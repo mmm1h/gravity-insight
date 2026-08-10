@@ -2,18 +2,15 @@
 
 from __future__ import annotations
 
+import os
 import sys
 from collections.abc import Sequence
-
-from . import cli as insight_cli
-from .census import cli as census_cli
-from .onboarding import command_requires_credentials, ensure_first_run_credentials
-from .sql import __main__ as sql_cli
 
 
 _HELP = """Gravity SDK
 
 Usage:
+  gravity [--workspace <gravity.toml|directory>] <command> [options]
   gravity insight <command> [options]
   gravity metadata sync --all-apps
   gravity metadata search|events|properties [query]
@@ -32,8 +29,29 @@ Run `gravity insight --help`, `gravity sql --help`, or
 """
 
 
+def command_requires_credentials(args: Sequence[str], parser_factory: object) -> bool:
+    from .onboarding import command_requires_credentials as implementation
+
+    return implementation(args, parser_factory)
+
+
+def ensure_first_run_credentials(*, requires_credentials: bool) -> bool:
+    from .onboarding import ensure_first_run_credentials as implementation
+
+    return implementation(requires_credentials=requires_credentials)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
-    args = list(sys.argv[1:] if argv is None else argv)
+    try:
+        args = _extract_workspace(list(sys.argv[1:] if argv is None else argv))
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+
+    from . import cli as insight_cli
+    from .census import cli as census_cli
+    from .sql import __main__ as sql_cli
+
     if not args:
         if not ensure_first_run_credentials(requires_credentials=True):
             return 4
@@ -70,6 +88,36 @@ def main(argv: Sequence[str] | None = None) -> int:
     ):
         return 4
     return command(command_args)
+
+
+def _extract_workspace(args: list[str]) -> list[str]:
+    """Apply the one process-wide workspace selector before SDK imports."""
+
+    selected: str | None = None
+    remaining: list[str] = []
+    index = 0
+    while index < len(args):
+        value = args[index]
+        if value == "--workspace":
+            if index + 1 >= len(args) or args[index + 1].startswith("--"):
+                raise ValueError("--workspace requires a gravity.toml file or directory")
+            candidate = args[index + 1]
+            index += 2
+        elif value.startswith("--workspace="):
+            candidate = value.partition("=")[2]
+            if not candidate:
+                raise ValueError("--workspace requires a gravity.toml file or directory")
+            index += 1
+        else:
+            remaining.append(value)
+            index += 1
+            continue
+        if selected is not None:
+            raise ValueError("--workspace may be supplied only once")
+        selected = candidate
+    if selected is not None:
+        os.environ["GRAVITY_WORKSPACE"] = selected
+    return remaining
 
 
 if __name__ == "__main__":

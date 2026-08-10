@@ -1044,7 +1044,7 @@ class OperationSpec:
             },
         }
 
-    def capability(self) -> dict[str, Any]:
+    def operation_summary(self) -> dict[str, Any]:
         return {
             "operation_id": self.operation_id,
             "domain": self.domain,

@@ -1,206 +1,64 @@
 schema_version = 1
 
 [apps]
-merge2-main = 29034827
-merge2-secondary = 27192043
-merge2-legacy = 24502679
+demo = 1001
 
 [defaults]
-app = "merge2-main"
+app = "demo"
 timezone = "Asia/Shanghai"
 time_window = "latest-safe-day"
 
-[datasources.merge2]
-id = "gravity_merge2_v1"
-verification_status = "verified_with_gaps"
+[datasources.demo]
+id = "demo_warehouse"
+verification_status = "pending_review"
 timezone = "Asia/Shanghai"
-freshness = "latest safe calendar day"
-privacy = "aggregate or schema-level output only"
+privacy = "aggregate output only"
 
-[products.payment-summary]
-kind = "payment-summary"
-datasource = "merge2"
-apps = ["merge2-main"]
+[products.daily-event-summary]
+kind = "custom-sql"
+datasource = "demo"
+apps = ["demo"]
+privacy = "aggregate"
+output_fields = ["app_id", "event_name", "event_count"]
+max_rows = 100
+measurement = "daily aggregate event count"
 forbidden_claims = [
-  "会计净收入或财务对账",
-  "活动归因、投放回收或 ROI",
-  "assignment/holdout 不完整时的因果 uplift",
+  "user-level identity or behavior",
+  "causal impact",
 ]
-source_event = "$PayEvent"
-window = "left-closed right-open in Asia/Shanghai"
-amount = "properties.$pay_amount in cents"
-order_key = "non-empty $order_id, otherwise user_id + create_time + $pay_reason + $pay_amount"
-buyer = "distinct user_id"
-limits = [
-  "behavioral payment is not financial net revenue",
-  "the product does not provide campaign attribution or causal uplift",
-]
+sql = """
+SELECT
+  app_id,
+  event AS event_name,
+  COUNT(*) AS event_count
+FROM `default`.`event`
+WHERE app_id IN ({app_ids})
+  AND create_time >= CAST('{start}' AS DATETIME)
+  AND create_time < CAST('{end}' AS DATETIME)
+GROUP BY app_id, event
+ORDER BY app_id, event_name
+LIMIT {limit}
+"""
 
-[products.first-scene-coverage]
-kind = "first-scene-coverage"
-datasource = "merge2"
-apps = ["merge2-main", "merge2-secondary", "merge2-legacy"]
-property = "$first_scene"
-forbidden_claims = [
-  "把用户属性 $first_scene 当作事件属性",
-  "把空值或未知宿主解释为没有来源",
-  "由场景覆盖率推导因果效果",
-]
-source = "user property $first_scene"
-window = "left-closed right-open in Asia/Shanghai"
-limits = [
-  "$first_scene is not an event property",
-  "empty or unknown values do not mean that the user had no source",
-]
-
-[products.first-scene-coverage.host_names]
-"01" = "今日头条"
-"02" = "抖音"
-"03" = "皮皮虾"
-"04" = "火山(旧)"
-"06" = "头条极速"
-"10" = "抖音极速"
-"14" = "番茄畅听"
-"18" = "番茄小说"
-"23" = "火山(新)"
-"25" = "PC抖音"
-"26" = "红果"
-"27" = "汽水"
-"28" = "番茄音乐"
-"29" = "抖音精选"
-"99" = "IDE/特殊"
-
-[products.energy-profile-coverage]
-kind = "profile-coverage"
-datasource = "merge2"
-apps = ["merge2-main"]
-activity_event = "AssetList"
-measurement = "current cumulative/profile snapshot coverage"
-forbidden_claims = [
-  "把累计/当前快照解释为窗口新增体力产耗",
-  "用 paid_assets 还原逐次体力消耗",
-  "由字段覆盖率推导活动效果",
-]
-semantics = "coverage of cumulative or snapshot user properties"
-limits = [
-  "the product does not calculate energy consumed within the query window",
-  "paid_assets cannot reconstruct per-action energy consumption",
-]
-
-[products.energy-profile-coverage.properties]
-getpower = "total_getpower_num"
-usepower = "total_usepower_num"
-current_power = "current_power"
-
-[products.event-coverage]
-kind = "event-coverage"
-datasource = "merge2"
-apps = ["merge2-main"]
-forbidden_claims = [
-  "把单日未出现解释为埋点失效",
-  "声称已完成全部字段级验证",
-  "由事件存在性推导活动或版本效果",
-]
-source = "declared event names in this workspace"
-semantics = "event presence within the query window"
-limits = [
-  "absence in one day does not prove instrumentation failure",
-  "event presence does not prove campaign or version impact",
-]
-events = [
-  "Login",
-  "$AppStart",
-  "$MPLaunch",
-  "AssetList",
-  "userlevel",
-  "power_multipe",
-  "paid_assets",
-  "piece_change",
-  "generator_get",
-  "order_status",
-  "island_store",
-  "piece_achievement",
-  "lv_rewards",
-  "$AdClick",
-  "$AdPlayStart",
-  "$AdShow",
-  "pay_click",
-  "pay_cancel",
-  "$PayEvent",
-  "routine_scence",
-  "event_scence",
-  "stage",
-  "skip_stoty",
-  "card_collect",
-  "card_pack",
-  "card_box_get",
-  "seven_tasks",
-  "seven_tasks_box",
-  "mini_chenss_achievement",
-  "mini_chessboard_box",
-  "arcade_game",
-  "arcade_game_piont",
-  "arcade_game_reward",
-  "water_challenge",
-  "water_challenge_reward",
-  "royal_crown",
-  "royal_crown_reward",
-  "pkrace",
-  "pkrace_reward",
-  "dogfood",
-  "dogfood_click",
-  "dogfood_reward",
-  "magiclamp",
-  "magiclamp_reward",
-  "vip_invitation",
-  "donutrace",
-  "donutrace_click",
-  "donutrace_reward",
-  "island_scene",
-  "island_plot",
-  "island_avatar",
-  "medal_campaign",
-  "medal_bigbag",
-  "surprise_gachapon",
-  "smjx",
-  "energytrain",
-  "energytrain_reward",
-  "onegetone",
-  "spin_buy",
-  "tiered_gift",
-  "small_plane",
-  "pass_task",
-  "pass_reward",
-  "soaring_ratings",
-  "soaring_ratings_lv",
-  "trainmerge_submit",
-  "trainmerge_reward",
-  "bingo_submit",
-  "bingo_reward",
-  "questionnaire_submit",
-  "little_sun",
-  "little_sun_box",
-]
-
-[recipes.retention-weekly]
+[recipes.demo-retention]
 operation = "analysis.retention.query"
-description = "Workspace-owned retention runbook example"
+description = "Fictional project-owned retention recipe"
 required_parameters = ["start", "end"]
 output_fields = ["total", "x", "y"]
 contract_fingerprint = "8b9b3a31284faa9e586342bb8875baba56f4e204a4e9c7115ab3939b8e9a2908"
 
-[recipes.retention-weekly.bindings]
-app_ref = "merge2-main"
+[recipes.demo-retention.bindings]
+app_ref = "demo"
 app_input = "app_id"
-report_ref = "workspace-retention"
+report_ref = "demo-retention"
 report_input = "query_id"
 
-[recipes.retention-weekly.parameters]
+[recipes.demo-retention.parameters]
 start = "date_list.0.start_date"
 end = "date_list.0.end_date"
 
-[recipes.retention-weekly.input]
+[recipes.demo-retention.input]
 query_item_list = [
-  { event_name = "$AppStart", event_label = "$AppStart", custom_name = "$AppStart", target = { name = "PresetAllCount", field = "PresetAllCount" }, conditions = [], cond_logic = "AND", event_index = 0 },
-  { event_name = "Login", event_label = "Login", custom_name = "Login", target = { name = "PresetAllCount", field = "PresetAllCount" }, conditions = [], cond_logic = "AND", event_index = 1 },
+  { event_name = "DemoStart", event_label = "DemoStart", custom_name = "DemoStart", target = { name = "PresetAllCount", field = "PresetAllCount" }, conditions = [], cond_logic = "AND", event_index = 0 },
+  { event_name = "DemoReturn", event_label = "DemoReturn", custom_name = "DemoReturn", target = { name = "PresetAllCount", field = "PresetAllCount" }, conditions = [], cond_logic = "AND", event_index = 1 },
 ]

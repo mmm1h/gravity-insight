@@ -1,6 +1,6 @@
 # Evidence 运行手册
 
-Evidence 是已登记 SQL 产品的可复核状态，不是普通查询缓存。只有显式发布流程可以更新仓库中的最新指针和不可变快照。
+Evidence 是已登记 SQL 产品的可复核状态，不是普通查询缓存。只有显式发布流程可以更新当前 workspace 私有状态目录中的最新指针和不可变快照；业务 Evidence 不进入 SDK 仓库。
 
 ## 1. 离线预检
 
@@ -13,7 +13,7 @@ python -m gravity_sdk.quality check
 git diff --check
 ```
 
-确认工作树中的非 Evidence 改动是当前任务的一部分，凭据文件未跟踪，系统日期和 `Asia/Shanghai` 安全日计算正确。
+确认业务 workspace 改动已经审查，凭据文件未跟踪，系统日期和 `Asia/Shanghai` 安全日计算正确。
 
 ## 2. 只读验证
 
@@ -55,4 +55,4 @@ gravity sql status --json
 - 发布中断：保留已写的不可变 snapshot，不手工移动 latest；
 - 发现用户级或敏感数据：立即停止，不提交输出。
 
-Evidence 不证明业务因果、财务净收入或活动归因；这些限制由包内 SQL 产品合同和输出中的 `forbidden_claims` 共同约束。
+Evidence 不证明业务因果、财务净收入或活动归因；这些限制由 SDK 的通用 SQL 机制合同、项目 workspace 产品合同和输出中的 `forbidden_claims` 共同约束。

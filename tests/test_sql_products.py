@@ -20,7 +20,6 @@ from gravity_sdk.sql.products import (
     build_evidence,
     build_sql,
     day_window,
-    declared_events,
     evidence_preflight,
     _credential_source,
     latest_safe_date,
@@ -29,9 +28,7 @@ from gravity_sdk.sql.products import (
     readiness_status,
     resolve_current_evidence,
     run_product,
-    summarize_events,
-    summarize_first_scene,
-    summarize_payment,
+    summarize_custom,
 )
 
 
@@ -41,58 +38,8 @@ EXAMPLE_WORKSPACE = ROOT / "examples" / "workspace" / "gravity.toml"
 
 class _AggregateClient:
     def execute_sql(self, sql):
-        if "WITH raw_pay AS" in sql:
-            return [
-                {
-                    "app_id": 29034827,
-                    "pay_event_rows": 2,
-                    "order_count": 2,
-                    "buyer_count": 1,
-                    "revenue_cent": 300,
-                    "duplicate_rows": 0,
-                    "missing_amount_rows": 0,
-                    "invalid_amount_rows": 0,
-                    "missing_reason_rows": 0,
-                    "fallback_order_key_rows": 0,
-                    "missing_pay_type_rows": 0,
-                    "missing_pay_method_rows": 0,
-                    "non_cny_rows": 0,
-                    "pay_method_value_count": 1,
-                    "pay_method_min": "method",
-                    "pay_method_max": "method",
-                    "pay_type_value_count": 1,
-                    "pay_type_min": "CNY",
-                    "pay_type_max": "CNY",
-                }
-            ]
-        if "WITH user_scene AS" in sql:
-            return [
-                {"app_id": 29034827, "scene_status": "reported", "host_prefix": "26", "registrations": 2}
-            ]
-        if "complete_profile_users" in sql:
-            return [
-                {
-                    "app_id": 29034827,
-                    "active_users": 2,
-                    "profile_row_users": 2,
-                    "getpower_users": 1,
-                    "usepower_users": 1,
-                    "current_power_users": 1,
-                    "complete_profile_users": 1,
-                    "assetlist_events": 0,
-                    "assetlist_users": 0,
-                }
-            ]
-        return [
-            {
-                "app_id": 29034827,
-                "event_name": "__all__",
-                "event_rows": 10,
-                "active_users": 2,
-                "first_event_at": "2026-07-22 00:00:00.011",
-                "last_event_at": "2026-07-22 23:59:59.999",
-            }
-        ]
+        self.sql = sql
+        return [{"app_id": 1001, "event_name": "DemoEvent", "event_count": 2}]
 
 
 class GravityProductTests(unittest.TestCase):
@@ -113,61 +60,32 @@ class GravityProductTests(unittest.TestCase):
             latest_safe_date(datetime(2026, 7, 23, 2, 0, 0, tzinfo=BEIJING)),
         )
 
-    def test_partial_products_keep_warnings_and_forbidden_claims(self):
+    def test_workspace_product_projects_only_declared_aggregate_fields(self):
         start_at, end_at = day_window(date(2026, 7, 22))
-        result = run_product(_AggregateClient(), "energy-profile-coverage", start_at, end_at)
+        result = run_product(
+            _AggregateClient(), "daily-event-summary", start_at, end_at
+        )
 
-        self.assertEqual("partial", result["status"])
-        self.assertTrue(result["warnings"])
+        self.assertEqual("complete", result["status"])
+        self.assertEqual([], result["warnings"])
         self.assertTrue(result["forbidden_claims"])
-        self.assertEqual(0.5, result["summary"]["apps"][0]["complete_profile_coverage_rate"])
-
-        payment_rows = _AggregateClient().execute_sql("WITH raw_pay AS")
-        payment_rows[0]["invalid_amount_rows"] = 1
-        payment_rows[0]["missing_reason_rows"] = 1
-        _summary, status, warnings, _notes = summarize_payment(
-            payment_rows, (29034827,), start_at, end_at
+        self.assertEqual(
+            [{"app_id": 1001, "event_name": "DemoEvent", "event_count": 2}],
+            result["summary"]["rows"],
         )
-        self.assertEqual("partial", status)
-        self.assertTrue(any("invalid_amount_rows=1" in warning for warning in warnings))
-        self.assertTrue(any("missing_reason_rows=1" in warning for warning in warnings))
 
-    def test_declared_event_absence_is_informational_but_late_data_is_partial(self):
+    def test_generic_summary_rejects_rows_above_workspace_limit(self):
         start_at, end_at = day_window(date(2026, 7, 22))
-        fresh_rows = _AggregateClient().execute_sql("event")
-        summary, status, warnings, notes = summarize_events(
-            fresh_rows, (29034827,), start_at, end_at, declared_events()
-        )
-        self.assertEqual("complete", status)
-        self.assertEqual([], warnings)
-        self.assertTrue(summary["apps"][0]["missing_events"])
-        self.assertIn("informational", notes[0])
-
-        fresh_rows[0]["last_event_at"] = "2026-07-22 23:00:00"
-        _summary, status, warnings, _notes = summarize_events(
-            fresh_rows, (29034827,), start_at, end_at, declared_events()
-        )
-        self.assertEqual("partial", status)
-        self.assertIn("15 minutes", warnings[0])
-
-    def test_first_scene_coverage_counts_nonempty_invalid_values_as_present(self):
-        start_at, end_at = day_window(date(2026, 7, 22))
-        summary, status, warnings, _notes = summarize_first_scene(
-            [
-                {"app_id": 29034827, "scene_status": "reported", "host_prefix": "26", "registrations": 8},
-                {"app_id": 29034827, "scene_status": "invalid_format", "host_prefix": "", "registrations": 1},
-                {"app_id": 29034827, "scene_status": "missing", "host_prefix": "", "registrations": 1},
-            ],
-            (29034827,),
-            start_at,
-            end_at,
-        )
-        app = summary["apps"][0]
-        self.assertEqual(9, app["with_scene"])
-        self.assertEqual(8, app["six_digit_scene"])
-        self.assertEqual(0.9, app["coverage_rate"])
-        self.assertEqual("partial", status)
-        self.assertTrue(warnings)
+        with self.assertRaisesRegex(EvidenceFormatError, "max_rows=1"):
+            summarize_custom(
+                [{"app_id": 1001}, {"app_id": 1001}],
+                (1001,),
+                start_at,
+                end_at,
+                output_fields=["app_id"],
+                max_rows=1,
+                measurement="aggregate",
+            )
 
     def test_evidence_atomic_round_trip_and_contract_drift_rejects_query(self):
         day = date(2026, 7, 22)
@@ -175,12 +93,7 @@ class GravityProductTests(unittest.TestCase):
         client = _AggregateClient()
         results = [
             run_product(client, product, start_at, end_at)
-            for product in (
-                "payment-summary",
-                "first-scene-coverage",
-                "energy-profile-coverage",
-                "event-coverage",
-            )
+            for product in ("daily-event-summary",)
         ]
         evidence = build_evidence(day, results)
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -207,7 +120,7 @@ class GravityProductTests(unittest.TestCase):
         ):
             self.assertTrue(readiness_status(evidence, now)["query_ready"])
             tampered = copy.deepcopy(evidence)
-            tampered["products"]["payment-summary"]["summary"]["apps"][0]["revenue_cent"] = 999999
+            tampered["products"]["daily-event-summary"]["summary"]["rows"][0]["event_count"] = 999999
             with self.assertRaises(EvidenceFormatError):
                 readiness_status(tampered, now)
             stripped = copy.deepcopy(evidence)
@@ -242,12 +155,7 @@ class GravityProductTests(unittest.TestCase):
             day,
             [
                 run_product(client, product, start_at, end_at)
-                for product in (
-                    "payment-summary",
-                    "first-scene-coverage",
-                    "energy-profile-coverage",
-                    "event-coverage",
-                )
+                for product in ("daily-event-summary",)
             ],
         )
         with tempfile.TemporaryDirectory() as temporary:
@@ -278,12 +186,7 @@ class GravityProductTests(unittest.TestCase):
             day,
             [
                 run_product(client, product, start_at, end_at)
-                for product in (
-                    "payment-summary",
-                    "first-scene-coverage",
-                    "energy-profile-coverage",
-                    "event-coverage",
-                )
+                for product in ("daily-event-summary",)
             ],
         )
         with tempfile.TemporaryDirectory() as temporary:
@@ -312,7 +215,7 @@ class GravityProductTests(unittest.TestCase):
             [
                 "gravity_sdk.sql",
                 "query",
-                "payment-summary",
+                "daily-event-summary",
                 "--start",
                 "2026-07-22T00:00:00",
                 "--end",
@@ -338,7 +241,7 @@ class GravityProductTests(unittest.TestCase):
             [
                 "gravity_sdk.sql",
                 "query",
-                "payment-summary",
+                "daily-event-summary",
                 "--start",
                 "2026-07-22T00:00:00",
                 "--end",
@@ -362,7 +265,7 @@ class GravityProductTests(unittest.TestCase):
             [
                 "gravity_sdk.sql",
                 "query",
-                "payment-summary",
+                "daily-event-summary",
                 "--start",
                 "2026-07-22T00:00:00' OR 1=1",
                 "--end",
@@ -381,7 +284,7 @@ class GravityProductTests(unittest.TestCase):
 
         start_at, end_at = day_window(date(2026, 7, 22))
         with self.assertRaises(ValueError):
-            build_sql("payment-summary", start_at, end_at, ("29034827 OR 1=1",))
+            build_sql("daily-event-summary", start_at, end_at, ("1001 OR 1=1",))
 
     def test_query_output_carries_one_immutable_evidence_reference(self):
         binding = mock.Mock()
@@ -393,7 +296,7 @@ class GravityProductTests(unittest.TestCase):
             [
                 "gravity_sdk.sql",
                 "query",
-                "payment-summary",
+                "daily-event-summary",
                 "--start",
                 "2026-07-22T00:00:00",
                 "--end",
@@ -406,7 +309,7 @@ class GravityProductTests(unittest.TestCase):
         ), mock.patch(
             "gravity_sdk.sql.__main__._client", return_value=mock.Mock()
         ), mock.patch(
-            "gravity_sdk.sql.__main__.run_product", return_value={"product": "payment-summary"}
+            "gravity_sdk.sql.__main__.run_product", return_value={"product": "daily-event-summary"}
         ), redirect_stdout(output), redirect_stderr(io.StringIO()):
             self.assertEqual(0, gravity_cli.main())
 

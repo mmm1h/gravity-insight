@@ -14,13 +14,19 @@ gravity sql <command>         受控 SQL 产品
 gravity census <command>      前端路由盘点
 ```
 
+任意命令都可在顶层显式选择项目配置：
+
+```powershell
+gravity --workspace <gravity.toml-or-directory> <command> [options]
+```
+
 历史 Insight 命令可以省略 `insight`，但新文档和自动化应使用完整命名空间。
 
 ## Insight
 
 | 命令组 | 用途 |
 | --- | --- |
-| `operations list/search/describe/schema` | 发现 operation 和输入合同；`capabilities` 是兼容 alias |
+| `operations list/search/describe/schema` | 发现 operation 和输入合同 |
 | `validate` | 离线校验输入，可选渲染脱敏 wire |
 | `read` | 执行一个 operation，支持受控分页和文件输出 |
 | `run` | 执行 `@recipe` 或 operation 的 Resolver 管线，并产出脱敏 Receipt |
@@ -87,16 +93,9 @@ workspace 的发现顺序、最小配置和 recipe 字段见 [Workspace 参考](
 | `gravity sql verify [--date ...] [--publish]` | 验证最近安全自然日；显式发布才更新 Evidence |
 | `gravity sql query <product> ...` | 执行已登记聚合产品 |
 
-SQL 不是任意查询入口。产品和参数以 `gravity sql query --help` 为准。
+SQL 不是任意查询入口。SDK 只实现 `custom-sql` 这一种通用、受治理的聚合产品机制；具体产品名称、SQL、App、数据源、输出字段和禁止结论全部由调用项目的 `gravity.toml` 维护。SDK 校验固定占位符、聚合隐私、输出投影和行数上限，但不内置任何业务事件、属性或口径。
 
-| 产品 | 只回答 | 不能回答 |
-| --- | --- | --- |
-| `payment-summary` | `$PayEvent` 行为收入、订单、买家聚合 | 财务净收入、活动归因、因果 uplift |
-| `first-scene-coverage` | 用户属性 `$first_scene` 的覆盖 | 事件属性、因果来源效果 |
-| `energy-profile-coverage` | 累计/快照体力属性的覆盖 | 查询窗口内逐次体力消耗 |
-| `event-coverage` | 合同声明事件在窗口内是否出现 | 埋点健康结论、活动效果 |
-
-SQL 进程级并发上限为 2。机器可执行语义位于 `src/gravity_sdk/contracts/sql-products/catalog.json`；调用结果中的 `warnings` 和 `forbidden_claims` 必须保留。
+SQL 进程级并发上限为 2。机制合同位于 `src/gravity_sdk/contracts/sql-products/catalog.json`；调用结果中的 `warnings` 和 `forbidden_claims` 必须保留。
 
 ## Census
 

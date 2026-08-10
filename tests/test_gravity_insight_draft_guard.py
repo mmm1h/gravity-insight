@@ -4,7 +4,7 @@ import unittest
 from types import SimpleNamespace
 
 try:
-    from gravity_sdk.catalog import CapabilityCatalog
+    from gravity_sdk.catalog import OperationCatalog
     from gravity_sdk.client import GravityInsightClient
     from gravity_sdk.drift import (
         AUTH_ERROR,
@@ -26,7 +26,7 @@ try:
     from gravity_sdk.models import load_operation_manifest
     from gravity_sdk.registry import PolicyEngine, Registry
 except ModuleNotFoundError:  # source checkout before editable installation
-    from gravity_sdk.catalog import CapabilityCatalog
+    from gravity_sdk.catalog import OperationCatalog
     from gravity_sdk.client import GravityInsightClient
     from gravity_sdk.drift import (
         AUTH_ERROR,
@@ -118,11 +118,11 @@ def _client(overlay: HealthOverlay, transport):
     )
     registry = Registry(operations)
     policy = PolicyEngine(registry)
-    catalog = CapabilityCatalog(operations, health_overlay=overlay)
+    catalog = OperationCatalog(operations, health_overlay=overlay)
     return GravityInsightClient(
         registry,
         ReadExecutor(registry, policy, transport),
-        capability_catalog=catalog,
+        operation_catalog=catalog,
     )
 
 
@@ -133,7 +133,7 @@ class DraftCatalogTests(unittest.TestCase):
 
         found = client._operation_catalog.search(DRAFT_ID)
         target = next(
-            item for item in found["capabilities"] if item["operation_id"] == DRAFT_ID
+            item for item in found["operations"] if item["operation_id"] == DRAFT_ID
         )
         self.assertEqual("draft_catalog_only", target["catalog_status"])
         self.assertFalse(target["executable"])

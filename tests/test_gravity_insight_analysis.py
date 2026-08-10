@@ -1159,25 +1159,25 @@ class GravityInsightAnalysisTests(unittest.TestCase):
                 else (_ for _ in ()).throw(AssertionError(path))
             ),
         )
-        capabilities = {
+        operations = {
             item["operation_id"]: item
-            for item in client.capabilities(domain="analysis", stability=None)
+            for item in client.operations(domain="analysis", stability=None)
             if item["operation_id"] in operation_ids
         }
-        self.assertEqual(operation_ids, set(capabilities))
+        self.assertEqual(operation_ids, set(operations))
         self.assertEqual(
-            "stable", capabilities["analysis.report_config.get"]["stability"]
+            "stable", operations["analysis.report_config.get"]["stability"]
         )
-        self.assertTrue(capabilities["analysis.report_config.get"]["executable"])
+        self.assertTrue(operations["analysis.report_config.get"]["executable"])
         self.assertEqual(
-            "stable", capabilities["analysis.report_config.list"]["stability"]
+            "stable", operations["analysis.report_config.list"]["stability"]
         )
-        self.assertTrue(capabilities["analysis.report_config.list"]["executable"])
+        self.assertTrue(operations["analysis.report_config.list"]["executable"])
         self.assertEqual(
-            "stable", capabilities["analysis.event_property_group.list"]["stability"]
+            "stable", operations["analysis.event_property_group.list"]["stability"]
         )
         self.assertTrue(
-            capabilities["analysis.event_property_group.list"]["executable"]
+            operations["analysis.event_property_group.list"]["executable"]
         )
 
         result = client.read("analysis.report_config.get", {"app_id": "101", "id": "1"})

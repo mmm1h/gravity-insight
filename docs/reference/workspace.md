@@ -7,9 +7,10 @@ operation 搜索和显式 `app_id` 查询不依赖它。
 
 SDK 按以下顺序只读加载 `gravity.toml`：
 
-1. Python API 显式传给 `load_workspace(path)` 的路径；
-2. `GRAVITY_WORKSPACE` 指向的文件或目录；
-3. 从当前目录逐级向上查找。
+1. CLI 顶层 `--workspace <文件或目录>`；
+2. Python API 显式传给 `load_workspace(path)` 的路径；
+3. `GRAVITY_WORKSPACE` 指向的文件或目录；
+4. 从当前目录逐级向上查找。
 
 没有 workspace 时，Insight operation 仍可使用；需要项目配置的命令会返回明确的
 未配置错误。SDK 不修改 `gravity.toml`，Receipt 和 Evidence 写入用户私有缓存。
@@ -34,6 +35,10 @@ time_window = "latest-safe-day"
 把文件放在调用项目根目录。`main` 是项目自定义别名，`1001` 替换为真实 App ID。
 完整 schema 位于包内 `contracts/schema/workspace-v1.schema.json`；仓库中的
 `examples/workspace/gravity.toml` 展示 SQL product 和 recipe 的完整形状。
+
+## SQL product
+
+SDK 只识别 `kind = "custom-sql"`。SQL 必须使用且只使用 `{app_ids}`、`{start}`、`{end}`、`{limit}` 四个占位符，并声明 `privacy = "aggregate"`、`output_fields`、`max_rows` 和 `forbidden_claims`。产品实例属于业务项目；SDK 仓库的示例仅使用虚构 App、事件和数据源。
 
 ## Recipe
 

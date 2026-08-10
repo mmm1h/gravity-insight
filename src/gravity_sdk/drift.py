@@ -486,11 +486,6 @@ def operation_availability(
     return health_overlay.catalog_availability(operation_id, status) if health_overlay else status
 
 
-# Public compatibility aliases for the pre-operations terminology.
-capability_health = operation_health
-capability_availability = operation_availability
-
-
 def projection_drift_status(drift: ProjectionDrift) -> str:
     return {
         ProjectionDrift.ADDITIVE: "contract_changed_additive",

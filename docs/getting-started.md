@@ -81,7 +81,7 @@ gravity run @<recipe-name> --start 2026-08-01 --end 2026-08-07
 gravity run <operation-id> --app <workspace-alias> --input <json>
 ```
 
-workspace 可由显式调用、`GRAVITY_WORKSPACE` 或 cwd 向上查找选中。SDK 只读该文件；执行回执写入用户缓存，不写项目目录。配置格式见 [Workspace 参考](reference/workspace.md)。
+workspace 可由顶层 `--workspace`、显式 API 调用、`GRAVITY_WORKSPACE` 或 cwd 向上查找选中。SDK 只读该文件；执行回执写入用户缓存，不写项目目录。配置格式见 [Workspace 参考](reference/workspace.md)。
 
 ## 5. 同步本地元数据目录
 

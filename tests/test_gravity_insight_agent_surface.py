@@ -137,20 +137,20 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
         self.assertEqual("BLOB_CHECKSUM_MISMATCH", extension.code)
         self.assertEqual("local", extension.category)
 
-    def test_capability_search_is_semantic_bounded_and_continuable(self):
-        semantic = self.client.search_capabilities("用户分群", limit=3)
+    def test_operation_search_is_semantic_bounded_and_continuable(self):
+        semantic = self.client.search_operations("用户分群", limit=3)
         self.assertLessEqual(semantic["count"], 3)
         self.assertTrue(
-            any("segment" in item["operation_id"] for item in semantic["capabilities"])
+            any("segment" in item["operation_id"] for item in semantic["operations"])
         )
 
-        first = self.client.search_capabilities("report", limit=2)
+        first = self.client.search_operations("report", limit=2)
         self.assertIsNotNone(first["continuation_token"])
-        second = self.client.search_capabilities(
+        second = self.client.search_operations(
             "report", limit=2, continuation=first["continuation_token"]
         )
-        first_ids = {item["operation_id"] for item in first["capabilities"]}
-        second_ids = {item["operation_id"] for item in second["capabilities"]}
+        first_ids = {item["operation_id"] for item in first["operations"]}
+        second_ids = {item["operation_id"] for item in second["operations"]}
         self.assertFalse(first_ids & second_ids)
 
     def test_describe_includes_source_contract_health_and_parent_trace(self):
@@ -354,11 +354,11 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
         with patch("gravity_sdk.cli.run", side_effect=UpstreamError("down")):
             stderr = io.StringIO()
             with contextlib.redirect_stderr(stderr):
-                self.assertEqual(3, cli.main(["capabilities", "list"]))
+                self.assertEqual(3, cli.main(["operations", "list"]))
         with patch("gravity_sdk.cli.run", side_effect=OSError("disk")):
             stderr = io.StringIO()
             with contextlib.redirect_stderr(stderr):
-                self.assertEqual(4, cli.main(["capabilities", "list"]))
+                self.assertEqual(4, cli.main(["operations", "list"]))
         self.assertEqual(2, exit_code_for_error(InputValidationError("bad")))
 
     def test_stdout_summarizes_large_values_and_caps_lists(self):

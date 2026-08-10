@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from gravity_sdk.paths import EVIDENCE_ROOT, PACKAGE_ROOT, PROJECT_ROOT
-from gravity_sdk.sql.product_runtime import render_product_sql
 from gravity_sdk.support.documents import replace_atomic_durable
 from gravity_sdk.support.evidence import (
     EvidenceBinding,
@@ -103,154 +102,12 @@ def normalize_app_ids(product: str, app_ids: list[int] | tuple[int, ...] | None)
     return values
 
 
-def declared_events(product: str | None = None) -> list[str]:
-    selected_product = product
-    if selected_product is None:
-        matches = [
-            name
-            for name in product_names()
-            if _product_definition(name).get("kind") == "event-coverage"
-        ]
-        if len(matches) != 1:
-            raise EvidenceFormatError("exactly one event-coverage product must be selected")
-        selected_product = matches[0]
-    events = _product_definition(selected_product).get("events")
-    if not isinstance(events, list) or not events:
-        raise EvidenceFormatError(f"{selected_product}: declared event list is empty")
-    if any(not isinstance(event, str) or not event for event in events):
-        raise EvidenceFormatError(f"{selected_product}: declared event list contains an invalid name")
-    if len(events) != len(set(events)):
-        raise EvidenceFormatError(f"{selected_product}: declared event list contains duplicates")
-    return events
-
-
 def build_sql(product: str, start_at: datetime, end_at: datetime, app_ids: tuple[int, ...]) -> str:
     app_ids = normalize_app_ids(product, app_ids)
     definition = _product_definition(product)
-    kind = str(definition["kind"])
     start = _sql_time(start_at)
     end = _sql_time(end_at)
-    if kind == "first-scene-coverage":
-        return _first_scene_sql(
-            _app_filter("u", app_ids),
-            _app_filter("", app_ids),
-            start, end,
-            str(definition["property"]),
-        )
-    if kind == "profile-coverage":
-        return _profile_sql(
-            _app_filter("e", app_ids),
-            _app_filter("u", app_ids),
-            _app_filter("", app_ids),
-            start,
-            end,
-            definition["properties"],
-            str(definition["activity_event"]),
-        )
-    if kind == "event-coverage":
-        declared_events(product)
-    if kind == "custom-sql":
-        return _custom_sql(definition, app_ids, start, end)
-    return render_product_sql(definition, app_ids, start, end)
-
-
-def _first_scene_sql(
-    app_filter: str, outer_filter: str, start: str, end: str, property_name: str
-) -> str:
-    return f"""WITH user_scene AS (
-  SELECT
-    app_id,
-    COALESCE(get_json_string(properties, '$.{property_name}'), '') AS scene
-  FROM `default`.`user` u
-  WHERE {app_filter}
-    AND u.create_time >= CAST('{start}' AS DATETIME)
-    AND u.create_time < CAST('{end}' AS DATETIME)
-)
-SELECT
-  app_id,
-  CASE
-    WHEN scene = '' THEN 'missing'
-    WHEN LENGTH(scene) = 6 THEN 'reported'
-    ELSE 'invalid_format'
-  END AS scene_status,
-  CASE WHEN LENGTH(scene) = 6 THEN SUBSTR(scene, 1, 2) ELSE '' END AS host_prefix,
-  COUNT(*) AS registrations
-FROM user_scene
-WHERE {outer_filter}
-GROUP BY
-  app_id,
-  CASE
-    WHEN scene = '' THEN 'missing'
-    WHEN LENGTH(scene) = 6 THEN 'reported'
-    ELSE 'invalid_format'
-  END,
-  CASE WHEN LENGTH(scene) = 6 THEN SUBSTR(scene, 1, 2) ELSE '' END
-ORDER BY app_id, scene_status, host_prefix
-LIMIT 10000"""
-
-
-def _profile_sql(
-    app_filter: str,
-    user_filter: str,
-    outer_filter: str,
-    start: str,
-    end: str,
-    properties: Mapping[str, Any],
-    activity_event: str,
-) -> str:
-    property_flags = ",\n".join(
-        f"    MAX(CASE WHEN COALESCE(get_json_string(u.prop_concat, '$.{property_name}'), '') <> '' THEN 1 ELSE 0 END) AS has_{output_name}"
-        for output_name, property_name in properties.items()
-    )
-    property_counts = ",\n".join(
-        f"  SUM(has_{output_name}) AS {output_name}_users"
-        for output_name in properties
-    )
-    complete_condition = " AND ".join(
-        f"has_{output_name} = 1" for output_name in properties
-    )
-    return f"""WITH active AS (
-  SELECT
-    app_id,
-    user_id,
-    SUM(CASE WHEN event = '{activity_event}' THEN 1 ELSE 0 END) AS activity_events
-  FROM `default`.`event` e
-  WHERE {app_filter}
-    AND e.create_time >= CAST('{start}' AS DATETIME)
-    AND e.create_time < CAST('{end}' AS DATETIME)
-    AND e.user_id IS NOT NULL
-  GROUP BY app_id, user_id
-),
-per_user AS (
-  SELECT
-    a.app_id,
-    a.user_id,
-    MAX(a.activity_events) AS activity_events,
-    MAX(CASE WHEN u.id IS NOT NULL THEN 1 ELSE 0 END) AS has_profile_row,
-{property_flags}
-  FROM active a
-  LEFT JOIN `default`.`user` u
-    ON u.app_id = a.app_id
-   AND u.id = a.user_id
-   AND {user_filter}
-  GROUP BY a.app_id, a.user_id
-)
-SELECT
-  app_id,
-  COUNT(*) AS active_users,
-  SUM(has_profile_row) AS profile_row_users,
-{property_counts},
-  SUM(CASE
-    WHEN {complete_condition}
-    THEN 1 ELSE 0 END
-  ) AS complete_profile_users,
-  SUM(activity_events) AS activity_events,
-  SUM(CASE WHEN activity_events > 0 THEN 1 ELSE 0 END) AS activity_users
-FROM per_user
-WHERE {outer_filter}
-GROUP BY app_id
-ORDER BY app_id
-LIMIT 1000"""
+    return _custom_sql(definition, app_ids, start, end)
 
 
 def _custom_sql(
@@ -276,7 +133,7 @@ def run_product(
     sql = build_sql(product, start_at, end_at, apps)
     rows = client.execute_sql(sql)
     summary, status, warnings, notes = _summarize_rows(
-        definition, rows, apps, start_at, end_at, product=product
+        definition, rows, apps, start_at, end_at
     )
     result: dict[str, Any] = {
         "product": product,
@@ -295,207 +152,6 @@ def run_product(
     if notes:
         result["notes"] = notes
     return result
-
-
-def summarize_payment(
-    rows: list[dict[str, Any]],
-    app_ids: tuple[int, ...],
-    _start_at: datetime,
-    _end_at: datetime,
-) -> tuple[dict[str, Any], str, list[str], list[str]]:
-    by_app = {_as_int(row.get("app_id")): row for row in rows}
-    apps: list[dict[str, Any]] = []
-    warnings: list[str] = []
-    for app_id in app_ids:
-        row = by_app.get(app_id, {})
-        item = {
-            "app_id": app_id,
-            "pay_event_rows": _as_int(row.get("pay_event_rows")),
-            "order_count": _as_int(row.get("order_count")),
-            "buyer_count": _as_int(row.get("buyer_count")),
-            "revenue_cent": _as_int(row.get("revenue_cent")),
-            "duplicate_rows": _as_int(row.get("duplicate_rows")),
-            "missing_amount_rows": _as_int(row.get("missing_amount_rows")),
-            "invalid_amount_rows": _as_int(row.get("invalid_amount_rows")),
-            "missing_reason_rows": _as_int(row.get("missing_reason_rows")),
-            "fallback_order_key_rows": _as_int(row.get("fallback_order_key_rows")),
-            "missing_pay_type_rows": _as_int(row.get("missing_pay_type_rows")),
-            "missing_pay_method_rows": _as_int(row.get("missing_pay_method_rows")),
-            "non_cny_rows": _as_int(row.get("non_cny_rows")),
-            "pay_method_value_count": _as_int(row.get("pay_method_value_count")),
-            "pay_method_min": _nullable_text(row.get("pay_method_min")),
-            "pay_method_max": _nullable_text(row.get("pay_method_max")),
-            "pay_type_value_count": _as_int(row.get("pay_type_value_count")),
-            "pay_type_min": _nullable_text(row.get("pay_type_min")),
-            "pay_type_max": _nullable_text(row.get("pay_type_max")),
-            "first_pay_at": _nullable_text(row.get("first_pay_at")),
-            "last_pay_at": _nullable_text(row.get("last_pay_at")),
-        }
-        item["revenue_yuan"] = round(item["revenue_cent"] / 100.0, 2)
-        apps.append(item)
-        if item["pay_event_rows"] == 0:
-            warnings.append(f"app_id={app_id}: no $PayEvent rows were observed")
-        for field in (
-            "duplicate_rows",
-            "missing_amount_rows",
-            "invalid_amount_rows",
-            "missing_reason_rows",
-            "fallback_order_key_rows",
-            "missing_pay_type_rows",
-            "missing_pay_method_rows",
-            "non_cny_rows",
-        ):
-            if item[field]:
-                warnings.append(f"app_id={app_id}: {field}={item[field]}")
-    return {"apps": apps, "activity_attribution": "not_provided"}, "partial" if warnings else "complete", warnings, []
-
-
-def summarize_first_scene(
-    rows: list[dict[str, Any]],
-    app_ids: tuple[int, ...],
-    _start_at: datetime,
-    _end_at: datetime,
-    host_names: Mapping[str, Any] | None = None,
-) -> tuple[dict[str, Any], str, list[str], list[str]]:
-    names = {} if host_names is None else host_names
-    apps: list[dict[str, Any]] = []
-    warnings: list[str] = []
-    for app_id in app_ids:
-        app_rows = [row for row in rows if _as_int(row.get("app_id")) == app_id]
-        breakdown = []
-        totals = {"reported": 0, "missing": 0, "invalid_format": 0}
-        for row in app_rows:
-            status = str(row.get("scene_status") or "invalid_format")
-            count = _as_int(row.get("registrations"))
-            totals[status if status in totals else "invalid_format"] += count
-            host_prefix = str(row.get("host_prefix") or "")
-            breakdown.append(
-                {
-                    "scene_status": status,
-                    "host_prefix": host_prefix,
-                    "host_name": str(names.get(host_prefix, "空值/未列举宿主")),
-                    "registrations": count,
-                }
-            )
-        registrations = sum(totals.values())
-        with_scene = totals["reported"] + totals["invalid_format"]
-        apps.append(
-            {
-                "app_id": app_id,
-                "registrations": registrations,
-                "with_scene": with_scene,
-                "six_digit_scene": totals["reported"],
-                "missing_scene": totals["missing"],
-                "invalid_format": totals["invalid_format"],
-                "coverage_rate": round(with_scene / registrations, 6) if registrations else None,
-                "by_status_host": breakdown,
-            }
-        )
-        if registrations == 0:
-            warnings.append(f"app_id={app_id}: no registrations were observed")
-        elif totals["missing"] or totals["invalid_format"]:
-            warnings.append(
-                f"app_id={app_id}: missing_scene={totals['missing']}, invalid_format={totals['invalid_format']}"
-            )
-    return {"apps": apps}, "partial" if warnings else "complete", warnings, []
-
-
-def summarize_profile(
-    rows: list[dict[str, Any]],
-    app_ids: tuple[int, ...],
-    _start_at: datetime,
-    _end_at: datetime,
-    properties: Mapping[str, Any],
-    *,
-    activity_event: str,
-    measurement: str,
-) -> tuple[dict[str, Any], str, list[str], list[str]]:
-    by_app = {_as_int(row.get("app_id")): row for row in rows}
-    apps: list[dict[str, Any]] = []
-    warnings: list[str] = []
-    notes: list[str] = []
-    for app_id in app_ids:
-        row = by_app.get(app_id, {})
-        active = _as_int(row.get("active_users"))
-        complete = _as_int(row.get("complete_profile_users"))
-        item = {
-            "app_id": app_id,
-            "active_users": active,
-            "profile_row_users": _as_int(row.get("profile_row_users")),
-            **{
-                f"{output_name}_users": _as_int(row.get(f"{output_name}_users"))
-                for output_name in properties
-            },
-            "complete_profile_users": complete,
-            "complete_profile_coverage_rate": round(complete / active, 6) if active else None,
-            "activity_events": _as_int(row.get("activity_events")),
-            "activity_users": _as_int(row.get("activity_users")),
-        }
-        apps.append(item)
-        if active == 0:
-            warnings.append(f"app_id={app_id}: no active users were observed")
-        elif complete < active:
-            warnings.append(f"app_id={app_id}: complete energy profile coverage is {complete}/{active}")
-        if item["activity_events"] == 0:
-            notes.append(
-                f"app_id={app_id}: {activity_event} was absent; this is diagnostic-only"
-            )
-    return {"apps": apps, "measurement": measurement}, "partial" if warnings else "complete", warnings, notes
-
-
-def summarize_events(
-    rows: list[dict[str, Any]],
-    app_ids: tuple[int, ...],
-    _start_at: datetime,
-    end_at: datetime,
-    declarations: list[str],
-) -> tuple[dict[str, Any], str, list[str], list[str]]:
-    apps: list[dict[str, Any]] = []
-    warnings: list[str] = []
-    notes: list[str] = []
-    for app_id in app_ids:
-        app_rows = [row for row in rows if _as_int(row.get("app_id")) == app_id]
-        overall = next((row for row in app_rows if row.get("event_name") == "__all__"), {})
-        event_rows = [row for row in app_rows if row.get("event_name") != "__all__"]
-        observed_rows = [row for row in event_rows if row.get("event_name") in declarations]
-        observed = {str(row["event_name"]) for row in observed_rows}
-        missing = [event for event in declarations if event not in observed]
-        unknown = sorted(str(row["event_name"]) for row in event_rows if row.get("event_name") not in declarations)
-        item = {
-            "app_id": app_id,
-            "event_rows": _as_int(overall.get("event_rows")),
-            "active_users": _as_int(overall.get("active_users")),
-            "first_event_at": _nullable_text(overall.get("first_event_at")),
-            "last_event_at": _nullable_text(overall.get("last_event_at")),
-            "declared_events": len(declarations),
-            "observed_events": len(observed),
-            "missing_events": missing,
-            "unknown_events": unknown,
-            "events": [
-                {
-                    "event_name": str(row["event_name"]),
-                    "event_rows": _as_int(row.get("event_rows")),
-                    "active_users": _as_int(row.get("active_users")),
-                    "first_event_at": _nullable_text(row.get("first_event_at")),
-                    "last_event_at": _nullable_text(row.get("last_event_at")),
-                }
-                for row in sorted(observed_rows, key=lambda value: str(value["event_name"]))
-            ],
-        }
-        apps.append(item)
-        if not item["event_rows"]:
-            warnings.append(f"app_id={app_id}: no events were observed")
-        else:
-            last_at = _parse_gravity_time(item["last_event_at"])
-            if last_at is None or last_at < end_at - timedelta(minutes=15):
-                warnings.append(f"app_id={app_id}: latest event is more than 15 minutes before window end")
-        if missing:
-            notes.append(
-                f"app_id={app_id}: {len(missing)} declared events were not observed; absence is informational"
-            )
-        if unknown:
-            notes.append(f"app_id={app_id}: {len(unknown)} observed events are not declared in the dictionary")
-    return {"apps": apps, "coverage": "declared-event presence only"}, "partial" if warnings else "complete", warnings, notes
 
 
 def summarize_custom(
@@ -529,41 +185,16 @@ def _summarize_rows(
     app_ids: tuple[int, ...],
     start_at: datetime,
     end_at: datetime,
-    *,
-    product: str,
 ) -> tuple[dict[str, Any], str, list[str], list[str]]:
-    kind = str(definition["kind"])
-    if kind == "payment-summary":
-        return summarize_payment(rows, app_ids, start_at, end_at)
-    if kind == "first-scene-coverage":
-        return summarize_first_scene(
-            rows, app_ids, start_at, end_at, definition.get("host_names", {})
-        )
-    if kind == "profile-coverage":
-        return summarize_profile(
-            rows,
-            app_ids,
-            start_at,
-            end_at,
-            definition["properties"],
-            activity_event=str(definition["activity_event"]),
-            measurement=str(definition.get("measurement", "profile property coverage")),
-        )
-    if kind == "event-coverage":
-        return summarize_events(
-            rows, app_ids, start_at, end_at, declared_events(product)
-        )
-    if kind == "custom-sql":
-        return summarize_custom(
-            rows,
-            app_ids,
-            start_at,
-            end_at,
-            output_fields=list(definition["output_fields"]),
-            max_rows=int(definition.get("max_rows", 1000)),
-            measurement=str(definition.get("measurement", "workspace aggregate")),
-        )
-    raise EvidenceFormatError(f"unsupported SQL product kind: {kind}")
+    return summarize_custom(
+        rows,
+        app_ids,
+        start_at,
+        end_at,
+        output_fields=list(definition["output_fields"]),
+        max_rows=int(definition.get("max_rows", 1000)),
+        measurement=str(definition.get("measurement", "workspace aggregate")),
+    )
 
 
 def build_evidence(day: date, product_results: list[dict[str, Any]]) -> dict[str, Any]:
@@ -1064,7 +695,7 @@ def _load_sql_product_contract(path: Path) -> dict[str, Any]:
         value = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise EvidenceFormatError(f"cannot read SQL product contract {path}: {exc}") from exc
-    if not isinstance(value, dict) or value.get("schema_version") != 2:
+    if not isinstance(value, dict) or value.get("schema_version") != 3:
         raise EvidenceFormatError(f"{path}: unsupported SQL product contract schema")
     return value
 
@@ -1077,9 +708,7 @@ def dry_run_checks() -> None:
         sql = build_sql(product, start_at, end_at, apps)
         if "2026-07-22 00:00:00" not in sql or "2026-07-23 00:00:00" not in sql:
             raise AssertionError(f"{product}: rendered SQL has the wrong window")
-        summary = _summarize_rows(
-            definition, [], apps, start_at, end_at, product=product
-        )[0]
+        summary = _summarize_rows(definition, [], apps, start_at, end_at)[0]
         if "user_id" in summary:
             raise AssertionError(f"{product}: aggregate summary leaked a user-level key")
     if latest_safe_date(datetime(2026, 7, 23, 1, 59, tzinfo=BEIJING)) != date(2026, 7, 21):
@@ -1114,11 +743,6 @@ def _sql_time(value: datetime) -> str:
     return value.astimezone(BEIJING).strftime("%Y-%m-%d %H:%M:%S")
 
 
-def _app_filter(alias: str, app_ids: tuple[int, ...]) -> str:
-    prefix = f"{alias}." if alias else ""
-    return "(" + " OR ".join(f"{prefix}app_id = {app_id}" for app_id in app_ids) + ")"
-
-
 def _sha256_text(value: str) -> str:
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
@@ -1134,26 +758,3 @@ def _validate_hashes(value: Any, label: str) -> None:
     for name in ("sql_sha256", "result_sha256", "contract_sha256"):
         if not HASH_RE.fullmatch(str(value.get(name, ""))):
             raise EvidenceFormatError(f"{label} contains invalid {name}")
-
-
-def _as_int(value: Any) -> int:
-    if value in (None, ""):
-        return 0
-    try:
-        return int(value)
-    except (TypeError, ValueError) as exc:
-        raise EvidenceFormatError(f"expected integer aggregate, got {value!r}") from exc
-
-
-def _nullable_text(value: Any) -> str | None:
-    return None if value in (None, "") else str(value)
-
-
-def _parse_gravity_time(value: str | None) -> datetime | None:
-    if not value:
-        return None
-    try:
-        parsed = datetime.fromisoformat(value)
-    except ValueError:
-        return None
-    return parsed.replace(tzinfo=BEIJING) if parsed.tzinfo is None else parsed.astimezone(BEIJING)

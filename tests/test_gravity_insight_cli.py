@@ -72,10 +72,10 @@ class FakeClient:
         self.read_all_calls: list[tuple[str, dict, int | None]] = []
         self.batch_calls: list[tuple[list[dict], int]] = []
         self.schema_calls: list[str] = []
-        self.capability_calls: list[tuple[object, object, object]] = []
+        self.operation_calls: list[tuple[object, object, object]] = []
 
-    def capabilities(self, *, domain=None, platform=None, stability="stable"):
-        self.capability_calls.append((domain, platform, stability))
+    def operations(self, *, domain=None, platform=None, stability="stable"):
+        self.operation_calls.append((domain, platform, stability))
         values = [
             {
                 "operation_id": operation_id,
@@ -470,23 +470,19 @@ class GravityInsightCliTests(unittest.TestCase):
         )
         self.assertEqual([], result["inputs"]["query_item_list"])
 
-    def test_operations_command_and_capabilities_search_alias_both_work(self):
+    def test_operations_command_is_the_only_discovery_entrypoint(self):
         client = GravityInsightClient.from_env()
         client.operation_ids = {
-            item["operation_id"] for item in client.capabilities(stability=None)
+            item["operation_id"] for item in client.operations(stability=None)
         }
-        current, legacy = (
-            self.invoke([name, "search", "retention"], client=client)[1]
-            for name in ("operations", "capabilities")
+        code, current, _, _ = self.invoke(
+            ["operations", "search", "retention"], client=client
         )
+        self.assertEqual(0, code)
         self.assertIn("operations", current)
         self.assertNotIn("capabilities", current)
-        self.assertIn("capabilities", legacy)
-        self.assertNotIn("operations", legacy)
-        self.assertEqual(
-            [item["operation_id"] for item in current["operations"]],
-            [item["operation_id"] for item in legacy["capabilities"]],
-        )
+        code, _, _, _ = self.invoke(["capabilities", "search", "retention"])
+        self.assertEqual(2, code)
 
     def test_experimental_analysis_requires_explicit_flag(self):
         class ExperimentalScatterClient(FakeClient):
@@ -1049,10 +1045,10 @@ class GravityInsightCliTests(unittest.TestCase):
         )
         self.assertTrue(all(item["read_all"] is True for item in requests))
 
-    def test_capability_filters_apply_domain_platform_and_stability(self):
+    def test_operation_filters_apply_domain_platform_and_stability(self):
         code, result, _, client = self.invoke(
             [
-                "capabilities",
+                "operations",
                 "list",
                 "--domain",
                 "promotion",
@@ -1067,16 +1063,16 @@ class GravityInsightCliTests(unittest.TestCase):
         self.assertTrue(
             all(
                 item["operation_id"].startswith("promotion.bytedance.")
-                for item in result["capabilities"]
+                for item in result["operations"]
             )
         )
         self.assertEqual(
-            ("promotion", "bytedance", "stable"), client.capability_calls[-1]
+            ("promotion", "bytedance", "stable"), client.operation_calls[-1]
         )
 
-        code, result, _, client = self.invoke(["capabilities", "list"])
+        code, result, _, client = self.invoke(["operations", "list"])
         self.assertEqual(0, code)
-        self.assertEqual((None, None, None), client.capability_calls[-1])
+        self.assertEqual((None, None, None), client.operation_calls[-1])
         self.assertEqual(len(client.operation_ids), result["count"])
 
     def test_cli_rejects_external_repo_or_manifest_roots_before_client_creation(self):
@@ -1247,7 +1243,7 @@ class GravityInsightCliTests(unittest.TestCase):
         analysis, _ = cli._merge_query_shortcuts(
             client,
             "analysis.event.query",
-            shortcut_args(app_id="29034827"),
+            shortcut_args(app_id="1001"),
             {
                 "query_id": "1700000000000abcdefghijklmnopqrs",
                 "query_item_list": [

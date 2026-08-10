@@ -24,7 +24,7 @@ contracts/
    父依赖和隐私分类证据。观察字段先进入候选清单，不会因 HTTP 200 自动暴露。
 3. 只有 `prober promote` 闸门通过后，才生成 `operations/<operation_id>.json` 并由
    compiler 重建 manifests。不要编辑 `../manifests/*.json`。
-4. `examples` 是 agent `capabilities describe` 的正式输入示例；只有不含租户值且可
+4. `examples` 是 agent `operations describe` 的正式输入示例；只有不含租户值且可
    直接运行的最小输入才能生成。无法提供安全、可运行示例时保留 `[]` 并显示 unknown。
 5. `required_parent.output_path` 和 `selection` 是父依赖溯源事实。`first/unique/all`
    表示可声明式选择，`caller_select` 表示业务调用方必须选择；不得用 `first` 掩盖

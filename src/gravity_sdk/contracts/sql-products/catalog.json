@@ -1,39 +1,8 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "product_kinds": {
-    "payment-summary": {
-      "privacy": "aggregate output only",
-      "source_event": "$PayEvent",
-      "amount": "properties.$pay_amount in cents",
-      "order_key": "non-empty $order_id with a deterministic fallback",
-      "buyer": "distinct user_id in an aggregate",
-      "window": "left-closed and right-open"
-    },
-    "first-scene-coverage": {
-      "privacy": "aggregate output only",
-      "configuration": [
-        "property",
-        "host_names"
-      ],
-      "window": "left-closed and right-open"
-    },
-    "profile-coverage": {
-      "privacy": "aggregate output only",
-      "configuration": [
-        "properties",
-        "activity_event",
-        "measurement"
-      ],
-      "window": "left-closed and right-open"
-    },
-    "event-coverage": {
-      "privacy": "aggregate output only",
-      "configuration": [
-        "events"
-      ],
-      "semantics": "declared event presence within the query window"
-    },
     "custom-sql": {
+      "purpose": "workspace-owned governed aggregate query",
       "privacy": "aggregate output only",
       "required_placeholders": [
         "app_ids",

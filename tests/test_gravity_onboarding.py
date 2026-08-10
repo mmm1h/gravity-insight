@@ -115,7 +115,7 @@ class GravityOnboardingTests(unittest.TestCase):
     def test_unified_cli_passes_parser_derived_requirement_to_onboarding(self) -> None:
         with patch.object(
             unified_cli, "ensure_first_run_credentials", return_value=True
-        ) as ensure, patch.object(unified_cli.insight_cli, "main", return_value=0):
+        ) as ensure, patch("gravity_sdk.cli.main", return_value=0):
             self.assertEqual(0, unified_cli.main(["find", "retention"]))
 
         ensure.assert_called_once_with(requires_credentials=False)

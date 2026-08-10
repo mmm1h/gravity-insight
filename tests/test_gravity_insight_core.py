@@ -271,10 +271,10 @@ class GravityInsightCoreTests(unittest.TestCase):
             "json_scalar", report.schema()["response_projection"]["leaf_contract"]
         )
 
-    def test_capabilities_schema_and_unknown_operation_are_fail_closed(self):
+    def test_operations_schema_and_unknown_operation_are_fail_closed(self):
         with tempfile.TemporaryDirectory() as directory:
             client, session = client_for(Path(directory), [])
-            self.assertEqual(1, len(client.capabilities(domain="example", platform="test_platform")))
+            self.assertEqual(1, len(client.operations(domain="example", platform="test_platform")))
             self.assertEqual("example.items.list", client.schema("example.items.list")["operation_id"])
             with self.assertRaises(UnknownOperationError):
                 client.read("example.unknown.list", {})
@@ -431,9 +431,9 @@ class GravityInsightCoreTests(unittest.TestCase):
                 operation_manifest=catalog_only,
                 allow_experimental=True,
             )
-            capability = client.capabilities(stability="deprecated")[0]
+            operation = client.operations(stability="deprecated")[0]
             self.assertEqual(
-                "deprecated", capability["availability_status"]
+                "deprecated", operation["availability_status"]
             )
             with self.assertRaisesRegex(PolicyViolation, "catalog-only"):
                 client.read("candidate.material.platform.list", {})
@@ -1354,11 +1354,11 @@ class GravityInsightCoreTests(unittest.TestCase):
             second = client.read("report.multidim.metric.list", {"filter": "private filter"})
         self.assertEqual(1, len(transport.calls))
         self.assertEqual("private metadata value", second["data"]["list"][0]["value"])
-        capability = client.capabilities(domain="report")[0]
-        self.assertEqual("success", capability["probe"]["status"])
-        self.assertEqual(64, len(capability["probe"]["schema_fingerprint"]))
-        self.assertEqual(1, client.capability_coverage(domain="report")["verified"])
-        catalog_json = json.dumps(client.capabilities(domain="report"))
+        operation = client.operations(domain="report")[0]
+        self.assertEqual("success", operation["probe"]["status"])
+        self.assertEqual(64, len(operation["probe"]["schema_fingerprint"]))
+        self.assertEqual(1, client.operation_coverage(domain="report")["verified"])
+        catalog_json = json.dumps(client.operations(domain="report"))
         self.assertNotIn("private metadata value", catalog_json)
         self.assertNotIn("private filter", catalog_json)
 
@@ -1605,7 +1605,7 @@ class GravityInsightCoreTests(unittest.TestCase):
                 self.calls = []
                 self.metadata_available = metadata_available
 
-            def capabilities(self, **filters):
+            def operations(self, **filters):
                 if filters.get("domain") != "promotion":
                     return []
                 if filters.get("platform") == "bytedance":
@@ -1884,7 +1884,7 @@ class GravityInsightCoreTests(unittest.TestCase):
         self.assertEqual("permission_unavailable", envelope["status"])
         # Permission is account/caller state, not evidence that the upstream
         # capability or its contract is unhealthy.
-        self.assertEqual(0, client.capability_coverage()["failed"])
+        self.assertEqual(0, client.operation_coverage()["failed"])
 
     def test_transport_rejects_unowned_operation_specs_before_network(self):
         safe = load_operation_manifest(manifest())[0]
@@ -2241,7 +2241,7 @@ class GravityInsightCoreTests(unittest.TestCase):
                 "executor",
                 "field_policy",
                 "metadata_cache",
-                "capability_catalog",
+                "operation_catalog",
             ):
                 self.assertFalse(hasattr(client, name))
 

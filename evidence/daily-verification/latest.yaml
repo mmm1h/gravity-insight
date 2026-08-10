@@ -1,8 +1,0 @@
-{
-  "schema_version": 1,
-  "data_product_id": "gravity.daily_verification",
-  "snapshot": "snapshots/2026-08-07T15-00-51.336469+08-00",
-  "manifest_sha256": "6b755a4e279258ab22f04030122ab0809c8cce30ecc596770da8fc7d9aa34f9c",
-  "result_sha256": "29199cb44dcbbed5065d22381d1cf64c7a4adaef40a61e904e5e279532a62594",
-  "updated_at": "2026-08-07T15:00:51.336469+08:00"
-}

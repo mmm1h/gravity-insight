@@ -20,7 +20,8 @@
 - 生成 provenance：`src/gravity_sdk/contracts/generated/`
 - SQL 产品机器合同：`src/gravity_sdk/contracts/sql-products/`
 - Census 数据：`src/gravity_sdk/census/data/`
-- 探针与发布证据：`evidence/`
+- operation 探针证据：`evidence/probe/`
+- SQL Evidence：当前 workspace 对应的用户私有 `state_root/evidence/`
 
 文档解释流程和边界；schema、默认值、operation 数量与字段列表以当前合同和 CLI 输出为准。
 

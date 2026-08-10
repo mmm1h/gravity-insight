@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 
 try:
-    from gravity_sdk.catalog import CapabilityCatalog
+    from gravity_sdk.catalog import OperationCatalog
     from gravity_sdk.drift import (
         AUTH_ERROR,
         CONTRACT_CHANGED_ADDITIVE,
@@ -19,7 +19,7 @@ try:
     )
     from gravity_sdk.errors import ContractChangedError
 except ModuleNotFoundError:  # source checkout before editable installation
-    from gravity_sdk.catalog import CapabilityCatalog
+    from gravity_sdk.catalog import OperationCatalog
     from gravity_sdk.drift import (
         AUTH_ERROR,
         CONTRACT_CHANGED_ADDITIVE,
@@ -40,12 +40,12 @@ from gravity_sdk.census.schema import (
 )
 
 
-class _Capability:
+class _Operation:
     operation_id = "analysis.fixture.list"
     upstream_method = "GET"
     path_template = "/api/v1/fixture/"
 
-    def capability(self):
+    def operation_summary(self):
         return {
             "operation_id": self.operation_id,
             "domain": "analysis",
@@ -61,7 +61,7 @@ class _Capability:
 
     def schema(self):
         return {
-            **self.capability(),
+            **self.operation_summary(),
             "input_fields": {},
             "response_projection": {"data_keys": ["items"]},
             "pagination": {"kind": "none"},
@@ -113,14 +113,14 @@ class RawSchemaSketchTests(unittest.TestCase):
 
 class HealthOverlayTests(unittest.TestCase):
     def test_catalog_distinguishes_additive_from_breaking_probe_results(self) -> None:
-        catalog = CapabilityCatalog([_Capability()])
+        catalog = OperationCatalog([_Operation()])
 
         catalog.record(
-            _Capability.operation_id,
+            _Operation.operation_id,
             status="contract_changed_additive",
             warnings_count=1,
         )
-        additive = catalog.describe(_Capability.operation_id)
+        additive = catalog.describe(_Operation.operation_id)
         self.assertEqual(
             CONTRACT_CHANGED_ADDITIVE, additive["health"]["status"]
         )
@@ -129,11 +129,11 @@ class HealthOverlayTests(unittest.TestCase):
         # The legacy contract_changed status is reserved for breaking evidence
         # and must continue to drive the upstream_changed stop state.
         catalog.record(
-            _Capability.operation_id,
+            _Operation.operation_id,
             status="contract_changed",
             warnings_count=1,
         )
-        breaking = catalog.describe(_Capability.operation_id)
+        breaking = catalog.describe(_Operation.operation_id)
         self.assertEqual(UPSTREAM_CHANGED, breaking["health"]["status"])
 
     def test_evidence_is_graded_and_recovery_requires_reviewed_clean_probes(self) -> None:
@@ -232,7 +232,7 @@ class HealthOverlayTests(unittest.TestCase):
         overlay = HealthOverlay()
         overlay.apply(
             DriftSignal(
-                _Capability.operation_id,
+                _Operation.operation_id,
                 "method_changed",
                 census_complete=True,
             )
@@ -240,16 +240,16 @@ class HealthOverlayTests(unittest.TestCase):
         # 静态 census 只给 suspect，guard 此时不应拦截；补上 probe 确认才隔离。
         overlay.apply(
             DriftSignal(
-                _Capability.operation_id,
+                _Operation.operation_id,
                 "method_rejected",
                 census_complete=True,
                 probe_confirmed=True,
             )
         )
-        catalog = CapabilityCatalog([_Capability()], health_overlay=overlay)
+        catalog = OperationCatalog([_Operation()], health_overlay=overlay)
 
-        described = catalog.describe(_Capability.operation_id)
-        merged = catalog.merge([_Capability().capability()])
+        described = catalog.describe(_Operation.operation_id)
+        merged = catalog.merge([_Operation().operation_summary()])
 
         self.assertEqual(
             {"status", "probe", "contract_fingerprint"},
@@ -258,7 +258,7 @@ class HealthOverlayTests(unittest.TestCase):
         self.assertEqual(UPSTREAM_CHANGED, described["health"]["status"])
         self.assertEqual("contract_changed", merged[0]["availability_status"])
         with self.assertRaises(ContractChangedError):
-            overlay.guard(_Capability.operation_id)
+            overlay.guard(_Operation.operation_id)
 
 
 if __name__ == "__main__":

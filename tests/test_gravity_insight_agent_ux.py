@@ -240,7 +240,7 @@ class ErrorAndHealthUxTests(unittest.TestCase):
                     ),
                     contextlib.redirect_stderr(stderr),
                 ):
-                    exit_code = cli.main(["capabilities", "list"])
+                    exit_code = cli.main(["operations", "list"])
                 envelope = json.loads(stderr.getvalue())
                 self.assertEqual(expected_code, exit_code)
                 self.assertEqual(expected_category, envelope["error"]["category"])
@@ -252,15 +252,15 @@ class DiscoveryUxTests(unittest.TestCase):
         cls.client = GravityInsightClient.from_env()
 
     def test_default_search_prioritizes_callable_and_only_previews_draft_noise(self) -> None:
-        result = self.client.search_capabilities(
+        result = self.client.search_operations(
             "当前账号 App", stability=None, limit=10
         )
-        capabilities = result["capabilities"]
-        non_callable = [item for item in capabilities if not item["executable"]]
+        operations = result["operations"]
+        non_callable = [item for item in operations if not item["executable"]]
 
-        self.assertTrue(capabilities)
-        self.assertEqual("stable", capabilities[0]["stability"])
-        self.assertTrue(capabilities[0]["executable"])
+        self.assertTrue(operations)
+        self.assertEqual("stable", operations[0]["stability"])
+        self.assertTrue(operations[0]["executable"])
         self.assertEqual(1, len(non_callable))
         self.assertEqual(
             "callable_stable_first", result["presentation"]["mode"]

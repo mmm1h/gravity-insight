@@ -106,7 +106,7 @@ def _workspace(tmp_path: Path) -> object:
         """schema_version = 1
 
 [apps]
-main = 29034827
+main = 1001
 
 [defaults]
 app = "main"
@@ -176,14 +176,14 @@ def test_resolver_binds_app_alias_and_writes_value_free_receipt(tmp_path: Path) 
         read=read,
     )
 
-    assert executed[0]["app_id"] == "29034827"
+    assert executed[0]["app_id"] == "1001"
     assert executed[0]["date_list"] == [
         {"start_date": "2026-08-01", "end_date": "2026-08-07"}
     ]
     assert result["receipt"]["request_count"] == 1
     assert result["receipt_storage"]["persisted"] is True
     receipt_text = json.dumps(result["receipt"], ensure_ascii=False)
-    assert "29034827" not in receipt_text
+    assert "1001" not in receipt_text
     assert "2026-08-01" not in receipt_text
 
 
@@ -228,10 +228,10 @@ def _metadata_catalog(path: Path) -> None:
     synced_at = "2026-08-10T00:00:00Z"
     with closing(sqlite3.connect(path)) as connection:
         _create_schema(connection)
-        _write_apps(connection, [("29034827", {"id": 29034827, "name": "Game"})], synced_at)
+        _write_apps(connection, [("1001", {"id": 1001, "name": "Demo"})], synced_at)
         _write_rows(
             connection,
-            "29034827",
+            "1001",
             "analysis.event.list",
             [{"name": "retention_reward", "cname": "Retention reward"}],
             synced_at,

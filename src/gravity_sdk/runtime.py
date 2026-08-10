@@ -77,12 +77,12 @@ def to_jsonable(value: Any) -> Any:
     return value
 
 
-def capability_operation_ids(capabilities: Any) -> set[str]:
+def operation_ids(operations: Any) -> set[str]:
     """Normalize operation IDs from list- or envelope-shaped SDK output."""
 
-    value = to_jsonable(capabilities)
+    value = to_jsonable(operations)
     if isinstance(value, Mapping):
-        for key in ("operations", "capabilities", "data"):
+        for key in ("operations", "data"):
             nested = value.get(key)
             if isinstance(nested, list):
                 value = nested
@@ -102,7 +102,7 @@ def resolve_operation_id(client: Any, candidates: str | Sequence[str]) -> str:
     """Select one registered operation ID from a stable CLI domain mapping."""
 
     choices = (candidates,) if isinstance(candidates, str) else tuple(candidates)
-    available = capability_operation_ids(client.capabilities())
+    available = operation_ids(client.operations())
     for operation_id in choices:
         if operation_id in available:
             return operation_id

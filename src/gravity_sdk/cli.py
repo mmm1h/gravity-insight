@@ -34,7 +34,7 @@ from gravity_sdk.domains import (
 )
 from gravity_sdk import nonempty_cli, runtime
 from gravity_sdk.cli_limits import (
-    capability_limit as _operation_limit,
+    operation_limit as _operation_limit,
     concurrency as _concurrency,
     positive_int as _positive_int,
     validate_date_pair,
@@ -823,7 +823,7 @@ def _apps_or_metadata(args: argparse.Namespace) -> Any:
 def _promotion(args: argparse.Namespace) -> Any:
     if args.promotion_command == "platforms":
         client = _client(args)
-        available = runtime.capability_operation_ids(client.capabilities())
+        available = runtime.operation_ids(client.operations())
         return {
             "platforms": [
                 {
@@ -911,8 +911,8 @@ def _attribution(args: argparse.Namespace) -> Any:
 def _doctor(args: argparse.Namespace) -> Any:
     local = runtime.validate_manifest_json()
     client = _client(args)
-    capabilities = client.capabilities()
-    operation_ids = runtime.capability_operation_ids(capabilities)
+    operations = client.operations()
+    operation_ids = runtime.operation_ids(operations)
     result: dict[str, Any] = {
         "status": "pass",
         "live": False,
@@ -973,8 +973,8 @@ def run(args: argparse.Namespace) -> Any:
             raise ValueError("--dry-run cannot be combined with a command")
         checks = runtime.validate_manifest_json()
         client = _client(args)
-        capabilities = client.capabilities(stability=None)
-        operation_ids = runtime.capability_operation_ids(capabilities)
+        operations = client.operations(stability=None)
+        operation_ids = runtime.operation_ids(operations)
         if not operation_ids:
             raise ValueError("core registry returned no operations")
         for operation_id in sorted(operation_ids):
@@ -987,7 +987,7 @@ def run(args: argparse.Namespace) -> Any:
             "registered_operations": len(operation_ids),
             **checks,
         }
-    if args.command in {"operations", "capabilities"}:
+    if args.command == "operations":
         return run_operation_command(args, _client(args), filter_operations)
     if args.command == "validate":
         return _client(args).validate(

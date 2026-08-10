@@ -48,7 +48,7 @@ class GravityInsightClient(ExportClientMixin):
         *,
         allow_experimental: bool = False,
         metadata_cache: MetadataCache | None = None,
-        capability_catalog: OperationCatalog | None = None,
+        operation_catalog: OperationCatalog | None = None,
         field_policy: FieldPolicy | None = None,
         export_components: tuple[Any, Any, Any] | None = None,
     ) -> None:
@@ -58,7 +58,7 @@ class GravityInsightClient(ExportClientMixin):
         self._metadata_cache = metadata_cache or MetadataCache(
             operation.operation_id for operation in registry.all() if is_metadata_operation(operation)
         )
-        self._operation_catalog = capability_catalog or OperationCatalog(registry.all())
+        self._operation_catalog = operation_catalog or OperationCatalog(registry.all())
         self._field_policy = field_policy or FieldPolicy()
         self._export_contracts, self._export_policy, self._export_runtime = (
             export_components or (None, None, None)
@@ -121,9 +121,9 @@ class GravityInsightClient(ExportClientMixin):
             )
         cache_root = os.environ.get("LOCALAPPDATA") or os.environ.get("XDG_CACHE_HOME")
         catalog_path = (
-            Path(cache_root) / "GravityInsight" / "capability-catalog.json"
+            Path(cache_root) / "GravityInsight" / "operation-catalog.json"
             if cache_root
-            else Path.home() / ".cache" / "gravity-insight" / "capability-catalog.json"
+            else Path.home() / ".cache" / "gravity-insight" / "operation-catalog.json"
         )
         export_contracts, export_policy = load_export_components(
             root,
@@ -134,7 +134,7 @@ class GravityInsightClient(ExportClientMixin):
             registry,
             ReadExecutor(registry, policy, request_transport),
             allow_experimental=allow_experimental,
-            capability_catalog=OperationCatalog(
+            operation_catalog=OperationCatalog(
                 registry.all(),
                 state_path=catalog_path,
                 contract_metadata=_load_contract_metadata(
@@ -166,7 +166,7 @@ class GravityInsightClient(ExportClientMixin):
             allow_experimental=allow_experimental,
         )
 
-    def capabilities(
+    def operations(
         self,
         *,
         domain: str | None = None,
@@ -174,7 +174,7 @@ class GravityInsightClient(ExportClientMixin):
         stability: str | None = "stable",
         include_probe_metadata: bool = True,
     ) -> list[dict[str, object]]:
-        operations = self._registry.capabilities(
+        operations = self._registry.operations(
             domain=domain, platform=platform, stability=stability
         )
         return (
@@ -183,7 +183,7 @@ class GravityInsightClient(ExportClientMixin):
             else operations
         )
 
-    def capability_coverage(
+    def operation_coverage(
         self,
         *,
         domain: str | None = None,
@@ -197,7 +197,7 @@ class GravityInsightClient(ExportClientMixin):
     def schema(self, operation_id: str | None = None) -> dict[str, object]:
         return self._registry.schema(operation_id)
 
-    def search_capabilities(
+    def search_operations(
         self,
         query: str,
         *,
@@ -354,7 +354,7 @@ class GravityInsightClient(ExportClientMixin):
                 else "partial"
             ),
             "probed": len(results),
-            "coverage": self.capability_coverage(
+            "coverage": self.operation_coverage(
                 domain=domain, platform=platform, stability="stable"
             ),
             "results": results,

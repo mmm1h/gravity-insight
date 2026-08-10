@@ -19,10 +19,10 @@ def concurrency(value: str) -> int:
     return parsed
 
 
-def capability_limit(value: str) -> int:
+def operation_limit(value: str) -> int:
     parsed = positive_int(value)
     if parsed > 20:
-        raise argparse.ArgumentTypeError("capability limit must be between 1 and 20")
+        raise argparse.ArgumentTypeError("operation limit must be between 1 and 20")
     return parsed
 
 

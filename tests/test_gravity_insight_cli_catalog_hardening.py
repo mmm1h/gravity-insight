@@ -14,7 +14,7 @@ try:
         PermissionUnavailableError,
     )
     from gravity_sdk.cache import is_metadata_operation
-    from gravity_sdk.catalog import CapabilityCatalog
+    from gravity_sdk.catalog import OperationCatalog
     from gravity_sdk.composite import CompositeService
     from gravity_sdk.errors import InputValidationError
 except ModuleNotFoundError:  # source checkout before editable installation
@@ -23,13 +23,13 @@ except ModuleNotFoundError:  # source checkout before editable installation
         PermissionUnavailableError,
     )
     from gravity_sdk.cache import is_metadata_operation
-    from gravity_sdk.catalog import CapabilityCatalog
+    from gravity_sdk.catalog import OperationCatalog
     from gravity_sdk.composite import CompositeService
     from gravity_sdk.errors import InputValidationError
 
 
 @dataclass(frozen=True)
-class _Capability:
+class _Operation:
     operation_id: str
     domain: str = "report"
     platform: str | None = None
@@ -37,7 +37,7 @@ class _Capability:
     contract_marker: str = "v1"
     description: str = "agent-facing documentation"
 
-    def capability(self):
+    def operation_summary(self):
         return {
             "operation_id": self.operation_id,
             "domain": self.domain,
@@ -48,14 +48,14 @@ class _Capability:
 
     def schema(self):
         return {
-            **self.capability(),
+            **self.operation_summary(),
             "contract_marker": self.contract_marker,
             "description": self.description,
         }
 
     def contract_fingerprint_payload(self):
         return {
-            **self.capability(),
+            **self.operation_summary(),
             "contract_marker": self.contract_marker,
         }
 
@@ -64,7 +64,7 @@ class GravityInsightCliCatalogHardeningTests(unittest.TestCase):
     def test_legacy_catalog_fingerprint_is_upgraded_without_losing_probe_state(self):
         with tempfile.TemporaryDirectory() as directory:
             state_path = Path(directory) / "capability-catalog.json"
-            operation = _Capability("report.metric.list")
+            operation = _Operation("report.metric.list")
             legacy_fingerprint = hashlib.sha256(
                 json.dumps(
                     operation.schema(),
@@ -96,7 +96,7 @@ class GravityInsightCliCatalogHardeningTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            catalog = CapabilityCatalog([operation], state_path=state_path)
+            catalog = OperationCatalog([operation], state_path=state_path)
             restored = catalog.probe(operation.operation_id)
             migrated = json.loads(state_path.read_text(encoding="utf-8"))
 
@@ -112,8 +112,8 @@ class GravityInsightCliCatalogHardeningTests(unittest.TestCase):
     def test_persisted_success_is_restored_only_for_the_same_contract(self):
         with tempfile.TemporaryDirectory() as directory:
             state_path = Path(directory) / "capability-catalog.json"
-            original = _Capability("report.metric.list", contract_marker="schema-v1")
-            catalog = CapabilityCatalog([original], state_path=state_path)
+            original = _Operation("report.metric.list", contract_marker="schema-v1")
+            catalog = OperationCatalog([original], state_path=state_path)
             catalog.record(
                 original.operation_id,
                 status="success",
@@ -126,8 +126,8 @@ class GravityInsightCliCatalogHardeningTests(unittest.TestCase):
             saved_contract_fingerprint = saved_probe["contract_fingerprint"]
             self.assertEqual(64, len(saved_contract_fingerprint))
 
-            restored = CapabilityCatalog(
-                [_Capability(original.operation_id, contract_marker="schema-v1")],
+            restored = OperationCatalog(
+                [_Operation(original.operation_id, contract_marker="schema-v1")],
                 state_path=state_path,
             )
             restored_probe = restored.probe(original.operation_id)
@@ -139,8 +139,8 @@ class GravityInsightCliCatalogHardeningTests(unittest.TestCase):
                 restored_probe["contract_fingerprint"],
             )
 
-            changed = CapabilityCatalog(
-                [_Capability(original.operation_id, contract_marker="schema-v2")],
+            changed = OperationCatalog(
+                [_Operation(original.operation_id, contract_marker="schema-v2")],
                 state_path=state_path,
             )
             changed_probe = changed.probe(original.operation_id)
@@ -277,7 +277,7 @@ class GravityInsightCliCatalogHardeningTests(unittest.TestCase):
                 )
 
     def test_catalog_failures_are_attempted_not_verified(self):
-        catalog = CapabilityCatalog([_Capability("report.metric.list")])
+        catalog = OperationCatalog([_Operation("report.metric.list")])
         catalog.record(
             "report.metric.list",
             status="semantic_error",
@@ -316,7 +316,7 @@ class GravityInsightCliCatalogHardeningTests(unittest.TestCase):
             def __init__(self):
                 self.batch_requests = []
 
-            def capabilities(self, **_filters):
+            def operations(self, **_filters):
                 return [
                     {
                         "operation_id": "report.template.list",
@@ -418,7 +418,7 @@ class GravityInsightCliCatalogHardeningTests(unittest.TestCase):
             def __init__(self):
                 self.batch_requests = []
 
-            def capabilities(self, **filters):
+            def operations(self, **filters):
                 resource, operation_id = capabilities[filters["platform"]]
                 return [
                     {

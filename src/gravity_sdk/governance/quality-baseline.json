@@ -7,8 +7,8 @@
       "src/gravity_sdk/blob_policy.py::BlobPolicy.__post_init__": 35,
       "src/gravity_sdk/blob_transfer.py::SafeBlobTransfer.download": 25,
       "src/gravity_sdk/blob_transfer.py::SafeBlobTransfer.upload": 18,
-      "src/gravity_sdk/catalog.py::CapabilityCatalog.coverage": 19,
-      "src/gravity_sdk/catalog.py::CapabilityCatalog.describe": 19,
+      "src/gravity_sdk/catalog.py::OperationCatalog.coverage": 19,
+      "src/gravity_sdk/catalog.py::OperationCatalog.describe": 19,
       "src/gravity_sdk/catalog.py::_infer_target_input": 20,
       "src/gravity_sdk/census/cli.py::run": 30,
       "src/gravity_sdk/census/coverage.py::build_coverage": 60,
@@ -84,7 +84,6 @@
       "src/gravity_sdk/sql/__main__.py::main": 25,
       "src/gravity_sdk/sql/client.py::_extract_rows": 23,
       "src/gravity_sdk/sql/credentials.py::self_test": 16,
-      "src/gravity_sdk/sql/products.py::summarize_events": 22,
       "src/gravity_sdk/sql/products.py::validate_evidence": 56,
       "src/gravity_sdk/support/evidence.py::validate_evidence_manifest": 50,
       "src/gravity_sdk/transport.py::Transport.request": 16
@@ -105,14 +104,14 @@
       "src/gravity_sdk/prober/parameters.py": 588,
       "src/gravity_sdk/prober/promotion.py": 594,
       "src/gravity_sdk/registry.py": 1146,
-      "src/gravity_sdk/sql/products.py": 1052
+      "src/gravity_sdk/sql/products.py": 675
     },
     "function_sloc": {
       "src/gravity_sdk/blob_headers.py::_preflight_headers": 104,
       "src/gravity_sdk/blob_policy.py::BlobPolicy.__post_init__": 83,
       "src/gravity_sdk/blob_transfer.py::SafeBlobTransfer.download": 190,
       "src/gravity_sdk/blob_transfer.py::SafeBlobTransfer.upload": 115,
-      "src/gravity_sdk/catalog.py::CapabilityCatalog.describe": 109,
+      "src/gravity_sdk/catalog.py::OperationCatalog.describe": 109,
       "src/gravity_sdk/census/cli.py::run": 96,
       "src/gravity_sdk/census/coverage.py::build_coverage": 265,
       "src/gravity_sdk/census/coverage.py::render_report": 164,

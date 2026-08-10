@@ -19,7 +19,7 @@
 ## 三个必须先知道的边界
 
 1. **Insight-first。** 能由 stable Insight operation 等价表达的查询，不走 SQL。
-2. **只执行已登记能力。** SDK 不接受任意 URL、HTTP 方法或未登记字段；SQL 也只有固定入口和固定产品。
+2. **只执行已登记能力。** SDK 不接受任意 URL、HTTP 方法或未登记字段；SQL 也只执行 workspace 已登记并通过治理校验的聚合产品。
 3. **SDK 不维护业务语义。** “幸运礼包”等模块名称、活动 ID、SKU、投放窗口和埋点关联由业务知识库维护；SDK 只校验和读取真实 Gravity 元数据。
 
 ## 文档层级

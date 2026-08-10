@@ -1,81 +1,76 @@
-"""Governed Insight and SQL SDK for Gravity private APIs."""
+"""Governed Insight and SQL SDK for Gravity private APIs.
 
-__version__ = "0.1.0"
+Public exports are loaded lazily so the CLI can select a business workspace
+before any workspace-dependent module is imported.
+"""
 
-from .cache import DEFAULT_METADATA_TTL_SECONDS, MetadataCache, is_metadata_operation
-from .catalog import CapabilityCatalog, CapabilityProbe
-from .client import GravityInsightClient
-from .composite import CompositeService
-from .credentials import Credential, CredentialConfig, CredentialProvider
-from .errors import (
-    AuthenticationError,
-    CredentialError,
-    GravityInsightError,
-    GravityExportError,
-    InputValidationError,
-    ManifestError,
-    PaginationError,
-    ParentRequiredError,
-    PermissionUnavailableError,
-    PolicyViolation,
-    SqlResponseError,
-    SqlValidationError,
-    TransportError,
-    UnknownOperationError,
-    UpstreamError,
-)
-from .export_contracts import ExportContractRegistry, ExportRouteContract
-from .export_runtime import (
-    ExportCreationRequest,
-    ExportJobSnapshot,
-    ExportOrchestrator,
-    ExportPollingPolicy,
-    ExportPrivacyContract,
-    ExportResult,
-    ExportRuntimeError,
-    ExportState,
-)
-from .sql import GravityClient, SqlBatchRequest, SqlBatchResult, build_sql_client
+from __future__ import annotations
 
-__all__ = [
+from importlib import import_module
+from typing import Any
+
+
+__version__ = "0.2.0"
+
+_EXPORTS = {
+    "DEFAULT_METADATA_TTL_SECONDS": (".cache", "DEFAULT_METADATA_TTL_SECONDS"),
+    "MetadataCache": (".cache", "MetadataCache"),
+    "is_metadata_operation": (".cache", "is_metadata_operation"),
+    "OperationCatalog": (".catalog", "OperationCatalog"),
+    "OperationProbe": (".catalog", "OperationProbe"),
+    "GravityInsightClient": (".client", "GravityInsightClient"),
+    "CompositeService": (".composite", "CompositeService"),
+    "Credential": (".credentials", "Credential"),
+    "CredentialConfig": (".credentials", "CredentialConfig"),
+    "CredentialProvider": (".credentials", "CredentialProvider"),
+    "ExportContractRegistry": (".export_contracts", "ExportContractRegistry"),
+    "ExportRouteContract": (".export_contracts", "ExportRouteContract"),
+    "ExportCreationRequest": (".export_runtime", "ExportCreationRequest"),
+    "ExportJobSnapshot": (".export_runtime", "ExportJobSnapshot"),
+    "ExportOrchestrator": (".export_runtime", "ExportOrchestrator"),
+    "ExportPollingPolicy": (".export_runtime", "ExportPollingPolicy"),
+    "ExportPrivacyContract": (".export_runtime", "ExportPrivacyContract"),
+    "ExportResult": (".export_runtime", "ExportResult"),
+    "ExportRuntimeError": (".export_runtime", "ExportRuntimeError"),
+    "ExportState": (".export_runtime", "ExportState"),
+    "GravityClient": (".sql", "GravityClient"),
+    "SqlBatchRequest": (".sql", "SqlBatchRequest"),
+    "SqlBatchResult": (".sql", "SqlBatchResult"),
+    "build_sql_client": (".sql", "build_sql_client"),
+}
+
+for _error_name in (
     "AuthenticationError",
-    "Credential",
-    "CredentialConfig",
     "CredentialError",
-    "CredentialProvider",
-    "ExportContractRegistry",
-    "ExportCreationRequest",
-    "ExportJobSnapshot",
-    "ExportOrchestrator",
-    "ExportPollingPolicy",
-    "ExportPrivacyContract",
-    "ExportResult",
-    "ExportRouteContract",
-    "ExportRuntimeError",
-    "ExportState",
-    "CapabilityCatalog",
-    "CapabilityProbe",
-    "CompositeService",
-    "DEFAULT_METADATA_TTL_SECONDS",
-    "GravityInsightClient",
     "GravityInsightError",
-    "GravityClient",
     "GravityExportError",
     "InputValidationError",
     "ManifestError",
-    "MetadataCache",
     "PaginationError",
     "ParentRequiredError",
     "PermissionUnavailableError",
     "PolicyViolation",
     "SqlResponseError",
-    "SqlBatchRequest",
-    "SqlBatchResult",
     "SqlValidationError",
     "TransportError",
     "UnknownOperationError",
     "UpstreamError",
-    "is_metadata_operation",
-    "build_sql_client",
-    "__version__",
-]
+):
+    _EXPORTS[_error_name] = (".errors", _error_name)
+
+
+def __getattr__(name: str) -> Any:
+    try:
+        module_name, attribute = _EXPORTS[name]
+    except KeyError as exc:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from exc
+    value = getattr(import_module(module_name, __name__), attribute)
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted({*globals(), *_EXPORTS})
+
+
+__all__ = [*_EXPORTS, "__version__"]

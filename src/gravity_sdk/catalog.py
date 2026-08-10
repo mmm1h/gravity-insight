@@ -128,7 +128,7 @@ def _draft_next_action(operation_id: str, blocker_codes: Iterable[str]) -> str:
             "ask them to verify it on an authorized account that satisfies the listed data or credential requirements and publish it as executable. Until then, search for a stable executable alternative.")
 
 
-class CapabilityCatalog:
+class OperationCatalog:
     """Immutable operation inventory plus minimal, value-free probe history."""
 
     def __init__(
@@ -147,7 +147,9 @@ class CapabilityCatalog:
         self._draft_ids = frozenset(item.operation_id for item in draft_specs)
         self._catalog_statuses = dict.fromkeys(self._draft_ids, "draft_catalog_only")
         self._specs = {item.operation_id: item for item in catalog_operations}
-        self._operations = {item.operation_id: item.capability() for item in catalog_operations}
+        self._operations = {
+            item.operation_id: item.operation_summary() for item in catalog_operations
+        }
         self._contract_fingerprints = {item.operation_id: _contract_fingerprint(item) for item in catalog_operations}
         self._clock = clock
         self._lock = threading.RLock()
@@ -222,7 +224,7 @@ class CapabilityCatalog:
             else None
         )
         return {
-            "schema_version": "gravity-insight.capability-search.v1",
+            "schema_version": "gravity-insight.operation-search.v1",
             "ok": True,
             "status": "success",
             "query": query,
@@ -239,7 +241,7 @@ class CapabilityCatalog:
                     not bool(item.get("executable", True)) for item in page
                 ),
             },
-            "capabilities": page,
+            "operations": page,
         }
 
     def describe(self, operation_id: str) -> dict[str, Any]:
@@ -718,7 +720,3 @@ def _safe_timestamp(value: str | None) -> str | None:
     if parsed.tzinfo is None:
         return None
     return parsed.astimezone(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
-
-
-CapabilityProbe = OperationProbe
-OperationCatalog = CapabilityCatalog

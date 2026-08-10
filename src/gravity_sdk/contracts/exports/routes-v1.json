@@ -230,7 +230,7 @@
             "idempotency_key_template": "agent-material-<yyyymmdd>-<unique-suffix>",
             "preflight": {
               "operation_id": "material.report.query",
-              "describe_command": "gravity insight capabilities describe material.report.query",
+              "describe_command": "gravity insight operations describe material.report.query",
               "read_command": "gravity insight read material.report.query --input <preflight.json> --max-pages 1 --max-items 1",
               "input_mapping": {"filters.app_id": "app_list[0]", "filters.ad_platform": "platform", "date_list": "date_list", "page": "page", "page_size": "page_size"},
               "required_result": "exit code is 0; data.list contains at least one projected row; status may be success, or contract_changed only when warnings say unregistered list item keys were omitted and the caller consumes only projected fields; any error, blocked health, other warning, or empty list forbids export start"

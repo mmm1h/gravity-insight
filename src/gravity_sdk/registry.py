@@ -180,7 +180,7 @@ class Registry:
     def all(self) -> tuple[OperationSpec, ...]:
         return tuple(self._operations[key] for key in sorted(self._operations))
 
-    def capabilities(
+    def operations(
         self,
         *,
         domain: str | None = None,
@@ -194,7 +194,7 @@ class Registry:
             operations = tuple(item for item in operations if item.platform == platform)
         if stability is not None:
             operations = tuple(item for item in operations if item.stability == stability)
-        return [operation.capability() for operation in operations]
+        return [operation.operation_summary() for operation in operations]
 
     def schema(self, operation_id: str | None = None) -> dict[str, object]:
         if operation_id is not None:

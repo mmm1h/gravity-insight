@@ -23,7 +23,7 @@ _PROMOTION_PRIMARY_RESOURCES = {
 
 
 class _PublicClient(Protocol):
-    def capabilities(
+    def operations(
         self,
         *,
         domain: str | None = None,
@@ -58,7 +58,7 @@ class CompositeService:
     """Compose safe reads without direct registry, executor, or transport access."""
 
     def __init__(self, client: _PublicClient) -> None:
-        required = ("capabilities", "schema", "read", "read_all", "batch")
+        required = ("operations", "schema", "read", "read_all", "batch")
         if any(not callable(getattr(client, name, None)) for name in required):
             raise TypeError("CompositeService requires the public GravityInsightClient facade")
         self._client = client
@@ -73,10 +73,10 @@ class CompositeService:
         explicit_selection = operation_ids is not None
         inputs_map = dict(inputs_by_operation or {})
         if operation_ids is None:
-            capabilities = self._client.capabilities(stability="stable")
+            operations = self._client.operations(stability="stable")
             selected = sorted(
                 str(item["operation_id"])
-                for item in capabilities
+                for item in operations
                 if is_metadata_operation(item)
             )
         else:
@@ -207,7 +207,7 @@ class CompositeService:
             selected_resources[platform] = selected_resource
             matches = [
                 item
-                for item in self._client.capabilities(
+                for item in self._client.operations(
                     domain="promotion", platform=platform, stability="stable"
                 )
                 if item.get("resource") == selected_resource
@@ -226,8 +226,8 @@ class CompositeService:
                     }
                 )
                 continue
-            capability = sorted(matches, key=lambda item: str(item["operation_id"]))[0]
-            operation_id = str(capability["operation_id"])
+            operation = sorted(matches, key=lambda item: str(item["operation_id"]))[0]
+            operation_id = str(operation["operation_id"])
             operation_inputs = dict(shared)
             operation_inputs.update(platform_inputs.get(platform, {}))
             requests.append(

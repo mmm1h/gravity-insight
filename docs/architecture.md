@@ -9,7 +9,7 @@ Gravity SDK 是受控读取层，不是通用 HTTP 客户端，也不是业务�
   ├─ 业务语义：由调用方或 work-dashboard 解析
   └─ Gravity SDK
        ├─ Insight：manifest 授权的结构化读取与导出
-       ├─ SQL：固定端点上的受控聚合产品
+       ├─ SQL：固定端点上的项目侧登记聚合产品
        ├─ Metadata：跨 App 物理元数据目录
        ├─ Census：前端路由发现和漂移检查
        └─ Contracts / Probes / Quality：能力准入和安全门禁
@@ -82,7 +82,7 @@ Insight 批量 worker 上限和 SQL 并发上限是独立安全合同；调用�
 
 ### 启动时路径环境
 
-`gravity_sdk.paths` 在模块 import 时执行一次 `load_workspace()`，因此 `WORKSPACE`、`WORKSPACE_ROOT` 和 `STATE_ROOT` 按当时 cwd 与 `GRAVITY_WORKSPACE` 固定；同一进程里随后 chdir 或修改环境变量不会重算这些常量，需要启动新进程。
+CLI 会先提取全局 `--workspace`，再导入 workspace 相关模块；它等价于为当前进程设置最高优先级的 `GRAVITY_WORKSPACE`。`gravity_sdk.paths` 随后执行一次 `load_workspace()`，因此 `WORKSPACE`、`WORKSPACE_ROOT` 和 `STATE_ROOT` 在当前进程固定；同一进程里随后 chdir 或修改环境变量不会重算这些常量，需要启动新进程。
 
 `PROJECT_ROOT` 也在 import 时按 cwd 判断当前安装是否处于 SDK checkout：cwd 同时包含匹配的 `src/gravity_sdk` 和 `pyproject.toml` 时取 checkout，否则取 workspace 的 `state_root`。这是 maintainer 工具访问真实 checkout 的有意行为，所以同一 wheel 从不同目录启动可能得到不同 `PROJECT_ROOT`。
 

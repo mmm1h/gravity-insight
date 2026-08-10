@@ -259,7 +259,7 @@ def _list_mapping(value: Mapping[str, Any]) -> dict[str, list[Any]]:
 
 def _operation_payload(operation: Any) -> Any:
     schema = getattr(operation, "schema", None)
-    return schema() if callable(schema) else operation.capability()
+    return schema() if callable(schema) else operation.operation_summary()
 
 
 def _strip_documentation(value: Any) -> Any:

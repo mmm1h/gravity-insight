@@ -27,15 +27,10 @@ class OperationFindBackend:
     name: str = "operations"
 
     def search(self, query: str, *, limit: int) -> Sequence[Mapping[str, Any]]:
-        search = getattr(self.client, "search_operations", None)
-        result = (
-            search(query, stability=None, limit=min(limit, 20))
-            if callable(search)
-            else self.client.search_capabilities(
-                query, stability=None, limit=min(limit, 20)
-            )
+        result = self.client.search_operations(
+            query, stability=None, limit=min(limit, 20)
         )
-        values = result.get("operations", result.get("capabilities", []))
+        values = result.get("operations", [])
         return [
             {
                 "backend": self.name,
@@ -119,7 +114,7 @@ def add_find_command(commands: Any, limit_parser: Any) -> None:
 
 def add_operation_commands(commands: Any, limit_parser: Any) -> None:
     operations = commands.add_parser(
-        "operations", aliases=["capabilities"], help="Inspect registered read operations."
+        "operations", help="Inspect registered read operations."
     )
     operations.set_defaults(network_required=False)
     operation_commands = operations.add_subparsers(
@@ -141,19 +136,18 @@ def add_operation_commands(commands: Any, limit_parser: Any) -> None:
 
 
 def run_operation_command(args: Any, client: Any, filter_operations: Any) -> Any:
-    command, legacy = args.operation_command, args.command == "capabilities"
+    command = args.operation_command
     if command == "list":
         return filter_operations(
             args,
-            client.capabilities(
+            client.operations(
                 domain=args.domain,
                 platform=args.platform,
                 stability=args.stability if args.stability else None,
             ),
-            legacy=legacy,
         )
     if command == "search":
-        result = client.search_capabilities(
+        return client.search_operations(
             args.query,
             domain=args.domain,
             platform=args.platform,
@@ -161,21 +155,14 @@ def run_operation_command(args: Any, client: Any, filter_operations: Any) -> Any
             limit=args.limit,
             continuation=args.continuation,
         )
-        if not legacy:
-            result = dict(result)
-            result["operations"] = result.pop("capabilities", [])
-            result["schema_version"] = "gravity-insight.operation-search.v1"
-        return result
     return client.describe(args.operation_id) if command == "describe" else client.schema(args.operation_id)
 
 
-def filter_operations(args: Any, value: Any, *, legacy: bool = False) -> Any:
+def filter_operations(args: Any, value: Any) -> Any:
     rendered = to_jsonable(value)
     items = rendered
     if isinstance(rendered, Mapping):
-        items = rendered.get(
-            "operations", rendered.get("capabilities", rendered.get("data"))
-        )
+        items = rendered.get("operations", rendered.get("data"))
     if not isinstance(items, list):
         return rendered
     filtered = []
@@ -191,17 +178,9 @@ def filter_operations(args: Any, value: Any, *, legacy: bool = False) -> Any:
             continue
         filtered.append(item)
     return {
-        "capabilities" if legacy else "operations": filtered,
+        "operations": filtered,
         "count": len(filtered),
     }
-
-
-def operation_search_output(result: Mapping[str, Any], *, legacy: bool) -> dict[str, Any]:
-    rendered = dict(result)
-    if not legacy:
-        rendered["operations"] = rendered.pop("capabilities", [])
-        rendered["schema_version"] = "gravity-insight.operation-search.v1"
-    return rendered
 
 
 def run_find_command(

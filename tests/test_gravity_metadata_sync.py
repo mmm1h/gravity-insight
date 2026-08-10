@@ -106,7 +106,7 @@ class MetadataSyncTests(unittest.TestCase):
                 connection,
                 "101",
                 "analysis.user_property.list",
-                [{"name": "$first_scene", "cname": "首次场景"}],
+                [{"name": "demo_scene", "cname": "示例场景"}],
                 synced_at,
             )
             _write_rows(

@@ -19,20 +19,11 @@ from .workspace_recipe import Recipe, RecipeBindings, validate_recipes
 WORKSPACE_FILENAME = "gravity.toml"
 WORKSPACE_ENV = "GRAVITY_WORKSPACE"
 _NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
-_PROPERTY_RE = re.compile(r"^[A-Za-z_$][A-Za-z0-9_$]*$")
-_SQL_NAME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
+_OUTPUT_FIELD_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
 _SENSITIVE_OUTPUT_FIELDS = frozenset(
     {"user_id", "device_id", "distinct_id", "account_id", "phone", "email"}
 )
-_PRODUCT_KINDS = frozenset(
-    {
-        "payment-summary",
-        "first-scene-coverage",
-        "profile-coverage",
-        "event-coverage",
-        "custom-sql",
-    }
-)
+_PRODUCT_KINDS = frozenset({"custom-sql"})
 _VERIFICATION_STATUSES = frozenset(
     {"pending_review", "verified", "verified_with_gaps", "blocked"}
 )
@@ -348,49 +339,10 @@ def _validate_products(
             ):
                 raise WorkspaceError(f"{path}: product {name!r} has an unknown app: {app!r}")
         _string_list(claims, f"products.{name}.forbidden_claims", path, allow_empty=False)
-        _validate_product_kind(name, kind, raw, path)
+        _validate_custom_sql_product(name, raw, path)
         _ensure_json_value(raw, f"products.{name}", path)
         products[name] = dict(raw)
     return products
-
-
-def _validate_product_kind(
-    name: str, kind: str, raw: Mapping[str, Any], path: Path
-) -> None:
-    validator = _PRODUCT_VALIDATORS.get(kind)
-    if validator is not None:
-        validator(name, raw, path)
-
-
-def _validate_first_scene_product(
-    name: str, raw: Mapping[str, Any], path: Path
-) -> None:
-    _property_name(raw.get("property"), f"products.{name}.property", path)
-    host_names = raw.get("host_names", {})
-    if not isinstance(host_names, dict) or not all(
-        isinstance(key, str) and isinstance(item, str)
-        for key, item in host_names.items()
-    ):
-        raise WorkspaceError(f"{path}: products.{name}.host_names must be a string table")
-
-
-def _validate_profile_product(name: str, raw: Mapping[str, Any], path: Path) -> None:
-    properties = raw.get("properties")
-    if not isinstance(properties, dict) or not properties:
-        raise WorkspaceError(f"{path}: products.{name}.properties must be a non-empty table")
-    for output_name, property_name in properties.items():
-        if not _SQL_NAME_RE.fullmatch(output_name):
-            raise WorkspaceError(f"{path}: invalid profile output name: {output_name!r}")
-        _property_name(property_name, f"products.{name}.properties.{output_name}", path)
-    _property_name(raw.get("activity_event"), f"products.{name}.activity_event", path)
-
-
-def _validate_event_product(name: str, raw: Mapping[str, Any], path: Path) -> None:
-    events = _string_list(
-        raw.get("events"), f"products.{name}.events", path, allow_empty=False
-    )
-    if len(events) != len(set(events)):
-        raise WorkspaceError(f"{path}: products.{name}.events contains duplicates")
 
 
 def _validate_custom_sql_product(
@@ -417,29 +369,23 @@ def _validate_custom_sql_product(
             f"{path}: products.{name}.sql placeholders must be exactly "
             "{app_ids}, {start}, {end}, and {limit}"
         )
-    if len(fields) != len(set(fields)):
-        raise WorkspaceError(f"{path}: products.{name}.output_fields contains duplicates")
-    if set(fields) & _SENSITIVE_OUTPUT_FIELDS:
-        raise WorkspaceError(f"{path}: products.{name}.output_fields contains a user-level field")
+    _validate_output_fields(name, fields, path)
     if raw.get("privacy") != "aggregate":
         raise WorkspaceError(f"{path}: products.{name}.privacy must be 'aggregate'")
-    max_rows = raw.get("max_rows", 1000)
+    max_rows = raw.get("max_rows")
     if type(max_rows) is not int or not 1 <= max_rows <= 10000:
         raise WorkspaceError(f"{path}: products.{name}.max_rows must be between 1 and 10000")
 
 
-_PRODUCT_VALIDATORS = {
-    "first-scene-coverage": _validate_first_scene_product,
-    "profile-coverage": _validate_profile_product,
-    "event-coverage": _validate_event_product,
-    "custom-sql": _validate_custom_sql_product,
-}
-
-
-def _property_name(value: Any, field: str, path: Path) -> str:
-    if not isinstance(value, str) or not _PROPERTY_RE.fullmatch(value):
-        raise WorkspaceError(f"{path}: {field} must be a safe Gravity property/event name")
-    return value
+def _validate_output_fields(name: str, fields: list[str], path: Path) -> None:
+    if len(fields) != len(set(fields)):
+        raise WorkspaceError(f"{path}: products.{name}.output_fields contains duplicates")
+    if any(not _OUTPUT_FIELD_RE.fullmatch(field) for field in fields):
+        raise WorkspaceError(
+            f"{path}: products.{name}.output_fields contains an invalid field name"
+        )
+    if {field.casefold() for field in fields} & _SENSITIVE_OUTPUT_FIELDS:
+        raise WorkspaceError(f"{path}: products.{name}.output_fields contains a user-level field")
 
 
 def _string_list(value: Any, field: str, path: Path, *, allow_empty: bool) -> list[str]:
