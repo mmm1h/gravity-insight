@@ -108,4 +108,4 @@ def test_find_includes_workspace_recipe_backend() -> None:
 
     assert result["status"] == "success"
     assert result["backends"] == {"recipes": 1}
-    assert result["results"][0]["name"] == "retention-weekly"
+    assert result["results"][0]["name"] == "demo-retention"

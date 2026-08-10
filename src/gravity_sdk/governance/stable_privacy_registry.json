@@ -925,6 +925,18 @@
       "data.tree.**.root_id",
       "data.video_size"
     ],
+    "material.asset_directional_package_bytedance.list": [
+      "data.list",
+      "data.list[].advertiser_id",
+      "data.list[].audience_name",
+      "data.list[].create_time",
+      "data.list[].id",
+      "data.list[].landing_type",
+      "data.list[].media_targeting_id",
+      "data.list[].media_type",
+      "data.list[].modify_time",
+      "data.page_info"
+    ],
     "material.asset_material_media_review_list.list": [
       "data.list",
       "data.list[].ad_id",
@@ -945,6 +957,38 @@
       "data.list[].file_name",
       "data.list[].gravity_material_id",
       "data.list[].material_id",
+      "data.page_info"
+    ],
+    "material.bytedance_asset_text_title.list": [
+      "data.list",
+      "data.list[].app_id",
+      "data.list[].create_time",
+      "data.list[].history_click_rate",
+      "data.list[].history_cost",
+      "data.list[].id",
+      "data.list[].is_ai",
+      "data.list[].is_deleted",
+      "data.list[].last_3_day_click_rate",
+      "data.list[].last_3_day_cost",
+      "data.list[].modify_time",
+      "data.list[].plan_num",
+      "data.list[].title",
+      "data.page_info"
+    ],
+    "material.bytedance_std_asset_text_title.list": [
+      "data.list",
+      "data.list[].app_id",
+      "data.list[].create_time",
+      "data.list[].history_click_rate",
+      "data.list[].history_cost",
+      "data.list[].id",
+      "data.list[].is_ai",
+      "data.list[].is_deleted",
+      "data.list[].last_3_day_click_rate",
+      "data.list[].last_3_day_cost",
+      "data.list[].modify_time",
+      "data.list[].plan_num",
+      "data.list[].title",
       "data.page_info"
     ],
     "material.examine.config.get": [
@@ -1147,6 +1191,15 @@
       "data.list[].material_id",
       "data.page_info"
     ],
+    "metadata.event_property_template_event.list": [
+      "data.list",
+      "data.list[].create_time",
+      "data.list[].id",
+      "data.list[].modify_time",
+      "data.list[].name",
+      "data.list[].template_type",
+      "data.page_info"
+    ],
     "metadata.event_property_template_event_list.list": [
       "data.list",
       "data.list[].cid",
@@ -1158,6 +1211,16 @@
       "data.list[].name",
       "data.list[].template_id",
       "data.list[].trigger_opportunity",
+      "data.page_info"
+    ],
+    "metadata.operation_log.list": [
+      "data.list",
+      "data.list[].action_sub_type",
+      "data.list[].action_type",
+      "data.list[].create_time",
+      "data.list[].id",
+      "data.list[].table_id",
+      "data.list[].version_id",
       "data.page_info"
     ],
     "metadata.promotion_gravity_metric.list": [
@@ -1180,6 +1243,35 @@
       "data.list[].modify_time",
       "data.list[].name",
       "data.list[].template_id",
+      "data.page_info"
+    ],
+    "metadata.version.list": [
+      "data.list",
+      "data.list[].create_time",
+      "data.list[].id",
+      "data.list[].table_id",
+      "data.list[].version_id",
+      "data.page_info"
+    ],
+    "promotion.ai_trusteeship.list": [
+      "data.list",
+      "data.list[].caliber",
+      "data.list[].check_fre",
+      "data.list[].check_type",
+      "data.list[].condition_type",
+      "data.list[].count",
+      "data.list[].create_time",
+      "data.list[].frequency",
+      "data.list[].id",
+      "data.list[].last_check_time",
+      "data.list[].media_type",
+      "data.list[].modify_time",
+      "data.list[].name",
+      "data.list[].params_md5",
+      "data.list[].schedule_type",
+      "data.list[].status",
+      "data.list[].target",
+      "data.list[].target_type",
       "data.page_info"
     ],
     "promotion.alipay.advertiser.list": [
@@ -1397,6 +1489,23 @@
       "data.list[].update_at",
       "data.list[].update_time",
       "data.list[].version",
+      "data.page_info"
+    ],
+    "promotion.bytedance.custom_audience.list": [
+      "data.list",
+      "data.list[].advertiser_id",
+      "data.list[].cover_num",
+      "data.list[].create_time",
+      "data.list[].custom_audience_id",
+      "data.list[].data_source_id",
+      "data.list[].delivery_status",
+      "data.list[].id",
+      "data.list[].isdel",
+      "data.list[].modify_time",
+      "data.list[].name",
+      "data.list[].source",
+      "data.list[].status",
+      "data.list[].upload_num",
       "data.page_info"
     ],
     "promotion.bytedance.project.list": [
@@ -2119,6 +2228,20 @@
       "data.total",
       "data.total[].cost",
       "data.update_at"
+    ],
+    "promotion.tencent.medium_adgroup.list": [
+      "data.list",
+      "data.list[].adgroup_id",
+      "data.list[].adgroup_name",
+      "data.list[].begin_date",
+      "data.list[].configured_status",
+      "data.list[].conversion_id",
+      "data.list[].cost_guarantee_status",
+      "data.list[].created_time",
+      "data.list[].end_date",
+      "data.list[].is_deleted",
+      "data.list[].last_modified_time",
+      "data.list[].system_status"
     ],
     "promotion.ubix.account.list": [
       "data.list",
