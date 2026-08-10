@@ -222,6 +222,10 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "material.bytedance_std_asset_text_title.list",
             # 腾讯广告组配置经父资源解析、非空复验和 fail-closed 字段审查后晋升。
             "promotion.tencent.medium_adgroup.list",
+            # 非空分页复验后晋升的 AI 托管与数据表配置读取。
+            "promotion.ai_trusteeship.list",
+            "metadata.version.list",
+            "metadata.operation_log.list",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]

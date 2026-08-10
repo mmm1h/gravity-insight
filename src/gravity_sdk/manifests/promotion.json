@@ -7806,6 +7806,157 @@
       ],
       "stability": "stable",
       "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "AI 托管规则只读列表；支持受控分页。2026-08-11 非空响应和分页合同复验通过，人员、规则条件、通知计划和目标明细固定省略。",
+      "domain": "promotion",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "page": {
+          "default": 1,
+          "description": "页码，从 1 开始。",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "description": "每页数量，最大 100。",
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.ai_trusteeship.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/task/ai_trusteeship/list/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "ai_trusteeship",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "caliber",
+          "check_fre",
+          "check_type",
+          "condition_type",
+          "count",
+          "create_time",
+          "frequency",
+          "id",
+          "last_check_time",
+          "media_type",
+          "modify_time",
+          "name",
+          "params_md5",
+          "schedule_type",
+          "status",
+          "target",
+          "target_type"
+        ],
+        "known_omitted_item_keys": [
+          "check_custom",
+          "cid",
+          "conditions",
+          "create_user_id",
+          "create_user_name",
+          "detail_list",
+          "disturb",
+          "operator_type",
+          "operator_values",
+          "schedule",
+          "send_way",
+          "target_values",
+          "update_user_id",
+          "update_user_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
     }
   ]
 }

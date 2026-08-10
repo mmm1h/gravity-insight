@@ -5,7 +5,7 @@
       {
         "code": "probe_inconclusive",
         "detail": "The latest probe did not satisfy the promotion gate.",
-        "evidence": "evidence/probe/20260808T205525Z_material.asset_directional_package_bytedance.list.yaml",
+        "evidence": "evidence/probe/20260810T204301Z_material.asset_directional_package_bytedance.list.yaml",
         "status": "open"
       }
     ],
@@ -352,12 +352,24 @@
         "projected_schema_fingerprint": null,
         "raw_schema_fingerprint": "1037cef6e6b878217b9fa41d73dd860177cb6f16453bafec8f4b0c0d226c8712",
         "successful": false
+      },
+      {
+        "conclusion": "local_or_parent_inconclusive",
+        "method_verified": false,
+        "pagination_verified": false,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260810T204301Z_material.asset_directional_package_bytedance.list.yaml",
+        "probed_at": "2026-08-10T20:43:01Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": null,
+        "successful": false
       }
     ],
     "promotion_gate": {
       "eligible": false,
       "missing": [
-        "probe_inconclusive"
+        "probe_inconclusive",
+        "successful_probe"
       ]
     },
     "route_evidence": {
@@ -475,6 +487,15 @@
           }
         ]
       },
+      "parent_resolution": {
+        "basis": "child_semantic_success_without_parent",
+        "bindings": [],
+        "conclusion": "unblocked",
+        "detail": "The child route returned a semantic success without a parent selector; no parent binding is required.",
+        "evidence": "evidence/probe/20260809T145635Z_material.asset_directional_package_bytedance.list.yaml",
+        "missing_evidence": [],
+        "replacement_blocker": null
+      },
       "path": "/turbo_engine/api/v1/asset/directional_package/bytedance/list/",
       "promotion_level": null,
       "promotion_platform": null,
@@ -495,16 +516,7 @@
         "每个账户单独选择素材",
         "素材平均分配到每个账户中",
         "请输入"
-      ],
-      "parent_resolution": {
-        "basis": "child_semantic_success_without_parent",
-        "bindings": [],
-        "conclusion": "unblocked",
-        "detail": "The child route returned a semantic success without a parent selector; no parent binding is required.",
-        "evidence": "evidence/probe/20260809T145635Z_material.asset_directional_package_bytedance.list.yaml",
-        "missing_evidence": [],
-        "replacement_blocker": null
-      }
+      ]
     },
     "status": "draft"
   },

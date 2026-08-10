@@ -15,8 +15,8 @@
 
 | status | routes |
 | --- | ---: |
-| `covered` | 140 |
-| `uncovered_read` | 375 |
+| `covered` | 143 |
+| `uncovered_read` | 372 |
 | `uncovered_write` | 414 |
 | `uncovered_export` | 22 |
 | `uncovered_auth_or_proxy` | 30 |
@@ -26,7 +26,7 @@
 ## Route accounting vs callability
 
 - Accounted routes: **987**
-- Callable covered routes: **140**
+- Callable covered routes: **143**
 - Unaccounted routes: **0**
 
 | accounting state | routes |
@@ -37,16 +37,16 @@
 | `accounted_experimental` | 2 |
 | `accounted_export_candidate` | 22 |
 | `accounted_permission_unavailable` | 1 |
-| `accounted_read_candidate` | 345 |
+| `accounted_read_candidate` | 342 |
 | `accounted_unsupported` | 58 |
-| `covered_executable` | 140 |
+| `covered_executable` | 143 |
 
 | callability | routes |
 | --- | ---: |
-| `candidate` | 367 |
+| `candidate` | 364 |
 | `catalog_only` | 8 |
 | `contract_only` | 414 |
-| `executable` | 140 |
+| `executable` | 143 |
 | `unsupported` | 58 |
 
 ## Stable manifest reconciliation
@@ -54,7 +54,7 @@
 | category | stable operations |
 | --- | ---: |
 | Previously covered | 0 |
-| (a) Found in previously unfetched chunks | 140 |
+| (a) Found in previously unfetched chunks | 143 |
 | (b) Normalization false gap fixed | 0 |
 | (c) Manifest route absent from frontend | 4 |
 
@@ -78,8 +78,8 @@
 | 报表 | 16 | 27 | 43 | 59 |
 | App 与账号 | 9 | 36 | 121 | 130 |
 | 归因 | 5 | 5 | 19 | 24 |
-| 元数据 | 8 | 24 | 43 | 51 |
-| 其它 | 15 | 56 | 124 | 139 |
+| 元数据 | 10 | 22 | 41 | 51 |
+| 其它 | 16 | 55 | 123 | 139 |
 
 ## Promotion platform x level uncovered reads
 
@@ -114,7 +114,7 @@
 ## Contract families
 
 - Families: **48**
-- Uncovered reads assigned to a family: **87 / 375 (23.2%)**
+- Uncovered reads assigned to a family: **87 / 372 (23.4%)**
 
 | family | kind | members | signature |
 | --- | --- | ---: | --- |
@@ -171,7 +171,7 @@
 
 | tier | uncovered reads | rule |
 | --- | ---: | --- |
-| 低 | 167 | Flat list/detail with no evident parent dependency |
+| 低 | 164 | Flat list/detail with no evident parent dependency |
 | 中 | 82 | Parent-resource dependency or structured selector |
 | 高 | 126 | Complex query/report body, proxy envelope, or dynamic path |
 
@@ -509,7 +509,7 @@ Cost is a scheduling heuristic, not an observed implementation duration.
 | `registered` | `POST` | `/turbo_engine/api/v1/user/device_white/testing_tool/attribution_query/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/user/promoted_object/click_url/list/` | `singleton` | `低` |
 
-### 元数据 (24)
+### 元数据 (22)
 
 | confidence | method | path | family | cost |
 | --- | --- | --- | --- | --- |
@@ -534,11 +534,9 @@ Cost is a scheduling heuristic, not an observed implementation duration.
 | `high` | `GET` | `/turbo_engine/api/v2/event/property_template/use_template/` | `singleton` | `低` |
 | `medium` | `POST` | `/turbo_engine/api/v2/event_dim/data_table/detail/` | `singleton` | `中` |
 | `medium` | `POST` | `/turbo_engine/api/v2/event_dim/data_table/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v2/event_dim/data_table/operation_log/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v2/event_dim/data_table/version/list/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v2/event_dim/data_table/version_id_set/` | `singleton` | `低` |
 
-### 其它 (56)
+### 其它 (55)
 
 | confidence | method | path | family | cost |
 | --- | --- | --- | --- | --- |
@@ -587,7 +585,6 @@ Cost is a scheduling heuristic, not an observed implementation duration.
 | `medium` | `POST` | `/turbo_engine/api/v1/oplog/list/` | `singleton` | `低` |
 | `medium` | `POST` | `/turbo_engine/api/v1/portal/company_query_permission/get/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/task/ai_trusteeship/detail/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/task/ai_trusteeship/list/` | `singleton` | `低` |
 | `medium` | `POST` | `/turbo_engine/api/v1/task/batch/operate/info/list/` | `singleton` | `低` |
 | `medium` | `POST` | `/turbo_engine/api/v1/task/batch/operate/list/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/task/task_batch_strategy/detail/` | `singleton` | `低` |

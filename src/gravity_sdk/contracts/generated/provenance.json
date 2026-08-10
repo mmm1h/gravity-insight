@@ -1,5 +1,5 @@
 {
-  "operation_count": 153,
+  "operation_count": 156,
   "operations": {
     "account.department.list": {
       "applied_overrides": [],
@@ -633,6 +633,14 @@
         "operations/metadata.event_property_template_event_list.list.json"
       ]
     },
+    "metadata.operation_log.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/metadata.operation_log.list.json"
+      ]
+    },
     "metadata.promotion_gravity_metric.list": {
       "applied_overrides": [],
       "family": null,
@@ -647,6 +655,22 @@
       "platform": null,
       "source_files": [
         "operations/metadata.property.list.json"
+      ]
+    },
+    "metadata.version.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/metadata.version.list.json"
+      ]
+    },
+    "promotion.ai_trusteeship.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/promotion.ai_trusteeship.list.json"
       ]
     },
     "promotion.alipay.advertiser.list": {

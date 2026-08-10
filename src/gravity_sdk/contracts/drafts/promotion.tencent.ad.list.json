@@ -3,24 +3,19 @@
   "draft": {
     "blockers": [
       {
+        "code": "request_parameters_required",
+        "detail": "The observed request reached a semantic error; required request fields remain unknown.",
+        "evidence": "evidence/probe/20260810T204823Z_promotion.tencent.ad.list.yaml",
+        "status": "open"
+      },
+      {
         "code": "response_schema_unverified",
         "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
-        "evidence": "evidence/probe/20260809T142913Z_promotion.tencent.ad.list.yaml",
+        "evidence": "evidence/probe/20260810T204823Z_promotion.tencent.ad.list.yaml",
         "status": "open"
       }
     ],
-    "candidate_fields": [
-      {
-        "classification_reason": "frontend_static_consumer_unreviewed",
-        "expose": false,
-        "path": "data.list",
-        "presence": "unknown",
-        "privacy_classification": "manual_review",
-        "types": [
-          "unknown"
-        ]
-      }
-    ],
+    "candidate_fields": [],
     "coverage_reference": {
       "coverage_path": "src/gravity_sdk/census/data/coverage.json",
       "json_pointer": "/routes/619",
@@ -75,13 +70,47 @@
         "projected_schema_fingerprint": null,
         "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
         "successful": false
+      },
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260810T203850Z_promotion.tencent.ad.list.yaml",
+        "probed_at": "2026-08-10T20:38:50Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
+        "successful": false
+      },
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260810T204212Z_promotion.tencent.ad.list.yaml",
+        "probed_at": "2026-08-10T20:42:12Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
+        "successful": false
+      },
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260810T204823Z_promotion.tencent.ad.list.yaml",
+        "probed_at": "2026-08-10T20:48:23Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
+        "successful": false
       }
     ],
     "promotion_gate": {
       "eligible": false,
       "missing": [
-        "response_schema_unverified",
+        "request_parameters_required",
         "response_projection",
+        "response_schema_unverified",
         "successful_probe"
       ]
     },
@@ -220,19 +249,6 @@
           }
         ]
       },
-      "path": "/turbo_engine/api/v1/tencent/ad/list/",
-      "promotion_level": "广告/创意",
-      "promotion_platform": "tencent",
-      "semantic_confidence": "medium",
-      "semantic_evidence": [
-        "read_action_path_token"
-      ],
-      "status": "uncovered_read",
-      "ui_texts": [
-        "创意",
-        "取消",
-        "确定"
-      ],
       "parent_resolution": {
         "basis": "declared_parent_probe",
         "bindings": [
@@ -266,7 +282,20 @@
         "evidence": "evidence/probe/20260809T145640Z_promotion.tencent.ad.list.yaml",
         "missing_evidence": [],
         "replacement_blocker": null
-      }
+      },
+      "path": "/turbo_engine/api/v1/tencent/ad/list/",
+      "promotion_level": "广告/创意",
+      "promotion_platform": "tencent",
+      "semantic_confidence": "medium",
+      "semantic_evidence": [
+        "read_action_path_token"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "创意",
+        "取消",
+        "确定"
+      ]
     },
     "status": "draft"
   },
@@ -274,7 +303,7 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "block_reason": "draft blockers: response_schema_unverified",
+    "block_reason": "draft blockers: request_parameters_required, response_schema_unverified",
     "contract_version": 1,
     "description": "Draft catalog entry inferred from census route POST /turbo_engine/api/v1/tencent/ad/list/; request binding, pagination, and response projection remain unverified.",
     "domain": "promotion",
@@ -283,31 +312,60 @@
     "executable": false,
     "input_fields": {
       "adgroup_id": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
-        "type": "any"
+        "description": "腾讯广告组标识；由广告组筛选列表选择。",
+        "max_length": 64,
+        "type": "string"
       },
       "advertiser_id": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
-        "type": "any"
+        "description": "腾讯广告主标识；必须与广告组来自同一父资源行。",
+        "max_length": 64,
+        "type": "string"
       },
       "api_version": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "description": "可选腾讯广告接口版本；页面仅在 3.0 广告组上发送 v3.0。",
+        "enum": [
+          "v3.0"
+        ],
         "type": "string"
       },
       "end_time": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
-        "type": "any"
+        "description": "统计结束日期，格式 YYYY-MM-DD。",
+        "max_length": 10,
+        "type": "string"
       },
       "query_fields": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "default": [
+          "cost"
+        ],
+        "description": "页面公开的腾讯创意指标；最小探针只读取 cost。",
+        "item_enum": [
+          "account_id",
+          "avg_view_per_user",
+          "click_user_count",
+          "cost",
+          "cpc",
+          "ctr",
+          "valid_click_count",
+          "view_count",
+          "view_user_count"
+        ],
+        "item_type": "string",
+        "max_items": 9,
+        "min_items": 1,
         "type": "array"
       },
       "start_time": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
-        "type": "any"
+        "description": "统计开始日期，格式 YYYY-MM-DD。",
+        "max_length": 10,
+        "type": "string"
       },
       "time_line": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "default": "REPORTING_TIME",
+        "description": "统计口径：转化回传时间或激活时间。",
+        "enum": [
+          "ACTIVE_TIME",
+          "REPORTING_TIME"
+        ],
         "type": "string"
       }
     },
@@ -316,11 +374,12 @@
       "inputs": {
         "adgroup_id": "$parent:adgroup_id",
         "advertiser_id": "$parent:advertiser_id",
-        "api_version": "",
-        "end_time": 0,
-        "query_fields": [],
-        "start_time": 0,
-        "time_line": ""
+        "end_time": "$today",
+        "query_fields": [
+          "cost"
+        ],
+        "start_time": "$yesterday",
+        "time_line": "REPORTING_TIME"
       }
     },
     "operation_id": "promotion.tencent.ad.list",
@@ -379,6 +438,7 @@
     },
     "provenance": {
       "applied_overrides": [
+        "current_frontend_creative_drawer_contract_2026-08-11",
         "frontend_route_parameter_contract",
         "stable_parent_candidate_binding"
       ],
@@ -398,7 +458,12 @@
         "start_time",
         "time_line"
       ],
-      "defaults": {},
+      "defaults": {
+        "query_fields": [
+          "cost"
+        ],
+        "time_line": "REPORTING_TIME"
+      },
       "fixed_body": {},
       "fixed_query": {},
       "path_fields": [],

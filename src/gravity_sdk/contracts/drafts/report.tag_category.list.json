@@ -5,7 +5,7 @@
       {
         "code": "probe_inconclusive",
         "detail": "The latest probe did not satisfy the promotion gate.",
-        "evidence": "evidence/probe/20260808T205500Z_report.tag_category.list.yaml",
+        "evidence": "evidence/probe/20260810T204302Z_report.tag_category.list.yaml",
         "status": "open"
       }
     ],
@@ -163,12 +163,24 @@
         "projected_schema_fingerprint": null,
         "raw_schema_fingerprint": "0603cf636df4dc2aa1d19517bbdd4cb0977acb0ea1f18f7df04ab6eaf7383cc3",
         "successful": false
+      },
+      {
+        "conclusion": "inconclusive",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260810T204302Z_report.tag_category.list.yaml",
+        "probed_at": "2026-08-10T20:43:02Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "0603cf636df4dc2aa1d19517bbdd4cb0977acb0ea1f18f7df04ab6eaf7383cc3",
+        "successful": false
       }
     ],
     "promotion_gate": {
       "eligible": false,
       "missing": [
-        "probe_inconclusive"
+        "probe_inconclusive",
+        "successful_probe"
       ]
     },
     "route_evidence": {
@@ -297,12 +309,14 @@
     },
     "operation_id": "report.tag_category.list",
     "pagination": {
-      "kind": "none",
-      "list_path": "",
-      "page_field": "",
-      "page_info_path": "",
-      "page_size_field": "",
-      "total_page_field": ""
+      "default_page_size": 100,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 100,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
     },
     "path_template": "/turbo_engine/api/v3/confmetric/tag_category/list/",
     "platform": null,
@@ -385,13 +399,13 @@
       "item_keys": [
         "cname",
         "create_time",
+        "data_topic",
         "id",
         "modify_time",
         "name",
         "order"
       ],
       "known_omitted_item_keys": [
-        "data_topic",
         "remark"
       ],
       "required_data_keys": [

@@ -207,6 +207,18 @@ def test_bytedance_text_title_metrics_are_reviewed_by_operation_family() -> None
     )[0] == "sensitive"
 
 
+def test_ai_trusteeship_metrics_are_reviewed_by_operation_family() -> None:
+    path = "data.list[].check_fre"
+
+    assert classify_field(path)[0] == "manual_review"
+    assert classify_candidate_field(
+        path, operation_id="promotion.ai_trusteeship.future_list"
+    ) == ("non_sensitive", "route_specific_field_review")
+    assert classify_candidate_field(
+        path, operation_id="material.ai_trusteeship.future_list"
+    )[0] == "manual_review"
+
+
 def test_strict_sensitive_fields_never_enter_generated_projection() -> None:
     payload = {
         "data": {

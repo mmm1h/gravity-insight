@@ -111,9 +111,6 @@ REVIEWED_SAFE_FIELDS: Mapping[str, frozenset[str]] = {
             "total_special_red_packet_consume",
         }
     ),
-    "promotion.ai_trusteeship.list": frozenset(
-        {"boost_value", "caliber", "check_fre", "frequency"}
-    ),
     "promotion.bytedance.site.list": frozenset({"siteId", "siteType"}),
     "report.company_amount.query": frozenset(
         {"ad_create_amount_usage", "material_transmit_g_usage"}
@@ -132,6 +129,16 @@ BYTEDANCE_TEXT_TITLE_METRIC_FIELDS = frozenset(
 BYTEDANCE_TEXT_TITLE_OPERATION_RE = re.compile(
     r"^material\.bytedance_[a-z0-9_]*text_title[a-z0-9_]*\.list$"
 )
+AI_TRUSTEESHIP_OPERATION_RE = re.compile(
+    r"^promotion\.ai_trusteeship\.[a-z0-9_]+$"
+)
+AI_TRUSTEESHIP_SAFE_FIELDS = frozenset(
+    {"boost_value", "caliber", "check_fre", "frequency"}
+)
+FAMILY_SAFE_FIELD_RULES = (
+    (BYTEDANCE_TEXT_TITLE_OPERATION_RE, BYTEDANCE_TEXT_TITLE_METRIC_FIELDS),
+    (AI_TRUSTEESHIP_OPERATION_RE, AI_TRUSTEESHIP_SAFE_FIELDS),
+)
 
 AGGREGATE_REPORT_OPERATIONS = frozenset(
     {"report.hour_comparison.query", "report.overview.query"}
@@ -146,9 +153,7 @@ AGGREGATE_REPORT_FIELDS = frozenset(
     }
 )
 
-METADATA_DICTIONARY_OPERATIONS = frozenset(
-    {"metadata.operation_log.list", "metadata.version.list"}
-)
+METADATA_DICTIONARY_RESOURCES = frozenset({"operation_log", "version"})
 
 METADATA_DICTIONARY_MARKERS = (
     ".col_name_en_cn_dict.", ".info.name_cname.", ".name_en_cn_dict.",
@@ -157,12 +162,21 @@ METADATA_DICTIONARY_MARKERS = (
 
 def _reviewed_safe_fields(operation_id: str | None) -> frozenset[str]:
     normalized = str(operation_id)
-    family_fields = (
-        BYTEDANCE_TEXT_TITLE_METRIC_FIELDS
-        if BYTEDANCE_TEXT_TITLE_OPERATION_RE.fullmatch(normalized)
-        else frozenset()
+    family_fields: set[str] = set()
+    for pattern, fields in FAMILY_SAFE_FIELD_RULES:
+        if pattern.fullmatch(normalized):
+            family_fields.update(fields)
+    return REVIEWED_SAFE_FIELDS.get(normalized, frozenset()) | frozenset(family_fields)
+
+
+def _is_metadata_dictionary_operation(operation_id: str | None) -> bool:
+    parts = str(operation_id).split(".")
+    return (
+        len(parts) == 3
+        and parts[0] == "metadata"
+        and parts[1] in METADATA_DICTIONARY_RESOURCES
+        and parts[2] == "list"
     )
-    return REVIEWED_SAFE_FIELDS.get(normalized, frozenset()) | family_fields
 
 
 def _json_type(value: Any) -> str:
@@ -271,7 +285,7 @@ def classify_candidate_field(
     ):
         return "non_sensitive", "aggregate_metric_field_review"
     if (
-        operation_id in METADATA_DICTIONARY_OPERATIONS
+        _is_metadata_dictionary_operation(operation_id)
         and any(marker in normalized for marker in METADATA_DICTIONARY_MARKERS)
         and field != "{dynamic_key}"
     ):

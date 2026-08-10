@@ -5,7 +5,7 @@
       {
         "code": "probe_inconclusive",
         "detail": "The latest probe did not satisfy the promotion gate.",
-        "evidence": "evidence/probe/20260808T205500Z_report.tag.list.yaml",
+        "evidence": "evidence/probe/20260810T204301Z_report.tag.list.yaml",
         "status": "open"
       }
     ],
@@ -174,12 +174,24 @@
         "projected_schema_fingerprint": null,
         "raw_schema_fingerprint": "5bf2da68031e1b6023f30fc2a2bc3d0485534ed8c2ab41c7842b3a795071f068",
         "successful": false
+      },
+      {
+        "conclusion": "inconclusive",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260810T204301Z_report.tag.list.yaml",
+        "probed_at": "2026-08-10T20:43:01Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "5bf2da68031e1b6023f30fc2a2bc3d0485534ed8c2ab41c7842b3a795071f068",
+        "successful": false
       }
     ],
     "promotion_gate": {
       "eligible": false,
       "missing": [
-        "probe_inconclusive"
+        "probe_inconclusive",
+        "successful_probe"
       ]
     },
     "route_evidence": {
@@ -308,12 +320,14 @@
     },
     "operation_id": "report.tag.list",
     "pagination": {
-      "kind": "none",
-      "list_path": "",
-      "page_field": "",
-      "page_info_path": "",
-      "page_size_field": "",
-      "total_page_field": ""
+      "default_page_size": 100,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 100,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
     },
     "path_template": "/turbo_engine/api/v3/confmetric/tag/list/",
     "platform": null,
@@ -397,13 +411,13 @@
         "category_id",
         "cname",
         "create_time",
+        "data_topic",
         "id",
         "modify_time",
         "name",
         "order"
       ],
       "known_omitted_item_keys": [
-        "data_topic",
         "exclusion_tags",
         "remark"
       ],
