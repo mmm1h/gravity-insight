@@ -1,0 +1,274 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "request_parameters_required",
+        "detail": "The observed request reached a semantic error; required request fields remain unknown.",
+        "evidence": "evidence/probe/20260808T231057Z_analysis.default_val.list.yaml",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "evidence": "evidence/probe/20260808T231057Z_analysis.default_val.list.yaml",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_sdk/census/data/coverage.json",
+      "json_pointer": "/routes/914",
+      "method": "POST",
+      "path": "/turbo_engine/api/v2/event/conf_event_meta/default_val/list/",
+      "route_index": 914,
+      "route_sha256": "192bb33a5c9a54c803d43c6a1fa1fc7545e44774aaf196e94ab083ac4b1428b9"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [],
+    "probe_evidence": [
+      {
+        "conclusion": "local_or_parent_inconclusive",
+        "method_verified": false,
+        "pagination_verified": false,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205323Z_analysis.default_val.list.yaml",
+        "probed_at": "2026-08-08T20:53:23Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": null,
+        "successful": false
+      },
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205504Z_analysis.default_val.list.yaml",
+        "probed_at": "2026-08-08T20:55:04Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1b898bf98211f851a2989bb1eb397aa45eb76a283568c75ab6a8dd0d96ac0e02",
+        "successful": false
+      },
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T231057Z_analysis.default_val.list.yaml",
+        "probed_at": "2026-08-08T23:10:57Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1b898bf98211f851a2989bb1eb397aa45eb76a283568c75ab6a8dd0d96ac0e02",
+        "successful": false
+      }
+    ],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "request_parameters_required",
+        "response_projection",
+        "response_schema_unverified",
+        "runtime_probe_placeholder_unsupported",
+        "successful_probe"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "其它",
+      "callers": [
+        "w"
+      ],
+      "contract_family": null,
+      "cost_reason": "flat list/detail lookup with no evident parent dependency",
+      "estimated_implementation_cost": "低",
+      "first_occurrence": {
+        "column": 40210,
+        "file": "raw/web.gravity-engine.com/assets/Debug-hpZqESZ9.js",
+        "line": 1,
+        "offset": 40209,
+        "url": "https://web.gravity-engine.com/assets/Debug-hpZqESZ9.js"
+      },
+      "method": "POST",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 47716,
+            "column": 40210,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Debug-hpZqESZ9.js",
+            "line": 1,
+            "route_offset": 40209
+          }
+        ],
+        "contract_confidence": "low",
+        "learned_parameters": [],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "POST",
+          "path": "/turbo_engine/api/v2/event/conf_event_meta/default_val/list/"
+        },
+        "source": "src/gravity_sdk/census/data/route-params.json",
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "high",
+            "default_observed": false,
+            "location": "body",
+            "name": "app_id",
+            "path": "$.app_id",
+            "presence": "unknown",
+            "types": [
+              "unknown"
+            ]
+          },
+          {
+            "confidence": "high",
+            "default_observed": true,
+            "location": "body",
+            "name": "subject",
+            "path": "$.subject",
+            "presence": "unknown",
+            "types": [
+              "string"
+            ]
+          }
+        ]
+      },
+      "path": "/turbo_engine/api/v2/event/conf_event_meta/default_val/list/",
+      "promotion_level": null,
+      "promotion_platform": null,
+      "semantic_confidence": "medium",
+      "semantic_evidence": [
+        "read_action_path_token"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "增加或减少一个用户的某个 NUMBER 类型的 Profile 值",
+        "存在则忽略，不存在则会自动创建",
+        "已存在则覆盖，不存在则自动创建"
+      ]
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: request_parameters_required, response_schema_unverified",
+    "contract_version": 1,
+    "description": "Draft catalog entry inferred from census route POST /turbo_engine/api/v2/event/conf_event_meta/default_val/list/; request binding, pagination, and response projection remain unverified.",
+    "domain": "analysis",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "app_id": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=unknown); presence describes frontend calls and is not a server-required declaration.",
+        "type": "any"
+      },
+      "subject": {
+        "default": "$lib_version",
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=unknown); presence describes frontend calls and is not a server-required declaration.",
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "subject": "$lib_version"
+      }
+    },
+    "operation_id": "analysis.default_val.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v2/event/conf_event_meta/default_val/list/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract"
+      ],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "drafts/analysis.default_val.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "app_id",
+        "subject"
+      ],
+      "defaults": {
+        "subject": "$lib_version"
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "default_val",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis.json"
+}

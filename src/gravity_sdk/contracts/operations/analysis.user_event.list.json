@@ -1,0 +1,251 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 19,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "单用户事件流；支持事件选择和结构化查询项，输出内部分析标识、非识别性设备属性、事件时间线及汇总；姓名、外部开放标识和广告设备标识保持隐藏。上游不返回 page_info，请显式递增 page，直到 event_timeline[*].list 为空。",
+    "domain": "analysis",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "app_id": {
+        "max_length": 64,
+        "required": true,
+        "type": "string"
+      },
+      "client_id": {
+        "max_length": 256,
+        "required": true,
+        "sensitive": true,
+        "type": "string"
+      },
+      "date": {
+        "required": false,
+        "type": "date"
+      },
+      "date_list": {
+        "item_type": "string",
+        "max_items": 2,
+        "min_items": 2,
+        "required": false,
+        "type": "array"
+      },
+      "desc": {
+        "default": true,
+        "type": "boolean"
+      },
+      "event_list": {
+        "default": [],
+        "item_type": "string",
+        "max_items": 2000,
+        "type": "array"
+      },
+      "fields": {
+        "default": [],
+        "item_type": "string",
+        "max_items": 2000,
+        "type": "array"
+      },
+      "group_by": {
+        "default": "day",
+        "enum": [
+          "day",
+          "hour",
+          "week",
+          "month"
+        ],
+        "type": "string"
+      },
+      "page": {
+        "default": 1,
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 20,
+        "type": "integer"
+      },
+      "query_item_list": {
+        "default": [],
+        "item_type": "object",
+        "max_items": 100,
+        "type": "array"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "app_id": "$first_app_id",
+        "client_id": "$first_client_id",
+        "date": "$today",
+        "page": 1,
+        "page_size": 1
+      }
+    },
+    "operation_id": "analysis.user_event.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/report/api/v3/dataanalysis/user/event/list/",
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "WXOpenID",
+        "DeviceId",
+        "Idfa",
+        "Idfv",
+        "Caid1",
+        "Caid2",
+        "Oaid",
+        "Imei",
+        "AndroidId"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.user_event.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "app_id",
+        "client_id",
+        "date",
+        "date_list",
+        "page",
+        "page_size",
+        "fields",
+        "desc",
+        "group_by",
+        "event_list",
+        "query_item_list"
+      ],
+      "defaults": {
+        "desc": true,
+        "event_list": [],
+        "fields": [],
+        "group_by": "day",
+        "page": 1,
+        "page_size": 20,
+        "query_item_list": []
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "analysis.user_detail.list",
+        "output_path": "data.list[].ClientID",
+        "selection": "first"
+      }
+    ],
+    "resource": "user_event",
+    "response_projection": {
+      "data_dynamic_item_fields": {
+        "device": [
+          "fields"
+        ],
+        "event_timeline": [
+          "fields"
+        ],
+        "re_attribute_records": [
+          "fields"
+        ],
+        "user": [
+          "fields"
+        ]
+      },
+      "data_item_keys": {
+        "device": [
+          "Android_Version",
+          "Api_Version",
+          "Aspect_Ratio",
+          "OS",
+          "Phone_Brand",
+          "Phone_Model",
+          "Rom",
+          "Rom_version"
+        ],
+        "re_attribute_records": [
+          "ReAttributeAdAid",
+          "ReAttributeAdCid",
+          "ReAttributeAdGid",
+          "ReAttributeAdPlatform",
+          "ReAttributeAdvertiserID",
+          "ReAttributeCSite",
+          "ReAttributeChannel",
+          "ReAttributeCreateTime",
+          "ReAttributeTurboPromotedObjectID",
+          "ReAttributeRetargetingCount",
+          "ReAttributeAdClickTime"
+        ],
+        "user": [
+          "ClientID",
+          "user_id",
+          "device_id",
+          "CreateTime",
+          "LatestLoginDay",
+          "modify_time"
+        ]
+      },
+      "data_keys": [
+        "event_timeline",
+        "summary",
+        "device",
+        "user",
+        "re_attribute_records"
+      ],
+      "dynamic_item_fields": [
+        "fields"
+      ],
+      "item_keys": [],
+      "known_omitted_data_item_keys": {
+        "device": [
+          "AndroidId",
+          "Caid1",
+          "Caid2",
+          "DeviceId",
+          "Idfa",
+          "Idfv",
+          "Imei",
+          "Oaid"
+        ],
+        "user": [
+          "Name",
+          "WXOpenID"
+        ]
+      },
+      "required_data_keys": [
+        "event_timeline"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis.json"
+}

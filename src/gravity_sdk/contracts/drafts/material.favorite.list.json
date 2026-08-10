@@ -1,0 +1,347 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "parent_resource_required",
+        "detail": "Parent probing is withheld because the current route shape does not prove read-only semantics.",
+        "evidence": "evidence/probe/20260809T145638Z_material.favorite.list.yaml",
+        "status": "open"
+      },
+      {
+        "code": "request_parameters_required",
+        "detail": "The observed request reached a semantic error; required request fields remain unknown.",
+        "evidence": "evidence/probe/20260808T232238Z_material.favorite.list.yaml",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "evidence": "evidence/probe/20260808T232238Z_material.favorite.list.yaml",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_sdk/census/data/coverage.json",
+      "json_pointer": "/routes/238",
+      "method": "POST",
+      "path": "/turbo_engine/api/v1/asset/material/favorites/",
+      "route_index": 238,
+      "route_sha256": "22524db42e4e0b9f91f13b78fe79a24c03244c8a7c0338442d2624b771cabf84"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [],
+    "probe_evidence": [
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205529Z_material.favorite.list.yaml",
+        "probed_at": "2026-08-08T20:55:29Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "3f76fb7899c7ed629940bc11822747ce51076fd3c24e9948e04818bb1e662536",
+        "successful": false
+      },
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T231117Z_material.favorite.list.yaml",
+        "probed_at": "2026-08-08T23:11:17Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "3f76fb7899c7ed629940bc11822747ce51076fd3c24e9948e04818bb1e662536",
+        "successful": false
+      },
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T232238Z_material.favorite.list.yaml",
+        "probed_at": "2026-08-08T23:22:38Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "3f76fb7899c7ed629940bc11822747ce51076fd3c24e9948e04818bb1e662536",
+        "successful": false
+      }
+    ],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "parent_resource_required",
+        "request_parameters_required",
+        "response_schema_unverified",
+        "response_projection",
+        "successful_probe"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "素材",
+      "callers": [
+        "S",
+        "ce",
+        "le"
+      ],
+      "contract_family": null,
+      "cost_reason": "素材 lookup normally depends on a parent account or campaign",
+      "estimated_implementation_cost": "中",
+      "first_occurrence": {
+        "column": 977,
+        "file": "raw/web.gravity-engine.com/assets/FavoriteDialog-DhTvwKgh.js",
+        "line": 1,
+        "offset": 976,
+        "url": "https://web.gravity-engine.com/assets/FavoriteDialog-DhTvwKgh.js"
+      },
+      "method": "POST",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 1661,
+            "column": 977,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/FavoriteDialog-DhTvwKgh.js",
+            "line": 1,
+            "route_offset": 976
+          },
+          {
+            "call_offset": 1425,
+            "column": 1101,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Favorites-BbBv7SV9.js",
+            "line": 1,
+            "route_offset": 1100
+          },
+          {
+            "call_offset": 3201,
+            "column": 3040,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Favorites-BbBv7SV9.js",
+            "line": 1,
+            "route_offset": 3039
+          }
+        ],
+        "contract_confidence": "medium",
+        "learned_parameters": [
+          "operate"
+        ],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "POST",
+          "path": "/turbo_engine/api/v1/asset/material/favorites/"
+        },
+        "source": "src/gravity_sdk/census/data/route-params.json",
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "favorites_id",
+            "path": "$.favorites_id",
+            "presence": "observed_conditional",
+            "types": [
+              "unknown"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "name",
+            "path": "$.name",
+            "presence": "observed_conditional",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "confidence": "high",
+            "default_observed": false,
+            "location": "body",
+            "name": "operate",
+            "path": "$.operate",
+            "presence": "observed_always",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "remark",
+            "path": "$.remark",
+            "presence": "observed_conditional",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "stable_parent_candidates": []
+      },
+      "path": "/turbo_engine/api/v1/asset/material/favorites/",
+      "promotion_level": null,
+      "promotion_platform": null,
+      "semantic_confidence": "medium",
+      "semantic_evidence": [
+        "read_action_path_token"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "删除成功",
+        "是否删除此收藏夹",
+        "编辑成功",
+        "请输入收藏夹名称",
+        "请选择收藏夹",
+        "选填",
+        "长度不能超过20个字符"
+      ],
+      "parent_resolution": {
+        "basis": "read_semantics_unproven",
+        "bindings": [],
+        "conclusion": "undetermined",
+        "detail": "Parent probing is withheld because the current route shape does not prove read-only semantics.",
+        "evidence": "evidence/probe/20260809T145638Z_material.favorite.list.yaml",
+        "missing_evidence": [
+          "A read-only request contract for the manage/operate route before any further live probe."
+        ],
+        "replacement_blocker": null
+      }
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: parent_resource_required, request_parameters_required, response_schema_unverified",
+    "contract_version": 1,
+    "description": "Draft catalog entry inferred from census route POST /turbo_engine/api/v1/asset/material/favorites/; request binding, pagination, and response projection remain unverified.",
+    "domain": "material",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "favorites_id": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_conditional); presence describes frontend calls and is not a server-required declaration.",
+        "type": "any"
+      },
+      "name": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_conditional); presence describes frontend calls and is not a server-required declaration.",
+        "type": "string"
+      },
+      "operate": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "string"
+      },
+      "remark": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_conditional); presence describes frontend calls and is not a server-required declaration.",
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "operate": "3",
+        "favorites_id": 0
+      }
+    },
+    "operation_id": "material.favorite.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/asset/material/favorites/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "material",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract",
+        "stable_parent_candidate_binding"
+      ],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "drafts/material.favorite.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "favorites_id",
+        "name",
+        "operate",
+        "remark"
+      ],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "favorite",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "material.json"
+}

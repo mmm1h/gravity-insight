@@ -1,0 +1,262 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 8,
+  "operation": {
+    "action": "query",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "留存分析结构化聚合；输入经事件元数据和时间窗口策略校验，动态时间槽响应按受控聚合投影输出。",
+    "domain": "analysis",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "app_id": {
+        "required": true,
+        "type": "string"
+      },
+      "custom_before_method": {
+        "default": "SUM",
+        "enum": [
+          "SUM",
+          "WEIGHTED_AVG"
+        ],
+        "type": "string"
+      },
+      "date_list": {
+        "item_type": "object",
+        "max_items": 1,
+        "min_items": 1,
+        "required": true,
+        "type": "array"
+      },
+      "group_by_list": {
+        "default": [],
+        "item_type": "object",
+        "max_items": 20,
+        "type": "array"
+      },
+      "offset": {
+        "default": 7,
+        "type": "integer"
+      },
+      "period_calc_method": {
+        "default": "SUM",
+        "enum": [
+          "SUM",
+          "WEIGHTED_AVG"
+        ],
+        "type": "string"
+      },
+      "property_condition": {
+        "default": [],
+        "item_type": "object",
+        "max_items": 100,
+        "type": "array"
+      },
+      "query_id": {
+        "required": true,
+        "type": "string"
+      },
+      "query_item_before_after": {
+        "default": {},
+        "type": "object"
+      },
+      "query_item_list": {
+        "item_type": "object",
+        "max_items": 2,
+        "min_items": 2,
+        "required": true,
+        "type": "array"
+      },
+      "total_calc_type": {
+        "default": "DAY",
+        "enum": [
+          "DAY",
+          "WEEK",
+          "MONTH"
+        ],
+        "type": "string"
+      },
+      "user_cond_logic": {
+        "default": "AND",
+        "enum": [
+          "AND",
+          "OR"
+        ],
+        "type": "string"
+      },
+      "user_filtering": {
+        "default": {},
+        "type": "object"
+      },
+      "user_re_attribute_filtering": {
+        "default": {},
+        "type": "object"
+      },
+      "week_first_day": {
+        "default": 1,
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "app_id": "$first_app_id",
+        "custom_before_method": "SUM",
+        "date_list": [
+          {
+            "end_date": "$yesterday",
+            "start_date": "$yesterday"
+          }
+        ],
+        "group_by_list": [
+          {
+            "field": "create_time",
+            "group_by": "day",
+            "type": "default_event"
+          }
+        ],
+        "offset": 7,
+        "period_calc_method": "SUM",
+        "query_id": "$analysis_query_id",
+        "query_item_list": [
+          {
+            "cond_logic": "AND",
+            "conditions": [],
+            "custom_name": "",
+            "event_index": 0,
+            "event_label": "",
+            "event_name": "$first_event_name",
+            "target": {
+              "field": "PresetAllCount",
+              "name": "PresetAllCount"
+            }
+          },
+          {
+            "cond_logic": "AND",
+            "conditions": [],
+            "custom_name": "",
+            "event_index": 1,
+            "event_label": "",
+            "event_name": "$first_event_name",
+            "target": {
+              "field": "PresetAllCount",
+              "name": "PresetAllCount"
+            }
+          }
+        ],
+        "total_calc_type": "DAY",
+        "week_first_day": 1
+      }
+    },
+    "operation_id": "analysis.retention.query",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/report/api/v3/dataanalysis/user/retention/",
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.retention.query.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "query_id",
+        "app_id",
+        "query_item_list",
+        "group_by_list",
+        "user_filtering",
+        "user_re_attribute_filtering",
+        "property_condition",
+        "query_item_before_after",
+        "user_cond_logic",
+        "date_list",
+        "offset",
+        "week_first_day",
+        "period_calc_method",
+        "custom_before_method",
+        "total_calc_type"
+      ],
+      "defaults": {
+        "custom_before_method": "SUM",
+        "group_by_list": [],
+        "offset": 7,
+        "period_calc_method": "SUM",
+        "property_condition": [],
+        "query_item_before_after": {},
+        "total_calc_type": "DAY",
+        "user_cond_logic": "AND",
+        "user_filtering": {},
+        "user_re_attribute_filtering": {},
+        "week_first_day": 1
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "analysis.event.list",
+        "output_path": "data.list[].name",
+        "selection": null
+      }
+    ],
+    "resource": "retention",
+    "response_projection": {
+      "data_keys": [
+        "total",
+        "x",
+        "y",
+        "date_to_week",
+        "date_to_month"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "known_omitted_data_keys": [
+        "extra_data"
+      ],
+      "numeric_paths": [
+        "total.[].init_custom_before_components.[]",
+        "total.[].init_custom_before_num",
+        "total.[].init_num",
+        "total.[].percent_values.[]",
+        "total.[].percent_values_loss.[]",
+        "total.[].values.[]",
+        "total.[].values_another_event.[]",
+        "total.[].values_loss.[]"
+      ],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis.json"
+}

@@ -1,0 +1,110 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 2,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "旧经营报表基础指标配置；data 为指标数组。2026-08-08 当前 Business 页面已改用 chunk 内静态经营指标，本接口在当前账号 code=0 空列表，保留为独立配置读取但不再作为 report.business.query 父级。",
+    "domain": "report",
+    "effect": "read",
+    "examples": [
+      {
+        "description": "Minimum input copied from the enabled, contract-verified live probe.",
+        "inputs": {},
+        "name": "minimum_read"
+      }
+    ],
+    "input_fields": {},
+    "live_probe": {
+      "enabled": true,
+      "inputs": {}
+    },
+    "operation_id": "report.business.metric.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v2/datamanageconfig/base_report_metrics/list/",
+    "privacy_policy": {
+      "classification": "configuration",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.business.metric.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "business_metric",
+    "response_projection": {
+      "data_keys": [],
+      "data_shape": "list",
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "id",
+        "name",
+        "cname",
+        "label",
+        "tip",
+        "children",
+        "metric_type",
+        "status"
+      ],
+      "nested_item_keys": {
+        "children": [
+          "label",
+          "name",
+          "tip",
+          "formula",
+          "sort",
+          "metric_label",
+          "metric_type"
+        ]
+      },
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "other.json"
+}

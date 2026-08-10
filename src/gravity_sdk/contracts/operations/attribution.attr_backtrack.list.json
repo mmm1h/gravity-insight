@@ -1,0 +1,112 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 2,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "归因回溯窗口列表。当前前端精确使用 GET JSON body {app_id} 并消费 app_id/attributed_reason/minutes/days/window_type；2026-08-08 七个可读 App 均返回 code=0 空列表，公司字段固定省略。",
+    "domain": "attribution",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "app_id": {
+        "required": true,
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "app_id": "$first_app_id"
+      }
+    },
+    "operation_id": "attribution.attr_backtrack.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/user/attr_backtrack/list/",
+    "privacy_policy": {
+      "classification": "configuration",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/attribution.attr_backtrack.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "app_id"
+      ],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "app.list",
+        "output_path": "data.list[].id",
+        "selection": "first"
+      }
+    ],
+    "resource": "attr_backtrack",
+    "response_projection": {
+      "data_keys": [
+        "list"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "app_id",
+        "attributed_reason",
+        "minutes",
+        "days",
+        "window_type"
+      ],
+      "known_omitted_item_keys": [
+        "company"
+      ],
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "candidates.json"
+}

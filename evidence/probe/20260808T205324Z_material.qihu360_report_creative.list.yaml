@@ -1,0 +1,36 @@
+{
+  "conclusion": "local_or_parent_inconclusive",
+  "http": [],
+  "operation_id": "material.qihu360_report_creative.list",
+  "pagination": {
+    "kind": "unknown",
+    "verified": false
+  },
+  "privacy": {
+    "candidate_fields": [],
+    "classified_non_sensitive": 0,
+    "classified_sensitive": 0,
+    "manual_review": 0,
+    "values_persisted": false
+  },
+  "probed_at": "2026-08-08T20:53:24Z",
+  "projected_schema_fingerprint": null,
+  "raw_schema_fingerprint": null,
+  "request_stats": {
+    "backoff_terminations": 0,
+    "failed": 0,
+    "total": 0
+  },
+  "required_parent": null,
+  "route": {
+    "family": "material.qihu360_report_creative.list",
+    "method": "POST",
+    "path": "/turbo_engine/api/v1/qihu360/report/creative/list/"
+  },
+  "schema_version": "gravity-insight.probe-evidence.v1",
+  "semantic_errors": {
+    "error_type": "ManifestError",
+    "permission_shape_observed": false
+  },
+  "successful": false
+}

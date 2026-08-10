@@ -1,0 +1,1403 @@
+{
+  "manifest_version": 1,
+  "operations": [
+    {
+      "action": "tree",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "看板空间、文件夹和看板目录；固定只读树路由，递归节点按显式字段投影。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id"
+        }
+      },
+      "operation_id": "analysis.dashboard.tree",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/tree/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "app_id"
+        ]
+      },
+      "required_parent": [
+        "app.list"
+      ],
+      "resource": "dashboard_tree",
+      "response_projection": {
+        "data_keys": [],
+        "data_shape": "list",
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "type",
+          "authority",
+          "folder_or_dashboard",
+          "dashboards"
+        ],
+        "known_omitted_item_keys": [
+          "children"
+        ],
+        "known_omitted_nested_item_keys": {
+          "dashboards": [
+            "ui_config"
+          ]
+        },
+        "nested_item_keys": {
+          "dashboards": [
+            "id",
+            "name",
+            "type",
+            "is_folder",
+            "space_id",
+            "authority"
+          ],
+          "folder_or_dashboard": [
+            "id",
+            "name",
+            "type",
+            "is_folder",
+            "space_id",
+            "authority",
+            "dashboards"
+          ]
+        },
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "detail",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "看板详情；上游路径保留 detial 拼写，ui_config 与 even_report.config 均为前端直接 JSON.parse 的 JSON 字符串；共享成员只返回内部标识与权限。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "space_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "id": "$first_dashboard_id",
+          "space_id": "$first_dashboard_space_id"
+        }
+      },
+      "operation_id": "analysis.dashboard.detail",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/dashboard/detial/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "remark",
+          "create_user_name",
+          "create_user_id",
+          "uname"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "app_id",
+          "id",
+          "space_id"
+        ]
+      },
+      "required_parent": [
+        "analysis.dashboard.tree"
+      ],
+      "resource": "dashboard",
+      "response_projection": {
+        "data_item_keys": {
+          "even_report": [
+            "report_id",
+            "name",
+            "subject",
+            "config"
+          ],
+          "share_members": [
+            "uid",
+            "authority"
+          ]
+        },
+        "data_keys": [
+          "id",
+          "name",
+          "app_id",
+          "space_id",
+          "authority",
+          "ui_config",
+          "even_report",
+          "share_members"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "known_omitted_data_item_keys": {
+          "even_report": [
+            "remark"
+          ],
+          "share_members": [
+            "name",
+            "uname"
+          ]
+        },
+        "known_omitted_data_keys": [
+          "create_user_id",
+          "create_user_name"
+        ],
+        "required_data_keys": [
+          "id"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "看板创建人与授权成员目录；仅返回内部成员标识与权限，成员姓名保持隐藏。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "dashboard_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "dashboard_id": "$first_dashboard_id"
+        }
+      },
+      "operation_id": "analysis.dashboard.members.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/dashboard/members/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "app_id",
+          "dashboard_id"
+        ]
+      },
+      "required_parent": [
+        "analysis.dashboard.detail"
+      ],
+      "resource": "dashboard_members",
+      "response_projection": {
+        "data_item_keys": {
+          "authUsers": [
+            "uid",
+            "authority"
+          ],
+          "creator": [
+            "id",
+            "uid"
+          ]
+        },
+        "data_keys": [
+          "creator",
+          "authUsers"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "known_omitted_data_item_keys": {
+          "authUsers": [
+            "name"
+          ],
+          "creator": [
+            "name"
+          ]
+        },
+        "required_data_keys": [
+          "creator",
+          "authUsers"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "看板空间创建人与授权成员目录；仅返回内部成员标识与权限，成员姓名保持隐藏。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "space_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "space_id": "$first_dashboard_space_id"
+        }
+      },
+      "operation_id": "analysis.dashboard.space_members.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/space/members/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "app_id",
+          "space_id"
+        ]
+      },
+      "required_parent": [
+        "analysis.dashboard.tree"
+      ],
+      "resource": "dashboard_space_members",
+      "response_projection": {
+        "data_item_keys": {
+          "authUsers": [
+            "uid",
+            "authority"
+          ],
+          "creator": [
+            "id",
+            "uid"
+          ]
+        },
+        "data_keys": [
+          "creator",
+          "authUsers"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "known_omitted_data_item_keys": {
+          "authUsers": [
+            "name"
+          ],
+          "creator": [
+            "name"
+          ]
+        },
+        "required_data_keys": [
+          "creator",
+          "authUsers"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "看板筛选收藏目录；支持 dashboard/default/name 精确 filters，并完整返回已登记的 condition/config 动态 JSON 配置（会话凭证键仍递归脱敏）。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "filters": {
+          "item_type": "object",
+          "max_items": 4,
+          "min_items": 1,
+          "required": true,
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "filters": [
+            {
+              "field": "dashboard_id",
+              "operator": 1,
+              "values": [
+                "$first_dashboard_id"
+              ]
+            }
+          ],
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "analysis.dashboard.condition_favourite.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/analysis_dashboard_condition_favourite/list/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "condition"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size",
+          "app_id",
+          "filters"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.dashboard.detail"
+      ],
+      "resource": "dashboard_condition_favourite",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "app_id",
+          "dashboard_id",
+          "name",
+          "default_to_one",
+          "default_to_all",
+          "to_use",
+          "cond_logic",
+          "config",
+          "create_time",
+          "modify_time"
+        ],
+        "known_omitted_item_keys": [
+          "condition"
+        ],
+        "opaque_json_item_keys": [
+          "config"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "get",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "看板已选事件的属性元数据；event_name_list 是前端逗号连接字符串，opaque extra/rules 与未建模维表固定省略。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "event_name_list": {
+          "max_length": 4096,
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "event_name_list": "$first_event_name"
+        }
+      },
+      "operation_id": "analysis.dashboard.event_list_info.get",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/event/event_list_info/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "remark"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "app_id",
+          "event_name_list"
+        ]
+      },
+      "required_parent": [
+        "analysis.event.list"
+      ],
+      "resource": "dashboard_event_list_info",
+      "response_projection": {
+        "data_item_keys": {
+          "common": [
+            "app_id",
+            "cname",
+            "create_time",
+            "data_type",
+            "has_dict",
+            "id",
+            "is_common",
+            "is_preset",
+            "modify_time",
+            "name",
+            "prop_type",
+            "uploaded",
+            "visible"
+          ],
+          "custom": [
+            "app_id",
+            "cname",
+            "create_time",
+            "data_type",
+            "has_dict",
+            "id",
+            "is_common",
+            "is_preset",
+            "modify_time",
+            "name",
+            "prop_type",
+            "uploaded",
+            "visible"
+          ],
+          "preset": [
+            "app_id",
+            "cname",
+            "create_time",
+            "data_type",
+            "has_dict",
+            "id",
+            "is_common",
+            "is_preset",
+            "modify_time",
+            "name",
+            "prop_type",
+            "uploaded",
+            "visible"
+          ]
+        },
+        "data_keys": [
+          "common",
+          "custom",
+          "preset"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "known_omitted_data_item_keys": {
+          "common": [
+            "dim_table",
+            "extra",
+            "rules",
+            "remark"
+          ],
+          "custom": [
+            "dim_table",
+            "extra",
+            "rules",
+            "remark"
+          ],
+          "preset": [
+            "dim_table",
+            "extra",
+            "rules",
+            "remark"
+          ]
+        },
+        "required_data_keys": [
+          "common",
+          "custom",
+          "preset"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "我的模板主题目录；无请求参数，返回主题 id/name 与只读分页元数据。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {},
+      "live_probe": {
+        "enabled": true,
+        "input": {}
+      },
+      "operation_id": "analysis.template.subject.own.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/template/subject/list/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "template_subject_own",
+      "response_projection": {
+        "data_item_keys": {
+          "page_info": [
+            "page",
+            "page_size",
+            "total_number",
+            "total_page"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "分享给我的模板主题目录；无请求参数，精确只读 share/list 路径由核心窄例外放行。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {},
+      "live_probe": {
+        "enabled": true,
+        "input": {}
+      },
+      "operation_id": "analysis.template.subject.share.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/template/subject/share/list/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "template_subject_share",
+      "response_projection": {
+        "data_item_keys": {
+          "page_info": [
+            "page",
+            "page_size",
+            "total_number",
+            "total_page"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "引力内置模板主题目录；无请求参数，返回主题 id/name。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {},
+      "live_probe": {
+        "enabled": true,
+        "input": {}
+      },
+      "operation_id": "analysis.template.subject.internal.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/template/subject_internal/list/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "template_subject_internal",
+      "response_projection": {
+        "data_keys": [
+          "list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "我的图表/看板模板目录；支持完整前端分页、主题与精确 filters，并返回模板动态 config。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "filters": {
+          "default": [
+            {
+              "field": "template_type",
+              "operator": 1,
+              "values": [
+                "report"
+              ]
+            }
+          ],
+          "item_type": "object",
+          "max_items": 2,
+          "min_items": 1,
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 15,
+          "type": "integer"
+        },
+        "subject_ids": {
+          "default": [],
+          "item_type": "integer",
+          "max_items": 100,
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "analysis.template.own.list",
+      "pagination": {
+        "default_page_size": 15,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 60,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/template/list/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "remark",
+          "create_user_name",
+          "update_user_name",
+          "create_user_id",
+          "update_user_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size",
+          "filters",
+          "subject_ids"
+        ],
+        "defaults": {
+          "filters": [
+            {
+              "field": "template_type",
+              "operator": 1,
+              "values": [
+                "report"
+              ]
+            }
+          ],
+          "page": 1,
+          "page_size": 15,
+          "subject_ids": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "template_own",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "cid",
+          "config",
+          "create_time",
+          "id",
+          "internal",
+          "modify_time",
+          "name",
+          "review",
+          "share_status",
+          "source",
+          "sub_type",
+          "subject_ids",
+          "subject_names",
+          "template_type"
+        ],
+        "known_omitted_item_keys": [
+          "create_user_id",
+          "create_user_name",
+          "remark",
+          "update_user_id",
+          "update_user_name"
+        ],
+        "nested_item_keys": {
+          "subject_names": [
+            "id",
+            "name"
+          ]
+        },
+        "opaque_json_item_keys": [
+          "config"
+        ],
+        "required_data_keys": [
+          "list"
+        ],
+        "scalar_list_item_types": {
+          "subject_ids": "integer"
+        }
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "分享给我的图表/看板模板目录；支持完整前端分页、创建人/主题与精确 filters，并返回模板动态 config。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "create_user_ids": {
+          "default": [],
+          "item_type": "integer",
+          "max_items": 100,
+          "type": "array"
+        },
+        "filters": {
+          "default": [
+            {
+              "field": "template_type",
+              "operator": 1,
+              "values": [
+                "report"
+              ]
+            }
+          ],
+          "item_type": "object",
+          "max_items": 2,
+          "min_items": 1,
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 15,
+          "type": "integer"
+        },
+        "subject_ids": {
+          "default": [],
+          "item_type": "integer",
+          "max_items": 100,
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "analysis.template.share.list",
+      "pagination": {
+        "default_page_size": 15,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 60,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/template/share/list/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "remark",
+          "create_user_name",
+          "update_user_name",
+          "create_user_id",
+          "update_user_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size",
+          "filters",
+          "subject_ids",
+          "create_user_ids"
+        ],
+        "defaults": {
+          "create_user_ids": [],
+          "filters": [
+            {
+              "field": "template_type",
+              "operator": 1,
+              "values": [
+                "report"
+              ]
+            }
+          ],
+          "page": 1,
+          "page_size": 15,
+          "subject_ids": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "template_share",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "cid",
+          "config",
+          "create_time",
+          "id",
+          "internal",
+          "modify_time",
+          "name",
+          "review",
+          "share_status",
+          "source",
+          "sub_type",
+          "subject_ids",
+          "subject_names",
+          "template_type"
+        ],
+        "known_omitted_item_keys": [
+          "create_user_id",
+          "create_user_name",
+          "remark",
+          "update_user_id",
+          "update_user_name"
+        ],
+        "nested_item_keys": {
+          "subject_names": [
+            "id",
+            "name"
+          ]
+        },
+        "opaque_json_item_keys": [
+          "config"
+        ],
+        "required_data_keys": [
+          "list"
+        ],
+        "scalar_list_item_types": {
+          "subject_ids": "integer"
+        }
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "引力内置图表/看板模板目录；支持完整前端分页、主题与精确 filters，并返回模板动态 config。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "filters": {
+          "default": [
+            {
+              "field": "template_type",
+              "operator": 1,
+              "values": [
+                "report"
+              ]
+            }
+          ],
+          "item_type": "object",
+          "max_items": 2,
+          "min_items": 1,
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 15,
+          "type": "integer"
+        },
+        "subject_ids": {
+          "default": [],
+          "item_type": "integer",
+          "max_items": 100,
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "analysis.template.internal.list",
+      "pagination": {
+        "default_page_size": 15,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 60,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/template_internal/list/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "remark",
+          "create_user_name",
+          "update_user_name",
+          "create_user_id",
+          "update_user_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size",
+          "filters",
+          "subject_ids"
+        ],
+        "defaults": {
+          "filters": [
+            {
+              "field": "template_type",
+              "operator": 1,
+              "values": [
+                "report"
+              ]
+            }
+          ],
+          "page": 1,
+          "page_size": 15,
+          "subject_ids": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "template_internal",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "cid",
+          "config",
+          "create_time",
+          "id",
+          "internal",
+          "modify_time",
+          "name",
+          "review",
+          "share_status",
+          "source",
+          "sub_type",
+          "subject_ids",
+          "subject_names",
+          "template_type"
+        ],
+        "known_omitted_item_keys": [
+          "create_user_id",
+          "create_user_name",
+          "remark",
+          "update_user_id",
+          "update_user_name"
+        ],
+        "nested_item_keys": {
+          "subject_names": [
+            "id",
+            "name"
+          ]
+        },
+        "opaque_json_item_keys": [
+          "config"
+        ],
+        "required_data_keys": [
+          "list"
+        ],
+        "scalar_list_item_types": {
+          "subject_ids": "integer"
+        }
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    }
+  ]
+}

@@ -1,0 +1,144 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 1,
+  "operation": {
+    "action": "detail",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "看板详情；上游路径保留 detial 拼写，ui_config 与 even_report.config 均为前端直接 JSON.parse 的 JSON 字符串；共享成员只返回内部标识与权限。",
+    "domain": "analysis",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "app_id": {
+        "max_length": 64,
+        "required": true,
+        "type": "string"
+      },
+      "id": {
+        "max_length": 64,
+        "required": true,
+        "type": "string"
+      },
+      "space_id": {
+        "max_length": 64,
+        "required": true,
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "app_id": "$first_app_id",
+        "id": "$first_dashboard_id",
+        "space_id": "$first_dashboard_space_id"
+      }
+    },
+    "operation_id": "analysis.dashboard.detail",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/dashboard/detial/",
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "remark",
+        "create_user_name",
+        "create_user_id",
+        "uname"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.dashboard.detail.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "app_id",
+        "id",
+        "space_id"
+      ]
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "analysis.dashboard.tree",
+        "output_path": null,
+        "selection": "caller_select"
+      }
+    ],
+    "resource": "dashboard",
+    "response_projection": {
+      "data_item_keys": {
+        "even_report": [
+          "report_id",
+          "name",
+          "subject",
+          "config"
+        ],
+        "share_members": [
+          "uid",
+          "authority"
+        ]
+      },
+      "data_keys": [
+        "id",
+        "name",
+        "app_id",
+        "space_id",
+        "authority",
+        "ui_config",
+        "even_report",
+        "share_members"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "known_omitted_data_item_keys": {
+        "even_report": [
+          "remark"
+        ],
+        "share_members": [
+          "name",
+          "uname"
+        ]
+      },
+      "known_omitted_data_keys": [
+        "create_user_id",
+        "create_user_name"
+      ],
+      "required_data_keys": [
+        "id"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis_dashboard.json"
+}

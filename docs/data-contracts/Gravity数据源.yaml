@@ -1,0 +1,54 @@
+datasource_id: "gravity_merge2_v1"
+owner_module: "gravity-sdk"
+status: "active"
+verification_status: "verified_with_gaps"
+system: "Gravity SQL"
+owned_tool: "src/gravity_sdk/sql"
+source_paths:
+  - "docs/data-contracts/Gravity支付口径.md"
+  - "docs/data-contracts/Offer分配数据契约.yaml"
+  - "docs/data-contracts/Merge埋点字典.md"
+  - "docs/data-contracts/首次场景口径.md"
+  - "docs/data-contracts/抖小买量口径.md"
+  - "docs/data-contracts/体力消耗口径.md"
+provided_contracts:
+  - "payment revenue, order and buyer aggregate definitions from Gravity $PayEvent"
+  - "stable metric ids and payment deduplication contract"
+  - "planned Offer assignment, outcome and unit-map definitions; causal use remains prohibited"
+  - "event presence, first-scene and energy-profile coverage definitions"
+  - "Douyin-host paid-acquisition user scope and $MPLaunch active-denominator proxy"
+  - "Gravity SQL connectivity and response-shape smoke"
+  - "paged export guard for default-limit detection"
+product_ids:
+  - "payment-summary"
+  - "first-scene-coverage"
+  - "energy-profile-coverage"
+  - "event-coverage"
+verification_commands:
+  - "gravity sql status --json"
+  - "gravity sql verify --date YYYY-MM-DD [--publish]"
+  - "gravity sql query <product> --start YYYY-MM-DDTHH:MM:SS --end YYYY-MM-DDTHH:MM:SS [--app-id ID ...]"
+evidence_refs:
+  - "evidence/daily-verification/latest.yaml"
+  - "evidence/latest.json"
+freshness_policy:
+  - "Asia/Shanghai latest safe calendar day"
+  - "before 02:00 use day before yesterday; from 02:00 use yesterday"
+  - "contract or rendered SQL hash drift makes evidence stale"
+readiness_rejections:
+  - "pending_review"
+  - "stale"
+  - "blocked"
+output_contracts:
+  - "read-only aggregate JSON; no arbitrary SQL"
+  - "partial results retain warnings and forbidden_claims"
+  - "no user-level rows, identifiers, raw exports or activity attribution"
+  - "verify --publish creates an immutable snapshot, updates latest.yaml last, and refreshes the rolling compatibility file"
+smoke_commands:
+  - "gravity sql --dry-run"
+privacy_boundary:
+  - "no token printing"
+  - "no Cookie printing"
+  - "no authorization header export"
+  - "aggregate or schema-level output only"
+  - "tracked JSON is limited to validated aggregate rolling evidence and immutable gravity-daily-verification snapshot results"

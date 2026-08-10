@@ -1,0 +1,113 @@
+{
+  "basis": "declared_parent_probe",
+  "bindings": [
+    {
+      "candidate_count": 0,
+      "output_path": "data.list[].material_id",
+      "parent_operation_id": "material.local.list",
+      "selection": "all",
+      "status": "undetermined",
+      "target_cardinality": "many",
+      "target_input": "material_ids"
+    }
+  ],
+  "conclusion": "undetermined",
+  "detail": "At least one declared stable parent did not produce a readable candidate response.",
+  "http": [
+    {
+      "http_status": 200,
+      "method": "POST",
+      "operation_id": "material.local.list",
+      "path": "/turbo_engine/api/v1/asset/material/manage/local/list/",
+      "purpose": "parent_resolution",
+      "raw_schema_fingerprint": "a632565d5a1268e39ad190f43a305431c461906ce0ea4ee4cf25aa79c199f854",
+      "request_fingerprint": "a4d6b1fcb22a8091ed8f749ffd61166ad48678d40f2b9a7b9dece986615cb101",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body.album_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.body.page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.body.page_size",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.body.search_keyword",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.body.search_type",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "null"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    }
+  ],
+  "missing_evidence": [
+    "A successful or explicit permission response from every declared parent operation."
+  ],
+  "operation_id": "material.batch_options.query",
+  "replacement_blocker": null,
+  "resolved_at": "2026-08-09T14:56:35Z",
+  "route": {
+    "method": "POST",
+    "path": "/turbo_engine/api/v1/asset/material/batch_options/"
+  },
+  "schema_version": "gravity-insight.parent-resolution-evidence.v1",
+  "source_evidence": null,
+  "values_persisted": false
+}

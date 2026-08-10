@@ -1,0 +1,724 @@
+{
+  "datasource_id": "gravity_merge2_v1",
+  "forbidden_claims": [
+    "会计净收入或财务对账",
+    "活动归因、投放回收或 ROI",
+    "assignment/holdout 不完整时的因果 uplift",
+    "把用户属性 $first_scene 当作事件属性",
+    "把空值或未知宿主解释为没有来源",
+    "由场景覆盖率推导因果效果",
+    "把累计/当前快照解释为窗口新增体力产耗",
+    "用 paid_assets 还原逐次体力消耗",
+    "由字段覆盖率推导活动效果",
+    "把单日未出现解释为埋点失效",
+    "声称已完成全部字段级验证",
+    "由事件存在性推导活动或版本效果"
+  ],
+  "generated_at": "2026-07-24T10:17:05+08:00",
+  "hashes": {
+    "contract_sha256": "61cbe4edc05cdc94c2f9b8d7622416a550e88b7a7b1b118198d5e7032df92743",
+    "result_sha256": "6b43fd67a6703cc3e513749e89b9c7209761e8d293a063fad1052516610e91ef",
+    "sql_sha256": "d565867f6629297c7095a4339d7b30ec0f429c2879192802841df41e1046ef3d"
+  },
+  "products": {
+    "energy-profile-coverage": {
+      "app_ids": [
+        29034827
+      ],
+      "forbidden_claims": [
+        "把累计/当前快照解释为窗口新增体力产耗",
+        "用 paid_assets 还原逐次体力消耗",
+        "由字段覆盖率推导活动效果"
+      ],
+      "hashes": {
+        "contract_sha256": "8e132375ac4223a3f0426b255b14809033eb9ae5e7e30a85bd60c68efce23ed6",
+        "result_sha256": "062944b24905366d95bba8f2399963b15b8880ee90e277b369dd5ead447a0a6f",
+        "sql_sha256": "7b6ff5ba23dac1c8042e60687701c2c8c8dabeca0e78904164812ab652745460"
+      },
+      "notes": [
+        "app_id=29034827: AssetList was absent; this is diagnostic-only"
+      ],
+      "product": "energy-profile-coverage",
+      "status": "partial",
+      "summary": {
+        "apps": [
+          {
+            "active_users": 36906,
+            "app_id": 29034827,
+            "assetlist_events": 0,
+            "assetlist_users": 0,
+            "complete_profile_coverage_rate": 0.68623,
+            "complete_profile_users": 25326,
+            "current_power_users": 25326,
+            "getpower_users": 25326,
+            "profile_row_users": 36906,
+            "usepower_users": 25326
+          }
+        ],
+        "measurement": "current cumulative/profile snapshot coverage"
+      },
+      "warnings": [
+        "app_id=29034827: complete energy profile coverage is 25326/36906"
+      ],
+      "window": {
+        "end": "2026-07-24T00:00:00+08:00",
+        "start": "2026-07-23T00:00:00+08:00",
+        "timezone": "Asia/Shanghai"
+      }
+    },
+    "event-coverage": {
+      "app_ids": [
+        29034827
+      ],
+      "forbidden_claims": [
+        "把单日未出现解释为埋点失效",
+        "声称已完成全部字段级验证",
+        "由事件存在性推导活动或版本效果"
+      ],
+      "hashes": {
+        "contract_sha256": "168f44c7fe408fa45c85339e2f33d9ddd8a2ae94f26e4f23f3220d16eed2fdac",
+        "result_sha256": "ecd0bd7d327e69fb8fb1c4d9dd315a0fe517358133c1873b0226ad78abb35094",
+        "sql_sha256": "9c4756a6341d4712d8801b71c7db68d8b8877dd41ff9a19e8da791233f9dd0c8"
+      },
+      "notes": [
+        "app_id=29034827: 22 declared events were not observed; absence is informational",
+        "app_id=29034827: 13 observed events are not declared in the dictionary"
+      ],
+      "product": "event-coverage",
+      "status": "complete",
+      "summary": {
+        "apps": [
+          {
+            "active_users": 36906,
+            "app_id": 29034827,
+            "declared_events": 72,
+            "event_rows": 12701802,
+            "events": [
+              {
+                "active_users": 3905,
+                "event_name": "$AdShow",
+                "event_rows": 31059,
+                "first_event_at": "2026-07-23T00:00:00",
+                "last_event_at": "2026-07-23T23:59:53"
+              },
+              {
+                "active_users": 36653,
+                "event_name": "$MPLaunch",
+                "event_rows": 113641,
+                "first_event_at": "2026-07-23T00:00:01.369",
+                "last_event_at": "2026-07-23T23:59:59.694"
+              },
+              {
+                "active_users": 1637,
+                "event_name": "$PayEvent",
+                "event_rows": 3354,
+                "first_event_at": "2026-07-23T00:00:12.544",
+                "last_event_at": "2026-07-23T23:59:57.295"
+              },
+              {
+                "active_users": 1,
+                "event_name": "arcade_game",
+                "event_rows": 11,
+                "first_event_at": "2026-07-23T15:02:49.19",
+                "last_event_at": "2026-07-23T15:55:00.796"
+              },
+              {
+                "active_users": 3,
+                "event_name": "arcade_game_piont",
+                "event_rows": 115,
+                "first_event_at": "2026-07-23T15:02:33.52",
+                "last_event_at": "2026-07-23T21:19:08.564"
+              },
+              {
+                "active_users": 23,
+                "event_name": "arcade_game_reward",
+                "event_rows": 63,
+                "first_event_at": "2026-07-23T00:42:07.126",
+                "last_event_at": "2026-07-23T22:33:35.088"
+              },
+              {
+                "active_users": 261,
+                "event_name": "card_box_get",
+                "event_rows": 261,
+                "first_event_at": "2026-07-23T00:07:15.914",
+                "last_event_at": "2026-07-23T23:43:18.397"
+              },
+              {
+                "active_users": 14345,
+                "event_name": "card_collect",
+                "event_rows": 178037,
+                "first_event_at": "2026-07-23T00:00:00.124",
+                "last_event_at": "2026-07-23T23:59:59.274"
+              },
+              {
+                "active_users": 14240,
+                "event_name": "card_pack",
+                "event_rows": 305228,
+                "first_event_at": "2026-07-23T00:00:00.145",
+                "last_event_at": "2026-07-23T23:59:59.948"
+              },
+              {
+                "active_users": 4650,
+                "event_name": "dogfood",
+                "event_rows": 1612907,
+                "first_event_at": "2026-07-23T00:00:00.009",
+                "last_event_at": "2026-07-23T08:01:23.565"
+              },
+              {
+                "active_users": 10848,
+                "event_name": "dogfood_click",
+                "event_rows": 21640,
+                "first_event_at": "2026-07-23T00:00:01.655",
+                "last_event_at": "2026-07-23T23:59:50.937"
+              },
+              {
+                "active_users": 1911,
+                "event_name": "dogfood_reward",
+                "event_rows": 3907,
+                "first_event_at": "2026-07-23T00:00:05.127",
+                "last_event_at": "2026-07-23T07:59:28.458"
+              },
+              {
+                "active_users": 44,
+                "event_name": "donutrace_click",
+                "event_rows": 44,
+                "first_event_at": "2026-07-23T00:19:12.501",
+                "last_event_at": "2026-07-23T23:19:23.491"
+              },
+              {
+                "active_users": 32,
+                "event_name": "energytrain",
+                "event_rows": 273,
+                "first_event_at": "2026-07-23T00:01:57.321",
+                "last_event_at": "2026-07-23T23:46:37.769"
+              },
+              {
+                "active_users": 15895,
+                "event_name": "event_scence",
+                "event_rows": 339340,
+                "first_event_at": "2026-07-23T00:00:00.322",
+                "last_event_at": "2026-07-23T23:59:58.861"
+              },
+              {
+                "active_users": 20590,
+                "event_name": "generator_get",
+                "event_rows": 246856,
+                "first_event_at": "2026-07-23T00:00:00.681",
+                "last_event_at": "2026-07-23T23:59:59.775"
+              },
+              {
+                "active_users": 1720,
+                "event_name": "island_avatar",
+                "event_rows": 2470,
+                "first_event_at": "2026-07-23T00:01:09.923",
+                "last_event_at": "2026-07-23T23:59:58.401"
+              },
+              {
+                "active_users": 8804,
+                "event_name": "island_plot",
+                "event_rows": 17655,
+                "first_event_at": "2026-07-23T00:00:22.568",
+                "last_event_at": "2026-07-23T23:59:57.817"
+              },
+              {
+                "active_users": 14478,
+                "event_name": "island_scene",
+                "event_rows": 354113,
+                "first_event_at": "2026-07-23T00:00:00.001",
+                "last_event_at": "2026-07-23T23:59:59.203"
+              },
+              {
+                "active_users": 16414,
+                "event_name": "island_store",
+                "event_rows": 320355,
+                "first_event_at": "2026-07-23T00:00:00.396",
+                "last_event_at": "2026-07-23T23:59:59.642"
+              },
+              {
+                "active_users": 14999,
+                "event_name": "little_sun",
+                "event_rows": 200165,
+                "first_event_at": "2026-07-23T00:00:00.051",
+                "last_event_at": "2026-07-23T23:59:59.825"
+              },
+              {
+                "active_users": 11366,
+                "event_name": "little_sun_box",
+                "event_rows": 18524,
+                "first_event_at": "2026-07-23T00:00:03.926",
+                "last_event_at": "2026-07-23T23:59:53.75"
+              },
+              {
+                "active_users": 9711,
+                "event_name": "lv_rewards",
+                "event_rows": 10275,
+                "first_event_at": "2026-07-23T00:00:06.896",
+                "last_event_at": "2026-07-23T23:59:58.2"
+              },
+              {
+                "active_users": 726,
+                "event_name": "medal_campaign",
+                "event_rows": 793,
+                "first_event_at": "2026-07-23T00:02:42.511",
+                "last_event_at": "2026-07-23T23:55:26.319"
+              },
+              {
+                "active_users": 5801,
+                "event_name": "mini_chenss_achievement",
+                "event_rows": 24238,
+                "first_event_at": "2026-07-23T00:00:00.653",
+                "last_event_at": "2026-07-23T23:59:54.05"
+              },
+              {
+                "active_users": 4241,
+                "event_name": "mini_chessboard_box",
+                "event_rows": 4977,
+                "first_event_at": "2026-07-23T00:00:02.478",
+                "last_event_at": "2026-07-23T23:59:28.548"
+              },
+              {
+                "active_users": 28444,
+                "event_name": "order_status",
+                "event_rows": 1496176,
+                "first_event_at": "2026-07-23T00:00:00.004",
+                "last_event_at": "2026-07-23T23:59:59.891"
+              },
+              {
+                "active_users": 24994,
+                "event_name": "paid_assets",
+                "event_rows": 1653412,
+                "first_event_at": "2026-07-23T00:00:00.053",
+                "last_event_at": "2026-07-23T23:59:59.97"
+              },
+              {
+                "active_users": 8196,
+                "event_name": "pass_reward",
+                "event_rows": 36113,
+                "first_event_at": "2026-07-23T00:00:01.165",
+                "last_event_at": "2026-07-23T23:59:58.227"
+              },
+              {
+                "active_users": 15681,
+                "event_name": "pass_task",
+                "event_rows": 228723,
+                "first_event_at": "2026-07-23T00:00:00.642",
+                "last_event_at": "2026-07-23T23:59:59.828"
+              },
+              {
+                "active_users": 2049,
+                "event_name": "pay_cancel",
+                "event_rows": 2862,
+                "first_event_at": "2026-07-23T00:00:44.836",
+                "last_event_at": "2026-07-23T23:58:22.658"
+              },
+              {
+                "active_users": 3604,
+                "event_name": "pay_click",
+                "event_rows": 6752,
+                "first_event_at": "2026-07-23T00:00:30.986",
+                "last_event_at": "2026-07-23T23:59:55.095"
+              },
+              {
+                "active_users": 12378,
+                "event_name": "piece_achievement",
+                "event_rows": 218407,
+                "first_event_at": "2026-07-23T00:00:00.991",
+                "last_event_at": "2026-07-23T23:59:59.975"
+              },
+              {
+                "active_users": 21862,
+                "event_name": "piece_change",
+                "event_rows": 513639,
+                "first_event_at": "2026-07-23T00:00:00.128",
+                "last_event_at": "2026-07-23T23:59:59.78"
+              },
+              {
+                "active_users": 13956,
+                "event_name": "pkrace",
+                "event_rows": 1119836,
+                "first_event_at": "2026-07-23T08:00:42.632",
+                "last_event_at": "2026-07-23T23:59:59.82"
+              },
+              {
+                "active_users": 8887,
+                "event_name": "pkrace_reward",
+                "event_rows": 8903,
+                "first_event_at": "2026-07-23T00:00:14.724",
+                "last_event_at": "2026-07-23T23:59:46.11"
+              },
+              {
+                "active_users": 2709,
+                "event_name": "power_multipe",
+                "event_rows": 14938,
+                "first_event_at": "2026-07-23T00:00:28.74",
+                "last_event_at": "2026-07-23T23:59:55.734"
+              },
+              {
+                "active_users": 262,
+                "event_name": "questionnaire_submit",
+                "event_rows": 262,
+                "first_event_at": "2026-07-23T08:01:31.847",
+                "last_event_at": "2026-07-23T23:57:03.71"
+              },
+              {
+                "active_users": 28560,
+                "event_name": "routine_scence",
+                "event_rows": 1489208,
+                "first_event_at": "2026-07-23T00:00:00",
+                "last_event_at": "2026-07-23T23:59:59.948"
+              },
+              {
+                "active_users": 2,
+                "event_name": "royal_crown",
+                "event_rows": 68,
+                "first_event_at": "2026-07-23T15:02:33.47",
+                "last_event_at": "2026-07-23T15:55:56.356"
+              },
+              {
+                "active_users": 26,
+                "event_name": "royal_crown_reward",
+                "event_rows": 64,
+                "first_event_at": "2026-07-23T00:20:21.448",
+                "last_event_at": "2026-07-23T23:51:57.341"
+              },
+              {
+                "active_users": 16601,
+                "event_name": "seven_tasks",
+                "event_rows": 131290,
+                "first_event_at": "2026-07-23T00:00:00.002",
+                "last_event_at": "2026-07-23T23:59:59.997"
+              },
+              {
+                "active_users": 4903,
+                "event_name": "seven_tasks_box",
+                "event_rows": 5455,
+                "first_event_at": "2026-07-23T00:00:07.24",
+                "last_event_at": "2026-07-23T23:58:32.651"
+              },
+              {
+                "active_users": 14390,
+                "event_name": "skip_stoty",
+                "event_rows": 77553,
+                "first_event_at": "2026-07-23T00:00:00.031",
+                "last_event_at": "2026-07-23T23:59:59.88"
+              },
+              {
+                "active_users": 3550,
+                "event_name": "small_plane",
+                "event_rows": 4687,
+                "first_event_at": "2026-07-23T00:00:02.33",
+                "last_event_at": "2026-07-23T07:59:58.897"
+              },
+              {
+                "active_users": 24351,
+                "event_name": "stage",
+                "event_rows": 1143477,
+                "first_event_at": "2026-07-23T00:00:00.01",
+                "last_event_at": "2026-07-23T23:59:59.962"
+              },
+              {
+                "active_users": 11571,
+                "event_name": "surprise_gachapon",
+                "event_rows": 87620,
+                "first_event_at": "2026-07-23T08:00:44.622",
+                "last_event_at": "2026-07-23T23:59:59.261"
+              },
+              {
+                "active_users": 14536,
+                "event_name": "userlevel",
+                "event_rows": 28874,
+                "first_event_at": "2026-07-23T00:00:01.138",
+                "last_event_at": "2026-07-23T23:59:54.243"
+              },
+              {
+                "active_users": 10969,
+                "event_name": "water_challenge",
+                "event_rows": 59520,
+                "first_event_at": "2026-07-23T08:00:43.931",
+                "last_event_at": "2026-07-23T23:59:59.108"
+              },
+              {
+                "active_users": 4316,
+                "event_name": "water_challenge_reward",
+                "event_rows": 4317,
+                "first_event_at": "2026-07-23T00:09:40.112",
+                "last_event_at": "2026-07-23T23:59:56.887"
+              }
+            ],
+            "first_event_at": "2026-07-23T00:00:00",
+            "last_event_at": "2026-07-23T23:59:59.997",
+            "missing_events": [
+              "Login",
+              "$AppStart",
+              "AssetList",
+              "$AdClick",
+              "$AdPlayStart",
+              "magiclamp",
+              "magiclamp_reward",
+              "vip_invitation",
+              "donutrace",
+              "donutrace_reward",
+              "medal_bigbag",
+              "smjx",
+              "energytrain_reward",
+              "onegetone",
+              "spin_buy",
+              "tiered_gift",
+              "soaring_ratings",
+              "soaring_ratings_lv",
+              "trainmerge_submit",
+              "trainmerge_reward",
+              "bingo_submit",
+              "bingo_reward"
+            ],
+            "observed_events": 50,
+            "unknown_events": [
+              "$AppEnd",
+              "$AppInstall",
+              "$AppRegister",
+              "$MPHide",
+              "$MPShow",
+              "$UserAttribution",
+              "$UserFirstRegister",
+              "island_insuder_reward",
+              "microgame_popup_click",
+              "microgame_popup_show",
+              "microgame_window_click",
+              "microgame_window_show",
+              "vip_gift_check"
+            ]
+          }
+        ],
+        "coverage": "declared-event presence only"
+      },
+      "warnings": [],
+      "window": {
+        "end": "2026-07-24T00:00:00+08:00",
+        "start": "2026-07-23T00:00:00+08:00",
+        "timezone": "Asia/Shanghai"
+      }
+    },
+    "first-scene-coverage": {
+      "app_ids": [
+        29034827,
+        27192043,
+        24502679
+      ],
+      "forbidden_claims": [
+        "把用户属性 $first_scene 当作事件属性",
+        "把空值或未知宿主解释为没有来源",
+        "由场景覆盖率推导因果效果"
+      ],
+      "hashes": {
+        "contract_sha256": "ec419b35033d826cb9a7d89eaf294475feb111281a7310d7e78791d38495c94d",
+        "result_sha256": "d037e3478ab25905124ef5740c1c32e0bbdcb8e407f227eae7a9b5f573829481",
+        "sql_sha256": "3b8a3a7a0c88cd5c153a9ac72f3110be35e977c5207cd58721b278f81094a701"
+      },
+      "product": "first-scene-coverage",
+      "status": "partial",
+      "summary": {
+        "apps": [
+          {
+            "app_id": 29034827,
+            "by_status_host": [
+              {
+                "host_name": "空值/未列举宿主",
+                "host_prefix": "",
+                "registrations": 116,
+                "scene_status": "invalid_format"
+              },
+              {
+                "host_name": "空值/未列举宿主",
+                "host_prefix": "",
+                "registrations": 73,
+                "scene_status": "missing"
+              },
+              {
+                "host_name": "抖音",
+                "host_prefix": "02",
+                "registrations": 10931,
+                "scene_status": "reported"
+              },
+              {
+                "host_name": "抖音极速",
+                "host_prefix": "10",
+                "registrations": 274,
+                "scene_status": "reported"
+              },
+              {
+                "host_name": "番茄畅听",
+                "host_prefix": "14",
+                "registrations": 7,
+                "scene_status": "reported"
+              },
+              {
+                "host_name": "番茄小说",
+                "host_prefix": "18",
+                "registrations": 180,
+                "scene_status": "reported"
+              },
+              {
+                "host_name": "火山(新)",
+                "host_prefix": "23",
+                "registrations": 8,
+                "scene_status": "reported"
+              },
+              {
+                "host_name": "PC抖音",
+                "host_prefix": "25",
+                "registrations": 21,
+                "scene_status": "reported"
+              },
+              {
+                "host_name": "红果",
+                "host_prefix": "26",
+                "registrations": 706,
+                "scene_status": "reported"
+              },
+              {
+                "host_name": "汽水",
+                "host_prefix": "27",
+                "registrations": 5,
+                "scene_status": "reported"
+              },
+              {
+                "host_name": "番茄音乐",
+                "host_prefix": "28",
+                "registrations": 4,
+                "scene_status": "reported"
+              },
+              {
+                "host_name": "抖音精选",
+                "host_prefix": "29",
+                "registrations": 2,
+                "scene_status": "reported"
+              },
+              {
+                "host_name": "IDE/特殊",
+                "host_prefix": "99",
+                "registrations": 1,
+                "scene_status": "reported"
+              }
+            ],
+            "coverage_rate": 0.994079,
+            "invalid_format": 116,
+            "missing_scene": 73,
+            "registrations": 12328,
+            "six_digit_scene": 12139,
+            "with_scene": 12255
+          },
+          {
+            "app_id": 27192043,
+            "by_status_host": [
+              {
+                "host_name": "空值/未列举宿主",
+                "host_prefix": "",
+                "registrations": 13,
+                "scene_status": "missing"
+              }
+            ],
+            "coverage_rate": 0.0,
+            "invalid_format": 0,
+            "missing_scene": 13,
+            "registrations": 13,
+            "six_digit_scene": 0,
+            "with_scene": 0
+          },
+          {
+            "app_id": 24502679,
+            "by_status_host": [
+              {
+                "host_name": "空值/未列举宿主",
+                "host_prefix": "",
+                "registrations": 79,
+                "scene_status": "missing"
+              }
+            ],
+            "coverage_rate": 0.0,
+            "invalid_format": 0,
+            "missing_scene": 79,
+            "registrations": 79,
+            "six_digit_scene": 0,
+            "with_scene": 0
+          }
+        ]
+      },
+      "warnings": [
+        "app_id=29034827: missing_scene=73, invalid_format=116",
+        "app_id=27192043: missing_scene=13, invalid_format=0",
+        "app_id=24502679: missing_scene=79, invalid_format=0"
+      ],
+      "window": {
+        "end": "2026-07-24T00:00:00+08:00",
+        "start": "2026-07-23T00:00:00+08:00",
+        "timezone": "Asia/Shanghai"
+      }
+    },
+    "payment-summary": {
+      "app_ids": [
+        29034827
+      ],
+      "forbidden_claims": [
+        "会计净收入或财务对账",
+        "活动归因、投放回收或 ROI",
+        "assignment/holdout 不完整时的因果 uplift"
+      ],
+      "hashes": {
+        "contract_sha256": "a2e7765311e16febed4fa4e08302411eeee1851a11d68ccf6c45d0d82a680fcf",
+        "result_sha256": "c94f914b1587b11176300456e07e4876d6517085f950ef9eafb8238dba677e25",
+        "sql_sha256": "721c0f8ee6876aa341eba6a279a24f2234bd1c72188a2a58fbba41c75f76a322"
+      },
+      "product": "payment-summary",
+      "status": "complete",
+      "summary": {
+        "activity_attribution": "not_provided",
+        "apps": [
+          {
+            "app_id": 29034827,
+            "buyer_count": 1637,
+            "duplicate_rows": 0,
+            "fallback_order_key_rows": 0,
+            "first_pay_at": "2026-07-23T00:00:12.544",
+            "invalid_amount_rows": 0,
+            "last_pay_at": "2026-07-23T23:59:57.295",
+            "missing_amount_rows": 0,
+            "missing_pay_method_rows": 0,
+            "missing_pay_type_rows": 0,
+            "missing_reason_rows": 0,
+            "non_cny_rows": 0,
+            "order_count": 3354,
+            "pay_event_rows": 3354,
+            "pay_method_max": "抖音道具直购",
+            "pay_method_min": "抖音App支付",
+            "pay_method_value_count": 2,
+            "pay_type_max": "CNY",
+            "pay_type_min": "CNY",
+            "pay_type_value_count": 1,
+            "revenue_cent": 7288700,
+            "revenue_yuan": 72887.0
+          }
+        ]
+      },
+      "warnings": [],
+      "window": {
+        "end": "2026-07-24T00:00:00+08:00",
+        "start": "2026-07-23T00:00:00+08:00",
+        "timezone": "Asia/Shanghai"
+      }
+    }
+  },
+  "schema_version": 1,
+  "verification_status": "verified_with_gaps",
+  "verified_for_date": "2026-07-23",
+  "warnings": [
+    "first-scene-coverage: app_id=29034827: missing_scene=73, invalid_format=116",
+    "first-scene-coverage: app_id=27192043: missing_scene=13, invalid_format=0",
+    "first-scene-coverage: app_id=24502679: missing_scene=79, invalid_format=0",
+    "energy-profile-coverage: app_id=29034827: complete energy profile coverage is 25326/36906"
+  ],
+  "window": {
+    "end": "2026-07-24T00:00:00+08:00",
+    "start": "2026-07-23T00:00:00+08:00",
+    "timezone": "Asia/Shanghai"
+  }
+}

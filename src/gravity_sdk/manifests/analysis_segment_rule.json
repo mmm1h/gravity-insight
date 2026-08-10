@@ -1,0 +1,186 @@
+{
+  "manifest_version": 1,
+  "operations": [
+    {
+      "action": "query",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "用户分群规则命中人数与比例预估。调用方只传结构化属性规则和事件规则；SDK 校验实时元数据，派生 from_user_prop/from_event_prop 与前端兼容 FE_CONFIG，不接受原始 FE_CONFIG 或任意规则 JSON 字符串。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "cond_logic": {
+          "default": "AND",
+          "enum": [
+            "AND",
+            "OR"
+          ],
+          "type": "string"
+        },
+        "date_range": {
+          "required": true,
+          "type": "object"
+        },
+        "name": {
+          "max_length": 128,
+          "required": true,
+          "type": "string"
+        },
+        "remark": {
+          "default": "",
+          "max_length": 2000,
+          "type": "string"
+        },
+        "update_type": {
+          "default": "Manual",
+          "enum": [
+            "Manual",
+            "Routine"
+          ],
+          "type": "string"
+        },
+        "user_event_rules": {
+          "default": {
+            "cond_logic": "AND",
+            "groups": []
+          },
+          "max_depth": 12,
+          "type": "object"
+        },
+        "user_property_rules": {
+          "default": {
+            "cond_logic": "AND",
+            "groups": []
+          },
+          "max_depth": 10,
+          "type": "object"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "cond_logic": "AND",
+          "date_range": {
+            "end_date": "$today",
+            "start_date": "$today"
+          },
+          "name": "__gravity_contract_probe__",
+          "remark": "",
+          "update_type": "Manual",
+          "user_event_rules": {
+            "cond_logic": "AND",
+            "groups": []
+          },
+          "user_property_rules": {
+            "cond_logic": "AND",
+            "groups": []
+          }
+        }
+      },
+      "operation_id": "analysis.segment.evaluate_percent",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v3/dataanalysis/segment/from_rule/evaluate_percent/",
+      "privacy_policy": {
+        "classification": "aggregate",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "name",
+          "remark",
+          "update_type",
+          "date_range",
+          "cond_logic",
+          "user_property_rules",
+          "user_event_rules"
+        ],
+        "defaults": {
+          "cond_logic": "AND",
+          "remark": "",
+          "update_type": "Manual",
+          "user_event_rules": {
+            "cond_logic": "AND",
+            "groups": []
+          },
+          "user_property_rules": {
+            "cond_logic": "AND",
+            "groups": []
+          }
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "app.list",
+        "analysis.user_property.list",
+        "analysis.event.list",
+        "analysis.event_property.list",
+        "analysis.event.info",
+        "analysis.segment.list"
+      ],
+      "resource": "segment_rule",
+      "response_projection": {
+        "data_keys": [
+          "part",
+          "percent",
+          "total"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "numeric_paths": [
+          "part",
+          "percent",
+          "total"
+        ],
+        "required_data_keys": [
+          "part",
+          "percent",
+          "total"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    }
+  ]
+}

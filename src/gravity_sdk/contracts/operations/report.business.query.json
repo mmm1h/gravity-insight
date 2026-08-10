@@ -1,0 +1,250 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 3,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "经营分析报表受控查询。2026-08-08 当前 Business chunk 直接声明 6 个经营指标，并以 app_list、date_list、metrics_list、dims_list、filtering.ad_platform_list 调用 manager_report/list；公开 codec 仅允许前端已消费的非人员维度，并在网络边界构造 filtering。",
+    "domain": "report",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "ad_platform_list": {
+        "item_enum": [
+          "bytedance",
+          "tencent",
+          "kuaishou"
+        ],
+        "item_type": "string",
+        "max_items": 3,
+        "min_items": 1,
+        "required": true,
+        "type": "array"
+      },
+      "app_list": {
+        "item_type": "string",
+        "max_items": 100,
+        "min_items": 1,
+        "required": true,
+        "type": "array"
+      },
+      "calc_diff": {
+        "default": false,
+        "type": "boolean"
+      },
+      "date_list": {
+        "required": true,
+        "type": "array"
+      },
+      "dims_list": {
+        "item_enum": [
+          "stat_datetime",
+          "advertiser_id",
+          "ad_platform",
+          "app_id"
+        ],
+        "item_type": "string",
+        "max_items": 4,
+        "min_items": 1,
+        "required": true,
+        "type": "array"
+      },
+      "metrics_list": {
+        "item_enum": [
+          "AdCost",
+          "AppRevenue",
+          "AppROI",
+          "AppRealRegisterCnt",
+          "AppGamePayUserCntReportingStandard",
+          "AppDAUReco"
+        ],
+        "item_type": "string",
+        "max_items": 6,
+        "min_items": 1,
+        "required": true,
+        "type": "array"
+      },
+      "need_ratio": {
+        "default": false,
+        "type": "boolean"
+      },
+      "page": {
+        "default": 1,
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 20,
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "ad_platform_list": [
+          "bytedance",
+          "tencent",
+          "kuaishou"
+        ],
+        "app_list": [
+          "$first_app_id"
+        ],
+        "calc_diff": false,
+        "date_list": [
+          "$today",
+          "$today"
+        ],
+        "dims_list": [
+          "stat_datetime"
+        ],
+        "metrics_list": [
+          "AdCost"
+        ],
+        "need_ratio": true,
+        "page": 1,
+        "page_size": 1
+      }
+    },
+    "operation_id": "report.business.query",
+    "pagination": {
+      "default_page_size": 20,
+      "kind": "page_info",
+      "list_path": "data.items",
+      "max_page_size": 20,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/report/api/v1/manager_report/list/",
+    "privacy_policy": {
+      "classification": "aggregate",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "advertiser_name"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.business.query.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "page",
+        "page_size",
+        "date_list",
+        "app_list",
+        "metrics_list",
+        "dims_list",
+        "ad_platform_list",
+        "need_ratio",
+        "calc_diff"
+      ],
+      "defaults": {
+        "calc_diff": false,
+        "need_ratio": false,
+        "page": 1,
+        "page_size": 20
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "app.list",
+        "output_path": "data.list[].id",
+        "selection": "caller_select"
+      }
+    ],
+    "resource": "business_report",
+    "response_projection": {
+      "data_dynamic_item_fields": {
+        "ratio": [
+          "metrics_list",
+          "dims_list"
+        ],
+        "total": [
+          "metrics_list",
+          "dims_list"
+        ]
+      },
+      "data_keys": [
+        "items",
+        "page_info",
+        "ratio",
+        "total"
+      ],
+      "dynamic_item_fields": [
+        "metrics_list",
+        "dims_list"
+      ],
+      "item_keys": [
+        "id",
+        "name",
+        "status",
+        "date",
+        "day",
+        "hour",
+        "week",
+        "month",
+        "stat_datetime",
+        "ad_platform",
+        "advertiser_id",
+        "campaign_id",
+        "campaign_name",
+        "project_id",
+        "project_name",
+        "group_id",
+        "group_name",
+        "ad_group_id",
+        "ad_group_name",
+        "ad_unit_id",
+        "ad_unit_name",
+        "creative_id",
+        "creative_name",
+        "account_id",
+        "account_name",
+        "app_id",
+        "app_name"
+      ],
+      "known_omitted_item_keys": [
+        "advertiser_name"
+      ],
+      "required_data_keys": [
+        "items"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "other.json"
+}

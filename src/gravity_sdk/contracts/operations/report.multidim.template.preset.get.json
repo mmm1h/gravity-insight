@@ -1,0 +1,123 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 2,
+  "operation": {
+    "action": "get",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "预设模板安全详情。模板 id/category 从已登记预置模板列表解析；2026-08-08 最小探针 code=0，仅公开 name/remark，深层 columns/filterForm/extra_data 所在 config 容器固定省略。",
+    "domain": "report",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "category": {
+        "default": "",
+        "type": "string"
+      },
+      "id": {
+        "required": true,
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "category": "$first_preset_template_category",
+        "id": "$first_preset_template_id"
+      }
+    },
+    "operation_id": "report.multidim.template.preset.get",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v3/conftemplate/preset_template/detail/",
+    "privacy_policy": {
+      "classification": "configuration",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "remark"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.multidim.template.preset.get.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {
+        "category": ""
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "id",
+        "category"
+      ]
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "report.multidim.template.preset.list",
+        "output_path": "data.list[].id",
+        "selection": "caller_select"
+      }
+    ],
+    "resource": "template",
+    "response_projection": {
+      "data_item_keys": {
+        "detail": [
+          "name"
+        ]
+      },
+      "data_keys": [
+        "detail"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "known_omitted_data_item_keys": {
+        "detail": [
+          "config",
+          "remark"
+        ]
+      },
+      "required_data_keys": [
+        "detail"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "report.json"
+}

@@ -1,0 +1,244 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 15,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "订单细查；接受结构化字段、条件、排序及单日快捷参数，返回订单、归因和内部分析标识，成员姓名保持隐藏。",
+    "domain": "analysis",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "app_id": {
+        "max_length": 64,
+        "required": true,
+        "type": "string"
+      },
+      "date": {
+        "required": false,
+        "type": "date"
+      },
+      "fields": {
+        "default": [],
+        "item_type": "string",
+        "max_items": 100,
+        "type": "array"
+      },
+      "global_conditions": {
+        "default": [],
+        "item_type": "object",
+        "max_items": 100,
+        "type": "array"
+      },
+      "order_by_list": {
+        "default": [],
+        "item_type": "object",
+        "max_items": 20,
+        "type": "array"
+      },
+      "order_cond_logic": {
+        "default": "AND",
+        "enum": [
+          "AND",
+          "OR"
+        ],
+        "type": "string"
+      },
+      "order_conditions": {
+        "default": [],
+        "item_type": "object",
+        "max_items": 100,
+        "type": "array"
+      },
+      "page": {
+        "default": 1,
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 20,
+        "type": "integer"
+      },
+      "user_cond_logic": {
+        "default": "AND",
+        "enum": [
+          "AND",
+          "OR"
+        ],
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "app_id": "$first_app_id",
+        "date": "$today",
+        "page": 1,
+        "page_size": 1
+      }
+    },
+    "operation_id": "analysis.order_detail.list",
+    "pagination": {
+      "default_page_size": 20,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 100,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/report/api/v3/dataanalysis/user/pay_event/list/",
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.order_detail.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "app_id",
+        "date",
+        "fields",
+        "page",
+        "page_size",
+        "order_by_list",
+        "global_conditions",
+        "order_conditions",
+        "user_cond_logic",
+        "order_cond_logic"
+      ],
+      "defaults": {
+        "fields": [],
+        "global_conditions": [],
+        "order_by_list": [],
+        "order_cond_logic": "AND",
+        "order_conditions": [],
+        "page": 1,
+        "page_size": 20,
+        "user_cond_logic": "AND"
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "app.list",
+        "output_path": "data.list[].id",
+        "selection": "first"
+      }
+    ],
+    "resource": "order_detail",
+    "response_projection": {
+      "data_dynamic_item_fields": {
+        "total": [
+          "fields"
+        ]
+      },
+      "data_item_keys": {
+        "total": [
+          "ClientID",
+          "AdPlatform",
+          "Amount",
+          "BackAmount",
+          "PayCount",
+          "PostbackStatus",
+          "PostBackCode",
+          "PassStatus",
+          "Status",
+          "event$pay_method",
+          "event$pay_reason",
+          "user$pay_amount_sum",
+          "user$pay_max_amount"
+        ]
+      },
+      "data_keys": [
+        "list",
+        "page_info",
+        "total"
+      ],
+      "dynamic_item_fields": [
+        "fields"
+      ],
+      "item_keys": [
+        "TraceID",
+        "PayEventTime",
+        "CreateTime",
+        "ModifyTime",
+        "ClientID",
+        "AdPlatform",
+        "Amount",
+        "BackAmount",
+        "PayCount",
+        "PostbackStatus",
+        "PostBackCode",
+        "PassStatus",
+        "Status",
+        "event_pay_id",
+        "event$pay_method",
+        "event$pay_reason",
+        "PostbackCnt",
+        "$sdk_postback",
+        "$postback_count",
+        "$split_count",
+        "$split_trace_id_list",
+        "re_attribute_info"
+      ],
+      "known_omitted_data_item_keys": {
+        "total": [
+          "Name"
+        ]
+      },
+      "known_omitted_item_keys": [
+        "Name"
+      ],
+      "nested_item_keys": {
+        "re_attribute_info": [
+          "ReAttributeAdAid",
+          "ReAttributeAdCid",
+          "ReAttributeAdGid",
+          "ReAttributeAdPlatform",
+          "ReAttributeAdvertiserID",
+          "ReAttributeCSite",
+          "ReAttributeChannel",
+          "ReAttributeCreateTime",
+          "ReAttributeTurboPromotedObjectID",
+          "ReAttributeRetargetingCount",
+          "ReAttributeAdClickTime"
+        ]
+      },
+      "required_data_keys": [
+        "list"
+      ],
+      "scalar_list_item_types": {
+        "$split_trace_id_list": "string"
+      }
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis.json"
+}

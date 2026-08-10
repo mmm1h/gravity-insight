@@ -1,0 +1,38 @@
+{
+  "conclusion": {
+    "decision": "sensitive_personnel_permission",
+    "field_profiles": {
+      "is_superuser": {
+        "distinct_boolean_count": 2,
+        "distribution": {
+          "false": 1,
+          "null": 0,
+          "other_type": 0,
+          "true": 1
+        },
+        "missing_rows": 0,
+        "occurrences": 2
+      }
+    },
+    "remaining_question": null,
+    "row_count": 2,
+    "status": "resolved_by_probe"
+  },
+  "error_type": null,
+  "operation_id": "material.material_examine_user.list",
+  "privacy_safeguards": {
+    "non_target_fields_persisted": false,
+    "value_hashes_persisted": false,
+    "values_persisted": false
+  },
+  "probed_at": "2026-08-10T02:28:01Z",
+  "request_stats": {
+    "failed": 0,
+    "total": 1
+  },
+  "route": {
+    "method": "GET",
+    "path": "/turbo_engine/api/v1/asset/material_examine/user_list/"
+  },
+  "schema_version": "gravity-insight.verdict-probe-evidence.v1"
+}

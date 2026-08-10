@@ -1,0 +1,224 @@
+{
+  "conclusion": "inconclusive",
+  "http": [
+    {
+      "http_status": 200,
+      "method": "GET",
+      "operation_id": "promotion.bytedance.account_company.list",
+      "path": "/turbo_engine/api/v1/bytedance/manager/account/by_company/",
+      "purpose": "discovery",
+      "raw_schema_fingerprint": "a232a94926f4f6ad210f7ea0dfa409cc70977ce8944da4392efead55268b03d0",
+      "request_fingerprint": "9314d65971f5008bfbbbd3350fef1943d4fe093f183112385c8ebbe967154fcb",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.code",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[]",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.extra",
+            "presence": "observed",
+            "types": [
+              "null"
+            ]
+          },
+          {
+            "path": "$.msg",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    },
+    {
+      "http_status": 200,
+      "method": "GET",
+      "operation_id": "promotion.bytedance.account_company.list",
+      "path": "/turbo_engine/api/v1/bytedance/manager/account/by_company/",
+      "purpose": "confirmation",
+      "raw_schema_fingerprint": "a232a94926f4f6ad210f7ea0dfa409cc70977ce8944da4392efead55268b03d0",
+      "request_fingerprint": "9314d65971f5008bfbbbd3350fef1943d4fe093f183112385c8ebbe967154fcb",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.code",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[]",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.extra",
+            "presence": "observed",
+            "types": [
+              "null"
+            ]
+          },
+          {
+            "path": "$.msg",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    }
+  ],
+  "operation_id": "promotion.bytedance.account_company.list",
+  "pagination": {
+    "kind": "none",
+    "total_field_path": null,
+    "upstream_hard_max": null,
+    "verified": true
+  },
+  "privacy": {
+    "candidate_fields": [],
+    "classified_non_sensitive": 0,
+    "classified_sensitive": 0,
+    "manual_review": 0,
+    "values_persisted": false
+  },
+  "probed_at": "2026-08-08T19:20:10Z",
+  "projected_schema_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "raw_schema_fingerprint": "a232a94926f4f6ad210f7ea0dfa409cc70977ce8944da4392efead55268b03d0",
+  "request_stats": {
+    "backoff_terminations": 0,
+    "failed": 0,
+    "total": 2
+  },
+  "required_parent": null,
+  "route": {
+    "family": "promotion.family.001",
+    "method": "GET",
+    "path": "/turbo_engine/api/v1/bytedance/manager/account/by_company/"
+  },
+  "schema_version": "gravity-insight.probe-evidence.v1",
+  "semantic_errors": {
+    "missing_parameter": {
+      "attempted": false,
+      "shape_observed": false
+    },
+    "permission_shape_observed": false,
+    "rules": [
+      "code",
+      "extra.error"
+    ]
+  },
+  "successful": false
+}

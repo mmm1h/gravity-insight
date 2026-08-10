@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "data_product_id": "gravity.daily_verification",
+  "evidence_origin": "rolling_baseline",
+  "generated_at": "2026-07-25T12:19:22+08:00",
+  "data_window": {
+    "start": "2026-07-24T00:00:00+08:00",
+    "end": "2026-07-25T00:00:00+08:00"
+  },
+  "timezone": "Asia/Shanghai",
+  "data_contract_version": "sha256:61cbe4edc05cdc94c2f9b8d7622416a550e88b7a7b1b118198d5e7032df92743",
+  "query_id": "gravity.verify_all",
+  "query_version": "sha256:6a97e47f6fbc2cb5a57b9b21356570bb0aed920bf72a2d946079f193f5501f07",
+  "git_sha": "unknown-before-policy",
+  "git_dirty": null,
+  "row_count": 4,
+  "row_count_semantics": "data_product_count",
+  "result_file": "result.json",
+  "result_sha256": "aca7a4a150d5f50938a5528026694839d3d414977a28bc4a49ebced95aed0434",
+  "privacy_class": "aggregate",
+  "provenance_status": "partial_legacy",
+  "unknown_fields": ["git_sha", "git_dirty"]
+}

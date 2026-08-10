@@ -1,0 +1,121 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 3,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "看板空间创建人与授权成员目录；仅返回内部成员标识与权限，成员姓名保持隐藏。",
+    "domain": "analysis",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "app_id": {
+        "max_length": 64,
+        "required": true,
+        "type": "string"
+      },
+      "space_id": {
+        "max_length": 64,
+        "required": true,
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "app_id": "$first_app_id",
+        "space_id": "$first_dashboard_space_id"
+      }
+    },
+    "operation_id": "analysis.dashboard.space_members.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/space/members/",
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.dashboard.space_members.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "app_id",
+        "space_id"
+      ]
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "analysis.dashboard.tree",
+        "output_path": null,
+        "selection": "caller_select"
+      }
+    ],
+    "resource": "dashboard_space_members",
+    "response_projection": {
+      "data_item_keys": {
+        "authUsers": [
+          "uid",
+          "authority"
+        ],
+        "creator": [
+          "id",
+          "uid"
+        ]
+      },
+      "data_keys": [
+        "creator",
+        "authUsers"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "known_omitted_data_item_keys": {
+        "authUsers": [
+          "name"
+        ],
+        "creator": [
+          "name"
+        ]
+      },
+      "required_data_keys": [
+        "creator",
+        "authUsers"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis_dashboard.json"
+}

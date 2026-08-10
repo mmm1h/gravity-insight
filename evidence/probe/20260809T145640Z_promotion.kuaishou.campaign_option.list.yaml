@@ -1,0 +1,175 @@
+{
+  "basis": "declared_parent_probe",
+  "bindings": [
+    {
+      "candidate_count": 0,
+      "candidate_types": [],
+      "output_path": "data.list[].advertiser_id",
+      "parent_operation_id": "promotion.kuaishou.account.list",
+      "selection": "caller_select",
+      "status": "empty",
+      "target_cardinality": "many",
+      "target_input": "advertiser_id"
+    }
+  ],
+  "conclusion": "blocked_by_data",
+  "detail": "The binding is declared and typed, but the current account cannot supply a selectable parent value.",
+  "http": [
+    {
+      "http_status": 200,
+      "method": "POST",
+      "operation_id": "promotion.kuaishou.account.list",
+      "path": "/turbo_engine/api/v1/kuaishou/manage/account/list/",
+      "purpose": "parent_resolution",
+      "raw_schema_fingerprint": "a16439b7b51fd61509e58ad95306da222caad157223a5f785bdcf1f39a513ac7",
+      "request_fingerprint": "1a2493726042eb8c5ade38fa25fa13cd90255649bc32429d1401bdd500439223",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body.page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.body.page_size",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.code",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.expired_cnt",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[]",
+            "presence": "observed",
+            "types": [
+              "unknown"
+            ]
+          },
+          {
+            "path": "$.data.page_info",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.page_info.page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.page_size",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.total_number",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.total_page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.extra",
+            "presence": "observed",
+            "types": [
+              "null"
+            ]
+          },
+          {
+            "path": "$.msg",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    }
+  ],
+  "missing_evidence": [],
+  "operation_id": "promotion.kuaishou.campaign_option.list",
+  "replacement_blocker": "empty_sample",
+  "resolved_at": "2026-08-09T14:56:40Z",
+  "route": {
+    "method": "POST",
+    "path": "/turbo_engine/api/v1/kuaishou/manager/campaign/list/"
+  },
+  "schema_version": "gravity-insight.parent-resolution-evidence.v1",
+  "source_evidence": null,
+  "values_persisted": false
+}

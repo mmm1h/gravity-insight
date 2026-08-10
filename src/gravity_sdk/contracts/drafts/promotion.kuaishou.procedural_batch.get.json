@@ -1,0 +1,303 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "request_parameters_required",
+        "detail": "The observed request reached a semantic error; required request fields remain unknown.",
+        "evidence": "evidence/probe/20260808T231114Z_promotion.kuaishou.procedural_batch.get.yaml",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "evidence": "src/gravity_sdk/census/data/route-response-fields.json#/routes/492",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [
+      {
+        "classification_reason": "frontend_static_consumer_unreviewed",
+        "expose": false,
+        "path": "data.rule_config.app_id",
+        "presence": "unknown",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "unknown"
+        ]
+      },
+      {
+        "classification_reason": "frontend_static_consumer_unreviewed",
+        "expose": false,
+        "path": "data.rule_config.config_data",
+        "presence": "unknown",
+        "privacy_classification": "manual_review",
+        "types": [
+          "unknown"
+        ]
+      }
+    ],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_sdk/census/data/coverage.json",
+      "json_pointer": "/routes/492",
+      "method": "GET",
+      "path": "/turbo_engine/api/v1/kuaishou/procedural_batch/get/",
+      "route_index": 492,
+      "route_sha256": "ec6e98e065df34afa53af3eb683f488cf20ef0807743815fb4d604808579fa62"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [],
+    "probe_evidence": [
+      {
+        "conclusion": "local_or_parent_inconclusive",
+        "method_verified": false,
+        "pagination_verified": false,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205325Z_promotion.kuaishou.procedural_batch.get.yaml",
+        "probed_at": "2026-08-08T20:53:25Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": null,
+        "successful": false
+      },
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205538Z_promotion.kuaishou.procedural_batch.get.yaml",
+        "probed_at": "2026-08-08T20:55:38Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
+        "successful": false
+      },
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T231114Z_promotion.kuaishou.procedural_batch.get.yaml",
+        "probed_at": "2026-08-08T23:11:14Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
+        "successful": false
+      }
+    ],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "request_parameters_required",
+        "response_projection",
+        "response_schema_unverified",
+        "successful_probe"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "推广平台",
+      "callers": [
+        "f",
+        "i"
+      ],
+      "contract_family": {
+        "family_id": "promotion.family.002",
+        "family_kind": "same_level_cross_platform",
+        "member_count": 2
+      },
+      "cost_reason": "flat list/detail lookup with no evident parent dependency",
+      "estimated_implementation_cost": "低",
+      "first_occurrence": {
+        "column": 194985,
+        "file": "raw/web.gravity-engine.com/assets/Batch-DdiGltla.js",
+        "line": 1,
+        "offset": 194984,
+        "url": "https://web.gravity-engine.com/assets/Batch-DdiGltla.js"
+      },
+      "method": "GET",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 197615,
+            "column": 194985,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Batch-DdiGltla.js",
+            "line": 1,
+            "route_offset": 194984
+          },
+          {
+            "call_offset": 291629,
+            "column": 288546,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/kuaishouBatch-B4n3gpg0.js",
+            "line": 1,
+            "route_offset": 288545
+          }
+        ],
+        "contract_confidence": "medium",
+        "learned_parameters": [],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "GET",
+          "path": "/turbo_engine/api/v1/kuaishou/procedural_batch/get/"
+        },
+        "source": "src/gravity_sdk/census/data/route-params.json",
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "query",
+            "name": "app_id",
+            "path": "$.app_id",
+            "presence": "observed_always",
+            "types": [
+              "null"
+            ]
+          },
+          {
+            "confidence": "high",
+            "default_observed": false,
+            "location": "query",
+            "name": "modules",
+            "path": "$.modules",
+            "presence": "observed_always",
+            "types": [
+              "unknown"
+            ]
+          }
+        ]
+      },
+      "path": "/turbo_engine/api/v1/kuaishou/procedural_batch/get/",
+      "promotion_level": "其它",
+      "promotion_platform": "kuaishou",
+      "semantic_confidence": "high",
+      "semantic_evidence": [
+        "safe_http_method"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "加载中，请等待..."
+      ]
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "get",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: request_parameters_required, response_schema_unverified",
+    "contract_version": 1,
+    "description": "Draft catalog entry inferred from census route GET /turbo_engine/api/v1/kuaishou/procedural_batch/get/; request binding, pagination, and response projection remain unverified.",
+    "domain": "promotion",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "app_id": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "any"
+      },
+      "modules": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "any"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "app_id": 0,
+        "modules": 0
+      }
+    },
+    "operation_id": "promotion.kuaishou.procedural_batch.get",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/kuaishou/procedural_batch/get/",
+    "platform": "kuaishou",
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract"
+      ],
+      "family": "promotion.family.002",
+      "platform": "kuaishou",
+      "source_files": [
+        "drafts/promotion.kuaishou.procedural_batch.get.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "app_id",
+        "modules"
+      ]
+    },
+    "required_parent": [],
+    "resource": "procedural_batch",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "promotion.json"
+}

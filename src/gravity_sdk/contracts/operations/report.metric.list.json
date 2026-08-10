@@ -1,0 +1,148 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 13,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "经营报表配置域的指标目录；返回指标中英文名、类型和提示说明，排除维度及标签标识不输出。",
+    "domain": "report",
+    "effect": "read",
+    "examples": [
+      {
+        "description": "Minimum input verified by the contract probe pipeline.",
+        "inputs": {
+          "page": 1,
+          "page_size": 1
+        },
+        "name": "minimum_read"
+      }
+    ],
+    "executable": true,
+    "input_fields": {
+      "page": {
+        "default": 1,
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 20,
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "page": 1,
+        "page_size": 1
+      }
+    },
+    "operation_id": "report.metric.list",
+    "pagination": {
+      "default_page_size": 20,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 100,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/turbo_engine/api/v3/confmetric/metric/list/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "configuration",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.metric.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "page",
+        "page_size"
+      ],
+      "defaults": {
+        "page": 1,
+        "page_size": 20
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "metric",
+    "response_projection": {
+      "data_keys": [
+        "list",
+        "page_info"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "cname",
+        "metric_type",
+        "name",
+        "tip"
+      ],
+      "known_omitted_item_keys": [
+        "exclusion_dims",
+        "tag_ids"
+      ],
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "report.json"
+}

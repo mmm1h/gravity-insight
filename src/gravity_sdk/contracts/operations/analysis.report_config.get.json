@@ -1,0 +1,106 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 14,
+  "operation": {
+    "action": "get",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "读取已保存分析配置；配置 JSON 由受控专用投影解析，只开放已登记的结构化分析字段。",
+    "domain": "analysis",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "app_id": {
+        "required": true,
+        "type": "string"
+      },
+      "id": {
+        "required": true,
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "app_id": "$first_app_id",
+        "id": "$first_report_config_id"
+      }
+    },
+    "operation_id": "analysis.report_config.get",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v2/datamanageconfig/report_config/info/",
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "remark",
+        "update_user_name"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.report_config.get.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "id",
+        "app_id"
+      ]
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "analysis.report_config.list",
+        "output_path": "data.list[].id",
+        "selection": "first"
+      }
+    ],
+    "resource": "report_config",
+    "response_projection": {
+      "data_keys": [
+        "config",
+        "name"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "known_omitted_data_keys": [
+        "remark",
+        "update_user_name"
+      ],
+      "required_data_keys": [
+        "config"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis.json"
+}

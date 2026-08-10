@@ -1,0 +1,282 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "probe_inconclusive",
+        "detail": "The latest probe did not satisfy the promotion gate.",
+        "evidence": "evidence/probe/20260808T231137Z_promotion.company.list.yaml",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "evidence": "src/gravity_sdk/census/data/route-response-fields.json#/routes/686",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [
+      {
+        "classification_reason": "sensitive_name_pattern",
+        "expose": false,
+        "path": "data.list[].company",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "string"
+        ]
+      }
+    ],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_sdk/census/data/coverage.json",
+      "json_pointer": "/routes/686",
+      "method": "GET",
+      "path": "/turbo_engine/api/v1/user/common/media_advertiser/company/list/",
+      "route_index": 686,
+      "route_sha256": "3ba29d2caaa346857d4b1754132c70bc8054372ce058ac86afd0ca9378adface"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [],
+    "probe_evidence": [
+      {
+        "conclusion": "local_or_parent_inconclusive",
+        "method_verified": false,
+        "pagination_verified": false,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205323Z_promotion.company.list.yaml",
+        "probed_at": "2026-08-08T20:53:23Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": null,
+        "successful": false
+      },
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205503Z_promotion.company.list.yaml",
+        "probed_at": "2026-08-08T20:55:03Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
+        "successful": false
+      },
+      {
+        "conclusion": "inconclusive",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T231137Z_promotion.company.list.yaml",
+        "probed_at": "2026-08-08T23:11:37Z",
+        "projected_schema_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "raw_schema_fingerprint": "81cfc3403dcd1d00e945c09e5f67b83c34ffc9cc492b099b8082871c7c5ca2bb",
+        "successful": false
+      }
+    ],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "probe_inconclusive",
+        "response_projection",
+        "response_schema_unverified",
+        "successful_probe"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "推广平台",
+      "callers": [
+        "zb"
+      ],
+      "contract_family": null,
+      "cost_reason": "flat list/detail lookup with no evident parent dependency",
+      "estimated_implementation_cost": "低",
+      "first_occurrence": {
+        "column": 14845,
+        "file": "raw/web.gravity-engine.com/assets/Report-DZYAVjAW.js",
+        "line": 1,
+        "offset": 14844,
+        "url": "https://web.gravity-engine.com/assets/Report-DZYAVjAW.js"
+      },
+      "method": "GET",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 30419,
+            "column": 14845,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Report-DZYAVjAW.js",
+            "line": 1,
+            "route_offset": 14844
+          },
+          {
+            "call_offset": 1499497,
+            "column": 82801,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/index-D9HAN43D.js",
+            "line": 39,
+            "route_offset": 1499167
+          }
+        ],
+        "contract_confidence": "medium",
+        "learned_parameters": [],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "GET",
+          "path": "/turbo_engine/api/v1/user/common/media_advertiser/company/list/"
+        },
+        "source": "src/gravity_sdk/census/data/route-params.json",
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "medium",
+            "default_observed": true,
+            "location": "query",
+            "name": "media_type",
+            "path": "$.media_type",
+            "presence": "observed_always",
+            "types": [
+              "string"
+            ]
+          }
+        ]
+      },
+      "path": "/turbo_engine/api/v1/user/common/media_advertiser/company/list/",
+      "promotion_level": "账户",
+      "promotion_platform": "通用/未知",
+      "semantic_confidence": "high",
+      "semantic_evidence": [
+        "safe_http_method"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "应用",
+        "推广您的线上App",
+        "销量线索收集"
+      ]
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: probe_inconclusive, response_schema_unverified",
+    "contract_version": 1,
+    "description": "Draft catalog entry inferred from census route GET /turbo_engine/api/v1/user/common/media_advertiser/company/list/; request binding, pagination, and response projection remain unverified.",
+    "domain": "promotion",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "media_type": {
+        "default": "bytedance",
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "media_type": "bytedance"
+      }
+    },
+    "operation_id": "promotion.company.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/user/common/media_advertiser/company/list/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract"
+      ],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "drafts/promotion.company.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {
+        "media_type": "bytedance"
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "media_type"
+      ]
+    },
+    "required_parent": [],
+    "resource": "company",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "known_omitted_data_keys": [
+        "list"
+      ],
+      "known_omitted_item_keys": [
+        "company"
+      ],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "promotion.json"
+}

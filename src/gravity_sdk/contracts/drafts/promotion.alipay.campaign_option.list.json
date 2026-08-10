@@ -1,0 +1,219 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "evidence": "evidence/probe/20260809T144342Z_promotion.alipay.campaign_option.list.yaml",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [
+      {
+        "classification_reason": "frontend_static_consumer_unreviewed",
+        "expose": false,
+        "path": "data.list[].campaign_id",
+        "presence": "unknown",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "unknown"
+        ]
+      }
+    ],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_sdk/census/data/coverage.json",
+      "json_pointer": "/routes/849",
+      "method": "POST",
+      "path": "/turbo_engine/api/v2/alipay/manager/campaign/list/",
+      "route_index": 849,
+      "route_sha256": "cc3725defa4ec6861572a1bcc6f1dc256dd1ed484d13de79cf98b6d51e874d7b"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [],
+    "probe_evidence": [
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": false,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205620Z_promotion.alipay.campaign_option.list.yaml",
+        "probed_at": "2026-08-08T20:56:20Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "a632565d5a1268e39ad190f43a305431c461906ce0ea4ee4cf25aa79c199f854",
+        "successful": false
+      },
+      {
+        "conclusion": "inconclusive_empty",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260809T144342Z_promotion.alipay.campaign_option.list.yaml",
+        "probed_at": "2026-08-09T14:43:42Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "473dc96518465b7cfcc0fc2fb2f6b4cd1ab37fdc51f6dfc5add4e73d6b04965f",
+        "successful": false
+      }
+    ],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "response_schema_unverified"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "推广平台",
+      "callers": [
+        "k",
+        "l",
+        "u",
+        "x"
+      ],
+      "contract_family": null,
+      "cost_reason": "计划 lookup normally depends on a parent account or campaign",
+      "estimated_implementation_cost": "中",
+      "first_occurrence": {
+        "column": 2642,
+        "file": "raw/web.gravity-engine.com/assets/AlipayAd-KgPi_a5Z.js",
+        "line": 1,
+        "offset": 2641,
+        "url": "https://web.gravity-engine.com/assets/AlipayAd-KgPi_a5Z.js"
+      },
+      "method": "POST",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "path": "/turbo_engine/api/v2/alipay/manager/campaign/list/",
+      "promotion_level": "计划",
+      "promotion_platform": "alipay",
+      "semantic_confidence": "medium",
+      "semantic_evidence": [
+        "read_action_path_token"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "优化师",
+        "备注",
+        "广告创意已暂停",
+        "广告创意超预算",
+        "广告计划已暂停",
+        "广告计划超预算",
+        "广告账户已暂停",
+        "广告账户超预算",
+        "有效",
+        "请输入备注"
+      ],
+      "parent_resolution": {
+        "basis": "child_semantic_success_without_parent",
+        "bindings": [],
+        "conclusion": "unblocked",
+        "detail": "The child route returned a semantic success without a parent selector; no parent binding is required.",
+        "evidence": "evidence/probe/20260809T145638Z_promotion.alipay.campaign_option.list.yaml",
+        "missing_evidence": [],
+        "replacement_blocker": null
+      }
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: response_schema_unverified",
+    "contract_version": 1,
+    "description": "Draft catalog entry inferred from census route POST /turbo_engine/api/v2/alipay/manager/campaign/list/; request binding, pagination, and response projection remain unverified.",
+    "domain": "promotion",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {},
+    "live_probe": {
+      "enabled": false,
+      "inputs": {}
+    },
+    "operation_id": "promotion.alipay.campaign_option.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v2/alipay/manager/campaign/list/",
+    "platform": "alipay",
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "alipay",
+      "source_files": [
+        "drafts/promotion.alipay.campaign_option.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "campaign_option",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "promotion.json"
+}

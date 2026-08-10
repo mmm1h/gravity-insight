@@ -1,0 +1,130 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 12,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "漏斗页事件属性分组元数据；只输出分组标识和名称，固定省略 show/hide 中的事件集合。",
+    "domain": "analysis",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "app_id": {
+        "required": true,
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "app_id": "$first_app_id"
+      }
+    },
+    "operation_id": "analysis.event_property_group.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v2/datamanageconfig/conf_event_property_group/list/",
+    "privacy_policy": {
+      "classification": "configuration",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "create_user_id",
+        "create_user_name",
+        "update_user_id",
+        "update_user_name",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "origin_query",
+        "client_id",
+        "clientid",
+        "trace_id",
+        "traceid",
+        "uid"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.event_property_group.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "app_id"
+      ]
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "app.list",
+        "output_path": "data.list[].id",
+        "selection": "first"
+      }
+    ],
+    "resource": "event_property_group",
+    "response_projection": {
+      "data_keys": [
+        "list"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "id",
+        "name",
+        "is_applied",
+        "children"
+      ],
+      "known_omitted_nested_item_keys": {
+        "children": [
+          "show",
+          "hide"
+        ]
+      },
+      "nested_item_keys": {
+        "children": [
+          "id",
+          "name"
+        ]
+      },
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis.json"
+}

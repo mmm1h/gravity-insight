@@ -1,0 +1,271 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "request_parameters_required",
+        "detail": "The observed request reached a semantic error; required request fields remain unknown.",
+        "evidence": "evidence/probe/20260808T231140Z_metadata.use_template.get.yaml",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "evidence": "evidence/probe/20260808T231140Z_metadata.use_template.get.yaml",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_sdk/census/data/coverage.json",
+      "json_pointer": "/routes/932",
+      "method": "GET",
+      "path": "/turbo_engine/api/v2/event/property_template/use_template/",
+      "route_index": 932,
+      "route_sha256": "79161dea6b4710c673b8dd20227375321eae258af92e914c8126a7db4d7c195b"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [],
+    "probe_evidence": [
+      {
+        "conclusion": "local_or_parent_inconclusive",
+        "method_verified": false,
+        "pagination_verified": false,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205323Z_metadata.use_template.get.yaml",
+        "probed_at": "2026-08-08T20:53:23Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": null,
+        "successful": false
+      },
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205452Z_metadata.use_template.get.yaml",
+        "probed_at": "2026-08-08T20:54:52Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1b898bf98211f851a2989bb1eb397aa45eb76a283568c75ab6a8dd0d96ac0e02",
+        "successful": false
+      },
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T231140Z_metadata.use_template.get.yaml",
+        "probed_at": "2026-08-08T23:11:40Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1b898bf98211f851a2989bb1eb397aa45eb76a283568c75ab6a8dd0d96ac0e02",
+        "successful": false
+      }
+    ],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "request_parameters_required",
+        "response_projection",
+        "response_schema_unverified",
+        "successful_probe"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "元数据",
+      "callers": [
+        "N"
+      ],
+      "contract_family": null,
+      "cost_reason": "flat list/detail lookup with no evident parent dependency",
+      "estimated_implementation_cost": "低",
+      "first_occurrence": {
+        "column": 5063,
+        "file": "raw/web.gravity-engine.com/assets/VisibleDialog-h6XCjxrg.js",
+        "line": 1,
+        "offset": 5062,
+        "url": "https://web.gravity-engine.com/assets/VisibleDialog-h6XCjxrg.js"
+      },
+      "method": "GET",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 5658,
+            "column": 5063,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/VisibleDialog-h6XCjxrg.js",
+            "line": 1,
+            "route_offset": 5062
+          }
+        ],
+        "contract_confidence": "medium",
+        "learned_parameters": [],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "GET",
+          "path": "/turbo_engine/api/v2/event/property_template/use_template/"
+        },
+        "source": "src/gravity_sdk/census/data/route-params.json",
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "query",
+            "name": "app_id",
+            "path": "$.app_id",
+            "presence": "observed_always",
+            "types": [
+              "unknown"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "query",
+            "name": "template_id",
+            "path": "$.template_id",
+            "presence": "observed_always",
+            "types": [
+              "unknown"
+            ]
+          }
+        ]
+      },
+      "path": "/turbo_engine/api/v2/event/property_template/use_template/",
+      "promotion_level": null,
+      "promotion_platform": null,
+      "semantic_confidence": "high",
+      "semantic_evidence": [
+        "safe_http_method"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "事件名",
+        "失败原因",
+        "请选择模板"
+      ]
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "get",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: request_parameters_required, response_schema_unverified",
+    "contract_version": 1,
+    "description": "Draft catalog entry inferred from census route GET /turbo_engine/api/v2/event/property_template/use_template/; request binding, pagination, and response projection remain unverified.",
+    "domain": "metadata",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "app_id": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "any"
+      },
+      "template_id": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "any"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "app_id": 0,
+        "template_id": 0
+      }
+    },
+    "operation_id": "metadata.use_template.get",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v2/event/property_template/use_template/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "configuration",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract"
+      ],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "drafts/metadata.use_template.get.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "app_id",
+        "template_id"
+      ]
+    },
+    "required_parent": [],
+    "resource": "use_template",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "other.json"
+}

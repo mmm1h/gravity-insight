@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gravity-sdk.local/contracts/route-classification-v1.schema.json",
+  "title": "Gravity route classification registry v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generated_at", "source", "routes"],
+  "properties": {
+    "schema_version": {"const": "gravity-insight.route-classification.v1"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "source": {"type": "string", "minLength": 1},
+    "routes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "method",
+          "path",
+          "source_status",
+          "classification",
+          "subtype",
+          "disposition",
+          "reason_code",
+          "reason",
+          "route_index",
+          "route_sha256"
+        ],
+        "properties": {
+          "method": {"type": "string", "enum": ["GET", "POST", "UNKNOWN"]},
+          "path": {"type": "string", "minLength": 1},
+          "source_status": {
+            "type": "string",
+            "enum": ["uncovered_auth_or_proxy", "unclassified"]
+          },
+          "classification": {
+            "type": "string",
+            "enum": ["read", "write", "export", "auth", "proxy", "non_api"]
+          },
+          "subtype": {"type": "string", "minLength": 1},
+          "disposition": {
+            "type": "string",
+            "enum": ["blocked_write", "unsupported"]
+          },
+          "reason_code": {"type": "string", "minLength": 1},
+          "reason": {"type": "string", "minLength": 1},
+          "operation_id": {"type": ["string", "null"]},
+          "route_index": {"type": "integer", "minimum": 0},
+          "route_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+        }
+      }
+    }
+  }
+}

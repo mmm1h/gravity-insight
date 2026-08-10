@@ -1,0 +1,275 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "probe_inconclusive",
+        "detail": "The latest probe did not satisfy the promotion gate.",
+        "evidence": "evidence/probe/20260808T205538Z_promotion.kuaishou.account_company.list.yaml",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "evidence": "src/gravity_sdk/census/data/route-response-fields.json#/routes/487",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [
+      {
+        "classification_reason": "frontend_static_consumer_unreviewed",
+        "expose": false,
+        "path": "data.list",
+        "presence": "unknown",
+        "privacy_classification": "manual_review",
+        "types": [
+          "unknown"
+        ]
+      }
+    ],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_sdk/census/data/coverage.json",
+      "json_pointer": "/routes/487",
+      "method": "GET",
+      "path": "/turbo_engine/api/v1/kuaishou/manager/account/by_company/",
+      "route_index": 487,
+      "route_sha256": "fdeface95b7763c9e879830e85b6467a48a28903ee9ef70ae7ae03f273d0286c"
+    },
+    "generated_at": "2026-08-08T19:19:55Z",
+    "manual_review_fields": [],
+    "probe_evidence": [
+      {
+        "conclusion": "inconclusive",
+        "pagination_verified": true,
+        "path": "evidence/probe/20260808T192043Z_promotion.kuaishou.account_company.list.yaml",
+        "probed_at": "2026-08-08T19:20:43Z",
+        "projected_schema_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "raw_schema_fingerprint": "4a4b5fefb6a45a05ea835b21fddca6577ff444527e181c25b93dd6c0f8e5afe6",
+        "successful": false
+      },
+      {
+        "conclusion": "inconclusive",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205325Z_promotion.kuaishou.account_company.list.yaml",
+        "probed_at": "2026-08-08T20:53:25Z",
+        "projected_schema_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "raw_schema_fingerprint": "4a4b5fefb6a45a05ea835b21fddca6577ff444527e181c25b93dd6c0f8e5afe6",
+        "successful": false
+      },
+      {
+        "conclusion": "inconclusive",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205538Z_promotion.kuaishou.account_company.list.yaml",
+        "probed_at": "2026-08-08T20:55:38Z",
+        "projected_schema_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+        "raw_schema_fingerprint": "4a4b5fefb6a45a05ea835b21fddca6577ff444527e181c25b93dd6c0f8e5afe6",
+        "successful": false
+      }
+    ],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "probe_inconclusive",
+        "response_projection",
+        "response_schema_unverified",
+        "successful_probe"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "推广平台",
+      "callers": [
+        "Ke",
+        "ve"
+      ],
+      "contract_family": {
+        "family_id": "promotion.family.001",
+        "family_kind": "same_level_cross_platform",
+        "member_count": 3
+      },
+      "cost_reason": "flat list/detail lookup with no evident parent dependency",
+      "estimated_implementation_cost": "低",
+      "first_occurrence": {
+        "column": 5431,
+        "file": "raw/web.gravity-engine.com/assets/Form-CzFlzzxB.js",
+        "line": 1,
+        "offset": 5430,
+        "url": "https://web.gravity-engine.com/assets/Form-CzFlzzxB.js"
+      },
+      "method": "GET",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 8357,
+            "column": 5431,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Form-CzFlzzxB.js",
+            "line": 1,
+            "route_offset": 5430
+          },
+          {
+            "call_offset": 6118,
+            "column": 2951,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/batchTask-BvjCCXob.js",
+            "line": 1,
+            "route_offset": 2950
+          }
+        ],
+        "contract_confidence": "high",
+        "learned_parameters": [],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "GET",
+          "path": "/turbo_engine/api/v1/kuaishou/manager/account/by_company/"
+        },
+        "source": "src/gravity_sdk/census/data/route-params.json",
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "high",
+            "default_observed": true,
+            "location": "query",
+            "name": "need_company",
+            "path": "$.need_company",
+            "presence": "observed_always",
+            "types": [
+              "boolean"
+            ]
+          }
+        ]
+      },
+      "path": "/turbo_engine/api/v1/kuaishou/manager/account/by_company/",
+      "promotion_level": "账户",
+      "promotion_platform": "kuaishou",
+      "semantic_confidence": "high",
+      "semantic_evidence": [
+        "safe_http_method"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "支持批量复制，用空格或者逗号分隔",
+        "账户id",
+        "账户主体",
+        "输入账户ID"
+      ]
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: probe_inconclusive, response_schema_unverified",
+    "contract_version": 1,
+    "description": "Draft inferred from census route GET /turbo_engine/api/v1/kuaishou/manager/account/by_company/; response remains hidden until probe classification.",
+    "domain": "promotion",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "need_company": {
+        "default": true,
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "boolean"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "need_company": true
+      }
+    },
+    "operation_id": "promotion.kuaishou.account_company.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/kuaishou/manager/account/by_company/",
+    "platform": "kuaishou",
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract"
+      ],
+      "family": "promotion.family.001",
+      "platform": "kuaishou",
+      "source_files": [
+        "drafts/promotion.kuaishou.account_company.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {
+        "need_company": true
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "need_company"
+      ]
+    },
+    "required_parent": [],
+    "resource": "account_company",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "known_omitted_data_keys": [
+        "list"
+      ],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "experimental",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "promotion.json"
+}

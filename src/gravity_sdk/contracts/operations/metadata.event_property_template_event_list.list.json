@@ -1,0 +1,154 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 17,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "事件属性模板元数据域的事件列表；返回模板关联事件的标识、中英文名、触发时机、预置标记及创建修改时间，属性明细不输出。",
+    "domain": "metadata",
+    "effect": "read",
+    "examples": [
+      {
+        "description": "Minimum input verified by the contract probe pipeline.",
+        "inputs": {
+          "page": 1,
+          "page_size": 1
+        },
+        "name": "minimum_read"
+      }
+    ],
+    "executable": true,
+    "input_fields": {
+      "page": {
+        "default": 1,
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 20,
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "page": 1,
+        "page_size": 1
+      }
+    },
+    "operation_id": "metadata.event_property_template_event_list.list",
+    "pagination": {
+      "default_page_size": 20,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 100,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/turbo_engine/api/v2/event/property_template/event_list/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "configuration",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id",
+        "remark"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/metadata.event_property_template_event_list.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "page",
+        "page_size"
+      ],
+      "defaults": {
+        "page": 1,
+        "page_size": 20
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "event_property_template_event_list",
+    "response_projection": {
+      "data_keys": [
+        "list",
+        "page_info"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "cid",
+        "cname",
+        "create_time",
+        "id",
+        "is_preset",
+        "modify_time",
+        "name",
+        "template_id",
+        "trigger_opportunity"
+      ],
+      "known_omitted_item_keys": [
+        "properties",
+        "remark"
+      ],
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "other.json"
+}

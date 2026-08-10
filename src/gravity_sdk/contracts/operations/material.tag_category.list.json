@@ -1,0 +1,123 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 12,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "素材标签分类列表。",
+    "domain": "material",
+    "effect": "read",
+    "examples": [
+      {
+        "description": "Minimum input copied from the enabled, contract-verified live probe.",
+        "inputs": {
+          "page": 1,
+          "page_size": 1
+        },
+        "name": "minimum_read"
+      }
+    ],
+    "input_fields": {
+      "page": {
+        "default": 1,
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 100,
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "page": 1,
+        "page_size": 1
+      }
+    },
+    "operation_id": "material.tag_category.list",
+    "pagination": {
+      "default_page_size": 100,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 100,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/turbo_engine/api/v1/asset/material_tag/tag_category/list/",
+    "privacy_policy": {
+      "classification": "material",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/material.tag_category.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {
+        "page": 1,
+        "page_size": 100
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "page",
+        "page_size"
+      ]
+    },
+    "required_parent": [],
+    "resource": "tag_category",
+    "response_projection": {
+      "data_keys": [
+        "list",
+        "page_info"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "id",
+        "is_system",
+        "name",
+        "parent_id",
+        "source"
+      ],
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "other.json"
+}

@@ -1,0 +1,287 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "not_probed",
+        "detail": "No live probe evidence exists for this route.",
+        "status": "open"
+      },
+      {
+        "code": "pagination_unverified",
+        "detail": "Pagination kind, field names, and limits have not been observed.",
+        "status": "open"
+      },
+      {
+        "code": "parent_resource_required",
+        "detail": "At least one declared stable parent did not produce a readable candidate response.",
+        "status": "open",
+        "evidence": "evidence/probe/20260809T145638Z_material.local.detail.yaml"
+      },
+      {
+        "code": "request_binding_unverified",
+        "detail": "Query/body fields and fixed request values have not been observed.",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_sdk/census/data/coverage.json",
+      "json_pointer": "/routes/245",
+      "method": "GET",
+      "path": "/turbo_engine/api/v1/asset/material/manage/local/detail/",
+      "route_index": 245,
+      "route_sha256": "c081a38fcd37edc0347554886eb33f6e9356b6f70380c0600d2aef0e75cb2ca7"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [],
+    "probe_evidence": [],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "not_probed",
+        "pagination_unverified",
+        "parent_resource_required",
+        "request_binding_unverified",
+        "response_schema_unverified"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "素材",
+      "callers": [
+        "T",
+        "qe"
+      ],
+      "contract_family": null,
+      "cost_reason": "素材 lookup normally depends on a parent account or campaign",
+      "estimated_implementation_cost": "中",
+      "first_occurrence": {
+        "column": 3333,
+        "file": "raw/web.gravity-engine.com/assets/MaterialDraw-DhT2ljcP.js",
+        "line": 1,
+        "offset": 3332,
+        "url": "https://web.gravity-engine.com/assets/MaterialDraw-DhT2ljcP.js"
+      },
+      "method": "GET",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 5094,
+            "column": 3333,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/MaterialDraw-DhT2ljcP.js",
+            "line": 1,
+            "route_offset": 3332
+          },
+          {
+            "call_offset": 23284,
+            "column": 15966,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/MaterialDraw-DhT2ljcP.js",
+            "line": 1,
+            "route_offset": 15965
+          }
+        ],
+        "contract_confidence": "medium",
+        "learned_parameters": [],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "GET",
+          "path": "/turbo_engine/api/v1/asset/material/manage/local/detail/"
+        },
+        "source": "src/gravity_sdk/census/data/route-params.json",
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "medium",
+            "default_observed": true,
+            "location": "query",
+            "name": "material_id",
+            "path": "$.material_id",
+            "presence": "observed_always",
+            "types": [
+              "integer",
+              "unknown"
+            ]
+          }
+        ],
+        "stable_parent_candidates": [
+          {
+            "input_field": "material_id",
+            "operation_id": "material.local.list",
+            "output_path": "data.list[].material_id",
+            "selection": "caller_select"
+          }
+        ]
+      },
+      "path": "/turbo_engine/api/v1/asset/material/manage/local/detail/",
+      "promotion_level": null,
+      "promotion_platform": null,
+      "semantic_confidence": "high",
+      "semantic_evidence": [
+        "safe_http_method"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "拒审理由",
+        "暂无数据",
+        "目前暂不支持全媒体查看，请按单一媒体查看关联数据情况~",
+        "请输入素材名称",
+        "请选择素材目录"
+      ],
+      "parent_resolution": {
+        "basis": "declared_parent_probe",
+        "bindings": [
+          {
+            "candidate_count": 0,
+            "output_path": "data.list[].material_id",
+            "parent_operation_id": "material.local.list",
+            "selection": "caller_select",
+            "status": "undetermined",
+            "target_cardinality": "one",
+            "target_input": "material_id"
+          }
+        ],
+        "conclusion": "undetermined",
+        "detail": "At least one declared stable parent did not produce a readable candidate response.",
+        "evidence": "evidence/probe/20260809T145638Z_material.local.detail.yaml",
+        "missing_evidence": [
+          "A successful or explicit permission response from every declared parent operation."
+        ],
+        "replacement_blocker": null
+      }
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "detail",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: not_probed, pagination_unverified, parent_resource_required, request_binding_unverified, response_schema_unverified",
+    "contract_version": 1,
+    "description": "Draft catalog entry inferred from census route GET /turbo_engine/api/v1/asset/material/manage/local/detail/; request binding, pagination, and response projection remain unverified.",
+    "domain": "material",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "material_id": {
+        "default": 0,
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "material_id": "$parent:material_id"
+      }
+    },
+    "operation_id": "material.local.detail",
+    "pagination": {
+      "kind": "unverified",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/asset/material/manage/local/detail/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract",
+        "stable_parent_candidate_binding"
+      ],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "drafts/material.local.detail.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {
+        "material_id": 0
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "material_id"
+      ]
+    },
+    "required_parent": [
+      {
+        "input_field": "material_id",
+        "operation_id": "material.local.list",
+        "output_path": "data.list[].material_id",
+        "selection": "caller_select"
+      }
+    ],
+    "resource": "local",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "material.json"
+}

@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gravity-sdk.local/contracts/family-v1.schema.json",
+  "title": "Gravity Insight operation family source v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "family_schema_version",
+    "family_id",
+    "target_manifest",
+    "matrix",
+    "operation"
+  ],
+  "properties": {
+    "$schema": {"const": "../schema/family-v1.schema.json"},
+    "family_schema_version": {"const": 1},
+    "family_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "target_manifest": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*\\.json$"
+    },
+    "matrix": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["manifest_order", "bindings"],
+        "properties": {
+          "manifest_order": {"type": "integer", "minimum": 0},
+          "bindings": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": {
+              "type": ["string", "integer", "number", "boolean", "null"]
+            }
+          }
+        }
+      }
+    },
+    "operation": {
+      "type": "object",
+      "minProperties": 1
+    },
+    "overrides": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/override"}
+    }
+  },
+  "$defs": {
+    "when": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": ["string", "integer", "number", "boolean", "null"]
+      }
+    },
+    "disabledOverride": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "when", "disabled"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "when": {"$ref": "#/$defs/when"},
+        "disabled": {"const": true}
+      }
+    },
+    "patchOverride": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "when", "patch"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "when": {"$ref": "#/$defs/when"},
+        "patch": {"type": "object", "minProperties": 1},
+        "escape_hatch": {"const": false}
+      }
+    },
+    "replacementOverride": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "when", "escape_hatch", "replacement"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "when": {"$ref": "#/$defs/when"},
+        "escape_hatch": {"const": true},
+        "replacement": {"type": "object", "minProperties": 1}
+      }
+    },
+    "override": {
+      "oneOf": [
+        {"$ref": "#/$defs/disabledOverride"},
+        {"$ref": "#/$defs/patchOverride"},
+        {"$ref": "#/$defs/replacementOverride"}
+      ]
+    }
+  }
+}

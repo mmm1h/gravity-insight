@@ -1,0 +1,84 @@
+{
+  "conclusion": "semantic_error",
+  "http": [
+    {
+      "http_status": 204,
+      "method": "POST",
+      "operation_id": "promotion.tencent.user_organization_authentication.get",
+      "path": "/turbo_engine/api/v1/tencent/user_organization_authentication/get/",
+      "purpose": "discovery",
+      "raw_schema_fingerprint": "a632565d5a1268e39ad190f43a305431c461906ce0ea4ee4cf25aa79c199f854",
+      "request_fingerprint": "9314d65971f5008bfbbbd3350fef1943d4fe093f183112385c8ebbe967154fcb",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "null"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    }
+  ],
+  "operation_id": "promotion.tencent.user_organization_authentication.get",
+  "pagination": {
+    "kind": "unknown",
+    "verified": false
+  },
+  "privacy": {
+    "candidate_fields": [],
+    "classified_non_sensitive": 0,
+    "classified_sensitive": 0,
+    "manual_review": 0,
+    "values_persisted": false
+  },
+  "probed_at": "2026-08-08T21:15:40Z",
+  "projected_schema_fingerprint": null,
+  "raw_schema_fingerprint": "a632565d5a1268e39ad190f43a305431c461906ce0ea4ee4cf25aa79c199f854",
+  "request_stats": {
+    "backoff_terminations": 0,
+    "failed": 0,
+    "total": 1
+  },
+  "required_parent": null,
+  "route": {
+    "family": "promotion.tencent.user_organization_authentication.get",
+    "method": "POST",
+    "path": "/turbo_engine/api/v1/tencent/user_organization_authentication/get/"
+  },
+  "schema_version": "gravity-insight.probe-evidence.v1",
+  "semantic_errors": {
+    "error_type": "TransportError",
+    "permission_shape_observed": false
+  },
+  "successful": false
+}

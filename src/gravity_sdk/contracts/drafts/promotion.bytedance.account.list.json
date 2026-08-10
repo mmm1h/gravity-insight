@@ -1,0 +1,705 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "not_probed",
+        "detail": "No live probe evidence exists for this route.",
+        "status": "open"
+      },
+      {
+        "code": "pagination_unverified",
+        "detail": "Pagination kind, field names, and limits have not been observed.",
+        "status": "open"
+      },
+      {
+        "code": "request_binding_unverified",
+        "detail": "Query/body fields and fixed request values have not been observed.",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "evidence": "src/gravity_sdk/census/data/route-response-fields.json#/routes/370",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [
+      {
+        "classification_reason": "frontend_static_consumer_unreviewed",
+        "expose": false,
+        "path": "data.list[].advertiser_id",
+        "presence": "unknown",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "unknown"
+        ]
+      },
+      {
+        "classification_reason": "frontend_static_consumer_unreviewed",
+        "expose": false,
+        "path": "data.list[].app_id",
+        "presence": "unknown",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "unknown"
+        ]
+      },
+      {
+        "classification_reason": "frontend_static_consumer_unreviewed",
+        "expose": false,
+        "path": "data.list[].grant_type",
+        "presence": "unknown",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "unknown"
+        ]
+      },
+      {
+        "classification_reason": "frontend_static_consumer_unreviewed",
+        "expose": false,
+        "path": "data.list[].id",
+        "presence": "unknown",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "unknown"
+        ]
+      },
+      {
+        "classification_reason": "frontend_static_consumer_unreviewed",
+        "expose": false,
+        "path": "data.page_info.total_number",
+        "presence": "unknown",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "unknown"
+        ]
+      }
+    ],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_sdk/census/data/coverage.json",
+      "json_pointer": "/routes/370",
+      "method": "POST",
+      "path": "/turbo_engine/api/v1/bytedance/manage/account/list/",
+      "route_index": 370,
+      "route_sha256": "f1cd9a10addd26d3988a68341b0641d73a3ed5c080f631a3f328302881ac78d7"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [],
+    "probe_evidence": [],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "not_probed",
+        "pagination_unverified",
+        "request_binding_unverified",
+        "response_schema_unverified"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "推广平台",
+      "callers": [
+        "Bt",
+        "F",
+        "JC",
+        "Ke",
+        "L",
+        "M",
+        "Ne",
+        "Oe",
+        "Pe",
+        "R",
+        "S",
+        "_e",
+        "be",
+        "d",
+        "ee",
+        "fe",
+        "h",
+        "ie",
+        "j",
+        "ke"
+      ],
+      "contract_family": {
+        "family_id": "promotion.family.009",
+        "family_kind": "same_level_cross_platform",
+        "member_count": 2
+      },
+      "cost_reason": "flat list/detail lookup with no evident parent dependency",
+      "estimated_implementation_cost": "低",
+      "first_occurrence": {
+        "column": 924,
+        "file": "raw/web.gravity-engine.com/assets/AudiencePackage-BEe4OJTC.js",
+        "line": 1,
+        "offset": 923,
+        "url": "https://web.gravity-engine.com/assets/AudiencePackage-BEe4OJTC.js"
+      },
+      "method": "POST",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 1299,
+            "column": 924,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/AudiencePackage-BEe4OJTC.js",
+            "line": 1,
+            "route_offset": 923
+          },
+          {
+            "call_offset": 4573,
+            "column": 2342,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Batch-BqgLpnec.js",
+            "line": 1,
+            "route_offset": 2341
+          },
+          {
+            "call_offset": 8735,
+            "column": 5898,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/BatchHandelMaterial-CmAhz_be.js",
+            "line": 1,
+            "route_offset": 5897
+          },
+          {
+            "call_offset": 115884,
+            "column": 100665,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Clouddrive_pro-DZNkBF3z.js",
+            "line": 1,
+            "route_offset": 100664
+          },
+          {
+            "call_offset": 6039,
+            "column": 2902,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/CreativeModule-BOQju-tU.js",
+            "line": 1,
+            "route_offset": 2901
+          },
+          {
+            "call_offset": 3152,
+            "column": 3059,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Dmp-CyxAnU4r.js",
+            "line": 1,
+            "route_offset": 3058
+          },
+          {
+            "call_offset": 5412,
+            "column": 5005,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Dmp-CyxAnU4r.js",
+            "line": 1,
+            "route_offset": 5004
+          },
+          {
+            "call_offset": 3878,
+            "column": 2386,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/EventList-BpCR0jhx.js",
+            "line": 1,
+            "route_offset": 2385
+          },
+          {
+            "call_offset": 7995,
+            "column": 5194,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Form-CzFlzzxB.js",
+            "line": 1,
+            "route_offset": 5193
+          },
+          {
+            "call_offset": 23145,
+            "column": 12099,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Rules-ChMHnW7I.js",
+            "line": 1,
+            "route_offset": 12098
+          },
+          {
+            "call_offset": 5649,
+            "column": 3130,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Subcontractor-Ds1DKkg-.js",
+            "line": 1,
+            "route_offset": 3129
+          },
+          {
+            "call_offset": 33572,
+            "column": 31489,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Task-CucxuB0p.js",
+            "line": 1,
+            "route_offset": 31488
+          },
+          {
+            "call_offset": 81619,
+            "column": 78686,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Task-CucxuB0p.js",
+            "line": 1,
+            "route_offset": 78685
+          },
+          {
+            "call_offset": 93559,
+            "column": 87562,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Task-CucxuB0p.js",
+            "line": 1,
+            "route_offset": 87561
+          },
+          {
+            "call_offset": 5760,
+            "column": 2715,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/batchTask-BvjCCXob.js",
+            "line": 1,
+            "route_offset": 2714
+          },
+          {
+            "call_offset": 5111,
+            "column": 3682,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/bytedanceAccount-BoblE5hK.js",
+            "line": 1,
+            "route_offset": 3681
+          },
+          {
+            "call_offset": 21035,
+            "column": 18098,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/bytedanceAccount-BoblE5hK.js",
+            "line": 1,
+            "route_offset": 18097
+          },
+          {
+            "call_offset": 21100,
+            "column": 18177,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/bytedanceAccount-BoblE5hK.js",
+            "line": 1,
+            "route_offset": 18176
+          },
+          {
+            "call_offset": 32450,
+            "column": 30622,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/bytedanceAccount-BoblE5hK.js",
+            "line": 1,
+            "route_offset": 30621
+          },
+          {
+            "call_offset": 592049,
+            "column": 423141,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/bytedanceBatch-mBq4gNM_.js",
+            "line": 13,
+            "route_offset": 590688
+          },
+          {
+            "call_offset": 1499349,
+            "column": 82538,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/index-D9HAN43D.js",
+            "line": 39,
+            "route_offset": 1498904
+          },
+          {
+            "call_offset": 8180,
+            "column": 2544,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/landingpage-CvtqGvQP.js",
+            "line": 1,
+            "route_offset": 2543
+          },
+          {
+            "call_offset": 8687,
+            "column": 2544,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/landingpage-CvtqGvQP.js",
+            "line": 1,
+            "route_offset": 2543
+          },
+          {
+            "call_offset": 4855,
+            "column": 2847,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/localAudienceConfigV2-B2N1-ne0.js",
+            "line": 1,
+            "route_offset": 2846
+          },
+          {
+            "call_offset": 13572,
+            "column": 11299,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/localAudienceConfigV2-B2N1-ne0.js",
+            "line": 1,
+            "route_offset": 11298
+          },
+          {
+            "call_offset": 18821,
+            "column": 16904,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/localAudienceConfigV2-B2N1-ne0.js",
+            "line": 1,
+            "route_offset": 16903
+          },
+          {
+            "call_offset": 53647,
+            "column": 42756,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/localAudienceConfigV2-B2N1-ne0.js",
+            "line": 1,
+            "route_offset": 42755
+          },
+          {
+            "call_offset": 15318,
+            "column": 15233,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/nativeanchor-data-XFt-UFfy.js",
+            "line": 1,
+            "route_offset": 15232
+          },
+          {
+            "call_offset": 36520,
+            "column": 5120,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/nativeanchor-data-XFt-UFfy.js",
+            "line": 3,
+            "route_offset": 34552
+          },
+          {
+            "call_offset": 7034,
+            "column": 5054,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/toutiao-CnQmZVVX.js",
+            "line": 1,
+            "route_offset": 5053
+          },
+          {
+            "call_offset": 12590,
+            "column": 11155,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/toutiao-CnQmZVVX.js",
+            "line": 1,
+            "route_offset": 11154
+          },
+          {
+            "call_offset": 19278,
+            "column": 17854,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/toutiao-CnQmZVVX.js",
+            "line": 1,
+            "route_offset": 17853
+          },
+          {
+            "call_offset": 23230,
+            "column": 21888,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/toutiao-CnQmZVVX.js",
+            "line": 1,
+            "route_offset": 21887
+          },
+          {
+            "call_offset": 27332,
+            "column": 25700,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/toutiao-CnQmZVVX.js",
+            "line": 1,
+            "route_offset": 25699
+          },
+          {
+            "call_offset": 2469,
+            "column": 2111,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/trackActivitie-9KLUd7ci.js",
+            "line": 1,
+            "route_offset": 2110
+          }
+        ],
+        "contract_confidence": "low",
+        "learned_parameters": [],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "POST",
+          "path": "/turbo_engine/api/v1/bytedance/manage/account/list/"
+        },
+        "source": "src/gravity_sdk/census/data/route-params.json",
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "medium",
+            "default_observed": true,
+            "location": "query",
+            "name": "page",
+            "path": "$.page",
+            "presence": "unknown",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "query",
+            "name": "page_size",
+            "path": "$.page_size",
+            "presence": "unknown",
+            "types": [
+              "integer",
+              "number",
+              "unknown"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "filters",
+            "path": "$.filters",
+            "presence": "unknown",
+            "types": [
+              "array",
+              "unknown"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "many_meaning",
+            "path": "$.many_meaning",
+            "presence": "unknown",
+            "types": [
+              "string",
+              "unknown"
+            ]
+          },
+          {
+            "confidence": "high",
+            "default_observed": true,
+            "location": "body",
+            "name": "need_group_list",
+            "path": "$.need_group_list",
+            "presence": "unknown",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "confidence": "high",
+            "default_observed": false,
+            "location": "body",
+            "name": "order_by",
+            "path": "$.order_by",
+            "presence": "unknown",
+            "types": [
+              "unknown"
+            ]
+          },
+          {
+            "confidence": "high",
+            "default_observed": true,
+            "location": "body",
+            "name": "page",
+            "path": "$.page",
+            "presence": "unknown",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "page_size",
+            "path": "$.page_size",
+            "presence": "unknown",
+            "types": [
+              "integer"
+            ]
+          }
+        ]
+      },
+      "path": "/turbo_engine/api/v1/bytedance/manage/account/list/",
+      "promotion_level": "账户",
+      "promotion_platform": "bytedance",
+      "semantic_confidence": "medium",
+      "semantic_evidence": [
+        "read_action_path_token"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "${J.assetList.length} 个资产",
+        "${J.eventList.length} 个事件",
+        "<产品名称>",
+        "<推广活动名称>",
+        "<日期>",
+        "<素材名>-衍生",
+        "AccountCenter服务报错，暂时忽略",
+        "pre环境触发",
+        "test环境触发",
+        "人群包状态",
+        "全部",
+        "全部账户",
+        "创建人",
+        "创建时间",
+        "创意组件",
+        "升级版-协作者",
+        "升级版-管理员",
+        "协作者",
+        "备注",
+        "失败原因"
+      ]
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: not_probed, pagination_unverified, request_binding_unverified, response_schema_unverified",
+    "contract_version": 1,
+    "description": "Draft catalog entry inferred from census route POST /turbo_engine/api/v1/bytedance/manage/account/list/; request binding, pagination, and response projection remain unverified.",
+    "domain": "promotion",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "filters": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=unknown); presence describes frontend calls and is not a server-required declaration.",
+        "item_type": "object",
+        "type": "array"
+      },
+      "many_meaning": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=unknown); presence describes frontend calls and is not a server-required declaration.",
+        "type": "string"
+      },
+      "need_group_list": {
+        "default": 1,
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=unknown); presence describes frontend calls and is not a server-required declaration.",
+        "type": "integer"
+      },
+      "order_by": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=unknown); presence describes frontend calls and is not a server-required declaration.",
+        "type": "any"
+      },
+      "page": {
+        "default": 1,
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=unknown); presence describes frontend calls and is not a server-required declaration.",
+        "type": "integer"
+      },
+      "page_size": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=unknown); presence describes frontend calls and is not a server-required declaration.",
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "need_group_list": 1,
+        "page": 1
+      }
+    },
+    "operation_id": "promotion.bytedance.account.list",
+    "pagination": {
+      "kind": "unverified",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/bytedance/manage/account/list/",
+    "platform": "bytedance",
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract"
+      ],
+      "family": "promotion.family.009",
+      "platform": "bytedance",
+      "source_files": [
+        "drafts/promotion.bytedance.account.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "filters",
+        "many_meaning",
+        "need_group_list",
+        "order_by",
+        "page",
+        "page_size"
+      ],
+      "defaults": {
+        "need_group_list": 1,
+        "page": 1
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "account",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "promotion.json"
+}

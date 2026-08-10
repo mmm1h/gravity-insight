@@ -1,0 +1,148 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 4,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "看板筛选收藏目录；支持 dashboard/default/name 精确 filters，并完整返回已登记的 condition/config 动态 JSON 配置（会话凭证键仍递归脱敏）。",
+    "domain": "analysis",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "app_id": {
+        "max_length": 64,
+        "required": true,
+        "type": "string"
+      },
+      "filters": {
+        "item_type": "object",
+        "max_items": 4,
+        "min_items": 1,
+        "required": true,
+        "type": "array"
+      },
+      "page": {
+        "default": 1,
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 20,
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "app_id": "$first_app_id",
+        "filters": [
+          {
+            "field": "dashboard_id",
+            "operator": 1,
+            "values": [
+              "$first_dashboard_id"
+            ]
+          }
+        ],
+        "page": 1,
+        "page_size": 1
+      }
+    },
+    "operation_id": "analysis.dashboard.condition_favourite.list",
+    "pagination": {
+      "default_page_size": 20,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 100,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/turbo_engine/api/v2/datamanageconfig/analysis_dashboard_condition_favourite/list/",
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "condition"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.dashboard.condition_favourite.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "page",
+        "page_size",
+        "app_id",
+        "filters"
+      ],
+      "defaults": {
+        "page": 1,
+        "page_size": 20
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "analysis.dashboard.detail",
+        "output_path": "data.id",
+        "selection": "unique"
+      }
+    ],
+    "resource": "dashboard_condition_favourite",
+    "response_projection": {
+      "data_keys": [
+        "list",
+        "page_info"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "id",
+        "app_id",
+        "dashboard_id",
+        "name",
+        "default_to_one",
+        "default_to_all",
+        "to_use",
+        "cond_logic",
+        "config",
+        "create_time",
+        "modify_time"
+      ],
+      "known_omitted_item_keys": [
+        "condition"
+      ],
+      "opaque_json_item_keys": [
+        "config"
+      ],
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis_dashboard.json"
+}

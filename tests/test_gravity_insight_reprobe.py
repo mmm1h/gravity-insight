@@ -1,0 +1,408 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from gravity_sdk.prober.model import build_draft
+from gravity_sdk.prober.parameters import (
+    apply_error_learning,
+    apply_stable_request_patterns,
+    assemble_source_parameters,
+    bind_stable_parent_candidates,
+    parameter_hints_from_error,
+)
+from gravity_sdk.prober.probe_support import resolve_inputs
+from gravity_sdk.prober.reprobe import (
+    downgrade_auth_contaminated_draft,
+    prune_missing_probe_references,
+    select_parameter_reprobes,
+)
+from gravity_sdk.prober.transport import RecordingSession, RequestDiscipline
+
+
+def _route() -> dict[str, object]:
+    return {
+        "business_module": "其它",
+        "callers": ["loadExample"],
+        "contract_family": None,
+        "estimated_implementation_cost": "低",
+        "first_occurrence": {"file": "raw/example.js", "offset": 10},
+        "manifest_operations": [],
+        "method": "POST",
+        "method_certainty": "high",
+        "method_evidence": ["same_request_options"],
+        "path": "/turbo_engine/api/v1/example/list/",
+        "promotion_platform": None,
+        "status": "uncovered_read",
+        "ui_texts": ["Example"],
+    }
+
+
+def _parameter_contract() -> dict[str, object]:
+    return {
+        "method": "POST",
+        "path": "/turbo_engine/api/v1/example/list/",
+        "status": "extracted",
+        "contract_confidence": "medium",
+        "analysis": {
+            "call_sites": [
+                {
+                    "file": "raw/example.js",
+                    "route_offset": 10,
+                    "call_offset": 20,
+                    "evidence_kind": "load_call",
+                }
+            ]
+        },
+        "path_parameters": [],
+        "query_parameters": [],
+        "body_parameters": [
+            {
+                "name": "app_id",
+                "path": "$.app_id",
+                "types": ["unknown"],
+                "confidence": "medium",
+                "required": "observed_always",
+            },
+            {
+                "name": "page",
+                "path": "$.page",
+                "types": ["integer"],
+                "confidence": "high",
+                "required": "observed_always",
+                "default": 1,
+            },
+            {
+                "name": "filters",
+                "path": "$.filters",
+                "types": ["array"],
+                "confidence": "medium",
+                "required": "observed_conditional",
+            },
+        ],
+    }
+
+
+def _write_json(path: Path, value: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
+
+
+def test_parameter_assembly_keeps_frontend_presence_distinct_from_required() -> None:
+    source = build_draft(_route(), set())
+    source["operation"]["request"]["query_fields"] = ["app_id"]
+
+    assembled, stats = assemble_source_parameters(source, _parameter_contract())
+
+    operation = assembled["operation"]
+    assert {"app_id", "filters", "page"}.issubset(
+        operation["request"]["body_fields"]
+    )
+    assert "app_id" not in operation["request"]["query_fields"]
+    assert operation["live_probe"]["inputs"]["app_id"] == 0
+    assert operation["live_probe"]["inputs"]["page"] == 1
+    assert "filters" not in operation["live_probe"]["inputs"]
+    assert "required" not in operation["input_fields"]["app_id"]
+    assert "not a server-required declaration" in operation["input_fields"]["app_id"]["description"]
+    assert stats["high_confidence"] == 1
+    assert stats["medium_confidence"] == 2
+    metadata = assembled["draft"]["route_evidence"]["parameter_contract"]
+    assert metadata["required_semantics"] == "frontend_observation_only"
+    assert metadata["call_sites"][0]["call_offset"] == 20
+
+
+def test_code_1004_learning_records_only_parameter_shape() -> None:
+    source, _ = assemble_source_parameters(
+        build_draft(_route(), set()), _parameter_contract()
+    )
+    payload = {
+        "code": 1004,
+        "extra": {"app_id": ["private error text must not persist"]},
+    }
+
+    hints = parameter_hints_from_error(payload, known_parameters=("app_id", "page"))
+    learned, adjustment = apply_error_learning(source, payload, retry_index=1)
+
+    assert hints == [{"field": "app_id", "basis": "semantic_error_extra_key"}]
+    assert adjustment is not None
+    assert adjustment["field"] == "app_id"
+    assert adjustment["response_values_persisted"] is False
+    assert "private error text" not in json.dumps(adjustment)
+    assert learned["operation"]["live_probe"]["inputs"]["app_id"] == 1
+
+
+def test_code_1003_learning_applies_all_extra_parameter_keys_together() -> None:
+    source, _ = assemble_source_parameters(
+        build_draft(_route(), set()), _parameter_contract()
+    )
+    payload = {
+        "code": 1003,
+        "extra": {"app_id": ["hidden"], "filters": ["hidden"]},
+    }
+
+    learned, adjustment = apply_error_learning(source, payload, retry_index=1)
+
+    assert adjustment is not None
+    assert adjustment["fields"] == ["app_id", "filters"]
+    assert learned["operation"]["live_probe"]["inputs"]["app_id"] == 1
+    assert learned["operation"]["live_probe"]["inputs"]["filters"] == [{}]
+    assert "hidden" not in json.dumps(adjustment)
+
+
+def test_error_learning_initializes_missing_parameter_contract() -> None:
+    source = build_draft(_route(), set())
+    source["draft"]["route_evidence"].pop("parameter_contract", None)
+
+    learned, adjustment = apply_error_learning(
+        source,
+        {"code": 1004, "extra": {"parent_id": ["hidden"]}},
+        retry_index=1,
+    )
+
+    assert adjustment is not None
+    contract = learned["draft"]["route_evidence"]["parameter_contract"]
+    assert contract["source"] == "live_semantic_error"
+    assert contract["learned_parameters"] == ["parent_id"]
+    assert "hidden" not in json.dumps(contract)
+
+
+def test_non_1004_semantic_error_does_not_trigger_parameter_learning() -> None:
+    assert parameter_hints_from_error(
+        {"code": 1005, "extra": {"app_id": "not retained"}},
+        known_parameters=("app_id",),
+    ) == []
+
+
+def test_parameter_reprobe_selection_keeps_write_semantics_skipped(tmp_path: Path) -> None:
+    source, _ = assemble_source_parameters(
+        build_draft(_route(), set()), _parameter_contract()
+    )
+    source["draft"]["blockers"] = [
+        {
+            "code": "request_parameters_required",
+            "status": "open",
+            "detail": "semantic error",
+        }
+    ]
+    _write_json(tmp_path / "metadata.example.list.json", source)
+
+    selected, skipped = select_parameter_reprobes(tmp_path)
+
+    assert selected == [source["operation"]["operation_id"]]
+    assert skipped == []
+
+    source["operation"]["path_template"] = "/turbo_engine/api/v1/example/export/"
+    _write_json(tmp_path / "metadata.example.list.json", source)
+    selected, skipped = select_parameter_reprobes(tmp_path)
+    assert selected == []
+    assert skipped[0]["write_semantics_reason"] == "forbidden_path_segment:export"
+
+
+def test_missing_probe_reference_is_removed_and_gate_is_downgraded(tmp_path: Path) -> None:
+    source = build_draft(_route(), set())
+    source["operation"]["operation_id"] = "developer.application.list"
+    source["draft"]["probe_evidence"] = [
+        {
+            "path": "tmp/codex/missing-probe-evidence.yaml",
+            "probed_at": "2026-08-08T00:00:00Z",
+            "conclusion": "success",
+            "successful": True,
+            "pagination_verified": True,
+            "raw_schema_fingerprint": "a" * 64,
+            "projected_schema_fingerprint": "b" * 64,
+        }
+    ]
+    _write_json(tmp_path / "developer.application.list.json", source)
+
+    result = prune_missing_probe_references(
+        "developer.application.list", draft_root=tmp_path
+    )
+
+    persisted = json.loads(
+        (tmp_path / "developer.application.list.json").read_text(encoding="utf-8")
+    )
+    assert result["removed"] == ["tmp/codex/missing-probe-evidence.yaml"]
+    assert persisted["draft"]["probe_evidence"] == []
+    assert "successful_probe" in persisted["draft"]["promotion_gate"]["missing"]
+
+
+def test_exact_stable_parent_candidate_is_bound_without_a_value(tmp_path: Path) -> None:
+    draft_root = tmp_path / "drafts"
+    operation_root = tmp_path / "operations"
+    source, _ = assemble_source_parameters(
+        build_draft(_route(), set()), _parameter_contract()
+    )
+    source["operation"]["input_fields"]["app_id"] = {"type": "integer"}
+    _write_json(draft_root / f"{source['operation']['operation_id']}.json", source)
+    _write_json(
+        operation_root / "app.list.json",
+        {"operation": {"operation_id": "app.list", "stability": "stable"}},
+    )
+
+    result = bind_stable_parent_candidates(
+        draft_root=draft_root,
+        operation_root=operation_root,
+        operation_ids=[source["operation"]["operation_id"]],
+    )
+
+    persisted = json.loads(
+        (draft_root / f"{source['operation']['operation_id']}.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert result["bindings"] == 1
+    assert persisted["operation"]["live_probe"]["inputs"]["app_id"] == "$parent:app_id"
+    assert persisted["operation"]["required_parent"][0]["output_path"] == "data.list[].id"
+    assert persisted["operation"]["required_parent"][0]["selection"] == "caller_select"
+
+
+def test_named_parent_placeholders_resolve_independent_fields() -> None:
+    class StableClient:
+        def probe(self, operation_id: str) -> dict[str, object]:
+            assert operation_id == "promotion.example.advertiser.list"
+            return {
+                "status": "success",
+                "data": {"list": [{"advertiser_id": 7, "campaign_id": 9}]},
+            }
+
+    source = build_draft(_route(), set())
+    source["operation"]["required_parent"] = [
+        {
+            "operation_id": "promotion.example.advertiser.list",
+            "input_field": "advertiser_id",
+            "output_path": "data.list[].advertiser_id",
+            "selection": "first",
+        },
+        {
+            "operation_id": "promotion.example.advertiser.list",
+            "input_field": "campaign_id",
+            "output_path": "data.list[].campaign_id",
+            "selection": "first",
+        },
+    ]
+    recording = RecordingSession(
+        object(), RequestDiscipline(sleeper=lambda _: None)
+    )
+    parent_cache: dict[str, tuple[object, dict[str, object]]] = {}
+
+    resolved = resolve_inputs(
+        {
+            "advertiser_id": "$parent:advertiser_id",
+            "campaign_id": "$parent:campaign_id",
+        },
+        source=source,
+        stable_client=StableClient(),
+        recording=recording,
+        parent_cache=parent_cache,
+    )
+
+    assert resolved == {"advertiser_id": 7, "campaign_id": 9}
+    assert len(parent_cache) == 2
+
+
+def test_parent_all_selection_preserves_array_cardinality() -> None:
+    class StableClient:
+        def probe(self, operation_id: str) -> dict[str, object]:
+            assert operation_id == "promotion.example.advertiser.list"
+            return {
+                "status": "success",
+                "data": {"list": [{"advertiser_id": 7}, {"advertiser_id": 9}]},
+            }
+
+    source = build_draft(_route(), set())
+    source["operation"]["required_parent"] = [
+        {
+            "operation_id": "promotion.example.advertiser.list",
+            "input_field": "advertiser_ids",
+            "output_path": "data.list[].advertiser_id",
+            "selection": "all",
+        }
+    ]
+    recording = RecordingSession(
+        object(), RequestDiscipline(sleeper=lambda _: None)
+    )
+
+    resolved = resolve_inputs(
+        {"advertiser_ids": "$parent:advertiser_ids"},
+        source=source,
+        stable_client=StableClient(),
+        recording=recording,
+        parent_cache={},
+    )
+
+    assert resolved == {"advertiser_ids": [7, 9]}
+
+
+def test_verified_stable_date_pattern_replaces_invalid_scalar_candidate(
+    tmp_path: Path,
+) -> None:
+    source = build_draft(_route(), set())
+    source["operation"]["input_fields"]["date_list"] = {
+        "type": "string",
+        "default": "",
+    }
+    source["operation"]["request"]["body_fields"].append("date_list")
+    source["operation"]["request"]["defaults"]["date_list"] = ""
+    source["operation"]["live_probe"]["inputs"]["date_list"] = ""
+    operation_id = source["operation"]["operation_id"]
+    _write_json(tmp_path / f"{operation_id}.json", source)
+
+    result = apply_stable_request_patterns(
+        draft_root=tmp_path, operation_ids=[operation_id]
+    )
+
+    persisted = json.loads(
+        (tmp_path / f"{operation_id}.json").read_text(encoding="utf-8")
+    )
+    assert result["drafts_adjusted"] == 1
+    assert persisted["operation"]["live_probe"]["inputs"]["date_list"] == [
+        "$today",
+        "$today",
+    ]
+    assert persisted["operation"]["input_fields"]["date_list"]["type"] == "array"
+    assert "date_list" not in persisted["operation"]["request"]["defaults"]
+
+
+def test_auth_only_probe_reference_is_removed_from_target_contract(
+    tmp_path: Path,
+) -> None:
+    draft_root = tmp_path / "drafts"
+    source = build_draft(_route(), set())
+    operation_id = source["operation"]["operation_id"]
+    reference = {
+        "path": "evidence/auth-only.yaml",
+        "probed_at": "2026-08-09T00:00:00Z",
+        "conclusion": "privacy_review_required",
+        "successful": False,
+        "pagination_verified": False,
+        "raw_schema_fingerprint": "a" * 64,
+        "projected_schema_fingerprint": None,
+    }
+    source["draft"]["probe_evidence"] = [reference]
+    source["draft"]["candidate_fields"] = [
+        {
+            "path": "data.user.id",
+            "types": ["integer"],
+            "presence": "observed",
+            "privacy_classification": "non_sensitive",
+            "classification_reason": "business_metadata_name_pattern",
+            "expose": True,
+        }
+    ]
+    _write_json(draft_root / f"{operation_id}.json", source)
+    _write_json(
+        tmp_path / "evidence" / "auth-only.yaml",
+        {"http": [{"path": "/account_center/api/v1/user_login/v2/"}]},
+    )
+
+    result = downgrade_auth_contaminated_draft(
+        operation_id, draft_root=draft_root, repo_root=tmp_path
+    )
+
+    persisted = json.loads(
+        (draft_root / f"{operation_id}.json").read_text(encoding="utf-8")
+    )
+    assert result["removed"] == ["evidence/auth-only.yaml"]
+    assert persisted["draft"]["probe_evidence"] == []
+    assert persisted["operation"]["privacy_policy"]["classification"] == "unverified"
+    assert persisted["operation"]["response_projection"]["item_keys"] == []

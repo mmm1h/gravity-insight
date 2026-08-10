@@ -1,0 +1,214 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 4,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "腾讯广告 3.0 广告主报表。",
+    "domain": "promotion",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "date_list": {
+        "required": true,
+        "type": "array"
+      },
+      "filtering": {
+        "default": {},
+        "type": "object"
+      },
+      "filters": {
+        "default": [],
+        "type": "array"
+      },
+      "order_by": {
+        "default": [],
+        "type": "array"
+      },
+      "page": {
+        "default": 1,
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 10,
+        "type": "integer"
+      },
+      "query_fields": {
+        "default": [],
+        "type": "array"
+      },
+      "time_line": {
+        "default": "behavior",
+        "enum": [
+          "behavior",
+          "active",
+          "request"
+        ],
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "date_list": [
+          "$today",
+          "$today"
+        ],
+        "filtering": {},
+        "filters": [],
+        "order_by": [],
+        "page": 1,
+        "page_size": 1,
+        "query_fields": []
+      }
+    },
+    "operation_id": "promotion.tencent.advertiser.list",
+    "pagination": {
+      "default_page_size": 10,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 10,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/turbo_engine/api/v1/tencent/advertiser/list/v2/",
+    "platform": "tencent",
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "advertiser_name"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "tencent",
+      "source_files": [
+        "operations/promotion.tencent.advertiser.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "filtering",
+        "page",
+        "page_size",
+        "query_fields",
+        "date_list",
+        "order_by",
+        "filters",
+        "time_line"
+      ],
+      "defaults": {
+        "filtering": {},
+        "filters": [],
+        "order_by": [],
+        "page": 1,
+        "page_size": 10,
+        "query_fields": [],
+        "time_line": "behavior"
+      },
+      "fixed_body": {
+        "version": "v3.0"
+      },
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "advertiser",
+    "response_projection": {
+      "data_dynamic_item_fields": {
+        "total": [
+          "query_fields"
+        ]
+      },
+      "data_item_keys": {
+        "total": [
+          "cost"
+        ]
+      },
+      "data_keys": [
+        "list",
+        "page_info",
+        "total",
+        "update_at"
+      ],
+      "dynamic_item_fields": [
+        "query_fields"
+      ],
+      "item_keys": [
+        "id",
+        "name",
+        "status",
+        "date",
+        "day",
+        "hour",
+        "week",
+        "month",
+        "advertiser_id",
+        "campaign_id",
+        "campaign_name",
+        "project_id",
+        "project_name",
+        "group_id",
+        "group_name",
+        "ad_group_id",
+        "ad_group_name",
+        "ad_unit_id",
+        "ad_unit_name",
+        "creative_id",
+        "creative_name",
+        "account_id",
+        "account_name",
+        "app_id",
+        "app_name",
+        "advertiser_budget_mode",
+        "advertiser_system_status",
+        "cost"
+      ],
+      "known_omitted_item_keys": [
+        "advertiser_agent_id",
+        "advertiser_agent_name",
+        "advertiser_balance",
+        "advertiser_budget",
+        "advertiser_name",
+        "advertiser_remark",
+        "company",
+        "delay",
+        "project_list"
+      ],
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "promotion.json"
+}

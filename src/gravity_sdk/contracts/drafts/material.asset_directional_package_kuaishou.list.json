@@ -1,0 +1,393 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "empty_sample",
+        "detail": "The observed tenant response was empty and cannot prove an item schema.",
+        "evidence": "evidence/probe/20260808T205525Z_material.asset_directional_package_kuaishou.list.yaml",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "evidence": "evidence/probe/20260808T205525Z_material.asset_directional_package_kuaishou.list.yaml",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [
+      {
+        "classification_reason": "frontend_static_consumer_unreviewed",
+        "expose": false,
+        "path": "data.list",
+        "presence": "unknown",
+        "privacy_classification": "manual_review",
+        "types": [
+          "unknown"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.page",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.page_size",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.total_number",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.total_page",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      }
+    ],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_sdk/census/data/coverage.json",
+      "json_pointer": "/routes/225",
+      "method": "POST",
+      "path": "/turbo_engine/api/v1/asset/directional_package/kuaishou/list/",
+      "route_index": 225,
+      "route_sha256": "2d0634fe3097ce4e2a7b33b94d8fd5879aeb13cc3f5ce26eea913174e964d1e1"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [],
+    "probe_evidence": [
+      {
+        "conclusion": "inconclusive_empty",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205525Z_material.asset_directional_package_kuaishou.list.yaml",
+        "probed_at": "2026-08-08T20:55:25Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "7c58ed2c08c62403763f03bf84baabf2f6609efc6064f87aa03b35d9b739c9ea",
+        "successful": false
+      }
+    ],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "empty_sample",
+        "response_schema_unverified",
+        "response_projection",
+        "successful_probe"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "资产",
+      "callers": [
+        "Ar",
+        "U",
+        "f",
+        "i",
+        "s"
+      ],
+      "contract_family": null,
+      "cost_reason": "素材 lookup normally depends on a parent account or campaign",
+      "estimated_implementation_cost": "中",
+      "first_occurrence": {
+        "column": 4984,
+        "file": "raw/web.gravity-engine.com/assets/Audience-AMAPs9Rz.js",
+        "line": 1,
+        "offset": 4983,
+        "url": "https://web.gravity-engine.com/assets/Audience-AMAPs9Rz.js"
+      },
+      "method": "POST",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 5918,
+            "column": 4984,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Audience-AMAPs9Rz.js",
+            "line": 1,
+            "route_offset": 4983
+          },
+          {
+            "call_offset": 45334,
+            "column": 44147,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Batch-DdiGltla.js",
+            "line": 1,
+            "route_offset": 44146
+          },
+          {
+            "call_offset": 204916,
+            "column": 194582,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Batch-DdiGltla.js",
+            "line": 1,
+            "route_offset": 194581
+          },
+          {
+            "call_offset": 28671,
+            "column": 26909,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/kuaishouBatch-B4n3gpg0.js",
+            "line": 1,
+            "route_offset": 26908
+          },
+          {
+            "call_offset": 293604,
+            "column": 288009,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/kuaishouBatch-B4n3gpg0.js",
+            "line": 1,
+            "route_offset": 288008
+          },
+          {
+            "call_offset": 313412,
+            "column": 288009,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/kuaishouBatch-B4n3gpg0.js",
+            "line": 1,
+            "route_offset": 288008
+          }
+        ],
+        "contract_confidence": "medium",
+        "learned_parameters": [],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "POST",
+          "path": "/turbo_engine/api/v1/asset/directional_package/kuaishou/list/"
+        },
+        "source": "src/gravity_sdk/census/data/route-params.json",
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "filters",
+            "path": "$.filters",
+            "presence": "observed_always",
+            "types": [
+              "array",
+              "unknown"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": true,
+            "location": "body",
+            "name": "page",
+            "path": "$.page",
+            "presence": "observed_always",
+            "types": [
+              "integer",
+              "unknown"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "page_size",
+            "path": "$.page_size",
+            "presence": "observed_always",
+            "types": [
+              "integer",
+              "number",
+              "unknown"
+            ]
+          }
+        ]
+      },
+      "path": "/turbo_engine/api/v1/asset/directional_package/kuaishou/list/",
+      "promotion_level": null,
+      "promotion_platform": null,
+      "semantic_confidence": "medium",
+      "semantic_evidence": [
+        "read_action_path_token"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "全部相同",
+        "关键词",
+        "创建人",
+        "加载中，请等待...",
+        "按账户分配",
+        "操作",
+        "更新时间",
+        "本地定向包",
+        "稍后处理",
+        "立即迁移到新版",
+        "策略组描述",
+        "请输入策略组描述",
+        "配置加载中..."
+      ],
+      "parent_resolution": {
+        "basis": "child_semantic_success_without_parent",
+        "bindings": [],
+        "conclusion": "unblocked",
+        "detail": "The child route returned a semantic success without a parent selector; no parent binding is required.",
+        "evidence": "evidence/probe/20260809T145635Z_material.asset_directional_package_kuaishou.list.yaml",
+        "missing_evidence": [],
+        "replacement_blocker": null
+      }
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: empty_sample, response_schema_unverified",
+    "contract_version": 1,
+    "description": "Draft catalog entry inferred from census route POST /turbo_engine/api/v1/asset/directional_package/kuaishou/list/; request binding, pagination, and response projection remain unverified.",
+    "domain": "material",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "filters": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "item_type": "object",
+        "type": "array"
+      },
+      "page": {
+        "default": 1,
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "integer"
+      },
+      "page_size": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "filters": [],
+        "page": 1,
+        "page_size": 20
+      }
+    },
+    "operation_id": "material.asset_directional_package_kuaishou.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/asset/directional_package/kuaishou/list/",
+    "platform": "kuaishou",
+    "privacy_policy": {
+      "classification": "material",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract"
+      ],
+      "family": null,
+      "platform": "kuaishou",
+      "source_files": [
+        "drafts/material.asset_directional_package_kuaishou.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "filters",
+        "page",
+        "page_size"
+      ],
+      "defaults": {
+        "page": 1
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "asset_directional_package_kuaishou",
+    "response_projection": {
+      "data_keys": [
+        "page_info"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "known_omitted_data_keys": [
+        "list"
+      ],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "material.json"
+}

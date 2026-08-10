@@ -1,0 +1,2128 @@
+{
+  "manifest_version": 1,
+  "operations": [
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "多维报表模板树；category 为空时使用页面默认分类。",
+      "domain": "report",
+      "effect": "read",
+      "input_fields": {
+        "category": {
+          "default": "",
+          "enum": [
+            ""
+          ],
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "category": ""
+        }
+      },
+      "operation_id": "report.multidim.template.tree",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v3/conftemplate/template/tree/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {
+          "category": ""
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "category"
+        ]
+      },
+      "required_parent": [],
+      "resource": "template",
+      "response_projection": {
+        "data_item_keys": {
+          "my_template": [
+            "id",
+            "name"
+          ],
+          "share_template": [
+            "id",
+            "name"
+          ]
+        },
+        "data_keys": [
+          "my_template",
+          "share_template"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "预设模板列表；上游路径 perset_template 为既有拼写。",
+      "domain": "report",
+      "effect": "read",
+      "input_fields": {
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "filters": [],
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "report.multidim.template.preset.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 20,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v3/conftemplate/perset_template/list/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "remark"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filters",
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "filters": [],
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "template",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "category",
+          "modify_time"
+        ],
+        "known_omitted_item_keys": [
+          "remark"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "get",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "预设模板安全详情。模板 id/category 从已登记预置模板列表解析；2026-08-08 最小探针 code=0，仅公开 name/remark，深层 columns/filterForm/extra_data 所在 config 容器固定省略。",
+      "domain": "report",
+      "effect": "read",
+      "input_fields": {
+        "category": {
+          "default": "",
+          "type": "string"
+        },
+        "id": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "category": "$first_preset_template_category",
+          "id": "$first_preset_template_id"
+        }
+      },
+      "operation_id": "report.multidim.template.preset.get",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v3/conftemplate/preset_template/detail/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "remark"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {
+          "category": ""
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "id",
+          "category"
+        ]
+      },
+      "required_parent": [
+        "report.multidim.template.preset.list"
+      ],
+      "resource": "template",
+      "response_projection": {
+        "data_item_keys": {
+          "detail": [
+            "name"
+          ]
+        },
+        "data_keys": [
+          "detail"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "known_omitted_data_item_keys": {
+          "detail": [
+            "config",
+            "remark"
+          ]
+        },
+        "required_data_keys": [
+          "detail"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "当前账号的多维报表模板。",
+      "domain": "report",
+      "effect": "read",
+      "input_fields": {
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "filters": [],
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "report.multidim.template.mine.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 20,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v3/conftemplate/my_template/list/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "remark"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filters",
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "filters": [],
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "template",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "category",
+          "modify_time"
+        ],
+        "known_omitted_item_keys": [
+          "remark"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "共享给当前账号的多维报表模板。",
+      "domain": "report",
+      "effect": "read",
+      "input_fields": {
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "filters": [],
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "report.multidim.template.shared.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 20,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v3/conftemplate/share_template/list/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "remark"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filters",
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "filters": [],
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "template",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "category",
+          "modify_time"
+        ],
+        "known_omitted_item_keys": [
+          "remark"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "多维报表媒体枚举。",
+      "domain": "report",
+      "effect": "read",
+      "input_fields": {},
+      "live_probe": {
+        "enabled": true,
+        "input": {}
+      },
+      "operation_id": "report.multidim.media_enum.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v3/adreport/media_enums/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "media_enum",
+      "response_projection": {
+        "data_keys": [
+          "bytedance",
+          "tencent",
+          "kuaishou"
+        ],
+        "data_path_item_keys": {
+          "bytedance.deep_bid_type": [
+            "code",
+            "name"
+          ],
+          "bytedance.deep_optimization_goal": [
+            "code",
+            "name"
+          ],
+          "bytedance.optimization_goal": [
+            "code",
+            "name"
+          ],
+          "kuaishou.deep_optimization_goal": [
+            "code",
+            "name"
+          ],
+          "kuaishou.optimization_goal": [
+            "code",
+            "name"
+          ],
+          "tencent.deep_optimization_goal": [
+            "code",
+            "name",
+            "order"
+          ],
+          "tencent.optimization_goal": [
+            "code",
+            "name"
+          ]
+        },
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "多维报表基础指标元数据。",
+      "domain": "report",
+      "effect": "read",
+      "input_fields": {
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "filters": [],
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "report.multidim.metric.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 20,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/report/api/v3/confmetric/metric/list/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size",
+          "filters"
+        ],
+        "defaults": {
+          "filters": [],
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "metric",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "cname",
+          "metric_type",
+          "tag_ids",
+          "exclusion_dims",
+          "tip",
+          "label",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "required_data_keys": [
+          "list"
+        ],
+        "scalar_list_item_types": {
+          "exclusion_dims": "string",
+          "tag_ids": "integer"
+        }
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "当前账号自定义指标。",
+      "domain": "report",
+      "effect": "read",
+      "input_fields": {
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "filters": [],
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "report.multidim.custom_metric.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 20,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/report/api/v3/confmetric/custom_metric/list/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size",
+          "filters"
+        ],
+        "defaults": {
+          "filters": [],
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "custom_metric",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "cname",
+          "metric_type",
+          "tag_ids",
+          "exclusion_dims",
+          "tip",
+          "label",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "required_data_keys": [
+          "list"
+        ],
+        "scalar_list_item_types": {
+          "exclusion_dims": "string",
+          "tag_ids": "integer"
+        }
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "共享给当前账号的自定义指标。",
+      "domain": "report",
+      "effect": "read",
+      "input_fields": {
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "filters": [],
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "report.multidim.custom_metric.shared.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 20,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/report/api/v3/confmetric/custom_metric/shared_to_me/list/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size",
+          "filters"
+        ],
+        "defaults": {
+          "filters": [],
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "custom_metric",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "cname",
+          "metric_type",
+          "tag_ids",
+          "exclusion_dims",
+          "tip",
+          "label",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "required_data_keys": [
+          "list"
+        ],
+        "scalar_list_item_types": {
+          "exclusion_dims": "string",
+          "tag_ids": "integer"
+        }
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "指标标签分类。",
+      "domain": "report",
+      "effect": "read",
+      "input_fields": {
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "filters": [],
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "report.multidim.metric_tag_category.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 20,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/report/api/v3/confmetric/tag_category/list/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "remark"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size",
+          "filters"
+        ],
+        "defaults": {
+          "filters": [],
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "metric_tag_category",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "cname",
+          "data_topic",
+          "order",
+          "create_time",
+          "modify_time"
+        ],
+        "known_omitted_item_keys": [
+          "remark"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "指标标签。",
+      "domain": "report",
+      "effect": "read",
+      "input_fields": {
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "filters": [],
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "report.multidim.metric_tag.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 20,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/report/api/v3/confmetric/tag/list/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "remark"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size",
+          "filters"
+        ],
+        "defaults": {
+          "filters": [],
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "metric_tag",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "cname",
+          "data_topic",
+          "order",
+          "category_id",
+          "exclusion_tags",
+          "create_time",
+          "modify_time"
+        ],
+        "known_omitted_item_keys": [
+          "remark"
+        ],
+        "required_data_keys": [
+          "list"
+        ],
+        "scalar_list_item_types": {
+          "exclusion_tags": "integer"
+        }
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "执行已登记维度、指标和时间窗口的多维报表查询；支持受控关键日展开，并返回请求指标的数字后缀动态列。",
+      "domain": "report",
+      "effect": "read",
+      "input_fields": {
+        "custom_metrics_list": {
+          "default": [],
+          "type": "array"
+        },
+        "data_conf": {
+          "default": {
+            "decimal_point": 2,
+            "return_all_metrics": true
+          },
+          "enum": [
+            {
+              "decimal_point": 2,
+              "return_all_metrics": true
+            }
+          ],
+          "type": "object"
+        },
+        "data_dims": {
+          "default": [],
+          "type": "array"
+        },
+        "data_topic": {
+          "default": "adreport",
+          "enum": [
+            "adreport"
+          ],
+          "type": "string"
+        },
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "metrics_list": {
+          "required": true,
+          "type": "array"
+        },
+        "multi_keys": {
+          "item_enum": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30
+          ],
+          "item_type": "integer",
+          "max_items": 29,
+          "min_items": 1,
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 100,
+          "type": "integer"
+        },
+        "relate_dims": {
+          "default": [],
+          "type": "array"
+        },
+        "time_dims": {
+          "enum": [
+            "hour",
+            "day",
+            "week",
+            "month",
+            "total"
+          ],
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "custom_metrics_list": [],
+          "data_dims": [],
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filters": [
+            {
+              "field": "app_id",
+              "operator": "EQUALS",
+              "values": [
+                "$first_app_id"
+              ]
+            }
+          ],
+          "metrics_list": [
+            "ap_cost"
+          ],
+          "page": 1,
+          "page_size": 1,
+          "relate_dims": [],
+          "time_dims": "day"
+        }
+      },
+      "operation_id": "report.multidim.query",
+      "pagination": {
+        "default_page_size": 100,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/report/api/v3/adreport/custom_get/",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "time_dims",
+          "date_list",
+          "data_dims",
+          "relate_dims",
+          "metrics_list",
+          "multi_keys",
+          "custom_metrics_list",
+          "data_conf",
+          "data_topic",
+          "filters",
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "custom_metrics_list": [],
+          "data_conf": {
+            "decimal_point": 2,
+            "return_all_metrics": true
+          },
+          "data_dims": [],
+          "data_topic": "adreport",
+          "filters": [],
+          "page": 1,
+          "page_size": 100,
+          "relate_dims": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "adreport",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "data_dims",
+            "relate_dims",
+            "metrics_list",
+            "custom_metrics_list",
+            "time_dims"
+          ]
+        },
+        "data_item_keys": {
+          "extra_data": [],
+          "total": [
+            "stat_time"
+          ]
+        },
+        "data_keys": [
+          "data_dims",
+          "extra_data",
+          "list",
+          "page_info",
+          "time_dims",
+          "tips",
+          "total"
+        ],
+        "data_numeric_suffix_item_fields": {
+          "total": [
+            "metrics_list",
+            "custom_metrics_list"
+          ]
+        },
+        "data_scalar_list_types": {
+          "data_dims": "string"
+        },
+        "dynamic_item_fields": [
+          "data_dims",
+          "relate_dims",
+          "metrics_list",
+          "custom_metrics_list",
+          "time_dims"
+        ],
+        "item_keys": [
+          "app_id",
+          "click_company",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "date",
+          "stat_time"
+        ],
+        "numeric_suffix_item_fields": [
+          "metrics_list",
+          "custom_metrics_list"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "基于多维报表查询配置计算合计；支持受控关键日展开，并返回请求指标的数字后缀动态列。",
+      "domain": "report",
+      "effect": "read",
+      "input_fields": {
+        "custom_metrics_list": {
+          "default": [],
+          "type": "array"
+        },
+        "data_conf": {
+          "default": {
+            "decimal_point": 2,
+            "return_all_metrics": true
+          },
+          "enum": [
+            {
+              "decimal_point": 2,
+              "return_all_metrics": true
+            }
+          ],
+          "type": "object"
+        },
+        "data_dims": {
+          "default": [],
+          "type": "array"
+        },
+        "data_list": {
+          "type": "array"
+        },
+        "data_topic": {
+          "default": "adreport",
+          "enum": [
+            "adreport"
+          ],
+          "type": "string"
+        },
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "metrics_list": {
+          "required": true,
+          "type": "array"
+        },
+        "multi_keys": {
+          "item_enum": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15,
+            16,
+            17,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            24,
+            25,
+            26,
+            27,
+            28,
+            29,
+            30
+          ],
+          "item_type": "integer",
+          "max_items": 29,
+          "min_items": 1,
+          "type": "array"
+        },
+        "relate_dims": {
+          "default": [],
+          "type": "array"
+        },
+        "time_dims": {
+          "enum": [
+            "hour",
+            "day",
+            "week",
+            "month",
+            "total"
+          ],
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "custom_metrics_list": [],
+          "data_dims": [],
+          "data_list": [],
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filters": [
+            {
+              "field": "app_id",
+              "operator": "EQUALS",
+              "values": [
+                "$first_app_id"
+              ]
+            }
+          ],
+          "metrics_list": [
+            "ap_cost"
+          ],
+          "relate_dims": [],
+          "time_dims": "day"
+        }
+      },
+      "operation_id": "report.multidim.calc_total",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v3/adreport/custom_get/calc_total/",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "time_dims",
+          "date_list",
+          "data_dims",
+          "relate_dims",
+          "metrics_list",
+          "multi_keys",
+          "custom_metrics_list",
+          "data_conf",
+          "data_topic",
+          "filters",
+          "data_list"
+        ],
+        "defaults": {
+          "custom_metrics_list": [],
+          "data_conf": {
+            "decimal_point": 2,
+            "return_all_metrics": true
+          },
+          "data_dims": [],
+          "data_topic": "adreport",
+          "filters": [],
+          "relate_dims": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "report.multidim.query"
+      ],
+      "resource": "adreport_total",
+      "response_projection": {
+        "data_keys": [
+          "list"
+        ],
+        "dynamic_item_fields": [
+          "data_dims",
+          "relate_dims",
+          "metrics_list",
+          "custom_metrics_list",
+          "time_dims"
+        ],
+        "item_keys": [
+          "app_id",
+          "click_company",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "date",
+          "stat_time"
+        ],
+        "numeric_suffix_item_fields": [
+          "metrics_list",
+          "custom_metrics_list"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "经营报表配置域的指标目录；返回指标中英文名、类型和提示说明，排除维度及标签标识不输出。",
+      "domain": "report",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "report.metric.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v3/confmetric/metric/list/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "metric",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "cname",
+          "metric_type",
+          "name",
+          "tip"
+        ],
+        "known_omitted_item_keys": [
+          "exclusion_dims",
+          "tag_ids"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "query",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "公司资源用量报表域的按日用量列表；返回日期及广告、广告创建、点击、成本、事件、画像、存储、追踪和素材传输用量，用户数不输出。",
+      "domain": "report",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "report.company_amount.query",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/report/api/v1/admin_report/query_company_amount/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "company_amount",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "ad_count",
+          "ad_create_amount_usage",
+          "adclick_count",
+          "cost_count",
+          "date",
+          "event_count",
+          "material_transmit_g_usage",
+          "profile_count",
+          "storage_count",
+          "tracking_count"
+        ],
+        "known_omitted_data_keys": [
+          "total"
+        ],
+        "known_omitted_item_keys": [
+          "user_count"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "query",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "App 经营报表域的概览与趋势；返回概览指标的当前值、对比值和比率，以及按日广告成本、收入、活跃、注册、付费和 ROI 趋势。",
+      "domain": "report",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "app_ids": {
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "array"
+        },
+        "date_list": {
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "array"
+        },
+        "use_cache": {
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "any"
+        },
+        "verbose": {
+          "default": false,
+          "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "boolean"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_ids": [],
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "use_cache": 0,
+          "verbose": false
+        }
+      },
+      "operation_id": "report.overview.query",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v2/app/overview/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_ids",
+          "date_list",
+          "use_cache",
+          "verbose"
+        ],
+        "defaults": {
+          "verbose": false
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "overview",
+      "response_projection": {
+        "data_item_keys": {
+          "data_overview": [
+            "base",
+            "cname",
+            "compare",
+            "name",
+            "ratio"
+          ],
+          "trend_overview2": [
+            "AdCost",
+            "AppActivePayAmountSumReco",
+            "AppAdFirstDayRevenueReco",
+            "AppAdRevenueReco",
+            "AppDAUReco",
+            "AppFirstDayPayAmountStandardReco",
+            "AppROIReco",
+            "AppRealRegisterCnt",
+            "AppRevenueReco",
+            "date"
+          ]
+        },
+        "data_keys": [
+          "data_overview",
+          "trend_overview2"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "known_omitted_data_item_keys": {
+          "data_overview": [
+            "order"
+          ]
+        },
+        "known_omitted_data_keys": [
+          "columns",
+          "trend_overview",
+          "verbose"
+        ],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    }
+  ]
+}

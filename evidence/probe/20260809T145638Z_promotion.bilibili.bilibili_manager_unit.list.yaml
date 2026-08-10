@@ -1,0 +1,31 @@
+{
+  "basis": "declared_parent_probe",
+  "bindings": [
+    {
+      "candidate_count": 0,
+      "candidate_types": [],
+      "output_path": "data.list[].advertiser_id",
+      "parent_operation_id": "promotion.bilibili.advertiser.list",
+      "selection": "caller_select",
+      "status": "empty",
+      "target_cardinality": "one",
+      "target_input": "advertiser_id"
+    }
+  ],
+  "conclusion": "undetermined",
+  "detail": "Declared parent probes were not enough to bind every parent-shaped input field: campaign_id.",
+  "http": [],
+  "missing_evidence": [
+    "A proven parent operation and output path for: campaign_id."
+  ],
+  "operation_id": "promotion.bilibili.bilibili_manager_unit.list",
+  "replacement_blocker": null,
+  "resolved_at": "2026-08-09T14:56:38Z",
+  "route": {
+    "method": "POST",
+    "path": "/turbo_engine/api/v1/bilibili/manager/unit/list/"
+  },
+  "schema_version": "gravity-insight.parent-resolution-evidence.v1",
+  "source_evidence": null,
+  "values_persisted": false
+}

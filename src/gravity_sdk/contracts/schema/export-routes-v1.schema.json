@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gravity-sdk.local/contracts/export-routes-v1.schema.json",
+  "title": "Gravity Insight export route registry",
+  "type": "object",
+  "required": ["schema_version", "routes"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": 1},
+    "routes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "operation_id", "effect", "method", "path", "contract_status",
+          "executable", "request", "response", "privacy", "verification"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "operation_id": {"type": "string"},
+          "effect": {
+            "enum": [
+              "export_job_create", "export_status", "export_download",
+              "export_cancel"
+            ]
+          },
+          "method": {"enum": ["GET", "POST", "UNKNOWN"]},
+          "path": {"type": "string"},
+          "contract_status": {"enum": ["verified", "unverified"]},
+          "executable": {"type": "boolean"},
+          "block_reason": {"type": ["string", "null"]},
+          "request": {"type": "object"},
+          "response": {"type": "object"},
+          "privacy": {"type": "object"},
+          "verification": {"type": "object"}
+        }
+      }
+    }
+  }
+}

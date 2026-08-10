@@ -1,0 +1,206 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 3,
+  "operation": {
+    "action": "get",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "单事件属性详情；event_name 由稳定事件目录解析，输出 common/custom/preset 属性定义及维表字段白名单。",
+    "domain": "analysis",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "app_id": {
+        "required": true,
+        "type": "string"
+      },
+      "event_name": {
+        "required": true,
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "app_id": "$first_app_id",
+        "event_name": "$first_event_name"
+      }
+    },
+    "operation_id": "analysis.event.info",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v2/event/event_info/",
+    "privacy_policy": {
+      "classification": "configuration",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "client_id",
+        "clientid",
+        "trace_id",
+        "traceid",
+        "wxopenid",
+        "idfa",
+        "idfv",
+        "oaid",
+        "imei",
+        "androidid",
+        "caid1",
+        "caid2",
+        "remark"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.event.info.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "app_id",
+        "event_name"
+      ]
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "analysis.event.list",
+        "output_path": "data.list[].name",
+        "selection": "first"
+      }
+    ],
+    "resource": "event_info",
+    "response_projection": {
+      "data_item_keys": {
+        "event_define": [
+          "accepted",
+          "app_id",
+          "cname",
+          "create_time",
+          "id",
+          "is_preset",
+          "lookup",
+          "modify_time",
+          "name",
+          "trigger_opportunity",
+          "uploaded",
+          "visible"
+        ]
+      },
+      "data_keys": [
+        "event_define",
+        "properties"
+      ],
+      "data_path_item_keys": {
+        "properties.common": [
+          "app_id",
+          "cname",
+          "create_time",
+          "data_type",
+          "dim_table",
+          "has_dict",
+          "id",
+          "is_common",
+          "is_preset",
+          "modify_time",
+          "name",
+          "prop_type",
+          "uploaded",
+          "visible"
+        ],
+        "properties.custom": [
+          "app_id",
+          "cname",
+          "create_time",
+          "data_type",
+          "dim_table",
+          "has_dict",
+          "id",
+          "is_common",
+          "is_preset",
+          "modify_time",
+          "name",
+          "prop_type",
+          "uploaded",
+          "visible"
+        ],
+        "properties.preset": [
+          "app_id",
+          "cname",
+          "create_time",
+          "data_type",
+          "dim_table",
+          "has_dict",
+          "id",
+          "is_common",
+          "is_preset",
+          "modify_time",
+          "name",
+          "prop_type",
+          "uploaded",
+          "visible"
+        ]
+      },
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "known_omitted_data_item_keys": {
+        "event_define": [
+          "remark"
+        ],
+        "properties": [
+          "extra",
+          "rules"
+        ]
+      },
+      "nested_item_keys": {
+        "dim_table": [
+          "name",
+          "cname",
+          "data_type",
+          "dim_using_table_name"
+        ]
+      },
+      "required_data_keys": [
+        "properties"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis.json"
+}

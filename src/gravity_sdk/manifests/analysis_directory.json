@@ -1,0 +1,279 @@
+{
+  "manifest_version": 1,
+  "operations": [
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "账号中心成员目录。仅允许 dept_id/role_id 的 INNERS(6) 过滤，返回内部成员标识、组织归属、角色、状态与时间；姓名、联系方式、头像和超管标志不进入分析响应。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "filters": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 5,
+          "min_items": 0,
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 100,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "filters": [],
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "analysis.account_user.list",
+      "pagination": {
+        "default_page_size": 100,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 2000,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/account_center/api/v1/user/list/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "remark",
+          "avatar",
+          "email",
+          "is_superuser",
+          "phone"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {
+          "filters": [],
+          "page": 1,
+          "page_size": 100
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "page",
+          "page_size",
+          "filters"
+        ]
+      },
+      "required_parent": [],
+      "resource": "account_user",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "company_id",
+          "company_name",
+          "create_time",
+          "dept_id",
+          "dept_info",
+          "id",
+          "is_banned",
+          "is_deleted",
+          "is_main",
+          "modify_time",
+          "roles",
+          "user_id"
+        ],
+        "known_omitted_item_keys": [
+          "avatar",
+          "email",
+          "is_superuser",
+          "name",
+          "phone",
+          "remark"
+        ],
+        "nested_item_keys": {
+          "dept_info": [
+            "id",
+            "name",
+            "is_enabled"
+          ],
+          "roles": [
+            "id",
+            "name",
+            "code",
+            "is_enabled"
+          ]
+        },
+        "required_data_keys": [
+          "list",
+          "page_info"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "get",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "当前看板属于当前账号的默认筛选收藏。固定读取 app_id/dashboard_id，完整返回 data.object 的 contracted 标量与 condition/config JSON；JSON 内的凭证和会话秘密仍递归脱敏。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "dashboard_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "dashboard_id": "$first_dashboard_id"
+        }
+      },
+      "operation_id": "analysis.dashboard.condition_favourite.default_to_me.get",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/analysis_dashboard_condition_favourite/default_to_me/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "condition",
+          "remark",
+          "create_user_name",
+          "update_user_name",
+          "create_user_id",
+          "update_user_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "dashboard_id"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.dashboard.tree"
+      ],
+      "resource": "dashboard_condition_favourite_default",
+      "response_projection": {
+        "data_item_keys": {
+          "object": [
+            "app_id",
+            "cid",
+            "cond_logic",
+            "config",
+            "create_time",
+            "dashboard_id",
+            "default_to_all",
+            "default_to_one",
+            "id",
+            "isCollection",
+            "modify_time",
+            "name",
+            "show_order",
+            "to_use"
+          ]
+        },
+        "data_keys": [
+          "object"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "app_id",
+          "cid",
+          "cond_logic",
+          "config",
+          "create_time",
+          "dashboard_id",
+          "default_to_all",
+          "default_to_one",
+          "id",
+          "isCollection",
+          "modify_time",
+          "name",
+          "show_order",
+          "to_use"
+        ],
+        "known_omitted_data_item_keys": {
+          "object": [
+            "condition",
+            "create_user_id",
+            "create_user_name",
+            "remark",
+            "update_user_id",
+            "update_user_name"
+          ]
+        },
+        "known_omitted_item_keys": [
+          "condition",
+          "create_user_id",
+          "create_user_name",
+          "remark",
+          "update_user_id",
+          "update_user_name"
+        ],
+        "opaque_json_item_keys": [
+          "config"
+        ],
+        "required_data_keys": [
+          "object"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    }
+  ]
+}

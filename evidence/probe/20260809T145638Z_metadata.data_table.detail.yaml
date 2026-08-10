@@ -1,0 +1,20 @@
+{
+  "basis": "unbound_parent_fields",
+  "bindings": [],
+  "conclusion": "undetermined",
+  "detail": "A child response exists, but parent-shaped input fields remain unbound: table_id.",
+  "http": [],
+  "missing_evidence": [
+    "A proven parent operation and output path for: table_id."
+  ],
+  "operation_id": "metadata.data_table.detail",
+  "replacement_blocker": null,
+  "resolved_at": "2026-08-09T14:56:38Z",
+  "route": {
+    "method": "POST",
+    "path": "/turbo_engine/api/v2/event_dim/data_table/detail/"
+  },
+  "schema_version": "gravity-insight.parent-resolution-evidence.v1",
+  "source_evidence": "10_数据底座/evidence/gravity-probe/20260809T144342Z_metadata.data_table.detail.yaml",
+  "values_persisted": false
+}

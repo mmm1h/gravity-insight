@@ -1,0 +1,249 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "not_probed",
+        "detail": "No live probe evidence exists for this route.",
+        "status": "open"
+      },
+      {
+        "code": "pagination_unverified",
+        "detail": "Pagination kind, field names, and limits have not been observed.",
+        "status": "open"
+      },
+      {
+        "code": "request_binding_unverified",
+        "detail": "Query/body fields and fixed request values have not been observed.",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_sdk/census/data/coverage.json",
+      "json_pointer": "/routes/567",
+      "method": "GET",
+      "path": "/turbo_engine/api/v1/task/adcreate/arrest/v2/",
+      "route_index": 567,
+      "route_sha256": "27abdd44bddaa25d2a869e5fba981ba5de9b445950dda2ff00c05ab786430b02"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [],
+    "probe_evidence": [],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "not_probed",
+        "pagination_unverified",
+        "request_binding_unverified",
+        "response_schema_unverified"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "推广平台",
+      "callers": [
+        "a",
+        "i",
+        "l"
+      ],
+      "contract_family": null,
+      "cost_reason": "flat list/detail lookup with no evident parent dependency",
+      "estimated_implementation_cost": "低",
+      "first_occurrence": {
+        "column": 87396,
+        "file": "raw/web.gravity-engine.com/assets/Task-CucxuB0p.js",
+        "line": 1,
+        "offset": 87395,
+        "url": "https://web.gravity-engine.com/assets/Task-CucxuB0p.js"
+      },
+      "method": "GET",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 96455,
+            "column": 87396,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Task-CucxuB0p.js",
+            "line": 1,
+            "route_offset": 87395
+          },
+          {
+            "call_offset": 220784,
+            "column": 218479,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/kuaishouBatch-B4n3gpg0.js",
+            "line": 1,
+            "route_offset": 218478
+          },
+          {
+            "call_offset": 568836,
+            "column": 4989,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/tencentBatch-Bh6c1_6x.js",
+            "line": 5,
+            "route_offset": 566286
+          }
+        ],
+        "contract_confidence": "medium",
+        "learned_parameters": [],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "GET",
+          "path": "/turbo_engine/api/v1/task/adcreate/arrest/v2/"
+        },
+        "source": "src/gravity_sdk/census/data/route-params.json",
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "query",
+            "name": "task_id",
+            "path": "$.task_id",
+            "presence": "observed_always",
+            "types": [
+              "unknown"
+            ]
+          }
+        ]
+      },
+      "path": "/turbo_engine/api/v1/task/adcreate/arrest/v2/",
+      "promotion_level": "其它",
+      "promotion_platform": "通用/未知",
+      "semantic_confidence": "high",
+      "semantic_evidence": [
+        "safe_http_method"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "上传素材",
+        "创建创意",
+        "基本信息",
+        "手动投放",
+        "极速智投",
+        "自动投放"
+      ]
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "get",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: not_probed, pagination_unverified, request_binding_unverified, response_schema_unverified",
+    "contract_version": 1,
+    "description": "Draft catalog entry inferred from census route GET /turbo_engine/api/v1/task/adcreate/arrest/v2/; request binding, pagination, and response projection remain unverified.",
+    "domain": "promotion",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "task_id": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "any"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "task_id": 0
+      }
+    },
+    "operation_id": "promotion.task_adcreate_arrest_v2.get",
+    "pagination": {
+      "kind": "unverified",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/task/adcreate/arrest/v2/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract"
+      ],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "drafts/promotion.task_adcreate_arrest_v2.get.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "task_id"
+      ]
+    },
+    "required_parent": [],
+    "resource": "task_adcreate_arrest_v2",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "promotion.json"
+}

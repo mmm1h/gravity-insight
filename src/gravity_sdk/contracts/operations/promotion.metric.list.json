@@ -1,0 +1,153 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 0,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "Returns an array of metric groups; each item exposes height, label, and children metric definitions.",
+    "domain": "promotion",
+    "effect": "read",
+    "examples": [
+      {
+        "description": "Minimum input copied from the enabled, contract-verified live probe.",
+        "inputs": {
+          "media_type": "bytedance"
+        },
+        "name": "minimum_read"
+      }
+    ],
+    "input_fields": {
+      "media_type": {
+        "enum": [
+          "bytedance",
+          "tencentV3",
+          "kuaishou",
+          "oppo",
+          "bilibili",
+          "baidu",
+          "vivo",
+          "iqiyi",
+          "weibo",
+          "asa",
+          "uc",
+          "huawei",
+          "huawei_store",
+          "honor",
+          "ubix",
+          "xiaohongshu",
+          "xiaomi",
+          "qihu360",
+          "sigmob",
+          "youdao",
+          "huya",
+          "alipay"
+        ],
+        "required": true,
+        "type": "string"
+      },
+      "metric_type": {
+        "enum": [
+          "behavior",
+          "active"
+        ],
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "media_type": "bytedance"
+      }
+    },
+    "operation_id": "promotion.metric.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v2/datamanageconfig/promotion_metrics/list/",
+    "privacy_policy": {
+      "classification": "configuration",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/promotion.metric.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "media_type",
+        "metric_type"
+      ]
+    },
+    "required_parent": [],
+    "resource": "metric",
+    "response_projection": {
+      "data_keys": [],
+      "data_shape": "list",
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "height",
+        "label",
+        "name",
+        "cname",
+        "metric_type",
+        "tag_ids",
+        "exclusion_dims",
+        "tip",
+        "children"
+      ],
+      "nested_item_keys": {
+        "children": [
+          "name",
+          "cname",
+          "tip",
+          "sort",
+          "is_static",
+          "is_offline"
+        ]
+      },
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "promotion.json"
+}

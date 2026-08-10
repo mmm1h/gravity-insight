@@ -1,0 +1,29 @@
+{
+  "basis": "declared_parent_probe",
+  "bindings": [
+    {
+      "candidate_count": 0,
+      "candidate_types": [],
+      "output_path": "data.list[].advertiser_id",
+      "parent_operation_id": "promotion.apple.advertiser.list",
+      "selection": "caller_select",
+      "status": "empty",
+      "target_cardinality": "one",
+      "target_input": "advertiser_id"
+    }
+  ],
+  "conclusion": "blocked_by_data",
+  "detail": "The binding is declared and typed, but the current account cannot supply a selectable parent value.",
+  "http": [],
+  "missing_evidence": [],
+  "operation_id": "promotion.apple.apple_campaigns.list",
+  "replacement_blocker": "empty_sample",
+  "resolved_at": "2026-08-09T14:56:38Z",
+  "route": {
+    "method": "POST",
+    "path": "/turbo_engine/api/v1/apple/campaigns/"
+  },
+  "schema_version": "gravity-insight.parent-resolution-evidence.v1",
+  "source_evidence": null,
+  "values_persisted": false
+}

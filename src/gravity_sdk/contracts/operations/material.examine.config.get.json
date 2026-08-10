@@ -1,0 +1,101 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 10,
+  "operation": {
+    "action": "get",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "素材审核功能开关配置（不是素材审核详情）。当前前端无参 GET；2026-08-08 最小探针 code=0，公开 enable 与安全标量元数据，规则和人员容器固定省略。",
+    "domain": "material",
+    "effect": "read",
+    "examples": [
+      {
+        "description": "Minimum input copied from the enabled, contract-verified live probe.",
+        "inputs": {},
+        "name": "minimum_read"
+      }
+    ],
+    "input_fields": {},
+    "live_probe": {
+      "enabled": true,
+      "inputs": {}
+    },
+    "operation_id": "material.examine.config.get",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/asset/material_examine/get/",
+    "privacy_policy": {
+      "classification": "material",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/material.examine.config.get.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "examine_config",
+    "response_projection": {
+      "data_keys": [
+        "enable",
+        "cid",
+        "id",
+        "create_time",
+        "modify_time"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "known_omitted_data_keys": [
+        "rule",
+        "users"
+      ],
+      "required_data_keys": [
+        "enable"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "candidates.json"
+}

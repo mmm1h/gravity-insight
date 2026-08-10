@@ -1,0 +1,140 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 5,
+  "operation": {
+    "action": "get",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "用户分群配置详情；输出分群状态、时间范围和聚合人数，固定省略人员字段及 origin_query。",
+    "domain": "analysis",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "segment_id": {
+        "max_length": 64,
+        "required": true,
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "segment_id": "$first_segment_id"
+      }
+    },
+    "operation_id": "analysis.segment.detail",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/report/api/v3/dataanalysis/segment/detail/",
+    "privacy_policy": {
+      "classification": "configuration",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "create_user_id",
+        "create_user_name",
+        "update_user_id",
+        "update_user_name",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "origin_query",
+        "client_id",
+        "clientid",
+        "trace_id",
+        "traceid",
+        "uid"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.segment.detail.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "segment_id"
+      ]
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "analysis.segment.list",
+        "output_path": "data.list[].segment_id",
+        "selection": "first"
+      }
+    ],
+    "resource": "segment",
+    "response_projection": {
+      "data_item_keys": {
+        "update_date_range": [
+          "start_date",
+          "end_date"
+        ]
+      },
+      "data_keys": [
+        "id",
+        "segment_id",
+        "app_id",
+        "segment_name",
+        "segment_remark",
+        "user_cnt",
+        "operation_status",
+        "latest_version_calculation_status",
+        "latest_result_finish_time",
+        "analysis_scene",
+        "update_type",
+        "update_date_range",
+        "create_time",
+        "modify_time"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "known_omitted_data_keys": [
+        "create_user_id",
+        "create_user_name",
+        "update_user_id",
+        "update_user_name",
+        "origin_query"
+      ],
+      "required_data_keys": [
+        "segment_id"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis.json"
+}

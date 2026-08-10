@@ -1,0 +1,99 @@
+{
+  "conclusion": {
+    "decision": "shape_excludes_observed_free_text_but_not_business_semantics",
+    "field_profiles": {
+      "bid_amount": {
+        "absolute_digit_length": {
+          "max": 3,
+          "min": 3
+        },
+        "distinct_count": 1,
+        "id_like_10_plus_digits_count": 0,
+        "integer_count": 1,
+        "missing_rows": 0,
+        "null_count": 0,
+        "occurrences": 1,
+        "other_type_count": 0,
+        "range": {
+          "max": 300,
+          "min": 300
+        }
+      },
+      "bid_mode": {
+        "distinct_count": 1,
+        "length": {
+          "max": 13,
+          "min": 13
+        },
+        "missing_rows": 0,
+        "null_count": 0,
+        "occurrences": 1,
+        "other_type_count": 0,
+        "shape_matches": {
+          "blank": 0,
+          "cn_id": 0,
+          "email": 0,
+          "enum_token": 1,
+          "multiline": 0,
+          "phone": 0,
+          "uppercase_constant": 1
+        },
+        "string_count": 1
+      },
+      "daily_budget": {
+        "absolute_digit_length": {
+          "max": 7,
+          "min": 7
+        },
+        "distinct_count": 1,
+        "id_like_10_plus_digits_count": 0,
+        "integer_count": 1,
+        "missing_rows": 0,
+        "null_count": 0,
+        "occurrences": 1,
+        "other_type_count": 0,
+        "range": {
+          "max": 1000000,
+          "min": 1000000
+        }
+      },
+      "total_budget": {
+        "absolute_digit_length": {
+          "max": 1,
+          "min": 1
+        },
+        "distinct_count": 1,
+        "id_like_10_plus_digits_count": 0,
+        "integer_count": 1,
+        "missing_rows": 0,
+        "null_count": 0,
+        "occurrences": 1,
+        "other_type_count": 0,
+        "range": {
+          "max": 0,
+          "min": 0
+        }
+      }
+    },
+    "remaining_question": "本次 probe 观测到 1 个广告组行；bid_mode 有 1 个不同值，其中 1/1 个观测值符合大写常量形态；三个数值字段范围为 bid_amount=300..300, daily_budget=1000000..1000000, total_budget=0..0。请确认：bid_mode 是否由接口 schema 严格限制为固定合法枚举，并且 bid_amount、daily_budget、total_budget 是否都只表示广告组配置金额，绝不复用为用户/广告主标识或实际支付、订单、交易明细？",
+    "row_count": 1,
+    "status": "narrowed"
+  },
+  "error_type": null,
+  "operation_id": "promotion.tencent.tencent_medium_adgroup.list",
+  "privacy_safeguards": {
+    "non_target_fields_persisted": false,
+    "value_hashes_persisted": false,
+    "values_persisted": false
+  },
+  "probed_at": "2026-08-10T02:28:03Z",
+  "request_stats": {
+    "failed": 0,
+    "total": 2
+  },
+  "route": {
+    "method": "POST",
+    "path": "/turbo_engine/api/v1/tencent/medium/adgroup/list/"
+  },
+  "schema_version": "gravity-insight.verdict-probe-evidence.v1"
+}

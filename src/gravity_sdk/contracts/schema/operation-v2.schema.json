@@ -1,0 +1,569 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gravity-sdk.local/contracts/operation-v2.schema.json",
+  "title": "Gravity Insight operation contract source v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "source_schema_version",
+    "target_manifest",
+    "manifest_order",
+    "operation"
+  ],
+  "properties": {
+    "$schema": {"const": "../schema/operation-v2.schema.json"},
+    "source_schema_version": {"const": 2},
+    "target_manifest": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*\\.json$"
+    },
+    "manifest_order": {"type": "integer", "minimum": 0},
+    "operation": {"$ref": "#/$defs/operation"},
+    "draft": {"$ref": "#/$defs/draftMetadata"},
+    "reservation": {"$ref": "#/$defs/mutationReservation"}
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": {"type": "string"},
+      "uniqueItems": true
+    },
+    "stringArrayMap": {
+      "type": "object",
+      "additionalProperties": {"$ref": "#/$defs/stringArray"}
+    },
+    "inputField": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "any",
+            "string",
+            "integer",
+            "number",
+            "boolean",
+            "array",
+            "object",
+            "date",
+            "datetime"
+          ]
+        },
+        "required": {"type": "boolean"},
+        "nullable": {"type": "boolean"},
+        "enum": {"type": "array"},
+        "default": {},
+        "description": {"type": "string"},
+        "sensitive": {"type": "boolean"},
+        "item_type": {
+          "type": ["string", "null"],
+          "enum": ["any", "string", "integer", "number", "boolean", "object", null]
+        },
+        "item_enum": {"type": "array"},
+        "min_items": {"type": ["integer", "null"], "minimum": 0},
+        "max_items": {"type": ["integer", "null"], "minimum": 0},
+        "max_length": {"type": ["integer", "null"], "minimum": 1},
+        "max_depth": {"type": "integer", "minimum": 1, "maximum": 16}
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path_fields",
+        "query_fields",
+        "body_fields",
+        "defaults",
+        "fixed_query",
+        "fixed_body"
+      ],
+      "properties": {
+        "location": {"type": "string", "enum": ["query", "body", "mixed"]},
+        "path_fields": {"$ref": "#/$defs/stringArray"},
+        "query_fields": {"$ref": "#/$defs/stringArray"},
+        "body_fields": {"$ref": "#/$defs/stringArray"},
+        "defaults": {"type": "object"},
+        "fixed_query": {"type": "object"},
+        "fixed_body": {"type": "object"}
+      }
+    },
+    "responseProjection": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "data_shape": {"type": "string", "enum": ["object", "list"]},
+        "data_keys": {"$ref": "#/$defs/stringArray"},
+        "required_data_keys": {"$ref": "#/$defs/stringArray"},
+        "item_keys": {"$ref": "#/$defs/stringArray"},
+        "dynamic_item_fields": {"$ref": "#/$defs/stringArray"},
+        "numeric_suffix_item_fields": {"$ref": "#/$defs/stringArray"},
+        "nested_item_keys": {"$ref": "#/$defs/stringArrayMap"},
+        "known_omitted_nested_item_keys": {"$ref": "#/$defs/stringArrayMap"},
+        "data_item_keys": {"$ref": "#/$defs/stringArrayMap"},
+        "scalar_list_item_types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "enum": ["string", "integer", "number", "boolean"]
+          }
+        },
+        "data_scalar_list_types": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "enum": ["string", "integer", "number", "boolean"]
+          }
+        },
+        "data_path_item_keys": {"$ref": "#/$defs/stringArrayMap"},
+        "data_dynamic_item_fields": {"$ref": "#/$defs/stringArrayMap"},
+        "data_numeric_suffix_item_fields": {"$ref": "#/$defs/stringArrayMap"},
+        "known_omitted_item_keys": {"$ref": "#/$defs/stringArray"},
+        "recursive_data_item_keys": {"$ref": "#/$defs/stringArrayMap"},
+        "known_omitted_data_keys": {"$ref": "#/$defs/stringArray"},
+        "known_omitted_data_item_keys": {"$ref": "#/$defs/stringArrayMap"},
+        "numeric_paths": {"$ref": "#/$defs/stringArray"},
+        "empty_object_as_empty_page": {"type": "boolean"},
+        "empty_object_as_empty_result": {"type": "boolean"},
+        "opaque_json_item_keys": {"$ref": "#/$defs/stringArray"}
+      }
+    },
+    "pagination": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "page_field",
+        "page_size_field",
+        "list_path",
+        "page_info_path",
+        "total_page_field"
+      ],
+      "properties": {
+        "kind": {"type": "string", "enum": ["none", "page_info", "unverified"]},
+        "page_field": {"type": "string"},
+        "page_size_field": {"type": "string"},
+        "items_field": {"type": "string"},
+        "page_info_field": {"type": "string"},
+        "total_page_field": {"type": "string"},
+        "list_path": {"type": "string"},
+        "page_info_path": {"type": "string"},
+        "default_page_size": {"type": ["integer", "null"], "minimum": 1},
+        "max_page_size": {"type": ["integer", "null"], "minimum": 1}
+      }
+    },
+    "semanticErrorRule": {
+      "anyOf": [
+        {"type": "string", "minLength": 1},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "path": {"type": "string", "minLength": 1},
+            "field": {"type": "string", "minLength": 1},
+            "operator": {
+              "type": "string",
+              "enum": ["equals", "not_equals", "exists", "truthy", "falsy", "in", "not_in"]
+            },
+            "value": {},
+            "values": {"type": "array"},
+            "message": {"type": "string", "maxLength": 240}
+          }
+        }
+      ]
+    },
+    "privacyPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classification", "redact_fields"],
+      "properties": {
+        "classification": {
+          "type": "string",
+          "enum": ["internal_business", "aggregate", "configuration", "material", "user_level", "unverified"]
+        },
+        "redact_fields": {"$ref": "#/$defs/stringArray"}
+      }
+    },
+    "requiredParent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operation_id", "input_field", "output_path", "selection"],
+      "properties": {
+        "operation_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z0-9_]+)+$"
+        },
+        "input_field": {"type": ["string", "null"]},
+        "output_path": {"type": ["string", "null"]},
+        "selection": {
+          "type": ["string", "null"],
+          "enum": ["first", "unique", "all", "caller_select", null]
+        }
+      }
+    },
+    "liveProbe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["enabled", "inputs"],
+      "properties": {
+        "enabled": {"type": "boolean"},
+        "inputs": {"type": "object"}
+      }
+    },
+    "example": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "inputs"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1, "maxLength": 120},
+        "description": {"type": "string", "maxLength": 500},
+        "inputs": {"type": "object"}
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_files", "family", "platform", "applied_overrides"],
+      "properties": {
+        "source_files": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1},
+          "uniqueItems": true
+        },
+        "family": {"type": ["string", "null"]},
+        "platform": {"type": ["string", "null"]},
+        "applied_overrides": {"$ref": "#/$defs/stringArray"}
+      }
+    },
+    "probeField": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "types",
+        "presence",
+        "privacy_classification",
+        "classification_reason",
+        "expose"
+      ],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "types": {"$ref": "#/$defs/stringArray"},
+        "presence": {"type": "string", "enum": ["observed", "optional", "unknown"]},
+        "privacy_classification": {
+          "type": "string",
+          "enum": ["non_sensitive", "sensitive", "manual_review"]
+        },
+        "classification_reason": {"type": "string", "minLength": 1},
+        "expose": {"type": "boolean"}
+      }
+    },
+    "probeEvidenceReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "probed_at",
+        "conclusion",
+        "successful",
+        "pagination_verified",
+        "raw_schema_fingerprint"
+      ],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "probed_at": {"type": "string", "minLength": 1},
+        "conclusion": {"type": "string", "minLength": 1},
+        "successful": {"type": "boolean"},
+        "pagination_verified": {"type": "boolean"},
+        "parent_resolved": {"type": "boolean"},
+        "method_verified": {"type": "boolean"},
+        "raw_schema_fingerprint": {"type": ["string", "null"]},
+        "projected_schema_fingerprint": {"type": ["string", "null"]}
+      }
+    },
+    "coverageReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "coverage_path",
+        "route_index",
+        "json_pointer",
+        "method",
+        "path",
+        "route_sha256"
+      ],
+      "properties": {
+        "coverage_path": {"type": "string", "minLength": 1},
+        "route_index": {"type": "integer", "minimum": 0},
+        "json_pointer": {"type": "string", "pattern": "^/routes/[0-9]+$"},
+        "method": {"type": "string", "enum": ["GET", "POST"]},
+        "path": {"type": "string", "minLength": 1},
+        "route_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "draftBlocker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "status", "detail"],
+      "properties": {
+        "code": {"type": "string", "pattern": "^[a-z][a-z0-9_]+$"},
+        "status": {"const": "open"},
+        "detail": {"type": "string", "minLength": 1},
+        "evidence": {"type": "string", "minLength": 1}
+      }
+    },
+    "draftMetadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "generated_at",
+        "route_evidence",
+        "candidate_fields",
+        "manual_review_fields",
+        "probe_evidence",
+        "promotion_gate"
+      ],
+      "properties": {
+        "status": {"const": "draft"},
+        "generated_at": {"type": "string", "minLength": 1},
+        "coverage_reference": {"$ref": "#/$defs/coverageReference"},
+        "route_evidence": {"type": "object"},
+        "candidate_fields": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/probeField"}
+        },
+        "manual_review_fields": {"$ref": "#/$defs/stringArray"},
+        "probe_evidence": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/probeEvidenceReference"}
+        },
+        "blockers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/draftBlocker"}
+        },
+        "promotion_gate": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["eligible", "missing"],
+          "properties": {
+            "eligible": {"type": "boolean"},
+            "missing": {"$ref": "#/$defs/stringArray"}
+          }
+        }
+      }
+    },
+    "mutationReservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "block_reason",
+        "generated_at",
+        "route_evidence",
+        "mutation_semantics",
+        "request_contract_status",
+        "implementation_prerequisites"
+      ],
+      "properties": {
+        "status": {"const": "blocked_write"},
+        "block_reason": {"const": "mutation_sdk_not_implemented"},
+        "generated_at": {"type": "string", "minLength": 1},
+        "route_evidence": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "coverage_path",
+            "route_index",
+            "json_pointer",
+            "route_sha256",
+            "source_status"
+          ],
+          "properties": {
+            "coverage_path": {"type": "string", "minLength": 1},
+            "route_index": {"type": "integer", "minimum": 0},
+            "json_pointer": {"type": "string", "minLength": 1},
+            "route_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "source_status": {
+              "type": "string",
+              "enum": ["uncovered_write", "unclassified"]
+            }
+          }
+        },
+        "mutation_semantics": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "kind",
+            "idempotency",
+            "reversibility",
+            "scope",
+            "affects_live_delivery",
+            "risk_level",
+            "evidence"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "create",
+                "update",
+                "delete",
+                "batch",
+                "sync",
+                "approve",
+                "upload",
+                "state_change",
+                "bind",
+                "import",
+                "copy",
+                "move",
+                "share",
+                "execute",
+                "other"
+              ]
+            },
+            "batch_action": {
+              "type": ["string", "null"],
+              "enum": [
+                "create",
+                "update",
+                "delete",
+                "batch",
+                "sync",
+                "approve",
+                "bind",
+                "upload",
+                "state_change",
+                "import",
+                "copy",
+                "move",
+                "share",
+                "execute",
+                "other",
+                null
+              ]
+            },
+            "idempotency": {
+              "type": "string",
+              "enum": ["idempotent", "non_idempotent", "conditional", "unknown"]
+            },
+            "reversibility": {
+              "type": "string",
+              "enum": ["reversible", "irreversible", "unknown"]
+            },
+            "scope": {
+              "type": "string",
+              "enum": ["single", "batch", "unknown"]
+            },
+            "affects_live_delivery": {
+              "type": "string",
+              "enum": ["yes", "no", "unknown"]
+            },
+            "risk_level": {
+              "type": "string",
+              "enum": ["low", "medium", "high", "unknown"]
+            },
+            "evidence": {"$ref": "#/$defs/stringArray"}
+          }
+        },
+        "request_contract_status": {"const": "unknown_until_mutation_sdk_implementation"},
+        "implementation_prerequisites": {"$ref": "#/$defs/stringArray"}
+      }
+    },
+    "operation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation_id",
+        "domain",
+        "resource",
+        "action",
+        "contract_version",
+        "upstream_method",
+        "path_template",
+        "auth_profile",
+        "stability",
+        "input_fields",
+        "request",
+        "response_projection",
+        "pagination",
+        "semantic_error_rules",
+        "privacy_policy",
+        "required_parent",
+        "live_probe",
+        "effect",
+        "examples",
+        "provenance"
+      ],
+      "properties": {
+        "operation_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*(?:\\.[a-z0-9_]+)+$"
+        },
+        "domain": {"type": "string", "minLength": 1},
+        "resource": {"type": "string", "minLength": 1},
+        "action": {"type": "string", "minLength": 1},
+        "platform": {"type": ["string", "null"]},
+        "description": {"type": "string"},
+        "contract_version": {"type": ["string", "integer"]},
+        "upstream_method": {"type": "string", "enum": ["GET", "POST", "UNKNOWN"]},
+        "path_template": {
+          "type": "string",
+          "pattern": "^/(?:[A-Za-z0-9_.{}-]+/)*[A-Za-z0-9_.{}-]+/?$"
+        },
+        "auth_profile": {"type": "string", "minLength": 1},
+        "stability": {
+          "type": "string",
+          "enum": [
+            "stable",
+            "experimental",
+            "permission_unavailable",
+            "blocked_privacy",
+            "blocked_write",
+            "deprecated"
+          ]
+        },
+        "executable": {"type": "boolean"},
+        "block_reason": {"type": ["string", "null"]},
+        "input_fields": {
+          "type": "object",
+          "additionalProperties": {"$ref": "#/$defs/inputField"}
+        },
+        "request": {"$ref": "#/$defs/request"},
+        "response_projection": {"$ref": "#/$defs/responseProjection"},
+        "pagination": {"$ref": "#/$defs/pagination"},
+        "semantic_error_rules": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/semanticErrorRule"}
+        },
+        "privacy_policy": {"$ref": "#/$defs/privacyPolicy"},
+        "required_parent": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/requiredParent"}
+        },
+        "live_probe": {"$ref": "#/$defs/liveProbe"},
+        "effect": {
+          "type": "string",
+          "enum": [
+            "read",
+            "export_job_create",
+            "export_status",
+            "export_download",
+            "export_cancel",
+            "file",
+            "mutation"
+          ]
+        },
+        "examples": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/example"}
+        },
+        "provenance": {"$ref": "#/$defs/provenance", "readOnly": true}
+      }
+    }
+  }
+}

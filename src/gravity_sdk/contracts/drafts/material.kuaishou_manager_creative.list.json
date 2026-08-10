@@ -1,0 +1,319 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "empty_sample",
+        "detail": "The observed tenant response was empty and cannot prove an item schema.",
+        "evidence": "evidence/probe/20260808T205531Z_material.kuaishou_manager_creative.list.yaml",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "evidence": "evidence/probe/20260808T205531Z_material.kuaishou_manager_creative.list.yaml",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [
+      {
+        "classification_reason": "frontend_static_consumer_unreviewed",
+        "expose": false,
+        "path": "data.list",
+        "presence": "unknown",
+        "privacy_classification": "manual_review",
+        "types": [
+          "unknown"
+        ]
+      }
+    ],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_sdk/census/data/coverage.json",
+      "json_pointer": "/routes/490",
+      "method": "POST",
+      "path": "/turbo_engine/api/v1/kuaishou/manager/creative/list/",
+      "route_index": 490,
+      "route_sha256": "9c77b9e1cb743042dc93d0702769235c25fc46ff1025d0e8518783dece0e1b88"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [],
+    "probe_evidence": [
+      {
+        "conclusion": "inconclusive_empty",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205531Z_material.kuaishou_manager_creative.list.yaml",
+        "probed_at": "2026-08-08T20:55:31Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "c7066680fb7c4728ca0ebe6efd66f9d46e039674ba301095371e5cde45d317a1",
+        "successful": false
+      }
+    ],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "empty_sample",
+        "response_schema_unverified",
+        "response_projection",
+        "successful_probe"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "素材",
+      "callers": [],
+      "contract_family": null,
+      "cost_reason": "广告/创意 lookup normally depends on a parent account or campaign",
+      "estimated_implementation_cost": "中",
+      "first_occurrence": {
+        "column": 13127,
+        "file": "raw/web.gravity-engine.com/assets/Rules-ChMHnW7I.js",
+        "line": 1,
+        "offset": 13126,
+        "url": "https://web.gravity-engine.com/assets/Rules-ChMHnW7I.js"
+      },
+      "method": "POST",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 24728,
+            "column": 13127,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Rules-ChMHnW7I.js",
+            "line": 1,
+            "route_offset": 13126
+          }
+        ],
+        "contract_confidence": "high",
+        "learned_parameters": [],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "POST",
+          "path": "/turbo_engine/api/v1/kuaishou/manager/creative/list/"
+        },
+        "source": "src/gravity_sdk/census/data/route-params.json",
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "high",
+            "default_observed": false,
+            "location": "body",
+            "name": "advertiser_id",
+            "path": "$.advertiser_id",
+            "presence": "observed_always",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "confidence": "high",
+            "default_observed": true,
+            "location": "body",
+            "name": "page",
+            "path": "$.page",
+            "presence": "observed_always",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "confidence": "high",
+            "default_observed": true,
+            "location": "body",
+            "name": "page_size",
+            "path": "$.page_size",
+            "presence": "observed_always",
+            "types": [
+              "number"
+            ]
+          }
+        ],
+        "stable_parent_candidates": [
+          {
+            "input_field": "advertiser_id",
+            "operation_id": "promotion.kuaishou.advertiser.list",
+            "output_path": "data.list[].advertiser_id",
+            "selection": "all"
+          }
+        ]
+      },
+      "path": "/turbo_engine/api/v1/kuaishou/manager/creative/list/",
+      "promotion_level": null,
+      "promotion_platform": null,
+      "semantic_confidence": "medium",
+      "semantic_evidence": [
+        "read_action_path_token"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "请选择广告",
+        "请选择账户",
+        "请选择项目"
+      ],
+      "parent_resolution": {
+        "basis": "declared_parent_probe",
+        "bindings": [
+          {
+            "candidate_count": 0,
+            "candidate_types": [],
+            "output_path": "data.list[].advertiser_id",
+            "parent_operation_id": "promotion.kuaishou.advertiser.list",
+            "selection": "all",
+            "status": "empty",
+            "target_cardinality": "many",
+            "target_input": "advertiser_id"
+          }
+        ],
+        "conclusion": "blocked_by_data",
+        "detail": "The binding is declared and typed, but the current account cannot supply a selectable parent value.",
+        "evidence": "evidence/probe/20260809T145638Z_material.kuaishou_manager_creative.list.yaml",
+        "missing_evidence": [],
+        "replacement_blocker": "empty_sample"
+      }
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: empty_sample, response_schema_unverified",
+    "contract_version": 1,
+    "description": "Draft catalog entry inferred from census route POST /turbo_engine/api/v1/kuaishou/manager/creative/list/; request binding, pagination, and response projection remain unverified.",
+    "domain": "material",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "advertiser_id": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "array"
+      },
+      "page": {
+        "default": 1,
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 5000.0,
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "number"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "advertiser_id": "$parent:advertiser_id",
+        "page": 1,
+        "page_size": 5000.0
+      }
+    },
+    "operation_id": "material.kuaishou_manager_creative.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/kuaishou/manager/creative/list/",
+    "platform": "kuaishou",
+    "privacy_policy": {
+      "classification": "material",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract",
+        "stable_parent_candidate_binding"
+      ],
+      "family": null,
+      "platform": "kuaishou",
+      "source_files": [
+        "drafts/material.kuaishou_manager_creative.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "advertiser_id",
+        "page",
+        "page_size"
+      ],
+      "defaults": {
+        "page": 1,
+        "page_size": 5000.0
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": "advertiser_id",
+        "operation_id": "promotion.kuaishou.advertiser.list",
+        "output_path": "data.list[].advertiser_id",
+        "selection": "all"
+      }
+    ],
+    "resource": "kuaishou_manager_creative",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "known_omitted_data_keys": [
+        "list"
+      ],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "material.json"
+}

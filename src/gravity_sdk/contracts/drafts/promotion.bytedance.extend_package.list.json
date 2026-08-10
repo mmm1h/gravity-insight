@@ -1,0 +1,399 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "probe_inconclusive",
+        "detail": "The latest probe did not satisfy the promotion gate.",
+        "evidence": "evidence/probe/20260808T231144Z_promotion.bytedance.extend_package.list.yaml",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "evidence": "src/gravity_sdk/census/data/route-response-fields.json#/routes/325",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [
+      {
+        "classification_reason": "frontend_static_consumer_unreviewed",
+        "expose": false,
+        "path": "data.list",
+        "presence": "unknown",
+        "privacy_classification": "manual_review",
+        "types": [
+          "unknown"
+        ]
+      },
+      {
+        "classification_reason": "frontend_static_consumer_unreviewed",
+        "expose": false,
+        "path": "data.page_info.total_number",
+        "presence": "unknown",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "unknown"
+        ]
+      }
+    ],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_sdk/census/data/coverage.json",
+      "json_pointer": "/routes/325",
+      "method": "GET",
+      "path": "/turbo_engine/api/v1/bytedance/app/extend_package/list/",
+      "route_index": 325,
+      "route_sha256": "c71f4b4d4e4b184b7c9932f7cea12808cc459b57ebb6e00caa658f1502fb84cf"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [],
+    "probe_evidence": [
+      {
+        "conclusion": "local_or_parent_inconclusive",
+        "method_verified": false,
+        "pagination_verified": false,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205324Z_promotion.bytedance.extend_package.list.yaml",
+        "probed_at": "2026-08-08T20:53:24Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": null,
+        "successful": false
+      },
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205535Z_promotion.bytedance.extend_package.list.yaml",
+        "probed_at": "2026-08-08T20:55:35Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
+        "successful": false
+      },
+      {
+        "conclusion": "local_or_parent_inconclusive",
+        "method_verified": false,
+        "pagination_verified": false,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T231144Z_promotion.bytedance.extend_package.list.yaml",
+        "probed_at": "2026-08-08T23:11:44Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": null,
+        "successful": false
+      }
+    ],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "probe_inconclusive",
+        "response_projection",
+        "response_schema_unverified",
+        "successful_probe"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "推广平台",
+      "callers": [
+        "U",
+        "Ue",
+        "X"
+      ],
+      "contract_family": null,
+      "cost_reason": "flat list/detail lookup with no evident parent dependency",
+      "estimated_implementation_cost": "低",
+      "first_occurrence": {
+        "column": 1682,
+        "file": "raw/web.gravity-engine.com/assets/BatchImport-IRpWBU3t.js",
+        "line": 1,
+        "offset": 1681,
+        "url": "https://web.gravity-engine.com/assets/BatchImport-IRpWBU3t.js"
+      },
+      "method": "GET",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 2496,
+            "column": 1682,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/BatchImport-IRpWBU3t.js",
+            "line": 1,
+            "route_offset": 1681
+          },
+          {
+            "call_offset": 15481,
+            "column": 14485,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Subcontractor-Ds1DKkg-.js",
+            "line": 1,
+            "route_offset": 14484
+          },
+          {
+            "call_offset": 6051,
+            "column": 4125,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/bytedanceStdBatch-BDqDx27T.js",
+            "line": 1,
+            "route_offset": 4124
+          },
+          {
+            "call_offset": 3823,
+            "column": 1900,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/localMaterial-DbTOpbSo.js",
+            "line": 1,
+            "route_offset": 1899
+          }
+        ],
+        "contract_confidence": "medium",
+        "learned_parameters": [],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "GET",
+          "path": "/turbo_engine/api/v1/bytedance/app/extend_package/list/"
+        },
+        "source": "src/gravity_sdk/census/data/route-params.json",
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "query",
+            "name": "advertiser_id",
+            "path": "$.advertiser_id",
+            "presence": "observed_conditional",
+            "types": [
+              "string",
+              "unknown"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "query",
+            "name": "app_cloud_id",
+            "path": "$.app_cloud_id",
+            "presence": "observed_always",
+            "types": [
+              "object",
+              "string",
+              "unknown"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "query",
+            "name": "create_user_id",
+            "path": "$.create_user_id",
+            "presence": "observed_conditional",
+            "types": [
+              "string",
+              "unknown"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "query",
+            "name": "key_word",
+            "path": "$.key_word",
+            "presence": "observed_conditional",
+            "types": [
+              "string",
+              "unknown"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": true,
+            "location": "query",
+            "name": "page",
+            "path": "$.page",
+            "presence": "observed_always",
+            "types": [
+              "integer",
+              "unknown"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": true,
+            "location": "query",
+            "name": "page_size",
+            "path": "$.page_size",
+            "presence": "observed_always",
+            "types": [
+              "integer",
+              "number",
+              "unknown"
+            ]
+          }
+        ]
+      },
+      "path": "/turbo_engine/api/v1/bytedance/app/extend_package/list/",
+      "promotion_level": "其它",
+      "promotion_platform": "bytedance",
+      "semantic_confidence": "high",
+      "semantic_evidence": [
+        "safe_http_method"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "包名",
+        "包名/App ID",
+        "审核中",
+        "审核失败",
+        "审核成功",
+        "渠道包ID"
+      ]
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: probe_inconclusive, response_schema_unverified",
+    "contract_version": 1,
+    "description": "Draft catalog entry inferred from census route GET /turbo_engine/api/v1/bytedance/app/extend_package/list/; request binding, pagination, and response projection remain unverified.",
+    "domain": "promotion",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "advertiser_id": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_conditional); presence describes frontend calls and is not a server-required declaration.",
+        "type": "string"
+      },
+      "app_cloud_id": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "object"
+      },
+      "create_user_id": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_conditional); presence describes frontend calls and is not a server-required declaration.",
+        "type": "string"
+      },
+      "key_word": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_conditional); presence describes frontend calls and is not a server-required declaration.",
+        "type": "string"
+      },
+      "page": {
+        "default": 1,
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 5000.0,
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "app_cloud_id": {},
+        "page": 1,
+        "page_size": 5000.0
+      }
+    },
+    "operation_id": "promotion.bytedance.extend_package.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/bytedance/app/extend_package/list/",
+    "platform": "bytedance",
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract"
+      ],
+      "family": null,
+      "platform": "bytedance",
+      "source_files": [
+        "drafts/promotion.bytedance.extend_package.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {
+        "page": 1,
+        "page_size": 5000.0
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "advertiser_id",
+        "app_cloud_id",
+        "create_user_id",
+        "key_word",
+        "page",
+        "page_size"
+      ]
+    },
+    "required_parent": [],
+    "resource": "extend_package",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "promotion.json"
+}

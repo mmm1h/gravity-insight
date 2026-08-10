@@ -1,0 +1,659 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "parent_resource_required",
+        "detail": "At least one declared stable parent did not produce a readable candidate response.",
+        "evidence": "evidence/probe/20260809T145635Z_material.album.list.yaml",
+        "status": "open"
+      },
+      {
+        "code": "probe_inconclusive",
+        "detail": "The latest probe did not satisfy the promotion gate.",
+        "evidence": "evidence/probe/20260808T205524Z_material.album.list.yaml",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].group.album_authority.album_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].group.album_authority.album_type",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "sensitive_name_pattern",
+        "expose": false,
+        "path": "data.list[].group.album_authority.auth_ids",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "tenant_company_identifier_review",
+        "expose": true,
+        "path": "data.list[].group.album_authority.cid",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].group.album_authority.create_time",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].group.album_authority.id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].group.album_authority.modify_time",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].group.album_authority.type",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "tenant_company_identifier_review",
+        "expose": true,
+        "path": "data.list[].group.cid",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].group.create_time",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "sensitive_name_pattern",
+        "expose": false,
+        "path": "data.list[].group.create_user_id",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "sensitive_name_pattern",
+        "expose": false,
+        "path": "data.list[].group.create_user_name",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].group.id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].group.material_num",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].group.modify_time",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].group.name",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].group.parent_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "free_text_field_review",
+        "expose": false,
+        "path": "data.list[].group.remark",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].group.root_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "sensitive_name_pattern",
+        "expose": false,
+        "path": "data.list[].group.update_user_id",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "sensitive_name_pattern",
+        "expose": false,
+        "path": "data.list[].group.update_user_name",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].has_alum",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "boolean"
+        ]
+      },
+      {
+        "classification_reason": "nested_projection_container_review",
+        "expose": true,
+        "path": "data.list[].material",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].type",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.page",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.page_size",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.total_number",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.total_page",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      }
+    ],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_sdk/census/data/coverage.json",
+      "json_pointer": "/routes/232",
+      "method": "POST",
+      "path": "/turbo_engine/api/v1/asset/material/album/list/",
+      "route_index": 232,
+      "route_sha256": "e5c4c90c61b649ffc819f6e9377ae4d1d3e060248595386b6949a1ca85d93728"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [],
+    "probe_evidence": [
+      {
+        "conclusion": "local_or_parent_inconclusive",
+        "method_verified": false,
+        "pagination_verified": false,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205324Z_material.album.list.yaml",
+        "probed_at": "2026-08-08T20:53:24Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": null,
+        "successful": false
+      },
+      {
+        "conclusion": "privacy_review_required",
+        "method_verified": false,
+        "pagination_verified": false,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205524Z_material.album.list.yaml",
+        "probed_at": "2026-08-08T20:55:24Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "9dfc8e82b59c6e2a4fb6d36acc03900bfed09d443d09a4195a99589d4c417cc6",
+        "successful": false
+      }
+    ],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "parent_resource_required",
+        "probe_inconclusive"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "素材",
+      "callers": [
+        "v"
+      ],
+      "contract_family": null,
+      "cost_reason": "素材 lookup normally depends on a parent account or campaign",
+      "estimated_implementation_cost": "中",
+      "first_occurrence": {
+        "column": 74595,
+        "file": "raw/web.gravity-engine.com/assets/Clouddrive_pro-DZNkBF3z.js",
+        "line": 1,
+        "offset": 74594,
+        "url": "https://web.gravity-engine.com/assets/Clouddrive_pro-DZNkBF3z.js"
+      },
+      "method": "POST",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 78403,
+            "column": 74595,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Clouddrive_pro-DZNkBF3z.js",
+            "line": 1,
+            "route_offset": 74594
+          }
+        ],
+        "contract_confidence": "medium",
+        "learned_parameters": [],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "POST",
+          "path": "/turbo_engine/api/v1/asset/material/album/list/"
+        },
+        "source": "src/gravity_sdk/census/data/route-params.json",
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "medium",
+            "default_observed": true,
+            "location": "body",
+            "name": "album_id",
+            "path": "$.album_id",
+            "presence": "observed_always",
+            "types": [
+              "array",
+              "string"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "ordered_by",
+            "path": "$.ordered_by",
+            "presence": "observed_always",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "page",
+            "path": "$.page",
+            "presence": "observed_always",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "page_size",
+            "path": "$.page_size",
+            "presence": "observed_always",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "search_keyword",
+            "path": "$.search_keyword",
+            "presence": "observed_always",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "search_type",
+            "path": "$.search_type",
+            "presence": "observed_always",
+            "types": [
+              "integer",
+              "unknown"
+            ]
+          }
+        ],
+        "stable_parent_candidates": [
+          {
+            "input_field": "album_id",
+            "operation_id": "material.album.tree",
+            "output_path": "data.tree..id",
+            "selection": "all"
+          }
+        ]
+      },
+      "path": "/turbo_engine/api/v1/asset/material/album/list/",
+      "promotion_level": null,
+      "promotion_platform": null,
+      "semantic_confidence": "medium",
+      "semantic_evidence": [
+        "read_action_path_token"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "名称不能为空"
+      ],
+      "parent_resolution": {
+        "basis": "declared_parent_probe",
+        "bindings": [
+          {
+            "candidate_count": 0,
+            "output_path": "data.tree..id",
+            "parent_operation_id": "material.album.tree",
+            "selection": "all",
+            "status": "undetermined",
+            "target_cardinality": "many",
+            "target_input": "album_id"
+          }
+        ],
+        "conclusion": "undetermined",
+        "detail": "At least one declared stable parent did not produce a readable candidate response.",
+        "evidence": "evidence/probe/20260809T145635Z_material.album.list.yaml",
+        "missing_evidence": [
+          "A successful or explicit permission response from every declared parent operation."
+        ],
+        "replacement_blocker": null
+      }
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: parent_resource_required, probe_inconclusive",
+    "contract_version": 1,
+    "description": "Draft catalog entry inferred from census route POST /turbo_engine/api/v1/asset/material/album/list/; request binding, pagination, and response projection remain unverified.",
+    "domain": "material",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "album_id": {
+        "default": "",
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "array"
+      },
+      "ordered_by": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "string"
+      },
+      "page": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "integer"
+      },
+      "page_size": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "integer"
+      },
+      "search_keyword": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "string"
+      },
+      "search_type": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "album_id": "$parent:album_id",
+        "ordered_by": "",
+        "page": 1,
+        "page_size": 20,
+        "search_keyword": "",
+        "search_type": 0
+      }
+    },
+    "operation_id": "material.album.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/asset/material/album/list/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract",
+        "stable_parent_candidate_binding"
+      ],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "drafts/material.album.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "album_id",
+        "ordered_by",
+        "page",
+        "page_size",
+        "search_keyword",
+        "search_type"
+      ],
+      "defaults": {
+        "album_id": ""
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": "album_id",
+        "operation_id": "material.album.tree",
+        "output_path": "data.tree..id",
+        "selection": "all"
+      }
+    ],
+    "resource": "album",
+    "response_projection": {
+      "data_keys": [
+        "list",
+        "page_info"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "has_alum",
+        "type"
+      ],
+      "known_omitted_item_keys": [
+        "group",
+        "material"
+      ],
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "material.json"
+}

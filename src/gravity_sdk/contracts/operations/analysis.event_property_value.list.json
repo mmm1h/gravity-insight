@@ -1,0 +1,127 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 1,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "事件属性值枚举。当前 CreateUserGroup/EventFilter bundle 以 app_id、event_name_list、property_name 发起 POST，并把 data.list 的每个字符串直接映射为选项；事件和属性必须先通过实时事件详情元数据校验。",
+    "domain": "analysis",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "app_id": {
+        "max_length": 64,
+        "required": true,
+        "type": "string"
+      },
+      "event_name_list": {
+        "item_type": "string",
+        "max_items": 20,
+        "min_items": 1,
+        "required": true,
+        "type": "array"
+      },
+      "property_name": {
+        "max_length": 256,
+        "required": true,
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "app_id": "$first_app_id",
+        "event_name_list": [
+          "$first_event_name"
+        ],
+        "property_name": "$first_event_property_name"
+      }
+    },
+    "operation_id": "analysis.event_property_value.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v2/event/report_data_val_enum/event/list/",
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.event_property_value.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "event_name_list",
+        "property_name",
+        "app_id"
+      ],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "app.list",
+        "output_path": "data.list[].id",
+        "selection": "first"
+      },
+      {
+        "input_field": null,
+        "operation_id": "analysis.event.list",
+        "output_path": "data.list[].name",
+        "selection": "caller_select"
+      },
+      {
+        "input_field": null,
+        "operation_id": "analysis.event.info",
+        "output_path": "data.properties.*[].name",
+        "selection": "caller_select"
+      }
+    ],
+    "resource": "event_property_value",
+    "response_projection": {
+      "data_keys": [
+        "list"
+      ],
+      "data_scalar_list_types": {
+        "list": "string"
+      },
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis_values.json"
+}

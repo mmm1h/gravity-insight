@@ -1,0 +1,129 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 16,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "拆单明细；仅接受从订单结果取得的时间、TraceID、ClientID 和最多 100 个拆单 TraceID。",
+    "domain": "analysis",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "app_id": {
+        "max_length": 64,
+        "required": true,
+        "type": "string"
+      },
+      "client_id": {
+        "max_length": 256,
+        "required": true,
+        "sensitive": true,
+        "type": "string"
+      },
+      "pay_event_time": {
+        "required": true,
+        "sensitive": true,
+        "type": "datetime"
+      },
+      "split_trace_ids": {
+        "item_type": "string",
+        "max_items": 100,
+        "required": true,
+        "sensitive": true,
+        "type": "array"
+      },
+      "trace_id": {
+        "max_length": 256,
+        "required": true,
+        "sensitive": true,
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "app_id": "$first_app_id",
+        "client_id": "$first_order_client_id",
+        "pay_event_time": "$first_order_pay_event_time",
+        "split_trace_ids": "$first_order_split_trace_ids",
+        "trace_id": "$first_order_trace_id"
+      }
+    },
+    "operation_id": "analysis.order_split_detail.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/report/api/v3/dataanalysis/user/pay_event/split_order_detail/",
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.order_split_detail.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "app_id",
+        "pay_event_time",
+        "trace_id",
+        "client_id",
+        "split_trace_ids"
+      ],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "analysis.order_detail.list",
+        "output_path": null,
+        "selection": "caller_select"
+      }
+    ],
+    "resource": "order_split_detail",
+    "response_projection": {
+      "data_keys": [],
+      "data_shape": "list",
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "TraceID",
+        "Amount",
+        "BackAmount",
+        "Status",
+        "CreateTime"
+      ],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis.json"
+}

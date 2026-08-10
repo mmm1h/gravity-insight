@@ -1,0 +1,470 @@
+{
+  "manifest_version": 1,
+  "operations": [
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "事件分析报表已隐藏或已删除字段列表。当前 Event bundle 以 report_id、app_id 发起 GET，并仅消费 data_type、action_type、data_cname、data_name。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "report_id": {
+          "max_length": 128,
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "report_id": "$first_report_config_id"
+        }
+      },
+      "operation_id": "analysis.report.hidden_property.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/event/in_report/hide_or_delete_prop/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "report_id",
+          "app_id"
+        ]
+      },
+      "required_parent": [
+        "analysis.report_config.list",
+        "app.list"
+      ],
+      "resource": "report_hidden_property",
+      "response_projection": {
+        "data_keys": [
+          "list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "data_type",
+          "action_type",
+          "data_cname",
+          "data_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "付费事件补报任务只读列表。当前 OrderSearch/CashSearch bundle 以 app_id、page、page_size、结构化 filters 发起 POST；用户与订单标识按显式行字段合同输出。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "filters": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 100,
+          "min_items": 0,
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "filters": [],
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "analysis.task.pay_event.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 2000,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/task/user/pay_event/list/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "create_user_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "page",
+          "page_size",
+          "filters"
+        ],
+        "defaults": {
+          "filters": [],
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "app.list"
+      ],
+      "resource": "pay_event_task",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "client_id",
+          "trace_id",
+          "event_type",
+          "pay_amount",
+          "task_status",
+          "create_time",
+          "reason"
+        ],
+        "known_omitted_item_keys": [
+          "create_user_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "其他事件补报任务只读列表。当前 EventFlowDialog 发送 create_time、create_user_id、task_status、client_id 的结构化 filters，页面大小为 10/20/30。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "filters": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 100,
+          "min_items": 0,
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "filters": [],
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "analysis.task.other_event.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 30,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/task/user/other_event/list/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "create_user_name",
+          "create_user_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "page",
+          "page_size",
+          "filters"
+        ],
+        "defaults": {
+          "filters": [],
+          "page": 1,
+          "page_size": 10
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "app.list"
+      ],
+      "resource": "other_event_task",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "event_type",
+          "task_status",
+          "client_id",
+          "create_time",
+          "reason"
+        ],
+        "known_omitted_item_keys": [
+          "create_user_id",
+          "create_user_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "block_reason": "static_declaration_without_invocation",
+      "contract_version": 1,
+      "description": "当前 SmartAssistant bundle 仅创建 conversation/list loader，未发现调用、请求参数或响应消费；保持不可执行候选。",
+      "domain": "analysis",
+      "effect": "read",
+      "executable": false,
+      "input_fields": {},
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.ai.conversation.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v3/dataanalysis/ai/conversation/list/",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "ai_conversation",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "experimental",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "block_reason": "static_declaration_without_invocation",
+      "contract_version": 1,
+      "description": "当前 SmartAssistant bundle 仅创建 message/list loader，未发现调用、请求参数或响应消费；保持不可执行候选。",
+      "domain": "analysis",
+      "effect": "read",
+      "executable": false,
+      "input_fields": {},
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.ai.message.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v3/dataanalysis/ai/message/list/",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "ai_message",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "experimental",
+      "upstream_method": "POST"
+    }
+  ]
+}

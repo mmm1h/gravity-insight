@@ -1,0 +1,1206 @@
+{
+  "operation_count": 150,
+  "operations": {
+    "account.department.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/account.department.list.json"
+      ]
+    },
+    "analysis.account_user.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.account_user.list.json"
+      ]
+    },
+    "analysis.ai.conversation.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.ai.conversation.list.json"
+      ]
+    },
+    "analysis.ai.message.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.ai.message.list.json"
+      ]
+    },
+    "analysis.dashboard.condition_favourite.default_to_me.get": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.dashboard.condition_favourite.default_to_me.get.json"
+      ]
+    },
+    "analysis.dashboard.condition_favourite.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.dashboard.condition_favourite.list.json"
+      ]
+    },
+    "analysis.dashboard.detail": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.dashboard.detail.json"
+      ]
+    },
+    "analysis.dashboard.event_list_info.get": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.dashboard.event_list_info.get.json"
+      ]
+    },
+    "analysis.dashboard.members.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.dashboard.members.list.json"
+      ]
+    },
+    "analysis.dashboard.space_members.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.dashboard.space_members.list.json"
+      ]
+    },
+    "analysis.dashboard.tree": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.dashboard.tree.json"
+      ]
+    },
+    "analysis.event.info": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.event.info.json"
+      ]
+    },
+    "analysis.event.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.event.list.json"
+      ]
+    },
+    "analysis.event.query": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.event.query.json"
+      ]
+    },
+    "analysis.event_property.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.event_property.list.json"
+      ]
+    },
+    "analysis.event_property_group.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.event_property_group.list.json"
+      ]
+    },
+    "analysis.event_property_value.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.event_property_value.list.json"
+      ]
+    },
+    "analysis.funnel.query": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.funnel.query.json"
+      ]
+    },
+    "analysis.monetization_detail.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.monetization_detail.list.json"
+      ]
+    },
+    "analysis.order_detail.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.order_detail.list.json"
+      ]
+    },
+    "analysis.order_split_detail.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.order_split_detail.list.json"
+      ]
+    },
+    "analysis.property.query": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.property.query.json"
+      ]
+    },
+    "analysis.report.hidden_property.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.report.hidden_property.list.json"
+      ]
+    },
+    "analysis.report_config.get": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.report_config.get.json"
+      ]
+    },
+    "analysis.report_config.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.report_config.list.json"
+      ]
+    },
+    "analysis.retention.query": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.retention.query.json"
+      ]
+    },
+    "analysis.scatter.query": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.scatter.query.json"
+      ]
+    },
+    "analysis.segment.detail": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.segment.detail.json"
+      ]
+    },
+    "analysis.segment.evaluate_percent": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.segment.evaluate_percent.json"
+      ]
+    },
+    "analysis.segment.history_version.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.segment.history_version.list.json"
+      ]
+    },
+    "analysis.segment.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.segment.list.json"
+      ]
+    },
+    "analysis.segment.uid_result.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.segment.uid_result.list.json"
+      ]
+    },
+    "analysis.segment.user_detail.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.segment.user_detail.list.json"
+      ]
+    },
+    "analysis.task.other_event.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.task.other_event.list.json"
+      ]
+    },
+    "analysis.task.pay_event.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.task.pay_event.list.json"
+      ]
+    },
+    "analysis.template.internal.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.template.internal.list.json"
+      ]
+    },
+    "analysis.template.own.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.template.own.list.json"
+      ]
+    },
+    "analysis.template.share.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.template.share.list.json"
+      ]
+    },
+    "analysis.template.subject.internal.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.template.subject.internal.list.json"
+      ]
+    },
+    "analysis.template.subject.own.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.template.subject.own.list.json"
+      ]
+    },
+    "analysis.template.subject.share.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.template.subject.share.list.json"
+      ]
+    },
+    "analysis.user_detail.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.user_detail.list.json"
+      ]
+    },
+    "analysis.user_event.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.user_event.list.json"
+      ]
+    },
+    "analysis.user_postback_log.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.user_postback_log.list.json"
+      ]
+    },
+    "analysis.user_property.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.user_property.list.json"
+      ]
+    },
+    "analysis.user_property_value.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.user_property_value.list.json"
+      ]
+    },
+    "app.detail": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/app.detail.json"
+      ]
+    },
+    "app.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/app.list.json"
+      ]
+    },
+    "attribution.attr_backtrack.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/attribution.attr_backtrack.list.json"
+      ]
+    },
+    "attribution.attr_click_interval.get": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/attribution.attr_click_interval.get.json"
+      ]
+    },
+    "attribution.attr_impress_click.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/attribution.attr_impress_click.list.json"
+      ]
+    },
+    "attribution.post_backtrack.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/attribution.post_backtrack.list.json"
+      ]
+    },
+    "attribution.postback_map.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/attribution.postback_map.list.json"
+      ]
+    },
+    "attribution.postback_map_collect.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/attribution.postback_map_collect.list.json"
+      ]
+    },
+    "attribution.postback_mode.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/attribution.postback_mode.list.json"
+      ]
+    },
+    "attribution.reattribution.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/attribution.reattribution.list.json"
+      ]
+    },
+    "candidate.account.user_operation_log.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/candidate.account.user_operation_log.list.json"
+      ]
+    },
+    "candidate.material.kuaishou.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/candidate.material.kuaishou.list.json"
+      ]
+    },
+    "candidate.material.platform.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/candidate.material.platform.list.json"
+      ]
+    },
+    "candidate.promotion_object.click_url.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/candidate.promotion_object.click_url.list.json"
+      ]
+    },
+    "candidate.promotion_object.click_url_edit_log.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/candidate.promotion_object.click_url_edit_log.list.json"
+      ]
+    },
+    "candidate.promotion_object.extra_info.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/candidate.promotion_object.extra_info.list.json"
+      ]
+    },
+    "material.album.tree": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/material.album.tree.json"
+      ]
+    },
+    "material.asset_material_media_review_list.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/material.asset_material_media_review_list.list.json"
+      ]
+    },
+    "material.bytedance.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/material.bytedance.list.json"
+      ]
+    },
+    "material.examine.config.get": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/material.examine.config.get.json"
+      ]
+    },
+    "material.favorites.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/material.favorites.list.json"
+      ]
+    },
+    "material.local.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/material.local.list.json"
+      ]
+    },
+    "material.metric.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/material.metric.list.json"
+      ]
+    },
+    "material.recycle.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/material.recycle.list.json"
+      ]
+    },
+    "material.report.query": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/material.report.query.json"
+      ]
+    },
+    "material.review.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/material.review.list.json"
+      ]
+    },
+    "material.tag.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/material.tag.list.json"
+      ]
+    },
+    "material.tag_category.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/material.tag_category.list.json"
+      ]
+    },
+    "material.tag_category.tree": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/material.tag_category.tree.json"
+      ]
+    },
+    "material.tencent.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/material.tencent.list.json"
+      ]
+    },
+    "metadata.event_property_template_event_list.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/metadata.event_property_template_event_list.list.json"
+      ]
+    },
+    "metadata.promotion_gravity_metric.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/metadata.promotion_gravity_metric.list.json"
+      ]
+    },
+    "metadata.property.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/metadata.property.list.json"
+      ]
+    },
+    "promotion.alipay.advertiser.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "alipay",
+      "source_files": [
+        "operations/promotion.alipay.advertiser.list.json"
+      ]
+    },
+    "promotion.apple.advertiser.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "apple",
+      "source_files": [
+        "operations/promotion.apple.advertiser.list.json"
+      ]
+    },
+    "promotion.baidu.advertiser.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "baidu",
+      "source_files": [
+        "operations/promotion.baidu.advertiser.list.json"
+      ]
+    },
+    "promotion.bilibili.account.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "bilibili",
+      "source_files": [
+        "operations/promotion.bilibili.account.list.json"
+      ]
+    },
+    "promotion.bilibili.advertiser.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "bilibili",
+      "source_files": [
+        "operations/promotion.bilibili.advertiser.list.json"
+      ]
+    },
+    "promotion.bing.advertiser.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "bing",
+      "source_files": [
+        "operations/promotion.bing.advertiser.list.json"
+      ]
+    },
+    "promotion.bytedance.advertiser.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "bytedance",
+      "source_files": [
+        "operations/promotion.bytedance.advertiser.list.json"
+      ]
+    },
+    "promotion.bytedance.app.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "bytedance",
+      "source_files": [
+        "operations/promotion.bytedance.app.list.json"
+      ]
+    },
+    "promotion.bytedance.project.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "bytedance",
+      "source_files": [
+        "operations/promotion.bytedance.project.list.json"
+      ]
+    },
+    "promotion.bytedance.project_filter.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "bytedance",
+      "source_files": [
+        "operations/promotion.bytedance.project_filter.list.json"
+      ]
+    },
+    "promotion.bytedance.promotion_filter.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "bytedance",
+      "source_files": [
+        "operations/promotion.bytedance.promotion_filter.list.json"
+      ]
+    },
+    "promotion.bytedance.site.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "bytedance",
+      "source_files": [
+        "operations/promotion.bytedance.site.list.json"
+      ]
+    },
+    "promotion.conditions_history.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/promotion.conditions_history.list.json"
+      ]
+    },
+    "promotion.history.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/promotion.history.list.json"
+      ]
+    },
+    "promotion.honor.account.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "honor",
+      "source_files": [
+        "operations/promotion.honor.account.list.json"
+      ]
+    },
+    "promotion.honor.ad_group.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "honor",
+      "source_files": [
+        "operations/promotion.honor.ad_group.list.json"
+      ]
+    },
+    "promotion.honor.advertiser.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "honor",
+      "source_files": [
+        "operations/promotion.honor.advertiser.list.json"
+      ]
+    },
+    "promotion.honor.campaign.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "honor",
+      "source_files": [
+        "operations/promotion.honor.campaign.list.json"
+      ]
+    },
+    "promotion.huawei.advertiser.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "huawei",
+      "source_files": [
+        "operations/promotion.huawei.advertiser.list.json"
+      ]
+    },
+    "promotion.huawei_store.advertiser.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "huawei_store",
+      "source_files": [
+        "operations/promotion.huawei_store.advertiser.list.json"
+      ]
+    },
+    "promotion.huya.account.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "huya",
+      "source_files": [
+        "operations/promotion.huya.account.list.json"
+      ]
+    },
+    "promotion.huya.advertiser.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "huya",
+      "source_files": [
+        "operations/promotion.huya.advertiser.list.json"
+      ]
+    },
+    "promotion.iqiyi.advertiser.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "iqiyi",
+      "source_files": [
+        "operations/promotion.iqiyi.advertiser.list.json"
+      ]
+    },
+    "promotion.kuaishou.account.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "kuaishou",
+      "source_files": [
+        "operations/promotion.kuaishou.account.list.json"
+      ]
+    },
+    "promotion.kuaishou.ad_unit.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "kuaishou",
+      "source_files": [
+        "operations/promotion.kuaishou.ad_unit.list.json"
+      ]
+    },
+    "promotion.kuaishou.advertiser.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "kuaishou",
+      "source_files": [
+        "operations/promotion.kuaishou.advertiser.list.json"
+      ]
+    },
+    "promotion.latest_account_status.get": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/promotion.latest_account_status.get.json"
+      ]
+    },
+    "promotion.metric.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/promotion.metric.list.json"
+      ]
+    },
+    "promotion.object.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/promotion.object.list.json"
+      ]
+    },
+    "promotion.oppo.account.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "oppo",
+      "source_files": [
+        "operations/promotion.oppo.account.list.json"
+      ]
+    },
+    "promotion.oppo.advertiser.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "oppo",
+      "source_files": [
+        "operations/promotion.oppo.advertiser.list.json"
+      ]
+    },
+    "promotion.qihu360.account.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "qihu360",
+      "source_files": [
+        "operations/promotion.qihu360.account.list.json"
+      ]
+    },
+    "promotion.qihu360.advertiser.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "qihu360",
+      "source_files": [
+        "operations/promotion.qihu360.advertiser.list.json"
+      ]
+    },
+    "promotion.report_group.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/promotion.report_group.list.json"
+      ]
+    },
+    "promotion.sigmob.account.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "sigmob",
+      "source_files": [
+        "operations/promotion.sigmob.account.list.json"
+      ]
+    },
+    "promotion.sigmob.advertiser.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "sigmob",
+      "source_files": [
+        "operations/promotion.sigmob.advertiser.list.json"
+      ]
+    },
+    "promotion.taptap.group.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "taptap",
+      "source_files": [
+        "operations/promotion.taptap.group.list.json"
+      ]
+    },
+    "promotion.tencent.adgroup_filter.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "tencent",
+      "source_files": [
+        "operations/promotion.tencent.adgroup_filter.list.json"
+      ]
+    },
+    "promotion.tencent.advertiser.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "tencent",
+      "source_files": [
+        "operations/promotion.tencent.advertiser.list.json"
+      ]
+    },
+    "promotion.ubix.account.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "ubix",
+      "source_files": [
+        "operations/promotion.ubix.account.list.json"
+      ]
+    },
+    "promotion.ubix.group.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "ubix",
+      "source_files": [
+        "operations/promotion.ubix.group.list.json"
+      ]
+    },
+    "promotion.uc.advertiser.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "uc",
+      "source_files": [
+        "operations/promotion.uc.advertiser.list.json"
+      ]
+    },
+    "promotion.vivo.account.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "vivo",
+      "source_files": [
+        "operations/promotion.vivo.account.list.json"
+      ]
+    },
+    "promotion.vivo.advertiser.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "vivo",
+      "source_files": [
+        "operations/promotion.vivo.advertiser.list.json"
+      ]
+    },
+    "promotion.wechat_video.report.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "wechat_video",
+      "source_files": [
+        "operations/promotion.wechat_video.report.list.json"
+      ]
+    },
+    "promotion.weibo.account.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "weibo",
+      "source_files": [
+        "operations/promotion.weibo.account.list.json"
+      ]
+    },
+    "promotion.weibo.advertiser.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "weibo",
+      "source_files": [
+        "operations/promotion.weibo.advertiser.list.json"
+      ]
+    },
+    "promotion.xiaohongshu.advertiser.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "xiaohongshu",
+      "source_files": [
+        "operations/promotion.xiaohongshu.advertiser.list.json"
+      ]
+    },
+    "promotion.xiaohongshu.developer.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "xiaohongshu",
+      "source_files": [
+        "operations/promotion.xiaohongshu.developer.list.json"
+      ]
+    },
+    "promotion.xiaomi.account.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "xiaomi",
+      "source_files": [
+        "operations/promotion.xiaomi.account.list.json"
+      ]
+    },
+    "promotion.xiaomi.advertiser.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "xiaomi",
+      "source_files": [
+        "operations/promotion.xiaomi.advertiser.list.json"
+      ]
+    },
+    "promotion.youdao.account.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "youdao",
+      "source_files": [
+        "operations/promotion.youdao.account.list.json"
+      ]
+    },
+    "promotion.youdao.advertiser.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "youdao",
+      "source_files": [
+        "operations/promotion.youdao.advertiser.list.json"
+      ]
+    },
+    "report.business.metric.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.business.metric.list.json"
+      ]
+    },
+    "report.business.query": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.business.query.json"
+      ]
+    },
+    "report.company_amount.query": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.company_amount.query.json"
+      ]
+    },
+    "report.metric.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.metric.list.json"
+      ]
+    },
+    "report.multidim.calc_total": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.multidim.calc_total.json"
+      ]
+    },
+    "report.multidim.custom_metric.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.multidim.custom_metric.list.json"
+      ]
+    },
+    "report.multidim.custom_metric.shared.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.multidim.custom_metric.shared.list.json"
+      ]
+    },
+    "report.multidim.media_enum.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.multidim.media_enum.list.json"
+      ]
+    },
+    "report.multidim.metric.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.multidim.metric.list.json"
+      ]
+    },
+    "report.multidim.metric_tag.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.multidim.metric_tag.list.json"
+      ]
+    },
+    "report.multidim.metric_tag_category.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.multidim.metric_tag_category.list.json"
+      ]
+    },
+    "report.multidim.query": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.multidim.query.json"
+      ]
+    },
+    "report.multidim.template.mine.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.multidim.template.mine.list.json"
+      ]
+    },
+    "report.multidim.template.preset.get": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.multidim.template.preset.get.json"
+      ]
+    },
+    "report.multidim.template.preset.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.multidim.template.preset.list.json"
+      ]
+    },
+    "report.multidim.template.shared.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.multidim.template.shared.list.json"
+      ]
+    },
+    "report.multidim.template.tree": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.multidim.template.tree.json"
+      ]
+    },
+    "report.overview.query": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.overview.query.json"
+      ]
+    }
+  },
+  "provenance_version": 1
+}

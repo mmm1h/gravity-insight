@@ -1,0 +1,162 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 8,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "permission_unavailable",
+    "contract_version": 1,
+    "description": "磁力平台素材当前前端 wire contract 已确认。2026-08-08 受控探针中 manage/account/list 为空，advertiser/list 在 7/30/90 天窗口均 code=0 空列表，无法取得 advertiser_id；登记为 permission_unavailable 并禁止本地执行，待账号出现可读父账户后重新验证。",
+    "domain": "material",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "advertiser_id": {
+        "required": true,
+        "type": "string"
+      },
+      "page": {
+        "default": 1,
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 20,
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {}
+    },
+    "operation_id": "candidate.material.kuaishou.list",
+    "pagination": {
+      "default_page_size": 20,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 20,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/turbo_engine/api/v1/asset/material/kuaishou/list/",
+    "privacy_policy": {
+      "classification": "material",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/candidate.material.kuaishou.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "advertiser_id"
+      ],
+      "defaults": {
+        "page": 1,
+        "page_size": 20
+      },
+      "fixed_body": {
+        "check_local_exist": 1,
+        "filters": []
+      },
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "page",
+        "page_size"
+      ]
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "promotion.kuaishou.advertiser.list",
+        "output_path": "data.list[].advertiser_id",
+        "selection": "caller_select"
+      }
+    ],
+    "resource": "kuaishou",
+    "response_projection": {
+      "data_keys": [
+        "list",
+        "page_info"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "file_name",
+        "material_id",
+        "gravity_material_id"
+      ],
+      "known_omitted_item_keys": [
+        "create_time",
+        "modify_time",
+        "file_size",
+        "file_size_str",
+        "lowercase_file_name",
+        "file_type",
+        "video_duration",
+        "video_duration_second",
+        "width",
+        "height",
+        "aspect_ratio",
+        "aspect_xy",
+        "source_type",
+        "id",
+        "ad_created_time",
+        "ad_modified_time",
+        "cid",
+        "ad_platform",
+        "advertiser_id",
+        "derived_id",
+        "is_download",
+        "platform_id",
+        "format",
+        "status",
+        "image_nums",
+        "media_refuse_count",
+        "is_local_exist",
+        "local_material_id",
+        "file_md5",
+        "derived_file_md5",
+        "image_set",
+        "material_label_list",
+        "advertiser_name"
+      ],
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "permission_unavailable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "candidates.json"
+}

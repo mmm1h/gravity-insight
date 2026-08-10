@@ -1,0 +1,278 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "empty_sample",
+        "detail": "The observed tenant response was empty and cannot prove an item schema.",
+        "evidence": "evidence/probe/20260808T205558Z_promotion.bytedance.stardelivery.list.yaml",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "evidence": "src/gravity_sdk/census/data/route-response-fields.json#/routes/399",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [
+      {
+        "classification_reason": "frontend_static_consumer_unreviewed",
+        "expose": false,
+        "path": "data.list",
+        "presence": "unknown",
+        "privacy_classification": "manual_review",
+        "types": [
+          "unknown"
+        ]
+      }
+    ],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_sdk/census/data/coverage.json",
+      "json_pointer": "/routes/399",
+      "method": "POST",
+      "path": "/turbo_engine/api/v1/bytedance/stardelivery/list/",
+      "route_index": 399,
+      "route_sha256": "3c7b13e365d6a965c9f0ad38432dd1a3973a2ecb164383c2ae892033ddf947c7"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [],
+    "probe_evidence": [
+      {
+        "conclusion": "inconclusive_empty",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205558Z_promotion.bytedance.stardelivery.list.yaml",
+        "probed_at": "2026-08-08T20:55:58Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1b898bf98211f851a2989bb1eb397aa45eb76a283568c75ab6a8dd0d96ac0e02",
+        "successful": false
+      }
+    ],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "empty_sample",
+        "response_projection",
+        "response_schema_unverified",
+        "successful_probe"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "推广平台",
+      "callers": [],
+      "contract_family": null,
+      "cost_reason": "flat list/detail lookup with no evident parent dependency",
+      "estimated_implementation_cost": "低",
+      "first_occurrence": {
+        "column": 11502,
+        "file": "raw/web.gravity-engine.com/assets/bytedanceBatch-mBq4gNM_.js",
+        "line": 1,
+        "offset": 11501,
+        "url": "https://web.gravity-engine.com/assets/bytedanceBatch-mBq4gNM_.js"
+      },
+      "method": "POST",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 16042,
+            "column": 11502,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/bytedanceBatch-mBq4gNM_.js",
+            "line": 1,
+            "route_offset": 11501
+          },
+          {
+            "call_offset": 51263,
+            "column": 51131,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/bytedanceBatch-mBq4gNM_.js",
+            "line": 1,
+            "route_offset": 51130
+          },
+          {
+            "call_offset": 19349,
+            "column": 19218,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/bytedanceStdBatch-BDqDx27T.js",
+            "line": 1,
+            "route_offset": 19217
+          }
+        ],
+        "contract_confidence": "medium",
+        "learned_parameters": [],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "POST",
+          "path": "/turbo_engine/api/v1/bytedance/stardelivery/list/"
+        },
+        "source": "src/gravity_sdk/census/data/route-params.json",
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "advertiser_id",
+            "path": "$.advertiser_id",
+            "presence": "observed_always",
+            "types": [
+              "array",
+              "unknown"
+            ]
+          },
+          {
+            "confidence": "high",
+            "default_observed": false,
+            "location": "body",
+            "name": "filtering",
+            "path": "$.filtering",
+            "presence": "observed_conditional",
+            "types": [
+              "object"
+            ]
+          }
+        ]
+      },
+      "path": "/turbo_engine/api/v1/bytedance/stardelivery/list/",
+      "promotion_level": "其它",
+      "promotion_platform": "bytedance",
+      "semantic_confidence": "medium",
+      "semantic_evidence": [
+        "read_action_path_token"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "任务完成",
+        "任务已取消",
+        "否",
+        "是",
+        "计费中",
+        "账户信息"
+      ]
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: empty_sample, response_schema_unverified",
+    "contract_version": 1,
+    "description": "Draft catalog entry inferred from census route POST /turbo_engine/api/v1/bytedance/stardelivery/list/; request binding, pagination, and response projection remain unverified.",
+    "domain": "promotion",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "advertiser_id": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "item_type": "string",
+        "type": "array"
+      },
+      "filtering": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_conditional); presence describes frontend calls and is not a server-required declaration.",
+        "type": "object"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "advertiser_id": []
+      }
+    },
+    "operation_id": "promotion.bytedance.stardelivery.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/bytedance/stardelivery/list/",
+    "platform": "bytedance",
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract"
+      ],
+      "family": null,
+      "platform": "bytedance",
+      "source_files": [
+        "drafts/promotion.bytedance.stardelivery.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "advertiser_id",
+        "filtering"
+      ],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "stardelivery",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "promotion.json"
+}

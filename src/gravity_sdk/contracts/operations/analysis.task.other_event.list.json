@@ -1,0 +1,134 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 2,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "其他事件补报任务只读列表。当前 EventFlowDialog 发送 create_time、create_user_id、task_status、client_id 的结构化 filters，页面大小为 10/20/30。",
+    "domain": "analysis",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "app_id": {
+        "max_length": 64,
+        "required": true,
+        "type": "string"
+      },
+      "filters": {
+        "default": [],
+        "item_type": "object",
+        "max_items": 100,
+        "min_items": 0,
+        "type": "array"
+      },
+      "page": {
+        "default": 1,
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 10,
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "app_id": "$first_app_id",
+        "filters": [],
+        "page": 1,
+        "page_size": 1
+      }
+    },
+    "operation_id": "analysis.task.other_event.list",
+    "pagination": {
+      "default_page_size": 10,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 30,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/turbo_engine/api/v1/task/user/other_event/list/",
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "create_user_name",
+        "create_user_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.task.other_event.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "app_id",
+        "page",
+        "page_size",
+        "filters"
+      ],
+      "defaults": {
+        "filters": [],
+        "page": 1,
+        "page_size": 10
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "app.list",
+        "output_path": "data.list[].id",
+        "selection": "first"
+      }
+    ],
+    "resource": "other_event_task",
+    "response_projection": {
+      "data_keys": [
+        "list",
+        "page_info"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "event_type",
+        "task_status",
+        "client_id",
+        "create_time",
+        "reason"
+      ],
+      "known_omitted_item_keys": [
+        "create_user_id",
+        "create_user_name"
+      ],
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis_auxiliary.json"
+}

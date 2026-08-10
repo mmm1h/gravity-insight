@@ -1,0 +1,261 @@
+{
+  "conclusion": "inconclusive",
+  "http": [
+    {
+      "http_status": 200,
+      "method": "GET",
+      "operation_id": "promotion.company.list",
+      "path": "/turbo_engine/api/v1/user/common/media_advertiser/company/list/",
+      "purpose": "discovery",
+      "raw_schema_fingerprint": "81cfc3403dcd1d00e945c09e5f67b83c34ffc9cc492b099b8082871c7c5ca2bb",
+      "request_fingerprint": "772809aaf25ea6410a67edc35c71b336cd8cddeb901c735e92cce052f7dd5eb5",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.query.media_type",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.code",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].company",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.extra",
+            "presence": "observed",
+            "types": [
+              "null"
+            ]
+          },
+          {
+            "path": "$.msg",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    },
+    {
+      "http_status": 200,
+      "method": "GET",
+      "operation_id": "promotion.company.list",
+      "path": "/turbo_engine/api/v1/user/common/media_advertiser/company/list/",
+      "purpose": "confirmation",
+      "raw_schema_fingerprint": "81cfc3403dcd1d00e945c09e5f67b83c34ffc9cc492b099b8082871c7c5ca2bb",
+      "request_fingerprint": "772809aaf25ea6410a67edc35c71b336cd8cddeb901c735e92cce052f7dd5eb5",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.query.media_type",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.code",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].company",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.extra",
+            "presence": "observed",
+            "types": [
+              "null"
+            ]
+          },
+          {
+            "path": "$.msg",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    }
+  ],
+  "operation_id": "promotion.company.list",
+  "pagination": {
+    "kind": "none",
+    "total_field_path": null,
+    "upstream_hard_max": null,
+    "verified": true
+  },
+  "privacy": {
+    "candidate_fields": [
+      {
+        "classification_reason": "no_confident_name_pattern",
+        "expose": false,
+        "path": "data.list[].company",
+        "presence": "observed",
+        "privacy_classification": "manual_review",
+        "types": [
+          "string"
+        ]
+      }
+    ],
+    "classified_non_sensitive": 0,
+    "classified_sensitive": 0,
+    "manual_review": 1,
+    "values_persisted": false
+  },
+  "probed_at": "2026-08-08T23:11:37Z",
+  "projected_schema_fingerprint": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "raw_schema_fingerprint": "81cfc3403dcd1d00e945c09e5f67b83c34ffc9cc492b099b8082871c7c5ca2bb",
+  "request_stats": {
+    "backoff_terminations": 0,
+    "failed": 0,
+    "total": 2
+  },
+  "required_parent": null,
+  "route": {
+    "family": "promotion.company.list",
+    "method": "GET",
+    "path": "/turbo_engine/api/v1/user/common/media_advertiser/company/list/"
+  },
+  "schema_version": "gravity-insight.probe-evidence.v1",
+  "semantic_errors": {
+    "missing_parameter": {
+      "attempted": false,
+      "shape_observed": false
+    },
+    "parameter_adjustments": [],
+    "permission_shape_observed": false,
+    "rules": []
+  },
+  "successful": false
+}

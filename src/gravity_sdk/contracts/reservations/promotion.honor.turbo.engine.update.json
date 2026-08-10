@@ -1,0 +1,137 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 20426,
+  "operation": {
+    "action": "update",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "mutation_sdk_not_implemented",
+    "contract_version": 1,
+    "description": "Reserved mutation route POST /turbo_engine/api/v1/honor/manage/account/edit/; this version never dispatches the upstream request.",
+    "domain": "promotion",
+    "effect": "mutation",
+    "examples": [],
+    "executable": false,
+    "input_fields": {},
+    "live_probe": {
+      "enabled": false,
+      "inputs": {}
+    },
+    "operation_id": "promotion.honor.turbo.engine.update",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/honor/manage/account/edit/",
+    "platform": "honor",
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "honor",
+      "source_files": [
+        "reservations/promotion.honor.turbo.engine.update.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "turbo_engine",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "blocked_write",
+    "upstream_method": "POST"
+  },
+  "reservation": {
+    "block_reason": "mutation_sdk_not_implemented",
+    "generated_at": "2026-08-08T21:15:23Z",
+    "implementation_prerequisites": [
+      "approved_mutation_policy",
+      "exact_request_schema",
+      "idempotency_and_retry_contract",
+      "approval_and_audit_requirements",
+      "preimage_readback_and_rollback_contract"
+    ],
+    "mutation_semantics": {
+      "affects_live_delivery": "unknown",
+      "batch_action": null,
+      "evidence": [
+        "explicit_update_path_token",
+        "live_delivery_effect_not_proven",
+        "subsequent_mutation_can_restore_state"
+      ],
+      "idempotency": "conditional",
+      "kind": "update",
+      "reversibility": "reversible",
+      "risk_level": "unknown",
+      "scope": "unknown"
+    },
+    "request_contract_status": "unknown_until_mutation_sdk_implementation",
+    "route_evidence": {
+      "coverage_path": "src/gravity_sdk/census/data/coverage.json",
+      "json_pointer": "/routes/426",
+      "route_index": 426,
+      "route_sha256": "bb6775643d0a2f409f00b34d3b2400eeb39934c3e3acc72d33fad86b4dfd0bba",
+      "source_status": "uncovered_write"
+    },
+    "status": "blocked_write"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "promotion.json"
+}

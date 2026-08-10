@@ -1,0 +1,1612 @@
+{
+  "manifest_version": 1,
+  "operations": [
+    {
+      "action": "get",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "App 只读详情。当前前端精确使用 GET JSON body {app_id}；2026-08-08 最小探针 code=0，响应仅投影安全 App 元数据，下载、图标、回调和归因配置容器固定省略。",
+      "domain": "app",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id"
+        }
+      },
+      "operation_id": "app.detail",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v1/user/open_app/detail/",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "remark"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "app.list"
+      ],
+      "resource": "detail",
+      "response_projection": {
+        "data_item_keys": {
+          "app": [
+            "create_time",
+            "modify_time",
+            "id",
+            "cid",
+            "name",
+            "is_enabled",
+            "os",
+            "package_name",
+            "industry_id",
+            "wechat_app_id",
+            "wechat_origin_id",
+            "event_version",
+            "is_iaa"
+          ]
+        },
+        "data_keys": [
+          "app",
+          "distinct_strategy",
+          "reactive_window"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "known_omitted_data_item_keys": {
+          "app": [
+            "download_url",
+            "icon_url",
+            "sub_package_list",
+            "remark"
+          ]
+        },
+        "known_omitted_data_keys": [
+          "wx_app",
+          "ta_conf",
+          "postback_conf",
+          "booking_info",
+          "clickback_url",
+          "callback_url",
+          "extra_attribution_conf",
+          "attributed_order",
+          "dryrun_mode"
+        ],
+        "required_data_keys": [
+          "app"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "归因回传映射列表。当前前端精确使用 GET JSON body，filters 为 JSON 字符串；2026-08-08 在可读 App 上取得 code=0 非空合同，条件、公司和回传值配置固定省略。",
+      "domain": "attribution",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "string"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "attribution.postback_map.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 20,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/user/postback_map/list/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size",
+          "app_id"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {
+          "filters": "[]"
+        },
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "app.list"
+      ],
+      "resource": "postback_map",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "create_time",
+          "modify_time",
+          "id",
+          "app_id",
+          "turbo_promoted_object_id",
+          "event_name",
+          "event_type",
+          "including",
+          "is_enabled",
+          "ratio",
+          "ratio_type",
+          "ratio_mode",
+          "source_type",
+          "convert_type"
+        ],
+        "known_omitted_item_keys": [
+          "company",
+          "conditions",
+          "sub_conditions",
+          "circular_queue",
+          "back_value"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "归因回溯窗口列表。当前前端精确使用 GET JSON body {app_id} 并消费 app_id/attributed_reason/minutes/days/window_type；2026-08-08 七个可读 App 均返回 code=0 空列表，公司字段固定省略。",
+      "domain": "attribution",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id"
+        }
+      },
+      "operation_id": "attribution.attr_backtrack.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v1/user/attr_backtrack/list/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "app.list"
+      ],
+      "resource": "attr_backtrack",
+      "response_projection": {
+        "data_keys": [
+          "list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "app_id",
+          "attributed_reason",
+          "minutes",
+          "days",
+          "window_type"
+        ],
+        "known_omitted_item_keys": [
+          "company"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "再归因配置列表。当前前端精确使用 GET JSON body {app_id}；2026-08-08 在可读 App 上取得 code=0 非空合同。",
+      "domain": "attribution",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id"
+        }
+      },
+      "operation_id": "attribution.reattribution.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v1/base/reattribution/list/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "app.list"
+      ],
+      "resource": "reattribution",
+      "response_projection": {
+        "data_keys": [
+          "list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "app_id",
+          "create_time",
+          "is_enabled",
+          "modify_time",
+          "reclick_days",
+          "reflux_days"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "get",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "归因点击间隔配置。现行前端路径已迁移到 /user/open_app/attr_click_interval/list/，精确 GET JSON body {app_id}；合同字段为 is_enabled/unit/second/minute，2026-08-08 七个可读 App 均返回 code=0 空配置。",
+      "domain": "attribution",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id"
+        }
+      },
+      "operation_id": "attribution.attr_click_interval.get",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v1/user/open_app/attr_click_interval/list/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "app.list"
+      ],
+      "resource": "attr_click_interval",
+      "response_projection": {
+        "data_keys": [
+          "is_enabled",
+          "unit",
+          "second",
+          "minute"
+        ],
+        "dynamic_item_fields": [],
+        "empty_object_as_empty_result": true,
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "展示点击归因开关列表。当前前端精确使用 GET JSON body {app_id} 并消费 company/enable；2026-08-08 七个可读 App 均返回 code=0 空列表，公司字段固定省略。",
+      "domain": "attribution",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id"
+        }
+      },
+      "operation_id": "attribution.attr_impress_click.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v1/user/attr_impress_click/list/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "app.list"
+      ],
+      "resource": "attr_impress_click",
+      "response_projection": {
+        "data_keys": [
+          "list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "enable"
+        ],
+        "known_omitted_item_keys": [
+          "company"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "巨量平台素材列表。当前前端精确使用 query {page,page_size} 与 body {advertiser_id,check_local_exist:1,filters:[]}；2026-08-08 最小探针 code=0 且取得非空合同，URL、人员、MD5 和图片容器固定省略。",
+      "domain": "material",
+      "effect": "read",
+      "input_fields": {
+        "advertiser_id": {
+          "required": true,
+          "type": "string"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "advertiser_id": "$first_bytedance_advertiser_id",
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "material.bytedance.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 20,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/asset/material/bytedance/list/",
+      "privacy_policy": {
+        "classification": "material",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "advertiser_id"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {
+          "check_local_exist": 1,
+          "filters": []
+        },
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "page",
+          "page_size"
+        ]
+      },
+      "required_parent": [
+        "promotion.bytedance.advertiser.list"
+      ],
+      "resource": "bytedance",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "file_name",
+          "material_id",
+          "gravity_material_id"
+        ],
+        "known_omitted_item_keys": [
+          "create_time",
+          "modify_time",
+          "file_size",
+          "file_size_str",
+          "lowercase_file_name",
+          "file_type",
+          "video_duration",
+          "video_duration_second",
+          "width",
+          "height",
+          "aspect_ratio",
+          "aspect_xy",
+          "source_type",
+          "id",
+          "ad_created_time",
+          "ad_modified_time",
+          "cid",
+          "ad_platform",
+          "advertiser_id",
+          "derived_id",
+          "is_download",
+          "platform_id",
+          "format",
+          "status",
+          "image_nums",
+          "media_refuse_count",
+          "is_local_exist",
+          "local_material_id",
+          "file_md5",
+          "derived_file_md5",
+          "image_set",
+          "material_label_list",
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "腾讯平台素材列表。当前前端精确使用 query {page,page_size} 与 body {advertiser_id,check_local_exist:1,filters:[]}；2026-08-08 最小探针 code=0 且取得非空合同，URL、人员、MD5 和图片容器固定省略。",
+      "domain": "material",
+      "effect": "read",
+      "input_fields": {
+        "advertiser_id": {
+          "required": true,
+          "type": "string"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "advertiser_id": "$first_tencent_advertiser_id",
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "material.tencent.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 20,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/asset/material/tencent/list/",
+      "privacy_policy": {
+        "classification": "material",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "advertiser_id"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {
+          "check_local_exist": 1,
+          "filters": []
+        },
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "page",
+          "page_size"
+        ]
+      },
+      "required_parent": [
+        "promotion.tencent.advertiser.list"
+      ],
+      "resource": "tencent",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "file_name",
+          "material_id",
+          "gravity_material_id"
+        ],
+        "known_omitted_item_keys": [
+          "create_time",
+          "modify_time",
+          "file_size",
+          "file_size_str",
+          "lowercase_file_name",
+          "file_type",
+          "video_duration",
+          "video_duration_second",
+          "width",
+          "height",
+          "aspect_ratio",
+          "aspect_xy",
+          "source_type",
+          "id",
+          "ad_created_time",
+          "ad_modified_time",
+          "cid",
+          "ad_platform",
+          "advertiser_id",
+          "derived_id",
+          "is_download",
+          "platform_id",
+          "format",
+          "status",
+          "image_nums",
+          "media_refuse_count",
+          "is_local_exist",
+          "local_material_id",
+          "file_md5",
+          "derived_file_md5",
+          "image_set",
+          "material_label_list",
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "block_reason": "permission_unavailable",
+      "contract_version": 1,
+      "description": "磁力平台素材当前前端 wire contract 已确认。2026-08-08 受控探针中 manage/account/list 为空，advertiser/list 在 7/30/90 天窗口均 code=0 空列表，无法取得 advertiser_id；登记为 permission_unavailable 并禁止本地执行，待账号出现可读父账户后重新验证。",
+      "domain": "material",
+      "effect": "read",
+      "executable": false,
+      "input_fields": {
+        "advertiser_id": {
+          "required": true,
+          "type": "string"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "candidate.material.kuaishou.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 20,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/asset/material/kuaishou/list/",
+      "privacy_policy": {
+        "classification": "material",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "advertiser_id"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {
+          "check_local_exist": 1,
+          "filters": []
+        },
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "page",
+          "page_size"
+        ]
+      },
+      "required_parent": [
+        "promotion.kuaishou.advertiser.list"
+      ],
+      "resource": "kuaishou",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "file_name",
+          "material_id",
+          "gravity_material_id"
+        ],
+        "known_omitted_item_keys": [
+          "create_time",
+          "modify_time",
+          "file_size",
+          "file_size_str",
+          "lowercase_file_name",
+          "file_type",
+          "video_duration",
+          "video_duration_second",
+          "width",
+          "height",
+          "aspect_ratio",
+          "aspect_xy",
+          "source_type",
+          "id",
+          "ad_created_time",
+          "ad_modified_time",
+          "cid",
+          "ad_platform",
+          "advertiser_id",
+          "derived_id",
+          "is_download",
+          "platform_id",
+          "format",
+          "status",
+          "image_nums",
+          "media_refuse_count",
+          "is_local_exist",
+          "local_material_id",
+          "file_md5",
+          "derived_file_md5",
+          "image_set",
+          "material_label_list",
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "permission_unavailable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "block_reason": "deprecated",
+      "contract_version": 1,
+      "description": "历史静态资源中发现的泛平台素材路径；2026-08-08 当前 Clouddrive chunk 只调用 bytedance/tencent/kuaishou 三条具体路由，已由对应受控操作替代。该历史泛化入口登记为 deprecated 并禁止执行。",
+      "domain": "material",
+      "effect": "read",
+      "executable": false,
+      "input_fields": {},
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "candidate.material.platform.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v1/asset/material/platform/list/",
+      "privacy_policy": {
+        "classification": "material",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "platform",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "deprecated",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "get",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "素材审核功能开关配置（不是素材审核详情）。当前前端无参 GET；2026-08-08 最小探针 code=0，公开 enable 与安全标量元数据，规则和人员容器固定省略。",
+      "domain": "material",
+      "effect": "read",
+      "input_fields": {},
+      "live_probe": {
+        "enabled": true,
+        "input": {}
+      },
+      "operation_id": "material.examine.config.get",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v1/asset/material_examine/get/",
+      "privacy_policy": {
+        "classification": "material",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "examine_config",
+      "response_projection": {
+        "data_keys": [
+          "enable",
+          "cid",
+          "id",
+          "create_time",
+          "modify_time"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "known_omitted_data_keys": [
+          "rule",
+          "users"
+        ],
+        "required_data_keys": [
+          "enable"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "query",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "平台素材安全聚合报表。当前 Business chunk 明确巨量/腾讯/磁力/B站指标映射；受控 codec 固定 material/total 聚合、平台与 App filters，并将 stat_list 收紧为空以禁止 designer_id 人员分组。2026-08-08 四个平台最小探针均 code=0 且响应合同一致。",
+      "domain": "material",
+      "effect": "read",
+      "input_fields": {
+        "app_list": {
+          "item_type": "string",
+          "max_items": 100,
+          "min_items": 1,
+          "required": true,
+          "type": "array"
+        },
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "platform": {
+          "enum": [
+            "bytedance",
+            "tencent",
+            "kuaishou",
+            "bilibili"
+          ],
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_list": [
+            "$first_app_id"
+          ],
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "page": 1,
+          "page_size": 1,
+          "platform": "bytedance"
+        }
+      },
+      "operation_id": "material.report.query",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/report/api/v3/datareport/material_get/",
+      "privacy_policy": {
+        "classification": "material",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "platform",
+          "page",
+          "page_size",
+          "date_list",
+          "app_list"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 10
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "app.list"
+      ],
+      "resource": "report",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "file_name",
+          "gravity_material_id",
+          "stat_cost",
+          "ctr",
+          "convert_rate",
+          "cost",
+          "conversions_rate",
+          "charge",
+          "action_ratio",
+          "conversion_ratio",
+          "click_rate",
+          "AppRealRegisterCnt",
+          "AppGamePayUserCntStandardAtv"
+        ],
+        "known_omitted_data_keys": [
+          "total",
+          "update_at"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "block_reason": "blocked_privacy",
+      "contract_version": 1,
+      "description": "Read path may expose promotion-object identifiers or sensitive metadata; blocked until privacy projection is approved.",
+      "domain": "promotion",
+      "effect": "read",
+      "executable": false,
+      "input_fields": {},
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "candidate.promotion_object.extra_info.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v1/user/promoted_object/extra_info/list/",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "object_extra_info",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "blocked_privacy",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "block_reason": "blocked_privacy",
+      "contract_version": 1,
+      "description": "Read path exposes click URLs; blocked until privacy projection is approved.",
+      "domain": "promotion",
+      "effect": "read",
+      "executable": false,
+      "input_fields": {},
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "candidate.promotion_object.click_url.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v1/user/promoted_object/click_url/list/",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "object_click_url",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "blocked_privacy",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "block_reason": "blocked_privacy",
+      "contract_version": 1,
+      "description": "Read path exposes click-URL edit history; blocked until privacy projection is approved.",
+      "domain": "promotion",
+      "effect": "read",
+      "executable": false,
+      "input_fields": {},
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "candidate.promotion_object.click_url_edit_log.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v1/user/promoted_object/click_url/edit_log/list/",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "object_click_url_log",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "blocked_privacy",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "block_reason": "blocked_privacy",
+      "contract_version": 1,
+      "description": "Read path exposes user operation history; blocked until privacy projection is approved.",
+      "domain": "account",
+      "effect": "read",
+      "executable": false,
+      "input_fields": {},
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "candidate.account.user_operation_log.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v1/user/common/user_opera_log/list/",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "user_operation_log",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "blocked_privacy",
+      "upstream_method": "GET"
+    }
+  ]
+}

@@ -1,0 +1,480 @@
+{
+  "case_count": 13,
+  "cases": [
+    {
+      "input": {
+        "filters": [
+          {
+            "field": "status",
+            "operator": 1,
+            "values": [
+              "active"
+            ]
+          }
+        ],
+        "page": 2,
+        "page_size": 3
+      },
+      "operation_id": "analysis.account_user.list",
+      "wire": {
+        "body": {},
+        "method": "GET",
+        "path": "/account_center/api/v1/user/list/",
+        "query": {
+          "filters": "[{\"field\":\"status\",\"operator\":1,\"values\":[\"active\"]}]",
+          "page": 2,
+          "page_size": 3
+        }
+      }
+    },
+    {
+      "input": {
+        "app_id": "101",
+        "date": "2026-08-08",
+        "field_profile": "mobile",
+        "page": 2,
+        "page_size": 3
+      },
+      "operation_id": "analysis.monetization_detail.list",
+      "wire": {
+        "body": {
+          "app_id": 101,
+          "field_map": [
+            "CreateTime",
+            "AdEventTime",
+            "ClientID",
+            "AdPlatform",
+            "TurboPromotedObjectID",
+            "AdvertiserID",
+            "AdAid",
+            "event$ecpm",
+            "event$ad_type",
+            "event$adn_type",
+            "user$ad_count",
+            "user$ad_avg_ecpm",
+            "user$ad_ltv",
+            "event$ad_through",
+            "event$ad_source_id",
+            "event$ad_placement_id"
+          ],
+          "global_conditions": [
+            {
+              "field": "create_time",
+              "operator": "RANGE_IN",
+              "type": "event",
+              "value": [
+                "2026-08-08 00:00:00",
+                "2026-08-08 23:59:59"
+              ]
+            }
+          ],
+          "local_conditions": [],
+          "order_by_list": [],
+          "page": 2,
+          "page_size": 3,
+          "query_id": "17861472000000123456789abcdef012"
+        },
+        "method": "POST",
+        "path": "/report/api/v3/dataanalysis/monetization_detail/list/",
+        "query": {}
+      }
+    },
+    {
+      "input": {
+        "app_id": "101",
+        "date": "2026-08-08",
+        "fields": [
+          "Amount"
+        ],
+        "page": 2,
+        "page_size": 3
+      },
+      "operation_id": "analysis.order_detail.list",
+      "wire": {
+        "body": {
+          "app_id": 101,
+          "field_map": [
+            "Amount"
+          ],
+          "global_conditions": [
+            {
+              "field": "create_time",
+              "operator": "RANGE_IN",
+              "type": "event",
+              "value": [
+                "2026-08-08 00:00:00",
+                "2026-08-08 23:59:59"
+              ]
+            }
+          ],
+          "order_by_list": [],
+          "order_cond_logic": "AND",
+          "order_conditions": [],
+          "page": 2,
+          "page_size": 3,
+          "query_id": "17861472000000123456789abcdef012",
+          "user_cond_logic": "AND"
+        },
+        "method": "POST",
+        "path": "/report/api/v3/dataanalysis/user/pay_event/list/",
+        "query": {}
+      }
+    },
+    {
+      "input": {
+        "app_id": "101",
+        "client_id": "client-1",
+        "pay_event_time": "2026-08-08 12:00:00",
+        "split_trace_ids": [
+          "split-1",
+          "split-2"
+        ],
+        "trace_id": "trace-1"
+      },
+      "operation_id": "analysis.order_split_detail.list",
+      "wire": {
+        "body": {
+          "$split_trace_id_list": [
+            "split-1",
+            "split-2"
+          ],
+          "ClientID": "client-1",
+          "PayEventTime": "2026-08-08 12:00:00",
+          "TraceID": "trace-1",
+          "app_id": 101
+        },
+        "method": "POST",
+        "path": "/report/api/v3/dataanalysis/user/pay_event/split_order_detail/",
+        "query": {}
+      }
+    },
+    {
+      "input": {
+        "app_id": "101",
+        "cond_logic": "AND",
+        "date_range": {
+          "end_date": "2026-08-08",
+          "start_date": "2026-08-08"
+        },
+        "name": "golden probe",
+        "remark": "",
+        "update_type": "Manual",
+        "user_event_rules": {
+          "cond_logic": "AND",
+          "groups": []
+        },
+        "user_property_rules": {
+          "cond_logic": "AND",
+          "groups": []
+        }
+      },
+      "operation_id": "analysis.segment.evaluate_percent",
+      "wire": {
+        "body": {
+          "FE_CONFIG": "{\"userPropertyRules\":[],\"userBehaviorRules\":[]}",
+          "app_id": 101,
+          "cond_logic": "AND",
+          "from_event_prop": {
+            "cond_logic": "AND",
+            "list": []
+          },
+          "from_user_prop": {
+            "cond_logic": "AND",
+            "list": []
+          },
+          "segment_name": "golden probe",
+          "segment_remark": "",
+          "update_date_range": {
+            "end_date": "2026-08-08",
+            "start_date": "2026-08-08"
+          },
+          "update_type": "Manual"
+        },
+        "method": "POST",
+        "path": "/report/api/v3/dataanalysis/segment/from_rule/evaluate_percent/",
+        "query": {}
+      }
+    },
+    {
+      "input": {
+        "app_id": "101",
+        "page": 2,
+        "page_size": 3
+      },
+      "operation_id": "analysis.segment.list",
+      "wire": {
+        "body": {},
+        "method": "GET",
+        "path": "/report/api/v3/dataanalysis/segment/list/",
+        "query": {
+          "filters": "[{\"field\":\"app_id\",\"operator\":1,\"values\":[101]}]",
+          "page": 2,
+          "page_size": 3,
+          "to_response_origin_query": false
+        }
+      }
+    },
+    {
+      "input": {
+        "date": "2026-08-08",
+        "page": 2,
+        "page_size": 3,
+        "segment_id": "201"
+      },
+      "operation_id": "analysis.segment.uid_result.list",
+      "wire": {
+        "body": {},
+        "method": "GET",
+        "path": "/report/api/v3/dataanalysis/segment/uid_result/list/",
+        "query": {
+          "end_time": "2026-08-08 23:59:59",
+          "page": 2,
+          "page_size": 3,
+          "segment_id": 201,
+          "start_time": "2026-08-08 00:00:00"
+        }
+      }
+    },
+    {
+      "input": {
+        "app_id": "101",
+        "segment_id": "201",
+        "segment_version_id": "v-1"
+      },
+      "operation_id": "analysis.segment.user_detail.list",
+      "wire": {
+        "body": {
+          "app_id": 101,
+          "segment_id": 201,
+          "segment_version_id": "v-1",
+          "tmp_segment_id": 201,
+          "to_update_segment": false
+        },
+        "method": "POST",
+        "path": "/report/api/v3/dataanalysis/segment/user/detail/list/",
+        "query": {}
+      }
+    },
+    {
+      "input": {
+        "app_id": "101",
+        "client_id": "client-1",
+        "date": "2026-08-08",
+        "fields": [
+          "ClientID"
+        ],
+        "page": 2,
+        "page_size": 3
+      },
+      "operation_id": "analysis.user_detail.list",
+      "wire": {
+        "body": {
+          "app_id": 101,
+          "field_map": [
+            "ClientID"
+          ],
+          "global_conditions": [
+            {
+              "field": "create_date_list",
+              "operator": "RANGE_IN",
+              "type": "default_user",
+              "value": [
+                "2026-08-08 00:00:00",
+                "2026-08-08 23:59:59"
+              ]
+            },
+            {
+              "field": "client_id_list",
+              "operator": "IN",
+              "type": "default_user",
+              "value": [
+                "client-1"
+              ]
+            }
+          ],
+          "order_by_list": [],
+          "page": 2,
+          "page_size": 3,
+          "postback_cond_logic": "AND",
+          "postback_conditions": [],
+          "query_id": "17861472000000123456789abcdef012",
+          "user_cond_logic": "AND"
+        },
+        "method": "POST",
+        "path": "/report/api/v3/dataanalysis/user/detail/list/",
+        "query": {}
+      }
+    },
+    {
+      "input": {
+        "app_id": "101",
+        "client_id": "client-1",
+        "date_list": [
+          "2026-08-07",
+          "2026-08-08"
+        ],
+        "event_list": [
+          "purchase"
+        ],
+        "page": 2,
+        "page_size": 3
+      },
+      "operation_id": "analysis.user_event.list",
+      "wire": {
+        "body": {
+          "app_id": 101,
+          "client_id": "client-1",
+          "date_list": [
+            "2026-08-07",
+            "2026-08-08"
+          ],
+          "desc": true,
+          "event_list": [
+            "purchase"
+          ],
+          "group_by": "day",
+          "page_info": {
+            "page": 2,
+            "page_size": 3
+          },
+          "query_item_list": []
+        },
+        "method": "POST",
+        "path": "/report/api/v3/dataanalysis/user/event/list/",
+        "query": {}
+      }
+    },
+    {
+      "input": {
+        "app_id": "101",
+        "client_id": "client-1"
+      },
+      "operation_id": "analysis.user_postback_log.list",
+      "wire": {
+        "body": {
+          "app_id": 101,
+          "client_id": "client-1"
+        },
+        "method": "POST",
+        "path": "/report/api/v3/dataanalysis/user/postback_log/list/",
+        "query": {}
+      }
+    },
+    {
+      "input": {
+        "app_list": [
+          "app-1"
+        ],
+        "date_list": [
+          "2026-08-07",
+          "2026-08-08"
+        ],
+        "page": 2,
+        "page_size": 3,
+        "platform": "kuaishou"
+      },
+      "operation_id": "material.report.query",
+      "wire": {
+        "body": {
+          "data_dims": [
+            "material"
+          ],
+          "date_dims": "total",
+          "date_list": [
+            "2026-08-07",
+            "2026-08-08"
+          ],
+          "filters": [
+            {
+              "field": "ad_platform",
+              "operator": "EQUALS",
+              "values": [
+                "kuaishou"
+              ]
+            },
+            {
+              "field": "app_id",
+              "operator": "IN",
+              "values": [
+                "app-1"
+              ]
+            }
+          ],
+          "gravity_metrics_list": [
+            "AppRealRegisterCnt",
+            "AppGamePayUserCntStandardAtv"
+          ],
+          "metrics_list": [
+            "charge",
+            "action_ratio",
+            "conversion_ratio"
+          ],
+          "order_by": [],
+          "page": 2,
+          "page_size": 3,
+          "relate_dims": [],
+          "stat_list": []
+        },
+        "method": "POST",
+        "path": "/report/api/v3/datareport/material_get/",
+        "query": {}
+      }
+    },
+    {
+      "input": {
+        "ad_platform_list": [
+          "bytedance",
+          "tencent"
+        ],
+        "app_list": [
+          "app-1"
+        ],
+        "calc_diff": false,
+        "date_list": [
+          "2026-08-07",
+          "2026-08-08"
+        ],
+        "dims_list": [
+          "stat_datetime"
+        ],
+        "metrics_list": [
+          "AdCost"
+        ],
+        "need_ratio": true,
+        "page": 2,
+        "page_size": 3
+      },
+      "operation_id": "report.business.query",
+      "wire": {
+        "body": {
+          "app_list": [
+            "app-1"
+          ],
+          "date_list": [
+            "2026-08-07",
+            "2026-08-08"
+          ],
+          "dims_list": [
+            "stat_datetime"
+          ],
+          "filtering": {
+            "ad_platform_list": [
+              "bytedance",
+              "tencent"
+            ]
+          },
+          "metrics_list": [
+            "AdCost"
+          ],
+          "need_ratio": true,
+          "page": 2,
+          "page_size": 3
+        },
+        "method": "POST",
+        "path": "/report/api/v1/manager_report/list/",
+        "query": {}
+      }
+    }
+  ],
+  "golden_version": 1
+}

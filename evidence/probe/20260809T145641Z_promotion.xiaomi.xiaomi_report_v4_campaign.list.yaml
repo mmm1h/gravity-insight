@@ -1,0 +1,20 @@
+{
+  "basis": "no_proven_binding",
+  "bindings": [],
+  "conclusion": "undetermined",
+  "detail": "No declared parent binding exists and the child has not returned a semantic success without one.",
+  "http": [],
+  "missing_evidence": [
+    "A frontend request binding, a semantic error naming the parent field, or a successful child request without a parent selector."
+  ],
+  "operation_id": "promotion.xiaomi.xiaomi_report_v4_campaign.list",
+  "replacement_blocker": null,
+  "resolved_at": "2026-08-09T14:56:41Z",
+  "route": {
+    "method": "POST",
+    "path": "/turbo_engine/api/v1/xiaomi/report_v4/campaign/list/"
+  },
+  "schema_version": "gravity-insight.parent-resolution-evidence.v1",
+  "source_evidence": "10_数据底座/evidence/gravity-probe/20260809T143508Z_promotion.xiaomi.xiaomi_report_v4_campaign.list.yaml",
+  "values_persisted": false
+}

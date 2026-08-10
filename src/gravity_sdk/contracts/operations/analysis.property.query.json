@@ -1,0 +1,163 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 11,
+  "operation": {
+    "action": "query",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "属性分析聚合；仅允许结构化属性分析，不允许自由 SQL 或自由 join。",
+    "domain": "analysis",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "app_id": {
+        "required": true,
+        "type": "string"
+      },
+      "group_by_list": {
+        "default": [],
+        "item_type": "object",
+        "max_items": 20,
+        "type": "array"
+      },
+      "order_by_list": {
+        "default": [],
+        "item_type": "object",
+        "max_items": 20,
+        "type": "array"
+      },
+      "property_condition": {
+        "default": [],
+        "item_type": "object",
+        "max_items": 100,
+        "type": "array"
+      },
+      "query_id": {
+        "required": true,
+        "type": "string"
+      },
+      "query_item": {
+        "required": true,
+        "type": "object"
+      },
+      "user_cond_logic": {
+        "default": "AND",
+        "enum": [
+          "AND",
+          "OR"
+        ],
+        "type": "string"
+      },
+      "user_filtering": {
+        "default": {},
+        "type": "object"
+      },
+      "user_re_attribute_filtering": {
+        "default": {},
+        "type": "object"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "app_id": "$first_app_id",
+        "query_id": "$analysis_query_id",
+        "query_item": {
+          "conditions": [],
+          "custom_name": "",
+          "target": {
+            "cname": "",
+            "data_type": "INT",
+            "field": "PresetUserCount",
+            "name": "PresetUserCount"
+          }
+        }
+      }
+    },
+    "operation_id": "analysis.property.query",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/report/api/v3/dataanalysis/user/properties/",
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.property.query.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "query_id",
+        "app_id",
+        "query_item",
+        "group_by_list",
+        "user_filtering",
+        "user_re_attribute_filtering",
+        "user_cond_logic",
+        "property_condition",
+        "order_by_list"
+      ],
+      "defaults": {
+        "group_by_list": [],
+        "order_by_list": [],
+        "property_condition": [],
+        "user_cond_logic": "AND",
+        "user_filtering": {},
+        "user_re_attribute_filtering": {}
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "analysis.user_property.list",
+        "output_path": "data.list[].name",
+        "selection": "caller_select"
+      }
+    ],
+    "resource": "property",
+    "response_projection": {
+      "data_keys": [
+        "list",
+        "target"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "numeric_paths": [
+        "list.[].value"
+      ],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis.json"
+}

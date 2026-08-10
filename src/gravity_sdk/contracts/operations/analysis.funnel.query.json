@@ -1,0 +1,205 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 9,
+  "operation": {
+    "action": "query",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "漏斗分析结构化聚合；步骤、窗口和条件契约已确认，动态响应按受控聚合投影输出。",
+    "domain": "analysis",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "app_id": {
+        "required": true,
+        "type": "string"
+      },
+      "date_list": {
+        "item_type": "object",
+        "max_items": 1,
+        "min_items": 1,
+        "required": true,
+        "type": "array"
+      },
+      "global_cond_logic": {
+        "default": "AND",
+        "enum": [
+          "AND",
+          "OR"
+        ],
+        "type": "string"
+      },
+      "global_conditions": {
+        "default": [],
+        "item_type": "object",
+        "max_items": 100,
+        "type": "array"
+      },
+      "group_by_list": {
+        "default": [],
+        "item_type": "object",
+        "max_items": 20,
+        "type": "array"
+      },
+      "query_id": {
+        "required": true,
+        "type": "string"
+      },
+      "query_item_list": {
+        "item_type": "object",
+        "max_items": 20,
+        "min_items": 2,
+        "required": true,
+        "type": "array"
+      },
+      "stat_time_window": {
+        "required": true,
+        "type": "object"
+      },
+      "to_calc_each_day": {
+        "default": false,
+        "type": "boolean"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "app_id": "$first_app_id",
+        "date_list": [
+          {
+            "end_date": "$yesterday",
+            "start_date": "$yesterday"
+          }
+        ],
+        "group_by_list": [
+          {
+            "field": "create_time",
+            "group_by": "day",
+            "type": "default_event"
+          }
+        ],
+        "query_id": "$analysis_query_id",
+        "query_item_list": [
+          {
+            "cond_logic": "AND",
+            "conditions": [],
+            "custom_name": "",
+            "event_index": 0,
+            "event_label": "",
+            "event_name": "$first_event_name",
+            "target": {
+              "field": "PresetAllCount",
+              "name": "PresetAllCount"
+            }
+          },
+          {
+            "cond_logic": "AND",
+            "conditions": [],
+            "custom_name": "",
+            "event_index": 1,
+            "event_label": "",
+            "event_name": "$first_event_name",
+            "target": {
+              "field": "PresetAllCount",
+              "name": "PresetAllCount"
+            }
+          }
+        ],
+        "stat_time_window": {
+          "type": "day",
+          "val": 1
+        },
+        "to_calc_each_day": false
+      }
+    },
+    "operation_id": "analysis.funnel.query",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/report/api/v3/dataanalysis/funnel/",
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.funnel.query.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "query_id",
+        "app_id",
+        "query_item_list",
+        "stat_time_window",
+        "group_by_list",
+        "global_conditions",
+        "global_cond_logic",
+        "date_list",
+        "to_calc_each_day"
+      ],
+      "defaults": {
+        "global_cond_logic": "AND",
+        "global_conditions": [],
+        "group_by_list": [],
+        "to_calc_each_day": false
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "analysis.event.list",
+        "output_path": "data.list[].name",
+        "selection": null
+      }
+    ],
+    "resource": "funnel",
+    "response_projection": {
+      "data_keys": [
+        "date_list",
+        "aggregate_by_date",
+        "aggregate_date",
+        "window_funnel_mode"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "numeric_paths": [
+        "window_funnel_mode",
+        "aggregate_date.total.*",
+        "aggregate_date.*.*",
+        "aggregate_by_date.*.*",
+        "aggregate_by_date.*.*.*"
+      ],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis.json"
+}

@@ -1,0 +1,92 @@
+{
+  "basis": "declared_parent_probe",
+  "bindings": [
+    {
+      "candidate_count": 0,
+      "output_path": "data.list[].user_id",
+      "parent_operation_id": "analysis.account_user.list",
+      "selection": "caller_select",
+      "status": "undetermined",
+      "target_cardinality": "one",
+      "target_input": "user_id"
+    }
+  ],
+  "conclusion": "undetermined",
+  "detail": "At least one declared stable parent did not produce a readable candidate response.",
+  "http": [
+    {
+      "http_status": 200,
+      "method": "GET",
+      "operation_id": "analysis.account_user.list",
+      "path": "/account_center/api/v1/user/list/",
+      "purpose": "parent_resolution",
+      "raw_schema_fingerprint": "a632565d5a1268e39ad190f43a305431c461906ce0ea4ee4cf25aa79c199f854",
+      "request_fingerprint": "60bae6d70b3f71dbdd53c061c343439b51a522a7ca66dcba179422b912ed1be6",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.query.page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.query.page_size",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "null"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    }
+  ],
+  "missing_evidence": [
+    "A successful or explicit permission response from every declared parent operation."
+  ],
+  "operation_id": "app.project_auth.detail",
+  "replacement_blocker": null,
+  "resolved_at": "2026-08-09T14:56:34Z",
+  "route": {
+    "method": "GET",
+    "path": "/turbo_engine/api/v1/user/project_auth/detail/"
+  },
+  "schema_version": "gravity-insight.parent-resolution-evidence.v1",
+  "source_evidence": null,
+  "values_persisted": false
+}

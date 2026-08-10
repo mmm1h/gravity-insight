@@ -1,0 +1,179 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 11,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "引力内置图表/看板模板目录；支持完整前端分页、主题与精确 filters，并返回模板动态 config。",
+    "domain": "analysis",
+    "effect": "read",
+    "examples": [
+      {
+        "description": "Minimum input copied from the enabled, contract-verified live probe.",
+        "inputs": {
+          "page": 1,
+          "page_size": 1
+        },
+        "name": "minimum_read"
+      }
+    ],
+    "input_fields": {
+      "filters": {
+        "default": [
+          {
+            "field": "template_type",
+            "operator": 1,
+            "values": [
+              "report"
+            ]
+          }
+        ],
+        "item_type": "object",
+        "max_items": 2,
+        "min_items": 1,
+        "type": "array"
+      },
+      "page": {
+        "default": 1,
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 15,
+        "type": "integer"
+      },
+      "subject_ids": {
+        "default": [],
+        "item_type": "integer",
+        "max_items": 100,
+        "type": "array"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "page": 1,
+        "page_size": 1
+      }
+    },
+    "operation_id": "analysis.template.internal.list",
+    "pagination": {
+      "default_page_size": 15,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 60,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/turbo_engine/api/v2/datamanageconfig/template_internal/list/",
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "remark",
+        "create_user_name",
+        "update_user_name",
+        "create_user_id",
+        "update_user_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.template.internal.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "page",
+        "page_size",
+        "filters",
+        "subject_ids"
+      ],
+      "defaults": {
+        "filters": [
+          {
+            "field": "template_type",
+            "operator": 1,
+            "values": [
+              "report"
+            ]
+          }
+        ],
+        "page": 1,
+        "page_size": 15,
+        "subject_ids": []
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "template_internal",
+    "response_projection": {
+      "data_keys": [
+        "list",
+        "page_info"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "cid",
+        "config",
+        "create_time",
+        "id",
+        "internal",
+        "modify_time",
+        "name",
+        "review",
+        "share_status",
+        "source",
+        "sub_type",
+        "subject_ids",
+        "subject_names",
+        "template_type"
+      ],
+      "known_omitted_item_keys": [
+        "create_user_id",
+        "create_user_name",
+        "remark",
+        "update_user_id",
+        "update_user_name"
+      ],
+      "nested_item_keys": {
+        "subject_names": [
+          "id",
+          "name"
+        ]
+      },
+      "opaque_json_item_keys": [
+        "config"
+      ],
+      "required_data_keys": [
+        "list"
+      ],
+      "scalar_list_item_types": {
+        "subject_ids": "integer"
+      }
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis_dashboard.json"
+}

@@ -1,0 +1,118 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 0,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "多维报表模板树；category 为空时使用页面默认分类。",
+    "domain": "report",
+    "effect": "read",
+    "examples": [
+      {
+        "description": "Minimum input copied from the enabled, contract-verified live probe.",
+        "inputs": {
+          "category": ""
+        },
+        "name": "minimum_read"
+      }
+    ],
+    "input_fields": {
+      "category": {
+        "default": "",
+        "enum": [
+          ""
+        ],
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "category": ""
+      }
+    },
+    "operation_id": "report.multidim.template.tree",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v3/conftemplate/template/tree/",
+    "privacy_policy": {
+      "classification": "configuration",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.multidim.template.tree.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {
+        "category": ""
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "category"
+      ]
+    },
+    "required_parent": [],
+    "resource": "template",
+    "response_projection": {
+      "data_item_keys": {
+        "my_template": [
+          "id",
+          "name"
+        ],
+        "share_template": [
+          "id",
+          "name"
+        ]
+      },
+      "data_keys": [
+        "my_template",
+        "share_template"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "report.json"
+}

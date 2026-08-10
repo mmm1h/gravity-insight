@@ -1,0 +1,20 @@
+{
+  "basis": "unbound_parent_fields",
+  "bindings": [],
+  "conclusion": "undetermined",
+  "detail": "A child response exists, but parent-shaped input fields remain unbound: advertiser_id.",
+  "http": [],
+  "missing_evidence": [
+    "A proven parent operation and output path for: advertiser_id."
+  ],
+  "operation_id": "material.media_material_label.list",
+  "replacement_blocker": null,
+  "resolved_at": "2026-08-09T14:56:38Z",
+  "route": {
+    "method": "GET",
+    "path": "/turbo_engine/api/v1/asset/media_material_label/list/"
+  },
+  "schema_version": "gravity-insight.parent-resolution-evidence.v1",
+  "source_evidence": "10_数据底座/evidence/gravity-probe/20260809T144340Z_material.media_material_label.list.yaml",
+  "values_persisted": false
+}

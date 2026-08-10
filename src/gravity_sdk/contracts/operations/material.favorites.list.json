@@ -1,0 +1,171 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 10,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "素材收藏列表。当前前端精确使用固定 favorites 视图 body（page=1,page_size=5000）；2026-08-08 最小探针 code=0，type/group/material 嵌套结构按静态直接消费字段投影，人员和 URL 容器固定省略。",
+    "domain": "material",
+    "effect": "read",
+    "examples": [
+      {
+        "description": "Minimum input copied from the enabled, contract-verified live probe.",
+        "inputs": {
+          "page": 1,
+          "page_size": 5000
+        },
+        "name": "minimum_read"
+      }
+    ],
+    "input_fields": {
+      "page": {
+        "default": 1,
+        "enum": [
+          1
+        ],
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 5000,
+        "enum": [
+          5000
+        ],
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "page": 1,
+        "page_size": 5000
+      }
+    },
+    "operation_id": "material.favorites.list",
+    "pagination": {
+      "default_page_size": 5000,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 5000,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/turbo_engine/api/v1/asset/material/favorites/list/",
+    "privacy_policy": {
+      "classification": "material",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "remark"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/material.favorites.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "page",
+        "page_size"
+      ],
+      "defaults": {
+        "page": 1,
+        "page_size": 5000
+      },
+      "fixed_body": {
+        "favorites_id": "",
+        "file_type": "",
+        "order_by": "create_time desc",
+        "search_key": "",
+        "search_type": "favorites",
+        "view_type": "favorites"
+      },
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "favorites",
+    "response_projection": {
+      "data_keys": [
+        "list",
+        "page_info"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "type",
+        "has_alum",
+        "group",
+        "material"
+      ],
+      "known_omitted_nested_item_keys": {
+        "group": [
+          "previews",
+          "album_authority",
+          "create_user",
+          "remark"
+        ],
+        "material": [
+          "image_set",
+          "file_url",
+          "thumbnail_url"
+        ]
+      },
+      "nested_item_keys": {
+        "group": [
+          "id",
+          "name",
+          "material_num",
+          "parent_id",
+          "root_id"
+        ],
+        "material": [
+          "id",
+          "file_type",
+          "file_name",
+          "is_favorite",
+          "width",
+          "height",
+          "file_size",
+          "file_size_str",
+          "status",
+          "source_type",
+          "create_time"
+        ]
+      },
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "other.json"
+}

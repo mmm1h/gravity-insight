@@ -1,0 +1,120 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 20,
+  "operation": {
+    "action": "tree",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "素材管理域的标签分类树节点列表；返回分类标识、名称、来源及系统标记，分类下的标签明细不输出。",
+    "domain": "material",
+    "effect": "read",
+    "examples": [
+      {
+        "description": "Minimum input verified by the contract probe pipeline.",
+        "inputs": {},
+        "name": "minimum_read"
+      }
+    ],
+    "executable": true,
+    "input_fields": {},
+    "live_probe": {
+      "enabled": true,
+      "inputs": {}
+    },
+    "operation_id": "material.tag_category.tree",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/asset/material_tag/tag_category/whole_tree/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "material",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/material.tag_category.tree.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "tag_category",
+    "response_projection": {
+      "data_keys": [],
+      "data_shape": "list",
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "id",
+        "is_system",
+        "name",
+        "source"
+      ],
+      "known_omitted_item_keys": [
+        "tag_list"
+      ],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "other.json"
+}

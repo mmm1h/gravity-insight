@@ -1,0 +1,3636 @@
+{
+  "manifest_version": 1,
+  "operations": [
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "分析页事件目录；只输出事件定义元数据，不输出事件记录。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "string"
+        },
+        "need_favourite": {
+          "default": true,
+          "type": "boolean"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 100,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "analysis.event.list",
+      "pagination": {
+        "default_page_size": 100,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 2000,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v2/event/event_list/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "client_id",
+          "clientid",
+          "trace_id",
+          "traceid",
+          "wxopenid",
+          "idfa",
+          "idfv",
+          "oaid",
+          "imei",
+          "androidid",
+          "caid1",
+          "caid2",
+          "remark"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {
+          "need_favourite": true,
+          "page": 1,
+          "page_size": 100
+        },
+        "fixed_body": {},
+        "fixed_query": {
+          "filters": "[{\"field\":\"visible\",\"operator\":1,\"values\":[true]}]"
+        },
+        "path_fields": [],
+        "query_fields": [
+          "app_id",
+          "page",
+          "page_size",
+          "need_favourite"
+        ]
+      },
+      "required_parent": [
+        "app.list"
+      ],
+      "resource": "event",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "accepted",
+          "app_id",
+          "cname",
+          "create_time",
+          "id",
+          "is_favourite",
+          "is_preset",
+          "lookup",
+          "modify_time",
+          "name",
+          "trigger_opportunity",
+          "uploaded",
+          "visible",
+          "yesterday_count"
+        ],
+        "known_omitted_item_keys": [
+          "remark"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "分析页用户属性元数据；仅输出属性定义，不输出用户属性值。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "string"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 100,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "analysis.user_property.list",
+      "pagination": {
+        "default_page_size": 100,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 2000,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v2/event/user_property_list/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "client_id",
+          "clientid",
+          "trace_id",
+          "traceid",
+          "wxopenid",
+          "idfa",
+          "idfv",
+          "oaid",
+          "imei",
+          "androidid",
+          "caid1",
+          "caid2",
+          "remark"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {
+          "page": 1,
+          "page_size": 100
+        },
+        "fixed_body": {},
+        "fixed_query": {
+          "filters": "[{\"field\":\"visible\",\"operator\":1,\"values\":[true]}]"
+        },
+        "path_fields": [],
+        "query_fields": [
+          "app_id",
+          "page",
+          "page_size"
+        ]
+      },
+      "required_parent": [
+        "app.list"
+      ],
+      "resource": "user_property",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "app_id",
+          "cname",
+          "create_time",
+          "data_type",
+          "dim_table",
+          "dim_using_table_name",
+          "has_dict",
+          "id",
+          "is_common",
+          "is_preset",
+          "modify_time",
+          "name",
+          "prop_type",
+          "uploaded",
+          "visible"
+        ],
+        "known_omitted_item_keys": [
+          "remark"
+        ],
+        "nested_item_keys": {
+          "dim_table": [
+            "name",
+            "cname",
+            "data_type",
+            "dim_using_table_name"
+          ]
+        },
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "分析页事件属性目录；静态包确认无需事件名即可分页读取。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "string"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 100,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "analysis.event_property.list",
+      "pagination": {
+        "default_page_size": 100,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 2000,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v2/event/event_property_list/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "client_id",
+          "clientid",
+          "trace_id",
+          "traceid",
+          "wxopenid",
+          "idfa",
+          "idfv",
+          "oaid",
+          "imei",
+          "androidid",
+          "caid1",
+          "caid2",
+          "remark"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {
+          "page": 1,
+          "page_size": 100
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "app_id",
+          "page",
+          "page_size"
+        ]
+      },
+      "required_parent": [
+        "app.list"
+      ],
+      "resource": "event_property",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "app_id",
+          "cname",
+          "create_time",
+          "data_type",
+          "dim_table",
+          "dim_using_table_name",
+          "has_dict",
+          "id",
+          "is_common",
+          "is_preset",
+          "modify_time",
+          "name",
+          "prop_type",
+          "uploaded",
+          "visible"
+        ],
+        "known_omitted_item_keys": [
+          "remark"
+        ],
+        "nested_item_keys": {
+          "dim_table": [
+            "name",
+            "cname",
+            "data_type",
+            "dim_using_table_name"
+          ]
+        },
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "get",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "单事件属性详情；event_name 由稳定事件目录解析，输出 common/custom/preset 属性定义及维表字段白名单。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "string"
+        },
+        "event_name": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "event_name": "$first_event_name"
+        }
+      },
+      "operation_id": "analysis.event.info",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/event/event_info/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "client_id",
+          "clientid",
+          "trace_id",
+          "traceid",
+          "wxopenid",
+          "idfa",
+          "idfv",
+          "oaid",
+          "imei",
+          "androidid",
+          "caid1",
+          "caid2",
+          "remark"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "app_id",
+          "event_name"
+        ]
+      },
+      "required_parent": [
+        "analysis.event.list"
+      ],
+      "resource": "event_info",
+      "response_projection": {
+        "data_item_keys": {
+          "event_define": [
+            "accepted",
+            "app_id",
+            "cname",
+            "create_time",
+            "id",
+            "is_preset",
+            "lookup",
+            "modify_time",
+            "name",
+            "trigger_opportunity",
+            "uploaded",
+            "visible"
+          ]
+        },
+        "data_keys": [
+          "event_define",
+          "properties"
+        ],
+        "data_path_item_keys": {
+          "properties.common": [
+            "app_id",
+            "cname",
+            "create_time",
+            "data_type",
+            "dim_table",
+            "has_dict",
+            "id",
+            "is_common",
+            "is_preset",
+            "modify_time",
+            "name",
+            "prop_type",
+            "uploaded",
+            "visible"
+          ],
+          "properties.custom": [
+            "app_id",
+            "cname",
+            "create_time",
+            "data_type",
+            "dim_table",
+            "has_dict",
+            "id",
+            "is_common",
+            "is_preset",
+            "modify_time",
+            "name",
+            "prop_type",
+            "uploaded",
+            "visible"
+          ],
+          "properties.preset": [
+            "app_id",
+            "cname",
+            "create_time",
+            "data_type",
+            "dim_table",
+            "has_dict",
+            "id",
+            "is_common",
+            "is_preset",
+            "modify_time",
+            "name",
+            "prop_type",
+            "uploaded",
+            "visible"
+          ]
+        },
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "known_omitted_data_item_keys": {
+          "event_define": [
+            "remark"
+          ],
+          "properties": [
+            "extra",
+            "rules"
+          ]
+        },
+        "nested_item_keys": {
+          "dim_table": [
+            "name",
+            "cname",
+            "data_type",
+            "dim_using_table_name"
+          ]
+        },
+        "required_data_keys": [
+          "properties"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "用户分群定义列表；过滤掉创建人、更新人和 origin_query，仅保留分群配置状态及聚合人数。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "string"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 100,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "analysis.segment.list",
+      "pagination": {
+        "default_page_size": 100,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/report/api/v3/dataanalysis/segment/list/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "create_user_id",
+          "create_user_name",
+          "update_user_id",
+          "update_user_name",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "origin_query",
+          "client_id",
+          "clientid",
+          "trace_id",
+          "traceid",
+          "uid"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {
+          "page": 1,
+          "page_size": 100
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "app_id",
+          "page",
+          "page_size"
+        ]
+      },
+      "required_parent": [
+        "app.list"
+      ],
+      "resource": "segment",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "analysis_scene",
+          "app_id",
+          "based_current_time",
+          "cid",
+          "create_time",
+          "id",
+          "latest_result_finish_time",
+          "latest_user_cnt",
+          "latest_version_calculation_status",
+          "modify_time",
+          "operation_status",
+          "segment_id",
+          "segment_name",
+          "segment_remark",
+          "update_date_range",
+          "update_type",
+          "user_cnt"
+        ],
+        "known_omitted_item_keys": [
+          "create_user_id",
+          "create_user_name",
+          "origin_query",
+          "update_user_id",
+          "update_user_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "get",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "用户分群配置详情；输出分群状态、时间范围和聚合人数，固定省略人员字段及 origin_query。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "segment_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "segment_id": "$first_segment_id"
+        }
+      },
+      "operation_id": "analysis.segment.detail",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v3/dataanalysis/segment/detail/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "create_user_id",
+          "create_user_name",
+          "update_user_id",
+          "update_user_name",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "origin_query",
+          "client_id",
+          "clientid",
+          "trace_id",
+          "traceid",
+          "uid"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "segment_id"
+        ]
+      },
+      "required_parent": [
+        "analysis.segment.list"
+      ],
+      "resource": "segment",
+      "response_projection": {
+        "data_item_keys": {
+          "update_date_range": [
+            "start_date",
+            "end_date"
+          ]
+        },
+        "data_keys": [
+          "id",
+          "segment_id",
+          "app_id",
+          "segment_name",
+          "segment_remark",
+          "user_cnt",
+          "operation_status",
+          "latest_version_calculation_status",
+          "latest_result_finish_time",
+          "analysis_scene",
+          "update_type",
+          "update_date_range",
+          "create_time",
+          "modify_time"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "known_omitted_data_keys": [
+          "create_user_id",
+          "create_user_name",
+          "update_user_id",
+          "update_user_name",
+          "origin_query"
+        ],
+        "required_data_keys": [
+          "segment_id"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "用户分群历史版本及每版聚合人数；不返回分群成员。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 100,
+          "type": "integer"
+        },
+        "segment_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "page": 1,
+          "page_size": 1,
+          "segment_id": "$first_segment_id"
+        }
+      },
+      "operation_id": "analysis.segment.history_version.list",
+      "pagination": {
+        "default_page_size": 100,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/report/api/v3/dataanalysis/segment/history_version/list/",
+      "privacy_policy": {
+        "classification": "aggregate",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "client_id",
+          "clientid",
+          "trace_id",
+          "traceid",
+          "uid"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {
+          "page": 1,
+          "page_size": 100
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "segment_id",
+          "page",
+          "page_size"
+        ]
+      },
+      "required_parent": [
+        "analysis.segment.list"
+      ],
+      "resource": "segment_history_version",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "version_id",
+          "uid_cnt",
+          "execute_result",
+          "calculation_status"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "query",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "事件分析结构化聚合；不是自由 SQL。输入经实时元数据和深层结构策略校验，响应按受控聚合投影脱敏。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "aggregate_config": {
+          "default": {},
+          "type": "object"
+        },
+        "app_id": {
+          "required": true,
+          "type": "string"
+        },
+        "calc_layer_y": {
+          "default": false,
+          "type": "boolean"
+        },
+        "custom_query_item_list": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 50,
+          "type": "array"
+        },
+        "date_list": {
+          "item_type": "object",
+          "max_items": 2,
+          "min_items": 1,
+          "required": true,
+          "type": "array"
+        },
+        "extra_data": {
+          "default": {},
+          "type": "object"
+        },
+        "global_cond_logic": {
+          "default": "AND",
+          "enum": [
+            "AND",
+            "OR"
+          ],
+          "type": "string"
+        },
+        "global_conditions": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 100,
+          "type": "array"
+        },
+        "group_by_list": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 20,
+          "type": "array"
+        },
+        "query_id": {
+          "required": true,
+          "type": "string"
+        },
+        "query_item_list": {
+          "item_type": "object",
+          "max_items": 50,
+          "required": true,
+          "type": "array"
+        },
+        "return_hierarchy_list": {
+          "default": false,
+          "type": "boolean"
+        },
+        "split_event": {
+          "default": {},
+          "type": "object"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "aggregate_config": {
+            "period_calc_method_map": {},
+            "to_calc_type": "approximate"
+          },
+          "app_id": "$first_app_id",
+          "calc_layer_y": true,
+          "date_list": [
+            {
+              "end_date": "$yesterday",
+              "start_date": "$yesterday"
+            }
+          ],
+          "extra_data": {
+            "client_server_time": "CLIENT"
+          },
+          "group_by_list": [
+            {
+              "field": "create_time",
+              "group_by": "day",
+              "type": "default_event"
+            }
+          ],
+          "query_id": "$analysis_query_id",
+          "query_item_list": [
+            {
+              "cond_logic": "AND",
+              "conditions": [],
+              "custom_name": "$first_event_name",
+              "event_index": 0,
+              "event_label": "$first_event_name",
+              "event_name": "$first_event_name",
+              "target": {
+                "field": "PresetAllCount",
+                "name": "PresetAllCount"
+              }
+            }
+          ]
+        }
+      },
+      "operation_id": "analysis.event.query",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v3/dataanalysis/query_sql/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "query_id",
+          "app_id",
+          "query_item_list",
+          "custom_query_item_list",
+          "split_event",
+          "group_by_list",
+          "global_conditions",
+          "global_cond_logic",
+          "date_list",
+          "return_hierarchy_list",
+          "calc_layer_y",
+          "aggregate_config",
+          "extra_data"
+        ],
+        "defaults": {
+          "aggregate_config": {},
+          "calc_layer_y": false,
+          "custom_query_item_list": [],
+          "extra_data": {},
+          "global_cond_logic": "AND",
+          "global_conditions": [],
+          "group_by_list": [],
+          "return_hierarchy_list": false,
+          "split_event": {}
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.event.list"
+      ],
+      "resource": "event_analysis",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "target_list",
+          "default_limit",
+          "date_list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "numeric_paths": [
+          "default_limit",
+          "list.[].[].event_index",
+          "list.[].[].target.*",
+          "list.[].[].list.[].*"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "query",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "留存分析结构化聚合；输入经事件元数据和时间窗口策略校验，动态时间槽响应按受控聚合投影输出。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "string"
+        },
+        "custom_before_method": {
+          "default": "SUM",
+          "enum": [
+            "SUM",
+            "WEIGHTED_AVG"
+          ],
+          "type": "string"
+        },
+        "date_list": {
+          "item_type": "object",
+          "max_items": 1,
+          "min_items": 1,
+          "required": true,
+          "type": "array"
+        },
+        "group_by_list": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 20,
+          "type": "array"
+        },
+        "offset": {
+          "default": 7,
+          "type": "integer"
+        },
+        "period_calc_method": {
+          "default": "SUM",
+          "enum": [
+            "SUM",
+            "WEIGHTED_AVG"
+          ],
+          "type": "string"
+        },
+        "property_condition": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 100,
+          "type": "array"
+        },
+        "query_id": {
+          "required": true,
+          "type": "string"
+        },
+        "query_item_before_after": {
+          "default": {},
+          "type": "object"
+        },
+        "query_item_list": {
+          "item_type": "object",
+          "max_items": 2,
+          "min_items": 2,
+          "required": true,
+          "type": "array"
+        },
+        "total_calc_type": {
+          "default": "DAY",
+          "enum": [
+            "DAY",
+            "WEEK",
+            "MONTH"
+          ],
+          "type": "string"
+        },
+        "user_cond_logic": {
+          "default": "AND",
+          "enum": [
+            "AND",
+            "OR"
+          ],
+          "type": "string"
+        },
+        "user_filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "user_re_attribute_filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "week_first_day": {
+          "default": 1,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "custom_before_method": "SUM",
+          "date_list": [
+            {
+              "end_date": "$yesterday",
+              "start_date": "$yesterday"
+            }
+          ],
+          "group_by_list": [
+            {
+              "field": "create_time",
+              "group_by": "day",
+              "type": "default_event"
+            }
+          ],
+          "offset": 7,
+          "period_calc_method": "SUM",
+          "query_id": "$analysis_query_id",
+          "query_item_list": [
+            {
+              "cond_logic": "AND",
+              "conditions": [],
+              "custom_name": "",
+              "event_index": 0,
+              "event_label": "",
+              "event_name": "$first_event_name",
+              "target": {
+                "field": "PresetAllCount",
+                "name": "PresetAllCount"
+              }
+            },
+            {
+              "cond_logic": "AND",
+              "conditions": [],
+              "custom_name": "",
+              "event_index": 1,
+              "event_label": "",
+              "event_name": "$first_event_name",
+              "target": {
+                "field": "PresetAllCount",
+                "name": "PresetAllCount"
+              }
+            }
+          ],
+          "total_calc_type": "DAY",
+          "week_first_day": 1
+        }
+      },
+      "operation_id": "analysis.retention.query",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v3/dataanalysis/user/retention/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "query_id",
+          "app_id",
+          "query_item_list",
+          "group_by_list",
+          "user_filtering",
+          "user_re_attribute_filtering",
+          "property_condition",
+          "query_item_before_after",
+          "user_cond_logic",
+          "date_list",
+          "offset",
+          "week_first_day",
+          "period_calc_method",
+          "custom_before_method",
+          "total_calc_type"
+        ],
+        "defaults": {
+          "custom_before_method": "SUM",
+          "group_by_list": [],
+          "offset": 7,
+          "period_calc_method": "SUM",
+          "property_condition": [],
+          "query_item_before_after": {},
+          "total_calc_type": "DAY",
+          "user_cond_logic": "AND",
+          "user_filtering": {},
+          "user_re_attribute_filtering": {},
+          "week_first_day": 1
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.event.list"
+      ],
+      "resource": "retention",
+      "response_projection": {
+        "data_keys": [
+          "total",
+          "x",
+          "y",
+          "date_to_week",
+          "date_to_month"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "known_omitted_data_keys": [
+          "extra_data"
+        ],
+        "numeric_paths": [
+          "total.[].init_custom_before_components.[]",
+          "total.[].init_custom_before_num",
+          "total.[].init_num",
+          "total.[].percent_values.[]",
+          "total.[].percent_values_loss.[]",
+          "total.[].values.[]",
+          "total.[].values_another_event.[]",
+          "total.[].values_loss.[]"
+        ],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "query",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "漏斗分析结构化聚合；步骤、窗口和条件契约已确认，动态响应按受控聚合投影输出。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "string"
+        },
+        "date_list": {
+          "item_type": "object",
+          "max_items": 1,
+          "min_items": 1,
+          "required": true,
+          "type": "array"
+        },
+        "global_cond_logic": {
+          "default": "AND",
+          "enum": [
+            "AND",
+            "OR"
+          ],
+          "type": "string"
+        },
+        "global_conditions": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 100,
+          "type": "array"
+        },
+        "group_by_list": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 20,
+          "type": "array"
+        },
+        "query_id": {
+          "required": true,
+          "type": "string"
+        },
+        "query_item_list": {
+          "item_type": "object",
+          "max_items": 20,
+          "min_items": 2,
+          "required": true,
+          "type": "array"
+        },
+        "stat_time_window": {
+          "required": true,
+          "type": "object"
+        },
+        "to_calc_each_day": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "date_list": [
+            {
+              "end_date": "$yesterday",
+              "start_date": "$yesterday"
+            }
+          ],
+          "group_by_list": [
+            {
+              "field": "create_time",
+              "group_by": "day",
+              "type": "default_event"
+            }
+          ],
+          "query_id": "$analysis_query_id",
+          "query_item_list": [
+            {
+              "cond_logic": "AND",
+              "conditions": [],
+              "custom_name": "",
+              "event_index": 0,
+              "event_label": "",
+              "event_name": "$first_event_name",
+              "target": {
+                "field": "PresetAllCount",
+                "name": "PresetAllCount"
+              }
+            },
+            {
+              "cond_logic": "AND",
+              "conditions": [],
+              "custom_name": "",
+              "event_index": 1,
+              "event_label": "",
+              "event_name": "$first_event_name",
+              "target": {
+                "field": "PresetAllCount",
+                "name": "PresetAllCount"
+              }
+            }
+          ],
+          "stat_time_window": {
+            "type": "day",
+            "val": 1
+          },
+          "to_calc_each_day": false
+        }
+      },
+      "operation_id": "analysis.funnel.query",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v3/dataanalysis/funnel/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "query_id",
+          "app_id",
+          "query_item_list",
+          "stat_time_window",
+          "group_by_list",
+          "global_conditions",
+          "global_cond_logic",
+          "date_list",
+          "to_calc_each_day"
+        ],
+        "defaults": {
+          "global_cond_logic": "AND",
+          "global_conditions": [],
+          "group_by_list": [],
+          "to_calc_each_day": false
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.event.list"
+      ],
+      "resource": "funnel",
+      "response_projection": {
+        "data_keys": [
+          "date_list",
+          "aggregate_by_date",
+          "aggregate_date",
+          "window_funnel_mode"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "numeric_paths": [
+          "window_funnel_mode",
+          "aggregate_date.total.*",
+          "aggregate_date.*.*",
+          "aggregate_by_date.*.*",
+          "aggregate_by_date.*.*.*"
+        ],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "query",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "分布分析聚合；default zone 最小请求已实测，zone、指标、事件、时间分组和响应均受精确契约约束。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "string"
+        },
+        "date_list": {
+          "item_type": "object",
+          "max_items": 1,
+          "min_items": 1,
+          "required": true,
+          "type": "array"
+        },
+        "extra_data": {
+          "default": {},
+          "type": "object"
+        },
+        "group_by_list": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 20,
+          "type": "array"
+        },
+        "query_id": {
+          "required": true,
+          "type": "string"
+        },
+        "query_item_list": {
+          "item_type": "object",
+          "max_items": 20,
+          "min_items": 1,
+          "required": true,
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "date_list": [
+            {
+              "end_date": "$yesterday",
+              "start_date": "$yesterday"
+            }
+          ],
+          "extra_data": {
+            "client_server_time": "CLIENT"
+          },
+          "group_by_list": [
+            {
+              "field": "create_time",
+              "group_by": "day",
+              "type": "default_event"
+            }
+          ],
+          "query_id": "$analysis_query_id",
+          "query_item_list": [
+            {
+              "calc_zone": {
+                "zone_type": "default"
+              },
+              "cond_logic": "AND",
+              "conditions": [],
+              "custom_name": "",
+              "event_index": 0,
+              "event_label": "",
+              "event_name": "$first_event_name",
+              "prop_to_calc": "PresetAllCount",
+              "prop_to_calc_sub": "",
+              "target": {
+                "field": "PresetAllCount",
+                "name": "PresetAllCount"
+              }
+            }
+          ]
+        }
+      },
+      "operation_id": "analysis.scatter.query",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v3/dataanalysis/scatter/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "query_id",
+          "app_id",
+          "query_item_list",
+          "group_by_list",
+          "date_list",
+          "extra_data"
+        ],
+        "defaults": {
+          "extra_data": {},
+          "group_by_list": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.event.list"
+      ],
+      "resource": "scatter",
+      "response_projection": {
+        "data_keys": [
+          "aggregate_date",
+          "zone_tags"
+        ],
+        "dynamic_item_fields": [],
+        "empty_object_as_empty_result": true,
+        "item_keys": [],
+        "numeric_paths": [
+          "aggregate_date.[].[].*",
+          "zone_tags.val_list.[].*",
+          "zone_tags.val_list_to_aggregate_date_group.[].*"
+        ],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "query",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "属性分析聚合；仅允许结构化属性分析，不允许自由 SQL 或自由 join。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "string"
+        },
+        "group_by_list": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 20,
+          "type": "array"
+        },
+        "order_by_list": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 20,
+          "type": "array"
+        },
+        "property_condition": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 100,
+          "type": "array"
+        },
+        "query_id": {
+          "required": true,
+          "type": "string"
+        },
+        "query_item": {
+          "required": true,
+          "type": "object"
+        },
+        "user_cond_logic": {
+          "default": "AND",
+          "enum": [
+            "AND",
+            "OR"
+          ],
+          "type": "string"
+        },
+        "user_filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "user_re_attribute_filtering": {
+          "default": {},
+          "type": "object"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "query_id": "$analysis_query_id",
+          "query_item": {
+            "conditions": [],
+            "custom_name": "",
+            "target": {
+              "cname": "",
+              "data_type": "INT",
+              "field": "PresetUserCount",
+              "name": "PresetUserCount"
+            }
+          }
+        }
+      },
+      "operation_id": "analysis.property.query",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v3/dataanalysis/user/properties/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "query_id",
+          "app_id",
+          "query_item",
+          "group_by_list",
+          "user_filtering",
+          "user_re_attribute_filtering",
+          "user_cond_logic",
+          "property_condition",
+          "order_by_list"
+        ],
+        "defaults": {
+          "group_by_list": [],
+          "order_by_list": [],
+          "property_condition": [],
+          "user_cond_logic": "AND",
+          "user_filtering": {},
+          "user_re_attribute_filtering": {}
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.user_property.list"
+      ],
+      "resource": "property",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "target"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "numeric_paths": [
+          "list.[].value"
+        ],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "漏斗页事件属性分组元数据；只输出分组标识和名称，固定省略 show/hide 中的事件集合。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id"
+        }
+      },
+      "operation_id": "analysis.event_property_group.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/conf_event_property_group/list/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "create_user_id",
+          "create_user_name",
+          "update_user_id",
+          "update_user_name",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "origin_query",
+          "client_id",
+          "clientid",
+          "trace_id",
+          "traceid",
+          "uid"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "app_id"
+        ]
+      },
+      "required_parent": [
+        "app.list"
+      ],
+      "resource": "event_property_group",
+      "response_projection": {
+        "data_keys": [
+          "list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "is_applied",
+          "children"
+        ],
+        "known_omitted_nested_item_keys": {
+          "children": [
+            "show",
+            "hide"
+          ]
+        },
+        "nested_item_keys": {
+          "children": [
+            "id",
+            "name"
+          ]
+        },
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "已保存分析配置列表；只输出图表标识、名称、类型、备注和更新时间，人员字段与不透明 config 固定省略。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "string"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 1,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "analysis.report_config.list",
+      "pagination": {
+        "default_page_size": 1,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 1,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/report_config/list/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "create_user_id",
+          "create_user_name",
+          "update_user_id",
+          "update_user_name",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "origin_query",
+          "query_sql",
+          "config",
+          "client_id",
+          "clientid",
+          "trace_id",
+          "traceid",
+          "uid",
+          "remark"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {
+          "page": 1,
+          "page_size": 1
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "app_id",
+          "page",
+          "page_size"
+        ]
+      },
+      "required_parent": [
+        "app.list"
+      ],
+      "resource": "report_config",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "app_id",
+          "name",
+          "subject",
+          "modify_time"
+        ],
+        "known_omitted_item_keys": [
+          "config",
+          "update_user_id",
+          "update_user_name",
+          "create_user_id",
+          "create_user_name",
+          "create_time",
+          "is_deleted",
+          "remark"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "get",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "读取已保存分析配置；配置 JSON 由受控专用投影解析，只开放已登记的结构化分析字段。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "string"
+        },
+        "id": {
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "id": "$first_report_config_id"
+        }
+      },
+      "operation_id": "analysis.report_config.get",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/report_config/info/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "remark",
+          "update_user_name"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "id",
+          "app_id"
+        ]
+      },
+      "required_parent": [
+        "analysis.report_config.list"
+      ],
+      "resource": "report_config",
+      "response_projection": {
+        "data_keys": [
+          "config",
+          "name"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "known_omitted_data_keys": [
+          "remark",
+          "update_user_name"
+        ],
+        "required_data_keys": [
+          "config"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "订单细查；接受结构化字段、条件、排序及单日快捷参数，返回订单、归因和内部分析标识，成员姓名保持隐藏。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "date": {
+          "required": false,
+          "type": "date"
+        },
+        "fields": {
+          "default": [],
+          "item_type": "string",
+          "max_items": 100,
+          "type": "array"
+        },
+        "global_conditions": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 100,
+          "type": "array"
+        },
+        "order_by_list": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 20,
+          "type": "array"
+        },
+        "order_cond_logic": {
+          "default": "AND",
+          "enum": [
+            "AND",
+            "OR"
+          ],
+          "type": "string"
+        },
+        "order_conditions": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 100,
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "type": "integer"
+        },
+        "user_cond_logic": {
+          "default": "AND",
+          "enum": [
+            "AND",
+            "OR"
+          ],
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "date": "$today",
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "analysis.order_detail.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/report/api/v3/dataanalysis/user/pay_event/list/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "date",
+          "fields",
+          "page",
+          "page_size",
+          "order_by_list",
+          "global_conditions",
+          "order_conditions",
+          "user_cond_logic",
+          "order_cond_logic"
+        ],
+        "defaults": {
+          "fields": [],
+          "global_conditions": [],
+          "order_by_list": [],
+          "order_cond_logic": "AND",
+          "order_conditions": [],
+          "page": 1,
+          "page_size": 20,
+          "user_cond_logic": "AND"
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "app.list"
+      ],
+      "resource": "order_detail",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "fields"
+          ]
+        },
+        "data_item_keys": {
+          "total": [
+            "ClientID",
+            "AdPlatform",
+            "Amount",
+            "BackAmount",
+            "PayCount",
+            "PostbackStatus",
+            "PostBackCode",
+            "PassStatus",
+            "Status",
+            "event$pay_method",
+            "event$pay_reason",
+            "user$pay_amount_sum",
+            "user$pay_max_amount"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total"
+        ],
+        "dynamic_item_fields": [
+          "fields"
+        ],
+        "item_keys": [
+          "TraceID",
+          "PayEventTime",
+          "CreateTime",
+          "ModifyTime",
+          "ClientID",
+          "AdPlatform",
+          "Amount",
+          "BackAmount",
+          "PayCount",
+          "PostbackStatus",
+          "PostBackCode",
+          "PassStatus",
+          "Status",
+          "event_pay_id",
+          "event$pay_method",
+          "event$pay_reason",
+          "PostbackCnt",
+          "$sdk_postback",
+          "$postback_count",
+          "$split_count",
+          "$split_trace_id_list",
+          "re_attribute_info"
+        ],
+        "known_omitted_data_item_keys": {
+          "total": [
+            "Name"
+          ]
+        },
+        "known_omitted_item_keys": [
+          "Name"
+        ],
+        "nested_item_keys": {
+          "re_attribute_info": [
+            "ReAttributeAdAid",
+            "ReAttributeAdCid",
+            "ReAttributeAdGid",
+            "ReAttributeAdPlatform",
+            "ReAttributeAdvertiserID",
+            "ReAttributeCSite",
+            "ReAttributeChannel",
+            "ReAttributeCreateTime",
+            "ReAttributeTurboPromotedObjectID",
+            "ReAttributeRetargetingCount",
+            "ReAttributeAdClickTime"
+          ]
+        },
+        "required_data_keys": [
+          "list"
+        ],
+        "scalar_list_item_types": {
+          "$split_trace_id_list": "string"
+        }
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "拆单明细；仅接受从订单结果取得的时间、TraceID、ClientID 和最多 100 个拆单 TraceID。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "client_id": {
+          "max_length": 256,
+          "required": true,
+          "sensitive": true,
+          "type": "string"
+        },
+        "pay_event_time": {
+          "required": true,
+          "sensitive": true,
+          "type": "datetime"
+        },
+        "split_trace_ids": {
+          "item_type": "string",
+          "max_items": 100,
+          "required": true,
+          "sensitive": true,
+          "type": "array"
+        },
+        "trace_id": {
+          "max_length": 256,
+          "required": true,
+          "sensitive": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "client_id": "$first_order_client_id",
+          "pay_event_time": "$first_order_pay_event_time",
+          "split_trace_ids": "$first_order_split_trace_ids",
+          "trace_id": "$first_order_trace_id"
+        }
+      },
+      "operation_id": "analysis.order_split_detail.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v3/dataanalysis/user/pay_event/split_order_detail/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "pay_event_time",
+          "trace_id",
+          "client_id",
+          "split_trace_ids"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.order_detail.list"
+      ],
+      "resource": "order_split_detail",
+      "response_projection": {
+        "data_keys": [],
+        "data_shape": "list",
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "TraceID",
+          "Amount",
+          "BackAmount",
+          "Status",
+          "CreateTime"
+        ],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "变现细查；字段集合、条件和排序均为结构化契约，支持单日快捷参数；成员姓名、外部开放标识和广告设备标识保持隐藏。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "date": {
+          "required": false,
+          "type": "date"
+        },
+        "field_profile": {
+          "default": "base",
+          "enum": [
+            "base",
+            "miniapp",
+            "mobile",
+            "quickapp"
+          ],
+          "type": "string"
+        },
+        "fields": {
+          "default": [],
+          "item_type": "string",
+          "max_items": 100,
+          "type": "array"
+        },
+        "global_conditions": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 100,
+          "type": "array"
+        },
+        "local_conditions": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 100,
+          "type": "array"
+        },
+        "order_by_list": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 20,
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "date": "$today",
+          "field_profile": "base",
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "analysis.monetization_detail.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 1000,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/report/api/v3/dataanalysis/monetization_detail/list/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "WXOpenID",
+          "Idfa",
+          "Idfv",
+          "Caid1",
+          "Caid2",
+          "Oaid",
+          "Imei",
+          "AndroidId"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "date",
+          "field_profile",
+          "fields",
+          "page",
+          "page_size",
+          "order_by_list",
+          "global_conditions",
+          "local_conditions"
+        ],
+        "defaults": {
+          "field_profile": "base",
+          "fields": [],
+          "global_conditions": [],
+          "local_conditions": [],
+          "order_by_list": [],
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "app.list"
+      ],
+      "resource": "monetization_detail",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "fields"
+          ]
+        },
+        "data_item_keys": {
+          "total": [
+            "CreateTime",
+            "AdEventTime",
+            "ClientID",
+            "AdPlatform",
+            "TurboPromotedObjectID",
+            "AdvertiserID",
+            "AdAid",
+            "event$ecpm",
+            "samount",
+            "event$ad_type",
+            "event$adn_type",
+            "event$ad_unit_id",
+            "event$ad_through",
+            "event$ad_source_id",
+            "event$ad_placement_id"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total"
+        ],
+        "dynamic_item_fields": [
+          "fields"
+        ],
+        "item_keys": [
+          "TraceID",
+          "CreateTime",
+          "AdEventTime",
+          "ClientID",
+          "user_id",
+          "event_user_id",
+          "device_id",
+          "device_info",
+          "AdPlatform",
+          "TurboPromotedObjectID",
+          "AdvertiserID",
+          "AdAid",
+          "event$ecpm",
+          "samount",
+          "event$ad_type",
+          "event$adn_type",
+          "event$ad_unit_id",
+          "event$ad_through",
+          "event$ad_source_id",
+          "event$ad_placement_id",
+          "user$ad_count",
+          "user$ad_avg_ecpm",
+          "user$ad_ltv",
+          "re_attribute_info"
+        ],
+        "known_omitted_data_item_keys": {
+          "total": [
+            "Name"
+          ]
+        },
+        "known_omitted_item_keys": [
+          "Name",
+          "WXOpenID"
+        ],
+        "known_omitted_nested_item_keys": {
+          "device_info": [
+            "Idfa",
+            "Idfv",
+            "Caid1",
+            "Caid2",
+            "Oaid",
+            "Imei",
+            "AndroidId"
+          ]
+        },
+        "nested_item_keys": {
+          "device_info": [
+            "Android_Version",
+            "Api_Version",
+            "Rom_version",
+            "Aspect_Ratio",
+            "Phone_Brand",
+            "Phone_Model",
+            "OS"
+          ],
+          "re_attribute_info": [
+            "ReAttributeAdAid",
+            "ReAttributeAdCid",
+            "ReAttributeAdGid",
+            "ReAttributeAdPlatform",
+            "ReAttributeAdvertiserID",
+            "ReAttributeCSite",
+            "ReAttributeChannel",
+            "ReAttributeCreateTime",
+            "ReAttributeTurboPromotedObjectID",
+            "ReAttributeRetargetingCount",
+            "ReAttributeAdClickTime"
+          ]
+        },
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "用户细查；支持结构化字段、筛选和排序，返回内部分析标识、非识别性设备属性与归因字段；姓名、外部开放标识和广告设备标识保持隐藏。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "client_id": {
+          "max_length": 256,
+          "required": false,
+          "sensitive": true,
+          "type": "string"
+        },
+        "date": {
+          "required": false,
+          "type": "date"
+        },
+        "fields": {
+          "default": [],
+          "item_type": "string",
+          "max_items": 100,
+          "type": "array"
+        },
+        "global_conditions": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 100,
+          "type": "array"
+        },
+        "order_by_list": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 20,
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "type": "integer"
+        },
+        "postback_cond_logic": {
+          "default": "AND",
+          "enum": [
+            "AND",
+            "OR"
+          ],
+          "type": "string"
+        },
+        "postback_conditions": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 100,
+          "type": "array"
+        },
+        "user_cond_logic": {
+          "default": "AND",
+          "enum": [
+            "AND",
+            "OR"
+          ],
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "client_id": "$first_client_id",
+          "date": "$today",
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "analysis.user_detail.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/report/api/v3/dataanalysis/user/detail/list/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "WXOpenID",
+          "Idfa",
+          "Idfv",
+          "Caid1",
+          "Caid2",
+          "Oaid",
+          "Imei",
+          "AndroidId"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "client_id",
+          "date",
+          "fields",
+          "page",
+          "page_size",
+          "order_by_list",
+          "global_conditions",
+          "postback_conditions",
+          "user_cond_logic",
+          "postback_cond_logic"
+        ],
+        "defaults": {
+          "fields": [],
+          "global_conditions": [],
+          "order_by_list": [],
+          "page": 1,
+          "page_size": 20,
+          "postback_cond_logic": "AND",
+          "postback_conditions": [],
+          "user_cond_logic": "AND"
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "app.list"
+      ],
+      "resource": "user_detail",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [
+          "fields"
+        ],
+        "item_keys": [
+          "CreateTime",
+          "LatestLoginDay",
+          "modify_time",
+          "ClientID",
+          "user_id",
+          "device_id",
+          "AdPlatform",
+          "Channel",
+          "Version",
+          "TurboPromotedObjectID",
+          "AdvertiserID",
+          "AdAid",
+          "device_info",
+          "re_attribute_info"
+        ],
+        "known_omitted_item_keys": [
+          "Name",
+          "WXOpenID"
+        ],
+        "known_omitted_nested_item_keys": {
+          "device_info": [
+            "Idfa",
+            "Idfv",
+            "Caid1",
+            "Caid2",
+            "Oaid",
+            "Imei",
+            "AndroidId"
+          ]
+        },
+        "nested_item_keys": {
+          "device_info": [
+            "Android_Version",
+            "Api_Version",
+            "Rom_version",
+            "Aspect_Ratio",
+            "Phone_Brand",
+            "Phone_Model",
+            "OS"
+          ],
+          "re_attribute_info": [
+            "ReAttributeAdAid",
+            "ReAttributeAdCid",
+            "ReAttributeAdGid",
+            "ReAttributeAdPlatform",
+            "ReAttributeAdvertiserID",
+            "ReAttributeCSite",
+            "ReAttributeChannel",
+            "ReAttributeCreateTime",
+            "ReAttributeTurboPromotedObjectID",
+            "ReAttributeRetargetingCount",
+            "ReAttributeAdClickTime"
+          ]
+        },
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "单用户事件流；支持事件选择和结构化查询项，输出内部分析标识、非识别性设备属性、事件时间线及汇总；姓名、外部开放标识和广告设备标识保持隐藏。上游不返回 page_info，请显式递增 page，直到 event_timeline[*].list 为空。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "client_id": {
+          "max_length": 256,
+          "required": true,
+          "sensitive": true,
+          "type": "string"
+        },
+        "date": {
+          "required": false,
+          "type": "date"
+        },
+        "date_list": {
+          "item_type": "string",
+          "max_items": 2,
+          "min_items": 2,
+          "required": false,
+          "type": "array"
+        },
+        "desc": {
+          "default": true,
+          "type": "boolean"
+        },
+        "event_list": {
+          "default": [],
+          "item_type": "string",
+          "max_items": 2000,
+          "type": "array"
+        },
+        "fields": {
+          "default": [],
+          "item_type": "string",
+          "max_items": 2000,
+          "type": "array"
+        },
+        "group_by": {
+          "default": "day",
+          "enum": [
+            "day",
+            "hour",
+            "week",
+            "month"
+          ],
+          "type": "string"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "type": "integer"
+        },
+        "query_item_list": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 100,
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "client_id": "$first_client_id",
+          "date": "$today",
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "analysis.user_event.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v3/dataanalysis/user/event/list/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "WXOpenID",
+          "DeviceId",
+          "Idfa",
+          "Idfv",
+          "Caid1",
+          "Caid2",
+          "Oaid",
+          "Imei",
+          "AndroidId"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "client_id",
+          "date",
+          "date_list",
+          "page",
+          "page_size",
+          "fields",
+          "desc",
+          "group_by",
+          "event_list",
+          "query_item_list"
+        ],
+        "defaults": {
+          "desc": true,
+          "event_list": [],
+          "fields": [],
+          "group_by": "day",
+          "page": 1,
+          "page_size": 20,
+          "query_item_list": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.user_detail.list"
+      ],
+      "resource": "user_event",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "device": [
+            "fields"
+          ],
+          "event_timeline": [
+            "fields"
+          ],
+          "re_attribute_records": [
+            "fields"
+          ],
+          "user": [
+            "fields"
+          ]
+        },
+        "data_item_keys": {
+          "device": [
+            "Android_Version",
+            "Api_Version",
+            "Aspect_Ratio",
+            "OS",
+            "Phone_Brand",
+            "Phone_Model",
+            "Rom",
+            "Rom_version"
+          ],
+          "re_attribute_records": [
+            "ReAttributeAdAid",
+            "ReAttributeAdCid",
+            "ReAttributeAdGid",
+            "ReAttributeAdPlatform",
+            "ReAttributeAdvertiserID",
+            "ReAttributeCSite",
+            "ReAttributeChannel",
+            "ReAttributeCreateTime",
+            "ReAttributeTurboPromotedObjectID",
+            "ReAttributeRetargetingCount",
+            "ReAttributeAdClickTime"
+          ],
+          "user": [
+            "ClientID",
+            "user_id",
+            "device_id",
+            "CreateTime",
+            "LatestLoginDay",
+            "modify_time"
+          ]
+        },
+        "data_keys": [
+          "event_timeline",
+          "summary",
+          "device",
+          "user",
+          "re_attribute_records"
+        ],
+        "dynamic_item_fields": [
+          "fields"
+        ],
+        "item_keys": [],
+        "known_omitted_data_item_keys": {
+          "device": [
+            "AndroidId",
+            "Caid1",
+            "Caid2",
+            "DeviceId",
+            "Idfa",
+            "Idfv",
+            "Imei",
+            "Oaid"
+          ],
+          "user": [
+            "Name",
+            "WXOpenID"
+          ]
+        },
+        "required_data_keys": [
+          "event_timeline"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "用户回传日志；按 App 与 ClientID 读取上游固定窗口，仅输出事件类型、状态、回传时间和 TraceID。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "client_id": {
+          "max_length": 256,
+          "required": true,
+          "sensitive": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "client_id": "$first_client_id"
+        }
+      },
+      "operation_id": "analysis.user_postback_log.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v3/dataanalysis/user/postback_log/list/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "client_id"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.user_detail.list"
+      ],
+      "resource": "user_postback_log",
+      "response_projection": {
+        "data_keys": [
+          "list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "event_type",
+          "status",
+          "postback_time",
+          "trace_id"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "分群按日计算结果；该接口仅返回版本日期、聚合人数和计算状态，不返回 UID 成员。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "date": {
+          "required": true,
+          "type": "date"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 100,
+          "type": "integer"
+        },
+        "segment_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date": "$yesterday",
+          "page": 1,
+          "page_size": 1,
+          "segment_id": "$first_segment_id"
+        }
+      },
+      "operation_id": "analysis.segment.uid_result.list",
+      "pagination": {
+        "default_page_size": 100,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/report/api/v3/dataanalysis/segment/uid_result/list/",
+      "privacy_policy": {
+        "classification": "aggregate",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "client_id",
+          "clientid",
+          "trace_id",
+          "traceid",
+          "uid"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {
+          "page": 1,
+          "page_size": 100
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "segment_id",
+          "date",
+          "page",
+          "page_size"
+        ]
+      },
+      "required_parent": [
+        "analysis.segment.list"
+      ],
+      "resource": "segment_uid_result",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "create_date",
+          "user_cnt",
+          "calculation_status"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "分群用户详情；上游无分页，支持按元数据校验后的字段选择并返回内部分析标识与业务属性，成员姓名、外部开放标识和广告设备标识保持隐藏。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "fields": {
+          "default": [],
+          "item_type": "string",
+          "max_items": 100,
+          "type": "array"
+        },
+        "segment_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "segment_version_id": {
+          "max_length": 64,
+          "required": false,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "segment_id": "$first_segment_id"
+        }
+      },
+      "operation_id": "analysis.segment.user_detail.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v3/dataanalysis/segment/user/detail/list/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "WXOpenID",
+          "Idfa",
+          "Idfv",
+          "Caid1",
+          "Caid2",
+          "Oaid",
+          "Imei",
+          "AndroidId"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "segment_id",
+          "segment_version_id",
+          "fields"
+        ],
+        "defaults": {
+          "fields": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.segment.list"
+      ],
+      "resource": "segment_user_detail",
+      "response_projection": {
+        "data_item_keys": {
+          "page_info": [
+            "page",
+            "page_size",
+            "total_number",
+            "total_page"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [
+          "fields"
+        ],
+        "item_keys": [
+          "CreateTime",
+          "ClientID",
+          "AdPlatform",
+          "Channel",
+          "Version",
+          "TurboPromotedObjectID",
+          "AdvertiserID",
+          "AdAid",
+          "device_info",
+          "re_attribute_info"
+        ],
+        "known_omitted_item_keys": [
+          "Name",
+          "WXOpenID"
+        ],
+        "known_omitted_nested_item_keys": {
+          "device_info": [
+            "Idfa",
+            "Idfv",
+            "Caid1",
+            "Caid2",
+            "Oaid",
+            "Imei",
+            "AndroidId"
+          ]
+        },
+        "nested_item_keys": {
+          "device_info": [
+            "Android_Version",
+            "Api_Version",
+            "Rom_version",
+            "Aspect_Ratio",
+            "Phone_Brand",
+            "Phone_Model",
+            "OS"
+          ],
+          "re_attribute_info": [
+            "ReAttributeAdAid",
+            "ReAttributeAdCid",
+            "ReAttributeAdGid",
+            "ReAttributeAdPlatform",
+            "ReAttributeAdvertiserID",
+            "ReAttributeCSite",
+            "ReAttributeChannel",
+            "ReAttributeCreateTime",
+            "ReAttributeTurboPromotedObjectID",
+            "ReAttributeRetargetingCount",
+            "ReAttributeAdClickTime"
+          ]
+        },
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    }
+  ]
+}

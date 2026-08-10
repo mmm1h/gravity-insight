@@ -1,0 +1,295 @@
+"""Agent-facing CLI helpers for governed exports."""
+from __future__ import annotations
+
+import argparse
+from typing import Any, Callable, Mapping
+
+from .errors import (
+    ErrorCategory,
+    ErrorCode,
+    ErrorDetail,
+    InputValidationError,
+    error_envelope,
+    exit_code_for_error,
+)
+
+
+def add_export_commands(
+    commands: Any,
+    add_input: Callable[..., None],
+    positive_int: Callable[[str], int],
+) -> Any:
+    export = commands.add_parser(
+        "export",
+        help=(
+            "Discover, describe, create, monitor, download, or cancel governed "
+            "exports. Start with `export list-capabilities`."
+        ),
+    )
+    subcommands = export.add_subparsers(dest="export_command", required=True)
+    subcommands.add_parser(
+        "list-capabilities",
+        help="List every governed export effect and whether it is callable.",
+    )
+    describe = subcommands.add_parser(
+        "describe",
+        help="Show one export input schema, example, columns, scale, and workflow.",
+    )
+    describe.add_argument("operation_id")
+    start = subcommands.add_parser(
+        "start",
+        help="Create one job using the exact schema returned by `export describe`.",
+    )
+    start.add_argument("operation_id")
+    add_input(start, required=True)
+    start.add_argument("--columns", required=True)
+    start.add_argument("--idempotency-key", required=True)
+    start.add_argument("--timeout", type=float, default=120.0)
+    for name in ("status", "wait", "download", "cancel"):
+        item = subcommands.add_parser(name)
+        item.add_argument("job_id")
+        item.add_argument("--operation-id", required=True)
+        if name in {"status", "wait", "download"}:
+            item.add_argument("--timeout", type=float, default=300.0)
+        if name == "wait":
+            item.add_argument("--interval", type=float, default=2.0)
+        if name == "download":
+            item.add_argument("--output", required=True)
+    listing = subcommands.add_parser("list")
+    listing.add_argument("--page", type=positive_int, default=1)
+    listing.add_argument("--page-size", type=positive_int, default=100)
+    return commands
+
+
+def run_export_command(
+    args: argparse.Namespace,
+    client: Any,
+    object_input: Callable[[str | None], dict[str, Any]],
+) -> Any:
+    if args.export_command == "list-capabilities":
+        return client.export_capabilities()
+    if args.export_command == "describe":
+        return client.export_describe(args.operation_id)
+    if args.export_command == "start":
+        columns = tuple(
+            value.strip()
+            for value in str(args.columns).split(",")
+            if value.strip()
+        )
+        if not columns:
+            raise InputValidationError(
+                "--columns must contain at least one contracted column",
+                field="columns",
+            )
+        return client.export_start(
+            args.operation_id,
+            object_input(args.input),
+            requested_columns=columns,
+            idempotency_key=args.idempotency_key,
+            timeout_seconds=args.timeout,
+        )
+    if args.export_command == "status":
+        return client.export_status(
+            args.operation_id,
+            args.job_id,
+            timeout_seconds=args.timeout,
+        )
+    if args.export_command == "wait":
+        return client.export_wait(
+            args.operation_id,
+            args.job_id,
+            interval_seconds=args.interval,
+            timeout_seconds=args.timeout,
+        )
+    if args.export_command == "download":
+        return client.export_download(
+            args.operation_id,
+            args.job_id,
+            args.output,
+            timeout_seconds=args.timeout,
+        )
+    if args.export_command == "cancel":
+        return client.export_cancel(args.operation_id, args.job_id)
+    return client.export_list(page=args.page, page_size=args.page_size)
+
+
+def dispatch_command(
+    args: argparse.Namespace,
+    client_factory: Callable[[argparse.Namespace], Any],
+    object_input: Callable[[str | None], dict[str, Any]],
+    fallback: Callable[[argparse.Namespace], Any],
+) -> Any:
+    if args.command == "export":
+        return run_export_command(args, client_factory(args), object_input)
+    return fallback(args)
+
+
+def output_argument(args: argparse.Namespace) -> str | None:
+    if (
+        getattr(args, "command", None) == "export"
+        and getattr(args, "export_command", None) == "download"
+    ):
+        return None
+    return getattr(args, "output", None)
+
+
+def export_cli_error(
+    args: argparse.Namespace,
+    error: BaseException,
+) -> dict[str, Any]:
+    operation_id = str(getattr(args, "operation_id", "")) or None
+    job_id = str(getattr(args, "job_id", "")) or "<job-id>"
+    code = _public_error_code(error)
+    if code is None:
+        fallback_action = (
+            "Run `python -m gravity_sdk export describe "
+            f"{operation_id}` and retry with the documented input."
+            if getattr(args, "export_command", None) == "start" and operation_id
+            else "Run `python -m gravity_sdk export list --page 1 "
+            "--page-size 100` and retry only a job stage that exists."
+        )
+        return error_envelope(
+            error,
+            operation_id=operation_id,
+            next_action=getattr(error, "next_action", None) or fallback_action,
+        )
+    next_action = _next_action(
+        code,
+        str(getattr(args, "export_command", "status")),
+        job_id,
+        operation_id,
+    )
+    detail = ErrorDetail.create(
+        code,
+        error,
+        operation_id=operation_id,
+        field=_export_error_field(error),
+        retryable=bool(getattr(error, "retryable", False)),
+        next_action=next_action,
+    )
+    return {
+        "schema_version": "gravity-insight.error.v1",
+        "ok": False,
+        "status": "error",
+        "operation_id": operation_id,
+        "error": detail.to_dict(),
+    }
+
+
+def command_error(
+    args: argparse.Namespace | None,
+    error: BaseException,
+) -> tuple[dict[str, Any], int]:
+    operation_id = (
+        str(getattr(args, "operation_id", "")) or None
+        if args is not None
+        else None
+    )
+    if args is not None and getattr(args, "command", None) == "export":
+        envelope = export_cli_error(args, error)
+        detail = envelope.get("error", {})
+        category = detail.get("category") if isinstance(detail, Mapping) else None
+        code = {
+            ErrorCategory.CALLER.value: 2,
+            ErrorCategory.UPSTREAM.value: 3,
+            ErrorCategory.LOCAL.value: 4,
+        }.get(str(category), 4)
+        return envelope, code
+    return error_envelope(error, operation_id=operation_id), exit_code_for_error(error)
+
+
+def _public_error_code(error: BaseException) -> ErrorCode | str | None:
+    value = getattr(error, "code", "")
+    raw_code = value.value if isinstance(value, ErrorCode) else str(value)
+    if raw_code in {item.value for item in ErrorCode}:
+        return raw_code
+    if raw_code == "EXPORT_TIMEOUT":
+        return ErrorCode.EXPORT_TIMEOUT
+    if raw_code in {
+        "EXPORT_JOB_INVALID",
+        "EXPORT_COLUMNS_INVALID",
+        "EXPORT_IDEMPOTENCY_KEY_INVALID",
+        "EXPORT_TIMEOUT_INVALID",
+    }:
+        return ErrorCode.INPUT_INVALID
+    if raw_code in {"LOCAL_IO_ERROR", "BLOB_PATH_UNSAFE", "BLOB_PATH_REPARSE"}:
+        return ErrorCode.LOCAL_IO_ERROR
+    if raw_code.startswith("EXPORT_") or raw_code.startswith("BLOB_"):
+        return ErrorCode.CONTRACT_CHANGED
+    return None
+
+
+def _next_action(
+    code: ErrorCode | str,
+    command: str,
+    job_id: str,
+    operation_id: str | None,
+) -> str:
+    if code == ErrorCode.UNKNOWN_OPERATION:
+        return (
+            "Run `python -m gravity_sdk export list-capabilities` and "
+            "use an operation_id from the results."
+        )
+    if code == ErrorCode.EXPORT_TIMEOUT:
+        return (
+            "Run `python -m gravity_sdk export status "
+            f"{job_id} --operation-id {operation_id or '<operation-id>'}`."
+        )
+    if code == ErrorCode.INPUT_INVALID:
+        return (
+            "Run `python -m gravity_sdk export describe "
+            f"{operation_id or '<operation-id>'}` and retry with the documented input."
+        )
+    if code == ErrorCode.LOCAL_IO_ERROR:
+        return (
+            "Run `python -m gravity_sdk export download "
+            f"{job_id} --operation-id {operation_id or '<operation-id>'} "
+            "--output <writable-file.xlsx> --timeout 300`."
+        )
+    if code == ErrorCode.CONTRACT_CHANGED:
+        return (
+            "Run `python -m gravity_sdk export describe "
+            f"{operation_id or '<operation-id>'}` and stop automation until the "
+            "maintainer can re-verify and republish the contract."
+        )
+    if code in {ErrorCode.UNSUPPORTED, ErrorCode.NOT_IMPLEMENTED}:
+        return (
+            "Run `python -m gravity_sdk export describe "
+            f"{operation_id or '<operation-id>'}` and select an operation with "
+            "currently_callable=true."
+        )
+    if command == "start":
+        return (
+            "Run `python -m gravity_sdk export list --page 1 "
+            "--page-size 100` to determine whether a job was created; do not "
+            "create a duplicate."
+        )
+    return (
+        "Run `python -m gravity_sdk export status "
+        f"{job_id} --operation-id {operation_id or '<operation-id>'}` and retry "
+        "only the failed job stage."
+    )
+
+
+def _export_error_field(error: BaseException) -> str | None:
+    explicit = getattr(error, "field", None)
+    if explicit:
+        return str(explicit)
+    value = getattr(error, "code", "")
+    code = value.value if isinstance(value, ErrorCode) else str(value)
+    return {
+        "EXPORT_COLUMNS_INVALID": "columns",
+        "EXPORT_JOB_INVALID": "job_id",
+        "EXPORT_IDEMPOTENCY_KEY_INVALID": "idempotency_key",
+        "EXPORT_TIMEOUT_INVALID": "timeout",
+    }.get(code)
+
+
+__all__ = [
+    "add_export_commands",
+    "command_error",
+    "dispatch_command",
+    "export_cli_error",
+    "output_argument",
+    "run_export_command",
+]

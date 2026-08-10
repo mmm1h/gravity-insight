@@ -1,0 +1,223 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 12,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "基于多维报表查询配置计算合计；支持受控关键日展开，并返回请求指标的数字后缀动态列。",
+    "domain": "report",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "custom_metrics_list": {
+        "default": [],
+        "type": "array"
+      },
+      "data_conf": {
+        "default": {
+          "decimal_point": 2,
+          "return_all_metrics": true
+        },
+        "enum": [
+          {
+            "decimal_point": 2,
+            "return_all_metrics": true
+          }
+        ],
+        "type": "object"
+      },
+      "data_dims": {
+        "default": [],
+        "type": "array"
+      },
+      "data_list": {
+        "type": "array"
+      },
+      "data_topic": {
+        "default": "adreport",
+        "enum": [
+          "adreport"
+        ],
+        "type": "string"
+      },
+      "date_list": {
+        "required": true,
+        "type": "array"
+      },
+      "filters": {
+        "default": [],
+        "type": "array"
+      },
+      "metrics_list": {
+        "required": true,
+        "type": "array"
+      },
+      "multi_keys": {
+        "item_enum": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30],
+        "item_type": "integer",
+        "max_items": 29,
+        "min_items": 1,
+        "type": "array"
+      },
+      "relate_dims": {
+        "default": [],
+        "type": "array"
+      },
+      "time_dims": {
+        "enum": [
+          "hour",
+          "day",
+          "week",
+          "month",
+          "total"
+        ],
+        "required": true,
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "custom_metrics_list": [],
+        "data_dims": [],
+        "data_list": [],
+        "date_list": [
+          "$today",
+          "$today"
+        ],
+        "filters": [
+          {
+            "field": "app_id",
+            "operator": "EQUALS",
+            "values": [
+              "$first_app_id"
+            ]
+          }
+        ],
+        "metrics_list": [
+          "ap_cost"
+        ],
+        "relate_dims": [],
+        "time_dims": "day"
+      }
+    },
+    "operation_id": "report.multidim.calc_total",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/report/api/v3/adreport/custom_get/calc_total/",
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.multidim.calc_total.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "time_dims",
+        "date_list",
+        "data_dims",
+        "relate_dims",
+        "metrics_list",
+        "multi_keys",
+        "custom_metrics_list",
+        "data_conf",
+        "data_topic",
+        "filters",
+        "data_list"
+      ],
+      "defaults": {
+        "custom_metrics_list": [],
+        "data_dims": [],
+        "data_conf": {
+          "decimal_point": 2,
+          "return_all_metrics": true
+        },
+        "data_topic": "adreport",
+        "filters": [],
+        "relate_dims": []
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "report.multidim.query",
+        "output_path": "data.list[]",
+        "selection": "all"
+      }
+    ],
+    "resource": "adreport_total",
+    "response_projection": {
+      "data_keys": [
+        "list"
+      ],
+      "dynamic_item_fields": [
+        "data_dims",
+        "relate_dims",
+        "metrics_list",
+        "custom_metrics_list",
+        "time_dims"
+      ],
+      "numeric_suffix_item_fields": [
+        "metrics_list",
+        "custom_metrics_list"
+      ],
+      "item_keys": [
+        "app_id",
+        "click_company",
+        "day",
+        "hour",
+        "week",
+        "month",
+        "date",
+        "stat_time"
+      ],
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "report.json"
+}

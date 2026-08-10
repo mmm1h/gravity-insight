@@ -1,0 +1,92 @@
+name: Gravity upstream census
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gravity-upstream-census
+  cancel-in-progress: false
+
+env:
+  PYTHONUTF8: "1"
+  PYTHONIOENCODING: utf-8
+
+jobs:
+  inspect-public-static-graph:
+    name: Inspect public static graph
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out the reviewed baseline
+        uses: actions/checkout@v5
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install the local package
+        run: python -m pip install --disable-pip-version-check -e .
+
+      - name: Check entry HTML only
+        id: upstream
+        shell: pwsh
+        run: |
+          $evidence = Join-Path $env:RUNNER_TEMP "gravity-drift"
+          New-Item -ItemType Directory -Force -Path $evidence | Out-Null
+          $check = Join-Path $evidence "upstream-check.json"
+          gravity census check-upstream --output $check
+          $result = Get-Content -Raw $check | ConvertFrom-Json
+          "changed=$($result.upstream_changed.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+
+      - name: Fetch the complete public bundle graph
+        id: fetch
+        if: steps.upstream.outputs.changed == 'true'
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $evidence = Join-Path $env:RUNNER_TEMP "gravity-drift"
+          $raw = Join-Path $env:RUNNER_TEMP "gravity-census-raw"
+          gravity census fetch --raw-dir $raw --output (Join-Path $evidence "current-snapshot.json") --require-complete
+
+      - name: Parse routes and reconcile manifest coverage
+        if: steps.upstream.outputs.changed == 'true' && steps.fetch.outcome == 'success'
+        shell: pwsh
+        run: |
+          $evidence = Join-Path $env:RUNNER_TEMP "gravity-drift"
+          $raw = Join-Path $env:RUNNER_TEMP "gravity-census-raw"
+          $routes = Join-Path $evidence "current-routes.json"
+          gravity census parse --snapshot (Join-Path $evidence "current-snapshot.json") --raw-dir $raw --output $routes
+          gravity census coverage --routes $routes --output (Join-Path $evidence "current-coverage.json") --report (Join-Path $evidence "current-coverage-report.md") --require-complete
+
+      - name: Diff routes and locate affected operations
+        if: steps.upstream.outputs.changed == 'true' && steps.fetch.outcome == 'success'
+        shell: pwsh
+        run: |
+          $evidence = Join-Path $env:RUNNER_TEMP "gravity-drift"
+          $diff = Join-Path $evidence "route-diff.json"
+          $impact = Join-Path $evidence "operation-impact.json"
+          gravity census diff src/gravity_sdk/census/data/routes.json (Join-Path $evidence "current-routes.json") --output $diff
+          gravity census impact $diff --output $impact --overlay-output (Join-Path $evidence "health-overlay-candidate.json") --require-complete
+          $plan = (Get-Content -Raw $impact | ConvertFrom-Json).probe_plan
+          $plan | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 (Join-Path $evidence "targeted-probe-plan.json")
+
+      - name: Upload drift evidence and the schedule-only probe plan
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gravity-upstream-${{ github.run_id }}
+          path: ${{ runner.temp }}/gravity-drift/*
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Reject an incomplete changed bundle crawl
+        if: steps.upstream.outputs.changed == 'true' && steps.fetch.outcome != 'success'
+        shell: pwsh
+        run: throw "The entry changed, but a complete public static graph could not be proven."

@@ -1,0 +1,242 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 18,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "用户细查；支持结构化字段、筛选和排序，返回内部分析标识、非识别性设备属性与归因字段；姓名、外部开放标识和广告设备标识保持隐藏。",
+    "domain": "analysis",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "app_id": {
+        "max_length": 64,
+        "required": true,
+        "type": "string"
+      },
+      "client_id": {
+        "max_length": 256,
+        "required": false,
+        "sensitive": true,
+        "type": "string"
+      },
+      "date": {
+        "required": false,
+        "type": "date"
+      },
+      "fields": {
+        "default": [],
+        "item_type": "string",
+        "max_items": 100,
+        "type": "array"
+      },
+      "global_conditions": {
+        "default": [],
+        "item_type": "object",
+        "max_items": 100,
+        "type": "array"
+      },
+      "order_by_list": {
+        "default": [],
+        "item_type": "object",
+        "max_items": 20,
+        "type": "array"
+      },
+      "page": {
+        "default": 1,
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 20,
+        "type": "integer"
+      },
+      "postback_cond_logic": {
+        "default": "AND",
+        "enum": [
+          "AND",
+          "OR"
+        ],
+        "type": "string"
+      },
+      "postback_conditions": {
+        "default": [],
+        "item_type": "object",
+        "max_items": 100,
+        "type": "array"
+      },
+      "user_cond_logic": {
+        "default": "AND",
+        "enum": [
+          "AND",
+          "OR"
+        ],
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "app_id": "$first_app_id",
+        "client_id": "$first_client_id",
+        "date": "$today",
+        "page": 1,
+        "page_size": 1
+      }
+    },
+    "operation_id": "analysis.user_detail.list",
+    "pagination": {
+      "default_page_size": 20,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 100,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/report/api/v3/dataanalysis/user/detail/list/",
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "WXOpenID",
+        "Idfa",
+        "Idfv",
+        "Caid1",
+        "Caid2",
+        "Oaid",
+        "Imei",
+        "AndroidId"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.user_detail.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "app_id",
+        "client_id",
+        "date",
+        "fields",
+        "page",
+        "page_size",
+        "order_by_list",
+        "global_conditions",
+        "postback_conditions",
+        "user_cond_logic",
+        "postback_cond_logic"
+      ],
+      "defaults": {
+        "fields": [],
+        "global_conditions": [],
+        "order_by_list": [],
+        "page": 1,
+        "page_size": 20,
+        "postback_cond_logic": "AND",
+        "postback_conditions": [],
+        "user_cond_logic": "AND"
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "app.list",
+        "output_path": "data.list[].id",
+        "selection": "first"
+      }
+    ],
+    "resource": "user_detail",
+    "response_projection": {
+      "data_keys": [
+        "list",
+        "page_info"
+      ],
+      "dynamic_item_fields": [
+        "fields"
+      ],
+      "item_keys": [
+        "CreateTime",
+        "LatestLoginDay",
+        "modify_time",
+        "ClientID",
+        "user_id",
+        "device_id",
+        "AdPlatform",
+        "Channel",
+        "Version",
+        "TurboPromotedObjectID",
+        "AdvertiserID",
+        "AdAid",
+        "device_info",
+        "re_attribute_info"
+      ],
+      "known_omitted_item_keys": [
+        "Name",
+        "WXOpenID"
+      ],
+      "known_omitted_nested_item_keys": {
+        "device_info": [
+          "Idfa",
+          "Idfv",
+          "Caid1",
+          "Caid2",
+          "Oaid",
+          "Imei",
+          "AndroidId"
+        ]
+      },
+      "nested_item_keys": {
+        "device_info": [
+          "Android_Version",
+          "Api_Version",
+          "Rom_version",
+          "Aspect_Ratio",
+          "Phone_Brand",
+          "Phone_Model",
+          "OS"
+        ],
+        "re_attribute_info": [
+          "ReAttributeAdAid",
+          "ReAttributeAdCid",
+          "ReAttributeAdGid",
+          "ReAttributeAdPlatform",
+          "ReAttributeAdvertiserID",
+          "ReAttributeCSite",
+          "ReAttributeChannel",
+          "ReAttributeCreateTime",
+          "ReAttributeTurboPromotedObjectID",
+          "ReAttributeRetargetingCount",
+          "ReAttributeAdClickTime"
+        ]
+      },
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis.json"
+}

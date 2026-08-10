@@ -1,0 +1,31 @@
+{
+  "basis": "declared_parent_probe",
+  "bindings": [
+    {
+      "candidate_count": 1,
+      "candidate_types": [
+        "str"
+      ],
+      "output_path": "data.list[].advertiser_id",
+      "parent_operation_id": "promotion.bytedance.project_filter.list",
+      "selection": "caller_select",
+      "status": "resolved",
+      "target_cardinality": "one",
+      "target_input": "advertiser_id"
+    }
+  ],
+  "conclusion": "unblocked",
+  "detail": "Every declared parent binding yielded a selectable value; values stayed in process memory.",
+  "http": [],
+  "missing_evidence": [],
+  "operation_id": "promotion.bytedance.std_project.list",
+  "replacement_blocker": null,
+  "resolved_at": "2026-08-09T14:56:38Z",
+  "route": {
+    "method": "POST",
+    "path": "/turbo_engine/api/v1/bytedance/manager/std_project/list/"
+  },
+  "schema_version": "gravity-insight.parent-resolution-evidence.v1",
+  "source_evidence": null,
+  "values_persisted": false
+}

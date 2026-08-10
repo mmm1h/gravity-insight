@@ -1,0 +1,264 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "not_probed",
+        "detail": "No live probe evidence exists for this route.",
+        "status": "open"
+      },
+      {
+        "code": "openapi_developer_credentials_unavailable",
+        "detail": "OpenAPI developer signing credentials are unavailable to the stable runtime.",
+        "status": "open"
+      },
+      {
+        "code": "request_binding_unverified",
+        "detail": "Query/body fields and fixed request values have not been observed.",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "status": "open"
+      },
+      {
+        "code": "stable_runtime_route_unsupported",
+        "detail": "The stable runtime does not expose OpenAPI draft routes.",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_sdk/census/data/coverage.json",
+      "json_pointer": "/routes/129",
+      "method": "POST",
+      "path": "/openapi/api/v1/report/adreport/custom_get/",
+      "route_index": 129,
+      "route_sha256": "f7488b318072d55af556e922ed927b30ad9135de9a371236d132e3352b71d126"
+    },
+    "generated_at": "2026-08-08T20:41:21Z",
+    "manual_review_fields": [],
+    "probe_evidence": [],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "not_probed",
+        "openapi_developer_credentials_unavailable",
+        "request_binding_unverified",
+        "response_projection",
+        "response_schema_unverified",
+        "stable_runtime_route_unsupported",
+        "successful_probe"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "报表",
+      "callers": [
+        "yt"
+      ],
+      "contract_family": null,
+      "estimated_implementation_cost": "高",
+      "first_occurrence": {
+        "column": 69058,
+        "file": "raw/web.gravity-engine.com/assets/api-B9xDXL35.js",
+        "line": 1,
+        "offset": 69057,
+        "url": "https://web.gravity-engine.com/assets/api-B9xDXL35.js"
+      },
+      "method_certainty": "high",
+      "method_evidence": [
+        "live_options_allow",
+        "method_not_resolved"
+      ],
+      "ui_texts": [
+        "变现细查报表",
+        "多维报表",
+        "素材数据报表"
+      ]
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "query",
+    "auth_profile": "gravity_openapi_signature",
+    "block_reason": "draft blockers: not_probed, openapi_developer_credentials_unavailable, request_binding_unverified, response_schema_unverified, stable_runtime_route_unsupported",
+    "contract_version": 1,
+    "description": "Draft inferred from census route POST /openapi/api/v1/report/adreport/custom_get/; response remains hidden until probe classification.",
+    "domain": "report",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "custom_metrics_list": {
+        "default": [],
+        "type": "array"
+      },
+      "data_conf": {
+        "default": {},
+        "type": "object"
+      },
+      "data_dims": {
+        "default": [],
+        "type": "array"
+      },
+      "date_list": {
+        "required": true,
+        "type": "array"
+      },
+      "filters": {
+        "required": true,
+        "type": "array"
+      },
+      "metrics_list": {
+        "required": true,
+        "type": "array"
+      },
+      "relate_dims": {
+        "default": {},
+        "type": "object"
+      },
+      "time_dims": {
+        "enum": [
+          "total",
+          "month",
+          "week",
+          "day",
+          "hour"
+        ],
+        "required": true,
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "custom_metrics_list": [],
+        "data_conf": {},
+        "data_dims": [],
+        "date_list": [
+          "$today",
+          "$today"
+        ],
+        "filters": [
+          {
+            "field": "app_id",
+            "operator": "EQUALS",
+            "values": [
+              "$first_app_id"
+            ]
+          }
+        ],
+        "metrics_list": [
+          "ap_cost"
+        ],
+        "relate_dims": {},
+        "time_dims": "day"
+      }
+    },
+    "operation_id": "report.adreport.query",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/openapi/api/v1/report/adreport/custom_get/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "candidate.openapi.report.query_superseded"
+      ],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/candidate.openapi.report.query.json",
+        "drafts/report.adreport.query.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "time_dims",
+        "data_dims",
+        "relate_dims",
+        "date_list",
+        "metrics_list",
+        "custom_metrics_list",
+        "filters",
+        "data_conf"
+      ],
+      "defaults": {
+        "custom_metrics_list": [],
+        "data_conf": {},
+        "data_dims": [],
+        "relate_dims": {}
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "adreport",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "experimental",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "report.json"
+}

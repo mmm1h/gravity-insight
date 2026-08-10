@@ -1,0 +1,39 @@
+name: SDK CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUTF8: "1"
+  PYTHONIOENCODING: utf-8
+
+jobs:
+  test:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install SDK and test runner
+        run: python -m pip install --disable-pip-version-check -e ".[dev]"
+      - name: Run tests
+        run: python -m pytest -q
+      - name: Check deterministic contracts
+        run: python -m gravity_sdk.compiler check
+      - name: Check quality ratchet
+        run: python -m gravity_sdk.quality check
+      - name: Check all CLI namespaces offline
+        shell: pwsh
+        run: |
+          gravity --help
+          gravity sql --dry-run
+          gravity census --smoke
+          gravity insight --dry-run

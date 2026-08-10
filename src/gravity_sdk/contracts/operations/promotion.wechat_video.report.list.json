@@ -1,0 +1,146 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 41,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "视频号加热订单报表；实测可能返回 data={} 且 extra.error 非空，即使 code=0 也必须判为语义错误。",
+    "domain": "promotion",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "app_id": {
+        "default": "",
+        "type": "string"
+      },
+      "date_list": {
+        "required": true,
+        "type": "array"
+      },
+      "order_by": {
+        "default": [],
+        "type": "array"
+      },
+      "order_id": {
+        "default": "",
+        "type": "string"
+      },
+      "page": {
+        "default": 1,
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 10,
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "date_list": [
+          "$today",
+          "$today"
+        ],
+        "order_by": [],
+        "page": 1,
+        "page_size": 1
+      }
+    },
+    "operation_id": "promotion.wechat_video.report.list",
+    "pagination": {
+      "default_page_size": 10,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 10,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/turbo_engine/api/v1/wechat_video/report/list/",
+    "platform": "wechat_video",
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "wechat_video",
+      "source_files": [
+        "operations/promotion.wechat_video.report.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "page",
+        "page_size",
+        "date_list",
+        "order_by",
+        "app_id",
+        "order_id"
+      ],
+      "defaults": {
+        "app_id": "",
+        "order_by": [],
+        "order_id": "",
+        "page": 1,
+        "page_size": 10
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "report",
+    "response_projection": {
+      "data_keys": [
+        "list",
+        "page_info"
+      ],
+      "dynamic_item_fields": [],
+      "empty_object_as_empty_page": true,
+      "item_keys": [
+        "id",
+        "status",
+        "date",
+        "day",
+        "app_id",
+        "app_name",
+        "order_id"
+      ],
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "promotion.json"
+}

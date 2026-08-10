@@ -1,0 +1,7672 @@
+{
+  "manifest_version": 1,
+  "operations": [
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "Returns an array of metric groups; each item exposes height, label, and children metric definitions.",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "media_type": {
+          "enum": [
+            "bytedance",
+            "tencentV3",
+            "kuaishou",
+            "oppo",
+            "bilibili",
+            "baidu",
+            "vivo",
+            "iqiyi",
+            "weibo",
+            "asa",
+            "uc",
+            "huawei",
+            "huawei_store",
+            "honor",
+            "ubix",
+            "xiaohongshu",
+            "xiaomi",
+            "qihu360",
+            "sigmob",
+            "youdao",
+            "huya",
+            "alipay"
+          ],
+          "required": true,
+          "type": "string"
+        },
+        "metric_type": {
+          "enum": [
+            "behavior",
+            "active"
+          ],
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "media_type": "bytedance"
+        }
+      },
+      "operation_id": "promotion.metric.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/promotion_metrics/list/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "media_type",
+          "metric_type"
+        ]
+      },
+      "required_parent": [],
+      "resource": "metric",
+      "response_projection": {
+        "data_keys": [],
+        "data_shape": "list",
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "height",
+          "label",
+          "name",
+          "cname",
+          "metric_type",
+          "tag_ids",
+          "exclusion_dims",
+          "tip",
+          "children"
+        ],
+        "nested_item_keys": {
+          "children": [
+            "name",
+            "cname",
+            "tip",
+            "sort",
+            "is_static",
+            "is_offline"
+          ]
+        },
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "Lists saved report-field groups; filters is the encoded platform context.",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "filters": {
+          "enum": [
+            "[]"
+          ],
+          "required": true,
+          "type": "string"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 100,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "filters": "[]",
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.report_group.list",
+      "pagination": {
+        "default_page_size": 100,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/report_group/list/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {
+          "page": 1,
+          "page_size": 100
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "page",
+          "page_size",
+          "filters"
+        ]
+      },
+      "required_parent": [],
+      "resource": "report_group",
+      "response_projection": {
+        "data_keys": [
+          "page_info",
+          "list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "category",
+          "created_at",
+          "updated_at",
+          "create_time",
+          "modify_time",
+          "subject"
+        ],
+        "known_omitted_item_keys": [
+          "config",
+          "uid"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "巨量引擎广告主报表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "query_fields": {
+          "default": [],
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1,
+          "query_fields": []
+        }
+      },
+      "operation_id": "promotion.bytedance.advertiser.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/bytedance/std/advertiser/list/",
+      "platform": "bytedance",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filtering",
+          "page",
+          "page_size",
+          "query_fields",
+          "date_list",
+          "order_by",
+          "filters"
+        ],
+        "defaults": {
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "query_fields": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "advertiser",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "query_fields"
+          ]
+        },
+        "data_item_keys": {
+          "total": [
+            "stat_cost"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total",
+          "update_at"
+        ],
+        "dynamic_item_fields": [
+          "query_fields"
+        ],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "advertiser_id",
+          "campaign_id",
+          "campaign_name",
+          "project_id",
+          "project_name",
+          "group_id",
+          "group_name",
+          "ad_group_id",
+          "ad_group_name",
+          "ad_unit_id",
+          "ad_unit_name",
+          "creative_id",
+          "creative_name",
+          "account_id",
+          "account_name",
+          "app_id",
+          "app_name",
+          "advertiser_budget_mode",
+          "advertiser_system_status",
+          "stat_cost"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_agent_id",
+          "advertiser_agent_name",
+          "advertiser_balance",
+          "advertiser_budget",
+          "advertiser_name",
+          "advertiser_remark",
+          "company",
+          "project_list"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "巨量引擎项目层报表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "query_fields": {
+          "default": [],
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1,
+          "query_fields": []
+        }
+      },
+      "operation_id": "promotion.bytedance.project.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/bytedance/std/project/list/",
+      "platform": "bytedance",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filtering",
+          "page",
+          "page_size",
+          "query_fields",
+          "date_list",
+          "order_by",
+          "filters"
+        ],
+        "defaults": {
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "query_fields": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "project",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "query_fields"
+          ]
+        },
+        "data_item_keys": {
+          "total": [
+            "stat_cost"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total",
+          "update_at"
+        ],
+        "dynamic_item_fields": [
+          "query_fields"
+        ],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "advertiser_id",
+          "campaign_id",
+          "campaign_name",
+          "project_id",
+          "project_name",
+          "group_id",
+          "group_name",
+          "ad_group_id",
+          "ad_group_name",
+          "ad_unit_id",
+          "ad_unit_name",
+          "creative_id",
+          "creative_name",
+          "account_id",
+          "account_name",
+          "app_id",
+          "app_name",
+          "ad_type",
+          "advertiser_budget_mode",
+          "advertiser_system_status",
+          "app_promotion_type",
+          "bid",
+          "bid_type",
+          "budget",
+          "budget_mode",
+          "cpa_bid",
+          "deep_bid_type",
+          "deep_cpabid",
+          "deep_external_action",
+          "delivery_mode",
+          "download_type",
+          "end_time",
+          "external_action",
+          "landing_type",
+          "marketing_goal",
+          "opt_status",
+          "project_create_time",
+          "project_modify_time",
+          "roi_goal",
+          "start_time",
+          "stat_cost",
+          "status_second"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_agent_id",
+          "advertiser_agent_name",
+          "advertiser_balance",
+          "advertiser_budget",
+          "advertiser_name",
+          "advertiser_remark",
+          "company",
+          "project_list"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "腾讯广告 3.0 广告主报表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "query_fields": {
+          "default": [],
+          "type": "array"
+        },
+        "time_line": {
+          "default": "behavior",
+          "enum": [
+            "behavior",
+            "active",
+            "request"
+          ],
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1,
+          "query_fields": []
+        }
+      },
+      "operation_id": "promotion.tencent.advertiser.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/tencent/advertiser/list/v2/",
+      "platform": "tencent",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filtering",
+          "page",
+          "page_size",
+          "query_fields",
+          "date_list",
+          "order_by",
+          "filters",
+          "time_line"
+        ],
+        "defaults": {
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "query_fields": [],
+          "time_line": "behavior"
+        },
+        "fixed_body": {
+          "version": "v3.0"
+        },
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "advertiser",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "query_fields"
+          ]
+        },
+        "data_item_keys": {
+          "total": [
+            "cost"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total",
+          "update_at"
+        ],
+        "dynamic_item_fields": [
+          "query_fields"
+        ],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "advertiser_id",
+          "campaign_id",
+          "campaign_name",
+          "project_id",
+          "project_name",
+          "group_id",
+          "group_name",
+          "ad_group_id",
+          "ad_group_name",
+          "ad_unit_id",
+          "ad_unit_name",
+          "creative_id",
+          "creative_name",
+          "account_id",
+          "account_name",
+          "app_id",
+          "app_name",
+          "advertiser_budget_mode",
+          "advertiser_system_status",
+          "cost"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_agent_id",
+          "advertiser_agent_name",
+          "advertiser_balance",
+          "advertiser_budget",
+          "advertiser_name",
+          "advertiser_remark",
+          "company",
+          "delay",
+          "project_list"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "磁力智投广告主报表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "query_fields": {
+          "default": [],
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1,
+          "query_fields": []
+        }
+      },
+      "operation_id": "promotion.kuaishou.advertiser.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/kuaishou/advertiser/list/",
+      "platform": "kuaishou",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filtering",
+          "page",
+          "page_size",
+          "query_fields",
+          "date_list",
+          "order_by",
+          "filters"
+        ],
+        "defaults": {
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "query_fields": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "advertiser",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "query_fields"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total",
+          "update_at"
+        ],
+        "dynamic_item_fields": [
+          "query_fields"
+        ],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "advertiser_id",
+          "campaign_id",
+          "campaign_name",
+          "project_id",
+          "project_name",
+          "group_id",
+          "group_name",
+          "ad_group_id",
+          "ad_group_name",
+          "ad_unit_id",
+          "ad_unit_name",
+          "creative_id",
+          "creative_name",
+          "account_id",
+          "account_name",
+          "app_id",
+          "app_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "磁力智投账户筛选辅助列表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 2000,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.kuaishou.account.list",
+      "pagination": {
+        "default_page_size": 2000,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 2000,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/kuaishou/manage/account/list/",
+      "platform": "kuaishou",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 2000
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "account",
+      "response_projection": {
+        "data_keys": [
+          "page_info",
+          "list",
+          "expired_cnt"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "account_id",
+          "account_name",
+          "advertiser_id",
+          "app_id",
+          "app_name",
+          "developer_id",
+          "developer_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "磁力智投广告单元报表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "query_fields": {
+          "default": [],
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1,
+          "query_fields": []
+        }
+      },
+      "operation_id": "promotion.kuaishou.ad_unit.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/kuaishou/ad_unit/list/",
+      "platform": "kuaishou",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filtering",
+          "page",
+          "page_size",
+          "query_fields",
+          "date_list",
+          "order_by",
+          "filters"
+        ],
+        "defaults": {
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "query_fields": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "ad_unit",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "query_fields"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total",
+          "update_at"
+        ],
+        "dynamic_item_fields": [
+          "query_fields"
+        ],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "advertiser_id",
+          "campaign_id",
+          "campaign_name",
+          "project_id",
+          "project_name",
+          "group_id",
+          "group_name",
+          "ad_group_id",
+          "ad_group_name",
+          "ad_unit_id",
+          "ad_unit_name",
+          "creative_id",
+          "creative_name",
+          "account_id",
+          "account_name",
+          "app_id",
+          "app_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "OPPO 营销账户辅助列表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 500,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.oppo.account.list",
+      "pagination": {
+        "default_page_size": 500,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 500,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/oppo/advertiser/list/",
+      "platform": "oppo",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 500
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "account",
+      "response_projection": {
+        "data_keys": [
+          "page_info",
+          "list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "account_id",
+          "account_name",
+          "advertiser_id",
+          "app_id",
+          "app_name",
+          "developer_id",
+          "developer_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "OPPO 营销广告主报表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "query_fields": {
+          "default": [],
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1,
+          "query_fields": []
+        }
+      },
+      "operation_id": "promotion.oppo.advertiser.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/oppo/report/advertiser/list/",
+      "platform": "oppo",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filtering",
+          "page",
+          "page_size",
+          "query_fields",
+          "date_list",
+          "order_by",
+          "filters"
+        ],
+        "defaults": {
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "query_fields": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "advertiser",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "query_fields"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total",
+          "update_at"
+        ],
+        "dynamic_item_fields": [
+          "query_fields"
+        ],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "advertiser_id",
+          "campaign_id",
+          "campaign_name",
+          "project_id",
+          "project_name",
+          "group_id",
+          "group_name",
+          "ad_group_id",
+          "ad_group_name",
+          "ad_unit_id",
+          "ad_unit_name",
+          "creative_id",
+          "creative_name",
+          "account_id",
+          "account_name",
+          "app_id",
+          "app_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "B 站营销广告主报表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "query_fields": {
+          "default": [],
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1,
+          "query_fields": []
+        }
+      },
+      "operation_id": "promotion.bilibili.advertiser.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/bilibili/advertiser/report/",
+      "platform": "bilibili",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filtering",
+          "page",
+          "page_size",
+          "query_fields",
+          "date_list",
+          "order_by",
+          "filters"
+        ],
+        "defaults": {
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "query_fields": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "advertiser",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "query_fields"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total",
+          "update_at"
+        ],
+        "dynamic_item_fields": [
+          "query_fields"
+        ],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "advertiser_id",
+          "campaign_id",
+          "campaign_name",
+          "project_id",
+          "project_name",
+          "group_id",
+          "group_name",
+          "ad_group_id",
+          "ad_group_name",
+          "ad_unit_id",
+          "ad_unit_name",
+          "creative_id",
+          "creative_name",
+          "account_id",
+          "account_name",
+          "app_id",
+          "app_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "百度营销广告主账户报表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "query_fields": {
+          "default": [],
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1,
+          "query_fields": []
+        }
+      },
+      "operation_id": "promotion.baidu.advertiser.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/baidu/advertiser/account/report/",
+      "platform": "baidu",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filtering",
+          "page",
+          "page_size",
+          "query_fields",
+          "date_list",
+          "order_by",
+          "filters"
+        ],
+        "defaults": {
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "query_fields": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "advertiser",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "query_fields"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total",
+          "update_at"
+        ],
+        "dynamic_item_fields": [
+          "query_fields"
+        ],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "advertiser_id",
+          "campaign_id",
+          "campaign_name",
+          "project_id",
+          "project_name",
+          "group_id",
+          "group_name",
+          "ad_group_id",
+          "ad_group_name",
+          "ad_unit_id",
+          "ad_unit_name",
+          "creative_id",
+          "creative_name",
+          "account_id",
+          "account_name",
+          "app_id",
+          "app_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "VIVO 营销账户辅助列表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 500,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.vivo.account.list",
+      "pagination": {
+        "default_page_size": 500,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 500,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/vivo/account/list/",
+      "platform": "vivo",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 500
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "account",
+      "response_projection": {
+        "data_keys": [
+          "page_info",
+          "list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "account_id",
+          "account_name",
+          "advertiser_id",
+          "app_id",
+          "app_name",
+          "developer_id",
+          "developer_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "VIVO 营销广告主报表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "query_fields": {
+          "default": [],
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1,
+          "query_fields": []
+        }
+      },
+      "operation_id": "promotion.vivo.advertiser.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/vivo/report/advertiser/",
+      "platform": "vivo",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filtering",
+          "page",
+          "page_size",
+          "query_fields",
+          "date_list",
+          "order_by",
+          "filters"
+        ],
+        "defaults": {
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "query_fields": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "advertiser",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "query_fields"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total",
+          "update_at"
+        ],
+        "dynamic_item_fields": [
+          "query_fields"
+        ],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "advertiser_id",
+          "campaign_id",
+          "campaign_name",
+          "project_id",
+          "project_name",
+          "group_id",
+          "group_name",
+          "ad_group_id",
+          "ad_group_name",
+          "ad_unit_id",
+          "ad_unit_name",
+          "creative_id",
+          "creative_name",
+          "account_id",
+          "account_name",
+          "app_id",
+          "app_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "爱奇艺麒麟广告主报表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "query_fields": {
+          "default": [],
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1,
+          "query_fields": []
+        }
+      },
+      "operation_id": "promotion.iqiyi.advertiser.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/iqiyi/report/advertiser/",
+      "platform": "iqiyi",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filtering",
+          "page",
+          "page_size",
+          "query_fields",
+          "date_list",
+          "order_by",
+          "filters"
+        ],
+        "defaults": {
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "query_fields": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "advertiser",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "query_fields"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total",
+          "update_at"
+        ],
+        "dynamic_item_fields": [
+          "query_fields"
+        ],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "advertiser_id",
+          "campaign_id",
+          "campaign_name",
+          "project_id",
+          "project_name",
+          "group_id",
+          "group_name",
+          "ad_group_id",
+          "ad_group_name",
+          "ad_unit_id",
+          "ad_unit_name",
+          "creative_id",
+          "creative_name",
+          "account_id",
+          "account_name",
+          "app_id",
+          "app_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "微博粉丝通账户辅助列表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 500,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.weibo.account.list",
+      "pagination": {
+        "default_page_size": 500,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 500,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/weibo/advertiser/list/",
+      "platform": "weibo",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 500
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "account",
+      "response_projection": {
+        "data_keys": [
+          "page_info",
+          "list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "account_id",
+          "account_name",
+          "advertiser_id",
+          "app_id",
+          "app_name",
+          "developer_id",
+          "developer_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "微博粉丝通广告主报表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "query_fields": {
+          "default": [],
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1,
+          "query_fields": []
+        }
+      },
+      "operation_id": "promotion.weibo.advertiser.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/weibo/report/advertiser/list/",
+      "platform": "weibo",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filtering",
+          "page",
+          "page_size",
+          "query_fields",
+          "date_list",
+          "order_by",
+          "filters"
+        ],
+        "defaults": {
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "query_fields": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "advertiser",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "query_fields"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total",
+          "update_at"
+        ],
+        "dynamic_item_fields": [
+          "query_fields"
+        ],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "advertiser_id",
+          "campaign_id",
+          "campaign_name",
+          "project_id",
+          "project_name",
+          "group_id",
+          "group_name",
+          "ad_group_id",
+          "ad_group_name",
+          "ad_unit_id",
+          "ad_unit_name",
+          "creative_id",
+          "creative_name",
+          "account_id",
+          "account_name",
+          "app_id",
+          "app_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "Apple Search Ads（UI: ASA）广告主报表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "query_fields": {
+          "default": [],
+          "type": "array"
+        },
+        "time_zone": {
+          "default": "utc",
+          "enum": [
+            "utc"
+          ],
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1,
+          "query_fields": []
+        }
+      },
+      "operation_id": "promotion.apple.advertiser.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/apple/report/v2/advertiser/",
+      "platform": "apple",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filtering",
+          "page",
+          "page_size",
+          "query_fields",
+          "date_list",
+          "order_by",
+          "filters",
+          "time_zone"
+        ],
+        "defaults": {
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "query_fields": [],
+          "time_zone": "utc"
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "advertiser",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "query_fields"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total",
+          "update_at"
+        ],
+        "dynamic_item_fields": [
+          "query_fields"
+        ],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "advertiser_id",
+          "campaign_id",
+          "campaign_name",
+          "project_id",
+          "project_name",
+          "group_id",
+          "group_name",
+          "ad_group_id",
+          "ad_group_name",
+          "ad_unit_id",
+          "ad_unit_name",
+          "creative_id",
+          "creative_name",
+          "account_id",
+          "account_name",
+          "app_id",
+          "app_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "UC 超级汇川广告主报表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "query_fields": {
+          "default": [],
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1,
+          "query_fields": []
+        }
+      },
+      "operation_id": "promotion.uc.advertiser.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/uc/report/advertiser/list/",
+      "platform": "uc",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filtering",
+          "page",
+          "page_size",
+          "query_fields",
+          "date_list",
+          "order_by",
+          "filters"
+        ],
+        "defaults": {
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "query_fields": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "advertiser",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "query_fields"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total",
+          "update_at"
+        ],
+        "dynamic_item_fields": [
+          "query_fields"
+        ],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "advertiser_id",
+          "campaign_id",
+          "campaign_name",
+          "project_id",
+          "project_name",
+          "group_id",
+          "group_name",
+          "ad_group_id",
+          "ad_group_name",
+          "ad_unit_id",
+          "ad_unit_name",
+          "creative_id",
+          "creative_name",
+          "account_id",
+          "account_name",
+          "app_id",
+          "app_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "华为鲸鸿广告主报表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "query_fields": {
+          "default": [],
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1,
+          "query_fields": []
+        }
+      },
+      "operation_id": "promotion.huawei.advertiser.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/huawei/report/advertiser/",
+      "platform": "huawei",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filtering",
+          "page",
+          "page_size",
+          "query_fields",
+          "date_list",
+          "order_by",
+          "filters"
+        ],
+        "defaults": {
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "query_fields": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "advertiser",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "query_fields"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total",
+          "update_at"
+        ],
+        "dynamic_item_fields": [
+          "query_fields"
+        ],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "advertiser_id",
+          "campaign_id",
+          "campaign_name",
+          "project_id",
+          "project_name",
+          "group_id",
+          "group_name",
+          "ad_group_id",
+          "ad_group_name",
+          "ad_unit_id",
+          "ad_unit_name",
+          "creative_id",
+          "creative_name",
+          "account_id",
+          "account_name",
+          "app_id",
+          "app_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "华为商店广告主报表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "query_fields": {
+          "default": [],
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1,
+          "query_fields": []
+        }
+      },
+      "operation_id": "promotion.huawei_store.advertiser.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/huawei/store/report/advertiser/",
+      "platform": "huawei_store",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filtering",
+          "page",
+          "page_size",
+          "query_fields",
+          "date_list",
+          "order_by",
+          "filters"
+        ],
+        "defaults": {
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "query_fields": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "advertiser",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "query_fields"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total",
+          "update_at"
+        ],
+        "dynamic_item_fields": [
+          "query_fields"
+        ],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "advertiser_id",
+          "campaign_id",
+          "campaign_name",
+          "project_id",
+          "project_name",
+          "group_id",
+          "group_name",
+          "ad_group_id",
+          "ad_group_name",
+          "ad_unit_id",
+          "ad_unit_name",
+          "creative_id",
+          "creative_name",
+          "account_id",
+          "account_name",
+          "app_id",
+          "app_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "荣耀媒体账户层报表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "query_fields": {
+          "default": [],
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1,
+          "query_fields": []
+        }
+      },
+      "operation_id": "promotion.honor.advertiser.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/honor/report/advertiser/list/",
+      "platform": "honor",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filtering",
+          "page",
+          "page_size",
+          "query_fields",
+          "date_list",
+          "order_by",
+          "filters"
+        ],
+        "defaults": {
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "query_fields": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "advertiser",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "query_fields"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total",
+          "update_at"
+        ],
+        "dynamic_item_fields": [
+          "query_fields"
+        ],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "advertiser_id",
+          "campaign_id",
+          "campaign_name",
+          "project_id",
+          "project_name",
+          "group_id",
+          "group_name",
+          "ad_group_id",
+          "ad_group_name",
+          "ad_unit_id",
+          "ad_unit_name",
+          "creative_id",
+          "creative_name",
+          "account_id",
+          "account_name",
+          "app_id",
+          "app_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "荣耀账户筛选辅助列表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 2000,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.honor.account.list",
+      "pagination": {
+        "default_page_size": 2000,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 2000,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/honor/manage/account/list/",
+      "platform": "honor",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 2000
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "account",
+      "response_projection": {
+        "data_keys": [
+          "page_info",
+          "list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "account_id",
+          "account_name",
+          "advertiser_id",
+          "app_id",
+          "app_name",
+          "developer_id",
+          "developer_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "荣耀推广计划层报表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "query_fields": {
+          "default": [],
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1,
+          "query_fields": []
+        }
+      },
+      "operation_id": "promotion.honor.campaign.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/honor/report/campaign/list/",
+      "platform": "honor",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filtering",
+          "page",
+          "page_size",
+          "query_fields",
+          "date_list",
+          "order_by",
+          "filters"
+        ],
+        "defaults": {
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "query_fields": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "campaign",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "query_fields"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total",
+          "update_at"
+        ],
+        "dynamic_item_fields": [
+          "query_fields"
+        ],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "advertiser_id",
+          "campaign_id",
+          "campaign_name",
+          "project_id",
+          "project_name",
+          "group_id",
+          "group_name",
+          "ad_group_id",
+          "ad_group_name",
+          "ad_unit_id",
+          "ad_unit_name",
+          "creative_id",
+          "creative_name",
+          "account_id",
+          "account_name",
+          "app_id",
+          "app_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "荣耀推广单元层报表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "query_fields": {
+          "default": [],
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1,
+          "query_fields": []
+        }
+      },
+      "operation_id": "promotion.honor.ad_group.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/honor/report/ad_group/list/",
+      "platform": "honor",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filtering",
+          "page",
+          "page_size",
+          "query_fields",
+          "date_list",
+          "order_by",
+          "filters"
+        ],
+        "defaults": {
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "query_fields": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "ad_group",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "query_fields"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total",
+          "update_at"
+        ],
+        "dynamic_item_fields": [
+          "query_fields"
+        ],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "advertiser_id",
+          "campaign_id",
+          "campaign_name",
+          "project_id",
+          "project_name",
+          "group_id",
+          "group_name",
+          "ad_group_id",
+          "ad_group_name",
+          "ad_unit_id",
+          "ad_unit_name",
+          "creative_id",
+          "creative_name",
+          "account_id",
+          "account_name",
+          "app_id",
+          "app_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "UBIX 账户筛选辅助列表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 2000,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.ubix.account.list",
+      "pagination": {
+        "default_page_size": 2000,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 2000,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/ubix/advertiser/list/",
+      "platform": "ubix",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 2000
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "account",
+      "response_projection": {
+        "data_keys": [
+          "page_info",
+          "list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "account_id",
+          "account_name",
+          "advertiser_id",
+          "app_id",
+          "app_name",
+          "developer_id",
+          "developer_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "UBIX 广告组报表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "query_fields": {
+          "default": [],
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1,
+          "query_fields": []
+        }
+      },
+      "operation_id": "promotion.ubix.group.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/ubix/report/group/list/",
+      "platform": "ubix",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filtering",
+          "page",
+          "page_size",
+          "query_fields",
+          "date_list",
+          "order_by",
+          "filters"
+        ],
+        "defaults": {
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "query_fields": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "group",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "query_fields"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total",
+          "update_at"
+        ],
+        "dynamic_item_fields": [
+          "query_fields"
+        ],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "advertiser_id",
+          "campaign_id",
+          "campaign_name",
+          "project_id",
+          "project_name",
+          "group_id",
+          "group_name",
+          "ad_group_id",
+          "ad_group_name",
+          "ad_unit_id",
+          "ad_unit_name",
+          "creative_id",
+          "creative_name",
+          "account_id",
+          "account_name",
+          "app_id",
+          "app_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "小红书投放产品/开发者筛选辅助列表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "media_type": {
+          "enum": [
+            "xiaohongshu"
+          ],
+          "required": true,
+          "type": "string"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 500,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "media_type": "xiaohongshu",
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.xiaohongshu.developer.list",
+      "pagination": {
+        "default_page_size": 500,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 500,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/media/developer/list/",
+      "platform": "xiaohongshu",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {
+          "page": 1,
+          "page_size": 500
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "media_type",
+          "page",
+          "page_size"
+        ]
+      },
+      "required_parent": [],
+      "resource": "developer",
+      "response_projection": {
+        "data_keys": [
+          "page_info",
+          "list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "account_id",
+          "account_name",
+          "advertiser_id",
+          "app_id",
+          "app_name",
+          "developer_id",
+          "developer_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "小红书广告账户列表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "filters": [],
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.xiaohongshu.advertiser.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/xiaohongshu/advertiser/list/",
+      "platform": "xiaohongshu",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size",
+          "filters"
+        ],
+        "defaults": {
+          "filters": [],
+          "page": 1,
+          "page_size": 10
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "advertiser",
+      "response_projection": {
+        "data_keys": [
+          "page_info",
+          "list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "account_id",
+          "account_name",
+          "advertiser_id",
+          "app_id",
+          "app_name",
+          "developer_id",
+          "developer_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "小米营销账户辅助列表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 500,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.xiaomi.account.list",
+      "pagination": {
+        "default_page_size": 500,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 500,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/xiaomi/advertiser/list/",
+      "platform": "xiaomi",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 500
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "account",
+      "response_projection": {
+        "data_keys": [
+          "page_info",
+          "list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "account_id",
+          "account_name",
+          "advertiser_id",
+          "app_id",
+          "app_name",
+          "developer_id",
+          "developer_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "小米营销广告主报表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "query_fields": {
+          "default": [],
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1,
+          "query_fields": []
+        }
+      },
+      "operation_id": "promotion.xiaomi.advertiser.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/xiaomi/report/advertiser/list/",
+      "platform": "xiaomi",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filtering",
+          "page",
+          "page_size",
+          "query_fields",
+          "date_list",
+          "order_by",
+          "filters"
+        ],
+        "defaults": {
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "query_fields": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "advertiser",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "query_fields"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total",
+          "update_at"
+        ],
+        "dynamic_item_fields": [
+          "query_fields"
+        ],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "advertiser_id",
+          "campaign_id",
+          "campaign_name",
+          "project_id",
+          "project_name",
+          "group_id",
+          "group_name",
+          "ad_group_id",
+          "ad_group_name",
+          "ad_unit_id",
+          "ad_unit_name",
+          "creative_id",
+          "creative_name",
+          "account_id",
+          "account_name",
+          "app_id",
+          "app_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "360 营销账户辅助列表；API 路由前缀固定为 qihu360。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 500,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.qihu360.account.list",
+      "pagination": {
+        "default_page_size": 500,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 500,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/qihu360/account/list/",
+      "platform": "qihu360",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 500
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "account",
+      "response_projection": {
+        "data_keys": [
+          "page_info",
+          "list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "account_id",
+          "account_name",
+          "advertiser_id",
+          "app_id",
+          "app_name",
+          "developer_id",
+          "developer_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "360 营销广告主报表；API 路由前缀固定为 qihu360。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "query_fields": {
+          "default": [],
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1,
+          "query_fields": []
+        }
+      },
+      "operation_id": "promotion.qihu360.advertiser.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/qihu360/report/advertiser/list/",
+      "platform": "qihu360",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filtering",
+          "page",
+          "page_size",
+          "query_fields",
+          "date_list",
+          "order_by",
+          "filters"
+        ],
+        "defaults": {
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "query_fields": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "advertiser",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "query_fields"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total",
+          "update_at"
+        ],
+        "dynamic_item_fields": [
+          "query_fields"
+        ],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "advertiser_id",
+          "campaign_id",
+          "campaign_name",
+          "project_id",
+          "project_name",
+          "group_id",
+          "group_name",
+          "ad_group_id",
+          "ad_group_name",
+          "ad_unit_id",
+          "ad_unit_name",
+          "creative_id",
+          "creative_name",
+          "account_id",
+          "account_name",
+          "app_id",
+          "app_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "Sigmob 账户辅助列表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 500,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.sigmob.account.list",
+      "pagination": {
+        "default_page_size": 500,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 500,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/sigmob/advertiser/list/",
+      "platform": "sigmob",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 500
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "account",
+      "response_projection": {
+        "data_keys": [
+          "page_info",
+          "list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "account_id",
+          "account_name",
+          "advertiser_id",
+          "app_id",
+          "app_name",
+          "developer_id",
+          "developer_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "Sigmob 广告主报表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "query_fields": {
+          "default": [],
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1,
+          "query_fields": []
+        }
+      },
+      "operation_id": "promotion.sigmob.advertiser.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/sigmob/report/advertiser/list/",
+      "platform": "sigmob",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filtering",
+          "page",
+          "page_size",
+          "query_fields",
+          "date_list",
+          "order_by",
+          "filters"
+        ],
+        "defaults": {
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "query_fields": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "advertiser",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "query_fields"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total",
+          "update_at"
+        ],
+        "dynamic_item_fields": [
+          "query_fields"
+        ],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "advertiser_id",
+          "campaign_id",
+          "campaign_name",
+          "project_id",
+          "project_name",
+          "group_id",
+          "group_name",
+          "ad_group_id",
+          "ad_group_name",
+          "ad_unit_id",
+          "ad_unit_name",
+          "creative_id",
+          "creative_name",
+          "account_id",
+          "account_name",
+          "app_id",
+          "app_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "网易有道账户辅助列表；API 路由前缀固定为 youdao。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 500,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.youdao.account.list",
+      "pagination": {
+        "default_page_size": 500,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 500,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/youdao/advertiser/list/",
+      "platform": "youdao",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 500
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "account",
+      "response_projection": {
+        "data_keys": [
+          "page_info",
+          "list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "account_id",
+          "account_name",
+          "advertiser_id",
+          "app_id",
+          "app_name",
+          "developer_id",
+          "developer_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "网易有道广告主报表；API 路由前缀固定为 youdao。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "query_fields": {
+          "default": [],
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1,
+          "query_fields": []
+        }
+      },
+      "operation_id": "promotion.youdao.advertiser.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/youdao/report/advertiser/list/",
+      "platform": "youdao",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filtering",
+          "page",
+          "page_size",
+          "query_fields",
+          "date_list",
+          "order_by",
+          "filters"
+        ],
+        "defaults": {
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "query_fields": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "advertiser",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "query_fields"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total",
+          "update_at"
+        ],
+        "dynamic_item_fields": [
+          "query_fields"
+        ],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "advertiser_id",
+          "campaign_id",
+          "campaign_name",
+          "project_id",
+          "project_name",
+          "group_id",
+          "group_name",
+          "ad_group_id",
+          "ad_group_name",
+          "ad_unit_id",
+          "ad_unit_name",
+          "creative_id",
+          "creative_name",
+          "account_id",
+          "account_name",
+          "app_id",
+          "app_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "虎牙账户辅助列表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 500,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.huya.account.list",
+      "pagination": {
+        "default_page_size": 500,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 500,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/huya/advertiser/list/",
+      "platform": "huya",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 500
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "account",
+      "response_projection": {
+        "data_keys": [
+          "page_info",
+          "list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "account_id",
+          "account_name",
+          "advertiser_id",
+          "app_id",
+          "app_name",
+          "developer_id",
+          "developer_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "虎牙广告主报表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "query_fields": {
+          "default": [],
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1,
+          "query_fields": []
+        }
+      },
+      "operation_id": "promotion.huya.advertiser.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/huya/report/advertiser/list/",
+      "platform": "huya",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filtering",
+          "page",
+          "page_size",
+          "query_fields",
+          "date_list",
+          "order_by",
+          "filters"
+        ],
+        "defaults": {
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "query_fields": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "advertiser",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "query_fields"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total",
+          "update_at"
+        ],
+        "dynamic_item_fields": [
+          "query_fields"
+        ],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "advertiser_id",
+          "campaign_id",
+          "campaign_name",
+          "project_id",
+          "project_name",
+          "group_id",
+          "group_name",
+          "ad_group_id",
+          "ad_group_name",
+          "ad_unit_id",
+          "ad_unit_name",
+          "creative_id",
+          "creative_name",
+          "account_id",
+          "account_name",
+          "app_id",
+          "app_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "支付宝灯火广告主报表；分页必须放在 query，业务筛选放在 JSON body。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "conv_time_join_rule": {
+          "default": "",
+          "enum": [
+            ""
+          ],
+          "type": "string"
+        },
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "filtering": {
+          "default": {},
+          "type": "object"
+        },
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "query_fields": {
+          "default": [],
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1,
+          "query_fields": []
+        }
+      },
+      "operation_id": "promotion.alipay.advertiser.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v2/alipay/advertiser/list/",
+      "platform": "alipay",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "conv_time_join_rule",
+          "filtering",
+          "filters",
+          "query_fields",
+          "date_list",
+          "order_by"
+        ],
+        "defaults": {
+          "conv_time_join_rule": "",
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "query_fields": []
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "page",
+          "page_size"
+        ]
+      },
+      "required_parent": [],
+      "resource": "advertiser",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "query_fields"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total",
+          "update_at"
+        ],
+        "dynamic_item_fields": [
+          "query_fields"
+        ],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "advertiser_id",
+          "campaign_id",
+          "campaign_name",
+          "project_id",
+          "project_name",
+          "group_id",
+          "group_name",
+          "ad_group_id",
+          "ad_group_name",
+          "ad_unit_id",
+          "ad_unit_name",
+          "creative_id",
+          "creative_name",
+          "account_id",
+          "account_name",
+          "app_id",
+          "app_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "BING 广告主列表；filters 保持 JSON 字符串，不转换为数组。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "filters": {
+          "default": "[]",
+          "enum": [
+            "[]"
+          ],
+          "type": "string"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "filters": "[]",
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.bing.advertiser.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/bing/advertiser/list/",
+      "platform": "bing",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size",
+          "filters"
+        ],
+        "defaults": {
+          "filters": "[]",
+          "page": 1,
+          "page_size": 10
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "advertiser",
+      "response_projection": {
+        "data_keys": [
+          "page_info",
+          "list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "account_id",
+          "account_name",
+          "advertiser_id",
+          "app_id",
+          "app_name",
+          "developer_id",
+          "developer_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "视频号加热订单报表；实测可能返回 data={} 且 extra.error 非空，即使 code=0 也必须判为语义错误。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "default": "",
+          "type": "string"
+        },
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "order_id": {
+          "default": "",
+          "type": "string"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.wechat_video.report.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/wechat_video/report/list/",
+      "platform": "wechat_video",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size",
+          "date_list",
+          "order_by",
+          "app_id",
+          "order_id"
+        ],
+        "defaults": {
+          "app_id": "",
+          "order_by": [],
+          "order_id": "",
+          "page": 1,
+          "page_size": 10
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "report",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "empty_object_as_empty_page": true,
+        "item_keys": [
+          "id",
+          "status",
+          "date",
+          "day",
+          "app_id",
+          "app_name",
+          "order_id"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "TapTap 广告组报表。",
+      "domain": "promotion",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "default": "",
+          "type": "string"
+        },
+        "date_list": {
+          "required": true,
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "type": "integer"
+        },
+        "search_id": {
+          "default": "",
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.taptap.group.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 10,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/taptap/report/group/list/",
+      "platform": "taptap",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "email",
+          "phone",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size",
+          "date_list",
+          "order_by",
+          "app_id",
+          "search_id"
+        ],
+        "defaults": {
+          "app_id": "",
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "search_id": ""
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "group",
+      "response_projection": {
+        "data_item_keys": {
+          "total": []
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "status",
+          "date",
+          "day",
+          "hour",
+          "week",
+          "month",
+          "advertiser_id",
+          "campaign_id",
+          "campaign_name",
+          "project_id",
+          "project_name",
+          "group_id",
+          "group_name",
+          "ad_group_id",
+          "ad_group_name",
+          "ad_unit_id",
+          "ad_unit_name",
+          "creative_id",
+          "creative_name",
+          "account_id",
+          "account_name",
+          "app_id",
+          "app_name",
+          "plan_id",
+          "plan_name",
+          "ad_id",
+          "ad_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "巨量引擎推广报表域的项目筛选列表；返回广告主标识、项目标识和项目名称。",
+      "domain": "promotion",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.bytedance.project_filter.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/bytedance/report/project/filters/",
+      "platform": "bytedance",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "project_filter",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "advertiser_id",
+          "project_id",
+          "project_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "巨量引擎推广报表域的广告筛选列表；返回广告主标识、项目标识、广告标识和广告名称。",
+      "domain": "promotion",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.bytedance.promotion_filter.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/bytedance/report/promotion/filters/",
+      "platform": "bytedance",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "promotion_filter",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "advertiser_id",
+          "project_id",
+          "promotion_id",
+          "promotion_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "get",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "推广账户管理域的最新媒体账户状态列表；返回媒体、媒体报表状态与时间及广告主修改时间，App、授权过期和投放禁用明细不输出。",
+      "domain": "promotion",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {},
+      "live_probe": {
+        "enabled": true,
+        "input": {}
+      },
+      "operation_id": "promotion.latest_account_status.get",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v1/media_manager/advertiser_state_message/latest_account_status/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "latest_account_status",
+      "response_projection": {
+        "data_keys": [],
+        "data_shape": "list",
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "advertiser_modify_time",
+          "media",
+          "media_report_status",
+          "media_report_time"
+        ],
+        "known_omitted_item_keys": [
+          "app_id_list",
+          "authorize_expired",
+          "put_status_disabled"
+        ],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "腾讯广告推广报表域的广告组筛选列表；返回广告主标识、广告组标识和广告组名称。",
+      "domain": "promotion",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.tencent.adgroup_filter.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/tencent/report/adgroup/filters/",
+      "platform": "tencent",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "adgroup_filter",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "adgroup_id",
+          "adgroup_name",
+          "advertiser_id"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "哔哩哔哩推广报表域的广告主账户报表；返回广告主与产品名称，以及曝光、点击、点击率、点击与千次曝光成本和现金、红包、三连起飞等消耗指标。",
+      "domain": "promotion",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "date_list": {
+          "description": "Probe candidate aligned with the verified stable report request pattern; not a server-required declaration.",
+          "item_type": "string",
+          "type": "array"
+        },
+        "filtering": {
+          "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "object"
+        },
+        "filters": {
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "item_type": "object",
+          "type": "array"
+        },
+        "order_by": {
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.bilibili.account.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/bilibili/account/report/",
+      "platform": "bilibili",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "date_list",
+          "filtering",
+          "filters",
+          "order_by",
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "account",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "advertiser_id",
+          "average_cost_per_thousand",
+          "click_count",
+          "click_rate",
+          "cost_per_click",
+          "product_name",
+          "san_lian_launch_total_consume",
+          "show_count",
+          "total_cash_consume",
+          "total_consume",
+          "total_red_packet_consume",
+          "total_special_red_packet_consume"
+        ],
+        "known_omitted_data_keys": [
+          "total"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "List ByteDance application metadata with verified pagination and a fail-closed response projection.",
+      "domain": "promotion",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "advertiser_ids": {
+          "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=unknown); presence describes frontend calls and is not a server-required declaration.",
+          "type": "any"
+        },
+        "page": {
+          "default": 1,
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=unknown); presence describes frontend calls and is not a server-required declaration.",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=unknown); presence describes frontend calls and is not a server-required declaration.",
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.bytedance.app.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/bytedance/app/list/",
+      "platform": "bytedance",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "advertiser_ids",
+          "page",
+          "page_size"
+        ]
+      },
+      "required_parent": [],
+      "resource": "app",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "app_cloud_id",
+          "app_id",
+          "app_name",
+          "booking",
+          "create_at",
+          "create_time",
+          "id",
+          "package_id",
+          "package_name",
+          "publish_time",
+          "update_at",
+          "update_time",
+          "version"
+        ],
+        "known_omitted_item_keys": [
+          "cid",
+          "download_url",
+          "icon_url"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "字节跳动落地页只读列表。最小 POST 请求、分页和响应投影已经验证；仅暴露站点业务标识、名称、功能与分享类型及状态，广告主名称、租户标识和缩略图保持隐藏。",
+      "domain": "promotion",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "filters": {
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "integer"
+        },
+        "search": {
+          "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "item_type": "string",
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "filters": [],
+          "page": 1,
+          "page_size": 1,
+          "search": []
+        }
+      },
+      "operation_id": "promotion.bytedance.site.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/bytedance/site/list/v2/",
+      "platform": "bytedance",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filters",
+          "page",
+          "page_size",
+          "search"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "site",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "advertiser_id",
+          "function_type",
+          "id",
+          "name",
+          "share_type",
+          "siteId",
+          "siteType",
+          "status"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name",
+          "cid",
+          "thumbnail"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "AI 托管条件执行历史只读列表。最小 POST 请求、分页和响应投影已经验证；条件结果、消息、操作结果、操作类型与运行目标保持隐藏。",
+      "domain": "promotion",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "advertiser_list": {
+          "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_conditional); presence describes frontend calls and is not a server-required declaration.",
+          "item_type": "string",
+          "type": "array"
+        },
+        "filters": {
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "item_type": "object",
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "integer"
+        },
+        "target": {
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_conditional); presence describes frontend calls and is not a server-required declaration.",
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "filters": [],
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.conditions_history.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/task/ai_trusteeship/conditions_history_list/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "advertiser_list",
+          "filters",
+          "page",
+          "page_size",
+          "target"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "conditions_history",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "advertiser_id",
+          "ai_id",
+          "create_time",
+          "history_id",
+          "id",
+          "media_type",
+          "target_id",
+          "target_name",
+          "target_type"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_name",
+          "cid",
+          "condition_result",
+          "message",
+          "operator_result",
+          "operator_type",
+          "target"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "AI 托管运行历史只读列表。最小 POST 请求、分页和响应投影已经验证；运行目标、目标值明细与操作类型保持隐藏。",
+      "domain": "promotion",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "filters": {
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "item_type": "object",
+          "type": "array"
+        },
+        "operator_type": {
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_conditional); presence describes frontend calls and is not a server-required declaration.",
+          "type": "any"
+        },
+        "page": {
+          "default": 1,
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_conditional); presence describes frontend calls and is not a server-required declaration.",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "integer"
+        },
+        "target": {
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_conditional); presence describes frontend calls and is not a server-required declaration.",
+          "type": "any"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "filters": [],
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.history.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/task/ai_trusteeship/history_list/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filters",
+          "operator_type",
+          "page",
+          "page_size",
+          "target"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "history",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "ai_id",
+          "create_time",
+          "id",
+          "media_type",
+          "name",
+          "target_type",
+          "trigger"
+        ],
+        "known_omitted_item_keys": [
+          "cid",
+          "detail_list",
+          "operator_type",
+          "target",
+          "target_values"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    }
+  ]
+}

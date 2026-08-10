@@ -1,0 +1,165 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 11,
+  "operation": {
+    "action": "query",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "平台素材安全聚合报表。当前 Business chunk 明确巨量/腾讯/磁力/B站指标映射；受控 codec 固定 material/total 聚合、平台与 App filters，并将 stat_list 收紧为空以禁止 designer_id 人员分组。2026-08-08 四个平台最小探针均 code=0 且响应合同一致。",
+    "domain": "material",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "app_list": {
+        "item_type": "string",
+        "max_items": 100,
+        "min_items": 1,
+        "required": true,
+        "type": "array"
+      },
+      "date_list": {
+        "required": true,
+        "type": "array"
+      },
+      "page": {
+        "default": 1,
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 10,
+        "type": "integer"
+      },
+      "platform": {
+        "enum": [
+          "bytedance",
+          "tencent",
+          "kuaishou",
+          "bilibili"
+        ],
+        "required": true,
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "app_list": [
+          "$first_app_id"
+        ],
+        "date_list": [
+          "$today",
+          "$today"
+        ],
+        "page": 1,
+        "page_size": 1,
+        "platform": "bytedance"
+      }
+    },
+    "operation_id": "material.report.query",
+    "pagination": {
+      "default_page_size": 10,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 10,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/report/api/v3/datareport/material_get/",
+    "privacy_policy": {
+      "classification": "material",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/material.report.query.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "platform",
+        "page",
+        "page_size",
+        "date_list",
+        "app_list"
+      ],
+      "defaults": {
+        "page": 1,
+        "page_size": 10
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "app.list",
+        "output_path": "data.list[].id",
+        "selection": "caller_select"
+      }
+    ],
+    "resource": "report",
+    "response_projection": {
+      "data_keys": [
+        "list",
+        "page_info"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "file_name",
+        "gravity_material_id",
+        "stat_cost",
+        "ctr",
+        "convert_rate",
+        "cost",
+        "conversions_rate",
+        "charge",
+        "action_ratio",
+        "conversion_ratio",
+        "click_rate",
+        "AppRealRegisterCnt",
+        "AppGamePayUserCntStandardAtv"
+      ],
+      "known_omitted_data_keys": [
+        "total",
+        "update_at"
+      ],
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "candidates.json"
+}

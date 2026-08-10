@@ -1,0 +1,144 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 27,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "小红书投放产品/开发者筛选辅助列表。",
+    "domain": "promotion",
+    "effect": "read",
+    "examples": [
+      {
+        "description": "Minimum input copied from the enabled, contract-verified live probe.",
+        "inputs": {
+          "media_type": "xiaohongshu",
+          "page": 1,
+          "page_size": 1
+        },
+        "name": "minimum_read"
+      }
+    ],
+    "input_fields": {
+      "media_type": {
+        "enum": [
+          "xiaohongshu"
+        ],
+        "required": true,
+        "type": "string"
+      },
+      "page": {
+        "default": 1,
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 500,
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "media_type": "xiaohongshu",
+        "page": 1,
+        "page_size": 1
+      }
+    },
+    "operation_id": "promotion.xiaohongshu.developer.list",
+    "pagination": {
+      "default_page_size": 500,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 500,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/turbo_engine/api/v1/media/developer/list/",
+    "platform": "xiaohongshu",
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "advertiser_name"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "xiaohongshu",
+      "source_files": [
+        "operations/promotion.xiaohongshu.developer.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {
+        "page": 1,
+        "page_size": 500
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "media_type",
+        "page",
+        "page_size"
+      ]
+    },
+    "required_parent": [],
+    "resource": "developer",
+    "response_projection": {
+      "data_keys": [
+        "page_info",
+        "list"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "id",
+        "name",
+        "status",
+        "date",
+        "account_id",
+        "account_name",
+        "advertiser_id",
+        "app_id",
+        "app_name",
+        "developer_id",
+        "developer_name"
+      ],
+      "known_omitted_item_keys": [
+        "advertiser_name"
+      ],
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "promotion.json"
+}

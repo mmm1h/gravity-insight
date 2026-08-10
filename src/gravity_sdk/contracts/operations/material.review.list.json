@@ -1,0 +1,150 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 13,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "素材审核列表。",
+    "domain": "material",
+    "effect": "read",
+    "examples": [
+      {
+        "description": "Minimum input copied from the enabled, contract-verified live probe.",
+        "inputs": {
+          "filters": [],
+          "page": 1,
+          "page_size": 1
+        },
+        "name": "minimum_read"
+      }
+    ],
+    "input_fields": {
+      "filters": {
+        "default": [],
+        "type": "array"
+      },
+      "page": {
+        "default": 1,
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 20,
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "filters": [],
+        "page": 1,
+        "page_size": 1
+      }
+    },
+    "operation_id": "material.review.list",
+    "pagination": {
+      "default_page_size": 20,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 20,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/turbo_engine/api/v1/asset/material_examine/list/",
+    "privacy_policy": {
+      "classification": "material",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/material.review.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "page",
+        "page_size",
+        "filters"
+      ],
+      "defaults": {
+        "filters": [],
+        "page": 1,
+        "page_size": 20
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "review",
+    "response_projection": {
+      "data_keys": [
+        "list",
+        "page_info"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "id",
+        "name",
+        "status",
+        "material_id",
+        "material_name",
+        "file_name",
+        "file_size",
+        "size",
+        "file_type",
+        "media_type",
+        "width",
+        "height",
+        "duration",
+        "audit_status",
+        "examine_status",
+        "tags",
+        "album_id",
+        "favorites_id",
+        "media_status",
+        "media_use_status",
+        "created_at",
+        "updated_at",
+        "create_time",
+        "update_time"
+      ],
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "other.json"
+}

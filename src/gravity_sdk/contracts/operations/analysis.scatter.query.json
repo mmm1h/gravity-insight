@@ -1,0 +1,170 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 10,
+  "operation": {
+    "action": "query",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "分布分析聚合；default zone 最小请求已实测，zone、指标、事件、时间分组和响应均受精确契约约束。",
+    "domain": "analysis",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "app_id": {
+        "required": true,
+        "type": "string"
+      },
+      "date_list": {
+        "item_type": "object",
+        "max_items": 1,
+        "min_items": 1,
+        "required": true,
+        "type": "array"
+      },
+      "extra_data": {
+        "default": {},
+        "type": "object"
+      },
+      "group_by_list": {
+        "default": [],
+        "item_type": "object",
+        "max_items": 20,
+        "type": "array"
+      },
+      "query_id": {
+        "required": true,
+        "type": "string"
+      },
+      "query_item_list": {
+        "item_type": "object",
+        "max_items": 20,
+        "min_items": 1,
+        "required": true,
+        "type": "array"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "app_id": "$first_app_id",
+        "date_list": [
+          {
+            "end_date": "$yesterday",
+            "start_date": "$yesterday"
+          }
+        ],
+        "extra_data": {
+          "client_server_time": "CLIENT"
+        },
+        "group_by_list": [
+          {
+            "field": "create_time",
+            "group_by": "day",
+            "type": "default_event"
+          }
+        ],
+        "query_id": "$analysis_query_id",
+        "query_item_list": [
+          {
+            "calc_zone": {
+              "zone_type": "default"
+            },
+            "cond_logic": "AND",
+            "conditions": [],
+            "custom_name": "",
+            "event_index": 0,
+            "event_label": "",
+            "event_name": "$first_event_name",
+            "prop_to_calc": "PresetAllCount",
+            "prop_to_calc_sub": "",
+            "target": {
+              "field": "PresetAllCount",
+              "name": "PresetAllCount"
+            }
+          }
+        ]
+      }
+    },
+    "operation_id": "analysis.scatter.query",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/report/api/v3/dataanalysis/scatter/",
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.scatter.query.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "query_id",
+        "app_id",
+        "query_item_list",
+        "group_by_list",
+        "date_list",
+        "extra_data"
+      ],
+      "defaults": {
+        "extra_data": {},
+        "group_by_list": []
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "analysis.event.list",
+        "output_path": "data.list[].name",
+        "selection": null
+      }
+    ],
+    "resource": "scatter",
+    "response_projection": {
+      "data_keys": [
+        "aggregate_date",
+        "zone_tags"
+      ],
+      "dynamic_item_fields": [],
+      "empty_object_as_empty_result": true,
+      "item_keys": [],
+      "numeric_paths": [
+        "aggregate_date.[].[].*",
+        "zone_tags.val_list.[].*",
+        "zone_tags.val_list_to_aggregate_date_group.[].*"
+      ],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis.json"
+}

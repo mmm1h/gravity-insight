@@ -1,0 +1,547 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "field_review_required",
+        "detail": "A one-row shape-only verdict probe narrowed all four fields, but cannot establish fixed enum completeness or configuration-versus-transaction business semantics.",
+        "evidence": "evidence/probe/20260810T022803Z_promotion.tencent.tencent_medium_adgroup.list.verdict.yaml",
+        "status": "open"
+      },
+      {
+        "code": "privacy_classification_unverified",
+        "detail": "The route-level privacy classification has not been established.",
+        "evidence": "evidence/probe/20260810T022803Z_promotion.tencent.tencent_medium_adgroup.list.verdict.yaml",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].adgroup_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].adgroup_name",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].begin_date",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "verdict_probe_single_row_numeric_shape_business_semantics_pending_2026_08_10",
+        "expose": false,
+        "path": "data.list[].bid_amount",
+        "presence": "observed",
+        "privacy_classification": "manual_review",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "verdict_probe_single_row_uppercase_enum_shape_business_semantics_pending_2026_08_10",
+        "expose": false,
+        "path": "data.list[].bid_mode",
+        "presence": "observed",
+        "privacy_classification": "manual_review",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].configured_status",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].conversion_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].cost_guarantee_status",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].created_time",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "verdict_probe_single_row_numeric_shape_business_semantics_pending_2026_08_10",
+        "expose": false,
+        "path": "data.list[].daily_budget",
+        "presence": "observed",
+        "privacy_classification": "manual_review",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].end_date",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].is_deleted",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "boolean"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].last_modified_time",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].system_status",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "verdict_probe_single_row_numeric_shape_business_semantics_pending_2026_08_10",
+        "expose": false,
+        "path": "data.list[].total_budget",
+        "presence": "observed",
+        "privacy_classification": "manual_review",
+        "types": [
+          "integer"
+        ]
+      }
+    ],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_sdk/census/data/coverage.json",
+      "json_pointer": "/routes/651",
+      "method": "POST",
+      "path": "/turbo_engine/api/v1/tencent/medium/adgroup/list/",
+      "route_index": 651,
+      "route_sha256": "eb5fb3bc9f2cb3a5dfaff62794ee49de225cdde258c73af9aec2d08fd5dc9564"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [
+      "data.list[].bid_amount",
+      "data.list[].bid_mode",
+      "data.list[].daily_budget",
+      "data.list[].total_budget"
+    ],
+    "probe_evidence": [
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205628Z_promotion.tencent.tencent_medium_adgroup.list.yaml",
+        "probed_at": "2026-08-08T20:56:28Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
+        "successful": false
+      },
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T231056Z_promotion.tencent.tencent_medium_adgroup.list.yaml",
+        "probed_at": "2026-08-08T23:10:56Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
+        "successful": false
+      },
+      {
+        "conclusion": "local_or_parent_inconclusive",
+        "method_verified": false,
+        "pagination_verified": false,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T231940Z_promotion.tencent.tencent_medium_adgroup.list.yaml",
+        "probed_at": "2026-08-08T23:19:40Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "5a8bc8f2f8892997f05d37c38e9e1f69651786d82f3ac7f600a546e2bdc84cc8",
+        "successful": false
+      },
+      {
+        "conclusion": "success",
+        "method_verified": true,
+        "pagination_verified": true,
+        "parent_resolved": true,
+        "path": "evidence/probe/20260809T142915Z_promotion.tencent.tencent_medium_adgroup.list.yaml",
+        "probed_at": "2026-08-09T14:29:15Z",
+        "projected_schema_fingerprint": "b3488537d91fced41f6cd56449ee6c5d71986412f9ef2df55ab783242bd6a785",
+        "raw_schema_fingerprint": "28201394665ad45570c5282045141e87702562d907db9fa26b8e2a03da21857e",
+        "successful": true
+      }
+    ],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "field_review_required",
+        "privacy_classification_unverified"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "推广平台",
+      "callers": [
+        "de",
+        "p_"
+      ],
+      "contract_family": null,
+      "cost_reason": "广告组 lookup normally depends on a parent account or campaign",
+      "estimated_implementation_cost": "中",
+      "first_occurrence": {
+        "column": 12437,
+        "file": "raw/web.gravity-engine.com/assets/Rules-ChMHnW7I.js",
+        "line": 1,
+        "offset": 12436,
+        "url": "https://web.gravity-engine.com/assets/Rules-ChMHnW7I.js"
+      },
+      "method": "POST",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 23907,
+            "column": 12437,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Rules-ChMHnW7I.js",
+            "line": 1,
+            "route_offset": 12436
+          },
+          {
+            "call_offset": 557376,
+            "column": 358960,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/tencentBatch-Bh6c1_6x.js",
+            "line": 3,
+            "route_offset": 556908
+          }
+        ],
+        "contract_confidence": "medium",
+        "learned_parameters": [],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "POST",
+          "path": "/turbo_engine/api/v1/tencent/medium/adgroup/list/"
+        },
+        "source": "src/gravity_sdk/census/data/route-params.json",
+        "stable_parent_candidates": [
+          {
+            "input_field": "advertiser_id",
+            "operation_id": "promotion.tencent.adgroup_filter.list",
+            "output_path": "data.list[].advertiser_id",
+            "selection": "caller_select"
+          }
+        ],
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "advertiser_id",
+            "path": "$.advertiser_id",
+            "presence": "observed_always",
+            "types": [
+              "string",
+              "unknown"
+            ]
+          },
+          {
+            "confidence": "high",
+            "default_observed": true,
+            "location": "body",
+            "name": "api_version",
+            "path": "$.api_version",
+            "presence": "observed_conditional",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "confidence": "high",
+            "default_observed": false,
+            "location": "body",
+            "name": "fields",
+            "path": "$.fields",
+            "presence": "observed_conditional",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "confidence": "high",
+            "default_observed": false,
+            "location": "body",
+            "name": "filtering",
+            "path": "$.filtering",
+            "presence": "observed_conditional",
+            "types": [
+              "array"
+            ]
+          }
+        ]
+      },
+      "path": "/turbo_engine/api/v1/tencent/medium/adgroup/list/",
+      "promotion_level": "广告组",
+      "promotion_platform": "tencent",
+      "semantic_confidence": "medium",
+      "semantic_evidence": [
+        "read_action_path_token"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "全部失败",
+        "失败",
+        "成功",
+        "请选择广告",
+        "请选择账户",
+        "请选择项目"
+      ],
+      "parent_resolution": {
+        "basis": "declared_parent_probe",
+        "bindings": [
+          {
+            "candidate_count": 1,
+            "candidate_types": [
+              "str"
+            ],
+            "output_path": "data.list[].advertiser_id",
+            "parent_operation_id": "promotion.tencent.adgroup_filter.list",
+            "selection": "caller_select",
+            "status": "resolved",
+            "target_cardinality": "one",
+            "target_input": "advertiser_id"
+          }
+        ],
+        "conclusion": "unblocked",
+        "detail": "Every declared parent binding yielded a selectable value; values stayed in process memory.",
+        "evidence": "evidence/probe/20260809T145640Z_promotion.tencent.tencent_medium_adgroup.list.yaml",
+        "missing_evidence": [],
+        "replacement_blocker": null
+      }
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: field_review_required, privacy_classification_unverified",
+    "contract_version": 1,
+    "description": "Draft catalog entry inferred from census route POST /turbo_engine/api/v1/tencent/medium/adgroup/list/; request binding, pagination, and response projection remain unverified.",
+    "domain": "promotion",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "advertiser_id": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "string"
+      },
+      "api_version": {
+        "default": "v3.0",
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_conditional); presence describes frontend calls and is not a server-required declaration.",
+        "type": "string"
+      },
+      "fields": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_conditional); presence describes frontend calls and is not a server-required declaration.",
+        "item_type": "string",
+        "type": "array"
+      },
+      "filtering": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_conditional); presence describes frontend calls and is not a server-required declaration.",
+        "item_type": "object",
+        "type": "array"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {
+        "advertiser_id": "$parent:advertiser_id",
+        "api_version": "v3.0"
+      }
+    },
+    "operation_id": "promotion.tencent.tencent_medium_adgroup.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/tencent/medium/adgroup/list/",
+    "platform": "tencent",
+    "privacy_policy": {
+      "classification": "unverified",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract",
+        "privacy_verdict_probe_2026-08-10:bid_budget_narrowed",
+        "stable_parent_candidate_binding"
+      ],
+      "family": null,
+      "platform": "tencent",
+      "source_files": [
+        "drafts/promotion.tencent.tencent_medium_adgroup.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "advertiser_id",
+        "api_version",
+        "fields",
+        "filtering"
+      ],
+      "defaults": {
+        "api_version": "v3.0"
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": "advertiser_id",
+        "operation_id": "promotion.tencent.adgroup_filter.list",
+        "output_path": "data.list[].advertiser_id",
+        "selection": "caller_select"
+      }
+    ],
+    "resource": "tencent_medium_adgroup",
+    "response_projection": {
+      "data_keys": [
+        "list"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "adgroup_id",
+        "adgroup_name",
+        "begin_date",
+        "configured_status",
+        "conversion_id",
+        "cost_guarantee_status",
+        "created_time",
+        "end_date",
+        "is_deleted",
+        "last_modified_time",
+        "system_status"
+      ],
+      "required_data_keys": [
+        "list"
+      ],
+      "known_omitted_item_keys": [
+        "bid_amount",
+        "bid_mode",
+        "daily_budget",
+        "total_budget"
+      ]
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "promotion.json"
+}

@@ -1,0 +1,160 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 0,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "分析页事件目录；只输出事件定义元数据，不输出事件记录。",
+    "domain": "analysis",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "app_id": {
+        "required": true,
+        "type": "string"
+      },
+      "need_favourite": {
+        "default": true,
+        "type": "boolean"
+      },
+      "page": {
+        "default": 1,
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 100,
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "app_id": "$first_app_id",
+        "page": 1,
+        "page_size": 1
+      }
+    },
+    "operation_id": "analysis.event.list",
+    "pagination": {
+      "default_page_size": 100,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 2000,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/turbo_engine/api/v2/event/event_list/",
+    "privacy_policy": {
+      "classification": "configuration",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "client_id",
+        "clientid",
+        "trace_id",
+        "traceid",
+        "wxopenid",
+        "idfa",
+        "idfv",
+        "oaid",
+        "imei",
+        "androidid",
+        "caid1",
+        "caid2",
+        "remark"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.event.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {
+        "need_favourite": true,
+        "page": 1,
+        "page_size": 100
+      },
+      "fixed_body": {},
+      "fixed_query": {
+        "filters": "[{\"field\":\"visible\",\"operator\":1,\"values\":[true]}]"
+      },
+      "path_fields": [],
+      "query_fields": [
+        "app_id",
+        "page",
+        "page_size",
+        "need_favourite"
+      ]
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "app.list",
+        "output_path": "data.list[].id",
+        "selection": "first"
+      }
+    ],
+    "resource": "event",
+    "response_projection": {
+      "data_keys": [
+        "list",
+        "page_info"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "accepted",
+        "app_id",
+        "cname",
+        "create_time",
+        "id",
+        "is_favourite",
+        "is_preset",
+        "lookup",
+        "modify_time",
+        "name",
+        "trigger_opportunity",
+        "uploaded",
+        "visible",
+        "yesterday_count"
+      ],
+      "known_omitted_item_keys": [
+        "remark"
+      ],
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis.json"
+}

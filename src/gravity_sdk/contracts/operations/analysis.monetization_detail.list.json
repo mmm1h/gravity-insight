@@ -1,0 +1,267 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 17,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "变现细查；字段集合、条件和排序均为结构化契约，支持单日快捷参数；成员姓名、外部开放标识和广告设备标识保持隐藏。",
+    "domain": "analysis",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "app_id": {
+        "max_length": 64,
+        "required": true,
+        "type": "string"
+      },
+      "date": {
+        "required": false,
+        "type": "date"
+      },
+      "field_profile": {
+        "default": "base",
+        "enum": [
+          "base",
+          "miniapp",
+          "mobile",
+          "quickapp"
+        ],
+        "type": "string"
+      },
+      "fields": {
+        "default": [],
+        "item_type": "string",
+        "max_items": 100,
+        "type": "array"
+      },
+      "global_conditions": {
+        "default": [],
+        "item_type": "object",
+        "max_items": 100,
+        "type": "array"
+      },
+      "local_conditions": {
+        "default": [],
+        "item_type": "object",
+        "max_items": 100,
+        "type": "array"
+      },
+      "order_by_list": {
+        "default": [],
+        "item_type": "object",
+        "max_items": 20,
+        "type": "array"
+      },
+      "page": {
+        "default": 1,
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 20,
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "app_id": "$first_app_id",
+        "date": "$today",
+        "field_profile": "base",
+        "page": 1,
+        "page_size": 1
+      }
+    },
+    "operation_id": "analysis.monetization_detail.list",
+    "pagination": {
+      "default_page_size": 20,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 1000,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/report/api/v3/dataanalysis/monetization_detail/list/",
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "WXOpenID",
+        "Idfa",
+        "Idfv",
+        "Caid1",
+        "Caid2",
+        "Oaid",
+        "Imei",
+        "AndroidId"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.monetization_detail.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "app_id",
+        "date",
+        "field_profile",
+        "fields",
+        "page",
+        "page_size",
+        "order_by_list",
+        "global_conditions",
+        "local_conditions"
+      ],
+      "defaults": {
+        "field_profile": "base",
+        "fields": [],
+        "global_conditions": [],
+        "local_conditions": [],
+        "order_by_list": [],
+        "page": 1,
+        "page_size": 20
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "app.list",
+        "output_path": "data.list[].id",
+        "selection": "first"
+      }
+    ],
+    "resource": "monetization_detail",
+    "response_projection": {
+      "data_dynamic_item_fields": {
+        "total": [
+          "fields"
+        ]
+      },
+      "data_item_keys": {
+        "total": [
+          "CreateTime",
+          "AdEventTime",
+          "ClientID",
+          "AdPlatform",
+          "TurboPromotedObjectID",
+          "AdvertiserID",
+          "AdAid",
+          "event$ecpm",
+          "samount",
+          "event$ad_type",
+          "event$adn_type",
+          "event$ad_unit_id",
+          "event$ad_through",
+          "event$ad_source_id",
+          "event$ad_placement_id"
+        ]
+      },
+      "data_keys": [
+        "list",
+        "page_info",
+        "total"
+      ],
+      "dynamic_item_fields": [
+        "fields"
+      ],
+      "item_keys": [
+        "TraceID",
+        "CreateTime",
+        "AdEventTime",
+        "ClientID",
+        "user_id",
+        "event_user_id",
+        "device_id",
+        "device_info",
+        "AdPlatform",
+        "TurboPromotedObjectID",
+        "AdvertiserID",
+        "AdAid",
+        "event$ecpm",
+        "samount",
+        "event$ad_type",
+        "event$adn_type",
+        "event$ad_unit_id",
+        "event$ad_through",
+        "event$ad_source_id",
+        "event$ad_placement_id",
+        "user$ad_count",
+        "user$ad_avg_ecpm",
+        "user$ad_ltv",
+        "re_attribute_info"
+      ],
+      "known_omitted_data_item_keys": {
+        "total": [
+          "Name"
+        ]
+      },
+      "known_omitted_item_keys": [
+        "Name",
+        "WXOpenID"
+      ],
+      "known_omitted_nested_item_keys": {
+        "device_info": [
+          "Idfa",
+          "Idfv",
+          "Caid1",
+          "Caid2",
+          "Oaid",
+          "Imei",
+          "AndroidId"
+        ]
+      },
+      "nested_item_keys": {
+        "device_info": [
+          "Android_Version",
+          "Api_Version",
+          "Rom_version",
+          "Aspect_Ratio",
+          "Phone_Brand",
+          "Phone_Model",
+          "OS"
+        ],
+        "re_attribute_info": [
+          "ReAttributeAdAid",
+          "ReAttributeAdCid",
+          "ReAttributeAdGid",
+          "ReAttributeAdPlatform",
+          "ReAttributeAdvertiserID",
+          "ReAttributeCSite",
+          "ReAttributeChannel",
+          "ReAttributeCreateTime",
+          "ReAttributeTurboPromotedObjectID",
+          "ReAttributeRetargetingCount",
+          "ReAttributeAdClickTime"
+        ]
+      },
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis.json"
+}

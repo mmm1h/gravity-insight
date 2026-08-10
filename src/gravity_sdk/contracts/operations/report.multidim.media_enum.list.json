@@ -1,0 +1,124 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 5,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "多维报表媒体枚举。",
+    "domain": "report",
+    "effect": "read",
+    "examples": [
+      {
+        "description": "Minimum input copied from the enabled, contract-verified live probe.",
+        "inputs": {},
+        "name": "minimum_read"
+      }
+    ],
+    "input_fields": {},
+    "live_probe": {
+      "enabled": true,
+      "inputs": {}
+    },
+    "operation_id": "report.multidim.media_enum.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/report/api/v3/adreport/media_enums/",
+    "privacy_policy": {
+      "classification": "configuration",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.multidim.media_enum.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "media_enum",
+    "response_projection": {
+      "data_keys": [
+        "bytedance",
+        "tencent",
+        "kuaishou"
+      ],
+      "data_path_item_keys": {
+        "bytedance.deep_bid_type": [
+          "code",
+          "name"
+        ],
+        "bytedance.deep_optimization_goal": [
+          "code",
+          "name"
+        ],
+        "bytedance.optimization_goal": [
+          "code",
+          "name"
+        ],
+        "kuaishou.deep_optimization_goal": [
+          "code",
+          "name"
+        ],
+        "kuaishou.optimization_goal": [
+          "code",
+          "name"
+        ],
+        "tencent.deep_optimization_goal": [
+          "code",
+          "name",
+          "order"
+        ],
+        "tencent.optimization_goal": [
+          "code",
+          "name"
+        ]
+      },
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "report.json"
+}

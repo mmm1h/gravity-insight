@@ -1,0 +1,393 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "draft": {
+    "blockers": [
+      {
+        "code": "request_parameters_required",
+        "detail": "The observed request reached a semantic error; required request fields remain unknown.",
+        "evidence": "evidence/probe/20260808T231142Z_promotion.info.list.yaml",
+        "status": "open"
+      },
+      {
+        "code": "response_schema_unverified",
+        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "evidence": "src/gravity_sdk/census/data/route-response-fields.json#/routes/588",
+        "status": "open"
+      }
+    ],
+    "candidate_fields": [
+      {
+        "classification_reason": "frontend_static_consumer_unreviewed",
+        "expose": false,
+        "path": "data.list",
+        "presence": "unknown",
+        "privacy_classification": "manual_review",
+        "types": [
+          "unknown"
+        ]
+      },
+      {
+        "classification_reason": "frontend_static_consumer_unreviewed",
+        "expose": false,
+        "path": "data.task.status",
+        "presence": "unknown",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "unknown"
+        ]
+      }
+    ],
+    "coverage_reference": {
+      "coverage_path": "src/gravity_sdk/census/data/coverage.json",
+      "json_pointer": "/routes/588",
+      "method": "POST",
+      "path": "/turbo_engine/api/v1/task/batch/operate/info/list/",
+      "route_index": 588,
+      "route_sha256": "85ad352eed9f829c972c402f7c1f1707a0abe0d7ba1696f5f91487a03b3a3d3b"
+    },
+    "generated_at": "2026-08-08T20:23:09Z",
+    "manual_review_fields": [],
+    "probe_evidence": [
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T205603Z_promotion.info.list.yaml",
+        "probed_at": "2026-08-08T20:56:03Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
+        "successful": false
+      },
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260808T231142Z_promotion.info.list.yaml",
+        "probed_at": "2026-08-08T23:11:42Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
+        "successful": false
+      }
+    ],
+    "promotion_gate": {
+      "eligible": false,
+      "missing": [
+        "request_parameters_required",
+        "response_projection",
+        "response_schema_unverified",
+        "successful_probe"
+      ]
+    },
+    "route_evidence": {
+      "business_module": "其它",
+      "callers": [
+        "$t",
+        "Gi",
+        "S",
+        "j",
+        "nt",
+        "o"
+      ],
+      "contract_family": null,
+      "cost_reason": "flat list/detail lookup with no evident parent dependency",
+      "estimated_implementation_cost": "低",
+      "first_occurrence": {
+        "column": 848,
+        "file": "raw/web.gravity-engine.com/assets/AudiencePackage-BEe4OJTC.js",
+        "line": 1,
+        "offset": 847,
+        "url": "https://web.gravity-engine.com/assets/AudiencePackage-BEe4OJTC.js"
+      },
+      "method": "POST",
+      "method_certainty": "high",
+      "method_evidence": [
+        "same_request_options"
+      ],
+      "parameter_contract": {
+        "call_sites": [
+          {
+            "call_offset": 1748,
+            "column": 848,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/AudiencePackage-BEe4OJTC.js",
+            "line": 1,
+            "route_offset": 847
+          },
+          {
+            "call_offset": 1997,
+            "column": 848,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/AudiencePackage-BEe4OJTC.js",
+            "line": 1,
+            "route_offset": 847
+          },
+          {
+            "call_offset": 5984,
+            "column": 1024,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/SyncMaterialDialog-W8KSjBXr.js",
+            "line": 1,
+            "route_offset": 1023
+          },
+          {
+            "call_offset": 15435,
+            "column": 14296,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Task-CucxuB0p.js",
+            "line": 1,
+            "route_offset": 14295
+          },
+          {
+            "call_offset": 15519,
+            "column": 14296,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Task-CucxuB0p.js",
+            "line": 1,
+            "route_offset": 14295
+          },
+          {
+            "call_offset": 26572,
+            "column": 24791,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Task-CucxuB0p.js",
+            "line": 1,
+            "route_offset": 24790
+          },
+          {
+            "call_offset": 104662,
+            "column": 103729,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Task-CucxuB0p.js",
+            "line": 1,
+            "route_offset": 103728
+          },
+          {
+            "call_offset": 104709,
+            "column": 103729,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/Task-CucxuB0p.js",
+            "line": 1,
+            "route_offset": 103728
+          },
+          {
+            "call_offset": 5908,
+            "column": 2704,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/landingpage-CvtqGvQP.js",
+            "line": 1,
+            "route_offset": 2703
+          },
+          {
+            "call_offset": 6179,
+            "column": 2704,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/landingpage-CvtqGvQP.js",
+            "line": 1,
+            "route_offset": 2703
+          },
+          {
+            "call_offset": 36188,
+            "column": 5443,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/nativeanchor-data-XFt-UFfy.js",
+            "line": 3,
+            "route_offset": 34875
+          },
+          {
+            "call_offset": 36458,
+            "column": 5443,
+            "evidence_kind": "load_call",
+            "file": "raw/web.gravity-engine.com/assets/nativeanchor-data-XFt-UFfy.js",
+            "line": 3,
+            "route_offset": 34875
+          }
+        ],
+        "contract_confidence": "low",
+        "learned_parameters": [],
+        "required_semantics": "frontend_observation_only",
+        "route": {
+          "method": "POST",
+          "path": "/turbo_engine/api/v1/task/batch/operate/info/list/"
+        },
+        "source": "src/gravity_sdk/census/data/route-params.json",
+        "status": "extracted",
+        "top_level_parameters": [
+          {
+            "confidence": "medium",
+            "default_observed": false,
+            "location": "body",
+            "name": "file_type",
+            "path": "$.file_type",
+            "presence": "unknown",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "confidence": "medium",
+            "default_observed": true,
+            "location": "body",
+            "name": "task_id",
+            "path": "$.task_id",
+            "presence": "unknown",
+            "types": [
+              "string",
+              "integer",
+              "unknown"
+            ]
+          }
+        ]
+      },
+      "path": "/turbo_engine/api/v1/task/batch/operate/info/list/",
+      "promotion_level": null,
+      "promotion_platform": null,
+      "semantic_confidence": "medium",
+      "semantic_evidence": [
+        "read_action_path_token"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "<落地页模板名>--<小游戏名>--<时间戳>",
+        "修改创意人",
+        "修改拍摄人",
+        "修改设计师(剪辑)",
+        "失败",
+        "审核不通过",
+        "审核通过",
+        "拉数范围",
+        "来源",
+        "橙子落地页",
+        "素材",
+        "素材ID/组件ID",
+        "素材数：${e.second_success_count}",
+        "组件",
+        "触发时间",
+        "请稍后重试",
+        "请选择人群包",
+        "账户ID",
+        "账户数：${e.commit_count}",
+        "锚点新建"
+      ]
+    },
+    "status": "draft"
+  },
+  "manifest_order": 10000,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "block_reason": "draft blockers: request_parameters_required, response_schema_unverified",
+    "contract_version": 1,
+    "description": "Draft catalog entry inferred from census route POST /turbo_engine/api/v1/task/batch/operate/info/list/; request binding, pagination, and response projection remain unverified.",
+    "domain": "promotion",
+    "effect": "read",
+    "examples": [],
+    "executable": false,
+    "input_fields": {
+      "file_type": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=unknown); presence describes frontend calls and is not a server-required declaration.",
+        "type": "string"
+      },
+      "task_id": {
+        "default": 0,
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=unknown); presence describes frontend calls and is not a server-required declaration.",
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {}
+    },
+    "operation_id": "promotion.info.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/task/batch/operate/info/list/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [
+        "frontend_route_parameter_contract"
+      ],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "drafts/promotion.info.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "file_type",
+        "task_id"
+      ],
+      "defaults": {
+        "task_id": 0
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "info",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [],
+    "stability": "experimental",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "promotion.json"
+}

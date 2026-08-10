@@ -1,0 +1,506 @@
+{
+  "conclusion": "semantic_error",
+  "http": [
+    {
+      "http_status": 200,
+      "method": "POST",
+      "operation_id": "account.company_query_permission.get",
+      "path": "/turbo_engine/api/v1/portal/company_query_permission/get/",
+      "purpose": "discovery",
+      "raw_schema_fingerprint": "417c5de139cdaefa18351184daa948511aeae5fb75a1407bc5347c9f65a07b88",
+      "request_fingerprint": "830c389eb9855402f6ce506bfb6a4f3e711e7475a594a6f7e004d3e12085e760",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body.role_ids",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.body.role_ids[]",
+            "presence": "observed",
+            "types": [
+              "unknown"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.code",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.extra",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.extra.role_ids",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.extra.role_ids[]",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.msg",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    },
+    {
+      "http_status": 200,
+      "method": "POST",
+      "operation_id": "account.company_query_permission.get",
+      "path": "/turbo_engine/api/v1/portal/company_query_permission/get/",
+      "purpose": "parameter_retry_1",
+      "raw_schema_fingerprint": "417c5de139cdaefa18351184daa948511aeae5fb75a1407bc5347c9f65a07b88",
+      "request_fingerprint": "0c0b0d7c64ac51542292c02845fb2a1074106a0d9340f1bf12ef1c4e64974d08",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body.role_ids",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.body.role_ids[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.code",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.extra",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.extra.role_ids",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.extra.role_ids[]",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.msg",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    },
+    {
+      "http_status": 200,
+      "method": "POST",
+      "operation_id": "account.company_query_permission.get",
+      "path": "/turbo_engine/api/v1/portal/company_query_permission/get/",
+      "purpose": "parameter_retry_2",
+      "raw_schema_fingerprint": "417c5de139cdaefa18351184daa948511aeae5fb75a1407bc5347c9f65a07b88",
+      "request_fingerprint": "a1680d053d4a79a8159f7069383030a6b2e7b729654cd50cba8f72249c3abd52",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body.role_ids",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.body.role_ids[]",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.code",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.extra",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.extra.role_ids",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.extra.role_ids[]",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.msg",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    },
+    {
+      "http_status": 200,
+      "method": "POST",
+      "operation_id": "account.company_query_permission.get",
+      "path": "/turbo_engine/api/v1/portal/company_query_permission/get/",
+      "purpose": "parameter_retry_3",
+      "raw_schema_fingerprint": "417c5de139cdaefa18351184daa948511aeae5fb75a1407bc5347c9f65a07b88",
+      "request_fingerprint": "a1680d053d4a79a8159f7069383030a6b2e7b729654cd50cba8f72249c3abd52",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body.role_ids",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.body.role_ids[]",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.code",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.extra",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.extra.role_ids",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.extra.role_ids[]",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.msg",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    }
+  ],
+  "operation_id": "account.company_query_permission.get",
+  "pagination": {
+    "kind": "none",
+    "verified": true
+  },
+  "privacy": {
+    "candidate_fields": [],
+    "classified_non_sensitive": 0,
+    "classified_sensitive": 0,
+    "manual_review": 0,
+    "values_persisted": false
+  },
+  "probed_at": "2026-08-08T23:22:37Z",
+  "projected_schema_fingerprint": null,
+  "raw_schema_fingerprint": "417c5de139cdaefa18351184daa948511aeae5fb75a1407bc5347c9f65a07b88",
+  "request_stats": {
+    "backoff_terminations": 0,
+    "failed": 0,
+    "total": 4
+  },
+  "required_parent": null,
+  "route": {
+    "family": "account.company_query_permission.get",
+    "method": "POST",
+    "path": "/turbo_engine/api/v1/portal/company_query_permission/get/"
+  },
+  "schema_version": "gravity-insight.probe-evidence.v1",
+  "semantic_errors": {
+    "missing_parameter": {
+      "attempted": false,
+      "shape_observed": false
+    },
+    "parameter_adjustments": [
+      {
+        "action": "add_or_change_candidates",
+        "basis": "semantic_error_extra_key",
+        "basis_by_field": {
+          "role_ids": "semantic_error_extra_key"
+        },
+        "candidate_type": "array",
+        "candidate_types": {
+          "role_ids": "array"
+        },
+        "field": "role_ids",
+        "fields": [
+          "role_ids"
+        ],
+        "response_values_persisted": false,
+        "retry": 1
+      },
+      {
+        "action": "add_or_change_candidates",
+        "basis": "semantic_error_extra_key",
+        "basis_by_field": {
+          "role_ids": "semantic_error_extra_key"
+        },
+        "candidate_type": "array",
+        "candidate_types": {
+          "role_ids": "array"
+        },
+        "field": "role_ids",
+        "fields": [
+          "role_ids"
+        ],
+        "response_values_persisted": false,
+        "retry": 2
+      },
+      {
+        "action": "add_or_change_candidates",
+        "basis": "semantic_error_extra_key",
+        "basis_by_field": {
+          "role_ids": "semantic_error_extra_key"
+        },
+        "candidate_type": "array",
+        "candidate_types": {
+          "role_ids": "array"
+        },
+        "field": "role_ids",
+        "fields": [
+          "role_ids"
+        ],
+        "response_values_persisted": false,
+        "retry": 3
+      }
+    ],
+    "permission_shape_observed": false,
+    "rules": []
+  },
+  "successful": false
+}

@@ -1,0 +1,142 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 0,
+  "operation": {
+    "action": "get",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "App 只读详情。当前前端精确使用 GET JSON body {app_id}；2026-08-08 最小探针 code=0，响应仅投影安全 App 元数据，下载、图标、回调和归因配置容器固定省略。",
+    "domain": "app",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "app_id": {
+        "required": true,
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "app_id": "$first_app_id"
+      }
+    },
+    "operation_id": "app.detail",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/user/open_app/detail/",
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "remark"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/app.detail.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "app_id"
+      ],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "app.list",
+        "output_path": "data.list[].id",
+        "selection": "first"
+      }
+    ],
+    "resource": "detail",
+    "response_projection": {
+      "data_item_keys": {
+        "app": [
+          "create_time",
+          "modify_time",
+          "id",
+          "cid",
+          "name",
+          "is_enabled",
+          "os",
+          "package_name",
+          "industry_id",
+          "wechat_app_id",
+          "wechat_origin_id",
+          "event_version",
+          "is_iaa"
+        ]
+      },
+      "data_keys": [
+        "app",
+        "distinct_strategy",
+        "reactive_window"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "known_omitted_data_item_keys": {
+        "app": [
+          "download_url",
+          "icon_url",
+          "sub_package_list",
+          "remark"
+        ]
+      },
+      "known_omitted_data_keys": [
+        "wx_app",
+        "ta_conf",
+        "postback_conf",
+        "booking_info",
+        "clickback_url",
+        "callback_url",
+        "extra_attribution_conf",
+        "attributed_order",
+        "dryrun_mode"
+      ],
+      "required_data_keys": [
+        "app"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "candidates.json"
+}

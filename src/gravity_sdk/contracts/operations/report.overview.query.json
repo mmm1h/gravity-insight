@@ -1,0 +1,186 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 15,
+  "operation": {
+    "action": "query",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "App 经营报表域的概览与趋势；返回概览指标的当前值、对比值和比率，以及按日广告成本、收入、活跃、注册、付费和 ROI 趋势。",
+    "domain": "report",
+    "effect": "read",
+    "examples": [
+      {
+        "description": "Minimum input replayed from the successful 2026-08-09 contract probe.",
+        "inputs": {
+          "app_ids": [],
+          "date_list": [
+            "2026-08-09",
+            "2026-08-09"
+          ],
+          "use_cache": 0,
+          "verbose": false
+        },
+        "name": "minimum_read"
+      }
+    ],
+    "executable": true,
+    "input_fields": {
+      "app_ids": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "array"
+      },
+      "date_list": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "array"
+      },
+      "use_cache": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "any"
+      },
+      "verbose": {
+        "default": false,
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "boolean"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "app_ids": [],
+        "date_list": [
+          "$today",
+          "$today"
+        ],
+        "use_cache": 0,
+        "verbose": false
+      }
+    },
+    "operation_id": "report.overview.query",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/report/api/v2/app/overview/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.overview.query.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "app_ids",
+        "date_list",
+        "use_cache",
+        "verbose"
+      ],
+      "defaults": {
+        "verbose": false
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "overview",
+    "response_projection": {
+      "data_item_keys": {
+        "data_overview": [
+          "base",
+          "cname",
+          "compare",
+          "name",
+          "ratio"
+        ],
+        "trend_overview2": [
+          "AdCost",
+          "AppActivePayAmountSumReco",
+          "AppAdFirstDayRevenueReco",
+          "AppAdRevenueReco",
+          "AppDAUReco",
+          "AppFirstDayPayAmountStandardReco",
+          "AppROIReco",
+          "AppRealRegisterCnt",
+          "AppRevenueReco",
+          "date"
+        ]
+      },
+      "data_keys": [
+        "data_overview",
+        "trend_overview2"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "known_omitted_data_item_keys": {
+        "data_overview": [
+          "order"
+        ]
+      },
+      "known_omitted_data_keys": [
+        "columns",
+        "trend_overview",
+        "verbose"
+      ],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "report.json"
+}

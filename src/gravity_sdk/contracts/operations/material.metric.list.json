@@ -1,0 +1,123 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 14,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "指定媒体的素材指标配置；data 为指标数组。",
+    "domain": "material",
+    "effect": "read",
+    "examples": [
+      {
+        "description": "Minimum input copied from the enabled, contract-verified live probe.",
+        "inputs": {
+          "media_type": "bytedance"
+        },
+        "name": "minimum_read"
+      }
+    ],
+    "input_fields": {
+      "media_type": {
+        "enum": [
+          "bytedance"
+        ],
+        "required": true,
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "media_type": "bytedance"
+      }
+    },
+    "operation_id": "material.metric.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v2/datamanageconfig/material_metrics/list/v3/",
+    "privacy_policy": {
+      "classification": "configuration",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/material.metric.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "media_type"
+      ]
+    },
+    "required_parent": [],
+    "resource": "metric",
+    "response_projection": {
+      "data_keys": [],
+      "data_shape": "list",
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "id",
+        "name",
+        "cname",
+        "label",
+        "tip",
+        "children",
+        "height",
+        "metric_type",
+        "media_type",
+        "status"
+      ],
+      "nested_item_keys": {
+        "children": [
+          "name",
+          "cname",
+          "tip",
+          "sort"
+        ]
+      },
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "other.json"
+}

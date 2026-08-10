@@ -1,0 +1,164 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 6,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "巨量平台素材列表。当前前端精确使用 query {page,page_size} 与 body {advertiser_id,check_local_exist:1,filters:[]}；2026-08-08 最小探针 code=0 且取得非空合同，URL、人员、MD5 和图片容器固定省略。",
+    "domain": "material",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "advertiser_id": {
+        "required": true,
+        "type": "string"
+      },
+      "page": {
+        "default": 1,
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 20,
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "advertiser_id": "$first_bytedance_advertiser_id",
+        "page": 1,
+        "page_size": 1
+      }
+    },
+    "operation_id": "material.bytedance.list",
+    "pagination": {
+      "default_page_size": 20,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 20,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/turbo_engine/api/v1/asset/material/bytedance/list/",
+    "privacy_policy": {
+      "classification": "material",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/material.bytedance.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "advertiser_id"
+      ],
+      "defaults": {
+        "page": 1,
+        "page_size": 20
+      },
+      "fixed_body": {
+        "check_local_exist": 1,
+        "filters": []
+      },
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "page",
+        "page_size"
+      ]
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "promotion.bytedance.advertiser.list",
+        "output_path": "data.list[].advertiser_id",
+        "selection": "first"
+      }
+    ],
+    "resource": "bytedance",
+    "response_projection": {
+      "data_keys": [
+        "list",
+        "page_info"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "file_name",
+        "material_id",
+        "gravity_material_id"
+      ],
+      "known_omitted_item_keys": [
+        "create_time",
+        "modify_time",
+        "file_size",
+        "file_size_str",
+        "lowercase_file_name",
+        "file_type",
+        "video_duration",
+        "video_duration_second",
+        "width",
+        "height",
+        "aspect_ratio",
+        "aspect_xy",
+        "source_type",
+        "id",
+        "ad_created_time",
+        "ad_modified_time",
+        "cid",
+        "ad_platform",
+        "advertiser_id",
+        "derived_id",
+        "is_download",
+        "platform_id",
+        "format",
+        "status",
+        "image_nums",
+        "media_refuse_count",
+        "is_local_exist",
+        "local_material_id",
+        "file_md5",
+        "derived_file_md5",
+        "image_set",
+        "material_label_list",
+        "advertiser_name"
+      ],
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "candidates.json"
+}

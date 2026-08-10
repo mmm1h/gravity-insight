@@ -1,0 +1,173 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 15,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "素材回收站只读列表；单页最小探针已验证，人员标识、URL、文件 MD5 与嵌套图片集合不输出。",
+    "domain": "material",
+    "effect": "read",
+    "examples": [
+      {
+        "description": "Minimum input copied from the enabled, contract-verified live probe.",
+        "inputs": {
+          "filters": [],
+          "page": 1,
+          "page_size": 1
+        },
+        "name": "minimum_read"
+      }
+    ],
+    "input_fields": {
+      "filters": {
+        "default": [],
+        "type": "array"
+      },
+      "page": {
+        "default": 1,
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 20,
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "filters": [],
+        "page": 1,
+        "page_size": 1
+      }
+    },
+    "operation_id": "material.recycle.list",
+    "pagination": {
+      "default_page_size": 20,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 20,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/turbo_engine/api/v1/asset/material/manage/local/recycle/list/",
+    "privacy_policy": {
+      "classification": "material",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "designer_image_id",
+        "designer_image_name",
+        "remark"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/material.recycle.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "page",
+        "page_size",
+        "filters"
+      ],
+      "defaults": {
+        "filters": [],
+        "page": 1,
+        "page_size": 20
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "recycle",
+    "response_projection": {
+      "data_keys": [
+        "list",
+        "page_info",
+        "user_delete",
+        "company_delete"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "create_time",
+        "modify_time",
+        "cid",
+        "file_size",
+        "file_size_str",
+        "file_name",
+        "file_type",
+        "video_duration",
+        "video_duration_second",
+        "width",
+        "height",
+        "aspect_ratio",
+        "aspect_xy",
+        "source_type",
+        "id",
+        "owner_album_id",
+        "owner_root_id",
+        "thumbnail_url_size",
+        "copy_material_id",
+        "source",
+        "audit_status",
+        "is_favorite",
+        "internal_audit_status",
+        "status",
+        "derive_id",
+        "make_time",
+        "media_refuse_count",
+        "format",
+        "used_ad_platform",
+        "lowercase_file_name",
+        "material_ad_consumed",
+        "material_ad_used",
+        "material_consumed",
+        "material_used",
+        "image_nums",
+        "aspect_ratio_int",
+        "file_extension"
+      ],
+      "known_omitted_item_keys": [
+        "file_md5",
+        "image_set",
+        "remark"
+      ],
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "other.json"
+}

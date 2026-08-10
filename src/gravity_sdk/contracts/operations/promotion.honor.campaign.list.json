@@ -1,0 +1,185 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 23,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "荣耀推广计划层报表。",
+    "domain": "promotion",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "date_list": {
+        "required": true,
+        "type": "array"
+      },
+      "filtering": {
+        "default": {},
+        "type": "object"
+      },
+      "filters": {
+        "default": [],
+        "type": "array"
+      },
+      "order_by": {
+        "default": [],
+        "type": "array"
+      },
+      "page": {
+        "default": 1,
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 10,
+        "type": "integer"
+      },
+      "query_fields": {
+        "default": [],
+        "type": "array"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "date_list": [
+          "$today",
+          "$today"
+        ],
+        "filtering": {},
+        "filters": [],
+        "order_by": [],
+        "page": 1,
+        "page_size": 1,
+        "query_fields": []
+      }
+    },
+    "operation_id": "promotion.honor.campaign.list",
+    "pagination": {
+      "default_page_size": 10,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 10,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/turbo_engine/api/v1/honor/report/campaign/list/",
+    "platform": "honor",
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "advertiser_name"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "honor",
+      "source_files": [
+        "operations/promotion.honor.campaign.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "filtering",
+        "page",
+        "page_size",
+        "query_fields",
+        "date_list",
+        "order_by",
+        "filters"
+      ],
+      "defaults": {
+        "filtering": {},
+        "filters": [],
+        "order_by": [],
+        "page": 1,
+        "page_size": 10,
+        "query_fields": []
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "campaign",
+    "response_projection": {
+      "data_dynamic_item_fields": {
+        "total": [
+          "query_fields"
+        ]
+      },
+      "data_keys": [
+        "list",
+        "page_info",
+        "total",
+        "update_at"
+      ],
+      "dynamic_item_fields": [
+        "query_fields"
+      ],
+      "item_keys": [
+        "id",
+        "name",
+        "status",
+        "date",
+        "day",
+        "hour",
+        "week",
+        "month",
+        "advertiser_id",
+        "campaign_id",
+        "campaign_name",
+        "project_id",
+        "project_name",
+        "group_id",
+        "group_name",
+        "ad_group_id",
+        "ad_group_name",
+        "ad_unit_id",
+        "ad_unit_name",
+        "creative_id",
+        "creative_name",
+        "account_id",
+        "account_name",
+        "app_id",
+        "app_name"
+      ],
+      "known_omitted_item_keys": [
+        "advertiser_name"
+      ],
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "promotion.json"
+}

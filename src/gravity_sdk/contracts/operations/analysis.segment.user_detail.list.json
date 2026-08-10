@@ -1,0 +1,185 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 22,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "分群用户详情；上游无分页，支持按元数据校验后的字段选择并返回内部分析标识与业务属性，成员姓名、外部开放标识和广告设备标识保持隐藏。",
+    "domain": "analysis",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "app_id": {
+        "max_length": 64,
+        "required": true,
+        "type": "string"
+      },
+      "fields": {
+        "default": [],
+        "item_type": "string",
+        "max_items": 100,
+        "type": "array"
+      },
+      "segment_id": {
+        "max_length": 64,
+        "required": true,
+        "type": "string"
+      },
+      "segment_version_id": {
+        "max_length": 64,
+        "required": false,
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "app_id": "$first_app_id",
+        "segment_id": "$first_segment_id"
+      }
+    },
+    "operation_id": "analysis.segment.user_detail.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/report/api/v3/dataanalysis/segment/user/detail/list/",
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "WXOpenID",
+        "Idfa",
+        "Idfv",
+        "Caid1",
+        "Caid2",
+        "Oaid",
+        "Imei",
+        "AndroidId"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.segment.user_detail.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "app_id",
+        "segment_id",
+        "segment_version_id",
+        "fields"
+      ],
+      "defaults": {
+        "fields": []
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "analysis.segment.list",
+        "output_path": "data.list[].segment_id",
+        "selection": "first"
+      }
+    ],
+    "resource": "segment_user_detail",
+    "response_projection": {
+      "data_item_keys": {
+        "page_info": [
+          "page",
+          "page_size",
+          "total_number",
+          "total_page"
+        ]
+      },
+      "data_keys": [
+        "list",
+        "page_info"
+      ],
+      "dynamic_item_fields": [
+        "fields"
+      ],
+      "item_keys": [
+        "CreateTime",
+        "ClientID",
+        "AdPlatform",
+        "Channel",
+        "Version",
+        "TurboPromotedObjectID",
+        "AdvertiserID",
+        "AdAid",
+        "device_info",
+        "re_attribute_info"
+      ],
+      "known_omitted_item_keys": [
+        "Name",
+        "WXOpenID"
+      ],
+      "known_omitted_nested_item_keys": {
+        "device_info": [
+          "Idfa",
+          "Idfv",
+          "Caid1",
+          "Caid2",
+          "Oaid",
+          "Imei",
+          "AndroidId"
+        ]
+      },
+      "nested_item_keys": {
+        "device_info": [
+          "Android_Version",
+          "Api_Version",
+          "Rom_version",
+          "Aspect_Ratio",
+          "Phone_Brand",
+          "Phone_Model",
+          "OS"
+        ],
+        "re_attribute_info": [
+          "ReAttributeAdAid",
+          "ReAttributeAdCid",
+          "ReAttributeAdGid",
+          "ReAttributeAdPlatform",
+          "ReAttributeAdvertiserID",
+          "ReAttributeCSite",
+          "ReAttributeChannel",
+          "ReAttributeCreateTime",
+          "ReAttributeTurboPromotedObjectID",
+          "ReAttributeRetargetingCount",
+          "ReAttributeAdClickTime"
+        ]
+      },
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis.json"
+}

@@ -1,0 +1,30 @@
+{
+  "basis": "declared_parent_probe",
+  "bindings": [
+    {
+      "candidate_count": 0,
+      "output_path": "data.list[].material_id",
+      "parent_operation_id": "material.local.list",
+      "selection": "caller_select",
+      "status": "undetermined",
+      "target_cardinality": "one",
+      "target_input": "material_id"
+    }
+  ],
+  "conclusion": "undetermined",
+  "detail": "At least one declared stable parent did not produce a readable candidate response.",
+  "http": [],
+  "missing_evidence": [
+    "A successful or explicit permission response from every declared parent operation."
+  ],
+  "operation_id": "material.history.get",
+  "replacement_blocker": null,
+  "resolved_at": "2026-08-09T14:56:38Z",
+  "route": {
+    "method": "GET",
+    "path": "/turbo_engine/api/v1/asset/material_examine/history/"
+  },
+  "schema_version": "gravity-insight.parent-resolution-evidence.v1",
+  "source_evidence": null,
+  "values_persisted": false
+}

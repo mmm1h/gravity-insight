@@ -1,0 +1,305 @@
+{
+  "conclusion": "success",
+  "http": [],
+  "offline_reevaluation": true,
+  "operation_id": "report.overview.query",
+  "pagination": {
+    "kind": "none",
+    "verified": true
+  },
+  "privacy": {
+    "candidate_fields": [
+      {
+        "classification_reason": "aggregate_metric_field_review",
+        "expose": true,
+        "path": "data.columns.AdCost",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "aggregate_metric_field_review",
+        "expose": true,
+        "path": "data.columns.AppActivePayAmountSumReco",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "aggregate_metric_field_review",
+        "expose": true,
+        "path": "data.columns.AppAdFirstDayRevenueReco",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "aggregate_metric_field_review",
+        "expose": true,
+        "path": "data.columns.AppAdRevenueReco",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "aggregate_metric_field_review",
+        "expose": true,
+        "path": "data.columns.AppDAUReco",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "aggregate_metric_field_review",
+        "expose": true,
+        "path": "data.columns.AppFirstDayPayAmountStandardReco",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "aggregate_metric_field_review",
+        "expose": true,
+        "path": "data.columns.AppROIReco",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "aggregate_metric_field_review",
+        "expose": true,
+        "path": "data.columns.AppRealRegisterCnt",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "aggregate_metric_field_review",
+        "expose": true,
+        "path": "data.columns.AppRevenueReco",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "aggregate_metric_field_review",
+        "expose": true,
+        "path": "data.data_overview[].base",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data_overview[].cname",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "aggregate_metric_field_review",
+        "expose": true,
+        "path": "data.data_overview[].compare",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data_overview[].name",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "sensitive_name_pattern",
+        "expose": false,
+        "path": "data.data_overview[].order",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "aggregate_metric_field_review",
+        "expose": true,
+        "path": "data.data_overview[].ratio",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "aggregate_metric_field_review",
+        "expose": true,
+        "path": "data.trend_overview2[].AdCost",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "aggregate_metric_field_review",
+        "expose": true,
+        "path": "data.trend_overview2[].AppActivePayAmountSumReco",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "aggregate_metric_field_review",
+        "expose": true,
+        "path": "data.trend_overview2[].AppAdFirstDayRevenueReco",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "aggregate_metric_field_review",
+        "expose": true,
+        "path": "data.trend_overview2[].AppAdRevenueReco",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "aggregate_metric_field_review",
+        "expose": true,
+        "path": "data.trend_overview2[].AppDAUReco",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "aggregate_metric_field_review",
+        "expose": true,
+        "path": "data.trend_overview2[].AppFirstDayPayAmountStandardReco",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "aggregate_metric_field_review",
+        "expose": true,
+        "path": "data.trend_overview2[].AppROIReco",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "aggregate_metric_field_review",
+        "expose": true,
+        "path": "data.trend_overview2[].AppRealRegisterCnt",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "aggregate_metric_field_review",
+        "expose": true,
+        "path": "data.trend_overview2[].AppRevenueReco",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.trend_overview2[].date",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      }
+    ],
+    "classified_non_sensitive": 24,
+    "classified_sensitive": 1,
+    "manual_review": 0,
+    "values_persisted": false
+  },
+  "probed_at": "2026-08-08T20:55:16Z",
+  "projected_schema_fingerprint": "7bbc9f5ad5675d7259aa44b4831024ad36a21dfccaf18108e54cc0dd4d4f1b12",
+  "raw_schema_fingerprint": "087ae9eaac9aead3fd10ec5185ece3ce81a898735c6a4231a5df9bff8d6d294b",
+  "reevaluated_at": "2026-08-09T00:36:37Z",
+  "request_stats": {
+    "backoff_terminations": 0,
+    "failed": 0,
+    "total": 0
+  },
+  "required_parent": null,
+  "route": {
+    "family": "report.overview.query",
+    "method": "POST",
+    "path": "/report/api/v2/app/overview/"
+  },
+  "schema_version": "gravity-insight.probe-semantic-reevaluation.v1",
+  "semantic_basis": {
+    "http_discovery_2xx": true,
+    "legacy_branch": "sensitive_field_short_circuit",
+    "manual_review_fields": 0,
+    "nonempty_data_shape_observed": true,
+    "sensitive_fields_hidden_by_projection": true
+  },
+  "semantic_errors": {
+    "missing_parameter": {
+      "attempted": false,
+      "shape_observed": false
+    },
+    "permission_shape_observed": false,
+    "rules": []
+  },
+  "source_evidence": {
+    "conclusion": "privacy_review_required",
+    "path": "10_数据底座/evidence/gravity-probe/20260808T205516Z_report.overview.query.yaml",
+    "sha256": "0d35bc7d1431a2fc481d1e2f4ac956886e1a2fd252d5b355c6caeabdba4cd38e"
+  },
+  "successful": true
+}

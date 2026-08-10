@@ -1,0 +1,163 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 1,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "分析页用户属性元数据；仅输出属性定义，不输出用户属性值。",
+    "domain": "analysis",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "app_id": {
+        "required": true,
+        "type": "string"
+      },
+      "page": {
+        "default": 1,
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 100,
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "app_id": "$first_app_id",
+        "page": 1,
+        "page_size": 1
+      }
+    },
+    "operation_id": "analysis.user_property.list",
+    "pagination": {
+      "default_page_size": 100,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 2000,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/turbo_engine/api/v2/event/user_property_list/",
+    "privacy_policy": {
+      "classification": "configuration",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "email",
+        "phone",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "client_id",
+        "clientid",
+        "trace_id",
+        "traceid",
+        "wxopenid",
+        "idfa",
+        "idfv",
+        "oaid",
+        "imei",
+        "androidid",
+        "caid1",
+        "caid2",
+        "remark"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.user_property.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {
+        "page": 1,
+        "page_size": 100
+      },
+      "fixed_body": {},
+      "fixed_query": {
+        "filters": "[{\"field\":\"visible\",\"operator\":1,\"values\":[true]}]"
+      },
+      "path_fields": [],
+      "query_fields": [
+        "app_id",
+        "page",
+        "page_size"
+      ]
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "app.list",
+        "output_path": "data.list[].id",
+        "selection": "first"
+      }
+    ],
+    "resource": "user_property",
+    "response_projection": {
+      "data_keys": [
+        "list",
+        "page_info"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "app_id",
+        "cname",
+        "create_time",
+        "data_type",
+        "dim_table",
+        "dim_using_table_name",
+        "has_dict",
+        "id",
+        "is_common",
+        "is_preset",
+        "modify_time",
+        "name",
+        "prop_type",
+        "uploaded",
+        "visible"
+      ],
+      "known_omitted_item_keys": [
+        "remark"
+      ],
+      "nested_item_keys": {
+        "dim_table": [
+          "name",
+          "cname",
+          "data_type",
+          "dim_using_table_name"
+        ]
+      },
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis.json"
+}

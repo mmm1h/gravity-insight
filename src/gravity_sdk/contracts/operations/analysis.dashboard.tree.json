@@ -1,0 +1,125 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 0,
+  "operation": {
+    "action": "tree",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "看板空间、文件夹和看板目录；固定只读树路由，递归节点按显式字段投影。",
+    "domain": "analysis",
+    "effect": "read",
+    "examples": [],
+    "input_fields": {
+      "app_id": {
+        "max_length": 64,
+        "required": true,
+        "type": "string"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "app_id": "$first_app_id"
+      }
+    },
+    "operation_id": "analysis.dashboard.tree",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/tree/",
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.dashboard.tree.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "app_id"
+      ]
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "app.list",
+        "output_path": "data.list[].id",
+        "selection": "first"
+      }
+    ],
+    "resource": "dashboard_tree",
+    "response_projection": {
+      "data_keys": [],
+      "data_shape": "list",
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "id",
+        "name",
+        "type",
+        "authority",
+        "folder_or_dashboard",
+        "dashboards"
+      ],
+      "known_omitted_item_keys": [
+        "children"
+      ],
+      "known_omitted_nested_item_keys": {
+        "dashboards": [
+          "ui_config"
+        ]
+      },
+      "nested_item_keys": {
+        "dashboards": [
+          "id",
+          "name",
+          "type",
+          "is_folder",
+          "space_id",
+          "authority"
+        ],
+        "folder_or_dashboard": [
+          "id",
+          "name",
+          "type",
+          "is_folder",
+          "space_id",
+          "authority",
+          "dashboards"
+        ]
+      },
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis_dashboard.json"
+}

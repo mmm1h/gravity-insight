@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gravity-sdk"
+version = "0.1.0"
+description = "Governed Python SDK and CLI for Gravity Insight and custom SQL"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "requests==2.32.5",
+  "tzdata==2026.3",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=9,<10"]
+
+[project.scripts]
+gravity = "gravity_sdk.__main__:main"
+gravity-insight = "gravity_sdk.cli:main"
+gravity-sql = "gravity_sdk.sql.__main__:main"
+gravity-census = "gravity_sdk.census.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["gravity_sdk*"]
+
+[tool.setuptools.package-data]
+gravity_sdk = [
+  "contracts/**/*.json",
+  "manifests/*.json",
+  "census/data/*",
+  "governance/*.json",
+]
