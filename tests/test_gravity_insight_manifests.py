@@ -488,7 +488,16 @@ class GravityInsightManifestTests(unittest.TestCase):
                 )
                 self.assertTrue(required_redactions <= set(privacy["redact_keys"]))
                 self.assertFalse(ALLOWED_BUSINESS_NAMES & set(privacy["redact_keys"]))
-                self.assertTrue(set(item["required_parent"]) <= all_ids)
+                parent_ids = {
+                    parent["operation_id"]
+                    if isinstance(parent, dict)
+                    else parent
+                    for parent in item["required_parent"]
+                }
+                self.assertTrue(parent_ids <= all_ids)
+                for parent in item["required_parent"]:
+                    if isinstance(parent, dict):
+                        self.assertIn(parent.get("input_field"), declared)
 
                 probe = item["live_probe"]
                 self.assertEqual({"enabled", "input"}, set(probe))

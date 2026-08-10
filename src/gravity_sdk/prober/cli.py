@@ -102,7 +102,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     verdict_probe = commands.add_parser(
         "verdict-probe",
-        help="Collect shape-only evidence for the two open privacy verdicts.",
+        help="Collect shape-only evidence for open privacy verdicts.",
     )
     verdict_probe.add_argument("operation_id", nargs="+")
     verdict_probe.add_argument("--interval-ms", type=_interval, default=310)

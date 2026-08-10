@@ -1,9 +1,8 @@
-"""Shape-only probes for the two open Gravity Insight privacy verdicts."""
+"""Shape-only probes for open Gravity Insight privacy verdicts."""
 
 from __future__ import annotations
 
 import copy
-import re
 import time
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -26,14 +25,7 @@ from .transport import (
 
 
 MATERIAL_USER_OPERATION = "material.material_examine_user.list"
-TENCENT_ADGROUP_OPERATION = "promotion.tencent.tencent_medium_adgroup.list"
-SUPPORTED_OPERATIONS = (MATERIAL_USER_OPERATION, TENCENT_ADGROUP_OPERATION)
-
-_ENUM_TOKEN = re.compile(r"^[A-Za-z][A-Za-z0-9_.:-]*$")
-_UPPER_CONSTANT = re.compile(r"^[A-Z][A-Z0-9_]*$")
-_EMAIL = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
-_PHONE = re.compile(r"^(?:\+?86[- ]?)?1[3-9]\d{9}$")
-_CN_ID = re.compile(r"^(?:\d{15}|\d{17}[0-9Xx])$")
+SUPPORTED_OPERATIONS = (MATERIAL_USER_OPERATION,)
 
 
 def _rows(payload: Mapping[str, Any]) -> list[Mapping[str, Any]]:
@@ -69,69 +61,6 @@ def _boolean_profile(
             "other_type": other_count,
         },
         "distinct_boolean_count": int(true_count > 0) + int(false_count > 0),
-    }
-
-
-def _string_profile(
-    rows: Sequence[Mapping[str, Any]], field: str
-) -> dict[str, Any]:
-    values, missing = _field_values(rows, field)
-    strings = [value for value in values if isinstance(value, str)]
-    lengths = [len(value) for value in strings]
-    stripped = [value.strip() for value in strings]
-    return {
-        "occurrences": len(values),
-        "missing_rows": missing,
-        "string_count": len(strings),
-        "null_count": sum(value is None for value in values),
-        "other_type_count": sum(
-            value is not None and not isinstance(value, str) for value in values
-        ),
-        "distinct_count": len(set(strings)),
-        "length": {
-            "min": min(lengths) if lengths else None,
-            "max": max(lengths) if lengths else None,
-        },
-        "shape_matches": {
-            "uppercase_constant": sum(bool(_UPPER_CONSTANT.fullmatch(value)) for value in stripped),
-            "enum_token": sum(bool(_ENUM_TOKEN.fullmatch(value)) for value in stripped),
-            "blank": sum(not value for value in stripped),
-            "multiline": sum("\n" in value or "\r" in value for value in strings),
-            "email": sum(bool(_EMAIL.fullmatch(value)) for value in stripped),
-            "phone": sum(bool(_PHONE.fullmatch(value)) for value in stripped),
-            "cn_id": sum(bool(_CN_ID.fullmatch(value)) for value in stripped),
-        },
-    }
-
-
-def _integer_profile(
-    rows: Sequence[Mapping[str, Any]], field: str
-) -> dict[str, Any]:
-    values, missing = _field_values(rows, field)
-    integers = [
-        value for value in values if isinstance(value, int) and not isinstance(value, bool)
-    ]
-    digit_lengths = [len(str(abs(value))) for value in integers]
-    return {
-        "occurrences": len(values),
-        "missing_rows": missing,
-        "integer_count": len(integers),
-        "null_count": sum(value is None for value in values),
-        "other_type_count": sum(
-            value is not None
-            and (not isinstance(value, int) or isinstance(value, bool))
-            for value in values
-        ),
-        "distinct_count": len(set(integers)),
-        "range": {
-            "min": min(integers) if integers else None,
-            "max": max(integers) if integers else None,
-        },
-        "absolute_digit_length": {
-            "min": min(digit_lengths) if digit_lengths else None,
-            "max": max(digit_lengths) if digit_lengths else None,
-        },
-        "id_like_10_plus_digits_count": sum(length >= 10 for length in digit_lengths),
     }
 
 
@@ -175,43 +104,6 @@ def profile_verdict_payload(
             "decision": decision,
             "row_count": len(rows),
             "field_profiles": {"is_superuser": profile},
-            "remaining_question": question,
-        }
-
-    if operation_id == TENCENT_ADGROUP_OPERATION:
-        profiles = {
-            "bid_mode": _string_profile(rows, "bid_mode"),
-            "bid_amount": _integer_profile(rows, "bid_amount"),
-            "daily_budget": _integer_profile(rows, "daily_budget"),
-            "total_budget": _integer_profile(rows, "total_budget"),
-        }
-        if any(profile["occurrences"] == 0 for profile in profiles.values()):
-            return {
-                "status": "still_blocked",
-                "decision": "one_or_more_target_fields_not_observed",
-                "row_count": len(rows),
-                "field_profiles": profiles,
-                "remaining_question": None,
-            }
-        bid_mode = profiles["bid_mode"]
-        numeric_ranges = ", ".join(
-            f"{name}={profile['range']['min']}..{profile['range']['max']}"
-            for name, profile in profiles.items()
-            if name != "bid_mode"
-        )
-        question = (
-            f"本次 probe 观测到 {len(rows)} 个广告组行；bid_mode 有 "
-            f"{bid_mode['distinct_count']} 个不同值，其中 "
-            f"{bid_mode['shape_matches']['uppercase_constant']}/{bid_mode['string_count']} 个观测值符合"
-            f"大写常量形态；三个数值字段范围为 {numeric_ranges}。请确认：bid_mode 是否由接口 schema "
-            "严格限制为固定合法枚举，并且 bid_amount、daily_budget、total_budget 是否都只表示广告组配置金额，"
-            "绝不复用为用户/广告主标识或实际支付、订单、交易明细？"
-        )
-        return {
-            "status": "narrowed",
-            "decision": "shape_excludes_observed_free_text_but_not_business_semantics",
-            "row_count": len(rows),
-            "field_profiles": profiles,
             "remaining_question": question,
         }
 
@@ -319,7 +211,7 @@ def run_verdict_probes(
     if not operation_ids:
         raise ValueError("verdict-probe requires at least one operation_id")
     if len(operation_ids) > len(SUPPORTED_OPERATIONS):
-        raise ValueError("verdict-probe accepts at most two operations")
+        raise ValueError("verdict-probe accepts at most one operation")
     if len(set(operation_ids)) != len(operation_ids):
         raise ValueError("verdict-probe operation_ids must be unique")
     unsupported = sorted(set(operation_ids) - set(SUPPORTED_OPERATIONS))
@@ -370,7 +262,6 @@ def run_verdict_probes(
 __all__ = [
     "MATERIAL_USER_OPERATION",
     "SUPPORTED_OPERATIONS",
-    "TENCENT_ADGROUP_OPERATION",
     "profile_verdict_payload",
     "run_verdict_probes",
 ]

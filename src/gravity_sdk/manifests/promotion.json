@@ -7667,6 +7667,145 @@
       ],
       "stability": "stable",
       "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "腾讯广告 3.0 广告组配置只读列表；按广告主读取广告组标识、名称、投放状态和有效日期。2026-08-11 复验非空响应；出价模式与出价/预算数值固定省略。",
+      "domain": "promotion",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "advertiser_id": {
+          "description": "腾讯广告主标识；可由 promotion.tencent.adgroup_filter.list 选择。",
+          "max_length": 64,
+          "type": "string"
+        },
+        "api_version": {
+          "default": "v3.0",
+          "description": "上游接口版本；当前只允许已验证的 v3.0。",
+          "enum": [
+            "v3.0"
+          ],
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "advertiser_id": "$parent:advertiser_id",
+          "api_version": "v3.0"
+        }
+      },
+      "operation_id": "promotion.tencent.medium_adgroup.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v1/tencent/medium/adgroup/list/",
+      "platform": "tencent",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "advertiser_id",
+          "api_version"
+        ],
+        "defaults": {
+          "api_version": "v3.0"
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        {
+          "input_field": "advertiser_id",
+          "operation_id": "promotion.tencent.adgroup_filter.list"
+        }
+      ],
+      "resource": "medium_adgroup",
+      "response_projection": {
+        "data_keys": [
+          "list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "adgroup_id",
+          "adgroup_name",
+          "begin_date",
+          "configured_status",
+          "conversion_id",
+          "cost_guarantee_status",
+          "created_time",
+          "end_date",
+          "is_deleted",
+          "last_modified_time",
+          "system_status"
+        ],
+        "known_omitted_item_keys": [
+          "bid_amount",
+          "bid_mode",
+          "daily_budget",
+          "total_budget"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
     }
   ]
 }

@@ -1,5 +1,5 @@
 {
-  "operation_count": 152,
+  "operation_count": 153,
   "operations": {
     "account.department.list": {
       "applied_overrides": [],
@@ -959,6 +959,14 @@
       "platform": "tencent",
       "source_files": [
         "operations/promotion.tencent.advertiser.list.json"
+      ]
+    },
+    "promotion.tencent.medium_adgroup.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "tencent",
+      "source_files": [
+        "operations/promotion.tencent.medium_adgroup.list.json"
       ]
     },
     "promotion.ubix.account.list": {

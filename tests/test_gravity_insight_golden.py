@@ -220,6 +220,8 @@ class GravityInsightGoldenTests(unittest.TestCase):
             # 巨量标题素材两条读取经非空分页探针验证后晋升 stable。
             "material.bytedance_asset_text_title.list",
             "material.bytedance_std_asset_text_title.list",
+            # 腾讯广告组配置经父资源解析、非空复验和 fail-closed 字段审查后晋升。
+            "promotion.tencent.medium_adgroup.list",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]

@@ -15,8 +15,8 @@
 
 | status | routes |
 | --- | ---: |
-| `covered` | 139 |
-| `uncovered_read` | 376 |
+| `covered` | 140 |
+| `uncovered_read` | 375 |
 | `uncovered_write` | 414 |
 | `uncovered_export` | 22 |
 | `uncovered_auth_or_proxy` | 30 |
@@ -26,7 +26,7 @@
 ## Route accounting vs callability
 
 - Accounted routes: **987**
-- Callable covered routes: **139**
+- Callable covered routes: **140**
 - Unaccounted routes: **0**
 
 | accounting state | routes |
@@ -37,16 +37,16 @@
 | `accounted_experimental` | 2 |
 | `accounted_export_candidate` | 22 |
 | `accounted_permission_unavailable` | 1 |
-| `accounted_read_candidate` | 346 |
+| `accounted_read_candidate` | 345 |
 | `accounted_unsupported` | 58 |
-| `covered_executable` | 139 |
+| `covered_executable` | 140 |
 
 | callability | routes |
 | --- | ---: |
-| `candidate` | 368 |
+| `candidate` | 367 |
 | `catalog_only` | 8 |
 | `contract_only` | 414 |
-| `executable` | 139 |
+| `executable` | 140 |
 | `unsupported` | 58 |
 
 ## Stable manifest reconciliation
@@ -54,7 +54,7 @@
 | category | stable operations |
 | --- | ---: |
 | Previously covered | 0 |
-| (a) Found in previously unfetched chunks | 139 |
+| (a) Found in previously unfetched chunks | 140 |
 | (b) Normalization false gap fixed | 0 |
 | (c) Manifest route absent from frontend | 4 |
 
@@ -72,7 +72,7 @@
 | module | covered | uncovered read | all uncovered | total |
 | --- | ---: | ---: | ---: | ---: |
 | 分析 | 20 | 7 | 48 | 68 |
-| 推广平台 | 48 | 154 | 276 | 324 |
+| 推广平台 | 49 | 153 | 275 | 324 |
 | 资产 | 3 | 20 | 75 | 78 |
 | 素材 | 15 | 47 | 99 | 114 |
 | 报表 | 16 | 27 | 43 | 59 |
@@ -101,7 +101,7 @@
 | qihu360 | 0 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 2 |
 | sigmob | 0 | 0 | 1 | 0 | 0 | 0 | 1 | 1 | 3 |
 | taptap | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| tencent | 6 | 0 | 0 | 3 | 1 | 0 | 0 | 5 | 15 |
+| tencent | 6 | 0 | 0 | 2 | 1 | 0 | 0 | 5 | 14 |
 | ubix | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | uc | 2 | 0 | 4 | 4 | 0 | 0 | 0 | 0 | 10 |
 | vivo | 0 | 0 | 2 | 2 | 0 | 0 | 0 | 0 | 4 |
@@ -114,7 +114,7 @@
 ## Contract families
 
 - Families: **48**
-- Uncovered reads assigned to a family: **87 / 376 (23.1%)**
+- Uncovered reads assigned to a family: **87 / 375 (23.2%)**
 
 | family | kind | members | signature |
 | --- | --- | ---: | --- |
@@ -172,7 +172,7 @@
 | tier | uncovered reads | rule |
 | --- | ---: | --- |
 | 低 | 167 | Flat list/detail with no evident parent dependency |
-| 中 | 83 | Parent-resource dependency or structured selector |
+| 中 | 82 | Parent-resource dependency or structured selector |
 | 高 | 126 | Complex query/report body, proxy envelope, or dynamic path |
 
 Cost is a scheduling heuristic, not an observed implementation duration.
@@ -191,7 +191,7 @@ Cost is a scheduling heuristic, not an observed implementation duration.
 | `medium` | `POST` | `/report/api/v3/dataanalysis/ai/message/list/` | `singleton` | `高` |
 | `medium` | `POST` | `/turbo_engine/api/v2/datamanageconfig/kanban/report/setting/` | `singleton` | `高` |
 
-### 推广平台 (154)
+### 推广平台 (153)
 
 | confidence | method | path | family | cost |
 | --- | --- | --- | --- | --- |
@@ -307,7 +307,6 @@ Cost is a scheduling heuristic, not an observed implementation duration.
 | `medium` | `POST` | `/turbo_engine/api/v1/tencent/manage/account_channel/check/` | `singleton` | `低` |
 | `medium` | `POST` | `/turbo_engine/api/v1/tencent/manage/account_channel/list/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/tencent/manager/account/by_company/` | `promotion.family.001` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/tencent/medium/adgroup/list/` | `singleton` | `中` |
 | `medium` | `POST` | `/turbo_engine/api/v1/tencent/medium/adgroup/query/` | `singleton` | `高` |
 | `medium` | `POST` | `/turbo_engine/api/v1/tencent/user_organization_authentication/get` | `singleton` | `低` |
 | `medium` | `POST` | `/turbo_engine/api/v1/tencent/wechat_channels_accounts/get/set/` | `singleton` | `低` |

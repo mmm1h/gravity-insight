@@ -79,7 +79,6 @@
       "src/gravity_sdk/prober/promotion.py::reevaluate_drafts": 23,
       "src/gravity_sdk/prober/reprobe.py::run_parameter_reprobes": 25,
       "src/gravity_sdk/prober/reprobe.py::run_scoped_reprobes": 18,
-      "src/gravity_sdk/prober/verdict_probe.py::_string_profile": 18,
       "src/gravity_sdk/registry.py::_request_parts": 24,
       "src/gravity_sdk/sql/__main__.py::main": 25,
       "src/gravity_sdk/sql/client.py::_extract_rows": 23,
