@@ -1388,6 +1388,10 @@ class GravityInsightManifestTests(unittest.TestCase):
                 self.assertEqual(2000, operation["request"]["defaults"]["page_size"])
                 self.assertEqual(2000, operation["pagination"]["default_page_size"])
                 self.assertEqual(2000, operation["pagination"]["max_page_size"])
+                self.assertTrue(
+                    {"data_topic", "is_media"}
+                    <= set(operation["response_projection"]["item_keys"])
+                )
 
 
 if __name__ == "__main__":

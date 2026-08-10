@@ -3,15 +3,21 @@
   "draft": {
     "blockers": [
       {
+        "code": "parent_resource_required",
+        "detail": "A parent account/campaign selector is indicated, but its binding and cardinality require proof.",
+        "evidence": "evidence/probe/20260810T231756Z_report.get.query.yaml",
+        "status": "open"
+      },
+      {
         "code": "request_parameters_required",
         "detail": "The observed request reached a semantic error; required request fields remain unknown.",
-        "evidence": "evidence/probe/20260808T232932Z_report.get.query.yaml",
+        "evidence": "evidence/probe/20260810T231756Z_report.get.query.yaml",
         "status": "open"
       },
       {
         "code": "response_schema_unverified",
         "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
-        "evidence": "evidence/probe/20260808T232932Z_report.get.query.yaml",
+        "evidence": "evidence/probe/20260810T231756Z_report.get.query.yaml",
         "status": "open"
       }
     ],
@@ -70,14 +76,93 @@
         "projected_schema_fingerprint": null,
         "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
         "successful": false
+      },
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260810T230527Z_report.get.query.yaml",
+        "probed_at": "2026-08-10T23:05:27Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
+        "successful": false
+      },
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260810T230749Z_report.get.query.yaml",
+        "probed_at": "2026-08-10T23:07:49Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
+        "successful": false
+      },
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260810T231326Z_report.get.query.yaml",
+        "probed_at": "2026-08-10T23:13:26Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
+        "successful": false
+      },
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260810T231408Z_report.get.query.yaml",
+        "probed_at": "2026-08-10T23:14:08Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
+        "successful": false
+      },
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260810T231444Z_report.get.query.yaml",
+        "probed_at": "2026-08-10T23:14:44Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
+        "successful": false
+      },
+      {
+        "conclusion": "local_or_parent_inconclusive",
+        "method_verified": false,
+        "pagination_verified": false,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260810T231618Z_report.get.query.yaml",
+        "probed_at": "2026-08-10T23:16:18Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": null,
+        "successful": false
+      },
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260810T231756Z_report.get.query.yaml",
+        "probed_at": "2026-08-10T23:17:56Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
+        "successful": false
       }
     ],
     "promotion_gate": {
       "eligible": false,
       "missing": [
+        "parent_resource_required",
         "request_parameters_required",
         "response_projection",
         "response_schema_unverified",
+        "runtime_probe_placeholder_unsupported",
         "successful_probe"
       ]
     },
@@ -248,67 +333,124 @@
   "operation": {
     "action": "query",
     "auth_profile": "gravity_authorization",
-    "block_reason": "draft blockers: request_parameters_required, response_schema_unverified",
+    "block_reason": "draft blockers: parent_resource_required, request_parameters_required, response_schema_unverified",
     "contract_version": 1,
-    "description": "Draft catalog entry inferred from census route POST /report/api/v3/monetization_report/custom_get/; request binding, pagination, and response projection remain unverified.",
+    "description": "变现多维报表受控查询；参数结构与网页端 monetization_report 请求对齐，响应字段仍由在线探针确认。",
     "domain": "report",
     "effect": "read",
     "examples": [],
     "executable": false,
     "input_fields": {
       "custom_metrics_list": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "default": [],
+        "item_type": "string",
+        "max_items": 500,
         "type": "array"
       },
       "data_conf": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "default": {
+          "accumulate": false,
+          "asa_time_zone": "UTC",
+          "decimal_point": 2,
+          "minigame_pay_shared_ratio": 100,
+          "minigame_pay_shared_ratio_ios": 100,
+          "return_all_metrics": true
+        },
+        "enum": [
+          {
+            "accumulate": false,
+            "asa_time_zone": "UTC",
+            "decimal_point": 2,
+            "minigame_pay_shared_ratio": 100,
+            "minigame_pay_shared_ratio_ios": 100,
+            "return_all_metrics": true
+          }
+        ],
         "type": "object"
       },
       "data_dims": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "default": [],
+        "item_type": "string",
+        "max_items": 100,
         "type": "array"
       },
       "data_topic": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "default": "monetization_report",
+        "enum": [
+          "monetization_report"
+        ],
         "type": "string"
       },
       "date_list": {
-        "description": "Probe candidate aligned with the verified stable report request pattern; not a server-required declaration.",
         "item_type": "string",
+        "max_items": 2,
+        "min_items": 2,
+        "required": true,
         "type": "array"
       },
       "filters": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "default": [],
+        "item_type": "object",
+        "max_items": 100,
         "type": "array"
       },
       "metrics_list": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "item_type": "string",
+        "max_items": 500,
+        "min_items": 1,
+        "required": true,
         "type": "array"
       },
       "relate_dims": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
-        "type": "any"
+        "item_type": "string",
+        "max_items": 100,
+        "type": "array"
       },
       "time_dims": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
-        "type": "any"
+        "enum": [
+          "hour",
+          "day",
+          "week",
+          "month",
+          "total"
+        ],
+        "required": true,
+        "type": "string"
       }
     },
     "live_probe": {
-      "enabled": false,
+      "enabled": true,
       "inputs": {
         "custom_metrics_list": [],
-        "data_conf": {},
-        "data_dims": [],
-        "data_topic": "",
+        "data_conf": {
+          "accumulate": false,
+          "asa_time_zone": "UTC",
+          "decimal_point": 2,
+          "minigame_pay_shared_ratio": 100,
+          "minigame_pay_shared_ratio_ios": 100,
+          "return_all_metrics": true
+        },
+        "data_dims": [
+          "app_id"
+        ],
+        "data_topic": "monetization_report",
         "date_list": [
           "$today",
           "$today"
         ],
-        "filters": [],
-        "metrics_list": [],
-        "relate_dims": 0,
-        "time_dims": 0
+        "filters": [
+          {
+            "field": "app_id",
+            "operator": "EQUALS",
+            "values": [
+              "$parent"
+            ]
+          }
+        ],
+        "metrics_list": [
+          "reporting_ad_revenue"
+        ],
+        "time_dims": "day"
       }
     },
     "operation_id": "report.get.query",
@@ -388,21 +530,46 @@
         "relate_dims",
         "time_dims"
       ],
-      "defaults": {},
+      "defaults": {
+        "custom_metrics_list": [],
+        "data_conf": {
+          "accumulate": false,
+          "asa_time_zone": "UTC",
+          "decimal_point": 2,
+          "minigame_pay_shared_ratio": 100,
+          "minigame_pay_shared_ratio_ios": 100,
+          "return_all_metrics": true
+        },
+        "data_dims": [],
+        "data_topic": "monetization_report",
+        "filters": []
+      },
       "fixed_body": {},
       "fixed_query": {},
       "path_fields": [],
       "query_fields": []
     },
-    "required_parent": [],
-    "resource": "get",
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "app.list",
+        "output_path": "data.list[].id",
+        "selection": "first"
+      }
+    ],
+    "resource": "monetization_report",
     "response_projection": {
       "data_keys": [],
       "dynamic_item_fields": [],
-      "item_keys": [],
+      "item_keys": [
+        "app_id"
+      ],
       "required_data_keys": []
     },
-    "semantic_error_rules": [],
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
     "stability": "experimental",
     "upstream_method": "POST"
   },

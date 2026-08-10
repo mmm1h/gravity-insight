@@ -721,6 +721,8 @@
           "id",
           "name",
           "cname",
+          "data_topic",
+          "is_media",
           "metric_type",
           "tag_ids",
           "exclusion_dims",
@@ -1816,6 +1818,8 @@
         "dynamic_item_fields": [],
         "item_keys": [
           "cname",
+          "data_topic",
+          "is_media",
           "metric_type",
           "name",
           "tip"

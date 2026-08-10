@@ -28250,6 +28250,8 @@
           "id",
           "name",
           "cname",
+          "data_topic",
+          "is_media",
           "metric_type",
           "tag_ids",
           "exclusion_dims",
