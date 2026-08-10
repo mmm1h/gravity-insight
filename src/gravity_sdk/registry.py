@@ -22,6 +22,11 @@ from .export_policy import (
 )
 from .models import OperationSpec
 from .multidim import OPERATIONS as MULTIDIM_OPERATIONS, build_request_body
+from .request_codecs import (
+    analysis_account_user_request_parts,
+    analysis_segment_request_parts,
+    app_onelink_request_parts,
+)
 
 
 _READ_ACTIONS = frozenset(
@@ -342,7 +347,7 @@ def _request_parts(
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Build the wire payload exclusively from the manifest request codec."""
 
-    builder = {"analysis.segment.list": _analysis_segment_request_parts, "analysis.segment.evaluate_percent": _analysis_segment_rule_request_parts, "analysis.account_user.list": _analysis_account_user_request_parts}.get(operation.operation_id)
+    builder = {"analysis.segment.list": analysis_segment_request_parts, "analysis.segment.evaluate_percent": _analysis_segment_rule_request_parts, "analysis.account_user.list": analysis_account_user_request_parts, "app.onelink.list": app_onelink_request_parts}.get(operation.operation_id)
     if builder: return builder(values)
     if operation.operation_id == "analysis.order_detail.list":
         return _analysis_order_detail_request_parts(values)
@@ -392,53 +397,6 @@ def _request_parts(
                 "operation contract contains validated inputs not bound to the request codec"
             )
     isolated = json.loads(_canonical_wire_snapshot(query, body))
-    return isolated["query"], isolated["body"]
-
-
-def _analysis_segment_request_parts(
-    values: Mapping[str, Any],
-) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Encode the public app_id into Gravity's canonical segment filter."""
-
-    app_id = values.get("app_id")
-    if not isinstance(app_id, str) or not app_id or len(app_id) > 64:
-        raise PolicyViolation("analysis segment app_id is invalid")
-    filter_value: str | int = app_id
-    if app_id.isdecimal():
-        filter_value = int(app_id)
-    query = {
-        "page": values.get("page", 1),
-        "page_size": values.get("page_size", 100),
-        "to_response_origin_query": False,
-        "filters": json.dumps(
-            [
-                {
-                    "field": "app_id",
-                    "operator": 1,
-                    "values": [filter_value],
-                }
-            ],
-            ensure_ascii=False,
-            separators=(",", ":"),
-        ),
-    }
-    isolated = json.loads(_canonical_wire_snapshot(query, {}))
-    return isolated["query"], isolated["body"]
-
-
-def _analysis_account_user_request_parts(
-    values: Mapping[str, Any],
-) -> tuple[dict[str, Any], dict[str, Any]]:
-    query: dict[str, Any] = {
-        "page": values.get("page", 1),
-        "page_size": values.get("page_size", 100),
-    }
-    filters = values.get("filters", ())
-    if isinstance(filters, (list, tuple)) and filters:
-        query["filters"] = json.dumps(
-            list(filters), ensure_ascii=False, separators=(",", ":")
-        )
-    isolated = json.loads(_canonical_wire_snapshot(query, {}))
     return isolated["query"], isolated["body"]
 
 

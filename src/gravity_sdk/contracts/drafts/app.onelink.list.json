@@ -227,6 +227,14 @@
               "unknown"
             ]
           }
+        ],
+        "stable_parent_candidates": [
+          {
+            "input_field": "turbo_promoted_object_id",
+            "operation_id": "promotion.object.list",
+            "output_path": "data.list[].turbo_promoted_object_id",
+            "selection": "first"
+          }
         ]
       },
       "path": "/turbo_engine/api/v1/user/promoted/onelink/list/",
@@ -263,9 +271,10 @@
     "examples": [],
     "executable": false,
     "input_fields": {
-      "filters": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
-        "type": "any"
+      "turbo_promoted_object_id": {
+        "description": "Promoted-object ID encoded by the SDK into Gravity's private OneLink filter grammar.",
+        "required": true,
+        "type": "string"
       },
       "page": {
         "default": 1,
@@ -273,7 +282,7 @@
         "type": "integer"
       },
       "page_size": {
-        "default": 5000,
+        "default": 10,
         "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
         "type": "integer"
       }
@@ -281,9 +290,9 @@
     "live_probe": {
       "enabled": false,
       "inputs": {
-        "filters": 0,
+        "turbo_promoted_object_id": "$parent:turbo_promoted_object_id",
         "page": 1,
-        "page_size": 5000
+        "page_size": 1
       }
     },
     "operation_id": "app.onelink.list",
@@ -342,7 +351,8 @@
     },
     "provenance": {
       "applied_overrides": [
-        "frontend_route_parameter_contract"
+        "frontend_route_parameter_contract",
+        "stable_parent_candidate_binding"
       ],
       "family": null,
       "platform": null,
@@ -354,18 +364,25 @@
       "body_fields": [],
       "defaults": {
         "page": 1,
-        "page_size": 5000
+        "page_size": 10
       },
       "fixed_body": {},
       "fixed_query": {},
       "path_fields": [],
       "query_fields": [
-        "filters",
+        "turbo_promoted_object_id",
         "page",
         "page_size"
       ]
     },
-    "required_parent": [],
+    "required_parent": [
+      {
+        "input_field": "turbo_promoted_object_id",
+        "operation_id": "promotion.object.list",
+        "output_path": "data.list[].turbo_promoted_object_id",
+        "selection": "first"
+      }
+    ],
     "resource": "onelink",
     "response_projection": {
       "data_keys": [

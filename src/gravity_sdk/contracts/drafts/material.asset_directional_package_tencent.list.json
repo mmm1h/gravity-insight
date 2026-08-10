@@ -308,9 +308,8 @@
       "enabled": false,
       "inputs": {
         "advertiser_ids": "$parent:advertiser_ids",
-        "filters": [],
         "page": 1,
-        "page_size": 200
+        "page_size": 1
       }
     },
     "operation_id": "material.asset_directional_package_tencent.list",

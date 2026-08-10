@@ -100,7 +100,7 @@
       "src/gravity_sdk/prober/drafts.py": 1806,
       "src/gravity_sdk/prober/export_verify.py": 655,
       "src/gravity_sdk/prober/promotion.py": 594,
-      "src/gravity_sdk/registry.py": 1146,
+      "src/gravity_sdk/registry.py": 1109,
       "src/gravity_sdk/sql/products.py": 675
     },
     "function_sloc": {

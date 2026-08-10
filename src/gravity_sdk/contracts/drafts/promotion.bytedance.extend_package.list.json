@@ -232,6 +232,14 @@
               "unknown"
             ]
           }
+        ],
+        "stable_parent_candidates": [
+          {
+            "input_field": "app_cloud_id",
+            "operation_id": "promotion.bytedance.app.list",
+            "output_path": "data.list[].app_cloud_id",
+            "selection": "first"
+          }
         ]
       },
       "path": "/turbo_engine/api/v1/bytedance/app/extend_package/list/",
@@ -270,8 +278,9 @@
         "type": "string"
       },
       "app_cloud_id": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
-        "type": "object"
+        "description": "Frontend-observed ByteDance cloud application ID.",
+        "required": true,
+        "type": "string"
       },
       "create_user_id": {
         "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_conditional); presence describes frontend calls and is not a server-required declaration.",
@@ -287,7 +296,7 @@
         "type": "integer"
       },
       "page_size": {
-        "default": 5000,
+        "default": 20,
         "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
         "type": "integer"
       }
@@ -295,9 +304,9 @@
     "live_probe": {
       "enabled": false,
       "inputs": {
-        "app_cloud_id": {},
+        "app_cloud_id": "$parent:app_cloud_id",
         "page": 1,
-        "page_size": 5000
+        "page_size": 1
       }
     },
     "operation_id": "promotion.bytedance.extend_package.list",
@@ -356,7 +365,8 @@
     },
     "provenance": {
       "applied_overrides": [
-        "frontend_route_parameter_contract"
+        "frontend_route_parameter_contract",
+        "stable_parent_candidate_binding"
       ],
       "family": null,
       "platform": "bytedance",
@@ -368,7 +378,7 @@
       "body_fields": [],
       "defaults": {
         "page": 1,
-        "page_size": 5000
+        "page_size": 20
       },
       "fixed_body": {},
       "fixed_query": {},
@@ -382,7 +392,14 @@
         "page_size"
       ]
     },
-    "required_parent": [],
+    "required_parent": [
+      {
+        "input_field": "app_cloud_id",
+        "operation_id": "promotion.bytedance.app.list",
+        "output_path": "data.list[].app_cloud_id",
+        "selection": "first"
+      }
+    ],
     "resource": "extend_package",
     "response_projection": {
       "data_keys": [],
