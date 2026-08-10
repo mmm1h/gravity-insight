@@ -44,6 +44,21 @@ def value_type(value: Any) -> str:
     return "any"
 
 
+def field_accepts_value(field: Mapping[str, Any], value: Any) -> bool:
+    if isinstance(value, str) and value.startswith("$"):
+        return True
+    if value is None:
+        return bool(field.get("nullable", False))
+    declared = str(field.get("type", "any"))
+    actual = value_type(value)
+    return (
+        declared == "any"
+        or declared == actual
+        or (declared == "number" and actual == "integer")
+        or (declared in {"date", "datetime"} and actual == "string")
+    )
+
+
 def top_level_parameters(route: Mapping[str, Any]) -> list[dict[str, Any]]:
     result: list[dict[str, Any]] = []
     for location, source_key, request_key in _PARAMETER_GROUPS:
@@ -152,12 +167,7 @@ def reconcile_field(
     candidate = candidate_value(parameter)
     current_type = str(field.get("type", "any"))
     candidate_type = value_type(candidate) if candidate is not MISSING else None
-    compatible = (
-        candidate_type is None
-        or current_type == "any"
-        or candidate_type == current_type
-        or (current_type == "number" and candidate_type == "integer")
-    )
+    compatible = candidate_type is None or field_accepts_value(field, candidate)
     if not field.get("type") or field.get("type") == "any" or not compatible:
         field["type"] = inferred_type
     if field.get("type") != "array":
@@ -212,8 +222,63 @@ def apply_parameter(operation: dict[str, Any], parameter: Mapping[str, Any]) -> 
             request[other] = [item for item in request.get(other, []) if item != name]
     request[binding] = sorted(set(request.get(binding, [])) | {name})
     probe_inputs = operation["live_probe"]["inputs"]
+    existing_probe = probe_inputs.get(name, MISSING)
+    observed_default = parameter.get("default", MISSING)
+    generated_default = (
+        observed_default is not MISSING
+        and existing_probe is not MISSING
+        and value_type(existing_probe) == value_type(observed_default)
+        and existing_probe == observed_default
+    )
+    incompatible_literal = (
+        existing_probe is not MISSING
+        and not field_accepts_value(field, existing_probe)
+    )
     if candidate is not MISSING and (
-        "default" in parameter or name not in probe_inputs
+        existing_probe is MISSING or generated_default or incompatible_literal
     ):
         probe_inputs[name] = candidate
     return confidence
+
+
+def validate_operation_bindings(operation: Mapping[str, Any]) -> None:
+    fields = operation.get("input_fields", {})
+    if not isinstance(fields, Mapping):
+        return
+    request = operation.get("request", {})
+    live_probe = operation.get("live_probe", {})
+    bindings = (
+        (
+            "input_fields",
+            {
+                name: field["default"]
+                for name, field in fields.items()
+                if isinstance(field, Mapping) and "default" in field
+            },
+        ),
+        (
+            "request.defaults",
+            request.get("defaults", {}) if isinstance(request, Mapping) else {},
+        ),
+        (
+            "live_probe.inputs",
+            live_probe.get("inputs", {}) if isinstance(live_probe, Mapping) else {},
+        ),
+    )
+    for source, values in bindings:
+        if not isinstance(values, Mapping):
+            continue
+        for name, value in values.items():
+            field = fields.get(name)
+            if isinstance(field, Mapping) and not field_accepts_value(field, value):
+                declared = str(field.get("type", "any"))
+                raise ValueError(
+                    f"operation.{source}.{name} conflicts with declared type {declared}"
+                )
+
+
+def validate_source_contract(source: Mapping[str, Any]) -> None:
+    from gravity_sdk.compiler import ContractCompiler
+
+    ContractCompiler().operation_schema.validate(source)
+    validate_operation_bindings(source["operation"])

@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from gravity_sdk.prober.model import build_draft
+from gravity_sdk.prober.drafts import validate_source
 from gravity_sdk.prober.parameters import (
     apply_error_learning,
     apply_stable_request_patterns,
@@ -142,7 +143,7 @@ def test_parameter_assembly_repairs_ambiguous_pagination_types_and_defaults() ->
     assert operation["input_fields"]["page_size"]["default"] == 5000
     assert isinstance(operation["input_fields"]["page_size"]["default"], int)
     assert operation["request"]["defaults"]["page_size"] == 5000
-    assert operation["live_probe"]["inputs"]["page_size"] == 5000
+    assert operation["live_probe"]["inputs"]["page_size"] == 2
 
 
 def test_parameter_assembly_prefers_an_observed_default_type_over_array_noise() -> None:
@@ -164,6 +165,65 @@ def test_parameter_assembly_prefers_an_observed_default_type_over_array_noise() 
     field = assembled["operation"]["input_fields"]["album_id"]
     assert field["type"] == "string"
     assert field["default"] == ""
+
+
+def test_parameter_reassembly_preserves_parent_binding_and_later_enrichment() -> None:
+    source = build_draft(_route(), set())
+    contract = _parameter_contract()
+    contract["body_parameters"] = [
+        {
+            "name": "album_id",
+            "path": "$.album_id",
+            "types": ["array", "string"],
+            "confidence": "medium",
+            "required": "observed_always",
+            "default": "",
+        }
+    ]
+    source, _ = assemble_source_parameters(source, contract)
+    source["operation"]["live_probe"]["inputs"]["album_id"] = "$parent:album_id"
+    metadata = source["draft"]["route_evidence"]["parameter_contract"]
+    metadata["stable_parent_candidates"] = [
+        {
+            "operation_id": "material.album.tree",
+            "input_field": "album_id",
+            "output_path": "data.tree..id",
+            "selection": "all",
+        }
+    ]
+    metadata["stable_pattern_adjustments"] = [
+        {"field": "date_list", "candidate_shape": "array<string>"}
+    ]
+
+    reassembled, _ = assemble_source_parameters(source, contract)
+
+    self_contract = reassembled["draft"]["route_evidence"]["parameter_contract"]
+    assert reassembled["operation"]["live_probe"]["inputs"]["album_id"] == (
+        "$parent:album_id"
+    )
+    assert self_contract["stable_parent_candidates"] == metadata[
+        "stable_parent_candidates"
+    ]
+    assert self_contract["stable_pattern_adjustments"] == metadata[
+        "stable_pattern_adjustments"
+    ]
+
+
+def test_draft_validation_rejects_literal_type_conflicts_before_network() -> None:
+    source = build_draft(_route(), set())
+    source["operation"]["input_fields"]["page"] = {"type": "array"}
+    source["operation"]["request"]["defaults"]["page"] = 1
+
+    try:
+        validate_source(source)
+    except ValueError as exc:
+        assert "request.defaults.page" in str(exc)
+    else:  # pragma: no cover - regression guard
+        raise AssertionError("literal type conflict was accepted")
+
+    source["operation"]["request"]["defaults"].pop("page")
+    source["operation"]["live_probe"]["inputs"]["page"] = "$parent:page"
+    validate_source(source)
 
 
 def test_code_1004_learning_records_only_parameter_shape() -> None:

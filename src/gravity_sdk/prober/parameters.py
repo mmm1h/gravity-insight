@@ -75,6 +75,7 @@ def assemble_source_parameters(
     prior = route_evidence.get("parameter_contract", {})
     learned = prior.get("learned_parameters", []) if isinstance(prior, Mapping) else []
     route_evidence["parameter_contract"] = {
+        **(copy.deepcopy(dict(prior)) if isinstance(prior, Mapping) else {}),
         "source": "src/gravity_sdk/census/data/route-params.json",
         "route": {"method": str(route.get("method", "")), "path": str(route.get("path", ""))},
         "status": str(route.get("status", "unknown")),

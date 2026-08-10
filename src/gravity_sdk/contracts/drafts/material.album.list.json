@@ -457,17 +457,6 @@
           }
         ]
       },
-      "path": "/turbo_engine/api/v1/asset/material/album/list/",
-      "promotion_level": null,
-      "promotion_platform": null,
-      "semantic_confidence": "medium",
-      "semantic_evidence": [
-        "read_action_path_token"
-      ],
-      "status": "uncovered_read",
-      "ui_texts": [
-        "名称不能为空"
-      ],
       "parent_resolution": {
         "basis": "declared_parent_probe",
         "bindings": [
@@ -488,7 +477,18 @@
           "A successful or explicit permission response from every declared parent operation."
         ],
         "replacement_blocker": null
-      }
+      },
+      "path": "/turbo_engine/api/v1/asset/material/album/list/",
+      "promotion_level": null,
+      "promotion_platform": null,
+      "semantic_confidence": "medium",
+      "semantic_evidence": [
+        "read_action_path_token"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "名称不能为空"
+      ]
     },
     "status": "draft"
   },
@@ -507,7 +507,7 @@
       "album_id": {
         "default": "",
         "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
-        "type": "array"
+        "type": "string"
       },
       "ordered_by": {
         "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",

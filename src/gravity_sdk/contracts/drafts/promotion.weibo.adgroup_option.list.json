@@ -165,19 +165,6 @@
           }
         ]
       },
-      "path": "/turbo_engine/api/v1/weibo/manager/adgroup/list/",
-      "promotion_level": "广告组",
-      "promotion_platform": "weibo",
-      "semantic_confidence": "medium",
-      "semantic_evidence": [
-        "read_action_path_token"
-      ],
-      "status": "uncovered_read",
-      "ui_texts": [
-        "优化师",
-        "单页汇总",
-        "投放产品"
-      ],
       "parent_resolution": {
         "basis": "declared_parent_probe",
         "bindings": [
@@ -199,7 +186,20 @@
           "A proven parent operation and output path for: campaign_id."
         ],
         "replacement_blocker": null
-      }
+      },
+      "path": "/turbo_engine/api/v1/weibo/manager/adgroup/list/",
+      "promotion_level": "广告组",
+      "promotion_platform": "weibo",
+      "semantic_confidence": "medium",
+      "semantic_evidence": [
+        "read_action_path_token"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "优化师",
+        "单页汇总",
+        "投放产品"
+      ]
     },
     "status": "draft"
   },
@@ -228,7 +228,7 @@
       "enabled": false,
       "inputs": {
         "advertiser_id": "$parent:advertiser_id",
-        "campaign_id": 0
+        "campaign_id": ""
       }
     },
     "operation_id": "promotion.weibo.adgroup_option.list",

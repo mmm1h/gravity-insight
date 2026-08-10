@@ -231,6 +231,15 @@
           }
         ]
       },
+      "parent_resolution": {
+        "basis": "child_semantic_success_without_parent",
+        "bindings": [],
+        "conclusion": "unblocked",
+        "detail": "The child route returned a semantic success without a parent selector; no parent binding is required.",
+        "evidence": "evidence/probe/20260809T145638Z_material.kuaishou_asset_title.list.yaml",
+        "missing_evidence": [],
+        "replacement_blocker": null
+      },
       "path": "/turbo_engine/api/v1/kuaishou/asset/title/list/",
       "promotion_level": null,
       "promotion_platform": null,
@@ -248,16 +257,7 @@
         "请输入关键词",
         "请输入标题名称",
         "请输入策略组描述"
-      ],
-      "parent_resolution": {
-        "basis": "child_semantic_success_without_parent",
-        "bindings": [],
-        "conclusion": "unblocked",
-        "detail": "The child route returned a semantic success without a parent selector; no parent binding is required.",
-        "evidence": "evidence/probe/20260809T145638Z_material.kuaishou_asset_title.list.yaml",
-        "missing_evidence": [],
-        "replacement_blocker": null
-      }
+      ]
     },
     "status": "draft"
   },
@@ -287,7 +287,7 @@
         "type": "integer"
       },
       "page_size": {
-        "default": 5000.0,
+        "default": 5000,
         "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=unknown); presence describes frontend calls and is not a server-required declaration.",
         "type": "integer"
       }
@@ -296,7 +296,7 @@
       "enabled": false,
       "inputs": {
         "page": 1,
-        "page_size": 5000.0
+        "page_size": 5000
       }
     },
     "operation_id": "material.kuaishou_asset_title.list",
@@ -372,7 +372,7 @@
       ],
       "defaults": {
         "page": 1,
-        "page_size": 5000.0
+        "page_size": 5000
       },
       "fixed_body": {},
       "fixed_query": {},

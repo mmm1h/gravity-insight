@@ -230,23 +230,6 @@
           }
         ]
       },
-      "path": "/turbo_engine/api/v1/asset/directional_package/tencent/list/",
-      "promotion_level": null,
-      "promotion_platform": null,
-      "semantic_confidence": "medium",
-      "semantic_evidence": [
-        "read_action_path_token"
-      ],
-      "status": "uncovered_read",
-      "ui_texts": [
-        "关键词",
-        "创建人",
-        "加载中，请等待...",
-        "操作",
-        "更新时间",
-        "本地定向包",
-        "请输入"
-      ],
       "parent_resolution": {
         "basis": "declared_parent_probe",
         "bindings": [
@@ -268,7 +251,24 @@
         "evidence": "evidence/probe/20260809T145635Z_material.asset_directional_package_tencent.list.yaml",
         "missing_evidence": [],
         "replacement_blocker": null
-      }
+      },
+      "path": "/turbo_engine/api/v1/asset/directional_package/tencent/list/",
+      "promotion_level": null,
+      "promotion_platform": null,
+      "semantic_confidence": "medium",
+      "semantic_evidence": [
+        "read_action_path_token"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "关键词",
+        "创建人",
+        "加载中，请等待...",
+        "操作",
+        "更新时间",
+        "本地定向包",
+        "请输入"
+      ]
     },
     "status": "draft"
   },
@@ -301,16 +301,16 @@
       "page_size": {
         "default": 200,
         "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
-        "type": "array"
+        "type": "integer"
       }
     },
     "live_probe": {
       "enabled": false,
       "inputs": {
+        "advertiser_ids": "$parent:advertiser_ids",
         "filters": [],
         "page": 1,
-        "page_size": 200,
-        "advertiser_ids": "$parent:advertiser_ids"
+        "page_size": 200
       }
     },
     "operation_id": "material.asset_directional_package_tencent.list",

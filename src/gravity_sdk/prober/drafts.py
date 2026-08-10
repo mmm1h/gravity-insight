@@ -910,9 +910,9 @@ def build_draft(route: Mapping[str, Any], existing_ids: set[str]) -> dict[str, A
 
 
 def validate_source(source: Mapping[str, Any]) -> None:
-    from gravity_sdk.compiler import ContractCompiler
+    from .parameter_types import validate_source_contract
 
-    ContractCompiler().operation_schema.validate(source)
+    validate_source_contract(source)
 
 
 def create_drafts(

@@ -253,11 +253,11 @@
       },
       "page": {
         "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
-        "type": "array"
+        "type": "integer"
       },
       "page_size": {
         "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
-        "type": "array"
+        "type": "integer"
       }
     },
     "live_probe": {
