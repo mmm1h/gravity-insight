@@ -3,37 +3,57 @@
   "draft": {
     "blockers": [
       {
-        "code": "probe_inconclusive",
-        "detail": "The latest probe did not satisfy the promotion gate.",
-        "evidence": "evidence/probe/20260808T231144Z_promotion.bytedance.extend_package.list.yaml",
+        "code": "empty_sample",
+        "detail": "The observed tenant response was empty and cannot prove an item schema.",
+        "evidence": "evidence/probe/20260810T215922Z_promotion.bytedance.extend_package.list.yaml",
         "status": "open"
       },
       {
         "code": "response_schema_unverified",
         "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
-        "evidence": "src/gravity_sdk/census/data/route-response-fields.json#/routes/325",
+        "evidence": "evidence/probe/20260810T215922Z_promotion.bytedance.extend_package.list.yaml",
         "status": "open"
       }
     ],
     "candidate_fields": [
       {
-        "classification_reason": "frontend_static_consumer_unreviewed",
-        "expose": false,
-        "path": "data.list",
-        "presence": "unknown",
-        "privacy_classification": "manual_review",
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.page",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
         "types": [
-          "unknown"
+          "integer"
         ]
       },
       {
-        "classification_reason": "frontend_static_consumer_unreviewed",
-        "expose": false,
-        "path": "data.page_info.total_number",
-        "presence": "unknown",
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.page_size",
+        "presence": "observed",
         "privacy_classification": "non_sensitive",
         "types": [
-          "unknown"
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.total_number",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.total_page",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
         ]
       }
     ],
@@ -80,12 +100,34 @@
         "projected_schema_fingerprint": null,
         "raw_schema_fingerprint": null,
         "successful": false
+      },
+      {
+        "conclusion": "local_or_parent_inconclusive",
+        "method_verified": false,
+        "pagination_verified": false,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260810T215522Z_promotion.bytedance.extend_package.list.yaml",
+        "probed_at": "2026-08-10T21:55:22Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "09b11dee96b91c5f7ff0f8fa03d644e62d2de7f85af48359a94d837961cfce8f",
+        "successful": false
+      },
+      {
+        "conclusion": "inconclusive_empty",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260810T215922Z_promotion.bytedance.extend_package.list.yaml",
+        "probed_at": "2026-08-10T21:59:22Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "7c58ed2c08c62403763f03bf84baabf2f6609efc6064f87aa03b35d9b739c9ea",
+        "successful": false
       }
     ],
     "promotion_gate": {
       "eligible": false,
       "missing": [
-        "probe_inconclusive",
+        "empty_sample",
         "response_projection",
         "response_schema_unverified",
         "successful_probe"
@@ -234,6 +276,28 @@
           }
         ]
       },
+      "parent_resolution": {
+        "basis": "declared_parent_probe",
+        "bindings": [
+          {
+            "candidate_count": 1,
+            "candidate_types": [
+              "int"
+            ],
+            "output_path": "data.list[].app_cloud_id",
+            "parent_operation_id": "promotion.bytedance.app.list",
+            "selection": "first",
+            "status": "resolved",
+            "target_cardinality": "one",
+            "target_input": "app_cloud_id"
+          }
+        ],
+        "conclusion": "unblocked",
+        "detail": "Every declared parent binding yielded a selectable value; values stayed in process memory.",
+        "evidence": "evidence/probe/20260810T215500Z_promotion.bytedance.extend_package.list.yaml",
+        "missing_evidence": [],
+        "replacement_blocker": null
+      },
       "path": "/turbo_engine/api/v1/bytedance/app/extend_package/list/",
       "promotion_level": "其它",
       "promotion_platform": "bytedance",
@@ -257,7 +321,7 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "block_reason": "draft blockers: probe_inconclusive, response_schema_unverified",
+    "block_reason": "draft blockers: empty_sample, response_schema_unverified",
     "contract_version": 1,
     "description": "Draft catalog entry inferred from census route GET /turbo_engine/api/v1/bytedance/app/extend_package/list/; request binding, pagination, and response projection remain unverified.",
     "domain": "promotion",
@@ -268,7 +332,7 @@
       "app_cloud_id": {
         "description": "Frontend-observed ByteDance cloud application ID.",
         "required": true,
-        "type": "string"
+        "type": "integer"
       },
       "page": {
         "default": 1,
@@ -291,12 +355,14 @@
     },
     "operation_id": "promotion.bytedance.extend_package.list",
     "pagination": {
-      "kind": "none",
-      "list_path": "",
-      "page_field": "",
-      "page_info_path": "",
-      "page_size_field": "",
-      "total_page_field": ""
+      "default_page_size": 20,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 100,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
     },
     "path_template": "/turbo_engine/api/v1/bytedance/app/extend_package/list/",
     "platform": "bytedance",
@@ -378,9 +444,14 @@
     ],
     "resource": "extend_package",
     "response_projection": {
-      "data_keys": [],
+      "data_keys": [
+        "page_info"
+      ],
       "dynamic_item_fields": [],
       "item_keys": [],
+      "known_omitted_data_keys": [
+        "list"
+      ],
       "required_data_keys": []
     },
     "semantic_error_rules": [],

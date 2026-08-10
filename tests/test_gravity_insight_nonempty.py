@@ -481,4 +481,4 @@ def test_task_scope_tracks_integrated_exact_blocker_sets() -> None:
         ROOT / "src" / "gravity_sdk" / "contracts" / "drafts"
     )
 
-    assert len(operation_ids) == 115
+    assert len(operation_ids) == 118

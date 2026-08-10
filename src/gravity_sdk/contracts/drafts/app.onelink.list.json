@@ -3,29 +3,19 @@
   "draft": {
     "blockers": [
       {
-        "code": "probe_inconclusive",
-        "detail": "The latest probe did not satisfy the promotion gate.",
-        "evidence": "evidence/probe/20260809T011137Z_app.onelink.list.yaml",
+        "code": "empty_sample",
+        "detail": "The observed tenant response was empty and cannot prove an item schema.",
+        "evidence": "evidence/probe/20260810T215515Z_app.onelink.list.yaml",
         "status": "open"
       },
       {
         "code": "response_schema_unverified",
         "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
-        "evidence": "src/gravity_sdk/census/data/route-response-fields.json#/routes/779",
+        "evidence": "evidence/probe/20260810T215515Z_app.onelink.list.yaml",
         "status": "open"
       }
     ],
     "candidate_fields": [
-      {
-        "classification_reason": "frontend_static_consumer_unreviewed",
-        "expose": false,
-        "path": "data.list",
-        "presence": "unknown",
-        "privacy_classification": "manual_review",
-        "types": [
-          "unknown"
-        ]
-      },
       {
         "classification_reason": "business_metadata_name_pattern",
         "expose": true,
@@ -121,12 +111,23 @@
         "projected_schema_fingerprint": null,
         "raw_schema_fingerprint": null,
         "successful": false
+      },
+      {
+        "conclusion": "inconclusive_empty",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260810T215515Z_app.onelink.list.yaml",
+        "probed_at": "2026-08-10T21:55:15Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "7c58ed2c08c62403763f03bf84baabf2f6609efc6064f87aa03b35d9b739c9ea",
+        "successful": false
       }
     ],
     "promotion_gate": {
       "eligible": false,
       "missing": [
-        "probe_inconclusive",
+        "empty_sample",
         "response_projection",
         "response_schema_unverified",
         "successful_probe"
@@ -229,6 +230,28 @@
           }
         ]
       },
+      "parent_resolution": {
+        "basis": "declared_parent_probe",
+        "bindings": [
+          {
+            "candidate_count": 1,
+            "candidate_types": [
+              "str"
+            ],
+            "output_path": "data.list[].turbo_promoted_object_id",
+            "parent_operation_id": "promotion.object.list",
+            "selection": "first",
+            "status": "resolved",
+            "target_cardinality": "one",
+            "target_input": "turbo_promoted_object_id"
+          }
+        ],
+        "conclusion": "unblocked",
+        "detail": "Every declared parent binding yielded a selectable value; values stayed in process memory.",
+        "evidence": "evidence/probe/20260810T215459Z_app.onelink.list.yaml",
+        "missing_evidence": [],
+        "replacement_blocker": null
+      },
       "path": "/turbo_engine/api/v1/user/promoted/onelink/list/",
       "promotion_level": null,
       "promotion_platform": null,
@@ -255,7 +278,7 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "block_reason": "draft blockers: probe_inconclusive, response_schema_unverified",
+    "block_reason": "draft blockers: empty_sample, response_schema_unverified",
     "contract_version": 1,
     "description": "Draft catalog entry inferred from census route GET /turbo_engine/api/v1/user/promoted/onelink/list/; request binding, pagination, and response projection remain unverified.",
     "domain": "app",
@@ -263,11 +286,6 @@
     "examples": [],
     "executable": false,
     "input_fields": {
-      "turbo_promoted_object_id": {
-        "description": "Promoted-object ID encoded by the SDK into Gravity's private OneLink filter grammar.",
-        "required": true,
-        "type": "string"
-      },
       "page": {
         "default": 1,
         "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
@@ -277,24 +295,31 @@
         "default": 10,
         "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
         "type": "integer"
+      },
+      "turbo_promoted_object_id": {
+        "description": "Promoted-object ID encoded by the SDK into Gravity's private OneLink filter grammar.",
+        "required": true,
+        "type": "string"
       }
     },
     "live_probe": {
       "enabled": false,
       "inputs": {
-        "turbo_promoted_object_id": "$parent:turbo_promoted_object_id",
         "page": 1,
-        "page_size": 1
+        "page_size": 1,
+        "turbo_promoted_object_id": "$parent:turbo_promoted_object_id"
       }
     },
     "operation_id": "app.onelink.list",
     "pagination": {
-      "kind": "none",
-      "list_path": "",
-      "page_field": "",
-      "page_info_path": "",
-      "page_size_field": "",
-      "total_page_field": ""
+      "default_page_size": 10,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 100,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
     },
     "path_template": "/turbo_engine/api/v1/user/promoted/onelink/list/",
     "platform": null,
@@ -361,9 +386,9 @@
       "fixed_query": {},
       "path_fields": [],
       "query_fields": [
-        "turbo_promoted_object_id",
         "page",
-        "page_size"
+        "page_size",
+        "turbo_promoted_object_id"
       ]
     },
     "required_parent": [
