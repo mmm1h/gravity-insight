@@ -10,7 +10,6 @@ from __future__ import annotations
 import importlib
 import inspect
 import json
-import subprocess
 import threading
 from dataclasses import asdict, is_dataclass
 from datetime import datetime, timedelta, timezone
@@ -188,8 +187,8 @@ def credential_status() -> dict[str, Any]:
     else:
         state = "missing"
         next_action = (
-            "Configure GRAVITY_AUTH_TOKEN or both GRAVITY_USERNAME and "
-            "GRAVITY_PASSWORD, then run `python -m gravity_sdk auth status`."
+            "Run `gravity` in an interactive terminal to configure the Gravity "
+            "username and password."
         )
     return {
         "status": state,
@@ -228,46 +227,17 @@ def _masked_account(username: str | None) -> str | None:
 
 
 def refresh_credentials() -> dict[str, Any]:
-    """Delegate credential refresh to the existing guarded PowerShell workflow."""
+    """Refresh the SDK-managed session without exposing a token setting."""
 
-    root = REPO_ROOT
-    script = root / "scripts" / "refresh-local-token.ps1"
-    if not script.is_file():
-        raise RuntimeError("Gravity credential refresh workflow is unavailable")
-    completed = subprocess.run(
-        ["powershell", "-NoProfile", "-File", str(script), "-Force"],
-        cwd=root,
-        capture_output=True,
-        text=True,
-        timeout=360,
-        check=False,
-    )
-    if completed.returncode != 0:
-        raise RuntimeError("Gravity credential refresh failed; inspect the local refresh state")
-    state_path = root / "tmp" / "scheduled-tasks" / "gravity-token-refresh.latest.json"
-    allowed = {
-        "TimestampAsiaShanghai",
-        "Status",
-        "Action",
-        "ExpirationAsiaShanghai",
-        "HoursLeft",
-        "UserEnvironmentSynced",
-        "SmokeHttp",
-        "SmokeApiCode",
-        "SmokeStatus",
-        "CredentialSync",
-    }
-    state: dict[str, Any] = {}
-    if state_path.is_file():
-        try:
-            raw = json.loads(state_path.read_text(encoding="utf-8"))
-            if isinstance(raw, Mapping):
-                state = {key: raw[key] for key in allowed if key in raw}
-        except (OSError, UnicodeError, json.JSONDecodeError):
-            state = {}
+    sdk = _sdk_module()
+    provider_class = getattr(sdk, "CredentialProvider", None)
+    if provider_class is None:
+        raise RuntimeError("Gravity SDK does not export CredentialProvider")
+    provider = provider_class(REPO_ROOT / ".env.gravity.local", environ={})
+    provider.refresh()
     return {
         "status": "success",
-        "refresh": state,
+        "refresh": {"action": "refreshed_internal_session"},
         "auth": credential_status(),
     }
 

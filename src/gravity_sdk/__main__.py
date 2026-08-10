@@ -7,6 +7,7 @@ from collections.abc import Sequence
 
 from . import cli as insight_cli
 from .census import cli as census_cli
+from .onboarding import ensure_first_run_credentials
 from .sql import __main__ as sql_cli
 
 
@@ -14,6 +15,7 @@ _HELP = """Gravity SDK
 
 Usage:
   gravity insight <command> [options]
+  gravity metadata sync --all-apps
   gravity sql <command> [options]
   gravity census <command> [options]
 
@@ -27,6 +29,8 @@ Run `gravity insight --help`, `gravity sql --help`, or
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
+    if not ensure_first_run_credentials(args):
+        return 4
     if not args or args == ["--help"] or args == ["-h"]:
         print(_HELP, end="")
         return 0

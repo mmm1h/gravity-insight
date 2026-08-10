@@ -166,38 +166,33 @@ class CredentialUxTests(unittest.TestCase):
     def test_refresh_returns_the_post_refresh_auth_status(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            script = root / "scripts" / "refresh-local-token.ps1"
-            script.parent.mkdir(parents=True)
-            script.write_text("# test fixture\n", encoding="utf-8")
-            state_path = (
-                root
-                / "tmp"
-                / "scheduled-tasks"
-                / "gravity-token-refresh.latest.json"
-            )
-            state_path.parent.mkdir(parents=True)
-            state_path.write_text(
-                json.dumps({"Status": "success", "Action": "refreshed"}),
-                encoding="utf-8",
-            )
             refreshed = {
                 "auth_state": "valid_token",
                 "token_valid": True,
                 "account_hint": "a***@example.invalid",
             }
+
+            class Provider:
+                def __init__(self, path, *, environ):
+                    self.path = path
+                    self.environ = environ
+
+                def refresh(self):
+                    return SimpleNamespace(token="internal")
+
             with (
                 patch.object(runtime, "REPO_ROOT", root),
                 patch.object(
-                    runtime.subprocess,
-                    "run",
-                    return_value=SimpleNamespace(returncode=0),
+                    runtime,
+                    "_sdk_module",
+                    return_value=SimpleNamespace(CredentialProvider=Provider),
                 ),
                 patch.object(runtime, "credential_status", return_value=refreshed),
             ):
                 result = runtime.refresh_credentials()
 
         self.assertEqual("success", result["status"])
-        self.assertEqual("refreshed", result["refresh"]["Action"])
+        self.assertEqual("refreshed_internal_session", result["refresh"]["action"])
         self.assertEqual(refreshed, result["auth"])
 
 

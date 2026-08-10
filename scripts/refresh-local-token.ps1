@@ -8,6 +8,7 @@ $ErrorActionPreference = "Stop"
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $envPath = Join-Path $repoRoot ".env.gravity.local"
+$sessionPath = Join-Path $repoRoot ".env.gravity.session.local"
 $statePath = Join-Path $repoRoot "tmp\scheduled-tasks\gravity-token-refresh.latest.json"
 
 function Read-LocalEnv {
@@ -44,7 +45,18 @@ function Write-LocalEnv {
     "# Local Gravity SQL auth. This file is ignored by git.",
     "# Do not commit, paste, or print these values.",
     "GRAVITY_USERNAME=$($Values.GRAVITY_USERNAME)",
-    "GRAVITY_PASSWORD=$($Values.GRAVITY_PASSWORD)",
+    "GRAVITY_PASSWORD=$($Values.GRAVITY_PASSWORD)"
+  )
+}
+
+function Write-SessionEnv {
+  param(
+    [Parameter(Mandatory = $true)][string]$Path,
+    [Parameter(Mandatory = $true)][hashtable]$Values
+  )
+
+  Set-Content -LiteralPath $Path -Encoding UTF8 -Value @(
+    "# SDK-managed Gravity session. Do not edit or commit.",
     "GRAVITY_AUTH_TOKEN=$($Values.GRAVITY_AUTH_TOKEN)",
     "GRAVITY_AUTH_TOKEN_EXPIRES_AT_ASIA_SHANGHAI=$($Values.GRAVITY_AUTH_TOKEN_EXPIRES_AT_ASIA_SHANGHAI)",
     "GRAVITY_AUTH_UPDATED_AT=$($Values.GRAVITY_AUTH_UPDATED_AT)"
@@ -238,23 +250,23 @@ try {
     throw "Missing GRAVITY_USERNAME or GRAVITY_PASSWORD in $envPath"
   }
 
-  $status = Get-JwtStatus -Token $localEnv.GRAVITY_AUTH_TOKEN
+  $sessionEnv = Read-LocalEnv -Path $sessionPath
+  $status = Get-JwtStatus -Token $sessionEnv.GRAVITY_AUTH_TOKEN
   $action = "kept_local_token"
   if (-not $status -or $Force -or $status.NeedsRefresh) {
-    $localEnv.GRAVITY_AUTH_TOKEN = Invoke-GravityLogin -Username $localEnv.GRAVITY_USERNAME -Password $localEnv.GRAVITY_PASSWORD
-    $status = Get-JwtStatus -Token $localEnv.GRAVITY_AUTH_TOKEN
+    $sessionEnv.GRAVITY_AUTH_TOKEN = Invoke-GravityLogin -Username $localEnv.GRAVITY_USERNAME -Password $localEnv.GRAVITY_PASSWORD
+    $status = Get-JwtStatus -Token $sessionEnv.GRAVITY_AUTH_TOKEN
     if (-not $status) {
       throw "Gravity login returned a token without a valid expiration."
     }
-    $localEnv.GRAVITY_AUTH_TOKEN_EXPIRES_AT_ASIA_SHANGHAI = $status.ExpiresAt.ToString("yyyy-MM-dd HH:mm:ss zzz")
-    $localEnv.GRAVITY_AUTH_UPDATED_AT = (Get-Date).ToString("yyyy-MM-ddTHH:mm:sszzz")
+    $sessionEnv.GRAVITY_AUTH_TOKEN_EXPIRES_AT_ASIA_SHANGHAI = $status.ExpiresAt.ToString("yyyy-MM-dd HH:mm:ss zzz")
+    $sessionEnv.GRAVITY_AUTH_UPDATED_AT = (Get-Date).ToString("yyyy-MM-ddTHH:mm:sszzz")
     Write-LocalEnv -Path $envPath -Values $localEnv
+    Write-SessionEnv -Path $sessionPath -Values $sessionEnv
     $action = "refreshed_local_token"
   }
 
-  [Environment]::SetEnvironmentVariable("GRAVITY_AUTH_TOKEN", $localEnv.GRAVITY_AUTH_TOKEN, "User")
-  $env:GRAVITY_AUTH_TOKEN = $localEnv.GRAVITY_AUTH_TOKEN
-  $smoke = Invoke-GravitySmokeTest -Token $localEnv.GRAVITY_AUTH_TOKEN
+  $smoke = Invoke-GravitySmokeTest -Token $sessionEnv.GRAVITY_AUTH_TOKEN
   $credentialSync = if ($action -eq "refreshed_local_token") { Invoke-GitHubCredentialSync } else { "unchanged" }
   $result = [ordered]@{
     TimestampAsiaShanghai = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss zzz")
@@ -262,7 +274,7 @@ try {
     Action = $action
     ExpirationAsiaShanghai = $status.ExpiresAt.ToString("yyyy-MM-dd HH:mm:ss zzz")
     HoursLeft = [math]::Round($status.HoursLeft, 2)
-    UserEnvironmentSynced = $true
+    UserEnvironmentSynced = $false
     SmokeHttp = $smoke.Http
     SmokeApiCode = $smoke.ApiCode
     SmokeStatus = $smoke.Status

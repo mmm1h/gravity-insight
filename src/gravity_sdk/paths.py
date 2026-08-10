@@ -18,6 +18,5 @@ PROJECT_ROOT = (
 CONTRACT_ROOT = PACKAGE_ROOT / "contracts"
 MANIFEST_ROOT = PACKAGE_ROOT / "manifests"
 CENSUS_DATA_ROOT = PACKAGE_ROOT / "census" / "data"
-DATA_CONTRACT_ROOT = PROJECT_ROOT / "docs" / "data-contracts"
 EVIDENCE_ROOT = PROJECT_ROOT / "evidence"
 TMP_ROOT = PROJECT_ROOT / "tmp"

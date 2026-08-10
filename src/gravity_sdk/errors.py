@@ -102,8 +102,8 @@ def _default_next_action(code: str, operation_id: str | None) -> str:
         ErrorCode.INPUT_INVALID.value: describe,
         ErrorCode.PARENT_REQUIRED.value: describe,
         ErrorCode.AUTH_MISSING.value: (
-            "Run `python -m gravity_sdk auth status`; configure a token "
-            "or username/password, then run `python -m gravity_sdk auth refresh`."
+            "Run `gravity` in an interactive terminal to configure the Gravity "
+            "username and password."
         ),
         ErrorCode.AUTH_REJECTED.value: (
             "Run `python -m gravity_sdk auth refresh`, then retry once."

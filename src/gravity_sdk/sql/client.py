@@ -22,6 +22,7 @@ try:
         SQL_PROFILE,
         get_shared_runtime,
     )
+    from gravity_sdk.paths import PROJECT_ROOT
 except ModuleNotFoundError:  # pragma: no cover - source-tree execution without installation.
     from gravity_sdk.errors import (
         AuthenticationError,
@@ -36,6 +37,7 @@ except ModuleNotFoundError:  # pragma: no cover - source-tree execution without 
         SQL_PROFILE,
         get_shared_runtime,
     )
+    from gravity_sdk.paths import PROJECT_ROOT
 
 
 DEFAULT_ENDPOINT = "https://api-insight.gravity-engine.com/custom_sql/api/sql/execute"
@@ -94,7 +96,7 @@ class GravityClient:
 
     @classmethod
     def from_env(cls) -> "GravityClient":
-        return cls(get_shared_runtime())
+        return cls(get_shared_runtime(env_path=PROJECT_ROOT / ".env.gravity.local"))
 
     def execute_sql(self, sql: str) -> list[dict[str, Any]]:
         normalized = _validate_sql(sql)

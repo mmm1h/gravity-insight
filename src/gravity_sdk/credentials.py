@@ -3,12 +3,9 @@
 from __future__ import annotations
 
 import base64
-import getpass
 import hashlib
 import json
 import os
-import subprocess
-import tempfile
 import threading
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
@@ -16,36 +13,28 @@ from pathlib import Path
 from typing import Any, Callable, Mapping, MutableMapping
 from zoneinfo import ZoneInfo
 
+from .credential_storage import (
+    EXPIRY_KEY,
+    TOKEN_KEYS,
+    UPDATED_KEY,
+    _atomic_update_env,
+    clear_account_credentials,
+    migrate_legacy_session,
+    read_env_file as _read_env_file,
+    save_account_credentials,
+    session_path,
+)
 from .errors import AuthenticationError, CredentialError
 
 
 GRAVITY_HOST = "https://api-insight.gravity-engine.com"
 LOGIN_PATH = "/account_center/api/v1/user_login/v2/"
 DEFAULT_ENV_PATH = Path(__file__).resolve().parents[3] / ".env.gravity.local"
-TOKEN_KEYS = ("GRAVITY_AUTH_TOKEN", "GRAVITY_AUTHORIZATION")
-EXPIRY_KEY = "GRAVITY_AUTH_TOKEN_EXPIRES_AT_ASIA_SHANGHAI"
-UPDATED_KEY = "GRAVITY_AUTH_UPDATED_AT"
 SHANGHAI = ZoneInfo("Asia/Shanghai")
 
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
-
-
-def _read_env_file(path: Path) -> dict[str, str]:
-    try:
-        lines = path.read_text(encoding="utf-8-sig").splitlines()
-    except FileNotFoundError:
-        return {}
-    except (OSError, UnicodeError) as exc:
-        raise CredentialError("could not read the Gravity credential file") from exc
-    values: dict[str, str] = {}
-    for line in lines:
-        stripped = line.strip()
-        if stripped and not stripped.startswith("#") and "=" in stripped:
-            key, value = stripped.split("=", 1)
-            values[key.strip()] = value.strip().strip('"').strip("'")
-    return values
 
 
 def _parse_datetime(value: str | None) -> datetime | None:
@@ -88,6 +77,7 @@ class CredentialConfig:
         environ: Mapping[str, str] | None = None,
     ) -> "CredentialConfig":
         file_values = _read_env_file(path)
+        session_values = _read_env_file(session_path(path))
         # Explicit mappings are deterministic overrides. Ambient process values can be
         # stale after the refresh workflow updates the file and user environment because
         # a child process cannot mutate its parent's already-inherited environment.
@@ -95,9 +85,29 @@ class CredentialConfig:
         environment_values = _gravity_values(environment)
         values = dict(file_values)
         values.update(environment_values)
-        token, token_values, token_source = _select_token_source(
-            file_values, environment_values, ambient=environ is None
+        session_token = _token_from(session_values)
+        explicit_token = (
+            _token_from(environment_values) if environ is not None else None
         )
+        if explicit_token:
+            token, token_values, token_source = (
+                explicit_token,
+                environment_values,
+                "process_environment",
+            )
+        elif session_token:
+            token, token_values, token_source = (
+                session_token,
+                session_values,
+                "internal_session",
+            )
+        else:
+            # Backward-compatible read for installations that still have a token
+            # in the account file or process environment. New writes always go to
+            # the private session file.
+            token, token_values, token_source = _select_token_source(
+                file_values, environment_values, ambient=environ is None
+            )
         configured_expiry = _parse_datetime(token_values.get(EXPIRY_KEY))
         return cls(
             username=values.get("GRAVITY_USERNAME", "").strip() or None,
@@ -234,6 +244,8 @@ class CredentialProvider:
         return cls(env_path, **kwargs)
 
     def _load(self) -> Credential | None:
+        if self._persist:
+            migrate_legacy_session(self.env_path)
         config = CredentialConfig.from_env(self.env_path, self._environ)
         self._config = config
         if not config.token:
@@ -444,56 +456,7 @@ class CredentialProvider:
             EXPIRY_KEY: expiry.astimezone(SHANGHAI).isoformat(timespec="seconds") if expiry else "",
             UPDATED_KEY: updated.astimezone(SHANGHAI).isoformat(timespec="seconds"),
         }
-        _atomic_update_env(self.env_path, updates)
-        if self._environ is not None:
-            self._environ.update(updates)
-
-
-def _atomic_update_env(path: Path, updates: Mapping[str, str]) -> None:
-    for value in updates.values():
-        if "\n" in value or "\r" in value:
-            raise CredentialError("credential values must not contain line breaks")
-    try:
-        existing = path.read_text(encoding="utf-8-sig") if path.exists() else ""
-    except (OSError, UnicodeError) as exc:
-        raise CredentialError("could not read the Gravity credential file") from exc
-    if path.exists() and (path.is_symlink() or not path.is_file()):
-        raise CredentialError("the Gravity credential path must be a regular file")
-    remaining = dict(updates)
-    lines: list[str] = []
-    for line in existing.splitlines():
-        stripped = line.strip()
-        if stripped and not stripped.startswith("#") and "=" in stripped:
-            key = stripped.split("=", 1)[0].strip()
-            if key in remaining:
-                lines.append(f"{key}={remaining.pop(key)}")
-                continue
-        lines.append(line)
-    lines.extend(f"{key}={value}" for key, value in remaining.items())
-    content = "\n".join(lines).rstrip("\n") + "\n"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary: Path | None = None
-    try:
-        with tempfile.NamedTemporaryFile(
-            "w",
-            encoding="utf-8",
-            newline="\n",
-            dir=path.parent,
-            prefix=f".{path.name}.",
-            suffix=".tmp",
-            delete=False,
-        ) as handle:
-            temporary = Path(handle.name)
-            handle.write(content)
-            handle.flush()
-            os.fsync(handle.fileno())
-        _restrict_secret_file(temporary)
-        os.replace(temporary, path)
-    except OSError as exc:
-        raise CredentialError("could not atomically update the Gravity credential file") from exc
-    finally:
-        if temporary is not None:
-            temporary.unlink(missing_ok=True)
+        _atomic_update_env(session_path(self.env_path), updates)
 
 
 def _jwt_expiry(token: str) -> datetime | None:
@@ -511,34 +474,3 @@ def _jwt_expiry(token: str) -> datetime | None:
         return datetime.fromtimestamp(exp, timezone.utc)
     except (UnicodeError, ValueError, OSError, json.JSONDecodeError):
         return None
-
-
-def _restrict_secret_file(path: Path) -> None:
-    if os.name != "nt":  # pragma: no cover - exercised by Linux CI
-        path.chmod(0o600)
-        return
-    domain = os.environ.get("USERDOMAIN", "").strip()
-    if not domain or domain.upper() == "WORKGROUP":
-        domain = os.environ.get("COMPUTERNAME", "").strip()
-    username = os.environ.get("USERNAME", "").strip() or getpass.getuser()
-    account = "\\".join(part for part in (domain, username) if part) or username
-    try:
-        result = subprocess.run(
-            [
-                "icacls.exe",
-                str(path),
-                "/inheritance:r",
-                "/grant:r",
-                f"{account}:(F)",
-                "*S-1-5-18:(F)",
-                "*S-1-5-32-544:(F)",
-            ],
-            check=False,
-            capture_output=True,
-            timeout=10,
-            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
-        )
-    except (OSError, subprocess.SubprocessError) as exc:
-        raise CredentialError("could not restrict the Gravity credential file") from exc
-    if result.returncode:
-        raise CredentialError("could not restrict the Gravity credential file")

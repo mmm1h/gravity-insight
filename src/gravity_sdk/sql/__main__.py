@@ -32,7 +32,7 @@ from gravity_sdk.sql.products import (
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Gravity data-foundation utilities.")
+    parser = argparse.ArgumentParser(description="Governed SQL fallback when stable Insight cannot express equivalent semantics; otherwise prefer Insight.")
     parser.add_argument("--dry-run", action="store_true", help="Run offline contract checks without calling Gravity.")
     commands = parser.add_subparsers(dest="command")
     credential_parser = commands.add_parser("credentials", help="Sync GM/Gravity credentials via GitHub.")
@@ -51,7 +51,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     verify_parser = commands.add_parser("verify", help="Verify the latest safe Beijing calendar day.")
     verify_parser.add_argument("--date", help="Beijing calendar day (YYYY-MM-DD).")
     verify_parser.add_argument("--publish", action="store_true", help="Atomically update rolling aggregate evidence.")
-    query_parser = commands.add_parser("query", help="Run one built-in aggregate product.")
+    query_parser = commands.add_parser("query", help="Run an aggregate product only when Insight cannot express equivalent semantics.")
     query_parser.add_argument("product", choices=PRODUCTS)
     query_parser.add_argument("--start", required=True, help="Inclusive ISO timestamp.")
     query_parser.add_argument("--end", required=True, help="Exclusive ISO timestamp.")

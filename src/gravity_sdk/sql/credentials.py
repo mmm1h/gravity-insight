@@ -157,9 +157,8 @@ def _credential_fingerprint(root: Path = ROOT) -> str:
     gravity = _env_values(root / ".env.gravity.local")
     values = {
         "storage": "github-draft-release-plaintext-v1",
-        "gravity": gravity.get("GRAVITY_AUTH_TOKEN") or gravity.get("GRAVITY_AUTHORIZATION"),
-        "gmTest": _env_values(root / ".env.gm.local").get("GM_ACCESS_TOKEN"),
-        "gmProduction": _env_values(root / ".env.gm.prod.local").get("GM_ACCESS_TOKEN"),
+        "gravityUsername": gravity.get("GRAVITY_USERNAME"),
+        "gravityPassword": gravity.get("GRAVITY_PASSWORD"),
     }
     if not all(values.values()):
         raise CredentialSyncNotReady("One or more credential files do not contain an access token.")
@@ -355,13 +354,17 @@ def self_test() -> None:
             else:
                 raise AssertionError("a local permission failure was accepted")
         assert not list(failed_target.iterdir())
-        (source / ".env.gravity.local").write_text("GRAVITY_AUTH_TOKEN=g1\nEXPIRES_AT=1\n")
-        (source / ".env.gm.local").write_text("GM_ACCESS_TOKEN=t1\nGM_COOKIE_EXPIRES_AT=1\n")
-        (source / ".env.gm.prod.local").write_text("GM_ACCESS_TOKEN=p1\nGM_COOKIE_EXPIRES_AT=1\n")
+        (source / ".env.gravity.local").write_text(
+            "GRAVITY_USERNAME=account\nGRAVITY_PASSWORD=password-1\n"
+        )
         fingerprint = _credential_fingerprint(source)
-        (source / ".env.gm.local").write_text("GM_ACCESS_TOKEN=t1\nGM_COOKIE_EXPIRES_AT=2\n")
+        (source / ".env.gravity.local").write_text(
+            "GRAVITY_USERNAME=account\nGRAVITY_PASSWORD=password-1\n# comment changed\n"
+        )
         assert _credential_fingerprint(source) == fingerprint
-        (source / ".env.gm.local").write_text("GM_ACCESS_TOKEN=t2\nGM_COOKIE_EXPIRES_AT=2\n")
+        (source / ".env.gravity.local").write_text(
+            "GRAVITY_USERNAME=account\nGRAVITY_PASSWORD=password-2\n"
+        )
         assert _credential_fingerprint(source) != fingerprint
         (source / ".env.gravity.local").unlink()
         try:

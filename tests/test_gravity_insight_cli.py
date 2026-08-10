@@ -344,6 +344,37 @@ class GravityInsightCliTests(unittest.TestCase):
         self.assertTrue(all(item["read_all"] for item in requests))
         self.assertTrue(all(item["inputs"]["app_id"] == "101" for item in requests))
 
+    def test_metadata_sync_all_apps_routes_to_persistent_sync_service(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            database = Path(temporary) / "catalog.sqlite3"
+            envelope = {
+                "schema_version": "gravity-insight.metadata-sync.v1",
+                "ok": True,
+                "status": "success",
+                "database": str(database),
+                "exit_code": 0,
+            }
+            with patch(
+                "gravity_sdk.metadata_sync.sync_all_apps", return_value=envelope
+            ) as sync:
+                code, result, error, client = self.invoke(
+                    [
+                        "metadata",
+                        "sync",
+                        "--all-apps",
+                        "--database",
+                        str(database),
+                        "--concurrency",
+                        "12",
+                    ]
+                )
+            self.assertEqual(0, code)
+            self.assertEqual(envelope, result)
+            self.assertIsNone(error)
+            sync.assert_called_once_with(
+                client, database=database, concurrency=12
+            )
+
     def test_stable_analysis_query_generates_frontend_query_id(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "event.json"

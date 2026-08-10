@@ -608,7 +608,7 @@ def render_markdown(profile: QualityProfile) -> str:
         "# Gravity Insight 代码质量门禁",
         "",
         "> 本文由 `python -m gravity_sdk.quality profile --markdown-out "
-        "docs/governance/GravityInsight代码质量门禁.md` 从当前工作树生成。",
+        "tmp/quality-profile.md` 从当前工作树生成；它是临时诊断，不属于长期文档。",
         "",
         "## 口径与结论",
         "",

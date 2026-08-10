@@ -466,7 +466,7 @@ class GravityProductTests(unittest.TestCase):
                 "GRAVITY_USERNAME=account\nGRAVITY_PASSWORD=password\n",
                 encoding="utf-8",
             )
-            self.assertEqual("ignored_local_file", _credential_source(Path(tempdir)))
+            self.assertEqual("local_account_file", _credential_source(Path(tempdir)))
 
     def test_evidence_preflight_cli_is_offline_json(self):
         output = io.StringIO()

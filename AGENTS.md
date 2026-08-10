@@ -14,6 +14,15 @@ belong here.
 - `gravity census ...` for frontend route census and drift checks.
 - Existing Insight commands may be invoked directly as `gravity <command>`.
 
+## Documentation
+
+- Start at `docs/index.md`; do not read the documentation tree front to back.
+- Querying agents follow `docs/agent-workflow.md`.
+- SDK changes start at `docs/maintainers/index.md` and then read only the
+  task-specific maintainer page.
+- Business modules, campaign semantics, and tracking bindings belong in the
+  calling product knowledge base, not in this repository.
+
 ## Safety
 
 - Read operations use fixed hosts, paths, methods, and manifest contracts.
@@ -21,7 +30,7 @@ belong here.
   raw user-level output.
 - New stable operations require a contract, deterministic manifest compilation,
   projection/privacy review, and tests.
-- Production probing must follow `docs/guides/browser-probe-safety.md`.
+- Production probing must follow `docs/maintainers/probing.md`.
 
 ## Validation
 

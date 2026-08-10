@@ -15,7 +15,6 @@ from gravity_sdk.domains import (
     ANALYSIS_DASHBOARD_OPERATIONS,
     ANALYSIS_DETAIL_OPERATIONS,
     ANALYSIS_DIRECTORY_OPERATIONS,
-    ANALYSIS_METADATA_OPERATIONS,
     ANALYSIS_PAGINATED_OPERATIONS,
     ANALYSIS_QUERY_OPERATIONS,
     ANALYSIS_REPORT_CONFIG_OPERATIONS,
@@ -70,6 +69,11 @@ except ModuleNotFoundError:  # source checkout before editable installation
     from gravity_sdk.multidim import parse_multi_days
 
 from gravity_sdk.parents import add_parent_commands, run_parent_command
+from gravity_sdk.metadata_sync import (
+    add_metadata_commands,
+    run_analysis_metadata,
+    run_metadata_command,
+)
 
 
 DEFAULT_STDOUT_MAX_PAGES, DEFAULT_STDOUT_MAX_ITEMS = 5, 200
@@ -371,11 +375,7 @@ def build_parser() -> argparse.ArgumentParser:
     doctor.add_argument("--live", action="store_true")
     doctor.add_argument("--concurrency", type=_concurrency, default=6)
 
-    apps = commands.add_parser("apps")
-    apps_commands = apps.add_subparsers(dest="apps_command", required=True)
-    apps_list = apps_commands.add_parser("list")
-    _add_input(apps_list)
-    _add_all_pages(apps_list)
+    add_metadata_commands(commands, _concurrency, _add_input, _add_all_pages)
 
     analysis = commands.add_parser("analysis")
     analysis_commands = analysis.add_subparsers(dest="analysis_command", required=True)
@@ -759,36 +759,7 @@ def _multidim_metadata(args: argparse.Namespace) -> Any:
 
 def _analysis(args: argparse.Namespace) -> Any:
     if args.analysis_command == "metadata":
-        client = _client(args)
-        supplied = _object_input(args.input)
-        keyed_input = any(
-            operation_id in supplied for operation_id in ANALYSIS_METADATA_OPERATIONS
-        )
-        requests: list[dict[str, Any]] = []
-        for operation_id in ANALYSIS_METADATA_OPERATIONS:
-            operation_input = (
-                supplied.get(operation_id, {}) if keyed_input else supplied
-            )
-            if not isinstance(operation_input, Mapping):
-                raise ValueError(
-                    f"analysis metadata input for {operation_id} must be an object"
-                )
-            inputs = {
-                "app_id": str(args.app_id),
-                **dict(operation_input),
-            }
-            if operation_id in ANALYSIS_PAGINATED_OPERATIONS:
-                inputs.setdefault("page", 1)
-                inputs.setdefault("page_size", 2_000)
-            inputs["app_id"] = str(args.app_id)
-            requests.append(
-                {
-                    "operation_id": operation_id,
-                    "inputs": inputs,
-                    "read_all": True,
-                }
-            )
-        return runtime.call_batch(client, requests, concurrency=4)
+        return run_analysis_metadata(args, _client, _object_input)
 
     supplied = _object_input(args.input)
     if args.analysis_command == "query":
@@ -853,6 +824,12 @@ def _analysis(args: argparse.Namespace) -> Any:
         max_pages=_page_limits(args, all_pages=True)[0] if read_all else None,
         max_items=_page_limits(args, all_pages=True)[1] if read_all else None,
     )
+
+
+def _apps_or_metadata(args: argparse.Namespace) -> Any:
+    if args.command == "apps":
+        return _domain_read(args, "apps.list")
+    return run_metadata_command(args, _client)
 
 
 def _promotion(args: argparse.Namespace) -> Any:
@@ -1107,8 +1084,8 @@ def run(args: argparse.Namespace) -> Any:
         return _auth_or_parents(args)
     if args.command == "doctor":
         return _doctor(args)
-    if args.command == "apps":
-        return _domain_read(args, "apps.list")
+    if args.command in {"apps", "metadata"}:
+        return _apps_or_metadata(args)
     if args.command == "analysis":
         return _analysis(args)
     if args.command == "multidim":
@@ -1348,10 +1325,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser = build_parser()
         args = parser.parse_args(argv)
         result = dispatch_command(args, _client, _object_input, nonempty_cli.runner(_object_input, run))
-        if (
-            isinstance(result, Mapping)
-            and result.get("schema_version") == "gravity-insight.batch.v1"
-        ):
+        if isinstance(result, Mapping) and result.get("schema_version") in {
+            "gravity-insight.batch.v1",
+            "gravity-insight.metadata-sync.v1",
+        }:
             _emit_success(args, result)
             return int(result.get("exit_code", 4))
         if isinstance(result, Mapping) and result.get("ok") is False:

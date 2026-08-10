@@ -11,7 +11,7 @@ from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
 
-from gravity_sdk.paths import DATA_CONTRACT_ROOT, EVIDENCE_ROOT, PROJECT_ROOT
+from gravity_sdk.paths import EVIDENCE_ROOT, PACKAGE_ROOT, PROJECT_ROOT
 from gravity_sdk.support.documents import replace_atomic_durable
 from gravity_sdk.support.evidence import (
     EvidenceBinding,
@@ -25,8 +25,9 @@ ROOT = PROJECT_ROOT
 BEIJING = timezone(timedelta(hours=8), name="Asia/Shanghai")
 EVIDENCE_PATH = EVIDENCE_ROOT / "latest.json"
 EVIDENCE_PRODUCT_ROOT = EVIDENCE_ROOT / "daily-verification"
-DATASOURCE_PATH = DATA_CONTRACT_ROOT / "Gravity数据源.yaml"
-EVENT_DICTIONARY_PATH = DATA_CONTRACT_ROOT / "Merge埋点字典.md"
+SQL_PRODUCT_CONTRACT_PATH = PACKAGE_ROOT / "contracts" / "sql-products" / "catalog.json"
+DATASOURCE_PATH = SQL_PRODUCT_CONTRACT_PATH
+EVENT_DICTIONARY_PATH = SQL_PRODUCT_CONTRACT_PATH
 
 PRODUCTS = (
     "payment-summary",
@@ -39,12 +40,6 @@ DEFAULT_APP_IDS = {
     "first-scene-coverage": (29034827, 27192043, 24502679),
     "energy-profile-coverage": (29034827,),
     "event-coverage": (29034827,),
-}
-PRODUCT_CONTRACTS = {
-    "payment-summary": DATA_CONTRACT_ROOT / "Gravity支付口径.md",
-    "first-scene-coverage": DATA_CONTRACT_ROOT / "首次场景口径.md",
-    "energy-profile-coverage": DATA_CONTRACT_ROOT / "体力消耗口径.md",
-    "event-coverage": EVENT_DICTIONARY_PATH,
 }
 FORBIDDEN_CLAIMS = {
     "payment-summary": [
@@ -128,25 +123,14 @@ def normalize_app_ids(product: str, app_ids: list[int] | tuple[int, ...] | None)
 
 
 def declared_events(path: Path = EVENT_DICTIONARY_PATH) -> list[str]:
-    text = path.read_text(encoding="utf-8")
-    marker = "## 事件索引"
-    if marker not in text:
-        raise EvidenceFormatError(f"{path}: missing event index")
-    section = text.split(marker, 1)[1].split("\n## ", 1)[0]
-    events: list[str] = []
-    for line in section.splitlines():
-        if not line.startswith("|"):
-            continue
-        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
-        if len(cells) < 2:
-            continue
-        event = cells[1]
-        if event in {"", "埋点名称"} or set(event) <= {"-", ":"}:
-            continue
-        if event not in events:
-            events.append(event)
-    if not events:
-        raise EvidenceFormatError(f"{path}: event index contains no events")
+    contract = _load_sql_product_contract(path)
+    events = contract.get("event_coverage", {}).get("declared_events")
+    if not isinstance(events, list) or not events:
+        raise EvidenceFormatError(f"{path}: declared event list is empty")
+    if any(not isinstance(event, str) or not event for event in events):
+        raise EvidenceFormatError(f"{path}: declared event list contains an invalid name")
+    if len(events) != len(set(events)):
+        raise EvidenceFormatError(f"{path}: declared event list contains duplicates")
     return events
 
 
@@ -1036,20 +1020,17 @@ def _credential_source(root: Path) -> str:
         }
     except (OSError, UnicodeError):
         return "missing"
-    has_token = bool(keys.intersection({"GRAVITY_AUTH_TOKEN", "GRAVITY_AUTHORIZATION"}))
-    has_login = {"GRAVITY_USERNAME", "GRAVITY_PASSWORD"}.issubset(keys)
-    return "ignored_local_file" if has_token or has_login else "missing"
+    account_fields = {"GRAVITY_USERNAME", "GRAVITY_PASSWORD"}
+    has_login = account_fields.issubset(keys)
+    return "local_account_file" if has_login else "missing"
 
 
 def datasource_verification_status(path: Path = DATASOURCE_PATH) -> str:
-    try:
-        text = path.read_text(encoding="utf-8")
-    except OSError as exc:
-        raise EvidenceFormatError(f"cannot read datasource contract: {exc}") from exc
-    match = re.search(r'(?m)^verification_status:\s*["\']?([a-z_]+)', text)
-    if not match:
+    contract = _load_sql_product_contract(path)
+    datasource = contract.get("datasource")
+    status = datasource.get("verification_status") if isinstance(datasource, dict) else None
+    if not isinstance(status, str):
         raise EvidenceFormatError("datasource contract is missing verification_status")
-    status = match.group(1)
     if status not in {"pending_review", "verified", "verified_with_gaps", "blocked"}:
         raise EvidenceFormatError(f"invalid datasource verification_status: {status}")
     return status
@@ -1057,9 +1038,27 @@ def datasource_verification_status(path: Path = DATASOURCE_PATH) -> str:
 
 def contract_hash(product: str) -> str:
     try:
-        return hashlib.sha256(PRODUCT_CONTRACTS[product].read_bytes()).hexdigest()
-    except (KeyError, OSError) as exc:
+        contract = _load_sql_product_contract(SQL_PRODUCT_CONTRACT_PATH)
+        product_contract = contract["products"][product]
+        encoded = json.dumps(
+            product_contract,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+        return hashlib.sha256(encoded).hexdigest()
+    except (KeyError, TypeError, OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise EvidenceFormatError(f"cannot hash contract for {product}: {exc}") from exc
+
+
+def _load_sql_product_contract(path: Path) -> dict[str, Any]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise EvidenceFormatError(f"cannot read SQL product contract {path}: {exc}") from exc
+    if not isinstance(value, dict) or value.get("schema_version") != 1:
+        raise EvidenceFormatError(f"{path}: unsupported SQL product contract schema")
+    return value
 
 
 def dry_run_checks() -> None:

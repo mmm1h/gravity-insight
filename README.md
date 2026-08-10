@@ -1,60 +1,43 @@
 # Gravity SDK
 
-Standalone Python SDK and CLI for governed access to Gravity Insight and
-Gravity custom SQL.
+Gravity 的受控只读 SDK 与 CLI。它提供三条边界清晰的能力：
 
-It combines four previously separate surfaces:
+- `gravity insight`：结构化 Insight 查询与导出，日常分析首选；
+- `gravity sql`：Insight 无法等价表达时使用的受控 SQL 产品；
+- `gravity census`：前端路由盘点、合同发现与上游漂移检查。
 
-- typed, manifest-authorized Insight reads and exports;
-- fixed-route custom SQL execution, isolated batch reads, and paged export;
-- deterministic contract compilation and privacy-aware probing;
-- frontend route census and upstream drift detection.
+SDK 还可通过 `gravity metadata sync --all-apps` 将所有可见 App 的事件与属性同步到本地 SQLite。
 
-## Install
+## 快速开始
 
 ```powershell
 python -m pip install -e .
+gravity
+gravity insight capabilities search "event analysis"
+gravity metadata sync --all-apps
 ```
 
-On Windows, if `pip` reports that its `Scripts` directory is not on `PATH`,
-add the reported directory to `PATH` or use `python -m gravity_sdk`.
+首次交互式运行 `gravity` 会询问 Gravity 用户名和密码，验证登录并在用户私有目录维护会话。使用者不需要配置或维护 token。
 
-Copy `.env.example` to `.env.gravity.local` and fill only the credentials needed
-for your environment. The local environment file is ignored by Git.
+查询遵循 **Insight-first**：只要 stable Insight operation 能等价表达目标，就优先使用 Insight；只有复杂跨表、特殊计算或 Evidence 产品无法由 Insight 表达时才使用 SQL。
 
-## CLI
+## 文档入口
+
+从 [文档导航](docs/index.md) 开始。它按任务给出最短阅读路径：
+
+- 第一次安装和查询：[快速上手](docs/getting-started.md)
+- Agent 执行查询：[Agent 工作流](docs/agent-workflow.md)
+- 理解系统边界：[架构与概念](docs/architecture.md)
+- 开发和维护 SDK：[维护者入口](docs/maintainers/index.md)
+
+历史拆仓来源见 [MIGRATION.md](MIGRATION.md)。
+
+## 验证
 
 ```powershell
-gravity --help
-gravity insight capabilities list
-gravity insight multidim query --help
-gravity sql --dry-run
-gravity sql query payment-summary --start 2026-08-01T00:00:00+08:00 --end 2026-08-02T00:00:00+08:00
-gravity census --smoke
-```
-
-The Python API exposes both clients from one package:
-
-```python
-from gravity_sdk import GravityClient, GravityInsightClient
-
-insight = GravityInsightClient.from_env()
-sql = GravityClient.from_env()
-```
-
-All production transports remain fixed-host and policy constrained. The SDK
-does not expose arbitrary URL/method execution, and SQL accepts only the fixed
-custom-SQL endpoint.
-
-See [MIGRATION.md](MIGRATION.md) for provenance and
-[docs/guides/agent-guide.md](docs/guides/agent-guide.md) for the full command
-surface.
-
-## Verify
-
-```powershell
-python -m pytest -q
+python -m unittest discover -s tests
 python -m gravity_sdk.compiler check
 python -m gravity_sdk.quality check
+python -m gravity_sdk --help
 git diff --check
 ```
