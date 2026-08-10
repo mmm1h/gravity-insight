@@ -70,7 +70,6 @@
       "src/gravity_sdk/prober/drafts.py::select_routes": 21,
       "src/gravity_sdk/prober/drafts.py::structured_blockers": 59,
       "src/gravity_sdk/prober/parameters.py::_parent_candidate": 30,
-      "src/gravity_sdk/prober/parameters.py::assemble_source_parameters": 23,
       "src/gravity_sdk/prober/parameters.py::bind_stable_parent_candidates": 32,
       "src/gravity_sdk/prober/privacy.py::_mapping_projection": 24,
       "src/gravity_sdk/prober/privacy.py::projection_exposes_path": 17,
@@ -100,7 +99,6 @@
       "src/gravity_sdk/prober/batch.py": 592,
       "src/gravity_sdk/prober/drafts.py": 1806,
       "src/gravity_sdk/prober/export_verify.py": 655,
-      "src/gravity_sdk/prober/parameters.py": 588,
       "src/gravity_sdk/prober/promotion.py": 594,
       "src/gravity_sdk/registry.py": 1146,
       "src/gravity_sdk/sql/products.py": 675

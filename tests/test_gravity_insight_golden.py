@@ -229,6 +229,8 @@ class GravityInsightGoldenTests(unittest.TestCase):
             # 修复整数页大小并完成分页复验后晋升。
             "metadata.event_property_template_event.list",
             "promotion.bytedance.custom_audience.list",
+            # 修复歧义分页类型、完成非空分页复验并收窄筛选与响应投影后晋升。
+            "material.asset_directional_package_bytedance.list",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]

@@ -111,6 +111,61 @@ def test_parameter_assembly_keeps_frontend_presence_distinct_from_required() -> 
     assert metadata["call_sites"][0]["call_offset"] == 20
 
 
+def test_parameter_assembly_repairs_ambiguous_pagination_types_and_defaults() -> None:
+    source = build_draft(_route(), set())
+    source["operation"]["input_fields"]["page"] = {
+        "type": "array",
+        "item_type": "string",
+        "default": 1,
+    }
+    contract = _parameter_contract()
+    page = contract["body_parameters"][1]
+    page["types"] = ["array", "integer"]
+    page["items"] = {"types": ["string", "unknown"]}
+    contract["body_parameters"].append(
+        {
+            "name": "page_size",
+            "path": "$.page_size",
+            "types": ["integer", "number"],
+            "confidence": "high",
+            "required": "observed_always",
+            "default": 5000.0,
+        }
+    )
+
+    assembled, _ = assemble_source_parameters(source, contract)
+
+    operation = assembled["operation"]
+    assert operation["input_fields"]["page"]["type"] == "integer"
+    assert "item_type" not in operation["input_fields"]["page"]
+    assert operation["input_fields"]["page_size"]["type"] == "integer"
+    assert operation["input_fields"]["page_size"]["default"] == 5000
+    assert isinstance(operation["input_fields"]["page_size"]["default"], int)
+    assert operation["request"]["defaults"]["page_size"] == 5000
+    assert operation["live_probe"]["inputs"]["page_size"] == 5000
+
+
+def test_parameter_assembly_prefers_an_observed_default_type_over_array_noise() -> None:
+    source = build_draft(_route(), set())
+    contract = _parameter_contract()
+    contract["body_parameters"] = [
+        {
+            "name": "album_id",
+            "path": "$.album_id",
+            "types": ["array", "string"],
+            "confidence": "medium",
+            "required": "observed_always",
+            "default": "",
+        }
+    ]
+
+    assembled, _ = assemble_source_parameters(source, contract)
+
+    field = assembled["operation"]["input_fields"]["album_id"]
+    assert field["type"] == "string"
+    assert field["default"] == ""
+
+
 def test_code_1004_learning_records_only_parameter_shape() -> None:
     source, _ = assemble_source_parameters(
         build_draft(_route(), set()), _parameter_contract()

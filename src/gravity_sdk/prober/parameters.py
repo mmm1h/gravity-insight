@@ -11,16 +11,18 @@ from typing import Any, Mapping, Sequence
 from gravity_sdk.paths import CENSUS_DATA_ROOT
 
 from .core import DRAFT_ROOT, OPERATION_ROOT, canonical_fingerprint, read_json
+from .parameter_types import MISSING as _MISSING
+from .parameter_types import apply_parameter
+from .parameter_types import candidate_value as _candidate_value
+from .parameter_types import field_type as _field_type
+from .parameter_types import merge_description as _merge_description
+from .parameter_types import parameter_metadata as _metadata_parameter
+from .parameter_types import top_level_parameters
 from .promotion import save_draft
 
 
 ROUTE_PARAMETERS_PATH = CENSUS_DATA_ROOT / "route-params.json"
 
-_PARAMETER_GROUPS = (
-    ("path", "path_parameters", "path_fields"),
-    ("query", "query_parameters", "query_fields"),
-    ("body", "body_parameters", "body_fields"),
-)
 _VALID_PARAMETER_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _RESERVED_EXTRA_KEYS = {
     "code",
@@ -35,8 +37,6 @@ _RESERVED_EXTRA_KEYS = {
     "status",
     "trace_id",
 }
-_DESCRIPTION_MARKER = "Frontend-observed candidate"
-_MISSING = object()
 
 
 def _route_key(method: Any, path: Any) -> tuple[str, str]:
@@ -55,106 +55,6 @@ def load_route_parameter_contracts(
     }
 
 
-def _top_level(parameter: Mapping[str, Any]) -> bool:
-    path = str(parameter.get("path", ""))
-    name = str(parameter.get("name", ""))
-    return path == f"$.{name}" and bool(_VALID_PARAMETER_NAME.fullmatch(name))
-
-
-def top_level_parameters(route: Mapping[str, Any]) -> list[dict[str, Any]]:
-    result: list[dict[str, Any]] = []
-    for location, source_key, request_key in _PARAMETER_GROUPS:
-        parameters = route.get(source_key, [])
-        if not isinstance(parameters, list):
-            continue
-        for parameter in parameters:
-            if not isinstance(parameter, Mapping) or not _top_level(parameter):
-                continue
-            result.append(
-                {
-                    **copy.deepcopy(dict(parameter)),
-                    "location": location,
-                    "request_key": request_key,
-                }
-            )
-    return result
-
-
-def _field_type(parameter: Mapping[str, Any]) -> str:
-    observed = {
-        str(item) for item in parameter.get("types", []) if isinstance(item, str)
-    }
-    for candidate in (
-        "array", "object", "boolean", "integer", "number", "string"
-    ):
-        if candidate in observed:
-            return candidate
-    return "any"
-
-
-def _item_type(parameter: Mapping[str, Any]) -> str | None:
-    items = parameter.get("items")
-    if not isinstance(items, Mapping):
-        return None
-    selected = _field_type(items)
-    return selected if selected in {"string", "integer", "number", "boolean", "object"} else None
-
-
-def _candidate_value(parameter: Mapping[str, Any]) -> Any:
-    if "default" in parameter:
-        return copy.deepcopy(parameter["default"])
-    if parameter.get("required") != "observed_always":
-        return _MISSING
-    name = str(parameter.get("name", "")).casefold()
-    field_type = _field_type(parameter)
-    if name in {"page", "page_no", "page_num", "page_number", "current_page"}:
-        return 1
-    if name in {"page_size", "pagesize", "limit", "size"}:
-        return 20
-    if name in {"start_date", "begin_date", "date_start"}:
-        return "$yesterday"
-    if name in {"end_date", "date_end", "date"}:
-        return "$today"
-    if field_type == "array":
-        return []
-    if field_type == "object":
-        return {}
-    if field_type == "boolean":
-        return False
-    if field_type in {"integer", "number", "any"}:
-        return 0
-    return ""
-
-
-def _field_description(parameter: Mapping[str, Any]) -> str:
-    confidence = str(parameter.get("confidence", "unknown"))
-    presence = str(parameter.get("required", "unknown"))
-    return (
-        f"{_DESCRIPTION_MARKER} from route-params.json "
-        f"(confidence={confidence}, presence={presence}); "
-        "presence describes frontend calls and is not a server-required declaration."
-    )
-
-
-def _merge_description(existing: Any, observed: str) -> str:
-    current = str(existing or "").strip()
-    if _DESCRIPTION_MARKER in current:
-        current = current.split(_DESCRIPTION_MARKER, 1)[0].rstrip(" ;")
-    return f"{current}; {observed}" if current else observed
-
-
-def _metadata_parameter(parameter: Mapping[str, Any]) -> dict[str, Any]:
-    return {
-        "name": str(parameter["name"]),
-        "location": str(parameter["location"]),
-        "path": str(parameter.get("path", "")),
-        "types": [str(item) for item in parameter.get("types", [])],
-        "confidence": str(parameter.get("confidence", "unknown")),
-        "presence": str(parameter.get("required", "unknown")),
-        "default_observed": "default" in parameter,
-    }
-
-
 def assemble_source_parameters(
     source: Mapping[str, Any], route: Mapping[str, Any]
 ) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -162,43 +62,12 @@ def assemble_source_parameters(
 
     updated = copy.deepcopy(dict(source))
     operation = updated["operation"]
-    input_fields = operation["input_fields"]
-    request = operation["request"]
-    probe_inputs = operation["live_probe"]["inputs"]
     parameters = top_level_parameters(route)
     confidence_counts = {"high": 0, "medium": 0}
     for parameter in parameters:
-        name = str(parameter["name"])
-        confidence = str(parameter.get("confidence", "unknown"))
+        confidence = apply_parameter(operation, parameter)
         if confidence in confidence_counts:
             confidence_counts[confidence] += 1
-        existing = input_fields.get(name)
-        field = dict(existing) if isinstance(existing, Mapping) else {}
-        observed_type = _field_type(parameter)
-        if not field.get("type") or field.get("type") == "any":
-            field["type"] = observed_type
-        if observed_type == "array" and not field.get("item_type"):
-            item_type = _item_type(parameter)
-            if item_type:
-                field["item_type"] = item_type
-        if "default" in parameter:
-            field["default"] = copy.deepcopy(parameter["default"])
-            request["defaults"][name] = copy.deepcopy(parameter["default"])
-        field["description"] = _merge_description(
-            field.get("description"), _field_description(parameter)
-        )
-        input_fields[name] = field
-        binding = str(parameter["request_key"])
-        for other_binding in ("path_fields", "query_fields", "body_fields"):
-            if other_binding != binding:
-                request[other_binding] = [
-                    item for item in request.get(other_binding, []) if item != name
-                ]
-        request[binding] = sorted(set(request.get(binding, [])) | {name})
-        candidate = _candidate_value(parameter)
-        if candidate is not _MISSING:
-            if "default" in parameter or name not in probe_inputs:
-                probe_inputs[name] = candidate
 
     analysis = route.get("analysis", {})
     call_sites = analysis.get("call_sites", []) if isinstance(analysis, Mapping) else []

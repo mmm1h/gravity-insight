@@ -1,5 +1,5 @@
 {
-  "operation_count": 158,
+  "operation_count": 159,
   "operations": {
     "account.department.list": {
       "applied_overrides": [],
@@ -503,6 +503,14 @@
       "platform": null,
       "source_files": [
         "operations/material.album.tree.json"
+      ]
+    },
+    "material.asset_directional_package_bytedance.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "bytedance",
+      "source_files": [
+        "operations/material.asset_directional_package_bytedance.list.json"
       ]
     },
     "material.asset_material_media_review_list.list": {
