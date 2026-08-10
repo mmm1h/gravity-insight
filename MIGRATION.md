@@ -17,3 +17,9 @@ The extraction consolidates the former locations below:
 
 The source commit is the immutable provenance anchor for pre-split history.
 Subsequent SDK development is owned exclusively by this repository.
+
+Work-dashboard-specific campaign consumers were not made part of the SDK API.
+They were retired during the split because they coupled SDK transport to one
+repository's topic paths and frozen report assets. Business SQL remains owned
+by its calling product repository; this SDK owns authentication, policy,
+transport, contracts, probing, census, and Evidence publication.

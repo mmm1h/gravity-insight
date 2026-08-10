@@ -119,8 +119,9 @@ complex query/report/proxy or dynamic fields (high). They are not observed deliv
 ## Verification
 
 ```powershell
-python -m unittest discover -s tests -p "test_gravity_census*.py"
-python -m tools.common.validate_all
+python -m pytest tests/test_gravity_census*.py -q
+python -m gravity_sdk.compiler check
+python -m gravity_sdk.quality check
 ```
 
 The parser sorts all files, occurrences, evidence, and routes before serialization. JSON output

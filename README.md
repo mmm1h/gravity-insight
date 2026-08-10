@@ -49,3 +49,12 @@ custom-SQL endpoint.
 See [MIGRATION.md](MIGRATION.md) for provenance and
 [docs/guides/agent-guide.md](docs/guides/agent-guide.md) for the full command
 surface.
+
+## Verify
+
+```powershell
+python -m pytest -q
+python -m gravity_sdk.compiler check
+python -m gravity_sdk.quality check
+git diff --check
+```

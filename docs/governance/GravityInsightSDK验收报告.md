@@ -1,5 +1,7 @@
 # Gravity Insight SDK 验收报告
 
+> 迁移说明：本文是拆仓前 `work-dashboard` 源提交上的验收快照，保留当时的路径、测试数字和门禁输出作为 provenance。独立仓库的当前状态以根 README、CI 和本仓库实际测试结果为准。
+
 验收日期：2026-08-10。验收对象：`feat/gravity-sdk-productization` 分支
 `505c6e78`。结论：**当前 SDK 能力按 141 个 stable read operation 计算，不按 987 条
 census route 计算。另有 295 个不可调用 draft、414 个 blocked-write reservation，以及

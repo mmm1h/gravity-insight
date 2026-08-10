@@ -68,8 +68,9 @@ gravity sql verify --date YYYY-MM-DD --publish
 
 ```powershell
 gravity sql status --json
-python -m tools.common.validate_all --full --privacy-scope tracked
-python -m unittest tools.gravity.test_products -v
+python -m gravity_sdk.compiler check
+python -m gravity_sdk.quality check
+python -m pytest tests/test_sql_products.py -q
 git diff --check
 ```
 
