@@ -191,6 +191,22 @@ def test_route_context_does_not_weaken_sensitive_user_count_rule() -> None:
     )
 
 
+def test_bytedance_text_title_metrics_are_reviewed_by_operation_family() -> None:
+    path = "data.list[].history_click_rate"
+
+    assert classify_field(path)[0] == "manual_review"
+    assert classify_candidate_field(
+        path, operation_id="material.bytedance_future_text_title.list"
+    ) == ("non_sensitive", "route_specific_field_review")
+    assert classify_candidate_field(
+        path, operation_id="promotion.bytedance_future_text_title.list"
+    )[0] == "manual_review"
+    assert classify_candidate_field(
+        "data.list[].create_user_id",
+        operation_id="material.bytedance_future_text_title.list",
+    )[0] == "sensitive"
+
+
 def test_strict_sensitive_fields_never_enter_generated_projection() -> None:
     payload = {
         "data": {

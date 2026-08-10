@@ -139,10 +139,11 @@ class GravityInsightWriteRegistryTests(unittest.TestCase):
         # 写作时 120，batch-probe 升 10 条、gi-reprobe 升 1 条；本趟再由
         # report.company_amount.query 与 report.overview.query 升至 133；
         # cid 租户标识复评再解锁 promotion.bytedance.app.list，升至 134；
-        # 本趟隐私复评再解锁三条成功 probe，升至 137。
+        # 本趟隐私复评再解锁三条成功 probe，升至 137；巨量标题素材
+        # 两条分页读取验证后升至 139。
         # 本测试的保证不是「这个数不变」，而是「它远小于 accounted，且
         # blocked_write 绝不被计入可调用」——即下面两条 414 断言。
-        self.assertEqual(137, rebuilt["summary"]["callable_covered"])
+        self.assertEqual(139, rebuilt["summary"]["callable_covered"])
         self.assertEqual(414, rebuilt["accounting_summary"]["accounted_blocked_write"])
         self.assertEqual(414, rebuilt["callability_summary"]["contract_only"])
 

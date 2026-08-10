@@ -244,7 +244,17 @@ def promotion_metadata_inputs(
 
 def order_field(value: Any) -> str | None:
     if isinstance(value, str) and value:
-        return value.lstrip("+-")
+        normalized = value.strip()
+        if not normalized:
+            return None
+        if normalized[0] in "+-":
+            return normalized[1:] or None
+        parts = normalized.split()
+        if len(parts) == 1:
+            return parts[0]
+        if len(parts) == 2 and parts[1].casefold() in {"asc", "desc"}:
+            return parts[0]
+        return None
     if not isinstance(value, Mapping):
         return None
     if set(value) - {"field", "name", "order", "direction", "sort"}:

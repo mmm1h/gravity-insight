@@ -204,10 +204,10 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
         # gi-reprobe 后为 (54, 81)；report.company_amount.query 与前趟两个
         # 成功 probe 可重放输入共增加三个完整 example。cid 复评又解锁
         # promotion.bytedance.app.list，随后隐私复评解锁三条成功 probe，
-        # stable 总数现为 141。
+        # stable 总数随后增加两条已验证的巨量标题素材读取，且均带 example。
         # 这条断言锁的是「填充率不许退化」——examples_complete 只许涨不许跌，
         # 新增 stable 带来的 unknown 增长必须显式在此登记，不能被平均掉。
-        self.assertEqual((61, 80), (examples_complete, examples_unknown))
+        self.assertEqual((63, 80), (examples_complete, examples_unknown))
         # 本趟按父 response projection 与调用方选择语义补全 6 条边；剩余
         # 16 条涉及 runtime-v1 target 投影、递归、同一行关联或嵌套输入变换。
         self.assertEqual((46, 16), (parents_complete, parents_unknown))

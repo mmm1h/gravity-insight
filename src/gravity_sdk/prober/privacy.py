@@ -111,30 +111,6 @@ REVIEWED_SAFE_FIELDS: Mapping[str, frozenset[str]] = {
             "total_special_red_packet_consume",
         }
     ),
-    "material.bytedance_asset_text_title.list": frozenset(
-        {
-            "history_click_rate", "history_cost", "last_3_day_click_rate",
-            "last_3_day_cost",
-        }
-    ),
-    "material.bytedance_asset_text_title_package.list": frozenset(
-        {
-            "history_click_rate", "history_cost", "last_3_day_click_rate",
-            "last_3_day_cost",
-        }
-    ),
-    "material.bytedance_std_asset_text_title.list": frozenset(
-        {
-            "history_click_rate", "history_cost", "last_3_day_click_rate",
-            "last_3_day_cost",
-        }
-    ),
-    "material.bytedance_std_asset_text_title_package.list": frozenset(
-        {
-            "history_click_rate", "history_cost", "last_3_day_click_rate",
-            "last_3_day_cost",
-        }
-    ),
     "promotion.ai_trusteeship.list": frozenset(
         {"boost_value", "caliber", "check_fre", "frequency"}
     ),
@@ -144,6 +120,18 @@ REVIEWED_SAFE_FIELDS: Mapping[str, frozenset[str]] = {
     ),
     "report.media_report.list": frozenset({"cost"}),
 }
+
+BYTEDANCE_TEXT_TITLE_METRIC_FIELDS = frozenset(
+    {
+        "history_click_rate",
+        "history_cost",
+        "last_3_day_click_rate",
+        "last_3_day_cost",
+    }
+)
+BYTEDANCE_TEXT_TITLE_OPERATION_RE = re.compile(
+    r"^material\.bytedance_[a-z0-9_]*text_title[a-z0-9_]*\.list$"
+)
 
 AGGREGATE_REPORT_OPERATIONS = frozenset(
     {"report.hour_comparison.query", "report.overview.query"}
@@ -165,6 +153,16 @@ METADATA_DICTIONARY_OPERATIONS = frozenset(
 METADATA_DICTIONARY_MARKERS = (
     ".col_name_en_cn_dict.", ".info.name_cname.", ".name_en_cn_dict.",
 )
+
+
+def _reviewed_safe_fields(operation_id: str | None) -> frozenset[str]:
+    normalized = str(operation_id)
+    family_fields = (
+        BYTEDANCE_TEXT_TITLE_METRIC_FIELDS
+        if BYTEDANCE_TEXT_TITLE_OPERATION_RE.fullmatch(normalized)
+        else frozenset()
+    )
+    return REVIEWED_SAFE_FIELDS.get(normalized, frozenset()) | family_fields
 
 
 def _json_type(value: Any) -> str:
@@ -260,7 +258,7 @@ def classify_candidate_field(
     if classification != "manual_review":
         return classification, reason
 
-    reviewed = REVIEWED_SAFE_FIELDS.get(str(operation_id), frozenset())
+    reviewed = _reviewed_safe_fields(operation_id)
     if field_name in reviewed:
         return "non_sensitive", "route_specific_field_review"
 

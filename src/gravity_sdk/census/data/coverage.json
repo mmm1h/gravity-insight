@@ -6,15 +6,15 @@
     "accounted_experimental": 2,
     "accounted_export_candidate": 22,
     "accounted_permission_unavailable": 1,
-    "accounted_read_candidate": 352,
+    "accounted_read_candidate": 346,
     "accounted_unsupported": 58,
-    "covered_executable": 133
+    "covered_executable": 139
   },
   "callability_summary": {
-    "candidate": 374,
+    "candidate": 368,
     "catalog_only": 8,
     "contract_only": 414,
-    "executable": 133,
+    "executable": 139,
     "unsupported": 58
   },
   "classification_policy": {
@@ -913,9 +913,9 @@
     }
   ],
   "family_summary": {
-    "coverage_ratio": 0.227749,
+    "coverage_ratio": 0.231383,
     "families": 48,
-    "uncovered_read_routes": 382,
+    "uncovered_read_routes": 376,
     "uncovered_read_routes_with_family": 87
   },
   "manifest_reconciliation": {
@@ -1376,6 +1376,22 @@
       },
       {
         "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "material.json",
+        "method": "POST",
+        "operation_id": "material.bytedance_asset_text_title.list",
+        "path": "/turbo_engine/api/v1/bytedance/asset/text/title/list/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "material.json",
+        "method": "POST",
+        "operation_id": "material.bytedance_std_asset_text_title.list",
+        "path": "/turbo_engine/api/v1/bytedance/std/asset/text/title/list/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
         "manifest_file": "candidates.json",
         "method": "GET",
         "operation_id": "material.examine.config.get",
@@ -1545,6 +1561,14 @@
       {
         "category": "newly_covered_from_previously_unfetched_chunk",
         "manifest_file": "promotion.json",
+        "method": "GET",
+        "operation_id": "promotion.bytedance.app.list",
+        "path": "/turbo_engine/api/v1/bytedance/app/list/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "promotion.json",
         "method": "POST",
         "operation_id": "promotion.bytedance.project.list",
         "path": "/turbo_engine/api/v1/bytedance/std/project/list/",
@@ -1564,6 +1588,30 @@
         "method": "POST",
         "operation_id": "promotion.bytedance.promotion_filter.list",
         "path": "/turbo_engine/api/v1/bytedance/report/promotion/filters/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "promotion.json",
+        "method": "POST",
+        "operation_id": "promotion.bytedance.site.list",
+        "path": "/turbo_engine/api/v1/bytedance/site/list/v2/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "promotion.json",
+        "method": "POST",
+        "operation_id": "promotion.conditions_history.list",
+        "path": "/turbo_engine/api/v1/task/ai_trusteeship/conditions_history_list/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "promotion.json",
+        "method": "POST",
+        "operation_id": "promotion.history.list",
+        "path": "/turbo_engine/api/v1/task/ai_trusteeship/history_list/",
         "similar_frontend_routes": []
       },
       {
@@ -2029,20 +2077,20 @@
       }
     ],
     "previously_missing_breakdown": {
-      "a_previously_unfetched_chunk": 133,
+      "a_previously_unfetched_chunk": 139,
       "b_normalization_false_gap_fixed": 0,
       "c_manifest_route_absent_from_frontend": 4
     },
-    "stable_operations": 137,
+    "stable_operations": 143,
     "summary": {
       "manifest_route_absent_from_frontend": 4,
-      "newly_covered_from_previously_unfetched_chunk": 133
+      "newly_covered_from_previously_unfetched_chunk": 139
     }
   },
   "manifest_summary": {
-    "manifest_files": 10,
-    "operations": 146,
-    "stable_operations": 137
+    "manifest_files": 11,
+    "operations": 152,
+    "stable_operations": 143
   },
   "module_summary": [
     {
@@ -2053,18 +2101,18 @@
       "uncovered_read": 7
     },
     {
-      "covered": 46,
+      "covered": 48,
       "module": "推广平台",
       "total": 324,
-      "uncovered": 278,
-      "uncovered_read": 156
+      "uncovered": 276,
+      "uncovered_read": 154
     },
     {
-      "covered": 1,
+      "covered": 3,
       "module": "资产",
       "total": 78,
-      "uncovered": 77,
-      "uncovered_read": 22
+      "uncovered": 75,
+      "uncovered_read": 20
     },
     {
       "covered": 15,
@@ -2102,11 +2150,11 @@
       "uncovered_read": 24
     },
     {
-      "covered": 13,
+      "covered": 15,
       "module": "其它",
       "total": 139,
-      "uncovered": 126,
-      "uncovered_read": 58
+      "uncovered": 124,
+      "uncovered_read": 56
     }
   ],
   "promotion_gap_matrix": [
@@ -2498,12 +2546,12 @@
     {
       "levels": {
         "其它": {
-          "covered": 0,
+          "covered": 2,
           "total": 43,
           "unclassified": 0,
           "uncovered_auth_or_proxy": 2,
           "uncovered_export": 0,
-          "uncovered_read": 19,
+          "uncovered_read": 17,
           "uncovered_write": 22
         },
         "广告/创意": {
@@ -4037,8 +4085,8 @@
     }
   ],
   "read_cost_summary": {
-    "中": 85,
-    "低": 171,
+    "中": 83,
+    "低": 167,
     "高": 126
   },
   "reservation_summary": {
@@ -22003,7 +22051,7 @@
     },
     {
       "business_module": "推广平台",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "Mi",
         "U",
@@ -22015,9 +22063,9 @@
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "flat list/detail lookup with no evident parent dependency",
-      "estimated_implementation_cost": "低",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 1532,
         "file": "raw/web.gravity-engine.com/assets/BatchImport-IRpWBU3t.js",
@@ -22025,8 +22073,16 @@
         "offset": 1531,
         "url": "https://web.gravity-engine.com/assets/BatchImport-IRpWBU3t.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "GET",
+          "operation_id": "promotion.bytedance.app.list",
+          "path": "/turbo_engine/api/v1/bytedance/app/list/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "GET",
       "method_certainty": "high",
       "method_evidence": [
@@ -22039,16 +22095,16 @@
       "raw_paths": [
         "/bytedance/app/list/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "high",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "safe_http_method"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "API回传",
         "SDK回传",
@@ -22768,15 +22824,15 @@
     },
     {
       "business_module": "资产",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "d"
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "素材 lookup normally depends on a parent account or campaign",
-      "estimated_implementation_cost": "中",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 3914,
         "file": "raw/web.gravity-engine.com/assets/Toutiao-BJGLBGLD.js",
@@ -22784,8 +22840,16 @@
         "offset": 3913,
         "url": "https://web.gravity-engine.com/assets/Toutiao-BJGLBGLD.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "POST",
+          "operation_id": "material.bytedance_asset_text_title.list",
+          "path": "/turbo_engine/api/v1/bytedance/asset/text/title/list/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "POST",
       "method_certainty": "high",
       "method_evidence": [
@@ -22798,16 +22862,16 @@
       "raw_paths": [
         "/bytedance/asset/text/title/list/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "read_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "标题包名称",
         "确定",
@@ -25768,15 +25832,15 @@
     },
     {
       "business_module": "推广平台",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "j"
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "flat list/detail lookup with no evident parent dependency",
-      "estimated_implementation_cost": "低",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 2409,
         "file": "raw/web.gravity-engine.com/assets/landingpage-CvtqGvQP.js",
@@ -25784,8 +25848,16 @@
         "offset": 2408,
         "url": "https://web.gravity-engine.com/assets/landingpage-CvtqGvQP.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "POST",
+          "operation_id": "promotion.bytedance.site.list",
+          "path": "/turbo_engine/api/v1/bytedance/site/list/v2/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "POST",
       "method_certainty": "high",
       "method_evidence": [
@@ -25798,16 +25870,16 @@
       "raw_paths": [
         "/bytedance/site/list/v2/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "read_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "来源",
         "橙子落地页",
@@ -26412,15 +26484,15 @@
     },
     {
       "business_module": "资产",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "d"
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "素材 lookup normally depends on a parent account or campaign",
-      "estimated_implementation_cost": "中",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 3919,
         "file": "raw/web.gravity-engine.com/assets/BytedanceStd-BTp7SlmA.js",
@@ -26428,8 +26500,16 @@
         "offset": 3918,
         "url": "https://web.gravity-engine.com/assets/BytedanceStd-BTp7SlmA.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "POST",
+          "operation_id": "material.bytedance_std_asset_text_title.list",
+          "path": "/turbo_engine/api/v1/bytedance/std/asset/text/title/list/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "POST",
       "method_certainty": "high",
       "method_evidence": [
@@ -26442,16 +26522,16 @@
       "raw_paths": [
         "/bytedance/std/asset/text/title/list/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "read_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "标题包名称",
         "确定",
@@ -36162,7 +36242,7 @@
     },
     {
       "business_module": "其它",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "$",
         "T",
@@ -36170,9 +36250,9 @@
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "flat list/detail lookup with no evident parent dependency",
-      "estimated_implementation_cost": "低",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 53932,
         "file": "raw/web.gravity-engine.com/assets/Rules-ChMHnW7I.js",
@@ -36180,8 +36260,16 @@
         "offset": 53931,
         "url": "https://web.gravity-engine.com/assets/Rules-ChMHnW7I.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "POST",
+          "operation_id": "promotion.conditions_history.list",
+          "path": "/turbo_engine/api/v1/task/ai_trusteeship/conditions_history_list/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "POST",
       "method_certainty": "high",
       "method_evidence": [
@@ -36194,16 +36282,16 @@
       "raw_paths": [
         "/task/ai_trusteeship/conditions_history_list/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "read_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "元",
         "媒体",
@@ -36488,7 +36576,7 @@
     },
     {
       "business_module": "其它",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "T",
         "Ut",
@@ -36496,9 +36584,9 @@
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "flat list/detail lookup with no evident parent dependency",
-      "estimated_implementation_cost": "低",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 50617,
         "file": "raw/web.gravity-engine.com/assets/Rules-ChMHnW7I.js",
@@ -36506,8 +36594,16 @@
         "offset": 50616,
         "url": "https://web.gravity-engine.com/assets/Rules-ChMHnW7I.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "POST",
+          "operation_id": "promotion.history.list",
+          "path": "/turbo_engine/api/v1/task/ai_trusteeship/history_list/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "POST",
       "method_certainty": "high",
       "method_evidence": [
@@ -36520,16 +36616,16 @@
       "raw_paths": [
         "/task/ai_trusteeship/history_list/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "read_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "发送通知",
         "触发记录",
@@ -59248,14 +59344,14 @@
   "summary": {
     "accounted": 987,
     "accounting_complete": true,
-    "callable_covered": 133,
-    "covered": 133,
+    "callable_covered": 139,
+    "covered": 139,
     "total_routes": 987,
     "unaccounted": 0,
     "unclassified": 0,
     "uncovered_auth_or_proxy": 30,
     "uncovered_export": 22,
-    "uncovered_read": 382,
+    "uncovered_read": 376,
     "uncovered_write": 414,
     "unsupported_non_api": 6
   }

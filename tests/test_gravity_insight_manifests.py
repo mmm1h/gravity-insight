@@ -21,6 +21,7 @@ MANIFEST_NAMES = {
     "analysis_values.json",
     "report.json",
     "promotion.json",
+    "material.json",
     "other.json",
     "candidates.json",
 }
@@ -220,7 +221,7 @@ class GravityInsightManifestTests(unittest.TestCase):
                 loaded.extend(load_operation_manifest(document))
         self.assertEqual(len(self.operations), len(Registry(loaded).all()))
         summary = validate_manifest_json()
-        self.assertEqual(10, summary["manifest_files"])
+        self.assertEqual(11, summary["manifest_files"])
         self.assertEqual(len(self.operations), summary["operations"])
 
     def test_operation_ids_are_unique_and_well_formed(self) -> None:

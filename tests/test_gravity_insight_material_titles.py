@@ -1,0 +1,166 @@
+from __future__ import annotations
+
+import json
+import unittest
+from pathlib import Path
+from typing import Any, Mapping
+
+from gravity_sdk import GravityInsightClient, InputValidationError
+from gravity_sdk.transport import TransportResponse
+
+
+ROOT = Path(__file__).resolve().parents[1]
+CONTRACT_ROOT = ROOT / "src" / "gravity_sdk" / "contracts" / "operations"
+OPERATION_IDS = (
+    "material.bytedance_asset_text_title.list",
+    "material.bytedance_std_asset_text_title.list",
+)
+
+
+def manifest(*operation_ids: str) -> dict[str, Any]:
+    operations = []
+    for operation_id in operation_ids:
+        source = json.loads(
+            (CONTRACT_ROOT / f"{operation_id}.json").read_text(encoding="utf-8")
+        )
+        operations.append(source["operation"])
+    return {"manifest_version": 1, "operations": operations}
+
+
+class RecordingTransport:
+    is_test_transport = True
+
+    def __init__(self, handler=None) -> None:
+        self.handler = handler or self._default
+        self.calls: list[tuple[str, str, Mapping[str, Any]]] = []
+
+    @staticmethod
+    def _default(
+        _method: str, _path: str, _kwargs: Mapping[str, Any]
+    ) -> Mapping[str, Any]:
+        return {
+            "code": 0,
+            "data": {
+                "list": [
+                    {
+                        "id": 7,
+                        "app_id": 101,
+                        "title": "safe title",
+                        "history_cost": 12.5,
+                        "cid": 99,
+                        "create_user_id": 88,
+                        "create_user_name": "hidden operator",
+                        "update_user_id": 77,
+                    }
+                ],
+                "page_info": {
+                    "page": 2,
+                    "page_size": 100,
+                    "total_page": 2,
+                    "total_number": 1,
+                },
+            },
+        }
+
+    def request(self, method: str, path: str, **kwargs: Any) -> TransportResponse:
+        self.calls.append((method, path, kwargs))
+        return TransportResponse(
+            200,
+            self.handler(method, path, kwargs),
+            "2026-08-11T00:00:00Z",
+        )
+
+
+class MaterialTitleOperationTests(unittest.TestCase):
+    def test_fixed_routes_controls_and_projection(self) -> None:
+        paths = {
+            OPERATION_IDS[0]: "/turbo_engine/api/v1/bytedance/asset/text/title/list/",
+            OPERATION_IDS[1]: "/turbo_engine/api/v1/bytedance/std/asset/text/title/list/",
+        }
+        for operation_id in OPERATION_IDS:
+            with self.subTest(operation_id=operation_id):
+                transport = RecordingTransport()
+                client = GravityInsightClient._from_manifest_for_tests(
+                    manifest(operation_id), transport=transport
+                )
+                result = client.read(
+                    operation_id,
+                    {
+                        "filters": [
+                            {"field": "title", "operator": 8, "values": ["safe"]}
+                        ],
+                        "order_by": ["history_cost desc"],
+                        "page": 2,
+                        "page_size": 100,
+                    },
+                )
+
+                self.assertEqual("success", result["status"])
+                self.assertEqual("POST", transport.calls[0][0])
+                self.assertEqual(paths[operation_id], transport.calls[0][1])
+                body = dict(transport.calls[0][2]["body"])
+                self.assertEqual(2, body["page"])
+                self.assertEqual(100, body["page_size"])
+                self.assertEqual(["history_cost desc"], body["order_by"])
+                row = result["data"]["list"][0]
+                self.assertEqual("safe title", row["title"])
+                self.assertNotIn("cid", row)
+                self.assertNotIn("create_user_id", row)
+                self.assertNotIn("create_user_name", row)
+                self.assertNotIn("update_user_id", row)
+
+    def test_invalid_controls_fail_before_network(self) -> None:
+        invalid_inputs = (
+            {"page_size": 101},
+            {
+                "filters": [
+                    {"field": "create_user_id", "operator": 6, "values": [88]}
+                ]
+            },
+            {"order_by": ["create_user_name desc"]},
+            {"order_by": ["history_cost desc; drop"]},
+        )
+        for operation_id in OPERATION_IDS:
+            for inputs in invalid_inputs:
+                with self.subTest(operation_id=operation_id, inputs=inputs):
+                    transport = RecordingTransport()
+                    client = GravityInsightClient._from_manifest_for_tests(
+                        manifest(operation_id), transport=transport
+                    )
+                    with self.assertRaises(InputValidationError):
+                        client.read(operation_id, inputs)
+                    self.assertEqual([], transport.calls)
+
+    def test_read_all_stops_at_reported_total_page(self) -> None:
+        def handler(
+            _method: str, _path: str, kwargs: Mapping[str, Any]
+        ) -> Mapping[str, Any]:
+            page = int(kwargs["body"]["page"])
+            return {
+                "code": 0,
+                "data": {
+                    "list": [{"id": page, "title": f"title-{page}"}],
+                    "page_info": {
+                        "page": page,
+                        "page_size": 1,
+                        "total_page": 2,
+                        "total_number": 2,
+                    },
+                },
+            }
+
+        transport = RecordingTransport(handler)
+        client = GravityInsightClient._from_manifest_for_tests(
+            manifest(OPERATION_IDS[0]), transport=transport
+        )
+        result = client.read_all(
+            OPERATION_IDS[0], {"page_size": 1}, max_pages=3, max_items=10
+        )
+
+        self.assertEqual("success", result["status"])
+        self.assertEqual([1, 2], [row["id"] for row in result["data"]["list"]])
+        self.assertEqual(2, len(transport.calls))
+
+
+if __name__ == "__main__":
+    unittest.main()

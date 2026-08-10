@@ -1,0 +1,325 @@
+{
+  "manifest_version": 1,
+  "operations": [
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "巨量素材标题库只读列表；支持按产品、标题筛选和已验证字段排序，分页上限 100。2026-08-11 最小探针确认非空响应与分页合同，创建人、更新人和租户标识固定省略。",
+      "domain": "material",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "description": "可选 Gravity App ID；省略时读取当前账号可见的全部标题素材。",
+          "max_length": 64,
+          "type": "string"
+        },
+        "filters": {
+          "default": [],
+          "description": "结构化筛选；稳定支持对公开投影字段筛选，标题包含使用 operator=8。",
+          "item_type": "object",
+          "max_items": 20,
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "description": "公开投影字段排序，格式为 field asc 或 field desc。",
+          "item_type": "string",
+          "max_items": 10,
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "description": "页码，从 1 开始。",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "description": "每页数量，最大 100。",
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "material.bytedance_asset_text_title.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/bytedance/asset/text/title/list/",
+      "platform": "bytedance",
+      "privacy_policy": {
+        "classification": "material",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "filters",
+          "order_by",
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "bytedance_asset_text_title",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "app_id",
+          "create_time",
+          "history_click_rate",
+          "history_cost",
+          "id",
+          "is_ai",
+          "is_deleted",
+          "last_3_day_click_rate",
+          "last_3_day_cost",
+          "modify_time",
+          "plan_num",
+          "title"
+        ],
+        "known_omitted_item_keys": [
+          "cid",
+          "create_user_id",
+          "create_user_name",
+          "update_user_id"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "巨量标准投放素材标题库只读列表；支持按产品、标题筛选和已验证字段排序，分页上限 100。2026-08-11 最小探针确认非空响应与分页合同，创建人、更新人和租户标识固定省略。",
+      "domain": "material",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "description": "可选 Gravity App ID；省略时读取当前账号可见的全部标题素材。",
+          "max_length": 64,
+          "type": "string"
+        },
+        "filters": {
+          "default": [],
+          "description": "结构化筛选；稳定支持对公开投影字段筛选，标题包含使用 operator=8。",
+          "item_type": "object",
+          "max_items": 20,
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "description": "公开投影字段排序，格式为 field asc 或 field desc。",
+          "item_type": "string",
+          "max_items": 10,
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "description": "页码，从 1 开始。",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "description": "每页数量，最大 100。",
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "material.bytedance_std_asset_text_title.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/bytedance/std/asset/text/title/list/",
+      "platform": "bytedance",
+      "privacy_policy": {
+        "classification": "material",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "filters",
+          "order_by",
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "bytedance_std_asset_text_title",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "app_id",
+          "create_time",
+          "history_click_rate",
+          "history_cost",
+          "id",
+          "is_ai",
+          "is_deleted",
+          "last_3_day_click_rate",
+          "last_3_day_cost",
+          "modify_time",
+          "plan_num",
+          "title"
+        ],
+        "known_omitted_item_keys": [
+          "cid",
+          "create_user_id",
+          "create_user_name",
+          "update_user_id"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    }
+  ]
+}

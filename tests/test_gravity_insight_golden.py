@@ -217,6 +217,9 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "promotion.bytedance.site.list",
             "promotion.conditions_history.list",
             "promotion.history.list",
+            # 巨量标题素材两条读取经非空分页探针验证后晋升 stable。
+            "material.bytedance_asset_text_title.list",
+            "material.bytedance_std_asset_text_title.list",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]

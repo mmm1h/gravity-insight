@@ -40,6 +40,14 @@ gravity --workspace <gravity.toml-or-directory> <command> [options]
 
 领域命令如 `analysis`、`multidim`、`promotion`、`materials` 是受控 operation 的易用门面；不确定时从 `operations search` 开始。
 
+例如，先发现并审阅巨量标题素材合同，再执行受控分页读取：
+
+```powershell
+gravity insight operations search "巨量 标题 素材" --domain material
+gravity insight operations describe material.bytedance_asset_text_title.list
+gravity run material.bytedance_asset_text_title.list --set page_size=100 --all-pages
+```
+
 常用读取参数：
 
 ```text

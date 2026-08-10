@@ -48,7 +48,7 @@ class GravityInsightCompilerTests(unittest.TestCase):
         }
         self.assertEqual(len(compiled_ids), result.operation_count)
         self.assertLessEqual(direct_source_ids, compiled_ids)
-        self.assertEqual(10, len(result.manifests))
+        self.assertEqual(11, len(result.manifests))
 
     def test_runtime_products_keep_semantics_and_strip_documentation_fields(self) -> None:
         result = ContractCompiler(CONTRACT_ROOT, MANIFEST_ROOT).lint()
