@@ -206,10 +206,11 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
         # promotion.bytedance.app.list，随后隐私复评解锁三条成功 probe，
         # stable 总数随后增加两条巨量标题素材、一条腾讯广告组配置，
         # 三条 AI 托管/数据表配置读取、两条模板/自定义人群读取，以及一条
-        # 巨量素材定向包读取，以及两条报表标签配置读取，且均带 example。
+        # 巨量素材定向包读取、两条报表标签配置读取和一条小时聚合对比，
+        # 且均带 example。
         # 这条断言锁的是「填充率不许退化」——examples_complete 只许涨不许跌，
         # 新增 stable 带来的 unknown 增长必须显式在此登记，不能被平均掉。
-        self.assertEqual((72, 80), (examples_complete, examples_unknown))
+        self.assertEqual((73, 80), (examples_complete, examples_unknown))
         # 本趟按父 response projection 与调用方选择语义补全 7 条边；剩余
         # 16 条涉及 runtime-v1 target 投影、递归、同一行关联或嵌套输入变换。
         self.assertEqual((47, 16), (parents_complete, parents_unknown))

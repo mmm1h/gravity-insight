@@ -140,9 +140,7 @@ FAMILY_SAFE_FIELD_RULES = (
     (AI_TRUSTEESHIP_OPERATION_RE, AI_TRUSTEESHIP_SAFE_FIELDS),
 )
 
-AGGREGATE_REPORT_OPERATIONS = frozenset(
-    {"report.hour_comparison.query", "report.overview.query"}
-)
+AGGREGATE_REPORT_RESOURCES = frozenset({"hour_comparison", "overview"})
 
 AGGREGATE_REPORT_FIELDS = frozenset(
     {
@@ -176,6 +174,16 @@ def _is_metadata_dictionary_operation(operation_id: str | None) -> bool:
         and parts[0] == "metadata"
         and parts[1] in METADATA_DICTIONARY_RESOURCES
         and parts[2] == "list"
+    )
+
+
+def _is_aggregate_report_operation(operation_id: str | None) -> bool:
+    parts = str(operation_id).split(".")
+    return (
+        len(parts) == 3
+        and parts[0] == "report"
+        and parts[1] in AGGREGATE_REPORT_RESOURCES
+        and parts[2] == "query"
     )
 
 
@@ -279,7 +287,7 @@ def classify_candidate_field(
     normalized = path.casefold()
     field = field_name.casefold()
     if (
-        operation_id in AGGREGATE_REPORT_OPERATIONS
+        _is_aggregate_report_operation(operation_id)
         and field in AGGREGATE_REPORT_FIELDS
         and normalized.startswith("data.")
     ):
@@ -339,6 +347,29 @@ def _mapping_keys(rows: Sequence[Any]) -> set[str]:
     return keys
 
 
+def _container_projection_keys(
+    key: str, value: Any, by_path: Mapping[str, Mapping[str, Any]]
+) -> tuple[list[str], list[str]]:
+    if isinstance(value, list):
+        all_keys = candidate_keys = _mapping_keys(value)
+        prefix = f"data.{key}[]"
+    elif isinstance(value, Mapping):
+        all_keys = {safe_schema_key(name) for name in value}
+        candidate_keys = {
+            safe_schema_key(name)
+            for name, item in value.items()
+            if not isinstance(item, (Mapping, list))
+        }
+        prefix = f"data.{key}"
+    else:
+        return [], []
+    safe = sorted(
+        name for name in candidate_keys
+        if _classified(f"{prefix}.{name}", by_path) == "non_sensitive"
+    )
+    return safe, sorted(all_keys - set(safe))
+
+
 def _list_projection(data: list[Any], by_path: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]:
     keys = _mapping_keys(data)
     safe = sorted(
@@ -389,13 +420,8 @@ def _mapping_projection(
                 exposed.append(key)
             else:
                 omitted.append(key)
-        elif isinstance(value, list):
-            keys = _mapping_keys(value)
-            safe = sorted(
-                name for name in keys
-                if _classified(f"data.{key}[].{name}", by_path) == "non_sensitive"
-            )
-            hidden = sorted(keys - set(safe))
+        elif isinstance(value, (list, Mapping)):
+            safe, hidden = _container_projection_keys(key, value, by_path)
             if safe and not (key == "total" and hidden):
                 exposed.append(key)
                 projection.setdefault("data_item_keys", {})[key] = safe

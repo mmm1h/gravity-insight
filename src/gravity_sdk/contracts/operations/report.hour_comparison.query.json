@@ -1,0 +1,150 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 18,
+  "operation": {
+    "action": "query",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "当前账号可访问应用的今日/昨日小时级经营指标对比；返回字段说明及按小时汇总的注册、活跃、付费、广告收入、总收入等聚合指标。",
+    "domain": "report",
+    "effect": "read",
+    "examples": [
+      {
+        "description": "Minimum input verified by the contract probe pipeline.",
+        "inputs": {},
+        "name": "minimum_read"
+      }
+    ],
+    "executable": true,
+    "input_fields": {},
+    "live_probe": {
+      "enabled": true,
+      "inputs": {}
+    },
+    "operation_id": "report.hour_comparison.query",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/report/api/v2/app/hour_comparison/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.hour_comparison.query.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {},
+      "fixed_body": {
+        "app_ids": []
+      },
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "hour_comparison",
+    "response_projection": {
+      "data_item_keys": {
+        "columns": [
+          "AdCost",
+          "AppActivePayAmountSumReco",
+          "AppAdFirstDayRevenueReco",
+          "AppAdRevenueReco",
+          "AppDAUReco",
+          "AppFirstDayPayAmountStandardReco",
+          "AppROIReco",
+          "AppRealRegisterCnt",
+          "AppRevenueReco"
+        ],
+        "today": [
+          "AppActivePayAmountSumReco",
+          "AppAdFirstDayRevenueReco",
+          "AppAdRevenueReco",
+          "AppDAUReco",
+          "AppFirstDayPayAmountStandardReco",
+          "AppRealRegisterCnt",
+          "AppRevenueReco",
+          "hour"
+        ],
+        "yesterday": [
+          "AppActivePayAmountSumReco",
+          "AppAdFirstDayRevenueReco",
+          "AppAdRevenueReco",
+          "AppDAUReco",
+          "AppFirstDayPayAmountStandardReco",
+          "AppRealRegisterCnt",
+          "AppRevenueReco",
+          "hour"
+        ]
+      },
+      "data_keys": [
+        "columns",
+        "today",
+        "yesterday"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "report.json"
+}

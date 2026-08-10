@@ -71,7 +71,7 @@
       "src/gravity_sdk/prober/drafts.py::structured_blockers": 59,
       "src/gravity_sdk/prober/parameters.py::_parent_candidate": 30,
       "src/gravity_sdk/prober/parameters.py::bind_stable_parent_candidates": 21,
-      "src/gravity_sdk/prober/privacy.py::_mapping_projection": 24,
+      "src/gravity_sdk/prober/privacy.py::_mapping_projection": 22,
       "src/gravity_sdk/prober/privacy.py::projection_exposes_path": 17,
       "src/gravity_sdk/prober/promotion.py::_legacy_privacy_evidence_reusable": 36,
       "src/gravity_sdk/prober/promotion.py::evaluate_gate": 35,
@@ -214,8 +214,7 @@
         "metadata.property.list": 1,
         "promotion.bilibili.account.list": 1,
         "promotion.bytedance.site.list": 1,
-        "report.company_amount.query": 1,
-        "report.overview.query": 1
+        "report.company_amount.query": 1
       },
       "src/gravity_sdk/registry.py": {
         "analysis.account_user.list": 1,

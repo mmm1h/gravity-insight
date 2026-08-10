@@ -167,6 +167,36 @@ def test_aggregate_metric_review_is_route_and_path_scoped() -> None:
     )[0] == "manual_review"
 
 
+def test_aggregate_mapping_and_series_receive_nested_allowlists() -> None:
+    payload = {
+        "data": {
+            "columns": {
+                "AppRevenueReco": "revenue",
+                "remark": "not persisted",
+            },
+            "today": [
+                {"AppRevenueReco": 12, "hour": "10", "remark": "not persisted"}
+            ],
+        }
+    }
+    fields = candidate_fields(
+        response_schema_sketch(payload),
+        operation_id="report.hour_comparison.query",
+    )
+
+    projection = build_projection(payload, fields)
+
+    assert projection["data_keys"] == ["columns", "today"]
+    assert projection["data_item_keys"] == {
+        "columns": ["AppRevenueReco"],
+        "today": ["AppRevenueReco", "hour"],
+    }
+    assert projection["known_omitted_data_item_keys"] == {
+        "columns": ["remark"],
+        "today": ["remark"],
+    }
+
+
 def test_metadata_dictionary_context_does_not_override_sensitive_names() -> None:
     safe_path = "data.list[].name_en_cn_dict.item_price"
     sensitive_path = "data.list[].name_en_cn_dict.user_name"

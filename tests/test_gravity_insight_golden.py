@@ -234,6 +234,8 @@ class GravityInsightGoldenTests(unittest.TestCase):
             # 收敛前端超大分页默认值并完成非空分页与隐私投影复验后晋升。
             "report.tag.list",
             "report.tag_category.list",
+            # 固定全局范围并完成嵌套聚合字段白名单复验后晋升。
+            "report.hour_comparison.query",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]
