@@ -371,6 +371,50 @@ def test_exact_stable_parent_candidate_is_bound_without_a_value(tmp_path: Path) 
     assert persisted["operation"]["required_parent"][0]["selection"] == "caller_select"
 
 
+def test_automatic_parent_rebinding_preserves_manual_parent_and_is_idempotent(
+    tmp_path: Path,
+) -> None:
+    draft_root = tmp_path / "drafts"
+    operation_root = tmp_path / "operations"
+    source, _ = assemble_source_parameters(
+        build_draft(_route(), set()), _parameter_contract()
+    )
+    source["operation"]["input_fields"].update(
+        {"app_id": {"type": "integer"}, "custom_id": {"type": "string"}}
+    )
+    source["operation"]["required_parent"] = [
+        {
+            "operation_id": "custom.parent.list",
+            "input_field": "custom_id",
+            "output_path": "data.list[].id",
+            "selection": "first",
+        }
+    ]
+    source["operation"]["live_probe"]["inputs"]["custom_id"] = "$parent:custom_id"
+    draft_path = draft_root / f"{source['operation']['operation_id']}.json"
+    _write_json(draft_path, source)
+    _write_json(
+        operation_root / "app.list.json",
+        {"operation": {"operation_id": "app.list", "stability": "stable"}},
+    )
+
+    for _ in range(2):
+        bind_stable_parent_candidates(
+            draft_root=draft_root,
+            operation_root=operation_root,
+            operation_ids=[source["operation"]["operation_id"]],
+        )
+
+    persisted = json.loads(draft_path.read_text(encoding="utf-8"))
+    parents = persisted["operation"]["required_parent"]
+    assert [item["input_field"] for item in parents] == ["custom_id", "app_id"]
+    assert persisted["operation"]["live_probe"]["inputs"]["custom_id"] == "$parent:custom_id"
+    assert persisted["operation"]["live_probe"]["inputs"]["app_id"] == "$parent:app_id"
+    assert persisted["draft"]["route_evidence"]["parameter_contract"][
+        "stable_parent_candidates"
+    ] == [parents[1]]
+
+
 def test_named_parent_placeholders_resolve_independent_fields() -> None:
     class StableClient:
         def probe(self, operation_id: str) -> dict[str, object]:

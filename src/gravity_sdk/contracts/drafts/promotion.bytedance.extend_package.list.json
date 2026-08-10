@@ -232,14 +232,6 @@
               "unknown"
             ]
           }
-        ],
-        "stable_parent_candidates": [
-          {
-            "input_field": "app_cloud_id",
-            "operation_id": "promotion.bytedance.app.list",
-            "output_path": "data.list[].app_cloud_id",
-            "selection": "first"
-          }
         ]
       },
       "path": "/turbo_engine/api/v1/bytedance/app/extend_package/list/",
@@ -273,21 +265,9 @@
     "examples": [],
     "executable": false,
     "input_fields": {
-      "advertiser_id": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_conditional); presence describes frontend calls and is not a server-required declaration.",
-        "type": "string"
-      },
       "app_cloud_id": {
         "description": "Frontend-observed ByteDance cloud application ID.",
         "required": true,
-        "type": "string"
-      },
-      "create_user_id": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_conditional); presence describes frontend calls and is not a server-required declaration.",
-        "type": "string"
-      },
-      "key_word": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_conditional); presence describes frontend calls and is not a server-required declaration.",
         "type": "string"
       },
       "page": {
@@ -365,8 +345,7 @@
     },
     "provenance": {
       "applied_overrides": [
-        "frontend_route_parameter_contract",
-        "stable_parent_candidate_binding"
+        "frontend_route_parameter_contract"
       ],
       "family": null,
       "platform": "bytedance",
@@ -384,10 +363,7 @@
       "fixed_query": {},
       "path_fields": [],
       "query_fields": [
-        "advertiser_id",
         "app_cloud_id",
-        "create_user_id",
-        "key_word",
         "page",
         "page_size"
       ]

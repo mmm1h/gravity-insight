@@ -227,14 +227,6 @@
               "unknown"
             ]
           }
-        ],
-        "stable_parent_candidates": [
-          {
-            "input_field": "turbo_promoted_object_id",
-            "operation_id": "promotion.object.list",
-            "output_path": "data.list[].turbo_promoted_object_id",
-            "selection": "first"
-          }
         ]
       },
       "path": "/turbo_engine/api/v1/user/promoted/onelink/list/",
@@ -351,8 +343,7 @@
     },
     "provenance": {
       "applied_overrides": [
-        "frontend_route_parameter_contract",
-        "stable_parent_candidate_binding"
+        "frontend_route_parameter_contract"
       ],
       "family": null,
       "platform": null,

@@ -13,11 +13,14 @@ from gravity_sdk.paths import CENSUS_DATA_ROOT
 from .core import DRAFT_ROOT, OPERATION_ROOT, canonical_fingerprint, read_json
 from .parameter_types import MISSING as _MISSING
 from .parameter_types import apply_parameter
-from .parameter_types import candidate_value as _candidate_value
 from .parameter_types import field_type as _field_type
 from .parameter_types import merge_description as _merge_description
 from .parameter_types import parameter_metadata as _metadata_parameter
 from .parameter_types import top_level_parameters
+from .parent_bindings import (
+    automatic_parent_state,
+    restore_removed_parent_inputs,
+)
 from .promotion import save_draft
 
 
@@ -210,12 +213,9 @@ def bind_stable_parent_candidates(
         operation = source["operation"]
         platform = operation.get("platform")
         original_parents = copy.deepcopy(operation.get("required_parent", []))
-        existing_parents = operation.get("required_parent", [])
-        automatic = "stable_parent_candidate_binding" in operation.get(
-            "provenance", {}
-        ).get("applied_overrides", [])
-        if automatic:
-            existing_parents = []
+        contract, existing_parents, prior_automatic, automatic = (
+            automatic_parent_state(source, operation)
+        )
         bound_fields = {
             str(item.get("input_field"))
             for item in existing_parents
@@ -247,33 +247,12 @@ def bind_stable_parent_candidates(
             )
             bindings.append(parent)
         if automatic:
-            old_fields = {
-                str(item.get("input_field"))
-                for item in operation.get("required_parent", [])
-                if isinstance(item, Mapping) and item.get("input_field")
-            }
-            new_fields = {str(item["input_field"]) for item in bindings}
-            metadata = {
-                str(item.get("name")): item
-                for item in source.get("draft", {})
-                .get("route_evidence", {})
-                .get("parameter_contract", {})
-                .get("top_level_parameters", [])
-                if isinstance(item, Mapping) and item.get("name")
-            }
-            for removed_field in sorted(old_fields - new_fields):
-                parameter = metadata.get(removed_field)
-                candidate = _candidate_value(parameter) if parameter else 0
-                operation["live_probe"]["inputs"][removed_field] = (
-                    0 if candidate is _MISSING else candidate
-                )
+            restore_removed_parent_inputs(
+                source, operation, prior_automatic, bindings
+            )
         operation["required_parent"] = existing_parents
         if not bindings and not automatic:
             continue
-        contract = (
-            source["draft"].setdefault("route_evidence", {})
-            .setdefault("parameter_contract", {})
-        )
         contract["stable_parent_candidates"] = copy.deepcopy(bindings)
         if original_parents != existing_parents:
             source["draft"]["route_evidence"].pop("parent_resolution", None)
