@@ -22,7 +22,9 @@ def should_onboard(argv: Sequence[str]) -> bool:
     """Keep help and offline checks usable without asking for credentials."""
 
     lowered = {value.lower() for value in argv}
-    return not ({"--help", "-h", "--dry-run"} & lowered)
+    if {"--help", "-h", "--dry-run"} & lowered:
+        return False
+    return not (argv and argv[0].lower() == "census" and "--smoke" in lowered)
 
 
 def ensure_first_run_credentials(

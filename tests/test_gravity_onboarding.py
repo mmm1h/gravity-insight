@@ -87,6 +87,7 @@ class GravityOnboardingTests(unittest.TestCase):
     def test_help_and_dry_run_never_start_onboarding(self) -> None:
         self.assertFalse(should_onboard(["--help"]))
         self.assertFalse(should_onboard(["sql", "--dry-run"]))
+        self.assertFalse(should_onboard(["census", "--smoke"]))
         self.assertTrue(should_onboard(["insight", "auth", "status"]))
 
     def test_failed_login_rolls_back_account_fields(self) -> None:
