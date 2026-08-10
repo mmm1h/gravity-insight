@@ -6,18 +6,20 @@ Gravity 的受控只读 SDK 与 CLI。它提供三条边界清晰的能力：
 - `gravity sql`：Insight 无法等价表达时使用的受控 SQL 产品；
 - `gravity census`：前端路由盘点、合同发现与上游漂移检查。
 
-SDK 还可通过 `gravity metadata sync --all-apps` 将所有可见 App 的事件与属性同步到本地 SQLite。
+SDK 还提供本地元数据检索、跨目录发现与 workspace recipe：`gravity
+metadata sync/search`、`gravity find` 和 `gravity run` 让 Agent 无需临时 Python/JSON
+脚本即可完成常见查询链路。
 
 ## 快速开始
 
 ```powershell
 python -m pip install -e .
 gravity
-gravity insight capabilities search "event analysis"
+gravity insight operations search "event analysis"
 gravity metadata sync --all-apps
 ```
 
-首次交互式运行 `gravity` 会询问 Gravity 用户名和密码，验证登录并在用户私有目录维护会话。使用者不需要配置或维护 token。
+首次在交互式终端运行 `gravity` 会询问 Gravity 用户名和密码，验证登录并在用户私有目录维护会话。`--help`、operation 搜索、`find`、recipe 检查和本地 metadata 查询不会触发登录。使用者不需要配置或维护 token。
 
 查询遵循 **Insight-first**：只要 stable Insight operation 能等价表达目标，就优先使用 Insight；只有复杂跨表、特殊计算或 Evidence 产品无法由 Insight 表达时才使用 SQL。
 

@@ -40,6 +40,8 @@ GRAVITY_PASSWORD=your-password
 gravity insight auth status
 ```
 
+`--help`、operation 搜索、`find`、recipe 检查和本地 metadata 查询不需要凭据，也不会先弹出向导。首次执行需要 Gravity 客户端的命令时才会进入设置流程。
+
 ## 3. 离线自检
 
 ```powershell
@@ -55,20 +57,31 @@ gravity census --smoke
 不要猜 operation ID。按固定顺序执行：
 
 ```powershell
-gravity insight capabilities search "applications"
-gravity insight capabilities describe app.list
+gravity insight operations search "applications"
+gravity insight operations describe app.list
 gravity insight read app.list --all-pages --max-items 20
 ```
 
-需要输入参数时，将 JSON 写入临时文件：
+需要输入参数时可直接使用内联 JSON；只改少数字段时可追加 `--set`：
 
 ```powershell
-gravity insight capabilities describe analysis.event.list
-gravity insight validate analysis.event.list --input tmp/event-list.json
-gravity insight read analysis.event.list --input tmp/event-list.json --all-pages
+gravity insight operations describe analysis.event.list
+gravity insight validate analysis.event.list --input '{"app_id":"101"}'
+gravity insight read analysis.event.list --input '{"app_id":"101"}' --set page_size=100
 ```
 
 `describe` 的输入 schema 和 example 是调用前权威。`validate` 只做本地检查；`read` 才会访问 Gravity。
+
+项目提供 `gravity.toml` 时，也可以让 Resolver 在一个进程里完成绑定、校验、父资源检查、执行和诊断：
+
+```powershell
+gravity recipe validate <recipe-name>
+gravity recipe check <recipe-name>
+gravity run @<recipe-name> --start 2026-08-01 --end 2026-08-07
+gravity run <operation-id> --app <workspace-alias> --input <json>
+```
+
+workspace 可由显式调用、`GRAVITY_WORKSPACE` 或 cwd 向上查找选中。SDK 只读该文件；执行回执写入用户缓存，不写项目目录。配置格式见 [Workspace 参考](reference/workspace.md)。
 
 ## 5. 同步本地元数据目录
 

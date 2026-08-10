@@ -17,6 +17,7 @@ from .domains import (
     DOMAIN_OPERATIONS,
 )
 from .errors import ContractChangedError, InputValidationError, UpstreamError
+from .find_metadata import search_limit, search_metadata, search_offset
 from .runtime import call_batch
 
 
@@ -57,7 +58,7 @@ def add_metadata_commands(
     input_adder(apps_list)
     all_pages_adder(apps_list)
     metadata = commands.add_parser(
-        "metadata", help="Synchronize governed Gravity metadata for local reuse."
+        "metadata", help="Synchronize and search governed local Gravity metadata."
     )
     metadata_commands = metadata.add_subparsers(
         dest="metadata_command", required=True
@@ -74,13 +75,39 @@ def add_metadata_commands(
         help="Override the private per-user SQLite catalog path.",
     )
     sync.add_argument("--concurrency", type=concurrency_parser, default=8)
+    for name, help_text in (
+        ("search", "Search applications, events, and properties offline."),
+        ("events", "List or search synchronized events offline."),
+        ("properties", "List or search synchronized properties offline."),
+    ):
+        query = metadata_commands.add_parser(name, help=help_text)
+        query.set_defaults(network_required=False)
+        query.add_argument("query", nargs="?", default="")
+        query.add_argument("--app-id")
+        query.add_argument("--database", type=Path, default=None)
+        query.add_argument("--limit", type=search_limit, default=20)
+        query.add_argument("--offset", type=search_offset, default=0)
 
 
 def run_metadata_command(args: Any, client_builder: Any) -> dict[str, Any]:
-    if args.metadata_command != "sync" or not args.all_apps:
-        raise InputValidationError("metadata sync currently requires --all-apps")
-    return sync_all_apps(
-        client_builder(args), database=args.database, concurrency=args.concurrency
+    if args.metadata_command == "sync":
+        if not args.all_apps:
+            raise InputValidationError("metadata sync currently requires --all-apps")
+        return sync_all_apps(
+            client_builder(args), database=args.database, concurrency=args.concurrency
+        )
+    kind = {
+        "search": "all",
+        "events": "event",
+        "properties": "property",
+    }[args.metadata_command]
+    return search_metadata(
+        args.query,
+        database=args.database,
+        app_id=args.app_id,
+        kind=kind,
+        limit=args.limit,
+        offset=args.offset,
     )
 
 

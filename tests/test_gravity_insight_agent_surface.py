@@ -297,7 +297,7 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
         batch = client.batch([{"operation_id": "example.unknown.list", "inputs": {}}])
         self.assertFalse(batch[0]["ok"])
         self.assertEqual("UNKNOWN_OPERATION", batch[0]["error"]["code"])
-        self.assertIn("capabilities search", batch[0]["error"]["next_action"])
+        self.assertIn("operations search", batch[0]["error"]["next_action"])
 
     def test_read_limited_stops_at_five_or_two_hundred_with_continuation(self):
         operation = _operation(

@@ -10,6 +10,7 @@
 | 让 Agent 查询 Gravity | [Agent 工作流](agent-workflow.md) | [架构与概念](architecture.md) |
 | 判断用 Insight 还是 SQL | [架构与概念](architecture.md#查询路由) | [Agent 工作流](agent-workflow.md#选择查询通道) |
 | 同步全部 App 的埋点目录 | [快速上手](getting-started.md#同步本地元数据目录) | [CLI 参考](reference/cli.md#metadata) |
+| 配置项目 App、SQL 产品或 recipe | [Workspace 参考](reference/workspace.md) | [架构与概念](architecture.md#核心层级) |
 | 创建或下载异步导出 | [导出指南](guides/export.md) | [CLI 参考](reference/cli.md) |
 | 新增或升级 operation | [新增受控能力](maintainers/operations.md) | [维护者入口](maintainers/index.md) |
 | 探测生产接口 | [探测安全](maintainers/probing.md) | [路由盘点](maintainers/census.md) |

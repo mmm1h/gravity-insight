@@ -1,5 +1,6 @@
 import copy
 import io
+import os
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
@@ -19,6 +20,7 @@ from gravity_sdk.sql.products import (
     build_evidence,
     build_sql,
     day_window,
+    declared_events,
     evidence_preflight,
     _credential_source,
     latest_safe_date,
@@ -31,6 +33,10 @@ from gravity_sdk.sql.products import (
     summarize_first_scene,
     summarize_payment,
 )
+
+
+ROOT = Path(__file__).resolve().parents[1]
+EXAMPLE_WORKSPACE = ROOT / "examples" / "workspace" / "gravity.toml"
 
 
 class _AggregateClient:
@@ -90,6 +96,13 @@ class _AggregateClient:
 
 
 class GravityProductTests(unittest.TestCase):
+    def setUp(self):
+        self.workspace_environment = mock.patch.dict(
+            os.environ, {"GRAVITY_WORKSPACE": str(EXAMPLE_WORKSPACE)}
+        )
+        self.workspace_environment.start()
+        self.addCleanup(self.workspace_environment.stop)
+
     def test_latest_safe_day_changes_at_0200_beijing(self):
         self.assertEqual(
             date(2026, 7, 21),
@@ -123,7 +136,7 @@ class GravityProductTests(unittest.TestCase):
         start_at, end_at = day_window(date(2026, 7, 22))
         fresh_rows = _AggregateClient().execute_sql("event")
         summary, status, warnings, notes = summarize_events(
-            fresh_rows, (29034827,), start_at, end_at
+            fresh_rows, (29034827,), start_at, end_at, declared_events()
         )
         self.assertEqual("complete", status)
         self.assertEqual([], warnings)
@@ -132,7 +145,7 @@ class GravityProductTests(unittest.TestCase):
 
         fresh_rows[0]["last_event_at"] = "2026-07-22 23:00:00"
         _summary, status, warnings, _notes = summarize_events(
-            fresh_rows, (29034827,), start_at, end_at
+            fresh_rows, (29034827,), start_at, end_at, declared_events()
         )
         self.assertEqual("partial", status)
         self.assertIn("15 minutes", warnings[0])
@@ -467,6 +480,17 @@ class GravityProductTests(unittest.TestCase):
                 encoding="utf-8",
             )
             self.assertEqual("local_account_file", _credential_source(Path(tempdir)))
+
+    def test_credential_subprocess_falls_back_when_state_root_is_absent(self):
+        completed = __import__("subprocess").CompletedProcess(["tool"], 0, b"", b"")
+        with tempfile.TemporaryDirectory() as temporary:
+            missing_root = Path(temporary) / "not-created"
+            with mock.patch.object(gravity_cli.credentials, "ROOT", missing_root), mock.patch.object(
+                gravity_cli.credentials.subprocess, "run", return_value=completed
+            ) as run:
+                gravity_cli.credentials._run(["tool"], check=False)
+
+        self.assertEqual(Path.cwd(), run.call_args.kwargs["cwd"])
 
     def test_evidence_preflight_cli_is_offline_json(self):
         output = io.StringIO()

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import logging
 import os
@@ -15,15 +14,16 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from .cache import MetadataCache, is_metadata_operation
-from .catalog import CapabilityCatalog
+from .catalog import OperationCatalog
 from .credentials import CredentialProvider
 from .drift import aggregate_contract_status
-from .errors import ErrorCategory, ErrorCode, ErrorDetail, GravityInsightError, InputValidationError, PaginationError, ParentRequiredError, PermissionUnavailableError, PolicyViolation, UnknownOperationError, UpstreamError, error_detail_from_exception
+from .errors import ErrorCode, ErrorDetail, GravityInsightError, InputValidationError, PaginationError, ParentRequiredError, PermissionUnavailableError, PolicyViolation, UnknownOperationError, UpstreamError, error_detail_from_exception
 from .executor import ReadExecutor
 from .export_batch import batch_input_error, validate_batch_item
 from .export_client import ExportClientMixin, load_export_components
 from .export_validation import validate_export_input
 from .field_policy import FieldPolicy
+from .fingerprints import shape_fingerprint
 from .http_runtime import (
     DEFAULT_CONCURRENCY, MAX_CONCURRENCY, GravityHttpRuntime, get_shared_runtime,
 )
@@ -48,7 +48,7 @@ class GravityInsightClient(ExportClientMixin):
         *,
         allow_experimental: bool = False,
         metadata_cache: MetadataCache | None = None,
-        capability_catalog: CapabilityCatalog | None = None,
+        capability_catalog: OperationCatalog | None = None,
         field_policy: FieldPolicy | None = None,
         export_components: tuple[Any, Any, Any] | None = None,
     ) -> None:
@@ -58,14 +58,14 @@ class GravityInsightClient(ExportClientMixin):
         self._metadata_cache = metadata_cache or MetadataCache(
             operation.operation_id for operation in registry.all() if is_metadata_operation(operation)
         )
-        self._capability_catalog = capability_catalog or CapabilityCatalog(registry.all())
+        self._operation_catalog = capability_catalog or OperationCatalog(registry.all())
         self._field_policy = field_policy or FieldPolicy()
         self._export_contracts, self._export_policy, self._export_runtime = (
             export_components or (None, None, None)
         )
         self._probe_lock = threading.Lock()
         self._probe_values: dict[str, Any] = {}
-        self._executor._bind_call_guard(self._capability_catalog.guard)
+        self._executor._bind_call_guard(self._operation_catalog.guard)
         self._executor._bind_field_validator(self._validate_field_request)
 
     @classmethod
@@ -134,7 +134,7 @@ class GravityInsightClient(ExportClientMixin):
             registry,
             ReadExecutor(registry, policy, request_transport),
             allow_experimental=allow_experimental,
-            capability_catalog=CapabilityCatalog(
+            capability_catalog=OperationCatalog(
                 registry.all(),
                 state_path=catalog_path,
                 contract_metadata=_load_contract_metadata(
@@ -174,13 +174,13 @@ class GravityInsightClient(ExportClientMixin):
         stability: str | None = "stable",
         include_probe_metadata: bool = True,
     ) -> list[dict[str, object]]:
-        capabilities = self._registry.capabilities(
+        operations = self._registry.capabilities(
             domain=domain, platform=platform, stability=stability
         )
         return (
-            self._capability_catalog.merge(capabilities)
+            self._operation_catalog.merge(operations)
             if include_probe_metadata
-            else capabilities
+            else operations
         )
 
     def capability_coverage(
@@ -190,7 +190,7 @@ class GravityInsightClient(ExportClientMixin):
         platform: str | None = None,
         stability: str | None = "stable",
     ) -> dict[str, Any]:
-        return self._capability_catalog.coverage(
+        return self._operation_catalog.coverage(
             domain=domain, platform=platform, stability=stability
         )
 
@@ -207,7 +207,7 @@ class GravityInsightClient(ExportClientMixin):
         limit: int = 20,
         continuation: str | None = None,
     ) -> dict[str, Any]:
-        return self._capability_catalog.search(
+        return self._operation_catalog.search(
             query,
             domain=domain,
             platform=platform,
@@ -217,7 +217,7 @@ class GravityInsightClient(ExportClientMixin):
         )
 
     def describe(self, operation_id: str) -> dict[str, Any]:
-        return self._capability_catalog.describe(operation_id)
+        return self._operation_catalog.describe(operation_id)
 
     def validate(
         self,
@@ -317,7 +317,7 @@ class GravityInsightClient(ExportClientMixin):
                 inputs = self._resolve_probe_inputs(operation.live_probe.inputs)
             except GravityInsightError as exc:
                 envelope = self._error_envelope(operation.operation_id, exc)
-                self._capability_catalog.record_envelope(operation.operation_id, envelope)
+                self._operation_catalog.record_envelope(operation.operation_id, envelope)
                 resolution_failures[operation.operation_id] = BatchResult(
                     operation.operation_id,
                     False,
@@ -722,7 +722,7 @@ class GravityInsightClient(ExportClientMixin):
             )
             if parent:
                 next_action = (
-                    f"Run `python -m gravity_sdk capabilities describe {parent}`, "
+                    f"Run `python -m gravity_sdk operations describe {parent}`, "
                     f"then run `python -m gravity_sdk read {parent} --input "
                     f"<parent-input.json>` and pass the selected value to `{operation_id}`."
                 )
@@ -761,17 +761,17 @@ class GravityInsightClient(ExportClientMixin):
         except (UpstreamError, ParentRequiredError, PermissionUnavailableError) as exc:
             envelope = self._error_envelope(operation_id, exc)
         except GravityInsightError as exc:
-            if error_detail_from_exception(exc).category == ErrorCategory.UPSTREAM.value: self._capability_catalog.record(operation_id, status=_error_status(exc))
+            self._operation_catalog.record_upstream_exception(operation_id, exc, status=_error_status(exc))
             _audit_read(operation_id, _error_status(exc), started)
             raise
-        self._capability_catalog.record_envelope(operation_id, envelope)
+        self._operation_catalog.record_envelope(operation_id, envelope)
         _audit_read(operation_id, str(envelope.get("status", "success")), started, envelope)
         return envelope
 
     def _execute_result(
         self, operation_id: str, inputs: Mapping[str, Any] | None
     ) -> ReadResult:
-        self._capability_catalog.guard(operation_id)
+        self._operation_catalog.guard(operation_id)
         operation = self._executor._policy.authorize_operation(operation_id)
         normalized_inputs = operation.validate_inputs(inputs)
         return self._metadata_cache.get_or_load(
@@ -814,10 +814,10 @@ class GravityInsightClient(ExportClientMixin):
         except (UpstreamError, ParentRequiredError, PermissionUnavailableError) as exc:
             envelope = self._error_envelope(operation_id, exc)
         except GravityInsightError as exc:
-            if error_detail_from_exception(exc).category == ErrorCategory.UPSTREAM.value: self._capability_catalog.record(operation_id, status=_error_status(exc))
+            self._operation_catalog.record_upstream_exception(operation_id, exc, status=_error_status(exc))
             _audit_read(operation_id, _error_status(exc), started)
             raise
-        self._capability_catalog.record_envelope(operation_id, envelope)
+        self._operation_catalog.record_envelope(operation_id, envelope)
         _audit_read(operation_id, str(envelope.get("status", "success")), started, envelope)
         return envelope
 
@@ -842,10 +842,10 @@ class GravityInsightClient(ExportClientMixin):
         except (UpstreamError, ParentRequiredError, PermissionUnavailableError) as exc:
             envelope = self._error_envelope(operation_id, exc)
         except GravityInsightError as exc:
-            if error_detail_from_exception(exc).category == ErrorCategory.UPSTREAM.value: self._capability_catalog.record(operation_id, status=_error_status(exc))
+            self._operation_catalog.record_upstream_exception(operation_id, exc, status=_error_status(exc))
             _audit_read(operation_id, _error_status(exc), started)
             raise
-        self._capability_catalog.record_envelope(operation_id, envelope)
+        self._operation_catalog.record_envelope(operation_id, envelope)
         _audit_read(
             operation_id,
             str(envelope.get("status", "success")),
@@ -871,7 +871,7 @@ class GravityInsightClient(ExportClientMixin):
                 f"max_items must be between 1 and {_MAX_READ_ITEMS}",
                 field="max_items",
             )
-        self._capability_catalog.guard(operation_id)
+        self._operation_catalog.guard(operation_id)
         operation = self._executor._policy.authorize_operation(operation_id)
         supplied = dict(inputs or {})
         requested_page_size: int | None = None
@@ -1013,7 +1013,7 @@ class GravityInsightClient(ExportClientMixin):
             "effective_page_size": safe_size,
             "page_size_clamped": requested_page_size != safe_size,
         }
-        result["schema_fingerprint"] = _shape_fingerprint(result["data"])
+        result["schema_fingerprint"] = shape_fingerprint(result["data"])
         return result
 
     def _read_all_untracked(
@@ -1027,7 +1027,7 @@ class GravityInsightClient(ExportClientMixin):
             raise ValueError(f"max_pages must be between 1 and {_MAX_READ_PAGES}")
         if not 1 <= max_items <= _MAX_READ_ITEMS:
             raise ValueError(f"max_items must be between 1 and {_MAX_READ_ITEMS}")
-        self._capability_catalog.guard(operation_id)
+        self._operation_catalog.guard(operation_id)
         operation = self._executor._policy.authorize_operation(operation_id)
         supplied = dict(inputs or {})
         first = self._execute_result(operation_id, supplied)
@@ -1109,7 +1109,7 @@ class GravityInsightClient(ExportClientMixin):
             "has_more": False,
             "pages_fetched": len(pages),
         }
-        result["schema_fingerprint"] = _shape_fingerprint(result["data"])
+        result["schema_fingerprint"] = shape_fingerprint(result["data"])
         return result
 
     def batch(
@@ -1452,35 +1452,10 @@ def _has_next_page(
     return bool(page_size and item_count >= page_size)
 
 
-def _shape(value: Any) -> Any:
-    if isinstance(value, Mapping):
-        return {str(key): _shape(item) for key, item in sorted(value.items(), key=lambda pair: str(pair[0]))}
-    if isinstance(value, list):
-        element_shapes = {_canonical(_shape(item)) for item in value}
-        return {"type": "array", "items": [json.loads(item) for item in sorted(element_shapes)]}
-    if value is None:
-        return "null"
-    if isinstance(value, bool):
-        return "boolean"
-    if isinstance(value, int):
-        return "integer"
-    if isinstance(value, float):
-        return "number"
-    return "string"
-
-
-def _canonical(value: Any) -> str:
-    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-
-
 def _new_analysis_query_id() -> str:
     milliseconds = f"{int(time.time() * 1_000):013d}"[-13:]
     entropy = secrets.token_hex(10)[:19]
     return milliseconds + entropy
-
-
-def _shape_fingerprint(value: Any) -> str:
-    return hashlib.sha256(_canonical(_shape(value)).encode("utf-8")).hexdigest()
 
 
 def _error_status(error: GravityInsightError) -> str:

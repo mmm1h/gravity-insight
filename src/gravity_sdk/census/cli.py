@@ -40,7 +40,9 @@ def _path(value: str) -> Path:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Gravity frontend static route census")
+    parser = argparse.ArgumentParser(
+        description="Maintainer-only Gravity frontend static route census"
+    )
     parser.add_argument("--smoke", action="store_true", help="run deterministic offline smoke checks")
     subparsers = parser.add_subparsers(dest="command")
 

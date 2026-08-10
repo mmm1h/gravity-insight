@@ -9,9 +9,10 @@ import subprocess
 import tempfile
 from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Mapping
 
 from gravity_sdk.paths import EVIDENCE_ROOT, PACKAGE_ROOT, PROJECT_ROOT
+from gravity_sdk.sql.product_runtime import render_product_sql
 from gravity_sdk.support.documents import replace_atomic_durable
 from gravity_sdk.support.evidence import (
     EvidenceBinding,
@@ -19,6 +20,7 @@ from gravity_sdk.support.evidence import (
     resolve_json_evidence,
     serialize_json_result,
 )
+from gravity_sdk.workspace import Workspace, WorkspaceError, load_workspace, require_products
 
 
 ROOT = PROJECT_ROOT
@@ -26,65 +28,45 @@ BEIJING = timezone(timedelta(hours=8), name="Asia/Shanghai")
 EVIDENCE_PATH = EVIDENCE_ROOT / "latest.json"
 EVIDENCE_PRODUCT_ROOT = EVIDENCE_ROOT / "daily-verification"
 SQL_PRODUCT_CONTRACT_PATH = PACKAGE_ROOT / "contracts" / "sql-products" / "catalog.json"
-DATASOURCE_PATH = SQL_PRODUCT_CONTRACT_PATH
-EVENT_DICTIONARY_PATH = SQL_PRODUCT_CONTRACT_PATH
-
-PRODUCTS = (
-    "payment-summary",
-    "first-scene-coverage",
-    "energy-profile-coverage",
-    "event-coverage",
-)
-DEFAULT_APP_IDS = {
-    "payment-summary": (29034827,),
-    "first-scene-coverage": (29034827, 27192043, 24502679),
-    "energy-profile-coverage": (29034827,),
-    "event-coverage": (29034827,),
-}
-FORBIDDEN_CLAIMS = {
-    "payment-summary": [
-        "会计净收入或财务对账",
-        "活动归因、投放回收或 ROI",
-        "assignment/holdout 不完整时的因果 uplift",
-    ],
-    "first-scene-coverage": [
-        "把用户属性 $first_scene 当作事件属性",
-        "把空值或未知宿主解释为没有来源",
-        "由场景覆盖率推导因果效果",
-    ],
-    "energy-profile-coverage": [
-        "把累计/当前快照解释为窗口新增体力产耗",
-        "用 paid_assets 还原逐次体力消耗",
-        "由字段覆盖率推导活动效果",
-    ],
-    "event-coverage": [
-        "把单日未出现解释为埋点失效",
-        "声称已完成全部字段级验证",
-        "由事件存在性推导活动或版本效果",
-    ],
-}
-HOST_NAMES = {
-    "01": "今日头条",
-    "02": "抖音",
-    "03": "皮皮虾",
-    "04": "火山(旧)",
-    "06": "头条极速",
-    "10": "抖音极速",
-    "14": "番茄畅听",
-    "18": "番茄小说",
-    "23": "火山(新)",
-    "25": "PC抖音",
-    "26": "红果",
-    "27": "汽水",
-    "28": "番茄音乐",
-    "29": "抖音精选",
-    "99": "IDE/特殊",
-}
 HASH_RE = re.compile(r"^[0-9a-f]{64}$")
 
 
 class EvidenceFormatError(ValueError):
     pass
+
+
+def product_names(workspace: Workspace | None = None) -> tuple[str, ...]:
+    selected = load_workspace() if workspace is None else workspace
+    return require_products(selected)
+
+
+def _product_definition(product: str, workspace: Workspace | None = None) -> Mapping[str, Any]:
+    selected = load_workspace() if workspace is None else workspace
+    try:
+        return selected.product(product)
+    except WorkspaceError as exc:
+        raise EvidenceFormatError(str(exc)) from exc
+
+
+def _product_apps(product: str, workspace: Workspace | None = None) -> tuple[int, ...]:
+    selected = load_workspace() if workspace is None else workspace
+    definition = _product_definition(product, selected)
+    return tuple(selected.resolve_app(value) for value in definition["apps"])
+
+
+def _datasource_contract(
+    product: str | None = None, workspace: Workspace | None = None
+) -> Mapping[str, Any]:
+    selected = load_workspace() if workspace is None else workspace
+    names = (product,) if product is not None else product_names(selected)
+    datasource_names = {str(_product_definition(name, selected)["datasource"]) for name in names}
+    if len(datasource_names) != 1:
+        raise EvidenceFormatError("SQL Evidence products must use exactly one datasource")
+    return selected.datasource(next(iter(datasource_names)))
+
+
+def _datasource_id(product: str | None = None) -> str:
+    return str(_datasource_contract(product)["id"])
 
 
 def latest_safe_date(now: datetime | None = None) -> date:
@@ -114,129 +96,71 @@ def normalize_window(start: str, end: str) -> tuple[datetime, datetime]:
 
 
 def normalize_app_ids(product: str, app_ids: list[int] | tuple[int, ...] | None) -> tuple[int, ...]:
-    if product not in PRODUCTS:
-        raise ValueError(f"unknown product: {product}")
-    values = tuple(dict.fromkeys(app_ids or DEFAULT_APP_IDS[product]))
+    defaults = _product_apps(product)
+    values = tuple(dict.fromkeys(app_ids or defaults))
     if not values or any(type(value) is not int or value <= 0 for value in values):
         raise ValueError("app ids must be positive integers")
     return values
 
 
-def declared_events(path: Path = EVENT_DICTIONARY_PATH) -> list[str]:
-    contract = _load_sql_product_contract(path)
-    events = contract.get("event_coverage", {}).get("declared_events")
+def declared_events(product: str | None = None) -> list[str]:
+    selected_product = product
+    if selected_product is None:
+        matches = [
+            name
+            for name in product_names()
+            if _product_definition(name).get("kind") == "event-coverage"
+        ]
+        if len(matches) != 1:
+            raise EvidenceFormatError("exactly one event-coverage product must be selected")
+        selected_product = matches[0]
+    events = _product_definition(selected_product).get("events")
     if not isinstance(events, list) or not events:
-        raise EvidenceFormatError(f"{path}: declared event list is empty")
+        raise EvidenceFormatError(f"{selected_product}: declared event list is empty")
     if any(not isinstance(event, str) or not event for event in events):
-        raise EvidenceFormatError(f"{path}: declared event list contains an invalid name")
+        raise EvidenceFormatError(f"{selected_product}: declared event list contains an invalid name")
     if len(events) != len(set(events)):
-        raise EvidenceFormatError(f"{path}: declared event list contains duplicates")
+        raise EvidenceFormatError(f"{selected_product}: declared event list contains duplicates")
     return events
 
 
 def build_sql(product: str, start_at: datetime, end_at: datetime, app_ids: tuple[int, ...]) -> str:
     app_ids = normalize_app_ids(product, app_ids)
+    definition = _product_definition(product)
+    kind = str(definition["kind"])
     start = _sql_time(start_at)
     end = _sql_time(end_at)
-    if product == "payment-summary":
-        return _payment_sql(_app_filter("e", app_ids), _app_filter("", app_ids), start, end)
-    if product == "first-scene-coverage":
-        return _first_scene_sql(_app_filter("u", app_ids), _app_filter("", app_ids), start, end)
-    if product == "energy-profile-coverage":
-        return _energy_sql(
+    if kind == "first-scene-coverage":
+        return _first_scene_sql(
+            _app_filter("u", app_ids),
+            _app_filter("", app_ids),
+            start, end,
+            str(definition["property"]),
+        )
+    if kind == "profile-coverage":
+        return _profile_sql(
             _app_filter("e", app_ids),
             _app_filter("u", app_ids),
             _app_filter("", app_ids),
             start,
             end,
+            definition["properties"],
+            str(definition["activity_event"]),
         )
-    if product == "event-coverage":
-        declared_events()
-        return _event_sql(
-            _app_filter("e", app_ids),
-            _app_filter("coverage", app_ids),
-            start,
-            end,
-        )
-    raise ValueError(f"unknown product: {product}")
+    if kind == "event-coverage":
+        declared_events(product)
+    if kind == "custom-sql":
+        return _custom_sql(definition, app_ids, start, end)
+    return render_product_sql(definition, app_ids, start, end)
 
 
-def _payment_sql(app_filter: str, outer_filter: str, start: str, end: str) -> str:
-    return f"""WITH raw_pay AS (
-  SELECT
-    app_id,
-    user_id,
-    create_time,
-    COALESCE(get_json_string(properties, '$.$pay_amount'), '') AS amount_raw,
-    COALESCE(get_json_string(properties, '$.$pay_reason'), '') AS pay_reason,
-    COALESCE(get_json_string(properties, '$.$order_id'), '') AS order_key,
-    COALESCE(get_json_string(properties, '$.$pay_type'), '') AS pay_type,
-    COALESCE(get_json_string(properties, '$.$pay_method'), '') AS pay_method
-  FROM `default`.`event` e
-  WHERE {app_filter}
-    AND e.event = '$PayEvent'
-    AND e.create_time >= CAST('{start}' AS DATETIME)
-    AND e.create_time < CAST('{end}' AS DATETIME)
-),
-keyed AS (
-  SELECT
-    *,
-    COALESCE(
-      NULLIF(order_key, ''),
-      CONCAT(
-        CAST(user_id AS VARCHAR), '|', CAST(create_time AS VARCHAR), '|',
-        pay_reason, '|', amount_raw
-      )
-    ) AS pay_key,
-    CASE
-      WHEN amount_raw REGEXP '^[0-9]+$' THEN CAST(amount_raw AS BIGINT)
-      ELSE 0
-    END AS amount_cent
-  FROM raw_pay
-),
-pay_ranked AS (
-  SELECT
-    *,
-    ROW_NUMBER() OVER (
-      PARTITION BY app_id, pay_key
-      ORDER BY CAST(create_time AS DATETIME)
-    ) AS duplicate_rank
-  FROM keyed
-)
-SELECT
-  app_id,
-  COUNT(*) AS pay_event_rows,
-  SUM(CASE WHEN duplicate_rank = 1 THEN 1 ELSE 0 END) AS order_count,
-  COUNT(DISTINCT CASE WHEN duplicate_rank = 1 THEN user_id ELSE NULL END) AS buyer_count,
-  SUM(CASE WHEN duplicate_rank = 1 THEN amount_cent ELSE 0 END) AS revenue_cent,
-  SUM(CASE WHEN duplicate_rank > 1 THEN 1 ELSE 0 END) AS duplicate_rows,
-  SUM(CASE WHEN amount_raw = '' THEN 1 ELSE 0 END) AS missing_amount_rows,
-  SUM(CASE WHEN amount_raw <> '' AND NOT (amount_raw REGEXP '^[0-9]+$') THEN 1 ELSE 0 END) AS invalid_amount_rows,
-  SUM(CASE WHEN pay_reason = '' THEN 1 ELSE 0 END) AS missing_reason_rows,
-  SUM(CASE WHEN order_key = '' THEN 1 ELSE 0 END) AS fallback_order_key_rows,
-  SUM(CASE WHEN pay_type = '' THEN 1 ELSE 0 END) AS missing_pay_type_rows,
-  SUM(CASE WHEN pay_method = '' THEN 1 ELSE 0 END) AS missing_pay_method_rows,
-  SUM(CASE WHEN pay_type <> '' AND pay_type <> 'CNY' THEN 1 ELSE 0 END) AS non_cny_rows,
-  COUNT(DISTINCT NULLIF(pay_method, '')) AS pay_method_value_count,
-  MIN(NULLIF(pay_method, '')) AS pay_method_min,
-  MAX(NULLIF(pay_method, '')) AS pay_method_max,
-  COUNT(DISTINCT NULLIF(pay_type, '')) AS pay_type_value_count,
-  MIN(NULLIF(pay_type, '')) AS pay_type_min,
-  MAX(NULLIF(pay_type, '')) AS pay_type_max,
-  MIN(create_time) AS first_pay_at,
-  MAX(create_time) AS last_pay_at
-FROM pay_ranked
-WHERE {outer_filter}
-GROUP BY app_id
-ORDER BY app_id
-LIMIT 1000"""
-
-
-def _first_scene_sql(app_filter: str, outer_filter: str, start: str, end: str) -> str:
+def _first_scene_sql(
+    app_filter: str, outer_filter: str, start: str, end: str, property_name: str
+) -> str:
     return f"""WITH user_scene AS (
   SELECT
     app_id,
-    COALESCE(get_json_string(properties, '$.$first_scene'), '') AS scene
+    COALESCE(get_json_string(properties, '$.{property_name}'), '') AS scene
   FROM `default`.`user` u
   WHERE {app_filter}
     AND u.create_time >= CAST('{start}' AS DATETIME)
@@ -265,18 +189,31 @@ ORDER BY app_id, scene_status, host_prefix
 LIMIT 10000"""
 
 
-def _energy_sql(
+def _profile_sql(
     app_filter: str,
     user_filter: str,
     outer_filter: str,
     start: str,
     end: str,
+    properties: Mapping[str, Any],
+    activity_event: str,
 ) -> str:
+    property_flags = ",\n".join(
+        f"    MAX(CASE WHEN COALESCE(get_json_string(u.prop_concat, '$.{property_name}'), '') <> '' THEN 1 ELSE 0 END) AS has_{output_name}"
+        for output_name, property_name in properties.items()
+    )
+    property_counts = ",\n".join(
+        f"  SUM(has_{output_name}) AS {output_name}_users"
+        for output_name in properties
+    )
+    complete_condition = " AND ".join(
+        f"has_{output_name} = 1" for output_name in properties
+    )
     return f"""WITH active AS (
   SELECT
     app_id,
     user_id,
-    SUM(CASE WHEN event = 'AssetList' THEN 1 ELSE 0 END) AS assetlist_events
+    SUM(CASE WHEN event = '{activity_event}' THEN 1 ELSE 0 END) AS activity_events
   FROM `default`.`event` e
   WHERE {app_filter}
     AND e.create_time >= CAST('{start}' AS DATETIME)
@@ -288,11 +225,9 @@ per_user AS (
   SELECT
     a.app_id,
     a.user_id,
-    MAX(a.assetlist_events) AS assetlist_events,
+    MAX(a.activity_events) AS activity_events,
     MAX(CASE WHEN u.id IS NOT NULL THEN 1 ELSE 0 END) AS has_profile_row,
-    MAX(CASE WHEN COALESCE(get_json_string(u.prop_concat, '$.total_getpower_num'), '') <> '' THEN 1 ELSE 0 END) AS has_getpower,
-    MAX(CASE WHEN COALESCE(get_json_string(u.prop_concat, '$.total_usepower_num'), '') <> '' THEN 1 ELSE 0 END) AS has_usepower,
-    MAX(CASE WHEN COALESCE(get_json_string(u.prop_concat, '$.current_power'), '') <> '' THEN 1 ELSE 0 END) AS has_current_power
+{property_flags}
   FROM active a
   LEFT JOIN `default`.`user` u
     ON u.app_id = a.app_id
@@ -304,15 +239,13 @@ SELECT
   app_id,
   COUNT(*) AS active_users,
   SUM(has_profile_row) AS profile_row_users,
-  SUM(has_getpower) AS getpower_users,
-  SUM(has_usepower) AS usepower_users,
-  SUM(has_current_power) AS current_power_users,
+{property_counts},
   SUM(CASE
-    WHEN has_getpower = 1 AND has_usepower = 1 AND has_current_power = 1
+    WHEN {complete_condition}
     THEN 1 ELSE 0 END
   ) AS complete_profile_users,
-  SUM(assetlist_events) AS assetlist_events,
-  SUM(CASE WHEN assetlist_events > 0 THEN 1 ELSE 0 END) AS assetlist_users
+  SUM(activity_events) AS activity_events,
+  SUM(CASE WHEN activity_events > 0 THEN 1 ELSE 0 END) AS activity_users
 FROM per_user
 WHERE {outer_filter}
 GROUP BY app_id
@@ -320,44 +253,15 @@ ORDER BY app_id
 LIMIT 1000"""
 
 
-def _event_sql(
-    app_filter: str,
-    outer_filter: str,
-    start: str,
-    end: str,
+def _custom_sql(
+    definition: Mapping[str, Any], app_ids: tuple[int, ...], start: str, end: str
 ) -> str:
-    return f"""WITH filtered AS (
-  SELECT app_id, user_id, event, create_time
-  FROM `default`.`event` e
-  WHERE {app_filter}
-    AND e.create_time >= CAST('{start}' AS DATETIME)
-    AND e.create_time < CAST('{end}' AS DATETIME)
-)
-SELECT *
-FROM (
-SELECT
-  app_id,
-  '__all__' AS event_name,
-  COUNT(*) AS event_rows,
-  COUNT(DISTINCT user_id) AS active_users,
-  MIN(create_time) AS first_event_at,
-  MAX(create_time) AS last_event_at
-FROM filtered
-GROUP BY app_id
-UNION ALL
-SELECT
-  app_id,
-  event AS event_name,
-  COUNT(*) AS event_rows,
-  COUNT(DISTINCT user_id) AS active_users,
-  MIN(create_time) AS first_event_at,
-  MAX(create_time) AS last_event_at
-FROM filtered
-GROUP BY app_id, event
-) coverage
-WHERE {outer_filter}
-ORDER BY app_id, event_name
-LIMIT 10000"""
+    return str(definition["sql"]).format(
+        app_ids=", ".join(str(app_id) for app_id in app_ids),
+        start=start,
+        end=end,
+        limit=int(definition.get("max_rows", 1000)) + 1,
+    )
 
 
 def run_product(
@@ -368,9 +272,12 @@ def run_product(
     app_ids: list[int] | tuple[int, ...] | None = None,
 ) -> dict[str, Any]:
     apps = normalize_app_ids(product, app_ids)
+    definition = _product_definition(product)
     sql = build_sql(product, start_at, end_at, apps)
     rows = client.execute_sql(sql)
-    summary, status, warnings, notes = _SUMMARIZERS[product](rows, apps, start_at, end_at)
+    summary, status, warnings, notes = _summarize_rows(
+        definition, rows, apps, start_at, end_at, product=product
+    )
     result: dict[str, Any] = {
         "product": product,
         "status": status,
@@ -378,7 +285,7 @@ def run_product(
         "app_ids": list(apps),
         "summary": summary,
         "warnings": warnings,
-        "forbidden_claims": FORBIDDEN_CLAIMS[product],
+        "forbidden_claims": list(definition["forbidden_claims"]),
         "hashes": {
             "sql_sha256": _sha256_text(sql),
             "result_sha256": _sha256_json(rows),
@@ -448,7 +355,9 @@ def summarize_first_scene(
     app_ids: tuple[int, ...],
     _start_at: datetime,
     _end_at: datetime,
+    host_names: Mapping[str, Any] | None = None,
 ) -> tuple[dict[str, Any], str, list[str], list[str]]:
+    names = {} if host_names is None else host_names
     apps: list[dict[str, Any]] = []
     warnings: list[str] = []
     for app_id in app_ids:
@@ -464,7 +373,7 @@ def summarize_first_scene(
                 {
                     "scene_status": status,
                     "host_prefix": host_prefix,
-                    "host_name": HOST_NAMES.get(host_prefix, "空值/未列举宿主"),
+                    "host_name": str(names.get(host_prefix, "空值/未列举宿主")),
                     "registrations": count,
                 }
             )
@@ -491,11 +400,15 @@ def summarize_first_scene(
     return {"apps": apps}, "partial" if warnings else "complete", warnings, []
 
 
-def summarize_energy(
+def summarize_profile(
     rows: list[dict[str, Any]],
     app_ids: tuple[int, ...],
     _start_at: datetime,
     _end_at: datetime,
+    properties: Mapping[str, Any],
+    *,
+    activity_event: str,
+    measurement: str,
 ) -> tuple[dict[str, Any], str, list[str], list[str]]:
     by_app = {_as_int(row.get("app_id")): row for row in rows}
     apps: list[dict[str, Any]] = []
@@ -509,22 +422,25 @@ def summarize_energy(
             "app_id": app_id,
             "active_users": active,
             "profile_row_users": _as_int(row.get("profile_row_users")),
-            "getpower_users": _as_int(row.get("getpower_users")),
-            "usepower_users": _as_int(row.get("usepower_users")),
-            "current_power_users": _as_int(row.get("current_power_users")),
+            **{
+                f"{output_name}_users": _as_int(row.get(f"{output_name}_users"))
+                for output_name in properties
+            },
             "complete_profile_users": complete,
             "complete_profile_coverage_rate": round(complete / active, 6) if active else None,
-            "assetlist_events": _as_int(row.get("assetlist_events")),
-            "assetlist_users": _as_int(row.get("assetlist_users")),
+            "activity_events": _as_int(row.get("activity_events")),
+            "activity_users": _as_int(row.get("activity_users")),
         }
         apps.append(item)
         if active == 0:
             warnings.append(f"app_id={app_id}: no active users were observed")
         elif complete < active:
             warnings.append(f"app_id={app_id}: complete energy profile coverage is {complete}/{active}")
-        if item["assetlist_events"] == 0:
-            notes.append(f"app_id={app_id}: AssetList was absent; this is diagnostic-only")
-    return {"apps": apps, "measurement": "current cumulative/profile snapshot coverage"}, "partial" if warnings else "complete", warnings, notes
+        if item["activity_events"] == 0:
+            notes.append(
+                f"app_id={app_id}: {activity_event} was absent; this is diagnostic-only"
+            )
+    return {"apps": apps, "measurement": measurement}, "partial" if warnings else "complete", warnings, notes
 
 
 def summarize_events(
@@ -532,8 +448,8 @@ def summarize_events(
     app_ids: tuple[int, ...],
     _start_at: datetime,
     end_at: datetime,
+    declarations: list[str],
 ) -> tuple[dict[str, Any], str, list[str], list[str]]:
-    declarations = declared_events()
     apps: list[dict[str, Any]] = []
     warnings: list[str] = []
     notes: list[str] = []
@@ -582,27 +498,83 @@ def summarize_events(
     return {"apps": apps, "coverage": "declared-event presence only"}, "partial" if warnings else "complete", warnings, notes
 
 
-_SUMMARIZERS: dict[
-    str,
-    Callable[
-        [list[dict[str, Any]], tuple[int, ...], datetime, datetime],
-        tuple[dict[str, Any], str, list[str], list[str]],
-    ],
-] = {
-    "payment-summary": summarize_payment,
-    "first-scene-coverage": summarize_first_scene,
-    "energy-profile-coverage": summarize_energy,
-    "event-coverage": summarize_events,
-}
+def summarize_custom(
+    rows: list[dict[str, Any]],
+    app_ids: tuple[int, ...],
+    _start_at: datetime,
+    _end_at: datetime,
+    *,
+    output_fields: list[str],
+    max_rows: int,
+    measurement: str,
+) -> tuple[dict[str, Any], str, list[str], list[str]]:
+    if len(rows) > max_rows:
+        raise EvidenceFormatError(f"custom SQL product exceeded max_rows={max_rows}")
+    projected: list[dict[str, Any]] = []
+    for row in rows:
+        if not isinstance(row, Mapping):
+            raise EvidenceFormatError("custom SQL product returned a non-object row")
+        projected.append({field: row.get(field) for field in output_fields})
+    return {
+        "rows": projected,
+        "row_count": len(projected),
+        "app_ids": list(app_ids),
+        "measurement": measurement,
+    }, "complete", [], []
+
+
+def _summarize_rows(
+    definition: Mapping[str, Any],
+    rows: list[dict[str, Any]],
+    app_ids: tuple[int, ...],
+    start_at: datetime,
+    end_at: datetime,
+    *,
+    product: str,
+) -> tuple[dict[str, Any], str, list[str], list[str]]:
+    kind = str(definition["kind"])
+    if kind == "payment-summary":
+        return summarize_payment(rows, app_ids, start_at, end_at)
+    if kind == "first-scene-coverage":
+        return summarize_first_scene(
+            rows, app_ids, start_at, end_at, definition.get("host_names", {})
+        )
+    if kind == "profile-coverage":
+        return summarize_profile(
+            rows,
+            app_ids,
+            start_at,
+            end_at,
+            definition["properties"],
+            activity_event=str(definition["activity_event"]),
+            measurement=str(definition.get("measurement", "profile property coverage")),
+        )
+    if kind == "event-coverage":
+        return summarize_events(
+            rows, app_ids, start_at, end_at, declared_events(product)
+        )
+    if kind == "custom-sql":
+        return summarize_custom(
+            rows,
+            app_ids,
+            start_at,
+            end_at,
+            output_fields=list(definition["output_fields"]),
+            max_rows=int(definition.get("max_rows", 1000)),
+            measurement=str(definition.get("measurement", "workspace aggregate")),
+        )
+    raise EvidenceFormatError(f"unsupported SQL product kind: {kind}")
 
 
 def build_evidence(day: date, product_results: list[dict[str, Any]]) -> dict[str, Any]:
-    if len(product_results) != len(PRODUCTS) or {
+    configured_products = product_names()
+    if len(product_results) != len(configured_products) or {
         result.get("product") for result in product_results
-    } != set(PRODUCTS):
-        raise EvidenceFormatError("verification must contain exactly the four built-in products")
+    } != set(configured_products):
+        raise EvidenceFormatError("verification must contain exactly the configured SQL products")
     start_at, end_at = day_window(day)
-    products = {result["product"]: result for result in product_results}
+    by_name = {result["product"]: result for result in product_results}
+    products = {product: by_name[product] for product in configured_products}
     warnings = [
         f"{product}: {warning}"
         for product, result in products.items()
@@ -611,13 +583,13 @@ def build_evidence(day: date, product_results: list[dict[str, Any]]) -> dict[str
     forbidden = list(
         dict.fromkeys(
             claim
-            for product in PRODUCTS
+            for product in configured_products
             for claim in products[product].get("forbidden_claims", [])
         )
     )
     evidence: dict[str, Any] = {
         "schema_version": 1,
-        "datasource_id": "gravity_merge2_v1",
+        "datasource_id": _datasource_id(),
         "generated_at": datetime.now(BEIJING).isoformat(timespec="microseconds"),
         "verified_for_date": day.isoformat(),
         "window": _window_dict(start_at, end_at),
@@ -628,11 +600,17 @@ def build_evidence(day: date, product_results: list[dict[str, Any]]) -> dict[str
     }
     evidence["hashes"] = {
         "sql_sha256": _sha256_json(
-            {product: products[product]["hashes"]["sql_sha256"] for product in PRODUCTS}
+            {
+                product: products[product]["hashes"]["sql_sha256"]
+                for product in configured_products
+            }
         ),
         "result_sha256": _sha256_json(products),
         "contract_sha256": _sha256_json(
-            {product: products[product]["hashes"]["contract_sha256"] for product in PRODUCTS}
+            {
+                product: products[product]["hashes"]["contract_sha256"]
+                for product in configured_products
+            }
         ),
     }
     validate_evidence(evidence)
@@ -642,8 +620,8 @@ def build_evidence(day: date, product_results: list[dict[str, Any]]) -> dict[str
 def verify_all(client: Any, day: date) -> dict[str, Any]:
     start_at, end_at = day_window(day)
     results = [
-        run_product(client, product, start_at, end_at, DEFAULT_APP_IDS[product])
-        for product in PRODUCTS
+        run_product(client, product, start_at, end_at)
+        for product in product_names()
     ]
     return build_evidence(day, results)
 
@@ -666,10 +644,17 @@ def validate_evidence(evidence: Any) -> None:
     missing = sorted(required - set(evidence))
     if missing:
         raise EvidenceFormatError(f"evidence is missing fields: {', '.join(missing)}")
+    unknown = sorted(set(evidence) - required)
+    if unknown:
+        raise EvidenceFormatError(f"evidence has unknown fields: {', '.join(unknown)}")
+    if not isinstance(evidence["datasource_id"], str):
+        raise EvidenceFormatError("evidence datasource_id must be a string")
+    schema_version = evidence["schema_version"]
+    datasource_id = _datasource_id()
     if (
-        type(evidence["schema_version"]) is not int
-        or evidence["schema_version"] != 1
-        or evidence["datasource_id"] != "gravity_merge2_v1"
+        type(schema_version) is not int
+        or schema_version != 1
+        or evidence["datasource_id"] != datasource_id
     ):
         raise EvidenceFormatError("unsupported evidence schema or datasource")
     if evidence["verification_status"] not in {"verified", "verified_with_gaps"}:
@@ -692,9 +677,10 @@ def validate_evidence(evidence: Any) -> None:
     if start_at != expected_start or end_at != expected_end:
         raise EvidenceFormatError("evidence must describe one Beijing calendar day")
     products = evidence["products"]
-    if not isinstance(products, dict) or set(products) != set(PRODUCTS):
-        raise EvidenceFormatError("evidence must contain exactly the four built-in products")
-    for product in PRODUCTS:
+    configured_products = product_names()
+    if not isinstance(products, dict) or set(products) != set(configured_products):
+        raise EvidenceFormatError("evidence must contain exactly the configured SQL products")
+    for product in configured_products:
         result = products[product]
         if not isinstance(result, dict) or result.get("product") != product:
             raise EvidenceFormatError(f"invalid product evidence: {product}")
@@ -726,13 +712,13 @@ def validate_evidence(evidence: Any) -> None:
         _validate_hashes(result.get("hashes"), f"product {product}")
     expected_warnings = [
         f"{product}: {warning}"
-        for product in PRODUCTS
+        for product in configured_products
         for warning in products[product]["warnings"]
     ]
     expected_forbidden = list(
         dict.fromkeys(
             claim
-            for product in PRODUCTS
+            for product in configured_products
             for claim in products[product]["forbidden_claims"]
         )
     )
@@ -754,17 +740,29 @@ def validate_evidence(evidence: Any) -> None:
     if evidence["verification_status"] == "verified_with_gaps" and not evidence["warnings"]:
         raise EvidenceFormatError("verified_with_gaps evidence must contain warnings")
     _validate_hashes(evidence["hashes"], "evidence")
-    expected_hashes = {
+    expected_hashes = _evidence_hashes(products, configured_products)
+    if evidence["hashes"] != expected_hashes:
+        raise EvidenceFormatError("evidence content does not match its top-level hashes")
+
+
+def _evidence_hashes(
+    products: Mapping[str, Any], configured_products: tuple[str, ...]
+) -> dict[str, str]:
+    return {
         "sql_sha256": _sha256_json(
-            {product: products[product]["hashes"]["sql_sha256"] for product in PRODUCTS}
+            {
+                product: products[product]["hashes"]["sql_sha256"]
+                for product in configured_products
+            }
         ),
         "result_sha256": _sha256_json(products),
         "contract_sha256": _sha256_json(
-            {product: products[product]["hashes"]["contract_sha256"] for product in PRODUCTS}
+            {
+                product: products[product]["hashes"]["contract_sha256"]
+                for product in configured_products
+            }
         ),
     }
-    if evidence["hashes"] != expected_hashes:
-        raise EvidenceFormatError("evidence content does not match its top-level hashes")
 
 
 def publish_evidence(evidence: dict[str, Any], path: Path = EVIDENCE_PATH) -> None:
@@ -884,11 +882,17 @@ def readiness_status(
     evidence_value = binding.result if binding else evidence
     safe_day = latest_safe_date(now)
     declared = datasource_verification_status()
+    datasource_id = _datasource_id()
+    evidence_pointer = EVIDENCE_PRODUCT_ROOT / "latest.yaml"
+    try:
+        evidence_path = evidence_pointer.relative_to(ROOT).as_posix()
+    except ValueError:
+        evidence_path = evidence_pointer.as_posix()
     base = {
-        "datasource_id": "gravity_merge2_v1",
+        "datasource_id": datasource_id,
         "declared_status": declared,
         "latest_safe_date": safe_day.isoformat(),
-        "evidence_path": (EVIDENCE_PRODUCT_ROOT / "latest.yaml").relative_to(ROOT).as_posix(),
+        "evidence_path": evidence_path,
     }
     if binding:
         base["evidence_reference"] = binding.reference()
@@ -1025,10 +1029,8 @@ def _credential_source(root: Path) -> str:
     return "local_account_file" if has_login else "missing"
 
 
-def datasource_verification_status(path: Path = DATASOURCE_PATH) -> str:
-    contract = _load_sql_product_contract(path)
-    datasource = contract.get("datasource")
-    status = datasource.get("verification_status") if isinstance(datasource, dict) else None
+def datasource_verification_status() -> str:
+    status = _datasource_contract().get("verification_status")
     if not isinstance(status, str):
         raise EvidenceFormatError("datasource contract is missing verification_status")
     if status not in {"pending_review", "verified", "verified_with_gaps", "blocked"}:
@@ -1038,10 +1040,16 @@ def datasource_verification_status(path: Path = DATASOURCE_PATH) -> str:
 
 def contract_hash(product: str) -> str:
     try:
-        contract = _load_sql_product_contract(SQL_PRODUCT_CONTRACT_PATH)
-        product_contract = contract["products"][product]
+        definition = _product_definition(product)
+        datasource = _datasource_contract(product)
+        kernel_contract = _load_sql_product_contract(SQL_PRODUCT_CONTRACT_PATH)
+        kind_contract = kernel_contract["product_kinds"][definition["kind"]]
         encoded = json.dumps(
-            product_contract,
+            {
+                "datasource": datasource,
+                "kernel_kind": kind_contract,
+                "product": definition,
+            },
             ensure_ascii=False,
             sort_keys=True,
             separators=(",", ":"),
@@ -1056,21 +1064,24 @@ def _load_sql_product_contract(path: Path) -> dict[str, Any]:
         value = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise EvidenceFormatError(f"cannot read SQL product contract {path}: {exc}") from exc
-    if not isinstance(value, dict) or value.get("schema_version") != 1:
+    if not isinstance(value, dict) or value.get("schema_version") != 2:
         raise EvidenceFormatError(f"{path}: unsupported SQL product contract schema")
     return value
 
 
 def dry_run_checks() -> None:
     start_at, end_at = day_window(date(2026, 7, 22))
-    for product in PRODUCTS:
-        sql = build_sql(product, start_at, end_at, DEFAULT_APP_IDS[product])
+    for product in product_names():
+        apps = _product_apps(product)
+        definition = _product_definition(product)
+        sql = build_sql(product, start_at, end_at, apps)
         if "2026-07-22 00:00:00" not in sql or "2026-07-23 00:00:00" not in sql:
             raise AssertionError(f"{product}: rendered SQL has the wrong window")
-        if "user_id" in _SUMMARIZERS[product]([], DEFAULT_APP_IDS[product], start_at, end_at)[0]:
+        summary = _summarize_rows(
+            definition, [], apps, start_at, end_at, product=product
+        )[0]
+        if "user_id" in summary:
             raise AssertionError(f"{product}: aggregate summary leaked a user-level key")
-    if len(declared_events()) != 72:
-        raise AssertionError("event dictionary must expose 72 declared events")
     if latest_safe_date(datetime(2026, 7, 23, 1, 59, tzinfo=BEIJING)) != date(2026, 7, 21):
         raise AssertionError("pre-02:00 safe-day rule failed")
     if latest_safe_date(datetime(2026, 7, 23, 2, 0, tzinfo=BEIJING)) != date(2026, 7, 22):
@@ -1080,7 +1091,7 @@ def dry_run_checks() -> None:
 def _stale_reason(evidence: dict[str, Any], safe_day: date) -> str | None:
     if evidence["verified_for_date"] != safe_day.isoformat():
         return f"evidence date {evidence['verified_for_date']} != latest safe date {safe_day.isoformat()}"
-    for product in PRODUCTS:
+    for product in product_names():
         result = evidence["products"][product]
         if result["hashes"]["contract_sha256"] != contract_hash(product):
             return f"{product} contract changed after verification"

@@ -1,0 +1,296 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gravity-sdk.local/contracts/schema/workspace-v1.schema.json",
+  "title": "Gravity workspace",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "apps",
+    "defaults",
+    "datasources",
+    "products"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "apps": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/name"
+      },
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 1
+      }
+    },
+    "defaults": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "app",
+        "timezone",
+        "time_window"
+      ],
+      "properties": {
+        "app": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timezone": {
+          "type": "string",
+          "minLength": 1
+        },
+        "time_window": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "datasources": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/name"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/datasource"
+      }
+    },
+    "products": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/name"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/product"
+      }
+    },
+    "recipes": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/name"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/recipe"
+      }
+    }
+  },
+  "$defs": {
+    "name": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$"
+    },
+    "datasource": {
+      "type": "object",
+      "required": [
+        "id",
+        "verification_status"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "verification_status": {
+          "enum": [
+            "pending_review",
+            "verified",
+            "verified_with_gaps",
+            "blocked"
+          ]
+        }
+      }
+    },
+    "product": {
+      "type": "object",
+      "required": [
+        "kind",
+        "datasource",
+        "apps",
+        "forbidden_claims"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "payment-summary",
+            "first-scene-coverage",
+            "profile-coverage",
+            "event-coverage",
+            "custom-sql"
+          ]
+        },
+        "datasource": {
+          "type": "string",
+          "minLength": 1
+        },
+        "apps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "integer",
+                "minimum": 1
+              }
+            ]
+          }
+        },
+        "forbidden_claims": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "property": {
+          "$ref": "#/$defs/property_name"
+        },
+        "properties": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": {
+            "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/property_name"
+          }
+        },
+        "activity_event": {
+          "$ref": "#/$defs/property_name"
+        },
+        "events": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "sql": {
+          "type": "string",
+          "minLength": 1
+        },
+        "output_fields": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+          }
+        },
+        "privacy": {
+          "const": "aggregate"
+        },
+        "max_rows": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        }
+      }
+    },
+    "recipe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation",
+        "bindings",
+        "parameters",
+        "required_parameters",
+        "input",
+        "output_fields",
+        "contract_fingerprint"
+      ],
+      "properties": {
+        "operation": {
+          "$ref": "#/$defs/name"
+        },
+        "description": {
+          "type": "string"
+        },
+        "bindings": {
+          "$ref": "#/$defs/recipe_bindings"
+        },
+        "parameters": {
+          "type": "object",
+          "propertyNames": {
+            "$ref": "#/$defs/name"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/input_path"
+          }
+        },
+        "required_parameters": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/name"
+          }
+        },
+        "input": {
+          "type": "object"
+        },
+        "output_fields": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "contract_fingerprint": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "recipe_bindings": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "app_ref": {
+          "$ref": "#/$defs/name"
+        },
+        "app_input": {
+          "$ref": "#/$defs/input_path"
+        },
+        "report_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "report_input": {
+          "$ref": "#/$defs/input_path"
+        }
+      },
+      "anyOf": [
+        {
+          "required": ["app_ref", "app_input"]
+        },
+        {
+          "required": ["report_ref", "report_input"]
+        }
+      ],
+      "dependentRequired": {
+        "app_ref": ["app_input"],
+        "app_input": ["app_ref"],
+        "report_ref": ["report_input"],
+        "report_input": ["report_ref"]
+      }
+    },
+    "input_path": {
+      "type": "string",
+      "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.(?:[A-Za-z_][A-Za-z0-9_]*|[0-9]+))*$"
+    },
+    "property_name": {
+      "type": "string",
+      "pattern": "^[A-Za-z_$][A-Za-z0-9_$]*$"
+    }
+  }
+}

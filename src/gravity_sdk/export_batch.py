@@ -26,10 +26,11 @@ def add_batch_commands(
         ),
     )
     subcommands = batch.add_subparsers(dest="batch_command", required=True)
-    subcommands.add_parser(
+    schema = subcommands.add_parser(
         "schema",
         help="Print the complete wrapper, item fields, example, output, and exit rules.",
     )
+    schema.set_defaults(network_required=False)
     read = subcommands.add_parser(
         "read",
         description=f"Execute a batch described by `{_SCHEMA_COMMAND}`.",

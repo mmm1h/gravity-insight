@@ -17,22 +17,75 @@ from gravity_sdk.sql.credentials import CredentialSyncError
 from gravity_sdk.sql.export import build_paged_sql
 from gravity_sdk.sql.products import (
     EVIDENCE_PATH,
-    PRODUCTS,
     EvidenceFormatError,
     dry_run_checks,
     evidence_preflight,
     latest_safe_date,
     normalize_window,
     publish_evidence,
+    product_names,
     readiness_status,
     resolve_current_evidence,
     run_product,
     verify_all,
 )
+from gravity_sdk.workspace import WorkspaceError
 
 
-def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Governed SQL fallback when stable Insight cannot express equivalent semantics; otherwise prefer Insight.")
+def _run_credentials(args: argparse.Namespace) -> int:
+    try:
+        if args.credential_command == "status":
+            result = credentials.status()
+        elif args.credential_command == "push":
+            result = (
+                {"status": "uploaded" if credentials.push_if_enabled() else "disabled-or-unchanged"}
+                if args.if_enabled
+                else credentials.push()
+            )
+        else:
+            result = credentials.pull()
+        print(json.dumps(result, ensure_ascii=False))
+        return 0
+    except CredentialSyncError as exc:
+        print(f"ERROR: {exc}")
+        return 1
+
+
+def _missing_products_error(
+    configured_products: tuple[str, ...], workspace_error: str | None
+) -> int | None:
+    if configured_products:
+        return None
+    detail = workspace_error or (
+        "no SQL products are configured; add [products.<name>] to gravity.toml"
+    )
+    print(f"ERROR: {detail}", file=sys.stderr)
+    return 2
+
+
+def _configured_products() -> tuple[tuple[str, ...], str | None]:
+    workspace_error: str | None = None
+    try:
+        configured_products = product_names()
+    except WorkspaceError as exc:
+        configured_products = ()
+        workspace_error = str(exc)
+    if len(configured_products) != len(set(configured_products)):
+        raise RuntimeError("workspace SQL product names must be unique")
+    if "" in configured_products:
+        raise RuntimeError("workspace SQL product names must be non-empty")
+    return configured_products, workspace_error
+
+
+def build_parser(
+    configured_products: tuple[str, ...] | None = None,
+) -> argparse.ArgumentParser:
+    if configured_products is None:
+        configured_products, _workspace_error = _configured_products()
+    parser = argparse.ArgumentParser(
+        description="Governed SQL fallback when stable Insight cannot express equivalent semantics; otherwise prefer Insight."
+    )
+    parser.set_defaults(network_required=False)
     parser.add_argument("--dry-run", action="store_true", help="Run offline contract checks without calling Gravity.")
     commands = parser.add_subparsers(dest="command")
     credential_parser = commands.add_parser("credentials", help="Sync GM/Gravity credentials via GitHub.")
@@ -49,37 +102,47 @@ def main(argv: Sequence[str] | None = None) -> int:
     preflight_parser.add_argument("--date", help="Proposed Beijing calendar day (YYYY-MM-DD).")
     preflight_parser.add_argument("--json", action="store_true", help="Print machine-readable preflight.")
     verify_parser = commands.add_parser("verify", help="Verify the latest safe Beijing calendar day.")
+    verify_parser.set_defaults(network_required=True)
     verify_parser.add_argument("--date", help="Beijing calendar day (YYYY-MM-DD).")
     verify_parser.add_argument("--publish", action="store_true", help="Atomically update rolling aggregate evidence.")
     query_parser = commands.add_parser("query", help="Run an aggregate product only when Insight cannot express equivalent semantics.")
-    query_parser.add_argument("product", choices=PRODUCTS)
+    query_parser.set_defaults(network_required=True)
+    query_parser.add_argument("product", choices=configured_products or None)
     query_parser.add_argument("--start", required=True, help="Inclusive ISO timestamp.")
     query_parser.add_argument("--end", required=True, help="Exclusive ISO timestamp.")
     query_parser.add_argument("--app-id", type=int, action="extend", nargs="+", help="Positive Gravity app id.")
+    return parser
+
+
+def _run_dry_checks() -> int:
+    payload = {"data": {"status": "success", "result": {"columns": [{"name": "user_id"}], "rows": [["u1"]]}}}
+    rows = _extract_rows(payload)
+    paged = build_paged_sql("SELECT user_id FROM source", page_size=10, offset=0)
+    if rows != [{"user_id": "u1"}] or "LIMIT 10 OFFSET 0" not in paged:
+        print("FAIL gravity dry-run")
+        return 1
+    credentials.self_test()
+    dry_run_checks()
+    print("PASS gravity dry-run")
+    return 0
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    configured_products, workspace_error = _configured_products()
+    parser = build_parser(configured_products)
     args = parser.parse_args(argv)
 
     if args.command == "credentials":
-        try:
-            if args.credential_command == "status":
-                result = credentials.status()
-            elif args.credential_command == "push":
-                if args.if_enabled:
-                    pushed = credentials.push_if_enabled()
-                    result = {"status": "uploaded" if pushed else "disabled-or-unchanged"}
-                else:
-                    result = credentials.push()
-            else:
-                result = credentials.pull()
-            print(json.dumps(result, ensure_ascii=False))
-            return 0
-        except CredentialSyncError as exc:
-            print(f"ERROR: {exc}")
-            return 1
+        return _run_credentials(args)
+
+    missing_products = _missing_products_error(configured_products, workspace_error)
+    if missing_products is not None:
+        return missing_products
 
     if args.command == "status":
         try:
             result = readiness_status(resolve_current_evidence())
-        except EvidenceFormatError as exc:
+        except (EvidenceFormatError, WorkspaceError) as exc:
             print(f"ERROR: {exc}", file=sys.stderr)
             return 2
         if args.json:
@@ -146,16 +209,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if not args.dry_run:
         parser.error("Choose --dry-run, status, evidence-preflight, verify, query, or credentials.")
 
-    payload = {"data": {"status": "success", "result": {"columns": [{"name": "user_id"}], "rows": [["u1"]]}}}
-    rows = _extract_rows(payload)
-    paged = build_paged_sql("SELECT user_id FROM source", page_size=10, offset=0)
-    if rows != [{"user_id": "u1"}] or "LIMIT 10 OFFSET 0" not in paged:
-        print("FAIL gravity dry-run")
-        return 1
-    credentials.self_test()
-    dry_run_checks()
-    print("PASS gravity dry-run")
-    return 0
+    return _run_dry_checks()
 
 
 def _client() -> GravityClient:

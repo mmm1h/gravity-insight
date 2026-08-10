@@ -1,127 +1,48 @@
 {
-  "schema_version": 1,
-  "datasource": {
-    "id": "gravity_merge2_v1",
-    "verification_status": "verified_with_gaps",
-    "timezone": "Asia/Shanghai",
-    "freshness": "latest safe calendar day",
-    "privacy": "aggregate or schema-level output only"
-  },
-  "products": {
+  "schema_version": 2,
+  "product_kinds": {
     "payment-summary": {
+      "privacy": "aggregate output only",
       "source_event": "$PayEvent",
-      "window": "left-closed right-open in Asia/Shanghai",
       "amount": "properties.$pay_amount in cents",
-      "order_key": "non-empty $order_id, otherwise user_id + create_time + $pay_reason + $pay_amount",
-      "buyer": "distinct user_id",
-      "limits": [
-        "behavioral payment is not financial net revenue",
-        "the product does not provide campaign attribution or causal uplift"
-      ]
+      "order_key": "non-empty $order_id with a deterministic fallback",
+      "buyer": "distinct user_id in an aggregate",
+      "window": "left-closed and right-open"
     },
     "first-scene-coverage": {
-      "source": "user property $first_scene",
-      "window": "left-closed right-open in Asia/Shanghai",
-      "limits": [
-        "$first_scene is not an event property",
-        "empty or unknown values do not mean that the user had no source"
-      ]
-    },
-    "energy-profile-coverage": {
-      "source_properties": [
-        "total_usepower_num",
-        "total_getpower_num",
-        "current_power"
+      "privacy": "aggregate output only",
+      "configuration": [
+        "property",
+        "host_names"
       ],
-      "semantics": "coverage of cumulative or snapshot user properties",
-      "limits": [
-        "the product does not calculate energy consumed within the query window",
-        "paid_assets cannot reconstruct per-action energy consumption"
-      ]
+      "window": "left-closed and right-open"
+    },
+    "profile-coverage": {
+      "privacy": "aggregate output only",
+      "configuration": [
+        "properties",
+        "activity_event",
+        "measurement"
+      ],
+      "window": "left-closed and right-open"
     },
     "event-coverage": {
-      "source": "declared event names in this contract",
-      "semantics": "event presence within the query window",
-      "limits": [
-        "absence in one day does not prove instrumentation failure",
-        "event presence does not prove campaign or version impact"
-      ]
+      "privacy": "aggregate output only",
+      "configuration": [
+        "events"
+      ],
+      "semantics": "declared event presence within the query window"
+    },
+    "custom-sql": {
+      "privacy": "aggregate output only",
+      "required_placeholders": [
+        "app_ids",
+        "start",
+        "end",
+        "limit"
+      ],
+      "output_policy": "project only declared output_fields and reject user-level field names",
+      "max_rows": 10000
     }
-  },
-  "event_coverage": {
-    "declared_events": [
-      "Login",
-      "$AppStart",
-      "$MPLaunch",
-      "AssetList",
-      "userlevel",
-      "power_multipe",
-      "paid_assets",
-      "piece_change",
-      "generator_get",
-      "order_status",
-      "island_store",
-      "piece_achievement",
-      "lv_rewards",
-      "$AdClick",
-      "$AdPlayStart",
-      "$AdShow",
-      "pay_click",
-      "pay_cancel",
-      "$PayEvent",
-      "routine_scence",
-      "event_scence",
-      "stage",
-      "skip_stoty",
-      "card_collect",
-      "card_pack",
-      "card_box_get",
-      "seven_tasks",
-      "seven_tasks_box",
-      "mini_chenss_achievement",
-      "mini_chessboard_box",
-      "arcade_game",
-      "arcade_game_piont",
-      "arcade_game_reward",
-      "water_challenge",
-      "water_challenge_reward",
-      "royal_crown",
-      "royal_crown_reward",
-      "pkrace",
-      "pkrace_reward",
-      "dogfood",
-      "dogfood_click",
-      "dogfood_reward",
-      "magiclamp",
-      "magiclamp_reward",
-      "vip_invitation",
-      "donutrace",
-      "donutrace_click",
-      "donutrace_reward",
-      "island_scene",
-      "island_plot",
-      "island_avatar",
-      "medal_campaign",
-      "medal_bigbag",
-      "surprise_gachapon",
-      "smjx",
-      "energytrain",
-      "energytrain_reward",
-      "onegetone",
-      "spin_buy",
-      "tiered_gift",
-      "small_plane",
-      "pass_task",
-      "pass_reward",
-      "soaring_ratings",
-      "soaring_ratings_lv",
-      "trainmerge_submit",
-      "trainmerge_reward",
-      "bingo_submit",
-      "bingo_reward",
-      "questionnaire_submit",
-      "little_sun",
-      "little_sun_box"
-    ]
   }
 }

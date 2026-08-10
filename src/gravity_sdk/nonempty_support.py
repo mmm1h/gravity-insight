@@ -88,7 +88,7 @@ def _checked_cache_root(cache_root: Path) -> Path:
     resolved = cache_root.resolve()
     if not resolved.is_relative_to((REPO_ROOT / "tmp").resolve()):
         raise ValueError(
-            "non-empty discovery cache must stay under the repository tmp directory"
+            "non-empty discovery cache must stay under the workspace state tmp directory"
         )
     return resolved
 

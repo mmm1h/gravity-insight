@@ -6,7 +6,7 @@ import getpass
 import sys
 from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import TextIO
+from typing import Any, TextIO
 
 from .credentials import (
     CredentialConfig,
@@ -18,18 +18,33 @@ from .credentials import (
 from .paths import PROJECT_ROOT
 
 
-def should_onboard(argv: Sequence[str]) -> bool:
-    """Keep help and offline checks usable without asking for credentials."""
+def should_onboard(*, requires_credentials: bool) -> bool:
+    """Use the selected command's declared client requirement."""
 
-    lowered = {value.lower() for value in argv}
-    if {"--help", "-h", "--dry-run"} & lowered:
+    return bool(requires_credentials)
+
+
+def command_requires_credentials(
+    argv: Sequence[str], parser_factory: Callable[[], Any]
+) -> bool:
+    """Read the selected command's parser-owned network requirement."""
+
+    if any(value in {"-h", "--help"} for value in argv):
         return False
-    return not (argv and argv[0].lower() == "census" and "--smoke" in lowered)
+    try:
+        args = parser_factory().parse_args(argv)
+    except (Exception, SystemExit):
+        return False
+    if bool(getattr(args, "dry_run", False)):
+        return False
+    if bool(getattr(args, "live", False)):
+        return True
+    return bool(getattr(args, "network_required", True))
 
 
 def ensure_first_run_credentials(
-    argv: Sequence[str],
     *,
+    requires_credentials: bool = True,
     env_path: Path | None = None,
     stdin: TextIO | None = None,
     stderr: TextIO | None = None,
@@ -39,7 +54,7 @@ def ensure_first_run_credentials(
 ) -> bool:
     """Prompt once on an interactive terminal and validate the saved account."""
 
-    if not should_onboard(argv):
+    if not should_onboard(requires_credentials=requires_credentials):
         return True
     selected_path = Path(env_path or (PROJECT_ROOT / ".env.gravity.local"))
     migrate_legacy_session(selected_path)

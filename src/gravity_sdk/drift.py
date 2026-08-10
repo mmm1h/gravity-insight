@@ -455,11 +455,11 @@ class HealthOverlay:
             return
 
 
-def capability_health(
-    capability: Mapping[str, Any], probe_status: str,
+def operation_health(
+    operation: Mapping[str, Any], probe_status: str,
     health_overlay: HealthOverlay | None = None, operation_id: str = "",
 ) -> str:
-    if not bool(capability.get("executable", True)) or capability.get("stability") in {
+    if not bool(operation.get("executable", True)) or operation.get("stability") in {
         "permission_unavailable", "blocked_privacy", "blocked_write", "deprecated",
     }:
         status = "blocked"
@@ -475,7 +475,7 @@ def capability_health(
     return health_overlay.catalog_health(operation_id, status) if health_overlay else status
 
 
-def capability_availability(
+def operation_availability(
     stability: str, *, executable: bool = True, block_reason: str | None = None,
     health_overlay: HealthOverlay | None = None, operation_id: str = "",
 ) -> str:
@@ -484,6 +484,11 @@ def capability_availability(
               "permission_unavailable": "permission_unavailable", "blocked_privacy": "blocked_privacy",
               "blocked_write": "blocked_write", "deprecated": "deprecated"}.get(stability, "unavailable")
     return health_overlay.catalog_availability(operation_id, status) if health_overlay else status
+
+
+# Public compatibility aliases for the pre-operations terminology.
+capability_health = operation_health
+capability_availability = operation_availability
 
 
 def projection_drift_status(drift: ProjectionDrift) -> str:

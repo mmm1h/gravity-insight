@@ -1,4 +1,5 @@
-"""Apply frontend-observed route parameter contracts to probe drafts."""
+"""Apply frontend-observed route parameter contracts to probe drafts.
+Static census input is package data; generated probe output uses workspace state."""
 
 from __future__ import annotations
 
@@ -7,13 +8,13 @@ import re
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from .core import DRAFT_ROOT, OPERATION_ROOT, REPO_ROOT, canonical_fingerprint, read_json
+from gravity_sdk.paths import CENSUS_DATA_ROOT
+
+from .core import DRAFT_ROOT, OPERATION_ROOT, canonical_fingerprint, read_json
 from .promotion import save_draft
 
 
-ROUTE_PARAMETERS_PATH = (
-    REPO_ROOT / "src" / "gravity_sdk" / "census" / "data" / "route-params.json"
-)
+ROUTE_PARAMETERS_PATH = CENSUS_DATA_ROOT / "route-params.json"
 
 _PARAMETER_GROUPS = (
     ("path", "path_parameters", "path_fields"),

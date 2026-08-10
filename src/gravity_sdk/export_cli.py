@@ -27,15 +27,17 @@ def add_export_commands(
         ),
     )
     subcommands = export.add_subparsers(dest="export_command", required=True)
-    subcommands.add_parser(
+    listing_capabilities = subcommands.add_parser(
         "list-capabilities",
         help="List every governed export effect and whether it is callable.",
     )
+    listing_capabilities.set_defaults(network_required=False)
     describe = subcommands.add_parser(
         "describe",
         help="Show one export input schema, example, columns, scale, and workflow.",
     )
     describe.add_argument("operation_id")
+    describe.set_defaults(network_required=False)
     start = subcommands.add_parser(
         "start",
         help="Create one job using the exact schema returned by `export describe`.",

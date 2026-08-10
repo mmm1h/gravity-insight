@@ -14,9 +14,11 @@ gravity insight export download <job-id> --operation-id <operation-id> --output 
 
 严格使用 `describe` 返回的 example、列、规模限制和 workflow。不同导出 operation 的 ID 字段、状态字段和下载方式可能不同。
 
+这里有意保留 `list-capabilities`：它列的是导出扩展支持的 effect/workflow（create、status、download、cancel）及 callable 状态，不是 Kernel 的 operation catalog。普通读能力统一称为 `operations`；导出清单仍使用 capability，避免把“支持哪个导出阶段”误写成 operation 搜索。
+
 ## 安全规则
 
-- 只有 capability 明确标记 callable 的 effect 才能执行。
+- 只有 export operation 明确标记 callable 的 effect 才能执行。
 - 创建前确认 App、时间范围、字段投影和预计规模。
 - 不把用户级原始结果写入仓库、共享目录或对话输出。
 - 本地输出使用显式路径；临时文件应位于受控临时目录。

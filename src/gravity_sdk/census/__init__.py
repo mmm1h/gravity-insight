@@ -1,4 +1,4 @@
-"""Offline-first Gravity frontend route census tooling."""
+"""Maintainer-only, offline-first Gravity frontend route census tooling."""
 
 from .normalize import normalize_path
 

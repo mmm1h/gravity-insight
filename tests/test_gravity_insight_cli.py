@@ -396,6 +396,98 @@ class GravityInsightCliTests(unittest.TestCase):
             client.read_calls[0][1]["query_id"], r"^\d{13}[A-Za-z0-9]{19}$"
         )
 
+    def test_inline_json_and_typed_set_merge_without_a_file(self):
+        code, result, error, _ = self.invoke(
+            [
+                "read",
+                "app.list",
+                "--input",
+                '{"nested":{"value":1},"source":"input"}',
+                "--set",
+                "nested.value=2",
+                "--set",
+                "enabled=true",
+                "--set",
+                'labels=["alpha","beta"]',
+                "--set",
+                "source=plain-text",
+            ]
+        )
+        self.assertEqual(0, code)
+        self.assertIsNone(error)
+        self.assertEqual(
+            {
+                "nested": {"value": 2},
+                "enabled": True,
+                "labels": ["alpha", "beta"],
+                "source": "plain-text",
+            },
+            result["inputs"],
+        )
+
+    def test_query_flags_override_set_and_inline_input(self):
+        class AnalysisFlagClient(FakeClient):
+            def schema(self, operation_id: str):
+                schema = super().schema(operation_id)
+                if operation_id == "analysis.event.query":
+                    schema["input_fields"] = {
+                        "app_id": {},
+                        "date_list": {},
+                        "query_item_list": {},
+                        "query_id": {},
+                    }
+                return schema
+
+        code, result, error, _ = self.invoke(
+            [
+                "analysis",
+                "query",
+                "--kind",
+                "event",
+                "--input",
+                '{"app_id":"input","date_list":["old","old"]}',
+                "--set",
+                "app_id=set",
+                "--set",
+                'date_list=["set","set"]',
+                "--set",
+                "query_item_list=[]",
+                "--app-id",
+                "flag",
+                "--start",
+                "2026-08-01",
+                "--end",
+                "2026-08-02",
+            ],
+            client=AnalysisFlagClient(),
+        )
+        self.assertEqual(0, code)
+        self.assertIsNone(error)
+        self.assertEqual("flag", result["inputs"]["app_id"])
+        self.assertEqual(
+            [{"start_date": "2026-08-01", "end_date": "2026-08-02"}],
+            result["inputs"]["date_list"],
+        )
+        self.assertEqual([], result["inputs"]["query_item_list"])
+
+    def test_operations_command_and_capabilities_search_alias_both_work(self):
+        client = GravityInsightClient.from_env()
+        client.operation_ids = {
+            item["operation_id"] for item in client.capabilities(stability=None)
+        }
+        current, legacy = (
+            self.invoke([name, "search", "retention"], client=client)[1]
+            for name in ("operations", "capabilities")
+        )
+        self.assertIn("operations", current)
+        self.assertNotIn("capabilities", current)
+        self.assertIn("capabilities", legacy)
+        self.assertNotIn("operations", legacy)
+        self.assertEqual(
+            [item["operation_id"] for item in current["operations"]],
+            [item["operation_id"] for item in legacy["capabilities"]],
+        )
+
     def test_experimental_analysis_requires_explicit_flag(self):
         class ExperimentalScatterClient(FakeClient):
             def schema(self, operation_id: str):
@@ -1150,6 +1242,31 @@ class GravityInsightCliTests(unittest.TestCase):
         )
         client._registry.get("promotion.bytedance.project.list").validate_inputs(
             project
+        )
+
+        analysis, _ = cli._merge_query_shortcuts(
+            client,
+            "analysis.event.query",
+            shortcut_args(app_id="29034827"),
+            {
+                "query_id": "1700000000000abcdefghijklmnopqrs",
+                "query_item_list": [
+                    {
+                        "event_name": "$PayEvent",
+                        "event_label": "$PayEvent",
+                        "custom_name": "$PayEvent",
+                        "target": {"name": "PresetAllCount", "field": "PresetAllCount"},
+                        "conditions": [],
+                        "cond_logic": "AND",
+                        "event_index": 0,
+                    }
+                ],
+            },
+        )
+        client._registry.get("analysis.event.query").validate_inputs(analysis)
+        self.assertEqual(
+            [{"start_date": "2026-08-01", "end_date": "2026-08-02"}],
+            analysis["date_list"],
         )
 
     def test_new_catalog_operations_extend_structural_shortcuts_without_code_changes(self):

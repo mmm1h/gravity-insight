@@ -28,6 +28,45 @@ def contract_fingerprint(operation: Any) -> str:
     return _canonical_fingerprint(payload)
 
 
+def value_shape(value: Any) -> Any:
+    """Return a value-free structural sketch suitable for aggregation."""
+
+    if isinstance(value, Mapping):
+        return {
+            str(key): value_shape(item)
+            for key, item in sorted(value.items(), key=lambda pair: str(pair[0]))
+        }
+    if isinstance(value, (list, tuple)):
+        encoded = {
+            json.dumps(
+                value_shape(item),
+                sort_keys=True,
+                separators=(",", ":"),
+                ensure_ascii=False,
+            )
+            for item in value
+        }
+        return {
+            "type": "array",
+            "items": [json.loads(item) for item in sorted(encoded)],
+        }
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "boolean"
+    if isinstance(value, int):
+        return "integer"
+    if isinstance(value, float):
+        return "number"
+    return "string"
+
+
+def shape_fingerprint(value: Any) -> str:
+    """Hash only object keys, container layout, and JSON scalar types."""
+
+    return _canonical_fingerprint(value_shape(value))
+
+
 def legacy_contract_fingerprint(operation: Any) -> str:
     """Reproduce the pre-migration schema hash for exact evidence upgrades."""
 

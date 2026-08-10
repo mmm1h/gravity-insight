@@ -63,7 +63,7 @@ def _run(
     try:
         result = subprocess.run(
             list(args),
-            cwd=ROOT,
+            cwd=ROOT if ROOT.is_dir() else Path.cwd(),
             check=False,
             capture_output=True,
             timeout=timeout,

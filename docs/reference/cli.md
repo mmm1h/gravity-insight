@@ -6,7 +6,10 @@
 
 ```text
 gravity insight <command>     结构化读取和导出
-gravity metadata sync ...    本地物理元数据目录
+gravity metadata <command>    本地物理元数据目录
+gravity find <query>          跨 operation、recipe 与 metadata 检索
+gravity recipe <command>      离线校验 workspace recipe
+gravity run <selector>        单进程解析并执行 recipe 或 operation
 gravity sql <command>         受控 SQL 产品
 gravity census <command>      前端路由盘点
 ```
@@ -17,9 +20,11 @@ gravity census <command>      前端路由盘点
 
 | 命令组 | 用途 |
 | --- | --- |
-| `capabilities list/search/describe/schema` | 发现 operation 和输入合同 |
+| `operations list/search/describe/schema` | 发现 operation 和输入合同；`capabilities` 是兼容 alias |
 | `validate` | 离线校验输入，可选渲染脱敏 wire |
 | `read` | 执行一个 operation，支持受控分页和文件输出 |
+| `run` | 执行 `@recipe` 或 operation 的 Resolver 管线，并产出脱敏 Receipt |
+| `recipe validate/check` | 离线检查 recipe 格式或 operation 漂移 |
 | `discover-nonempty` | 在严格 HTTP 预算内发现非空输入组合 |
 | `batch` | 批量执行独立的受控读取 |
 | `parents resolve` | 解析 operation 需要的父资源 |
@@ -27,12 +32,13 @@ gravity census <command>      前端路由盘点
 | `export ...` | 创建、等待、下载或取消治理导出 |
 | `doctor` | 离线检查；`--live` 执行最小在线探针 |
 
-领域命令如 `analysis`、`multidim`、`promotion`、`materials` 是受控 operation 的易用门面；不确定时从 `capabilities search` 开始。
+领域命令如 `analysis`、`multidim`、`promotion`、`materials` 是受控 operation 的易用门面；不确定时从 `operations search` 开始。
 
 常用读取参数：
 
 ```text
---input/-i <json-file>   JSON 输入；'-' 表示 stdin
+--input/-i <json|file>   内联 JSON 或 JSON 文件；'-' 表示 stdin
+--set <path=value>       点路径覆盖，可重复
 --all-pages              遵循 manifest 分页合同
 --max-pages <n>          最大页数
 --max-items <n>          最大返回条数
@@ -46,9 +52,30 @@ Insight 普通批量读取默认并发为 6，显式上限为 24；Metadata 同�
 
 ```powershell
 gravity metadata sync --all-apps [--database <path>] [--concurrency 1..24]
+gravity metadata search [query] [--app-id <id>] [--database <path>]
+gravity metadata events [query] [--app-id <id>] [--database <path>]
+gravity metadata properties [query] [--app-id <id>] [--database <path>]
+gravity find <query> [--backend operations] [--backend metadata]
 ```
 
 默认位置是用户私有缓存下的 `GravityInsight/metadata/catalog.sqlite3`。同步采用临时库构建和原子替换；部分失败会保留成功数据，并记录失败的 App、operation 和错误代码。
+查询命令以 SQLite 只读模式运行，不创建客户端、不读取凭据、不访问网络。
+`find` 对三个目录做稳定相关性排序；backend 是显式注册表。
+
+`find` 当前注册 `operations`、`recipes`、`metadata` 三个 backend。`recipe validate` 只验证 workspace 声明；`recipe check` 还检查 operation 存在性/废弃状态、输入和输出字段及合同指纹，仍不访问网络。
+
+Resolver 常用形式：
+
+```powershell
+gravity run @retention-weekly --start 2026-08-01 --end 2026-08-07
+gravity run <operation-id> --app <alias-or-id> --input <json> --set page_size=100
+```
+
+recipe 参数用 `--param name=value`，`start/end` 有同名快捷参数。`--app` 先查 workspace alias，未命中时只接受正整数 App id。Resolver 失败输出按输入合同、父资源、空结果和本地事件相似候选排序；相似候选只是字符串距离，不建立业务绑定。
+
+workspace 的发现顺序、最小配置和 recipe 字段见 [Workspace 参考](workspace.md)。
+
+`operations`、`validate`、`find`、`recipe validate/check`、`metadata search/events/properties` 等 parser 标记为不需要网络客户端，因此不会触发首次凭据向导。新增离线命令必须在自己的 parser 上声明相同属性。
 
 ## SQL
 
@@ -95,6 +122,8 @@ GRAVITY_PASSWORD=...
 ```
 
 token 由 SDK 私有缓存维护。不要把 token、Cookie 或密码作为命令行参数，也不要把本地凭据文件提交到 Git。
+
+Resolver Receipt 写在 workspace 对应的私有缓存 `state_root/receipts/`。`input_shape_fingerprint` 只哈希字段、容器结构和标量类型；相同结构换筛选值仍得到同一指纹。
 
 ## 输出与退出码
 

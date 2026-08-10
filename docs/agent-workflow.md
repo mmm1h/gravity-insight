@@ -11,8 +11,8 @@ Gravity SDK 能回答的是：某 App 有哪些事件和属性、某个受控分
 ## 1. 发现能力
 
 ```powershell
-gravity insight capabilities search "<业务目标的英文或技术关键词>"
-gravity insight capabilities describe <operation-id>
+gravity insight operations search "<业务目标的英文或技术关键词>"
+gravity insight operations describe <operation-id>
 ```
 
 规则：
@@ -43,10 +43,30 @@ gravity insight validate <operation-id> --input <input.json>
 
 ## 4. 执行并控制规模
 
+有 workspace recipe 时优先使用单进程 Resolver：
+
+```powershell
+gravity recipe check <recipe-name>
+gravity run @<recipe-name> --start 2026-08-01 --end 2026-08-07
+```
+
+没有 recipe 时也可执行 `gravity run <operation-id> --app <alias-or-id> ...`。它委托既有 read，不建立业务语义；stale recipe、缺父资源、输入失败和空结果会在同一 envelope 的 `diagnostics` 中返回后续命令或候选。
+
 ```powershell
 gravity insight read <operation-id> --input <input.json>
+gravity insight read <operation-id> --input '{"app_id":"101"}'
+gravity insight read <operation-id> --input '{"app_id":"101"}' --set page_size=100
 gravity insight read <operation-id> --input <input.json> --all-pages --max-pages 5 --max-items 200
 ```
+
+所有 query/read 门面按 `flag > --set > --input > 合同默认值` 合并输入。`--input`
+以 `{` 或 `[` 开头时是内联 JSON，`-` 从 stdin 读取，其他值按文件路径读取；
+`--set a.b=c` 支持点路径，右值优先按 JSON 解析，不能解析时才作为字符串。
+
+`analysis query` 的 event、retention、funnel、scatter 都支持
+`--app-id --start --end`。各 kind 的 `query_item_list`、分组对象及 funnel
+窗口结构不同，继续用内联 JSON 或 `--set` 明确提供，不要用字符串
+`--metrics` / `--dimensions` 猜测复杂对象。
 
 先做小范围读取，再扩大时间、分页或维度。大结果写文件，不要把用户级数据完整输出到终端或对话：
 
@@ -62,11 +82,21 @@ gravity insight read <operation-id> --input <input.json> --all-pages --output tm
 
 ```powershell
 gravity metadata sync --all-apps
+gravity metadata search "purchase"
+gravity metadata events "purchase" --app-id 101
+gravity metadata properties "amount" --app-id 101
 ```
 
 不要生成临时循环脚本。`status=partial` 时数据库仍可使用，但必须读取失败计数，不能宣称已经覆盖全部 App。
 
-元数据同步不提供业务词搜索。业务绑定应先由外部知识库解析，再用本地目录验证事件和属性。
+这些查询只读本地 SQLite，不访问网络。名称相似仍不能建立业务绑定；业务绑定应先由
+外部知识库解析，再用本地目录验证事件和属性。
+
+需要同时查 operation、workspace recipe 与本地 metadata 时使用：
+
+```powershell
+gravity find "retention"
+```
 
 ## 6. 空结果与父资源
 

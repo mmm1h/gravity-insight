@@ -20,7 +20,6 @@ dev = ["pytest>=9,<10"]
 gravity = "gravity_sdk.__main__:main"
 gravity-insight = "gravity_sdk.cli:main"
 gravity-sql = "gravity_sdk.sql.__main__:main"
-gravity-census = "gravity_sdk.census.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

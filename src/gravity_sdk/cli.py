@@ -34,7 +34,7 @@ from gravity_sdk.domains import (
 )
 from gravity_sdk import nonempty_cli, runtime
 from gravity_sdk.cli_limits import (
-    capability_limit as _capability_limit,
+    capability_limit as _operation_limit,
     concurrency as _concurrency,
     positive_int as _positive_int,
     validate_date_pair,
@@ -74,15 +74,40 @@ from gravity_sdk.metadata_sync import (
     run_analysis_metadata,
     run_metadata_command,
 )
+from gravity_sdk.find import (
+    add_find_command,
+    add_operation_commands,
+    filter_operations,
+    run_find_command,
+    run_operation_command,
+)
+from gravity_sdk.find_input import (
+    add_input as _add_input, date_range_input as _date_range_input,
+    load_json_input as _load_json_input,
+    normalize_input_arguments as _normalize_input_arguments,
+    object_input as _object_input,
+    without_filter as _without_filter,
+)
+from gravity_sdk.recipe import add_recipe_commands
+from gravity_sdk.resolver_cli import add_resolver_command
 
 
 DEFAULT_STDOUT_MAX_PAGES, DEFAULT_STDOUT_MAX_ITEMS = 5, 200
 MAX_ALL_PAGES, MAX_ALL_ITEMS = 1_000, 100_000
 _LARGE_VALUE_BYTES = 8_192
-_MULTIDIM_QUERY_OPERATIONS = frozenset((*DOMAIN_OPERATIONS["multidim.query"], *DOMAIN_OPERATIONS["multidim.calc_total"]))
+_MULTIDIM_QUERY_OPERATIONS = frozenset(
+    (*DOMAIN_OPERATIONS["multidim.query"], *DOMAIN_OPERATIONS["multidim.calc_total"])
+)
 
 
 class AgentArgumentParser(argparse.ArgumentParser):
+    def parse_args(
+        self, args: Sequence[str] | None = None, namespace: argparse.Namespace | None = None
+    ) -> argparse.Namespace:
+        parsed = super().parse_args(args, namespace)
+        _normalize_input_arguments(parsed)
+        return parsed
+
     def error(self, message: str) -> None:
         raise InputValidationError(
             message,
@@ -236,37 +261,6 @@ def _write_json(value: Any, *, stream=None) -> None:
     )
 
 
-def _load_json_input(source: str | None, *, required: bool = False) -> Any:
-    if source is None:
-        if required:
-            raise ValueError("--input is required (use a JSON file or '-' for stdin)")
-        return {}
-    if source == "-":
-        raw = sys.stdin.read()
-    else:
-        raw = Path(source).read_text(encoding="utf-8")
-    try:
-        return json.loads(raw)
-    except json.JSONDecodeError as exc:
-        raise ValueError("input must be valid JSON") from exc
-
-
-def _object_input(source: str | None) -> dict[str, Any]:
-    value = _load_json_input(source)
-    if not isinstance(value, Mapping):
-        raise ValueError("operation input must be a JSON object")
-    return dict(value)
-
-
-def _add_input(parser: argparse.ArgumentParser, *, required: bool = False) -> None:
-    parser.add_argument(
-        "--input",
-        "-i",
-        required=required,
-        help="JSON object file, or '-' to read JSON from stdin.",
-    )
-
-
 def _add_all_pages(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--all-pages",
@@ -306,6 +300,7 @@ def _add_query_shortcuts(parser: argparse.ArgumentParser) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = AgentArgumentParser(description="Governed Gravity Insight read and export operations.")
+    parser.set_defaults(network_required=True)
     parser.add_argument(
         "--dry-run",
         action="store_true",
@@ -313,29 +308,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     commands = parser.add_subparsers(dest="command")
 
-    capabilities = commands.add_parser(
-        "capabilities", help="Inspect registered read operations."
-    )
-    cap_commands = capabilities.add_subparsers(dest="capability_command", required=True)
-    cap_list = cap_commands.add_parser("list")
-    cap_list.add_argument("--domain")
-    cap_list.add_argument("--platform")
-    cap_list.add_argument("--stability")
-    cap_schema = cap_commands.add_parser("schema")
-    cap_schema.add_argument("operation_id")
-    cap_search = cap_commands.add_parser("search")
-    cap_search.add_argument("query")
-    cap_search.add_argument("--domain")
-    cap_search.add_argument("--platform")
-    cap_search.add_argument("--stability")
-    cap_search.add_argument("--limit", type=_capability_limit, default=20)
-    cap_search.add_argument("--continuation")
-    cap_describe = cap_commands.add_parser("describe")
-    cap_describe.add_argument("operation_id")
+    add_operation_commands(commands, _operation_limit)
 
     validate = commands.add_parser(
         "validate", help="Validate one operation input without network access."
     )
+    validate.set_defaults(network_required=False)
     validate.add_argument("operation_id")
     _add_input(validate, required=True)
     validate.add_argument("--render-wire", action="store_true")
@@ -350,6 +328,8 @@ def build_parser() -> argparse.ArgumentParser:
         help="Compatibility alias for --max-items.",
     )
 
+    add_resolver_command(commands, _add_input, _add_all_pages)
+
     nonempty_cli.register(commands, _add_input)
 
     batch_input, batch_concurrency = _add_input, _concurrency
@@ -363,7 +343,8 @@ def build_parser() -> argparse.ArgumentParser:
         "auth", help="Inspect or refresh local Gravity credentials."
     )
     auth_commands = auth.add_subparsers(dest="auth_command", required=True)
-    auth_commands.add_parser("status")
+    auth_status = auth_commands.add_parser("status")
+    auth_status.set_defaults(network_required=False)
     auth_commands.add_parser("refresh")
 
     add_parent_commands(commands)
@@ -374,6 +355,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     doctor.add_argument("--live", action="store_true")
     doctor.add_argument("--concurrency", type=_concurrency, default=6)
+    doctor.set_defaults(network_required=False)
 
     add_metadata_commands(commands, _concurrency, _add_input, _add_all_pages)
 
@@ -400,7 +382,8 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="allow the operation only when the registry marks it experimental",
     )
-    _add_input(analysis_query, required=True)
+    _add_input(analysis_query)
+    _add_query_shortcuts(analysis_query)
     analysis_segment = analysis_commands.add_parser(
         "segment", help="Read a segment definition, history, trend, or member rows."
     )
@@ -540,6 +523,8 @@ def build_parser() -> argparse.ArgumentParser:
         item = attribution_commands.add_parser(name)
         _add_input(item)
         _add_all_pages(item)
+    add_find_command(commands, _operation_limit)
+    add_recipe_commands(commands)
     return parser
 
 
@@ -635,7 +620,7 @@ def _merge_query_shortcuts(
             return
         target = next((name for name in candidates if name in allowed), None)
         if target:
-            result.setdefault(target, value)
+            result[target] = value
         elif strict:
             raise ValueError(
                 f"{operation_id} does not accept --{flag.replace('_', '-')}"
@@ -646,7 +631,7 @@ def _merge_query_shortcuts(
     app_id = getattr(args, "app_id", None)
     media = getattr(args, "media", None)
     if operation_id in _MULTIDIM_QUERY_OPERATIONS:
-        filters = list(result.get("filters", []))
+        filters = _without_filter(result.get("filters", []), "app_id", app_id is not None)
         if app_id is not None:
             filters.append(
                 {"field": "app_id", "operator": "EQUALS", "values": [str(app_id)]}
@@ -659,9 +644,9 @@ def _merge_query_shortcuts(
             result["filters"] = filters
     else:
         if app_id is not None and "app_id" in allowed:
-            result.setdefault("app_id", str(app_id))
+            result["app_id"] = str(app_id)
         elif app_id is not None and _accepts_array_field(fields, "filters"):
-            filters = list(result.get("filters", []))
+            filters = _without_filter(result.get("filters", []), "app_id")
             filters.append(
                 {
                     "field": "app_id",
@@ -677,7 +662,7 @@ def _merge_query_shortcuts(
         assign("media", ("media_type", "media"), media)
     start, end = getattr(args, "start", None), getattr(args, "end", None)
     validate_date_pair(start, end)
-    assign("start/end", ("date_list",), [start, end] if start and end else None)
+    assign("start/end", ("date_list",), _date_range_input(operation_id, start if start and end else None, end))
     time_dims = _split_values(getattr(args, "time_dim", None))
     if time_dims and len(time_dims) != 1:
         raise ValueError("--time-dim accepts exactly one value")
@@ -712,9 +697,9 @@ def _merge_query_shortcuts(
         )
         filter_field = PROMOTION_PARENT_FILTER_FIELDS.get(operation_id)
         if direct:
-            result.setdefault(direct, str(parent))
+            result[direct] = str(parent)
         elif filter_field and _accepts_array_field(fields, "filters"):
-            filters = list(result.get("filters", []))
+            filters = _without_filter(result.get("filters", []), filter_field)
             filters.append(
                 {
                     "field": filter_field,
@@ -811,6 +796,7 @@ def _analysis(args: argparse.Namespace) -> Any:
         client = runtime.build_client(allow_experimental=True)
 
     if args.analysis_command == "query":
+        supplied, _ = _merge_query_shortcuts(client, operation_id, args, supplied)
         supplied.setdefault("query_id", new_analysis_query_id())
         return runtime.call_read(client, operation_id, supplied)
 
@@ -829,6 +815,8 @@ def _analysis(args: argparse.Namespace) -> Any:
 def _apps_or_metadata(args: argparse.Namespace) -> Any:
     if args.command == "apps":
         return _domain_read(args, "apps.list")
+    if args.command == "find":
+        return run_find_command(args, _client(args))
     return run_metadata_command(args, _client)
 
 
@@ -920,30 +908,6 @@ def _attribution(args: argparse.Namespace) -> Any:
     return runtime.call_batch(client, requests)
 
 
-def _filter_capabilities(args: argparse.Namespace, value: Any) -> Any:
-    rendered = runtime.to_jsonable(value)
-    items = rendered
-    if isinstance(rendered, Mapping):
-        items = rendered.get(
-            "operations", rendered.get("capabilities", rendered.get("data"))
-        )
-    if not isinstance(items, list):
-        return rendered
-    filtered = []
-    for item in items:
-        if not isinstance(item, Mapping):
-            continue
-        operation_id = str(item.get("operation_id", ""))
-        if args.domain and item.get("domain") != args.domain:
-            continue
-        if args.platform and not operation_id.startswith(f"promotion.{args.platform}."):
-            continue
-        if args.stability and item.get("stability") != args.stability:
-            continue
-        filtered.append(item)
-    return {"capabilities": filtered, "count": len(filtered)}
-
-
 def _doctor(args: argparse.Namespace) -> Any:
     local = runtime.validate_manifest_json()
     client = _client(args)
@@ -1023,29 +987,8 @@ def run(args: argparse.Namespace) -> Any:
             "registered_operations": len(operation_ids),
             **checks,
         }
-    if args.command == "capabilities":
-        client = _client(args)
-        if args.capability_command == "list":
-            return _filter_capabilities(
-                args,
-                client.capabilities(
-                    domain=args.domain,
-                    platform=args.platform,
-                    stability=args.stability if args.stability else None,
-                ),
-            )
-        if args.capability_command == "search":
-            return client.search_capabilities(
-                args.query,
-                domain=args.domain,
-                platform=args.platform,
-                stability=args.stability,
-                limit=args.limit,
-                continuation=args.continuation,
-            )
-        if args.capability_command == "describe":
-            return client.describe(args.operation_id)
-        return client.schema(args.operation_id)
+    if args.command in {"operations", "capabilities"}:
+        return run_operation_command(args, _client(args), filter_operations)
     if args.command == "validate":
         return _client(args).validate(
             args.operation_id,
@@ -1084,7 +1027,7 @@ def run(args: argparse.Namespace) -> Any:
         return _auth_or_parents(args)
     if args.command == "doctor":
         return _doctor(args)
-    if args.command in {"apps", "metadata"}:
+    if args.command in {"apps", "metadata", "find"}:
         return _apps_or_metadata(args)
     if args.command == "analysis":
         return _analysis(args)

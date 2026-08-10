@@ -131,7 +131,7 @@ class DraftCatalogTests(unittest.TestCase):
         transport = _NeverTransport()
         client = GravityInsightClient.from_env(transport=transport)
 
-        found = client._capability_catalog.search(DRAFT_ID)
+        found = client._operation_catalog.search(DRAFT_ID)
         target = next(
             item for item in found["capabilities"] if item["operation_id"] == DRAFT_ID
         )

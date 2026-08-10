@@ -36,6 +36,7 @@ from .errors import (
     SqlValidationError,
     TransportError,
 )
+from .receipt import perform_http_request
 from .registry import _consume_authorized_request
 
 
@@ -308,8 +309,7 @@ class _GravityRequester:
         if not _safe_path(path) or not profile.accepts(normalized_method, path):
             raise PolicyViolation("Gravity request is outside its controlled route profile")
         _validate_profile_payload(profile, normalized_method, params, json_body)
-        request_timeout = self.timeout if timeout is None else timeout
-        request_attempts = self.attempts if attempts is None else attempts
+        request_timeout, request_attempts = (self.timeout if timeout is None else timeout), (self.attempts if attempts is None else attempts)
         if request_timeout <= 0 or request_attempts < 1 or request_attempts > 5:
             raise ValueError("invalid Gravity timeout or retry count")
         extra_headers = dict(headers or {})
@@ -324,7 +324,7 @@ class _GravityRequester:
         for attempt in range(request_attempts):
             self.limiter.acquire(GRAVITY_HOST, self.sleeper)
             try:
-                response = self.session.request(
+                response = perform_http_request(self.session.request,
                     normalized_method,
                     GRAVITY_HOST + path,
                     headers=request_headers,

@@ -91,12 +91,12 @@ def _input_field(message: str) -> str | None:
 def _default_next_action(code: str, operation_id: str | None) -> str:
     operation = operation_id or "<operation-id>"
     describe = (
-        "Run `python -m gravity_sdk capabilities describe "
+        "Run `gravity insight operations describe "
         f"{operation}` and retry with the documented input."
     )
     actions = {
         ErrorCode.UNKNOWN_OPERATION.value: (
-            "Run `python -m gravity_sdk capabilities search <query>` "
+            "Run `gravity insight operations search <query>` "
             "and use an operation_id from the results."
         ),
         ErrorCode.INPUT_INVALID.value: describe,
@@ -106,10 +106,10 @@ def _default_next_action(code: str, operation_id: str | None) -> str:
             "username and password."
         ),
         ErrorCode.AUTH_REJECTED.value: (
-            "Run `python -m gravity_sdk auth refresh`, then retry once."
+            "Run `gravity insight auth refresh`, then retry once."
         ),
         ErrorCode.PERMISSION_UNAVAILABLE.value: (
-            f"Run `python -m gravity_sdk capabilities describe {operation}` "
+            f"Run `gravity insight operations describe {operation}` "
             "and request the listed Gravity permission before retrying."
         ),
         ErrorCode.RATE_LIMITED.value: "Wait retry_after_ms, then retry the same request once.",
@@ -118,12 +118,12 @@ def _default_next_action(code: str, operation_id: str | None) -> str:
             "`python -m gravity_sdk doctor --live`."
         ),
         ErrorCode.CONTRACT_CHANGED.value: (
-            f"Run `python -m gravity_sdk capabilities describe {operation}` "
+            f"Run `gravity insight operations describe {operation}` "
             "and stop automation until the contract is re-verified."
         ),
         ErrorCode.UNSUPPORTED.value: describe,
         ErrorCode.NOT_IMPLEMENTED.value: (
-            "Run `python -m gravity_sdk capabilities search <query>` "
+            "Run `gravity insight operations search <query>` "
             "and select an executable operation."
         ),
         ErrorCode.PAGINATION_LIMIT.value: (

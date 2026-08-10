@@ -1,11 +1,10 @@
-"""Privacy-safe runtime verification metadata for Gravity capabilities."""
+"""Privacy-safe runtime verification metadata for Gravity operations."""
 
 from __future__ import annotations
 
 import base64
 import hashlib
 import json
-import re
 import threading
 from collections import Counter
 from dataclasses import dataclass
@@ -13,11 +12,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping
 
-from .drift import HealthOverlay, capability_availability, capability_health
+from .drift import HealthOverlay, operation_availability, operation_health
 from .errors import (
+    ErrorCategory,
     InputValidationError,
     OperationNotImplementedError,
     UnknownOperationError,
+    error_detail_from_exception,
 )
 from .fingerprints import (
     contract_fingerprint,
@@ -26,6 +27,13 @@ from .fingerprints import (
     write_json_atomic,
 )
 from .models import OperationSpec
+from .operation_search import (
+    expose_non_callable_result as _expose_non_callable_result,
+    normalize_search_text as _normalize_search_text,
+    ordered_search as _ordered_search,
+    search_page_limit as _search_page_limit,
+    search_score as _search_score,
+)
 
 
 def _utc_now() -> datetime:
@@ -33,7 +41,7 @@ def _utc_now() -> datetime:
 
 
 @dataclass(frozen=True)
-class CapabilityProbe:
+class OperationProbe:
     last_verified_at: str | None = None
     status: str = "unverified"
     schema_fingerprint: str | None = None
@@ -114,7 +122,7 @@ def _draft_error(metadata: Mapping[str, Any]) -> OperationNotImplementedError:
 
 def _draft_next_action(operation_id: str, blocker_codes: Iterable[str]) -> str:
     rendered = ", ".join(blocker_codes) or "unknown"
-    return ("This capability is discoverable but disabled because the SDK lacks enough "
+    return ("This operation is discoverable but disabled because the SDK lacks enough "
             f"verified request/response evidence (blockers: {rendered}). An SDK caller cannot unlock it. "
             f"Contact the Gravity Insight SDK maintainers with operation_id `{operation_id}` and these blocker codes; "
             "ask them to verify it on an authorized account that satisfies the listed data or credential requirements and publish it as executable. Until then, search for a stable executable alternative.")
@@ -143,7 +151,7 @@ class CapabilityCatalog:
         self._contract_fingerprints = {item.operation_id: _contract_fingerprint(item) for item in catalog_operations}
         self._clock = clock
         self._lock = threading.RLock()
-        self._probes = {item.operation_id: CapabilityProbe() for item in catalog_operations}
+        self._probes = {item.operation_id: OperationProbe() for item in catalog_operations}
         self._state_path = state_path
         metadata = dict(contract_metadata or {})
         metadata.update(draft_metadata)
@@ -162,15 +170,15 @@ class CapabilityCatalog:
         limit: int = 20,
         continuation: str | None = None,
     ) -> dict[str, Any]:
-        """Return a deterministic lexical/semantic capability search page."""
+        """Return a deterministic lexical/semantic operation search page."""
 
         if not isinstance(query, str) or not query.strip():
             raise InputValidationError(
-                "capability search query must be a non-empty string", field="query"
+                "operation search query must be a non-empty string", field="query"
             )
         if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 20:
             raise InputValidationError(
-                "capability search limit must be between 1 and 20", field="limit"
+                "operation search limit must be between 1 and 20", field="limit"
             )
         normalized_query = _normalize_search_text(query)
         signature = {
@@ -192,24 +200,20 @@ class CapabilityCatalog:
             platform,
             stability,
         )
-        ordered = _ordered_search(scored, normalized_query); first_other = _first_non_callable(ordered)
-        if stability is None and limit > 1 and limit <= first_other < len(ordered): ordered.insert(limit - 1, ordered.pop(first_other))
+        ordered = _expose_non_callable_result(
+            _ordered_search(scored, normalized_query), limit, stability
+        )
         if offset > len(ordered):
             raise InputValidationError(
-                "capability search continuation is outside the result set",
+                "operation search continuation is outside the result set",
                 field="continuation",
             )
-        page_limit = limit
-        if continuation is None and stability is None:
-            callable_count = next(
-                (
-                    index
-                    for index, item in enumerate(ordered)
-                    if not bool(item.get("executable", True))
-                ),
-                len(ordered),
-            )
-            if callable_count < len(ordered): page_limit = min(limit, callable_count + 1)
+        page_limit = _search_page_limit(
+            ordered,
+            limit,
+            continuation=continuation,
+            stability=stability,
+        )
         page = ordered[offset : offset + page_limit]
         next_offset = offset + len(page)
         token = (
@@ -242,7 +246,7 @@ class CapabilityCatalog:
         operation = self._specs.get(operation_id)
         if operation is None:
             raise UnknownOperationError(f"unknown Gravity operation: {operation_id}")
-        capability = self._operations[operation_id]
+        operation_summary = self._operations[operation_id]
         schema = operation.schema()
         metadata = self._contract_metadata.get(operation_id, {})
         source_operation = metadata.get("operation", metadata)
@@ -277,7 +281,7 @@ class CapabilityCatalog:
         examples = source_operation.get("examples", [])
         if not isinstance(examples, list):
             examples = []
-        probe = self._probes.get(operation_id, CapabilityProbe())
+        probe = self._probes.get(operation_id, OperationProbe())
         provenance = source_operation.get("provenance")
         if not isinstance(provenance, Mapping):
             provenance = {}
@@ -286,17 +290,17 @@ class CapabilityCatalog:
             "ok": True,
             "status": "success",
             "operation_id": operation_id,
-            "domain": capability.get("domain"),
-            "resource": capability.get("resource"),
-            "action": capability.get("action"),
-            "platform": capability.get("platform"),
-            "description": capability.get("description", ""),
-            "contract_version": capability.get("contract_version"),
-            "stability": capability.get("stability"),
-            "executable": capability.get("executable", True),
-            "block_reason": capability.get("block_reason"),
+            "domain": operation_summary.get("domain"),
+            "resource": operation_summary.get("resource"),
+            "action": operation_summary.get("action"),
+            "platform": operation_summary.get("platform"),
+            "description": operation_summary.get("description", ""),
+            "contract_version": operation_summary.get("contract_version"),
+            "stability": operation_summary.get("stability"),
+            "executable": operation_summary.get("executable", True),
+            "block_reason": operation_summary.get("block_reason"),
             "catalog_status": self._catalog_statuses.get(operation_id, "registered"),
-            "currently_callable": bool(capability.get("executable", True)),
+            "currently_callable": bool(operation_summary.get("executable", True)),
             "effect": source_operation.get("effect", "read"),
             "input_schema": schema.get("input_fields", {}),
             "wire": {
@@ -329,17 +333,17 @@ class CapabilityCatalog:
                 "complete"
                 if examples
                 else "unknown"
-                if capability.get("stability") == "stable"
+                if operation_summary.get("stability") == "stable"
                 else "not_provided"
             ),
             "examples_unknown_reason": (
                 None
-                if examples or capability.get("stability") != "stable"
+                if examples or operation_summary.get("stability") != "stable"
                 else "minimum input depends on account or live metadata values"
             ),
             "required_parent": parents,
             "health": {
-                "status": capability_health(capability, probe.status, self._health_overlay, operation_id),
+                "status": operation_health(operation_summary, probe.status, self._health_overlay, operation_id),
                 "probe": probe.to_dict(),
                 "contract_fingerprint": self._contract_fingerprints[operation_id],
             },
@@ -382,7 +386,7 @@ class CapabilityCatalog:
         with self._lock:
             previous = self._probes[operation_id]
             verified = safe_status in _VERIFIED_STATUSES
-            self._probes[operation_id] = CapabilityProbe(
+            self._probes[operation_id] = OperationProbe(
                 last_attempted_at=attempted_at,
                 last_verified_at=attempted_at if verified else previous.last_verified_at,
                 status=safe_status,
@@ -390,6 +394,12 @@ class CapabilityCatalog:
                 warnings_count=warning_count,
             )
             self._persist_state()
+
+    def record_upstream_exception(
+        self, operation_id: str, error: Exception, *, status: str
+    ) -> None:
+        if error_detail_from_exception(error).category == ErrorCategory.UPSTREAM.value:
+            self.record(operation_id, status=status)
 
     def record_envelope(self, operation_id: str, envelope: Mapping[str, Any]) -> None:
         error = envelope.get("error")
@@ -414,16 +424,16 @@ class CapabilityCatalog:
             "contract_fingerprint": self._contract_fingerprints[operation_id],
         }
 
-    def merge(self, capabilities: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    def merge(self, operations: Iterable[Mapping[str, Any]]) -> list[dict[str, Any]]:
         merged: list[dict[str, Any]] = []
         with self._lock:
             probes = dict(self._probes)
             contract_fingerprints = dict(self._contract_fingerprints)
-        for capability in capabilities:
-            item = dict(capability)
+        for operation in operations:
+            item = dict(operation)
             operation_id = str(item.get("operation_id", ""))
             stability = str(item.get("stability", ""))
-            item["availability_status"] = capability_availability(
+            item["availability_status"] = operation_availability(
                 stability,
                 executable=bool(item.get("executable", True)),
                 block_reason=(
@@ -433,7 +443,7 @@ class CapabilityCatalog:
                 operation_id=operation_id,
             )
             item["probe"] = {
-                **probes.get(operation_id, CapabilityProbe()).to_dict(),
+                **probes.get(operation_id, OperationProbe()).to_dict(),
                 "contract_fingerprint": contract_fingerprints.get(operation_id),
             }
             merged.append(item)
@@ -503,7 +513,7 @@ class CapabilityCatalog:
             fingerprint = value.get("schema_fingerprint")
             if not _safe_fingerprint(fingerprint):
                 fingerprint = None
-            self._probes[operation_id] = CapabilityProbe(
+            self._probes[operation_id] = OperationProbe(
                 last_attempted_at=_safe_timestamp(value.get("last_attempted_at")),
                 last_verified_at=_safe_timestamp(value.get("last_verified_at")),
                 status=status,
@@ -530,108 +540,34 @@ class CapabilityCatalog:
         write_json_atomic(self._state_path, payload)
 
 
-_SEARCH_ALIASES: Mapping[str, tuple[str, ...]] = {
-    "应用": ("app", "application"), "广告": ("promotion", "advertiser", "campaign"), "推广": ("promotion", "advertiser", "campaign"), "活动": ("campaign",),
-    "报表": ("report", "query", "metric"), "指标": ("metric", "report"), "素材": ("material", "creative"), "归因": ("attribution", "postback", "backtrack"),
-    "分群": ("segment", "cohort"), "用户": ("user", "account"), "事件": ("event",), "漏斗": ("funnel",), "留存": ("retention",),
-    "看板": ("dashboard",), "订单": ("order",), "变现": ("monetization",), "模板": ("template",), "属性": ("property",),
-    "字段": ("property", "field", "metric"), "配置": ("config", "configuration"), "campaign": ("推广", "广告", "活动"), "dashboard": ("看板",), "segment": ("分群",), "material": ("素材",),
-}
-
-
-def _normalize_search_text(value: str) -> str:
-    return " ".join(value.casefold().strip().split())
-
-
-def _search_presentation_rank(capability: Mapping[str, Any]) -> int:
-    if (
-        capability.get("stability") == "stable"
-        and bool(capability.get("executable", True))
-        and capability.get("health") not in {"blocked", "upstream_changed"}
-    ):
-        return 0
-    if bool(capability.get("executable", True)):
-        return 1
-    return 2
-
-
 def _search_candidates(
-    specs: Mapping[str, OperationSpec], capabilities: Mapping[str, Mapping[str, Any]],
-    probes: Mapping[str, CapabilityProbe], catalog_statuses: Mapping[str, str],
+    specs: Mapping[str, OperationSpec], operations: Mapping[str, Mapping[str, Any]],
+    probes: Mapping[str, OperationProbe], catalog_statuses: Mapping[str, str],
     overlay: HealthOverlay | None, query: str, domain: str | None,
     platform: str | None, stability: str | None,
 ) -> list[tuple[int, str, dict[str, Any]]]:
     scored: list[tuple[int, str, dict[str, Any]]] = []
     for operation_id in specs:
-        capability = capabilities[operation_id]
-        if domain is not None and capability.get("domain") != domain: continue
-        if platform is not None and capability.get("platform") != platform: continue
-        if stability is not None and capability.get("stability") != stability: continue
+        operation = operations[operation_id]
+        if domain is not None and operation.get("domain") != domain:
+            continue
+        if platform is not None and operation.get("platform") != platform:
+            continue
+        if stability is not None and operation.get("stability") != stability:
+            continue
         score, matched_on = _search_score(
-            query, operation_id=operation_id, domain=str(capability.get("domain", "")),
-            resource=str(capability.get("resource", "")), platform=str(capability.get("platform") or ""),
-            description=str(capability.get("description", "")))
-        if score <= 0: continue
-        probe = probes.get(operation_id, CapabilityProbe())
-        item = {**dict(capability),
-                "health": capability_health(capability, probe.status, overlay, operation_id),
+            query, operation_id=operation_id, domain=str(operation.get("domain", "")),
+            resource=str(operation.get("resource", "")), platform=str(operation.get("platform") or ""),
+            description=str(operation.get("description", "")))
+        if score <= 0:
+            continue
+        probe = probes.get(operation_id, OperationProbe())
+        item = {**dict(operation),
+                "health": operation_health(operation, probe.status, overlay, operation_id),
                 "catalog_status": catalog_statuses.get(operation_id, "registered"),
                 "matched_on": matched_on, "score": score}
         scored.append((score, operation_id, item))
     return scored
-
-
-def _ordered_search(
-    scored: list[tuple[int, str, dict[str, Any]]], query: str,
-) -> list[dict[str, Any]]:
-    def key(row: tuple[int, str, dict[str, Any]]) -> tuple[int, int, str]:
-        exact = _normalize_search_text(str(row[2].get("operation_id", ""))) == query
-        return (0 if exact else _search_presentation_rank(row[2]) + 1, -row[0], row[1])
-    return [item for _, _, item in sorted(scored, key=key)]
-
-
-def _first_non_callable(items: list[dict[str, Any]]) -> int:
-    return next((index for index, item in enumerate(items) if not bool(item.get("executable", True))), len(items))
-
-
-def _search_score(
-    query: str,
-    *,
-    operation_id: str, domain: str,
-    resource: str, platform: str,
-    description: str,
-) -> tuple[int, list[str]]:
-    fields = {
-        "operation_id": _normalize_search_text(operation_id), "domain": _normalize_search_text(domain),
-        "resource": _normalize_search_text(resource), "platform": _normalize_search_text(platform),
-        "description": _normalize_search_text(description),
-    }
-    terms = {query}
-    terms.update(re.findall(r"[a-z0-9_]+|[\u3400-\u9fff]+", query))
-    for key, values in _SEARCH_ALIASES.items():
-        if key in query or key in terms:
-            terms.update(_normalize_search_text(value) for value in values)
-    matched_on: set[str] = set()
-    score = 0
-    weights = {
-        "operation_id": 16, "domain": 10,
-        "resource": 9, "platform": 8,
-        "description": 6,
-    }
-    for field, value in fields.items():
-        if not value:
-            continue
-        if value == query:
-            score += weights[field] * 8
-            matched_on.add(field)
-        elif query in value:
-            score += weights[field] * 5
-            matched_on.add(field)
-        for term in sorted(terms - {query}):
-            if term and term in value:
-                score += weights[field]
-                matched_on.add(field)
-    return score, sorted(matched_on)
 
 
 def _catalog_signature(operations: Iterable[Any]) -> str:
@@ -654,21 +590,21 @@ def _decode_continuation(token: str, signature: Mapping[str, Any]) -> int:
         padding = "=" * (-len(token) % 4)
         payload = json.loads(base64.urlsafe_b64decode((token + padding).encode("ascii")).decode("utf-8"))
     except (ValueError, UnicodeError, json.JSONDecodeError) as exc:
-        raise InputValidationError("capability search continuation is invalid", field="continuation") from exc
+        raise InputValidationError("operation search continuation is invalid", field="continuation") from exc
     if not isinstance(payload, Mapping) or payload.get("v") != 1:
         raise InputValidationError(
-            "capability search continuation is invalid", field="continuation"
+            "operation search continuation is invalid", field="continuation"
         )
     expected = {"v": 1, **dict(signature)}
     if any(payload.get(key) != value for key, value in expected.items()):
         raise InputValidationError(
-            "capability search continuation does not match this query",
+            "operation search continuation does not match this query",
             field="continuation",
         )
     offset = payload.get("offset")
     if isinstance(offset, bool) or not isinstance(offset, int) or offset < 0:
         raise InputValidationError(
-            "capability search continuation is invalid", field="continuation"
+            "operation search continuation is invalid", field="continuation"
         )
     return offset
 
@@ -782,3 +718,7 @@ def _safe_timestamp(value: str | None) -> str | None:
     if parsed.tzinfo is None:
         return None
     return parsed.astimezone(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
+CapabilityProbe = OperationProbe
+OperationCatalog = CapabilityCatalog

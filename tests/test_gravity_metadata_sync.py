@@ -1,14 +1,26 @@
 from __future__ import annotations
 
+import contextlib
+import io
+import json
 import sqlite3
 import tempfile
 import unittest
 from contextlib import closing
 from pathlib import Path
+from unittest.mock import patch
 
+from gravity_sdk import cli
 from gravity_sdk.domains import ANALYSIS_METADATA_OPERATIONS
 from gravity_sdk.errors import ContractChangedError
-from gravity_sdk.metadata_sync import sync_all_apps
+from gravity_sdk.find_metadata import search_metadata
+from gravity_sdk.metadata_sync import (
+    _create_schema,
+    _write_apps,
+    _write_catalog_metadata,
+    _write_rows,
+    sync_all_apps,
+)
 
 
 class FakeSyncClient:
@@ -74,6 +86,87 @@ class FakeSyncClient:
 
 
 class MetadataSyncTests(unittest.TestCase):
+    def _fixture_catalog(self, database: Path) -> None:
+        synced_at = "2026-08-10T00:00:00Z"
+        with closing(sqlite3.connect(database)) as connection:
+            _create_schema(connection)
+            _write_apps(
+                connection,
+                [("101", {"id": 101, "name": "Alpha Game"})],
+                synced_at,
+            )
+            _write_rows(
+                connection,
+                "101",
+                "analysis.event.list",
+                [{"name": "purchase", "cname": "支付成功"}],
+                synced_at,
+            )
+            _write_rows(
+                connection,
+                "101",
+                "analysis.user_property.list",
+                [{"name": "$first_scene", "cname": "首次场景"}],
+                synced_at,
+            )
+            _write_rows(
+                connection,
+                "101",
+                "analysis.event_property.list",
+                [{"name": "order_amount", "cname": "订单金额"}],
+                synced_at,
+            )
+            _write_catalog_metadata(
+                connection,
+                synced_at=synced_at,
+                status="success",
+                app_count=1,
+                rows_written=3,
+                failure_count=0,
+            )
+            connection.commit()
+
+    def test_fixture_catalog_searches_events_and_properties_offline(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            database = Path(temporary) / "metadata.sqlite3"
+            self._fixture_catalog(database)
+
+            search = search_metadata("支付", database=database)
+            events = search_metadata(database=database, kind="event")
+            properties = search_metadata("金额", database=database, kind="property")
+
+        self.assertTrue(search["offline"])
+        self.assertEqual(["purchase"], [item["name"] for item in search["results"]])
+        self.assertEqual(["event"], [item["kind"] for item in events["results"]])
+        self.assertEqual(
+            ["order_amount"], [item["name"] for item in properties["results"]]
+        )
+
+    def test_fixture_search_treats_sql_wildcards_as_literals(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            database = Path(temporary) / "metadata.sqlite3"
+            self._fixture_catalog(database)
+            result = search_metadata("%", database=database)
+        self.assertEqual(0, result["count"])
+
+    def test_metadata_search_cli_uses_fixture_without_building_a_client(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            database = Path(temporary) / "metadata.sqlite3"
+            self._fixture_catalog(database)
+            stdout = io.StringIO()
+            with (
+                patch("gravity_sdk.cli.runtime.build_client") as build_client,
+                contextlib.redirect_stdout(stdout),
+            ):
+                exit_code = cli.main(
+                    ["metadata", "search", "purchase", "--database", str(database)]
+                )
+        self.assertEqual(0, exit_code)
+        build_client.assert_not_called()
+        result = json.loads(stdout.getvalue())
+        self.assertTrue(result["offline"])
+        self.assertEqual("purchase", result["results"][0]["name"])
+
     def test_sync_all_apps_persists_every_catalog_atomically(self) -> None:
         client = FakeSyncClient()
         with tempfile.TemporaryDirectory() as temporary:
