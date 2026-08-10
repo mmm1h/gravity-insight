@@ -226,6 +226,9 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "promotion.ai_trusteeship.list",
             "metadata.version.list",
             "metadata.operation_log.list",
+            # 修复整数页大小并完成分页复验后晋升。
+            "metadata.event_property_template_event.list",
+            "promotion.bytedance.custom_audience.list",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]

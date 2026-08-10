@@ -6,15 +6,15 @@
     "accounted_experimental": 2,
     "accounted_export_candidate": 22,
     "accounted_permission_unavailable": 1,
-    "accounted_read_candidate": 342,
+    "accounted_read_candidate": 340,
     "accounted_unsupported": 58,
-    "covered_executable": 143
+    "covered_executable": 145
   },
   "callability_summary": {
-    "candidate": 364,
+    "candidate": 362,
     "catalog_only": 8,
     "contract_only": 414,
-    "executable": 143,
+    "executable": 145,
     "unsupported": 58
   },
   "classification_policy": {
@@ -913,9 +913,9 @@
     }
   ],
   "family_summary": {
-    "coverage_ratio": 0.233871,
+    "coverage_ratio": 0.235135,
     "families": 48,
-    "uncovered_read_routes": 372,
+    "uncovered_read_routes": 370,
     "uncovered_read_routes_with_family": 87
   },
   "manifest_reconciliation": {
@@ -1482,6 +1482,14 @@
         "category": "newly_covered_from_previously_unfetched_chunk",
         "manifest_file": "other.json",
         "method": "POST",
+        "operation_id": "metadata.event_property_template_event.list",
+        "path": "/turbo_engine/api/v2/event/property_template/event/list/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "other.json",
+        "method": "POST",
         "operation_id": "metadata.event_property_template_event_list.list",
         "path": "/turbo_engine/api/v2/event/property_template/event_list/",
         "similar_frontend_routes": []
@@ -1588,6 +1596,14 @@
         "method": "GET",
         "operation_id": "promotion.bytedance.app.list",
         "path": "/turbo_engine/api/v1/bytedance/app/list/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "promotion.json",
+        "method": "POST",
+        "operation_id": "promotion.bytedance.custom_audience.list",
+        "path": "/turbo_engine/api/v1/bytedance/custom_audience_list/v2/",
         "similar_frontend_routes": []
       },
       {
@@ -2109,20 +2125,20 @@
       }
     ],
     "previously_missing_breakdown": {
-      "a_previously_unfetched_chunk": 143,
+      "a_previously_unfetched_chunk": 145,
       "b_normalization_false_gap_fixed": 0,
       "c_manifest_route_absent_from_frontend": 4
     },
-    "stable_operations": 147,
+    "stable_operations": 149,
     "summary": {
       "manifest_route_absent_from_frontend": 4,
-      "newly_covered_from_previously_unfetched_chunk": 143
+      "newly_covered_from_previously_unfetched_chunk": 145
     }
   },
   "manifest_summary": {
     "manifest_files": 11,
-    "operations": 156,
-    "stable_operations": 147
+    "operations": 158,
+    "stable_operations": 149
   },
   "module_summary": [
     {
@@ -2133,11 +2149,11 @@
       "uncovered_read": 7
     },
     {
-      "covered": 49,
+      "covered": 50,
       "module": "推广平台",
       "total": 324,
-      "uncovered": 275,
-      "uncovered_read": 153
+      "uncovered": 274,
+      "uncovered_read": 152
     },
     {
       "covered": 3,
@@ -2175,11 +2191,11 @@
       "uncovered_read": 5
     },
     {
-      "covered": 10,
+      "covered": 11,
       "module": "元数据",
       "total": 51,
-      "uncovered": 41,
-      "uncovered_read": 22
+      "uncovered": 40,
+      "uncovered_read": 21
     },
     {
       "covered": 16,
@@ -2578,12 +2594,12 @@
     {
       "levels": {
         "其它": {
-          "covered": 2,
+          "covered": 3,
           "total": 43,
           "unclassified": 0,
           "uncovered_auth_or_proxy": 2,
           "uncovered_export": 0,
-          "uncovered_read": 17,
+          "uncovered_read": 16,
           "uncovered_write": 22
         },
         "广告/创意": {
@@ -4118,7 +4134,7 @@
   ],
   "read_cost_summary": {
     "中": 82,
-    "低": 164,
+    "低": 162,
     "高": 126
   },
   "reservation_summary": {
@@ -24059,7 +24075,7 @@
     },
     {
       "business_module": "推广平台",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "m",
         "re",
@@ -24067,9 +24083,9 @@
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "flat list/detail lookup with no evident parent dependency",
-      "estimated_implementation_cost": "低",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 5093,
         "file": "raw/web.gravity-engine.com/assets/Dmp-CyxAnU4r.js",
@@ -24077,8 +24093,16 @@
         "offset": 5092,
         "url": "https://web.gravity-engine.com/assets/Dmp-CyxAnU4r.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "POST",
+          "operation_id": "promotion.bytedance.custom_audience.list",
+          "path": "/turbo_engine/api/v1/bytedance/custom_audience_list/v2/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "POST",
       "method_certainty": "high",
       "method_evidence": [
@@ -24091,16 +24115,16 @@
       "raw_paths": [
         "/bytedance/custom_audience_list/v2/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "read_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "全部",
         "分账户选择",
@@ -56043,7 +56067,7 @@
     },
     {
       "business_module": "元数据",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "J",
         "N",
@@ -56051,9 +56075,9 @@
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "flat list/detail lookup with no evident parent dependency",
-      "estimated_implementation_cost": "低",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 8605,
         "file": "raw/web.gravity-engine.com/assets/Templates-CdXr47wf.js",
@@ -56061,8 +56085,16 @@
         "offset": 8604,
         "url": "https://web.gravity-engine.com/assets/Templates-CdXr47wf.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "POST",
+          "operation_id": "metadata.event_property_template_event.list",
+          "path": "/turbo_engine/api/v2/event/property_template/event/list/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "POST",
       "method_certainty": "high",
       "method_evidence": [
@@ -56075,16 +56107,16 @@
       "raw_paths": [
         "/event/property_template/event/list/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "read_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "事件名",
         "事件属性",
@@ -59408,14 +59440,14 @@
   "summary": {
     "accounted": 987,
     "accounting_complete": true,
-    "callable_covered": 143,
-    "covered": 143,
+    "callable_covered": 145,
+    "covered": 145,
     "total_routes": 987,
     "unaccounted": 0,
     "unclassified": 0,
     "uncovered_auth_or_proxy": 30,
     "uncovered_export": 22,
-    "uncovered_read": 372,
+    "uncovered_read": 370,
     "uncovered_write": 414,
     "unsupported_non_api": 6
   }

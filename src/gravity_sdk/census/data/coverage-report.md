@@ -15,8 +15,8 @@
 
 | status | routes |
 | --- | ---: |
-| `covered` | 143 |
-| `uncovered_read` | 372 |
+| `covered` | 145 |
+| `uncovered_read` | 370 |
 | `uncovered_write` | 414 |
 | `uncovered_export` | 22 |
 | `uncovered_auth_or_proxy` | 30 |
@@ -26,7 +26,7 @@
 ## Route accounting vs callability
 
 - Accounted routes: **987**
-- Callable covered routes: **143**
+- Callable covered routes: **145**
 - Unaccounted routes: **0**
 
 | accounting state | routes |
@@ -37,16 +37,16 @@
 | `accounted_experimental` | 2 |
 | `accounted_export_candidate` | 22 |
 | `accounted_permission_unavailable` | 1 |
-| `accounted_read_candidate` | 342 |
+| `accounted_read_candidate` | 340 |
 | `accounted_unsupported` | 58 |
-| `covered_executable` | 143 |
+| `covered_executable` | 145 |
 
 | callability | routes |
 | --- | ---: |
-| `candidate` | 364 |
+| `candidate` | 362 |
 | `catalog_only` | 8 |
 | `contract_only` | 414 |
-| `executable` | 143 |
+| `executable` | 145 |
 | `unsupported` | 58 |
 
 ## Stable manifest reconciliation
@@ -54,7 +54,7 @@
 | category | stable operations |
 | --- | ---: |
 | Previously covered | 0 |
-| (a) Found in previously unfetched chunks | 143 |
+| (a) Found in previously unfetched chunks | 145 |
 | (b) Normalization false gap fixed | 0 |
 | (c) Manifest route absent from frontend | 4 |
 
@@ -72,13 +72,13 @@
 | module | covered | uncovered read | all uncovered | total |
 | --- | ---: | ---: | ---: | ---: |
 | 分析 | 20 | 7 | 48 | 68 |
-| 推广平台 | 49 | 153 | 275 | 324 |
+| 推广平台 | 50 | 152 | 274 | 324 |
 | 资产 | 3 | 20 | 75 | 78 |
 | 素材 | 15 | 47 | 99 | 114 |
 | 报表 | 16 | 27 | 43 | 59 |
 | App 与账号 | 9 | 36 | 121 | 130 |
 | 归因 | 5 | 5 | 19 | 24 |
-| 元数据 | 10 | 22 | 41 | 51 |
+| 元数据 | 11 | 21 | 40 | 51 |
 | 其它 | 16 | 55 | 123 | 139 |
 
 ## Promotion platform x level uncovered reads
@@ -90,7 +90,7 @@
 | baidu | 7 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 9 |
 | bilibili | 1 | 0 | 2 | 2 | 0 | 0 | 0 | 0 | 5 |
 | bing | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| bytedance | 3 | 3 | 0 | 0 | 0 | 1 | 0 | 17 | 24 |
+| bytedance | 3 | 3 | 0 | 0 | 0 | 1 | 0 | 16 | 23 |
 | honor | 0 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 2 |
 | huawei | 1 | 0 | 2 | 2 | 0 | 0 | 0 | 0 | 5 |
 | huawei_store | 1 | 0 | 1 | 2 | 0 | 0 | 1 | 0 | 5 |
@@ -114,7 +114,7 @@
 ## Contract families
 
 - Families: **48**
-- Uncovered reads assigned to a family: **87 / 372 (23.4%)**
+- Uncovered reads assigned to a family: **87 / 370 (23.5%)**
 
 | family | kind | members | signature |
 | --- | --- | ---: | --- |
@@ -171,7 +171,7 @@
 
 | tier | uncovered reads | rule |
 | --- | ---: | --- |
-| 低 | 164 | Flat list/detail with no evident parent dependency |
+| 低 | 162 | Flat list/detail with no evident parent dependency |
 | 中 | 82 | Parent-resource dependency or structured selector |
 | 高 | 126 | Complex query/report body, proxy envelope, or dynamic path |
 
@@ -191,7 +191,7 @@ Cost is a scheduling heuristic, not an observed implementation duration.
 | `medium` | `POST` | `/report/api/v3/dataanalysis/ai/message/list/` | `singleton` | `高` |
 | `medium` | `POST` | `/turbo_engine/api/v2/datamanageconfig/kanban/report/setting/` | `singleton` | `高` |
 
-### 推广平台 (153)
+### 推广平台 (152)
 
 | confidence | method | path | family | cost |
 | --- | --- | --- | --- | --- |
@@ -230,7 +230,6 @@ Cost is a scheduling heuristic, not an observed implementation duration.
 | `medium` | `POST` | `/turbo_engine/api/v1/bytedance/aweme_auth_list/` | `singleton` | `低` |
 | `medium` | `POST` | `/turbo_engine/api/v1/bytedance/batch_options/` | `promotion.family.006` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/bytedance/clue/wechat_game/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bytedance/custom_audience_list/v2/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/bytedance/event_manager/optimized_goal/get/` | `singleton` | `低` |
 | `medium` | `POST` | `/turbo_engine/api/v1/bytedance/event_manager_assets/list/` | `singleton` | `中` |
 | `medium` | `POST` | `/turbo_engine/api/v1/bytedance/manage/account/list/` | `promotion.family.009` | `低` |
@@ -509,7 +508,7 @@ Cost is a scheduling heuristic, not an observed implementation duration.
 | `registered` | `POST` | `/turbo_engine/api/v1/user/device_white/testing_tool/attribution_query/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/user/promoted_object/click_url/list/` | `singleton` | `低` |
 
-### 元数据 (22)
+### 元数据 (21)
 
 | confidence | method | path | family | cost |
 | --- | --- | --- | --- | --- |
@@ -530,7 +529,6 @@ Cost is a scheduling heuristic, not an observed implementation duration.
 | `medium` | `POST` | `/turbo_engine/api/v2/datamanageconfig/check_metrics/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v2/datamanageconfig/gravity_metric/list/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v2/datamanageconfig/report_metrics/role_get/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v2/event/property_template/event/list/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v2/event/property_template/use_template/` | `singleton` | `低` |
 | `medium` | `POST` | `/turbo_engine/api/v2/event_dim/data_table/detail/` | `singleton` | `中` |
 | `medium` | `POST` | `/turbo_engine/api/v2/event_dim/data_table/list/` | `singleton` | `低` |
