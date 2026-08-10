@@ -65,6 +65,34 @@ CASES = {
             "detail": {"table_name": "hidden detail"},
         },
     },
+    "report.tag.list": {
+        "path": "/turbo_engine/api/v3/confmetric/tag/list/",
+        "safe_field": "category_id",
+        "hidden": ("exclusion_tags", "remark"),
+        "row": {
+            "id": 1,
+            "category_id": 2,
+            "name": "safe-tag",
+            "cname": "安全标签",
+            "data_topic": "event",
+            "order": 1,
+            "exclusion_tags": [3],
+            "remark": "hidden note",
+        },
+    },
+    "report.tag_category.list": {
+        "path": "/turbo_engine/api/v3/confmetric/tag_category/list/",
+        "safe_field": "data_topic",
+        "hidden": ("remark",),
+        "row": {
+            "id": 1,
+            "name": "safe-category",
+            "cname": "安全分类",
+            "data_topic": "event",
+            "order": 1,
+            "remark": "hidden note",
+        },
+    },
 }
 
 
@@ -119,7 +147,7 @@ class PromotedConfigurationReadTests(unittest.TestCase):
                 self.assertEqual("POST", transport.calls[0][0])
                 self.assertEqual(case["path"], transport.calls[0][1])
                 body = dict(transport.calls[0][2]["body"])
-                if operation_id.startswith("metadata."):
+                if operation_id.startswith(("metadata.", "report.")):
                     self.assertEqual([], body["filters"])
                 else:
                     self.assertNotIn("filters", body)

@@ -38,8 +38,6 @@ _TIER_ONE_IDS = frozenset(
         "report.metric.list",
         "report.report_confmetric_permission.list",
         "report.shared_to_me.list",
-        "report.tag.list",
-        "report.tag_category.list",
     }
 )
 

@@ -231,6 +231,9 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "promotion.bytedance.custom_audience.list",
             # 修复歧义分页类型、完成非空分页复验并收窄筛选与响应投影后晋升。
             "material.asset_directional_package_bytedance.list",
+            # 收敛前端超大分页默认值并完成非空分页与隐私投影复验后晋升。
+            "report.tag.list",
+            "report.tag_category.list",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]

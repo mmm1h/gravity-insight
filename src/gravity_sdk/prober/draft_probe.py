@@ -118,6 +118,17 @@ def _observed_contract(
         operation["live_probe"]["inputs"].setdefault("page", 1)
         operation["live_probe"]["inputs"].setdefault("page_size", 20)
     pagination = pagination_from_payload(payload, updated["operation"])
+    if pagination["kind"] == "page_info":
+        operation = updated["operation"]
+        default_page_size = int(pagination["default_page_size"])
+        operation["input_fields"]["page"]["type"] = "integer"
+        operation["input_fields"]["page"]["default"] = 1
+        operation["input_fields"]["page_size"]["type"] = "integer"
+        operation["input_fields"]["page_size"]["default"] = default_page_size
+        operation["request"]["defaults"]["page"] = 1
+        operation["request"]["defaults"]["page_size"] = default_page_size
+        operation["live_probe"]["inputs"]["page"] = 1
+        operation["live_probe"]["inputs"]["page_size"] = default_page_size
     updated["operation"]["response_projection"] = build_projection(payload, fields)
     updated["operation"]["pagination"] = pagination
     classifications = {
@@ -136,6 +147,26 @@ def _observed_contract(
         privacy_classification = "internal_business"
     updated["operation"]["privacy_policy"]["classification"] = privacy_classification
     return updated, pagination, fields, sketch
+
+
+def _bounded_pagination_inputs(
+    source: Mapping[str, Any], inputs: Mapping[str, Any]
+) -> dict[str, Any]:
+    bounded = dict(inputs)
+    pagination = source["operation"].get("pagination", {})
+    if not isinstance(pagination, Mapping) or pagination.get("kind") != "page_info":
+        return bounded
+    page_field = str(pagination["page_field"])
+    page_size_field = str(pagination["page_size_field"])
+    default_page_size = int(pagination["default_page_size"])
+    max_page_size = int(pagination["max_page_size"])
+    bounded.setdefault(page_field, 1)
+    page_size = bounded.get(page_size_field, default_page_size)
+    if isinstance(page_size, (int, float)) and not isinstance(page_size, bool):
+        bounded[page_size_field] = min(int(page_size), max_page_size)
+    else:
+        bounded[page_size_field] = default_page_size
+    return bounded
 
 
 def _verify_pagination(
@@ -175,7 +206,7 @@ def _probe_missing_parameter(
     missing_name = required[0]
     missing_source = contract_with_optional_required(updated, missing_name)
     client = build_draft_client(missing_source, runtime)
-    missing_inputs = dict(inputs)
+    missing_inputs = _bounded_pagination_inputs(updated, inputs)
     missing_inputs.pop(missing_name, None)
     start = len(recording.observations)
     try:
@@ -203,6 +234,7 @@ def _confirm(
     operation_id = str(updated["operation"]["operation_id"])
     try:
         client = build_draft_client(updated, runtime)
+        inputs = _bounded_pagination_inputs(updated, inputs)
         with recording.observing(operation_id, selected_family, "confirmation"):
             envelope = client.read(operation_id, inputs)
         if isinstance(envelope, Mapping):

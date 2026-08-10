@@ -2828,6 +2828,29 @@
       "data.trend_overview2[].AppRealRegisterCnt",
       "data.trend_overview2[].AppRevenueReco",
       "data.trend_overview2[].date"
+    ],
+    "report.tag.list": [
+      "data.list",
+      "data.list[].category_id",
+      "data.list[].cname",
+      "data.list[].create_time",
+      "data.list[].data_topic",
+      "data.list[].id",
+      "data.list[].modify_time",
+      "data.list[].name",
+      "data.list[].order",
+      "data.page_info"
+    ],
+    "report.tag_category.list": [
+      "data.list",
+      "data.list[].cname",
+      "data.list[].create_time",
+      "data.list[].data_topic",
+      "data.list[].id",
+      "data.list[].modify_time",
+      "data.list[].name",
+      "data.list[].order",
+      "data.page_info"
     ]
   }
 }

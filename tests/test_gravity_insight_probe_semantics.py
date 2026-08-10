@@ -133,6 +133,61 @@ def test_manual_review_remains_blocked_after_successful_transport_probe(
     assert source["draft"]["manual_review_fields"] == ["data[].content"]
 
 
+def test_probe_bounds_frontend_page_size_before_contract_confirmation(
+) -> None:
+    source = build_draft(_route(), set())
+    operation = source["operation"]
+    operation["input_fields"] = {
+        "page": {"type": "integer", "default": 1},
+        "page_size": {"type": "number", "default": 2_000.0},
+    }
+    operation["request"]["query_fields"] = ["page", "page_size"]
+    operation["request"]["defaults"] = {"page": 1, "page_size": 2_000.0}
+    operation["live_probe"]["inputs"] = {"page": 1, "page_size": 2_000.0}
+    payload = {
+        "code": 0,
+        "data": {
+            "list": [{"campaign_id": "campaign-1"}],
+            "page_info": {
+                "page": 1,
+                "page_size": 2_000,
+                "total_page": 1,
+                "total_number": 1,
+            },
+        },
+    }
+    updated, _pagination, _fields, _sketch = draft_probe._observed_contract(
+        source, payload
+    )
+    captured: dict[str, object] = {}
+
+    class _Client:
+        def read(self, operation_id: str, inputs: dict[str, object]) -> dict[str, str]:
+            captured.update({"operation_id": operation_id, "inputs": inputs})
+            return {"status": "success", "schema_fingerprint": "f" * 64}
+
+    recording = SimpleNamespace(
+        observing=lambda *_args: contextlib.nullcontext()
+    )
+    with patch.object(draft_probe, "build_draft_client", return_value=_Client()):
+        status, fingerprint = draft_probe._confirm(
+            updated,
+            {"page": 1, "page_size": 2_000.0},
+            object(),
+            recording,
+            "test-family",
+        )
+
+    assert captured["inputs"] == {"page": 1, "page_size": 100}
+    assert updated["operation"]["input_fields"]["page_size"] == {
+        "type": "integer",
+        "default": 100,
+    }
+    assert updated["operation"]["request"]["defaults"]["page_size"] == 100
+    assert updated["operation"]["live_probe"]["inputs"]["page_size"] == 100
+    assert (status, fingerprint) == ("success", "f" * 64)
+
+
 class _StaticTransport:
     is_test_transport = True
 
