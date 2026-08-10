@@ -15,15 +15,31 @@ OPERATION_IDS = (
     "material.bytedance_asset_text_title.list",
     "material.bytedance_std_asset_text_title.list",
 )
+PACKAGE_OPERATION_IDS = (
+    "material.bytedance_asset_text_title_package.list",
+    "material.bytedance_std_asset_text_title_package.list",
+)
 
 
 def manifest(*operation_ids: str) -> dict[str, Any]:
-    operations = []
-    for operation_id in operation_ids:
+    operations: list[dict[str, Any]] = []
+    pending = list(operation_ids)
+    loaded: set[str] = set()
+    while pending:
+        operation_id = pending.pop(0)
+        if operation_id in loaded:
+            continue
         source = json.loads(
             (CONTRACT_ROOT / f"{operation_id}.json").read_text(encoding="utf-8")
         )
-        operations.append(source["operation"])
+        operation = source["operation"]
+        operations.append(operation)
+        loaded.add(operation_id)
+        pending.extend(
+            str(parent["operation_id"])
+            for parent in operation.get("required_parent", [])
+            if parent.get("operation_id")
+        )
     return {"manifest_version": 1, "operations": operations}
 
 
@@ -122,6 +138,94 @@ class MaterialTitleOperationTests(unittest.TestCase):
         )
         for operation_id in OPERATION_IDS:
             for inputs in invalid_inputs:
+                with self.subTest(operation_id=operation_id, inputs=inputs):
+                    transport = RecordingTransport()
+                    client = GravityInsightClient._from_manifest_for_tests(
+                        manifest(operation_id), transport=transport
+                    )
+                    with self.assertRaises(InputValidationError):
+                        client.read(operation_id, inputs)
+                    self.assertEqual([], transport.calls)
+
+    def test_title_packages_require_integer_app_and_hide_title_contents(self) -> None:
+        paths = {
+            PACKAGE_OPERATION_IDS[0]: (
+                "/turbo_engine/api/v1/bytedance/asset/text/title_package/list/"
+            ),
+            PACKAGE_OPERATION_IDS[1]: (
+                "/turbo_engine/api/v1/bytedance/std/asset/text/title_package/list/"
+            ),
+        }
+
+        def handler(
+            _method: str, _path: str, _kwargs: Mapping[str, Any]
+        ) -> Mapping[str, Any]:
+            return {
+                "code": 0,
+                "data": {
+                    "list": [
+                        {
+                            "id": 7,
+                            "app_id": 101,
+                            "cid": 99,
+                            "title_package_name": "safe package",
+                            "title_num": 12,
+                            "history_cost": 34.5,
+                            "title_list": ["hidden title"],
+                            "create_user_id": 88,
+                            "create_user_name": "hidden operator",
+                            "update_user_id": 77,
+                        }
+                    ],
+                    "page_info": {
+                        "page": 1,
+                        "page_size": 20,
+                        "total_page": 1,
+                        "total_number": 1,
+                    },
+                },
+            }
+
+        for operation_id in PACKAGE_OPERATION_IDS:
+            with self.subTest(operation_id=operation_id):
+                transport = RecordingTransport(handler)
+                client = GravityInsightClient._from_manifest_for_tests(
+                    manifest(operation_id), transport=transport
+                )
+                result = client.read(
+                    operation_id,
+                    {
+                        "app_id": 101,
+                        "filters": [
+                            {
+                                "field": "title_package_name",
+                                "operator": 8,
+                                "values": ["safe"],
+                            }
+                        ],
+                        "order_by": ["history_cost desc"],
+                    },
+                )
+
+                self.assertEqual("success", result["status"])
+                self.assertEqual(("POST", paths[operation_id]), transport.calls[0][:2])
+                body = dict(transport.calls[0][2]["body"])
+                self.assertEqual(101, body["app_id"])
+                self.assertEqual(["history_cost desc"], body["order_by"])
+                row = result["data"]["list"][0]
+                self.assertEqual("safe package", row["title_package_name"])
+                self.assertEqual(99, row["cid"])
+                for field in (
+                    "title_list",
+                    "create_user_id",
+                    "create_user_name",
+                    "update_user_id",
+                ):
+                    self.assertNotIn(field, row)
+
+    def test_title_packages_reject_missing_or_invalid_app_before_network(self) -> None:
+        for operation_id in PACKAGE_OPERATION_IDS:
+            for inputs in ({}, {"app_id": "101"}, {"app_id": 101, "page_size": 101}):
                 with self.subTest(operation_id=operation_id, inputs=inputs):
                     transport = RecordingTransport()
                     client = GravityInsightClient._from_manifest_for_tests(

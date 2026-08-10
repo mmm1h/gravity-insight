@@ -220,6 +220,9 @@ class GravityInsightGoldenTests(unittest.TestCase):
             # 巨量标题素材两条读取经非空分页探针验证后晋升 stable。
             "material.bytedance_asset_text_title.list",
             "material.bytedance_std_asset_text_title.list",
+            # 巨量标题素材包经 app.list 父级、必填参数和分页复验后晋升。
+            "material.bytedance_asset_text_title_package.list",
+            "material.bytedance_std_asset_text_title_package.list",
             # 腾讯广告组配置经父资源解析、非空复验和 fail-closed 字段审查后晋升。
             "promotion.tencent.medium_adgroup.list",
             # 非空分页复验后晋升的 AI 托管与数据表配置读取。

@@ -3,12 +3,6 @@
   "draft": {
     "blockers": [
       {
-        "code": "parent_resource_required",
-        "detail": "At least one declared stable parent did not produce a readable candidate response.",
-        "evidence": "evidence/probe/20260809T145635Z_material.album.list.yaml",
-        "status": "open"
-      },
-      {
         "code": "probe_inconclusive",
         "detail": "The latest probe did not satisfy the promotion gate.",
         "evidence": "evidence/probe/20260808T205524Z_material.album.list.yaml",
@@ -334,8 +328,8 @@
     "promotion_gate": {
       "eligible": false,
       "missing": [
-        "parent_resource_required",
-        "probe_inconclusive"
+        "probe_inconclusive",
+        "successful_probe"
       ]
     },
     "route_evidence": {
@@ -377,6 +371,14 @@
           "path": "/turbo_engine/api/v1/asset/material/album/list/"
         },
         "source": "src/gravity_sdk/census/data/route-params.json",
+        "stable_parent_candidates": [
+          {
+            "input_field": "album_id",
+            "operation_id": "material.album.tree",
+            "output_path": "data.tree..id",
+            "selection": "caller_select"
+          }
+        ],
         "status": "extracted",
         "top_level_parameters": [
           {
@@ -447,35 +449,28 @@
               "unknown"
             ]
           }
-        ],
-        "stable_parent_candidates": [
-          {
-            "input_field": "album_id",
-            "operation_id": "material.album.tree",
-            "output_path": "data.tree..id",
-            "selection": "all"
-          }
         ]
       },
       "parent_resolution": {
         "basis": "declared_parent_probe",
         "bindings": [
           {
-            "candidate_count": 0,
+            "candidate_count": 95,
+            "candidate_types": [
+              "int"
+            ],
             "output_path": "data.tree..id",
             "parent_operation_id": "material.album.tree",
-            "selection": "all",
-            "status": "undetermined",
-            "target_cardinality": "many",
+            "selection": "caller_select",
+            "status": "resolved",
+            "target_cardinality": "one",
             "target_input": "album_id"
           }
         ],
-        "conclusion": "undetermined",
-        "detail": "At least one declared stable parent did not produce a readable candidate response.",
-        "evidence": "evidence/probe/20260809T145635Z_material.album.list.yaml",
-        "missing_evidence": [
-          "A successful or explicit permission response from every declared parent operation."
-        ],
+        "conclusion": "unblocked",
+        "detail": "Every declared parent binding yielded a selectable value; values stayed in process memory.",
+        "evidence": "evidence/probe/20260810T223504Z_material.album.list.yaml",
+        "missing_evidence": [],
         "replacement_blocker": null
       },
       "path": "/turbo_engine/api/v1/asset/material/album/list/",
@@ -496,7 +491,7 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "block_reason": "draft blockers: parent_resource_required, probe_inconclusive",
+    "block_reason": "draft blockers: probe_inconclusive",
     "contract_version": 1,
     "description": "Draft catalog entry inferred from census route POST /turbo_engine/api/v1/asset/material/album/list/; request binding, pagination, and response projection remain unverified.",
     "domain": "material",
@@ -628,7 +623,7 @@
         "input_field": "album_id",
         "operation_id": "material.album.tree",
         "output_path": "data.tree..id",
-        "selection": "all"
+        "selection": "caller_select"
       }
     ],
     "resource": "album",

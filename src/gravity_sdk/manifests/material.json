@@ -459,6 +459,346 @@
       ],
       "stability": "stable",
       "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "巨量引擎标题素材包的只读列表；返回包名、标题数量、计划数量、历史成本与点击率等汇总，固定省略标题正文与人员字段。",
+      "domain": "material",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "description": "Gravity App ID；通过 app.list 父资源选择。",
+          "required": true,
+          "type": "integer"
+        },
+        "filters": {
+          "default": [],
+          "description": "结构化筛选，最多 20 条。",
+          "item_type": "object",
+          "max_items": 20,
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "description": "排序表达式，最多 10 条。",
+          "item_type": "string",
+          "max_items": 10,
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "description": "页码，从 1 开始。",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "description": "每页数量，最大 100。",
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$parent:app_id",
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "material.bytedance_asset_text_title_package.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/bytedance/asset/text/title_package/list/",
+      "platform": "bytedance",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "filters",
+          "order_by",
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        {
+          "input_field": "app_id",
+          "operation_id": "app.list"
+        }
+      ],
+      "resource": "bytedance_asset_text_title_package",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "app_id",
+          "cid",
+          "create_time",
+          "history_click_rate",
+          "history_cost",
+          "id",
+          "is_ai",
+          "is_deleted",
+          "last_3_day_click_rate",
+          "last_3_day_cost",
+          "modify_time",
+          "plan_num",
+          "title_num",
+          "title_package_name"
+        ],
+        "known_omitted_item_keys": [
+          "create_user_id",
+          "create_user_name",
+          "title_list",
+          "update_user_id"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "巨量引擎标准版标题素材包的只读列表；返回包名、标题数量、计划数量、历史成本与点击率等汇总，固定省略标题正文与人员字段。",
+      "domain": "material",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "description": "Gravity App ID；通过 app.list 父资源选择。",
+          "required": true,
+          "type": "integer"
+        },
+        "filters": {
+          "default": [],
+          "description": "结构化筛选，最多 20 条。",
+          "item_type": "object",
+          "max_items": 20,
+          "type": "array"
+        },
+        "order_by": {
+          "default": [],
+          "description": "排序表达式，最多 10 条。",
+          "item_type": "string",
+          "max_items": 10,
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "description": "页码，从 1 开始。",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "description": "每页数量，最大 100。",
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$parent:app_id",
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "material.bytedance_std_asset_text_title_package.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/bytedance/std/asset/text/title_package/list/",
+      "platform": "bytedance",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "filters",
+          "order_by",
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        {
+          "input_field": "app_id",
+          "operation_id": "app.list"
+        }
+      ],
+      "resource": "bytedance_std_asset_text_title_package",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "app_id",
+          "cid",
+          "create_time",
+          "history_click_rate",
+          "history_cost",
+          "id",
+          "is_ai",
+          "is_deleted",
+          "last_3_day_click_rate",
+          "last_3_day_cost",
+          "modify_time",
+          "plan_num",
+          "title_num",
+          "title_package_name"
+        ],
+        "known_omitted_item_keys": [
+          "create_user_id",
+          "create_user_name",
+          "title_list",
+          "update_user_id"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
     }
   ]
 }

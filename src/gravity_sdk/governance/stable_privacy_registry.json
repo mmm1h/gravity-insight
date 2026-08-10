@@ -975,6 +975,24 @@
       "data.list[].title",
       "data.page_info"
     ],
+    "material.bytedance_asset_text_title_package.list": [
+      "data.list",
+      "data.list[].app_id",
+      "data.list[].cid",
+      "data.list[].create_time",
+      "data.list[].history_click_rate",
+      "data.list[].history_cost",
+      "data.list[].id",
+      "data.list[].is_ai",
+      "data.list[].is_deleted",
+      "data.list[].last_3_day_click_rate",
+      "data.list[].last_3_day_cost",
+      "data.list[].modify_time",
+      "data.list[].plan_num",
+      "data.list[].title_num",
+      "data.list[].title_package_name",
+      "data.page_info"
+    ],
     "material.bytedance_std_asset_text_title.list": [
       "data.list",
       "data.list[].app_id",
@@ -989,6 +1007,24 @@
       "data.list[].modify_time",
       "data.list[].plan_num",
       "data.list[].title",
+      "data.page_info"
+    ],
+    "material.bytedance_std_asset_text_title_package.list": [
+      "data.list",
+      "data.list[].app_id",
+      "data.list[].cid",
+      "data.list[].create_time",
+      "data.list[].history_click_rate",
+      "data.list[].history_cost",
+      "data.list[].id",
+      "data.list[].is_ai",
+      "data.list[].is_deleted",
+      "data.list[].last_3_day_click_rate",
+      "data.list[].last_3_day_cost",
+      "data.list[].modify_time",
+      "data.list[].plan_num",
+      "data.list[].title_num",
+      "data.list[].title_package_name",
       "data.page_info"
     ],
     "material.examine.config.get": [
