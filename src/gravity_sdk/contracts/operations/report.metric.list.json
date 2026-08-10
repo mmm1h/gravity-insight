@@ -25,7 +25,7 @@
         "type": "integer"
       },
       "page_size": {
-        "default": 20,
+        "default": 2000,
         "type": "integer"
       }
     },
@@ -38,10 +38,10 @@
     },
     "operation_id": "report.metric.list",
     "pagination": {
-      "default_page_size": 20,
+      "default_page_size": 2000,
       "kind": "page_info",
       "list_path": "data.list",
-      "max_page_size": 100,
+      "max_page_size": 2000,
       "page_field": "page",
       "page_info_path": "data.page_info",
       "page_size_field": "page_size",
@@ -107,7 +107,7 @@
       ],
       "defaults": {
         "page": 1,
-        "page_size": 20
+        "page_size": 2000
       },
       "fixed_body": {},
       "fixed_query": {},

@@ -28150,7 +28150,7 @@
         {
           "default": {
             "present": true,
-            "value": 20
+            "value": 2000
           },
           "description": "",
           "enum": [],
@@ -28177,11 +28177,11 @@
       },
       "operation_id": "report.multidim.metric.list",
       "pagination": {
-        "default_page_size": 20,
+        "default_page_size": 2000,
         "items_field": "list",
         "kind": "page_info",
         "list_path": "data.list",
-        "max_page_size": 20,
+        "max_page_size": 2000,
         "page_field": "page",
         "page_info_field": "page_info",
         "page_info_path": "data.page_info",
@@ -28223,7 +28223,7 @@
         "defaults": {
           "filters": [],
           "page": 1,
-          "page_size": 20
+          "page_size": 2000
         },
         "fixed_body": {},
         "fixed_query": {},

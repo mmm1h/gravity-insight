@@ -1377,6 +1377,18 @@ class GravityInsightManifestTests(unittest.TestCase):
             <= set(material["response_projection"]["item_keys"])
         )
 
+    def test_metric_catalogs_use_the_observed_single_page_limit(self) -> None:
+        for operation_id in (
+            "report.metric.list",
+            "report.multidim.metric.list",
+        ):
+            with self.subTest(operation_id=operation_id):
+                operation = self.by_id[operation_id]
+                self.assertEqual(2000, operation["input_fields"]["page_size"]["default"])
+                self.assertEqual(2000, operation["request"]["defaults"]["page_size"])
+                self.assertEqual(2000, operation["pagination"]["default_page_size"])
+                self.assertEqual(2000, operation["pagination"]["max_page_size"])
+
 
 if __name__ == "__main__":
     unittest.main()
