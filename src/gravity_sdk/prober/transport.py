@@ -12,8 +12,8 @@ from typing import Any, Callable, Iterator, Mapping
 from urllib.parse import urlsplit
 
 from gravity_sdk import runtime as tool_runtime
+from gravity_sdk.paths import PROJECT_ROOT
 
-from .core import REPO_ROOT
 from .privacy import response_schema_sketch
 
 
@@ -228,11 +228,12 @@ class _OpenApiProbeRuntime:
 
 def build_runtime(recording: RecordingSession) -> Any:
     parts = sdk_parts()
+    credential_path = PROJECT_ROOT / ".env.gravity.local"
     credentials = parts["credentials"].CredentialProvider.from_env(
-        REPO_ROOT / ".env.gravity.local", session=recording, persist=True,
+        credential_path, session=recording, persist=True,
     )
     base_runtime = parts["http_runtime"].GravityHttpRuntime(
-        env_path=REPO_ROOT / ".env.gravity.local", session=recording,
+        env_path=credential_path, session=recording,
         credentials=credentials, timeout=120.0, attempts=1,
         requests_per_second=3.0, interval_jitter_ratio=0.0,
     )
