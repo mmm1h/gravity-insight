@@ -372,7 +372,6 @@ def test_missing_required_parent_candidates_skip_invalid_target_attempts(
     source["operation"]["input_fields"]["selection"] = {
         "type": "array",
         "item_type": "string",
-        "required": True,
     }
     source["operation"]["request"]["body_fields"].append("selection")
     source["operation"]["live_probe"]["inputs"]["selection"] = ["$first"]

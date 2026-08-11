@@ -306,10 +306,22 @@ def _required_unresolved(
     operation: Mapping[str, Any], unresolved: Sequence[Mapping[str, str]]
 ) -> bool:
     fields = operation.get("input_fields", {})
+    parents = operation.get("required_parent", [])
+    parent_fields = {
+        str(item.get("input_field"))
+        for item in parents
+        if isinstance(item, Mapping) and item.get("input_field")
+    }
     return any(
-        isinstance(fields, Mapping)
-        and isinstance(fields.get(str(item.get("field"))), Mapping)
-        and fields[str(item.get("field"))].get("required") is True
+        (
+            str(item.get("field")) in parent_fields
+            and str(item.get("reason", "")).startswith("parent_")
+        )
+        or (
+            isinstance(fields, Mapping)
+            and isinstance(fields.get(str(item.get("field"))), Mapping)
+            and fields[str(item.get("field"))].get("required") is True
+        )
         for item in unresolved
     )
 
