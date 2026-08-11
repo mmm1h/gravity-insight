@@ -233,6 +233,18 @@ def test_discovery_stops_on_first_nonempty_and_caches_result(
     assert result["search"]["attempted_combinations"] == 2
     assert result["search"]["stopped_early_on_nonempty"] is True
     assert len(session.calls) == 2
+    assert result["schema_version"] == "gravity-insight.nonempty-discovery.v2"
+    assert result["successful_input"] == {
+        "field_names": ["date_range", "filters", "scope"],
+        "values_redacted": True,
+    }
+    assert result["cache"]["contains_business_values"] is False
+    rendered = json.dumps(result)
+    assert "primary" not in rendered
+    assert "secondary" not in rendered
+    cache_path = tmp_path / result["cache"]["path"]
+    assert "primary" not in cache_path.read_text(encoding="utf-8")
+    assert "secondary" not in cache_path.read_text(encoding="utf-8")
 
     cached, second_session = _run_discovery(
         tmp_path,
@@ -243,7 +255,23 @@ def test_discovery_stops_on_first_nonempty_and_caches_result(
     assert cached["cache"]["hit"] is True
     assert cached["request_stats"]["total"] == 0
     assert cached["request_stats"]["reused_request_count"] == 2
+    assert cached["cache"]["contains_business_values"] is False
     assert second_session.calls == []
+
+
+def test_legacy_business_value_cache_is_not_reused(tmp_path: Path) -> None:
+    path = tmp_path / "legacy.json"
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": "gravity-insight.nonempty-discovery.v1",
+                "inputs": {"album_id": "private-business-value"},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert nonempty_support._cached_result(path) is None
 
 
 def test_resolved_parent_is_not_required_in_temporary_target_registry(
@@ -522,7 +550,7 @@ def test_cli_dispatches_nonempty_discovery_without_building_normal_client() -> N
             "--refresh-cache",
         ]
     )
-    expected = {"schema_version": "gravity-insight.nonempty-discovery.v1"}
+    expected = {"schema_version": "gravity-insight.nonempty-discovery.v2"}
     with patch(
         "gravity_sdk.nonempty.discover_nonempty", return_value=expected
     ) as discover:

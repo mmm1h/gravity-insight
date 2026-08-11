@@ -31,7 +31,7 @@ gravity --workspace <gravity.toml-or-directory> <command> [options]
 | `read` | 执行一个 operation，支持受控分页和文件输出 |
 | `run` | 执行 `@recipe` 或 operation 的 Resolver 管线，并产出脱敏 Receipt |
 | `recipe validate/check` | 离线检查 recipe 格式或 operation 漂移 |
-| `discover-nonempty` | 在严格 HTTP 预算内发现非空输入组合 |
+| `discover-nonempty` | 在严格 HTTP 预算内发现非空组合；输出和缓存只保留输入字段名，不保留值 |
 | `batch` | 批量执行独立的受控读取 |
 | `parents resolve` | 解析 operation 需要的父资源 |
 | `auth status/refresh` | 查看或刷新认证状态 |

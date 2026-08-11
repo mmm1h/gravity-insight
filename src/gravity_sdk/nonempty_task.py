@@ -12,6 +12,7 @@ from .nonempty_plan import (
     DEFAULT_INTERVAL_SECONDS,
 )
 from .nonempty_runtime import discover_nonempty
+from .nonempty_support import SCHEMA_VERSION
 from .prober.core import DRAFT_ROOT, OPERATION_ROOT, REPO_ROOT, read_json, write_json
 
 
@@ -45,12 +46,12 @@ def _failed_result(
 ) -> dict[str, Any]:
     error_type = type(exc).__name__
     return {
-        "schema_version": "gravity-insight.nonempty-discovery.v1",
+        "schema_version": SCHEMA_VERSION,
         "ok": True,
         "operation_id": operation_id,
         "resolution": "undetermined",
         "found": False,
-        "inputs": None,
+        "successful_input": None,
         "search": {
             "request_budget": request_budget,
             "planned_combinations": 0,

@@ -17,6 +17,7 @@ from .prober.transport import HttpObservation, RequestDiscipline
 
 
 DEFAULT_EVIDENCE_ROOT = REPO_ROOT / "evidence" / "probe"
+SCHEMA_VERSION = "gravity-insight.nonempty-discovery.v2"
 
 
 def _apply_found_draft(
@@ -95,7 +96,7 @@ def _checked_cache_root(cache_root: Path) -> Path:
 
 def _cached_result(path: Path) -> dict[str, Any] | None:
     cached = read_json(path)
-    if not isinstance(cached, Mapping):
+    if not isinstance(cached, Mapping) or cached.get("schema_version") != SCHEMA_VERSION:
         return None
     result = copy.deepcopy(dict(cached))
     prior = int(result.get("request_stats", {}).get("total", 0))
@@ -107,7 +108,7 @@ def _cached_result(path: Path) -> dict[str, Any] | None:
     result["cache"] = {
         "hit": True,
         "path": path.relative_to(REPO_ROOT).as_posix(),
-        "contains_business_values": True,
+        "contains_business_values": False,
     }
     return result
 
@@ -244,13 +245,20 @@ def _result_document(
             ),
         }
     return {
-        "schema_version": "gravity-insight.nonempty-discovery.v1",
+        "schema_version": SCHEMA_VERSION,
         "ok": True,
         "operation_id": operation_id,
         "contract_state": contract_state,
         "resolution": resolution,
         "found": found,
-        "inputs": state.get("inputs"),
+        "successful_input": (
+            {
+                "field_names": sorted(str(name) for name in state["inputs"]),
+                "values_redacted": True,
+            }
+            if isinstance(state.get("inputs"), Mapping)
+            else None
+        ),
         "nonempty": nonempty,
         "search": _search_summary(
             dimensions,
@@ -279,13 +287,14 @@ def _result_document(
         "cache": {
             "hit": False,
             "path": cache_path.relative_to(REPO_ROOT).as_posix(),
-            "contains_business_values": True,
+            "contains_business_values": False,
         },
     }
 
 
 __all__ = [
     "DEFAULT_EVIDENCE_ROOT",
+    "SCHEMA_VERSION",
     "_apply_found_draft",
     "_cache_path",
     "_cached_result",
