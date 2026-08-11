@@ -1,0 +1,1199 @@
+{
+  "conclusion": "success",
+  "http": [
+    {
+      "http_status": 200,
+      "method": "GET",
+      "operation_id": "app.template.list",
+      "path": "/account_center/api/v1/role/template/list/",
+      "purpose": "discovery",
+      "raw_schema_fingerprint": "734f84ba6eda5403e0be9171ab64f64b0d82641c267f6e53e18f006a12e92ca5",
+      "request_fingerprint": "597fefaedbf8f457f3c26af8e6b4fbd7a079495002a94ef09f2ca06ab645afa6",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.query.page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.query.page_size",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.query.product_name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.code",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].cid",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].code",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].create_time",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].data_config",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].data_config[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].data_config[].child_module",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].data_config[].effect_module",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].data_config[].role_effect",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].menu_config",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].menu_config[]",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].modify_time",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].product_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].remark",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.page_info",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.page_info.page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.page_size",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.total_number",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.total_page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.extra",
+            "presence": "observed",
+            "types": [
+              "null"
+            ]
+          },
+          {
+            "path": "$.msg",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    },
+    {
+      "http_status": 200,
+      "method": "GET",
+      "operation_id": "app.template.list",
+      "path": "/account_center/api/v1/role/template/list/",
+      "purpose": "pagination_page_2",
+      "raw_schema_fingerprint": "734f84ba6eda5403e0be9171ab64f64b0d82641c267f6e53e18f006a12e92ca5",
+      "request_fingerprint": "597fefaedbf8f457f3c26af8e6b4fbd7a079495002a94ef09f2ca06ab645afa6",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.query.page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.query.page_size",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.query.product_name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.code",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].cid",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].code",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].create_time",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].data_config",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].data_config[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].data_config[].child_module",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].data_config[].effect_module",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].data_config[].role_effect",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].menu_config",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].menu_config[]",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].modify_time",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].product_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].remark",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.page_info",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.page_info.page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.page_size",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.total_number",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.total_page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.extra",
+            "presence": "observed",
+            "types": [
+              "null"
+            ]
+          },
+          {
+            "path": "$.msg",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    },
+    {
+      "http_status": 200,
+      "method": "GET",
+      "operation_id": "app.template.list",
+      "path": "/account_center/api/v1/role/template/list/",
+      "purpose": "pagination_safe_max",
+      "raw_schema_fingerprint": "734f84ba6eda5403e0be9171ab64f64b0d82641c267f6e53e18f006a12e92ca5",
+      "request_fingerprint": "597fefaedbf8f457f3c26af8e6b4fbd7a079495002a94ef09f2ca06ab645afa6",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.query.page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.query.page_size",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.query.product_name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.code",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].cid",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].code",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].create_time",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].data_config",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].data_config[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].data_config[].child_module",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].data_config[].effect_module",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].data_config[].role_effect",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].menu_config",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].menu_config[]",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].modify_time",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].product_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].remark",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.page_info",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.page_info.page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.page_size",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.total_number",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.total_page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.extra",
+            "presence": "observed",
+            "types": [
+              "null"
+            ]
+          },
+          {
+            "path": "$.msg",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    },
+    {
+      "http_status": 200,
+      "method": "GET",
+      "operation_id": "app.template.list",
+      "path": "/account_center/api/v1/role/template/list/",
+      "purpose": "confirmation",
+      "raw_schema_fingerprint": "734f84ba6eda5403e0be9171ab64f64b0d82641c267f6e53e18f006a12e92ca5",
+      "request_fingerprint": "597fefaedbf8f457f3c26af8e6b4fbd7a079495002a94ef09f2ca06ab645afa6",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.query.page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.query.page_size",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.query.product_name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.code",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].cid",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].code",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].create_time",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].data_config",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].data_config[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].data_config[].child_module",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].data_config[].effect_module",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].data_config[].role_effect",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].menu_config",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].menu_config[]",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].modify_time",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].product_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].remark",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.page_info",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.page_info.page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.page_size",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.total_number",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.total_page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.extra",
+            "presence": "observed",
+            "types": [
+              "null"
+            ]
+          },
+          {
+            "path": "$.msg",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    }
+  ],
+  "operation_id": "app.template.list",
+  "pagination": {
+    "kind": "page_info",
+    "page_2_row_count": 2,
+    "page_parameter_observed": true,
+    "safe_max_row_count": 9,
+    "total_field_path": "data.page_info.total_page",
+    "upstream_hard_max": null,
+    "verified": true,
+    "verified_safe_max_page_size": 100
+  },
+  "privacy": {
+    "candidate_fields": [
+      {
+        "classification_reason": "tenant_company_identifier_review",
+        "expose": true,
+        "path": "data.list[].cid",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].code",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].create_time",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.list[].data_config[].child_module",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.list[].data_config[].effect_module",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.list[].data_config[].role_effect",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].modify_time",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].name",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].product_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "free_text_field_review",
+        "expose": false,
+        "path": "data.list[].remark",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.page",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.page_size",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.total_number",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.page_info.total_page",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      }
+    ],
+    "classified_non_sensitive": 14,
+    "classified_sensitive": 1,
+    "manual_review": 0,
+    "values_persisted": false
+  },
+  "probed_at": "2026-08-11T07:06:28Z",
+  "projected_schema_fingerprint": "1c2c777de5f081dbaf790927f1882c464c47d5edf6c53746b2fa561dc8bd07ce",
+  "raw_schema_fingerprint": "734f84ba6eda5403e0be9171ab64f64b0d82641c267f6e53e18f006a12e92ca5",
+  "request_stats": {
+    "backoff_terminations": 0,
+    "failed": 0,
+    "total": 4
+  },
+  "required_parent": null,
+  "route": {
+    "family": "app.template.list",
+    "method": "GET",
+    "path": "/account_center/api/v1/role/template/list/"
+  },
+  "schema_version": "gravity-insight.probe-evidence.v1",
+  "semantic_errors": {
+    "missing_parameter": {
+      "attempted": false,
+      "shape_observed": false
+    },
+    "parameter_adjustments": [],
+    "permission_shape_observed": false,
+    "rules": []
+  },
+  "successful": true
+}

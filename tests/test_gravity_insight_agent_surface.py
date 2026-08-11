@@ -227,7 +227,8 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
         # AI 托管指标字典依赖规则列表中的 media_type，也不伪造示例。
         # 权限菜单读取由 SDK 固定产品常量，无需业务输入，再增加一个完整 example。
         # 角色列表仅需分页默认值并固定关闭菜单展开，再增加一个完整 example。
-        self.assertEqual((82, 91), (examples_complete, examples_unknown))
+        # 角色模板列表有已验证分页默认值，再增加一个完整 example。
+        self.assertEqual((83, 91), (examples_complete, examples_unknown))
         # 本趟按父 response projection 与调用方选择语义补全 9 条边；剩余
         # 16 条涉及 runtime-v1 target 投影、递归、同一行关联或嵌套输入变换。
         # 素材相册列表再补一条递归父级边，公开 probe 会按目标字符串契约转换；

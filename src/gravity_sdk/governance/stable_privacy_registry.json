@@ -926,6 +926,22 @@
       "data.list[].product_id",
       "data.page_info"
     ],
+    "app.template.list": [
+      "data.list",
+      "data.list[].cid",
+      "data.list[].code",
+      "data.list[].create_time",
+      "data.list[].data_config",
+      "data.list[].data_config.child_module",
+      "data.list[].data_config.effect_module",
+      "data.list[].data_config.role_effect",
+      "data.list[].id",
+      "data.list[].menu_config",
+      "data.list[].modify_time",
+      "data.list[].name",
+      "data.list[].product_id",
+      "data.page_info"
+    ],
     "attribution.attr_backtrack.list": [
       "data.list",
       "data.list[].app_id",

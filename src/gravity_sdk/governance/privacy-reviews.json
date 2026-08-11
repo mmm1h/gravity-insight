@@ -26,6 +26,12 @@
       "is_default",
       "person_num"
     ],
+    "app.template.list": [
+      "child_module",
+      "effect_module",
+      "menu_config",
+      "role_effect"
+    ],
     "material.asset_material_media_review_list.list": [
       "suggestion"
     ],

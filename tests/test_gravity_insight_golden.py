@@ -275,6 +275,8 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "app.permission_menu.list",
             # 角色列表完成固定菜单开关、分页上限和隐私复验后晋升。
             "app.role.list",
+            # 角色模板完成固定产品参数、分页和嵌套配置投影复验后晋升。
+            "app.template.list",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]

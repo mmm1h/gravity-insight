@@ -713,6 +713,9 @@ class GravityInsightManifestTests(unittest.TestCase):
             "app.permission_menu.list": {
                 "children": ["id", "name", "parent_id", "person_num"]
             },
+            "app.template.list": {
+                "data_config": ["child_module", "effect_module", "role_effect"]
+            },
             "analysis.account_user.list": {
                 "dept_info": ["id", "name", "is_enabled"],
                 "roles": ["id", "name", "code", "is_enabled"],
@@ -1289,6 +1292,7 @@ class GravityInsightManifestTests(unittest.TestCase):
         self.assertEqual(
             {
                 "analysis.order_detail.list": {"$split_trace_id_list": "string"},
+                "app.template.list": {"menu_config": "integer"},
                 "analysis.template.own.list": {"subject_ids": "integer"},
                 "analysis.template.share.list": {"subject_ids": "integer"},
                 "analysis.template.internal.list": {"subject_ids": "integer"},

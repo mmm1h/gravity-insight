@@ -3561,6 +3561,148 @@
       ],
       "stability": "stable",
       "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "List the authenticated tenant's Gravity role templates.",
+      "domain": "app",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "page": {
+          "default": 1,
+          "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 100,
+          "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "app.template.list",
+      "pagination": {
+        "default_page_size": 100,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/account_center/api/v1/role/template/list/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {
+          "page": 1,
+          "page_size": 100
+        },
+        "fixed_body": {},
+        "fixed_query": {
+          "product_name": "turbo"
+        },
+        "path_fields": [],
+        "query_fields": [
+          "page",
+          "page_size"
+        ]
+      },
+      "required_parent": [],
+      "resource": "template",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "cid",
+          "code",
+          "create_time",
+          "data_config",
+          "id",
+          "menu_config",
+          "modify_time",
+          "name",
+          "product_id"
+        ],
+        "known_omitted_item_keys": [
+          "remark"
+        ],
+        "nested_item_keys": {
+          "data_config": [
+            "child_module",
+            "effect_module",
+            "role_effect"
+          ]
+        },
+        "required_data_keys": [
+          "list"
+        ],
+        "scalar_list_item_types": {
+          "menu_config": "integer"
+        }
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
     }
   ]
 }
