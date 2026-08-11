@@ -41,6 +41,12 @@
     "app.permission_menu.list": [
       "person_num"
     ],
+    "app.role.detail": [
+      "child_module",
+      "effect_module",
+      "is_default",
+      "role_effect"
+    ],
     "app.role.list": [
       "is_default",
       "person_num"
@@ -128,6 +134,11 @@
       "our_salesman_id",
       "our_salesman_remark",
       "silence"
+    ],
+    "app.role.detail": [
+      "menu_url",
+      "remark",
+      "sort_order"
     ],
     "material.bytedance.promotion_material.list": [
       "cover_source",

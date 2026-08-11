@@ -951,6 +951,25 @@
       "data.conf[].modify_time",
       "data.conf[].start_time"
     ],
+    "app.role.detail": [
+      "data.code",
+      "data.create_time",
+      "data.data_permission",
+      "data.data_permission[].child_module",
+      "data.data_permission[].effect_module",
+      "data.data_permission[].id",
+      "data.data_permission[].role_effect",
+      "data.id",
+      "data.is_default",
+      "data.is_deleted",
+      "data.is_enabled",
+      "data.menu",
+      "data.menu[].id",
+      "data.menu[].name",
+      "data.modify_time",
+      "data.name",
+      "data.product_id"
+    ],
     "app.role.list": [
       "data.list",
       "data.list[].code",

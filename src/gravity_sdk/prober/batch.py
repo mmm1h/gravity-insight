@@ -24,7 +24,6 @@ BATCH_ROOT = REPO_ROOT / "tmp" / "codex" / "gi-batch-probe"
 
 _TIER_ONE_IDS = frozenset(
     {
-        "app.role.detail",
         "material.file_params.get",
         "material.media_material_label.list",
         "material.tag_category.tree",

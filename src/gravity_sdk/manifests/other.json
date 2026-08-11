@@ -3884,6 +3884,146 @@
       ],
       "stability": "stable",
       "upstream_method": "GET"
+    },
+    {
+      "action": "detail",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "Read one role's permission configuration for the authenticated tenant.",
+      "domain": "app",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "role_id": {
+          "description": "Role identifier selected from app.role.list.",
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "role_id": "$parent:role_id"
+        }
+      },
+      "operation_id": "app.role.detail",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/account_center/api/v1/role/detail/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {
+          "need_menu": true,
+          "product_name": "turbo"
+        },
+        "path_fields": [],
+        "query_fields": [
+          "role_id"
+        ]
+      },
+      "required_parent": [
+        {
+          "input_field": "role_id",
+          "operation_id": "app.role.list"
+        }
+      ],
+      "resource": "role",
+      "response_projection": {
+        "data_item_keys": {
+          "data_permission": [
+            "child_module",
+            "effect_module",
+            "id",
+            "role_effect"
+          ],
+          "menu": [
+            "id",
+            "name"
+          ]
+        },
+        "data_keys": [
+          "code",
+          "create_time",
+          "data_permission",
+          "id",
+          "is_default",
+          "is_deleted",
+          "is_enabled",
+          "menu",
+          "modify_time",
+          "name",
+          "product_id"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "known_omitted_data_item_keys": {
+          "menu": [
+            "menu_url",
+            "sort_order"
+          ]
+        },
+        "known_omitted_data_keys": [
+          "remark"
+        ],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
     }
   ]
 }

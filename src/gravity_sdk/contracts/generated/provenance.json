@@ -1,5 +1,5 @@
 {
-  "operation_count": 184,
+  "operation_count": 185,
   "operations": {
     "account.department.list": {
       "applied_overrides": [],
@@ -415,6 +415,14 @@
       "platform": null,
       "source_files": [
         "operations/app.realtime_event.list.json"
+      ]
+    },
+    "app.role.detail": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/app.role.detail.json"
       ]
     },
     "app.role.list": {

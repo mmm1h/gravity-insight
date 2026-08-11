@@ -1118,6 +1118,15 @@ class GravityInsightManifestTests(unittest.TestCase):
                     "re_attribute_records": re_attribute_info,
                 },
                 "app.capacity.get": {"data": ["capacity", "product"]},
+                "app.role.detail": {
+                    "data_permission": [
+                        "child_module",
+                        "effect_module",
+                        "id",
+                        "role_effect",
+                    ],
+                    "menu": ["id", "name"],
+                },
                 "app.realtime_event.list": {
                     "conf": [
                         "app_id",
