@@ -245,6 +245,8 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "material.album.list",
             # 巨量创意组件账户选择器完成精确请求绑定、分页和隐私复验后晋升。
             "promotion.bytedance.account.list",
+            # 巨量图片素材列表完成父级、整数参数、分页和隐私复验后晋升。
+            "material.bytedance_asset_material.list",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]

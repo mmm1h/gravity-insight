@@ -985,6 +985,19 @@
       "data.list[].material_id",
       "data.page_info"
     ],
+    "material.bytedance_asset_material.list": [
+      "data.list",
+      "data.list[].aigc",
+      "data.list[].create_time",
+      "data.list[].filename",
+      "data.list[].format",
+      "data.list[].height",
+      "data.list[].id",
+      "data.list[].material_id",
+      "data.list[].size",
+      "data.list[].width",
+      "data.page_info"
+    ],
     "material.bytedance_asset_text_title.list": [
       "data.list",
       "data.list[].app_id",

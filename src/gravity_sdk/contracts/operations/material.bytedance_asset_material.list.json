@@ -1,0 +1,162 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 7,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "分页列出指定巨量广告主账户的图片素材，供创意组件选择素材标识和尺寸信息。",
+    "domain": "material",
+    "effect": "read",
+    "examples": [],
+    "executable": true,
+    "input_fields": {
+      "advertiser_id": {
+        "description": "巨量账户列表已验证 advertiser_id 为整数；网页创意组件将该值原样传给素材接口。",
+        "required": true,
+        "type": "integer"
+      },
+      "page": {
+        "default": 1,
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 20,
+        "description": "每页素材数；网页使用整数，SDK 默认收窄到 20 以控制读取成本。",
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "advertiser_id": "$parent:advertiser_id",
+        "page": 1,
+        "page_size": 1
+      }
+    },
+    "operation_id": "material.bytedance_asset_material.list",
+    "pagination": {
+      "default_page_size": 20,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 100,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/turbo_engine/api/v1/bytedance/asset/material/list/",
+    "platform": "bytedance",
+    "privacy_policy": {
+      "classification": "material",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "bytedance",
+      "source_files": [
+        "operations/material.bytedance_asset_material.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {
+        "page": 1,
+        "page_size": 20
+      },
+      "fixed_body": {},
+      "fixed_query": {
+        "file_type": "image"
+      },
+      "path_fields": [],
+      "query_fields": [
+        "advertiser_id",
+        "page",
+        "page_size"
+      ]
+    },
+    "required_parent": [
+      {
+        "input_field": "advertiser_id",
+        "operation_id": "promotion.bytedance.account.list",
+        "output_path": "data.list[].advertiser_id",
+        "selection": "caller_select"
+      }
+    ],
+    "resource": "bytedance_asset_material",
+    "response_projection": {
+      "data_keys": [
+        "list",
+        "page_info"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "aigc",
+        "create_time",
+        "filename",
+        "format",
+        "height",
+        "id",
+        "material_id",
+        "size",
+        "width"
+      ],
+      "known_omitted_item_keys": [
+        "signature",
+        "url"
+      ],
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "material.json"
+}
