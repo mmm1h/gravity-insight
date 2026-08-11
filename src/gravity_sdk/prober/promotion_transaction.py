@@ -14,7 +14,7 @@ GateEvaluator = Callable[[Mapping[str, Any]], Mapping[str, Any]]
 StableBuilder = Callable[[Mapping[str, Any], Path], Mapping[str, Any]]
 
 
-def _compile_contract_products() -> None:
+def compile_contract_products() -> None:
     from gravity_sdk.compiler import ContractCompiler
 
     ContractCompiler().compile()
@@ -41,7 +41,7 @@ def _rollback_failed_promotion(
         failures.append(exc)
     if restore_products:
         try:
-            _compile_contract_products()
+            compile_contract_products()
         except Exception as exc:
             failures.append(exc)
     if failures:
@@ -108,7 +108,7 @@ def promote_atomically(
             promoted.append(result)
         if compile_products and promoted:
             compile_started = True
-            _compile_contract_products()
+            compile_contract_products()
         for draft_path, _, _ in candidates:
             draft_path.unlink()
         return promoted

@@ -64,6 +64,9 @@
       "siteId",
       "siteType"
     ],
+    "promotion.tencent.account_company.list": [
+      "list"
+    ],
     "report.company_amount.query": [
       "ad_create_amount_usage",
       "material_transmit_g_usage"

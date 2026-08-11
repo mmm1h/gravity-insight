@@ -28,7 +28,8 @@ from .privacy import (
     response_schema_sketch,
 )
 from .probe_support import evidence_path, privacy_summary
-from .promotion_transaction import promote_atomically
+from .promotion_normalization import complete_privacy_redactions
+from .promotion_transaction import compile_contract_products, promote_atomically
 
 
 def _placeholder_supported(value: Any) -> bool:
@@ -224,13 +225,13 @@ def _stable_source(source: Mapping[str, Any], operation_root: Path) -> dict[str,
                 "inputs": example_inputs,
             }
         ]
-    operation_id = str(operation["operation_id"])
     operation["provenance"] = {
-        "source_files": [f"operations/{operation_id}.json"],
+        "source_files": [f"operations/{operation['operation_id']}.json"],
         "family": None,
         "platform": operation.get("platform"),
         "applied_overrides": [],
     }
+    complete_privacy_redactions(operation)
     validate_source(stable)
     return stable
 
@@ -280,9 +281,7 @@ def normalize_promoted_contracts(
         write_json(path, source)
         normalized.append(operation_id)
     if compile_products and normalized:
-        from gravity_sdk.compiler import ContractCompiler
-
-        ContractCompiler().compile()
+        compile_contract_products()
     return normalized
 
 

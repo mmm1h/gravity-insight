@@ -388,6 +388,10 @@ def test_promote_moves_only_gate_passing_draft(tmp_path: Path) -> None:
     draft_root = tmp_path / "drafts"
     operation_root = tmp_path / "operations"
     source = _gate_ready_source()
+    source["operation"]["privacy_policy"]["redact_fields"] = [
+        "authorization",
+        "token",
+    ]
     operation_id = source["operation"]["operation_id"]
     _write_json(draft_root / f"{operation_id}.json", source)
 
@@ -406,6 +410,12 @@ def test_promote_moves_only_gate_passing_draft(tmp_path: Path) -> None:
     assert stable["operation"]["stability"] == "stable"
     assert stable["operation"]["executable"] is True
     assert stable["operation"]["semantic_error_rules"]
+    assert {
+        "authorization",
+        "token",
+        "operator",
+        "callback_url",
+    } <= set(stable["operation"]["privacy_policy"]["redact_fields"])
     assert stable["operation"]["provenance"]["family"] is None
     assert stable["operation"]["provenance"]["applied_overrides"] == []
     assert not (draft_root / f"{operation_id}.json").exists()
@@ -431,7 +441,7 @@ def test_promote_restores_draft_when_compilation_fails(
             raise RuntimeError("prospective compilation failed")
 
     monkeypatch.setattr(
-        "gravity_sdk.prober.promotion_transaction._compile_contract_products",
+        "gravity_sdk.prober.promotion_transaction.compile_contract_products",
         compile_products,
     )
 

@@ -2393,6 +2393,9 @@
       "data.page_info",
       "data.total"
     ],
+    "promotion.tencent.account_company.list": [
+      "data.list"
+    ],
     "promotion.tencent.adgroup_filter.list": [
       "data.list",
       "data.list[].adgroup_id",

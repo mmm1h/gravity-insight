@@ -261,6 +261,8 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "promotion.bytedance.advertiser_performance.list",
             # 公司套餐容量完成精确 GET、嵌套投影和隐私复验后晋升。
             "app.capacity.get",
+            # 腾讯账户主体选择器完成标量类型和隐私复验后晋升。
+            "promotion.tencent.account_company.list",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]
