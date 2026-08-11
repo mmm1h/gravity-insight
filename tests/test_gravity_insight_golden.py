@@ -247,6 +247,8 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "promotion.bytedance.account.list",
             # 巨量账户主体选择器完成标量列表投影与隐私复验后晋升。
             "promotion.bytedance.account_company.list",
+            # 巨量启用项目列表完成父级、固定过滤和保守隐私投影复验后晋升。
+            "promotion.bytedance.manager_project.list",
             # 巨量图片素材列表完成父级、整数参数、分页和隐私复验后晋升。
             "material.bytedance_asset_material.list",
         }

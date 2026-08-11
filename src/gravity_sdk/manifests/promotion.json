@@ -8372,6 +8372,181 @@
       ],
       "stability": "stable",
       "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "列出巨量引擎账户下处于启用状态的普通项目，返回网页项目选择器及下游素材读取所需的最小字段。",
+      "domain": "promotion",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "advertiser_id": {
+          "description": "巨量引擎广告主 ID；由受治理的账户列表返回，网页端以整数传入。",
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "advertiser_id": "$parent:advertiser_id"
+        }
+      },
+      "operation_id": "promotion.bytedance.manager_project.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v1/bytedance/manager/project/list/",
+      "platform": "bytedance",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "advertiser_id"
+        ],
+        "defaults": {},
+        "fixed_body": {
+          "filtering": {
+            "status": "PROJECT_STATUS_ENABLE"
+          }
+        },
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        {
+          "input_field": "advertiser_id",
+          "operation_id": "promotion.bytedance.account.list"
+        }
+      ],
+      "resource": "manager_project",
+      "response_projection": {
+        "data_keys": [
+          "list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "ad_type",
+          "advertiser_id",
+          "name",
+          "project_id",
+          "status"
+        ],
+        "known_omitted_item_keys": [
+          "aigc_dynamic_creative_switch",
+          "app_name",
+          "app_promotion_type",
+          "asset_type",
+          "audience",
+          "blue_flow_package",
+          "budget_group_id",
+          "delivery_mode",
+          "delivery_product",
+          "delivery_range",
+          "delivery_setting",
+          "delivery_type",
+          "download_mode",
+          "download_type",
+          "download_url",
+          "dpa_adtype",
+          "dpa_categories",
+          "dpa_product_target",
+          "duration_count",
+          "internal_advertiser_info",
+          "keywords",
+          "landing_page_stay_time",
+          "landing_type",
+          "launch_type",
+          "marketing_goal",
+          "micro_app_instance_id",
+          "micro_promotion_type",
+          "open_url",
+          "open_url_field",
+          "open_url_params",
+          "open_url_type",
+          "opt_status",
+          "optimize_goal",
+          "package_name",
+          "pricing",
+          "project_create_time",
+          "project_modify_time",
+          "promotion_type",
+          "quick_app_id",
+          "related_product",
+          "star_auto_delivery_switch",
+          "star_task_id",
+          "star_task_version",
+          "status_first",
+          "status_second",
+          "subscribe_url",
+          "track_url_setting",
+          "ulink_type",
+          "ulink_url",
+          "value_optimized_type",
+          "yuntu_5a_brand_id",
+          "yuntu_5a_brand_main_industry_id",
+          "yuntu_5a_brand_name",
+          "yuntu_5a_industry_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
     }
   ]
 }

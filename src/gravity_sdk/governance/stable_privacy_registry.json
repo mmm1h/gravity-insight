@@ -1606,6 +1606,14 @@
       "data.list[].upload_num",
       "data.page_info"
     ],
+    "promotion.bytedance.manager_project.list": [
+      "data.list",
+      "data.list[].ad_type",
+      "data.list[].advertiser_id",
+      "data.list[].name",
+      "data.list[].project_id",
+      "data.list[].status"
+    ],
     "promotion.bytedance.project.list": [
       "@dynamic:data:total:query_fields",
       "@dynamic:item:query_fields",
