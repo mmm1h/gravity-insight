@@ -198,6 +198,25 @@ def test_plan_derives_parent_enum_and_date_dimensions_from_contract() -> None:
     assert first["date_range"] == ["2026-07-11", "2026-08-09"]
 
 
+def test_explicit_string_array_dates_are_the_first_search_candidate() -> None:
+    source = _source()
+    supplied = ["2026-08-10", "2026-08-11"]
+
+    base, dimensions, unresolved = _build_plan(
+        source,
+        overrides={"date_range": supplied},
+        parent_values={},
+        parent_failures={},
+        anchor=date(2026, 8, 11),
+    )
+
+    date_dimension = next(item for item in dimensions if item.label == "date_range")
+    assert date_dimension.source == "date_window"
+    assert date_dimension.patches[0] == {"date_range": supplied}
+    assert "date_range" not in {item["field"] for item in unresolved}
+    assert next(_iter_combinations(base, dimensions))["date_range"] == supplied
+
+
 def test_weighted_search_varies_parent_before_lower_priority_dimensions() -> None:
     dimensions = [
         SearchDimension("parent", "required_parent", ({"parent": 1}, {"parent": 2}), 1),

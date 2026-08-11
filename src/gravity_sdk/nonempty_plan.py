@@ -102,7 +102,7 @@ def _date_dimension(
         isinstance(resolved, list)
         and 1 <= len(resolved) <= 2
         and all(_is_date_value(item) for item in resolved)
-        and (bool(tokens) or field.get("item_type") == "date")
+        and (explicit_seed or bool(tokens) or field.get("item_type") == "date")
     )
     if not is_scalar and not is_array:
         return None
