@@ -302,6 +302,24 @@ def _trial_outcome(observation: HttpObservation | None) -> tuple[str, int, str]:
     return ("nonempty" if data_nonempty(observation.payload) else "empty"), count, semantics
 
 
+def _safe_semantic_code(payload: Any) -> str:
+    """Classify an upstream semantic error without retaining response text."""
+
+    if not isinstance(payload, Mapping):
+        return "unknown"
+    code = payload.get("code")
+    if isinstance(code, int) and not isinstance(code, bool) and abs(code) <= 999_999_999:
+        return str(code)
+    if isinstance(code, str):
+        normalized = code.strip()
+        if normalized.lstrip("-").isdigit() and 1 <= len(normalized.lstrip("-")) <= 9:
+            return str(int(normalized))
+    extra = payload.get("extra")
+    if code in (None, 0, 200, "0", "200") and isinstance(extra, Mapping) and extra.get("error"):
+        return "extra_error"
+    return "other"
+
+
 def _required_unresolved(
     operation: Mapping[str, Any], unresolved: Sequence[Mapping[str, str]]
 ) -> bool:
@@ -342,7 +360,7 @@ def _search_candidates(
     state: dict[str, Any] = {
         "evaluated": 0, "attempted": 0, "target_requests": 0, "outcomes": {},
         "inputs": None, "observation": None, "count": 0, "count_semantics": "unavailable",
-        "local_error_types": {}, "semantic_hints": {},
+        "local_error_types": {}, "semantic_hints": {}, "semantic_error_codes": {},
     }
     candidates = () if _required_unresolved(operation, unresolved) else _iter_combinations(base, dimensions)
     for candidate in candidates:
@@ -384,6 +402,9 @@ def _record_diagnostic(
         values[error_type] = values.get(error_type, 0) + 1
     if outcome != "semantic_error" or observation is None:
         return
+    semantic_codes = state["semantic_error_codes"]
+    code = _safe_semantic_code(observation.payload)
+    semantic_codes[code] = semantic_codes.get(code, 0) + 1
     names = tuple(str(name) for name in input_fields) if isinstance(input_fields, Mapping) else ()
     for hint in parameter_hints_from_error(observation.payload, known_parameters=names):
         key = (str(hint["field"]), str(hint["basis"]))

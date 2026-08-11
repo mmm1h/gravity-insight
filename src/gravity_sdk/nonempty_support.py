@@ -207,6 +207,9 @@ def _search_summary(
         "outcomes": dict(state.get("outcomes", {})),
         "diagnostics": {
             "local_error_types": dict(state.get("local_error_types", {})),
+            "semantic_error_codes": dict(
+                sorted(state.get("semantic_error_codes", {}).items())
+            ),
             "semantic_parameter_hints": list(
                 state.get("semantic_hints", {}).values()
             ),

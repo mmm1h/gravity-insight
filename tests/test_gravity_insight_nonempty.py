@@ -453,10 +453,35 @@ def test_semantic_diagnostics_retain_parameter_names_without_messages(
     )
 
     assert result["resolution"] == "undetermined"
+    assert result["search"]["diagnostics"]["semantic_error_codes"] == {
+        "1003": 1
+    }
     assert result["search"]["diagnostics"]["semantic_parameter_hints"] == [
         {"field": "scope", "basis": "semantic_error_extra_key"}
     ]
     assert "private response message" not in json.dumps(result)
+
+
+def test_semantic_diagnostics_bucket_opaque_codes_without_retaining_them(
+    tmp_path: Path, monkeypatch: object
+) -> None:
+    source = _source()
+    source["operation"]["input_fields"] = {
+        "scope": {"type": "string", "enum": ["primary"]}
+    }
+    source["operation"]["request"]["defaults"] = {}
+    source["operation"]["request"]["body_fields"] = ["scope"]
+    source["operation"]["live_probe"]["inputs"] = {"scope": "primary"}
+    payload = {"code": "tenant-specific-secret", "extra": {}}
+
+    result, _ = _run_discovery(
+        tmp_path, monkeypatch, source=source, payloads=[payload]
+    )
+
+    assert result["search"]["diagnostics"]["semantic_error_codes"] == {
+        "other": 1
+    }
+    assert "tenant-specific-secret" not in json.dumps(result)
 
 
 def test_request_budget_caps_lazy_cartesian_search(
