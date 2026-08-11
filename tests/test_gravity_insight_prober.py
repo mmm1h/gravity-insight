@@ -16,6 +16,7 @@ from gravity_sdk.prober.model import (
     create_drafts,
     evaluate_gate,
     promote_drafts,
+    refresh_structured_blockers,
     response_schema_sketch,
     status_report,
 )
@@ -195,6 +196,38 @@ def test_schema_sketch_and_projection_never_retain_values() -> None:
     assert "description" not in projection["item_keys"]
 
 
+def test_scalar_business_selector_list_is_typed_value_free_after_review() -> None:
+    payload = {"data": {"list": ["Private Company A", "Private Company B"]}}
+    sketch = response_schema_sketch(payload)
+
+    generic = candidate_fields(sketch)
+    reviewed = [
+        {
+            **generic[0],
+            "privacy_classification": "non_sensitive",
+            "classification_reason": "business_company_selector_manual_review",
+            "expose": True,
+        }
+    ]
+    projection = build_projection(payload, reviewed)
+
+    assert generic[0]["path"] == "data.list[]"
+    assert generic[0]["privacy_classification"] == "manual_review"
+    assert reviewed[0]["privacy_classification"] == "non_sensitive"
+    assert reviewed[0]["classification_reason"] == "business_company_selector_manual_review"
+    assert projection == {
+        "data_keys": ["list"],
+        "required_data_keys": ["list"],
+        "item_keys": [],
+        "dynamic_item_fields": [],
+        "data_scalar_list_types": {"list": "string"},
+    }
+    rendered = json.dumps(
+        {"sketch": sketch, "fields": reviewed, "projection": projection}
+    )
+    assert "Private Company" not in rendered
+
+
 def test_global_sensitive_review_cannot_be_weakened_by_route_context() -> None:
     sketch = response_schema_sketch(
         {"data": {"list": [{"remark": "not persisted"}]}}
@@ -273,6 +306,37 @@ def test_promotion_gate_requires_classified_exposure() -> None:
 
     source["draft"]["candidate_fields"][0]["privacy_classification"] = "manual_review"
     assert "unclassified_or_sensitive_field_exposed" in evaluate_gate(source)["missing"]
+
+
+def test_promotion_gate_accepts_a_reviewed_scalar_list_projection() -> None:
+    source = _gate_ready_source()
+    source["operation"]["response_projection"] = {
+        "data_keys": ["list"],
+        "required_data_keys": ["list"],
+        "item_keys": [],
+        "dynamic_item_fields": [],
+        "data_scalar_list_types": {"list": "string"},
+    }
+    source["draft"]["candidate_fields"] = [
+        {
+            "path": "data.list[]",
+            "types": ["string"],
+            "presence": "observed",
+            "privacy_classification": "non_sensitive",
+            "classification_reason": "route_specific_field_review",
+            "expose": True,
+        }
+    ]
+
+    assert evaluate_gate(source) == {"eligible": True, "missing": []}
+    refreshed = refresh_structured_blockers(source)
+    assert refreshed["draft"]["promotion_gate"] == {
+        "eligible": True,
+        "missing": [],
+    }
+    assert [item["code"] for item in refreshed["draft"]["blockers"]] == [
+        "promotion_pending"
+    ]
 
 
 def test_promotion_gate_blocks_unsupported_parent_placeholder() -> None:

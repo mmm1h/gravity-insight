@@ -673,12 +673,11 @@ def structured_blockers(
             )
         )
     projection = operation.get("response_projection", {}) if isinstance(operation, Mapping) else {}
-    exposed = []
+    exposed = set()
     if isinstance(projection, Mapping):
-        exposed = list(projection.get("item_keys", [])) + [
-            key for key in projection.get("data_keys", [])
-            if key not in {"list", "page_info"}
-        ]
+        exposed = set(projection.get("item_keys", []))
+        exposed.update(projection.get("data_scalar_list_types", {}))
+        exposed.update(set(projection.get("data_keys", [])) - {"list", "page_info"})
     if not exposed:
         result.append(
             _blocker(

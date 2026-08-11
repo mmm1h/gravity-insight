@@ -69,9 +69,8 @@ def evaluate_gate(source: Mapping[str, Any]) -> dict[str, Any]:
     exposed = 0
     if isinstance(projection, Mapping):
         exposed += len(projection.get("item_keys", []))
-        exposed += len(
-            [key for key in projection.get("data_keys", []) if key not in {"list", "page_info"}]
-        )
+        exposed += len(set(projection.get("data_keys", [])) - {"list", "page_info"})
+        exposed += len(projection.get("data_scalar_list_types", {}))
     if exposed == 0:
         missing.append("response_projection")
     candidates = draft.get("candidate_fields")

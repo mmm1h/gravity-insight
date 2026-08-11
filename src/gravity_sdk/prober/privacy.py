@@ -312,7 +312,16 @@ def candidate_fields(
         types = sorted(str(value) for value in item.get("types", []))
         if not path.startswith("$.data.") and not path.startswith("$.data[]"):
             continue
-        if path.endswith("[]") or set(types) <= {"array", "object", "unknown"}:
+        scalar_list_leaf = (
+            bool(types)
+            and path == "$.data.list[]"
+            and set(types) <= {"string", "integer", "number", "boolean"}
+        )
+        if (path.endswith("[]") and not scalar_list_leaf) or set(types) <= {
+            "array",
+            "object",
+            "unknown",
+        }:
             continue
         normalized = path.removeprefix("$.")
         field_name = normalized.rsplit(".", 1)[-1].replace("[]", "")
@@ -345,6 +354,38 @@ def _mapping_keys(rows: Sequence[Any]) -> set[str]:
         if isinstance(row, Mapping):
             keys.update(safe_schema_key(key) for key in row)
     return keys
+
+
+def _scalar_list_type(value: Any) -> str | None:
+    if not isinstance(value, list) or not value:
+        return None
+    observed = {_json_type(item) for item in value}
+    if not observed <= {"string", "integer", "number", "boolean"}:
+        return None
+    if observed <= {"integer", "number"}:
+        return "number" if "number" in observed else "integer"
+    return next(iter(observed)) if len(observed) == 1 else None
+
+
+def _list_data_projection(
+    value: list[Any], by_path: Mapping[str, Mapping[str, Any]]
+) -> dict[str, Any] | None:
+    scalar_type = _scalar_list_type(value)
+    if scalar_type is not None:
+        if _classified("data.list[]", by_path) != "non_sensitive":
+            return None
+        return {"data_scalar_list_types": {"list": scalar_type}}
+    keys = _mapping_keys(value)
+    safe = sorted(
+        name for name in keys if _classified(f"data.list[].{name}", by_path) == "non_sensitive"
+    )
+    if not safe:
+        return None
+    result: dict[str, Any] = {"item_keys": safe}
+    hidden = sorted(keys - set(safe))
+    if hidden:
+        result["known_omitted_item_keys"] = hidden
+    return result
 
 
 def _container_projection_keys(
@@ -397,18 +438,11 @@ def _mapping_projection(
     for raw_key, value in data.items():
         key = safe_schema_key(raw_key)
         if key == "list" and isinstance(value, list):
-            keys = _mapping_keys(value)
-            safe = sorted(
-                name for name in keys
-                if _classified(f"data.list[].{name}", by_path) == "non_sensitive"
-            )
-            if safe:
+            list_projection = _list_data_projection(value, by_path)
+            if list_projection is not None:
                 exposed.append(key)
                 projection["required_data_keys"].append(key)
-                projection["item_keys"] = safe
-                hidden = sorted(keys - set(safe))
-                if hidden:
-                    projection["known_omitted_item_keys"] = hidden
+                projection.update(list_projection)
             else:
                 omitted.append(key)
         elif key == "page_info" and isinstance(value, Mapping):
@@ -481,13 +515,8 @@ def projection_exposes_path(path: str, projection: Mapping[str, Any]) -> bool:
     if normalized.startswith("data[]"):
         return len(segments) == 1 and first_name in item_keys
     if first == "list[]":
-        if "list" not in data_keys or len(segments) < 2:
-            return False
-        item_name = segments[1].removesuffix("[]")
-        if item_name not in item_keys:
-            return False
-        return _nested_projection_exposes(
-            item_name, segments[2:], projection.get("nested_item_keys", {})
+        return _list_projection_exposes(
+            segments, data_keys=data_keys, item_keys=item_keys, projection=projection
         )
     if len(segments) == 1:
         return first_name in data_keys
@@ -500,6 +529,30 @@ def projection_exposes_path(path: str, projection: Mapping[str, Any]) -> bool:
         item_name = segments[1].removesuffix("[]")
         return item_name in {str(value) for value in allowed.get(first_name, ())}
     return False
+
+
+def _list_projection_exposes(
+    segments: Sequence[str],
+    *,
+    data_keys: set[str],
+    item_keys: set[str],
+    projection: Mapping[str, Any],
+) -> bool:
+    if len(segments) == 1:
+        scalar_lists = projection.get("data_scalar_list_types", {})
+        return (
+            "list" in data_keys
+            and isinstance(scalar_lists, Mapping)
+            and "list" in scalar_lists
+        )
+    if "list" not in data_keys:
+        return False
+    item_name = segments[1].removesuffix("[]")
+    if item_name not in item_keys:
+        return False
+    return _nested_projection_exposes(
+        item_name, segments[2:], projection.get("nested_item_keys", {})
+    )
 
 
 def _nested_projection_exposes(
