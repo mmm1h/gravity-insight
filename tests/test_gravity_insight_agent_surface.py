@@ -217,8 +217,9 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
         # 项目素材列表依赖同一项目行的两个 ID，也不伪造静态示例。
         # 这条断言锁的是「填充率不许退化」——examples_complete 只许涨不许跌，
         # 新增 stable 带来的 unknown 增长必须显式在此登记，不能被平均掉。
-        # 广告素材表现读取依赖同一广告行的两个 ID，也不伪造静态示例。
-        self.assertEqual((76, 88), (examples_complete, examples_unknown))
+        # 广告素材表现读取依赖同一广告行的两个 ID，也不伪造静态示例；
+        # 广告主表现首屏只需日期窗口，晋升后增加一个完整 example。
+        self.assertEqual((77, 88), (examples_complete, examples_unknown))
         # 本趟按父 response projection 与调用方选择语义补全 9 条边；剩余
         # 16 条涉及 runtime-v1 target 投影、递归、同一行关联或嵌套输入变换。
         # 素材相册列表再补一条递归父级边，公开 probe 会按目标字符串契约转换；

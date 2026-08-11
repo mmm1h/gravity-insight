@@ -1056,6 +1056,9 @@ class GravityInsightManifestTests(unittest.TestCase):
                 },
                 "report.multidim.template.preset.get": {"detail": ["name"]},
                 "promotion.bytedance.advertiser.list": {"total": ["stat_cost"]},
+                "promotion.bytedance.advertiser_performance.list": {
+                    "total": ["stat_cost"]
+                },
                 "promotion.bytedance.project.list": {"total": ["stat_cost"]},
                 "promotion.tencent.advertiser.list": {"total": ["cost"]},
                 "promotion.taptap.group.list": {"total": []},

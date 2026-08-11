@@ -1,0 +1,203 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 59,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "巨量广告主表现分页列表；固定网页初始状态过滤与每页最多 10 行读取，明确排除会触发重新拉数的 real_data 参数。",
+    "domain": "promotion",
+    "effect": "read",
+    "examples": [
+      {
+        "description": "Minimum input verified by the contract probe pipeline.",
+        "inputs": {
+          "date_list": [
+            "2026-08-11",
+            "2026-08-11"
+          ],
+          "page": 1,
+          "page_size": 1
+        },
+        "name": "minimum_read"
+      }
+    ],
+    "executable": true,
+    "input_fields": {
+      "date_list": {
+        "description": "查询日期范围，固定为 [开始日期, 结束日期] 两项，格式 YYYY-MM-DD。",
+        "item_type": "string",
+        "max_items": 2,
+        "min_items": 2,
+        "required": true,
+        "type": "array"
+      },
+      "page": {
+        "default": 1,
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 10,
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "date_list": [
+          "$today",
+          "$today"
+        ],
+        "page": 1,
+        "page_size": 1
+      }
+    },
+    "operation_id": "promotion.bytedance.advertiser_performance.list",
+    "pagination": {
+      "default_page_size": 10,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 10,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/turbo_engine/api/v1/bytedance/advertiser/list/",
+    "platform": "bytedance",
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "bytedance",
+      "source_files": [
+        "operations/promotion.bytedance.advertiser_performance.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "date_list",
+        "page",
+        "page_size"
+      ],
+      "defaults": {
+        "page": 1,
+        "page_size": 10
+      },
+      "fixed_body": {
+        "filtering": {},
+        "filters": [
+          {
+            "field": "put_status",
+            "operator": 1,
+            "values": [
+              1
+            ]
+          },
+          {
+            "field": "grant_type",
+            "operator": 1,
+            "values": [
+              2
+            ]
+          }
+        ],
+        "order_by": [],
+        "query_fields": []
+      },
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "advertiser_performance",
+    "response_projection": {
+      "data_item_keys": {
+        "total": [
+          "stat_cost"
+        ]
+      },
+      "data_keys": [
+        "list",
+        "page_info",
+        "total",
+        "update_at"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "advertiser_agent_id",
+        "advertiser_agent_name",
+        "advertiser_balance",
+        "advertiser_budget",
+        "advertiser_budget_mode",
+        "advertiser_id",
+        "advertiser_system_status",
+        "app_id",
+        "app_name",
+        "stat_cost"
+      ],
+      "known_omitted_item_keys": [
+        "advertiser_name",
+        "advertiser_remark",
+        "company",
+        "delay",
+        "operator_id",
+        "operator_name",
+        "project_list"
+      ],
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "promotion.json"
+}

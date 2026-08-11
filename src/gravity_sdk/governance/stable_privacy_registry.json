@@ -1709,6 +1709,23 @@
       "data.total[].stat_cost",
       "data.update_at"
     ],
+    "promotion.bytedance.advertiser_performance.list": [
+      "data.list",
+      "data.list[].advertiser_agent_id",
+      "data.list[].advertiser_agent_name",
+      "data.list[].advertiser_balance",
+      "data.list[].advertiser_budget",
+      "data.list[].advertiser_budget_mode",
+      "data.list[].advertiser_id",
+      "data.list[].advertiser_system_status",
+      "data.list[].app_id",
+      "data.list[].app_name",
+      "data.list[].stat_cost",
+      "data.page_info",
+      "data.total",
+      "data.total[].stat_cost",
+      "data.update_at"
+    ],
     "promotion.bytedance.project_filter.list": [
       "data.list",
       "data.list[].advertiser_id",

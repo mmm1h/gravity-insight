@@ -257,6 +257,8 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "material.bytedance.project_material.list",
             # 巨量广告素材表现完成同源父级、默认指标和隐私投影复验后晋升。
             "material.bytedance.promotion_material.list",
+            # 巨量广告主表现首屏完成精确无拉数请求和隐私投影复验后晋升。
+            "promotion.bytedance.advertiser_performance.list",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]

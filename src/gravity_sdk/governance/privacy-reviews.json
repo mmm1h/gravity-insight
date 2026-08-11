@@ -16,6 +16,12 @@
       "stat_cost",
       "width"
     ],
+    "promotion.bytedance.advertiser_performance.list": [
+      "advertiser_balance",
+      "advertiser_budget",
+      "advertiser_budget_mode",
+      "stat_cost"
+    ],
     "metadata.event_property_template_event_list.list": [
       "is_common",
       "is_preset",
@@ -54,6 +60,10 @@
       "organization_tags",
       "signature",
       "star_author_id"
+    ],
+    "promotion.bytedance.advertiser_performance.list": [
+      "advertiser_remark",
+      "delay"
     ]
   }
 }
