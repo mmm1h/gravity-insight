@@ -243,6 +243,8 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "material.material_examine_user.list",
             # 素材相册列表经递归父级解析、分页复验和嵌套隐私投影后晋升。
             "material.album.list",
+            # 巨量创意组件账户选择器完成精确请求绑定、分页和隐私复验后晋升。
+            "promotion.bytedance.account.list",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]

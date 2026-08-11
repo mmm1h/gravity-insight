@@ -1505,6 +1505,20 @@
       "data.list[].status",
       "data.page_info"
     ],
+    "promotion.bytedance.account.list": [
+      "data.expired_cnt",
+      "data.list",
+      "data.list[].account_id",
+      "data.list[].account_name",
+      "data.list[].account_role",
+      "data.list[].ad_platform",
+      "data.list[].advertiser_id",
+      "data.list[].app_id",
+      "data.list[].grant_type",
+      "data.list[].media_status",
+      "data.list[].put_status",
+      "data.page_info"
+    ],
     "promotion.bytedance.advertiser.list": [
       "@dynamic:data:total:query_fields",
       "@dynamic:item:query_fields",

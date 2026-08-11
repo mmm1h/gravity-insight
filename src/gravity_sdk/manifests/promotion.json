@@ -8099,6 +8099,183 @@
       ],
       "stability": "stable",
       "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "列出已授权的巨量引擎广告主账户，供创意、素材等只读操作选择账户。",
+      "domain": "promotion",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "page": {
+          "default": 1,
+          "description": "页码，从 1 开始。",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "description": "每页账户数；网页创意组件调用以 query 参数传递。",
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.bytedance.account.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/bytedance/manage/account/list/",
+      "platform": "bytedance",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id",
+          "account_email",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {
+          "filters": [
+            {
+              "field": "account_role",
+              "operator": 6,
+              "values": [
+                "ADVERTISER"
+              ]
+            }
+          ]
+        },
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "page",
+          "page_size"
+        ]
+      },
+      "required_parent": [],
+      "resource": "account",
+      "response_projection": {
+        "data_keys": [
+          "expired_cnt",
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "account_id",
+          "account_name",
+          "account_role",
+          "ad_platform",
+          "advertiser_id",
+          "app_id",
+          "grant_type",
+          "media_status",
+          "put_status"
+        ],
+        "known_omitted_item_keys": [
+          "account_email",
+          "advertiser_name",
+          "advertiser_sort",
+          "agent_id",
+          "agent_name",
+          "balance",
+          "budget",
+          "budget_mode",
+          "cid",
+          "company",
+          "create_time",
+          "create_user_id",
+          "create_user_name",
+          "develop_app_id",
+          "financial_info",
+          "first_agent_company_id",
+          "first_agent_company_name",
+          "first_agent_id",
+          "first_agent_name",
+          "first_industry_name",
+          "grant",
+          "grant_source",
+          "id",
+          "modify_time",
+          "operator_id",
+          "operator_name",
+          "parent_id",
+          "put_status_modify_time",
+          "remark",
+          "second_industry_name",
+          "self_operation_tag",
+          "sum_quota",
+          "toutiao_parent_id",
+          "update_user_id",
+          "update_user_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
     }
   ]
 }

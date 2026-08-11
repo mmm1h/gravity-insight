@@ -376,11 +376,30 @@ def test_authentication_refresh_observation_cannot_become_target_primary() -> No
 
 @pytest.mark.parametrize(
     "segment",
-    ["create", "update", "delete", "export", "upload", "set", "manage", "submit_task"],
+    ["create", "update", "delete", "export", "upload", "set", "submit_task"],
 )
 def test_online_probe_rejects_non_read_route_segments(segment: str) -> None:
     source = build_draft(_route(), set())
     source["operation"]["path_template"] = f"/turbo_engine/api/v1/resource/{segment}/"
+
+    with pytest.raises(ValueError, match="refused"):
+        assert_read_only_source(source)
+
+
+def test_online_probe_allows_read_list_under_manage_directory() -> None:
+    source = build_draft(_route(), set())
+    source["operation"]["path_template"] = (
+        "/turbo_engine/api/v1/bytedance/manage/account/list/"
+    )
+
+    assert_read_only_source(source)
+
+
+def test_online_probe_still_rejects_mutation_under_manage_directory() -> None:
+    source = build_draft(_route(), set())
+    source["operation"]["path_template"] = (
+        "/turbo_engine/api/v1/bytedance/manage/account/delete/"
+    )
 
     with pytest.raises(ValueError, match="refused"):
         assert_read_only_source(source)

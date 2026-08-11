@@ -522,6 +522,11 @@ def test_found_draft_evidence_retains_schema_but_not_business_values(
         / "promotion.youdao.campaign.list.json"
     )
     source = json.loads(source_path.read_text(encoding="utf-8"))
+    request = source["operation"]["request"]
+    request["body_fields"] = [
+        name for name in request["body_fields"] if name not in {"page", "page_size"}
+    ]
+    request["query_fields"] = ["page", "page_size"]
     draft_root = tmp_path / "drafts"
     evidence_root = tmp_path / "evidence"
     draft_root.mkdir()
@@ -557,9 +562,12 @@ def test_found_draft_evidence_retains_schema_but_not_business_values(
 
     evidence = (tmp_path / applied["evidence"]).read_text(encoding="utf-8")
     persisted = (draft_root / source_path.name).read_text(encoding="utf-8")
+    persisted_request = json.loads(persisted)["operation"]["request"]
     assert "business-secret-value" not in evidence
     assert "business-secret-value" not in persisted
     assert "data.list[].campaign_id" in evidence
+    assert persisted_request["query_fields"] == ["page", "page_size"]
+    assert not {"page", "page_size"} & set(persisted_request["body_fields"])
 
 
 def test_cli_dispatches_nonempty_discovery_without_building_normal_client() -> None:

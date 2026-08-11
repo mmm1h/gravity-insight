@@ -105,14 +105,7 @@ def _observed_contract(
         operation["input_fields"].setdefault(
             "page_size", {"type": "integer", "default": 20}
         )
-        location = (
-            "query_fields"
-            if operation["upstream_method"] == "GET"
-            else "body_fields"
-        )
-        operation["request"][location] = sorted(
-            set(operation["request"].get(location, [])) | {"page", "page_size"}
-        )
+        _bind_observed_pagination(operation)
         operation["request"]["defaults"].setdefault("page", 1)
         operation["request"]["defaults"].setdefault("page_size", 20)
         operation["live_probe"]["inputs"].setdefault("page", 1)
@@ -147,6 +140,28 @@ def _observed_contract(
         privacy_classification = "internal_business"
     updated["operation"]["privacy_policy"]["classification"] = privacy_classification
     return updated, pagination, fields, sketch
+
+
+def _bind_observed_pagination(operation: dict[str, Any]) -> None:
+    """Preserve an explicit pagination location and eliminate stale duplicates."""
+
+    fields = {"page", "page_size"}
+    request = operation["request"]
+    query = set(request.get("query_fields", []))
+    body = set(request.get("body_fields", []))
+    query_complete = fields <= query
+    body_complete = fields <= body
+    if query_complete != body_complete:
+        selected = "query_fields" if query_complete else "body_fields"
+    else:
+        selected = (
+            "query_fields"
+            if operation["upstream_method"] == "GET"
+            else "body_fields"
+        )
+    other = "body_fields" if selected == "query_fields" else "query_fields"
+    request[selected] = sorted(set(request.get(selected, [])) | fields)
+    request[other] = sorted(set(request.get(other, [])) - fields)
 
 
 def _bounded_pagination_inputs(

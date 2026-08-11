@@ -28,7 +28,7 @@ def assert_read_only_source(source: Mapping[str, Any]) -> None:
     }
     forbidden = {
         "create", "update", "delete", "export", "upload", "remove", "write",
-        "set", "manage", "verify_code", "submit_task",
+        "set", "verify_code", "submit_task",
     }
     if path_segments & forbidden:
         raise ValueError("online probe refused a mutation, export, or upload route")
