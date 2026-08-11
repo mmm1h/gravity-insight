@@ -22,6 +22,10 @@
     "app.permission_menu.list": [
       "person_num"
     ],
+    "app.role.list": [
+      "is_default",
+      "person_num"
+    ],
     "material.asset_material_media_review_list.list": [
       "suggestion"
     ],

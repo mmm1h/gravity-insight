@@ -912,6 +912,20 @@
       "data.conf[].modify_time",
       "data.conf[].start_time"
     ],
+    "app.role.list": [
+      "data.list",
+      "data.list[].code",
+      "data.list[].create_time",
+      "data.list[].id",
+      "data.list[].is_default",
+      "data.list[].is_deleted",
+      "data.list[].is_enabled",
+      "data.list[].modify_time",
+      "data.list[].name",
+      "data.list[].person_num",
+      "data.list[].product_id",
+      "data.page_info"
+    ],
     "attribution.attr_backtrack.list": [
       "data.list",
       "data.list[].app_id",

@@ -273,6 +273,8 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "metadata.metrics.get",
             # 权限菜单完成网页端固定产品参数、递归投影和隐私复验后晋升。
             "app.permission_menu.list",
+            # 角色列表完成固定菜单开关、分页上限和隐私复验后晋升。
+            "app.role.list",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]
