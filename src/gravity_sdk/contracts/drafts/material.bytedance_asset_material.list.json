@@ -3,24 +3,19 @@
   "draft": {
     "blockers": [
       {
+        "code": "request_parameters_required",
+        "detail": "The observed request reached a semantic error; required request fields remain unknown.",
+        "evidence": "evidence/probe/20260811T015221Z_material.bytedance_asset_material.list.yaml",
+        "status": "open"
+      },
+      {
         "code": "response_schema_unverified",
         "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
-        "evidence": "evidence/probe/20260809T142904Z_material.bytedance_asset_material.list.yaml",
+        "evidence": "evidence/probe/20260811T015221Z_material.bytedance_asset_material.list.yaml",
         "status": "open"
       }
     ],
-    "candidate_fields": [
-      {
-        "classification_reason": "frontend_static_consumer_unreviewed",
-        "expose": false,
-        "path": "data.list",
-        "presence": "unknown",
-        "privacy_classification": "manual_review",
-        "types": [
-          "unknown"
-        ]
-      }
-    ],
+    "candidate_fields": [],
     "coverage_reference": {
       "coverage_path": "src/gravity_sdk/census/data/coverage.json",
       "json_pointer": "/routes/332",
@@ -86,13 +81,25 @@
         "projected_schema_fingerprint": null,
         "raw_schema_fingerprint": "1b898bf98211f851a2989bb1eb397aa45eb76a283568c75ab6a8dd0d96ac0e02",
         "successful": false
+      },
+      {
+        "conclusion": "semantic_error",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": true,
+        "path": "evidence/probe/20260811T015221Z_material.bytedance_asset_material.list.yaml",
+        "probed_at": "2026-08-11T01:52:21Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "1b898bf98211f851a2989bb1eb397aa45eb76a283568c75ab6a8dd0d96ac0e02",
+        "successful": false
       }
     ],
     "promotion_gate": {
       "eligible": false,
       "missing": [
-        "response_schema_unverified",
+        "request_parameters_required",
         "response_projection",
+        "response_schema_unverified",
         "successful_probe"
       ]
     },
@@ -138,7 +145,7 @@
         "stable_parent_candidates": [
           {
             "input_field": "advertiser_id",
-            "operation_id": "promotion.bytedance.project_filter.list",
+            "operation_id": "promotion.bytedance.account.list",
             "output_path": "data.list[].advertiser_id",
             "selection": "caller_select"
           }
@@ -191,6 +198,28 @@
           }
         ]
       },
+      "parent_resolution": {
+        "basis": "declared_parent_probe",
+        "bindings": [
+          {
+            "candidate_count": 1,
+            "candidate_types": [
+              "int"
+            ],
+            "output_path": "data.list[].advertiser_id",
+            "parent_operation_id": "promotion.bytedance.account.list",
+            "selection": "caller_select",
+            "status": "resolved",
+            "target_cardinality": "one",
+            "target_input": "advertiser_id"
+          }
+        ],
+        "conclusion": "unblocked",
+        "detail": "Every declared parent binding yielded a selectable value; values stayed in process memory.",
+        "evidence": "evidence/probe/20260811T015016Z_material.bytedance_asset_material.list.yaml",
+        "missing_evidence": [],
+        "replacement_blocker": null
+      },
       "path": "/turbo_engine/api/v1/bytedance/asset/material/list/",
       "promotion_level": null,
       "promotion_platform": null,
@@ -203,29 +232,7 @@
         "创意组件",
         "组件名",
         "请输入"
-      ],
-      "parent_resolution": {
-        "basis": "declared_parent_probe",
-        "bindings": [
-          {
-            "candidate_count": 1,
-            "candidate_types": [
-              "str"
-            ],
-            "output_path": "data.list[].advertiser_id",
-            "parent_operation_id": "promotion.bytedance.project_filter.list",
-            "selection": "caller_select",
-            "status": "resolved",
-            "target_cardinality": "one",
-            "target_input": "advertiser_id"
-          }
-        ],
-        "conclusion": "unblocked",
-        "detail": "Every declared parent binding yielded a selectable value; values stayed in process memory.",
-        "evidence": "evidence/probe/20260809T145637Z_material.bytedance_asset_material.list.yaml",
-        "missing_evidence": [],
-        "replacement_blocker": null
-      }
+      ]
     },
     "status": "draft"
   },
@@ -233,7 +240,7 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "block_reason": "draft blockers: response_schema_unverified",
+    "block_reason": "draft blockers: request_parameters_required, response_schema_unverified",
     "contract_version": 1,
     "description": "Draft catalog entry inferred from census route GET /turbo_engine/api/v1/bytedance/asset/material/list/; request binding, pagination, and response projection remain unverified.",
     "domain": "material",
@@ -327,7 +334,7 @@
     "provenance": {
       "applied_overrides": [
         "frontend_route_parameter_contract",
-        "stable_parent_candidate_binding"
+        "stable_bytedance_account_parent_binding"
       ],
       "family": null,
       "platform": "bytedance",
@@ -355,7 +362,7 @@
     "required_parent": [
       {
         "input_field": "advertiser_id",
-        "operation_id": "promotion.bytedance.project_filter.list",
+        "operation_id": "promotion.bytedance.account.list",
         "output_path": "data.list[].advertiser_id",
         "selection": "caller_select"
       }

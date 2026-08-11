@@ -301,13 +301,10 @@ def _persist_observed(
 ) -> dict[str, Any]:
     write_json(path, evidence)
     parent_resolved = bool(
-        evidence.get("successful")
-        and (
-            not updated["operation"].get("required_parent")
-            or (
-                isinstance(evidence.get("required_parent"), Mapping)
-                and evidence["required_parent"].get("status") == "resolved"
-            )
+        not updated["operation"].get("required_parent")
+        or (
+            isinstance(evidence.get("required_parent"), Mapping)
+            and evidence["required_parent"].get("status") == "resolved"
         )
     )
     reference = {

@@ -137,6 +137,60 @@ def test_manual_review_remains_blocked_after_successful_transport_probe(
     assert source["draft"]["manual_review_fields"] == ["data[].content"]
 
 
+def test_semantic_error_keeps_successfully_resolved_parent_attribution(
+    tmp_path: Path,
+) -> None:
+    source = build_draft(_route("bytedance"), set())
+    source["operation"]["input_fields"]["advertiser_id"] = {"type": "string"}
+    source["operation"]["required_parent"] = [
+        {
+            "operation_id": "promotion.bytedance.account.list",
+            "input_field": "advertiser_id",
+            "output_path": "data.list[].advertiser_id",
+            "selection": "caller_select",
+        }
+    ]
+    discovery = SimpleNamespace(
+        status_code=200,
+        payload={"code": 2015, "data": None},
+    )
+    parent_summary = {
+        "operation_id": "promotion.bytedance.account.list",
+        "output_path": "data.list[].advertiser_id",
+        "selection": "caller_select",
+        "candidate_count": 1,
+        "status": "resolved",
+    }
+    recording = SimpleNamespace(observations=[])
+    with (
+        patch.object(
+            draft_probe,
+            "_discover",
+            return_value=(source, {}, parent_summary, discovery, []),
+        ),
+        patch.object(draft_probe, "relative", side_effect=lambda path: path.as_posix()),
+    ):
+        result = draft_probe.probe_draft(
+            source,
+            stable_client=object(),
+            runtime=object(),
+            recording=recording,
+            evidence_root=tmp_path / "evidence",
+            draft_root=tmp_path / "drafts",
+        )
+
+    updated = json.loads(
+        (
+            tmp_path
+            / "drafts"
+            / f"{source['operation']['operation_id']}.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert result["conclusion"] == "semantic_error"
+    assert updated["draft"]["probe_evidence"][-1]["successful"] is False
+    assert updated["draft"]["probe_evidence"][-1]["parent_resolved"] is True
+
+
 def test_probe_bounds_frontend_page_size_before_contract_confirmation(
 ) -> None:
     source = build_draft(_route(), set())
