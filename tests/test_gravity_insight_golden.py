@@ -249,6 +249,8 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "promotion.bytedance.account_company.list",
             # 巨量启用项目列表完成父级、固定过滤和保守隐私投影复验后晋升。
             "promotion.bytedance.manager_project.list",
+            # 巨量可投放广告列表完成账户父级、固定过滤和隐私投影复验后晋升。
+            "promotion.bytedance.manager_promotion.list",
             # 巨量图片素材列表完成父级、整数参数、分页和隐私复验后晋升。
             "material.bytedance_asset_material.list",
             # 巨量项目素材列表完成同源父级、非空样本和嵌套隐私投影后晋升。

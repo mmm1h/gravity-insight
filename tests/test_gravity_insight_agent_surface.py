@@ -217,13 +217,14 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
         # 项目素材列表依赖同一项目行的两个 ID，也不伪造静态示例。
         # 这条断言锁的是「填充率不许退化」——examples_complete 只许涨不许跌，
         # 新增 stable 带来的 unknown 增长必须显式在此登记，不能被平均掉。
-        self.assertEqual((76, 86), (examples_complete, examples_unknown))
+        self.assertEqual((76, 87), (examples_complete, examples_unknown))
         # 本趟按父 response projection 与调用方选择语义补全 9 条边；剩余
         # 16 条涉及 runtime-v1 target 投影、递归、同一行关联或嵌套输入变换。
         # 素材相册列表再补一条递归父级边，公开 probe 会按目标字符串契约转换；
         # 巨量图片素材列表与巨量项目列表各补一条账户 advertiser_id 的
-        # 完整父级边；项目素材列表再补两条项目筛选器父级边。
-        self.assertEqual((54, 16), (parents_complete, parents_unknown))
+        # 完整父级边；项目素材列表再补两条项目筛选器父级边，巨量广告
+        # 选择器再补一条账户父级边。
+        self.assertEqual((55, 16), (parents_complete, parents_unknown))
 
         transformed = self.client.describe("analysis.event.query")["required_parent"][0]
         self.assertEqual("data.list[].name", transformed["output_path"])

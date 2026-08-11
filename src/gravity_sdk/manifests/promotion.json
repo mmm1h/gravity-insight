@@ -8547,6 +8547,129 @@
       ],
       "stability": "stable",
       "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "列出巨量引擎账户下处于可投放状态的广告，返回网页广告选择器所需的最小字段。",
+      "domain": "promotion",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "advertiser_id": {
+          "description": "巨量引擎广告主 ID；由受治理的账户列表返回，网页端以整数传入。",
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "advertiser_id": "$parent:advertiser_id"
+        }
+      },
+      "operation_id": "promotion.bytedance.manager_promotion.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v1/bytedance/manager/promotion/list/",
+      "platform": "bytedance",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "advertiser_id"
+        ],
+        "defaults": {},
+        "fixed_body": {
+          "filtering": {
+            "status": "OK"
+          }
+        },
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        {
+          "input_field": "advertiser_id",
+          "operation_id": "promotion.bytedance.account.list"
+        }
+      ],
+      "resource": "manager_promotion",
+      "response_projection": {
+        "data_keys": [
+          "list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "advertiser_id",
+          "opt_status",
+          "promotion_id",
+          "promotion_name",
+          "status"
+        ],
+        "known_omitted_item_keys": [
+          "learning_phase",
+          "star_auto_delivery_switch"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
     }
   ]
 }

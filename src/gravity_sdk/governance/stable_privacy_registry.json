@@ -1620,6 +1620,14 @@
       "data.list[].project_id",
       "data.list[].status"
     ],
+    "promotion.bytedance.manager_promotion.list": [
+      "data.list",
+      "data.list[].advertiser_id",
+      "data.list[].opt_status",
+      "data.list[].promotion_id",
+      "data.list[].promotion_name",
+      "data.list[].status"
+    ],
     "promotion.bytedance.project.list": [
       "@dynamic:data:total:query_fields",
       "@dynamic:item:query_fields",
