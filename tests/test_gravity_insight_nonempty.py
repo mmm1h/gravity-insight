@@ -98,9 +98,24 @@ class _TargetClient:
 
 
 class _StableClient:
+    def __init__(self, recording: object) -> None:
+        self.recording = recording
+
     @classmethod
-    def from_env(cls, **_: object) -> "_StableClient":
-        return cls()
+    def from_env(cls, **kwargs: object) -> "_StableClient":
+        runtime = kwargs["runtime"]
+        return cls(runtime.recording)
+
+    def read(self, operation_id: str, inputs: dict[str, object]) -> dict[str, object]:
+        response = self.recording.request(
+            "GET",
+            f"https://web.gravity-engine.com/{operation_id}",
+            params=inputs,
+        )
+        return response.json()
+
+    def probe(self, operation_id: str) -> dict[str, object]:
+        return self.read(operation_id, {})
 
 
 def _run_discovery(
@@ -261,6 +276,65 @@ def test_resolved_parent_is_not_required_in_temporary_target_registry(
 
     assert result["resolution"] == "unblocked"
     assert session.runtime_sources[0]["operation"]["required_parent"] == []
+
+
+def test_discovery_extracts_recursive_parent_candidates(
+    tmp_path: Path, monkeypatch: object
+) -> None:
+    source = _source()
+    source["operation"]["input_fields"] = {
+        "album_id": {"type": "integer", "required": True}
+    }
+    source["operation"]["request"]["defaults"] = {}
+    source["operation"]["request"]["body_fields"] = ["album_id"]
+    source["operation"]["live_probe"]["inputs"] = {
+        "album_id": "$parent:album_id"
+    }
+    source["operation"]["required_parent"] = [
+        {
+            "operation_id": "material.album.tree",
+            "input_field": "album_id",
+            "output_path": "data.tree..id",
+            "selection": "caller_select",
+        }
+    ]
+    operation_root = tmp_path / "operations"
+    operation_root.mkdir(parents=True)
+    (operation_root / "material.album.tree.json").write_text(
+        json.dumps(
+            {
+                "operation": {
+                    "operation_id": "material.album.tree",
+                    "effect": "read",
+                    "input_fields": {},
+                    "request": {"defaults": {}},
+                    "live_probe": {"inputs": {}},
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    parent_payload = {
+        "status": "success",
+        "data": {
+            "tree": [
+                {"id": 11, "children": [{"id": 22}]},
+                {"id": 33},
+            ]
+        },
+    }
+    target_payload = {"code": 0, "data": {"list": [{"id": "row"}]}}
+
+    result, session = _run_discovery(
+        tmp_path,
+        monkeypatch,
+        source=source,
+        payloads=[parent_payload, target_payload],
+    )
+
+    assert result["resolution"] == "unblocked"
+    assert result["parents"][0]["candidate_count"] == 3
+    assert session.calls[1]["json"]["album_id"] == 11
 
 
 def test_missing_required_parent_candidates_skip_invalid_target_attempts(

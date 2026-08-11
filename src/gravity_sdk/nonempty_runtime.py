@@ -9,6 +9,7 @@ from typing import Any, Mapping, Sequence
 
 from gravity_sdk import runtime as tool_runtime
 
+from .parent_resolution import extract_parent_values
 from .nonempty_plan import (
     DEFAULT_CACHE_ROOT,
     DEFAULT_CANDIDATE_LIMIT,
@@ -31,7 +32,6 @@ from .prober.core import (
 )
 from .prober.parameters import parameter_hints_from_error
 from .prober.probe_support import (
-    _extract_values,
     data_nonempty,
     family_id,
     last_primary,
@@ -194,9 +194,13 @@ def _fetch_parent_candidates(
         target_source=target_source,
         candidate_limit=candidate_limit,
     )
-    values = _extract_values(envelope, output_path) if isinstance(envelope, Mapping) else []
+    values = (
+        extract_parent_values(envelope, output_path)
+        if isinstance(envelope, Mapping)
+        else []
+    )
     if not values and primary is not None and isinstance(primary.payload, Mapping):
-        values = _extract_values(primary.payload, output_path)
+        values = extract_parent_values(primary.payload, output_path)
     selected = _unique_values(values)[:candidate_limit]
     status = "resolved" if selected else "empty_or_unavailable"
     return selected, _parent_summary(

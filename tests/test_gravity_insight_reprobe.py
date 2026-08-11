@@ -465,7 +465,14 @@ def test_parent_all_selection_preserves_array_cardinality() -> None:
             assert operation_id == "promotion.example.advertiser.list"
             return {
                 "status": "success",
-                "data": {"list": [{"advertiser_id": 7}, {"advertiser_id": 9}]},
+                "data": {
+                    "tree": [
+                        {
+                            "advertiser_id": 7,
+                            "children": [{"advertiser_id": 9}],
+                        }
+                    ]
+                },
             }
 
     source = build_draft(_route(), set())
@@ -473,7 +480,7 @@ def test_parent_all_selection_preserves_array_cardinality() -> None:
         {
             "operation_id": "promotion.example.advertiser.list",
             "input_field": "advertiser_ids",
-            "output_path": "data.list[].advertiser_id",
+            "output_path": "data.tree..advertiser_id",
             "selection": "all",
         }
     ]

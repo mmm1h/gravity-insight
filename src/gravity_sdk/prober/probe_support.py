@@ -8,6 +8,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from ..parent_resolution import extract_parent_values
 from .core import REPO_ROOT, canonical_fingerprint
 from .privacy import response_schema_sketch
 from .transport import HttpObservation, RecordingSession
@@ -42,24 +43,6 @@ def family_id(source: Mapping[str, Any]) -> str:
     return str(family or source.get("operation", {}).get("operation_id", "unassigned"))
 
 
-def _extract_values(value: Any, output_path: str) -> list[Any]:
-    current: list[Any] = [value]
-    for raw_part in output_path.split("."):
-        is_array = raw_part.endswith("[]")
-        part = raw_part[:-2] if is_array else raw_part
-        next_values: list[Any] = []
-        for item in current:
-            if not isinstance(item, Mapping) or part not in item:
-                continue
-            child = item[part]
-            if is_array and isinstance(child, list):
-                next_values.extend(child)
-            else:
-                next_values.append(child)
-        current = next_values
-    return [item for item in current if item is not None and not isinstance(item, (Mapping, list))]
-
-
 def resolve_parent(
     source: Mapping[str, Any], stable_client: Any, recording: RecordingSession,
     input_field: str | None = None,
@@ -79,7 +62,11 @@ def resolve_parent(
     with recording.observing(operation_id, family_id(source), "parent"):
         envelope = stable_client.probe(operation_id)
     status = str(envelope.get("status", "error")) if isinstance(envelope, Mapping) else "error"
-    values = _extract_values(envelope, output_path) if isinstance(envelope, Mapping) else []
+    values = (
+        extract_parent_values(envelope, output_path)
+        if isinstance(envelope, Mapping)
+        else []
+    )
     if status not in {"success", "empty"} or not values:
         raise ValueError(f"required parent did not yield a selectable value: {operation_id}")
     selection = str(parent.get("selection") or "first")
