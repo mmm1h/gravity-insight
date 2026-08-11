@@ -251,6 +251,8 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "promotion.bytedance.manager_project.list",
             # 巨量图片素材列表完成父级、整数参数、分页和隐私复验后晋升。
             "material.bytedance_asset_material.list",
+            # 巨量项目素材列表完成同源父级、非空样本和嵌套隐私投影后晋升。
+            "material.bytedance.project_material.list",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]

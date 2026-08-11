@@ -1047,6 +1047,9 @@ class GravityInsightManifestTests(unittest.TestCase):
                         "is_iaa",
                     ]
                 },
+                "material.bytedance.project_material.list": {
+                    "video_material_list": ["file_name", "material_id", "type"]
+                },
                 "report.multidim.template.tree": {
                     "my_template": ["id", "name"],
                     "share_template": ["id", "name"],

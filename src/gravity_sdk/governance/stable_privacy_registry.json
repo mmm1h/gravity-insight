@@ -985,6 +985,12 @@
       "data.list[].material_id",
       "data.page_info"
     ],
+    "material.bytedance.project_material.list": [
+      "data.video_material_list",
+      "data.video_material_list[].file_name",
+      "data.video_material_list[].material_id",
+      "data.video_material_list[].type"
+    ],
     "material.bytedance_asset_material.list": [
       "data.list",
       "data.list[].aigc",

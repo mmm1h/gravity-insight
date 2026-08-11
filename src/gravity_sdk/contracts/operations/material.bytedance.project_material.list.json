@@ -1,0 +1,154 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 8,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "列出指定巨量项目可使用的素材；当前稳定投影开放视频素材的标识、文件名与类型。",
+    "domain": "material",
+    "effect": "read",
+    "examples": [],
+    "executable": true,
+    "input_fields": {
+      "advertiser_id": {
+        "description": "巨量广告主 ID；由项目筛选列表返回。",
+        "required": true,
+        "type": "integer"
+      },
+      "project_id": {
+        "description": "巨量项目 ID；由项目筛选列表返回。",
+        "required": true,
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "advertiser_id": "$parent:advertiser_id",
+        "project_id": "$parent:project_id"
+      }
+    },
+    "operation_id": "material.bytedance.project_material.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/bytedance/project/material_get/",
+    "platform": "bytedance",
+    "privacy_policy": {
+      "classification": "material",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "bytedance",
+      "source_files": [
+        "operations/material.bytedance.project_material.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "advertiser_id",
+        "project_id"
+      ],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": "advertiser_id",
+        "operation_id": "promotion.bytedance.project_filter.list",
+        "output_path": "data.list[].advertiser_id",
+        "selection": "caller_select"
+      },
+      {
+        "input_field": "project_id",
+        "operation_id": "promotion.bytedance.project_filter.list",
+        "output_path": "data.list[].project_id",
+        "selection": "caller_select"
+      }
+    ],
+    "resource": "project_material",
+    "response_projection": {
+      "data_item_keys": {
+        "video_material_list": [
+          "file_name",
+          "material_id",
+          "type"
+        ]
+      },
+      "data_keys": [
+        "video_material_list"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "known_omitted_data_item_keys": {
+        "video_material_list": [
+          "file_url",
+          "thumbnail_url"
+        ]
+      },
+      "known_omitted_data_keys": [
+        "instant_play_material_list",
+        "trial_play_material_list"
+      ],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "material.json"
+}

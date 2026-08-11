@@ -117264,7 +117264,7 @@
             "project_id"
           ],
           "method": "POST",
-          "operation_id": "material.material_get.query",
+          "operation_id": "material.bytedance.project_material.list",
           "path": "/turbo_engine/api/v1/bytedance/project/material_get/",
           "verdict": "matched"
         },
