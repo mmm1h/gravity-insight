@@ -1,5 +1,5 @@
 {
-  "operation_count": 164,
+  "operation_count": 165,
   "operations": {
     "account.department.list": {
       "applied_overrides": [],
@@ -583,6 +583,14 @@
       "platform": null,
       "source_files": [
         "operations/material.local.list.json"
+      ]
+    },
+    "material.material_examine_user.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/material.material_examine_user.list.json"
       ]
     },
     "material.metric.list": {

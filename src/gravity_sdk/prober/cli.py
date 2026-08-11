@@ -21,7 +21,6 @@ from .model import (
     status_report,
 )
 from .online import run_online_probes
-from .verdict_probe import run_verdict_probes
 from .batch import run_batch_probes
 from .parameters import assemble_draft_parameters
 from .reprobe import run_parameter_reprobes
@@ -99,15 +98,6 @@ def build_parser() -> argparse.ArgumentParser:
         "--evidence-root", type=Path, default=None,
         help="Override the immutable evidence directory for a scoped discovery run.",
     )
-
-    verdict_probe = commands.add_parser(
-        "verdict-probe",
-        help="Collect shape-only evidence for open privacy verdicts.",
-    )
-    verdict_probe.add_argument("operation_id", nargs="+")
-    verdict_probe.add_argument("--interval-ms", type=_interval, default=310)
-    verdict_probe.add_argument("--request-limit", type=_request_limit, default=10)
-    verdict_probe.add_argument("--evidence-root", type=Path, default=None)
 
     batch = commands.add_parser(
         "probe-batch", help="Probe all drafts by data-availability tier."
@@ -228,22 +218,6 @@ def run(args: argparse.Namespace) -> Mapping[str, Any]:
         result = run_online_probes(
             args.operation_id,
             stable=args.stable,
-            interval_seconds=args.interval_ms / 1000.0,
-            request_limit=args.request_limit,
-            **kwargs,
-        )
-        result["auth"] = {
-            "auth_state": auth.get("auth_state"),
-            "can_exchange_credentials": bool(auth.get("can_exchange_credentials")),
-        }
-        return result
-    if args.command == "verdict-probe":
-        auth = _ensure_auth()
-        kwargs: dict[str, Any] = {}
-        if args.evidence_root is not None:
-            kwargs["evidence_root"] = args.evidence_root.resolve()
-        result = run_verdict_probes(
-            args.operation_id,
             interval_seconds=args.interval_ms / 1000.0,
             request_limit=args.request_limit,
             **kwargs,

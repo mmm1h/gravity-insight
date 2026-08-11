@@ -635,6 +635,18 @@ class GravityInsightManifestTests(unittest.TestCase):
                     projection["item_keys"] or projection["dynamic_item_fields"]
                 )
 
+    def test_material_examine_user_projection_is_fail_closed(self) -> None:
+        operation = self.by_id["material.material_examine_user.list"]
+        projection = operation["response_projection"]
+
+        self.assertEqual("user_level", operation["privacy_policy"]["classification"])
+        self.assertEqual(["cid", "id", "name"], projection["item_keys"])
+        self.assertEqual(
+            ["company", "dept", "email", "is_superuser", "role"],
+            projection["known_omitted_item_keys"],
+        )
+        self.assertEqual({}, operation["input_fields"])
+
     def test_verified_nested_projection_contracts_are_exact(self) -> None:
         expected = {
             "analysis.account_user.list": {

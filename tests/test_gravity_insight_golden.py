@@ -239,6 +239,8 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "report.tag_category.list",
             # 固定全局范围并完成嵌套聚合字段白名单复验后晋升。
             "report.hour_comparison.query",
+            # 素材审核用户列表经非空验证和人员敏感字段收窄后晋升。
+            "material.material_examine_user.list",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]

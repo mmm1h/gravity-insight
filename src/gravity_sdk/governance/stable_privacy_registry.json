@@ -1086,6 +1086,12 @@
       "data.list[].width",
       "data.page_info"
     ],
+    "material.material_examine_user.list": [
+      "data.list",
+      "data.list[].cid",
+      "data.list[].id",
+      "data.list[].name"
+    ],
     "material.metric.list": [
       "data[].children",
       "data[].children.cname",

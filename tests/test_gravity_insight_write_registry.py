@@ -146,10 +146,11 @@ class GravityInsightWriteRegistryTests(unittest.TestCase):
         # 分页类型并完成非空复验后升至 146；两条报表标签配置读取
         # 收敛分页默认值并完成非空复验后升至 148；小时聚合对比固定
         # 全局范围并完成嵌套投影复验后升至 149；两条巨量标题素材包
-        # 完成父级、必填参数和分页复验后升至 151。
+        # 完成父级、必填参数和分页复验后升至 151；素材审核用户列表
+        # 经非空与隐私收窄验证后升至 152。
         # 本测试的保证不是「这个数不变」，而是「它远小于 accounted，且
         # blocked_write 绝不被计入可调用」——即下面两条 414 断言。
-        self.assertEqual(151, rebuilt["summary"]["callable_covered"])
+        self.assertEqual(152, rebuilt["summary"]["callable_covered"])
         self.assertEqual(414, rebuilt["accounting_summary"]["accounted_blocked_write"])
         self.assertEqual(414, rebuilt["callability_summary"]["contract_only"])
 
