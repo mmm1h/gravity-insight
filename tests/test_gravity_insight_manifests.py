@@ -710,6 +710,16 @@ class GravityInsightManifestTests(unittest.TestCase):
                     "start_time",
                 ],
             },
+            "app.capacity.list": {
+                "relation_package": [
+                    "end_time",
+                    "formula_name",
+                    "name",
+                    "package_id",
+                    "package_total_million",
+                    "start_time",
+                ]
+            },
             "app.permission_menu.list": {
                 "children": ["id", "name", "parent_id", "person_num"]
             },

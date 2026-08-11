@@ -1,0 +1,198 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 30,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "List capacity records for the authenticated tenant's current company.",
+    "domain": "app",
+    "effect": "read",
+    "examples": [],
+    "executable": true,
+    "input_fields": {
+      "company_id": {
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "integer"
+      },
+      "page": {
+        "default": 1,
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 20,
+        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "integer"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "company_id": "$parent:company_id",
+        "page": 1,
+        "page_size": 1
+      }
+    },
+    "operation_id": "app.capacity.list",
+    "pagination": {
+      "default_page_size": 20,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 100,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
+    },
+    "path_template": "/account_center/api/v1/company/capacity/list/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "user_level",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/app.capacity.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {
+        "page": 1,
+        "page_size": 20
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "company_id",
+        "page",
+        "page_size"
+      ]
+    },
+    "required_parent": [
+      {
+        "input_field": "company_id",
+        "operation_id": "app.capacity.get",
+        "output_path": "data.data.capacity.company_id",
+        "selection": "first"
+      }
+    ],
+    "resource": "capacity",
+    "response_projection": {
+      "data_keys": [
+        "list",
+        "page_info"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "ad_create_amount",
+        "ad_create_amount_usage",
+        "advertiser_amount",
+        "advertiser_amount_usage",
+        "app_limit_amount",
+        "app_limit_amount_usage",
+        "capacity_type",
+        "click_amount_million",
+        "click_amount_million_usage",
+        "company_id",
+        "company_type",
+        "contact_status",
+        "create_time",
+        "end_time",
+        "event_amount_million",
+        "event_amount_million_usage",
+        "id",
+        "material_transmit_g",
+        "material_transmit_g_usage",
+        "modify_time",
+        "package_total_million",
+        "package_total_million_opt_usage",
+        "package_total_million_usage",
+        "relation_package",
+        "snapshot_id",
+        "start_time",
+        "storage_amount_g",
+        "storage_amount_g_usage",
+        "update_usage_time"
+      ],
+      "known_omitted_item_keys": [
+        "company_position",
+        "create_user_name",
+        "modify_user_name",
+        "our_salesman_id",
+        "our_salesman_remark",
+        "silence"
+      ],
+      "known_omitted_nested_item_keys": {
+        "relation_package": [
+          "formula"
+        ]
+      },
+      "nested_item_keys": {
+        "relation_package": [
+          "end_time",
+          "formula_name",
+          "name",
+          "package_id",
+          "package_total_million",
+          "start_time"
+        ]
+      },
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "other.json"
+}
