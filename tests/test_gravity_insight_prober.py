@@ -7,6 +7,7 @@ from types import SimpleNamespace
 import pytest
 
 from gravity_sdk.prober import transport as prober_transport
+from gravity_sdk.prober import probe_support
 from gravity_sdk.prober.batch import finalize_batch_report
 from gravity_sdk.prober.model import (
     build_draft,
@@ -21,7 +22,24 @@ from gravity_sdk.prober.model import (
     status_report,
 )
 from gravity_sdk.prober.online import RecordingSession, RequestDiscipline
-from gravity_sdk.prober.probe_support import assert_read_only_source, evidence_path
+from gravity_sdk.prober.probe_support import (
+    assert_read_only_source,
+    evidence_path,
+    relative,
+)
+
+
+def test_evidence_display_path_accepts_scoped_root_outside_default(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    default_root = tmp_path / "default"
+    monkeypatch.setattr(probe_support, "REPO_ROOT", default_root)
+
+    assert relative(default_root / "evidence" / "inside.yaml") == (
+        "evidence/inside.yaml"
+    )
+    outside = tmp_path / "repository" / "evidence" / "outside.yaml"
+    assert relative(outside) == outside.as_posix()
 
 
 def test_probe_runtime_uses_project_credential_path(

@@ -5,6 +5,12 @@ from __future__ import annotations
 import re
 from typing import Any, Mapping, Sequence
 
+from .privacy_reviews import (
+    REVIEWED_SAFE_FIELDS,
+    ROUTE_REVIEWED_SENSITIVE_FIELDS,
+)
+from .schema_sketch import json_type, response_schema_sketch, safe_schema_key
+
 
 SENSITIVE_TOKENS = frozenset(
     {
@@ -89,35 +95,6 @@ SAFE_SUFFIXES = (
     "_type", "_number", "_total",
 )
 
-REVIEWED_SAFE_FIELDS: Mapping[str, frozenset[str]] = {
-    "material.asset_material_media_review_list.list": frozenset(
-        {"suggestion"}
-    ),
-    "metadata.event_property_template_event_list.list": frozenset(
-        {"is_common", "is_preset", "trigger_opportunity"}
-    ),
-    "metadata.property.list": frozenset(
-        {"is_common", "is_preset"}
-    ),
-    "promotion.bilibili.account.list": frozenset(
-        {
-            "average_cost_per_thousand",
-            "click_rate",
-            "cost_per_click",
-            "san_lian_launch_total_consume",
-            "total_cash_consume",
-            "total_consume",
-            "total_red_packet_consume",
-            "total_special_red_packet_consume",
-        }
-    ),
-    "promotion.bytedance.site.list": frozenset({"siteId", "siteType"}),
-    "report.company_amount.query": frozenset(
-        {"ad_create_amount_usage", "material_transmit_g_usage"}
-    ),
-    "report.media_report.list": frozenset({"cost"}),
-}
-
 BYTEDANCE_TEXT_TITLE_METRIC_FIELDS = frozenset(
     {
         "history_click_rate",
@@ -167,6 +144,10 @@ def _reviewed_safe_fields(operation_id: str | None) -> frozenset[str]:
     return REVIEWED_SAFE_FIELDS.get(normalized, frozenset()) | frozenset(family_fields)
 
 
+def _reviewed_sensitive_fields(operation_id: str | None) -> frozenset[str]:
+    return ROUTE_REVIEWED_SENSITIVE_FIELDS.get(str(operation_id), frozenset())
+
+
 def _is_metadata_dictionary_operation(operation_id: str | None) -> bool:
     parts = str(operation_id).split(".")
     return (
@@ -185,64 +166,6 @@ def _is_aggregate_report_operation(operation_id: str | None) -> bool:
         and parts[1] in AGGREGATE_REPORT_RESOURCES
         and parts[2] == "query"
     )
-
-
-def _json_type(value: Any) -> str:
-    if value is None:
-        return "null"
-    if isinstance(value, bool):
-        return "boolean"
-    if isinstance(value, int):
-        return "integer"
-    if isinstance(value, float):
-        return "number"
-    if isinstance(value, str):
-        return "string"
-    if isinstance(value, list):
-        return "array"
-    if isinstance(value, Mapping):
-        return "object"
-    return "unknown"
-
-
-def safe_schema_key(value: Any) -> str:
-    key = str(value)
-    lowered = key.casefold()
-    if (
-        len(key) > 64
-        or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", key)
-        or "@" in key
-        or re.fullmatch(r"[0-9a-f]{16,}", lowered)
-        or re.fullmatch(r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", lowered)
-    ):
-        return "{dynamic_key}"
-    return key
-
-
-def response_schema_sketch(value: Any) -> dict[str, Any]:
-    """Return path/type observations without retaining response values."""
-
-    observed: dict[str, set[str]] = {}
-
-    def visit(item: Any, path: str, depth: int) -> None:
-        observed.setdefault(path, set()).add(_json_type(item))
-        if depth >= 12:
-            return
-        if isinstance(item, Mapping):
-            for raw_key, child in item.items():
-                visit(child, f"{path}.{safe_schema_key(raw_key)}", depth + 1)
-        elif isinstance(item, list):
-            if not item:
-                observed.setdefault(path + "[]", set()).add("unknown")
-            for child in item[:200]:
-                visit(child, path + "[]", depth + 1)
-
-    visit(value, "$", 0)
-    paths = [
-        {"path": path, "types": sorted(types), "presence": "observed"}
-        for path, types in sorted(observed.items())
-    ]
-    return {"schema_version": "gravity-insight.raw-schema-sketch.v1", "paths": paths}
 
 
 def classify_field(path: str) -> tuple[str, str]:
@@ -276,6 +199,8 @@ def classify_candidate_field(
     """Classify one observed field with narrowly scoped semantic context."""
 
     field_name = path.rsplit(".", 1)[-1].replace("[]", "")
+    if field_name.casefold() in _reviewed_sensitive_fields(operation_id):
+        return "sensitive", "route_specific_sensitive_field_review"
     classification, reason = classify_field(path)
     if classification != "manual_review":
         return classification, reason
@@ -359,7 +284,7 @@ def _mapping_keys(rows: Sequence[Any]) -> set[str]:
 def _scalar_list_type(value: Any) -> str | None:
     if not isinstance(value, list) or not value:
         return None
-    observed = {_json_type(item) for item in value}
+    observed = {json_type(item) for item in value}
     if not observed <= {"string", "integer", "number", "boolean"}:
         return None
     if observed <= {"integer", "number"}:

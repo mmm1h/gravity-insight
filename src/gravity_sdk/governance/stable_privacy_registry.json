@@ -991,6 +991,28 @@
       "data.video_material_list[].material_id",
       "data.video_material_list[].type"
     ],
+    "material.bytedance.promotion_material.list": [
+      "data.list",
+      "data.list[].bit_rate",
+      "data.list[].click_cnt",
+      "data.list[].cpc_platform",
+      "data.list[].cpm_platform",
+      "data.list[].create_time",
+      "data.list[].ctr",
+      "data.list[].duration",
+      "data.list[].file_type",
+      "data.list[].filename",
+      "data.list[].format",
+      "data.list[].height",
+      "data.list[].id",
+      "data.list[].material_id",
+      "data.list[].show_cnt",
+      "data.list[].size",
+      "data.list[].source",
+      "data.list[].stat_cost",
+      "data.list[].video_cover_id",
+      "data.list[].width"
+    ],
     "material.bytedance_asset_material.list": [
       "data.list",
       "data.list[].aigc",

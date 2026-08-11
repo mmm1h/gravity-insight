@@ -1,0 +1,192 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 9,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "巨量广告素材表现列表；按日期查询同一广告主、广告下的素材及网页端默认展示指标。",
+    "domain": "material",
+    "effect": "read",
+    "examples": [],
+    "executable": true,
+    "input_fields": {
+      "advertiser_id": {
+        "description": "巨量广告主 ID；与 promotion_id 取自同一受治理广告筛选行。",
+        "required": true,
+        "type": "string"
+      },
+      "end_time": {
+        "description": "查询结束日期，格式 YYYY-MM-DD。",
+        "required": true,
+        "type": "date"
+      },
+      "promotion_id": {
+        "description": "巨量广告 ID；与 advertiser_id 取自同一受治理广告筛选行。",
+        "required": true,
+        "type": "string"
+      },
+      "start_time": {
+        "description": "查询开始日期，格式 YYYY-MM-DD。",
+        "required": true,
+        "type": "date"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "advertiser_id": "$parent:advertiser_id",
+        "end_time": "$today",
+        "promotion_id": "$parent:promotion_id",
+        "start_time": "$yesterday"
+      }
+    },
+    "operation_id": "material.bytedance.promotion_material.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/bytedance/promotion/material/list/",
+    "platform": "bytedance",
+    "privacy_policy": {
+      "classification": "material",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "bytedance",
+      "source_files": [
+        "operations/material.bytedance.promotion_material.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "advertiser_id",
+        "end_time",
+        "promotion_id",
+        "start_time"
+      ],
+      "defaults": {},
+      "fixed_body": {
+        "query_fields": [
+          "stat_cost",
+          "show_cnt",
+          "cpm_platform",
+          "click_cnt",
+          "ctr",
+          "cpc_platform"
+        ]
+      },
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": "advertiser_id",
+        "operation_id": "promotion.bytedance.promotion_filter.list",
+        "output_path": "data.list[].advertiser_id",
+        "selection": "caller_select"
+      },
+      {
+        "input_field": "promotion_id",
+        "operation_id": "promotion.bytedance.promotion_filter.list",
+        "output_path": "data.list[].promotion_id",
+        "selection": "caller_select"
+      }
+    ],
+    "resource": "bytedance_promotion_material",
+    "response_projection": {
+      "data_keys": [
+        "list"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "bit_rate",
+        "click_cnt",
+        "cpc_platform",
+        "cpm_platform",
+        "create_time",
+        "ctr",
+        "duration",
+        "file_type",
+        "filename",
+        "format",
+        "height",
+        "id",
+        "material_id",
+        "show_cnt",
+        "size",
+        "source",
+        "stat_cost",
+        "video_cover_id",
+        "width"
+      ],
+      "known_omitted_item_keys": [
+        "cover_source",
+        "labels",
+        "material_info",
+        "organization_tags",
+        "poster_url",
+        "signature",
+        "star_author_id",
+        "url"
+      ],
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "material.json"
+}

@@ -1,0 +1,59 @@
+{
+  "reviewed_safe_fields": {
+    "material.asset_material_media_review_list.list": [
+      "suggestion"
+    ],
+    "material.bytedance.promotion_material.list": [
+      "bit_rate",
+      "cpc_platform",
+      "cpm_platform",
+      "ctr",
+      "duration",
+      "filename",
+      "format",
+      "height",
+      "size",
+      "stat_cost",
+      "width"
+    ],
+    "metadata.event_property_template_event_list.list": [
+      "is_common",
+      "is_preset",
+      "trigger_opportunity"
+    ],
+    "metadata.property.list": [
+      "is_common",
+      "is_preset"
+    ],
+    "promotion.bilibili.account.list": [
+      "average_cost_per_thousand",
+      "click_rate",
+      "cost_per_click",
+      "san_lian_launch_total_consume",
+      "total_cash_consume",
+      "total_consume",
+      "total_red_packet_consume",
+      "total_special_red_packet_consume"
+    ],
+    "promotion.bytedance.site.list": [
+      "siteId",
+      "siteType"
+    ],
+    "report.company_amount.query": [
+      "ad_create_amount_usage",
+      "material_transmit_g_usage"
+    ],
+    "report.media_report.list": [
+      "cost"
+    ]
+  },
+  "reviewed_sensitive_fields": {
+    "material.bytedance.promotion_material.list": [
+      "cover_source",
+      "labels",
+      "organization_tags",
+      "signature",
+      "star_author_id"
+    ]
+  }
+}

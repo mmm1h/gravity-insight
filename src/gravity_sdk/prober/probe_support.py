@@ -292,7 +292,10 @@ def evidence_path(operation_id: str, evidence_root: Path) -> Path:
 
 
 def relative(path: Path) -> str:
-    return path.relative_to(REPO_ROOT).as_posix()
+    try:
+        return path.relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return path.as_posix()
 
 
 def conclusion(status_code: int | None, payload: Any, confirmed_status: str | None) -> str:

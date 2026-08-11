@@ -249,6 +249,56 @@ def test_ai_trusteeship_metrics_are_reviewed_by_operation_family() -> None:
     )[0] == "manual_review"
 
 
+def test_bytedance_promotion_material_review_keeps_identity_and_urls_hidden() -> None:
+    payload = {
+        "data": {
+            "list": [
+                {
+                    "filename": "synthetic.mp4",
+                    "stat_cost": 1.0,
+                    "cpc_platform": 0.5,
+                    "labels": ["synthetic"],
+                    "material_info": {
+                        "filename": "synthetic.mp4",
+                        "signature": "synthetic-signature",
+                        "star_author_id": "synthetic-author",
+                        "url": "https://example.invalid/video",
+                    },
+                },
+                {"labels": "synthetic"},
+            ]
+        }
+    }
+
+    fields = candidate_fields(
+        response_schema_sketch(payload),
+        operation_id="material.bytedance.promotion_material.list",
+    )
+    by_path = {item["path"]: item for item in fields}
+
+    for path in (
+        "data.list[].filename",
+        "data.list[].stat_cost",
+        "data.list[].cpc_platform",
+        "data.list[].material_info.filename",
+    ):
+        assert by_path[path]["privacy_classification"] == "non_sensitive"
+        assert by_path[path]["expose"] is True
+    for path in (
+        "data.list[].labels",
+        "data.list[].material_info.signature",
+        "data.list[].material_info.star_author_id",
+        "data.list[].material_info.url",
+    ):
+        assert by_path[path]["privacy_classification"] == "sensitive"
+        assert by_path[path]["expose"] is False
+    assert not {
+        item["path"]
+        for item in fields
+        if item["privacy_classification"] == "manual_review"
+    }
+
+
 def test_strict_sensitive_fields_never_enter_generated_projection() -> None:
     payload = {
         "data": {

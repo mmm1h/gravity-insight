@@ -206,14 +206,6 @@
         "promotion.honor.campaign.list": 1,
         "promotion.tencent.adgroup_filter.list": 2
       },
-      "src/gravity_sdk/prober/privacy.py": {
-        "material.asset_material_media_review_list.list": 1,
-        "metadata.event_property_template_event_list.list": 1,
-        "metadata.property.list": 1,
-        "promotion.bilibili.account.list": 1,
-        "promotion.bytedance.site.list": 1,
-        "report.company_amount.query": 1
-      },
       "src/gravity_sdk/registry.py": {
         "analysis.account_user.list": 1,
         "analysis.monetization_detail.list": 1,
