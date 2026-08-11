@@ -1,0 +1,691 @@
+{
+  "conclusion": "inconclusive_empty",
+  "http": [
+    {
+      "http_status": 200,
+      "method": "POST",
+      "operation_id": "promotion.bytedance.account.list",
+      "path": "/turbo_engine/api/v1/bytedance/manage/account/list/",
+      "purpose": "parent",
+      "raw_schema_fingerprint": "cd033783cdd1f927d668a7f3dee2aab3eb6525e567bcf1a641314b725d4b0103",
+      "request_fingerprint": "c5c5168e6e9f31b852ed1e85de20a762b5f247c2a868a33c9df371d16bec0d8c",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body.filters",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.body.filters[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body.filters[].field",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.body.filters[].operator",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.body.filters[].values",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.body.filters[].values[]",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.query.page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.query.page_size",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.code",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.expired_cnt",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].account_email",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].account_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].account_name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].account_role",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].ad_platform",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].advertiser_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].advertiser_name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].advertiser_sort",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].agent_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].agent_name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].app_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].balance",
+            "presence": "observed",
+            "types": [
+              "number"
+            ]
+          },
+          {
+            "path": "$.data.list[].budget",
+            "presence": "observed",
+            "types": [
+              "number"
+            ]
+          },
+          {
+            "path": "$.data.list[].budget_mode",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].cid",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].company",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].create_time",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].create_user_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].create_user_name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].develop_app_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].financial_info",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].financial_info.common_grant",
+            "presence": "observed",
+            "types": [
+              "number"
+            ]
+          },
+          {
+            "path": "$.data.list[].financial_info.default_grant",
+            "presence": "observed",
+            "types": [
+              "number"
+            ]
+          },
+          {
+            "path": "$.data.list[].financial_info.grant",
+            "presence": "observed",
+            "types": [
+              "number"
+            ]
+          },
+          {
+            "path": "$.data.list[].financial_info.search_grant",
+            "presence": "observed",
+            "types": [
+              "number"
+            ]
+          },
+          {
+            "path": "$.data.list[].financial_info.valid_grant",
+            "presence": "observed",
+            "types": [
+              "number"
+            ]
+          },
+          {
+            "path": "$.data.list[].first_agent_company_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].first_agent_company_name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].first_agent_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].first_agent_name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].first_industry_name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].grant",
+            "presence": "observed",
+            "types": [
+              "number"
+            ]
+          },
+          {
+            "path": "$.data.list[].grant_source",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].grant_type",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].media_status",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].modify_time",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].operator_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].operator_name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].parent_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].put_status",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].put_status_modify_time",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].remark",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].second_industry_name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].self_operation_tag",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].sum_quota",
+            "presence": "observed",
+            "types": [
+              "number"
+            ]
+          },
+          {
+            "path": "$.data.list[].toutiao_parent_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].update_user_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].update_user_name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.page_info",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.page_info.page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.page_size",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.total_number",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.total_page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.extra",
+            "presence": "observed",
+            "types": [
+              "null"
+            ]
+          },
+          {
+            "path": "$.msg",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    },
+    {
+      "http_status": 200,
+      "method": "POST",
+      "operation_id": "promotion.bytedance.standard_project.list",
+      "path": "/turbo_engine/api/v1/bytedance/manager/std_project/list/",
+      "purpose": "discovery",
+      "raw_schema_fingerprint": "c7066680fb7c4728ca0ebe6efd66f9d46e039674ba301095371e5cde45d317a1",
+      "request_fingerprint": "6f8a73d3d33dc4383996da7432ff14d3697d5c0f25e13f7545fdecde2ee5224b",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body.advertiser_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.body.filtering",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body.filtering.status_first",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.code",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[]",
+            "presence": "observed",
+            "types": [
+              "unknown"
+            ]
+          },
+          {
+            "path": "$.extra",
+            "presence": "observed",
+            "types": [
+              "null"
+            ]
+          },
+          {
+            "path": "$.msg",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    }
+  ],
+  "operation_id": "promotion.bytedance.standard_project.list",
+  "pagination": {
+    "kind": "none",
+    "total_field_path": null,
+    "upstream_hard_max": null,
+    "verified": true
+  },
+  "privacy": {
+    "candidate_fields": [],
+    "classified_non_sensitive": 0,
+    "classified_sensitive": 0,
+    "manual_review": 0,
+    "values_persisted": false
+  },
+  "probed_at": "2026-08-11T03:22:55Z",
+  "projected_schema_fingerprint": null,
+  "raw_schema_fingerprint": "c7066680fb7c4728ca0ebe6efd66f9d46e039674ba301095371e5cde45d317a1",
+  "request_stats": {
+    "backoff_terminations": 0,
+    "failed": 0,
+    "total": 2
+  },
+  "required_parent": {
+    "candidate_count": 1,
+    "operation_id": "promotion.bytedance.account.list",
+    "output_path": "data.list[].advertiser_id",
+    "probe_selection": "first",
+    "selection": "caller_select",
+    "status": "resolved"
+  },
+  "route": {
+    "family": "promotion.bytedance.standard_project.list",
+    "method": "POST",
+    "path": "/turbo_engine/api/v1/bytedance/manager/std_project/list/"
+  },
+  "schema_version": "gravity-insight.probe-evidence.v1",
+  "semantic_errors": {
+    "missing_parameter": {
+      "attempted": false,
+      "shape_observed": false
+    },
+    "parameter_adjustments": [],
+    "permission_shape_observed": false,
+    "rules": []
+  },
+  "successful": false
+}

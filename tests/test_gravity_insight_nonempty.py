@@ -752,4 +752,5 @@ def test_task_scope_tracks_integrated_exact_blocker_sets() -> None:
         ROOT / "src" / "gravity_sdk" / "contracts" / "drafts"
     )
 
-    assert len(operation_ids) == 118
+    # 标准投放项目已验证请求与父链，但当前租户仍只有空样本。
+    assert len(operation_ids) == 119

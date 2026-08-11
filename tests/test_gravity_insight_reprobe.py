@@ -415,6 +415,64 @@ def test_automatic_parent_rebinding_preserves_manual_parent_and_is_idempotent(
     ] == [parents[1]]
 
 
+def test_frontend_verified_parent_wins_over_generic_same_field_candidate(
+    tmp_path: Path,
+) -> None:
+    draft_root = tmp_path / "drafts"
+    operation_root = tmp_path / "operations"
+    source = build_draft(_route(), set())
+    operation = source["operation"]
+    operation["operation_id"] = "promotion.bytedance.standard_project.list"
+    operation["platform"] = "bytedance"
+    operation["input_fields"] = {
+        "advertiser_id": {"type": "integer", "required": True}
+    }
+    verified_parent = {
+        "operation_id": "promotion.bytedance.account.list",
+        "input_field": "advertiser_id",
+        "output_path": "data.list[].advertiser_id",
+        "selection": "caller_select",
+    }
+    operation["required_parent"] = [verified_parent]
+    operation["live_probe"]["inputs"] = {
+        "advertiser_id": "$parent:advertiser_id"
+    }
+    operation["provenance"]["applied_overrides"] = [
+        "frontend_verified_parent_binding"
+    ]
+    source["draft"]["route_evidence"]["parameter_contract"] = {
+        "stable_parent_candidates": [verified_parent]
+    }
+    draft_path = draft_root / f"{operation['operation_id']}.json"
+    _write_json(draft_path, source)
+    for operation_id in (
+        "promotion.bytedance.account.list",
+        "promotion.bytedance.project_filter.list",
+    ):
+        _write_json(
+            operation_root / f"{operation_id}.json",
+            {
+                "operation": {
+                    "operation_id": operation_id,
+                    "stability": "stable",
+                }
+            },
+        )
+
+    result = bind_stable_parent_candidates(
+        draft_root=draft_root,
+        operation_root=operation_root,
+        operation_ids=[operation["operation_id"]],
+    )
+
+    persisted = json.loads(draft_path.read_text(encoding="utf-8"))
+    assert result["bindings"] == 0
+    assert persisted["operation"]["required_parent"] == [verified_parent]
+    assert persisted["draft"]["route_evidence"]["parameter_contract"][
+        "stable_parent_candidates"
+    ] == [verified_parent]
+
+
 def test_named_parent_placeholders_resolve_independent_fields() -> None:
     class StableClient:
         def probe(self, operation_id: str) -> dict[str, object]:
