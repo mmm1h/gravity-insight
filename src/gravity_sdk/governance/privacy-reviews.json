@@ -1,5 +1,24 @@
 {
   "reviewed_safe_fields": {
+    "app.capacity.get": [
+      "ad_create_amount",
+      "ad_create_amount_usage",
+      "advertiser_amount",
+      "advertiser_amount_usage",
+      "app_limit_amount",
+      "app_limit_amount_usage",
+      "click_amount_million",
+      "click_amount_million_usage",
+      "event_amount_million",
+      "event_amount_million_usage",
+      "material_transmit_g",
+      "material_transmit_g_usage",
+      "package_total_million",
+      "package_total_million_opt_usage",
+      "package_total_million_usage",
+      "storage_amount_g",
+      "storage_amount_g_usage"
+    ],
     "material.asset_material_media_review_list.list": [
       "suggestion"
     ],
@@ -54,6 +73,13 @@
     ]
   },
   "reviewed_sensitive_fields": {
+    "app.capacity.get": [
+      "company_position",
+      "formula",
+      "our_salesman_id",
+      "our_salesman_remark",
+      "silence"
+    ],
     "material.bytedance.promotion_material.list": [
       "cover_source",
       "labels",

@@ -156,10 +156,11 @@ class GravityInsightWriteRegistryTests(unittest.TestCase):
         # 完成同源父级、非空样本和嵌套隐私投影后升至 158；巨量可投放
         # 广告列表完成账户父级、固定过滤和隐私投影后升至 159；巨量广告
         # 素材表现列表完成同源父级、默认指标和隐私投影后升至 160；巨量
-        # 广告主表现首屏完成无拉数请求、非空样本与隐私收口后升至 161。
+        # 广告主表现首屏完成无拉数请求、非空样本与隐私收口后升至 161；
+        # 公司套餐容量读取完成嵌套投影和隐私复验后升至 162。
         # 本测试的保证不是「这个数不变」，而是「它远小于 accounted，且
         # blocked_write 绝不被计入可调用」——即下面两条 414 断言。
-        self.assertEqual(161, rebuilt["summary"]["callable_covered"])
+        self.assertEqual(162, rebuilt["summary"]["callable_covered"])
         self.assertEqual(414, rebuilt["accounting_summary"]["accounted_blocked_write"])
         self.assertEqual(414, rebuilt["callability_summary"]["contract_only"])
 

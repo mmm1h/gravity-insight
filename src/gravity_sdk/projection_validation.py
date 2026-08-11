@@ -42,12 +42,21 @@ def validate_projection_bindings(projection: Any, names: Sequence[str]) -> None:
 
 def _validate_collection_bindings(projection: Any) -> None:
     nested_parent_keys = set(projection.item_keys)
+    for data_item_keys in projection.data_item_keys.values():
+        nested_parent_keys.update(data_item_keys)
     for path_item_keys in projection.data_path_item_keys.values():
         nested_parent_keys.update(path_item_keys)
+    pending = list(nested_parent_keys)
+    while pending:
+        parent = pending.pop()
+        for child in projection.nested_item_keys.get(parent, ()):
+            if child not in nested_parent_keys:
+                nested_parent_keys.add(child)
+                pending.append(child)
     if set(projection.nested_item_keys) - nested_parent_keys:
         raise ManifestError(
             "response_projection.nested_item_keys must reference declared item_keys "
-            "or data_path_item_keys"
+            "or reachable data container fields"
         )
     if set(projection.data_item_keys) - set(projection.data_keys):
         raise ManifestError(

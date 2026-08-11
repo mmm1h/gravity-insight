@@ -4,14 +4,17 @@ import json
 
 import pytest
 
+from gravity_sdk.models import ResponseProjection
 from gravity_sdk.prober.privacy import (
     build_projection,
     candidate_fields,
     classify_candidate_field,
     classify_field,
+    projection_exposes_path,
     response_schema_sketch,
 )
 from gravity_sdk.prober.privacy_stats import profile_named_fields
+from gravity_sdk.projection_validation import validate_projection_bindings
 
 
 @pytest.mark.parametrize(
@@ -195,6 +198,49 @@ def test_aggregate_mapping_and_series_receive_nested_allowlists() -> None:
         "columns": ["remark"],
         "today": ["remark"],
     }
+
+
+def test_nested_object_projection_is_recursive_and_fail_closed() -> None:
+    payload = {
+        "data": {
+            "data": {
+                "capacity": {
+                    "status": "active",
+                    "total_count": 10,
+                    "create_user_name": "not persisted",
+                    "relation_package": [
+                        {"id": 1, "name": "standard", "remark": "not persisted"}
+                    ],
+                },
+                "product": {"id": 2, "status": 1, "remark": "not persisted"},
+            }
+        }
+    }
+    fields = candidate_fields(response_schema_sketch(payload))
+
+    projection = build_projection(payload, fields)
+
+    assert projection["data_keys"] == ["data"]
+    assert projection["data_item_keys"] == {"data": ["capacity", "product"]}
+    assert projection["nested_item_keys"] == {
+        "capacity": ["relation_package", "status", "total_count"],
+        "product": ["id", "status"],
+        "relation_package": ["id", "name"],
+    }
+    assert projection["known_omitted_nested_item_keys"] == {
+        "capacity": ["create_user_name"],
+        "product": ["remark"],
+        "relation_package": ["remark"],
+    }
+    assert projection_exposes_path("data.data.capacity.total_count", projection)
+    assert projection_exposes_path(
+        "data.data.capacity.relation_package[].name", projection
+    )
+    assert not projection_exposes_path(
+        "data.data.capacity.create_user_name", projection
+    )
+    assert not projection_exposes_path("data.data.product.remark", projection)
+    validate_projection_bindings(ResponseProjection.from_dict(projection), ())
 
 
 def test_metadata_dictionary_context_does_not_override_sensitive_names() -> None:

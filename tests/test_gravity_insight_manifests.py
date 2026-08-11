@@ -323,8 +323,17 @@ class GravityInsightManifestTests(unittest.TestCase):
                 nested_item_keys = projection.get("nested_item_keys", {})
                 self.assertIsInstance(nested_item_keys, dict)
                 nested_parent_keys = set(projection["item_keys"])
+                for fields in projection.get("data_item_keys", {}).values():
+                    nested_parent_keys.update(fields)
                 for fields in projection.get("data_path_item_keys", {}).values():
                     nested_parent_keys.update(fields)
+                pending = list(nested_parent_keys)
+                while pending:
+                    parent = pending.pop()
+                    for child in nested_item_keys.get(parent, []):
+                        if child not in nested_parent_keys:
+                            nested_parent_keys.add(child)
+                            pending.append(child)
                 self.assertTrue(set(nested_item_keys) <= nested_parent_keys)
                 self.assertTrue(
                     all(
@@ -649,6 +658,58 @@ class GravityInsightManifestTests(unittest.TestCase):
 
     def test_verified_nested_projection_contracts_are_exact(self) -> None:
         expected = {
+            "app.capacity.get": {
+                "capacity": [
+                    "ad_create_amount",
+                    "ad_create_amount_usage",
+                    "advertiser_amount",
+                    "advertiser_amount_usage",
+                    "app_limit_amount",
+                    "app_limit_amount_usage",
+                    "capacity_type",
+                    "click_amount_million",
+                    "click_amount_million_usage",
+                    "company_id",
+                    "company_type",
+                    "contact_status",
+                    "create_time",
+                    "end_time",
+                    "event_amount_million",
+                    "event_amount_million_usage",
+                    "id",
+                    "material_transmit_g",
+                    "material_transmit_g_usage",
+                    "modify_time",
+                    "package_total_million",
+                    "package_total_million_opt_usage",
+                    "package_total_million_usage",
+                    "relation_package",
+                    "snapshot_id",
+                    "start_time",
+                    "storage_amount_g",
+                    "storage_amount_g_usage",
+                    "update_usage_time",
+                ],
+                "product": [
+                    "company_id",
+                    "create_time",
+                    "end_time",
+                    "id",
+                    "modify_time",
+                    "product_id",
+                    "start_time",
+                    "status",
+                    "version",
+                ],
+                "relation_package": [
+                    "end_time",
+                    "formula_name",
+                    "name",
+                    "package_id",
+                    "package_total_million",
+                    "start_time",
+                ],
+            },
             "analysis.account_user.list": {
                 "dept_info": ["id", "name", "is_enabled"],
                 "roles": ["id", "name", "code", "is_enabled"],
@@ -1030,6 +1091,7 @@ class GravityInsightManifestTests(unittest.TestCase):
                     ],
                     "re_attribute_records": re_attribute_info,
                 },
+                "app.capacity.get": {"data": ["capacity", "product"]},
                 "app.detail": {
                     "app": [
                         "create_time",

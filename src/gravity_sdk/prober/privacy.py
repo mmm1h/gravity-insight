@@ -5,6 +5,11 @@ from __future__ import annotations
 import re
 from typing import Any, Mapping, Sequence
 
+from .nested_projection import (
+    build_container_contract,
+    merge_allowed_fields,
+    merge_omitted_fields,
+)
 from .privacy_reviews import (
     REVIEWED_SAFE_FIELDS,
     ROUTE_REVIEWED_SENSITIVE_FIELDS,
@@ -273,12 +278,12 @@ def _classified(path: str, candidates: Mapping[str, Mapping[str, Any]]) -> str:
     return classify_field(path)[0]
 
 
-def _mapping_keys(rows: Sequence[Any]) -> set[str]:
-    keys: set[str] = set()
-    for row in rows:
-        if isinstance(row, Mapping):
-            keys.update(safe_schema_key(key) for key in row)
-    return keys
+def _container_contract(
+    value: Any, path: str, by_path: Mapping[str, Mapping[str, Any]]
+) -> tuple[list[str], list[str], dict[str, list[str]], dict[str, list[str]]]:
+    return build_container_contract(
+        [value], path, lambda candidate: _classified(candidate, by_path)
+    )
 
 
 def _scalar_list_type(value: Any) -> str | None:
@@ -300,55 +305,111 @@ def _list_data_projection(
         if _classified("data.list[]", by_path) != "non_sensitive":
             return None
         return {"data_scalar_list_types": {"list": scalar_type}}
-    keys = _mapping_keys(value)
-    safe = sorted(
-        name for name in keys if _classified(f"data.list[].{name}", by_path) == "non_sensitive"
+    safe, hidden, nested, nested_omitted = _container_contract(
+        value, "data.list", by_path
     )
     if not safe:
         return None
     result: dict[str, Any] = {"item_keys": safe}
-    hidden = sorted(keys - set(safe))
     if hidden:
         result["known_omitted_item_keys"] = hidden
+    if nested:
+        result["nested_item_keys"] = nested
+    if nested_omitted:
+        result["known_omitted_nested_item_keys"] = nested_omitted
     return result
 
 
 def _container_projection_keys(
     key: str, value: Any, by_path: Mapping[str, Mapping[str, Any]]
-) -> tuple[list[str], list[str]]:
-    if isinstance(value, list):
-        all_keys = candidate_keys = _mapping_keys(value)
-        prefix = f"data.{key}[]"
-    elif isinstance(value, Mapping):
-        all_keys = {safe_schema_key(name) for name in value}
-        candidate_keys = {
-            safe_schema_key(name)
-            for name, item in value.items()
-            if not isinstance(item, (Mapping, list))
-        }
-        prefix = f"data.{key}"
-    else:
-        return [], []
-    safe = sorted(
-        name for name in candidate_keys
-        if _classified(f"{prefix}.{name}", by_path) == "non_sensitive"
-    )
-    return safe, sorted(all_keys - set(safe))
+) -> tuple[list[str], list[str], dict[str, list[str]], dict[str, list[str]]]:
+    return _container_contract(value, f"data.{key}", by_path)
 
 
 def _list_projection(data: list[Any], by_path: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]:
-    keys = _mapping_keys(data)
-    safe = sorted(
-        key for key in keys if _classified(f"data[].{key}", by_path) == "non_sensitive"
-    )
+    safe, hidden, nested, nested_omitted = _container_contract(data, "data", by_path)
     projection: dict[str, Any] = {
         "data_keys": [], "required_data_keys": [], "item_keys": safe,
         "dynamic_item_fields": [], "data_shape": "list",
     }
-    hidden = sorted(keys - set(safe))
     if hidden:
         projection["known_omitted_item_keys"] = hidden
+    if nested:
+        projection["nested_item_keys"] = nested
+    if nested_omitted:
+        projection["known_omitted_nested_item_keys"] = nested_omitted
     return projection
+
+
+def _apply_list_data_projection(
+    projection: dict[str, Any],
+    value: list[Any],
+    by_path: Mapping[str, Mapping[str, Any]],
+) -> bool:
+    result = _list_data_projection(value, by_path)
+    if result is None:
+        return False
+    projection["required_data_keys"].append("list")
+    projection.update(result)
+    return True
+
+
+def _page_info_is_safe(
+    value: Mapping[str, Any], by_path: Mapping[str, Mapping[str, Any]]
+) -> bool:
+    child_keys = {safe_schema_key(name) for name in value}
+    return bool(child_keys) and all(
+        _classified(f"data.page_info.{name}", by_path) == "non_sensitive"
+        for name in child_keys
+    )
+
+
+def _merge_nested_projection(
+    projection: dict[str, Any],
+    nested: Mapping[str, Sequence[str]],
+    nested_omitted: Mapping[str, Sequence[str]],
+) -> None:
+    if nested:
+        allowed = projection.setdefault("nested_item_keys", {})
+        for name, fields in nested.items():
+            merge_allowed_fields(allowed, name, fields)
+    if nested_omitted:
+        omitted = projection.setdefault("known_omitted_nested_item_keys", {})
+        for name, fields in nested_omitted.items():
+            merge_omitted_fields(omitted, name, fields)
+
+
+def _apply_container_projection(
+    projection: dict[str, Any],
+    key: str,
+    value: Any,
+    by_path: Mapping[str, Mapping[str, Any]],
+) -> bool:
+    safe, hidden, nested, nested_omitted = _container_projection_keys(
+        key, value, by_path
+    )
+    if not safe or key == "total" and hidden:
+        return False
+    projection.setdefault("data_item_keys", {})[key] = safe
+    if hidden:
+        projection.setdefault("known_omitted_data_item_keys", {})[key] = hidden
+    _merge_nested_projection(projection, nested, nested_omitted)
+    return True
+
+
+def _project_mapping_value(
+    projection: dict[str, Any],
+    key: str,
+    value: Any,
+    by_path: Mapping[str, Mapping[str, Any]],
+) -> bool:
+    if key == "list" and isinstance(value, list):
+        return _apply_list_data_projection(projection, value, by_path)
+    if key == "page_info" and isinstance(value, Mapping):
+        return _page_info_is_safe(value, by_path)
+    if isinstance(value, (list, Mapping)):
+        return _apply_container_projection(projection, key, value, by_path)
+    return _classified(f"data.{key}", by_path) == "non_sensitive"
 
 
 def _mapping_projection(
@@ -362,35 +423,7 @@ def _mapping_projection(
     omitted: list[str] = []
     for raw_key, value in data.items():
         key = safe_schema_key(raw_key)
-        if key == "list" and isinstance(value, list):
-            list_projection = _list_data_projection(value, by_path)
-            if list_projection is not None:
-                exposed.append(key)
-                projection["required_data_keys"].append(key)
-                projection.update(list_projection)
-            else:
-                omitted.append(key)
-        elif key == "page_info" and isinstance(value, Mapping):
-            child_keys = {safe_schema_key(name) for name in value}
-            if child_keys and all(
-                _classified(f"data.page_info.{name}", by_path) == "non_sensitive"
-                for name in child_keys
-            ):
-                exposed.append(key)
-            else:
-                omitted.append(key)
-        elif isinstance(value, (list, Mapping)):
-            safe, hidden = _container_projection_keys(key, value, by_path)
-            if safe and not (key == "total" and hidden):
-                exposed.append(key)
-                projection.setdefault("data_item_keys", {})[key] = safe
-                if hidden:
-                    projection.setdefault("known_omitted_data_item_keys", {})[key] = hidden
-            else:
-                omitted.append(key)
-        elif not isinstance(value, (Mapping, list)) and _classified(
-            f"data.{key}", by_path
-        ) == "non_sensitive":
+        if _project_mapping_value(projection, key, value, by_path):
             exposed.append(key)
         else:
             omitted.append(key)
@@ -437,23 +470,26 @@ def projection_exposes_path(path: str, projection: Mapping[str, Any]) -> bool:
     data_keys = {str(value) for value in projection.get("data_keys", ())}
     item_keys = {str(value) for value in projection.get("item_keys", ())}
 
+    nested = projection.get("nested_item_keys", {})
     if normalized.startswith("data[]"):
-        return len(segments) == 1 and first_name in item_keys
+        return first_name in item_keys and _nested_projection_exposes(
+            first_name, segments[1:], nested
+        )
     if first == "list[]":
         return _list_projection_exposes(
             segments, data_keys=data_keys, item_keys=item_keys, projection=projection
         )
     if len(segments) == 1:
         return first_name in data_keys
-    if first.endswith("[]"):
-        if first_name not in data_keys:
-            return False
-        allowed = projection.get("data_item_keys", {})
-        if not isinstance(allowed, Mapping):
-            return False
-        item_name = segments[1].removesuffix("[]")
-        return item_name in {str(value) for value in allowed.get(first_name, ())}
-    return False
+    if first_name not in data_keys:
+        return False
+    allowed = projection.get("data_item_keys", {})
+    if not isinstance(allowed, Mapping):
+        return False
+    item_name = segments[1].removesuffix("[]")
+    if item_name not in {str(value) for value in allowed.get(first_name, ())}:
+        return False
+    return _nested_projection_exposes(item_name, segments[2:], nested)
 
 
 def _list_projection_exposes(

@@ -1,0 +1,1023 @@
+{
+  "conclusion": "success",
+  "http": [
+    {
+      "http_status": 200,
+      "method": "GET",
+      "operation_id": "app.capacity.get",
+      "path": "/account_center/api/v1/company/capacity/info/",
+      "purpose": "nonempty_search",
+      "raw_schema_fingerprint": "cb07bbf2a002fcf9acee51e88e05e6c80ce6c6e7dd8be9774238eda2226d70d1",
+      "request_fingerprint": "9314d65971f5008bfbbbd3350fef1943d4fe093f183112385c8ebbe967154fcb",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.code",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.ad_create_amount",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.ad_create_amount_usage",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.advertiser_amount",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.advertiser_amount_usage",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.app_limit_amount",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.app_limit_amount_usage",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.capacity_type",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.click_amount_million",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.click_amount_million_usage",
+            "presence": "observed",
+            "types": [
+              "number"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.company_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.company_position",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.company_type",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.contact_status",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.create_time",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.create_user_name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.end_time",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.event_amount_million",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.event_amount_million_usage",
+            "presence": "observed",
+            "types": [
+              "number"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.material_transmit_g",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.material_transmit_g_usage",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.modify_time",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.modify_user_name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.our_salesman_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.our_salesman_remark",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.package_total_million",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.package_total_million_opt_usage",
+            "presence": "observed",
+            "types": [
+              "number"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.package_total_million_usage",
+            "presence": "observed",
+            "types": [
+              "number"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.relation_package",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.relation_package[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.relation_package[].end_time",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.relation_package[].formula",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.relation_package[].formula_name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.relation_package[].name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.relation_package[].package_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.relation_package[].package_total_million",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.relation_package[].start_time",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.silence",
+            "presence": "observed",
+            "types": [
+              "null"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.snapshot_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.start_time",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.storage_amount_g",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.storage_amount_g_usage",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.capacity.update_usage_time",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.product",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.data.product.company_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.product.create_time",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.product.end_time",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.product.id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.product.modify_time",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.product.product_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.data.product.remark",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.data.product.start_time",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.product.status",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.data.product.version",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.extra",
+            "presence": "observed",
+            "types": [
+              "null"
+            ]
+          },
+          {
+            "path": "$.msg",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    }
+  ],
+  "operation_id": "app.capacity.get",
+  "pagination": {
+    "kind": "none",
+    "verified": true
+  },
+  "privacy": {
+    "candidate_fields": [
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.data.capacity.ad_create_amount",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.data.capacity.ad_create_amount_usage",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.data.capacity.advertiser_amount",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.data.capacity.advertiser_amount_usage",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.data.capacity.app_limit_amount",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.data.capacity.app_limit_amount_usage",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data.capacity.capacity_type",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.data.capacity.click_amount_million",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.data.capacity.click_amount_million_usage",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "number"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data.capacity.company_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_sensitive_field_review",
+        "expose": false,
+        "path": "data.data.capacity.company_position",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data.capacity.company_type",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data.capacity.contact_status",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data.capacity.create_time",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "sensitive_name_pattern",
+        "expose": false,
+        "path": "data.data.capacity.create_user_name",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data.capacity.end_time",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.data.capacity.event_amount_million",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.data.capacity.event_amount_million_usage",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "number"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data.capacity.id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.data.capacity.material_transmit_g",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.data.capacity.material_transmit_g_usage",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data.capacity.modify_time",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "sensitive_name_pattern",
+        "expose": false,
+        "path": "data.data.capacity.modify_user_name",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_sensitive_field_review",
+        "expose": false,
+        "path": "data.data.capacity.our_salesman_id",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_sensitive_field_review",
+        "expose": false,
+        "path": "data.data.capacity.our_salesman_remark",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.data.capacity.package_total_million",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.data.capacity.package_total_million_opt_usage",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "number"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.data.capacity.package_total_million_usage",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "number"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data.capacity.relation_package[].end_time",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_sensitive_field_review",
+        "expose": false,
+        "path": "data.data.capacity.relation_package[].formula",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data.capacity.relation_package[].formula_name",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data.capacity.relation_package[].name",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data.capacity.relation_package[].package_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.data.capacity.relation_package[].package_total_million",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data.capacity.relation_package[].start_time",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_sensitive_field_review",
+        "expose": false,
+        "path": "data.data.capacity.silence",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data.capacity.snapshot_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data.capacity.start_time",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.data.capacity.storage_amount_g",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.data.capacity.storage_amount_g_usage",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data.capacity.update_usage_time",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data.product.company_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data.product.create_time",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data.product.end_time",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data.product.id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data.product.modify_time",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data.product.product_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "free_text_field_review",
+        "expose": false,
+        "path": "data.data.product.remark",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data.product.start_time",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data.product.status",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.data.product.version",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      }
+    ],
+    "classified_non_sensitive": 43,
+    "classified_sensitive": 8,
+    "manual_review": 0,
+    "values_persisted": false
+  },
+  "probed_at": "2026-08-11T05:09:21Z",
+  "projected_schema_fingerprint": "2670770a3be214596d906ff4557656379e41c0ae39cb5151143795b3350b459c",
+  "raw_schema_fingerprint": "cb07bbf2a002fcf9acee51e88e05e6c80ce6c6e7dd8be9774238eda2226d70d1",
+  "request_stats": {
+    "backoff_terminations": 0,
+    "failed": 0,
+    "total": 1
+  },
+  "required_parent": null,
+  "route": {
+    "family": "app.capacity.get",
+    "method": "GET",
+    "path": "/account_center/api/v1/company/capacity/info/"
+  },
+  "schema_version": "gravity-insight.probe-evidence.v1",
+  "semantic_errors": {
+    "missing_parameter": {
+      "attempted": false,
+      "shape_observed": false
+    },
+    "parameter_adjustments": [],
+    "permission_shape_observed": false,
+    "rules": [
+      "code",
+      "extra.error"
+    ]
+  },
+  "successful": true
+}
