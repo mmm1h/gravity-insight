@@ -5,13 +5,13 @@
       {
         "code": "empty_sample",
         "detail": "The observed tenant response was empty and cannot prove an item schema.",
-        "evidence": "evidence/probe/20260808T205518Z_material.creative_component.list.yaml",
+        "evidence": "evidence/probe/20260811T020200Z_material.creative_component.list.yaml",
         "status": "open"
       },
       {
         "code": "response_schema_unverified",
         "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
-        "evidence": "evidence/probe/20260808T205518Z_material.creative_component.list.yaml",
+        "evidence": "evidence/probe/20260811T020200Z_material.creative_component.list.yaml",
         "status": "open"
       }
     ],
@@ -89,14 +89,25 @@
         "projected_schema_fingerprint": null,
         "raw_schema_fingerprint": "7c58ed2c08c62403763f03bf84baabf2f6609efc6064f87aa03b35d9b739c9ea",
         "successful": false
+      },
+      {
+        "conclusion": "inconclusive_empty",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": true,
+        "path": "evidence/probe/20260811T020200Z_material.creative_component.list.yaml",
+        "probed_at": "2026-08-11T02:02:00Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "7c58ed2c08c62403763f03bf84baabf2f6609efc6064f87aa03b35d9b739c9ea",
+        "successful": false
       }
     ],
     "promotion_gate": {
       "eligible": false,
       "missing": [
         "empty_sample",
-        "response_schema_unverified",
         "response_projection",
+        "response_schema_unverified",
         "successful_probe"
       ]
     },
@@ -176,6 +187,15 @@
           }
         ]
       },
+      "parent_resolution": {
+        "basis": "child_semantic_success_without_parent",
+        "bindings": [],
+        "conclusion": "unblocked",
+        "detail": "The child route returned a semantic success without a parent selector; no parent binding is required.",
+        "evidence": "evidence/probe/20260809T145638Z_material.creative_component.list.yaml",
+        "missing_evidence": [],
+        "replacement_blocker": null
+      },
       "path": "/turbo_engine/api/v1/bytedance/creative_component/list/",
       "promotion_level": null,
       "promotion_platform": null,
@@ -188,16 +208,7 @@
         "创意组件",
         "组件名",
         "请输入"
-      ],
-      "parent_resolution": {
-        "basis": "child_semantic_success_without_parent",
-        "bindings": [],
-        "conclusion": "unblocked",
-        "detail": "The child route returned a semantic success without a parent selector; no parent binding is required.",
-        "evidence": "evidence/probe/20260809T145638Z_material.creative_component.list.yaml",
-        "missing_evidence": [],
-        "replacement_blocker": null
-      }
+      ]
     },
     "status": "draft"
   },
@@ -207,21 +218,19 @@
     "auth_profile": "gravity_authorization",
     "block_reason": "draft blockers: empty_sample, response_schema_unverified",
     "contract_version": 1,
-    "description": "Draft catalog entry inferred from census route GET /turbo_engine/api/v1/bytedance/creative_component/list/; request binding, pagination, and response projection remain unverified.",
+    "description": "分页列出巨量创意组件；当前契约固定为空筛选，与网页首次加载行为一致。",
     "domain": "material",
     "effect": "read",
     "examples": [],
     "executable": false,
     "input_fields": {
-      "filters": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
-        "type": "any"
-      },
       "page": {
+        "default": 1,
         "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
         "type": "integer"
       },
       "page_size": {
+        "default": 20,
         "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
         "type": "integer"
       }
@@ -229,19 +238,20 @@
     "live_probe": {
       "enabled": false,
       "inputs": {
-        "filters": 0,
         "page": 1,
         "page_size": 20
       }
     },
     "operation_id": "material.creative_component.list",
     "pagination": {
-      "kind": "none",
-      "list_path": "",
-      "page_field": "",
-      "page_info_path": "",
-      "page_size_field": "",
-      "total_page_field": ""
+      "default_page_size": 20,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 100,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
     },
     "path_template": "/turbo_engine/api/v1/bytedance/creative_component/list/",
     "platform": "bytedance",
@@ -290,7 +300,8 @@
     },
     "provenance": {
       "applied_overrides": [
-        "frontend_route_parameter_contract"
+        "frontend_route_parameter_contract",
+        "frontend_creative_module_request_binding"
       ],
       "family": null,
       "platform": "bytedance",
@@ -300,12 +311,16 @@
     },
     "request": {
       "body_fields": [],
-      "defaults": {},
+      "defaults": {
+        "page": 1,
+        "page_size": 20
+      },
       "fixed_body": {},
-      "fixed_query": {},
+      "fixed_query": {
+        "filters": "[]"
+      },
       "path_fields": [],
       "query_fields": [
-        "filters",
         "page",
         "page_size"
       ]
