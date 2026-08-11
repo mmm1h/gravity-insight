@@ -2138,6 +2138,49 @@ class GravityInsightCoreTests(unittest.TestCase):
             )
         self.assertEqual([], session.calls)
 
+    def test_manifest_authorized_account_and_apprank_reads_reach_runtime(self):
+        class Credentials:
+            def get(self):
+                return Credential("opaque")
+
+        paths = (
+            "/account_center/api/v1/company/capacity/info/",
+            "/apprank/api/v1/app/list/",
+        )
+        for path in paths:
+            with self.subTest(path=path):
+                operation = load_operation_manifest(manifest(path=path))[0]
+                policy = PolicyEngine(Registry([operation]))
+                session = FakeSession([FakeResponse({"code": 0, "data": []})])
+                runtime = GravityHttpRuntime(
+                    session=session,
+                    credentials=Credentials(),
+                    requests_per_second=100,
+                    sleeper=lambda _delay: None,
+                    interval_jitter_ratio=0.0,
+                )
+                authorization = policy._prepare_request(operation.operation_id, {})
+
+                response = runtime._request_insight(
+                    authorization.method,
+                    authorization.path,
+                    policy_authorization=authorization,
+                    params=authorization.query,
+                    json_body=authorization.body,
+                )
+
+                self.assertEqual(200, response.status_code)
+                self.assertTrue(session.calls[0][1].endswith(path))
+
+    def test_manifest_policy_keeps_account_login_outside_read_surface(self):
+        operation = load_operation_manifest(
+            manifest(path="/account_center/api/v1/user_login/v2/")
+        )[0]
+        policy = PolicyEngine(Registry([operation]))
+
+        with self.assertRaisesRegex(PolicyViolation, "approved Gravity API namespaces"):
+            policy._prepare_request(operation.operation_id, {})
+
     def test_authorized_wire_payload_is_a_deep_toctou_safe_snapshot(self):
         controlled = manifest()
         operation_document = controlled["operations"][0]

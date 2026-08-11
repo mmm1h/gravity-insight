@@ -102,15 +102,15 @@ class GravityInsightAnalysisDirectoryTests(unittest.TestCase):
             self.assertTrue(operation.executable)
             self.assertTrue(operation.live_probe.enabled)
 
-    def test_http_runtime_allows_only_the_exact_account_directory_read(self) -> None:
+    def test_http_runtime_profile_accepts_governed_read_namespaces(self) -> None:
         self.assertTrue(
             INSIGHT_PROFILE.accepts("GET", "/account_center/api/v1/user/list/")
         )
-        self.assertFalse(
-            INSIGHT_PROFILE.accepts("POST", "/account_center/api/v1/user/list/")
+        self.assertTrue(
+            INSIGHT_PROFILE.accepts("POST", "/apprank/api/v1/app/list/")
         )
         self.assertFalse(
-            INSIGHT_PROFILE.accepts("GET", "/account_center/api/v1/user/export/")
+            INSIGHT_PROFILE.accepts("GET", "/outside/api/v1/user/list/")
         )
 
     def test_account_user_projects_analysis_safe_member_contract(self) -> None:

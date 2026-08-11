@@ -82,8 +82,7 @@ INSIGHT_PROFILE = RequestProfile(
     "https://web.gravity-engine.com",
     "https://web.gravity-engine.com/",
     frozenset({"GET", "POST"}),
-    exact_routes=frozenset({("GET", "/account_center/api/v1/user/list/")}),
-    path_prefixes=("/turbo_engine/", "/report/"),
+    path_prefixes=("/account_center/api/", "/apprank/api/", "/report/", "/turbo_engine/"),
 )
 SQL_PROFILE = RequestProfile(
     "sql",

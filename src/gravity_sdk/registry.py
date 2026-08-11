@@ -70,13 +70,11 @@ _BLOCKED_TERMINAL_TOKENS = _BLOCKED_PATH_SEGMENTS | frozenset(
         "reset", "restore", "revoke", "run", "set", "sync", "trigger",
     }
 )
-_EXACT_READ_ONLY_PATH_EXCEPTIONS = frozenset(
-    {
-        "/turbo_engine/api/v2/event/in_report/hide_or_delete_prop/",
-        "/turbo_engine/api/v2/datamanageconfig/template/subject/share/list/",
-        "/turbo_engine/api/v2/datamanageconfig/template/share/list/",
-    }
-)
+_EXACT_READ_ONLY_PATH_EXCEPTIONS = frozenset({
+    "/turbo_engine/api/v2/event/in_report/hide_or_delete_prop/",
+    "/turbo_engine/api/v2/datamanageconfig/template/subject/share/list/",
+    "/turbo_engine/api/v2/datamanageconfig/template/share/list/",
+})
 _MATERIAL_REPORT_METRICS: Mapping[str, tuple[str, ...]] = MappingProxyType(
     {
         "bytedance": ("stat_cost", "ctr", "convert_rate"),
@@ -327,7 +325,9 @@ class PolicyEngine(ExportPolicyMixin):
 
     @staticmethod
     def _check_template(path: str) -> None:
-        if not path.startswith(("/report/api/", "/turbo_engine/api/", "/account_center/api/")):
+        if path.startswith("/account_center/api/v1/user_login/") or not path.startswith(
+            ("/account_center/api/", "/apprank/api/", "/report/api/", "/turbo_engine/api/")
+        ):
             raise PolicyViolation("operation path is outside approved Gravity API namespaces")
         segments = {segment.casefold() for segment in path.split("/") if segment}
         exact_read_exception = path in _EXACT_READ_ONLY_PATH_EXCEPTIONS
