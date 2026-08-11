@@ -823,6 +823,13 @@ class GravityInsightManifestTests(unittest.TestCase):
                     "create_time",
                 ],
             },
+            "promotion.ai_trusteeship.detail": {
+                "conditions": ["day", "metrics_name", "value"],
+                "detail_list": ["advertiser_id", "count"],
+                "operator_values": ["boost_value", "type", "value"],
+                "send_way": ["type"],
+                "target_values": ["advertiser_id"],
+            },
         }
         device_info = [
             "Android_Version",
@@ -1117,6 +1124,33 @@ class GravityInsightManifestTests(unittest.TestCase):
                     "share_template": ["id", "name"],
                 },
                 "report.multidim.template.preset.get": {"detail": ["name"]},
+                "promotion.ai_trusteeship.detail": {
+                    "data": [
+                        "caliber",
+                        "check_fre",
+                        "check_type",
+                        "cid",
+                        "condition_type",
+                        "conditions",
+                        "count",
+                        "create_time",
+                        "detail_list",
+                        "frequency",
+                        "id",
+                        "last_check_time",
+                        "media_type",
+                        "modify_time",
+                        "name",
+                        "operator_values",
+                        "params_md5",
+                        "schedule_type",
+                        "send_way",
+                        "status",
+                        "target",
+                        "target_type",
+                        "target_values",
+                    ]
+                },
                 "promotion.bytedance.advertiser.list": {"total": ["stat_cost"]},
                 "promotion.bytedance.advertiser_performance.list": {
                     "total": ["stat_cost"]

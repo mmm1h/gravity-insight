@@ -25,6 +25,18 @@ from .promotion import save_draft
 
 
 ROUTE_PARAMETERS_PATH = CENSUS_DATA_ROOT / "route-params.json"
+_EXACT_PARENT_CANDIDATES: Mapping[str, tuple[tuple[str, ...], str]] = {
+    "ai_id": (("promotion", "ai_trusteeship", "list"), "data.list[].id"),
+    "app_id": (("app", "list"), "data.list[].id"),
+    "user_id": (("analysis", "account_user", "list"), "data.list[].user_id"),
+    "examine_user_id": (
+        ("analysis", "account_user", "list"),
+        "data.list[].user_id",
+    ),
+    "material_id": (("material", "local", "list"), "data.list[].material_id"),
+    "material_ids": (("material", "local", "list"), "data.list[].material_id"),
+    "album_id": (("material", "album", "tree"), "data.tree..id"),
+}
 
 _VALID_PARAMETER_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _RESERVED_EXTRA_KEYS = {
@@ -148,14 +160,10 @@ def assemble_draft_parameters(
 def _parent_candidate(
     field_name: str, platform: str | None, stable_ids: set[str]
 ) -> tuple[str, str] | None:
-    if field_name == "app_id" and "app.list" in stable_ids:
-        return "app.list", "data.list[].id"
-    if field_name in {"user_id", "examine_user_id"} and "analysis.account_user.list" in stable_ids:
-        return "analysis.account_user.list", "data.list[].user_id"
-    if field_name in {"material_id", "material_ids"} and "material.local.list" in stable_ids:
-        return "material.local.list", "data.list[].material_id"
-    if field_name == "album_id" and "material.album.tree" in stable_ids:
-        return "material.album.tree", "data.tree..id"
+    exact = _EXACT_PARENT_CANDIDATES.get(field_name)
+    if exact is not None:
+        parent_operation = ".".join(exact[0])
+        return (parent_operation, exact[1]) if parent_operation in stable_ids else None
     if field_name == "promotion_id" and platform == "bytedance":
         operation_id = "promotion.bytedance.promotion_filter.list"
         if operation_id in stable_ids:

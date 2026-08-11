@@ -371,6 +371,48 @@ def test_exact_stable_parent_candidate_is_bound_without_a_value(tmp_path: Path) 
     assert persisted["operation"]["required_parent"][0]["selection"] == "caller_select"
 
 
+def test_ai_trusteeship_detail_binds_the_stable_rule_list(tmp_path: Path) -> None:
+    draft_root = tmp_path / "drafts"
+    operation_root = tmp_path / "operations"
+    source, _ = assemble_source_parameters(
+        build_draft(_route(), set()), _parameter_contract()
+    )
+    source["operation"]["input_fields"] = {"ai_id": {"type": "integer"}}
+    source["operation"]["live_probe"]["inputs"] = {"ai_id": 0}
+    _write_json(draft_root / f"{source['operation']['operation_id']}.json", source)
+    _write_json(
+        operation_root / "promotion.ai_trusteeship.list.json",
+        {
+            "operation": {
+                "operation_id": "promotion.ai_trusteeship.list",
+                "stability": "stable",
+            }
+        },
+    )
+
+    result = bind_stable_parent_candidates(
+        draft_root=draft_root,
+        operation_root=operation_root,
+        operation_ids=[source["operation"]["operation_id"]],
+    )
+
+    persisted = json.loads(
+        (draft_root / f"{source['operation']['operation_id']}.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert result["bindings"] == 1
+    assert persisted["operation"]["live_probe"]["inputs"]["ai_id"] == "$parent:ai_id"
+    assert persisted["operation"]["required_parent"] == [
+        {
+            "input_field": "ai_id",
+            "operation_id": "promotion.ai_trusteeship.list",
+            "output_path": "data.list[].id",
+            "selection": "caller_select",
+        }
+    ]
+
+
 def test_automatic_parent_rebinding_preserves_manual_parent_and_is_idempotent(
     tmp_path: Path,
 ) -> None:

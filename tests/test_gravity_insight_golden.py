@@ -265,6 +265,8 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "promotion.tencent.account_company.list",
             # 快手账户主体选择器完成布尔请求和标量类型复验后晋升。
             "promotion.kuaishou.account_company.list",
+            # AI 托管详情完成规则列表父级、GET 参数和递归隐私投影复验后晋升。
+            "promotion.ai_trusteeship.detail",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]

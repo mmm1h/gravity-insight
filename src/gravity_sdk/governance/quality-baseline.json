@@ -68,7 +68,7 @@
       "src/gravity_sdk/prober/drafts.py::create_write_registry": 49,
       "src/gravity_sdk/prober/drafts.py::select_routes": 21,
       "src/gravity_sdk/prober/drafts.py::structured_blockers": 57,
-      "src/gravity_sdk/prober/parameters.py::_parent_candidate": 30,
+      "src/gravity_sdk/prober/parameters.py::_parent_candidate": 24,
       "src/gravity_sdk/prober/parameters.py::bind_stable_parent_candidates": 21,
       "src/gravity_sdk/prober/promotion.py::_legacy_privacy_evidence_reusable": 36,
       "src/gravity_sdk/prober/promotion.py::evaluate_gate": 33,
@@ -196,10 +196,6 @@
         "analysis.segment.user_detail.list": 2
       },
       "src/gravity_sdk/prober/parameters.py": {
-        "analysis.account_user.list": 2,
-        "app.list": 2,
-        "material.album.tree": 2,
-        "material.local.list": 2,
         "promotion.bytedance.project_filter.list": 2,
         "promotion.bytedance.promotion_filter.list": 1,
         "promotion.honor.campaign.list": 1,
