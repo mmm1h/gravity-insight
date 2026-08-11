@@ -1099,6 +1099,16 @@ class GravityInsightManifestTests(unittest.TestCase):
                     "re_attribute_records": re_attribute_info,
                 },
                 "app.capacity.get": {"data": ["capacity", "product"]},
+                "app.realtime_event.list": {
+                    "conf": [
+                        "app_id",
+                        "create_time",
+                        "end_time",
+                        "is_enabled",
+                        "modify_time",
+                        "start_time",
+                    ]
+                },
                 "app.detail": {
                     "app": [
                         "create_time",

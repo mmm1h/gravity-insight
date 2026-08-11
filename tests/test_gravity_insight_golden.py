@@ -267,6 +267,8 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "promotion.kuaishou.account_company.list",
             # AI 托管详情完成规则列表父级、GET 参数和递归隐私投影复验后晋升。
             "promotion.ai_trusteeship.detail",
+            # 实时事件配置完成应用父级、GET 参数和自由文本隐私收口后晋升。
+            "app.realtime_event.list",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]

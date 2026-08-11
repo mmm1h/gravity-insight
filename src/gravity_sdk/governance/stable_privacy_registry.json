@@ -891,6 +891,15 @@
       "data.list[].wechat_origin_id",
       "data.page_info"
     ],
+    "app.realtime_event.list": [
+      "data.conf",
+      "data.conf[].app_id",
+      "data.conf[].create_time",
+      "data.conf[].end_time",
+      "data.conf[].is_enabled",
+      "data.conf[].modify_time",
+      "data.conf[].start_time"
+    ],
     "attribution.attr_backtrack.list": [
       "data.list",
       "data.list[].app_id",
