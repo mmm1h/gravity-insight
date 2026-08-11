@@ -64,6 +64,9 @@
       "siteId",
       "siteType"
     ],
+    "promotion.kuaishou.account_company.list": [
+      "list"
+    ],
     "promotion.tencent.account_company.list": [
       "list"
     ],

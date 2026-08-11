@@ -170,13 +170,18 @@ def test_aggregate_metric_review_is_route_and_path_scoped() -> None:
     )[0] == "manual_review"
 
 
-def test_tencent_company_selector_review_is_route_scoped() -> None:
+def test_account_company_selector_reviews_are_route_scoped() -> None:
     path = "data.list[]"
 
     assert classify_field(path)[0] == "manual_review"
-    assert classify_candidate_field(
-        path, operation_id="promotion.tencent.account_company.list"
-    ) == ("non_sensitive", "route_specific_field_review")
+    for operation_id in (
+        "promotion.kuaishou.account_company.list",
+        "promotion.tencent.account_company.list",
+    ):
+        assert classify_candidate_field(path, operation_id=operation_id) == (
+            "non_sensitive",
+            "route_specific_field_review",
+        )
     assert classify_candidate_field(
         path, operation_id="promotion.company.list"
     )[0] == "manual_review"

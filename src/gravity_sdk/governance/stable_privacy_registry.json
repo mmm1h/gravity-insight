@@ -2103,6 +2103,9 @@
       "data.list[].status",
       "data.page_info"
     ],
+    "promotion.kuaishou.account_company.list": [
+      "data.list"
+    ],
     "promotion.kuaishou.ad_unit.list": [
       "@dynamic:data:total:query_fields",
       "@dynamic:item:query_fields",

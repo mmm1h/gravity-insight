@@ -1,0 +1,132 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 61,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "Draft inferred from census route GET /turbo_engine/api/v1/kuaishou/manager/account/by_company/; response remains hidden until probe classification.",
+    "domain": "promotion",
+    "effect": "read",
+    "examples": [
+      {
+        "description": "Minimum input verified by the contract probe pipeline.",
+        "inputs": {
+          "need_company": true
+        },
+        "name": "minimum_read"
+      }
+    ],
+    "executable": true,
+    "input_fields": {
+      "need_company": {
+        "default": true,
+        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "type": "boolean"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "need_company": true
+      }
+    },
+    "operation_id": "promotion.kuaishou.account_company.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v1/kuaishou/manager/account/by_company/",
+    "platform": "kuaishou",
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "kuaishou",
+      "source_files": [
+        "operations/promotion.kuaishou.account_company.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {
+        "need_company": true
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "need_company"
+      ]
+    },
+    "required_parent": [],
+    "resource": "account_company",
+    "response_projection": {
+      "data_keys": [
+        "list"
+      ],
+      "data_scalar_list_types": {
+        "list": "integer"
+      },
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "promotion.json"
+}

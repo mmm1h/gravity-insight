@@ -221,7 +221,8 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
         # 广告主表现首屏只需日期窗口，晋升后增加一个完整 example。
         # 公司容量读取无需业务输入，晋升后再增加一个完整 example。
         # 腾讯账户主体选择器无需输入，晋升后再增加一个完整 example。
-        self.assertEqual((79, 88), (examples_complete, examples_unknown))
+        # 快手账户主体选择器只有已验证布尔默认值，再增加一个完整 example。
+        self.assertEqual((80, 88), (examples_complete, examples_unknown))
         # 本趟按父 response projection 与调用方选择语义补全 9 条边；剩余
         # 16 条涉及 runtime-v1 target 投影、递归、同一行关联或嵌套输入变换。
         # 素材相册列表再补一条递归父级边，公开 probe 会按目标字符串契约转换；

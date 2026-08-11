@@ -1,5 +1,5 @@
 {
-  "operation_count": 176,
+  "operation_count": 177,
   "operations": {
     "account.department.list": {
       "applied_overrides": [],
@@ -991,6 +991,14 @@
       "platform": "kuaishou",
       "source_files": [
         "operations/promotion.kuaishou.account.list.json"
+      ]
+    },
+    "promotion.kuaishou.account_company.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "kuaishou",
+      "source_files": [
+        "operations/promotion.kuaishou.account_company.list.json"
       ]
     },
     "promotion.kuaishou.ad_unit.list": {
