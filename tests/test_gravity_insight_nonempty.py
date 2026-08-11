@@ -17,7 +17,7 @@ from gravity_sdk.nonempty import (
     task_empty_sample_operation_ids,
 )
 from gravity_sdk.prober import probe_support
-from gravity_sdk.prober.probe_support import conclusion
+from gravity_sdk.prober.probe_support import conclusion, data_nonempty
 from gravity_sdk.prober.promotion import _runnable_example_inputs
 from gravity_sdk.prober.transport import HttpObservation
 
@@ -474,6 +474,19 @@ def test_additive_confirmation_is_success_and_examples_resolve_only_dates() -> N
     assert runnable is not None
     assert all(not value.startswith("$") for value in runnable["date_list"])
     assert _runnable_example_inputs({"app_id": "$first_app_id"}) is None
+
+
+def test_null_only_object_is_not_a_nonempty_probe_sample() -> None:
+    assert not data_nonempty({"code": 0, "data": {"conf": None}})
+    assert not data_nonempty({"code": 0, "data": {"conf": {"value": None}}})
+    assert conclusion(200, {"code": 0, "data": {"conf": None}}, None) == (
+        "inconclusive_empty"
+    )
+
+
+def test_false_and_zero_remain_meaningful_probe_values() -> None:
+    assert data_nonempty({"code": 0, "data": {"conf": {"is_enabled": False}}})
+    assert data_nonempty({"code": 0, "data": {"total": 0}})
 
 
 def test_task_scope_tracks_integrated_exact_blocker_sets() -> None:

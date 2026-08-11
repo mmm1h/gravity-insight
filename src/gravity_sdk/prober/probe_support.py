@@ -155,10 +155,22 @@ def data_nonempty(payload: Any) -> bool:
     data = payload.get("data")
     if data is None:
         return False
-    if isinstance(data, (list, Mapping, str)):
-        if isinstance(data, Mapping) and "list" in data and isinstance(data["list"], list):
+    if isinstance(data, Mapping):
+        if "list" in data and isinstance(data["list"], list):
             return bool(data["list"])
+        return any(_contains_meaningful_value(item) for item in data.values())
+    if isinstance(data, (list, str)):
         return bool(data)
+    return True
+
+
+def _contains_meaningful_value(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, Mapping):
+        return any(_contains_meaningful_value(item) for item in value.values())
+    if isinstance(value, (list, str)):
+        return bool(value)
     return True
 
 
