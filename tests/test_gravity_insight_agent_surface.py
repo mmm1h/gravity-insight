@@ -208,13 +208,15 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
         # 三条 AI 托管/数据表配置读取、两条模板/自定义人群读取，以及一条
         # 巨量素材定向包读取、两条报表标签配置读取和一条小时聚合对比均带
         # example；两条标题素材包依赖运行时选择 app_id，不伪造可执行示例；
-        # 素材审核用户列表无需输入，晋升后再增加一个完整 example。
+        # 素材审核用户列表无需输入，晋升后再增加一个完整 example；素材
+        # 相册列表依赖运行时从递归父级树选取 album_id，不伪造静态示例。
         # 这条断言锁的是「填充率不许退化」——examples_complete 只许涨不许跌，
         # 新增 stable 带来的 unknown 增长必须显式在此登记，不能被平均掉。
-        self.assertEqual((74, 82), (examples_complete, examples_unknown))
+        self.assertEqual((74, 83), (examples_complete, examples_unknown))
         # 本趟按父 response projection 与调用方选择语义补全 9 条边；剩余
         # 16 条涉及 runtime-v1 target 投影、递归、同一行关联或嵌套输入变换。
-        self.assertEqual((49, 16), (parents_complete, parents_unknown))
+        # 素材相册列表再补一条递归父级边，公开 probe 会按目标字符串契约转换。
+        self.assertEqual((50, 16), (parents_complete, parents_unknown))
 
         transformed = self.client.describe("analysis.event.query")["required_parent"][0]
         self.assertEqual("data.list[].name", transformed["output_path"])

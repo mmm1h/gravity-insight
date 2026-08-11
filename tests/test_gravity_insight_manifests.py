@@ -738,6 +738,30 @@ class GravityInsightManifestTests(unittest.TestCase):
                     "create_time",
                 ],
             },
+            "material.album.list": {
+                "group": [
+                    "id",
+                    "name",
+                    "material_num",
+                    "parent_id",
+                    "root_id",
+                    "create_time",
+                    "modify_time",
+                ],
+                "material": [
+                    "id",
+                    "file_type",
+                    "file_name",
+                    "is_favorite",
+                    "width",
+                    "height",
+                    "file_size",
+                    "file_size_str",
+                    "status",
+                    "source_type",
+                    "create_time",
+                ],
+            },
         }
         device_info = [
             "Android_Version",

@@ -8,6 +8,9 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from gravity_sdk import cli
+from gravity_sdk.catalog import OperationCatalog
+from gravity_sdk.executor import ReadExecutor
+from gravity_sdk.models import load_operation_manifest
 from gravity_sdk.prober import draft_probe
 from gravity_sdk.prober.model import (
     build_draft,
@@ -17,6 +20,7 @@ from gravity_sdk.prober.model import (
     reevaluate_drafts,
     response_schema_sketch,
 )
+from gravity_sdk.registry import PolicyEngine, Registry
 
 try:
     from gravity_sdk import GravityInsightClient
@@ -196,6 +200,120 @@ class _StaticTransport:
 
     def request(self, *_args: object, **_kwargs: object) -> TransportResponse:
         return TransportResponse(200, self.payload, "2026-08-09T00:00:00Z")
+
+
+class _ParentProbeTransport:
+    is_test_transport = True
+
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, dict[str, object]]] = []
+
+    def request(
+        self, _method: str, _path: str, *, operation: object, body: object, **_: object
+    ) -> TransportResponse:
+        operation_id = str(operation.operation_id)
+        request_body = dict(body)
+        self.calls.append((operation_id, request_body))
+        if operation_id == "material.album.tree":
+            payload = {
+                "code": 0,
+                "data": {
+                    "tree": [
+                        {
+                            "id": 17,
+                            "label": "fixture",
+                            "parent_id": 0,
+                            "root_id": 17,
+                            "has_alum": True,
+                            "children": [
+                                {
+                                    "id": 22,
+                                    "label": "child",
+                                    "parent_id": 17,
+                                    "root_id": 17,
+                                    "has_alum": False,
+                                    "children": [],
+                                }
+                            ],
+                        }
+                    ],
+                    "image_size": 0,
+                    "video_size": 0,
+                },
+            }
+        else:
+            assert operation_id == "material.album.list"
+            payload = {
+                "code": 0,
+                "data": {
+                    "list": [
+                        {
+                            "type": 1,
+                            "has_alum": False,
+                            "group": {
+                                "id": 17,
+                                "name": "fixture",
+                                "material_num": 0,
+                                "parent_id": 0,
+                                "root_id": 17,
+                            },
+                            "material": None,
+                        }
+                    ],
+                    "page_info": {
+                        "page": 1,
+                        "page_size": 1,
+                        "total_page": 1,
+                        "total_number": 1,
+                    },
+                },
+            }
+        return TransportResponse(200, payload, "2026-08-11T00:00:00Z")
+
+
+def test_public_probe_resolves_recursive_declared_parent_and_target_type() -> None:
+    root = Path(__file__).resolve().parents[1]
+    contract_root = root / "src" / "gravity_sdk" / "contracts" / "operations"
+    operation_ids = ("material.album.tree", "material.album.list")
+    metadata = {
+        operation_id: json.loads(
+            (contract_root / f"{operation_id}.json").read_text(encoding="utf-8")
+        )["operation"]
+        for operation_id in operation_ids
+    }
+    manifest_root = root / "src" / "gravity_sdk" / "manifests"
+    compiled = [
+        item
+        for path in manifest_root.glob("*.json")
+        for item in json.loads(path.read_text(encoding="utf-8"))["operations"]
+    ]
+    selected = [
+        item
+        for item in compiled
+        if item["operation_id"] in operation_ids
+    ]
+    operations = load_operation_manifest(
+        {"manifest_version": 1, "operations": selected}
+    )
+    registry = Registry(operations)
+    transport = _ParentProbeTransport()
+    client = GravityInsightClient(
+        registry,
+        ReadExecutor(registry, PolicyEngine(registry), transport),
+        operation_catalog=OperationCatalog(
+            operations,
+            contract_metadata=metadata,
+        ),
+    )
+
+    result = client.probe("material.album.list")
+
+    assert result["status"] == "success"
+    assert [call[0] for call in transport.calls] == [
+        "material.album.tree",
+        "material.album.list",
+    ]
+    assert transport.calls[1][1]["album_id"] == "17"
 
 
 def _surface_client() -> tuple[GravityInsightClient, dict[str, object]]:

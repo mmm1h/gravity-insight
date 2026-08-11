@@ -12,6 +12,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Iterator, Mapping, Sequence
 
+from .parent_resolution import coerce_parent_value
 from .prober.core import REPO_ROOT, canonical_fingerprint
 
 
@@ -129,18 +130,6 @@ def _seed_inputs(operation: Mapping[str, Any], overrides: Mapping[str, Any]) -> 
     return seed
 
 
-def _coerce_parent_value(value: Any, field_type: str) -> Any:
-    scalar = isinstance(value, (str, int, float)) and not isinstance(value, bool)
-    if field_type == "string" and scalar:
-        return str(value)
-    if field_type not in {"integer", "number"} or not scalar:
-        return value
-    try:
-        return int(value) if field_type == "integer" else float(value)
-    except ValueError:
-        return value
-
-
 def _parent_plan(
     fields: Mapping[str, Any],
     parent_values: Mapping[str, Sequence[Any]],
@@ -155,9 +144,9 @@ def _parent_plan(
         field_type = str(field.get("type", "any"))
         item_type = str(field.get("item_type", "any"))
         candidates = [
-            [_coerce_parent_value(value, item_type)]
+            [coerce_parent_value(value, item_type)]
             if field_type == "array"
-            else _coerce_parent_value(value, field_type)
+            else coerce_parent_value(value, field_type)
             for value in values
         ]
         dimensions.append(

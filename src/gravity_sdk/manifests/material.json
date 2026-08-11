@@ -904,6 +904,207 @@
       ],
       "stability": "stable",
       "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "素材相册只读列表。按 material.album.tree 返回的相册 ID 查询，支持关键词、排序与类型筛选；2026-08-11 在线验证父级解析、非空响应及分页上限 100。仅暴露相册与素材受控元数据，人员、权限、备注、URL 和租户标识固定省略。",
+      "domain": "material",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "album_id": {
+          "default": "",
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "string"
+        },
+        "ordered_by": {
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "string"
+        },
+        "page": {
+          "default": 1,
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "integer"
+        },
+        "search_keyword": {
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "string"
+        },
+        "search_type": {
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "album_id": "$parent:album_id",
+          "ordered_by": "",
+          "page": 1,
+          "page_size": 1,
+          "search_keyword": "",
+          "search_type": 0
+        }
+      },
+      "operation_id": "material.album.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/asset/material/album/list/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "material",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "auth_ids",
+          "create_user_id",
+          "create_user_name",
+          "update_user_id",
+          "update_user_name",
+          "remark",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "album_id",
+          "ordered_by",
+          "page",
+          "page_size",
+          "search_keyword",
+          "search_type"
+        ],
+        "defaults": {
+          "album_id": "",
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        {
+          "input_field": "album_id",
+          "operation_id": "material.album.tree"
+        }
+      ],
+      "resource": "album",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "type",
+          "has_alum",
+          "group",
+          "material"
+        ],
+        "known_omitted_nested_item_keys": {
+          "group": [
+            "previews",
+            "album_authority",
+            "create_user",
+            "create_user_id",
+            "create_user_name",
+            "cid",
+            "update_user_id",
+            "update_user_name",
+            "remark"
+          ],
+          "material": [
+            "image_set",
+            "file_url",
+            "thumbnail_url"
+          ]
+        },
+        "nested_item_keys": {
+          "group": [
+            "id",
+            "name",
+            "material_num",
+            "parent_id",
+            "root_id",
+            "create_time",
+            "modify_time"
+          ],
+          "material": [
+            "id",
+            "file_type",
+            "file_name",
+            "is_favorite",
+            "width",
+            "height",
+            "file_size",
+            "file_size_str",
+            "status",
+            "source_type",
+            "create_time"
+          ]
+        },
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
     }
   ]
 }

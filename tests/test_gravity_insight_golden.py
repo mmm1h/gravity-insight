@@ -241,6 +241,8 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "report.hour_comparison.query",
             # 素材审核用户列表经非空验证和人员敏感字段收窄后晋升。
             "material.material_examine_user.list",
+            # 素材相册列表经递归父级解析、分页复验和嵌套隐私投影后晋升。
+            "material.album.list",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]

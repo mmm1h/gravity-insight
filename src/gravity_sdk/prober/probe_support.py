@@ -8,7 +8,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from ..parent_resolution import extract_parent_values
+from ..parent_resolution import coerce_parent_value, extract_parent_values
 from .core import REPO_ROOT, canonical_fingerprint
 from .privacy import response_schema_sketch
 from .transport import HttpObservation, RecordingSession
@@ -43,6 +43,23 @@ def family_id(source: Mapping[str, Any]) -> str:
     return str(family or source.get("operation", {}).get("operation_id", "unassigned"))
 
 
+def _parent_target_type(
+    source: Mapping[str, Any], parent: Mapping[str, Any], input_field: str | None
+) -> str:
+    target_field = str(input_field or parent.get("input_field") or "")
+    fields = source.get("operation", {}).get("input_fields", {})
+    if not isinstance(fields, Mapping):
+        return "any"
+    field = fields.get(target_field, {})
+    if not isinstance(field, Mapping):
+        return "any"
+    return str(
+        field.get("item_type", "any")
+        if field.get("type") == "array"
+        else field.get("type", "any")
+    )
+
+
 def resolve_parent(
     source: Mapping[str, Any], stable_client: Any, recording: RecordingSession,
     input_field: str | None = None,
@@ -67,6 +84,8 @@ def resolve_parent(
         if isinstance(envelope, Mapping)
         else []
     )
+    field_type = _parent_target_type(source, parent, input_field)
+    values = [coerce_parent_value(value, field_type) for value in values]
     if status not in {"success", "empty"} or not values:
         raise ValueError(f"required parent did not yield a selectable value: {operation_id}")
     selection = str(parent.get("selection") or "first")

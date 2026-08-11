@@ -5,11 +5,10 @@ from __future__ import annotations
 import json
 import logging
 import os
-import secrets
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -29,6 +28,7 @@ from .http_runtime import (
 )
 from .models import BatchRequest, BatchResult, OperationSpec, ReadResult, load_operation_manifest
 from .paths import CONTRACT_ROOT, MANIFEST_ROOT, PROJECT_ROOT
+from .probe_inputs import resolve_probe_inputs
 from .registry import PolicyEngine, Registry
 from .transport import Transport
 
@@ -292,7 +292,10 @@ class GravityInsightClient(ExportClientMixin):
         operation = self._executor._policy.authorize_operation(operation_id)
         if not operation.live_probe.enabled:
             raise PolicyViolation("operation has no enabled minimum live probe")
-        inputs = self._resolve_probe_inputs(operation.live_probe.inputs)
+        inputs = self._resolve_probe_inputs(
+            operation.live_probe.inputs,
+            operation_id=operation_id,
+        )
         return self.read(operation_id, inputs)
 
     def probe_all(
@@ -314,7 +317,10 @@ class GravityInsightClient(ExportClientMixin):
         resolution_failures: dict[str, dict[str, Any]] = {}
         for operation in operations:
             try:
-                inputs = self._resolve_probe_inputs(operation.live_probe.inputs)
+                inputs = self._resolve_probe_inputs(
+                    operation.live_probe.inputs,
+                    operation_id=operation.operation_id,
+                )
             except GravityInsightError as exc:
                 envelope = self._error_envelope(operation.operation_id, exc)
                 self._operation_catalog.record_envelope(operation.operation_id, envelope)
@@ -360,55 +366,10 @@ class GravityInsightClient(ExportClientMixin):
             "results": results,
         }
 
-    def _resolve_probe_inputs(self, value: Any) -> Any:
-        if value == "$today":
-            return date.today().isoformat()
-        if value == "$yesterday":
-            return (date.today() - timedelta(days=1)).isoformat()
-        if value == "$analysis_query_id":
-            return _new_analysis_query_id()
-        if value == "$first_app_id":
-            return self._first_probe_app_id()
-        if value == "$first_event_name":
-            return self._first_probe_event_name()
-        if value == "$first_user_property_name":
-            return self._first_probe_user_property_name()
-        if value == "$first_event_property_name":
-            return self._first_probe_event_property_name()
-        if value == "$first_segment_id":
-            return self._first_probe_segment_id()
-        if value == "$first_report_config_id":
-            return self._first_probe_report_config_id()
-        if value == "$first_dashboard_id":
-            return self._first_probe_dashboard_field("dashboard_id")
-        if value == "$first_dashboard_space_id":
-            return self._first_probe_dashboard_field("space_id")
-        if value == "$first_client_id":
-            return self._first_probe_client_id()
-        if isinstance(value, str) and value.startswith("$first_order_"):
-            field = value.removeprefix("$first_order_")
-            return self._first_probe_order_field(field)
-        if isinstance(value, str) and value.startswith("$first_") and value.endswith(
-            "_advertiser_id"
-        ):
-            platform = value.removeprefix("$first_").removesuffix("_advertiser_id")
-            if platform in {"bytedance", "tencent", "kuaishou"}:
-                return self._first_probe_advertiser_id(platform)
-        if isinstance(value, str) and value in {
-            "$first_preset_template_id",
-            "$first_preset_template_category",
-        }:
-            field = value.removeprefix("$first_preset_template_")
-            return self._first_probe_preset_template_field(field)
-        if isinstance(value, str) and value.startswith("$"):
-            raise PolicyViolation("live probe contains an unsupported dynamic placeholder")
-        if isinstance(value, Mapping):
-            return {
-                str(key): self._resolve_probe_inputs(item) for key, item in value.items()
-            }
-        if isinstance(value, (list, tuple)):
-            return [self._resolve_probe_inputs(item) for item in value]
-        return value
+    def _resolve_probe_inputs(
+        self, value: Any, *, operation_id: str | None = None
+    ) -> Any:
+        return resolve_probe_inputs(self, value, operation_id=operation_id)
 
     def _first_probe_app_id(self) -> str:
         with self._probe_lock:
@@ -1450,12 +1411,6 @@ def _has_next_page(
     if page_number is not None and total_pages is not None:
         return page_number < total_pages
     return bool(page_size and item_count >= page_size)
-
-
-def _new_analysis_query_id() -> str:
-    milliseconds = f"{int(time.time() * 1_000):013d}"[-13:]
-    entropy = secrets.token_hex(10)[:19]
-    return milliseconds + entropy
 
 
 def _error_status(error: GravityInsightError) -> str:

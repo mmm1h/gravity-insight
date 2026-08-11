@@ -59,6 +59,20 @@ def extract_parent_values(value: Any, output_path: str) -> list[Any]:
     return result
 
 
+def coerce_parent_value(value: Any, field_type: str) -> Any:
+    """Coerce one scalar parent candidate to its declared target field type."""
+
+    scalar = isinstance(value, (str, int, float)) and not isinstance(value, bool)
+    if field_type == "string" and scalar:
+        return str(value)
+    if field_type not in {"integer", "number"} or not scalar:
+        return value
+    try:
+        return int(value) if field_type == "integer" else float(value)
+    except (TypeError, ValueError, OverflowError):
+        return value
+
+
 def _target_cardinality(description: Mapping[str, Any], target: str | None) -> str:
     schema = description.get("input_schema", {})
     field = schema.get(target) if target and isinstance(schema, Mapping) else None
@@ -200,4 +214,8 @@ def resolve_declared_parents(
     }
 
 
-__all__ = ["extract_parent_values", "resolve_declared_parents"]
+__all__ = [
+    "coerce_parent_value",
+    "extract_parent_values",
+    "resolve_declared_parents",
+]

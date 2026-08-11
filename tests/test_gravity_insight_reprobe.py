@@ -425,6 +425,12 @@ def test_named_parent_placeholders_resolve_independent_fields() -> None:
             }
 
     source = build_draft(_route(), set())
+    source["operation"]["input_fields"].update(
+        {
+            "advertiser_id": {"type": "string"},
+            "campaign_id": {"type": "integer"},
+        }
+    )
     source["operation"]["required_parent"] = [
         {
             "operation_id": "promotion.example.advertiser.list",
@@ -455,7 +461,7 @@ def test_named_parent_placeholders_resolve_independent_fields() -> None:
         parent_cache=parent_cache,
     )
 
-    assert resolved == {"advertiser_id": 7, "campaign_id": 9}
+    assert resolved == {"advertiser_id": "7", "campaign_id": 9}
     assert len(parent_cache) == 2
 
 
@@ -476,6 +482,10 @@ def test_parent_all_selection_preserves_array_cardinality() -> None:
             }
 
     source = build_draft(_route(), set())
+    source["operation"]["input_fields"]["advertiser_ids"] = {
+        "type": "array",
+        "item_type": "string",
+    }
     source["operation"]["required_parent"] = [
         {
             "operation_id": "promotion.example.advertiser.list",
@@ -496,7 +506,7 @@ def test_parent_all_selection_preserves_array_cardinality() -> None:
         parent_cache={},
     )
 
-    assert resolved == {"advertiser_ids": [7, 9]}
+    assert resolved == {"advertiser_ids": ["7", "9"]}
 
 
 def test_verified_stable_date_pattern_replaces_invalid_scalar_candidate(
