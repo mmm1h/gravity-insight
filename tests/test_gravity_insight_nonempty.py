@@ -437,6 +437,95 @@ def test_discovery_reuses_shared_parent_response_for_multiple_fields(
     }
 
 
+def test_discovery_keeps_multiple_parent_fields_aligned_by_row(
+    tmp_path: Path, monkeypatch: object
+) -> None:
+    source = _source("material.bytedance.promotion_material.list")
+    source["operation"]["input_fields"] = {
+        "advertiser_id": {"type": "integer", "required": True},
+        "promotion_id": {"type": "integer", "required": True},
+    }
+    source["operation"]["request"]["defaults"] = {}
+    source["operation"]["request"]["body_fields"] = [
+        "advertiser_id",
+        "promotion_id",
+    ]
+    source["operation"]["live_probe"]["inputs"] = {
+        "advertiser_id": "$parent:advertiser_id",
+        "promotion_id": "$parent:promotion_id",
+    }
+    parent_id = "promotion.bytedance.promotion_filter.list"
+    source["operation"]["required_parent"] = [
+        {
+            "operation_id": parent_id,
+            "input_field": "advertiser_id",
+            "output_path": "data.list[].advertiser_id",
+            "selection": "caller_select",
+        },
+        {
+            "operation_id": parent_id,
+            "input_field": "promotion_id",
+            "output_path": "data.list[].promotion_id",
+            "selection": "caller_select",
+        },
+    ]
+    operation_root = tmp_path / "operations"
+    operation_root.mkdir(parents=True)
+    (operation_root / f"{parent_id}.json").write_text(
+        json.dumps(
+            {
+                "operation": {
+                    "operation_id": parent_id,
+                    "effect": "read",
+                    "input_fields": {},
+                    "request": {"defaults": {}},
+                    "live_probe": {"inputs": {}},
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    parent_payload = {
+        "status": "success",
+        "data": {
+            "list": [
+                {"advertiser_id": "101", "promotion_id": "201"},
+                {"advertiser_id": "102", "promotion_id": "202"},
+            ]
+        },
+    }
+
+    result, session = _run_discovery(
+        tmp_path,
+        monkeypatch,
+        source=source,
+        payloads=[
+            parent_payload,
+            {"code": 0, "data": {"list": []}},
+            {"code": 0, "data": {"list": [{"id": "row"}]}},
+        ],
+    )
+
+    assert result["found"] is True
+    assert len(session.calls) == 3
+    assert session.calls[1]["json"] == {
+        "advertiser_id": 101,
+        "promotion_id": 201,
+    }
+    assert session.calls[2]["json"] == {
+        "advertiser_id": 102,
+        "promotion_id": 202,
+    }
+    assert result["search"]["dimensions"] == [
+        {
+            "field": "advertiser_id+promotion_id",
+            "source": "required_parent_row",
+            "candidate_count": 2,
+            "priority_weight": 1,
+        }
+    ]
+
+
 def test_missing_required_parent_candidates_skip_invalid_target_attempts(
     tmp_path: Path, monkeypatch: object
 ) -> None:

@@ -42,16 +42,22 @@ def _path_children(items: Sequence[Any], raw_part: str) -> list[Any]:
     return result
 
 
-def extract_parent_values(value: Any, output_path: str) -> list[Any]:
-    """Extract scalar values from the operation-v2 parent output-path syntax."""
+def extract_parent_items(value: Any, output_path: str) -> list[Any]:
+    """Extract aligned items without discarding object or list values."""
 
     current: list[Any] = [value]
     normalized_path = output_path.replace("..", ".@recursive:")
     for raw_part in normalized_path.split("."):
         if raw_part:
             current = _path_children(current, raw_part)
+    return current
+
+
+def extract_parent_values(value: Any, output_path: str) -> list[Any]:
+    """Extract unique scalar values from an operation-v2 parent output path."""
+
     result: list[Any] = []
-    for item in current:
+    for item in extract_parent_items(value, output_path):
         if item is None or isinstance(item, (Mapping, list, tuple)):
             continue
         if item not in result:
@@ -216,6 +222,7 @@ def resolve_declared_parents(
 
 __all__ = [
     "coerce_parent_value",
+    "extract_parent_items",
     "extract_parent_values",
     "resolve_declared_parents",
 ]

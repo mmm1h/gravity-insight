@@ -134,6 +134,7 @@ def _parent_plan(
     fields: Mapping[str, Any],
     parent_values: Mapping[str, Sequence[Any]],
     parent_failures: Mapping[str, str],
+    parent_dimensions: Sequence[SearchDimension] = (),
 ) -> tuple[list[SearchDimension], list[dict[str, str]], set[str]]:
     dimensions: list[SearchDimension] = []
     unresolved: list[dict[str, str]] = []
@@ -161,6 +162,16 @@ def _parent_plan(
     for name, reason in parent_failures.items():
         unresolved.append({"field": name, "reason": reason})
         handled.add(name)
+    for dimension in parent_dimensions:
+        grouped_fields = {
+            str(name)
+            for patch in dimension.patches
+            for name in patch
+            if str(name) in fields
+        }
+        if grouped_fields:
+            dimensions.append(dimension)
+            handled.update(grouped_fields)
     return dimensions, unresolved, handled
 
 
@@ -256,6 +267,7 @@ def _build_plan(
     overrides: Mapping[str, Any],
     parent_values: Mapping[str, Sequence[Any]],
     parent_failures: Mapping[str, str],
+    parent_dimensions: Sequence[SearchDimension] = (),
     anchor: date,
 ) -> tuple[dict[str, Any], list[SearchDimension], list[dict[str, str]]]:
     operation = source["operation"]
@@ -264,7 +276,7 @@ def _build_plan(
         raise ValueError("operation input_fields must be an object")
     seed = _seed_inputs(operation, overrides)
     dimensions, unresolved, handled = _parent_plan(
-        fields, parent_values, parent_failures
+        fields, parent_values, parent_failures, parent_dimensions
     )
     base: dict[str, Any] = {}
     pagination = operation.get("pagination", {})

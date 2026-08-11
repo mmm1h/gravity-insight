@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from gravity_sdk.parent_resolution import (
+    extract_parent_items,
     extract_parent_values,
     resolve_declared_parents,
 )
@@ -26,6 +27,15 @@ def test_extract_parent_values_supports_lists_and_deduplicates() -> None:
     payload = {"data": {"list": [{"id": 7}, {"id": 7}, {"id": 9}]}}
 
     assert extract_parent_values(payload, "data.list[].id") == [7, 9]
+
+
+def test_extract_parent_items_preserves_aligned_rows() -> None:
+    rows = [
+        {"advertiser_id": 101, "promotion_id": 201},
+        {"advertiser_id": 102, "promotion_id": 202},
+    ]
+
+    assert extract_parent_items({"data": {"list": rows}}, "data.list[]") == rows
 
 
 def test_extract_parent_values_supports_recursive_tree_fields() -> None:
