@@ -1532,6 +1532,9 @@
       "data.list[].put_status",
       "data.page_info"
     ],
+    "promotion.bytedance.account_company.list": [
+      "data.list"
+    ],
     "promotion.bytedance.advertiser.list": [
       "@dynamic:data:total:query_fields",
       "@dynamic:item:query_fields",

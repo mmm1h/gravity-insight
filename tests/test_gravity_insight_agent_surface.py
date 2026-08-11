@@ -211,10 +211,11 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
         # 素材审核用户列表无需输入，晋升后再增加一个完整 example；素材
         # 相册列表依赖运行时从递归父级树选取 album_id，不伪造静态示例；
         # 巨量广告主账户列表无需业务输入，晋升后再增加一个完整 example；
-        # 巨量图片素材列表依赖调用方选择 advertiser_id，不伪造静态示例。
+        # 巨量图片素材列表依赖调用方选择 advertiser_id，不伪造静态示例；
+        # 巨量账户主体选择器无需输入，晋升后再增加一个完整 example。
         # 这条断言锁的是「填充率不许退化」——examples_complete 只许涨不许跌，
         # 新增 stable 带来的 unknown 增长必须显式在此登记，不能被平均掉。
-        self.assertEqual((75, 84), (examples_complete, examples_unknown))
+        self.assertEqual((76, 84), (examples_complete, examples_unknown))
         # 本趟按父 response projection 与调用方选择语义补全 9 条边；剩余
         # 16 条涉及 runtime-v1 target 投影、递归、同一行关联或嵌套输入变换。
         # 素材相册列表再补一条递归父级边，公开 probe 会按目标字符串契约转换；
