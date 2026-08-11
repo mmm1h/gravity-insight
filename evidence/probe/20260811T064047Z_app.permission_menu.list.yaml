@@ -1,0 +1,790 @@
+{
+  "conclusion": "success",
+  "http": [
+    {
+      "http_status": 200,
+      "method": "GET",
+      "operation_id": "app.permission_menu.list",
+      "path": "/account_center/api/v1/permission_menu/list/",
+      "purpose": "nonempty_search",
+      "raw_schema_fingerprint": "dcf08e9aa5b4bb195a24ba638b64b0fcc29325f39bf2c036d6689ac6384e040a",
+      "request_fingerprint": "044624b13e0eab815e34948a30e9e4dfd6ca096f1538027be2766ba55389547d",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.query.product_name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.code",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].children",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children[].children",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children[].children[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children[].children[].children",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children[].children[].children[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children[].children[].children[].id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children[].children[].children[].menu_url",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children[].children[].children[].name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children[].children[].children[].parent_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children[].children[].children[].person_num",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children[].children[].children[].remark",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children[].children[].children[].sort_order",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children[].children[].id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children[].children[].menu_url",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children[].children[].name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children[].children[].parent_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children[].children[].person_num",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children[].children[].remark",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children[].children[].sort_order",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children[].id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children[].menu_url",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children[].name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children[].parent_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children[].person_num",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children[].remark",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].children[].sort_order",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].menu_url",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].parent_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].person_num",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].remark",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].children[].sort_order",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].menu_url",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].parent_id",
+            "presence": "observed",
+            "types": [
+              "null"
+            ]
+          },
+          {
+            "path": "$.data.list[].person_num",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].remark",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].sort_order",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.extra",
+            "presence": "observed",
+            "types": [
+              "null"
+            ]
+          },
+          {
+            "path": "$.msg",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    }
+  ],
+  "operation_id": "app.permission_menu.list",
+  "pagination": {
+    "kind": "none",
+    "verified": true
+  },
+  "privacy": {
+    "candidate_fields": [
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].children[].children[].children[].children[].id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "sensitive_name_pattern",
+        "expose": false,
+        "path": "data.list[].children[].children[].children[].children[].menu_url",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].children[].children[].children[].children[].name",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].children[].children[].children[].children[].parent_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.list[].children[].children[].children[].children[].person_num",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "free_text_field_review",
+        "expose": false,
+        "path": "data.list[].children[].children[].children[].children[].remark",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "sensitive_name_pattern",
+        "expose": false,
+        "path": "data.list[].children[].children[].children[].children[].sort_order",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].children[].children[].children[].id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "sensitive_name_pattern",
+        "expose": false,
+        "path": "data.list[].children[].children[].children[].menu_url",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].children[].children[].children[].name",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].children[].children[].children[].parent_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.list[].children[].children[].children[].person_num",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "free_text_field_review",
+        "expose": false,
+        "path": "data.list[].children[].children[].children[].remark",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "sensitive_name_pattern",
+        "expose": false,
+        "path": "data.list[].children[].children[].children[].sort_order",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].children[].children[].id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "sensitive_name_pattern",
+        "expose": false,
+        "path": "data.list[].children[].children[].menu_url",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].children[].children[].name",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].children[].children[].parent_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.list[].children[].children[].person_num",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "free_text_field_review",
+        "expose": false,
+        "path": "data.list[].children[].children[].remark",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "sensitive_name_pattern",
+        "expose": false,
+        "path": "data.list[].children[].children[].sort_order",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].children[].id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "sensitive_name_pattern",
+        "expose": false,
+        "path": "data.list[].children[].menu_url",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].children[].name",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].children[].parent_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.list[].children[].person_num",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "free_text_field_review",
+        "expose": false,
+        "path": "data.list[].children[].remark",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "sensitive_name_pattern",
+        "expose": false,
+        "path": "data.list[].children[].sort_order",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "sensitive_name_pattern",
+        "expose": false,
+        "path": "data.list[].menu_url",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].name",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].parent_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.list[].person_num",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "free_text_field_review",
+        "expose": false,
+        "path": "data.list[].remark",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "sensitive_name_pattern",
+        "expose": false,
+        "path": "data.list[].sort_order",
+        "presence": "observed",
+        "privacy_classification": "sensitive",
+        "types": [
+          "integer"
+        ]
+      }
+    ],
+    "classified_non_sensitive": 20,
+    "classified_sensitive": 15,
+    "manual_review": 0,
+    "values_persisted": false
+  },
+  "probed_at": "2026-08-11T06:40:47Z",
+  "projected_schema_fingerprint": "45b6134035374bda21573f7bcf94b8810c856256aceec177a69a459ea50c67f4",
+  "raw_schema_fingerprint": "dcf08e9aa5b4bb195a24ba638b64b0fcc29325f39bf2c036d6689ac6384e040a",
+  "request_stats": {
+    "backoff_terminations": 0,
+    "failed": 0,
+    "total": 1
+  },
+  "required_parent": null,
+  "route": {
+    "family": "app.permission_menu.list",
+    "method": "GET",
+    "path": "/account_center/api/v1/permission_menu/list/"
+  },
+  "schema_version": "gravity-insight.probe-evidence.v1",
+  "semantic_errors": {
+    "missing_parameter": {
+      "attempted": false,
+      "shape_observed": false
+    },
+    "parameter_adjustments": [],
+    "permission_shape_observed": false,
+    "rules": []
+  },
+  "successful": true
+}

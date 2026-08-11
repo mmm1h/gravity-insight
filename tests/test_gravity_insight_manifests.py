@@ -710,6 +710,9 @@ class GravityInsightManifestTests(unittest.TestCase):
                     "start_time",
                 ],
             },
+            "app.permission_menu.list": {
+                "children": ["id", "name", "parent_id", "person_num"]
+            },
             "analysis.account_user.list": {
                 "dept_info": ["id", "name", "is_enabled"],
                 "roles": ["id", "name", "code", "is_enabled"],

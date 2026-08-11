@@ -19,6 +19,9 @@
       "storage_amount_g",
       "storage_amount_g_usage"
     ],
+    "app.permission_menu.list": [
+      "person_num"
+    ],
     "material.asset_material_media_review_list.list": [
       "suggestion"
     ],

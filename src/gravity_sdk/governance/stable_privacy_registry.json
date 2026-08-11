@@ -891,6 +891,18 @@
       "data.list[].wechat_origin_id",
       "data.page_info"
     ],
+    "app.permission_menu.list": [
+      "data.list",
+      "data.list[].children",
+      "data.list[].children.id",
+      "data.list[].children.name",
+      "data.list[].children.parent_id",
+      "data.list[].children.person_num",
+      "data.list[].id",
+      "data.list[].name",
+      "data.list[].parent_id",
+      "data.list[].person_num"
+    ],
     "app.realtime_event.list": [
       "data.conf",
       "data.conf[].app_id",

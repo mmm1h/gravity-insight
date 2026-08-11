@@ -1,0 +1,143 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 27,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "List the authenticated tenant's Gravity permission-menu tree.",
+    "domain": "app",
+    "effect": "read",
+    "examples": [
+      {
+        "description": "Minimum input verified by the contract probe pipeline.",
+        "inputs": {},
+        "name": "minimum_read"
+      }
+    ],
+    "executable": true,
+    "input_fields": {},
+    "live_probe": {
+      "enabled": true,
+      "inputs": {}
+    },
+    "operation_id": "app.permission_menu.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/account_center/api/v1/permission_menu/list/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "configuration",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "creator",
+        "creator_id",
+        "user_name",
+        "dept",
+        "department",
+        "callback_url",
+        "click_url",
+        "postback_url",
+        "uid",
+        "user_id",
+        "device_id",
+        "phone",
+        "mobile",
+        "email",
+        "idfa",
+        "idfv",
+        "imei",
+        "oaid",
+        "android_id",
+        "order_id",
+        "ip",
+        "ip_address",
+        "openid",
+        "open_id",
+        "unionid",
+        "client_id",
+        "trace_id"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/app.permission_menu.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {
+        "product_name": "turbo"
+      },
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "permission_menu",
+    "response_projection": {
+      "data_keys": [
+        "list"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "children",
+        "id",
+        "name",
+        "parent_id",
+        "person_num"
+      ],
+      "known_omitted_item_keys": [
+        "menu_url",
+        "remark",
+        "sort_order"
+      ],
+      "known_omitted_nested_item_keys": {
+        "children": [
+          "menu_url",
+          "remark",
+          "sort_order"
+        ]
+      },
+      "nested_item_keys": {
+        "children": [
+          "id",
+          "name",
+          "parent_id",
+          "person_num"
+        ]
+      },
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "other.json"
+}
