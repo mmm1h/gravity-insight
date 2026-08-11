@@ -20,6 +20,7 @@ from gravity_sdk.prober.model import (
     reevaluate_drafts,
     response_schema_sketch,
 )
+from gravity_sdk.probe_inputs import resolve_probe_inputs
 from gravity_sdk.registry import PolicyEngine, Registry
 
 try:
@@ -368,6 +369,62 @@ def test_public_probe_resolves_recursive_declared_parent_and_target_type() -> No
         "material.album.list",
     ]
     assert transport.calls[1][1]["album_id"] == "17"
+
+
+def test_public_probe_reuses_one_parent_envelope_for_multiple_fields() -> None:
+    class ParentClient:
+        def __init__(self) -> None:
+            self.calls = 0
+            fields = {
+                name: SimpleNamespace(type="integer", item_type=None)
+                for name in ("advertiser_id", "project_id")
+            }
+            self._registry = SimpleNamespace(
+                get=lambda _operation_id: SimpleNamespace(fields=fields)
+            )
+
+        def describe(self, _operation_id: str) -> dict[str, object]:
+            return {
+                "required_parent": [
+                    {
+                        "operation_id": "promotion.bytedance.project_filter.list",
+                        "output_path": "data.list[].advertiser_id",
+                        "selection": "caller_select",
+                        "target_input": "advertiser_id",
+                    },
+                    {
+                        "operation_id": "promotion.bytedance.project_filter.list",
+                        "output_path": "data.list[].project_id",
+                        "selection": "caller_select",
+                        "target_input": "project_id",
+                    },
+                ]
+            }
+
+        def probe(self, _operation_id: str) -> dict[str, object]:
+            self.calls += 1
+            if self.calls > 1:
+                raise AssertionError("shared parent must be probed once")
+            return {
+                "data": {
+                    "list": [
+                        {"advertiser_id": "101", "project_id": "202"}
+                    ]
+                }
+            }
+
+    client = ParentClient()
+    resolved = resolve_probe_inputs(
+        client,
+        {
+            "advertiser_id": "$parent:advertiser_id",
+            "project_id": "$parent:project_id",
+        },
+        operation_id="material.bytedance.project_material.list",
+    )
+
+    assert resolved == {"advertiser_id": 101, "project_id": 202}
+    assert client.calls == 1
 
 
 def _surface_client() -> tuple[GravityInsightClient, dict[str, object]]:

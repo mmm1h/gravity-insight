@@ -365,6 +365,78 @@ def test_discovery_extracts_recursive_parent_candidates(
     assert session.calls[1]["json"]["album_id"] == 11
 
 
+def test_discovery_reuses_shared_parent_response_for_multiple_fields(
+    tmp_path: Path, monkeypatch: object
+) -> None:
+    source = _source("material.bytedance.project_material.list")
+    source["operation"]["input_fields"] = {
+        "advertiser_id": {"type": "integer", "required": True},
+        "project_id": {"type": "integer", "required": True},
+    }
+    source["operation"]["request"]["defaults"] = {}
+    source["operation"]["request"]["body_fields"] = [
+        "advertiser_id",
+        "project_id",
+    ]
+    source["operation"]["live_probe"]["inputs"] = {
+        "advertiser_id": "$parent:advertiser_id",
+        "project_id": "$parent:project_id",
+    }
+    source["operation"]["required_parent"] = [
+        {
+            "operation_id": "promotion.bytedance.project_filter.list",
+            "input_field": "advertiser_id",
+            "output_path": "data.list[].advertiser_id",
+            "selection": "caller_select",
+        },
+        {
+            "operation_id": "promotion.bytedance.project_filter.list",
+            "input_field": "project_id",
+            "output_path": "data.list[].project_id",
+            "selection": "caller_select",
+        },
+    ]
+    operation_root = tmp_path / "operations"
+    operation_root.mkdir(parents=True)
+    (operation_root / "promotion.bytedance.project_filter.list.json").write_text(
+        json.dumps(
+            {
+                "operation": {
+                    "operation_id": "promotion.bytedance.project_filter.list",
+                    "effect": "read",
+                    "input_fields": {},
+                    "request": {"defaults": {}},
+                    "live_probe": {"inputs": {}},
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    parent_payload = {
+        "status": "success",
+        "data": {
+            "list": [
+                {"advertiser_id": "101", "project_id": "202"}
+            ]
+        },
+    }
+    target_payload = {"code": 0, "data": {"list": [{"id": "row"}]}}
+
+    result, session = _run_discovery(
+        tmp_path,
+        monkeypatch,
+        source=source,
+        payloads=[parent_payload, target_payload],
+    )
+
+    assert result["resolution"] == "unblocked"
+    assert len(session.calls) == 2
+    assert session.calls[1]["json"] == {
+        "advertiser_id": 101,
+        "project_id": 202,
+    }
+
+
 def test_missing_required_parent_candidates_skip_invalid_target_attempts(
     tmp_path: Path, monkeypatch: object
 ) -> None:

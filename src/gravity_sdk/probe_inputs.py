@@ -11,7 +11,7 @@ from .errors import PermissionUnavailableError, PolicyViolation
 from .parent_resolution import coerce_parent_value, extract_parent_values
 
 
-ParentCache = dict[tuple[str, str], Mapping[str, Any]]
+ParentCache = dict[str, Mapping[str, Any]]
 
 
 def resolve_probe_inputs(
@@ -126,10 +126,9 @@ def _declared_parent_value(
     output_path = str(parent.get("output_path") or "")
     if not parent_id or not output_path:
         raise PolicyViolation("parent probe declaration is incomplete")
-    cache_key = (parent_id, output_path)
-    if cache_key not in cache:
-        cache[cache_key] = client.probe(parent_id)
-    values = extract_parent_values(cache[cache_key], output_path)
+    if parent_id not in cache:
+        cache[parent_id] = client.probe(parent_id)
+    values = extract_parent_values(cache[parent_id], output_path)
     if not values:
         raise PermissionUnavailableError(
             f"required parent {parent_id} has no selectable value"

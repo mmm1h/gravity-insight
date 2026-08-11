@@ -184,6 +184,9 @@ def _fetch_parent_candidates(
     candidate_limit: int,
     operation_root: Path,
     anchor: date,
+    parent_cache: dict[
+        str, tuple[Any, HttpObservation | None, str | None]
+    ],
 ) -> tuple[list[Any], dict[str, Any]]:
     operation_id = str(parent.get("operation_id", ""))
     output_path = str(parent.get("output_path", ""))
@@ -191,15 +194,17 @@ def _fetch_parent_candidates(
     if not operation_id or not output_path or not path.is_file():
         return [], _parent_summary(operation_id, output_path, "metadata_unavailable")
     source = read_json(path)
-    envelope, primary, local_error_type = _call_parent(
-        operation_id,
-        source,
-        _simple_parent_inputs(source, anchor),
-        stable_client=stable_client,
-        recording=recording,
-        target_source=target_source,
-        candidate_limit=candidate_limit,
-    )
+    if operation_id not in parent_cache:
+        parent_cache[operation_id] = _call_parent(
+            operation_id,
+            source,
+            _simple_parent_inputs(source, anchor),
+            stable_client=stable_client,
+            recording=recording,
+            target_source=target_source,
+            candidate_limit=candidate_limit,
+        )
+    envelope, primary, local_error_type = parent_cache[operation_id]
     if local_error_type is not None:
         return [], _parent_summary(
             operation_id,
@@ -268,6 +273,9 @@ def _resolve_parents(
     values_by_field: dict[str, Sequence[Any]] = {}
     failures: dict[str, str] = {}
     summaries: list[dict[str, Any]] = []
+    parent_cache: dict[
+        str, tuple[Any, HttpObservation | None, str | None]
+    ] = {}
     for parent in operation.get("required_parent", []):
         if not isinstance(parent, Mapping):
             continue
@@ -285,6 +293,7 @@ def _resolve_parents(
             candidate_limit=candidate_limit,
             operation_root=operation_root,
             anchor=anchor,
+            parent_cache=parent_cache,
         )
         summaries.append(summary)
         if values:
