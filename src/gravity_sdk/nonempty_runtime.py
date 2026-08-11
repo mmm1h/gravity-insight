@@ -143,7 +143,7 @@ def _call_parent(
     recording: RecordingSession,
     target_source: Mapping[str, Any],
     candidate_limit: int,
-) -> tuple[Any, HttpObservation | None]:
+) -> tuple[Any, HttpObservation | None, str | None]:
     if inputs is not None:
         pagination = source["operation"].get("pagination", {})
         selected = dict(inputs)
@@ -155,6 +155,7 @@ def _call_parent(
     else:
         selected = None
     start = len(recording.observations)
+    local_error_type = None
     try:
         with recording.observing(
             operation_id, family_id(target_source), "nonempty_parent_candidates"
@@ -164,9 +165,14 @@ def _call_parent(
                 if selected is None
                 else stable_client.read(operation_id, selected)
             )
-    except Exception:
+    except Exception as error:
         envelope = {}
-    return envelope, last_primary(recording.observations[start:], operation_id)
+        local_error_type = type(error).__name__
+    return (
+        envelope,
+        last_primary(recording.observations[start:], operation_id),
+        local_error_type,
+    )
 
 
 def _fetch_parent_candidates(
@@ -185,7 +191,7 @@ def _fetch_parent_candidates(
     if not operation_id or not output_path or not path.is_file():
         return [], _parent_summary(operation_id, output_path, "metadata_unavailable")
     source = read_json(path)
-    envelope, primary = _call_parent(
+    envelope, primary, local_error_type = _call_parent(
         operation_id,
         source,
         _simple_parent_inputs(source, anchor),
@@ -194,6 +200,14 @@ def _fetch_parent_candidates(
         target_source=target_source,
         candidate_limit=candidate_limit,
     )
+    if local_error_type is not None:
+        return [], _parent_summary(
+            operation_id,
+            output_path,
+            "local_error",
+            primary=primary,
+            local_error_type=local_error_type,
+        )
     values = (
         extract_parent_values(envelope, output_path)
         if isinstance(envelope, Mapping)
@@ -225,14 +239,18 @@ def _parent_summary(
     status: str,
     count: int = 0,
     primary: HttpObservation | None = None,
+    local_error_type: str | None = None,
 ) -> dict[str, Any]:
-    return {
+    result = {
         "operation_id": operation_id,
         "output_path": output_path,
         "status": status,
         "candidate_count": count,
         "http_status": primary.status_code if primary else None,
     }
+    if local_error_type is not None:
+        result["local_error_type"] = local_error_type
+    return result
 
 
 def _resolve_parents(

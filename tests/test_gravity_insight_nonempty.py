@@ -394,6 +394,58 @@ def test_missing_required_parent_candidates_skip_invalid_target_attempts(
     assert session.calls == []
 
 
+def test_parent_local_error_is_reported_without_message_or_values(
+    tmp_path: Path, monkeypatch: object
+) -> None:
+    source = _source()
+    source["operation"]["input_fields"]["selection"] = {
+        "type": "string",
+    }
+    source["operation"]["request"]["body_fields"].append("selection")
+    source["operation"]["required_parent"] = [
+        {
+            "operation_id": "parent.available.list",
+            "input_field": "selection",
+            "output_path": "data.list[].id",
+            "selection": "caller_select",
+        }
+    ]
+    operation_root = tmp_path / "operations"
+    operation_root.mkdir(parents=True, exist_ok=True)
+    (operation_root / "parent.available.list.json").write_text(
+        json.dumps(
+            {
+                "operation": {
+                    "operation_id": "parent.available.list",
+                    "effect": "read",
+                    "input_fields": {},
+                    "request": {"defaults": {}},
+                    "live_probe": {"inputs": {}},
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result, _session = _run_discovery(
+        tmp_path, monkeypatch, source=source, payloads=[]
+    )
+
+    assert result["resolution"] == "undetermined"
+    assert result["search"]["attempted_combinations"] == 0
+    assert result["parents"] == [
+        {
+            "operation_id": "parent.available.list",
+            "output_path": "data.list[].id",
+            "status": "local_error",
+            "candidate_count": 0,
+            "http_status": None,
+            "local_error_type": "IndexError",
+        }
+    ]
+    assert "message" not in result["parents"][0]
+
+
 def test_confirmed_empty_requires_exhaustive_nonopaque_space(
     tmp_path: Path, monkeypatch: object
 ) -> None:
