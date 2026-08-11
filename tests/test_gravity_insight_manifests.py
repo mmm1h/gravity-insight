@@ -830,6 +830,9 @@ class GravityInsightManifestTests(unittest.TestCase):
                 "send_way": ["type"],
                 "target_values": ["advertiser_id"],
             },
+            "metadata.metrics.get": {
+                "metrics": ["cname", "formula", "name", "unit"]
+            },
         }
         device_info = [
             "Android_Version",

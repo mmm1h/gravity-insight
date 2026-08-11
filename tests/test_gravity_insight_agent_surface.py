@@ -224,7 +224,8 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
         # 快手账户主体选择器只有已验证布尔默认值，再增加一个完整 example。
         # AI 托管详情依赖运行时从规则列表选择 ai_id，不伪造静态示例。
         # 实时事件配置依赖运行时从应用列表选择 app_id，同样不伪造示例。
-        self.assertEqual((80, 90), (examples_complete, examples_unknown))
+        # AI 托管指标字典依赖规则列表中的 media_type，也不伪造示例。
+        self.assertEqual((80, 91), (examples_complete, examples_unknown))
         # 本趟按父 response projection 与调用方选择语义补全 9 条边；剩余
         # 16 条涉及 runtime-v1 target 投影、递归、同一行关联或嵌套输入变换。
         # 素材相册列表再补一条递归父级边，公开 probe 会按目标字符串契约转换；
@@ -232,8 +233,9 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
         # 完整父级边；项目素材列表再补两条项目筛选器父级边，巨量广告
         # 选择器再补一条账户父级边。
         # 广告素材表现读取再补两条同源广告筛选器父级边；AI 托管详情
-        # 再补一条规则列表 id 父级边；实时事件配置再补一条应用父级边。
-        self.assertEqual((59, 16), (parents_complete, parents_unknown))
+        # 再补一条规则列表 id 父级边；实时事件配置再补一条应用父级边；
+        # AI 托管指标字典再补一条规则媒体类型父级边。
+        self.assertEqual((60, 16), (parents_complete, parents_unknown))
 
         transformed = self.client.describe("analysis.event.query")["required_parent"][0]
         self.assertEqual("data.list[].name", transformed["output_path"])

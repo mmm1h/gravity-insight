@@ -46,6 +46,10 @@
       "is_preset",
       "trigger_opportunity"
     ],
+    "metadata.metrics.get": [
+      "formula",
+      "unit"
+    ],
     "metadata.property.list": [
       "is_common",
       "is_preset"

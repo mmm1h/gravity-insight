@@ -269,6 +269,8 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "promotion.ai_trusteeship.detail",
             # 实时事件配置完成应用父级、GET 参数和自由文本隐私收口后晋升。
             "app.realtime_event.list",
+            # AI 托管指标字典完成媒体类型父级、嵌套字段和路由隐私复验后晋升。
+            "metadata.metrics.get",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]

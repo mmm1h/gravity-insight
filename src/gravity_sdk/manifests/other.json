@@ -3189,6 +3189,125 @@
       ],
       "stability": "stable",
       "upstream_method": "GET"
+    },
+    {
+      "action": "get",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "AI 托管媒体指标字典只读查询；media_type 可由稳定的 promotion.ai_trusteeship.list 选择。",
+      "domain": "metadata",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "media_type": {
+          "description": "媒体类型；由 AI 托管规则列表返回。",
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "media_type": "$parent:media_type"
+        }
+      },
+      "operation_id": "metadata.metrics.get",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v1/task/ai_trusteeship/get_metrics/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "media_type"
+        ]
+      },
+      "required_parent": [
+        {
+          "input_field": "media_type",
+          "operation_id": "promotion.ai_trusteeship.list"
+        }
+      ],
+      "resource": "metrics",
+      "response_projection": {
+        "data_keys": [
+          "list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "metrics",
+          "name"
+        ],
+        "nested_item_keys": {
+          "metrics": [
+            "cname",
+            "formula",
+            "name",
+            "unit"
+          ]
+        },
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
     }
   ]
 }

@@ -1,0 +1,244 @@
+{
+  "conclusion": "success",
+  "http": [
+    {
+      "http_status": 200,
+      "method": "GET",
+      "operation_id": "metadata.metrics.get",
+      "path": "/turbo_engine/api/v1/task/ai_trusteeship/get_metrics/",
+      "purpose": "nonempty_search",
+      "raw_schema_fingerprint": "9d7f7322d633c241fb5a9d688b71a9c597b43ae5a72be062faa0213e9b265d1b",
+      "request_fingerprint": "772809aaf25ea6410a67edc35c71b336cd8cddeb901c735e92cce052f7dd5eb5",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.query.media_type",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.code",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].metrics",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].metrics[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].metrics[].cname",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].metrics[].formula",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].metrics[].name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].metrics[].unit",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.extra",
+            "presence": "observed",
+            "types": [
+              "null"
+            ]
+          },
+          {
+            "path": "$.msg",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    }
+  ],
+  "operation_id": "metadata.metrics.get",
+  "pagination": {
+    "kind": "none",
+    "verified": true
+  },
+  "privacy": {
+    "candidate_fields": [
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].metrics[].cname",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.list[].metrics[].formula",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].metrics[].name",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.list[].metrics[].unit",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].name",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      }
+    ],
+    "classified_non_sensitive": 5,
+    "classified_sensitive": 0,
+    "manual_review": 0,
+    "values_persisted": false
+  },
+  "probed_at": "2026-08-11T06:18:35Z",
+  "projected_schema_fingerprint": "f9a7757b12f3b706a4726856fe55b78695b3b11c72d916842e8e5a21dda7826d",
+  "raw_schema_fingerprint": "9d7f7322d633c241fb5a9d688b71a9c597b43ae5a72be062faa0213e9b265d1b",
+  "request_stats": {
+    "backoff_terminations": 0,
+    "failed": 0,
+    "total": 1
+  },
+  "required_parent": {
+    "candidate_count": 1,
+    "http_status": 200,
+    "operation_id": "promotion.ai_trusteeship.list",
+    "output_path": "data.list[].media_type",
+    "status": "resolved"
+  },
+  "route": {
+    "family": "metadata.metrics.get",
+    "method": "GET",
+    "path": "/turbo_engine/api/v1/task/ai_trusteeship/get_metrics/"
+  },
+  "schema_version": "gravity-insight.probe-evidence.v1",
+  "semantic_errors": {
+    "missing_parameter": {
+      "attempted": false,
+      "shape_observed": false
+    },
+    "parameter_adjustments": [],
+    "permission_shape_observed": false,
+    "rules": []
+  },
+  "successful": true
+}

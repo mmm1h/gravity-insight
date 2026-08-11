@@ -1380,6 +1380,15 @@
       "data.list[].trigger_opportunity",
       "data.page_info"
     ],
+    "metadata.metrics.get": [
+      "data.list",
+      "data.list[].metrics",
+      "data.list[].metrics.cname",
+      "data.list[].metrics.formula",
+      "data.list[].metrics.name",
+      "data.list[].metrics.unit",
+      "data.list[].name"
+    ],
     "metadata.operation_log.list": [
       "data.list",
       "data.list[].action_sub_type",
