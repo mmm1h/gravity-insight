@@ -411,6 +411,43 @@ def test_promote_moves_only_gate_passing_draft(tmp_path: Path) -> None:
     assert not (draft_root / f"{operation_id}.json").exists()
 
 
+def test_promote_restores_draft_when_compilation_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    draft_root = tmp_path / "drafts"
+    operation_root = tmp_path / "operations"
+    source = _gate_ready_source()
+    operation_id = source["operation"]["operation_id"]
+    draft_path = draft_root / f"{operation_id}.json"
+    destination = operation_root / f"{operation_id}.json"
+    _write_json(draft_path, source)
+    original = draft_path.read_bytes()
+    compile_calls = 0
+
+    def compile_products() -> None:
+        nonlocal compile_calls
+        compile_calls += 1
+        if compile_calls == 1:
+            raise RuntimeError("prospective compilation failed")
+
+    monkeypatch.setattr(
+        "gravity_sdk.prober.promotion_transaction._compile_contract_products",
+        compile_products,
+    )
+
+    with pytest.raises(RuntimeError, match="prospective compilation failed"):
+        promote_drafts(
+            [operation_id],
+            draft_root=draft_root,
+            operation_root=operation_root,
+            compile_products=True,
+        )
+
+    assert compile_calls == 2
+    assert draft_path.read_bytes() == original
+    assert not destination.exists()
+
+
 def test_request_discipline_enforces_spacing_budget_and_family_stop() -> None:
     now = [0.0]
     sleeps: list[float] = []

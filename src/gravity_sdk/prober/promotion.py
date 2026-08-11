@@ -28,6 +28,7 @@ from .privacy import (
     response_schema_sketch,
 )
 from .probe_support import evidence_path, privacy_summary
+from .promotion_transaction import promote_atomically
 
 
 def _placeholder_supported(value: Any) -> bool:
@@ -289,28 +290,14 @@ def promote_drafts(
     operation_ids: Sequence[str], *, draft_root: Path = DRAFT_ROOT,
     operation_root: Path = OPERATION_ROOT, compile_products: bool = True,
 ) -> list[dict[str, Any]]:
-    promoted: list[dict[str, Any]] = []
-    for operation_id in operation_ids:
-        draft_path = draft_root / f"{operation_id}.json"
-        if not draft_path.is_file():
-            raise ValueError(f"unknown draft operation: {operation_id}")
-        source = read_json(draft_path)
-        gate = evaluate_gate(source)
-        if not gate["eligible"]:
-            raise ValueError(f"promotion gate blocked {operation_id}: " + ", ".join(gate["missing"]))
-        destination = operation_root / f"{operation_id}.json"
-        if destination.exists():
-            raise ValueError(f"stable operation already exists: {operation_id}")
-        write_json(destination, _stable_source(source, operation_root))
-        draft_path.unlink()
-        promoted.append(
-            {"operation_id": operation_id, "status": "stable", "operation_path": display_path(destination)}
-        )
-    if compile_products and promoted:
-        from gravity_sdk.compiler import ContractCompiler
-
-        ContractCompiler().compile()
-    return promoted
+    return promote_atomically(
+        operation_ids,
+        draft_root=draft_root,
+        operation_root=operation_root,
+        compile_products=compile_products,
+        evaluate_gate=evaluate_gate,
+        stable_source=_stable_source,
+    )
 
 
 def _resolve_evidence_reference(reference: str, evidence_root: Path) -> Path:

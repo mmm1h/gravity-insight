@@ -96,7 +96,7 @@
       "src/gravity_sdk/prober/batch.py": 590,
       "src/gravity_sdk/prober/drafts.py": 1805,
       "src/gravity_sdk/prober/export_verify.py": 655,
-      "src/gravity_sdk/prober/promotion.py": 593,
+      "src/gravity_sdk/prober/promotion.py": 581,
       "src/gravity_sdk/registry.py": 1109,
       "src/gravity_sdk/sql/products.py": 675
     },
