@@ -16,13 +16,6 @@ from .multidim_service import (
 )
 
 
-_PROMOTION_PRIMARY_RESOURCES = {
-    "ubix": "group",
-    "taptap": "group",
-    "wechat_video": "report",
-}
-
-
 class _PublicClient(Protocol):
     def operations(
         self,
@@ -171,90 +164,17 @@ class CompositeService:
         read_all: bool = False,
         max_workers: int = 6,
     ) -> dict[str, Any]:
-        selected_platforms = list(dict.fromkeys(_operation_ids(platforms)))
-        if not selected_platforms:
-            raise InputValidationError("promotion snapshot requires at least one platform")
-        if not isinstance(resource, str) or not resource:
-            raise InputValidationError("promotion snapshot resource must be a non-empty string")
-        platform_inputs = dict(inputs_by_platform or {})
-        if set(platform_inputs) - set(selected_platforms):
-            raise InputValidationError("promotion inputs reference an unselected platform")
-        shared = dict(common_inputs or {})
-        requests: list[dict[str, Any]] = []
-        unavailable: list[dict[str, Any]] = []
-        selected_resources: dict[str, str] = {}
-        for platform in selected_platforms:
-            selected_resource = (
-                _PROMOTION_PRIMARY_RESOURCES.get(platform, "advertiser")
-                if resource == "primary"
-                else resource
-            )
-            selected_resources[platform] = selected_resource
-            matches = [
-                item
-                for item in self._client.operations(
-                    domain="promotion", platform=platform, stability="stable"
-                )
-                if item.get("resource") == selected_resource
-                and item.get("action") in {"list", "query"}
-            ]
-            if not matches:
-                unavailable.append(
-                    {
-                        "operation_id": None,
-                        "platform": platform,
-                        "resource": selected_resource,
-                        "ok": False,
-                        "status": "unavailable",
-                        "data": None,
-                        "error": "no stable read operation is registered for this platform/resource",
-                    }
-                )
-                continue
-            operation = sorted(matches, key=lambda item: str(item["operation_id"]))[0]
-            operation_id = str(operation["operation_id"])
-            operation_inputs = dict(shared)
-            operation_inputs.update(platform_inputs.get(platform, {}))
-            requests.append(
-                {
-                    "request_id": platform,
-                    "operation_id": operation_id,
-                    "inputs": operation_inputs,
-                    "read_all": read_all,
-                }
-            )
-        completed = self._client.batch(requests, max_workers=max_workers) if requests else []
-        results: list[dict[str, Any]] = []
-        by_platform = {
-            str(item.get("request_id")): {
-                **item,
-                "platform": str(item.get("request_id")),
-                "resource": selected_resources.get(str(item.get("request_id"))),
-            }
-            for item in completed
-        }
-        unavailable_by_platform = {str(item["platform"]): item for item in unavailable}
-        for platform in selected_platforms:
-            results.append(
-                by_platform.get(platform)
-                or unavailable_by_platform.get(platform)
-                or {
-                    "operation_id": None,
-                    "platform": platform,
-                    "resource": selected_resources[platform],
-                    "ok": False,
-                    "status": "error",
-                    "data": None,
-                    "error": "the batch did not return a result for this platform",
-                }
-            )
-        return {
-            "schema_version": "gravity-insight.composite.promotion.v1",
-            "status": _batch_status(results),
-            "resource": resource,
-            "coverage": _batch_coverage(len(selected_platforms), results),
-            "results": results,
-        }
+        from .promotion_snapshot_compat import promotion_snapshot_compat
+
+        return promotion_snapshot_compat(
+            self._client,
+            platforms,
+            resource=resource,
+            common_inputs=common_inputs,
+            inputs_by_platform=inputs_by_platform,
+            read_all=read_all,
+            max_workers=max_workers,
+        )
 
 def _operation_ids(values: Sequence[str]) -> list[str]:
     if isinstance(values, (str, bytes)) or any(not isinstance(item, str) or not item for item in values):
