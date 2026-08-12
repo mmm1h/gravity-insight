@@ -9,6 +9,7 @@ from typing import Any
 
 from ._field_policy_shared import (
     is_direct_personal_response_field,
+    is_sensitive_analysis_field,
     is_sensitive_control_key,
 )
 from .composite_batch import validate_composite_bounds
@@ -134,10 +135,15 @@ def normalize_promotion_app(value: str | int) -> str:
         raise _input_error(
             "promotion performance app_id must be a positive App id", "app_id"
         )
-    rendered = str(value).strip()
+    if isinstance(value, int) and (value <= 0 or value.bit_length() > 426):
+        raise _input_error(
+            "promotion performance app_id must be a positive App id", "app_id"
+        )
+    rendered = str(value)
     if (
         not rendered
         or len(rendered) > 128
+        or rendered != rendered.strip()
         or not rendered.isascii()
         or not rendered.isdecimal()
         or int(rendered) <= 0
@@ -220,7 +226,9 @@ def normalize_promotion_metrics(values: Sequence[str]) -> tuple[str, ...]:
             not isinstance(value, str)
             or not _METRIC_NAME.fullmatch(value)
             or is_direct_personal_response_field(value)
+            or is_sensitive_analysis_field(value)
             or is_sensitive_control_key(value)
+            or _credential_field(value)
             or value in PROMOTION_NON_METRIC_FIELDS
         ):
             raise _input_error(
@@ -238,6 +246,26 @@ def normalize_promotion_metrics(values: Sequence[str]) -> tuple[str, ...]:
             "metrics",
         )
     return tuple(selected)
+
+
+def _credential_field(value: str) -> bool:
+    normalized = value.casefold().replace("-", "_")
+    compact = re.sub(r"[^a-z0-9]", "", normalized)
+    if any(
+        marker in compact
+        for marker in (
+            "authorization", "credential", "password", "secret", "token",
+            "cookie", "callbackurl", "clickurl", "postbackurl",
+        )
+    ) or compact.startswith("auth") or compact in {
+        "session", "sessionid", "sessionkey",
+    }:
+        return True
+    return any(
+        compact == f"{prefix}{suffix}"
+        for prefix in ("api", "access", "private", "signing", "client")
+        for suffix in ("key", "header", "secret", "id")
+    )
 
 
 def normalize_promotion_workers(value: Any) -> int:

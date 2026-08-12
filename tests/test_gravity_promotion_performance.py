@@ -7,7 +7,8 @@ import unittest
 
 from gravity_sdk.composite import CompositeService
 from gravity_sdk.domains import PROMOTION_PRIMARY_OPERATIONS
-from gravity_sdk.errors import InputValidationError, LocalIOError, PaginationError
+from gravity_sdk.errors import (
+    GravityInsightError, InputValidationError, LocalIOError, PaginationError)
 from gravity_sdk.promotion_performance import (
     PROMOTION_PLATFORM_OPERATIONS,
     SUPPORTED_PLATFORMS,
@@ -81,6 +82,10 @@ class _BatchClient:
 
 
 class PromotionPerformanceTests(unittest.TestCase):
+    def _safe_status(self, value):
+        return safe_component(
+            value, "tencent", metrics=("stat_cost",), max_pages=3)["status"]
+
     def test_fans_out_real_operations_with_fair_bounds_and_order(self):
         client = _BatchClient()
         result = promotion_performance(
@@ -165,6 +170,8 @@ class PromotionPerformanceTests(unittest.TestCase):
         cases = (
             {"app_id": True},
             {"app_id": "0"},
+            {"app_id": " 17 "},
+            {"app_id": 1 << 20_000},
             {"app_id": "1" * 129},
             {"start": "2026-08-08", "end": "2026-08-07"},
             {"start": "20260801", "end": "20260802"},
@@ -173,6 +180,11 @@ class PromotionPerformanceTests(unittest.TestCase):
             {"platforms": ("bing",)},
             {"metrics": ("app_id",)},
             {"metrics": ("phone",)},
+            *({"metrics": (name,)} for name in (
+                "authorization_header", "api_key", "access_key", "private_key",
+                "client_secret", "session_cookie", "credentials", "credential_id",
+                "session_key", "access_secret", "signing_key", "accessToken",
+                "apiSecret", "clientPassword", "callbackUrl")),
             {"metrics": ("metric", "metric")},
             {"metrics": ()},
             {"max_workers": 25},
@@ -215,6 +227,19 @@ class PromotionPerformanceTests(unittest.TestCase):
         huge = _success("tencent")
         huge["data"]["page"]["total_items"] = 1 << 20_000
         mutations.append(huge)
+        for field, bad_value in (
+            ("size", 999), ("total_pages", 999), ("total_items", 999),
+            ("total_items", []), ("total_items", {}), ("total_items", False)):
+            malformed = _success("tencent")
+            malformed["data"]["page"][field] = bad_value
+            mutations.append(malformed)
+        contradictory_empty = _success(
+            "tencent", [], status="empty", page={
+                "number": 1, "size": 10, "item_count": 0, "total_pages": 2,
+                "total_items": 0, "has_more": False, "pages_fetched": 1,
+                "max_workers": 1},
+        )
+        mutations.append(contradictory_empty)
         mutations.extend(
             (
                 _success("tencent", [], status="success"),
@@ -224,27 +249,34 @@ class PromotionPerformanceTests(unittest.TestCase):
         )
         for value in mutations:
             with self.subTest(value=value):
-                safe = safe_component(
-                    value, "tencent", metrics=("stat_cost",), max_pages=3
-                )
+                safe = safe_component(value, "tencent", metrics=("stat_cost",), max_pages=3)
                 self.assertEqual("contract_changed", safe["status"])
                 self.assertFalse(safe["window_applied"])
         empty = _success("tencent", [], status="empty", page={
-            "number": 1,
-            "size": 10,
-            "item_count": 0,
-            "total_pages": 0,
-            "total_items": 0,
-            "has_more": False,
-            "pages_fetched": 1,
-            "max_workers": 1,
-        })
-        self.assertEqual(
-            "empty",
-            safe_component(
-                empty, "tencent", metrics=("stat_cost",), max_pages=3
-            )["status"],
-        )
+            "number": 1, "size": 10, "item_count": 0, "total_pages": 0,
+            "total_items": 0, "has_more": False, "pages_fetched": 1,
+            "max_workers": 1})
+        self.assertEqual("empty", self._safe_status(empty))
+        optional_totals = _success("tencent")
+        optional_totals["data"]["page"].update(total_pages=None, total_items=None)
+        empty_one = copy.deepcopy(empty); empty_one["data"]["page"]["total_pages"] = 1
+        two_pages = _success("tencent", [{"stat_cost": index} for index in range(11)], page={
+            "number": 1, "size": 10, "item_count": 11, "total_pages": 2,
+            "total_items": 11, "has_more": False, "pages_fetched": 2, "max_workers": 1})
+        for expected, value in (("success", optional_totals), ("empty", empty_one),
+                                ("success", two_pages)):
+            self.assertEqual(expected, self._safe_status(value))
+
+        unknown_code = {"operation_id": PROMOTION_PLATFORM_OPERATIONS["tencent"], "request_id": "tencent",
+            "ok": False, "status": "error", "data": None, "error": {
+                "code": "SECRET_TOKEN_LEAK", "category": "local", "retryable": False}}
+        safe = safe_component(unknown_code, "tencent", metrics=("stat_cost",), max_pages=3)
+        self.assertEqual("contract_changed", self._safe_status(unknown_code))
+        self.assertNotIn("SECRET_TOKEN_LEAK", repr(safe))
+
+        missing = copy.deepcopy(unknown_code)
+        missing["error"]["code"] = "BATCH_RESULT_MISSING"
+        self.assertEqual("error", self._safe_status(missing))
 
     def test_partial_error_is_sanitized_and_preserves_primary_exit(self):
         class PartialClient:
@@ -331,6 +363,16 @@ class PromotionPerformanceTests(unittest.TestCase):
             )
         self.assertNotIn("secret", str(raised.exception))
         self.assertNotIn("C:/private", str(raised.exception))
+
+        class ExtensionErrorClient:
+            def batch(self, *_args, **_options):
+                raise GravityInsightError("token=secret", code="SECRET_TOKEN_LEAK")
+
+        with self.assertRaises(Exception) as raised:
+            promotion_performance(ExtensionErrorClient(), 17, "2026-08-01", "2026-08-02",
+                platforms=("tencent",), metrics=("stat_cost",), max_items=1)
+        self.assertNotIn("SECRET_TOKEN_LEAK", repr(raised.exception))
+        self.assertEqual("LOCAL_IO_ERROR", raised.exception.to_error_detail().code)
 
     def test_input_schema_is_closed_and_legacy_snapshot_stays_compatible(self):
         schema = promotion_performance_input_schema()

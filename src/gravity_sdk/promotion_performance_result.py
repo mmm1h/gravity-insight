@@ -147,7 +147,6 @@ _FAILURE_STATUSES = frozenset(
         "permission_unavailable",
     }
 )
-_MAX_RECEIPT_INTEGER = (1 << 31) - 1
 
 
 def promotion_performance_item_count(value: Any) -> int:
@@ -341,23 +340,42 @@ def _valid_page_receipt(
         and 1 <= pages_fetched <= max_pages
         and workers == 1
         and number == 1
-        and 1 <= size <= 1_000
+        and size == 10
         and has_more is False
-        and _valid_page_total(total_pages, pages_fetched, rows)
-        and _valid_total(total_items, rows)
+        and _valid_completion_totals(
+            rows,
+            pages_fetched=pages_fetched,
+            total_pages=total_pages,
+            total_items=total_items,
+        )
     )
 
 
-def _valid_total(value: Any, observed: int) -> bool:
-    return value is None or (
-        type(value) is int and observed <= value <= _MAX_RECEIPT_INTEGER
+def _valid_completion_totals(
+    rows: int,
+    *,
+    pages_fetched: int,
+    total_pages: Any,
+    total_items: Any,
+) -> bool:
+    if rows == 0:
+        return bool(
+            pages_fetched == 1
+            and _optional_empty_page_total(total_pages)
+            and _optional_exact_total(total_items, 0)
+        )
+    return bool(
+        _optional_exact_total(total_pages, pages_fetched)
+        and _optional_exact_total(total_items, rows)
     )
 
 
-def _valid_page_total(value: Any, pages_fetched: int, rows: int) -> bool:
-    if rows == 0 and type(value) is int and value == 0 and pages_fetched == 1:
-        return True
-    return _valid_total(value, pages_fetched)
+def _optional_empty_page_total(value: Any) -> bool:
+    return value is None or (type(value) is int and value in {0, 1})
+
+
+def _optional_exact_total(value: Any, expected: int) -> bool:
+    return value is None or (type(value) is int and value == expected)
 
 
 def contract_component(platform: str) -> dict[str, Any]:

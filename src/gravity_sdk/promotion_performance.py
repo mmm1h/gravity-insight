@@ -14,7 +14,6 @@ from typing import Any
 from . import runtime
 from .composite_batch import ordered_results
 from .errors import (
-    ErrorDetail,
     GravityInsightError,
     LocalIOError,
     PaginationError,
@@ -32,6 +31,7 @@ from .promotion_performance_request import (
     promotion_performance_input_schema,
     validate_promotion_performance_request,
 )
+from .promotion_performance_error import safe_batch_error
 from .promotion_performance_result import (
     PROMOTION_NON_METRIC_FIELDS,
     PROMOTION_PLATFORM_OPERATIONS,
@@ -207,17 +207,7 @@ def _execute_batch(
         )
         return ordered_results(raw, requests, component="promotion performance")
     except GravityInsightError as exc:
-        detail = exc.to_error_detail()
-        safe = ErrorDetail.create(
-            detail.code,
-            "Promotion performance batch read failed.",
-            category=detail.category,
-            retryable=detail.retryable,
-            retry_after_ms=detail.retry_after_ms,
-            next_action=(
-                "Inspect the controlled Gravity error and retry only when indicated."
-            ),
-        )
+        safe = safe_batch_error(exc.to_error_detail())
         raise GravityInsightError(
             safe.message,
             code=safe.code,

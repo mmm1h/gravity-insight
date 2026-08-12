@@ -30,7 +30,6 @@ _SPECIAL_FAILURE_CODES = frozenset(
     if status != "semantic_error"
     for code in codes
 )
-_ERROR_CODE = re.compile(r"^[A-Z][A-Z0-9_]{2,63}$")
 _ERROR_FIELD = re.compile(r"^[A-Za-z][A-Za-z0-9_.-]{0,127}$")
 _CATEGORIES = frozenset(item.value for item in ErrorCategory)
 _MAX_RECEIPT_INTEGER = (1 << 31) - 1
@@ -41,6 +40,39 @@ _BUILTIN_DEFAULTS = {
     )
     for code in ErrorCode
 }
+_SAFE_CODE_DEFAULTS = {
+    **_BUILTIN_DEFAULTS,
+    "BATCH_RESULT_MISSING": (ErrorCategory.LOCAL.value, False),
+}
+
+
+def safe_batch_error(detail: ErrorDetail) -> ErrorDetail:
+    """Map a whole-batch exception to a built-in public error identity."""
+
+    if detail.code in _BUILTIN_DEFAULTS:
+        code = detail.code
+    else:
+        code = {
+            ErrorCategory.CALLER.value: ErrorCode.INPUT_INVALID.value,
+            ErrorCategory.UPSTREAM.value: ErrorCode.UPSTREAM_UNAVAILABLE.value,
+            ErrorCategory.LOCAL.value: ErrorCode.LOCAL_IO_ERROR.value,
+        }.get(detail.category, ErrorCode.LOCAL_IO_ERROR.value)
+    expected = _BUILTIN_DEFAULTS[code]
+    retry_after = (
+        detail.retry_after_ms
+        if expected[1]
+        and type(detail.retry_after_ms) is int
+        and 0 <= detail.retry_after_ms <= _MAX_RECEIPT_INTEGER
+        else None
+    )
+    return ErrorDetail.create(
+        code,
+        "Promotion performance batch read failed.",
+        category=expected[0],
+        retryable=expected[1],
+        retry_after_ms=retry_after,
+        next_action="Inspect the controlled Gravity error and retry only when indicated.",
+    )
 
 
 def safe_performance_error(value: Any, platform: str) -> dict[str, Any] | None:
@@ -52,13 +84,10 @@ def safe_performance_error(value: Any, platform: str) -> dict[str, Any] | None:
     category = value.get("category")
     if (
         not isinstance(code, str)
-        or not _ERROR_CODE.fullmatch(code)
+        or code not in _SAFE_CODE_DEFAULTS
         or not isinstance(category, str)
         or category not in _CATEGORIES
-        or (
-            code in _BUILTIN_DEFAULTS
-            and category != _BUILTIN_DEFAULTS[code][0]
-        )
+        or category != _SAFE_CODE_DEFAULTS[code][0]
     ):
         return None
     field = value.get("field")
@@ -99,8 +128,8 @@ def error_exit_code(error: Mapping[str, Any]) -> int:
 def _valid_retry_receipt(code: str, retryable: Any, retry_after: Any) -> bool:
     if not isinstance(retryable, bool):
         return False
-    default = _BUILTIN_DEFAULTS.get(code)
-    if default is not None and retryable is not default[1]:
+    default = _SAFE_CODE_DEFAULTS.get(code)
+    if default is None or retryable is not default[1]:
         return False
     if retry_after is None:
         return True
@@ -121,4 +150,9 @@ def _failure_action(code: str, category: str) -> str:
     return "Retry only the failed platform; do not replay successful siblings."
 
 
-__all__ = ["error_exit_code", "failure_matches", "safe_performance_error"]
+__all__ = [
+    "error_exit_code",
+    "failure_matches",
+    "safe_batch_error",
+    "safe_performance_error",
+]
