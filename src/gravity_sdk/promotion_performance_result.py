@@ -21,6 +21,7 @@ from .promotion_performance_error import (
     failure_matches as _failure_matches,
     safe_performance_error as _safe_error,
 )
+from .promotion_performance_binding import rows_match_performance_request
 
 
 SCHEMA_VERSION = "gravity-insight.promotion-performance.v1"
@@ -173,6 +174,8 @@ def safe_component(
     platform: str,
     *,
     metrics: Sequence[str],
+    expected_app_id: str,
+    expected_window: tuple[str, str],
     max_pages: int,
 ) -> dict[str, Any]:
     """Project one batch result against its request-bound identity."""
@@ -194,6 +197,8 @@ def safe_component(
             platform,
             status,
             metrics=metrics,
+            expected_app_id=expected_app_id,
+            expected_window=expected_window,
             max_pages=max_pages,
         )
     if value.get("ok") is False and status in _FAILURE_STATUSES:
@@ -222,9 +227,13 @@ def _safe_success(
     status: str,
     *,
     metrics: Sequence[str],
+    expected_app_id: str,
+    expected_window: tuple[str, str],
     max_pages: int,
 ) -> dict[str, Any]:
     operation_id = PROMOTION_PLATFORM_OPERATIONS[platform]
+    if value.get("error") not in (None, {}):
+        return contract_component(platform)
     envelope = value.get("data")
     if not isinstance(envelope, Mapping):
         return contract_component(platform)
@@ -244,7 +253,13 @@ def _safe_success(
         return contract_component(platform)
     allowed_fields = PROMOTION_ROW_FIELDS[platform] | frozenset(metrics)
     rows = _safe_rows(data.get("list"), allowed_fields=allowed_fields)
-    if rows is None or (status == "empty") != (not rows):
+    if (
+        rows is None
+        or not rows_match_performance_request(
+            rows, expected_app_id, expected_window
+        )
+        or (status == "empty") != (not rows)
+    ):
         return contract_component(platform)
     page = _safe_page(envelope.get("page"), len(rows), max_pages=max_pages)
     if page is None:

@@ -21,6 +21,10 @@ from gravity_sdk.promotion_performance_result import (
 )
 
 
+def _safe(value, metrics=("stat_cost",)):
+    return safe_component(value, "tencent", metrics=metrics, expected_app_id="17", expected_window=("2026-08-01", "2026-08-07"), max_pages=3)
+
+
 def _read_envelope(operation_id, rows, *, status="success", page=None):
     return {
         "schema_version": "gravity-insight.read.v1",
@@ -82,10 +86,6 @@ class _BatchClient:
 
 
 class PromotionPerformanceTests(unittest.TestCase):
-    def _safe_status(self, value):
-        return safe_component(
-            value, "tencent", metrics=("stat_cost",), max_pages=3)["status"]
-
     def test_fans_out_real_operations_with_fair_bounds_and_order(self):
         client = _BatchClient()
         result = promotion_performance(
@@ -244,19 +244,19 @@ class PromotionPerformanceTests(unittest.TestCase):
             (
                 _success("tencent", [], status="success"),
                 _success("tencent", [{"stat_cost": 1}], status="empty"),
-                _success("tencent", [{"stat_cost": float("nan")}]),
+                _success("tencent", [{"stat_cost": float("nan")}]), dict(_success("tencent"), error={"code": "CONTRACT_CHANGED"}),
             )
         )
         for value in mutations:
             with self.subTest(value=value):
-                safe = safe_component(value, "tencent", metrics=("stat_cost",), max_pages=3)
+                safe = _safe(value)
                 self.assertEqual("contract_changed", safe["status"])
                 self.assertFalse(safe["window_applied"])
         empty = _success("tencent", [], status="empty", page={
             "number": 1, "size": 10, "item_count": 0, "total_pages": 0,
             "total_items": 0, "has_more": False, "pages_fetched": 1,
             "max_workers": 1})
-        self.assertEqual("empty", self._safe_status(empty))
+        self.assertEqual("empty", _safe(empty)["status"])
         optional_totals = _success("tencent")
         optional_totals["data"]["page"].update(total_pages=None, total_items=None)
         empty_one = copy.deepcopy(empty); empty_one["data"]["page"]["total_pages"] = 1
@@ -265,18 +265,20 @@ class PromotionPerformanceTests(unittest.TestCase):
             "total_items": 11, "has_more": False, "pages_fetched": 2, "max_workers": 1})
         for expected, value in (("success", optional_totals), ("empty", empty_one),
                                 ("success", two_pages)):
-            self.assertEqual(expected, self._safe_status(value))
+            self.assertEqual(expected, _safe(value)["status"])
+        for field, value in (("app_id", "18"), ("date", "2026-08-08"), ("day", "20260801"), ("stat_date", "2026-07-31")):
+            self.assertEqual("contract_changed", _safe(_success("tencent", [{"stat_cost": 1, field: value}]), ("stat_cost", field) if field == "stat_date" else ("stat_cost",))["status"])
 
         unknown_code = {"operation_id": PROMOTION_PLATFORM_OPERATIONS["tencent"], "request_id": "tencent",
             "ok": False, "status": "error", "data": None, "error": {
                 "code": "SECRET_TOKEN_LEAK", "category": "local", "retryable": False}}
-        safe = safe_component(unknown_code, "tencent", metrics=("stat_cost",), max_pages=3)
-        self.assertEqual("contract_changed", self._safe_status(unknown_code))
+        safe = _safe(unknown_code)
+        self.assertEqual("contract_changed", _safe(unknown_code)["status"])
         self.assertNotIn("SECRET_TOKEN_LEAK", repr(safe))
 
         missing = copy.deepcopy(unknown_code)
         missing["error"]["code"] = "BATCH_RESULT_MISSING"
-        self.assertEqual("error", self._safe_status(missing))
+        self.assertEqual("error", _safe(missing)["status"])
 
     def test_partial_error_is_sanitized_and_preserves_primary_exit(self):
         class PartialClient:

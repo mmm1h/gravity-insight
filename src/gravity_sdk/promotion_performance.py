@@ -135,6 +135,8 @@ def _read_platform_results(
             value,
             platform,
             metrics=metrics,
+            expected_app_id=app,
+            expected_window=window,
             max_pages=max_pages,
         )
         for platform, value in zip(platforms, ordered, strict=True)
