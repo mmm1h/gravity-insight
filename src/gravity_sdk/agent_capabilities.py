@@ -16,7 +16,7 @@ from .find import query_match
 
 _ASCII_WORD = re.compile(r"[a-z0-9_]+", re.IGNORECASE)
 AGENT_SCOPE = (
-    "workspace_recipes_analysis_query_spec_stable_insight_composites_"
+    "workspace_recipes_analysis_query_spec_segment_rule_spec_stable_insight_composites_"
     "sql_products_governed_exports_and_local_metadata"
 )
 
@@ -237,8 +237,11 @@ def analysis_query_spec_cards(
     """Expose the offline Analysis compiler as a first-class Agent handoff."""
 
     from .agent_analysis import analysis_query_spec_cards as build_cards
+    from .agent_segment import segment_rule_spec_cards as segment_cards
 
-    return build_cards(query, domain=domain, platform=platform)
+    return segment_cards(query, domain=domain, platform=platform) or build_cards(
+        query, domain=domain, platform=platform
+    )
 
 
 def composite_capability_cards(

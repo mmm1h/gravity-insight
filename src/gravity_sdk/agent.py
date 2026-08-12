@@ -26,7 +26,6 @@ from .agent_handoff import (
 from .agent_export import (
     export_capability_cards,
     export_inventory_for_query,
-    is_authoritative_export_card,
 )
 from .agent_sources import (
     catalog_cards,
@@ -37,6 +36,7 @@ from .agent_sources import (
 )
 from .agent_batch_sources import AgentSourceSnapshot
 from .agent_table_lineage import table_lineage_capability_cards
+from .agent_segment import is_authoritative_direct_card
 from .agent_vocabulary import is_authoritative_local_metadata_card
 from .agent_client import DeferredAgentClient
 from .errors import InputValidationError
@@ -190,7 +190,7 @@ def _discover(
         request, request.query, client=client, workspace=workspace, sources=sources
     )
     authoritative_cards = [
-        card for card in page.catalog_cards if is_authoritative_export_card(card)
+        card for card in page.catalog_cards if is_authoritative_direct_card(card)
     ] or [
         card
         for card in page.catalog_cards

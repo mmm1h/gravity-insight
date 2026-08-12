@@ -10,6 +10,8 @@
 | 已知 operation 和输入 schema | `gravity run <operation-id> ...` | 1 |
 | 已知 Analysis kind 和物理字段 | 单个 `analysis query`；多个用一个 `analysis_query` Plan | 1 |
 | 已知 Analysis kind，指标未知 | `metadata vocabulary` → `analysis query --spec` | 2 |
+| 已知人群规则 spec | `gravity analysis segment evaluate --app ... --spec ...` | 1 |
+| 不知道人群规则合同 | `gravity agent "评估人群规则命中人数"` → `plan run` | 2 |
 | 已知保存分析引用 | `gravity analysis saved run --app ... --ref ...` | 1 |
 | 不知道保存分析引用 | `gravity agent "saved report templates"` → 执行返回的 Plan 节点 | 2 |
 | 已知可调用导出及完整输入 | `gravity export run ... --output <file.xlsx>` | 1 |
@@ -29,8 +31,9 @@
 
 经营概览和趋势直接一次调用 `gravity reports pulse --app main --start 2026-08-01 --end 2026-08-07 --include-hourly`；只有需要小时对比时加 `--include-hourly`，其结果是 `scope=workspace`。交叉 Plan 使用 composite `name=business_pulse` 和 `apps/start/end`，不要手工串行读取 overview/business。
 
-保存分析已知稳定 ID/精确名称时直接 `gravity analysis saved run --app ... --ref ...`，不要先串行 list/get/prepare。Strict Replay 不猜 Web 配置；`prepare --ref` 会联网解析引用但不执行最终查询，显式 `--definition` 才是零网络编译。自然语言发现只返回 `composite:saved_analysis` 和缺失的
-`app/ref`，不会自动选择或执行。
+保存分析已知稳定 ID/精确名称时直接 `gravity analysis saved run --app ... --ref ...`，不要先串行 list/get/prepare。Strict Replay 不猜 Web 配置；`prepare --ref` 会联网解析引用但不执行最终查询，显式 `--definition` 才是零网络编译。自然语言发现只返回 `composite:saved_analysis` 和缺失的 `app/ref`，不会自动选择或执行。
+
+人群规则只接受显式紧凑 spec：Agent 强意图卡给完整 schema 和缺失的 `app/spec`，不会从自然语言生成规则。已知 spec 可直接 evaluate；交叉查询用 `segment_evaluate` composite，只有 `/app` 可绑定，结果仅 `part/percent/total`。
 
 ## 1. 业务语义先在调用项目解析
 
@@ -98,7 +101,7 @@ gravity plan run --input plan.json --dry-run
 gravity plan run --input plan.json --concurrency 6
 ```
 
-Analysis 查询复用 composite `name=analysis_query`，支持 `event/funnel/retention/property/scatter`。已知 kind/App/literal spec 时直接一次 `plan run`；未知时一次 `gravity agent` 发现、调用方确认补齐 spec、一次 Plan 执行，自然语言不自动执行。同层查询由全局 pool 并发、adapter worker 固定 1、保声明序并隔离失败；节点和总预算同时生效。binding 仅可写已有标量 `/app`，不支持 `/spec/...` 或 spec 内部引用；结果不回显 request/spec/binding 值并继续脱敏。完整事件、event+funnel 并发及其余 Plan 合同见 [Plan v1 参考](reference/plan.md#analysis-query-composite)。
+Analysis 查询复用 composite `name=analysis_query`；人群规则用 `name=segment_evaluate`。已知 App/literal spec 时一次 `plan run`；未知时 Agent 发现、调用方补齐 spec、再执行 Plan，自然语言不自动执行。同层查询由全局 pool 并发并保声明序；binding 仅可写 `/app`，不支持 `/spec/...`；结果不回显 request/spec/binding 值。完整合同见 [Plan v1 参考](reference/plan.md#analysis-query-composite)。
 
 ## 4. 选择 Insight 还是 SQL
 
@@ -200,10 +203,7 @@ gravity find "retention"
 
 ## 8. 只在诊断要求时分支
 
-`stale` 才运行 `recipe check`；`PARENT_REQUIRED` 按 diagnostics 解析父资源；`INPUT_INVALID`
-重新 describe。`empty` 先核对 App、时间、时区和父资源，不能解释成业务未发生。认证只刷新
-一次，权限错误不循环；限流遵循 `retry_after_ms`；合同变化立即停止依赖新字段。任何分支都
-只保留结构化摘要，不输出请求敏感信息。
+`stale` 才运行 `recipe check`；`PARENT_REQUIRED` 按 diagnostics 解析父资源；`INPUT_INVALID` 重新 describe。`empty` 先核对 App、时间、时区和父资源，不能解释成业务未发生。认证只刷新一次，权限错误不循环；限流遵循 `retry_after_ms`；合同变化立即停止依赖新字段。任何分支都只保留结构化摘要，不输出请求敏感信息。
 
 只有在严格 HTTP 预算内寻找一个可用输入组合时使用 `discover-nonempty`。它不是空结果后的
 默认重试器。

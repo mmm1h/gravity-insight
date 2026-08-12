@@ -172,6 +172,54 @@ Plan binding 只作用于 request 边界：`/app` 可从上游复制一个标量
 `depends_on`；v1 不支持写入 `/spec/...`，也不解释 spec 内部引用或表达式。需要变化的事件、
 指标、过滤条件必须在提交 Plan 前生成完整 literal spec。
 
+## Segment Rule composite
+
+人群规则人数/占比评估复用 `composite` 节点，request 固定为 `name="segment_evaluate"`、
+`app` 和完整 literal `spec`：
+
+```json
+{
+  "schema_version": "gravity.plan.v1",
+  "budget": {"max_workers": 6, "max_total_items": 1},
+  "nodes": [
+    {
+      "id": "eligible_audience",
+      "kind": "composite",
+      "request": {
+        "name": "segment_evaluate",
+        "app": 101,
+        "spec": {
+          "name": "CN users",
+          "start": "2026-08-01",
+          "property_rules": {
+            "logic": "AND",
+            "groups": [
+              {
+                "logic": "AND",
+                "rules": [
+                  {"field": "country", "source": "user", "operator": "EQUALS", "values": ["CN"]}
+                ]
+              }
+            ]
+          },
+          "event_rules": {"logic": "AND", "groups": []}
+        }
+      },
+      "limits": {"max_pages": 1, "max_items": 1},
+      "output_fields": ["part", "percent", "total"]
+    }
+  ]
+}
+```
+
+先用 metadata 确认示例中的物理字段，再提交规则。预检完整编译 spec 且零网络；真实事件、属性、
+分群与版本仍在执行阶段由现有 FieldPolicy 元数据校验。binding/foreach 只能写 `/app`，禁止
+`/spec/...`、名称或规则值；`output_fields` 是节点级、data-relative 字段，只允许
+`part/percent/total`。结果与错误均不回显 request、spec、binding 值或原始异常。
+
+已知 app/spec 时一次 `plan run`。未知合同则一次 `gravity agent "评估人群规则命中人数"`，
+调用方按卡片 schema 填写 `app/spec`，再执行 Plan，总共两次；自然语言不会生成规则或自动执行。
+
 预检完整验证 schema、依赖、环、pointer、kind、动态 target 与最坏预算；失败时零网络请求。
 节点仅限 `run`、`sql_product`、`metadata_search`、`composite`，不接受裸 SQL、任意
 HTTP/Python、表达式、join/reduce、条件或循环。

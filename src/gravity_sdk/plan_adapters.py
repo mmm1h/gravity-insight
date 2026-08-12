@@ -12,6 +12,7 @@ from .composite import CompositeService, MULTIDIM_QUERY_OPERATION
 from .output_projection import validate_output_fields
 from .plan import AdapterContext, PlanAdapter, PlanAdapters
 from . import plan_analysis_adapter as analysis_plan
+from . import plan_segment_adapter as segment_plan
 from .plan_binding import set_pointer
 from .plan_pulse_adapter import execute_business_pulse, validate_business_pulse
 from .plan_saved_analysis_adapter import (
@@ -56,6 +57,7 @@ _COMPOSITES = frozenset(
         "analysis_context", "app_snapshot", "attribution_snapshot",
         "business_pulse", "saved_analysis", "multidim",
         analysis_plan.ANALYSIS_QUERY_NAME,
+        segment_plan.SEGMENT_EVALUATE_NAME,
     }
 )
 _COMPOSITE_OUTPUT_FIELDS = frozenset(
@@ -366,6 +368,11 @@ def _validate_composite(
             insight, workspace, request, context
         )
         return
+    if name == segment_plan.SEGMENT_EVALUATE_NAME:
+        segment_plan.validate_segment_evaluate_plan(
+            insight, workspace, request, context
+        )
+        return
     _request_object(request, _COMPOSITE_FIELDS, "composite")
     if name not in _COMPOSITES:
         raise _input("composite name is not allowlisted", "name")
@@ -477,6 +484,8 @@ def _execute_composite(
         return execute_saved_analysis_plan(sdk, request, context)
     if name == analysis_plan.ANALYSIS_QUERY_NAME:
         return analysis_plan.execute_analysis_query_plan(sdk, request, context)
+    if name == segment_plan.SEGMENT_EVALUATE_NAME:
+        return segment_plan.execute_segment_evaluate_plan(sdk, request, context)
     app_id = context.workspace.resolve_app(app)
     inputs = _multidim_inputs(dict(request.get("inputs", {})), app_id)
     return CompositeService(sdk.insight).multidim_query(
@@ -512,6 +521,8 @@ def _project_composite(
 ) -> Any:
     if analysis_plan.is_analysis_query_result(result):
         return analysis_plan.project_analysis_query_result(result, fields, context)
+    if segment_plan.is_segment_evaluate_result(result):
+        return segment_plan.project_segment_evaluate_result(result, fields, context)
     return _composite_projection(result, fields, context)
 
 

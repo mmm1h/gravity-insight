@@ -147,6 +147,55 @@ class AnalysisSdkMixin:
             compiled.operation_id, compiled.inputs, output_fields=output_fields
         )
 
+    def prepare_segment_evaluation(
+        self,
+        spec: Mapping[str, Any],
+        *,
+        app: str | int | None = None,
+        start: str | None = None,
+        end: str | None = None,
+        workspace: Any | None = None,
+    ) -> dict[str, Any]:
+        """Compile and validate a compact Segment Rule Spec without evaluation."""
+
+        from .segment_spec import prepare_segment_spec
+
+        return prepare_segment_spec(
+            self.insight,
+            spec,
+            workspace=self._select_workspace(workspace),
+            app=app,
+            start=start,
+            end=end,
+        )
+
+    def segment_evaluate(
+        self,
+        spec: Mapping[str, Any],
+        *,
+        app: str | int | None = None,
+        start: str | None = None,
+        end: str | None = None,
+        workspace: Any | None = None,
+        output_fields: Sequence[str] | None = None,
+    ) -> dict[str, Any]:
+        """Estimate aggregate population/ratio from one explicit compact rule."""
+
+        from .segment_spec import compile_segment_spec
+
+        compiled = compile_segment_spec(
+            spec,
+            workspace=self._select_workspace(workspace),
+            app=app,
+            start=start,
+            end=end,
+        )
+        return self.read(
+            compiled.operation_id,
+            compiled.inputs,
+            output_fields=output_fields,
+        )
+
     def business_pulse(
         self,
         apps: str | int | Sequence[str | int],

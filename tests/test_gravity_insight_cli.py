@@ -74,6 +74,7 @@ class FakeClient:
         self.read_all_calls: list[tuple[str, dict, int | None]] = []
         self.batch_calls: list[tuple[list[dict], int]] = []
         self.schema_calls: list[str] = []
+        self.validate_calls: list[tuple[str, dict]] = []
         self.operation_calls: list[tuple[object, object, object]] = []
 
     def operations(self, *, domain=None, platform=None, stability="stable"):
@@ -130,6 +131,15 @@ class FakeClient:
                 "inputs": {"page": 1, "page_size": 1},
             }
         return schema
+
+    def validate(self, operation_id: str, inputs: dict):
+        self.validate_calls.append((operation_id, inputs))
+        return {
+            "ok": True,
+            "status": "needs_live_metadata",
+            "network_called": False,
+            "live_metadata_dependencies": ["analysis.user_property.list"],
+        }
 
     def read(self, operation_id: str, inputs: dict):
         self.read_calls.append((operation_id, inputs))
@@ -688,6 +698,26 @@ class GravityInsightCliTests(unittest.TestCase):
         self.assertIsNone(error)
         self.assertEqual("analysis.segment.evaluate_percent", result["operation_id"])
         self.assertEqual("high-value users", client.read_calls[0][1]["name"])
+
+    def test_analysis_segment_compact_spec_previews_then_executes_one_read(self):
+        spec = json.dumps({"name": "private audience", "start": "2026-08-01"})
+        code, preview, error, client = self.invoke([
+            "analysis", "segment", "evaluate", "--app", "101",
+            "--spec", spec, "--dry-run",
+        ])
+        self.assertEqual((0, None, []), (code, error, client.read_calls))
+        self.assertEqual(("compiled", False), (
+            preview["status"], preview["network_called"]
+        ))
+        self.assertNotIn("private audience", repr(preview))
+        code, result, error, client = self.invoke([
+            "analysis", "segment", "evaluate", "--app", "101", "--spec", spec,
+        ])
+        self.assertEqual((0, None), (code, error))
+        self.assertEqual(
+            "analysis.segment.evaluate_percent", client.read_calls[0][0]
+        )
+        self.assertEqual("private audience", client.read_calls[0][1]["name"])
 
     def test_analysis_user_event_rejects_unproven_all_pages_semantics(self):
         with tempfile.TemporaryDirectory() as temporary:

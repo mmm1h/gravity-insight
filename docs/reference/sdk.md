@@ -91,6 +91,16 @@ compiled = gravity.compile_analysis_query("event", event_spec, app="main")
 assert compiled["network_called"] is False
 event_result = gravity.analysis_query("event", event_spec, app="main")
 
+# 紧凑规则先做零网络脱敏预览，再执行聚合人数/占比评估。
+segment_spec = {
+    "name": "active users",
+    "start": "2026-08-01",
+}
+segment_preview = gravity.prepare_segment_evaluation(segment_spec, app="main")
+segment_result = gravity.segment_evaluate(
+    segment_spec, app="main", output_fields=["part", "percent", "total"]
+)
+
 # 保存分析按显式引用读取；prepare 读取目录/详情但不执行最终查询。
 saved = gravity.saved_analyses("main")
 eligibility = gravity.get_saved_analysis("main", "daily purchases")
@@ -138,6 +148,8 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `query_sql_products()` | `run_product_queries()`，支持单对象或批量、保序隔离失败 |
 | `compile_analysis_query()` | 把 Analysis Spec v1 编译为稳定 operation input 并运行离线输入校验；带筛选值时预览脱敏且不返回 Plan node；零网络请求 |
 | `analysis_query()` | 使用同一编译器执行 `event/funnel/retention/property/scatter` 稳定查询 |
+| `prepare_segment_evaluation()` | 编译并离线校验紧凑 Segment Rule Spec，返回脱敏预览且不执行评估 |
+| `segment_evaluate()` | 执行受治理的聚合人群规则人数/占比评估 |
 | `saved_analyses()` | 列出一个 App 的安全保存分析身份，不读取 opaque config |
 | `get_saved_analysis()` | 按 ID 或精确名称检查 Strict Replay 资格，不返回 config |
 | `prepare_saved_analysis()` | 读取保存定义并严格编译，不执行最终 Analysis 查询 |
@@ -198,6 +210,24 @@ Spec 只简化结构，不替调用方决定语义：事件名、属性名、指
 必须显式填写。物理字段未知时，先通过 `gravity metadata search` 或本地 metadata API 确认，
 随后一次调用 `analysis_query()`；自然语言 capability discovery 不会自动执行查询。
 
+## Segment Rule Spec v1
+
+`prepare_segment_evaluation(spec, *, app=None, start=None, end=None, workspace=None)` 与
+`segment_evaluate(spec, *, app=None, start=None, end=None, workspace=None,
+output_fields=None)` 使用 `gravity-insight.segment-rule-spec.v1`。spec 顶层为
+`app/name/remark/update_type/start/end/logic/property_rules/event_rules`；条件、事件目标和日期模式
+的完整机器合同由 `segment_rule_spec_schema()` 返回。它不接受 FE_CONFIG、Web wire JSON、表达式
+或自然语言规则。
+
+prepare 只编译并调用现有离线 `validate()`，因此 `network_called=false`；名称、备注和规则值均
+脱敏，value-bearing preview 不返回 Plan node。`validation.status=needs_live_metadata` 表示事件、
+属性、分群或版本仍须执行阶段用实时元数据证明，不等于已完成语义验证。执行只返回 stable
+operation 投影，`output_fields` 仅允许 `part/percent/total`。
+
+Agent 只有在中英文意图同时明确“人群/受众规则、人数或占比、评估”时返回唯一
+`analysis.segment.rule.spec` 卡；卡片包含完整紧凑 schema 和缺失的 `app/spec`，不会生成规则值
+或自动执行。泛分群列表、成员、历史、详情与导出继续走各自产品。
+
 保存分析四个方法都接受 workspace App alias 或正整数。列表只返回受合同允许的身份字段；
 `get/prepare/run` 的 reference 只接受稳定 ID 或精确名称，歧义时失败。Strict Replay 仅支持
 `analysis_event/funnel/retention/scatter/user_property`，并要求保存 config 原样通过
@@ -216,6 +246,10 @@ Analysis Query 不增加新的 SDK 方法：通过现有 `validate_plan()` / `ex
 `composite` 节点。request 固定接受 `name="analysis_query"`、`kind/app/spec` 和可选的成对
 `start/end`；五种 kind 是 `event/funnel/retention/property/scatter`。`output_fields` 属于 Plan
 节点、不放进 request，并按底层 operation 的 data-relative FieldPolicy 校验。
+
+Segment Rule 使用同一公开 `validate_plan()` / `execute_plan()`，composite request 为
+`name="segment_evaluate"`、`app/spec` 和可选 `start/end`。只有 `/app` 可绑定；规则必须是提交前
+完成的 literal spec，节点级 `output_fields` 仅允许 `part/percent/total`。
 
 下面是一个完整的进程内 Plan 示例。Analysis event 与本地 metadata 分支没有依赖，交给同一个
 全局 worker pool，同时保持声明顺序：

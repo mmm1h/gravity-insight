@@ -37,6 +37,8 @@ def command_requires_credentials(
         return False
     if bool(getattr(args, "dry_run", False)) or bool(
         getattr(args, "query_spec_dry_run", False)
+    ) or bool(
+        getattr(args, "segment_spec_dry_run", False)
     ):
         return False
     if bool(getattr(args, "spec_schema", False)):

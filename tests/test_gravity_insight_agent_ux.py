@@ -551,6 +551,67 @@ class DiscoveryUxTests(unittest.TestCase):
                 )
                 self.assertEqual("composite", card["plan_node"]["kind"])
 
+    def test_agent_segment_rule_evaluation_is_one_explicit_plan_handoff(self) -> None:
+        cases = (
+            "segment rule population estimate",
+            "evaluate audience rule percentage",
+            "评估人群规则命中人数",
+            "受众规则占比评估",
+            "analysis.segment.rule.spec",
+        )
+        for query in cases:
+            with self.subTest(query=query):
+                result = discover_capabilities(
+                    query, client=None, domain="analysis", limit=3
+                )
+                self.assertEqual((1, 1), (result["count"], result["total"]))
+                card = result["candidates"][0]
+                self.assertEqual("segment_rule_spec", card["kind"])
+                self.assertEqual(["app", "spec"], card["missing_inputs"])
+                self.assertFalse(card["natural_language_auto_execute"])
+                request = card["plan_node"]["request"]
+                self.assertEqual("segment_evaluate", request["name"])
+                self.assertEqual(card["input_template"]["app"], request["app"])
+                self.assertEqual(card["input_template"]["spec"], request["spec"])
+                self.assertEqual("composite", card["plan_node"]["kind"])
+                spec = card["input_schema"]["spec"]
+                self.assertEqual(
+                    "gravity-insight.segment-rule-spec.v1",
+                    spec["schema_version"],
+                )
+                self.assertIn("event_rule", spec["definitions"])
+                self.assertIn("property_rules", spec["schema"]["properties"])
+                self.assertNotIn("FE_CONFIG", json.dumps(card))
+        class NoOperationClient:
+            def operation_inventory(self, **_options):
+                self.fail("segment compiler discovery must not scan operations")
+
+        batch = capabilities_many(
+            [{"id": "segment", "query": cases[0], "domain": "analysis"}],
+            client=NoOperationClient(),
+        )
+        self.assertEqual(
+            "segment_rule_spec",
+            batch["results"][0]["result"]["candidates"][0]["kind"],
+        )
+
+    def test_agent_segment_rule_intent_does_not_capture_related_products(self) -> None:
+        for query in (
+            "segment",
+            "segment members",
+            "segment history",
+            "audience detail",
+            "用户分群",
+            "人群成员详情",
+            "人群导出",
+        ):
+            with self.subTest(query=query):
+                result = discover_capabilities(query, client=self.client, limit=5)
+                self.assertNotIn(
+                    "segment_rule_spec",
+                    [card["kind"] for card in result["candidates"]],
+                )
+
     @patch("gravity_sdk.agent_batch_sources.search_metadata", return_value={"results": []})
     def test_agent_batch_namespaces_analysis_spec_plan_nodes(self, _metadata) -> None:
         result = capabilities_many(
@@ -1277,7 +1338,7 @@ class DiscoveryUxTests(unittest.TestCase):
         self.assertIn("next_action", terminal)
         self.assertIn("execution", terminal)
         self.assertEqual(
-            "workspace_recipes_analysis_query_spec_stable_insight_composites_"
+            "workspace_recipes_analysis_query_spec_segment_rule_spec_stable_insight_composites_"
             "sql_products_governed_exports_and_local_metadata",
             terminal["scope"],
         )

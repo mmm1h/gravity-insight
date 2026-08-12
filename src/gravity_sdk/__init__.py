@@ -49,6 +49,11 @@ _EXPORTS = {
     "CompiledAnalysisQuery": (".analysis_spec", "CompiledAnalysisQuery"),
     "analysis_query_spec_schema": (".analysis_spec", "analysis_query_spec_schema"),
     "compile_query_spec": (".analysis_spec", "compile_query_spec"),
+    "CompiledSegmentSpec": (".segment_spec", "CompiledSegmentSpec"),
+    "compile_segment_spec": (".segment_spec", "compile_segment_spec"),
+    "prepare_segment_spec": (".segment_spec", "prepare_segment_spec"),
+    "segment_rule_spec_schema": (".segment_spec", "segment_rule_spec_schema"),
+    "validate_segment_spec": (".segment_spec", "validate_segment_spec"),
     "business_pulse": (".business_pulse", "business_pulse"),
     "compile_saved_analysis_definition": (
         ".saved_analysis", "compile_saved_analysis_definition"

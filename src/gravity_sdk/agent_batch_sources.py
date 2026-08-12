@@ -10,6 +10,10 @@ from .agent_capabilities import composite_capability_inventory
 from .agent_export import load_export_agent_inventory, query_requests_export
 from .agent_sources import workspace_catalog_fingerprint
 from .agent_table_lineage import table_lineage_capability_cards
+from .agent_segment import (
+    is_authoritative_direct_card,
+    segment_rule_spec_cards,
+)
 from .errors import InputValidationError
 from .find import _metadata_card
 from .find_metadata import search_metadata
@@ -49,12 +53,12 @@ def snapshot_agent_sources(
         query_requests_export(str(getattr(item, "query", "")))
         for item in questions or ()
     )
-    vocabulary_only = (
-        not export_requested and questions_use_only_vocabulary(questions, metadata)
+    local_only = (
+        not export_requested and questions_use_only_local_catalog(questions, metadata)
     )
-    inventory = () if vocabulary_only else operation_inventory(client)
-    recipes = () if vocabulary_only else snapshot_recipes(selected_workspace)
-    products = () if vocabulary_only else snapshot_products(selected_workspace, warnings)
+    inventory = () if local_only else operation_inventory(client)
+    recipes = () if local_only else snapshot_recipes(selected_workspace)
+    products = () if local_only else snapshot_products(selected_workspace, warnings)
     exports = (
         load_export_agent_inventory(client)
         if export_requested
@@ -73,7 +77,7 @@ def snapshot_agent_sources(
     )
 
 
-def questions_use_only_vocabulary(
+def questions_use_only_local_catalog(
     questions: Sequence[Any] | None,
     metadata: tuple[Mapping[str, Any], ...],
 ) -> bool:
@@ -83,17 +87,20 @@ def questions_use_only_vocabulary(
         return False
     vocabulary = tuple(item for item in metadata if is_workspace_vocabulary(item))
     for question in questions:
-        if getattr(question, "domain", None) is not None:
-            return False
-        if getattr(question, "platform", None) is not None:
-            return False
+        domain = getattr(question, "domain", None)
+        platform = getattr(question, "platform", None)
         query = str(getattr(question, "query", ""))
         cards = [
-            *table_lineage_capability_cards(query, domain=None, platform=None),
-            *(_metadata_card(query, item) for item in vocabulary),
+            *segment_rule_spec_cards(query, domain=domain, platform=platform),
+            *table_lineage_capability_cards(query, domain=domain, platform=platform),
         ]
+        if platform is None and domain in {None, "metadata"}:
+            cards.extend(_metadata_card(query, item) for item in vocabulary)
         if not any(
-            is_authoritative_local_metadata_card(card)
+            (
+                is_authoritative_local_metadata_card(card)
+                or is_authoritative_direct_card(card)
+            )
             and card.get("match", {}).get("confidence") == "strong"
             for card in cards
         ):

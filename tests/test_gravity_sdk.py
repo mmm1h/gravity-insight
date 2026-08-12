@@ -7,7 +7,11 @@ from gravity_sdk import GravitySDK, InputValidationError, PlanValidationError
 
 
 class _Insight:
+    def __init__(self):
+        self.read_calls = []
+
     def read(self, operation_id, inputs=None):
+        self.read_calls.append((operation_id, inputs))
         return {"kind": "read", "operation_id": operation_id, "inputs": inputs}
 
     def read_all(self, operation_id, inputs=None, **options):
@@ -179,6 +183,50 @@ class GravitySDKTests(unittest.TestCase):
         sql_batch = sdk.sql.execute_batch(["SELECT 1"], max_workers=2)
         self.assertEqual(2, sql_batch[0]["options"]["max_workers"])
         self.assertFalse(hasattr(sdk, "execute_sql"))
+
+    def test_segment_spec_sdk_and_plan_share_one_safe_execution_path(self) -> None:
+        class SegmentInsight(_Insight):
+            def operations(self, **_options):
+                return [{
+                    "operation_id": "analysis.segment.evaluate_percent",
+                    "stability": "stable",
+                }]
+
+            def validate(self, operation_id, _inputs):
+                return {
+                    "ok": True, "status": "needs_live_metadata",
+                    "operation_id": operation_id, "network_called": False,
+                }
+
+            def schema(self, operation_id):
+                return {
+                    "operation_id": operation_id,
+                    "response_projection": {
+                        "data_keys": ["part", "percent", "total"],
+                        "numeric_paths": ["part", "percent", "total"],
+                    },
+                }
+
+        insight = SegmentInsight()
+        sdk = GravitySDK(insight=insight, sql=_Sql())
+        spec = {"name": "private audience", "start": "2026-08-01"}
+        preview = sdk.prepare_segment_evaluation(spec, app=101)
+        self.assertEqual((False, []), (
+            preview["network_called"], insight.read_calls
+        ))
+        plan = {
+            "schema_version": "gravity.plan.v1",
+            "nodes": [{
+                "id": "segment", "kind": "composite",
+                "request": {"name": "segment_evaluate", "app": 101, "spec": spec},
+                "limits": {"max_pages": 1, "max_items": 3},
+            }],
+        }
+        self.assertEqual("validated", sdk.validate_plan(plan)["status"])
+        result = sdk.execute_plan(plan)
+        self.assertEqual((True, 1), (result["ok"], len(insight.read_calls)))
+        self.assertNotIn("private audience", repr(result))
+        self.assertNotIn("inputs", result["results"][0]["result"])
 
     def test_agent_facade_discovers_then_runs_without_cli_argument_ceremony(self) -> None:
         built = {"insight": 0}

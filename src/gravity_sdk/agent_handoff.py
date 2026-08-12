@@ -61,6 +61,7 @@ def _card_depends_on_workspace(card: Mapping[str, Any]) -> bool:
         "metadata",
         "composite",
         "analysis_query_spec",
+        "segment_rule_spec",
     }
 
 
@@ -175,6 +176,10 @@ def _plan_request(
             if card.get(field) is not None:
                 request[field] = card[field]
         return request, "composite"
+    if kind == "segment_rule_spec":
+        from .agent_segment import segment_rule_plan_request
+
+        return segment_rule_plan_request(card), "composite"
     if kind in {"recipe", "operation"}:
         return {"selector": selector}, "run"
     if kind == "sql_product":

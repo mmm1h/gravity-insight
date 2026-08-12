@@ -115,7 +115,18 @@
           "department",
           "callback_url",
           "click_url",
-          "postback_url"
+          "postback_url",
+          "FE_CONFIG",
+          "from_user_prop",
+          "from_event_prop",
+          "user_property_rules",
+          "user_event_rules",
+          "segment_name",
+          "segment_remark",
+          "name",
+          "remark",
+          "value",
+          "values"
         ]
       },
       "request": {

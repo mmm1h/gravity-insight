@@ -157,8 +157,10 @@ class GravityInsightAnalysisSegmentRuleTests(unittest.TestCase):
             operation["response_projection"]["numeric_paths"],
         )
         self.assertTrue(operation["live_probe"]["enabled"])
+        self.assertNotIn("FE_CONFIG", operation["input_fields"])
+        self.assertNotIn("FE_CONFIG", operation["request"]["body_fields"])
+        self.assertIn("FE_CONFIG", operation["privacy_policy"]["redact_keys"])
         serialized = json.dumps(operation, ensure_ascii=False)
-        self.assertNotIn('"FE_CONFIG"', serialized)
         self.assertNotIn("raw_body", serialized)
 
     def test_empty_rule_evaluation_derives_exact_frontend_body(self) -> None:
@@ -338,6 +340,25 @@ class GravityInsightAnalysisSegmentRuleTests(unittest.TestCase):
         with self.assertRaises(InputValidationError):
             client.read("analysis.segment.evaluate_percent", invalid)
         self.assertFalse(any(path == TARGET_PATH for _, path, _ in transport.calls))
+
+        private = base_inputs()
+        private["name"] = "secret-segment-name"
+        private["remark"] = "private-remark"
+        private["user_property_rules"] = {
+            "cond_logic": "AND",
+            "groups": [{"cond_logic": "AND", "conditions": [{
+                "field": "region", "type": "user", "operator": "EQUALS",
+                "value": ["north-secret"],
+            }]}],
+        }
+        rendered = json.dumps(
+            client.validate(
+                "analysis.segment.evaluate_percent", private, render_wire=True
+            ),
+            ensure_ascii=False,
+        )
+        for secret in ("secret-segment-name", "private-remark", "north-secret"):
+            self.assertNotIn(secret, rendered)
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -265,6 +265,27 @@ CLI 子命令。Plan composite request 是 `name="analysis_query"` 加
 `/spec/...` binding 和 spec 内部引用不受支持。完整事件示例及 event+funnel 同层并发示例见
 [Plan v1 参考](plan.md#analysis-query-composite)。
 
+### Segment Rule Spec v1
+
+人群规则人数/占比评估使用紧凑 spec，不需要拼接 FE_CONFIG 或上游 Web JSON：
+
+```powershell
+gravity analysis segment evaluate --spec-schema
+gravity analysis segment evaluate --app main --spec segment.json --dry-run
+gravity analysis segment evaluate --app main --spec segment.json --fields part,percent,total
+```
+
+`--spec` 接受内联 JSON、文件或 `-`；`--start/--end` 可覆盖 spec 日期。顶层字段是
+`app/name/remark/update_type/start/end/logic/property_rules/event_rules`，完整条件、事件目标、日期
+模式和枚举以 `--spec-schema` 为准。`--dry-run` 只编译并执行离线校验，返回脱敏预览和
+`needs_live_metadata` 依赖，不发最终查询；物理事件、属性、分群与版本仍需执行阶段的实时元数据
+证明。旧 `analysis segment --kind evaluate --input ...` 继续兼容现有调用方。
+
+明确询问“人群/受众规则命中人数或占比评估”时，`gravity agent` 唯一返回
+`analysis.segment.rule.spec` 强卡，包含完整紧凑 schema、缺失的 `app/spec` 和可复制的
+`segment_evaluate` composite Plan 节点；自然语言不生成规则或自动执行。泛分群、成员、历史、
+详情和导出不会误配此卡。
+
 ### Saved Analysis v1
 
 保存分析入口把稳定的保存目录、详情读取和现有 Analysis Spec 编译器连成一条受控路径。已知
@@ -352,7 +373,7 @@ gravity plan run --input plan.json --concurrency 6
 | `run` | `selector`、`inputs`/`parameters`、可选 `app/start/end/all_pages` | operation 或 `@recipe` |
 | `sql_product` | `product` 及该 Workspace 产品的 App/时间输入 | 已登记产品，禁止裸 SQL |
 | `metadata_search` | `query`、可选 `kind/app_id/limit/offset` | 已同步的本地 catalog |
-| `composite` | `name`、组合所需 App/查询输入 | 仅登记的 analysis query/context、App/attribution snapshot、business pulse、multidim |
+| `composite` | `name`、组合所需 App/查询输入 | 仅登记的 analysis/segment query、context/snapshot、business pulse、multidim |
 
 每个节点还可声明 `depends_on`、标量 `bindings`、一个有限 `foreach`、`limits` 和
 `output_fields`。binding/foreach 的 `from` 必须显式位于 `depends_on`，路径使用 RFC 6901 JSON

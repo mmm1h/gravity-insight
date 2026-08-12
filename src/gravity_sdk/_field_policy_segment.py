@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import Any, Mapping
 
 from ._field_policy_conditions import validate_analysis_target
@@ -224,7 +225,10 @@ def _validate_did_condition(value: Any) -> None:
     require_exact_mapping(
         value, {"operator", "value"}, "analysis segment did condition"
     )
-    if value.get("operator") not in SEGMENT_RULE_OPERATORS:
+    # The request codec copies this control verbatim.  Unlike ordinary rule
+    # conditions it has no frontend transformation for relative/boolean
+    # pseudo-operators, so only the proven base operator vocabulary is valid.
+    if value.get("operator") not in ANALYSIS_CONDITION_OPERATORS:
         raise InputValidationError(
             "analysis segment did operator is invalid; request was not sent"
         )
@@ -264,9 +268,125 @@ def validate_segment_rule_condition(
             "analysis segment condition operator is invalid; request was not sent"
         )
     validate_scalar_list(value.get("value"), "analysis segment condition value")
+    _validate_segment_operator_shape(value)
     is_segment = _add_segment_condition_reference(value, field, references)
     _add_segment_condition_dimension(value, field, is_segment, references)
     validate_segment_condition_date_controls(value)
+
+
+_SEGMENT_DATE_CONTROLS = frozenset(
+    {
+        "date_type",
+        "date_unit",
+        "date_relative_type",
+        "date_relative_unit",
+        "date_relative_left",
+        "date_relative_right",
+    }
+)
+
+
+def _validate_segment_operator_shape(value: Mapping[str, Any]) -> None:
+    """Reject controls the wire codec would otherwise ignore or misinterpret."""
+
+    operator = value.get("operator")
+    values = list(value.get("value", ()))
+    if value.get("type") == "user_segment":
+        if operator != "TRUE" or values:
+            raise InputValidationError(
+                "analysis segment reference must use TRUE with an empty value; "
+                "request was not sent"
+            )
+        _reject_segment_date_controls(value)
+        return
+    if operator in {"TRUE", "FALSE"}:
+        if values:
+            raise InputValidationError(
+                "analysis segment boolean condition must use an empty value; "
+                "request was not sent"
+            )
+        _reject_segment_date_controls(value)
+        return
+    if operator == "CURRENT_DAY":
+        _require_numeric_values(values, 1, "current-day")
+        _require_choices(value, "date_type", {"past", "future"})
+        _require_choices(value, "date_unit", {"within", "outside"})
+        _reject_segment_date_controls(value, allowed={"date_type", "date_unit"})
+        return
+    if operator == "RELATIVE_DAY":
+        _require_numeric_values(values, 2, "relative-day")
+        _require_choices(value, "date_type", {"past", "future"})
+        _reject_segment_date_controls(value, allowed={"date_type"})
+        return
+    if operator == "RELATIVELY_CURRENT_TIME":
+        _validate_relative_time_shape(value, values)
+        return
+    _reject_segment_date_controls(value)
+
+
+def _validate_relative_time_shape(
+    value: Mapping[str, Any], values: list[Any]
+) -> None:
+    relative_type = value.get("date_relative_type")
+    if relative_type == "range":
+        _require_numeric_values(values, 2, "relative-time range")
+        _require_choices(
+            value, "date_relative_unit", {"minute", "hour", "day"}
+        )
+        _require_choices(value, "date_relative_left", {"past", "future"})
+        _require_choices(value, "date_relative_right", {"past", "future"})
+        _reject_segment_date_controls(
+            value,
+            allowed={
+                "date_relative_type",
+                "date_relative_unit",
+                "date_relative_left",
+                "date_relative_right",
+            },
+        )
+        return
+    if relative_type not in {"day", "week", "month"} or values:
+        raise InputValidationError(
+            "analysis segment relative-time condition is invalid; request was not sent"
+        )
+    _reject_segment_date_controls(value, allowed={"date_relative_type"})
+
+
+def _require_numeric_values(values: list[Any], count: int, label: str) -> None:
+    if len(values) != count or any(
+        isinstance(item, bool)
+        or not isinstance(item, (int, float))
+        or isinstance(item, float) and not math.isfinite(item)
+        or item < 0
+        for item in values
+    ):
+        raise InputValidationError(
+            f"analysis segment {label} values are invalid; request was not sent"
+        )
+
+
+def _require_choices(
+    value: Mapping[str, Any], key: str, allowed: set[str]
+) -> None:
+    if value.get(key) not in allowed:
+        raise InputValidationError(
+            f"analysis segment {key} is required; request was not sent"
+        )
+
+
+def _reject_segment_date_controls(
+    value: Mapping[str, Any], *, allowed: set[str] | frozenset[str] = frozenset()
+) -> None:
+    invalid = [
+        key
+        for key in _SEGMENT_DATE_CONTROLS - set(allowed)
+        if value.get(key) not in {None, ""}
+    ]
+    if invalid:
+        raise InputValidationError(
+            "analysis segment condition contains date controls unavailable for "
+            "its operator; request was not sent"
+        )
 
 
 def _add_segment_condition_reference(
