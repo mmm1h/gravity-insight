@@ -18,9 +18,7 @@ from .plan_adapter_support import (
 _FIELDS = frozenset(
     {"name", "apps", "start", "end", "platforms", "include_hourly"}
 )
-_TARGETS = frozenset(
-    {"/apps", "/start", "/end", "/platforms", "/include_hourly"}
-)
+_TARGETS = frozenset({"/start", "/end", "/include_hourly"})
 
 
 def validate_business_pulse(
@@ -35,9 +33,9 @@ def validate_business_pulse(
         )
     validate_exact_targets(context, _TARGETS)
     dynamic = set(context.dynamic_targets)
-    _validate_apps(request, dynamic, workspace)
+    _validate_apps(request, workspace)
     _validate_dates(request, dynamic)
-    _validate_platforms(request, dynamic)
+    _validate_platforms(request)
     hourly = request.get("include_hourly", False)
     if "/include_hourly" not in dynamic and not isinstance(hourly, bool):
         raise input_error(
@@ -66,11 +64,7 @@ def execute_business_pulse(
     )
 
 
-def _validate_apps(
-    request: Mapping[str, Any], dynamic: set[str], workspace: Any
-) -> None:
-    if "/apps" in dynamic:
-        return
+def _validate_apps(request: Mapping[str, Any], workspace: Any) -> None:
     apps = request.get("apps")
     if not isinstance(apps, list) or not 1 <= len(apps) <= 100:
         raise input_error(
@@ -97,9 +91,7 @@ def _validate_dates(request: Mapping[str, Any], dynamic: set[str]) -> None:
         )
 
 
-def _validate_platforms(request: Mapping[str, Any], dynamic: set[str]) -> None:
-    if "/platforms" in dynamic:
-        return
+def _validate_platforms(request: Mapping[str, Any]) -> None:
     platforms = request.get("platforms", list(DEFAULT_PLATFORMS))
     if (
         not isinstance(platforms, list)

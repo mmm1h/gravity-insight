@@ -256,16 +256,19 @@ def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
         from .agent_multidim import multidim_plan_request
 
         return multidim_plan_request(card)
+    if composite == "business_pulse":
+        from .agent_business_pulse import business_pulse_plan_request
+
+        return business_pulse_plan_request(card)
     return {"name": composite}
 
 
 def _handoff_requirements(
     card: Mapping[str, Any], kind: str
 ) -> tuple[list[str], dict[str, Any]]:
-    if kind == "composite" and card.get("composite") == "multidim":
-        from .agent_multidim import multidim_input_template
-
-        return ["app", "inputs"], multidim_input_template()
+    product = _composite_product_requirements(card, kind)
+    if product is not None:
+        return product
     existing_missing = card.get("missing_inputs")
     existing_template = card.get("input_template")
     if isinstance(existing_missing, list) and isinstance(existing_template, Mapping):
@@ -289,6 +292,25 @@ def _handoff_requirements(
             "end": "<end:exclusive-iso>",
         }
     return [], {}
+
+
+def _composite_product_requirements(
+    card: Mapping[str, Any], kind: str
+) -> tuple[list[str], dict[str, Any]] | None:
+    if kind != "composite":
+        return None
+    if card.get("composite") == "multidim":
+        from .agent_multidim import multidim_input_template
+
+        return ["app", "inputs"], multidim_input_template()
+    if card.get("composite") == "business_pulse":
+        from .agent_business_pulse import (
+            BUSINESS_PULSE_REQUIRED_INPUTS,
+            business_pulse_input_template,
+        )
+
+        return list(BUSINESS_PULSE_REQUIRED_INPUTS), business_pulse_input_template()
+    return None
 
 
 def _field_placeholder(name: str, specification: Any) -> str:

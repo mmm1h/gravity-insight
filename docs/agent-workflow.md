@@ -22,6 +22,7 @@
 | 已知可调用导出及完整输入 | `gravity export run ... --output <file.xlsx>` | 1 |
 | 不知道可调用导出 | `gravity agent "material report export"` → 执行 `next.argv` | 2 |
 | 已知 App 与经营时间窗 | `gravity reports pulse --app ... --start ... --end ...` | 1 |
+| 不知道经营 Pulse 入口 | `gravity agent "business pulse"` → 填卡并 `plan run` | 2 |
 | 已知多个 selector 或已有 Plan | `gravity plan run --input <plan.json>` | 1 |
 | 已知单用户标识与时间窗 | `gravity analysis user journey ...` | 1 |
 | 已同步数据表沿革，目标未知 | `gravity agent "data table lineage"` → `plan run` | 2 |
@@ -34,7 +35,7 @@
 
 五种 Analysis kind（`event/funnel/retention/property/scatter`）使用 `gravity analysis query --kind <kind> --spec <json|file|->`；多个独立 spec 一次交给 `analysis query batch`，复用 Plan 并发。事件/属性用 `metadata search`，指标/标签/媒体枚举/模板用 `metadata vocabulary`；确认后执行。`--dry-run` 返回零网络安全预览，Spec 不接受自然语言自动执行。完整示例见 [CLI 参考](reference/cli.md#analysis-query-spec-v1)。
 
-经营概览和趋势直接一次调用 `gravity reports pulse --app main --start 2026-08-01 --end 2026-08-07 --include-hourly`；只有需要小时对比时加 `--include-hourly`，其结果是 `scope=workspace`。交叉 Plan 使用 composite `name=business_pulse` 和 `apps/start/end`，不要手工串行读取 overview/business。
+经营概览和趋势直接一次调用 `gravity reports pulse --app main --start 2026-08-01 --end 2026-08-07 --include-hourly`；只有需要小时对比时加 `--include-hourly`，其结果是 `scope=workspace`。不知道入口时，明确的 `business pulse/经营脉搏` 意图离线返回唯一 composite，并展开 `apps/start/end/platforms/include_hourly`；调用方补齐后执行一次 Plan。泛 `business analysis/经营分析` 不由 Pulse 抢占，Agent 也不从自然语言填写 App、日期或平台。交叉 Plan 不要手工串行读取 overview/business。
 
 保存分析已知稳定 ID/精确名称和日期窗时直接 `gravity analysis saved run --app ... --ref ... --start ... --end ...`，不要先串行 list/get/prepare。reference Strict Replay 只接受已证明的五类 Web artifact，并严格复用现有编译器；`prepare --ref` 会联网解析引用但不执行最终查询。旧 compact reference/显式 `--definition` 可保留原日期语义，但 Agent 主路径仍要求窗口以覆盖 Web artifact。自然语言发现只返回 `composite:saved_analysis` 和缺失的 `app/ref/start/end`，不会猜引用或自动执行。引用未知时先 `saved list` 后人工选择再 run；若此前还需要 Agent 发现能力，就是三次调用，不能宣称“两次”。
 

@@ -15,6 +15,8 @@ from unittest.mock import patch
 
 from gravity_sdk import cli, runtime
 from gravity_sdk.agent import discover_capabilities
+from gravity_sdk.agent_business_pulse import business_pulse_query
+from gravity_sdk.agent_capabilities import composite_capability_cards
 from gravity_sdk.agent_analysis_task import analysis_task_cards
 from gravity_sdk.agent_batch import capabilities_many, iter_ndjson_records
 from gravity_sdk.agent_batch_sources import AgentSourceSnapshot
@@ -382,9 +384,9 @@ class DiscoveryUxTests(unittest.TestCase):
                 self.assertEqual(name, card["composite"])
                 self.assertEqual("composite", card["plan_node"]["kind"])
                 self.assertEqual(missing, card["missing_inputs"])
-                if name != "multidim":
+                if name not in {"business_pulse", "multidim"}:
                     self.assertEqual(set(missing), set(card["input_template"]))
-                else:
+                elif name == "multidim":
                     schema = card["input_schema"]["inputs"]["machine_schema"]
                     self.assertEqual(
                         (False, ["date_list", "time_dims", "metrics_list"]),
@@ -414,6 +416,41 @@ class DiscoveryUxTests(unittest.TestCase):
             self.assertNotIn(
                 "dashboard_snapshot", [card.get("composite") for card in result["candidates"]]
             )
+
+    def test_business_pulse_is_strict_authoritative_and_mechanically_fillable(self) -> None:
+        cases = {
+            True: (
+                "business pulse", "operating pulse", "show business overview and trends",
+                "经营脉搏", "请汇总经营概览和趋势",
+            ),
+            False: (
+                "business analysis", "business report", "经营分析", "经营报表",
+                "multidim business pulse", "business pulse dashboard", "导出经营脉搏",
+                "归因经营脉搏", "business pulse template permissions",
+            ),
+        }
+        for expected, queries in cases.items():
+            for query in queries:
+                with self.subTest(query=query):
+                    self.assertEqual(expected, business_pulse_query(query))
+                    cards = composite_capability_cards(query, domain="report", platform=None)
+                    self.assertEqual(
+                        expected, any(card.get("composite") == "business_pulse" for card in cards)
+                    )
+
+        with patch.object(self.client, "operations", wraps=self.client.operations) as scan:
+            result = discover_capabilities(
+                "business pulse", client=self.client, domain="report", limit=5
+            )
+        scan.assert_not_called()
+        self.assertEqual((1, 1), (result["count"], result["total"]))
+        card = result["candidates"][0]
+        self.assertEqual(["apps", "start", "end"], card["missing_inputs"])
+        expected_fields = {"apps", "start", "end", "platforms", "include_hourly"}
+        self.assertEqual((expected_fields, {"name", *expected_fields}), (
+            set(card["input_template"]), set(card["plan_node"]["request"]),
+        ))
+        self.assertFalse(card["natural_language_auto_execute"])
 
     def test_multidim_intent_is_authoritative_but_excludes_adjacent_products(self) -> None:
         for query in (

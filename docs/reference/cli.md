@@ -481,6 +481,12 @@ gravity reports pulse --app main --start 2026-08-01 --end 2026-08-07 `
 `scope=workspace`，不能解释为单个 App 的小时结果。组合复用现有 stable operation、批量并发、
 分页和局部失败合同；不推导业务结论或指标别名。
 
+未知入口使用 `gravity agent "business pulse" --domain report`。明确 Pulse/脉搏或同时表达经营
+概览与趋势的请求返回唯一 `composite:business_pulse`，且不扫描 operation inventory；卡片给出
+完整的 `apps/start/end/platforms/include_hourly` Plan request。调用方显式替换占位值后执行，
+自然语言不填值也不自动执行。泛 `business analysis/经营分析` 和多维、看板、保存分析、归因、
+模板或导出意图不会被 Pulse 抢占。
+
 ## Plan v1
 
 ```powershell
@@ -542,7 +548,8 @@ Business pulse 的 Plan 节点使用同一实现；`apps/start/end` 必填：
 ```
 
 Plan 中小时结果仍为 `scope=workspace`；adapter 内部 worker 固定为 1，由 Plan 全局 worker pool
-管理并发。
+管理并发。binding 只接受 `/start`、`/end`、`/include_hourly`；`apps/platforms` 必须在提交前
+作为显式数组给出，Plan v1 不把 scalar binding 当作数组。
 
 `analysis_query` 同样由全局 pool 调度；同层独立查询并发，adapter worker 固定 1。一个查询
 失败不取消 sibling，结果仍按节点声明顺序返回。节点 `max_items` 和 Plan 总预算共同限制结果

@@ -310,7 +310,10 @@ ISO date/timestamp（两端下发且 `end-start` 不超过 90 天），严格复
 max_workers=6, max_pages=1000, max_items=100000, workspace=None)` 接受一个 App 或 App 序列；
 每项是 workspace alias 或正整数。结果固定按 `overview/business/hourly_comparison` 排序，最后一项
 只在 `include_hourly=True` 时存在，且始终标记 `scope=workspace`，不能当作某个 App 的小时
-数据。对应 Plan composite 使用 `name="business_pulse"` 以及必填 `apps/start/end`。
+数据。对应 Plan composite 使用 `name="business_pulse"` 以及必填 `apps/start/end`；直接入口默认
+6 workers、上限 24，Plan adapter 固定为 1。`capabilities("business pulse")` 离线返回唯一卡，
+Plan request 同时展开 `platforms/include_hourly` 的中性默认值；泛 `business analysis/经营分析`
+不会被路由到该产品。
 
 ## Multidim
 

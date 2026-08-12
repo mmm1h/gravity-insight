@@ -9,6 +9,7 @@ from typing import Any
 
 _STRICT_COMPOSITES = frozenset(
     {
+        "business_pulse",
         "dashboard_analysis",
         "dashboard_snapshot",
         "multidim",
@@ -26,14 +27,14 @@ def composite_card(
     selection = _selection(query, domain, definition)
     if selection is None:
         return None
-    name, selected_domain, accepted, dashboard = selection
+    name, selected_domain, accepted, strict_product = selection
     selector = f"composite:{name}"
     match = agent_query_match(
         query, selector, name, name.replace("_", " "), selected_domain, *accepted,
         definition.get("description"),
         *(str(value) for value in definition.get("aliases", ())),
     )
-    if dashboard or normalized in {selector.casefold(), name.casefold()}:
+    if strict_product or normalized in {selector.casefold(), name.casefold()}:
         match = _exact_match(match, normalized)
     if match["confidence"] != "strong":
         return None
@@ -100,6 +101,10 @@ def _strict_composite_query(name: str, query: str) -> bool:
         from .agent_multidim import multidim_query
 
         return multidim_query(query)
+    if name == "business_pulse":
+        from .agent_business_pulse import business_pulse_query
+
+        return business_pulse_query(query)
     return False
 
 

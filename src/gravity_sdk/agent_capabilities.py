@@ -12,6 +12,7 @@ import re
 from typing import Any
 
 from .find import query_match
+from .agent_business_pulse import BUSINESS_PULSE_CAPABILITY, BUSINESS_PULSE_NAME
 from .agent_dashboard import DASHBOARD_ANALYSIS_CAPABILITY
 from .agent_multidim import MULTIDIM_CAPABILITY
 from .agent_saved_analysis import SAVED_ANALYSIS_CAPABILITY
@@ -135,34 +136,7 @@ _COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
         },
     },
     MULTIDIM_CAPABILITY,
-    {
-        "name": "business_pulse",
-        "domain": "report",
-        "aliases": (
-            "business pulse",
-            "business analysis",
-            "operating pulse",
-            "经营分析",
-            "经营脉搏",
-            "业务脉搏",
-        ),
-        "intent_terms": ("pulse", "business analysis", "经营", "业务脉搏"),
-        "description": (
-            "并发汇总多个 App 在指定时间窗内的核心经营指标、趋势和可复核来源。"
-        ),
-        "required_inputs": ("apps", "start", "end"),
-        "input_schema": {
-            "apps": {
-                "type": "array",
-                "item_type": "string",
-                "required": True,
-                "nullable": False,
-                "min_items": 1,
-            },
-            "start": {"type": "string", "required": True, "nullable": False},
-            "end": {"type": "string", "required": True, "nullable": False},
-        },
-    },
+    BUSINESS_PULSE_CAPABILITY,
 )
 
 
@@ -392,6 +366,7 @@ def authoritative_capability_cards(
         in {
             "dashboard_analysis",
             "dashboard_snapshot",
+            BUSINESS_PULSE_NAME,
             "multidim",
             "saved_analysis",
             "segment_snapshot",

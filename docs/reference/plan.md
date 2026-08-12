@@ -176,6 +176,36 @@ Plan binding 只作用于 request 边界：`/app` 可从上游复制一个标量
 `gravity analysis query batch --input queries.json`；它机械生成同层 `analysis_query` 节点，
 仍由本页的 Plan 引擎调度。需要依赖、跨引擎节点或 foreach 时才手写完整 Plan。
 
+## Business Pulse composite
+
+经营概览与趋势使用登记的 `business_pulse` composite。调用方必须显式给出 App 数组和日期窗；
+平台数组与 hourly 开关有中性默认值：
+
+```json
+{
+  "id": "pulse",
+  "kind": "composite",
+  "request": {
+    "name": "business_pulse",
+    "apps": ["main"],
+    "start": "2026-08-01",
+    "end": "2026-08-07",
+    "platforms": ["bytedance", "tencent", "kuaishou"],
+    "include_hourly": false
+  },
+  "limits": {"max_pages": 5, "max_items": 200}
+}
+```
+
+基础节点一次 batch 读取 `overview/business`；显式启用 hourly 时仍是一次 batch，并追加
+`scope=workspace` 的 `hourly_comparison`。直接 CLI/SDK 默认 6 workers、上限 24；Plan adapter
+固定为 1，独立节点由全局 pool 并发。binding 只允许 `/start`、`/end`、`/include_hourly`，
+`apps/platforms` 必须是提交前确定的 literal 数组。
+
+`gravity agent "business pulse"` 返回同形状的五字段占位节点，调用方替换后执行，共两次调用；
+Agent 不填写任何业务值，也不自动执行。泛 `business analysis/经营分析` 不选择本 composite，
+多维、看板、保存分析、归因、模板、权限与导出意图同样被严格排除。
+
 ## Dashboard Snapshot composite
 
 看板控制面使用登记的 `dashboard_snapshot` composite。调用方必须给出 Workspace App 和看板

@@ -1,6 +1,9 @@
 import unittest
 
 from gravity_sdk.business_pulse import business_pulse
+from gravity_sdk.errors import InputValidationError
+from gravity_sdk.plan import AdapterContext
+from gravity_sdk.plan_pulse_adapter import validate_business_pulse
 
 
 class RecordingClient:
@@ -69,3 +72,27 @@ class BusinessPulseTests(unittest.TestCase):
             ["overview", "business"],
             [row["source"] for row in default["results"]],
         )
+
+    def test_plan_bindings_are_limited_to_scalar_product_fields(self):
+        Workspace = type(
+            "Workspace", (), {"resolve_app": lambda _self, value: {"main": 101}[value]}
+        )
+        workspace = Workspace()
+        request = {
+            "name": "business_pulse", "apps": ["main"],
+            "start": "2026-08-01", "end": "2026-08-07",
+            "platforms": ["bytedance"], "include_hourly": False,
+        }
+
+        def context(target):
+            return AdapterContext(
+                node_id="pulse", execution_id="pulse", kind="composite",
+                workspace=workspace, output_fields=(), dynamic_targets=(target,),
+                max_pages=5, max_items=200,
+            )
+
+        for target in ("/start", "/end", "/include_hourly"):
+            validate_business_pulse(request, context(target), workspace, frozenset())
+        for target in ("/apps", "/platforms"):
+            with self.assertRaises(InputValidationError):
+                validate_business_pulse(request, context(target), workspace, frozenset())
