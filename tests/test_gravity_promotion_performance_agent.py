@@ -16,7 +16,8 @@ class PromotionPerformanceAgentTests(unittest.TestCase):
         queries = (
             "promotion performance", "run a cross-platform promotion report",
             "show advertising performance", "推广表现", "请执行跨平台推广报表",
-            "帮我查看跨平台投放报告",
+            "帮我查看跨平台投放报告", "promotion 跨平台报表",
+            "推广 performance", "投放 report",
         )
         for query in queries:
             with self.subTest(query=query):
@@ -55,6 +56,14 @@ class PromotionPerformanceAgentTests(unittest.TestCase):
             "promotion performance segment", "promotion performance user journey",
             "raw promotion snapshot", "bing promotion report", "小红书推广表现",
             "taptap promotion performance", "视频号投放报表",
+            "Tap Tap promotion report", "Tap-Tap promotion report", "Tap_Tap promotion report",
+            "WeChatVideo ad performance", "wechat-video ad performance",
+            "red note promotion report", "red_note promotion report", "cannot run promotion report",
+            "can't run promotion performance", "won't run promotion report",
+            "这不是推广表现", "并非投放报表", "非推广表现",
+            "推荐推广表现", "推广表现推荐", "推广投放方案报告",
+            "publish promotion report", "remove promotion performance",
+            "insert promotion report",
         )
         for query in queries:
             with self.subTest(query=query):
@@ -67,9 +76,7 @@ class PromotionPerformanceAgentTests(unittest.TestCase):
                 self.assertFalse(any(
                     card.get("kind") == "operation" for card in result["candidates"]
                 ))
-                if query in {"not promotion performance", "raw promotion snapshot",
-                             "bing promotion report", "小红书推广表现",
-                             "taptap promotion performance", "视频号投放报表"}:
+                if query != "promotion performance business pulse":
                     self.assertEqual("capability_gap", result["status"])
 
     def test_exact_raw_operation_selector_keeps_normal_discovery(self):
@@ -91,21 +98,24 @@ class PromotionPerformanceAgentTests(unittest.TestCase):
         self.assertEqual([operation_id], [card["selector"] for card in result["candidates"]])
 
     @patch("gravity_sdk.agent_batch_sources.search_metadata", return_value={"results": []})
-    def test_batch_strong_intents_do_not_load_operation_inventory(self, _metadata):
+    def test_batch_product_intents_do_not_load_operation_inventory(self, _metadata):
         class NoOperationClient:
             def operation_inventory(self, **_options):
                 raise AssertionError("Promotion Performance is a local Agent product")
 
         result = capabilities_many(
-            ["cross platform promotion performance", {
+            ["promotion 跨平台报表", "推广 performance", "投放 report", {
                 "id": "chinese", "query": "跨平台投放报表", "domain": "report",
-            }], client=NoOperationClient(),
+            }, "Tap Tap promotion report", "WeChatVideo ad performance",
+             "red note promotion report", "can't run promotion performance",
+             "并非投放报表", "推广表现推荐", "publish promotion report"],
+            client=NoOperationClient(),
             workspace=SimpleNamespace(recipes={}, products={}, datasources={}),
         )
         self.assertEqual(0, result["failure_count"])
         self.assertEqual(
-            ["promotion_performance", "promotion_performance"],
-            [item["result"]["candidates"][0]["composite"] for item in result["results"]],
+            ["success"] * 4 + ["capability_gap"] * 7,
+            [item["status"] for item in result["results"]],
         )
 
 

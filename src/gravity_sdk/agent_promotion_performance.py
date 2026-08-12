@@ -26,7 +26,10 @@ PROMOTION_PERFORMANCE_PLATFORMS = tuple(
 )
 
 _ASCII_WORD = re.compile(r"[a-z0-9_]+", re.IGNORECASE)
-_ENGLISH_NEGATION_PHRASE = re.compile(r"\b(?:don['’]?t|do\s+not)\b")
+_COMPACT_SEPARATORS = re.compile(r"[\s_-]+")
+_ENGLISH_NEGATION_PHRASE = re.compile(
+    r"\b(?:don['’]?t|do\s+not|cannot|can['’]?t|can\s+not|won['’]?t|will\s+not)\b"
+)
 _EXACT_INTENTS = frozenset(
     {
         PROMOTION_PERFORMANCE_NAME,
@@ -48,7 +51,7 @@ _ENGLISH_SUBJECTS = frozenset(
 )
 _ENGLISH_ACTIONS = frozenset({"performance", "report", "reporting"})
 _ENGLISH_NEGATIONS = frozenset(
-    {"avoid", "exclude", "never", "no", "not", "skip", "without"}
+    {"avoid", "cannot", "exclude", "never", "no", "not", "skip", "without"}
 )
 _ENGLISH_BLOCKED = frozenset(
     {
@@ -57,7 +60,9 @@ _ENGLISH_BLOCKED = frozenset(
         "creative", "dashboard", "delete", "directory", "download", "edit",
         "export", "hierarchy", "journey", "level", "material", "materials",
         "multidim", "multidimensional", "mutate", "optimization", "optimize",
-        "permission", "permissions", "pulse", "query", "rank", "ranking",
+        "permission", "permissions", "plan", "planning", "publish", "published",
+        "publishing", "pulse", "query", "rank", "ranking", "remove", "removed",
+        "removing", "insert", "inserted", "inserting",
         "raw", "recommend", "recommendation", "saved", "segment", "snapshot",
         "strategy", "template", "update", "upload", "user", "write",
     }
@@ -76,15 +81,21 @@ _CHINESE_SUBJECTS = ("推广", "投放")
 _CHINESE_ACTIONS = ("表现", "效果", "报表", "报告")
 _CHINESE_NEGATIONS = (
     "不要", "无需", "无须", "不需要", "不必", "不做", "不用", "避免", "排除",
+    "不是", "并非", "非推广", "非投放",
 )
 _CHINESE_BLOCKED = (
     "账户", "账号", "广告主", "归因", "人群", "受众", "最佳", "最好", "经营",
     "业务脉搏", "活动", "系列", "目录", "创建", "素材", "看板", "删除", "下载",
     "导出", "层级", "旅程", "多维", "修改", "优化", "权限", "脉搏", "查询",
-    "排行", "排名", "原始", "建议", "保存分析", "保存", "已存", "分群", "快照",
-    "策略", "模板", "更新", "上传", "单用户", "写入",
+    "排行", "排名", "原始", "建议", "推荐", "方案", "保存分析", "保存", "已存",
+    "分群", "快照", "策略", "模板", "更新", "上传", "发布", "移除", "插入",
+    "单用户", "写入",
 )
 _HETEROGENEOUS_CHINESE = ("必应", "小红书", "微信视频号", "视频号")
+_HETEROGENEOUS_COMPACT = tuple(
+    _COMPACT_SEPARATORS.sub("", term.casefold())
+    for term in (*_HETEROGENEOUS_ENGLISH, *_HETEROGENEOUS_CHINESE)
+)
 _CHINESE_BIE_NEGATION = re.compile(
     r"(?:^|请|麻烦|[\s，,。；;！!])别(?:再)?"
     r"(?=$|[\s，,。；;！!]|查|看|跑|执行|生成|获取|做|分析|汇总|查询|输出|拉取|给|展示)"
@@ -205,40 +216,51 @@ def _claims_product(selected: str) -> bool:
     if selected.isascii() and " " not in selected and "." in selected:
         return False
     words = frozenset(_ASCII_WORD.findall(selected.replace("-", " ")))
-    compact = "".join(selected.split())
-    return bool(
-        _claims_english_product(selected, words)
-        or _claims_chinese_product(compact)
+    compact = _compact(selected)
+    subject, action, adjacent, heterogeneous = _intent_signals(words, compact)
+    return bool(subject and (action or adjacent) or heterogeneous and action)
+
+
+def _intent_signals(
+    words: frozenset[str], compact: str
+) -> tuple[bool, bool, bool, bool]:
+    """Combine English and Chinese subjects/actions without inferring values."""
+
+    subject = bool(words & _ENGLISH_SUBJECTS) or _contains_any(
+        compact, _CHINESE_SUBJECTS
     )
-
-
-def _claims_english_product(selected: str, words: frozenset[str]) -> bool:
-    action = bool(words & _ENGLISH_ACTIONS)
-    return bool(
-        words & _ENGLISH_SUBJECTS and (action or words & _ENGLISH_BLOCKED)
-        or action and any(term in selected for term in _HETEROGENEOUS_ENGLISH)
+    action = bool(words & _ENGLISH_ACTIONS) or _contains_any(
+        compact, _CHINESE_ACTIONS
     )
-
-
-def _claims_chinese_product(compact: str) -> bool:
-    action = any(term in compact for term in _CHINESE_ACTIONS)
-    return bool(
-        any(term in compact for term in _CHINESE_SUBJECTS)
-        and (action or any(term in compact for term in _CHINESE_BLOCKED))
-        or action and any(term in compact for term in _HETEROGENEOUS_CHINESE)
+    adjacent = bool(words & (_ENGLISH_BLOCKED | _ENGLISH_NEGATIONS)) or _contains_any(
+        compact, (*_CHINESE_BLOCKED, *_CHINESE_NEGATIONS)
     )
+    heterogeneous = _contains_any(compact, _HETEROGENEOUS_COMPACT)
+    return subject, action, adjacent, heterogeneous
+
+
+def _compact(value: str) -> str:
+    """Normalize spacing variants used by platform aliases.
+
+    Only spaces, hyphens, and underscores collapse; query meaning is untouched.
+    """
+
+    return _COMPACT_SEPARATORS.sub("", value.casefold())
+
+
+def _contains_any(value: str, terms: tuple[str, ...]) -> bool:
+    return any(term in value for term in terms)
 
 
 def _blocked(selected: str) -> bool:
     words = frozenset(_ASCII_WORD.findall(selected.replace("-", " ")))
-    compact = "".join(selected.split())
+    compact = _compact(selected)
     return bool(
         words & (_ENGLISH_BLOCKED | _ENGLISH_NEGATIONS)
         or _ENGLISH_NEGATION_PHRASE.search(selected)
-        or any(term in selected for term in _HETEROGENEOUS_ENGLISH)
+        or _contains_any(compact, _HETEROGENEOUS_COMPACT)
         or any(term in compact for term in _CHINESE_BLOCKED)
         or any(term in compact for term in _CHINESE_NEGATIONS)
-        or any(term in compact for term in _HETEROGENEOUS_CHINESE)
         or _CHINESE_BIE_NEGATION.search(selected)
     )
 
