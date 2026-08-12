@@ -14,17 +14,14 @@ from .agent_capabilities import (
 )
 from .agent_export import load_export_agent_inventory, query_requests_export
 from .agent_handoff import is_analysis_task_handoff_query
+from .agent_discovery_policy import is_authoritative_local_question
 from .agent_sources import snapshot_recipe_cards, workspace_catalog_fingerprint
 from .agent_table_lineage import table_lineage_capability_cards
 from .agent_user_journey import user_journey_capability_cards
-from .agent_segment import is_authoritative_direct_card
 from .errors import InputValidationError
 from .find import _metadata_card
 from .find_metadata import search_metadata
-from .agent_vocabulary import (
-    is_authoritative_local_metadata_card,
-    is_workspace_vocabulary,
-)
+from .agent_vocabulary import is_workspace_vocabulary
 from .workspace import load_workspace
 
 
@@ -131,16 +128,7 @@ def questions_use_only_local_catalog(
         ]
         if platform is None and domain in {None, "metadata"}:
             cards.extend(_metadata_card(query, item) for item in vocabulary)
-        if not any(
-            (
-                is_authoritative_local_metadata_card(card)
-                or is_authoritative_direct_card(card)
-                or card.get("kind")
-                in {"recipe", "composite", "analysis_query_spec", "analysis_task"}
-            )
-            and card.get("match", {}).get("confidence") == "strong"
-            for card in cards
-        ):
+        if not is_authoritative_local_question(cards, query):
             return False
     return True
 

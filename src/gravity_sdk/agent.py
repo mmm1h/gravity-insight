@@ -10,8 +10,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .agent_capabilities import (
-    AGENT_SCOPE,
-    authoritative_capability_cards,
+    AGENT_SCOPE, authoritative_capability_cards,
     capability_handoff_cards,
     merge_catalog_handoff_cards,
     should_load_capability_catalog,
@@ -50,6 +49,7 @@ class _DiscoveryPage:
     expected_candidates_fingerprint: str | None
     offset: int
     workspace_path: object | None
+    operation_fallback_excluded: bool
 
 
 @dataclass(frozen=True)
@@ -186,7 +186,7 @@ def _discover(
         request, request.query, client=client, workspace=workspace, sources=sources
     )
     authoritative_cards = authoritative_capability_cards(page.catalog_cards)
-    if authoritative_cards:
+    if authoritative_cards or page.operation_fallback_excluded:
         unified = [("catalog", card) for card in authoritative_cards]
         weak_operations: list[Mapping[str, Any]] = []
     else:
@@ -221,18 +221,8 @@ def _discover(
     candidates = _materialize_candidates(
         client, unified[page.offset : page.offset + request.limit]
     )
-    gaps = (
-        []
-        if unified
-        else capability_gaps(
-            client,
-            request.query,
-            domain=request.domain,
-            platform=request.platform,
-            limit=request.limit,
-            weak_operations=weak_operations,
-        )
-    )
+    gaps = [] if unified else _capability_gaps(
+        request, client, weak_operations, page.operation_fallback_excluded)
     return _discovery_response(
         request,
         page,
@@ -242,6 +232,25 @@ def _discover(
         candidates_fingerprint=fingerprint,
         plan_node_namespace=plan_node_namespace,
         workspace_path=page.workspace_path,
+    )
+
+
+def _capability_gaps(
+    request: _DiscoveryRequest,
+    client: Any,
+    weak_operations: list[Mapping[str, Any]],
+    operation_fallback_excluded: bool,
+) -> list[dict[str, Any]]:
+    if operation_fallback_excluded:
+        from .agent_discovery_policy import promotion_performance_gap
+        return promotion_performance_gap(request.query)
+    return capability_gaps(
+        client,
+        request.query,
+        domain=request.domain,
+        platform=request.platform,
+        limit=request.limit,
+        weak_operations=weak_operations,
     )
 
 
@@ -386,6 +395,7 @@ def _discovery_page(
         expected_candidates_fingerprint=expected_candidates_fingerprint,
         offset=offset,
         workspace_path=workspace_path,
+        operation_fallback_excluded=catalog_excluded,
     )
 
 

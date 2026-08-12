@@ -429,6 +429,37 @@ Agent 对明确的中英文多维查询意图返回唯一 `composite:multidim` �
 未用份额不可借用。safe projector 只保留白名单物理行、平台身份、计数、安全错误和分页收据；
 结果不包含 App id/binding 值、原始请求或异常，也不做跨平台归一、排名或业务判断。
 
+## Promotion Performance composite
+
+推广表现使用登记的 `name="promotion_performance"`；一个节点只绑定一个 App，平台和物理指标数组
+必须在提交前完成：
+
+```json
+{
+  "id": "promotion",
+  "kind": "composite",
+  "request": {
+    "name": "promotion_performance",
+    "app": "main",
+    "start": "2026-08-01",
+    "end": "2026-08-07",
+    "platforms": ["bytedance", "tencent"],
+    "metrics": ["stat_cost", "AppRealRegisterCnt"]
+  },
+  "limits": {"max_pages": 5, "max_items": 200},
+  "output_fields": ["app_id", "date_range", "platforms", "metrics", "results", "limits"]
+}
+```
+
+只有标量 `/app`、`/start`、`/end` 可接受 binding；`platforms/metrics` 及其元素不是动态 target。
+adapter 内平台与分页 worker 都固定为 1，多个 App 使用同层节点或 `foreach /app`，由 Plan 全局池
+并发。`max_pages` 按平台生效，`max_items` 按平台等额 floor 分配且不可借用；safe projector 对
+平台身份、顺序、预算、分页收据和结果计数重新核对。
+
+Agent 的唯一卡包含五个待填写字段与同形状 request，不选择任何业务值或自动执行。否定、导出、
+写入、策略、相邻产品、raw snapshot 以及 `bing/xiaohongshu/taptap/wechat_video` 请求不会回落为
+generic Promotion operation。结果保留平台原生字段，不做归一、汇总、排名或业务判断。
+
 ## Saved Analysis composite
 
 保存分析 reference replay 使用 `saved_analysis` composite；Agent 主路径在提交前明确 App、稳定

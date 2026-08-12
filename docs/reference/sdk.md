@@ -176,6 +176,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `prepare_multidim_query()` | 绑定 App 并本地预检 Multidim 物理输入；不执行查询、不回显 filter values |
 | `multidim_query()` | 校验实时指标后读取 Multidim 明细，可选 total 与全量分页 |
 | `material_performance()` | 按显式 App、日期窗和平台读取稳定素材表现；平台保序、共享预算、局部失败隔离 |
+| `promotion_performance()` | 按一个显式 App、日期窗、平台和物理指标读取 21 个同构平台；平台保序、局部失败隔离 |
 | `analysis_vocabulary()` | 严格离线搜索已同步的 workspace 指标、标签、媒体枚举和模板目录 |
 | `table_lineage()` | 严格离线查询已同步的 account-scope 数据表版本与操作观察 |
 | `business_pulse()` | 并发读取 App 经营概览与趋势，可选 workspace scope 小时对比 |
@@ -343,6 +344,18 @@ alias/正整数或它们的显式序列。方法先解析并校验完整请求�
 分页 worker 固定 1。batch 将共享 item 预算按平台等额 floor 分配，未用份额不能借给 sibling。
 返回 `gravity-insight.material-performance.v1`，仅保留平台、白名单素材身份/物理指标、安全错误和
 分页收据。它不归一、换算、总计、排序、排名，也不解释业务或 Web opaque config。
+
+## Promotion Performance
+
+`promotion_performance(app, start, end, *, platforms, metrics, max_workers=6, max_pages=1000,
+max_items=100000, workspace=None)` 接受一个 workspace App alias/正整数，以及显式平台和物理指标
+序列。平台仅限 21 个同构 primary source；动态指标仍由对应平台的实时
+`promotion.metric.list` fail closed 校验，不维护第二份指标字典。
+
+每个平台一个 batch item且内部分页 worker 固定 1；direct 平台池范围 1..24。共享 item 预算按
+平台等额 floor 分配，结果按调用方平台序返回并隔离 sibling 失败。返回
+`gravity-insight.promotion-performance.v1` 的安全投影，不归一字段、不跨平台汇总或排名，也不生成
+策略。四个异构平台 `bing/xiaohongshu/taptap/wechat_video` 继续由兼容 raw 方法读取。
 
 ## Plan v1
 

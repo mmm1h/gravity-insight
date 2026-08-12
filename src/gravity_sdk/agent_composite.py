@@ -13,6 +13,7 @@ _STRICT_COMPOSITES = frozenset(
         "dashboard_analysis",
         "dashboard_snapshot",
         "material_performance",
+        "promotion_performance",
         "multidim",
         "saved_analysis",
         "segment_snapshot",
@@ -52,7 +53,12 @@ def composite_card(
         "natural_language_auto_execute": False, "input_schema": input_schema,
         "required_inputs": required, "match": match,
         "next": {"ready_without_input": not required,
-                 "argv": ["gravity", "plan", "run", "--input", "<plan.json>"]},
+                  "argv": ["gravity", "plan", "run", "--input", "<plan.json>"]},
+        **(
+            {"plan_node_limits": copy.deepcopy(dict(definition["plan_node_limits"]))}
+            if isinstance(definition.get("plan_node_limits"), Mapping)
+            else {}
+        ),
     }
 
 
@@ -110,6 +116,10 @@ def _strict_composite_query(name: str, query: str) -> bool:
         from .agent_material_performance import material_performance_query
 
         return material_performance_query(query)
+    if name == "promotion_performance":
+        from .agent_promotion_performance import promotion_performance_query
+
+        return promotion_performance_query(query)
     return False
 
 

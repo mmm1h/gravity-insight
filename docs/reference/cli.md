@@ -150,6 +150,21 @@ gravity materials performance --app main --app secondary `
 `floor(max_items/platform_count)` 的不可借用份额。结果按平台声明序，物理指标保持原名；不生成
 归一指标、总计、排名或业务结论。
 
+## Promotion Performance
+
+21 个合同同构的平台使用一个显式只读产品入口；App、日期、平台和物理指标都必须给出：
+
+```powershell
+gravity promotion performance --app main --start 2026-08-01 --end 2026-08-07 `
+  --platform bytedance --platform tencent `
+  --metric stat_cost --metric AppRealRegisterCnt --concurrency 6
+```
+
+`--platform`、`--metric` 可重复或逗号分隔。每个平台一个 batch item，分页 worker 固定 1；direct
+平台池默认 6、最大 24。`max_pages` 按平台生效，`max_items` 按平台数等额 floor 分配且不可借用。
+输出保留原生物理字段和平台声明序，不做跨平台归一、总计、排名或策略。
+`bing/xiaohongshu/taptap/wechat_video` 不满足共同合同，继续使用兼容的 `promotion query/snapshot`。
+
 批量 wrapper 可由机器自描述，不需要猜 JSON 字段：
 
 ```powershell
@@ -546,7 +561,7 @@ gravity plan run --input plan.json --concurrency 6
 | `run` | `selector`、`inputs`/`parameters`、可选 `app/start/end/all_pages` | operation 或 `@recipe` |
 | `sql_product` | `product` 及该 Workspace 产品的 App/时间输入 | 已登记产品，禁止裸 SQL |
 | `metadata_search` | `query`、可选 `kind/app_id/limit/offset` | 已同步的本地 catalog |
-| `composite` | `name`、组合所需 App/查询输入 | 仅登记的 analysis/segment query、context/dashboard/app/attribution snapshot、business pulse、multidim、material performance |
+| `composite` | `name`、组合所需 App/查询输入 | 仅登记的 analysis/segment query、context/dashboard/app/attribution snapshot、business pulse、multidim、material/promotion performance |
 
 每个节点还可声明 `depends_on`、标量 `bindings`、一个有限 `foreach`、`limits` 和
 `output_fields`。binding/foreach 的 `from` 必须显式位于 `depends_on`，路径使用 RFC 6901 JSON

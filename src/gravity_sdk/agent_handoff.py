@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+import copy
 import hashlib
 import re
 from typing import Any
@@ -165,6 +166,9 @@ def attach_plan_node(
     output_fields = card.get("output_fields")
     if isinstance(output_fields, list) and output_fields:
         node["output_fields"] = list(output_fields)
+    limits = card.get("plan_node_limits")
+    if isinstance(limits, Mapping):
+        node["limits"] = copy.deepcopy(dict(limits))
     missing, template = _handoff_requirements(card, kind)
     return {
         **dict(card),
@@ -264,6 +268,10 @@ def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
         from .agent_material_performance import material_performance_plan_request
 
         return material_performance_plan_request(card)
+    if composite == "promotion_performance":
+        from .agent_promotion_performance import promotion_performance_plan_request
+
+        return promotion_performance_plan_request(card)
     return {"name": composite}
 
 
@@ -318,6 +326,16 @@ def _composite_product_requirements(
         from .agent_material_performance import material_performance_input_template
 
         return ["apps", "start", "end"], material_performance_input_template()
+    if card.get("composite") == "promotion_performance":
+        from .agent_promotion_performance import (
+            PROMOTION_PERFORMANCE_REQUIRED_INPUTS,
+            promotion_performance_input_template,
+        )
+
+        return (
+            list(PROMOTION_PERFORMANCE_REQUIRED_INPUTS),
+            promotion_performance_input_template(),
+        )
     return None
 
 

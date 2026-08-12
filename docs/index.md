@@ -11,6 +11,7 @@
 | 构造事件、漏斗、留存、属性或分布查询 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Analysis Spec](reference/cli.md#analysis-query-spec-v1) |
 | 执行多维报表查询 | [Agent 工作流：Multidim](agent-workflow.md#multidim) | [CLI 参考：Multidim](reference/cli.md#multidim) |
 | 读取跨平台素材表现 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Material Performance](reference/cli.md#material-performance) |
+| 读取跨平台推广表现 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Promotion Performance](reference/cli.md#promotion-performance) |
 | 批量发现并执行交叉查询 | [Agent 工作流：显式 Plan](agent-workflow.md#3-交叉查询一个显式-plan) | [CLI Plan 参考](reference/cli.md#plan-v1) |
 | 在 Python 中集成 SDK | [Python SDK 参考](reference/sdk.md) | [架构与概念](architecture.md) |
 | 判断用 Insight 还是 SQL | [架构与概念](architecture.md#查询路由) | [Agent 工作流](agent-workflow.md#选择-insight-还是-sql) |
@@ -40,6 +41,8 @@
   `gravity analysis user journey`，不手工串行三条 operation。
 - 已知 Multidim 物理输入：一次 `gravity multidim query`；未知能力：一次 Agent 发现加一次
   Plan 执行。多个独立查询放进同一个 Plan，不逐条启动命令。
+- 已知推广 App、日期、平台和物理指标：一次 `gravity promotion performance`；未知入口：Agent
+  返回待填写的 `promotion_performance` 节点，再执行一次 Plan。
 - 发现只返回候选以及 Plan node 或受控编译交接，不会从自然语言自动执行。
 
 当前基线仍为 185 个 operation、176 个 stable。本轮 17 个候选新增 stable 数为 0；不要把

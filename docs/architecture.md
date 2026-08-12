@@ -141,6 +141,7 @@ Resolver 的完成路径生成 `gravity.receipt.v1`，写到当前 workspace 的
 | Saved analysis | `gravity analysis saved prepare\|run --app ... --ref ... --start ... --end ...` | `prepare_saved_analysis()` / `run_saved_analysis()` | 精确解析一个保存分析；reference Web artifact 严格复用五类编译器和显式日期窗，compact definition 保持兼容 |
 | Multidim | `gravity multidim query --app <alias\|id> --input <json>` | `multidim_query()` | 闭合物理输入、实时指标校验、有界分页与可选 total；不引入 Spec DSL 或 Web 模板语义 |
 | Material performance | `gravity materials performance --app <alias\|id> --start ... --end ...` | `material_performance()` | 仅组合 stable `material.report.query`，按平台保序聚合原生指标；不做跨平台归一或排名 |
+| Promotion performance | `gravity promotion performance --app <alias\|id> --start ... --end ... --platform ... --metric ...` | `promotion_performance()` | 组合 21 个同构平台的 stable primary operation 与实时物理指标校验；不统一口径或生成策略 |
 | Segment snapshot | `gravity analysis segment snapshot --app <alias|id> --ref <id-or-exact-name> --date <YYYY-MM-DD>` | `segment_snapshot()` | 精确解析一个分群后固定读取 detail、history、daily_result；不返回成员或规则定义 |
 | App snapshot | `gravity apps snapshot --app <alias|id>` | `app_snapshot()` | app detail、realtime event、capacity、permission menu、role、template，共 6 个来源 |
 | Attribution snapshot | `gravity attribution snapshot --app <alias|id>` | `attribution_snapshot()` | 当前 8 个 stable attribution 配置 operation |
@@ -174,6 +175,10 @@ fail closed。完整输入直接一次调用；未知入口是一次 Agent 发�
 Material Performance 每个平台提交一个 stable batch item，多个 App 仅形成同一个 `app_list`。
 HTTP 数为 `Σ P_platform`。direct worker 默认 6、最大 24，实际平台池最多 4；平台内分页固定
 单 worker。共享 item 预算按平台等额 floor 分配且余量不可借用，结果重新计数并对收据 fail closed。
+
+Promotion Performance 只接收一个显式 App、日期窗、21 平台子集和物理指标数组；每个平台一个
+独立 batch item，输出保持平台声明序与原生字段。`bing/xiaohongshu/taptap/wechat_video` 继续使用
+兼容 raw 入口，不被伪装成同构报表；Agent 不选择 App、平台、指标，也不输出排名或投放建议。
 
 ### 候选能力不等于已交付能力
 

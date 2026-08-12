@@ -15,7 +15,7 @@
 
 ## 当前条目
 
-当前没有经源码和质量门禁证明、且仍未安排退出条件的 Multidim 结构债务。
+当前没有经源码和质量门禁证明、且仍未安排退出条件的结构债务。
 
 本轮已把 CLI 路由、Plan adapter、Multidim service 和 Agent 卡分别下沉到领域模块；通用入口只保留
 薄路由，direct/Plan 共用 worker 预算，旧 raw 合同继续兼容。后续若这些模块再次触发机器 ratchet，
@@ -25,8 +25,6 @@ Business Pulse 的 generic Agent 交接缺口已由领域 recognizer、完整 Pl
 路由收口；执行 core、CLI、SDK 与 Plan adapter 继续复用原实现。`apps/platforms` 的无效数组绑定
 入口也已关闭，不保留第二套运行时或未证明的结果层债务。
 
-Promotion owner area 当前有两个与本轮纵切同域的机器热点：`cli.py::_merge_query_shortcuts`
-同时承担多个领域的请求转换，`CompositeService.promotion_snapshot` 同时承担选择、批处理和结果
-组装。触发条件是加入 Promotion Performance 产品面；退出条件是把 promotion parser/dispatch/
-shortcut 与产品 core 下沉到领域模块，让旧 CLI/Composite 只做兼容薄委托，并保持通用热点与
-quality baseline 不增长。不得借此重写无关 operation、executor 或其他领域 shortcut。
+Promotion Performance 已把 parser/dispatch/shortcut、产品 core、结果重建、SDK、Plan 和 Agent
+分别下沉到领域模块；旧 promotion CLI 与 `CompositeService.promotion_snapshot` 只保留兼容薄委托。
+通用热点与 quality baseline 未增长，原退出条件已完成，不保留已关闭的活动条目。
