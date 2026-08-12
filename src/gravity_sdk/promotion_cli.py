@@ -462,11 +462,16 @@ def _accepts_array_field(fields: Any, name: str) -> bool:
 
 def _output_file(value: str) -> str:
     selected = value.strip()
-    if not selected or selected == "-":
+    if not selected or selected == "-" or "\x00" in selected:
         raise ValueError("output must be a non-empty local file path")
     path = Path(selected)
     if path.exists() and path.is_dir():
         raise ValueError("output must be a local file path, not a directory")
+    ancestor = path.parent
+    while not ancestor.exists() and ancestor != ancestor.parent:
+        ancestor = ancestor.parent
+    if ancestor.exists() and not ancestor.is_dir():
+        raise ValueError("output parent must be a local directory")
     return selected
 
 

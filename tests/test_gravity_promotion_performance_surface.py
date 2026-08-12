@@ -141,6 +141,7 @@ class PromotionPerformanceSurfaceTests(unittest.TestCase):
             [*BASE, "--max-items", "0"],
             [*BASE, "--output", "-"],
             [*BASE, "--output", "."],
+            [*BASE, "--output", "pyproject.toml/child.json"],
         )
         with (
             patch("gravity_sdk.promotion_cli.load_workspace", return_value=_Workspace()),
