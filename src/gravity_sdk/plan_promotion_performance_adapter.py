@@ -166,6 +166,8 @@ def sanitize_product_result(
             item,
             platform,
             metrics=expected_metrics,
+            expected_app_id=expected_app_id,
+            expected_window=expected_window,
             max_pages=expected_max_pages,
         )
         for platform, item in zip(expected_platforms, results, strict=True)
@@ -264,6 +266,8 @@ def _resanitize_component(
     platform: str,
     *,
     metrics: Sequence[str],
+    expected_app_id: str,
+    expected_window: tuple[str, str],
     max_pages: int,
 ) -> dict[str, Any]:
     if not isinstance(value, Mapping):
@@ -294,7 +298,12 @@ def _resanitize_component(
             "page": value.get("page"),
         }
     safe = safe_component(
-        batch, platform, metrics=metrics, max_pages=max_pages
+        batch,
+        platform,
+        metrics=metrics,
+        expected_app_id=expected_app_id,
+        expected_window=expected_window,
+        max_pages=max_pages,
     )
     checked = (
         "ok", "status", "exit_code", "error", "window_applied",

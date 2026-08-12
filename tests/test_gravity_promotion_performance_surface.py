@@ -81,14 +81,14 @@ def _component(platform):
         "data": {
             "schema_version": "gravity-insight.read.v1",
             "operation_id": operation, "status": "success", "error": None,
-            "data": {"list": [{"date": WINDOW[0], METRICS[0]: 2.5}]},
+            "data": {"list": [{"app_id": "7", "date": WINDOW[0], METRICS[0]: 2.5}]},
             "page": {
                 "item_count": 1, "pages_fetched": 1, "max_workers": 1,
                 "number": 1, "size": 10, "total_pages": 1,
                 "total_items": 1, "has_more": False,
             },
         },
-    }, platform, metrics=METRICS, max_pages=5)
+    }, platform, metrics=METRICS, expected_app_id="7", expected_window=WINDOW, max_pages=5)
 
 
 def _failure(platform="tencent"):
@@ -100,7 +100,7 @@ def _failure(platform="tencent"):
             ErrorCode.UPSTREAM_UNAVAILABLE, "secret upstream diagnostic",
             operation_id=operation,
         ).to_dict(),
-    }, platform, metrics=METRICS, max_pages=5)
+    }, platform, metrics=METRICS, expected_app_id="7", expected_window=WINDOW, max_pages=5)
 
 
 def _product(platforms=("bytedance",), *, max_items=10, results=None):
@@ -140,6 +140,7 @@ class PromotionPerformanceSurfaceTests(unittest.TestCase):
             [*BASE[:-1], "user_id"],
             [*BASE, "--max-items", "0"],
             [*BASE, "--output", "-"],
+            [*BASE, "--output", "."],
         )
         with (
             patch("gravity_sdk.promotion_cli.load_workspace", return_value=_Workspace()),
@@ -227,6 +228,8 @@ class PromotionPerformanceSurfaceTests(unittest.TestCase):
             lambda item: item["date_range"].__setitem__("end", "2026-08-03"),
             lambda item: item["results"][0].__setitem__("platform", "tencent"),
             lambda item: item["results"].reverse(),
+            lambda item: item["results"][0]["data"]["list"][0].__setitem__("app_id", "8"),
+            lambda item: item["results"][0]["data"]["list"][0].__setitem__("date", "2026-08-03"),
             lambda item: item.__setitem__("metric_count", 2),
             lambda item: item["limits"].__setitem__("platform_workers", 2),
             lambda item: item.__setitem__("returned_items", 3),

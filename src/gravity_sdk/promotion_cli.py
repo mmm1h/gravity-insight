@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping, Sequence
+from pathlib import Path
 from typing import Any
 
 from . import runtime
@@ -409,6 +410,8 @@ def prepare_promotion_performance_request(
 
     platforms = _required_values(args.platform, "platform")
     metrics = _required_values(args.metric, "metric")
+    if getattr(args, "output", None) is not None:
+        _output_file(args.output)
     if not isinstance(args.app, str) or not args.app.strip():
         raise InputValidationError(
             "--app must be a non-empty workspace alias or positive id", field="app"
@@ -461,6 +464,9 @@ def _output_file(value: str) -> str:
     selected = value.strip()
     if not selected or selected == "-":
         raise ValueError("output must be a non-empty local file path")
+    path = Path(selected)
+    if path.exists() and path.is_dir():
+        raise ValueError("output must be a local file path, not a directory")
     return selected
 
 
