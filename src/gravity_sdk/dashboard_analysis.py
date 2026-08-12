@@ -194,6 +194,8 @@ def _read_detail(
         raise ContractChangedError("dashboard detail returned an invalid envelope")
     status = _status(result)
     if result.get("ok") is False or status not in _SUCCESS_STATUSES:
+        if status == "contract_changed":
+            raise ContractChangedError("dashboard detail contract changed")
         raise _safe_exception(result.get("error"), "detail")
     return result
 
@@ -307,8 +309,12 @@ def _executed_chart(
             "Dashboard analysis omitted an expected chart result.",
             category=ErrorCategory.LOCAL,
         ))
+    outer_status = _status(result)
     if result.get("ok") is not True:
         return _query_failure(prepared, _safe_query_error(result.get("error"), value.operation_id))
+    if outer_status not in _SUCCESS_STATUSES:
+        error = _contract_error(value.operation_id) if outer_status == "contract_changed" else _safe_query_error(result.get("error"), value.operation_id)
+        return _query_failure(prepared, error)
     native = result.get("data")
     if not isinstance(native, Mapping):
         return _query_failure(prepared, _contract_error(value.operation_id))
@@ -320,14 +326,12 @@ def _executed_chart(
     if operation_id not in (None, value.operation_id):
         return _query_failure(prepared, _contract_error(value.operation_id))
     safe_native = {
-        "schema_version": native.get("schema_version", "gravity-insight.read.v1"),
+        "schema_version": "gravity-insight.read.v1",
         "operation_id": value.operation_id,
         "ok": True,
         "status": status,
         "data": copy.deepcopy(native.get("data")),
     }
-    if isinstance(native.get("page"), Mapping):
-        safe_native["page"] = copy.deepcopy(native["page"])
     return {**prepared, "query_executed": True, "result": safe_native, "error": None}
 
 
