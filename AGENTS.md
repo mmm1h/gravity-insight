@@ -48,6 +48,12 @@ git diff --check
 
 - `main` is the stable integration branch consumed by other projects. Do not
   develop, test, or fix bugs directly on `main`.
-- Use `dev` for normal development, tests, refactors, and bug fixes.
+- Keep the canonical consumer checkout on `main`. Check out `dev` in a sibling
+  worktree (for example `../gravity-sdk-dev`); never switch the consumer
+  checkout itself to `dev`.
+- Use `dev` for normal development, tests, refactors, and bug fixes. Give each
+  development worktree its own ignored `.venv` and editable install, then run
+  validation with that environment's Python. A shared editable interpreter may
+  still resolve imports from the `main` checkout and produce false test results.
 - Promote validated changes from `dev` to `main` only as an explicit release
   action after the required checks pass.
