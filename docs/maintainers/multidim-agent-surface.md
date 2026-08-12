@@ -67,7 +67,8 @@ input，App 在 input 外单独绑定，并由产品入口覆盖唯一 `app_id` 
 ## 安全与非目标
 
 - 继续复用 live metric/FieldPolicy；未知指标、维度、动态列或 metadata 不完整时 fail closed。
-- dry-run 不返回 App、filter values、完整 normalized input 或可直接执行的隐式业务选择。
+- dry-run 可返回已显式绑定的 canonical `app_id` receipt，但不返回 raw input、filter values、完整
+  normalized input 或任何隐式业务选择。
 - Plan 只保留固定 Multidim envelope、validation、query/total 的受治理结果；失败不保留原始
   request、未知 data、路径或异常文本。
 - 不做 template replay、公式/指标语义、透视/图表、layout、收藏、拖拽、权限、join/reduce、

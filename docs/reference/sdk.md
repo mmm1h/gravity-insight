@@ -172,6 +172,9 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `get_saved_analysis()` | 按 ID 或精确名称检查 Strict Replay 资格及 window 要求，不返回 config |
 | `prepare_saved_analysis()` | 在显式日期窗内读取 reference Web artifact 并严格编译，不执行最终查询；compact definition 旧模式兼容 |
 | `run_saved_analysis()` | 一次解析并严格复用五类编译器后执行；不猜 Web 配置字段 |
+| `multidim_input_schema()` | 返回闭合的 `gravity-insight.multidim-input.v1` 机器输入合同；零网络 |
+| `prepare_multidim_query()` | 绑定 App 并本地预检 Multidim 物理输入；不执行查询、不回显 filter values |
+| `multidim_query()` | 校验实时指标后读取 Multidim 明细，可选 total 与全量分页 |
 | `analysis_vocabulary()` | 严格离线搜索已同步的 workspace 指标、标签、媒体枚举和模板目录 |
 | `table_lineage()` | 严格离线查询已同步的 account-scope 数据表版本与操作观察 |
 | `business_pulse()` | 并发读取 App 经营概览与趋势，可选 workspace scope 小时对比 |
@@ -308,6 +311,22 @@ max_workers=6, max_pages=1000, max_items=100000, workspace=None)` 接受一个 A
 每项是 workspace alias 或正整数。结果固定按 `overview/business/hourly_comparison` 排序，最后一项
 只在 `include_hourly=True` 时存在，且始终标记 `scope=workspace`，不能当作某个 App 的小时
 数据。对应 Plan composite 使用 `name="business_pulse"` 以及必填 `apps/start/end`。
+
+## Multidim
+
+`multidim_input_schema()` 是 CLI、SDK、Plan 和 Agent 共用的闭合机器合同。公开 input 直接使用
+`date_list/time_dims/metrics_list/custom_metrics_list/data_dims/relate_dims/filters/multi_keys`；
+没有额外 Spec DSL。App 位于 input 外，由 workspace alias 或正整数绑定。
+
+`prepare_multidim_query(inputs, *, app, workspace=None)` 只做安全预检；执行方法
+`multidim_query(inputs, *, app, include_total=False, read_all=False, max_pages=1000, max_items=100000,
+max_workers=6, workspace=None)` 使用同一合同。直接入口 worker 默认 6、最大 24；Plan adapter 固定为 1。实时请求数量为去重指标 metadata
+请求 `M` + query 页数 `P` + 显式 `include_total` 时的一次 total。已知完整输入是一调用；未知入口
+由 `capabilities()` 返回唯一 `composite:multidim` 卡，调用方补齐后执行 Plan，共两次。
+
+多个独立请求放在同一个 Plan 的同层节点，由 Plan 全局 pool 并发；不提供第二个 batch scheduler。
+Agent 和 SDK 不解释模板、布局、收藏、权限、图表，也不生成 App、指标、维度、日期、filter value
+或业务指标口径。
 
 ## Plan v1
 

@@ -102,16 +102,26 @@ Insight 普通批量读取默认并发为 6，显式上限为 24；Metadata 同�
 强制单分页 worker，防止嵌套放大。这些是 worker 上限，实际请求仍受每 host 限流、重试和
 共享冷却约束。
 
-多维查询需要同时得到明细和合计时，使用一次组合调用；默认不加该参数时仍返回原有查询
-envelope：
+## Multidim
+
+公开入口直接接受稳定的闭合物理输入，不增加一套字段改名后的 Spec DSL。App 单独绑定；
+`--input-schema` 可离线取得机器合同，`--dry-run` 在构造 client 前完成本地预检：
 
 ```powershell
-gravity insight multidim query --input <query.json> --include-total `
+gravity multidim query --input-schema
+gravity multidim query --app main --input <query.json> --include-total `
   --all-pages --max-pages 20 --max-items 5000 --concurrency 6
 ```
 
-组合调用先用在线指标元数据校验维度约束，再读取明细并把安全投影后的行交给 calc-total；分页
-边界和 worker 上限与普通 `--all-pages` 完全一致。
+input 只含 `date_list/time_dims/metrics_list/custom_metrics_list/data_dims/relate_dims/filters/multi_keys`。
+`--app` 接受 workspace alias 或正整数；它与兼容的 `--app-id` 不能冲突。Agent 不会填 App、指标、
+维度、日期或 filter value。直接执行默认 6 workers、最大 24；Plan adapter 固定 1。`--include-total`
+才会在 query 后串行计算 total，`--all-pages` 使用受控分页。HTTP 数为去重 metadata `M` + query
+页数 `P` + 可选一次 total。已知输入一调用；未知入口是一次 Agent 发现加一次 Plan。多个查询
+应放进一个 Plan，不新增 batch wrapper。
+
+Multidim 不回放 template，不处理图表/透视、layout、收藏、拖拽、成员权限或业务指标语义；这些
+边界也不会通过 `--input` 扩张。
 
 批量 wrapper 可由机器自描述，不需要猜 JSON 字段：
 

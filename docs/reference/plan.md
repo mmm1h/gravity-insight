@@ -321,6 +321,52 @@ unsupported，其他 sibling 继续。已知 selector 是一次 `plan run`；未
 已知 app/spec 时一次 `plan run`。未知合同则一次 `gravity agent "评估人群规则命中人数"`，
 调用方按卡片 schema 填写 `app/spec`，再执行 Plan，总共两次；自然语言不会生成规则或自动执行。
 
+## Multidim composite
+
+Multidim 继续使用登记的 `name="multidim"`，不新增 composite 名或 Spec DSL：
+
+```json
+{
+  "schema_version": "gravity.plan.v1",
+  "budget": {"max_workers": 6, "max_total_items": 5000},
+  "nodes": [
+    {
+      "id": "daily_cost",
+      "kind": "composite",
+      "request": {
+        "name": "multidim",
+        "app": "main",
+        "inputs": {
+          "date_list": ["2026-08-01", "2026-08-07"],
+          "time_dims": "day",
+          "metrics_list": ["ap_cost"],
+          "custom_metrics_list": [],
+          "data_dims": ["day"],
+          "relate_dims": [],
+          "filters": []
+        },
+        "include_total": true,
+        "read_all": true
+      },
+      "limits": {"max_pages": 20, "max_items": 5000}
+    }
+  ]
+}
+```
+
+`app/inputs` 必填，`include_total/read_all` 显式布尔且默认 false。动态 target 兼容 `/app` 和
+当前 `report.multidim.query` schema 登记的 `/inputs/<field>`；后者覆盖八个 product 字段以及仍在
+operation 合同中的 legacy 字段，不硬编码成一份会漂移的名单。通用标量 binding/foreach 规则
+仍然适用，`include_total/read_all/metadata_inputs` 不可绑定。Agent 不创建 binding，也不生成指标、
+维度、日期或 filter 值。adapter 内部 worker 固定 1；多个独立查询作为同层节点交给 Plan 全局
+pool，并保持声明顺序。一次执行的 HTTP
+数为去重 metadata `M` + query 页数 `P` + 可选一次 total；total 依赖 query，不能并发提前执行。
+
+Agent 对明确的中英文多维查询意图返回唯一 `composite:multidim` 卡，完整展开闭合 input schema
+以及可机械填写的 `name/app/inputs/include_total/read_all` request。已知完整输入一次执行；未知
+入口是 Agent + Plan 两次。模板、layout、收藏、权限、经营 pulse 和五类 Analysis 查询均不由
+本 composite 接管。
+
 ## Saved Analysis composite
 
 保存分析 reference replay 使用 `saved_analysis` composite；Agent 主路径在提交前明确 App、稳定

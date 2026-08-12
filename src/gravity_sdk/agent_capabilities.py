@@ -13,6 +13,7 @@ from typing import Any
 
 from .find import query_match
 from .agent_dashboard import DASHBOARD_ANALYSIS_CAPABILITY
+from .agent_multidim import MULTIDIM_CAPABILITY
 from .agent_saved_analysis import SAVED_ANALYSIS_CAPABILITY
 from .agent_segment_snapshot import SEGMENT_SNAPSHOT_CAPABILITY
 
@@ -133,26 +134,7 @@ _COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
             "app": {"type": "string", "required": True, "nullable": False},
         },
     },
-    {
-        "name": "multidim",
-        "domain": "report",
-        "aliases": (
-            "multidim",
-            "multi dimension",
-            "multidimensional report",
-            "cross dimension",
-            "多维分析",
-            "交叉维度",
-        ),
-        "description": (
-            "执行受合同约束的多维报表查询，并可组合总计与维度元数据。"
-        ),
-        "required_inputs": ("app", "inputs"),
-        "input_schema": {
-            "app": {"type": "string", "required": True, "nullable": False},
-            "inputs": {"type": "object", "required": True, "nullable": False},
-        },
-    },
+    MULTIDIM_CAPABILITY,
     {
         "name": "business_pulse",
         "domain": "report",
@@ -410,6 +392,7 @@ def authoritative_capability_cards(
         in {
             "dashboard_analysis",
             "dashboard_snapshot",
+            "multidim",
             "saved_analysis",
             "segment_snapshot",
         }

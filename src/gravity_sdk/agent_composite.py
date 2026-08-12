@@ -10,6 +10,7 @@ _STRICT_COMPOSITES = frozenset(
     {
         "dashboard_analysis",
         "dashboard_snapshot",
+        "multidim",
         "saved_analysis",
         "segment_snapshot",
     }
@@ -94,6 +95,10 @@ def _strict_composite_query(name: str, query: str) -> bool:
         from .agent_saved_analysis import saved_analysis_query
 
         return saved_analysis_query(query)
+    if name == "multidim":
+        from .agent_multidim import multidim_query
+
+        return multidim_query(query)
     return False
 
 

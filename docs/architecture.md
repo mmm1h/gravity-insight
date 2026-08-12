@@ -139,6 +139,7 @@ Resolver 的完成路径生成 `gravity.receipt.v1`，写到当前 workspace 的
 | Dashboard snapshot | `gravity analysis dashboard snapshot --app <alias|id> --ref <id-or-exact-name>` | `dashboard_snapshot()` | 精确解析一个看板后读取 detail、dashboard members、space members、condition favourites 与 default favourite，共 5 个控制面来源；不执行图表 |
 | Dashboard analysis | `gravity analysis dashboard prepare\|run --app ... --ref ... --start ... --end ...` | `prepare_dashboard_analysis()` / `run_dashboard_analysis()` | 静态 Web artifact 编译边界内的 event/funnel/retention/property/scatter chart；按声明序、单图失败隔离 |
 | Saved analysis | `gravity analysis saved prepare\|run --app ... --ref ... --start ... --end ...` | `prepare_saved_analysis()` / `run_saved_analysis()` | 精确解析一个保存分析；reference Web artifact 严格复用五类编译器和显式日期窗，compact definition 保持兼容 |
+| Multidim | `gravity multidim query --app <alias\|id> --input <json>` | `multidim_query()` | 闭合物理输入、实时指标校验、有界分页与可选 total；不引入 Spec DSL 或 Web 模板语义 |
 | Segment snapshot | `gravity analysis segment snapshot --app <alias|id> --ref <id-or-exact-name> --date <YYYY-MM-DD>` | `segment_snapshot()` | 精确解析一个分群后固定读取 detail、history、daily_result；不返回成员或规则定义 |
 | App snapshot | `gravity apps snapshot --app <alias|id>` | `app_snapshot()` | app detail、realtime event、capacity、permission menu、role、template，共 6 个来源 |
 | Attribution snapshot | `gravity attribution snapshot --app <alias|id>` | `attribution_snapshot()` | 当前 8 个 stable attribution 配置 operation |
@@ -162,6 +163,12 @@ reference/definition 仍兼容其原有日期语义。它不复刻 template、la
 Segment snapshot 同样只组合 stable 只读 operation：先按 ID 或精确名称解析一个分群，再并发读取
 详情、历史版本与指定日期的单日计算结果。它不读取成员、用户标识或规则定义；名称歧义时失败，
 不会选择相似名称或自动执行自然语言请求。
+
+Multidim 不从 Web artifact 编译，也不把物理字段重新命名成另一套 Spec。App 在 input 外显式
+绑定；指标、维度、日期和 filters 都由调用方提供，并在闭合 schema 与实时 metadata 边界内
+fail closed。完整输入直接一次调用；未知入口是一次 Agent 发现加一次 Plan。N 个独立查询是
+一个 Plan 的 N 个同层节点，不新增 batch wrapper。执行请求数为去重 metadata `M` 加 query 页数
+`P`，显式请求 total 时再加一次；模板、布局、收藏、拖拽、权限和业务指标含义均不属于该产品。
 
 ### 候选能力不等于已交付能力
 
@@ -215,6 +222,7 @@ SQL 工具。
 | Dashboard snapshot | CLI/SDK 外层默认 5、上限 24；Plan adapter 内部固定 1 worker | 让 Plan 全局 pool 管理跨节点并发，避免“节点 × 5 来源”放大 |
 | Dashboard analysis | CLI/SDK run 默认 6、上限 24；Plan adapter 内固定 1；默认 32、硬上限 64 charts | 单图编译/执行隔离并按看板声明顺序聚合 |
 | Saved analysis | 单个 reference 只执行一个已编译查询；Plan adapter 内固定分页 worker 1 | 多个互不依赖的保存分析放入同一 Plan，由全局 pool 并发，避免外层线程池 |
+| Multidim | CLI/SDK 默认 6、上限 24；metadata 与已知页数共享同一预算；Plan adapter 内固定 1 | 多个独立查询作为同层 Plan 节点，避免“节点 × metadata × 页数”并发放大 |
 | Segment snapshot | CLI/SDK 外层默认 3、上限 24；Plan adapter 内部固定 1 worker | 三源固定保序，Plan 全局 pool 管理跨节点并发 |
 | Plan DAG | 一个全局 worker pool，默认 6、上限 24；同层并发、依赖层串行；adapter 内分页 worker 固定 1 | 把交叉查询放进一个 Plan，避免并发乘法放大 |
 | Plan foreach | 每节点最多一个，默认最多 32 项、硬上限 64；不支持嵌套和笛卡尔积 | 只用于一个上游数组到一个目标字段的有限扇出 |

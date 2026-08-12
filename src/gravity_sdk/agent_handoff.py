@@ -252,12 +252,20 @@ def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
         from .agent_saved_analysis import saved_analysis_plan_request
 
         return saved_analysis_plan_request(card)
+    if composite == "multidim":
+        from .agent_multidim import multidim_plan_request
+
+        return multidim_plan_request(card)
     return {"name": composite}
 
 
 def _handoff_requirements(
     card: Mapping[str, Any], kind: str
 ) -> tuple[list[str], dict[str, Any]]:
+    if kind == "composite" and card.get("composite") == "multidim":
+        from .agent_multidim import multidim_input_template
+
+        return ["app", "inputs"], multidim_input_template()
     existing_missing = card.get("missing_inputs")
     existing_template = card.get("input_template")
     if isinstance(existing_missing, list) and isinstance(existing_template, Mapping):

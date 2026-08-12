@@ -10,6 +10,8 @@
 | 已知 operation 和输入 schema | `gravity run <operation-id> ...` | 1 |
 | 已知 Analysis kind 和物理字段 | 单个 `analysis query`；多个独立 spec 用 `analysis query batch` | 1 |
 | 已知 Analysis kind，指标未知 | `metadata vocabulary` → `analysis query --spec` | 2 |
+| 已知 Multidim App 与完整物理输入 | `gravity multidim query --app ... --input ...` | 1 |
+| 不知道 Multidim 产品入口 | `gravity agent "执行多维报表查询"` → 填卡并 `plan run` | 2 |
 | 已知人群规则 spec | `gravity analysis segment evaluate --app ... --spec ...` | 1 |
 | 不知道人群规则合同 | `gravity agent "评估人群规则命中人数"` → `plan run` | 2 |
 | 分群详情/历史/单日结果（引用已知/未知） | 已知：`analysis segment snapshot`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
@@ -41,6 +43,15 @@
 人群规则只接受显式紧凑 spec：Agent 强意图卡给完整 schema 和缺失的 `app/spec`，不会从自然语言生成规则。已知 spec 可直接 evaluate；交叉查询用 `segment_evaluate` composite，只有 `/app` 可绑定，结果仅 `part/percent/total`。
 
 分群检查已知精确 ID/名称与日期时直接 `gravity analysis segment snapshot --app ... --ref ... --date ...`；固定返回 detail/history/daily_result，不读取规则或成员。未知时只有同时表达分群快照/检查、详情、历史和单日计算结果的强意图才返回 `segment_snapshot` 卡；补齐 `app/ref/date` 后一次 Plan 执行，自然语言不自动执行。
+
+### Multidim：使用物理输入，不新增 Spec
+
+Multidim 直接使用闭合的 `date_list/time_dims/metrics_list/custom_metrics_list/data_dims/relate_dims/filters/multi_keys` 物理输入；它没有第二套 Spec DSL。已知 App 和完整输入时直接一次 CLI/SDK 调用；不知道入口时，Agent 对明确的中英文多维查询意图只返回 `composite:multidim`，调用方填写 `app/inputs`，并明确选择 `include_total/read_all` 后执行一次 Plan，共两次。Agent 不选择 App、指标、维度、日期或 filter value，也不会把模板、布局、收藏、权限、经营 pulse 或 event/funnel Analysis 路由到这里。
+
+多个独立多维查询作为同层节点放进一个 Plan，由全局 worker pool 并发；不要建立 batch wrapper
+或逐条启动进程。直接 CLI/SDK 默认 6 workers、最大 24；Plan adapter 内固定 1，避免节点并发与
+分页/metadata 并发相乘。一次执行的 HTTP 数量是 `M + P + optional total`：`M` 为去重后的指标
+metadata 请求数，`P` 为实际 query 页数，只有显式 `include_total` 才增加一次 total。
 
 ## 1. 业务语义先在调用项目解析
 
@@ -106,7 +117,7 @@ gravity plan run --input plan.json --dry-run
 gravity plan run --input plan.json --concurrency 6
 ```
 
-Analysis 查询复用 `analysis_query`，保存分析用 `saved_analysis`，人群规则/快照用 `segment_evaluate`/`segment_snapshot`，看板控制面/图表用 `dashboard_snapshot`/`dashboard_analysis`。已知完整输入时一次 `plan run`；未知时 Agent 发现、调用方补齐再执行，自然语言不自动执行。同层查询由全局 pool 并发并保声明序；binding 仅可写登记目标，结果不回显 request/spec/binding 值。完整合同见 [Plan 参考](reference/plan.md)。
+Analysis 查询复用 `analysis_query`，Multidim 使用 `multidim`，保存分析用 `saved_analysis`，人群规则/快照用 `segment_evaluate`/`segment_snapshot`，看板控制面/图表用 `dashboard_snapshot`/`dashboard_analysis`。已知完整输入时一次 `plan run`；未知时 Agent 发现、调用方补齐再执行，自然语言不自动执行。同层查询由全局 pool 并发并保声明序；binding 仅可写登记目标，结果不回显 request/spec/binding 值。完整合同见 [Plan 参考](reference/plan.md)。
 
 ## 4. 选择 Insight 还是 SQL
 

@@ -382,7 +382,20 @@ class DiscoveryUxTests(unittest.TestCase):
                 self.assertEqual(name, card["composite"])
                 self.assertEqual("composite", card["plan_node"]["kind"])
                 self.assertEqual(missing, card["missing_inputs"])
-                self.assertEqual(set(missing), set(card["input_template"]))
+                if name != "multidim":
+                    self.assertEqual(set(missing), set(card["input_template"]))
+                else:
+                    schema = card["input_schema"]["inputs"]["machine_schema"]
+                    self.assertEqual(
+                        (False, ["date_list", "time_dims", "metrics_list"]),
+                        (schema["additionalProperties"], schema["required"]),
+                    )
+                    self.assertEqual(
+                        ({"app", "inputs", "include_total", "read_all"},
+                         {"name", "app", "inputs", "include_total", "read_all"}),
+                        (set(card["input_template"]), set(card["plan_node"]["request"])),
+                    )
+                    self.assertFalse(card["natural_language_auto_execute"])
                 if name == "dashboard_snapshot":
                     self.assertEqual((1, 1), (result["count"], result["total"]))
                     self.assertEqual(missing, card["required_inputs"])
@@ -401,6 +414,33 @@ class DiscoveryUxTests(unittest.TestCase):
             self.assertNotIn(
                 "dashboard_snapshot", [card.get("composite") for card in result["candidates"]]
             )
+
+    def test_multidim_intent_is_authoritative_but_excludes_adjacent_products(self) -> None:
+        for query in ("multidim", "multidimensional report query", "执行多维报表查询"):
+            with self.subTest(query=query):
+                result = discover_capabilities(query, client=self.client, limit=5)
+                self.assertEqual(["multidim"], [c.get("composite") for c in result["candidates"]])
+        for query in (
+            "multidim template", "multi dimension layout", "多维报表收藏权限",
+            "business pulse", "multidim funnel analysis",
+        ):
+            with self.subTest(query=query):
+                result = discover_capabilities(query, client=self.client, limit=5)
+                self.assertNotIn("multidim", [c.get("composite") for c in result["candidates"]])
+
+    @patch("gravity_sdk.agent_batch_sources.search_metadata", return_value={"results": []})
+    def test_multidim_batch_reuses_one_local_snapshot(self, metadata) -> None:
+        with patch.object(
+            self.client, "operation_inventory", wraps=self.client.operation_inventory
+        ) as operations:
+            result = capabilities_many(
+                ["multidimensional report query", "执行多维报表查询"],
+                client=self.client,
+                workspace=SimpleNamespace(recipes={}, products={}, datasources={}),
+            )
+        operations.assert_not_called()
+        metadata.assert_called_once_with("", limit=None, offset=0)
+        self.assertEqual([1, 1], [item["result"]["total"] for item in result["results"]])
 
     def test_agent_table_lineage_is_one_offline_plan_handoff(self) -> None:
         workspace = SimpleNamespace(path=Path("D:/private/workspaces/analyst.toml"))
