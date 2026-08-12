@@ -16,14 +16,14 @@ from .agent_capabilities import (
     should_load_capability_catalog,
 )
 from .agent_handoff import (
-    agent_execution_contract,
-    agent_fallbacks,
+    agent_execution_contract, agent_fallbacks,
     apply_workspace_prefix,
     attach_plan_node,
     resolve_workspace_path,
     unify_capability_candidates,
     workspace_prefix,
 )
+from .agent_order_trace import order_split_trace_safe_query
 from .agent_export import export_inventory_for_query
 from .agent_sources import (
     catalog_cards,
@@ -242,8 +242,8 @@ def _capability_gaps(
     operation_fallback_excluded: bool,
 ) -> list[dict[str, Any]]:
     if operation_fallback_excluded:
-        from .agent_discovery_policy import promotion_performance_gap
-        return promotion_performance_gap(request.query)
+        from .agent_discovery_policy import operation_fallback_gap
+        return operation_fallback_gap(request.query)
     return capability_gaps(
         client,
         request.query,
@@ -282,7 +282,7 @@ def _discovery_response(
     candidates = [
         attach_plan_node(
             apply_workspace_prefix(item, workspace_path),
-            request.query,
+            order_split_trace_safe_query(request.query),
             namespace=plan_node_namespace,
         )
         for item in candidates
@@ -291,7 +291,7 @@ def _discovery_response(
     next_token = (
         _encode_continuation(
             request,
-            request.query,
+            order_split_trace_safe_query(request.query),
             offset=next_offset,
             catalog_fingerprint=page.catalog_fingerprint,
             candidates_fingerprint=candidates_fingerprint,
@@ -307,7 +307,7 @@ def _discovery_response(
         "network_called": False,
         "mode": "discover_and_describe",
         "scope": AGENT_SCOPE,
-        "query": request.query,
+        "query": order_split_trace_safe_query(request.query),
         "limit": request.limit,
         "count": len(candidates),
         "total": total,
@@ -320,7 +320,7 @@ def _discovery_response(
             "partial_matches_are_executable": False,
         },
         "execution": agent_execution_contract(workspace_path),
-        "fallbacks": agent_fallbacks(request.query, workspace_path),
+        "fallbacks": agent_fallbacks(order_split_trace_safe_query(request.query), workspace_path),
         "next_action": (
             "Prefer a recipe, registered composite, then stable Insight; use a "
             "matching SQL product only when Insight cannot express the goal, and "
@@ -379,7 +379,7 @@ def _discovery_page(
         )
     if args.continuation:
         continuation = _decode_continuation(
-            args, query, catalog_fingerprint=catalog_fingerprint
+            args, order_split_trace_safe_query(query), catalog_fingerprint=catalog_fingerprint
         )
         offset = int(continuation["offset"])
         expected_candidates_fingerprint = str(

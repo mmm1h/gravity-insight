@@ -303,6 +303,39 @@ unsupported，其他 sibling 继续。已知 selector 是一次 `plan run`；未
 翻页；`continuation` 只告诉调用方下一显式 page。adapter 内 worker 固定 1，外层并发仍由 Plan
 的单一 worker pool 控制。
 
+## Order Split Trace composite
+
+按 TraceID 读取单日拆单明细使用登记的 `order_split_trace` 节点。Agent 返回的节点完整但不含
+任何业务值，调用方必须在执行前替换三个占位值：
+
+```json
+{
+  "id": "order_split_trace",
+  "kind": "composite",
+  "request": {
+    "name": "order_split_trace",
+    "app": "<workspace-app-alias-or-positive-id>",
+    "date": "<date:YYYY-MM-DD>",
+    "trace_id": "<explicit-sensitive-trace-id>"
+  },
+  "limits": {"max_pages": 1000, "max_items": 100000}
+}
+```
+
+`/app`、`/date`、`/trace_id` 是仅有的动态 target，且只接受有限 JSON scalar；每次 binding 后都
+重新校验正整数/alias、严格日期和长度 1..256 的非空敏感 TraceID。本节点不接受父行敏感数组
+binding，也不扩展通用 Plan DSL。Agent 不从自然语言抽取、显示或执行 TraceID。
+
+adapter 内父分页 worker 固定 1；它必须先完整读取受 `max_pages` 约束的单日父目录并在本地精确
+匹配唯一父行，之后才允许一次 child，网络调用数为 `P + 1`。`max_items` 是父扫描行与 child 行
+共享的总预算，child 前先保留最坏空间。专用 sanitizer/projector 重新核对阶段状态、页/行收据和
+预算，成功明细只允许 `Amount/BackAmount/Status/CreateTime`；结果与错误不得包含 TraceID、
+ClientID、拆单 ID、PayEventTime、request、binding 值或原始异常。
+
+多个独立 TraceID 使用同层节点，由 Plan 全局 pool 并发；不使用 `foreach` 生成敏感数组、不新增
+batch wrapper，也不形成节点并发与父分页的乘法放大。精确 raw
+`analysis.order_split_detail.list` 仍可作为专家 operation selector，但不是该产品的 Agent 回退。
+
 ## Segment Rule composite
 
 人群规则人数/占比评估复用 `composite` 节点，request 固定为 `name="segment_evaluate"`、

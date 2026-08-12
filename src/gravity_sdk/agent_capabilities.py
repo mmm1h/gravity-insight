@@ -17,6 +17,11 @@ from .agent_business_pulse import BUSINESS_PULSE_CAPABILITY, BUSINESS_PULSE_NAME
 from .agent_dashboard import DASHBOARD_ANALYSIS_CAPABILITY
 from .agent_multidim import MULTIDIM_CAPABILITY
 from .agent_material_performance import MATERIAL_PERFORMANCE_CAPABILITY
+from .agent_order_trace import (
+    ORDER_SPLIT_TRACE_CAPABILITY,
+    ORDER_SPLIT_TRACE_NAME,
+    order_split_trace_blocks_operation_fallback,
+)
 from .agent_promotion_performance import (
     PROMOTION_PERFORMANCE_CAPABILITY,
     PROMOTION_PERFORMANCE_NAME,
@@ -144,6 +149,7 @@ _COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
     },
     MULTIDIM_CAPABILITY,
     MATERIAL_PERFORMANCE_CAPABILITY,
+    ORDER_SPLIT_TRACE_CAPABILITY,
     PROMOTION_PERFORMANCE_CAPABILITY,
     BUSINESS_PULSE_CAPABILITY,
 )
@@ -296,6 +302,7 @@ def capability_handoff_cards(
         exports
         or lineage
         or journeys
+        or order_split_trace_blocks_operation_fallback(query)
         or promotion_performance_blocks_operation_fallback(query)
     )
 
@@ -380,6 +387,7 @@ def authoritative_capability_cards(
             "dashboard_snapshot",
             BUSINESS_PULSE_NAME,
             "material_performance",
+            ORDER_SPLIT_TRACE_NAME,
             PROMOTION_PERFORMANCE_NAME,
             "multidim",
             "saved_analysis",

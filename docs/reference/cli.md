@@ -20,6 +20,7 @@ gravity analysis dashboard snapshot  读取一个看板的控制面快照
 gravity analysis dashboard prepare|run  编译或执行一个看板的受支持图表
 gravity analysis segment snapshot  读取一个分群的详情、历史与单日计算结果
 gravity analysis saved ...    列出、读取、准备或严格重放保存分析
+gravity analysis order trace  按显式 TraceID 读取单日拆单明细
 gravity apps snapshot         并发读取一个 App 的治理快照
 gravity attribution snapshot  并发读取一个 App 的归因配置快照
 gravity reports pulse         并发读取 App 经营概览与趋势
@@ -370,6 +371,27 @@ gravity analysis user journey --app main --client-id <explicit-id> `
 `profile/events/postbacks` 排序并隔离局部失败，不回显 client ID、request 或凭据。上游
 user-event 尚无已证明的 `page_info`，因此 v1 只读取显式页并返回
 `continuation.automatic=false`；调用方根据下一页提示显式重试，不伪造自动分页。
+
+### Order Split Trace v1
+
+已知 App、单日和显式 TraceID 时，使用一次受控 parent-child 读取：
+
+```powershell
+gravity analysis order trace --app main --date 2026-08-08 `
+  --trace-id <explicit-sensitive-trace-id> --concurrency 6 `
+  --max-pages 1000 --max-items 100000
+```
+
+命令固定以 `page_size=100` 和四个静态父字段完整读取受限单日目录，再在本地对 TraceID 做
+大小写敏感的精确匹配。它不会把 TraceID 作为未经证明的上游 filter；零条、多条、截断、畸形
+分页收据或预算不足都在 child 前 fail closed。唯一父行才触发一次严格后置的
+`analysis.order_split_detail.list`，有效请求数为 `P + 1`。
+
+direct 父分页 worker 默认 6、最大 24；`max_items` 由父扫描行和 child 行共享。产品只输出完整
+JSON，不提供 NDJSON；成功行只保留 `Amount/BackAmount/Status/CreateTime`，结果和错误均不含
+TraceID、ClientID、拆单 ID、PayEventTime、request 或原始异常。未知入口时 Agent 只给待填写的
+`order_split_trace` Plan 节点，不提取、显示或执行自然语言中的 TraceID；精确 raw selector
+`analysis.order_split_detail.list` 保持专家兼容。
 
 ### Dashboard control-plane snapshot
 

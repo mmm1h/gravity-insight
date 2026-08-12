@@ -40,3 +40,8 @@ Business Pulse 的 generic Agent 交接缺口已由领域 recognizer、完整 Pl
 Promotion Performance 已把 parser/dispatch/shortcut、产品 core、结果重建、SDK、Plan 和 Agent
 分别下沉到领域模块；旧 promotion CLI 与 `CompositeService.promotion_snapshot` 只保留兼容薄委托。
 通用热点与 quality baseline 未增长，原退出条件已完成，不保留已关闭的活动条目。
+
+Order Split Trace 把“完整父目录精确匹配后再读取 child”的敏感派生留在登记领域 composite，
+不把数组 binding、join/reduce 或通用 parent-child DSL 引入 Plan；这一限制是安全产品边界，不登记
+为通用引擎债务。Agent 的中英 recognizer、占位 Plan 节点、相邻产品阻断与 raw exact 兼容均在
+领域模块内闭合，通用 discovery 入口只保留薄路由。

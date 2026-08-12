@@ -16,6 +16,8 @@
 | 不知道素材表现入口 | `gravity agent "跨平台素材报表"` → 填卡并 `plan run` | 2 |
 | 已知推广 App、日期、平台和物理指标 | `gravity promotion performance --app ... --start ... --end ... --platform ... --metric ...` | 1 |
 | 不知道推广表现入口 | `gravity agent "跨平台推广报表"` → 填卡并 `plan run` | 2 |
+| 已知 App、单日与 TraceID | `gravity analysis order trace --app ... --date ... --trace-id ...` | 1 |
+| 不知道拆单追踪入口 | `gravity agent "按 TraceID 查拆单明细"` → 填卡并 `plan run` | 2 |
 | 已知人群规则 spec | `gravity analysis segment evaluate --app ... --spec ...` | 1 |
 | 不知道人群规则合同 | `gravity agent "评估人群规则命中人数"` → `plan run` | 2 |
 | 分群详情/历史/单日结果（引用已知/未知） | 已知：`analysis segment snapshot`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
@@ -48,6 +50,16 @@
 ### Multidim
 
 Multidim 使用物理输入，不新增 Spec。它直接使用闭合的 `date_list/time_dims/metrics_list/custom_metrics_list/data_dims/relate_dims/filters/multi_keys` 物理输入；已知 App 和完整输入时直接一次 CLI/SDK 调用；不知道入口时，Agent 对明确的中英文多维查询意图只返回 `composite:multidim`，调用方填写 `app/inputs`，并明确选择 `include_total/read_all` 后执行一次 Plan，共两次。Agent 不选择 App、指标、维度、日期或 filter value，也不会把模板、布局、收藏、权限、经营 pulse 或 event/funnel Analysis 路由到这里。
+
+### Order Split Trace
+
+已知 App、严格 `YYYY-MM-DD` 和显式 TraceID 时，一次 `gravity analysis order trace` 完整读取有界
+单日父目录，在本地精确匹配唯一父行，再读取一次拆单明细；不发送未经证明的 TraceID 上游
+filter，也不把父/子标识放进结果。未知入口时，Agent 对明确的中英文读取意图只返回唯一
+`composite:order_split_trace` 卡和完整占位节点；它不从自然语言提取、显示或执行 TraceID。
+否定、导出、写入、退款/净收入、归因、用户旅程、普通订单目录、变现、推广/素材、模板/看板、
+UI/权限等冲突意图会安全报缺口且不扫描 raw inventory；精确 raw selector
+`analysis.order_split_detail.list` 仍保持专家兼容。
 
 推广表现要求调用方先明确一个 App、日期、平台数组和物理指标数组；Agent 只对明确的 `promotion performance/跨平台推广报表` 返回 `promotion_performance` 节点，不从自然语言选值。否定、导出、写入、策略、素材/Pulse/Multidim/归因/看板/保存分析/分群/旅程、raw snapshot 及四个异构平台请求不会回落为 generic Promotion operation。
 
@@ -120,7 +132,7 @@ gravity plan run --input plan.json --dry-run
 gravity plan run --input plan.json --concurrency 6
 ```
 
-Analysis 查询复用 `analysis_query`，Multidim 使用 `multidim`，素材/推广表现分别使用 `material_performance`/`promotion_performance`，保存分析用 `saved_analysis`，人群规则/快照用 `segment_evaluate`/`segment_snapshot`，看板控制面/图表用 `dashboard_snapshot`/`dashboard_analysis`。已知完整输入时一次 `plan run`；未知时 Agent 发现、调用方补齐再执行，自然语言不自动执行。同层查询由全局 pool 并发并保声明序；binding 仅可写登记目标，结果不回显 request/spec/binding 值。完整合同见 [Plan 参考](reference/plan.md)。
+Analysis 查询复用 `analysis_query`，Multidim 使用 `multidim`，拆单追踪使用 `order_split_trace`，素材/推广表现分别使用 `material_performance`/`promotion_performance`，保存分析用 `saved_analysis`，人群规则/快照用 `segment_evaluate`/`segment_snapshot`，看板控制面/图表用 `dashboard_snapshot`/`dashboard_analysis`。已知完整输入时一次 `plan run`；未知时 Agent 发现、调用方补齐再执行，自然语言不自动执行。同层查询由全局 pool 并发并保声明序；binding 仅可写登记目标，结果不回显 request/spec/binding 值。完整合同见 [Plan 参考](reference/plan.md)。
 
 ## 4. 选择 Insight 还是 SQL
 

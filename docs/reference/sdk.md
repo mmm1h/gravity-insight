@@ -177,6 +177,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `multidim_query()` | 校验实时指标后读取 Multidim 明细，可选 total 与全量分页 |
 | `material_performance()` | 按显式 App、日期窗和平台读取稳定素材表现；平台保序、共享预算、局部失败隔离 |
 | `promotion_performance()` | 按一个显式 App、日期窗、平台和物理指标读取 21 个同构平台；平台保序、局部失败隔离 |
+| `order_split_trace()` | 完整扫描一个 App 的单日父订单并按显式 TraceID 精确匹配，再读取一次安全拆单投影 |
 | `analysis_vocabulary()` | 严格离线搜索已同步的 workspace 指标、标签、媒体枚举和模板目录 |
 | `table_lineage()` | 严格离线查询已同步的 account-scope 数据表版本与操作观察 |
 | `business_pulse()` | 并发读取 App 经营概览与趋势，可选 workspace scope 小时对比 |
@@ -246,6 +247,16 @@ page_size=20, fields=(), events=(), max_workers=3, max_items=200, workspace=None
 一次 workspace App，然后把 profile、events、postbacks 作为一个受控批次读取。结果固定来源
 顺序、局部失败隔离，并递归剔除 client ID、request 和凭据字段。user-event 没有已证明的自动
 分页合同，调用方必须显式递增 page。
+
+`order_split_trace(app, date, trace_id, *, max_workers=6, max_pages=1000,
+max_items=100000, workspace=None)` 接受 workspace App alias/正整数、严格 `YYYY-MM-DD` 和长度
+1..256 的显式敏感 TraceID。方法在惰性构造 client 前完成本地输入校验；随后用静态父字段完整
+读取受限单日目录，在本地精确匹配唯一父行，再严格后置一次 child。它不发送 TraceID 上游
+filter，不做模糊或首条选择；`max_items` 由父扫描行和 child 行共享。
+
+返回 `gravity-insight.order-split-trace.v1`，成功明细只含
+`Amount/BackAmount/Status/CreateTime`；父/子标识、ClientID、PayEventTime、request 与原始异常
+不会进入结果或错误。direct 父分页 worker 默认 6、最大 24；有效请求为 `P + 1`。
 
 `dashboard_snapshot(app, ref, *, max_workers=5, max_pages=1000, max_items=100000,
 workspace=None)` 只接受 workspace App alias/正整数和看板稳定 ID/精确名称。它先精确解析目录，
@@ -376,6 +387,11 @@ Single-user journey 也使用登记 composite：request 为 `name="user_journey"
 `app/client_id` 以及单个 `date` 或成对 `start/end`，可选 `page/page_size/fields/events`。只有
 `/app` 与 `/client_id` 可接受显式标量 binding；后者是敏感输入，任何 Plan 结果和错误都不得
 回显绑定值。adapter 在 Plan 全局 worker pool 内固定内部 worker 为 1，避免并发乘法放大。
+
+Order Split Trace request 固定为 `name="order_split_trace"` 与必填 `app/date/trace_id`；三者都可
+接受显式标量 binding，绑定后重新执行完整本地验证。adapter 内父分页 worker 固定 1，节点
+`max_items` 同时约束父扫描和 child 行；专用 projector 只允许四个拆单物理字段及安全计数/收据，
+不会回显任何标识或 binding 值。Agent 只生成三个待填写占位值。
 
 Dashboard snapshot 的 composite request 固定为 `name="dashboard_snapshot"` 与必填 `app/ref`；
 `ref` 仍必须是稳定 ID 或精确名称，`/app`、`/ref` 可接受显式标量 binding。节点预算必须覆盖

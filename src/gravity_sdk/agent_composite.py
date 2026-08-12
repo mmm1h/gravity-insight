@@ -13,6 +13,7 @@ _STRICT_COMPOSITES = frozenset(
         "dashboard_analysis",
         "dashboard_snapshot",
         "material_performance",
+        "order_split_trace",
         "promotion_performance",
         "multidim",
         "saved_analysis",
@@ -37,7 +38,13 @@ def composite_card(
         *(str(value) for value in definition.get("aliases", ())),
     )
     if strict_product or normalized in {selector.casefold(), name.casefold()}:
-        match = _exact_match(match, normalized)
+        from .agent_order_trace import order_split_trace_blocks_operation_fallback
+
+        redact_query = bool(definition.get("sensitive_query")) or (
+            order_split_trace_blocks_operation_fallback(query)
+        )
+        matched = selector.casefold() if redact_query else normalized
+        match = _exact_match(match, matched)
     if match["confidence"] != "strong":
         return None
     required = [str(value) for value in definition.get("required_inputs", ())]
@@ -116,6 +123,10 @@ def _strict_composite_query(name: str, query: str) -> bool:
         from .agent_material_performance import material_performance_query
 
         return material_performance_query(query)
+    if name == "order_split_trace":
+        from .agent_order_trace import order_split_trace_query
+
+        return order_split_trace_query(query)
     if name == "promotion_performance":
         from .agent_promotion_performance import promotion_performance_query
 

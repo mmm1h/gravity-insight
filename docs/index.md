@@ -10,6 +10,7 @@
 | 让 Agent 查询 Gravity | [Agent 工作流](agent-workflow.md) | [架构与概念](architecture.md) |
 | 构造事件、漏斗、留存、属性或分布查询 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Analysis Spec](reference/cli.md#analysis-query-spec-v1) |
 | 执行多维报表查询 | [Agent 工作流：Multidim](agent-workflow.md#multidim) | [CLI 参考：Multidim](reference/cli.md#multidim) |
+| 按 TraceID 读取单日拆单明细 | [Agent 工作流：Order Split Trace](agent-workflow.md#order-split-trace) | [CLI 参考：Order Split Trace](reference/cli.md#order-split-trace-v1) |
 | 读取跨平台素材表现 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Material Performance](reference/cli.md#material-performance) |
 | 读取跨平台推广表现 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Promotion Performance](reference/cli.md#promotion-performance) |
 | 批量发现并执行交叉查询 | [Agent 工作流：显式 Plan](agent-workflow.md#3-交叉查询一个显式-plan) | [CLI Plan 参考](reference/cli.md#plan-v1) |
@@ -41,6 +42,8 @@
   `gravity analysis user journey`，不手工串行三条 operation。
 - 已知 Multidim 物理输入：一次 `gravity multidim query`；未知能力：一次 Agent 发现加一次
   Plan 执行。多个独立查询放进同一个 Plan，不逐条启动命令。
+- 已知 App、单日与 TraceID：一次 `gravity analysis order trace`；未知入口：Agent 只返回
+  待填写的 `order_split_trace` 节点，再执行一次 Plan。自然语言中的 TraceID 不会被复制或执行。
 - 已知推广 App、日期、平台和物理指标：一次 `gravity promotion performance`；未知入口：Agent
   返回待填写的 `promotion_performance` 节点，再执行一次 Plan。
 - 发现只返回候选以及 Plan node 或受控编译交接，不会从自然语言自动执行。
