@@ -43,3 +43,11 @@ python -m gravity_sdk.quality check
 python -m gravity_sdk --help
 git diff --check
 ```
+
+## Branch workflow
+
+- `main` is the stable integration branch consumed by other projects. Do not
+  develop, test, or fix bugs directly on `main`.
+- Use `dev` for normal development, tests, refactors, and bug fixes.
+- Promote validated changes from `dev` to `main` only as an explicit release
+  action after the required checks pass.
