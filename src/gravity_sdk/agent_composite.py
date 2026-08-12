@@ -7,7 +7,12 @@ from typing import Any
 
 
 _STRICT_COMPOSITES = frozenset(
-    {"dashboard_analysis", "dashboard_snapshot", "segment_snapshot"}
+    {
+        "dashboard_analysis",
+        "dashboard_snapshot",
+        "saved_analysis",
+        "segment_snapshot",
+    }
 )
 
 
@@ -85,6 +90,10 @@ def _strict_composite_query(name: str, query: str) -> bool:
         from .agent_segment_snapshot import segment_snapshot_query
 
         return segment_snapshot_query(query)
+    if name == "saved_analysis":
+        from .agent_saved_analysis import saved_analysis_query
+
+        return saved_analysis_query(query)
     return False
 
 

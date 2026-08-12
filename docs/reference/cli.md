@@ -404,7 +404,7 @@ gravity analysis segment evaluate --app main --spec segment.json --fields part,p
 `segment_evaluate` composite Plan 节点；自然语言不生成规则或自动执行。泛分群、成员、历史、
 详情和导出不会误配此卡。
 
-### Saved Analysis v1
+### Saved Analysis v2
 
 保存分析入口把稳定的保存目录、详情读取和现有 Analysis Spec 编译器连成一条受控路径。已知
 引用时不要手工执行 `operations search/describe`，直接运行：
@@ -416,29 +416,37 @@ gravity analysis saved list --app main
 # 按稳定 ID 或精确名称查看受控定义摘要
 gravity analysis saved get --app main --ref <id-or-exact-name>
 
-# 读取定义并编译，但不执行最终分析查询
-gravity analysis saved prepare --app main --ref <id-or-exact-name>
+# reference Web artifact：读取定义并编译，但不执行最终分析查询
+gravity analysis saved prepare --app main --ref <id-or-exact-name> `
+  --start 2026-08-01 --end 2026-08-07
 
 # 本地 definition 直接严格编译，零网络且不需要 Gravity 凭据
 gravity analysis saved prepare --app main --definition <json-object-or-file>
 
-# 一次解析、严格编译并执行
-gravity analysis saved run --app main --ref <id-or-exact-name>
+# reference Web artifact：一次解析、严格编译并执行
+gravity analysis saved run --app main --ref <id-or-exact-name> `
+  --start 2026-08-01 --end 2026-08-07
 ```
 
 `--app` 接受 workspace alias 或正整数。`--ref` 只接受稳定 ID 或精确名称；精确名称命中
 多个项目会以 caller/2 失败，要求改用稳定 ID，不会静默选择第一项。分析 kind 由保存定义
-中已登记的 subject 决定，调用方不能覆盖。
+中已登记的 subject 决定，调用方不能覆盖。reference 模式的 `prepare/run` 必须提供成对
+`--start/--end`，使用 ISO date/timestamp 且为 inclusive、最长 90 天；主路径建议
+`YYYY-MM-DD`。`list/get` 不要求日期窗，`get` 会明确报告
+该引用运行时是否需要 window。
 
-Strict Replay 不是通用 Web 配置翻译器。只有定义中的紧凑 spec 能被当前 Analysis Spec
-编译器原样验证时，`prepare/run` 才继续；未知字段、无法证明的 opaque config 或不支持的
-分析 kind 均结构化失败，不降级为裸请求。`prepare --ref` 为解析引用会读取在线目录以及必要
-详情，所以它不是离线 dry-run；它与 `run` 的区别是不会发送最终分析查询。`list/get` 也会
-访问已登记的 stable 只读 operation。
+Strict Replay 不是通用 Web 配置翻译器。reference 模式只接受静态证据已证明的 Web artifact，
+并直接复用现有 `event/funnel/retention/property/scatter` 五类编译器；未知字段、无法证明的
+opaque config 或其他 kind 均结构化失败，不降级为裸请求。显式 `--definition` 的 compact spec
+保留旧兼容模式。两种模式都不解释 template、layout、favourite、权限或页面状态。
+`prepare --ref` 为解析引用会读取在线目录以及必要详情，所以它不是离线 dry-run；它与 `run`
+的区别是不会发送最终分析查询。`list/get` 也会访问已登记的 stable 只读 operation。
 
-Agent 查询 `saved report templates`、`保存分析`，包括 `--domain report`，唯一强候选是
-`composite:saved_analysis`。卡片必填 `app/ref`，可选 `mode`，并提供可复制的 Plan
-节点；发现本身完全离线，也不会基于自然语言自动执行。
+Agent 查询 `run saved analysis <ref>`、`运行保存分析 <引用>`，包括 `--domain report`，唯一
+权威候选是 `composite:saved_analysis`。卡片明确缺失 `app/ref/start/end`，Plan request 为四项
+提供可机械填写的槽位，可选 `mode=prepare|run`；发现本身完全离线，也不会从自然语言提取引用
+或自动执行。已有引用和窗口但不知道能力时是 Agent + Plan 两次；引用未知时必须先 list 并由
+调用方选择，若还需 Agent 发现能力则至少三次。
 
 ### Business pulse
 

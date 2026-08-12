@@ -13,8 +13,9 @@
 | 已知人群规则 spec | `gravity analysis segment evaluate --app ... --spec ...` | 1 |
 | 不知道人群规则合同 | `gravity agent "评估人群规则命中人数"` → `plan run` | 2 |
 | 分群详情/历史/单日结果（引用已知/未知） | 已知：`analysis segment snapshot`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
-| 已知保存分析引用 | `gravity analysis saved run --app ... --ref ...` | 1 |
-| 不知道保存分析引用 | `gravity agent "saved report templates"` → 执行返回的 Plan 节点 | 2 |
+| 已知保存分析引用和日期窗 | `gravity analysis saved run --app ... --ref ... --start ... --end ...` | 1 |
+| 不知道能力、但已有引用和日期窗 | `gravity agent "run saved analysis <ref>"` → 填卡并 `plan run` | 2 |
+| 不知道保存分析引用 | `analysis saved list` → 人工选择精确引用 → `analysis saved run` | 2；若还要先发现能力则 3 |
 | 看板控制面/图表重放（引用已知/未知） | 已知：`analysis dashboard snapshot` 或 `analysis dashboard run`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
 | 已知可调用导出及完整输入 | `gravity export run ... --output <file.xlsx>` | 1 |
 | 不知道可调用导出 | `gravity agent "material report export"` → 执行 `next.argv` | 2 |
@@ -33,7 +34,7 @@
 
 经营概览和趋势直接一次调用 `gravity reports pulse --app main --start 2026-08-01 --end 2026-08-07 --include-hourly`；只有需要小时对比时加 `--include-hourly`，其结果是 `scope=workspace`。交叉 Plan 使用 composite `name=business_pulse` 和 `apps/start/end`，不要手工串行读取 overview/business。
 
-保存分析已知稳定 ID/精确名称时直接 `gravity analysis saved run --app ... --ref ...`，不要先串行 list/get/prepare。Strict Replay 不猜 Web 配置；`prepare --ref` 会联网解析引用但不执行最终查询，显式 `--definition` 才是零网络编译。自然语言发现只返回 `composite:saved_analysis` 和缺失的 `app/ref`，不会自动选择或执行。
+保存分析已知稳定 ID/精确名称和日期窗时直接 `gravity analysis saved run --app ... --ref ... --start ... --end ...`，不要先串行 list/get/prepare。reference Strict Replay 只接受已证明的五类 Web artifact，并严格复用现有编译器；`prepare --ref` 会联网解析引用但不执行最终查询，显式 compact `--definition` 保持旧模式兼容。自然语言发现只返回 `composite:saved_analysis` 和缺失的 `app/ref/start/end`，不会猜引用或自动执行。引用未知时先 `saved list` 后人工选择再 run；若此前还需要 Agent 发现能力，就是三次调用，不能宣称“两次”。
 
 看板控制面仍用 `dashboard_snapshot`；图表执行用 `analysis dashboard run --app ... --ref ... --start ... --end ...`。后者只编译静态 Web artifact 中已证明的五类 Analysis 图表，不模拟布局、收藏或页面全局筛选，单图不支持时隔离报告。未知时 `agent "run dashboard charts"` 返回缺失 `app/ref/start/end` 的 `dashboard_analysis` 节点；自然语言不自动执行，Plan 内固定 1 worker。
 
@@ -64,7 +65,7 @@ gravity run <operation-id> --input <json-or-file>
   "questions": [
     {"id": "apps", "query": "list apps", "domain": "app"},
     {"id": "events", "query": "event metadata", "domain": "analysis"},
-    {"id": "reports", "query": "saved report templates", "domain": "report"}
+    {"id": "reports", "query": "run saved analysis report-42", "domain": "report"}
   ]
 }
 ```
@@ -107,7 +108,7 @@ gravity plan run --input plan.json --dry-run
 gravity plan run --input plan.json --concurrency 6
 ```
 
-Analysis 查询复用 `analysis_query`，人群规则/快照用 `segment_evaluate`/`segment_snapshot`，看板控制面/图表用 `dashboard_snapshot`/`dashboard_analysis`。已知完整输入时一次 `plan run`；未知时 Agent 发现、调用方补齐再执行，自然语言不自动执行。同层查询由全局 pool 并发并保声明序；binding 仅可写登记目标，结果不回显 request/spec/binding 值。完整合同见 [Plan 参考](reference/plan.md)。
+Analysis 查询复用 `analysis_query`，保存分析用 `saved_analysis`，人群规则/快照用 `segment_evaluate`/`segment_snapshot`，看板控制面/图表用 `dashboard_snapshot`/`dashboard_analysis`。已知完整输入时一次 `plan run`；未知时 Agent 发现、调用方补齐再执行，自然语言不自动执行。同层查询由全局 pool 并发并保声明序；binding 仅可写登记目标，结果不回显 request/spec/binding 值。完整合同见 [Plan 参考](reference/plan.md)。
 
 ## 4. 选择 Insight 还是 SQL
 
@@ -214,7 +215,6 @@ gravity find "retention"
 `--output` 是最终文件而非 JSON envelope；超时不取消，拿 `job_id` 走 status/wait/download，无可靠 ID 先 `export list`。分阶段命令只用于恢复；导出不进入 Plan v1。详见[导出指南](guides/export.md)。
 
 ## 10. 交付
-至少说明：业务口径、`operation_id` 或 SQL product、App、时间范围、选择 Insight/SQL 的
-理由、成功/空/部分失败/能力缺口，以及不能支持的结论。不要把“没有查到”改写成“没有发生”。
+至少说明：业务口径、`operation_id` 或 SQL product、App、时间范围、选择 Insight/SQL 的理由、成功/空/部分失败/能力缺口，以及不能支持的结论。不要把“没有查到”改写成“没有发生”。
 
 CLI 退出码：`0` 成功（包括合同允许的 empty）、`2` 调用方错误、`3` 上游/权限错误、`4` 本地合同/隐私/策略错误。批量命令按最高严重级别聚合退出码，仍需读取每项结果。

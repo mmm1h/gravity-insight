@@ -115,8 +115,12 @@ segment_result = gravity.segment_evaluate(
 # 保存分析按显式引用读取；prepare 读取目录/详情但不执行最终查询。
 saved = gravity.saved_analyses("main")
 eligibility = gravity.get_saved_analysis("main", "daily purchases")
-prepared = gravity.prepare_saved_analysis("main", "daily purchases")
-replayed = gravity.run_saved_analysis("main", "daily purchases")
+prepared = gravity.prepare_saved_analysis(
+    "main", "daily purchases", start="2026-08-01", end="2026-08-07"
+)
+replayed = gravity.run_saved_analysis(
+    "main", "daily purchases", start="2026-08-01", end="2026-08-07"
+)
 
 # 并发读取经营概览与趋势；小时对比明确属于 workspace scope。
 pulse = gravity.business_pulse(
@@ -163,9 +167,9 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `segment_evaluate()` | 执行受治理的聚合人群规则人数/占比评估 |
 | `segment_snapshot()` | 按稳定 ID 或精确名称读取分群 detail/history/daily_result；不返回成员或规则 |
 | `saved_analyses()` | 列出一个 App 的安全保存分析身份，不读取 opaque config |
-| `get_saved_analysis()` | 按 ID 或精确名称检查 Strict Replay 资格，不返回 config |
-| `prepare_saved_analysis()` | 读取保存定义并严格编译，不执行最终 Analysis 查询 |
-| `run_saved_analysis()` | 一次解析、严格编译并执行保存分析；不猜 Web 配置字段 |
+| `get_saved_analysis()` | 按 ID 或精确名称检查 Strict Replay 资格及 window 要求，不返回 config |
+| `prepare_saved_analysis()` | 在显式日期窗内读取 reference Web artifact 并严格编译，不执行最终查询；compact definition 旧模式兼容 |
+| `run_saved_analysis()` | 一次解析并严格复用五类编译器后执行；不猜 Web 配置字段 |
 | `analysis_vocabulary()` | 严格离线搜索已同步的 workspace 指标、标签、媒体枚举和模板目录 |
 | `table_lineage()` | 严格离线查询已同步的 account-scope 数据表版本与操作观察 |
 | `business_pulse()` | 并发读取 App 经营概览与趋势，可选 workspace scope 小时对比 |
@@ -284,10 +288,12 @@ workspace=None)` 先在已绑定 workspace App 中按稳定 ID 或精确名称�
 `segment_evaluate()` 独立处理。
 
 保存分析四个方法都接受 workspace App alias 或正整数。列表只返回受合同允许的身份字段；
-`get/prepare/run` 的 reference 只接受稳定 ID 或精确名称，歧义时失败。Strict Replay 仅支持
-`analysis_event/funnel/retention/scatter/user_property`，并要求保存 config 原样通过
-Analysis Spec v1 与 FieldPolicy。按 reference prepare 会读取在线目录和详情；只有直接调用
-公开 `compile_saved_analysis_definition()` 并提供本地 definition 才是零网络编译。
+`get/prepare/run` 的 reference 只接受稳定 ID 或精确名称，歧义时失败。reference 模式的
+`prepare_saved_analysis()` / `run_saved_analysis()` 以 keyword-only `start/end` 接受成对的
+inclusive ISO date/timestamp（最长 90 天），严格复用 `event/funnel/retention/property/scatter`
+编译器；不维护第二套 Web 翻译器，也不解释 template/layout/favourite/权限。按 reference prepare 会读取在线
+目录和详情；公开 `compile_saved_analysis_definition()` 的 compact definition 路径保持旧兼容，
+直接提供本地 definition 才是零网络编译。
 
 `business_pulse(apps, start, end, *, platforms=(...), include_hourly=False,
 max_workers=6, max_pages=1000, max_items=100000, workspace=None)` 接受一个 App 或 App 序列；

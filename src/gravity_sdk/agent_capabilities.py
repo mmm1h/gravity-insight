@@ -13,6 +13,7 @@ from typing import Any
 
 from .find import query_match
 from .agent_dashboard import DASHBOARD_ANALYSIS_CAPABILITY
+from .agent_saved_analysis import SAVED_ANALYSIS_CAPABILITY
 from .agent_segment_snapshot import SEGMENT_SNAPSHOT_CAPABILITY
 
 
@@ -43,6 +44,7 @@ _COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
     },
     DASHBOARD_ANALYSIS_CAPABILITY,
     SEGMENT_SNAPSHOT_CAPABILITY,
+    SAVED_ANALYSIS_CAPABILITY,
     {
         "name": "dashboard_snapshot",
         "domain": "analysis",
@@ -129,45 +131,6 @@ _COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
         "required_inputs": ("app",),
         "input_schema": {
             "app": {"type": "string", "required": True, "nullable": False},
-        },
-    },
-    {
-        "name": "saved_analysis",
-        "domain": "analysis",
-        "accepted_domains": ("analysis", "report"),
-        "aliases": (
-            "saved analysis",
-            "saved report template",
-            "saved report templates",
-            "saved report",
-            "保存分析",
-            "保存的分析",
-            "已存分析",
-            "保存报表模板",
-        ),
-        "intent_terms": ("saved", "save", "保存", "已存"),
-        "description": (
-            "按稳定引用列出、读取或严格重放保存分析；重放仅接受能由现有 "
-            "Analysis Spec 编译器原样验证的定义。"
-        ),
-        "required_inputs": ("app", "ref"),
-        "input_schema": {
-            "app": {
-                "type": "string|integer",
-                "required": True,
-                "nullable": False,
-            },
-            "ref": {
-                "type": "string|integer",
-                "required": True,
-                "nullable": False,
-            },
-            "mode": {
-                "type": "string",
-                "required": False,
-                "enum": ["prepare", "run"],
-                "default": "run",
-            },
         },
     },
     {
@@ -444,7 +407,12 @@ def authoritative_capability_cards(
         for card in cards
         if card.get("kind") == "composite"
         and card.get("composite")
-        in {"dashboard_analysis", "dashboard_snapshot", "segment_snapshot"}
+        in {
+            "dashboard_analysis",
+            "dashboard_snapshot",
+            "saved_analysis",
+            "segment_snapshot",
+        }
     ]
     return (
         authoritative_composites

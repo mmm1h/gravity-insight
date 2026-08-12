@@ -248,6 +248,10 @@ def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
         from .agent_segment_snapshot import segment_snapshot_plan_request
 
         return segment_snapshot_plan_request(card)
+    if composite == "saved_analysis":
+        from .agent_saved_analysis import saved_analysis_plan_request
+
+        return saved_analysis_plan_request(card)
     return {"name": composite}
 
 

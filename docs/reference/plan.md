@@ -321,6 +321,44 @@ unsupported，其他 sibling 继续。已知 selector 是一次 `plan run`；未
 已知 app/spec 时一次 `plan run`。未知合同则一次 `gravity agent "评估人群规则命中人数"`，
 调用方按卡片 schema 填写 `app/spec`，再执行 Plan，总共两次；自然语言不会生成规则或自动执行。
 
+## Saved Analysis composite
+
+保存分析 reference replay 使用 `saved_analysis` composite；提交前必须明确 App、稳定 ID/精确
+名称和日期窗：
+
+```json
+{
+  "schema_version": "gravity.plan.v1",
+  "budget": {"max_workers": 6, "max_total_items": 200},
+  "nodes": [
+    {
+      "id": "saved_daily_purchases",
+      "kind": "composite",
+      "request": {
+        "name": "saved_analysis",
+        "app": "main",
+        "ref": "Daily purchases",
+        "start": "2026-08-01",
+        "end": "2026-08-07",
+        "mode": "run"
+      },
+      "limits": {"max_pages": 5, "max_items": 200}
+    }
+  ]
+}
+```
+
+`start/end` 必须成对提供 inclusive ISO date/timestamp 且最长 90 天（Agent 主路径使用
+`YYYY-MM-DD`）；`mode` 只允许 `prepare/run`。只有 `/app`
+可接受显式标量 binding，`ref/mode/start/end` 必须是提交前完成的 literal。reference Web artifact
+严格复用 `event/funnel/retention/property/scatter` 五类编译器，不处理 template、layout、
+favourite 或权限。多个互不依赖的保存分析应作为同层节点交给 Plan 全局 pool 并发；adapter 内
+分页 worker 固定 1，避免并发相乘。
+
+Agent 卡的 request 保留 `app/ref/start/end` 可机械填写槽位且不会自动执行。已有引用和日期窗但
+未知能力时是一次发现加一次 Plan；引用未知时必须先列目录并由调用方选择，因此若还需能力发现
+至少三次。compact definition 旧模式是显式 SDK/CLI 兼容入口，不是 Agent Plan 自动翻译面。
+
 ## Segment Snapshot composite
 
 分群详情、版本历史和指定日期的单日计算结果使用独立的 `segment_snapshot` composite：
