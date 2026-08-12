@@ -126,6 +126,12 @@ def _sanitize(value, **overrides):
     return sanitize_product_result(value, **expected)
 
 
+def _inject_unhashable_error_code(value):
+    failure = _failure("bytedance")
+    failure["error"]["code"] = []
+    value["results"][0] = failure
+
+
 class PromotionPerformanceSurfaceTests(unittest.TestCase):
     def test_cli_preflight_owns_onboarding_output_and_legacy_compatibility(self):
         invalid = (
@@ -219,11 +225,13 @@ class PromotionPerformanceSurfaceTests(unittest.TestCase):
         mutations = (
             lambda item: item.__setitem__("app_id", "8"),
             lambda item: item["date_range"].__setitem__("end", "2026-08-03"),
+            lambda item: item["results"][0].__setitem__("platform", "tencent"),
             lambda item: item["results"].reverse(),
             lambda item: item.__setitem__("metric_count", 2),
             lambda item: item["limits"].__setitem__("platform_workers", 2),
             lambda item: item.__setitem__("returned_items", 3),
             lambda item: item["results"][0].__setitem__("status", []),
+            _inject_unhashable_error_code,
         )
         for mutate in mutations:
             value = _product(("bytedance", "tencent"))
