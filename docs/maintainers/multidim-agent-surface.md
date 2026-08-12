@@ -83,4 +83,3 @@ input，App 在 input 外单独绑定，并由产品入口覆盖唯一 `app_id` 
 5. 不回显 filter values、raw inputs、原始错误或未知响应字段。
 6. 不新增 operation/probe；完整 compiler、quality、测试和 diff 门禁通过。
 7. 新增生产代码与测试代码至少 3:1，目标 4:1；复用既有底层测试，不复制合同矩阵。
-

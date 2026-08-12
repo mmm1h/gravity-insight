@@ -21,4 +21,3 @@
 | Plan composite routing | `plan_adapters.py` 已在质量上限附近，Multidim 校验/执行/投影仍内嵌 | 移入 `plan_multidim_adapter.py`，通用文件只显式路由 | 通用 adapter 行数净减，Plan 预检/绑定/预算由领域模块独立覆盖 |
 | Composite domain mixing | `CompositeService` 同时承担 snapshot 与 Multidim metadata/query；节点 worker 未传到 metadata loader | 下沉 Multidim service，保留兼容薄委托 | direct/Plan worker 使用同一预算，`CompositeService` 不再增长 |
 | Agent opaque composite | Multidim 卡只显示 `inputs: object` 且 plan request 缺槽位 | 独立 `agent_multidim.py` 输出闭合机器 schema和显式模板 | 明确中英文意图唯一命中，NL 不填业务值 |
-
