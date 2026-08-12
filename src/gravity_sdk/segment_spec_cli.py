@@ -9,11 +9,14 @@ from .domains import ANALYSIS_PAGINATED_OPERATIONS, ANALYSIS_SEGMENT_OPERATIONS
 from .errors import InputValidationError
 from .output_projection import project_output, validate_output_fields
 from .pagination_cli import page_options
+from .segment_snapshot import segment_snapshot
 from .segment_spec import (
     compile_segment_spec,
     prepare_segment_spec,
     segment_rule_spec_schema,
 )
+from .workspace import load_workspace
+from .workspace_app import resolve_workspace_app
 
 
 def add_segment_commands(
@@ -29,12 +32,12 @@ def add_segment_commands(
     parser.add_argument("--kind", choices=sorted(ANALYSIS_SEGMENT_OPERATIONS))
     add_input(parser)
     add_all_pages(parser)
-    add_segment_evaluate_command(parser)
+    add_segment_product_commands(parser)
     return parser
 
 
-def add_segment_evaluate_command(parser: Any) -> None:
-    """Add the product-shaped path while retaining legacy parser options."""
+def add_segment_product_commands(parser: Any) -> None:
+    """Add product-shaped paths while retaining legacy parser options."""
 
     commands = parser.add_subparsers(dest="segment_action")
     evaluate = commands.add_parser(
@@ -63,6 +66,36 @@ def add_segment_evaluate_command(parser: Any) -> None:
         action="append",
         help="Comma-separated aggregate fields: part, percent, total.",
     )
+    snapshot = commands.add_parser(
+        "snapshot",
+        help="Inspect one exact segment's detail, history, and daily result.",
+    )
+    snapshot.add_argument(
+        "--app", required=True, help="Workspace App alias or positive id."
+    )
+    snapshot.add_argument(
+        "--ref", required=True, help="Exact segment id or exact segment name."
+    )
+    snapshot.add_argument(
+        "--date", required=True, help="Natural day for daily_result (YYYY-MM-DD)."
+    )
+    snapshot.add_argument(
+        "--concurrency", dest="segment_snapshot_concurrency", type=int, default=3,
+        help="Independent source workers (default 3, maximum 24).",
+    )
+    snapshot.add_argument(
+        "--max-pages", dest="segment_snapshot_max_pages", type=int, default=5,
+        help="Maximum pages per paginated source (default 5).",
+    )
+    snapshot.add_argument(
+        "--max-items", dest="segment_snapshot_max_items", type=int, default=200,
+        help="Aggregate catalog, source, and row budget (default 200).",
+    )
+    snapshot.add_argument("--output", help="Write JSON or NDJSON to this local path.")
+    snapshot.add_argument(
+        "--format", choices=("json", "ndjson"), default="json"
+    )
+    snapshot.set_defaults(network_required=True)
 
 
 def run_segment_command(
@@ -77,6 +110,8 @@ def run_segment_command(
         return run_segment_evaluate_command(
             args, build_client, parse_object, call_read
         )
+    if getattr(args, "segment_action", None) == "snapshot":
+        return run_segment_snapshot_command(args, build_client)
     kind = getattr(args, "kind", None)
     if kind is None:
         raise InputValidationError(
@@ -108,6 +143,37 @@ def run_segment_command(
         parse_object(args.input),
         read_all=read_all,
         **page_options(args, all_pages=True, active=read_all),
+    )
+
+
+def run_segment_snapshot_command(
+    args: Any, build_client: Callable[..., Any]
+) -> dict[str, Any]:
+    """Bind one workspace App, then execute the bounded aggregate inspector."""
+
+    if any(
+        (
+            getattr(args, "kind", None) is not None,
+            getattr(args, "input", None) is not None,
+            bool(getattr(args, "input_sets", None)),
+            bool(getattr(args, "all_pages", False)),
+        )
+    ):
+        raise InputValidationError(
+            "segment snapshot cannot use legacy segment read arguments",
+            field="snapshot",
+            next_action="Remove --kind, --input, --set, and --all-pages before snapshot.",
+        )
+    workspace = load_workspace(getattr(args, "workspace", None))
+    app_id = resolve_workspace_app(workspace, args.app)
+    return segment_snapshot(
+        build_client(),
+        app_id,
+        args.ref,
+        date=args.date,
+        max_workers=args.segment_snapshot_concurrency,
+        max_pages=args.segment_snapshot_max_pages,
+        max_items=args.segment_snapshot_max_items,
     )
 def run_segment_evaluate_command(
     args: Any,
@@ -169,4 +235,8 @@ def _selected_fields(values: Sequence[str] | None) -> tuple[str, ...]:
     return tuple(dict.fromkeys(selected))
 
 
-__all__ = ["add_segment_commands", "run_segment_command"]
+__all__ = [
+    "add_segment_commands",
+    "run_segment_command",
+    "run_segment_snapshot_command",
+]

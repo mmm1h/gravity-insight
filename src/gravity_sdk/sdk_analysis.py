@@ -349,6 +349,34 @@ class AnalysisSdkMixin:
             max_items=max_items,
         )
 
+    def segment_snapshot(
+        self,
+        app: str | int | None,
+        ref: str | int,
+        *,
+        date: str,
+        max_workers: int = 3,
+        max_pages: int = 1_000,
+        max_items: int = 100_000,
+        workspace: Any | None = None,
+    ) -> dict[str, Any]:
+        """Inspect one exact Segment's definition, history, and daily result."""
+
+        from .segment_snapshot import segment_snapshot
+
+        selected = self._select_workspace(workspace)
+        app_id = self._resolve_app(selected, app)
+        insight = self.insight
+        return segment_snapshot(
+            insight,
+            app_id,
+            ref,
+            date=date,
+            max_workers=max_workers,
+            max_pages=max_pages,
+            max_items=max_items,
+        )
+
     def prepare_dashboard_analysis(
         self,
         app: str | int | None,

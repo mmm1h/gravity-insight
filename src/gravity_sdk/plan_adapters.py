@@ -12,7 +12,7 @@ from .composite import CompositeService, MULTIDIM_QUERY_OPERATION
 from .output_projection import validate_output_fields
 from .plan import AdapterContext, PlanAdapter, PlanAdapters
 from . import plan_analysis_adapter as analysis_plan
-from . import plan_segment_adapter as segment_plan
+from . import plan_segment_composites as segment_plan
 from . import plan_user_journey_adapter as user_journey_plan
 from . import plan_dashboard_adapter as dashboard_plan
 from .plan_binding import set_pointer
@@ -59,7 +59,7 @@ _COMPOSITES = frozenset(
         "analysis_context", "app_snapshot", "attribution_snapshot",
         "business_pulse", "saved_analysis", "multidim",
         analysis_plan.ANALYSIS_QUERY_NAME,
-        segment_plan.SEGMENT_EVALUATE_NAME,
+        *segment_plan.COMPOSITE_NAMES,
         user_journey_plan.USER_JOURNEY_NAME,
         *dashboard_plan.COMPOSITE_NAMES,
     }
@@ -372,8 +372,8 @@ def _validate_composite(
             insight, workspace, request, context
         )
         return
-    if name == segment_plan.SEGMENT_EVALUATE_NAME:
-        segment_plan.validate_segment_evaluate_plan(
+    if segment_plan.is_segment_composite(name):
+        segment_plan.validate_segment_composite(
             insight, workspace, request, context
         )
         return
@@ -494,8 +494,8 @@ def _execute_composite(
         return execute_saved_analysis_plan(sdk, request, context)
     if name == analysis_plan.ANALYSIS_QUERY_NAME:
         return analysis_plan.execute_analysis_query_plan(sdk, request, context)
-    if name == segment_plan.SEGMENT_EVALUATE_NAME:
-        return segment_plan.execute_segment_evaluate_plan(sdk, request, context)
+    if segment_plan.is_segment_composite(name):
+        return segment_plan.execute_segment_composite(sdk, request, context)
     if name == user_journey_plan.USER_JOURNEY_NAME:
         return user_journey_plan.execute_user_journey_plan(sdk, request, context)
     if dashboard_plan.is_dashboard_composite(name):
@@ -535,8 +535,8 @@ def _project_composite(
 ) -> Any:
     if analysis_plan.is_analysis_query_result(result):
         return analysis_plan.project_analysis_query_result(result, fields, context)
-    if segment_plan.is_segment_evaluate_result(result):
-        return segment_plan.project_segment_evaluate_result(result, fields, context)
+    if segment_plan.is_segment_result(result):
+        return segment_plan.project_segment_result(result, fields, context)
     if user_journey_plan.is_user_journey_result(result):
         return user_journey_plan.project_user_journey_result(result, fields, context)
     if dashboard_plan.is_dashboard_result(result):
