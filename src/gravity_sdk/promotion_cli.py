@@ -382,8 +382,28 @@ def split_values(values: Sequence[str] | None) -> list[str] | None:
 
 
 def _performance(args: Any) -> dict[str, Any]:
+    app_id, platforms, metrics = prepare_promotion_performance_request(args)
+    from .promotion_performance import promotion_performance
+
+    return promotion_performance(
+        runtime.build_client(),
+        app_id,
+        args.start,
+        args.end,
+        platforms=platforms,
+        metrics=metrics,
+        max_workers=args.concurrency,
+        max_pages=args.max_pages,
+        max_items=args.max_items,
+    )
+
+
+def prepare_promotion_performance_request(
+    args: Any,
+) -> tuple[int, tuple[str, ...], tuple[str, ...]]:
+    """Close a CLI product request without constructing a network client."""
+
     from .promotion_performance import (
-        promotion_performance,
         validate_promotion_performance_request,
     )
 
@@ -415,17 +435,7 @@ def _performance(args: Any) -> dict[str, Any]:
         max_pages=args.max_pages,
         max_items=args.max_items,
     )
-    return promotion_performance(
-        runtime.build_client(),
-        app_id,
-        args.start,
-        args.end,
-        platforms=platforms,
-        metrics=metrics,
-        max_workers=args.concurrency,
-        max_pages=args.max_pages,
-        max_items=args.max_items,
-    )
+    return app_id, platforms, metrics
 
 
 def _required_values(values: Sequence[str] | None, field: str) -> tuple[str, ...]:
@@ -463,5 +473,6 @@ __all__ = [
     "add_query_shortcuts",
     "dispatch_promotion_command",
     "merge_query_shortcuts",
+    "prepare_promotion_performance_request",
     "split_values",
 ]

@@ -50,10 +50,9 @@ def command_requires_credentials(
         args, "multidim_command", None
     ) == "query":
         return _multidim_requires_credentials(args)
-    if getattr(args, "command", None) == "materials" and getattr(
-        args, "materials_command", None
-    ) == "performance":
-        return _material_requires_credentials(args)
+    product_requirement = _product_requires_credentials(args)
+    if product_requirement is not None:
+        return product_requirement
     if bool(getattr(args, "live", False)):
         return True
     return bool(getattr(args, "network_required", True))
@@ -67,6 +66,16 @@ def _offline_flag_selected(args: Any) -> bool:
             "analysis_query_batch_dry_run", "multidim_dry_run",
         )
     )
+
+
+def _product_requires_credentials(args: Any) -> bool | None:
+    command = getattr(args, "command", None)
+    action = getattr(args, f"{command}_command", None)
+    checker = {
+        ("materials", "performance"): _material_requires_credentials,
+        ("promotion", "performance"): _promotion_requires_credentials,
+    }.get((command, action))
+    return checker(args) if checker is not None else None
 
 
 def _segment_requires_credentials(args: Any) -> bool:
@@ -200,6 +209,18 @@ def _material_requires_credentials(args: Any) -> bool:
             max_pages=getattr(args, "max_pages", None),
             max_items=getattr(args, "max_items", None),
         )
+    except (InputValidationError, OSError, TypeError, ValueError):
+        return False
+    return True
+
+
+def _promotion_requires_credentials(args: Any) -> bool:
+    """Offer login only after Promotion Performance is locally executable."""
+
+    try:
+        from .promotion_cli import prepare_promotion_performance_request
+
+        prepare_promotion_performance_request(args)
     except (InputValidationError, OSError, TypeError, ValueError):
         return False
     return True
