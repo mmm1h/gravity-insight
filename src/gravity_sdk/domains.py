@@ -488,6 +488,21 @@ ANALYSIS_AUXILIARY_OPERATIONS = _DERIVED.analysis_auxiliary_operations
 ANALYSIS_DETAIL_OPERATIONS = _DERIVED.analysis_detail_operations
 ANALYSIS_PAGINATED_OPERATIONS = _DERIVED.analysis_paginated_operations
 ATTRIBUTION_STATUS_OPERATIONS = _DERIVED.attribution_status_operations
+ATTRIBUTION_SNAPSHOT_OPERATIONS = tuple(
+    sorted(
+        operation.operation_id
+        for operation in COMPILED_CATALOG_OPERATIONS
+        if operation.domain == "attribution"
+        and operation.stability == "stable"
+        and operation.executable
+    )
+)
+ATTRIBUTION_PAGINATED_OPERATIONS = frozenset(
+    operation.operation_id
+    for operation in COMPILED_CATALOG_OPERATIONS
+    if operation.operation_id in ATTRIBUTION_SNAPSHOT_OPERATIONS
+    and operation.paginated
+)
 MULTIDIM_METADATA_OPERATIONS = _DERIVED.multidim_metadata_operations
 MULTIDIM_TEMPLATE_SCOPES = _DERIVED.multidim_template_scopes
 

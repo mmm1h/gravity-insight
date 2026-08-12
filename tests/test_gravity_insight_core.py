@@ -1420,7 +1420,14 @@ class GravityInsightCoreTests(unittest.TestCase):
         business = {
             "code": 0,
             "data": {
-                "list": [{"day": "2026-08-07", "ap_cost": 1}],
+                "list": [
+                    {
+                        "day": "2026-08-07",
+                        "advertiser_id": "advertiser-1",
+                        "gid": "group-1",
+                        "ap_cost": 1,
+                    }
+                ],
                 "page_info": {"page": 1, "page_size": 100, "total_page": 1},
             },
         }
@@ -1455,7 +1462,13 @@ class GravityInsightCoreTests(unittest.TestCase):
         self.assertEqual(4, len(transport.calls))
         self.assertEqual("success", result["status"])
         self.assertEqual(
-            {"day": "2026-08-07", "ap_cost": 1}, result["data"]["list"][0]
+            {
+                "day": "2026-08-07",
+                "advertiser_id": "advertiser-1",
+                "gid": "group-1",
+                "ap_cost": 1,
+            },
+            result["data"]["list"][0],
         )
 
     def test_multidim_numeric_suffix_metrics_are_projected_for_requested_days(self):
@@ -1580,6 +1593,55 @@ class GravityInsightCoreTests(unittest.TestCase):
         self.assertEqual("success", result["status"])
         self.assertEqual([safe_row], transport.calls[1][2]["body"]["data_list"])
 
+    def test_composite_calc_total_accepts_contracted_advertiser_and_group_ids(self):
+        multidim = repository_manifest(
+            "report.multidim.metric.list",
+            "report.multidim.query",
+            "report.multidim.calc_total",
+        )
+        metadata = {
+            "code": 0,
+            "data": {
+                "list": [
+                    {"name": "ap_cost", "tag_ids": [], "exclusion_dims": []}
+                ],
+                "page_info": {"page": 1, "page_size": 20, "total_page": 1},
+            },
+        }
+        row = {
+            "day": "2026-08-07",
+            "advertiser_id": "advertiser-1",
+            "gid": "group-1",
+            "ap_cost": 1,
+        }
+        query = {
+            "code": 0,
+            "data": {
+                "list": [row],
+                "page_info": {"page": 1, "page_size": 100, "total_page": 1},
+            },
+        }
+        total = {"code": 0, "data": {"list": [row]}}
+        with tempfile.TemporaryDirectory() as directory:
+            client, transport = client_for(
+                Path(directory),
+                [FakeResponse(metadata), FakeResponse(query), FakeResponse(total)],
+                operation_manifest=multidim,
+            )
+            result = CompositeService(client).multidim_query(
+                {
+                    "time_dims": "day",
+                    "date_list": ["2026-08-07", "2026-08-07"],
+                    "data_dims": ["day"],
+                    "metrics_list": ["ap_cost"],
+                },
+                include_total=True,
+            )
+
+        self.assertEqual("success", result["status"])
+        self.assertEqual(row, transport.calls[2][2]["body"]["data_list"][0])
+        self.assertEqual(row, result["total"]["data"]["list"][0])
+
     def test_read_all_enforces_item_limit_for_nonpaginated_direct_lists(self):
         direct_list = manifest()
         operation = direct_list["operations"][0]
@@ -1641,7 +1703,7 @@ class GravityInsightCoreTests(unittest.TestCase):
                 raise KeyError(operation_id)
 
             def read_all(self, operation_id, inputs=None, **bounds):
-                self.calls.append(("read_all", operation_id, inputs))
+                self.calls.append(("read_all", operation_id, inputs, bounds))
                 if not self.metadata_available:
                     raise InputValidationError("metadata unavailable")
                 return {
@@ -1687,6 +1749,25 @@ class GravityInsightCoreTests(unittest.TestCase):
         self.assertEqual("success", result["status"])
         calc_call = next(call for call in public.calls if call[1] == "report.multidim.calc_total")
         self.assertEqual([{"ap_cost": 1}], calc_call[2]["data_list"])
+
+        public.calls.clear()
+        paged = service.multidim_query(
+            {"metrics_list": ["ap_cost"], "data_dims": []},
+            read_all=True,
+            max_pages=7,
+            max_items=321,
+            max_workers=9,
+        )
+        self.assertEqual("success", paged["status"])
+        query_call = next(
+            call
+            for call in public.calls
+            if call[0] == "read_all" and call[1] == "report.multidim.query"
+        )
+        self.assertEqual(
+            {"max_pages": 7, "max_items": 321, "max_workers": 9},
+            query_call[3],
+        )
 
         public.calls.clear()
         with self.assertRaises(InputValidationError):

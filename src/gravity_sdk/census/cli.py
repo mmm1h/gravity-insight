@@ -39,11 +39,17 @@ def _path(value: str) -> Path:
     return Path(value).resolve()
 
 
-def build_parser() -> argparse.ArgumentParser:
+def _root_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
+        prog="gravity census",
         description="Maintainer-only Gravity frontend static route census"
     )
     parser.add_argument("--smoke", action="store_true", help="run deterministic offline smoke checks")
+    return parser
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = _root_parser()
     subparsers = parser.add_subparsers(dest="command")
 
     fetch = subparsers.add_parser("fetch", help="discover and GET public frontend bundles")

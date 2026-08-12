@@ -147,12 +147,19 @@ class ExportContractTests(unittest.TestCase):
                 {},
             )
         self.assertEqual("operation_id", raised.exception.field)
-        self.assertIn("export describe", raised.exception.next_action)
+        self.assertTrue(
+            raised.exception.next_action.startswith("Run `gravity export describe ")
+        )
         self.assertNotIn("export list`", raised.exception.next_action)
 
     def test_material_export_description_is_complete_and_runnable(self):
-        description = ExportContractRegistry.from_file(CONTRACT_PATH).describe(
-            "export.material.report.start"
+        contracts = ExportContractRegistry.from_file(CONTRACT_PATH)
+        description = contracts.describe("export.material.report.start")
+        self.assertEqual(
+            "gravity export describe export.material.report.start",
+            contracts.get("export.material.report.start").capability()[
+                "describe_command"
+            ],
         )
         self.assertTrue(description["currently_callable"])
         self.assertEqual("export_job_create", description["effect"])
@@ -172,6 +179,16 @@ class ExportContractTests(unittest.TestCase):
         self.assertEqual(
             ["start", "wait", "download"], description["workflow"]["order"]
         )
+        self.assertTrue(
+            all(
+                command.startswith("gravity export ")
+                for command in description["workflow"]["commands"]
+            )
+        )
+        self.assertTrue(
+            description["next_action"].startswith("Run `gravity export start ")
+        )
+        self.assertNotIn("python -m", json.dumps(description))
         self.assertEqual(
             "素材名称",
             description["columns"]["output_headers_by_code"]["file_name"],
@@ -193,7 +210,9 @@ class ExportContractTests(unittest.TestCase):
                 idempotency_key="fixture-export-key-0001",
             )
         self.assertEqual("data_dims", raised.exception.field)
-        self.assertIn("export describe", raised.exception.next_action)
+        self.assertTrue(
+            raised.exception.next_action.startswith("Run `gravity export describe ")
+        )
         self.assertNotIn("contracts/", raised.exception.next_action)
 
     def test_online_task_routes_lock_the_observed_request_locations(self):
@@ -472,7 +491,9 @@ class GatewayAndCliTests(unittest.TestCase):
         self.assertEqual("FAILED", result["state"])
         self.assertEqual("UPSTREAM_UNAVAILABLE", result["error"]["code"])
         self.assertEqual("upstream", result["error"]["category"])
-        self.assertIn("export list", result["error"]["next_action"])
+        self.assertTrue(
+            result["error"]["next_action"].startswith("Run `gravity export list ")
+        )
 
     def test_task_list_maps_operation_and_redacts_request_values(self):
         contracts = ExportContractRegistry.from_file(CONTRACT_PATH)

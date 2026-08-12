@@ -54,32 +54,33 @@ gravity census --smoke
 
 ## 4. 发现并执行查询
 
-不要猜 operation ID。按固定顺序执行：
+不要猜 operation ID。Agent 用两条命令完成发现、描述和执行：
 
 ```powershell
-gravity insight operations search "applications"
-gravity insight operations describe app.list
-gravity insight read app.list --all-pages --max-items 20
+gravity agent "app"
+# 选择 capability card，并执行其中的 next.argv
+gravity run app.list --max-items 20
 ```
 
-需要输入参数时可直接使用内联 JSON；只改少数字段时可追加 `--set`：
+`gravity agent` 完全离线，优先返回匹配的 workspace recipe，并用少量 stable operation 补足
+候选；每张卡都带必填参数或字段及可复制 argv。需要查看 operation 的完整 schema 时再使用
+`operations describe`；输入可用内联 JSON，只改少数字段时可追加 `--set`：
 
 ```powershell
 gravity insight operations describe analysis.event.list
-gravity insight validate analysis.event.list --input '{"app_id":"101"}'
-gravity insight read analysis.event.list --input '{"app_id":"101"}' --set page_size=100
+gravity run analysis.event.list --input '{"app_id":"101"}' --set page_size=100
 ```
 
-`describe` 的输入 schema 和 example 是调用前权威。`validate` 只做本地检查；`read` 才会访问 Gravity。
+`run` 已在一个进程完成输入校验、父资源处理、读取和诊断；不需要先机械调用 `validate`。
 
 项目提供 `gravity.toml` 时，也可以让 Resolver 在一个进程里完成绑定、校验、父资源检查、执行和诊断：
 
 ```powershell
-gravity recipe validate <recipe-name>
-gravity recipe check <recipe-name>
 gravity run @<recipe-name> --start 2026-08-01 --end 2026-08-07
 gravity run <operation-id> --app <workspace-alias> --input <json>
 ```
+
+只有 `run` 报告 recipe stale 时再执行 `gravity recipe check <recipe-name>`。
 
 workspace 可由顶层 `--workspace`、显式 API 调用、`GRAVITY_WORKSPACE` 或 cwd 向上查找选中。SDK 只读该文件；执行回执写入用户缓存，不写项目目录。配置格式见 [Workspace 参考](reference/workspace.md)。
 
@@ -98,5 +99,6 @@ gravity metadata sync --all-apps
 ## 下一步
 
 - 执行真实分析任务：[Agent 工作流](agent-workflow.md)
+- 在服务或 notebook 中使用：[Python SDK 参考](reference/sdk.md)
 - 理解 Insight、SQL 和合同层：[架构与概念](architecture.md)
 - 查完整命令分组：[CLI 参考](reference/cli.md)

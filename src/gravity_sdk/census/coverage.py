@@ -241,7 +241,7 @@ def classify_module(path: str) -> str:
     lower = path.lower()
     if _contains_any(lower, ("attribution", "postback", "click_url", "track_link", "tracking_link")):
         return "归因"
-    if _contains_any(lower, ("material", "creative", "image", "video", "media_library")):
+    if _contains_any(lower, ("material", "creative", "image", "video", "media_library")) and not re.search(r"/wechat(?:_|/)video/report/", lower):
         return "素材"
     if _contains_any(lower, ("/asset/", "promoted_object", "product_library", "audience_package")):
         return "资产"

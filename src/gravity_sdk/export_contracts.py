@@ -116,7 +116,7 @@ class ExportRouteContract:
             "currently_callable": currently_callable,
             "block_reason": self.block_reason,
             "describe_command": (
-                "python -m gravity_sdk export describe "
+                "gravity export describe "
                 f"{self.operation_id}"
             ),
             "verification": _plain(self.verification),
@@ -168,11 +168,11 @@ class ExportRouteContract:
             "verification": _plain(self.verification),
         }
         result["next_action"] = (
-            "Run `python -m gravity_sdk export start "
+            "Run `gravity export start "
             f"{self.operation_id} --input <request.json> --columns <column-codes> "
             "--idempotency-key <key>` after applying the documented substitutions."
             if currently_callable and self.effect == "export_job_create"
-            else "Run `python -m gravity_sdk export list-capabilities` "
+            else "Run `gravity export list-capabilities` "
             "and select an operation with currently_callable=true."
         )
         return result
@@ -221,7 +221,7 @@ class ExportContractRegistry:
                 f"unknown Gravity export operation: {operation_id}",
                 field="operation_id",
                 next_action=(
-                    "Run `python -m gravity_sdk export list-capabilities` "
+                    "Run `gravity export list-capabilities` "
                     "and use an operation_id from the results."
                 ),
             ) from exc
@@ -477,7 +477,7 @@ def _raise_export_input(operation_id: str, message: str, field: str) -> None:
         message,
         field=field,
         next_action=(
-            "Run `python -m gravity_sdk export describe "
+            "Run `gravity export describe "
             f"{operation_id}` and retry with the documented input."
         ),
     )
@@ -502,21 +502,21 @@ def _workflow(operation_id: str, effect: str) -> dict[str, Any]:
         "order": ["start", "wait", "download"],
         "commands": [
             (
-                "python -m gravity_sdk export start "
+                "gravity export start "
                 f"{operation_id} --input <request.json> --columns <column-codes> "
                 "--idempotency-key <key>"
             ),
             (
-                "python -m gravity_sdk export wait <job-id> "
+                "gravity export wait <job-id> "
                 f"--operation-id {operation_id} --interval 2 --timeout 300"
             ),
             (
-                "python -m gravity_sdk export download <job-id> "
+                "gravity export download <job-id> "
                 f"--operation-id {operation_id} --output <file.xlsx> --timeout 300"
             ),
         ],
         "recovery": (
-            "If start outcome is uncertain, run `python -m gravity_sdk "
+            "If start outcome is uncertain, run `gravity "
             "export list --page 1 --page-size 100` before creating another job. "
             "A wait timeout does not cancel the job."
         ),

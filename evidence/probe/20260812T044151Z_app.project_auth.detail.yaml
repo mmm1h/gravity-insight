@@ -1,0 +1,350 @@
+{
+  "conclusion": "local_or_parent_inconclusive",
+  "http": [
+    {
+      "http_status": 200,
+      "method": "GET",
+      "operation_id": "analysis.account_user.list",
+      "path": "/account_center/api/v1/user/list/",
+      "purpose": "parent",
+      "raw_schema_fingerprint": "10f1338c4e2e6530fb4dddc058b7f24ac90e6219f610b60f83873f895903e621",
+      "request_fingerprint": "60bae6d70b3f71dbdd53c061c343439b51a522a7ca66dcba179422b912ed1be6",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.query.page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.query.page_size",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.code",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].avatar",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].company_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].company_name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].create_time",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].dept_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].dept_info",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].dept_info.id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].dept_info.is_enabled",
+            "presence": "observed",
+            "types": [
+              "boolean"
+            ]
+          },
+          {
+            "path": "$.data.list[].dept_info.name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].email",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].is_banned",
+            "presence": "observed",
+            "types": [
+              "boolean"
+            ]
+          },
+          {
+            "path": "$.data.list[].is_deleted",
+            "presence": "observed",
+            "types": [
+              "boolean"
+            ]
+          },
+          {
+            "path": "$.data.list[].is_main",
+            "presence": "observed",
+            "types": [
+              "boolean"
+            ]
+          },
+          {
+            "path": "$.data.list[].is_superuser",
+            "presence": "observed",
+            "types": [
+              "boolean"
+            ]
+          },
+          {
+            "path": "$.data.list[].modify_time",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].phone",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].remark",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].roles",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].roles[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].roles[].code",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].roles[].id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].roles[].is_enabled",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].roles[].name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.page_info",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.page_info.page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.page_size",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.total_number",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.total_page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.extra",
+            "presence": "observed",
+            "types": [
+              "null"
+            ]
+          },
+          {
+            "path": "$.msg",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    }
+  ],
+  "operation_id": "app.project_auth.detail",
+  "pagination": {
+    "kind": "unknown",
+    "verified": false
+  },
+  "privacy": {
+    "candidate_fields": [],
+    "classified_non_sensitive": 0,
+    "classified_sensitive": 0,
+    "manual_review": 0,
+    "values_persisted": false
+  },
+  "probed_at": "2026-08-12T04:41:51Z",
+  "projected_schema_fingerprint": null,
+  "raw_schema_fingerprint": "10f1338c4e2e6530fb4dddc058b7f24ac90e6219f610b60f83873f895903e621",
+  "request_stats": {
+    "backoff_terminations": 0,
+    "failed": 0,
+    "total": 1
+  },
+  "required_parent": null,
+  "route": {
+    "family": "app.project_auth.detail",
+    "method": "GET",
+    "path": "/turbo_engine/api/v1/user/project_auth/detail/"
+  },
+  "schema_version": "gravity-insight.probe-evidence.v1",
+  "semantic_errors": {
+    "error_type": "ValueError",
+    "permission_shape_observed": false
+  },
+  "successful": false
+}

@@ -195,8 +195,6 @@ class GravityInsightGoldenTests(unittest.TestCase):
         operations = repository_operations()
         probed_additions = {
             "material.asset_material_media_review_list.list",
-            "material.tag_category.tree",
-            "metadata.event_property_template_event_list.list",
             "metadata.promotion_gravity_metric.list",
             "metadata.property.list",
             "promotion.bytedance.project_filter.list",
@@ -207,10 +205,8 @@ class GravityInsightGoldenTests(unittest.TestCase):
             # gi-reprobe：参数契约装配后新升 stable。
             # 本集合刻意保持显式登记而非动态计算——每个新增 stable 都必须
             # 在这里被看见，否则契约可以悄悄混进 catalog 而不被任何人察觉。
-            "promotion.bilibili.account.list",
             # gi-final-unlock：分页与 fail-closed 响应投影在线验证后新升 stable。
             "report.company_amount.query",
-            "report.overview.query",
             # gi-cid-unblock：cid 租户标识复评后通过既有完整 probe 闸门。
             "promotion.bytedance.app.list",
             # gi-privacy：隐私分类闭环后通过既有成功 probe 闸门。

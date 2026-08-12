@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from .errors import GravityInsightError, InputValidationError
+from .errors import ErrorCategory, GravityInsightError, InputValidationError
 from .parent_resolution import resolve_declared_parents
 from .receipt import RequestCounter, build_receipt, count_http_requests, persist_receipt
 from .recipe import check_recipe
@@ -46,7 +46,9 @@ def resolve_and_run(
     read_all: bool = False,
     max_pages: int | None = None,
     max_items: int | None = None,
+    max_workers: int | None = None,
     metadata_database: Path | None = None,
+    output_fields: tuple[str, ...] | list[str] | None = None,
 ) -> dict[str, Any]:
     resolver = _Resolver(
         selector=selector,
@@ -61,7 +63,9 @@ def resolve_and_run(
         read_all=read_all,
         max_pages=max_pages,
         max_items=max_items,
+        max_workers=max_workers,
         metadata_database=metadata_database,
+        output_fields=tuple(output_fields) if output_fields is not None else None,
     )
     return resolver.run()
 
@@ -80,7 +84,9 @@ class _Resolver:
     read_all: bool
     max_pages: int | None
     max_items: int | None
+    max_workers: int | None
     metadata_database: Path | None
+    output_fields: tuple[str, ...] | None
     operation_id: str = field(init=False)
     inputs: dict[str, Any] = field(default_factory=dict, init=False)
     contract_fingerprint: str | None = field(default=None, init=False)
@@ -132,6 +138,14 @@ class _Resolver:
                 start=self.start,
                 end=self.end,
             )
+            if self.output_fields is not None:
+                from .output_projection import validate_output_fields
+
+                validate_output_fields(
+                    self.description,
+                    self.output_fields,
+                    request_inputs=self.inputs,
+                )
         except _EXPECTED_ERRORS as exc:
             self.pipeline["bind"] = {"status": "error"}
             self.diagnostics.append(error_diagnostic(exc, priority=10))
@@ -231,6 +245,7 @@ class _Resolver:
                 read_all=self.read_all,
                 max_pages=self.max_pages,
                 max_items=self.max_items,
+                max_workers=self.max_workers,
             )
         except _EXPECTED_ERRORS as exc:
             self.pipeline["exec"] = {"status": "error"}
@@ -238,6 +253,15 @@ class _Resolver:
             self.pipeline["diagnose"] = {"status": "action_required"}
             return self._finish(False, "error", parents=parents)
         status = str(result.get("status", "success"))
+        if self.output_fields is not None:
+            from .output_projection import apply_output_fields
+
+            result = apply_output_fields(
+                result,
+                self.description,
+                self.output_fields,
+                request_inputs=self.inputs,
+            )
         self.pipeline["exec"] = {"status": status}
         self._diagnose_result(result, status)
         return self._finish(
@@ -299,6 +323,7 @@ class _Resolver:
             "schema_version": SCHEMA_VERSION,
             "ok": ok,
             "status": status,
+            "exit_code": _resolver_exit_code(ok, status, self.diagnostics),
             "selector": self.selector,
             "recipe": self.recipe.name if self.recipe is not None else None,
             "operation_id": self.operation_id,
@@ -320,6 +345,31 @@ class _Resolver:
         if result is not None:
             envelope["result"] = dict(result)
         return envelope
+
+
+def _resolver_exit_code(
+    ok: bool, status: str, diagnostics: list[dict[str, Any]]
+) -> int:
+    if ok:
+        return 0
+    categories = {
+        str(error.get("category"))
+        for item in diagnostics
+        if isinstance(item, Mapping)
+        for error in (item.get("error"),)
+        if isinstance(error, Mapping)
+    }
+    if ErrorCategory.LOCAL.value in categories:
+        return 4
+    if ErrorCategory.UPSTREAM.value in categories:
+        return 3
+    if ErrorCategory.CALLER.value in categories or status in {
+        "invalid",
+        "stale",
+        "needs_parent",
+    }:
+        return 2
+    return 4
 
 
 __all__ = ["parse_parameter_assignments", "resolve_and_run"]

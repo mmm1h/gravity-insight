@@ -86,7 +86,13 @@ ANALYSIS_PROPERTY_GROUP_OPERATORS = frozenset(
     }
 )
 ANALYSIS_FIXED_EVENT_FIELDS = frozenset(
-    {"PresetAllCount", "$EventCreateTime", "create_time", "$PresetAdPlatform"}
+    {
+        "PresetAllCount",
+        "PresetUserCount",
+        "$EventCreateTime",
+        "create_time",
+        "$PresetAdPlatform",
+    }
 )
 ANALYSIS_FIXED_USER_FIELDS = frozenset(
     {"PresetUserCount", "create_time", "create_date_list", "ad_platform_list"}

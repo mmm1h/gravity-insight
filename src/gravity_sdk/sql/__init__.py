@@ -16,6 +16,7 @@ from gravity_sdk.sql.export import (
     fetch_all_rows,
     fetch_all_rows_with_audit,
 )
+from gravity_sdk.sql.products import describe_products, run_product_queries
 
 __all__ = [
     "ExportAudit",
@@ -27,6 +28,8 @@ __all__ = [
     "build_paged_sql",
     "fetch_all_rows",
     "fetch_all_rows_with_audit",
+    "describe_products",
+    "run_product_queries",
     "SqlBatchRequest",
     "SqlBatchResult",
     "build_sql_client",

@@ -32,6 +32,11 @@ def add_resolver_command(
     command.add_argument("--start")
     command.add_argument("--end")
     command.add_argument(
+        "--fields",
+        action="append",
+        help="Comma-separated contracted output fields; may be repeated.",
+    )
+    command.add_argument(
         "--database", type=Path, default=None, help="Metadata catalog for diagnostics."
     )
     add_all_pages(command)
@@ -55,8 +60,22 @@ def dispatch(args: Any, object_input: Callable[[Any], Mapping[str, Any]]) -> Any
         read_all=all_pages,
         max_pages=max_pages,
         max_items=max_items,
+        max_workers=args.concurrency,
         metadata_database=args.database,
+        output_fields=_field_values(args.fields),
     )
+
+
+def _field_values(values: list[str] | None) -> tuple[str, ...] | None:
+    if not values:
+        return None
+    fields = tuple(
+        part.strip()
+        for value in values
+        for part in value.split(",")
+        if part.strip()
+    )
+    return fields or None
 
 
 __all__ = ["add_resolver_command", "dispatch"]

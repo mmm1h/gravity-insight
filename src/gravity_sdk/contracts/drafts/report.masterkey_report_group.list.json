@@ -5,7 +5,7 @@
       {
         "code": "empty_sample",
         "detail": "The observed tenant response was empty and cannot prove an item schema.",
-        "evidence": "evidence/probe/20260809T011205Z_report.masterkey_report_group.list.yaml",
+        "evidence": "evidence/probe/20260812T043757Z_report.masterkey_report_group.list.yaml",
         "status": "open"
       }
     ],
@@ -123,6 +123,17 @@
         "parent_resolved": false,
         "path": "evidence/probe/20260809T011205Z_report.masterkey_report_group.list.yaml",
         "probed_at": "2026-08-09T01:12:05Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "0d7a87f422d9bb5fe9399280216a04f6966c952f5fe65b9b6426749850320b88",
+        "successful": false
+      },
+      {
+        "conclusion": "inconclusive_empty",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": true,
+        "path": "evidence/probe/20260812T043757Z_report.masterkey_report_group.list.yaml",
+        "probed_at": "2026-08-12T04:37:57Z",
         "projected_schema_fingerprint": null,
         "raw_schema_fingerprint": "0d7a87f422d9bb5fe9399280216a04f6966c952f5fe65b9b6426749850320b88",
         "successful": false
@@ -329,10 +340,12 @@
         "type": "array"
       },
       "page": {
+        "default": 1,
         "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
         "type": "integer"
       },
       "page_size": {
+        "default": 20,
         "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
         "type": "integer"
       },

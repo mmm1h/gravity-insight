@@ -1,6 +1,6 @@
 {
   "golden_version": 1,
-  "operation_count": 133,
+  "operation_count": 137,
   "operations": [
     {
       "action": "list",
@@ -15027,6 +15027,141 @@
       "upstream_method": "GET"
     },
     {
+      "action": "tree",
+      "auth_profile": "gravity_authorization",
+      "block_reason": null,
+      "contract_version": "1",
+      "description": "素材管理域的标签分类树节点列表；返回分类标识、名称、来源、系统标记及分类下标签的标识与名称。",
+      "domain": "material",
+      "executable": true,
+      "input_fields": [],
+      "live_probe": {
+        "enabled": true,
+        "inputs": {}
+      },
+      "operation_id": "material.tag_category.tree",
+      "pagination": {
+        "default_page_size": null,
+        "items_field": "list",
+        "kind": "none",
+        "list_path": "",
+        "max_page_size": null,
+        "page_field": "",
+        "page_info_field": "page_info",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v1/asset/material_tag/tag_category/whole_tree/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "material",
+        "redact_fields": [
+          "authorization",
+          "password",
+          "token",
+          "gravity_email",
+          "access_token",
+          "cookie",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "location": "mixed",
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "tag_category",
+      "response_projection": {
+        "data_dynamic_item_fields": {},
+        "data_item_keys": {},
+        "data_keys": [],
+        "data_path_item_keys": {},
+        "data_scalar_list_types": {},
+        "data_shape": "list",
+        "dynamic_item_fields": [],
+        "empty_object_as_empty_page": false,
+        "empty_object_as_empty_result": false,
+        "item_keys": [
+          "id",
+          "is_system",
+          "name",
+          "source",
+          "tag_list"
+        ],
+        "known_omitted_data_item_keys": {},
+        "known_omitted_data_keys": [],
+        "known_omitted_item_keys": [],
+        "known_omitted_nested_item_keys": {},
+        "nested_item_keys": {
+          "tag_list": [
+            "id",
+            "name"
+          ]
+        },
+        "numeric_paths": [],
+        "opaque_json_item_keys": [],
+        "recursive_data_item_keys": {},
+        "required_data_keys": [],
+        "scalar_list_item_types": {}
+      },
+      "semantic_error_rules": [
+        {
+          "message": "Gravity rejected the read operation",
+          "operator": "truthy",
+          "path": "code",
+          "value": null,
+          "values": []
+        },
+        {
+          "message": "Gravity rejected the read operation",
+          "operator": "truthy",
+          "path": "extra.error",
+          "value": null,
+          "values": []
+        }
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
       "action": "list",
       "auth_profile": "gravity_authorization",
       "block_reason": null,
@@ -15224,6 +15359,249 @@
         ],
         "known_omitted_nested_item_keys": {},
         "nested_item_keys": {},
+        "numeric_paths": [],
+        "opaque_json_item_keys": [],
+        "recursive_data_item_keys": {},
+        "required_data_keys": [
+          "list"
+        ],
+        "scalar_list_item_types": {}
+      },
+      "semantic_error_rules": [
+        {
+          "message": "Gravity rejected the read operation",
+          "operator": "truthy",
+          "path": "code",
+          "value": null,
+          "values": []
+        },
+        {
+          "message": "Gravity rejected the read operation",
+          "operator": "truthy",
+          "path": "extra.error",
+          "value": null,
+          "values": []
+        }
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "block_reason": null,
+      "contract_version": "1",
+      "description": "事件属性模板元数据域的事件列表；返回模板关联事件及 common/custom/preset 属性的已验证结构化元数据，remark 和未知字段不输出。",
+      "domain": "metadata",
+      "executable": true,
+      "input_fields": [
+        {
+          "default": {
+            "present": true,
+            "value": 1
+          },
+          "description": "",
+          "enum": [],
+          "item_enum": [],
+          "item_type": null,
+          "max_depth": 5,
+          "max_items": null,
+          "max_length": null,
+          "min_items": null,
+          "name": "page",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "integer"
+        },
+        {
+          "default": {
+            "present": true,
+            "value": 20
+          },
+          "description": "",
+          "enum": [],
+          "item_enum": [],
+          "item_type": null,
+          "max_depth": 5,
+          "max_items": null,
+          "max_length": null,
+          "min_items": null,
+          "name": "page_size",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "integer"
+        }
+      ],
+      "live_probe": {
+        "enabled": true,
+        "inputs": {
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "metadata.event_property_template_event_list.list",
+      "pagination": {
+        "default_page_size": 20,
+        "items_field": "list",
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_field": "page_info",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v2/event/property_template/event_list/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_fields": [
+          "authorization",
+          "password",
+          "token",
+          "gravity_email",
+          "access_token",
+          "cookie",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id",
+          "remark"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "location": "mixed",
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "event_property_template_event_list",
+      "response_projection": {
+        "data_dynamic_item_fields": {},
+        "data_item_keys": {},
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "data_path_item_keys": {},
+        "data_scalar_list_types": {},
+        "data_shape": "object",
+        "dynamic_item_fields": [],
+        "empty_object_as_empty_page": false,
+        "empty_object_as_empty_result": false,
+        "item_keys": [
+          "cid",
+          "cname",
+          "create_time",
+          "id",
+          "is_preset",
+          "modify_time",
+          "name",
+          "properties",
+          "template_id",
+          "trigger_opportunity"
+        ],
+        "known_omitted_data_item_keys": {},
+        "known_omitted_data_keys": [],
+        "known_omitted_item_keys": [
+          "remark"
+        ],
+        "known_omitted_nested_item_keys": {
+          "common": [
+            "remark"
+          ],
+          "custom": [
+            "remark"
+          ],
+          "preset": [
+            "remark"
+          ]
+        },
+        "nested_item_keys": {
+          "common": [
+            "cid",
+            "cname",
+            "create_time",
+            "data_type",
+            "id",
+            "is_common",
+            "is_preset",
+            "modify_time",
+            "name",
+            "template_id"
+          ],
+          "custom": [
+            "cid",
+            "cname",
+            "create_time",
+            "data_type",
+            "id",
+            "is_common",
+            "is_preset",
+            "modify_time",
+            "name",
+            "template_id"
+          ],
+          "preset": [
+            "cid",
+            "cname",
+            "create_time",
+            "data_type",
+            "id",
+            "is_common",
+            "is_preset",
+            "modify_time",
+            "name",
+            "template_id"
+          ],
+          "properties": [
+            "common",
+            "custom",
+            "preset"
+          ]
+        },
         "numeric_paths": [],
         "opaque_json_item_keys": [],
         "recursive_data_item_keys": {},
@@ -16181,6 +16559,300 @@
           "account_name",
           "app_id",
           "app_name"
+        ],
+        "known_omitted_data_item_keys": {},
+        "known_omitted_data_keys": [],
+        "known_omitted_item_keys": [
+          "advertiser_name"
+        ],
+        "known_omitted_nested_item_keys": {},
+        "nested_item_keys": {},
+        "numeric_paths": [],
+        "opaque_json_item_keys": [],
+        "recursive_data_item_keys": {},
+        "required_data_keys": [
+          "list"
+        ],
+        "scalar_list_item_types": {}
+      },
+      "semantic_error_rules": [
+        {
+          "message": "Gravity rejected the read operation",
+          "operator": "truthy",
+          "path": "code",
+          "value": null,
+          "values": []
+        },
+        {
+          "message": "Gravity rejected the read operation",
+          "operator": "truthy",
+          "path": "extra.error",
+          "value": null,
+          "values": []
+        }
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "block_reason": null,
+      "contract_version": "1",
+      "description": "哔哩哔哩推广报表域的广告主账户报表；返回广告主与产品名称，以及曝光、点击、点击率、点击与千次曝光成本和现金、红包、三连起飞等消耗指标。",
+      "domain": "promotion",
+      "executable": true,
+      "input_fields": [
+        {
+          "default": {
+            "present": false,
+            "value": null
+          },
+          "description": "Probe candidate aligned with the verified stable report request pattern; not a server-required declaration.",
+          "enum": [],
+          "item_enum": [],
+          "item_type": "string",
+          "max_depth": 5,
+          "max_items": 2,
+          "max_length": null,
+          "min_items": 2,
+          "name": "date_list",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "array"
+        },
+        {
+          "default": {
+            "present": false,
+            "value": null
+          },
+          "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "enum": [],
+          "item_enum": [],
+          "item_type": null,
+          "max_depth": 5,
+          "max_items": null,
+          "max_length": null,
+          "min_items": null,
+          "name": "filtering",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "object"
+        },
+        {
+          "default": {
+            "present": false,
+            "value": null
+          },
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "enum": [],
+          "item_enum": [],
+          "item_type": "object",
+          "max_depth": 5,
+          "max_items": 100,
+          "max_length": null,
+          "min_items": 0,
+          "name": "filters",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "array"
+        },
+        {
+          "default": {
+            "present": false,
+            "value": null
+          },
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "enum": [],
+          "item_enum": [],
+          "item_type": "any",
+          "max_depth": 5,
+          "max_items": 100,
+          "max_length": null,
+          "min_items": 0,
+          "name": "order_by",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "array"
+        },
+        {
+          "default": {
+            "present": true,
+            "value": 1
+          },
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "enum": [],
+          "item_enum": [],
+          "item_type": null,
+          "max_depth": 5,
+          "max_items": null,
+          "max_length": null,
+          "min_items": null,
+          "name": "page",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "integer"
+        },
+        {
+          "default": {
+            "present": true,
+            "value": 20
+          },
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "enum": [],
+          "item_enum": [],
+          "item_type": null,
+          "max_depth": 5,
+          "max_items": null,
+          "max_length": null,
+          "min_items": null,
+          "name": "page_size",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "integer"
+        }
+      ],
+      "live_probe": {
+        "enabled": true,
+        "inputs": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "promotion.bilibili.account.list",
+      "pagination": {
+        "default_page_size": 20,
+        "items_field": "list",
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_field": "page_info",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/bilibili/account/report/",
+      "platform": "bilibili",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_fields": [
+          "authorization",
+          "password",
+          "token",
+          "gravity_email",
+          "access_token",
+          "cookie",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id",
+          "advertiser_name"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "date_list",
+          "filtering",
+          "filters",
+          "order_by",
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "location": "mixed",
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "account",
+      "response_projection": {
+        "data_dynamic_item_fields": {},
+        "data_item_keys": {
+          "total": [
+            "average_cost_per_thousand",
+            "click_count",
+            "click_rate",
+            "cost_per_click",
+            "san_lian_launch_total_consume",
+            "show_count",
+            "total_cash_consume",
+            "total_consume",
+            "total_red_packet_consume",
+            "total_special_red_packet_consume"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total"
+        ],
+        "data_path_item_keys": {},
+        "data_scalar_list_types": {},
+        "data_shape": "object",
+        "dynamic_item_fields": [],
+        "empty_object_as_empty_page": false,
+        "empty_object_as_empty_result": false,
+        "item_keys": [
+          "advertiser_id",
+          "average_cost_per_thousand",
+          "click_count",
+          "click_rate",
+          "cost_per_click",
+          "product_name",
+          "san_lian_launch_total_consume",
+          "show_count",
+          "total_cash_consume",
+          "total_consume",
+          "total_red_packet_consume",
+          "total_special_red_packet_consume"
         ],
         "known_omitted_data_item_keys": {},
         "known_omitted_data_keys": [],
@@ -27529,9 +28201,11 @@
         "empty_object_as_empty_page": false,
         "empty_object_as_empty_result": false,
         "item_keys": [
+          "advertiser_id",
           "app_id",
           "click_company",
           "day",
+          "gid",
           "hour",
           "week",
           "month",
@@ -29112,9 +29786,11 @@
         "empty_object_as_empty_page": false,
         "empty_object_as_empty_result": false,
         "item_keys": [
+          "advertiser_id",
           "app_id",
           "click_company",
           "day",
+          "gid",
           "hour",
           "week",
           "month",
@@ -30031,6 +30707,264 @@
       ],
       "stability": "stable",
       "upstream_method": "GET"
+    },
+    {
+      "action": "query",
+      "auth_profile": "gravity_authorization",
+      "block_reason": null,
+      "contract_version": "1",
+      "description": "App 经营报表域的概览与趋势；返回概览指标的当前值、对比值和比率，以及按日广告成本、收入、活跃、注册、付费和 ROI 趋势。",
+      "domain": "report",
+      "executable": true,
+      "input_fields": [
+        {
+          "default": {
+            "present": false,
+            "value": null
+          },
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "enum": [],
+          "item_enum": [],
+          "item_type": null,
+          "max_depth": 5,
+          "max_items": null,
+          "max_length": null,
+          "min_items": null,
+          "name": "app_ids",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "array"
+        },
+        {
+          "default": {
+            "present": false,
+            "value": null
+          },
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "enum": [],
+          "item_enum": [],
+          "item_type": "string",
+          "max_depth": 5,
+          "max_items": 2,
+          "max_length": null,
+          "min_items": 2,
+          "name": "date_list",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "array"
+        },
+        {
+          "default": {
+            "present": false,
+            "value": null
+          },
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "enum": [],
+          "item_enum": [],
+          "item_type": null,
+          "max_depth": 5,
+          "max_items": null,
+          "max_length": null,
+          "min_items": null,
+          "name": "use_cache",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "any"
+        },
+        {
+          "default": {
+            "present": true,
+            "value": false
+          },
+          "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "enum": [],
+          "item_enum": [],
+          "item_type": null,
+          "max_depth": 5,
+          "max_items": null,
+          "max_length": null,
+          "min_items": null,
+          "name": "verbose",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "boolean"
+        }
+      ],
+      "live_probe": {
+        "enabled": true,
+        "inputs": {
+          "app_ids": [],
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "use_cache": 0,
+          "verbose": false
+        }
+      },
+      "operation_id": "report.overview.query",
+      "pagination": {
+        "default_page_size": null,
+        "items_field": "list",
+        "kind": "none",
+        "list_path": "",
+        "max_page_size": null,
+        "page_field": "",
+        "page_info_field": "page_info",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v2/app/overview/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_fields": [
+          "authorization",
+          "password",
+          "token",
+          "gravity_email",
+          "access_token",
+          "cookie",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_ids",
+          "date_list",
+          "use_cache",
+          "verbose"
+        ],
+        "defaults": {
+          "verbose": false
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "location": "mixed",
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "overview",
+      "response_projection": {
+        "data_dynamic_item_fields": {},
+        "data_item_keys": {
+          "columns": [
+            "AdCost",
+            "AppActivePayAmountSumReco",
+            "AppAdFirstDayRevenueReco",
+            "AppAdRevenueReco",
+            "AppDAUReco",
+            "AppFirstDayPayAmountStandardReco",
+            "AppROIReco",
+            "AppRealRegisterCnt",
+            "AppRevenueReco"
+          ],
+          "data_overview": [
+            "base",
+            "cname",
+            "compare",
+            "name",
+            "ratio"
+          ],
+          "trend_overview2": [
+            "AdCost",
+            "AppActivePayAmountSumReco",
+            "AppAdFirstDayRevenueReco",
+            "AppAdRevenueReco",
+            "AppDAUReco",
+            "AppFirstDayPayAmountStandardReco",
+            "AppROIReco",
+            "AppRealRegisterCnt",
+            "AppRevenueReco",
+            "date"
+          ]
+        },
+        "data_keys": [
+          "columns",
+          "data_overview",
+          "trend_overview2"
+        ],
+        "data_path_item_keys": {},
+        "data_scalar_list_types": {},
+        "data_shape": "object",
+        "dynamic_item_fields": [],
+        "empty_object_as_empty_page": false,
+        "empty_object_as_empty_result": false,
+        "item_keys": [],
+        "known_omitted_data_item_keys": {
+          "data_overview": [
+            "order"
+          ]
+        },
+        "known_omitted_data_keys": [
+          "trend_overview",
+          "verbose"
+        ],
+        "known_omitted_item_keys": [],
+        "known_omitted_nested_item_keys": {},
+        "nested_item_keys": {},
+        "numeric_paths": [],
+        "opaque_json_item_keys": [],
+        "recursive_data_item_keys": {},
+        "required_data_keys": [],
+        "scalar_list_item_types": {}
+      },
+      "semantic_error_rules": [
+        {
+          "message": "Gravity rejected the read operation",
+          "operator": "truthy",
+          "path": "code",
+          "value": null,
+          "values": []
+        },
+        {
+          "message": "Gravity rejected the read operation",
+          "operator": "truthy",
+          "path": "extra.error",
+          "value": null,
+          "values": []
+        }
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
     }
   ]
 }

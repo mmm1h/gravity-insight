@@ -6,15 +6,15 @@
     "accounted_experimental": 2,
     "accounted_export_candidate": 22,
     "accounted_permission_unavailable": 1,
-    "accounted_read_candidate": 340,
+    "accounted_read_candidate": 313,
     "accounted_unsupported": 58,
-    "covered_executable": 145
+    "covered_executable": 172
   },
   "callability_summary": {
-    "candidate": 362,
+    "candidate": 335,
     "catalog_only": 8,
     "contract_only": 414,
-    "executable": 145,
+    "executable": 172,
     "unsupported": 58
   },
   "classification_policy": {
@@ -34,26 +34,6 @@
     {
       "family_id": "promotion.family.001",
       "family_kind": "same_level_cross_platform",
-      "member_count": 3,
-      "members": [
-        {
-          "method": "GET",
-          "path": "/turbo_engine/api/v1/bytedance/manager/account/by_company/"
-        },
-        {
-          "method": "GET",
-          "path": "/turbo_engine/api/v1/kuaishou/manager/account/by_company/"
-        },
-        {
-          "method": "GET",
-          "path": "/turbo_engine/api/v1/tencent/manager/account/by_company/"
-        }
-      ],
-      "signature": "GET | /turbo_engine/api/v1/{platform}/manager/account/by_company/"
-    },
-    {
-      "family_id": "promotion.family.002",
-      "family_kind": "same_level_cross_platform",
       "member_count": 2,
       "members": [
         {
@@ -68,7 +48,7 @@
       "signature": "GET | /turbo_engine/api/v1/{platform}/procedural_batch/get/"
     },
     {
-      "family_id": "promotion.family.003",
+      "family_id": "promotion.family.002",
       "family_kind": "same_level_cross_platform",
       "member_count": 5,
       "members": [
@@ -96,9 +76,9 @@
       "signature": "POST | /turbo_engine/api/v1/{platform}/account/list/"
     },
     {
-      "family_id": "promotion.family.004",
+      "family_id": "promotion.family.003",
       "family_kind": "same_level_cross_platform",
-      "member_count": 3,
+      "member_count": 2,
       "members": [
         {
           "method": "POST",
@@ -107,16 +87,12 @@
         {
           "method": "POST",
           "path": "/turbo_engine/api/v1/bilibili/advertiser/list/"
-        },
-        {
-          "method": "POST",
-          "path": "/turbo_engine/api/v1/bytedance/advertiser/list/"
         }
       ],
       "signature": "POST | /turbo_engine/api/v1/{platform}/advertiser/list/"
     },
     {
-      "family_id": "promotion.family.005",
+      "family_id": "promotion.family.004",
       "family_kind": "same_level_cross_platform",
       "member_count": 2,
       "members": [
@@ -132,7 +108,7 @@
       "signature": "POST | /turbo_engine/api/v1/{platform}/agent/list/"
     },
     {
-      "family_id": "promotion.family.006",
+      "family_id": "promotion.family.005",
       "family_kind": "same_level_cross_platform",
       "member_count": 3,
       "members": [
@@ -152,7 +128,7 @@
       "signature": "POST | /turbo_engine/api/v1/{platform}/batch_options/"
     },
     {
-      "family_id": "promotion.family.007",
+      "family_id": "promotion.family.006",
       "family_kind": "same_level_cross_platform",
       "member_count": 2,
       "members": [
@@ -168,7 +144,7 @@
       "signature": "POST | /turbo_engine/api/v1/{platform}/brand/list/"
     },
     {
-      "family_id": "promotion.family.008",
+      "family_id": "promotion.family.007",
       "family_kind": "same_level_cross_platform",
       "member_count": 3,
       "members": [
@@ -188,23 +164,7 @@
       "signature": "POST | /turbo_engine/api/v1/{platform}/campaign/list/"
     },
     {
-      "family_id": "promotion.family.009",
-      "family_kind": "same_level_cross_platform",
-      "member_count": 2,
-      "members": [
-        {
-          "method": "POST",
-          "path": "/turbo_engine/api/v1/bytedance/manage/account/list/"
-        },
-        {
-          "method": "POST",
-          "path": "/turbo_engine/api/v1/tencent/manage/account/list/"
-        }
-      ],
-      "signature": "POST | /turbo_engine/api/v1/{platform}/manage/account/list/"
-    },
-    {
-      "family_id": "promotion.family.010",
+      "family_id": "promotion.family.008",
       "family_kind": "same_level_cross_platform",
       "member_count": 3,
       "members": [
@@ -224,7 +184,7 @@
       "signature": "POST | /turbo_engine/api/v1/{platform}/manager/adgroup/list/"
     },
     {
-      "family_id": "promotion.family.011",
+      "family_id": "promotion.family.009",
       "family_kind": "same_level_cross_platform",
       "member_count": 6,
       "members": [
@@ -256,7 +216,7 @@
       "signature": "POST | /turbo_engine/api/v1/{platform}/manager/campaign/list/"
     },
     {
-      "family_id": "promotion.family.012",
+      "family_id": "promotion.family.010",
       "family_kind": "same_level_cross_platform",
       "member_count": 2,
       "members": [
@@ -272,7 +232,7 @@
       "signature": "POST | /turbo_engine/api/v1/{platform}/manager/group/list/"
     },
     {
-      "family_id": "promotion.family.013",
+      "family_id": "promotion.family.011",
       "family_kind": "same_level_cross_platform",
       "member_count": 2,
       "members": [
@@ -288,7 +248,7 @@
       "signature": "POST | /turbo_engine/api/v1/{platform}/manager/plan/list/"
     },
     {
-      "family_id": "promotion.family.014",
+      "family_id": "promotion.family.012",
       "family_kind": "same_level_cross_platform",
       "member_count": 4,
       "members": [
@@ -312,7 +272,7 @@
       "signature": "POST | /turbo_engine/api/v1/{platform}/report/adgroup/"
     },
     {
-      "family_id": "promotion.family.015",
+      "family_id": "promotion.family.013",
       "family_kind": "same_level_cross_platform",
       "member_count": 2,
       "members": [
@@ -328,7 +288,7 @@
       "signature": "POST | /turbo_engine/api/v1/{platform}/report/adgroup/list/"
     },
     {
-      "family_id": "promotion.family.016",
+      "family_id": "promotion.family.014",
       "family_kind": "same_level_cross_platform",
       "member_count": 3,
       "members": [
@@ -348,7 +308,7 @@
       "signature": "POST | /turbo_engine/api/v1/{platform}/report/campaign/"
     },
     {
-      "family_id": "promotion.family.017",
+      "family_id": "promotion.family.015",
       "family_kind": "same_level_cross_platform",
       "member_count": 8,
       "members": [
@@ -388,7 +348,7 @@
       "signature": "POST | /turbo_engine/api/v1/{platform}/report/campaign/list/"
     },
     {
-      "family_id": "promotion.family.018",
+      "family_id": "promotion.family.016",
       "family_kind": "same_level_cross_platform",
       "member_count": 5,
       "members": [
@@ -416,7 +376,7 @@
       "signature": "POST | /turbo_engine/api/v1/{platform}/report/group/list/"
     },
     {
-      "family_id": "promotion.family.019",
+      "family_id": "promotion.family.017",
       "family_kind": "same_platform_cross_level",
       "member_count": 2,
       "members": [
@@ -432,7 +392,7 @@
       "signature": "POST | alipay | /turbo_engine/api/v2/alipay/{level}/list/"
     },
     {
-      "family_id": "promotion.family.020",
+      "family_id": "promotion.family.018",
       "family_kind": "same_platform_cross_level",
       "member_count": 2,
       "members": [
@@ -448,7 +408,7 @@
       "signature": "POST | apple | /turbo_engine/api/v1/apple/{level}/v2/{level}/"
     },
     {
-      "family_id": "promotion.family.021",
+      "family_id": "promotion.family.019",
       "family_kind": "same_platform_cross_level",
       "member_count": 3,
       "members": [
@@ -468,7 +428,7 @@
       "signature": "POST | baidu | /turbo_engine/api/v1/baidu/{level}/feed/{level}/{level}/"
     },
     {
-      "family_id": "promotion.family.022",
+      "family_id": "promotion.family.020",
       "family_kind": "same_platform_cross_level",
       "member_count": 2,
       "members": [
@@ -484,7 +444,7 @@
       "signature": "POST | baidu | /turbo_engine/api/v1/baidu/{level}/{level}/{level}/"
     },
     {
-      "family_id": "promotion.family.023",
+      "family_id": "promotion.family.021",
       "family_kind": "same_platform_cross_level",
       "member_count": 2,
       "members": [
@@ -500,7 +460,7 @@
       "signature": "POST | bilibili | /turbo_engine/api/v1/bilibili/manager/{level}/list/"
     },
     {
-      "family_id": "promotion.family.024",
+      "family_id": "promotion.family.022",
       "family_kind": "same_platform_cross_level",
       "member_count": 2,
       "members": [
@@ -516,23 +476,7 @@
       "signature": "POST | bilibili | /turbo_engine/api/v1/bilibili/{level}/{level}/"
     },
     {
-      "family_id": "promotion.family.025",
-      "family_kind": "same_platform_cross_level",
-      "member_count": 2,
-      "members": [
-        {
-          "method": "POST",
-          "path": "/turbo_engine/api/v1/bytedance/advertiser/list/"
-        },
-        {
-          "method": "POST",
-          "path": "/turbo_engine/api/v1/bytedance/project/list/"
-        }
-      ],
-      "signature": "POST | bytedance | /turbo_engine/api/v1/bytedance/{level}/list/"
-    },
-    {
-      "family_id": "promotion.family.026",
+      "family_id": "promotion.family.023",
       "family_kind": "same_platform_cross_level",
       "member_count": 2,
       "members": [
@@ -548,7 +492,7 @@
       "signature": "POST | honor | /turbo_engine/api/v1/honor/manager/{level}/list/"
     },
     {
-      "family_id": "promotion.family.027",
+      "family_id": "promotion.family.024",
       "family_kind": "same_platform_cross_level",
       "member_count": 2,
       "members": [
@@ -564,7 +508,7 @@
       "signature": "POST | huawei | /turbo_engine/api/v1/huawei/manager/{level}/list/"
     },
     {
-      "family_id": "promotion.family.028",
+      "family_id": "promotion.family.025",
       "family_kind": "same_platform_cross_level",
       "member_count": 2,
       "members": [
@@ -580,7 +524,7 @@
       "signature": "POST | huawei | /turbo_engine/api/v1/huawei/{level}/{level}/"
     },
     {
-      "family_id": "promotion.family.029",
+      "family_id": "promotion.family.026",
       "family_kind": "same_platform_cross_level",
       "member_count": 2,
       "members": [
@@ -596,7 +540,7 @@
       "signature": "POST | huawei_store | /turbo_engine/api/v1/huawei/store/{level}/list/"
     },
     {
-      "family_id": "promotion.family.030",
+      "family_id": "promotion.family.027",
       "family_kind": "same_platform_cross_level",
       "member_count": 2,
       "members": [
@@ -612,7 +556,7 @@
       "signature": "POST | huya | /turbo_engine/api/v1/huya/{level}/{level}/list/"
     },
     {
-      "family_id": "promotion.family.031",
+      "family_id": "promotion.family.028",
       "family_kind": "same_platform_cross_level",
       "member_count": 2,
       "members": [
@@ -628,7 +572,7 @@
       "signature": "POST | iqiyi | /turbo_engine/api/v1/iqiyi/manager/{level}/list/"
     },
     {
-      "family_id": "promotion.family.032",
+      "family_id": "promotion.family.029",
       "family_kind": "same_platform_cross_level",
       "member_count": 2,
       "members": [
@@ -644,7 +588,7 @@
       "signature": "POST | iqiyi | /turbo_engine/api/v1/iqiyi/{level}/{level}/"
     },
     {
-      "family_id": "promotion.family.033",
+      "family_id": "promotion.family.030",
       "family_kind": "same_platform_cross_level",
       "member_count": 2,
       "members": [
@@ -660,7 +604,7 @@
       "signature": "POST | kuaishou | /turbo_engine/api/v1/kuaishou/manager/{level}/list/"
     },
     {
-      "family_id": "promotion.family.034",
+      "family_id": "promotion.family.031",
       "family_kind": "same_platform_cross_level",
       "member_count": 2,
       "members": [
@@ -676,7 +620,7 @@
       "signature": "POST | oppo | /turbo_engine/api/v1/oppo/manager/{level}/list/"
     },
     {
-      "family_id": "promotion.family.035",
+      "family_id": "promotion.family.032",
       "family_kind": "same_platform_cross_level",
       "member_count": 2,
       "members": [
@@ -692,7 +636,7 @@
       "signature": "POST | oppo | /turbo_engine/api/v1/oppo/{level}/{level}/list/"
     },
     {
-      "family_id": "promotion.family.036",
+      "family_id": "promotion.family.033",
       "family_kind": "same_platform_cross_level",
       "member_count": 2,
       "members": [
@@ -708,7 +652,7 @@
       "signature": "POST | qihu360 | /turbo_engine/api/v1/qihu360/{level}/{level}/list/"
     },
     {
-      "family_id": "promotion.family.037",
+      "family_id": "promotion.family.034",
       "family_kind": "same_platform_cross_level",
       "member_count": 2,
       "members": [
@@ -724,7 +668,7 @@
       "signature": "POST | uc | /turbo_engine/api/v1/uc/feed/{level}/list/"
     },
     {
-      "family_id": "promotion.family.038",
+      "family_id": "promotion.family.035",
       "family_kind": "same_platform_cross_level",
       "member_count": 2,
       "members": [
@@ -740,7 +684,7 @@
       "signature": "POST | uc | /turbo_engine/api/v1/uc/manager/{level}/list/"
     },
     {
-      "family_id": "promotion.family.039",
+      "family_id": "promotion.family.036",
       "family_kind": "same_platform_cross_level",
       "member_count": 3,
       "members": [
@@ -760,7 +704,7 @@
       "signature": "POST | uc | /turbo_engine/api/v1/uc/{level}/feed/{level}/list/"
     },
     {
-      "family_id": "promotion.family.040",
+      "family_id": "promotion.family.037",
       "family_kind": "same_platform_cross_level",
       "member_count": 2,
       "members": [
@@ -776,7 +720,7 @@
       "signature": "POST | uc | /turbo_engine/api/v1/uc/{level}/{level}/list/"
     },
     {
-      "family_id": "promotion.family.041",
+      "family_id": "promotion.family.038",
       "family_kind": "same_platform_cross_level",
       "member_count": 2,
       "members": [
@@ -792,7 +736,7 @@
       "signature": "POST | vivo | /turbo_engine/api/v1/vivo/{level}/list/"
     },
     {
-      "family_id": "promotion.family.042",
+      "family_id": "promotion.family.039",
       "family_kind": "same_platform_cross_level",
       "member_count": 2,
       "members": [
@@ -808,7 +752,7 @@
       "signature": "POST | vivo | /turbo_engine/api/v1/vivo/{level}/{level}/"
     },
     {
-      "family_id": "promotion.family.043",
+      "family_id": "promotion.family.040",
       "family_kind": "same_platform_cross_level",
       "member_count": 2,
       "members": [
@@ -824,7 +768,7 @@
       "signature": "POST | weibo | /turbo_engine/api/v1/weibo/manager/{level}/list/"
     },
     {
-      "family_id": "promotion.family.044",
+      "family_id": "promotion.family.041",
       "family_kind": "same_platform_cross_level",
       "member_count": 2,
       "members": [
@@ -840,7 +784,7 @@
       "signature": "POST | weibo | /turbo_engine/api/v1/weibo/{level}/{level}/list/"
     },
     {
-      "family_id": "promotion.family.045",
+      "family_id": "promotion.family.042",
       "family_kind": "same_platform_cross_level",
       "member_count": 4,
       "members": [
@@ -864,7 +808,7 @@
       "signature": "POST | xiaohongshu | /turbo_engine/api/v1/xiaohongshu/{level}/{level}/list/"
     },
     {
-      "family_id": "promotion.family.046",
+      "family_id": "promotion.family.043",
       "family_kind": "same_platform_cross_level",
       "member_count": 2,
       "members": [
@@ -880,7 +824,7 @@
       "signature": "POST | xiaomi | /turbo_engine/api/v1/xiaomi/report_v4/{level}/list/"
     },
     {
-      "family_id": "promotion.family.047",
+      "family_id": "promotion.family.044",
       "family_kind": "same_platform_cross_level",
       "member_count": 2,
       "members": [
@@ -896,7 +840,7 @@
       "signature": "POST | xiaomi | /turbo_engine/api/v1/xiaomi/{level}/{level}/list/"
     },
     {
-      "family_id": "promotion.family.048",
+      "family_id": "promotion.family.045",
       "family_kind": "same_platform_cross_level",
       "member_count": 2,
       "members": [
@@ -913,10 +857,10 @@
     }
   ],
   "family_summary": {
-    "coverage_ratio": 0.235135,
-    "families": 48,
-    "uncovered_read_routes": 370,
-    "uncovered_read_routes_with_family": 87
+    "coverage_ratio": 0.233236,
+    "families": 45,
+    "uncovered_read_routes": 343,
+    "uncovered_read_routes_with_family": 80
   },
   "manifest_reconciliation": {
     "baseline_supplied": false,
@@ -1272,6 +1216,22 @@
       },
       {
         "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "other.json",
+        "method": "GET",
+        "operation_id": "app.capacity.get",
+        "path": "/account_center/api/v1/company/capacity/info/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "other.json",
+        "method": "GET",
+        "operation_id": "app.capacity.list",
+        "path": "/account_center/api/v1/company/capacity/list/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
         "manifest_file": "candidates.json",
         "method": "GET",
         "operation_id": "app.detail",
@@ -1284,6 +1244,46 @@
         "method": "GET",
         "operation_id": "app.list",
         "path": "/turbo_engine/api/v1/user/open_app/list/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "other.json",
+        "method": "GET",
+        "operation_id": "app.permission_menu.list",
+        "path": "/account_center/api/v1/permission_menu/list/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "other.json",
+        "method": "GET",
+        "operation_id": "app.realtime_event.list",
+        "path": "/turbo_engine/api/v1/user/realtime_event/list/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "other.json",
+        "method": "GET",
+        "operation_id": "app.role.detail",
+        "path": "/account_center/api/v1/role/detail/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "other.json",
+        "method": "GET",
+        "operation_id": "app.role.list",
+        "path": "/account_center/api/v1/role/list/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "other.json",
+        "method": "GET",
+        "operation_id": "app.template.list",
+        "path": "/account_center/api/v1/role/template/list/",
         "similar_frontend_routes": []
       },
       {
@@ -1352,10 +1352,26 @@
       },
       {
         "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "material.json",
+        "method": "POST",
+        "operation_id": "material.album.list",
+        "path": "/turbo_engine/api/v1/asset/material/album/list/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
         "manifest_file": "other.json",
         "method": "GET",
         "operation_id": "material.album.tree",
         "path": "/turbo_engine/api/v1/asset/material/album/tree/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "material.json",
+        "method": "POST",
+        "operation_id": "material.asset_directional_package_bytedance.list",
+        "path": "/turbo_engine/api/v1/asset/directional_package/bytedance/list/",
         "similar_frontend_routes": []
       },
       {
@@ -1378,6 +1394,30 @@
         "category": "newly_covered_from_previously_unfetched_chunk",
         "manifest_file": "material.json",
         "method": "POST",
+        "operation_id": "material.bytedance.project_material.list",
+        "path": "/turbo_engine/api/v1/bytedance/project/material_get/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "material.json",
+        "method": "POST",
+        "operation_id": "material.bytedance.promotion_material.list",
+        "path": "/turbo_engine/api/v1/bytedance/promotion/material/list/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "material.json",
+        "method": "GET",
+        "operation_id": "material.bytedance_asset_material.list",
+        "path": "/turbo_engine/api/v1/bytedance/asset/material/list/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "material.json",
+        "method": "POST",
         "operation_id": "material.bytedance_asset_text_title.list",
         "path": "/turbo_engine/api/v1/bytedance/asset/text/title/list/",
         "similar_frontend_routes": []
@@ -1386,8 +1426,24 @@
         "category": "newly_covered_from_previously_unfetched_chunk",
         "manifest_file": "material.json",
         "method": "POST",
+        "operation_id": "material.bytedance_asset_text_title_package.list",
+        "path": "/turbo_engine/api/v1/bytedance/asset/text/title_package/list/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "material.json",
+        "method": "POST",
         "operation_id": "material.bytedance_std_asset_text_title.list",
         "path": "/turbo_engine/api/v1/bytedance/std/asset/text/title/list/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "material.json",
+        "method": "POST",
+        "operation_id": "material.bytedance_std_asset_text_title_package.list",
+        "path": "/turbo_engine/api/v1/bytedance/std/asset/text/title_package/list/",
         "similar_frontend_routes": []
       },
       {
@@ -1412,6 +1468,14 @@
         "method": "POST",
         "operation_id": "material.local.list",
         "path": "/turbo_engine/api/v1/asset/material/manage/local/list/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "material.json",
+        "method": "GET",
+        "operation_id": "material.material_examine_user.list",
+        "path": "/turbo_engine/api/v1/asset/material_examine/user_list/",
         "similar_frontend_routes": []
       },
       {
@@ -1497,6 +1561,14 @@
       {
         "category": "newly_covered_from_previously_unfetched_chunk",
         "manifest_file": "other.json",
+        "method": "GET",
+        "operation_id": "metadata.metrics.get",
+        "path": "/turbo_engine/api/v1/task/ai_trusteeship/get_metrics/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "other.json",
         "method": "POST",
         "operation_id": "metadata.operation_log.list",
         "path": "/turbo_engine/api/v2/event_dim/data_table/operation_log/list/",
@@ -1524,6 +1596,14 @@
         "method": "POST",
         "operation_id": "metadata.version.list",
         "path": "/turbo_engine/api/v2/event_dim/data_table/version/list/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "promotion.json",
+        "method": "GET",
+        "operation_id": "promotion.ai_trusteeship.detail",
+        "path": "/turbo_engine/api/v1/task/ai_trusteeship/detail/",
         "similar_frontend_routes": []
       },
       {
@@ -1586,8 +1666,32 @@
         "category": "newly_covered_from_previously_unfetched_chunk",
         "manifest_file": "promotion.json",
         "method": "POST",
+        "operation_id": "promotion.bytedance.account.list",
+        "path": "/turbo_engine/api/v1/bytedance/manage/account/list/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "promotion.json",
+        "method": "GET",
+        "operation_id": "promotion.bytedance.account_company.list",
+        "path": "/turbo_engine/api/v1/bytedance/manager/account/by_company/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "promotion.json",
+        "method": "POST",
         "operation_id": "promotion.bytedance.advertiser.list",
         "path": "/turbo_engine/api/v1/bytedance/std/advertiser/list/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "promotion.json",
+        "method": "POST",
+        "operation_id": "promotion.bytedance.advertiser_performance.list",
+        "path": "/turbo_engine/api/v1/bytedance/advertiser/list/",
         "similar_frontend_routes": []
       },
       {
@@ -1604,6 +1708,22 @@
         "method": "POST",
         "operation_id": "promotion.bytedance.custom_audience.list",
         "path": "/turbo_engine/api/v1/bytedance/custom_audience_list/v2/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "promotion.json",
+        "method": "POST",
+        "operation_id": "promotion.bytedance.manager_project.list",
+        "path": "/turbo_engine/api/v1/bytedance/manager/project/list/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "promotion.json",
+        "method": "POST",
+        "operation_id": "promotion.bytedance.manager_promotion.list",
+        "path": "/turbo_engine/api/v1/bytedance/manager/promotion/list/",
         "similar_frontend_routes": []
       },
       {
@@ -1737,6 +1857,14 @@
       {
         "category": "newly_covered_from_previously_unfetched_chunk",
         "manifest_file": "promotion.json",
+        "method": "GET",
+        "operation_id": "promotion.kuaishou.account_company.list",
+        "path": "/turbo_engine/api/v1/kuaishou/manager/account/by_company/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "promotion.json",
         "method": "POST",
         "operation_id": "promotion.kuaishou.ad_unit.list",
         "path": "/turbo_engine/api/v1/kuaishou/ad_unit/list/",
@@ -1836,6 +1964,14 @@
         "method": "POST",
         "operation_id": "promotion.taptap.group.list",
         "path": "/turbo_engine/api/v1/taptap/report/group/list/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "promotion.json",
+        "method": "GET",
+        "operation_id": "promotion.tencent.account_company.list",
+        "path": "/turbo_engine/api/v1/tencent/manager/account/by_company/",
         "similar_frontend_routes": []
       },
       {
@@ -2002,6 +2138,14 @@
         "category": "newly_covered_from_previously_unfetched_chunk",
         "manifest_file": "report.json",
         "method": "POST",
+        "operation_id": "report.hour_comparison.query",
+        "path": "/report/api/v2/app/hour_comparison/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "report.json",
+        "method": "POST",
         "operation_id": "report.metric.list",
         "path": "/turbo_engine/api/v3/confmetric/metric/list/",
         "similar_frontend_routes": []
@@ -2122,23 +2266,39 @@
         "operation_id": "report.overview.query",
         "path": "/report/api/v2/app/overview/",
         "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "report.json",
+        "method": "POST",
+        "operation_id": "report.tag.list",
+        "path": "/turbo_engine/api/v3/confmetric/tag/list/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "report.json",
+        "method": "POST",
+        "operation_id": "report.tag_category.list",
+        "path": "/turbo_engine/api/v3/confmetric/tag_category/list/",
+        "similar_frontend_routes": []
       }
     ],
     "previously_missing_breakdown": {
-      "a_previously_unfetched_chunk": 145,
+      "a_previously_unfetched_chunk": 172,
       "b_normalization_false_gap_fixed": 0,
       "c_manifest_route_absent_from_frontend": 4
     },
-    "stable_operations": 149,
+    "stable_operations": 176,
     "summary": {
       "manifest_route_absent_from_frontend": 4,
-      "newly_covered_from_previously_unfetched_chunk": 145
+      "newly_covered_from_previously_unfetched_chunk": 172
     }
   },
   "manifest_summary": {
     "manifest_files": 11,
-    "operations": 158,
-    "stable_operations": 149
+    "operations": 185,
+    "stable_operations": 176
   },
   "module_summary": [
     {
@@ -2149,39 +2309,39 @@
       "uncovered_read": 7
     },
     {
-      "covered": 50,
+      "covered": 58,
       "module": "推广平台",
-      "total": 324,
-      "uncovered": 274,
-      "uncovered_read": 152
+      "total": 326,
+      "uncovered": 268,
+      "uncovered_read": 145
     },
     {
-      "covered": 3,
+      "covered": 6,
       "module": "资产",
       "total": 78,
-      "uncovered": 75,
-      "uncovered_read": 20
+      "uncovered": 72,
+      "uncovered_read": 17
     },
     {
-      "covered": 15,
+      "covered": 19,
       "module": "素材",
-      "total": 114,
-      "uncovered": 99,
-      "uncovered_read": 47
+      "total": 112,
+      "uncovered": 93,
+      "uncovered_read": 42
+    },
+    {
+      "covered": 19,
+      "module": "报表",
+      "total": 59,
+      "uncovered": 40,
+      "uncovered_read": 24
     },
     {
       "covered": 16,
-      "module": "报表",
-      "total": 59,
-      "uncovered": 43,
-      "uncovered_read": 27
-    },
-    {
-      "covered": 9,
       "module": "App 与账号",
       "total": 130,
-      "uncovered": 121,
-      "uncovered_read": 36
+      "uncovered": 114,
+      "uncovered_read": 29
     },
     {
       "covered": 5,
@@ -2191,18 +2351,18 @@
       "uncovered_read": 5
     },
     {
-      "covered": 11,
+      "covered": 12,
       "module": "元数据",
       "total": 51,
-      "uncovered": 40,
-      "uncovered_read": 21
+      "uncovered": 39,
+      "uncovered_read": 20
     },
     {
-      "covered": 16,
+      "covered": 17,
       "module": "其它",
       "total": 139,
-      "uncovered": 123,
-      "uncovered_read": 55
+      "uncovered": 122,
+      "uncovered_read": 54
     }
   ],
   "promotion_gap_matrix": [
@@ -2594,12 +2754,12 @@
     {
       "levels": {
         "其它": {
-          "covered": 3,
+          "covered": 4,
           "total": 43,
           "unclassified": 0,
           "uncovered_auth_or_proxy": 2,
           "uncovered_export": 0,
-          "uncovered_read": 16,
+          "uncovered_read": 15,
           "uncovered_write": 22
         },
         "广告/创意": {
@@ -2648,21 +2808,21 @@
           "uncovered_write": 0
         },
         "账户": {
-          "covered": 1,
+          "covered": 4,
           "total": 6,
           "unclassified": 0,
           "uncovered_auth_or_proxy": 0,
           "uncovered_export": 0,
-          "uncovered_read": 3,
+          "uncovered_read": 0,
           "uncovered_write": 2
         },
         "项目": {
-          "covered": 2,
+          "covered": 3,
           "total": 5,
           "unclassified": 0,
           "uncovered_auth_or_proxy": 0,
           "uncovered_export": 0,
-          "uncovered_read": 3,
+          "uncovered_read": 2,
           "uncovered_write": 0
         }
       },
@@ -3110,12 +3270,12 @@
           "uncovered_write": 1
         },
         "账户": {
-          "covered": 2,
+          "covered": 3,
           "total": 7,
           "unclassified": 0,
           "uncovered_auth_or_proxy": 0,
           "uncovered_export": 0,
-          "uncovered_read": 2,
+          "uncovered_read": 1,
           "uncovered_write": 3
         },
         "项目": {
@@ -3495,12 +3655,12 @@
           "uncovered_write": 0
         },
         "账户": {
-          "covered": 1,
+          "covered": 2,
           "total": 11,
           "unclassified": 0,
           "uncovered_auth_or_proxy": 0,
           "uncovered_export": 0,
-          "uncovered_read": 6,
+          "uncovered_read": 5,
           "uncovered_write": 4
         },
         "项目": {
@@ -3745,6 +3905,83 @@
         }
       },
       "platform": "vivo"
+    },
+    {
+      "levels": {
+        "其它": {
+          "covered": 0,
+          "total": 0,
+          "unclassified": 0,
+          "uncovered_auth_or_proxy": 0,
+          "uncovered_export": 0,
+          "uncovered_read": 0,
+          "uncovered_write": 0
+        },
+        "广告/创意": {
+          "covered": 0,
+          "total": 0,
+          "unclassified": 0,
+          "uncovered_auth_or_proxy": 0,
+          "uncovered_export": 0,
+          "uncovered_read": 0,
+          "uncovered_write": 0
+        },
+        "广告组": {
+          "covered": 0,
+          "total": 0,
+          "unclassified": 0,
+          "uncovered_auth_or_proxy": 0,
+          "uncovered_export": 0,
+          "uncovered_read": 0,
+          "uncovered_write": 0
+        },
+        "报表": {
+          "covered": 1,
+          "total": 2,
+          "unclassified": 0,
+          "uncovered_auth_or_proxy": 0,
+          "uncovered_export": 0,
+          "uncovered_read": 0,
+          "uncovered_write": 1
+        },
+        "素材": {
+          "covered": 0,
+          "total": 0,
+          "unclassified": 0,
+          "uncovered_auth_or_proxy": 0,
+          "uncovered_export": 0,
+          "uncovered_read": 0,
+          "uncovered_write": 0
+        },
+        "计划": {
+          "covered": 0,
+          "total": 0,
+          "unclassified": 0,
+          "uncovered_auth_or_proxy": 0,
+          "uncovered_export": 0,
+          "uncovered_read": 0,
+          "uncovered_write": 0
+        },
+        "账户": {
+          "covered": 0,
+          "total": 0,
+          "unclassified": 0,
+          "uncovered_auth_or_proxy": 0,
+          "uncovered_export": 0,
+          "uncovered_read": 0,
+          "uncovered_write": 0
+        },
+        "项目": {
+          "covered": 0,
+          "total": 0,
+          "unclassified": 0,
+          "uncovered_auth_or_proxy": 0,
+          "uncovered_export": 0,
+          "uncovered_read": 0,
+          "uncovered_write": 0
+        }
+      },
+      "platform": "wechat_video"
     },
     {
       "levels": {
@@ -4133,9 +4370,9 @@
     }
   ],
   "read_cost_summary": {
-    "中": 82,
-    "低": 162,
-    "高": 126
+    "中": 73,
+    "低": 145,
+    "高": 125
   },
   "reservation_summary": {
     "blocked_write_operations": 414,
@@ -4475,16 +4712,16 @@
     },
     {
       "business_module": "App 与账号",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "o",
         "tt"
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "flat list/detail lookup with no evident parent dependency",
-      "estimated_implementation_cost": "低",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 11543,
         "file": "raw/web.gravity-engine.com/assets/Frame-Dal-Bq6n.js",
@@ -4492,8 +4729,16 @@
         "offset": 12120,
         "url": "https://web.gravity-engine.com/assets/Frame-Dal-Bq6n.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "GET",
+          "operation_id": "app.capacity.get",
+          "path": "/account_center/api/v1/company/capacity/info/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "GET",
       "method_certainty": "high",
       "method_evidence": [
@@ -4506,16 +4751,16 @@
       "raw_paths": [
         "/company/capacity/info/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "high",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "safe_http_method"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "不限量",
         "请输入新密码",
@@ -4525,15 +4770,15 @@
     },
     {
       "business_module": "App 与账号",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "tt"
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "flat list/detail lookup with no evident parent dependency",
-      "estimated_implementation_cost": "低",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 7421,
         "file": "raw/web.gravity-engine.com/assets/UsageOverview-D76wkWy8.js",
@@ -4541,8 +4786,16 @@
         "offset": 7420,
         "url": "https://web.gravity-engine.com/assets/UsageOverview-D76wkWy8.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "GET",
+          "operation_id": "app.capacity.list",
+          "path": "/account_center/api/v1/company/capacity/list/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "GET",
       "method_certainty": "high",
       "method_evidence": [
@@ -4555,16 +4808,16 @@
       "raw_paths": [
         "/company/capacity/list/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "high",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "safe_http_method"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "不限量"
       ]
@@ -5413,15 +5666,15 @@
     },
     {
       "business_module": "App 与账号",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "le"
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "flat list/detail lookup with no evident parent dependency",
-      "estimated_implementation_cost": "低",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 77848,
         "file": "raw/web.gravity-engine.com/assets/Role-BccHVQip.js",
@@ -5429,8 +5682,16 @@
         "offset": 77847,
         "url": "https://web.gravity-engine.com/assets/Role-BccHVQip.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "GET",
+          "operation_id": "app.permission_menu.list",
+          "path": "/account_center/api/v1/permission_menu/list/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "GET",
       "method_certainty": "high",
       "method_evidence": [
@@ -5443,16 +5704,16 @@
       "raw_paths": [
         "/permission_menu/list/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "high",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "safe_http_method"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "删除",
         "编辑"
@@ -5575,15 +5836,15 @@
     },
     {
       "business_module": "App 与账号",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "le"
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "flat list/detail lookup with no evident parent dependency",
-      "estimated_implementation_cost": "低",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 77655,
         "file": "raw/web.gravity-engine.com/assets/Role-BccHVQip.js",
@@ -5591,8 +5852,16 @@
         "offset": 77654,
         "url": "https://web.gravity-engine.com/assets/Role-BccHVQip.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "GET",
+          "operation_id": "app.role.detail",
+          "path": "/account_center/api/v1/role/detail/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "GET",
       "method_certainty": "high",
       "method_evidence": [
@@ -5605,16 +5874,16 @@
       "raw_paths": [
         "/role/detail/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "high",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "safe_http_method"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "删除",
         "编辑"
@@ -5677,16 +5946,16 @@
     },
     {
       "business_module": "App 与账号",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "Ue",
         "le"
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "flat list/detail lookup with no evident parent dependency",
-      "estimated_implementation_cost": "低",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 5172,
         "file": "raw/web.gravity-engine.com/assets/Member-BxFGcfs8.js",
@@ -5694,8 +5963,16 @@
         "offset": 5171,
         "url": "https://web.gravity-engine.com/assets/Member-BxFGcfs8.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "GET",
+          "operation_id": "app.role.list",
+          "path": "/account_center/api/v1/role/list/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "GET",
       "method_certainty": "high",
       "method_evidence": [
@@ -5708,16 +5985,16 @@
       "raw_paths": [
         "/role/list/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "high",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "safe_http_method"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "删除",
         "编辑"
@@ -5725,15 +6002,15 @@
     },
     {
       "business_module": "App 与账号",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "le"
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "flat list/detail lookup with no evident parent dependency",
-      "estimated_implementation_cost": "低",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 77929,
         "file": "raw/web.gravity-engine.com/assets/Role-BccHVQip.js",
@@ -5741,8 +6018,16 @@
         "offset": 77928,
         "url": "https://web.gravity-engine.com/assets/Role-BccHVQip.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "GET",
+          "operation_id": "app.template.list",
+          "path": "/account_center/api/v1/role/template/list/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "GET",
       "method_certainty": "high",
       "method_evidence": [
@@ -5755,16 +6040,16 @@
       "raw_paths": [
         "/role/template/list/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "high",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "safe_http_method"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "删除",
         "编辑",
@@ -11928,15 +12213,15 @@
     },
     {
       "business_module": "报表",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "P"
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "dynamic path or complex query/report semantics",
-      "estimated_implementation_cost": "高",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 5089,
         "file": "raw/web.gravity-engine.com/assets/Home-VJUev0Y8.js",
@@ -11944,8 +12229,16 @@
         "offset": 5088,
         "url": "https://web.gravity-engine.com/assets/Home-VJUev0Y8.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "POST",
+          "operation_id": "report.hour_comparison.query",
+          "path": "/report/api/v2/app/hour_comparison/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "POST",
       "method_certainty": "high",
       "method_evidence": [
@@ -11958,16 +12251,16 @@
       "raw_paths": [
         "/app/hour_comparison/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "read_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": []
     },
     {
@@ -15246,9 +15539,9 @@
         "l"
       ],
       "contract_family": {
-        "family_id": "promotion.family.004",
+        "family_id": "promotion.family.003",
         "family_kind": "same_level_cross_platform",
-        "member_count": 3
+        "member_count": 2
       },
       "contract_family_alternates": [],
       "cost_confidence": "medium",
@@ -15362,7 +15655,7 @@
         "y"
       ],
       "contract_family": {
-        "family_id": "promotion.family.003",
+        "family_id": "promotion.family.002",
         "family_kind": "same_level_cross_platform",
         "member_count": 5
       },
@@ -15841,7 +16134,7 @@
         "y"
       ],
       "contract_family": {
-        "family_id": "promotion.family.020",
+        "family_id": "promotion.family.018",
         "family_kind": "same_platform_cross_level",
         "member_count": 2
       },
@@ -15949,7 +16242,7 @@
         "y"
       ],
       "contract_family": {
-        "family_id": "promotion.family.020",
+        "family_id": "promotion.family.018",
         "family_kind": "same_platform_cross_level",
         "member_count": 2
       },
@@ -16112,7 +16405,7 @@
     },
     {
       "business_module": "资产",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "Bi",
         "Ne",
@@ -16122,9 +16415,9 @@
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "素材 lookup normally depends on a parent account or campaign",
-      "estimated_implementation_cost": "中",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 17600,
         "file": "raw/web.gravity-engine.com/assets/bytedanceBatch-mBq4gNM_.js",
@@ -16132,8 +16425,16 @@
         "offset": 17599,
         "url": "https://web.gravity-engine.com/assets/bytedanceBatch-mBq4gNM_.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "POST",
+          "operation_id": "material.asset_directional_package_bytedance.list",
+          "path": "/turbo_engine/api/v1/asset/directional_package/bytedance/list/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "POST",
       "method_certainty": "high",
       "method_evidence": [
@@ -16146,16 +16447,16 @@
       "raw_paths": [
         "/asset/directional_package/bytedance/list/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "read_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "关键词",
         "分账户选择",
@@ -16630,15 +16931,15 @@
     },
     {
       "business_module": "素材",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "v"
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "素材 lookup normally depends on a parent account or campaign",
-      "estimated_implementation_cost": "中",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 74595,
         "file": "raw/web.gravity-engine.com/assets/Clouddrive_pro-DZNkBF3z.js",
@@ -16646,8 +16947,16 @@
         "offset": 74594,
         "url": "https://web.gravity-engine.com/assets/Clouddrive_pro-DZNkBF3z.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "POST",
+          "operation_id": "material.album.list",
+          "path": "/turbo_engine/api/v1/asset/material/album/list/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "POST",
       "method_certainty": "high",
       "method_evidence": [
@@ -16660,16 +16969,16 @@
       "raw_paths": [
         "/asset/material/album/list/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "read_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "名称不能为空"
       ]
@@ -18879,16 +19188,16 @@
     },
     {
       "business_module": "素材",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "Ut",
         "kn"
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "素材 lookup normally depends on a parent account or campaign",
-      "estimated_implementation_cost": "中",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 66269,
         "file": "raw/web.gravity-engine.com/assets/Clouddrive_pro-DZNkBF3z.js",
@@ -18896,8 +19205,16 @@
         "offset": 66268,
         "url": "https://web.gravity-engine.com/assets/Clouddrive_pro-DZNkBF3z.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "GET",
+          "operation_id": "material.material_examine_user.list",
+          "path": "/turbo_engine/api/v1/asset/material_examine/user_list/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "GET",
       "method_certainty": "high",
       "method_evidence": [
@@ -18910,16 +19227,16 @@
       "raw_paths": [
         "/asset/material_examine/user_list/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "high",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "safe_http_method"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "所选标签数>50个，已自动过滤并保留至前50个",
         "最多添加50个标签",
@@ -19578,7 +19895,7 @@
         "y"
       ],
       "contract_family": {
-        "family_id": "promotion.family.021",
+        "family_id": "promotion.family.019",
         "family_kind": "same_platform_cross_level",
         "member_count": 3
       },
@@ -19630,7 +19947,7 @@
         "b"
       ],
       "contract_family": {
-        "family_id": "promotion.family.021",
+        "family_id": "promotion.family.019",
         "family_kind": "same_platform_cross_level",
         "member_count": 3
       },
@@ -19682,7 +19999,7 @@
         "m"
       ],
       "contract_family": {
-        "family_id": "promotion.family.021",
+        "family_id": "promotion.family.019",
         "family_kind": "same_platform_cross_level",
         "member_count": 3
       },
@@ -19847,7 +20164,7 @@
         "x"
       ],
       "contract_family": {
-        "family_id": "promotion.family.022",
+        "family_id": "promotion.family.020",
         "family_kind": "same_platform_cross_level",
         "member_count": 2
       },
@@ -19899,7 +20216,7 @@
         "y"
       ],
       "contract_family": {
-        "family_id": "promotion.family.022",
+        "family_id": "promotion.family.020",
         "family_kind": "same_platform_cross_level",
         "member_count": 2
       },
@@ -20623,9 +20940,9 @@
         "x"
       ],
       "contract_family": {
-        "family_id": "promotion.family.004",
+        "family_id": "promotion.family.003",
         "family_kind": "same_level_cross_platform",
-        "member_count": 3
+        "member_count": 2
       },
       "contract_family_alternates": [],
       "cost_confidence": "medium",
@@ -21094,7 +21411,7 @@
         "b"
       ],
       "contract_family": {
-        "family_id": "promotion.family.024",
+        "family_id": "promotion.family.022",
         "family_kind": "same_platform_cross_level",
         "member_count": 2
       },
@@ -21254,12 +21571,12 @@
         "x"
       ],
       "contract_family": {
-        "family_id": "promotion.family.011",
+        "family_id": "promotion.family.009",
         "family_kind": "same_level_cross_platform",
         "member_count": 6
       },
       "contract_family_alternates": [
-        "promotion.family.023"
+        "promotion.family.021"
       ],
       "cost_confidence": "medium",
       "cost_reason": "计划 lookup normally depends on a parent account or campaign",
@@ -21359,7 +21676,7 @@
         "x"
       ],
       "contract_family": {
-        "family_id": "promotion.family.023",
+        "family_id": "promotion.family.021",
         "family_kind": "same_platform_cross_level",
         "member_count": 2
       },
@@ -21498,7 +21815,7 @@
         "x"
       ],
       "contract_family": {
-        "family_id": "promotion.family.024",
+        "family_id": "promotion.family.022",
         "family_kind": "same_platform_cross_level",
         "member_count": 2
       },
@@ -21773,21 +22090,15 @@
     },
     {
       "business_module": "推广平台",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "k"
       ],
-      "contract_family": {
-        "family_id": "promotion.family.004",
-        "family_kind": "same_level_cross_platform",
-        "member_count": 3
-      },
-      "contract_family_alternates": [
-        "promotion.family.025"
-      ],
-      "cost_confidence": "medium",
-      "cost_reason": "flat list/detail lookup with no evident parent dependency",
-      "estimated_implementation_cost": "低",
+      "contract_family": null,
+      "contract_family_alternates": [],
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 3688,
         "file": "raw/web.gravity-engine.com/assets/bidAd-BcPCzJa5.js",
@@ -21795,8 +22106,16 @@
         "offset": 3687,
         "url": "https://web.gravity-engine.com/assets/bidAd-BcPCzJa5.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "POST",
+          "operation_id": "promotion.bytedance.advertiser_performance.list",
+          "path": "/turbo_engine/api/v1/bytedance/advertiser/list/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "POST",
       "method_certainty": "high",
       "method_evidence": [
@@ -21809,16 +22128,16 @@
       "raw_paths": [
         "/bytedance/advertiser/list/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "read_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "拉数功能仅限每日一次，最近更新时间：",
         "支持根据当前查询日期主动触发拉数，当任务执行完成后会更新数据。注：每个账户一天仅支持操作1次。",
@@ -21832,7 +22151,7 @@
         "a"
       ],
       "contract_family": {
-        "family_id": "promotion.family.005",
+        "family_id": "promotion.family.004",
         "family_kind": "same_level_cross_platform",
         "member_count": 2
       },
@@ -22388,15 +22707,15 @@
     },
     {
       "business_module": "素材",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "R"
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "素材 lookup normally depends on a parent account or campaign",
-      "estimated_implementation_cost": "中",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 3072,
         "file": "raw/web.gravity-engine.com/assets/CreativeModule-BOQju-tU.js",
@@ -22404,8 +22723,16 @@
         "offset": 3071,
         "url": "https://web.gravity-engine.com/assets/CreativeModule-BOQju-tU.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "GET",
+          "operation_id": "material.bytedance_asset_material.list",
+          "path": "/turbo_engine/api/v1/bytedance/asset/material/list/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "GET",
       "method_certainty": "high",
       "method_evidence": [
@@ -22418,16 +22745,16 @@
       "raw_paths": [
         "/bytedance/asset/material/list/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "high",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "safe_http_method"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "创意组件",
         "组件名",
@@ -23159,15 +23486,15 @@
     },
     {
       "business_module": "资产",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "h"
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "素材 lookup normally depends on a parent account or campaign",
-      "estimated_implementation_cost": "中",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 1354,
         "file": "raw/web.gravity-engine.com/assets/AITitle-OpvdsT9e.js",
@@ -23175,8 +23502,16 @@
         "offset": 1353,
         "url": "https://web.gravity-engine.com/assets/AITitle-OpvdsT9e.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "POST",
+          "operation_id": "material.bytedance_asset_text_title_package.list",
+          "path": "/turbo_engine/api/v1/bytedance/asset/text/title_package/list/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "POST",
       "method_certainty": "high",
       "method_evidence": [
@@ -23189,16 +23524,16 @@
       "raw_paths": [
         "/bytedance/asset/text/title_package/list/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "read_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "关联广告数",
         "标题数",
@@ -23503,7 +23838,7 @@
         "yn"
       ],
       "contract_family": {
-        "family_id": "promotion.family.006",
+        "family_id": "promotion.family.005",
         "family_kind": "same_level_cross_platform",
         "member_count": 3
       },
@@ -24534,7 +24869,7 @@
     },
     {
       "business_module": "推广平台",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "Bt",
         "F",
@@ -24557,15 +24892,11 @@
         "j",
         "ke"
       ],
-      "contract_family": {
-        "family_id": "promotion.family.009",
-        "family_kind": "same_level_cross_platform",
-        "member_count": 2
-      },
+      "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "flat list/detail lookup with no evident parent dependency",
-      "estimated_implementation_cost": "低",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 924,
         "file": "raw/web.gravity-engine.com/assets/AudiencePackage-BEe4OJTC.js",
@@ -24573,8 +24904,16 @@
         "offset": 923,
         "url": "https://web.gravity-engine.com/assets/AudiencePackage-BEe4OJTC.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "POST",
+          "operation_id": "promotion.bytedance.account.list",
+          "path": "/turbo_engine/api/v1/bytedance/manage/account/list/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "POST",
       "method_certainty": "high",
       "method_evidence": [
@@ -24587,16 +24926,16 @@
       "raw_paths": [
         "/bytedance/manage/account/list/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "read_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "${J.assetList.length} 个资产",
         "${J.eventList.length} 个事件",
@@ -24622,7 +24961,7 @@
     },
     {
       "business_module": "推广平台",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "Bt",
         "Ke",
@@ -24630,15 +24969,11 @@
         "re",
         "ve"
       ],
-      "contract_family": {
-        "family_id": "promotion.family.001",
-        "family_kind": "same_level_cross_platform",
-        "member_count": 3
-      },
+      "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "flat list/detail lookup with no evident parent dependency",
-      "estimated_implementation_cost": "低",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 4909,
         "file": "raw/web.gravity-engine.com/assets/Dmp-CyxAnU4r.js",
@@ -24646,8 +24981,16 @@
         "offset": 4908,
         "url": "https://web.gravity-engine.com/assets/Dmp-CyxAnU4r.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "GET",
+          "operation_id": "promotion.bytedance.account_company.list",
+          "path": "/turbo_engine/api/v1/bytedance/manager/account/by_company/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "GET",
       "method_certainty": "high",
       "method_evidence": [
@@ -24660,16 +25003,16 @@
       "raw_paths": [
         "/bytedance/manager/account/by_company/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "high",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "safe_http_method"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "全部",
         "已选",
@@ -24688,13 +25031,13 @@
     },
     {
       "business_module": "推广平台",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "项目 lookup normally depends on a parent account or campaign",
-      "estimated_implementation_cost": "中",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 12671,
         "file": "raw/web.gravity-engine.com/assets/Rules-ChMHnW7I.js",
@@ -24702,8 +25045,16 @@
         "offset": 12670,
         "url": "https://web.gravity-engine.com/assets/Rules-ChMHnW7I.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "POST",
+          "operation_id": "promotion.bytedance.manager_project.list",
+          "path": "/turbo_engine/api/v1/bytedance/manager/project/list/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "POST",
       "method_certainty": "high",
       "method_evidence": [
@@ -24716,16 +25067,16 @@
       "raw_paths": [
         "/bytedance/manager/project/list/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "read_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "请选择广告",
         "请选择账户",
@@ -24734,15 +25085,15 @@
     },
     {
       "business_module": "推广平台",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "media_type"
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "flat list/detail lookup with no evident parent dependency",
-      "estimated_implementation_cost": "低",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 12344,
         "file": "raw/web.gravity-engine.com/assets/Rules-ChMHnW7I.js",
@@ -24750,8 +25101,16 @@
         "offset": 12343,
         "url": "https://web.gravity-engine.com/assets/Rules-ChMHnW7I.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "POST",
+          "operation_id": "promotion.bytedance.manager_promotion.list",
+          "path": "/turbo_engine/api/v1/bytedance/manager/promotion/list/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "POST",
       "method_certainty": "high",
       "method_evidence": [
@@ -24764,16 +25123,16 @@
       "raw_paths": [
         "/bytedance/manager/promotion/list/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "read_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "请选择广告",
         "请选择账户",
@@ -25353,11 +25712,7 @@
       "callers": [
         "we"
       ],
-      "contract_family": {
-        "family_id": "promotion.family.025",
-        "family_kind": "same_platform_cross_level",
-        "member_count": 2
-      },
+      "contract_family": null,
       "contract_family_alternates": [],
       "cost_confidence": "medium",
       "cost_reason": "项目 lookup normally depends on a parent account or campaign",
@@ -25401,15 +25756,15 @@
     },
     {
       "business_module": "素材",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "He"
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "项目 lookup normally depends on a parent account or campaign",
-      "estimated_implementation_cost": "中",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 17902,
         "file": "raw/web.gravity-engine.com/assets/ad-data-BoZxCaUe.js",
@@ -25417,8 +25772,16 @@
         "offset": 17901,
         "url": "https://web.gravity-engine.com/assets/ad-data-BoZxCaUe.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "POST",
+          "operation_id": "material.bytedance.project_material.list",
+          "path": "/turbo_engine/api/v1/bytedance/project/material_get/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "POST",
       "method_certainty": "high",
       "method_evidence": [
@@ -25431,16 +25794,16 @@
       "raw_paths": [
         "/bytedance/project/material_get/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "read_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "媒体账户",
         "请输入起量预算",
@@ -25497,15 +25860,15 @@
     },
     {
       "business_module": "素材",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "fn"
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "素材 lookup normally depends on a parent account or campaign",
-      "estimated_implementation_cost": "中",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 41000,
         "file": "raw/web.gravity-engine.com/assets/bidAd-BcPCzJa5.js",
@@ -25513,8 +25876,16 @@
         "offset": 40999,
         "url": "https://web.gravity-engine.com/assets/bidAd-BcPCzJa5.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "POST",
+          "operation_id": "material.bytedance.promotion_material.list",
+          "path": "/turbo_engine/api/v1/bytedance/promotion/material/list/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "POST",
       "method_certainty": "high",
       "method_evidence": [
@@ -25527,16 +25898,16 @@
       "raw_paths": [
         "/bytedance/promotion/material/list/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "read_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "广告修改时间",
         "确认${e===0?",
@@ -26768,15 +27139,15 @@
     },
     {
       "business_module": "资产",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "h"
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "素材 lookup normally depends on a parent account or campaign",
-      "estimated_implementation_cost": "中",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 9808,
         "file": "raw/web.gravity-engine.com/assets/BytedanceStd-BTp7SlmA.js",
@@ -26784,8 +27155,16 @@
         "offset": 9807,
         "url": "https://web.gravity-engine.com/assets/BytedanceStd-BTp7SlmA.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "POST",
+          "operation_id": "material.bytedance_std_asset_text_title_package.list",
+          "path": "/turbo_engine/api/v1/bytedance/std/asset/text/title_package/list/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "POST",
       "method_certainty": "high",
       "method_evidence": [
@@ -26798,16 +27177,16 @@
       "raw_paths": [
         "/bytedance/std/asset/text/title_package/list/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "read_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "关联项目数",
         "标题数",
@@ -27838,7 +28217,7 @@
         "p"
       ],
       "contract_family": {
-        "family_id": "promotion.family.026",
+        "family_id": "promotion.family.023",
         "family_kind": "same_platform_cross_level",
         "member_count": 2
       },
@@ -27891,12 +28270,12 @@
         "y"
       ],
       "contract_family": {
-        "family_id": "promotion.family.011",
+        "family_id": "promotion.family.009",
         "family_kind": "same_level_cross_platform",
         "member_count": 6
       },
       "contract_family_alternates": [
-        "promotion.family.026"
+        "promotion.family.023"
       ],
       "cost_confidence": "medium",
       "cost_reason": "计划 lookup normally depends on a parent account or campaign",
@@ -28172,7 +28551,7 @@
         "y"
       ],
       "contract_family": {
-        "family_id": "promotion.family.003",
+        "family_id": "promotion.family.002",
         "family_kind": "same_level_cross_platform",
         "member_count": 5
       },
@@ -28228,12 +28607,12 @@
         "p"
       ],
       "contract_family": {
-        "family_id": "promotion.family.010",
+        "family_id": "promotion.family.008",
         "family_kind": "same_level_cross_platform",
         "member_count": 3
       },
       "contract_family_alternates": [
-        "promotion.family.027"
+        "promotion.family.024"
       ],
       "cost_confidence": "medium",
       "cost_reason": "广告组 lookup normally depends on a parent account or campaign",
@@ -28283,12 +28662,12 @@
         "y"
       ],
       "contract_family": {
-        "family_id": "promotion.family.011",
+        "family_id": "promotion.family.009",
         "family_kind": "same_level_cross_platform",
         "member_count": 6
       },
       "contract_family_alternates": [
-        "promotion.family.027"
+        "promotion.family.024"
       ],
       "cost_confidence": "medium",
       "cost_reason": "计划 lookup normally depends on a parent account or campaign",
@@ -28338,12 +28717,12 @@
         "p"
       ],
       "contract_family": {
-        "family_id": "promotion.family.014",
+        "family_id": "promotion.family.012",
         "family_kind": "same_level_cross_platform",
         "member_count": 4
       },
       "contract_family_alternates": [
-        "promotion.family.028"
+        "promotion.family.025"
       ],
       "cost_confidence": "medium",
       "cost_reason": "dynamic path or complex query/report semantics",
@@ -28448,12 +28827,12 @@
         "y"
       ],
       "contract_family": {
-        "family_id": "promotion.family.016",
+        "family_id": "promotion.family.014",
         "family_kind": "same_level_cross_platform",
         "member_count": 3
       },
       "contract_family_alternates": [
-        "promotion.family.028"
+        "promotion.family.025"
       ],
       "cost_confidence": "medium",
       "cost_reason": "dynamic path or complex query/report semantics",
@@ -28616,12 +28995,12 @@
         "p"
       ],
       "contract_family": {
-        "family_id": "promotion.family.003",
+        "family_id": "promotion.family.002",
         "family_kind": "same_level_cross_platform",
         "member_count": 5
       },
       "contract_family_alternates": [
-        "promotion.family.029"
+        "promotion.family.026"
       ],
       "cost_confidence": "medium",
       "cost_reason": "flat list/detail lookup with no evident parent dependency",
@@ -28723,12 +29102,12 @@
         "m"
       ],
       "contract_family": {
-        "family_id": "promotion.family.008",
+        "family_id": "promotion.family.007",
         "family_kind": "same_level_cross_platform",
         "member_count": 3
       },
       "contract_family_alternates": [
-        "promotion.family.029"
+        "promotion.family.026"
       ],
       "cost_confidence": "medium",
       "cost_reason": "计划 lookup normally depends on a parent account or campaign",
@@ -28778,7 +29157,7 @@
         "m"
       ],
       "contract_family": {
-        "family_id": "promotion.family.014",
+        "family_id": "promotion.family.012",
         "family_kind": "same_level_cross_platform",
         "member_count": 4
       },
@@ -29165,12 +29544,12 @@
         "_"
       ],
       "contract_family": {
-        "family_id": "promotion.family.017",
+        "family_id": "promotion.family.015",
         "family_kind": "same_level_cross_platform",
         "member_count": 8
       },
       "contract_family_alternates": [
-        "promotion.family.030"
+        "promotion.family.027"
       ],
       "cost_confidence": "medium",
       "cost_reason": "dynamic path or complex query/report semantics",
@@ -29267,12 +29646,12 @@
         "l"
       ],
       "contract_family": {
-        "family_id": "promotion.family.018",
+        "family_id": "promotion.family.016",
         "family_kind": "same_level_cross_platform",
         "member_count": 5
       },
       "contract_family_alternates": [
-        "promotion.family.030"
+        "promotion.family.027"
       ],
       "cost_confidence": "medium",
       "cost_reason": "dynamic path or complex query/report semantics",
@@ -29379,7 +29758,7 @@
         "u"
       ],
       "contract_family": {
-        "family_id": "promotion.family.003",
+        "family_id": "promotion.family.002",
         "family_kind": "same_level_cross_platform",
         "member_count": 5
       },
@@ -29436,12 +29815,12 @@
         "u"
       ],
       "contract_family": {
-        "family_id": "promotion.family.012",
+        "family_id": "promotion.family.010",
         "family_kind": "same_level_cross_platform",
         "member_count": 2
       },
       "contract_family_alternates": [
-        "promotion.family.031"
+        "promotion.family.028"
       ],
       "cost_confidence": "medium",
       "cost_reason": "广告组 lookup normally depends on a parent account or campaign",
@@ -29491,12 +29870,12 @@
         "l"
       ],
       "contract_family": {
-        "family_id": "promotion.family.013",
+        "family_id": "promotion.family.011",
         "family_kind": "same_level_cross_platform",
         "member_count": 2
       },
       "contract_family_alternates": [
-        "promotion.family.031"
+        "promotion.family.028"
       ],
       "cost_confidence": "medium",
       "cost_reason": "flat list/detail lookup with no evident parent dependency",
@@ -29545,12 +29924,12 @@
         "l"
       ],
       "contract_family": {
-        "family_id": "promotion.family.014",
+        "family_id": "promotion.family.012",
         "family_kind": "same_level_cross_platform",
         "member_count": 4
       },
       "contract_family_alternates": [
-        "promotion.family.032"
+        "promotion.family.029"
       ],
       "cost_confidence": "medium",
       "cost_reason": "dynamic path or complex query/report semantics",
@@ -29655,12 +30034,12 @@
         "u"
       ],
       "contract_family": {
-        "family_id": "promotion.family.016",
+        "family_id": "promotion.family.014",
         "family_kind": "same_level_cross_platform",
         "member_count": 3
       },
       "contract_family_alternates": [
-        "promotion.family.032"
+        "promotion.family.029"
       ],
       "cost_confidence": "medium",
       "cost_reason": "dynamic path or complex query/report semantics",
@@ -29877,7 +30256,7 @@
         "a"
       ],
       "contract_family": {
-        "family_id": "promotion.family.005",
+        "family_id": "promotion.family.004",
         "family_kind": "same_level_cross_platform",
         "member_count": 2
       },
@@ -30549,7 +30928,7 @@
         "oe"
       ],
       "contract_family": {
-        "family_id": "promotion.family.006",
+        "family_id": "promotion.family.005",
         "family_kind": "same_level_cross_platform",
         "member_count": 3
       },
@@ -30663,7 +31042,7 @@
         "O"
       ],
       "contract_family": {
-        "family_id": "promotion.family.008",
+        "family_id": "promotion.family.007",
         "family_kind": "same_level_cross_platform",
         "member_count": 3
       },
@@ -31175,20 +31554,16 @@
     },
     {
       "business_module": "推广平台",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "Ke",
         "ve"
       ],
-      "contract_family": {
-        "family_id": "promotion.family.001",
-        "family_kind": "same_level_cross_platform",
-        "member_count": 3
-      },
+      "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "flat list/detail lookup with no evident parent dependency",
-      "estimated_implementation_cost": "低",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 5431,
         "file": "raw/web.gravity-engine.com/assets/Form-CzFlzzxB.js",
@@ -31196,8 +31571,16 @@
         "offset": 5430,
         "url": "https://web.gravity-engine.com/assets/Form-CzFlzzxB.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "GET",
+          "operation_id": "promotion.kuaishou.account_company.list",
+          "path": "/turbo_engine/api/v1/kuaishou/manager/account/by_company/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "GET",
       "method_certainty": "high",
       "method_evidence": [
@@ -31210,16 +31593,16 @@
       "raw_paths": [
         "/kuaishou/manager/account/by_company/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "high",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "safe_http_method"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "支持批量复制，用空格或者逗号分隔",
         "账户id",
@@ -31235,7 +31618,7 @@
         "oe"
       ],
       "contract_family": {
-        "family_id": "promotion.family.033",
+        "family_id": "promotion.family.030",
         "family_kind": "same_platform_cross_level",
         "member_count": 2
       },
@@ -31294,12 +31677,12 @@
         "s"
       ],
       "contract_family": {
-        "family_id": "promotion.family.011",
+        "family_id": "promotion.family.009",
         "family_kind": "same_level_cross_platform",
         "member_count": 6
       },
       "contract_family_alternates": [
-        "promotion.family.033"
+        "promotion.family.030"
       ],
       "cost_confidence": "medium",
       "cost_reason": "计划 lookup normally depends on a parent account or campaign",
@@ -31466,7 +31849,7 @@
         "i"
       ],
       "contract_family": {
-        "family_id": "promotion.family.002",
+        "family_id": "promotion.family.001",
         "family_kind": "same_level_cross_platform",
         "member_count": 2
       },
@@ -33802,7 +34185,7 @@
         "vn"
       ],
       "contract_family": {
-        "family_id": "promotion.family.007",
+        "family_id": "promotion.family.006",
         "family_kind": "same_level_cross_platform",
         "member_count": 2
       },
@@ -33917,12 +34300,12 @@
         "l"
       ],
       "contract_family": {
-        "family_id": "promotion.family.012",
+        "family_id": "promotion.family.010",
         "family_kind": "same_level_cross_platform",
         "member_count": 2
       },
       "contract_family_alternates": [
-        "promotion.family.034"
+        "promotion.family.031"
       ],
       "cost_confidence": "medium",
       "cost_reason": "广告组 lookup normally depends on a parent account or campaign",
@@ -33972,12 +34355,12 @@
         "v"
       ],
       "contract_family": {
-        "family_id": "promotion.family.013",
+        "family_id": "promotion.family.011",
         "family_kind": "same_level_cross_platform",
         "member_count": 2
       },
       "contract_family_alternates": [
-        "promotion.family.034"
+        "promotion.family.031"
       ],
       "cost_confidence": "medium",
       "cost_reason": "flat list/detail lookup with no evident parent dependency",
@@ -34028,7 +34411,7 @@
         "Fa"
       ],
       "contract_family": {
-        "family_id": "promotion.family.002",
+        "family_id": "promotion.family.001",
         "family_kind": "same_level_cross_platform",
         "member_count": 2
       },
@@ -34243,12 +34626,12 @@
         "l"
       ],
       "contract_family": {
-        "family_id": "promotion.family.018",
+        "family_id": "promotion.family.016",
         "family_kind": "same_level_cross_platform",
         "member_count": 5
       },
       "contract_family_alternates": [
-        "promotion.family.035"
+        "promotion.family.032"
       ],
       "cost_confidence": "medium",
       "cost_reason": "dynamic path or complex query/report semantics",
@@ -34297,7 +34680,7 @@
         "v"
       ],
       "contract_family": {
-        "family_id": "promotion.family.035",
+        "family_id": "promotion.family.032",
         "family_kind": "same_platform_cross_level",
         "member_count": 2
       },
@@ -34981,12 +35364,12 @@
         "_"
       ],
       "contract_family": {
-        "family_id": "promotion.family.017",
+        "family_id": "promotion.family.015",
         "family_kind": "same_level_cross_platform",
         "member_count": 8
       },
       "contract_family_alternates": [
-        "promotion.family.036"
+        "promotion.family.033"
       ],
       "cost_confidence": "medium",
       "cost_reason": "dynamic path or complex query/report semantics",
@@ -35083,12 +35466,12 @@
         "l"
       ],
       "contract_family": {
-        "family_id": "promotion.family.018",
+        "family_id": "promotion.family.016",
         "family_kind": "same_level_cross_platform",
         "member_count": 5
       },
       "contract_family_alternates": [
-        "promotion.family.036"
+        "promotion.family.033"
       ],
       "cost_confidence": "medium",
       "cost_reason": "dynamic path or complex query/report semantics",
@@ -35369,7 +35752,7 @@
         "l"
       ],
       "contract_family": {
-        "family_id": "promotion.family.017",
+        "family_id": "promotion.family.015",
         "family_kind": "same_level_cross_platform",
         "member_count": 8
       },
@@ -36470,15 +36853,15 @@
     },
     {
       "business_module": "其它",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "dvertiser_id"
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "flat list/detail lookup with no evident parent dependency",
-      "estimated_implementation_cost": "低",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 12585,
         "file": "raw/web.gravity-engine.com/assets/Rules-ChMHnW7I.js",
@@ -36486,8 +36869,16 @@
         "offset": 12584,
         "url": "https://web.gravity-engine.com/assets/Rules-ChMHnW7I.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "GET",
+          "operation_id": "promotion.ai_trusteeship.detail",
+          "path": "/turbo_engine/api/v1/task/ai_trusteeship/detail/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "GET",
       "method_certainty": "high",
       "method_evidence": [
@@ -36500,16 +36891,16 @@
       "raw_paths": [
         "/task/ai_trusteeship/detail/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "high",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "safe_http_method"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "请选择广告",
         "请选择账户",
@@ -36574,7 +36965,7 @@
     },
     {
       "business_module": "元数据",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "c",
         "he",
@@ -36583,9 +36974,9 @@
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "flat list/detail lookup with no evident parent dependency",
-      "estimated_implementation_cost": "低",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 12019,
         "file": "raw/web.gravity-engine.com/assets/Rules-ChMHnW7I.js",
@@ -36593,8 +36984,16 @@
         "offset": 12018,
         "url": "https://web.gravity-engine.com/assets/Rules-ChMHnW7I.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "GET",
+          "operation_id": "metadata.metrics.get",
+          "path": "/turbo_engine/api/v1/task/ai_trusteeship/get_metrics/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "GET",
       "method_certainty": "high",
       "method_evidence": [
@@ -36607,16 +37006,16 @@
       "raw_paths": [
         "/task/ai_trusteeship/get_metrics/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "high",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "safe_http_method"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "发送通知",
         "失败：",
@@ -39646,7 +40045,7 @@
         "v"
       ],
       "contract_family": {
-        "family_id": "promotion.family.006",
+        "family_id": "promotion.family.005",
         "family_kind": "same_level_cross_platform",
         "member_count": 3
       },
@@ -40036,7 +40435,7 @@
         "c"
       ],
       "contract_family": {
-        "family_id": "promotion.family.007",
+        "family_id": "promotion.family.006",
         "family_kind": "same_level_cross_platform",
         "member_count": 2
       },
@@ -40165,11 +40564,7 @@
         "ui",
         "ve"
       ],
-      "contract_family": {
-        "family_id": "promotion.family.009",
-        "family_kind": "same_level_cross_platform",
-        "member_count": 2
-      },
+      "contract_family": null,
       "contract_family_alternates": [],
       "cost_confidence": "medium",
       "cost_reason": "flat list/detail lookup with no evident parent dependency",
@@ -40382,20 +40777,16 @@
     },
     {
       "business_module": "推广平台",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "Ke",
         "ve"
       ],
-      "contract_family": {
-        "family_id": "promotion.family.001",
-        "family_kind": "same_level_cross_platform",
-        "member_count": 3
-      },
+      "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "flat list/detail lookup with no evident parent dependency",
-      "estimated_implementation_cost": "低",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 5113,
         "file": "raw/web.gravity-engine.com/assets/Form-CzFlzzxB.js",
@@ -40403,8 +40794,16 @@
         "offset": 5112,
         "url": "https://web.gravity-engine.com/assets/Form-CzFlzzxB.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "GET",
+          "operation_id": "promotion.tencent.account_company.list",
+          "path": "/turbo_engine/api/v1/tencent/manager/account/by_company/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "GET",
       "method_certainty": "high",
       "method_evidence": [
@@ -40417,16 +40816,16 @@
       "raw_paths": [
         "/tencent/manager/account/by_company/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "high",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "safe_http_method"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "支持批量复制，用空格或者逗号分隔",
         "账户主体",
@@ -41493,7 +41892,7 @@
         "l"
       ],
       "contract_family": {
-        "family_id": "promotion.family.003",
+        "family_id": "promotion.family.002",
         "family_kind": "same_level_cross_platform",
         "member_count": 5
       },
@@ -41549,7 +41948,7 @@
         "l"
       ],
       "contract_family": {
-        "family_id": "promotion.family.037",
+        "family_id": "promotion.family.034",
         "family_kind": "same_platform_cross_level",
         "member_count": 2
       },
@@ -41602,7 +42001,7 @@
         "l"
       ],
       "contract_family": {
-        "family_id": "promotion.family.037",
+        "family_id": "promotion.family.034",
         "family_kind": "same_platform_cross_level",
         "member_count": 2
       },
@@ -41655,12 +42054,12 @@
         "l"
       ],
       "contract_family": {
-        "family_id": "promotion.family.010",
+        "family_id": "promotion.family.008",
         "family_kind": "same_level_cross_platform",
         "member_count": 3
       },
       "contract_family_alternates": [
-        "promotion.family.038"
+        "promotion.family.035"
       ],
       "cost_confidence": "medium",
       "cost_reason": "广告组 lookup normally depends on a parent account or campaign",
@@ -41710,12 +42109,12 @@
         "l"
       ],
       "contract_family": {
-        "family_id": "promotion.family.011",
+        "family_id": "promotion.family.009",
         "family_kind": "same_level_cross_platform",
         "member_count": 6
       },
       "contract_family_alternates": [
-        "promotion.family.038"
+        "promotion.family.035"
       ],
       "cost_confidence": "medium",
       "cost_reason": "计划 lookup normally depends on a parent account or campaign",
@@ -41765,12 +42164,12 @@
         "l"
       ],
       "contract_family": {
-        "family_id": "promotion.family.015",
+        "family_id": "promotion.family.013",
         "family_kind": "same_level_cross_platform",
         "member_count": 2
       },
       "contract_family_alternates": [
-        "promotion.family.040"
+        "promotion.family.037"
       ],
       "cost_confidence": "medium",
       "cost_reason": "dynamic path or complex query/report semantics",
@@ -41875,12 +42274,12 @@
         "_"
       ],
       "contract_family": {
-        "family_id": "promotion.family.017",
+        "family_id": "promotion.family.015",
         "family_kind": "same_level_cross_platform",
         "member_count": 8
       },
       "contract_family_alternates": [
-        "promotion.family.040"
+        "promotion.family.037"
       ],
       "cost_confidence": "medium",
       "cost_reason": "dynamic path or complex query/report semantics",
@@ -41929,7 +42328,7 @@
         "l"
       ],
       "contract_family": {
-        "family_id": "promotion.family.039",
+        "family_id": "promotion.family.036",
         "family_kind": "same_platform_cross_level",
         "member_count": 3
       },
@@ -41981,7 +42380,7 @@
         "v"
       ],
       "contract_family": {
-        "family_id": "promotion.family.039",
+        "family_id": "promotion.family.036",
         "family_kind": "same_platform_cross_level",
         "member_count": 3
       },
@@ -42033,7 +42432,7 @@
         "_"
       ],
       "contract_family": {
-        "family_id": "promotion.family.039",
+        "family_id": "promotion.family.036",
         "family_kind": "same_platform_cross_level",
         "member_count": 3
       },
@@ -48395,15 +48794,15 @@
     },
     {
       "business_module": "App 与账号",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "w"
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "flat list/detail lookup with no evident parent dependency",
-      "estimated_implementation_cost": "低",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 40466,
         "file": "raw/web.gravity-engine.com/assets/Debug-hpZqESZ9.js",
@@ -48411,8 +48810,16 @@
         "offset": 40465,
         "url": "https://web.gravity-engine.com/assets/Debug-hpZqESZ9.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "GET",
+          "operation_id": "app.realtime_event.list",
+          "path": "/turbo_engine/api/v1/user/realtime_event/list/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "GET",
       "method_certainty": "high",
       "method_evidence": [
@@ -48425,16 +48832,16 @@
       "raw_paths": [
         "/user/realtime_event/list/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "high",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "safe_http_method"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "增加或减少一个用户的某个 NUMBER 类型的 Profile 值",
         "存在则忽略，不存在则会自动创建",
@@ -48923,7 +49330,7 @@
         "l"
       ],
       "contract_family": {
-        "family_id": "promotion.family.041",
+        "family_id": "promotion.family.038",
         "family_kind": "same_platform_cross_level",
         "member_count": 2
       },
@@ -48976,12 +49383,12 @@
         "v"
       ],
       "contract_family": {
-        "family_id": "promotion.family.008",
+        "family_id": "promotion.family.007",
         "family_kind": "same_level_cross_platform",
         "member_count": 3
       },
       "contract_family_alternates": [
-        "promotion.family.041"
+        "promotion.family.038"
       ],
       "cost_confidence": "medium",
       "cost_reason": "计划 lookup normally depends on a parent account or campaign",
@@ -49031,12 +49438,12 @@
         "l"
       ],
       "contract_family": {
-        "family_id": "promotion.family.014",
+        "family_id": "promotion.family.012",
         "family_kind": "same_level_cross_platform",
         "member_count": 4
       },
       "contract_family_alternates": [
-        "promotion.family.042"
+        "promotion.family.039"
       ],
       "cost_confidence": "medium",
       "cost_reason": "dynamic path or complex query/report semantics",
@@ -49141,12 +49548,12 @@
         "v"
       ],
       "contract_family": {
-        "family_id": "promotion.family.016",
+        "family_id": "promotion.family.014",
         "family_kind": "same_level_cross_platform",
         "member_count": 3
       },
       "contract_family_alternates": [
-        "promotion.family.042"
+        "promotion.family.039"
       ],
       "cost_confidence": "medium",
       "cost_reason": "dynamic path or complex query/report semantics",
@@ -49189,7 +49596,7 @@
       ]
     },
     {
-      "business_module": "素材",
+      "business_module": "推广平台",
       "callability": "contract_only",
       "callers": [
         "ce"
@@ -49223,8 +49630,8 @@
       ],
       "occurrences": 1,
       "path": "/turbo_engine/api/v1/wechat_video/report/create/",
-      "promotion_level": null,
-      "promotion_platform": null,
+      "promotion_level": "报表",
+      "promotion_platform": "wechat_video",
       "raw_paths": [
         "/wechat_video/report/create/"
       ],
@@ -49245,7 +49652,7 @@
       ]
     },
     {
-      "business_module": "素材",
+      "business_module": "推广平台",
       "callability": "executable",
       "callers": [
         "L",
@@ -49280,8 +49687,8 @@
       ],
       "occurrences": 2,
       "path": "/turbo_engine/api/v1/wechat_video/report/list/",
-      "promotion_level": null,
-      "promotion_platform": null,
+      "promotion_level": "报表",
+      "promotion_platform": "wechat_video",
       "raw_paths": [
         "/wechat_video/report/list/"
       ],
@@ -49432,12 +49839,12 @@
         "l"
       ],
       "contract_family": {
-        "family_id": "promotion.family.010",
+        "family_id": "promotion.family.008",
         "family_kind": "same_level_cross_platform",
         "member_count": 3
       },
       "contract_family_alternates": [
-        "promotion.family.043"
+        "promotion.family.040"
       ],
       "cost_confidence": "medium",
       "cost_reason": "广告组 lookup normally depends on a parent account or campaign",
@@ -49487,12 +49894,12 @@
         "v"
       ],
       "contract_family": {
-        "family_id": "promotion.family.011",
+        "family_id": "promotion.family.009",
         "family_kind": "same_level_cross_platform",
         "member_count": 6
       },
       "contract_family_alternates": [
-        "promotion.family.043"
+        "promotion.family.040"
       ],
       "cost_confidence": "medium",
       "cost_reason": "计划 lookup normally depends on a parent account or campaign",
@@ -49542,12 +49949,12 @@
         "l"
       ],
       "contract_family": {
-        "family_id": "promotion.family.015",
+        "family_id": "promotion.family.013",
         "family_kind": "same_level_cross_platform",
         "member_count": 2
       },
       "contract_family_alternates": [
-        "promotion.family.044"
+        "promotion.family.041"
       ],
       "cost_confidence": "medium",
       "cost_reason": "dynamic path or complex query/report semantics",
@@ -49652,12 +50059,12 @@
         "v"
       ],
       "contract_family": {
-        "family_id": "promotion.family.017",
+        "family_id": "promotion.family.015",
         "family_kind": "same_level_cross_platform",
         "member_count": 8
       },
       "contract_family_alternates": [
-        "promotion.family.044"
+        "promotion.family.041"
       ],
       "cost_confidence": "medium",
       "cost_reason": "dynamic path or complex query/report semantics",
@@ -49828,7 +50235,7 @@
         "v"
       ],
       "contract_family": {
-        "family_id": "promotion.family.045",
+        "family_id": "promotion.family.042",
         "family_kind": "same_platform_cross_level",
         "member_count": 4
       },
@@ -49880,12 +50287,12 @@
         "_"
       ],
       "contract_family": {
-        "family_id": "promotion.family.017",
+        "family_id": "promotion.family.015",
         "family_kind": "same_level_cross_platform",
         "member_count": 8
       },
       "contract_family_alternates": [
-        "promotion.family.045"
+        "promotion.family.042"
       ],
       "cost_confidence": "medium",
       "cost_reason": "dynamic path or complex query/report semantics",
@@ -49934,7 +50341,7 @@
         "l"
       ],
       "contract_family": {
-        "family_id": "promotion.family.045",
+        "family_id": "promotion.family.042",
         "family_kind": "same_platform_cross_level",
         "member_count": 4
       },
@@ -49986,7 +50393,7 @@
         "l"
       ],
       "contract_family": {
-        "family_id": "promotion.family.045",
+        "family_id": "promotion.family.042",
         "family_kind": "same_platform_cross_level",
         "member_count": 4
       },
@@ -50318,12 +50725,12 @@
         "_"
       ],
       "contract_family": {
-        "family_id": "promotion.family.017",
+        "family_id": "promotion.family.015",
         "family_kind": "same_level_cross_platform",
         "member_count": 8
       },
       "contract_family_alternates": [
-        "promotion.family.047"
+        "promotion.family.044"
       ],
       "cost_confidence": "medium",
       "cost_reason": "dynamic path or complex query/report semantics",
@@ -50420,12 +50827,12 @@
         "l"
       ],
       "contract_family": {
-        "family_id": "promotion.family.018",
+        "family_id": "promotion.family.016",
         "family_kind": "same_level_cross_platform",
         "member_count": 5
       },
       "contract_family_alternates": [
-        "promotion.family.047"
+        "promotion.family.044"
       ],
       "cost_confidence": "medium",
       "cost_reason": "dynamic path or complex query/report semantics",
@@ -50474,7 +50881,7 @@
         "v"
       ],
       "contract_family": {
-        "family_id": "promotion.family.046",
+        "family_id": "promotion.family.043",
         "family_kind": "same_platform_cross_level",
         "member_count": 2
       },
@@ -50526,7 +50933,7 @@
         "_"
       ],
       "contract_family": {
-        "family_id": "promotion.family.046",
+        "family_id": "promotion.family.043",
         "family_kind": "same_platform_cross_level",
         "member_count": 2
       },
@@ -50858,12 +51265,12 @@
         "v"
       ],
       "contract_family": {
-        "family_id": "promotion.family.017",
+        "family_id": "promotion.family.015",
         "family_kind": "same_level_cross_platform",
         "member_count": 8
       },
       "contract_family_alternates": [
-        "promotion.family.048"
+        "promotion.family.045"
       ],
       "cost_confidence": "medium",
       "cost_reason": "dynamic path or complex query/report semantics",
@@ -50960,12 +51367,12 @@
         "l"
       ],
       "contract_family": {
-        "family_id": "promotion.family.018",
+        "family_id": "promotion.family.016",
         "family_kind": "same_level_cross_platform",
         "member_count": 5
       },
       "contract_family_alternates": [
-        "promotion.family.048"
+        "promotion.family.045"
       ],
       "cost_confidence": "medium",
       "cost_reason": "dynamic path or complex query/report semantics",
@@ -51389,7 +51796,7 @@
         "x"
       ],
       "contract_family": {
-        "family_id": "promotion.family.019",
+        "family_id": "promotion.family.017",
         "family_kind": "same_platform_cross_level",
         "member_count": 2
       },
@@ -51489,7 +51896,7 @@
         "u"
       ],
       "contract_family": {
-        "family_id": "promotion.family.019",
+        "family_id": "promotion.family.017",
         "family_kind": "same_platform_cross_level",
         "member_count": 2
       },
@@ -58115,15 +58522,15 @@
     },
     {
       "business_module": "报表",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "ce"
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "flat list/detail lookup with no evident parent dependency",
-      "estimated_implementation_cost": "低",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 199081,
         "file": "raw/web.gravity-engine.com/assets/NewReportCenter-Dxgo5EkI.js",
@@ -58131,8 +58538,16 @@
         "offset": 199080,
         "url": "https://web.gravity-engine.com/assets/NewReportCenter-Dxgo5EkI.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "POST",
+          "operation_id": "report.tag.list",
+          "path": "/turbo_engine/api/v3/confmetric/tag/list/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "POST",
       "method_certainty": "high",
       "method_evidence": [
@@ -58145,29 +58560,29 @@
       "raw_paths": [
         "/confmetric/tag/list/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "read_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": []
     },
     {
       "business_module": "报表",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "d"
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "flat list/detail lookup with no evident parent dependency",
-      "estimated_implementation_cost": "低",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 198283,
         "file": "raw/web.gravity-engine.com/assets/NewReportCenter-Dxgo5EkI.js",
@@ -58175,8 +58590,16 @@
         "offset": 198282,
         "url": "https://web.gravity-engine.com/assets/NewReportCenter-Dxgo5EkI.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "POST",
+          "operation_id": "report.tag_category.list",
+          "path": "/turbo_engine/api/v3/confmetric/tag_category/list/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "POST",
       "method_certainty": "high",
       "method_evidence": [
@@ -58189,16 +58612,16 @@
       "raw_paths": [
         "/confmetric/tag_category/list/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "read_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": []
     },
     {
@@ -59440,14 +59863,14 @@
   "summary": {
     "accounted": 987,
     "accounting_complete": true,
-    "callable_covered": 145,
-    "covered": 145,
+    "callable_covered": 172,
+    "covered": 172,
     "total_routes": 987,
     "unaccounted": 0,
     "unclassified": 0,
     "uncovered_auth_or_proxy": 30,
     "uncovered_export": 22,
-    "uncovered_read": 370,
+    "uncovered_read": 343,
     "uncovered_write": 414,
     "unsupported_non_api": 6
   }

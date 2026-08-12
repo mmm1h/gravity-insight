@@ -3,21 +3,21 @@
   "draft": {
     "blockers": [
       {
-        "code": "empty_sample",
-        "detail": "The observed tenant response was empty and cannot prove an item schema.",
-        "evidence": "evidence/probe/20260808T231133Z_app.project_auth.detail.yaml",
-        "status": "open"
-      },
-      {
         "code": "parent_resource_required",
         "detail": "At least one declared stable parent did not produce a readable candidate response.",
         "evidence": "evidence/probe/20260809T145634Z_app.project_auth.detail.yaml",
         "status": "open"
       },
       {
+        "code": "probe_inconclusive",
+        "detail": "The latest probe did not satisfy the promotion gate.",
+        "evidence": "evidence/probe/20260812T044151Z_app.project_auth.detail.yaml",
+        "status": "open"
+      },
+      {
         "code": "response_schema_unverified",
         "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
-        "evidence": "evidence/probe/20260808T231133Z_app.project_auth.detail.yaml",
+        "evidence": "evidence/probe/20260812T044151Z_app.project_auth.detail.yaml",
         "status": "open"
       }
     ],
@@ -76,15 +76,27 @@
         "projected_schema_fingerprint": null,
         "raw_schema_fingerprint": "c7066680fb7c4728ca0ebe6efd66f9d46e039674ba301095371e5cde45d317a1",
         "successful": false
+      },
+      {
+        "conclusion": "local_or_parent_inconclusive",
+        "method_verified": false,
+        "pagination_verified": false,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260812T044151Z_app.project_auth.detail.yaml",
+        "probed_at": "2026-08-12T04:41:51Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "10f1338c4e2e6530fb4dddc058b7f24ac90e6219f610b60f83873f895903e621",
+        "successful": false
       }
     ],
     "promotion_gate": {
       "eligible": false,
       "missing": [
-        "empty_sample",
+        "field_review_required",
         "parent_resource_required",
-        "response_schema_unverified",
+        "probe_inconclusive",
         "response_projection",
+        "response_schema_unverified",
         "successful_probe"
       ]
     },
@@ -125,6 +137,14 @@
           "path": "/turbo_engine/api/v1/user/project_auth/detail/"
         },
         "source": "src/gravity_sdk/census/data/route-params.json",
+        "stable_parent_candidates": [
+          {
+            "input_field": "user_id",
+            "operation_id": "analysis.account_user.list",
+            "output_path": "data.list[].user_id",
+            "selection": "caller_select"
+          }
+        ],
         "status": "extracted",
         "top_level_parameters": [
           {
@@ -138,27 +158,8 @@
               "unknown"
             ]
           }
-        ],
-        "stable_parent_candidates": [
-          {
-            "input_field": "user_id",
-            "operation_id": "analysis.account_user.list",
-            "output_path": "data.list[].user_id",
-            "selection": "caller_select"
-          }
         ]
       },
-      "path": "/turbo_engine/api/v1/user/project_auth/detail/",
-      "promotion_level": null,
-      "promotion_platform": null,
-      "semantic_confidence": "high",
-      "semantic_evidence": [
-        "safe_http_method"
-      ],
-      "status": "uncovered_read",
-      "ui_texts": [
-        "（预置)"
-      ],
       "parent_resolution": {
         "basis": "declared_parent_probe",
         "bindings": [
@@ -179,7 +180,18 @@
           "A successful or explicit permission response from every declared parent operation."
         ],
         "replacement_blocker": null
-      }
+      },
+      "path": "/turbo_engine/api/v1/user/project_auth/detail/",
+      "promotion_level": null,
+      "promotion_platform": null,
+      "semantic_confidence": "high",
+      "semantic_evidence": [
+        "safe_http_method"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "（预置)"
+      ]
     },
     "status": "draft"
   },
@@ -187,7 +199,7 @@
   "operation": {
     "action": "detail",
     "auth_profile": "gravity_authorization",
-    "block_reason": "draft blockers: empty_sample, parent_resource_required, response_schema_unverified",
+    "block_reason": "draft blockers: parent_resource_required, probe_inconclusive, response_schema_unverified",
     "contract_version": 1,
     "description": "Draft catalog entry inferred from census route GET /turbo_engine/api/v1/user/project_auth/detail/; request binding, pagination, and response projection remain unverified.",
     "domain": "app",

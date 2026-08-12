@@ -144,10 +144,10 @@ def export_cli_error(
     code = _public_error_code(error)
     if code is None:
         fallback_action = (
-            "Run `python -m gravity_sdk export describe "
+            "Run `gravity export describe "
             f"{operation_id}` and retry with the documented input."
             if getattr(args, "export_command", None) == "start" and operation_id
-            else "Run `python -m gravity_sdk export list --page 1 "
+            else "Run `gravity export list --page 1 "
             "--page-size 100` and retry only a job stage that exists."
         )
         return error_envelope(
@@ -229,45 +229,45 @@ def _next_action(
 ) -> str:
     if code == ErrorCode.UNKNOWN_OPERATION:
         return (
-            "Run `python -m gravity_sdk export list-capabilities` and "
+            "Run `gravity export list-capabilities` and "
             "use an operation_id from the results."
         )
     if code == ErrorCode.EXPORT_TIMEOUT:
         return (
-            "Run `python -m gravity_sdk export status "
+            "Run `gravity export status "
             f"{job_id} --operation-id {operation_id or '<operation-id>'}`."
         )
     if code == ErrorCode.INPUT_INVALID:
         return (
-            "Run `python -m gravity_sdk export describe "
+            "Run `gravity export describe "
             f"{operation_id or '<operation-id>'}` and retry with the documented input."
         )
     if code == ErrorCode.LOCAL_IO_ERROR:
         return (
-            "Run `python -m gravity_sdk export download "
+            "Run `gravity export download "
             f"{job_id} --operation-id {operation_id or '<operation-id>'} "
             "--output <writable-file.xlsx> --timeout 300`."
         )
     if code == ErrorCode.CONTRACT_CHANGED:
         return (
-            "Run `python -m gravity_sdk export describe "
+            "Run `gravity export describe "
             f"{operation_id or '<operation-id>'}` and stop automation until the "
             "maintainer can re-verify and republish the contract."
         )
     if code in {ErrorCode.UNSUPPORTED, ErrorCode.NOT_IMPLEMENTED}:
         return (
-            "Run `python -m gravity_sdk export describe "
+            "Run `gravity export describe "
             f"{operation_id or '<operation-id>'}` and select an operation with "
             "currently_callable=true."
         )
     if command == "start":
         return (
-            "Run `python -m gravity_sdk export list --page 1 "
+            "Run `gravity export list --page 1 "
             "--page-size 100` to determine whether a job was created; do not "
             "create a duplicate."
         )
     return (
-        "Run `python -m gravity_sdk export status "
+        "Run `gravity export status "
         f"{job_id} --operation-id {operation_id or '<operation-id>'}` and retry "
         "only the failed job stage."
     )

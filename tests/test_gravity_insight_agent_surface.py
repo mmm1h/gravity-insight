@@ -153,6 +153,12 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
         second_ids = {item["operation_id"] for item in second["operations"]}
         self.assertFalse(first_ids & second_ids)
 
+        irrelevant = self.client.search_operations(
+            "zzzz-no-such-capability-987654", limit=3
+        )
+        self.assertEqual(0, irrelevant["count"])
+        self.assertEqual([], irrelevant["operations"])
+
     def test_describe_includes_source_contract_health_and_parent_trace(self):
         described = self.client.describe("analysis.dashboard.members.list")
         self.assertEqual("read", described["effect"])

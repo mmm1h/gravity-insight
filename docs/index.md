@@ -8,19 +8,35 @@
 | --- | --- | --- |
 | 安装、登录、跑第一个查询 | [快速上手](getting-started.md) | [CLI 参考](reference/cli.md) |
 | 让 Agent 查询 Gravity | [Agent 工作流](agent-workflow.md) | [架构与概念](architecture.md) |
-| 判断用 Insight 还是 SQL | [架构与概念](architecture.md#查询路由) | [Agent 工作流](agent-workflow.md#选择查询通道) |
+| 批量发现并执行交叉查询 | [Agent 工作流：显式 Plan](agent-workflow.md#3-交叉查询一个显式-plan) | [CLI Plan 参考](reference/cli.md#plan-v1) |
+| 在 Python 中集成 SDK | [Python SDK 参考](reference/sdk.md) | [架构与概念](architecture.md) |
+| 判断用 Insight 还是 SQL | [架构与概念](architecture.md#查询路由) | [Agent 工作流](agent-workflow.md#选择-insight-还是-sql) |
 | 同步全部 App 的埋点目录 | [快速上手](getting-started.md#同步本地元数据目录) | [CLI 参考](reference/cli.md#metadata) |
-| 配置项目 App、SQL 产品或 recipe | [Workspace 参考](reference/workspace.md) | [架构与概念](architecture.md#核心层级) |
+| 配置项目 App、SQL 产品或 recipe | [Workspace 参考](reference/workspace.md) | [架构与概念](architecture.md#发现workspace-与-resolver) |
 | 创建或下载异步导出 | [导出指南](guides/export.md) | [CLI 参考](reference/cli.md) |
 | 新增或升级 operation | [新增受控能力](maintainers/operations.md) | [维护者入口](maintainers/index.md) |
+| 判断能力应扩展到哪一层 | [扩展地图](maintainers/extending.md) | [新增受控能力](maintainers/operations.md) |
+| 查看当前平台覆盖和不能直接上线的缺口 | [能力覆盖与缺口](capability-coverage.md) | [路由盘点](maintainers/census.md) |
+| 查看本轮 17 个候选的真实状态 | [候选能力证据矩阵](candidate-capability-matrix.md) | [探测安全](maintainers/probing.md) |
 | 探测生产接口 | [探测安全](maintainers/probing.md) | [路由盘点](maintainers/census.md) |
 | 刷新 Evidence | [Evidence 运行手册](maintainers/evidence.md) | [维护者入口](maintainers/index.md) |
 
 ## 三个必须先知道的边界
 
 1. **Insight-first。** 能由 stable Insight operation 等价表达的查询，不走 SQL。
-2. **只执行已登记能力。** SDK 不接受任意 URL、HTTP 方法或未登记字段；SQL 也只执行 workspace 已登记并通过治理校验的聚合产品。
+2. **只执行已登记能力。** SDK 不接受任意 URL、HTTP 方法或未登记字段；Agent 面向的 SQL
+   只执行 workspace 已登记聚合产品。底层 `GravityClient` 不是 Agent 产品入口。
 3. **SDK 不维护业务语义。** “幸运礼包”等模块名称、活动 ID、SKU、投放窗口和埋点关联由业务知识库维护；SDK 只校验和读取真实 Gravity 元数据。
+
+## Agent 最短路径
+
+- 已知 selector 或已有 Plan：一次 `gravity run` / `gravity plan run`。
+- 未知问题：一次 `gravity agent --input` 批量发现，再一次 `gravity plan run`，总共两次。
+- 发现只返回候选和 `plan_node`，不会从自然语言自动执行。
+
+当前基线仍为 185 个 operation、176 个 stable。本轮 17 个候选新增 stable 数为 0；不要把
+`draft` 能力写入生产 Plan。逐项 blocker 以[候选能力证据矩阵](candidate-capability-matrix.md)
+为准。
 
 ## 文档层级
 

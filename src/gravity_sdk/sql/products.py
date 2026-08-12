@@ -7,7 +7,7 @@ import platform
 import re
 import subprocess
 import tempfile
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -19,19 +19,19 @@ from gravity_sdk.support.evidence import (
     resolve_json_evidence,
     serialize_json_result,
 )
+from gravity_sdk.sql.credential_source import credential_source as _credential_source
+from gravity_sdk.sql.evidence_validation import (
+    EvidenceFormatError,
+    validate_evidence_document,
+)
+from gravity_sdk.sql.time_window import BEIJING, day_window, latest_safe_date, normalize_window, parse_timestamp
 from gravity_sdk.workspace import Workspace, WorkspaceError, load_workspace, require_products
 
 
 ROOT = PROJECT_ROOT
-BEIJING = timezone(timedelta(hours=8), name="Asia/Shanghai")
 EVIDENCE_PATH = EVIDENCE_ROOT / "latest.json"
 EVIDENCE_PRODUCT_ROOT = EVIDENCE_ROOT / "daily-verification"
 SQL_PRODUCT_CONTRACT_PATH = PACKAGE_ROOT / "contracts" / "sql-products" / "catalog.json"
-HASH_RE = re.compile(r"^[0-9a-f]{64}$")
-
-
-class EvidenceFormatError(ValueError):
-    pass
 
 
 def product_names(workspace: Workspace | None = None) -> tuple[str, ...]:
@@ -64,47 +64,33 @@ def _datasource_contract(
     return selected.datasource(next(iter(datasource_names)))
 
 
-def _datasource_id(product: str | None = None) -> str:
-    return str(_datasource_contract(product)["id"])
+def _datasource_id(
+    product: str | None = None, workspace: Workspace | None = None
+) -> str:
+    return str(_datasource_contract(product, workspace)["id"])
 
 
-def latest_safe_date(now: datetime | None = None) -> date:
-    current = now.astimezone(BEIJING) if now and now.tzinfo else (now.replace(tzinfo=BEIJING) if now else datetime.now(BEIJING))
-    return current.date() - timedelta(days=2 if current.hour < 2 else 1)
-
-
-def day_window(day: date) -> tuple[datetime, datetime]:
-    start = datetime.combine(day, time.min, BEIJING)
-    return start, start + timedelta(days=1)
-
-
-def parse_timestamp(value: str) -> datetime:
-    try:
-        parsed = datetime.fromisoformat(value)
-    except ValueError as exc:
-        raise ValueError(f"invalid ISO timestamp: {value!r}") from exc
-    parsed = parsed.replace(tzinfo=BEIJING) if parsed.tzinfo is None else parsed.astimezone(BEIJING)
-    return parsed.replace(microsecond=0)
-
-
-def normalize_window(start: str, end: str) -> tuple[datetime, datetime]:
-    start_at, end_at = parse_timestamp(start), parse_timestamp(end)
-    if start_at >= end_at:
-        raise ValueError("start must be earlier than end")
-    return start_at, end_at
-
-
-def normalize_app_ids(product: str, app_ids: list[int] | tuple[int, ...] | None) -> tuple[int, ...]:
-    defaults = _product_apps(product)
+def normalize_app_ids(
+    product: str,
+    app_ids: list[int] | tuple[int, ...] | None,
+    workspace: Workspace | None = None,
+) -> tuple[int, ...]:
+    defaults = _product_apps(product, workspace)
     values = tuple(dict.fromkeys(app_ids or defaults))
     if not values or any(type(value) is not int or value <= 0 for value in values):
         raise ValueError("app ids must be positive integers")
     return values
 
 
-def build_sql(product: str, start_at: datetime, end_at: datetime, app_ids: tuple[int, ...]) -> str:
-    app_ids = normalize_app_ids(product, app_ids)
-    definition = _product_definition(product)
+def build_sql(
+    product: str,
+    start_at: datetime,
+    end_at: datetime,
+    app_ids: tuple[int, ...],
+    workspace: Workspace | None = None,
+) -> str:
+    app_ids = normalize_app_ids(product, app_ids, workspace)
+    definition = _product_definition(product, workspace)
     start = _sql_time(start_at)
     end = _sql_time(end_at)
     return _custom_sql(definition, app_ids, start, end)
@@ -127,10 +113,13 @@ def run_product(
     start_at: datetime,
     end_at: datetime,
     app_ids: list[int] | tuple[int, ...] | None = None,
+    *,
+    workspace: Workspace | None = None,
 ) -> dict[str, Any]:
-    apps = normalize_app_ids(product, app_ids)
-    definition = _product_definition(product)
-    sql = build_sql(product, start_at, end_at, apps)
+    selected = load_workspace() if workspace is None else workspace
+    apps = normalize_app_ids(product, app_ids, selected)
+    definition = _product_definition(product, selected)
+    sql = build_sql(product, start_at, end_at, apps, selected)
     rows = client.execute_sql(sql)
     summary, status, warnings, notes = _summarize_rows(
         definition, rows, apps, start_at, end_at
@@ -146,7 +135,7 @@ def run_product(
         "hashes": {
             "sql_sha256": _sha256_text(sql),
             "result_sha256": _sha256_json(rows),
-            "contract_sha256": contract_hash(product),
+            "contract_sha256": contract_hash(product, selected),
         },
     }
     if notes:
@@ -197,8 +186,14 @@ def _summarize_rows(
     )
 
 
-def build_evidence(day: date, product_results: list[dict[str, Any]]) -> dict[str, Any]:
-    configured_products = product_names()
+def build_evidence(
+    day: date,
+    product_results: list[dict[str, Any]],
+    *,
+    workspace: Workspace | None = None,
+) -> dict[str, Any]:
+    selected = load_workspace() if workspace is None else workspace
+    configured_products = product_names(selected)
     if len(product_results) != len(configured_products) or {
         result.get("product") for result in product_results
     } != set(configured_products):
@@ -220,7 +215,7 @@ def build_evidence(day: date, product_results: list[dict[str, Any]]) -> dict[str
     )
     evidence: dict[str, Any] = {
         "schema_version": 1,
-        "datasource_id": _datasource_id(),
+        "datasource_id": _datasource_id(workspace=selected),
         "generated_at": datetime.now(BEIJING).isoformat(timespec="microseconds"),
         "verified_for_date": day.isoformat(),
         "window": _window_dict(start_at, end_at),
@@ -244,160 +239,28 @@ def build_evidence(day: date, product_results: list[dict[str, Any]]) -> dict[str
             }
         ),
     }
-    validate_evidence(evidence)
+    validate_evidence(evidence, workspace=selected)
     return evidence
 
 
-def verify_all(client: Any, day: date) -> dict[str, Any]:
-    start_at, end_at = day_window(day)
-    results = [
-        run_product(client, product, start_at, end_at)
-        for product in product_names()
-    ]
-    return build_evidence(day, results)
-
-
-def validate_evidence(evidence: Any) -> None:
-    if not isinstance(evidence, dict):
-        raise EvidenceFormatError("evidence root must be an object")
-    required = {
-        "schema_version",
-        "datasource_id",
-        "generated_at",
-        "verified_for_date",
-        "window",
-        "verification_status",
-        "products",
-        "warnings",
-        "forbidden_claims",
-        "hashes",
-    }
-    missing = sorted(required - set(evidence))
-    if missing:
-        raise EvidenceFormatError(f"evidence is missing fields: {', '.join(missing)}")
-    unknown = sorted(set(evidence) - required)
-    if unknown:
-        raise EvidenceFormatError(f"evidence has unknown fields: {', '.join(unknown)}")
-    if not isinstance(evidence["datasource_id"], str):
-        raise EvidenceFormatError("evidence datasource_id must be a string")
-    schema_version = evidence["schema_version"]
-    datasource_id = _datasource_id()
-    if (
-        type(schema_version) is not int
-        or schema_version != 1
-        or evidence["datasource_id"] != datasource_id
-    ):
-        raise EvidenceFormatError("unsupported evidence schema or datasource")
-    if evidence["verification_status"] not in {"verified", "verified_with_gaps"}:
-        raise EvidenceFormatError("invalid evidence verification_status")
-    try:
-        date.fromisoformat(str(evidence["verified_for_date"]))
-        datetime.fromisoformat(str(evidence["generated_at"]))
-    except ValueError as exc:
-        raise EvidenceFormatError("evidence contains an invalid date/time") from exc
-    window = evidence["window"]
-    if not isinstance(window, dict) or set(("start", "end", "timezone")) - set(window):
-        raise EvidenceFormatError("evidence window is incomplete")
-    if window["timezone"] != "Asia/Shanghai":
-        raise EvidenceFormatError("evidence timezone must be Asia/Shanghai")
-    try:
-        start_at, end_at = normalize_window(str(window["start"]), str(window["end"]))
-    except ValueError as exc:
-        raise EvidenceFormatError(str(exc)) from exc
-    expected_start, expected_end = day_window(date.fromisoformat(str(evidence["verified_for_date"])))
-    if start_at != expected_start or end_at != expected_end:
-        raise EvidenceFormatError("evidence must describe one Beijing calendar day")
-    products = evidence["products"]
-    configured_products = product_names()
-    if not isinstance(products, dict) or set(products) != set(configured_products):
-        raise EvidenceFormatError("evidence must contain exactly the configured SQL products")
-    for product in configured_products:
-        result = products[product]
-        if not isinstance(result, dict) or result.get("product") != product:
-            raise EvidenceFormatError(f"invalid product evidence: {product}")
-        if result.get("status") not in {"complete", "partial"}:
-            raise EvidenceFormatError(f"invalid product status: {product}")
-        if not isinstance(result.get("summary"), dict):
-            raise EvidenceFormatError(f"missing product summary: {product}")
-        warnings = result.get("warnings")
-        forbidden_claims = result.get("forbidden_claims")
-        if (
-            not isinstance(warnings, list)
-            or not all(isinstance(item, str) for item in warnings)
-            or not isinstance(forbidden_claims, list)
-            or not forbidden_claims
-            or not all(isinstance(item, str) for item in forbidden_claims)
-        ):
-            raise EvidenceFormatError(f"invalid product warnings/claims: {product}")
-        if result["status"] == "partial" and not warnings:
-            raise EvidenceFormatError(f"partial product must contain warnings: {product}")
-        if result.get("window") != window:
-            raise EvidenceFormatError(f"product window differs from evidence window: {product}")
-        app_ids = result.get("app_ids")
-        if (
-            not isinstance(app_ids, list)
-            or not app_ids
-            or any(not isinstance(app_id, int) or app_id <= 0 for app_id in app_ids)
-        ):
-            raise EvidenceFormatError(f"invalid product app_ids: {product}")
-        _validate_hashes(result.get("hashes"), f"product {product}")
-    expected_warnings = [
-        f"{product}: {warning}"
-        for product in configured_products
-        for warning in products[product]["warnings"]
-    ]
-    expected_forbidden = list(
-        dict.fromkeys(
-            claim
-            for product in configured_products
-            for claim in products[product]["forbidden_claims"]
-        )
+def validate_evidence(evidence: Any, *, workspace: Workspace | None = None) -> None:
+    selected = load_workspace() if workspace is None else workspace
+    validate_evidence_document(
+        evidence,
+        configured_products=product_names(selected),
+        datasource_id=_datasource_id(workspace=selected),
+        hash_json=_sha256_json,
     )
-    expected_status = "verified_with_gaps" if expected_warnings else "verified"
-    if evidence["warnings"] != expected_warnings:
-        raise EvidenceFormatError("evidence warnings differ from product warnings")
-    if evidence["forbidden_claims"] != expected_forbidden:
-        raise EvidenceFormatError("evidence forbidden_claims differ from product claims")
-    if evidence["verification_status"] != expected_status:
-        raise EvidenceFormatError("evidence verification_status differs from product statuses")
-    if (
-        not isinstance(evidence["warnings"], list)
-        or not all(isinstance(item, str) for item in evidence["warnings"])
-        or not isinstance(evidence["forbidden_claims"], list)
-        or not evidence["forbidden_claims"]
-        or not all(isinstance(item, str) for item in evidence["forbidden_claims"])
-    ):
-        raise EvidenceFormatError("evidence warnings and forbidden_claims must be lists")
-    if evidence["verification_status"] == "verified_with_gaps" and not evidence["warnings"]:
-        raise EvidenceFormatError("verified_with_gaps evidence must contain warnings")
-    _validate_hashes(evidence["hashes"], "evidence")
-    expected_hashes = _evidence_hashes(products, configured_products)
-    if evidence["hashes"] != expected_hashes:
-        raise EvidenceFormatError("evidence content does not match its top-level hashes")
 
 
-def _evidence_hashes(
-    products: Mapping[str, Any], configured_products: tuple[str, ...]
-) -> dict[str, str]:
-    return {
-        "sql_sha256": _sha256_json(
-            {
-                product: products[product]["hashes"]["sql_sha256"]
-                for product in configured_products
-            }
-        ),
-        "result_sha256": _sha256_json(products),
-        "contract_sha256": _sha256_json(
-            {
-                product: products[product]["hashes"]["contract_sha256"]
-                for product in configured_products
-            }
-        ),
-    }
-
-
-def publish_evidence(evidence: dict[str, Any], path: Path = EVIDENCE_PATH) -> None:
-    validate_evidence(evidence)
+def publish_evidence(
+    evidence: dict[str, Any],
+    path: Path = EVIDENCE_PATH,
+    *,
+    workspace: Workspace | None = None,
+) -> None:
+    selected = load_workspace() if workspace is None else workspace
+    validate_evidence(evidence, workspace=selected)
     canonical_publish = path.resolve() == EVIDENCE_PATH.resolve()
     snapshot_metadata = _snapshot_metadata(evidence) if canonical_publish else None
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -421,7 +284,9 @@ def publish_evidence(evidence: dict[str, Any], path: Path = EVIDENCE_PATH) -> No
                 EVIDENCE_PRODUCT_ROOT,
                 evidence,
                 snapshot_metadata,
-                result_validator=validate_evidence,
+                result_validator=lambda value: validate_evidence(
+                    value, workspace=selected
+                ),
             )
         # The mutable file is compatibility-only. Never expose it until the
         # canonical immutable snapshot and latest pointer are durable.
@@ -431,30 +296,39 @@ def publish_evidence(evidence: dict[str, Any], path: Path = EVIDENCE_PATH) -> No
             temporary.unlink()
 
 
-def resolve_current_evidence(product_root: Path | None = None) -> EvidenceBinding:
+def resolve_current_evidence(
+    product_root: Path | None = None,
+    *,
+    workspace: Workspace | None = None,
+) -> EvidenceBinding:
     """Resolve latest.yaml once and return one validated immutable binding."""
 
+    selected = load_workspace() if workspace is None else workspace
     try:
         return resolve_json_evidence(
             product_root or EVIDENCE_PRODUCT_ROOT,
-            result_validator=validate_evidence,
+            result_validator=lambda value: validate_evidence(
+                value, workspace=selected
+            ),
         )
     except (ValueError, OSError) as exc:
         raise EvidenceFormatError(f"cannot resolve immutable Evidence: {exc}") from exc
 
 
-def read_evidence(path: Path | None = None) -> dict[str, Any] | None:
+def read_evidence(
+    path: Path | None = None, *, workspace: Workspace | None = None
+) -> dict[str, Any] | None:
     """Read Evidence; default to immutable resolution, explicit paths are compatibility-only."""
 
     if path is None:
-        return resolve_current_evidence().result
+        return resolve_current_evidence(workspace=workspace).result
     if not path.exists():
         return None
     try:
         evidence = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
         raise EvidenceFormatError(f"cannot read evidence: {exc}") from exc
-    validate_evidence(evidence)
+    validate_evidence(evidence, workspace=workspace)
     return evidence
 
 
@@ -508,12 +382,15 @@ def _git_state() -> tuple[str, bool]:
 def readiness_status(
     evidence: dict[str, Any] | EvidenceBinding | None,
     now: datetime | None = None,
+    *,
+    workspace: Workspace | None = None,
 ) -> dict[str, Any]:
+    selected = load_workspace() if workspace is None else workspace
     binding = evidence if isinstance(evidence, EvidenceBinding) else None
     evidence_value = binding.result if binding else evidence
     safe_day = latest_safe_date(now)
-    declared = datasource_verification_status()
-    datasource_id = _datasource_id()
+    declared = datasource_verification_status(selected)
+    datasource_id = _datasource_id(workspace=selected)
     evidence_pointer = EVIDENCE_PRODUCT_ROOT / "latest.yaml"
     try:
         evidence_path = evidence_pointer.relative_to(ROOT).as_posix()
@@ -543,7 +420,7 @@ def readiness_status(
             "query_ready": False,
             "reason": "immutable evidence is missing",
         }
-    validate_evidence(evidence_value)
+    validate_evidence(evidence_value, workspace=selected)
     if evidence_value["verification_status"] not in {"verified", "verified_with_gaps"}:
         return {
             **base,
@@ -552,7 +429,7 @@ def readiness_status(
             "reason": "published evidence is not query-ready",
             "verified_for_date": evidence_value["verified_for_date"],
         }
-    stale_reason = _stale_reason(evidence_value, safe_day)
+    stale_reason = _stale_reason(evidence_value, safe_day, selected)
     if stale_reason:
         return {
             **base,
@@ -580,6 +457,7 @@ def evidence_preflight(
     now: datetime | None = None,
     root: Path = ROOT,
     product_root: Path | None = None,
+    workspace: Workspace | None = None,
 ) -> dict[str, Any]:
     """Return offline operational checks without contacting Gravity."""
 
@@ -601,9 +479,10 @@ def evidence_preflight(
         raise EvidenceFormatError("cannot determine Git state for Evidence preflight")
     git_dirty = bool(status.stdout.strip())
     credential_source = _credential_source(root)
-    binding = resolve_current_evidence(product_root)
+    selected = load_workspace() if workspace is None else workspace
+    binding = resolve_current_evidence(product_root, workspace=selected)
     start_at, end_at = day_window(selected_day)
-    current_status = readiness_status(binding, now)
+    current_status = readiness_status(binding, now, workspace=selected)
     blockers: list[str] = []
     if git_dirty:
         blockers.append("working_tree_not_clean_or_scoped")
@@ -641,27 +520,8 @@ def evidence_preflight(
     }
 
 
-def _credential_source(root: Path) -> str:
-    if os.environ.get("GRAVITY_AUTH_TOKEN") or os.environ.get("GRAVITY_AUTHORIZATION"):
-        return "environment"
-    if os.environ.get("GRAVITY_USERNAME") and os.environ.get("GRAVITY_PASSWORD"):
-        return "environment"
-    env_path = root / ".env.gravity.local"
-    try:
-        keys = {
-            line.split("=", 1)[0].strip()
-            for line in env_path.read_text(encoding="utf-8").splitlines()
-            if "=" in line and not line.lstrip().startswith("#")
-        }
-    except (OSError, UnicodeError):
-        return "missing"
-    account_fields = {"GRAVITY_USERNAME", "GRAVITY_PASSWORD"}
-    has_login = account_fields.issubset(keys)
-    return "local_account_file" if has_login else "missing"
-
-
-def datasource_verification_status() -> str:
-    status = _datasource_contract().get("verification_status")
+def datasource_verification_status(workspace: Workspace | None = None) -> str:
+    status = _datasource_contract(workspace=workspace).get("verification_status")
     if not isinstance(status, str):
         raise EvidenceFormatError("datasource contract is missing verification_status")
     if status not in {"pending_review", "verified", "verified_with_gaps", "blocked"}:
@@ -669,10 +529,11 @@ def datasource_verification_status() -> str:
     return status
 
 
-def contract_hash(product: str) -> str:
+def contract_hash(product: str, workspace: Workspace | None = None) -> str:
     try:
-        definition = _product_definition(product)
-        datasource = _datasource_contract(product)
+        selected = load_workspace() if workspace is None else workspace
+        definition = _product_definition(product, selected)
+        datasource = _datasource_contract(product, selected)
         kernel_contract = _load_sql_product_contract(SQL_PRODUCT_CONTRACT_PATH)
         kind_contract = kernel_contract["product_kinds"][definition["kind"]]
         encoded = json.dumps(
@@ -717,16 +578,20 @@ def dry_run_checks() -> None:
         raise AssertionError("post-02:00 safe-day rule failed")
 
 
-def _stale_reason(evidence: dict[str, Any], safe_day: date) -> str | None:
+def _stale_reason(
+    evidence: dict[str, Any], safe_day: date, workspace: Workspace
+) -> str | None:
     if evidence["verified_for_date"] != safe_day.isoformat():
         return f"evidence date {evidence['verified_for_date']} != latest safe date {safe_day.isoformat()}"
-    for product in product_names():
+    for product in product_names(workspace):
         result = evidence["products"][product]
-        if result["hashes"]["contract_sha256"] != contract_hash(product):
+        if result["hashes"]["contract_sha256"] != contract_hash(product, workspace):
             return f"{product} contract changed after verification"
         start_at, end_at = normalize_window(result["window"]["start"], result["window"]["end"])
-        apps = normalize_app_ids(product, result["app_ids"])
-        if result["hashes"]["sql_sha256"] != _sha256_text(build_sql(product, start_at, end_at, apps)):
+        apps = normalize_app_ids(product, result["app_ids"], workspace)
+        if result["hashes"]["sql_sha256"] != _sha256_text(
+            build_sql(product, start_at, end_at, apps, workspace)
+        ):
             return f"{product} SQL changed after verification"
     return None
 
@@ -752,9 +617,8 @@ def _sha256_json(value: Any) -> str:
     return _sha256_text(encoded)
 
 
-def _validate_hashes(value: Any, label: str) -> None:
-    if not isinstance(value, dict):
-        raise EvidenceFormatError(f"{label} hashes must be an object")
-    for name in ("sql_sha256", "result_sha256", "contract_sha256"):
-        if not HASH_RE.fullmatch(str(value.get(name, ""))):
-            raise EvidenceFormatError(f"{label} contains invalid {name}")
+# Public compatibility exports live here after the product core is fully defined;
+# the focused modules import core helpers without creating import-time cycles.
+from gravity_sdk.sql.catalog import describe_products as describe_products
+from gravity_sdk.sql.query import run_product_queries as run_product_queries
+from gravity_sdk.sql.verification import verify_all as verify_all

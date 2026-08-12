@@ -1,5 +1,9 @@
 # 新增受控能力
 
+如果还没确定应该新增 operation、codec、CLI 门面、workspace recipe 或 SQL product，先读
+[扩展地图](extending.md)。能由合同表达时保持数据化；不要为一个平台或一次业务查询复制
+运行时。
+
 ## 准入条件
 
 一个候选接口成为 stable operation 前，必须回答：
@@ -50,6 +54,9 @@ python -m gravity_sdk.compiler check
 - 敏感字段递归剔除；
 - 401 单次刷新、限流或上游错误的结构化映射；
 - 最小探针使用脱敏 fixture 时的合同一致性。
+
+开发内循环先运行新增 operation 及共享模型的目标测试；不要求每次修改合同都运行整个测试
+目录。提升 stable 或准备提交时再运行完整门禁。
 
 ### 4. 在线验证
 

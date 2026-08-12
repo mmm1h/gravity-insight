@@ -176,7 +176,7 @@ class ExportPolicyMixin:
                 f"unknown Gravity export operation: {operation_id}",
                 field="operation_id",
                 next_action=(
-                    "Run `python -m gravity_sdk export list-capabilities` "
+                    "Run `gravity export list-capabilities` "
                     "and use an operation_id from the results."
                 ),
             ) from exc
@@ -185,7 +185,7 @@ class ExportPolicyMixin:
                 "export operation effect does not match this stage",
                 field="operation_id",
                 next_action=(
-                    "Run `python -m gravity_sdk export describe "
+                    "Run `gravity export describe "
                     f"{operation_id}` and use the documented workflow."
                 ),
             )
@@ -194,7 +194,7 @@ class ExportPolicyMixin:
                 f"export operation is catalog-only: {route.block_reason or 'unverified'}",
                 field="operation_id",
                 next_action=(
-                    "Run `python -m gravity_sdk export describe "
+                    "Run `gravity export describe "
                     f"{operation_id}` and select a currently_callable alternative."
                 ),
             )
@@ -203,7 +203,7 @@ class ExportPolicyMixin:
                 "export operation has no verified wire contract",
                 field="operation_id",
                 next_action=(
-                    "Run `python -m gravity_sdk export describe "
+                    "Run `gravity export describe "
                     f"{operation_id}` and select a currently_callable alternative."
                 ),
             )
@@ -394,7 +394,7 @@ def _validated_effect_values(
             message,
             field=field,
             next_action=(
-                "Run `python -m gravity_sdk export describe "
+                "Run `gravity export describe "
                 f"{route.operation_id}` and retry with the documented input."
             ),
         )

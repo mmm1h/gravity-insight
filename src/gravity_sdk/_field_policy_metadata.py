@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any, Mapping, Sequence
 
 from ._field_policy_operations import (
@@ -22,6 +23,15 @@ from ._field_policy_shared import (
     require_dimension_tables,
 )
 from .errors import GravityInsightError, InputValidationError
+
+
+_CONTROLLED_READ_SCHEMA = "gravity-insight.read.v1"
+_OMITTED_NESTED_CONTAINER_WARNING = re.compile(
+    r"uncontracted nested item containers were omitted \(count=[1-9][0-9]*\)"
+)
+_OMITTED_NESTED_ITEM_KEYS_WARNING = re.compile(
+    r"unregistered nested response item keys were omitted \(count=[1-9][0-9]*\)"
+)
 
 
 def wire_property_names(
@@ -72,11 +82,73 @@ def load_view(
             "required live field metadata has an invalid envelope; business request was not sent"
         )
     status = str(envelope.get("status", "error"))
-    if status not in {"success", "empty"}:
+    if status not in {"success", "empty"} and not _usable_segment_projection(
+        operation_id, envelope
+    ):
         raise InputValidationError(
             "required live field metadata is unavailable; business request was not sent"
         )
     return MetadataView(operation_id, status, tuple(flatten_rows(rows(envelope))))
+
+
+def _usable_segment_projection(
+    operation_id: str, envelope: Mapping[str, Any]
+) -> bool:
+    """Allow one proven-safe projected segment drift for metadata membership only."""
+
+    if operation_id != ANALYSIS_SEGMENT:
+        return False
+    if not _controlled_projection_contract_change(
+        operation_id, envelope, _OMITTED_NESTED_CONTAINER_WARNING
+    ):
+        return False
+    data = envelope.get("data")
+    projected_rows = data.get("list") if isinstance(data, Mapping) else None
+    if not isinstance(projected_rows, (list, tuple)) or not projected_rows:
+        return False
+    return all(
+        isinstance(row, Mapping)
+        and any(
+            isinstance(row.get(key), (str, int))
+            and not isinstance(row.get(key), bool)
+            and str(row.get(key))
+            for key in ("segment_id", "id")
+        )
+        for row in projected_rows
+    )
+
+
+def _controlled_projection_contract_change(
+    operation_id: str,
+    envelope: Mapping[str, Any],
+    safe_warning: re.Pattern[str],
+) -> bool:
+    if envelope.get("status") != "contract_changed":
+        return False
+    if envelope.get("schema_version") != _CONTROLLED_READ_SCHEMA:
+        return False
+    if (
+        envelope.get("operation_id") != operation_id
+        or envelope.get("error") is not None
+    ):
+        return False
+    source = envelope.get("source")
+    if (
+        not isinstance(source, Mapping)
+        or source.get("system") != "gravity_insight"
+        or not isinstance(source.get("contract_fingerprint"), str)
+        or not source.get("contract_fingerprint")
+    ):
+        return False
+    warnings = envelope.get("warnings")
+    return (
+        isinstance(warnings, (list, tuple))
+        and bool(warnings)
+        and all(
+            isinstance(warning, str) and safe_warning.fullmatch(warning) is not None
+            for warning in warnings
+        )
+    )
 
 
 def load_event_property_rows(
@@ -105,10 +177,15 @@ def _load_one_event_property(
             "required event-specific field metadata is unavailable; "
             "business request was not sent"
         ) from None
-    if not isinstance(envelope, Mapping) or str(envelope.get("status", "error")) not in {
-        "success",
-        "empty",
-    }:
+    if not isinstance(envelope, Mapping):
+        raise InputValidationError(
+            "required event-specific field metadata is unavailable; "
+            "business request was not sent"
+        )
+    status = str(envelope.get("status", "error"))
+    if status not in {"success", "empty"} and not _usable_event_info_projection(
+        envelope
+    ):
         raise InputValidationError(
             "required event-specific field metadata is unavailable; "
             "business request was not sent"
@@ -127,6 +204,31 @@ def _load_one_event_property(
                 flatten_rows(tuple(item for item in values if isinstance(item, Mapping)))
             )
     return tuple(result)
+
+
+def _usable_event_info_projection(envelope: Mapping[str, Any]) -> bool:
+    if not _controlled_projection_contract_change(
+        ANALYSIS_EVENT_INFO, envelope, _OMITTED_NESTED_ITEM_KEYS_WARNING
+    ):
+        return False
+    data = envelope.get("data")
+    properties = data.get("properties") if isinstance(data, Mapping) else None
+    categories = ("common", "custom", "preset")
+    if not isinstance(properties, Mapping) or set(properties) != set(categories):
+        return False
+    for category in categories:
+        values = properties[category]
+        if not isinstance(values, (list, tuple)):
+            return False
+        if any(
+            not isinstance(item, Mapping)
+            or not isinstance(item.get("name"), str)
+            or not item.get("name")
+            or len(item["name"]) > 256
+            for item in values
+        ):
+            return False
+    return True
 
 
 def rows(envelope: Mapping[str, Any]) -> tuple[Mapping[str, Any], ...]:

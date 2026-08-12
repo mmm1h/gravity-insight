@@ -17,7 +17,8 @@ from .domains import (
     DOMAIN_OPERATIONS,
 )
 from .errors import ContractChangedError, InputValidationError, UpstreamError
-from .find_metadata import search_limit, search_metadata, search_offset
+from .find_metadata import search_metadata
+from .cli_limits import metadata_limit, nonnegative_int
 from .runtime import call_batch
 
 
@@ -27,8 +28,9 @@ APP_OPERATION_ID = DOMAIN_OPERATIONS["apps.list"][0]
 DEFAULT_CONCURRENCY = 8
 MAX_CONCURRENCY = 24
 # batch() divides its 100,000-row aggregate allowance among requests. Keeping
-# each operation batch at eight apps leaves 12,500 rows for every app catalog.
-MAX_APPS_PER_BATCH = 8
+# every mixed operation/app batch at eight requests leaves 12,500 rows for each
+# catalog slice while allowing small workspaces to use more than one worker.
+MAX_REQUESTS_PER_BATCH = 8
 
 
 class MetadataSyncClient(Protocol):
@@ -51,7 +53,7 @@ def add_metadata_commands(
     concurrency_parser: Any,
     input_adder: Any,
     all_pages_adder: Any,
-) -> None:
+) -> tuple[Any, Any]:
     apps = commands.add_parser("apps")
     apps_commands = apps.add_subparsers(dest="apps_command", required=True)
     apps_list = apps_commands.add_parser("list")
@@ -85,8 +87,9 @@ def add_metadata_commands(
         query.add_argument("query", nargs="?", default="")
         query.add_argument("--app-id")
         query.add_argument("--database", type=Path, default=None)
-        query.add_argument("--limit", type=search_limit, default=20)
-        query.add_argument("--offset", type=search_offset, default=0)
+        query.add_argument("--limit", type=metadata_limit, default=20)
+        query.add_argument("--offset", type=nonnegative_int, default=0)
+    return apps_commands, metadata_commands
 
 
 def run_metadata_command(args: Any, client_builder: Any) -> dict[str, Any]:
@@ -240,30 +243,34 @@ def _sync_operations(
 ) -> tuple[dict[str, int], list[dict[str, Any]], int]:
     counts = {operation_id: 0 for operation_id in ANALYSIS_METADATA_OPERATIONS}
     failures: list[dict[str, Any]] = []
-    for operation_id in ANALYSIS_METADATA_OPERATIONS:
-        for app_chunk in _chunks(apps, min(concurrency, MAX_APPS_PER_BATCH)):
-            results = _sync_batch(client, operation_id, app_chunk, concurrency)
-            for app_id, _ in app_chunk:
-                result = results.get(app_id)
-                failure = _failure(app_id, operation_id, result)
-                if failure is not None:
-                    failures.append(failure)
-                    _write_failure(connection, failure, synced_at)
-                    continue
-                assert result is not None
-                envelope = result.get("data")
-                rows = _rows(envelope if isinstance(envelope, Mapping) else {})
-                _write_rows(connection, app_id, operation_id, rows, synced_at)
-                counts[operation_id] += len(rows)
+    tasks = [
+        (operation_id, app_id)
+        for operation_id in ANALYSIS_METADATA_OPERATIONS
+        for app_id, _ in apps
+    ]
+    batch_size = min(concurrency, MAX_REQUESTS_PER_BATCH)
+    for task_chunk in _chunks(tasks, batch_size):
+        results = _sync_batch(client, task_chunk, concurrency)
+        for index, (operation_id, app_id) in enumerate(task_chunk):
+            result = results[index] if index < len(results) else None
+            failure = _failure(app_id, operation_id, result)
+            if failure is not None:
+                failures.append(failure)
+                _write_failure(connection, failure, synced_at)
+                continue
+            assert result is not None
+            envelope = result.get("data")
+            rows = _rows(envelope if isinstance(envelope, Mapping) else {})
+            _write_rows(connection, app_id, operation_id, rows, synced_at)
+            counts[operation_id] += len(rows)
     return counts, failures, sum(counts.values())
 
 
 def _sync_batch(
     client: MetadataSyncClient,
-    operation_id: str,
-    apps: Sequence[tuple[str, Mapping[str, Any]]],
+    tasks: Sequence[tuple[str, str]],
     concurrency: int,
-) -> dict[str, Mapping[str, Any]]:
+) -> list[Mapping[str, Any]]:
     requests = [
         {
             "operation_id": operation_id,
@@ -271,14 +278,12 @@ def _sync_batch(
             "inputs": _metadata_inputs(operation_id, app_id),
             "read_all": True,
         }
-        for app_id, _ in apps
+        for operation_id, app_id in tasks
     ]
-    results = call_batch(client, requests, concurrency=concurrency)
-    return {
-        str(result.get("request_id")): result
-        for result in results
-        if isinstance(result, Mapping) and result.get("request_id") is not None
-    }
+    return [
+        result if isinstance(result, Mapping) else {}
+        for result in call_batch(client, requests, concurrency=concurrency)
+    ]
 
 
 def _validated_apps(rows: Sequence[Mapping[str, Any]]) -> list[tuple[str, Mapping[str, Any]]]:
@@ -495,9 +500,7 @@ def _failure_exit_code(failures: Sequence[Mapping[str, Any]]) -> int:
     )
 
 
-def _chunks(
-    values: Sequence[tuple[str, Mapping[str, Any]]], size: int
-) -> list[Sequence[tuple[str, Mapping[str, Any]]]]:
+def _chunks(values: Sequence[Any], size: int) -> list[Sequence[Any]]:
     return [values[index : index + size] for index in range(0, len(values), size)]
 
 

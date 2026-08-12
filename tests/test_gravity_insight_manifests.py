@@ -793,6 +793,7 @@ class GravityInsightManifestTests(unittest.TestCase):
                 ]
             },
             "material.tag.list": {"category": ["id", "name"]},
+            "material.tag_category.tree": {"tag_list": ["id", "name"]},
             "material.favorites.list": {
                 "group": [
                     "id",
@@ -846,8 +847,53 @@ class GravityInsightManifestTests(unittest.TestCase):
                 "send_way": ["type"],
                 "target_values": ["advertiser_id"],
             },
+            "promotion.conditions_history.list": {
+                "condition_result": ["target_id"]
+            },
+            "promotion.history.list": {
+                "target_values": ["advertiser_id"]
+            },
             "metadata.metrics.get": {
                 "metrics": ["cname", "formula", "name", "unit"]
+            },
+            "metadata.event_property_template_event_list.list": {
+                "common": [
+                    "cid",
+                    "cname",
+                    "create_time",
+                    "data_type",
+                    "id",
+                    "is_common",
+                    "is_preset",
+                    "modify_time",
+                    "name",
+                    "template_id",
+                ],
+                "custom": [
+                    "cid",
+                    "cname",
+                    "create_time",
+                    "data_type",
+                    "id",
+                    "is_common",
+                    "is_preset",
+                    "modify_time",
+                    "name",
+                    "template_id",
+                ],
+                "preset": [
+                    "cid",
+                    "cname",
+                    "create_time",
+                    "data_type",
+                    "id",
+                    "is_common",
+                    "is_preset",
+                    "modify_time",
+                    "name",
+                    "template_id",
+                ],
+                "properties": ["common", "custom", "preset"],
             },
         }
         device_info = [
@@ -1190,6 +1236,20 @@ class GravityInsightManifestTests(unittest.TestCase):
                     ]
                 },
                 "promotion.bytedance.advertiser.list": {"total": ["stat_cost"]},
+                "promotion.bilibili.account.list": {
+                    "total": [
+                        "average_cost_per_thousand",
+                        "click_count",
+                        "click_rate",
+                        "cost_per_click",
+                        "san_lian_launch_total_consume",
+                        "show_count",
+                        "total_cash_consume",
+                        "total_consume",
+                        "total_red_packet_consume",
+                        "total_special_red_packet_consume",
+                    ]
+                },
                 "promotion.bytedance.advertiser_performance.list": {
                     "total": ["stat_cost"]
                 },
@@ -1202,6 +1262,17 @@ class GravityInsightManifestTests(unittest.TestCase):
                 },
                 # gi-final-unlock：overview 只暴露在线验证过的聚合列表字段。
                 "report.overview.query": {
+                    "columns": [
+                        "AdCost",
+                        "AppActivePayAmountSumReco",
+                        "AppAdFirstDayRevenueReco",
+                        "AppAdRevenueReco",
+                        "AppDAUReco",
+                        "AppFirstDayPayAmountStandardReco",
+                        "AppROIReco",
+                        "AppRealRegisterCnt",
+                        "AppRevenueReco",
+                    ],
                     "data_overview": ["base", "cname", "compare", "name", "ratio"],
                     "trend_overview2": [
                         "AdCost",
@@ -1510,6 +1581,8 @@ class GravityInsightManifestTests(unittest.TestCase):
 
         multidim = self.by_id["report.multidim.query"]
         self.assertIn("app_id", multidim["response_projection"]["item_keys"])
+        self.assertIn("advertiser_id", multidim["response_projection"]["item_keys"])
+        self.assertIn("gid", multidim["response_projection"]["item_keys"])
         self.assertEqual(
             {
                 "data_dims",

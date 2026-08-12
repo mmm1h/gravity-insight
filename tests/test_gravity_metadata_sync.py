@@ -159,12 +159,24 @@ class MetadataSyncTests(unittest.TestCase):
                 contextlib.redirect_stdout(stdout),
             ):
                 exit_code = cli.main(
-                    ["metadata", "search", "purchase", "--database", str(database)]
+                    [
+                        "metadata",
+                        "search",
+                        "purchase",
+                        "--database",
+                        str(database),
+                        "--limit",
+                        "1",
+                        "--offset",
+                        "0",
+                    ]
                 )
         self.assertEqual(0, exit_code)
         build_client.assert_not_called()
         result = json.loads(stdout.getvalue())
         self.assertTrue(result["offline"])
+        self.assertEqual(1, result["limit"])
+        self.assertEqual(0, result["offset"])
         self.assertEqual("purchase", result["results"][0]["name"])
 
     def test_sync_all_apps_persists_every_catalog_atomically(self) -> None:
@@ -179,12 +191,16 @@ class MetadataSyncTests(unittest.TestCase):
             self.assertEqual(2, result["app_count"])
             self.assertEqual(8, result["operation_count"])
             self.assertEqual(8, result["rows_written"])
-            self.assertEqual(4, len(client.batch_calls))
+            self.assertEqual(1, len(client.batch_calls))
             self.assertTrue(all(call[1] == 8 for call in client.batch_calls))
             self.assertEqual(
-                list(ANALYSIS_METADATA_OPERATIONS),
-                [call[0][0]["operation_id"] for call in client.batch_calls],
+                set(ANALYSIS_METADATA_OPERATIONS),
+                {
+                    request["operation_id"]
+                    for request in client.batch_calls[0][0]
+                },
             )
+            self.assertEqual(8, len(client.batch_calls[0][0]))
             self.assertTrue(
                 all(
                     request["read_all"]

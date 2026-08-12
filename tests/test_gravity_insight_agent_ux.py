@@ -7,12 +7,16 @@ import json
 import os
 import tempfile
 import unittest
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
 from gravity_sdk import cli, runtime
+from gravity_sdk.agent import discover_capabilities
+from gravity_sdk.agent_sources import OperationDiscovery, discover_operation_cards
+from gravity_sdk.workspace import load_workspace
 
 try:
     from gravity_sdk import GravityInsightClient
@@ -21,6 +25,7 @@ try:
         InputValidationError,
         OperationNotImplementedError,
         UpstreamError,
+        error_detail_from_exception,
     )
 except ModuleNotFoundError:  # source checkout before editable installation
     from gravity_sdk import GravityInsightClient
@@ -29,6 +34,7 @@ except ModuleNotFoundError:  # source checkout before editable installation
         InputValidationError,
         OperationNotImplementedError,
         UpstreamError,
+        error_detail_from_exception,
     )
 
 
@@ -267,6 +273,676 @@ class DiscoveryUxTests(unittest.TestCase):
         )
         self.assertGreater(result["total"], result["count"])
         self.assertIsNotNone(result["continuation_token"])
+
+    def test_agent_operation_discovery_scans_inventory_once_without_search_pages(self) -> None:
+        with (
+            patch.object(
+                self.client, "operations", wraps=self.client.operations
+            ) as inventory,
+            patch.object(
+                self.client, "search_operations", wraps=self.client.search_operations
+            ) as search,
+        ):
+            discovered = discover_operation_cards(
+                self.client,
+                "event",
+                domain=None,
+                platform=None,
+            )
+
+        self.assertTrue(discovered.matches)
+        inventory.assert_called_once_with(
+            domain=None, platform=None, stability="stable"
+        )
+        search.assert_not_called()
+
+    def test_agent_protocol_and_discovery_are_bounded_offline_and_executable(self) -> None:
+        protocol = cli.run_agent_command(
+            SimpleNamespace(
+                query=None, domain=None, platform=None, limit=3, continuation=None
+            ),
+            self.client,
+        )
+        self.assertEqual("gravity.agent.v1", protocol["schema_version"])
+        self.assertEqual("protocol", protocol["mode"])
+        self.assertFalse(protocol["network_called"])
+        self.assertIn("--concurrency", protocol["execution"]["input_forms"])
+        self.assertIn("--concurrency", protocol["execution"]["large_result_argv_suffix"])
+        self.assertEqual("gravity", protocol["workflow"][0]["argv"][0])
+        self.assertEqual({"0", "2", "3", "4"}, set(protocol["exit_codes"]))
+
+        discovered = cli.run_agent_command(
+            SimpleNamespace(
+                query="retention",
+                domain=None,
+                platform=None,
+                limit=2,
+                continuation=None,
+            ),
+            self.client,
+        )
+        self.assertEqual("discover_and_describe", discovered["mode"])
+        self.assertLessEqual(discovered["count"], 2)
+        self.assertTrue(discovered["candidates"])
+        candidate = discovered["candidates"][0]
+        self.assertEqual("gravity", candidate["next"]["argv"][0])
+        self.assertEqual("run", candidate["next"]["argv"][1])
+        self.assertIn("input_schema", candidate)
+        self.assertNotIn("response_projection", candidate)
+
+    def test_agent_prefers_a_matching_workspace_recipe_in_the_same_call(self) -> None:
+        workspace = load_workspace(
+            Path(__file__).resolve().parents[1]
+            / "examples"
+            / "workspace"
+            / "gravity.toml"
+        )
+        with patch("gravity_sdk.agent_sources.load_workspace", return_value=workspace):
+            result = cli.run_agent_command(
+                SimpleNamespace(
+                    query="retention",
+                    domain=None,
+                    platform=None,
+                    limit=2,
+                    continuation=None,
+                ),
+                self.client,
+            )
+
+        self.assertLessEqual(result["count"], 2)
+        self.assertEqual("recipe", result["candidates"][0]["kind"])
+        self.assertEqual("@demo-retention", result["candidates"][0]["selector"])
+        self.assertEqual("gravity", result["candidates"][0]["next"]["argv"][0])
+
+    def test_agent_returns_matching_workspace_sql_product_in_the_same_call(self) -> None:
+        workspace = load_workspace(
+            Path(__file__).resolve().parents[1]
+            / "examples"
+            / "workspace"
+            / "gravity.toml"
+        )
+        with (
+            patch("gravity_sdk.agent_sources.load_workspace", return_value=workspace),
+            patch(
+                "gravity_sdk.agent_sources.metadata_capability_cards",
+                return_value=([], []),
+            ),
+        ):
+            result = cli.run_agent_command(
+                SimpleNamespace(
+                    query="daily event summary",
+                    domain=None,
+                    platform=None,
+                    limit=3,
+                    continuation=None,
+                ),
+                self.client,
+            )
+
+        product = result["candidates"][0]
+        self.assertEqual("sql_product", product["kind"])
+        self.assertEqual("sql:daily-event-summary", product["selector"])
+        self.assertEqual("strong", product["match"]["confidence"])
+        self.assertNotIn("sql", product)
+        self.assertEqual(
+            "daily event summary", result["fallbacks"][0]["argv"][-1]
+        )
+
+        with (
+            patch("gravity_sdk.agent_sources.load_workspace", return_value=workspace),
+            patch(
+                "gravity_sdk.agent_sources.metadata_capability_cards",
+                return_value=([], []),
+            ),
+        ):
+            insight_first = cli.run_agent_command(
+                SimpleNamespace(
+                    query="event",
+                    domain=None,
+                    platform=None,
+                    limit=3,
+                    continuation=None,
+                ),
+                self.client,
+            )
+        self.assertEqual("operation", insight_first["candidates"][0]["kind"])
+        self.assertGreater(insight_first["total"], insight_first["count"])
+        self.assertIsNotNone(insight_first["continuation_token"])
+
+    def test_agent_total_is_independent_of_limit_for_one_strong_sql_match(self) -> None:
+        workspace = load_workspace(
+            Path(__file__).resolve().parents[1]
+            / "examples"
+            / "workspace"
+            / "gravity.toml"
+        )
+        results = []
+        with (
+            patch("gravity_sdk.agent_sources.load_workspace", return_value=workspace),
+            patch(
+                "gravity_sdk.agent_sources.metadata_capability_cards",
+                return_value=([], []),
+            ),
+        ):
+            for limit in (1, 3):
+                results.append(
+                    cli.run_agent_command(
+                        SimpleNamespace(
+                            query="daily event summary",
+                            domain=None,
+                            platform=None,
+                            limit=limit,
+                            continuation=None,
+                        ),
+                        self.client,
+                    )
+                )
+
+        self.assertEqual([1, 1], [result["total"] for result in results])
+        self.assertEqual([1, 1], [result["count"] for result in results])
+        self.assertTrue(all(result["continuation_token"] is None for result in results))
+
+    def test_agent_pages_every_catalog_in_priority_order_without_duplicates(self) -> None:
+        catalog = [
+            {"kind": "recipe", "selector": "@recipe"},
+            {"kind": "sql_product", "selector": "sql:product"},
+            {"kind": "metadata", "selector": "metadata:event:1"},
+        ]
+        operations = OperationDiscovery(
+            matches=[
+                {
+                    "operation_id": "app.list",
+                    "agent_match": {
+                        "confidence": "strong",
+                        "coverage": 1.0,
+                        "matched_terms": ["app"],
+                        "missing_terms": [],
+                        "score": 100,
+                    },
+                }
+            ],
+            weak=[],
+        )
+        selectors: list[str] = []
+        totals: list[int] = []
+        token = None
+        with (
+            patch(
+                "gravity_sdk.agent.catalog_cards",
+                return_value=(catalog, len(catalog), [], "0" * 64),
+            ),
+            patch(
+                "gravity_sdk.agent.discover_operation_cards",
+                return_value=operations,
+            ),
+        ):
+            while True:
+                result = cli.run_agent_command(
+                    SimpleNamespace(
+                        query="app",
+                        domain=None,
+                        platform=None,
+                        limit=1,
+                        continuation=token,
+                    ),
+                    self.client,
+                )
+                totals.append(result["total"])
+                self.assertEqual(1, result["count"])
+                selectors.append(result["candidates"][0]["selector"])
+                token = result["continuation_token"]
+                if token is None:
+                    break
+
+        self.assertEqual([4, 4, 4, 4], totals)
+        self.assertEqual(
+            ["@recipe", "app.list", "sql:product", "metadata:event:1"],
+            selectors,
+        )
+        self.assertEqual(len(selectors), len(set(selectors)))
+
+    def test_agent_weak_only_result_has_zero_total_and_no_false_page(self) -> None:
+        weak = {"operation_id": "analysis.event.list", "score": 1}
+        with (
+            patch("gravity_sdk.agent.catalog_cards", return_value=([], 0, [], "0" * 64)),
+            patch(
+                "gravity_sdk.agent.discover_operation_cards",
+                return_value=OperationDiscovery(matches=[], weak=[weak]),
+            ),
+        ):
+            result = cli.run_agent_command(
+                SimpleNamespace(
+                    query="missing capability",
+                    domain=None,
+                    platform=None,
+                    limit=1,
+                    continuation=None,
+                ),
+                self.client,
+            )
+
+        self.assertEqual("capability_gap", result["status"])
+        self.assertEqual(0, result["total"])
+        self.assertEqual(0, result["count"])
+        self.assertIsNone(result["continuation_token"])
+
+    def test_agent_does_not_promote_weak_partial_matches(self) -> None:
+        with patch(
+            "gravity_sdk.agent.catalog_cards", return_value=([], 0, [], "0" * 64)
+        ):
+            result = cli.run_agent_command(
+                SimpleNamespace(
+                    query="push campaign nonexistent capability",
+                    domain=None,
+                    platform=None,
+                    limit=3,
+                    continuation=None,
+                ),
+                self.client,
+            )
+
+        self.assertEqual("capability_gap", result["status"])
+        self.assertEqual([], result["candidates"])
+        gap = result["capability_gaps"][0]
+        self.assertTrue(gap["weak_matches"])
+        self.assertEqual(
+            "partial", gap["weak_matches"][0]["match"]["confidence"]
+        )
+        self.assertNotIn("next", gap)
+
+    def test_agent_reports_exact_draft_blockers_without_execution_argv(self) -> None:
+        operation_id = "promotion.alipay.campaign.list"
+        with patch(
+            "gravity_sdk.agent.catalog_cards", return_value=([], 0, [], "0" * 64)
+        ):
+            result = cli.run_agent_command(
+                SimpleNamespace(
+                    query=operation_id,
+                    domain=None,
+                    platform=None,
+                    limit=3,
+                    continuation=None,
+                ),
+                self.client,
+            )
+
+        self.assertEqual("capability_gap", result["status"])
+        gap = result["capability_gaps"][0]
+        self.assertEqual("draft_capability_gap", gap["kind"])
+        self.assertEqual(operation_id, gap["operation_id"])
+        self.assertTrue(gap["blockers"])
+        self.assertNotIn("next", gap)
+
+    def test_agent_metadata_source_is_safe_and_warns_when_default_is_unavailable(self) -> None:
+        from gravity_sdk.find import metadata_capability_cards
+
+        metadata_result = {
+            "results": [
+                {
+                    "kind": "event",
+                    "app_id": "101",
+                    "name": "Purchase",
+                    "cname": "Purchase event",
+                    "operation_id": "analysis.event.list",
+                    "score": 100,
+                    "payload": {"name": "Purchase", "internal": "not-for-card"},
+                }
+            ]
+        }
+        with patch(
+            "gravity_sdk.find.search_metadata", return_value=metadata_result
+        ) as search:
+            cards, warnings = metadata_capability_cards("purchase", limit=2)
+
+        self.assertEqual([], warnings)
+        self.assertEqual("metadata", cards[0]["kind"])
+        self.assertNotIn("payload", cards[0])
+        self.assertEqual(
+            ["gravity", "metadata", "events", "purchase", "--app-id", "101"],
+            cards[0]["next"]["argv"],
+        )
+        search.assert_called_once_with("purchase", limit=None, offset=0)
+
+        broad_results = {
+            "total": 250,
+            "results": [
+                {
+                    "kind": "event",
+                    "app_id": str(index),
+                    "name": f"Event {index}",
+                    "cname": "Broad event",
+                    "operation_id": "analysis.event.list",
+                    "score": 60,
+                }
+                for index in range(250)
+            ],
+        }
+        with patch(
+            "gravity_sdk.find.search_metadata", return_value=broad_results
+        ) as broad_search:
+            broad_cards, _ = metadata_capability_cards("event", limit=None)
+        self.assertEqual(250, len(broad_cards))
+        broad_search.assert_called_once_with("event", limit=None, offset=0)
+
+        with patch(
+            "gravity_sdk.find.search_metadata",
+            side_effect=InputValidationError("missing", field="database"),
+        ):
+            cards, warnings = metadata_capability_cards("purchase", limit=2)
+        self.assertEqual([], cards)
+        self.assertIn("metadata sync --all-apps", warnings[0])
+        self.assertNotIn("\\", warnings[0])
+
+    def test_agent_recipe_page_continuation_remains_valid(self) -> None:
+        workspace = load_workspace(
+            Path(__file__).resolve().parents[1]
+            / "examples"
+            / "workspace"
+            / "gravity.toml"
+        )
+        with patch("gravity_sdk.agent_sources.load_workspace", return_value=workspace):
+            first = cli.run_agent_command(
+                SimpleNamespace(
+                    query="analysis",
+                    domain=None,
+                    platform=None,
+                    limit=2,
+                    continuation=None,
+                ),
+                self.client,
+            )
+            second = cli.run_agent_command(
+                SimpleNamespace(
+                    query="analysis",
+                    domain=None,
+                    platform=None,
+                    limit=2,
+                    continuation=first["continuation_token"],
+                ),
+                self.client,
+            )
+
+        self.assertEqual("recipe", first["candidates"][0]["kind"])
+        self.assertTrue(first["continuation_token"])
+        self.assertEqual(first["total"], second["total"])
+        self.assertNotEqual(
+            first["candidates"][-1]["selector"],
+            second["candidates"][0]["selector"],
+        )
+        self.assertEqual("operation", second["candidates"][0]["kind"])
+        token = first["continuation_token"]
+        padding = "=" * (-len(token) % 4)
+        token_payload = json.loads(
+            base64.urlsafe_b64decode(token + padding).decode("utf-8")
+        )
+        self.assertRegex(token_payload["catalog_fingerprint"], r"^[0-9a-f]{64}$")
+        self.assertRegex(token_payload["candidates_fingerprint"], r"^[0-9a-f]{64}$")
+        self.assertNotIn("SELECT", json.dumps(token_payload))
+        self.assertNotIn(str(workspace.path), json.dumps(token_payload))
+
+    def test_agent_continuation_binds_operation_inventory_candidates(self) -> None:
+        class InventoryClient:
+            def __init__(self, operation_ids: list[str]) -> None:
+                self.operation_ids = operation_ids
+
+            def operations(self, **_filters):
+                return [
+                    {
+                        "operation_id": operation_id,
+                        "domain": "analysis",
+                        "resource": "event",
+                        "action": "list",
+                        "stability": "stable",
+                        "executable": True,
+                        "contract_version": "1",
+                    }
+                    for operation_id in self.operation_ids
+                ]
+
+            def describe(self, operation_id: str):
+                return {
+                    "operation_id": operation_id,
+                    "input_schema": {},
+                    "stability": "stable",
+                    "executable": True,
+                }
+
+        workspace = load_workspace(
+            Path(__file__).resolve().parents[1]
+            / "examples"
+            / "workspace"
+            / "gravity.toml"
+        )
+        first_client = InventoryClient(["event.a", "event.b"])
+        first = discover_capabilities(
+            "event", client=first_client, workspace=workspace, limit=1
+        )
+        same = discover_capabilities(
+            "event",
+            client=InventoryClient(["event.a", "event.b"]),
+            workspace=workspace,
+            limit=1,
+            continuation=first["continuation_token"],
+        )
+        self.assertEqual("event.a", first["candidates"][0]["selector"])
+        self.assertEqual("event.b", same["candidates"][0]["selector"])
+
+        with self.assertRaises(InputValidationError) as raised:
+            discover_capabilities(
+                "event",
+                client=InventoryClient(["event.x", "event.y"]),
+                workspace=workspace,
+                limit=1,
+                continuation=first["continuation_token"],
+            )
+        self.assertEqual("continuation", raised.exception.field)
+
+    def test_agent_continuation_binds_metadata_candidates(self) -> None:
+        def metadata_card(selector: str) -> dict[str, object]:
+            return {
+                "kind": "metadata",
+                "selector": selector,
+                "metadata_kind": "event",
+                "app_id": "1",
+                "name": selector,
+                "display_name": selector,
+                "operation_id": "analysis.event.list",
+            }
+
+        first_catalog = [metadata_card("metadata:event:1:a"), metadata_card("metadata:event:1:b")]
+        changed_catalog = [metadata_card("metadata:event:1:x"), metadata_card("metadata:event:1:y")]
+        empty_operations = OperationDiscovery(matches=[], weak=[])
+        with (
+            patch(
+                "gravity_sdk.agent.catalog_cards",
+                side_effect=(
+                    (first_catalog, 2, [], "0" * 64),
+                    (changed_catalog, 2, [], "0" * 64),
+                ),
+            ),
+            patch(
+                "gravity_sdk.agent.discover_operation_cards",
+                return_value=empty_operations,
+            ),
+        ):
+            first = discover_capabilities("event", client=self.client, limit=1)
+            with self.assertRaises(InputValidationError) as raised:
+                discover_capabilities(
+                    "event",
+                    client=self.client,
+                    limit=1,
+                    continuation=first["continuation_token"],
+                )
+
+        self.assertEqual("continuation", raised.exception.field)
+
+    def test_agent_continuation_rejects_explicit_workspace_switch(self) -> None:
+        workspace_a = load_workspace(
+            Path(__file__).resolve().parents[1]
+            / "examples"
+            / "workspace"
+            / "gravity.toml"
+        )
+        product_name = workspace_a.product_names[0]
+        product = dict(workspace_a.products[product_name])
+        product["measurement"] = "changed aggregate contract"
+        workspace_b = replace(
+            workspace_a,
+            path=Path("B:/different/gravity.toml"),
+            products={**workspace_a.products, product_name: product},
+        )
+        first = discover_capabilities(
+            "event", client=self.client, workspace=workspace_a, limit=1
+        )
+        self.assertIsNotNone(first["continuation_token"])
+
+        with self.assertRaises(InputValidationError) as raised:
+            discover_capabilities(
+                "event",
+                client=self.client,
+                workspace=workspace_b,
+                limit=1,
+                continuation=first["continuation_token"],
+            )
+
+        self.assertEqual("continuation", raised.exception.field)
+        self.assertEqual("caller", error_detail_from_exception(raised.exception).category)
+
+    def test_agent_continuation_rejects_default_cwd_workspace_switch(self) -> None:
+        source = (
+            Path(__file__).resolve().parents[1]
+            / "examples"
+            / "workspace"
+            / "gravity.toml"
+        ).read_text(encoding="utf-8")
+        changed = source.replace(
+            "Fictional project-owned retention recipe",
+            "Changed project-owned retention recipe",
+        )
+        original_cwd = Path.cwd()
+        with tempfile.TemporaryDirectory() as temporary, patch.dict(
+            os.environ, {"GRAVITY_WORKSPACE": ""}
+        ):
+            root = Path(temporary)
+            workspace_a = root / "a"
+            workspace_b = root / "b"
+            workspace_a.mkdir()
+            workspace_b.mkdir()
+            (workspace_a / "gravity.toml").write_text(source, encoding="utf-8")
+            (workspace_b / "gravity.toml").write_text(changed, encoding="utf-8")
+            try:
+                os.chdir(workspace_a)
+                first = discover_capabilities("event", client=self.client, limit=1)
+                os.chdir(workspace_b)
+                with self.assertRaises(InputValidationError) as raised:
+                    discover_capabilities(
+                        "event",
+                        client=self.client,
+                        limit=1,
+                        continuation=first["continuation_token"],
+                    )
+            finally:
+                os.chdir(original_cwd)
+
+        self.assertEqual("continuation", raised.exception.field)
+
+    def test_agent_continuation_rejects_same_workspace_contract_drift(self) -> None:
+        base = load_workspace(
+            Path(__file__).resolve().parents[1]
+            / "examples"
+            / "workspace"
+            / "gravity.toml"
+        )
+        recipe_name = base.recipe_names[0]
+        product_name = base.product_names[0]
+        changed_recipe = replace(
+            base.recipes[recipe_name], description="changed recipe contract"
+        )
+        changed_product = dict(base.products[product_name])
+        changed_product["max_rows"] = int(changed_product["max_rows"]) + 1
+        variants = (
+            replace(base, recipes={**base.recipes, recipe_name: changed_recipe}),
+            replace(base, products={**base.products, product_name: changed_product}),
+        )
+        for kind, changed_workspace in zip(("recipe", "product"), variants):
+            with self.subTest(changed=kind):
+                first = discover_capabilities(
+                    "event", client=self.client, workspace=base, limit=1
+                )
+                with self.assertRaises(InputValidationError) as raised:
+                    discover_capabilities(
+                        "event",
+                        client=self.client,
+                        workspace=changed_workspace,
+                        limit=1,
+                        continuation=first["continuation_token"],
+                    )
+                self.assertEqual("continuation", raised.exception.field)
+
+    def test_agent_cli_emits_one_json_document_and_stable_empty_success(self) -> None:
+        class EmptySearchClient:
+            def search_operations(self, *_args, **_kwargs):
+                return {
+                    "operations": [],
+                    "total": 0,
+                    "continuation_token": None,
+                }
+
+        for argv, expected_status, selected_client in (
+            (["agent"], "ready", self.client),
+            (
+                ["agent", "no-such-capability-xyz"],
+                "capability_gap",
+                EmptySearchClient(),
+            ),
+        ):
+            with self.subTest(argv=argv):
+                stdout = io.StringIO()
+                stderr = io.StringIO()
+                with (
+                    patch("gravity_sdk.cli.runtime.build_client", return_value=selected_client),
+                    contextlib.redirect_stdout(stdout),
+                    contextlib.redirect_stderr(stderr),
+                ):
+                    exit_code = cli.main(argv)
+                payload = json.loads(stdout.getvalue())
+                self.assertEqual(0, exit_code)
+                self.assertEqual(expected_status, payload["status"])
+                self.assertIn("next_action", payload)
+                self.assertEqual("", stderr.getvalue())
+
+    def test_agent_ndjson_emits_one_candidate_per_line_and_terminal_metadata(self) -> None:
+        stdout = io.StringIO()
+        with (
+            patch("gravity_sdk.cli.runtime.build_client", return_value=self.client),
+            contextlib.redirect_stdout(stdout),
+        ):
+            exit_code = cli.main(
+                ["agent", "report", "--limit", "1", "--format", "ndjson"]
+            )
+
+        lines = [json.loads(line) for line in stdout.getvalue().splitlines()]
+        self.assertEqual(0, exit_code)
+        self.assertGreaterEqual(len(lines), 2)
+        self.assertIn("operation_id", lines[0])
+        self.assertEqual(len(lines) - 1, lines[-1]["_gravity_insight"]["rows_written"])
+        terminal = lines[-1]["_gravity_insight"]
+        self.assertEqual("gravity.agent.v1", terminal["payload_schema_version"])
+        self.assertTrue(terminal["ok"])
+        self.assertTrue(terminal["offline"])
+        self.assertFalse(terminal["network_called"])
+        self.assertEqual("discover_and_describe", terminal["mode"])
+        self.assertEqual(terminal["rows_written"], terminal["count"])
+        self.assertIn("continuation_token", terminal)
+        self.assertIsNotNone(terminal["continuation_token"])
+        self.assertIn("next_action", terminal)
+        self.assertIn("execution", terminal)
+        self.assertEqual(
+            "workspace_recipes_stable_insight_sql_products_and_local_metadata",
+            terminal["scope"],
+        )
+        self.assertTrue(terminal["fallbacks"])
+        self.assertIn("catalog_warnings", terminal)
 
     def test_draft_action_is_written_for_sdk_users(self) -> None:
         operation_id = "app.app_info.get"

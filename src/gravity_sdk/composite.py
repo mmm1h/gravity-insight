@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import inspect
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Mapping, Protocol, Sequence
 
 from .cache import is_metadata_operation
+from .composite_result import combined_status as _combined_status
+from .composite_result import multidim_envelope, should_calculate_total
 from .errors import GravityInsightError, InputValidationError, PolicyViolation
 
 
@@ -43,6 +47,7 @@ class _PublicClient(Protocol):
         *,
         max_pages: int = 1_000,
         max_items: int = 100_000,
+        max_workers: int = 6,
     ) -> dict[str, Any]: ...
 
     def batch(
@@ -145,18 +150,27 @@ class CompositeService:
         include_total: bool = False,
         read_all: bool = False,
         metadata_inputs: Mapping[str, Mapping[str, Any]] | None = None,
+        max_pages: int = 1_000,
+        max_items: int = 100_000,
+        max_workers: int = 6,
     ) -> dict[str, Any]:
         if not isinstance(inputs, Mapping):
             raise InputValidationError("multidimensional inputs must be an object")
         supplied = dict(inputs)
         validation = self._validate_multidim(supplied, metadata_inputs or {})
         query = (
-            self._client.read_all(MULTIDIM_QUERY_OPERATION, supplied)
+            self._client.read_all(
+                MULTIDIM_QUERY_OPERATION,
+                supplied,
+                max_pages=max_pages,
+                max_items=max_items,
+                max_workers=max_workers,
+            )
             if read_all
             else self._client.read(MULTIDIM_QUERY_OPERATION, supplied)
         )
         total: dict[str, Any] | None = None
-        if include_total and query.get("status") not in {"contract_changed", "error"}:
+        if include_total and should_calculate_total(query):
             calc_schema = self._client.schema(MULTIDIM_TOTAL_OPERATION)
             input_schema = calc_schema.get("input_fields", {})
             if not isinstance(input_schema, Mapping) or "data_list" not in input_schema:
@@ -165,16 +179,13 @@ class CompositeService:
             calc_inputs = {key: value for key, value in supplied.items() if key in allowed}
             calc_inputs["data_list"] = _rows(query)
             total = self._client.read(MULTIDIM_TOTAL_OPERATION, calc_inputs)
-        statuses = [str(query.get("status", "error"))]
-        if total is not None:
-            statuses.append(str(total.get("status", "error")))
-        return {
-            "schema_version": "gravity-insight.composite.multidim.v1",
-            "status": _combined_status(statuses),
-            "validation": validation,
-            "query": query,
-            "total": total,
-        }
+        return multidim_envelope(
+            validation,
+            query,
+            total,
+            query_operation=MULTIDIM_QUERY_OPERATION,
+            total_operation=MULTIDIM_TOTAL_OPERATION,
+        )
 
     def promotion_snapshot(
         self,
@@ -348,25 +359,52 @@ class CompositeService:
         *,
         required: bool,
     ) -> tuple[list[Mapping[str, Any]], list[str]]:
-        rows: list[Mapping[str, Any]] = []
-        successful = False
-        verified_operations: list[str] = []
-        for operation_id in operation_ids:
+        if not operation_ids:
+            if required:
+                raise InputValidationError(
+                    "live metric metadata is unavailable; multidimensional query was not executed"
+                )
+            return [], []
+
+        def load(operation_id: str) -> tuple[str, list[Mapping[str, Any]]] | None:
             try:
                 schema = self._client.schema(operation_id)
                 if not is_metadata_operation(schema):
-                    continue
-                envelope = self._client.read_all(
-                    operation_id, dict(metadata_inputs.get(operation_id, {}))
+                    return None
+                read_all = self._client.read_all
+                parameters = inspect.signature(read_all).parameters
+                options = (
+                    {"max_workers": 1}
+                    if "max_workers" in parameters
+                    or any(
+                        parameter.kind is inspect.Parameter.VAR_KEYWORD
+                        for parameter in parameters.values()
+                    )
+                    else {}
+                )
+                envelope = read_all(
+                    operation_id,
+                    dict(metadata_inputs.get(operation_id, {})),
+                    **options,
                 )
             except (GravityInsightError, KeyError, TypeError, ValueError):
-                continue
+                return None
             if envelope.get("status") == "contract_changed":
-                continue
-            if envelope.get("status") in {"success", "empty"}:
-                successful = True
-                verified_operations.append(operation_id)
-                rows.extend(item for item in _rows(envelope) if isinstance(item, Mapping))
+                return None
+            if envelope.get("status") not in {"success", "empty"}:
+                return None
+            return operation_id, [
+                item for item in _rows(envelope) if isinstance(item, Mapping)
+            ]
+
+        workers = min(6, len(operation_ids))
+        with ThreadPoolExecutor(
+            max_workers=workers, thread_name_prefix="gravity-metadata"
+        ) as pool:
+            loaded = list(pool.map(load, operation_ids))
+        successful = [item for item in loaded if item is not None]
+        verified_operations = [item[0] for item in successful]
+        rows = [row for _, values in successful for row in values]
         if required and (not successful or not rows):
             raise InputValidationError(
                 "live metric metadata is unavailable; multidimensional query was not executed"
@@ -415,26 +453,6 @@ def _operation_ids(values: Sequence[str]) -> list[str]:
     if isinstance(values, (str, bytes)) or any(not isinstance(item, str) or not item for item in values):
         raise InputValidationError("operation/platform identifiers must be non-empty strings")
     return list(values)
-
-
-def _combined_status(statuses: Sequence[str]) -> str:
-    if any(
-        status
-        in {
-            "error",
-            "semantic_error",
-            "unavailable",
-            "parent_required",
-            "permission_unavailable",
-        }
-        for status in statuses
-    ):
-        return "partial" if any(status in {"success", "empty", "contract_changed"} for status in statuses) else "error"
-    if any(status == "contract_changed" for status in statuses):
-        return "contract_changed"
-    if statuses and all(status == "empty" for status in statuses):
-        return "empty"
-    return "success"
 
 
 def _batch_status(results: Sequence[Mapping[str, Any]]) -> str:

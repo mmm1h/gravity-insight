@@ -6,6 +6,7 @@
 
 | 任务 | 文档 |
 | --- | --- |
+| 选择 operation、codec、CLI、recipe、SQL 或 export 扩展面 | [扩展地图](extending.md) |
 | 新增、升级或废弃 operation | [新增受控能力](operations.md) |
 | 在线探测、浏览器确认页面行为 | [探测安全](probing.md) |
 | 发现上游路由或评估漂移 | [路由盘点](census.md) |
@@ -25,7 +26,10 @@
 
 文档解释流程和边界；schema、默认值、operation 数量与字段列表以当前合同和 CLI 输出为准。
 
-## 必跑门禁
+## 验证节奏
+
+开发内循环先跑受影响的目标测试和确定性检查；不要让纯文档、CLI 文案或局部合同改动每一步
+都等待 live probe、Census 或 Evidence。提交前仍运行完整门禁：
 
 ```powershell
 python -m unittest discover -s tests

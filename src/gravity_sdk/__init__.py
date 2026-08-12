@@ -19,6 +19,8 @@ _EXPORTS = {
     "OperationCatalog": (".catalog", "OperationCatalog"),
     "OperationProbe": (".catalog", "OperationProbe"),
     "GravityInsightClient": (".client", "GravityInsightClient"),
+    "GravitySDK": (".sdk", "GravitySDK"),
+    "connect": (".sdk", "connect"),
     "CompositeService": (".composite", "CompositeService"),
     "Credential": (".credentials", "Credential"),
     "CredentialConfig": (".credentials", "CredentialConfig"),
@@ -37,6 +39,13 @@ _EXPORTS = {
     "SqlBatchRequest": (".sql", "SqlBatchRequest"),
     "SqlBatchResult": (".sql", "SqlBatchResult"),
     "build_sql_client": (".sql", "build_sql_client"),
+    "PlanAdapter": (".plan", "PlanAdapter"),
+    "PlanAdapters": (".plan", "PlanAdapters"),
+    "PlanValidationError": (".plan", "PlanValidationError"),
+    "execute_plan": (".plan", "execute_plan"),
+    "plan_schema": (".plan", "plan_schema"),
+    "validate_plan": (".plan", "validate_plan"),
+    "capabilities_many": (".agent_batch", "capabilities_many"),
 }
 
 for _error_name in (

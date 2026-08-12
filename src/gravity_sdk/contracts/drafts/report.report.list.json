@@ -5,13 +5,13 @@
       {
         "code": "empty_sample",
         "detail": "The observed tenant response was empty and cannot prove an item schema.",
-        "evidence": "evidence/probe/20260809T011204Z_report.report.list.yaml",
+        "evidence": "evidence/probe/20260812T043810Z_report.report.list.yaml",
         "status": "open"
       },
       {
         "code": "response_schema_unverified",
         "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
-        "evidence": "evidence/probe/20260809T011204Z_report.report.list.yaml",
+        "evidence": "evidence/probe/20260812T043810Z_report.report.list.yaml",
         "status": "open"
       }
     ],
@@ -97,6 +97,17 @@
         "parent_resolved": false,
         "path": "evidence/probe/20260809T011204Z_report.report.list.yaml",
         "probed_at": "2026-08-09T01:12:04Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "7c58ed2c08c62403763f03bf84baabf2f6609efc6064f87aa03b35d9b739c9ea",
+        "successful": false
+      },
+      {
+        "conclusion": "inconclusive_empty",
+        "method_verified": false,
+        "pagination_verified": true,
+        "parent_resolved": true,
+        "path": "evidence/probe/20260812T043810Z_report.report.list.yaml",
+        "probed_at": "2026-08-12T04:38:10Z",
         "projected_schema_fingerprint": null,
         "raw_schema_fingerprint": "7c58ed2c08c62403763f03bf84baabf2f6609efc6064f87aa03b35d9b739c9ea",
         "successful": false
@@ -230,10 +241,12 @@
         "type": "array"
       },
       "page": {
+        "default": 1,
         "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
         "type": "integer"
       },
       "page_size": {
+        "default": 20,
         "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
         "type": "integer"
       }

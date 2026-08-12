@@ -318,6 +318,54 @@ class GravityInsightAnalysisTests(unittest.TestCase):
         )
         self.assertEqual([], result["warnings"])
 
+    def test_event_query_accepts_preset_user_count_with_user_filter(self) -> None:
+        def handler(_method: str, path: str, _kwargs: Mapping[str, Any]):
+            if path.endswith("event_list/"):
+                return event_metadata()
+            if path.endswith("event_property_list/"):
+                return page([])
+            if path.endswith("user_property_list/"):
+                return page(
+                    [
+                        {
+                            "name": "$pay_count",
+                            "cname": "pay count",
+                            "data_type": "INT",
+                            "visible": True,
+                        }
+                    ]
+                )
+            if path.endswith("event_info/"):
+                raise AssertionError("PresetUserCount must not require event metadata")
+            return clean_event_result()
+
+        client, transport = client_for(
+            "analysis.event.query",
+            "analysis.event_property.list",
+            "analysis.user_property.list",
+            handler=handler,
+        )
+        inputs = event_inputs()
+        inputs["query_item_list"][0]["target"] = {
+            "name": "PresetUserCount",
+            "field": "PresetUserCount",
+        }
+        inputs["query_item_list"][0]["conditions"] = [
+            {
+                "operator": "GREATER",
+                "field": "$pay_count",
+                "type": "user",
+                "value": ["0"],
+            }
+        ]
+
+        result = client.read("analysis.event.query", inputs)
+
+        self.assertEqual("success", result["status"])
+        self.assertFalse(
+            any(path.endswith("event_info/") for _, path, _ in transport.calls)
+        )
+
     def test_event_split_and_custom_scatter_use_full_frontend_structures(self) -> None:
         def handler(_method: str, path: str, kwargs: Mapping[str, Any]):
             if path.endswith("event_list/"):

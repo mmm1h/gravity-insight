@@ -6,6 +6,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from gravity_sdk.census.cli import build_parser
 from gravity_sdk.census.coverage import build_coverage
 from gravity_sdk.census.diffing import diff_routes
 from gravity_sdk.census.fetcher import StaticFetcher, _looks_like_vite_chunk, check_upstream
@@ -15,6 +16,14 @@ from gravity_sdk.census.parser import build_routes, parse_text
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+class GravityCensusCliTests(unittest.TestCase):
+    def test_nested_help_keeps_the_copyable_census_prefix(self) -> None:
+        parser = build_parser()
+        self.assertTrue(parser.format_usage().startswith("usage: gravity census"))
+        coverage = parser.parse_args(["coverage"])
+        self.assertEqual("coverage", coverage.command)
 
 
 class GravityCensusNormalizationTests(unittest.TestCase):
@@ -209,6 +218,24 @@ class GravityCensusCoverageTests(unittest.TestCase):
         self.assertEqual(result["family_summary"]["families"], 1)
         self.assertTrue(all(item["contract_family"] for item in result["routes"]))
         self.assertTrue(all(item["estimated_implementation_cost"] == "高" for item in result["routes"]))
+
+    def test_wechat_video_report_is_classified_as_a_promotion_platform(self) -> None:
+        routes = {
+            "source": {"bundle_complete": True},
+            "routes": [
+                {
+                    "method": "POST",
+                    "path": "/turbo_engine/api/v1/wechat_video/report/list/",
+                }
+            ],
+        }
+
+        result = build_coverage(routes, [])
+
+        route = result["routes"][0]
+        self.assertEqual("推广平台", route["business_module"])
+        self.assertEqual("wechat_video", route["promotion_platform"])
+        self.assertEqual("报表", route["promotion_level"])
 
 
 class GravityCensusFetcherTests(unittest.TestCase):

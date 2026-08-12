@@ -121,6 +121,7 @@ def call_read(
     limit: int | None = None,
     max_pages: int | None = None,
     max_items: int | None = None,
+    max_workers: int | None = None,
 ) -> Any:
     effective_items = max_items if max_items is not None else limit
     if not read_all and (max_pages is not None or effective_items is not None) and callable(
@@ -138,6 +139,8 @@ def call_read(
             if name in parameters:
                 kwargs[name] = effective_items
                 break
+    if max_workers is not None and "max_workers" in parameters:
+        kwargs["max_workers"] = max_workers
     return method(operation_id, dict(inputs), **kwargs)
 
 
@@ -146,6 +149,8 @@ def call_batch(
     requests: Sequence[Mapping[str, Any]],
     *,
     concurrency: int = 6,
+    max_pages: int | None = None,
+    max_total_items: int | None = None,
 ) -> Any:
     method = client.batch
     parameters = inspect.signature(method).parameters
@@ -154,6 +159,10 @@ def call_batch(
         kwargs["concurrency"] = concurrency
     elif "max_workers" in parameters:
         kwargs["max_workers"] = concurrency
+    if max_pages is not None and "max_pages" in parameters:
+        kwargs["max_pages"] = max_pages
+    if max_total_items is not None and "max_total_items" in parameters:
+        kwargs["max_total_items"] = max_total_items
     return method([dict(item) for item in requests], **kwargs)
 
 
@@ -181,7 +190,7 @@ def credential_status() -> dict[str, Any]:
     elif credentials_available:
         state = "credentials_available"
         next_action = (
-            "Run `python -m gravity_sdk auth refresh` to exchange the "
+            "Run `gravity auth refresh` to exchange the "
             "configured username/password for a token."
         )
     else:

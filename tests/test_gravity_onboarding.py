@@ -93,6 +93,8 @@ class GravityOnboardingTests(unittest.TestCase):
 
     def test_offline_requirement_is_derived_from_command_properties(self) -> None:
         for command in (
+            ["agent"],
+            ["agent", "retention"],
             ["operations", "search", "retention"],
             ["find", "retention"],
             ["metadata", "search", "retention"],
@@ -157,6 +159,7 @@ class GravityOnboardingTests(unittest.TestCase):
 
         rendered = output.getvalue()
         self.assertIn("gravity find <query>", rendered)
+        self.assertIn("gravity agent [query]", rendered)
         self.assertIn("gravity recipe validate|check <name>", rendered)
         self.assertIn("gravity run @<recipe>", rendered)
 

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Protocol, Sequence
@@ -13,6 +15,29 @@ from .workspace import Workspace, load_workspace
 
 
 SCHEMA_VERSION = "gravity.find.v1"
+
+_MATCH_ALIASES: Mapping[str, tuple[str, ...]] = {
+    "app": ("应用", "application"),
+    "campaign": ("活动", "推广", "广告"),
+    "cohort": ("分群", "segment"),
+    "event": ("事件",),
+    "funnel": ("漏斗",),
+    "material": ("素材", "creative"),
+    "metadata": ("元数据",),
+    "report": ("报表", "metric", "指标"),
+    "retention": ("留存",),
+    "segment": ("分群", "cohort"),
+    "user": ("用户", "account"),
+    "事件": ("event",),
+    "分群": ("segment", "cohort"),
+    "应用": ("app", "application"),
+    "报表": ("report", "metric"),
+    "推广": ("promotion", "campaign"),
+    "活动": ("campaign",),
+    "用户": ("user", "account"),
+    "留存": ("retention",),
+    "素材": ("material", "creative"),
+}
 
 
 class FindBackend(Protocol):
@@ -93,6 +118,168 @@ class RecipeFindBackend:
         return sorted(
             results, key=lambda item: (-int(item["score"]), str(item["name"]))
         )[:limit]
+
+
+def query_match(
+    query: str, *values: object, score: int = 0
+) -> dict[str, Any]:
+    """Measure whether every meaningful query concept is represented."""
+
+    concepts = _query_concepts(query)
+    haystack = " ".join(str(value).casefold() for value in values if value is not None)
+    matched = [
+        label
+        for label, alternatives in concepts
+        if any(term in haystack for term in alternatives)
+    ]
+    coverage = len(matched) / len(concepts) if concepts else 0.0
+    return {
+        "confidence": "strong" if coverage >= 0.8 else "partial" if coverage else "none",
+        "coverage": round(coverage, 3),
+        "matched_terms": matched,
+        "missing_terms": [label for label, _ in concepts if label not in matched],
+        "score": int(score),
+    }
+
+
+def metadata_capability_cards(
+    query: str, *, limit: int | None
+) -> tuple[list[dict[str, Any]], list[str]]:
+    """Search only the safely resolved default local metadata catalog."""
+
+    try:
+        result = search_metadata(query, limit=None, offset=0)
+        results = [
+            item
+            for item in result.get("results", [])
+            if isinstance(item, Mapping)
+        ]
+    except (InputValidationError, OSError):
+        return [], [
+            "The default local metadata catalog is unavailable; run `gravity metadata "
+            "sync --all-apps` before metadata discovery."
+        ]
+    cards = [_metadata_card(query, item) for item in results]
+    strong = [card for card in cards if card["match"]["confidence"] == "strong"]
+    return (strong if limit is None else strong[:limit]), []
+
+
+def capability_gaps(
+    client: Any,
+    query: str,
+    *,
+    domain: str | None,
+    platform: str | None,
+    limit: int,
+    weak_operations: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    """Return bounded non-executable blockers or an explicit absence summary."""
+
+    result = client.search_operations(
+        query,
+        domain=domain,
+        platform=platform,
+        stability=None,
+        limit=limit,
+    )
+    gaps = [
+        _draft_gap(client, query, item)
+        for item in result.get("operations", [])
+        if isinstance(item, Mapping) and not bool(item.get("executable", True))
+    ]
+    strong = [gap for gap in gaps if gap["match"]["confidence"] == "strong"]
+    if strong:
+        return strong[:limit]
+    weak = [
+        {
+            "operation_id": str(item.get("operation_id")),
+            "match": query_match(
+                query,
+                item.get("operation_id"),
+                item.get("domain"),
+                item.get("resource"),
+                item.get("platform"),
+                item.get("description"),
+                score=int(item.get("score", 0)),
+            ),
+        }
+        for item in weak_operations[:limit]
+    ]
+    return [{
+        "kind": "capability_gap",
+        "query": query,
+        "reason": "no strongly matching executable or draft capability is registered",
+        "weak_matches": weak,
+    }]
+
+
+def _query_concepts(query: str) -> list[tuple[str, frozenset[str]]]:
+    fragments = re.findall(r"[a-z0-9_]+|[\u3400-\u9fff]+", query.casefold())
+    labels: list[str] = []
+    for fragment in fragments:
+        if fragment.isascii():
+            if len(fragment) >= 3:
+                labels.append(fragment)
+            continue
+        aliases = [key for key in _MATCH_ALIASES if not key.isascii() and key in fragment]
+        labels.extend(aliases or [fragment])
+    return [
+        (label, frozenset((label, *_MATCH_ALIASES.get(label, ()))))
+        for label in dict.fromkeys(labels)
+    ]
+
+
+def _metadata_card(query: str, item: Mapping[str, Any]) -> dict[str, Any]:
+    kind = str(item.get("kind", "all"))
+    command = "events" if kind == "event" else "properties" if "property" in kind else "search"
+    app_id = str(item.get("app_id", ""))
+    payload = item.get("payload")
+    match = query_match(
+        query,
+        item.get("name"),
+        item.get("cname"),
+        json.dumps(payload, ensure_ascii=False, sort_keys=True) if isinstance(payload, Mapping) else None,
+        score=int(item.get("score", 0)),
+    )
+    argv = ["gravity", "metadata", command, query]
+    if app_id:
+        argv.extend(["--app-id", app_id])
+    return {
+        "kind": "metadata",
+        "selector": f"metadata:{kind}:{app_id}:{item.get('name') or ''}",
+        "metadata_kind": kind,
+        "app_id": app_id or None,
+        "name": item.get("name"),
+        "display_name": item.get("cname"),
+        "operation_id": item.get("operation_id"),
+        "match": match,
+        "next": {"ready_without_input": True, "argv": argv},
+    }
+
+
+def _draft_gap(client: Any, query: str, item: Mapping[str, Any]) -> dict[str, Any]:
+    operation_id = str(item.get("operation_id"))
+    described = client.describe(operation_id)
+    return {
+        "kind": "draft_capability_gap",
+        "operation_id": operation_id,
+        "description": item.get("description"),
+        "domain": item.get("domain"),
+        "platform": item.get("platform"),
+        "stability": item.get("stability"),
+        "block_reason": item.get("block_reason"),
+        "blockers": described.get("blockers"),
+        "promotion_gate": described.get("promotion_gate"),
+        "match": query_match(
+            query,
+            operation_id,
+            item.get("domain"),
+            item.get("resource"),
+            item.get("platform"),
+            item.get("description"),
+            score=int(item.get("score", 0)),
+        ),
+    }
 
 
 def add_find_command(commands: Any, limit_parser: Any) -> None:
@@ -254,6 +441,9 @@ __all__ = [
     "MetadataFindBackend",
     "OperationFindBackend",
     "RecipeFindBackend",
+    "capability_gaps",
+    "metadata_capability_cards",
+    "query_match",
     "run_find_command",
     "add_operation_commands",
     "filter_operations",

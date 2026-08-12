@@ -102,7 +102,10 @@ def search_score(
         "description": normalize_search_text(description),
     }
     terms = {query}
-    terms.update(re.findall(r"[a-z0-9_]+|[\u3400-\u9fff]+", query))
+    fragments = re.findall(r"[a-z0-9_]+|[\u3400-\u9fff]+", query)
+    terms.update(
+        term for term in fragments if len(term) >= 3 or not term.isascii()
+    )
     for key, values in _SEARCH_ALIASES.items():
         if key in query or key in terms:
             terms.update(normalize_search_text(value) for value in values)

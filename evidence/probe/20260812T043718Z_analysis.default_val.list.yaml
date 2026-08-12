@@ -1,0 +1,161 @@
+{
+  "conclusion": "inconclusive",
+  "http": [
+    {
+      "http_status": 200,
+      "method": "POST",
+      "operation_id": "analysis.default_val.list",
+      "path": "/turbo_engine/api/v2/event/conf_event_meta/default_val/list/",
+      "purpose": "discovery",
+      "raw_schema_fingerprint": "3ce953ceb9923612ec4fd001c34e43025cdba5dd8a1684e112bcdf063174f490",
+      "request_fingerprint": "496754e987e56724896a514ac7d7a3b6024e65bca57b773bd33ad235dc6ace0b",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body.app_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.body.subject",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.code",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.api",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.api[]",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.cocoscreator",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.cocoscreator[]",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.extra",
+            "presence": "observed",
+            "types": [
+              "null"
+            ]
+          },
+          {
+            "path": "$.msg",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    }
+  ],
+  "operation_id": "analysis.default_val.list",
+  "pagination": {
+    "kind": "none",
+    "total_field_path": null,
+    "upstream_hard_max": null,
+    "verified": true
+  },
+  "privacy": {
+    "candidate_fields": [],
+    "classified_non_sensitive": 0,
+    "classified_sensitive": 0,
+    "manual_review": 0,
+    "values_persisted": false
+  },
+  "probed_at": "2026-08-12T04:37:18Z",
+  "projected_schema_fingerprint": null,
+  "raw_schema_fingerprint": "3ce953ceb9923612ec4fd001c34e43025cdba5dd8a1684e112bcdf063174f490",
+  "request_stats": {
+    "backoff_terminations": 0,
+    "failed": 0,
+    "total": 1
+  },
+  "required_parent": null,
+  "route": {
+    "family": "analysis.default_val.list",
+    "method": "POST",
+    "path": "/turbo_engine/api/v2/event/conf_event_meta/default_val/list/"
+  },
+  "schema_version": "gravity-insight.probe-evidence.v1",
+  "semantic_errors": {
+    "missing_parameter": {
+      "attempted": false,
+      "shape_observed": false
+    },
+    "parameter_adjustments": [],
+    "permission_shape_observed": false,
+    "rules": []
+  },
+  "successful": false
+}

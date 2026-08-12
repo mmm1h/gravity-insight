@@ -8,6 +8,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from gravity_sdk import cli, runtime
@@ -21,6 +22,7 @@ from gravity_sdk.domains import (
     ANALYSIS_SEGMENT_OPERATIONS,
     ANALYSIS_TEMPLATE_OPERATIONS,
     ANALYSIS_VALUE_OPERATIONS,
+    ATTRIBUTION_SNAPSHOT_OPERATIONS,
     ATTRIBUTION_STATUS_OPERATIONS,
     DOMAIN_OPERATIONS,
     MULTIDIM_METADATA_OPERATIONS,
@@ -144,7 +146,18 @@ class FakeClient:
 
     def batch(self, requests: list[dict], concurrency: int = 4):
         self.batch_calls.append((requests, concurrency))
-        return [{"operation_id": item["operation_id"], "ok": True} for item in requests]
+        return [
+            {
+                "operation_id": item["operation_id"],
+                "ok": True,
+                **(
+                    {"request_id": item["request_id"]}
+                    if "request_id" in item
+                    else {}
+                ),
+            }
+            for item in requests
+        ]
 
 
 class GravityInsightCliTests(unittest.TestCase):
@@ -264,7 +277,66 @@ class GravityInsightCliTests(unittest.TestCase):
             item["allowed_fields"],
         )
         self.assertEqual("app.list", result["example"]["requests"][0]["operation_id"])
+        self.assertEqual(
+            "gravity batch read --input <batch.json> --concurrency 1",
+            result["command"],
+        )
         self.assertIn("highest item exit code wins", result["exit_codes"]["aggregation"])
+
+    def test_batch_run_schema_and_execution_share_the_resolver_protocol(self):
+        code, schema, error, _ = self.invoke(["batch", "schema", "--mode", "run"])
+        self.assertEqual(0, code)
+        self.assertIsNone(error)
+        self.assertEqual(
+            "gravity-insight.resolver-batch-schema.v1", schema["schema_version"]
+        )
+
+        payload = {
+            "requests": [
+                {
+                    "selector": "app.list",
+                    "apps": "*",
+                    "request_id": "apps",
+                }
+            ]
+        }
+        workspace = SimpleNamespace(apps={"zeta": 2, "alpha": 1})
+
+        def resolved(selector, **kwargs):
+            return {
+                "schema_version": "gravity-insight.resolve.v1",
+                "ok": True,
+                "status": "success",
+                "operation_id": selector,
+            }
+
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "resolver-batch.json"
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            with (
+                patch("gravity_sdk.workspace.load_workspace", return_value=workspace),
+                patch(
+                    "gravity_sdk.resolver_batch.resolve_and_run", side_effect=resolved
+                ) as run,
+            ):
+                code, result, error, _ = self.invoke(
+                    [
+                        "batch", "run", "--input", str(path),
+                        "--concurrency", "2", "--max-pages", "7",
+                        "--max-items", "321",
+                    ]
+                )
+
+        self.assertEqual(0, code)
+        self.assertIsNone(error)
+        self.assertEqual("gravity-insight.resolver-batch.v1", result["schema_version"])
+        self.assertEqual(["apps:alpha", "apps:zeta"], [
+            item["request_id"] for item in result["results"]
+        ])
+        self.assertEqual(2, run.call_count)
+        self.assertTrue(all(call.kwargs["max_workers"] == 1 for call in run.call_args_list))
+        self.assertTrue(all(call.kwargs["max_pages"] == 7 for call in run.call_args_list))
+        self.assertTrue(all(call.kwargs["max_items"] == 321 for call in run.call_args_list))
 
     def test_batch_unknown_item_field_lists_every_allowed_field(self):
         payload = {
@@ -290,7 +362,10 @@ class GravityInsightCliTests(unittest.TestCase):
             "allowed fields: input, inputs, operation_id, read_all, request_id",
             error["error"]["message"],
         )
-        self.assertIn("batch schema", error["error"]["next_action"])
+        self.assertEqual(
+            "Run `gravity batch schema` and retry with only the documented wrapper and item fields.",
+            error["error"]["next_action"],
+        )
         self.assertEqual([], client.batch_calls)
 
     def test_batch_envelope_aggregates_counts_and_highest_exit_code(self):
@@ -859,6 +934,14 @@ class GravityInsightCliTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     cli.build_parser().parse_args(command)
 
+    def test_nested_help_uses_copyable_gravity_command(self):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output), self.assertRaises(SystemExit) as raised:
+            cli.build_parser().parse_args(["attribution", "snapshot", "--help"])
+
+        self.assertEqual(0, raised.exception.code)
+        self.assertTrue(output.getvalue().startswith("usage: gravity attribution snapshot"))
+
     def test_multidim_layout_scope_and_query_shortcuts(self):
         code, _, _, client = self.invoke(
             ["multidim", "templates", "list", "--scope", "mine"]
@@ -931,6 +1014,205 @@ class GravityInsightCliTests(unittest.TestCase):
         self.assertEqual(2, code)
         self.assertIsNone(result)
         self.assertIn("unique ascending", error["error"]["message"])
+
+    def test_multidim_query_include_total_uses_composite_with_page_bounds(self):
+        class CompositeClient(FakeClient):
+            def __init__(self):
+                super().__init__()
+                self.bounded_read_calls = []
+
+            def schema(self, operation_id: str):
+                if operation_id == "report.multidim.metric.list":
+                    return {
+                        "operation_id": operation_id,
+                        "domain": "report",
+                        "resource": "metric",
+                        "action": "list",
+                    }
+                if operation_id == "report.multidim.calc_total":
+                    return {
+                        "operation_id": operation_id,
+                        "input_fields": {
+                            "metrics_list": {},
+                            "data_dims": {},
+                            "data_list": {},
+                        },
+                    }
+                return super().schema(operation_id)
+
+            def read_all(
+                self,
+                operation_id: str,
+                inputs: dict,
+                *,
+                max_pages: int = 1_000,
+                max_items: int = 100_000,
+                max_workers: int = 6,
+            ):
+                self.bounded_read_calls.append(
+                    (operation_id, inputs, max_pages, max_items, max_workers)
+                )
+                if operation_id == "report.multidim.metric.list":
+                    return {
+                        "status": "success",
+                        "data": {
+                            "list": [
+                                {
+                                    "name": "cost",
+                                    "exclusion_dims": [],
+                                }
+                            ]
+                        },
+                    }
+                if operation_id == "report.multidim.query":
+                    return {
+                        "status": "success",
+                        "data": {"list": [{"day": "2026-08-01", "cost": 1}]},
+                    }
+                raise AssertionError(operation_id)
+
+            def read(self, operation_id: str, inputs: dict):
+                self.read_calls.append((operation_id, inputs))
+                if operation_id == "report.multidim.calc_total":
+                    return {"status": "success", "data": {"list": [{"cost": 1}]}}
+                return super().read(operation_id, inputs)
+
+        client = CompositeClient()
+        code, result, error, _ = self.invoke(
+            [
+                "multidim",
+                "query",
+                "--metrics",
+                "cost",
+                "--include-total",
+                "--all-pages",
+                "--max-pages",
+                "7",
+                "--max-items",
+                "321",
+                "--concurrency",
+                "9",
+            ],
+            client=client,
+        )
+
+        self.assertEqual(0, code)
+        self.assertIsNone(error)
+        self.assertEqual("gravity-insight.composite.multidim.v1", result["schema_version"])
+        self.assertTrue(result["ok"])
+        self.assertEqual(0, result["exit_code"])
+        self.assertEqual("success", result["status"])
+        query_call = next(
+            call
+            for call in client.bounded_read_calls
+            if call[0] == "report.multidim.query"
+        )
+        self.assertEqual((7, 321, 9), query_call[2:])
+        self.assertEqual(
+            [{"day": "2026-08-01", "cost": 1}],
+            client.read_calls[0][1]["data_list"],
+        )
+
+    def test_multidim_include_total_propagates_partial_failure_exit_code(self):
+        class PartialClient(FakeClient):
+            def schema(self, operation_id: str):
+                if operation_id == "report.multidim.calc_total":
+                    return {"operation_id": operation_id, "input_fields": {"data_list": {}}}
+                return super().schema(operation_id)
+
+            def read(self, operation_id: str, inputs: dict):
+                if operation_id == "report.multidim.query":
+                    return {"ok": True, "status": "success", "data": {"list": [{"day": "2026-08-01"}]}}
+                if operation_id == "report.multidim.calc_total":
+                    return {
+                        "ok": False,
+                        "status": "error",
+                        "error": {
+                            "code": "UPSTREAM_UNAVAILABLE",
+                            "category": "upstream",
+                            "message": "unsafe upstream token=secret",
+                        },
+                    }
+                return super().read(operation_id, inputs)
+
+        code, result, error, _ = self.invoke(
+            ["multidim", "query", "--include-total"], client=PartialClient()
+        )
+
+        self.assertEqual(3, code)
+        self.assertIsNone(error)
+        self.assertFalse(result["ok"])
+        self.assertEqual("partial", result["status"])
+        self.assertEqual(3, result["exit_code"])
+        self.assertEqual("total", result["error"]["stage"])
+        self.assertNotIn("token=secret", json.dumps(result))
+
+        class ActionClient(PartialClient):
+            def __init__(self, code: str, category: str):
+                super().__init__()
+                self.error_code = code
+                self.error_category = category
+
+            def read(self, operation_id: str, inputs: dict):
+                if operation_id == "report.multidim.calc_total":
+                    return {
+                        "ok": False,
+                        "status": "error",
+                        "error": {
+                            "code": self.error_code,
+                            "category": self.error_category,
+                            "retry_after_ms": 250 if self.error_code == "RATE_LIMITED" else None,
+                        },
+                    }
+                return super().read(operation_id, inputs)
+
+        actions = (
+            ("AUTH_MISSING", "caller", "gravity auth status"),
+            ("INPUT_INVALID", "caller", "operations describe"),
+            ("RATE_LIMITED", "upstream", "retry_after_ms"),
+        )
+        for error_code, category, expected_action in actions:
+            with self.subTest(error_code=error_code):
+                action_code, action_result, _, _ = self.invoke(
+                    ["multidim", "query", "--include-total"],
+                    client=ActionClient(error_code, category),
+                )
+                self.assertEqual(2 if category == "caller" else 3, action_code)
+                self.assertIn(expected_action, action_result["next_action"])
+
+    def test_multidim_include_total_contract_change_is_nonzero_but_empty_is_success(self):
+        class QueryClient(FakeClient):
+            def __init__(self, status: str):
+                super().__init__()
+                self.status = status
+
+            def read(self, operation_id: str, inputs: dict):
+                if operation_id == "report.multidim.query":
+                    return {"status": self.status, "data": {"list": []}}
+                return super().read(operation_id, inputs)
+
+        changed_code, changed, _, _ = self.invoke(
+            ["multidim", "query", "--include-total"],
+            client=QueryClient("contract_changed"),
+        )
+        failed_code, failed, _, _ = self.invoke(
+            ["multidim", "query", "--include-total"], client=QueryClient("error")
+        )
+        empty_code, empty, _, _ = self.invoke(
+            ["multidim", "query", "--include-total"], client=QueryClient("empty")
+        )
+
+        self.assertEqual(3, changed_code)
+        self.assertFalse(changed["ok"])
+        self.assertEqual("contract_changed", changed["status"])
+        self.assertEqual("query", changed["error"]["stage"])
+        self.assertEqual(3, failed_code)
+        self.assertFalse(failed["ok"])
+        self.assertEqual("error", failed["status"])
+        self.assertEqual("query", failed["error"]["stage"])
+        self.assertEqual(0, empty_code)
+        self.assertTrue(empty["ok"])
+        self.assertEqual("empty", empty["status"])
 
     def test_promotion_snapshot_all_batches_exactly_one_primary_operation_per_platform(
         self,
@@ -1044,6 +1326,75 @@ class GravityInsightCliTests(unittest.TestCase):
             {item["operation_id"] for item in requests},
         )
         self.assertTrue(all(item["read_all"] is True for item in requests))
+
+    def test_attribution_snapshot_batches_every_stable_configuration(self):
+        code, result, error, client = self.invoke(
+            [
+                "attribution", "snapshot", "--app-id", "101",
+                "--concurrency", "8",
+            ]
+        )
+
+        self.assertEqual(0, code)
+        self.assertIsNone(error)
+        self.assertEqual(
+            "gravity-insight.attribution-snapshot.v1", result["schema_version"]
+        )
+        requests, concurrency = client.batch_calls[0]
+        self.assertEqual(8, concurrency)
+        self.assertEqual(
+            list(ATTRIBUTION_SNAPSHOT_OPERATIONS),
+            [item["operation_id"] for item in requests],
+        )
+        self.assertTrue(all(item["inputs"] == {"app_id": "101"} for item in requests))
+
+    def test_attribution_snapshot_returns_partial_results_with_aggregate_exit(self):
+        class PartialClient(FakeClient):
+            def batch(self, requests: list[dict], concurrency: int = 4):
+                self.batch_calls.append((requests, concurrency))
+                return [
+                    {
+                        "operation_id": item["operation_id"],
+                        "request_id": item["request_id"],
+                        "ok": index != 0,
+                        **(
+                            {}
+                            if index
+                            else {
+                                "error": {
+                                    "category": "upstream",
+                                    "code": "UPSTREAM_UNAVAILABLE",
+                                }
+                            }
+                        ),
+                    }
+                    for index, item in enumerate(requests)
+                ]
+
+        code, result, error, _ = self.invoke(
+            ["attribution", "snapshot", "--app-id", "101"],
+            client=PartialClient(),
+        )
+
+        self.assertEqual(3, code)
+        self.assertIsNone(error)
+        self.assertEqual("partial", result["status"])
+        self.assertEqual(1, result["failure_count"])
+
+    def test_attribution_snapshot_rejects_invalid_app_id_before_batch(self):
+        client = FakeClient()
+
+        for invalid in ("alias", "-1"):
+            with self.subTest(app_id=invalid):
+                code, result, error, _ = self.invoke(
+                    ["attribution", "snapshot", "--app-id", invalid],
+                    client=client,
+                )
+                self.assertEqual(2, code)
+                self.assertIsNone(result)
+                self.assertEqual("INPUT_INVALID", error["error"]["code"])
+                self.assertNotIn(invalid, json.dumps(error))
+        self.assertEqual([], client.batch_calls)
 
     def test_operation_filters_apply_domain_platform_and_stability(self):
         code, result, _, client = self.invoke(

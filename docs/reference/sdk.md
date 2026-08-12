@@ -1,0 +1,241 @@
+# Python SDK 参考
+
+Python API 与 CLI 共享合同和运行时。长期服务、notebook 封装或需要在内存中组合结果时使用
+SDK；Agent 和一次性分析优先使用 CLI，因为它已经处理输入文件、输出编码、退出码和诊断。
+
+## 推荐统一入口
+
+```python
+from gravity_sdk import connect
+
+gravity = connect(workspace="/path/to/gravity.toml")
+
+# 与 `gravity agent` 相同的离线发现合同；一次得到 recipe/operation、输入 schema 和下一步。
+capabilities = gravity.capabilities("event analysis")
+
+# 多个未知问题只做一次目录快照；每个候选带可直接组装的 plan_node。
+many = gravity.capabilities_many(
+    [
+        {"id": "apps", "query": "list apps", "domain": "app"},
+        {"id": "events", "query": "event metadata", "domain": "analysis"},
+    ]
+)
+
+# 选中后走与 `gravity run` 相同的绑定、校验、父依赖、诊断和有界读取流水线。
+result = gravity.run(
+    capabilities["candidates"][0]["selector"],
+    {"app_id": 101},
+)
+
+# 多个 recipe/operation selector 走同一 Resolver，复用实例绑定的 workspace。
+batch = gravity.run_many(
+    {
+        "requests": [
+            {"selector": "@retention-weekly", "apps": "*", "request_id": "weekly"},
+            {"selector": "app.list", "inputs": {"page": 1}, "request_id": "apps"},
+        ]
+    },
+    max_workers=4,
+)
+
+# 首次 read 才构建 Insight client；以后复用同一实例。
+result = gravity.read("app.list", {"page": 1, "page_size": 20})
+
+# 本地、合同约束的字段裁剪；非法字段在联网前失败。
+compact = gravity.read(
+    "app.list",
+    {"page": 1, "page_size": 20},
+    output_fields=["id", "name"],
+)
+
+# 独立读取一次提交，保留 batch 的顺序和错误语义。
+results = gravity.read_many(
+    [
+        {"operation_id": "app.list", "inputs": {"page": 1, "page_size": 1}},
+        {"operation_id": "app.list", "inputs": {"page": 2, "page_size": 1}},
+    ],
+    max_workers=2,
+)
+
+# 治理后的 workspace SQL product；不会暴露或接受裸 SQL。
+products = gravity.describe_sql_products()
+sql_result = gravity.query_sql_products(
+    {
+        "product": "daily-event-summary",
+        "start": "2026-08-01T00:00:00+08:00",
+        "end": "2026-08-02T00:00:00+08:00",
+    }
+)
+
+# 固定组合复用同一个 workspace App alias，并在组合外层并发。
+analysis = gravity.analysis_context("main", max_workers=6)
+app = gravity.app_snapshot("main", max_workers=6)
+attribution = gravity.attribution_snapshot("main", max_workers=6)
+```
+
+`GravitySDK` / `connect()` 惰性创建并分别缓存 Insight 与 SQL client，适合一个进程同时使用
+两类能力。它复用 CLI 已有的 Agent 发现/执行合同，不再要求嵌入方自己拼接
+search/describe/validate/read；它仍不根据字符串猜测 Insight/SQL 查询通道，也不改变底层
+envelope 或异常。workspace 在构造时解析并绑定；之后即使进程切换 cwd，recipe、App alias、
+SQL product 的描述和执行仍使用同一个 workspace。
+
+| 统一方法 | 委托到 |
+| --- | --- |
+| `capabilities()` | `gravity agent` 同源的离线 recipe + stable operation 紧凑发现 |
+| `capabilities_many()` | 一次快照批量发现多个问题，保序返回并给每个候选附 `plan_node` |
+| `run()` | `gravity run` 同源的绑定、父依赖、校验、诊断、有界/全量读取流水线 |
+| `run_many()` | `gravity batch run` 同源的 selector/App 展开、保序并发和失败隔离；支持批量默认 `output_fields`，绑定当前实例 workspace |
+| `read()` | `GravityInsightClient.read()` |
+| `read_all()` | `GravityInsightClient.read_all()` |
+| `read_limited()` | Agent 安全前缀与显式 continuation，默认最多 5 页/200 项 |
+| `read_many()` | `GravityInsightClient.batch()` |
+| `describe_sql_products()` | 安全描述 workspace 产品，不返回 SQL 模板 |
+| `query_sql_products()` | `run_product_queries()`，支持单对象或批量、保序隔离失败 |
+| `analysis_context()` | 固定 13 个 Analysis 词汇/模板来源，外层并发、局部失败隔离 |
+| `app_snapshot()` | 固定 6 个 App 治理来源，明确 company/App scope |
+| `attribution_snapshot()` | 当前 8 个 stable attribution 配置来源，不包含 draft 查询 |
+| `validate_plan()` | 离线校验 Plan schema、依赖、预算和 adapter 请求；不发网络请求 |
+| `execute_plan()` | 使用内建四类受控 adapter 执行 Plan DAG |
+
+需要完整 catalog、validate、probe、export 或测试注入时，使用公开属性 `gravity.insight`。
+`gravity.sql` 是兼容专家调用方的低层入口，不应注册给程序化 Agent。
+
+`capabilities_many()` 接受字符串或带稳定 `id` 的对象数组，也接受
+`{"questions":[...]}` wrapper；每次最多 32 个问题，ID 必须唯一。它只扫描一次 Workspace、
+stable operation、SQL product 和本地 metadata 目录，单项失败不影响其他项。
+
+`read()`、`read_all()`、`read_limited()` 和 `run()` 都接受 `output_fields`。它只在本地裁剪合同
+允许的输出字段；默认 `None` 时保持原 envelope。动态字段必须同时由本次请求声明并被合同
+允许，不能用它请求未知上游字段。
+
+## Plan v1
+
+下面是一个完整的进程内 Plan 示例。它把两个独立来源交给同一个全局 worker pool，同时保留
+声明顺序：
+
+```python
+from gravity_sdk import connect
+
+gravity = connect(workspace="/path/to/gravity.toml")
+plan = {
+    "schema_version": "gravity.plan.v1",
+    "budget": {"max_workers": 6, "max_total_items": 10000},
+    "nodes": [
+        {
+            "id": "apps",
+            "kind": "run",
+            "request": {
+                "selector": "app.list",
+                "inputs": {"page": 1, "page_size": 20},
+            },
+            "limits": {"max_pages": 1, "max_items": 20},
+            "output_fields": ["id", "name"],
+        },
+        {
+            "id": "events",
+            "kind": "metadata_search",
+            "request": {"query": "purchase", "kind": "event", "limit": 20},
+        },
+    ],
+}
+
+gravity.validate_plan(plan)                    # 全离线；失败时零网络请求
+preview = gravity.execute_plan(plan, dry_run=True)
+result = gravity.execute_plan(plan, max_workers=6)
+```
+
+公开 Plan schema 可由 `gravity plan schema` 获取。四种节点是 `run`、`sql_product`、
+`metadata_search` 和 `composite`；SDK 自动构造对应的内建 adapter，不接受裸 SQL、任意 HTTP 或
+Python callback。若需要测试一个自定义 adapter，应直接使用 `gravity_sdk.plan.execute_plan`
+的依赖注入接口，而不是把自定义执行器注册到 Agent facade。
+
+Plan 先对所有节点完成离线预检，再提交任何执行。DAG 同层并发、依赖层顺序执行；一个全局
+worker pool 默认 6、上限 24，adapter 内分页 worker 固定 1。独立失败不会取消 sibling，下游
+依赖失败返回 `skipped/DEPENDENCY_FAILED`。声明最多 64 个节点、运行时最多展开 256 次、
+聚合 `max_items` 预算不超过 100,000；单节点最多一个 foreach，默认 32、硬上限 64。
+
+## Insight 专用 facade
+
+```python
+from gravity_sdk import GravityInsightClient
+
+client = GravityInsightClient.from_env()
+
+# 发现和描述不访问 Gravity。
+candidates = client.search_operations("event analysis")
+description = client.describe("analysis.event.list")
+validation = client.validate("analysis.event.list", {"app_id": "101"})
+
+# read 才访问 Gravity；返回结构化 envelope，而不是裸 response。
+result = client.read("analysis.event.list", {"app_id": "101"})
+```
+
+主要方法：
+
+| 方法 | 用途 |
+| --- | --- |
+| `operations()` / `search_operations()` | 列出或搜索 catalog |
+| `describe()` / `schema()` | 获取调用合同 |
+| `validate()` | 离线输入校验；某些字段会报告需要 live metadata |
+| `read()` | 读取一页或一个非分页结果 |
+| `read_all()` | 有明确总页数时按小窗口并发；未知总页数时串行；执行规模上限 |
+| `read_limited()` | 读取 Agent 安全前缀，返回 `next_page_input`；分页策略同 `read_all()` |
+| `batch()` | 并发执行独立读取，保持输入顺序并隔离失败 |
+| `probe()` / `probe_all()` | 维护者的最小线上验证，不是普通查询前置步骤 |
+
+批量读取应一次提交，不要在外层再建线程池：
+
+```python
+results = client.batch(
+    [
+        {
+            "operation_id": "app.list",
+            "request_id": "first",
+            "inputs": {"page": 1, "page_size": 1},
+        },
+        {
+            "operation_id": "app.list",
+            "request_id": "second",
+            "inputs": {"page": 2, "page_size": 1},
+        },
+    ],
+    max_workers=2,
+)
+```
+
+`from_env()` 默认加载包内编译 manifest，并让 Insight 与 SQL 复用同一个按
+`timeout/attempts` 配置的进程级 HTTP runtime；先访问哪一侧不会改变配置。
+测试必须注入显式 fake transport；普通单元测试不得连接生产 Gravity。
+
+`read_all()` 和 `read_limited()` 的 `max_workers` 默认 6、上限 24，结果始终按页码顺序合并。
+只有首页明确给出 `total_page` 才会并发；未知长度由每页响应决定是否继续，因此保持串行。
+`batch()` 里的 `read_all` 会把分页 worker 固定为 1，避免两层线程池相乘。
+
+## SQL 专用底层 facade
+
+```python
+from gravity_sdk import GravityClient
+
+sql = GravityClient.from_env()
+rows = sql.execute_sql("SELECT count(*) AS total FROM governed_source")
+batch = sql.execute_batch(
+    ["SELECT 1 AS value", "SELECT 2 AS value"],
+    max_workers=2,
+)
+```
+
+`GravityClient` 固定 custom-SQL 路由、复用认证、返回表格行并把并发限制为最多 2；它当前
+只检查 SQL 是非空字符串。它不读取 workspace product，不校验 Evidence，也不替调用方执行
+聚合隐私或输出投影。团队产品和 Agent 应使用 `gravity sql query <product>`；直接 SDK 调用方
+必须自己拥有并审核 SQL 模板，不能把 `execute_sql()` 暴露为任意 SQL 工具。
+
+## 错误与输出
+
+Insight 的正常调用返回带 `schema_version`、`status`、`data`、`warnings` 和可选 `error` 的
+envelope。SDK 异常均从 `gravity_sdk` 公开导出，常见基类是 `GravityInsightError`；调用方应
+按结构化错误码处理，不解析英文错误文本。
+
+不要把统一构造误解为自动路由：`GravitySDK` 不会根据字符串猜 Insight/SQL。高层 SQL
+方法只执行 workspace product；如确需裸 SQL，必须显式进入 `gravity.sql` 或构造
+`GravityClient`。Metadata sync 和 Census 仍有独立 facade/命令，并只在共享 runtime 或
+合同层汇合。

@@ -158,8 +158,23 @@
     "response_projection": {
       "data_keys": [
         "list",
-        "page_info"
+        "page_info",
+        "total"
       ],
+      "data_item_keys": {
+        "total": [
+          "average_cost_per_thousand",
+          "click_count",
+          "click_rate",
+          "cost_per_click",
+          "san_lian_launch_total_consume",
+          "show_count",
+          "total_cash_consume",
+          "total_consume",
+          "total_red_packet_consume",
+          "total_special_red_packet_consume"
+        ]
+      },
       "dynamic_item_fields": [],
       "item_keys": [
         "advertiser_id",
@@ -174,9 +189,6 @@
         "total_consume",
         "total_red_packet_consume",
         "total_special_red_packet_consume"
-      ],
-      "known_omitted_data_keys": [
-        "total"
       ],
       "known_omitted_item_keys": [
         "advertiser_name"

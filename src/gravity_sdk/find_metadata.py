@@ -31,14 +31,15 @@ def search_metadata(
     database: str | Path | None = None,
     app_id: str | None = None,
     kind: str = "all",
-    limit: int = 20,
+    limit: int | None = 20,
     offset: int = 0,
 ) -> dict[str, Any]:
     """Search the synchronized catalog without creating a network client."""
 
     if kind not in {"all", "event", "property"}:
         raise InputValidationError("unknown metadata search kind", field="kind")
-    search_limit(limit)
+    if limit is not None:
+        search_limit(limit)
     search_offset(offset)
     catalog = Path(database) if database is not None else _default_catalog_path()
     catalog = catalog.expanduser().resolve()
@@ -53,7 +54,7 @@ def search_metadata(
         catalog_status = _catalog_values(connection)
         candidates = _candidates(connection, query, app_id, kind)
     ordered = sorted(candidates, key=_sort_key)
-    page = ordered[offset : offset + limit]
+    page = ordered[offset:] if limit is None else ordered[offset : offset + limit]
     return {
         "schema_version": SCHEMA_VERSION,
         "ok": True,

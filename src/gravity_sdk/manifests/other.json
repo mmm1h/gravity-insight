@@ -2031,7 +2031,7 @@
       "action": "list",
       "auth_profile": "gravity_authorization",
       "contract_version": 1,
-      "description": "事件属性模板元数据域的事件列表；返回模板关联事件的标识、中英文名、触发时机、预置标记及创建修改时间，属性明细不输出。",
+      "description": "事件属性模板元数据域的事件列表；返回模板关联事件及 common/custom/preset 属性的已验证结构化元数据，remark 和未知字段不输出。",
       "domain": "metadata",
       "effect": "read",
       "executable": true,
@@ -2139,13 +2139,67 @@
           "is_preset",
           "modify_time",
           "name",
+          "properties",
           "template_id",
           "trigger_opportunity"
         ],
         "known_omitted_item_keys": [
-          "properties",
           "remark"
         ],
+        "known_omitted_nested_item_keys": {
+          "common": [
+            "remark"
+          ],
+          "custom": [
+            "remark"
+          ],
+          "preset": [
+            "remark"
+          ]
+        },
+        "nested_item_keys": {
+          "common": [
+            "cid",
+            "cname",
+            "create_time",
+            "data_type",
+            "id",
+            "is_common",
+            "is_preset",
+            "modify_time",
+            "name",
+            "template_id"
+          ],
+          "custom": [
+            "cid",
+            "cname",
+            "create_time",
+            "data_type",
+            "id",
+            "is_common",
+            "is_preset",
+            "modify_time",
+            "name",
+            "template_id"
+          ],
+          "preset": [
+            "cid",
+            "cname",
+            "create_time",
+            "data_type",
+            "id",
+            "is_common",
+            "is_preset",
+            "modify_time",
+            "name",
+            "template_id"
+          ],
+          "properties": [
+            "common",
+            "custom",
+            "preset"
+          ]
+        },
         "required_data_keys": [
           "list"
         ]
@@ -2422,7 +2476,7 @@
       "action": "tree",
       "auth_profile": "gravity_authorization",
       "contract_version": 1,
-      "description": "素材管理域的标签分类树节点列表；返回分类标识、名称、来源及系统标记，分类下的标签明细不输出。",
+      "description": "素材管理域的标签分类树节点列表；返回分类标识、名称、来源、系统标记及分类下标签的标识与名称。",
       "domain": "material",
       "effect": "read",
       "executable": true,
@@ -2503,11 +2557,15 @@
           "id",
           "is_system",
           "name",
-          "source"
-        ],
-        "known_omitted_item_keys": [
+          "source",
           "tag_list"
         ],
+        "nested_item_keys": {
+          "tag_list": [
+            "id",
+            "name"
+          ]
+        },
         "required_data_keys": []
       },
       "semantic_error_rules": [

@@ -5,7 +5,7 @@
     "action": "list",
     "auth_profile": "gravity_authorization",
     "contract_version": 1,
-    "description": "AI 托管运行历史只读列表。最小 POST 请求、分页和响应投影已经验证；运行目标、目标值明细与操作类型保持隐藏。",
+    "description": "AI 托管运行历史只读列表。最小 POST 请求、分页和响应投影已经验证；仅开放操作类型与目标值中的广告主标识，运行目标、广告主名称、目标值明细与自由文本保持隐藏。",
     "domain": "promotion",
     "effect": "read",
     "examples": [
@@ -148,16 +148,26 @@
         "id",
         "media_type",
         "name",
+        "operator_type",
         "target_type",
+        "target_values",
         "trigger"
       ],
       "known_omitted_item_keys": [
         "cid",
         "detail_list",
-        "operator_type",
-        "target",
-        "target_values"
+        "target"
       ],
+      "known_omitted_nested_item_keys": {
+        "target_values": [
+          "values"
+        ]
+      },
+      "nested_item_keys": {
+        "target_values": [
+          "advertiser_id"
+        ]
+      },
       "required_data_keys": [
         "list"
       ]

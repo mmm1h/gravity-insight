@@ -1,153 +1,220 @@
 # Agent 工作流
 
-本页是 Agent 执行 Gravity 查询时的最短操作协议。
+本页是 Agent 的最短执行协议。目标不是把所有命令跑一遍，而是用最少调用得到一个可复核的
+结果或明确能力缺口。
 
-## 0. 先判断问题属于哪一层
+## 0. 先选最短入口
 
-如果用户说的是业务名称，例如“幸运礼包”，先从业务知识库确定模块、活动 ID、SKU、时间窗和已审核埋点绑定。不要从事件中文名模糊猜测业务归属。
+| 已知信息 | 直接执行 | 正常命令数 |
+| --- | --- | --- |
+| 已知 workspace recipe | `gravity run @<recipe> ...` | 1 |
+| 已知 operation 和输入 schema | `gravity run <operation-id> ...` | 1 |
+| 已知多个 selector 或已有 Plan | `gravity plan run --input <plan.json>` | 1 |
+| 已知 operation，不确定输入 | `gravity agent <operation-id>` → `run` | 2 |
+| 只知道分析目标 | `gravity agent "<query>"` → 返回 argv | 2 |
+| 多个未知分析问题 | `gravity agent --input <questions.json>` → `plan run` | 2 |
+| 同时找 operation、recipe、metadata | `gravity find "<query>"` | 1 次发现 |
+| 多个独立 operation | `gravity insight batch read ...` | 1 次批量执行 |
 
-Gravity SDK 能回答的是：某 App 有哪些事件和属性、某个受控分析如何执行、结果是否为空或部分失败。它不能自行建立业务语义。
+`run` 已经完成 bind、validate、parents、exec 和 diagnose。不要在每次调用前机械执行
+`recipe check`、`validate`、`parents resolve` 和 `doctor`；只有 `run` 的 diagnostics 要求时
+再执行对应命令。
 
-## 1. 发现能力
+## 1. 业务语义先在调用项目解析
+
+如果用户说“幸运礼包”之类业务名称，先从业务知识库确定模块、活动 ID、SKU、时间窗和已
+审核埋点绑定。SDK 能验证某 App 有哪些物理事件/属性并执行受控分析，但不能从相似名称建立
+业务归属。
+
+无法解析业务口径时先向用户报告缺失信息，不要用事件中文名或字段名猜测。
+
+## 2. 未知能力：总共两次调用
 
 ```powershell
-gravity insight operations search "<业务目标的英文或技术关键词>"
-gravity insight operations describe <operation-id>
+gravity agent "<英文或技术关键词>"
+# 从 capability card 选择候选、填写 required_inputs，并执行 next.argv
+gravity run <operation-id> --input <json-or-file>
 ```
 
-规则：
+`gravity agent` 完全离线，一次完成 bounded search + describe，优先返回匹配的 workspace
+recipe，再用 stable operation 补足默认 3 个、最多 5 个 capability cards。Recipe 卡片包含
+`required_parameters`；operation 卡片包含压缩 input schema、`required_inputs`、父 operation、
+分页合同；两类都提供可直接调用的 `next.argv`。无 query 时运行 `gravity agent` 可取得
+`gravity.agent.v1` 机器协议。
 
-- 不读取 manifest 猜字段；`describe` 是调用前权威。
-- 只默认选择 `stable`。
-- 搜索不到时再看 [CLI 参考](reference/cli.md)，不要改成裸 HTTP。
+多个问题不要逐个执行 `gravity agent`。一次提交带稳定 ID 的问题数组：
 
-## 2. 校验输入
+```json
+{
+  "questions": [
+    {"id": "apps", "query": "list apps", "domain": "app"},
+    {"id": "events", "query": "event metadata", "domain": "analysis"},
+    {"id": "reports", "query": "saved report templates", "domain": "report"}
+  ]
+}
+```
 
 ```powershell
-gravity insight validate <operation-id> --input <input.json>
+gravity agent --input questions.json
 ```
 
-- `valid_offline`：输入结构已通过离线验证；
-- `needs_live_metadata`：结构正确，执行时还需在线核验事件、属性或指标；
-- 校验失败时修改输入，不要通过添加未知 wire 字段绕过。
+这次调用只加载一次 Workspace、operation inventory、SQL product 和本地 metadata catalog，按
+问题输入顺序返回结果。每个强候选都带可复制的 `plan_node`；单项发现失败不影响其他问题。
+自然语言发现不会自动执行。调用方选择节点、补齐输入并组成一个 Plan 后，第二次调用
+`gravity plan run`。因此未知问题是“批量发现一次 + 执行一次”，不是“每个问题两次”。
 
-## 3. 选择查询通道
+选择卡片时检查：
 
-优先级：
+- recipe 优先确认 `required_parameters` 已全部填写；
+- operation 确认 `executable: true`、`stability: stable`，且 `required_inputs` 已全部填写；
+- `next.argv` 中的 placeholder 已替换。
+
+需要完整浏览 catalog 或查看 draft/blocked 覆盖缺口时，再使用
+`operations search/describe`；这时再检查 `block_reason`、`currently_callable`、完整 schema 和
+example。不要执行 blocked 候选，也不要读取 manifest 猜 wire 字段。
+
+`--input` 以 `{` 或 `[` 开头时是内联 JSON，`-` 从 stdin 读取，其他值是文件路径；
+`--set a.b=c` 支持点路径。输入合并优先级是 `flag > --set > --input > 合同默认值`。
+
+已知稳定 recipe 时更短：
+
+```powershell
+gravity run @retention-weekly --start 2026-08-01 --end 2026-08-07
+```
+
+stale recipe 会在同一个 envelope 返回下一步；此时才运行：
+
+```powershell
+gravity recipe check retention-weekly
+```
+
+## 3. 交叉查询：一个显式 Plan
+
+Plan v1 把四类登记能力放入一个有界 DAG；预检失败时零网络请求：
+
+```powershell
+gravity plan schema
+gravity plan run --input plan.json --dry-run
+gravity plan run --input plan.json --concurrency 6
+```
+
+完整 JSON、binding、fan-out、预算、并发与错误合同见 [Plan v1 参考](reference/plan.md)。
+
+## 4. 选择 Insight 还是 SQL
+
+按以下顺序：
 
 1. stable Insight operation；
-2. 已登记的 SQL 聚合产品；
+2. 调用项目已经登记的 SQL 聚合产品；
 3. 报告能力缺口。
 
-只有 Insight 不能等价表达跨表连接、窗口函数、特殊计算或 Evidence 口径时，才选择 SQL。不要因为 SQL 命令更短就切换通道。
+即使 Insight 需要几项并发读取，只要能等价表达，也优先使用 Insight。只有跨表连接、窗口
+函数、特殊计算或已审核 Evidence 口径无法由 Insight 表达时，才使用 SQL。
 
-## 4. 执行并控制规模
-
-有 workspace recipe 时优先使用单进程 Resolver：
-
-```powershell
-gravity recipe check <recipe-name>
-gravity run @<recipe-name> --start 2026-08-01 --end 2026-08-07
-```
-
-没有 recipe 时也可执行 `gravity run <operation-id> --app <alias-or-id> ...`。它委托既有 read，不建立业务语义；stale recipe、缺父资源、输入失败和空结果会在同一 envelope 的 `diagnostics` 中返回后续命令或候选。
+已知 SQL 产品时直接执行，不先跑维护命令链：
 
 ```powershell
-gravity insight read <operation-id> --input <input.json>
-gravity insight read <operation-id> --input '{"app_id":"101"}'
-gravity insight read <operation-id> --input '{"app_id":"101"}' --set page_size=100
-gravity insight read <operation-id> --input <input.json> --all-pages --max-pages 5 --max-items 200
+gravity sql query <product> --start <inclusive-iso> --end <exclusive-iso>
 ```
 
-所有 query/read 门面按 `flag > --set > --input > 合同默认值` 合并输入。`--input`
-以 `{` 或 `[` 开头时是内联 JSON，`-` 从 stdin 读取，其他值按文件路径读取；
-`--set a.b=c` 支持点路径，右值优先按 JSON 解析，不能解析时才作为字符串。
+`query` 自己校验 workspace product；Evidence 可用时附 reference，不可用或过期时附 warning，
+不阻断产品查询。不要自动循环执行 `status`、`evidence-preflight`、`verify --publish`，也不要改用 Python
+`GravityClient.execute_sql()` 绕过产品治理。Evidence 发布需要维护授权。
 
-`analysis query` 的 event、retention、funnel、scatter 都支持
-`--app-id --start --end`。各 kind 的 `query_item_list`、分组对象及 funnel
-窗口结构不同，继续用内联 JSON 或 `--set` 明确提供，不要用字符串
-`--metrics` / `--dimensions` 猜测复杂对象。
+## 5. 独立任务一次并发
 
-先做小范围读取，再扩大时间、分页或维度。大结果写文件，不要把用户级数据完整输出到终端或对话：
+多个 App、日期段或 operation 彼此独立时，使用正式 batch，而不是逐条起 CLI 进程或临时
+线程脚本。首次不确定 wrapper 时查看一次 schema：
 
 ```powershell
-gravity insight read <operation-id> --input <input.json> --all-pages --output tmp/result.ndjson --format ndjson
+gravity insight batch schema
+gravity insight batch read --input <batch.json> --concurrency 6
 ```
 
-多项独立读取使用正式 batch wrapper；不要自行绕过并发上限。
+最小 `batch.json`：
 
-## 5. 元数据任务
+```json
+{
+  "requests": [
+    {
+      "operation_id": "app.list",
+      "request_id": "page-1",
+      "input": {"page": 1, "page_size": 1}
+    },
+    {
+      "operation_id": "app.list",
+      "request_id": "page-2",
+      "input": {"page": 2, "page_size": 1}
+    }
+  ]
+}
+```
 
-需要完整事件/属性目录时：
+batch 保持输入顺序、隔离单项失败并聚合退出码；默认并发 6、上限 24。单个 operation 的
+`--all-pages` 会在首页返回明确 `total_page` 时按小窗口并发且保持页序；总页数未知时串行。
+batch 内 `read_all` 固定单分页 worker，避免嵌套并发放大。不要在外层套线程池绕过
+进程/host 限流。SQL query 也接受单个、数组或 requests wrapper，并发上限独立且为 2。
+
+## 6. 控制结果规模
+
+先小范围读取，再扩大时间、分页或维度。大结果写文件，不把用户级数据完整输出到终端或
+对话：
+
+```powershell
+gravity run <operation-id> --input <input.json> `
+  --all-pages --max-pages 20 --max-items 5000 --concurrency 6 `
+  --output tmp/result.ndjson --format ndjson
+```
+
+只需要部分合同字段时使用本地输出裁剪，默认不变；非法字段会在联网前以 caller/2 失败：
+
+```powershell
+gravity read app.list --input '{"page":1,"page_size":20}' --fields id,name
+gravity run app.list --input '{"page":1,"page_size":20}' --fields id,name
+```
+
+`--fields` 只能选择合同允许的输出字段；动态字段还必须由本次请求显式声明。它不是绕过响应
+投影的方式，也不会让未登记上游字段进入结果。
+
+`run` 写脱敏 Receipt 到 workspace 私有 `state_root/receipts/`。它不保存输入值或结果行；
+交付时可引用 operation、合同指纹、状态和请求数。
+
+## 7. 物理元数据
+
+需要完整事件/属性目录时使用内建并发同步，不生成临时循环：
 
 ```powershell
 gravity metadata sync --all-apps
 gravity metadata search "purchase"
-gravity metadata events "purchase" --app-id 101
-gravity metadata properties "amount" --app-id 101
 ```
 
-不要生成临时循环脚本。`status=partial` 时数据库仍可使用，但必须读取失败计数，不能宣称已经覆盖全部 App。
+`events`/`properties` 可加 `--app-id` 收窄；查询只读本地 SQLite。`status=partial` 时报告失败
+计数，不能宣称覆盖全部 App；相似名称只是候选，不是业务绑定证据。
 
-这些查询只读本地 SQLite，不访问网络。名称相似仍不能建立业务绑定；业务绑定应先由
-外部知识库解析，再用本地目录验证事件和属性。
-
-需要同时查 operation、workspace recipe 与本地 metadata 时使用：
+需要同时查 operation、recipe 和 metadata 时只调用：
 
 ```powershell
 gravity find "retention"
 ```
 
-## 6. 空结果与父资源
+## 8. 只在诊断要求时分支
 
-查询为空不等于接口失败，也不等于业务没有数据。依次检查：
+`stale` 才运行 `recipe check`；`PARENT_REQUIRED` 按 diagnostics 解析父资源；`INPUT_INVALID`
+重新 describe。`empty` 先核对 App、时间、时区和父资源，不能解释成业务未发生。认证只刷新
+一次，权限错误不循环；限流遵循 `retry_after_ms`；合同变化立即停止依赖新字段。任何分支都
+只保留结构化摘要，不输出请求敏感信息。
 
-1. App、时间范围和时区；
-2. 事件、属性、指标是否存在于当前 App；
-3. operation 是否要求父资源；
-4. 是否有可枚举的候选值；
-5. 是否需要 `discover-nonempty` 在严格请求预算内找可用组合。
+只有在严格 HTTP 预算内寻找一个可用输入组合时使用 `discover-nonempty`。它不是空结果后的
+默认重试器。
 
-需要父资源时使用：
+## 9. 导出
 
-```powershell
-gravity insight parents resolve <operation-id>
-```
+异步导出按 `list-capabilities → describe → start → wait/status → download`；创建任务会产生
+服务端状态，下载会写本地文件。执行前阅读 [导出指南](guides/export.md)。
 
-## 7. 导出
+## 10. 交付
+至少说明：业务口径、`operation_id` 或 SQL product、App、时间范围、选择 Insight/SQL 的
+理由、成功/空/部分失败/能力缺口，以及不能支持的结论。不要把“没有查到”改写成“没有发生”。
 
-异步导出必须遵循：
-
-```text
-list-capabilities → describe → start → wait/status → download
-```
-
-创建任务可能产生服务端状态，下载会写本地文件。执行前阅读 [导出指南](guides/export.md)。
-
-## 8. 错误处理
-
-| 类别 | 处理 |
-| --- | --- |
-| `UNKNOWN_OPERATION` | 重新 search，不猜 ID |
-| `INPUT_INVALID` | 重新 describe/validate |
-| `PARENT_REQUIRED` | 先解析父资源 |
-| `AUTH_MISSING` | 在交互式终端运行 `gravity` |
-| `AUTH_REJECTED` | 刷新一次；仍失败则停止 |
-| `PERMISSION_UNAVAILABLE` | 报告权限缺口，不循环重试 |
-| `RATE_LIMITED` | 遵循 `retry_after_ms`，同一请求最多重试一次 |
-| `CONTRACT_CHANGED` | 停止依赖新字段，交给维护者处理 |
-| `UPSTREAM_*` | 保留结构化错误摘要，不输出敏感请求信息 |
-
-CLI 退出码：`0` 成功、`2` 调用方错误、`3` 上游或权限问题、`4` 本地策略/合同问题。
-
-## 9. 向用户交付
-
-结果至少说明：
-
-- 使用的业务口径和 `operation_id`；
-- App 与时间范围；
-- Insight 或 SQL，以及选择理由；
-- 成功、空、部分失败或能力缺口；
-- 代理指标、缺失事件和不能支持的结论。
-
-不要把“没有查到”改写成“没有发生”，也不要把元数据相似名称当成模块绑定证据。
+CLI 退出码：`0` 成功（包括合同允许的 empty）、`2` 调用方错误、`3` 上游/权限错误、`4`
+本地合同/隐私/策略错误。批量命令按最高严重级别聚合退出码，仍需读取每项结果。

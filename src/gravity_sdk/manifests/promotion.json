@@ -7044,9 +7044,24 @@
       "required_parent": [],
       "resource": "account",
       "response_projection": {
+        "data_item_keys": {
+          "total": [
+            "average_cost_per_thousand",
+            "click_count",
+            "click_rate",
+            "cost_per_click",
+            "san_lian_launch_total_consume",
+            "show_count",
+            "total_cash_consume",
+            "total_consume",
+            "total_red_packet_consume",
+            "total_special_red_packet_consume"
+          ]
+        },
         "data_keys": [
           "list",
-          "page_info"
+          "page_info",
+          "total"
         ],
         "dynamic_item_fields": [],
         "item_keys": [
@@ -7062,9 +7077,6 @@
           "total_consume",
           "total_red_packet_consume",
           "total_special_red_packet_consume"
-        ],
-        "known_omitted_data_keys": [
-          "total"
         ],
         "known_omitted_item_keys": [
           "advertiser_name"
@@ -7369,7 +7381,7 @@
       "action": "list",
       "auth_profile": "gravity_authorization",
       "contract_version": 1,
-      "description": "AI 托管条件执行历史只读列表。最小 POST 请求、分页和响应投影已经验证；条件结果、消息、操作结果、操作类型与运行目标保持隐藏。",
+      "description": "AI 托管条件执行历史只读列表。最小 POST 请求、分页和响应投影已经验证；仅开放操作类型与条件结果中的目标标识，条件、指标、消息、操作结果与运行目标保持隐藏。",
       "domain": "promotion",
       "effect": "read",
       "executable": true,
@@ -7491,10 +7503,12 @@
         "item_keys": [
           "advertiser_id",
           "ai_id",
+          "condition_result",
           "create_time",
           "history_id",
           "id",
           "media_type",
+          "operator_type",
           "target_id",
           "target_name",
           "target_type"
@@ -7502,12 +7516,22 @@
         "known_omitted_item_keys": [
           "advertiser_name",
           "cid",
-          "condition_result",
           "message",
           "operator_result",
-          "operator_type",
           "target"
         ],
+        "known_omitted_nested_item_keys": {
+          "condition_result": [
+            "condition",
+            "condition_result",
+            "metric_cname"
+          ]
+        },
+        "nested_item_keys": {
+          "condition_result": [
+            "target_id"
+          ]
+        },
         "required_data_keys": [
           "list"
         ]
@@ -7523,7 +7547,7 @@
       "action": "list",
       "auth_profile": "gravity_authorization",
       "contract_version": 1,
-      "description": "AI 托管运行历史只读列表。最小 POST 请求、分页和响应投影已经验证；运行目标、目标值明细与操作类型保持隐藏。",
+      "description": "AI 托管运行历史只读列表。最小 POST 请求、分页和响应投影已经验证；仅开放操作类型与目标值中的广告主标识，运行目标、广告主名称、目标值明细与自由文本保持隐藏。",
       "domain": "promotion",
       "effect": "read",
       "executable": true,
@@ -7647,16 +7671,26 @@
           "id",
           "media_type",
           "name",
+          "operator_type",
           "target_type",
+          "target_values",
           "trigger"
         ],
         "known_omitted_item_keys": [
           "cid",
           "detail_list",
-          "operator_type",
-          "target",
-          "target_values"
+          "target"
         ],
+        "known_omitted_nested_item_keys": {
+          "target_values": [
+            "values"
+          ]
+        },
+        "nested_item_keys": {
+          "target_values": [
+            "advertiser_id"
+          ]
+        },
         "required_data_keys": [
           "list"
         ]

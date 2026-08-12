@@ -11,6 +11,10 @@ _HELP = """Gravity SDK
 
 Usage:
   gravity [--workspace <gravity.toml|directory>] <command> [options]
+  gravity agent [query]
+  gravity agent --input <questions.json>
+  gravity plan schema
+  gravity plan run --input <plan.json>
   gravity insight <command> [options]
   gravity metadata sync --all-apps
   gravity metadata search|events|properties [query]
@@ -24,6 +28,7 @@ Usage:
 Compatibility:
   Existing Insight commands may omit the `insight` namespace.
 
+For an Agent-ready machine protocol, run `gravity agent`.
 Run `gravity insight --help`, `gravity sql --help`, or
 `gravity census --help` for command-specific help.
 """

@@ -67,7 +67,7 @@ def _validation_envelope(operation_id: str, values: Mapping[str, Any]) -> dict[s
         },
         "error": None,
         "next_action": (
-            "Run `python -m gravity_sdk export start "
+            "Run `gravity export start "
             f"{operation_id} --input <request.json> --columns <column-codes> "
             "--idempotency-key <key>` after matching --columns to the "
             "export_col_list described by `export describe`."

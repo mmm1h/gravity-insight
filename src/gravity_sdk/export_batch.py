@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import argparse
-from typing import Any, Callable, Mapping
+from typing import Any, Callable, Mapping, Sequence
 
 from .errors import ErrorCategory, InputValidationError
 
@@ -10,13 +10,14 @@ from .errors import ErrorCategory, InputValidationError
 BATCH_ITEM_FIELDS = frozenset(
     {"operation_id", "input", "inputs", "request_id", "read_all"}
 )
-_SCHEMA_COMMAND = "python -m gravity_sdk batch schema"
+_SCHEMA_COMMAND = "gravity batch schema"
 
 
 def add_batch_commands(
     commands: Any,
     add_input: Callable[..., None],
     concurrency_type: Callable[[str], int],
+    positive_type: Callable[[str], int],
 ) -> None:
     batch = commands.add_parser(
         "batch",
@@ -31,12 +32,26 @@ def add_batch_commands(
         help="Print the complete wrapper, item fields, example, output, and exit rules.",
     )
     schema.set_defaults(network_required=False)
+    schema.add_argument("--mode", choices=("read", "run"), default="read")
     read = subcommands.add_parser(
         "read",
         description=f"Execute a batch described by `{_SCHEMA_COMMAND}`.",
     )
     add_input(read, required=True)
     read.add_argument("--concurrency", type=concurrency_type, default=6)
+    resolver = subcommands.add_parser(
+        "run",
+        description="Resolve and execute recipe or operation selectors concurrently.",
+    )
+    add_input(resolver, required=True)
+    resolver.add_argument("--concurrency", type=concurrency_type, default=6)
+    resolver.add_argument("--max-pages", type=positive_type, default=5)
+    resolver.add_argument("--max-items", type=positive_type, default=200)
+    resolver.add_argument(
+        "--fields",
+        action="append",
+        help="Default comma-separated contracted output fields for every item.",
+    )
 
 
 def run_batch_command(
@@ -47,12 +62,51 @@ def run_batch_command(
     example_operation: str,
 ) -> dict[str, Any]:
     if args.batch_command == "schema":
+        if getattr(args, "mode", "read") == "run":
+            from .resolver_batch import resolver_batch_schema
+
+            return resolver_batch_schema()
         return batch_schema(example_operation)
+    if args.batch_command == "run":
+        from .resolver_batch import run_many
+        from .workspace import load_workspace
+
+        return run_many(
+            load_json_input(args.input, required=True),
+            client=client_factory(args),
+            workspace=load_workspace(),
+            max_workers=args.concurrency,
+            max_pages=args.max_pages,
+            max_items=args.max_items,
+            output_fields=_field_values(args.fields),
+        )
     payload = _batch_payload(load_json_input(args.input, required=True))
     results = call_batch(
         client_factory(args), payload, concurrency=args.concurrency
     )
     return batch_envelope(results)
+
+
+def _field_values(values: Sequence[str] | None) -> tuple[str, ...] | None:
+    if not values:
+        return None
+    fields = tuple(
+        part.strip() for value in values for part in value.split(",") if part.strip()
+    )
+    return fields or None
+
+
+def batch_schema_version(args: argparse.Namespace) -> str:
+    if args.batch_command == "schema":
+        return (
+            "gravity-insight.resolver-batch-schema.v1"
+            if getattr(args, "mode", "read") == "run"
+            else "gravity-insight.batch-schema.v1"
+        )
+    return {
+        "read": "gravity-insight.batch.v1",
+        "run": "gravity-insight.resolver-batch.v1",
+    }[args.batch_command]
 
 
 def validate_batch_item(value: Any) -> Mapping[str, Any]:
@@ -87,7 +141,7 @@ def batch_schema(example_operation: str) -> dict[str, Any]:
         "ok": True,
         "status": "success",
         "command": (
-            "python -m gravity_sdk batch read --input <batch.json> "
+            "gravity batch read --input <batch.json> "
             "--concurrency 1"
         ),
         "wrapper": {
@@ -230,6 +284,7 @@ __all__ = [
     "add_batch_commands",
     "batch_envelope",
     "batch_schema",
+    "batch_schema_version",
     "envelope_exit_code",
     "batch_input_error",
     "run_batch_command",

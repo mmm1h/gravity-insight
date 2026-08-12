@@ -1,100 +1,240 @@
 # 架构与概念
 
-## 系统定位
+## 产品定位
 
-Gravity SDK 是受控读取层，不是通用 HTTP 客户端，也不是业务知识库。它把上游易变的接口转换成稳定、可发现、可校验的 operation，并统一认证、限流、重试、分页、字段投影、隐私和错误输出。
+Gravity SDK 是数据分析团队共用的 **Python SDK + Agent 优先 CLI**。两种入口共享同一套
+operation 合同、认证、运行时、分页、并发、投影和错误语义：CLI 适合 Agent、终端和流水线，
+Python API 适合长期服务和组合逻辑。
 
-```text
-调用方 / Agent
-  ├─ 业务语义：由调用方或 work-dashboard 解析
-  └─ Gravity SDK
-       ├─ Insight：manifest 授权的结构化读取与导出
-       ├─ SQL：固定端点上的项目侧登记聚合产品
-       ├─ Metadata：跨 App 物理元数据目录
-       ├─ Census：前端路由发现和漂移检查
-       └─ Contracts / Probes / Quality：能力准入和安全门禁
+它不是通用 HTTP 客户端，也不是业务知识库。调用项目负责“活动、SKU、业务模块、时间窗”
+等业务语义；本项目负责把 Gravity 的物理能力变成稳定、可发现、可校验的原子操作。
+
+```mermaid
+flowchart LR
+    caller["分析师 / Agent / 调用项目"]
+    cli["CLI 入口\nagent | run | plan | analysis | apps | attribution"]
+    sdk["Python 入口\nGravitySDK / connect"]
+    catalog["一次离线目录快照\nWorkspace | operation | SQL product | metadata"]
+    plan["Plan v1\n离线预检 → DAG ready queue → 全局 worker pool"]
+    run["run adapter\noperation / @recipe"]
+    sqlproduct["sql_product adapter\n已登记 workspace product"]
+    metadata["metadata_search adapter\n本地 SQLite catalog"]
+    composite["composite adapter\n登记组合能力"]
+    result["保序结果\n局部失败隔离 | ErrorDetail | 统一退出码"]
+    runtime["共享 HTTP Runtime\n认证 single-flight | 限流 | 重试 | 并发槽"]
+    gravity["固定 Gravity host / path / method"]
+
+    caller --> cli
+    caller --> sdk
+    cli --> catalog
+    sdk --> catalog
+    catalog --> plan
+    cli -->|"已知 selector 的单查询"| run
+    sdk -->|"read / run / composite"| run
+    plan --> run
+    plan --> sqlproduct
+    plan --> metadata
+    plan --> composite
+    run --> runtime
+    sqlproduct --> runtime
+    composite --> runtime
+    metadata --> result
+    runtime --> gravity
+    run --> result
+    sqlproduct --> result
+    composite --> result
 ```
 
-## 核心层级
+这张图描述的是同一产品的两个入口，不是两套实现。CLI 负责文件/stdin、机器输出和退出码；
+SDK 负责进程内复用。二者最终使用同一 operation 合同、Workspace、Plan 预检、adapter、分页和
+错误合同。Plan 也不是任意工作流框架：它只编排四种登记节点，不支持裸 SQL、任意 HTTP、
+Python、表达式、join/reduce、条件循环、暂停恢复或分布式队列。
 
-运行时按不可变 Kernel 与项目工作区分层：
+## 运行时边界
+
+| 层 | 负责 | 不负责 |
+| --- | --- | --- |
+| 调用项目 | 业务实体、指标口径、App/报表绑定、recipe 和 SQL 产品实例 | 猜测上游 URL 或绕过 SDK 策略 |
+| CLI / Python facade | 参数解析、可发现 API、稳定 envelope | 复制一套独立执行逻辑 |
+| Plan v1 | 离线校验依赖和预算、同层并发、受控绑定/扇出、失败隔离和声明顺序输出 | 自然语言自动执行、任意代码和通用工作流语法 |
+| Catalog / Workspace / Resolver | 搜索、描述、绑定、离线校验、父资源诊断、Receipt | 从模糊业务词自动建立事实绑定 |
+| Insight 内核 | operation 授权、请求构建、响应投影、分页和结构化错误 | 任意 host、path、method 或未知字段 |
+| HTTP Runtime | 登录刷新、共享会话、重试、冷却、进程/host 并发 | operation 或业务语义 |
+| Maintainer 工具 | contract 编译、Census、Probe、Evidence 和质量检查 | 普通查询的必经在线链路 |
+
+### 三条真实调用路径
 
 ```text
-Workspace：apps / defaults / datasources / products / recipes
-    ↓ 只读加载
-Kernel：Catalog → Invocation → Resolver → Execution → Receipt
+gravity run / GravityInsightClient.read
+  → OperationCatalog / Registry
+  → PolicyEngine（一次性请求授权）
+  → ReadExecutor（codec、投影、envelope）
+  → Transport
+  → GravityHttpRuntime
+
+gravity plan run / GravitySDK.execute_plan
+  → 全 Plan 离线预检（失败时零网络请求）
+  → DAG ready queue（同层独立节点并发）
+  → run | sql_product | metadata_search | composite adapter
+  → 按声明顺序聚合结果
+
+源 operation JSON
+  → ContractCompiler
+  → manifests/*.json
+  → GravityInsightClient.from_env() 加载
 ```
 
-workspace 只声明项目意图，实例不进入 wheel；Kernel 只拥有加载、校验、绑定和执行机制。recipe 必须明示 operation、app/report 绑定、参数到输入路径的映射、必填参数、输出字段和合同指纹。SDK 不从业务词推断 App、报表、事件或列。
+`operation_id` 是 Insight 的公共接口。固定 host、path、method、输入、响应投影、分页、
+稳定性、隐私和最小 probe 都来自合同；上游版本变化优先由合同或 codec 吸收。
 
-### Operation catalog
+Python 推荐入口是惰性的 `GravitySDK/connect`。它缓存 Insight 与 SQL 专用 client，直接提供
+`read/read_all/read_many`、组合快照和受控的 `describe_sql_products/query_sql_products`；
+Plan 入口只使用登记 adapter，不自动猜查询通道。裸 SQL 只通过显式的 `sdk.sql` /
+`GravityClient` 使用，不能进入 Agent Plan。
+`GravityInsightClient` 和 `GravityClient` 仍是公开 API，Metadata 与 Census 仍有独立入口。
+详细接口见 [SDK 参考](reference/sdk.md)。
 
-稳定 `operation_id` 是公共接口。每个 operation 声明固定 host、path、method、输入、响应投影、分页、稳定性、隐私级别和最小探针。上游版本变化应由 manifest 或 codec 吸收，不应迫使调用方改 URL。
+## 发现、Workspace 与 Resolver
 
-状态含义：
+### 发现优先于读文件
 
-- `stable`：默认可执行；
-- `experimental`：只有显式允许时可执行；
-- `permission_unavailable`：合同存在，但当前账号无法完成验证；
-- `blocked_privacy` / `blocked_write`：有意不开放；
-- `deprecated`：保留身份，不应继续调用。
+Agent 默认用一次离线 `gravity agent <query>` 完成 bounded search + describe，优先返回匹配的
+workspace recipe，并用 stable operation 补足最多 5 张 capability card；每张卡都带必填输入或
+参数、下一条 argv 和可直接放进 Plan 的 `plan_node`。多个问题使用一次
+`gravity agent --input questions.json`，Workspace、operation inventory、SQL product 和 metadata
+catalog 只扫描一次，单项发现失败不会清空其他问题。随后执行一次 `gravity run` 或
+`gravity plan run`。需要浏览完整 catalog 时再用
+`operations search/describe`。完整搜索也会展示 draft/blocked 条目来暴露覆盖缺口；它们不是
+可执行能力。不要读取 manifest 猜字段或把 Census 候选当成合同。
 
-### Runtime
+### Workspace 只保存项目意图
 
-Insight 与 SQL 复用账号登录和进程级 HTTP 运行时，但保持独立策略：
+`gravity.toml` 可声明 App 别名、默认值、datasource、SQL product 和 recipe。它由调用项目维护，
+SDK 只读加载；实例不会进入 wheel。加载顺序和 schema 见
+[Workspace 参考](reference/workspace.md)。
 
-- Insight 必须消费 manifest 的一次性授权；
-- SQL 只允许固定 custom-SQL host、path、method 和请求形状；
-- 认证刷新采用 single-flight，避免并发重复登录；
-- 响应只暴露合同允许的字段，新字段默认隐藏并产生漂移信号。
+### Resolver 减少 Agent 往返
 
-### Metadata catalog
+`gravity run` 把 bind、build、validate、parents、exec、diagnose 合并为一次调用。已知 recipe
+时直接 `gravity run @name`；不需要先机械执行 `recipe check` 和 `validate`。只有返回 stale
+或 diagnostics 要求动作时，再调用对应诊断命令。
 
-`gravity metadata sync --all-apps` 保存 App、事件和属性的当前物理事实。它适合校验事件是否存在、字段是否可用以及类型是否漂移。
+Resolver 的完成路径生成 `gravity.receipt.v1`，写到当前 workspace 的
+`state_root/receipts/`，并在 envelope 中返回持久化状态。Receipt 只有 operation、输入/输出
+形状指纹、合同指纹、状态、耗时和 HTTP 请求数，不含查询值、结果行或凭据。
 
-`gravity metadata search/events/properties` 以只读方式查询该 SQLite；`gravity find`
-把 operation、workspace recipe 与 metadata backend 合并为一个入口。recipe 实例仍属于项目 workspace，不属于 wheel。
+### 已知一次，未知两次
 
-它不保存或推断业务模块、活动配置、SKU、活动窗口和分析口径。这些语义属于调用产品。
+- 已知 selector 或已经保存 Plan：直接 `gravity run` / `gravity plan run`，一次调用。
+- 未知能力：一次 `gravity agent --input` 批量发现，一次 `gravity plan run`，共两次调用。
+- 自然语言发现只生成候选和 `plan_node`，永不自动联网执行；调用方必须显式选择和执行。
+
+### 登记组合能力
+
+组合能力解决“同一分析上下文要调用十几条 operation”的重复劳动，同时保留底层原子合同：
+
+| 组合 | CLI | SDK | 当前固定内容 |
+| --- | --- | --- | --- |
+| Analysis context | `gravity analysis context --app <alias|id>` | `analysis_context()` | event、event property/group、user property、metric、media enum 与 mine/shared/preset template，共 13 个来源 |
+| App snapshot | `gravity apps snapshot --app <alias|id>` | `app_snapshot()` | app detail、realtime event、capacity、permission menu、role、template，共 6 个来源 |
+| Attribution snapshot | `gravity attribution snapshot --app <alias|id>` | `attribution_snapshot()` | 当前 8 个 stable attribution 配置 operation |
+
+组合结果按固定来源顺序返回，每个来源带 scope 和 operation identity；局部失败隔离。它们不会
+把 draft operation 伪装成 stable，也不会自动枚举全部 role detail。
+
+### 候选能力不等于已交付能力
+
+当前基线是 185 个 operation、176 个 stable。本轮 17 个 Analysis、Report、App 和 Attribution
+候选均已得到明确探测结论，但新增 stable 数仍为 **0**；它们全部保持 `draft`。逐项证据、
+blocker 和下一步最小证据见[候选能力证据矩阵](candidate-capability-matrix.md)。尤其
+`attribution.attribution.query` 与 `attribution.attribution_detail.query` 仍不可作为正式 CLI/SDK
+查询能力宣传或执行。
 
 ## 查询路由
 
-默认顺序：
-
-```text
-业务问题
-  → 解析业务实体与口径
-  → 搜索 stable Insight operation
-  → 能等价表达：Insight
-  → 不能等价表达：检查受控 SQL 产品
-  → 两者都不能：报告能力缺口，不生成任意请求
+```mermaid
+flowchart LR
+    q["已解析业务问题"] --> known{"已知 recipe?"}
+    known -->|是| run["gravity run @recipe"]
+    known -->|否| op{"stable Insight 能等价表达?"}
+    op -->|是| insight["Insight operation / batch"]
+    op -->|否| product{"已有受控 SQL product?"}
+    product -->|是| sql["gravity sql query product"]
+    product -->|否| gap["报告能力缺口"]
 ```
 
-即使 Insight 需要多轮并发读取，只要语义等价，也应优先于一条重 SQL。SQL 只承担 Insight 无法表达的复杂跨表、窗口函数、自定义 CASE、特殊用户分层或 Evidence 产品。
+Insight 即使需要几项并发读取，只要语义等价，仍优先于一条重 SQL。SQL 只用于跨表连接、
+窗口函数、特殊计算或已审核 Evidence 口径；不能表达时应报告缺口，不生成裸 HTTP 请求。
 
-Insight 批量 worker 上限和 SQL 并发上限是独立安全合同；调用方不得用自建线程池绕过 CLI 或运行时限制。
+### SQL 的当前边界
 
-### Resolver 与 Receipt
+SQL 有两层，不能混为一谈：
 
-`gravity run` 在一个进程内完成 bind、build、validate、parents、exec 和 diagnose。`@recipe` 先做离线 stale 检查；直接 operation 只按输入 schema 绑定 `--app/--start/--end`，不能表达的结构必须由 `--input` 或 `--set` 明示。父资源只有合同声明了安全 selection 时才自动绑定，否则返回候选并保留 `parents resolve`。
+- `gravity sql query <product>` 是团队产品入口：读取 workspace product，绑定 App/时间窗，
+  限制聚合隐私、投影和行数，并在可用时附加 Evidence reference/warning。
+- `sdk.sql.execute_sql()` / `GravityClient.execute_sql()` 是显式低层 SDK 原语：固定 custom-SQL
+  host、path、method，复用认证并限制并发；当前只校验 SQL 非空，**不检查 workspace 产品
+  登记或 Evidence**。统一 `GravitySDK` 门面只直接提供产品发现与产品查询，不委托裸 SQL。
 
-每次 Resolver 执行返回并落盘一份 `gravity.receipt.v1`。回执只含 operation id、输入/输出形状指纹、合同指纹、状态、耗时和 HTTP 请求数；不含查询值、结果行或凭据。文件写到当前 workspace 对应的 `state_root/receipts/`，不会修改 `gravity.toml`。
+因此 Agent 默认只能使用第一层的已登记产品。先用 `gravity sql products` 一次发现产品与
+batch 输入合同，已知产品时直接执行 `query`。Evidence 新鲜度不是查询授权门禁；缺失或过期
+时结果带 warning，而不是迫使 Agent 串行运行 `status → evidence-preflight → verify`。这些是
+诊断和授权维护命令。底层 `GravityClient` 适合受控集成代码，不应直接暴露为 Agent 的任意
+SQL 工具。
 
-### 启动时路径环境
+## 并发模型
 
-CLI 会先提取全局 `--workspace`，再导入 workspace 相关模块；它等价于为当前进程设置最高优先级的 `GRAVITY_WORKSPACE`。`gravity_sdk.paths` 随后执行一次 `load_workspace()`，因此 `WORKSPACE`、`WORKSPACE_ROOT` 和 `STATE_ROOT` 在当前进程固定；同一进程里随后 chdir 或修改环境变量不会重算这些常量，需要启动新进程。
+并发用于彼此独立的工作；有数据依赖时保持串行。
 
-`PROJECT_ROOT` 也在 import 时按 cwd 判断当前安装是否处于 SDK checkout：cwd 同时包含匹配的 `src/gravity_sdk` 和 `pyproject.toml` 时取 checkout，否则取 workspace 的 `state_root`。这是 maintainer 工具访问真实 checkout 的有意行为，所以同一 wheel 从不同目录启动可能得到不同 `PROJECT_ROOT`。
+| 场景 | 当前实现 | 调用建议 |
+| --- | --- | --- |
+| 多个独立 Insight operation | `batch` 默认 6 workers，显式上限 24，保持输入顺序并隔离单项失败 | 一次 `batch read`，不要逐条起进程 |
+| Analysis/App/Attribution 组合 | 外层默认 6、上限 24；各来源独立执行，结果固定顺序 | 使用登记组合，不手写多命令循环 |
+| Plan DAG | 一个全局 worker pool，默认 6、上限 24；同层并发、依赖层串行；adapter 内分页 worker 固定 1 | 把交叉查询放进一个 Plan，避免并发乘法放大 |
+| Plan foreach | 每节点最多一个，默认最多 32 项、硬上限 64；不支持嵌套和笛卡尔积 | 只用于一个上游数组到一个目标字段的有限扇出 |
+| 单个 Insight 的分页 | 首页给出明确 `total_page` 时，`read_all/read_limited` 按小窗口并发并保持页序；未知总页数时串行。最多 1,000 页 / 100,000 items | 使用内建分页，不自行并发猜页 |
+| Metadata 全量同步 | 命令支持 `--concurrency 1..24` | 使用内建同步，不写临时循环 |
+| SQL 独立请求 / 分页导出 | 进程级并发上限 2；SQL export 最大并发也是 2 | 使用 `execute_batch` 或正式产品/导出函数 |
+| 在线 probe | 复用 Insight batch 上限 | 只在维护流程中运行 |
+
+分页窗口 `max_workers` 默认 6、上限 24；batch 内的 `read_all` 固定为 1 个分页 worker，
+避免“批任务 × 分页”嵌套放大。HTTP Runtime 还在 worker 之下共享进程级业务槽、每 host
+令牌桶、429 冷却与认证 single-flight。因此把 worker 调到 24 不等于会同时发出 24 个请求，
+也不应在外层再套线程池绕过它。并发不是越大越快；默认值是日常吞吐入口，上限是安全边界。
+
+Plan 还限制声明节点最多 64、运行时展开最多 256、总 `max_items` 预算最多 100,000。标量
+binding 只复制 RFC 6901 JSON Pointer 指向的值，`from` 必须位于 `depends_on`；路径不存在时
+返回 `BINDING_FAILED`，不回显绑定值。独立分支失败后其他分支继续，下游标记
+`skipped/DEPENDENCY_FAILED`。输出始终按 Plan 声明顺序，foreach 实例按源数组顺序；退出码按
+`local 4 > upstream 3 > caller 2 > success 0` 聚合。
+
+## 门禁分层
+
+门禁只应保护真实风险，不应变成每次开发或查询的仪式。
+
+### 运行时硬底线
+
+- 固定 host、path、method 和 effect；默认拒绝写操作与未知 wire 字段；
+- 凭据、Cookie、token 和原始用户级输出不进入日志、fixture、stdout 或 Git；
+- 响应字段显式投影，敏感字段递归剔除，新字段默认隐藏；
+- 分页、结果规模、重试、并发和导出落盘有上限；
+- 单元测试不访问生产 Gravity，生产 probe 遵循授权流程。
+
+这些约束不能为了省命令而绕过。
+
+### 发布/兼容检查
+
+合同确定性编译、provenance、fixture、兼容测试、文档链接和完整测试属于提交前检查。
+开发内循环只运行与改动相关的编译检查和目标测试；不要求每改一行就跑全套测试、Census、
+live probe 或 Evidence 刷新。文档改动、CLI 文案和纯重构也不应被迫制造新合同或 probe。
+
+新增能力如何选择最小扩展面、何时升级门禁，见
+[扩展地图](maintainers/extending.md) 和 [新增受控能力](maintainers/operations.md)。
 
 ## 数据与隐私边界
 
-- 凭据、token、Cookie、Authorization 和登录 payload 不进入日志、stdout、fixture 或 Git。
-- 用户级读取只有在 manifest 明确登记并通过隐私审查时开放。
-- 普通 read 不自动写仓库、发布 Evidence、上传、分享或修改上游资源。
-- 导出是独立 effect，必须经过导出合同和本地落盘策略。
-
-## 扩展原则
-
-新增 stable operation 需要：端点证据、只读理由、输入/输出合同、字段投影、隐私分类、脱敏 fixture、最小 live probe 和测试。静态发现或页面可见不等于可开放。
-
-具体流程见 [新增受控能力](maintainers/operations.md)。
+- Metadata catalog 保存 App、事件和属性的物理事实，不推断模块、活动、SKU 或指标口径。
+- 普通 read 不发布 Evidence、不上传或分享文件，也不修改上游资源。
+- 导出是独立 effect，经过导出合同和本地落盘策略。
+- 能力数量、平台覆盖和字段列表随合同变化；以 `operations list/search/describe` 的当前输出
+  为准，文档不维护易过期的静态数字。

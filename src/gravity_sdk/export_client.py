@@ -63,7 +63,7 @@ class ExportClientMixin:
             ),
             "operations": values,
             "next_action": (
-                "Run `python -m gravity_sdk export describe "
+                "Run `gravity export describe "
                 "<operation-id>` for the input schema and workflow."
             ),
         }
@@ -122,7 +122,7 @@ class ExportClientMixin:
                 "export wait interval must be at least 2 seconds",
                 field="interval",
                 next_action=(
-                    "Run `python -m gravity_sdk export wait "
+                    "Run `gravity export wait "
                     f"{job_id} --operation-id {operation_id} --interval 2 "
                     "--timeout 300`."
                 ),
@@ -132,7 +132,7 @@ class ExportClientMixin:
                 "export wait timeout must be between 0 and 300 seconds",
                 field="timeout",
                 next_action=(
-                    "Run `python -m gravity_sdk export wait "
+                    "Run `gravity export wait "
                     f"{job_id} --operation-id {operation_id} --interval 2 "
                     "--timeout 300`."
                 ),
@@ -254,7 +254,7 @@ class ExportClientMixin:
         envelope = _export_result_envelope(operation_id, result)
         envelope["cancel_requested"] = True
         envelope["next_action"] = (
-            "Run `python -m gravity_sdk export status "
+            "Run `gravity export status "
             f"{job_id} --operation-id {operation_id}`; cancellation is not terminal."
         )
         return envelope
@@ -266,7 +266,7 @@ class ExportClientMixin:
                 "export list page must be at least 1",
                 field="page",
                 next_action=(
-                    "Run `python -m gravity_sdk export list --page 1 "
+                    "Run `gravity export list --page 1 "
                     "--page-size 100`."
                 ),
             )
@@ -275,7 +275,7 @@ class ExportClientMixin:
                 "export list page_size must be between 1 and 300",
                 field="page_size",
                 next_action=(
-                    "Run `python -m gravity_sdk export list --page 1 "
+                    "Run `gravity export list --page 1 "
                     "--page-size 100`."
                 ),
             )
@@ -399,9 +399,9 @@ def _export_failed_snapshot_envelope(
         operation_id=operation_id,
         retryable=False,
         next_action=(
-            "Run `python -m gravity_sdk export list --page 1 "
+            "Run `gravity export list --page 1 "
             "--page-size 100` to record the terminal job, then run "
-            f"`python -m gravity_sdk export describe {operation_id}` "
+            f"`gravity export describe {operation_id}` "
             "before requesting authorization for a new input."
         ),
     )
@@ -481,30 +481,30 @@ def _public_export_error(
     }
     if code == "EXPORT_TIMEOUT":
         return ErrorCode.EXPORT_TIMEOUT, (
-            "Run `python -m gravity_sdk export status "
+            "Run `gravity export status "
             f"{job_id} --operation-id {operation_id}`, then resume with "
             "`export download` when READY."
         )
     if code in input_codes:
         return ErrorCode.INPUT_INVALID, (
-            "Run `python -m gravity_sdk export describe "
-            f"{operation_id}` and retry `python -m gravity_sdk export "
+            "Run `gravity export describe "
+            f"{operation_id}` and retry `gravity export "
             "start` with the documented input."
         )
     if code in local_codes:
         return ErrorCode.LOCAL_IO_ERROR, (
-            "Run `python -m gravity_sdk export download "
+            "Run `gravity export download "
             f"{job_id or '<job-id>'} --operation-id {operation_id} --output "
             "<writable-file.xlsx> --timeout 300`."
         )
     if code in contract_codes:
         return ErrorCode.CONTRACT_CHANGED, (
-            "Run `python -m gravity_sdk export describe "
+            "Run `gravity export describe "
             f"{operation_id}` and stop automation until the maintainer republishes "
             "a verified contract."
         )
     return ErrorCode.UPSTREAM_UNAVAILABLE, (
-        "Run `python -m gravity_sdk export list --page 1 --page-size "
+        "Run `gravity export list --page 1 --page-size "
         "100` to determine whether a job was created; do not create a duplicate."
     )
 

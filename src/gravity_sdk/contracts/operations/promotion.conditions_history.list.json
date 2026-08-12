@@ -5,7 +5,7 @@
     "action": "list",
     "auth_profile": "gravity_authorization",
     "contract_version": 1,
-    "description": "AI 托管条件执行历史只读列表。最小 POST 请求、分页和响应投影已经验证；条件结果、消息、操作结果、操作类型与运行目标保持隐藏。",
+    "description": "AI 托管条件执行历史只读列表。最小 POST 请求、分页和响应投影已经验证；仅开放操作类型与条件结果中的目标标识，条件、指标、消息、操作结果与运行目标保持隐藏。",
     "domain": "promotion",
     "effect": "read",
     "examples": [
@@ -146,10 +146,12 @@
       "item_keys": [
         "advertiser_id",
         "ai_id",
+        "condition_result",
         "create_time",
         "history_id",
         "id",
         "media_type",
+        "operator_type",
         "target_id",
         "target_name",
         "target_type"
@@ -157,12 +159,22 @@
       "known_omitted_item_keys": [
         "advertiser_name",
         "cid",
-        "condition_result",
         "message",
         "operator_result",
-        "operator_type",
         "target"
       ],
+      "known_omitted_nested_item_keys": {
+        "condition_result": [
+          "condition",
+          "condition_result",
+          "metric_cname"
+        ]
+      },
+      "nested_item_keys": {
+        "condition_result": [
+          "target_id"
+        ]
+      },
       "required_data_keys": [
         "list"
       ]

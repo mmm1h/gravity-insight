@@ -1456,9 +1456,11 @@
           "time_dims"
         ],
         "item_keys": [
+          "advertiser_id",
           "app_id",
           "click_company",
           "day",
+          "gid",
           "hour",
           "week",
           "month",
@@ -1689,9 +1691,11 @@
           "time_dims"
         ],
         "item_keys": [
+          "advertiser_id",
           "app_id",
           "click_company",
           "day",
+          "gid",
           "hour",
           "week",
           "month",
@@ -2083,6 +2087,17 @@
       "resource": "overview",
       "response_projection": {
         "data_item_keys": {
+          "columns": [
+            "AdCost",
+            "AppActivePayAmountSumReco",
+            "AppAdFirstDayRevenueReco",
+            "AppAdRevenueReco",
+            "AppDAUReco",
+            "AppFirstDayPayAmountStandardReco",
+            "AppROIReco",
+            "AppRealRegisterCnt",
+            "AppRevenueReco"
+          ],
           "data_overview": [
             "base",
             "cname",
@@ -2104,6 +2119,7 @@
           ]
         },
         "data_keys": [
+          "columns",
           "data_overview",
           "trend_overview2"
         ],
@@ -2115,7 +2131,6 @@
           ]
         },
         "known_omitted_data_keys": [
-          "columns",
           "trend_overview",
           "verbose"
         ],

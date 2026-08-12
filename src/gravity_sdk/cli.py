@@ -34,10 +34,17 @@ from gravity_sdk.domains import (
 )
 from gravity_sdk import nonempty_cli, runtime
 from gravity_sdk.cli_limits import (
+    agent_limit as _agent_limit,
     operation_limit as _operation_limit,
     concurrency as _concurrency,
     positive_int as _positive_int,
     validate_date_pair,
+)
+from gravity_sdk.pagination_cli import (
+    DEFAULT_STDOUT_MAX_ITEMS,
+    DEFAULT_STDOUT_MAX_PAGES,
+    add_pagination_arguments as _add_all_pages,
+    page_options as _page_options,
 )
 
 try:
@@ -51,9 +58,9 @@ try:
         output_argument,
     )
     from gravity_sdk.export_batch import (
-        add_batch_commands, envelope_exit_code, run_batch_command,
+        add_batch_commands, batch_schema_version, envelope_exit_code, run_batch_command,
     )
-    from gravity_sdk.multidim import parse_multi_days
+    from gravity_sdk.multidim import add_cli_query_arguments, call_cli_read, parse_multi_days
 except ModuleNotFoundError:  # source checkout before editable installation
     from gravity_sdk.errors import (
         ErrorCategory,
@@ -64,11 +71,12 @@ except ModuleNotFoundError:  # source checkout before editable installation
         add_export_commands, command_error, dispatch_command, output_argument,
     )
     from gravity_sdk.export_batch import (
-        add_batch_commands, envelope_exit_code, run_batch_command,
+        add_batch_commands, batch_schema_version, envelope_exit_code, run_batch_command,
     )
-    from gravity_sdk.multidim import parse_multi_days
+    from gravity_sdk.multidim import add_cli_query_arguments, call_cli_read, parse_multi_days
 
 from gravity_sdk.parents import add_parent_commands, run_parent_command
+from gravity_sdk.attribution import add_snapshot_command
 from gravity_sdk.metadata_sync import (
     add_metadata_commands,
     run_analysis_metadata,
@@ -90,10 +98,13 @@ from gravity_sdk.find_input import (
 )
 from gravity_sdk.recipe import add_recipe_commands
 from gravity_sdk.resolver_cli import add_resolver_command
+from gravity_sdk.agent import add_agent_command, ndjson_metadata, run_agent_command
+from gravity_sdk.capability_cli import add_deepening_commands
+from gravity_sdk.read_cli import add_read_command
+from gravity_sdk.plan_cli import add_plan_commands
+from gravity_sdk.plan_product_cli import dispatch as dispatch_plan
 
 
-DEFAULT_STDOUT_MAX_PAGES, DEFAULT_STDOUT_MAX_ITEMS = 5, 200
-MAX_ALL_PAGES, MAX_ALL_ITEMS = 1_000, 100_000
 _LARGE_VALUE_BYTES = 8_192
 _MULTIDIM_QUERY_OPERATIONS = frozenset(
     (*DOMAIN_OPERATIONS["multidim.query"], *DOMAIN_OPERATIONS["multidim.calc_total"])
@@ -111,7 +122,7 @@ class AgentArgumentParser(argparse.ArgumentParser):
     def error(self, message: str) -> None:
         raise InputValidationError(
             message,
-            next_action="Run `python -m gravity_sdk --help` and retry with valid arguments.",
+            next_action="Run `gravity --help` and retry with valid arguments.",
         )
 
 
@@ -261,31 +272,6 @@ def _write_json(value: Any, *, stream=None) -> None:
     )
 
 
-def _add_all_pages(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument(
-        "--all-pages",
-        action="store_true",
-        help="Follow the manifest pagination contract.",
-    )
-    parser.add_argument(
-        "--max-pages",
-        type=_positive_int,
-        help=f"Maximum pages (stdout default: {DEFAULT_STDOUT_MAX_PAGES}).",
-    )
-    parser.add_argument(
-        "--max-items",
-        type=_positive_int,
-        help=f"Maximum returned items (stdout default: {DEFAULT_STDOUT_MAX_ITEMS}).",
-    )
-    parser.add_argument("--output", help="Write JSON or NDJSON to this local path.")
-    parser.add_argument(
-        "--format",
-        choices=("json", "ndjson"),
-        default="json",
-        help="Output encoding; NDJSON may stream to stdout.",
-    )
-
-
 def _add_query_shortcuts(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--app-id")
     parser.add_argument("--media")
@@ -298,8 +284,13 @@ def _add_query_shortcuts(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--parent-id")
 
 
+def _add_discovery_commands(commands: Any) -> None:
+    add_agent_command(commands, _agent_limit)
+    add_operation_commands(commands, _operation_limit)
+
+
 def build_parser() -> argparse.ArgumentParser:
-    parser = AgentArgumentParser(description="Governed Gravity Insight read and export operations.")
+    parser = AgentArgumentParser(prog="gravity", description="Governed Gravity Insight read and export operations.")
     parser.set_defaults(network_required=True)
     parser.add_argument(
         "--dry-run",
@@ -308,7 +299,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     commands = parser.add_subparsers(dest="command")
 
-    add_operation_commands(commands, _operation_limit)
+    _add_discovery_commands(commands)
+
+    add_plan_commands(
+        commands, _concurrency, _add_input, handler=dispatch_plan
+    )
 
     validate = commands.add_parser(
         "validate", help="Validate one operation input without network access."
@@ -318,26 +313,14 @@ def build_parser() -> argparse.ArgumentParser:
     _add_input(validate, required=True)
     validate.add_argument("--render-wire", action="store_true")
 
-    read = commands.add_parser("read", help="Execute one registered operation_id.")
-    read.add_argument("operation_id")
-    _add_input(read)
-    _add_all_pages(read)
-    read.add_argument(
-        "--limit",
-        type=_positive_int,
-        help="Compatibility alias for --max-items.",
-    )
+    add_read_command(commands, _add_input, _add_all_pages, _positive_int)
 
     add_resolver_command(commands, _add_input, _add_all_pages)
 
     nonempty_cli.register(commands, _add_input)
 
-    batch_input, batch_concurrency = _add_input, _concurrency
-    add_batch_commands(
-        commands,
-        batch_input,
-        batch_concurrency,
-    )
+    batch_input, batch_concurrency, batch_positive = _add_input, _concurrency, _positive_int
+    add_batch_commands(commands, batch_input, batch_concurrency, batch_positive)
 
     auth = commands.add_parser(
         "auth", help="Inspect or refresh local Gravity credentials."
@@ -357,13 +340,16 @@ def build_parser() -> argparse.ArgumentParser:
     doctor.add_argument("--concurrency", type=_concurrency, default=6)
     doctor.set_defaults(network_required=False)
 
-    add_metadata_commands(commands, _concurrency, _add_input, _add_all_pages)
+    apps_commands, _ = add_metadata_commands(
+        commands, _concurrency, _add_input, _add_all_pages
+    )
 
     analysis = commands.add_parser("analysis")
     analysis_commands = analysis.add_subparsers(dest="analysis_command", required=True)
     analysis_metadata = analysis_commands.add_parser("metadata")
     analysis_metadata.add_argument("--app-id", required=True)
     _add_input(analysis_metadata)
+    add_deepening_commands(apps_commands, analysis_commands, _concurrency)
     analysis_segments = analysis_commands.add_parser("segments")
     analysis_segments.add_argument("--app-id", required=True)
     analysis_segments.add_argument(
@@ -465,9 +451,9 @@ def build_parser() -> argparse.ArgumentParser:
     multidim_metadata = multidim_commands.add_parser("metadata")
     _add_input(multidim_metadata)
     multidim_query = multidim_commands.add_parser("query")
-    _add_input(multidim_query)
-    _add_all_pages(multidim_query)
-    _add_query_shortcuts(multidim_query)
+    add_cli_query_arguments(
+        multidim_query, _add_input, _add_all_pages, _add_query_shortcuts
+    )
     multidim_total = multidim_commands.add_parser("calc-total")
     _add_input(multidim_total)
     _add_query_shortcuts(multidim_total)
@@ -523,6 +509,7 @@ def build_parser() -> argparse.ArgumentParser:
         item = attribution_commands.add_parser(name)
         _add_input(item)
         _add_all_pages(item)
+    add_snapshot_command(attribution_commands, _concurrency)
     add_find_command(commands, _operation_limit)
     add_recipe_commands(commands)
     return parser
@@ -548,20 +535,6 @@ def _enforce_output_policy(args: argparse.Namespace) -> None:
     )
 
 
-def _page_limits(
-    args: argparse.Namespace, *, all_pages: bool
-) -> tuple[int, int]:
-    if all_pages:
-        return (
-            int(getattr(args, "max_pages", None) or MAX_ALL_PAGES),
-            int(getattr(args, "max_items", None) or MAX_ALL_ITEMS),
-        )
-    return (
-        int(getattr(args, "max_pages", None) or DEFAULT_STDOUT_MAX_PAGES),
-        int(getattr(args, "max_items", None) or DEFAULT_STDOUT_MAX_ITEMS),
-    )
-
-
 def _domain_read(
     args: argparse.Namespace,
     command_key: str,
@@ -580,8 +553,7 @@ def _domain_read(
         operation_id,
         _object_input(args.input),
         read_all=all_pages,
-        max_pages=_page_limits(args, all_pages=all_pages)[0] if all_pages else None,
-        max_items=_page_limits(args, all_pages=all_pages)[1] if all_pages else None,
+        **_page_options(args, all_pages=all_pages, active=all_pages),
     )
 
 
@@ -807,8 +779,7 @@ def _analysis(args: argparse.Namespace) -> Any:
         operation_id,
         supplied,
         read_all=read_all,
-        max_pages=_page_limits(args, all_pages=True)[0] if read_all else None,
-        max_items=_page_limits(args, all_pages=True)[1] if read_all else None,
+        **_page_options(args, all_pages=True, active=read_all),
     )
 
 
@@ -873,12 +844,11 @@ def _promotion(args: argparse.Namespace) -> Any:
         operation_id,
         inputs,
         read_all=read_all,
-        max_pages=_page_limits(args, all_pages=True)[0]
-        if bool(getattr(args, "all_pages", False))
-        else None,
-        max_items=_page_limits(args, all_pages=True)[1]
-        if bool(getattr(args, "all_pages", False))
-        else None,
+        **_page_options(
+            args,
+            all_pages=True,
+            active=bool(getattr(args, "all_pages", False)),
+        ),
     )
 
 
@@ -894,12 +864,7 @@ def _attribution(args: argparse.Namespace) -> Any:
             operation_id,
             supplied,
             read_all=bool(args.all_pages),
-            max_pages=_page_limits(args, all_pages=True)[0]
-            if args.all_pages
-            else None,
-            max_items=_page_limits(args, all_pages=True)[1]
-            if args.all_pages
-            else None,
+            **_page_options(args, all_pages=True, active=bool(args.all_pages)),
         )
     requests = [
         {"operation_id": operation_id, "inputs": dict(supplied)}
@@ -966,6 +931,12 @@ def _auth_or_parents(args: argparse.Namespace) -> Any:
     return runtime.credential_status() if args.auth_command == "status" else runtime.refresh_credentials()
 
 
+def _run_discovery(args: argparse.Namespace) -> Any:
+    if args.command == "agent":
+        return run_agent_command(args, _client(args))
+    return run_operation_command(args, _client(args), filter_operations)
+
+
 def run(args: argparse.Namespace) -> Any:
     _enforce_output_policy(args)
     if args.dry_run:
@@ -987,30 +958,13 @@ def run(args: argparse.Namespace) -> Any:
             "registered_operations": len(operation_ids),
             **checks,
         }
-    if args.command == "operations":
-        return run_operation_command(args, _client(args), filter_operations)
+    if args.command in {"operations", "agent"}:
+        return _run_discovery(args)
     if args.command == "validate":
         return _client(args).validate(
             args.operation_id,
             _object_input(args.input),
             render_wire=args.render_wire,
-        )
-    if args.command == "read":
-        if args.limit is not None and args.max_items is not None:
-            raise InputValidationError(
-                "--limit and --max-items cannot be combined", field="max_items"
-            )
-        all_pages = bool(args.all_pages)
-        max_pages, max_items = _page_limits(args, all_pages=all_pages)
-        if args.limit is not None:
-            max_items = args.limit
-        return runtime.call_read(
-            _client(args),
-            args.operation_id,
-            _object_input(args.input),
-            read_all=all_pages,
-            max_pages=max_pages,
-            max_items=max_items,
         )
     if args.command == "batch":
         result = run_batch_command(
@@ -1018,10 +972,10 @@ def run(args: argparse.Namespace) -> Any:
             DOMAIN_OPERATIONS["apps.list"][0],
         )
         batch_command = args.batch_command
-        expected_schema = {"schema": "gravity-insight.batch-schema.v1", "read": "gravity-insight.batch.v1"}[batch_command]
+        expected_schema = batch_schema_version(args)
         if not isinstance(result, Mapping): raise RuntimeError("batch command returned a non-object envelope")
         if result.get("schema_version") != expected_schema: raise RuntimeError("batch command returned the wrong public schema")
-        if batch_command == "read" and "exit_code" not in result: raise RuntimeError("batch read omitted its aggregate exit code")
+        if batch_command in {"read", "run"} and "exit_code" not in result: raise RuntimeError("batch execution omitted its aggregate exit code")
         return result
     if args.command in {"auth", "parents"}:
         return _auth_or_parents(args)
@@ -1051,17 +1005,16 @@ def run(args: argparse.Namespace) -> Any:
         inputs, _ = _merge_query_shortcuts(
             client, operation_id, args, _object_input(args.input)
         )
-        return runtime.call_read(
+        return call_cli_read(
             client,
             operation_id,
             inputs,
-            read_all=bool(getattr(args, "all_pages", False)),
-            max_pages=_page_limits(args, all_pages=True)[0]
-            if bool(getattr(args, "all_pages", False))
-            else None,
-            max_items=_page_limits(args, all_pages=True)[1]
-            if bool(getattr(args, "all_pages", False))
-            else None,
+            include_total=bool(getattr(args, "include_total", False)), read_all=bool(getattr(args, "all_pages", False)),
+            **_page_options(
+                args,
+                all_pages=True,
+                active=bool(getattr(args, "all_pages", False)),
+            ),
         )
     if args.command == "promotion":
         return _promotion(args)
@@ -1197,6 +1150,10 @@ def _ndjson_rows(result: Any) -> tuple[list[Any], dict[str, Any]]:
             rows = data
         elif isinstance(data, Mapping):
             rows = data.get("list", data.get("items"))
+        elif value.get("schema_version") == "gravity.agent.v1" and isinstance(
+            value.get("candidates"), list
+        ):
+            rows = value["candidates"]
     if not isinstance(rows, list):
         rows = [value]
     metadata = {
@@ -1208,6 +1165,7 @@ def _ndjson_rows(result: Any) -> tuple[list[Any], dict[str, Any]]:
         "total": value.get("total") if isinstance(value, Mapping) else None,
         "rows_written": len(rows),
     }
+    metadata.update(ndjson_metadata(value))
     return rows, metadata
 
 
@@ -1270,7 +1228,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         result = dispatch_command(args, _client, _object_input, nonempty_cli.runner(_object_input, run))
         if isinstance(result, Mapping) and result.get("schema_version") in {
             "gravity-insight.batch.v1",
-            "gravity-insight.metadata-sync.v1",
+            "gravity-insight.metadata-sync.v1", "gravity-insight.resolver-batch.v1", "gravity-insight.attribution-snapshot.v1", "gravity-insight.composite.multidim.v1",
+            "gravity-insight.analysis-context.v1", "gravity-insight.app-snapshot.v1",
+            "gravity.resolver.v1",
+            "gravity.agent-batch.v1", "gravity.plan-result.v1",
         }:
             _emit_success(args, result)
             return int(result.get("exit_code", 4))

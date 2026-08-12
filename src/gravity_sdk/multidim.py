@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from typing import Any, Mapping, MutableSet, Sequence
 
+from . import runtime
 from .composite import (
+    CompositeService,
     MULTIDIM_QUERY_OPERATION as QUERY_OPERATION,
     MULTIDIM_TOTAL_OPERATION as TOTAL_OPERATION,
 )
@@ -12,6 +14,51 @@ from .errors import PolicyViolation
 
 
 OPERATIONS = frozenset({QUERY_OPERATION, TOTAL_OPERATION})
+
+
+def add_cli_query_arguments(
+    parser: Any, input_adder: Any, pagination_adder: Any, shortcut_adder: Any
+) -> None:
+    input_adder(parser)
+    pagination_adder(parser)
+    parser.add_argument(
+        "--include-total",
+        action="store_true",
+        help="Validate live metric metadata and calculate totals in the same command.",
+    )
+    shortcut_adder(parser)
+
+
+def call_cli_read(
+    client: Any,
+    operation_id: str,
+    inputs: Mapping[str, Any],
+    *,
+    include_total: bool = False,
+    read_all: bool = False,
+    max_pages: int | None = None,
+    max_items: int | None = None,
+    max_workers: int | None = None,
+) -> Any:
+    options = {
+        "max_pages": max_pages,
+        "max_items": max_items,
+        "max_workers": max_workers,
+    }
+    if include_total:
+        return CompositeService(client).multidim_query(
+            inputs,
+            include_total=True,
+            read_all=read_all,
+            **{key: value for key, value in options.items() if value is not None},
+        )
+    return runtime.call_read(
+        client,
+        operation_id,
+        inputs,
+        read_all=read_all,
+        **options,
+    )
 
 
 def requested_strings(values: Mapping[str, Any], input_names: Sequence[str]) -> set[str]:

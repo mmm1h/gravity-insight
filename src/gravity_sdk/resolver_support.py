@@ -10,7 +10,13 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from .errors import GravityInsightError, InputValidationError, error_detail_from_exception
+from .errors import (
+    ErrorCode,
+    ErrorDetail,
+    GravityInsightError,
+    InputValidationError,
+    error_detail_from_exception,
+)
 from .find_metadata import search_metadata
 from .workspace import Recipe, Workspace
 
@@ -289,11 +295,11 @@ def add_event_diagnostics(
         return
     try:
         names = _event_names(database, inputs.get("app_id"))
-    except (InputValidationError, OSError) as exc:
+    except (InputValidationError, OSError):
         diagnostics.append({
             "code": "metadata_unavailable",
             "priority": 50,
-            "message": str(exc),
+            "message": "The local metadata catalog is unavailable.",
             "next_action": "Run `gravity metadata sync --all-apps` before requesting local event suggestions.",
         })
         return
@@ -395,7 +401,27 @@ def error_diagnostic(exc: Exception, *, priority: int) -> dict[str, Any]:
             "error": detail,
             "next_action": detail.get("next_action"),
         }
-    return diagnostic(type(exc).__name__.casefold(), priority, str(exc))
+    detail = ErrorDetail.create(
+        ErrorCode.INPUT_INVALID if isinstance(exc, ValueError) else ErrorCode.LOCAL_IO_ERROR,
+        (
+            "Resolver could not bind or validate this request."
+            if isinstance(exc, ValueError)
+            else "Resolver failed while processing a local dependency."
+        ),
+        next_action=(
+            "Review the selector inputs and retry this request."
+            if isinstance(exc, ValueError)
+            else "Check the local workspace and paths, then retry this request."
+        ),
+    )
+    value = detail.to_dict()
+    return {
+        "code": detail.code.casefold(),
+        "priority": priority,
+        "message": detail.message,
+        "error": value,
+        "next_action": detail.next_action,
+    }
 
 
 def diagnostic(

@@ -198,9 +198,11 @@
         "custom_metrics_list"
       ],
       "item_keys": [
+        "advertiser_id",
         "app_id",
         "click_company",
         "day",
+        "gid",
         "hour",
         "week",
         "month",

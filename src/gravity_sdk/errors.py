@@ -115,7 +115,7 @@ def _default_next_action(code: str, operation_id: str | None) -> str:
         ErrorCode.RATE_LIMITED.value: "Wait retry_after_ms, then retry the same request once.",
         ErrorCode.UPSTREAM_UNAVAILABLE.value: (
             "Retry the same request once; if it fails again, run "
-            "`python -m gravity_sdk doctor --live`."
+            "`gravity doctor --live`."
         ),
         ErrorCode.CONTRACT_CHANGED.value: (
             f"Run `gravity insight operations describe {operation}` "

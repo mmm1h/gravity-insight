@@ -13,20 +13,21 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from .cache import MetadataCache, is_metadata_operation
+from .batch_limits import MAX_READ_ITEMS, MAX_READ_PAGES, validate_batch_limits
 from .catalog import OperationCatalog
+from .catalog_inventory import CatalogInventoryMixin
 from .credentials import CredentialProvider
-from .drift import aggregate_contract_status
 from .errors import ErrorCode, ErrorDetail, GravityInsightError, InputValidationError, PaginationError, ParentRequiredError, PermissionUnavailableError, PolicyViolation, UnknownOperationError, UpstreamError, error_detail_from_exception
 from .executor import ReadExecutor
 from .export_batch import batch_input_error, validate_batch_item
 from .export_client import ExportClientMixin, load_export_components
 from .export_validation import validate_export_input
 from .field_policy import FieldPolicy
-from .fingerprints import shape_fingerprint
 from .http_runtime import (
     DEFAULT_CONCURRENCY, MAX_CONCURRENCY, GravityHttpRuntime, get_shared_runtime,
 )
 from .models import BatchRequest, BatchResult, OperationSpec, ReadResult, load_operation_manifest
+from .pagination import read_all_pages, read_limited_pages
 from .paths import CONTRACT_ROOT, MANIFEST_ROOT, PROJECT_ROOT
 from .probe_inputs import resolve_probe_inputs
 from .registry import PolicyEngine, Registry
@@ -34,11 +35,7 @@ from .transport import Transport
 
 
 _LOGGER = logging.getLogger("gravity_sdk")
-_MAX_READ_PAGES = 1_000
-_MAX_READ_ITEMS = 100_000
-
-
-class GravityInsightClient(ExportClientMixin):
+class GravityInsightClient(CatalogInventoryMixin, ExportClientMixin):
     """Stable facade over private, versioned Gravity read APIs."""
 
     def __init__(
@@ -683,8 +680,8 @@ class GravityInsightClient(ExportClientMixin):
             )
             if parent:
                 next_action = (
-                    f"Run `python -m gravity_sdk operations describe {parent}`, "
-                    f"then run `python -m gravity_sdk read {parent} --input "
+                    f"Run `gravity operations describe {parent}`, "
+                    f"then run `gravity read {parent} --input "
                     f"<parent-input.json>` and pass the selected value to `{operation_id}`."
                 )
         detail = error_detail_from_exception(
@@ -763,6 +760,7 @@ class GravityInsightClient(ExportClientMixin):
         *,
         max_pages: int = 1_000,
         max_items: int = 100_000,
+        max_workers: int = DEFAULT_CONCURRENCY,
     ) -> dict[str, Any]:
         started = time.monotonic()
         try:
@@ -771,6 +769,7 @@ class GravityInsightClient(ExportClientMixin):
                 inputs,
                 max_pages=max_pages,
                 max_items=max_items,
+                max_workers=max_workers,
             )
         except (UpstreamError, ParentRequiredError, PermissionUnavailableError) as exc:
             envelope = self._error_envelope(operation_id, exc)
@@ -789,6 +788,7 @@ class GravityInsightClient(ExportClientMixin):
         *,
         max_pages: int = 5,
         max_items: int = 200,
+        max_workers: int = DEFAULT_CONCURRENCY,
     ) -> dict[str, Any]:
         """Read up to agent-safe bounds and return an explicit continuation."""
 
@@ -799,6 +799,7 @@ class GravityInsightClient(ExportClientMixin):
                 inputs,
                 max_pages=max_pages,
                 max_items=max_items,
+                max_workers=max_workers,
             )
         except (UpstreamError, ParentRequiredError, PermissionUnavailableError) as exc:
             envelope = self._error_envelope(operation_id, exc)
@@ -820,258 +821,42 @@ class GravityInsightClient(ExportClientMixin):
         operation_id: str,
         inputs: Mapping[str, Any] | None = None,
         *,
-        max_pages: int, max_items: int,
+        max_pages: int,
+        max_items: int,
+        max_workers: int = DEFAULT_CONCURRENCY,
     ) -> dict[str, Any]:
-        if not 1 <= max_pages <= _MAX_READ_PAGES:
-            raise InputValidationError(
-                f"max_pages must be between 1 and {_MAX_READ_PAGES}",
-                field="max_pages",
-            )
-        if not 1 <= max_items <= _MAX_READ_ITEMS:
-            raise InputValidationError(
-                f"max_items must be between 1 and {_MAX_READ_ITEMS}",
-                field="max_items",
-            )
         self._operation_catalog.guard(operation_id)
         operation = self._executor._policy.authorize_operation(operation_id)
-        supplied = dict(inputs or {})
-        requested_page_size: int | None = None
-        safe_size: int | None = None
-        if operation.pagination.kind == "page_info":
-            configured_size = _integer(
-                supplied.get(operation.pagination.page_size_field),
-                operation.request.defaults.get(
-                    operation.pagination.page_size_field,
-                    operation.pagination.default_page_size,
-                ),
-                default=max_items,
-            )
-            requested_page_size = configured_size
-            per_page_budget = max(1, max_items // max_pages)
-            safe_size = min(configured_size or max_items, per_page_budget)
-            supplied[operation.pagination.page_size_field] = safe_size
-
-        first = self._execute_result(operation_id, supplied)
-        if operation.pagination.kind == "none":
-            result = first.to_dict()
-            returned, original = _truncate_nonpaginated_result(result, max_items)
-            truncated = original > returned
-            result["truncated"] = truncated
-            result["next_page_input"] = None
-            result["total"] = {
-                "items": original,
-                "pages": 1,
-                "returned_items": returned,
-                "returned_pages": 1,
-            }
-            result["safety_limits"] = {
-                "max_pages": max_pages,
-                "max_items": max_items,
-                "page_size_clamped": False,
-            }
-            return result
-
-        all_items = list(first.items)
-        pages = [first]
-        page_number = _integer(
-            first.page_info.get(operation.pagination.page_field),
-            supplied.get(
-                operation.pagination.page_field,
-                operation.request.defaults.get(operation.pagination.page_field, 1),
-            ),
-            default=1,
+        return read_limited_pages(
+            self._execute_result,
+            operation_id,
+            operation,
+            inputs,
+            max_pages=max_pages,
+            max_items=max_items,
+            max_workers=max_workers,
         )
-        page_size = _integer(
-            first.page_info.get(operation.pagination.page_size_field),
-            supplied.get(operation.pagination.page_size_field),
-            default=None,
-        )
-        total_pages = _integer(
-            first.page_info.get(operation.pagination.total_page_field),
-            None,
-            default=None,
-        )
-        truncated = False
-        next_page_input: dict[str, Any] | None = None
-        current = first
-        while _has_next_page(
-            len(current.items), page_number, page_size, total_pages
-        ):
-            next_page = (page_number or 0) + 1
-            if len(pages) >= max_pages or len(all_items) >= max_items:
-                truncated = True
-                next_page_input = {
-                    **supplied,
-                    operation.pagination.page_field: next_page,
-                }
-                break
-            supplied[operation.pagination.page_field] = next_page
-            candidate = self._execute_result(operation_id, supplied)
-            observed_page = _integer(
-                candidate.page_info.get(operation.pagination.page_field),
-                next_page,
-                default=next_page,
-            )
-            if observed_page <= (page_number or 0):
-                raise PaginationError("Gravity pagination did not advance")
-            if len(all_items) + len(candidate.items) > max_items:
-                truncated = True
-                next_page_input = dict(supplied)
-                break
-            page_number = observed_page
-            if candidate.page_info.get(operation.pagination.total_page_field) is not None:
-                total_pages = _integer(
-                    candidate.page_info.get(operation.pagination.total_page_field),
-                    total_pages,
-                    default=total_pages,
-                )
-            pages.append(candidate)
-            all_items.extend(candidate.items)
-            current = candidate
-
-        result = pages[0].to_dict()
-        item_field = operation.pagination.list_path.rsplit(".", 1)[-1] or "list"
-        if isinstance(result["data"], Mapping):
-            result["data"] = dict(result["data"])
-            result["data"][item_field] = all_items
-        else:
-            result["data"] = all_items
-        result["fetched_at"] = pages[-1].fetched_at
-        result["warnings"] = list(
-            dict.fromkeys(warning for page in pages for warning in page.warnings)
-        )
-        result["status"] = (
-            contract_status
-            if (contract_status := aggregate_contract_status({page.status for page in pages}))
-            else "empty"
-            if not all_items
-            else "success"
-        )
-        reported_total = (
-            pages[-1].page.get("total_items") if pages[-1].page else None
-        )
-        result["page"] = {
-            "number": pages[0].page.get("number") if pages[0].page else 1,
-            "size": page_size,
-            "item_count": len(all_items),
-            "total_pages": total_pages,
-            "total_items": reported_total,
-            "has_more": truncated,
-            "pages_fetched": len(pages),
-        }
-        result["truncated"] = truncated
-        result["next_page_input"] = next_page_input
-        result["total"] = {
-            "items": reported_total,
-            "pages": total_pages,
-            "returned_items": len(all_items),
-            "returned_pages": len(pages),
-        }
-        result["safety_limits"] = {
-            "max_pages": max_pages,
-            "max_items": max_items,
-            "requested_page_size": requested_page_size,
-            "effective_page_size": safe_size,
-            "page_size_clamped": requested_page_size != safe_size,
-        }
-        result["schema_fingerprint"] = shape_fingerprint(result["data"])
-        return result
 
     def _read_all_untracked(
         self,
         operation_id: str,
         inputs: Mapping[str, Any] | None = None,
         *,
-        max_pages: int = 1_000, max_items: int = 100_000,
+        max_pages: int = 1_000,
+        max_items: int = 100_000,
+        max_workers: int = DEFAULT_CONCURRENCY,
     ) -> dict[str, Any]:
-        if not 1 <= max_pages <= _MAX_READ_PAGES:
-            raise ValueError(f"max_pages must be between 1 and {_MAX_READ_PAGES}")
-        if not 1 <= max_items <= _MAX_READ_ITEMS:
-            raise ValueError(f"max_items must be between 1 and {_MAX_READ_ITEMS}")
         self._operation_catalog.guard(operation_id)
         operation = self._executor._policy.authorize_operation(operation_id)
-        supplied = dict(inputs or {})
-        first = self._execute_result(operation_id, supplied)
-        if len(first.items) > max_items:
-            raise PaginationError("read_all exceeded its item safety bound")
-        if operation.pagination.kind == "none":
-            return first.to_dict()
-
-        all_items = list(first.items)
-        pages = [first]
-        page_number = _integer(
-            first.page_info.get(operation.pagination.page_field),
-            supplied.get(
-                operation.pagination.page_field,
-                operation.request.defaults.get(operation.pagination.page_field, 1),
-            ),
-            default=1,
+        return read_all_pages(
+            self._execute_result,
+            operation_id,
+            operation,
+            inputs,
+            max_pages=max_pages,
+            max_items=max_items,
+            max_workers=max_workers,
         )
-        page_size = _integer(
-            first.page_info.get(operation.pagination.page_size_field),
-            supplied.get(
-                operation.pagination.page_size_field,
-                operation.request.defaults.get(operation.pagination.page_size_field),
-            ),
-            default=None,
-        )
-        total_pages = _integer(
-            first.page_info.get(operation.pagination.total_page_field), None, default=None
-        )
-        while _has_next_page(len(first.items), page_number, page_size, total_pages):
-            if len(pages) >= max_pages:
-                raise PaginationError("read_all exceeded its page safety bound")
-            next_page = page_number + 1
-            supplied[operation.pagination.page_field] = next_page
-            current = self._execute_result(operation_id, supplied)
-            observed_page = _integer(
-                current.page_info.get(operation.pagination.page_field), next_page, default=next_page
-            )
-            if observed_page <= page_number:
-                raise PaginationError("Gravity pagination did not advance")
-            page_number = observed_page
-            if current.page_info.get(operation.pagination.total_page_field) is not None:
-                total_pages = _integer(
-                    current.page_info.get(operation.pagination.total_page_field),
-                    total_pages,
-                    default=total_pages,
-                )
-            pages.append(current)
-            all_items.extend(current.items)
-            first = current
-            if len(all_items) > max_items:
-                raise PaginationError("read_all exceeded its item safety bound")
-
-        result = pages[0].to_dict()
-        item_field = operation.pagination.list_path.rsplit(".", 1)[-1] or "list"
-        if isinstance(result["data"], Mapping):
-            result["data"] = dict(result["data"])
-            result["data"][item_field] = all_items
-        else:
-            result["data"] = all_items
-        result["fetched_at"] = pages[-1].fetched_at
-        aggregate_warnings = list(
-            dict.fromkeys(warning for page in pages for warning in page.warnings)
-        )
-        result["warnings"] = aggregate_warnings
-        result["status"] = (
-            contract_status
-            if (contract_status := aggregate_contract_status({page.status for page in pages}))
-            else "empty"
-            if not all_items
-            else "success"
-        )
-        result["page"] = {
-            "number": pages[0].page.get("number") if pages[0].page else 1,
-            "size": page_size,
-            "item_count": len(all_items),
-            "total_pages": total_pages,
-            "total_items": pages[-1].page.get("total_items") if pages[-1].page else None,
-            "has_more": False,
-            "pages_fetched": len(pages),
-        }
-        result["schema_fingerprint"] = shape_fingerprint(result["data"])
-        return result
 
     def batch(
         self,
@@ -1079,21 +864,18 @@ class GravityInsightClient(ExportClientMixin):
         *,
         max_workers: int = DEFAULT_CONCURRENCY,
         fail_fast: bool = False,
-        max_total_items: int = _MAX_READ_ITEMS,
+        max_pages: int = MAX_READ_PAGES,
+        max_total_items: int = MAX_READ_ITEMS,
     ) -> list[dict[str, Any]]:
         normalized = [_batch_request(item) for item in requests]
         if not normalized:
             return []
-        if max_workers < 1 or max_workers > MAX_CONCURRENCY:
-            raise ValueError(
-                f"batch max_workers must be between 1 and {MAX_CONCURRENCY}"
-            )
-        if not 1 <= max_total_items <= _MAX_READ_ITEMS:
-            raise ValueError(
-                f"batch max_total_items must be between 1 and {_MAX_READ_ITEMS}"
-            )
-        if len(normalized) > max_total_items:
-            raise ValueError("batch request count exceeds its aggregate item safety bound")
+        validate_batch_limits(
+            max_workers=max_workers,
+            max_pages=max_pages,
+            max_total_items=max_total_items,
+            request_count=len(normalized),
+        )
         per_request_limit = max(1, max_total_items // len(normalized))
 
         def run(item: BatchRequest) -> BatchResult:
@@ -1102,7 +884,9 @@ class GravityInsightClient(ExportClientMixin):
                     self.read_all(
                         item.operation_id,
                         item.inputs,
+                        max_pages=max_pages,
                         max_items=per_request_limit,
+                        max_workers=1,
                     )
                     if item.read_all
                     else self.read(item.operation_id, item.inputs)
@@ -1219,25 +1003,6 @@ def _redact_operation_values(operation: OperationSpec, value: Any) -> Any:
         return item
 
     return redact(value)
-
-
-def _truncate_nonpaginated_result(
-    result: dict[str, Any], max_items: int
-) -> tuple[int, int]:
-    data = result.get("data")
-    if isinstance(data, list):
-        original = len(data)
-        result["data"] = data[:max_items]
-        return len(result["data"]), original
-    if isinstance(data, Mapping):
-        for key in ("list", "items"):
-            rows = data.get(key)
-            if isinstance(rows, list):
-                original = len(rows)
-                result["data"] = {**dict(data), key: rows[:max_items]}
-                return min(original, max_items), original
-    count = _envelope_item_count(result)
-    return count, count
 
 
 def _envelope_item_count(envelope: Mapping[str, Any]) -> int:
@@ -1390,27 +1155,6 @@ def _batch_request(
     if not isinstance(read_all, bool):
         raise batch_input_error("batch read_all must be a boolean", "read_all")
     return BatchRequest(normalized_operation_id, normalized_inputs, request_id, read_all)
-
-
-def _integer(primary: Any, fallback: Any, *, default: int | None) -> int | None:
-    value = primary if primary is not None else fallback
-    if isinstance(value, bool):
-        return default
-    try:
-        return int(value) if value is not None else default
-    except (TypeError, ValueError):
-        return default
-
-
-def _has_next_page(
-    item_count: int,
-    page_number: int | None,
-    page_size: int | None,
-    total_pages: int | None,
-) -> bool:
-    if page_number is not None and total_pages is not None:
-        return page_number < total_pages
-    return bool(page_size and item_count >= page_size)
 
 
 def _error_status(error: GravityInsightError) -> str:
