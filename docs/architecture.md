@@ -155,8 +155,8 @@ favourite，也不模拟页面级 global filter。已知 App/ref/window 是一�
 
 Saved analysis 的 reference 模式也只消费已登记目录/详情：按稳定 ID 或精确名称解析后，把已证明
 的 Web artifact 交给既有 `event/funnel/retention/property/scatter` 编译器，不维护第二套翻译器。
-`prepare/run` 必须显式给出成对日期窗（最长 90 天）；旧调用方提交的 compact definition 仍走
-原编译模式。它不复刻 template、layout、favourite、权限或页面状态，Agent 卡也只提供待填写的
+Web artifact 的 `prepare/run` 必须显式给出成对日期窗（`end-start` 不超过 90 天）；compact
+reference/definition 仍兼容其原有日期语义。它不复刻 template、layout、favourite、权限或页面状态，Agent 卡也只提供待填写的
 `app/ref/start/end`，绝不从自然语言选择引用或执行查询。
 
 Segment snapshot 同样只组合 stable 只读 operation：先按 ID 或精确名称解析一个分群，再并发读取

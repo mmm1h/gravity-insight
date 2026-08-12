@@ -6,6 +6,7 @@ import json
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from .dashboard_artifact_contract import SUBJECT_KINDS
 from .errors import (
     ContractChangedError,
     ErrorCode,
@@ -18,25 +19,52 @@ from .workspace import Workspace, load_workspace
 
 DEFAULT_MAX_PAGES = 1_000
 DEFAULT_MAX_ITEMS = 100_000
+DEFAULT_MAX_WORKERS = 6
+MAX_WORKERS = 24
 MAX_CONFIG_BYTES = 1_000_000
-SUBJECT_KINDS = {
-    "analysis_event": "event",
-    "analysis_funnel": "funnel",
-    "analysis_retention": "retention",
-    "analysis_scatter": "scatter",
-    "analysis_user_property": "property",
-}
-
 DEFINITION_FIELDS = frozenset(
     {"id", "app_id", "name", "subject", "modify_time", "config"}
 )
 SUCCESS_STATUSES = frozenset({"success", "empty"})
+RESULT_STATUSES = SUCCESS_STATUSES | frozenset(
+    {
+        "error",
+        "partial",
+        "contract_changed",
+        "contract_changed_additive",
+        "semantic_error",
+        "unavailable",
+        "parent_required",
+        "permission_unavailable",
+    }
+)
 KNOWN_ERROR_CODES = frozenset(item.value for item in ErrorCode)
 
 
 def normalize_definition(
     value: Mapping[str, Any], *, expected_app_id: str
 ) -> tuple[dict[str, Any], dict[str, Any]]:
+    normalized = _definition_fields(value)
+    supplied_app = value.get("app_id")
+    if (
+        supplied_app is not None
+        and identifier(supplied_app, "definition.app_id") != expected_app_id
+    ):
+        raise InputValidationError(
+            "saved Analysis definition app_id does not match the selected workspace App",
+            field="definition.app_id",
+        )
+    normalized["app_id"] = expected_app_id
+    return normalized, safe_metadata(normalized, app_id=expected_app_id)
+
+
+def validate_definition_shape(value: Any) -> None:
+    """Validate caller-owned definition structure without a client or workspace."""
+
+    _definition_fields(value)
+
+
+def _definition_fields(value: Any) -> dict[str, Any]:
     if not isinstance(value, Mapping):
         raise InputValidationError(
             "saved Analysis definition must be an object", field="definition"
@@ -55,18 +83,21 @@ def normalize_definition(
         )
     supported_subject(value.get("subject"))
     decoded_config(value.get("config"))
-    supplied_app = value.get("app_id")
-    if (
-        supplied_app is not None
-        and identifier(supplied_app, "definition.app_id") != expected_app_id
-    ):
-        raise InputValidationError(
-            "saved Analysis definition app_id does not match the selected workspace App",
-            field="definition.app_id",
+    normalized: dict[str, Any] = {
+        "subject": value["subject"],
+        "config": value["config"],
+    }
+    if "id" in value:
+        normalized["id"] = identifier(value["id"], "definition.id")
+    if "name" in value:
+        normalized["name"] = text(value["name"], "definition.name")
+    if "modify_time" in value:
+        normalized["modify_time"] = text(
+            value["modify_time"], "definition.modify_time"
         )
-    normalized = {key: value[key] for key in DEFINITION_FIELDS if key in value}
-    normalized["app_id"] = expected_app_id
-    return normalized, safe_metadata(normalized, app_id=expected_app_id)
+    if "app_id" in value:
+        identifier(value["app_id"], "definition.app_id")
+    return normalized
 
 
 def catalog_rows(envelope: Mapping[str, Any], app_id: str) -> list[dict[str, Any]]:
@@ -81,6 +112,7 @@ def catalog_rows(envelope: Mapping[str, Any], app_id: str) -> list[dict[str, Any
             ),
         )
     result: list[dict[str, Any]] = []
+    seen_ids: set[str] = set()
     for raw in rows:
         if not isinstance(raw, Mapping):
             raise ContractChangedError(
@@ -91,6 +123,11 @@ def catalog_rows(envelope: Mapping[str, Any], app_id: str) -> list[dict[str, Any
             name = text(raw.get("name"), "catalog.name")
             subject = text(raw.get("subject"), "catalog.subject")
             row_app = identifier(raw.get("app_id"), "catalog.app_id")
+            modified = (
+                text(raw["modify_time"], "catalog.modify_time")
+                if "modify_time" in raw
+                else None
+            )
         except InputValidationError:
             raise ContractChangedError(
                 "saved Analysis catalog contains an invalid projected item"
@@ -99,6 +136,11 @@ def catalog_rows(envelope: Mapping[str, Any], app_id: str) -> list[dict[str, Any
             raise ContractChangedError(
                 "saved Analysis catalog returned an item for a different App"
             )
+        if item_id in seen_ids:
+            raise ContractChangedError(
+                "saved Analysis catalog contains a duplicate identity"
+            )
+        seen_ids.add(item_id)
         item = {
             key: raw[key]
             for key in ("id", "app_id", "name", "subject", "modify_time")
@@ -112,9 +154,12 @@ def catalog_rows(envelope: Mapping[str, Any], app_id: str) -> list[dict[str, Any
                 "subject": subject,
                 "kind": SUBJECT_KINDS.get(subject),
                 "subject_supported": subject in SUBJECT_KINDS,
+                "replay_supported": subject in SUBJECT_KINDS,
                 "replay_status": "unchecked",
             }
         )
+        if modified is not None:
+            item["modify_time"] = modified
         result.append(item)
     return result
 
@@ -215,16 +260,19 @@ def decoded_config(value: Any) -> Mapping[str, Any]:
 
 def safe_metadata(value: Mapping[str, Any], *, app_id: str) -> dict[str, Any]:
     subject = value.get("subject")
-    result = {
-        key: value[key]
-        for key in ("id", "name", "subject", "modify_time")
-        if key in value
-    }
+    result: dict[str, Any] = {}
+    for key in ("id", "name", "subject", "modify_time"):
+        item = value.get(key)
+        if isinstance(item, (str, int)) and not isinstance(item, bool):
+            rendered = str(item).strip()
+            if rendered and len(rendered) <= 256:
+                result[key] = item
     result.update(
         {
             "app_id": app_id,
             "kind": SUBJECT_KINDS.get(subject) if isinstance(subject, str) else None,
             "subject_supported": subject in SUBJECT_KINDS,
+            "replay_supported": None,
         }
     )
     return result
@@ -238,7 +286,21 @@ def safe_query_envelope(value: Any) -> dict[str, Any]:
     # Data has already passed the operation projection.  Rebuild the envelope
     # instead of copying transport metadata, request echoes, page tokens, or
     # raw upstream exception text.
-    status = str(value.get("status") or "error")
+    status = value.get("status")
+    if not isinstance(status, str) or status not in RESULT_STATUSES:
+        raise ContractChangedError(
+            "saved Analysis query returned an unknown result status"
+        )
+    error = value.get("error")
+    if status in SUCCESS_STATUSES and error not in (None, {}):
+        raise ContractChangedError(
+            "saved Analysis query returned contradictory success and error fields"
+        )
+    ok = status in SUCCESS_STATUSES and error in (None, {})
+    if "ok" in value and value.get("ok") is not ok:
+        raise ContractChangedError(
+            "saved Analysis query returned inconsistent success metadata"
+        )
     result = {
         "schema_version": "gravity-insight.read.v1",
         "operation_id": (
@@ -246,14 +308,13 @@ def safe_query_envelope(value: Any) -> dict[str, Any]:
             if isinstance(value.get("operation_id"), str)
             else None
         ),
-        "ok": status in SUCCESS_STATUSES and value.get("error") in (None, {}),
+        "ok": ok,
         "status": status,
-        "data": value.get("data"),
+        "data": value.get("data") if ok else None,
         "error": None,
     }
-    error = value.get("error")
-    if isinstance(error, Mapping):
-        result["error"] = _safe_error(error)
+    if not ok:
+        result["error"] = _safe_error(error if isinstance(error, Mapping) else {})
     return result
 
 
@@ -268,12 +329,13 @@ def _safe_error(value: Mapping[str, Any]) -> dict[str, Any]:
         "code": code,
         "category": category,
         "message": "Saved Analysis query failed.",
-        "field": str(value.get("field")) if isinstance(value.get("field"), str) else None,
+        "field": "result" if isinstance(value.get("field"), str) else None,
         "retryable": value.get("retryable") is True,
         "retry_after_ms": (
             value.get("retry_after_ms")
             if isinstance(value.get("retry_after_ms"), int)
             and not isinstance(value.get("retry_after_ms"), bool)
+            and value["retry_after_ms"] >= 0
             else None
         ),
         "next_action": "Follow the governed error code and retry only after correcting its cause.",
@@ -293,7 +355,10 @@ def require_success(value: Any, operation_id: str, label: str) -> None:
     if not isinstance(value, Mapping):
         raise ContractChangedError(f"{label} returned a malformed envelope")
     status = str(value.get("status", "error"))
-    if status in SUCCESS_STATUSES and value.get("error") in (None, {}):
+    success = status in SUCCESS_STATUSES and value.get("error") in (None, {})
+    if "ok" in value and value.get("ok") is not success:
+        raise ContractChangedError(f"{label} returned inconsistent success metadata")
+    if success:
         return
     error = value.get("error")
     raw_code = error.get("code") if isinstance(error, Mapping) else None
@@ -335,6 +400,15 @@ def bounds(max_pages: Any, max_items: Any) -> tuple[int, int]:
     return max_pages, max_items
 
 
+def workers(value: Any) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= MAX_WORKERS:
+        raise InputValidationError(
+            f"saved Analysis max_workers must be between 1 and {MAX_WORKERS}",
+            field="max_workers",
+        )
+    return value
+
+
 def identifier(value: Any, field: str) -> str:
     if isinstance(value, bool) or not isinstance(value, (str, int)):
         raise InputValidationError(
@@ -365,6 +439,7 @@ def require_one_source(reference: Any, definition: Any) -> None:
 __all__ = [
     "DEFAULT_MAX_ITEMS",
     "DEFAULT_MAX_PAGES",
+    "DEFAULT_MAX_WORKERS",
     "SUBJECT_KINDS",
     "SUCCESS_STATUSES",
     "bounds",
@@ -379,4 +454,6 @@ __all__ = [
     "select_reference",
     "selected_workspace",
     "supported_subject",
+    "validate_definition_shape",
+    "workers",
 ]

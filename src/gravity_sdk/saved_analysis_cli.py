@@ -6,6 +6,7 @@ import argparse
 from typing import Any, Callable, Mapping
 
 from . import runtime
+from .cli_limits import concurrency
 from .errors import InputValidationError
 from .saved_analysis import (
     compile_saved_analysis_definition,
@@ -13,8 +14,16 @@ from .saved_analysis import (
     list_saved_analyses,
     prepare_saved_analysis,
 )
-from .saved_analysis_artifact import validate_saved_window
+from .saved_analysis_artifact import preflight_saved_definition, validate_saved_window
+from .saved_analysis_support import (
+    bounds,
+    normalize_definition,
+    normalize_reference,
+    validate_definition_shape,
+    workers,
+)
 from .workspace import load_workspace
+from .workspace_app import resolve_workspace_app
 
 
 def add_saved_analysis_commands(
@@ -30,11 +39,17 @@ def add_saved_analysis_commands(
     )
     commands = saved.add_subparsers(dest="saved_command", required=True)
     listing = commands.add_parser("list", help="List safe saved-Analysis identities.")
-    _add_common(listing, positive_int, requires_reference=False, window=False)
+    _add_common(
+        listing, positive_int, include_reference=False, requires_reference=False,
+        window=False,
+    )
     prepare = commands.add_parser(
         "prepare", help="Resolve and compile a saved definition without running it."
     )
-    _add_common(prepare, positive_int, requires_reference=False, window=True)
+    _add_common(
+        prepare, positive_int, include_reference=True, requires_reference=False,
+        window=True,
+    )
     prepare.add_argument(
         "--definition",
         action=_OfflineDefinition,
@@ -43,7 +58,10 @@ def add_saved_analysis_commands(
     execute = commands.add_parser(
         "run", help="Resolve, strictly compile, and execute one saved definition."
     )
-    _add_common(execute, positive_int, requires_reference=False, window=True)
+    _add_common(
+        execute, positive_int, include_reference=True, requires_reference=False,
+        window=True,
+    )
     execute.add_argument(
         "--definition",
         help="Inline JSON, JSON file, or '-' for a caller-supplied definition.",
@@ -51,7 +69,10 @@ def add_saved_analysis_commands(
     inspect = commands.add_parser(
         "get", help="Inspect replay eligibility without returning opaque config."
     )
-    _add_common(inspect, positive_int, requires_reference=True, window=True)
+    _add_common(
+        inspect, positive_int, include_reference=True, requires_reference=True,
+        window=True,
+    )
     for parser in (listing, inspect, prepare, execute):
         parser.set_defaults(_gravity_handler=dispatch_saved_analysis)
     # Only an explicit definition can compile without catalog/detail reads.
@@ -63,18 +84,24 @@ def dispatch_saved_analysis(args: Any, object_input: Callable[[Any], Mapping[str
     reference, definition = _selected_source(args, object_input)
     start, end = getattr(args, "start", None), getattr(args, "end", None)
     validate_saved_window(start, end)
-    if args.saved_command in {"prepare", "run"} and reference is not None and start is None:
-        raise InputValidationError(
-            "saved reference prepare/run requires --start and --end",
-            field="start/end",
-        )
+    bounds(args.max_pages, args.max_items)
+    workers(args.concurrency)
     workspace = load_workspace()
+    app_id = resolve_workspace_app(workspace, args.app)
+    if definition is not None:
+        normalized, _metadata = normalize_definition(
+            definition, expected_app_id=str(app_id)
+        )
+        preflight_saved_definition(
+            normalized, app=str(app_id), workspace=workspace, start=start, end=end
+        )
     client = runtime.build_client()
     options = {
-        "app": args.app,
+        "app": app_id,
         "workspace": workspace,
         "max_pages": args.max_pages,
         "max_items": args.max_items,
+        "max_workers": args.concurrency,
     }
     if args.saved_command == "list":
         return list_saved_analyses(client, **options)
@@ -84,10 +111,11 @@ def dispatch_saved_analysis(args: Any, object_input: Callable[[Any], Mapping[str
         return inspect_saved_analysis(
             client,
             args.ref,
-            app=args.app,
+            app=app_id,
             workspace=workspace,
             max_pages=args.max_pages,
             max_items=args.max_items,
+            max_workers=args.concurrency,
             start=start,
             end=end,
         )
@@ -95,7 +123,7 @@ def dispatch_saved_analysis(args: Any, object_input: Callable[[Any], Mapping[str
         return compile_saved_analysis_definition(
             client,
             definition,
-            app=args.app,
+            app=app_id,
             workspace=workspace,
             start=start,
             end=end,
@@ -119,23 +147,40 @@ def _add_common(
     parser: Any,
     positive_int: Callable[[str], int],
     *,
+    include_reference: bool,
     requires_reference: bool,
     window: bool,
 ) -> None:
-    parser.add_argument("--app", required=True)
-    parser.add_argument("--ref", required=requires_reference)
+    parser.add_argument("--app", required=True, type=_nonempty_app)
+    if include_reference:
+        parser.add_argument("--ref", required=requires_reference)
     parser.add_argument("--max-pages", type=positive_int, default=1_000)
     parser.add_argument("--max-items", type=positive_int, default=100_000)
+    parser.add_argument(
+        "--concurrency", type=concurrency, default=6,
+        help="Parallel catalog page workers when totals are known (default: 6, max: 24).",
+    )
     if window:
         parser.add_argument("--start", help="Inclusive ISO replay start.")
         parser.add_argument("--end", help="Inclusive ISO replay end (maximum 90 days).")
+    parser.add_argument(
+        "--output", type=_output_path,
+        help="Write JSON or NDJSON to this local path (use omission for stdout).",
+    )
+    parser.add_argument(
+        "--format", choices=("json", "ndjson"), default="json",
+        help="Output encoding; NDJSON may stream to stdout.",
+    )
 
 
 def _selected_source(
     args: Any, object_input: Callable[[Any], Mapping[str, Any]]
 ) -> tuple[Any, Mapping[str, Any] | None]:
     if args.saved_command not in {"prepare", "run"}:
-        return getattr(args, "ref", None), None
+        reference = getattr(args, "ref", None)
+        if reference is not None:
+            normalize_reference(reference)
+        return reference, None
     reference = args.ref
     definition = object_input(args.definition) if args.definition is not None else None
     if (reference is None) == (definition is None):
@@ -143,6 +188,10 @@ def _selected_source(
             "saved prepare/run requires exactly one --ref or --definition",
             field="ref/definition",
         )
+    if reference is not None:
+        normalize_reference(reference)
+    if definition is not None:
+        validate_definition_shape(definition)
     return reference, definition
 
 
@@ -158,6 +207,20 @@ class _OfflineDefinition(argparse.Action):
     ) -> None:
         setattr(namespace, self.dest, values)
         setattr(namespace, "network_required", False)
+
+
+def _output_path(value: str) -> str:
+    if not value.strip() or value == "-":
+        raise argparse.ArgumentTypeError(
+            "saved Analysis --output must be a local path; omit it for stdout"
+        )
+    return value
+
+
+def _nonempty_app(value: str) -> str:
+    if not value.strip():
+        raise argparse.ArgumentTypeError("saved Analysis --app must not be empty")
+    return value
 
 
 __all__ = ["add_saved_analysis_commands", "dispatch_saved_analysis"]

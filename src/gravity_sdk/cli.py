@@ -1124,15 +1124,11 @@ def _ndjson_rows(result: Any) -> tuple[list[Any], dict[str, Any]]:
     if isinstance(value, list):
         rows = value
     elif isinstance(value, Mapping):
-        data = value.get("data")
+        data = value.get("data", value)
         if isinstance(data, list):
             rows = data
         elif isinstance(data, Mapping):
-            rows = data.get("list", data.get("items"))
-        elif value.get("schema_version") == "gravity.agent.v1" and isinstance(
-            value.get("candidates"), list
-        ):
-            rows = value["candidates"]
+            rows = data.get("list", data.get("items", data.get("candidates")))
     if not isinstance(rows, list):
         rows = [value]
     metadata = {
@@ -1141,7 +1137,7 @@ def _ndjson_rows(result: Any) -> tuple[list[Any], dict[str, Any]]:
         "status": value.get("status") if isinstance(value, Mapping) else "success",
         "truncated": value.get("truncated", False) if isinstance(value, Mapping) else False,
         "next_page_input": value.get("next_page_input") if isinstance(value, Mapping) else None,
-        "total": value.get("total") if isinstance(value, Mapping) else None,
+        "total": value.get("total", value.get("count")) if isinstance(value, Mapping) else None,
         "rows_written": len(rows),
     }
     metadata.update(ndjson_metadata(value))

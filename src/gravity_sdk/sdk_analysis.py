@@ -72,19 +72,25 @@ class AnalysisSdkMixin:
         *,
         max_pages: int = 1_000,
         max_items: int = 100_000,
+        max_workers: int = 6,
         workspace: Any | None = None,
     ) -> dict[str, Any]:
         """List safe saved-Analysis identities without fetching opaque configs."""
 
         from .saved_analysis import list_saved_analyses
+        from .saved_analysis_support import bounds, workers
 
         selected = self._select_workspace(workspace)
+        bounds(max_pages, max_items)
+        workers(max_workers)
+        app_id = self._resolve_app(selected, app)
         return list_saved_analyses(
             self.insight,
-            app,
+            app_id,
             workspace=selected,
             max_pages=max_pages,
             max_items=max_items,
+            max_workers=max_workers,
         )
 
     def prepare_saved_analysis(
@@ -96,13 +102,18 @@ class AnalysisSdkMixin:
         end: str | None = None,
         max_pages: int = 1_000,
         max_items: int = 100_000,
+        max_workers: int = 6,
         workspace: Any | None = None,
     ) -> dict[str, Any]:
         """Resolve and strictly compile one saved definition without running it."""
 
         from .saved_analysis import prepare_saved_analysis
         from .saved_analysis_artifact import validate_saved_window
+        from .saved_analysis_support import bounds, normalize_reference, workers
 
+        normalize_reference(reference)
+        bounds(max_pages, max_items)
+        workers(max_workers)
         selected = self._select_workspace(workspace)
         validate_saved_window(start, end)
         app_id = self._resolve_app(selected, app)
@@ -113,6 +124,7 @@ class AnalysisSdkMixin:
             workspace=selected,
             max_pages=max_pages,
             max_items=max_items,
+            max_workers=max_workers,
             start=start,
             end=end,
         )
@@ -126,13 +138,18 @@ class AnalysisSdkMixin:
         end: str | None = None,
         max_pages: int = 1_000,
         max_items: int = 100_000,
+        max_workers: int = 6,
         workspace: Any | None = None,
     ) -> dict[str, Any]:
         """Inspect replay eligibility without returning opaque configuration."""
 
         from .saved_analysis import inspect_saved_analysis
         from .saved_analysis_artifact import validate_saved_window
+        from .saved_analysis_support import bounds, normalize_reference, workers
 
+        normalize_reference(reference)
+        bounds(max_pages, max_items)
+        workers(max_workers)
         selected = self._select_workspace(workspace)
         validate_saved_window(start, end)
         app_id = self._resolve_app(selected, app)
@@ -143,6 +160,7 @@ class AnalysisSdkMixin:
             workspace=selected,
             max_pages=max_pages,
             max_items=max_items,
+            max_workers=max_workers,
             start=start,
             end=end,
         )
@@ -156,13 +174,18 @@ class AnalysisSdkMixin:
         end: str | None = None,
         max_pages: int = 1_000,
         max_items: int = 100_000,
+        max_workers: int = 6,
         workspace: Any | None = None,
     ) -> dict[str, Any]:
         """Resolve, strictly compile, and execute one saved Analysis reference."""
 
         from .saved_analysis import execute_saved_analysis
         from .saved_analysis_artifact import validate_saved_window
+        from .saved_analysis_support import bounds, normalize_reference, workers
 
+        normalize_reference(reference)
+        bounds(max_pages, max_items)
+        workers(max_workers)
         selected = self._select_workspace(workspace)
         validate_saved_window(start, end)
         app_id = self._resolve_app(selected, app)
@@ -173,6 +196,7 @@ class AnalysisSdkMixin:
             workspace=selected,
             max_pages=max_pages,
             max_items=max_items,
+            max_workers=max_workers,
             start=start,
             end=end,
         )

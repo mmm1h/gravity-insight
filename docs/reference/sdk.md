@@ -113,13 +113,15 @@ segment_result = gravity.segment_evaluate(
 )
 
 # 保存分析按显式引用读取；prepare 读取目录/详情但不执行最终查询。
-saved = gravity.saved_analyses("main")
-eligibility = gravity.get_saved_analysis("main", "daily purchases")
+saved = gravity.saved_analyses("main", max_workers=6)
+eligibility = gravity.get_saved_analysis("main", "daily purchases", max_workers=6)
 prepared = gravity.prepare_saved_analysis(
-    "main", "daily purchases", start="2026-08-01", end="2026-08-07"
+    "main", "daily purchases", start="2026-08-01", end="2026-08-07",
+    max_workers=6,
 )
 replayed = gravity.run_saved_analysis(
-    "main", "daily purchases", start="2026-08-01", end="2026-08-07"
+    "main", "daily purchases", start="2026-08-01", end="2026-08-07",
+    max_workers=6,
 )
 
 # 并发读取经营概览与趋势；小时对比明确属于 workspace scope。
@@ -288,11 +290,17 @@ workspace=None)` 先在已绑定 workspace App 中按稳定 ID 或精确名称�
 `segment_evaluate()` 独立处理。
 
 保存分析四个方法都接受 workspace App alias 或正整数。列表只返回受合同允许的身份字段；
+公共签名分别为 `saved_analyses(app, *, max_pages=1000, max_items=100000, max_workers=6,
+workspace=None)`，以及 `get_saved_analysis` / `prepare_saved_analysis` / `run_saved_analysis`
+的 `(app, reference, *, start=None, end=None, max_pages=1000, max_items=100000,
+max_workers=6, workspace=None)`。`max_workers` 只用于已知总页数的目录分页，范围 1..24；
+Plan adapter 固定传 1，多个独立引用由 Plan 全局 pool 并发。
 `get/prepare/run` 的 reference 只接受稳定 ID 或精确名称，歧义时失败。reference 模式的
 `prepare_saved_analysis()` / `run_saved_analysis()` 以 keyword-only `start/end` 接受成对的
-inclusive ISO date/timestamp（最长 90 天），严格复用 `event/funnel/retention/property/scatter`
+ISO date/timestamp（两端下发且 `end-start` 不超过 90 天），严格复用 `event/funnel/retention/property/scatter`
 编译器；不维护第二套 Web 翻译器，也不解释 template/layout/favourite/权限。按 reference prepare 会读取在线
-目录和详情；公开 `compile_saved_analysis_definition()` 的 compact definition 路径保持旧兼容，
+目录和详情；Web artifact 缺少 window 时结构化失败，compact reference/公开
+`compile_saved_analysis_definition()` 路径保持旧兼容，
 直接提供本地 definition 才是零网络编译。
 
 `business_pulse(apps, start, end, *, platforms=(...), include_hourly=False,

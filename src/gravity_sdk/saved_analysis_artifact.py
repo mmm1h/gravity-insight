@@ -11,9 +11,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Mapping
 
-from .analysis_spec import prepare_query_spec, validate_query_spec
+from .analysis_spec import compile_query_spec, prepare_query_spec, validate_query_spec
 from .dashboard_artifact import compile_dashboard_chart, validate_dashboard_window
-from .errors import InputValidationError
+from .domains import ANALYSIS_QUERY_OPERATIONS
+from .errors import InputValidationError, UnsupportedOperationError
+from ._field_policy_analysis import validate_analysis_shape
 from .saved_analysis_support import decoded_config, supported_subject
 
 
@@ -64,6 +66,45 @@ def validate_saved_window(start: Any, end: Any) -> None:
     """Validate an optional paired window before any catalog or client call."""
 
     _paired_window(start, end)
+
+
+def preflight_saved_definition(
+    definition: Mapping[str, Any], *, app: str, workspace: Any,
+    start: str | None = None, end: str | None = None,
+) -> None:
+    """Compile caller-owned structure without constructing an Insight client."""
+
+    _paired_window(start, end)
+    kind = supported_subject(definition.get("subject"))
+    config = decoded_config(definition.get("config"))
+    if "calculateBody" not in config:
+        compile_query_spec(
+            kind, config, workspace=workspace, app=app, start=start, end=end
+        )
+        return
+    if start is None or end is None:
+        raise InputValidationError(
+            "saved Web artifact replay requires explicit start and end",
+            field="start/end",
+        )
+    compile_dashboard_chart(
+        _OfflineValidator(), _dashboard_report(definition, config),
+        app_id=app, start=start, end=end
+    )
+
+
+class _OfflineValidator:
+    @staticmethod
+    def validate(operation_id: str, inputs: Mapping[str, Any]) -> dict[str, Any]:
+        kind = next(
+            (name for name, selected in ANALYSIS_QUERY_OPERATIONS.items()
+             if selected == operation_id),
+            None,
+        )
+        if kind is None:
+            raise UnsupportedOperationError("saved artifact operation is not registered")
+        validate_analysis_shape(kind, inputs)
+        return {"ok": True, "status": "valid_offline"}
 
 
 def compile_saved_artifact(
@@ -266,6 +307,7 @@ __all__ = [
     "compile_saved_artifact",
     "inspect_saved_artifact",
     "prepare_saved_artifact",
+    "preflight_saved_definition",
     "saved_artifact_mode",
     "validate_saved_window",
 ]

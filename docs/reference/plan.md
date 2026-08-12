@@ -323,8 +323,8 @@ unsupported，其他 sibling 继续。已知 selector 是一次 `plan run`；未
 
 ## Saved Analysis composite
 
-保存分析 reference replay 使用 `saved_analysis` composite；提交前必须明确 App、稳定 ID/精确
-名称和日期窗：
+保存分析 reference replay 使用 `saved_analysis` composite；Agent 主路径在提交前明确 App、稳定
+ID/精确名称和日期窗：
 
 ```json
 {
@@ -348,12 +348,14 @@ unsupported，其他 sibling 继续。已知 selector 是一次 `plan run`；未
 }
 ```
 
-`start/end` 必须成对提供 inclusive ISO date/timestamp 且最长 90 天（Agent 主路径使用
-`YYYY-MM-DD`）；`mode` 只允许 `prepare/run`。只有 `/app`
+`start/end` 必须成对提供 ISO date/timestamp，两端下发且 `end-start` 不超过 90 天
+（Agent 主路径使用 `YYYY-MM-DD`）。旧 compact reference 的无窗兼容只在直接 CLI/SDK 暴露，
+Plan 保持可静态证明的显式窗口合同。
+`mode` 只允许 `prepare/run`。只有 `/app`
 可接受显式标量 binding，`ref/mode/start/end` 必须是提交前完成的 literal。reference Web artifact
 严格复用 `event/funnel/retention/property/scatter` 五类编译器，不处理 template、layout、
 favourite 或权限。多个互不依赖的保存分析应作为同层节点交给 Plan 全局 pool 并发；adapter 内
-分页 worker 固定 1，避免并发相乘。
+分页 worker 固定 1，避免并发相乘；直接 CLI/SDK 的目录分页才允许显式配置 1..24 worker。
 
 Agent 卡的 request 保留 `app/ref/start/end` 可机械填写槽位且不会自动执行。已有引用和日期窗但
 未知能力时是一次发现加一次 Plan；引用未知时必须先列目录并由调用方选择，因此若还需能力发现

@@ -80,18 +80,88 @@ def _segment_requires_credentials(args: Any) -> bool:
 def _saved_requires_credentials(args: Any) -> bool:
     """Avoid credential prompts for an incomplete local Saved request."""
 
+    from .saved_analysis_support import bounds, workers
+
+    try:
+        bounds(getattr(args, "max_pages", None), getattr(args, "max_items", None))
+        workers(getattr(args, "concurrency", None))
+    except InputValidationError:
+        return False
+    if not _saved_app_valid(getattr(args, "app", None)):
+        return False
     command = getattr(args, "saved_command", None)
     if command == "list":
         return True
     if command == "get":
-        return _saved_window_valid(args, required=False)
+        return _saved_reference_valid(getattr(args, "ref", None)) and _saved_window_valid(
+            args, required=False
+        )
     reference = getattr(args, "ref", None)
     definition = getattr(args, "definition", None)
     if (reference is None) == (definition is None):
         return False
     if definition is not None:
-        return command == "run" and _saved_window_valid(args, required=False)
-    return _saved_window_valid(args, required=True)
+        return command == "run" and _saved_definition_valid(definition, args)
+    return _saved_reference_valid(reference) and _saved_window_valid(
+        args, required=False
+    )
+
+
+def _saved_reference_valid(value: Any) -> bool:
+    from .saved_analysis_support import normalize_reference
+
+    try:
+        normalize_reference(value)
+    except InputValidationError:
+        return False
+    return True
+
+
+def _saved_app_valid(value: Any) -> bool:
+    from .workspace import load_workspace
+    from .workspace_app import resolve_workspace_app
+
+    try:
+        workspace = load_workspace()
+        if not workspace.apps and workspace.defaults.app is None:
+            return (
+                isinstance(value, str)
+                and value.isascii()
+                and value.isdecimal()
+                and int(value) > 0
+            )
+        resolve_workspace_app(workspace, value)
+    except (InputValidationError, OSError, ValueError):
+        return False
+    return True
+
+
+def _saved_definition_valid(value: Any, args: Any) -> bool:
+    from .find_input import load_json_input
+    from .saved_analysis_artifact import preflight_saved_definition
+    from .saved_analysis_support import normalize_definition
+    from .workspace import load_workspace
+    from .workspace_app import resolve_workspace_app
+    from .errors import UnsupportedOperationError
+
+    if value == "-":
+        return True
+    try:
+        workspace = load_workspace()
+        app_id = str(resolve_workspace_app(workspace, getattr(args, "app", None)))
+        definition, _metadata = normalize_definition(
+            load_json_input(value), expected_app_id=app_id
+        )
+        preflight_saved_definition(
+            definition,
+            app=app_id,
+            workspace=workspace,
+            start=getattr(args, "start", None),
+            end=getattr(args, "end", None),
+        )
+        return True
+    except (InputValidationError, UnsupportedOperationError, OSError, ValueError):
+        return False
 
 
 def _saved_window_valid(args: Any, *, required: bool) -> bool:

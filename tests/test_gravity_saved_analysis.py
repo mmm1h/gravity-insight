@@ -5,7 +5,12 @@ import unittest
 from pathlib import Path
 from typing import Any
 
-from gravity_sdk.errors import InputValidationError, UnsupportedOperationError
+from gravity_sdk.errors import (
+    ContractChangedError,
+    InputValidationError,
+    PaginationError,
+    UnsupportedOperationError,
+)
 from gravity_sdk.saved_analysis import (
     GET_OPERATION_ID,
     LIST_OPERATION_ID,
@@ -15,6 +20,8 @@ from gravity_sdk.saved_analysis import (
     list_saved_analyses,
     resolve_saved_analysis,
 )
+from gravity_sdk.saved_analysis_result import saved_result_item_count
+from gravity_sdk.domains import ANALYSIS_QUERY_OPERATIONS
 from gravity_sdk.workspace import Workspace, WorkspaceDefaults
 
 
@@ -122,7 +129,7 @@ class Client:
         return {
             "status": "success",
             "request": {"must": "not leak"},
-            "data": {"series": [{"value": 7, "values": [1, 2]}]},
+            "data": {"list": [{"value": 7, "values": [1, 2]}]},
             "error": None,
         }
 
@@ -142,6 +149,8 @@ class SavedAnalysisTests(unittest.TestCase):
 
         self.assertEqual("success", result["status"])
         self.assertEqual("event", result["items"][0]["kind"])
+        self.assertTrue(result["items"][0]["replay_supported"])
+        self.assertEqual("unchecked", result["items"][0]["replay_status"])
         self.assertNotIn("config", result["items"][0])
         self.assertEqual(
             [("read_all", LIST_OPERATION_ID, {"app_id": "101", "page": 1, "page_size": 1})],
@@ -163,6 +172,21 @@ class SavedAnalysisTests(unittest.TestCase):
                 definition(config={"commonFilter": []}),
                 "main",
                 workspace=workspace(),
+            )
+        with self.assertRaises(ContractChangedError):
+            resolve_saved_analysis(
+                Client([client.rows[0], {**client.rows[0], "name": "conflict"}]),
+                {"id": "8"}, "main", workspace=workspace(),
+            )
+
+        truncated = Client()
+        truncated.read_all = lambda *args, **kwargs: {
+            "status": "success", "data": {"list": truncated.rows},
+            "error": None, "truncated": True, "next_page_input": {"page": 2},
+        }
+        with self.assertRaises(PaginationError):
+            resolve_saved_analysis(
+                truncated, {"id": "8"}, "main", workspace=workspace(),
             )
         with self.assertRaises(UnsupportedOperationError):
             compile_saved_analysis_definition(
@@ -213,8 +237,39 @@ class SavedAnalysisTests(unittest.TestCase):
         self.assertNotIn("request", result["result"])
         self.assertEqual(
             {"value": 7, "values": [1, 2]},
-            result["result"]["data"]["series"][0],
+            result["result"]["data"]["list"][0],
         )
+
+        empty_error = Client()
+        empty_error.read = lambda operation_id, inputs: {
+            "status": "success", "data": {"list": []}, "error": {}
+        }
+        self.assertTrue(execute_saved_analysis(
+            empty_error, definition=definition(), app="main", workspace=workspace()
+        )["ok"])
+
+        families = {
+            "event": {"list": [{}, {}]},
+            "property": {"list": [{}, {}]},
+            "retention": {"total": [{}, {}]},
+            "funnel": {"aggregate_by_date": {"one": {}, "two": {}}},
+            "scatter": {"aggregate_date": [[1], [2]]},
+        }
+        for kind, data in families.items():
+            self.assertEqual(2, saved_result_item_count(
+                ANALYSIS_QUERY_OPERATIONS[kind], {"data": data}
+            ))
+        with self.assertRaises(ContractChangedError):
+            saved_result_item_count(
+                ANALYSIS_QUERY_OPERATIONS["funnel"], {"data": {"aggregate_by_date": 7}}
+            )
+        self.assertEqual(500, saved_result_item_count(
+            ANALYSIS_QUERY_OPERATIONS["event"], {"data": {"list": [[{}] * 500]}}
+        ))
+        with self.assertRaises(ContractChangedError):
+            saved_result_item_count(
+                ANALYSIS_QUERY_OPERATIONS["event"], {"data": {"list": [], "raw": "x"}}
+            )
 
     def test_web_artifact_requires_window_then_compiles_through_shared_boundary(self) -> None:
         invalid = Client()
@@ -242,6 +297,7 @@ class SavedAnalysisTests(unittest.TestCase):
         )
         self.assertEqual("web_artifact", inspected["artifact_mode"])
         self.assertEqual("requires_window", inspected["replay_status"])
+        self.assertFalse(inspected["saved_analysis"]["replay_supported"])
         self.assertIsNone(inspected["date_range"])
 
         prepared = compile_saved_analysis_definition(
@@ -293,6 +349,7 @@ class SavedAnalysisTests(unittest.TestCase):
         self.assertNotIn("raw-error", encoded)
         self.assertNotIn("must-not-leak", encoded)
         self.assertNotIn("calculateBody", encoded)
+        self.assertIsNone(result["result"]["data"])
 
 
 if __name__ == "__main__":

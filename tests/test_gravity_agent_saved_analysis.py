@@ -47,6 +47,8 @@ class SavedAnalysisAgentTest(unittest.TestCase):
             "saved report templates",
             "show saved report layout",
             "查看保存报表收藏和权限",
+            "保存这个分析",
+            "帮我保存这个分析",
             "dashboard saved filters",
         ):
             with self.subTest(query=query):

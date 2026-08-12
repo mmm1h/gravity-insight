@@ -34,7 +34,7 @@
 
 经营概览和趋势直接一次调用 `gravity reports pulse --app main --start 2026-08-01 --end 2026-08-07 --include-hourly`；只有需要小时对比时加 `--include-hourly`，其结果是 `scope=workspace`。交叉 Plan 使用 composite `name=business_pulse` 和 `apps/start/end`，不要手工串行读取 overview/business。
 
-保存分析已知稳定 ID/精确名称和日期窗时直接 `gravity analysis saved run --app ... --ref ... --start ... --end ...`，不要先串行 list/get/prepare。reference Strict Replay 只接受已证明的五类 Web artifact，并严格复用现有编译器；`prepare --ref` 会联网解析引用但不执行最终查询，显式 compact `--definition` 保持旧模式兼容。自然语言发现只返回 `composite:saved_analysis` 和缺失的 `app/ref/start/end`，不会猜引用或自动执行。引用未知时先 `saved list` 后人工选择再 run；若此前还需要 Agent 发现能力，就是三次调用，不能宣称“两次”。
+保存分析已知稳定 ID/精确名称和日期窗时直接 `gravity analysis saved run --app ... --ref ... --start ... --end ...`，不要先串行 list/get/prepare。reference Strict Replay 只接受已证明的五类 Web artifact，并严格复用现有编译器；`prepare --ref` 会联网解析引用但不执行最终查询。旧 compact reference/显式 `--definition` 可保留原日期语义，但 Agent 主路径仍要求窗口以覆盖 Web artifact。自然语言发现只返回 `composite:saved_analysis` 和缺失的 `app/ref/start/end`，不会猜引用或自动执行。引用未知时先 `saved list` 后人工选择再 run；若此前还需要 Agent 发现能力，就是三次调用，不能宣称“两次”。
 
 看板控制面仍用 `dashboard_snapshot`；图表执行用 `analysis dashboard run --app ... --ref ... --start ... --end ...`。后者只编译静态 Web artifact 中已证明的五类 Analysis 图表，不模拟布局、收藏或页面全局筛选，单图不支持时隔离报告。未知时 `agent "run dashboard charts"` 返回缺失 `app/ref/start/end` 的 `dashboard_analysis` 节点；自然语言不自动执行，Plan 内固定 1 worker。
 
@@ -61,13 +61,11 @@ gravity run <operation-id> --input <json-or-file>
 多个问题不要逐个执行 `gravity agent`。一次提交带稳定 ID 的问题数组：
 
 ```json
-{
-  "questions": [
-    {"id": "apps", "query": "list apps", "domain": "app"},
-    {"id": "events", "query": "event metadata", "domain": "analysis"},
-    {"id": "reports", "query": "run saved analysis report-42", "domain": "report"}
-  ]
-}
+{"questions": [
+  {"id": "apps", "query": "list apps", "domain": "app"},
+  {"id": "events", "query": "event metadata", "domain": "analysis"},
+  {"id": "reports", "query": "run saved analysis report-42", "domain": "report"}
+]}
 ```
 
 ```powershell
@@ -141,20 +139,10 @@ gravity insight batch read --input <batch.json> --concurrency 6
 最小 `batch.json`：
 
 ```json
-{
-  "requests": [
-    {
-      "operation_id": "app.list",
-      "request_id": "page-1",
-      "input": {"page": 1, "page_size": 1}
-    },
-    {
-      "operation_id": "app.list",
-      "request_id": "page-2",
-      "input": {"page": 2, "page_size": 1}
-    }
-  ]
-}
+{"requests": [
+  {"operation_id": "app.list", "request_id": "page-1", "input": {"page": 1, "page_size": 1}},
+  {"operation_id": "app.list", "request_id": "page-2", "input": {"page": 2, "page_size": 1}}
+]}
 ```
 
 batch 保持输入顺序、隔离单项失败并聚合退出码；默认并发 6、上限 24。单个 operation 的 `--all-pages` 只在首页返回明确 `total_page` 时按小窗口并发并保持页序；未知总页数串行。batch 内 `read_all` 固定单分页 worker，避免嵌套并发放大；不要在外层套线程池绕过进程/host 限流；SQL query 也接受单个、数组或 requests wrapper，并发上限独立且为 2。

@@ -411,7 +411,7 @@ gravity analysis segment evaluate --app main --spec segment.json --fields part,p
 
 ```powershell
 # 浏览目录；list 不需要 --ref
-gravity analysis saved list --app main
+gravity analysis saved list --app main --concurrency 6
 
 # 按稳定 ID 或精确名称查看受控定义摘要
 gravity analysis saved get --app main --ref <id-or-exact-name>
@@ -430,15 +430,19 @@ gravity analysis saved run --app main --ref <id-or-exact-name> `
 
 `--app` 接受 workspace alias 或正整数。`--ref` 只接受稳定 ID 或精确名称；精确名称命中
 多个项目会以 caller/2 失败，要求改用稳定 ID，不会静默选择第一项。分析 kind 由保存定义
-中已登记的 subject 决定，调用方不能覆盖。reference 模式的 `prepare/run` 必须提供成对
-`--start/--end`，使用 ISO date/timestamp 且为 inclusive、最长 90 天；主路径建议
-`YYYY-MM-DD`。`list/get` 不要求日期窗，`get` 会明确报告
-该引用运行时是否需要 window。
+中已登记的 subject 决定，调用方不能覆盖。若 reference 是 Web artifact，`prepare/run` 必须提供
+成对 `--start/--end`；两端会包含在下发窗口中且 `end-start` 不超过 90 天，主路径建议
+`YYYY-MM-DD`。旧 compact reference 可省略 window，并保留原定义的日期语义；只提供一端始终在
+建客户端前失败。`list/get` 不要求日期窗，`get` 会明确报告该引用是否需要 window。
 
 Strict Replay 不是通用 Web 配置翻译器。reference 模式只接受静态证据已证明的 Web artifact，
 并直接复用现有 `event/funnel/retention/property/scatter` 五类编译器；未知字段、无法证明的
 opaque config 或其他 kind 均结构化失败，不降级为裸请求。显式 `--definition` 的 compact spec
 保留旧兼容模式。两种模式都不解释 template、layout、favourite、权限或页面状态。
+`list/get/prepare/run` 均支持 `--output <path>` 与 `--format json|ndjson`；目录较大时应显式落盘，
+避免 stdout 的安全摘要上限遮住后续条目。
+四个命令也都接受 `--concurrency 1..24`（默认 6），只在目录首页证明总页数后并发读取后续页，
+结果仍按页码保序；未知总页数保持串行。Plan adapter 固定分页 worker 为 1，避免与 Plan 全局并发相乘。
 `prepare --ref` 为解析引用会读取在线目录以及必要详情，所以它不是离线 dry-run；它与 `run`
 的区别是不会发送最终分析查询。`list/get` 也会访问已登记的 stable 只读 operation。
 
