@@ -8,7 +8,6 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
-from .composite import CompositeService, MULTIDIM_QUERY_OPERATION
 from .output_projection import validate_output_fields
 from .plan import AdapterContext, PlanAdapter, PlanAdapters
 from . import plan_analysis_adapter as analysis_plan
@@ -23,6 +22,13 @@ from .plan_saved_analysis_adapter import (
     project_saved_analysis_result,
     validate_saved_analysis,
 )
+from .plan_multidim_adapter import (
+    MULTIDIM_NAME,
+    execute_multidim_plan,
+    is_multidim_result,
+    project_multidim_result,
+    validate_multidim_plan,
+)
 from .plan_metadata_adapter import execute_metadata_plan, validate_metadata_plan
 from .resolver_support import build_inputs
 from .plan_adapter_support import (
@@ -35,7 +41,6 @@ from .plan_adapter_support import (
     input_error as _input,
     mapping as _mapping,
     metadata_projection as _metadata_projection,
-    nested_mapping as _nested_mapping,
     request_object as _request_object,
     sql_projection as _sql_projection,
     validate_exact_targets as _validate_exact_targets,
@@ -59,7 +64,7 @@ _COMPOSITE_FIELDS = frozenset(
 _COMPOSITES = frozenset(
     {
         "analysis_context", "app_snapshot", "attribution_snapshot",
-        "business_pulse", "saved_analysis", "multidim",
+        "business_pulse", "saved_analysis", MULTIDIM_NAME,
         analysis_plan.ANALYSIS_QUERY_NAME,
         *segment_plan.COMPOSITE_NAMES,
         user_journey_plan.USER_JOURNEY_NAME,
@@ -398,24 +403,17 @@ def _validate_composite(
             request, context, workspace, _COMPOSITE_OUTPUT_FIELDS
         )
         return
+    if name == MULTIDIM_NAME:
+        validate_multidim_plan(insight, workspace, request, context)
+        return
     allowed_targets = {"/app"}
-    if name == "multidim":
-        schema = insight.schema(MULTIDIM_QUERY_OPERATION)
-        fields = schema.get("input_fields", {})
-        if not isinstance(fields, Mapping):
-            raise _input("multidim input contract is invalid", "name")
-        allowed_targets.update(f"/inputs/{field}" for field in fields)
-        allowed_targets.update({"/include_total", "/read_all"})
     _validate_exact_targets(context, frozenset(allowed_targets))
     dynamic_app = _has_dynamic(context, "/app")
     app_id = None if dynamic_app else workspace.resolve_app(request.get("app"))
     _validate_selected_fields(
         context.output_fields, _COMPOSITE_OUTPUT_FIELDS, "output_fields"
     )
-    if name != "multidim":
-        _validate_fixed_composite(request, context, str(name))
-        return
-    _validate_multidim(request, context, insight, fields, app_id)
+    _validate_fixed_composite(request, context, str(name))
 
 
 def _validate_fixed_composite(
@@ -432,33 +430,6 @@ def _validate_fixed_composite(
         raise _input(
             "composite fixed sources exceed this node max_items", "limits.max_items"
         )
-
-
-def _validate_multidim(
-    request: Mapping[str, Any],
-    context: AdapterContext,
-    insight: Any,
-    fields: Mapping[str, Any],
-    app_id: int | None,
-) -> None:
-    inputs = _mapping(request.get("inputs", {}), "inputs")
-    dynamic_inputs = copy.deepcopy(dict(inputs))
-    for target in context.dynamic_targets:
-        field = _target_name(target, ("/inputs/",))
-        if field is not None:
-            dynamic_inputs[field] = _field_sentinel(fields[field])
-    supplied = (
-        _multidim_inputs(dynamic_inputs, app_id)
-        if app_id is not None
-        else dynamic_inputs
-    )
-    validation = insight.validate(MULTIDIM_QUERY_OPERATION, supplied)
-    if validation.get("ok") is not True:
-        raise _input("multidim request failed offline validation", "inputs")
-    for field in ("include_total", "read_all"):
-        if field in request and not isinstance(request[field], bool):
-            raise _input("multidim switches must be booleans", field)
-    _nested_mapping(request.get("metadata_inputs", {}), "metadata_inputs")
 
 
 def _execute_composite(
@@ -494,6 +465,8 @@ def _execute_composite(
         return execute_business_pulse(sdk, request, context)
     if name == "saved_analysis":
         return execute_saved_analysis_plan(sdk, request, context)
+    if name == MULTIDIM_NAME:
+        return execute_multidim_plan(sdk, request, context)
     if name == analysis_plan.ANALYSIS_QUERY_NAME:
         return analysis_plan.execute_analysis_query_plan(sdk, request, context)
     if segment_plan.is_segment_composite(name):
@@ -502,34 +475,7 @@ def _execute_composite(
         return user_journey_plan.execute_user_journey_plan(sdk, request, context)
     if dashboard_plan.is_dashboard_composite(name):
         return dashboard_plan.execute_dashboard_plan(sdk, request, context)
-    app_id = context.workspace.resolve_app(app)
-    inputs = _multidim_inputs(dict(request.get("inputs", {})), app_id)
-    return CompositeService(sdk.insight).multidim_query(
-        inputs,
-        include_total=bool(request.get("include_total", False)),
-        read_all=bool(request.get("read_all", False)),
-        metadata_inputs=request.get("metadata_inputs"),
-        max_pages=context.max_pages,
-        max_items=context.max_items,
-        max_workers=1,
-    )
-
-
-def _multidim_inputs(inputs: Mapping[str, Any], app_id: int) -> dict[str, Any]:
-    selected = copy.deepcopy(dict(inputs))
-    filters = selected.get("filters", [])
-    if not isinstance(filters, list):
-        raise _input("multidim filters must be an array", "inputs.filters")
-    retained = [
-        item
-        for item in filters
-        if not isinstance(item, Mapping) or item.get("field") != "app_id"
-    ]
-    retained.append(
-        {"field": "app_id", "operator": "EQUALS", "values": [str(app_id)]}
-    )
-    selected["filters"] = retained
-    return selected
+    raise RuntimeError("validated composite routing omitted an executor")
 
 
 def _project_composite(
@@ -545,6 +491,8 @@ def _project_composite(
         return dashboard_plan.project_dashboard_result(result, fields, context)
     if is_saved_analysis_result(result):
         return project_saved_analysis_result(result, fields, context)
+    if is_multidim_result(result):
+        return project_multidim_result(result, fields, context)
     return _composite_projection(result, fields, context)
 
 

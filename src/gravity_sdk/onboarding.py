@@ -36,23 +36,33 @@ def command_requires_credentials(
         args = parser_factory().parse_args(argv)
     except (Exception, SystemExit):
         return False
-    if bool(getattr(args, "dry_run", False)) or bool(
-        getattr(args, "query_spec_dry_run", False)
-    ) or bool(
-        getattr(args, "segment_spec_dry_run", False)
-    ) or bool(
-        getattr(args, "analysis_query_batch_dry_run", False)
-    ):
+    if _offline_flag_selected(args):
         return False
-    if bool(getattr(args, "spec_schema", False)):
+    if bool(getattr(args, "spec_schema", False)) or bool(
+        getattr(args, "multidim_input_schema", False)
+    ):
         return False
     if getattr(args, "analysis_command", None) == "segment":
         return _segment_requires_credentials(args)
     if getattr(args, "analysis_command", None) == "saved":
         return _saved_requires_credentials(args)
+    if getattr(args, "command", None) == "multidim" and getattr(
+        args, "multidim_command", None
+    ) == "query":
+        return _multidim_requires_credentials(args)
     if bool(getattr(args, "live", False)):
         return True
     return bool(getattr(args, "network_required", True))
+
+
+def _offline_flag_selected(args: Any) -> bool:
+    return any(
+        bool(getattr(args, name, False))
+        for name in (
+            "dry_run", "query_spec_dry_run", "segment_spec_dry_run",
+            "analysis_query_batch_dry_run", "multidim_dry_run",
+        )
+    )
 
 
 def _segment_requires_credentials(args: Any) -> bool:
@@ -115,6 +125,39 @@ def _saved_reference_valid(value: Any) -> bool:
     except InputValidationError:
         return False
     return True
+
+
+def _multidim_requires_credentials(args: Any) -> bool:
+    """Reject incomplete product requests before offering a credential prompt."""
+
+    if getattr(args, "app", None) is None:
+        return True  # The compatibility operation surface owns its live validation.
+    if getattr(args, "app_id", None) is not None:
+        return False
+    source = getattr(args, "input", None)
+    if source == "-":
+        return True
+    try:
+        from .find_input import object_input
+        from .multidim_cli import _product_bounds, _product_shortcuts
+        from .multidim_product import (
+            bind_multidim_app,
+            normalize_multidim_inputs,
+            prepare_multidim_query,
+        )
+        from .workspace import load_workspace
+        from .workspace_app import resolve_workspace_app
+
+        supplied = _product_shortcuts(args, object_input(source))
+        normalized = normalize_multidim_inputs(supplied)
+        _product_bounds(args, bool(getattr(args, "all_pages", False)))
+        workspace = load_workspace(getattr(args, "workspace", None))
+        app_id = resolve_workspace_app(workspace, getattr(args, "app", None))
+        bound = bind_multidim_app(normalized, app_id)
+        preview = prepare_multidim_query(None, bound, app_id=app_id)
+        return preview.get("ok") is True and preview.get("network_called") is False
+    except (InputValidationError, OSError, TypeError, ValueError):
+        return False
 
 
 def _saved_app_valid(value: Any) -> bool:

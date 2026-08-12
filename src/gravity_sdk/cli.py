@@ -20,8 +20,6 @@ from gravity_sdk.domains import (
     ANALYSIS_VALUE_OPERATIONS,
     ATTRIBUTION_STATUS_OPERATIONS,
     DOMAIN_OPERATIONS,
-    MULTIDIM_METADATA_OPERATIONS,
-    MULTIDIM_TEMPLATE_SCOPES,
     PROMOTION_EQUALS_OPERATOR,
     PROMOTION_PARENT_FILTER_FIELDS,
     PROMOTION_PLATFORMS,
@@ -56,7 +54,7 @@ try:
     from gravity_sdk.export_batch import (
         add_batch_commands, batch_schema_version, envelope_exit_code, run_batch_command,
     )
-    from gravity_sdk.multidim import add_cli_query_arguments, call_cli_read, parse_multi_days
+    from gravity_sdk.multidim import parse_multi_days
 except ModuleNotFoundError:  # source checkout before editable installation
     from gravity_sdk.errors import (
         ErrorCategory,
@@ -69,7 +67,7 @@ except ModuleNotFoundError:  # source checkout before editable installation
     from gravity_sdk.export_batch import (
         add_batch_commands, batch_schema_version, envelope_exit_code, run_batch_command,
     )
-    from gravity_sdk.multidim import add_cli_query_arguments, call_cli_read, parse_multi_days
+    from gravity_sdk.multidim import parse_multi_days
 
 from gravity_sdk.parents import add_parent_commands, run_parent_command
 from gravity_sdk.attribution import add_snapshot_command
@@ -79,6 +77,7 @@ from gravity_sdk.segment_spec_cli import add_segment_commands, run_segment_comma
 from gravity_sdk.business_pulse_cli import add_business_pulse_command
 from gravity_sdk.dashboard_snapshot_cli import add_dashboard_commands
 from gravity_sdk.saved_analysis_cli import add_saved_analysis_commands
+from gravity_sdk.multidim_cli import add_multidim_commands
 from gravity_sdk.user_journey_cli import add_user_journey_command
 from gravity_sdk.metadata_sync import (
     add_metadata_commands,
@@ -110,9 +109,6 @@ from gravity_sdk.plan_product_cli import dispatch as dispatch_plan
 
 _LARGE_VALUE_BYTES = 8_192
 _ANALYSIS_QUERY_COMMAND = "query"
-_MULTIDIM_QUERY_OPERATIONS = frozenset(
-    (*DOMAIN_OPERATIONS["multidim.query"], *DOMAIN_OPERATIONS["multidim.calc_total"])
-)
 
 
 class AgentArgumentParser(argparse.ArgumentParser):
@@ -420,27 +416,13 @@ def build_parser() -> argparse.ArgumentParser:
     _add_input(analysis_detail, required=True)
     _add_all_pages(analysis_detail)
 
-    multidim = commands.add_parser("multidim")
-    multidim_commands = multidim.add_subparsers(dest="multidim_command", required=True)
-    templates = multidim_commands.add_parser("templates")
-    template_commands = templates.add_subparsers(dest="template_command", required=True)
-    template_list = template_commands.add_parser("list")
-    template_list.add_argument(
-        "--scope", choices=sorted(MULTIDIM_TEMPLATE_SCOPES), default="preset"
+    add_multidim_commands(
+        commands,
+        _add_input,
+        _add_all_pages,
+        _add_query_shortcuts,
+        _merge_query_shortcuts,
     )
-    _add_input(template_list)
-    _add_all_pages(template_list)
-    template_get = template_commands.add_parser("get")
-    _add_input(template_get)
-    multidim_metadata = multidim_commands.add_parser("metadata")
-    _add_input(multidim_metadata)
-    multidim_query = multidim_commands.add_parser("query")
-    add_cli_query_arguments(
-        multidim_query, _add_input, _add_all_pages, _add_query_shortcuts
-    )
-    multidim_total = multidim_commands.add_parser("calc-total")
-    _add_input(multidim_total)
-    _add_query_shortcuts(multidim_total)
 
     promotion = commands.add_parser("promotion")
     promotion_commands = promotion.add_subparsers(
@@ -506,6 +488,10 @@ def _client(args: argparse.Namespace):
 
 
 def _enforce_output_policy(args: argparse.Namespace) -> None:
+    if bool(getattr(args, "multidim_dry_run", False)) or bool(
+        getattr(args, "multidim_input_schema", False)
+    ):
+        return
     if not bool(getattr(args, "all_pages", False)):
         return
     if getattr(args, "output", None) or getattr(args, "format", "json") == "ndjson":
@@ -586,36 +572,23 @@ def _merge_query_shortcuts(
 
     app_id = getattr(args, "app_id", None)
     media = getattr(args, "media", None)
-    if operation_id in _MULTIDIM_QUERY_OPERATIONS:
-        filters = _without_filter(result.get("filters", []), "app_id", app_id is not None)
-        if app_id is not None:
-            filters.append(
-                {"field": "app_id", "operator": "EQUALS", "values": [str(app_id)]}
-            )
-        if media is not None:
-            filters.append(
-                {"field": "click_company", "operator": "IN", "values": [media]}
-            )
-        if app_id is not None or media is not None:
-            result["filters"] = filters
-    else:
-        if app_id is not None and "app_id" in allowed:
-            result["app_id"] = str(app_id)
-        elif app_id is not None and _accepts_array_field(fields, "filters"):
-            filters = _without_filter(result.get("filters", []), "app_id")
-            filters.append(
-                {
-                    "field": "app_id",
-                    "operator": PROMOTION_EQUALS_OPERATOR,
-                    "values": [str(app_id)],
-                }
-            )
-            result["filters"] = filters
-        elif app_id is not None and strict:
-            raise ValueError(f"{operation_id} does not accept --app-id")
-        elif app_id is not None:
-            ignored.append("app_id")
-        assign("media", ("media_type", "media"), media)
+    if app_id is not None and "app_id" in allowed:
+        result["app_id"] = str(app_id)
+    elif app_id is not None and _accepts_array_field(fields, "filters"):
+        filters = _without_filter(result.get("filters", []), "app_id")
+        filters.append(
+            {
+                "field": "app_id",
+                "operator": PROMOTION_EQUALS_OPERATOR,
+                "values": [str(app_id)],
+            }
+        )
+        result["filters"] = filters
+    elif app_id is not None and strict:
+        raise ValueError(f"{operation_id} does not accept --app-id")
+    elif app_id is not None:
+        ignored.append("app_id")
+    assign("media", ("media_type", "media"), media)
     start, end = getattr(args, "start", None), getattr(args, "end", None)
     validate_date_pair(start, end)
     assign("start/end", ("date_list",), _date_range_input(operation_id, start if start and end else None, end))
@@ -676,26 +649,6 @@ def _accepts_array_field(fields: Any, name: str) -> bool:
         return False
     spec = fields.get(name)
     return isinstance(spec, Mapping) and spec.get("type") == "array"
-
-
-def _multidim_metadata(args: argparse.Namespace) -> Any:
-    client = _client(args)
-    supplied = _object_input(args.input)
-    requests: list[dict[str, Any]] = []
-    for operation_id in MULTIDIM_METADATA_OPERATIONS:
-        per_operation = supplied.get(
-            operation_id, supplied.get(operation_id.rsplit(".", 2)[-2], {})
-        )
-        if not isinstance(per_operation, Mapping):
-            raise ValueError(f"metadata input for {operation_id} must be an object")
-        requests.append(
-            {
-                "operation_id": operation_id,
-                "inputs": dict(per_operation),
-                "read_all": True,
-            }
-        )
-    return runtime.call_batch(client, requests)
 
 
 def _analysis(args: argparse.Namespace) -> Any:
@@ -964,37 +917,6 @@ def run(args: argparse.Namespace) -> Any:
         return _apps_or_metadata(args)
     if args.command == "analysis":
         return _analysis(args)
-    if args.command == "multidim":
-        if args.multidim_command == "metadata":
-            return _multidim_metadata(args)
-        if args.multidim_command == "templates":
-            key = (
-                f"multidim.templates.{args.scope}"
-                if args.template_command == "list"
-                else "multidim.templates.get"
-            )
-            return _domain_read(args, key)
-        key = (
-            "multidim.query"
-            if args.multidim_command == "query"
-            else "multidim.calc_total"
-        )
-        client = _client(args)
-        operation_id = runtime.resolve_operation_id(client, DOMAIN_OPERATIONS[key])
-        inputs, _ = _merge_query_shortcuts(
-            client, operation_id, args, _object_input(args.input)
-        )
-        return call_cli_read(
-            client,
-            operation_id,
-            inputs,
-            include_total=bool(getattr(args, "include_total", False)), read_all=bool(getattr(args, "all_pages", False)),
-            **_page_options(
-                args,
-                all_pages=True,
-                active=bool(getattr(args, "all_pages", False)),
-            ),
-        )
     if args.command == "promotion":
         return _promotion(args)
     if args.command == "business-report":

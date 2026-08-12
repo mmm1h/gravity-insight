@@ -14,12 +14,13 @@ from typing import Any
 
 from .sdk_analysis import AnalysisSdkMixin
 from .sdk_metadata import MetadataSdkMixin
+from .sdk_report import ReportSdkMixin
 
 
 ClientFactory = Callable[[], Any]
 
 
-class GravitySDK(AnalysisSdkMixin, MetadataSdkMixin):
+class GravitySDK(AnalysisSdkMixin, ReportSdkMixin, MetadataSdkMixin):
     """Lazy, process-friendly entry point for the Gravity SDK.
 
     ``insight`` and ``sql`` are built only when first used.  Direct convenience
