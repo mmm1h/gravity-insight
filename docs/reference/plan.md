@@ -210,6 +210,43 @@ condition、成员 uid/name，也不运行、重放或渲染看板图表。已�
 未知时 `gravity agent "inspect dashboard members and saved filters"` 返回带 `app/ref` 占位符的
 非自动执行节点，调用方补齐后再运行，总共两次调用。
 
+## Dashboard Analysis composite
+
+看板图表编译/重放使用独立的 `dashboard_analysis` composite，不会改变控制面 snapshot：
+
+```json
+{
+  "id": "dashboard_charts",
+  "kind": "composite",
+  "request": {
+    "name": "dashboard_analysis",
+    "app": "main",
+    "ref": "Growth Overview",
+    "mode": "run",
+    "start": "2026-08-01",
+    "end": "2026-08-08"
+  },
+  "limits": {"max_pages": 1, "max_items": 200},
+  "output_fields": ["dashboard", "date_range", "charts"]
+}
+```
+
+`mode` 为 `prepare|run`，默认 run。只有 `/app` 可接受动态 binding；`ref/start/end/mode` 必须是
+literal；start/end 是首尾均包含的 ISO 日期，最长 90 天。因而名称、日期顺序、字段和最坏静态
+预算在任何网络请求前完成预检。节点至少预留 3 个
+item（目录根、看板和一个 chart）；实际目录或结果超出 `max_items` 时运行时 fail closed。Plan
+最多准备 `min(32, max_items-2)` 个 chart，adapter 内部 worker 固定 1，由全局 pool 管理跨节点并发。
+
+结果只允许投影 `app_id/dashboard/mode/date_range/charts/chart_count/supported_count/`
+`unsupported_count/success_count/failure_count`。chart 保留身份、kind、operation、状态、安全
+ErrorDetail 和原生受治理 result，不返回 config、compiled request、binding 值或原始异常。
+
+该 adapter 调用静态 Web artifact 编译器，只覆盖已证明的 event/funnel/retention/property/scatter
+构造；不模拟 layout、favourite 或页面 global filter。无法证明的 chart 按声明顺序标记
+unsupported，其他 sibling 继续。已知 selector 是一次 `plan run`；未知时
+`gravity agent "run dashboard charts"` 返回缺失 `app/ref/start/end` 的占位节点，补齐并执行共两次，
+自然语言永远不自动执行。
+
 ## User Journey composite
 
 单用户 profile、event timeline 与 postback 使用一个登记节点，不需要调用方手工拼三条 run：

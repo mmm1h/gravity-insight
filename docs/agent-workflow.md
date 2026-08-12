@@ -14,7 +14,7 @@
 | 不知道人群规则合同 | `gravity agent "评估人群规则命中人数"` → `plan run` | 2 |
 | 已知保存分析引用 | `gravity analysis saved run --app ... --ref ...` | 1 |
 | 不知道保存分析引用 | `gravity agent "saved report templates"` → 执行返回的 Plan 节点 | 2 |
-| 看板控制面（引用已知/未知） | 已知：`analysis dashboard snapshot --app ... --ref ...`；未知：`agent "dashboard snapshot"` → `plan run` | 1 / 2 |
+| 看板控制面/图表重放（引用已知/未知） | 已知：`analysis dashboard snapshot` 或 `analysis dashboard run`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
 | 已知可调用导出及完整输入 | `gravity export run ... --output <file.xlsx>` | 1 |
 | 不知道可调用导出 | `gravity agent "material report export"` → 执行 `next.argv` | 2 |
 | 已知 App 与经营时间窗 | `gravity reports pulse --app ... --start ... --end ...` | 1 |
@@ -34,7 +34,7 @@
 
 保存分析已知稳定 ID/精确名称时直接 `gravity analysis saved run --app ... --ref ...`，不要先串行 list/get/prepare。Strict Replay 不猜 Web 配置；`prepare --ref` 会联网解析引用但不执行最终查询，显式 `--definition` 才是零网络编译。自然语言发现只返回 `composite:saved_analysis` 和缺失的 `app/ref`，不会自动选择或执行。
 
-看板稳定 ID/精确名称已知时直接取 5 源控制面快照；未知时 Agent 只返回缺失 `app/ref` 的 `dashboard_snapshot` 节点。它裁剪 opaque config，不运行或重放图表；CLI/SDK 外层默认 5、上限 24，Plan 内固定 1 worker。
+看板控制面仍用 `dashboard_snapshot`；图表执行用 `analysis dashboard run --app ... --ref ... --start ... --end ...`。后者只编译静态 Web artifact 中已证明的五类 Analysis 图表，不模拟布局、收藏或页面全局筛选，单图不支持时隔离报告。未知时 `agent "run dashboard charts"` 返回缺失 `app/ref/start/end` 的 `dashboard_analysis` 节点；自然语言不自动执行，Plan 内固定 1 worker。
 
 人群规则只接受显式紧凑 spec：Agent 强意图卡给完整 schema 和缺失的 `app/spec`，不会从自然语言生成规则。已知 spec 可直接 evaluate；交叉查询用 `segment_evaluate` composite，只有 `/app` 可绑定，结果仅 `part/percent/total`。
 
@@ -104,7 +104,7 @@ gravity plan run --input plan.json --dry-run
 gravity plan run --input plan.json --concurrency 6
 ```
 
-Analysis 查询复用 composite `name=analysis_query`；人群规则用 `name=segment_evaluate`，看板控制面用 `name=dashboard_snapshot` 和显式 `app/ref`。已知完整输入时一次 `plan run`；未知时 Agent 发现、调用方补齐再执行，自然语言不自动执行。同层查询由全局 pool 并发并保声明序；binding 仅可写登记目标，不支持 `/spec/...`；结果不回显 request/spec/binding 值。完整合同分别见 [Analysis Query](reference/plan.md#analysis-query-composite)、[Segment Rule](reference/plan.md#segment-rule-composite) 和 [Dashboard Snapshot](reference/plan.md#dashboard-snapshot-composite)。
+Analysis 查询复用 `analysis_query`，人群规则用 `segment_evaluate`，看板控制面/图表用 `dashboard_snapshot`/`dashboard_analysis`。已知完整输入时一次 `plan run`；未知时 Agent 发现、调用方补齐再执行，自然语言不自动执行。同层查询由全局 pool 并发并保声明序；binding 仅可写登记目标，结果不回显 request/spec/binding 值。完整合同见 [Plan 参考](reference/plan.md)。
 
 ## 4. 选择 Insight 还是 SQL
 

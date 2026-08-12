@@ -17,6 +17,7 @@ gravity sql <command>         受控 SQL 产品
 gravity census <command>      前端路由盘点
 gravity analysis context      并发读取一个 App 的分析上下文
 gravity analysis dashboard snapshot  读取一个看板的控制面快照
+gravity analysis dashboard prepare|run  编译或执行一个看板的受支持图表
 gravity analysis saved ...    列出、读取、准备或严格重放保存分析
 gravity apps snapshot         并发读取一个 App 的治理快照
 gravity attribution snapshot  并发读取一个 App 的归因配置快照
@@ -335,6 +336,31 @@ adapter 内部固定 1 worker，由 Plan 全局 pool 管理并发。引用已知
 
 结果较大时可把 `--output <path> --format json|ndjson` 放在 `snapshot` 子命令参数末尾；不指定
 `--output` 时 JSON 输出仍受统一 stdout 裁剪保护，`--format ndjson` 可流式写到 stdout。
+
+### Dashboard Analysis Replay v2
+
+已知 App、看板引用和时间窗时，一次调用即可编译或执行声明的图表：
+
+```powershell
+gravity analysis dashboard prepare --app main --ref "Growth Overview" `
+  --start 2026-08-01 --end 2026-08-08 --max-charts 32
+gravity analysis dashboard run --app main --ref "Growth Overview" `
+  --start 2026-08-01 --end 2026-08-08 --concurrency 6 `
+  --max-charts 32 --max-items 100000
+```
+
+`prepare` 读取目录和详情、编译支持的 chart，但不执行最终查询；`run` 使用同一编译结果并发
+执行，默认 6、上限 24，默认最多 32 个 chart，显式 `--max-charts` 硬上限 64。结果严格按看板
+声明顺序返回，单图不支持或失败不会取消 sibling。start/end 都包含在 Gravity `date_list` 内，
+允许同一天，最长 90 天；`--max-items` 同时约束目录、图表和结果规模。
+
+编译器边界来自公开静态 Web artifact 中已证明的 event/funnel/retention/property/scatter
+配置构造。它不是浏览器模拟器：不解释布局，不应用 favourite，也不模拟页面级 global filter；
+无法证明的 subject/config 以结构化 unsupported chart 返回，不猜字段或改用任意 HTTP。
+
+引用已知时 CLI/SDK 是一次顶层调用。引用或能力未知时先运行
+`gravity agent "run dashboard charts"`，填入卡片缺失的 `app/ref/start/end` 后执行其 Plan node，
+总共两次；自然语言卡永远不自动执行。
 
 ### Segment Rule Spec v1
 

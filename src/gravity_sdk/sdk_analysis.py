@@ -349,6 +349,64 @@ class AnalysisSdkMixin:
             max_items=max_items,
         )
 
+    def prepare_dashboard_analysis(
+        self,
+        app: str | int | None,
+        ref: str | int,
+        *,
+        start: str,
+        end: str,
+        max_charts: int = 32,
+        max_items: int = 100_000,
+        workspace: Any | None = None,
+    ) -> dict[str, Any]:
+        """Compile supported charts from one exact dashboard without running them."""
+
+        from .dashboard_analysis import prepare_dashboard_analysis
+
+        selected = self._select_workspace(workspace)
+        app_id = self._resolve_app(selected, app)
+        insight = self.insight
+        return prepare_dashboard_analysis(
+            insight,
+            app_id,
+            ref,
+            start=start,
+            end=end,
+            max_charts=max_charts,
+            max_items=max_items,
+        )
+
+    def run_dashboard_analysis(
+        self,
+        app: str | int | None,
+        ref: str | int,
+        *,
+        start: str,
+        end: str,
+        max_workers: int = 6,
+        max_charts: int = 32,
+        max_items: int = 100_000,
+        workspace: Any | None = None,
+    ) -> dict[str, Any]:
+        """Compile and execute supported dashboard charts in declaration order."""
+
+        from .dashboard_analysis import run_dashboard_analysis
+
+        selected = self._select_workspace(workspace)
+        app_id = self._resolve_app(selected, app)
+        insight = self.insight
+        return run_dashboard_analysis(
+            insight,
+            app_id,
+            ref,
+            start=start,
+            end=end,
+            max_workers=max_workers,
+            max_charts=max_charts,
+            max_items=max_items,
+        )
+
     def attribution_snapshot(
         self,
         app: str | int | None = None,

@@ -15,6 +15,16 @@ from .workspace import load_workspace
 from .workspace_app import resolve_workspace_app
 
 
+_DASHBOARD_ANALYSIS_COMMANDS = frozenset({"prepare", "run"})
+
+
+def _max_charts(value: str) -> int:
+    parsed = int(value)
+    if not 1 <= parsed <= 64:
+        raise argparse.ArgumentTypeError("max charts must be between 1 and 64")
+    return parsed
+
+
 class _DashboardNetworkValue(argparse.Action):
     """Make first-run credential checks follow a complete dashboard command.
 
@@ -66,12 +76,18 @@ class _DashboardSetValue(argparse.Action):
 
 
 def _refresh_network_requirement(args: Any) -> None:
-    if getattr(args, "analysis_dashboard_command", None) == "snapshot":
+    command = getattr(args, "analysis_dashboard_command", None)
+    if command == "snapshot":
         ready = (
             getattr(args, "app", None) is not None
             and getattr(args, "ref", None) is not None
             and not _has_legacy_dashboard_arguments(args)
         )
+    elif command in _DASHBOARD_ANALYSIS_COMMANDS:
+        ready = all(
+            getattr(args, field, None) is not None
+            for field in ("app", "ref", "start", "end")
+        ) and not _has_legacy_dashboard_arguments(args)
     else:
         ready = (
             getattr(args, "kind", None) is not None
@@ -101,13 +117,16 @@ def add_dashboard_snapshot_command(
     dashboard_parser: Any,
     concurrency_type: Callable[[str], int],
     positive_int: Callable[[str], int],
+    *,
+    commands: Any | None = None,
 ) -> Any:
     """Attach ``analysis dashboard snapshot`` without replacing legacy reads."""
 
-    commands = dashboard_parser.add_subparsers(
-        dest="analysis_dashboard_command",
-        action=_DashboardSubparsersAction,
-    )
+    if commands is None:
+        commands = dashboard_parser.add_subparsers(
+            dest="analysis_dashboard_command",
+            action=_DashboardSubparsersAction,
+        )
     snapshot = commands.add_parser(
         "snapshot",
         help="Resolve one dashboard and read its governed control-plane context.",
@@ -147,6 +166,76 @@ def add_dashboard_snapshot_command(
     return snapshot
 
 
+def _add_dashboard_analysis_arguments(
+    parser: Any,
+    *,
+    positive_int: Callable[[str], int],
+) -> None:
+    parser.add_argument(
+        "--app",
+        required=True,
+        action=_DashboardNetworkValue,
+        help="Workspace App alias or positive id.",
+    )
+    parser.add_argument(
+        "--ref",
+        required=True,
+        action=_DashboardNetworkValue,
+        help="Exact dashboard id or exact dashboard name.",
+    )
+    parser.add_argument(
+        "--start",
+        required=True,
+        action=_DashboardNetworkValue,
+        help="Inclusive analysis start date (YYYY-MM-DD).",
+    )
+    parser.add_argument(
+        "--end",
+        required=True,
+        action=_DashboardNetworkValue,
+        help="Inclusive analysis end date (YYYY-MM-DD, at most 90 days from start).",
+    )
+    parser.add_argument("--max-charts", type=_max_charts, default=32)
+    parser.add_argument("--max-items", dest="analysis_max_items", type=positive_int, default=100_000)
+    parser.add_argument("--output", help="Write JSON or NDJSON to this local path.")
+    parser.add_argument(
+        "--format",
+        choices=("json", "ndjson"),
+        default="json",
+        help="Output encoding; NDJSON may stream to stdout.",
+    )
+
+
+def add_dashboard_analysis_commands(
+    commands: Any,
+    concurrency_type: Callable[[str], int],
+    positive_int: Callable[[str], int],
+) -> tuple[Any, Any]:
+    """Attach explicit dashboard chart compilation and replay products."""
+
+    prepare = commands.add_parser(
+        "prepare",
+        help="Compile supported dashboard charts without executing their queries.",
+    )
+    _add_dashboard_analysis_arguments(prepare, positive_int=positive_int)
+    prepare.set_defaults(
+        _gravity_handler=dispatch_dashboard_analysis,
+        network_required=False,
+    )
+
+    run = commands.add_parser(
+        "run",
+        help="Compile and concurrently execute supported dashboard charts.",
+    )
+    _add_dashboard_analysis_arguments(run, positive_int=positive_int)
+    run.add_argument("--concurrency", dest="analysis_concurrency", type=concurrency_type, default=6)
+    run.set_defaults(
+        _gravity_handler=dispatch_dashboard_analysis,
+        network_required=False,
+    )
+    return prepare, run
+
+
 def add_dashboard_commands(
     analysis_commands: Any,
     _add_input: Callable[..., None],
@@ -182,7 +271,17 @@ def add_dashboard_commands(
     add_all_pages(parser)
     parser.set_defaults(concurrency=None)
     parser.set_defaults(_gravity_handler=dispatch_dashboard_read)
-    add_dashboard_snapshot_command(parser, concurrency_type, positive_int)
+    commands = parser.add_subparsers(
+        dest="analysis_dashboard_command",
+        action=_DashboardSubparsersAction,
+    )
+    add_dashboard_snapshot_command(
+        parser,
+        concurrency_type,
+        positive_int,
+        commands=commands,
+    )
+    add_dashboard_analysis_commands(commands, concurrency_type, positive_int)
     return parser
 
 
@@ -237,9 +336,48 @@ def dispatch_dashboard_snapshot(args: Any, _object_input: Any) -> dict[str, Any]
     )
 
 
+def dispatch_dashboard_analysis(args: Any, _object_input: Any) -> dict[str, Any]:
+    """Bind one App before constructing the client and compiling Web artifacts."""
+
+    if _has_legacy_dashboard_arguments(args):
+        raise InputValidationError(
+            "dashboard analysis cannot use legacy dashboard read arguments",
+            field="dashboard",
+            next_action="Remove --kind, --input, and --all-pages before prepare or run.",
+        )
+    workspace = load_workspace(getattr(args, "workspace", None))
+    app_id = resolve_workspace_app(workspace, args.app)
+    if args.analysis_dashboard_command == "prepare":
+        from .dashboard_analysis import prepare_dashboard_analysis
+
+        return prepare_dashboard_analysis(
+            runtime.build_client(),
+            app_id,
+            args.ref,
+            start=args.start,
+            end=args.end,
+            max_charts=args.max_charts,
+            max_items=args.analysis_max_items,
+        )
+    from .dashboard_analysis import run_dashboard_analysis
+
+    return run_dashboard_analysis(
+        runtime.build_client(),
+        app_id,
+        args.ref,
+        start=args.start,
+        end=args.end,
+        max_workers=args.analysis_concurrency,
+        max_charts=args.max_charts,
+        max_items=args.analysis_max_items,
+    )
+
+
 __all__ = [
     "add_dashboard_commands",
+    "add_dashboard_analysis_commands",
     "add_dashboard_snapshot_command",
     "dispatch_dashboard_read",
+    "dispatch_dashboard_analysis",
     "dispatch_dashboard_snapshot",
 ]

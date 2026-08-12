@@ -70,6 +70,13 @@ sql_result = gravity.query_sql_products(
 # 固定组合复用同一个 workspace App alias，并在组合外层并发。
 analysis = gravity.analysis_context("main", max_workers=6)
 dashboard = gravity.dashboard_snapshot("main", "Growth Overview", max_workers=5)
+prepared_dashboard = gravity.prepare_dashboard_analysis(
+    "main", "Growth Overview", start="2026-08-01", end="2026-08-08"
+)
+dashboard_results = gravity.run_dashboard_analysis(
+    "main", "Growth Overview", start="2026-08-01", end="2026-08-08",
+    max_workers=6, max_charts=32,
+)
 app = gravity.app_snapshot("main", max_workers=6)
 attribution = gravity.attribution_snapshot("main", max_workers=6)
 
@@ -160,6 +167,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `business_pulse()` | 并发读取 App 经营概览与趋势，可选 workspace scope 小时对比 |
 | `analysis_context()` | 固定 13 个 Analysis 词汇/模板来源，外层并发、局部失败隔离 |
 | `dashboard_snapshot()` | 按稳定 ID 或精确名称读取一个看板的 5 源控制面快照；不执行图表 |
+| `prepare_dashboard_analysis()` / `run_dashboard_analysis()` | 编译或并发执行看板中受支持的五类 Analysis 图表；保序并隔离单图失败 |
 | `app_snapshot()` | 固定 6 个 App 治理来源，明确 company/App scope |
 | `attribution_snapshot()` | 当前 8 个 stable attribution 配置来源，不包含 draft 查询 |
 | `validate_plan()` | 离线校验 Plan schema、依赖、预算和 adapter 请求；不发网络请求 |
@@ -230,6 +238,17 @@ workspace=None)` 只接受 workspace App alias/正整数和看板稳定 ID/精�
 default favourite 五个控制面来源；目录树只用于精确解析引用，不是结果来源。局部失败隔离，
 无法证明语义的 opaque config 被裁剪；它不会编译 Web config，也不会执行、重放或渲染看板
 图表；`max_workers` 上限为 24。
+
+`prepare_dashboard_analysis(app, ref, *, start, end, max_charts=32,
+max_items=100000, workspace=None)` 与 `run_dashboard_analysis(..., max_workers=6)` 使用同一静态
+Web artifact 编译器。SDK 先在选定 workspace 中绑定 App，再惰性构建 Insight client；prepare
+只编译，run 执行受支持 chart。start/end 是包含首尾的 ISO 日期，最长 90 天；两者按看板声明
+顺序返回，并将不支持/失败限制在单个 chart。
+
+编译边界只覆盖公开静态 Web artifact 已证明的 event/funnel/retention/property/scatter 请求
+构造。不会模拟 layout、favourite 或页面 global filter，也不会把 opaque config、查询 request
+或原始异常回显给 Plan。已知引用和时间窗是一调用；未知时先由 Agent 返回
+`composite:dashboard_analysis`，调用方补齐 `app/ref/start/end` 再执行，共两次且不会自然语言自动执行。
 
 ## Segment Rule Spec v1
 

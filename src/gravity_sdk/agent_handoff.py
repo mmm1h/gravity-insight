@@ -222,6 +222,10 @@ def _plan_request(
             from .agent_dashboard import dashboard_plan_request
 
             return dashboard_plan_request(card), "composite"
+        if card.get("composite") == "dashboard_analysis":
+            from .agent_dashboard import dashboard_analysis_plan_request
+
+            return dashboard_analysis_plan_request(card), "composite"
         return {"name": card.get("composite")}, "composite"
     if card.get("metadata_kind") == "table_lineage":
         return {"query": "", "kind": "table_lineage"}, "metadata_search"

@@ -45,7 +45,7 @@ def composite_card(
 def _selection(
     query: str, domain: str | None, definition: Mapping[str, Any]
 ) -> tuple[str, str, tuple[str, ...], bool] | None:
-    from .agent_dashboard import dashboard_snapshot_query
+    from .agent_dashboard import dashboard_analysis_query, dashboard_snapshot_query
 
     name, selected_domain = str(definition["name"]), str(definition["domain"])
     accepted = tuple(
@@ -54,7 +54,15 @@ def _selection(
     if domain is not None and domain not in accepted:
         return None
     intent = tuple(str(value) for value in definition.get("intent_terms", ()))
-    dashboard = name == "dashboard_snapshot" and dashboard_snapshot_query(query)
+    exact_selector = name in {"dashboard_analysis", "dashboard_snapshot"} and (
+        query.strip().casefold()
+        in {name.casefold(), f"composite:{name}".casefold()}
+    )
+    dashboard = (
+        name == "dashboard_snapshot" and dashboard_snapshot_query(query)
+    ) or (
+        name == "dashboard_analysis" and dashboard_analysis_query(query)
+    ) or exact_selector
     if intent and not dashboard and not any(term in query.casefold() for term in intent):
         return None
     return name, selected_domain, accepted, dashboard

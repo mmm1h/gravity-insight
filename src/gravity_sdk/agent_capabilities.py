@@ -12,6 +12,7 @@ import re
 from typing import Any
 
 from .find import query_match
+from .agent_dashboard import DASHBOARD_ANALYSIS_CAPABILITY
 
 
 _ASCII_WORD = re.compile(r"[a-z0-9_]+", re.IGNORECASE)
@@ -39,6 +40,7 @@ _COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
             "app": {"type": "string", "required": True, "nullable": False},
         },
     },
+    DASHBOARD_ANALYSIS_CAPABILITY,
     {
         "name": "dashboard_snapshot",
         "domain": "analysis",
@@ -439,7 +441,7 @@ def authoritative_capability_cards(
         card
         for card in cards
         if card.get("kind") == "composite"
-        and card.get("composite") == "dashboard_snapshot"
+        and card.get("composite") in {"dashboard_analysis", "dashboard_snapshot"}
     ]
     return (
         dashboard

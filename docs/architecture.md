@@ -137,6 +137,7 @@ Resolver 的完成路径生成 `gravity.receipt.v1`，写到当前 workspace 的
 | --- | --- | --- | --- |
 | Analysis context | `gravity analysis context --app <alias|id>` | `analysis_context()` | event、event property/group、user property、metric、media enum 与 mine/shared/preset template，共 13 个来源 |
 | Dashboard snapshot | `gravity analysis dashboard snapshot --app <alias|id> --ref <id-or-exact-name>` | `dashboard_snapshot()` | 精确解析一个看板后读取 detail、dashboard members、space members、condition favourites 与 default favourite，共 5 个控制面来源；不执行图表 |
+| Dashboard analysis | `gravity analysis dashboard prepare\|run --app ... --ref ... --start ... --end ...` | `prepare_dashboard_analysis()` / `run_dashboard_analysis()` | 静态 Web artifact 编译边界内的 event/funnel/retention/property/scatter chart；按声明序、单图失败隔离 |
 | App snapshot | `gravity apps snapshot --app <alias|id>` | `app_snapshot()` | app detail、realtime event、capacity、permission menu、role、template，共 6 个来源 |
 | Attribution snapshot | `gravity attribution snapshot --app <alias|id>` | `attribution_snapshot()` | 当前 8 个 stable attribution 配置 operation |
 | User journey | `gravity analysis user journey --app ... --client-id ...` | `user_journey()` | 单用户 profile、event timeline、postback 三个受控来源；显式分页 |
@@ -144,6 +145,11 @@ Resolver 的完成路径生成 `gravity.receipt.v1`，写到当前 workspace 的
 组合结果按固定来源顺序返回，每个来源带 scope 和 operation identity；局部失败隔离。Dashboard
 snapshot 还会裁掉 detail 中无法证明语义的 opaque config；这些组合不会把 draft operation
 伪装成 stable、自动枚举全部 role detail，或把控制面定义当作图表查询执行。
+
+Dashboard analysis 是显式执行产品，不是 Web 页面模拟器。它读取同一稳定目录/详情，把公开静态
+Web artifact 已证明的五类图表配置编译为受治理 operation input；不解释 layout，不应用
+favourite，也不模拟页面级 global filter。已知 App/ref/window 是一次调用；未知时 Agent 给出
+`dashboard_analysis` Plan 节点，调用方补齐再执行，总共两次。自然语言始终停在发现边界。
 
 ### 候选能力不等于已交付能力
 
@@ -195,6 +201,7 @@ SQL 工具。
 | 多个 compact Analysis spec | `analysis query batch` 先全量离线编译，再复用 Plan 同层并发 | 一次 batch，不在外层再建线程池 |
 | Analysis/App/Attribution 组合 | 外层默认 6、上限 24；各来源独立执行，结果固定顺序 | 使用登记组合，不手写多命令循环 |
 | Dashboard snapshot | CLI/SDK 外层默认 5、上限 24；Plan adapter 内部固定 1 worker | 让 Plan 全局 pool 管理跨节点并发，避免“节点 × 5 来源”放大 |
+| Dashboard analysis | CLI/SDK run 默认 6、上限 24；Plan adapter 内固定 1；默认 32、硬上限 64 charts | 单图编译/执行隔离并按看板声明顺序聚合 |
 | Plan DAG | 一个全局 worker pool，默认 6、上限 24；同层并发、依赖层串行；adapter 内分页 worker 固定 1 | 把交叉查询放进一个 Plan，避免并发乘法放大 |
 | Plan foreach | 每节点最多一个，默认最多 32 项、硬上限 64；不支持嵌套和笛卡尔积 | 只用于一个上游数组到一个目标字段的有限扇出 |
 | 单个 Insight 的分页 | 首页给出明确 `total_page` 时，`read_all/read_limited` 按小窗口并发并保持页序；未知总页数时串行。最多 1,000 页 / 100,000 items | 使用内建分页，不自行并发猜页 |
