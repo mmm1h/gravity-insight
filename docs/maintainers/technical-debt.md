@@ -15,7 +15,19 @@
 
 ## 当前条目
 
-当前没有经源码和质量门禁证明、且仍未安排退出条件的结构债务。
+### Order Split Trace 的敏感 parent-child 断点
+
+`analysis.order_split_detail.list` 的 stable child 合同要求从 `analysis.order_detail.list` 父行取得
+四项敏感输入，其中 `$split_trace_id_list` 是数组；Plan v1 只绑定有限 JSON scalar，当前 Agent
+只能返回不可直接执行的 raw child，调用方会被迫手工搬运用户级标识。Owner area 是 Analysis
+product/Plan/Agent，处理边界见 [Order Split Trace v1](order-split-trace.md)。
+
+退出条件：单日完整有界父目录、本地 exact/unique TraceID、零 upstream TraceID filter；所有非唯一、
+截断和合同漂移路径零 child；成功路径为 `P` 个父页加 1 个 child，Plan 内 worker 固定 1；产品与
+Plan projector 都不返回任何父/子标识或 raw request/error；CLI/SDK/Plan/Agent 同形状且 raw exact
+selector 继续兼容；通用热点不增长、quality baseline 不放宽、Python gross/net 比例均达到 3:1。
+
+### 已关闭结构债务
 
 本轮已把 CLI 路由、Plan adapter、Multidim service 和 Agent 卡分别下沉到领域模块；通用入口只保留
 薄路由，direct/Plan 共用 worker 预算，旧 raw 合同继续兼容。后续若这些模块再次触发机器 ratchet，
