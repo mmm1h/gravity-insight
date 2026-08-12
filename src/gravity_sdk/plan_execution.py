@@ -333,7 +333,7 @@ def exception_item(
             native.code, "Plan adapter failed.", category=native.category,
             field=native.field, retryable=native.retryable,
             retry_after_ms=native.retry_after_ms,
-            next_action=category_action(native.category, native.code),
+            next_action=native.next_action or category_action(native.category, native.code),
         )
     else:
         detail = safe_detail("PLAN_ADAPTER_EXCEPTION", ErrorCategory.LOCAL.value)

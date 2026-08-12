@@ -14,6 +14,7 @@
 | 不知道保存分析引用 | `gravity agent "saved report templates"` → 执行返回的 Plan 节点 | 2 |
 | 已知 App 与经营时间窗 | `gravity reports pulse --app ... --start ... --end ...` | 1 |
 | 已知多个 selector 或已有 Plan | `gravity plan run --input <plan.json>` | 1 |
+| 已同步数据表沿革，目标未知 | `gravity agent "data table lineage"` → `plan run` | 2 |
 | 已知 operation，不确定输入 | `gravity agent <operation-id>` → `run` | 2 |
 | 只知道分析目标 | `gravity agent "<query>"` → 返回 argv | 2 |
 | 多个未知分析问题 | `gravity agent --input <questions.json>` → `plan run` | 2 |
@@ -180,17 +181,17 @@ gravity run app.list --input '{"page":1,"page_size":20}' --fields id,name
 
 ## 7. 物理元数据
 
-需要完整事件/属性目录时使用内建并发同步，不生成临时循环：
+需要完整事件/属性目录或数据表沿革时使用一次内建同步，不生成临时循环：
 
 ```powershell
-gravity metadata sync --all-apps
+gravity metadata sync --all-apps --include-table-lineage
 gravity metadata search "purchase"
+gravity metadata tables "publish"
 ```
 
-`events`/`properties` 可加 `--app-id` 收窄；查询只读本地 SQLite。`status=partial` 时报告失败
-计数，不能宣称覆盖全部 App；相似名称只是候选，不是业务绑定证据。
-
-需要同时查 operation、recipe 和 metadata 时只调用：
+`events`/`properties` 可加 `--app-id` 收窄；`tables` 是 account scope，只陈述同步时观察到的 `table_id`、版本、动作和时间，不能推断表名、App 归属或当前版本。
+查询只读本地 SQLite；缺少 lineage snapshot 时先执行上述 opt-in 同步。Agent 路径是一次离线发现、一次 Plan 执行；Plan 节点也只查本地 catalog。`status=partial` 时报告失败计数，不能宣称完整覆盖。相似名称只是候选，
+不是业务绑定证据。需要同时查 operation、recipe 和 metadata 时只调用：
 
 ```powershell
 gravity find "retention"

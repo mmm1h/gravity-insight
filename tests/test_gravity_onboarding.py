@@ -103,6 +103,7 @@ class GravityOnboardingTests(unittest.TestCase):
             ["auth", "status"],
             ["export", "list-capabilities"],
             ["batch", "schema"],
+            ["plan", "run", "--input", '{"nodes":[]}'],
             [
                 "analysis", "query", "--kind", "event",
                 "--spec", "{}", "--dry-run",

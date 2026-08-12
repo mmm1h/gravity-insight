@@ -102,6 +102,9 @@ pulse = gravity.business_pulse(
     ["main"], "2026-08-01", "2026-08-07",
     platforms=["bytedance"], include_hourly=True,
 )
+
+# 严格离线读取已同步的数据表沿革；不会构建 Insight/SQL client。
+lineage = gravity.table_lineage("publish", limit=20)
 ```
 
 `GravitySDK` / `connect()` 惰性创建并分别缓存 Insight 与 SQL client，适合一个进程同时使用
@@ -128,6 +131,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `get_saved_analysis()` | 按 ID 或精确名称检查 Strict Replay 资格，不返回 config |
 | `prepare_saved_analysis()` | 读取保存定义并严格编译，不执行最终 Analysis 查询 |
 | `run_saved_analysis()` | 一次解析、严格编译并执行保存分析；不猜 Web 配置字段 |
+| `table_lineage()` | 严格离线查询已同步的 account-scope 数据表版本与操作观察 |
 | `business_pulse()` | 并发读取 App 经营概览与趋势，可选 workspace scope 小时对比 |
 | `analysis_context()` | 固定 13 个 Analysis 词汇/模板来源，外层并发、局部失败隔离 |
 | `app_snapshot()` | 固定 6 个 App 治理来源，明确 company/App scope |
@@ -141,6 +145,13 @@ SQL product 的描述和执行仍使用同一个 workspace。
 `capabilities_many()` 接受字符串或带稳定 `id` 的对象数组，也接受
 `{"questions":[...]}` wrapper；每次最多 32 个问题，ID 必须唯一。它只扫描一次 Workspace、
 stable operation、SQL product 和本地 metadata 目录，单项失败不影响其他项。
+
+`table_lineage(query="", *, database=None, limit=20, offset=0)` 只读已经通过
+`gravity metadata sync --all-apps --include-table-lineage` 建立的本地 catalog。结果是
+`scope="account"`、`observed=true` 的有界快照，只含观察到的 `table_id`、版本、动作及时间；
+不得据此声称表名、App 归属或当前版本。成功响应不回显 catalog 绝对路径，也不会惰性构建
+Insight/SQL client。catalog 缺失或未同步 lineage 时返回结构化 caller/2 错误，仍为
+`offline=true`、`observed=false`，不会联网补数据。
 
 `read()`、`read_all()`、`read_limited()` 和 `run()` 都接受 `output_fields`。它只在本地裁剪合同
 允许的输出字段；默认 `None` 时保持原 envelope。动态字段必须同时由本次请求声明并被合同
@@ -202,6 +213,12 @@ plan = {
             "kind": "metadata_search",
             "request": {"query": "purchase", "kind": "event", "limit": 20},
         },
+        {
+            "id": "table_history",
+            "kind": "metadata_search",
+            "request": {"query": "publish", "kind": "table_lineage", "limit": 20},
+            "limits": {"max_pages": 1, "max_items": 20},
+        },
     ],
 }
 
@@ -214,6 +231,10 @@ result = gravity.execute_plan(plan, max_workers=6)
 `metadata_search` 和 `composite`；SDK 自动构造对应的内建 adapter，不接受裸 SQL、任意 HTTP 或
 Python callback。若需要测试一个自定义 adapter，应直接使用 `gravity_sdk.plan.execute_plan`
 的依赖注入接口，而不是把自定义执行器注册到 Agent facade。
+
+`metadata_search` 的 `table_lineage` 请求仅接受 `query/kind/limit/offset`；它是 account scope，
+因此禁止 `app_id`。节点结果保留 `scope/observed` 与有界的版本、操作 rows，不回显本地
+database 路径。`limit` 同时受节点 `max_items` 和 Plan 总 `max_items` 预算约束。
 
 Plan 先对所有节点完成离线预检，再提交任何执行。DAG 同层并发、依赖层顺序执行；一个全局
 worker pool 默认 6、上限 24，adapter 内分页 worker 固定 1。独立失败不会取消 sibling，下游

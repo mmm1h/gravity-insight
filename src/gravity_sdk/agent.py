@@ -31,6 +31,7 @@ from .agent_sources import (
     workspace_catalog_fingerprint,
 )
 from .agent_batch_sources import AgentSourceSnapshot
+from .agent_table_lineage import table_lineage_capability_cards
 from .errors import InputValidationError
 from .find import capability_gaps
 
@@ -161,11 +162,6 @@ def discover_capabilities(
     query = request.query
     if not query:
         return _protocol(resolve_workspace_path(workspace))
-    if client is None:
-        raise InputValidationError(
-            "an Insight client is required for capability discovery",
-            field="client",
-        )
     return _discover(
         request,
         client,
@@ -186,14 +182,29 @@ def _discover(
     page = _discovery_page(
         request, request.query, workspace=workspace, sources=sources
     )
-    operations = discover_operation_cards(
-        client,
-        request.query,
-        domain=request.domain,
-        platform=request.platform,
-        inventory=(sources.operation_inventory if sources is not None else None),
-    )
-    unified = unify_capability_candidates(page.catalog_cards, operations.matches)
+    lineage_cards = [
+        card
+        for card in page.catalog_cards
+        if card.get("selector") == "metadata:table_lineage"
+    ]
+    if lineage_cards:
+        unified = [("catalog", card) for card in lineage_cards]
+        weak_operations: list[Mapping[str, Any]] = []
+    else:
+        if client is None:
+            raise InputValidationError(
+                "an Insight client is required for capability discovery",
+                field="client",
+            )
+        operations = discover_operation_cards(
+            client,
+            request.query,
+            domain=request.domain,
+            platform=request.platform,
+            inventory=(sources.operation_inventory if sources is not None else None),
+        )
+        unified = unify_capability_candidates(page.catalog_cards, operations.matches)
+        weak_operations = operations.weak
     fingerprint = candidates_fingerprint(unified)
     if (
         page.expected_candidates_fingerprint is not None
@@ -220,7 +231,7 @@ def _discover(
             domain=request.domain,
             platform=request.platform,
             limit=request.limit,
-            weak_operations=operations.weak,
+            weak_operations=weak_operations,
         )
     )
     return _discovery_response(
@@ -324,10 +335,11 @@ def _discovery_page(
     composite_inventory = (
         sources.composite_inventory if sources is not None else None
     )
-    selected_cards = [
-        *analysis_query_spec_cards(
-            query, domain=args.domain, platform=args.platform
-        ),
+    lineage_cards = table_lineage_capability_cards(
+        query, domain=args.domain, platform=args.platform
+    )
+    selected_cards = lineage_cards or [
+        *analysis_query_spec_cards(query, domain=args.domain, platform=args.platform),
         *composite_capability_cards(
             query,
             domain=args.domain,
@@ -337,7 +349,7 @@ def _discovery_page(
     ]
     warnings: list[str] = []
     catalog_fingerprint = workspace_catalog_fingerprint(None)
-    if args.domain is None and args.platform is None:
+    if not lineage_cards and args.domain is None and args.platform is None:
         catalog, _catalog_total, warnings, catalog_fingerprint = catalog_cards(
             query, 100, workspace=workspace, sources=sources
         )

@@ -98,6 +98,18 @@ class GravitySDKTests(unittest.TestCase):
         self.assertIs(sdk.sql, sdk.sql)
         self.assertEqual({"insight": 1, "sql": 1}, built)
 
+    def test_table_lineage_missing_catalog_is_safe_and_keeps_clients_lazy(self) -> None:
+        sdk = GravitySDK(
+            insight_factory=lambda: self.fail("lineage must stay offline"),
+            sql_factory=lambda: self.fail("lineage must stay offline"),
+        )
+        result = sdk.table_lineage(database="missing-lineage.sqlite3")
+        self.assertEqual((False, 2, "database"), (
+            result["ok"], result["exit_code"], result["error"]["field"]
+        ))
+        self.assertNotIn("database", result)
+        self.assertIn("metadata sync --all-apps", result["error"]["next_action"])
+
     def test_convenience_methods_preserve_specialized_client_options(self) -> None:
         sdk = GravitySDK(insight=_Insight(), sql=_Sql())
         read = sdk.read_all(

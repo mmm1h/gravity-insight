@@ -232,8 +232,9 @@ class PlanExecutionTests(unittest.TestCase):
         self.assertEqual(result["results"][0]["result"], {"safe": 1})
         self.assertEqual(projected, [(('safe',), 1)])
 
-    @patch("gravity_sdk.plan_adapters.search_metadata")
-    def test_production_adapters_execute_all_four_engines(self, metadata):
+    @patch("gravity_sdk.plan_metadata_adapter.search_table_lineage")
+    @patch("gravity_sdk.plan_metadata_adapter.search_metadata")
+    def test_production_adapters_execute_all_four_engines(self, metadata, lineage):
         workspace = load_workspace(
             Path(__file__).resolve().parents[1] / "examples" / "workspace" / "gravity.toml"
         )
@@ -263,6 +264,11 @@ class PlanExecutionTests(unittest.TestCase):
         metadata.return_value = {
             "ok": True, "status": "success", "results": [{"kind": "event", "name": "open"}]
         }
+        lineage.return_value = {
+            "ok": True, "status": "success", "offline": True, "scope": "account",
+            "observed": True, "database": "C:/private/catalog.sqlite3",
+            "results": [{"table_id": "7", "versions": [], "operations": []}],
+        }
         plan = _plan(
             _node("insight", {"selector": "app.list"}, limits={"max_items": 1}),
             _node(
@@ -271,6 +277,10 @@ class PlanExecutionTests(unittest.TestCase):
             ),
             _node(
                 "metadata", {"query": "open", "kind": "event", "limit": 1},
+                kind="metadata_search", limits={"max_items": 1},
+            ),
+            _node(
+                "lineage", {"kind": "table_lineage", "limit": 1},
                 kind="metadata_search", limits={"max_items": 1},
             ),
             _node(
@@ -284,8 +294,10 @@ class PlanExecutionTests(unittest.TestCase):
             adapters=build_plan_adapters(SDK(), workspace=workspace),
             workspace=workspace,
         )
-        self.assertEqual(4, result["success_count"])
-        self.assertEqual(["run", "sql_product", "metadata_search", "composite"], [item["kind"] for item in result["results"]])
+        self.assertEqual(5, result["success_count"])
+        lineage_result = result["results"][3]["result"]
+        self.assertEqual(("account", "7"), (lineage_result["scope"], lineage_result["results"][0]["table_id"]))
+        self.assertNotIn("database", lineage_result)
 
 
 class AgentBatchTests(unittest.TestCase):

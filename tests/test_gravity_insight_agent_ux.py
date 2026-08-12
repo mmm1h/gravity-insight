@@ -314,6 +314,52 @@ class DiscoveryUxTests(unittest.TestCase):
                 self.assertEqual(missing, card["missing_inputs"])
                 self.assertEqual(set(missing), set(card["input_template"]))
 
+    def test_agent_table_lineage_is_one_offline_plan_handoff(self) -> None:
+        workspace = SimpleNamespace(path=Path("D:/private/workspaces/analyst.toml"))
+        for query in (
+            "table lineage",
+            "table versions",
+            "table operation logs",
+            "表版本",
+            "表变更",
+            "数据表的版本",
+        ):
+            with self.subTest(query=query):
+                result = discover_capabilities(
+                    query, client=None, workspace=workspace, limit=5
+                )
+                self.assertEqual((1, 1), (result["total"], result["count"]))
+                card = result["candidates"][0]
+                self.assertEqual("metadata:table_lineage", card["selector"])
+                self.assertEqual("strong", card["match"]["confidence"])
+                self.assertEqual([], card["missing_inputs"])
+                self.assertIn("query", card["input_template"])
+                self.assertIn("next_action", card)
+                self.assertEqual(
+                    {"query": "", "kind": "table_lineage"},
+                    card["plan_node"]["request"],
+                )
+                self.assertEqual("metadata_search", card["plan_node"]["kind"])
+                self.assertFalse(result["network_called"])
+
+        with patch("gravity_sdk.agent_batch_sources.search_metadata") as metadata:
+            metadata.return_value = {"results": []}
+            batch = capabilities_many(
+                [
+                    {"id": "versions", "query": "table versions"},
+                    {"id": "changes", "query": "表变更"},
+                ],
+                client=self.client,
+                workspace=load_workspace(
+                    Path(__file__).resolve().parents[1]
+                    / "examples" / "workspace" / "gravity.toml"
+                ),
+            )
+        cards = [item["result"]["candidates"][0] for item in batch["results"]]
+        self.assertEqual(["versions", "changes"], [item["question_id"] for item in batch["results"]])
+        self.assertEqual(2, len({card["plan_node"]["id"] for card in cards}))
+        self.assertNotIn("gravity.toml", json.dumps([card["plan_node"] for card in cards]))
+
     def test_agent_exact_selector_and_plural_query_choose_app_list(self) -> None:
         exact = discover_capabilities("app.list", client=self.client, limit=3)
         plural = discover_capabilities(

@@ -28,6 +28,10 @@ def add_plan_commands(
     run = actions.add_parser(
         "run", help="Execute a gravity.plan.v1 document with controlled adapters."
     )
+    # Plan is a machine-facing surface: adapters report authentication failures
+    # structurally, while fully local plans must never trigger an interactive
+    # first-run prompt before their nodes are inspected.
+    run.set_defaults(network_required=False)
     add_input(run, required=True)
     run.add_argument(
         "--concurrency",

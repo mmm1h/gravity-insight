@@ -185,7 +185,6 @@ _ANALYSIS_QUERY_SPEC = {
     ),
 }
 
-
 def normalize_agent_query(query: str) -> str:
     """Normalize only safe English inflections; do not guess business meaning."""
 

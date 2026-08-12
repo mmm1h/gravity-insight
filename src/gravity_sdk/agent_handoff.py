@@ -172,6 +172,8 @@ def _plan_request(
         return {"product": card.get("product")}, "sql_product"
     if kind == "composite":
         return {"name": card.get("composite")}, "composite"
+    if card.get("metadata_kind") == "table_lineage":
+        return {"query": "", "kind": "table_lineage"}, "metadata_search"
     request: dict[str, Any] = {
         "query": query,
         "kind": card.get("metadata_kind", "all"),

@@ -151,6 +151,10 @@ def search_table_lineage(
 ) -> dict[str, Any]:
     """Search an opt-in lineage snapshot without constructing a client."""
 
+    if not isinstance(query, str):
+        raise InputValidationError(
+            "table lineage query must be a string", field="query"
+        )
     search_limit(limit)
     search_offset(offset)
     catalog = Path(database) if database is not None else _default_catalog_path()
@@ -160,6 +164,10 @@ def search_table_lineage(
             "metadata catalog does not exist; run `gravity metadata sync --all-apps "
             "--include-table-lineage`",
             field="database",
+            next_action=(
+                "Run `gravity metadata sync --all-apps --include-table-lineage`, "
+                "then retry."
+            ),
         )
     connection = sqlite3.connect(f"{catalog.as_uri()}?mode=ro", uri=True)
     try:
@@ -298,6 +306,10 @@ def _require_lineage_snapshot(connection: sqlite3.Connection) -> None:
             "metadata catalog has no observed table lineage; run `gravity metadata "
             "sync --all-apps --include-table-lineage`",
             field="database",
+            next_action=(
+                "Run `gravity metadata sync --all-apps --include-table-lineage`, "
+                "then retry."
+            ),
         )
 
 

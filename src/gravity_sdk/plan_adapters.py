@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any
 
 from .composite import CompositeService, MULTIDIM_QUERY_OPERATION
-from .find_metadata import search_metadata
 from .output_projection import validate_output_fields
 from .plan import AdapterContext, PlanAdapter, PlanAdapters
 from .plan_binding import set_pointer
@@ -18,6 +17,7 @@ from .plan_saved_analysis_adapter import (
     execute_saved_analysis_plan,
     validate_saved_analysis,
 )
+from .plan_metadata_adapter import execute_metadata_plan, validate_metadata_plan
 from .resolver_support import build_inputs
 from .plan_adapter_support import (
     alias_mapping as _alias_mapping,
@@ -44,7 +44,6 @@ _RUN_FIELDS = frozenset(
     {"selector", "input", "inputs", "parameters", "app", "start", "end", "all_pages"}
 )
 _SQL_FIELDS = frozenset({"product", "start", "end", "app_id", "app_ids"})
-_METADATA_FIELDS = frozenset({"query", "app_id", "kind", "limit", "offset"})
 _COMPOSITE_FIELDS = frozenset(
     {
         "name", "app", "apps", "ref", "mode", "start", "end", "platforms", "include_hourly",
@@ -56,9 +55,6 @@ _COMPOSITES = frozenset(
         "analysis_context", "app_snapshot", "attribution_snapshot",
         "business_pulse", "saved_analysis", "multidim",
     }
-)
-_METADATA_OUTPUT_FIELDS = frozenset(
-    {"kind", "app_id", "operation_id", "name", "cname", "payload", "score"}
 )
 _COMPOSITE_OUTPUT_FIELDS = frozenset(
     {
@@ -124,22 +120,10 @@ def build_plan_adapters(
         )
 
     def validate_metadata(request: Mapping[str, Any], context: AdapterContext) -> None:
-        _validate_metadata(request, context)
+        validate_metadata_plan(request, context)
 
     def execute_metadata(request: Mapping[str, Any], _context: AdapterContext) -> Any:
-        validate_metadata(request, replace(_context, dynamic_targets=()))
-        limit = request.get("limit", min(20, _context.max_items))
-        _bounded_optional(limit, 1, min(100, _context.max_items), "limit")
-        result = search_metadata(
-            str(request.get("query", "")),
-            database=database,
-            app_id=request.get("app_id"),
-            kind=str(request.get("kind", "all")),
-            limit=limit,
-            offset=request.get("offset", 0),
-        )
-        fields = _context.output_fields or tuple(sorted(_METADATA_OUTPUT_FIELDS))
-        return _metadata_projection(result, fields, _context)
+        return execute_metadata_plan(request, _context, database=database)
 
     def validate_composite(request: Mapping[str, Any], context: AdapterContext) -> None:
         _validate_composite(request, context, insight, workspace)
@@ -366,27 +350,6 @@ def _validate_sql_apps(
     if values is None:
         raise _input("SQL product app ids are invalid", "app_ids")
     normalize_app_ids(product, values, workspace)
-
-
-def _validate_metadata(request: Mapping[str, Any], context: AdapterContext) -> None:
-    _request_object(request, _METADATA_FIELDS, "metadata_search")
-    _validate_exact_targets(
-        context, frozenset({"/query", "/app_id", "/limit", "/offset"})
-    )
-    query = request.get("query", "")
-    if not isinstance(query, str) and not _has_dynamic(context, "/query"):
-        raise _input("metadata query must be a string", "query")
-    if request.get("kind", "all") not in {"all", "event", "property"}:
-        raise _input("metadata kind is unsupported", "kind")
-    app_id = request.get("app_id")
-    if app_id is not None and not isinstance(app_id, str):
-        raise _input("metadata app_id must be a string", "app_id")
-    limit = request.get("limit", min(20, context.max_items))
-    _bounded_optional(limit, 1, min(100, context.max_items), "limit")
-    _bounded_optional(request.get("offset", 0), 0, 2**31 - 1, "offset")
-    _validate_selected_fields(
-        context.output_fields, _METADATA_OUTPUT_FIELDS, "output_fields"
-    )
 
 
 def _validate_composite(
