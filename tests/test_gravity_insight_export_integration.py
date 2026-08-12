@@ -29,6 +29,7 @@ from gravity_sdk.export_gateway import (
     ExportTaskCenter,
     GravityExportGateway,
 )
+from gravity_sdk.export_cli import output_argument
 from gravity_sdk.export_models import (
     ExportCreationRequest,
     ExportPrivacyContract,
@@ -179,6 +180,7 @@ class ExportContractTests(unittest.TestCase):
         self.assertEqual(
             ["start", "wait", "download"], description["workflow"]["order"]
         )
+        self.assertIn("gravity export run ", description["workflow"]["default_command"])
         self.assertTrue(
             all(
                 command.startswith("gravity export ")
@@ -186,7 +188,7 @@ class ExportContractTests(unittest.TestCase):
             )
         )
         self.assertTrue(
-            description["next_action"].startswith("Run `gravity export start ")
+            description["next_action"].startswith("Run `gravity export run ")
         )
         self.assertNotIn("python -m", json.dumps(description))
         self.assertEqual(
@@ -529,7 +531,7 @@ class GatewayAndCliTests(unittest.TestCase):
         self.assertTrue(job["request_summary"]["parameter_values_redacted"])
         self.assertIn("filters", job["request_summary"]["field_names"])
 
-    def test_cli_declares_all_eight_export_commands(self):
+    def test_cli_declares_all_nine_export_commands(self):
         parser = build_parser()
         cases = {
             "list-capabilities": ["export", "list-capabilities"],
@@ -548,6 +550,12 @@ class GatewayAndCliTests(unittest.TestCase):
                 "file_name,gravity_material_id",
                 "--idempotency-key",
                 "fixture-export-key-0001",
+            ],
+            "run": [
+                "export", "run", "export.material.report.start",
+                "--input", "{}", "--columns", "file_name,gravity_material_id",
+                "--idempotency-key", "fixture-export-key-0001",
+                "--output", "report.csv",
             ],
             "status": [
                 "export",
@@ -585,6 +593,8 @@ class GatewayAndCliTests(unittest.TestCase):
             with self.subTest(name=name):
                 parsed = parser.parse_args(argv)
                 self.assertEqual(name, parsed.export_command)
+                if name in {"run", "download"}:
+                    self.assertIsNone(output_argument(parsed))
 
     def test_cli_export_extension_error_uses_builtin_14_code_and_action(self):
         stderr = io.StringIO()

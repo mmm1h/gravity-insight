@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import threading
 from collections.abc import Callable, Mapping, Sequence
+from pathlib import Path
 from typing import Any
 
 from .sdk_analysis import AnalysisSdkMixin
@@ -176,6 +177,27 @@ class GravitySDK(AnalysisSdkMixin, MetadataSdkMixin):
         **options: Any,
     ) -> list[dict[str, Any]]:
         return self.insight.batch(requests, **options)
+
+    def export_run(
+        self,
+        operation_id: str,
+        payload: Mapping[str, Any],
+        destination: str | Path,
+        *,
+        requested_columns: Sequence[str],
+        idempotency_key: str,
+        timeout_seconds: float = 300.0,
+    ) -> dict[str, Any]:
+        """Run the existing governed export state machine in one call."""
+
+        return self.insight.export_run(
+            operation_id,
+            payload,
+            destination,
+            requested_columns=requested_columns,
+            idempotency_key=idempotency_key,
+            timeout_seconds=timeout_seconds,
+        )
 
     def capabilities(
         self,

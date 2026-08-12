@@ -299,6 +299,57 @@ class DiscoveryUxTests(unittest.TestCase):
         )
         search.assert_not_called()
 
+    def test_agent_export_card_is_direct_and_privacy_blocked_routes_stay_hidden(self) -> None:
+        operation_id = "export.material.report.start"
+        for query in ("export", "导出素材报表", operation_id):
+            with self.subTest(query=query):
+                result = discover_capabilities(query, client=self.client, limit=1)
+                card = result["candidates"][0]
+                self.assertEqual(("export", operation_id), (card["kind"], card["selector"]))
+                self.assertEqual("export_job_create", card["effect"])
+                self.assertTrue(card["currently_callable"])
+                self.assertFalse(card["natural_language_auto_execute"])
+                self.assertIsNone(card["plan_node"])
+                self.assertFalse(card["next"]["ready_without_input"])
+                self.assertEqual(
+                    ["input", "columns", "idempotency_key", "output"],
+                    card["required_inputs"],
+                )
+                self.assertEqual(
+                    ["gravity", "export", "run", operation_id],
+                    card["next"]["argv"][:4],
+                )
+                self.assertIn("allowed_codes", card["columns"])
+                self.assertEqual(300, card["timeout"]["default_seconds"])
+        for blocked in (
+            "export.analysis.segment.result.start",
+            "export.analysis.user_event.start",
+            "export.task.cancel",
+        ):
+            result = discover_capabilities(blocked, client=self.client)
+            self.assertNotIn(blocked, [card["selector"] for card in result["candidates"]])
+
+    @patch("gravity_sdk.agent_batch_sources.search_metadata", return_value={"results": []})
+    def test_agent_batch_snapshots_export_inventory_once(self, _metadata) -> None:
+        workspace = SimpleNamespace(recipes={}, products={}, datasources={})
+        with (
+            patch.object(self.client, "export_capabilities", wraps=self.client.export_capabilities) as listing,
+            patch.object(self.client, "export_describe", wraps=self.client.export_describe) as describe,
+        ):
+            result = capabilities_many(
+                [
+                    {"id": "english", "query": "export"},
+                    {"id": "chinese", "query": "素材报表导出"},
+                ],
+                client=self.client,
+                workspace=workspace,
+            )
+        cards = [item["result"]["candidates"][0] for item in result["results"]]
+        listing.assert_called_once_with()
+        describe.assert_called_once_with("export.material.report.start")
+        self.assertEqual(["export", "export"], [card["kind"] for card in cards])
+        self.assertTrue(all(card["plan_node"] is None for card in cards))
+
     def test_agent_discovers_registered_composites_with_handoff_templates(self) -> None:
         cases = (
             ("analysis context", "analysis_context", ["app"]),
@@ -1227,7 +1278,7 @@ class DiscoveryUxTests(unittest.TestCase):
         self.assertIn("execution", terminal)
         self.assertEqual(
             "workspace_recipes_analysis_query_spec_stable_insight_composites_"
-            "sql_products_and_local_metadata",
+            "sql_products_governed_exports_and_local_metadata",
             terminal["scope"],
         )
         self.assertTrue(terminal["fallbacks"])

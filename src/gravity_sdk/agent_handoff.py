@@ -114,6 +114,14 @@ def attach_plan_node(
     selector = str(card.get("selector", "candidate"))
     seed = selector if namespace is None else f"{namespace}\0{selector}"
     kind = str(card.get("kind", ""))
+    if card.get("plan_executable") is False:
+        missing, template = _handoff_requirements(card, kind)
+        return {
+            **dict(card),
+            "missing_inputs": missing,
+            "input_template": template,
+            "plan_node": None,
+        }
     request, plan_kind = _plan_request(card, query, kind, selector)
     node: dict[str, Any] = {
         "id": "n_" + hashlib.sha256(seed.encode("utf-8")).hexdigest()[:12],

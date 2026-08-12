@@ -488,8 +488,8 @@ def _public_export_error(
     if code in input_codes:
         return ErrorCode.INPUT_INVALID, (
             "Run `gravity export describe "
-            f"{operation_id}` and retry `gravity export "
-            "start` with the documented input."
+            f"{operation_id}` and retry `gravity export run` with the documented "
+            "input and an explicit output file."
         )
     if code in local_codes:
         return ErrorCode.LOCAL_IO_ERROR, (

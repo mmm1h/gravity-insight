@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .agent_capabilities import composite_capability_inventory
+from .agent_export import load_export_agent_inventory, query_requests_export
 from .agent_sources import workspace_catalog_fingerprint
 from .agent_table_lineage import table_lineage_capability_cards
 from .errors import InputValidationError
@@ -31,6 +32,7 @@ class AgentSourceSnapshot:
     composite_inventory: tuple[Mapping[str, Any], ...]
     warnings: tuple[str, ...]
     workspace_fingerprint: str
+    export_inventory: tuple[Mapping[str, Any], ...] = ()
 
 
 def snapshot_agent_sources(
@@ -43,10 +45,21 @@ def snapshot_agent_sources(
 
     selected_workspace, warnings = selected_workspace_and_warnings(workspace)
     metadata = metadata_inventory(warnings)
-    vocabulary_only = questions_use_only_vocabulary(questions, metadata)
+    export_requested = any(
+        query_requests_export(str(getattr(item, "query", "")))
+        for item in questions or ()
+    )
+    vocabulary_only = (
+        not export_requested and questions_use_only_vocabulary(questions, metadata)
+    )
     inventory = () if vocabulary_only else operation_inventory(client)
     recipes = () if vocabulary_only else snapshot_recipes(selected_workspace)
     products = () if vocabulary_only else snapshot_products(selected_workspace, warnings)
+    exports = (
+        load_export_agent_inventory(client)
+        if export_requested
+        else ()
+    )
     return AgentSourceSnapshot(
         workspace=selected_workspace,
         operation_inventory=inventory,
@@ -56,6 +69,7 @@ def snapshot_agent_sources(
         composite_inventory=composite_capability_inventory(),
         warnings=tuple(warnings),
         workspace_fingerprint=workspace_catalog_fingerprint(selected_workspace),
+        export_inventory=exports,
     )
 
 

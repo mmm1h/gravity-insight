@@ -47,6 +47,18 @@ def add_export_commands(
     start.add_argument("--columns", required=True)
     start.add_argument("--idempotency-key", required=True)
     start.add_argument("--timeout", type=float, default=120.0)
+    run = subcommands.add_parser(
+        "run",
+        help=(
+            "Create, wait for, verify, and atomically download one governed export."
+        ),
+    )
+    run.add_argument("operation_id")
+    add_input(run, required=True)
+    run.add_argument("--columns", required=True)
+    run.add_argument("--idempotency-key", required=True)
+    run.add_argument("--output", required=True)
+    run.add_argument("--timeout", type=float, default=300.0)
     for name in ("status", "wait", "download", "cancel"):
         item = subcommands.add_parser(name)
         item.add_argument("job_id")
@@ -73,20 +85,20 @@ def run_export_command(
     if args.export_command == "describe":
         return client.export_describe(args.operation_id)
     if args.export_command == "start":
-        columns = tuple(
-            value.strip()
-            for value in str(args.columns).split(",")
-            if value.strip()
-        )
-        if not columns:
-            raise InputValidationError(
-                "--columns must contain at least one contracted column",
-                field="columns",
-            )
+        columns = _requested_columns(args.columns)
         return client.export_start(
             args.operation_id,
             object_input(args.input),
             requested_columns=columns,
+            idempotency_key=args.idempotency_key,
+            timeout_seconds=args.timeout,
+        )
+    if args.export_command == "run":
+        return client.export_run(
+            args.operation_id,
+            object_input(args.input),
+            args.output,
+            requested_columns=_requested_columns(args.columns),
             idempotency_key=args.idempotency_key,
             timeout_seconds=args.timeout,
         )
@@ -129,10 +141,24 @@ def dispatch_command(
 def output_argument(args: argparse.Namespace) -> str | None:
     if (
         getattr(args, "command", None) == "export"
-        and getattr(args, "export_command", None) == "download"
+        and getattr(args, "export_command", None) in {"download", "run"}
     ):
         return None
     return getattr(args, "output", None)
+
+
+def _requested_columns(value: Any) -> tuple[str, ...]:
+    columns = tuple(
+        item.strip()
+        for item in str(value).split(",")
+        if item.strip()
+    )
+    if not columns:
+        raise InputValidationError(
+            "--columns must contain at least one contracted column",
+            field="columns",
+        )
+    return columns
 
 
 def export_cli_error(
@@ -146,7 +172,8 @@ def export_cli_error(
         fallback_action = (
             "Run `gravity export describe "
             f"{operation_id}` and retry with the documented input."
-            if getattr(args, "export_command", None) == "start" and operation_id
+            if getattr(args, "export_command", None) in {"start", "run"}
+            and operation_id
             else "Run `gravity export list --page 1 "
             "--page-size 100` and retry only a job stage that exists."
         )
@@ -260,7 +287,7 @@ def _next_action(
             f"{operation_id or '<operation-id>'}` and select an operation with "
             "currently_callable=true."
         )
-    if command == "start":
+    if command in {"start", "run"}:
         return (
             "Run `gravity export list --page 1 "
             "--page-size 100` to determine whether a job was created; do not "

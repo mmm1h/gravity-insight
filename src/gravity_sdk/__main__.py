@@ -17,6 +17,7 @@ Usage:
   gravity plan run --input <plan.json>
   gravity analysis saved list|get|prepare|run
   gravity reports pulse --app <alias|id> --start <date> --end <date>
+  gravity export run <operation-id> --input <json|file|-> --output <file>
   gravity insight <command> [options]
   gravity metadata sync --all-apps
   gravity metadata search|events|properties|vocabulary [query]

@@ -6,6 +6,7 @@
 
 ```text
 gravity insight <command>     结构化读取和导出
+gravity export <command>      一键治理导出及分阶段恢复
 gravity agent [query]         单问题发现；--input 批量发现并返回 Plan 节点
 gravity plan schema|run       预检或执行受控跨能力 DAG
 gravity metadata <command>    本地物理元数据目录
@@ -57,7 +58,7 @@ domain 或 platform 组合。需要完整 catalog 或 blocked 覆盖信息时再
 | `batch` | 批量执行独立的受控读取 |
 | `parents resolve` | 解析 operation 需要的父资源 |
 | `auth status/refresh` | 查看或刷新认证状态 |
-| `export ...` | 创建、等待、下载或取消治理导出 |
+| `export ...` | 一键创建/轮询/下载治理导出，或分阶段恢复 |
 | `doctor` | 离线检查；`--live` 执行最小在线探针 |
 
 领域命令如 `analysis`、`multidim`、`promotion`、`materials` 是受控 operation 的易用门面；不确定时从 `operations search` 开始。
@@ -138,6 +139,33 @@ context 固定 13 个词汇/模板来源，App snapshot 固定 6 个治理来源
 覆盖当前 8 个 stable attribution operation，其中两个 postback map 自动读取全部页。三者均
 默认并发 6、上限 24，按固定来源顺序返回并隔离局部失败。Attribution snapshot 不包含仍为
 draft 的聚合归因和用户/设备级明细查询。
+
+### Governed export
+
+已知 operation 和完整输入时，默认一次调用：
+
+```powershell
+gravity export run export.material.report.start --input material-export.json `
+  --columns file_name,gravity_material_id,stat_cost `
+  --idempotency-key material-20260812-001 `
+  --output D:\exports\material.xlsx --timeout 300
+```
+
+`run` 接受 `<operation-id> --input <json|file|-> [--set PATH=VALUE] --columns <csv>
+--idempotency-key <key> --output <file> [--timeout 300]`，复用现有状态机完成创建、轮询、下载、
+隐私/schema 验证和原子提交。`--output` 只指定导出文件；JSON envelope 继续写 stdout，不覆盖
+目标文件。未知导出先一次 `gravity agent "material report export"`，审阅卡片并补齐
+`input/columns/idempotency_key/output` 后执行 `next.argv`，总共两次且不自动执行自然语言。
+
+Agent 只为 `currently_callable=true` 的 `export_job_create` 返回 executable 卡；当前唯一操作是
+`export.material.report.start`。status/cancel 路由和 blocked Analysis exports 不作为创建候选。
+卡片明确 `natural_language_auto_execute=false`、`plan_executable=false` 和 `plan_node=null`；导出
+不进入 Plan v1。
+
+`start/status/wait/download/cancel/list` 是人工和恢复命令。run 或 wait 超时不会自动取消；已有
+`job_id` 时用 status/wait 后在 READY 时 download 到同一显式路径。创建结果不确定且没有可靠
+ID 时先 `gravity export list --page 1 --page-size 100`，不要直接重跑。详见
+[导出指南](../guides/export.md)。
 
 ### Analysis Query Spec v1
 

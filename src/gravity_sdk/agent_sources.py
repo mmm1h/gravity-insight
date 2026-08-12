@@ -390,6 +390,15 @@ def candidates_fingerprint(
                 "kinds": list(item.get("kinds", [])),
                 "input_schema": item.get("input_schema", {}),
             }
+        elif kind == "export":
+            identity["contract"] = {
+                "effect": item.get("effect"),
+                "currently_callable": item.get("currently_callable"),
+                "request_required_fields": list(
+                    item.get("request_required_fields", [])
+                ),
+                "columns": item.get("columns", {}),
+            }
         identities.append(identity)
     return _digest(identities)
 

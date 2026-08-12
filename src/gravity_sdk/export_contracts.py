@@ -168,9 +168,10 @@ class ExportRouteContract:
             "verification": _plain(self.verification),
         }
         result["next_action"] = (
-            "Run `gravity export start "
+            "Run `gravity export run "
             f"{self.operation_id} --input <request.json> --columns <column-codes> "
-            "--idempotency-key <key>` after applying the documented substitutions."
+            "--idempotency-key <key> --output <file.xlsx>` after applying the "
+            "documented substitutions."
             if currently_callable and self.effect == "export_job_create"
             else "Run `gravity export list-capabilities` "
             "and select an operation with currently_callable=true."
@@ -499,6 +500,12 @@ def _workflow(operation_id: str, effect: str) -> dict[str, Any]:
             "note": "This route is a supporting export effect, not a job creator.",
         }
     return {
+        "default_command": (
+            "gravity export run "
+            f"{operation_id} --input <request.json> --columns <column-codes> "
+            "--idempotency-key <key> --output <file.xlsx> --timeout 300"
+        ),
+        "default_mode": "create_poll_download",
         "order": ["start", "wait", "download"],
         "commands": [
             (
@@ -516,10 +523,12 @@ def _workflow(operation_id: str, effect: str) -> dict[str, Any]:
             ),
         ],
         "recovery": (
-            "If start outcome is uncertain, run `gravity "
+            "The staged commands are recovery controls. If creation outcome is "
+            "uncertain, run `gravity "
             "export list --page 1 --page-size 100` before creating another job. "
             "A wait timeout does not cancel the job."
         ),
+        "staged_commands_are_recovery": True,
         "create_auto_retry": False,
         "timeout_auto_cancel": False,
     }

@@ -17,7 +17,7 @@ from .find import query_match
 _ASCII_WORD = re.compile(r"[a-z0-9_]+", re.IGNORECASE)
 AGENT_SCOPE = (
     "workspace_recipes_analysis_query_spec_stable_insight_composites_"
-    "sql_products_and_local_metadata"
+    "sql_products_governed_exports_and_local_metadata"
 )
 
 _COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (

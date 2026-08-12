@@ -23,6 +23,11 @@ from .agent_handoff import (
     unify_capability_candidates,
     workspace_prefix,
 )
+from .agent_export import (
+    export_capability_cards,
+    export_inventory_for_query,
+    is_authoritative_export_card,
+)
 from .agent_sources import (
     catalog_cards,
     candidates_fingerprint,
@@ -182,15 +187,17 @@ def _discover(
     plan_node_namespace: str | None = None,
 ) -> dict[str, Any]:
     page = _discovery_page(
-        request, request.query, workspace=workspace, sources=sources
+        request, request.query, client=client, workspace=workspace, sources=sources
     )
-    local_metadata_cards = [
+    authoritative_cards = [
+        card for card in page.catalog_cards if is_authoritative_export_card(card)
+    ] or [
         card
         for card in page.catalog_cards
         if is_authoritative_local_metadata_card(card)
     ]
-    if local_metadata_cards:
-        unified = [("catalog", card) for card in local_metadata_cards]
+    if authoritative_cards:
+        unified = [("catalog", card) for card in authoritative_cards]
         weak_operations: list[Mapping[str, Any]] = []
     else:
         if client is None:
@@ -329,6 +336,7 @@ def _discovery_page(
     args: Any,
     query: str,
     *,
+    client: Any | None = None,
     workspace: Any | None = None,
     sources: AgentSourceSnapshot | None = None,
 ) -> _DiscoveryPage:
@@ -337,10 +345,21 @@ def _discovery_page(
     composite_inventory = (
         sources.composite_inventory if sources is not None else None
     )
+    export_inventory = export_inventory_for_query(
+        query,
+        client=client,
+        inventory=sources.export_inventory if sources is not None else None,
+    )
+    export_cards = export_capability_cards(
+        query,
+        domain=args.domain,
+        platform=args.platform,
+        inventory=export_inventory,
+    )
     lineage_cards = table_lineage_capability_cards(
         query, domain=args.domain, platform=args.platform
     )
-    selected_cards = lineage_cards or [
+    selected_cards = export_cards or lineage_cards or [
         *analysis_query_spec_cards(query, domain=args.domain, platform=args.platform),
         *composite_capability_cards(
             query,
@@ -351,7 +370,7 @@ def _discovery_page(
     ]
     warnings: list[str] = []
     catalog_fingerprint = workspace_catalog_fingerprint(None)
-    if not lineage_cards and args.domain is None and args.platform is None:
+    if not export_cards and not lineage_cards and args.domain is None and args.platform is None:
         catalog, _catalog_total, warnings, catalog_fingerprint = catalog_cards(
             query, 100, workspace=workspace, sources=sources
         )

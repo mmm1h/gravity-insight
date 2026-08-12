@@ -105,6 +105,16 @@ pulse = gravity.business_pulse(
 
 # 严格离线读取已同步的数据表沿革；不会构建 Insight/SQL client。
 lineage = gravity.table_lineage("publish", limit=20)
+
+# 已知治理导出一次完成创建、轮询、校验和原子下载。
+exported = gravity.export_run(
+    "export.material.report.start",
+    material_request,
+    "D:/exports/material.xlsx",
+    requested_columns=["file_name", "gravity_material_id", "stat_cost"],
+    idempotency_key="material-20260812-001",
+    timeout_seconds=300,
+)
 ```
 
 `GravitySDK` / `connect()` 惰性创建并分别缓存 Insight 与 SQL client，适合一个进程同时使用
@@ -123,6 +133,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `read_all()` | `GravityInsightClient.read_all()` |
 | `read_limited()` | Agent 安全前缀与显式 continuation，默认最多 5 页/200 项 |
 | `read_many()` | `GravityInsightClient.batch()` |
+| `export_run()` | 现有治理导出状态机：create、poll、download、隐私/schema 校验和原子提交 |
 | `describe_sql_products()` | 安全描述 workspace 产品，不返回 SQL 模板 |
 | `query_sql_products()` | `run_product_queries()`，支持单对象或批量、保序隔离失败 |
 | `compile_analysis_query()` | 把 Analysis Spec v1 编译为稳定 operation input 并运行离线输入校验；带筛选值时预览脱敏且不返回 Plan node；零网络请求 |
@@ -140,7 +151,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `validate_plan()` | 离线校验 Plan schema、依赖、预算和 adapter 请求；不发网络请求 |
 | `execute_plan()` | 使用内建四类受控 adapter 执行 Plan DAG |
 
-需要完整 catalog、validate、probe、export 或测试注入时，使用公开属性 `gravity.insight`。
+需要完整 catalog、validate、probe、分阶段 export 恢复或测试注入时，使用公开属性 `gravity.insight`。
 `gravity.sql` 是兼容专家调用方的低层入口，不应注册给程序化 Agent。
 
 `capabilities_many()` 接受字符串或带稳定 `id` 的对象数组，也接受
@@ -159,6 +170,17 @@ Insight/SQL client。catalog 缺失或未同步 lineage 时返回结构化 calle
 `read()`、`read_all()`、`read_limited()` 和 `run()` 都接受 `output_fields`。它只在本地裁剪合同
 允许的输出字段；默认 `None` 时保持原 envelope。动态字段必须同时由本次请求声明并被合同
 允许，不能用它请求未知上游字段。
+
+`export_run(operation_id, payload, destination, *, requested_columns, idempotency_key,
+timeout_seconds=300.0)` 原样委托 `GravityInsightClient.export_run()`。当前唯一 callable create 是
+`export.material.report.start`；status/cancel 和 blocked Analysis exports 不会成为 Agent executable
+卡。未知导出通过一次 `capabilities("material report export")` 加一次 `export_run()` 完成发现与
+执行；卡片不自动执行自然语言、不生成 Plan node，导出也不进入 Plan v1。
+
+`destination` 是最终文件路径，不是 JSON 输出路径。timeout 不自动取消；结果保留安全的
+`job_id/resumable/error.next_action`。已有 job ID 时用 `gravity.insight.export_status()`、
+`export_wait()` 和 `export_download()` 恢复；创建结果不确定且无可靠 ID 时先 `export_list()`，
+不要重复创建。输入、列顺序、幂等键和目的路径都必须由调用方显式给出。
 
 ## Analysis Query Spec v1
 

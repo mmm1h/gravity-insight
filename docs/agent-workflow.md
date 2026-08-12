@@ -12,6 +12,8 @@
 | 已知 Analysis kind，指标未知 | `metadata vocabulary` → `analysis query --spec` | 2 |
 | 已知保存分析引用 | `gravity analysis saved run --app ... --ref ...` | 1 |
 | 不知道保存分析引用 | `gravity agent "saved report templates"` → 执行返回的 Plan 节点 | 2 |
+| 已知可调用导出及完整输入 | `gravity export run ... --output <file.xlsx>` | 1 |
+| 不知道可调用导出 | `gravity agent "material report export"` → 执行 `next.argv` | 2 |
 | 已知 App 与经营时间窗 | `gravity reports pulse --app ... --start ... --end ...` | 1 |
 | 已知多个 selector 或已有 Plan | `gravity plan run --input <plan.json>` | 1 |
 | 已同步数据表沿革，目标未知 | `gravity agent "data table lineage"` → `plan run` | 2 |
@@ -27,9 +29,7 @@
 
 经营概览和趋势直接一次调用 `gravity reports pulse --app main --start 2026-08-01 --end 2026-08-07 --include-hourly`；只有需要小时对比时加 `--include-hourly`，其结果是 `scope=workspace`。交叉 Plan 使用 composite `name=business_pulse` 和 `apps/start/end`，不要手工串行读取 overview/business。
 
-保存分析已知稳定 ID/精确名称时直接 `gravity analysis saved run --app ... --ref ...`，不要先串行
-list/get/prepare。Strict Replay 不猜 Web 配置；`prepare --ref` 会联网解析引用但不执行最终查询，
-显式 `--definition` 才是零网络编译。自然语言发现只返回 `composite:saved_analysis` 和缺失的
+保存分析已知稳定 ID/精确名称时直接 `gravity analysis saved run --app ... --ref ...`，不要先串行 list/get/prepare。Strict Replay 不猜 Web 配置；`prepare --ref` 会联网解析引用但不执行最终查询，显式 `--definition` 才是零网络编译。自然语言发现只返回 `composite:saved_analysis` 和缺失的
 `app/ref`，不会自动选择或执行。
 
 ## 1. 业务语义先在调用项目解析
@@ -210,8 +210,8 @@ gravity find "retention"
 
 ## 9. 导出
 
-异步导出按 `list-capabilities → describe → start → wait/status → download`；创建任务会产生
-服务端状态，下载会写本地文件。执行前阅读 [导出指南](guides/export.md)。
+已知完整输入直接一次 `gravity export run ... --output <file.xlsx>`；未知时一次 `gravity agent "material report export"` 加一次卡片 `next.argv`，自然语言不自动执行。当前唯一 callable create 是 `export.material.report.start`；status/cancel 和 blocked Analysis 导出不生成 executable 卡。
+`--output` 是最终文件而非 JSON envelope；超时不取消，拿 `job_id` 走 status/wait/download，无可靠 ID 先 `export list`。分阶段命令只用于恢复；导出不进入 Plan v1。详见[导出指南](guides/export.md)。
 
 ## 10. 交付
 至少说明：业务口径、`operation_id` 或 SQL product、App、时间范围、选择 Insight/SQL 的
