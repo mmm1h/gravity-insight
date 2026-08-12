@@ -246,7 +246,7 @@ def add_dashboard_commands(
     """Register legacy dashboard reads plus the snapshot product child."""
 
     parser = analysis_commands.add_parser(
-        "dashboard", help="Read Analysis dashboards or one governed snapshot."
+        "dashboard", help="Read, snapshot, prepare, or run governed Analysis dashboards."
     )
     parser.set_defaults(network_required=False)
     parser.add_argument(
@@ -290,7 +290,7 @@ def dispatch_dashboard_read(args: Any, object_input: Any) -> dict[str, Any]:
 
     if args.kind is None:
         raise InputValidationError(
-            "analysis dashboard requires --kind or snapshot", field="kind"
+            "analysis dashboard requires --kind, snapshot, prepare, or run", field="kind"
         )
     if args.input is None:
         raise InputValidationError(

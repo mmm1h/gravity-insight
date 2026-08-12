@@ -240,7 +240,8 @@ default favourite 五个控制面来源；目录树只用于精确解析引用�
 图表；`max_workers` 上限为 24。
 
 `prepare_dashboard_analysis(app, ref, *, start, end, max_charts=32,
-max_items=100000, workspace=None)` 与 `run_dashboard_analysis(..., max_workers=6)` 使用同一静态
+max_items=100000, workspace=None)` 与 `run_dashboard_analysis(app, ref, *, start, end,
+max_workers=6, max_charts=32, max_items=100000, workspace=None)` 使用同一静态
 Web artifact 编译器。SDK 先在选定 workspace 中绑定 App，再惰性构建 Insight client；prepare
 只编译，run 执行受支持 chart。start/end 是包含首尾的 ISO 日期，最长 90 天；两者按看板声明
 顺序返回，并将不支持/失败限制在单个 chart。

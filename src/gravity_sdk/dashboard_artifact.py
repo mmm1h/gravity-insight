@@ -74,7 +74,7 @@ def compile_dashboard_chart(
             next_action="Keep this chart unsupported until its query contract is proven.",
         )
     selected_app = _app_id(app_id)
-    _date_window(start, end)
+    validate_dashboard_window(start, end)
     config = _config(item.get("config"))
     _reject_unknown(config, UI_FIELDS[kind], "report.config")
     _validate_ui_config(kind, config)
@@ -103,10 +103,16 @@ def compile_dashboard_chart(
         kind=kind,
         operation_id=operation_id,
         inputs=inputs,
-        validation_status=str(validation.get("status") or "valid_offline"),
+        validation_status=_validation_status(validation.get("status")),
         date_override_applied=applied,
         limitations=limitations,
     )
+
+
+def validate_dashboard_window(start: str, end: str) -> None:
+    """Validate the shared inclusive Dashboard window without client access."""
+
+    _date_window(start, end)
 
 
 def _compile_inputs(
@@ -328,12 +334,18 @@ def _validate_ui_config(kind: str, config: Mapping[str, Any]) -> None:
         _optional_date_list(config, "date_list")
         for field in ("groupBy", "queryItemList", "customQueryItemList"):
             _optional_array(config, field)
+        for field in ("cascaderValue", "checkIndexList", "customSortData"):
+            _optional_array(config, field)
     elif kind == "property":
         _optional_array(config, "groupBy")
+        _optional_array(config, "customSortData")
         _optional_object(config, "queryItem", fields=None)
     elif kind == "retention":
         _optional_array(config, "queryItemList")
         _optional_array(config, "group_by_list")
+        _optional_array(config, "groupBy")
+        _optional_array(config, "checkIndexList")
+        _optional_array(config, "customSortData")
         _optional_array(config, "cascaderValue")
         _optional_array(config, "compareList")
         _optional_object(config, "groupByCreateTime")
@@ -421,6 +433,11 @@ def _date_window(start: str, end: str) -> None:
         )
 
 
+def _validation_status(value: Any) -> str:
+    selected = str(value or "").strip().casefold()
+    return selected if selected in {"valid_offline", "needs_live_metadata"} else "valid_offline"
+
+
 def _parse_date(value: Any, field: str) -> datetime:
     if not isinstance(value, str) or not value.strip():
         raise InputValidationError(f"{field} must be an ISO date or timestamp", field=field)
@@ -497,4 +514,5 @@ __all__ = [
     "MAX_CONFIG_BYTES",
     "SUBJECT_KINDS",
     "compile_dashboard_chart",
+    "validate_dashboard_window",
 ]

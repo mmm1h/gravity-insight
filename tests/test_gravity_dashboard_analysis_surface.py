@@ -132,6 +132,8 @@ class DashboardAnalysisSurfaceTests(unittest.TestCase):
             "dashboard": {"id": 8}, "mode": "run", "chart_count": 1,
             "charts": [{"index": 0, "name": "Revenue", "supported": True,
                         "query_executed": True, "result": {"data": []},
+                        "date_override_applied": False,
+                        "limitations": ["property analysis has no date window"],
                         "error": {"code": "X", "category": "local",
                                   "message": "C:/private/original exception"},
                         "config": "private", "request": {"token": "secret"}}],
@@ -156,6 +158,8 @@ class DashboardAnalysisSurfaceTests(unittest.TestCase):
         })
         self.assertNotIn("private", str(projected))
         self.assertNotIn("secret", str(projected))
+        self.assertFalse(projected["charts"][0]["date_override_applied"])
+        self.assertEqual(1, len(projected["charts"][0]["limitations"]))
 
     def test_agent_routes_chart_replay_without_colliding_with_snapshot(self):
         cases = (

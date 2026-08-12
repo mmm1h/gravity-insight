@@ -7,7 +7,11 @@ from gravity_sdk.dashboard_analysis import (
     prepare_dashboard_analysis,
     run_dashboard_analysis,
 )
-from gravity_sdk.errors import ContractChangedError, PaginationError
+from gravity_sdk.errors import (
+    ContractChangedError,
+    InputValidationError,
+    PaginationError,
+)
 
 
 def _event_report(report_id: str = "10") -> dict:
@@ -48,9 +52,10 @@ class _Client:
             {"report_id": "11", "name": "Web only", "subject": "analysis_cash", "config": {}},
         ]
         self.fail, self.duplicate = fail, duplicate
-        self.batch_calls = []
+        self.batch_calls, self.read_calls = [], []
 
     def read(self, operation_id, inputs):
+        self.read_calls.append((operation_id, inputs))
         if operation_id.endswith(".tree"):
             return _tree()
         return {"ok": True, "status": "success", "data": {
@@ -101,7 +106,10 @@ class DashboardAnalysisTests(unittest.TestCase):
             self.assertNotIn(forbidden, encoded)
 
     def test_run_batches_supported_charts_in_order_and_sanitizes_failures(self):
-        client = _Client()
+        client = _Client([
+            {"report_id": "11", "name": "Web only", "subject": "analysis_cash", "config": {}},
+            _event_report(),
+        ])
         result = run_dashboard_analysis(
             client, 17, 3, start="2026-08-01", end="2026-08-08", max_workers=4,
             max_items=20,
@@ -110,10 +118,10 @@ class DashboardAnalysisTests(unittest.TestCase):
             result["status"], result["success_count"], result["failure_count"]
         ))
         self.assertEqual((4, 1), (client.batch_calls[0][1], client.batch_calls[0][2]))
-        self.assertTrue(result["charts"][0]["query_executed"])
-        self.assertFalse(result["charts"][1]["query_executed"])
+        self.assertFalse(result["charts"][0]["query_executed"])
+        self.assertTrue(result["charts"][1]["query_executed"])
         encoded = json.dumps(result).casefold()
-        for forbidden in ("request_id", "token", "secret", "inputs", "config"):
+        for forbidden in ("request_id", "token", "secret", "inputs", "calculatebody"):
             self.assertNotIn(forbidden, encoded)
 
         failed = run_dashboard_analysis(
@@ -138,11 +146,24 @@ class DashboardAnalysisTests(unittest.TestCase):
                 max_charts=5, max_items=30,
             )
         self.assertEqual([], bounded.batch_calls)
+        capacity = _Client([_event_report(str(index)) for index in range(5)])
+        with self.assertRaises(PaginationError):
+            run_dashboard_analysis(
+                capacity, 17, 3, start="2026-08-01", end="2026-08-08",
+                max_items=7,
+            )
+        self.assertEqual([], capacity.batch_calls)
         with self.assertRaises(RuntimeError):
             run_dashboard_analysis(
                 _Client(duplicate=True), 17, 3,
                 start="2026-08-01", end="2026-08-08",
             )
+        offline = _Client([])
+        with self.assertRaises(InputValidationError):
+            prepare_dashboard_analysis(
+                offline, 17, 3, start="not-a-date", end="2026-08-08"
+            )
+        self.assertEqual([], offline.read_calls)
 
 
 if __name__ == "__main__":

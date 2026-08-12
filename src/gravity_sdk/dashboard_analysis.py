@@ -13,6 +13,7 @@ from .dashboard_artifact import (
     SUBJECT_KINDS,
     CompiledDashboardChart,
     compile_dashboard_chart,
+    validate_dashboard_window,
 )
 from .dashboard_snapshot import (
     DASHBOARD_SNAPSHOT_SOURCES,
@@ -33,6 +34,7 @@ from .errors import (
     InputValidationError,
     LocalIOError,
     PaginationError,
+    UnsupportedOperationError,
 )
 from .plan_execution import result_item_count
 
@@ -104,13 +106,20 @@ def run_dashboard_analysis(
         max_charts=max_charts,
         max_items=max_items,
     )
-    compiled = [item for item in state.charts if isinstance(item, CompiledDashboardChart)]
-    requests = [_query_request(index, item) for index, item in enumerate(compiled)]
+    compiled = [
+        (index, item)
+        for index, item in enumerate(state.charts)
+        if isinstance(item, CompiledDashboardChart)
+    ]
+    remaining = max_items - state.tree_items - len(state.charts)
+    if len(compiled) > remaining:
+        raise PaginationError("dashboard analysis has insufficient result item budget")
+    requests = [_query_request(index, item) for index, item in compiled]
     ordered = _execute(
         client,
         requests,
         workers=workers,
-        max_items=max(1, max_items - state.tree_items - len(state.charts)),
+        max_items=remaining,
     ) if requests else []
     by_report = {
         request["request_id"]: result
@@ -121,7 +130,7 @@ def run_dashboard_analysis(
         for index, value in enumerate(state.charts)
     ]
     used = state.tree_items + len(charts) + sum(
-        result_item_count(chart.get("result"))
+        max(1, result_item_count(chart.get("result")))
         for chart in charts
         if chart.get("query_executed") is True
     )
@@ -142,6 +151,7 @@ def _prepare(
 ) -> _PreparedDashboard:
     selected_app = _positive_app_id(app_id)
     selected_ref = _reference(ref)
+    validate_dashboard_window(start, end)
     _, items = validate_composite_bounds(
         1,
         max_items,
@@ -208,6 +218,8 @@ def _reports(
     data = _envelope_data(detail)
     if not isinstance(data, Mapping):
         raise ContractChangedError("dashboard detail no longer returns an object")
+    if data.get("id") is None:
+        raise ContractChangedError("dashboard detail no longer returns its required identity")
     for field, expected in (
         ("id", dashboard.dashboard_id),
         ("app_id", app_id),
@@ -221,18 +233,28 @@ def _reports(
         return []
     if not isinstance(raw, list) or any(not isinstance(item, Mapping) for item in raw):
         raise ContractChangedError("dashboard detail returned an invalid chart collection")
+    return _unique_reports(raw)
+
+
+def _unique_reports(raw: Sequence[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
     seen: set[str] = set()
     reports: list[Mapping[str, Any]] = []
     for item in raw:
-        report_id = item.get("report_id")
-        if isinstance(report_id, bool) or not isinstance(report_id, (str, int)):
-            raise ContractChangedError("dashboard detail returned an incomplete chart identity")
-        identity = str(report_id).strip()
-        if not identity or len(identity) > 256 or identity in seen:
-            raise ContractChangedError("dashboard detail returned a duplicate or invalid chart identity")
+        identity = _report_identity(item.get("report_id"))
+        if identity in seen:
+            raise ContractChangedError("dashboard detail returned a duplicate chart identity")
         seen.add(identity)
         reports.append(item)
     return reports
+
+
+def _report_identity(value: Any) -> str:
+    if isinstance(value, bool) or not isinstance(value, (str, int)):
+        raise ContractChangedError("dashboard detail returned an incomplete chart identity")
+    identity = str(value).strip()
+    if not identity or len(identity) > 256:
+        raise ContractChangedError("dashboard detail returned an invalid chart identity")
+    return identity
 
 
 def _compile_or_isolate(
@@ -251,16 +273,15 @@ def _compile_or_isolate(
             start=start,
             end=end,
         )
-    except GravityInsightError as exc:
+    except (InputValidationError, UnsupportedOperationError) as exc:
         return _unsupported_chart(report, exc)
+    except GravityInsightError as exc:
+        raise _safe_exception(exc.to_error_detail(), "compiler") from None
     except Exception:
-        detail = ErrorDetail.create(
-            "DASHBOARD_CHART_COMPILER_FAILED",
-            "Dashboard chart compiler failed locally.",
-            category=ErrorCategory.LOCAL,
-            next_action="Keep this chart isolated and inspect the local compiler.",
-        )
-        return _unsupported_chart(report, detail)
+        raise LocalIOError(
+            "dashboard chart compiler failed locally",
+            next_action="Inspect the local compiler before retrying this dashboard.",
+        ) from None
 
 
 def _unsupported_chart(report: Mapping[str, Any], error: Any) -> dict[str, Any]:
@@ -436,7 +457,7 @@ def _safe_compile_error(error: GravityInsightError) -> ErrorDetail:
     return ErrorDetail.create(
         selected,
         "Dashboard chart cannot be compiled through a proven stable contract.",
-        field=error.field,
+        field="report.config",
         next_action="Keep this chart unsupported until its Web artifact contract is proven.",
     )
 
