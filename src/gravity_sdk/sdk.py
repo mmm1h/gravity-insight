@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from .sdk_analysis import AnalysisSdkMixin
+from .sdk_material import MaterialSdkMixin
 from .sdk_metadata import MetadataSdkMixin
 from .sdk_report import ReportSdkMixin
 
@@ -20,7 +21,9 @@ from .sdk_report import ReportSdkMixin
 ClientFactory = Callable[[], Any]
 
 
-class GravitySDK(AnalysisSdkMixin, ReportSdkMixin, MetadataSdkMixin):
+class GravitySDK(
+    AnalysisSdkMixin, ReportSdkMixin, MaterialSdkMixin, MetadataSdkMixin
+):
     """Lazy, process-friendly entry point for the Gravity SDK.
 
     ``insight`` and ``sql`` are built only when first used.  Direct convenience

@@ -10,6 +10,7 @@
 | 查看或清理结构性技术债 | [技术债清单](technical-debt.md) |
 | 完善 Multidim 的 Agent 产品面 | [Multidim Agent Surface v1](multidim-agent-surface.md) |
 | 完善 Business Pulse 的 Agent 交接 | [Business Pulse Agent Surface v1](business-pulse-agent-surface.md) |
+| 完善四平台素材表现的 Agent 产品面 | [Material Performance v1](material-performance.md) |
 | 选择 operation、codec、CLI、recipe、SQL 或 export 扩展面 | [扩展地图](extending.md) |
 | 新增、升级或废弃 operation | [新增受控能力](operations.md) |
 | 在线探测、浏览器确认页面行为 | [探测安全](probing.md) |

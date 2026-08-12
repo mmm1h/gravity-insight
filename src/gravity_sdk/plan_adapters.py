@@ -29,6 +29,13 @@ from .plan_multidim_adapter import (
     project_multidim_result,
     validate_multidim_plan,
 )
+from .plan_material_performance_adapter import (
+    MATERIAL_PERFORMANCE_NAME,
+    execute_material_performance_plan,
+    is_material_performance_result,
+    project_material_performance_result,
+    validate_material_performance_plan,
+)
 from .plan_metadata_adapter import execute_metadata_plan, validate_metadata_plan
 from .resolver_support import build_inputs
 from .plan_adapter_support import (
@@ -65,6 +72,7 @@ _COMPOSITES = frozenset(
     {
         "analysis_context", "app_snapshot", "attribution_snapshot",
         "business_pulse", "saved_analysis", MULTIDIM_NAME,
+        MATERIAL_PERFORMANCE_NAME,
         analysis_plan.ANALYSIS_QUERY_NAME,
         *segment_plan.COMPOSITE_NAMES,
         user_journey_plan.USER_JOURNEY_NAME,
@@ -406,6 +414,9 @@ def _validate_composite(
     if name == MULTIDIM_NAME:
         validate_multidim_plan(insight, workspace, request, context)
         return
+    if name == MATERIAL_PERFORMANCE_NAME:
+        validate_material_performance_plan(request, context, workspace)
+        return
     allowed_targets = {"/app"}
     _validate_exact_targets(context, frozenset(allowed_targets))
     dynamic_app = _has_dynamic(context, "/app")
@@ -467,6 +478,8 @@ def _execute_composite(
         return execute_saved_analysis_plan(sdk, request, context)
     if name == MULTIDIM_NAME:
         return execute_multidim_plan(sdk, request, context)
+    if name == MATERIAL_PERFORMANCE_NAME:
+        return execute_material_performance_plan(sdk, request, context)
     if name == analysis_plan.ANALYSIS_QUERY_NAME:
         return analysis_plan.execute_analysis_query_plan(sdk, request, context)
     if segment_plan.is_segment_composite(name):
@@ -493,6 +506,8 @@ def _project_composite(
         return project_saved_analysis_result(result, fields, context)
     if is_multidim_result(result):
         return project_multidim_result(result, fields, context)
+    if is_material_performance_result(result):
+        return project_material_performance_result(result, fields, context)
     return _composite_projection(result, fields, context)
 
 

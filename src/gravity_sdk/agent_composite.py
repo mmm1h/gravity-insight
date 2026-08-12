@@ -12,6 +12,7 @@ _STRICT_COMPOSITES = frozenset(
         "business_pulse",
         "dashboard_analysis",
         "dashboard_snapshot",
+        "material_performance",
         "multidim",
         "saved_analysis",
         "segment_snapshot",
@@ -105,6 +106,10 @@ def _strict_composite_query(name: str, query: str) -> bool:
         from .agent_business_pulse import business_pulse_query
 
         return business_pulse_query(query)
+    if name == "material_performance":
+        from .agent_material_performance import material_performance_query
+
+        return material_performance_query(query)
     return False
 
 

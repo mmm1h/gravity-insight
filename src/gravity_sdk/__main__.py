@@ -21,6 +21,7 @@ Usage:
   gravity analysis user journey --app <alias|id> --client-id <id> --date <date>
   gravity analysis segment snapshot --app <alias|id> --ref <id|name> --date <date>
   gravity reports pulse --app <alias|id> --start <date> --end <date>
+  gravity materials performance --app <alias|id> --start <date> --end <date>
   gravity export run <operation-id> --input <json|file|-> --output <file>
   gravity insight <command> [options]
   gravity metadata sync --all-apps

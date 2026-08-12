@@ -15,6 +15,7 @@ from .find import query_match
 from .agent_business_pulse import BUSINESS_PULSE_CAPABILITY, BUSINESS_PULSE_NAME
 from .agent_dashboard import DASHBOARD_ANALYSIS_CAPABILITY
 from .agent_multidim import MULTIDIM_CAPABILITY
+from .agent_material_performance import MATERIAL_PERFORMANCE_CAPABILITY
 from .agent_saved_analysis import SAVED_ANALYSIS_CAPABILITY
 from .agent_segment_snapshot import SEGMENT_SNAPSHOT_CAPABILITY
 
@@ -136,6 +137,7 @@ _COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
         },
     },
     MULTIDIM_CAPABILITY,
+    MATERIAL_PERFORMANCE_CAPABILITY,
     BUSINESS_PULSE_CAPABILITY,
 )
 
@@ -367,6 +369,7 @@ def authoritative_capability_cards(
             "dashboard_analysis",
             "dashboard_snapshot",
             BUSINESS_PULSE_NAME,
+            "material_performance",
             "multidim",
             "saved_analysis",
             "segment_snapshot",

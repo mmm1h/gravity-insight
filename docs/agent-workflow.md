@@ -12,6 +12,8 @@
 | 已知 Analysis kind，指标未知 | `metadata vocabulary` → `analysis query --spec` | 2 |
 | 已知 Multidim App 与完整物理输入 | `gravity multidim query --app ... --input ...` | 1 |
 | 不知道 Multidim 产品入口 | `gravity agent "执行多维报表查询"` → 填卡并 `plan run` | 2 |
+| 已知素材 App、日期窗和平台 | `gravity materials performance --app ... --start ... --end ...` | 1 |
+| 不知道素材表现入口 | `gravity agent "跨平台素材报表"` → 填卡并 `plan run` | 2 |
 | 已知人群规则 spec | `gravity analysis segment evaluate --app ... --spec ...` | 1 |
 | 不知道人群规则合同 | `gravity agent "评估人群规则命中人数"` → `plan run` | 2 |
 | 分群详情/历史/单日结果（引用已知/未知） | 已知：`analysis segment snapshot`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
@@ -118,7 +120,7 @@ gravity plan run --input plan.json --dry-run
 gravity plan run --input plan.json --concurrency 6
 ```
 
-Analysis 查询复用 `analysis_query`，Multidim 使用 `multidim`，保存分析用 `saved_analysis`，人群规则/快照用 `segment_evaluate`/`segment_snapshot`，看板控制面/图表用 `dashboard_snapshot`/`dashboard_analysis`。已知完整输入时一次 `plan run`；未知时 Agent 发现、调用方补齐再执行，自然语言不自动执行。同层查询由全局 pool 并发并保声明序；binding 仅可写登记目标，结果不回显 request/spec/binding 值。完整合同见 [Plan 参考](reference/plan.md)。
+Analysis 查询复用 `analysis_query`，Multidim 使用 `multidim`，素材表现使用 `material_performance`，保存分析用 `saved_analysis`，人群规则/快照用 `segment_evaluate`/`segment_snapshot`，看板控制面/图表用 `dashboard_snapshot`/`dashboard_analysis`。已知完整输入时一次 `plan run`；未知时 Agent 发现、调用方补齐再执行，自然语言不自动执行。同层查询由全局 pool 并发并保声明序；binding 仅可写登记目标，结果不回显 request/spec/binding 值。完整合同见 [Plan 参考](reference/plan.md)。
 
 ## 4. 选择 Insight 还是 SQL
 
@@ -216,5 +218,4 @@ gravity find "retention"
 
 ## 10. 交付
 至少说明：业务口径、`operation_id` 或 SQL product、App、时间范围、选择 Insight/SQL 的理由、成功/空/部分失败/能力缺口，以及不能支持的结论。不要把“没有查到”改写成“没有发生”。
-
 CLI 退出码：`0` 成功（包括合同允许的 empty）、`2` 调用方错误、`3` 上游/权限错误、`4` 本地合同/隐私/策略错误。批量命令按最高严重级别聚合退出码，仍需读取每项结果。

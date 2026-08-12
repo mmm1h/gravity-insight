@@ -400,6 +400,35 @@ Agent 对明确的中英文多维查询意图返回唯一 `composite:multidim` �
 入口是 Agent + Plan 两次。模板、layout、收藏、权限、经营 pulse 和五类 Analysis 查询均不由
 本 composite 接管。
 
+## Material Performance composite
+
+跨平台素材表现使用登记的 `name="material_performance"`，数组必须在 Plan 提交前显式完成：
+
+```json
+{
+  "id": "materials",
+  "kind": "composite",
+  "request": {
+    "name": "material_performance",
+    "apps": ["main", "secondary"],
+    "start": "2026-08-01",
+    "end": "2026-08-07",
+    "platforms": ["bytedance", "tencent", "kuaishou", "bilibili"]
+  },
+  "limits": {"max_pages": 20, "max_items": 5000},
+  "output_fields": ["date_range", "platforms", "results", "limits"]
+}
+```
+
+只有标量 `/start`、`/end` 可接受 binding；`/apps`、`/platforms` 或其元素都不是动态 target，
+本轮不新增数组 DSL。adapter 内强制 worker 1，并把结果自报的 pages/items/workers 与节点 context
+精确核对。每个平台分页也固定 worker 1；多个独立节点由 Plan 全局 pool 并发。
+
+每个平台使用一次 stable `material.report.query` batch item，HTTP 数为 `Σ P_platform`。多个 App
+合并进每个平台的 `app_list`，不展开笛卡尔积。节点 `max_items` 由 batch 按平台等额 floor 分配，
+未用份额不可借用。safe projector 只保留白名单物理行、平台身份、计数、安全错误和分页收据；
+结果不包含 App id/binding 值、原始请求或异常，也不做跨平台归一、排名或业务判断。
+
 ## Saved Analysis composite
 
 保存分析 reference replay 使用 `saved_analysis` composite；Agent 主路径在提交前明确 App、稳定

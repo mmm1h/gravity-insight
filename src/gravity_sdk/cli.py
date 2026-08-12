@@ -75,6 +75,7 @@ from gravity_sdk.analysis_spec_cli import run_analysis_query_command
 from gravity_sdk.analysis_query_batch_cli import add_analysis_query_commands
 from gravity_sdk.segment_spec_cli import add_segment_commands, run_segment_command
 from gravity_sdk.business_pulse_cli import add_business_pulse_command
+from gravity_sdk.material_cli import add_material_commands, dispatch_material_command
 from gravity_sdk.dashboard_snapshot_cli import add_dashboard_commands
 from gravity_sdk.saved_analysis_cli import add_saved_analysis_commands
 from gravity_sdk.multidim_cli import add_multidim_commands, multidim_ndjson_view
@@ -332,6 +333,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     add_business_pulse_command(commands, _concurrency, _positive_int)
 
+    add_material_commands(
+        commands, _add_input, _add_all_pages, _concurrency, _positive_int
+    )
+
     doctor = add_export_commands(commands, _add_input, _positive_int).add_parser(
         "doctor",
         help="Validate local contracts; --live runs every stable minimum probe.",
@@ -457,15 +462,6 @@ def build_parser() -> argparse.ArgumentParser:
     objects_list = object_commands.add_parser("list")
     _add_input(objects_list)
     _add_all_pages(objects_list)
-
-    materials = commands.add_parser("materials")
-    material_commands = materials.add_subparsers(
-        dest="materials_command", required=True
-    )
-    for name in ("list", "tags", "reviews"):
-        item = material_commands.add_parser(name)
-        _add_input(item)
-        _add_all_pages(item)
 
     attribution = commands.add_parser("attribution")
     attribution_commands = attribution.add_subparsers(
@@ -924,7 +920,7 @@ def run(args: argparse.Namespace) -> Any:
     if args.command == "objects":
         return _domain_read(args, "objects.list")
     if args.command == "materials":
-        return _domain_read(args, f"materials.{args.materials_command}")
+        return dispatch_material_command(args, _object_input)
     if args.command == "attribution":
         return _attribution(args)
     raise ValueError("choose --dry-run or a command")

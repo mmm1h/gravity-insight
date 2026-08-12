@@ -175,6 +175,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `multidim_input_schema()` | 返回闭合的 `gravity-insight.multidim-input.v1` 机器输入合同；零网络 |
 | `prepare_multidim_query()` | 绑定 App 并本地预检 Multidim 物理输入；不执行查询、不回显 filter values |
 | `multidim_query()` | 校验实时指标后读取 Multidim 明细，可选 total 与全量分页 |
+| `material_performance()` | 按显式 App、日期窗和平台读取稳定素材表现；平台保序、共享预算、局部失败隔离 |
 | `analysis_vocabulary()` | 严格离线搜索已同步的 workspace 指标、标签、媒体枚举和模板目录 |
 | `table_lineage()` | 严格离线查询已同步的 account-scope 数据表版本与操作观察 |
 | `business_pulse()` | 并发读取 App 经营概览与趋势，可选 workspace scope 小时对比 |
@@ -330,6 +331,18 @@ max_workers=6, workspace=None)` 使用同一合同。直接入口 worker 默认 
 多个独立请求放在同一个 Plan 的同层节点，由 Plan 全局 pool 并发；不提供第二个 batch scheduler。
 Agent 和 SDK 不解释模板、布局、收藏、权限、图表，也不生成 App、指标、维度、日期、filter value
 或业务指标口径。
+
+## Material Performance
+
+`material_performance(apps, start, end, *, platforms=("bytedance", "tencent", "kuaishou",
+"bilibili"), max_workers=6, max_pages=1000, max_items=100000, workspace=None)` 接受一个 App
+alias/正整数或它们的显式序列。方法先解析并校验完整请求，随后才惰性构造 Insight client。
+
+实现只调用 stable `material.report.query`。每个平台一个 batch item，多个 App 合并在该 item 的
+`app_list`，HTTP 数为 `Σ P_platform`。direct worker 范围 1..24，实际平台池最多 4；每个平台
+分页 worker 固定 1。batch 将共享 item 预算按平台等额 floor 分配，未用份额不能借给 sibling。
+返回 `gravity-insight.material-performance.v1`，仅保留平台、白名单素材身份/物理指标、安全错误和
+分页收据。它不归一、换算、总计、排序、排名，也不解释业务或 Web opaque config。
 
 ## Plan v1
 

@@ -50,6 +50,10 @@ def command_requires_credentials(
         args, "multidim_command", None
     ) == "query":
         return _multidim_requires_credentials(args)
+    if getattr(args, "command", None) == "materials" and getattr(
+        args, "materials_command", None
+    ) == "performance":
+        return _material_requires_credentials(args)
     if bool(getattr(args, "live", False)):
         return True
     return bool(getattr(args, "network_required", True))
@@ -163,6 +167,42 @@ def _multidim_requires_credentials(args: Any) -> bool:
         return preview.get("ok") is True and preview.get("network_called") is False
     except (InputValidationError, OSError, TypeError, ValueError):
         return False
+
+
+def _material_requires_credentials(args: Any) -> bool:
+    """Offer login only after the complete Material request is locally valid."""
+
+    try:
+        from .material_cli import _split_values
+        from .material_performance import (
+            DEFAULT_PLATFORMS,
+            validate_material_performance_request,
+        )
+        from .workspace import load_workspace
+        from .workspace_app import resolve_workspace_app
+
+        output = getattr(args, "output", None)
+        if output is not None and (
+            not isinstance(output, str) or not output.strip() or output == "-"
+        ):
+            return False
+        workspace = load_workspace()
+        apps = [
+            resolve_workspace_app(workspace, value)
+            for value in _split_values(getattr(args, "app", []), field="app")
+        ]
+        validate_material_performance_request(
+            apps,
+            getattr(args, "start", None),
+            getattr(args, "end", None),
+            platforms=tuple(getattr(args, "platform", None) or DEFAULT_PLATFORMS),
+            max_workers=getattr(args, "concurrency", None),
+            max_pages=getattr(args, "max_pages", None),
+            max_items=getattr(args, "max_items", None),
+        )
+    except (InputValidationError, OSError, TypeError, ValueError):
+        return False
+    return True
 
 
 def _saved_app_valid(value: Any) -> bool:

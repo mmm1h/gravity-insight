@@ -260,6 +260,10 @@ def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
         from .agent_business_pulse import business_pulse_plan_request
 
         return business_pulse_plan_request(card)
+    if composite == "material_performance":
+        from .agent_material_performance import material_performance_plan_request
+
+        return material_performance_plan_request(card)
     return {"name": composite}
 
 
@@ -310,6 +314,10 @@ def _composite_product_requirements(
         )
 
         return list(BUSINESS_PULSE_REQUIRED_INPUTS), business_pulse_input_template()
+    if card.get("composite") == "material_performance":
+        from .agent_material_performance import material_performance_input_template
+
+        return ["apps", "start", "end"], material_performance_input_template()
     return None
 
 

@@ -154,14 +154,20 @@ def call_batch(
 ) -> Any:
     method = client.batch
     parameters = inspect.signature(method).parameters
+    accepts_options = any(
+        parameter.kind is inspect.Parameter.VAR_KEYWORD
+        for parameter in parameters.values()
+    )
     kwargs: dict[str, Any] = {}
     if "concurrency" in parameters:
         kwargs["concurrency"] = concurrency
-    elif "max_workers" in parameters:
+    elif "max_workers" in parameters or accepts_options:
         kwargs["max_workers"] = concurrency
-    if max_pages is not None and "max_pages" in parameters:
+    if max_pages is not None and ("max_pages" in parameters or accepts_options):
         kwargs["max_pages"] = max_pages
-    if max_total_items is not None and "max_total_items" in parameters:
+    if max_total_items is not None and (
+        "max_total_items" in parameters or accepts_options
+    ):
         kwargs["max_total_items"] = max_total_items
     return method([dict(item) for item in requests], **kwargs)
 

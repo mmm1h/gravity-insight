@@ -23,6 +23,7 @@ gravity analysis saved ...    列出、读取、准备或严格重放保存分�
 gravity apps snapshot         并发读取一个 App 的治理快照
 gravity attribution snapshot  并发读取一个 App 的归因配置快照
 gravity reports pulse         并发读取 App 经营概览与趋势
+gravity materials performance 读取稳定的跨平台素材表现
 ```
 
 任意命令都可在顶层显式选择项目配置：
@@ -126,6 +127,28 @@ input 只含 `date_list/time_dims/metrics_list/custom_metrics_list/data_dims/rel
 
 Multidim 不回放 template，不处理图表/透视、layout、收藏、拖拽、成员权限或业务指标语义；这些
 边界也不会通过 `--input` 扩张。
+
+## Material Performance
+
+`materials list/tags/reviews` 保持原有兼容入口；新产品使用独立子命令：
+
+```powershell
+gravity materials performance --app main --app secondary `
+  --start 2026-08-01 --end 2026-08-07 `
+  --platform bytedance --platform tencent `
+  --concurrency 6 --max-pages 20 --max-items 5000 `
+  --output tmp/material-performance.json
+```
+
+`--app` 可重复或逗号分隔，接受 workspace alias 或正整数；平台省略时为
+`bytedance/tencent/kuaishou/bilibili`。所有本地输入和输出路径先校验，之后才构造 client。
+命令只写完整 JSON，不提供 NDJSON，以免破坏平台分组、分页收据和 partial 失败信息。
+
+每个平台调用一次现有 stable `material.report.query` 并读取受控分页，多个 App 合并进该平台的
+`app_list`；HTTP 数为 `Σ P_platform`。direct worker 范围 1..24、默认 6，实际池不超过平台数且
+最多 4；每个平台分页 worker 固定 1。`max_items` 是共享声明预算，batch 实际给每个平台
+`floor(max_items/platform_count)` 的不可借用份额。结果按平台声明序，物理指标保持原名；不生成
+归一指标、总计、排名或业务结论。
 
 批量 wrapper 可由机器自描述，不需要猜 JSON 字段：
 
@@ -523,7 +546,7 @@ gravity plan run --input plan.json --concurrency 6
 | `run` | `selector`、`inputs`/`parameters`、可选 `app/start/end/all_pages` | operation 或 `@recipe` |
 | `sql_product` | `product` 及该 Workspace 产品的 App/时间输入 | 已登记产品，禁止裸 SQL |
 | `metadata_search` | `query`、可选 `kind/app_id/limit/offset` | 已同步的本地 catalog |
-| `composite` | `name`、组合所需 App/查询输入 | 仅登记的 analysis/segment query、context/dashboard/app/attribution snapshot、business pulse、multidim |
+| `composite` | `name`、组合所需 App/查询输入 | 仅登记的 analysis/segment query、context/dashboard/app/attribution snapshot、business pulse、multidim、material performance |
 
 每个节点还可声明 `depends_on`、标量 `bindings`、一个有限 `foreach`、`limits` 和
 `output_fields`。binding/foreach 的 `from` 必须显式位于 `depends_on`，路径使用 RFC 6901 JSON
