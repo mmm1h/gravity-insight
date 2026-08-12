@@ -179,6 +179,8 @@ HTTP 数为 `Σ P_platform`。direct worker 默认 6、最大 24，实际平台�
 Promotion Performance 只接收一个显式 App、日期窗、21 平台子集和物理指标数组；每个平台一个
 独立 batch item，输出保持平台声明序与原生字段。`bing/xiaohongshu/taptap/wechat_video` 继续使用
 兼容 raw 入口，不被伪装成同构报表；Agent 不选择 App、平台、指标，也不输出排名或投放建议。
+执行请求数为平台元数据请求 `P` 加各平台查询页数 `Σ pages`。direct 平台池默认 6、上限 24；
+平台内分页固定 1，Plan adapter 也固定 1，把跨节点并发留给 Plan 全局池。
 
 ### 候选能力不等于已交付能力
 
@@ -234,6 +236,7 @@ SQL 工具。
 | Saved analysis | 单个 reference 只执行一个已编译查询；Plan adapter 内固定分页 worker 1 | 多个互不依赖的保存分析放入同一 Plan，由全局 pool 并发，避免外层线程池 |
 | Multidim | CLI/SDK 默认 6、上限 24；metadata 与已知页数共享同一预算；Plan adapter 内固定 1 | 多个独立查询作为同层 Plan 节点，避免“节点 × metadata × 页数”并发放大 |
 | Material performance | CLI/SDK 默认 6、上限 24，实际平台池最多 4；每个平台分页 worker 固定 1；Plan adapter 内固定 1 | 平台 fan-out 与分页不相乘；多个独立请求交给 Plan 全局 pool |
+| Promotion performance | CLI/SDK 平台池默认 6、上限 24；每个平台分页 worker 固定 1；Plan adapter 内固定 1 | 21 平台 fan-out 与分页不相乘；不同 App 或物理指标集合用同层 Plan 节点 |
 | Segment snapshot | CLI/SDK 外层默认 3、上限 24；Plan adapter 内部固定 1 worker | 三源固定保序，Plan 全局 pool 管理跨节点并发 |
 | Plan DAG | 一个全局 worker pool，默认 6、上限 24；同层并发、依赖层串行；adapter 内分页 worker 固定 1 | 把交叉查询放进一个 Plan，避免并发乘法放大 |
 | Plan foreach | 每节点最多一个，默认最多 32 项、硬上限 64；不支持嵌套和笛卡尔积 | 只用于一个上游数组到一个目标字段的有限扇出 |
