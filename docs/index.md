@@ -17,6 +17,7 @@
 | 创建或下载异步导出 | [导出指南](guides/export.md) | [CLI 参考](reference/cli.md) |
 | 新增或升级 operation | [新增受控能力](maintainers/operations.md) | [维护者入口](maintainers/index.md) |
 | 判断能力应扩展到哪一层 | [扩展地图](maintainers/extending.md) | [新增受控能力](maintainers/operations.md) |
+| 查看架构热点与清理条件 | [技术债清单](maintainers/technical-debt.md) | [维护者入口](maintainers/index.md) |
 | 查看当前平台覆盖和不能直接上线的缺口 | [能力覆盖与缺口](capability-coverage.md) | [路由盘点](maintainers/census.md) |
 | 查看本轮 17 个候选的真实状态 | [候选能力证据矩阵](candidate-capability-matrix.md) | [探测安全](maintainers/probing.md) |
 | 探测生产接口 | [探测安全](maintainers/probing.md) | [路由盘点](maintainers/census.md) |
