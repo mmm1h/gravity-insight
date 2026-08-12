@@ -15,10 +15,12 @@ Usage:
   gravity agent --input <questions.json>
   gravity plan schema
   gravity plan run --input <plan.json>
+  gravity analysis saved list|get|prepare|run
   gravity reports pulse --app <alias|id> --start <date> --end <date>
   gravity insight <command> [options]
   gravity metadata sync --all-apps
   gravity metadata search|events|properties [query]
+  gravity metadata tables [query]
   gravity find <query>
   gravity recipe validate|check <name>
   gravity run @<recipe> [options]

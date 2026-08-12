@@ -19,6 +19,14 @@ from .domains import (
 from .errors import ContractChangedError, InputValidationError, UpstreamError
 from .find_metadata import search_metadata
 from .cli_limits import metadata_limit, nonnegative_int
+from .metadata_lineage import (
+    TABLE_LINEAGE_OPERATIONS,
+    add_table_lineage_commands,
+    create_table_lineage_schema,
+    lineage_catalog_values,
+    search_table_lineage,
+    sync_table_lineage,
+)
 from .runtime import call_batch
 
 
@@ -89,6 +97,7 @@ def add_metadata_commands(
         query.add_argument("--database", type=Path, default=None)
         query.add_argument("--limit", type=metadata_limit, default=20)
         query.add_argument("--offset", type=nonnegative_int, default=0)
+    add_table_lineage_commands(metadata_commands, sync)
     return apps_commands, metadata_commands
 
 
@@ -96,8 +105,16 @@ def run_metadata_command(args: Any, client_builder: Any) -> dict[str, Any]:
     if args.metadata_command == "sync":
         if not args.all_apps:
             raise InputValidationError("metadata sync currently requires --all-apps")
-        return sync_all_apps(
-            client_builder(args), database=args.database, concurrency=args.concurrency
+        options = {"database": args.database, "concurrency": args.concurrency}
+        if bool(args.include_table_lineage):
+            options["include_table_lineage"] = True
+        return sync_all_apps(client_builder(args), **options)
+    if args.metadata_command == "tables":
+        return search_table_lineage(
+            args.query,
+            database=args.database,
+            limit=args.limit,
+            offset=args.offset,
         )
     kind = {
         "search": "all",
@@ -156,6 +173,7 @@ def sync_all_apps(
     *,
     database: str | Path | None = None,
     concurrency: int = DEFAULT_CONCURRENCY,
+    include_table_lineage: bool = False,
 ) -> dict[str, Any]:
     """Download every readable app's stable Analysis metadata into SQLite."""
 
@@ -178,6 +196,7 @@ def sync_all_apps(
     temporary = _temporary_database(destination)
     failures: list[dict[str, Any]] = []
     operation_counts = {operation_id: 0 for operation_id in ANALYSIS_METADATA_OPERATIONS}
+    lineage_counts = {operation_id: 0 for operation_id in TABLE_LINEAGE_OPERATIONS}
     rows_written = 0
     try:
         with closing(sqlite3.connect(temporary)) as connection:
@@ -186,6 +205,10 @@ def sync_all_apps(
             operation_counts, failures, rows_written = _sync_operations(
                 connection, client, apps, concurrency, synced_at
             )
+            if include_table_lineage:
+                lineage_counts = sync_table_lineage(
+                    connection, client, concurrency, synced_at
+                )
             status = "partial" if failures else "success"
             _write_catalog_metadata(
                 connection,
@@ -194,6 +217,7 @@ def sync_all_apps(
                 app_count=len(apps),
                 rows_written=rows_written,
                 failure_count=len(failures),
+                lineage_counts=lineage_counts if include_table_lineage else None,
             )
             connection.commit()
         os.replace(temporary, destination)
@@ -202,7 +226,7 @@ def sync_all_apps(
         raise
 
     exit_code = _failure_exit_code(failures)
-    return {
+    result = {
         "schema_version": SCHEMA_VERSION,
         "ok": not failures,
         "status": "partial" if failures else "success",
@@ -218,6 +242,12 @@ def sync_all_apps(
         "failures_truncated": len(failures) > 20,
         "exit_code": exit_code,
     }
+    if include_table_lineage:
+        result.update(
+            table_lineage_included=True,
+            table_lineage_rows=lineage_counts,
+        )
+    return result
 
 
 def _load_apps(client: MetadataSyncClient) -> list[tuple[str, Mapping[str, Any]]]:
@@ -403,6 +433,7 @@ def _create_schema(connection: sqlite3.Connection) -> None:
         );
         """
     )
+    create_table_lineage_schema(connection)
     connection.execute(f"PRAGMA user_version = {DATABASE_SCHEMA_VERSION}")
 
 
@@ -478,6 +509,7 @@ def _write_catalog_metadata(
     app_count: int,
     rows_written: int,
     failure_count: int,
+    lineage_counts: Mapping[str, int] | None = None,
 ) -> None:
     values = {
         "schema_version": str(DATABASE_SCHEMA_VERSION),
@@ -487,6 +519,8 @@ def _write_catalog_metadata(
         "rows_written": str(rows_written),
         "failure_count": str(failure_count),
     }
+    if lineage_counts is not None:
+        values.update(lineage_catalog_values(lineage_counts))
     connection.executemany(
         "INSERT INTO catalog_metadata(key, value) VALUES (?, ?)", values.items()
     )

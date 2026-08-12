@@ -50,6 +50,14 @@ _EXPORTS = {
     "analysis_query_spec_schema": (".analysis_spec", "analysis_query_spec_schema"),
     "compile_query_spec": (".analysis_spec", "compile_query_spec"),
     "business_pulse": (".business_pulse", "business_pulse"),
+    "compile_saved_analysis_definition": (
+        ".saved_analysis", "compile_saved_analysis_definition"
+    ),
+    "execute_saved_analysis": (".saved_analysis", "execute_saved_analysis"),
+    "inspect_saved_analysis": (".saved_analysis", "inspect_saved_analysis"),
+    "list_saved_analyses": (".saved_analysis", "list_saved_analyses"),
+    "prepare_saved_analysis": (".saved_analysis", "prepare_saved_analysis"),
+    "resolve_saved_analysis": (".saved_analysis", "resolve_saved_analysis"),
 }
 
 for _error_name in (

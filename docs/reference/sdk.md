@@ -91,6 +91,12 @@ compiled = gravity.compile_analysis_query("event", event_spec, app="main")
 assert compiled["network_called"] is False
 event_result = gravity.analysis_query("event", event_spec, app="main")
 
+# 保存分析按显式引用读取；prepare 读取目录/详情但不执行最终查询。
+saved = gravity.saved_analyses("main")
+eligibility = gravity.get_saved_analysis("main", "daily purchases")
+prepared = gravity.prepare_saved_analysis("main", "daily purchases")
+replayed = gravity.run_saved_analysis("main", "daily purchases")
+
 # 并发读取经营概览与趋势；小时对比明确属于 workspace scope。
 pulse = gravity.business_pulse(
     ["main"], "2026-08-01", "2026-08-07",
@@ -118,6 +124,10 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `query_sql_products()` | `run_product_queries()`，支持单对象或批量、保序隔离失败 |
 | `compile_analysis_query()` | 把 Analysis Spec v1 编译为稳定 operation input 并运行离线输入校验；带筛选值时预览脱敏且不返回 Plan node；零网络请求 |
 | `analysis_query()` | 使用同一编译器执行 `event/funnel/retention/property/scatter` 稳定查询 |
+| `saved_analyses()` | 列出一个 App 的安全保存分析身份，不读取 opaque config |
+| `get_saved_analysis()` | 按 ID 或精确名称检查 Strict Replay 资格，不返回 config |
+| `prepare_saved_analysis()` | 读取保存定义并严格编译，不执行最终 Analysis 查询 |
+| `run_saved_analysis()` | 一次解析、严格编译并执行保存分析；不猜 Web 配置字段 |
 | `business_pulse()` | 并发读取 App 经营概览与趋势，可选 workspace scope 小时对比 |
 | `analysis_context()` | 固定 13 个 Analysis 词汇/模板来源，外层并发、局部失败隔离 |
 | `app_snapshot()` | 固定 6 个 App 治理来源，明确 company/App scope |
@@ -151,6 +161,12 @@ output_fields=None)` 支持 `event`、`funnel`、`retention`、`property`、`sca
 Spec 只简化结构，不替调用方决定语义：事件名、属性名、指标、聚合、日期、窗口、分组和条件
 必须显式填写。物理字段未知时，先通过 `gravity metadata search` 或本地 metadata API 确认，
 随后一次调用 `analysis_query()`；自然语言 capability discovery 不会自动执行查询。
+
+保存分析四个方法都接受 workspace App alias 或正整数。列表只返回受合同允许的身份字段；
+`get/prepare/run` 的 reference 只接受稳定 ID 或精确名称，歧义时失败。Strict Replay 仅支持
+`analysis_event/funnel/retention/scatter/user_property`，并要求保存 config 原样通过
+Analysis Spec v1 与 FieldPolicy。按 reference prepare 会读取在线目录和详情；只有直接调用
+公开 `compile_saved_analysis_definition()` 并提供本地 definition 才是零网络编译。
 
 `business_pulse(apps, start, end, *, platforms=(...), include_hourly=False,
 max_workers=6, max_pages=1000, max_items=100000, workspace=None)` 接受一个 App 或 App 序列；

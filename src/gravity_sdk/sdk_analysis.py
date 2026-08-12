@@ -9,6 +9,96 @@ from typing import Any
 class AnalysisSdkMixin:
     """Keep Analysis product helpers cohesive without growing the core facade."""
 
+    def saved_analyses(
+        self,
+        app: str | int | None = None,
+        *,
+        max_pages: int = 1_000,
+        max_items: int = 100_000,
+        workspace: Any | None = None,
+    ) -> dict[str, Any]:
+        """List safe saved-Analysis identities without fetching opaque configs."""
+
+        from .saved_analysis import list_saved_analyses
+
+        selected = self._select_workspace(workspace)
+        return list_saved_analyses(
+            self.insight,
+            app,
+            workspace=selected,
+            max_pages=max_pages,
+            max_items=max_items,
+        )
+
+    def prepare_saved_analysis(
+        self,
+        app: str | int | None,
+        reference: str | int | Mapping[str, Any],
+        *,
+        max_pages: int = 1_000,
+        max_items: int = 100_000,
+        workspace: Any | None = None,
+    ) -> dict[str, Any]:
+        """Resolve and strictly compile one saved definition without running it."""
+
+        from .saved_analysis import prepare_saved_analysis
+
+        selected = self._select_workspace(workspace)
+        return prepare_saved_analysis(
+            self.insight,
+            app=app,
+            reference=reference,
+            workspace=selected,
+            max_pages=max_pages,
+            max_items=max_items,
+        )
+
+    def get_saved_analysis(
+        self,
+        app: str | int | None,
+        reference: str | int | Mapping[str, Any],
+        *,
+        max_pages: int = 1_000,
+        max_items: int = 100_000,
+        workspace: Any | None = None,
+    ) -> dict[str, Any]:
+        """Inspect replay eligibility without returning opaque configuration."""
+
+        from .saved_analysis import inspect_saved_analysis
+
+        selected = self._select_workspace(workspace)
+        return inspect_saved_analysis(
+            self.insight,
+            reference,
+            app,
+            workspace=selected,
+            max_pages=max_pages,
+            max_items=max_items,
+        )
+
+    def run_saved_analysis(
+        self,
+        app: str | int | None,
+        reference: str | int | Mapping[str, Any],
+        *,
+        max_pages: int = 1_000,
+        max_items: int = 100_000,
+        workspace: Any | None = None,
+    ) -> dict[str, Any]:
+        """Resolve, strictly compile, and execute one saved Analysis reference."""
+
+        from .saved_analysis import execute_saved_analysis
+
+        selected = self._select_workspace(workspace)
+        return execute_saved_analysis(
+            self.insight,
+            app=app,
+            reference=reference,
+            workspace=selected,
+            max_pages=max_pages,
+            max_items=max_items,
+        )
+
     def compile_analysis_query(
         self,
         kind: str,

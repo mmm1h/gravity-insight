@@ -15,6 +15,7 @@ gravity run <selector>        单进程解析并执行 recipe 或 operation
 gravity sql <command>         受控 SQL 产品
 gravity census <command>      前端路由盘点
 gravity analysis context      并发读取一个 App 的分析上下文
+gravity analysis saved ...    列出、读取、准备或严格重放保存分析
 gravity apps snapshot         并发读取一个 App 的治理快照
 gravity attribution snapshot  并发读取一个 App 的归因配置快照
 gravity reports pulse         并发读取 App 经营概览与趋势
@@ -204,6 +205,42 @@ gravity analysis query --kind funnel --workspace . --app main `
 Spec 不接受自然语言，也不会猜测事件、属性、指标、窗口或筛选条件。物理字段未知时，先用
 本地 metadata 目录确认，再执行一次 spec；自然语言能力发现仍只返回候选，不会自动联网执行。
 原始 `--input` 入口继续兼容，但不能与 `--spec` 同时使用。
+
+### Saved Analysis v1
+
+保存分析入口把稳定的保存目录、详情读取和现有 Analysis Spec 编译器连成一条受控路径。已知
+引用时不要手工执行 `operations search/describe`，直接运行：
+
+```powershell
+# 浏览目录；list 不需要 --ref
+gravity analysis saved list --app main
+
+# 按稳定 ID 或精确名称查看受控定义摘要
+gravity analysis saved get --app main --ref <id-or-exact-name>
+
+# 读取定义并编译，但不执行最终分析查询
+gravity analysis saved prepare --app main --ref <id-or-exact-name>
+
+# 本地 definition 直接严格编译，零网络且不需要 Gravity 凭据
+gravity analysis saved prepare --app main --definition <json-object-or-file>
+
+# 一次解析、严格编译并执行
+gravity analysis saved run --app main --ref <id-or-exact-name>
+```
+
+`--app` 接受 workspace alias 或正整数。`--ref` 只接受稳定 ID 或精确名称；精确名称命中
+多个项目会以 caller/2 失败，要求改用稳定 ID，不会静默选择第一项。分析 kind 由保存定义
+中已登记的 subject 决定，调用方不能覆盖。
+
+Strict Replay 不是通用 Web 配置翻译器。只有定义中的紧凑 spec 能被当前 Analysis Spec
+编译器原样验证时，`prepare/run` 才继续；未知字段、无法证明的 opaque config 或不支持的
+分析 kind 均结构化失败，不降级为裸请求。`prepare --ref` 为解析引用会读取在线目录以及必要
+详情，所以它不是离线 dry-run；它与 `run` 的区别是不会发送最终分析查询。`list/get` 也会
+访问已登记的 stable 只读 operation。
+
+Agent 查询 `saved report templates`、`保存分析`，包括 `--domain report`，唯一强候选是
+`composite:saved_analysis`。卡片必填 `app/ref`，可选 `mode`，并提供可复制的 Plan
+节点；发现本身完全离线，也不会基于自然语言自动执行。
 
 ### Business pulse
 

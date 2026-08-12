@@ -77,6 +77,7 @@ from gravity_sdk.parents import add_parent_commands, run_parent_command
 from gravity_sdk.attribution import add_snapshot_command
 from gravity_sdk.analysis_spec_cli import add_analysis_query_arguments, run_analysis_query_command
 from gravity_sdk.business_pulse_cli import add_business_pulse_command
+from gravity_sdk.saved_analysis_cli import add_saved_analysis_commands
 from gravity_sdk.metadata_sync import (
     add_metadata_commands,
     run_analysis_metadata,
@@ -346,8 +347,7 @@ def build_parser() -> argparse.ArgumentParser:
         commands, _concurrency, _add_input, _add_all_pages
     )
 
-    analysis = commands.add_parser("analysis")
-    analysis_commands = analysis.add_subparsers(dest="analysis_command", required=True)
+    analysis_commands = add_saved_analysis_commands(commands, _positive_int)
     analysis_metadata = analysis_commands.add_parser("metadata")
     analysis_metadata.add_argument("--app-id", required=True)
     _add_input(analysis_metadata)
@@ -1219,13 +1219,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser = build_parser()
         args = parser.parse_args(argv)
         result = dispatch_command(args, _client, _object_input, nonempty_cli.runner(_object_input, run))
-        if isinstance(result, Mapping) and result.get("schema_version") in {
-            "gravity-insight.batch.v1",
-            "gravity-insight.metadata-sync.v1", "gravity-insight.resolver-batch.v1", "gravity-insight.attribution-snapshot.v1", "gravity-insight.composite.multidim.v1",
-            "gravity-insight.analysis-context.v1", "gravity-insight.app-snapshot.v1",
-            "gravity.resolver.v1",
-            "gravity.agent-batch.v1", "gravity.plan-result.v1",
-        }:
+        if isinstance(result, Mapping) and type(result.get("exit_code")) is int:
             _emit_success(args, result)
             return int(result.get("exit_code", 4))
         if isinstance(result, Mapping) and result.get("ok") is False:

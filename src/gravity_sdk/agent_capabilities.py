@@ -74,6 +74,45 @@ _COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
         },
     },
     {
+        "name": "saved_analysis",
+        "domain": "analysis",
+        "accepted_domains": ("analysis", "report"),
+        "aliases": (
+            "saved analysis",
+            "saved report template",
+            "saved report templates",
+            "saved report",
+            "保存分析",
+            "保存的分析",
+            "已存分析",
+            "保存报表模板",
+        ),
+        "intent_terms": ("saved", "save", "保存", "已存"),
+        "description": (
+            "按稳定引用列出、读取或严格重放保存分析；重放仅接受能由现有 "
+            "Analysis Spec 编译器原样验证的定义。"
+        ),
+        "required_inputs": ("app", "ref"),
+        "input_schema": {
+            "app": {
+                "type": "string|integer",
+                "required": True,
+                "nullable": False,
+            },
+            "ref": {
+                "type": "string|integer",
+                "required": True,
+                "nullable": False,
+            },
+            "mode": {
+                "type": "string",
+                "required": False,
+                "enum": ["prepare", "run"],
+                "default": "run",
+            },
+        },
+    },
+    {
         "name": "multidim",
         "domain": "report",
         "aliases": (
@@ -348,7 +387,11 @@ def _composite_card(
 ) -> dict[str, Any] | None:
     name = str(definition["name"])
     selected_domain = str(definition["domain"])
-    if domain is not None and domain != selected_domain:
+    accepted_domains = tuple(
+        str(value)
+        for value in definition.get("accepted_domains", (selected_domain,))
+    )
+    if domain is not None and domain not in accepted_domains:
         return None
     intent = tuple(str(value) for value in definition.get("intent_terms", ()))
     if intent and not any(term in query.casefold() for term in intent):
@@ -361,6 +404,7 @@ def _composite_card(
         name,
         name.replace("_", " "),
         selected_domain,
+        *accepted_domains,
         definition.get("description"),
         *aliases,
     )

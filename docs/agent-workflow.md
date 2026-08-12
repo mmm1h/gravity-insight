@@ -10,6 +10,8 @@
 | 已知 operation 和输入 schema | `gravity run <operation-id> ...` | 1 |
 | 已知 Analysis kind 和物理字段 | `gravity analysis query --kind <kind> --spec <spec>` | 1 |
 | 已知 Analysis kind，物理字段未知 | `metadata search` → `analysis query --spec` | 2 |
+| 已知保存分析引用 | `gravity analysis saved run --app ... --ref ...` | 1 |
+| 不知道保存分析引用 | `gravity agent "saved report templates"` → 执行返回的 Plan 节点 | 2 |
 | 已知 App 与经营时间窗 | `gravity reports pulse --app ... --start ... --end ...` | 1 |
 | 已知多个 selector 或已有 Plan | `gravity plan run --input <plan.json>` | 1 |
 | 已知 operation，不确定输入 | `gravity agent <operation-id>` → `run` | 2 |
@@ -23,6 +25,11 @@
 五种 Analysis kind（`event/funnel/retention/property/scatter`）使用 `gravity analysis query --kind <kind> --spec <json|file|->`，完整示例见 [CLI 参考](reference/cli.md#analysis-query-spec-v1)。物理字段已知时一次执行；未知时先 `gravity metadata search`，再一次 spec 执行。`--dry-run` 返回零网络的安全编译预览；带条件值时会脱敏并省略 Plan node。Spec 必须显式声明事件、指标、日期、窗口、分组和条件，不接受自然语言自动执行，也不要求调用方复制 Web wire 结构。
 
 经营概览和趋势直接一次调用 `gravity reports pulse --app main --start 2026-08-01 --end 2026-08-07 --include-hourly`；只有需要小时对比时加 `--include-hourly`，其结果是 `scope=workspace`。交叉 Plan 使用 composite `name=business_pulse` 和 `apps/start/end`，不要手工串行读取 overview/business。
+
+保存分析已知稳定 ID/精确名称时直接 `gravity analysis saved run --app ... --ref ...`，不要先串行
+list/get/prepare。Strict Replay 不猜 Web 配置；`prepare --ref` 会联网解析引用但不执行最终查询，
+显式 `--definition` 才是零网络编译。自然语言发现只返回 `composite:saved_analysis` 和缺失的
+`app/ref`，不会自动选择或执行。
 
 ## 1. 业务语义先在调用项目解析
 

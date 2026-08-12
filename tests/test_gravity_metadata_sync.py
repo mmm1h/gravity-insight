@@ -12,8 +12,13 @@ from unittest.mock import patch
 
 from gravity_sdk import cli
 from gravity_sdk.domains import ANALYSIS_METADATA_OPERATIONS
-from gravity_sdk.errors import ContractChangedError
+from gravity_sdk.errors import ContractChangedError, UpstreamError
 from gravity_sdk.find_metadata import search_metadata
+from gravity_sdk.metadata_lineage import (
+    TABLE_LINEAGE_OPERATIONS,
+    TABLE_OPERATION_LOG_OPERATION_ID,
+    search_table_lineage,
+)
 from gravity_sdk.metadata_sync import (
     _create_schema,
     _write_apps,
@@ -83,6 +88,52 @@ class FakeSyncClient:
                 }
             )
         return results
+
+
+class FakeLineageClient(FakeSyncClient):
+    def __init__(self, *, fail_lineage: bool = False) -> None:
+        super().__init__()
+        self.fail_lineage = fail_lineage
+
+    def batch(self, requests: list[dict], max_workers: int = 6):
+        if requests and all(
+            request["operation_id"] in TABLE_LINEAGE_OPERATIONS
+            for request in requests
+        ):
+            self.batch_calls.append((requests, max_workers))
+            results = []
+            for request in requests:
+                operation_id = request["operation_id"]
+                if self.fail_lineage and operation_id == TABLE_OPERATION_LOG_OPERATION_ID:
+                    results.append(
+                        {
+                            "ok": False,
+                            "status": "error",
+                            "data": None,
+                            "error": {
+                                "category": "upstream",
+                                "code": "UPSTREAM_UNAVAILABLE",
+                            },
+                        }
+                    )
+                    continue
+                row = {
+                    "id": f"source-{operation_id}",
+                    "table_id": "table-7",
+                    "version_id": "version-2",
+                    "create_time": "2026-08-12T01:02:03Z",
+                }
+                if operation_id == TABLE_OPERATION_LOG_OPERATION_ID:
+                    row.update(action_type="publish", action_sub_type="version")
+                results.append(
+                    {
+                        "ok": True,
+                        "status": "success",
+                        "data": {"status": "success", "data": {"list": [row]}},
+                    }
+                )
+            return results
+        return super().batch(requests, max_workers=max_workers)
 
 
 class MetadataSyncTests(unittest.TestCase):
@@ -191,6 +242,7 @@ class MetadataSyncTests(unittest.TestCase):
             self.assertEqual(2, result["app_count"])
             self.assertEqual(8, result["operation_count"])
             self.assertEqual(8, result["rows_written"])
+            self.assertNotIn("table_lineage_included", result)
             self.assertEqual(1, len(client.batch_calls))
             self.assertTrue(all(call[1] == 8 for call in client.batch_calls))
             self.assertEqual(
@@ -254,6 +306,68 @@ class MetadataSyncTests(unittest.TestCase):
             with self.assertRaises(ContractChangedError):
                 sync_all_apps(InvalidAppClient(), database=database)
             self.assertEqual(b"previous", database.read_bytes())
+
+    def test_opt_in_lineage_replaces_atomically_and_is_searchable_offline(self) -> None:
+        client = FakeLineageClient()
+        with tempfile.TemporaryDirectory() as temporary:
+            database = Path(temporary) / "metadata.sqlite3"
+            database.write_bytes(b"previous")
+            result = sync_all_apps(
+                client,
+                database=database,
+                concurrency=8,
+                include_table_lineage=True,
+            )
+            found = search_table_lineage("publish", database=database)
+
+        lineage_requests = client.batch_calls[-1][0]
+        self.assertEqual(list(TABLE_LINEAGE_OPERATIONS), [
+            item["operation_id"] for item in lineage_requests
+        ])
+        self.assertTrue(all(item["read_all"] for item in lineage_requests))
+        self.assertTrue(result["table_lineage_included"])
+        self.assertEqual(1, found["count"])
+        self.assertTrue(found["offline"])
+        self.assertEqual("account", found["scope"])
+        self.assertEqual(
+            {"table_id", "observed", "versions", "operations"},
+            set(found["results"][0]),
+        )
+        self.assertNotIn("name", found["results"][0])
+        self.assertNotIn("app_id", found["results"][0])
+        self.assertNotIn("current_version", found["results"][0])
+
+    def test_lineage_source_failure_preserves_previous_catalog(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            database = Path(temporary) / "metadata.sqlite3"
+            database.write_bytes(b"previous")
+            with self.assertRaises(UpstreamError):
+                sync_all_apps(
+                    FakeLineageClient(fail_lineage=True),
+                    database=database,
+                    include_table_lineage=True,
+                )
+            self.assertEqual(b"previous", database.read_bytes())
+
+    def test_metadata_tables_cli_does_not_build_a_client(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            database = Path(temporary) / "metadata.sqlite3"
+            sync_all_apps(
+                FakeLineageClient(),
+                database=database,
+                include_table_lineage=True,
+            )
+            stdout = io.StringIO()
+            with (
+                patch("gravity_sdk.cli.runtime.build_client") as build_client,
+                contextlib.redirect_stdout(stdout),
+            ):
+                exit_code = cli.main(
+                    ["metadata", "tables", "table-7", "--database", str(database)]
+                )
+        self.assertEqual(0, exit_code)
+        build_client.assert_not_called()
+        self.assertTrue(json.loads(stdout.getvalue())["observed"])
 
 
 if __name__ == "__main__":
