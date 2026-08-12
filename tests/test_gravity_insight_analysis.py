@@ -140,6 +140,43 @@ def event_inputs(**overrides: Any) -> dict[str, Any]:
 
 
 class GravityInsightAnalysisTests(unittest.TestCase):
+    def test_funnel_rejects_live_incompatible_user_property_type_offline(self) -> None:
+        manifest = repository_manifest("analysis.funnel.query")
+        inputs = json.loads(json.dumps(manifest["operations"][0]["live_probe"]["input"]))
+        inputs.update(
+            app_id="101",
+            query_id=QUERY_ID,
+            date_list=[{"start_date": "2026-08-07", "end_date": "2026-08-07"}],
+        )
+        for step in inputs["query_item_list"]:
+            step["event_name"] = "purchase"
+        inputs["global_conditions"] = [
+            {
+                "operator": "IN",
+                "field": "$ea_click_company",
+                "type": "user_property",
+                "value": ["bytedance"],
+            }
+        ]
+        client, transport = client_for(
+            "analysis.funnel.query",
+            handler=lambda *_args: (_ for _ in ()).throw(AssertionError("network")),
+        )
+
+        invalid = client.validate("analysis.funnel.query", inputs)
+        self.assertFalse(invalid["ok"])
+        self.assertEqual("INPUT_INVALID", invalid["error"]["code"])
+        self.assertEqual("global_conditions", invalid["error"]["field"])
+        self.assertIn("type to `user`", invalid["error"]["next_action"])
+        with self.assertRaises(InputValidationError):
+            client.read("analysis.funnel.query", inputs)
+
+        inputs["global_conditions"][0]["type"] = "user"
+        accepted = client.validate("analysis.funnel.query", inputs)
+        self.assertTrue(accepted["ok"])
+        self.assertEqual("needs_live_metadata", accepted["status"])
+        self.assertEqual([], transport.calls)
+
     def test_analysis_promoted_object_profile_is_fixed_and_supports_full_page(
         self,
     ) -> None:

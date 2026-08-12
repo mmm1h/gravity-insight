@@ -82,8 +82,23 @@ def validate_analysis_shape(
     validate_analysis_conditions(
         inputs.get("global_conditions", ()), references, "global_conditions"
     )
+    if query_kind == "funnel":
+        _reject_funnel_user_property_conditions(inputs.get("global_conditions", ()))
     _validate_query_kind_controls(query_kind, inputs, references)
     return references
+
+
+def _reject_funnel_user_property_conditions(value: Any) -> None:
+    if any(item.get("type") == "user_property" for item in value):
+        raise InputValidationError(
+            "analysis funnel global_conditions must use type 'user' for user "
+            "properties; request was not sent",
+            field="global_conditions",
+            next_action=(
+                "Change each funnel user-property condition type to `user`, then "
+                "retry the same request."
+            ),
+        )
 
 
 def _validate_property_query(
