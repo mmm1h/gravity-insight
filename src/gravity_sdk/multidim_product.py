@@ -32,6 +32,42 @@ _FIELDS = (
 )
 _REQUIRED = frozenset({"date_list", "time_dims", "metrics_list"})
 _TIME_DIMS = ("hour", "day", "week", "month", "total")
+_MAX_SCALAR_TEXT = 4_096
+_MAX_SCALAR_INT_BITS = 13_607
+_FILTER_OPERATORS = frozenset(
+    {
+        "EQUALS",
+        "IN",
+        "NOT_EQUALS",
+        "NOT_IN",
+        "CONTAINS",
+        "GT",
+        "GTE",
+        "LT",
+        "LTE",
+        "RANGE_IN",
+    }
+)
+_STATIC_FILTER_FIELDS = frozenset(
+    {
+        "advertiser_id",
+        "app_id",
+        "click_company",
+        "day",
+        "gid",
+        "hour",
+        "week",
+        "month",
+        "date",
+        "stat_time",
+    }
+)
+_DYNAMIC_FILTER_SOURCES = (
+    "data_dims",
+    "relate_dims",
+    "metrics_list",
+    "custom_metrics_list",
+)
 _FIELD_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_.-]*$")
 _NAME_LIMITS = {
     "metrics_list": 500,
@@ -50,7 +86,7 @@ def multidim_input_schema() -> dict[str, Any]:
         result = {
             "type": "array",
             "maxItems": _NAME_LIMITS[field],
-            "items": {"type": "string", "maxLength": 4_096},
+            "items": {"type": "string", "minLength": 1, "maxLength": 4_096},
         }
         if default:
             result["default"] = []
@@ -76,6 +112,10 @@ def multidim_input_schema() -> dict[str, Any]:
                 "type": "array",
                 "maxItems": _MAX_FILTERS,
                 "default": [],
+                "x-allowed-field-sources": {
+                    "static": sorted(_STATIC_FILTER_FIELDS),
+                    "input_fields": list(_DYNAMIC_FILTER_SOURCES),
+                },
                 "items": {
                     "type": "object",
                     "additionalProperties": False,
@@ -83,10 +123,8 @@ def multidim_input_schema() -> dict[str, Any]:
                     "properties": {
                         "field": {"type": "string", "minLength": 1, "maxLength": 128},
                         "operator": {
-                            "oneOf": [
-                                {"type": "string", "maxLength": 4_096},
-                                {"type": "integer"},
-                            ]
+                            "type": "string",
+                            "enum": sorted(_FILTER_OPERATORS),
                         },
                         "values": {
                             "type": "array",
@@ -125,7 +163,7 @@ def normalize_multidim_inputs(inputs: Mapping[str, Any]) -> dict[str, Any]:
     if missing:
         raise _input_error("multidimensional inputs are missing required fields", "inputs")
 
-    normalized = {
+    normalized: dict[str, Any] = {
         "date_list": _dates(inputs.get("date_list")),
         "time_dims": _time_dim(inputs.get("time_dims")),
         "metrics_list": _names(inputs.get("metrics_list"), "metrics_list"),
@@ -134,8 +172,16 @@ def normalize_multidim_inputs(inputs: Mapping[str, Any]) -> dict[str, Any]:
         ),
         "data_dims": _names(inputs.get("data_dims", []), "data_dims"),
         "relate_dims": _names(inputs.get("relate_dims", []), "relate_dims"),
-        "filters": _filters(inputs.get("filters", [])),
     }
+    _require_metric_for_dimensions(normalized)
+    allowed_fields = _STATIC_FILTER_FIELDS | {
+        item
+        for source in _DYNAMIC_FILTER_SOURCES
+        for item in normalized[source]
+    }
+    normalized["filters"] = _filters(
+        inputs.get("filters", []), allowed_fields=allowed_fields
+    )
     if "multi_keys" in inputs:
         normalized["multi_keys"] = _multi_keys(inputs.get("multi_keys"))
     return normalized
@@ -230,6 +276,7 @@ def run_multidim_query(
     return {
         **result,
         "app_id": canonical_app,
+        "input_schema_version": MULTIDIM_INPUT_SCHEMA_VERSION,
         "network_called": True,
         "query_executed": True,
     }
@@ -266,22 +313,34 @@ def _names(value: Any, field: str) -> list[str]:
     if not isinstance(value, (list, tuple)) or len(value) > _NAME_LIMITS[field]:
         raise _input_error(f"{field} must be a bounded string array", field)
     selected = list(value)
-    if any(
-        not isinstance(item, str)
-        or len(item) > 4_096
-        for item in selected
-    ):
-        raise _input_error(f"{field} must contain bounded strings", field)
+    if any(not isinstance(item, str) or not item or len(item) > 4_096 for item in selected):
+        raise _input_error(f"{field} must contain bounded non-empty strings", field)
     return selected
 
 
-def _filters(value: Any) -> list[dict[str, Any]]:
+def _require_metric_for_dimensions(inputs: Mapping[str, Any]) -> None:
+    if (
+        not inputs["metrics_list"]
+        and not inputs["custom_metrics_list"]
+        and (inputs["data_dims"] or inputs["relate_dims"])
+    ):
+        raise _input_error(
+            "data_dims/relate_dims require at least one selected metric",
+            "data_dims/relate_dims",
+        )
+
+
+def _filters(
+    value: Any, *, allowed_fields: frozenset[str] | set[str]
+) -> list[dict[str, Any]]:
     if not isinstance(value, (list, tuple)) or len(value) > _MAX_FILTERS:
         raise _input_error("filters must be a bounded array", "filters")
-    return [_filter_item(item) for item in value]
+    return [_filter_item(item, allowed_fields=allowed_fields) for item in value]
 
 
-def _filter_item(value: Any) -> dict[str, Any]:
+def _filter_item(
+    value: Any, *, allowed_fields: frozenset[str] | set[str]
+) -> dict[str, Any]:
     allowed = {"field", "operator", "values", "value"}
     if (
         not isinstance(value, Mapping)
@@ -291,6 +350,11 @@ def _filter_item(value: Any) -> dict[str, Any]:
     ):
         raise _input_error("filter items must match the closed product shape", "filters")
     field = _filter_field(value.get("field"))
+    if field not in allowed_fields:
+        raise _input_error(
+            "filter field is absent from the explicit Multidim controls",
+            "filters",
+        )
     operator = _filter_operator(value.get("operator"))
     value_key = "values" if "values" in value else "value"
     normalized = {"field": field, "operator": operator}
@@ -305,14 +369,9 @@ def _filter_field(value: Any) -> str:
     return value
 
 
-def _filter_operator(value: Any) -> str | int:
-    if (
-        isinstance(value, bool)
-        or not isinstance(value, (str, int))
-        or isinstance(value, str)
-        and len(value) > 4_096
-    ):
-        raise _input_error("filter operator must be a bounded string or integer", "filters")
+def _filter_operator(value: Any) -> str:
+    if not isinstance(value, str) or value not in _FILTER_OPERATORS:
+        raise _input_error("filter operator is not supported", "filters")
     return value
 
 
@@ -325,11 +384,13 @@ def _filter_values(value: Any) -> list[Any]:
 
 
 def _is_bounded_scalar(value: Any) -> bool:
-    if value is None or isinstance(value, (bool, int)):
+    if value is None or isinstance(value, bool):
         return True
+    if isinstance(value, int):
+        return value.bit_length() <= _MAX_SCALAR_INT_BITS
     if isinstance(value, float):
         return math.isfinite(value)
-    return isinstance(value, str) and len(value) <= 4_096
+    return isinstance(value, str) and len(value) <= _MAX_SCALAR_TEXT
 
 
 def _multi_keys(value: Any) -> list[int]:
@@ -356,10 +417,21 @@ def _multi_keys(value: Any) -> list[int]:
 def _positive_app_id(value: Any) -> str:
     if isinstance(value, bool) or not isinstance(value, (str, int)):
         raise _input_error("app_id must be a positive integer", "app_id")
-    rendered = str(value).strip()
-    if not rendered.isascii() or not rendered.isdigit() or int(rendered) <= 0:
+    if isinstance(value, int):
+        if value <= 0 or value.bit_length() > 426:
+            raise _input_error("app_id must be a bounded positive integer", "app_id")
+        rendered = str(value)
+    else:
+        rendered = value.strip()
+    if (
+        not rendered
+        or len(rendered) > 128
+        or not rendered.isascii()
+        or not rendered.isdigit()
+        or not any(character != "0" for character in rendered)
+    ):
         raise _input_error("app_id must be a positive integer", "app_id")
-    return str(int(rendered))
+    return rendered.lstrip("0")
 
 
 def _workers(value: Any) -> int:

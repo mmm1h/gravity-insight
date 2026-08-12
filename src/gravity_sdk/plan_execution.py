@@ -490,6 +490,8 @@ def detail_exit_code(detail: ErrorDetail) -> int:
 def category_action(category: str, code: str) -> str:
     if code.startswith("AUTH_") or "AUTH" in code:
         return "Run `gravity auth status`; refresh or configure credentials, then retry."
+    if code == "CONTRACT_CHANGED":
+        return "Stop automation until the governed contract is re-verified."
     if category == ErrorCategory.CALLER.value:
         return "Correct this node request, then retry."
     if category == ErrorCategory.UPSTREAM.value:

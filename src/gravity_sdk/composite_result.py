@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -9,10 +10,19 @@ from .errors import ErrorCategory, ErrorCode, ErrorDetail, exit_code_for_error
 
 
 _FAILURE_STATUSES = frozenset(
-    {"error", "semantic_error", "unavailable", "parent_required", "permission_unavailable"}
+    {
+        "error",
+        "semantic_error",
+        "unavailable",
+        "parent_required",
+        "permission_unavailable",
+    }
 )
+_SUCCESS_STATUSES = frozenset({"success", "empty"})
+_CONTRACT_STATUSES = frozenset({"contract_changed", "contract_changed_additive"})
 _STATUS_CODES = {
     "contract_changed": ErrorCode.CONTRACT_CHANGED,
+    "contract_changed_additive": ErrorCode.CONTRACT_CHANGED,
     "parent_required": ErrorCode.PARENT_REQUIRED,
     "permission_unavailable": ErrorCode.PERMISSION_UNAVAILABLE,
 }
@@ -52,20 +62,29 @@ def multidim_envelope(
             else "Consume query and total; continue only from a bounded query envelope."
         ),
         "validation": dict(validation),
-        "query": _safe_component(query, query_failure),
-        "total": _safe_component(total, total_failure),
+        "query": _safe_component(
+            query, query_failure, operation_id=query_operation
+        ),
+        "total": _safe_component(
+            total, total_failure, operation_id=total_operation
+        ),
     }
 
 
 def combined_status(statuses: Sequence[str]) -> str:
-    if any(status in _FAILURE_STATUSES for status in statuses):
-        successes = {"success", "empty", "contract_changed"}
-        return "partial" if any(status in successes for status in statuses) else "error"
-    if "contract_changed" in statuses:
+    selected = list(statuses)
+    if any(status in _CONTRACT_STATUSES for status in selected):
         return "contract_changed"
-    if statuses and all(status == "empty" for status in statuses):
+    failed = any(status in _FAILURE_STATUSES for status in selected)
+    unknown = any(
+        status not in _SUCCESS_STATUSES | _FAILURE_STATUSES | _CONTRACT_STATUSES
+        for status in selected
+    )
+    if failed or unknown:
+        return "partial" if any(status in _SUCCESS_STATUSES for status in selected) else "error"
+    if selected and all(status == "empty" for status in selected):
         return "empty"
-    return "success"
+    return "success" if selected else "error"
 
 
 def _failure(
@@ -81,7 +100,12 @@ def _failure(
     raw_value = envelope.get("error")
     raw = raw_value if isinstance(raw_value, Mapping) else {}
     code = raw.get("code", _STATUS_CODES.get(status, ErrorCode.UPSTREAM_UNAVAILABLE))
-    category = raw.get("category") if raw.get("category") in _CATEGORIES else None
+    raw_category = raw.get("category")
+    category = (
+        raw_category
+        if isinstance(raw_category, str) and raw_category in _CATEGORIES
+        else None
+    )
     try:
         detail = _error_detail(stage, status, operation_id, code, category, raw)
     except (TypeError, ValueError):
@@ -131,15 +155,66 @@ def _fallback_detail(stage: str, operation_id: str) -> ErrorDetail:
 def _safe_component(
     envelope: Mapping[str, Any] | None,
     failure: tuple[str, ErrorDetail] | None,
+    *,
+    operation_id: str,
 ) -> dict[str, Any] | None:
-    if envelope is None or failure is None:
-        return dict(envelope) if envelope is not None else None
-    return {
-        "schema_version": envelope.get("schema_version"),
+    if envelope is None:
+        return None
+    if failure is None:
+        selected: dict[str, Any] = {
+            "operation_id": operation_id,
+            "ok": True,
+            "status": str(envelope["status"]),
+            "data": copy.deepcopy(envelope["data"]),
+        }
+        if envelope.get("schema_version") == "gravity-insight.read.v1":
+            selected["schema_version"] = envelope["schema_version"]
+        fingerprint = envelope.get("schema_fingerprint")
+        if (
+            isinstance(fingerprint, str)
+            and len(fingerprint) == 64
+            and all(character in "0123456789abcdef" for character in fingerprint)
+        ):
+            selected["schema_fingerprint"] = fingerprint
+        if isinstance(envelope.get("truncated"), bool):
+            selected["truncated"] = envelope["truncated"]
+        page = _safe_page(envelope.get("page"))
+        if page is not None:
+            selected["page"] = page
+        return selected
+    selected = {
+        "operation_id": operation_id,
         "ok": False,
         "status": str(envelope.get("status", "error")),
         "error": failure[1].to_dict(),
     }
+    if envelope.get("schema_version") == "gravity-insight.read.v1":
+        selected["schema_version"] = envelope["schema_version"]
+    return selected
+
+
+def _safe_page(value: Any) -> dict[str, Any] | None:
+    if not isinstance(value, Mapping):
+        return None
+    selected = {
+        key: item
+        for key, item in value.items()
+        if key
+        in {
+            "number",
+            "size",
+            "item_count",
+            "total_pages",
+            "total_items",
+            "pages_fetched",
+            "max_workers",
+        }
+        and type(item) is int
+        and item >= 0
+    }
+    if isinstance(value.get("has_more"), bool):
+        selected["has_more"] = value["has_more"]
+    return selected or None
 
 
 def _failure_exit_code(failure: tuple[str, ErrorDetail]) -> int:

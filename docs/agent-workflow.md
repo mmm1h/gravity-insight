@@ -44,9 +44,9 @@
 
 分群检查已知精确 ID/名称与日期时直接 `gravity analysis segment snapshot --app ... --ref ... --date ...`；固定返回 detail/history/daily_result，不读取规则或成员。未知时只有同时表达分群快照/检查、详情、历史和单日计算结果的强意图才返回 `segment_snapshot` 卡；补齐 `app/ref/date` 后一次 Plan 执行，自然语言不自动执行。
 
-### Multidim：使用物理输入，不新增 Spec
+### Multidim
 
-Multidim 直接使用闭合的 `date_list/time_dims/metrics_list/custom_metrics_list/data_dims/relate_dims/filters/multi_keys` 物理输入；它没有第二套 Spec DSL。已知 App 和完整输入时直接一次 CLI/SDK 调用；不知道入口时，Agent 对明确的中英文多维查询意图只返回 `composite:multidim`，调用方填写 `app/inputs`，并明确选择 `include_total/read_all` 后执行一次 Plan，共两次。Agent 不选择 App、指标、维度、日期或 filter value，也不会把模板、布局、收藏、权限、经营 pulse 或 event/funnel Analysis 路由到这里。
+Multidim 使用物理输入，不新增 Spec。它直接使用闭合的 `date_list/time_dims/metrics_list/custom_metrics_list/data_dims/relate_dims/filters/multi_keys` 物理输入；已知 App 和完整输入时直接一次 CLI/SDK 调用；不知道入口时，Agent 对明确的中英文多维查询意图只返回 `composite:multidim`，调用方填写 `app/inputs`，并明确选择 `include_total/read_all` 后执行一次 Plan，共两次。Agent 不选择 App、指标、维度、日期或 filter value，也不会把模板、布局、收藏、权限、经营 pulse 或 event/funnel Analysis 路由到这里。
 
 多个独立多维查询作为同层节点放进一个 Plan，由全局 worker pool 并发；不要建立 batch wrapper
 或逐条启动进程。直接 CLI/SDK 默认 6 workers、最大 24；Plan adapter 内固定 1，避免节点并发与

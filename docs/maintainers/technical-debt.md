@@ -15,9 +15,8 @@
 
 ## 当前条目
 
-| Owner area | 当前证据 | 本轮动作 | 状态与退出条件 |
-| --- | --- | --- | --- |
-| CLI domain routing | `cli.py` 集中注册和分派多个领域，修改 Multidim 会继续扩大热点 | 把 Multidim parser/dispatch 移入 `multidim_cli.py`，`cli.py` 只保留 hook | 本轮目标；合流后以 CLI 净减、旧命令/help/输出兼容和全门禁为退出证据 |
-| Plan composite routing | `plan_adapters.py` 已在质量上限附近，Multidim 校验/执行/投影仍内嵌 | 移入 `plan_multidim_adapter.py`，通用文件只显式路由 | 本轮目标；合流后以 adapter 独立覆盖预检/绑定/预算且通用文件净减为退出证据 |
-| Composite domain mixing | `CompositeService` 同时承担 snapshot 与 Multidim metadata/query；节点 worker 未传到 metadata loader | 下沉 Multidim service，保留兼容薄委托 | 本轮目标；合流后证明 direct/Plan 共用 worker 预算且兼容委托不再增长 |
-| Agent opaque composite | Multidim 卡只显示 `inputs: object` 且 plan request 缺槽位 | 独立 `agent_multidim.py` 输出闭合机器 schema和显式模板 | Agent 分支已实现；待 core schema 合流及全门禁后删除本条，不提前宣称整轮收口 |
+当前没有经源码和质量门禁证明、且仍未安排退出条件的 Multidim 结构债务。
+
+本轮已把 CLI 路由、Plan adapter、Multidim service 和 Agent 卡分别下沉到领域模块；通用入口只保留
+薄路由，direct/Plan 共用 worker 预算，旧 raw 合同继续兼容。后续若这些模块再次触发机器 ratchet，
+再以当时的源码证据登记新条目，不保留已经关闭的历史任务。

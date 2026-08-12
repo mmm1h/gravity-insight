@@ -335,6 +335,7 @@ Multidim 继续使用登记的 `name="multidim"`，不新增 composite 名或 Sp
       "kind": "composite",
       "request": {
         "name": "multidim",
+        "input_schema_version": "gravity-insight.multidim-input.v1",
         "app": "main",
         "inputs": {
           "date_list": ["2026-08-01", "2026-08-07"],
@@ -354,16 +355,18 @@ Multidim 继续使用登记的 `name="multidim"`，不新增 composite 名或 Sp
 }
 ```
 
-`app/inputs` 必填，`include_total/read_all` 显式布尔且默认 false。动态 target 兼容 `/app` 和
-当前 `report.multidim.query` schema 登记的 `/inputs/<field>`；后者覆盖八个 product 字段以及仍在
-operation 合同中的 legacy 字段，不硬编码成一份会漂移的名单。通用标量 binding/foreach 规则
-仍然适用，`include_total/read_all/metadata_inputs` 不可绑定。Agent 不创建 binding，也不生成指标、
+Agent 产品请求以固定 `input_schema_version="gravity-insight.multidim-input.v1"` 选择闭合物理输入；
+省略该字段时保持旧 raw Plan 语义，避免历史请求被新规则接管。`app/inputs` 必填，
+`include_total/read_all` 为显式布尔且默认 false。动态 target 只接受 `/app`、两个布尔开关和
+真正标量的输入字段：产品模式为 `/inputs/time_dims`；legacy 模式按当前 operation schema 接受
+登记的标量字段。数组或对象不能接收 Plan 的标量 binding/foreach，预检会直接拒绝。Agent
+不创建 binding，也不生成指标、
 维度、日期或 filter 值。adapter 内部 worker 固定 1；多个独立查询作为同层节点交给 Plan 全局
 pool，并保持声明顺序。一次执行的 HTTP
 数为去重 metadata `M` + query 页数 `P` + 可选一次 total；total 依赖 query，不能并发提前执行。
 
 Agent 对明确的中英文多维查询意图返回唯一 `composite:multidim` 卡，完整展开闭合 input schema
-以及可机械填写的 `name/app/inputs/include_total/read_all` request。已知完整输入一次执行；未知
+以及可机械填写的 `name/input_schema_version/app/inputs/include_total/read_all` request。已知完整输入一次执行；未知
 入口是 Agent + Plan 两次。模板、layout、收藏、权限、经营 pulse 和五类 Analysis 查询均不由
 本 composite 接管。
 

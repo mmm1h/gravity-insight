@@ -14,7 +14,7 @@ from typing import Any, Mapping, Protocol, Sequence
 
 from .cache import is_metadata_operation
 from .composite_batch import validate_composite_bounds
-from .composite_result import multidim_envelope, should_calculate_total
+from .composite_result import multidim_envelope
 from ._field_policy_operations import (
     REPORT_MULTIDIM_CUSTOM_METRIC,
     REPORT_MULTIDIM_METRIC,
@@ -39,6 +39,19 @@ CUSTOM_METRIC_OPERATIONS = (
     REPORT_MULTIDIM_SHARED_METRIC,
 )
 MAX_MULTIDIM_WORKERS = 24
+_SUCCESS_RESULT_STATUSES = frozenset({"success", "empty"})
+_FAILURE_RESULT_STATUSES = frozenset(
+    {
+        "contract_changed",
+        "contract_changed_additive",
+        "semantic_error",
+        "error",
+        "unavailable",
+        "parent_required",
+        "permission_unavailable",
+    }
+)
+_KNOWN_RESULT_STATUSES = _SUCCESS_RESULT_STATUSES | _FAILURE_RESULT_STATUSES
 
 
 class _PublicClient(Protocol):
@@ -107,10 +120,15 @@ class MultidimService:
             if read_all
             else self._client.read(MULTIDIM_QUERY_OPERATION, supplied)
         )
-        _validate_query_result(query)
-        _enforce_query_item_budget(query, items)
+        _validate_result_component(
+            query,
+            operation_id=MULTIDIM_QUERY_OPERATION,
+            label="query",
+        )
+        if query["status"] in _SUCCESS_RESULT_STATUSES:
+            _enforce_query_item_budget(query, items)
         total: dict[str, Any] | None = None
-        if include_total and should_calculate_total(query):
+        if include_total and query["status"] == "success":
             calc_schema = self._client.schema(MULTIDIM_TOTAL_OPERATION)
             input_schema = calc_schema.get("input_fields", {})
             if not isinstance(input_schema, Mapping) or "data_list" not in input_schema:
@@ -121,6 +139,11 @@ class MultidimService:
             calc_inputs = {key: value for key, value in supplied.items() if key in allowed}
             calc_inputs["data_list"] = _rows(query)
             total = self._client.read(MULTIDIM_TOTAL_OPERATION, calc_inputs)
+            _validate_result_component(
+                total,
+                operation_id=MULTIDIM_TOTAL_OPERATION,
+                label="total",
+            )
         return multidim_envelope(
             validation,
             query,
@@ -141,8 +164,10 @@ class MultidimService:
             inputs.get("custom_metrics_list", []), "custom_metrics_list"
         )
         data_dims = _string_values(inputs.get("data_dims", []), "data_dims")
+        relate_dims = _string_values(inputs.get("relate_dims", []), "relate_dims")
+        dimensions = [*data_dims, *relate_dims]
         if not metrics and not custom_metrics:
-            return _no_metric_validation(data_dims)
+            return _no_metric_validation(dimensions)
 
         requested_operations = (
             ((STANDARD_METRIC_OPERATION,) if metrics else ())
@@ -154,13 +179,13 @@ class MultidimService:
             max_workers=max_workers,
         )
         selected_rows = _selected_metric_rows(metrics, custom_metrics, sources)
-        _validate_exclusions(selected_rows, data_dims)
+        _validate_exclusions(selected_rows, dimensions)
         return {
-            "status": "validated" if not data_dims else "validated_exclusions_only",
+            "status": "validated" if not dimensions else "validated_exclusions_only",
             "metrics": "validated_live",
-            "data_dims": "exclusion_checked" if data_dims else "not_requested",
+            "data_dims": "exclusion_checked" if dimensions else "not_requested",
             "metrics_checked": len(selected_rows),
-            "data_dims_checked": len(data_dims),
+            "data_dims_checked": len(dimensions),
             "metadata_operations": list(sources),
         }
 
@@ -335,15 +360,42 @@ def _query_item_count(envelope: Mapping[str, Any]) -> int:
     return max(counts)
 
 
-def _validate_query_result(envelope: Any) -> None:
+def _validate_result_component(
+    envelope: Any, *, operation_id: str, label: str
+) -> None:
     if not isinstance(envelope, Mapping):
-        raise ContractChangedError("multidimensional query returned an invalid envelope")
-    if envelope.get("status") not in {"success", "empty"}:
-        return
-    data = envelope.get("data")
-    if not isinstance(data, Mapping) or not isinstance(data.get("list"), list):
         raise ContractChangedError(
-            "multidimensional query no longer returns its required data.list"
+            f"multidimensional {label} returned an invalid envelope"
+        )
+    status = envelope.get("status")
+    if not isinstance(status, str) or status not in _KNOWN_RESULT_STATUSES:
+        raise ContractChangedError(
+            f"multidimensional {label} returned an unknown status"
+        )
+    identity = envelope.get("operation_id")
+    if identity is not None and identity != operation_id:
+        raise ContractChangedError(
+            f"multidimensional {label} operation identity changed"
+        )
+    if status not in _SUCCESS_RESULT_STATUSES:
+        if envelope.get("ok") is True:
+            raise ContractChangedError(
+                f"multidimensional {label} failure has a success marker"
+            )
+        return
+    if envelope.get("ok") is False:
+        raise ContractChangedError(
+            f"multidimensional {label} success has a failure marker"
+        )
+    data = envelope.get("data")
+    rows = data.get("list") if isinstance(data, Mapping) else None
+    if not isinstance(rows, list) or any(not isinstance(row, Mapping) for row in rows):
+        raise ContractChangedError(
+            f"multidimensional {label} no longer returns mapped data.list rows"
+        )
+    if status == "empty" and rows:
+        raise ContractChangedError(
+            f"multidimensional {label} empty status contains rows"
         )
 
 

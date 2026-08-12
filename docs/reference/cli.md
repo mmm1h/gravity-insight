@@ -113,6 +113,10 @@ gravity multidim query --app main --input <query.json> --include-total `
   --all-pages --max-pages 20 --max-items 5000 --concurrency 6
 ```
 
+产品 dry-run 必须显式写在子命令后并提供 App：`gravity multidim query --app main --input ... --dry-run`。
+根级 `gravity --dry-run` 是全仓合同自检，不能与任何命令组合；缺少 `--app` 的 live query 保持旧 raw
+入口语义，因此不会用 workspace 默认 App 冒充同一产品请求。
+
 input 只含 `date_list/time_dims/metrics_list/custom_metrics_list/data_dims/relate_dims/filters/multi_keys`。
 `--app` 接受 workspace alias 或正整数；它与兼容的 `--app-id` 不能冲突。Agent 不会填 App、指标、
 维度、日期或 filter value。直接执行默认 6 workers、最大 24；Plan adapter 固定 1。`--include-total`

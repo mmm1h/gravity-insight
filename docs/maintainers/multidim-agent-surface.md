@@ -3,10 +3,10 @@
 本页记录 Multidim 产品化的实现决策。它是开发边界，不是新的 Gravity operation，也不是一套
 平行查询语言。
 
-## 现状与目标
+## 交付前断点与本轮结果
 
 `report.multidim.query`、`report.multidim.calc_total`、标准/自定义/共享指标目录、动态列投影、
-分页和 `CompositeService.multidim_query()` 均已有 stable 合同。当前断点在产品表面：
+分页和 `CompositeService.multidim_query()` 均已有 stable 合同。本轮开始时的产品表面断点是：
 
 - `GravitySDK` 没有直接的 Multidim 方法；
 - Agent 的 composite 卡只把 `inputs` 描述为不透明 object，Plan node 只有 `name`；
@@ -14,7 +14,8 @@
 - Plan 使用通用 composite 投影和计数，可能裁掉 `query`，且不能按 `query.data.list` 执行预算；
 - Plan 虽把 query 分页 worker 固定为 1，指标 metadata loader 仍会在节点内自行并发。
 
-目标是让调用方直接使用已经稳定的物理输入，不再从 Web 反推参数，同时保持旧 raw 入口兼容。
+本轮已用独立 product/service、CLI/SDK/Plan adapter 和 Agent 卡关闭上述断点：调用方直接使用
+稳定的物理输入，不再从 Web 反推参数，同时保持旧 raw 入口兼容。
 
 ## 决策：复用 raw 合同，不新增 Spec DSL
 
@@ -47,7 +48,8 @@ input，App 在 input 外单独绑定，并由产品入口覆盖唯一 `app_id` 
 - SDK：`GravitySDK.multidim_query(inputs, *, app, include_total=False, read_all=False,
   max_pages=1000, max_items=100000, max_workers=6, workspace=None)`；离线预检使用同一产品模块。
 - Plan：继续使用 `composite` / `name=multidim`，不新增第二个 composite 名。request 显式包含
-  `app/inputs/include_total/read_all`；专属 adapter 负责预检、App 绑定、安全结果和预算。
+  `name/input_schema_version/app/inputs/include_total/read_all`；专属 adapter 负责预检、App 绑定、
+  安全结果和预算。
 - Agent：继续发布唯一 `composite:multidim` 卡，但展开完整机器 input schema、必填槽位和可复制
   Plan request；自然语言永不选择 App、指标、维度、日期或 filter value。
 

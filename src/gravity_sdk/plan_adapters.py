@@ -58,7 +58,7 @@ _SQL_FIELDS = frozenset({"product", "start", "end", "app_id", "app_ids"})
 _COMPOSITE_FIELDS = frozenset(
     {
         "name", "app", "apps", "ref", "mode", "start", "end", "platforms", "include_hourly",
-        "inputs", "include_total", "read_all", "metadata_inputs",
+        "inputs", "include_total", "read_all", "metadata_inputs", "input_schema_version",
     }
 )
 _COMPOSITES = frozenset(

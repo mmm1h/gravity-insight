@@ -22,7 +22,7 @@ def _inputs() -> dict[str, object]:
         "metrics_list": ["ap_cost"],
         "custom_metrics_list": ["custom_cost"],
         "data_dims": [],
-        "filters": [{"field": "country", "operator": "IN", "values": ["CN"]}],
+        "filters": [{"field": "click_company", "operator": "IN", "values": ["CN"]}],
     }
 
 
@@ -62,18 +62,42 @@ class GravityMultidimProductTests(unittest.TestCase):
         self.assertEqual(["date_list", "time_dims", "metrics_list"], schema["required"])
         self.assertEqual(500, schema["properties"]["metrics_list"]["maxItems"])
         self.assertEqual(100, schema["properties"]["data_dims"]["maxItems"])
+        self.assertEqual(
+            [
+                "CONTAINS", "EQUALS", "GT", "GTE", "IN", "LT", "LTE",
+                "NOT_EQUALS", "NOT_IN", "RANGE_IN",
+            ],
+            schema["properties"]["filters"]["items"]["properties"]["operator"]["enum"],
+        )
         cases = [
             {**_inputs(), "page": 1},
             {**_inputs(), "date_list": ["2026-8-1", "2026-08-07"]},
             {**_inputs(), "date_list": ["2026-08-08", "2026-08-07"]},
             {**_inputs(), "metrics_list": ["x"] * 501},
+            {**_inputs(), "metrics_list": [""]},
             {**_inputs(), "filters": [{"field": "x", "operator": False, "values": []}]},
+            {**_inputs(), "filters": [{"field": "x", "operator": 1, "values": []}]},
+            {**_inputs(), "filters": [{"field": "x", "operator": "EQUALS", "values": []}]},
             {**_inputs(), "filters": [{"field": "x", "operator": "IN", "values": [[1]]}]},
+            {
+                **_inputs(),
+                "filters": [
+                    {"field": "click_company", "operator": "IN", "values": [1 << 13_607]}
+                ],
+            },
             {**_inputs(), "multi_keys": [7, 2]},
+            {**_inputs(), "metrics_list": [], "custom_metrics_list": [], "data_dims": ["country"]},
+            {**_inputs(), "metrics_list": [], "custom_metrics_list": [], "relate_dims": ["country"]},
         ]
         for value in cases:
             with self.subTest(value=value), self.assertRaises(InputValidationError):
                 normalize_multidim_inputs(value)
+        dynamic = {
+            **_inputs(),
+            "data_dims": ["country"],
+            "filters": [{"field": "country", "operator": "EQUALS", "values": ["CN"]}],
+        }
+        self.assertEqual("country", normalize_multidim_inputs(dynamic)["filters"][0]["field"])
 
     def test_binding_replaces_app_filters_and_prepare_is_value_safe_offline(self) -> None:
         supplied = _inputs()
@@ -92,6 +116,9 @@ class GravityMultidimProductTests(unittest.TestCase):
         self.assertNotIn("inputs", preview)
         self.assertNotIn("plan_node", preview)
         self.assertNotIn("CN", repr(preview))
+        for app_id in ("9" * 129, 10**5000):
+            with self.subTest(app_id_type=type(app_id)), self.assertRaises(InputValidationError):
+                bind_multidim_app(supplied, app_id)
 
     def test_plan_worker_budget_is_sequential_and_query_receives_same_budget(self) -> None:
         client = _Client()
@@ -129,6 +156,68 @@ class GravityMultidimProductTests(unittest.TestCase):
         client.read = lambda *_args, **_kwargs: {"status": "success", "data": {"list": {}}}
         with self.assertRaises(ContractChangedError):
             run_multidim_query(client, value, app_id=7)
+
+    def test_result_contract_is_strict_and_drops_request_values(self) -> None:
+        value = {**_inputs(), "metrics_list": [], "custom_metrics_list": []}
+        malformed = [
+            {"data": {"list": []}},
+            {"status": "mystery", "data": {"list": []}},
+            {"status": "success", "data": {"list": [1]}},
+            {"status": "empty", "data": {"list": [{"day": "2026-08-01"}]}},
+        ]
+        for response in malformed:
+            client = _Client()
+            client.read = lambda *_args, response=response, **_kwargs: response
+            with self.subTest(response=response), self.assertRaises(ContractChangedError):
+                run_multidim_query(client, value, app_id=7)
+
+        client = _Client()
+        client.read = lambda *_args, **_kwargs: {
+            "schema_version": "gravity-insight.read.v1",
+            "operation_id": "report.multidim.query",
+            "status": "success",
+            "data": {"list": [{"day": "2026-08-01"}]},
+            "page": {"item_count": 1, "has_more": False, "private": "token=secret"},
+            "request": {"inputs": {"filters": ["token=secret"]}},
+            "next_page_input": {"filters": ["token=secret"]},
+            "source": {"private": "token=secret"},
+            "fetched_at": "token=secret",
+            "warnings": ["token=secret"],
+        }
+        safe = run_multidim_query(client, value, app_id=7)
+        self.assertEqual(
+            {"schema_version", "operation_id", "ok", "status", "data", "page"},
+            set(safe["query"]),
+        )
+        self.assertNotIn("token=secret", repr(safe))
+
+        failure = _Client()
+        failure.read = lambda *_args, **_kwargs: {
+            "ok": False,
+            "status": "error",
+            "data": {"list": [{"private": "token=secret"}]},
+            "error": {"code": "UPSTREAM_UNAVAILABLE", "message": "token=secret"},
+        }
+        failed = run_multidim_query(failure, value, app_id=7, include_total=True)
+        self.assertFalse(failed["ok"])
+        self.assertEqual("error", failed["status"])
+        self.assertNotIn("data", failed["query"])
+        self.assertFalse(any(call[1] == "report.multidim.calc_total" for call in failure.calls))
+
+        for total_response in malformed:
+            total_client = _Client()
+            total_client.schema = lambda operation_id=None: (
+                {"input_fields": {"data_list": {}, "metrics_list": {}}}
+                if operation_id == "report.multidim.calc_total"
+                else _Client.schema(total_client, operation_id)
+            )
+            total_client.read = lambda operation_id, _inputs=None, response=total_response: (
+                response
+                if operation_id == "report.multidim.calc_total"
+                else {"status": "success", "data": {"list": [{"day": "2026-08-01"}]}}
+            )
+            with self.subTest(total_response=total_response), self.assertRaises(ContractChangedError):
+                run_multidim_query(total_client, value, app_id=7, include_total=True)
 
 
 if __name__ == "__main__":

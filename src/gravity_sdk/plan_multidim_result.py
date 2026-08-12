@@ -6,7 +6,7 @@ import copy
 from collections.abc import Mapping
 from typing import Any
 
-from .errors import ContractChangedError
+from .errors import ContractChangedError, ErrorCode
 from .multidim_service import (
     CUSTOM_METRIC_OPERATIONS,
     MULTIDIM_QUERY_OPERATION,
@@ -24,6 +24,7 @@ _COMPONENT_STATUSES = frozenset(
     {
         "success", "empty", "partial", "error", "contract_changed",
         "semantic_error", "parent_required", "permission_unavailable", "unavailable",
+        "contract_changed_additive",
     }
 )
 _STRUCTURAL = frozenset(
@@ -33,15 +34,19 @@ _STRUCTURAL = frozenset(
         "input_schema_version", "next_action",
     }
 )
-_KNOWN_CODES = frozenset(
-    {
-        "AUTH_MISSING", "AUTH_REJECTED", "INPUT_INVALID", "RATE_LIMITED",
-        "UPSTREAM_UNAVAILABLE", "CONTRACT_CHANGED", "PERMISSION_UNAVAILABLE",
-        "PAGINATION_LIMIT",
-    }
-)
+_KNOWN_CODES = frozenset(item.value for item in ErrorCode)
 _METADATA_OPERATIONS = frozenset(
     {STANDARD_METRIC_OPERATION, *CUSTOM_METRIC_OPERATIONS}
+)
+_VALIDATION_ENUMS = {
+    "status": frozenset({"not_required", "validated", "validated_exclusions_only"}),
+    "metrics": frozenset({"not_requested", "validated_live"}),
+    "data_dims": frozenset(
+        {"not_requested", "not_validated_without_selected_metrics", "exclusion_checked"}
+    ),
+}
+_VALIDATION_FIELDS = frozenset(
+    {*_VALIDATION_ENUMS, "metrics_checked", "data_dims_checked", "metadata_operations"}
 )
 
 
@@ -119,10 +124,10 @@ def sanitize_multidim_result(
 def _validate_result(result: Mapping[str, Any], expected_app_id: str) -> None:
     _validate_identity(result, expected_app_id)
     _validate_outcome(result)
-    if not isinstance(result.get("validation"), Mapping):
-        raise ContractChangedError("multidim validation result is invalid")
+    _validate_validation(result.get("validation"))
     _validate_component(result.get("query"), MULTIDIM_QUERY_OPERATION, required=True)
     _validate_component(result.get("total"), MULTIDIM_TOTAL_OPERATION, required=False)
+    _validate_success_components(result)
 
 
 def _validate_identity(result: Mapping[str, Any], expected_app_id: str) -> None:
@@ -134,11 +139,11 @@ def _validate_identity(result: Mapping[str, Any], expected_app_id: str) -> None:
         raise ContractChangedError("multidim network invariant changed")
     if result.get("query_executed") is not True:
         raise ContractChangedError("multidim execution invariant changed")
-    if result.get("operation_id") not in {None, MULTIDIM_QUERY_OPERATION}:
+    operation_id = result.get("operation_id")
+    if operation_id is not None and operation_id != MULTIDIM_QUERY_OPERATION:
         raise ContractChangedError("multidim operation identity changed")
-    if result.get("input_schema_version") not in {
-        None, MULTIDIM_INPUT_SCHEMA_VERSION,
-    }:
+    input_schema_version = result.get("input_schema_version")
+    if input_schema_version is not None and input_schema_version != MULTIDIM_INPUT_SCHEMA_VERSION:
         raise ContractChangedError("multidim input schema identity changed")
 
 
@@ -166,7 +171,8 @@ def _validate_component(value: Any, operation_id: str, *, required: bool) -> Non
     status = value.get("status")
     if not isinstance(status, str) or status not in _COMPONENT_STATUSES:
         raise ContractChangedError("multidim component status is invalid")
-    if value.get("operation_id") not in {None, operation_id}:
+    component_operation = value.get("operation_id")
+    if component_operation is not None and component_operation != operation_id:
         raise ContractChangedError("multidim component operation changed")
     if status in _SUCCESS:
         _validate_success_component(value, operation_id)
@@ -180,8 +186,41 @@ def _validate_success_component(value: Mapping[str, Any], operation_id: str) -> 
     data = value.get("data")
     if not isinstance(data, Mapping):
         raise ContractChangedError("multidim component data contract changed")
-    if not any(isinstance(data.get(key), list) for key in ("list", "items")):
+    rows = next(
+        (data[key] for key in ("list", "items") if isinstance(data.get(key), list)),
+        None,
+    )
+    if rows is None or any(not isinstance(item, Mapping) for item in rows):
         raise ContractChangedError("multidim component rows contract changed")
+
+
+def _validate_success_components(result: Mapping[str, Any]) -> None:
+    if result.get("ok") is not True:
+        return
+    for field in ("query", "total"):
+        component = result.get(field)
+        if component is not None and component.get("status") not in _SUCCESS:
+            raise ContractChangedError(
+                "multidim success outcome contradicts a component failure"
+            )
+
+
+def _validate_validation(value: Any) -> None:
+    if not isinstance(value, Mapping) or set(value) - _VALIDATION_FIELDS:
+        raise ContractChangedError("multidim validation result is invalid")
+    for key, allowed in _VALIDATION_ENUMS.items():
+        item = value.get(key)
+        if not isinstance(item, str) or item not in allowed:
+            raise ContractChangedError("multidim validation status changed")
+    for key in ("metrics_checked", "data_dims_checked"):
+        if key in value and (type(value[key]) is not int or value[key] < 0):
+            raise ContractChangedError("multidim validation count changed")
+    operations = value.get("metadata_operations")
+    if not isinstance(operations, list) or any(
+        not isinstance(item, str) or item not in _METADATA_OPERATIONS
+        for item in operations
+    ):
+        raise ContractChangedError("multidim validation operations changed")
 
 
 def _safe_component(
@@ -190,7 +229,7 @@ def _safe_component(
     if value is None:
         return None
     assert isinstance(value, Mapping)
-    status = str(value.get("status", "error"))
+    status = value["status"]
     if failed and status not in _SUCCESS:
         return {
             "operation_id": operation_id,
@@ -228,8 +267,9 @@ def _safe_page(value: Any) -> dict[str, Any] | None:
     }
     if isinstance(value.get("has_more"), bool):
         selected["has_more"] = value["has_more"]
-    if value.get("fetch_strategy") in {"single", "serial", "parallel"}:
-        selected["fetch_strategy"] = value["fetch_strategy"]
+    strategy = value.get("fetch_strategy")
+    if isinstance(strategy, str) and strategy in {"single", "serial", "parallel"}:
+        selected["fetch_strategy"] = strategy
     return selected
 
 
@@ -237,23 +277,14 @@ def _safe_validation(value: Any) -> dict[str, Any]:
     if not isinstance(value, Mapping):
         return {}
     selected: dict[str, Any] = {}
-    enums = {
-        "status": {"not_required", "validated", "validated_exclusions_only"},
-        "metrics": {"not_requested", "validated_live"},
-        "data_dims": {
-            "not_requested", "not_validated_without_selected_metrics", "exclusion_checked"
-        },
-    }
-    for key, allowed in enums.items():
-        if value.get(key) in allowed:
-            selected[key] = value[key]
+    for key in _VALIDATION_ENUMS:
+        selected[key] = value[key]
     for key in ("metrics_checked", "data_dims_checked"):
         item = value.get(key)
         if type(item) is int and item >= 0:
             selected[key] = item
     operations = value.get("metadata_operations")
-    if isinstance(operations, list) and all(item in _METADATA_OPERATIONS for item in operations):
-        selected["metadata_operations"] = list(dict.fromkeys(operations))
+    selected["metadata_operations"] = list(dict.fromkeys(operations))
     return selected
 
 
@@ -261,9 +292,13 @@ def _safe_error(value: Any) -> dict[str, Any] | None:
     if not isinstance(value, Mapping):
         return None
     code = value.get("code")
-    selected_code = code if code in _KNOWN_CODES else "UPSTREAM_UNAVAILABLE"
+    selected_code = code if isinstance(code, str) and code in _KNOWN_CODES else "UPSTREAM_UNAVAILABLE"
     category = value.get("category")
-    selected_category = category if category in {"caller", "upstream", "local"} else "upstream"
+    selected_category = (
+        category
+        if isinstance(category, str) and category in {"caller", "upstream", "local"}
+        else "upstream"
+    )
     retry_after = value.get("retry_after_ms")
     if type(retry_after) is not int or retry_after < 0:
         retry_after = None
@@ -274,13 +309,20 @@ def _safe_error(value: Any) -> dict[str, Any] | None:
         "retryable": value.get("retryable") if isinstance(value.get("retryable"), bool) else False,
         "retry_after_ms": retry_after,
         "next_action": action,
-        "stage": value.get("stage") if value.get("stage") in {"query", "total"} else None,
+        "stage": (
+            value.get("stage")
+            if isinstance(value.get("stage"), str)
+            and value.get("stage") in {"query", "total"}
+            else None
+        ),
     }
 
 
 def _safe_action(code: str, category: str) -> str:
     if code.startswith("AUTH_"):
         return "Run `gravity auth status`, then retry the same Multidim request."
+    if code == "CONTRACT_CHANGED":
+        return "Stop automation until the Multidim contract is re-verified."
     if category == "caller":
         return "Correct the explicit Multidim request, then retry."
     return "Retry the same Multidim request after checking Gravity availability."

@@ -392,7 +392,7 @@ class DiscoveryUxTests(unittest.TestCase):
                     )
                     self.assertEqual(
                         ({"app", "inputs", "include_total", "read_all"},
-                         {"name", "app", "inputs", "include_total", "read_all"}),
+                         {"name", "input_schema_version", "app", "inputs", "include_total", "read_all"}),
                         (set(card["input_template"]), set(card["plan_node"]["request"])),
                     )
                     self.assertFalse(card["natural_language_auto_execute"])
@@ -416,17 +416,50 @@ class DiscoveryUxTests(unittest.TestCase):
             )
 
     def test_multidim_intent_is_authoritative_but_excludes_adjacent_products(self) -> None:
-        for query in ("multidim", "multidimensional report query", "执行多维报表查询"):
+        for query in (
+            "multidim",
+            "multidimensional report query",
+            "run a multi-dimensional report",
+            "query across multiple dimensions",
+            "calculate multidim total",
+            "multidimensional totals",
+            "执行多维报表查询",
+            "按多个维度查询报表",
+            "按维度交叉查询",
+            "多维合计",
+            "计算多维合计",
+        ):
             with self.subTest(query=query):
                 result = discover_capabilities(query, client=self.client, limit=5)
                 self.assertEqual(["multidim"], [c.get("composite") for c in result["candidates"]])
         for query in (
             "multidim template", "multi dimension layout", "多维报表收藏权限",
-            "business pulse", "multidim funnel analysis",
+            "business pulse", "multidim funnel analysis", "multiple dimensions",
+            "tell me about multiple dimensions",
         ):
             with self.subTest(query=query):
                 result = discover_capabilities(query, client=self.client, limit=5)
                 self.assertNotIn("multidim", [c.get("composite") for c in result["candidates"]])
+
+        for query in (
+            "run saved multidimensional analysis",
+            "运行已保存的多维分析",
+        ):
+            with self.subTest(query=query):
+                result = discover_capabilities(query, client=self.client, limit=5)
+                self.assertEqual(
+                    ["saved_analysis"],
+                    [candidate.get("composite") for candidate in result["candidates"]],
+                )
+
+        first = discover_capabilities("multidim", client=self.client, limit=5)
+        schema = first["candidates"][0]["input_schema"]["inputs"]["machine_schema"]
+        schema["required"].append("mutated")
+        second = discover_capabilities("multidim", client=self.client, limit=5)
+        self.assertNotIn(
+            "mutated",
+            second["candidates"][0]["input_schema"]["inputs"]["machine_schema"]["required"],
+        )
 
     @patch("gravity_sdk.agent_batch_sources.search_metadata", return_value={"results": []})
     def test_multidim_batch_reuses_one_local_snapshot(self, metadata) -> None:

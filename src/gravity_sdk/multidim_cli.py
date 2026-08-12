@@ -116,6 +116,12 @@ def dispatch_multidim(
 ) -> Any:
     """Dispatch one Multidim command while keeping product preflight client-free."""
 
+    if bool(getattr(args, "dry_run", False)):
+        raise InputValidationError(
+            "global --dry-run cannot be combined with a Multidim command; "
+            "place --dry-run after `multidim query`",
+            field="dry_run",
+        )
     _enforce_output_policy(args)
     command = args.multidim_command
     if command == "metadata":
@@ -165,6 +171,8 @@ def _product_query(args: Any, object_input: Callable[[Any], Mapping[str, Any]]) 
         run_multidim_query,
     )
 
+    if bool(getattr(args, "multidim_dry_run", False)) and getattr(args, "app", None) is None:
+        raise InputValidationError("product --dry-run requires explicit --app", field="app")
     supplied = _product_shortcuts(args, object_input(args.input))
     normalized = normalize_multidim_inputs(supplied)
     workspace = load_workspace(getattr(args, "workspace", None))
@@ -388,4 +396,27 @@ def _output_path(value: str) -> str:
     return selected
 
 
-__all__ = ["add_multidim_commands", "dispatch_multidim"]
+def multidim_ndjson_view(value: Mapping[str, Any]) -> tuple[Any, dict[str, Any]]:
+    """Return the primary query rows and bounded stream metadata."""
+
+    if value.get("schema_version") != "gravity-insight.composite.multidim.v1":
+        return value.get("data", value), {}
+    query = value.get("query")
+    if not isinstance(query, Mapping):
+        return None, {}
+    page = query.get("page") if isinstance(query.get("page"), Mapping) else {}
+    data = query.get("data")
+    rows = data.get("list", data.get("items")) if isinstance(data, Mapping) else None
+    total_items = page.get("total_items")
+    if type(total_items) is not int or total_items < 0:
+        total_items = len(rows) if isinstance(rows, list) else None
+    return data, {
+        "operation_id": query.get("operation_id"),
+        "status": value.get("status", query.get("status")),
+        "truncated": query.get("truncated", False),
+        "next_page_input": None,
+        "total": total_items,
+    }
+
+
+__all__ = ["add_multidim_commands", "dispatch_multidim", "multidim_ndjson_view"]

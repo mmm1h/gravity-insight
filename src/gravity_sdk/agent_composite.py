@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 from collections.abc import Mapping
 from typing import Any
 
@@ -38,7 +39,7 @@ def composite_card(
         return None
     required = [str(value) for value in definition.get("required_inputs", ())]
     input_schema = {
-        str(key): dict(value)
+        str(key): copy.deepcopy(dict(value))
         for key, value in definition.get("input_schema", {}).items()
         if isinstance(value, Mapping)
     }

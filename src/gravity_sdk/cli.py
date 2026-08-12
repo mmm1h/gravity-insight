@@ -77,7 +77,7 @@ from gravity_sdk.segment_spec_cli import add_segment_commands, run_segment_comma
 from gravity_sdk.business_pulse_cli import add_business_pulse_command
 from gravity_sdk.dashboard_snapshot_cli import add_dashboard_commands
 from gravity_sdk.saved_analysis_cli import add_saved_analysis_commands
-from gravity_sdk.multidim_cli import add_multidim_commands
+from gravity_sdk.multidim_cli import add_multidim_commands, multidim_ndjson_view
 from gravity_sdk.user_journey_cli import add_user_journey_command
 from gravity_sdk.metadata_sync import (
     add_metadata_commands,
@@ -1046,7 +1046,7 @@ def _ndjson_rows(result: Any) -> tuple[list[Any], dict[str, Any]]:
     if isinstance(value, list):
         rows = value
     elif isinstance(value, Mapping):
-        data = value.get("data", value)
+        data, multidim_metadata = multidim_ndjson_view(value)
         if isinstance(data, list):
             rows = data
         elif isinstance(data, Mapping):
@@ -1062,7 +1062,7 @@ def _ndjson_rows(result: Any) -> tuple[list[Any], dict[str, Any]]:
         "total": value.get("total", value.get("count")) if isinstance(value, Mapping) else None,
         "rows_written": len(rows),
     }
-    metadata.update(ndjson_metadata(value))
+    metadata.update({**ndjson_metadata(value), **(multidim_metadata if isinstance(value, Mapping) else {})})
     return rows, metadata
 
 
@@ -1078,7 +1078,7 @@ def _iter_ndjson_lines(result: Any):
             _redact(_safe_stdout_result(row)), ensure_ascii=False, sort_keys=True
         )
     yield json.dumps(
-        {"_gravity_insight": metadata}, ensure_ascii=False, sort_keys=True
+        _redact({"_gravity_insight": metadata}), ensure_ascii=False, sort_keys=True
     )
 
 
