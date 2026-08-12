@@ -179,8 +179,9 @@ HTTP 数为 `Σ P_platform`。direct worker 默认 6、最大 24，实际平台�
 Promotion Performance 只接收一个显式 App、日期窗、21 平台子集和物理指标数组；每个平台一个
 独立 batch item，输出保持平台声明序与原生字段。`bing/xiaohongshu/taptap/wechat_video` 继续使用
 兼容 raw 入口，不被伪装成同构报表；Agent 不选择 App、平台、指标，也不输出排名或投放建议。
-执行请求数为平台元数据请求 `P` 加各平台查询页数 `Σ pages`。direct 平台池默认 6、上限 24；
-平台内分页固定 1，Plan adapter 也固定 1，把跨节点并发留给 Plan 全局池。
+执行请求数不超过 `P` 次平台元数据请求加各平台查询页数 `Σ pages`；固定字段或缓存命中时更少。
+direct 平台池默认 6、上限 24；平台内分页固定 1，Plan adapter 也固定 1，把跨节点并发留给
+Plan 全局池。
 
 ### 候选能力不等于已交付能力
 
