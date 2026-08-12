@@ -6,6 +6,7 @@
 
 | 任务 | 文档 |
 | --- | --- |
+| 查看、领取、推进或关闭 GitHub Issue | [Issue 状态管理](issues.md) |
 | 选择 operation、codec、CLI、recipe、SQL 或 export 扩展面 | [扩展地图](extending.md) |
 | 新增、升级或废弃 operation | [新增受控能力](operations.md) |
 | 在线探测、浏览器确认页面行为 | [探测安全](probing.md) |

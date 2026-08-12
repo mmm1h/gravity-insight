@@ -1,0 +1,68 @@
+name: Bug report
+description: Report a reproducible Gravity SDK, CLI, contract, or projection problem.
+title: "[Bug] "
+labels:
+  - bug
+  - status:triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include credentials, App/user/device identifiers, or raw user-level output.
+        Prefer bounded aggregate examples and sanitized field/type paths.
+  - type: input
+    id: surface
+    attributes:
+      label: Surface or operation
+      description: CLI command, SDK method, operation_id, or SQL product.
+      placeholder: analysis.funnel.query
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: 0.2.0 / a9e534d
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal sanitized reproduction
+      description: Include the smallest command/input shape and whether network was called.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual machine-visible behavior
+      description: Include status, error code, field, warning, or exit code; omit sensitive values.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected contract
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence boundary
+      description: Reproduction count, safe field/type paths, sample state, and known unknowns.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: State the smallest externally observable result that closes the issue.
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: This issue contains no credentials or raw user-level output.
+          required: true

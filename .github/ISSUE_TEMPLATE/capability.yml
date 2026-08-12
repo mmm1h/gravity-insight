@@ -1,0 +1,49 @@
+name: Capability request
+description: Request one atomic Gravity capability or a bounded product improvement.
+title: "[Capability] "
+labels:
+  - enhancement
+  - status:triage
+body:
+  - type: input
+    id: outcome
+    attributes:
+      label: User or Agent outcome
+      description: Describe the result, not an implementation framework.
+    validations:
+      required: true
+  - type: textarea
+    id: shortest_path
+    attributes:
+      label: Current path and avoidable work
+      description: List current calls/commands and the desired shortest path.
+    validations:
+      required: true
+  - type: textarea
+    id: atomic_scope
+    attributes:
+      label: Atomic scope
+      description: Operations, products, composites, or CLI/SDK surfaces in scope and out of scope.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Existing evidence and blockers
+      description: Known routes/contracts/probes and exactly what remains unverified.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Include call count, concurrency, output contract, or compatibility expectations.
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: This request contains no credentials or raw user-level output.
+          required: true

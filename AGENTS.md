@@ -57,3 +57,14 @@ git diff --check
   still resolve imports from the `main` checkout and produce false test results.
 - Promote validated changes from `dev` to `main` only as an explicit release
   action after the required checks pass.
+
+## Issue workflow
+
+- Read `docs/maintainers/issues.md` before taking a GitHub issue.
+- Only start implementation from `status:ready`; first change it to
+  `status:in-progress` and record the `dev` worktree and intended scope.
+- Use exactly one `status:*` and one `priority:*` label. Do not close an issue
+  at `status:fixed-dev`; close it only after the fix reaches `main`, then use
+  `status:released`.
+- If evidence is insufficient, use `status:needs-evidence` and state the exact
+  missing safe evidence instead of guessing or broadening a contract.
