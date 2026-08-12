@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 
@@ -13,8 +14,24 @@ def dispatch(args: Any, object_input: Any) -> dict[str, Any]:
     if args.plan_command == "schema":
         return plan_schema()
 
-    from .plan_adapters import build_plan_adapters
+    value = args.input
+    if not isinstance(value, Mapping):
+        value = object_input(value)
+
+    from .plan import PlanAdapters, validate_plan
     from .plan_cli import run_plan_command
+    validated = validate_plan(value)
+    if all(node.kind == "metadata_search" for node in validated.nodes):
+        from .plan_metadata_adapter import build_metadata_plan_adapter
+
+        return run_plan_command(
+            args,
+            adapters=PlanAdapters(metadata_search=build_metadata_plan_adapter()),
+            workspace=None,
+            object_input=lambda _input: value,
+        )
+
+    from .plan_adapters import build_plan_adapters
     from .sdk import GravitySDK
     from .workspace import load_workspace
 
@@ -24,7 +41,7 @@ def dispatch(args: Any, object_input: Any) -> dict[str, Any]:
         args,
         adapters=build_plan_adapters(sdk, workspace=workspace),
         workspace=workspace,
-        object_input=object_input,
+        object_input=lambda _input: value,
     )
 
 

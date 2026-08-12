@@ -9,7 +9,7 @@
 | 已知 workspace recipe | `gravity run @<recipe> ...` | 1 |
 | 已知 operation 和输入 schema | `gravity run <operation-id> ...` | 1 |
 | 已知 Analysis kind 和物理字段 | `gravity analysis query --kind <kind> --spec <spec>` | 1 |
-| 已知 Analysis kind，物理字段未知 | `metadata search` → `analysis query --spec` | 2 |
+| 已知 Analysis kind，指标未知 | `metadata vocabulary` → `analysis query --spec` | 2 |
 | 已知保存分析引用 | `gravity analysis saved run --app ... --ref ...` | 1 |
 | 不知道保存分析引用 | `gravity agent "saved report templates"` → 执行返回的 Plan 节点 | 2 |
 | 已知 App 与经营时间窗 | `gravity reports pulse --app ... --start ... --end ...` | 1 |
@@ -23,7 +23,7 @@
 
 `run` 已经完成 bind、validate、parents、exec 和 diagnose。不要在每次调用前机械执行 `recipe check`、`validate`、`parents resolve` 和 `doctor`；只有 `run` 的 diagnostics 要求时再执行对应命令。
 
-五种 Analysis kind（`event/funnel/retention/property/scatter`）使用 `gravity analysis query --kind <kind> --spec <json|file|->`，完整示例见 [CLI 参考](reference/cli.md#analysis-query-spec-v1)。物理字段已知时一次执行；未知时先 `gravity metadata search`，再一次 spec 执行。`--dry-run` 返回零网络的安全编译预览；带条件值时会脱敏并省略 Plan node。Spec 必须显式声明事件、指标、日期、窗口、分组和条件，不接受自然语言自动执行，也不要求调用方复制 Web wire 结构。
+五种 Analysis kind（`event/funnel/retention/property/scatter`）使用 `gravity analysis query --kind <kind> --spec <json|file|->`，完整示例见 [CLI 参考](reference/cli.md#analysis-query-spec-v1)。事件/属性用 `metadata search`，指标/标签/媒体枚举/模板用 `metadata vocabulary`；确认后一次执行 spec。`--dry-run` 返回零网络的安全编译预览。Spec 不接受自然语言自动执行。
 
 经营概览和趋势直接一次调用 `gravity reports pulse --app main --start 2026-08-01 --end 2026-08-07 --include-hourly`；只有需要小时对比时加 `--include-hourly`，其结果是 `scope=workspace`。交叉 Plan 使用 composite `name=business_pulse` 和 `apps/start/end`，不要手工串行读取 overview/business。
 
@@ -179,19 +179,20 @@ gravity run app.list --input '{"page":1,"page_size":20}' --fields id,name
 `run` 写脱敏 Receipt 到 workspace 私有 `state_root/receipts/`。它不保存输入值或结果行；
 交付时可引用 operation、合同指纹、状态和请求数。
 
-## 7. 物理元数据
+## 7. 离线元数据与 Analysis 词汇
 
-需要完整事件/属性目录或数据表沿革时使用一次内建同步，不生成临时循环：
+一次同步同时保存 App 事件/属性和 workspace Analysis 词汇；可选保存 account 数据表沿革：
 
 ```powershell
 gravity metadata sync --all-apps --include-table-lineage
 gravity metadata search "purchase"
+gravity metadata vocabulary "revenue" --kind metric
 gravity metadata tables "publish"
 ```
 
-`events`/`properties` 可加 `--app-id` 收窄；`tables` 是 account scope，只陈述同步时观察到的 `table_id`、版本、动作和时间，不能推断表名、App 归属或当前版本。
-查询只读本地 SQLite；缺少 lineage snapshot 时先执行上述 opt-in 同步。Agent 路径是一次离线发现、一次 Plan 执行；Plan 节点也只查本地 catalog。`status=partial` 时报告失败计数，不能宣称完整覆盖。相似名称只是候选，
-不是业务绑定证据。需要同时查 operation、recipe 和 metadata 时只调用：
+词汇同步固定读取 9 个 workspace source，各一次且不随 App 数增长；六类 kind 是 `metric/custom_metric/metric_tag/metric_tag_category/media_enum/template`，都不接受 `app_id`。指标卡只给可复制的 `request_fragment`，模板是 `catalog_only`，没有配置回放。`status=partial` 时必须保留并报告失败来源，不能宣称完整覆盖。
+
+最短未知路径是 `sync` 一次，随后 `gravity agent "<指标或模板>"` 一次离线扫描并执行其 `metadata_search` Plan node；批量问题仍只加载 SQLite 一次。`events/properties` 是 App scope；`tables` 是 account scope，只陈述观察到的 ID/版本/动作/时间。所有本地词汇只提供物理候选，不自动执行或绑定业务查询。需要同时查 operation、recipe 和 metadata 时调用：
 
 ```powershell
 gravity find "retention"
@@ -216,5 +217,4 @@ gravity find "retention"
 至少说明：业务口径、`operation_id` 或 SQL product、App、时间范围、选择 Insight/SQL 的
 理由、成功/空/部分失败/能力缺口，以及不能支持的结论。不要把“没有查到”改写成“没有发生”。
 
-CLI 退出码：`0` 成功（包括合同允许的 empty）、`2` 调用方错误、`3` 上游/权限错误、`4`
-本地合同/隐私/策略错误。批量命令按最高严重级别聚合退出码，仍需读取每项结果。
+CLI 退出码：`0` 成功（包括合同允许的 empty）、`2` 调用方错误、`3` 上游/权限错误、`4` 本地合同/隐私/策略错误。批量命令按最高严重级别聚合退出码，仍需读取每项结果。

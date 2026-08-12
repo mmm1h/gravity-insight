@@ -8,6 +8,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Protocol, Sequence
 
+from .agent_vocabulary import (
+    is_vocabulary_discovery_query,
+    is_workspace_vocabulary,
+    vocabulary_card_fields,
+    vocabulary_match_values,
+)
 from .errors import InputValidationError
 from .find_metadata import search_metadata
 from .runtime import to_jsonable
@@ -148,7 +154,8 @@ def metadata_capability_cards(
     """Search only the safely resolved default local metadata catalog."""
 
     try:
-        result = search_metadata(query, limit=None, offset=0)
+        catalog_query = "" if is_vocabulary_discovery_query(query) else query
+        result = search_metadata(catalog_query, limit=None, offset=0)
         results = [
             item
             for item in result.get("results", [])
@@ -231,6 +238,8 @@ def _query_concepts(query: str) -> list[tuple[str, frozenset[str]]]:
 
 def _metadata_card(query: str, item: Mapping[str, Any]) -> dict[str, Any]:
     kind = str(item.get("kind", "all"))
+    if is_workspace_vocabulary(item):
+        return _vocabulary_card(query, item)
     command = "events" if kind == "event" else "properties" if "property" in kind else "search"
     app_id = str(item.get("app_id", ""))
     payload = item.get("payload")
@@ -254,6 +263,28 @@ def _metadata_card(query: str, item: Mapping[str, Any]) -> dict[str, Any]:
         "operation_id": item.get("operation_id"),
         "match": match,
         "next": {"ready_without_input": True, "argv": argv},
+    }
+
+
+def _vocabulary_card(query: str, item: Mapping[str, Any]) -> dict[str, Any]:
+    kind = str(item["kind"])
+    payload = item.get("payload")
+    match = query_match(
+        query,
+        *vocabulary_match_values(item),
+        json.dumps(payload, ensure_ascii=False, sort_keys=True)
+        if isinstance(payload, Mapping)
+        else None,
+        score=int(item.get("score", 0)),
+    )
+    return {
+        "kind": "metadata",
+        "metadata_kind": kind,
+        "name": item.get("name"),
+        "display_name": item.get("cname"),
+        "operation_id": item.get("operation_id"),
+        "match": match,
+        **vocabulary_card_fields(item, query),
     }
 
 

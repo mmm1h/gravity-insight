@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk import GravitySDK
+from gravity_sdk import GravitySDK, InputValidationError, PlanValidationError
 
 
 class _Insight:
@@ -110,6 +110,56 @@ class GravitySDKTests(unittest.TestCase):
         self.assertNotIn("database", result)
         self.assertIn("metadata sync --all-apps", result["error"]["next_action"])
 
+    @patch("gravity_sdk.find_metadata.search_metadata")
+    def test_analysis_vocabulary_is_offline_safe_and_strips_database(self, search) -> None:
+        search.return_value = {
+            "ok": True, "status": "success", "offline": True, "kind": "metric",
+            "database": "C:/private/catalog.sqlite3",
+            "results": [{"kind": "metric", "scope": "workspace", "name": "users"}],
+        }
+        sdk = GravitySDK(
+            insight_factory=lambda: self.fail("vocabulary must stay offline"),
+        )
+        result = sdk.analysis_vocabulary("users", kind="metric", limit=3)
+        self.assertEqual((0, "users"), (result["exit_code"], result["results"][0]["name"]))
+        self.assertNotIn("database", result)
+        search.side_effect = InputValidationError(
+            "stale C:/private/catalog.sqlite3", field="database"
+        )
+        failure = sdk.analysis_vocabulary(kind="vocabulary")
+        self.assertEqual(7, len(failure["error"]))
+        self.assertEqual(
+            "Run `gravity metadata sync --all-apps`, then retry the same offline "
+            "analysis vocabulary search.",
+            failure["error"]["next_action"],
+        )
+        self.assertNotIn("private", str(failure))
+
+    @patch("gravity_sdk.plan_metadata_adapter.search_metadata")
+    def test_metadata_only_plan_keeps_clients_lazy_and_enforces_vocabulary_scope(
+        self, search
+    ) -> None:
+        search.return_value = {
+            "ok": True, "database": "private", "results": [],
+            "failures": [{"source": "mine_templates", "code": "X", "message": "secret"}],
+        }
+        sdk = GravitySDK(insight_factory=lambda: self.fail("must stay offline"))
+        valid_plan = {
+            "schema_version": "gravity.plan.v1",
+            "nodes": [{
+                "id": "metrics", "kind": "metadata_search",
+                "request": {"kind": "metric", "limit": 1},
+                "limits": {"max_items": 1},
+            }],
+        }
+        result = sdk.execute_plan(valid_plan, workspace=object())["results"][0]["result"]
+        self.assertNotIn("database", result)
+        self.assertEqual([{"source": "mine_templates", "code": "X"}], result["failures"])
+        valid_plan["nodes"][0]["request"]["app_id"] = "7"
+        with self.assertRaises(PlanValidationError) as raised:
+            sdk.validate_plan(valid_plan)
+        self.assertIn("does not accept app_id", str(raised.exception))
+
     def test_convenience_methods_preserve_specialized_client_options(self) -> None:
         sdk = GravitySDK(insight=_Insight(), sql=_Sql())
         read = sdk.read_all(
@@ -140,6 +190,28 @@ class GravitySDKTests(unittest.TestCase):
         sdk = GravitySDK(insight_factory=insight_factory, sql=_Sql())
         protocol = sdk.capabilities()
         self.assertEqual("gravity.agent.v1", protocol["schema_version"])
+        self.assertEqual({"insight": 0}, built)
+
+        with patch("gravity_sdk.find.search_metadata", return_value={
+            "results": [{
+                "kind": "metric", "scope": "workspace", "source": "report_metrics",
+                "operation_id": "report.multidim.metric.list", "name": "Revenue",
+                "cname": "Revenue", "score": 100, "payload": {"name": "Revenue"},
+            }],
+        }):
+            local = sdk.capabilities("Revenue", limit=1)
+        self.assertEqual("metric", local["candidates"][0]["metadata_kind"])
+        self.assertEqual({"insight": 0}, built)
+
+        with patch("gravity_sdk.agent_batch_sources.search_metadata", return_value={
+            "results": [{
+                "kind": "metric", "scope": "workspace", "source": "report_metrics",
+                "operation_id": "report.multidim.metric.list", "name": "Revenue",
+                "cname": "Revenue", "score": 100, "payload": {"name": "Revenue"},
+            }],
+        }):
+            batch = sdk.capabilities_many([{"id": "metric", "query": "Revenue"}])
+        self.assertEqual("metric", batch["results"][0]["result"]["candidates"][0]["metadata_kind"])
         self.assertEqual({"insight": 0}, built)
 
         capabilities = sdk.capabilities("app", domain="app", limit=1)

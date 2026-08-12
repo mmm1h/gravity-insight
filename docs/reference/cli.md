@@ -333,12 +333,16 @@ gravity metadata sync --all-apps [--database <path>] [--concurrency 1..24]
 gravity metadata search [query] [--app-id <id>] [--database <path>]
 gravity metadata events [query] [--app-id <id>] [--database <path>]
 gravity metadata properties [query] [--app-id <id>] [--database <path>]
+gravity metadata vocabulary [query] [--kind vocabulary|metric|custom_metric|metric_tag|metric_tag_category|media_enum|template]
+gravity metadata tables [query] [--database <path>]
 gravity find <query> [--backend operations] [--backend metadata]
 ```
 
-默认位置是用户私有缓存下的 `GravityInsight/metadata/catalog.sqlite3`。同步采用临时库构建和原子替换；部分失败会保留成功数据，并记录失败的 App、operation 和错误代码。
+默认位置是用户私有缓存下的 `GravityInsight/metadata/catalog.sqlite3`。同步采用临时库构建和原子替换；除 App 目录外，固定读取 9 个 workspace Analysis 词汇来源各一次，请求数不随 App 增长。部分失败保留成功数据和失败来源；`status=partial` 不代表完整目录。
 查询命令以 SQLite 只读模式运行，不创建客户端、不读取凭据、不访问网络。
 `find` 对三个目录做稳定相关性排序；backend 是显式注册表。
+
+`vocabulary` 搜索物理/自定义指标、指标标签与分类、媒体枚举和 mine/shared/preset 模板。它们都是 workspace scope，不接受 `--app-id`。`gravity agent <query>` 对强匹配返回同 kind 的 `metadata_search` Plan node；指标卡的 `request_fragment` 可复制进显式 Analysis spec，但不会自动执行。模板只提供安全目录身份，标记 `catalog_only`，不包含配置且不可回放。
 
 `find` 当前注册 `operations`、`recipes`、`metadata` 三个 backend。`recipe validate` 只验证 workspace 声明；`recipe check` 还检查 operation 存在性/废弃状态、输入和输出字段及合同指纹，仍不访问网络。
 
@@ -353,7 +357,7 @@ recipe 参数用 `--param name=value`，`start/end` 有同名快捷参数。`--a
 
 workspace 的发现顺序、最小配置和 recipe 字段见 [Workspace 参考](workspace.md)。
 
-`operations`、`validate`、`find`、`recipe validate/check`、`metadata search/events/properties` 等 parser 标记为不需要网络客户端，因此不会触发首次凭据向导。新增离线命令必须在自己的 parser 上声明相同属性。
+`operations`、`validate`、`find`、`recipe validate/check`、`metadata search/events/properties/vocabulary/tables` 等 parser 标记为不需要网络客户端，因此不会触发首次凭据向导。新增离线命令必须在自己的 parser 上声明相同属性。
 
 ## SQL
 

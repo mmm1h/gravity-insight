@@ -32,6 +32,8 @@ from .agent_sources import (
 )
 from .agent_batch_sources import AgentSourceSnapshot
 from .agent_table_lineage import table_lineage_capability_cards
+from .agent_vocabulary import is_authoritative_local_metadata_card
+from .agent_client import DeferredAgentClient
 from .errors import InputValidationError
 from .find import capability_gaps
 
@@ -182,13 +184,13 @@ def _discover(
     page = _discovery_page(
         request, request.query, workspace=workspace, sources=sources
     )
-    lineage_cards = [
+    local_metadata_cards = [
         card
         for card in page.catalog_cards
-        if card.get("selector") == "metadata:table_lineage"
+        if is_authoritative_local_metadata_card(card)
     ]
-    if lineage_cards:
-        unified = [("catalog", card) for card in lineage_cards]
+    if local_metadata_cards:
+        unified = [("catalog", card) for card in local_metadata_cards]
         weak_operations: list[Mapping[str, Any]] = []
     else:
         if client is None:

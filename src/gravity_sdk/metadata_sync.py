@@ -27,6 +27,7 @@ from .metadata_lineage import (
     search_table_lineage,
     sync_table_lineage,
 )
+from . import metadata_vocabulary as vocabulary
 from .runtime import call_batch
 
 
@@ -97,6 +98,9 @@ def add_metadata_commands(
         query.add_argument("--database", type=Path, default=None)
         query.add_argument("--limit", type=metadata_limit, default=20)
         query.add_argument("--offset", type=nonnegative_int, default=0)
+    vocabulary.add_vocabulary_command(
+        metadata_commands, metadata_limit, nonnegative_int
+    )
     add_table_lineage_commands(metadata_commands, sync)
     return apps_commands, metadata_commands
 
@@ -116,15 +120,13 @@ def run_metadata_command(args: Any, client_builder: Any) -> dict[str, Any]:
             limit=args.limit,
             offset=args.offset,
         )
-    kind = {
-        "search": "all",
-        "events": "event",
-        "properties": "property",
-    }[args.metadata_command]
+    if args.metadata_command == "vocabulary":
+        return vocabulary.run_vocabulary_search(args)
+    kind = getattr(args, "kind", None) or {"search": "all", "events": "event", "properties": "property"}[args.metadata_command]
     return search_metadata(
         args.query,
         database=args.database,
-        app_id=args.app_id,
+        app_id=getattr(args, "app_id", None),
         kind=kind,
         limit=args.limit,
         offset=args.offset,
@@ -182,8 +184,7 @@ def sync_all_apps(
             f"metadata sync concurrency must be between 1 and {MAX_CONCURRENCY}",
             field="concurrency",
         )
-    destination = Path(database) if database is not None else default_catalog_path()
-    destination = destination.expanduser().resolve()
+    destination = (Path(database) if database is not None else default_catalog_path()).expanduser().resolve()
     if destination.exists() and destination.is_dir():
         raise InputValidationError(
             "metadata sync database path points to a directory", field="database"
@@ -191,19 +192,22 @@ def sync_all_apps(
 
     apps = _load_apps(client)
     synced_at = _utc_now()
-
     destination.parent.mkdir(parents=True, exist_ok=True)
     temporary = _temporary_database(destination)
     failures: list[dict[str, Any]] = []
     operation_counts = {operation_id: 0 for operation_id in ANALYSIS_METADATA_OPERATIONS}
     lineage_counts = {operation_id: 0 for operation_id in TABLE_LINEAGE_OPERATIONS}
     rows_written = 0
+    vocabulary_result = vocabulary.empty_vocabulary_result()
     try:
         with closing(sqlite3.connect(temporary)) as connection:
             _create_schema(connection)
             _write_apps(connection, apps, synced_at)
             operation_counts, failures, rows_written = _sync_operations(
                 connection, client, apps, concurrency, synced_at
+            )
+            vocabulary_result = vocabulary.sync_vocabulary_snapshot(
+                connection, client, concurrency, synced_at, failures
             )
             if include_table_lineage:
                 lineage_counts = sync_table_lineage(
@@ -218,6 +222,7 @@ def sync_all_apps(
                 rows_written=rows_written,
                 failure_count=len(failures),
                 lineage_counts=lineage_counts if include_table_lineage else None,
+                vocabulary_result=vocabulary_result,
             )
             connection.commit()
         os.replace(temporary, destination)
@@ -225,7 +230,6 @@ def sync_all_apps(
         temporary.unlink(missing_ok=True)
         raise
 
-    exit_code = _failure_exit_code(failures)
     result = {
         "schema_version": SCHEMA_VERSION,
         "ok": not failures,
@@ -237,10 +241,11 @@ def sync_all_apps(
         "operation_count": len(apps) * len(ANALYSIS_METADATA_OPERATIONS),
         "rows_written": rows_written,
         "operation_rows": operation_counts,
+        **vocabulary.vocabulary_summary(vocabulary_result),
         "failure_count": len(failures),
         "failures": failures[:20],
         "failures_truncated": len(failures) > 20,
-        "exit_code": exit_code,
+        "exit_code": _failure_exit_code(failures),
     }
     if include_table_lineage:
         result.update(
@@ -434,6 +439,7 @@ def _create_schema(connection: sqlite3.Connection) -> None:
         """
     )
     create_table_lineage_schema(connection)
+    vocabulary.create_vocabulary_schema(connection)
     connection.execute(f"PRAGMA user_version = {DATABASE_SCHEMA_VERSION}")
 
 
@@ -510,6 +516,7 @@ def _write_catalog_metadata(
     rows_written: int,
     failure_count: int,
     lineage_counts: Mapping[str, int] | None = None,
+    vocabulary_result: vocabulary.VocabularySyncResult | None = None,
 ) -> None:
     values = {
         "schema_version": str(DATABASE_SCHEMA_VERSION),
@@ -521,6 +528,8 @@ def _write_catalog_metadata(
     }
     if lineage_counts is not None:
         values.update(lineage_catalog_values(lineage_counts))
+    if vocabulary_result is not None:
+        values.update(vocabulary.vocabulary_catalog_values(vocabulary_result))
     connection.executemany(
         "INSERT INTO catalog_metadata(key, value) VALUES (?, ?)", values.items()
     )

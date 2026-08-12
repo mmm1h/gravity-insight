@@ -9,7 +9,7 @@ from typing import Any
 
 from .find_metadata import search_metadata
 from .metadata_lineage import search_table_lineage
-from .plan import AdapterContext
+from .plan import AdapterContext, PlanAdapter
 from .plan_adapter_support import (
     bounded_optional,
     has_dynamic,
@@ -24,11 +24,23 @@ from .plan_adapter_support import (
 REQUEST_FIELDS = frozenset({"query", "app_id", "kind", "limit", "offset"})
 OUTPUT_FIELDS = frozenset(
     {
-        "kind", "app_id", "operation_id", "name", "cname", "payload", "score",
+        "backend", "kind", "scope", "source", "app_id", "operation_id",
+        "name", "cname", "payload", "score",
         "table_id", "observed", "versions", "operations",
     }
 )
-KINDS = frozenset({"all", "event", "property", "table_lineage"})
+VOCABULARY_KINDS = frozenset(
+    {
+        "metric",
+        "custom_metric",
+        "metric_tag",
+        "metric_tag_category",
+        "media_enum",
+        "template",
+        "vocabulary",
+    }
+)
+KINDS = frozenset({"all", "event", "property", "table_lineage"}) | VOCABULARY_KINDS
 
 
 def validate_metadata_plan(
@@ -45,11 +57,12 @@ def validate_metadata_plan(
     if kind not in KINDS:
         raise input_error("metadata kind is unsupported", "kind")
     app_id = request.get("app_id")
-    if kind == "table_lineage" and (
+    if kind in VOCABULARY_KINDS | {"table_lineage"} and (
         app_id is not None or has_dynamic(context, "/app_id")
     ):
         raise input_error(
-            "table lineage is account-scoped and does not accept app_id", "app_id"
+            f"metadata kind {kind} is not App-scoped and does not accept app_id",
+            "app_id",
         )
     if app_id is not None and not isinstance(app_id, str):
         raise input_error("metadata app_id must be a string", "app_id")
@@ -87,4 +100,29 @@ def execute_metadata_plan(
     return metadata_projection(result, fields, context)
 
 
-__all__ = ["execute_metadata_plan", "validate_metadata_plan"]
+def build_metadata_plan_adapter(
+    database: str | Path | None = None,
+) -> PlanAdapter:
+    """Bind the offline adapter without touching either network client.
+
+    The general adapter set needs Insight contracts for ``run`` and
+    ``composite`` preflight.  Metadata-only plans should not pay that cost, so
+    the unified SDK can use this small adapter directly.
+    """
+
+    selected = Path(database) if database is not None else None
+
+    def execute(request: Mapping[str, Any], context: AdapterContext) -> dict[str, Any]:
+        return execute_metadata_plan(request, context, database=selected)
+
+    return PlanAdapter(
+        execute=execute,
+        validate=validate_metadata_plan,
+        project=metadata_projection,
+    )
+
+
+__all__ = [
+    "KINDS", "OUTPUT_FIELDS", "VOCABULARY_KINDS",
+    "build_metadata_plan_adapter", "execute_metadata_plan", "validate_metadata_plan",
+]

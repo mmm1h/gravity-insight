@@ -190,8 +190,9 @@ class GravitySDK(AnalysisSdkMixin, MetadataSdkMixin):
         """Discover recipes and executable Insight operations in one offline call."""
 
         from .agent import discover_capabilities
+        from .agent_client import DeferredAgentClient
 
-        client = self.insight if str(query or "").strip() else None
+        client = DeferredAgentClient(lambda: self.insight) if str(query or "").strip() else None
         return discover_capabilities(
             query,
             client=client,
@@ -211,10 +212,11 @@ class GravitySDK(AnalysisSdkMixin, MetadataSdkMixin):
         """Discover up to 32 questions from one immutable offline catalog snapshot."""
 
         from .agent_batch import capabilities_many
+        from .agent_client import DeferredAgentClient
 
         return capabilities_many(
             questions,
-            client=self.insight,
+            client=DeferredAgentClient(lambda: self.insight),
             workspace=self._select_workspace(workspace),
         )
 
@@ -341,17 +343,30 @@ class GravitySDK(AnalysisSdkMixin, MetadataSdkMixin):
     ) -> dict[str, Any]:
         """Execute one bounded Plan v1 through the four governed adapters."""
 
-        from .plan import execute_plan
+        from .plan import PlanAdapters, execute_plan, validate_plan
         from .plan_adapters import build_plan_adapters
 
-        selected = self._select_workspace(workspace)
-        return execute_plan(
-            plan,
-            adapters=build_plan_adapters(
+        validated = validate_plan(plan)
+        metadata_only = all(
+            node.kind == "metadata_search" for node in validated.nodes
+        )
+        if metadata_only:
+            from .plan_metadata_adapter import build_metadata_plan_adapter
+
+            selected = self._workspace if workspace is None else workspace
+            adapters = PlanAdapters(
+                metadata_search=build_metadata_plan_adapter(metadata_database)
+            )
+        else:
+            selected = self._select_workspace(workspace)
+            adapters = build_plan_adapters(
                 self,
                 workspace=selected,
                 metadata_database=metadata_database,
-            ),
+            )
+        return execute_plan(
+            plan,
+            adapters=adapters,
             workspace=selected,
             max_workers=max_workers,
             dry_run=dry_run,

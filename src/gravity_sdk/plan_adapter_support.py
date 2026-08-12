@@ -19,6 +19,9 @@ ENVELOPE_FIELDS = frozenset(
         "scope", "observed",
     }
 )
+METADATA_FAILURE_FIELDS = frozenset(
+    {"source", "operation_id", "status", "category", "code"}
+)
 
 
 def identity_projection(
@@ -69,6 +72,17 @@ def metadata_projection(
         for item in rows
         if isinstance(item, Mapping)
     ] if isinstance(rows, list) else []
+    failures = result.get("failures")
+    if isinstance(failures, list):
+        selected["failures"] = [
+            {
+                field: copy.deepcopy(item[field])
+                for field in METADATA_FAILURE_FIELDS
+                if field in item and isinstance(item[field], str)
+            }
+            for item in failures[:9]
+            if isinstance(item, Mapping)
+        ]
     return selected
 
 

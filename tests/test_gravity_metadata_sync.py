@@ -19,6 +19,7 @@ from gravity_sdk.metadata_lineage import (
     TABLE_OPERATION_LOG_OPERATION_ID,
     search_table_lineage,
 )
+from gravity_sdk.metadata_vocabulary import VOCABULARY_SOURCES
 from gravity_sdk.metadata_sync import (
     _create_schema,
     _write_apps,
@@ -29,8 +30,11 @@ from gravity_sdk.metadata_sync import (
 
 
 class FakeSyncClient:
-    def __init__(self, *, failed_app: str | None = None) -> None:
+    def __init__(
+        self, *, failed_app: str | None = None, malformed_media: bool = False
+    ) -> None:
         self.failed_app = failed_app
+        self.malformed_media = malformed_media
         self.batch_calls: list[tuple[list[dict], int]] = []
 
     def read_all(self, operation_id: str, inputs: dict):
@@ -52,6 +56,22 @@ class FakeSyncClient:
         for request in requests:
             app_id = request["request_id"]
             operation_id = request["operation_id"]
+            if app_id == "media_enums":
+                media = (
+                    {"bytedance": {"optimization_goal": {"secret": "hidden"}}}
+                    if self.malformed_media
+                    else {"bytedance": {"optimization_goal": [
+                        {"code": "INSTALL", "name": "Install"}
+                    ]}}
+                )
+                results.append({
+                    "operation_id": operation_id,
+                    "request_id": app_id,
+                    "ok": True,
+                    "status": "success",
+                    "data": {"status": "success", "data": media},
+                })
+                continue
             if app_id == self.failed_app:
                 results.append(
                     {
@@ -243,8 +263,8 @@ class MetadataSyncTests(unittest.TestCase):
             self.assertEqual(8, result["operation_count"])
             self.assertEqual(8, result["rows_written"])
             self.assertNotIn("table_lineage_included", result)
-            self.assertEqual(1, len(client.batch_calls))
-            self.assertTrue(all(call[1] == 8 for call in client.batch_calls))
+            self.assertEqual(3, len(client.batch_calls))
+            self.assertEqual([8, 8, 1], [call[1] for call in client.batch_calls])
             self.assertEqual(
                 set(ANALYSIS_METADATA_OPERATIONS),
                 {
@@ -253,13 +273,50 @@ class MetadataSyncTests(unittest.TestCase):
                 },
             )
             self.assertEqual(8, len(client.batch_calls[0][0]))
-            self.assertTrue(
-                all(
-                    request["read_all"]
-                    for requests, _ in client.batch_calls
-                    for request in requests
-                )
+            vocabulary_requests = [
+                request
+                for requests, _ in client.batch_calls[1:]
+                for request in requests
+            ]
+            self.assertEqual(
+                [source.operation_id for source in VOCABULARY_SOURCES],
+                [request["operation_id"] for request in vocabulary_requests],
             )
+            self.assertEqual(
+                [source.source for source in VOCABULARY_SOURCES],
+                [request["request_id"] for request in vocabulary_requests],
+            )
+            self.assertEqual(9, result["vocabulary_operation_count"])
+            self.assertEqual(9, result["vocabulary_rows_written"])
+            metric = search_metadata(
+                "name-report_metrics", database=database, kind="metric"
+            )
+            media = search_metadata("INSTALL", database=database, kind="media_enum")
+            self.assertEqual(
+                ("workspace", "report_metrics"),
+                (metric["results"][0]["scope"], metric["results"][0]["source"]),
+            )
+            self.assertEqual(
+                {"platform": "bytedance", "group": "optimization_goal", "code": "INSTALL", "name": "Install"},
+                media["results"][0]["payload"],
+            )
+            self.assertTrue(all(request["read_all"] for request in client.batch_calls[0][0]))
+            self.assertEqual(
+                [source.paginated for source in VOCABULARY_SOURCES],
+                [request["read_all"] for request in vocabulary_requests],
+            )
+            stdout = io.StringIO()
+            with (
+                patch("gravity_sdk.cli.runtime.build_client") as build_client,
+                contextlib.redirect_stdout(stdout),
+            ):
+                exit_code = cli.main([
+                    "metadata", "vocabulary", "INSTALL", "--kind", "media_enum",
+                    "--database", str(database),
+                ])
+            self.assertEqual(0, exit_code)
+            build_client.assert_not_called()
+            self.assertNotIn("database", json.loads(stdout.getvalue()))
 
             with closing(sqlite3.connect(database)) as connection:
                 app_count = connection.execute("SELECT COUNT(*) FROM apps").fetchone()[0]
@@ -294,6 +351,15 @@ class MetadataSyncTests(unittest.TestCase):
                 ).fetchall()
             self.assertEqual(4, len(failures))
             self.assertTrue(all(row[0] == "202" for row in failures))
+
+        with tempfile.TemporaryDirectory() as temporary:
+            malformed = sync_all_apps(
+                FakeSyncClient(malformed_media=True),
+                database=Path(temporary) / "metadata.sqlite3",
+            )
+        self.assertEqual(("partial", 1), (
+            malformed["status"], malformed["vocabulary_failure_count"]
+        ))
 
     def test_invalid_app_catalog_keeps_previous_database(self) -> None:
         class InvalidAppClient(FakeSyncClient):

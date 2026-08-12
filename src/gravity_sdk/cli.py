@@ -99,7 +99,7 @@ from gravity_sdk.find_input import (
 )
 from gravity_sdk.recipe import add_recipe_commands
 from gravity_sdk.resolver_cli import add_resolver_command
-from gravity_sdk.agent import add_agent_command, ndjson_metadata, run_agent_command
+from gravity_sdk.agent import DeferredAgentClient, add_agent_command, ndjson_metadata, run_agent_command
 from gravity_sdk.capability_cli import add_deepening_commands
 from gravity_sdk.read_cli import add_read_command
 from gravity_sdk.plan_cli import add_plan_commands
@@ -921,7 +921,7 @@ def _auth_or_parents(args: argparse.Namespace) -> Any:
 
 def _run_discovery(args: argparse.Namespace) -> Any:
     if args.command == "agent":
-        return run_agent_command(args, _client(args))
+        return run_agent_command(args, DeferredAgentClient(lambda: _client(args)))
     return run_operation_command(args, _client(args), filter_operations)
 
 

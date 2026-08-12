@@ -73,7 +73,11 @@ def capabilities_many(
 
     pending = validate_questions(questions)
     try:
-        sources = snapshot_agent_sources(client, workspace=workspace)
+        sources = snapshot_agent_sources(
+            client,
+            workspace=workspace,
+            questions=pending,
+        )
     except Exception:
         return snapshot_failure(pending)
     cached_client = _SnapshotClient(client, sources)

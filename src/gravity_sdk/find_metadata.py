@@ -11,6 +11,11 @@ from typing import Any
 
 from .domains import ANALYSIS_METADATA_OPERATIONS
 from .errors import InputValidationError
+from .metadata_vocabulary import (
+    VOCABULARY_SEARCH_KINDS,
+    vocabulary_failures,
+    vocabulary_rows,
+)
 
 
 SCHEMA_VERSION = "gravity.metadata-search.v1"
@@ -23,6 +28,8 @@ _PROPERTY_OPERATIONS = tuple(
     for value in ANALYSIS_METADATA_OPERATIONS
     if value.endswith((".user_property.list", ".event_property.list"))
 )
+_APP_KINDS = {"all", "event", "property"}
+_VOCABULARY_KINDS = set(VOCABULARY_SEARCH_KINDS)
 
 
 def search_metadata(
@@ -36,8 +43,13 @@ def search_metadata(
 ) -> dict[str, Any]:
     """Search the synchronized catalog without creating a network client."""
 
-    if kind not in {"all", "event", "property"}:
+    if kind not in _APP_KINDS | _VOCABULARY_KINDS:
         raise InputValidationError("unknown metadata search kind", field="kind")
+    if app_id is not None and kind in _VOCABULARY_KINDS:
+        raise InputValidationError(
+            "workspace Analysis vocabulary cannot be filtered by app_id",
+            field="app_id",
+        )
     if limit is not None:
         search_limit(limit)
     search_offset(offset)
@@ -52,10 +64,27 @@ def search_metadata(
         connection.row_factory = sqlite3.Row
         _validate_schema(connection)
         catalog_status = _catalog_values(connection)
-        candidates = _candidates(connection, query, app_id, kind)
+        candidates = (
+            _candidates(connection, query, app_id, kind)
+            if kind in _APP_KINDS
+            else []
+        )
+        include_vocabulary = kind in _VOCABULARY_KINDS or (
+            kind == "all"
+            and app_id is None
+            and catalog_status.get("analysis_vocabulary_observed", "").casefold()
+            == "true"
+        )
+        vocabulary_kind = kind if kind in _VOCABULARY_KINDS else "vocabulary"
+        catalog_failures: list[dict[str, str]] = []
+        if include_vocabulary:
+            candidates.extend(
+                _vocabulary_candidates(connection, query, vocabulary_kind)
+            )
+            catalog_failures = vocabulary_failures(connection)
     ordered = sorted(candidates, key=_sort_key)
     page = ordered[offset:] if limit is None else ordered[offset : offset + limit]
-    return {
+    result = {
         "schema_version": SCHEMA_VERSION,
         "ok": True,
         "status": "success",
@@ -70,6 +99,35 @@ def search_metadata(
         "offset": offset,
         "results": page,
     }
+    if kind in _VOCABULARY_KINDS:
+        result.update(scope="workspace", failures=catalog_failures)
+    return result
+
+
+def _vocabulary_candidates(
+    connection: sqlite3.Connection,
+    query: str,
+    kind: str,
+) -> list[dict[str, Any]]:
+    normalized = query.strip().casefold()
+    results = []
+    for row in vocabulary_rows(connection, query, kind):
+        name = _optional_text(row["name"])
+        cname = _optional_text(row["cname"])
+        results.append(
+            {
+                "backend": "metadata",
+                "kind": str(row["kind"]),
+                "scope": "workspace",
+                "source": str(row["source"]),
+                "operation_id": str(row["operation_id"]),
+                "name": name,
+                "cname": cname,
+                "score": _score(normalized, name, cname, str(row["payload_json"])),
+                "payload": json.loads(row["payload_json"]),
+            }
+        )
+    return results
 
 
 def _candidates(

@@ -131,6 +131,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `get_saved_analysis()` | 按 ID 或精确名称检查 Strict Replay 资格，不返回 config |
 | `prepare_saved_analysis()` | 读取保存定义并严格编译，不执行最终 Analysis 查询 |
 | `run_saved_analysis()` | 一次解析、严格编译并执行保存分析；不猜 Web 配置字段 |
+| `analysis_vocabulary()` | 严格离线搜索已同步的 workspace 指标、标签、媒体枚举和模板目录 |
 | `table_lineage()` | 严格离线查询已同步的 account-scope 数据表版本与操作观察 |
 | `business_pulse()` | 并发读取 App 经营概览与趋势，可选 workspace scope 小时对比 |
 | `analysis_context()` | 固定 13 个 Analysis 词汇/模板来源，外层并发、局部失败隔离 |
@@ -145,6 +146,8 @@ SQL product 的描述和执行仍使用同一个 workspace。
 `capabilities_many()` 接受字符串或带稳定 `id` 的对象数组，也接受
 `{"questions":[...]}` wrapper；每次最多 32 个问题，ID 必须唯一。它只扫描一次 Workspace、
 stable operation、SQL product 和本地 metadata 目录，单项失败不影响其他项。
+
+`analysis_vocabulary(query="", *, kind="vocabulary", database=None, limit=20, offset=0)` 只读一次 `metadata sync --all-apps` 生成的 SQLite 快照。同步对 9 个 workspace source 各请求一次，不随 App 数增加；搜索 kind 为 `metric/custom_metric/metric_tag/metric_tag_category/media_enum/template/vocabulary`，不接受 App 归属。partial 快照会公开失败来源；模板只有安全目录身份、不可回放。Agent 指标卡提供 `metrics_list` 或 `custom_metrics_list` 请求片段，但自然语言发现绝不自动执行分析。
 
 `table_lineage(query="", *, database=None, limit=20, offset=0)` 只读已经通过
 `gravity metadata sync --all-apps --include-table-lineage` 建立的本地 catalog。结果是

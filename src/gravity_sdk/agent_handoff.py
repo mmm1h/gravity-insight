@@ -174,8 +174,10 @@ def _plan_request(
         return {"name": card.get("composite")}, "composite"
     if card.get("metadata_kind") == "table_lineage":
         return {"query": "", "kind": "table_lineage"}, "metadata_search"
+    lookup_query = card.get("lookup_query")
+    selected_query = lookup_query if isinstance(lookup_query, str) else query
     request: dict[str, Any] = {
-        "query": query,
+        "query": selected_query,
         "kind": card.get("metadata_kind", "all"),
     }
     if card.get("app_id") is not None:

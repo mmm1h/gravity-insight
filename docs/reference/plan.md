@@ -63,6 +63,14 @@ gravity plan run --input plan.json --concurrency 6
 没有证据时不会补出表名、App 归属或“当前版本”。`limit` 受节点 `max_items` 和 Plan 总预算
 共同约束，`offset` 仅用于本地有界分页。
 
+同一 `metadata_search` 节点也执行离线 Analysis 词汇搜索，不增加新节点类型：
+
+```json
+{"id":"metric","kind":"metadata_search","request":{"kind":"metric","query":"revenue","limit":20}}
+```
+
+词汇 kind 为 `metric/custom_metric/metric_tag/metric_tag_category/media_enum/template/vocabulary`，都是 workspace scope 且禁止 `app_id`。一次同步固定请求 9 个来源各一次；partial 结果保留成功行与失败来源。节点只返回安全投影；Agent 指标卡可附显式查询请求片段，模板仍是 `catalog_only`，不会从目录配置伪造回放或自动执行 Analysis 查询。
+
 预检完整验证 schema、依赖、环、pointer、kind、动态 target 与最坏预算；失败时零网络请求。
 节点仅限 `run`、`sql_product`、`metadata_search`、`composite`，不接受裸 SQL、任意
 HTTP/Python、表达式、join/reduce、条件或循环。

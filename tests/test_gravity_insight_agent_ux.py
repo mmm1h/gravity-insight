@@ -16,6 +16,8 @@ from unittest.mock import patch
 from gravity_sdk import cli, runtime
 from gravity_sdk.agent import discover_capabilities
 from gravity_sdk.agent_batch import capabilities_many, iter_ndjson_records
+from gravity_sdk.agent_batch_sources import AgentSourceSnapshot
+from gravity_sdk.agent_client import DeferredAgentClient
 from gravity_sdk.agent_sources import OperationDiscovery, discover_operation_cards
 from gravity_sdk.workspace import load_workspace
 
@@ -360,6 +362,83 @@ class DiscoveryUxTests(unittest.TestCase):
         self.assertEqual(2, len({card["plan_node"]["id"] for card in cards}))
         self.assertNotIn("gravity.toml", json.dumps([card["plan_node"] for card in cards]))
 
+    def test_agent_vocabulary_is_an_offline_typed_plan_handoff(self) -> None:
+        from gravity_sdk.find import metadata_capability_cards
+
+        cases = (
+            ("physical metric", "metric", "report_metrics", "Revenue", {"metrics_list": ["Revenue"]}),
+            ("custom metric", "custom_metric", "custom_metrics", "Profit", {"custom_metrics_list": ["Profit"]}),
+            ("metric tag", "metric_tag", "metric_tags", "Growth", None),
+            ("metric tag category", "metric_tag_category", "metric_tag_categories", "Acquisition", None),
+            ("media enum", "media_enum", "media_enums", "Bytedance", None),
+            ("analysis template", "template", "mine_templates", "Daily KPI", None),
+        )
+        for query, kind, source, name, fragment in cases:
+            with self.subTest(kind=kind):
+                row = {
+                    "kind": kind, "scope": "workspace", "source": source,
+                    "operation_id": f"report.multidim.{kind}.list", "name": name,
+                    "cname": name, "score": 100, "payload": {"name": name},
+                }
+                with patch(
+                    "gravity_sdk.find.search_metadata", return_value={"results": [row]}
+                ) as search:
+                    direct, warnings = metadata_capability_cards(query, limit=1)
+                self.assertEqual([], warnings)
+                self.assertEqual("strong", direct[0]["match"]["confidence"])
+                search.assert_called_once_with("", limit=None, offset=0)
+                sources = AgentSourceSnapshot(
+                    None, (), (), (), (row,), (), (), "0" * 64
+                )
+                result = discover_capabilities(query, client=None, sources=sources)
+                card = result["candidates"][0]
+                self.assertEqual((kind, "workspace"), (card["metadata_kind"], card["scope"]))
+                self.assertNotIn("app_id", card)
+                self.assertEqual("metadata_search", card["plan_node"]["kind"])
+                self.assertEqual(name, card["lookup_query"])
+                self.assertEqual({"query": name, "kind": kind}, card["plan_node"]["request"])
+                self.assertEqual(fragment, card.get("request_fragment"))
+                self.assertEqual(
+                    ["gravity", "metadata", "vocabulary", name, "--kind", kind],
+                    card["next"]["argv"],
+                )
+                if kind == "template":
+                    self.assertTrue(card["catalog_only"])
+                    self.assertFalse(card["replay_supported"])
+
+    @patch("gravity_sdk.agent_batch_sources.search_metadata")
+    def test_agent_batch_loads_vocabulary_once_and_namespaces_nodes(self, search) -> None:
+        search.return_value = {"results": [
+            {
+                "kind": "metric_tag", "scope": "workspace", "source": "metric_tags",
+                "operation_id": "report.multidim.metric_tag.list", "name": "Growth",
+                "cname": "Growth", "score": 100, "payload": {"name": "Growth"},
+            },
+            {
+                "kind": "template", "scope": "workspace", "source": "mine_templates",
+                "operation_id": "report.multidim.template.mine.list", "name": "Daily KPI",
+                "cname": "Daily KPI", "score": 100, "payload": {"name": "Daily KPI"},
+            },
+        ]}
+        builds = 0
+
+        def build_client():
+            nonlocal builds
+            builds += 1
+            return self.client
+
+        batch = capabilities_many(
+            [
+                {"id": "tags", "query": "metric tags"},
+                {"id": "templates", "query": "analysis template"},
+            ],
+            client=DeferredAgentClient(build_client),
+        )
+        nodes = [item["result"]["candidates"][0]["plan_node"] for item in batch["results"]]
+        search.assert_called_once_with("", limit=None, offset=0)
+        self.assertEqual(0, builds)
+        self.assertEqual(2, len({node["id"] for node in nodes}))
+
     def test_agent_exact_selector_and_plural_query_choose_app_list(self) -> None:
         exact = discover_capabilities("app.list", client=self.client, limit=3)
         plural = discover_capabilities(
@@ -383,20 +462,33 @@ class DiscoveryUxTests(unittest.TestCase):
 
     @patch("gravity_sdk.agent_batch_sources.search_metadata")
     def test_agent_batch_namespaces_plan_nodes_and_exposes_ndjson_rows(self, metadata) -> None:
-        metadata.return_value = {"results": []}
+        metadata.return_value = {"results": [{
+            "kind": "metric", "scope": "workspace", "source": "report_metrics",
+            "operation_id": "report.multidim.metric.list", "name": "Revenue",
+            "cname": "Revenue", "score": 100, "payload": {"name": "Revenue"},
+        }]}
+        builds = 0
+
+        def build_client():
+            nonlocal builds
+            builds += 1
+            return self.client
+
         result = capabilities_many(
             [
-                {"id": "events-a", "query": "analysis.event.list"},
-                {"id": "events-b", "query": "analysis.event.list"},
+                {"id": "metric", "query": "Revenue"},
+                {"id": "events", "query": "analysis.event.list"},
             ],
-            client=self.client,
+            client=DeferredAgentClient(build_client),
         )
         cards = [item["result"]["candidates"][0] for item in result["results"]]
         self.assertEqual(2, len({card["plan_node"]["id"] for card in cards}))
-        self.assertEqual(["app_id"], cards[0]["missing_inputs"])
+        self.assertEqual(1, builds)
+        self.assertEqual([], cards[0]["missing_inputs"])
+        self.assertEqual(["app_id"], cards[1]["missing_inputs"])
         rows = list(iter_ndjson_records(result))
         self.assertEqual(3, len(rows))
-        self.assertEqual("events-a", rows[0]["question_id"])
+        self.assertEqual("metric", rows[0]["question_id"])
         self.assertEqual(2, rows[-1]["_gravity_agent_batch"]["rows_written"])
 
     def test_agent_protocol_and_discovery_are_bounded_offline_and_executable(self) -> None:
