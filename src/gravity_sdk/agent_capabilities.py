@@ -11,7 +11,6 @@ from collections.abc import Mapping, Sequence
 import re
 from typing import Any
 
-from .analysis_spec_schema import analysis_query_spec_schema
 from .find import query_match
 
 
@@ -162,28 +161,6 @@ _COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
     },
 )
 
-_ANALYSIS_QUERY_SPEC = {
-    "kind": "analysis_query_spec",
-    "selector": "analysis.query.spec",
-    "compiler": "analysis_query",
-    "domain": "analysis",
-    "description": (
-        "把紧凑事件、漏斗、留存、属性或散点分析 spec 离线编译为现有 stable "
-        "operation 输入和可复制 Plan 节点，无需理解 Web wire JSON。"
-    ),
-    "kinds": ("event", "funnel", "property", "retention", "scatter"),
-    "aliases": (
-        "analysis query spec",
-        "analysis query compiler",
-        "event analysis query",
-        "funnel query spec",
-        "retention query spec",
-        "property query spec",
-        "scatter query spec",
-        "分析查询规格",
-        "分析查询编译器",
-    ),
-}
 
 def normalize_agent_query(query: str) -> str:
     """Normalize only safe English inflections; do not guess business meaning."""
@@ -259,96 +236,9 @@ def analysis_query_spec_cards(
 ) -> list[dict[str, Any]]:
     """Expose the offline Analysis compiler as a first-class Agent handoff."""
 
-    definition = _ANALYSIS_QUERY_SPEC
-    if platform is not None or (domain is not None and domain != definition["domain"]):
-        return []
-    normalized = normalize_agent_query(query)
-    explicit_compiler_intent = (
-        normalized == definition["selector"]
-        or any(term in normalized.split() for term in ("spec", "compiler", "compile"))
-        or "analysis query" in normalized
-        or any(term in query for term in ("分析查询", "查询规格", "查询编译"))
-    )
-    if not explicit_compiler_intent:
-        return []
-    match = agent_query_match(
-        query,
-        definition["selector"],
-        definition["compiler"],
-        definition["domain"],
-        definition["description"],
-        *definition["aliases"],
-    )
-    if normalized == definition["selector"]:
-        match = {
-            **match,
-            "confidence": "strong",
-            "coverage": 1.0,
-            "matched_terms": [definition["selector"]],
-            "missing_terms": [],
-            "exact_selector": True,
-        }
-    if match["confidence"] != "strong":
-        return []
-    return [_analysis_spec_card(definition, match)]
+    from .agent_analysis import analysis_query_spec_cards as build_cards
 
-
-def _analysis_spec_card(
-    definition: Mapping[str, Any], match: Mapping[str, Any]
-) -> dict[str, Any]:
-    kinds = list(definition["kinds"])
-    spec_contract = analysis_query_spec_schema()
-    return {
-        "kind": definition["kind"],
-        "selector": definition["selector"],
-        "compiler": definition["compiler"],
-        "domain": definition["domain"],
-        "description": definition["description"],
-        "effect": "local_compile",
-        "executable": False,
-        "compiler_callable": True,
-        "plan_executable": False,
-        "execution_mode": "direct_cli_after_spec",
-        "offline": True,
-        "network_called": False,
-        "kinds": kinds,
-        "input_schema": {
-            "kind": {"type": "string", "required": True, "enum": kinds},
-            "app": {
-                "type": "string|integer",
-                "required": True,
-                "nullable": False,
-            },
-            "spec": {
-                "type": "object",
-                "required": True,
-                "nullable": False,
-                "variants_by_kind": spec_contract["kind_schemas"],
-                "definitions": spec_contract["definitions"],
-            },
-        },
-        "required_inputs": ["kind", "app", "spec"],
-        "missing_inputs": ["kind", "app", "spec"],
-        "input_template": {
-            "kind": "<event|funnel|property|retention|scatter>",
-            "app": "<workspace-app-alias-or-positive-id>",
-            "spec": "<gravity-insight.analysis-query-spec.v1 object>",
-        },
-        "spec_schema_version": spec_contract["schema_version"],
-        "match": match,
-        "next": {
-            "ready_without_input": False,
-            "argv": [
-                "gravity", "analysis", "query", "--kind", "<kind>",
-                "--spec", "<json-object-or-file>", "--app", "<app>",
-            ],
-            "schema_argv": [
-                "gravity", "analysis", "query", "--kind", "<kind>",
-                "--spec-schema",
-            ],
-            "call_count_after_discovery": 1,
-        },
-    }
+    return build_cards(query, domain=domain, platform=platform)
 
 
 def composite_capability_cards(

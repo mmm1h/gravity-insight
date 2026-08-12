@@ -114,14 +114,6 @@ def attach_plan_node(
     selector = str(card.get("selector", "candidate"))
     seed = selector if namespace is None else f"{namespace}\0{selector}"
     kind = str(card.get("kind", ""))
-    if kind == "analysis_query_spec":
-        missing, template = _handoff_requirements(card, kind)
-        return {
-            **dict(card),
-            "missing_inputs": missing,
-            "input_template": template,
-            "plan_node": None,
-        }
     request, plan_kind = _plan_request(card, query, kind, selector)
     node: dict[str, Any] = {
         "id": "n_" + hashlib.sha256(seed.encode("utf-8")).hexdigest()[:12],
@@ -166,6 +158,15 @@ def unify_capability_candidates(
 def _plan_request(
     card: Mapping[str, Any], query: str, kind: str, selector: str
 ) -> tuple[dict[str, Any], str]:
+    if kind == "analysis_query_spec":
+        request: dict[str, Any] = {"name": "analysis_query"}
+        analysis_kind = card.get("analysis_kind")
+        if isinstance(analysis_kind, str) and analysis_kind:
+            request["kind"] = analysis_kind
+        for field in ("app", "spec", "start", "end"):
+            if card.get(field) is not None:
+                request[field] = card[field]
+        return request, "composite"
     if kind in {"recipe", "operation"}:
         return {"selector": selector}, "run"
     if kind == "sql_product":

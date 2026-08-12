@@ -206,6 +206,37 @@ Spec 不接受自然语言，也不会猜测事件、属性、指标、窗口或
 本地 metadata 目录确认，再执行一次 spec；自然语言能力发现仍只返回候选，不会自动联网执行。
 原始 `--input` 入口继续兼容，但不能与 `--spec` 同时使用。
 
+需要把多个 Analysis 查询放入一个并发 DAG 时，继续使用现有 `gravity plan run`，不增加新的
+CLI 子命令。Plan composite request 是 `name="analysis_query"` 加
+`kind/app/spec`，可选成对的 `start/end`；`output_fields` 放在节点级：
+
+```json
+{
+  "id": "daily_opens",
+  "kind": "composite",
+  "request": {
+    "name": "analysis_query",
+    "kind": "event",
+    "app": "main",
+    "spec": {
+      "start": "2026-08-01",
+      "end": "2026-08-07",
+      "steps": [{"event": "app_open", "metric": {"field": "PresetAllCount", "aggregation": "PresetAllCount"}}]
+    }
+  },
+  "limits": {"max_pages": 1, "max_items": 200}
+}
+```
+
+节点 `output_fields` 按底层 Analysis operation 的 data-relative FieldPolicy 选择，例如 event
+可选 `list/target_list/date_list`；它不是 composite wrapper 字段。
+
+五种 kind 与 `analysis query` 相同：`event/funnel/retention/property/scatter`。已知 kind、App
+和 literal spec 时，一次 `gravity plan run --input plan.json`；未知时一次 `gravity agent`
+发现候选、一次 `plan run` 执行。自然语言不会自动执行。`/app` 可以接受既有标量 binding；
+`/spec/...` binding 和 spec 内部引用不受支持。完整事件示例及 event+funnel 同层并发示例见
+[Plan v1 参考](plan.md#analysis-query-composite)。
+
 ### Saved Analysis v1
 
 保存分析入口把稳定的保存目录、详情读取和现有 Analysis Spec 编译器连成一条受控路径。已知
@@ -293,7 +324,7 @@ gravity plan run --input plan.json --concurrency 6
 | `run` | `selector`、`inputs`/`parameters`、可选 `app/start/end/all_pages` | operation 或 `@recipe` |
 | `sql_product` | `product` 及该 Workspace 产品的 App/时间输入 | 已登记产品，禁止裸 SQL |
 | `metadata_search` | `query`、可选 `kind/app_id/limit/offset` | 已同步的本地 catalog |
-| `composite` | `name`、组合所需 App/查询输入 | 仅登记的 analysis context、App/attribution snapshot、business pulse、multidim |
+| `composite` | `name`、组合所需 App/查询输入 | 仅登记的 analysis query/context、App/attribution snapshot、business pulse、multidim |
 
 每个节点还可声明 `depends_on`、标量 `bindings`、一个有限 `foreach`、`limits` 和
 `output_fields`。binding/foreach 的 `from` 必须显式位于 `depends_on`，路径使用 RFC 6901 JSON
@@ -319,6 +350,10 @@ Business pulse 的 Plan 节点使用同一实现；`apps/start/end` 必填：
 
 Plan 中小时结果仍为 `scope=workspace`；adapter 内部 worker 固定为 1，由 Plan 全局 worker pool
 管理并发。
+
+`analysis_query` 同样由全局 pool 调度；同层独立查询并发，adapter worker 固定 1。一个查询
+失败不取消 sibling，结果仍按节点声明顺序返回。节点 `max_items` 和 Plan 总预算共同限制结果
+规模；失败结果不回显 request、spec、binding 值或原始异常，筛选值遵守既有脱敏合同。
 
 外层并发默认 6、上限 24，adapter 内分页 worker 固定 1；SQL 的进程级并发仍为 2。声明节点
 最多 64、展开执行最多 256、总 `max_items` 不超过 100,000。每个 foreach 默认最多 32、硬

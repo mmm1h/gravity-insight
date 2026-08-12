@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | 已知 workspace recipe | `gravity run @<recipe> ...` | 1 |
 | 已知 operation 和输入 schema | `gravity run <operation-id> ...` | 1 |
-| 已知 Analysis kind 和物理字段 | `gravity analysis query --kind <kind> --spec <spec>` | 1 |
+| 已知 Analysis kind 和物理字段 | 单个 `analysis query`；多个用一个 `analysis_query` Plan | 1 |
 | 已知 Analysis kind，指标未知 | `metadata vocabulary` → `analysis query --spec` | 2 |
 | 已知保存分析引用 | `gravity analysis saved run --app ... --ref ...` | 1 |
 | 不知道保存分析引用 | `gravity agent "saved report templates"` → 执行返回的 Plan 节点 | 2 |
@@ -98,7 +98,7 @@ gravity plan run --input plan.json --dry-run
 gravity plan run --input plan.json --concurrency 6
 ```
 
-完整 JSON、binding、fan-out、预算、并发与错误合同见 [Plan v1 参考](reference/plan.md)。
+Analysis 查询复用 composite `name=analysis_query`，支持 `event/funnel/retention/property/scatter`。已知 kind/App/literal spec 时直接一次 `plan run`；未知时一次 `gravity agent` 发现、调用方确认补齐 spec、一次 Plan 执行，自然语言不自动执行。同层查询由全局 pool 并发、adapter worker 固定 1、保声明序并隔离失败；节点和总预算同时生效。binding 仅可写已有标量 `/app`，不支持 `/spec/...` 或 spec 内部引用；结果不回显 request/spec/binding 值并继续脱敏。完整事件、event+funnel 并发及其余 Plan 合同见 [Plan v1 参考](reference/plan.md#analysis-query-composite)。
 
 ## 4. 选择 Insight 还是 SQL
 

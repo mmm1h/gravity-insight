@@ -455,10 +455,70 @@ class DiscoveryUxTests(unittest.TestCase):
         card = result["candidates"][0]
         self.assertEqual("analysis_query_spec", card["kind"])
         self.assertEqual(["kind", "app", "spec"], card["missing_inputs"])
-        self.assertEqual("<app>", card["next"]["argv"][-1])
+        self.assertEqual("<plan.json>", card["next"]["argv"][-1])
         self.assertEqual("--spec-schema", card["next"]["schema_argv"][-1])
-        self.assertIsNone(card["plan_node"])
+        self.assertTrue(card["plan_executable"])
+        self.assertFalse(card["natural_language_auto_execute"])
+        self.assertEqual(
+            {"name": "analysis_query"}, card["plan_node"]["request"]
+        )
+        self.assertEqual("composite", card["plan_node"]["kind"])
         self.assertIn("funnel_window", card["input_schema"]["spec"]["definitions"])
+
+    def test_agent_prefers_one_kind_specific_analysis_spec_card(self) -> None:
+        cases = (
+            ("event analysis", "event"),
+            ("analysis.query.spec:event", "event"),
+            ("事件分析", "event"),
+            ("funnel analysis", "funnel"),
+            ("转化漏斗", "funnel"),
+            ("property analysis", "property"),
+            ("用户属性分析", "property"),
+            ("retention analysis", "retention"),
+            ("留存分析", "retention"),
+            ("scatter plot analysis", "scatter"),
+            ("散点图", "scatter"),
+        )
+        for query, kind in cases:
+            with self.subTest(query=query):
+                result = discover_capabilities(
+                    query, client=self.client, domain="analysis", limit=2
+                )
+                card = result["candidates"][0]
+                self.assertEqual("analysis_query_spec", card["kind"])
+                self.assertEqual(kind, card["analysis_kind"])
+                self.assertEqual("strong", card["match"]["confidence"])
+                self.assertEqual(["app", "spec"], card["missing_inputs"])
+                self.assertEqual(kind, card["input_template"]["kind"])
+                self.assertTrue(card["input_template"]["spec"])
+                spec_contract = card["input_schema"]["spec"]
+                self.assertEqual(kind, spec_contract["selected_kind"])
+                self.assertEqual([kind], list(spec_contract["variants_by_kind"]))
+                self.assertEqual(
+                    {"name": "analysis_query", "kind": kind},
+                    card["plan_node"]["request"],
+                )
+                self.assertEqual("composite", card["plan_node"]["kind"])
+
+    @patch("gravity_sdk.agent_batch_sources.search_metadata", return_value={"results": []})
+    def test_agent_batch_namespaces_analysis_spec_plan_nodes(self, _metadata) -> None:
+        result = capabilities_many(
+            [
+                {"id": "acquisition", "query": "funnel analysis", "domain": "analysis"},
+                {"id": "cohort", "query": "留存分析", "domain": "analysis"},
+            ],
+            client=self.client,
+        )
+        self.assertEqual(
+            ["acquisition", "cohort"],
+            [item["question_id"] for item in result["results"]],
+        )
+        cards = [item["result"]["candidates"][0] for item in result["results"]]
+        self.assertEqual(2, len({card["plan_node"]["id"] for card in cards}))
+        self.assertEqual(
+            ["funnel", "retention"],
+            [card["plan_node"]["request"]["kind"] for card in cards],
+        )
 
     @patch("gravity_sdk.agent_batch_sources.search_metadata")
     def test_agent_batch_namespaces_plan_nodes_and_exposes_ndjson_rows(self, metadata) -> None:

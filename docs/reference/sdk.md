@@ -190,8 +190,13 @@ max_workers=6, max_pages=1000, max_items=100000, workspace=None)` 接受一个 A
 
 ## Plan v1
 
-下面是一个完整的进程内 Plan 示例。它把两个独立来源交给同一个全局 worker pool，同时保留
-声明顺序：
+Analysis Query 不增加新的 SDK 方法：通过现有 `validate_plan()` / `execute_plan()` 执行
+`composite` 节点。request 固定接受 `name="analysis_query"`、`kind/app/spec` 和可选的成对
+`start/end`；五种 kind 是 `event/funnel/retention/property/scatter`。`output_fields` 属于 Plan
+节点、不放进 request，并按底层 operation 的 data-relative FieldPolicy 校验。
+
+下面是一个完整的进程内 Plan 示例。Analysis event 与本地 metadata 分支没有依赖，交给同一个
+全局 worker pool，同时保持声明顺序：
 
 ```python
 from gravity_sdk import connect
@@ -212,6 +217,31 @@ plan = {
             "output_fields": ["id", "name"],
         },
         {
+            "id": "daily_opens",
+            "kind": "composite",
+            "request": {
+                "name": "analysis_query",
+                "kind": "event",
+                "app": "main",
+                "spec": {
+                    "start": "2026-08-01",
+                    "end": "2026-08-07",
+                    "time_grain": "day",
+                    "steps": [
+                        {
+                            "event": "app_open",
+                            "metric": {
+                                "field": "PresetAllCount",
+                                "aggregation": "PresetAllCount",
+                            },
+                        }
+                    ],
+                },
+            },
+            "limits": {"max_pages": 1, "max_items": 200},
+            "output_fields": ["list", "target_list", "date_list"],
+        },
+        {
             "id": "events",
             "kind": "metadata_search",
             "request": {"query": "purchase", "kind": "event", "limit": 20},
@@ -230,6 +260,14 @@ preview = gravity.execute_plan(plan, dry_run=True)
 result = gravity.execute_plan(plan, max_workers=6)
 ```
 
+已知 kind、App 和完整 literal spec 时直接执行 Plan，一次调用完成；未知时先用现有 Agent
+capability discovery 得到候选，由调用方确认/补齐 spec，再执行 Plan，总共两次。自然语言不会
+自动执行。多个独立 Analysis 查询应声明为同层 sibling；无需在 SDK 外再建线程池。
+
+Plan v1 binding 只能把既有上游标量写入 `/app`，且来源必须列入 `depends_on`。它不允许
+`/spec/...` target，也不解析 spec 内的表达式、引用或模板；调用方必须在提交前生成完整 literal
+spec。
+
 公开 Plan schema 可由 `gravity plan schema` 获取。四种节点是 `run`、`sql_product`、
 `metadata_search` 和 `composite`；SDK 自动构造对应的内建 adapter，不接受裸 SQL、任意 HTTP 或
 Python callback。若需要测试一个自定义 adapter，应直接使用 `gravity_sdk.plan.execute_plan`
@@ -243,6 +281,11 @@ Plan 先对所有节点完成离线预检，再提交任何执行。DAG 同层�
 worker pool 默认 6、上限 24，adapter 内分页 worker 固定 1。独立失败不会取消 sibling，下游
 依赖失败返回 `skipped/DEPENDENCY_FAILED`。声明最多 64 个节点、运行时最多展开 256 次、
 聚合 `max_items` 预算不超过 100,000；单节点最多一个 foreach，默认 32、硬上限 64。
+
+Analysis Query adapter 同样固定内部 worker 为 1；节点结果按 Plan 声明顺序而不是完成顺序。
+节点 `limits.max_items` 与总预算共同生效。成功保留安全原生 envelope；成功与失败都不回显
+request、literal spec、compiled input 或 binding 值，失败也不回显原始异常；条件/筛选值继续
+使用 Analysis 查询的脱敏合同。
 
 ## Insight 专用 facade
 

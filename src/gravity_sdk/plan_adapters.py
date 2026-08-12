@@ -11,6 +11,7 @@ from typing import Any
 from .composite import CompositeService, MULTIDIM_QUERY_OPERATION
 from .output_projection import validate_output_fields
 from .plan import AdapterContext, PlanAdapter, PlanAdapters
+from . import plan_analysis_adapter as analysis_plan
 from .plan_binding import set_pointer
 from .plan_pulse_adapter import execute_business_pulse, validate_business_pulse
 from .plan_saved_analysis_adapter import (
@@ -54,6 +55,7 @@ _COMPOSITES = frozenset(
     {
         "analysis_context", "app_snapshot", "attribution_snapshot",
         "business_pulse", "saved_analysis", "multidim",
+        analysis_plan.ANALYSIS_QUERY_NAME,
     }
 )
 _COMPOSITE_OUTPUT_FIELDS = frozenset(
@@ -139,7 +141,7 @@ def build_plan_adapters(
             execute_metadata, validate_metadata, _metadata_projection
         ),
         composite=PlanAdapter(
-            execute_composite, validate_composite, _composite_projection
+            execute_composite, validate_composite, _project_composite
         ),
     )
 
@@ -358,8 +360,13 @@ def _validate_composite(
     insight: Any,
     workspace: Any,
 ) -> None:
-    _request_object(request, _COMPOSITE_FIELDS, "composite")
     name = request.get("name")
+    if name == analysis_plan.ANALYSIS_QUERY_NAME:
+        analysis_plan.validate_analysis_query_plan(
+            insight, workspace, request, context
+        )
+        return
+    _request_object(request, _COMPOSITE_FIELDS, "composite")
     if name not in _COMPOSITES:
         raise _input("composite name is not allowlisted", "name")
     if name == "business_pulse":
@@ -468,6 +475,8 @@ def _execute_composite(
         return execute_business_pulse(sdk, request, context)
     if name == "saved_analysis":
         return execute_saved_analysis_plan(sdk, request, context)
+    if name == analysis_plan.ANALYSIS_QUERY_NAME:
+        return analysis_plan.execute_analysis_query_plan(sdk, request, context)
     app_id = context.workspace.resolve_app(app)
     inputs = _multidim_inputs(dict(request.get("inputs", {})), app_id)
     return CompositeService(sdk.insight).multidim_query(
@@ -496,6 +505,14 @@ def _multidim_inputs(inputs: Mapping[str, Any], app_id: int) -> dict[str, Any]:
     )
     selected["filters"] = retained
     return selected
+
+
+def _project_composite(
+    result: Any, fields: tuple[str, ...], context: AdapterContext
+) -> Any:
+    if analysis_plan.is_analysis_query_result(result):
+        return analysis_plan.project_analysis_query_result(result, fields, context)
+    return _composite_projection(result, fields, context)
 
 
 __all__ = ["build_plan_adapters"]

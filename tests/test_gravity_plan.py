@@ -3,6 +3,7 @@ from __future__ import annotations
 import threading
 import time
 import unittest
+from copy import deepcopy
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -235,9 +236,7 @@ class PlanExecutionTests(unittest.TestCase):
     @patch("gravity_sdk.plan_metadata_adapter.search_table_lineage")
     @patch("gravity_sdk.plan_metadata_adapter.search_metadata")
     def test_production_adapters_execute_all_four_engines(self, metadata, lineage):
-        workspace = load_workspace(
-            Path(__file__).resolve().parents[1] / "examples" / "workspace" / "gravity.toml"
-        )
+        workspace = load_workspace(Path(__file__).resolve().parents[1] / "examples/workspace")
 
         class Insight:
             def operations(self, **_options):
@@ -298,6 +297,121 @@ class PlanExecutionTests(unittest.TestCase):
         lineage_result = result["results"][3]["result"]
         self.assertEqual(("account", "7"), (lineage_result["scope"], lineage_result["results"][0]["table_id"]))
         self.assertNotIn("database", lineage_result)
+
+    def test_analysis_query_composite_preflights_and_sanitizes(self):
+        workspace = load_workspace(
+            Path(__file__).resolve().parents[1] / "examples" / "workspace" / "gravity.toml"
+        )
+        metric = {"field": "PresetAllCount", "aggregation": "PresetAllCount"}
+        step = lambda name: {"event": name, "metric": metric}
+        dated = {"start": "2026-08-01", "end": "2026-08-02"}
+        cases = {
+            "event": {**dated, "steps": [step("open")]},
+            "funnel": {**dated, "steps": [step("open"), step("pay")],
+                       "window": {"unit": "day", "value": 1}},
+            "retention": {**dated, "steps": [step("open"), step("return")],
+                          "offset": 7, "period_calc_method": "SUM",
+                          "custom_before_method": "SUM", "total_calc_type": "DAY",
+                          "week_first_day": 1},
+            "property": {"property": {"field": "PresetUserCount",
+                                       "aggregation": "PresetUserCount", "data_type": "INT"}},
+            "scatter": {**dated, "steps": [step("pay")]},
+        }
+
+        class Insight:
+            def operations(self, **_options): return []
+            def validate(self, _operation_id, _inputs): return {"ok": True}
+            def schema(self, _operation_id):
+                return {"response_projection": {"data_keys": ["list", "target_list"]}}
+
+        class SDK:
+            insight = Insight()
+            def analysis_query(self, kind, spec, **options):
+                from gravity_sdk.analysis_spec import validate_query_spec
+                compiled, _ = validate_query_spec(
+                    self.insight, kind, spec, workspace=options["workspace"],
+                    app=options.get("app"), start=options.get("start"), end=options.get("end"),
+                )
+                return {"ok": True, "status": "success",
+                        "operation_id": compiled.operation_id,
+                        "request": {"inputs": deepcopy(compiled.inputs)},
+                        "data": {"list": [], "target_list": []},
+                        "output_fields": list(options.get("output_fields") or [])}
+
+        sdk = SDK()
+        nodes = [
+            _node(kind, {"name": "analysis_query", "kind": " EVENT " if kind == "event" else kind,
+                         "app": "demo", "spec": spec}, kind="composite")
+            for kind, spec in cases.items()
+        ]
+        nodes[0]["output_fields"] = ["target_list"]
+        result = execute_plan(
+            _plan(*nodes, budget={"max_workers": 5}),
+            adapters=build_plan_adapters(sdk, workspace=workspace), workspace=workspace,
+        )
+        values = [item["result"] for item in result["results"]]
+        self.assertEqual([f"analysis.{kind}.query" for kind in cases],
+                         [item["operation_id"] for item in values])
+        self.assertTrue(all("request" not in item for item in values))
+        self.assertNotIn("open", repr(values))
+        self.assertEqual(["target_list"], values[0]["output_fields"])
+
+    def test_analysis_query_composite_offline_guards_binding_dry_run_and_drift(self):
+        workspace = load_workspace(Path(__file__).resolve().parents[1] / "examples/workspace")
+        private = "private-filter-value"
+
+        class Insight:
+            def operations(self, **_options): return []
+            def validate(self, _operation_id, _inputs): return {"ok": True}
+            def schema(self, _operation_id):
+                return {"response_projection": {"data_keys": ["list"]}}
+
+        class SDK:
+            insight = Insight()
+            calls = 0
+            wrong_operation = False
+            def analysis_query(self, kind, spec, **_options):
+                self.calls += 1
+                return {"ok": True, "status": (
+                            "success" if self.wrong_operation else "contract_changed"
+                        ),
+                        "operation_id": (
+                            "analysis.scatter.query" if self.wrong_operation
+                            else f"analysis.{kind}.query"
+                        ),
+                        "request": {"inputs": deepcopy(spec)}, "data": {"list": [private]},
+                        "error": {"category": "upstream", "code": "DRIFT",
+                                  "message": f"secret={private}"}}
+
+        sdk = SDK()
+        adapter = build_plan_adapters(sdk, workspace=workspace)
+        valid = {"name": "analysis_query", "kind": "event", "app": "demo",
+                 "spec": {"start": "2026-08-01", "end": "2026-08-02",
+                          "steps": [{"event": "open", "metric": {
+                              "field": "PresetAllCount", "aggregation": "PresetAllCount"}}]}}
+        invalid = [
+            {**valid, "spec": {**valid["spec"], "unknown": private}},
+            {**valid, "kind": "unknown"},
+        ]
+        for request in invalid:
+            with self.subTest(request=request), self.assertRaises(PlanValidationError) as raised:
+                execute_plan(_plan(_node("q", request, kind="composite")),
+                             adapters=adapter, workspace=workspace)
+            self.assertNotIn(private, str(raised.exception))
+        nested = _node("q", valid, kind="composite", depends_on=["source"], bindings=[{
+            "from": "source", "source": "/result/value", "target": "/spec/start"}])
+        with self.assertRaises(PlanValidationError):
+            execute_plan(_plan(_node("source"), nested), adapters=adapter, workspace=workspace)
+        dry = execute_plan(_plan(_node("q", valid, kind="composite")),
+                           adapters=adapter, workspace=workspace, dry_run=True)
+        self.assertTrue(dry["dry_run"])
+        self.assertEqual(0, sdk.calls)
+        for sdk.wrong_operation in (False, True):
+            drift = execute_plan(_plan(_node("q", valid, kind="composite")),
+                                 adapters=adapter, workspace=workspace)
+            self.assertEqual((False, 3, None),
+                             (drift["ok"], drift["exit_code"], drift["results"][0]["result"]))
+            self.assertNotIn(private, repr(drift))
 
 
 class AgentBatchTests(unittest.TestCase):
