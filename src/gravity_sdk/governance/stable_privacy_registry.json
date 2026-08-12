@@ -3047,7 +3047,17 @@
       "data.list[].profile_count",
       "data.list[].storage_count",
       "data.list[].tracking_count",
-      "data.page_info"
+      "data.page_info",
+      "data.total",
+      "data.total[].ad_count",
+      "data.total[].ad_create_amount_usage",
+      "data.total[].adclick_count",
+      "data.total[].cost_count",
+      "data.total[].event_count",
+      "data.total[].material_transmit_g_usage",
+      "data.total[].profile_count",
+      "data.total[].storage_count",
+      "data.total[].tracking_count"
     ],
     "report.hour_comparison.query": [
       "data.columns",

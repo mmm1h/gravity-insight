@@ -1941,9 +1941,23 @@
       "required_parent": [],
       "resource": "company_amount",
       "response_projection": {
+        "data_item_keys": {
+          "total": [
+            "ad_count",
+            "ad_create_amount_usage",
+            "adclick_count",
+            "cost_count",
+            "event_count",
+            "material_transmit_g_usage",
+            "profile_count",
+            "storage_count",
+            "tracking_count"
+          ]
+        },
         "data_keys": [
           "list",
-          "page_info"
+          "page_info",
+          "total"
         ],
         "dynamic_item_fields": [],
         "item_keys": [
@@ -1958,9 +1972,11 @@
           "storage_count",
           "tracking_count"
         ],
-        "known_omitted_data_keys": [
-          "total"
-        ],
+        "known_omitted_data_item_keys": {
+          "total": [
+            "user_count"
+          ]
+        },
         "known_omitted_item_keys": [
           "user_count"
         ],

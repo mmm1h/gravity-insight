@@ -4,12 +4,25 @@ from __future__ import annotations
 
 import base64
 import binascii
-import hashlib
 import json
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from .agent_capabilities import (
+    AGENT_SCOPE,
+    analysis_query_spec_cards,
+    composite_capability_cards,
+)
+from .agent_handoff import (
+    agent_execution_contract,
+    agent_fallbacks,
+    apply_workspace_prefix,
+    attach_plan_node,
+    resolve_workspace_path,
+    unify_capability_candidates,
+    workspace_prefix,
+)
 from .agent_sources import (
     catalog_cards,
     candidates_fingerprint,
@@ -32,6 +45,7 @@ class _DiscoveryPage:
     catalog_fingerprint: str
     expected_candidates_fingerprint: str | None
     offset: int
+    workspace_path: object | None
 
 
 @dataclass(frozen=True)
@@ -123,6 +137,7 @@ def discover_capabilities(
     limit: int = DEFAULT_LIMIT,
     continuation: str | None = None,
     sources: AgentSourceSnapshot | None = None,
+    plan_node_namespace: str | None = None,
 ) -> dict[str, Any]:
     """Return the same bounded, offline protocol used by ``gravity agent``.
 
@@ -145,13 +160,19 @@ def discover_capabilities(
     )
     query = request.query
     if not query:
-        return _protocol()
+        return _protocol(resolve_workspace_path(workspace))
     if client is None:
         raise InputValidationError(
             "an Insight client is required for capability discovery",
             field="client",
         )
-    return _discover(request, client, workspace=workspace, sources=sources)
+    return _discover(
+        request,
+        client,
+        workspace=workspace,
+        sources=sources,
+        plan_node_namespace=plan_node_namespace,
+    )
 
 
 def _discover(
@@ -160,6 +181,7 @@ def _discover(
     *,
     workspace: Any | None,
     sources: AgentSourceSnapshot | None = None,
+    plan_node_namespace: str | None = None,
 ) -> dict[str, Any]:
     page = _discovery_page(
         request, request.query, workspace=workspace, sources=sources
@@ -171,7 +193,7 @@ def _discover(
         platform=request.platform,
         inventory=(sources.operation_inventory if sources is not None else None),
     )
-    unified = _unified_candidates(page.catalog_cards, operations.matches)
+    unified = unify_capability_candidates(page.catalog_cards, operations.matches)
     fingerprint = candidates_fingerprint(unified)
     if (
         page.expected_candidates_fingerprint is not None
@@ -208,19 +230,9 @@ def _discover(
         gaps,
         total=len(unified),
         candidates_fingerprint=fingerprint,
+        plan_node_namespace=plan_node_namespace,
+        workspace_path=page.workspace_path,
     )
-
-
-def _unified_candidates(
-    catalog: list[dict[str, Any]], operations: list[Mapping[str, Any]]
-) -> list[tuple[str, Mapping[str, Any]]]:
-    recipes = [card for card in catalog if card.get("kind") == "recipe"]
-    auxiliary = [card for card in catalog if card.get("kind") != "recipe"]
-    return [
-        *(("catalog", card) for card in recipes),
-        *(("operation", item) for item in operations),
-        *(("catalog", card) for card in auxiliary),
-    ]
 
 
 def _materialize_candidates(
@@ -245,8 +257,17 @@ def _discovery_response(
     *,
     total: int,
     candidates_fingerprint: str,
+    plan_node_namespace: str | None,
+    workspace_path: object | None,
 ) -> dict[str, Any]:
-    candidates = [_with_plan_node(item, request.query) for item in candidates]
+    candidates = [
+        attach_plan_node(
+            apply_workspace_prefix(item, workspace_path),
+            request.query,
+            namespace=plan_node_namespace,
+        )
+        for item in candidates
+    ]
     next_offset = page.offset + len(candidates)
     next_token = (
         _encode_continuation(
@@ -266,7 +287,7 @@ def _discovery_response(
         "offline": True,
         "network_called": False,
         "mode": "discover_and_describe",
-        "scope": "workspace_recipes_stable_insight_sql_products_and_local_metadata",
+        "scope": AGENT_SCOPE,
         "query": request.query,
         "limit": request.limit,
         "count": len(candidates),
@@ -279,11 +300,12 @@ def _discovery_response(
             "success_requires": "at least 80% query-term coverage",
             "partial_matches_are_executable": False,
         },
-        "execution": _execution_contract(),
-        "fallbacks": _fallbacks(request.query),
+        "execution": agent_execution_contract(workspace_path),
+        "fallbacks": agent_fallbacks(request.query, workspace_path),
         "next_action": (
-            "Prefer a recipe, then stable Insight; use a matching SQL product only "
-            "when Insight cannot express the goal, and invoke the selected next.argv."
+            "Prefer a recipe, registered composite, then stable Insight; use a "
+            "matching SQL product only when Insight cannot express the goal, and "
+            "invoke the selected next.argv."
             if candidates
             else "Report capability_gaps; do not execute weak partial matches."
         ),
@@ -297,13 +319,29 @@ def _discovery_page(
     workspace: Any | None = None,
     sources: AgentSourceSnapshot | None = None,
 ) -> _DiscoveryPage:
-    selected_cards: list[dict[str, Any]] = []
+    selected_workspace = sources.workspace if sources is not None else workspace
+    workspace_path = resolve_workspace_path(selected_workspace)
+    composite_inventory = (
+        sources.composite_inventory if sources is not None else None
+    )
+    selected_cards = [
+        *analysis_query_spec_cards(
+            query, domain=args.domain, platform=args.platform
+        ),
+        *composite_capability_cards(
+            query,
+            domain=args.domain,
+            platform=args.platform,
+            inventory=composite_inventory,
+        ),
+    ]
     warnings: list[str] = []
     catalog_fingerprint = workspace_catalog_fingerprint(None)
     if args.domain is None and args.platform is None:
-        selected_cards, _catalog_total, warnings, catalog_fingerprint = catalog_cards(
+        catalog, _catalog_total, warnings, catalog_fingerprint = catalog_cards(
             query, 100, workspace=workspace, sources=sources
         )
+        selected_cards = [*catalog, *selected_cards]
     if args.continuation:
         continuation = _decode_continuation(
             args, query, catalog_fingerprint=catalog_fingerprint
@@ -321,41 +359,11 @@ def _discovery_page(
         catalog_fingerprint=catalog_fingerprint,
         expected_candidates_fingerprint=expected_candidates_fingerprint,
         offset=offset,
+        workspace_path=workspace_path,
     )
 
 
-def _with_plan_node(card: dict[str, Any], query: str) -> dict[str, Any]:
-    """Attach a value-free Plan v1 node template to an executable card."""
-
-    selector = str(card.get("selector", "candidate"))
-    node_id = "n_" + hashlib.sha256(selector.encode("utf-8")).hexdigest()[:12]
-    kind = str(card.get("kind", ""))
-    if kind in {"recipe", "operation"}:
-        request: dict[str, Any] = {"selector": selector}
-        plan_kind = "run"
-    elif kind == "sql_product":
-        request = {"product": card.get("product")}
-        plan_kind = "sql_product"
-    else:
-        request = {
-            "query": query,
-            "kind": card.get("metadata_kind", "all"),
-        }
-        if card.get("app_id") is not None:
-            request["app_id"] = card["app_id"]
-        plan_kind = "metadata_search"
-    plan_node: dict[str, Any] = {
-        "id": node_id,
-        "kind": plan_kind,
-        "request": request,
-    }
-    output_fields = card.get("output_fields")
-    if isinstance(output_fields, list) and output_fields:
-        plan_node["output_fields"] = list(output_fields)
-    return {**card, "plan_node": plan_node}
-
-
-def _protocol() -> dict[str, Any]:
+def _protocol(workspace_path: object | None = None) -> dict[str, Any]:
     return {
         "schema_version": SCHEMA_VERSION,
         "ok": True,
@@ -363,18 +371,18 @@ def _protocol() -> dict[str, Any]:
         "offline": True,
         "network_called": False,
         "mode": "protocol",
-        "scope": "workspace_recipes_stable_insight_sql_products_and_local_metadata",
+        "scope": AGENT_SCOPE,
         "goal": "Discover plus describe, then execute, in at most two CLI calls.",
         "workflow": [
             {
                 "step": "discover_and_describe",
-                "argv": ["gravity", "agent", "<query>"],
+                "argv": [*workspace_prefix(workspace_path), "agent", "<query>"],
                 "network_required": False,
             },
             {
                 "step": "execute",
                 "argv": [
-                    "gravity",
+                    *workspace_prefix(workspace_path),
                     "run",
                     "<operation_id-or-@recipe>",
                     "--input",
@@ -385,6 +393,7 @@ def _protocol() -> dict[str, Any]:
         ],
         "selection_policy": [
             "Prefer a matching workspace recipe because it owns project semantics.",
+            "Prefer a registered composite when it already covers the requested context.",
             "Otherwise select a callable stable Insight operation.",
             "Use governed SQL only when Insight cannot express equivalent semantics.",
         ],
@@ -400,8 +409,8 @@ def _protocol() -> dict[str, Any]:
             "3": "upstream, permission, or rate limit",
             "4": "local contract, privacy, policy, or I/O",
         },
-        "execution": _execution_contract(),
-        "fallbacks": _fallbacks(),
+        "execution": agent_execution_contract(workspace_path),
+        "fallbacks": agent_fallbacks(workspace_path=workspace_path),
         "next_action": "Run `gravity agent <query>` to get bounded executable capability cards.",
     }
 
@@ -461,35 +470,6 @@ def _decode_continuation(
     return payload
 
 
-def _execution_contract() -> dict[str, Any]:
-    return {
-        "argv": [
-            "gravity",
-            "run",
-            "<operation_id-or-@recipe>",
-            "--input",
-            "<json-object-or-file>",
-        ],
-        "input_forms": {
-            "--input": "inline JSON, JSON file, or '-' for stdin",
-            "--set": "repeatable path=value override",
-            "--app": "workspace alias or positive App id",
-            "--start/--end": "paired date shortcuts",
-            "--concurrency": "known-total page workers (default 6, maximum 24)",
-        },
-        "bounded_stdout": {"max_pages": 5, "max_items": 200},
-        "large_result_argv_suffix": [
-            "--all-pages",
-            "--concurrency",
-            "6",
-            "--output",
-            "<path>",
-            "--format",
-            "ndjson",
-        ],
-    }
-
-
 def ndjson_metadata(value: Any) -> dict[str, Any]:
     """Preserve the Agent protocol when candidates become NDJSON rows."""
 
@@ -513,20 +493,6 @@ def ndjson_metadata(value: Any) -> dict[str, Any]:
         "capability_gaps": value.get("capability_gaps"),
         "match_policy": value.get("match_policy"),
     }
-
-
-def _fallbacks(query: str | None = None) -> list[dict[str, Any]]:
-    selected_query = query or "<query>"
-    return [
-        {
-            "when": "workspace recipe or local metadata may already encode the goal",
-            "argv": ["gravity", "find", selected_query],
-        },
-        {
-            "when": "no stable Insight operation can express equivalent semantics",
-            "argv": ["gravity", "sql", "products"],
-        },
-    ]
 
 
 __all__ = [

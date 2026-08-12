@@ -1,7 +1,6 @@
 # Agent 工作流
 
-本页是 Agent 的最短执行协议。目标不是把所有命令跑一遍，而是用最少调用得到一个可复核的
-结果或明确能力缺口。
+本页是 Agent 的最短执行协议。目标不是把所有命令跑一遍，而是用最少调用得到一个可复核的结果或明确能力缺口。
 
 ## 0. 先选最短入口
 
@@ -9,6 +8,9 @@
 | --- | --- | --- |
 | 已知 workspace recipe | `gravity run @<recipe> ...` | 1 |
 | 已知 operation 和输入 schema | `gravity run <operation-id> ...` | 1 |
+| 已知 Analysis kind 和物理字段 | `gravity analysis query --kind <kind> --spec <spec>` | 1 |
+| 已知 Analysis kind，物理字段未知 | `metadata search` → `analysis query --spec` | 2 |
+| 已知 App 与经营时间窗 | `gravity reports pulse --app ... --start ... --end ...` | 1 |
 | 已知多个 selector 或已有 Plan | `gravity plan run --input <plan.json>` | 1 |
 | 已知 operation，不确定输入 | `gravity agent <operation-id>` → `run` | 2 |
 | 只知道分析目标 | `gravity agent "<query>"` → 返回 argv | 2 |
@@ -16,15 +18,15 @@
 | 同时找 operation、recipe、metadata | `gravity find "<query>"` | 1 次发现 |
 | 多个独立 operation | `gravity insight batch read ...` | 1 次批量执行 |
 
-`run` 已经完成 bind、validate、parents、exec 和 diagnose。不要在每次调用前机械执行
-`recipe check`、`validate`、`parents resolve` 和 `doctor`；只有 `run` 的 diagnostics 要求时
-再执行对应命令。
+`run` 已经完成 bind、validate、parents、exec 和 diagnose。不要在每次调用前机械执行 `recipe check`、`validate`、`parents resolve` 和 `doctor`；只有 `run` 的 diagnostics 要求时再执行对应命令。
+
+五种 Analysis kind（`event/funnel/retention/property/scatter`）使用 `gravity analysis query --kind <kind> --spec <json|file|->`，完整示例见 [CLI 参考](reference/cli.md#analysis-query-spec-v1)。物理字段已知时一次执行；未知时先 `gravity metadata search`，再一次 spec 执行。`--dry-run` 返回零网络的安全编译预览；带条件值时会脱敏并省略 Plan node。Spec 必须显式声明事件、指标、日期、窗口、分组和条件，不接受自然语言自动执行，也不要求调用方复制 Web wire 结构。
+
+经营概览和趋势直接一次调用 `gravity reports pulse --app main --start 2026-08-01 --end 2026-08-07 --include-hourly`；只有需要小时对比时加 `--include-hourly`，其结果是 `scope=workspace`。交叉 Plan 使用 composite `name=business_pulse` 和 `apps/start/end`，不要手工串行读取 overview/business。
 
 ## 1. 业务语义先在调用项目解析
 
-如果用户说“幸运礼包”之类业务名称，先从业务知识库确定模块、活动 ID、SKU、时间窗和已
-审核埋点绑定。SDK 能验证某 App 有哪些物理事件/属性并执行受控分析，但不能从相似名称建立
-业务归属。
+如果用户说“幸运礼包”之类业务名称，先从业务知识库确定模块、活动 ID、SKU、时间窗和已审核埋点绑定。SDK 能验证某 App 有哪些物理事件/属性并执行受控分析，但不能从相似名称建立业务归属。
 
 无法解析业务口径时先向用户报告缺失信息，不要用事件中文名或字段名猜测。
 
@@ -36,11 +38,7 @@ gravity agent "<英文或技术关键词>"
 gravity run <operation-id> --input <json-or-file>
 ```
 
-`gravity agent` 完全离线，一次完成 bounded search + describe，优先返回匹配的 workspace
-recipe，再用 stable operation 补足默认 3 个、最多 5 个 capability cards。Recipe 卡片包含
-`required_parameters`；operation 卡片包含压缩 input schema、`required_inputs`、父 operation、
-分页合同；两类都提供可直接调用的 `next.argv`。无 query 时运行 `gravity agent` 可取得
-`gravity.agent.v1` 机器协议。
+`gravity agent` 完全离线，一次完成 bounded search + describe，优先返回匹配的 workspace recipe，再用 stable operation 补足默认 3 个、最多 5 个 capability cards。Recipe 卡片包含 `required_parameters`；operation 卡片包含压缩 input schema、`required_inputs`、父 operation、分页合同；两类都提供可直接调用的 `next.argv`。无 query 时运行 `gravity agent` 可取得 `gravity.agent.v1` 机器协议。
 
 多个问题不要逐个执行 `gravity agent`。一次提交带稳定 ID 的问题数组：
 
@@ -58,10 +56,7 @@ recipe，再用 stable operation 补足默认 3 个、最多 5 个 capability ca
 gravity agent --input questions.json
 ```
 
-这次调用只加载一次 Workspace、operation inventory、SQL product 和本地 metadata catalog，按
-问题输入顺序返回结果。每个强候选都带可复制的 `plan_node`；单项发现失败不影响其他问题。
-自然语言发现不会自动执行。调用方选择节点、补齐输入并组成一个 Plan 后，第二次调用
-`gravity plan run`。因此未知问题是“批量发现一次 + 执行一次”，不是“每个问题两次”。
+这次调用只加载一次 Workspace、operation inventory、SQL product 和本地 metadata catalog，按问题输入顺序返回结果。Plan 可执行候选带可复制的 `plan_node`；Analysis Spec 编译器卡则内嵌完整 kind schema 和可直接执行的 `argv`。单项发现失败不影响其他问题。自然语言发现不会自动执行。调用方选择节点、补齐输入并组成一个 Plan 后，第二次调用 `gravity plan run`；Spec 卡可直接执行其 compact spec。因此未知问题仍是“批量发现一次 + 执行一次”。
 
 选择卡片时检查：
 
@@ -69,12 +64,9 @@ gravity agent --input questions.json
 - operation 确认 `executable: true`、`stability: stable`，且 `required_inputs` 已全部填写；
 - `next.argv` 中的 placeholder 已替换。
 
-需要完整浏览 catalog 或查看 draft/blocked 覆盖缺口时，再使用
-`operations search/describe`；这时再检查 `block_reason`、`currently_callable`、完整 schema 和
-example。不要执行 blocked 候选，也不要读取 manifest 猜 wire 字段。
+需要完整浏览 catalog 或查看 draft/blocked 覆盖缺口时，再使用 `operations search/describe`；这时再检查 `block_reason`、`currently_callable`、完整 schema 和 example。不要执行 blocked 候选，也不要读取 manifest 猜 wire 字段。
 
-`--input` 以 `{` 或 `[` 开头时是内联 JSON，`-` 从 stdin 读取，其他值是文件路径；
-`--set a.b=c` 支持点路径。输入合并优先级是 `flag > --set > --input > 合同默认值`。
+`--input` 以 `{` 或 `[` 开头时是内联 JSON，`-` 从 stdin 读取，其他值是文件路径；`--set a.b=c` 支持点路径。输入合并优先级是 `flag > --set > --input > 合同默认值`。
 
 已知稳定 recipe 时更短：
 

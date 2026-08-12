@@ -71,6 +71,31 @@ sql_result = gravity.query_sql_products(
 analysis = gravity.analysis_context("main", max_workers=6)
 app = gravity.app_snapshot("main", max_workers=6)
 attribution = gravity.attribution_snapshot("main", max_workers=6)
+
+# 用紧凑、显式的分析语义代替 Web wire 结构；编译阶段不发送网络请求。
+event_spec = {
+    "start": "2026-08-01",
+    "end": "2026-08-07",
+    "time_grain": "day",
+    "steps": [
+        {
+            "event": "app_open",
+            "metric": {
+                "field": "PresetAllCount",
+                "aggregation": "PresetAllCount",
+            },
+        }
+    ],
+}
+compiled = gravity.compile_analysis_query("event", event_spec, app="main")
+assert compiled["network_called"] is False
+event_result = gravity.analysis_query("event", event_spec, app="main")
+
+# 并发读取经营概览与趋势；小时对比明确属于 workspace scope。
+pulse = gravity.business_pulse(
+    ["main"], "2026-08-01", "2026-08-07",
+    platforms=["bytedance"], include_hourly=True,
+)
 ```
 
 `GravitySDK` / `connect()` 惰性创建并分别缓存 Insight 与 SQL client，适合一个进程同时使用
@@ -91,6 +116,9 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `read_many()` | `GravityInsightClient.batch()` |
 | `describe_sql_products()` | 安全描述 workspace 产品，不返回 SQL 模板 |
 | `query_sql_products()` | `run_product_queries()`，支持单对象或批量、保序隔离失败 |
+| `compile_analysis_query()` | 把 Analysis Spec v1 编译为稳定 operation input 并运行离线输入校验；带筛选值时预览脱敏且不返回 Plan node；零网络请求 |
+| `analysis_query()` | 使用同一编译器执行 `event/funnel/retention/property/scatter` 稳定查询 |
+| `business_pulse()` | 并发读取 App 经营概览与趋势，可选 workspace scope 小时对比 |
 | `analysis_context()` | 固定 13 个 Analysis 词汇/模板来源，外层并发、局部失败隔离 |
 | `app_snapshot()` | 固定 6 个 App 治理来源，明确 company/App scope |
 | `attribution_snapshot()` | 当前 8 个 stable attribution 配置来源，不包含 draft 查询 |
@@ -107,6 +135,28 @@ stable operation、SQL product 和本地 metadata 目录，单项失败不影响
 `read()`、`read_all()`、`read_limited()` 和 `run()` 都接受 `output_fields`。它只在本地裁剪合同
 允许的输出字段；默认 `None` 时保持原 envelope。动态字段必须同时由本次请求声明并被合同
 允许，不能用它请求未知上游字段。
+
+## Analysis Query Spec v1
+
+`compile_analysis_query(kind, spec, *, app=None, start=None, end=None, workspace=None)` 与
+`analysis_query(kind, spec, *, app=None, start=None, end=None, workspace=None,
+output_fields=None)` 支持 `event`、`funnel`、`retention`、`property`、`scatter` 五种 kind。
+`app` 接受绑定 workspace 中的别名或正整数；成对提供的 `start/end` 覆盖 spec 日期。
+
+编译结果使用 `gravity-insight.analysis-query-compiled.v1`，包含现有稳定 `operation_id`、
+`compiled_input`、`validation` 和无敏感筛选值时可直接加入 Plan 的 `plan_node`；`offline=true` 且
+`network_called=false`。执行方法会先调用同一编译和离线校验，再通过公共 `read()` 执行，
+因此不需要在每次查询前单独编译。
+
+Spec 只简化结构，不替调用方决定语义：事件名、属性名、指标、聚合、日期、窗口、分组和条件
+必须显式填写。物理字段未知时，先通过 `gravity metadata search` 或本地 metadata API 确认，
+随后一次调用 `analysis_query()`；自然语言 capability discovery 不会自动执行查询。
+
+`business_pulse(apps, start, end, *, platforms=(...), include_hourly=False,
+max_workers=6, max_pages=1000, max_items=100000, workspace=None)` 接受一个 App 或 App 序列；
+每项是 workspace alias 或正整数。结果固定按 `overview/business/hourly_comparison` 排序，最后一项
+只在 `include_hourly=True` 时存在，且始终标记 `scope=workspace`，不能当作某个 App 的小时
+数据。对应 Plan composite 使用 `name="business_pulse"` 以及必填 `apps/start/end`。
 
 ## Plan v1
 

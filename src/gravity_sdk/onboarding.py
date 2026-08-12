@@ -35,7 +35,11 @@ def command_requires_credentials(
         args = parser_factory().parse_args(argv)
     except (Exception, SystemExit):
         return False
-    if bool(getattr(args, "dry_run", False)):
+    if bool(getattr(args, "dry_run", False)) or bool(
+        getattr(args, "query_spec_dry_run", False)
+    ):
+        return False
+    if bool(getattr(args, "spec_schema", False)):
         return False
     if bool(getattr(args, "live", False)):
         return True

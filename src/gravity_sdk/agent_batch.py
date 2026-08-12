@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
 import threading
 from typing import Any
@@ -13,6 +13,8 @@ from .errors import ErrorCategory, ErrorDetail
 
 
 SCHEMA_VERSION = "gravity.agent-batch.v1"
+NDJSON_RECORD_SCHEMA_VERSION = "gravity.agent-question.v1"
+NDJSON_SUMMARY_SCHEMA_VERSION = "gravity.agent-batch-summary.v1"
 MAX_QUESTIONS = 32
 _QUESTION_FIELDS = frozenset({"id", "query", "domain", "platform", "limit"})
 
@@ -106,6 +108,37 @@ def capabilities_many_for_sdk(
         client=sdk.insight,
         workspace=selected_workspace,
     )
+
+
+def iter_ndjson_records(value: Mapping[str, Any]) -> Iterator[dict[str, Any]]:
+    """Yield one bounded question per row plus a terminal summary.
+
+    This is the CLI-independent integration hook for true batch NDJSON.  The
+    shared CLI renderer can adopt it without teaching discovery about stdout.
+    """
+
+    if value.get("schema_version") != SCHEMA_VERSION:
+        raise ValueError("agent batch NDJSON requires a gravity.agent-batch.v1 result")
+    results = value.get("results", [])
+    if not isinstance(results, list):
+        raise ValueError("agent batch NDJSON results must be an array")
+    for item in results:
+        if not isinstance(item, Mapping):
+            raise ValueError("agent batch NDJSON result items must be objects")
+        yield {"schema_version": NDJSON_RECORD_SCHEMA_VERSION, **dict(item)}
+    summary = {
+        key: item
+        for key, item in value.items()
+        if key not in {"results", "schema_version"}
+    }
+    yield {
+        "_gravity_agent_batch": {
+            "schema_version": NDJSON_SUMMARY_SCHEMA_VERSION,
+            "payload_schema_version": SCHEMA_VERSION,
+            "rows_written": len(results),
+            **summary,
+        }
+    }
 
 
 def validate_questions(
@@ -208,6 +241,7 @@ def discover_one(
             platform=item.platform,
             limit=item.limit,
             sources=sources,
+            plan_node_namespace=item.question_id,
         )
         return {
             "question_id": item.question_id,
@@ -237,5 +271,6 @@ def discover_one(
 __all__ = [
     "capabilities_many",
     "capabilities_many_for_sdk",
+    "iter_ndjson_records",
     "validate_questions",
 ]

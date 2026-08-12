@@ -8,6 +8,7 @@
 | --- | --- | --- |
 | 安装、登录、跑第一个查询 | [快速上手](getting-started.md) | [CLI 参考](reference/cli.md) |
 | 让 Agent 查询 Gravity | [Agent 工作流](agent-workflow.md) | [架构与概念](architecture.md) |
+| 构造事件、漏斗、留存、属性或分布查询 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Analysis Spec](reference/cli.md#analysis-query-spec-v1) |
 | 批量发现并执行交叉查询 | [Agent 工作流：显式 Plan](agent-workflow.md#3-交叉查询一个显式-plan) | [CLI Plan 参考](reference/cli.md#plan-v1) |
 | 在 Python 中集成 SDK | [Python SDK 参考](reference/sdk.md) | [架构与概念](architecture.md) |
 | 判断用 Insight 还是 SQL | [架构与概念](architecture.md#查询路由) | [Agent 工作流](agent-workflow.md#选择-insight-还是-sql) |
@@ -32,7 +33,7 @@
 
 - 已知 selector 或已有 Plan：一次 `gravity run` / `gravity plan run`。
 - 未知问题：一次 `gravity agent --input` 批量发现，再一次 `gravity plan run`，总共两次。
-- 发现只返回候选和 `plan_node`，不会从自然语言自动执行。
+- 发现只返回候选以及 Plan node 或受控编译交接，不会从自然语言自动执行。
 
 当前基线仍为 185 个 operation、176 个 stable。本轮 17 个候选新增 stable 数为 0；不要把
 `draft` 能力写入生产 Plan。逐项 blocker 以[候选能力证据矩阵](candidate-capability-matrix.md)

@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from .agent_capabilities import composite_capability_inventory
 from .agent_sources import workspace_catalog_fingerprint
 from .errors import InputValidationError
 from .find_metadata import search_metadata
@@ -21,6 +22,7 @@ class AgentSourceSnapshot:
     recipe_inventory: tuple[Mapping[str, Any], ...]
     product_inventory: tuple[Mapping[str, Any], ...]
     metadata_inventory: tuple[Mapping[str, Any], ...]
+    composite_inventory: tuple[Mapping[str, Any], ...]
     warnings: tuple[str, ...]
     workspace_fingerprint: str
 
@@ -36,13 +38,14 @@ def snapshot_agent_sources(
     recipes = snapshot_recipes(selected_workspace)
     products = snapshot_products(selected_workspace, warnings)
     return AgentSourceSnapshot(
-        selected_workspace,
-        inventory,
-        recipes,
-        products,
-        metadata,
-        tuple(warnings),
-        workspace_catalog_fingerprint(selected_workspace),
+        workspace=selected_workspace,
+        operation_inventory=inventory,
+        recipe_inventory=recipes,
+        product_inventory=products,
+        metadata_inventory=metadata,
+        composite_inventory=composite_capability_inventory(),
+        warnings=tuple(warnings),
+        workspace_fingerprint=workspace_catalog_fingerprint(selected_workspace),
     )
 
 

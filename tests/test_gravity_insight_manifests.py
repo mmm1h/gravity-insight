@@ -1256,6 +1256,19 @@ class GravityInsightManifestTests(unittest.TestCase):
                 "promotion.bytedance.project.list": {"total": ["stat_cost"]},
                 "promotion.tencent.advertiser.list": {"total": ["cost"]},
                 "promotion.taptap.group.list": {"total": []},
+                "report.company_amount.query": {
+                    "total": [
+                        "ad_count",
+                        "ad_create_amount_usage",
+                        "adclick_count",
+                        "cost_count",
+                        "event_count",
+                        "material_transmit_g_usage",
+                        "profile_count",
+                        "storage_count",
+                        "tracking_count",
+                    ]
+                },
                 "report.multidim.query": {
                     "extra_data": [],
                     "total": ["stat_time"],

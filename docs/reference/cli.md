@@ -17,6 +17,7 @@ gravity census <command>      前端路由盘点
 gravity analysis context      并发读取一个 App 的分析上下文
 gravity apps snapshot         并发读取一个 App 的治理快照
 gravity attribution snapshot  并发读取一个 App 的归因配置快照
+gravity reports pulse         并发读取 App 经营概览与趋势
 ```
 
 任意命令都可在顶层显式选择项目配置：
@@ -38,7 +39,7 @@ gravity agent --input questions.json
 ```
 
 无 query 时返回两步协议；有 query 时优先返回匹配的 workspace recipe，再用 stable operation
-补足 capability cards；每张卡都含必填输入或参数、下一条 `argv` 和 `plan_node`，默认 3 个、
+补足 capability cards；可由 Plan 执行的卡含必填输入、下一条 `argv` 和 `plan_node`，默认 3 个、
 最多 5 个，不访问网络。`--input` 接受最多 32 个唯一 ID 问题的 `{"questions":[...]}`，为
 多个问题复用一次离线目录快照并按输入顺序返回；不能与 positional query、continuation、
 domain 或 platform 组合。需要完整 catalog 或 blocked 覆盖信息时再进入
@@ -137,6 +138,88 @@ context 固定 13 个词汇/模板来源，App snapshot 固定 6 个治理来源
 默认并发 6、上限 24，按固定来源顺序返回并隔离局部失败。Attribution snapshot 不包含仍为
 draft 的聚合归因和用户/设备级明细查询。
 
+### Analysis Query Spec v1
+
+`analysis query` 支持五种稳定分析：`event`、`funnel`、`retention`、`property`、`scatter`。
+使用 `--spec` 时，调用方只声明事件、指标、日期、分组、窗口和条件等分析语义；编译器负责
+生成 `query_id`、`query_item_list`、`group_by_list` 等上游 wire 结构。先查看机器合同：
+
+```powershell
+gravity analysis query --kind event --spec-schema
+```
+
+`--spec-schema` 完全离线，不创建客户端。`--spec` 接受内联 JSON、JSON 文件路径或 `-`
+（stdin）；`--app <alias|id>` 选择 workspace App，`--workspace <file|directory>` 显式选择
+workspace。`--start/--end` 必须成对使用，并覆盖 spec 中的日期。
+
+下面的事件分析按天统计 `app_open` 的总次数。执行前应确认 `app_open` 是目标 App 的真实物理
+事件名；如果不确定，先运行一次 `gravity metadata search "app_open" --app-id 1001`：
+
+```powershell
+gravity analysis query --kind event --app 1001 --spec '{
+  "start": "2026-08-01",
+  "end": "2026-08-07",
+  "time_grain": "day",
+  "steps": [
+    {
+      "event": "app_open",
+      "metric": {
+        "field": "PresetAllCount",
+        "aggregation": "PresetAllCount"
+      }
+    }
+  ]
+}'
+```
+
+下面的漏斗查询使用 workspace 的 `main` App，并通过 CLI 日期覆盖指定时间；窗口是一天：
+
+```powershell
+gravity analysis query --kind funnel --workspace . --app main `
+  --start 2026-08-01 --end 2026-08-07 --spec '{
+  "steps": [
+    {
+      "event": "app_open",
+      "metric": {
+        "field": "PresetAllCount",
+        "aggregation": "PresetAllCount"
+      }
+    },
+    {
+      "event": "purchase",
+      "metric": {
+        "field": "PresetAllCount",
+        "aggregation": "PresetAllCount"
+      }
+    }
+  ],
+  "window": {"unit": "day", "value": 1}
+}'
+```
+
+在上述命令末尾加 `--dry-run` 会离线编译并运行现有输入校验，保证
+`network_called=false`，同时返回 `operation_id`、`compiled_input` 和可放入 Plan 的
+`plan_node`。带条件值时预览会用占位符脱敏并把 `plan_node` 设为 `null`，避免同一敏感值在机器输出中重复；仍可直接执行原始 compact spec。正常执行已经包含相同编译与校验，不需要每次先跑 dry-run。
+
+Spec 不接受自然语言，也不会猜测事件、属性、指标、窗口或筛选条件。物理字段未知时，先用
+本地 metadata 目录确认，再执行一次 spec；自然语言能力发现仍只返回候选，不会自动联网执行。
+原始 `--input` 入口继续兼容，但不能与 `--spec` 同时使用。
+
+### Business pulse
+
+一个命令并发读取 App 概览和经营趋势；`--app` 可重复或用逗号分隔，支持 workspace alias 或
+正整数。平台默认包含 `bytedance/tencent/kuaishou`，可重复指定 `--platform`：
+
+```powershell
+gravity reports pulse --app main --start 2026-08-01 --end 2026-08-07 `
+  --platform bytedance --include-hourly
+```
+
+基础结果按 `overview`、`business` 顺序；`--include-hourly` 才追加
+`hourly_comparison`。前两项是 `scope=app`，小时对比受上游合同限制并明确标记
+`scope=workspace`，不能解释为单个 App 的小时结果。组合复用现有 stable operation、批量并发、
+分页和局部失败合同；不推导业务结论或指标别名。
+
 ## Plan v1
 
 ```powershell
@@ -173,12 +256,32 @@ gravity plan run --input plan.json --concurrency 6
 | `run` | `selector`、`inputs`/`parameters`、可选 `app/start/end/all_pages` | operation 或 `@recipe` |
 | `sql_product` | `product` 及该 Workspace 产品的 App/时间输入 | 已登记产品，禁止裸 SQL |
 | `metadata_search` | `query`、可选 `kind/app_id/limit/offset` | 已同步的本地 catalog |
-| `composite` | `name`、组合所需 App/查询输入 | 仅登记的 analysis context、App/attribution snapshot、multidim |
+| `composite` | `name`、组合所需 App/查询输入 | 仅登记的 analysis context、App/attribution snapshot、business pulse、multidim |
 
 每个节点还可声明 `depends_on`、标量 `bindings`、一个有限 `foreach`、`limits` 和
 `output_fields`。binding/foreach 的 `from` 必须显式位于 `depends_on`，路径使用 RFC 6901 JSON
 Pointer。预检覆盖 schema、ID、依赖、环、pointer、adapter 输入和最坏预算；任一节点预检
 失败时零网络请求。
+
+Business pulse 的 Plan 节点使用同一实现；`apps/start/end` 必填：
+
+```json
+{
+  "id": "pulse",
+  "kind": "composite",
+  "request": {
+    "name": "business_pulse",
+    "apps": ["main"],
+    "start": "2026-08-01",
+    "end": "2026-08-07",
+    "include_hourly": true
+  },
+  "limits": {"max_pages": 20, "max_items": 5000}
+}
+```
+
+Plan 中小时结果仍为 `scope=workspace`；adapter 内部 worker 固定为 1，由 Plan 全局 worker pool
+管理并发。
 
 外层并发默认 6、上限 24，adapter 内分页 worker 固定 1；SQL 的进程级并发仍为 2。声明节点
 最多 64、展开执行最多 256、总 `max_items` 不超过 100,000。每个 foreach 默认最多 32、硬

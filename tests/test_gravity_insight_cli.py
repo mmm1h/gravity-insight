@@ -471,6 +471,17 @@ class GravityInsightCliTests(unittest.TestCase):
             client.read_calls[0][1]["query_id"], r"^\d{13}[A-Za-z0-9]{19}$"
         )
 
+    def test_raw_analysis_query_dry_run_is_rejected_without_reading(self):
+        code, _, error, client = self.invoke(
+            [
+                "analysis", "query", "--kind", "event",
+                "--input", "{}", "--dry-run",
+            ]
+        )
+        self.assertEqual(2, code)
+        self.assertEqual("dry_run", error["error"]["field"])
+        self.assertEqual([], client.read_calls)
+
     def test_inline_json_and_typed_set_merge_without_a_file(self):
         code, result, error, _ = self.invoke(
             [

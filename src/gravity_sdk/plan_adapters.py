@@ -13,6 +13,7 @@ from .find_metadata import search_metadata
 from .output_projection import validate_output_fields
 from .plan import AdapterContext, PlanAdapter, PlanAdapters
 from .plan_binding import set_pointer
+from .plan_pulse_adapter import execute_business_pulse, validate_business_pulse
 from .resolver_support import build_inputs
 from .plan_adapter_support import (
     alias_mapping as _alias_mapping,
@@ -41,17 +42,24 @@ _RUN_FIELDS = frozenset(
 _SQL_FIELDS = frozenset({"product", "start", "end", "app_id", "app_ids"})
 _METADATA_FIELDS = frozenset({"query", "app_id", "kind", "limit", "offset"})
 _COMPOSITE_FIELDS = frozenset(
-    {"name", "app", "inputs", "include_total", "read_all", "metadata_inputs"}
+    {
+        "name", "app", "apps", "start", "end", "platforms", "include_hourly",
+        "inputs", "include_total", "read_all", "metadata_inputs",
+    }
 )
 _COMPOSITES = frozenset(
-    {"analysis_context", "app_snapshot", "attribution_snapshot", "multidim"}
+    {
+        "analysis_context", "app_snapshot", "attribution_snapshot",
+        "business_pulse", "multidim",
+    }
 )
 _METADATA_OUTPUT_FIELDS = frozenset(
     {"kind", "app_id", "operation_id", "name", "cname", "payload", "score"}
 )
 _COMPOSITE_OUTPUT_FIELDS = frozenset(
     {
-        "app_id", "components", "coverage", "operation_count",
+        "app_count", "app_id", "components", "coverage", "date_range",
+        "include_hourly", "operation_count", "platforms",
         "paginated_operation_count", "query", "results", "scopes", "source_count",
         "total", "validation",
     }
@@ -386,6 +394,11 @@ def _validate_composite(
     name = request.get("name")
     if name not in _COMPOSITES:
         raise _input("composite name is not allowlisted", "name")
+    if name == "business_pulse":
+        validate_business_pulse(
+            request, context, workspace, _COMPOSITE_OUTPUT_FIELDS
+        )
+        return
     allowed_targets = {"/app"}
     if name == "multidim":
         schema = insight.schema(MULTIDIM_QUERY_OPERATION)
@@ -478,6 +491,8 @@ def _execute_composite(
             max_items=context.max_items,
             workspace=context.workspace,
         )
+    if name == "business_pulse":
+        return execute_business_pulse(sdk, request, context)
     app_id = context.workspace.resolve_app(app)
     inputs = _multidim_inputs(dict(request.get("inputs", {})), app_id)
     return CompositeService(sdk.insight).multidim_query(

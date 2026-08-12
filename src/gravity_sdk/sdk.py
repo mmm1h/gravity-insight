@@ -11,11 +11,13 @@ import threading
 from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
+from .sdk_analysis import AnalysisSdkMixin
+
 
 ClientFactory = Callable[[], Any]
 
 
-class GravitySDK:
+class GravitySDK(AnalysisSdkMixin):
     """Lazy, process-friendly entry point for the Gravity SDK.
 
     ``insight`` and ``sql`` are built only when first used.  Direct convenience
@@ -309,72 +311,6 @@ class GravitySDK:
             values,
             max_workers=max_workers,
             workspace=self._select_workspace(workspace),
-        )
-
-    def analysis_context(
-        self,
-        app: str | int | None = None,
-        *,
-        max_workers: int = 6,
-        max_pages: int = 1_000,
-        max_items: int = 100_000,
-        workspace: Any | None = None,
-    ) -> dict[str, Any]:
-        """Read the fixed Analysis vocabulary for one workspace App."""
-
-        from .analysis_context import analysis_context
-
-        selected = self._select_workspace(workspace)
-        return analysis_context(
-            self.insight,
-            self._resolve_app(selected, app),
-            max_workers=max_workers,
-            max_pages=max_pages,
-            max_items=max_items,
-        )
-
-    def app_snapshot(
-        self,
-        app: str | int | None = None,
-        *,
-        max_workers: int = 6,
-        max_pages: int = 1_000,
-        max_items: int = 100_000,
-        workspace: Any | None = None,
-    ) -> dict[str, Any]:
-        """Read the fixed App governance snapshot with explicit scopes."""
-
-        from .app_snapshot import app_snapshot
-
-        selected = self._select_workspace(workspace)
-        return app_snapshot(
-            self.insight,
-            self._resolve_app(selected, app),
-            max_workers=max_workers,
-            max_pages=max_pages,
-            max_items=max_items,
-        )
-
-    def attribution_snapshot(
-        self,
-        app: str | int | None = None,
-        *,
-        max_workers: int = 6,
-        max_pages: int = 1_000,
-        max_items: int = 100_000,
-        workspace: Any | None = None,
-    ) -> dict[str, Any]:
-        """Read every stable attribution configuration for one workspace App."""
-
-        from .attribution import attribution_snapshot
-
-        selected = self._select_workspace(workspace)
-        return attribution_snapshot(
-            self.insight,
-            self._resolve_app(selected, app),
-            concurrency=max_workers,
-            max_pages=max_pages,
-            max_items=max_items,
         )
 
     def validate_plan(

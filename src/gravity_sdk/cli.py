@@ -16,7 +16,6 @@ from gravity_sdk.domains import (
     ANALYSIS_DETAIL_OPERATIONS,
     ANALYSIS_DIRECTORY_OPERATIONS,
     ANALYSIS_PAGINATED_OPERATIONS,
-    ANALYSIS_QUERY_OPERATIONS,
     ANALYSIS_REPORT_CONFIG_OPERATIONS,
     ANALYSIS_SEGMENT_OPERATIONS,
     ANALYSIS_TEMPLATE_OPERATIONS,
@@ -30,7 +29,6 @@ from gravity_sdk.domains import (
     PROMOTION_PLATFORMS,
     PROMOTION_PRIMARY_OPERATIONS,
     promotion_operation,
-    new_analysis_query_id,
 )
 from gravity_sdk import nonempty_cli, runtime
 from gravity_sdk.cli_limits import (
@@ -77,6 +75,8 @@ except ModuleNotFoundError:  # source checkout before editable installation
 
 from gravity_sdk.parents import add_parent_commands, run_parent_command
 from gravity_sdk.attribution import add_snapshot_command
+from gravity_sdk.analysis_spec_cli import add_analysis_query_arguments, run_analysis_query_command
+from gravity_sdk.business_pulse_cli import add_business_pulse_command
 from gravity_sdk.metadata_sync import (
     add_metadata_commands,
     run_analysis_metadata,
@@ -332,6 +332,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     add_parent_commands(commands)
 
+    add_business_pulse_command(commands, _concurrency, _positive_int)
+
     doctor = add_export_commands(commands, _add_input, _positive_int).add_parser(
         "doctor",
         help="Validate local contracts; --live runs every stable minimum probe.",
@@ -360,16 +362,7 @@ def build_parser() -> argparse.ArgumentParser:
     _add_input(analysis_segments)
     _add_all_pages(analysis_segments)
     analysis_query = analysis_commands.add_parser("query")
-    analysis_query.add_argument(
-        "--kind", required=True, choices=sorted(ANALYSIS_QUERY_OPERATIONS)
-    )
-    analysis_query.add_argument(
-        "--experimental",
-        action="store_true",
-        help="allow the operation only when the registry marks it experimental",
-    )
-    _add_input(analysis_query)
-    _add_query_shortcuts(analysis_query)
+    add_analysis_query_arguments(analysis_query, _add_input, _add_query_shortcuts)
     analysis_segment = analysis_commands.add_parser(
         "segment", help="Read a segment definition, history, trend, or member rows."
     )
@@ -717,11 +710,11 @@ def _multidim_metadata(args: argparse.Namespace) -> Any:
 def _analysis(args: argparse.Namespace) -> Any:
     if args.analysis_command == "metadata":
         return run_analysis_metadata(args, _client, _object_input)
+    if args.analysis_command == "query":
+        return run_analysis_query_command(args, runtime.build_client, _object_input, _merge_query_shortcuts, runtime.call_read)
 
     supplied = _object_input(args.input)
-    if args.analysis_command == "query":
-        operation_id = ANALYSIS_QUERY_OPERATIONS[args.kind]
-    elif args.analysis_command == "segments":
+    if args.analysis_command == "segments":
         operation_id = DOMAIN_OPERATIONS["analysis.segments"][0]
     elif args.analysis_command == "segment":
         operation_id = ANALYSIS_SEGMENT_OPERATIONS[args.kind]
@@ -766,11 +759,6 @@ def _analysis(args: argparse.Namespace) -> Any:
                 "experimental analysis reads require explicit --experimental"
             )
         client = runtime.build_client(allow_experimental=True)
-
-    if args.analysis_command == "query":
-        supplied, _ = _merge_query_shortcuts(client, operation_id, args, supplied)
-        supplied.setdefault("query_id", new_analysis_query_id())
-        return runtime.call_read(client, operation_id, supplied)
 
     if args.analysis_command == "segments":
         supplied["app_id"] = str(args.app_id)
@@ -1170,6 +1158,11 @@ def _ndjson_rows(result: Any) -> tuple[list[Any], dict[str, Any]]:
 
 
 def _iter_ndjson_lines(result: Any):
+    if isinstance(result, Mapping) and result.get("schema_version") == "gravity.agent-batch.v1":
+        from gravity_sdk.agent_batch import iter_ndjson_records
+        for record in iter_ndjson_records(result):
+            yield json.dumps(_redact(record), ensure_ascii=False, sort_keys=True)
+        return
     rows, metadata = _ndjson_rows(result)
     for row in rows:
         yield json.dumps(

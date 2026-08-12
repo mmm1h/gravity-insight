@@ -103,6 +103,10 @@ class GravityOnboardingTests(unittest.TestCase):
             ["auth", "status"],
             ["export", "list-capabilities"],
             ["batch", "schema"],
+            [
+                "analysis", "query", "--kind", "event",
+                "--spec", "{}", "--dry-run",
+            ],
         ):
             with self.subTest(command=command):
                 self.assertFalse(command_requires_credentials(command, build_parser))

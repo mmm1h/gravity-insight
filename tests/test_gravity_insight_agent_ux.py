@@ -15,6 +15,7 @@ from unittest.mock import patch
 
 from gravity_sdk import cli, runtime
 from gravity_sdk.agent import discover_capabilities
+from gravity_sdk.agent_batch import capabilities_many, iter_ndjson_records
 from gravity_sdk.agent_sources import OperationDiscovery, discover_operation_cards
 from gravity_sdk.workspace import load_workspace
 
@@ -296,6 +297,62 @@ class DiscoveryUxTests(unittest.TestCase):
         )
         search.assert_not_called()
 
+    def test_agent_discovers_registered_composites_with_handoff_templates(self) -> None:
+        cases = (
+            ("analysis context", "analysis_context", ["app"]),
+            ("app snapshots", "app_snapshot", ["app"]),
+            ("attribution snapshot", "attribution_snapshot", ["app"]),
+            ("multi dimensions", "multidim", ["app", "inputs"]),
+            ("business pulse", "business_pulse", ["apps", "start", "end"]),
+        )
+        for query, name, missing in cases:
+            with self.subTest(query=query):
+                result = discover_capabilities(query, client=self.client, limit=1)
+                card = result["candidates"][0]
+                self.assertEqual(name, card["composite"])
+                self.assertEqual("composite", card["plan_node"]["kind"])
+                self.assertEqual(missing, card["missing_inputs"])
+                self.assertEqual(set(missing), set(card["input_template"]))
+
+    def test_agent_exact_selector_and_plural_query_choose_app_list(self) -> None:
+        exact = discover_capabilities("app.list", client=self.client, limit=3)
+        plural = discover_capabilities(
+            "list apps", client=self.client, domain="app", limit=1
+        )
+        self.assertEqual(["app.list"], [item["selector"] for item in exact["candidates"]])
+        self.assertTrue(exact["candidates"][0]["match"]["exact_selector"])
+        self.assertEqual("app.list", plural["candidates"][0]["selector"])
+
+    def test_agent_analysis_query_compiler_hands_off_to_spec_schema(self) -> None:
+        result = discover_capabilities(
+            "analysis query compiler", client=self.client, limit=1
+        )
+        card = result["candidates"][0]
+        self.assertEqual("analysis_query_spec", card["kind"])
+        self.assertEqual(["kind", "app", "spec"], card["missing_inputs"])
+        self.assertEqual("<app>", card["next"]["argv"][-1])
+        self.assertEqual("--spec-schema", card["next"]["schema_argv"][-1])
+        self.assertIsNone(card["plan_node"])
+        self.assertIn("funnel_window", card["input_schema"]["spec"]["definitions"])
+
+    @patch("gravity_sdk.agent_batch_sources.search_metadata")
+    def test_agent_batch_namespaces_plan_nodes_and_exposes_ndjson_rows(self, metadata) -> None:
+        metadata.return_value = {"results": []}
+        result = capabilities_many(
+            [
+                {"id": "events-a", "query": "analysis.event.list"},
+                {"id": "events-b", "query": "analysis.event.list"},
+            ],
+            client=self.client,
+        )
+        cards = [item["result"]["candidates"][0] for item in result["results"]]
+        self.assertEqual(2, len({card["plan_node"]["id"] for card in cards}))
+        self.assertEqual(["app_id"], cards[0]["missing_inputs"])
+        rows = list(iter_ndjson_records(result))
+        self.assertEqual(3, len(rows))
+        self.assertEqual("events-a", rows[0]["question_id"])
+        self.assertEqual(2, rows[-1]["_gravity_agent_batch"]["rows_written"])
+
     def test_agent_protocol_and_discovery_are_bounded_offline_and_executable(self) -> None:
         protocol = cli.run_agent_command(
             SimpleNamespace(
@@ -353,6 +410,33 @@ class DiscoveryUxTests(unittest.TestCase):
         self.assertEqual("recipe", result["candidates"][0]["kind"])
         self.assertEqual("@demo-retention", result["candidates"][0]["selector"])
         self.assertEqual("gravity", result["candidates"][0]["next"]["argv"][0])
+
+    @patch("gravity_sdk.agent_batch_sources.search_metadata")
+    def test_agent_workspace_is_preserved_in_single_and_batch_handoffs(self, metadata) -> None:
+        metadata.return_value = {"results": []}
+        workspace = load_workspace(
+            Path(__file__).resolve().parents[1]
+            / "examples"
+            / "workspace"
+            / "gravity.toml"
+        )
+        prefix = ["gravity", "--workspace", str(workspace.path)]
+        single = discover_capabilities(
+            "demo-retention", client=self.client, workspace=workspace, limit=1
+        )
+        recipe = single["candidates"][0]
+        self.assertEqual(prefix, recipe["next"]["argv"][:3])
+        self.assertEqual(1, recipe["next"]["argv"].count("--workspace"))
+        self.assertEqual(prefix, single["execution"]["argv"][:3])
+        self.assertTrue(all(item["argv"][:3] == prefix for item in single["fallbacks"]))
+
+        batch = capabilities_many(
+            [{"id": "context", "query": "analysis context"}],
+            client=self.client,
+            workspace=workspace,
+        )
+        composite = batch["results"][0]["result"]["candidates"][0]
+        self.assertEqual(prefix, composite["next"]["argv"][:3])
 
     def test_agent_returns_matching_workspace_sql_product_in_the_same_call(self) -> None:
         workspace = load_workspace(
@@ -494,9 +578,15 @@ class DiscoveryUxTests(unittest.TestCase):
                 if token is None:
                     break
 
-        self.assertEqual([4, 4, 4, 4], totals)
+        self.assertEqual([5, 5, 5, 5, 5], totals)
         self.assertEqual(
-            ["@recipe", "app.list", "sql:product", "metadata:event:1"],
+            [
+                "@recipe",
+                "app.list",
+                "sql:product",
+                "metadata:event:1",
+                "composite:app_snapshot",
+            ],
             selectors,
         )
         self.assertEqual(len(selectors), len(set(selectors)))
@@ -938,7 +1028,8 @@ class DiscoveryUxTests(unittest.TestCase):
         self.assertIn("next_action", terminal)
         self.assertIn("execution", terminal)
         self.assertEqual(
-            "workspace_recipes_stable_insight_sql_products_and_local_metadata",
+            "workspace_recipes_analysis_query_spec_stable_insight_composites_"
+            "sql_products_and_local_metadata",
             terminal["scope"],
         )
         self.assertTrue(terminal["fallbacks"])

@@ -46,6 +46,10 @@ _EXPORTS = {
     "plan_schema": (".plan", "plan_schema"),
     "validate_plan": (".plan", "validate_plan"),
     "capabilities_many": (".agent_batch", "capabilities_many"),
+    "CompiledAnalysisQuery": (".analysis_spec", "CompiledAnalysisQuery"),
+    "analysis_query_spec_schema": (".analysis_spec", "analysis_query_spec_schema"),
+    "compile_query_spec": (".analysis_spec", "compile_query_spec"),
+    "business_pulse": (".business_pulse", "business_pulse"),
 }
 
 for _error_name in (

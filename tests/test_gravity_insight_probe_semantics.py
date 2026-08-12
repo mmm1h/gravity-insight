@@ -427,7 +427,9 @@ def test_public_probe_reuses_one_parent_envelope_for_multiple_fields() -> None:
     assert client.calls == 1
 
 
-def _surface_client() -> tuple[GravityInsightClient, dict[str, object]]:
+def _surface_client() -> tuple[
+    GravityInsightClient, dict[str, object], dict[str, int]
+]:
     root = Path(__file__).resolve().parents[1]
     source = json.loads(
         (
@@ -454,6 +456,17 @@ def _surface_client() -> tuple[GravityInsightClient, dict[str, object]]:
         "page_info_path": "",
         "total_page_field": "",
     }
+    safe_total = {
+        "ad_count": 3,
+        "ad_create_amount_usage": 4,
+        "adclick_count": 5,
+        "cost_count": 6,
+        "event_count": 7,
+        "material_transmit_g_usage": 8,
+        "profile_count": 9,
+        "storage_count": 10,
+        "tracking_count": 11,
+    }
     payload = {
         "code": 0,
         "data": {
@@ -470,7 +483,13 @@ def _surface_client() -> tuple[GravityInsightClient, dict[str, object]]:
                 "total_number": 1,
                 "total_page": 1,
             },
-            "total": [{"ad_count": 3, SENSITIVE_KEY: SENSITIVE_VALUE}],
+            "total": [
+                {
+                    **safe_total,
+                    SENSITIVE_KEY: SENSITIVE_VALUE,
+                    "future_private_total": "must stay hidden",
+                }
+            ],
         },
     }
     projection = operation["response_projection"]
@@ -478,11 +497,11 @@ def _surface_client() -> tuple[GravityInsightClient, dict[str, object]]:
     client = GravityInsightClient._from_manifest_for_tests(
         manifest, transport=_StaticTransport(payload)
     )
-    return client, projection
+    return client, projection, safe_total
 
 
 def test_sensitive_field_is_hidden_from_projection_read_describe_and_cli() -> None:
-    client, projection = _surface_client()
+    client, projection, safe_total = _surface_client()
     assert SENSITIVE_KEY not in _exposed_response_fields(projection)
     assert SENSITIVE_VALUE not in json.dumps(projection, sort_keys=True)
 
@@ -492,6 +511,7 @@ def test_sensitive_field_is_hidden_from_projection_read_describe_and_cli() -> No
     assert SENSITIVE_VALUE not in rendered_read
     assert read_result["data"] == {
         "list": [{"ad_count": 3, "date": "2026-08-08"}],
+        "total": [safe_total],
     }
 
     described = client.describe("report.company_amount.query")

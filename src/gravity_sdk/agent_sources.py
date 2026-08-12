@@ -8,12 +8,16 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from .agent_capabilities import (
+    agent_query_match,
+    operation_query_match,
+)
+from .agent_handoff import apply_workspace_prefix
 from .errors import InputValidationError
 from .find import (
     RecipeFindBackend,
     _metadata_card,
     metadata_capability_cards,
-    query_match,
 )
 from .sql.catalog import search_product_cards
 from .workspace import load_workspace
@@ -74,16 +78,23 @@ def discover_operation_cards(
                 field="client",
             )
         selected_inventory = search.get("operations", [])
-    for item in selected_inventory:
-        if not isinstance(item, Mapping) or not item.get("operation_id"):
-            continue
-        if inventory is not None and item.get("stability") != "stable":
-            continue
-        if domain is not None and item.get("domain") != domain:
-            continue
-        if platform is not None and item.get("platform") != platform:
-            continue
-        match = _operation_match(query, item)
+    eligible = _eligible_operations(
+        selected_inventory,
+        require_stable=inventory is not None,
+        domain=domain,
+        platform=platform,
+    )
+    exact = _exact_operation(eligible, query)
+    if exact is not None:
+        return OperationDiscovery(
+            matches=[{
+                **dict(exact),
+                "agent_match": operation_query_match(query, exact),
+            }],
+            weak=[],
+        )
+    for item in eligible:
+        match = operation_query_match(query, item)
         selected = {**dict(item), "agent_match": match}
         if match["confidence"] == "strong":
             matches.append(selected)
@@ -92,10 +103,44 @@ def discover_operation_cards(
     matches.sort(
         key=lambda item: (
             -float(item["agent_match"]["coverage"]),
+            -int(item["agent_match"].get("score", 0)),
+            str(item["operation_id"]).count("."),
             str(item["operation_id"]),
         )
     )
     return OperationDiscovery(matches=matches, weak=weak)
+
+
+def _eligible_operations(
+    inventory: Any,
+    *,
+    require_stable: bool,
+    domain: str | None,
+    platform: str | None,
+) -> list[Mapping[str, Any]]:
+    return [
+        item
+        for item in inventory
+        if isinstance(item, Mapping)
+        and item.get("operation_id")
+        and (not require_stable or item.get("stability") == "stable")
+        and (domain is None or item.get("domain") == domain)
+        and (platform is None or item.get("platform") == platform)
+    ]
+
+
+def _exact_operation(
+    inventory: list[Mapping[str, Any]], query: str
+) -> Mapping[str, Any] | None:
+    selected = query.strip().casefold()
+    return next(
+        (
+            item
+            for item in inventory
+            if str(item.get("operation_id", "")).casefold() == selected
+        ),
+        None,
+    )
 
 
 def describe_operation_cards(
@@ -154,6 +199,12 @@ def catalog_cards(
         metadata_warnings = []
     cards.extend(metadata)
     warnings.extend(metadata_warnings)
+    workspace_path = (
+        getattr(selected_workspace, "path", None)
+        if selected_workspace is not None
+        else None
+    )
+    cards = [apply_workspace_prefix(card, workspace_path) for card in cards]
     priority = {"recipe": 0, "sql_product": 1, "metadata": 2}
     ordered = sorted(
         cards,
@@ -177,7 +228,7 @@ def snapshot_recipe_cards(
     cards: list[dict[str, Any]] = []
     for recipe in inventory:
         name = str(recipe["name"])
-        match = query_match(
+        match = agent_query_match(
             query,
             name,
             recipe.get("operation_id"),
@@ -220,7 +271,7 @@ def _snapshot_product_card(
     query: str, product: Mapping[str, Any]
 ) -> dict[str, Any]:
     name = str(product["name"])
-    match = query_match(
+    match = agent_query_match(
         query,
         name.replace("-", " "),
         product.get("measurement"),
@@ -327,6 +378,18 @@ def candidates_fingerprint(
                     "operation_id",
                 )
             }
+        elif kind == "composite":
+            identity["contract"] = {
+                "composite": item.get("composite"),
+                "required_inputs": list(item.get("required_inputs", [])),
+                "input_schema": item.get("input_schema", {}),
+            }
+        elif kind == "analysis_query_spec":
+            identity["contract"] = {
+                "compiler": item.get("compiler"),
+                "kinds": list(item.get("kinds", [])),
+                "input_schema": item.get("input_schema", {}),
+            }
         identities.append(identity)
     return _digest(identities)
 
@@ -336,30 +399,6 @@ def _digest(value: Any) -> str:
         value, ensure_ascii=True, sort_keys=True, separators=(",", ":")
     ).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
-
-
-def _operation_match(query: str, item: Mapping[str, Any]) -> dict[str, Any]:
-    match = query_match(
-        query,
-        item.get("operation_id"),
-        item.get("domain"),
-        item.get("resource"),
-        item.get("action"),
-        item.get("platform"),
-        item.get("description"),
-        score=int(item.get("score", 0)),
-    )
-    operation_id = str(item.get("operation_id", ""))
-    exact_id_query = query.isascii() and query.count(".") >= 2 and " " not in query
-    if exact_id_query and operation_id.casefold() != query.casefold():
-        return {
-            **match,
-            "confidence": "partial",
-            "coverage": 0.0,
-            "matched_terms": [],
-            "missing_terms": [query.casefold()],
-        }
-    return match
 
 
 def _operation_card(
@@ -425,7 +464,7 @@ def _recipe_cards(
     for match in matches:
         name = str(match["name"])
         recipe = workspace.recipe(name)
-        relevance = query_match(
+        relevance = agent_query_match(
             query,
             name,
             recipe.operation,
