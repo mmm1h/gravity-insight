@@ -15,6 +15,7 @@ from typing import Any
 from .sdk_analysis import AnalysisSdkMixin
 from .sdk_material import MaterialSdkMixin
 from .sdk_metadata import MetadataSdkMixin
+from .sdk_order import OrderSdkMixin
 from .sdk_promotion import PromotionSdkMixin
 from .sdk_report import ReportSdkMixin
 
@@ -24,7 +25,7 @@ ClientFactory = Callable[[], Any]
 
 class GravitySDK(
     AnalysisSdkMixin, ReportSdkMixin, MaterialSdkMixin, PromotionSdkMixin,
-    MetadataSdkMixin
+    OrderSdkMixin, MetadataSdkMixin
 ):
     """Lazy, process-friendly entry point for the Gravity SDK.
 

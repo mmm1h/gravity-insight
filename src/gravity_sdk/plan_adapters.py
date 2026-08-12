@@ -14,6 +14,7 @@ from . import plan_analysis_adapter as analysis_plan
 from . import plan_segment_composites as segment_plan
 from . import plan_user_journey_adapter as user_journey_plan
 from . import plan_dashboard_adapter as dashboard_plan
+from . import plan_order_trace_adapter as order_trace_plan
 from .plan_binding import set_pointer
 from .plan_pulse_adapter import execute_business_pulse, validate_business_pulse
 from .plan_saved_analysis_adapter import (
@@ -407,6 +408,9 @@ def _validate_composite(
     if dashboard_plan.is_dashboard_composite(name):
         dashboard_plan.validate_dashboard_plan(request, context, workspace)
         return
+    if name == order_trace_plan.ORDER_SPLIT_TRACE_NAME:
+        order_trace_plan.validate_order_split_trace_plan(request, context, workspace)
+        return
     _request_object(request, _COMPOSITE_FIELDS, "composite")
     if name not in _COMPOSITES:
         raise _input("composite name is not allowlisted", "name")
@@ -502,6 +506,8 @@ def _execute_composite(
         return user_journey_plan.execute_user_journey_plan(sdk, request, context)
     if dashboard_plan.is_dashboard_composite(name):
         return dashboard_plan.execute_dashboard_plan(sdk, request, context)
+    if name == order_trace_plan.ORDER_SPLIT_TRACE_NAME:
+        return order_trace_plan.execute_order_split_trace_plan(sdk, request, context)
     raise RuntimeError("validated composite routing omitted an executor")
 
 
@@ -516,6 +522,8 @@ def _project_composite(
         return user_journey_plan.project_user_journey_result(result, fields, context)
     if dashboard_plan.is_dashboard_result(result):
         return dashboard_plan.project_dashboard_result(result, fields, context)
+    if order_trace_plan.is_order_split_trace_result(result):
+        return order_trace_plan.project_order_split_trace_result(result, fields, context)
     if is_saved_analysis_result(result):
         return project_saved_analysis_result(result, fields, context)
     if is_multidim_result(result):
