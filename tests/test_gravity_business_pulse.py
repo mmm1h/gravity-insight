@@ -84,11 +84,12 @@ class BusinessPulseTests(unittest.TestCase):
             "platforms": ["bytedance"], "include_hourly": False,
         }
 
-        def context(target):
+        def context(target=None, *, max_items=200):
             return AdapterContext(
                 node_id="pulse", execution_id="pulse", kind="composite",
-                workspace=workspace, output_fields=(), dynamic_targets=(target,),
-                max_pages=5, max_items=200,
+                workspace=workspace, output_fields=(),
+                dynamic_targets=(() if target is None else (target,)),
+                max_pages=5, max_items=max_items,
             )
 
         for target in ("/start", "/end", "/include_hourly"):
@@ -96,3 +97,27 @@ class BusinessPulseTests(unittest.TestCase):
         for target in ("/apps", "/platforms"):
             with self.assertRaises(InputValidationError):
                 validate_business_pulse(request, context(target), workspace, frozenset())
+
+        budget_cases = (
+            (False, None, 2, True),
+            (True, None, 2, False),
+            (False, "/include_hourly", 2, False),
+            (False, "/include_hourly", 3, True),
+        )
+        for hourly, target, max_items, accepted in budget_cases:
+            with self.subTest(
+                hourly=hourly, target=target, max_items=max_items, accepted=accepted
+            ):
+                request["include_hourly"] = hourly
+                if accepted:
+                    validate_business_pulse(
+                        request, context(target, max_items=max_items), workspace, frozenset()
+                    )
+                else:
+                    with self.assertRaises(InputValidationError):
+                        validate_business_pulse(
+                            request,
+                            context(target, max_items=max_items),
+                            workspace,
+                            frozenset(),
+                        )

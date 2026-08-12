@@ -36,6 +36,7 @@ _ENGLISH_SUBJECTS = frozenset(
 )
 _ENGLISH_OVERVIEW = frozenset({"overview", "summary"})
 _ENGLISH_TRENDS = frozenset({"trend", "trends"})
+_ENGLISH_NEGATIONS = frozenset({"avoid", "no", "not", "without"})
 _ENGLISH_BLOCKED = frozenset(
     {
         "attribution",
@@ -80,6 +81,11 @@ _CHINESE_SUBJECTS = ("经营", "业务")
 _CHINESE_PULSE = ("脉搏", "脉动")
 _CHINESE_OVERVIEW = ("概览", "概况", "总览")
 _CHINESE_TRENDS = ("趋势", "走势")
+_CHINESE_NEGATIONS = ("不要", "无需", "无须", "不需要", "不必", "避免")
+_CHINESE_BIE_NEGATION = re.compile(
+    r"(?:^|请|麻烦|[\s，,。；;！!])别(?:再)?"
+    r"(?=$|[\s，,。；;！!]|查|看|跑|执行|生成|获取|做|分析|汇总|查询|要|输出|拉取|给|展示|算)"
+)
 _CHINESE_BLOCKED = (
     "归因",
     "分群",
@@ -104,12 +110,6 @@ _CHINESE_BLOCKED = (
     "模板",
     "更新",
     "单用户",
-    "attribution",
-    "dashboard",
-    "export",
-    "multidim",
-    "segment",
-    "template",
 )
 
 
@@ -178,12 +178,12 @@ def business_pulse_query(query: str) -> bool:
         return False
     if selected.isascii():
         return _english_query(selected)
-    return _chinese_query("".join(selected.split()))
+    return _chinese_query(selected)
 
 
 def _english_query(selected: str) -> bool:
     words = frozenset(_ASCII_WORD.findall(selected.replace("-", " ")))
-    if words & _ENGLISH_BLOCKED or not words & _ENGLISH_SUBJECTS:
+    if _blocked_query(selected, words) or not words & _ENGLISH_SUBJECTS:
         return False
     return "pulse" in words or bool(
         words & _ENGLISH_OVERVIEW and words & _ENGLISH_TRENDS
@@ -191,13 +191,29 @@ def _english_query(selected: str) -> bool:
 
 
 def _chinese_query(selected: str) -> bool:
-    if any(term in selected for term in _CHINESE_BLOCKED):
+    words = frozenset(_ASCII_WORD.findall(selected.replace("-", " ")))
+    if _blocked_query(selected, words):
         return False
-    subject = any(term in selected for term in _CHINESE_SUBJECTS)
-    pulse = any(term in selected for term in _CHINESE_PULSE)
-    overview = any(term in selected for term in _CHINESE_OVERVIEW)
-    trends = any(term in selected for term in _CHINESE_TRENDS)
+    subject = bool(words & _ENGLISH_SUBJECTS) or any(
+        term in selected for term in _CHINESE_SUBJECTS
+    )
+    pulse = "pulse" in words or any(term in selected for term in _CHINESE_PULSE)
+    overview = bool(words & _ENGLISH_OVERVIEW) or any(
+        term in selected for term in _CHINESE_OVERVIEW
+    )
+    trends = bool(words & _ENGLISH_TRENDS) or any(
+        term in selected for term in _CHINESE_TRENDS
+    )
     return subject and (pulse or overview and trends)
+
+
+def _blocked_query(selected: str, words: frozenset[str]) -> bool:
+    return bool(
+        words & (_ENGLISH_BLOCKED | _ENGLISH_NEGATIONS)
+        or any(term in selected for term in _CHINESE_BLOCKED)
+        or any(term in selected for term in _CHINESE_NEGATIONS)
+        or _CHINESE_BIE_NEGATION.search(selected)
+    )
 
 
 def business_pulse_input_template() -> dict[str, Any]:

@@ -41,7 +41,8 @@ def validate_business_pulse(
         raise input_error(
             "business_pulse include_hourly must be a boolean", "include_hourly"
         )
-    if context.max_items < (3 if hourly is True else 2):
+    required_sources = 3 if "/include_hourly" in dynamic or hourly is True else 2
+    if context.max_items < required_sources:
         raise input_error(
             "business_pulse sources exceed this node max_items", "limits.max_items"
         )

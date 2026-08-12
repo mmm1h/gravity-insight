@@ -421,12 +421,17 @@ class DiscoveryUxTests(unittest.TestCase):
         cases = {
             True: (
                 "business pulse", "operating pulse", "show business overview and trends",
-                "经营脉搏", "请汇总经营概览和趋势",
+                "notable business pulse", "经营脉搏", "请汇总经营概览和趋势",
+                "经营脉搏别样视角",
             ),
             False: (
                 "business analysis", "business report", "经营分析", "经营报表",
                 "multidim business pulse", "business pulse dashboard", "导出经营脉搏",
                 "归因经营脉搏", "business pulse template permissions",
+                "not business pulse", "avoid business pulse", "no business pulse",
+                "business pulse without hourly", "不要经营脉搏", "无需经营脉搏",
+                "别查经营脉搏", "经营脉搏 saved analysis", "经营脉搏 permission",
+                "经营脉搏 user journey", "business pulse 权限",
             ),
         }
         for expected, queries in cases.items():
