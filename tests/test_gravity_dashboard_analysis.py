@@ -114,9 +114,10 @@ class DashboardAnalysisTests(unittest.TestCase):
             client, 17, 3, start="2026-08-01", end="2026-08-08", max_workers=4,
             max_items=20,
         )
-        self.assertEqual(("success", 1, 0), (
+        self.assertEqual(("partial", 1, 1), (
             result["status"], result["success_count"], result["failure_count"]
         ))
+        self.assertEqual(2, result["exit_code"])
         self.assertEqual((4, 1), (client.batch_calls[0][1], client.batch_calls[0][2]))
         self.assertFalse(result["charts"][0]["query_executed"])
         self.assertTrue(result["charts"][1]["query_executed"])

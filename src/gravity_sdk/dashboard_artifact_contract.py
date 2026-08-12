@@ -39,10 +39,12 @@ UI_FIELDS = {
         "compareList", "date_extra_data", "date_list", "getDateConfig",
         "getSelectQueryList", "groupBy", "groupByCreateTime", "queryItemList",
         "selectedSteps", "seriesType", "showEchartsNumber", "tableShowType",
+        "customSortData",
     }),
     "scatter": frozenset({
         "calculateBody", "checkValue", "date_extra_data", "getDateConfig",
         "groupBy", "groupByCreateTime", "queryItemList", "seriesType",
+        "customSortData",
     }),
 }
 

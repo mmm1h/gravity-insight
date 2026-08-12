@@ -334,18 +334,19 @@ def _validate_ui_config(kind: str, config: Mapping[str, Any]) -> None:
         _optional_date_list(config, "date_list")
         for field in ("groupBy", "queryItemList", "customQueryItemList"):
             _optional_array(config, field)
-        for field in ("cascaderValue", "checkIndexList", "customSortData"):
+        for field in ("cascaderValue", "checkIndexList", "viewNumValue"):
             _optional_array(config, field)
+        _optional_sort(config)
     elif kind == "property":
         _optional_array(config, "groupBy")
-        _optional_array(config, "customSortData")
+        _optional_sort(config)
         _optional_object(config, "queryItem", fields=None)
     elif kind == "retention":
         _optional_array(config, "queryItemList")
         _optional_array(config, "group_by_list")
         _optional_array(config, "groupBy")
         _optional_array(config, "checkIndexList")
-        _optional_array(config, "customSortData")
+        _optional_sort(config)
         _optional_array(config, "cascaderValue")
         _optional_array(config, "compareList")
         _optional_object(config, "groupByCreateTime")
@@ -358,10 +359,12 @@ def _validate_ui_config(kind: str, config: Mapping[str, Any]) -> None:
             _optional_array(config, field)
         _optional_object(config, "groupByCreateTime")
         _optional_date_list(config, "date_list")
+        _optional_sort(config)
     else:
         _optional_object(config, "groupByCreateTime")
         for field in ("groupBy", "queryItemList"):
             _optional_array(config, field)
+        _optional_sort(config)
 
 
 def _optional_object(
@@ -381,6 +384,17 @@ def _ui_object(value: Any, field: str) -> Mapping[str, Any]:
     selected = _mapping(value, field)
     _reject_unknown(selected, frozenset({"label", "value"}), field)
     return selected
+
+
+def _optional_sort(config: Mapping[str, Any]) -> None:
+    if "customSortData" not in config or config.get("customSortData") is None:
+        return
+    value = _mapping(config["customSortData"], "report.config.customSortData")
+    _reject_unknown(
+        value,
+        frozenset({"customSortable", "customSlot", "prop", "currentSort"}),
+        "report.config.customSortData",
+    )
 
 
 def _optional_array(config: Mapping[str, Any], key: str) -> None:

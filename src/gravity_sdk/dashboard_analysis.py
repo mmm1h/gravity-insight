@@ -414,8 +414,12 @@ def _envelope(
     supported = sum(item.get("supported") is True for item in charts)
     unsupported = len(charts) - supported
     successes = sum(item.get("query_executed") is True and item.get("error") is None for item in charts)
-    failures = sum(item.get("query_executed") is True and item.get("error") is not None for item in charts)
-    error = _highest_error(charts) if failures else None
+    query_failures = sum(
+        item.get("query_executed") is True and item.get("error") is not None
+        for item in charts
+    )
+    failures = query_failures + (unsupported if mode == "run" else 0)
+    error = _highest_error(charts, include_unsupported=mode == "run") if failures else None
     status = "partial" if failures else "prepared" if mode == "prepare" else "success"
     return {
         "schema_version": SCHEMA_VERSION,
@@ -444,8 +448,15 @@ def _envelope(
     }
 
 
-def _highest_error(charts: Sequence[Mapping[str, Any]]) -> dict[str, Any] | None:
-    details = [item.get("error") for item in charts if isinstance(item.get("error"), Mapping) and item.get("query_executed") is True]
+def _highest_error(
+    charts: Sequence[Mapping[str, Any]], *, include_unsupported: bool
+) -> dict[str, Any] | None:
+    details = [
+        item.get("error")
+        for item in charts
+        if isinstance(item.get("error"), Mapping)
+        and (item.get("query_executed") is True or include_unsupported)
+    ]
     if not details:
         return None
     return copy.deepcopy(max(details, key=lambda item: {"caller": 2, "upstream": 3, "local": 4}.get(str(item.get("category")), 4)))

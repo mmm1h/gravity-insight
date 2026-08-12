@@ -195,8 +195,14 @@ def _add_dashboard_analysis_arguments(
         action=_DashboardNetworkValue,
         help="Inclusive analysis end date (YYYY-MM-DD, at most 90 days from start).",
     )
-    parser.add_argument("--max-charts", type=_max_charts, default=32)
-    parser.add_argument("--max-items", dest="analysis_max_items", type=positive_int, default=100_000)
+    parser.add_argument(
+        "--max-charts", type=_max_charts, default=32,
+        help="Maximum charts to compile (default 32, hard limit 64).",
+    )
+    parser.add_argument(
+        "--max-items", dest="analysis_max_items", type=positive_int, default=100_000,
+        help="Aggregate directory, chart, and result item budget (default 100000).",
+    )
     parser.add_argument("--output", help="Write JSON or NDJSON to this local path.")
     parser.add_argument(
         "--format",
@@ -228,7 +234,10 @@ def add_dashboard_analysis_commands(
         help="Compile and concurrently execute supported dashboard charts.",
     )
     _add_dashboard_analysis_arguments(run, positive_int=positive_int)
-    run.add_argument("--concurrency", dest="analysis_concurrency", type=concurrency_type, default=6)
+    run.add_argument(
+        "--concurrency", dest="analysis_concurrency", type=concurrency_type, default=6,
+        help="Independent chart workers (default 6, maximum 24).",
+    )
     run.set_defaults(
         _gravity_handler=dispatch_dashboard_analysis,
         network_required=False,
