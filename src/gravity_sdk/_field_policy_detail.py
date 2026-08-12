@@ -15,6 +15,7 @@ from ._field_policy_metadata import (
 from ._field_policy_operations import (
     ANALYSIS_EVENT,
     ANALYSIS_EVENT_PROPERTY,
+    ANALYSIS_ORDER_DETAIL,
     ANALYSIS_SEGMENT,
     ANALYSIS_SEGMENT_HISTORY,
     ANALYSIS_USER_EVENT,
@@ -27,6 +28,7 @@ from ._field_policy_shared import (
     MetadataLoader,
     MetadataView,
     is_direct_personal_response_field,
+    parse_iso_calendar_date,
     require_exact_mapping,
     validate_optional_label,
     validate_scalar_list,
@@ -52,6 +54,13 @@ def validate_analysis_detail(
     app_id = _validate_app_id(inputs.get("app_id"))
     if operation.operation_id == ANALYSIS_USER_EVENT:
         _validate_user_event_contract(inputs)
+    if _static_order_trace_parent(operation, inputs):
+        parse_iso_calendar_date(inputs.get("date"), "date")
+        _validate_selected_fields(
+            inputs.get("fields", ()), set(operation.response_projection.item_keys)
+        )
+        _validate_detail_logic(inputs)
+        return
     metadata = _load_detail_metadata(operation, app_id, metadata_loader)
     selected_fields = set(metadata.allowed_fields)
     if operation.operation_id == ANALYSIS_USER_EVENT:
@@ -69,6 +78,31 @@ def validate_analysis_detail(
         _validate_user_event_items(
             inputs, app_id, metadata, metadata_loader
         )
+
+
+def _static_order_trace_parent(
+    operation: OperationSpec, inputs: Mapping[str, Any]
+) -> bool:
+    """Skip metadata only for the product's exact static parent request."""
+
+    expected = {"TraceID", "PayEventTime", "ClientID", "$split_trace_id_list"}
+    fields = inputs.get("fields")
+    return bool(
+        operation.operation_id == ANALYSIS_ORDER_DETAIL
+        and isinstance(fields, (list, tuple))
+        and len(fields) == len(expected)
+        and set(fields) == expected
+        and inputs.get("date") not in (None, "")
+        and type(inputs.get("page", 1)) is int
+        and inputs.get("page", 1) >= 1
+        and inputs.get("page_size", 20) == 100
+        and all(
+            inputs.get(name) in (None, (), [])
+            for name in ("global_conditions", "order_conditions", "order_by_list")
+        )
+        and inputs.get("user_cond_logic", "AND") == "AND"
+        and inputs.get("order_cond_logic", "AND") == "AND"
+    )
 
 
 def _validate_app_id(value: Any) -> str:

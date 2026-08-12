@@ -74,6 +74,10 @@ _EXPORTS = {
     "promotion_performance_input_schema": (
         ".promotion_performance", "promotion_performance_input_schema"
     ),
+    "order_split_trace": (".order_trace", "order_split_trace"),
+    "validate_order_split_trace_request": (
+        ".order_trace", "validate_order_split_trace_request"
+    ),
     "compile_saved_analysis_definition": (
         ".saved_analysis", "compile_saved_analysis_definition"
     ),
