@@ -271,6 +271,147 @@ def composite_capability_cards(
     )
 
 
+def capability_handoff_cards(
+    query: str,
+    *,
+    domain: str | None,
+    platform: str | None,
+    export_inventory: Sequence[Mapping[str, Any]],
+    composite_inventory: Sequence[Mapping[str, Any]] | None,
+) -> tuple[list[dict[str, Any]], bool]:
+    """Select direct product handoffs and whether they exclude local catalogs."""
+
+    from .agent_export import export_capability_cards
+    from .agent_table_lineage import table_lineage_capability_cards
+    from .agent_user_journey import user_journey_capability_cards
+
+    exports = export_capability_cards(
+        query, domain=domain, platform=platform, inventory=export_inventory
+    )
+    lineage = table_lineage_capability_cards(
+        query, domain=domain, platform=platform
+    )
+    journeys = user_journey_capability_cards(
+        query, domain=domain, platform=platform
+    )
+    products = [
+        *analysis_query_spec_cards(query, domain=domain, platform=platform),
+        *composite_capability_cards(
+            query,
+            domain=domain,
+            platform=platform,
+            inventory=composite_inventory,
+        ),
+    ]
+    return exports or lineage or journeys or products, bool(
+        exports or lineage or journeys
+    )
+
+
+def should_load_capability_catalog(
+    query: str,
+    *,
+    domain: str | None,
+    platform: str | None,
+    direct_cards: Sequence[Mapping[str, Any]],
+    catalog_excluded: bool,
+) -> bool:
+    """Keep catalog loading compatible while enabling Analysis task candidates."""
+
+    from .agent_handoff import is_analysis_task_handoff_query
+
+    task_catalog = (
+        not direct_cards
+        and platform is None
+        and domain in {None, "analysis"}
+        and is_analysis_task_handoff_query(query)
+    )
+    return (
+        not catalog_excluded
+        and platform is None
+        and (domain is None or task_catalog)
+    )
+
+
+def merge_catalog_handoff_cards(
+    query: str,
+    *,
+    domain: str | None,
+    platform: str | None,
+    direct_cards: list[dict[str, Any]],
+    catalog: list[dict[str, Any]],
+    warnings: list[str],
+    sources: Any | None,
+) -> list[dict[str, Any]]:
+    """Give recipes/vocabulary precedence, otherwise emit one Analysis task."""
+
+    from .agent_analysis_task import analysis_task_cards
+    from .agent_handoff import is_analysis_task_handoff_query
+    from .agent_vocabulary import is_authoritative_local_metadata_card
+
+    recipes = [card for card in catalog if card.get("kind") == "recipe"]
+    local = [card for card in catalog if is_authoritative_local_metadata_card(card)]
+    task_cards = (
+        analysis_task_cards(
+            query,
+            metadata_rows=_analysis_task_metadata_rows(catalog, warnings, sources),
+            domain=domain,
+            platform=platform,
+        )
+        if (
+            is_analysis_task_handoff_query(query)
+            and not direct_cards
+            and not recipes
+            and not local
+        )
+        else []
+    )
+    return task_cards or [*catalog, *direct_cards]
+
+
+def authoritative_capability_cards(
+    cards: Sequence[Mapping[str, Any]],
+) -> list[Mapping[str, Any]]:
+    """Return the first exclusive discovery product class, if one exists."""
+
+    from .agent_segment import is_authoritative_direct_card
+    from .agent_user_journey import is_user_journey_card
+    from .agent_vocabulary import is_authoritative_local_metadata_card
+
+    return [card for card in cards if is_authoritative_direct_card(card)] or [
+        card
+        for card in cards
+        if card.get("kind") == "analysis_task" or is_user_journey_card(card)
+    ] or [card for card in cards if is_authoritative_local_metadata_card(card)]
+
+
+def _analysis_task_metadata_rows(
+    catalog: Sequence[Mapping[str, Any]], warnings: Sequence[str], sources: Any | None
+) -> tuple[Mapping[str, Any], ...] | None:
+    if sources is not None:
+        if not bool(getattr(sources, "metadata_catalog_available", True)):
+            return None
+        return tuple(getattr(sources, "metadata_inventory", ()))
+    if any(
+        "metadata catalog is unavailable" in warning.casefold()
+        for warning in warnings
+    ):
+        return None
+    return tuple(
+        {
+            "kind": card.get("metadata_kind"),
+            "name": card.get("name"),
+            "cname": card.get("display_name"),
+            "operation_id": card.get("operation_id"),
+            "app_id": card.get("app_id"),
+            "scope": card.get("scope"),
+            "source": card.get("source"),
+        }
+        for card in catalog
+        if card.get("kind") == "metadata"
+    )
+
+
 def _composite_card(
     query: str,
     normalized: str,
@@ -343,8 +484,12 @@ __all__ = [
     "AGENT_SCOPE",
     "agent_query_match",
     "analysis_query_spec_cards",
+    "authoritative_capability_cards",
+    "capability_handoff_cards",
     "composite_capability_cards",
     "composite_capability_inventory",
+    "merge_catalog_handoff_cards",
     "normalize_agent_query",
     "operation_query_match",
+    "should_load_capability_catalog",
 ]

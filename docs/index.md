@@ -33,6 +33,8 @@
 
 - 已知 selector 或已有 Plan：一次 `gravity run` / `gravity plan run`。
 - 未知问题：一次 `gravity agent --input` 批量发现，再一次 `gravity plan run`，总共两次。
+- 多个独立 Analysis spec：一次 `gravity analysis query batch`；单用户明细链用一次
+  `gravity analysis user journey`，不手工串行三条 operation。
 - 发现只返回候选以及 Plan node 或受控编译交接，不会从自然语言自动执行。
 
 当前基线仍为 185 个 operation、176 个 stable。本轮 17 个候选新增 stable 数为 0；不要把

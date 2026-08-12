@@ -11,6 +11,14 @@ body:
         Do not include credentials, App/user/device identifiers, or raw user-level output.
         Prefer bounded aggregate examples and sanitized field/type paths.
   - type: input
+    id: consumer_context
+    attributes:
+      label: Consumer project or integration context
+      description: Name the calling project or describe its integration role; do not include private identifiers.
+      placeholder: data-analysis-agent / scheduled reporting service
+    validations:
+      required: true
+  - type: input
     id: surface
     attributes:
       label: Surface or operation
@@ -64,5 +72,7 @@ body:
     attributes:
       label: Safety check
       options:
+        - label: This issue comes from real usage by a project that consumes Gravity SDK, not from the SDK's internal roadmap.
+          required: true
         - label: This issue contains no credentials or raw user-level output.
           required: true

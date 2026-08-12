@@ -6,14 +6,18 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from .agent_capabilities import composite_capability_inventory
-from .agent_export import load_export_agent_inventory, query_requests_export
-from .agent_sources import workspace_catalog_fingerprint
-from .agent_table_lineage import table_lineage_capability_cards
-from .agent_segment import (
-    is_authoritative_direct_card,
-    segment_rule_spec_cards,
+from .agent_analysis_task import analysis_task_cards
+from .agent_capabilities import (
+    analysis_query_spec_cards,
+    composite_capability_cards,
+    composite_capability_inventory,
 )
+from .agent_export import load_export_agent_inventory, query_requests_export
+from .agent_handoff import is_analysis_task_handoff_query
+from .agent_sources import snapshot_recipe_cards, workspace_catalog_fingerprint
+from .agent_table_lineage import table_lineage_capability_cards
+from .agent_user_journey import user_journey_capability_cards
+from .agent_segment import is_authoritative_direct_card
 from .errors import InputValidationError
 from .find import _metadata_card
 from .find_metadata import search_metadata
@@ -37,6 +41,7 @@ class AgentSourceSnapshot:
     warnings: tuple[str, ...]
     workspace_fingerprint: str
     export_inventory: tuple[Mapping[str, Any], ...] = ()
+    metadata_catalog_available: bool = True
 
 
 def snapshot_agent_sources(
@@ -48,16 +53,21 @@ def snapshot_agent_sources(
     """Load each discovery inventory once for a capabilities-many request."""
 
     selected_workspace, warnings = selected_workspace_and_warnings(workspace)
-    metadata = metadata_inventory(warnings)
+    metadata, metadata_available = metadata_inventory_state(warnings)
+    recipes = snapshot_recipes(selected_workspace)
+    composites = composite_capability_inventory()
     export_requested = any(
         query_requests_export(str(getattr(item, "query", "")))
         for item in questions or ()
     )
-    local_only = (
-        not export_requested and questions_use_only_local_catalog(questions, metadata)
+    local_only = not export_requested and questions_use_only_local_catalog(
+        questions,
+        metadata,
+        metadata_catalog_available=metadata_available,
+        recipes=recipes,
+        composites=composites,
     )
     inventory = () if local_only else operation_inventory(client)
-    recipes = () if local_only else snapshot_recipes(selected_workspace)
     products = () if local_only else snapshot_products(selected_workspace, warnings)
     exports = (
         load_export_agent_inventory(client)
@@ -70,16 +80,21 @@ def snapshot_agent_sources(
         recipe_inventory=recipes,
         product_inventory=products,
         metadata_inventory=metadata,
-        composite_inventory=composite_capability_inventory(),
+        composite_inventory=composites,
         warnings=tuple(warnings),
         workspace_fingerprint=workspace_catalog_fingerprint(selected_workspace),
         export_inventory=exports,
+        metadata_catalog_available=metadata_available,
     )
 
 
 def questions_use_only_local_catalog(
     questions: Sequence[Any] | None,
     metadata: tuple[Mapping[str, Any], ...],
+    *,
+    metadata_catalog_available: bool = True,
+    recipes: tuple[Mapping[str, Any], ...] = (),
+    composites: tuple[Mapping[str, Any], ...] = (),
 ) -> bool:
     """Prove every question is fully answered by an authoritative local card."""
 
@@ -91,8 +106,28 @@ def questions_use_only_local_catalog(
         platform = getattr(question, "platform", None)
         query = str(getattr(question, "query", ""))
         cards = [
-            *segment_rule_spec_cards(query, domain=domain, platform=platform),
+            *snapshot_recipe_cards(query, recipes),
+            *analysis_query_spec_cards(query, domain=domain, platform=platform),
             *table_lineage_capability_cards(query, domain=domain, platform=platform),
+            *user_journey_capability_cards(
+                query, domain=domain, platform=platform
+            ),
+            *composite_capability_cards(
+                query,
+                domain=domain,
+                platform=platform,
+                inventory=composites,
+            ),
+            *(
+                analysis_task_cards(
+                    query,
+                    metadata_rows=metadata if metadata_catalog_available else None,
+                    domain=domain,
+                    platform=platform,
+                )
+                if is_analysis_task_handoff_query(query)
+                else []
+            ),
         ]
         if platform is None and domain in {None, "metadata"}:
             cards.extend(_metadata_card(query, item) for item in vocabulary)
@@ -100,6 +135,8 @@ def questions_use_only_local_catalog(
             (
                 is_authoritative_local_metadata_card(card)
                 or is_authoritative_direct_card(card)
+                or card.get("kind")
+                in {"recipe", "composite", "analysis_query_spec", "analysis_task"}
             )
             and card.get("match", {}).get("confidence") == "strong"
             for card in cards
@@ -140,18 +177,31 @@ def operation_inventory(client: Any) -> tuple[Mapping[str, Any], ...]:
     )
 
 
-def metadata_inventory(warnings: list[str]) -> tuple[Mapping[str, Any], ...]:
+def metadata_inventory_state(
+    warnings: list[str],
+) -> tuple[tuple[Mapping[str, Any], ...], bool]:
     try:
         result = search_metadata("", limit=None, offset=0)
-        return tuple(
-            item for item in result.get("results", []) if isinstance(item, Mapping)
+        return (
+            tuple(
+                item
+                for item in result.get("results", [])
+                if isinstance(item, Mapping)
+            ),
+            True,
         )
     except (InputValidationError, OSError):
         warnings.append(
             "The default local metadata catalog is unavailable; run `gravity metadata "
             "sync --all-apps` before metadata discovery."
         )
-        return ()
+        return (), False
+
+
+def metadata_inventory(warnings: list[str]) -> tuple[Mapping[str, Any], ...]:
+    """Compatibility wrapper for callers that only need the rows."""
+
+    return metadata_inventory_state(warnings)[0]
 
 
 def snapshot_recipes(workspace: Any | None) -> tuple[Mapping[str, Any], ...]:

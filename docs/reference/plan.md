@@ -172,6 +172,36 @@ Plan binding 只作用于 request 边界：`/app` 可从上游复制一个标量
 `depends_on`；v1 不支持写入 `/spec/...`，也不解释 spec 内部引用或表达式。需要变化的事件、
 指标、过滤条件必须在提交 Plan 前生成完整 literal spec。
 
+多个无依赖 literal spec 可以直接包装成 `gravity.analysis-query-batch.v1` 并运行
+`gravity analysis query batch --input queries.json`；它机械生成同层 `analysis_query` 节点，
+仍由本页的 Plan 引擎调度。需要依赖、跨引擎节点或 foreach 时才手写完整 Plan。
+
+## User Journey composite
+
+单用户 profile、event timeline 与 postback 使用一个登记节点，不需要调用方手工拼三条 run：
+
+```json
+{
+  "id": "user_journey",
+  "kind": "composite",
+  "request": {
+    "name": "user_journey",
+    "app": "main",
+    "client_id": "<explicit-sensitive-id>",
+    "start": "2026-08-01",
+    "end": "2026-08-07",
+    "page": 1,
+    "page_size": 20
+  },
+  "limits": {"max_pages": 1, "max_items": 200}
+}
+```
+
+`/app` 与 `/client_id` 是仅有的动态 target；Plan 不从自然语言产生用户标识。三路结果固定顺序、
+局部失败隔离，输出不含 client ID/request。user-event 没有已证明的 page-info，因此节点不自动
+翻页；`continuation` 只告诉调用方下一显式 page。adapter 内 worker 固定 1，外层并发仍由 Plan
+的单一 worker pool 控制。
+
 ## Segment Rule composite
 
 人群规则人数/占比评估复用 `composite` 节点，request 固定为 `name="segment_evaluate"`、

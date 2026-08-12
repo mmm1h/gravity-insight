@@ -108,6 +108,9 @@ class GravityOnboardingTests(unittest.TestCase):
                 "analysis", "query", "--kind", "event",
                 "--spec", "{}", "--dry-run",
             ],
+            [
+                "analysis", "query", "batch", "--input", "{}", "--dry-run",
+            ],
         ):
             with self.subTest(command=command):
                 self.assertFalse(command_requires_credentials(command, build_parser))
@@ -117,6 +120,9 @@ class GravityOnboardingTests(unittest.TestCase):
                 ["read", "analysis.retention.query"], build_parser
             )
         )
+        self.assertTrue(command_requires_credentials(
+            ["analysis", "query", "batch", "--input", "{}"], build_parser
+        ))
         self.assertTrue(should_onboard(requires_credentials=True))
 
     def test_unified_cli_passes_parser_derived_requirement_to_onboarding(self) -> None:

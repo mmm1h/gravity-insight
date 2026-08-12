@@ -234,8 +234,40 @@ Spec 不接受自然语言，也不会猜测事件、属性、指标、窗口或
 本地 metadata 目录确认，再执行一次 spec；自然语言能力发现仍只返回候选，不会自动联网执行。
 原始 `--input` 入口继续兼容，但不能与 `--spec` 同时使用。
 
-需要把多个 Analysis 查询放入一个并发 DAG 时，继续使用现有 `gravity plan run`，不增加新的
-CLI 子命令。Plan composite request 是 `name="analysis_query"` 加
+多个彼此独立的 compact spec 直接使用一次批量入口；它先编译全部 1–32 项，再交给同一个
+Plan 全局 worker pool，并按输入顺序返回：
+
+```powershell
+gravity analysis query batch --input queries.json --concurrency 6 --dry-run
+gravity analysis query batch --input queries.json --concurrency 6
+```
+
+`queries.json` 使用 `gravity.analysis-query-batch.v1`，每项必填唯一 `id/kind/app/spec`，可选
+`start/end/output_fields/limits.max_items`。`--dry-run` 对整批完成零网络编译与 Plan 预检；任一
+wrapper、预算或 literal spec 错误都会在执行前失败。正常执行保序、隔离 sibling 失败，且不回显
+spec、compiled input 或筛选值。不要为批量查询再创建外层线程池。
+
+```json
+{
+  "schema_version": "gravity.analysis-query-batch.v1",
+  "queries": [
+    {
+      "id": "daily_opens",
+      "kind": "event",
+      "app": "main",
+      "spec": {
+        "start": "2026-08-01",
+        "end": "2026-08-07",
+        "steps": [{"event": "app_open", "metric": {"field": "PresetAllCount", "aggregation": "PresetAllCount"}}]
+      },
+      "limits": {"max_items": 200}
+    }
+  ]
+}
+```
+
+有依赖、binding 或需要混合 SQL/metadata/composite 时使用 `gravity plan run`。Plan composite
+request 是 `name="analysis_query"` 加
 `kind/app/spec`，可选成对的 `start/end`；`output_fields` 放在节点级：
 
 ```json
@@ -264,6 +296,20 @@ CLI 子命令。Plan composite request 是 `name="analysis_query"` 加
 发现候选、一次 `plan run` 执行。自然语言不会自动执行。`/app` 可以接受既有标量 binding；
 `/spec/...` binding 和 spec 内部引用不受支持。完整事件示例及 event+funnel 同层并发示例见
 [Plan v1 参考](plan.md#analysis-query-composite)。
+
+### Single-user journey
+
+已知 App、用户标识和时间窗时，一次并发读取受控 profile、event timeline 与 postback：
+
+```powershell
+gravity analysis user journey --app main --client-id <explicit-id> `
+  --start 2026-08-01 --end 2026-08-07 --page 1 --page-size 20
+```
+
+也可用单个 `--date`；`--event/--field` 可重复，`--concurrency` 默认 3。结果固定按
+`profile/events/postbacks` 排序并隔离局部失败，不回显 client ID、request 或凭据。上游
+user-event 尚无已证明的 `page_info`，因此 v1 只读取显式页并返回
+`continuation.automatic=false`；调用方根据下一页提示显式重试，不伪造自动分页。
 
 ### Segment Rule Spec v1
 

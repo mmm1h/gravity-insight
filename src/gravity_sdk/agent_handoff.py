@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 import hashlib
+import re
 from typing import Any
 
 
@@ -25,6 +26,25 @@ def resolve_workspace_path(workspace: Any | None) -> object | None:
     return getattr(selected, "path", None)
 
 
+def is_analysis_task_handoff_query(query: str) -> bool:
+    """Keep broad task recognition away from one-word capability lookups."""
+
+    from .agent_analysis_task import is_analysis_task_query
+
+    if not is_analysis_task_query(query):
+        return False
+    selected = query.strip().casefold()
+    if selected.isascii() and " " not in selected and "." in selected:
+        return False
+    ascii_terms = re.findall(r"[a-z0-9_]+", selected)
+    if selected.isascii():
+        return len(ascii_terms) >= 2
+    chinese = [
+        character for character in selected if "\u3400" <= character <= "\u9fff"
+    ]
+    return len(chinese) >= 4
+
+
 def apply_workspace_prefix(
     card: Mapping[str, Any], workspace_path: object | None
 ) -> dict[str, Any]:
@@ -35,23 +55,35 @@ def apply_workspace_prefix(
     if not isinstance(next_step, Mapping):
         return selected
     rendered = dict(next_step)
-    for field in ("argv", "then_argv", "schema_argv"):
-        argv = rendered.get(field)
-        already_bound = (
-            isinstance(argv, list)
-            and len(argv) >= 3
-            and argv[0] == "gravity"
-            and argv[1] == "--workspace"
-        )
-        if (
-            isinstance(argv, list)
-            and argv
-            and argv[0] == "gravity"
-            and not already_bound
-        ):
-            rendered[field] = [*workspace_prefix(workspace_path), *argv[1:]]
+    for field in ("argv", "then_argv", "schema_argv", "cli_argv"):
+        rendered[field] = _bound_argv(rendered.get(field), workspace_path)
     selected["next"] = rendered
+    return _prefix_catalog_sync(selected, workspace_path)
+
+
+def _prefix_catalog_sync(
+    selected: dict[str, Any], workspace_path: object
+) -> dict[str, Any]:
+    sync = selected.get("catalog_sync_argv")
+    if isinstance(sync, list) and sync and sync[0] == "gravity":
+        bound = _bound_argv(sync, workspace_path)
+        selected["catalog_sync_argv"] = bound
+        catalog = selected.get("catalog")
+        if isinstance(catalog, Mapping):
+            catalog_value = dict(catalog)
+            catalog_next = catalog_value.get("next")
+            if isinstance(catalog_next, Mapping):
+                catalog_value["next"] = {**catalog_next, "argv": bound}
+            selected["catalog"] = catalog_value
     return selected
+
+
+def _bound_argv(argv: Any, workspace_path: object) -> Any:
+    if not isinstance(argv, list) or not argv or argv[0] != "gravity":
+        return argv
+    if len(argv) >= 3 and argv[1] == "--workspace":
+        return argv
+    return [*workspace_prefix(workspace_path), *argv[1:]]
 
 
 def _card_depends_on_workspace(card: Mapping[str, Any]) -> bool:
@@ -61,6 +93,7 @@ def _card_depends_on_workspace(card: Mapping[str, Any]) -> bool:
         "metadata",
         "composite",
         "analysis_query_spec",
+        "analysis_task",
         "segment_rule_spec",
     }
 
@@ -243,6 +276,7 @@ __all__ = [
     "agent_fallbacks",
     "apply_workspace_prefix",
     "attach_plan_node",
+    "is_analysis_task_handoff_query",
     "resolve_workspace_path",
     "unify_capability_candidates",
     "workspace_prefix",

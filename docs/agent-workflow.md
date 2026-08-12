@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | 已知 workspace recipe | `gravity run @<recipe> ...` | 1 |
 | 已知 operation 和输入 schema | `gravity run <operation-id> ...` | 1 |
-| 已知 Analysis kind 和物理字段 | 单个 `analysis query`；多个用一个 `analysis_query` Plan | 1 |
+| 已知 Analysis kind 和物理字段 | 单个 `analysis query`；多个独立 spec 用 `analysis query batch` | 1 |
 | 已知 Analysis kind，指标未知 | `metadata vocabulary` → `analysis query --spec` | 2 |
 | 已知人群规则 spec | `gravity analysis segment evaluate --app ... --spec ...` | 1 |
 | 不知道人群规则合同 | `gravity agent "评估人群规则命中人数"` → `plan run` | 2 |
@@ -18,16 +18,16 @@
 | 不知道可调用导出 | `gravity agent "material report export"` → 执行 `next.argv` | 2 |
 | 已知 App 与经营时间窗 | `gravity reports pulse --app ... --start ... --end ...` | 1 |
 | 已知多个 selector 或已有 Plan | `gravity plan run --input <plan.json>` | 1 |
+| 已知单用户标识与时间窗 | `gravity analysis user journey ...` | 1 |
 | 已同步数据表沿革，目标未知 | `gravity agent "data table lineage"` → `plan run` | 2 |
 | 已知 operation，不确定输入 | `gravity agent <operation-id>` → `run` | 2 |
 | 只知道分析目标 | `gravity agent "<query>"` → 返回 argv | 2 |
 | 多个未知分析问题 | `gravity agent --input <questions.json>` → `plan run` | 2 |
 | 同时找 operation、recipe、metadata | `gravity find "<query>"` | 1 次发现 |
 | 多个独立 operation | `gravity insight batch read ...` | 1 次批量执行 |
-
 `run` 已经完成 bind、validate、parents、exec 和 diagnose。不要在每次调用前机械执行 `recipe check`、`validate`、`parents resolve` 和 `doctor`；只有 `run` 的 diagnostics 要求时再执行对应命令。
 
-五种 Analysis kind（`event/funnel/retention/property/scatter`）使用 `gravity analysis query --kind <kind> --spec <json|file|->`，完整示例见 [CLI 参考](reference/cli.md#analysis-query-spec-v1)。事件/属性用 `metadata search`，指标/标签/媒体枚举/模板用 `metadata vocabulary`；确认后一次执行 spec。`--dry-run` 返回零网络的安全编译预览。Spec 不接受自然语言自动执行。
+五种 Analysis kind（`event/funnel/retention/property/scatter`）使用 `gravity analysis query --kind <kind> --spec <json|file|->`；多个独立 spec 一次交给 `analysis query batch`，复用 Plan 并发。事件/属性用 `metadata search`，指标/标签/媒体枚举/模板用 `metadata vocabulary`；确认后执行。`--dry-run` 返回零网络安全预览，Spec 不接受自然语言自动执行。完整示例见 [CLI 参考](reference/cli.md#analysis-query-spec-v1)。
 
 经营概览和趋势直接一次调用 `gravity reports pulse --app main --start 2026-08-01 --end 2026-08-07 --include-hourly`；只有需要小时对比时加 `--include-hourly`，其结果是 `scope=workspace`。交叉 Plan 使用 composite `name=business_pulse` 和 `apps/start/end`，不要手工串行读取 overview/business。
 
@@ -67,7 +67,7 @@ gravity run <operation-id> --input <json-or-file>
 gravity agent --input questions.json
 ```
 
-这次调用只加载一次 Workspace、operation inventory、SQL product 和本地 metadata catalog，按问题输入顺序返回结果。Plan 可执行候选带可复制的 `plan_node`；Analysis Spec 编译器卡则内嵌完整 kind schema 和可直接执行的 `argv`。单项发现失败不影响其他问题。自然语言发现不会自动执行。调用方选择节点、补齐输入并组成一个 Plan 后，第二次调用 `gravity plan run`；Spec 卡可直接执行其 compact spec。因此未知问题仍是“批量发现一次 + 执行一次”。
+这次调用只加载一次 Workspace、operation inventory、SQL product 和本地 metadata catalog，按问题输入顺序返回。Plan 候选带 `plan_node`；多个 Analysis Spec 卡只保留所选 kind 的合同引用，并附一个可复制的 `analysis_query_batch`，不重复整份 schema。自然业务问题只给本地物理候选和缺失决策，不选择字段或自动执行。调用方补齐后第二次执行 Plan/batch，因此仍是“发现一次 + 执行一次”。
 
 选择卡片时检查：
 
@@ -126,7 +126,7 @@ gravity sql query <product> --start <inclusive-iso> --end <exclusive-iso>
 
 ## 5. 独立任务一次并发
 
-多个 App、日期段或 operation 彼此独立时，使用正式 batch，而不是逐条起 CLI 进程或临时
+多个 App、日期段、Analysis spec 或 operation 彼此独立时，使用正式 batch，而不是逐条起 CLI 进程或临时
 线程脚本。首次不确定 wrapper 时查看一次 schema：
 
 ```powershell

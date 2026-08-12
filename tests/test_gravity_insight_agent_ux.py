@@ -15,9 +15,11 @@ from unittest.mock import patch
 
 from gravity_sdk import cli, runtime
 from gravity_sdk.agent import discover_capabilities
+from gravity_sdk.agent_analysis_task import analysis_task_cards
 from gravity_sdk.agent_batch import capabilities_many, iter_ndjson_records
 from gravity_sdk.agent_batch_sources import AgentSourceSnapshot
 from gravity_sdk.agent_client import DeferredAgentClient
+from gravity_sdk.agent_handoff import apply_workspace_prefix
 from gravity_sdk.agent_sources import OperationDiscovery, discover_operation_cards
 from gravity_sdk.workspace import load_workspace
 
@@ -612,6 +614,58 @@ class DiscoveryUxTests(unittest.TestCase):
                     [card["kind"] for card in result["candidates"]],
                 )
 
+    def test_agent_analysis_task_and_user_journey_are_single_safe_handoffs(self) -> None:
+        class NoOperationClient:
+            def operation_inventory(self, **_options):
+                raise AssertionError("local Agent handoffs must not scan operations")
+
+        with patch(
+            "gravity_sdk.agent_batch_sources.search_metadata",
+            side_effect=OSError("catalog unavailable"),
+        ):
+            task = capabilities_many(
+                [{"id": "conversion", "query": "分析过去7天成交用户数和转化率"}],
+                client=NoOperationClient(),
+            )["results"][0]["result"]
+        self.assertEqual((1, 1), (task["count"], task["total"]))
+        handoff = task["candidates"][0]
+        self.assertEqual("analysis_task", handoff["kind"])
+        self.assertIsNone(handoff["plan_node"])
+        self.assertTrue(handoff["catalog_missing"])
+        self.assertEqual(
+            ["gravity", "metadata", "sync", "--all-apps"],
+            handoff["catalog_sync_argv"],
+        )
+        metadata_card = {
+            "kind": "metadata",
+            "metadata_kind": "event",
+            "name": "Purchase",
+            "display_name": "购买",
+            "operation_id": "analysis.event.list",
+            "match": {"confidence": "strong"},
+        }
+        with patch(
+            "gravity_sdk.agent.catalog_cards",
+            return_value=([metadata_card], 1, [], "0" * 64),
+        ):
+            available = discover_capabilities(
+                "analyze purchase trends", client=None
+            )["candidates"][0]
+        self.assertFalse(available["catalog_missing"])
+        self.assertEqual(
+            "Purchase", available["metadata_candidates"]["events"][0]["name"]
+        )
+
+        journey = discover_capabilities(
+            "single user events and postbacks", client=None, domain="analysis"
+        )
+        self.assertEqual((1, 1), (journey["count"], journey["total"]))
+        card = journey["candidates"][0]
+        self.assertEqual("composite:user_journey", card["selector"])
+        self.assertTrue(card["input_schema"]["client_id"]["sensitive"])
+        self.assertEqual({"name": "user_journey"}, card["plan_node"]["request"])
+        self.assertNotIn("client_id", card["plan_node"]["request"])
+
     @patch("gravity_sdk.agent_batch_sources.search_metadata", return_value={"results": []})
     def test_agent_batch_namespaces_analysis_spec_plan_nodes(self, _metadata) -> None:
         result = capabilities_many(
@@ -631,6 +685,32 @@ class DiscoveryUxTests(unittest.TestCase):
             ["funnel", "retention"],
             [card["plan_node"]["request"]["kind"] for card in cards],
         )
+        for card in cards:
+            spec = card["input_schema"]["spec"]
+            self.assertEqual(card["spec_schema_version"], spec["schema_version"])
+            self.assertNotIn("definitions", spec)
+            self.assertNotIn("variants_by_kind", spec)
+            self.assertEqual(
+                card["analysis_kind"], spec["contract_ref"]["selected_kind"]
+            )
+            self.assertEqual(
+                card["next"]["schema_argv"],
+                spec["contract_ref"]["schema_argv"],
+            )
+        handoff = result["analysis_query_batch"]
+        self.assertEqual(
+            "gravity.analysis-query-batch.v1", handoff["schema_version"]
+        )
+        self.assertFalse(handoff["natural_language_auto_execute"])
+        self.assertEqual(
+            ["acquisition", "cohort"],
+            [query["id"] for query in handoff["queries"]],
+        )
+        self.assertEqual(
+            ["funnel", "retention"],
+            [query["kind"] for query in handoff["queries"]],
+        )
+        self.assertEqual("batch", handoff["command"][3])
 
     @patch("gravity_sdk.agent_batch_sources.search_metadata")
     def test_agent_batch_namespaces_plan_nodes_and_exposes_ndjson_rows(self, metadata) -> None:
@@ -747,6 +827,22 @@ class DiscoveryUxTests(unittest.TestCase):
         )
         composite = batch["results"][0]["result"]["candidates"][0]
         self.assertEqual(prefix, composite["next"]["argv"][:3])
+        task = capabilities_many(
+            [{"id": "kpi", "query": "analyze weekly purchase count"}],
+            client=self.client,
+            workspace=workspace,
+        )["results"][0]["result"]["candidates"][0]
+        self.assertFalse(task["catalog_missing"])
+        self.assertEqual(prefix, task["next"]["argv"][:3])
+        self.assertEqual(prefix, task["next"]["schema_argv"][:3])
+        missing = apply_workspace_prefix(
+            analysis_task_cards("analyze weekly purchase count", metadata_rows=None)[0],
+            workspace.path,
+        )
+        self.assertEqual(prefix, missing["catalog_sync_argv"][:3])
+        self.assertEqual(prefix, missing["catalog"]["next"]["argv"][:3])
+        rebound = apply_workspace_prefix(missing, workspace.path)
+        self.assertEqual(1, rebound["catalog_sync_argv"].count("--workspace"))
 
     def test_agent_returns_matching_workspace_sql_product_in_the_same_call(self) -> None:
         workspace = load_workspace(

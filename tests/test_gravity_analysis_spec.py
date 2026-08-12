@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unittest
 from typing import Any, Mapping
+from unittest.mock import patch
 
 from gravity_sdk.analysis_spec import analysis_query_spec_schema, compile_query_spec
 from gravity_sdk.errors import InputValidationError
@@ -178,6 +179,20 @@ class AnalysisQuerySpecTests(unittest.TestCase):
         self.assertEqual("1001", prepared["compiled_input"]["app_id"])
         self.assertEqual("success", result["status"])
         self.assertEqual("analysis.funnel.query", insight.reads[0][0])
+        with patch(
+            "gravity_sdk.analysis_query_batch.run_analysis_query_batch",
+            return_value={"status": "validated"},
+        ) as run_batch:
+            batch = sdk.analysis_queries(
+                {"schema_version": "gravity.analysis-query-batch.v1", "queries": []},
+                max_workers=4,
+                dry_run=True,
+            )
+        self.assertEqual("validated", batch["status"])
+        self.assertEqual((4, True), (
+            run_batch.call_args.kwargs["max_workers"],
+            run_batch.call_args.kwargs["dry_run"],
+        ))
 
 
 if __name__ == "__main__":

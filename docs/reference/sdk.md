@@ -210,6 +210,18 @@ Spec 只简化结构，不替调用方决定语义：事件名、属性名、指
 必须显式填写。物理字段未知时，先通过 `gravity metadata search` 或本地 metadata API 确认，
 随后一次调用 `analysis_query()`；自然语言 capability discovery 不会自动执行查询。
 
+`analysis_queries(payload, *, max_workers=6, workspace=None, dry_run=False)` 是多查询薄门面。
+payload 为 `gravity.analysis-query-batch.v1`，最多 32 个带唯一 ID 的 literal spec；方法先编译
+整批，再复用 Plan v1 的预检、同层并发、声明顺序和失败隔离。`dry_run=True` 零执行；成功或
+失败结果都不回显 spec/compiled input。它不新增第二套调度器，也不支持 dependencies、binding、
+foreach 或表达式；这些仍由 `execute_plan()` 负责。
+
+`user_journey(client_id, *, app=None, date=None, start=None, end=None, page=1,
+page_size=20, fields=(), events=(), max_workers=3, max_items=200, workspace=None)` 在入口只解析
+一次 workspace App，然后把 profile、events、postbacks 作为一个受控批次读取。结果固定来源
+顺序、局部失败隔离，并递归剔除 client ID、request 和凭据字段。user-event 没有已证明的自动
+分页合同，调用方必须显式递增 page。
+
 ## Segment Rule Spec v1
 
 `prepare_segment_evaluation(spec, *, app=None, start=None, end=None, workspace=None)` 与
@@ -242,7 +254,7 @@ max_workers=6, max_pages=1000, max_items=100000, workspace=None)` 接受一个 A
 
 ## Plan v1
 
-Analysis Query 不增加新的 SDK 方法：通过现有 `validate_plan()` / `execute_plan()` 执行
+Analysis Query Plan 通过现有 `validate_plan()` / `execute_plan()` 执行
 `composite` 节点。request 固定接受 `name="analysis_query"`、`kind/app/spec` 和可选的成对
 `start/end`；五种 kind 是 `event/funnel/retention/property/scatter`。`output_fields` 属于 Plan
 节点、不放进 request，并按底层 operation 的 data-relative FieldPolicy 校验。
@@ -250,6 +262,11 @@ Analysis Query 不增加新的 SDK 方法：通过现有 `validate_plan()` / `ex
 Segment Rule 使用同一公开 `validate_plan()` / `execute_plan()`，composite request 为
 `name="segment_evaluate"`、`app/spec` 和可选 `start/end`。只有 `/app` 可绑定；规则必须是提交前
 完成的 literal spec，节点级 `output_fields` 仅允许 `part/percent/total`。
+
+Single-user journey 也使用登记 composite：request 为 `name="user_journey"`，必填
+`app/client_id` 以及单个 `date` 或成对 `start/end`，可选 `page/page_size/fields/events`。只有
+`/app` 与 `/client_id` 可接受显式标量 binding；后者是敏感输入，任何 Plan 结果和错误都不得
+回显绑定值。adapter 在 Plan 全局 worker pool 内固定内部 worker 为 1，避免并发乘法放大。
 
 下面是一个完整的进程内 Plan 示例。Analysis event 与本地 metadata 分支没有依赖，交给同一个
 全局 worker pool，同时保持声明顺序：

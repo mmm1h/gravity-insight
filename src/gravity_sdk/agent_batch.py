@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 
+import copy
 from collections.abc import Iterator, Mapping, Sequence
 from dataclasses import dataclass
+import hashlib
+import re
 import threading
 from typing import Any
 
 from .agent import DEFAULT_LIMIT, discover_capabilities
 from .agent_batch_sources import AgentSourceSnapshot, snapshot_agent_sources
+from .agent_handoff import resolve_workspace_path, workspace_prefix
 from .errors import ErrorCategory, ErrorDetail
 
 
@@ -17,6 +21,8 @@ NDJSON_RECORD_SCHEMA_VERSION = "gravity.agent-question.v1"
 NDJSON_SUMMARY_SCHEMA_VERSION = "gravity.agent-batch-summary.v1"
 MAX_QUESTIONS = 32
 _QUESTION_FIELDS = frozenset({"id", "query", "domain", "platform", "limit"})
+_ANALYSIS_BATCH_SCHEMA_VERSION = "gravity.analysis-query-batch.v1"
+_SAFE_QUERY_ID = re.compile(r"^[A-Za-z][A-Za-z0-9_.-]{0,63}$")
 
 
 @dataclass(frozen=True)
@@ -81,11 +87,14 @@ def capabilities_many(
     except Exception:
         return snapshot_failure(pending)
     cached_client = _SnapshotClient(client, sources)
-    results = [discover_one(item, cached_client, sources) for item in pending]
+    results = [
+        compact_analysis_schema(discover_one(item, cached_client, sources))
+        for item in pending
+    ]
     failures = [item for item in results if item["ok"] is not True]
     successes = len(results) - len(failures)
     gaps = sum(item["status"] == "capability_gap" for item in results)
-    return {
+    response = {
         "schema_version": SCHEMA_VERSION,
         "ok": not failures,
         "status": "success" if not failures else "partial" if successes else "error",
@@ -96,6 +105,10 @@ def capabilities_many(
         "exit_code": max((int(item["exit_code"]) for item in failures), default=0),
         "results": results,
     }
+    handoff = analysis_query_batch_handoff(results, sources.workspace)
+    if handoff is not None:
+        response["analysis_query_batch"] = handoff
+    return response
 
 
 def capabilities_many_for_sdk(
@@ -270,6 +283,143 @@ def discover_one(
             "result": None,
             "error": detail.to_dict(),
         }
+
+
+def compact_analysis_schema(item: Mapping[str, Any]) -> dict[str, Any]:
+    """Remove repeated Analysis schema bodies from one batch-only result."""
+
+    selected = dict(item)
+    raw_result = selected.get("result")
+    if not isinstance(raw_result, Mapping):
+        return selected
+    result = dict(raw_result)
+    selected["result"] = result
+    candidates = result.get("candidates")
+    if not isinstance(candidates, list):
+        return selected
+    result["candidates"] = [
+        _compact_analysis_card(card) if isinstance(card, Mapping) else card
+        for card in candidates
+    ]
+    return selected
+
+
+def analysis_query_batch_handoff(
+    results: Sequence[Mapping[str, Any]], workspace: Any | None
+) -> dict[str, Any] | None:
+    """Build one fillable batch document from kind-specific compiler cards."""
+
+    queries: list[dict[str, Any]] = []
+    used: set[str] = set()
+    for index, item in enumerate(results):
+        card = _analysis_card(item)
+        if card is None:
+            continue
+        template = card.get("input_template")
+        values = template if isinstance(template, Mapping) else {}
+        kind = card.get("analysis_kind") or values.get("kind") or "<kind>"
+        queries.append(
+            {
+                "id": _safe_query_id(str(item.get("question_id", "")), index, used),
+                "kind": kind,
+                "app": values.get("app", "<workspace-app-alias-or-positive-id>"),
+                "spec": copy.deepcopy(
+                    values.get(
+                        "spec", "<gravity-insight.analysis-query-spec.v1 object>"
+                    )
+                ),
+                "limits": {"max_items": 200},
+            }
+        )
+    if not queries:
+        return None
+    return {
+        "schema_version": _ANALYSIS_BATCH_SCHEMA_VERSION,
+        "natural_language_auto_execute": False,
+        "command": [
+            *workspace_prefix(resolve_workspace_path(workspace)),
+            "analysis",
+            "query",
+            "batch",
+            "--input",
+            "<queries.json>",
+            "--concurrency",
+            "6",
+        ],
+        "queries": queries,
+    }
+
+
+def _compact_analysis_card(card: Mapping[str, Any]) -> dict[str, Any]:
+    if card.get("kind") != "analysis_query_spec":
+        return dict(card)
+    selected = {
+        key: copy.deepcopy(value)
+        for key, value in card.items()
+        if key != "input_schema"
+    }
+    raw_schema = card.get("input_schema")
+    schema = (
+        {
+            key: copy.deepcopy(value)
+            for key, value in raw_schema.items()
+            if key != "spec"
+        }
+        if isinstance(raw_schema, Mapping)
+        else {}
+    )
+    raw_spec = raw_schema.get("spec") if isinstance(raw_schema, Mapping) else None
+    spec = dict(raw_spec) if isinstance(raw_spec, Mapping) else {}
+    next_step = selected.get("next")
+    next_values = next_step if isinstance(next_step, Mapping) else {}
+    compact = {
+        key: copy.deepcopy(value)
+        for key, value in spec.items()
+        if key not in {"definitions", "variants_by_kind"}
+    }
+    compact["contract_ref"] = {
+        "schema_version": selected.get("spec_schema_version")
+        or spec.get("schema_version"),
+        "selected_kind": selected.get("analysis_kind"),
+        "schema_argv": copy.deepcopy(next_values.get("schema_argv")),
+    }
+    schema["spec"] = compact
+    selected["input_schema"] = schema
+    return selected
+
+
+def _analysis_card(item: Mapping[str, Any]) -> Mapping[str, Any] | None:
+    result = item.get("result")
+    candidates = result.get("candidates") if isinstance(result, Mapping) else None
+    if not isinstance(candidates, Sequence):
+        return None
+    return next(
+        (
+            card
+            for card in candidates
+            if isinstance(card, Mapping) and card.get("kind") == "analysis_query_spec"
+        ),
+        None,
+    )
+
+
+def _safe_query_id(value: str, index: int, used: set[str]) -> str:
+    selected = value.strip()
+    if not _SAFE_QUERY_ID.fullmatch(selected):
+        stem = re.sub(r"[^A-Za-z0-9_.-]+", "-", selected).strip(".-")
+        if not stem or not stem[0].isalpha():
+            stem = f"question-{index + 1}"
+        selected = stem[:64]
+    base = selected
+    salt = 0
+    while selected in used:
+        digest = hashlib.sha256(
+            f"{value}\0{salt}".encode("utf-8")
+        ).hexdigest()[:8]
+        selected = f"{base[:55]}-{digest}"
+        salt += 1
+    used.add(selected)
+    return selected
 
 
 __all__ = [

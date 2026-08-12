@@ -138,6 +138,7 @@ Resolver 的完成路径生成 `gravity.receipt.v1`，写到当前 workspace 的
 | Analysis context | `gravity analysis context --app <alias|id>` | `analysis_context()` | event、event property/group、user property、metric、media enum 与 mine/shared/preset template，共 13 个来源 |
 | App snapshot | `gravity apps snapshot --app <alias|id>` | `app_snapshot()` | app detail、realtime event、capacity、permission menu、role、template，共 6 个来源 |
 | Attribution snapshot | `gravity attribution snapshot --app <alias|id>` | `attribution_snapshot()` | 当前 8 个 stable attribution 配置 operation |
+| User journey | `gravity analysis user journey --app ... --client-id ...` | `user_journey()` | 单用户 profile、event timeline、postback 三个受控来源；显式分页 |
 
 组合结果按固定来源顺序返回，每个来源带 scope 和 operation identity；局部失败隔离。它们不会
 把 draft operation 伪装成 stable，也不会自动枚举全部 role detail。
@@ -189,6 +190,7 @@ SQL 工具。
 | 场景 | 当前实现 | 调用建议 |
 | --- | --- | --- |
 | 多个独立 Insight operation | `batch` 默认 6 workers，显式上限 24，保持输入顺序并隔离单项失败 | 一次 `batch read`，不要逐条起进程 |
+| 多个 compact Analysis spec | `analysis query batch` 先全量离线编译，再复用 Plan 同层并发 | 一次 batch，不在外层再建线程池 |
 | Analysis/App/Attribution 组合 | 外层默认 6、上限 24；各来源独立执行，结果固定顺序 | 使用登记组合，不手写多命令循环 |
 | Plan DAG | 一个全局 worker pool，默认 6、上限 24；同层并发、依赖层串行；adapter 内分页 worker 固定 1 | 把交叉查询放进一个 Plan，避免并发乘法放大 |
 | Plan foreach | 每节点最多一个，默认最多 32 项、硬上限 64；不支持嵌套和笛卡尔积 | 只用于一个上游数组到一个目标字段的有限扇出 |

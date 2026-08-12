@@ -26,6 +26,8 @@ gravity
 gravity agent "event analysis"
 gravity agent --input questions.json
 gravity plan schema
+gravity analysis query batch --input queries.json --concurrency 6
+gravity analysis user journey --app main --client-id <id> --date 2026-08-12
 gravity metadata sync --all-apps
 ```
 

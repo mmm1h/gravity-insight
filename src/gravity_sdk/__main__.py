@@ -16,6 +16,8 @@ Usage:
   gravity plan schema
   gravity plan run --input <plan.json>
   gravity analysis saved list|get|prepare|run
+  gravity analysis query batch --input <queries.json> [--dry-run]
+  gravity analysis user journey --app <alias|id> --client-id <id> --date <date>
   gravity reports pulse --app <alias|id> --start <date> --end <date>
   gravity export run <operation-id> --input <json|file|-> --output <file>
   gravity insight <command> [options]

@@ -20,7 +20,7 @@ def add_analysis_query_arguments(
     add_shortcuts: Callable[[Any], None],
 ) -> None:
     parser.add_argument(
-        "--kind", required=True, choices=sorted(ANALYSIS_QUERY_OPERATIONS)
+        "--kind", choices=sorted(ANALYSIS_QUERY_OPERATIONS)
     )
     parser.add_argument(
         "--experimental",
@@ -55,6 +55,15 @@ def run_analysis_query_command(
     merge_shortcuts: Callable[..., tuple[dict[str, Any], list[str]]],
     call_read: Callable[..., dict[str, Any]],
 ) -> dict[str, Any]:
+    if args.kind is None:
+        raise InputValidationError(
+            "analysis query requires --kind unless the batch subcommand is used",
+            field="kind",
+            next_action=(
+                "Run `gravity analysis query --kind <kind> --help`, or use "
+                "`gravity analysis query batch --input <queries.json>`."
+            ),
+        )
     if bool(getattr(args, "spec_schema", False)):
         if args.spec is not None or args.input is not None:
             raise InputValidationError(

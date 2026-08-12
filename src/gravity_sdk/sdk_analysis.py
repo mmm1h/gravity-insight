@@ -9,6 +9,63 @@ from typing import Any
 class AnalysisSdkMixin:
     """Keep Analysis product helpers cohesive without growing the core facade."""
 
+    def analysis_queries(
+        self,
+        payload: Mapping[str, Any],
+        *,
+        max_workers: int = 6,
+        workspace: Any | None = None,
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """Validate or execute up to 32 compact Analysis queries through Plan v1."""
+
+        from .analysis_query_batch import run_analysis_query_batch
+
+        return run_analysis_query_batch(
+            self,
+            payload,
+            workspace=self._select_workspace(workspace),
+            max_workers=max_workers,
+            dry_run=dry_run,
+        )
+
+    def user_journey(
+        self,
+        client_id: str,
+        *,
+        app: str | int | None = None,
+        date: str | None = None,
+        start: str | None = None,
+        end: str | None = None,
+        page: int = 1,
+        page_size: int = 20,
+        fields: Sequence[str] = (),
+        events: Sequence[str] = (),
+        max_workers: int = 3,
+        max_items: int = 200,
+        workspace: Any | None = None,
+    ) -> dict[str, Any]:
+        """Read one user's profile, event timeline, and postbacks concurrently."""
+
+        from .user_journey import user_journey
+
+        selected = self._select_workspace(workspace)
+        app_id = self._resolve_app(selected, app)
+        return user_journey(
+            self.insight,
+            app_id,
+            client_id,
+            date_value=date,
+            start=start,
+            end=end,
+            page=page,
+            page_size=page_size,
+            fields=fields,
+            events=events,
+            max_workers=max_workers,
+            max_items=max_items,
+        )
+
     def saved_analyses(
         self,
         app: str | int | None = None,

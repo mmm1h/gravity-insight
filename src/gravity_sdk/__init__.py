@@ -49,6 +49,18 @@ _EXPORTS = {
     "CompiledAnalysisQuery": (".analysis_spec", "CompiledAnalysisQuery"),
     "analysis_query_spec_schema": (".analysis_spec", "analysis_query_spec_schema"),
     "compile_query_spec": (".analysis_spec", "compile_query_spec"),
+    "analysis_query_batch_schema": (
+        ".analysis_query_batch", "analysis_query_batch_schema"
+    ),
+    "execute_analysis_query_batch": (
+        ".analysis_query_batch", "execute_analysis_query_batch"
+    ),
+    "run_analysis_query_batch": (
+        ".analysis_query_batch", "run_analysis_query_batch"
+    ),
+    "validate_analysis_query_batch": (
+        ".analysis_query_batch", "validate_analysis_query_batch"
+    ),
     "CompiledSegmentSpec": (".segment_spec", "CompiledSegmentSpec"),
     "compile_segment_spec": (".segment_spec", "compile_segment_spec"),
     "prepare_segment_spec": (".segment_spec", "prepare_segment_spec"),

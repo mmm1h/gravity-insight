@@ -6,6 +6,14 @@ labels:
   - status:triage
 body:
   - type: input
+    id: consumer_context
+    attributes:
+      label: Consumer project or integration context
+      description: Name the calling project or describe the real workflow that is blocked; do not include private identifiers.
+      placeholder: data-analysis-agent / analyst reporting workflow
+    validations:
+      required: true
+  - type: input
     id: outcome
     attributes:
       label: User or Agent outcome
@@ -45,5 +53,7 @@ body:
     attributes:
       label: Safety check
       options:
+        - label: This request comes from real usage by a project that consumes Gravity SDK, not from the SDK's internal roadmap.
+          required: true
         - label: This request contains no credentials or raw user-level output.
           required: true

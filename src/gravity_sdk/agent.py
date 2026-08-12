@@ -11,8 +11,10 @@ from typing import Any
 
 from .agent_capabilities import (
     AGENT_SCOPE,
-    analysis_query_spec_cards,
-    composite_capability_cards,
+    authoritative_capability_cards,
+    capability_handoff_cards,
+    merge_catalog_handoff_cards,
+    should_load_capability_catalog,
 )
 from .agent_handoff import (
     agent_execution_contract,
@@ -23,10 +25,7 @@ from .agent_handoff import (
     unify_capability_candidates,
     workspace_prefix,
 )
-from .agent_export import (
-    export_capability_cards,
-    export_inventory_for_query,
-)
+from .agent_export import export_inventory_for_query
 from .agent_sources import (
     catalog_cards,
     candidates_fingerprint,
@@ -35,9 +34,6 @@ from .agent_sources import (
     workspace_catalog_fingerprint,
 )
 from .agent_batch_sources import AgentSourceSnapshot
-from .agent_table_lineage import table_lineage_capability_cards
-from .agent_segment import is_authoritative_direct_card
-from .agent_vocabulary import is_authoritative_local_metadata_card
 from .agent_client import DeferredAgentClient
 from .errors import InputValidationError
 from .find import capability_gaps
@@ -189,13 +185,7 @@ def _discover(
     page = _discovery_page(
         request, request.query, client=client, workspace=workspace, sources=sources
     )
-    authoritative_cards = [
-        card for card in page.catalog_cards if is_authoritative_direct_card(card)
-    ] or [
-        card
-        for card in page.catalog_cards
-        if is_authoritative_local_metadata_card(card)
-    ]
+    authoritative_cards = authoritative_capability_cards(page.catalog_cards)
     if authoritative_cards:
         unified = [("catalog", card) for card in authoritative_cards]
         weak_operations: list[Mapping[str, Any]] = []
@@ -350,31 +340,34 @@ def _discovery_page(
         client=client,
         inventory=sources.export_inventory if sources is not None else None,
     )
-    export_cards = export_capability_cards(
+    selected_cards, catalog_excluded = capability_handoff_cards(
         query,
         domain=args.domain,
         platform=args.platform,
-        inventory=export_inventory,
+        export_inventory=export_inventory,
+        composite_inventory=composite_inventory,
     )
-    lineage_cards = table_lineage_capability_cards(
-        query, domain=args.domain, platform=args.platform
-    )
-    selected_cards = export_cards or lineage_cards or [
-        *analysis_query_spec_cards(query, domain=args.domain, platform=args.platform),
-        *composite_capability_cards(
-            query,
-            domain=args.domain,
-            platform=args.platform,
-            inventory=composite_inventory,
-        ),
-    ]
     warnings: list[str] = []
     catalog_fingerprint = workspace_catalog_fingerprint(None)
-    if not export_cards and not lineage_cards and args.domain is None and args.platform is None:
+    if should_load_capability_catalog(
+        query,
+        domain=args.domain,
+        platform=args.platform,
+        direct_cards=selected_cards,
+        catalog_excluded=catalog_excluded,
+    ):
         catalog, _catalog_total, warnings, catalog_fingerprint = catalog_cards(
             query, 100, workspace=workspace, sources=sources
         )
-        selected_cards = [*catalog, *selected_cards]
+        selected_cards = merge_catalog_handoff_cards(
+            query,
+            domain=args.domain,
+            platform=args.platform,
+            direct_cards=selected_cards,
+            catalog=catalog,
+            warnings=warnings,
+            sources=sources,
+        )
     if args.continuation:
         continuation = _decode_continuation(
             args, query, catalog_fingerprint=catalog_fingerprint

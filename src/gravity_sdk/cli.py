@@ -74,13 +74,12 @@ except ModuleNotFoundError:  # source checkout before editable installation
 
 from gravity_sdk.parents import add_parent_commands, run_parent_command
 from gravity_sdk.attribution import add_snapshot_command
-from gravity_sdk.analysis_spec_cli import add_analysis_query_arguments, run_analysis_query_command
-from gravity_sdk.segment_spec_cli import (
-    add_segment_commands,
-    run_segment_command,
-)
+from gravity_sdk.analysis_spec_cli import run_analysis_query_command
+from gravity_sdk.analysis_query_batch_cli import add_analysis_query_commands
+from gravity_sdk.segment_spec_cli import add_segment_commands, run_segment_command
 from gravity_sdk.business_pulse_cli import add_business_pulse_command
 from gravity_sdk.saved_analysis_cli import add_saved_analysis_commands
+from gravity_sdk.user_journey_cli import add_user_journey_command
 from gravity_sdk.metadata_sync import (
     add_metadata_commands,
     run_analysis_metadata,
@@ -110,6 +109,7 @@ from gravity_sdk.plan_product_cli import dispatch as dispatch_plan
 
 
 _LARGE_VALUE_BYTES = 8_192
+_ANALYSIS_QUERY_COMMAND = "query"
 _MULTIDIM_QUERY_OPERATIONS = frozenset(
     (*DOMAIN_OPERATIONS["multidim.query"], *DOMAIN_OPERATIONS["multidim.calc_total"])
 )
@@ -305,9 +305,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     _add_discovery_commands(commands)
 
-    add_plan_commands(
-        commands, _concurrency, _add_input, handler=dispatch_plan
-    )
+    add_plan_commands(commands, _concurrency, _add_input, handler=dispatch_plan)
 
     validate = commands.add_parser(
         "validate", help="Validate one operation input without network access."
@@ -364,8 +362,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_input(analysis_segments)
     _add_all_pages(analysis_segments)
-    analysis_query = analysis_commands.add_parser("query")
-    add_analysis_query_arguments(analysis_query, _add_input, _add_query_shortcuts)
+    add_analysis_query_commands(
+        analysis_commands, _add_input, _add_query_shortcuts, _concurrency
+    )
+    add_user_journey_command(analysis_commands, _concurrency, _positive_int)
     add_segment_commands(analysis_commands, _add_input, _add_all_pages)
     analysis_report_config = analysis_commands.add_parser(
         "report-config", help="List or read a saved Analysis configuration."
@@ -706,7 +706,7 @@ def _multidim_metadata(args: argparse.Namespace) -> Any:
 def _analysis(args: argparse.Namespace) -> Any:
     if args.analysis_command == "metadata":
         return run_analysis_metadata(args, _client, _object_input)
-    if args.analysis_command == "query":
+    if args.analysis_command == _ANALYSIS_QUERY_COMMAND:
         return run_analysis_query_command(args, runtime.build_client, _object_input, _merge_query_shortcuts, runtime.call_read)
     if args.analysis_command == "segment":
         return run_segment_command(
