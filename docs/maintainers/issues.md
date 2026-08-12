@@ -1,7 +1,13 @@
 # Issue 状态管理
 
-GitHub Issue 是问题与交付状态的唯一线上账本。状态用 GitHub 的 open/closed
-加一枚 `status:*` 标签表达；不要另建 Project、审批流或重复任务系统。
+GitHub Issue 只接收其他项目在真实使用本 SDK 时提交的问题，是这些问题与交付状态的唯一
+线上账本。状态用 GitHub 的 open/closed 加一枚 `status:*` 标签表达；不要另建 Project、
+审批流或重复任务系统。
+
+Codex 或维护者自行发现的优化、能力规划和开发拆包不得创建 GitHub Issue。它们记录在当前
+开发计划、`dev` 提交和维护文档中；只有消费项目提交了可追溯的使用问题后，才进入下面的
+Issue 状态流。Agent 可以整理、补证据和更新已有外部 Issue，但不得为了给自己的开发工作
+派号而创建 Issue。
 
 ## 状态流
 
@@ -38,7 +44,7 @@ triage -> ready -> in-progress -> fixed-dev -> released
 
 ## Agent 最短路径
 
-只领取已准备好的任务：
+先确认 Issue 来自消费项目的真实使用反馈，再领取已准备好的任务：
 
 ```powershell
 gh issue list --repo mmm1h/gravity-sdk --state open `
