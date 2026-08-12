@@ -17,7 +17,9 @@ class PromotionPerformanceAgentTests(unittest.TestCase):
             "promotion performance", "run a cross-platform promotion report",
             "show advertising performance", "推广表现", "请执行跨平台推广报表",
             "帮我查看跨平台投放报告", "promotion 跨平台报表",
-            "推广 performance", "投放 report",
+            "推广 performance", "投放 report", "promotion performance 请查询",
+            "请查询 promotion performance", "query promotion performance", "查询推广表现",
+            "请查询跨平台推广报表",
         )
         for query in queries:
             with self.subTest(query=query):
@@ -60,7 +62,8 @@ class PromotionPerformanceAgentTests(unittest.TestCase):
             "WeChatVideo ad performance", "wechat-video ad performance",
             "red note promotion report", "red_note promotion report", "cannot run promotion report",
             "can't run promotion performance", "won't run promotion report",
-            "这不是推广表现", "并非投放报表", "非推广表现",
+            "这不是推广表现", "并非投放报表", "非推广表现", "不想看推广表现",
+            "我不想要 promotion performance", "拒绝推广表现", "不看推广表现", "不查推广表现", "不查询推广表现",
             "推荐推广表现", "推广表现推荐", "推广投放方案报告",
             "publish promotion report", "remove promotion performance",
             "insert promotion report",
@@ -96,6 +99,7 @@ class PromotionPerformanceAgentTests(unittest.TestCase):
 
         result = discover_capabilities(operation_id, client=Client())
         self.assertEqual([operation_id], [card["selector"] for card in result["candidates"]])
+        self.assertFalse(promotion_performance_query("promotion query"))
 
     @patch("gravity_sdk.agent_batch_sources.search_metadata", return_value={"results": []})
     def test_batch_product_intents_do_not_load_operation_inventory(self, _metadata):

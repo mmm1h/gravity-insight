@@ -50,6 +50,7 @@ _ENGLISH_SUBJECTS = frozenset(
     {"ad", "ads", "advertising", "promotion", "promotions"}
 )
 _ENGLISH_ACTIONS = frozenset({"performance", "report", "reporting"})
+_ENGLISH_READ_ONLY_VERBS = frozenset({"query"})
 _ENGLISH_NEGATIONS = frozenset(
     {"avoid", "cannot", "exclude", "never", "no", "not", "skip", "without"}
 )
@@ -79,9 +80,11 @@ _HETEROGENEOUS_ENGLISH = (
 )
 _CHINESE_SUBJECTS = ("推广", "投放")
 _CHINESE_ACTIONS = ("表现", "效果", "报表", "报告")
+_CHINESE_READ_ONLY_VERBS = ("查询",)
 _CHINESE_NEGATIONS = (
     "不要", "无需", "无须", "不需要", "不必", "不做", "不用", "避免", "排除",
-    "不是", "并非", "非推广", "非投放",
+    "不是", "并非", "非推广", "非投放", "不想看", "不想要", "拒绝", "不看", "不查",
+    "不查询",
 )
 _CHINESE_BLOCKED = (
     "账户", "账号", "广告主", "归因", "人群", "受众", "最佳", "最好", "经营",
@@ -95,6 +98,11 @@ _HETEROGENEOUS_CHINESE = ("必应", "小红书", "微信视频号", "视频号")
 _HETEROGENEOUS_COMPACT = tuple(
     _COMPACT_SEPARATORS.sub("", term.casefold())
     for term in (*_HETEROGENEOUS_ENGLISH, *_HETEROGENEOUS_CHINESE)
+)
+_CHINESE_BLOCKING_TERMS = tuple(
+    term
+    for term in (*_CHINESE_BLOCKED, *_CHINESE_NEGATIONS)
+    if term not in _CHINESE_READ_ONLY_VERBS
 )
 _CHINESE_BIE_NEGATION = re.compile(
     r"(?:^|请|麻烦|[\s，,。；;！!])别(?:再)?"
@@ -232,9 +240,7 @@ def _intent_signals(
     action = bool(words & _ENGLISH_ACTIONS) or _contains_any(
         compact, _CHINESE_ACTIONS
     )
-    adjacent = bool(words & (_ENGLISH_BLOCKED | _ENGLISH_NEGATIONS)) or _contains_any(
-        compact, (*_CHINESE_BLOCKED, *_CHINESE_NEGATIONS)
-    )
+    adjacent = _has_blocked_term(words, compact)
     heterogeneous = _contains_any(compact, _HETEROGENEOUS_COMPACT)
     return subject, action, adjacent, heterogeneous
 
@@ -252,15 +258,20 @@ def _contains_any(value: str, terms: tuple[str, ...]) -> bool:
     return any(term in value for term in terms)
 
 
+def _has_blocked_term(words: frozenset[str], compact: str) -> bool:
+    english = words & (_ENGLISH_BLOCKED | _ENGLISH_NEGATIONS)
+    return bool(english - _ENGLISH_READ_ONLY_VERBS) or _contains_any(
+        compact, _CHINESE_BLOCKING_TERMS
+    )
+
+
 def _blocked(selected: str) -> bool:
     words = frozenset(_ASCII_WORD.findall(selected.replace("-", " ")))
     compact = _compact(selected)
     return bool(
-        words & (_ENGLISH_BLOCKED | _ENGLISH_NEGATIONS)
+        _has_blocked_term(words, compact)
         or _ENGLISH_NEGATION_PHRASE.search(selected)
         or _contains_any(compact, _HETEROGENEOUS_COMPACT)
-        or any(term in compact for term in _CHINESE_BLOCKED)
-        or any(term in compact for term in _CHINESE_NEGATIONS)
         or _CHINESE_BIE_NEGATION.search(selected)
     )
 
