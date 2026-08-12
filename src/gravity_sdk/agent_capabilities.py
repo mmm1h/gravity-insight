@@ -40,6 +40,61 @@ _COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
         },
     },
     {
+        "name": "dashboard_snapshot",
+        "domain": "analysis",
+        "accepted_domains": ("analysis", "report"),
+        "aliases": (
+            "dashboard snapshot",
+            "dashboard context",
+            "dashboard control context",
+            "dashboard details members filters",
+            "analyze dashboard details members filters",
+            "inspect dashboard members and saved filters",
+            "show dashboard members and favourites",
+            "get dashboard details members and default favourite",
+            "看板快照",
+            "看板详情成员筛选",
+            "分析看板详情成员筛选",
+            "请查看看板成员和筛选收藏",
+            "帮我检查看板成员和筛选收藏",
+            "帮我获取看板详情和默认收藏",
+        ),
+        "intent_terms": (
+            "dashboard snapshot",
+            "dashboard_snapshot",
+            "dashboard context",
+            "dashboard control context",
+            "dashboard details",
+            "dashboard member",
+            "dashboard filter",
+            "dashboard favourite",
+            "dashboard favorite",
+            "看板快照",
+            "看板详情",
+            "看板成员",
+            "看板筛选",
+            "看板收藏",
+        ),
+        "description": (
+            "按精确 ID 或精确名称解析一个 Analysis 看板，并发读取详情、成员、"
+            "空间成员、筛选收藏和默认收藏；只返回控制面快照，不执行图表。"
+        ),
+        "required_inputs": ("app", "ref"),
+        "input_schema": {
+            "app": {
+                "type": "string|integer",
+                "required": True,
+                "nullable": False,
+            },
+            "ref": {
+                "type": "string|integer",
+                "required": True,
+                "nullable": False,
+                "description": "Exact dashboard id or exact dashboard name.",
+            },
+        },
+    },
+    {
         "name": "app_snapshot",
         "domain": "app",
         "aliases": (
@@ -255,11 +310,13 @@ def composite_capability_cards(
 
     if platform is not None:
         return []
+    from .agent_composite import composite_card
+
     normalized = normalize_agent_query(query)
     cards = [
         card
         for definition in inventory or _COMPOSITE_CAPABILITIES
-        if (card := _composite_card(query, normalized, domain, definition)) is not None
+        if (card := composite_card(query, normalized, domain, definition)) is not None
     ]
     return sorted(
         cards,
@@ -378,11 +435,22 @@ def authoritative_capability_cards(
     from .agent_user_journey import is_user_journey_card
     from .agent_vocabulary import is_authoritative_local_metadata_card
 
-    return [card for card in cards if is_authoritative_direct_card(card)] or [
+    dashboard = [
         card
         for card in cards
-        if card.get("kind") == "analysis_task" or is_user_journey_card(card)
-    ] or [card for card in cards if is_authoritative_local_metadata_card(card)]
+        if card.get("kind") == "composite"
+        and card.get("composite") == "dashboard_snapshot"
+    ]
+    return (
+        dashboard
+        or [card for card in cards if is_authoritative_direct_card(card)]
+        or [
+            card
+            for card in cards
+            if card.get("kind") == "analysis_task" or is_user_journey_card(card)
+        ]
+        or [card for card in cards if is_authoritative_local_metadata_card(card)]
+    )
 
 
 def _analysis_task_metadata_rows(
@@ -410,74 +478,6 @@ def _analysis_task_metadata_rows(
         for card in catalog
         if card.get("kind") == "metadata"
     )
-
-
-def _composite_card(
-    query: str,
-    normalized: str,
-    domain: str | None,
-    definition: Mapping[str, Any],
-) -> dict[str, Any] | None:
-    name = str(definition["name"])
-    selected_domain = str(definition["domain"])
-    accepted_domains = tuple(
-        str(value)
-        for value in definition.get("accepted_domains", (selected_domain,))
-    )
-    if domain is not None and domain not in accepted_domains:
-        return None
-    intent = tuple(str(value) for value in definition.get("intent_terms", ()))
-    if intent and not any(term in query.casefold() for term in intent):
-        return None
-    selector = f"composite:{name}"
-    aliases = tuple(str(value) for value in definition.get("aliases", ()))
-    match = agent_query_match(
-        query,
-        selector,
-        name,
-        name.replace("_", " "),
-        selected_domain,
-        *accepted_domains,
-        definition.get("description"),
-        *aliases,
-    )
-    if normalized in {selector.casefold(), name.casefold()}:
-        match = _exact_match(match, normalized)
-    if match["confidence"] != "strong":
-        return None
-    required = [str(value) for value in definition.get("required_inputs", ())]
-    input_schema = {
-        str(key): dict(value)
-        for key, value in definition.get("input_schema", {}).items()
-        if isinstance(value, Mapping)
-    }
-    return {
-        "kind": "composite",
-        "selector": selector,
-        "composite": name,
-        "domain": selected_domain,
-        "description": str(definition.get("description", "")),
-        "effect": "read",
-        "executable": True,
-        "input_schema": input_schema,
-        "required_inputs": required,
-        "match": match,
-        "next": {
-            "ready_without_input": not required,
-            "argv": ["gravity", "plan", "run", "--input", "<plan.json>"],
-        },
-    }
-
-
-def _exact_match(match: Mapping[str, Any], normalized: str) -> dict[str, Any]:
-    return {
-        **dict(match),
-        "confidence": "strong",
-        "coverage": 1.0,
-        "matched_terms": [normalized],
-        "missing_terms": [],
-        "exact_selector": True,
-    }
 
 
 __all__ = [

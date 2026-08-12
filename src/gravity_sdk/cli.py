@@ -12,7 +12,6 @@ from typing import Any, Mapping, Sequence
 
 from gravity_sdk.domains import (
     ANALYSIS_AUXILIARY_OPERATIONS,
-    ANALYSIS_DASHBOARD_OPERATIONS,
     ANALYSIS_DETAIL_OPERATIONS,
     ANALYSIS_DIRECTORY_OPERATIONS,
     ANALYSIS_PAGINATED_OPERATIONS,
@@ -78,6 +77,7 @@ from gravity_sdk.analysis_spec_cli import run_analysis_query_command
 from gravity_sdk.analysis_query_batch_cli import add_analysis_query_commands
 from gravity_sdk.segment_spec_cli import add_segment_commands, run_segment_command
 from gravity_sdk.business_pulse_cli import add_business_pulse_command
+from gravity_sdk.dashboard_snapshot_cli import add_dashboard_commands
 from gravity_sdk.saved_analysis_cli import add_saved_analysis_commands
 from gravity_sdk.user_journey_cli import add_user_journey_command
 from gravity_sdk.metadata_sync import (
@@ -375,14 +375,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     _add_input(analysis_report_config, required=True)
     _add_all_pages(analysis_report_config)
-    analysis_dashboard = analysis_commands.add_parser(
-        "dashboard", help="Read Analysis dashboard trees, details, and members."
+    add_dashboard_commands(
+        analysis_commands, _add_input, _add_all_pages, _concurrency, _positive_int
     )
-    analysis_dashboard.add_argument(
-        "--kind", required=True, choices=sorted(ANALYSIS_DASHBOARD_OPERATIONS)
-    )
-    _add_input(analysis_dashboard, required=True)
-    _add_all_pages(analysis_dashboard)
     analysis_values = analysis_commands.add_parser(
         "values", help="Read enumerable user or event property values."
     )
@@ -718,8 +713,6 @@ def _analysis(args: argparse.Namespace) -> Any:
         operation_id = DOMAIN_OPERATIONS["analysis.segments"][0]
     elif args.analysis_command == "report-config":
         operation_id = ANALYSIS_REPORT_CONFIG_OPERATIONS[args.kind]
-    elif args.analysis_command == "dashboard":
-        operation_id = ANALYSIS_DASHBOARD_OPERATIONS[args.kind]
     elif args.analysis_command == "values":
         operation_id = ANALYSIS_VALUE_OPERATIONS[args.kind]
     elif args.analysis_command == "users":

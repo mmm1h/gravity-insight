@@ -14,6 +14,7 @@
 | 不知道人群规则合同 | `gravity agent "评估人群规则命中人数"` → `plan run` | 2 |
 | 已知保存分析引用 | `gravity analysis saved run --app ... --ref ...` | 1 |
 | 不知道保存分析引用 | `gravity agent "saved report templates"` → 执行返回的 Plan 节点 | 2 |
+| 看板控制面（引用已知/未知） | 已知：`analysis dashboard snapshot --app ... --ref ...`；未知：`agent "dashboard snapshot"` → `plan run` | 1 / 2 |
 | 已知可调用导出及完整输入 | `gravity export run ... --output <file.xlsx>` | 1 |
 | 不知道可调用导出 | `gravity agent "material report export"` → 执行 `next.argv` | 2 |
 | 已知 App 与经营时间窗 | `gravity reports pulse --app ... --start ... --end ...` | 1 |
@@ -32,6 +33,8 @@
 经营概览和趋势直接一次调用 `gravity reports pulse --app main --start 2026-08-01 --end 2026-08-07 --include-hourly`；只有需要小时对比时加 `--include-hourly`，其结果是 `scope=workspace`。交叉 Plan 使用 composite `name=business_pulse` 和 `apps/start/end`，不要手工串行读取 overview/business。
 
 保存分析已知稳定 ID/精确名称时直接 `gravity analysis saved run --app ... --ref ...`，不要先串行 list/get/prepare。Strict Replay 不猜 Web 配置；`prepare --ref` 会联网解析引用但不执行最终查询，显式 `--definition` 才是零网络编译。自然语言发现只返回 `composite:saved_analysis` 和缺失的 `app/ref`，不会自动选择或执行。
+
+看板稳定 ID/精确名称已知时直接取 5 源控制面快照；未知时 Agent 只返回缺失 `app/ref` 的 `dashboard_snapshot` 节点。它裁剪 opaque config，不运行或重放图表；CLI/SDK 外层默认 5、上限 24，Plan 内固定 1 worker。
 
 人群规则只接受显式紧凑 spec：Agent 强意图卡给完整 schema 和缺失的 `app/spec`，不会从自然语言生成规则。已知 spec 可直接 evaluate；交叉查询用 `segment_evaluate` composite，只有 `/app` 可绑定，结果仅 `part/percent/total`。
 
@@ -101,7 +104,7 @@ gravity plan run --input plan.json --dry-run
 gravity plan run --input plan.json --concurrency 6
 ```
 
-Analysis 查询复用 composite `name=analysis_query`；人群规则用 `name=segment_evaluate`。已知 App/literal spec 时一次 `plan run`；未知时 Agent 发现、调用方补齐 spec、再执行 Plan，自然语言不自动执行。同层查询由全局 pool 并发并保声明序；binding 仅可写 `/app`，不支持 `/spec/...`；结果不回显 request/spec/binding 值。完整合同见 [Plan v1 参考](reference/plan.md#analysis-query-composite)。
+Analysis 查询复用 composite `name=analysis_query`；人群规则用 `name=segment_evaluate`，看板控制面用 `name=dashboard_snapshot` 和显式 `app/ref`。已知完整输入时一次 `plan run`；未知时 Agent 发现、调用方补齐再执行，自然语言不自动执行。同层查询由全局 pool 并发并保声明序；binding 仅可写登记目标，不支持 `/spec/...`；结果不回显 request/spec/binding 值。完整合同分别见 [Analysis Query](reference/plan.md#analysis-query-composite)、[Segment Rule](reference/plan.md#segment-rule-composite) 和 [Dashboard Snapshot](reference/plan.md#dashboard-snapshot-composite)。
 
 ## 4. 选择 Insight 还是 SQL
 
@@ -153,10 +156,7 @@ gravity insight batch read --input <batch.json> --concurrency 6
 }
 ```
 
-batch 保持输入顺序、隔离单项失败并聚合退出码；默认并发 6、上限 24。单个 operation 的
-`--all-pages` 会在首页返回明确 `total_page` 时按小窗口并发且保持页序；总页数未知时串行。
-batch 内 `read_all` 固定单分页 worker，避免嵌套并发放大。不要在外层套线程池绕过
-进程/host 限流。SQL query 也接受单个、数组或 requests wrapper，并发上限独立且为 2。
+batch 保持输入顺序、隔离单项失败并聚合退出码；默认并发 6、上限 24。单个 operation 的 `--all-pages` 只在首页返回明确 `total_page` 时按小窗口并发并保持页序；未知总页数串行。batch 内 `read_all` 固定单分页 worker，避免嵌套并发放大；不要在外层套线程池绕过进程/host 限流；SQL query 也接受单个、数组或 requests wrapper，并发上限独立且为 2。
 
 ## 6. 控制结果规模
 

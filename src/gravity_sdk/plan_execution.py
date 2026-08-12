@@ -257,10 +257,9 @@ def preflight_adapters(
         except InputValidationError as exc:
             from .plan import PlanValidationError
 
-            suffix = f".{exc.field}" if exc.field else ""
             raise PlanValidationError(
                 str(exc),
-                field=f"nodes[{index}].request{suffix}",
+                field=_adapter_validation_field(index, exc.field),
             ) from None
         except Exception:
             from .plan import PlanValidationError
@@ -269,6 +268,13 @@ def preflight_adapters(
                 "plan adapter rejected a declared request",
                 field=f"nodes[{index}].request",
             ) from None
+
+
+def _adapter_validation_field(index: int, field: str | None) -> str:
+    if field == "output_fields" or (field or "").startswith("limits."):
+        return f"nodes[{index}].{field}"
+    suffix = f".{field}" if field else ""
+    return f"nodes[{index}].request{suffix}"
 
 
 def native_failure(result: Mapping[str, Any]) -> bool:

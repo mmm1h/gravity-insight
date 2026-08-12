@@ -67,6 +67,7 @@ _EXPORTS = {
     "segment_rule_spec_schema": (".segment_spec", "segment_rule_spec_schema"),
     "validate_segment_spec": (".segment_spec", "validate_segment_spec"),
     "business_pulse": (".business_pulse", "business_pulse"),
+    "dashboard_snapshot": (".dashboard_snapshot", "dashboard_snapshot"),
     "compile_saved_analysis_definition": (
         ".saved_analysis", "compile_saved_analysis_definition"
     ),

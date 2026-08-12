@@ -184,6 +184,38 @@ class GravitySDKTests(unittest.TestCase):
         self.assertEqual(2, sql_batch[0]["options"]["max_workers"])
         self.assertFalse(hasattr(sdk, "execute_sql"))
 
+    @patch("gravity_sdk.dashboard_snapshot.dashboard_snapshot")
+    def test_dashboard_snapshot_facade_resolves_one_bound_app(self, snapshot) -> None:
+        workspace = type("Workspace", (), {"resolve_app": lambda _self, value: 17})()
+        sdk = GravitySDK(insight=_Insight(), workspace=workspace)
+        snapshot.return_value = {"schema_version": "gravity-insight.dashboard-snapshot.v1"}
+        self.assertIs(snapshot.return_value, sdk.dashboard_snapshot(
+            "main", "Overview", max_workers=4, max_pages=3, max_items=50
+        ))
+        snapshot.assert_called_once_with(
+            sdk.insight, 17, "Overview", max_workers=4, max_pages=3, max_items=50
+        )
+
+    def test_dashboard_snapshot_resolves_app_before_lazy_insight_construction(self) -> None:
+        order = []
+
+        class Workspace:
+            def resolve_app(self, value):
+                order.append(("app", value))
+                return 17
+
+        insight = _Insight()
+        sdk = GravitySDK(
+            insight_factory=lambda: (order.append(("insight", None)), insight)[1],
+            workspace=Workspace(),
+        )
+        with patch(
+            "gravity_sdk.dashboard_snapshot.dashboard_snapshot",
+            return_value={"ok": True},
+        ):
+            sdk.dashboard_snapshot("main", "Overview")
+        self.assertEqual([("app", "main"), ("insight", None)], order)
+
     def test_segment_spec_sdk_and_plan_share_one_safe_execution_path(self) -> None:
         class SegmentInsight(_Insight):
             def operations(self, **_options):

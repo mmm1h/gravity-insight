@@ -355,6 +355,20 @@ class DiscoveryUxTests(unittest.TestCase):
     def test_agent_discovers_registered_composites_with_handoff_templates(self) -> None:
         cases = (
             ("analysis context", "analysis_context", ["app"]),
+            (
+                "analyze dashboard details members filters",
+                "dashboard_snapshot",
+                ["app", "ref"],
+            ),
+            (
+                "inspect dashboard members and saved filters",
+                "dashboard_snapshot",
+                ["app", "ref"],
+            ),
+            ("can you show me dashboard members and filters", "dashboard_snapshot", ["app", "ref"]),
+            ("分析看板详情成员筛选", "dashboard_snapshot", ["app", "ref"]),
+            ("请查看看板成员和筛选收藏", "dashboard_snapshot", ["app", "ref"]),
+            ("查看一下看板的成员和筛选收藏", "dashboard_snapshot", ["app", "ref"]),
             ("app snapshots", "app_snapshot", ["app"]),
             ("attribution snapshot", "attribution_snapshot", ["app"]),
             ("multi dimensions", "multidim", ["app", "inputs"]),
@@ -362,12 +376,31 @@ class DiscoveryUxTests(unittest.TestCase):
         )
         for query, name, missing in cases:
             with self.subTest(query=query):
-                result = discover_capabilities(query, client=self.client, limit=1)
+                domain = "report" if query == "分析看板详情成员筛选" else None
+                result = discover_capabilities(query, client=self.client, domain=domain, limit=1)
                 card = result["candidates"][0]
                 self.assertEqual(name, card["composite"])
                 self.assertEqual("composite", card["plan_node"]["kind"])
                 self.assertEqual(missing, card["missing_inputs"])
                 self.assertEqual(set(missing), set(card["input_template"]))
+                if name == "dashboard_snapshot":
+                    self.assertEqual((1, 1), (result["count"], result["total"]))
+                    self.assertEqual(missing, card["required_inputs"])
+                    self.assertEqual(set(missing), set(card["input_schema"]))
+                    self.assertEqual(
+                        {
+                            "name": name,
+                            "app": "<app:string|integer>",
+                            "ref": "<ref:string|integer>",
+                        },
+                        card["plan_node"]["request"],
+                    )
+                    self.assertFalse(card["natural_language_auto_execute"])
+        for query in ("run dashboard charts", "replay dashboard charts", "重放看板图表"):
+            result = discover_capabilities(query, client=self.client, limit=5)
+            self.assertNotIn(
+                "dashboard_snapshot", [card.get("composite") for card in result["candidates"]]
+            )
 
     def test_agent_table_lineage_is_one_offline_plan_handoff(self) -> None:
         workspace = SimpleNamespace(path=Path("D:/private/workspaces/analyst.toml"))

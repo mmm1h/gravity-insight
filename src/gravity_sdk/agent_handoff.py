@@ -218,6 +218,10 @@ def _plan_request(
     if kind == "sql_product":
         return {"product": card.get("product")}, "sql_product"
     if kind == "composite":
+        if card.get("composite") == "dashboard_snapshot":
+            from .agent_dashboard import dashboard_plan_request
+
+            return dashboard_plan_request(card), "composite"
         return {"name": card.get("composite")}, "composite"
     if card.get("metadata_kind") == "table_lineage":
         return {"query": "", "kind": "table_lineage"}, "metadata_search"

@@ -854,6 +854,62 @@ class GravityInsightCliTests(unittest.TestCase):
                 calls = client.read_all_calls if paginated else client.read_calls
                 self.assertEqual(kind, calls[0][1]["marker"])
 
+    def test_dashboard_snapshot_cli_binds_one_workspace_and_product(self):
+        expected = {"schema_version": "gravity-insight.dashboard-snapshot.v1", "ok": True}
+        workspace = object()
+        with (
+            patch("gravity_sdk.dashboard_snapshot_cli.load_workspace", return_value=workspace),
+            patch("gravity_sdk.dashboard_snapshot_cli.resolve_workspace_app", return_value=17) as resolve,
+            patch("gravity_sdk.dashboard_snapshot_cli.dashboard_snapshot", return_value=expected) as snapshot,
+        ):
+            code, result, error, client = self.invoke([
+                "analysis", "dashboard", "snapshot", "--app", "main", "--ref", "Overview",
+                "--concurrency", "4", "--max-pages", "3", "--max-items", "50",
+            ])
+        self.assertEqual((0, expected, None), (code, result, error))
+        resolve.assert_called_once_with(workspace, "main")
+        snapshot.assert_called_once_with(
+            client, 17, "Overview", max_workers=4, max_pages=3, max_items=50
+        )
+
+    def test_dashboard_snapshot_help_exposes_trailing_output_options(self):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output), self.assertRaises(SystemExit) as raised:
+            cli.build_parser().parse_args(
+                ["analysis", "dashboard", "snapshot", "--help"]
+            )
+        self.assertEqual(0, raised.exception.code)
+        self.assertIn("--output", output.getvalue())
+        self.assertIn("--format {json,ndjson}", output.getvalue())
+
+    def test_dashboard_parser_marks_only_complete_unmixed_forms_as_networked(self):
+        from gravity_sdk.onboarding import command_requires_credentials
+
+        offline = (
+            ["analysis", "dashboard"],
+            ["analysis", "dashboard", "--kind", "tree"],
+            ["analysis", "dashboard", "--input", "{}"],
+            [
+                "analysis", "dashboard", "--kind", "tree", "snapshot",
+                "--app", "main", "--ref", "Overview",
+            ],
+        )
+        for arguments in offline:
+            with self.subTest(arguments=arguments):
+                self.assertFalse(command_requires_credentials(arguments, cli.build_parser))
+        self.assertTrue(command_requires_credentials(
+            ["analysis", "dashboard", "--kind", "tree", "--input", "{}"],
+            cli.build_parser,
+        ))
+        self.assertTrue(command_requires_credentials(
+            ["analysis", "dashboard", "--kind", "tree", "--set", "app_id=17"],
+            cli.build_parser,
+        ))
+        self.assertTrue(command_requires_credentials(
+            ["analysis", "dashboard", "snapshot", "--app", "main", "--ref", "Overview"],
+            cli.build_parser,
+        ))
+
     def test_analysis_values_and_account_users_have_normal_cli_routes(self):
         cases = (
             (

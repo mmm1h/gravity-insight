@@ -16,6 +16,7 @@ gravity run <selector>        单进程解析并执行 recipe 或 operation
 gravity sql <command>         受控 SQL 产品
 gravity census <command>      前端路由盘点
 gravity analysis context      并发读取一个 App 的分析上下文
+gravity analysis dashboard snapshot  读取一个看板的控制面快照
 gravity analysis saved ...    列出、读取、准备或严格重放保存分析
 gravity apps snapshot         并发读取一个 App 的治理快照
 gravity attribution snapshot  并发读取一个 App 的归因配置快照
@@ -130,15 +131,16 @@ workspace 已绑定的 App alias，并按 alias 排序。外层并发保序且�
 
 ```powershell
 gravity analysis context --app main --concurrency 6
+gravity analysis dashboard snapshot --app main --ref <id-or-exact-name> --concurrency 5
 gravity apps snapshot --app main --concurrency 6
 gravity attribution snapshot --app main --concurrency 6
 ```
 
 `--app` 接受 workspace alias 或正整数；归因命令继续接受 `--app-id` 兼容别名。Analysis
 context 固定 13 个词汇/模板来源，App snapshot 固定 6 个治理来源；Attribution snapshot 固定
-覆盖当前 8 个 stable attribution operation，其中两个 postback map 自动读取全部页。三者均
-默认并发 6、上限 24，按固定来源顺序返回并隔离局部失败。Attribution snapshot 不包含仍为
-draft 的聚合归因和用户/设备级明细查询。
+覆盖当前 8 个 stable attribution operation，其中两个 postback map 自动读取全部页。这三者
+默认并发 6；Dashboard snapshot 默认 5；所有组合上限均为 24，按固定来源顺序返回并隔离局部
+失败。Attribution snapshot 不包含仍为 draft 的聚合归因和用户/设备级明细查询。
 
 ### Governed export
 
@@ -311,6 +313,29 @@ gravity analysis user journey --app main --client-id <explicit-id> `
 user-event 尚无已证明的 `page_info`，因此 v1 只读取显式页并返回
 `continuation.automatic=false`；调用方根据下一页提示显式重试，不伪造自动分页。
 
+### Dashboard control-plane snapshot
+
+已知 App 和看板稳定 ID/精确名称时，一次调用读取看板控制面，不需要在 Web 中逐页检查：
+
+```powershell
+gravity analysis dashboard snapshot --app main --ref <id-or-exact-name> `
+  --concurrency 5 --max-pages 5 --max-items 200
+```
+
+命令先用看板目录精确解析 `--ref`；名称歧义或不存在时 fail closed，不选择相似名称。解析后按
+固定顺序读取 detail、dashboard members、space members、condition favourites 和 default
+favourite 五个来源，保留 scope、operation identity 与局部失败。目录树仅用于精确解析引用，
+不计入结果来源；detail 中未被合同证明的 opaque
+config 会被裁剪；本产品不编译该 config，也不运行、重放或渲染看板图表。
+
+CLI/SDK 外层并发默认 5、上限 24。Plan 使用 `{"name":"dashboard_snapshot","app":...,"ref":...}`；
+adapter 内部固定 1 worker，由 Plan 全局 pool 管理并发。引用已知时直接执行是一次调用；未知时
+先用 `gravity agent "dashboard snapshot"` 得到缺少 `app/ref` 的卡，再显式补齐并执行 Plan，共
+两次调用。自然语言发现不会猜引用或自动执行。
+
+结果较大时可把 `--output <path> --format json|ndjson` 放在 `snapshot` 子命令参数末尾；不指定
+`--output` 时 JSON 输出仍受统一 stdout 裁剪保护，`--format ndjson` 可流式写到 stdout。
+
 ### Segment Rule Spec v1
 
 人群规则人数/占比评估使用紧凑 spec，不需要拼接 FE_CONFIG 或上游 Web JSON：
@@ -419,7 +444,7 @@ gravity plan run --input plan.json --concurrency 6
 | `run` | `selector`、`inputs`/`parameters`、可选 `app/start/end/all_pages` | operation 或 `@recipe` |
 | `sql_product` | `product` 及该 Workspace 产品的 App/时间输入 | 已登记产品，禁止裸 SQL |
 | `metadata_search` | `query`、可选 `kind/app_id/limit/offset` | 已同步的本地 catalog |
-| `composite` | `name`、组合所需 App/查询输入 | 仅登记的 analysis/segment query、context/snapshot、business pulse、multidim |
+| `composite` | `name`、组合所需 App/查询输入 | 仅登记的 analysis/segment query、context/dashboard/app/attribution snapshot、business pulse、multidim |
 
 每个节点还可声明 `depends_on`、标量 `bindings`、一个有限 `foreach`、`limits` 和
 `output_fields`。binding/foreach 的 `from` 必须显式位于 `depends_on`，路径使用 RFC 6901 JSON

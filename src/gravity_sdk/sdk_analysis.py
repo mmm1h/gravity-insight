@@ -323,6 +323,32 @@ class AnalysisSdkMixin:
             max_items=max_items,
         )
 
+    def dashboard_snapshot(
+        self,
+        app: str | int | None,
+        ref: str | int,
+        *,
+        max_workers: int = 5,
+        max_pages: int = 1_000,
+        max_items: int = 100_000,
+        workspace: Any | None = None,
+    ) -> dict[str, Any]:
+        """Resolve one dashboard and read its bounded control-plane snapshot."""
+
+        from .dashboard_snapshot import dashboard_snapshot
+
+        selected = self._select_workspace(workspace)
+        app_id = self._resolve_app(selected, app)
+        insight = self.insight
+        return dashboard_snapshot(
+            insight,
+            app_id,
+            ref,
+            max_workers=max_workers,
+            max_pages=max_pages,
+            max_items=max_items,
+        )
+
     def attribution_snapshot(
         self,
         app: str | int | None = None,

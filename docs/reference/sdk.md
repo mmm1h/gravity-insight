@@ -69,6 +69,7 @@ sql_result = gravity.query_sql_products(
 
 # 固定组合复用同一个 workspace App alias，并在组合外层并发。
 analysis = gravity.analysis_context("main", max_workers=6)
+dashboard = gravity.dashboard_snapshot("main", "Growth Overview", max_workers=5)
 app = gravity.app_snapshot("main", max_workers=6)
 attribution = gravity.attribution_snapshot("main", max_workers=6)
 
@@ -158,6 +159,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `table_lineage()` | 严格离线查询已同步的 account-scope 数据表版本与操作观察 |
 | `business_pulse()` | 并发读取 App 经营概览与趋势，可选 workspace scope 小时对比 |
 | `analysis_context()` | 固定 13 个 Analysis 词汇/模板来源，外层并发、局部失败隔离 |
+| `dashboard_snapshot()` | 按稳定 ID 或精确名称读取一个看板的 5 源控制面快照；不执行图表 |
 | `app_snapshot()` | 固定 6 个 App 治理来源，明确 company/App scope |
 | `attribution_snapshot()` | 当前 8 个 stable attribution 配置来源，不包含 draft 查询 |
 | `validate_plan()` | 离线校验 Plan schema、依赖、预算和 adapter 请求；不发网络请求 |
@@ -222,6 +224,13 @@ page_size=20, fields=(), events=(), max_workers=3, max_items=200, workspace=None
 顺序、局部失败隔离，并递归剔除 client ID、request 和凭据字段。user-event 没有已证明的自动
 分页合同，调用方必须显式递增 page。
 
+`dashboard_snapshot(app, ref, *, max_workers=5, max_pages=1000, max_items=100000,
+workspace=None)` 只接受 workspace App alias/正整数和看板稳定 ID/精确名称。它先精确解析目录，
+再按固定顺序并发读取 detail、dashboard members、space members、condition favourites 与
+default favourite 五个控制面来源；目录树只用于精确解析引用，不是结果来源。局部失败隔离，
+无法证明语义的 opaque config 被裁剪；它不会编译 Web config，也不会执行、重放或渲染看板
+图表；`max_workers` 上限为 24。
+
 ## Segment Rule Spec v1
 
 `prepare_segment_evaluation(spec, *, app=None, start=None, end=None, workspace=None)` 与
@@ -267,6 +276,12 @@ Single-user journey 也使用登记 composite：request 为 `name="user_journey"
 `app/client_id` 以及单个 `date` 或成对 `start/end`，可选 `page/page_size/fields/events`。只有
 `/app` 与 `/client_id` 可接受显式标量 binding；后者是敏感输入，任何 Plan 结果和错误都不得
 回显绑定值。adapter 在 Plan 全局 worker pool 内固定内部 worker 为 1，避免并发乘法放大。
+
+Dashboard snapshot 的 composite request 固定为 `name="dashboard_snapshot"` 与必填 `app/ref`；
+`ref` 仍必须是稳定 ID 或精确名称，`/app`、`/ref` 可接受显式标量 binding。节点预算必须覆盖
+目录扫描与固定五源；adapter 内部固定 1 worker，并保留 SDK 的固定来源顺序与局部失败合同。
+已知引用时直接执行 Plan 是一次调用；未知时先由 Agent 返回非执行卡、调用方补齐引用再执行，
+共两次。
 
 下面是一个完整的进程内 Plan 示例。Analysis event 与本地 metadata 分支没有依赖，交给同一个
 全局 worker pool，同时保持声明顺序：

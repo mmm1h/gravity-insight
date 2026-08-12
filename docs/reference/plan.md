@@ -176,6 +176,40 @@ Plan binding 只作用于 request 边界：`/app` 可从上游复制一个标量
 `gravity analysis query batch --input queries.json`；它机械生成同层 `analysis_query` 节点，
 仍由本页的 Plan 引擎调度。需要依赖、跨引擎节点或 foreach 时才手写完整 Plan。
 
+## Dashboard Snapshot composite
+
+看板控制面使用登记的 `dashboard_snapshot` composite。调用方必须给出 Workspace App 和看板
+稳定 ID 或精确名称；Plan 不从自然语言、相似名称或 Web URL 猜测引用：
+
+```json
+{
+  "id": "dashboard_control_plane",
+  "kind": "composite",
+  "request": {
+    "name": "dashboard_snapshot",
+    "app": "main",
+    "ref": "Growth Overview"
+  },
+  "limits": {"max_pages": 5, "max_items": 200},
+  "output_fields": ["dashboard", "results", "scopes"]
+}
+```
+
+节点先在受治理目录中精确解析 `ref`，再固定读取 detail、dashboard members、space members、
+condition favourites 与当前账号的 default favourite。目录节点和五源结果共同受
+`limits.max_items` 约束；收藏分页受 `limits.max_pages` 约束。五源保持声明顺序并隔离局部失败，
+breaking contract drift 仍是 upstream failure，不会伪装成空结果。
+
+`/app` 与 `/ref` 都可接受一个显式标量 binding，且来源节点必须列入 `depends_on`；不允许把
+binding 写入 opaque dashboard config。`output_fields` 只允许 `app_id/dashboard/results/scopes/`
+`source_count`，结构与错误字段始终保留。adapter 内 worker 固定为 1，跨节点并发继续由 Plan
+全局 pool 控制。
+
+本 composite 只返回裁剪后的控制面摘要。它不返回或解释 `ui_config`、report/favourite config、
+condition、成员 uid/name，也不运行、重放或渲染看板图表。已知 App/ref 时直接一次 `plan run`；
+未知时 `gravity agent "inspect dashboard members and saved filters"` 返回带 `app/ref` 占位符的
+非自动执行节点，调用方补齐后再运行，总共两次调用。
+
 ## User Journey composite
 
 单用户 profile、event timeline 与 postback 使用一个登记节点，不需要调用方手工拼三条 run：
