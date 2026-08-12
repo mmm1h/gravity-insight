@@ -35,7 +35,9 @@ class MaterialSdkMixin:
         selected = self._select_workspace(workspace)
         if isinstance(apps, (str, int)):
             values = [apps]
-        elif isinstance(apps, Sequence):
+        elif isinstance(apps, Sequence) and not isinstance(
+            apps, (bytes, bytearray, memoryview)
+        ):
             values = list(apps)
         else:
             raise InputValidationError(

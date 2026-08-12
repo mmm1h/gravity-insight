@@ -57,7 +57,7 @@ def execute_business_pulse(
         request["start"],
         request["end"],
         platforms=request.get("platforms", DEFAULT_PLATFORMS),
-        include_hourly=bool(request.get("include_hourly", False)),
+        include_hourly=request.get("include_hourly", False),
         max_workers=1,
         max_pages=context.max_pages,
         max_items=context.max_items,

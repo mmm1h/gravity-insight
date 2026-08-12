@@ -90,6 +90,15 @@ def material_performance(
         _safe_component(value, platform, max_pages=pages)
         for platform, value in zip(selected_platforms, ordered, strict=True)
     ]
+    per_platform_items = items // len(selected_platforms)
+    if any(
+        material_component_item_count(value) > per_platform_items
+        for value in results
+    ):
+        raise PaginationError(
+            "material performance exceeded a platform item share",
+            next_action="Increase max_items or request fewer platforms.",
+        )
     returned = sum(material_component_item_count(value) for value in results)
     if returned > items:
         raise PaginationError(
@@ -137,7 +146,9 @@ def validate_material_performance_request(
 def normalize_material_apps(values: Sequence[str | int]) -> tuple[str, ...]:
     """Normalize resolved positive App ids without exposing them in results."""
 
-    if isinstance(values, (str, bytes, bytearray)) or not isinstance(values, Sequence):
+    if isinstance(values, (str, bytes, bytearray, memoryview)) or not isinstance(
+        values, Sequence
+    ):
         raise InputValidationError(
             "material performance apps must be a non-empty array",
             field="apps",
@@ -278,6 +289,7 @@ def _execute_batch(
         raw = runtime.call_batch(
             client, requests, concurrency=workers,
             max_pages=max_pages, max_total_items=max_items,
+            forward_var_kwargs=True,
         )
         return ordered_results(raw, requests, component="material performance")
     except GravityInsightError as exc:

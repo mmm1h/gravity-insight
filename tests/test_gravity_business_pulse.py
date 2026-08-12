@@ -3,7 +3,7 @@ import unittest
 from gravity_sdk.business_pulse import business_pulse
 from gravity_sdk.errors import InputValidationError
 from gravity_sdk.plan import AdapterContext
-from gravity_sdk.plan_pulse_adapter import validate_business_pulse
+from gravity_sdk.plan_pulse_adapter import execute_business_pulse, validate_business_pulse
 
 
 class RecordingClient:
@@ -72,7 +72,6 @@ class BusinessPulseTests(unittest.TestCase):
             ["overview", "business"],
             [row["source"] for row in default["results"]],
         )
-
     def test_plan_bindings_are_limited_to_scalar_product_fields(self):
         Workspace = type(
             "Workspace", (), {"resolve_app": lambda _self, value: {"main": 101}[value]}
@@ -83,7 +82,6 @@ class BusinessPulseTests(unittest.TestCase):
             "start": "2026-08-01", "end": "2026-08-07",
             "platforms": ["bytedance"], "include_hourly": False,
         }
-
         def context(target=None, *, max_items=200):
             return AdapterContext(
                 node_id="pulse", execution_id="pulse", kind="composite",
@@ -91,13 +89,11 @@ class BusinessPulseTests(unittest.TestCase):
                 dynamic_targets=(() if target is None else (target,)),
                 max_pages=5, max_items=max_items,
             )
-
         for target in ("/start", "/end", "/include_hourly"):
             validate_business_pulse(request, context(target), workspace, frozenset())
         for target in ("/apps", "/platforms"):
             with self.assertRaises(InputValidationError):
                 validate_business_pulse(request, context(target), workspace, frozenset())
-
         budget_cases = (
             (False, None, 2, True),
             (True, None, 2, False),
@@ -121,3 +117,7 @@ class BusinessPulseTests(unittest.TestCase):
                             workspace,
                             frozenset(),
                         )
+        passthrough = type("SDK", (), {"business_pulse": lambda _self, *_a, **kw: kw})()
+        request["include_hourly"] = "bound-scalar"
+        result = execute_business_pulse(passthrough, request, context(max_items=3))
+        self.assertEqual("bound-scalar", result["include_hourly"])

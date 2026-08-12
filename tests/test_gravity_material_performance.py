@@ -8,7 +8,6 @@ from gravity_sdk.material_performance import (
 )
 from gravity_sdk.material_performance_result import safe_component
 
-
 def _read_envelope(rows, *, status="success", page=None):
     return {
         "schema_version": "gravity-insight.read.v1",
@@ -23,7 +22,6 @@ def _read_envelope(rows, *, status="success", page=None):
         },
     }
 
-
 def _success(platform, rows=None, *, status="success", page=None):
     return {
         "operation_id": MATERIAL_REPORT_OPERATION,
@@ -37,14 +35,12 @@ def _success(platform, rows=None, *, status="success", page=None):
         "error": None,
     }
 
-
 def _failure(status, code, category):
     return {
         "operation_id": MATERIAL_REPORT_OPERATION, "request_id": "tencent",
         "ok": False, "status": status, "data": None,
         "error": {"code": code, "category": category},
     }
-
 
 class _BatchClient:
     def __init__(self, *, rows_per_platform=1):
@@ -59,7 +55,6 @@ class _BatchClient:
         } for index in range(self.rows_per_platform)])
             for request in reversed(requests)]
 
-
 class MaterialPerformanceTests(unittest.TestCase):
     def test_fans_out_by_platform_with_canonical_bounds_and_order(self):
         client = _BatchClient()
@@ -68,7 +63,6 @@ class MaterialPerformanceTests(unittest.TestCase):
             platforms=("tencent", "bytedance"),
             max_workers=6, max_pages=3, max_items=5,
         )
-
         requests, options = client.calls[0]
         self.assertEqual({
             "max_workers": 2, "max_pages": 3, "max_total_items": 5,
@@ -85,6 +79,7 @@ class MaterialPerformanceTests(unittest.TestCase):
 
     def test_all_local_rules_fail_before_batch(self):
         cases = (
+            {"app_ids": memoryview(b"1")},
             {"app_ids": [17, "017"]},
             {"start": "2026-08-08", "end": "2026-08-07"},
             {"start": "20260801", "end": "20260802"},
@@ -116,6 +111,9 @@ class MaterialPerformanceTests(unittest.TestCase):
         contradictory_receipt["data"]["page"].update(
             number=99, size=0, total_pages=0, total_items=0, has_more=True)
         mutations.append(contradictory_receipt)
+        huge_receipt = _success("tencent")
+        huge_receipt["data"]["page"]["total_items"] = 1 << 20_000
+        mutations.append(huge_receipt)
         mutations.extend((
             _success("tencent", [], status="success"),
             _success("tencent", [{"gravity_material_id": "x"}], status="empty"),
@@ -153,7 +151,6 @@ class MaterialPerformanceTests(unittest.TestCase):
                     _failure(status, code, category), "tencent", max_pages=3
                 )
                 self.assertEqual("contract_changed", result["status"])
-
         for code, category, retryable, retry_after in (
             ("LOCAL_IO_ERROR", "local", True, None),
             ("RATE_LIMITED", "upstream", False, None),
@@ -186,7 +183,6 @@ class MaterialPerformanceTests(unittest.TestCase):
                         },
                     },
                 ]
-
         result = material_performance(
             PartialClient(), [17], "2026-08-01", "2026-08-02",
             platforms=("tencent", "bytedance"), max_items=2)
@@ -194,26 +190,31 @@ class MaterialPerformanceTests(unittest.TestCase):
             result["status"], result["success_count"], result["failure_count"]))
         self.assertNotIn("secret", repr(result))
         self.assertNotIn("C:/private", repr(result))
-
         with self.assertRaises(PaginationError):
             material_performance(
                 _BatchClient(rows_per_platform=2), [17],
                 "2026-08-01", "2026-08-02",
                 platforms=("tencent",), max_items=1,
             )
+        class UnfairClient:
+            def batch(self, _requests, **_options):
+                return [
+                    _success("tencent", [{"gravity_material_id": str(index)}
+                        for index in range(3)]),
+                    _success("bytedance", [{"gravity_material_id": "only"}]),
+                ]
+        with self.assertRaises(PaginationError):
+            material_performance(
+                UnfairClient(), [17], "2026-08-01", "2026-08-02",
+                platforms=("tencent", "bytedance"), max_items=4)
 
     def test_compatible_batch_exceptions_never_expose_raw_details(self):
         class BrokenClient:
             def batch(self, _requests, **_options):
                 raise RuntimeError("token=secret C:/private/request.json")
-
         with self.assertRaises(LocalIOError) as raised:
             material_performance(
                 BrokenClient(), [17], "2026-08-01", "2026-08-02",
                 platforms=("tencent",), max_items=1)
         self.assertNotIn("secret", str(raised.exception))
         self.assertNotIn("C:/private", str(raised.exception))
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -36,7 +36,10 @@ _ENGLISH_SUBJECTS = frozenset(
 )
 _ENGLISH_OVERVIEW = frozenset({"overview", "summary"})
 _ENGLISH_TRENDS = frozenset({"trend", "trends"})
-_ENGLISH_NEGATIONS = frozenset({"avoid", "no", "not", "without"})
+_ENGLISH_NEGATIONS = frozenset(
+    {"avoid", "exclude", "never", "no", "not", "skip", "without"}
+)
+_ENGLISH_NEGATION_PHRASE = re.compile(r"\b(?:don['’]?t|do\s+not)\b")
 _ENGLISH_BLOCKED = frozenset(
     {
         "attribution",
@@ -61,6 +64,8 @@ _ENGLISH_BLOCKED = frozenset(
         "layouts",
         "member",
         "members",
+        "material",
+        "materials",
         "multidim",
         "multidimensional",
         "permission",
@@ -81,7 +86,10 @@ _CHINESE_SUBJECTS = ("经营", "业务")
 _CHINESE_PULSE = ("脉搏", "脉动")
 _CHINESE_OVERVIEW = ("概览", "概况", "总览")
 _CHINESE_TRENDS = ("趋势", "走势")
-_CHINESE_NEGATIONS = ("不要", "无需", "无须", "不需要", "不必", "避免")
+_CHINESE_NEGATIONS = (
+    "不要", "无需", "无须", "不需要", "不必", "不做", "不用", "避免",
+    "非经营", "非业务",
+)
 _CHINESE_BIE_NEGATION = re.compile(
     r"(?:^|请|麻烦|[\s，,。；;！!])别(?:再)?"
     r"(?=$|[\s，,。；;！!]|查|看|跑|执行|生成|获取|做|分析|汇总|查询|要|输出|拉取|给|展示|算)"
@@ -102,9 +110,12 @@ _CHINESE_BLOCKED = (
     "旅程",
     "布局",
     "成员",
+    "素材",
     "权限",
     "留存",
     "保存分析",
+    "保存",
+    "已存",
     "属性分析",
     "分布分析",
     "模板",
@@ -210,6 +221,7 @@ def _chinese_query(selected: str) -> bool:
 def _blocked_query(selected: str, words: frozenset[str]) -> bool:
     return bool(
         words & (_ENGLISH_BLOCKED | _ENGLISH_NEGATIONS)
+        or _ENGLISH_NEGATION_PHRASE.search(selected)
         or any(term in selected for term in _CHINESE_BLOCKED)
         or any(term in selected for term in _CHINESE_NEGATIONS)
         or _CHINESE_BIE_NEGATION.search(selected)

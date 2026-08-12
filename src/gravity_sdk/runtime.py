@@ -151,10 +151,11 @@ def call_batch(
     concurrency: int = 6,
     max_pages: int | None = None,
     max_total_items: int | None = None,
+    forward_var_kwargs: bool = False,
 ) -> Any:
     method = client.batch
     parameters = inspect.signature(method).parameters
-    accepts_options = any(
+    accepts_options = forward_var_kwargs and any(
         parameter.kind is inspect.Parameter.VAR_KEYWORD
         for parameter in parameters.values()
     )

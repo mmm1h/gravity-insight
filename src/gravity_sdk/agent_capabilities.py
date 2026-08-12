@@ -7,6 +7,7 @@ CLI subcommands or the Plan adapter allowlist.
 
 from __future__ import annotations
 
+import copy
 from collections.abc import Mapping, Sequence
 import re
 from typing import Any
@@ -208,7 +209,7 @@ def operation_query_match(query: str, item: Mapping[str, Any]) -> dict[str, Any]
 def composite_capability_inventory() -> tuple[Mapping[str, Any], ...]:
     """Return the immutable, value-free built-in composite inventory."""
 
-    return _COMPOSITE_CAPABILITIES
+    return tuple(copy.deepcopy(item) for item in _COMPOSITE_CAPABILITIES)
 
 
 def analysis_query_spec_cards(

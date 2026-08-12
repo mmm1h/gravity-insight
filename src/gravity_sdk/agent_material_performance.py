@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 from collections.abc import Mapping
 import re
 from typing import Any
@@ -25,6 +26,7 @@ _EXACT = frozenset(
     }
 )
 _ASCII_WORD = re.compile(r"[a-z0-9_]+", re.IGNORECASE)
+_ENGLISH_NEGATION_PHRASE = re.compile(r"\b(?:don['’]?t|do\s+not)\b")
 _ENGLISH_ACTIONS = frozenset({"performance", "report"})
 _ENGLISH_BLOCKED = frozenset(
     {
@@ -33,14 +35,20 @@ _ENGLISH_BLOCKED = frozenset(
         "recycle", "upload", "template", "dashboard", "promotion", "campaign",
         "business", "pulse", "multidim", "create", "update", "delete",
         "rank", "ranking", "rankings", "top", "best", "winner",
-        "not", "no", "avoid", "without",
+        "not", "no", "avoid", "exclude", "never", "skip", "without", "saved",
     }
 )
 _CHINESE_ACTIONS = ("表现", "效果", "报表")
 _CHINESE_BLOCKED = (
     "导出", "下载", "素材库", "相册", "标签", "审核", "收藏", "回收", "上传",
     "模板", "看板", "推广", "经营", "业务脉搏", "多维", "创建", "更新", "删除",
-    "排名", "排行", "最佳", "最好", "不要", "无需",
+    "排名", "排行", "最佳", "最好", "不要", "无需", "无须", "不需要", "不必",
+    "不做", "不用",
+    "避免", "非素材", "保存", "已存", "脉搏", "脉动",
+)
+_CHINESE_BIE_NEGATION = re.compile(
+    r"(?:^|请|麻烦|[\s，,。；;！!])别(?:再)?"
+    r"(?=查|看|跑|执行|获取|做|查询|输出|拉取|给|展示)"
 )
 
 
@@ -94,19 +102,21 @@ def material_performance_query(query: str) -> bool:
     selected = " ".join(query.strip().casefold().split())
     words = frozenset(_ASCII_WORD.findall(selected))
     compact = "".join(selected.split())
-    if words & _ENGLISH_BLOCKED:
+    if words & _ENGLISH_BLOCKED or _ENGLISH_NEGATION_PHRASE.search(selected):
         return False
-    if any(term in compact for term in _CHINESE_BLOCKED):
+    if (
+        any(term in compact for term in _CHINESE_BLOCKED)
+        or _CHINESE_BIE_NEGATION.search(selected)
+    ):
         return False
     if selected in _EXACT:
         return True
+    if selected.isascii() and " " not in selected and "." in selected:
+        return False
+    if words & {"material", "materials"} and words & _ENGLISH_ACTIONS:
+        return True
     if selected.isascii():
-        if " " not in selected and "." in selected:
-            return False
-        return (
-            bool(words & {"material", "materials"})
-            and bool(words & _ENGLISH_ACTIONS)
-        )
+        return False
     return (
         "素材" in compact
         and any(term in compact for term in _CHINESE_ACTIONS)
@@ -116,17 +126,19 @@ def material_performance_query(query: str) -> bool:
 def material_performance_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
     """Return type-correct literal slots without selecting business values."""
 
-    return {
-        "name": MATERIAL_PERFORMANCE_NAME,
-        "apps": card.get("apps", ["<workspace-app-alias-or-positive-id>"]),
-        "start": card.get("start", "<start:YYYY-MM-DD>"),
-        "end": card.get("end", "<end:YYYY-MM-DD>"),
-        "platforms": card.get("platforms", list(DEFAULT_PLATFORMS)),
-    }
+    template = material_performance_input_template()
+    return {"name": MATERIAL_PERFORMANCE_NAME, **{
+        key: copy.deepcopy(card.get(key, value)) for key, value in template.items()
+    }}
 
 
 def material_performance_input_template() -> dict[str, Any]:
-    return material_performance_plan_request({})
+    return {
+        "apps": ["<workspace-app-alias-or-positive-id>"],
+        "start": "<start:YYYY-MM-DD>",
+        "end": "<end:YYYY-MM-DD>",
+        "platforms": list(DEFAULT_PLATFORMS),
+    }
 
 
 __all__ = [

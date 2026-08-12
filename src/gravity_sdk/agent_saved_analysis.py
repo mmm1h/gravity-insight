@@ -41,6 +41,8 @@ _ENGLISH_BLOCKED = frozenset(
     {
         "create",
         "delete",
+        "download",
+        "export",
         "update",
         "template",
         "layout",
@@ -72,6 +74,8 @@ _CHINESE_BLOCKED = (
     "保存本",
     "帮我保存",
     "创建",
+    "导出",
+    "下载",
     "删除",
     "更新",
     "模板",

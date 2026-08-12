@@ -208,8 +208,7 @@ gravity find "retention"
 
 `stale` 才运行 `recipe check`；`PARENT_REQUIRED` 按 diagnostics 解析父资源；`INPUT_INVALID` 重新 describe。`empty` 先核对 App、时间、时区和父资源，不能解释成业务未发生。认证只刷新一次，权限错误不循环；限流遵循 `retry_after_ms`；合同变化立即停止依赖新字段。任何分支都只保留结构化摘要，不输出请求敏感信息。
 
-只有在严格 HTTP 预算内寻找一个可用输入组合时使用 `discover-nonempty`。它不是空结果后的
-默认重试器。
+只有在严格 HTTP 预算内寻找一个可用输入组合时使用 `discover-nonempty`。它不是空结果后的默认重试器。
 
 ## 9. 导出
 

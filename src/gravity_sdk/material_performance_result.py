@@ -53,6 +53,7 @@ _SPECIAL_FAILURE_CODES = frozenset(
 _ERROR_CODE = re.compile(r"^[A-Z][A-Z0-9_]{2,63}$")
 _ERROR_FIELD = re.compile(r"^[A-Za-z][A-Za-z0-9_.-]{0,127}$")
 _CATEGORIES = frozenset(item.value for item in ErrorCategory)
+_MAX_RECEIPT_INTEGER = (1 << 31) - 1
 _BUILTIN_DEFAULTS = {
     code.value: (
         ErrorDetail.create(code, "default check").category,
@@ -205,7 +206,9 @@ def _safe_page(value: Any, rows: int, *, max_pages: int) -> dict[str, Any] | Non
 
 
 def _valid_total(value: Any, observed: int) -> bool:
-    return value is None or (type(value) is int and value >= observed)
+    return value is None or (
+        type(value) is int and observed <= value <= _MAX_RECEIPT_INTEGER
+    )
 
 
 def _valid_page_receipt(
@@ -225,7 +228,7 @@ def _valid_page_receipt(
         and 1 <= pages_fetched <= max_pages
         and workers == 1
         and number == 1
-        and size >= 1
+        and 1 <= size <= 1_000
         and has_more is False
         and _valid_page_total(total_pages, pages_fetched, rows)
         and _valid_total(total_items, rows)
@@ -267,7 +270,7 @@ def _safe_error(value: Any, platform: str) -> dict[str, Any] | None:
         "code": code,
         "category": category,
         "message": f"Material performance query failed for {platform}.",
-        "field": field,
+        "field": "result" if field is not None else None,
         "retryable": retryable,
         "retry_after_ms": retry_after,
         "next_action": _failure_action(code, category),
@@ -282,7 +285,11 @@ def _valid_retry_receipt(code: str, retryable: Any, retry_after: Any) -> bool:
         return False
     if retry_after is None:
         return True
-    return bool(retryable and type(retry_after) is int and retry_after >= 0)
+    return bool(
+        retryable
+        and type(retry_after) is int
+        and 0 <= retry_after <= _MAX_RECEIPT_INTEGER
+    )
 
 
 def contract_component(platform: str) -> dict[str, Any]:

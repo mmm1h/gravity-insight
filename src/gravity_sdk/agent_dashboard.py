@@ -91,6 +91,15 @@ def dashboard_analysis_query(query: str) -> bool:
         "控制面",
         "成员",
         "收藏",
+        "saved",
+        "material",
+        "pulse",
+        "multidim",
+        "保存",
+        "已存",
+        "素材",
+        "脉搏",
+        "多维",
     )
     if any(term in selected for term in control_terms):
         return False

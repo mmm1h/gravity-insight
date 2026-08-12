@@ -432,6 +432,9 @@ class DiscoveryUxTests(unittest.TestCase):
                 "business pulse without hourly", "不要经营脉搏", "无需经营脉搏",
                 "别查经营脉搏", "经营脉搏 saved analysis", "经营脉搏 permission",
                 "经营脉搏 user journey", "business pulse 权限",
+                "don't run business pulse", "exclude business pulse", "不做经营脉搏",
+                "非经营脉搏", "经营脉搏不用了", "business pulse material performance",
+                "素材表现脉搏", "运行已保存的经营脉搏报表",
             ),
         }
         for expected, queries in cases.items():

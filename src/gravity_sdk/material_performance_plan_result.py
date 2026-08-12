@@ -59,7 +59,10 @@ def sanitize_product_result(
         for platform, item in zip(platforms, results, strict=True)
     ]
     returned = sum(material_component_item_count(item) for item in safe)
-    if returned > limits[1]:
+    per_platform_items = limits[1] // len(platforms)
+    if returned > limits[1] or any(
+        material_component_item_count(item) > per_platform_items for item in safe
+    ):
         return contract_result()
     rebuilt = product_envelope(
         safe,
