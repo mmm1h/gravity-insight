@@ -20,11 +20,6 @@ from gravity_sdk.domains import (
     ANALYSIS_VALUE_OPERATIONS,
     ATTRIBUTION_STATUS_OPERATIONS,
     DOMAIN_OPERATIONS,
-    PROMOTION_EQUALS_OPERATOR,
-    PROMOTION_PARENT_FILTER_FIELDS,
-    PROMOTION_PLATFORMS,
-    PROMOTION_PRIMARY_OPERATIONS,
-    promotion_operation,
 )
 from gravity_sdk import nonempty_cli, runtime
 from gravity_sdk.cli_limits import (
@@ -32,7 +27,6 @@ from gravity_sdk.cli_limits import (
     operation_limit as _operation_limit,
     concurrency as _concurrency,
     positive_int as _positive_int,
-    validate_date_pair,
 )
 from gravity_sdk.pagination_cli import (
     DEFAULT_STDOUT_MAX_ITEMS,
@@ -54,7 +48,6 @@ try:
     from gravity_sdk.export_batch import (
         add_batch_commands, batch_schema_version, envelope_exit_code, run_batch_command,
     )
-    from gravity_sdk.multidim import parse_multi_days
 except ModuleNotFoundError:  # source checkout before editable installation
     from gravity_sdk.errors import (
         ErrorCategory,
@@ -67,7 +60,6 @@ except ModuleNotFoundError:  # source checkout before editable installation
     from gravity_sdk.export_batch import (
         add_batch_commands, batch_schema_version, envelope_exit_code, run_batch_command,
     )
-    from gravity_sdk.multidim import parse_multi_days
 
 from gravity_sdk.parents import add_parent_commands, run_parent_command
 from gravity_sdk.attribution import add_snapshot_command
@@ -76,6 +68,13 @@ from gravity_sdk.analysis_query_batch_cli import add_analysis_query_commands
 from gravity_sdk.segment_spec_cli import add_segment_commands, run_segment_command
 from gravity_sdk.business_pulse_cli import add_business_pulse_command
 from gravity_sdk.material_cli import add_material_commands, dispatch_material_command
+from gravity_sdk.promotion_cli import (
+    add_promotion_commands,
+    add_query_shortcuts as _add_query_shortcuts,
+    dispatch_promotion_command,
+    merge_query_shortcuts as _merge_query_shortcuts,
+    split_values as _split_values,
+)
 from gravity_sdk.dashboard_snapshot_cli import add_dashboard_commands
 from gravity_sdk.saved_analysis_cli import add_saved_analysis_commands
 from gravity_sdk.multidim_cli import add_multidim_commands, multidim_ndjson_view
@@ -93,11 +92,10 @@ from gravity_sdk.find import (
     run_operation_command,
 )
 from gravity_sdk.find_input import (
-    add_input as _add_input, date_range_input as _date_range_input,
+    add_input as _add_input,
     load_json_input as _load_json_input,
     normalize_input_arguments as _normalize_input_arguments,
     object_input as _object_input,
-    without_filter as _without_filter,
 )
 from gravity_sdk.recipe import add_recipe_commands
 from gravity_sdk.resolver_cli import add_resolver_command
@@ -273,18 +271,6 @@ def _write_json(value: Any, *, stream=None) -> None:
     )
 
 
-def _add_query_shortcuts(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--app-id")
-    parser.add_argument("--media")
-    parser.add_argument("--start")
-    parser.add_argument("--end")
-    parser.add_argument("--time-dim", action="append")
-    parser.add_argument("--dimensions", action="append")
-    parser.add_argument("--metrics", action="append")
-    parser.add_argument("--multi-days", action="append")
-    parser.add_argument("--parent-id")
-
-
 def _add_discovery_commands(commands: Any) -> None:
     add_agent_command(commands, _agent_limit)
     add_operation_commands(commands, _operation_limit)
@@ -429,27 +415,9 @@ def build_parser() -> argparse.ArgumentParser:
         _merge_query_shortcuts,
     )
 
-    promotion = commands.add_parser("promotion")
-    promotion_commands = promotion.add_subparsers(
-        dest="promotion_command", required=True
+    add_promotion_commands(
+        commands, _add_input, _add_all_pages, _concurrency, _positive_int
     )
-    promotion_commands.add_parser("platforms")
-    promotion_query = promotion_commands.add_parser("query")
-    promotion_query.add_argument(
-        "--platform", required=True, choices=sorted(PROMOTION_PLATFORMS)
-    )
-    promotion_query.add_argument("--level")
-    _add_input(promotion_query)
-    _add_all_pages(promotion_query)
-    _add_query_shortcuts(promotion_query)
-    promotion_snapshot = promotion_commands.add_parser("snapshot")
-    promotion_snapshot.add_argument(
-        "--platform", required=True, choices=("all", *sorted(PROMOTION_PLATFORMS))
-    )
-    promotion_snapshot.add_argument("--level")
-    promotion_snapshot.add_argument("--concurrency", type=_concurrency, default=6)
-    _add_input(promotion_snapshot)
-    _add_query_shortcuts(promotion_snapshot)
 
     business = commands.add_parser("business-report")
     business_commands = business.add_subparsers(dest="business_command", required=True)
@@ -523,130 +491,6 @@ def _domain_read(
     )
 
 
-def _split_values(values: Sequence[str] | None) -> list[str] | None:
-    if not values:
-        return None
-    result = [
-        part.strip() for value in values for part in value.split(",") if part.strip()
-    ]
-    return result or None
-
-
-def _merge_query_shortcuts(
-    client: Any,
-    operation_id: str,
-    args: argparse.Namespace,
-    supplied: Mapping[str, Any],
-    *,
-    strict: bool = True,
-) -> tuple[dict[str, Any], list[str]]:
-    schema = runtime.to_jsonable(client.schema(operation_id))
-    fields = schema.get("input_fields", {}) if isinstance(schema, Mapping) else {}
-    allowed = set(fields) if isinstance(fields, Mapping) else set()
-    unknown = sorted(set(supplied) - allowed)
-    if unknown and strict:
-        raise ValueError(
-            f"{operation_id} does not accept input fields: " + ", ".join(unknown)
-        )
-    result = {key: value for key, value in supplied.items() if key in allowed}
-    ignored: list[str] = []
-    if not strict:
-        ignored.extend(f"input:{key}" for key in unknown)
-
-    def assign(flag: str, candidates: Sequence[str], value: Any) -> None:
-        if value is None:
-            return
-        target = next((name for name in candidates if name in allowed), None)
-        if target:
-            result[target] = value
-        elif strict:
-            raise ValueError(
-                f"{operation_id} does not accept --{flag.replace('_', '-')}"
-            )
-        else:
-            ignored.append(flag)
-
-    app_id = getattr(args, "app_id", None)
-    media = getattr(args, "media", None)
-    if app_id is not None and "app_id" in allowed:
-        result["app_id"] = str(app_id)
-    elif app_id is not None and _accepts_array_field(fields, "filters"):
-        filters = _without_filter(result.get("filters", []), "app_id")
-        filters.append(
-            {
-                "field": "app_id",
-                "operator": PROMOTION_EQUALS_OPERATOR,
-                "values": [str(app_id)],
-            }
-        )
-        result["filters"] = filters
-    elif app_id is not None and strict:
-        raise ValueError(f"{operation_id} does not accept --app-id")
-    elif app_id is not None:
-        ignored.append("app_id")
-    assign("media", ("media_type", "media"), media)
-    start, end = getattr(args, "start", None), getattr(args, "end", None)
-    validate_date_pair(start, end)
-    assign("start/end", ("date_list",), _date_range_input(operation_id, start if start and end else None, end))
-    time_dims = _split_values(getattr(args, "time_dim", None))
-    if time_dims and len(time_dims) != 1:
-        raise ValueError("--time-dim accepts exactly one value")
-    assign("time_dim", ("time_dims",), time_dims[0] if time_dims else None)
-    assign(
-        "dimensions",
-        ("data_dims", "dims_list"),
-        _split_values(getattr(args, "dimensions", None)),
-    )
-    assign(
-        "metrics",
-        ("metrics_list", "query_fields"),
-        _split_values(getattr(args, "metrics", None)),
-    )
-    assign("multi_days", ("multi_keys",), parse_multi_days(_split_values(getattr(args, "multi_days", None))))
-    parent = getattr(args, "parent_id", None)
-    if parent is not None:
-        direct = next(
-            (
-                name
-                for name in (
-                    "parent_id",
-                    "advertiser_id",
-                    "account_id",
-                    "campaign_id",
-                    "group_id",
-                    "developer_id",
-                )
-                if name in allowed
-            ),
-            None,
-        )
-        filter_field = PROMOTION_PARENT_FILTER_FIELDS.get(operation_id)
-        if direct:
-            result[direct] = str(parent)
-        elif filter_field and _accepts_array_field(fields, "filters"):
-            filters = _without_filter(result.get("filters", []), filter_field)
-            filters.append(
-                {
-                    "field": filter_field,
-                    "operator": PROMOTION_EQUALS_OPERATOR,
-                    "values": [str(parent)],
-                }
-            )
-            result["filters"] = filters
-        elif strict:
-            raise ValueError(f"{operation_id} does not accept --parent-id")
-        else:
-            ignored.append("parent_id")
-    return result, ignored
-
-
-def _accepts_array_field(fields: Any, name: str) -> bool:
-    if not isinstance(fields, Mapping):
-        return False
-    spec = fields.get(name)
-    return isinstance(spec, Mapping) and spec.get("type") == "array"
-
-
 def _analysis(args: argparse.Namespace) -> Any:
     if args.analysis_command == "metadata":
         return run_analysis_metadata(args, _client, _object_input)
@@ -717,67 +561,6 @@ def _apps_or_metadata(args: argparse.Namespace) -> Any:
     if args.command == "find":
         return run_find_command(args, _client(args))
     return run_metadata_command(args, _client)
-
-
-def _promotion(args: argparse.Namespace) -> Any:
-    if args.promotion_command == "platforms":
-        client = _client(args)
-        available = runtime.operation_ids(client.operations())
-        return {
-            "platforms": [
-                {
-                    "platform": platform,
-                    "levels": {
-                        level: operation_id
-                        for level, operation_id in levels.items()
-                        if not available or operation_id in available
-                    },
-                }
-                for platform, levels in PROMOTION_PLATFORMS.items()
-            ]
-        }
-    client = _client(args)
-    if args.promotion_command == "snapshot" and args.platform == "all":
-        if args.level is not None:
-            raise ValueError("--level cannot be combined with --platform all")
-        supplied = _object_input(args.input)
-        requests: list[dict[str, Any]] = []
-        ignored: dict[str, list[str]] = {}
-        for platform, operation_id in PROMOTION_PRIMARY_OPERATIONS.items():
-            inputs, skipped = _merge_query_shortcuts(
-                client, operation_id, args, supplied, strict=False
-            )
-            requests.append(
-                {"operation_id": operation_id, "inputs": inputs, "read_all": True}
-            )
-            if skipped:
-                ignored[platform] = skipped
-        results = runtime.call_batch(client, requests, concurrency=args.concurrency)
-        return {
-            "platform_count": len(requests),
-            "concurrency": args.concurrency,
-            "ignored_shortcuts": ignored,
-            "results": results,
-        }
-    operation_id = promotion_operation(args.platform, args.level)
-    operation_id = runtime.resolve_operation_id(client, operation_id)
-    inputs, _ = _merge_query_shortcuts(
-        client, operation_id, args, _object_input(args.input)
-    )
-    read_all = args.promotion_command == "snapshot" or bool(
-        getattr(args, "all_pages", False)
-    )
-    return runtime.call_read(
-        client,
-        operation_id,
-        inputs,
-        read_all=read_all,
-        **_page_options(
-            args,
-            all_pages=True,
-            active=bool(getattr(args, "all_pages", False)),
-        ),
-    )
 
 
 def _attribution(args: argparse.Namespace) -> Any:
@@ -914,7 +697,7 @@ def run(args: argparse.Namespace) -> Any:
     if args.command == "analysis":
         return _analysis(args)
     if args.command == "promotion":
-        return _promotion(args)
+        return dispatch_promotion_command(args, _object_input)
     if args.command == "business-report":
         return _domain_read(args, "business_report.query")
     if args.command == "objects":

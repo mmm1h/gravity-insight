@@ -68,6 +68,12 @@ _EXPORTS = {
     "validate_segment_spec": (".segment_spec", "validate_segment_spec"),
     "business_pulse": (".business_pulse", "business_pulse"),
     "dashboard_snapshot": (".dashboard_snapshot", "dashboard_snapshot"),
+    "promotion_performance": (
+        ".promotion_performance", "promotion_performance"
+    ),
+    "promotion_performance_input_schema": (
+        ".promotion_performance", "promotion_performance_input_schema"
+    ),
     "compile_saved_analysis_definition": (
         ".saved_analysis", "compile_saved_analysis_definition"
     ),
