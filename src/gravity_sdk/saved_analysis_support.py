@@ -111,7 +111,8 @@ def catalog_rows(envelope: Mapping[str, Any], app_id: str) -> list[dict[str, Any
                 "name": name,
                 "subject": subject,
                 "kind": SUBJECT_KINDS.get(subject),
-                "replay_supported": subject in SUBJECT_KINDS,
+                "subject_supported": subject in SUBJECT_KINDS,
+                "replay_status": "unchecked",
             }
         )
         result.append(item)
@@ -223,7 +224,7 @@ def safe_metadata(value: Mapping[str, Any], *, app_id: str) -> dict[str, Any]:
         {
             "app_id": app_id,
             "kind": SUBJECT_KINDS.get(subject) if isinstance(subject, str) else None,
-            "replay_supported": subject in SUBJECT_KINDS,
+            "subject_supported": subject in SUBJECT_KINDS,
         }
     )
     return result
@@ -234,13 +235,48 @@ def safe_query_envelope(value: Any) -> dict[str, Any]:
         raise ContractChangedError(
             "saved Analysis query returned a malformed envelope"
         )
-    # Governed client responses are already projected by the operation
-    # contract.  Remove only input-bearing envelope sections; response fields
-    # named value/values are legitimate analysis results and remain unchanged.
+    # Data has already passed the operation projection.  Rebuild the envelope
+    # instead of copying transport metadata, request echoes, page tokens, or
+    # raw upstream exception text.
+    status = str(value.get("status") or "error")
+    result = {
+        "schema_version": "gravity-insight.read.v1",
+        "operation_id": (
+            str(value["operation_id"])
+            if isinstance(value.get("operation_id"), str)
+            else None
+        ),
+        "ok": status in SUCCESS_STATUSES and value.get("error") in (None, {}),
+        "status": status,
+        "data": value.get("data"),
+        "error": None,
+    }
+    error = value.get("error")
+    if isinstance(error, Mapping):
+        result["error"] = _safe_error(error)
+    return result
+
+
+def _safe_error(value: Mapping[str, Any]) -> dict[str, Any]:
+    category = str(value.get("category") or "upstream")
+    if category not in {"caller", "upstream", "local"}:
+        category = "upstream"
+    code = str(value.get("code") or ErrorCode.UPSTREAM_UNAVAILABLE.value).upper()
+    if code not in KNOWN_ERROR_CODES and code != "BATCH_RESULT_MISSING":
+        code = ErrorCode.UPSTREAM_UNAVAILABLE.value
     return {
-        str(key): item
-        for key, item in value.items()
-        if key not in {"request", "inputs", "compiled_input"}
+        "code": code,
+        "category": category,
+        "message": "Saved Analysis query failed.",
+        "field": str(value.get("field")) if isinstance(value.get("field"), str) else None,
+        "retryable": value.get("retryable") is True,
+        "retry_after_ms": (
+            value.get("retry_after_ms")
+            if isinstance(value.get("retry_after_ms"), int)
+            and not isinstance(value.get("retry_after_ms"), bool)
+            else None
+        ),
+        "next_action": "Follow the governed error code and retry only after correcting its cause.",
     }
 
 

@@ -56,6 +56,41 @@ def definition(**updates: Any) -> dict[str, Any]:
     return value
 
 
+def web_definition(**updates: Any) -> dict[str, Any]:
+    event = {
+        "cond_logic": "AND",
+        "conditions": [],
+        "custom_name": "purchase",
+        "event_index": 0,
+        "event_label": "purchase",
+        "event_name": "purchase",
+        "target": {"field": "PresetAllCount", "name": "PresetAllCount"},
+    }
+    value = definition(
+        config={
+            "calculateBody": {
+                "query_item_list": [event],
+                "group_by_list": [
+                    {
+                        "type": "default_event",
+                        "field": "create_time",
+                        "group_by": "day",
+                    }
+                ],
+            },
+            "groupByCreateTime": {"value": "day"},
+            "tableShowType": "table",
+            "aggregate_config": {},
+            "date_list": [
+                {"start_date": "2025-01-01", "end_date": "2025-01-02"}
+            ],
+            "queryItemList": [],
+        }
+    )
+    value.update(updates)
+    return value
+
+
 class Client:
     def __init__(self, rows: list[dict[str, Any]] | None = None) -> None:
         self.rows = rows if rows is not None else [
@@ -180,6 +215,84 @@ class SavedAnalysisTests(unittest.TestCase):
             {"value": 7, "values": [1, 2]},
             result["result"]["data"]["series"][0],
         )
+
+    def test_web_artifact_requires_window_then_compiles_through_shared_boundary(self) -> None:
+        invalid = Client()
+        with self.assertRaises(InputValidationError):
+            inspect_saved_analysis(
+                invalid, {"id": "8"}, "main", workspace=workspace(), start="2026-08-01"
+            )
+        self.assertEqual([], invalid.calls)
+        client = Client()
+        # Replace the catalog detail with a proven persisted Web artifact.
+        client.read = lambda operation_id, inputs: (
+            {
+                "status": "success",
+                "data": {
+                    "name": "daily purchases",
+                    "config": json.dumps(web_definition()["config"]),
+                },
+                "error": None,
+            }
+            if operation_id == GET_OPERATION_ID
+            else Client.read(client, operation_id, inputs)
+        )
+        inspected = inspect_saved_analysis(
+            client, {"id": "8"}, "main", workspace=workspace()
+        )
+        self.assertEqual("web_artifact", inspected["artifact_mode"])
+        self.assertEqual("requires_window", inspected["replay_status"])
+        self.assertIsNone(inspected["date_range"])
+
+        prepared = compile_saved_analysis_definition(
+            client,
+            web_definition(),
+            "main",
+            workspace=workspace(),
+            start="2026-08-01",
+            end="2026-08-07",
+        )
+        self.assertEqual("web_artifact", prepared["artifact_mode"])
+        self.assertIsNone(prepared["compiled_input"])
+        self.assertTrue(prepared["input_values_redacted"])
+        self.assertEqual("2026-08-01", prepared["date_range"]["start"])
+
+    def test_web_artifact_unknown_semantics_and_query_errors_are_safe(self) -> None:
+        client = Client()
+        bad = web_definition()
+        bad["config"]["future_semantic"] = {"private": "secret"}
+        with self.assertRaises(UnsupportedOperationError):
+            compile_saved_analysis_definition(
+                client,
+                bad,
+                "main",
+                workspace=workspace(),
+                start="2026-08-01",
+                end="2026-08-07",
+            )
+
+        client.read = lambda operation_id, inputs: {
+            "status": "error",
+            "request": {"secret": "must-not-leak"},
+            "error": {
+                "code": "UPSTREAM_UNAVAILABLE",
+                "category": "upstream",
+                "message": "C:/private/raw-error.txt",
+            },
+        }
+        result = execute_saved_analysis(
+            client,
+            definition=web_definition(),
+            app="main",
+            workspace=workspace(),
+            start="2026-08-01",
+            end="2026-08-07",
+        )
+        encoded = json.dumps(result)
+        self.assertFalse(result["ok"])
+        self.assertNotIn("raw-error", encoded)
+        self.assertNotIn("must-not-leak", encoded)
+        self.assertNotIn("calculateBody", encoded)
 
 
 if __name__ == "__main__":

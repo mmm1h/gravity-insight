@@ -1,11 +1,10 @@
 """Safe discovery and replay for saved Gravity Analysis definitions.
 
-The upstream saved-report API stores an opaque JSON string.  This module does
-not implement a Web configuration translator: a definition is replayable only
-when its registered ``subject`` selects one of the five stable Analysis Spec
-kinds and the decoded JSON already satisfies the public Analysis Spec and
-FieldPolicy contracts.  Unknown subjects and Web-only config shapes therefore
-fail closed before an Analysis query is sent.
+The upstream saved-report API stores an opaque JSON string.  This module keeps
+catalog and identity orchestration separate from compilation.  Compact caller
+definitions use Analysis Spec v1; persisted ``calculateBody`` artifacts use
+the same five statically proven compilers as Dashboard Analysis.  Unknown
+subjects and unregistered Web fields fail closed before a query is sent.
 """
 
 from __future__ import annotations
@@ -13,7 +12,6 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from .analysis_spec import compile_query_spec, prepare_query_spec, validate_query_spec
 from .composite_catalog import stable_operation
 from .errors import (
     ContractChangedError,
@@ -23,6 +21,12 @@ from .errors import (
     UnsupportedOperationError,
 )
 from .runtime import call_read
+from .saved_analysis_artifact import (
+    compile_saved_artifact,
+    inspect_saved_artifact,
+    prepare_saved_artifact,
+    validate_saved_window,
+)
 from .saved_analysis_support import (
     DEFAULT_MAX_ITEMS,
     DEFAULT_MAX_PAGES,
@@ -30,16 +34,13 @@ from .saved_analysis_support import (
     SUBJECT_KINDS,
     bounds,
     catalog_rows,
-    decoded_config,
     normalize_definition,
     require_one_source,
     require_success,
     safe_metadata,
     safe_query_envelope,
-    safe_validation,
     select_reference,
     selected_workspace as _select_workspace,
-    supported_subject,
 )
 from .workspace import Workspace
 from .workspace_app import resolve_workspace_app
@@ -113,6 +114,8 @@ def resolve_saved_analysis(
     workspace: Workspace | str | Any | None = None,
     max_pages: int = DEFAULT_MAX_PAGES,
     max_items: int = DEFAULT_MAX_ITEMS,
+    start: str | None = None,
+    end: str | None = None,
 ) -> dict[str, Any]:
     """Resolve and inspect one saved definition without exposing its config.
 
@@ -128,6 +131,8 @@ def resolve_saved_analysis(
         workspace=workspace,
         max_pages=max_pages,
         max_items=max_items,
+        start=start,
+        end=end,
     )
 
 
@@ -139,9 +144,12 @@ def inspect_saved_analysis(
     workspace: Workspace | str | Any | None = None,
     max_pages: int = DEFAULT_MAX_PAGES,
     max_items: int = DEFAULT_MAX_ITEMS,
+    start: str | None = None,
+    end: str | None = None,
 ) -> dict[str, Any]:
     """Read safe metadata and report replay eligibility without returning config."""
 
+    validate_saved_window(start, end)
     selected = _select_workspace(workspace)
     definition, metadata = _read_definition(
         client,
@@ -151,29 +159,43 @@ def inspect_saved_analysis(
         max_pages=max_pages,
         max_items=max_items,
     )
-    blocker = None
     try:
-        kind = supported_subject(definition.get("subject"))
-        compile_query_spec(
-            kind,
-            decoded_config(definition.get("config")),
-            workspace=selected,
+        inspection = inspect_saved_artifact(
+            client,
+            definition,
             app=metadata["app_id"],
+            workspace=selected,
+            start=start,
+            end=end,
         )
-        replay_status = "supported"
+        blocker = None
     except (InputValidationError, UnsupportedOperationError):
-        kind = SUBJECT_KINDS.get(str(definition.get("subject")))
-        replay_status = "unsupported"
-        blocker = ErrorDetail.create(
-            ErrorCode.UNSUPPORTED,
-            "saved Analysis definition cannot be replayed through Analysis Spec v1",
-            field="config",
-            next_action=(
-                "Use prepare to validate a supported compact definition, or run "
-                "the saved configuration through Gravity Web."
-            ),
-        ).to_dict()
-    metadata = {**metadata, "replay_supported": replay_status == "supported"}
+        inspection, blocker = _unsupported_inspection(definition)
+    return _inspection_envelope(metadata, inspection, blocker)
+
+
+def _inspection_envelope(
+    metadata: Mapping[str, Any],
+    inspection: Mapping[str, Any],
+    blocker: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    replay_status = str(inspection["replay_status"])
+    metadata = {
+        **metadata,
+        "replay_supported": (
+            True if replay_status == "supported" else False
+            if replay_status == "unsupported" else None
+        ),
+    }
+    next_action = (
+        "Prepare or execute this saved Analysis by the same explicit reference."
+        if replay_status == "supported"
+        else (
+            "Provide an explicit inclusive start/end window, then prepare or execute."
+            if replay_status == "requires_window"
+            else blocker["next_action"]
+        )
+    )
     return {
         "schema_version": INSPECT_SCHEMA_VERSION,
         "ok": True,
@@ -182,15 +204,40 @@ def inspect_saved_analysis(
         "network_called": True,
         "query_executed": False,
         "saved_analysis": metadata,
-        "kind": kind,
+        "kind": inspection.get("kind"),
+        "artifact_mode": inspection.get("artifact_mode"),
+        "date_range": inspection.get("date_range"),
+        "date_override_applied": inspection.get("date_override_applied", False),
+        "limitations": list(inspection.get("limitations", [])),
+        "validation": inspection.get("validation"),
         "replay_status": replay_status,
         "blocker": blocker,
-        "next_action": (
-            "Prepare or execute this saved Analysis by the same explicit reference."
-            if replay_status == "supported"
-            else blocker["next_action"]
-        ),
+        "next_action": next_action,
     }
+
+
+def _unsupported_inspection(
+    definition: Mapping[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    inspection = {
+        "kind": SUBJECT_KINDS.get(str(definition.get("subject"))),
+        "artifact_mode": None,
+        "date_range": None,
+        "date_override_applied": False,
+        "limitations": [],
+        "validation": None,
+        "replay_status": "unsupported",
+    }
+    blocker = ErrorDetail.create(
+        ErrorCode.UNSUPPORTED,
+        "saved Analysis definition cannot be replayed through a proven stable contract",
+        field="config",
+        next_action=(
+            "Correct the compact definition or keep the unregistered Web artifact "
+            "unsupported until its semantics are proven."
+        ),
+    ).to_dict()
+    return inspection, blocker
 
 
 def compile_saved_analysis_definition(
@@ -199,6 +246,8 @@ def compile_saved_analysis_definition(
     app: str | int | None = None,
     *,
     workspace: Workspace | str | Any | None = None,
+    start: str | None = None,
+    end: str | None = None,
 ) -> dict[str, Any]:
     """Compile a caller-supplied definition with zero network requests.
 
@@ -207,6 +256,7 @@ def compile_saved_analysis_definition(
     this function never translates unknown Web fields or guesses semantics.
     """
 
+    validate_saved_window(start, end)
     selected = _select_workspace(workspace)
     app_id = str(resolve_workspace_app(selected, app))
     normalized, _metadata = normalize_definition(definition, expected_app_id=app_id)
@@ -217,6 +267,8 @@ def compile_saved_analysis_definition(
         workspace=selected,
         network_called=False,
         source="definition",
+        start=start,
+        end=end,
     )
 
 
@@ -229,6 +281,8 @@ def prepare_saved_analysis(
     workspace: Workspace | str | Any | None = None,
     max_pages: int = DEFAULT_MAX_PAGES,
     max_items: int = DEFAULT_MAX_ITEMS,
+    start: str | None = None,
+    end: str | None = None,
 ) -> dict[str, Any]:
     """Prepare either an upstream reference or an explicit local definition.
 
@@ -238,12 +292,15 @@ def prepare_saved_analysis(
     """
 
     require_one_source(reference, definition)
+    validate_saved_window(start, end)
     if definition is not None:
         return compile_saved_analysis_definition(
             client,
             definition,
             app,
             workspace=workspace,
+            start=start,
+            end=end,
         )
     assert reference is not None
     selected = _select_workspace(workspace)
@@ -262,6 +319,8 @@ def prepare_saved_analysis(
         workspace=selected,
         network_called=True,
         source="catalog",
+        start=start,
+        end=end,
     )
 
 
@@ -274,6 +333,8 @@ def execute_saved_analysis(
     workspace: Workspace | str | Any | None = None,
     max_pages: int = DEFAULT_MAX_PAGES,
     max_items: int = DEFAULT_MAX_ITEMS,
+    start: str | None = None,
+    end: str | None = None,
 ) -> dict[str, Any]:
     """Validate and execute one supported saved Analysis definition.
 
@@ -283,6 +344,7 @@ def execute_saved_analysis(
     """
 
     require_one_source(reference, definition)
+    validate_saved_window(start, end)
     selected = _select_workspace(workspace)
     network_called = reference is not None
     source = "catalog" if network_called else "definition"
@@ -301,11 +363,13 @@ def execute_saved_analysis(
         app_id = str(resolve_workspace_app(selected, app))
         normalized, metadata = normalize_definition(definition, expected_app_id=app_id)
 
-    compiled, validation = _compile(
+    compiled = compile_saved_artifact(
         client,
         normalized,
         app=app_id,
         workspace=selected,
+        start=start,
+        end=end,
     )
     query = call_read(client, compiled.operation_id, compiled.inputs)
     safe_query = safe_query_envelope(query)
@@ -321,10 +385,19 @@ def execute_saved_analysis(
         "network_called": True,
         "definition_network_called": network_called,
         "query_executed": True,
-        "saved_analysis": metadata,
+        "saved_analysis": {**metadata, "replay_supported": True},
+        "artifact_mode": compiled.artifact_mode,
         "kind": compiled.kind,
         "operation_id": compiled.operation_id,
-        "validation": safe_validation(validation),
+        "date_range": compiled.date_range,
+        "date_override_applied": compiled.date_override_applied,
+        "limitations": list(compiled.limitations),
+        "validation": {
+            "status": compiled.validation_status,
+            "live_metadata_dependencies": list(
+                compiled.live_metadata_dependencies
+            ),
+        },
         "result": safe_query,
         "next_action": (
             "Consume the governed Analysis result."
@@ -407,10 +480,17 @@ def _prepare_definition(
     workspace: Any,
     network_called: bool,
     source: str,
+    start: str | None,
+    end: str | None,
 ) -> dict[str, Any]:
-    kind = supported_subject(definition.get("subject"))
-    spec = decoded_config(definition.get("config"))
-    preview = prepare_query_spec(client, kind, spec, workspace=workspace, app=app)
+    preview = prepare_saved_artifact(
+        client,
+        definition,
+        app=app,
+        workspace=workspace,
+        start=start,
+        end=end,
+    )
     metadata = safe_metadata(definition, app_id=app)
     return {
         "schema_version": PREVIEW_SCHEMA_VERSION,
@@ -420,27 +500,19 @@ def _prepare_definition(
         "source": source,
         "network_called": network_called,
         "query_executed": False,
-        "saved_analysis": metadata,
-        "kind": kind,
+        "saved_analysis": {**metadata, "replay_supported": True},
+        "artifact_mode": preview["artifact_mode"],
+        "kind": preview["kind"],
         "operation_id": preview["operation_id"],
+        "date_range": preview.get("date_range"),
+        "date_override_applied": preview.get("date_override_applied", False),
+        "limitations": list(preview.get("limitations", [])),
         "compiled_input": preview["compiled_input"],
         "input_values_redacted": preview["input_values_redacted"],
         "validation": preview["validation"],
         "plan_node": preview["plan_node"],
         "next_action": preview["next_action"],
     }
-
-
-def _compile(
-    client: Any,
-    definition: Mapping[str, Any],
-    *,
-    app: str,
-    workspace: Any,
-) -> tuple[Any, Mapping[str, Any]]:
-    kind = supported_subject(definition.get("subject"))
-    spec = decoded_config(definition.get("config"))
-    return validate_query_spec(client, kind, spec, workspace=workspace, app=app)
 
 
 def _result_exit_code(value: Mapping[str, Any]) -> int:
