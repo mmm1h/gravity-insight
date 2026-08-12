@@ -16,6 +16,7 @@ from .credentials import (
     save_account_credentials,
 )
 from .paths import PROJECT_ROOT
+from .errors import InputValidationError
 
 
 def should_onboard(*, requires_credentials: bool) -> bool:
@@ -47,6 +48,8 @@ def command_requires_credentials(
         return False
     if getattr(args, "analysis_command", None) == "segment":
         return _segment_requires_credentials(args)
+    if getattr(args, "analysis_command", None) == "saved":
+        return _saved_requires_credentials(args)
     if bool(getattr(args, "live", False)):
         return True
     return bool(getattr(args, "network_required", True))
@@ -72,6 +75,36 @@ def _segment_requires_credentials(args: Any) -> bool:
         getattr(args, "input", None) is not None
         or bool(getattr(args, "input_sets", None))
     )
+
+
+def _saved_requires_credentials(args: Any) -> bool:
+    """Avoid credential prompts for an incomplete local Saved request."""
+
+    command = getattr(args, "saved_command", None)
+    if command == "list":
+        return True
+    if command == "get":
+        return _saved_window_valid(args, required=False)
+    reference = getattr(args, "ref", None)
+    definition = getattr(args, "definition", None)
+    if (reference is None) == (definition is None):
+        return False
+    if definition is not None:
+        return command == "run" and _saved_window_valid(args, required=False)
+    return _saved_window_valid(args, required=True)
+
+
+def _saved_window_valid(args: Any, *, required: bool) -> bool:
+    from .saved_analysis_artifact import validate_saved_window
+
+    start, end = getattr(args, "start", None), getattr(args, "end", None)
+    if required and (start is None or end is None):
+        return False
+    try:
+        validate_saved_window(start, end)
+    except InputValidationError:
+        return False
+    return True
 
 
 def ensure_first_run_credentials(

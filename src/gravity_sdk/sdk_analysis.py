@@ -92,6 +92,8 @@ class AnalysisSdkMixin:
         app: str | int | None,
         reference: str | int | Mapping[str, Any],
         *,
+        start: str | None = None,
+        end: str | None = None,
         max_pages: int = 1_000,
         max_items: int = 100_000,
         workspace: Any | None = None,
@@ -99,15 +101,20 @@ class AnalysisSdkMixin:
         """Resolve and strictly compile one saved definition without running it."""
 
         from .saved_analysis import prepare_saved_analysis
+        from .saved_analysis_artifact import validate_saved_window
 
         selected = self._select_workspace(workspace)
+        validate_saved_window(start, end)
+        app_id = self._resolve_app(selected, app)
         return prepare_saved_analysis(
             self.insight,
-            app=app,
+            app=app_id,
             reference=reference,
             workspace=selected,
             max_pages=max_pages,
             max_items=max_items,
+            start=start,
+            end=end,
         )
 
     def get_saved_analysis(
@@ -115,6 +122,8 @@ class AnalysisSdkMixin:
         app: str | int | None,
         reference: str | int | Mapping[str, Any],
         *,
+        start: str | None = None,
+        end: str | None = None,
         max_pages: int = 1_000,
         max_items: int = 100_000,
         workspace: Any | None = None,
@@ -122,15 +131,20 @@ class AnalysisSdkMixin:
         """Inspect replay eligibility without returning opaque configuration."""
 
         from .saved_analysis import inspect_saved_analysis
+        from .saved_analysis_artifact import validate_saved_window
 
         selected = self._select_workspace(workspace)
+        validate_saved_window(start, end)
+        app_id = self._resolve_app(selected, app)
         return inspect_saved_analysis(
             self.insight,
             reference,
-            app,
+            app_id,
             workspace=selected,
             max_pages=max_pages,
             max_items=max_items,
+            start=start,
+            end=end,
         )
 
     def run_saved_analysis(
@@ -138,6 +152,8 @@ class AnalysisSdkMixin:
         app: str | int | None,
         reference: str | int | Mapping[str, Any],
         *,
+        start: str | None = None,
+        end: str | None = None,
         max_pages: int = 1_000,
         max_items: int = 100_000,
         workspace: Any | None = None,
@@ -145,15 +161,20 @@ class AnalysisSdkMixin:
         """Resolve, strictly compile, and execute one saved Analysis reference."""
 
         from .saved_analysis import execute_saved_analysis
+        from .saved_analysis_artifact import validate_saved_window
 
         selected = self._select_workspace(workspace)
+        validate_saved_window(start, end)
+        app_id = self._resolve_app(selected, app)
         return execute_saved_analysis(
             self.insight,
-            app=app,
+            app=app_id,
             reference=reference,
             workspace=selected,
             max_pages=max_pages,
             max_items=max_items,
+            start=start,
+            end=end,
         )
 
     def compile_analysis_query(

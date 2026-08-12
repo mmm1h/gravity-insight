@@ -19,6 +19,8 @@ from .plan_binding import set_pointer
 from .plan_pulse_adapter import execute_business_pulse, validate_business_pulse
 from .plan_saved_analysis_adapter import (
     execute_saved_analysis_plan,
+    is_saved_analysis_result,
+    project_saved_analysis_result,
     validate_saved_analysis,
 )
 from .plan_metadata_adapter import execute_metadata_plan, validate_metadata_plan
@@ -541,6 +543,8 @@ def _project_composite(
         return user_journey_plan.project_user_journey_result(result, fields, context)
     if dashboard_plan.is_dashboard_result(result):
         return dashboard_plan.project_dashboard_result(result, fields, context)
+    if is_saved_analysis_result(result):
+        return project_saved_analysis_result(result, fields, context)
     return _composite_projection(result, fields, context)
 
 
