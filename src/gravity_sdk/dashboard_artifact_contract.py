@@ -13,25 +13,28 @@ SUBJECT_KINDS = {
 
 UI_FIELDS = {
     "event": frozenset({
-        "aggregate_config", "calculateBody", "checkIndexList", "compareList",
+        "aggregate_config", "calculateBody", "cascaderInput", "cascaderValue",
+        "checkIndexList", "compareList",
         "currentSelectCompare", "customQueryItemList", "date_extra_data",
         "date_list", "getDateConfig", "groupBy", "groupByCreateTime",
         "isDateTotal", "isHandelHeader", "isShowSum", "queryItemList",
         "seriesType", "stageSumSetting", "tableShowType", "tableType",
-        "tempSettingList",
+        "tempSettingList", "showEchartsNumber",
     }),
     "property": frozenset({"calculateBody", "groupBy", "queryItem", "seriesType"}),
     "retention": frozenset({
-        "calculateBody", "cascaderInput", "cascaderValue", "currentView",
-        "date_extra_data", "displaySettingNums", "echartShowType", "getDateConfig",
-        "group_by_list", "is_total_calc", "onlyShowSameData", "queryItemList",
+        "calculateBody", "cascaderInput", "cascaderValue", "checkIndexList",
+        "compareList", "currentView", "date_extra_data", "date_list",
+        "displaySettingNums", "echartShowType", "getDateConfig", "group_by_list",
+        "groupByCreateTime", "is_total_calc", "onlyShowSameData", "queryItemList",
         "sameTimeShowData", "sameTimeShowFormulaData", "showEchartsNumber",
-        "total_calc_type", "week_first_day",
+        "seriesType", "total_calc_type", "week_first_day",
     }),
     "funnel": frozenset({
-        "calculateBody", "checkIndexList", "date_extra_data", "getDateConfig",
-        "getSelectQueryList", "groupBy", "queryItemList", "selectedSteps",
-        "seriesType", "showEchartsNumber", "tableShowType",
+        "calculateBody", "cascaderInput", "cascaderValue", "checkIndexList",
+        "compareList", "date_extra_data", "date_list", "getDateConfig",
+        "getSelectQueryList", "groupBy", "groupByCreateTime", "queryItemList",
+        "selectedSteps", "seriesType", "showEchartsNumber", "tableShowType",
     }),
     "scatter": frozenset({
         "calculateBody", "checkValue", "date_extra_data", "getDateConfig",

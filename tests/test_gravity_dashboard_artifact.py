@@ -61,6 +61,12 @@ class DashboardArtifactTests(unittest.TestCase):
             "analysis_retention": {
                 "calculateBody": {"query_item_list": [_event("before"), _event("after")]},
                 "cascaderValue": ["day", 7],
+                "cascaderInput": 7,
+                "seriesType": "table",
+                "groupByCreateTime": {"value": "day"},
+                "compareList": [],
+                "date_list": [{"start_date": "2026-07-01", "end_date": "2026-07-02"}],
+                "checkIndexList": [],
                 "week_first_day": 1,
                 "is_total_calc": False,
             },
@@ -70,6 +76,11 @@ class DashboardArtifactTests(unittest.TestCase):
                     "stat_time_window": {"type": "day", "val": 1},
                 },
                 "seriesType": "line",
+                "cascaderValue": ["day", 7],
+                "cascaderInput": 7,
+                "groupByCreateTime": {"value": "day"},
+                "compareList": [],
+                "date_list": [{"start_date": "2026-07-01", "end_date": "2026-07-02"}],
             },
             "analysis_scatter": {
                 "calculateBody": {
@@ -78,8 +89,8 @@ class DashboardArtifactTests(unittest.TestCase):
                         {"type": "default_event", "field": "create_time", "group_by": "day"}
                     ],
                 },
-                "seriesType": "table",
-                "groupByCreateTime": {"value": "total"},
+                "seriesType": "scatter_bar",
+                "groupByCreateTime": {"value": "week"},
             },
         }
         client = _Client()

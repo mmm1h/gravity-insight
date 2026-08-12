@@ -154,6 +154,11 @@ def _event_inputs(
         config.get("groupByCreateTime", {}),
         "report.config.groupByCreateTime",
     ).get("value")
+    if any(item.get("field") == "create_time" for item in groups) and grain is None:
+        _unsupported(
+            "event groupByCreateTime.value is required for create_time grouping",
+            "report.config.groupByCreateTime.value",
+        )
     if grain is not None:
         groups = [_event_time_group(item, grain) for item in groups]
     return {
@@ -266,16 +271,20 @@ def _scatter_inputs(
     groups = _objects(body.get("group_by_list", []), "calculateBody.group_by_list")
     if not groups or groups[-1].get("field") != "create_time":
         _unsupported("scatter config is missing its trailing create_time group", "calculateBody.group_by_list")
+    series_type = config.get("seriesType")
+    if not isinstance(series_type, str):
+        _unsupported("scatter seriesType must be text", "report.config.seriesType")
     grain = _ui_object(
         config.get("groupByCreateTime"),
         "report.config.groupByCreateTime",
     ).get("value")
     if not isinstance(grain, str) or not grain:
         _unsupported("scatter groupByCreateTime.value is required", "report.config.groupByCreateTime.value")
+    effective_grain = "total" if series_type == "scatter_bar" else grain
     groups[-1] = {
         "type": "default_event",
         "field": "create_time",
-        "group_by": "day" if grain == "total" else grain,
+        "group_by": "day" if effective_grain == "total" else effective_grain,
     }
     inputs = copy.deepcopy(dict(body))
     inputs.update(
@@ -293,6 +302,8 @@ def _event_time_group(item: Mapping[str, Any], grain: Any) -> dict[str, Any]:
     result = copy.deepcopy(dict(item))
     if result.get("field") != "create_time":
         return result
+    if isinstance(grain, bool) or not isinstance(grain, (str, int)):
+        _unsupported("event groupByCreateTime.value is invalid", "report.config.groupByCreateTime.value")
     if grain in {1, 5, 10}:
         result.update({"group_by": "minute", "granularity": grain})
     elif isinstance(grain, str) and grain:
@@ -323,9 +334,18 @@ def _validate_ui_config(kind: str, config: Mapping[str, Any]) -> None:
     elif kind == "retention":
         _optional_array(config, "queryItemList")
         _optional_array(config, "group_by_list")
+        _optional_array(config, "cascaderValue")
+        _optional_array(config, "compareList")
+        _optional_object(config, "groupByCreateTime")
+        _optional_date_list(config, "date_list")
     elif kind == "funnel":
-        for field in ("groupBy", "queryItemList", "selectedSteps", "checkIndexList"):
+        for field in (
+            "cascaderValue", "checkIndexList", "compareList", "groupBy",
+            "queryItemList", "selectedSteps",
+        ):
             _optional_array(config, field)
+        _optional_object(config, "groupByCreateTime")
+        _optional_date_list(config, "date_list")
     else:
         _optional_object(config, "groupByCreateTime")
         for field in ("groupBy", "queryItemList"):
@@ -363,6 +383,12 @@ def _optional_date_list(config: Mapping[str, Any], key: str) -> None:
     if not values or any(not isinstance(item, Mapping) for item in values):
         _unsupported(
             "saved Dashboard date_list must contain date objects",
+            f"report.config.{key}",
+        )
+    for item in values:
+        _reject_unknown(
+            item,
+            frozenset({"start_date", "end_date"}),
             f"report.config.{key}",
         )
 
@@ -450,6 +476,8 @@ def _text(value: Any, field: str, *, maximum: int) -> str:
 
 
 def _reject_unknown(value: Mapping[str, Any], allowed: frozenset[str], field: str) -> None:
+    if any(not isinstance(key, str) for key in value):
+        _unsupported(f"{field} contains a non-text Web field", field)
     unknown = sorted(set(value) - set(allowed))
     if unknown:
         _unsupported(f"{field} contains unregistered Web fields", field)
