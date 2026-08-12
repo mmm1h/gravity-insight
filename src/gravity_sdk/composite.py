@@ -2,23 +2,20 @@
 
 from __future__ import annotations
 
-import inspect
-from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Mapping, Protocol, Sequence
 
 from .cache import is_metadata_operation
 from .composite_result import combined_status as _combined_status
-from .composite_result import multidim_envelope, should_calculate_total
-from .errors import GravityInsightError, InputValidationError, PolicyViolation
-
-
-MULTIDIM_QUERY_OPERATION = "report.multidim.query"
-MULTIDIM_TOTAL_OPERATION = "report.multidim.calc_total"
-STANDARD_METRIC_OPERATION = "report.multidim.metric.list"
-CUSTOM_METRIC_OPERATIONS = (
-    "report.multidim.custom_metric.list",
-    "report.multidim.custom_metric.shared.list",
+from .errors import InputValidationError, PolicyViolation
+from .multidim_service import (
+    CUSTOM_METRIC_OPERATIONS,
+    MULTIDIM_QUERY_OPERATION,
+    MULTIDIM_TOTAL_OPERATION,
+    STANDARD_METRIC_OPERATION,
+    MultidimService,
 )
+
+
 _PROMOTION_PRIMARY_RESOURCES = {
     "ubix": "group",
     "taptap": "group",
@@ -154,37 +151,14 @@ class CompositeService:
         max_items: int = 100_000,
         max_workers: int = 6,
     ) -> dict[str, Any]:
-        if not isinstance(inputs, Mapping):
-            raise InputValidationError("multidimensional inputs must be an object")
-        supplied = dict(inputs)
-        validation = self._validate_multidim(supplied, metadata_inputs or {})
-        query = (
-            self._client.read_all(
-                MULTIDIM_QUERY_OPERATION,
-                supplied,
-                max_pages=max_pages,
-                max_items=max_items,
-                max_workers=max_workers,
-            )
-            if read_all
-            else self._client.read(MULTIDIM_QUERY_OPERATION, supplied)
-        )
-        total: dict[str, Any] | None = None
-        if include_total and should_calculate_total(query):
-            calc_schema = self._client.schema(MULTIDIM_TOTAL_OPERATION)
-            input_schema = calc_schema.get("input_fields", {})
-            if not isinstance(input_schema, Mapping) or "data_list" not in input_schema:
-                raise PolicyViolation("the registered calc-total contract does not accept data_list")
-            allowed = set(str(key) for key in input_schema)
-            calc_inputs = {key: value for key, value in supplied.items() if key in allowed}
-            calc_inputs["data_list"] = _rows(query)
-            total = self._client.read(MULTIDIM_TOTAL_OPERATION, calc_inputs)
-        return multidim_envelope(
-            validation,
-            query,
-            total,
-            query_operation=MULTIDIM_QUERY_OPERATION,
-            total_operation=MULTIDIM_TOTAL_OPERATION,
+        return MultidimService(self._client).query(
+            inputs,
+            include_total=include_total,
+            read_all=read_all,
+            metadata_inputs=metadata_inputs,
+            max_pages=max_pages,
+            max_items=max_items,
+            max_workers=max_workers,
         )
 
     def promotion_snapshot(
@@ -281,173 +255,6 @@ class CompositeService:
             "coverage": _batch_coverage(len(selected_platforms), results),
             "results": results,
         }
-
-    def _validate_multidim(
-        self,
-        inputs: Mapping[str, Any],
-        metadata_inputs: Mapping[str, Mapping[str, Any]],
-    ) -> dict[str, Any]:
-        metrics = _string_values(inputs.get("metrics_list", []), "metrics_list")
-        custom_metrics = _string_values(
-            inputs.get("custom_metrics_list", []), "custom_metrics_list"
-        )
-        data_dims = _string_values(inputs.get("data_dims", []), "data_dims")
-        if not metrics and not custom_metrics:
-            if data_dims:
-                raise InputValidationError(
-                    "data_dims cannot be live-validated without selected metrics; query was not executed"
-                )
-            return {
-                "status": "not_required",
-                "metrics": "not_requested",
-                "data_dims": "not_validated_without_selected_metrics",
-                "metadata_operations": [],
-            }
-
-        selected_rows: list[Mapping[str, Any]] = []
-        used_operations: list[str] = []
-        if metrics:
-            rows, verified_operations = self._load_metric_rows(
-                (STANDARD_METRIC_OPERATION,), metadata_inputs, required=True
-            )
-            selected_rows.extend(_select_metrics(rows, metrics, "metrics_list"))
-            used_operations.extend(verified_operations)
-        if custom_metrics:
-            rows, verified_operations = self._load_metric_rows(
-                CUSTOM_METRIC_OPERATIONS, metadata_inputs, required=True
-            )
-            selected_rows.extend(_select_metrics(rows, custom_metrics, "custom_metrics_list"))
-            used_operations.extend(verified_operations)
-
-        excluded: set[str] = set()
-        incomplete_exclusions = False
-        for row in selected_rows:
-            if "exclusion_dims" not in row:
-                incomplete_exclusions = True
-                continue
-            exclusion_dims = row.get("exclusion_dims")
-            if exclusion_dims in (None, ""):
-                continue
-            if not isinstance(exclusion_dims, (list, tuple)):
-                incomplete_exclusions = True
-                continue
-            if any(not isinstance(item, str) for item in exclusion_dims):
-                incomplete_exclusions = True
-                continue
-            excluded.update(item for item in exclusion_dims if isinstance(item, str))
-        if data_dims and incomplete_exclusions:
-            raise InputValidationError(
-                "live metric metadata is incomplete; data_dims were not sent upstream"
-            )
-        if set(data_dims) & excluded:
-            raise InputValidationError(
-                "selected data_dims conflict with live metric exclusion metadata"
-            )
-        return {
-            "status": "validated" if not data_dims else "validated_exclusions_only",
-            "metrics": "validated_live",
-            "data_dims": "exclusion_checked" if data_dims else "not_requested",
-            "metrics_checked": len(selected_rows),
-            "data_dims_checked": len(data_dims),
-            "metadata_operations": list(dict.fromkeys(used_operations)),
-        }
-
-    def _load_metric_rows(
-        self,
-        operation_ids: Sequence[str],
-        metadata_inputs: Mapping[str, Mapping[str, Any]],
-        *,
-        required: bool,
-    ) -> tuple[list[Mapping[str, Any]], list[str]]:
-        if not operation_ids:
-            if required:
-                raise InputValidationError(
-                    "live metric metadata is unavailable; multidimensional query was not executed"
-                )
-            return [], []
-
-        def load(operation_id: str) -> tuple[str, list[Mapping[str, Any]]] | None:
-            try:
-                schema = self._client.schema(operation_id)
-                if not is_metadata_operation(schema):
-                    return None
-                read_all = self._client.read_all
-                parameters = inspect.signature(read_all).parameters
-                options = (
-                    {"max_workers": 1}
-                    if "max_workers" in parameters
-                    or any(
-                        parameter.kind is inspect.Parameter.VAR_KEYWORD
-                        for parameter in parameters.values()
-                    )
-                    else {}
-                )
-                envelope = read_all(
-                    operation_id,
-                    dict(metadata_inputs.get(operation_id, {})),
-                    **options,
-                )
-            except (GravityInsightError, KeyError, TypeError, ValueError):
-                return None
-            if envelope.get("status") == "contract_changed":
-                return None
-            if envelope.get("status") not in {"success", "empty"}:
-                return None
-            return operation_id, [
-                item for item in _rows(envelope) if isinstance(item, Mapping)
-            ]
-
-        workers = min(6, len(operation_ids))
-        with ThreadPoolExecutor(
-            max_workers=workers, thread_name_prefix="gravity-metadata"
-        ) as pool:
-            loaded = list(pool.map(load, operation_ids))
-        successful = [item for item in loaded if item is not None]
-        verified_operations = [item[0] for item in successful]
-        rows = [row for _, values in successful for row in values]
-        if required and (not successful or not rows):
-            raise InputValidationError(
-                "live metric metadata is unavailable; multidimensional query was not executed"
-            )
-        return rows, verified_operations
-
-
-def _select_metrics(
-    rows: Sequence[Mapping[str, Any]], requested: Sequence[str], label: str
-) -> list[Mapping[str, Any]]:
-    by_identifier: dict[str, Mapping[str, Any]] = {}
-    for row in rows:
-        for key in ("id", "name", "cname", "label"):
-            value = row.get(key)
-            if isinstance(value, (str, int)) and not isinstance(value, bool):
-                by_identifier[str(value)] = row
-    missing = [item for item in requested if item not in by_identifier]
-    if missing:
-        raise InputValidationError(
-            f"{label} contains values absent from live metadata (count={len(missing)})"
-        )
-    return [by_identifier[item] for item in requested]
-
-
-def _rows(envelope: Mapping[str, Any]) -> list[Any]:
-    data = envelope.get("data")
-    if isinstance(data, list):
-        return list(data)
-    if isinstance(data, Mapping):
-        for key in ("list", "items"):
-            value = data.get(key)
-            if isinstance(value, list):
-                return list(value)
-    return []
-
-
-def _string_values(value: Any, label: str) -> list[str]:
-    if value is None:
-        return []
-    if not isinstance(value, (list, tuple)) or any(not isinstance(item, str) for item in value):
-        raise InputValidationError(f"{label} must be a list of strings")
-    return list(value)
-
 
 def _operation_ids(values: Sequence[str]) -> list[str]:
     if isinstance(values, (str, bytes)) or any(not isinstance(item, str) or not item for item in values):

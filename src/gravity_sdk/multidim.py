@@ -5,12 +5,12 @@ from __future__ import annotations
 from typing import Any, Mapping, MutableSet, Sequence
 
 from . import runtime
-from .composite import (
-    CompositeService,
+from .composite import CompositeService
+from .errors import PolicyViolation
+from .multidim_service import (
     MULTIDIM_QUERY_OPERATION as QUERY_OPERATION,
     MULTIDIM_TOTAL_OPERATION as TOTAL_OPERATION,
 )
-from .errors import PolicyViolation
 
 
 OPERATIONS = frozenset({QUERY_OPERATION, TOTAL_OPERATION})

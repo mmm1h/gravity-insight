@@ -34,7 +34,6 @@
       "src/gravity_sdk/cli.py::run": 26,
       "src/gravity_sdk/client.py::GravityInsightClient._first_probe_order_field": 18,
       "src/gravity_sdk/client.py::GravityInsightClient.probe_all": 18,
-      "src/gravity_sdk/composite.py::CompositeService._validate_multidim": 19,
       "src/gravity_sdk/composite.py::CompositeService.metadata_snapshot": 18,
       "src/gravity_sdk/composite.py::CompositeService.promotion_snapshot": 19,
       "src/gravity_sdk/credentials.py::CredentialProvider._credential_from_login": 18,
@@ -165,13 +164,6 @@
         "analysis.user_property.list": 1,
         "app.list": 1,
         "report.multidim.template.preset.list": 1
-      },
-      "src/gravity_sdk/composite.py": {
-        "report.multidim.calc_total": 1,
-        "report.multidim.custom_metric.list": 1,
-        "report.multidim.custom_metric.shared.list": 1,
-        "report.multidim.metric.list": 1,
-        "report.multidim.query": 1
       },
       "src/gravity_sdk/executor.py": {
         "analysis.event.query": 2,
