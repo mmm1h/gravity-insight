@@ -89,7 +89,11 @@ def validate_analysis_shape(
 
 
 def _reject_funnel_user_property_conditions(value: Any) -> None:
-    if any(item.get("type") == "user_property" for item in value):
+    if any(
+        item.get("type") == "user_property"
+        and item.get("segment_type") in {None, ""}
+        for item in value
+    ):
         raise InputValidationError(
             "analysis funnel global_conditions must use type 'user' for user "
             "properties; request was not sent",
