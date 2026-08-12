@@ -40,6 +40,8 @@ class DashboardArtifactTests(unittest.TestCase):
                 "groupByCreateTime": {"value": 5},
                 "tableShowType": "table",
                 "aggregate_config": {},
+                "date_list": [{"start_date": "2026-07-01", "end_date": "2026-07-02"}],
+                "queryItemList": [],
             },
             "analysis_user_property": {
                 "calculateBody": {
@@ -67,7 +69,7 @@ class DashboardArtifactTests(unittest.TestCase):
                     "query_item_list": [_event("one"), _event("two")],
                     "stat_time_window": {"type": "day", "val": 1},
                 },
-                "seriesType": "funnel_line",
+                "seriesType": "line",
             },
             "analysis_scatter": {
                 "calculateBody": {
@@ -115,6 +117,24 @@ class DashboardArtifactTests(unittest.TestCase):
             compile_dashboard_chart(client, report, app_id=1, start="2026-08-01", end="2026-08-02")
         with self.assertRaises(InputValidationError):
             compile_dashboard_chart(client, {**report, "config": {"calculateBody": {"query_item_list": [_event()]}}}, app_id=1, start="2026-08-03", end="2026-08-02")
+        drift = {**report, "config": {
+            "calculateBody": {"query_item_list": [_event()]},
+            "groupByCreateTime": {"value": "day", "future_semantic": True},
+        }}
+        with self.assertRaises(UnsupportedOperationError):
+            compile_dashboard_chart(client, drift, app_id=1, start="2026-08-01", end="2026-08-02")
+        retention = {
+            "report_id": "2", "name": "retention", "subject": "analysis_retention",
+            "config": {
+                "calculateBody": {
+                    "query_item_list": [_event("before"), _event("after")],
+                    "user_re_attribute_filtering": {"channel": "private"},
+                },
+                "cascaderValue": ["day", 7], "is_total_calc": "false",
+            },
+        }
+        with self.assertRaises(UnsupportedOperationError):
+            compile_dashboard_chart(client, retention, app_id=1, start="2026-08-01", end="2026-08-02")
         self.assertEqual(client.calls, [])
 
 

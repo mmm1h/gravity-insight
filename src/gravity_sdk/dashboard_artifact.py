@@ -15,105 +15,13 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
 
+from .dashboard_artifact_contract import BODY_FIELDS, SUBJECT_KINDS, UI_FIELDS
 from .domains import ANALYSIS_QUERY_OPERATIONS, new_analysis_query_id
 from .errors import InputValidationError, UnsupportedOperationError
 
 
 MAX_CONFIG_BYTES = 1_048_576
 MAX_ANALYSIS_DAYS = 90
-SUBJECT_KINDS = {
-    "analysis_event": "event",
-    "analysis_funnel": "funnel",
-    "analysis_retention": "retention",
-    "analysis_user_property": "property",
-    "analysis_scatter": "scatter",
-}
-
-_UI_FIELDS = {
-    "event": frozenset(
-        {
-            "calculateBody",
-            "groupByCreateTime",
-            "tableShowType",
-            "aggregate_config",
-        }
-    ),
-    "property": frozenset({"calculateBody", "seriesType", "groupBy"}),
-    "retention": frozenset(
-        {
-            "calculateBody",
-            "cascaderValue",
-            "cascaderInput",
-            "week_first_day",
-            "total_calc_type",
-            "is_total_calc",
-        }
-    ),
-    "funnel": frozenset({"calculateBody", "seriesType", "groupBy"}),
-    "scatter": frozenset(
-        {
-            "calculateBody",
-            "seriesType",
-            "groupByCreateTime",
-            "groupBy",
-            "checkValue",
-            "queryItemList",
-        }
-    ),
-}
-
-_BODY_FIELDS = {
-    "event": frozenset(
-        {
-            "query_item_list",
-            "custom_query_item_list",
-            "group_by_list",
-            "user_filtering",
-            "global_conditions",
-            "global_cond_logic",
-            "split_event",
-            "extra_data",
-        }
-    ),
-    "property": frozenset(
-        {
-            "query_item",
-            "group_by_list",
-            "user_filtering",
-            "user_re_attribute_filtering",
-            "user_cond_logic",
-            "property_condition",
-            "order_by_list",
-        }
-    ),
-    "retention": frozenset(
-        {
-            "query_item_before_after",
-            "query_item_list",
-            "group_by_list",
-            "user_filtering",
-            "user_re_attribute_filtering",
-            "property_condition",
-            "user_cond_logic",
-            "period_calc_method",
-            "custom_before_method",
-        }
-    ),
-    "funnel": frozenset(
-        {
-            "query_item_list",
-            "group_by_list",
-            "global_conditions",
-            "global_cond_logic",
-            "stat_time_window",
-        }
-    ),
-    "scatter": frozenset(
-        {"query_item_list", "group_by_list", "extra_data"}
-    ),
-}
-
-
 @dataclass(frozen=True)
 class CompiledDashboardChart:
     """One Dashboard artifact compiled to an exact stable Analysis request."""
@@ -168,9 +76,10 @@ def compile_dashboard_chart(
     selected_app = _app_id(app_id)
     _date_window(start, end)
     config = _config(item.get("config"))
-    _reject_unknown(config, _UI_FIELDS[kind], "report.config")
+    _reject_unknown(config, UI_FIELDS[kind], "report.config")
+    _validate_ui_config(kind, config)
     body = _mapping(config.get("calculateBody"), "report.config.calculateBody")
-    _reject_unknown(body, _BODY_FIELDS[kind], "report.config.calculateBody")
+    _reject_unknown(body, BODY_FIELDS[kind], "report.config.calculateBody")
     inputs, applied, limitations = _compile_inputs(
         kind,
         config,
@@ -241,7 +150,10 @@ def _event_inputs(
     if body.get("user_filtering") not in (None, [], {}):
         _unsupported("event user_filtering is not registered", "calculateBody.user_filtering")
     groups = _objects(body.get("group_by_list", []), "calculateBody.group_by_list")
-    grain = _mapping(config.get("groupByCreateTime", {}), "report.config.groupByCreateTime").get("value")
+    grain = _ui_object(
+        config.get("groupByCreateTime", {}),
+        "report.config.groupByCreateTime",
+    ).get("value")
     if grain is not None:
         groups = [_event_time_group(item, grain) for item in groups]
     return {
@@ -276,17 +188,34 @@ def _retention_inputs(
     start: str,
     end: str,
 ) -> dict[str, Any]:
+    reattribute = body.get("user_re_attribute_filtering")
+    if reattribute not in (None, [], {}):
+        _unsupported(
+            "retention user_re_attribute_filtering is not sent by Dashboard Web",
+            "calculateBody.user_re_attribute_filtering",
+        )
     groups = _objects(body.get("group_by_list", []), "calculateBody.group_by_list")
     cascade = _sequence(config.get("cascaderValue", ["day", 7]), "report.config.cascaderValue")
     if len(cascade) != 2:
         _unsupported("retention cascaderValue must contain grain and offset", "report.config.cascaderValue")
-    offset = config.get("cascaderInput", 7) if cascade[1] == "custom" else cascade[1]
+    grain, offset_selector = cascade
+    if not isinstance(grain, str) or not grain:
+        _unsupported("retention grain is invalid", "report.config.cascaderValue")
+    offset = config.get("cascaderInput", 7) if offset_selector == "custom" else offset_selector
+    if isinstance(offset, bool) or not isinstance(offset, int):
+        _unsupported("retention offset is invalid", "report.config.cascaderValue")
     groups.append({"type": "default_event", "field": "create_time", "group_by": cascade[0]})
     total = config.get("total_calc_type", "total_week")
+    if not isinstance(total, str) or total not in {"total_week", "total_month"}:
+        _unsupported("retention total_calc_type is invalid", "report.config.total_calc_type")
+    total_enabled = config.get("is_total_calc", False)
+    if not isinstance(total_enabled, bool):
+        _unsupported("retention is_total_calc must be boolean", "report.config.is_total_calc")
     total_calc_type = "DAY"
-    if config.get("is_total_calc") is True:
+    if total_enabled:
         total_calc_type = {"total_week": "WEEK", "total_month": "MONTH"}.get(total, "DAY")
     inputs = copy.deepcopy(dict(body))
+    inputs.pop("user_re_attribute_filtering", None)
     inputs.update(
         {
             "query_id": new_analysis_query_id(),
@@ -308,13 +237,20 @@ def _funnel_inputs(
     start: str,
     end: str,
 ) -> dict[str, Any]:
+    series_type = config.get("seriesType")
+    if not isinstance(series_type, str):
+        _unsupported("funnel seriesType must be text", "report.config.seriesType")
+    normalized_series = {
+        "bar": "funnel_bar",
+        "line": "funnel_line",
+    }.get(series_type, series_type)
     inputs = copy.deepcopy(dict(body))
     inputs.update(
         {
             "query_id": new_analysis_query_id(),
             "app_id": app_id,
             "date_list": [_date_item(start, end)],
-            "to_calc_each_day": config.get("seriesType") in {"funnel_line", "line_table"},
+            "to_calc_each_day": normalized_series in {"funnel_line", "line_table"},
         }
     )
     return inputs
@@ -330,7 +266,10 @@ def _scatter_inputs(
     groups = _objects(body.get("group_by_list", []), "calculateBody.group_by_list")
     if not groups or groups[-1].get("field") != "create_time":
         _unsupported("scatter config is missing its trailing create_time group", "calculateBody.group_by_list")
-    grain = _mapping(config.get("groupByCreateTime"), "report.config.groupByCreateTime").get("value")
+    grain = _ui_object(
+        config.get("groupByCreateTime"),
+        "report.config.groupByCreateTime",
+    ).get("value")
     if not isinstance(grain, str) or not grain:
         _unsupported("scatter groupByCreateTime.value is required", "report.config.groupByCreateTime.value")
     groups[-1] = {
@@ -362,6 +301,70 @@ def _event_time_group(item: Mapping[str, Any], grain: Any) -> dict[str, Any]:
     else:
         _unsupported("event groupByCreateTime.value is invalid", "report.config.groupByCreateTime.value")
     return result
+
+
+def _validate_ui_config(kind: str, config: Mapping[str, Any]) -> None:
+    """Validate proven UI-only containers before intentionally not executing them."""
+
+    if kind == "event":
+        if config.get("compareList") not in (None, []):
+            _unsupported(
+                "event comparison windows cannot be represented by one explicit date pair",
+                "report.config.compareList",
+            )
+        _optional_object(config, "groupByCreateTime")
+        _optional_object(config, "aggregate_config", fields=None)
+        _optional_date_list(config, "date_list")
+        for field in ("groupBy", "queryItemList", "customQueryItemList"):
+            _optional_array(config, field)
+    elif kind == "property":
+        _optional_array(config, "groupBy")
+        _optional_object(config, "queryItem", fields=None)
+    elif kind == "retention":
+        _optional_array(config, "queryItemList")
+        _optional_array(config, "group_by_list")
+    elif kind == "funnel":
+        for field in ("groupBy", "queryItemList", "selectedSteps", "checkIndexList"):
+            _optional_array(config, field)
+    else:
+        _optional_object(config, "groupByCreateTime")
+        for field in ("groupBy", "queryItemList"):
+            _optional_array(config, field)
+
+
+def _optional_object(
+    config: Mapping[str, Any],
+    key: str,
+    *,
+    fields: frozenset[str] | None = frozenset({"label", "value"}),
+) -> None:
+    if key not in config or config.get(key) is None:
+        return
+    value = _mapping(config[key], f"report.config.{key}")
+    if fields is not None:
+        _reject_unknown(value, fields, f"report.config.{key}")
+
+
+def _ui_object(value: Any, field: str) -> Mapping[str, Any]:
+    selected = _mapping(value, field)
+    _reject_unknown(selected, frozenset({"label", "value"}), field)
+    return selected
+
+
+def _optional_array(config: Mapping[str, Any], key: str) -> None:
+    if key in config and config.get(key) is not None:
+        _sequence(config[key], f"report.config.{key}")
+
+
+def _optional_date_list(config: Mapping[str, Any], key: str) -> None:
+    if key not in config or config.get(key) is None:
+        return
+    values = _sequence(config[key], f"report.config.{key}")
+    if not values or any(not isinstance(item, Mapping) for item in values):
+        _unsupported(
+            "saved Dashboard date_list must contain date objects",
+            f"report.config.{key}",
+        )
 
 
 def _config(value: Any) -> Mapping[str, Any]:
