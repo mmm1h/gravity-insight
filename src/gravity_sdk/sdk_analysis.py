@@ -362,10 +362,21 @@ class AnalysisSdkMixin:
     ) -> dict[str, Any]:
         """Inspect one exact Segment's definition, history, and daily result."""
 
-        from .segment_snapshot import segment_snapshot
+        from .segment_snapshot import (
+            segment_snapshot,
+            validate_segment_snapshot_request,
+        )
 
         selected = self._select_workspace(workspace)
         app_id = self._resolve_app(selected, app)
+        validate_segment_snapshot_request(
+            app_id,
+            ref,
+            date=date,
+            max_workers=max_workers,
+            max_pages=max_pages,
+            max_items=max_items,
+        )
         insight = self.insight
         return segment_snapshot(
             insight,

@@ -33,6 +33,7 @@ class _Client:
         return self.catalog
 
     def batch(self, requests, *, max_workers, max_pages, max_total_items):
+        if len(requests) > max_total_items: raise ValueError("request budget")
         self.batch_calls.append((requests, max_workers, max_pages, max_total_items))
         results = []
         for request in reversed(requests):
@@ -90,7 +91,7 @@ class SegmentSnapshotTests(unittest.TestCase):
             client, 17, 8, date="2026-08-12", max_workers=3, max_pages=5, max_items=20
         )
         requests, workers, pages, items = client.batch_calls[0]
-        self.assertEqual((3, 5, 15), (workers, pages, items))
+        self.assertEqual((3, 5, 18), (workers, pages, items))
         self.assertEqual(
             ["detail", "history", "daily_result"],
             [row["source"] for row in result["results"]],
@@ -128,6 +129,15 @@ class SegmentSnapshotTests(unittest.TestCase):
         ))
         with self.assertRaises(ContractChangedError):
             segment_snapshot(duplicate, 17, 8, date="2026-08-12")
+        mismatch = _Client(_catalog(
+            {"segment_id": 8, "id": 999, "segment_name": "A", "app_id": 17},
+        ))
+        with self.assertRaises(ContractChangedError):
+            segment_snapshot(mismatch, 17, 8, date="2026-08-12")
+        missing = segment_snapshot(
+            _Client(omit="history"), 17, 8, date="2026-08-12"
+        )
+        self.assertEqual("BATCH_RESULT_MISSING", missing["results"][1]["error"]["code"])
         bounded = _Client(daily_rows=[
             {"create_date": "2026-08-12", "user_cnt": 1, "secret": "x"}
         ])

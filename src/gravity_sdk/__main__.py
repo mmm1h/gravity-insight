@@ -19,6 +19,7 @@ Usage:
   gravity analysis query batch --input <queries.json> [--dry-run]
   gravity analysis dashboard prepare|run --app <alias|id> --ref <id|name> --start <date> --end <date>
   gravity analysis user journey --app <alias|id> --client-id <id> --date <date>
+  gravity analysis segment snapshot --app <alias|id> --ref <id|name> --date <date>
   gravity reports pulse --app <alias|id> --start <date> --end <date>
   gravity export run <operation-id> --input <json|file|-> --output <file>
   gravity insight <command> [options]

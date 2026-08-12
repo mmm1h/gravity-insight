@@ -7,7 +7,9 @@ class SegmentSnapshotAgentTest(unittest.TestCase):
         positives = ("segment_snapshot",
                      "inspect segment details history and daily calculation result",
                      "check segment details history daily user count result",
-                     "检查分群详情历史和单日计算结果")
+                     "检查分群详情历史和单日计算结果",
+                     "inspect audience snapshot details history and result for 2026-08-12",
+                     "查看分群快照详情历史和2026-08-12计算结果")
         for query in positives:
             with self.subTest(query=query):
                 cards = composite_capability_cards(query, domain=None, platform=None)

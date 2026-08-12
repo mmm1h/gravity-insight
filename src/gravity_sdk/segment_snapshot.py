@@ -11,7 +11,6 @@ from __future__ import annotations
 import copy
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from datetime import date as date_type
 from typing import Any
 
 from . import runtime
@@ -19,7 +18,6 @@ from .composite_batch import (
     annotate_result,
     composite_envelope,
     ordered_results,
-    validate_composite_bounds,
 )
 from .composite_catalog import stable_operation
 from .errors import (
@@ -31,15 +29,22 @@ from .errors import (
     LocalIOError,
     PaginationError,
 )
+from .segment_snapshot_inputs import (
+    DEFAULT_CONCURRENCY,
+    MAX_CONCURRENCY,
+    MIN_SNAPSHOT_ITEMS,
+    bounded_text as _bounded_text,
+    matches_app as _matches_app,
+    positive_id as _positive_id,
+    validate_segment_snapshot_request,
+)
 
 
 SCHEMA_VERSION = "gravity-insight.segment-snapshot.v1"
-DEFAULT_CONCURRENCY = 3
-MAX_CONCURRENCY = 24
-MIN_SNAPSHOT_ITEMS = 4
 SOURCE_COUNT = 3
 _SUCCESS = frozenset({"success", "empty", "contract_changed_additive"})
 _ERROR_CODES = frozenset(item.value for item in ErrorCode)
+_SAFE_EXTENSION_CODES = frozenset({"BATCH_RESULT_MISSING"})
 
 
 @dataclass(frozen=True)
@@ -82,12 +87,15 @@ def segment_snapshot(
 ) -> dict[str, Any]:
     """Resolve one segment and return three ordered aggregate sources."""
 
-    selected_app = _positive_id(app_id, "app_id")
-    selected_ref = _reference(ref)
-    selected_date = _date(date)
-    workers = _workers(max_workers)
-    pages, items = validate_composite_bounds(
-        max_pages, max_items, minimum_items=MIN_SNAPSHOT_ITEMS
+    selected_app, selected_ref, selected_date, workers, pages, items = (
+        validate_segment_snapshot_request(
+            app_id,
+            ref,
+            date=date,
+            max_workers=max_workers,
+            max_pages=max_pages,
+            max_items=max_items,
+        )
     )
     catalog = _read_catalog(
         client,
@@ -96,14 +104,22 @@ def segment_snapshot(
         items=items - SOURCE_COUNT,
     )
     identity = _resolve_identity(catalog, selected_ref, selected_app)
-    remaining = items - len(catalog) - SOURCE_COUNT
+    if len(catalog) + SOURCE_COUNT > items:
+        raise PaginationError(
+            "segment catalog and fixed sources exceed the aggregate item safety bound"
+        )
+    remaining = items - len(catalog)
+    if remaining < SOURCE_COUNT:
+        raise PaginationError(
+            "segment catalog left no capacity for the fixed snapshot sources"
+        )
     requests = _requests(identity.segment_id, selected_date)
     ordered = _read_sources(
         client,
         requests,
         workers=workers,
         pages=pages,
-        items=max(1, remaining),
+        items=remaining,
     )
     results = [
         annotate_result(
@@ -306,6 +322,9 @@ def _project_source(
     if source == "detail":
         if _row_identity(data) != identity.segment_id:
             raise ContractChangedError("segment detail identity changed")
+        detail_name = _bounded_text(data.get("segment_name"))
+        if detail_name is not None and detail_name != identity.name:
+            raise ContractChangedError("segment detail name changed")
         raw_app = data.get("app_id")
         if raw_app is not None and not _matches_app(raw_app, app_id):
             raise ContractChangedError("segment detail App identity changed")
@@ -382,7 +401,11 @@ def _safe_error(value: Any, source: SegmentSource) -> ErrorDetail:
     else:
         raw = value if isinstance(value, Mapping) else {}
         candidate = str(raw.get("code", "")).strip().upper()
-        code = candidate if candidate in _ERROR_CODES else ErrorCode.LOCAL_IO_ERROR.value
+        code = (
+            candidate
+            if candidate in _ERROR_CODES | _SAFE_EXTENSION_CODES
+            else ErrorCode.LOCAL_IO_ERROR.value
+        )
     retry_after = raw.get("retry_after_ms")
     return ErrorDetail.create(
         code,
@@ -439,14 +462,9 @@ def _row_count(results: Sequence[Mapping[str, Any]]) -> int:
 def _row_identity(value: Mapping[str, Any]) -> str | None:
     primary = _bounded_text(value.get("segment_id"))
     alternate = _bounded_text(value.get("id"))
+    if primary is not None and alternate is not None and primary != alternate:
+        raise ContractChangedError("segment identity fields disagree")
     return primary or alternate
-
-
-def _matches_app(value: Any, app_id: str) -> bool:
-    try:
-        return _positive_id(value, "app_id") == app_id
-    except InputValidationError:
-        return False
 
 
 def _mapping(value: Any, field: str) -> Mapping[str, Any]:
@@ -460,67 +478,6 @@ def _status(value: Mapping[str, Any]) -> str:
     return status.strip().casefold() if isinstance(status, str) else ""
 
 
-def _positive_id(value: Any, field: str) -> str:
-    rendered = (
-        str(value).strip()
-        if isinstance(value, (str, int)) and not isinstance(value, bool)
-        else ""
-    )
-    if not rendered.isascii() or not rendered.isdigit() or int(rendered) <= 0:
-        raise InputValidationError(
-            f"segment snapshot {field} must be a positive integer", field=field
-        )
-    return str(int(rendered))
-
-
-def _reference(value: Any) -> str:
-    selected = _bounded_text(value) if not isinstance(value, bool) else None
-    if selected is None:
-        raise InputValidationError(
-            "segment snapshot ref must be a bounded id or exact name", field="ref"
-        )
-    return selected
-
-
-def _bounded_text(value: Any) -> str | None:
-    if not isinstance(value, (str, int)) or isinstance(value, bool):
-        return None
-    rendered = str(value).strip()
-    return rendered if 0 < len(rendered) <= 256 else None
-
-
-def _date(value: Any) -> str:
-    if not isinstance(value, str):
-        raise InputValidationError(
-            "segment snapshot date must be an ISO natural day", field="date"
-        )
-    try:
-        parsed = date_type.fromisoformat(value)
-    except ValueError:
-        raise InputValidationError(
-            "segment snapshot date must be an ISO natural day", field="date"
-        ) from None
-    rendered = parsed.isoformat()
-    if rendered != value:
-        raise InputValidationError(
-            "segment snapshot date must use canonical YYYY-MM-DD", field="date"
-        )
-    return rendered
-
-
-def _workers(value: Any) -> int:
-    if (
-        isinstance(value, bool)
-        or not isinstance(value, int)
-        or not 1 <= value <= MAX_CONCURRENCY
-    ):
-        raise InputValidationError(
-            f"segment snapshot max_workers must be between 1 and {MAX_CONCURRENCY}",
-            field="max_workers",
-        )
-    return value
-
-
 __all__ = [
     "DEFAULT_CONCURRENCY",
     "LIST_OPERATION",
@@ -530,4 +487,5 @@ __all__ = [
     "SEGMENT_SOURCES",
     "SOURCE_COUNT",
     "segment_snapshot",
+    "validate_segment_snapshot_request",
 ]

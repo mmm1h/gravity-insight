@@ -114,7 +114,15 @@ def safe_segment_snapshot_envelope(result: Any) -> dict[str, Any]:
     selected = {
         key: copy.deepcopy(value) for key, value in result.items() if key in _SAFE_FIELDS
     }
-    selected["results"] = _safe_results(result.get("results"))
+    safe_results = _safe_results(result.get("results"))
+    if safe_results is None:
+        return _failure(
+            ErrorDetail.create(
+                ErrorCode.CONTRACT_CHANGED,
+                "Segment snapshot result sources changed.",
+            )
+        )
+    selected["results"] = safe_results
     if _native_failure(result):
         selected["ok"] = False
         selected["error"] = _aggregate_error(result).to_dict()
@@ -123,13 +131,15 @@ def safe_segment_snapshot_envelope(result: Any) -> dict[str, Any]:
     return selected
 
 
-def _safe_results(value: Any) -> list[dict[str, Any]]:
-    if not isinstance(value, list):
-        return []
+def _safe_results(value: Any) -> list[dict[str, Any]] | None:
+    if not isinstance(value, list) or len(value) != 3:
+        return None
     rows: list[dict[str, Any]] = []
-    for raw in value:
+    for expected, raw in zip(("detail", "history", "daily_result"), value, strict=True):
         if not isinstance(raw, Mapping):
-            continue
+            return None
+        if raw.get("source") != expected or not isinstance(raw.get("ok"), bool):
+            return None
         row = {
             key: copy.deepcopy(raw[key])
             for key in (
@@ -139,6 +149,7 @@ def _safe_results(value: Any) -> list[dict[str, Any]]:
             if key in raw
         }
         if raw.get("ok") is not True:
+            row["data"] = None
             error = raw.get("error") if isinstance(raw.get("error"), Mapping) else {}
             category = _category(error.get("category"), None)
             code = error.get("code") if isinstance(error.get("code"), str) else None
@@ -231,6 +242,15 @@ def _failure(detail: ErrorDetail) -> dict[str, Any]:
 
 
 def _resolve_app(workspace: Any, value: Any) -> None:
+    if isinstance(value, bool) or not isinstance(value, (str, int)):
+        raise input_error(
+            "segment snapshot app must select a configured workspace App", "app"
+        )
+    rendered = str(value).strip()
+    if not rendered or len(rendered) > 256:
+        raise input_error(
+            "segment snapshot app must select a configured workspace App", "app"
+        )
     try:
         workspace.resolve_app(value)
     except (KeyError, TypeError, ValueError):

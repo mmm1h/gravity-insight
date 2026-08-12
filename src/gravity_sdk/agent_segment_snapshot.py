@@ -14,6 +14,7 @@ _EXACT_SELECTORS = frozenset(
     {SEGMENT_SNAPSHOT_NAME, SEGMENT_SNAPSHOT_SELECTOR}
 )
 _ASCII_WORD = re.compile(r"[a-z0-9_]+", re.IGNORECASE)
+_ISO_DATE = re.compile(r"(?<!\d)\d{4}-\d{2}-\d{2}(?!\d)")
 _ENGLISH_SUBJECTS = frozenset({"segment", "audience", "cohort"})
 _ENGLISH_ACTIONS = frozenset({"snapshot", "inspect", "inspection", "check", "audit"})
 _ENGLISH_DETAILS = frozenset({"detail", "details"})
@@ -74,12 +75,13 @@ def _english_snapshot_query(selected: str) -> bool:
     words = frozenset(_ASCII_WORD.findall(selected))
     groups = (
         _ENGLISH_SUBJECTS, _ENGLISH_ACTIONS, _ENGLISH_DETAILS,
-        _ENGLISH_HISTORY, _ENGLISH_DAILY, _ENGLISH_RESULTS,
+        _ENGLISH_HISTORY, _ENGLISH_RESULTS,
     )
     return (
         not (words & _ENGLISH_BLOCKED)
         and not any(term in selected for term in _ENGLISH_BLOCKED_PHRASES)
         and all(words & group for group in groups)
+        and (bool(words & _ENGLISH_DAILY) or _ISO_DATE.search(selected) is not None)
     )
 
 
@@ -91,7 +93,10 @@ def _chinese_snapshot_query(selected: str) -> bool:
         and any(term in compact for term in ("快照", "检查", "查看"))
         and "详情" in compact
         and any(term in compact for term in ("历史", "历史版本"))
-        and any(term in compact for term in ("单日结果", "当日结果", "单日计算结果"))
+        and (
+            any(term in compact for term in ("单日结果", "当日结果", "单日计算结果"))
+            or _ISO_DATE.search(compact) is not None
+        )
     )
 
 

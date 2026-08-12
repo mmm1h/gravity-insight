@@ -9,6 +9,7 @@ from gravity_sdk.errors import InputValidationError
 from gravity_sdk.plan import AdapterContext
 from gravity_sdk.segment_snapshot import SCHEMA_VERSION
 from gravity_sdk.segment_spec_cli import run_segment_command
+from gravity_sdk.onboarding import command_requires_credentials
 
 
 class _Workspace:
@@ -64,6 +65,40 @@ class SegmentSnapshotSurfaceTests(unittest.TestCase):
             max_pages=3, max_items=30,
         )
 
+        lazy = GravitySDK(
+            workspace=workspace,
+            insight_factory=lambda: self.fail("invalid input must stay local"),
+        )
+        with self.assertRaises(InputValidationError):
+            lazy.segment_snapshot("main", 8, date="not-a-date")
+
+        mixed = cli.build_parser().parse_args([
+            "analysis", "segment", "--kind", "detail", "snapshot",
+            "--app", "main", "--ref", "Buyers", "--date", "2026-08-12",
+        ])
+        with self.assertRaises(InputValidationError):
+            run_segment_command(
+                mixed,
+                lambda: self.fail("mixed input must stay local"),
+                lambda _v: {},
+                lambda *_a, **_k: {},
+            )
+        self.assertFalse(command_requires_credentials(
+            ["analysis", "segment"], cli.build_parser
+        ))
+        self.assertFalse(command_requires_credentials(
+            ["analysis", "segment", "--kind", "detail"], cli.build_parser
+        ))
+        self.assertTrue(command_requires_credentials(
+            ["analysis", "segment", "--kind", "detail", "--input", "{}"],
+            cli.build_parser,
+        ))
+        self.assertFalse(command_requires_credentials(
+            ["analysis", "segment", "--kind", "detail", "snapshot", "--app",
+             "main", "--ref", "Buyers", "--date", "2026-08-12"],
+            cli.build_parser,
+        ))
+
     def test_plan_preflight_is_offline_exact_and_execution_uses_one_worker(self):
         workspace = _Workspace()
         request = {"name": "segment_snapshot", "app": "main",
@@ -91,9 +126,13 @@ class SegmentSnapshotSurfaceTests(unittest.TestCase):
             "schema_version": SCHEMA_VERSION, "ok": False, "status": "partial",
             "exit_code": 3, "total_count": 3, "success_count": 2,
             "failure_count": 1, "app_id": 17, "segment": {"id": "8"},
-            "date": "2026-08-12", "results": [{"ok": False, "error": {
-                "code": "UPSTREAM_UNAVAILABLE", "category": "upstream",
-                "message": "C:/private/raw boom"}}], "scopes": ["segment"],
+            "date": "2026-08-12", "results": [
+                {"source": "detail", "ok": True, "status": "success", "data": {}},
+                {"source": "history", "ok": False, "status": "error", "error": {
+                    "code": "UPSTREAM_UNAVAILABLE", "category": "upstream",
+                    "message": "C:/private/raw boom"}},
+                {"source": "daily_result", "ok": True, "status": "success", "data": {}},
+            ], "scopes": ["segment"],
             "source_count": 3, "ref": "private-ref",
         }
         sdk = SimpleNamespace(segment_snapshot=lambda app, ref, **options:

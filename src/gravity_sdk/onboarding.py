@@ -45,9 +45,33 @@ def command_requires_credentials(
         return False
     if bool(getattr(args, "spec_schema", False)):
         return False
+    if getattr(args, "analysis_command", None) == "segment":
+        return _segment_requires_credentials(args)
     if bool(getattr(args, "live", False)):
         return True
     return bool(getattr(args, "network_required", True))
+
+
+def _segment_requires_credentials(args: Any) -> bool:
+    """Require login only for a complete, unambiguous Segment command."""
+
+    action = getattr(args, "segment_action", None)
+    legacy = any(
+        (
+            getattr(args, "kind", None) is not None,
+            getattr(args, "input", None) is not None,
+            bool(getattr(args, "input_sets", None)),
+            bool(getattr(args, "all_pages", False)),
+        )
+    )
+    if action == "snapshot":
+        return not legacy
+    if action == "evaluate":
+        return getattr(args, "spec", None) is not None
+    return getattr(args, "kind", None) is not None and (
+        getattr(args, "input", None) is not None
+        or bool(getattr(args, "input_sets", None))
+    )
 
 
 def ensure_first_run_credentials(

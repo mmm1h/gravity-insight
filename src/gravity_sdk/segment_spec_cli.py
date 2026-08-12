@@ -9,7 +9,7 @@ from .domains import ANALYSIS_PAGINATED_OPERATIONS, ANALYSIS_SEGMENT_OPERATIONS
 from .errors import InputValidationError
 from .output_projection import project_output, validate_output_fields
 from .pagination_cli import page_options
-from .segment_snapshot import segment_snapshot
+from .segment_snapshot import segment_snapshot, validate_segment_snapshot_request
 from .segment_spec import (
     compile_segment_spec,
     prepare_segment_spec,
@@ -166,6 +166,14 @@ def run_segment_snapshot_command(
         )
     workspace = load_workspace(getattr(args, "workspace", None))
     app_id = resolve_workspace_app(workspace, args.app)
+    validate_segment_snapshot_request(
+        app_id,
+        args.ref,
+        date=args.date,
+        max_workers=args.segment_snapshot_concurrency,
+        max_pages=args.segment_snapshot_max_pages,
+        max_items=args.segment_snapshot_max_items,
+    )
     return segment_snapshot(
         build_client(),
         app_id,
