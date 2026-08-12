@@ -443,18 +443,21 @@ Agent 对明确的中英文多维查询意图返回唯一 `composite:multidim` �
     "app": "main",
     "start": "2026-08-01",
     "end": "2026-08-07",
-    "platforms": ["bytedance", "tencent"],
-    "metrics": ["stat_cost", "AppRealRegisterCnt"]
+    "platforms": ["bytedance"],
+    "metrics": ["stat_cost"]
   },
   "limits": {"max_pages": 5, "max_items": 200},
-  "output_fields": ["app_id", "date_range", "platforms", "metrics", "results", "limits"]
+  "output_fields": ["app_id", "date_range", "platform_count", "metric_count", "results", "limits"]
 }
 ```
 
 只有标量 `/app`、`/start`、`/end` 可接受 binding；`platforms/metrics` 及其元素不是动态 target。
 adapter 内平台与分页 worker 都固定为 1，多个 App 使用同层节点或 `foreach /app`，由 Plan 全局池
 并发。`max_pages` 按平台生效，`max_items` 按平台等额 floor 分配且不可借用；safe projector 对
-平台身份、顺序、预算、分页收据和结果计数重新核对。
+平台身份、顺序、预算、分页收据和结果计数重新核对。`platforms/metrics` 是 request 字段，不是
+可投影的结果字段；结果只公开它们的数量，具体平台身份随每个受控 component 返回。
+同一 `metrics` 数组必须由每个所选平台的实时元数据分别证明；原生指标名不同时用同层独立节点，
+不要在一个节点里假设不同名称具有相同业务语义。
 
 Agent 的唯一卡包含五个待填写字段与同形状 request，不选择任何业务值或自动执行。否定、导出、
 写入、策略、相邻产品、raw snapshot 以及 `bing/xiaohongshu/taptap/wechat_video` 请求不会回落为

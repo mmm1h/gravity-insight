@@ -32,8 +32,7 @@ CLI：
 
 ```powershell
 gravity promotion performance --app main --start 2026-08-01 --end 2026-08-07 `
-  --platform bytedance --platform tencent `
-  --metric stat_cost --metric AppRealRegisterCnt --concurrency 6
+  --platform bytedance --metric stat_cost --concurrency 6
 ```
 
 `--app` 接受一个 workspace alias 或正整数。`--platform` 和 `--metric` 都必须由调用方显式
@@ -48,8 +47,8 @@ result = gravity.promotion_performance(
     "main",
     "2026-08-01",
     "2026-08-07",
-    platforms=("bytedance", "tencent"),
-    metrics=("stat_cost", "AppRealRegisterCnt"),
+    platforms=("bytedance",),
+    metrics=("stat_cost",),
     max_workers=6,
     max_pages=20,
     max_items=5000,
@@ -64,8 +63,8 @@ Plan composite request：
   "app": "main",
   "start": "2026-08-01",
   "end": "2026-08-07",
-  "platforms": ["bytedance", "tencent"],
-  "metrics": ["stat_cost", "AppRealRegisterCnt"]
+  "platforms": ["bytedance"],
+  "metrics": ["stat_cost"]
 }
 ```
 
@@ -87,7 +86,8 @@ filters=[app_id EQUALS canonical_app_id]
 每个平台请求仍经过现有 schema 和 FieldPolicy；固定投影字段可离线验证，动态指标必须出现在该
 平台实时 `promotion.metric.list` 元数据中，否则在 query HTTP 前 fail closed。产品不维护第二份
 指标词典，也不把同名指标解释为跨平台同一业务口径。腾讯沿用已验证的默认 behavior timeline；
-本轮不开放平台专属请求旋钮。
+本轮不开放平台专属请求旋钮。同一指标数组会应用到每个所选平台；多平台请求只适合各平台元数据
+都证明存在的同名指标。原生指标名不同时应使用同层独立 Plan 节点，不能在 SDK 内猜映射。
 
 选择平台数为 `P` 时，每个平台一个 batch item并读取受控分页：
 

@@ -156,13 +156,16 @@ gravity materials performance --app main --app secondary `
 
 ```powershell
 gravity promotion performance --app main --start 2026-08-01 --end 2026-08-07 `
-  --platform bytedance --platform tencent `
-  --metric stat_cost --metric AppRealRegisterCnt --concurrency 6
+  --platform bytedance --metric stat_cost --concurrency 6
 ```
 
 `--platform`、`--metric` 可重复或逗号分隔。每个平台一个 batch item，分页 worker 固定 1；direct
 平台池默认 6、最大 24。`max_pages` 按平台生效，`max_items` 按平台数等额 floor 分配且不可借用。
 输出保留原生物理字段和平台声明序，不做跨平台归一、总计、排名或策略。
+完整结果可用 `--output <path>` 写入 JSON；该产品不提供 NDJSON，以免拆散平台 component、分页
+收据和 partial 失败信息。
+同一个指标数组会发给每个所选平台；多个平台只有在各自实时元数据都证明该同名物理指标时才应
+放进同一请求。平台原生指标名不同则使用同层 Plan 节点并发，SDK 不猜字段映射。
 `bing/xiaohongshu/taptap/wechat_video` 不满足共同合同，继续使用兼容的 `promotion query/snapshot`。
 
 批量 wrapper 可由机器自描述，不需要猜 JSON 字段：
