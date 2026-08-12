@@ -12,6 +12,7 @@
 | 已知 Analysis kind，指标未知 | `metadata vocabulary` → `analysis query --spec` | 2 |
 | 已知人群规则 spec | `gravity analysis segment evaluate --app ... --spec ...` | 1 |
 | 不知道人群规则合同 | `gravity agent "评估人群规则命中人数"` → `plan run` | 2 |
+| 分群详情/历史/单日结果（引用已知/未知） | 已知：`analysis segment snapshot`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
 | 已知保存分析引用 | `gravity analysis saved run --app ... --ref ...` | 1 |
 | 不知道保存分析引用 | `gravity agent "saved report templates"` → 执行返回的 Plan 节点 | 2 |
 | 看板控制面/图表重放（引用已知/未知） | 已知：`analysis dashboard snapshot` 或 `analysis dashboard run`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
@@ -37,6 +38,8 @@
 看板控制面仍用 `dashboard_snapshot`；图表执行用 `analysis dashboard run --app ... --ref ... --start ... --end ...`。后者只编译静态 Web artifact 中已证明的五类 Analysis 图表，不模拟布局、收藏或页面全局筛选，单图不支持时隔离报告。未知时 `agent "run dashboard charts"` 返回缺失 `app/ref/start/end` 的 `dashboard_analysis` 节点；自然语言不自动执行，Plan 内固定 1 worker。
 
 人群规则只接受显式紧凑 spec：Agent 强意图卡给完整 schema 和缺失的 `app/spec`，不会从自然语言生成规则。已知 spec 可直接 evaluate；交叉查询用 `segment_evaluate` composite，只有 `/app` 可绑定，结果仅 `part/percent/total`。
+
+分群检查已知精确 ID/名称与日期时直接 `gravity analysis segment snapshot --app ... --ref ... --date ...`；固定返回 detail/history/daily_result，不读取规则或成员。未知时只有同时表达分群快照/检查、详情、历史和单日计算结果的强意图才返回 `segment_snapshot` 卡；补齐 `app/ref/date` 后一次 Plan 执行，自然语言不自动执行。
 
 ## 1. 业务语义先在调用项目解析
 
@@ -104,7 +107,7 @@ gravity plan run --input plan.json --dry-run
 gravity plan run --input plan.json --concurrency 6
 ```
 
-Analysis 查询复用 `analysis_query`，人群规则用 `segment_evaluate`，看板控制面/图表用 `dashboard_snapshot`/`dashboard_analysis`。已知完整输入时一次 `plan run`；未知时 Agent 发现、调用方补齐再执行，自然语言不自动执行。同层查询由全局 pool 并发并保声明序；binding 仅可写登记目标，结果不回显 request/spec/binding 值。完整合同见 [Plan 参考](reference/plan.md)。
+Analysis 查询复用 `analysis_query`，人群规则/快照用 `segment_evaluate`/`segment_snapshot`，看板控制面/图表用 `dashboard_snapshot`/`dashboard_analysis`。已知完整输入时一次 `plan run`；未知时 Agent 发现、调用方补齐再执行，自然语言不自动执行。同层查询由全局 pool 并发并保声明序；binding 仅可写登记目标，结果不回显 request/spec/binding 值。完整合同见 [Plan 参考](reference/plan.md)。
 
 ## 4. 选择 Insight 还是 SQL
 
@@ -114,8 +117,7 @@ Analysis 查询复用 `analysis_query`，人群规则用 `segment_evaluate`，�
 2. 调用项目已经登记的 SQL 聚合产品；
 3. 报告能力缺口。
 
-即使 Insight 需要几项并发读取，只要能等价表达，也优先使用 Insight。只有跨表连接、窗口
-函数、特殊计算或已审核 Evidence 口径无法由 Insight 表达时，才使用 SQL。
+即使 Insight 需要几项并发读取，只要能等价表达，也优先使用 Insight。只有跨表连接、窗口函数、特殊计算或已审核 Evidence 口径无法由 Insight 表达时，才使用 SQL。
 
 已知 SQL 产品时直接执行，不先跑维护命令链：
 
@@ -123,9 +125,7 @@ Analysis 查询复用 `analysis_query`，人群规则用 `segment_evaluate`，�
 gravity sql query <product> --start <inclusive-iso> --end <exclusive-iso>
 ```
 
-`query` 自己校验 workspace product；Evidence 可用时附 reference，不可用或过期时附 warning，
-不阻断产品查询。不要自动循环执行 `status`、`evidence-preflight`、`verify --publish`，也不要改用 Python
-`GravityClient.execute_sql()` 绕过产品治理。Evidence 发布需要维护授权。
+`query` 自己校验 workspace product；Evidence 可用时附 reference，不可用或过期时附 warning，不阻断产品查询。不要自动循环执行 `status`、`evidence-preflight`、`verify --publish`，也不要改用 Python `GravityClient.execute_sql()` 绕过产品治理。Evidence 发布需要维护授权。
 
 ## 5. 独立任务一次并发
 

@@ -218,15 +218,7 @@ def _plan_request(
     if kind == "sql_product":
         return {"product": card.get("product")}, "sql_product"
     if kind == "composite":
-        if card.get("composite") == "dashboard_snapshot":
-            from .agent_dashboard import dashboard_plan_request
-
-            return dashboard_plan_request(card), "composite"
-        if card.get("composite") == "dashboard_analysis":
-            from .agent_dashboard import dashboard_analysis_plan_request
-
-            return dashboard_analysis_plan_request(card), "composite"
-        return {"name": card.get("composite")}, "composite"
+        return _composite_plan_request(card), "composite"
     if card.get("metadata_kind") == "table_lineage":
         return {"query": "", "kind": "table_lineage"}, "metadata_search"
     lookup_query = card.get("lookup_query")
@@ -238,6 +230,25 @@ def _plan_request(
     if card.get("app_id") is not None:
         request["app_id"] = card["app_id"]
     return request, "metadata_search"
+
+
+def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
+    """Delegate value-sensitive composite request templates to their owners."""
+
+    composite = card.get("composite")
+    if composite == "dashboard_snapshot":
+        from .agent_dashboard import dashboard_plan_request
+
+        return dashboard_plan_request(card)
+    if composite == "dashboard_analysis":
+        from .agent_dashboard import dashboard_analysis_plan_request
+
+        return dashboard_analysis_plan_request(card)
+    if composite == "segment_snapshot":
+        from .agent_segment_snapshot import segment_snapshot_plan_request
+
+        return segment_snapshot_plan_request(card)
+    return {"name": composite}
 
 
 def _handoff_requirements(

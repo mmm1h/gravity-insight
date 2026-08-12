@@ -321,6 +321,39 @@ unsupported，其他 sibling 继续。已知 selector 是一次 `plan run`；未
 已知 app/spec 时一次 `plan run`。未知合同则一次 `gravity agent "评估人群规则命中人数"`，
 调用方按卡片 schema 填写 `app/spec`，再执行 Plan，总共两次；自然语言不会生成规则或自动执行。
 
+## Segment Snapshot composite
+
+分群详情、版本历史和指定日期的单日计算结果使用独立的 `segment_snapshot` composite：
+
+```json
+{
+  "schema_version": "gravity.plan.v1",
+  "budget": {"max_workers": 6, "max_total_items": 200},
+  "nodes": [
+    {
+      "id": "segment_control_plane",
+      "kind": "composite",
+      "request": {
+        "name": "segment_snapshot",
+        "app": "main",
+        "ref": "High-value users",
+        "date": "2026-08-01"
+      },
+      "limits": {"max_pages": 5, "max_items": 200},
+      "output_fields": ["segment", "results", "scopes"]
+    }
+  ]
+}
+```
+
+`ref` 只接受稳定 ID 或精确名称，`date` 只接受一个 `YYYY-MM-DD`；名称歧义或日期无效均在
+受控边界失败。节点至少预留 4 items，并固定按 `detail/history/daily_result` 顺序返回，局部失败
+不取消 sibling。adapter 内部 worker 固定 1，由 Plan 全局 pool 管理跨节点并发。
+
+只有 `/app` 可接受显式标量 binding；`ref/date` 是提交前完成的 literal。输出不包含成员、用户
+标识、规则定义、request、binding 值或原始异常。已知输入时一次 `plan run`；未知时 Agent 强
+意图卡给出 `app/ref/date` 占位符，调用方补齐并执行，仍是“发现一次 + Plan 一次”。
+
 预检完整验证 schema、依赖、环、pointer、kind、动态 target 与最坏预算；失败时零网络请求。
 节点仅限 `run`、`sql_product`、`metadata_search`、`composite`，不接受裸 SQL、任意
 HTTP/Python、表达式、join/reduce、条件或循环。

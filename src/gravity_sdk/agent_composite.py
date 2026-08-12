@@ -6,6 +6,11 @@ from collections.abc import Mapping
 from typing import Any
 
 
+_STRICT_COMPOSITES = frozenset(
+    {"dashboard_analysis", "dashboard_snapshot", "segment_snapshot"}
+)
+
+
 def composite_card(
     query: str, normalized: str, domain: str | None, definition: Mapping[str, Any]
 ) -> dict[str, Any] | None:
@@ -45,8 +50,6 @@ def composite_card(
 def _selection(
     query: str, domain: str | None, definition: Mapping[str, Any]
 ) -> tuple[str, str, tuple[str, ...], bool] | None:
-    from .agent_dashboard import dashboard_analysis_query, dashboard_snapshot_query
-
     name, selected_domain = str(definition["name"]), str(definition["domain"])
     accepted = tuple(
         str(value) for value in definition.get("accepted_domains", (selected_domain,))
@@ -54,18 +57,35 @@ def _selection(
     if domain is not None and domain not in accepted:
         return None
     intent = tuple(str(value) for value in definition.get("intent_terms", ()))
-    exact_selector = name in {"dashboard_analysis", "dashboard_snapshot"} and (
-        query.strip().casefold()
-        in {name.casefold(), f"composite:{name}".casefold()}
-    )
-    dashboard = (
-        name == "dashboard_snapshot" and dashboard_snapshot_query(query)
-    ) or (
-        name == "dashboard_analysis" and dashboard_analysis_query(query)
-    ) or exact_selector
-    if intent and not dashboard and not any(term in query.casefold() for term in intent):
+    strict_product = _strict_composite_query(name, query)
+    if name in _STRICT_COMPOSITES and not strict_product:
         return None
-    return name, selected_domain, accepted, dashboard
+    if intent and not strict_product and not any(term in query.casefold() for term in intent):
+        return None
+    return name, selected_domain, accepted, strict_product
+
+
+def _strict_composite_query(name: str, query: str) -> bool:
+    """Keep intent recognizers independent from generic catalog matching."""
+
+    selected = query.strip().casefold()
+    if name in _STRICT_COMPOSITES and selected in {
+        name.casefold(), f"composite:{name}".casefold()
+    }:
+        return True
+    if name == "dashboard_snapshot":
+        from .agent_dashboard import dashboard_snapshot_query
+
+        return dashboard_snapshot_query(query)
+    if name == "dashboard_analysis":
+        from .agent_dashboard import dashboard_analysis_query
+
+        return dashboard_analysis_query(query)
+    if name == "segment_snapshot":
+        from .agent_segment_snapshot import segment_snapshot_query
+
+        return segment_snapshot_query(query)
+    return False
 
 
 def _exact_match(match: Mapping[str, Any], normalized: str) -> dict[str, Any]:

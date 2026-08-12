@@ -18,6 +18,7 @@ gravity census <command>      前端路由盘点
 gravity analysis context      并发读取一个 App 的分析上下文
 gravity analysis dashboard snapshot  读取一个看板的控制面快照
 gravity analysis dashboard prepare|run  编译或执行一个看板的受支持图表
+gravity analysis segment snapshot  读取一个分群的详情、历史与单日计算结果
 gravity analysis saved ...    列出、读取、准备或严格重放保存分析
 gravity apps snapshot         并发读取一个 App 的治理快照
 gravity attribution snapshot  并发读取一个 App 的归因配置快照
@@ -133,6 +134,7 @@ workspace 已绑定的 App alias，并按 alias 排序。外层并发保序且�
 ```powershell
 gravity analysis context --app main --concurrency 6
 gravity analysis dashboard snapshot --app main --ref <id-or-exact-name> --concurrency 5
+gravity analysis segment snapshot --app main --ref <id-or-exact-name> --date <YYYY-MM-DD> --concurrency 3
 gravity apps snapshot --app main --concurrency 6
 gravity attribution snapshot --app main --concurrency 6
 ```
@@ -140,7 +142,7 @@ gravity attribution snapshot --app main --concurrency 6
 `--app` 接受 workspace alias 或正整数；归因命令继续接受 `--app-id` 兼容别名。Analysis
 context 固定 13 个词汇/模板来源，App snapshot 固定 6 个治理来源；Attribution snapshot 固定
 覆盖当前 8 个 stable attribution operation，其中两个 postback map 自动读取全部页。这三者
-默认并发 6；Dashboard snapshot 默认 5；所有组合上限均为 24，按固定来源顺序返回并隔离局部
+默认并发 6；Dashboard snapshot 默认 5，Segment snapshot 默认 3；所有组合上限均为 24，按固定来源顺序返回并隔离局部
 失败。Attribution snapshot 不包含仍为 draft 的聚合归因和用户/设备级明细查询。
 
 ### Governed export
@@ -361,6 +363,25 @@ gravity analysis dashboard run --app main --ref "Growth Overview" `
 引用已知时 CLI/SDK 是一次顶层调用。引用或能力未知时先运行
 `gravity agent "run dashboard charts"`，填入卡片缺失的 `app/ref/start/end` 后执行其 Plan node，
 总共两次；自然语言卡永远不自动执行。
+
+### Segment Snapshot v1
+
+已知 App、分群稳定 ID/精确名称和单日日期时，一次调用替代 Web 中的目录、详情、历史和当日
+结果页面切换：
+
+```powershell
+gravity analysis segment snapshot --app main --ref <id-or-exact-name> `
+  --date 2026-08-01 --concurrency 3 --max-pages 5 --max-items 200
+```
+
+命令先精确解析 `--ref`，歧义或不存在时 fail closed；随后固定按 `detail/history/daily_result`
+顺序读取并隔离局部失败。`--date` 是单个 `YYYY-MM-DD`，不表示趋势时间窗。结果不包含成员、
+用户标识、规则定义、request 或原始异常；结果 schema 是 `gravity-insight.segment-snapshot.v1`，
+固定 `source_count=3`，最小 `max-items` 为 4（目录命中与三个来源）。
+
+已知输入时 CLI/SDK 是一次调用。未知时只有明确包含“分群快照/检查 + 详情 + 历史 + 单日计算
+结果”的强意图会返回 `segment_snapshot` 卡；调用方补齐 `app/ref/date` 后执行 Plan，共两次。
+泛分群、规则评估、成员/用户列表、导出和写操作不会命中，且自然语言不会自动执行。
 
 ### Segment Rule Spec v1
 

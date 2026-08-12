@@ -77,6 +77,9 @@ dashboard_results = gravity.run_dashboard_analysis(
     "main", "Growth Overview", start="2026-08-01", end="2026-08-08",
     max_workers=6, max_charts=32,
 )
+segment = gravity.segment_snapshot(
+    "main", "High-value users", date="2026-08-01", max_workers=3
+)
 app = gravity.app_snapshot("main", max_workers=6)
 attribution = gravity.attribution_snapshot("main", max_workers=6)
 
@@ -158,6 +161,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `analysis_query()` | 使用同一编译器执行 `event/funnel/retention/property/scatter` 稳定查询 |
 | `prepare_segment_evaluation()` | 编译并离线校验紧凑 Segment Rule Spec，返回脱敏预览且不执行评估 |
 | `segment_evaluate()` | 执行受治理的聚合人群规则人数/占比评估 |
+| `segment_snapshot()` | 按稳定 ID 或精确名称读取分群 detail/history/daily_result；不返回成员或规则 |
 | `saved_analyses()` | 列出一个 App 的安全保存分析身份，不读取 opaque config |
 | `get_saved_analysis()` | 按 ID 或精确名称检查 Strict Replay 资格，不返回 config |
 | `prepare_saved_analysis()` | 读取保存定义并严格编译，不执行最终 Analysis 查询 |
@@ -269,6 +273,16 @@ Agent 只有在中英文意图同时明确“人群/受众规则、人数或占�
 `analysis.segment.rule.spec` 卡；卡片包含完整紧凑 schema 和缺失的 `app/spec`，不会生成规则值
 或自动执行。泛分群列表、成员、历史、详情与导出继续走各自产品。
 
+`segment_snapshot(app, ref, *, date, max_workers=3, max_pages=1000, max_items=100000,
+workspace=None)` 先在已绑定 workspace App 中按稳定 ID 或精确名称解析一个分群，再固定按
+`detail/history/daily_result` 顺序读取详情、版本历史和指定日期的单日计算结果。名称歧义失败；
+`date` 必须是单个 ISO 日期。它不返回成员、用户标识或规则定义，`max_workers` 上限为 24，
+`max_items` 最少为 4。
+
+已知 app/ref/date 是一次 SDK 调用。未知时 Agent 只对完整的快照检查语义返回缺失三项输入的
+`composite:segment_snapshot` 节点，调用方补齐后执行一次 Plan；规则评估仍由
+`segment_evaluate()` 独立处理。
+
 保存分析四个方法都接受 workspace App alias 或正整数。列表只返回受合同允许的身份字段；
 `get/prepare/run` 的 reference 只接受稳定 ID 或精确名称，歧义时失败。Strict Replay 仅支持
 `analysis_event/funnel/retention/scatter/user_property`，并要求保存 config 原样通过
@@ -291,6 +305,10 @@ Analysis Query Plan 通过现有 `validate_plan()` / `execute_plan()` 执行
 Segment Rule 使用同一公开 `validate_plan()` / `execute_plan()`，composite request 为
 `name="segment_evaluate"`、`app/spec` 和可选 `start/end`。只有 `/app` 可绑定；规则必须是提交前
 完成的 literal spec，节点级 `output_fields` 仅允许 `part/percent/total`。
+
+Segment Snapshot request 固定为 `name="segment_snapshot"` 与必填 `app/ref/date`；只有 `/app`
+可绑定，`ref` 是稳定 ID 或精确名称，`date` 是 `YYYY-MM-DD` literal。节点预算至少 4 items，
+adapter 内 worker 固定 1；输出保持 detail/history/daily_result 声明顺序并隔离局部失败。
 
 Single-user journey 也使用登记 composite：request 为 `name="user_journey"`，必填
 `app/client_id` 以及单个 `date` 或成对 `start/end`，可选 `page/page_size/fields/events`。只有
