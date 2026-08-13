@@ -42,6 +42,7 @@ _ENGLISH_BLOCKED = frozenset(
 )
 _CHINESE_SUBJECTS = ("多维", "多个维度", "交叉维度", "维度交叉")
 _CHINESE_ACTIONS = ("查询", "报表", "分析", "统计", "合计")
+_CHINESE_ORDER_DIRECTORY = ("订单目录", "订单明细", "订单详情", "订单列表")
 _CHINESE_BLOCKED = (
     "模板", "布局", "收藏", "权限", "成员", "经营", "业务脉搏", "看板", "事件分析",
     "漏斗", "留存", "属性分析", "分布分析", "保存", "已存", "创建", "更新", "删除",
@@ -103,6 +104,7 @@ def multidim_query(query: str) -> bool:
         any(term in compact for term in _CHINESE_SUBJECTS)
         and any(term in compact for term in _CHINESE_ACTIONS)
         and not any(term in compact for term in _CHINESE_BLOCKED)
+        and not any(term in compact for term in _CHINESE_ORDER_DIRECTORY)
     )
 
 
@@ -119,6 +121,14 @@ def _english_multidim_query(selected: str) -> bool:
         has_subject
         and bool(words & _ENGLISH_ACTIONS)
         and not bool(words & _ENGLISH_BLOCKED)
+        and not _english_order_directory_conflict(words)
+    )
+
+
+def _english_order_directory_conflict(words: frozenset[str]) -> bool:
+    return bool(
+        words & {"order", "orders"}
+        and words & {"directory", "detail", "details"}
     )
 
 

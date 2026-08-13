@@ -62,6 +62,8 @@ def dashboard_snapshot_query(query: str) -> bool:
     """Recognize control-plane requests without capturing chart execution."""
 
     selected = query.strip().casefold()
+    if _order_directory_conflict(selected):
+        return False
     if any(term in selected for term in ("chart", "图表")):
         return False
     english = (
@@ -81,6 +83,8 @@ def dashboard_analysis_query(query: str) -> bool:
     """Recognize explicit chart execution/replay without capturing snapshots."""
 
     selected = query.strip().casefold()
+    if _order_directory_conflict(selected):
+        return False
     control_terms = (
         "snapshot",
         "control plane",
@@ -113,6 +117,16 @@ def dashboard_analysis_query(query: str) -> bool:
         "看板" in selected
         and "图表" in selected
         and any(term in selected for term in chinese_action)
+    )
+
+
+def _order_directory_conflict(selected: str) -> bool:
+    return any(
+        term in selected
+        for term in (
+            "order directory", "order detail", "订单目录", "订单明细",
+            "订单详情", "订单列表",
+        )
     )
 
 

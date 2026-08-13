@@ -13,6 +13,24 @@ from gravity_sdk.agent_order_directory import (
     ORDER_DIRECTORY_SAFE_FIELDS, order_directory_query,
 )
 from gravity_sdk.plan import PlanAdapter, PlanAdapters, execute_plan
+
+
+_ADJACENT_GAPS = (
+    "order directory material performance", "material performance order directory",
+    "订单目录素材表现", "素材表现订单目录", "order directory multidim report",
+    "multidimensional order directory report", "订单目录多维报表", "多维报表订单目录",
+)
+_CONFIRMED_GAPS = (
+    "order directory promotion performance", "promotion performance order directory",
+    "订单目录推广表现", "推广表现订单目录", "order directory dashboard snapshot",
+    "dashboard snapshot order directory", "订单目录看板快照", "看板快照订单目录",
+    "order directory run dashboard charts", "run dashboard charts order directory",
+    "订单目录运行看板图表", "运行看板图表订单目录",
+    "order directory user journey", "user journey order directory",
+    "订单目录用户旅程", "用户旅程订单目录",
+)
+
+
 class NoDiscovery:
     def operations(self, **_options):
         raise AssertionError("must not scan operations")
@@ -61,6 +79,7 @@ class OrderDirectoryAgentTests(unittest.TestCase):
             "订单目录变现", "推广订单目录", "素材订单明细", "看板订单目录", "保存订单明细",
             "分群订单目录", "权限界面订单目录", "按字段筛选订单明细", "跨日订单报表",
             "非订单目录", "拒绝订单明细", "export 订单明细", "订单目录 refund", "business pulse order directory", "经营脉搏订单目录",
+            *_ADJACENT_GAPS, *_CONFIRMED_GAPS,
         )
         for query in queries:
             with self.subTest(query=query):
@@ -71,6 +90,9 @@ class OrderDirectoryAgentTests(unittest.TestCase):
                 self.assertNotIn("secret-42", json.dumps(result, ensure_ascii=False))
         self.assertEqual("capability_gap", discover_capabilities(
             "please run analysis.order_detail.list secret-42", client=NoDiscovery())["status"])
+        for query in (*_ADJACENT_GAPS, *_CONFIRMED_GAPS):
+            self.assertEqual("capability_gap", discover_capabilities(
+                query, client=NoDiscovery())["status"])
     def test_adjacent_products_and_exact_raw_selectors_stay_unique(self):
         adjacent = (("order split trace", "order_split_trace"),
                     ("run saved analysis order directory secret-42", "saved_analysis"), ("run saved order directory", "saved_analysis"), ("运行已保存的订单目录", "saved_analysis"),
@@ -95,9 +117,10 @@ class OrderDirectoryAgentTests(unittest.TestCase):
     def test_pure_batch_deep_copies_and_plan_node_dry_runs(self, _metadata):
         result = capabilities_many(
             ["order directory", "订单明细", "export order details", "跨日订单报表",
-             "order details from 2026-08-01 to 2026-08-08", "analysis.order_detail.list secret"], client=NoDiscovery(),
+             "order details from 2026-08-01 to 2026-08-08", "analysis.order_detail.list secret",
+             *_ADJACENT_GAPS], client=NoDiscovery(),
             workspace=SimpleNamespace(recipes={}, products={}, datasources={}))
-        self.assertEqual(["success", "success", "capability_gap", "capability_gap", "capability_gap", "capability_gap"],
+        self.assertEqual(["success", "success"] + ["capability_gap"] * (4 + len(_ADJACENT_GAPS)),
                          [item["status"] for item in result["results"]])
         first = discover_capabilities("order directory", client=None)["candidates"][0]
         first["input_schema"]["app"]["type"] = first["input_template"]["date"] = "poison"

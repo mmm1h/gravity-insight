@@ -39,6 +39,7 @@ _ENGLISH_BLOCKED = frozenset(
     }
 )
 _CHINESE_ACTIONS = ("表现", "效果", "报表")
+_CHINESE_ORDER_DIRECTORY = ("订单目录", "订单明细", "订单详情", "订单列表")
 _CHINESE_BLOCKED = (
     "导出", "下载", "素材库", "相册", "标签", "审核", "收藏", "回收", "上传",
     "模板", "看板", "推广", "经营", "业务脉搏", "多维", "创建", "更新", "删除",
@@ -102,12 +103,7 @@ def material_performance_query(query: str) -> bool:
     selected = " ".join(query.strip().casefold().split())
     words = frozenset(_ASCII_WORD.findall(selected))
     compact = "".join(selected.split())
-    if words & _ENGLISH_BLOCKED or _ENGLISH_NEGATION_PHRASE.search(selected):
-        return False
-    if (
-        any(term in compact for term in _CHINESE_BLOCKED)
-        or _CHINESE_BIE_NEGATION.search(selected)
-    ):
+    if _blocked_query(selected, words, compact):
         return False
     if selected in _EXACT:
         return True
@@ -121,6 +117,25 @@ def material_performance_query(query: str) -> bool:
         "素材" in compact
         and any(term in compact for term in _CHINESE_ACTIONS)
     )
+
+
+def _blocked_query(
+    selected: str, words: frozenset[str], compact: str
+) -> bool:
+    return bool(
+        words & _ENGLISH_BLOCKED
+        or _ENGLISH_NEGATION_PHRASE.search(selected)
+        or _order_directory_conflict(words, compact)
+        or any(term in compact for term in _CHINESE_BLOCKED)
+        or _CHINESE_BIE_NEGATION.search(selected)
+    )
+
+
+def _order_directory_conflict(words: frozenset[str], compact: str) -> bool:
+    return bool(
+        words & {"order", "orders"}
+        and words & {"directory", "detail", "details"}
+    ) or any(term in compact for term in _CHINESE_ORDER_DIRECTORY)
 
 
 def material_performance_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
