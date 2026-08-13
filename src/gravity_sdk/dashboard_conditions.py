@@ -13,6 +13,7 @@ from .errors import (
     ErrorDetail,
     GravityInsightError,
     LocalIOError,
+    exit_code_for_error,
 )
 
 
@@ -100,12 +101,13 @@ def page_condition_gap_envelope(
 ) -> dict[str, Any]:
     """Return one value-free product envelope for an unprovable replay."""
 
-    error = unsupported_page_condition_error().to_dict()
+    detail = unsupported_page_condition_error()
+    error = detail.to_dict()
     return {
         "schema_version": schema_version,
         "ok": False,
         "status": "unsupported",
-        "exit_code": 2,
+        "exit_code": exit_code_for_error(detail),
         "total_count": 0,
         "app_id": app_id,
         "dashboard": dict(dashboard),

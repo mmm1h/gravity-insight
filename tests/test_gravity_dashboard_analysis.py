@@ -103,7 +103,7 @@ class DashboardAnalysisTests(unittest.TestCase):
         result = run_dashboard_analysis(
             blocked, 17, 3, start="2026-08-01", end="2026-08-08"
         )
-        self.assertEqual((False, "unsupported", 2), (
+        self.assertEqual((False, "unsupported", 4), (
             result["ok"], result["status"], result["exit_code"]
         ))
         self.assertEqual((True, 1, False), (
