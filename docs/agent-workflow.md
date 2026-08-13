@@ -218,3 +218,9 @@ gravity find "retention"
 ## 10. 交付
 至少说明：业务口径、`operation_id` 或 SQL product、App、时间范围、选择 Insight/SQL 的理由、成功/空/部分失败/能力缺口，以及不能支持的结论。不要把“没有查到”改写成“没有发生”。
 CLI 退出码：`0` 成功（包括合同允许的 empty）、`2` 调用方错误、`3` 上游/权限错误、`4` 本地合同/隐私/策略错误。批量命令按最高严重级别聚合退出码，仍需读取每项结果。
+
+## 入口补充：同 spec 跨期对比
+
+| 已知信息 | 直接执行 | 正常命令数 |
+| --- | --- | --- |
+| 同一 Analysis spec 的两个明确日期窗 | `analysis query --spec ... --compare-start ... --compare-end ...`；返回双窗状态和已登记物理指标 delta | 1 |
