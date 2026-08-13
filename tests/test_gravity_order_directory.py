@@ -47,6 +47,7 @@ def _read(rows, *, workers=3, status=None):
             "total_items": len(rows),
             "has_more": False,
             "pages_fetched": 1,
+            "fetch_strategy": "single_page",
             "max_workers": workers,
         },
     }
@@ -121,15 +122,73 @@ class OrderDirectoryTests(unittest.TestCase):
         client = GravityInsightClient._from_manifest_for_tests(
             {"manifest_version": 1, "operations": operations}, transport=transport
         )
-
         result = order_directory(
             client, 7, DAY, max_workers=3, max_pages=5, max_items=10
         )
-
         self.assertEqual("success", result["status"])
         self.assertEqual([1, 2], [row["Amount"] for row in result["data"]["list"]])
         self.assertEqual(2, result["page"]["pages_fetched"])
         self.assertEqual(2, len(transport.calls))
+
+    def test_page_strategy_receipt_must_be_reachable(self):
+        def receipt(rows, strategy, fetched, total_pages, workers):
+            value = _read(rows, workers=workers)
+            value["page"].update({
+                "fetch_strategy": strategy,
+                "pages_fetched": fetched,
+                "total_pages": total_pages,
+            })
+            return value
+
+        valid = (
+            ([ROW], "single_page", 1, 1, 6),
+            ([ROW], "serial_known_total", 2, 2, 6),
+            ([ROW], "serial_known_total", 3, 3, 1),
+            ([ROW], "parallel_known_total", 3, 3, 6),
+            ([ROW], "serial_unknown_total", 1, None, 6),
+            ([ROW] * 100, "serial_unknown_total", 2, None, 6),
+            ([ROW] * 100, "serial_unknown_total", 2, 2, 6),
+        )
+        invalid = (
+            ([ROW], None, 1, 1, 1),
+            ([ROW], "parallel_known_total", 1, 1, 1),
+            ([ROW], "single_page", 2, 2, 1),
+            ([ROW], "single_page", 1, None, 1),
+            ([ROW], "serial_known_total", 3, 3, 6),
+            ([ROW], "parallel_known_total", 2, 2, 6),
+            ([ROW], "serial_unknown_total", 1, 1, 1),
+            ([ROW] * 100, "serial_unknown_total", 1, None, 1),
+            ([ROW], "serial_unknown_total", 2, None, 1),
+            ([ROW] * 101, "single_page", 1, 1, 1),
+            ([ROW] * 100, "serial_unknown_total", 5, None, 1),
+        )
+        for rows, strategy, fetched, total_pages, workers in valid:
+            with self.subTest(valid=strategy, fetched=fetched, workers=workers):
+                result = order_directory(
+                    _Client(receipt(rows, strategy, fetched, total_pages, workers)),
+                    7, DAY, max_workers=workers, max_pages=5, max_items=200,
+                )
+                self.assertEqual("success", result["status"])
+        for rows, strategy, fetched, total_pages, workers in invalid:
+            with self.subTest(invalid=strategy, fetched=fetched, workers=workers):
+                value = receipt(rows, strategy, fetched, total_pages, workers)
+                if strategy is None:
+                    value["page"].pop("fetch_strategy")
+                result = order_directory(
+                    _Client(value), 7, DAY, max_workers=workers,
+                    max_pages=5, max_items=200,
+                )
+                self.assertEqual("contract_changed", result["status"])
+
+        safe = order_directory(
+            _Client(_read([ROW], workers=1)), 7, DAY,
+            max_workers=1, max_pages=5, max_items=200,
+        )
+        safe["page"].update({"total_pages": None, "pages_fetched": 2})
+        rebuilt = sanitize_order_directory_result(
+            safe, "7", DAY, max_pages=5, max_items=200, max_workers=1,
+        )
+        self.assertEqual("contract_changed", rebuilt["status"])
 
     def test_exact_request_success_empty_and_validation(self):
         for rows, expected in (([ROW], "success"), ([], "empty")):

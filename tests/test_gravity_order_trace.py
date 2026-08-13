@@ -34,7 +34,8 @@ def _parent(rows, *, workers=3, status=None):
         "page": {
             "number": 1, "size": 100, "item_count": len(rows),
             "total_pages": 1, "total_items": len(rows), "has_more": False,
-            "pages_fetched": 1, "max_workers": workers,
+            "pages_fetched": 1, "fetch_strategy": "single_page",
+            "max_workers": workers,
         },
     }
 
@@ -168,6 +169,29 @@ class OrderSplitTraceTests(unittest.TestCase):
             order_split_trace(first, 7, DAY, "parent-1", max_workers=1)["status"],
         )
         self.assertEqual(1, len(first.calls))
+
+        for strategy, fetched, total_pages, workers in (
+            (None, 1, 1, 1),
+            ("parallel_known_total", 1, 1, 1),
+            ("single_page", 2, 2, 1),
+            ("serial_known_total", 3, 3, 6),
+        ):
+            with self.subTest(strategy=strategy):
+                parent = _parent([_row()], workers=workers)
+                parent["page"].update({
+                    "fetch_strategy": strategy,
+                    "pages_fetched": fetched,
+                    "total_pages": total_pages,
+                })
+                if strategy is None:
+                    parent["page"].pop("fetch_strategy")
+                client = _Client(parent)
+                result = order_split_trace(
+                    client, 7, DAY, "parent-1", max_workers=workers,
+                    max_pages=5, max_items=10,
+                )
+                self.assertEqual("contract_changed", result["status"])
+                self.assertEqual(1, len(client.calls))
 
         second = _Client(
             _parent([_row()], workers=1),

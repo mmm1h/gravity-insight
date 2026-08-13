@@ -157,6 +157,7 @@ def complete_order_rows(
         len(rows),
         max_pages=max_pages,
         max_workers=max_workers,
+        require_strategy=True,
     )
     return (rows, page) if page is not None else None
 
@@ -167,6 +168,7 @@ def complete_page_receipt(
     *,
     max_pages: int,
     max_workers: int,
+    require_strategy: bool = False,
 ) -> dict[str, Any] | None:
     """Return a smaller safe receipt only when the raw page is complete."""
 
@@ -180,8 +182,18 @@ def complete_page_receipt(
     if not _valid_page_totals(total_pages, total_items, fetched, count):
         return None
     strategy = value.get("fetch_strategy")
-    if strategy is not None and (
-        not isinstance(strategy, str) or strategy not in _FETCH_STRATEGIES
+    if require_strategy and not isinstance(strategy, str):
+        return None
+    strategies = (strategy,) if isinstance(strategy, str) else _FETCH_STRATEGIES
+    if not any(
+        _valid_fetch_receipt(
+            candidate,
+            fetched=fetched,
+            total_pages=total_pages,
+            max_workers=max_workers,
+            count=count,
+        )
+        for candidate in strategies
     ):
         return None
     return {
@@ -294,6 +306,38 @@ def _valid_page_totals(
     return _complete_page_total(total_pages, fetched, count) and (
         _complete_item_total(total_items, count)
     )
+
+
+def _valid_fetch_receipt(
+    strategy: str,
+    *,
+    fetched: int,
+    total_pages: int | None,
+    max_workers: int,
+    count: int,
+) -> bool:
+    if strategy not in _FETCH_STRATEGIES or count > 100 * fetched:
+        return False
+    if strategy == "single_page":
+        return fetched == 1 and total_pages in {0, 1}
+    if strategy == "serial_known_total":
+        return bool(
+            fetched >= 2
+            and total_pages == fetched
+            and (max_workers == 1 or fetched == 2)
+        )
+    if strategy == "parallel_known_total":
+        return fetched >= 3 and total_pages == fetched and max_workers > 1
+    return _valid_unknown_receipt(fetched, total_pages, count)
+
+
+def _valid_unknown_receipt(
+    fetched: int, total_pages: int | None, count: int
+) -> bool:
+    if fetched == 1:
+        return total_pages is None and count < 100
+    minimum = (fetched - 1) * 100 if total_pages is None else 100
+    return total_pages in {None, fetched} and count >= minimum
 
 
 def false_or_absent(value: Any) -> bool:
