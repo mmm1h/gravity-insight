@@ -7,7 +7,11 @@ from collections.abc import Mapping
 from dataclasses import replace
 from typing import Any
 
-from .analysis_spec import ANALYSIS_QUERY_OPERATIONS, validate_query_spec
+from .analysis_spec import (
+    ANALYSIS_QUERY_OPERATIONS,
+    compile_query_spec,
+    validate_query_spec,
+)
 from .output_projection import validate_output_fields
 from .plan import AdapterContext
 from .plan_adapter_support import (
@@ -21,7 +25,7 @@ from .plan_adapter_support import (
 
 ANALYSIS_QUERY_NAME = "analysis_query"
 ANALYSIS_QUERY_REQUEST_FIELDS = frozenset(
-    {"name", "kind", "app", "spec", "start", "end"}
+    {"name", "kind", "app", "spec", "start", "end", "compare_start", "compare_end"}
 )
 _ANALYSIS_OPERATIONS = frozenset(ANALYSIS_QUERY_OPERATIONS.values())
 _SAFE_ENVELOPE_FIELDS = frozenset(
@@ -39,6 +43,11 @@ _SAFE_ENVELOPE_FIELDS = frozenset(
         "warnings",
         "error",
         "output_fields",
+        "kind",
+        "network_called",
+        "windows",
+        "delta",
+        "next_action",
     }
 )
 _SAFE_ERROR_FIELDS = frozenset(
@@ -82,6 +91,31 @@ def validate_analysis_query_plan(
         start=request.get("start"),
         end=request.get("end"),
     )
+    compare_start, compare_end = request.get("compare_start"), request.get("compare_end")
+    if (compare_start is None) != (compare_end is None):
+        raise input_error(
+            "analysis query compare_start and compare_end must be provided together",
+            "compare_start/compare_end",
+        )
+    if compare_start is not None:
+        if context.output_fields:
+            raise input_error(
+                "analysis period compare does not accept single-window output_fields",
+                "output_fields",
+            )
+        if compiled.kind == "property":
+            raise input_error(
+                "property Analysis has no governed date-window input",
+                "compare_start/compare_end",
+            )
+        compile_query_spec(
+            compiled.kind,
+            spec,
+            workspace=workspace,
+            app=selected_app,
+            start=compare_start,
+            end=compare_end,
+        )
     if context.output_fields:
         validate_output_fields(
             insight.schema(compiled.operation_id),
@@ -110,6 +144,9 @@ def execute_analysis_query_plan(
         app=request.get("app"),
         start=request.get("start"),
         end=request.get("end"),
+        compare_start=request.get("compare_start"),
+        compare_end=request.get("compare_end"),
+        max_workers=1,
         workspace=context.workspace,
         output_fields=context.output_fields or None,
     )

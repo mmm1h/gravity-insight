@@ -27,6 +27,9 @@ _SCALAR_QUERY_ARGUMENTS = (
     "app",
     "query_spec_dry_run",
     "spec_schema",
+    "compare_start",
+    "compare_end",
+    "compare_concurrency",
 )
 
 
