@@ -27,6 +27,31 @@
 
 | `attribution.attribution_detail.query` | `draft` | 本轮 0 次请求，且无既有 live probe；无样本，分页未验证；无父绑定。 | `not_probed`、`pagination_unverified`、`request_binding_unverified`、`response_schema_unverified` | 必须先取得经批准的测试级标识来源、完整请求绑定和隐私边界；不得使用任意用户级设备标识。证据不足时保持不探测。 |
 
+## 2026-08-14 追加判定：六条缺失动线批量定性
+
+生产探测前预估 0 次业务请求，另留 6 次应急上限；实际 0 次。实际分类为
+`success=0 / empty=0 / permission_unavailable=0 / semantic_error=0 / other=0`。
+本地读语义 preflight 在凭据和 transport 之前拦截 7 个弱证据 POST；这些本地阻断不计业务请求，
+也不能归入线上 `other`。另外从 census 已记录的精确 URL 分段读取同一报表 bundle 6 次，
+仅用于静态控制流取证，不调用业务 API、不使用凭据。
+
+| 动线 | 判定 | 已有证据与精确阻塞 | 下一轮最有希望的取证 |
+| --- | --- | --- | --- |
+| 查找自有、共享和 MasterKey 报表并读取其定义 | **合同阻塞** | `report.masterkey_report_group.list`、`report.report.list`、`report.shared_to_me.list` 均被读语义闸门拦截；三者只有 `read_action_path_token`，旧空 receipt 又都是 `method_verified=false`。`report.report.detail` 是 GET，但列表未产出父候选。 | 分析 MasterKey/report/shared 对应 bundle 的装载控制流并形成逐 route 的 read confirmation；之后由有报表数据的租户或调用方样本提供一个父项，再做最小 detail。 |
+| 查看报表订阅清单 | **合同阻塞** | `NewReportCenter-Dxgo5EkI.js` 的 `reportSubscribe` 控制流把 `POST /subscribe/list/` 单独用于加载表格，body 为 `page/page_size/filters`，响应只读 `list/page_info.total_number`；create/edit/delete/export 是独立路由。因此 list 是读取，不是订阅 mutation。但当前确认文件没有该 route，preflight 仍失败，且 item schema 未在线证明。 | 复核并登记同一 bundle 的静态读证据，再做 1 次 `page=1/page_size=1` probe；非空时只审查表格实际消费字段。 |
+| 查找可用的媒体报表 | **合同阻塞** | `report.media_report.list` 被读语义闸门拦截；`app_id/ad_platform` 的 caller-bound 来源未证实，旧空样本不能证明猜测绑定正确，item schema 未成立。 | 分析 media-report bundle 的调用参数来源与列表消费；形成 read confirmation 后才做最短窗口、第一页、最小页大小 probe。 |
+| 查找当前账号可读的 App 项目 | **合同阻塞** | `app.project.list` 被读语义闸门拦截；旧空 receipt 虽证明分页壳，但 `method_verified=false`，不能排除请求合同或语义问题，也就不能定为数据阻塞。 | 分析 `appManageIndex-DCdX2wdf.js` 的列表装载与响应消费，登记静态读证据后做 1 次最小第一页 probe。 |
+| 查看 App 的 OneLink 与公开信息绑定 | **合同阻塞** | `app.onelink.list` 是 GET，稳定父绑定、分页和重复空目标已证明，当前账号没有可供下钻的 OneLink 项；但 `app.app_info.get` 虽也是 GET，历史 probe 使用的 URL 没有可信 caller 绑定，响应合同也未证实。组合动线仍卡合同。 | 从 appManage bundle 恢复 `fetch_app_info` 的 URL 来源与有效值约束，再用调用方提供的公开测试 URL 做 1 次最小 GET。 |
+| 按平台、广告位和日期汇总变现结果（D28） | **合同阻塞** | `app.monetization_app.list` 被读语义闸门拦截；`account/monetization_platform` 的来源和值域未绑定，旧空 receipt 不能证明请求有效，且非空 item schema 未成立。 | 分析 csj/tobid bundle 中 account 与平台的来源和列表消费；形成 read confirmation 后才做 1 次 `page=1/page_size=1` probe。 |
+
+**闸门命中：** `report.masterkey_report_group.list`、`report.report.list`、
+`report.shared_to_me.list`、`report.subscribe.list`、`report.media_report.list`、
+`app.project.list`、`app.monetization_app.list`。`report.report.detail`、`app.onelink.list`、
+`app.app_info.get` 均为 GET，未命中。按探测纪律，命中后没有绕过、没有构造 transport、没有重试。
+
+六条均非 Web UI 布局/收藏/拖拽、成员权限、写操作或调用方业务语义，因此没有判为非目标，
+也没有从缺失清单移出；台账仍为 **42 条：已闭环 18 / 部分闭环 9 / 完全缺失 15**。
+
 ## 2026-08-14 追加判定：三条 `analysis.*` 合同取证
 
 先估最坏 7 次业务请求；实际 3 次，分类为
