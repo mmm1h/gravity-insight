@@ -1091,6 +1091,34 @@ class GravityInsightCliTests(unittest.TestCase):
             inputs["filters"],
         )
 
+    def test_multidim_shortcuts_override_set_and_input_and_reject_multiple_filters(self):
+        raw = ('{"date_list":["2026-08-01","2026-08-02"],"time_dims":"day",'
+               '"metrics_list":["cost"],"custom_metrics_list":["input"],'
+               '"relate_dims":["input"],"filters":[]}')
+        with patch("gravity_sdk.multidim_product.run_multidim_query", return_value={}) as run:
+            code, _, _, _ = self.invoke([
+                "multidim", "query", "--app", "7", "--input", raw,
+                "--set", 'custom_metrics_list=["set"]', "--custom-metric", "custom_a,custom_b",
+                "--set", 'relate_dims=["set"]', "--relate-dim", "campaign_name",
+                "--set", 'filters=[{"field":"day","operator":"EQUALS","values":["input"]}]',
+                "--filter", "advertiser_id", "IN", "1,2",
+            ])
+        inputs = run.call_args.args[1]
+        self.assertEqual((0, ["custom_a", "custom_b"], ["campaign_name"]),
+                         (code, inputs["custom_metrics_list"], inputs["relate_dims"]))
+        self.assertEqual([1, 2], inputs["filters"][0]["values"])
+        invalid = (
+            (["--filter", "day", "EQUALS", "x", "--filter", "hour", "EQUALS", "1"], "filter"),
+            (["--filter", "bad field", "IN", "x"], "filters[].field"),
+            (["--filter", "day", "BAD", "x"], "filters[].operator"),
+            (["--filter", "day", "IN", "x,"], "filter.values"),
+        )
+        for options, field in invalid:
+            code, _, error, _ = self.invoke([
+                "multidim", "query", "--app", "7", "--input", raw, *options
+            ])
+            self.assertEqual((2, field), (code, error["error"]["field"]))
+
     def test_multidim_rejects_multiple_time_dimensions(self):
         code, result, error, _ = self.invoke(
             ["multidim", "query", "--app", "7", "--time-dim", "day,hour"]

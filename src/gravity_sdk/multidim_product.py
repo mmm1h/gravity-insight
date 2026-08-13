@@ -96,6 +96,7 @@ def multidim_input_schema() -> dict[str, Any]:
         "type": "object",
         "additionalProperties": False,
         "required": ["date_list", "time_dims", "metrics_list"],
+        "x-cli-shortcuts": _cli_shortcut_schema(),
         "properties": {
             "date_list": {
                 "type": "array",
@@ -149,6 +150,29 @@ def multidim_input_schema() -> dict[str, Any]:
         },
     }
     return copy.deepcopy(schema)
+
+
+def _cli_shortcut_schema() -> dict[str, Any]:
+    return {
+        "precedence": ["shortcut", "--set", "--input", "contract_default"],
+        "filter": {
+            "argv": ["FIELD", "OPERATOR", "VALUE[,VALUE...]"],
+            "maps_to": "filters",
+            "max_occurrences": 1,
+            "operator_enum": sorted(_FILTER_OPERATORS),
+            "value_items": "JSON scalar",
+            "combination_logic": "unproven_single_condition_only",
+            "conflicts_with": ["--media"],
+        },
+        "custom-metric": {
+            "argv": ["NAME[,NAME...]"],
+            "maps_to": "custom_metrics_list",
+        },
+        "relate-dim": {
+            "argv": ["NAME[,NAME...]"],
+            "maps_to": "relate_dims",
+        },
+    }
 
 
 def normalize_multidim_inputs(inputs: Mapping[str, Any]) -> dict[str, Any]:
@@ -353,7 +377,7 @@ def _filter_item(
     if field not in allowed_fields:
         raise _input_error(
             "filter field is absent from the explicit Multidim controls",
-            "filters",
+            "filters[].field",
         )
     operator = _filter_operator(value.get("operator"))
     value_key = "values" if "values" in value else "value"
@@ -365,21 +389,25 @@ def _filter_item(
 
 def _filter_field(value: Any) -> str:
     if not isinstance(value, str) or len(value) > 128 or not _FIELD_RE.fullmatch(value):
-        raise _input_error("filter field must be a bounded field name", "filters")
+        raise _input_error(
+            "filter field must be a bounded field name", "filters[].field"
+        )
     return value
 
 
 def _filter_operator(value: Any) -> str:
     if not isinstance(value, str) or value not in _FILTER_OPERATORS:
-        raise _input_error("filter operator is not supported", "filters")
+        raise _input_error("filter operator is not supported", "filters[].operator")
     return value
 
 
 def _filter_values(value: Any) -> list[Any]:
     if not isinstance(value, (list, tuple)) or len(value) > _MAX_FILTER_VALUES:
-        raise _input_error("filter values must be a bounded array", "filters")
+        raise _input_error("filter values must be a bounded array", "filters[].values")
     if any(not _is_bounded_scalar(scalar) for scalar in value):
-        raise _input_error("filter values must contain bounded JSON scalars", "filters")
+        raise _input_error(
+            "filter values must contain bounded JSON scalars", "filters[].values"
+        )
     return list(value)
 
 

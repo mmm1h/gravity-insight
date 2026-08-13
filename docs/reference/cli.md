@@ -114,6 +114,9 @@ Insight 普通批量读取默认并发为 6，显式上限为 24；Metadata 同�
 gravity multidim query --input-schema
 gravity multidim query --app main --input <query.json> --include-total `
   --all-pages --max-pages 20 --max-items 5000 --concurrency 6
+gravity multidim query --app main --input <query.json> `
+  --filter click_company IN bytedance,tencent `
+  --custom-metric roi_after_tax --relate-dim advertiser_name
 ```
 
 产品 dry-run 必须显式写在子命令后并提供 App：`gravity multidim query --app main --input ... --dry-run`。
@@ -122,6 +125,16 @@ gravity multidim query --app main --input <query.json> --include-total `
 App，也不会回退到 raw operation。
 
 input 只含 `date_list/time_dims/metrics_list/custom_metrics_list/data_dims/relate_dims/filters/multi_keys`。
+三个新增便利层直接复用物理字段：`--custom-metric NAME[,NAME...]` 覆盖
+`custom_metrics_list`，`--relate-dim NAME[,NAME...]` 覆盖 `relate_dims`，
+`--filter FIELD OPERATOR VALUE[,VALUE...]` 覆盖 `filters`。快捷参数优先于 `--set`，`--set`
+优先于 `--input`；未出现的快捷参数不修改对应物理字段。filter value 按 JSON scalar 解析，
+不能用快捷参数表达的字面值继续使用 `--input`/`--set`。
+
+真实 artifact 未提供多 filter 组合语义证据，因此当前 `--filter` 最多出现一次，且不能和
+`--media` 同用；重复条件在联网前拒绝。该边界也由 `--input-schema` 的
+`x-cli-shortcuts.filter` 机器字段声明。已有版本化物理 `filters[]` 合同不收缩：专家仍可通过
+`--input`/`--set` 使用原合同形状，其语义与优先级不变。
 `--app` 接受 workspace alias 或正整数；专用入口不再接受 `--app-id` 或 `--parent-id`。Agent 不会填
 App、指标、维度、日期或 filter value。直接执行默认 6 workers、最大 24；Plan adapter 固定 1。`--include-total`
 才会在 query 后串行计算 total，`--all-pages` 使用受控分页。HTTP 数为去重 metadata `M` + query
