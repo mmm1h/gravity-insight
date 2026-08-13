@@ -394,8 +394,8 @@ def _validate_composite(
     workspace: Any,
 ) -> None:
     name = request.get("name")
-    if name == analysis_plan.ANALYSIS_QUERY_NAME:
-        analysis_plan.validate_analysis_query_plan(
+    if analysis_plan.is_analysis_composite(name):
+        analysis_plan.validate_analysis_plan(
             insight, workspace, request, context
         )
         return
@@ -461,8 +461,8 @@ def _execute_composite(
         return execute_material_performance_plan(sdk, request, context)
     if name == PROMOTION_PERFORMANCE_NAME:
         return execute_promotion_performance_plan(sdk, request, context)
-    if name == analysis_plan.ANALYSIS_QUERY_NAME:
-        return analysis_plan.execute_analysis_query_plan(sdk, request, context)
+    if analysis_plan.is_analysis_composite(name):
+        return analysis_plan.execute_analysis_plan(sdk, request, context)
     if segment_plan.is_segment_composite(name):
         return segment_plan.execute_segment_composite(sdk, request, context)
     if name == user_journey_plan.USER_JOURNEY_NAME:
@@ -477,8 +477,8 @@ def _execute_composite(
 def _project_composite(
     result: Any, fields: tuple[str, ...], context: AdapterContext
 ) -> Any:
-    if analysis_plan.is_analysis_query_result(result):
-        return analysis_plan.project_analysis_query_result(result, fields, context)
+    if analysis_plan.is_analysis_result(result):
+        return analysis_plan.project_analysis_result(result, fields, context)
     if segment_plan.is_segment_result(result):
         return segment_plan.project_segment_result(result, fields, context)
     if user_journey_plan.is_user_journey_result(result):

@@ -1,11 +1,12 @@
-"""Fail-closed natural-language discovery for raw Monetization detail.
-
-Canonical selectors remain available as explicit expert-only entry points.
-"""
+"""Identifier-free Agent product and fail-closed Monetization guard."""
 
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
+from typing import Any
+
+from .monetization_detail import SAFE_ROW_FIELDS
 
 
 MONETIZATION_DETAIL_RAW_SELECTOR = ".".join(
@@ -16,9 +17,12 @@ MONETIZATION_EXPORT_RAW_SELECTOR = ".".join(
 )
 MONETIZATION_SAFE_QUERY = "monetization_detail"
 MONETIZATION_GAP_REASON = (
-    "no identifier-free Monetization Agent product is registered; use an "
-    "exact governed selector only in expert workflows"
+    "the request is outside the identifier-free single-day Monetization "
+    "Detail product boundary"
 )
+MONETIZATION_DETAIL_NAME = "monetization_detail"
+MONETIZATION_DETAIL_SELECTOR = f"composite:{MONETIZATION_DETAIL_NAME}"
+MONETIZATION_DETAIL_REQUIRED_INPUTS = ("app", "date")
 
 _ASCII_WORD = re.compile(r"[a-z0-9]+", re.IGNORECASE)
 _COMPACT_SEPARATORS = re.compile(r"[\s_-]+")
@@ -34,6 +38,47 @@ _CHINESE_SHAPES = (
     "变现目录",
     "变现列表",
     "广告变现明细",
+)
+_EXACT_PRODUCT_INTENTS = frozenset(
+    {
+        MONETIZATION_DETAIL_NAME,
+        MONETIZATION_DETAIL_SELECTOR,
+        "monetization detail",
+        "monetization details",
+        "monetization directory",
+        "monetization rows",
+        "monetization list",
+        "变现明细",
+        "变现目录",
+        "变现列表",
+        "广告变现明细",
+    }
+)
+_ENGLISH_BLOCKED = frozenset(
+    {
+        "adid", "advertiser", "aggregate", "attribution", "client_id", "clientid",
+        "dashboard", "delete", "device", "download", "export", "field",
+        "fields", "filter", "group", "grouping", "ltv", "placement",
+        "profile", "raw", "report", "revenue", "roi", "sort", "summary",
+        "total", "trace_id", "traceid", "update", "user", "user_id",
+        "event_user_id", "device_id", "where", "write", "order", "orders",
+        "material", "materials", "promotion", "multidim", "saved", "segment",
+        "journey", "pulse",
+    }
+)
+_ENGLISH_NEGATIONS = frozenset(
+    {"avoid", "cannot", "exclude", "never", "no", "not", "skip", "without"}
+)
+_CHINESE_BLOCKED = (
+    "不要", "无需", "不需要", "拒绝", "导出", "下载", "写入", "修改",
+    "删除", "用户", "设备", "标识", "筛选", "过滤", "条件", "分组", "订单",
+    "排序", "字段", "画像", "跨日", "日期范围", "时间范围", "汇总",
+    "聚合", "总计", "报告", "报表", "收入", "归因", "看板", "原始",
+    "素材", "推广", "多维", "保存分析", "分群", "旅程", "脉搏",
+)
+_RANGE_PHRASE = re.compile(
+    r"\b(?:from|between|range|weekly|monthly|week|month)\b|\bto\b",
+    re.IGNORECASE,
 )
 _EXACT_EXPERT_SELECTORS = frozenset(
     {
@@ -54,6 +99,36 @@ def monetization_guard_blocks_operation_fallback(query: str) -> bool:
     words = tuple(_ASCII_WORD.findall(selected))
     compact = _COMPACT_SEPARATORS.sub("", selected)
     return _english_detail_shape(words) or _chinese_detail_shape(compact)
+
+
+def monetization_detail_query(query: str) -> bool:
+    """Recognize the approved product while rejecting adjacent semantics."""
+
+    selected = _normalize(query)
+    if selected in _EXACT_PRODUCT_INTENTS:
+        return True
+    if _contains_near_raw_selector(selected):
+        return False
+    return (
+        monetization_guard_blocks_operation_fallback(selected)
+        and not _blocked_product_query(selected)
+    )
+
+
+def monetization_detail_input_template() -> dict[str, str]:
+    return {
+        "app": "<workspace-app-alias-or-positive-id>",
+        "date": "<date:YYYY-MM-DD>",
+    }
+
+
+def monetization_detail_plan_request(
+    _card: Mapping[str, Any],
+) -> dict[str, Any]:
+    return {
+        "name": MONETIZATION_DETAIL_NAME,
+        **monetization_detail_input_template(),
+    }
 
 
 def monetization_guard_safe_query(query: str) -> str:
@@ -78,6 +153,16 @@ def _contains_near_raw_selector(selected: str) -> bool:
     return bool(_NEAR_RAW_SELECTOR.search(selected))
 
 
+def _blocked_product_query(selected: str) -> bool:
+    words = frozenset(_ASCII_WORD.findall(selected.replace("-", " ")))
+    compact = _COMPACT_SEPARATORS.sub("", selected)
+    return bool(
+        words & (_ENGLISH_BLOCKED | _ENGLISH_NEGATIONS)
+        or _RANGE_PHRASE.search(selected)
+        or any(term in compact for term in _CHINESE_BLOCKED)
+    )
+
+
 def _english_detail_shape(words: tuple[str, ...]) -> bool:
     if "monetization" not in words:
         return False
@@ -93,11 +178,52 @@ def _chinese_detail_shape(compact: str) -> bool:
     return any(shape in compact for shape in _CHINESE_SHAPES)
 
 
+MONETIZATION_DETAIL_CAPABILITY: Mapping[str, Any] = {
+    "name": MONETIZATION_DETAIL_NAME,
+    "domain": "analysis",
+    "aliases": (
+        "read one complete daily monetization detail",
+        "list identifier-free ad monetization rows for one explicit day",
+        "读取一个显式单日的完整无标识变现明细",
+    ),
+    "description": (
+        "按显式 App 和单日完整读取无标识变现明细；固定返回批准字段 "
+        + "/".join(SAFE_ROW_FIELDS)
+        + "，未知字段默认隐藏，不提供用户维度筛选、分组或 raw 结果。"
+    ),
+    "required_inputs": MONETIZATION_DETAIL_REQUIRED_INPUTS,
+    "input_schema": {
+        "app": {
+            "type": "string|integer",
+            "required": True,
+            "nullable": False,
+            "description": "Workspace App alias or positive App id.",
+        },
+        "date": {
+            "type": "string",
+            "format": "date",
+            "required": True,
+            "nullable": False,
+            "description": "One explicit YYYY-MM-DD monetization window.",
+        },
+    },
+    "plan_node_limits": {"max_pages": 1_000, "max_items": 100_000},
+    "sensitive_query": True,
+}
+
+
 __all__ = [
     "MONETIZATION_DETAIL_RAW_SELECTOR",
+    "MONETIZATION_DETAIL_CAPABILITY",
+    "MONETIZATION_DETAIL_NAME",
+    "MONETIZATION_DETAIL_REQUIRED_INPUTS",
+    "MONETIZATION_DETAIL_SELECTOR",
     "MONETIZATION_EXPORT_RAW_SELECTOR",
     "MONETIZATION_GAP_REASON",
     "MONETIZATION_SAFE_QUERY",
     "monetization_guard_blocks_operation_fallback",
     "monetization_guard_safe_query",
+    "monetization_detail_input_template",
+    "monetization_detail_plan_request",
+    "monetization_detail_query",
 ]

@@ -272,6 +272,10 @@ def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
         from .agent_material_performance import material_performance_plan_request
 
         return material_performance_plan_request(card)
+    if composite == "monetization_detail":
+        from .agent_monetization_guard import monetization_detail_plan_request
+
+        return monetization_detail_plan_request(card)
     if composite == "order_directory":
         from .agent_order_directory import order_directory_plan_request
 
@@ -338,6 +342,16 @@ def _composite_product_requirements(
         from .agent_material_performance import material_performance_input_template
 
         return ["apps", "start", "end"], material_performance_input_template()
+    if card.get("composite") == "monetization_detail":
+        from .agent_monetization_guard import (
+            MONETIZATION_DETAIL_REQUIRED_INPUTS,
+            monetization_detail_input_template,
+        )
+
+        return (
+            list(MONETIZATION_DETAIL_REQUIRED_INPUTS),
+            monetization_detail_input_template(),
+        )
     if card.get("composite") == "order_directory":
         from .agent_order_directory import (
             ORDER_DIRECTORY_REQUIRED_INPUTS,

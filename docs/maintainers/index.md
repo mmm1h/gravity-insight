@@ -15,7 +15,7 @@
 | 修复看板页面条件忠实重放 | [Dashboard Page Conditions Replay (D22)](dashboard-conditions.md) |
 | 一次调用追踪订单拆单明细 | [Order Split Trace v1](order-split-trace.md) |
 | 读取单日无标识普通订单目录 | [Order Directory v1](order-directory.md) |
-| 阻止自然语言误落原始变现明细 | [Monetization Discovery Guard](monetization-discovery-guard.md) |
+| 维护无标识变现明细与保留型 Guard | [Monetization Detail Product and Discovery Guard](monetization-discovery-guard.md) |
 | 选择 operation、codec、CLI、recipe、SQL 或 export 扩展面 | [扩展地图](extending.md) |
 | 新增、升级或废弃 operation | [新增受控能力](operations.md) |
 | 在线探测、浏览器确认页面行为 | [探测安全](probing.md) |

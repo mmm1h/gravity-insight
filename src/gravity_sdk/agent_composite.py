@@ -13,6 +13,7 @@ _STRICT_COMPOSITES = frozenset(
         "dashboard_analysis",
         "dashboard_snapshot",
         "material_performance",
+        "monetization_detail",
         "order_directory",
         "order_split_trace",
         "promotion_performance",
@@ -129,6 +130,10 @@ def _strict_composite_query(name: str, query: str) -> bool:
         from .agent_material_performance import material_performance_query
 
         return material_performance_query(query)
+    if name == "monetization_detail":
+        from .agent_monetization_guard import monetization_detail_query
+
+        return monetization_detail_query(query)
     if name == "order_directory":
         from .agent_order_directory import order_directory_query
 
