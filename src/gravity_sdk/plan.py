@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ContextManager
 
 from .errors import InputValidationError
+from .plan_budget import PlanWorkerLease, SerialWorkerLease
 
 
 PLAN_SCHEMA_VERSION = "gravity.plan.v1"
@@ -41,6 +42,14 @@ class AdapterContext:
     max_pages: int
     max_items: int
     max_workers: int = 1
+    _worker_lease: PlanWorkerLease | SerialWorkerLease = field(
+        default_factory=SerialWorkerLease, repr=False, compare=False
+    )
+
+    def borrow_workers(self, limit: int) -> ContextManager[int]:
+        """Borrow available outer Plan capacity without waiting for extra slots."""
+
+        return self._worker_lease.borrow(limit)
 
 
 @dataclass(frozen=True)
@@ -50,6 +59,7 @@ class PlanAdapter:
     execute: AdapterExecute
     validate: AdapterValidate
     project: AdapterProject | None = None
+    preserve_partial: bool = False
 
 
 @dataclass(frozen=True)
@@ -182,6 +192,8 @@ def plan_schema() -> dict[str, Any]:
             "outer_concurrency_default": DEFAULT_MAX_WORKERS,
             "outer_concurrency_max": MAX_WORKERS,
             "adapter_inner_concurrency": 1,
+            "adapter_borrowed_concurrency_max": MAX_WORKERS,
+            "adapter_and_outer_concurrency": "shared outer budget",
         },
         "node": {
             "required": ["id", "kind", "request"],
@@ -210,6 +222,7 @@ def plan_schema() -> dict[str, Any]:
             "binding_code": "BINDING_FAILED",
             "siblings": "independent nodes continue",
             "failed_result": None,
+            "partial_result": "adapter-safe result preserved; node remains failed",
             "exit_precedence": "4 > 3 > 2 > 0",
         },
     }

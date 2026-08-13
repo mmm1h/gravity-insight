@@ -20,6 +20,7 @@ from .plan import (
     ValidatedPlan,
 )
 from .plan_binding import prepare_executions, validate_json
+from .plan_budget import PlanConcurrencyBudget
 from .plan_validation import bounded_int, validate_plan
 
 
@@ -56,6 +57,7 @@ def run_layers(
     results: list[dict[str, Any]] = []
     unresolved = {node.node_id for node in plan.nodes}
     expanded_count = 0
+    budget = PlanConcurrencyBudget(workers)
     with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="gravity-plan") as pool:
         while unresolved:
             ready = ready_nodes(plan.nodes, unresolved, registry)
@@ -69,7 +71,7 @@ def run_layers(
                     if expanded_count > MAX_EXPANDED_NODES:
                         raise RuntimeError("validated plan exceeded its expansion budget")
                     runnable.append((node, executions))
-            groups = submit_layer(pool, runnable, adapters, workspace)
+            groups = submit_layer(pool, runnable, adapters, workspace, budget)
             collect_layer(groups, registry, results, unresolved)
     return registry, declaration_order(plan.nodes, results)
 
@@ -131,6 +133,7 @@ def submit_layer(
     runnable: list[tuple[PlanNode, list[tuple[str, int | None, Mapping[str, Any]]]]],
     adapters: Mapping[str, PlanAdapter],
     workspace: Any,
+    budget: PlanConcurrencyBudget,
 ) -> list[tuple[PlanNode, list[Future[dict[str, Any]]]]]:
     groups: list[tuple[PlanNode, list[Future[dict[str, Any]]]]] = []
     for node, executions in runnable:
@@ -143,6 +146,7 @@ def submit_layer(
                 request,
                 adapters[node.kind],
                 workspace,
+                budget,
             )
             for execution_id, foreach_index, request in executions
         ]
@@ -170,38 +174,42 @@ def execute_one(
     request: Mapping[str, Any],
     adapter: PlanAdapter,
     workspace: Any,
+    budget: PlanConcurrencyBudget,
 ) -> dict[str, Any]:
-    context = AdapterContext(
-        node_id=node.node_id,
-        execution_id=execution_id,
-        kind=node.kind,
-        workspace=workspace,
-        output_fields=node.output_fields,
-        dynamic_targets=tuple(
-            [binding.target for binding in node.bindings]
-            + ([node.foreach.target] if node.foreach is not None else [])
-        ),
-        max_pages=node.limits.max_pages,
-        max_items=node.limits.max_items,
-    )
-    try:
-        result = adapter.execute(copy.deepcopy(dict(request)), context)
-        if not isinstance(result, Mapping):
-            raise TypeError("adapter result must be an object")
-        if native_failure(result):
-            return adapter_failure_item(node, execution_id, foreach_index, result)
-        projected: Any = copy.deepcopy(dict(result))
-        if node.output_fields:
-            projected = adapter.project(projected, node.output_fields, context)  # type: ignore[misc]
-        validate_json(projected)
-        if result_item_count(projected) > node.limits.max_items:
-            raise RuntimeError("plan adapter result exceeded its item budget")
-        return result_item(
-            node, execution_id, foreach_index, True,
-            str(result.get("status", "success")), 0, projected, None, [],
+    with budget.worker() as lease:
+        context = AdapterContext(
+            node_id=node.node_id,
+            execution_id=execution_id,
+            kind=node.kind,
+            workspace=workspace,
+            output_fields=node.output_fields,
+            dynamic_targets=tuple(
+                [binding.target for binding in node.bindings]
+                + ([node.foreach.target] if node.foreach is not None else [])
+            ),
+            max_pages=node.limits.max_pages,
+            max_items=node.limits.max_items,
+            _worker_lease=lease,
         )
-    except Exception as exc:
-        return exception_item(node, execution_id, foreach_index, exc)
+        try:
+            result = adapter.execute(copy.deepcopy(dict(request)), context)
+            if not isinstance(result, Mapping):
+                raise TypeError("adapter result must be an object")
+            if native_failure(result):
+                partial = preserved_partial_result(result, adapter, node, context)
+                return adapter_failure_item(node, execution_id, foreach_index, result, partial)
+            projected: Any = copy.deepcopy(dict(result))
+            if node.output_fields:
+                projected = adapter.project(projected, node.output_fields, context)  # type: ignore[misc]
+            validate_json(projected)
+            if result_item_count(projected) > node.limits.max_items:
+                raise RuntimeError("plan adapter result exceeded its item budget")
+            return result_item(
+                node, execution_id, foreach_index, True,
+                str(result.get("status", "success")), 0, projected, None, [],
+            )
+        except Exception as exc:
+            return exception_item(node, execution_id, foreach_index, exc)
 
 
 def adapter_map(
@@ -288,12 +296,31 @@ def adapter_failure_item(
     execution_id: str,
     foreach_index: int | None,
     result: Mapping[str, Any],
+    preserved: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     detail = safe_native_error(result)
+    status = "partial" if preserved is not None else "error"
     return result_item(
-        node, execution_id, foreach_index, False, "error", detail_exit_code(detail),
-        None, detail.to_dict(), [],
+        node, execution_id, foreach_index, False, status, detail_exit_code(detail),
+        preserved, detail.to_dict(), [],
     )
+
+
+def preserved_partial_result(
+    result: Mapping[str, Any],
+    adapter: PlanAdapter,
+    node: PlanNode,
+    context: AdapterContext,
+) -> Mapping[str, Any] | None:
+    if not adapter.preserve_partial or str(result.get("status", "")).casefold() != "partial":
+        return None
+    selected: Any = copy.deepcopy(dict(result))
+    if node.output_fields:
+        selected = adapter.project(selected, node.output_fields, context)  # type: ignore[misc]
+    validate_json(selected)
+    if not isinstance(selected, Mapping) or result_item_count(selected) > node.limits.max_items:
+        raise RuntimeError("preserved partial result exceeded its Plan contract")
+    return selected
 
 
 def safe_native_error(result: Mapping[str, Any]) -> ErrorDetail:
@@ -451,10 +478,11 @@ def result_envelope(
         default=0,
     )
     ok = failed == 0 and skipped == 0
+    partial = any(item["status"] == "partial" for item in results)
     return {
         "schema_version": RESULT_SCHEMA_VERSION,
         "ok": ok,
-        "status": "success" if ok else "partial" if succeeded else "error",
+        "status": "success" if ok else "partial" if succeeded or partial else "error",
         "dry_run": False,
         "declared_count": len(plan.nodes),
         "expanded_count": sum(item["status"] not in {"skipped", "empty"} for item in results),

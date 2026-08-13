@@ -14,6 +14,7 @@ from . import plan_analysis_adapter as analysis_plan
 from . import plan_segment_composites as segment_plan
 from . import plan_user_journey_adapter as user_journey_plan
 from . import plan_dashboard_adapter as dashboard_plan
+from . import plan_fixed_composite_adapter as fixed_plan
 from . import plan_order_adapter as order_plan
 from .plan_binding import set_pointer
 from .plan_pulse_adapter import execute_business_pulse, validate_business_pulse
@@ -74,12 +75,12 @@ _COMPOSITE_FIELDS = frozenset(
     {
         "name", "app", "apps", "ref", "mode", "start", "end", "platforms", "include_hourly",
         "inputs", "include_total", "read_all", "metadata_inputs", "metrics",
-        "input_schema_version",
+        "input_schema_version", "max_charts",
     }
 )
 _COMPOSITES = frozenset(
     {
-        "analysis_context", "app_snapshot", "attribution_snapshot",
+        *fixed_plan.COMPOSITE_NAMES,
         "business_pulse", "saved_analysis", MULTIDIM_NAME,
         MATERIAL_PERFORMANCE_NAME,
         PROMOTION_PERFORMANCE_NAME,
@@ -172,7 +173,8 @@ def build_plan_adapters(
             execute_metadata, validate_metadata, _metadata_projection
         ),
         composite=PlanAdapter(
-            execute_composite, validate_composite, _project_composite
+            execute_composite, validate_composite, _project_composite,
+            preserve_partial=True,
         ),
     )
 
@@ -440,54 +442,15 @@ def _validate_composite(
     _validate_selected_fields(
         context.output_fields, _COMPOSITE_OUTPUT_FIELDS, "output_fields"
     )
-    _validate_fixed_composite(request, context, str(name))
-
-
-def _validate_fixed_composite(
-    request: Mapping[str, Any], context: AdapterContext, name: str
-) -> None:
-    if set(request) - {"name", "app"}:
-        raise _input("composite request contains fields unavailable for this name", "request")
-    required_items = {
-        "analysis_context": 13,
-        "app_snapshot": 6,
-        "attribution_snapshot": 8,
-    }[name]
-    if context.max_items < required_items:
-        raise _input(
-            "composite fixed sources exceed this node max_items", "limits.max_items"
-        )
+    fixed_plan.validate_fixed_composite(request, context, str(name))
 
 
 def _execute_composite(
     sdk: Any, request: Mapping[str, Any], context: AdapterContext
 ) -> Any:
     name = str(request["name"])
-    app = request.get("app")
-    if name == "analysis_context":
-        return sdk.analysis_context(
-            app,
-            max_workers=1,
-            max_pages=context.max_pages,
-            max_items=context.max_items,
-            workspace=context.workspace,
-        )
-    if name == "app_snapshot":
-        return sdk.app_snapshot(
-            app,
-            max_workers=1,
-            max_pages=context.max_pages,
-            max_items=context.max_items,
-            workspace=context.workspace,
-        )
-    if name == "attribution_snapshot":
-        return sdk.attribution_snapshot(
-            app,
-            max_workers=1,
-            max_pages=context.max_pages,
-            max_items=context.max_items,
-            workspace=context.workspace,
-        )
+    if fixed_plan.is_fixed_composite(name):
+        return fixed_plan.execute_fixed_composite(sdk, request, context)
     if name == "business_pulse":
         return execute_business_pulse(sdk, request, context)
     if name == "saved_analysis":

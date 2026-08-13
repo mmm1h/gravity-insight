@@ -39,14 +39,15 @@
 - 同一领域的 `compiler` / provenance / coverage 生成物必须串行再生成。
 - 已知依赖链：`D22 → D23`、`D29 → D30`、`D27 → D28`、`D33 → D34`、`D35 → F40`。
 
-## 两个已经贴脸的硬约束
+## 两条曾经贴脸的硬约束（已解除，规则保留）
 
-1. **`plan_adapters.py` 余量 9 SLOC**（491/500），`_execute_composite` 复杂度 14/15。
-   再按 Material/Promotion 的方式直接加分支会当场触发门禁。
-   **解法已存在**：照 `plan_order_adapter.py` 做窄领域 family router，中央文件净增长为 0。
-   不要为此引入全局 adapter registry 或插件机制。
-2. **Agent 意图冲突正在跨 owner 扩散**。Order Directory 接入时回改了 5 个既有产品 recognizer，
-   且这些 owner 至今残留其专用排除词。新增语义相邻产品的成本随**相邻产品数**增长。
+1. **`plan_adapters.py` 已从 491 降到 456 SLOC**，余量 44 行，`_execute_composite` 不再是该文件
+   最大函数。解除方式是把固定来源 composite 下沉到窄领域 family router（照 `plan_order_adapter.py`）。
+   **这条路径仍是唯一批准的接法**：新增 Plan composite 走 family router，中央文件净增长 ≤ 0，
+   不引入全局 adapter registry 或插件机制。余量变宽不等于可以回去直接加分支。
+2. **Agent 意图冲突已收口到 `agent_intent_routing.py`**，五个既有 owner 不再持有他产品负向词。
+   新增语义相邻产品的成本**不再随相邻产品数增长**。判据是 selector 精确度 + owner 正向证据基数，
+   不枚举产品对；新产品只需声明自己的正向证据。不引入插件、注册表或通用意图 DSL。
 
 ## 已知能力净损失
 
@@ -120,12 +121,20 @@ fields/conditions/group 时应短路这两次 metadata 加载。该路径与变�
 ## 并发
 
 已有 28 条并发路径、7 种模型，底层受业务槽 24、SQL 槽 2、host 令牌桶与 429 cooldown 约束。
-17 条可增强候选中收益最大的是 Promotion Performance（≤21 平台）、Dashboard Analysis（≤32/64 图表）、
-Analysis Context（13 来源）。
+17 条可增强候选中收益最大的 Promotion Performance（≤21 平台）、Dashboard Analysis（≤32/64 图表）、
+Analysis Context（13 来源）已接入 Plan 全局预算租借。
 
-**约束**：向 Plan 现有全局预算租借，**不要把 adapter 的 worker 从 1 改成 6**——那会与全局池
-形成嵌套并发乘法。所有增强保持上游总请求量 `1x`，只提高峰值在途数。SQL 硬上限 2 有 4 并发
-实测失败证据，不提高。分页未知总页、父子依赖链、导出 `create→poll→download`、探测链不并发。
+租借接口把 Plan execution 已占的一槽计入可用 worker，额外容量只做非阻塞 try-acquire；同一 execution
+嵌套租借复用已持有容量，退出或异常均归还，因此多个 Plan worker 不会等待额外槽而自锁。adapter
+不拥有第二个预算，领域 core 继续复用既有 bounded batch。fake transport 在 Plan 预算 6 下记录到：
+Promotion 21 请求峰值 `1→6`、Dashboard 32/64 图表总请求分别 35/67 且图表阶段峰值 `1→6`、
+Analysis Context 13 请求峰值 `1→6`；串并行请求 identity 完全相同。21 平台中 3 个失败的结果保持
+`partial`，18 个成功/空组件与 3 个逐平台错误/能力缺口均保留，Plan 依赖仍把 partial 视为失败。
+
+**约束**：不要给 adapter 增加独立 worker 默认值或私有预算。所有增强保持上游总请求量 `1x`，只提高
+峰值在途数。SQL 硬上限 2 有 4 并发实测失败证据，不提高。分页未知总页、父子依赖链、导出
+`create→poll→download`、探测链不并发。fake transport 证明预算与语义，不代表生产 24 并发已完成
+soak；真实吞吐、尾延迟和 429 频率仍需在发布流程中做受控长时观察。
 
 ## 已批准的隐私投影边界：变现明细（D27）
 
@@ -155,7 +164,7 @@ D27 需要独占共享 spine，必须在 spine 空闲时作为**完整单元**�
 
 ## Agent 入口表的增长处理
 
-`docs/agent-workflow.md` 的入口表已从 34 行按任务类型压到 17 行，文件由 220 行降到 203 行；
+`docs/agent-workflow.md` 的入口表已从 34 行按任务类型压到 17 行，文件由 220 行降到 202 行；
 Analysis 编译、报表产品、投放/素材表现、订单、分群、保存分析、看板等同类入口共享一行，
 现有直接命令、未知能力路径与 1/2/3 次调用边界全部保留。
 

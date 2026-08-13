@@ -27,8 +27,9 @@ from .plan_adapter_support import (
 DASHBOARD_ANALYSIS_NAME = "dashboard_analysis"
 DASHBOARD_ANALYSIS_MIN_ITEMS = 3
 DASHBOARD_ANALYSIS_DEFAULT_MAX_CHARTS = 32
+DASHBOARD_ANALYSIS_MAX_CHARTS = 64
 DASHBOARD_ANALYSIS_REQUEST_FIELDS = frozenset(
-    {"name", "app", "ref", "mode", "start", "end"}
+    {"name", "app", "ref", "mode", "start", "end", "max_charts"}
 )
 DASHBOARD_ANALYSIS_OUTPUT_FIELDS = frozenset(
     {
@@ -124,6 +125,10 @@ def validate_dashboard_analysis_plan(
             "dashboard analysis needs room for a directory, dashboard, and chart",
             "limits.max_items",
         )
+    _chart_budget(
+        request.get("max_charts", DASHBOARD_ANALYSIS_DEFAULT_MAX_CHARTS),
+        context.max_items,
+    )
     validate_selected_fields(
         context.output_fields,
         DASHBOARD_ANALYSIS_OUTPUT_FIELDS,
@@ -136,12 +141,15 @@ def execute_dashboard_analysis_plan(
     request: Mapping[str, Any],
     context: AdapterContext,
 ) -> dict[str, Any]:
-    """Run through the SDK while preventing scheduler concurrency multiplication."""
+    """Run through the SDK using capacity borrowed from the Plan scheduler."""
 
     options = {
         "start": request["start"],
         "end": request["end"],
-        "max_charts": _chart_budget(context.max_items),
+        "max_charts": _chart_budget(
+            request.get("max_charts", DASHBOARD_ANALYSIS_DEFAULT_MAX_CHARTS),
+            context.max_items,
+        ),
         "max_items": context.max_items,
         "workspace": context.workspace,
     }
@@ -152,12 +160,13 @@ def execute_dashboard_analysis_plan(
             **options,
         )
     else:
-        result = sdk.run_dashboard_analysis(
-            request.get("app"),
-            request.get("ref"),
-            max_workers=1,
-            **options,
-        )
+        with context.borrow_workers(options["max_charts"]) as workers:
+            result = sdk.run_dashboard_analysis(
+                request.get("app"),
+                request.get("ref"),
+                max_workers=workers,
+                **options,
+            )
     return safe_dashboard_analysis_envelope(result)
 
 
@@ -261,8 +270,17 @@ def _safe_error(
     return selected
 
 
-def _chart_budget(max_items: int) -> int:
-    return min(DASHBOARD_ANALYSIS_DEFAULT_MAX_CHARTS, max_items - 2)
+def _chart_budget(value: Any, max_items: int) -> int:
+    if (
+        isinstance(value, bool)
+        or not isinstance(value, int)
+        or not 1 <= value <= DASHBOARD_ANALYSIS_MAX_CHARTS
+    ):
+        raise input_error(
+            f"dashboard analysis max_charts must be between 1 and {DASHBOARD_ANALYSIS_MAX_CHARTS}",
+            "max_charts",
+        )
+    return min(value, max_items - 2)
 
 
 def _validate_window(start: Any, end: Any) -> None:
@@ -311,6 +329,7 @@ def _failure(detail: ErrorDetail) -> dict[str, Any]:
 
 __all__ = [
     "DASHBOARD_ANALYSIS_DEFAULT_MAX_CHARTS",
+    "DASHBOARD_ANALYSIS_MAX_CHARTS",
     "DASHBOARD_ANALYSIS_MIN_ITEMS",
     "DASHBOARD_ANALYSIS_NAME",
     "DASHBOARD_ANALYSIS_OUTPUT_FIELDS",

@@ -104,7 +104,7 @@ class DashboardAnalysisSurfaceTests(unittest.TestCase):
             "mode": "run", "start": "2026-08-01", "end": "2026-08-08",
         }
         plan_adapter.validate_dashboard_analysis_plan(
-            request, _context(workspace), workspace
+            {**request, "max_charts": 64}, _context(workspace, items=66), workspace
         )
         self.assertEqual(["main"], workspace.calls)
         plan_adapter.validate_dashboard_analysis_plan(
@@ -115,6 +115,7 @@ class DashboardAnalysisSurfaceTests(unittest.TestCase):
         invalid = (
             ({**request, "x": 1}, _context(workspace)),
             ({**request, "mode": "guess"}, _context(workspace)),
+            ({**request, "max_charts": 65}, _context(workspace, items=67)),
             ({**request, "end": "2026-07-01"}, _context(workspace)),
             ({**request, "end": "2026-11-01"}, _context(workspace)),
             (request, _context(workspace, targets=("/ref",))),
