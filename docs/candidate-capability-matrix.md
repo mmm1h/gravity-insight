@@ -142,6 +142,26 @@ card 已闭环，原自然语言固定 gap 仅对批准形状解除。D28 聚合
 manager/feed 等无完整分页证据的 draft 还卡在 `pagination_unverified`。下一步只允许在有数据租户上复用
 同一最小范围，从对应断点开始；当前账号下不得重试或扩大范围。
 
+## 2026-08-14 追加判定：D22 看板条件合并语义
+
+**判定：证明不了，不是部分证明。** 本轮取证 HTTP 共 10 次：1 次公开 source-map GET 返回 404；
+2 次 stable `app.list` 与 7 次 stable `analysis.dashboard.tree` 均返回 HTTP 200。看板树中 6 次为合法空样本，
+1 次为 `contract_changed`；没有 detail、default-favourite、分析 query、POST、重试、翻页、扩样或写入。
+
+- Bundle：冻结 `Dashboard-DrzT0Orh.js` 为 251654 bytes，SHA-256
+  `6fc5339f29035a8aa08755e1ebfc482dd227c1c4511ff35c340dcc621ac48016`；三份本地 census 正文逐字匹配。
+  完整控制流证明 chart `global_conditions` 与 page `dashboard_condition` 是同一请求的独立顶层字段，
+  公共 HTTP wrapper 直接发送 body，前端没有合并或覆盖。合并若存在，只能发生在服务端。
+- Artifact：当前账号全部 7 个 App 都没有取得可选看板；本地历史 receipt/临时语料也没有双条件实例。
+  因此异维度叠加和同维度冲突都没有可判别样本。
+- Probe：没有发送分析请求。现有 stable Analysis 合同不登记 `dashboard_condition`，离线校验以
+  `INPUT_INVALID`、`network_called=false` 拒绝；不使用 raw transport 绕过。弱证据 POST 读语义闸门未命中。
+- 反例：前端证据同时兼容 AND、页面覆盖、图表覆盖、同维度替换/异维度叠加四种服务端实现，
+  所以不能从“两个字段都出现”推断任何一种规则。
+
+解锁至少需要服务端合同，或自然存在的双条件看板及其只读请求/权威结果；证据必须同时区分
+异维度组合与同维度冲突。D22 的非空页面条件继续 fail-closed，空条件行为不变。
+
 ## 本轮可复用结论
 
 - 多 App Analysis 扇出是既有 `analysis.event/funnel/retention/property.query` stable 产品的离线
