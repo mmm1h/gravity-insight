@@ -12,6 +12,7 @@ from .analysis_spec import (
 )
 from .domains import ANALYSIS_QUERY_OPERATIONS, new_analysis_query_id
 from .errors import InputValidationError
+from .result_output import output_file
 
 
 def add_analysis_query_arguments(
@@ -76,6 +77,11 @@ def add_analysis_query_arguments(
         action="store_true",
         help="print the compact Analysis Spec v1 contract without a client",
     )
+    parser.add_argument(
+        "--output", type=output_file,
+        help="Atomically write the complete JSON result to a local file.",
+    )
+    parser.set_defaults(result_output_fail_closed=True)
 
 
 def run_analysis_query_command(

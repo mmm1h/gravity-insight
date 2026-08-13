@@ -7,6 +7,11 @@ from collections.abc import Mapping, Sequence
 from datetime import date
 
 from gravity_sdk.http_runtime import MAX_SQL_CONCURRENCY
+from gravity_sdk.result_output import (
+    output_file,
+    result_is_persistable,
+    write_rendered_result,
+)
 from gravity_sdk.sql import credentials
 from gravity_sdk.sql.client import (
     GravityAuthError,
@@ -138,6 +143,10 @@ def build_parser(
         default=MAX_SQL_CONCURRENCY,
         help=f"Concurrent product reads (1..{MAX_SQL_CONCURRENCY}; default: {MAX_SQL_CONCURRENCY}).",
     )
+    query_parser.add_argument(
+        "--output", type=output_file,
+        help="Atomically write the complete JSON result to a local file.",
+    )
     return parser
 
 
@@ -177,6 +186,7 @@ def _emit_query_result(
     envelope: dict[str, object],
     evidence_reference: dict[str, object] | None,
     evidence_warning: str | None,
+    output: str | None = None,
 ) -> int:
     results = envelope["results"]
     if not isinstance(results, list):  # Internal invariant; keep machine output stable.
@@ -193,7 +203,21 @@ def _emit_query_result(
         payload["evidence_reference"] = evidence_reference
         if evidence_warning:
             payload["evidence_warning"] = evidence_warning
-    print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
+    if output and result_is_persistable(payload):
+        rendered = json.dumps(
+            payload, ensure_ascii=False, indent=2, sort_keys=True
+        ) + "\n"
+        print(json.dumps(
+            write_rendered_result(output, rendered),
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+        ))
+    else:
+        print(
+            json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True),
+            file=sys.stderr if output else sys.stdout,
+        )
     return int(envelope["exit_code"])
 
 
@@ -393,7 +417,9 @@ def _run_query_command(
             max_workers=args.concurrency,
             workspace=workspace,
         )
-        return _emit_query_result(result, evidence_reference, evidence_warning)
+        return _emit_query_result(
+            result, evidence_reference, evidence_warning, args.output
+        )
     except _DirectQueryInputError as exc:
         return _emit_query_error(
             str(exc),

@@ -8,6 +8,7 @@ from typing import Any
 from .analysis_query_batch import run_analysis_query_batch
 from .analysis_spec_cli import add_analysis_query_arguments
 from .errors import InputValidationError
+from .result_output import output_file
 
 
 _SCALAR_QUERY_ARGUMENTS = (
@@ -74,6 +75,11 @@ def add_analysis_query_batch_command(
         action="store_true",
         help="Compile every spec and run complete Plan preflight without execution.",
     )
+    parser.add_argument(
+        "--output", type=output_file,
+        help="Atomically write the complete JSON result to a local file.",
+    )
+    parser.set_defaults(result_output_fail_closed=True)
     if handler is not None:
         parser.set_defaults(_gravity_handler=handler)
     return parser

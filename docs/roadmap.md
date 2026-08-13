@@ -33,6 +33,22 @@
 
 完整动线的逐条判定与最小证据要求见[分析动线台账](analysis-journeys.md)；本页只维护排期与约束。
 
+### 分析结果落盘统一裁决（2026-08-14）
+
+**只统一 JSON 落盘，不统一 `--format`，不新增 CSV/表格。** `analysis query`（含 compact batch
+与显式多 App 扇出）、`reports pulse`、`sql query` 补 `--output`；写入完整既有 envelope，不改变
+结果内容。它们与已有产品共用一个原子结果写入原语和同形 `written` 收据。纯 `error` 或
+`capability_gap` 不创建也不替换目标文件；`partial` 写入完整 envelope，同时保留原非零退出码。
+理由是 partial 中独立成功组件仍可消费，且 envelope 已明确记录失败组件；拒绝写入反而会丢掉
+不可无代价重取的成功结果。终止失败则没有可消费结果，覆盖旧文件会把一次失败伪装成新 artifact。
+
+格式判据不是“有没有 rows 字段”，而是**公开结果合同本身是否是无损二维记录集**。Analysis、Pulse
+和 SQL product 的公开合同都包含状态、错误/partial、分页或 Evidence/查询收据；SQL 内部 rows
+即使二维，公开结果仍不是裸表。把这些 envelope 输出 CSV 必须丢字段或自创映射，所以不提供。
+NDJSON 只保留在已有明确逐记录编码合同的入口；本轮不把它扩到 composite。若以后有公开合同天然
+就是同构标量行数组，且所有状态与收据都有无损、版本化的独立承载，才可单独评估 CSV；不得为嵌套
+结果定义通用拍平规则。xlsx 仍只走治理导出 effect。
+
 D32 本轮先估 22 次、实际只发 5 次最小 stable 根读取；5 次均为 HTTP 200 空样本。复用 D33
 的 Bilibili/Huya 3 次证据后，七个平台中只有 Bilibili account 曾非空，但其 advertiser 为空；
 其余六个平台在允许的根读取或最短单日 advertiser 窗口内均为空。没有权限失败、合同漂移、重试、
