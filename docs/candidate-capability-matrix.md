@@ -1,16 +1,16 @@
 # 候选能力证据矩阵
 
-本矩阵记录 17 项候选能力在 2026-08-12 受控只读探测后的真实状态，供后续开发决策使用。仓库基线仍为 [185 个 operation、其中 176 个 stable operation](capability-coverage.md)；本轮没有新增 stable operation，基线数量未变化。
+本矩阵记录 17 项候选能力在 2026-08-12 受控只读探测后的真实状态，并原位追加后续取证结论，供开发决策使用。仓库基线仍为 [185 个 operation、其中 176 个 stable operation](capability-coverage.md)；本轮没有新增 stable operation，基线数量未变化。
 
-所有候选项当前均为 `draft`，且 promotion gate 均未满足。表中的“下一步最小证据”表示继续判断所需的最小输入，不代表晋升计划或交付承诺。后续在线验证仍须遵循[探测规范](maintainers/probing.md)，保持只读、限流、值不落盘和 fail-closed。
+所有候选项仍未晋升；`analysis.setting.query` 保留在 draft 台账但 `effect=mutation`，其余候选仍是 read draft，promotion gate 均未满足。表中的“下一步最小证据”表示继续判断所需的最小输入，不代表晋升计划或交付承诺。后续在线验证仍须遵循[探测规范](maintainers/probing.md)，保持只读、限流、值不落盘和 fail-closed。
 
 ## 逐项状态
 
 | Operation | Status | 本轮请求、样本、分页与父绑定 | 精确 blocker | 下一步最小证据 |
 | --- | --- | --- | --- | --- |
-| `analysis.default_val.list` | `draft` | 1 次目标请求；HTTP 200、非空，结论 `inconclusive`；分页为 `none` 且已确认；无父绑定。 | `request_parameters_required`、`response_schema_unverified` | 将本轮成功的最小请求形状固化为值无关合同，解决动态占位与字面量的歧义；再做 1 次同形状确认，并完成响应投影与隐私审查。 |
-| `analysis.realtime_event.list` | `draft` | 1 次目标请求；HTTP 200 但为 `semantic_error`，无可用样本；分页未验证；无父绑定。 | `request_parameters_required`、`response_schema_unverified` | 从现有前端消费证据确认必需字段、类型和空值语义，再做 1 次最小成功请求；不得通过扩大参数组合猜测合同。 |
-| `analysis.setting.query` | `draft` | 本轮 0 次请求；沿用既有 `semantic_error` 证据，无可用样本；分页为 `none`，本轮未复核；无父绑定。 | `request_parameters_required`、`response_schema_unverified` | 先获得配置、空间和报表相关字段的完整值无关请求形状，并明确必需项；自由文本字段继续 fail-closed，再做 1 次最小成功请求。 |
+| `analysis.default_val.list` | `draft`（部分证明） | 本轮 1 次目标请求；完整前端 builder 与 HTTP 200 语义成功空响应共同证明 body 为 caller-bound `app_id` + 固定 `$lib_version`，分页 `none`；既有非空样本只观察到 `data.api[]`、`data.cocoscreator[]` 为 string，前端按动态字典消费。 | `dynamic_key_projection_unapproved`、`successful_confirmation_required` | 在同一最小 App/同形状下取得另一个非空样本；随后批准有界 SDK-family key 投影。动态 `{dynamic_key}` 未批准前继续全隐藏。 |
+| `analysis.realtime_event.list` | `draft`（部分证明） | 本轮 1 次目标请求；完整 builder 与 HTTP 200 语义成功空 `data.list` 证明顶层 `app_id/filters/page/page_size/request_time` 及 7 个 filter 键；无 `page_info`，未翻页。 | `empty_sample`、`pagination_unverified`、`response_item_schema_unverified`、`privacy_projection_approval_required` | 同一最短当天窗口、第一页、`page_size=1` 取得 1 个非空 item；单独证明服务端分页。静态候选 `client_id/request_id/request_ip/raw_properties` 未获隐私投影批准。 |
+| `analysis.setting.query` | `draft`（mutation 负向证明） | 本轮 0 次请求；完整 Dashboard builder 证明该 POST 在修改图表时提交 `config/name/remark` 等字段，成功后继续改 dashboard layout 并提示修改成功；合同 `effect=mutation`，probe 在 transport 前拒绝。 | `mutation_route_not_read`、`free_text_fail_closed` | 原查询动线须找到另一条可证明只读的 route；本 route 属 mutation，在线 probe 被禁止，批准 mutation 也不能替代读取合同。 |
 | `report.masterkey_report_group.list` | `draft` | 3 次目标请求；HTTP 200、空样本；`page_info`、第二页行为和安全页上限已验证；无父绑定。 | `empty_sample` | 在相同最小日期窗口和第一页条件下取得 1 个非空列表样本，用于证明 item schema；不扩大时间范围寻找数据。 |
 | `report.report.list` | `draft` | 3 次目标请求；HTTP 200、空样本；`page_info`、第二页行为和安全页上限已验证；无父绑定。 | `empty_sample`、`response_schema_unverified` | 取得 1 个非空列表样本，并仅对实际观察到的 item 字段做投影与隐私审查。 |
 | `report.report.detail` | `draft` | 0 次请求；同批 `report.report.list` 为空，按约定跳过；沿用既有空样本；分页为 `none`，本轮未复核；前置资源未解析。 | `empty_sample`、`response_schema_unverified` | 先从同批列表得到 1 个可读候选，再仅以内存传入 1 次 detail 请求；随后审查 detail 字段，不持久化父值。 |
@@ -26,6 +26,28 @@
 | `attribution.attribution.query` | `draft` | 本轮 0 次请求；沿用既有 `semantic_error` 证据，无可用样本；分页为 `none`，本轮未复核；无父绑定。 | `request_parameters_required`、`response_schema_unverified` | 先取得可复核的现有调用方或同一 census 快照对应的 bundle 正文，且证据须包含请求构造、默认值和条件省略逻辑，以唯一证明完整 POST body 的全部字段名、JSON 类型、必填性及 `null`/空数组/空字符串语义；若只有脱敏浏览器网络记录，还须补充空值与省略规则证据。当前 `route-params` 的 2 个 load call 均未解析、`body_parameters` 为空，且仓库无 bundle 正文或调用方；补齐前保持 0 次请求且不做组合猜测。 |
 
 | `attribution.attribution_detail.query` | `draft` | 本轮 0 次请求，且无既有 live probe；无样本，分页未验证；无父绑定。 | `not_probed`、`pagination_unverified`、`request_binding_unverified`、`response_schema_unverified` | 必须先取得经批准的测试级标识来源、完整请求绑定和隐私边界；不得使用任意用户级设备标识。证据不足时保持不探测。 |
+
+## 2026-08-14 追加判定：三条 `analysis.*` 合同取证
+
+先估最坏 7 次业务请求；实际 3 次，分类为
+`success=1 / empty=2 / permission_unavailable=0 / semantic_error=0 / other=0`。
+`success` 是只用于内存解析最小 App 的 stable `app.list`；两个目标读取均 HTTP 200、语义成功但为空。
+没有 confirmation、翻页、扩窗、换 App 或重试，`analysis.setting.query` 因静态证据证明为 mutation 而保持 0 次。
+
+- Census：default-val 提取 `app_id/subject` 但响应未绑定；realtime-event 提取 5 个顶层字段、
+  7 个 filter 子键且只追到 `data.list`；setting 提取 9 个顶层字段但响应未绑定。
+- Bundle：完整 builder 证明 default-val 固定 `$lib_version`；realtime-event 空 filter 成员序列化时省略，
+  前端对 `data.list` 做本地切片；setting 在修改图表后继续修改 dashboard layout 并提示修改成功。
+- Artifact：看板、模板、saved-analysis 语料未发现 default-val/realtime-event 请求；已有看板 artifact
+  也没有独立的 setting 请求或响应样本。
+- 隐私：本轮空响应没有观察到敏感字段值；静态 item 消费候选 `client_id`、`request_id`、
+  `request_ip`、`raw_properties` 仅登记字段名并保持隐藏，需单独投影批准。setting 的
+  `name/remark/config` 未发送、未投影。
+
+`analysis.default_val.list` 的旧非空响应确实证明 `data.api[]` 与 `data.cocoscreator[]` 为 string，
+完整前端消费还证明 `data` 被当作动态字典、value 被按数组消费；它不能证明 key 的闭集或未观察 value 的类型，
+也没有形成获批的动态 key 投影。本轮同形状空响应只能确认请求可用，不能确认 item 投影。
+因此三条均未晋升：总 operation 仍为 185，stable 仍为 176。
 
 ## 2026-08-13 追加判定：无标识变现明细（D27）
 

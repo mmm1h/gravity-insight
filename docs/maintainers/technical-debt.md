@@ -48,6 +48,26 @@
   使两条路径语义一致；确证无消费者时直接删除。**不要为它补 Agent 卡或 Plan 面**——
   那是在把未校验路径推给自动化调用方。静默忽略 shortcut 的行为无论保留与否都应改为显式报错。
 
+### 3. Census 把 214 条 POST 仅凭路径词元判为「未覆盖读」
+
+- **Owner area**：Census 路由语义分类 / 探测安全。
+- **证据**：2026-08-14 取证证明 `analysis.setting.query`（`POST /kanban/report/setting/`）
+  **是 mutation 不是查询**——完整前端控制流显示它提交 `config/name/remark`、随后更新看板布局
+  并提示修改成功。但 census 此前把它判为 `status=uncovered_read`，唯一语义证据是
+  `read_action_path_token`（路径里有 read 味的词），`semantic_confidence=medium`。
+  该 draft 已有 **3 次真实 probe 记录**（`2026-08-08`），即探测确实打到了写路由上；
+  只因语义报错才没造成写入，**这是运气不是设计**。
+  实测同类分布：343 条 `uncovered_read` 中 **261 条（76%）唯一证据就是 `read_action_path_token`**，
+  其中 **214 条是 POST**；仅 60 条有 `safe_http_method`（GET，HTTP 语义本身安全），22 条为 registry 声明。
+  样本里 `/account_center/api/v1/get_verify_code/v2/` 同样可疑——发送验证码是副作用动作。
+- **触发条件**：任何人对 `uncovered_read` 池中的 POST 路由发起 probe；或把这类候选纳入排期。
+- **退出条件**：**先加探测闸门**——仅有 `read_action_path_token` 的 POST 路由默认禁止 probe，
+  需要逐条人工确认读语义后才放行；再逐步用控制流证据替换弱信号分类。
+  **不要反过来把它们批量标成 mutation**——那会误伤真正的读路由；
+  正确方向是把"未经证实"与"已证实为读"分开，而不是二选一。
+- **注意**：`docs/maintainers/probing.md` 现有纪律针对请求量与隐私，**不覆盖"目标是否真的是读"**。
+  这条债务补的是那个缺口。
+
 ## 明确不登记为债务
 
 以下模式经审计判定为**合理领域边界**，不因文件数量多而登记：25 个 `agent_*.py`、

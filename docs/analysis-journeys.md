@@ -39,9 +39,9 @@
 | 创建、轮询并下载素材分析报表 | 已闭环 | 有 / 有 / 设计不适用 / 有 | 1 / 2（卡面） | 文件 effect 由一次 `export run` 完成 create→poll→download、校验与原子提交；卡声明发现后 1 次调用。Plan v1 不承诺文件副作用、超时恢复或部分下载语义。 |
 | 跨平台读取任意推广层级的兼容快照 | 不计独立动线（legacy 兼容面） | 有 / 有 / 设计不暴露 / 设计不暴露 | 1 / 不提供 | permissive snapshot 绕过正式产品的 workspace App、统一日期窗、平台/指标 allowlist 与结果绑定；保留专家兼容入口，Agent 主路径指向 `promotion performance`。 |
 | 读取任意稳定元数据 operation 的统一快照 | 不计独立动线（SDK 便利面） | 设计不暴露 / 有 / 设计不暴露 / 设计不暴露 | 1 / 不提供 | inventory 驱动且会跳过缺必填 input 的 operation，不构成稳定调用方任务；在线固定上下文走 `analysis context`，离线发现走 `metadata search` / `metadata vocabulary`。 |
-| 查询分析默认值字典 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | `analysis.default_val.list` 请求必填语义与响应 schema 未证实；现有非空响应仍为 inconclusive。 |
-| 查询实时事件目录 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | `analysis.realtime_event.list` 仅有 semantic error；请求字段、分页和响应 schema 未证实。 |
-| 查询分析空间或报表设置 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | `analysis.setting.query` 缺完整值无关请求形状与响应投影；自由文本继续 fail-closed。 |
+| 查询分析默认值字典 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | 请求形状与无分页已证明；既有非空样本只证明已观察的 string-array 键，动态字典 key 投影未批准，且本轮同形状响应为空，不能完成非空确认。 |
+| 查询实时事件目录 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | 完整请求 builder 已证明且最小请求语义成功为空；item schema 与服务端分页仍未证实，`client_id/request_id/request_ip/raw_properties` 需单独隐私投影批准。 |
+| 查询分析空间或报表设置 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | 候选 `analysis.setting.query` 已由完整前端控制流证明为修改报表设置的 mutation，不是读取；自由文本/config 继续 fail-closed，须另找只读 route。 |
 | 查找自有、共享和 MasterKey 报表并读取其定义 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | group/list/shared 样本均空；detail 无父候选，item schema 与隐私投影未证实。 |
 | 查看报表订阅清单 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | `report.subscribe.list` 的只读语义、请求合同、分页和响应 schema 均未证实。 |
 | 查找可用的媒体报表 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | `report.media_report.list` 缺 App/平台可信绑定和非空 item schema。 |

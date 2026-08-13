@@ -3,19 +3,30 @@
   "draft": {
     "blockers": [
       {
-        "code": "request_parameters_required",
-        "detail": "The observed request reached a semantic error; required request fields remain unknown.",
-        "evidence": "evidence/probe/20260808T231057Z_analysis.default_val.list.yaml",
+        "code": "dynamic_key_projection_unapproved",
+        "detail": "The frontend consumes a dynamic dictionary and the prior sample proves two observed keys are string arrays, but unbounded keys and value types remain fail-closed.",
+        "evidence": "docs/candidate-capability-matrix.md",
         "status": "open"
       },
       {
-        "code": "response_schema_unverified",
-        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
-        "evidence": "evidence/probe/20260808T231057Z_analysis.default_val.list.yaml",
+        "code": "successful_confirmation_required",
+        "detail": "The exact minimum request returned semantic success with empty data on 2026-08-14, so it cannot confirm the prior non-empty response projection.",
+        "evidence": "docs/candidate-capability-matrix.md",
         "status": "open"
       }
     ],
-    "candidate_fields": [],
+    "candidate_fields": [
+      {
+        "classification_reason": "unbounded_dynamic_dictionary_key_review",
+        "expose": false,
+        "path": "data.{dynamic_key}[]",
+        "presence": "unknown",
+        "privacy_classification": "manual_review",
+        "types": [
+          "unknown"
+        ]
+      }
+    ],
     "coverage_reference": {
       "coverage_path": "src/gravity_sdk/census/data/coverage.json",
       "json_pointer": "/routes/914",
@@ -25,7 +36,9 @@
       "route_sha256": "192bb33a5c9a54c803d43c6a1fa1fc7545e44774aaf196e94ab083ac4b1428b9"
     },
     "generated_at": "2026-08-08T20:23:09Z",
-    "manual_review_fields": [],
+    "manual_review_fields": [
+      "data.{dynamic_key}[]"
+    ],
     "probe_evidence": [
       {
         "conclusion": "local_or_parent_inconclusive",
@@ -75,10 +88,10 @@
     "promotion_gate": {
       "eligible": false,
       "missing": [
-        "request_parameters_required",
+        "dynamic_key_projection_unapproved",
+        "field_review_required",
         "response_projection",
-        "response_schema_unverified",
-        "runtime_probe_placeholder_unsupported",
+        "successful_confirmation_required",
         "successful_probe"
       ]
     },
@@ -113,9 +126,9 @@
             "route_offset": 40209
           }
         ],
-        "contract_confidence": "low",
+        "contract_confidence": "high",
         "learned_parameters": [],
-        "required_semantics": "frontend_observation_only",
+        "required_semantics": "complete_frontend_builder_and_live_empty_success",
         "route": {
           "method": "POST",
           "path": "/turbo_engine/api/v2/event/conf_event_meta/default_val/list/"
@@ -129,9 +142,9 @@
             "location": "body",
             "name": "app_id",
             "path": "$.app_id",
-            "presence": "unknown",
+            "presence": "observed_always",
             "types": [
-              "unknown"
+              "integer"
             ]
           },
           {
@@ -140,7 +153,7 @@
             "location": "body",
             "name": "subject",
             "path": "$.subject",
-            "presence": "unknown",
+            "presence": "observed_always",
             "types": [
               "string"
             ]
@@ -167,28 +180,24 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "block_reason": "draft blockers: request_parameters_required, response_schema_unverified",
+    "block_reason": "draft blockers: dynamic_key_projection_unapproved, successful_confirmation_required",
     "contract_version": 1,
-    "description": "Draft catalog entry inferred from census route POST /turbo_engine/api/v2/event/conf_event_meta/default_val/list/; request binding, pagination, and response projection remain unverified.",
+    "description": "Read the SDK default-value dictionary for one App. The frontend fixes subject to $lib_version; dynamic response keys remain fail-closed.",
     "domain": "analysis",
     "effect": "read",
     "examples": [],
     "executable": false,
     "input_fields": {
       "app_id": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=unknown); presence describes frontend calls and is not a server-required declaration.",
-        "type": "any"
-      },
-      "subject": {
-        "default": "$lib_version",
-        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=unknown); presence describes frontend calls and is not a server-required declaration.",
-        "type": "string"
+        "description": "App identifier selected by the caller.",
+        "required": true,
+        "type": "integer"
       }
     },
     "live_probe": {
       "enabled": false,
       "inputs": {
-        "subject": "$lib_version"
+        "app_id": "$parent:app_id"
       }
     },
     "operation_id": "analysis.default_val.list",
@@ -257,18 +266,24 @@
     },
     "request": {
       "body_fields": [
-        "app_id",
-        "subject"
+        "app_id"
       ],
-      "defaults": {
+      "defaults": {},
+      "fixed_body": {
         "subject": "$lib_version"
       },
-      "fixed_body": {},
       "fixed_query": {},
       "path_fields": [],
       "query_fields": []
     },
-    "required_parent": [],
+    "required_parent": [
+      {
+        "input_field": "app_id",
+        "operation_id": "app.list",
+        "output_path": "data.list[].id",
+        "selection": "caller_select"
+      }
+    ],
     "resource": "default_val",
     "response_projection": {
       "data_keys": [],
