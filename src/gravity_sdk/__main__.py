@@ -20,6 +20,7 @@ Usage:
   gravity analysis dashboard prepare|run --app <alias|id> --ref <id|name> --start <date> --end <date>
   gravity analysis user journey --app <alias|id> --client-id <id> --date <date>
   gravity analysis segment snapshot --app <alias|id> --ref <id|name> --date <date>
+  gravity analysis order directory --app <alias|id> --date <date>
   gravity analysis order trace --app <alias|id> --date <date> --trace-id <id>
   gravity reports pulse --app <alias|id> --start <date> --end <date>
   gravity materials performance --app <alias|id> --start <date> --end <date>

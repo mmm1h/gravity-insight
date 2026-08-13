@@ -12,17 +12,13 @@ from .workspace_app import resolve_workspace_app
 
 
 def add_order_trace_command(
-    analysis_commands: Any,
+    order_commands: Any,
     concurrency_parser: Callable[[str], int],
     positive_int_parser: Callable[[str], int],
 ) -> None:
-    """Register ``analysis order trace`` without growing the root CLI."""
+    """Register the ``trace`` member of the governed order family."""
 
-    order = analysis_commands.add_parser(
-        "order", help="Run bounded governed order products."
-    )
-    commands = order.add_subparsers(dest="order_command", required=True)
-    trace = commands.add_parser(
+    trace = order_commands.add_parser(
         "trace", help="Read split-order detail for one exact TraceID."
     )
     trace.add_argument("--app", required=True)
@@ -60,6 +56,9 @@ def prepare_order_trace_request(args: Any) -> tuple[str, str, str]:
 def dispatch_order_trace(args: Any, _object_input: Any) -> dict[str, Any]:
     """Execute only after local input and workspace preflight succeeds."""
 
+    from .order_cli import reject_order_dry_run
+
+    reject_order_dry_run(args)
     app_id, date, trace_id = prepare_order_trace_request(args)
     from .order_trace import order_split_trace
 

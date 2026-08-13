@@ -78,6 +78,10 @@ _EXPORTS = {
     "validate_order_split_trace_request": (
         ".order_trace", "validate_order_split_trace_request"
     ),
+    "order_directory": (".order_directory", "order_directory"),
+    "validate_order_directory_request": (
+        ".order_directory", "validate_order_directory_request"
+    ),
     "compile_saved_analysis_definition": (
         ".saved_analysis", "compile_saved_analysis_definition"
     ),

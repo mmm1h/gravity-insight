@@ -8,7 +8,7 @@ from . import runtime
 from .analysis_context import analysis_context
 from .app_snapshot import app_snapshot
 from .cli_limits import positive_int
-from .order_trace_cli import add_order_trace_command
+from .order_cli import add_order_commands
 from .workspace import load_workspace
 from .workspace_app import resolve_workspace_app
 
@@ -29,7 +29,7 @@ def add_deepening_commands(
     )
     _add_app_and_concurrency(context, concurrency_parser)
     context.set_defaults(_gravity_handler=_dispatch_analysis_context)
-    add_order_trace_command(analysis_commands, concurrency_parser, positive_int)
+    add_order_commands(analysis_commands, concurrency_parser, positive_int)
 
 
 def _add_app_and_concurrency(parser: Any, concurrency_parser: Any) -> None:

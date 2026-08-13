@@ -47,7 +47,7 @@ def command_requires_credentials(
     if getattr(args, "analysis_command", None) == "saved":
         return _saved_requires_credentials(args)
     if getattr(args, "analysis_command", None) == "order":
-        return _order_trace_requires_credentials(args)
+        return _order_requires_credentials(args)
     if getattr(args, "command", None) == "multidim" and getattr(
         args, "multidim_command", None
     ) == "query":
@@ -228,15 +228,21 @@ def _promotion_requires_credentials(args: Any) -> bool:
     return True
 
 
-def _order_trace_requires_credentials(args: Any) -> bool:
-    """Offer login only after the exact Order Trace request is locally valid."""
+def _order_requires_credentials(args: Any) -> bool:
+    """Offer login only after the selected Order request is locally valid."""
 
-    if getattr(args, "order_command", None) != "trace":
+    action = getattr(args, "order_command", None)
+    if action not in {"directory", "trace"}:
         return False
     try:
-        from .order_trace_cli import prepare_order_trace_request
+        if action == "directory":
+            from .order_directory_cli import prepare_order_directory_request
 
-        prepare_order_trace_request(args)
+            prepare_order_directory_request(args)
+        else:
+            from .order_trace_cli import prepare_order_trace_request
+
+            prepare_order_trace_request(args)
     except (InputValidationError, OSError, TypeError, ValueError):
         return False
     return True
