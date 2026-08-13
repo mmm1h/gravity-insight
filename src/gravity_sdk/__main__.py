@@ -22,6 +22,7 @@ Usage:
   gravity analysis segment snapshot --app <alias|id> --ref <id|name> --date <date>
   gravity analysis order directory --app <alias|id> --date <date>
   gravity analysis order trace --app <alias|id> --date <date> --trace-id <id>
+  gravity analysis monetization detail --app <alias|id> --date <date>
   gravity multidim query --app <alias|id> --input <json|file|->
   gravity reports pulse --app <alias|id> --start <date> --end <date>
   gravity materials performance --app <alias|id> --start <date> --end <date>

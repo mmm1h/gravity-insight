@@ -82,6 +82,10 @@ _EXPORTS = {
     "validate_order_directory_request": (
         ".order_directory", "validate_order_directory_request"
     ),
+    "monetization_detail": (".monetization_detail", "monetization_detail"),
+    "validate_monetization_detail_request": (
+        ".monetization_detail", "validate_monetization_detail_request"
+    ),
     "compile_saved_analysis_definition": (
         ".saved_analysis", "compile_saved_analysis_definition"
     ),

@@ -17,9 +17,13 @@ from .plan_adapter_support import (
     request_object,
     validate_exact_targets,
 )
+from . import plan_monetization_adapter as monetization_plan
 
 
 ANALYSIS_QUERY_NAME = "analysis_query"
+COMPOSITE_NAMES = frozenset(
+    {ANALYSIS_QUERY_NAME, monetization_plan.MONETIZATION_DETAIL_NAME}
+)
 ANALYSIS_QUERY_REQUEST_FIELDS = frozenset(
     {"name", "kind", "app", "spec", "start", "end"}
 )
@@ -89,6 +93,50 @@ def validate_analysis_query_plan(
             request_inputs=compiled.inputs,
         )
     return compiled.operation_id
+
+
+def is_analysis_composite(value: Any) -> bool:
+    return value in COMPOSITE_NAMES
+
+
+def validate_analysis_plan(
+    insight: Any,
+    workspace: Any,
+    request: Mapping[str, Any],
+    context: AdapterContext,
+) -> None:
+    if request.get("name") == monetization_plan.MONETIZATION_DETAIL_NAME:
+        monetization_plan.validate_monetization_detail_plan(
+            request, context, workspace
+        )
+        return
+    validate_analysis_query_plan(insight, workspace, request, context)
+
+
+def execute_analysis_plan(
+    sdk: Any, request: Mapping[str, Any], context: AdapterContext
+) -> dict[str, Any]:
+    if request.get("name") == monetization_plan.MONETIZATION_DETAIL_NAME:
+        return monetization_plan.execute_monetization_detail_plan(
+            sdk, request, context
+        )
+    return execute_analysis_query_plan(sdk, request, context)
+
+
+def is_analysis_result(value: Any) -> bool:
+    return is_analysis_query_result(value) or (
+        monetization_plan.is_monetization_detail_result(value)
+    )
+
+
+def project_analysis_result(
+    value: Any, fields: tuple[str, ...], context: AdapterContext
+) -> dict[str, Any]:
+    if monetization_plan.is_monetization_detail_result(value):
+        return monetization_plan.project_monetization_detail_result(
+            value, fields, context
+        )
+    return project_analysis_query_result(value, fields, context)
 
 
 def execute_analysis_query_plan(
@@ -199,9 +247,15 @@ def project_analysis_query_result(
 __all__ = [
     "ANALYSIS_QUERY_NAME",
     "ANALYSIS_QUERY_REQUEST_FIELDS",
+    "COMPOSITE_NAMES",
+    "execute_analysis_plan",
     "execute_analysis_query_plan",
+    "is_analysis_composite",
+    "is_analysis_result",
     "is_analysis_query_result",
+    "project_analysis_result",
     "project_analysis_query_result",
     "safe_analysis_envelope",
+    "validate_analysis_plan",
     "validate_analysis_query_plan",
 ]

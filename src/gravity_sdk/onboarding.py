@@ -48,6 +48,8 @@ def command_requires_credentials(
         return _saved_requires_credentials(args)
     if getattr(args, "analysis_command", None) == "order":
         return _order_requires_credentials(args)
+    if getattr(args, "analysis_command", None) == "monetization":
+        return _monetization_requires_credentials(args)
     if getattr(args, "command", None) == "multidim" and getattr(
         args, "multidim_command", None
     ) == "query":
@@ -241,6 +243,20 @@ def _order_requires_credentials(args: Any) -> bool:
             from .order_trace_cli import prepare_order_trace_request
 
             prepare_order_trace_request(args)
+    except (InputValidationError, OSError, TypeError, ValueError):
+        return False
+    return True
+
+
+def _monetization_requires_credentials(args: Any) -> bool:
+    """Offer login only after the identifier-free request is locally valid."""
+
+    if getattr(args, "monetization_command", None) != "detail":
+        return False
+    try:
+        from .monetization_detail_cli import prepare_monetization_detail_request
+
+        prepare_monetization_detail_request(args)
     except (InputValidationError, OSError, TypeError, ValueError):
         return False
     return True
