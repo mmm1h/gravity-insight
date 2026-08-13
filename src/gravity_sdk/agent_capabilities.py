@@ -30,6 +30,7 @@ from .agent_promotion_performance import (
     PROMOTION_PERFORMANCE_NAME,
 )
 from .agent_saved_analysis import SAVED_ANALYSIS_CAPABILITY
+from .template_replay_surface import ANALYSIS_TEMPLATE_CAPABILITY
 from .agent_segment_snapshot import SEGMENT_SNAPSHOT_CAPABILITY
 
 
@@ -61,6 +62,7 @@ _COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
     DASHBOARD_ANALYSIS_CAPABILITY,
     SEGMENT_SNAPSHOT_CAPABILITY,
     SAVED_ANALYSIS_CAPABILITY,
+    ANALYSIS_TEMPLATE_CAPABILITY,
     {
         "name": "dashboard_snapshot",
         "domain": "analysis",
@@ -400,6 +402,7 @@ def authoritative_capability_cards(
             PROMOTION_PERFORMANCE_NAME,
             "multidim",
             "saved_analysis",
+            "analysis_template",
             "segment_snapshot",
         }
     ]

@@ -18,6 +18,7 @@ _STRICT_COMPOSITES = frozenset(
         "promotion_performance",
         "multidim",
         "saved_analysis",
+        "analysis_template",
         "segment_snapshot",
     }
 )
@@ -112,6 +113,10 @@ def _strict_composite_query(name: str, query: str) -> bool:
         from .agent_saved_analysis import saved_analysis_query
 
         return saved_analysis_query(query)
+    if name == "analysis_template":
+        from .template_replay_surface import analysis_template_query
+
+        return analysis_template_query(query)
     if name == "multidim":
         from .agent_multidim import multidim_query
 

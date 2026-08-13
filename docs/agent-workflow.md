@@ -25,6 +25,7 @@
 | 已知保存分析引用和日期窗 | `gravity analysis saved run --app ... --ref ... --start ... --end ...` | 1 |
 | 不知道能力、但已有引用和日期窗 | `gravity agent "run saved analysis <ref>"` → 填卡并 `plan run` | 2 |
 | 不知道保存分析引用 | `analysis saved list` → 人工选择精确引用 → `analysis saved run` | 2；若还要先发现能力则 3 |
+| 分析模板（scope/引用已知或未知） | 已知：`analysis template run --scope ... --app ... --ref ... --start ... --end ...`；未知：Agent 卡 → `plan run`。只执行 compact Spec/已证明 artifact；`originParams` 与 compare 逐字段隔离，不猜译 | 1 / 2 |
 | 看板控制面/图表重放（引用已知/未知） | 已知：`analysis dashboard snapshot` 或 `analysis dashboard run`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
 | 已知可调用导出及完整输入 | `gravity export run ... --output <file.xlsx>` | 1 |
 | 不知道可调用导出 | `gravity agent "material report export"` → 执行 `next.argv` | 2 |
@@ -188,7 +189,6 @@ gravity run app.list --input '{"page":1,"page_size":20}' --fields id,name
 ## 7. 离线元数据与 Analysis 词汇
 
 一次同步同时保存 App 事件/属性和 workspace Analysis 词汇；可选保存 account 数据表沿革：
-
 ```powershell
 gravity metadata sync --all-apps --include-table-lineage
 gravity metadata search "purchase"

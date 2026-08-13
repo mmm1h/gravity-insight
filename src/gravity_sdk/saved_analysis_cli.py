@@ -77,6 +77,9 @@ def add_saved_analysis_commands(
         parser.set_defaults(_gravity_handler=dispatch_saved_analysis)
     # Only an explicit definition can compile without catalog/detail reads.
     prepare.set_defaults(network_required=True)
+    from .template_replay_surface import add_template_commands
+
+    add_template_commands(analysis_commands, positive_int)
     return analysis_commands
 
 

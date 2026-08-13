@@ -256,6 +256,10 @@ def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
         from .agent_saved_analysis import saved_analysis_plan_request
 
         return saved_analysis_plan_request(card)
+    if composite == "analysis_template":
+        from .template_replay_surface import analysis_template_plan_request
+
+        return analysis_template_plan_request(card)
     if composite == "multidim":
         from .agent_multidim import multidim_plan_request
 
