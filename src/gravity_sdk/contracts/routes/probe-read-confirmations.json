@@ -1,4 +1,41 @@
 {
-  "confirmations": [],
+  "confirmations": [
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The recovered frontend builder sends only an integer app_id and the fixed subject \"$lib_version\", carries no pagination, and the response is consumed as a read-only dictionary of string arrays. No mutation control flow reaches this route.",
+          "source": "docs/candidate-capability-matrix.md"
+        },
+        {
+          "detail": "A minimum single-page request returned HTTP 200 with a semantically successful empty envelope, with no confirmation step, no layout update and no success toast.",
+          "source": "docs/analysis-journeys.md"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "analysis.default_val.list",
+      "path": "/turbo_engine/api/v2/event/conf_event_meta/default_val/list/",
+      "reviewed_at": "2026-08-14",
+      "reviewer": "hm"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The recovered frontend builder proves five top-level fields and seven filter subkeys, and the caller slices the returned list locally. Listing and slicing are read behaviour; no write control flow invokes this route.",
+          "source": "docs/candidate-capability-matrix.md"
+        },
+        {
+          "detail": "A minimum first-page request returned HTTP 200 with a semantically successful empty data.list envelope, with no confirmation step and no modification feedback.",
+          "source": "docs/analysis-journeys.md"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "analysis.realtime_event.list",
+      "path": "/turbo_engine/api/v2/event/realtime_event/list/",
+      "reviewed_at": "2026-08-14",
+      "reviewer": "hm"
+    }
+  ],
   "schema_version": "gravity-insight.probe-read-confirmations.v1"
 }
