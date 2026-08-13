@@ -10,6 +10,7 @@ manifest 与 `gravity agent <query>` 为准；完整路由账本见
 | --- | --- |
 | 编译 operation | 185 |
 | stable operation | 176 |
+| stable operation 产品面交叉 | 86 已覆盖 / 82 不应产品化 / 8 值得产品化（其中 1 条本轮闭环） |
 | 推广 / 素材 stable 原子读取 | 64 / 24 |
 | Census 路由 | 987，全部有明确归类 |
 | Census 中 callable covered route | 172 |
@@ -19,6 +20,12 @@ manifest 与 `gravity agent <query>` 为准；完整路由账本见
 这些数字不等于“还有 343 个接口可以直接开发”。推广与素材共有 188 个 catalog-only
 draft，但当前没有一个具有成功 probe；它们可用于说明缺口和准备最小探测，不能生成执行
 argv，也不能进入 stable manifest。
+
+stable 同样不等于已有分析产品：本轮首次从 176 条 stable operation 正向检查产品调用链，
+`gravity run <operation-id>`、legacy promotion snapshot 和 SDK inventory snapshot 均不算分析动线。
+实现前完整交叉为 `86 / 82 / 8`；8 条中只有 `report.company_amount.query` 同时具备成功非空与
+分页证据、清晰独立语义和已批准投影，因此已通过 `reports usage` / SDK / Plan / Agent 四面闭环。
+其余 7 条的边界与 blocker 以 [路线图](roadmap.md#stable-operation-正向交叉2026-08-14) 为准。
 
 ## 平台纵深
 

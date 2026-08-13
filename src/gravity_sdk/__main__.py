@@ -26,6 +26,7 @@ Usage:
   gravity analysis monetization detail --app <alias|id> --date <date>
   gravity multidim query --app <alias|id> --input <json|file|->
   gravity reports pulse --app <alias|id> --start <date> --end <date>
+  gravity reports usage
   gravity materials performance --app <alias|id> --start <date> --end <date>
   gravity promotion performance --app <alias|id> --start <date> --end <date>
   gravity export run <operation-id> --input <json|file|-> --output <file>
