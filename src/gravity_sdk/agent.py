@@ -408,7 +408,7 @@ def _protocol(workspace_path: object | None = None) -> dict[str, Any]:
         "network_called": False,
         "mode": "protocol",
         "scope": AGENT_SCOPE,
-        "goal": "Discover plus describe, then execute, in at most two CLI calls.",
+        "goal": "Known inputs take one call; candidate.call_bound declares unknown-input lower bounds.",
         "workflow": [
             {
                 "step": "discover_and_describe",

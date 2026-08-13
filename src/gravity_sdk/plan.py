@@ -198,9 +198,16 @@ def plan_schema() -> dict[str, Any]:
         "node": {
             "required": ["id", "kind", "request"],
             "allowed_fields": [
-                "bindings", "depends_on", "foreach", "id", "kind", "limits",
-                "output_fields", "request",
+                "bindings", "call_bound", "depends_on", "foreach", "id", "kind",
+                "limits", "output_fields", "request",
             ],
+            "call_bound": {
+                "required": False,
+                "schema_version": "gravity.agent-call-bound.v1",
+                "default": None,
+                "execution_effect": "advisory_only",
+                "unknown_capability_assumes": "required_inputs_known",
+            },
             "bindings": {
                 "fields": ["from", "source", "target"],
                 "value": "JSON scalar only",

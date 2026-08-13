@@ -91,12 +91,18 @@ D32 本轮先估 22 次、实际只发 5 次最小 stable 根读取；5 次均�
 
 ## Agent 可用性欠账
 
-- **"未知 2 次"的承诺不成立**：[台账](analysis-journeys.md)逐条实测为 **9 条调用次数不达标**
-  （引用未知、物理输入未知、物理指标未知、metadata 未同步等实际需要 3 次），另有 2 条缺 Agent 卡。
-  旧记的"8 条"没有逐条底稿，以台账为准。要么补齐路径，要么在卡上显式声明调用次数下界与输入来源。
-  声明机制**已部分存在**（`next.call_count_after_discovery`，实测素材导出为 `1`），
-  但未统一应用到全部卡——这正是它不可靠的原因：Agent 读不到就只能猜。
-- 13 张固定 composite 卡的 7 对意图重叠已收口：集中层按现有 owner 的正向证据强度与 selector
+- **"未知 2 次"的承诺不成立，已改为显式声明下界。** 旧记的"8 条"口径有误：把 Dashboard
+  control/replay 两张卡并成一行，又把执行后的 stale/parent/diagnostic 重试当成一条正常路径。
+  按同一类别口径重算，加上后来新增的分析模板引用路径，实际是 **9 类**。
+  **九类全部判定为"显式声明"而非"补齐路径"**——它们都要求调用方精确选择引用、App 或物理字段，
+  把目录选择折进执行只会隐式猜值或重复读目录，那比多一次调用更糟。
+  下界：未知引用/物理输入 3 次；App 也未知时 4 次；metadata 未同步且 App 未知时最高 5 次。
+  声明走 `gravity.agent-call-bound.v1`，四面一致（`gravity agent` candidate、
+  `GravitySDK.capabilities()`、`candidate.call_bound`、`plan_node.call_bound`），
+  含 `minimum_calls`、`discovery_calls`、`unknown_inputs`、`catalog_status`、`input_sources` 与依赖。
+  旧 Plan 不含该字段仍通过，字段不进运行态 `PlanNode`，不改变 request、并发或执行结果。
+  Multidim 与 Promotion 的独立目录已用现有 batch 合为一次发现调用，selector 集合与分页数不变。
+- 当时 13 张固定 composite 卡（现 15 张）的 7 对意图重叠已收口：集中层按现有 owner 的正向证据强度与 selector
   精确度收集产品，命中多个产品即返回 `MULTIPLE_INTENTS`，不再搜索 raw operation。
   该判据不枚举产品对；显式 `and/以及/同时` 子句独立识别，wrapper 引用与历史紧邻冲突仍 fail closed。
 - 错误分类已对齐：permission 返回 upstream/3，本地 unsupported/policy/privacy 阻断返回 local/4；
