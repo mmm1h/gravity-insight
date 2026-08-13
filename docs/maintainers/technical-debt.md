@@ -33,21 +33,7 @@
   只做薄路由。现有中英文、exact selector、sensitive query、raw fallback 与 pairwise conflict 测试
   全部保持。**不引入插件、注册表或通用意图 DSL。**
 
-### 2. Plan composite 中央入口逼近 file/complexity 阈值
-
-- **Owner area**：Plan composite routing。
-- **证据**：`plan_adapters.py` 当前 491 SLOC，距 500 只剩 9 行；`_execute_composite` 50 SLOC/复杂度 14，
-  距 15 只剩 1 个决策点。Material、Promotion、Order Split Trace 曾分别使该文件净增 15、16、8 行，
-  以当前余量重复前两种接法会立即触发门禁。Order Directory 改用 `plan_order_adapter.py` 家族路由后，
-  本轮中央文件 +7/-7、净增长 0。
-- **触发条件**：新增或修改 Plan composite 使 `plan_adapters.py` 超过 491 SLOC，或给
-  `_execute_composite` 再加产品专用分支。
-- **退出条件**：下次开发相邻 Plan 产品时复用或新增窄领域 family router，或顺手把正在修改的相邻既有
-  产品收进其领域 router；`plan_adapters.py` 不高于 491 SLOC，中央 validate/execute/project 不再新增
-  同一产品的三重知识，公共 Plan schema/request/projection/envelope 保持兼容。
-  **不建立全局 adapter registry 或插件机制。**
-
-### 3. Material/Promotion 重复实现多平台结果重建
+### 2. Material/Promotion 重复实现多平台结果重建
 
 - **Owner area**：Material Performance / Promotion Performance result contracts。
 - **证据**：`material_performance_result.py`(406 SLOC) 与 `promotion_performance_result.py`(489 SLOC)
@@ -69,6 +55,9 @@
 不建议放宽或更新 baseline 来容纳增长。
 
 ## 已关闭结构债务
+
+Plan 固定来源 composite 已下沉到窄 family router；并发增强复用同一全局预算租借，中央
+`plan_adapters.py` 低于原 491 SLOC 基线且没有新增 registry、插件或产品三重知识。
 
 本轮已把 CLI 路由、Plan adapter、Multidim service 和 Agent 卡分别下沉到领域模块；通用入口只保留
 薄路由，direct/Plan 共用 worker 预算，旧 raw 合同继续兼容。后续若这些模块再次触发机器 ratchet，

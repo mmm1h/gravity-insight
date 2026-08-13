@@ -251,14 +251,15 @@ SQL 工具。
 | 多个 compact Analysis spec | `analysis query batch` 先全量离线编译，再复用 Plan 同层并发 | 一次 batch，不在外层再建线程池 |
 | Analysis/App/Attribution 组合 | 外层默认 6、上限 24；各来源独立执行，结果固定顺序 | 使用登记组合，不手写多命令循环 |
 | Dashboard snapshot | CLI/SDK 外层默认 5、上限 24；Plan adapter 内部固定 1 worker | 让 Plan 全局 pool 管理跨节点并发，避免“节点 × 5 来源”放大 |
-| Dashboard analysis | CLI/SDK run 默认 6、上限 24；Plan adapter 内固定 1；默认 32、硬上限 64 charts | 单图编译/执行隔离并按看板声明顺序聚合 |
+| Dashboard analysis | CLI/SDK run 默认 6、上限 24；Plan adapter 从全局预算租借；默认 32、显式硬上限 64 charts | `tree→detail→compile` 串行，之后只并发独立图表执行并按看板声明顺序聚合 |
 | Saved analysis | 单个 reference 只执行一个已编译查询；Plan adapter 内固定分页 worker 1 | 多个互不依赖的保存分析放入同一 Plan，由全局 pool 并发，避免外层线程池 |
 | Multidim | CLI/SDK 默认 6、上限 24；metadata 与已知页数共享同一预算；Plan adapter 内固定 1 | 多个独立查询作为同层 Plan 节点，避免“节点 × metadata × 页数”并发放大 |
 | Material performance | CLI/SDK 默认 6、上限 24，实际平台池最多 4；每个平台分页 worker 固定 1；Plan adapter 内固定 1 | 平台 fan-out 与分页不相乘；多个独立请求交给 Plan 全局 pool |
-| Promotion performance | CLI/SDK 平台池默认 6、上限 24；每个平台分页 worker 固定 1；Plan adapter 内固定 1 | 21 平台 fan-out 与分页不相乘；不同 App 或物理指标集合用同层 Plan 节点 |
+| Promotion performance | CLI/SDK 平台池默认 6、上限 24；每个平台分页 worker 固定 1；Plan adapter 从全局预算租借 | 21 平台 fan-out 与分页不相乘；不同 App 或物理指标集合用同层 Plan 节点 |
 | Order directory | direct 分页默认 6、上限 24；Plan adapter 内固定 1 | 多个独立 App/日期使用同层 Plan 节点，不新增 batch wrapper |
 | Order split trace | direct 父分页默认 6、上限 24；child 严格后置；Plan adapter 内固定 1 | 不并发猜 child；多个独立 TraceID 使用同层 Plan 节点 |
 | Segment snapshot | CLI/SDK 外层默认 3、上限 24；Plan adapter 内部固定 1 worker | 三源固定保序，Plan 全局 pool 管理跨节点并发 |
+| Analysis context | CLI/SDK 默认 6、上限 24；Plan adapter 从全局预算租借 | 13 个固定来源独立读取，按声明顺序聚合并保留逐来源失败 |
 | Plan DAG | 一个全局 worker pool，默认 6、上限 24；同层并发、依赖层串行；adapter 内分页 worker 固定 1 | 把交叉查询放进一个 Plan，避免并发乘法放大 |
 | Plan foreach | 每节点最多一个，默认最多 32 项、硬上限 64；不支持嵌套和笛卡尔积 | 只用于一个上游数组到一个目标字段的有限扇出 |
 | 单个 Insight 的分页 | 首页给出明确 `total_page` 时，`read_all/read_limited` 按小窗口并发并保持页序；未知总页数时串行。最多 1,000 页 / 100,000 items | 使用内建分页，不自行并发猜页 |
@@ -270,6 +271,11 @@ SQL 工具。
 避免“批任务 × 分页”嵌套放大。HTTP Runtime 还在 worker 之下共享进程级业务槽、每 host
 令牌桶、429 冷却与认证 single-flight。因此把 worker 调到 24 不等于会同时发出 24 个请求，
 也不应在外层再套线程池绕过它。并发不是越大越快；默认值是日常吞吐入口，上限是安全边界。
+
+Plan 的预算租借只用于已登记且内部工作彼此独立的 adapter。execution 自身持有的一槽计入租借结果，
+额外槽只尝试获取当前空闲容量而不等待；嵌套租借复用当前持有量，context manager 在正常、失败和异常
+路径归还额外槽。因而同层节点与节点内 fan-out 共享同一个总上限，而不是形成“节点数 × adapter
+workers”。借不到额外槽时自动退化为串行，不改变请求集合、分页页数或部分失败 envelope。
 
 Plan 还限制声明节点最多 64、运行时展开最多 256、总 `max_items` 预算最多 100,000。标量
 binding 只复制 RFC 6901 JSON Pointer 指向的值，`from` 必须位于 `depends_on`；路径不存在时

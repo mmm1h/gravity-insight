@@ -70,12 +70,20 @@
 ## 并发
 
 已有 28 条并发路径、7 种模型，底层受业务槽 24、SQL 槽 2、host 令牌桶与 429 cooldown 约束。
-17 条可增强候选中收益最大的是 Promotion Performance（≤21 平台）、Dashboard Analysis（≤32/64 图表）、
-Analysis Context（13 来源）。
+17 条可增强候选中收益最大的 Promotion Performance（≤21 平台）、Dashboard Analysis（≤32/64 图表）、
+Analysis Context（13 来源）已接入 Plan 全局预算租借。
 
-**约束**：向 Plan 现有全局预算租借，**不要把 adapter 的 worker 从 1 改成 6**——那会与全局池
-形成嵌套并发乘法。所有增强保持上游总请求量 `1x`，只提高峰值在途数。SQL 硬上限 2 有 4 并发
-实测失败证据，不提高。分页未知总页、父子依赖链、导出 `create→poll→download`、探测链不并发。
+租借接口把 Plan execution 已占的一槽计入可用 worker，额外容量只做非阻塞 try-acquire；同一 execution
+嵌套租借复用已持有容量，退出或异常均归还，因此多个 Plan worker 不会等待额外槽而自锁。adapter
+不拥有第二个预算，领域 core 继续复用既有 bounded batch。fake transport 在 Plan 预算 6 下记录到：
+Promotion 21 请求峰值 `1→6`、Dashboard 32/64 图表总请求分别 35/67 且图表阶段峰值 `1→6`、
+Analysis Context 13 请求峰值 `1→6`；串并行请求 identity 完全相同。21 平台中 3 个失败的结果保持
+`partial`，18 个成功/空组件与 3 个逐平台错误/能力缺口均保留，Plan 依赖仍把 partial 视为失败。
+
+**约束**：不要给 adapter 增加独立 worker 默认值或私有预算。所有增强保持上游总请求量 `1x`，只提高
+峰值在途数。SQL 硬上限 2 有 4 并发实测失败证据，不提高。分页未知总页、父子依赖链、导出
+`create→poll→download`、探测链不并发。fake transport 证明预算与语义，不代表生产 24 并发已完成
+soak；真实吞吐、尾延迟和 429 频率仍需在发布流程中做受控长时观察。
 
 ## 已批准的隐私投影边界：变现明细（D27）
 

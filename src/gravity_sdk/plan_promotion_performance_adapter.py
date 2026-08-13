@@ -88,21 +88,22 @@ def execute_promotion_performance_plan(
     request: Mapping[str, Any],
     context: AdapterContext,
 ) -> dict[str, Any]:
-    """Execute serially inside Plan, then rebuild a request-bound envelope."""
+    """Execute with borrowed Plan capacity, then rebuild a request-bound envelope."""
 
     platforms = tuple(request["platforms"])
     metrics = tuple(request["metrics"])
-    result = sdk.promotion_performance(
-        request["app"],
-        request["start"],
-        request["end"],
-        platforms=platforms,
-        metrics=metrics,
-        max_workers=1,
-        max_pages=context.max_pages,
-        max_items=context.max_items,
-        workspace=context.workspace,
-    )
+    with context.borrow_workers(len(platforms)) as workers:
+        result = sdk.promotion_performance(
+            request["app"],
+            request["start"],
+            request["end"],
+            platforms=platforms,
+            metrics=metrics,
+            max_workers=workers,
+            max_pages=context.max_pages,
+            max_items=context.max_items,
+            workspace=context.workspace,
+        )
     try:
         app_id = normalize_promotion_app(
             context.workspace.resolve_app(request["app"])
@@ -120,7 +121,7 @@ def execute_promotion_performance_plan(
         expected_metrics=metrics,
         expected_max_pages=context.max_pages,
         expected_max_items=context.max_items,
-        expected_max_workers=1,
+        expected_max_workers=workers,
     )
     if promotion_performance_item_count(safe) > context.max_items:
         raise input_error(
