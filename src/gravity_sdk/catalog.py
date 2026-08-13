@@ -405,7 +405,7 @@ class OperationCatalog:
 
     def record_envelope(self, operation_id: str, envelope: Mapping[str, Any]) -> None:
         error = envelope.get("error")
-        if isinstance(error, Mapping) and error.get("category") != "upstream":
+        if isinstance(error, Mapping) and (error.get("category") != "upstream" or error.get("code") == "PERMISSION_UNAVAILABLE"):
             return
         warnings = envelope.get("warnings")
         self.record(

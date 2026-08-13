@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from .blob import SafeBlobTransfer
-from .errors import ErrorCode, ErrorDetail, InputValidationError
+from .errors import ErrorCategory, ErrorCode, ErrorDetail, InputValidationError
 from .export_contracts import (
     ExportContractRegistry,
     export_error_field, validate_export_payload,
@@ -452,6 +452,9 @@ def _export_result_error_detail(operation_id: str, result: Any) -> ErrorDetail:
         public_code,
         result.error,
         operation_id=operation_id,
+        category=(
+            ErrorCategory.LOCAL if code == "EXPORT_PRIVACY_DENIED" else None
+        ),
         field=export_error_field(code),
         retryable=bool(getattr(result.error, "retryable", False)),
         next_action=next_action,

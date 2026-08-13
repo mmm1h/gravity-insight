@@ -117,7 +117,7 @@ class DashboardAnalysisTests(unittest.TestCase):
         self.assertEqual(("partial", 1, 1), (
             result["status"], result["success_count"], result["failure_count"]
         ))
-        self.assertEqual(2, result["exit_code"])
+        self.assertEqual(4, result["exit_code"])
         self.assertEqual((4, 1), (client.batch_calls[0][1], client.batch_calls[0][2]))
         self.assertFalse(result["charts"][0]["query_executed"])
         self.assertTrue(result["charts"][1]["query_executed"])
@@ -128,7 +128,7 @@ class DashboardAnalysisTests(unittest.TestCase):
         failed = run_dashboard_analysis(
             _Client(fail=True), 17, 3, start="2026-08-01", end="2026-08-08"
         )
-        self.assertEqual(("partial", 3, None), (
+        self.assertEqual(("partial", 4, None), (
             failed["status"], failed["exit_code"], failed["charts"][0]["result"]
         ))
         self.assertNotIn("private", json.dumps(failed).casefold())

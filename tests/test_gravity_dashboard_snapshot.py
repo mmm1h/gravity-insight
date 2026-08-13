@@ -114,7 +114,7 @@ class DashboardSnapshotTests(unittest.TestCase):
         with self.assertRaises(GravityInsightError) as raised:
             dashboard_snapshot(permission, 17, 3)
         detail = raised.exception.to_error_detail()
-        self.assertEqual(("PERMISSION_UNAVAILABLE", "caller"), (detail.code, detail.category))
+        self.assertEqual(("PERMISSION_UNAVAILABLE", "upstream"), (detail.code, detail.category))
         self.assertNotIn("private", str(raised.exception))
         throwing = _Client(); throwing.batch = lambda *_args, **_kwargs: (_ for _ in ()).throw(
             RuntimeError("C:/private/raw boom token=secret"))

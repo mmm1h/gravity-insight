@@ -192,6 +192,11 @@ def export_cli_error(
         code,
         error,
         operation_id=operation_id,
+        category=(
+            ErrorCategory.LOCAL
+            if str(getattr(error, "code", "")) == "EXPORT_PRIVACY_DENIED"
+            else None
+        ),
         field=_export_error_field(error),
         retryable=bool(getattr(error, "retryable", False)),
         next_action=next_action,

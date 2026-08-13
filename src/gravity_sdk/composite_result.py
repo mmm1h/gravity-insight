@@ -134,6 +134,8 @@ def _error_detail(
     raw: Mapping[str, Any],
 ) -> ErrorDetail:
     normalized_code = code.value if isinstance(code, ErrorCode) else str(code).strip().upper()
+    if normalized_code == ErrorCode.PERMISSION_UNAVAILABLE.value:
+        category = ErrorCategory.UPSTREAM
     return ErrorDetail.create(
         code,
         f"Multidimensional {stage} stage failed.",

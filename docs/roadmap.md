@@ -65,7 +65,8 @@
   实际需要 3 次）。要么补齐路径，要么在卡上显式声明调用次数下界与输入来源。
 - 13 张固定 composite 卡中有 7 对存在意图重叠，已复现真实误路由：
   `gravity agent "多维报表和经营脉搏"` 返回无关 operation 而非两个产品或明确的多意图缺口。
-- 错误分类文档与实现不一致：文档称 permission 为 exit 3，实现返回 caller/2。
+- 错误分类已对齐：permission 返回 upstream/3，本地 unsupported/policy/privacy 阻断返回 local/4；
+  operation、请求行为和错误 code 均未改变，没有读能力损失。
 
 ## 并发
 
