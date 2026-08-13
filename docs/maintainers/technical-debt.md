@@ -15,7 +15,15 @@
 
 ## 当前条目
 
-当前没有由本轮源码证明、但尚未闭合的结构债务。新证据出现时按上述维护规则登记。
+### Order Directory 的产品面断点
+
+- owner area：Analysis order products / Agent / Plan。
+- 证据：stable `analysis.order_detail.list` 已证明单日四字段物理目录，但自然语言 order directory
+  仍是 gap，order detail 会同时暴露父 operation 与敏感 child；复制 raw node 也缺闭合 inputs。
+- 触发条件：实现 [Order Directory v1](order-directory.md) 时，只允许精确四字段 profile 与完整分页，
+  不把任意 fields/conditions 或订单语义带入产品。
+- 退出条件：Core/CLI/SDK/Plan/Agent 共用 request-bound 安全结果，direct/Plan worker 预算闭合，
+  raw exact selector 兼容，通用热点零增长，gross/net Python 比例与全门禁通过。
 
 ### 已关闭结构债务
 
