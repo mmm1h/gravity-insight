@@ -1,6 +1,6 @@
 # Workspace 参考
 
-只有项目需要 App 别名、SQL 产品或可复用 recipe 时才配置 workspace。普通
+只有项目需要 App 别名、SQL 产品、单 operation recipe 或参数化 Plan 时才配置 workspace。普通
 operation 搜索和显式 `app_id` 查询不依赖它。
 
 ## 发现顺序
@@ -63,7 +63,56 @@ gravity run @<name> --param <key>=<value>
 
 `check` 出现 `stale` 时应在项目侧更新 recipe；不要修改 SDK 来适配某个业务查询。
 
+## 参数化 Plan
+
+`plan_recipes` 登记调用项目拥有的多节点 `gravity.plan.v1`。SDK 只提供显式参数声明、
+JSON Pointer 绑定、展开、校验和执行；节点组合、事件、指标、活动与业务口径仍留在调用项目。
+仓库示例 `demo-order-window` 只使用虚构 App/日期和两个已有 composite 展示形状。
+
+每个参数声明 `type`、可选 `format`、`required` 和一个或多个 `bindings`：
+
+```toml
+[plan_recipes.example.parameters.date]
+type = "string"
+format = "date"
+required = true
+bindings = [
+  "/nodes/0/request/date",
+  "/nodes/1/request/date",
+]
+
+[plan_recipes.example.plan]
+schema_version = "gravity.plan.v1"
+
+[[plan_recipes.example.plan.nodes]]
+id = "fictional-alpha"
+kind = "composite"
+request = { name = "order_directory", app = "demo", date = "2026-01-01" }
+```
+
+`type` 只允许 `string/integer/number/boolean`，值必须是有限 JSON scalar；字符串可用
+`format = "date"`（`YYYY-MM-DD`）或带时区偏移的 ISO 8601 `date-time`。绑定只能指向
+literal Plan 中**已经存在**的 `/nodes/<index>/request/...` 非空 scalar 叶子；不能修改节点、
+依赖、预算或 limits。一个参数可以绑定多个 request 叶子，因此 Agent 只需机械填写一次日期。
+
+```powershell
+gravity --workspace <path> plan run --recipe example `
+  --param date=2026-08-14 --dry-run
+gravity --workspace <path> plan run --recipe example `
+  --param date=2026-08-14
+```
+
+`--param` 右侧先按 JSON scalar 解析，所以 integer/number/boolean 分别写作 `7`、`1.5`、
+`true`，字符串可以直接写普通无空格文本或 JSON string。缺少 required 参数、类型/格式错误、
+声明的绑定路径不存在都返回 `PLAN_RECIPE_INVALID`、`category=local`、exit `4`，并在任何
+adapter 执行前失败。`--dry-run` 仍调用现有 Plan v1 全量结构与 adapter preflight，但不执行
+adapter、也不发网络请求。
+
+`required = false` 不会推断默认值；调用方省略时只保留 workspace Plan 中已明确写下的 literal。
+日期等每次必须变化的值应声明为 required。这里没有字符串插值、模板继承、表达式、条件、循环、
+调度或通知。
+
 ## 所有权边界
 
-SDK 只定义 workspace/recipe schema、加载、校验、解析和执行机制。App ID、报表 ID、
-事件/属性绑定、指标口径、活动窗口和具体 recipe 实例由调用项目维护。
+SDK 只定义 workspace/recipe/Plan recipe schema、加载、校验、解析和执行机制。App ID、报表 ID、
+事件/属性绑定、指标口径、活动窗口和具体 recipe/Plan recipe 实例由调用项目维护。

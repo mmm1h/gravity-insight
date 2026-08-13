@@ -32,7 +32,31 @@ def add_plan_commands(
     # structurally, while fully local plans must never trigger an interactive
     # first-run prompt before their nodes are inspected.
     run.set_defaults(network_required=False)
-    add_input(run, required=True)
+    source = run.add_mutually_exclusive_group(required=True)
+    source.add_argument(
+        "--input", "-i",
+        help="Inline Plan JSON, a JSON file, or '-' to read JSON from stdin.",
+    )
+    source.add_argument(
+        "--recipe",
+        help="Name of a parameterized Plan registered in the selected workspace.",
+    )
+    run.add_argument(
+        "--set",
+        dest="input_sets",
+        action="append",
+        default=[],
+        metavar="PATH=VALUE",
+        help="Override an input value by dotted path; JSON values are typed.",
+    )
+    run.add_argument(
+        "--param",
+        dest="parameters",
+        action="append",
+        default=[],
+        metavar="NAME=VALUE",
+        help="Bind one declared recipe parameter; JSON scalar values stay typed.",
+    )
     run.add_argument(
         "--concurrency",
         type=concurrency_type,
@@ -55,12 +79,31 @@ def run_plan_command(
     adapters: PlanAdapters | Mapping[str, PlanAdapter],
     workspace: Any,
     object_input: Callable[[Any], Mapping[str, Any]] | None = None,
+    resolved_plan: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Dispatch a registered plan command using caller-owned dependencies."""
 
     if args.plan_command == "schema":
         return plan_schema()
-    value = args.input
+    if resolved_plan is not None:
+        value = resolved_plan
+    elif getattr(args, "recipe", None) is not None:
+        from .workspace_plan_recipe import (
+            PlanRecipeError,
+            expand_plan_recipe,
+            parse_plan_recipe_parameters,
+        )
+
+        if getattr(args, "input_sets", []):
+            raise PlanRecipeError("--set cannot be combined with --recipe", field="set")
+        value = expand_plan_recipe(
+            workspace.plan_recipe(args.recipe),
+            parse_plan_recipe_parameters(getattr(args, "parameters", [])),
+        )
+    else:
+        if getattr(args, "parameters", []):
+            raise ValueError("--param requires --recipe")
+        value = args.input
     if not isinstance(value, Mapping):
         if object_input is None:
             raise ValueError("plan run requires a decoded JSON object")

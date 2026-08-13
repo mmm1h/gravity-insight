@@ -18,6 +18,7 @@ from .sdk_metadata import MetadataSdkMixin
 from .sdk_monetization import MonetizationSdkMixin
 from .sdk_order import OrderSdkMixin
 from .sdk_promotion import PromotionSdkMixin
+from .sdk_plan_recipe import PlanRecipeSdkMixin
 from .sdk_report import ReportSdkMixin
 from .template_replay_surface import TemplateSdkMixin
 
@@ -27,7 +28,8 @@ ClientFactory = Callable[[], Any]
 
 class GravitySDK(
     AnalysisSdkMixin, ReportSdkMixin, MaterialSdkMixin, PromotionSdkMixin,
-    OrderSdkMixin, MetadataSdkMixin, MonetizationSdkMixin, TemplateSdkMixin
+    OrderSdkMixin, MetadataSdkMixin, MonetizationSdkMixin, TemplateSdkMixin,
+    PlanRecipeSdkMixin,
 ):
     """Lazy, process-friendly entry point for the Gravity SDK.
 
