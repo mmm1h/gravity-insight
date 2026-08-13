@@ -100,6 +100,22 @@ gravity run material.bytedance_asset_text_title.list --set page_size=100 `
 `output_fields`（item 值优先于批量默认值）。默认不指定时输出完全不变；未知字段会在联网前返回 caller/2。动态字段只能
 选择请求已经声明且合同允许的字段。
 
+结果型 `--output` 在同目录写临时文件并原子替换目标；写入成功后 stdout 只返回收据，不再混排结果：
+
+```json
+{
+  "format": "json",
+  "ok": true,
+  "output": "tmp/result.json",
+  "size_bytes": 1234,
+  "status": "written"
+}
+```
+
+`size_bytes` 是实际 UTF-8 文件字节数。已有 NDJSON 编码的行数继续由文件末尾
+`_gravity_insight.rows_written` 表示，外层收据不另加字段。纯 `error`/`capability_gap` 不创建或替换
+目标；支持 partial 的新产品写入完整 partial envelope，并原样返回非零退出码。
+
 Insight 普通批量读取默认并发为 6，显式上限为 24；Metadata 同步允许 `1..24`。单次分页
 读取在首页有明确总页数时按小窗口并发并保持页序，未知总页数时串行；batch 内的分页读取
 强制单分页 worker，防止嵌套放大。这些是 worker 上限，实际请求仍受每 host 限流、重试和
@@ -321,13 +337,15 @@ Plan 全局 worker pool，并按输入顺序返回：
 
 ```powershell
 gravity analysis query batch --input queries.json --concurrency 6 --dry-run
-gravity analysis query batch --input queries.json --concurrency 6
+gravity analysis query batch --input queries.json --concurrency 6 `
+  --output tmp/analysis-batch.json
 ```
 
 `queries.json` 使用 `gravity.analysis-query-batch.v1`，每项必填唯一 `id/kind/app/spec`，可选
 `start/end/output_fields/limits.max_items`。`--dry-run` 对整批完成零网络编译与 Plan 预检；任一
 wrapper、预算或 literal spec 错误都会在执行前失败。正常执行保序、隔离 sibling 失败，且不回显
-spec、compiled input 或筛选值。不要为批量查询再创建外层线程池。
+spec、compiled input 或筛选值。不要为批量查询再创建外层线程池。标量 query、batch 与下述多 App
+入口都可用 `--output <path>` 原子写入完整 JSON；不提供 `--format`。
 
 ```json
 {
@@ -353,7 +371,7 @@ spec、compiled input 或筛选值。不要为批量查询再创建外层线程�
 
 ```powershell
 gravity analysis query --kind retention --spec retention.json `
-  --apps main,overseas,103 --concurrency 6
+  --apps main,overseas,103 --concurrency 6 --output tmp/retention.json
 ```
 
 `--apps` 可重复；它与 `--app`、跨期对比互斥。`--dry-run` 会编译每个 App 并完成 Plan 预检，
@@ -622,13 +640,16 @@ Agent 查询 `run saved analysis <ref>`、`运行保存分析 <引用>`，包括
 
 ```powershell
 gravity reports pulse --app main --start 2026-08-01 --end 2026-08-07 `
-  --platform bytedance --include-hourly
+  --platform bytedance --include-hourly --output tmp/business-pulse.json
 ```
 
 基础结果按 `overview`、`business` 顺序；`--include-hourly` 才追加
 `hourly_comparison`。前两项是 `scope=app`，小时对比受上游合同限制并明确标记
 `scope=workspace`，不能解释为单个 App 的小时结果。组合复用现有 stable operation、批量并发、
 分页和局部失败合同；不推导业务结论或指标别名。
+
+`--output` 原子写入完整 JSON，不提供 `--format`。`partial` 仍写文件并保留非零退出码，成功与失败
+source 都留在 envelope 中；纯 `error` 或 `capability_gap` 不创建也不替换目标文件。
 
 未知入口使用 `gravity agent "business pulse" --domain report`。明确 Pulse/脉搏或同时表达经营
 概览与趋势的请求返回唯一 `composite:business_pulse`，且不扫描 operation inventory；卡片给出
@@ -758,6 +779,9 @@ SQL CLI 不是任意查询入口。它只实现 `custom-sql` 这一种受治理�
 
 未知产品时先运行一次 `gravity sql products`；已知产品直接 `gravity sql query`。query 支持
 单个参数、`--input` 对象、数组或 `requests` wrapper，并以 `--concurrency 1..2` 保序并发。
+可加 `--output <path>` 原子写入完整 JSON envelope；stdout 只返回与 Insight 产品一致的
+`written` 收据。SQL 公开结果还包含状态、错误、Evidence 与查询收据，即使内部 `rows` 是二维，
+也不提供会丢失这些合同信息的 CSV/表格输出。
 Evidence 可用时附 reference；缺失或过期时附 warning，不阻断已登记产品查询。`status`、
 `evidence-preflight` 和 `verify` 是诊断/授权维护命令，不是每次查询前要串行执行的门禁。
 Python 的底层 `GravityClient.execute_sql()` 只固定路由并限制并发，不执行 workspace/Evidence

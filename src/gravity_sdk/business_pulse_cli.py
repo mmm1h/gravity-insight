@@ -8,6 +8,7 @@ from typing import Any
 from . import runtime
 from .business_pulse import DEFAULT_PLATFORMS, business_pulse
 from .errors import InputValidationError
+from .result_output import output_file
 from .workspace import load_workspace
 from .workspace_app import resolve_workspace_app
 
@@ -42,6 +43,11 @@ def add_business_pulse_command(
     pulse.add_argument("--concurrency", type=concurrency_parser, default=6)
     pulse.add_argument("--max-pages", type=positive_int, default=5)
     pulse.add_argument("--max-items", type=positive_int, default=200)
+    pulse.add_argument(
+        "--output", type=output_file,
+        help="Atomically write the complete JSON result to a local file.",
+    )
+    pulse.set_defaults(result_output_fail_closed=True)
     pulse.set_defaults(_gravity_handler=_dispatch_business_pulse)
 
 

@@ -7,7 +7,6 @@ import hashlib
 import json
 import re
 import sys
-from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from gravity_sdk.domains import (
@@ -34,6 +33,7 @@ from gravity_sdk.pagination_cli import (
     add_pagination_arguments as _add_all_pages,
     page_options as _page_options,
 )
+from gravity_sdk import result_output
 
 try:
     from gravity_sdk.errors import (
@@ -872,24 +872,15 @@ def _emit_success(args: argparse.Namespace, result: Any) -> None:
                 "--output must be a file path; use --format ndjson for stdout",
                 field="output",
             )
-        path = Path(output)
-        path.parent.mkdir(parents=True, exist_ok=True)
         if output_format == "ndjson":
             rendered = _render_ndjson(result)
         else:
             rendered = json.dumps(
                 _redact(result), ensure_ascii=False, indent=2, sort_keys=True
             ) + "\n"
-        path.write_text(rendered, encoding="utf-8")
-        _write_json(
-            {
-                "ok": True,
-                "status": "written",
-                "output": str(path),
-                "format": output_format,
-                "size_bytes": len(rendered.encode("utf-8")),
-            }
-        )
+        _write_json(result_output.write_rendered_result(
+            output, rendered, output_format=output_format
+        ))
         return
     if output_format == "ndjson":
         for line in _iter_ndjson_lines(result):
@@ -905,6 +896,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser = build_parser()
         args = parser.parse_args(argv)
         result = dispatch_command(args, _client, _object_input, nonempty_cli.runner(_object_input, run))
+        if (
+            output_argument(args)
+            and bool(getattr(args, "result_output_fail_closed", False))
+            and not result_output.result_is_persistable(result)
+        ):
+            _write_json(result, stream=sys.stderr)
+            return result_output.terminal_result_exit_code(result)
         if isinstance(result, Mapping) and type(result.get("exit_code")) is int:
             _emit_success(args, result)
             return int(result.get("exit_code", 4))
