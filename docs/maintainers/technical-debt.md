@@ -90,5 +90,8 @@ Order Split Trace 把“完整父目录精确匹配后再读取 child”的敏�
 Order Directory 已以单日四字段 profile、完整分页和 request-bound 结果闭合 Core/CLI/SDK/Plan/Agent；
 与 Order Split Trace 共用读取收据和静态字段策略，raw exact selector 继续兼容，通用热点未增长。
 
+Monetization Detail 已以批准字段 allowlist、嵌套重建和保留型 Guard 闭合五面入口；Plan 复用窄
+Analysis family router，`plan_adapters.py` 净增长 0，D28 聚合未被误纳入本产品。
+
 Quality profile 已删除与 runtime root 同路径的冗余 CLI 扫描；每个函数 identity 仅产出一次，Markdown
 函数/复杂度超额与未修改的 baseline 一致，500/80/15/0 阈值和失败策略保持不变。

@@ -12,11 +12,11 @@
 | 已知 Analysis kind，指标未知 | `metadata vocabulary` → `analysis query --spec` | 2 |
 | 已知 Multidim App 与完整物理输入 | `gravity multidim query --app ... --input ...` | 1 |
 | 不知道 Multidim 产品入口 | `gravity agent "执行多维报表查询"` → 填卡并 `plan run` | 2 |
-| 已知素材 App、日期窗和平台 | `gravity materials performance --app ... --start ... --end ...` | 1 |
-| 不知道素材表现入口 | `gravity agent "跨平台素材报表"` → 填卡并 `plan run` | 2 |
+| 素材表现（输入已知/入口未知） | 已知：`gravity materials performance ...`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
 | 已知推广 App、日期、平台和物理指标 | `gravity promotion performance --app ... --start ... --end ... --platform ... --metric ...` | 1 |
 | 不知道推广表现入口 | `gravity agent "跨平台推广报表"` → 填卡并 `plan run` | 2 |
 | 普通订单目录（App/单日已知或入口未知） | 已知：`gravity analysis order directory --app ... --date ...`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
+| 无标识变现明细（App/单日已知或入口未知） | 已知：`gravity analysis monetization detail --app ... --date ...`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
 | 已知 App、单日与 TraceID | `gravity analysis order trace --app ... --date ... --trace-id ...` | 1 |
 | 不知道拆单追踪入口 | `gravity agent "按 TraceID 查拆单明细"` → 填卡并 `plan run` | 2 |
 | 已知人群规则 spec | `gravity analysis segment evaluate --app ... --spec ...` | 1 |
@@ -74,7 +74,7 @@ gravity agent "<英文或技术关键词>"
 gravity run <operation-id> --input <json-or-file>
 ```
 
-`gravity agent` 完全离线，一次完成 bounded search + describe，优先返回匹配的 workspace recipe，再用 stable operation 补足默认 3 个、最多 5 个 capability cards。Recipe 卡片包含 `required_parameters`；operation 卡片包含压缩 input schema、`required_inputs`、父 operation、分页合同；两类都提供可直接调用的 `next.argv`。无 query 时运行 `gravity agent` 可取得 `gravity.agent.v1` 机器协议。明确的 `monetization details/变现明细` 当前只返回本地安全 capability gap 且不扫描 raw inventory；只有精确 `analysis.monetization_detail.list` 保持专家入口，这个 Guard 不是 Monetization 产品或 Plan 承诺。
+`gravity agent` 完全离线，一次完成 bounded search + describe，优先返回匹配的 workspace recipe，再用 stable operation 补足默认 3 个、最多 5 个 capability cards。Recipe 卡片包含 `required_parameters`；operation 卡片包含压缩 input schema、`required_inputs`、父 operation、分页合同；两类都提供可直接调用的 `next.argv`。无 query 时运行 `gravity agent` 可取得 `gravity.agent.v1` 机器协议。明确且无冲突的 `monetization details/变现明细` 返回 value-free `monetization_detail` 卡；调用方只填 App/单日。用户/设备筛选或分组、动态字段、跨日、聚合、导出/写入及 raw-like 后缀仍由本地 Guard 报 gap，不扫描 raw inventory；精确 `analysis.monetization_detail.list` 保持专家入口。
 
 多个问题不要逐个执行 `gravity agent`。一次提交带稳定 ID 的问题数组：
 
@@ -120,7 +120,7 @@ gravity plan run --input plan.json --dry-run
 gravity plan run --input plan.json --concurrency 6
 ```
 
-Analysis 查询复用 `analysis_query`，Multidim 使用 `multidim`，普通订单目录/拆单追踪使用 `order_directory`/`order_split_trace`，素材/推广表现分别使用 `material_performance`/`promotion_performance`，保存分析用 `saved_analysis`，人群规则/快照用 `segment_evaluate`/`segment_snapshot`，看板控制面/图表用 `dashboard_snapshot`/`dashboard_analysis`。已知完整输入时一次 `plan run`；未知时 Agent 发现、调用方补齐再执行，自然语言不自动执行。同层查询由全局 pool 并发并保声明序；binding 仅可写登记目标，结果不回显 request/spec/binding 值。完整合同见 [Plan 参考](reference/plan.md)。
+Analysis 查询复用 `analysis_query`，无标识变现明细用 `monetization_detail`，Multidim 使用 `multidim`，普通订单目录/拆单追踪使用 `order_directory`/`order_split_trace`，素材/推广表现分别使用 `material_performance`/`promotion_performance`，保存分析用 `saved_analysis`，人群规则/快照用 `segment_evaluate`/`segment_snapshot`，看板控制面/图表用 `dashboard_snapshot`/`dashboard_analysis`。已知完整输入时一次 `plan run`；未知时 Agent 发现、调用方补齐再执行，自然语言不自动执行。同层查询由全局 pool 并发并保声明序；binding 仅可写登记目标，结果不回显 request/spec/binding 值。完整合同见 [Plan 参考](reference/plan.md)。
 
 ## 4. 选择 Insight 还是 SQL
 

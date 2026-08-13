@@ -19,8 +19,6 @@ from gravity_sdk.onboarding import command_requires_credentials
 from gravity_sdk.plan import AdapterContext, execute_plan
 from gravity_sdk.plan_adapters import build_plan_adapters
 from gravity_sdk.sdk import GravitySDK
-
-
 DAY = "2026-08-08"
 SAFE = {
     "CreateTime": "2026-08-08 12:00:00",
@@ -32,8 +30,7 @@ SAFE = {
         "ReAttributeAdPlatform": "demo-platform",
         "ReAttributeAdAid": "ad-safe",
     },
-}
-EXCLUDED = {
+}; EXCLUDED = {
     "user_id": "user-secret",
     "event_user_id": "event-user-secret",
     "device_id": "device-secret",
@@ -46,8 +43,6 @@ EXCLUDED = {
     "Name": "name-secret",
     "WXOpenID": "openid-secret",
 }
-
-
 def _read(row, *, workers=2):
     rows = [] if row is None else [copy.deepcopy(row)]
     return {
@@ -68,8 +63,6 @@ def _read(row, *, workers=2):
             "max_workers": workers,
         },
     }
-
-
 class Client:
     def __init__(self, value):
         self.value, self.calls = value, []
@@ -79,22 +72,16 @@ class Client:
         if isinstance(self.value, BaseException):
             raise self.value
         return copy.deepcopy(self.value)
-
-
 class Workspace:
     def resolve_app(self, value=None):
         if value in {7, "7", "main"}:
             return 7
         raise ValueError("unknown app")
-
-
 def _product_result(*, app=7, workers=1):
     return monetization_detail(
         Client(_read(SAFE, workers=workers)), app, DAY,
         max_workers=workers, max_pages=5, max_items=10,
     )
-
-
 class ProductSDK:
     workspace, insight = Workspace(), type("Insight", (), {"operations": lambda *_a, **_k: []})()
 
@@ -104,8 +91,6 @@ class ProductSDK:
     def monetization_detail(self, *args, **kwargs):
         self.calls.append((args, kwargs))
         return copy.deepcopy(self.value)
-
-
 class MonetizationDetailTests(unittest.TestCase):
     def test_happy_path_uses_fixed_fields_and_rebuilds_safe_rows(self):
         raw = {**SAFE, **EXCLUDED, "future_user_metric": "future-secret"}
@@ -123,7 +108,6 @@ class MonetizationDetailTests(unittest.TestCase):
                          (operation, inputs["fields"], inputs["page"], inputs["page_size"]))
         self.assertEqual({"max_workers": 2, "max_pages": 5, "max_items": 10}, options)
         self.assertEqual(1, result["page"]["pages_fetched"])
-
     def test_projection_fails_closed_and_never_exposes_excluded_values(self):
         secrets = tuple(str(value) for value in EXCLUDED.values()) + (
             "future-secret", "nested-secret", "exception-secret", "error-secret"
@@ -140,7 +124,6 @@ class MonetizationDetailTests(unittest.TestCase):
                          [result["status"] for result in results])
         rendered = repr(results)
         self.assertFalse(any(secret in rendered for secret in secrets))
-
     def test_request_bound_sanitizer_rejects_identity_receipt_and_public_extras(self):
         result = monetization_detail(
             Client(_read(SAFE, workers=1)), 7, DAY,
@@ -165,8 +148,7 @@ class MonetizationDetailTests(unittest.TestCase):
             )
             self.assertEqual("contract_changed", rebuilt["status"])
             self.assertNotIn("public-secret", repr(rebuilt))
-
-    def test_field_policy_fast_path_requires_the_exact_static_profile(self):
+    def test_raw_operation_policy_allows_only_the_approved_projection(self):
         root = Path(__file__).resolve().parents[1]
         operation = next(
             item for item in load_operation_manifest(
@@ -180,13 +162,42 @@ class MonetizationDetailTests(unittest.TestCase):
             lambda *args: calls.append(args),
         )
         self.assertEqual([], calls)
-        for fields in (SAFE_ROW_FIELDS[:-1], (*SAFE_ROW_FIELDS, "TraceID")):
-            validate_analysis_detail(
-                operation, {**base, "fields": list(fields)},
-                lambda *args: calls.append(args) or {"status": "empty", "data": {"list": []}},
+        validate_analysis_detail(
+            operation, {**base, "fields": list(SAFE_ROW_FIELDS[:-1])},
+            lambda *args: calls.append(args),
+        )
+        self.assertEqual([], calls)
+        rejected = [
+            {**base, "fields": [field]}
+            for field in (*EXCLUDED, "future_user_metric")
+        ]
+        rejected.extend((
+            {
+                **base,
+                "fields": list(SAFE_ROW_FIELDS),
+                "global_conditions": [{"field": "user_id"}],
+            },
+            {
+                **base,
+                "fields": list(SAFE_ROW_FIELDS),
+                "local_conditions": [{"field": "device_id"}],
+            },
+            {
+                **base,
+                "fields": list(SAFE_ROW_FIELDS),
+                "order_by_list": [{"field": "TraceID"}],
+            },
+        ))
+        for inputs in rejected:
+            with self.assertRaises(ValueError):
+                validate_analysis_detail(
+                    operation, inputs, lambda *args: calls.append(args)
+                )
+        with self.assertRaises(ValueError):
+            operation.validate_inputs(
+                {**base, "fields": list(SAFE_ROW_FIELDS), "group_by": ["user_id"]}
             )
-        self.assertTrue(calls)
-
+        self.assertEqual([], calls)
     def test_cli_sdk_and_plan_share_one_preflighted_product(self):
         base = [
             "analysis", "monetization", "detail", "--app", "main",
@@ -230,7 +241,6 @@ class MonetizationDetailTests(unittest.TestCase):
             {"monetization_detail", "validate_monetization_detail_request"},
             set(gravity_sdk.__all__),
         )
-
     def test_plan_is_request_bound_serial_and_dry_run_safe(self):
         request = {"name": "monetization_detail", "app": "main", "date": DAY}
         context = AdapterContext(
@@ -256,7 +266,5 @@ class MonetizationDetailTests(unittest.TestCase):
             workspace=Workspace(), dry_run=True,
         )
         self.assertEqual(("validated", []), (receipt["status"], dry_sdk.calls))
-
-
 if __name__ == "__main__":
     unittest.main()

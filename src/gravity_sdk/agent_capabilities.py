@@ -31,6 +31,10 @@ from .agent_promotion_performance import (
 )
 from .agent_saved_analysis import SAVED_ANALYSIS_CAPABILITY
 from .agent_segment_snapshot import SEGMENT_SNAPSHOT_CAPABILITY
+from .agent_monetization_guard import (
+    MONETIZATION_DETAIL_CAPABILITY,
+    MONETIZATION_DETAIL_NAME,
+)
 
 
 _ASCII_WORD = re.compile(r"[a-z0-9_]+", re.IGNORECASE)
@@ -59,6 +63,7 @@ _COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
         },
     },
     DASHBOARD_ANALYSIS_CAPABILITY,
+    MONETIZATION_DETAIL_CAPABILITY,
     SEGMENT_SNAPSHOT_CAPABILITY,
     SAVED_ANALYSIS_CAPABILITY,
     {
@@ -288,7 +293,17 @@ def capability_handoff_cards(
     from .agent_user_journey import user_journey_capability_cards
 
     if monetization_guard_blocks_operation_fallback(query):
-        return [], True
+        products = [
+            card
+            for card in composite_capability_cards(
+                query,
+                domain=domain,
+                platform=platform,
+                inventory=composite_inventory,
+            )
+            if card.get("composite") == MONETIZATION_DETAIL_NAME
+        ]
+        return products, True
     exports = export_capability_cards(
         query, domain=domain, platform=platform, inventory=export_inventory
     )
@@ -395,6 +410,7 @@ def authoritative_capability_cards(
             "dashboard_snapshot",
             BUSINESS_PULSE_NAME,
             "material_performance",
+            MONETIZATION_DETAIL_NAME,
             ORDER_DIRECTORY_NAME,
             ORDER_SPLIT_TRACE_NAME,
             PROMOTION_PERFORMANCE_NAME,
