@@ -74,6 +74,15 @@
       "additionalProperties": {
         "$ref": "#/$defs/recipe"
       }
+    },
+    "plan_recipes": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/$defs/name"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/plan_recipe"
+      }
     }
   },
   "$defs": {
@@ -266,6 +275,49 @@
         "app_input": ["app_ref"],
         "report_ref": ["report_input"],
         "report_input": ["report_ref"]
+      }
+    },
+    "plan_recipe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["parameters", "plan"],
+      "properties": {
+        "description": {"type": "string"},
+        "parameters": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": {"$ref": "#/$defs/name"},
+          "additionalProperties": {"$ref": "#/$defs/plan_recipe_parameter"}
+        },
+        "plan": {
+          "type": "object",
+          "required": ["schema_version", "nodes"],
+          "properties": {
+            "schema_version": {"const": "gravity.plan.v1"},
+            "nodes": {"type": "array", "minItems": 1}
+          }
+        }
+      }
+    },
+    "plan_recipe_parameter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "required", "bindings"],
+      "if": {"required": ["format"]},
+      "then": {"properties": {"type": {"const": "string"}}},
+      "properties": {
+        "type": {"enum": ["string", "integer", "number", "boolean"]},
+        "format": {"enum": ["date", "date-time"]},
+        "required": {"type": "boolean"},
+        "bindings": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^/nodes/[0-9]+/request/.+"
+          }
+        }
       }
     },
     "input_path": {

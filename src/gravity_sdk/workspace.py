@@ -7,13 +7,18 @@ import json
 import os
 import re
 import tomllib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from string import Formatter
 from typing import Any, Mapping
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from .workspace_recipe import Recipe, RecipeBindings, validate_recipes
+from .workspace_plan_recipe import (
+    PlanRecipe,
+    PlanRecipeError,
+    validate_plan_recipes,
+)
 
 
 WORKSPACE_FILENAME = "gravity.toml"
@@ -56,6 +61,7 @@ class Workspace:
     datasources: Mapping[str, Mapping[str, Any]]
     products: Mapping[str, Mapping[str, Any]]
     recipes: Mapping[str, Recipe]
+    plan_recipes: Mapping[str, PlanRecipe] = field(default_factory=dict)
 
     @property
     def configured(self) -> bool:
@@ -68,6 +74,10 @@ class Workspace:
     @property
     def recipe_names(self) -> tuple[str, ...]:
         return tuple(sorted(self.recipes))
+
+    @property
+    def plan_recipe_names(self) -> tuple[str, ...]:
+        return tuple(sorted(self.plan_recipes))
 
     def resolve_app(self, value: str | int | None = None) -> int:
         selected: str | int | None = self.defaults.app if value is None else value
@@ -105,6 +115,17 @@ class Workspace:
                     "no recipes are configured; add [recipes.<name>] to gravity.toml"
                 ) from exc
             raise WorkspaceError(f"unknown recipe: {name}") from exc
+
+    def plan_recipe(self, name: str) -> PlanRecipe:
+        try:
+            return self.plan_recipes[name]
+        except KeyError as exc:
+            if not self.plan_recipes:
+                raise PlanRecipeError(
+                    "no Plan recipes are configured; add [plan_recipes.<name>] to gravity.toml",
+                    field="recipe",
+                ) from exc
+            raise PlanRecipeError(f"unknown Plan recipe: {name}", field="recipe") from exc
 
 
 def user_cache_root(environ: Mapping[str, str] | None = None) -> Path:
@@ -173,13 +194,16 @@ def load_workspace(
             datasources={},
             products={},
             recipes={},
+            plan_recipes={},
         )
 
     try:
         data = tomllib.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, tomllib.TOMLDecodeError) as exc:
         raise WorkspaceError(f"cannot read Gravity workspace {path}: {exc}") from exc
-    apps, defaults, datasources, products, recipes = _validate_workspace(data, path)
+    apps, defaults, datasources, products, recipes, plan_recipes = _validate_workspace(
+        data, path
+    )
     state_root = _workspace_state_root(selected_cache, path)
     return Workspace(
         path=path,
@@ -190,6 +214,7 @@ def load_workspace(
         datasources=datasources,
         products=products,
         recipes=recipes,
+        plan_recipes=plan_recipes,
     )
 
 
@@ -225,6 +250,7 @@ def _validate_workspace(
     dict[str, Mapping[str, Any]],
     dict[str, Mapping[str, Any]],
     dict[str, Recipe],
+    dict[str, PlanRecipe],
 ]:
     if not isinstance(value, dict):
         raise WorkspaceError(f"{path}: workspace root must be a table")
@@ -235,6 +261,7 @@ def _validate_workspace(
         "datasources",
         "products",
         "recipes",
+        "plan_recipes",
     }
     unknown = sorted(set(value) - allowed)
     if unknown:
@@ -252,7 +279,12 @@ def _validate_workspace(
     recipes = validate_recipes(
         value.get("recipes", {}), apps, path, error=WorkspaceError
     )
-    return apps, defaults, datasources, products, recipes
+    plan_recipes = validate_plan_recipes(
+        value.get("plan_recipes", {}),
+        path,
+        error=lambda message: PlanRecipeError(message, field="plan_recipes"),
+    )
+    return apps, defaults, datasources, products, recipes, plan_recipes
 
 
 def _validate_apps(value: Mapping[str, Any], path: Path) -> dict[str, int]:
@@ -424,6 +456,8 @@ __all__ = [
     "WorkspaceNotConfiguredError",
     "Recipe",
     "RecipeBindings",
+    "PlanRecipe",
+    "PlanRecipeError",
     "find_workspace",
     "load_workspace",
     "require_products",

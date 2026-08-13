@@ -145,6 +145,23 @@ D32 本轮先估 22 次、实际只发 5 次最小 stable 根读取；5 次均�
 
 ## 使用成本：参数化程度审计结论
 
+### Workspace 参数化 Plan 裁决（2026-08-14）
+
+**判定应做，且只做 Plan 构造机制。** 单 operation recipe 无法表达重复的多节点 DAG；要求分析师
+或 Agent 每次只换日期却重新生成完整 Plan JSON，是调用成本而不是业务语义。调用方自行写模板脚本
+虽能绕过，但会把类型、路径、Plan schema 与 fail-closed 校验拆到仓库外，无法形成机器合同。
+
+本轮新增 workspace `plan_recipes`：参数显式声明 `type/format/required/bindings[]`，只向 literal
+Plan 已存在的 `/nodes/<index>/request/...` scalar 叶子写值。展开后的对象进入唯一 Plan v1
+校验/adapter preflight/执行路径；不增加 Plan node kind、adapter、worker、线程池、请求或 envelope。
+手写 `plan run --input`、DAG/依赖/foreach、全局 `PlanConcurrencyBudget`、partial 与退出码聚合保持。
+缺参、类型/格式错或 workspace 绑定路径不存在均在 adapter 构造/执行前以
+`PLAN_RECIPE_INVALID`、local/4 失败；dry-run 零执行、零网络。
+
+机制进入 SDK；具体步骤、业务口径与模板实例继续留在调用项目 workspace。仓库只保留虚构形状示例，
+不内置“日常经营检查”等模板。不为 Agent 增加发现卡：workspace 实例是调用方私有内容，Agent
+发现面仍只描述仓库能力；已知 recipe 名时，CLI/SDK 的显式参数合同已经可机械填写。
+
 判据是**改一个参数要不要改代码**。20 个真实分析场景实撞（11 次 HTTP，无权限失败与合同漂移）：
 零成本 11 / 有成本可接受 4 / 需改代码 5。
 

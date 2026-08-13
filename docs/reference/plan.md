@@ -46,6 +46,35 @@ gravity plan run --input plan.json --dry-run
 gravity plan run --input plan.json --concurrency 6
 ```
 
+## Workspace 参数化 Plan
+
+调用项目可在 `gravity.toml` 的 `plan_recipes.<name>` 保存一份完整 literal Plan，并给会变化的
+request 叶子声明 typed 参数。执行时不再重复提交完整 JSON：
+
+```powershell
+gravity plan run --recipe example --param date=2026-08-14 --param app=main --dry-run
+gravity plan run --recipe example --param date=2026-08-14 --param app=main
+```
+
+参数合同为 `{type, format?, required, bindings[]}`；`bindings` 是一个或多个
+`/nodes/<index>/request/...` RFC 6901 JSON Pointer。参数只替换已存在的非空 scalar 叶子，
+不做字符串插值，也不能改变节点、依赖、foreach、budget 或 limits。完整 TOML 形状、类型与格式
+见 [Workspace 参考](workspace.md#参数化-plan)。
+
+展开严格发生在 Plan v1 之前：workspace 合同与绑定路径本地校验，调用参数完成类型/格式校验，
+生成普通 `gravity.plan.v1` object，随后原样进入本页唯一的 `validate_plan`、adapter preflight 和
+`execute_plan`。因此 DAG、并发预算、部分失败、envelope、上游请求集合与手写等价 Plan 完全相同。
+`--dry-run` 也复用同一路径并保持零网络。
+
+缺 required 参数、类型/格式错误或绑定路径不存在统一返回
+`PLAN_RECIPE_INVALID` / `local` / exit `4`，不构造执行请求。Python 调用方可用
+`sdk.expand_plan_recipe()` 查看普通 Plan，或用 `sdk.validate_plan_recipe()` /
+`sdk.execute_plan_recipe()`；后两者分别委托现有 dry-run 与执行方法。
+
+原入口 `gravity plan run --input <plan.json> [--set PATH=VALUE]` 未改变：仍解析同一 Plan JSON，
+走同一校验、adapter 与结果 envelope；`--recipe` 只是互斥的 Plan 来源。workspace Plan recipe
+实例不进入 Agent capability card：它是调用项目私有内容，而 Agent 卡发现的是仓库能力。
+
 数据表沿革复用 `metadata_search`，不增加新的节点类型：
 
 ```json

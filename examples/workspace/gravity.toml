@@ -67,3 +67,42 @@ query_item_list = [
   { event_name = "DemoStart", event_label = "DemoStart", custom_name = "DemoStart", target = { name = "PresetAllCount", field = "PresetAllCount" }, conditions = [], cond_logic = "AND", event_index = 0 },
   { event_name = "DemoReturn", event_label = "DemoReturn", custom_name = "DemoReturn", target = { name = "PresetAllCount", field = "PresetAllCount" }, conditions = [], cond_logic = "AND", event_index = 1 },
 ]
+
+[plan_recipes.demo-order-window]
+description = "Fictional two-node Plan shape"
+
+[plan_recipes.demo-order-window.parameters.date]
+type = "string"
+format = "date"
+required = true
+bindings = [
+  "/nodes/0/request/date",
+  "/nodes/1/request/date",
+]
+
+[plan_recipes.demo-order-window.parameters.app]
+type = "string"
+required = true
+bindings = [
+  "/nodes/0/request/app",
+  "/nodes/1/request/app",
+]
+
+[plan_recipes.demo-order-window.plan]
+schema_version = "gravity.plan.v1"
+
+[plan_recipes.demo-order-window.plan.budget]
+max_workers = 2
+max_total_items = 2000
+
+[[plan_recipes.demo-order-window.plan.nodes]]
+id = "fictional-alpha"
+kind = "composite"
+request = { name = "order_directory", app = "demo", date = "2026-01-01" }
+limits = { max_pages = 10, max_items = 1000 }
+
+[[plan_recipes.demo-order-window.plan.nodes]]
+id = "fictional-beta"
+kind = "composite"
+request = { name = "monetization_detail", app = "demo", date = "2026-01-01" }
+limits = { max_pages = 10, max_items = 1000 }
