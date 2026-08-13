@@ -52,6 +52,9 @@ _EXPORTS = {
     "analysis_query_batch_schema": (
         ".analysis_query_batch", "analysis_query_batch_schema"
     ),
+    "analysis_query_multi_app_schema": (
+        ".analysis_query_multi_app", "analysis_query_multi_app_schema"
+    ),
     "execute_analysis_query_batch": (
         ".analysis_query_batch", "execute_analysis_query_batch"
     ),

@@ -25,6 +25,7 @@ _SCALAR_QUERY_ARGUMENTS = (
     "parent_id",
     "spec",
     "app",
+    "apps",
     "query_spec_dry_run",
     "spec_schema",
     "compare_start",
@@ -42,7 +43,7 @@ def add_analysis_query_commands(
     """Register the compatible scalar query and its compact batch child."""
 
     parser = analysis_commands.add_parser("query")
-    add_analysis_query_arguments(parser, add_input, add_shortcuts)
+    add_analysis_query_arguments(parser, add_input, add_shortcuts, concurrency_type)
     add_analysis_query_batch_subcommand(parser, add_input, concurrency_type)
     return parser
 

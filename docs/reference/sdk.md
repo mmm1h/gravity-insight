@@ -244,6 +244,24 @@ payload 为 `gravity.analysis-query-batch.v1`，最多 32 个带唯一 ID 的 li
 失败结果都不回显 spec/compiled input。它不新增第二套调度器，也不支持 dependencies、binding、
 foreach 或表达式；这些仍由 `execute_plan()` 负责。
 
+同一 spec 执行多个 App 时，同一方法接受 `gravity.analysis-query-batch.v2`：当前 kind 限定为
+`event/funnel/retention/property`，每项使用显式 `apps` 数组，展开后总计最多 32 个组件。
+`"*"`、空数组、重复或解析到同一 App 的 alias/ID 都在 Plan 前失败。v2 result 的每个 Plan
+组件增加 `query_id/app`，顶层固定 `cross_app_aggregation=false`；不跨 App 合并或计算指标。
+v1 输入与 `gravity.analysis-query-batch-result.v1` 输出分支保持不变。
+
+```python
+sdk.analysis_queries({
+    "schema_version": "gravity.analysis-query-batch.v2",
+    "queries": [{
+        "id": "retention",
+        "kind": "retention",
+        "apps": ["main", "overseas", 103],
+        "spec": retention_spec,
+    }],
+})
+```
+
 `user_journey(client_id, *, app=None, date=None, start=None, end=None, page=1,
 page_size=20, fields=(), events=(), max_workers=3, max_items=200, workspace=None)` 在入口只解析
 一次 workspace App，然后把 profile、events、postbacks 作为一个受控批次读取。结果固定来源

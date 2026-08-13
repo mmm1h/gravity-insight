@@ -42,7 +42,8 @@
 
 - 已知 selector 或已有 Plan：一次 `gravity run` / `gravity plan run`。
 - 未知问题：一次 `gravity agent --input` 批量发现，再一次 `gravity plan run`，总共两次。
-- 多个独立 Analysis spec：一次 `gravity analysis query batch`；单用户明细链用一次
+- 多个独立 Analysis spec，或同一事件/漏斗/留存/属性 spec 的显式多 App 数组：一次
+  `gravity analysis query batch`；单用户明细链用一次
   `gravity analysis user journey`，不手工串行三条 operation。
 - 已知 Multidim 物理输入：一次 `gravity multidim query`；未知能力：一次 Agent 发现加一次
   Plan 执行。CLI 显式要求 `--app`，Plan 显式要求当前 `input_schema_version`，结果行读取

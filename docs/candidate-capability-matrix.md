@@ -122,6 +122,9 @@ manager/feed 等无完整分页证据的 draft 还卡在 `pagination_unverified`
 
 ## 本轮可复用结论
 
+- 多 App Analysis 扇出是既有 `analysis.event/funnel/retention/property.query` stable 产品的离线
+  Plan 编排增强，本轮 0 次生产请求、0 个 candidate 晋升；operation 总数和 stable 数不变，不改变
+  本矩阵 17 项 draft 的 blocker。
 - Agent 固定产品按 owner 正向证据强度与 selector 精确度集中裁决；命中多个 authoritative 产品时返回
   `MULTIPLE_INTENTS` 与候选 selector，候选为空且禁止 raw operation fallback。7 对已知重叠均以
   owner recognizer 离线复现该行为，公共 Agent/Plan/card envelope 未变。
