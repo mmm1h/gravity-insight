@@ -14,6 +14,7 @@ from typing import Any
 from ._field_policy_analysis import validate_analysis_shape
 from .analysis_spec_preview import redact_analysis_values
 from .analysis_spec_schema import ANALYSIS_SPEC_KINDS, analysis_query_spec_schema
+from .analysis_spec_controls import apply_scatter_zone, funnel_window, retention_controls
 from .domains import ANALYSIS_QUERY_OPERATIONS, new_analysis_query_id
 from .errors import InputValidationError
 from .workspace import Workspace, load_workspace
@@ -37,6 +38,7 @@ _KIND_FIELDS = {
             "global_filters",
             "global_logic",
             "calculate_layer_y",
+            "return_hierarchy_list",
             "aggregate",
         }
     ),
@@ -67,6 +69,7 @@ _KIND_FIELDS = {
             "user_reattribute_filters",
             "user_logic",
             "property_conditions",
+            "query_item_before_after",
         }
     ),
     "property": frozenset(
@@ -235,18 +238,22 @@ def _compile_dated_query(
         inputs["global_cond_logic"] = _logic(spec.get("global_logic", "AND"), "global_logic")
     if kind == "event":
         inputs["calc_layer_y"] = _boolean(spec.get("calculate_layer_y", False), "calculate_layer_y")
+        if "return_hierarchy_list" in spec:
+            inputs["return_hierarchy_list"] = _boolean(
+                spec["return_hierarchy_list"], "return_hierarchy_list"
+            )
         if "aggregate" in spec:
             inputs["aggregate_config"] = dict(_mapping(spec["aggregate"], "aggregate"))
         inputs["extra_data"] = {"client_server_time": "CLIENT"}
     elif kind == "funnel":
-        inputs["stat_time_window"] = _window(spec.get("window"))
+        inputs["stat_time_window"] = funnel_window(spec.get("window"))
         inputs["to_calc_each_day"] = _boolean(
             spec.get("calculate_each_day", False), "calculate_each_day"
         )
     elif kind == "retention":
-        inputs.update(_retention_controls(spec))
+        inputs.update(retention_controls(spec))
     elif kind == "scatter":
-        _apply_scatter_zone(inputs["query_item_list"][0], spec.get("zone"))
+        apply_scatter_zone(inputs["query_item_list"][0], spec.get("zone"))
         inputs["extra_data"] = {"client_server_time": "CLIENT"}
 
 
@@ -392,52 +399,6 @@ def _group_by(spec: Mapping[str, Any]) -> list[dict[str, Any]]:
                 group[target_key] = item[source_key]
         result.append(group)
     return result
-
-
-def _retention_controls(spec: Mapping[str, Any]) -> dict[str, Any]:
-    offset = spec.get("offset")
-    if not isinstance(offset, int) or isinstance(offset, bool) or not 1 <= offset <= 365:
-        raise InputValidationError(
-            "retention offset must be an integer from 1 through 365", field="offset"
-        )
-    return {
-        "offset": offset,
-        "period_calc_method": _choice(
-            spec.get("period_calc_method"), {"SUM", "WEIGHTED_AVG"}, "period_calc_method"
-        ),
-        "custom_before_method": _choice(
-            spec.get("custom_before_method"), {"SUM", "WEIGHTED_AVG"}, "custom_before_method"
-        ),
-        "total_calc_type": _choice(
-            spec.get("total_calc_type"), {"DAY", "WEEK", "MONTH"}, "total_calc_type"
-        ),
-        "week_first_day": _integer_range(spec.get("week_first_day"), 1, 7, "week_first_day"),
-    }
-
-
-def _window(value: Any) -> dict[str, Any]:
-    item = _mapping(value, "window")
-    _reject_keys(item, {"unit", "value"}, "window")
-    unit = _choice(item.get("unit"), {"minute", "hour", "day"}, "window.unit")
-    limit = {"minute": 60, "hour": 24, "day": 30}[unit]
-    return {
-        "type": unit,
-        "val": _integer_range(item.get("value"), 1, limit, "window.value"),
-    }
-
-
-def _apply_scatter_zone(step: dict[str, Any], value: Any) -> None:
-    if value is None:
-        step["calc_zone"] = {"zone_type": "default"}
-        return
-    item = _mapping(value, "zone")
-    _reject_keys(item, {"type", "ranges"}, "zone")
-    zone_type = _choice(item.get("type"), {"default", "custom"}, "zone.type")
-    step["calc_zone"] = {"zone_type": zone_type}
-    if zone_type == "custom":
-        step["calc_zone"]["range_list"] = _list(item.get("ranges"), "zone.ranges", 100)
-    elif "ranges" in item:
-        raise InputValidationError("default zone does not accept ranges", field="zone.ranges")
 
 
 def _steps(value: Any, kind: str) -> list[Mapping[str, Any]]:
