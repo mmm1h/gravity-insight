@@ -47,7 +47,7 @@
 | 查询实时事件目录 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | 完整请求 builder 已证明且最小请求语义成功为空；item schema 与服务端分页仍未证实，`client_id/request_id/request_ip/raw_properties` 需单独隐私投影批准。 |
 | 查询分析空间或报表设置 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | 候选 `analysis.setting.query` 已由完整前端控制流证明为修改报表设置的 mutation，不是读取；自由文本/config 继续 fail-closed，须另找只读 route。 |
 | 查找自有、共享和 MasterKey 报表并读取其定义 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | **合同阻塞**：group/list/shared 三个 POST 的读语义仍只有路径词元证据，均被探测读语义闸门拦截；闸门上线前的空样本不能补足该合同，GET detail 又没有父候选。下一轮先分析对应 bundle 控制流，再由有报表样本的调用方提供非空父项。 |
-| 查看报表订阅清单 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | **合同阻塞**：同一 census bundle 的列表装载、分页和响应消费证明 `report.subscribe.list` 是读取，创建/编辑/删除另有 mutation 路由；但该静态证据尚未登记为 probe read confirmation，当前仍撞读语义闸门，item schema 也未在线证实。下一轮先复核并登记 bundle 证据，再做 1 次最小第一页 probe。 |
+| 查看报表订阅清单 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | **合同阻塞**：同一 census bundle 的列表装载、分页和响应消费证明 `report.subscribe.list` 是读取，创建/编辑/删除另有 mutation 路由；该静态证据已复核并登记为 probe read confirmation（2026-08-14），闸门已放行；item schema 仍未在线证实，下一轮做 1 次最小第一页 probe 即可推进。 |
 | 查找可用的媒体报表 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | **合同阻塞**：`report.media_report.list` 的 POST 读语义仍只有路径词元证据并撞闸门；App/广告平台的可信绑定和非空 item schema 也未成立。下一轮优先分析 bundle 中调用方绑定，证实读语义后才做最小 probe。 |
 | 查找当前账号可读的 App 项目 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | **合同阻塞**：`app.project.list` 的 POST 读语义仍只有路径词元证据并撞闸门；旧空样本的 receipt 均为 `method_verified=false`，不能据此定为当前账号无数据。下一轮优先分析 appManage bundle 的列表控制流，再做 1 次最小第一页 probe。 |
 | 查看 App 的 OneLink 与公开信息绑定 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | **合同阻塞**：OneLink GET 父链、分页与重复空样本已成立，说明当前账号未提供 OneLink 项；但组合动线的 app-info GET 仍缺可信 URL 绑定和响应 schema，不能把整条动线定为数据阻塞。下一轮先从 appManage bundle 恢复 URL 来源，再做 1 次最小读取。 |

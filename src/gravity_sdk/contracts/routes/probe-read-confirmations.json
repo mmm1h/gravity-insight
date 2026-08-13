@@ -4,6 +4,20 @@
       "decision": "confirmed_read",
       "evidence": [
         {
+          "detail": "In the hash-matched census bundle the reportSubscribe component calls this route to load its table rows and page_info.total_number. Creating, editing, deleting and exporting a subscription each go through their own separate routes, so listing carries no write side effect.",
+          "source": "docs/analysis-journeys.md"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "report.subscribe.list",
+      "path": "/turbo_engine/api/v3/subscribe/list/",
+      "reviewed_at": "2026-08-14",
+      "reviewer": "hm"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
           "detail": "The recovered frontend builder sends only an integer app_id and the fixed subject \"$lib_version\", carries no pagination, and the response is consumed as a read-only dictionary of string arrays. No mutation control flow reaches this route.",
           "source": "docs/candidate-capability-matrix.md"
         },
