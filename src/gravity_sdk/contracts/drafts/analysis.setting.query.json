@@ -3,15 +3,15 @@
   "draft": {
     "blockers": [
       {
-        "code": "request_parameters_required",
-        "detail": "The observed request reached a semantic error; required request fields remain unknown.",
-        "evidence": "evidence/probe/20260808T231055Z_analysis.setting.query.yaml",
+        "code": "mutation_route_not_read",
+        "detail": "The complete frontend control flow invokes this route while editing a report setting, then edits dashboard layout and reports modification success.",
+        "evidence": "docs/candidate-capability-matrix.md",
         "status": "open"
       },
       {
-        "code": "response_schema_unverified",
-        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
-        "evidence": "evidence/probe/20260808T231055Z_analysis.setting.query.yaml",
+        "code": "free_text_fail_closed",
+        "detail": "The mutation carries JSON config plus free-text name and remark. Those values remain unprojected and no online mutation probe is authorized.",
+        "evidence": "docs/candidate-capability-matrix.md",
         "status": "open"
       }
     ],
@@ -64,10 +64,8 @@
     "promotion_gate": {
       "eligible": false,
       "missing": [
-        "request_parameters_required",
-        "response_projection",
-        "response_schema_unverified",
-        "successful_probe"
+        "free_text_fail_closed",
+        "mutation_route_not_read"
       ]
     },
     "route_evidence": {
@@ -229,13 +227,13 @@
   },
   "manifest_order": 10000,
   "operation": {
-    "action": "query",
+    "action": "update",
     "auth_profile": "gravity_authorization",
-    "block_reason": "draft blockers: request_parameters_required, response_schema_unverified",
+    "block_reason": "mutation route; online dispatch is forbidden and the free-text/config payload remains fail-closed",
     "contract_version": 1,
-    "description": "Draft catalog entry inferred from census route POST /turbo_engine/api/v2/datamanageconfig/kanban/report/setting/; request binding, pagination, and response projection remain unverified.",
+    "description": "Blocked mutation route used by Gravity Web to update an existing report setting; this SDK version never dispatches it.",
     "domain": "analysis",
-    "effect": "read",
+    "effect": "mutation",
     "examples": [],
     "executable": false,
     "input_fields": {
@@ -279,17 +277,7 @@
     },
     "live_probe": {
       "enabled": false,
-      "inputs": {
-        "app_id": 0,
-        "config": 0,
-        "dashboard_id": 0,
-        "id": 0,
-        "name": 0,
-        "remark": 0,
-        "report_id": 0,
-        "report_with": 0,
-        "space_id": 0
-      }
+      "inputs": {}
     },
     "operation_id": "analysis.setting.query",
     "pagination": {

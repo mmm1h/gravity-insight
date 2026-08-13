@@ -3,15 +3,27 @@
   "draft": {
     "blockers": [
       {
-        "code": "request_parameters_required",
-        "detail": "The observed request reached a semantic error; required request fields remain unknown.",
-        "evidence": "evidence/probe/20260808T231117Z_analysis.realtime_event.list.yaml",
+        "code": "empty_sample",
+        "detail": "The complete frontend request builder returned semantic success with an empty data.list on 2026-08-14; an empty list cannot prove item fields.",
+        "evidence": "docs/candidate-capability-matrix.md",
         "status": "open"
       },
       {
-        "code": "response_schema_unverified",
-        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
+        "code": "pagination_unverified",
+        "detail": "The request sends page and page_size, but the empty response had no page_info and the frontend slices data.list client-side.",
         "evidence": "src/gravity_sdk/census/data/route-response-fields.json#/routes/933",
+        "status": "open"
+      },
+      {
+        "code": "response_item_schema_unverified",
+        "detail": "Static consumption and the live empty sample prove data.list only; no non-empty item schema or privacy projection is available.",
+        "evidence": "docs/candidate-capability-matrix.md",
+        "status": "open"
+      },
+      {
+        "code": "privacy_projection_approval_required",
+        "detail": "Frontend item consumers reference client_id, request_id, request_ip, and raw_properties; these unverified user-level or re-identifiable candidates remain hidden and require separate approval.",
+        "evidence": "docs/candidate-capability-matrix.md",
         "status": "open"
       }
     ],
@@ -22,6 +34,46 @@
         "path": "data.list",
         "presence": "unknown",
         "privacy_classification": "manual_review",
+        "types": [
+          "unknown"
+        ]
+      },
+      {
+        "classification_reason": "frontend_static_consumer_user_identifier_candidate",
+        "expose": false,
+        "path": "data.list[].client_id",
+        "presence": "unknown",
+        "privacy_classification": "sensitive",
+        "types": [
+          "unknown"
+        ]
+      },
+      {
+        "classification_reason": "frontend_static_consumer_request_identifier_candidate",
+        "expose": false,
+        "path": "data.list[].request_id",
+        "presence": "unknown",
+        "privacy_classification": "sensitive",
+        "types": [
+          "unknown"
+        ]
+      },
+      {
+        "classification_reason": "frontend_static_consumer_network_identifier_candidate",
+        "expose": false,
+        "path": "data.list[].request_ip",
+        "presence": "unknown",
+        "privacy_classification": "sensitive",
+        "types": [
+          "unknown"
+        ]
+      },
+      {
+        "classification_reason": "frontend_static_consumer_unbounded_event_payload_candidate",
+        "expose": false,
+        "path": "data.list[].raw_properties",
+        "presence": "unknown",
+        "privacy_classification": "sensitive",
         "types": [
           "unknown"
         ]
@@ -36,7 +88,13 @@
       "route_sha256": "3bad93cbf0f285cd219a7b96ef41ce9293350c2fc6f6b7599ac9599eefa36332"
     },
     "generated_at": "2026-08-08T20:23:09Z",
-    "manual_review_fields": [],
+    "manual_review_fields": [
+      "data.list",
+      "data.list[].client_id",
+      "data.list[].raw_properties",
+      "data.list[].request_id",
+      "data.list[].request_ip"
+    ],
     "probe_evidence": [
       {
         "conclusion": "local_or_parent_inconclusive",
@@ -86,9 +144,12 @@
     "promotion_gate": {
       "eligible": false,
       "missing": [
-        "request_parameters_required",
+        "empty_sample",
+        "field_review_required",
+        "pagination_unverified",
+        "privacy_projection_approval_required",
         "response_projection",
-        "response_schema_unverified",
+        "response_item_schema_unverified",
         "successful_probe"
       ]
     },
@@ -125,7 +186,7 @@
         ],
         "contract_confidence": "medium",
         "learned_parameters": [],
-        "required_semantics": "frontend_observation_only",
+        "required_semantics": "complete_frontend_builder_and_live_empty_success",
         "route": {
           "method": "POST",
           "path": "/turbo_engine/api/v2/event/realtime_event/list/"
@@ -206,44 +267,46 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "block_reason": "draft blockers: request_parameters_required, response_schema_unverified",
+    "block_reason": "draft blockers: empty_sample, pagination_unverified, privacy_projection_approval_required, response_item_schema_unverified",
     "contract_version": 1,
-    "description": "Draft catalog entry inferred from census route POST /turbo_engine/api/v2/event/realtime_event/list/; request binding, pagination, and response projection remain unverified.",
+    "description": "Read the realtime event catalog for one App and one explicit time window. Item fields and server pagination remain fail-closed pending a non-empty sample.",
     "domain": "analysis",
     "effect": "read",
     "examples": [],
     "executable": false,
     "input_fields": {
       "app_id": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "description": "App identifier selected by the caller.",
+        "required": true,
         "type": "integer"
       },
       "filters": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "description": "Filter object built from event_type, event_name, request_id, client_id, client_lib, client_lib_version, and properties; empty controls serialize to an empty object.",
+        "required": true,
         "type": "object"
       },
       "page": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "default": 1,
+        "description": "Observed frontend page selector; server pagination effect remains unverified.",
+        "required": true,
         "type": "integer"
       },
       "page_size": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "default": 50,
+        "description": "Observed frontend page size; the minimum probe uses 1 and the server cap remains unverified.",
+        "required": true,
         "type": "integer"
       },
       "request_time": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "description": "Two Asia/Shanghai local datetime strings delimiting the explicit shortest probe window.",
+        "item_type": "string",
+        "required": true,
         "type": "array"
       }
     },
     "live_probe": {
       "enabled": false,
-      "inputs": {
-        "app_id": 0,
-        "filters": {},
-        "page": 1,
-        "page_size": 20,
-        "request_time": []
-      }
+      "inputs": {}
     },
     "operation_id": "analysis.realtime_event.list",
     "pagination": {
@@ -317,13 +380,23 @@
         "page_size",
         "request_time"
       ],
-      "defaults": {},
+      "defaults": {
+        "page": 1,
+        "page_size": 50
+      },
       "fixed_body": {},
       "fixed_query": {},
       "path_fields": [],
       "query_fields": []
     },
-    "required_parent": [],
+    "required_parent": [
+      {
+        "input_field": "app_id",
+        "operation_id": "app.list",
+        "output_path": "data.list[].id",
+        "selection": "caller_select"
+      }
+    ],
     "resource": "realtime_event",
     "response_projection": {
       "data_keys": [],
