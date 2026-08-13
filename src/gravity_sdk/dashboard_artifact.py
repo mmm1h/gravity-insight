@@ -125,25 +125,16 @@ def _compile_inputs(
     end: str,
 ) -> tuple[dict[str, Any], bool, tuple[str, ...]]:
     if kind == "event":
-        return _event_inputs(config, body, app_id, start, end), True, (
-            "dashboard conditions are not applied by the stable event contract",
-        )
+        return _event_inputs(config, body, app_id, start, end), True, ()
     if kind == "property":
         return _property_inputs(body, app_id), False, (
             "property analysis has no date window in its stable contract",
-            "dashboard conditions are not applied",
         )
     if kind == "retention":
-        return _retention_inputs(config, body, app_id, start, end), True, (
-            "dashboard conditions are not applied by the stable retention contract",
-        )
+        return _retention_inputs(config, body, app_id, start, end), True, ()
     if kind == "funnel":
-        return _funnel_inputs(config, body, app_id, start, end), True, (
-            "dashboard conditions are not applied by the stable funnel contract",
-        )
-    return _scatter_inputs(config, body, app_id, start, end), True, (
-        "dashboard conditions are not applied by the stable scatter contract",
-    )
+        return _funnel_inputs(config, body, app_id, start, end), True, ()
+    return _scatter_inputs(config, body, app_id, start, end), True, ()
 
 
 def _event_inputs(

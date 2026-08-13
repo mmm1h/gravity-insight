@@ -114,6 +114,10 @@ class DashboardArtifactTests(unittest.TestCase):
         self.assertEqual(client.calls[2][1]["offset"], 7)
         self.assertTrue(client.calls[3][1]["to_calc_each_day"])
         self.assertEqual(client.calls[4][1]["group_by_list"][-1]["group_by"], "day")
+        self.assertFalse(any(
+            "dashboard conditions" in limitation
+            for item in compiled for limitation in item.limitations
+        ))
         self.assertNotIn("inputs", compiled[0].safe_summary())
 
     def test_unknown_web_semantics_and_bad_window_fail_before_validation(self) -> None:

@@ -15,6 +15,7 @@ from .dashboard_artifact import (
     compile_dashboard_chart,
     validate_dashboard_window,
 )
+from .dashboard_conditions import DashboardPageConditions, page_condition_gap_envelope, read_dashboard_page_conditions
 from .dashboard_snapshot import (
     DASHBOARD_SNAPSHOT_SOURCES,
     DashboardIdentity,
@@ -56,6 +57,7 @@ class _PreparedDashboard:
     dashboard: DashboardIdentity
     tree_items: int
     charts: tuple[CompiledDashboardChart | dict[str, Any], ...]
+    page_conditions: DashboardPageConditions
 
 
 def prepare_dashboard_analysis(
@@ -161,6 +163,11 @@ def _prepare(
     tree = _read_tree(client, selected_app)
     candidates, tree_items = _dashboard_identities(tree, max_nodes=items - 1)
     dashboard = _resolve_dashboard(candidates, selected_ref)
+    page_conditions = read_dashboard_page_conditions(
+        client, selected_app, dashboard.dashboard_id
+    )
+    if page_conditions.active:
+        return _PreparedDashboard(selected_app, dashboard, tree_items, (), page_conditions)
     reports = _reports(_read_detail(client, selected_app, dashboard), selected_app, dashboard)
     if len(reports) > cap:
         raise PaginationError("dashboard chart count exceeds the declared max_charts bound")
@@ -176,7 +183,7 @@ def _prepare(
         )
         for report in reports
     )
-    return _PreparedDashboard(selected_app, dashboard, tree_items, charts)
+    return _PreparedDashboard(selected_app, dashboard, tree_items, charts, page_conditions)
 
 
 def _read_detail(
@@ -411,6 +418,12 @@ def _envelope(
     start: str,
     end: str,
 ) -> dict[str, Any]:
+    if state.page_conditions.active:
+        return page_condition_gap_envelope(
+            state.page_conditions, schema_version=SCHEMA_VERSION,
+            app_id=state.app_id, dashboard=state.dashboard.to_dict(),
+            mode=mode, start=start, end=end,
+        )
     supported = sum(item.get("supported") is True for item in charts)
     unsupported = len(charts) - supported
     successes = sum(item.get("query_executed") is True and item.get("error") is None for item in charts)
@@ -431,6 +444,7 @@ def _envelope(
         "dashboard": state.dashboard.to_dict(),
         "mode": mode,
         "date_range": {"start": start, "end": end, "inclusive": True},
+        "page_conditions": state.page_conditions.safe_receipt(),
         "charts": list(charts),
         "chart_count": len(charts),
         "supported_count": supported,
