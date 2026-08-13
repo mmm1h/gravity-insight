@@ -46,6 +46,23 @@ argv，也不能进入 stable manifest。
 合计字段链路、overview 指标列映射，以及事件属性模板的 common/custom/preset 字典；未知
 字段继续 fail-closed。
 
+## 导出边界（2026-08-13 判定）
+
+导出是独立 effect，账本在 `src/gravity_sdk/contracts/exports/routes-v1.json`。22 条 route 中只有
+5 条 `executable`：`export.material.report.start` 是唯一可创建的导出，其余 4 条
+（`export.task.list/progress/cancel`、`export.task_type.list`）是支持路由，不是创建候选。
+
+**9 条 `export.analysis.*` 全部不可执行，且本轮判定为不推进**：
+
+| 分类 | 数量 | route | 结论 |
+| --- | --- | --- | --- |
+| 合同已验证，隐私 gate 阻塞 | 3 | `origin_event.evaluate`、`segment.result.start`、`user_event.start` | 在线 wire 与文件协议已验证，但导出内容落在用户级标识/用户事件上，缺经批准的投影。**保留项**，不因合同可用而放行 |
+| 合同未验证 | 6 | `origin_event.start`、`monetization_detail.start`、`segment_user_detail.start`、`stream_event.start`、`user_detail.start`、`pay_event.start` | 多数在线可建任务但任务失败，或返回 1004 无 task id；请求形状与文件 schema 未证明。**无新证据不重试** |
+
+这是分析动线里唯一确定不脱离引力 Web 的环节：分析结果的导出需要先有经批准的用户级数据投影，
+属于范围与安全模型问题，不是工程排期问题。调用方用 `export list-capabilities` 查看边界，
+不要把 catalog 条目当成可执行能力。
+
 ## 刷新与核对
 
 日常调用方不需要跑 Census。维护者在 frontend bundle 或 manifest 变化后执行离线对账：
