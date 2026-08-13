@@ -40,6 +40,21 @@ fetch bundles
 - blocked-write / blocked-privacy：明确保留，不应追求 callable；
 - unknown：进入人工分类，不直接生成通用 operation。
 
+`semantic_evidence` 还表示证据强度，而不是可探测性授权：
+
+- `safe_http_method`：GET/HEAD/OPTIONS 的 HTTP 读语义证据；
+- `route_registry:read_contract_not_verified`：维护者登记的读合同声明；
+- `read_action_path_token`：仅由 `/list`、`/get`、`/query` 等路径词元推断的弱证据。
+
+最后一类若同时为 POST，必须先按[探测安全](probing.md)逐条人工确认，不能把
+`status=uncovered_read` 当作 probe 许可，也不能反向批量标成 mutation。
+
+2026-08-14 对 214 条弱证据 POST 做了 12 条静态抽样：两个风险哨兵加按路径 SHA-256 固定选择的
+10 条非定向样本。结果为 **2 条写、10 条真读、0 条判不了**；两个写路由分别是发送验证码与修改
+报表设置，非定向 10 条均为读。样本不支持“多数都是写”，但证明误判不止一个且跨域存在；因此本轮
+只增加证据强度闸门，不改提取器、不批量重分类。逐项工作记录位于忽略目录
+`tmp/codex/probe-read-gate/sampling.md`，不作为长期分类台账。
+
 ## 更新仓库数据
 
 应用新路由或响应字段前：

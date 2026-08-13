@@ -7,6 +7,7 @@ from typing import Any, Mapping, Sequence
 
 from .core import DRAFT_ROOT, EVIDENCE_ROOT, OPERATION_ROOT, read_json
 from .draft_probe import probe_draft
+from .read_semantics import assert_probe_sources
 from .stable_probe import probe_stable
 from .transport import (
     HttpObservation,
@@ -42,6 +43,16 @@ def _probe_one_draft(
     )
 
 
+def preflight_online_probes(
+    operation_ids: Sequence[str], *, stable: bool = False,
+    draft_root: Path = DRAFT_ROOT,
+) -> None:
+    if not stable:
+        assert_probe_sources(
+            [read_json(draft_root / f"{operation_id}.json") for operation_id in operation_ids]
+        )
+
+
 def run_online_probes(
     operation_ids: Sequence[str], *, stable: bool = False,
     interval_seconds: float = 0.31, request_limit: int = 200,
@@ -52,6 +63,7 @@ def run_online_probes(
         raise ValueError("probe requires at least one operation_id")
     if len(operation_ids) > 12:
         raise ValueError("one probe command accepts at most 12 operations")
+    preflight_online_probes(operation_ids, stable=stable, draft_root=draft_root)
     discipline = RequestDiscipline(
         interval_seconds=interval_seconds, request_limit=request_limit
     )
@@ -90,5 +102,5 @@ def run_online_probes(
 
 __all__ = [
     "HttpObservation", "RecordingSession", "RequestContext", "RequestDiscipline",
-    "probe_draft", "probe_stable", "run_online_probes",
+    "preflight_online_probes", "probe_draft", "probe_stable", "run_online_probes",
 ]

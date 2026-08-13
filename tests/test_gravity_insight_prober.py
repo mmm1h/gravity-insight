@@ -6,8 +6,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from gravity_sdk.prober import transport as prober_transport
-from gravity_sdk.prober import probe_support
+from gravity_sdk.errors import PolicyViolation, exit_code_for_error
+from gravity_sdk.prober import online, probe_support, transport as prober_transport
 from gravity_sdk.prober.batch import finalize_batch_report
 from gravity_sdk.prober.model import (
     build_draft,
@@ -27,6 +27,7 @@ from gravity_sdk.prober.probe_support import (
     evidence_path,
     relative,
 )
+from gravity_sdk.prober.read_semantics import assert_probe_read_semantics
 
 
 def test_evidence_display_path_accepts_scoped_root_outside_default(
@@ -582,6 +583,57 @@ def test_online_probe_rejects_non_read_effect() -> None:
 
     with pytest.raises(ValueError, match="declared as read"):
         assert_read_only_source(source)
+
+
+def test_weak_post_probe_requires_traceable_static_confirmation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = build_draft(_route("/candidate/query/"), set())
+    route = source["draft"]["route_evidence"]
+    route["semantic_evidence"] = ["read_action_path_token"]
+    source["operation"]["upstream_method"] = "POST"
+    confirmations = tmp_path / "confirmations.json"
+    document = {
+        "schema_version": "gravity-insight.probe-read-confirmations.v1",
+        "confirmations": [],
+    }
+    _write_json(confirmations, document)
+
+    with pytest.raises(PolicyViolation, match="inferred only from a path token") as error:
+        assert_probe_read_semantics(source, confirmations_path=confirmations)
+    assert (error.value.code.value, error.value.category.value) == (
+        "UNSUPPORTED", "local"
+    )
+    assert exit_code_for_error(error.value) == 4
+    _write_json(tmp_path / "candidate.query.json", source)
+    monkeypatch.setattr(
+        online, "_session_or_default",
+        lambda _session: pytest.fail("probe session must not be constructed"),
+    )
+    with pytest.raises(PolicyViolation, match="inferred only from a path token"):
+        online.run_online_probes(["candidate.query"], draft_root=tmp_path)
+
+    document["confirmations"] = [{
+        "method": "POST", "path": "/candidate/query/",
+        "decision": "confirmed_read", "reviewer": "maintainer@example.test",
+        "reviewed_at": "2026-08-14", "evidence": [{
+            "source": "raw/example.js#control-flow",
+            "detail": "The call only renders returned rows.",
+        }],
+    }]
+    _write_json(confirmations, document)
+    assert_probe_read_semantics(source, confirmations_path=confirmations)
+
+    for method, evidence in (
+        ("GET", ["read_action_path_token"]),
+        ("GET", ["safe_http_method"]),
+        ("POST", ["route_registry:read_contract_not_verified"]),
+    ):
+        source["operation"]["upstream_method"] = method
+        route["semantic_evidence"] = evidence
+        assert_probe_read_semantics(
+            source, confirmations_path=tmp_path / "intentionally-missing.json"
+        )
 
 
 def test_probe_evidence_uses_privacy_guard_compatible_yaml(tmp_path: Path) -> None:

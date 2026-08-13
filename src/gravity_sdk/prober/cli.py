@@ -20,11 +20,12 @@ from .model import (
     reevaluate_drafts,
     status_report,
 )
-from .online import run_online_probes
+from .online import preflight_online_probes, run_online_probes
 from .batch import run_batch_probes
 from .parameters import assemble_draft_parameters
-from .reprobe import run_parameter_reprobes
+from .reprobe import preflight_parameter_reprobes, run_parameter_reprobes
 from .parents import resolve_parent_blockers
+from .read_semantics import assert_probe_draft_directory
 from .transport import RecordingSession, RequestDiscipline, build_runtime, sdk_parts
 
 
@@ -211,7 +212,7 @@ def run(args: argparse.Namespace) -> Mapping[str, Any]:
             "summary": summary,
         }
     if args.command == "probe":
-        auth = _ensure_auth()
+        preflight_online_probes(args.operation_id, stable=args.stable); auth = _ensure_auth()
         kwargs: dict[str, Any] = {}
         if args.evidence_root is not None:
             kwargs["evidence_root"] = args.evidence_root.resolve()
@@ -228,7 +229,7 @@ def run(args: argparse.Namespace) -> Mapping[str, Any]:
         }
         return result
     if args.command == "probe-batch":
-        auth = _ensure_auth()
+        assert_probe_draft_directory(); auth = _ensure_auth()
         result = run_batch_probes(
             interval_seconds=args.interval_ms / 1000.0,
             request_limit=args.request_limit,
@@ -242,7 +243,7 @@ def run(args: argparse.Namespace) -> Mapping[str, Any]:
     if args.command == "assemble-params":
         return assemble_draft_parameters()
     if args.command == "reprobe-params":
-        auth = _ensure_auth()
+        preflight_parameter_reprobes(); auth = _ensure_auth()
         result = run_parameter_reprobes(
             interval_seconds=args.interval_ms / 1000.0,
             request_limit=args.request_limit,
