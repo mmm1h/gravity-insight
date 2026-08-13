@@ -10,6 +10,7 @@ from typing import Any
 _STRICT_COMPOSITES = frozenset(
     {
         "business_pulse",
+        "company_usage",
         "dashboard_analysis",
         "dashboard_snapshot",
         "material_performance",
@@ -122,10 +123,9 @@ def _strict_composite_query(name: str, query: str) -> bool:
         from .agent_multidim import multidim_query
 
         return multidim_query(query)
-    if name == "business_pulse":
-        from .agent_business_pulse import business_pulse_query
-
-        return business_pulse_query(query)
+    from .agent_report_routing import REPORT_PRODUCTS, report_product_query
+    if name in REPORT_PRODUCTS:
+        return report_product_query(name, query)
     if name == "material_performance":
         from .agent_material_performance import material_performance_query
 

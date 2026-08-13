@@ -130,6 +130,7 @@ pulse = gravity.business_pulse(
     ["main"], "2026-08-01", "2026-08-07",
     platforms=["bytedance"], include_hourly=True,
 )
+usage = gravity.company_usage(max_pages=1000, max_items=100000)
 
 # 严格离线读取已同步的数据表沿革；不会构建 Insight/SQL client。
 lineage = gravity.table_lineage("publish", limit=20)
@@ -183,6 +184,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `analysis_vocabulary()` | 严格离线搜索已同步的 workspace 指标、标签、媒体枚举和模板目录 |
 | `table_lineage()` | 严格离线查询已同步的 account-scope 数据表版本与操作观察 |
 | `business_pulse()` | 并发读取 App 经营概览与趋势，可选 workspace scope 小时对比 |
+| `company_usage()` | 完整读取 company scope 的按日资源用量趋势，无 App/日期输入 |
 | `analysis_context()` | 固定 13 个 Analysis 词汇/模板来源，外层并发、局部失败隔离 |
 | `dashboard_snapshot()` | 按稳定 ID 或精确名称读取一个看板的 5 源控制面快照；不执行图表 |
 | `prepare_dashboard_analysis()` / `run_dashboard_analysis()` | 编译或并发执行看板中受支持的五类 Analysis 图表；保序并隔离单图失败 |
@@ -357,6 +359,12 @@ max_workers=6, max_pages=1000, max_items=100000, workspace=None)` 接受一个 A
 6 workers、上限 24，Plan adapter 固定为 1。`capabilities("business pulse")` 离线返回唯一卡，
 Plan request 同时展开 `platforms/include_hourly` 的中性默认值；泛 `business analysis/经营分析`
 不会被路由到该产品。
+
+`company_usage(*, max_pages=1000, max_items=100000)` 完整读取公司级按日资源用量并返回
+`gravity-insight.company-usage.v1`。结果只有一个 `source=usage`、`scope=company` 组件；空列表为
+顶层 `empty`，能力缺口、上游失败和合同漂移保持结构化状态。该方法不接受 App、日期、字段或筛选，
+稳定 operation 投影固定排除 `user_count`。对应 Plan request 只有
+`{"name":"company_usage"}`；`capabilities("company resource usage")` 离线返回唯一卡。
 
 ## Multidim
 

@@ -17,7 +17,7 @@ from . import plan_dashboard_adapter as dashboard_plan
 from . import plan_fixed_composite_adapter as fixed_plan
 from . import plan_order_adapter as order_plan
 from .plan_binding import set_pointer
-from .plan_pulse_adapter import execute_business_pulse, validate_business_pulse
+from . import plan_report_adapter as report_plan
 from .plan_saved_analysis_adapter import (
     execute_saved_analysis_plan,
     is_saved_analysis_result,
@@ -81,7 +81,7 @@ _COMPOSITE_FIELDS = frozenset(
 _COMPOSITES = frozenset(
     {
         *fixed_plan.COMPOSITE_NAMES,
-        "business_pulse", "saved_analysis", MULTIDIM_NAME,
+        *report_plan.COMPOSITE_NAMES, "saved_analysis", MULTIDIM_NAME,
         MATERIAL_PERFORMANCE_NAME,
         PROMOTION_PERFORMANCE_NAME,
         analysis_plan.ANALYSIS_QUERY_NAME,
@@ -416,8 +416,8 @@ def _validate_composite(
     _request_object(request, _COMPOSITE_FIELDS, "composite")
     if name not in _COMPOSITES:
         raise _input("composite name is not allowlisted", "name")
-    if name == "business_pulse":
-        validate_business_pulse(
+    if report_plan.is_report_composite(name):
+        report_plan.validate_report_composite(
             request, context, workspace, _COMPOSITE_OUTPUT_FIELDS
         )
         return
@@ -451,8 +451,8 @@ def _execute_composite(
     name = str(request["name"])
     if fixed_plan.is_fixed_composite(name):
         return fixed_plan.execute_fixed_composite(sdk, request, context)
-    if name == "business_pulse":
-        return execute_business_pulse(sdk, request, context)
+    if report_plan.is_report_composite(name):
+        return report_plan.execute_report_composite(sdk, request, context)
     if name == "saved_analysis":
         return execute_saved_analysis_plan(sdk, request, context)
     if name == MULTIDIM_NAME:

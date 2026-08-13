@@ -25,6 +25,7 @@ gravity analysis order trace  按显式 TraceID 读取单日拆单明细
 gravity apps snapshot         并发读取一个 App 的治理快照
 gravity attribution snapshot  并发读取一个 App 的归因配置快照
 gravity reports pulse         并发读取 App 经营概览与趋势
+gravity reports usage         完整读取公司级按日资源用量趋势
 gravity materials performance 读取稳定的跨平台素材表现
 ```
 
@@ -657,6 +658,17 @@ source 都留在 envelope 中；纯 `error` 或 `capability_gap` 不创建也不
 自然语言不填值也不自动执行。泛 `business analysis/经营分析` 和多维、看板、保存分析、归因、
 模板或导出意图不会被 Pulse 抢占。
 
+同一 `reports` 命名空间还提供无 App 输入的公司资源用量趋势：
+
+```powershell
+gravity reports usage --max-pages 1000 --max-items 100000
+```
+
+命令完整分页读取已登记的广告、广告创建、点击、成本、事件、画像、存储、追踪和素材传输用量，
+返回 `gravity-insight.company-usage.v1`；稳定投影固定排除 `user_count`，未知上游字段继续
+fail closed。未知入口使用 `gravity agent "company resource usage" --domain report`，返回唯一
+`composite:company_usage`，无需补 App、日期或引用，发现后执行共两次调用。
+
 ## Plan v1
 
 ```powershell
@@ -693,7 +705,7 @@ gravity plan run --input plan.json --concurrency 6
 | `run` | `selector`、`inputs`/`parameters`、可选 `app/start/end/all_pages` | operation 或 `@recipe` |
 | `sql_product` | `product` 及该 Workspace 产品的 App/时间输入 | 已登记产品，禁止裸 SQL |
 | `metadata_search` | `query`、可选 `kind/app_id/limit/offset` | 已同步的本地 catalog |
-| `composite` | `name`、组合所需 App/查询输入 | 仅登记的 analysis/segment query、context/dashboard/app/attribution snapshot、business pulse、multidim、material/promotion performance |
+| `composite` | `name`、组合所需 App/查询输入 | 仅登记的 analysis/segment query、context/dashboard/app/attribution snapshot、business pulse/company usage、multidim、material/promotion performance |
 
 每个节点还可声明 `depends_on`、标量 `bindings`、一个有限 `foreach`、`limits` 和
 `output_fields`。binding/foreach 的 `from` 必须显式位于 `depends_on`，路径使用 RFC 6901 JSON

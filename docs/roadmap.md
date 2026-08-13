@@ -13,12 +13,51 @@
 
 ## 现状
 
-当前从仓库产品入口反推 42 条产品动线：**已闭环 18 / 部分闭环 9 / 完全缺失 15**；
+当前从仓库产品入口与 stable operation 正向交叉反推 43 条产品动线：**已闭环 19 / 部分闭环 9 / 完全缺失 15**；
 另有 2 条 legacy/SDK 便利面保留用于兼容与维护，但不计产品动线。
 逐条状态、四面入口、调用次数和证据阻塞以[分析动线台账](analysis-journeys.md)为准；旧
 `21/14/6` 快照的逐条底稿未进入版本控制，无法复算，已停止作为排期事实。
 
 `draft` 候选数量不等于排期数量：17 项候选归并进台账动线或按明确非目标排除，不按 operation 单独排期。
+
+### Stable operation 正向交叉（2026-08-14）
+
+**提案：**从 176 条 stable operation 正向检查真实产品调用链，排除通用 `run`、legacy 快照、
+维护/诊断/权限/任务状态和纯 catalog 入口；对剩余分析结果判断非空证据、动线归属、最小五面成本与
+隐私边界，只实现有非空证据、语义闭合且不需要新投影批准的 1--3 条。逐 operation 工作底稿保留在
+ignored `tmp/codex/stable-coverage-gap/crossref.md`，权威结论落在本页和动线台账。
+
+**判定：**实现前交叉为 **已被动线覆盖 86 / 不该有产品面 82 / 值得有产品面 8**，三类完备且
+无重复。值得产品化的完整集合为 `report.company_amount.query`、
+`promotion.bilibili.account.list`、`promotion.bytedance.advertiser_performance.list`、
+`promotion.bytedance.custom_audience.list`、
+`material.bytedance_asset_text_title_package.list`、
+`material.bytedance_std_asset_text_title_package.list`、
+`material.bytedance.promotion_material.list`、`analysis.segment.user_detail.list`。
+
+| Operation | 分析问题 / 非空证据 | 动线 / 最小五面成本 | 隐私投影与本轮裁决 |
+| --- | --- | --- | --- |
+| `report.company_amount.query` | 公司每日广告、点击、成本、事件、画像、存储、追踪和素材传输用量如何变化；有非空且分页证据 | 新增公司资源用量趋势；`1/1/1/1/1` | `user_count` 保持省略；本轮实现 |
+| `promotion.bilibili.account.list` | B 站账户/产品曝光、点击、CTR、CPC、CPM 和资金消耗如何；有非空且分页证据 | 补推广表现 Bilibili account profile；`1/1/1/1/1` | `advertiser_name` 保持省略；待实现 |
+| `promotion.bytedance.advertiser_performance.list` | 巨量广告主消耗、余额、预算模式和状态如何；有非空、无分页复验 | 补推广表现独立 profile；`1/1/1/1/1` | `advertiser_name`、`advertiser_remark`、`company`、`delay`、`operator_id`、`operator_name`、`project_list` 保持省略；待分页约束 |
+| `promotion.bytedance.custom_audience.list` | 可投人群覆盖数、上传数、来源和状态如何；有旧非空样本，stable 合同晚于样本 | 新增自定义人群覆盖与状态；`1/1/1/1/1` | `cid`、`company`、`create_user_id`、`create_user_name`、`tag`、`update_user_id`、`update_user_name` 保持省略；待实现 |
+| `material.bytedance_asset_text_title_package.list` | 普通标题包的标题数、计划数、历史成本和 CTR 如何；有旧非空样本，stable 合同晚于样本 | 补 D32 title-package family；与标准版共享 `1/1/1/1/1` | `title_list`、`create_user_id`、`create_user_name`、`update_user_id` 保持省略；待实现 |
+| `material.bytedance_std_asset_text_title_package.list` | 标准标题包的标题数、计划数、历史成本和 CTR 如何；有旧非空样本，stable 合同晚于样本 | 补 D32 title-package family；与普通版共享 `1/1/1/1/1` | 同上；待实现 |
+| `material.bytedance.promotion_material.list` | 精确广告窗口内素材的消耗、曝光、点击、CTR、CPC、CPM、尺寸和时长如何；目标响应为空 | 补 D32；`1/1/1/1/1`，未知引用路径 3 次 | `cover_source`、`labels`、`material_info`、`organization_tags`、`poster_url`、`signature`、`star_author_id`、`url` 保持省略；等非空证据 |
+| `analysis.segment.user_detail.list` | 精确分群有哪些成员及其时间、渠道、版本和归因属性；无不可变非空样本 | 补分群详情；`1/1/1/1/1` | `ClientID`、`device_info`、`re_attribute_info`、动态 `fields` 待隐私批准，本轮停止 |
+
+本轮只实现 `report.company_amount.query`：已有成功非空与分页证据，无 App、日期或父引用输入，
+稳定投影已排除 `user_count`，可作为独立的“查看公司资源用量趋势”一次完整分页闭环。Core、CLI
+`reports usage`、SDK `company_usage()`、Plan `company_usage` composite 与 Agent
+`composite:company_usage` 五面共用 `gravity-insight.company-usage.v1`；已知输入 1 次、未知能力
+2 次由 `gravity.agent-call-bound.v1` 声明。Plan 通过 Report family router 接入，
+`plan_adapters.py` 净增长 0。本轮 0 次生产请求，完全复用不可变 Evidence，未触发 probe 读语义闸门。
+
+其余 7 条不在本轮实现：Bilibili account 与 Bytedance advertiser performance 同现有推广表现
+语义重叠但请求维度不同；custom audience 需要新动线，两类 title package 应补进 D32；
+promotion material 的目标响应为空；segment member 明细还涉及 `ClientID`、`device_info`、
+`re_attribute_info` 与动态 `fields` 的用户级投影，本单元无批准权。它们保持显式产品缺口，不能因
+stable 或 raw/legacy 入口而算作闭环。
 9 条 `export.analysis.*` 已判定结案（见[能力覆盖与缺口](capability-coverage.md)）：台账仍如实记为
 完全缺失，但属于隐私/合同边界，不作为工程排期缺口。
 

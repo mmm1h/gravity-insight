@@ -14,6 +14,7 @@ from typing import Any
 
 from .find import query_match
 from .agent_business_pulse import BUSINESS_PULSE_CAPABILITY, BUSINESS_PULSE_NAME
+from .agent_company_usage import COMPANY_USAGE_CAPABILITY, COMPANY_USAGE_NAME
 from .agent_dashboard import DASHBOARD_ANALYSIS_CAPABILITY
 from .agent_multidim import MULTIDIM_CAPABILITY
 from .agent_material_performance import MATERIAL_PERFORMANCE_CAPABILITY
@@ -162,6 +163,7 @@ _COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
     ORDER_SPLIT_TRACE_CAPABILITY,
     PROMOTION_PERFORMANCE_CAPABILITY,
     BUSINESS_PULSE_CAPABILITY,
+    COMPANY_USAGE_CAPABILITY,
 )
 
 
@@ -417,6 +419,7 @@ def authoritative_capability_cards(
             "dashboard_analysis",
             "dashboard_snapshot",
             BUSINESS_PULSE_NAME,
+            COMPANY_USAGE_NAME,
             "material_performance",
             MONETIZATION_DETAIL_NAME,
             ORDER_DIRECTORY_NAME,

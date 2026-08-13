@@ -243,6 +243,21 @@ Plan binding 只作用于 request 边界：`/app` 可从上游复制一个标量
 Agent 不填写任何业务值，也不自动执行。泛 `business analysis/经营分析` 不选择本 composite，
 多维、看板、保存分析、归因、模板、权限与导出意图同样被严格排除。
 
+公司资源用量使用同一 Report family router，request 只有固定名称：
+
+```json
+{
+  "id": "company_usage",
+  "kind": "composite",
+  "request": {"name": "company_usage"},
+  "limits": {"max_pages": 1000, "max_items": 100000}
+}
+```
+
+该节点没有 binding target，也不接受 App、日期或筛选；一次完整分页读取返回
+`gravity-insight.company-usage.v1`。Agent 卡通过 `gravity.agent-call-bound.v1` 声明已知输入 1 次、
+未知能力 2 次，Plan adapter 固定使用一个上游 worker。
+
 ## Dashboard Snapshot composite
 
 看板控制面使用登记的 `dashboard_snapshot` composite。调用方必须给出 Workspace App 和看板

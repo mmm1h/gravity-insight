@@ -90,6 +90,23 @@ class ReportSdkMixin:
             max_workers=max_workers,
         )
 
+    def company_usage(
+        self,
+        *,
+        max_pages: int = 1_000,
+        max_items: int = 100_000,
+    ) -> dict[str, Any]:
+        """Read the complete company-level daily resource-usage trend."""
+
+        from .company_usage import company_usage
+
+        _validate_limits(max_pages, max_items, 1)
+        return company_usage(
+            self.insight,
+            max_pages=max_pages,
+            max_items=max_items,
+        )
+
 
 def _validate_limits(max_pages: Any, max_items: Any, max_workers: Any) -> None:
     for field, value, maximum in (
