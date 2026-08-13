@@ -51,3 +51,16 @@ fetch bundles
 5. 运行 compiler、quality、完整单元测试和 `git diff --check`。
 
 生产页面确认仍受 [探测安全](probing.md) 约束。
+
+## 请求提取器的已知诊断边界
+
+`route-params.json` 的 `analysis.unresolved_reasons` 只保留 occurrence 级原因。表达式级
+`unresolved_body_expression` 位于提取期间的内存 shape，输出时只折叠进
+`analysis.unresolved_calls` 计数；因此不能用 JSON 文本 grep 统计该原因。需要诊断时必须用与
+`bundle-snapshot.json` 逐文件 hash 一致的 raw bundle 重放当前提取器，同时分别报告 route、
+occurrence/call-site 和 coverage 分类，不能把三个口径混用。
+
+2026-08-14 的同快照杠杆评估得到：`load_alias_has_no_static_call` 为 97 route / 123 occurrence，
+`unresolved_body_expression` 为 60 route / 82 call site；与 15 条完全缺失和 12 条部分闭环动线的
+当前 blocker 交叉均为 0。函数内联与条件 callee 因而暂不实现；未来只有在它们能移除多条排期
+动线的当前 blocker 时再重评，不能因静态命中规模大就扩张为通用 JS 求值器。
