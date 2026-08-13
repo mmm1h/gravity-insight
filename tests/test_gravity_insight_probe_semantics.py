@@ -522,7 +522,7 @@ def test_sensitive_field_is_hidden_from_projection_read_describe_and_cli() -> No
 
     stdout = io.StringIO()
     with (
-        patch("gravity_sdk.cli._client", return_value=client),
+        patch("gravity_sdk.read_cli.runtime.build_client", return_value=client),
         contextlib.redirect_stdout(stdout),
     ):
         assert cli.main(["read", "report.company_amount.query"]) == 0
