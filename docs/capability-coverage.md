@@ -29,7 +29,9 @@ argv，也不能进入 stable manifest。
 - 除 Bytedance 外，平台专属素材能力普遍缺少经过非空样本验证的响应合同；不要把 common
   素材目录误写成各平台已完整覆盖。
 - Apple、Huya、Qihu360、Sigmob、UC、Youdao、Bilibili 的 campaign/group/creative/report
-  草稿最接近可验证状态，但仍需在有数据租户上执行最小 live probe。
+  草稿最接近可验证状态。D32 已在当前账号完成最小根读取：只有 Bilibili account 曾非空，但
+  advertiser 为空；其余六个平台在允许的根读取或最短单日 advertiser 窗口内均为空，且无权限
+  失败或合同漂移。子级未发送，所有草稿继续等待有数据租户的最小非空 probe。
 - auth/proxy 路由和写操作不属于普通读取缺口。前者保持 unsupported，后者保持 reservation，
   除非项目范围和安全模型明确扩展。
 

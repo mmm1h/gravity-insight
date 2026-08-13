@@ -89,6 +89,37 @@ card 已闭环，原自然语言固定 gap 仅对批准形状解除。D28 聚合
 **未决**：Bilibili account 已返回 `advertiser_id`，但 campaign 草稿声明的父资源是 advertiser report，
 两者是否等价**不能推断**；Bilibili manager 三层的 `data.list` 与分页仍未在线证明。
 
+## 2026-08-13 追加判定：平台专属素材/创意纵深（D32）
+
+先估最坏 22 次业务请求，再执行最小根读取。**本轮实际 5 次请求**，均为 HTTP 200 空样本；
+`success=0 / empty=5 / permission_unavailable=0 / contract_changed=0 / other=0`。没有重试、翻页、
+扩窗、App 切换或账户遍历。Bilibili 与 Huya 复用上节 D33 的已提交结论，本轮不重复请求。
+
+| 平台 | 本轮请求 | 当前账号数据可用性 | 父链断点 | 子级动作 |
+| --- | ---: | --- | --- | --- |
+| Apple | 1 | stable advertiser 最短单日窗口为空 | advertiser 未产出候选 | campaign/adgroup/keyword 未发送 |
+| Bilibili | 0 | 复用 D33：account 非空，advertiser 为空 | account → advertiser | campaign/unit/creative 未发送 |
+| Huya | 0 | 复用 D33：account 为空 | account | advertiser/campaign/group 未发送 |
+| Qihu360 | 1 | stable account 为空 | account | advertiser/campaign/group 未发送 |
+| Sigmob | 1 | stable account 为空 | account | advertiser/campaign/promotion 未发送 |
+| UC | 1 | stable advertiser 最短单日窗口为空 | advertiser 未产出候选 | campaign/adgroup/feed 未发送 |
+| Youdao | 1 | stable account 为空 | account | advertiser/campaign/group 未发送 |
+
+七个平台前缀下的 31 个 draft 均无升级。按六项标准逐项判定：
+
+| 六项证据 | 判定 |
+| --- | --- |
+| 请求绑定 | stable 根读取已证明；多数 report draft 有前端观测请求形状，但 manager/feed 子级仍按各自 draft 记录，不能跨路由推断 |
+| 非空响应 | **全部目标 draft 缺失**；Bilibili 的非空 account 是 stable 父层证据，不是子级响应合同 |
+| 分页 | 多数 report draft 有既有 `page_info`、第二页和安全上限证据；Bilibili manager、UC manager/feed 等仍缺在线分页语义。分页证据不能替代非空 item schema |
+| 隐私 | 本轮空列表只证明响应壳，不证明 item 隐私。没有观察到需要新批准的字段；复用的 Bilibili account 中 `advertiser_name` 已按既有 stable 投影隐藏 |
+| 父依赖 | **全部目标 draft 未闭环**；分别断在 account 或 advertiser，未把任何父值写盘 |
+| 权限 | 5 个本轮根读取均可访问且语义成功为空；未发送的目标 draft 没有目标路由权限证据。没有 `permission_unavailable` |
+
+因此有既有分页壳证据的 report draft 仍至少卡在 `empty_sample`、目标 item 隐私、父依赖和目标权限；
+manager/feed 等无完整分页证据的 draft 还卡在 `pagination_unverified`。下一步只允许在有数据租户上复用
+同一最小范围，从对应断点开始；当前账号下不得重试或扩大范围。
+
 ## 本轮可复用结论
 
 - Agent 固定产品按 owner 正向证据强度与 selector 精确度集中裁决；命中多个 authoritative 产品时返回
