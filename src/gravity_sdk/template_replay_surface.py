@@ -474,8 +474,7 @@ def _validate_window(start: Any, end: Any) -> None:
 
 def analysis_template_query(query: str) -> bool:
     selected = " ".join(query.strip().casefold().split())
-    if selected in {ANALYSIS_TEMPLATE_NAME, f"composite:{ANALYSIS_TEMPLATE_NAME}",
-                    "analysis template", "分析模板"}:
+    if selected in {ANALYSIS_TEMPLATE_NAME, f"composite:{ANALYSIS_TEMPLATE_NAME}"}:
         return True
     blocked = ("saved", "dashboard", "create", "update", "delete", "share",
                "subscribe", "layout", "permission", "保存", "看板", "创建",
