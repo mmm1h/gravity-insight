@@ -56,7 +56,8 @@ class AnalysisQuerySpecTests(unittest.TestCase):
         inspect(schema)
         zones = schema["definitions"]["scatter_zone"]["oneOf"]
         self.assertEqual(["type"], zones[0]["required"])
-        self.assertEqual(["type", "ranges"], zones[1]["required"])
+        self.assertEqual("dispersed", zones[1]["properties"]["type"]["const"])
+        self.assertEqual(["type", "ranges"], zones[2]["required"])
         event_schema = schema["kind_schemas"]["event"]
         self.assertEqual(
             "#/definitions/aggregate",
@@ -115,6 +116,42 @@ class AnalysisQuerySpecTests(unittest.TestCase):
                 self.assertTrue(compiled.inputs["query_id"])
         self.assertEqual(2, len(compile_query_spec("funnel", cases["funnel"]).inputs["query_item_list"]))
         self.assertEqual("default", compile_query_spec("scatter", cases["scatter"]).inputs["query_item_list"][0]["calc_zone"]["zone_type"])
+
+    def test_production_proven_compact_controls_compile_to_exact_wire(self) -> None:
+        dated = {"app": "101", "start": "2026-08-01", "end": "2026-08-01"}
+        event = compile_query_spec("event", {
+            **dated, "steps": [step("open")], "return_hierarchy_list": True,
+        }).inputs
+        funnel = compile_query_spec("funnel", {
+            **dated, "steps": [step("open"), step("pay")],
+            "window": {"unit": "today", "value": 1},
+        }).inputs
+        before_after = {
+            "after": {"event_name": "pay", "target": {
+                "name": "PresetAllCount", "field": "PresetAllCount"}},
+            "formula": "+", "decimal_point": "two_point",
+            "before_decimal_point": "integer", "a_to_b": True, "name": "return",
+        }
+        retention = compile_query_spec("retention", {
+            **dated, "steps": [step("open"), step("pay")], "offset": 7,
+            "period_calc_method": "SUM", "custom_before_method": "SUM",
+            "total_calc_type": "DAY", "week_first_day": 1,
+            "query_item_before_after": before_after,
+        }).inputs
+        scatter = compile_query_spec("scatter", {
+            **dated, "steps": [step("pay")], "zone": {"type": "dispersed"},
+        }).inputs
+        self.assertIs(True, event["return_hierarchy_list"])
+        self.assertEqual({"type": "today", "val": 1}, funnel["stat_time_window"])
+        self.assertEqual(before_after, retention["query_item_before_after"])
+        self.assertEqual({"zone_type": "dispersed", "range_list": []},
+                         scatter["query_item_list"][0]["calc_zone"])
+        self.assertNotIn("return_hierarchy_list", compile_query_spec(
+            "event", {**dated, "steps": [step("open")] }).inputs)
+        for rejected in ("split_event", "custom_query_item_list"):
+            with self.subTest(rejected=rejected), self.assertRaises(InputValidationError):
+                compile_query_spec("event", {
+                    **dated, "steps": [step("open")], rejected: []})
 
     def test_invalid_semantics_stop_before_client_validation(self) -> None:
         sdk = GravitySDK(insight=FakeInsight())

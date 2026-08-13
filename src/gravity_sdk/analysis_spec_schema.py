@@ -54,6 +54,7 @@ def _kind_schemas() -> dict[str, Any]:
                     "global_filters": _array_ref("condition", 0, 100),
                     "global_logic": _enum("AND", "OR"),
                     "calculate_layer_y": {"type": "boolean", "default": False},
+                    "return_hierarchy_list": {"type": "boolean", "default": False},
                     "aggregate": {"$ref": "#/definitions/aggregate"},
                 },
             ),
@@ -85,6 +86,10 @@ def _kind_schemas() -> dict[str, Any]:
                     "custom_before_method": _enum("SUM", "WEIGHTED_AVG"),
                     "total_calc_type": _enum("DAY", "WEEK", "MONTH"),
                     "week_first_day": _integer(1, 7),
+                    "query_item_before_after": {
+                        "$ref": "#/definitions/retention_before_after",
+                        "default": {},
+                    },
                     **_shared_filter_properties(),
                 },
             ),
@@ -104,6 +109,7 @@ def _definitions() -> dict[str, Any]:
         "condition": _condition_definition(),
         **_target_definitions(),
         **_flow_definitions(),
+        **_retention_definitions(),
         "aggregate": _aggregate_definition(),
     }
 
@@ -199,16 +205,115 @@ def _flow_definitions() -> dict[str, Any]:
             },
         },
         "funnel_window": {
-            "type": "object",
-            "required": ["unit", "value"],
-            "additionalProperties": False,
             "oneOf": [
+                _window_variant("today", 1),
                 _window_variant("minute", 60),
                 _window_variant("hour", 24),
                 _window_variant("day", 30),
             ],
         },
-        "scatter_zone": {"oneOf": [_default_zone(), _custom_zone()]},
+        "scatter_zone": {
+            "oneOf": [_simple_zone("default"), _simple_zone("dispersed"), _custom_zone()]
+        },
+    }
+
+
+def _retention_definitions() -> dict[str, Any]:
+    precision = _enum(
+        "two_point", "three_point", "four_point", "percentage", "integer"
+    )
+    return {
+        "retention_target": {
+            "type": "object",
+            "required": ["name", "field"],
+            "additionalProperties": False,
+            "properties": {
+                "name": {
+                    "oneOf": [
+                        {"enum": sorted(ANALYSIS_TARGET_METHODS)},
+                        {
+                            "type": "string",
+                            "pattern": "^Quantile(?:_(?:[1-9]|[1-9][0-9]|100))?$",
+                        },
+                    ]
+                },
+                "field": _bounded_string(),
+                "quantile_level": {
+                    "type": "number", "exclusiveMinimum": 0, "maximum": 100
+                },
+                "dim_using_table_name": _bounded_string(),
+            },
+        },
+        "retention_after_event": _retention_event(False),
+        "retention_before_event": _retention_event(True),
+        "retention_after_custom": _retention_custom(False),
+        "retention_before_custom": _retention_custom(True),
+        "retention_before_after": {
+            "type": "object",
+            "additionalProperties": False,
+            "oneOf": [{"maxProperties": 0}, {"required": ["name"]}],
+            "properties": {
+                "after": {"$ref": "#/definitions/retention_after_event"},
+                "after_custom": {"$ref": "#/definitions/retention_after_custom"},
+                "before": {"$ref": "#/definitions/retention_before_event"},
+                "before_custom": {"$ref": "#/definitions/retention_before_custom"},
+                "formula": _enum("+", "-", "*", "/"),
+                "decimal_point": precision,
+                "before_decimal_point": precision,
+                "a_to_b": {"type": "boolean"},
+                "name": {"type": "string", "minLength": 1, "maxLength": 20},
+            },
+        },
+    }
+
+
+def _retention_event(before: bool) -> dict[str, Any]:
+    properties = {
+        "event_name": _bounded_string(),
+        "custom_name": {"type": "string", "maxLength": 256},
+        "target": {"$ref": "#/definitions/retention_target"},
+        "conditions": _array_ref("condition", 0, 100),
+        "cond_logic": _enum("AND", "OR"),
+        "prop_to_calc": {"type": "string", "maxLength": 256},
+        "prop_to_calc_target": {"type": "string", "maxLength": 256},
+    }
+    if before:
+        properties["customBeforeName"] = {"type": "string", "maxLength": 256}
+    return {
+        "type": "object",
+        "required": ["event_name", "target"],
+        "additionalProperties": False,
+        "properties": properties,
+    }
+
+
+def _retention_custom(before: bool) -> dict[str, Any]:
+    properties = {
+        "list": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 50,
+            "items": {
+                "$ref": (
+                    "#/definitions/retention_before_event"
+                    if before else "#/definitions/retention_after_event"
+                )
+            },
+        },
+        "conditions": _array_ref("condition", 0, 100),
+        "cond_logic": _enum("AND", "OR"),
+        "formula": {
+            "type": "string", "minLength": 1, "maxLength": 256,
+            "pattern": "^[xX0-9+*/().\\s-]{1,256}$",
+        },
+    }
+    if before:
+        properties["customBeforeName"] = {"type": "string", "maxLength": 256}
+    return {
+        "type": "object",
+        "required": ["list", "formula"],
+        "additionalProperties": False,
+        "properties": properties,
     }
 
 
@@ -306,6 +411,9 @@ def _array_ref(name: str, minimum: int, maximum: int) -> dict[str, Any]:
 
 def _window_variant(unit: str, maximum: int) -> dict[str, Any]:
     return {
+        "type": "object",
+        "required": ["unit", "value"],
+        "additionalProperties": False,
         "properties": {
             "unit": {"const": unit},
             "value": _integer(1, maximum),
@@ -313,12 +421,12 @@ def _window_variant(unit: str, maximum: int) -> dict[str, Any]:
     }
 
 
-def _default_zone() -> dict[str, Any]:
+def _simple_zone(zone_type: str) -> dict[str, Any]:
     return {
         "type": "object",
         "required": ["type"],
         "additionalProperties": False,
-        "properties": {"type": {"const": "default"}},
+        "properties": {"type": {"const": zone_type}},
     }
 
 
