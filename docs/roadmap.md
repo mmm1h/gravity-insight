@@ -83,17 +83,28 @@ AND/OR 条件、漏斗步数与窗口、留存 `offset`（1–365）、Multidim 
 **真实缺口只有一类：字段已在 operation 合同与 FieldPolicy 中登记，compact Spec 却没暴露。**
 调用方因此被迫从产品入口掉回手写 raw wire JSON，而该结构不自描述，Agent 无法机械填写。
 
-| kind | 未暴露字段 | 证据强度 |
-| --- | --- | --- |
-| Event | `custom_query_item_list` | 不足：最小公式样本上游 `semantic_error` |
-| Event | `return_hierarchy_list`、`split_event` | 静态：合同 + FieldPolicy + 单测 |
-| Retention | `query_item_before_after` | 静态：合同 + FieldPolicy + 单测 |
-| Funnel | 嵌套 `window.type=today` | 仅 FieldPolicy 接受 |
-| Scatter | 嵌套 `zone_type=dispersed` | 仅 FieldPolicy 接受 |
+**已补齐 4 项，2 项证据不足保持关闭：**
 
-补齐纪律：**先从生产 artifact 语料取形状**（模板与看板 artifact 是 Web 端产出的必定可用配置），
-取不到证据的 fail-closed 不暴露。逐字复用 FieldPolicy 已有结构直接编译，
-**不建通用公式 DSL、不接受任意表达式**。新字段必须有默认值且默认行为与现状完全一致。
+| kind | 控制项 | 判定 |
+| --- | --- | --- |
+| Event | `return_hierarchy` | **已暴露**，在线 probe `success` |
+| Retention | `query_item_before_after` | **已暴露**，在线 probe 合法 `empty` |
+| Funnel | `window.unit=today`（value 锁死 1） | **已暴露**，在线 probe `success` |
+| Scatter | `zone.type=dispersed`（不接受 ranges） | **已暴露**，在线 probe 合法 `empty` |
+| Event | `custom_query_item_list` | **不暴露**：artifact 0 实例，最小公式 probe `semantic_error` |
+| Event | `split_event` | **不暴露**：通过本地 FieldPolicy 但**上游 `semantic_error`** |
+
+`split_event` 的结果值得单独记：它**通过了我们的 FieldPolicy 却被上游拒绝**，
+说明本地策略层在这一处比上游宽。这不是 fail-closed 失效（请求确实发出并被拒），
+但意味着"FieldPolicy 接受"不能当作"上游可用"的证据——本轮两项未暴露的判定正基于此。
+
+取证路径记录：artifact 语料**六个字段全部 0 非空实例**（扫 32 个模板，最小 App 看板树为空），
+所以"先挖 artifact"这条路本轮没起作用，最终靠最小在线 probe 定的。语料扫描成本 74 次 HTTP，
+下次做同类取证要先估成本。
+
+补齐纪律（保留）：取不到生产证据的 fail-closed 不暴露；逐字复用 FieldPolicy 已有结构直接编译；
+**不建通用公式 DSL、不接受任意表达式**；新字段必须有默认值且默认行为与现状完全一致
+（已用五种 kind 的相同 compact Spec 做结构差分验证，归一化 `query_id` 后 inputs 完全相等）。
 
 Funnel、Property、Scatter 顶层无差集；Property 本身没有日期窗，不算丢参。
 
