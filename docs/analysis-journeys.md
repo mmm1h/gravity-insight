@@ -4,7 +4,7 @@
 
 闭环判据沿用[路线图](roadmap.md)：已知输入 1 次调用、未知输入 2 次调用，CLI/SDK/Plan/Agent 卡四面可达，结果为带 `schema_version` 的 envelope，能区分空、部分失败和能力缺口，未登记字段 fail-closed。调用次数是调用方顶层命令/SDK 调用数，不是 composite 内部 HTTP 数；`实测` 指本轮离线发现加 Plan dry-run，`卡面` 指卡明确声明发现后一次，`控制流` 指离线发现实测后核对 handoff/Plan 路径，`未验证` 不作达标声明。
 
-当前从产品入口、Agent 离线发现、Plan dry-run、候选矩阵和 export registry 反推 **44 条：已闭环 17 / 部分闭环 12 / 完全缺失 15**。旧快照 `21/14/6` 没有逐条证据，不能复算；本台账不还原已丢失的原始 41 条定义。D23/D29/D30 只剩依赖箭头、语义不可验证，故保留在此说明而不强挂到新动线。候选 `app.project_auth.detail`、`app.user_auth.list` 属成员权限管理，按 roadmap 非目标排除，不计动线。
+当前从产品入口、Agent 离线发现、Plan dry-run、候选矩阵和 export registry 反推 **42 条产品动线：已闭环 18 / 部分闭环 9 / 完全缺失 15**；另保留 2 条兼容/维护便利面供边界审计，但不计产品动线。旧快照 `21/14/6` 没有逐条证据，不能复算；本台账不还原已丢失的原始 41 条定义。D23/D29/D30 只剩依赖箭头、语义不可验证，故保留在此说明而不强挂到新动线。候选 `app.project_auth.detail`、`app.user_auth.list` 属成员权限管理，按 roadmap 非目标排除，不计动线。
 
 | 动线 | 状态 | 四面可达（CLI / SDK / Plan / Agent 卡） | 调用次数（已知 / 未知） | 阻塞 |
 | --- | --- | --- | --- | --- |
@@ -34,9 +34,9 @@
 | 按平台和物理指标读取推广表现 | 部分闭环 | 有 / 有 / 有 / 有 | 1 / 3（指标未知） | 物理指标未知时须先查本地指标目录再执行。 |
 | 离线查找可用于分析的事件、属性、指标和模板名称 | 部分闭环 | 有 / 有 / 有 / 有 | 1 / 2；未同步 3 | 缺本地 catalog 时先 `metadata sync`，超过两次上限。 |
 | 查询已同步的数据表版本与变更观察 | 部分闭环 | 有 / 有 / 有 / 有 | 1 / 2（实测、卡面）；未同步 3 | 缺 catalog 时需先同步；只证明沿革，不回答 F41 的当前 schema。 |
-| 创建、轮询并下载素材分析报表 | 部分闭环 | 有 / 有 / 无 / 有 | 1 / 2（卡面） | export 卡明确 `plan_executable=false`，缺 Plan 面。 |
-| 跨平台读取任意推广层级的兼容快照 | 部分闭环 | 有 / 有 / 无 / 无 | 1 / 未验证 | legacy permissive snapshot 缺 Plan 和 Agent 卡；未知入口调用数未验证。 |
-| 读取任意稳定元数据 operation 的统一快照 | 部分闭环 | 无 / 有 / 无 / 无 | 1 / 未验证 | 仅 `CompositeService.metadata_snapshot()`；缺专用 CLI、Plan 和 Agent 卡。 |
+| 创建、轮询并下载素材分析报表 | 已闭环 | 有 / 有 / 设计不适用 / 有 | 1 / 2（卡面） | 文件 effect 由一次 `export run` 完成 create→poll→download、校验与原子提交；卡声明发现后 1 次调用。Plan v1 不承诺文件副作用、超时恢复或部分下载语义。 |
+| 跨平台读取任意推广层级的兼容快照 | 不计独立动线（legacy 兼容面） | 有 / 有 / 设计不暴露 / 设计不暴露 | 1 / 不提供 | permissive snapshot 绕过正式产品的 workspace App、统一日期窗、平台/指标 allowlist 与结果绑定；保留专家兼容入口，Agent 主路径指向 `promotion performance`。 |
+| 读取任意稳定元数据 operation 的统一快照 | 不计独立动线（SDK 便利面） | 设计不暴露 / 有 / 设计不暴露 / 设计不暴露 | 1 / 不提供 | inventory 驱动且会跳过缺必填 input 的 operation，不构成稳定调用方任务；在线固定上下文走 `analysis context`，离线发现走 `metadata search` / `metadata vocabulary`。 |
 | 查询分析默认值字典 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | `analysis.default_val.list` 请求必填语义与响应 schema 未证实；现有非空响应仍为 inconclusive。 |
 | 查询实时事件目录 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | `analysis.realtime_event.list` 仅有 semantic error；请求字段、分页和响应 schema 未证实。 |
 | 查询分析空间或报表设置 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | `analysis.setting.query` 缺完整值无关请求形状与响应投影；自由文本继续 fail-closed。 |

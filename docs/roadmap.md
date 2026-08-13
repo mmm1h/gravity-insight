@@ -13,7 +13,8 @@
 
 ## 现状
 
-当前从仓库产品入口反推 44 条分析动线：**已闭环 17 / 部分闭环 12 / 完全缺失 15**。
+当前从仓库产品入口反推 42 条产品动线：**已闭环 18 / 部分闭环 9 / 完全缺失 15**；
+另有 2 条 legacy/SDK 便利面保留用于兼容与维护，但不计产品动线。
 逐条状态、四面入口、调用次数和证据阻塞以[分析动线台账](analysis-journeys.md)为准；旧
 `21/14/6` 快照的逐条底稿未进入版本控制，无法复算，已停止作为排期事实。
 
@@ -101,6 +102,29 @@ D32 本轮先估 22 次、实际只发 5 次最小 stable 根读取；5 次均�
 - 错误分类已对齐：permission 返回 upstream/3，本地 unsupported/policy/privacy 阻断返回 local/4；
   operation、请求行为和错误 code 均未改变，没有读能力损失。这是有意的破坏性行为变更——
   调用方需更新 exit-code 分支：`3` 表示换账号或申请权限，`4` 表示请求未发出、停止改输入重试。
+
+## 三处缺面裁决（2026-08-14）
+
+本轮先按调用方任务而非四面数量复核台账中的三处缺面，结论是**均不新增产品面**：
+
+- **素材报表导出不进入 Plan v1，但动线已闭环。** 导出是有文件副作用和恢复状态的 effect；
+  `export run` 已在一次顶层调用内拥有 create、poll、download、文件 schema 校验与原子提交，超时后还要
+  用 `job_id` 恢复。Agent 卡直接交接该命令并声明发现后 1 次调用。把它包装成普通 Plan 数据节点会让
+  Plan 错误承诺可重试、超时和部分文件语义，不能增加调用方可完成的任务。
+- **legacy promotion snapshot 不进 Agent/Plan 主路径。** 兼容面允许任意非空 promotion resource、
+  逐平台原始 input 和按 inventory 选择首个稳定 operation；CLI 的 all 模式还会按各 operation schema
+  静默忽略不适用 shortcut。它没有绑定一个 workspace App、统一日期窗和显式物理指标，也不校验结果
+  是否仍绑定这些选择。正式分析调用方使用 `promotion performance`：只覆盖已证明平台，固定 App/
+  日期/指标合同，指标在平台 metadata 中 fail closed，并具有 CLI/SDK/Plan/Agent 四面。兼容 SDK/CLI
+  保留给已知 operation 合同的专家调用方，不再把它计作独立分析动线。
+- **任意 stable metadata snapshot 是 SDK 维护便利面，不是调用方产品。** 它按当前 inventory 的
+  metadata 分类动态扩缩，默认跳过所有缺必填 input 的 operation，因而既没有稳定业务问题，也不能
+  承诺统一完整性。构造分析所需的在线上下文已有固定 13 来源的 `analysis context` 四面产品；名称发现
+  已由同步后的 `metadata search` / `metadata vocabulary` 离线产品覆盖。保留原 SDK 方法和精确 raw
+  operation 入口，不为 registry 聚合器新增 CLI/Plan/Agent 面。
+
+这三项只校正产品边界和台账口径；所有既有命令、SDK 方法、operation、envelope、Agent selector 与
+意图裁决保持不变，`plan_adapters.py` 未修改。
 
 ## 使用成本：参数化程度审计结论
 
