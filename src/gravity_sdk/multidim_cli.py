@@ -14,26 +14,18 @@ from .domains import (
     MULTIDIM_TEMPLATE_SCOPES,
 )
 from .errors import InputValidationError
-from .multidim import call_cli_read, parse_multi_days
+from .multidim import parse_multi_days
 from .pagination_cli import page_options
 from .workspace import load_workspace
 from .workspace_app import resolve_workspace_app
-
-
-MergeShortcuts = Callable[
-    [Any, str, argparse.Namespace, Mapping[str, Any]],
-    tuple[dict[str, Any], list[str]],
-]
 
 
 def add_multidim_commands(
     commands: Any,
     add_input: Callable[..., None],
     add_pagination: Callable[[argparse.ArgumentParser], None],
-    add_shortcuts: Callable[[argparse.ArgumentParser], None],
-    merge_shortcuts: MergeShortcuts,
 ) -> None:
-    """Register the legacy catalog plus the App-bound product query."""
+    """Register catalog reads plus the single App-bound product query."""
 
     multidim = commands.add_parser(
         "multidim", help="Read Multidim catalogs or execute a governed report query."
@@ -64,10 +56,10 @@ def add_multidim_commands(
         action="store_true",
         help="Validate live metric metadata and calculate totals in the same command.",
     )
-    add_shortcuts(query)
+    _add_product_shortcuts(query)
     query.add_argument(
         "--app",
-        help="Workspace App alias or positive id; selects the governed product surface.",
+        help="Required for execution: workspace App alias or positive id.",
     )
     query.add_argument(
         "--workspace",
@@ -87,24 +79,19 @@ def add_multidim_commands(
         help="Print the closed Multidim product input schema without network access.",
     )
 
-    total = subcommands.add_parser("calc-total")
-    add_input(total)
-    add_shortcuts(total)
-
-    handler = _handler(merge_shortcuts)
+    handler = _handler()
     for parser in (
         template_list,
         template_get,
         metadata,
         query,
-        total,
     ):
         parser.set_defaults(_gravity_handler=handler)
 
 
-def _handler(merge_shortcuts: MergeShortcuts) -> Callable[[Any, Any], Any]:
+def _handler() -> Callable[[Any, Any], Any]:
     def dispatch(args: Any, object_input: Callable[[Any], Mapping[str, Any]]) -> Any:
-        return dispatch_multidim(args, object_input, merge_shortcuts)
+        return dispatch_multidim(args, object_input)
 
     return dispatch
 
@@ -112,7 +99,6 @@ def _handler(merge_shortcuts: MergeShortcuts) -> Callable[[Any, Any], Any]:
 def dispatch_multidim(
     args: Any,
     object_input: Callable[[Any], Mapping[str, Any]],
-    merge_shortcuts: MergeShortcuts,
 ) -> Any:
     """Dispatch one Multidim command while keeping product preflight client-free."""
 
@@ -132,20 +118,12 @@ def dispatch_multidim(
             if args.template_command == "list"
             else "multidim.templates.get"
         )
-        return _legacy_read(args, object_input, DOMAIN_OPERATIONS[key])
-    if command == "calc-total":
-        return _legacy_query(args, object_input, merge_shortcuts, command)
-    if getattr(args, "app", None) is not None and getattr(args, "app_id", None) is not None:
-        raise InputValidationError("--app and --app-id cannot be combined", field="app")
+        return _catalog_read(args, object_input, DOMAIN_OPERATIONS[key])
     if bool(getattr(args, "multidim_input_schema", False)):
         from .multidim_product import multidim_input_schema
 
         return multidim_input_schema()
-    if getattr(args, "app", None) is not None or bool(
-        getattr(args, "multidim_dry_run", False)
-    ):
-        return _product_query(args, object_input)
-    return _legacy_query(args, object_input, merge_shortcuts, command)
+    return _product_query(args, object_input)
 
 
 def _enforce_output_policy(args: Any) -> None:
@@ -171,15 +149,16 @@ def _product_query(args: Any, object_input: Callable[[Any], Mapping[str, Any]]) 
         run_multidim_query,
     )
 
-    if bool(getattr(args, "multidim_dry_run", False)) and getattr(args, "app", None) is None:
-        raise InputValidationError("product --dry-run requires explicit --app", field="app")
+    if getattr(args, "app", None) is None:
+        raise InputValidationError(
+            "multidim query requires explicit --app",
+            field="app",
+            next_action="Retry with `gravity multidim query --app <name|id> ...`.",
+        )
     supplied = _product_shortcuts(args, object_input(args.input))
     normalized = normalize_multidim_inputs(supplied)
     workspace = load_workspace(getattr(args, "workspace", None))
-    selected_app = getattr(args, "app", None)
-    if selected_app is None:
-        selected_app = getattr(args, "app_id", None)
-    app_id = resolve_workspace_app(workspace, selected_app)
+    app_id = resolve_workspace_app(workspace, getattr(args, "app", None))
     bound = bind_multidim_app(normalized, app_id)
     all_pages = bool(getattr(args, "all_pages", False))
     _product_switches(args)
@@ -263,80 +242,10 @@ def _product_shortcuts(
             {"field": "click_company", "operator": "IN", "values": [media]}
         )
         result["filters"] = filters
-    if getattr(args, "parent_id", None) is not None:
-        raise InputValidationError(
-            "--parent-id is available only on the legacy operation surface",
-            field="parent_id",
-        )
     return result
 
 
-def _legacy_query(
-    args: Any,
-    object_input: Callable[[Any], Mapping[str, Any]],
-    merge_shortcuts: MergeShortcuts,
-    command: str,
-) -> Any:
-    client = runtime.build_client()
-    key = "multidim.query" if command == "query" else "multidim.calc_total"
-    operation_id = runtime.resolve_operation_id(client, DOMAIN_OPERATIONS[key])
-    inputs = _legacy_shortcuts(
-        client, operation_id, args, object_input(args.input), merge_shortcuts
-    )
-    all_pages = bool(getattr(args, "all_pages", False))
-    return call_cli_read(
-        client,
-        operation_id,
-        inputs,
-        include_total=bool(getattr(args, "include_total", False)),
-        read_all=all_pages,
-        **page_options(args, all_pages=True, active=all_pages),
-    )
-
-
-def _legacy_shortcuts(
-    client: Any,
-    operation_id: str,
-    args: Any,
-    supplied: Mapping[str, Any],
-    merge_shortcuts: MergeShortcuts,
-) -> dict[str, Any]:
-    selected_args = copy.copy(args)
-    selected_args.app_id = None
-    selected_args.media = None
-    inputs, _ignored = merge_shortcuts(
-        client, operation_id, selected_args, supplied
-    )
-    app_id, media = getattr(args, "app_id", None), getattr(args, "media", None)
-    if app_id is None and media is None:
-        return inputs
-    filters = inputs.get("filters", [])
-    if not isinstance(filters, list):
-        raise InputValidationError("multidim filters must be an array", field="filters")
-    replaced = set()
-    if app_id is not None:
-        replaced.add("app_id")
-    if media is not None:
-        replaced.add("click_company")
-    selected = [
-        item
-        for item in filters
-        if not isinstance(item, Mapping)
-        or item.get("field") not in replaced
-    ]
-    if app_id is not None:
-        selected.append(
-            {"field": "app_id", "operator": "EQUALS", "values": [str(app_id)]}
-        )
-    if media is not None:
-        selected.append(
-            {"field": "click_company", "operator": "IN", "values": [media]}
-        )
-    inputs["filters"] = selected
-    return inputs
-
-
-def _legacy_read(
+def _catalog_read(
     args: Any,
     object_input: Callable[[Any], Mapping[str, Any]],
     candidates: Sequence[str],
@@ -351,6 +260,18 @@ def _legacy_read(
         read_all=all_pages,
         **page_options(args, all_pages=all_pages, active=all_pages),
     )
+
+
+def _add_product_shortcuts(parser: argparse.ArgumentParser) -> None:
+    """Expose only shortcuts that map into the closed product input schema."""
+
+    parser.add_argument("--media")
+    parser.add_argument("--start")
+    parser.add_argument("--end")
+    parser.add_argument("--time-dim", action="append")
+    parser.add_argument("--dimensions", action="append")
+    parser.add_argument("--metrics", action="append")
+    parser.add_argument("--multi-days", action="append")
 
 
 def _metadata(args: Any, object_input: Callable[[Any], Mapping[str, Any]]) -> Any:

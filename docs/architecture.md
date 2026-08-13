@@ -173,6 +173,9 @@ Multidim 不从 Web artifact 编译，也不把物理字段重新命名成另一
 fail closed。完整输入直接一次调用；未知入口是一次 Agent 发现加一次 Plan。N 个独立查询是
 一个 Plan 的 N 个同层节点，不新增 batch wrapper。执行请求数为去重 metadata `M` 加 query 页数
 `P`，显式请求 total 时再加一次；模板、布局、收藏、拖拽、权限和业务指标含义均不属于该产品。
+专用 CLI 和 Plan 不再根据 `--app-id` 或缺失 schema version 回退 raw 模式；产品行固定在
+`query.data.list`。精确 `report.multidim.*` operation 仍可由专家通过 `gravity run` 使用，继续遵守
+独立 operation 合同。
 
 Material Performance 每个平台提交一个 stable batch item，多个 App 仅形成同一个 `app_list`。
 HTTP 数为 `Σ P_platform`。direct worker 默认 6、最大 24，实际平台池最多 4；平台内分页固定

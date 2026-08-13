@@ -1,9 +1,8 @@
 """Multidimensional metadata validation and query orchestration.
 
-This module owns the live portion of the Multidim vertical.  Product input
-normalization lives in :mod:`gravity_sdk.multidim_product`; the legacy
-``CompositeService`` delegates here so callers that use the full operation
-input contract remain compatible.
+This module owns the live portion of the Multidim vertical. Product input
+normalization lives in :mod:`gravity_sdk.multidim_product`; the lower-level
+``CompositeService`` delegates here for exact operation-oriented callers.
 """
 
 from __future__ import annotations

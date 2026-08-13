@@ -35,6 +35,21 @@
 
 文档解释流程和边界；schema、默认值、operation 数量与字段列表以当前合同和 CLI 输出为准。
 
+## 调用项目同步门禁
+
+SDK 新增或破坏性调整调用方能力时，发布完成条件包含同一轮更新 `work-dashboard`：
+
+- canonical route 指向唯一当前 CLI/Plan/SDK 入口；
+- 可执行 consumer 使用当前 envelope，并对版本、顶层状态和组件状态 fail closed；
+- consumer tests 同时覆盖新形状成功、旧形状拒绝和 partial/error/contract drift；
+- 冻结历史报告可保留旧命令作为历史事实，现行文档不得把旧 surface 写成兼容方案。
+
+这里取消的是调用方旧 surface，不是上游 operation 治理。精确 operation 可继续由专家通过
+`gravity run <operation-id>` 使用；其输入/响应语义仍必须按
+[新增受控能力](operations.md)提升合同版本、编译 manifest、审核投影与隐私，并在漂移时 fail closed。
+SDK 不为尚未迁移的调用项目保留 CLI alias、隐式 mode 或旧 envelope；调用项目的业务词、App alias
+和业务口径仍由调用项目维护。
+
 ## 验证节奏
 
 开发内循环先跑受影响的目标测试和确定性检查；不要让纯文档、CLI 文案或局部合同改动每一步

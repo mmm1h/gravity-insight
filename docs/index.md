@@ -42,7 +42,8 @@
 - 多个独立 Analysis spec：一次 `gravity analysis query batch`；单用户明细链用一次
   `gravity analysis user journey`，不手工串行三条 operation。
 - 已知 Multidim 物理输入：一次 `gravity multidim query`；未知能力：一次 Agent 发现加一次
-  Plan 执行。多个独立查询放进同一个 Plan，不逐条启动命令。
+  Plan 执行。CLI 显式要求 `--app`，Plan 显式要求当前 `input_schema_version`，结果行读取
+  `query.data.list`。多个独立查询放进同一个 Plan，不逐条启动命令。
 - 已知 App 与单日：一次 `gravity analysis order directory`；需要拆单明细时再提供 TraceID，执行
   `gravity analysis order trace`。未知入口由 Agent 返回待填写节点，再执行一次 Plan；自然语言中的
   TraceID 不会被复制或执行。

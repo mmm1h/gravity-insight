@@ -1,4 +1,4 @@
-"""Dedicated Plan adapter for App-bound and legacy Multidim requests."""
+"""Dedicated Plan adapter for versioned, App-bound Multidim requests."""
 
 from __future__ import annotations
 
@@ -8,12 +8,10 @@ from typing import Any
 
 from .errors import ContractChangedError, PaginationError
 from .multidim_product import MULTIDIM_INPUT_SCHEMA_VERSION
-from .multidim_service import MULTIDIM_QUERY_OPERATION
 from .plan import AdapterContext
 from .plan_adapter_support import (
     input_error,
     mapping,
-    nested_mapping,
     request_object,
     validate_exact_targets,
     validate_selected_fields,
@@ -30,7 +28,7 @@ from .plan_multidim_result import (
 MULTIDIM_NAME = "multidim"
 MULTIDIM_REQUEST_FIELDS = frozenset(
     {
-        "name", "app", "inputs", "include_total", "read_all", "metadata_inputs",
+        "name", "app", "inputs", "include_total", "read_all",
         "input_schema_version",
     }
 )
@@ -62,27 +60,29 @@ def validate_multidim_plan(
     request: Mapping[str, Any],
     context: AdapterContext,
 ) -> None:
-    """Validate one request, touching the Insight facade only for legacy fields."""
+    """Validate one explicitly versioned product request without network access."""
 
+    del insight
     request_object(request, MULTIDIM_REQUEST_FIELDS, "multidim")
     if request.get("name") != MULTIDIM_NAME:
         raise input_error("multidim request has the wrong composite name", "name")
+    _require_product_version(request)
     _switches(request)
-    metadata_inputs = mapping(request.get("metadata_inputs", {}), "metadata_inputs")
-    nested_mapping(metadata_inputs, "metadata_inputs")
     _validate_output_fields(context)
 
     raw_inputs = mapping(request.get("inputs", {}), "inputs")
-    product_mode = _product_mode(request)
-    if product_mode and request.get("app") is None and "/app" not in context.dynamic_targets:
-        raise input_error("product Multidim requests require an explicit App", "app")
+    if request.get("app") is None and "/app" not in context.dynamic_targets:
+        raise input_error("Multidim requests require an explicit App", "app")
     dynamic_names = _dynamic_input_names(context.dynamic_targets)
-    fields = _product_schema()["properties"] if product_mode else _legacy_fields(insight)
-    allowed_names = _PRODUCT_SCALAR_INPUTS if product_mode else _scalar_field_names(fields)
+    fields = _product_schema()["properties"]
     validate_exact_targets(
         context,
         frozenset(
-            {"/app", *_SWITCH_TARGETS, *(f"/inputs/{name}" for name in allowed_names)}
+            {
+                "/app",
+                *_SWITCH_TARGETS,
+                *(f"/inputs/{name}" for name in _PRODUCT_SCALAR_INPUTS),
+            }
         ),
     )
     dynamic_inputs = copy.deepcopy(dict(raw_inputs))
@@ -92,20 +92,7 @@ def validate_multidim_plan(
     app_id = 1 if "/app" in context.dynamic_targets else _resolve_app(
         workspace, request.get("app")
     )
-    if product_mode:
-        if metadata_inputs:
-            raise input_error(
-                "product Multidim requests cannot provide legacy metadata inputs",
-                "metadata_inputs",
-            )
-        _validate_product_inputs(dynamic_inputs, app_id)
-        return
-    if (set(dynamic_inputs) | dynamic_names) - set(fields):
-        raise input_error("multidim inputs contain an unknown operation field", "inputs")
-    supplied = _bind_legacy_app(dynamic_inputs, app_id)
-    validation = insight.validate(MULTIDIM_QUERY_OPERATION, supplied)
-    if not isinstance(validation, Mapping) or validation.get("ok") is not True:
-        raise input_error("multidim request failed offline validation", "inputs")
+    _validate_product_inputs(dynamic_inputs, app_id)
 
 
 def execute_multidim_plan(
@@ -113,51 +100,29 @@ def execute_multidim_plan(
     request: Mapping[str, Any],
     context: AdapterContext,
 ) -> dict[str, Any]:
-    """Execute through the product core or the compatible legacy service."""
+    """Execute through the single versioned product core."""
 
+    _require_product_version(request)
     app_id = _resolve_app(context.workspace, request.get("app"))
     inputs = dict(mapping(request.get("inputs", {}), "inputs"))
     _switches(request)
     include_total = bool(request.get("include_total", False))
     read_all = bool(request.get("read_all", False))
-    product_mode = _product_mode(request)
-    if product_mode and request.get("app") is None:
-        raise input_error("product Multidim requests require an explicit App", "app")
-    if product_mode:
-        from .multidim_product import run_multidim_query
+    from .multidim_product import run_multidim_query
 
-        native = run_multidim_query(
-            sdk.insight,
-            inputs,
-            app_id=app_id,
-            include_total=include_total,
-            read_all=read_all,
-            max_pages=context.max_pages,
-            max_items=context.max_items,
-            max_workers=1,
-        )
-    else:
-        from .composite import CompositeService
-
-        native = CompositeService(sdk.insight).multidim_query(
-            _bind_legacy_app(inputs, app_id),
-            include_total=include_total,
-            read_all=read_all,
-            metadata_inputs=request.get("metadata_inputs"),
-            max_pages=context.max_pages,
-            max_items=context.max_items,
-            max_workers=1,
-        )
-        native = {
-            **dict(native),
-            "app_id": str(app_id),
-            "network_called": True,
-            "query_executed": True,
-        }
+    native = run_multidim_query(
+        sdk.insight,
+        inputs,
+        app_id=app_id,
+        include_total=include_total,
+        read_all=read_all,
+        max_pages=context.max_pages,
+        max_items=context.max_items,
+        max_workers=1,
+    )
     safe = sanitize_multidim_result(native, str(app_id))
-    safe_version = safe.get("input_schema_version")
-    if product_mode != (safe_version == MULTIDIM_INPUT_SCHEMA_VERSION):
-        raise ContractChangedError("multidim execution mode identity changed")
+    if safe.get("input_schema_version") != MULTIDIM_INPUT_SCHEMA_VERSION:
+        raise ContractChangedError("multidim input schema identity changed")
     if multidim_result_item_count(safe) > context.max_items:
         raise PaginationError("multidimensional query exceeded its Plan item budget")
     return safe
@@ -186,33 +151,12 @@ def _validate_product_inputs(inputs: Mapping[str, Any], app_id: int) -> None:
         raise input_error("multidim product preflight failed", "inputs")
 
 
-def _product_mode(request: Mapping[str, Any]) -> bool:
-    if "input_schema_version" not in request:
-        return False
+def _require_product_version(request: Mapping[str, Any]) -> None:
     if request.get("input_schema_version") != MULTIDIM_INPUT_SCHEMA_VERSION:
-        raise input_error("multidim input schema version is unsupported", "input_schema_version")
-    return True
-
-
-def _legacy_fields(insight: Any) -> Mapping[str, Any]:
-    schema = insight.schema(MULTIDIM_QUERY_OPERATION)
-    fields = schema.get("input_fields", {}) if isinstance(schema, Mapping) else {}
-    if not isinstance(fields, Mapping):
-        raise input_error("multidim operation input contract is invalid", "name")
-    return fields
-
-
-def _bind_legacy_app(inputs: Mapping[str, Any], app_id: int) -> dict[str, Any]:
-    selected = copy.deepcopy(dict(inputs))
-    filters = selected.get("filters", [])
-    if not isinstance(filters, list):
-        raise input_error("multidim filters must be an array", "inputs.filters")
-    selected["filters"] = [
-        item
-        for item in filters
-        if not isinstance(item, Mapping) or item.get("field") != "app_id"
-    ] + [{"field": "app_id", "operator": "EQUALS", "values": [str(app_id)]}]
-    return selected
+        raise input_error(
+            "multidim requests require the current input schema version",
+            "input_schema_version",
+        )
 
 
 def _resolve_app(workspace: Any, value: Any) -> int:
@@ -243,15 +187,6 @@ def _dynamic_input_names(targets: tuple[str, ...]) -> set[str]:
         for target in targets
         if target.startswith("/inputs/") and target.count("/") == 2
     }
-
-
-def _scalar_field_names(fields: Mapping[str, Any]) -> frozenset[str]:
-    return frozenset(
-        name
-        for name, value in fields.items()
-        if _field_kind(value.get("type", "string") if isinstance(value, Mapping) else "string")
-        not in {"array", "object"}
-    )
 
 
 def _scalar_sentinel(value: Any) -> Any:

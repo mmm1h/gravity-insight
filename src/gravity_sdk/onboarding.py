@@ -146,13 +146,11 @@ def _multidim_requires_credentials(args: Any) -> bool:
     """Reject incomplete product requests before offering a credential prompt."""
 
     if getattr(args, "app", None) is None:
-        return True  # The compatibility operation surface owns its live validation.
+        return False
     if bool(getattr(args, "all_pages", False)) and not (
         getattr(args, "output", None)
         or getattr(args, "format", "json") == "ndjson"
     ):
-        return False
-    if getattr(args, "app_id", None) is not None:
         return False
     source = getattr(args, "input", None)
     if source == "-":

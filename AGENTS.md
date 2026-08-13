@@ -23,6 +23,18 @@ belong here.
 - Business modules, campaign semantics, and tracking bindings belong in the
   calling product knowledge base, not in this repository.
 
+## Consumer migration
+
+- Calling-facing SDK/CLI/Plan surfaces may make direct breaking upgrades; do
+  not add compatibility aliases, implicit modes, or legacy envelopes solely
+  for old consumers.
+- In the same release, migrate `work-dashboard` canonical consumers, current
+  routing docs, and consumer tests to the new surface. Frozen historical
+  reports may retain old commands as historical facts.
+- This rule does not weaken upstream operation governance. Operation input and
+  response changes still require explicit contract versions, projection and
+  privacy review, and fail-closed drift handling.
+
 ## Safety
 
 - Read operations use fixed hosts, paths, methods, and manifest contracts.

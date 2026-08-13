@@ -352,6 +352,12 @@ max_workers=6, workspace=None)` 使用同一合同。直接入口 worker 默认 
 请求 `M` + query 页数 `P` + 显式 `include_total` 时的一次 total。已知完整输入是一调用；未知入口
 由 `capabilities()` 返回唯一 `composite:multidim` 卡，调用方补齐后执行 Plan，共两次。
 
+执行结果固定使用 `gravity-insight.composite.multidim.v1`，明细行为 `result["query"]["data"]["list"]`。
+消费者必须校验顶层 `schema_version/status/exit_code` 与 `query.status`，并对
+`partial/error/contract_changed` fail closed；不再接受旧的顶层 `data.list` 形状。Plan 调用还必须
+保留 Agent 生成的 `input_schema_version="gravity-insight.multidim-input.v1"`，缺失/未知版本不走兼容
+分支。精确 raw 读取仍属于 `GravityInsightClient`/`gravity run report.multidim.*`，不属于该产品方法。
+
 多个独立请求放在同一个 Plan 的同层节点，由 Plan 全局 pool 并发；不提供第二个 batch scheduler。
 Agent 和 SDK 不解释模板、布局、收藏、权限、图表，也不生成 App、指标、维度、日期、filter value
 或业务指标口径。

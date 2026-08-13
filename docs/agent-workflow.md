@@ -50,7 +50,7 @@
 
 ### Multidim
 
-Multidim 使用物理输入，不新增 Spec。它直接使用闭合的 `date_list/time_dims/metrics_list/custom_metrics_list/data_dims/relate_dims/filters/multi_keys` 物理输入；已知 App 和完整输入时直接一次 CLI/SDK 调用；不知道入口时，Agent 对明确的中英文多维查询意图只返回 `composite:multidim`，调用方填写 `app/inputs`，并明确选择 `include_total/read_all` 后执行一次 Plan，共两次。Agent 不选择 App、指标、维度、日期或 filter value，也不会把模板、布局、收藏、权限、经营 pulse 或 event/funnel Analysis 路由到这里。
+Multidim 使用物理输入，不新增 Spec。它直接使用闭合的 `date_list/time_dims/metrics_list/custom_metrics_list/data_dims/relate_dims/filters/multi_keys` 物理输入；已知 App 和完整输入时直接一次 CLI/SDK 调用；不知道入口时，Agent 对明确的中英文多维查询意图只返回 `composite:multidim`，调用方填写 `app/inputs`，并明确选择 `include_total/read_all` 后执行一次 Plan，共两次。Agent 生成的 Plan request 总是带当前 `input_schema_version`；调用方不得删除或改写，旧无版本形状会在联网前失败。CLI 执行始终显式使用 `--app`，消费端从 `query.data.list` 取行并校验顶层与 query 结构化状态。Agent 不选择 App、指标、维度、日期或 filter value，也不会把模板、布局、收藏、权限、经营 pulse 或 event/funnel Analysis 路由到这里。
 
 ### Order Directory 与 Order Split Trace
 

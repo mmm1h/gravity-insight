@@ -18,6 +18,13 @@ plan run --input <plan.json>`，一次目录快照批量发现、一次显式执
 Plan 时直接 `gravity run` / `gravity plan run`，只需一次调用。发现结果包含可复制 argv 和
 `plan_node`，但自然语言不会自动执行。多个独立读取共享一个有界 worker pool，不逐条起进程。
 
+当前 `0.3` 是调用方 surface 的破坏性收口：Multidim 专用入口只有
+`gravity multidim query --app <alias|id> ...`，结果行位于 `query.data.list`；Plan request 必须带
+`input_schema_version="gravity-insight.multidim-input.v1"`。旧 `multidim query --app-id`、省略 App
+的 raw 分流和 `multidim calc-total` 不再提供。专家仍可通过
+`gravity run report.multidim.query` / `gravity run report.multidim.calc_total` 精确执行受治理的
+operation；这不绕过 operation 版本、字段投影或 fail-closed 合同。
+
 ## 快速开始
 
 ```powershell
@@ -26,6 +33,7 @@ gravity
 gravity agent "event analysis"
 gravity agent --input questions.json
 gravity plan schema
+gravity multidim query --input-schema
 gravity analysis query batch --input queries.json --concurrency 6
 gravity analysis user journey --app main --client-id <id> --date 2026-08-12
 gravity metadata sync --all-apps

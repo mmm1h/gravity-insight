@@ -1046,67 +1046,94 @@ class GravityInsightCliTests(unittest.TestCase):
         self.assertEqual(0, code)
         self.assertEqual("report.multidim.template.mine.list", client.read_calls[0][0])
 
-        code, result, _, client = self.invoke(
-            [
-                "multidim",
-                "query",
-                "--app-id",
-                "7",
-                "--media",
-                "bytedance",
-                "--start",
-                "2026-08-01",
-                "--end",
-                "2026-08-02",
-                "--time-dim",
-                "day",
-                "--dimensions",
-                "app,advertiser",
-                "--metrics",
-                "cost,click",
-                "--parent-id",
-                "parent-1",
-            ]
-        )
+        envelope = {
+            "schema_version": "gravity-insight.composite.multidim.v1",
+            "ok": True,
+            "status": "success",
+            "exit_code": 0,
+        }
+        with patch(
+            "gravity_sdk.multidim_product.run_multidim_query",
+            return_value=envelope,
+        ) as run:
+            code, result, _, _ = self.invoke(
+                [
+                    "multidim",
+                    "query",
+                    "--app",
+                    "7",
+                    "--media",
+                    "bytedance",
+                    "--start",
+                    "2026-08-01",
+                    "--end",
+                    "2026-08-02",
+                    "--time-dim",
+                    "day",
+                    "--dimensions",
+                    "app,advertiser",
+                    "--metrics",
+                    "cost,click",
+                ]
+            )
         self.assertEqual(0, code)
-        self.assertEqual("report.multidim.query", result["operation_id"])
-        self.assertEqual(["2026-08-01", "2026-08-02"], result["inputs"]["date_list"])
-        self.assertEqual("day", result["inputs"]["time_dims"])
-        self.assertEqual(["app", "advertiser"], result["inputs"]["data_dims"])
-        self.assertEqual(["cost", "click"], result["inputs"]["metrics_list"])
-        self.assertEqual("parent-1", result["inputs"]["advertiser_id"])
+        self.assertEqual(envelope, result)
+        inputs = run.call_args.args[1]
+        self.assertEqual(["2026-08-01", "2026-08-02"], inputs["date_list"])
+        self.assertEqual("day", inputs["time_dims"])
+        self.assertEqual(["app", "advertiser"], inputs["data_dims"])
+        self.assertEqual(["cost", "click"], inputs["metrics_list"])
         self.assertEqual(
             [
-                {"field": "app_id", "operator": "EQUALS", "values": ["7"]},
                 {"field": "click_company", "operator": "IN", "values": ["bytedance"]},
+                {"field": "app_id", "operator": "EQUALS", "values": ["7"]},
             ],
-            result["inputs"]["filters"],
+            inputs["filters"],
         )
 
     def test_multidim_rejects_multiple_time_dimensions(self):
         code, result, error, _ = self.invoke(
-            ["multidim", "query", "--time-dim", "day,hour"]
+            ["multidim", "query", "--app", "7", "--time-dim", "day,hour"]
         )
         self.assertEqual(2, code)
         self.assertIsNone(result)
         self.assertIn("exactly one", error["error"]["message"])
 
     def test_multidim_query_accepts_controlled_multi_days(self):
-        code, result, _, _ = self.invoke(
-            [
-                "multidim",
-                "query",
-                "--metrics",
-                "multi_day_roi_all",
-                "--multi-days",
-                "2,3,7",
-            ]
-        )
+        envelope = {
+            "schema_version": "gravity-insight.composite.multidim.v1",
+            "ok": True,
+            "status": "success",
+            "exit_code": 0,
+        }
+        with patch(
+            "gravity_sdk.multidim_product.run_multidim_query",
+            return_value=envelope,
+        ) as run:
+            code, result, _, _ = self.invoke(
+                [
+                    "multidim",
+                    "query",
+                    "--app",
+                    "7",
+                    "--start",
+                    "2026-08-01",
+                    "--end",
+                    "2026-08-02",
+                    "--time-dim",
+                    "day",
+                    "--metrics",
+                    "multi_day_roi_all",
+                    "--multi-days",
+                    "2,3,7",
+                ]
+            )
         self.assertEqual(0, code)
-        self.assertEqual([2, 3, 7], result["inputs"]["multi_keys"])
+        self.assertEqual(envelope, result)
+        self.assertEqual([2, 3, 7], run.call_args.args[1]["multi_keys"])
 
         code, result, error, _ = self.invoke(
-            ["multidim", "query", "--multi-days", "3,2"]
+            ["multidim", "query", "--app", "7", "--multi-days", "3,2"]
         )
         self.assertEqual(2, code)
         self.assertIsNone(result)
@@ -1179,6 +1206,14 @@ class GravityInsightCliTests(unittest.TestCase):
             [
                 "multidim",
                 "query",
+                "--app",
+                "7",
+                "--start",
+                "2026-08-01",
+                "--end",
+                "2026-08-02",
+                "--time-dim",
+                "day",
                 "--metrics",
                 "cost",
                 "--include-total",
@@ -1233,7 +1268,13 @@ class GravityInsightCliTests(unittest.TestCase):
                 return super().read(operation_id, inputs)
 
         code, result, error, _ = self.invoke(
-            ["multidim", "query", "--include-total"], client=PartialClient()
+            [
+                "multidim", "query", "--app", "7",
+                "--input", '{"metrics_list":[]}',
+                "--start", "2026-08-01", "--end", "2026-08-02",
+                "--time-dim", "day", "--include-total",
+            ],
+            client=PartialClient(),
         )
 
         self.assertEqual(3, code)
@@ -1271,7 +1312,12 @@ class GravityInsightCliTests(unittest.TestCase):
         for error_code, category, expected_action in actions:
             with self.subTest(error_code=error_code):
                 action_code, action_result, _, _ = self.invoke(
-                    ["multidim", "query", "--include-total"],
+                    [
+                        "multidim", "query", "--app", "7",
+                        "--input", '{"metrics_list":[]}',
+                        "--start", "2026-08-01", "--end", "2026-08-02",
+                        "--time-dim", "day", "--include-total",
+                    ],
                     client=ActionClient(error_code, category),
                 )
                 self.assertEqual(2 if category == "caller" else 3, action_code)
@@ -1289,14 +1335,31 @@ class GravityInsightCliTests(unittest.TestCase):
                 return super().read(operation_id, inputs)
 
         changed_code, changed, _, _ = self.invoke(
-            ["multidim", "query", "--include-total"],
+            [
+                "multidim", "query", "--app", "7",
+                "--input", '{"metrics_list":[]}',
+                "--start", "2026-08-01", "--end", "2026-08-02",
+                "--time-dim", "day", "--include-total",
+            ],
             client=QueryClient("contract_changed"),
         )
         failed_code, failed, _, _ = self.invoke(
-            ["multidim", "query", "--include-total"], client=QueryClient("error")
+            [
+                "multidim", "query", "--app", "7",
+                "--input", '{"metrics_list":[]}',
+                "--start", "2026-08-01", "--end", "2026-08-02",
+                "--time-dim", "day", "--include-total",
+            ],
+            client=QueryClient("error"),
         )
         empty_code, empty, _, _ = self.invoke(
-            ["multidim", "query", "--include-total"], client=QueryClient("empty")
+            [
+                "multidim", "query", "--app", "7",
+                "--input", '{"metrics_list":[]}',
+                "--start", "2026-08-01", "--end", "2026-08-02",
+                "--time-dim", "day", "--include-total",
+            ],
+            client=QueryClient("empty"),
         )
 
         self.assertEqual(3, changed_code)

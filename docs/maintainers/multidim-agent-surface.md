@@ -14,8 +14,9 @@
 - Plan 使用通用 composite 投影和计数，可能裁掉 `query`，且不能按 `query.data.list` 执行预算；
 - Plan 虽把 query 分页 worker 固定为 1，指标 metadata loader 仍会在节点内自行并发。
 
-本轮已用独立 product/service、CLI/SDK/Plan adapter 和 Agent 卡关闭上述断点：调用方直接使用
-稳定的物理输入，不再从 Web 反推参数，同时保持旧 raw 入口兼容。
+本轮已用独立 product/service、CLI/SDK/Plan adapter 和 Agent 卡关闭上述断点。`0.3` 进一步把
+调用方 surface 收成一条产品路径：调用方直接使用稳定物理输入，不再由专用 CLI 或 Plan 根据
+缺失字段猜测 product/raw 模式。
 
 ## 决策：复用 raw 合同，不新增 Spec DSL
 
@@ -38,13 +39,16 @@ Multidim 的公开输入已经是紧凑物理合同：
 需要吸收复杂 Web artifact；Multidim 不存在同样的结构鸿沟。机器 schema 直接描述上述受治理
 input，App 在 input 外单独绑定，并由产品入口覆盖唯一 `app_id` filter。
 
-旧 `--input`、CLI shortcuts、Plan `inputs` 和底层 operation 继续兼容。Agent 不展示
-`data_topic/data_conf/page/page_size` 等底层控制项；直接底层调用仍以 operation schema 为准。
+`--input` 与能映射进闭合 schema 的 CLI shortcuts 继续可用；`--app-id`、`--parent-id`、省略 App
+的 query 分流、无 `input_schema_version` 的 Plan request 和专用 `multidim calc-total` 已删除。
+Agent 不展示 `data_topic/data_conf/page/page_size` 等底层控制项。底层 operation 没有被删除：专家
+仍可用 `gravity run report.multidim.query` / `gravity run report.multidim.calc_total`，并继续服从其
+独立版本、manifest、投影、隐私与 fail-closed 合同。
 
 ## 公共入口
 
-- CLI：`gravity multidim query --app <alias|id> --input ...`，保留现有 shortcuts；增加专用
-  `--dry-run` 与 input schema 输出。`--app` 与兼容 `--app-id` 不能冲突。
+- CLI：`gravity multidim query --app <alias|id> --input ...`，只保留能映射进产品 schema 的
+  shortcuts；提供专用 `--dry-run` 与 input schema 输出。除纯 `--input-schema` 外，`--app` 必填。
 - SDK：`GravitySDK.multidim_query(inputs, *, app, include_total=False, read_all=False,
   max_pages=1000, max_items=100000, max_workers=6, workspace=None)`；离线预检使用同一产品模块。
 - Plan：继续使用 `composite` / `name=multidim`，不新增第二个 composite 名。request 显式包含
@@ -52,6 +56,10 @@ input，App 在 input 外单独绑定，并由产品入口覆盖唯一 `app_id` 
   安全结果和预算。
 - Agent：继续发布唯一 `composite:multidim` 卡，但展开完整机器 input schema、必填槽位和可复制
   Plan request；自然语言永不选择 App、指标、维度、日期或 filter value。
+
+产品 consumer 固定读取 `gravity-insight.composite.multidim.v1` 的 `query.data.list`，并同时校验
+顶层 `schema_version/status/exit_code` 和 `query.status`。不得把 `partial` 当成功、把旧顶层
+`data.list` 当兼容形状，或解析英文错误文本。
 
 多个独立 Multidim 查询放入同一个 Plan，由全局 worker pool 并发；不新增 batch wrapper。
 
@@ -86,3 +94,5 @@ input，App 在 input 外单独绑定，并由产品入口覆盖唯一 `app_id` 
 5. 不回显 filter values、raw inputs、原始错误或未知响应字段。
 6. 不新增 operation/probe；完整 compiler、quality、测试和 diff 门禁通过。
 7. 新增生产代码与测试代码至少 3:1，目标 4:1；复用既有底层测试，不复制合同矩阵。
+8. 发布同轮更新 `work-dashboard` canonical route、可执行 consumer 与 envelope 回归测试；冻结历史
+   报告保留历史命令，但现行路径不得列出旧 surface 作为兼容方案。

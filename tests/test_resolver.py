@@ -187,6 +187,37 @@ def test_resolver_binds_app_alias_and_writes_value_free_receipt(tmp_path: Path) 
     assert "2026-08-01" not in receipt_text
 
 
+@pytest.mark.parametrize(
+    "operation_id", ("report.multidim.query", "report.multidim.calc_total")
+)
+def test_exact_multidim_operations_remain_resolvable(
+    tmp_path: Path, operation_id: str
+) -> None:
+    description = {
+        "operation_id": operation_id,
+        "stability": "stable",
+        "executable": True,
+        "input_schema": {},
+        "required_parent": [],
+        "health": {"contract_fingerprint": "f" * 64},
+    }
+    executed: list[str] = []
+
+    result = resolve_and_run(
+        operation_id,
+        client=_ResolverClient(description),
+        workspace=_workspace(tmp_path),
+        read=lambda _client, selected, _inputs, **_kwargs: (
+            executed.append(selected)
+            or {"ok": True, "status": "empty", "data": {"list": []}}
+        ),
+    )
+
+    assert executed == [operation_id]
+    assert result["operation_id"] == operation_id
+    assert result["ok"] is True
+
+
 def test_resolver_returns_parent_candidates_without_guessing_selection(tmp_path: Path) -> None:
     description = {
         "operation_id": "report.child.list",

@@ -411,8 +411,6 @@ def build_parser() -> argparse.ArgumentParser:
         commands,
         _add_input,
         _add_all_pages,
-        _add_query_shortcuts,
-        _merge_query_shortcuts,
     )
 
     add_promotion_commands(

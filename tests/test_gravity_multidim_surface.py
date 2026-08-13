@@ -91,6 +91,7 @@ class MultidimSurfaceTests(unittest.TestCase):
                 getattr(invalid, "_gravity_handler")(invalid, cli._object_input)
             for argv in (
                 ["multidim", "query", "--input", '{}', "--dry-run"],
+                ["multidim", "query", "--input", '{}'],
                 ["--dry-run", "multidim", "query", "--app", "main", "--input", '{}'],
             ):
                 with self.subTest(argv=argv), self.assertRaises(InputValidationError):
@@ -99,6 +100,38 @@ class MultidimSurfaceTests(unittest.TestCase):
         self.assertFalse(preview["network_called"])
         self.assertEqual("gravity-insight.multidim-input.v1", schema["schema_version"])
         build.assert_not_called()
+
+    def test_cli_removes_legacy_multidim_options_and_calc_total_command(self):
+        from gravity_sdk import cli
+
+        invalid = (
+            ["multidim", "query", "--app-id", "17", "--input", "{}"],
+            ["multidim", "query", "--app", "main", "--parent-id", "parent"],
+            ["multidim", "calc-total", "--input", "{}"],
+        )
+        for argv in invalid:
+            with self.subTest(argv=argv), self.assertRaises(InputValidationError):
+                cli.build_parser().parse_args(argv)
+
+    def test_exact_multidim_operations_remain_available_through_gravity_run(self):
+        from gravity_sdk import cli
+
+        for selector in ("report.multidim.query", "report.multidim.calc_total"):
+            args = cli.build_parser().parse_args(
+                ["run", selector, "--input", "{}"]
+            )
+            with (
+                self.subTest(selector=selector),
+                patch("gravity_sdk.resolver_cli.runtime.build_client", return_value=object()),
+                patch("gravity_sdk.resolver_cli.load_workspace", return_value=object()),
+                patch(
+                    "gravity_sdk.resolver_cli.resolve_and_run",
+                    return_value={"ok": True, "operation_id": selector},
+                ) as run,
+            ):
+                result = getattr(args, "_gravity_handler")(args, cli._object_input)
+            self.assertEqual(selector, result["operation_id"])
+            self.assertEqual(selector, run.call_args.args[0])
 
     def test_onboarding_requires_a_locally_complete_product_request(self):
         from gravity_sdk import cli
@@ -125,6 +158,9 @@ class MultidimSurfaceTests(unittest.TestCase):
             ))
             self.assertFalse(command_requires_credentials(
                 [*base, "--dry-run"], cli.build_parser
+            ))
+            self.assertFalse(command_requires_credentials(
+                ["multidim", "query", "--input", encoded], cli.build_parser
             ))
             self.assertFalse(command_requires_credentials(
                 ["multidim", "query", "--input-schema"], cli.build_parser
@@ -307,21 +343,12 @@ class MultidimSurfaceTests(unittest.TestCase):
                 selected[field] = component
                 sanitize_multidim_result(selected, "17")
 
-    def test_plan_product_marker_preserves_legacy_and_rejects_nonscalar_bindings(self):
+    def test_plan_requires_product_version_and_rejects_legacy_shape_and_nonscalar_bindings(self):
         class Insight:
-            supplied = None
-
-            def schema(self, _operation_id):
-                return {"input_fields": {
-                    "time_dims": {"type": "string", "enum": ["day"]},
-                    "date_list": {"type": "array"},
-                    "metrics_list": {"type": "array"},
-                    "filters": {"type": "array"},
-                }}
-
-            def validate(self, _operation_id, inputs):
-                self.supplied = inputs
-                return {"ok": True}
+            def __getattribute__(self, name):
+                if name.startswith("__"):
+                    return super().__getattribute__(name)
+                raise AssertionError("product Plan preflight must not inspect raw operations")
 
         insight = Insight()
         base = AdapterContext(
@@ -332,8 +359,17 @@ class MultidimSurfaceTests(unittest.TestCase):
             **PRODUCT_INPUT,
             "filters": [{"field": "legacy", "operator": 8, "values": [1]}],
         }}
-        validate_multidim_plan(insight, _Workspace(), legacy, base)
-        self.assertEqual(8, insight.supplied["filters"][0]["operator"])
+        with self.assertRaisesRegex(
+            InputValidationError, "current input schema version"
+        ):
+            validate_multidim_plan(insight, _Workspace(), legacy, base)
+        with self.assertRaises(InputValidationError):
+            validate_multidim_plan(
+                insight,
+                _Workspace(),
+                {**PRODUCT_REQUEST, "metadata_inputs": {}},
+                base,
+            )
         with self.assertRaises(InputValidationError):
             validate_multidim_plan(
                 insight, _Workspace(), PRODUCT_REQUEST,
@@ -347,6 +383,14 @@ class MultidimSurfaceTests(unittest.TestCase):
             insight, _Workspace(), PRODUCT_REQUEST,
             AdapterContext(**{**base.__dict__, "dynamic_targets": ("/inputs/time_dims",)}),
         )
+
+        class SDK:
+            insight = object()
+
+        with self.assertRaisesRegex(
+            InputValidationError, "current input schema version"
+        ):
+            execute_multidim_plan(SDK(), legacy, base)
 
     def test_plan_projector_fails_closed_on_discriminator_drift(self):
         native = {

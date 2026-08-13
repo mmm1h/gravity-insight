@@ -117,15 +117,22 @@ gravity multidim query --app main --input <query.json> --include-total `
 ```
 
 产品 dry-run 必须显式写在子命令后并提供 App：`gravity multidim query --app main --input ... --dry-run`。
-根级 `gravity --dry-run` 是全仓合同自检，不能与任何命令组合；缺少 `--app` 的 live query 保持旧 raw
-入口语义，因此不会用 workspace 默认 App 冒充同一产品请求。
+根级 `gravity --dry-run` 是全仓合同自检，不能与任何命令组合。除纯离线
+`--input-schema` 外，缺少 `--app` 的专用 query 会在构造 client 前失败；不会使用 workspace 默认
+App，也不会回退到 raw operation。
 
 input 只含 `date_list/time_dims/metrics_list/custom_metrics_list/data_dims/relate_dims/filters/multi_keys`。
-`--app` 接受 workspace alias 或正整数；它与兼容的 `--app-id` 不能冲突。Agent 不会填 App、指标、
-维度、日期或 filter value。直接执行默认 6 workers、最大 24；Plan adapter 固定 1。`--include-total`
+`--app` 接受 workspace alias 或正整数；专用入口不再接受 `--app-id` 或 `--parent-id`。Agent 不会填
+App、指标、维度、日期或 filter value。直接执行默认 6 workers、最大 24；Plan adapter 固定 1。`--include-total`
 才会在 query 后串行计算 total，`--all-pages` 使用受控分页。HTTP 数为去重 metadata `M` + query
 页数 `P` + 可选一次 total。已知输入一调用；未知入口是一次 Agent 发现加一次 Plan。多个查询
 应放进一个 Plan，不新增 batch wrapper。
+
+产品结果固定为 `gravity-insight.composite.multidim.v1`；业务行读取
+`query.data.list`，并同时校验顶层 `status/exit_code` 和 `query.status`。`partial` 不是成功明细的
+同义词，调用方必须按结构化状态处理。独立的 `multidim calc-total` 子命令已删除；合计只通过
+`query --include-total` 请求。需要精确 raw operation 的专家流程继续使用
+`gravity run report.multidim.query` 或 `gravity run report.multidim.calc_total`。
 
 Multidim 不回放 template，不处理图表/透视、layout、收藏、拖拽、成员权限或业务指标语义；这些
 边界也不会通过 `--input` 扩张。
