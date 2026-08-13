@@ -21,7 +21,6 @@ from .paths import PROJECT_ROOT
 
 ROOT = PROJECT_ROOT
 RUNTIME_ROOT = Path("src/gravity_sdk")
-CLI_ROOT = RUNTIME_ROOT
 METRIC_SCOPE = (
     "src/gravity_sdk/**/*.py",
     "src/gravity_sdk/*.py (runtime CLI; excluding compiler.py and quality.py)",
@@ -290,23 +289,20 @@ def inspect_repository(root: Path) -> QualityProfile:
     file_sloc: dict[str, int] = {}
     functions: list[FunctionMetric] = []
     parsed: dict[str, ast.Module] = {}
-    for relative_root in (RUNTIME_ROOT, CLI_ROOT):
-        for path, source in _python_sources(
-            root, relative_root, recursive=relative_root == RUNTIME_ROOT
-        ):
-            if path in _BUILD_TIME_FILES:
-                continue
-            try:
-                lines = _source_lines(source)
-                tree = _parse(source, path)
-            except (OSError, UnicodeError, SyntaxError) as exc:
-                errors.append(f"{path}: Python 3.11 parse failed: {exc}")
-                continue
-            file_sloc[path] = len(lines)
-            collector = _FunctionCollector(path, lines)
-            collector.visit(tree)
-            functions.extend(collector.metrics)
-            parsed[path] = tree
+    for path, source in _python_sources(root, RUNTIME_ROOT):
+        if path in _BUILD_TIME_FILES:
+            continue
+        try:
+            lines = _source_lines(source)
+            tree = _parse(source, path)
+        except (OSError, UnicodeError, SyntaxError) as exc:
+            errors.append(f"{path}: Python 3.11 parse failed: {exc}")
+            continue
+        file_sloc[path] = len(lines)
+        collector = _FunctionCollector(path, lines)
+        collector.visit(tree)
+        functions.extend(collector.metrics)
+        parsed[path] = tree
     known = set(operation_ids)
     literals: list[LiteralOccurrence] = []
     for path, tree in parsed.items():

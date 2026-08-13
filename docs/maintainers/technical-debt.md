@@ -61,18 +61,6 @@
   operation identity、字段 allowlist、App/window/metrics binding、failure wording 继续留在各自 owner。
   **不做整文件统一，不造结果 DSL。**
 
-### 4. Quality profile 对函数指标双重计数
-
-- **Owner area**：Governance / quality ratchet diagnostics。
-- **证据**：`quality.py` 的 `RUNTIME_ROOT` 与 `CLI_ROOT` 均为 `src/gravity_sdk`，`inspect_repository()`
-  对二者重复扫描。profile 返回 6,072 条 function metric，按 `(path, qualname, line)` 去重仅 3,036 条，
-  精确翻倍；Markdown 把函数超额 2,036 报为 4,072、复杂度超额 868 报为 1,736。文件 ratchet、
-  function key ceiling 与 operation literal gate 因字典覆盖仍有效，**门禁未被绕过**，
-  但任何人据此评估债务规模都会被误导两倍。
-- **触发条件**：修改 `quality.py`、baseline 或质量报告；或质量 Markdown 被用作重构优先级依据。
-- **退出条件**：每个 Python path 只产生一份 function metric；增加回归测试断言 metric identity 唯一，
-  并断言 Markdown 汇总与 baseline 一致。阈值 500/80/15/0、baseline 值与失败策略不放宽。
-
 ## 明确不登记为债务
 
 以下模式经审计判定为**合理领域边界**，不因文件数量多而登记：25 个 `agent_*.py`、
@@ -101,3 +89,6 @@ Order Split Trace 把“完整父目录精确匹配后再读取 child”的敏�
 
 Order Directory 已以单日四字段 profile、完整分页和 request-bound 结果闭合 Core/CLI/SDK/Plan/Agent；
 与 Order Split Trace 共用读取收据和静态字段策略，raw exact selector 继续兼容，通用热点未增长。
+
+Quality profile 已删除与 runtime root 同路径的冗余 CLI 扫描；每个函数 identity 仅产出一次，Markdown
+函数/复杂度超额与未修改的 baseline 一致，500/80/15/0 阈值和失败策略保持不变。

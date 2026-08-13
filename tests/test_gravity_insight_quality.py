@@ -22,6 +22,7 @@ from gravity_sdk.quality import (
     evaluate_ratchet,
     evaluate_slope,
     inspect_repository,
+    render_markdown,
     validate,
 )
 from gravity_sdk.governance.privacy_consistency import (
@@ -338,6 +339,19 @@ def sample(value):
         self.assertFalse(profile.scan_errors, profile.scan_errors)
         self.assertTrue(any(item.value == "app.list" for item in profile.operation_literals))
         self.assertFalse(any(item.value == "gravity_sdk" for item in profile.operation_literals))
+
+    def test_repository_profile_metrics_and_markdown_match_baseline(self) -> None:
+        profile = inspect_repository(ROOT)
+        identities = {(item.path, item.qualname, item.line) for item in profile.functions}
+        baseline = json.loads((ROOT / "src/gravity_sdk/governance/quality-baseline.json").read_text())
+        function_excess = sum(max(0, item.sloc - FUNCTION_SLOC_LIMIT) for item in profile.functions)
+        complexity_excess = sum(max(0, item.complexity - COMPLEXITY_LIMIT) for item in profile.functions)
+        self.assertEqual(len(identities), len(profile.functions))
+        self.assertEqual(baseline["debt"], debt_snapshot(profile)["debt"])
+        self.assertIn(
+            f"函数超额 `{function_excess}` SLOC，复杂度超额 `{complexity_excess}`",
+            render_markdown(profile),
+        )
 
     def test_repository_gate_passes_checked_in_baseline(self) -> None:
         errors = validate(ROOT, base_ref=None)
