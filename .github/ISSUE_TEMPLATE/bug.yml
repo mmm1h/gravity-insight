@@ -30,7 +30,7 @@ body:
     id: version
     attributes:
       label: Version or commit
-      placeholder: 0.2.0 / a9e534d
+      placeholder: 0.3.0 / <git-sha>
     validations:
       required: true
   - type: textarea
