@@ -23,7 +23,7 @@
 | 序 | 动线 | 为什么排这里 | 阻塞 |
 | --- | --- | --- | --- |
 | 1 | **D22 看板页面条件忠实重放** | 已对非空 `data.object.config.filter` fail closed；空条件不受影响，待证明与图表条件冲突规则后才能忠实应用 | 合并冲突语义证据不足 |
-| 2 | **D35 归因表现聚合** | 当前只能读归因配置，无法回答归因结果；且是 F40 的前置 | 需先恢复完整请求 body |
+| 2 | **D35 归因表现聚合** | 当前只能读归因配置，无法回答归因结果；且是 F40 的前置 | **前端 body 已恢复，缺服务端证据**（见下） |
 | 3 | **D34 非 Bytedance 计划/组/创意下钻** | 跨平台产品多数只到顶层 | 依赖 D33 父链 |
 | 4 | **D32 平台专属素材/创意深查** | 除 Bytedance 外普遍缺非空合同证据 | 每平台需最小非空 probe |
 
@@ -121,18 +121,60 @@ Funnel、Property、Scatter 顶层无差集；Property 本身没有日期窗，�
 **detail 元数据成本已核清**：订单产品提交 `d1983c2` 已对精确固定 profile 短路，D27 的
 `ba01a3d` 也让变现固定 allowlist 直接本地校验。最小空日两者实测均为 1 POST、0 metadata，
 7 个同层订单节点为 7 POST。缓存仅进程内：raw 动态路径两个独立进程各 4 HTTP；同进程连续
-两次为 4+2，7 节点为 16（属性目录各 1、分群 7、订单 7）。旧审计的 3 HTTP 与其提交树已有
-fast path 矛盾，未保存的精确调用路径无法追溯；raw detail 的动态 fields/conditions/order 仍
-必须加载实时 metadata，未登记字段继续 fail closed。
+两次为 4+2，7 节点为 16（属性目录各 1、分群 7、订单 7）。raw detail 的动态
+fields/conditions/order 仍必须加载实时 metadata，未登记字段继续 fail closed。
+
+**旧审计"3 HTTP"是路径错配，不是未解之谜**（此为推断，原始调用未保存）：`d1983c2` 经核
+确在审计基线 `7d5bdb1` 的祖先里，fast path 当时已生效；而审计账本那一行标的是
+"Order Detail"，即 `analysis detail --kind order` 这条 **raw 路径**——它按设计就要加载 metadata
+校验动态字段。产品路径 `analysis order directory` 用固定 profile，实测 0 metadata。
+**教训：度量使用成本时必须写清走的是产品入口还是 raw 入口，两者成本不同是设计，不是缺陷。**
 
 **Multidim 使用成本**：`--start/--end/--time-dim/--metrics/--dimensions/--media/--multi-days`
 已覆盖常见变化，无需完整 JSON。仍需手写物理 JSON 的是 `filters[]`、`custom_metrics_list`、
 `relate_dims`。**多个扁平 filter 的 AND/OR 组合语义上游未经证明**，产品 schema 无 `filter_logic`；
 证明不了就只支持可确定语义的形态，不得假定默认值，更不得为此造通用布尔 DSL。
 
-## 并发
+## D35 归因请求合同：部分证明，仍不能开工
 
-已有 28 条并发路径、7 种模型，底层受业务槽 24、SQL 槽 2、host 令牌桶与 429 cooldown 约束。
+`attribution.attribution.query` 的**前端 builder 已完整恢复**（从与 census 快照哈希匹配的
+`Measurement-BV1Ulzee.js` 中的同作用域 builder `Gt`），16 个顶层字段：
+
+`child_type`、`date_list`、`metrics_list`、`dims_list`、`report_level`、`statistics_caliber`、
+`decimal_point`、`app_id`、`project_id`、`aggregate_app`、`multi_days`、`dims_metrics_list`、
+`filtering`、`need_all_metrics`、`need_cname`、`time_zone`。
+
+省略规则：14 个恒发；`project_id` 仅 truthy 时发；`dims_metrics_list` 仅非空时发，
+二者为 `undefined` 时由 `JSON.stringify` 从 wire 省略。`filtering` **恒含 8 个数组**
+（`ad_platform_list`、`os_platform_list`、`channel_list`、`version_list`、`operator_list`、
+`turbo_promoted_object_id_list`、`aid_list`、`advertiser_id_list`），无值时发 `[]` 而非
+`null` 或省略。固定值 `child_type="measurement"`、`need_all_metrics=true`、`need_cname=false`；
+源码默认 `report_level="day"`、`aggregate_app=false`、`multi_days=30`、`decimal_point=2`、
+`time_zone="utc"`。
+
+**判定：不能开工。** 2 次最小 POST 均 HTTP 200 但分类 `semantic_error`——响应里出现了预期的
+`columns/items/static/tips/total` 聚合容器且结果数组为空，同时带 `extra.error`，
+因此既不能算成功也不能算明确 empty。**前端形状不等于服务端合同**；此时实现产品等于把未经
+服务端证明的形状包装成正式能力，调用方会以为拿到了归因结果。
+
+仍未知：14 个恒发字段中服务端真正必填的是哪些；metrics/dims/口径/时区的允许值域；
+8 个筛选数组的元素类型；`project_id` 与 `connect_app_id` 的覆盖规则；semantic error 的成因
+（App 能力 / 数据配置 / 字段值约束 / 其他服务端前置）。
+
+**解锁需要**：该页面一次脱敏的成功或明确空网络记录，或一个确知支持该报表的最小测试 App，
+或服务端 schema。三者任一即可，都拿不到就保持 fail-closed。
+
+### census 提取器的已知能力边界
+
+那两次未解析 load 卡在 `census/params.py` 的 `_infer_expression`：**无法内联函数调用**
+`Gt(...)`，随后被标为 `unresolved_body_expression`，导致 `body_parameters=[]`。
+同 route 另 3 个 occurrence 卡在条件 callee `(e===1?Ie:ze)(...)`，标记
+`load_alias_has_no_static_call`——该标记在 `route-params.json` 中出现 **97 次**，
+说明这是跨 route 的普遍边界，不是归因独有。
+
+**这是提取器能力不足，不是源码动态隐藏**——区别重要：前者可修，后者不可。
+是否值得修取决于那 97 处里有多少落在排期动线上；**未统计前不要动提取器**，
+函数求值与条件 callee 支持不是窄修。
 17 条可增强候选中收益最大的 Promotion Performance（≤21 平台）、Dashboard Analysis（≤32/64 图表）、
 Analysis Context（13 来源）已接入 Plan 全局预算租借。
 
