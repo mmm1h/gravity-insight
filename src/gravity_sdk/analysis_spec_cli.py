@@ -36,6 +36,20 @@ def add_analysis_query_arguments(
     parser.add_argument("--app", help="workspace App alias or positive id for --spec")
     parser.add_argument("--workspace", help="gravity.toml or its directory for --spec")
     parser.add_argument(
+        "--compare-start",
+        help="explicit baseline window start date for same-spec period compare",
+    )
+    parser.add_argument(
+        "--compare-end",
+        help="explicit baseline window end date for same-spec period compare",
+    )
+    parser.add_argument(
+        "--compare-concurrency",
+        type=int,
+        default=None,
+        help="existing batch worker budget for the two windows (default: 2, maximum: 24)",
+    )
+    parser.add_argument(
         "--dry-run",
         dest="query_spec_dry_run",
         action="store_true",
@@ -78,6 +92,7 @@ def run_analysis_query_command(
             "--dry-run requires --spec; raw --input cannot be executed in dry-run mode",
             field="dry_run",
         )
+    compare_start, compare_end = _compare_dates(args)
     client = build_client()
     operation_id = ANALYSIS_QUERY_OPERATIONS[args.kind]
     stability = client.schema(operation_id).get("stability", "stable")
@@ -109,7 +124,12 @@ def run_analysis_query_command(
     if bool(getattr(args, "dry_run", False)) or bool(
         getattr(args, "query_spec_dry_run", False)
     ):
+        _reject_compare_dry_run(compare_start)
         return prepare_query_spec(client, args.kind, spec, **options)
+    if compare_start is not None:
+        return _run_period_compare(
+            args, client, spec, options, compare_start, compare_end
+        )
     compiled, _validation = validate_query_spec(
         client, args.kind, spec, **options
     )
@@ -120,6 +140,54 @@ def run_analysis_query_command(
     )
 
 
+def _compare_dates(args: Any) -> tuple[str | None, str | None]:
+    start = getattr(args, "compare_start", None)
+    end = getattr(args, "compare_end", None)
+    concurrency = getattr(args, "compare_concurrency", None)
+    if (start is None) != (end is None):
+        raise InputValidationError(
+            "--compare-start and --compare-end must be provided together",
+            field="compare_start/compare_end",
+        )
+    if start is not None and args.spec is None:
+        raise InputValidationError("period compare requires --spec", field="spec")
+    if concurrency is not None and start is None:
+        raise InputValidationError(
+            "--compare-concurrency requires a compare window",
+            field="compare_concurrency",
+        )
+    return start, end
+
+
+def _reject_compare_dry_run(compare_start: str | None) -> None:
+    if compare_start is not None:
+        raise InputValidationError(
+            "period compare does not support --dry-run", field="dry_run"
+        )
+
+
+def _run_period_compare(
+    args: Any,
+    client: Any,
+    spec: Mapping[str, Any],
+    options: Mapping[str, Any],
+    compare_start: str,
+    compare_end: str,
+) -> dict[str, Any]:
+    from .analysis_period_compare import compare_analysis_periods
+
+    return compare_analysis_periods(
+        client,
+        args.kind,
+        spec,
+        workspace=options["workspace"],
+        app=options["app"],
+        current_start=options["start"],
+        current_end=options["end"],
+        baseline_start=compare_start,
+        baseline_end=compare_end,
+        max_workers=getattr(args, "compare_concurrency", None) or 2,
+    )
 def _reject_unrelated_shortcuts(args: Any) -> None:
     unsupported = {
         "media": getattr(args, "media", None),

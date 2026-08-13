@@ -231,9 +231,41 @@ class AnalysisSdkMixin:
         app: str | int | None = None,
         start: str | None = None,
         end: str | None = None,
+        compare_start: str | None = None,
+        compare_end: str | None = None,
+        max_workers: int = 2,
         workspace: Any | None = None,
         output_fields: Sequence[str] | None = None,
     ) -> dict[str, Any]:
+        if (compare_start is None) != (compare_end is None):
+            from .errors import InputValidationError
+
+            raise InputValidationError(
+                "compare_start and compare_end must be provided together",
+                field="compare_start/compare_end",
+            )
+        if compare_start is not None:
+            if output_fields:
+                from .errors import InputValidationError
+
+                raise InputValidationError(
+                    "period compare does not accept single-window output_fields",
+                    field="output_fields",
+                )
+            from .analysis_period_compare import compare_analysis_periods
+
+            return compare_analysis_periods(
+                self.insight,
+                kind,
+                spec,
+                workspace=self._select_workspace(workspace),
+                app=app,
+                current_start=start,
+                current_end=end,
+                baseline_start=compare_start,
+                baseline_end=compare_end,
+                max_workers=max_workers,
+            )
         from .analysis_spec import validate_query_spec
 
         compiled, _validation = validate_query_spec(
