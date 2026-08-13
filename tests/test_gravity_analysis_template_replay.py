@@ -6,6 +6,8 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from gravity_sdk.cli import build_parser
+from gravity_sdk.agent_capabilities import composite_capability_cards
+from gravity_sdk.agent_handoff import attach_plan_node
 from gravity_sdk.plan import AdapterContext
 from gravity_sdk.plan_dashboard_adapter import (
     execute_dashboard_plan,
@@ -259,6 +261,27 @@ class AnalysisTemplateReplayTests(unittest.TestCase):
         self.assertEqual(("capability_gap", 1), (result["status"], len(calls)))
         self.assertEqual(1, calls[0]["max_workers"])
         self.assertNotIn("config", result["template"])
+
+    def test_agent_card_is_fillable_and_rejects_ui_or_write_intent(self) -> None:
+        for query in ("run analysis template", "重放分析模板"):
+            with self.subTest(query=query):
+                cards = composite_capability_cards(query, domain=None, platform=None)
+                self.assertEqual(["analysis_template"], [item["composite"] for item in cards])
+                card = attach_plan_node(cards[0], query)
+                self.assertEqual(
+                    ["scope", "app", "ref", "start", "end"],
+                    card["missing_inputs"],
+                )
+                self.assertEqual("analysis_template", card["plan_node"]["request"]["name"])
+                self.assertFalse(card["natural_language_auto_execute"])
+        for query in ("create analysis template", "分析模板分享权限", "saved analysis template"):
+            with self.subTest(query=query):
+                self.assertNotIn(
+                    "analysis_template",
+                    [item["composite"] for item in composite_capability_cards(
+                        query, domain=None, platform=None
+                    )],
+                )
 
 
 if __name__ == "__main__":

@@ -29,6 +29,32 @@ from .workspace import load_workspace
 
 
 ANALYSIS_TEMPLATE_NAME = "analysis_template"
+_SCOPES = ("own", "share", "internal")
+_MODES = frozenset({"prepare", "run"})
+ANALYSIS_TEMPLATE_CAPABILITY: Mapping[str, Any] = {
+    "name": ANALYSIS_TEMPLATE_NAME,
+    "domain": "analysis",
+    "accepted_domains": ("analysis", "report"),
+    "aliases": (
+        "run analysis template by exact reference",
+        "inspect chart template replay eligibility",
+        "按精确引用运行分析模板",
+        "检查图表模板回放能力",
+    ),
+    "description": (
+        "列举并按 scope 与精确引用解析分析模板；只对 compact Analysis Spec v1 "
+        "或已证明的 Dashboard Web artifact 执行，其他 config 逐字段隔离报告。"
+    ),
+    "required_inputs": ("scope", "app", "ref", "start", "end"),
+    "input_schema": {
+        "scope": {"type": "string", "required": True, "enum": list(_SCOPES)},
+        "app": {"type": "string|integer", "required": True, "nullable": False},
+        "ref": {"type": "string|integer", "required": True, "nullable": False},
+        "start": {"type": "string", "format": "date", "required": True},
+        "end": {"type": "string", "format": "date", "required": True},
+        "mode": {"type": "string", "enum": ["prepare", "run"], "default": "run"},
+    },
+}
 OUTPUT_FIELDS = frozenset(
     {
         "artifact_mode", "components", "date_range", "items", "kind",
@@ -36,8 +62,6 @@ OUTPUT_FIELDS = frozenset(
         "validation",
     }
 )
-_SCOPES = ("own", "share", "internal")
-_MODES = frozenset({"prepare", "run"})
 _REQUEST_FIELDS = frozenset({"name", "scope", "app", "ref", "mode", "start", "end"})
 _TOP_FIELDS = frozenset(
     {
@@ -446,9 +470,40 @@ def _validate_window(start: Any, end: Any) -> None:
         raise input_error(str(exc), "start/end") from None
 
 
+def analysis_template_query(query: str) -> bool:
+    selected = " ".join(query.strip().casefold().split())
+    if selected in {ANALYSIS_TEMPLATE_NAME, f"composite:{ANALYSIS_TEMPLATE_NAME}",
+                    "analysis template", "分析模板"}:
+        return True
+    blocked = ("saved", "dashboard", "create", "update", "delete", "share",
+               "subscribe", "layout", "permission", "保存", "看板", "创建",
+               "修改", "删除", "分享", "订阅", "布局", "权限")
+    actions = ("run", "replay", "prepare", "inspect", "understand", "execute",
+               "运行", "重放", "准备", "检查", "理解", "执行")
+    return (
+        ("analysis template" in selected or "chart template" in selected
+         or "分析模板" in selected or "图表模板" in selected)
+        and any(action in selected for action in actions)
+        and not any(term in selected for term in blocked)
+    )
+
+
+def analysis_template_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        "name": ANALYSIS_TEMPLATE_NAME,
+        "scope": card.get("scope", "<own|share|internal>"),
+        "app": card.get("app", "<workspace-app-alias-or-positive-id>"),
+        "ref": card.get("ref", "<analysis-template-id-or-exact-name>"),
+        "start": card.get("start", "<start:YYYY-MM-DD>"),
+        "end": card.get("end", "<end:YYYY-MM-DD>"),
+        "mode": card.get("mode", "run"),
+    }
+
+
 __all__ = [
-    "ANALYSIS_TEMPLATE_NAME", "OUTPUT_FIELDS", "add_template_commands",
-    "dispatch_template", "execute_template_plan", "is_template_result",
-    "project_template_result", "safe_template_result", "TemplateSdkMixin",
-    "validate_template_plan",
+    "ANALYSIS_TEMPLATE_CAPABILITY", "ANALYSIS_TEMPLATE_NAME", "OUTPUT_FIELDS",
+    "add_template_commands", "analysis_template_plan_request",
+    "analysis_template_query", "dispatch_template", "execute_template_plan",
+    "is_template_result", "project_template_result", "safe_template_result",
+    "TemplateSdkMixin", "validate_template_plan",
 ]
