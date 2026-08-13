@@ -61,9 +61,24 @@ D32 本轮先估 22 次、实际只发 5 次最小 stable 根读取；5 次均�
 
 ## 已知能力净损失
 
-`0.2` SQL 收口删除了 `payment-summary`、`first-scene-coverage`、`profile-coverage`、
-`event-coverage` 的专用 builder、summarizer、warnings 和映射语义；当前 `custom-sql` 只能投影
-声明字段，**不能等价恢复**。本仓库没有等价迁移证据。
+`0.2` SQL 收口的净损失**已部分偿还**（收口提交 `d951d52`）。四类逐一判定：
+
+| 产品 | 判定 | 说明 |
+| --- | --- | --- |
+| `payment-summary` | **部分恢复** | 聚合 SQL、全部异常计数字段与静态口径已恢复；未恢复 `revenue_yuan` 派生、动态 warning、旧 envelope |
+| `first-scene-coverage` | **部分恢复** | 状态、前缀、注册量已恢复；宿主名称映射属调用方语义，覆盖率与动态 warning 未恢复 |
+| `event-coverage` | **部分恢复** | 全量与逐事件聚合已恢复；项目事件字典、missing/unknown 对账、新鲜度 warning 未恢复 |
+| `profile-coverage` | **不该内置恢复** | 历史 SQL 有成功证据，但 `activity_event` 与画像属性名是业务绑定，属调用方。SDK 不固化这些字段；调用方可按自身契约登记同形 `custom-sql` |
+
+恢复走 workspace recipe 模板（`examples/workspace/sql-capability-recipes.toml`），
+**没有重建被删的 builder/summarizer 框架**——那正是收口要去掉的东西。证据是 `0.2` 之前
+7 份已发布聚合 Evidence（`2026-07-23`–`2026-08-06`），本轮 0 次上游请求。
+同时给 SQL product 增加 `output_semantics`，补上"只有字段名没有字段口径"这一块，
+它进入产品目录、Agent 匹配、dry-run 合同与查询摘要，但**不生成动态 warning 或业务判定**。
+
+**仍未偿还的部分**：动态 warning / notes / `partial` 状态、派生比率、声明集合对账。
+这些依赖业务字典，按边界属调用方；若将来判定应由 SDK 承担，需要先有不含业务绑定的设计。
+历史在线证据截至 `2026-08-06`，此后上游是否漂移未验证，示例 datasource 保持 `pending_review`。
 
 `0.3` Multidim 收口经复核**无取数能力净损失**：raw query/total 仍可经
 `gravity run report.multidim.*` 执行，损失的只是旧 CLI/Plan 便利性。
