@@ -121,9 +121,9 @@ def run_product(
     definition = _product_definition(product, selected)
     sql = build_sql(product, start_at, end_at, apps, selected)
     rows = client.execute_sql(sql)
-    summary, status, warnings, notes = _summarize_rows(
-        definition, rows, apps, start_at, end_at
-    )
+    summary, status, warnings, notes = _summarize_rows(definition, rows, apps, start_at, end_at)
+    if semantics := definition.get("output_semantics"):
+        summary["output_semantics"] = dict(semantics)
     result: dict[str, Any] = {
         "product": product,
         "status": status,

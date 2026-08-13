@@ -32,6 +32,7 @@ def _describe_product(name: str, workspace: Workspace) -> dict[str, Any]:
         "app_ids": list(_product_apps(name, workspace)),
         "privacy": definition["privacy"],
         "output_fields": list(definition["output_fields"]),
+        "output_semantics": dict(definition.get("output_semantics", {})),
         "max_rows": int(definition.get("max_rows", 1000)),
         "measurement": str(definition.get("measurement", "workspace aggregate")),
         "forbidden_claims": list(definition["forbidden_claims"]),
@@ -67,6 +68,7 @@ def _product_card(query: str, product: dict[str, Any]) -> dict[str, Any]:
         product.get("measurement"),
         product.get("datasource"),
         *(product.get("output_fields") or ()),
+        *(product.get("output_semantics") or {}).values(),
     )
     return {
         "kind": "sql_product",
@@ -77,6 +79,7 @@ def _product_card(query: str, product: dict[str, Any]) -> dict[str, Any]:
         "privacy": product.get("privacy"),
         "measurement": product.get("measurement"),
         "output_fields": list(product.get("output_fields", [])),
+        "output_semantics": dict(product.get("output_semantics", {})),
         "max_rows": product.get("max_rows"),
         "forbidden_claims": list(product.get("forbidden_claims", [])),
         "match": match,

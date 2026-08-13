@@ -370,6 +370,18 @@ def _validate_custom_sql_product(
             "{app_ids}, {start}, {end}, and {limit}"
         )
     _validate_output_fields(name, fields, path)
+    semantics = raw.get("output_semantics")
+    if semantics is not None:
+        if not isinstance(semantics, dict) or set(semantics) != set(fields):
+            raise WorkspaceError(
+                f"{path}: products.{name}.output_semantics must describe every output field"
+            )
+        _string_list(
+            list(semantics.values()),
+            f"products.{name}.output_semantics values",
+            path,
+            allow_empty=False,
+        )
     if raw.get("privacy") != "aggregate":
         raise WorkspaceError(f"{path}: products.{name}.privacy must be 'aggregate'")
     max_rows = raw.get("max_rows")

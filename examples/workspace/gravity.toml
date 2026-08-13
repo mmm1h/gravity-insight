@@ -40,6 +40,11 @@ ORDER BY app_id, event_name
 LIMIT {limit}
 """
 
+[products.daily-event-summary.output_semantics]
+app_id = "Gravity App identifier for this aggregate row"
+event_name = "observed event name"
+event_count = "event row count in the left-closed, right-open query window"
+
 [recipes.demo-retention]
 operation = "analysis.retention.query"
 description = "Fictional project-owned retention recipe"

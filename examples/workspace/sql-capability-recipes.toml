@@ -1,0 +1,216 @@
+# SQL shapes migrated from d951d52^ (before the 0.2 product-boundary change).
+# Seven published aggregate Evidence runs from 2026-07-23 through 2026-08-06
+# recorded successful execution. This template contains no production App IDs.
+schema_version = 1
+
+[apps]
+demo = 1001
+
+[defaults]
+app = "demo"
+timezone = "Asia/Shanghai"
+time_window = "latest-safe-day"
+
+[datasources.demo]
+id = "demo_warehouse"
+verification_status = "pending_review"
+timezone = "Asia/Shanghai"
+privacy = "aggregate output only"
+
+[products.payment-summary]
+kind = "custom-sql"
+datasource = "demo"
+apps = ["demo"]
+privacy = "aggregate"
+output_fields = [
+  "app_id", "pay_event_rows", "order_count", "buyer_count", "revenue_cent",
+  "duplicate_rows", "missing_amount_rows", "invalid_amount_rows",
+  "missing_reason_rows", "fallback_order_key_rows", "missing_pay_type_rows",
+  "missing_pay_method_rows", "non_cny_rows", "pay_method_value_count",
+  "pay_method_min", "pay_method_max", "pay_type_value_count", "pay_type_min",
+  "pay_type_max", "first_pay_at", "last_pay_at",
+]
+max_rows = 1000
+measurement = "behavioral payment totals and data-quality counters"
+forbidden_claims = [
+  "financial net revenue or accounting reconciliation",
+  "campaign attribution, return on investment, or causal uplift",
+]
+sql = """
+WITH raw_pay AS (
+  SELECT
+    app_id,
+    user_id,
+    create_time,
+    COALESCE(get_json_string(properties, '$.$pay_amount'), '') AS amount_raw,
+    COALESCE(get_json_string(properties, '$.$pay_reason'), '') AS pay_reason,
+    COALESCE(get_json_string(properties, '$.$order_id'), '') AS order_key,
+    COALESCE(get_json_string(properties, '$.$pay_type'), '') AS pay_type,
+    COALESCE(get_json_string(properties, '$.$pay_method'), '') AS pay_method
+  FROM `default`.`event`
+  WHERE app_id IN ({app_ids})
+    AND event = '$PayEvent'
+    AND create_time >= CAST('{start}' AS DATETIME)
+    AND create_time < CAST('{end}' AS DATETIME)
+),
+keyed AS (
+  SELECT
+    *,
+    COALESCE(NULLIF(order_key, ''), CONCAT(CAST(user_id AS VARCHAR), '|', CAST(create_time AS VARCHAR), '|', pay_reason, '|', amount_raw)) AS pay_key,
+    CASE WHEN amount_raw REGEXP '^[0-9]+$' THEN CAST(amount_raw AS BIGINT) ELSE 0 END AS amount_cent
+  FROM raw_pay
+),
+pay_ranked AS (
+  SELECT
+    *,
+    ROW_NUMBER() OVER (PARTITION BY app_id, pay_key ORDER BY CAST(create_time AS DATETIME)) AS duplicate_rank
+  FROM keyed
+)
+SELECT
+  app_id,
+  COUNT(*) AS pay_event_rows,
+  SUM(CASE WHEN duplicate_rank = 1 THEN 1 ELSE 0 END) AS order_count,
+  COUNT(DISTINCT CASE WHEN duplicate_rank = 1 THEN user_id ELSE NULL END) AS buyer_count,
+  SUM(CASE WHEN duplicate_rank = 1 THEN amount_cent ELSE 0 END) AS revenue_cent,
+  SUM(CASE WHEN duplicate_rank > 1 THEN 1 ELSE 0 END) AS duplicate_rows,
+  SUM(CASE WHEN amount_raw = '' THEN 1 ELSE 0 END) AS missing_amount_rows,
+  SUM(CASE WHEN amount_raw <> '' AND NOT (amount_raw REGEXP '^[0-9]+$') THEN 1 ELSE 0 END) AS invalid_amount_rows,
+  SUM(CASE WHEN pay_reason = '' THEN 1 ELSE 0 END) AS missing_reason_rows,
+  SUM(CASE WHEN order_key = '' THEN 1 ELSE 0 END) AS fallback_order_key_rows,
+  SUM(CASE WHEN pay_type = '' THEN 1 ELSE 0 END) AS missing_pay_type_rows,
+  SUM(CASE WHEN pay_method = '' THEN 1 ELSE 0 END) AS missing_pay_method_rows,
+  SUM(CASE WHEN pay_type <> '' AND pay_type <> 'CNY' THEN 1 ELSE 0 END) AS non_cny_rows,
+  COUNT(DISTINCT NULLIF(pay_method, '')) AS pay_method_value_count,
+  MIN(NULLIF(pay_method, '')) AS pay_method_min,
+  MAX(NULLIF(pay_method, '')) AS pay_method_max,
+  COUNT(DISTINCT NULLIF(pay_type, '')) AS pay_type_value_count,
+  MIN(NULLIF(pay_type, '')) AS pay_type_min,
+  MAX(NULLIF(pay_type, '')) AS pay_type_max,
+  MIN(create_time) AS first_pay_at,
+  MAX(create_time) AS last_pay_at
+FROM pay_ranked
+GROUP BY app_id
+ORDER BY app_id
+LIMIT {limit}
+"""
+
+[products.payment-summary.output_semantics]
+app_id = "Gravity App identifier for this aggregate row"
+pay_event_rows = "raw $PayEvent row count in the left-closed, right-open window"
+order_count = "deduplicated order count using non-empty order id or the documented fallback key"
+buyer_count = "distinct buyers among deduplicated payment rows"
+revenue_cent = "sum of valid integer $pay_amount values in cents after deduplication"
+duplicate_rows = "payment rows excluded by the deduplication key"
+missing_amount_rows = "payment rows with an empty $pay_amount"
+invalid_amount_rows = "payment rows whose non-empty $pay_amount is not an unsigned integer"
+missing_reason_rows = "payment rows with an empty $pay_reason"
+fallback_order_key_rows = "payment rows using user, time, reason, and amount instead of $order_id"
+missing_pay_type_rows = "payment rows with an empty $pay_type"
+missing_pay_method_rows = "payment rows with an empty $pay_method"
+non_cny_rows = "payment rows whose non-empty $pay_type is not CNY"
+pay_method_value_count = "count of distinct non-empty payment method values"
+pay_method_min = "lexical minimum non-empty payment method value"
+pay_method_max = "lexical maximum non-empty payment method value"
+pay_type_value_count = "count of distinct non-empty payment type values"
+pay_type_min = "lexical minimum non-empty payment type value"
+pay_type_max = "lexical maximum non-empty payment type value"
+first_pay_at = "earliest payment event time in the window"
+last_pay_at = "latest payment event time in the window"
+
+[products.first-scene-coverage]
+kind = "custom-sql"
+datasource = "demo"
+apps = ["demo"]
+privacy = "aggregate"
+output_fields = ["app_id", "scene_status", "host_prefix", "registrations"]
+max_rows = 10000
+measurement = "registration-time user property coverage for $first_scene"
+forbidden_claims = [
+  "treating $first_scene as an event property",
+  "treating missing or unknown values as proof that no source existed",
+  "causal source effectiveness",
+]
+sql = """
+WITH user_scene AS (
+  SELECT
+    app_id,
+    COALESCE(get_json_string(properties, '$.$first_scene'), '') AS scene
+  FROM `default`.`user`
+  WHERE app_id IN ({app_ids})
+    AND create_time >= CAST('{start}' AS DATETIME)
+    AND create_time < CAST('{end}' AS DATETIME)
+)
+SELECT
+  app_id,
+  CASE WHEN scene = '' THEN 'missing' WHEN LENGTH(scene) = 6 THEN 'reported' ELSE 'invalid_format' END AS scene_status,
+  CASE WHEN LENGTH(scene) = 6 THEN SUBSTR(scene, 1, 2) ELSE '' END AS host_prefix,
+  COUNT(*) AS registrations
+FROM user_scene
+GROUP BY
+  app_id,
+  CASE WHEN scene = '' THEN 'missing' WHEN LENGTH(scene) = 6 THEN 'reported' ELSE 'invalid_format' END,
+  CASE WHEN LENGTH(scene) = 6 THEN SUBSTR(scene, 1, 2) ELSE '' END
+ORDER BY app_id, scene_status, host_prefix
+LIMIT {limit}
+"""
+
+[products.first-scene-coverage.output_semantics]
+app_id = "Gravity App identifier for this aggregate row"
+scene_status = "reported for six characters, missing for empty, otherwise invalid_format"
+host_prefix = "first two characters for six-character values; project-owned host mapping is not applied"
+registrations = "registration rows in this status and prefix bucket"
+
+[products.event-coverage]
+kind = "custom-sql"
+datasource = "demo"
+apps = ["demo"]
+privacy = "aggregate"
+output_fields = ["app_id", "event_name", "event_rows", "active_users", "first_event_at", "last_event_at"]
+max_rows = 10000
+measurement = "observed aggregate event coverage in the query window"
+forbidden_claims = [
+  "instrumentation health from absence in one window",
+  "complete validation of a project event dictionary",
+  "campaign or version impact",
+]
+sql = """
+WITH filtered AS (
+  SELECT app_id, user_id, event, create_time
+  FROM `default`.`event`
+  WHERE app_id IN ({app_ids})
+    AND create_time >= CAST('{start}' AS DATETIME)
+    AND create_time < CAST('{end}' AS DATETIME)
+)
+SELECT *
+FROM (
+  SELECT
+    app_id,
+    '__all__' AS event_name,
+    COUNT(*) AS event_rows,
+    COUNT(DISTINCT user_id) AS active_users,
+    MIN(create_time) AS first_event_at,
+    MAX(create_time) AS last_event_at
+  FROM filtered
+  GROUP BY app_id
+  UNION ALL
+  SELECT
+    app_id,
+    event AS event_name,
+    COUNT(*) AS event_rows,
+    COUNT(DISTINCT user_id) AS active_users,
+    MIN(create_time) AS first_event_at,
+    MAX(create_time) AS last_event_at
+  FROM filtered
+  GROUP BY app_id, event
+) coverage
+ORDER BY app_id, event_name
+LIMIT {limit}
+"""
+
+[products.event-coverage.output_semantics]
+app_id = "Gravity App identifier for this aggregate row"
+event_name = "observed event name; __all__ is the synthetic all-event aggregate"
+event_rows = "event row count for this event or for all events when event_name is __all__"
+active_users = "distinct event user count for this event or for all events"
+first_event_at = "earliest observed event time in the window"
+last_event_at = "latest observed event time in the window"

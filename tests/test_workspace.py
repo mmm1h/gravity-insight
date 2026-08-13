@@ -247,6 +247,13 @@ def test_custom_sql_rejects_case_variant_user_level_output(tmp_path: Path) -> No
         load_workspace(path, environ={}, cache_root=tmp_path / "cache")
 
 
+def test_custom_sql_rejects_incomplete_output_semantics(tmp_path: Path) -> None:
+    path = tmp_path / "gravity.toml"
+    path.write_text(_workspace_text() + '\n[products.daily-summary.output_semantics]\napp_id = "App"\n', encoding="utf-8")
+    with pytest.raises(WorkspaceError, match="describe every output field"):
+        load_workspace(path, environ={}, cache_root=tmp_path / "cache")
+
+
 def test_census_console_script_is_not_published() -> None:
     project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
 
@@ -264,6 +271,7 @@ def test_sdk_contract_and_example_are_generic() -> None:
     assert set(catalog["product_kinds"]) == {"custom-sql"}
     assert example["apps"] == {"demo": 1001}
     assert set(example["products"]) == {"daily-event-summary"}
+    assert set(tomllib.loads((ROOT / "examples/workspace/sql-capability-recipes.toml").read_text(encoding="utf-8"))["products"]) == {"payment-summary", "first-scene-coverage", "event-coverage"}
 
 
 def test_global_workspace_flag_is_applied_before_cli_modules_import(
