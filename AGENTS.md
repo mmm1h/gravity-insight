@@ -36,8 +36,13 @@ belong here.
 - **A breaking surface change must not cost capability.** Direct breaking
   upgrades are allowed, but first prove no read capability is lost; record the
   finding in `docs/roadmap.md`.
-- **Each round starts with a written proposal.** Proposals land in `docs/`, not
-  in scratch files that version control ignores.
+- **Each round starts with a written proposal, and its conclusions land in
+  version control.** Record them in the existing authoritative documents:
+  `docs/roadmap.md` for schedule and decisions, `technical-debt.md` for
+  structural debt, `candidate-capability-matrix.md` for capability evidence.
+  Do not create one-off proposal files or a `docs/proposals/` tree. A survey
+  that is useful today is stale two rounds later, and the documentation tree
+  would pay for it forever. Keep the working draft in `tmp/`; land the verdict.
 
 ## Parallel development
 

@@ -48,6 +48,38 @@
 - 隐私：本轮无线上响应，因此**不能宣称响应无隐私风险**。`column_val_list` 等未知字段仍可能
   承载业务值或用户级数据，继续默认隐藏。
 
+## 2026-08-13 追加判定：非 Bytedance 平台投放层级（D33）
+
+选 Bilibili 与 Huya 两个平台做逐层父链取证（二者在候选中父链证据最完整）。
+**总计 3 次业务请求**，无重试、翻页、扩窗或账户遍历；无权限错误、限流或合同漂移。
+
+| 平台 | 层级 | 请求 | 结果 | 父绑定 |
+| --- | --- | ---: | --- | --- |
+| Bilibili | Account | 1 | HTTP 200 **非空** | 根层 |
+| Bilibili | Advertiser | 1 | HTTP 200 **空样本** | **未产出 `advertiser_id`** |
+| Bilibili | Campaign / Group / Creative | 0 | `parent_resource_required` | 否，未发送 |
+| Huya | Account | 1 | HTTP 200 **空样本** | 根层未产出候选 |
+| Huya | Advertiser 及以下 | 0 | `parent_resource_required` | 否，未发送 |
+
+**结论：两个平台的父链都无法建立，D34（按计划/组/创意下钻表现）保持阻塞。**
+
+唯一非空样本是 Bilibili account，键集合与现有 stable 投影一致：`advertiser_id`、
+`average_cost_per_thousand`、`click_count`、`click_rate`、`cost_per_click`、`product_name`、
+`san_lian_launch_total_consume`、`show_count`、`total_cash_consume`、`total_consume`、
+`total_red_packet_consume`、`total_special_red_packet_consume`。
+`advertiser_name` 判为敏感并隐藏；未知字段暴露数为 0。
+
+**下一步最小证据：**
+
+- Bilibili：stable advertiser 在同一单日第一页条件下返回 1 个 `advertiser_id`，
+  之后才能逐层证明 `campaign_id → unit_id → creative_id` 的键、类型、分页与父绑定。
+- Huya：先取得非空 account 候选；更关键的是需要前端控制流或上游合同，
+  证明 report 请求如何绑定 `advertiser_id/campaign_id/group_id`——当前三个 report body
+  **都没有这些父字段**。
+
+**未决**：Bilibili account 已返回 `advertiser_id`，但 campaign 草稿声明的父资源是 advertiser report，
+两者是否等价**不能推断**；Bilibili manager 三层的 `data.list` 与分页仍未在线证明。
+
 ## 本轮可复用结论
 
 - 六个列表操作已得到可复用的 `page_info` 分页证据：`report.masterkey_report_group.list`、`report.report.list`、`report.shared_to_me.list`、`app.project.list`、`app.user_auth.list`、`app.onelink.list`。
