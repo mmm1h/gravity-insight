@@ -417,6 +417,24 @@ class DiscoveryUxTests(unittest.TestCase):
                 "dashboard_snapshot", [card.get("composite") for card in result["candidates"]]
             )
 
+    def test_explicit_multiple_product_intents_fail_closed_before_raw_fallback(self) -> None:
+        cases = (
+            ("event analysis analysis context", ("analysis.query.spec:event", "composite:analysis_context")),
+            ("dashboard snapshot run dashboard charts", ("composite:dashboard_snapshot", "composite:dashboard_analysis")),
+            ("segment rule population estimate segment snapshot details history daily result", ("analysis.segment.rule.spec", "composite:segment_snapshot")),
+            ("order directory order split trace", ("composite:order_directory", "composite:order_split_trace")),
+            ("material performance promotion performance", ("composite:material_performance", "composite:promotion_performance")),
+            ("多维报表和经营脉搏", ("composite:multidim", "composite:business_pulse")),
+            ("run saved analysis and run dashboard charts", ("composite:saved_analysis", "composite:dashboard_analysis")),
+        )
+        for query, selectors in cases:
+            with self.subTest(query=query):
+                result = discover_capabilities(query, client=self.client)
+                gap = result["capability_gaps"][0]
+                self.assertEqual(("capability_gap", 0, "MULTIPLE_INTENTS"), (result["status"], result["count"], gap["code"]))
+                self.assertEqual(list(selectors), gap["candidate_selectors"])
+                self.assertFalse(any(card.get("kind") == "operation" for card in result["candidates"]))
+
     def test_business_pulse_is_strict_authoritative_and_mechanically_fillable(self) -> None:
         cases = {
             True: (

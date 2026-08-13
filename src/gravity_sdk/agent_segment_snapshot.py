@@ -71,6 +71,34 @@ def segment_snapshot_query(query: str) -> bool:
     return _chinese_snapshot_query(selected)
 
 
+def segment_snapshot_intent(query: str) -> bool:
+    """Return positive complete-snapshot evidence without conflict exclusions."""
+
+    selected = query.strip().casefold()
+    if selected in _EXACT_SELECTORS:
+        return True
+    if selected.isascii():
+        words = frozenset(_ASCII_WORD.findall(selected))
+        groups = (
+            _ENGLISH_SUBJECTS, _ENGLISH_ACTIONS, _ENGLISH_DETAILS,
+            _ENGLISH_HISTORY, _ENGLISH_RESULTS,
+        )
+        return all(words & group for group in groups) and (
+            bool(words & _ENGLISH_DAILY) or _ISO_DATE.search(selected) is not None
+        )
+    compact = "".join(selected.split())
+    return (
+        any(term in compact for term in ("分群", "人群", "受众"))
+        and any(term in compact for term in ("快照", "检查", "查看"))
+        and "详情" in compact
+        and any(term in compact for term in ("历史", "历史版本"))
+        and (
+            any(term in compact for term in ("单日结果", "当日结果", "单日计算结果"))
+            or _ISO_DATE.search(compact) is not None
+        )
+    )
+
+
 def _english_snapshot_query(selected: str) -> bool:
     words = frozenset(_ASCII_WORD.findall(selected))
     groups = (
@@ -115,5 +143,6 @@ __all__ = [
     "SEGMENT_SNAPSHOT_CAPABILITY",
     "SEGMENT_SNAPSHOT_NAME",
     "segment_snapshot_plan_request",
+    "segment_snapshot_intent",
     "segment_snapshot_query",
 ]

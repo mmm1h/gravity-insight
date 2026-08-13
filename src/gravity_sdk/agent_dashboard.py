@@ -62,10 +62,17 @@ def dashboard_snapshot_query(query: str) -> bool:
     """Recognize control-plane requests without capturing chart execution."""
 
     selected = query.strip().casefold()
-    if _order_directory_conflict(selected):
+    from .agent_intent_routing import adjacent_product_conflict
+
+    if adjacent_product_conflict("dashboard_snapshot", selected):
         return False
-    if any(term in selected for term in ("chart", "图表")):
-        return False
+    return dashboard_snapshot_intent(query)
+
+
+def dashboard_snapshot_intent(query: str) -> bool:
+    """Return positive snapshot evidence without applying adjacent-product policy."""
+
+    selected = query.strip().casefold()
     english = (
         "snapshot", "context", "control", "detail", "member", "filter",
         "favourite", "favorite", "inspect", "show", "view", "check", "get",
@@ -83,30 +90,17 @@ def dashboard_analysis_query(query: str) -> bool:
     """Recognize explicit chart execution/replay without capturing snapshots."""
 
     selected = query.strip().casefold()
-    if _order_directory_conflict(selected):
+    from .agent_intent_routing import adjacent_product_conflict
+
+    if adjacent_product_conflict("dashboard_analysis", selected):
         return False
-    control_terms = (
-        "snapshot",
-        "control plane",
-        "member",
-        "favourite",
-        "favorite",
-        "快照",
-        "控制面",
-        "成员",
-        "收藏",
-        "saved",
-        "material",
-        "pulse",
-        "multidim",
-        "保存",
-        "已存",
-        "素材",
-        "脉搏",
-        "多维",
-    )
-    if any(term in selected for term in control_terms):
-        return False
+    return dashboard_analysis_intent(query)
+
+
+def dashboard_analysis_intent(query: str) -> bool:
+    """Return positive chart-replay evidence without adjacent-product policy."""
+
+    selected = query.strip().casefold()
     english_action = ("run", "replay", "execute", "rerun", "refresh", "analyze")
     chinese_action = ("执行", "运行", "重放", "重跑", "刷新", "分析")
     return (
@@ -117,16 +111,6 @@ def dashboard_analysis_query(query: str) -> bool:
         "看板" in selected
         and "图表" in selected
         and any(term in selected for term in chinese_action)
-    )
-
-
-def _order_directory_conflict(selected: str) -> bool:
-    return any(
-        term in selected
-        for term in (
-            "order directory", "order detail", "订单目录", "订单明细",
-            "订单详情", "订单列表",
-        )
     )
 
 
@@ -168,7 +152,9 @@ def _placeholder(name: str, specification: Any) -> str:
 __all__ = [
     "DASHBOARD_ANALYSIS_CAPABILITY",
     "dashboard_analysis_plan_request",
+    "dashboard_analysis_intent",
     "dashboard_analysis_query",
     "dashboard_plan_request",
+    "dashboard_snapshot_intent",
     "dashboard_snapshot_query",
 ]

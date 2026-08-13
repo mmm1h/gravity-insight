@@ -244,6 +244,13 @@ def order_split_trace_query(query: str) -> bool:
     return _claims_product(selected) and not _blocked(selected)
 
 
+def order_split_trace_intent(query: str) -> bool:
+    """Return positive split-trace evidence without applying conflict policy."""
+
+    selected = _normalize(query)
+    return selected in _EXACT_INTENTS or _claims_product(selected)
+
+
 def order_split_trace_blocks_operation_fallback(query: str) -> bool:
     """Claim product-shaped conflicts so they cannot become raw child cards."""
 
@@ -331,6 +338,7 @@ __all__ = [
     "ORDER_SPLIT_TRACE_SELECTOR",
     "order_split_trace_blocks_operation_fallback",
     "order_split_trace_input_template",
+    "order_split_trace_intent",
     "order_split_trace_plan_request",
     "order_split_trace_query",
     "order_split_trace_safe_query",

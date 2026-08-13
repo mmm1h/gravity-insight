@@ -17,22 +17,6 @@
 
 登记于 2026-08-13，依据 `dev@8fd278e` 的源码与质量门禁审计。
 
-### 1. Agent 相邻产品冲突规则向既有 recognizer 扩散
-
-- **Owner area**：Agent discovery / product intent routing。
-- **证据**：九条产品线全部修改过 `agent_capabilities.py`、`agent_composite.py`、`agent_handoff.py`。
-  Order Directory 的接入提交 `454a70a` 修改了 `agent_business_pulse.py`、`agent_saved_analysis.py`，
-  冲突修补 `dcde27c` 又修改了 `agent_dashboard.py`、`agent_material_performance.py`、
-  `agent_multidim.py`；这五个既有 owner 至今仍含 `订单目录` 或 `_order_directory_conflict`。
-  `agent_handoff.py` 在 239-282 与 317-367 分别维护 Plan request 与 requirements 的产品分支。
-  已复现的实际后果：`gravity agent "多维报表和经营脉搏"` 返回无关 operation，而非两个产品或明确的多意图缺口。
-- **触发条件**：新增或修改一个自然语言产品时，需要在新 owner 之外修改任一无关产品 recognizer 的
-  产品专用负向词；或同一产品身份需要在三个以上中央 Agent 分支同步增加。
-- **退出条件**：下次触碰相邻 Agent 产品时，把已证明共享的冲突判断收口到新产品 owner 或 discovery
-  policy 的一个窄函数，旧 recognizer 只委托该判断；request/requirements 由 owner 提供，中央入口
-  只做薄路由。现有中英文、exact selector、sensitive query、raw fallback 与 pairwise conflict 测试
-  全部保持。**不引入插件、注册表或通用意图 DSL。**
-
 ### 2. Plan composite 中央入口逼近 file/complexity 阈值
 
 - **Owner area**：Plan composite routing。
@@ -69,6 +53,10 @@
 不建议放宽或更新 baseline 来容纳增长。
 
 ## 已关闭结构债务
+
+Agent 相邻产品冲突已收口到 `agent_intent_routing.py`：按独立 owner 正向证据强度与 selector 精确度
+裁决，多个产品返回 `MULTIPLE_INTENTS`，历史紧邻冲突集中兼容；五个既有 owner 不再持有他产品负向词，
+raw exact selector、敏感查询和既有 pairwise 行为保持。
 
 本轮已把 CLI 路由、Plan adapter、Multidim service 和 Agent 卡分别下沉到领域模块；通用入口只保留
 薄路由，direct/Plan 共用 worker 预算，旧 raw 合同继续兼容。后续若这些模块再次触发机器 ratchet，

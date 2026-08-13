@@ -32,20 +32,18 @@ _ENGLISH_BLOCKED = frozenset(
     {
         "export", "download", "library", "catalog", "album", "tag", "tags",
         "review", "reviews", "favorite", "favorites", "favourite", "favourites",
-        "recycle", "upload", "template", "dashboard", "promotion", "campaign",
-        "business", "pulse", "multidim", "create", "update", "delete",
+        "recycle", "upload", "template", "create", "update", "delete",
         "rank", "ranking", "rankings", "top", "best", "winner",
-        "not", "no", "avoid", "exclude", "never", "skip", "without", "saved",
+        "not", "no", "avoid", "exclude", "never", "skip", "without",
     }
 )
 _CHINESE_ACTIONS = ("表现", "效果", "报表")
-_CHINESE_ORDER_DIRECTORY = ("订单目录", "订单明细", "订单详情", "订单列表")
 _CHINESE_BLOCKED = (
     "导出", "下载", "素材库", "相册", "标签", "审核", "收藏", "回收", "上传",
-    "模板", "看板", "推广", "经营", "业务脉搏", "多维", "创建", "更新", "删除",
+    "模板", "创建", "更新", "删除",
     "排名", "排行", "最佳", "最好", "不要", "无需", "无须", "不需要", "不必",
     "不做", "不用",
-    "避免", "非素材", "保存", "已存", "脉搏", "脉动",
+    "避免", "非素材",
 )
 _CHINESE_BIE_NEGATION = re.compile(
     r"(?:^|请|麻烦|[\s，,。；;！!])别(?:再)?"
@@ -105,6 +103,15 @@ def material_performance_query(query: str) -> bool:
     compact = "".join(selected.split())
     if _blocked_query(selected, words, compact):
         return False
+    return material_performance_intent(query)
+
+
+def material_performance_intent(query: str) -> bool:
+    """Return positive aggregate-material evidence without adjacent exclusions."""
+
+    selected = " ".join(query.strip().casefold().split())
+    words = frozenset(_ASCII_WORD.findall(selected))
+    compact = "".join(selected.split())
     if selected in _EXACT:
         return True
     if selected.isascii() and " " not in selected and "." in selected:
@@ -122,20 +129,15 @@ def material_performance_query(query: str) -> bool:
 def _blocked_query(
     selected: str, words: frozenset[str], compact: str
 ) -> bool:
+    from .agent_intent_routing import adjacent_product_conflict
+
     return bool(
         words & _ENGLISH_BLOCKED
         or _ENGLISH_NEGATION_PHRASE.search(selected)
-        or _order_directory_conflict(words, compact)
+        or adjacent_product_conflict("material_performance", selected)
         or any(term in compact for term in _CHINESE_BLOCKED)
         or _CHINESE_BIE_NEGATION.search(selected)
     )
-
-
-def _order_directory_conflict(words: frozenset[str], compact: str) -> bool:
-    return bool(
-        words & {"order", "orders"}
-        and words & {"directory", "detail", "details"}
-    ) or any(term in compact for term in _CHINESE_ORDER_DIRECTORY)
 
 
 def material_performance_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
@@ -160,6 +162,7 @@ __all__ = [
     "MATERIAL_PERFORMANCE_CAPABILITY",
     "MATERIAL_PERFORMANCE_NAME",
     "material_performance_input_template",
+    "material_performance_intent",
     "material_performance_plan_request",
     "material_performance_query",
 ]

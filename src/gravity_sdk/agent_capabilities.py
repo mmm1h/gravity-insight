@@ -286,10 +286,13 @@ def capability_handoff_cards(
     )
     from .agent_discovery_policy import operation_fallback_excluded
     from .agent_export import export_capability_cards
+    from .agent_intent_routing import multiple_product_intents
     from .agent_table_lineage import table_lineage_capability_cards
     from .agent_user_journey import user_journey_capability_cards
 
     if monetization_guard_blocks_operation_fallback(query):
+        return [], True
+    if multiple_product_intents(query, inventory=composite_inventory):
         return [], True
     exports = export_capability_cards(
         query, domain=domain, platform=platform, inventory=export_inventory
@@ -383,6 +386,7 @@ def authoritative_capability_cards(
 ) -> list[Mapping[str, Any]]:
     """Return the first exclusive discovery product class, if one exists."""
 
+    from .agent_intent_routing import unique_authoritative_cards
     from .agent_segment import is_authoritative_direct_card
     from .agent_user_journey import is_user_journey_card
     from .agent_vocabulary import is_authoritative_local_metadata_card
@@ -406,7 +410,7 @@ def authoritative_capability_cards(
             "segment_snapshot",
         }
     ]
-    return (
+    return unique_authoritative_cards(
         authoritative_composites
         or [card for card in cards if is_authoritative_direct_card(card)]
         or [

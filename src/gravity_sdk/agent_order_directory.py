@@ -318,6 +318,18 @@ def order_directory_query(query: str) -> bool:
     return _claims_product(selected) and not _blocked(selected)
 
 
+def order_directory_intent(query: str) -> bool:
+    """Return positive Directory evidence without applying conflict policy."""
+
+    selected = _normalize(query)
+    words = frozenset(_ASCII_WORD.findall(selected))
+    return (
+        selected in _EXACT_INTENTS
+        or bool(words & _ENGLISH_ORDER and "directory" in words)
+        or "订单目录" in _compact(selected)
+    )
+
+
 def order_directory_blocks_operation_fallback(query: str) -> bool:
     """Claim product-shaped conflicts before generic operation discovery."""
 
@@ -325,6 +337,19 @@ def order_directory_blocks_operation_fallback(query: str) -> bool:
     if selected in ORDER_DIRECTORY_RAW_SELECTORS:
         return False
     return selected in _EXACT_INTENTS or _claims_product(selected)
+
+
+def order_directory_adjacent_intent(query: str) -> bool:
+    """Identify Directory wording reused by adjacent product recognizers."""
+
+    selected = _normalize(query)
+    words = frozenset(_ASCII_WORD.findall(selected))
+    compact = _compact(selected)
+    return bool(
+        words & _ENGLISH_ORDER and words & _ENGLISH_DETAIL
+    ) or _contains_any(
+        compact, ("订单目录", "订单明细", "订单详情", "订单列表")
+    )
 
 
 def order_directory_input_template() -> dict[str, str]:
@@ -456,6 +481,8 @@ __all__ = [
     "ORDER_DIRECTORY_SELECTOR",
     "order_directory_blocks_operation_fallback",
     "order_directory_input_template",
+    "order_directory_adjacent_intent",
+    "order_directory_intent",
     "order_directory_plan_request",
     "order_directory_query",
     "order_directory_safe_query",

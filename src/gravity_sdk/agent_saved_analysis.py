@@ -145,6 +145,8 @@ def saved_analysis_query(query: str) -> bool:
     """Recognize explicit replay/inspection intent and reject Web UI concepts."""
 
     selected = " ".join(query.strip().casefold().split())
+    from .agent_order_directory import order_directory_adjacent_intent
+
     if selected in _EXACT_SELECTORS:
         return True
     if selected.isascii():
@@ -153,7 +155,7 @@ def saved_analysis_query(query: str) -> bool:
             "saved" in words
             and bool(
                 words & _ENGLISH_SUBJECTS
-                or {"order", "directory"}.issubset(words)
+                or order_directory_adjacent_intent(selected)
             )
             and bool(words & _ENGLISH_ACTIONS)
             and not bool(words & _ENGLISH_BLOCKED)
@@ -163,7 +165,7 @@ def saved_analysis_query(query: str) -> bool:
         any(marker in compact for marker in ("保存", "已存"))
         and (
             any(subject in compact for subject in _CHINESE_SUBJECTS)
-            or "订单目录" in compact
+            or order_directory_adjacent_intent(selected)
         )
         and any(action in compact for action in _CHINESE_ACTIONS)
         and not any(term in compact for term in _CHINESE_BLOCKED)

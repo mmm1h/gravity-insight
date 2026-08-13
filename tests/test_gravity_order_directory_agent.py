@@ -1,4 +1,3 @@
-import base64
 import copy
 import json
 import unittest
@@ -174,11 +173,8 @@ class OrderDirectoryAgentTests(unittest.TestCase):
                                        copy.deepcopy(ORDER_DIRECTORY_CAPABILITY)), (), "0" * 64)
         query = "read order details north-secret for 2026-08-08"
         first = discover_capabilities(query, client=None, sources=sources, limit=1)
-        token = first["continuation_token"]
-        payload = json.loads(base64.urlsafe_b64decode(token + "=" * (-len(token) % 4)).decode("utf-8"))
-        self.assertEqual("order_directory", payload["query"])
+        self.assertEqual((1, 1, None),
+                         (first["count"], first["total"], first["continuation_token"]))
         self.assertFalse(any(value in json.dumps(first) for value in ("north-secret", "2026-08-08")))
-        second = discover_capabilities(query, client=None, sources=sources, limit=1, continuation=token)
-        self.assertEqual((2, "success", 1), (first["total"], second["status"], second["count"]))
 if __name__ == "__main__":
     unittest.main()
