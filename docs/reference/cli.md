@@ -389,7 +389,7 @@ gravity analysis order directory --app main --date 2026-08-08 `
 或订单成功。
 
 有效请求严格为 `P` 个目录分页，0 metadata、0 child。direct 分页 worker 默认 6、最大 24；
-Plan adapter 固定 1。省略 `--output` 时输出安全 stdout 前缀；指定它时原子写入完整 JSON。
+Plan adapter 固定 1。省略 `--output` 时输出安全 stdout 前缀；指定它时写入完整 JSON。
 产品不提供 NDJSON 或 `--format`。未知入口时 Agent 返回唯一
 `order_directory` Plan 节点及待填写的 `app/date`，不从自然语言取值或自动执行；否定、导出、
 写入及相邻分析产品会安全报缺口且不扫描 operation inventory。精确 raw selector
