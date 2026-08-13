@@ -220,7 +220,6 @@ gravity find "retention"
 CLI 退出码：`0` 成功（包括合同允许的 empty）、`2` 调用方错误、`3` 上游/权限错误、`4` 本地合同/隐私/策略错误。批量命令按最高严重级别聚合退出码，仍需读取每项结果。
 
 ## 入口补充：同 spec 跨期对比
-
 | 已知信息 | 直接执行 | 正常命令数 |
 | --- | --- | --- |
 | 同一 Analysis spec 的两个明确日期窗 | `analysis query --spec ... --compare-start ... --compare-end ...`；返回双窗状态和已登记物理指标 delta | 1 |
