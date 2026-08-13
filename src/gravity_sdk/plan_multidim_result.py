@@ -231,12 +231,16 @@ def _safe_component(
     assert isinstance(value, Mapping)
     status = value["status"]
     if failed and status not in _SUCCESS:
-        return {
+        selected = {
             "operation_id": operation_id,
             "ok": False,
             "status": status,
             "error": _safe_error(value.get("error")),
         }
+        diagnostics = _safe_drift_diagnostics(value, operation_id)
+        if diagnostics is not None:
+            selected["drift_diagnostics"] = diagnostics
+        return selected
     data = value["data"]
     rows_key = "list" if isinstance(data.get("list"), list) else "items"
     selected: dict[str, Any] = {
@@ -251,6 +255,77 @@ def _safe_component(
     if isinstance(value.get("truncated"), bool):
         selected["truncated"] = value["truncated"]
     return selected
+
+
+def _safe_drift_diagnostics(
+    value: Mapping[str, Any], operation_id: str
+) -> dict[str, Any] | None:
+    diagnostics = value.get("drift_diagnostics")
+    if not isinstance(diagnostics, Mapping):
+        return None
+    if diagnostics.get("schema_version") != "gravity-insight.drift-diagnostics.v1":
+        return None
+    warning_counts = _safe_drift_warning_counts(diagnostics.get("warning_counts"))
+    if warning_counts is None:
+        return None
+    evidence = diagnostics.get("evidence")
+    if not isinstance(evidence, Mapping) or evidence.get("operation_id") != operation_id:
+        return None
+    selected_evidence: dict[str, Any] = {
+        "operation_id": operation_id,
+        "required_evidence": "maintainer_live_probe",
+    }
+    fingerprint = _safe_contract_fingerprint(
+        evidence.get("contract_schema_fingerprint")
+    )
+    if fingerprint is not None:
+        selected_evidence["contract_schema_fingerprint"] = fingerprint
+    return {
+        "schema_version": "gravity-insight.drift-diagnostics.v1",
+        "warning_counts": warning_counts,
+        "evidence": selected_evidence,
+    }
+
+
+def _safe_drift_warning_counts(value: Any) -> list[dict[str, Any]] | None:
+    if not isinstance(value, list) or len(value) > 8:
+        return None
+    selected: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for item in value:
+        normalized = _safe_drift_warning_count(item, seen)
+        if normalized is None:
+            return None
+        seen.add(normalized["class"])
+        selected.append(normalized)
+    return selected
+
+
+def _safe_drift_warning_count(
+    value: Any, seen: set[str]
+) -> dict[str, Any] | None:
+    if not isinstance(value, Mapping):
+        return None
+    allowed_classes = {
+        "unregistered_list_item_keys",
+        "unregistered_response_data_item_keys",
+    }
+    warning_class, count = value.get("class"), value.get("count")
+    if not isinstance(warning_class, str) or warning_class not in allowed_classes:
+        return None
+    if warning_class in seen or type(count) is not int or not 0 <= count <= 1_000_000:
+        return None
+    return {"class": warning_class, "count": count}
+
+
+def _safe_contract_fingerprint(value: Any) -> str | None:
+    if (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value)
+    ):
+        return value
+    return None
 
 
 def _safe_page(value: Any) -> dict[str, Any] | None:

@@ -1537,6 +1537,81 @@ class GravityInsightCoreTests(unittest.TestCase):
         )
         self.assertNotIn("multi_keys", transport.calls[1][2]["body"])
 
+    def test_multidim_reviewed_implicit_metric_dependencies_are_omitted(self):
+        multidim = repository_manifest(
+            "report.multidim.metric.list",
+            "report.multidim.query",
+        )
+        metadata = {
+            "code": 0,
+            "data": {
+                "list": [
+                    {
+                        "name": "multi_day_revenue",
+                        "tag_ids": [],
+                        "exclusion_dims": [],
+                    }
+                ],
+                "page_info": {"page": 1, "page_size": 20, "total_page": 1},
+            },
+        }
+        horizons = (2, 3, 7, 14, 30)
+        requested = {
+            f"multi_day_revenue_{horizon}": float(horizon)
+            for horizon in horizons
+        }
+        implicit = {
+            "ad_1day_amount": 1.0,
+            "standard_1day_pay_amount": 2.0,
+            **{
+                f"multi_day_ad_amount_{horizon}": float(horizon)
+                for horizon in horizons
+            },
+            **{
+                f"multi_day_pay_amount_{horizon}": float(horizon)
+                for horizon in horizons
+            },
+        }
+        business = {
+            "code": 0,
+            "data": {
+                "list": [
+                    {"stat_time": "2026-07-01", **requested, **implicit}
+                ],
+                "total": {"stat_time": "-", **requested, **implicit},
+                "page_info": {"page": 1, "page_size": 1, "total_page": 1},
+            },
+        }
+        inputs = {
+            "time_dims": "day",
+            "date_list": ["2026-07-01", "2026-07-01"],
+            "data_dims": [],
+            "metrics_list": ["multi_day_revenue"],
+            "multi_keys": list(horizons),
+            "page": 1,
+            "page_size": 1,
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            client, _transport = client_for(
+                Path(directory),
+                [FakeResponse(metadata), FakeResponse(business)],
+                operation_manifest=multidim,
+            )
+            result = client.read("report.multidim.query", inputs)
+
+        self.assertEqual("success", result["status"])
+        self.assertEqual(
+            {"stat_time": "2026-07-01", **requested},
+            result["data"]["list"][0],
+        )
+        self.assertEqual(
+            {"stat_time": "-", **requested},
+            result["data"]["total"],
+        )
+        self.assertFalse(
+            any("unregistered" in warning for warning in result["warnings"])
+        )
+
     def test_calc_total_data_rows_are_field_controlled_before_network(self):
         calc_only = repository_manifest(
             "report.multidim.query", "report.multidim.calc_total"

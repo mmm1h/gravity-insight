@@ -1,0 +1,84 @@
+{
+  "schema_version": "gravity-insight.probe-evidence.v1",
+  "operation_id": "report.multidim.query",
+  "route": {
+    "method": "POST",
+    "path": "/report/api/v3/adreport/custom_get/",
+    "family": "report.multidim.query"
+  },
+  "probed_at": "2026-08-13T04:31:40Z",
+  "conclusion": "contract_changed_additive_classified",
+  "successful": false,
+  "http": [
+    {
+      "http_status": 200,
+      "method": "POST",
+      "operation_id": "report.multidim.query",
+      "path": "/report/api/v3/adreport/custom_get/",
+      "purpose": "issue_10_shape_probe",
+      "raw_schema_fingerprint": "1bbf9a95ea87c0624d2807b17f4dfffc04422325ac966ad4cfb2b97a8d9086f0",
+      "request_scope": {
+        "app_bound": true,
+        "date_days": 1,
+        "media_bound": true,
+        "metric_count": 7,
+        "multi_day_count": 5,
+        "page": 1,
+        "page_size": 1
+      },
+      "projected_status": "contract_changed_additive",
+      "projected_warning_counts": [
+        {
+          "class": "unregistered_list_item_keys",
+          "count": 12
+        },
+        {
+          "class": "unregistered_response_data_item_keys",
+          "count": 12
+        }
+      ]
+    }
+  ],
+  "raw_schema_fingerprint": "1bbf9a95ea87c0624d2807b17f4dfffc04422325ac966ad4cfb2b97a8d9086f0",
+  "projected_schema_fingerprint": null,
+  "pagination": {
+    "verified": false,
+    "kind": "page_info"
+  },
+  "observed_additive_fields": {
+    "containers": [
+      "data.list[]",
+      "data.total"
+    ],
+    "types": [
+      "number"
+    ],
+    "fields": [
+      "ad_1day_amount",
+      "standard_1day_pay_amount",
+      "multi_day_ad_amount_2",
+      "multi_day_ad_amount_3",
+      "multi_day_ad_amount_7",
+      "multi_day_ad_amount_14",
+      "multi_day_ad_amount_30",
+      "multi_day_pay_amount_2",
+      "multi_day_pay_amount_3",
+      "multi_day_pay_amount_7",
+      "multi_day_pay_amount_14",
+      "multi_day_pay_amount_30"
+    ]
+  },
+  "privacy": {
+    "classification": "aggregate_metric_dependencies",
+    "review": "non_sensitive_safe_omission",
+    "reason": "The fields are numeric IAP and advertising revenue components automatically returned for requested aggregate revenue and LTV metrics; no identifier, free text, or user-level value is present.",
+    "expose": false
+  },
+  "request_stats": {
+    "total": 2,
+    "failed": 0,
+    "backoff_terminations": 0,
+    "request_limit": 12,
+    "minimum_interval_ms": 310
+  }
+}

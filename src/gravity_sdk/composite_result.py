@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import re
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -28,6 +29,17 @@ _STATUS_CODES = {
 }
 _KNOWN_CODES = frozenset(item.value for item in ErrorCode)
 _CATEGORIES = frozenset(item.value for item in ErrorCategory)
+_DRIFT_WARNING_PATTERN = re.compile(
+    r"^(?P<label>"
+    r"unregistered list item keys|"
+    r"unregistered response data item keys"
+    r") were omitted \(count=(?P<count>[0-9]{1,7})\)$"
+)
+_DRIFT_WARNING_CLASSES = {
+    "unregistered list item keys": "unregistered_list_item_keys",
+    "unregistered response data item keys": "unregistered_response_data_item_keys",
+}
+_MAX_DRIFT_WARNING_COUNT = 1_000_000
 
 
 def should_calculate_total(query: Mapping[str, Any]) -> bool:
@@ -134,8 +146,11 @@ def _error_detail(
 
 
 def _next_action(status: str, code: str, category: object) -> str | None:
-    if status == "contract_changed":
-        return "Stop automation until the multidimensional contract is re-verified."
+    if status in _CONTRACT_STATUSES:
+        return (
+            "Stop automation, inspect the failed component's drift_diagnostics, "
+            "and re-verify the multidimensional contract."
+        )
     if code in {ErrorCode.AUTH_MISSING.value, ErrorCode.AUTH_REJECTED.value}:
         return "Run `gravity auth status`, then retry the same multidimensional request."
     if code not in _KNOWN_CODES and category == ErrorCategory.UPSTREAM.value:
@@ -190,7 +205,55 @@ def _safe_component(
     }
     if envelope.get("schema_version") == "gravity-insight.read.v1":
         selected["schema_version"] = envelope["schema_version"]
+    diagnostics = _safe_drift_diagnostics(envelope, operation_id=operation_id)
+    if diagnostics is not None:
+        selected["drift_diagnostics"] = diagnostics
     return selected
+
+
+def _safe_drift_diagnostics(
+    envelope: Mapping[str, Any], *, operation_id: str
+) -> dict[str, Any] | None:
+    if str(envelope.get("status", "")) not in _CONTRACT_STATUSES:
+        return None
+    warning_counts: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    warnings = envelope.get("warnings")
+    if isinstance(warnings, (list, tuple)):
+        for warning in warnings[:32]:
+            if not isinstance(warning, str):
+                continue
+            match = _DRIFT_WARNING_PATTERN.fullmatch(warning)
+            if match is None:
+                continue
+            warning_class = _DRIFT_WARNING_CLASSES[match.group("label")]
+            count = int(match.group("count"))
+            if warning_class in seen or count > _MAX_DRIFT_WARNING_COUNT:
+                continue
+            seen.add(warning_class)
+            warning_counts.append({"class": warning_class, "count": count})
+    evidence: dict[str, Any] = {
+        "operation_id": operation_id,
+        "required_evidence": "maintainer_live_probe",
+    }
+    fingerprint = _safe_schema_fingerprint(envelope.get("schema_fingerprint"))
+    if fingerprint is not None:
+        evidence["contract_schema_fingerprint"] = fingerprint
+    return {
+        "schema_version": "gravity-insight.drift-diagnostics.v1",
+        "warning_counts": warning_counts,
+        "evidence": evidence,
+    }
+
+
+def _safe_schema_fingerprint(value: Any) -> str | None:
+    if (
+        isinstance(value, str)
+        and len(value) == 64
+        and all(character in "0123456789abcdef" for character in value)
+    ):
+        return value
+    return None
 
 
 def _safe_page(value: Any) -> dict[str, Any] | None:

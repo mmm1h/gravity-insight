@@ -1,0 +1,71 @@
+{
+  "schema_version": "gravity-insight.probe-evidence.v1",
+  "operation_id": "report.multidim.query",
+  "route": {
+    "method": "POST",
+    "path": "/report/api/v3/adreport/custom_get/",
+    "family": "report.multidim.query"
+  },
+  "probed_at": "2026-08-13T04:40:14Z",
+  "conclusion": "success",
+  "successful": true,
+  "public_product": {
+    "schema_version": "gravity-insight.composite.multidim.v1",
+    "input_schema_version": "gravity-insight.multidim-input.v1",
+    "status": "success",
+    "exit_code": 0,
+    "query": {
+      "status": "success",
+      "row_count": 31,
+      "expected_field_count": 16,
+      "missing_expected_field_count": 0,
+      "truncated": false,
+      "has_more": false,
+      "schema_fingerprint": "e10701f173ccc80ad2f6c7525ed62c708a23553f66c88502bfa634a4df21ae0f"
+    }
+  },
+  "probe_scope": {
+    "app_bound": true,
+    "date_days": 31,
+    "media_bound": true,
+    "metric_count": 7,
+    "multi_day_count": 5,
+    "read_all": true,
+    "max_items": 5000,
+    "max_workers": 1
+  },
+  "expected_fields": [
+    "stat_time",
+    "ap_cost",
+    "standard_activate_cnt",
+    "standard_24h_pay_amount",
+    "ad_24h_amount",
+    "revenue_1day",
+    "multi_day_revenue_2",
+    "multi_day_revenue_3",
+    "multi_day_revenue_7",
+    "multi_day_revenue_14",
+    "multi_day_revenue_30",
+    "multi_day_ltv_2",
+    "multi_day_ltv_3",
+    "multi_day_ltv_7",
+    "multi_day_ltv_14",
+    "multi_day_ltv_30"
+  ],
+  "privacy": {
+    "classification": "aggregate_schema_receipt",
+    "raw_values_persisted": false,
+    "user_level_output_persisted": false
+  },
+  "pagination": {
+    "verified": true,
+    "kind": "page_info"
+  },
+  "request_stats": {
+    "total": 2,
+    "failed": 0,
+    "backoff_terminations": 0,
+    "request_limit": 12,
+    "minimum_interval_ms": 310
+  }
+}

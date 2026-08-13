@@ -314,6 +314,65 @@ class MultidimSurfaceTests(unittest.TestCase):
                 )
                 self.assertEqual("upstream", result["error"]["category"])
 
+    def test_multidim_additive_failure_preserves_only_bounded_drift_counts(self):
+        fingerprint = "a" * 64
+        result = multidim_envelope(
+            VALIDATION,
+            {
+                "schema_version": "gravity-insight.read.v1",
+                "operation_id": "report.multidim.query",
+                "ok": False,
+                "status": "contract_changed_additive",
+                "schema_fingerprint": fingerprint,
+                "warnings": [
+                    "unregistered list item keys were omitted (count=12)",
+                    "unregistered response data item keys were omitted (count=12)",
+                    "untrusted detail token=secret",
+                ],
+                "data": {"list": [{"private": "token=secret"}]},
+            },
+            None,
+            query_operation="report.multidim.query",
+            total_operation="report.multidim.calc_total",
+        )
+
+        self.assertEqual("contract_changed", result["status"])
+        self.assertEqual(3, result["exit_code"])
+        self.assertEqual(
+            {
+                "schema_version": "gravity-insight.drift-diagnostics.v1",
+                "warning_counts": [
+                    {"class": "unregistered_list_item_keys", "count": 12},
+                    {
+                        "class": "unregistered_response_data_item_keys",
+                        "count": 12,
+                    },
+                ],
+                "evidence": {
+                    "operation_id": "report.multidim.query",
+                    "required_evidence": "maintainer_live_probe",
+                    "contract_schema_fingerprint": fingerprint,
+                },
+            },
+            result["query"]["drift_diagnostics"],
+        )
+        self.assertNotIn("token=secret", repr(result))
+        self.assertIn("drift_diagnostics", result["next_action"])
+
+        product = {
+            **result,
+            "app_id": "17",
+            "network_called": True,
+            "query_executed": True,
+            "input_schema_version": "gravity-insight.multidim-input.v1",
+        }
+        plan_safe = sanitize_multidim_result(product, "17")
+        self.assertEqual(
+            result["query"]["drift_diagnostics"],
+            plan_safe["query"]["drift_diagnostics"],
+        )
+        self.assertNotIn("token=secret", repr(plan_safe))
+
     def test_plan_projector_rejects_top_success_with_failed_component(self):
         native = {
             "schema_version": "gravity-insight.composite.multidim.v1",

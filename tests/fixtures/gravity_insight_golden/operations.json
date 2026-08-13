@@ -29369,7 +29369,7 @@
       "action": "list",
       "auth_profile": "gravity_authorization",
       "block_reason": null,
-      "contract_version": "1",
+      "contract_version": "2",
       "description": "执行已登记维度、指标和时间窗口的多维报表查询；支持受控关键日展开，并返回请求指标的数字后缀动态列。",
       "domain": "report",
       "executable": true,
@@ -29808,9 +29808,37 @@
           "date",
           "stat_time"
         ],
-        "known_omitted_data_item_keys": {},
+        "known_omitted_data_item_keys": {
+          "total": [
+            "ad_1day_amount",
+            "standard_1day_pay_amount",
+            "multi_day_ad_amount_2",
+            "multi_day_ad_amount_3",
+            "multi_day_ad_amount_7",
+            "multi_day_ad_amount_14",
+            "multi_day_ad_amount_30",
+            "multi_day_pay_amount_2",
+            "multi_day_pay_amount_3",
+            "multi_day_pay_amount_7",
+            "multi_day_pay_amount_14",
+            "multi_day_pay_amount_30"
+          ]
+        },
         "known_omitted_data_keys": [],
-        "known_omitted_item_keys": [],
+        "known_omitted_item_keys": [
+          "ad_1day_amount",
+          "standard_1day_pay_amount",
+          "multi_day_ad_amount_2",
+          "multi_day_ad_amount_3",
+          "multi_day_ad_amount_7",
+          "multi_day_ad_amount_14",
+          "multi_day_ad_amount_30",
+          "multi_day_pay_amount_2",
+          "multi_day_pay_amount_3",
+          "multi_day_pay_amount_7",
+          "multi_day_pay_amount_14",
+          "multi_day_pay_amount_30"
+        ],
         "known_omitted_nested_item_keys": {},
         "nested_item_keys": {},
         "numeric_paths": [],
