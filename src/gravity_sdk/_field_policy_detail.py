@@ -15,6 +15,7 @@ from ._field_policy_metadata import (
 from ._field_policy_operations import (
     ANALYSIS_EVENT,
     ANALYSIS_EVENT_PROPERTY,
+    ANALYSIS_MONETIZATION_DETAIL,
     ANALYSIS_ORDER_DETAIL,
     ANALYSIS_SEGMENT,
     ANALYSIS_SEGMENT_HISTORY,
@@ -34,8 +35,14 @@ from ._field_policy_shared import (
     validate_scalar_list,
 )
 from ._order_read import STATIC_ORDER_FIELD_PROFILES
+from .monetization_detail import validate_monetization_operation_request
 from .errors import InputValidationError
 from .models import OperationSpec
+
+
+_STATIC_DETAIL_FIELD_PROFILES = {
+    ANALYSIS_ORDER_DETAIL: STATIC_ORDER_FIELD_PROFILES,
+}
 
 
 @dataclass(frozen=True)
@@ -55,7 +62,10 @@ def validate_analysis_detail(
     app_id = _validate_app_id(inputs.get("app_id"))
     if operation.operation_id == ANALYSIS_USER_EVENT:
         _validate_user_event_contract(inputs)
-    if _static_order_product_request(operation, inputs):
+    if operation.operation_id == ANALYSIS_MONETIZATION_DETAIL:
+        validate_monetization_operation_request(operation, inputs)
+        return
+    if _static_detail_product_request(operation, inputs):
         parse_iso_calendar_date(inputs.get("date"), "date")
         _validate_selected_fields(
             inputs.get("fields", ()), set(operation.response_projection.item_keys)
@@ -81,25 +91,30 @@ def validate_analysis_detail(
         )
 
 
-def _static_order_product_request(
+def _static_detail_product_request(
     operation: OperationSpec, inputs: Mapping[str, Any]
 ) -> bool:
-    """Skip metadata only for one of the exact static order product reads."""
+    """Skip metadata only for an exact governed product field profile."""
 
     fields = inputs.get("fields")
+    profiles = _STATIC_DETAIL_FIELD_PROFILES.get(operation.operation_id, ())
     return bool(
-        operation.operation_id == ANALYSIS_ORDER_DETAIL
-        and isinstance(fields, (list, tuple))
+        isinstance(fields, (list, tuple))
         and all(isinstance(field, str) for field in fields)
-        and frozenset(fields) in STATIC_ORDER_FIELD_PROFILES
         and len(fields) == len(set(fields))
+        and frozenset(fields) in profiles
         and inputs.get("date") not in (None, "")
         and type(inputs.get("page", 1)) is int
         and inputs.get("page", 1) >= 1
         and inputs.get("page_size", 20) == 100
         and all(
             inputs.get(name) in (None, (), [])
-            for name in ("global_conditions", "order_conditions", "order_by_list")
+            for name in (
+                "global_conditions",
+                "local_conditions",
+                "order_conditions",
+                "order_by_list",
+            )
         )
         and inputs.get("user_cond_logic", "AND") == "AND"
         and inputs.get("order_cond_logic", "AND") == "AND"

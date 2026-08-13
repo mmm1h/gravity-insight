@@ -817,33 +817,19 @@ def _analysis_order_detail_request_parts(
 _MONETIZATION_BASE_FIELDS = (
     "CreateTime",
     "AdEventTime",
-    "ClientID",
     "AdPlatform",
-    "TurboPromotedObjectID",
     "AdvertiserID",
     "AdAid",
-    "event$ecpm",
+    "TurboPromotedObjectID",
     "event$ad_type",
     "event$adn_type",
-    "user$ad_count",
-    "user$ad_avg_ecpm",
-    "user$ad_ltv",
-)
-_MONETIZATION_PROFILE_FIELDS: Mapping[str, tuple[str, ...]] = MappingProxyType(
-    {
-        "base": (),
-        "miniapp": ("event$ad_unit_id",),
-        "mobile": (
-            "event$ad_through",
-            "event$ad_source_id",
-            "event$ad_placement_id",
-        ),
-        "quickapp": (
-            "event$ad_unit_id",
-            "event$ad_through",
-            "event$ad_source_id",
-        ),
-    }
+    "event$ad_unit_id",
+    "event$ad_through",
+    "event$ad_source_id",
+    "event$ad_placement_id",
+    "event$ecpm",
+    "samount",
+    "re_attribute_info",
 )
 
 
@@ -853,11 +839,7 @@ def _analysis_monetization_detail_request_parts(
     conditions = _analysis_conditions_with_optional_day(
         values, default_field="create_time", default_type="event"
     )
-    profile = values.get("field_profile", "base")
-    additions = _MONETIZATION_PROFILE_FIELDS.get(str(profile))
-    if additions is None:
-        raise PolicyViolation("monetization field profile is outside the allowlist")
-    fields = values.get("fields") or (*_MONETIZATION_BASE_FIELDS, *additions)
+    fields = values.get("fields") or _MONETIZATION_BASE_FIELDS
     body = {
         "query_id": _analysis_query_id(),
         "app_id": _wire_identifier(values.get("app_id"), "app_id"),

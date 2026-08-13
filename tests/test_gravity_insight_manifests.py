@@ -907,7 +907,6 @@ class GravityInsightManifestTests(unittest.TestCase):
         ]
         re_attribute_info = expected["analysis.order_detail.list"]["re_attribute_info"]
         expected["analysis.monetization_detail.list"] = {
-            "device_info": device_info,
             "re_attribute_info": re_attribute_info,
         }
         expected["analysis.user_detail.list"] = {
@@ -1121,7 +1120,6 @@ class GravityInsightManifestTests(unittest.TestCase):
                     "total": [
                         "CreateTime",
                         "AdEventTime",
-                        "ClientID",
                         "AdPlatform",
                         "TurboPromotedObjectID",
                         "AdvertiserID",
@@ -1134,6 +1132,7 @@ class GravityInsightManifestTests(unittest.TestCase):
                         "event$ad_through",
                         "event$ad_source_id",
                         "event$ad_placement_id",
+                        "re_attribute_info",
                     ]
                 },
                 "analysis.segment.detail": {

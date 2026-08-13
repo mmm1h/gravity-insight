@@ -31,7 +31,23 @@
       "input": {
         "app_id": "101",
         "date": "2026-08-08",
-        "field_profile": "mobile",
+        "fields": [
+          "CreateTime",
+          "AdEventTime",
+          "AdPlatform",
+          "AdvertiserID",
+          "AdAid",
+          "TurboPromotedObjectID",
+          "event$ad_type",
+          "event$adn_type",
+          "event$ad_unit_id",
+          "event$ad_through",
+          "event$ad_source_id",
+          "event$ad_placement_id",
+          "event$ecpm",
+          "samount",
+          "re_attribute_info"
+        ],
         "page": 2,
         "page_size": 3
       },
@@ -42,20 +58,19 @@
           "field_map": [
             "CreateTime",
             "AdEventTime",
-            "ClientID",
             "AdPlatform",
-            "TurboPromotedObjectID",
             "AdvertiserID",
             "AdAid",
-            "event$ecpm",
+            "TurboPromotedObjectID",
             "event$ad_type",
             "event$adn_type",
-            "user$ad_count",
-            "user$ad_avg_ecpm",
-            "user$ad_ltv",
+            "event$ad_unit_id",
             "event$ad_through",
             "event$ad_source_id",
-            "event$ad_placement_id"
+            "event$ad_placement_id",
+            "event$ecpm",
+            "samount",
+            "re_attribute_info"
           ],
           "global_conditions": [
             {
