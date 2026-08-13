@@ -12,6 +12,7 @@ from .draft_probe import probe_draft
 from .drafts import refresh_structured_blockers
 from .parameters import assemble_draft_parameters
 from .promotion import evaluate_gate, promote_drafts, save_draft
+from .read_semantics import assert_probe_operation_ids
 from .transport import RecordingSession, RequestDiscipline, build_runtime, sdk_parts
 
 
@@ -96,6 +97,16 @@ def select_parameter_reprobes(
             selected.append((source, row))
     selected.sort(key=lambda item: _parameter_priority(item[0]))
     return [str(item[0]["operation"]["operation_id"]) for item in selected], skipped
+
+
+def preflight_parameter_reprobes(
+    draft_root: Path = DRAFT_ROOT,
+) -> tuple[list[str], list[dict[str, Any]]]:
+    operation_ids, skipped = select_parameter_reprobes(draft_root)
+    if (draft_root / f"{DEVELOPER_APPLICATION_OPERATION}.json").is_file():
+        operation_ids.append(DEVELOPER_APPLICATION_OPERATION)
+    assert_probe_operation_ids(operation_ids, draft_root=draft_root)
+    return operation_ids, skipped
 
 
 def prune_missing_probe_references(
@@ -294,7 +305,7 @@ def run_parameter_reprobes(
     operation_ids, skipped = select_parameter_reprobes(draft_root)
     if (draft_root / f"{DEVELOPER_APPLICATION_OPERATION}.json").is_file():
         operation_ids.append(DEVELOPER_APPLICATION_OPERATION)
-    write_json(
+    assert_probe_operation_ids(operation_ids, draft_root=draft_root); write_json(
         report_root / "selection.json",
         {
             "parameter_targets": len(operation_ids) - int(DEVELOPER_APPLICATION_OPERATION in operation_ids),
@@ -519,5 +530,6 @@ __all__ = [
     "prune_missing_probe_references",
     "run_parameter_reprobes",
     "run_scoped_reprobes",
+    "preflight_parameter_reprobes",
     "select_parameter_reprobes",
 ]

@@ -17,6 +17,7 @@ from .probe_support import (
     relative, request_stats, resolve_inputs, semantic_success,
 )
 from .promotion import evaluate_gate, save_draft
+from .read_semantics import assert_probe_read_semantics
 from .transport import HttpObservation, RecordingSession, build_draft_client
 
 
@@ -387,7 +388,7 @@ def probe_draft(
     recording: RecordingSession, evidence_root: Path = EVIDENCE_ROOT,
     draft_root: Path = DRAFT_ROOT,
 ) -> dict[str, Any]:
-    assert_read_only_source(source)
+    assert_probe_read_semantics(source); assert_read_only_source(source)
     operation_id = str(source["operation"]["operation_id"])
     selected_family = family_id(source)
     start = len(recording.observations)

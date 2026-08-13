@@ -4,6 +4,15 @@
 
 ## 在线 probe
 
+- 在线入口先在本地证明目标具有读语义，再检查凭据或构造 transport。`POST` 路由如果唯一读证据是
+  census 的 `read_action_path_token`，默认以 `UNSUPPORTED/local`（CLI exit 4）失败关闭：路径词元
+  只说明名字像读，不能排除写操作。GET、`safe_http_method` 和
+  `route_registry:read_contract_not_verified` 不受这条弱证据闸门影响。
+- 人工确认只按精确的 `method + path` 放行，记录在
+  `src/gravity_sdk/contracts/routes/probe-read-confirmations.json`。每条必须包含 `reviewer`、
+  `reviewed_at`、`decision=confirmed_read`，以及至少一条带 `source/detail` 的静态控制流证据；
+  缺字段、重复记录、路径变化或确认文件损坏都失败关闭。确认前只读前端控制流、UI 文案和同作用域
+  调用链，不得用在线请求判断是否为写。
 - 先通过全部离线合同、测试、隐私和质量门禁。
 - 使用合同声明的最小 App、时间、页数和字段。
 - 不为“找非空结果”扩大到长时间窗或用户级全量读取。
@@ -33,3 +42,7 @@ Gravity 报表编辑态存在未保存状态保护。探测不得接管用户已
 - 需要扩大到原始用户级数据才能继续；
 - 重复认证失败、限流或合同漂移；
 - 用户页面存在未保存状态。
+
+2026-08-08 的 `analysis.setting.query` 三份 probe receipt 保留为不可变历史安全证据，不删除、不改写，
+也不计作读语义确认。该 draft 已以 `effect=mutation`、`mutation_route_not_read` 和
+`free_text_fail_closed` 标注；后续入口会在请求前由上述闸门拒绝。
