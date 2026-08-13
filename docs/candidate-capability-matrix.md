@@ -26,6 +26,28 @@
 | `attribution.attribution.query` | `draft` | 本轮 0 次请求；沿用既有 `semantic_error` 证据，无可用样本；分页为 `none`，本轮未复核；无父绑定。 | `request_parameters_required`、`response_schema_unverified` | 先从现有调用方或前端证据还原完整请求 body 合同，再做 1 次最小成功请求；没有请求合同前不做组合猜测。 |
 | `attribution.attribution_detail.query` | `draft` | 本轮 0 次请求，且无既有 live probe；无样本，分页未验证；无父绑定。 | `not_probed`、`pagination_unverified`、`request_binding_unverified`、`response_schema_unverified` | 必须先取得经批准的测试级标识来源、完整请求绑定和隐私边界；不得使用任意用户级设备标识。证据不足时保持不探测。 |
 
+## 2026-08-13 追加判定：数据表 schema 三条路由
+
+来自 F41（按表名/App 查数据表当前 schema、字段与版本详情）的离线取证。**本轮 0 次网络请求**，
+判定为证据不足，保持 fail-closed。
+
+| Operation | Status | 本轮请求与父绑定 | 精确 blocker | 下一步最小证据 |
+| --- | --- | --- | --- | --- |
+| `metadata.data_table.list` | `draft` | 0 次；既有样本为空；无父绑定。`POST /turbo_engine/api/v2/event_dim/data_table/list/`，body `app_id_list`/`name_like`/`page`/`page_size` 为中置信度前端证据 | `not_probed`、`response_schema_unverified`、`request_binding_unverified` | 取得 1 份**不依赖猜测 App 或表名**的非空 list 值无关 schema，证明 item 中 `table_id` 的键与类型 |
+| `metadata.data_table.detail` | `draft` | 0 次；父候选未解析，未发送 | `parent_resource_required`、`response_schema_unverified` | 由上一条的非空 list 提供 1 个候选，**仅在内存中**传入 1 次 detail |
+| `metadata.version_id_set.get` | `draft` | 0 次；未 probe；父候选未解析 | `not_probed`、`parent_resource_required`、`response_schema_unverified` | 同上父绑定成立后再发 1 次；`table_id` 类型与响应结构均未知 |
+
+三条关键结论：
+
+- **表名没有可信来源**，**App 归属也没有**。`app_id_list` 只是请求候选字段，
+  `related_prop[].app_id` 只是未验证的 detail 响应消费字段。
+- **"当前版本"的权威语义无法定义。** `using_version_id` 的字段名不足以证明语义，
+  且**不得按最大时间戳推断当前版本**。需要上游合同或前端控制流证据说明版本选定规则。
+- 候选父链看似 `list.data.list[].table_id → detail/version_id_set`，但 `list` 既有样本为空，
+  该输出路径未被证明，**不构成可信父绑定**。
+- 隐私：本轮无线上响应，因此**不能宣称响应无隐私风险**。`column_val_list` 等未知字段仍可能
+  承载业务值或用户级数据，继续默认隐藏。
+
 ## 本轮可复用结论
 
 - 六个列表操作已得到可复用的 `page_info` 分页证据：`report.masterkey_report_group.list`、`report.report.list`、`report.shared_to_me.list`、`app.project.list`、`app.user_auth.list`、`app.onelink.list`。
