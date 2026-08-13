@@ -70,6 +70,53 @@
   operation、请求行为和错误 code 均未改变，没有读能力损失。这是有意的破坏性行为变更——
   调用方需更新 exit-code 分支：`3` 表示换账号或申请权限，`4` 表示请求未发出、停止改输入重试。
 
+## 使用成本：参数化程度审计结论
+
+判据是**改一个参数要不要改代码**。20 个真实分析场景实撞（11 次 HTTP，无权限失败与合同漂移）：
+零成本 11 / 有成本可接受 4 / 需改代码 5。
+
+**底层参数化总体健康**，不需要通用化改造。日期窗、周月粒度、分组（≤20）、多指标（≤50 步）、
+AND/OR 条件、漏斗步数与窗口、留存 `offset`（1–365）、Multidim 常见指标维度都是改参数即可。
+留存 D7→D8 零开发，推广平台硬编码是 operation 合同必要绑定，推广指标用开放排除法——
+这三处均不计缺陷。
+
+**真实缺口只有一类：字段已在 operation 合同与 FieldPolicy 中登记，compact Spec 却没暴露。**
+调用方因此被迫从产品入口掉回手写 raw wire JSON，而该结构不自描述，Agent 无法机械填写。
+
+| kind | 未暴露字段 | 证据强度 |
+| --- | --- | --- |
+| Event | `custom_query_item_list` | 不足：最小公式样本上游 `semantic_error` |
+| Event | `return_hierarchy_list`、`split_event` | 静态：合同 + FieldPolicy + 单测 |
+| Retention | `query_item_before_after` | 静态：合同 + FieldPolicy + 单测 |
+| Funnel | 嵌套 `window.type=today` | 仅 FieldPolicy 接受 |
+| Scatter | 嵌套 `zone_type=dispersed` | 仅 FieldPolicy 接受 |
+
+补齐纪律：**先从生产 artifact 语料取形状**（模板与看板 artifact 是 Web 端产出的必定可用配置），
+取不到证据的 fail-closed 不暴露。逐字复用 FieldPolicy 已有结构直接编译，
+**不建通用公式 DSL、不接受任意表达式**。新字段必须有默认值且默认行为与现状完全一致。
+
+Funnel、Property、Scatter 顶层无差集；Property 本身没有日期窗，不算丢参。
+
+**已作废的结论**：审计曾把"Event 双窗口"列为头号缺口，该判定基于 `7d5bdb1`，
+早于跨期对比合并。`analysis query --compare-start/--compare-end` 已覆盖，
+**不要新增 `date_ranges`**——那会造出第二条语义重叠的路径。上游原生 `date_list`
+支持双窗口且 1 次请求即可（本轮在线证实），比现有两次查询+本地 delta 省一次请求，
+但这是优化不是缺陷，且 operation 硬上限为 2，三期以上只能客户端拼接。
+
+**三处单日限制均为上游已登记合同限制，不是产品阉割**：`analysis.order_detail.list`（订单目录、
+拆单追踪父链）与 `analysis.segment.uid_result.list` 都只有单数 `date`。7 天订单目录的正解是
+一个 Plan 放 7 个同层节点并发，不是串行启 7 次 CLI；结果按日期节点分开，不混成一个目录。
+
+**实现与文档不符（待修）**：最小空日订单读取实测 3 次 HTTP（用户属性目录 + 分群目录 + 订单
+查询），而文档承诺 `P`、`0 metadata`；7 天冷启动可能是 21 次而非 7 次。无动态
+fields/conditions/group 时应短路这两次 metadata 加载。该路径与变现明细共用 detail 字段策略层，
+须待 D27 合并后再动。跨进程 cache 是否已消除该开销未验证。
+
+**Multidim 使用成本**：`--start/--end/--time-dim/--metrics/--dimensions/--media/--multi-days`
+已覆盖常见变化，无需完整 JSON。仍需手写物理 JSON 的是 `filters[]`、`custom_metrics_list`、
+`relate_dims`。**多个扁平 filter 的 AND/OR 组合语义上游未经证明**，产品 schema 无 `filter_logic`；
+证明不了就只支持可确定语义的形态，不得假定默认值，更不得为此造通用布尔 DSL。
+
 ## 并发
 
 已有 28 条并发路径、7 种模型，底层受业务槽 24、SQL 槽 2、host 令牌桶与 429 cooldown 约束。
