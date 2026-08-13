@@ -138,11 +138,14 @@ def _origin_report(config: Mapping[str, Any]) -> dict[str, Any]:
         ("Filtering", "filter_shape_not_registered"),
         ("queryItemList", "formula_token_semantics_unproven"),
         ("groupBy", "group_mapping_unproven"),
+        ("groupByCreateTime", "time_group_mapping_unproven"),
+        ("filterCondition", "condition_combination_semantics_unproven"),
         ("splitEvent", "split_event_mapping_unproven"),
+        ("splitEventOtherData", "split_event_auxiliary_mapping_unproven"),
         ("compareList", "period_compare_owned_by_separate_capability"),
     )
     for field, reason in dispositions:
-        if origin.get(field) not in (None, [], {}):
+        if field in origin:
             quarantine.append(_quarantine(f"config.originParams.{field}", reason))
     for field in ("dateListFormModel", "date_extra_data"):
         if field in origin:

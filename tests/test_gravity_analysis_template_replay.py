@@ -129,7 +129,10 @@ class AnalysisTemplateReplayTests(unittest.TestCase):
                     "Filtering": [{"conditionList": []}],
                     "queryItemList": [{"formulaArr": []}],
                     "groupBy": [{"value": "field"}],
+                    "groupByCreateTime": {"value": "day"},
+                    "filterCondition": "and",
                     "splitEvent": [],
+                    "splitEventOtherData": {},
                     "compareList": [{"resultDate": ["start", "end"]}],
                     "dateListFormModel": {"resultDate": ["start", "end"]},
                     "date_extra_data": {"date": ["start", "end"]},
@@ -160,6 +163,10 @@ class AnalysisTemplateReplayTests(unittest.TestCase):
         self.assertEqual("capability_gap", result["status"])
         self.assertFalse(result["query_executed"])
         self.assertIn("config.originParams.queryItemList", fields)
+        self.assertIn("config.originParams.groupByCreateTime", fields)
+        self.assertIn("config.originParams.filterCondition", fields)
+        self.assertIn("config.originParams.splitEvent", fields)
+        self.assertIn("config.originParams.splitEventOtherData", fields)
         self.assertIn("config.originParams.compareList", fields)
         self.assertIn("period_compare_owned_by_separate_capability", reasons)
         self.assertEqual(1, catalog_read.call_count)
