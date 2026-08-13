@@ -13,6 +13,8 @@ from gravity_sdk.plan_analysis_adapter import (
 )
 from gravity_sdk.sdk import GravitySDK
 from gravity_sdk.workspace import load_workspace
+from gravity_sdk.agent_analysis import analysis_query_spec_cards
+from gravity_sdk.agent_handoff import attach_plan_node
 
 
 def spec():
@@ -111,6 +113,23 @@ class AnalysisPeriodCompareTests(unittest.TestCase):
         planned = execute_analysis_query_plan(sdk, request, context)
         self.assertEqual(("success", "calculated"),
                          (planned["status"], planned["delta"]["status"]))
+
+    def test_agent_card_requires_explicit_compare_dates_and_rejects_property(self):
+        ordinary = analysis_query_spec_cards(
+            "event analysis", domain="analysis", platform=None)[0]
+        self.assertNotIn("compare_start", ordinary["missing_inputs"])
+        card = analysis_query_spec_cards(
+            "event analysis period compare", domain="analysis", platform=None)[0]
+        self.assertEqual(["app", "spec", "compare_start", "compare_end"],
+                         card["missing_inputs"])
+        filled = {**card, "compare_start": "2026-08-01", "compare_end": "2026-08-07"}
+        request = attach_plan_node(filled, "compare periods")["plan_node"]["request"]
+        self.assertEqual(("2026-08-01", "2026-08-07"),
+                         (request["compare_start"], request["compare_end"]))
+        gap = analysis_query_spec_cards(
+            "property analysis period compare", domain="analysis", platform=None)[0]
+        self.assertEqual((False, "capability_gap"),
+                         (gap["plan_executable"], gap["execution_mode"]))
 
 if __name__ == "__main__":
     unittest.main()

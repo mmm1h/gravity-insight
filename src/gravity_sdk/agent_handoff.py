@@ -388,3 +388,19 @@ __all__ = [
     "unify_capability_candidates",
     "workspace_prefix",
 ]
+
+
+_plan_request_without_period_compare = _plan_request
+
+
+def _plan_request(
+    card: Mapping[str, Any], query: str, kind: str, selector: str
+) -> tuple[dict[str, Any], str]:
+    request, plan_kind = _plan_request_without_period_compare(
+        card, query, kind, selector
+    )
+    if kind == "analysis_query_spec":
+        for field in ("compare_start", "compare_end"):
+            if card.get(field) is not None:
+                request[field] = card[field]
+    return request, plan_kind

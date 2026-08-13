@@ -304,3 +304,68 @@ def _schema_argv(selected_kind: str | None) -> list[str]:
 
 
 __all__ = ["analysis_query_spec_cards"]
+
+
+def _with_period_compare(
+    card: dict[str, Any], selected_kind: str | None, compare_requested: bool
+) -> dict[str, Any]:
+    """Advertise the optional two-window mode without inventing date values."""
+
+    fields = card["input_schema"]
+    for name in ("compare_start", "compare_end"):
+        fields[name] = {
+            "type": "string",
+            "format": "date",
+            "required": False,
+            "paired_with": "compare_end" if name == "compare_start" else "compare_start",
+        }
+    card["optional_inputs"] = ["compare_start", "compare_end"]
+    card["period_compare"] = {
+        "schema_version": "gravity-insight.analysis-period-compare.v1",
+        "same_spec_required": True,
+        "explicit_windows_required": True,
+        "supported_kinds": ["event", "funnel", "retention", "scatter"],
+        "property_capability_gap": True,
+    }
+    if compare_requested:
+        card["required_inputs"].extend(card["optional_inputs"])
+        card["missing_inputs"].extend(card["optional_inputs"])
+        card["input_template"].update(
+            compare_start="<explicit-baseline-start-date>",
+            compare_end="<explicit-baseline-end-date>",
+        )
+        if selected_kind == "property":
+            card.update(
+                executable=False,
+                plan_executable=False,
+                execution_mode="capability_gap",
+                capability_gap=(
+                    "property Analysis has no governed date-window input"
+                ),
+            )
+    return card
+
+
+_analysis_card_without_period_compare = _analysis_card
+
+
+def _analysis_card(query: str, selected_kind: str | None) -> dict[str, Any]:
+    return _with_period_compare(
+        _analysis_card_without_period_compare(query, selected_kind),
+        selected_kind,
+        any(term in query.strip().casefold() for term in (
+            "period compare", "compare analysis periods", "compare last week",
+            "compare last month", "跨期对比", "对比上周", "对比上月",
+        )),
+    )
+
+
+_GENERIC_ALIASES = _GENERIC_ALIASES + (
+    "analysis period compare",
+    "compare analysis periods",
+    "compare last week",
+    "compare last month",
+    "跨期对比",
+    "对比上周",
+    "对比上月",
+)
