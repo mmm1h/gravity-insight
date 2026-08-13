@@ -65,53 +65,21 @@ def compare_analysis_periods(
             "property Analysis has no governed date-window input",
             network_called=False,
         )
+    options = {"workspace": workspace, "app": app}
     current = compile_query_spec(
-        selected_kind,
-        spec,
-        workspace=workspace,
-        app=app,
-        start=current_start,
-        end=current_end,
+        selected_kind, spec, start=current_start, end=current_end, **options
     )
     baseline = compile_query_spec(
-        selected_kind,
-        spec,
-        workspace=workspace,
-        app=app,
-        start=baseline_start,
-        end=baseline_end,
+        selected_kind, spec, start=baseline_start, end=baseline_end, **options
     )
     _same_spec(current.inputs, baseline.inputs)
     current, _ = validate_query_spec(
-        client,
-        selected_kind,
-        spec,
-        workspace=workspace,
-        app=app,
-        start=current_start,
-        end=current_end,
+        client, selected_kind, spec, start=current_start, end=current_end, **options
     )
     baseline, _ = validate_query_spec(
-        client,
-        selected_kind,
-        spec,
-        workspace=workspace,
-        app=app,
-        start=baseline_start,
-        end=baseline_end,
+        client, selected_kind, spec, start=baseline_start, end=baseline_end, **options
     )
-    requests = [
-        {
-            "operation_id": baseline.operation_id,
-            "request_id": "baseline",
-            "inputs": baseline.inputs,
-        },
-        {
-            "operation_id": current.operation_id,
-            "request_id": "current",
-            "inputs": current.inputs,
-        },
-    ]
+    requests = [_request("baseline", baseline), _request("current", current)]
     results = client.batch(requests, max_workers=max_workers, max_pages=1)
     ordered = _ordered(results)
     windows = {
@@ -126,6 +94,14 @@ def compare_analysis_periods(
         ),
     }
     return _envelope(selected_kind, baseline.inputs, windows)
+
+
+def _request(request_id: str, compiled: Any) -> dict[str, Any]:
+    return {
+        "operation_id": compiled.operation_id,
+        "request_id": request_id,
+        "inputs": compiled.inputs,
+    }
 
 
 def _envelope(
