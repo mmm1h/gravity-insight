@@ -65,23 +65,65 @@ chart-level `global_conditions`.
 
 ## Evidence And Decision
 
-The controlled live parent chain issued two requests: `app.list` returned
-`success`, then `analysis.dashboard.tree` returned `success` without a selectable
-Dashboard. The run stopped without issuing `analysis.dashboard.detail` or
-widening to another App. This is classified as an empty artifact sample, not a
-permission or contract failure.
+**Verdict: the merge rule cannot be proven from the available evidence.** This
+is not a partial proof of merge semantics. The evidence proves the request
+boundary, but none of the four candidate rules can be distinguished.
 
-The repository's immutable bundle snapshot identifies
-`Dashboard-DrzT0Orh.js` as 251654 bytes. A direct public download matched its
-recorded SHA-256 exactly. Its Dashboard call sites prove that page conditions
-are sent independently from chart fields: event and scatter send the compiled
-list as-is, property and retention remove event-scoped conditions, and funnel
-removes dimension-table conditions. The evidence does not prove how the server
-resolves a page condition that conflicts with a chart-level condition.
+The immutable bundle snapshot identifies `Dashboard-DrzT0Orh.js` as 251654
+bytes with SHA-256
+`6fc5339f29035a8aa08755e1ebfc482dd227c1c4511ff35c340dcc621ac48016`.
+The snapshot record is at
+`src/gravity_sdk/census/data/bundle-snapshot.json:1622`; three local census
+copies match both values. Complete call-site inspection shows that the
+frontend does not merge page conditions into chart conditions:
 
-Therefore D22 fails closed when `data.object.config.filter` is non-empty. Its
-value-free receipt reports source, presence, condition count,
-`application_status=blocked_unproven_merge`, and `merge_semantics=unproven`.
-The minimum next evidence is one controlled Web request with the same field in
-both page- and chart-level conditions plus an authoritative response or server
-contract that demonstrates the conflict rule. No merge priority is inferred.
+- event sends chart `global_conditions` / `global_cond_logic` and a separate
+  `dashboard_condition` in the same request (byte offset 60353);
+- scatter also sends the compiled Dashboard list unchanged (offset 120299);
+- property and retention remove event-scoped Dashboard conditions (offsets
+  77227 and 92742);
+- funnel removes Dashboard conditions backed by a dimension table (offset
+  109123); and
+- the shared HTTP wrapper passes the constructed body directly as Axios
+  `data` (`api-B9xDXL35.js`, offset 136461); no request interceptor rewrites
+  either condition field.
+
+The only other frontend `dashboard_condition` matches are generated OpenAPI
+response examples, not consumers. The published source-map URL returns HTTP
+404. Consequently any cross-field merge or precedence occurs after the request
+leaves the frontend, and the bundle cannot prove the server rule.
+
+The bounded artifact census covered all seven Apps visible to the current
+account. It issued two `app.list` GETs and seven Dashboard-tree GETs. All nine
+returned HTTP 200: six tree responses were valid but contained zero selectable
+Dashboards, while one tree response was classified `contract_changed`. No
+Dashboard detail, default favourite, chart query, pagination, retry, widened
+sample, or write was attempted. Local receipts and ignored working artifacts
+also contain no Dashboard with both condition sources populated.
+
+The counterexample matrix therefore remains unresolved:
+
+| Page condition | Chart condition | Proven request behavior | Effective server behavior |
+| --- | --- | --- | --- |
+| empty | empty | separate empty/default fields are sent | no conflict to classify |
+| empty | non-empty | chart field is preserved; Dashboard list is empty | no conflict to classify |
+| non-empty | empty | Dashboard field is preserved | unknown |
+| non-empty, different dimension | non-empty | both fields are sent separately | AND/OR/override unknown |
+| non-empty, same dimension | non-empty | both fields are sent separately | winner/replacement rule unknown |
+
+A production query probe was not sent. `analysis.event.query` is a proven read,
+but its stable request contract does not include `dashboard_condition`; offline
+validation rejects that field with `INPUT_INVALID` and `network_called=false`.
+Using a raw transport would bypass the governed SDK, while creating a
+conflicting artifact would violate the read-only boundary. The weak-POST
+read-semantics gate was not hit; the stable input-contract gate stopped this
+path first.
+
+Therefore D22 continues to fail closed when
+`data.object.config.filter` is non-empty. Its value-free receipt reports source,
+presence, condition count, `application_status=blocked_unproven_merge`, and
+`merge_semantics=unproven`. The minimum safe evidence is either a server
+contract for the two request fields, or a naturally existing Dashboard whose
+captured read-only request and authoritative result distinguish both a
+different-dimension case and a same-dimension conflict. One case alone cannot
+prove the full rule; no merge priority is inferred.
