@@ -122,26 +122,65 @@ def call_read(
     max_pages: int | None = None,
     max_items: int | None = None,
     max_workers: int | None = None,
+    forward_var_kwargs: bool = False,
 ) -> Any:
     effective_items = max_items if max_items is not None else limit
-    if not read_all and (max_pages is not None or effective_items is not None) and callable(
-        getattr(client, "read_limited", None)
-    ):
-        method = client.read_limited
-    else:
-        method = client.read_all if read_all or effective_items is not None else client.read
-    kwargs: dict[str, Any] = {}
-    parameters = inspect.signature(method).parameters
-    if max_pages is not None and "max_pages" in parameters:
-        kwargs["max_pages"] = max_pages
-    if effective_items is not None:
-        for name in ("limit", "max_items", "max_rows"):
-            if name in parameters:
-                kwargs[name] = effective_items
-                break
-    if max_workers is not None and "max_workers" in parameters:
-        kwargs["max_workers"] = max_workers
+    method = _read_method(client, read_all, max_pages, effective_items)
+    kwargs = _read_options(
+        method,
+        max_pages=max_pages,
+        max_items=effective_items,
+        max_workers=max_workers,
+        forward_var_kwargs=forward_var_kwargs,
+    )
     return method(operation_id, dict(inputs), **kwargs)
+
+
+def _read_method(
+    client: Any, read_all: bool, max_pages: int | None, max_items: int | None
+) -> Any:
+    bounded = max_pages is not None or max_items is not None
+    if not read_all and bounded and callable(getattr(client, "read_limited", None)):
+        return client.read_limited
+    return client.read_all if read_all or max_items is not None else client.read
+
+
+def _read_options(
+    method: Any,
+    *,
+    max_pages: int | None,
+    max_items: int | None,
+    max_workers: int | None,
+    forward_var_kwargs: bool,
+) -> dict[str, Any]:
+    parameters = inspect.signature(method).parameters
+    accepts_options = forward_var_kwargs and any(
+        parameter.kind is inspect.Parameter.VAR_KEYWORD
+        for parameter in parameters.values()
+    )
+    kwargs: dict[str, Any] = {}
+    if max_pages is not None and ("max_pages" in parameters or accepts_options):
+        kwargs["max_pages"] = max_pages
+    item_option = _item_option(parameters, max_items, accepts_options)
+    if item_option is not None:
+        name, value = item_option
+        kwargs[name] = value
+    if max_workers is not None and ("max_workers" in parameters or accepts_options):
+        kwargs["max_workers"] = max_workers
+    return kwargs
+
+
+def _item_option(
+    parameters: Mapping[str, inspect.Parameter],
+    value: int | None,
+    accepts_options: bool,
+) -> tuple[str, int] | None:
+    if value is None:
+        return None
+    for name in ("limit", "max_items", "max_rows"):
+        if name in parameters:
+            return name, value
+    return ("max_items", value) if accepts_options else None
 
 
 def call_batch(

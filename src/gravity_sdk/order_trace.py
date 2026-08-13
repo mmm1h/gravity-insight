@@ -3,16 +3,22 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from datetime import date as date_type, datetime
-import re
+from datetime import datetime
 from typing import Any
 
 from . import runtime
-from .composite_batch import validate_composite_bounds
+from ._order_read import (
+    TRACE_PARENT_FIELDS,
+    complete_order_rows,
+    false_or_absent,
+    ok_matches,
+    validate_order_read_request,
+)
 from .composite_catalog import stable_operation
 from .errors import ErrorCode, InputValidationError
 from .order_trace_result import (
     MAX_SPLIT_IDS,
+    SAFE_ROW_FIELDS,
     SCHEMA_VERSION,
     failure_from_native,
     failure_result,
@@ -28,11 +34,7 @@ PARENT_OPERATION_ID = stable_operation(
 CHILD_OPERATION_ID = stable_operation(
     "analysis", "order_split_detail", action="list"
 ).operation_id
-PARENT_FIELDS = (
-    "TraceID", "PayEventTime", "ClientID", "$split_trace_id_list",
-)
-MAX_WORKERS = 24
-_ISO_DATE = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
+PARENT_FIELDS = TRACE_PARENT_FIELDS
 _FAILURE_STATUSES = frozenset(
     {"error", "semantic_error", "unavailable", "parent_required", "permission_unavailable"}
 )
@@ -98,16 +100,16 @@ def validate_order_split_trace_request(
 ) -> tuple[str, str, str, int, int, int]:
     """Close every caller-owned value without constructing a client."""
 
-    app = _positive_app(app_id)
-    day = _canonical_date(date)
+    app, day, workers, pages, items = validate_order_read_request(
+        app_id,
+        date,
+        max_workers=max_workers,
+        max_pages=max_pages,
+        max_items=max_items,
+        product="order split trace",
+    )
     trace = _bounded_trace(trace_id)
-    if type(max_workers) is not int or not 1 <= max_workers <= MAX_WORKERS:
-        raise InputValidationError(
-            f"order split trace max_workers must be between 1 and {MAX_WORKERS}",
-            field="max_workers",
-        )
-    pages, items = validate_composite_bounds(max_pages, max_items, minimum_items=1)
-    return app, day, trace, max_workers, pages, items
+    return app, day, trace, workers, pages, items
 
 
 def _read_parent(
@@ -121,6 +123,7 @@ def _read_parent(
         value = runtime.call_read(
             client, PARENT_OPERATION_ID, inputs, read_all=True,
             max_pages=pages, max_items=items, max_workers=workers,
+            forward_var_kwargs=True,
         )
     except Exception as exc:
         return failure_from_native(
@@ -131,7 +134,7 @@ def _read_parent(
     if not isinstance(value, Mapping):
         return _contract_failure(app, day, 0, 0, pages, items, workers)
     status = value.get("status")
-    if not isinstance(status, str) or not _ok_matches(value.get("ok"), status):
+    if not isinstance(status, str) or not ok_matches(value.get("ok"), status):
         return _contract_failure(app, day, 0, 0, pages, items, workers)
     if status in _CONTRACT_STATUSES:
         return _contract_failure(app, day, 0, 0, pages, items, workers)
@@ -143,67 +146,28 @@ def _read_parent(
         )
     if status not in {"success", "empty"}:
         return _contract_failure(app, day, 0, 0, pages, items, workers)
-    rows = _complete_parent_rows(value, pages=pages, items=items, workers=workers)
-    if rows is None:
+    complete = complete_order_rows(
+        value,
+        operation_id=PARENT_OPERATION_ID,
+        max_pages=pages,
+        max_items=items,
+        max_workers=workers,
+        project_row=_trace_parent_row,
+    )
+    if complete is None:
         return _contract_failure(app, day, 0, 0, pages, items, workers)
+    rows, _page = complete
     return rows, len(rows)
 
 
-def _complete_parent_rows(
-    value: Mapping[str, Any], *, pages: int, items: int, workers: int
-) -> list[Mapping[str, Any]] | None:
+def _trace_parent_row(value: Any) -> Mapping[str, Any] | None:
     if (
-        value.get("schema_version") != "gravity-insight.read.v1"
-        or value.get("operation_id") != PARENT_OPERATION_ID
-        or value.get("error") not in (None, {})
-        or not _false_or_absent(value.get("truncated"))
-        or value.get("next_page_input") not in (None, {})
+        not isinstance(value, Mapping)
+        or set(value) - set(PARENT_FIELDS)
+        or not _trace_value(value.get("TraceID"))
     ):
         return None
-    data = value.get("data")
-    rows = data.get("list") if isinstance(data, Mapping) else None
-    if not isinstance(rows, list) or len(rows) > items:
-        return None
-    if any(
-        not isinstance(row, Mapping) or not _trace_value(row.get("TraceID"))
-        for row in rows
-    ):
-        return None
-    if (value.get("status") == "empty") != (not rows):
-        return None
-    if not _complete_page(value.get("page"), len(rows), pages=pages, workers=workers):
-        return None
-    return rows
-
-
-def _complete_page(value: Any, count: int, *, pages: int, workers: int) -> bool:
-    if not isinstance(value, Mapping):
-        return False
-    fetched = value.get("pages_fetched")
-    total_pages = value.get("total_pages")
-    total_items = value.get("total_items")
-    exact = (
-        value.get("item_count"), value.get("max_workers"),
-        value.get("number"), value.get("size"),
-    )
-    return bool(
-        all(type(item) is int for item in exact)
-        and exact == (count, workers, 1, 100)
-        and type(fetched) is int and 1 <= fetched <= pages
-        and value.get("has_more") is False
-        and _complete_page_total(total_pages, fetched, count)
-        and _complete_item_total(total_items, count)
-    )
-
-
-def _complete_page_total(value: Any, fetched: int, count: int) -> bool:
-    return value is None or type(value) is int and (
-        value == fetched or not count and value in {0, 1}
-    )
-
-
-def _complete_item_total(value: Any, count: int) -> bool:
-    return value is None or type(value) is int and value == count
+    return dict(value)
 
 
 def _child_inputs(row: Mapping[str, Any], app: str) -> dict[str, Any] | None:
@@ -252,7 +216,7 @@ def _read_child(
             parent_stage="success", child_stage="contract_changed",
         )
     status = value.get("status")
-    if not isinstance(status, str) or not _ok_matches(value.get("ok"), status):
+    if not isinstance(status, str) or not ok_matches(value.get("ok"), status):
         return _contract_failure(
             app, day, scanned, len(split_ids), pages, items, workers,
             parent_stage="success", child_stage="contract_changed",
@@ -307,7 +271,7 @@ def _safe_child_rows(
         or value.get("operation_id") != CHILD_OPERATION_ID
         or value.get("error") not in (None, {})
         or value.get("page") is not None
-        or not _false_or_absent(value.get("truncated"))
+        or not false_or_absent(value.get("truncated"))
         or value.get("next_page_input") is not None
     ):
         return None
@@ -333,7 +297,7 @@ def _safe_child_row(
     observed: set[str],
     sensitive: tuple[str, ...],
 ) -> tuple[str, dict[str, Any]] | None:
-    fields = ("Amount", "BackAmount", "Status", "CreateTime")
+    fields = SAFE_ROW_FIELDS
     if not isinstance(value, Mapping) or set(value) - {"TraceID", *fields}:
         return None
     identity = _trace_value(value.get("TraceID"))
@@ -366,32 +330,6 @@ def _contract_failure(
         max_pages=pages, max_items=items, max_workers=workers,
         parent_stage=parent_stage, child_stage=child_stage,
     )
-
-
-def _positive_app(value: Any) -> str:
-    if isinstance(value, bool) or not isinstance(value, (str, int)):
-        raise _input("app_id", "positive")
-    if type(value) is int and value.bit_length() > 512:
-        raise _input("app_id", "positive")
-    rendered = str(value).strip()
-    if (
-        not rendered or len(rendered) > 128 or not rendered.isascii()
-        or not rendered.isdecimal() or int(rendered) <= 0
-    ):
-        raise _input("app_id", "positive")
-    return str(int(rendered))
-
-
-def _canonical_date(value: Any) -> str:
-    if not isinstance(value, str) or not _ISO_DATE.fullmatch(value):
-        raise _input("date", "use YYYY-MM-DD")
-    try:
-        parsed = date_type.fromisoformat(value)
-    except ValueError:
-        raise _input("date", "use YYYY-MM-DD") from None
-    if parsed.isoformat() != value:
-        raise _input("date", "use YYYY-MM-DD")
-    return value
 
 
 def _bounded_trace(value: Any) -> str:
@@ -440,16 +378,6 @@ def _contains_sensitive(value: Any, sensitive: tuple[str, ...]) -> bool:
     if not isinstance(value, str):
         return False
     return any(secret == value or len(secret) >= 4 and secret in value for secret in sensitive)
-
-
-def _false_or_absent(value: Any) -> bool:
-    return value is None or type(value) is bool and value is False
-
-
-def _ok_matches(value: Any, status: str) -> bool:
-    if value is None:
-        return True
-    return value is True if status in {"success", "empty"} else value is False
 
 
 def _input(field: str, requirement: str) -> InputValidationError:

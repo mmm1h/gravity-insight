@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import copy
-import math
 from collections.abc import Mapping
 from datetime import date as date_type
 from typing import Any
 
+from ._order_read import finite_json_scalar
 from .errors import ErrorCode, ErrorDetail, exit_code_for_error
 
 
@@ -445,7 +445,7 @@ def _validated_stages(value: Any) -> dict[str, str] | None:
 def _safe_row(value: Any) -> dict[str, Any] | None:
     if not isinstance(value, Mapping) or set(value) != set(SAFE_ROW_FIELDS):
         return None
-    if any(not _json_scalar(value[field]) for field in SAFE_ROW_FIELDS):
+    if any(not finite_json_scalar(value[field]) for field in SAFE_ROW_FIELDS):
         return None
     return {field: copy.deepcopy(value[field]) for field in SAFE_ROW_FIELDS}
 
@@ -455,16 +455,6 @@ def _required_safe_row(value: Any) -> dict[str, Any]:
     if selected is None:
         raise ValueError("order split trace safe row invariant failed")
     return selected
-
-
-def _json_scalar(value: Any) -> bool:
-    if value is None or isinstance(value, bool):
-        return True
-    if isinstance(value, str):
-        return len(value) <= 8_192
-    if type(value) is int:
-        return value.bit_length() <= 256
-    return isinstance(value, float) and math.isfinite(value)
 
 
 def _limits(max_pages: Any, max_items: Any, max_workers: Any) -> dict[str, int]:

@@ -33,6 +33,7 @@ from ._field_policy_shared import (
     validate_optional_label,
     validate_scalar_list,
 )
+from ._order_read import STATIC_ORDER_FIELD_PROFILES
 from .errors import InputValidationError
 from .models import OperationSpec
 
@@ -54,7 +55,7 @@ def validate_analysis_detail(
     app_id = _validate_app_id(inputs.get("app_id"))
     if operation.operation_id == ANALYSIS_USER_EVENT:
         _validate_user_event_contract(inputs)
-    if _static_order_trace_parent(operation, inputs):
+    if _static_order_product_request(operation, inputs):
         parse_iso_calendar_date(inputs.get("date"), "date")
         _validate_selected_fields(
             inputs.get("fields", ()), set(operation.response_projection.item_keys)
@@ -80,18 +81,18 @@ def validate_analysis_detail(
         )
 
 
-def _static_order_trace_parent(
+def _static_order_product_request(
     operation: OperationSpec, inputs: Mapping[str, Any]
 ) -> bool:
-    """Skip metadata only for the product's exact static parent request."""
+    """Skip metadata only for one of the exact static order product reads."""
 
-    expected = {"TraceID", "PayEventTime", "ClientID", "$split_trace_id_list"}
     fields = inputs.get("fields")
     return bool(
         operation.operation_id == ANALYSIS_ORDER_DETAIL
         and isinstance(fields, (list, tuple))
-        and len(fields) == len(expected)
-        and set(fields) == expected
+        and all(isinstance(field, str) for field in fields)
+        and frozenset(fields) in STATIC_ORDER_FIELD_PROFILES
+        and len(fields) == len(set(fields))
         and inputs.get("date") not in (None, "")
         and type(inputs.get("page", 1)) is int
         and inputs.get("page", 1) >= 1
