@@ -61,9 +61,16 @@
 
 ## Agent 可用性欠账
 
-- "未知 2 次"的承诺在 8 条路径上不成立（引用未知、物理指标未知、metadata 未同步、App 未知等
-  实际需要 3 次）。要么补齐路径，要么在卡上显式声明调用次数下界与输入来源。
-- 13 张固定 composite 卡的 7 对意图重叠已收口：集中层按现有 owner 的正向证据强度与 selector
+- "未知 2 次"旧盘点的临时审计表有 8 行，但把 Dashboard control/replay 两张卡合并成一行，
+  同时把执行后的 stale/parent/diagnostic 重试算成一行。按同一欠账类别口径，旧基线实际仍是
+  8 类正常路径；当前新增 Analysis Template 引用路径后为 9 类。逐卡展开时，当前 15 张 fixed
+  composite 均有 unknown-App 条件，另有泛 Analysis metadata 未同步路径；诊断重试是异常恢复，
+  不混入正常路径。Agent 卡与可复制 Plan 节点现以
+  `gravity.agent-call-bound.v1` 声明 required inputs 已知时的 1/2 次默认值，以及条件下界、发现调用数
+  和 CLI/SDK 输入来源；未知引用/物理输入为 3 次，App 依赖引用时为 4 次，metadata 未同步且 App
+  未知时最高 5 次。Multidim/Promotion 的独立目录可用现有 batch 合为一次发现调用，依赖关系仍
+  显式串行；这些路径均需调用方精确选择，未合并进执行请求，执行、并发和上游请求量均未改变。
+- 当时 13 张固定 composite 卡的 7 对意图重叠已收口：集中层按现有 owner 的正向证据强度与 selector
   精确度收集产品，命中多个产品即返回 `MULTIPLE_INTENTS`，不再搜索 raw operation。
   该判据不枚举产品对；显式 `and/以及/同时` 子句独立识别，wrapper 引用与历史紧邻冲突仍 fail closed。
 - 错误分类已对齐：permission 返回 upstream/3，本地 unsupported/policy/privacy 阻断返回 local/4；

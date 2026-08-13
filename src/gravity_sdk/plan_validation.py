@@ -33,14 +33,36 @@ _PLAN_FIELDS = frozenset({"schema_version", "nodes", "budget"})
 _NODE_FIELDS = frozenset(
     {
         "id", "kind", "request", "depends_on", "bindings", "foreach", "limits",
-        "output_fields",
+        "output_fields", "call_bound",
     }
 )
 _BUDGET_FIELDS = frozenset({"max_workers", "max_total_items"})
 _LIMIT_FIELDS = frozenset({"max_pages", "max_items"})
 _BINDING_FIELDS = frozenset({"from", "source", "target"})
 _FOREACH_FIELDS = frozenset({"from", "source", "target", "max_items"})
+_CALL_BOUND_FIELDS = frozenset(
+    {
+        "schema_version", "unit", "known_inputs", "unknown_capability",
+        "unknown_capability_assumes", "scenarios",
+    }
+)
+_CALL_BOUND_SCENARIO_FIELDS = frozenset(
+    {
+        "id", "minimum_calls", "discovery_calls", "unknown_inputs",
+        "input_sources", "selection", "catalog_status",
+    }
+)
+_CALL_BOUND_SOURCE_FIELDS = frozenset(
+    {
+        "inputs", "kind", "selector", "cli_argv", "sdk_method",
+        "depends_on_inputs", "depends_on_sources", "selectors",
+    }
+)
 _NODE_ID_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_.-]{0,63}$")
+_CALL_BOUND_ID_RE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
+_CALL_BOUND_SOURCE_KINDS = frozenset(
+    {"catalog_sync", "local_catalog", "upstream_catalog"}
+)
 
 
 def validate_plan(plan: Mapping[str, Any]) -> ValidatedPlan:
@@ -122,6 +144,7 @@ def validate_node(value: Any, index: int) -> PlanNode:
         raise invalid("output_fields must be non-empty strings", f"{field}.output_fields")
     if len(set(output_fields)) != len(output_fields):
         raise invalid("output_fields must be unique", f"{field}.output_fields")
+    validate_call_bound(value.get("call_bound"), f"{field}.call_bound")
     return PlanNode(
         node_id=node_id,
         kind=str(kind),
@@ -132,6 +155,150 @@ def validate_node(value: Any, index: int) -> PlanNode:
         limits=limits,
         output_fields=output_fields,
     )
+
+
+def validate_call_bound(value: Any, field: str) -> None:
+    """Validate the optional advisory contract without changing execution state."""
+
+    if value is None:
+        return
+    if not isinstance(value, Mapping):
+        raise invalid("call_bound must be an object", field)
+    reject_unknown(value, _CALL_BOUND_FIELDS, field)
+    if value.get("schema_version") != "gravity.agent-call-bound.v1":
+        raise invalid("call_bound schema_version is invalid", f"{field}.schema_version")
+    if value.get("unit") != "cli_or_sdk_invocation":
+        raise invalid("call_bound unit is invalid", f"{field}.unit")
+    for name in ("known_inputs", "unknown_capability"):
+        bounded_int(value.get(name), 1, 16, f"{field}.{name}")
+    if value.get("unknown_capability_assumes") != "required_inputs_known":
+        raise invalid(
+            "call_bound unknown_capability_assumes is invalid",
+            f"{field}.unknown_capability_assumes",
+        )
+    scenarios = value.get("scenarios")
+    if not _is_array(scenarios) or len(scenarios) > 16:
+        raise invalid("call_bound scenarios must be a bounded array", f"{field}.scenarios")
+    scenario_ids: set[str] = set()
+    for index, scenario in enumerate(scenarios):
+        scenario_id = validate_call_bound_scenario(
+            scenario, f"{field}.scenarios[{index}]"
+        )
+        if scenario_id in scenario_ids:
+            raise invalid("call_bound scenario ids must be unique", f"{field}.scenarios")
+        scenario_ids.add(scenario_id)
+    try:
+        validate_json(value)
+    except TypeError as exc:
+        raise invalid("call_bound must contain only JSON values", field) from exc
+
+
+def validate_call_bound_scenario(value: Any, field: str) -> str:
+    if not isinstance(value, Mapping):
+        raise invalid("call_bound scenarios must be objects", field)
+    reject_unknown(value, _CALL_BOUND_SCENARIO_FIELDS, field)
+    scenario_id = value.get("id")
+    if not isinstance(scenario_id, str) or not _CALL_BOUND_ID_RE.fullmatch(scenario_id):
+        raise invalid("call_bound scenario id is invalid", f"{field}.id")
+    minimum = bounded_int(value.get("minimum_calls"), 2, 16, f"{field}.minimum_calls")
+    discovery = bounded_int(
+        value.get("discovery_calls"), 0, 15, f"{field}.discovery_calls"
+    )
+    if minimum != discovery + 2:
+        raise invalid(
+            "call_bound minimum_calls must equal discovery_calls plus two",
+            f"{field}.minimum_calls",
+        )
+    unknown_inputs = call_bound_string_array(
+        value.get("unknown_inputs"), f"{field}.unknown_inputs"
+    )
+    if value.get("selection") != "caller_exact":
+        raise invalid("call_bound selection is invalid", f"{field}.selection")
+    if value.get("catalog_status") not in {"any", "available", "missing"}:
+        raise invalid(
+            "call_bound catalog_status is invalid", f"{field}.catalog_status"
+        )
+    sources = value.get("input_sources")
+    if not _is_array(sources) or not sources or len(sources) > 16:
+        raise invalid(
+            "call_bound input_sources must be a bounded non-empty array",
+            f"{field}.input_sources",
+        )
+    covered: set[str] = set()
+    selectors: set[str] = set()
+    for index, source in enumerate(sources):
+        source_inputs, selector, dependencies = validate_call_bound_source(
+            source, f"{field}.input_sources[{index}]"
+        )
+        if selector in selectors:
+            raise invalid(
+                "call_bound input source selectors must be unique",
+                f"{field}.input_sources[{index}].selector",
+            )
+        if not set(dependencies) <= selectors:
+            raise invalid(
+                "call_bound source dependency must precede the source",
+                f"{field}.input_sources[{index}].depends_on_sources",
+            )
+        selectors.add(selector)
+        covered.update(source_inputs)
+    if not set(unknown_inputs) <= covered:
+        raise invalid(
+            "call_bound input sources must cover every unknown input",
+            f"{field}.input_sources",
+        )
+    return scenario_id
+
+
+def validate_call_bound_source(
+    value: Any, field: str
+) -> tuple[tuple[str, ...], str, tuple[str, ...]]:
+    if not isinstance(value, Mapping):
+        raise invalid("call_bound input sources must be objects", field)
+    reject_unknown(value, _CALL_BOUND_SOURCE_FIELDS, field)
+    inputs = call_bound_string_array(value.get("inputs"), f"{field}.inputs")
+    if value.get("kind") not in _CALL_BOUND_SOURCE_KINDS:
+        raise invalid("call_bound input source kind is invalid", f"{field}.kind")
+    selector = value.get("selector")
+    if not isinstance(selector, str) or not selector.strip() or len(selector) > 256:
+        raise invalid("call_bound input source selector is invalid", f"{field}.selector")
+    cli_argv = call_bound_string_array(
+        value.get("cli_argv"), f"{field}.cli_argv", unique=False
+    )
+    if cli_argv[0] != "gravity":
+        raise invalid("call_bound cli_argv must invoke gravity", f"{field}.cli_argv")
+    sdk_method = value.get("sdk_method")
+    if not isinstance(sdk_method, str) or not sdk_method.strip() or len(sdk_method) > 256:
+        raise invalid("call_bound sdk_method is invalid", f"{field}.sdk_method")
+    selectors = value.get("selectors")
+    if selectors is not None:
+        call_bound_string_array(selectors, f"{field}.selectors")
+        if value.get("selector") != "gravity.batch.v1":
+            raise invalid(
+                "call_bound selectors require the batch selector",
+                f"{field}.selectors",
+            )
+    call_bound_string_array(
+        value.get("depends_on_inputs", []), f"{field}.depends_on_inputs", empty=True
+    )
+    dependencies = call_bound_string_array(
+        value.get("depends_on_sources", []), f"{field}.depends_on_sources", empty=True
+    )
+    return inputs, selector, dependencies
+
+
+def call_bound_string_array(
+    value: Any, field: str, *, empty: bool = False, unique: bool = True
+) -> tuple[str, ...]:
+    selected = string_array(value, field)
+    if (not empty and not selected) or len(selected) > 32:
+        raise invalid("call_bound string array has invalid length", field)
+    if (
+        any(not item.strip() or len(item) > 256 for item in selected)
+        or unique and len(set(selected)) != len(selected)
+    ):
+        raise invalid("call_bound string array contains invalid values", field)
+    return selected
 
 
 def validate_bindings(value: Any, field: str) -> tuple[Binding, ...]:

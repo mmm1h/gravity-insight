@@ -422,3 +422,27 @@ def _plan_request(
             if card.get(field) is not None:
                 request[field] = card[field]
     return request, plan_kind
+
+
+_attach_plan_node_without_call_bound = attach_plan_node
+
+
+def attach_plan_node(
+    card: Mapping[str, Any],
+    query: str,
+    *,
+    namespace: str | None = None,
+) -> dict[str, Any]:
+    """Attach the additive call-bound contract to both card and Plan handoff."""
+
+    from .agent_call_bound import call_bound_for_card
+
+    selected = _attach_plan_node_without_call_bound(
+        card, query, namespace=namespace
+    )
+    call_bound = call_bound_for_card(selected)
+    selected["call_bound"] = call_bound
+    node = selected.get("plan_node")
+    if isinstance(node, Mapping):
+        selected["plan_node"] = {**dict(node), "call_bound": copy.deepcopy(call_bound)}
+    return selected
