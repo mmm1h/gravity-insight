@@ -107,10 +107,12 @@ Funnel、Property、Scatter 顶层无差集；Property 本身没有日期窗，�
 拆单追踪父链）与 `analysis.segment.uid_result.list` 都只有单数 `date`。7 天订单目录的正解是
 一个 Plan 放 7 个同层节点并发，不是串行启 7 次 CLI；结果按日期节点分开，不混成一个目录。
 
-**实现与文档不符（待修）**：最小空日订单读取实测 3 次 HTTP（用户属性目录 + 分群目录 + 订单
-查询），而文档承诺 `P`、`0 metadata`；7 天冷启动可能是 21 次而非 7 次。无动态
-fields/conditions/group 时应短路这两次 metadata 加载。该路径与变现明细共用 detail 字段策略层，
-须待 D27 合并后再动。跨进程 cache 是否已消除该开销未验证。
+**detail 元数据成本已核清**：订单产品提交 `d1983c2` 已对精确固定 profile 短路，D27 的
+`ba01a3d` 也让变现固定 allowlist 直接本地校验。最小空日两者实测均为 1 POST、0 metadata，
+7 个同层订单节点为 7 POST。缓存仅进程内：raw 动态路径两个独立进程各 4 HTTP；同进程连续
+两次为 4+2，7 节点为 16（属性目录各 1、分群 7、订单 7）。旧审计的 3 HTTP 与其提交树已有
+fast path 矛盾，未保存的精确调用路径无法追溯；raw detail 的动态 fields/conditions/order 仍
+必须加载实时 metadata，未登记字段继续 fail closed。
 
 **Multidim 使用成本**：`--start/--end/--time-dim/--metrics/--dimensions/--media/--multi-days`
 已覆盖常见变化，无需完整 JSON。仍需手写物理 JSON 的是 `filters[]`、`custom_metrics_list`、
