@@ -234,14 +234,22 @@ fields/conditions/order 仍必须加载实时 metadata，未登记字段继续 f
 ### census 提取器的已知能力边界
 
 那两次未解析 load 卡在 `census/params.py` 的 `_infer_expression`：**无法内联函数调用**
-`Gt(...)`，随后被标为 `unresolved_body_expression`，导致 `body_parameters=[]`。
+`Gt(...)`，内存形状标为 `unresolved_body_expression`，导致 `body_parameters=[]`。
 同 route 另 3 个 occurrence 卡在条件 callee `(e===1?Ie:ze)(...)`，标记
-`load_alias_has_no_static_call`——该标记在 `route-params.json` 中出现 **97 次**，
-说明这是跨 route 的普遍边界，不是归因独有。
+`load_alias_has_no_static_call`。
 
-**这是提取器能力不足，不是源码动态隐藏**——区别重要：前者可修，后者不可。
-是否值得修取决于那 97 处里有多少落在排期动线上；**未统计前不要动提取器**，
-函数求值与条件 callee 支持不是窄修。
+**杠杆统计已完成，结论是不修。** 同一快照下，条件 alias 影响 97 条 route、123 个 occurrence；
+其中 49 条是写、23 条已覆盖、7 条 auth/proxy、1 条 export，只有 17 条未覆盖读。函数调用的
+`unresolved_body_expression` 影响 60 条 route、82 个 call site；45 条是写、7 条已覆盖、4 条 export、
+3 条 auth/proxy，唯一未覆盖读就是 D35。该 reason 只存在于内存 `_Shape`，序列化后折叠为
+`analysis.unresolved_calls` 计数，所以在 `route-params.json` 中 grep 为 0，并非 D35 结论错误。
+
+与台账交叉后，15 条完全缺失、12 条部分闭环中，**当前阻塞根因属于这两类提取失败的均为 0**。
+D35 的前端 16 字段已经人工恢复，卡服务端成功/明确空证据；默认值字典已有另一 occurrence 提取出
+`app_id`/`subject`，卡服务端必填语义与响应投影。其余相交项是写、已覆盖 route、helper、export，
+或另有父链/非空样本/隐私/产品面 blocker。实现函数内联和条件 callee 不会解锁排期动线，故保持
+现有静态分析边界，不为潜在未来收益扩张成通用求值器。明细见
+`tmp/codex/census-extractor-leverage/stats.md`。
 
 ## 并发
 
