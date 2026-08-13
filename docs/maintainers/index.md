@@ -12,6 +12,7 @@
 | 完善 Business Pulse 的 Agent 交接 | [Business Pulse Agent Surface v1](business-pulse-agent-surface.md) |
 | 完善四平台素材表现的 Agent 产品面 | [Material Performance v1](material-performance.md) |
 | 完善跨平台推广表现的 Agent 产品面 | [Promotion Performance v1](promotion-performance.md) |
+| 修复看板页面条件忠实重放 | [Dashboard Page Conditions Replay (D22)](dashboard-conditions.md) |
 | 一次调用追踪订单拆单明细 | [Order Split Trace v1](order-split-trace.md) |
 | 读取单日无标识普通订单目录 | [Order Directory v1](order-directory.md) |
 | 阻止自然语言误落原始变现明细 | [Monetization Discovery Guard](monetization-discovery-guard.md) |

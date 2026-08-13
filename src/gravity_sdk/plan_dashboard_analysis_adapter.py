@@ -57,6 +57,7 @@ _STRUCTURAL_FIELDS = frozenset(
         "total_count",
         "next_action",
         "error",
+        "page_conditions",
     }
 )
 _CHART_FIELDS = frozenset(
@@ -87,6 +88,10 @@ _ERROR_FIELDS = frozenset(
         "next_action",
     }
 )
+_PAGE_CONDITION_FIELDS = frozenset({
+    "source_operation", "source_field", "present", "active",
+    "condition_count", "application_status", "merge_semantics",
+})
 
 
 def validate_dashboard_analysis_plan(
@@ -210,10 +215,17 @@ def safe_dashboard_analysis_envelope(result: Any) -> dict[str, Any]:
         _safe_chart(chart) for chart in charts if isinstance(chart, Mapping)
     ] if isinstance(charts, list) else []
     if isinstance(selected.get("error"), Mapping):
+        page_gap = selected["error"].get("field") == "data.object.config.filter"
         selected["error"] = _safe_error(
             selected["error"],
             message="Dashboard analysis failed.",
+            page_condition_gap=page_gap,
         )
+    receipt = result.get("page_conditions")
+    selected["page_conditions"] = {
+        key: copy.deepcopy(value) for key, value in receipt.items()
+        if key in _PAGE_CONDITION_FIELDS
+    } if isinstance(receipt, Mapping) else {}
     return selected
 
 
@@ -231,14 +243,21 @@ def _safe_chart(chart: Mapping[str, Any]) -> dict[str, Any]:
     return selected
 
 
-def _safe_error(error: Mapping[str, Any], *, message: str) -> dict[str, Any]:
+def _safe_error(
+    error: Mapping[str, Any], *, message: str, page_condition_gap: bool = False
+) -> dict[str, Any]:
     selected = {
         key: copy.deepcopy(value)
         for key, value in error.items()
         if key in (_ERROR_FIELDS - {"message", "next_action"})
     }
     selected["message"] = message
-    selected["next_action"] = "Inspect the chart status and correct its governed input before retrying."
+    selected["next_action"] = (
+        "Capture one controlled Web query with conflicting page and chart "
+        "conditions, then prove the upstream conflict rule before retrying."
+        if page_condition_gap else
+        "Inspect the chart status and correct its governed input before retrying."
+    )
     return selected
 
 

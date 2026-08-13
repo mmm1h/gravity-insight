@@ -46,23 +46,29 @@ def _tree() -> dict:
 
 
 class _Client:
-    def __init__(self, reports=None, *, fail=False, duplicate=False):
+    def __init__(self, reports=None, *, fail=False, duplicate=False, page_filter=None):
         self.reports = reports if reports is not None else [
             _event_report(),
             {"report_id": "11", "name": "Web only", "subject": "analysis_cash", "config": {}},
         ]
         self.fail, self.duplicate = fail, duplicate
-        self.batch_calls, self.read_calls = [], []
+        self.page_filter = [] if page_filter is None else page_filter
+        self.batch_calls, self.read_calls, self.validate_calls = [], [], []
 
     def read(self, operation_id, inputs):
         self.read_calls.append((operation_id, inputs))
         if operation_id.endswith(".tree"):
             return _tree()
+        if operation_id.endswith("default_to_me.get"):
+            return {"ok": True, "status": "success", "data": {
+                "object": {"config": {"filter": self.page_filter}}
+            }}
         return {"ok": True, "status": "success", "data": {
             "id": 3, "app_id": 17, "space_id": 1, "even_report": self.reports,
         }}
 
     def validate(self, operation_id, inputs):
+        self.validate_calls.append((operation_id, inputs))
         return {"ok": True, "status": "needs_live_metadata"}
 
     def batch(self, requests, *, max_workers, max_pages, max_total_items):
@@ -90,6 +96,36 @@ class _Client:
 
 
 class DashboardAnalysisTests(unittest.TestCase):
+    def test_page_conditions_fail_closed_while_empty_conditions_still_run(self):
+        blocked = _Client([_event_report()], page_filter=[{
+            "conditionValue": "private", "conditionList": ["secret"],
+        }])
+        result = run_dashboard_analysis(
+            blocked, 17, 3, start="2026-08-01", end="2026-08-08"
+        )
+        self.assertEqual((False, "unsupported", 2), (
+            result["ok"], result["status"], result["exit_code"]
+        ))
+        self.assertEqual((True, 1, False), (
+            result["page_conditions"]["active"],
+            result["page_conditions"]["condition_count"],
+            result["query_executed"],
+        ))
+        self.assertEqual(([], []), (blocked.validate_calls, blocked.batch_calls))
+        self.assertNotIn("private", json.dumps(result).casefold())
+        empty = run_dashboard_analysis(
+            _Client([_event_report()]), 17, 3,
+            start="2026-08-01", end="2026-08-08",
+        )
+        self.assertEqual(("success", False, 1), (
+            empty["status"], empty["page_conditions"]["active"], empty["success_count"]
+        ))
+        with self.assertRaises(ContractChangedError):
+            run_dashboard_analysis(
+                _Client([_event_report()], page_filter={}), 17, 3,
+                start="2026-08-01", end="2026-08-08",
+            )
+
     def test_prepare_compiles_supported_and_isolates_unsupported_without_query(self):
         client = _Client()
         result = prepare_dashboard_analysis(
