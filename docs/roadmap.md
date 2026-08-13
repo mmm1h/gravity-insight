@@ -77,6 +77,47 @@ Analysis Context（13 来源）。
 形成嵌套并发乘法。所有增强保持上游总请求量 `1x`，只提高峰值在途数。SQL 硬上限 2 有 4 并发
 实测失败证据，不提高。分页未知总页、父子依赖链、导出 `create→poll→download`、探测链不并发。
 
+## 已批准的隐私投影边界：变现明细（D27）
+
+`analysis.monetization_detail.list` 的 identifier-free 投影已批准，边界如下。
+这是产品合同的一部分，不是可调参数。
+
+**永久排除，不得通过任何参数、字段选择或 raw 路径打开：**
+
+| 字段 | 排除理由 |
+| --- | --- |
+| `user_id`、`event_user_id`、`device_id`、`ClientID` | 直接用户/设备标识 |
+| `TraceID` | 可将同一用户的多条变现事件串联，构成间接标识 |
+| `device_info` **整个嵌套对象** | 硬标识符已 omit，但 `Phone_Brand`+`Phone_Model`+`OS`+`Rom_version`+`Aspect_Ratio` 组合构成设备指纹，足以重识别 |
+| `user$ad_count`、`user$ad_avg_ecpm`、`user$ad_ltv` | 绑定到单个用户的画像指标 |
+| `Name`、`WXOpenID` | 已在 `known_omitted_item_keys`，保持排除 |
+
+**批准暴露：** `CreateTime`、`AdEventTime`；`AdPlatform`、`AdvertiserID`、`AdAid`、
+`TurboPromotedObjectID`；`event$ad_type`、`event$adn_type`、`event$ad_unit_id`、
+`event$ad_through`、`event$ad_source_id`、`event$ad_placement_id`；`event$ecpm`、`samount`；
+`re_attribute_info` 中的广告维度字段。
+
+**附加约束：** 不提供按用户维度的筛选或分组——那会绕过投影重新定位个人。
+`fields` 动态字段继续 fail-closed，未登记字段默认隐藏。
+
+D27 需要独占共享 spine，必须在 spine 空闲时作为**完整单元**开发（core→surface→agent 一次跑完），
+不拆阶段。
+
+## Agent 入口表的增长处理
+
+`docs/agent-workflow.md` 已达 220 行硬上限（`tests/test_documentation.py`），入口表占 34 行。
+每条新产品线加一行，而上限固定——这是结构性矛盾，精简只能拖延。
+
+**已否决的方案**：拆成独立文档（入口表正是 Agent 最需要的机器可读内容，拆出去要多读一个文件）；
+提高上限（门禁本意"入口文档要读得快"是对的，提高等于放弃约束）。
+
+**决定**：入口表改为**按任务类型分组**，同类产品共享一行（例如"跨平台投放/素材表现"同时覆盖
+material 与 promotion），使其**不再随产品数线性增长**。
+
+更根本的判断：这张表在**补偿发现机制的不足**。`gravity agent` 本应让调用方知道有哪些产品可用，
+但当前 13 张固定卡中 7 对意图重叠且已复现误路由。修复 Agent 意图路由是根因治理，
+应作为独立单元排期，与入口表重构配套。
+
 ## 明确不做
 
 - 不复刻 Web UI 概念：布局、收藏、拖拽、成员权限管理。`app.project_auth.detail` 与
