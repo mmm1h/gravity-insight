@@ -163,7 +163,27 @@ def _analysis_card(query: str, selected_kind: str | None) -> dict[str, Any]:
             "call_count_after_discovery": 1,
         },
     }
+    if selected_kind in {"event", "funnel", "retention", "property"}:
+        card["multi_app_batch"] = _multi_app_batch_template(
+            selected_kind, card["input_template"]["spec"]
+        )
     return card
+
+
+def _multi_app_batch_template(kind: str, spec: Any) -> dict[str, Any]:
+    return {
+        "schema_version": "gravity.analysis-query-batch.v2",
+        "queries": [{
+            "id": kind,
+            "kind": kind,
+            "apps": ["<explicit-workspace-app-alias-or-positive-id>"],
+            "spec": deepcopy(spec),
+            "limits": {"max_items": 200},
+        }],
+        "max_expanded_components": 32,
+        "all_apps_selector": False,
+        "cross_app_aggregation": False,
+    }
 
 
 def _description(selected_kind: str | None) -> str:

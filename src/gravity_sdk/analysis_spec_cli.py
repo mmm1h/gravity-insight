@@ -18,6 +18,7 @@ def add_analysis_query_arguments(
     parser: Any,
     add_input: Callable[..., Any],
     add_shortcuts: Callable[[Any], None],
+    concurrency_type: Callable[[str], int],
 ) -> None:
     parser.add_argument(
         "--kind", choices=sorted(ANALYSIS_QUERY_OPERATIONS)
@@ -34,6 +35,21 @@ def add_analysis_query_arguments(
         help="compact Analysis spec as inline JSON, file path, or '-' for stdin",
     )
     parser.add_argument("--app", help="workspace App alias or positive id for --spec")
+    parser.add_argument(
+        "--apps",
+        action="append",
+        help=(
+            "comma-separated explicit Apps for event/funnel/retention/property; "
+            "may be repeated"
+        ),
+    )
+    parser.add_argument(
+        "--concurrency",
+        dest="analysis_query_concurrency",
+        type=concurrency_type,
+        default=6,
+        help="Plan worker budget for --apps (default: 6, maximum: 24)",
+    )
     parser.add_argument("--workspace", help="gravity.toml or its directory for --spec")
     parser.add_argument(
         "--compare-start",
@@ -78,6 +94,8 @@ def run_analysis_query_command(
                 "`gravity analysis query batch --input <queries.json>`."
             ),
         )
+    if getattr(args, "apps", None) and args.spec is None:
+        raise InputValidationError("--apps requires --spec", field="apps")
     if bool(getattr(args, "spec_schema", False)):
         if args.spec is not None or args.input is not None:
             raise InputValidationError(
@@ -121,6 +139,28 @@ def run_analysis_query_command(
         "start": getattr(args, "start", None),
         "end": getattr(args, "end", None),
     }
+    return _run_compact_query(
+        args,
+        client,
+        spec,
+        options,
+        compare_start,
+        compare_end,
+        call_read,
+    )
+
+
+def _run_compact_query(
+    args: Any,
+    client: Any,
+    spec: Mapping[str, Any],
+    options: Mapping[str, Any],
+    compare_start: str | None,
+    compare_end: str | None,
+    call_read: Callable[..., dict[str, Any]],
+) -> dict[str, Any]:
+    if getattr(args, "apps", None):
+        return _run_multi_app_query(args, client, spec, options, compare_start, compare_end)
     if bool(getattr(args, "dry_run", False)) or bool(
         getattr(args, "query_spec_dry_run", False)
     ):
@@ -137,6 +177,46 @@ def run_analysis_query_command(
         client,
         compiled.operation_id,
         compiled.inputs,
+    )
+
+
+def _run_multi_app_query(
+    args: Any,
+    client: Any,
+    spec: Mapping[str, Any],
+    options: Mapping[str, Any],
+    compare_start: str | None,
+    compare_end: str | None,
+) -> dict[str, Any]:
+    from .analysis_query_batch import MULTI_APP_BATCH_SCHEMA_VERSION
+    from .sdk import GravitySDK
+
+    if options.get("app") is not None:
+        raise InputValidationError("--apps cannot be combined with --app", field="apps")
+    if compare_start is not None or compare_end is not None:
+        raise InputValidationError(
+            "--apps does not support period compare", field="compare_start/compare_end"
+        )
+    apps = [
+        selected
+        for value in args.apps
+        for selected in (item.strip() for item in value.split(","))
+        if selected
+    ]
+    query: dict[str, Any] = {
+        "id": str(args.kind),
+        "kind": args.kind,
+        "apps": apps,
+        "spec": dict(spec),
+        "limits": {"max_items": 200},
+    }
+    if options.get("start") is not None:
+        query["start"] = options["start"]
+        query["end"] = options["end"]
+    return GravitySDK(insight=client, workspace=options.get("workspace")).analysis_queries(
+        {"schema_version": MULTI_APP_BATCH_SCHEMA_VERSION, "queries": [query]},
+        max_workers=args.analysis_query_concurrency,
+        dry_run=bool(getattr(args, "query_spec_dry_run", False)),
     )
 
 

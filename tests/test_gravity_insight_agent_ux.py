@@ -866,6 +866,13 @@ class DiscoveryUxTests(unittest.TestCase):
                 card["next"]["schema_argv"],
                 spec["contract_ref"]["schema_argv"],
             )
+            multi = card["multi_app_batch"]
+            self.assertEqual("gravity.analysis-query-batch.v2", multi["schema_version"])
+            self.assertEqual(
+                ["<explicit-workspace-app-alias-or-positive-id>"],
+                multi["queries"][0]["apps"],
+            )
+            self.assertFalse(multi["all_apps_selector"])
         handoff = result["analysis_query_batch"]
         self.assertEqual(
             "gravity.analysis-query-batch.v1", handoff["schema_version"]

@@ -348,6 +348,41 @@ spec、compiled input 或筛选值。不要为批量查询再创建外层线程�
 }
 ```
 
+同一 spec 跑多个 App 时只把合同版本和 App 参数改为 v2 的显式数组；当前支持
+`event/funnel/retention/property`：
+
+```powershell
+gravity analysis query --kind retention --spec retention.json `
+  --apps main,overseas,103 --concurrency 6
+```
+
+`--apps` 可重复；它与 `--app`、跨期对比互斥。`--dry-run` 会编译每个 App 并完成 Plan 预检，
+但不执行查询。Agent 或 SDK 需要直接生成机器输入时使用同一 v2 合同：
+
+```json
+{
+  "schema_version": "gravity.analysis-query-batch.v2",
+  "queries": [{
+    "id": "weekly_retention",
+    "kind": "retention",
+    "apps": ["main", "overseas", 103],
+    "spec": {"start": "2026-08-01", "end": "2026-08-07", "steps": ["<explicit-steps>"]},
+    "limits": {"max_items": 200}
+  }]
+}
+```
+
+`apps` 必须是非空、唯一的 workspace alias/正整数数组；不支持 `"*"`，alias 与 ID 解析到同一
+App 也视为重复。所有 query 展开后合计最多 32 个组件，超限在 Plan 前失败且零执行。每个组件
+在 v2 result 中带原始 `query_id` 和提交的 `app`，保留自己的 `ok/status/result/error/exit_code`；
+顶层沿用 Plan 的 success/empty/failure 计数与退出码优先级，并固定
+`cross_app_aggregation=false`。SDK 不跨 App 合并行，不计算排序、TopN、汇总、差异或比率。
+
+v1 的 `app`、节点 ID、`gravity.analysis-query-batch-result.v1` 和结果字段完全不变。v2 只做机械
+展开：每个 App 仍是一个现有 `analysis_query` Plan 节点，adapter worker 固定 1，唯一并发预算是
+`--concurrency` 对应的 Plan 全局预算。总请求集合等于各 App 单独执行的并集，不增加 metadata、
+重试或探测请求；只可能把峰值在途数从 1 提高到该全局预算允许的值。
+
 有依赖、binding 或需要混合 SQL/metadata/composite 时使用 `gravity plan run`。Plan composite
 request 是 `name="analysis_query"` 加
 `kind/app/spec`，可选成对的 `start/end`；`output_fields` 放在节点级：

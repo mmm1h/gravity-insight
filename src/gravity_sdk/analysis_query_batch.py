@@ -16,6 +16,12 @@ from typing import Any
 
 from .analysis_spec import compile_query_spec
 from .analysis_spec_schema import ANALYSIS_SPEC_KINDS
+from .analysis_query_multi_app import (
+    MAX_COMPONENTS,
+    MULTI_APP_BATCH_SCHEMA_VERSION,
+    MULTI_APP_KINDS,
+    MULTI_APP_RESULT_SCHEMA_VERSION,
+)
 from .errors import InputValidationError
 from .plan import DEFAULT_MAX_ITEMS, PLAN_SCHEMA_VERSION
 
@@ -31,7 +37,8 @@ _QUERY_FIELDS = frozenset(
     {"id", "kind", "app", "spec", "start", "end", "output_fields", "limits"}
 )
 _LIMIT_FIELDS = frozenset({"max_items"})
-_QUERY_ID_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_.-]{0,63}$")
+QUERY_ID_PATTERN = r"^[A-Za-z][A-Za-z0-9_.-]{0,63}$"
+_QUERY_ID_RE = re.compile(QUERY_ID_PATTERN)
 _PLAN_RESULT_FIELDS = frozenset(
     {
         "ok",
@@ -54,7 +61,8 @@ _PLAN_RESULT_FIELDS = frozenset(
 
 @dataclass(frozen=True)
 class _BatchQuery:
-    query_id: str
+    node_id: str
+    result_query_id: str
     kind: str
     app: str | int
     spec: Mapping[str, Any]
@@ -67,82 +75,9 @@ class _BatchQuery:
 def analysis_query_batch_schema() -> dict[str, Any]:
     """Return the complete, compact machine contract for this thin product."""
 
-    return {
-        "schema_version": SCHEMA_SCHEMA_VERSION,
-        "ok": True,
-        "status": "success",
-        "batch_schema_version": BATCH_SCHEMA_VERSION,
-        "result_schema_version": RESULT_SCHEMA_VERSION,
-        "command": "gravity analysis query batch --input <queries.json> --concurrency 6",
-        "input": {
-            "type": "object",
-            "additional_properties": False,
-            "required": ["schema_version", "queries"],
-            "properties": {
-                "schema_version": {"const": BATCH_SCHEMA_VERSION},
-                "queries": {
-                    "type": "array",
-                    "min_items": 1,
-                    "max_items": MAX_QUERIES,
-                    "items": {
-                        "type": "object",
-                        "additional_properties": False,
-                        "required": ["id", "kind", "app", "spec"],
-                        "properties": _query_schema_fields(),
-                    },
-                },
-            },
-        },
-        "execution": {
-            "delegate": "gravity.plan.v1",
-            "shape": "independent same-layer analysis_query composite nodes",
-            "outer_concurrency_default": DEFAULT_MAX_WORKERS,
-            "outer_concurrency_max": 24,
-            "adapter_inner_concurrency": 1,
-            "preflight": "every literal spec is compiled before Plan execution",
-            "natural_language_auto_execute": False,
-        },
-        "boundaries": {
-            "query_count": MAX_QUERIES,
-            "kinds": list(ANALYSIS_SPEC_KINDS),
-            "dependencies": False,
-            "bindings": False,
-            "foreach": False,
-            "expressions": False,
-            "raw_http_or_sql": False,
-        },
-        "output": {
-            "preserves_input_order": True,
-            "echoes_spec": False,
-            "echoes_compiled_input": False,
-            "failure_isolation": "Plan v1 sibling isolation",
-            "exit_precedence": "local 4 > upstream 3 > caller 2 > success 0",
-        },
-        "example": {
-            "schema_version": BATCH_SCHEMA_VERSION,
-            "queries": [
-                {
-                    "id": "daily_opens",
-                    "kind": "event",
-                    "app": "main",
-                    "spec": {
-                        "start": "2026-08-01",
-                        "end": "2026-08-07",
-                        "steps": [
-                            {
-                                "event": "app_open",
-                                "metric": {
-                                    "field": "PresetAllCount",
-                                    "aggregation": "PresetAllCount",
-                                },
-                            }
-                        ],
-                    },
-                    "limits": {"max_items": 200},
-                }
-            ],
-        },
-    }
+    from .analysis_query_batch_schema import build_analysis_query_batch_schema
+
+    return build_analysis_query_batch_schema()
 
 
 def validate_analysis_query_batch(
@@ -154,7 +89,7 @@ def validate_analysis_query_batch(
 ) -> dict[str, Any]:
     """Compile every item and delegate the zero-execution preflight to the SDK."""
 
-    plan, count, selected_workspace = _batch_plan(
+    plan, shape, selected_workspace = _batch_plan(
         sdk,
         payload,
         workspace=workspace,
@@ -165,7 +100,7 @@ def validate_analysis_query_batch(
         workspace=selected_workspace,
         max_workers=max_workers,
     )
-    return _safe_result(result, count)
+    return _safe_result(result, shape)
 
 
 def execute_analysis_query_batch(
@@ -177,7 +112,7 @@ def execute_analysis_query_batch(
 ) -> dict[str, Any]:
     """Compile every item, then delegate execution to the SDK's Plan engine."""
 
-    plan, count, selected_workspace = _batch_plan(
+    plan, shape, selected_workspace = _batch_plan(
         sdk,
         payload,
         workspace=workspace,
@@ -188,7 +123,7 @@ def execute_analysis_query_batch(
         workspace=selected_workspace,
         max_workers=max_workers,
     )
-    return _safe_result(result, count)
+    return _safe_result(result, shape)
 
 
 def run_analysis_query_batch(
@@ -218,10 +153,14 @@ def _batch_plan(
     *,
     workspace: Any | None,
     max_workers: int,
-) -> tuple[dict[str, Any], int, Any]:
+) -> tuple[dict[str, Any], tuple[str, int, tuple[_BatchQuery, ...]], Any]:
     selected_workspace = _selected_workspace(sdk, workspace)
-    queries = _queries(payload)
-    _preflight_specs(queries, selected_workspace)
+    version, query_count, queries = _queries(payload)
+    _preflight_specs(
+        queries,
+        selected_workspace,
+        reject_duplicate_apps=version == MULTI_APP_BATCH_SCHEMA_VERSION,
+    )
     nodes = [_plan_node(query) for query in queries]
     plan = {
         "schema_version": PLAN_SCHEMA_VERSION,
@@ -231,16 +170,21 @@ def _batch_plan(
         },
         "nodes": nodes,
     }
-    return plan, len(queries), selected_workspace
+    return plan, (version, query_count, queries), selected_workspace
 
 
-def _queries(payload: Mapping[str, Any]) -> tuple[_BatchQuery, ...]:
+def _queries(
+    payload: Mapping[str, Any],
+) -> tuple[str, int, tuple[_BatchQuery, ...]]:
     if not isinstance(payload, Mapping):
         raise _input_error("analysis query batch input must be an object", "input")
     _reject_unknown(payload, _WRAPPER_FIELDS, "input")
-    if payload.get("schema_version") != BATCH_SCHEMA_VERSION:
+    version = payload.get("schema_version")
+    if version not in {BATCH_SCHEMA_VERSION, MULTI_APP_BATCH_SCHEMA_VERSION}:
         raise _input_error(
-            f"schema_version must be {BATCH_SCHEMA_VERSION}", "schema_version"
+            "schema_version must be gravity.analysis-query-batch.v1 or "
+            "gravity.analysis-query-batch.v2",
+            "schema_version",
         )
     source = payload.get("queries")
     if not isinstance(source, Sequence) or isinstance(
@@ -251,11 +195,37 @@ def _queries(payload: Mapping[str, Any]) -> tuple[_BatchQuery, ...]:
         raise _input_error("queries must not be empty", "queries")
     if len(source) > MAX_QUERIES:
         raise _input_error(f"queries supports at most {MAX_QUERIES} items", "queries")
+    if version == MULTI_APP_BATCH_SCHEMA_VERSION:
+        values = _parse_multi_app_queries(source)
+    else:
+        values = _single_app_queries(source)
+    return version, len(source), values
+
+
+def _single_app_queries(source: Sequence[Any]) -> tuple[_BatchQuery, ...]:
     values = tuple(_query(item, index) for index, item in enumerate(source))
-    identifiers = [item.query_id for item in values]
-    if len(set(identifiers)) != len(identifiers):
+    if len({item.result_query_id for item in values}) != len(values):
         raise _input_error("query ids must be unique", "queries.id")
     return values
+
+
+def _parse_multi_app_queries(source: Sequence[Any]) -> tuple[_BatchQuery, ...]:
+    from .analysis_query_multi_app import parse_multi_app_queries
+
+    return tuple(
+        _BatchQuery(
+            node_id=item.node_id,
+            result_query_id=item.result_query_id,
+            kind=item.kind,
+            app=item.app,
+            spec=item.spec,
+            start=item.start,
+            end=item.end,
+            output_fields=item.output_fields,
+            max_items=item.max_items,
+        )
+        for item in parse_multi_app_queries(source)
+    )
 
 
 def _query(value: Any, index: int) -> _BatchQuery:
@@ -263,15 +233,7 @@ def _query(value: Any, index: int) -> _BatchQuery:
     if not isinstance(value, Mapping):
         raise _input_error("batch queries must be objects", field)
     _reject_unknown(value, _QUERY_FIELDS, field)
-    query_id = value.get("id")
-    if not isinstance(query_id, str) or not _QUERY_ID_RE.fullmatch(query_id):
-        raise _input_error("query id is invalid", f"{field}.id")
-    kind = value.get("kind")
-    if not isinstance(kind, str) or kind.strip().casefold() not in ANALYSIS_SPEC_KINDS:
-        raise _input_error(
-            "kind must be event, funnel, retention, property, or scatter",
-            f"{field}.kind",
-        )
+    query_id, kind = _identity(value, field)
     app = value.get("app")
     if not _is_app(app):
         raise _input_error(
@@ -282,8 +244,9 @@ def _query(value: Any, index: int) -> _BatchQuery:
         raise _input_error("spec must be an object", f"{field}.spec")
     limits = _limits(value.get("limits", {}), field)
     return _BatchQuery(
-        query_id=query_id,
-        kind=kind.strip().casefold(),
+        node_id=query_id,
+        result_query_id=query_id,
+        kind=kind,
         app=app,
         spec=copy.deepcopy(dict(spec)),
         start=_optional_text(value.get("start"), f"{field}.start"),
@@ -293,9 +256,28 @@ def _query(value: Any, index: int) -> _BatchQuery:
     )
 
 
-def _preflight_specs(queries: tuple[_BatchQuery, ...], workspace: Any) -> None:
+def _identity(value: Mapping[str, Any], field: str) -> tuple[str, str]:
+    query_id = value.get("id")
+    if not isinstance(query_id, str) or not _QUERY_ID_RE.fullmatch(query_id):
+        raise _input_error("query id is invalid", f"{field}.id")
+    kind = value.get("kind")
+    if not isinstance(kind, str) or kind.strip().casefold() not in ANALYSIS_SPEC_KINDS:
+        raise _input_error(
+            "kind must be event, funnel, retention, property, or scatter",
+            f"{field}.kind",
+        )
+    return query_id, kind.strip().casefold()
+
+
+def _preflight_specs(
+    queries: tuple[_BatchQuery, ...],
+    workspace: Any,
+    *,
+    reject_duplicate_apps: bool,
+) -> None:
+    resolved: set[tuple[str, str]] = set()
     for item in queries:
-        compile_query_spec(
+        compiled = compile_query_spec(
             item.kind,
             item.spec,
             workspace=workspace,
@@ -303,6 +285,12 @@ def _preflight_specs(queries: tuple[_BatchQuery, ...], workspace: Any) -> None:
             start=item.start,
             end=item.end,
         )
+        identity = (item.result_query_id, str(compiled.inputs["app_id"]))
+        if reject_duplicate_apps and identity in resolved:
+            raise _input_error(
+                "apps must resolve to unique Apps within each query", "queries.apps"
+            )
+        resolved.add(identity)
 
 
 def _plan_node(item: _BatchQuery) -> dict[str, Any]:
@@ -316,7 +304,7 @@ def _plan_node(item: _BatchQuery) -> dict[str, Any]:
         request["start"] = item.start
         request["end"] = item.end
     node: dict[str, Any] = {
-        "id": item.query_id,
+        "id": item.node_id,
         "kind": "composite",
         "request": request,
         "limits": {"max_pages": 1, "max_items": item.max_items},
@@ -363,7 +351,9 @@ def _selected_workspace(sdk: Any, workspace: Any | None) -> Any:
         raise _input_error("workspace is required", "workspace") from exc
 
 
-def _safe_result(result: Any, query_count: int) -> dict[str, Any]:
+def _safe_result(
+    result: Any, shape: tuple[str, int, tuple[_BatchQuery, ...]]
+) -> dict[str, Any]:
     if not isinstance(result, Mapping):
         raise RuntimeError("Plan returned an invalid Analysis query batch result")
     selected = {
@@ -371,37 +361,17 @@ def _safe_result(result: Any, query_count: int) -> dict[str, Any]:
         for key, value in result.items()
         if key in _PLAN_RESULT_FIELDS
     }
-    return {
-        "schema_version": RESULT_SCHEMA_VERSION,
-        "plan_result_schema_version": result.get("schema_version"),
-        "query_count": query_count,
-        **selected,
-    }
+    version, query_count, queries = shape
+    if version == BATCH_SCHEMA_VERSION:
+        return {
+            "schema_version": RESULT_SCHEMA_VERSION,
+            "plan_result_schema_version": result.get("schema_version"),
+            "query_count": query_count,
+            **selected,
+        }
+    from .analysis_query_multi_app import decorate_multi_app_result
 
-
-def _query_schema_fields() -> dict[str, Any]:
-    return {
-        "id": {"type": "string", "pattern": _QUERY_ID_RE.pattern},
-        "kind": {"type": "string", "enum": list(ANALYSIS_SPEC_KINDS)},
-        "app": {"type": ["string", "integer"]},
-        "spec": {
-            "type": "object",
-            "description": "One literal Analysis Query Spec v1 object for kind.",
-        },
-        "start": {"type": "string", "format": "date"},
-        "end": {"type": "string", "format": "date"},
-        "output_fields": {
-            "type": "array",
-            "min_items": 1,
-            "unique_items": True,
-            "items": {"type": "string"},
-        },
-        "limits": {
-            "type": "object",
-            "additional_properties": False,
-            "properties": {"max_items": {"type": "integer", "minimum": 1}},
-        },
-    }
+    return decorate_multi_app_result(selected, result, queries, query_count)
 
 
 def _optional_text(value: Any, field: str) -> str | None:
@@ -442,7 +412,12 @@ def _input_error(message: str, field: str) -> InputValidationError:
 __all__ = [
     "BATCH_SCHEMA_VERSION",
     "DEFAULT_MAX_WORKERS",
+    "MAX_COMPONENTS",
     "MAX_QUERIES",
+    "MULTI_APP_BATCH_SCHEMA_VERSION",
+    "MULTI_APP_KINDS",
+    "MULTI_APP_RESULT_SCHEMA_VERSION",
+    "QUERY_ID_PATTERN",
     "RESULT_SCHEMA_VERSION",
     "SCHEMA_SCHEMA_VERSION",
     "analysis_query_batch_schema",

@@ -176,6 +176,14 @@ Plan binding 只作用于 request 边界：`/app` 可从上游复制一个标量
 `gravity analysis query batch --input queries.json`；它机械生成同层 `analysis_query` 节点，
 仍由本页的 Plan 引擎调度。需要依赖、跨引擎节点或 foreach 时才手写完整 Plan。
 
+事件、漏斗、留存、属性的“同一 spec 跑多个 App”使用
+`gravity.analysis-query-batch.v2`：每项把 `app` 改为显式 `apps` 数组。batch 在 Plan 预检前按
+数组顺序生成同层 scalar-`app` 节点；Plan composite request 本身没有新增数组字段。展开总上限
+32，不接受 `"*"` 或解析后重复 App。结果仍是一 App 一组件，只额外标注 `query_id/app`，不做
+跨 App reduce/join/sort。adapter 内 worker 仍为 1，同层节点共享 Plan 的
+`PlanConcurrencyBudget`；因此 N 个 App 的上游请求集合与 N 次单独执行相同，只有峰值在途数可从
+1 增至全局预算允许值。scatter 及其他 composite 继续使用显式同层节点。
+
 ## Business Pulse composite
 
 经营概览与趋势使用登记的 `business_pulse` composite。调用方必须显式给出 App 数组和日期窗；

@@ -148,6 +148,24 @@ D32 本轮先估 22 次、实际只发 5 次最小 stable 根读取；5 次均�
 判据是**改一个参数要不要改代码**。20 个真实分析场景实撞（11 次 HTTP，无权限失败与合同漂移）：
 零成本 11 / 有成本可接受 4 / 需改代码 5。
 
+其中旧场景 4“同一分析跑多个 App”已按真实使用频率从“有成本可接受”改判为产品缺口并收口。
+首批选择事件趋势、漏斗、留存、属性分布四类 compact Analysis：它们都是同一 literal spec 只替换
+App，结果天然逐 App 独立。`gravity.analysis-query-batch.v2` 每项把标量 `app` 改为显式非空
+`apps` 数组，内部机械展开为现有同层 `analysis_query` Plan 节点；展开后最多 32 个组件，拒绝重复
+App（包括 alias/ID 解析到同一 App）和 `"*"`。结果只附 `query_id/app` 身份，不做跨 App
+排序、TopN、汇总、差异或比率计算。
+
+首批没有纳入 scatter（跨 App 散点比较频率低）、Multidim（物理 metadata/分页预算模型不同）、
+Saved/Dashboard/Template replay（每个 App 还要独立解析引用）、period compare（一个节点已含双窗口）、
+分群/订单/变现/推广/素材/SQL（各有引用、单日、平台或调用项目产品合同）。这些保持现有单 App 或
+显式同层 Plan 形态，不从本轮结果层外推通用多 App 抽象。
+
+并发没有新线程池或默认值：v2 仍只构造同层 Plan 节点，adapter 每节点固定 `max_workers=1`，
+共享 `PlanConcurrencyBudget`。fake transport 实测 3 个 App 在预算 1/3 时请求集合都恰为同三个
+App，峰值分别为 1/3；一个 App 权限失败时另外两个继续，外层为 `partial` 且失败组件保留 App。
+因此总上游请求量是逐 App 单跑请求集合之和，只提高峰值在途数。v1 `app` 输入和 v1 result 分支
+保持原样；既有五类单 App batch 回归继续通过。
+
 **底层参数化总体健康**，不需要通用化改造。日期窗、周月粒度、分组（≤20）、多指标（≤50 步）、
 AND/OR 条件、漏斗步数与窗口、留存 `offset`（1–365）、Multidim 常见指标维度都是改参数即可。
 留存 D7→D8 零开发，推广平台硬编码是 operation 合同必要绑定，推广指标用开放排除法——
