@@ -268,6 +268,10 @@ def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
         from .agent_material_performance import material_performance_plan_request
 
         return material_performance_plan_request(card)
+    if composite == "order_directory":
+        from .agent_order_directory import order_directory_plan_request
+
+        return order_directory_plan_request(card)
     if composite == "order_split_trace":
         from .agent_order_trace import order_split_trace_plan_request
 
@@ -330,6 +334,16 @@ def _composite_product_requirements(
         from .agent_material_performance import material_performance_input_template
 
         return ["apps", "start", "end"], material_performance_input_template()
+    if card.get("composite") == "order_directory":
+        from .agent_order_directory import (
+            ORDER_DIRECTORY_REQUIRED_INPUTS,
+            order_directory_input_template,
+        )
+
+        return (
+            list(ORDER_DIRECTORY_REQUIRED_INPUTS),
+            order_directory_input_template(),
+        )
     if card.get("composite") == "order_split_trace":
         from .agent_order_trace import (
             ORDER_SPLIT_TRACE_REQUIRED_INPUTS,

@@ -23,7 +23,7 @@ from .agent_handoff import (
     unify_capability_candidates,
     workspace_prefix,
 )
-from .agent_order_trace import order_split_trace_safe_query
+from .agent_discovery_policy import safe_discovery_query
 from .agent_export import export_inventory_for_query
 from .agent_sources import (
     catalog_cards,
@@ -282,7 +282,7 @@ def _discovery_response(
     candidates = [
         attach_plan_node(
             apply_workspace_prefix(item, workspace_path),
-            order_split_trace_safe_query(request.query),
+            safe_discovery_query(request.query),
             namespace=plan_node_namespace,
         )
         for item in candidates
@@ -291,7 +291,7 @@ def _discovery_response(
     next_token = (
         _encode_continuation(
             request,
-            order_split_trace_safe_query(request.query),
+            safe_discovery_query(request.query),
             offset=next_offset,
             catalog_fingerprint=page.catalog_fingerprint,
             candidates_fingerprint=candidates_fingerprint,
@@ -307,7 +307,7 @@ def _discovery_response(
         "network_called": False,
         "mode": "discover_and_describe",
         "scope": AGENT_SCOPE,
-        "query": order_split_trace_safe_query(request.query),
+        "query": safe_discovery_query(request.query),
         "limit": request.limit,
         "count": len(candidates),
         "total": total,
@@ -320,7 +320,7 @@ def _discovery_response(
             "partial_matches_are_executable": False,
         },
         "execution": agent_execution_contract(workspace_path),
-        "fallbacks": agent_fallbacks(order_split_trace_safe_query(request.query), workspace_path),
+        "fallbacks": agent_fallbacks(safe_discovery_query(request.query), workspace_path),
         "next_action": (
             "Prefer a recipe, registered composite, then stable Insight; use a "
             "matching SQL product only when Insight cannot express the goal, and "
@@ -379,7 +379,7 @@ def _discovery_page(
         )
     if args.continuation:
         continuation = _decode_continuation(
-            args, order_split_trace_safe_query(query), catalog_fingerprint=catalog_fingerprint
+            args, safe_discovery_query(query), catalog_fingerprint=catalog_fingerprint
         )
         offset = int(continuation["offset"])
         expected_candidates_fingerprint = str(

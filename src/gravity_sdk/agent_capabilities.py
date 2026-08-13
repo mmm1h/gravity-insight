@@ -17,15 +17,17 @@ from .agent_business_pulse import BUSINESS_PULSE_CAPABILITY, BUSINESS_PULSE_NAME
 from .agent_dashboard import DASHBOARD_ANALYSIS_CAPABILITY
 from .agent_multidim import MULTIDIM_CAPABILITY
 from .agent_material_performance import MATERIAL_PERFORMANCE_CAPABILITY
+from .agent_order_directory import (
+    ORDER_DIRECTORY_CAPABILITY,
+    ORDER_DIRECTORY_NAME,
+)
 from .agent_order_trace import (
     ORDER_SPLIT_TRACE_CAPABILITY,
     ORDER_SPLIT_TRACE_NAME,
-    order_split_trace_blocks_operation_fallback,
 )
 from .agent_promotion_performance import (
     PROMOTION_PERFORMANCE_CAPABILITY,
     PROMOTION_PERFORMANCE_NAME,
-    promotion_performance_blocks_operation_fallback,
 )
 from .agent_saved_analysis import SAVED_ANALYSIS_CAPABILITY
 from .agent_segment_snapshot import SEGMENT_SNAPSHOT_CAPABILITY
@@ -149,6 +151,7 @@ _COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
     },
     MULTIDIM_CAPABILITY,
     MATERIAL_PERFORMANCE_CAPABILITY,
+    ORDER_DIRECTORY_CAPABILITY,
     ORDER_SPLIT_TRACE_CAPABILITY,
     PROMOTION_PERFORMANCE_CAPABILITY,
     BUSINESS_PULSE_CAPABILITY,
@@ -276,6 +279,7 @@ def capability_handoff_cards(
 ) -> tuple[list[dict[str, Any]], bool]:
     """Select direct product handoffs and whether they exclude local catalogs."""
 
+    from .agent_discovery_policy import operation_fallback_excluded
     from .agent_export import export_capability_cards
     from .agent_table_lineage import table_lineage_capability_cards
     from .agent_user_journey import user_journey_capability_cards
@@ -302,8 +306,7 @@ def capability_handoff_cards(
         exports
         or lineage
         or journeys
-        or order_split_trace_blocks_operation_fallback(query)
-        or promotion_performance_blocks_operation_fallback(query)
+        or operation_fallback_excluded(query)
     )
 
 
@@ -387,6 +390,7 @@ def authoritative_capability_cards(
             "dashboard_snapshot",
             BUSINESS_PULSE_NAME,
             "material_performance",
+            ORDER_DIRECTORY_NAME,
             ORDER_SPLIT_TRACE_NAME,
             PROMOTION_PERFORMANCE_NAME,
             "multidim",

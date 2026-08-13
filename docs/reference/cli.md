@@ -20,6 +20,7 @@ gravity analysis dashboard snapshot  读取一个看板的控制面快照
 gravity analysis dashboard prepare|run  编译或执行一个看板的受支持图表
 gravity analysis segment snapshot  读取一个分群的详情、历史与单日计算结果
 gravity analysis saved ...    列出、读取、准备或严格重放保存分析
+gravity analysis order directory  读取无标识的单日普通订单目录
 gravity analysis order trace  按显式 TraceID 读取单日拆单明细
 gravity apps snapshot         并发读取一个 App 的治理快照
 gravity attribution snapshot  并发读取一个 App 的归因配置快照
@@ -371,6 +372,28 @@ gravity analysis user journey --app main --client-id <explicit-id> `
 `profile/events/postbacks` 排序并隔离局部失败，不回显 client ID、request 或凭据。上游
 user-event 尚无已证明的 `page_info`，因此 v1 只读取显式页并返回
 `continuation.automatic=false`；调用方根据下一页提示显式重试，不伪造自动分页。
+
+### Order Directory v1
+
+已知 App 和严格单日时，一次完整读取无标识的普通订单目录：
+
+```powershell
+gravity analysis order directory --app main --date 2026-08-08 `
+  --concurrency 6 --max-pages 1000 --max-items 100000 --output <file.json>
+```
+
+命令固定调用 `analysis.order_detail.list`，使用 `page_size=100`、空 conditions/order 和四个静态
+字段。成功的每行严格只含 `Amount/BackAmount/Status/CreateTime`；任何额外订单、用户、拆单或
+归因标识，畸形 scalar、不完整分页收据、continuation 或预算越界都会使整个结果 fail closed，
+不会裁剪前缀后冒充完整目录。它不接受任意 fields/filter/sort 或跨日窗口，也不解释退款、净收入
+或订单成功。
+
+有效请求严格为 `P` 个目录分页，0 metadata、0 child。direct 分页 worker 默认 6、最大 24；
+Plan adapter 固定 1。省略 `--output` 时输出安全 stdout 前缀；指定它时原子写入完整 JSON。
+产品不提供 NDJSON 或 `--format`。未知入口时 Agent 返回唯一
+`order_directory` Plan 节点及待填写的 `app/date`，不从自然语言取值或自动执行；否定、导出、
+写入及相邻分析产品会安全报缺口且不扫描 operation inventory。精确 raw selector
+`analysis.order_detail.list` 与 `analysis.order_split_detail.list` 仍保留专家兼容入口。
 
 ### Order Split Trace v1
 

@@ -142,6 +142,7 @@ Resolver 的完成路径生成 `gravity.receipt.v1`，写到当前 workspace 的
 | Multidim | `gravity multidim query --app <alias\|id> --input <json>` | `multidim_query()` | 闭合物理输入、实时指标校验、有界分页与可选 total；不引入 Spec DSL 或 Web 模板语义 |
 | Material performance | `gravity materials performance --app <alias\|id> --start ... --end ...` | `material_performance()` | 仅组合 stable `material.report.query`，按平台保序聚合原生指标；不做跨平台归一或排名 |
 | Promotion performance | `gravity promotion performance --app <alias\|id> --start ... --end ... --platform ... --metric ...` | `promotion_performance()` | 组合 21 个同构平台的 stable primary operation 与实时物理指标校验；不统一口径或生成策略 |
+| Order directory | `gravity analysis order directory --app <alias\|id> --date ...` | `order_directory()` | 完整有界读取单日普通订单目录；每行严格只含 Amount/BackAmount/Status/CreateTime，不返回任何标识或解释业务状态 |
 | Order split trace | `gravity analysis order trace --app <alias\|id> --date ... --trace-id ...` | `order_split_trace()` | 完整有界扫描单日父订单，按 TraceID 本地精确匹配唯一父行，再严格后置读取拆单明细；结果不含任何标识 |
 | Segment snapshot | `gravity analysis segment snapshot --app <alias|id> --ref <id-or-exact-name> --date <YYYY-MM-DD>` | `segment_snapshot()` | 精确解析一个分群后固定读取 detail、history、daily_result；不返回成员或规则定义 |
 | App snapshot | `gravity apps snapshot --app <alias|id>` | `app_snapshot()` | app detail、realtime event、capacity、permission menu、role、template，共 6 个来源 |
@@ -183,6 +184,13 @@ Promotion Performance 只接收一个显式 App、日期窗、21 平台子集和
 执行请求数不超过 `P` 次平台元数据请求加各平台查询页数 `Σ pages`；固定字段或缓存命中时更少。
 direct 平台池默认 6、上限 24；平台内分页固定 1，Plan adapter 也固定 1，把跨节点并发留给
 Plan 全局池。
+
+Order Directory 只接收一个显式 App 和单日。它用固定 `page_size=100` 完整读取
+`analysis.order_detail.list`，请求字段和结果行都严格限定为
+`Amount/BackAmount/Status/CreateTime`，不接受任意字段、筛选、排序或跨日窗口，也不解释退款、
+净收入或订单成功。有效请求为 `P` 个目录分页；direct 分页 worker 默认 6、上限 24，Plan
+adapter 固定 1。已知输入一次调用，未知入口由 Agent 返回 value-free `order_directory` 节点，
+调用方补齐 `app/date` 后再执行，共两次。
 
 Order Split Trace 只接收一个显式 App、单日和敏感 TraceID。它以已登记静态字段完整读取有界
 父目录，在本地做大小写敏感的精确匹配；零条或多条都不会调用 child。唯一父行的敏感四字段只在
@@ -245,6 +253,7 @@ SQL 工具。
 | Multidim | CLI/SDK 默认 6、上限 24；metadata 与已知页数共享同一预算；Plan adapter 内固定 1 | 多个独立查询作为同层 Plan 节点，避免“节点 × metadata × 页数”并发放大 |
 | Material performance | CLI/SDK 默认 6、上限 24，实际平台池最多 4；每个平台分页 worker 固定 1；Plan adapter 内固定 1 | 平台 fan-out 与分页不相乘；多个独立请求交给 Plan 全局 pool |
 | Promotion performance | CLI/SDK 平台池默认 6、上限 24；每个平台分页 worker 固定 1；Plan adapter 内固定 1 | 21 平台 fan-out 与分页不相乘；不同 App 或物理指标集合用同层 Plan 节点 |
+| Order directory | direct 分页默认 6、上限 24；Plan adapter 内固定 1 | 多个独立 App/日期使用同层 Plan 节点，不新增 batch wrapper |
 | Order split trace | direct 父分页默认 6、上限 24；child 严格后置；Plan adapter 内固定 1 | 不并发猜 child；多个独立 TraceID 使用同层 Plan 节点 |
 | Segment snapshot | CLI/SDK 外层默认 3、上限 24；Plan adapter 内部固定 1 worker | 三源固定保序，Plan 全局 pool 管理跨节点并发 |
 | Plan DAG | 一个全局 worker pool，默认 6、上限 24；同层并发、依赖层串行；adapter 内分页 worker 固定 1 | 把交叉查询放进一个 Plan，避免并发乘法放大 |
@@ -293,6 +302,8 @@ live probe 或 Evidence 刷新。文档改动、CLI 文案和纯重构也不应�
 - Metadata catalog 保存 App、事件和属性的物理事实，不推断模块、活动、SKU 或指标口径。
 - 普通 read 不发布 Evidence、不上传或分享文件，也不修改上游资源。
 - 导出是独立 effect，经过导出合同和本地落盘策略。
+- Order Directory 的结果行只允许 `Amount/BackAmount/Status/CreateTime`；额外订单、用户、拆单或
+  归因标识会使整个结果 fail closed，Agent 卡、continuation 和错误也不回显自然语言输入值。
 - Order Split Trace 的 TraceID、ClientID、拆单 ID 与 PayEventTime 只参与内存内精确派生；产品
   结果、错误、Agent 卡和 continuation 均不得回显这些标识或原始 request。
 - 能力数量、平台覆盖和字段列表随合同变化；以 `operations list/search/describe` 的当前输出

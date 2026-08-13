@@ -303,6 +303,34 @@ unsupported，其他 sibling 继续。已知 selector 是一次 `plan run`；未
 翻页；`continuation` 只告诉调用方下一显式 page。adapter 内 worker 固定 1，外层并发仍由 Plan
 的单一 worker pool 控制。
 
+## Order Directory composite
+
+单日普通订单目录使用登记的 `order_directory` 节点。Agent 只返回完整、value-free 的节点，调用方
+必须在执行前替换两个占位值：
+
+```json
+{
+  "id": "order_directory",
+  "kind": "composite",
+  "request": {
+    "name": "order_directory",
+    "app": "<workspace-app-alias-or-positive-id>",
+    "date": "<date:YYYY-MM-DD>"
+  },
+  "limits": {"max_pages": 1000, "max_items": 100000}
+}
+```
+
+`/app` 与 `/date` 是仅有的动态 target，只接受有限 JSON scalar；每次 binding 后重新校验 App 和
+严格单日。本节点不接受 fields/conditions/order、跨日窗口或状态筛选。Agent 不从自然语言填值，
+不解释退款、净收入或订单成功，也不自动执行。
+
+adapter 内分页 worker 固定 1；有效网络调用严格为 `P` 个 `analysis.order_detail.list` 分页，
+0 metadata、0 child。专用 projector 重新核对 operation identity、App/日期、limits、完整页/行收据
+和终止状态；成功行只允许 `Amount/BackAmount/Status/CreateTime`。额外字段或标识、continuation、
+截断、预算漂移及 raw exception 都 fail closed，结果与错误不含订单/用户/拆单/归因标识、request
+或 binding 值。多个独立 App/日期使用同层节点，由 Plan 全局 pool 并发。
+
 ## Order Split Trace composite
 
 按 TraceID 读取单日拆单明细使用登记的 `order_split_trace` 节点。Agent 返回的节点完整但不含

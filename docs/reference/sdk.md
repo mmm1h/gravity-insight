@@ -80,6 +80,7 @@ dashboard_results = gravity.run_dashboard_analysis(
 segment = gravity.segment_snapshot(
     "main", "High-value users", date="2026-08-01", max_workers=3
 )
+orders = gravity.order_directory("main", "2026-08-08", max_workers=6)
 app = gravity.app_snapshot("main", max_workers=6)
 attribution = gravity.attribution_snapshot("main", max_workers=6)
 
@@ -177,6 +178,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `multidim_query()` | 校验实时指标后读取 Multidim 明细，可选 total 与全量分页 |
 | `material_performance()` | 按显式 App、日期窗和平台读取稳定素材表现；平台保序、共享预算、局部失败隔离 |
 | `promotion_performance()` | 按一个显式 App、日期窗、平台和物理指标读取 21 个同构平台；平台保序、局部失败隔离 |
+| `order_directory()` | 完整读取一个 App 的单日普通订单目录；每行仅含四个无标识物理字段 |
 | `order_split_trace()` | 完整扫描一个 App 的单日父订单并按显式 TraceID 精确匹配，再读取一次安全拆单投影 |
 | `analysis_vocabulary()` | 严格离线搜索已同步的 workspace 指标、标签、媒体枚举和模板目录 |
 | `table_lineage()` | 严格离线查询已同步的 account-scope 数据表版本与操作观察 |
@@ -247,6 +249,16 @@ page_size=20, fields=(), events=(), max_workers=3, max_items=200, workspace=None
 一次 workspace App，然后把 profile、events、postbacks 作为一个受控批次读取。结果固定来源
 顺序、局部失败隔离，并递归剔除 client ID、request 和凭据字段。user-event 没有已证明的自动
 分页合同，调用方必须显式递增 page。
+
+`order_directory(app, date, *, max_workers=6, max_pages=1000, max_items=100000,
+workspace=None)` 接受 workspace App alias/正整数和严格 `YYYY-MM-DD`。方法在惰性构造 client 前
+完成本地输入校验；随后固定以 `page_size=100`、空 conditions/order 和四个静态字段完整读取
+`analysis.order_detail.list`。有效请求为 `P` 个目录分页；direct worker 默认 6、最大 24。
+
+返回 `gravity-insight.order-directory.v1`，成功行严格只含
+`Amount/BackAmount/Status/CreateTime`。额外标识或字段、畸形 scalar、不完整分页收据、
+continuation 与预算越界都 fail closed；结果和错误不含订单/用户/拆单/归因标识、request 或原始
+异常。方法不接受任意字段、筛选、排序、跨日窗口，也不解释退款、净收入或订单成功。
 
 `order_split_trace(app, date, trace_id, *, max_workers=6, max_pages=1000,
 max_items=100000, workspace=None)` 接受 workspace App alias/正整数、严格 `YYYY-MM-DD` 和长度
@@ -392,6 +404,11 @@ Order Split Trace request 固定为 `name="order_split_trace"` 与必填 `app/da
 接受显式标量 binding，绑定后重新执行完整本地验证。adapter 内父分页 worker 固定 1，节点
 `max_items` 同时约束父扫描和 child 行；专用 projector 只允许四个拆单物理字段及安全计数/收据，
 不会回显任何标识或 binding 值。Agent 只生成三个待填写占位值。
+
+Order Directory request 固定为 `name="order_directory"` 与必填 `app/date`；两者可接受显式标量
+binding，绑定后重新执行完整本地验证。节点默认 limits 为 `max_pages=1000/max_items=100000`，
+adapter 内分页 worker 固定 1；专用 projector 只允许四个物理字段及安全计数/收据。Agent 只生成
+两个待填写占位值，不从自然语言选择 App、日期、字段、筛选或状态。
 
 Dashboard snapshot 的 composite request 固定为 `name="dashboard_snapshot"` 与必填 `app/ref`；
 `ref` 仍必须是稳定 ID 或精确名称，`/app`、`/ref` 可接受显式标量 binding。节点预算必须覆盖

@@ -50,6 +50,9 @@ _ENGLISH_BLOCKED = frozenset(
         "create",
         "dashboard",
         "delete",
+        "detail",
+        "details",
+        "directory",
         "dimension",
         "dimensions",
         "event",
@@ -68,6 +71,8 @@ _ENGLISH_BLOCKED = frozenset(
         "materials",
         "multidim",
         "multidimensional",
+        "order",
+        "orders",
         "permission",
         "permissions",
         "property",
@@ -95,6 +100,10 @@ _CHINESE_BIE_NEGATION = re.compile(
     r"(?=$|[\s，,。；;！!]|查|看|跑|执行|生成|获取|做|分析|汇总|查询|要|输出|拉取|给|展示|算)"
 )
 _CHINESE_BLOCKED = (
+    "订单目录",
+    "订单明细",
+    "订单详情",
+    "订单列表",
     "归因",
     "分群",
     "人群",

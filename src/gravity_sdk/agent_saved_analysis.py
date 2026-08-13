@@ -151,14 +151,20 @@ def saved_analysis_query(query: str) -> bool:
         words = frozenset(_ASCII_WORD.findall(selected))
         return (
             "saved" in words
-            and bool(words & _ENGLISH_SUBJECTS)
+            and bool(
+                words & _ENGLISH_SUBJECTS
+                or {"order", "directory"}.issubset(words)
+            )
             and bool(words & _ENGLISH_ACTIONS)
             and not bool(words & _ENGLISH_BLOCKED)
         )
     compact = "".join(selected.split())
     return (
         any(marker in compact for marker in ("保存", "已存"))
-        and any(subject in compact for subject in _CHINESE_SUBJECTS)
+        and (
+            any(subject in compact for subject in _CHINESE_SUBJECTS)
+            or "订单目录" in compact
+        )
         and any(action in compact for action in _CHINESE_ACTIONS)
         and not any(term in compact for term in _CHINESE_BLOCKED)
     )

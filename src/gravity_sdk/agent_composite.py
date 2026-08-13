@@ -13,6 +13,7 @@ _STRICT_COMPOSITES = frozenset(
         "dashboard_analysis",
         "dashboard_snapshot",
         "material_performance",
+        "order_directory",
         "order_split_trace",
         "promotion_performance",
         "multidim",
@@ -123,6 +124,10 @@ def _strict_composite_query(name: str, query: str) -> bool:
         from .agent_material_performance import material_performance_query
 
         return material_performance_query(query)
+    if name == "order_directory":
+        from .agent_order_directory import order_directory_query
+
+        return order_directory_query(query)
     if name == "order_split_trace":
         from .agent_order_trace import order_split_trace_query
 
