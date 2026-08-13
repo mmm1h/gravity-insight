@@ -130,6 +130,9 @@ class DashboardAnalysisSurfaceTests(unittest.TestCase):
             "schema_version": "gravity-insight.dashboard-analysis.v1",
             "ok": True, "status": "success", "exit_code": 0, "app_id": 17,
             "dashboard": {"id": 8}, "mode": "run", "chart_count": 1,
+            "page_conditions": {"source_field": "data.object.config.filter",
+                                "active": False, "condition_count": 0,
+                                "config": "private"},
             "charts": [{"index": 0, "name": "Revenue", "supported": True,
                         "query_executed": True, "result": {"data": []},
                         "date_override_applied": False,
@@ -153,13 +156,15 @@ class DashboardAnalysisSurfaceTests(unittest.TestCase):
         projected = plan_adapter.project_dashboard_analysis_result(
             result, context.output_fields, context
         )
-        self.assertEqual({"dashboard", "charts"}, set(projected) - {
+        self.assertEqual({"dashboard", "charts", "page_conditions"}, set(projected) - {
             "schema_version", "ok", "status", "exit_code"
         })
         self.assertNotIn("private", str(projected))
         self.assertNotIn("secret", str(projected))
         self.assertFalse(projected["charts"][0]["date_override_applied"])
         self.assertEqual(1, len(projected["charts"][0]["limitations"]))
+        self.assertEqual({"source_field", "active", "condition_count"},
+                         set(projected["page_conditions"]))
 
     def test_agent_routes_chart_replay_without_colliding_with_snapshot(self):
         cases = (
