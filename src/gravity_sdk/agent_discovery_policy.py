@@ -5,6 +5,11 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from .agent_monetization_guard import (
+    MONETIZATION_GAP_REASON,
+    monetization_guard_blocks_operation_fallback,
+    monetization_guard_safe_query,
+)
 from .agent_order_directory import (
     order_directory_blocks_operation_fallback,
     order_directory_safe_query,
@@ -22,7 +27,8 @@ def operation_fallback_excluded(query: str) -> bool:
     """Return whether an explicit product request must not become a raw card."""
 
     return (
-        order_directory_blocks_operation_fallback(query)
+        monetization_guard_blocks_operation_fallback(query)
+        or order_directory_blocks_operation_fallback(query)
         or order_split_trace_blocks_operation_fallback(query)
         or promotion_performance_blocks_operation_fallback(query)
     )
@@ -31,7 +37,12 @@ def operation_fallback_excluded(query: str) -> bool:
 def safe_discovery_query(query: str) -> str:
     """Remove values from every sensitive product-shaped Agent query."""
 
-    return order_directory_safe_query(order_split_trace_safe_query(query))
+    protected = order_directory_safe_query(order_split_trace_safe_query(query))
+    if protected != query:
+        return protected
+    if monetization_guard_blocks_operation_fallback(query):
+        return monetization_guard_safe_query(query)
+    return query
 
 
 def operation_fallback_gap(query: str) -> list[dict[str, Any]]:
@@ -47,6 +58,8 @@ def operation_fallback_gap(query: str) -> list[dict[str, Any]]:
             "the explicit Order Directory request is excluded by its closed "
             "identifier-free single-day product boundary"
         )
+    elif monetization_guard_blocks_operation_fallback(query):
+        reason = MONETIZATION_GAP_REASON
     else:
         reason = (
             "the explicit Promotion Performance request is excluded by its "

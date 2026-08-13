@@ -74,7 +74,7 @@ gravity agent "<英文或技术关键词>"
 gravity run <operation-id> --input <json-or-file>
 ```
 
-`gravity agent` 完全离线，一次完成 bounded search + describe，优先返回匹配的 workspace recipe，再用 stable operation 补足默认 3 个、最多 5 个 capability cards。Recipe 卡片包含 `required_parameters`；operation 卡片包含压缩 input schema、`required_inputs`、父 operation、分页合同；两类都提供可直接调用的 `next.argv`。无 query 时运行 `gravity agent` 可取得 `gravity.agent.v1` 机器协议。
+`gravity agent` 完全离线，一次完成 bounded search + describe，优先返回匹配的 workspace recipe，再用 stable operation 补足默认 3 个、最多 5 个 capability cards。Recipe 卡片包含 `required_parameters`；operation 卡片包含压缩 input schema、`required_inputs`、父 operation、分页合同；两类都提供可直接调用的 `next.argv`。无 query 时运行 `gravity agent` 可取得 `gravity.agent.v1` 机器协议。明确的 `monetization details/变现明细` 当前只返回本地安全 capability gap 且不扫描 raw inventory；只有精确 `analysis.monetization_detail.list` 保持专家入口，这个 Guard 不是 Monetization 产品或 Plan 承诺。
 
 多个问题不要逐个执行 `gravity agent`。一次提交带稳定 ID 的问题数组：
 

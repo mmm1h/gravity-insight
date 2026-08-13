@@ -279,11 +279,16 @@ def capability_handoff_cards(
 ) -> tuple[list[dict[str, Any]], bool]:
     """Select direct product handoffs and whether they exclude local catalogs."""
 
+    from .agent_monetization_guard import (
+        monetization_guard_blocks_operation_fallback,
+    )
     from .agent_discovery_policy import operation_fallback_excluded
     from .agent_export import export_capability_cards
     from .agent_table_lineage import table_lineage_capability_cards
     from .agent_user_journey import user_journey_capability_cards
 
+    if monetization_guard_blocks_operation_fallback(query):
+        return [], True
     exports = export_capability_cards(
         query, domain=domain, platform=platform, inventory=export_inventory
     )
