@@ -44,7 +44,7 @@ ignored `tmp/codex/stable-coverage-gap/crossref.md`，权威结论落在本页�
 | `material.bytedance_asset_text_title_package.list` | 普通标题包的标题数、计划数、历史成本和 CTR 如何；有旧非空样本，stable 合同晚于样本 | 补 D32 title-package family；与标准版共享 `1/1/1/1/1` | `title_list`、`create_user_id`、`create_user_name`、`update_user_id` 保持省略；待实现 |
 | `material.bytedance_std_asset_text_title_package.list` | 标准标题包的标题数、计划数、历史成本和 CTR 如何；有旧非空样本，stable 合同晚于样本 | 补 D32 title-package family；与普通版共享 `1/1/1/1/1` | 同上；待实现 |
 | `material.bytedance.promotion_material.list` | 精确广告窗口内素材的消耗、曝光、点击、CTR、CPC、CPM、尺寸和时长如何；目标响应为空 | 补 D32；`1/1/1/1/1`，未知引用路径 3 次 | `cover_source`、`labels`、`material_info`、`organization_tags`、`poster_url`、`signature`、`star_author_id`、`url` 保持省略；等非空证据 |
-| `analysis.segment.user_detail.list` | 精确分群有哪些成员及其时间、渠道、版本和归因属性；无不可变非空样本 | 补分群详情；`1/1/1/1/1` | `ClientID`、`device_info`、`re_attribute_info`、动态 `fields` 待隐私批准，本轮停止 |
+| `analysis.segment.user_detail.list` | 精确分群有哪些成员及其时间、渠道、版本和归因属性；无不可变非空样本 | 补分群详情；`1/1/1/1/1` | **已裁决不批准**，保持 reservation（理由见下方「对照裁决」）；不再计入待实现 |
 
 本轮只实现 `report.company_amount.query`：已有成功非空与分页证据，无 App、日期或父引用输入，
 稳定投影已排除 `user_count`，可作为独立的“查看公司资源用量趋势”一次完整分页闭环。Core、CLI
@@ -416,6 +416,26 @@ identifier-free envelope，并通过 CLI/SDK/Plan/Agent card 四面交付；本�
 字段默认隐藏，永久排除值不进入 data/total/page/error/receipt。Plan 经窄 Analysis family router 接入，
 `plan_adapters.py` 净增长 0。Guard 仅放行无冲突的产品意图，用户/设备筛选或分组、动态字段、跨日、
 聚合、导出/写入和 raw-like 请求继续本地报 gap。D28 聚合仍需独立账户绑定与合同证据，本轮未实现。
+
+### 对照裁决：分群成员明细**不批准**（2026-08-14）
+
+`analysis.segment.user_detail.list` 在 stable 交叉中被列为"值得有产品面"，需要
+`ClientID`、`device_info`、`re_attribute_info` 与动态 `fields` 的投影批准。**判定：不批准，
+保持 reservation。** 这是与 D27 相对的一面，写在这里是为了让批准边界可读，不必每轮重问。
+
+理由不是字段逐个敏感，而是**这条动线的有用内容本身就是用户级的**：
+
+1. 它回答的是"这个分群里有哪些人、各自什么属性"。做 identifier-free 投影会把
+   区分它与聚合的那部分恰好剥掉——剥完就不再是这条动线。D27 不同：变现明细去掉标识后，
+   广告位/平台/ecpm 维度仍能回答"变现表现如何"。
+2. **聚合需求已经有产品**：`analysis segment snapshot` 返回 `part/percent/total`，
+   分群规模与占比已闭环。缺的只有逐人下钻，而那正是不该开的部分。
+3. 字段层面也不成立：`ClientID` 是直接标识；`device_info` 整个嵌套对象已由 D27 判定为
+   设备指纹；`re_attribute_info` 在 D27 只批准了聚合语境下的广告维度字段，
+   逐人语境下含义不同；动态 `fields` 无界。
+
+**与 3 条隐私门禁导出属同一类**：不是工程排期缺口，是范围与安全模型问题。
+除非项目范围明确扩展，否则不重开。
 
 ## Agent 入口表的增长处理
 
