@@ -8,6 +8,7 @@
 | --- | --- |
 | 查看、领取、推进或关闭 GitHub Issue | [Issue 状态管理](issues.md) |
 | 查看或清理结构性技术债 | [技术债清单](technical-debt.md) |
+| 对齐 Agent 错误分类与退出码 | [错误分类对齐](error-classification-alignment.md) |
 | 完善 Multidim 的 Agent 产品面 | [Multidim Agent Surface v1](multidim-agent-surface.md) |
 | 完善 Business Pulse 的 Agent 交接 | [Business Pulse Agent Surface v1](business-pulse-agent-surface.md) |
 | 完善四平台素材表现的 Agent 产品面 | [Material Performance v1](material-performance.md) |

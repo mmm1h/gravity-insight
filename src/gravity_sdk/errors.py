@@ -44,12 +44,12 @@ _CODE_DEFAULTS: dict[str, tuple[ErrorCategory, bool]] = {
     ErrorCode.PARENT_REQUIRED.value: (ErrorCategory.CALLER, False),
     ErrorCode.AUTH_MISSING.value: (ErrorCategory.CALLER, False),
     ErrorCode.AUTH_REJECTED.value: (ErrorCategory.CALLER, False),
-    ErrorCode.PERMISSION_UNAVAILABLE.value: (ErrorCategory.CALLER, False),
+    ErrorCode.PERMISSION_UNAVAILABLE.value: (ErrorCategory.UPSTREAM, False),
     ErrorCode.RATE_LIMITED.value: (ErrorCategory.UPSTREAM, True),
     ErrorCode.UPSTREAM_UNAVAILABLE.value: (ErrorCategory.UPSTREAM, True),
     ErrorCode.CONTRACT_CHANGED.value: (ErrorCategory.UPSTREAM, False),
-    ErrorCode.UNSUPPORTED.value: (ErrorCategory.CALLER, False),
-    ErrorCode.NOT_IMPLEMENTED.value: (ErrorCategory.CALLER, False),
+    ErrorCode.UNSUPPORTED.value: (ErrorCategory.LOCAL, False),
+    ErrorCode.NOT_IMPLEMENTED.value: (ErrorCategory.LOCAL, False),
     ErrorCode.PAGINATION_LIMIT.value: (ErrorCategory.CALLER, False),
     ErrorCode.EXPORT_TIMEOUT.value: (ErrorCategory.UPSTREAM, True),
     ErrorCode.LOCAL_IO_ERROR.value: (ErrorCategory.LOCAL, False),
@@ -236,6 +236,7 @@ class GravityInsightError(RuntimeError):
     """Base class for structured errors that are safe to show to callers."""
 
     code: ErrorCode | str = ErrorCode.UPSTREAM_UNAVAILABLE
+    category: ErrorCategory | str | None = None
 
     def __init__(
         self,
@@ -263,6 +264,7 @@ class GravityInsightError(RuntimeError):
             self.code,
             str(self),
             operation_id=operation_id,
+            category=self.category,
             field=self.field,
             retry_after_ms=self.retry_after_ms,
             next_action=next_action or self.next_action,
@@ -287,6 +289,7 @@ class ParentRequiredError(InputValidationError):
 
 class PolicyViolation(GravityInsightError, PermissionError):
     code = ErrorCode.UNSUPPORTED
+    category = ErrorCategory.LOCAL
 
 
 class CredentialError(GravityInsightError):

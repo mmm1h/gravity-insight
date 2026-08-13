@@ -63,7 +63,7 @@ class DashboardSnapshotPlanTests(unittest.TestCase):
 
     def test_partial_and_contract_drift_expose_only_aggregate_error_identity(self):
         for category, code, exit_code in (
-            ("caller", "PERMISSION_UNAVAILABLE", 2),
+            ("upstream", "PERMISSION_UNAVAILABLE", 3),
             ("upstream", "UPSTREAM_UNAVAILABLE", 3),
             ("local", "LOCAL_IO_ERROR", 4),
         ):
