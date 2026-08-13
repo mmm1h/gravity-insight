@@ -2,8 +2,16 @@ from __future__ import annotations
 
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
+from gravity_sdk.cli import build_parser
+from gravity_sdk.plan import AdapterContext
+from gravity_sdk.plan_dashboard_adapter import (
+    execute_dashboard_plan,
+    validate_dashboard_plan,
+)
+from gravity_sdk.sdk import GravitySDK
 from gravity_sdk.template_replay import (
     prepare_analysis_template,
     run_analysis_template,
@@ -187,6 +195,70 @@ class AnalysisTemplateReplayTests(unittest.TestCase):
         self.assertEqual("capability_gap", result["status"])
         self.assertEqual("config", result["quarantine"][0]["field"])
         self.assertNotIn("private", str(result))
+
+    def test_cli_sdk_and_plan_share_the_governed_surface(self) -> None:
+        args = build_parser().parse_args(
+            [
+                "analysis", "template", "run", "--scope", "internal",
+                "--app", "main", "--ref", "template-1",
+                "--start", "2026-08-01", "--end", "2026-08-02",
+            ]
+        )
+        self.assertEqual("run", args.template_command)
+
+        expected = {"schema_version": "gravity-insight.analysis-template-replay.v1"}
+        sdk = GravitySDK(insight=object(), workspace=_workspace())
+        with patch(
+            "gravity_sdk.template_replay_surface.run_analysis_template",
+            return_value=expected,
+        ) as delegated:
+            self.assertIs(
+                expected,
+                sdk.run_analysis_template(
+                    "main", "template-1", scope="internal",
+                    start="2026-08-01", end="2026-08-02",
+                ),
+            )
+        self.assertEqual(101, delegated.call_args.kwargs["app"])
+
+        request = {
+            "name": "analysis_template", "scope": "internal", "app": "main",
+            "ref": "template-1", "mode": "run",
+            "start": "2026-08-01", "end": "2026-08-02",
+        }
+        context = AdapterContext(
+            node_id="template", execution_id="test", kind="composite",
+            workspace=_workspace(), output_fields=(), dynamic_targets=(),
+            max_pages=2, max_items=10,
+        )
+        gap = {
+            "schema_version": "gravity-insight.analysis-template-replay.v1",
+            "ok": False, "status": "capability_gap", "exit_code": 2,
+            "network_called": True, "definition_network_called": True,
+            "query_executed": False,
+            "template": {
+                "scope": "internal", "id": "template-1", "name": "Template",
+                "template_type": "report", "sub_type": "event",
+                "modify_time": None, "replay_supported": False, "app_id": "101",
+            },
+            "artifact_mode": "origin_params", "kind": None,
+            "operation_id": None,
+            "date_range": {"start": "2026-08-01", "end": "2026-08-02", "inclusive": True},
+            "date_override_applied": False, "limitations": [], "validation": None,
+            "quarantine": [{
+                "field": "config.originParams.queryItemList",
+                "disposition": "quarantined",
+                "reason": "formula_token_semantics_unproven",
+            }],
+            "next_action": "Keep this template non-executable.",
+        }
+        calls: list[dict] = []
+        plan_sdk = SimpleNamespace(run_analysis_template=lambda *_args, **kwargs: calls.append(kwargs) or gap)
+        validate_dashboard_plan(request, context, context.workspace)
+        result = execute_dashboard_plan(plan_sdk, request, context)
+        self.assertEqual(("capability_gap", 1), (result["status"], len(calls)))
+        self.assertEqual(1, calls[0]["max_workers"])
+        self.assertNotIn("config", result["template"])
 
 
 if __name__ == "__main__":

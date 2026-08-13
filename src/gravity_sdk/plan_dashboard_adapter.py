@@ -1,4 +1,4 @@
-"""One Plan routing seam for Dashboard control and chart composites."""
+"""One Plan routing seam for governed Analysis artifacts."""
 
 from __future__ import annotations
 
@@ -8,10 +8,15 @@ from typing import Any
 from .plan import AdapterContext
 from . import plan_dashboard_analysis_adapter as analysis
 from . import plan_dashboard_snapshot_adapter as snapshot
+from . import template_replay_surface as template
 
 
 COMPOSITE_NAMES = frozenset(
-    {snapshot.DASHBOARD_SNAPSHOT_NAME, analysis.DASHBOARD_ANALYSIS_NAME}
+    {
+        snapshot.DASHBOARD_SNAPSHOT_NAME,
+        analysis.DASHBOARD_ANALYSIS_NAME,
+        template.ANALYSIS_TEMPLATE_NAME,
+    }
 )
 
 
@@ -24,6 +29,8 @@ def validate_dashboard_plan(
 ) -> None:
     if request.get("name") == analysis.DASHBOARD_ANALYSIS_NAME:
         analysis.validate_dashboard_analysis_plan(request, context, workspace)
+    elif request.get("name") == template.ANALYSIS_TEMPLATE_NAME:
+        template.validate_template_plan(request, context, workspace)
     else:
         snapshot.validate_dashboard_snapshot_plan(request, context, workspace)
 
@@ -33,13 +40,17 @@ def execute_dashboard_plan(
 ) -> dict[str, Any]:
     if request.get("name") == analysis.DASHBOARD_ANALYSIS_NAME:
         return analysis.execute_dashboard_analysis_plan(sdk, request, context)
+    if request.get("name") == template.ANALYSIS_TEMPLATE_NAME:
+        return template.execute_template_plan(sdk, request, context)
     return snapshot.execute_dashboard_snapshot_plan(sdk, request, context)
 
 
 def is_dashboard_result(result: Any) -> bool:
-    return analysis.is_dashboard_analysis_result(
-        result
-    ) or snapshot.is_dashboard_snapshot_result(result)
+    return (
+        analysis.is_dashboard_analysis_result(result)
+        or snapshot.is_dashboard_snapshot_result(result)
+        or template.is_template_result(result)
+    )
 
 
 def project_dashboard_result(
@@ -47,6 +58,8 @@ def project_dashboard_result(
 ) -> dict[str, Any]:
     if analysis.is_dashboard_analysis_result(result):
         return analysis.project_dashboard_analysis_result(result, fields, context)
+    if template.is_template_result(result):
+        return template.project_template_result(result, fields, context)
     return snapshot.project_dashboard_snapshot_result(result, fields, context)
 
 
