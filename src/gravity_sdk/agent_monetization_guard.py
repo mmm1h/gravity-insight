@@ -69,6 +69,7 @@ _ENGLISH_BLOCKED = frozenset(
 _ENGLISH_NEGATIONS = frozenset(
     {"avoid", "cannot", "exclude", "never", "no", "not", "skip", "without"}
 )
+_IDENTIFIER_FREE_NAME = "无标识"
 _CHINESE_BLOCKED = (
     "不要", "无需", "不需要", "拒绝", "导出", "下载", "写入", "修改",
     "删除", "用户", "设备", "标识", "筛选", "过滤", "条件", "分组", "订单",
@@ -156,6 +157,9 @@ def _contains_near_raw_selector(selected: str) -> bool:
 def _blocked_product_query(selected: str) -> bool:
     words = frozenset(_ASCII_WORD.findall(selected.replace("-", " ")))
     compact = _COMPACT_SEPARATORS.sub("", selected)
+    # "无标识" is this product's own approved name, so it must not trip the bare
+    # "标识" block that exists to refuse identifier-shaped requests.
+    compact = compact.replace(_IDENTIFIER_FREE_NAME, "")
     return bool(
         words & (_ENGLISH_BLOCKED | _ENGLISH_NEGATIONS)
         or _RANGE_PHRASE.search(selected)

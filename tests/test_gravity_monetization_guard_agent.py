@@ -17,6 +17,7 @@ class MonetizationGuardAgentTests(unittest.TestCase):
         queries = (
             "monetization details", "monetization-details", "monetization directory", "monetization rows",
             "monetization list", "变现明细", "变现 目录", "monetization 变现明细",
+            "无标识变现明细",
         )
         for query in queries:
             with self.subTest(query=query):
@@ -38,6 +39,7 @@ class MonetizationGuardAgentTests(unittest.TestCase):
             "monetization details from 2026-08-01 to 2026-08-08", "monetization details ClientID north-secret",
             "monetization details user_id north-secret", "monetization details fields AdPlatform",
             "monetization details filter advertiser north-secret", "monetization details group by user",
+            "带标识变现明细", "无标识变现明细按用户分组", "变现明细按标识筛选", "无标识变现明细跨日",
             "monetization details summary", "dashboard snapshot monetization details", "变现明细按用户分组",
             "变现明细聚合报表", f"{READ} north-secret", f"{READ.rsplit('.', 1)[0]} north-secret",
             f"{READ.removeprefix('analysis.')} north-secret", f"{EXPORT} north-secret",
