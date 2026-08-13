@@ -408,12 +408,20 @@ gravity analysis order directory --app main --date 2026-08-08 `
 不会裁剪前缀后冒充完整目录。它不接受任意 fields/filter/sort 或跨日窗口，也不解释退款、净收入
 或订单成功。
 
-有效请求严格为 `P` 个目录分页，0 metadata、0 child。direct 分页 worker 默认 6、最大 24；
+有效请求实测为 `P` 个目录 POST、0 metadata、0 child；最小空日为 1 HTTP，7 个同层空日 Plan
+节点为 7 HTTP。direct 分页 worker 默认 6、最大 24；
 Plan adapter 固定 1。省略 `--output` 时输出安全 stdout 前缀；指定它时写入完整 JSON。
 产品不提供 NDJSON 或 `--format`。未知入口时 Agent 返回唯一
 `order_directory` Plan 节点及待填写的 `app/date`，不从自然语言取值或自动执行；否定、导出、
 写入及相邻分析产品会安全报缺口且不扫描 operation inventory。精确 raw selector
 `analysis.order_detail.list` 与 `analysis.order_split_detail.list` 仍保留专家兼容入口。
+
+### Monetization Detail v1
+
+`gravity analysis monetization detail --app main --date 2026-08-08` 固定使用已批准的无标识字段
+allowlist 和严格单日，不接受动态 fields/conditions/group。有效请求实测为 `P` 个明细 POST、
+0 metadata；最小空日为 1 HTTP。未知上游字段默认隐藏，永久排除字段与隐私投影边界见
+[路线图](../roadmap.md#已批准的隐私投影边界变现明细d27)。
 
 ### Order Split Trace v1
 

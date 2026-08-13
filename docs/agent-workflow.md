@@ -37,7 +37,7 @@ Multidim 使用物理输入，不新增 Spec。它直接使用闭合的 `date_li
 
 ### Order Directory 与 Order Split Trace
 
-普通目录已知 App 和严格单日时，一次 `gravity analysis order directory` 完整读取 `P` 个分页，结果行严格只含 `Amount/BackAmount/Status/CreateTime`；完整结果使用可选 `--output <file.json>`，不支持 NDJSON/format。未知入口只返回 value-free `composite:order_directory`，调用方补齐 `app/date`。已知 App、单日和显式 TraceID 时，一次 `gravity analysis order trace` 完整读取有界父目录，本地精确匹配唯一父行后读取一次拆单明细。两者都不从自然语言选值或自动执行；否定、导出、写入、退款/净收入/成功解释、归因、旅程、变现、推广/素材、模板/看板、分群/保存分析、UI/权限等冲突意图安全报缺口且不扫描 raw inventory。精确 raw selector `analysis.order_detail.list` 与 `analysis.order_split_detail.list` 保持专家兼容；selector 后附任何自然语言则不再视为 exact，并安全报缺口。
+普通目录与变现明细已知 App 和严格单日时分别一次 `analysis order directory` / `analysis monetization detail` 完整读取 `P` 个分页，实测均为每页 1 POST、0 metadata；7 个同层空日订单节点为 7 POST。订单行严格只含 `Amount/BackAmount/Status/CreateTime`，完整结果使用可选 `--output <file.json>`，不支持 NDJSON/format。未知入口只返回 value-free composite，调用方补齐 `app/date`。已知 App、单日和显式 TraceID 时，一次 `analysis order trace` 完整读取有界父目录，本地精确匹配唯一父行后读取一次拆单明细。这些产品都不从自然语言选值或自动执行；否定、导出、写入、退款/净收入/成功解释、归因、旅程、相邻产品、推广/素材、模板/看板、分群/保存分析、UI/权限等冲突意图安全报缺口且不扫描 raw inventory。精确 raw selector 保持专家兼容；selector 后附任何自然语言则不再视为 exact，并安全报缺口。
 
 推广表现要求调用方先明确一个 App、日期、平台数组和物理指标数组；Agent 只对明确的 `promotion performance/跨平台推广报表` 返回 `promotion_performance` 节点，不从自然语言选值。否定、导出、写入、策略、素材/Pulse/Multidim/归因/看板/保存分析/分群/旅程、raw snapshot 及四个异构平台请求不会回落为 generic Promotion operation。
 
