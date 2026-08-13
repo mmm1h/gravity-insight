@@ -719,7 +719,7 @@ workspace 的发现顺序、最小配置和 recipe 字段见 [Workspace 参考](
 | `gravity sql verify [--date ...] [--publish]` | 验证最近安全自然日；显式发布才更新 Evidence |
 | `gravity sql query <product> ...` | 执行一个或批量已登记聚合产品 |
 
-SQL CLI 不是任意查询入口。它只实现 `custom-sql` 这一种受治理的聚合产品机制；具体产品名称、SQL、App、数据源、输出字段和禁止结论全部由调用项目的 `gravity.toml` 维护。产品层校验固定占位符、聚合隐私、输出投影和行数上限，但不内置任何业务事件、属性或口径。
+SQL CLI 不是任意查询入口。它只实现 `custom-sql` 这一种受治理的聚合产品机制；具体产品名称、SQL、App、数据源、输出字段和禁止结论全部由调用项目的 `gravity.toml` 维护。产品层校验固定占位符、聚合隐私、输出投影和行数上限；可选 `output_semantics` 把字段口径带入目录、dry-run 与查询摘要，但不内置业务事件、属性、动态 warning 或指标好坏判断。
 
 未知产品时先运行一次 `gravity sql products`；已知产品直接 `gravity sql query`。query 支持
 单个参数、`--input` 对象、数组或 `requests` wrapper，并以 `--concurrency 1..2` 保序并发。

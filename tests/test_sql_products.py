@@ -78,6 +78,7 @@ class GravityProductTests(unittest.TestCase):
             [{"app_id": 1001, "event_name": "DemoEvent", "event_count": 2}],
             result["summary"]["rows"],
         )
+        self.assertEqual("observed event name", result["summary"]["output_semantics"]["event_name"])
 
     def test_generic_summary_rejects_rows_above_workspace_limit(self):
         start_at, end_at = day_window(date(2026, 7, 22))
@@ -411,6 +412,7 @@ class GravityProductTests(unittest.TestCase):
         product = payload["products"][0]
         self.assertEqual("daily-event-summary", product["name"])
         self.assertNotIn("sql", product)
+        self.assertEqual("observed event name", product["output_semantics"]["event_name"])
         self.assertEqual(2, payload["query_input"]["max_concurrency"])
 
     def test_dry_run_query_emits_offline_safe_plan_without_runtime_or_evidence(self):

@@ -30,6 +30,7 @@ _CONTRACT_CARD_FIELDS = (
     "privacy",
     "measurement",
     "output_fields",
+    "output_semantics",
     "max_rows",
     "forbidden_claims",
 )
