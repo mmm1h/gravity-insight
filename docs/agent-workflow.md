@@ -6,35 +6,18 @@
 
 | 已知信息 | 直接执行 | 正常命令数 |
 | --- | --- | --- |
-| 已知 workspace recipe | `gravity run @<recipe> ...` | 1 |
-| 已知 operation 和输入 schema | `gravity run <operation-id> ...` | 1 |
-| 已知 Analysis kind 和物理字段 | 单个 `analysis query`；多个独立 spec 用 `analysis query batch` | 1 |
-| 已知 Analysis kind，指标未知 | `metadata vocabulary` → `analysis query --spec` | 2 |
-| 已知 Multidim App 与完整物理输入 | `gravity multidim query --app ... --input ...` | 1 |
-| 不知道 Multidim 产品入口 | `gravity agent "执行多维报表查询"` → 填卡并 `plan run` | 2 |
-| 已知素材 App、日期窗和平台 | `gravity materials performance --app ... --start ... --end ...` | 1 |
-| 不知道素材表现入口 | `gravity agent "跨平台素材报表"` → 填卡并 `plan run` | 2 |
-| 已知推广 App、日期、平台和物理指标 | `gravity promotion performance --app ... --start ... --end ... --platform ... --metric ...` | 1 |
-| 不知道推广表现入口 | `gravity agent "跨平台推广报表"` → 填卡并 `plan run` | 2 |
-| 普通订单目录（App/单日已知或入口未知） | 已知：`gravity analysis order directory --app ... --date ...`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
-| 已知 App、单日与 TraceID | `gravity analysis order trace --app ... --date ... --trace-id ...` | 1 |
-| 不知道拆单追踪入口 | `gravity agent "按 TraceID 查拆单明细"` → 填卡并 `plan run` | 2 |
-| 已知人群规则 spec | `gravity analysis segment evaluate --app ... --spec ...` | 1 |
-| 不知道人群规则合同 | `gravity agent "评估人群规则命中人数"` → `plan run` | 2 |
-| 分群详情/历史/单日结果（引用已知/未知） | 已知：`analysis segment snapshot`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
-| 已知保存分析引用和日期窗 | `gravity analysis saved run --app ... --ref ... --start ... --end ...` | 1 |
-| 不知道能力、但已有引用和日期窗 | `gravity agent "run saved analysis <ref>"` → 填卡并 `plan run` | 2 |
-| 不知道保存分析引用 | `analysis saved list` → 人工选择精确引用 → `analysis saved run` | 2；若还要先发现能力则 3 |
-| 看板控制面/图表重放（引用已知/未知） | 已知：`analysis dashboard snapshot` 或 `analysis dashboard run`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
-| 已知可调用导出及完整输入 | `gravity export run ... --output <file.xlsx>` | 1 |
-| 不知道可调用导出 | `gravity agent "material report export"` → 执行 `next.argv` | 2 |
-| 已知 App 与经营时间窗 | `gravity reports pulse --app ... --start ... --end ...` | 1 |
-| 不知道经营 Pulse 入口 | `gravity agent "business pulse"` → 填卡并 `plan run` | 2 |
-| 已知多个 selector 或已有 Plan | `gravity plan run --input <plan.json>` | 1 |
-| 已知单用户标识与时间窗 | `gravity analysis user journey ...` | 1 |
-| 已同步数据表沿革，目标未知 | `gravity agent "data table lineage"` → `plan run` | 2 |
-| 已知 operation，不确定输入 | `gravity agent <operation-id>` → `run` | 2 |
-| 只知道分析目标 | `gravity agent "<query>"` → 返回 argv | 2 |
+| 已知 recipe / operation | `gravity run @<recipe> ...` / `gravity run <operation-id> ...` | 1 |
+| Analysis 编译（kind/字段已知或指标未知） | `analysis query [batch]`；指标未知先 `metadata vocabulary` | 1 / 2 |
+| 报表产品（Multidim / Business Pulse） | 已知输入：`multidim query` / `reports pulse`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
+| 跨平台投放/素材表现 | 已知输入：`materials performance` / `promotion performance`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
+| 订单目录/拆单追踪 | 已知 App/单日[/TraceID]：`analysis order directory` / `analysis order trace`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
+| 人群规则/分群快照 | 已知 spec 或精确引用：`analysis segment evaluate` / `analysis segment snapshot`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
+| 保存分析 | 引用已知：`analysis saved run`；未知能力：Agent 卡；未知引用：`analysis saved list` 后人工选择 | 1 / 2 / 3 |
+| 看板控制面/图表重放 | 已知引用：`analysis dashboard snapshot` / `analysis dashboard run`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
+| Governed 导出 | 输入已知：`export run`；未知：`agent "material report export"` → `next.argv` | 1 / 2 |
+| 多 selector / 已有 Plan | `gravity plan run --input <plan.json>` | 1 |
+| 用户旅程/数据表沿革 | `analysis user journey`；目标未知：`agent "data table lineage"` → `plan run` | 1 / 2 |
+| 单个未知目标/operation 输入 | `gravity agent "<query>"` / `gravity agent <operation-id>` → 执行卡片 argv | 2 |
 | 多个未知分析问题 | `gravity agent --input <questions.json>` → `plan run` | 2 |
 | 同时找 operation、recipe、metadata | `gravity find "<query>"` | 1 次发现 |
 | 多个独立 operation | `gravity insight batch read ...` | 1 次批量执行 |

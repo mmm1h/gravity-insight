@@ -48,6 +48,11 @@ def safe_discovery_query(query: str) -> str:
 def operation_fallback_gap(query: str) -> list[dict[str, Any]]:
     """Return one product-specific safe gap without consulting operations."""
 
+    from .agent_intent_routing import multiple_intent_gap
+
+    if gap := multiple_intent_gap(query):
+        gap[0]["query"] = safe_discovery_query(query)
+        return gap
     if order_split_trace_blocks_operation_fallback(query):
         reason = (
             "the explicit Order Split Trace request is excluded by its closed "

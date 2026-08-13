@@ -176,6 +176,13 @@ def promotion_performance_query(query: str) -> bool:
     return _claims_product(selected) and not _blocked(selected)
 
 
+def promotion_performance_intent(query: str) -> bool:
+    """Return positive promotion evidence without applying conflict policy."""
+
+    selected = _normalize(query)
+    return selected in _EXACT_INTENTS or _claims_product(selected)
+
+
 def promotion_performance_blocks_operation_fallback(query: str) -> bool:
     """Claim explicit product-shaped requests even when policy blocks the card.
 
@@ -284,6 +291,7 @@ __all__ = [
     "PROMOTION_PERFORMANCE_SELECTOR",
     "promotion_performance_blocks_operation_fallback",
     "promotion_performance_input_template",
+    "promotion_performance_intent",
     "promotion_performance_plan_request",
     "promotion_performance_query",
 ]

@@ -48,6 +48,12 @@ def segment_rule_spec_cards(
     return [_segment_rule_card(query)]
 
 
+def segment_evaluate_intent(query: str) -> bool:
+    """Return positive Segment Evaluate evidence for central arbitration."""
+
+    return _requests_segment_evaluation(query)
+
+
 def is_authoritative_direct_card(card: Mapping[str, Any]) -> bool:
     """Identify direct cards that must suppress low-level operation fallback."""
 
@@ -209,6 +215,7 @@ def _intent_match(query: str) -> dict[str, Any]:
 
 __all__ = [
     "is_authoritative_direct_card",
+    "segment_evaluate_intent",
     "segment_rule_plan_request",
     "segment_rule_spec_cards",
 ]

@@ -22,6 +22,7 @@ _EXACT_INTENTS = frozenset(
         "business pulse",
         "operating pulse",
         "经营脉搏",
+        "经营脉薄",
         "业务脉搏",
     }
 )
@@ -42,53 +43,30 @@ _ENGLISH_NEGATIONS = frozenset(
 _ENGLISH_NEGATION_PHRASE = re.compile(r"\b(?:don['’]?t|do\s+not)\b")
 _ENGLISH_BLOCKED = frozenset(
     {
-        "attribution",
-        "audience",
-        "cohort",
         "config",
         "configuration",
         "create",
-        "dashboard",
         "delete",
         "detail",
         "details",
-        "directory",
-        "dimension",
-        "dimensions",
-        "event",
         "export",
         "favorite",
         "favorites",
         "favourite",
         "favourites",
-        "funnel",
-        "journey",
         "layout",
         "layouts",
         "member",
         "members",
-        "material",
-        "materials",
-        "multidim",
-        "multidimensional",
-        "order",
-        "orders",
         "permission",
         "permissions",
-        "property",
-        "retention",
-        "saved",
-        "scatter",
-        "segment",
         "template",
         "templates",
         "update",
-        "user",
-        "users",
     }
 )
 _CHINESE_SUBJECTS = ("经营", "业务")
-_CHINESE_PULSE = ("脉搏", "脉动")
+_CHINESE_PULSE = ("脉搏", "脉薄", "脉动")
 _CHINESE_OVERVIEW = ("概览", "概况", "总览")
 _CHINESE_TRENDS = ("趋势", "走势")
 _CHINESE_NEGATIONS = (
@@ -100,36 +78,16 @@ _CHINESE_BIE_NEGATION = re.compile(
     r"(?=$|[\s，,。；;！!]|查|看|跑|执行|生成|获取|做|分析|汇总|查询|要|输出|拉取|给|展示|算)"
 )
 _CHINESE_BLOCKED = (
-    "订单目录",
-    "订单明细",
-    "订单详情",
-    "订单列表",
-    "归因",
-    "分群",
-    "人群",
     "配置",
     "创建",
-    "看板",
     "删除",
-    "多维",
-    "事件",
     "导出",
     "收藏",
-    "漏斗",
-    "旅程",
     "布局",
     "成员",
-    "素材",
     "权限",
-    "留存",
-    "保存分析",
-    "保存",
-    "已存",
-    "属性分析",
-    "分布分析",
     "模板",
     "更新",
-    "单用户",
 )
 
 
@@ -201,6 +159,28 @@ def business_pulse_query(query: str) -> bool:
     return _chinese_query(selected)
 
 
+def business_pulse_intent(query: str) -> bool:
+    """Return positive Pulse evidence without adjacent-product exclusions."""
+
+    selected = " ".join(query.strip().casefold().split())
+    if selected in _EXACT_INTENTS:
+        return True
+    if not selected:
+        return False
+    words = frozenset(_ASCII_WORD.findall(selected.replace("-", " ")))
+    subject = bool(words & _ENGLISH_SUBJECTS) or any(
+        term in selected for term in _CHINESE_SUBJECTS
+    )
+    pulse = "pulse" in words or any(term in selected for term in _CHINESE_PULSE)
+    overview = bool(words & _ENGLISH_OVERVIEW) or any(
+        term in selected for term in _CHINESE_OVERVIEW
+    )
+    trends = bool(words & _ENGLISH_TRENDS) or any(
+        term in selected for term in _CHINESE_TRENDS
+    )
+    return subject and (pulse or overview and trends)
+
+
 def _english_query(selected: str) -> bool:
     words = frozenset(_ASCII_WORD.findall(selected.replace("-", " ")))
     if _blocked_query(selected, words) or not words & _ENGLISH_SUBJECTS:
@@ -228,9 +208,12 @@ def _chinese_query(selected: str) -> bool:
 
 
 def _blocked_query(selected: str, words: frozenset[str]) -> bool:
+    from .agent_intent_routing import adjacent_product_conflict
+
     return bool(
         words & (_ENGLISH_BLOCKED | _ENGLISH_NEGATIONS)
         or _ENGLISH_NEGATION_PHRASE.search(selected)
+        or adjacent_product_conflict("business_pulse", selected)
         or any(term in selected for term in _CHINESE_BLOCKED)
         or any(term in selected for term in _CHINESE_NEGATIONS)
         or _CHINESE_BIE_NEGATION.search(selected)
@@ -269,6 +252,7 @@ __all__ = [
     "BUSINESS_PULSE_REQUIRED_INPUTS",
     "BUSINESS_PULSE_SELECTOR",
     "business_pulse_input_template",
+    "business_pulse_intent",
     "business_pulse_plan_request",
     "business_pulse_query",
 ]
