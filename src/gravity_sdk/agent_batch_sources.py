@@ -15,6 +15,7 @@ from .agent_capabilities import (
 from .agent_export import load_export_agent_inventory, query_requests_export
 from .agent_handoff import is_analysis_task_handoff_query
 from .agent_discovery_policy import is_authoritative_local_question
+from .agent_order_trace import order_split_trace_blocks_operation_fallback
 from .agent_sources import snapshot_recipe_cards, workspace_catalog_fingerprint
 from .agent_table_lineage import table_lineage_capability_cards
 from .agent_user_journey import user_journey_capability_cards
@@ -55,6 +56,9 @@ def snapshot_agent_sources(
     composites = composite_capability_inventory()
     export_requested = any(
         query_requests_export(str(getattr(item, "query", "")))
+        and not order_split_trace_blocks_operation_fallback(
+            str(getattr(item, "query", ""))
+        )
         for item in questions or ()
     )
     local_only = not export_requested and questions_use_only_local_catalog(

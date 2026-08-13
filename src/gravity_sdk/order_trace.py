@@ -12,6 +12,7 @@ from .composite_batch import validate_composite_bounds
 from .composite_catalog import stable_operation
 from .errors import ErrorCode, InputValidationError
 from .order_trace_result import (
+    MAX_SPLIT_IDS,
     SCHEMA_VERSION,
     failure_from_native,
     failure_result,
@@ -130,7 +131,9 @@ def _read_parent(
     if not isinstance(value, Mapping):
         return _contract_failure(app, day, 0, 0, pages, items, workers)
     status = value.get("status")
-    if not isinstance(status, str) or status in _CONTRACT_STATUSES:
+    if not isinstance(status, str) or not _ok_matches(value.get("ok"), status):
+        return _contract_failure(app, day, 0, 0, pages, items, workers)
+    if status in _CONTRACT_STATUSES:
         return _contract_failure(app, day, 0, 0, pages, items, workers)
     if status in _FAILURE_STATUSES:
         return failure_from_native(
@@ -153,7 +156,7 @@ def _complete_parent_rows(
         value.get("schema_version") != "gravity-insight.read.v1"
         or value.get("operation_id") != PARENT_OPERATION_ID
         or value.get("error") not in (None, {})
-        or value.get("truncated") not in (None, False)
+        or not _false_or_absent(value.get("truncated"))
         or value.get("next_page_input") not in (None, {})
     ):
         return None
@@ -212,7 +215,7 @@ def _child_inputs(row: Mapping[str, Any], app: str) -> dict[str, Any] | None:
     raw_ids = row.get("$split_trace_id_list")
     if not trace or not client or not _valid_datetime(pay_time):
         return None
-    if not isinstance(raw_ids, list) or not 1 <= len(raw_ids) <= 100:
+    if not isinstance(raw_ids, list) or not 1 <= len(raw_ids) <= MAX_SPLIT_IDS:
         return None
     ids = [_string_identity(item) for item in raw_ids]
     if any(not item for item in ids) or len(set(ids)) != len(ids):
@@ -249,7 +252,12 @@ def _read_child(
             parent_stage="success", child_stage="contract_changed",
         )
     status = value.get("status")
-    if not isinstance(status, str) or status in _CONTRACT_STATUSES:
+    if not isinstance(status, str) or not _ok_matches(value.get("ok"), status):
+        return _contract_failure(
+            app, day, scanned, len(split_ids), pages, items, workers,
+            parent_stage="success", child_stage="contract_changed",
+        )
+    if status in _CONTRACT_STATUSES:
         return _contract_failure(
             app, day, scanned, len(split_ids), pages, items, workers,
             parent_stage="success", child_stage="contract_changed",
@@ -299,7 +307,7 @@ def _safe_child_rows(
         or value.get("operation_id") != CHILD_OPERATION_ID
         or value.get("error") not in (None, {})
         or value.get("page") is not None
-        or value.get("truncated") not in (None, False)
+        or not _false_or_absent(value.get("truncated"))
         or value.get("next_page_input") is not None
     ):
         return None
@@ -432,6 +440,16 @@ def _contains_sensitive(value: Any, sensitive: tuple[str, ...]) -> bool:
     if not isinstance(value, str):
         return False
     return any(secret == value or len(secret) >= 4 and secret in value for secret in sensitive)
+
+
+def _false_or_absent(value: Any) -> bool:
+    return value is None or type(value) is bool and value is False
+
+
+def _ok_matches(value: Any, status: str) -> bool:
+    if value is None:
+        return True
+    return value is True if status in {"success", "empty"} else value is False
 
 
 def _input(field: str, requirement: str) -> InputValidationError:

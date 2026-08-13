@@ -78,6 +78,10 @@ def export_inventory_for_query(
 ) -> Sequence[Mapping[str, Any]]:
     """Reuse a batch snapshot, or lazily load a single explicit export query."""
 
+    from .agent_order_trace import order_split_trace_blocks_operation_fallback
+
+    if order_split_trace_blocks_operation_fallback(query):
+        return ()
     if inventory is not None:
         return inventory
     if client is None or not query_requests_export(query):

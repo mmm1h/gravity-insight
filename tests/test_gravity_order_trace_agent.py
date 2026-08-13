@@ -58,6 +58,7 @@ class OrderSplitTraceAgentTests(unittest.TestCase):
             "run saved order split trace", "order split trace segment",
             "audience order split trace", "cohort order split trace",
             "permission UI order split trace", "不要查拆单追踪", "导出拆单追踪",
+            "别拆单追踪", "写拆单追踪",
             "拆单追踪退款判断", "拆单追踪净收入", "归因拆单追踪",
             "运行已保存的拆单追踪", "保存拆单追踪", "分群拆单追踪",
             "人群拆单追踪", "受众拆单追踪",
@@ -108,18 +109,21 @@ class OrderSplitTraceAgentTests(unittest.TestCase):
     @patch("gravity_sdk.agent_batch_sources.search_metadata", return_value={"results": []})
     def test_batch_positive_and_blocked_intents_never_load_operations(self, _metadata):
         class NoOperationClient:
+            def export_capabilities(self):
+                raise AssertionError("blocked Order Split Trace must not scan exports")
+
             def operation_inventory(self, **_options):
                 raise AssertionError("Order Split Trace is a local Agent product")
 
         result = capabilities_many(
-            ["order split trace", "拆单追踪", "export order split trace", "归因拆单追踪",
+            ["order split trace", "拆单追踪", "export order split trace", "导出拆单追踪", "归因拆单追踪",
              "run saved order split trace", "分群拆单追踪"],
             client=NoOperationClient(),
             workspace=SimpleNamespace(recipes={}, products={}, datasources={}),
         )
         self.assertEqual(0, result["failure_count"])
         self.assertEqual(
-            ["success", "success", "capability_gap", "capability_gap",
+            ["success", "success", "capability_gap", "capability_gap", "capability_gap",
              "capability_gap", "capability_gap"],
             [item["status"] for item in result["results"]],
         )

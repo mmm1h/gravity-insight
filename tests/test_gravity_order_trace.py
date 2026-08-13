@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import copy
+import json
 import unittest
 from pathlib import Path
 
 from gravity_sdk._field_policy_detail import validate_analysis_detail
+from gravity_sdk import GravityInsightClient
 from gravity_sdk.models import load_operation_manifest
 from gravity_sdk.order_trace import (
     CHILD_OPERATION_ID,
@@ -14,6 +16,7 @@ from gravity_sdk.order_trace import (
     sanitize_order_split_trace_result,
     validate_order_split_trace_request,
 )
+from gravity_sdk.transport import TransportResponse
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -75,7 +78,47 @@ class _ExplodingClient(_Client):
         raise RuntimeError("parent-secret client-secret")
 
 
+class _RoutingTransport:
+    is_test_transport = True
+
+    def __init__(self, handler):
+        self.handler, self.calls = handler, []
+
+    def request(self, method, path, **kwargs):
+        self.calls.append((method, path, kwargs))
+        return TransportResponse(
+            200, self.handler(path, kwargs), "2026-08-08T06:00:00Z"
+        )
+
+
 class OrderSplitTraceTests(unittest.TestCase):
+    def test_real_client_reads_every_parent_page_then_one_child_without_metadata(self):
+        def handler(path, kwargs):
+            if path.endswith("/pay_event/list/"):
+                page = kwargs["body"]["page"]
+                row = _row("other" if page == 1 else "parent-1")
+                return {"code": 0, "data": {"list": [row], "page_info": {
+                    "page": page, "page_size": 100, "total_page": 2,
+                    "total_number": 2,
+                }}}
+            if path.endswith("/split_order_detail/"):
+                return {"code": 0, "data": [{
+                    "TraceID": "split-1", "Amount": 9, "BackAmount": 0,
+                    "Status": "paid", "CreateTime": f"{DAY} 12:01:00",
+                }]}
+            raise AssertionError(path)
+        operations = [operation for path in (ROOT / "src" / "gravity_sdk" / "manifests").glob("*.json")
+                      for operation in json.loads(path.read_text(encoding="utf-8"))["operations"]]
+        transport = _RoutingTransport(handler)
+        client = GravityInsightClient._from_manifest_for_tests(
+            {"manifest_version": 1, "operations": operations}, transport=transport,
+        )
+        result = order_split_trace(client, 7, DAY, "parent-1", max_workers=3,
+                                   max_pages=5, max_items=10)
+        self.assertEqual("success", result["status"])
+        self.assertEqual(3, len(transport.calls))
+        self.assertEqual(2, sum(path.endswith("/pay_event/list/") for _, path, _ in transport.calls))
+
     def test_success_derives_child_once_and_drops_every_identifier(self):
         client = _Client(
             _parent([_row()], workers=3),
@@ -146,6 +189,17 @@ class OrderSplitTraceTests(unittest.TestCase):
                 )
                 self.assertEqual("contract_changed", result["status"])
 
+        for truncated in (0, 0.0):
+            with self.subTest(truncated=truncated):
+                malformed = _parent([_row()], workers=1)
+                malformed["truncated"] = truncated
+                self.assertEqual(
+                    "contract_changed",
+                    order_split_trace(
+                        _Client(malformed), 7, DAY, "parent-1", max_workers=1,
+                    )["status"],
+                )
+
         incomplete = _child([{
             "TraceID": "split-1", "Amount": 1, "BackAmount": 0,
             "Status": "paid", "CreateTime": DAY,
@@ -207,6 +261,10 @@ class OrderSplitTraceTests(unittest.TestCase):
             self.assertNotIn("parent-1", repr(result))
 
     def test_request_and_plan_resanitizer_are_strict(self):
+        def sanitized(value, items=10):
+            return sanitize_order_split_trace_result(
+                value, "7", DAY, max_pages=5, max_items=items, max_workers=1,
+            )
         for values in (
             (True, DAY, "x"), (7, "20260808", "x"), (7, DAY, "\n"),
             (7, DAY, " x "),
@@ -218,21 +276,18 @@ class OrderSplitTraceTests(unittest.TestCase):
             max_pages=5, max_items=10,
         )
         valid["app_id"] = "8"
-        safe = sanitize_order_split_trace_result(
-            valid, "7", DAY, max_pages=5, max_items=10, max_workers=1,
-        )
-        self.assertEqual("contract_changed", safe["status"])
+        self.assertEqual("contract_changed", sanitized(valid)["status"])
 
         forged = order_split_trace(
             _Client(_parent([_row()], workers=1), _child([])),
             7, DAY, "parent-1", max_workers=1, max_pages=5, max_items=10,
         )
+        unreachable = {**forged, "scanned_items": 0}
+        self.assertEqual("contract_changed", sanitized(unreachable)["status"])
         forged["split_id_count"] = 10
         self.assertEqual(
             "contract_changed",
-            sanitize_order_split_trace_result(
-                forged, "7", DAY, max_pages=5, max_items=10, max_workers=1,
-            )["status"],
+            sanitized(forged)["status"],
         )
         valid_failure = order_split_trace(
             _ExplodingClient(_parent([], workers=1)),
@@ -241,11 +296,32 @@ class OrderSplitTraceTests(unittest.TestCase):
         valid_failure["stages"] = {"parent": "success", "child": "success"}
         self.assertEqual(
             "contract_changed",
-            sanitize_order_split_trace_result(
-                valid_failure, "7", DAY,
-                max_pages=5, max_items=10, max_workers=1,
-            )["status"],
+            sanitized(valid_failure)["status"],
         )
+        for scanned, split_ids in ((0, 1), (9, 10)):
+            forged_failure = copy.deepcopy(valid_failure)
+            forged_failure.update({"scanned_items": scanned, "split_id_count": split_ids,
+                                   "stages": {"parent": "success", "child": "error"}})
+            forged_failure["error"]["field"] = "child"
+            self.assertEqual("contract_changed", sanitized(forged_failure)["status"])
+        budget_failure = order_split_trace(
+            _Client(_parent([_row(splits=["a", "b"])], workers=1)),
+            7, DAY, "parent-1", max_workers=1, max_pages=5, max_items=2,
+        )
+        self.assertEqual(
+            "PAGINATION_LIMIT",
+            sanitized(budget_failure, 2)["error"]["code"],
+        )
+        unreachable_budget = copy.deepcopy(budget_failure)
+        unreachable_budget.update({"scanned_items": 0, "limits": {**budget_failure["limits"], "max_items": 1}})
+        self.assertEqual("contract_changed", sanitized(unreachable_budget, 1)["status"])
+        for malformed_status in ([], {}):
+            malformed = copy.deepcopy(budget_failure)
+            malformed["status"] = malformed_status
+            self.assertEqual(
+                "contract_changed",
+                sanitized(malformed, 2)["status"],
+            )
 
     def test_exact_static_parent_skips_metadata_but_nearby_request_does_not(self):
         operation = next(

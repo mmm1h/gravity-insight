@@ -22,7 +22,7 @@ _ENGLISH_NEGATION_PHRASE = re.compile(
 )
 _CHINESE_BIE_NEGATION = re.compile(
     r"(?:^|请|麻烦|[\s，,。；;！!])别(?:再)?"
-    r"(?=$|[\s，,。；;！!]|查|看|读|跑|执行|获取|做|分析|输出|拉取|展示)"
+    r"(?=$|[\s，,。；;！!]|查|看|读|跑|执行|获取|做|分析|输出|拉取|展示|拆|追)"
 )
 
 _EXACT_INTENTS = frozenset(
@@ -166,6 +166,7 @@ _CHINESE_BLOCKED = (
     "导出",
     "下载",
     "写入",
+    "写",
     "修改",
     "更新",
     "创建",

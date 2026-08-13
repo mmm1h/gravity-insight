@@ -53,20 +53,11 @@ Multidim 使用物理输入，不新增 Spec。它直接使用闭合的 `date_li
 
 ### Order Split Trace
 
-已知 App、严格 `YYYY-MM-DD` 和显式 TraceID 时，一次 `gravity analysis order trace` 完整读取有界
-单日父目录，在本地精确匹配唯一父行，再读取一次拆单明细；不发送未经证明的 TraceID 上游
-filter，也不把父/子标识放进结果。未知入口时，Agent 对明确的中英文读取意图只返回唯一
-`composite:order_split_trace` 卡和完整占位节点；它不从自然语言提取、显示或执行 TraceID。
-否定、导出、写入、退款/净收入、归因、用户旅程、普通订单目录、变现、推广/素材、模板/看板、
-UI/权限等冲突意图会安全报缺口且不扫描 raw inventory；精确 raw selector
-`analysis.order_split_detail.list` 仍保持专家兼容。
+已知 App、严格 `YYYY-MM-DD` 和显式 TraceID 时，一次 `gravity analysis order trace` 完整读取有界单日父目录，本地精确匹配唯一父行后读取一次拆单明细；不发送未经证明的上游 filter，也不返回父/子标识。未知入口时，明确中英文读取意图只返回唯一 `composite:order_split_trace` 占位节点，不从自然语言提取、显示或执行 TraceID。否定、导出、写入、退款/净收入、归因、旅程、普通订单目录、变现、推广/素材、模板/看板、UI/权限等冲突意图安全报缺口且不扫描 raw inventory；精确 raw selector `analysis.order_split_detail.list` 保持专家兼容。
 
 推广表现要求调用方先明确一个 App、日期、平台数组和物理指标数组；Agent 只对明确的 `promotion performance/跨平台推广报表` 返回 `promotion_performance` 节点，不从自然语言选值。否定、导出、写入、策略、素材/Pulse/Multidim/归因/看板/保存分析/分群/旅程、raw snapshot 及四个异构平台请求不会回落为 generic Promotion operation。
 
-多个独立多维查询作为同层节点放进一个 Plan，由全局 worker pool 并发；不要建立 batch wrapper
-或逐条启动进程。直接 CLI/SDK 默认 6 workers、最大 24；Plan adapter 内固定 1，避免节点并发与
-分页/metadata 并发相乘。一次执行的 HTTP 数量是 `M + P + optional total`：`M` 为去重后的指标
-metadata 请求数，`P` 为实际 query 页数，只有显式 `include_total` 才增加一次 total。
+多个独立多维查询作为同层 Plan 节点由全局 worker pool 并发，不建 batch wrapper 或逐条启动进程。direct 默认 6、最大 24 workers，Plan adapter 内固定 1，避免与分页/metadata 并发相乘；HTTP 数量为 `M + P + optional total`，其中 `M` 是去重指标 metadata 请求数、`P` 是 query 页数。
 
 ## 1. 业务语义先在调用项目解析
 
@@ -87,11 +78,7 @@ gravity run <operation-id> --input <json-or-file>
 多个问题不要逐个执行 `gravity agent`。一次提交带稳定 ID 的问题数组：
 
 ```json
-{"questions": [
-  {"id": "apps", "query": "list apps", "domain": "app"},
-  {"id": "events", "query": "event metadata", "domain": "analysis"},
-  {"id": "reports", "query": "run saved analysis report-42", "domain": "report"}
-]}
+{"questions":[{"id":"apps","query":"list apps","domain":"app"},{"id":"events","query":"event metadata","domain":"analysis"},{"id":"reports","query":"run saved analysis report-42","domain":"report"}]}
 ```
 
 ```powershell

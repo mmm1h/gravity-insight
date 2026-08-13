@@ -13,6 +13,7 @@ from .errors import ErrorCode, ErrorDetail, exit_code_for_error
 
 SCHEMA_VERSION = "gravity-insight.order-split-trace.v1"
 SAFE_ROW_FIELDS = ("Amount", "BackAmount", "Status", "CreateTime")
+MAX_SPLIT_IDS = 100
 
 _BUILTIN_CODES = frozenset(item.value for item in ErrorCode)
 _SUCCESS_STATUSES = frozenset({"success", "empty"})
@@ -144,7 +145,7 @@ def failure_result(
         "app_id": app_id,
         "date": date,
         "scanned_items": _bounded_count(scanned_items, max_items),
-        "split_id_count": _bounded_count(split_id_count, 100),
+        "split_id_count": _bounded_count(split_id_count, MAX_SPLIT_IDS),
         "returned_items": 0,
         "limits": _limits(max_pages, max_items, max_workers),
         "stages": _stages(resolved_parent, resolved_child),
@@ -222,9 +223,12 @@ def sanitize_order_split_trace_result(
     stages = _validated_stages(value.get("stages"))
     if counts is None or stages is None:
         return _contract_result(app_id, date, expected_limits)
-    if value.get("ok") is True and value.get("status") in _SUCCESS_STATUSES:
+    status = value.get("status")
+    if not isinstance(status, str):
+        return _contract_result(app_id, date, expected_limits)
+    if value.get("ok") is True and status in _SUCCESS_STATUSES:
         return _sanitize_success(value, app_id, date, expected_limits, counts, stages)
-    if value.get("ok") is False and value.get("status") in _FAILURE_STATUSES:
+    if value.get("ok") is False and status in _FAILURE_STATUSES:
         return _sanitize_failure(value, app_id, date, expected_limits, counts, stages)
     return _contract_result(app_id, date, expected_limits)
 
@@ -277,10 +281,12 @@ def _valid_success_receipt(
     expected_status: str,
 ) -> bool:
     expected_child = "success" if rows else "empty" if split_ids else "skipped"
+    child_reachable = split_ids == 0 if expected_child == "skipped" else scanned > 0 and split_ids > 0
     return bool(
         all(row is not None for row in safe_rows)
         and returned == len(rows)
         and scanned + split_ids <= max_items
+        and child_reachable
         and value.get("status") == expected_status
         and type(value.get("exit_code")) is int
         and value.get("exit_code") == 0
@@ -301,11 +307,13 @@ def _sanitize_failure(
     data = value.get("data")
     rows = data.get("list") if isinstance(data, Mapping) else None
     raw_error = value.get("error")
-    if rows != [] or counts[2] != 0 or not isinstance(raw_error, Mapping):
+    if not _valid_failure_shape(rows, counts, raw_error, value.get("ok")):
         return _contract_result(app_id, date, limits)
     raw_code = raw_error.get("code")
     candidate = raw_code.strip().upper() if isinstance(raw_code, str) else ""
     if candidate not in _BUILTIN_CODES:
+        return _contract_result(app_id, date, limits)
+    if not _valid_failure_budget(counts, stages, limits["max_items"], candidate):
         return _contract_result(app_id, date, limits)
     field = raw_error.get("field")
     stage = field if isinstance(field, str) and field in {"parent", "child"} else "contract"
@@ -338,6 +346,30 @@ def _sanitize_failure(
         parent_stage=stages["parent"],
         child_stage=stages["child"],
     )
+
+
+def _valid_failure_shape(rows: Any, counts: tuple[int, int, int], error: Any, ok: Any) -> bool:
+    return rows == [] and counts[2] == 0 and isinstance(error, Mapping) and ok is False
+
+
+def _valid_failure_budget(
+    counts: tuple[int, int, int],
+    stages: Mapping[str, str],
+    max_items: int,
+    code: str,
+) -> bool:
+    scanned, split_ids, _returned = counts
+    if stages["parent"] == "error":
+        return scanned == 0 and split_ids == 0
+    if stages["parent"] == "success":
+        if scanned == 0 or split_ids == 0:
+            return False
+        exceeds = scanned + split_ids > max_items
+        budget_failure = stages["child"] == "skipped"
+        return exceeds is budget_failure and budget_failure is (
+            code == ErrorCode.PAGINATION_LIMIT.value
+        )
+    return code == ErrorCode.CONTRACT_CHANGED.value and split_ids == 0
 
 
 def _failure_matches(status: str, code: str) -> bool:
@@ -391,7 +423,7 @@ def _validated_counts(
     if any(type(item) is not int or item < 0 for item in counts):
         return None
     scanned, split_ids, returned = counts
-    if scanned > max_items or split_ids > 100 or returned > split_ids:
+    if scanned > max_items or split_ids > MAX_SPLIT_IDS or returned > split_ids:
         return None
     if scanned + returned > max_items:
         return None
