@@ -66,7 +66,10 @@
 - 13 张固定 composite 卡中有 7 对存在意图重叠，已复现真实误路由：
   `gravity agent "多维报表和经营脉搏"` 返回无关 operation 而非两个产品或明确的多意图缺口。
 - 错误分类已对齐：permission 返回 upstream/3，本地 unsupported/policy/privacy 阻断返回 local/4；
-  operation、请求行为和错误 code 均未改变，没有读能力损失。
+  operation、请求行为和错误 code 均未改变，没有读能力损失。这是有意的破坏性行为变更——
+  调用方需更新 exit-code 分支：`3` 表示换账号或申请权限，`4` 表示请求未发出、停止改输入重试。
+  **待办**：`docs/agent-workflow.md` 的退出码表述需在入口表重构时一并精确化。该文件已 220 行
+  顶死，且承载退出码的那一行已被跨期对比的入口说明挤占，不宜再单独追加。
 
 ## 并发
 
