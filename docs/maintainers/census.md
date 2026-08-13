@@ -64,3 +64,14 @@ occurrence/call-site 和 coverage 分类，不能把三个口径混用。
 `unresolved_body_expression` 为 60 route / 82 call site；与 15 条完全缺失和 12 条部分闭环动线的
 当前 blocker 交叉均为 0。函数内联与条件 callee 因而暂不实现；未来只有在它们能移除多条排期
 动线的当前 blocker 时再重评，不能因静态命中规模大就扩张为通用 JS 求值器。
+
+**杠杆低的原因是分布，不是数量**——两类失败绝大多数落在本就不追的区域：
+
+| 失败类型 | 写操作 | 已覆盖 | 未覆盖读 | auth/proxy | export |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `load_alias_has_no_static_call`（97 route） | 49 | 23 | 17 | 7 | 1 |
+| `unresolved_body_expression`（60 route） | 45 | 7 | **1（D35）** | 3 | 4 |
+
+写操作保持 reservation、auth/proxy 保持 unsupported，都不是取数缺口；已覆盖的 route 不需要再提取。
+真正相交的只有默认值字典与 D35，而这两条卡的是**服务端语义与非空证据**，不是静态提取能力——
+提取器修好了它们照样过不去。复算方法见上一段，逐 route 明细不入库（随 bundle 变化即过期）。
