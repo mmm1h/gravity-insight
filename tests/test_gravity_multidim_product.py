@@ -63,6 +63,13 @@ class GravityMultidimProductTests(unittest.TestCase):
         self.assertEqual(500, schema["properties"]["metrics_list"]["maxItems"])
         self.assertEqual(100, schema["properties"]["data_dims"]["maxItems"])
         self.assertEqual(
+            (1, "unproven_single_condition_only"),
+            (
+                schema["x-cli-shortcuts"]["filter"]["max_occurrences"],
+                schema["x-cli-shortcuts"]["filter"]["combination_logic"],
+            ),
+        )
+        self.assertEqual(
             [
                 "CONTAINS", "EQUALS", "GT", "GTE", "IN", "LT", "LTE",
                 "NOT_EQUALS", "NOT_IN", "RANGE_IN",
@@ -101,10 +108,17 @@ class GravityMultidimProductTests(unittest.TestCase):
 
     def test_binding_replaces_app_filters_and_prepare_is_value_safe_offline(self) -> None:
         supplied = _inputs()
+        supplied["filters"].append({"field": "day", "operator": "EQUALS", "values": ["2026-08-01"]})
         supplied["filters"].append({"field": "app_id", "operator": "IN", "values": [99]})
         bound = bind_multidim_app(supplied, "007")
-        apps = [item for item in bound["filters"] if item["field"] == "app_id"]
-        self.assertEqual([{"field": "app_id", "operator": "EQUALS", "values": ["7"]}], apps)
+        self.assertEqual(
+            [
+                {"field": "click_company", "operator": "IN", "values": ["CN"]},
+                {"field": "day", "operator": "EQUALS", "values": ["2026-08-01"]},
+                {"field": "app_id", "operator": "EQUALS", "values": ["7"]},
+            ],
+            bound["filters"],
+        )
 
         class Bomb:
             def __getattribute__(self, _name):

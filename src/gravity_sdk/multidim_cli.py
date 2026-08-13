@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import json
 from collections.abc import Callable, Mapping, Sequence
 from typing import Any
 
@@ -221,18 +222,43 @@ def _product_shortcuts(
         )
     if time_dims:
         result["time_dims"] = time_dims[0]
-    for argument, field in (("dimensions", "data_dims"), ("metrics", "metrics_list")):
-        values = _split_values(getattr(args, argument, None))
+    for argument, field in (
+        ("dimensions", "data_dims"),
+        ("metrics", "metrics_list"),
+        ("custom_metric", "custom_metrics_list"),
+        ("relate_dim", "relate_dims"),
+    ):
+        raw_values = getattr(args, argument, None)
+        values = (
+            _shortcut_names(raw_values, argument)
+            if argument in {"custom_metric", "relate_dim"}
+            else _split_values(raw_values)
+        )
         if values is not None:
             result[field] = values
     multi_days = parse_multi_days(_split_values(getattr(args, "multi_days", None)))
     if multi_days is not None:
         result["multi_keys"] = multi_days
+    _filter_shortcuts(args, result)
+    return result
+
+
+def _filter_shortcuts(args: Any, result: dict[str, Any]) -> None:
     filters = result.get("filters", [])
     if not isinstance(filters, list):
         raise InputValidationError("multidim filters must be an array", field="filters")
+    shortcut_filter = _filter_shortcut(getattr(args, "filter", None))
+    if shortcut_filter is not None:
+        filters = [shortcut_filter]
+        result["filters"] = filters
     media = getattr(args, "media", None)
     if media is not None:
+        if shortcut_filter is not None:
+            raise InputValidationError(
+                "--filter cannot be combined with --media because multiple-filter "
+                "combination logic is unproven",
+                field="filter",
+            )
         filters = [
             item
             for item in filters
@@ -242,7 +268,6 @@ def _product_shortcuts(
             {"field": "click_company", "operator": "IN", "values": [media]}
         )
         result["filters"] = filters
-    return result
 
 
 def _catalog_read(
@@ -272,6 +297,27 @@ def _add_product_shortcuts(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--dimensions", action="append")
     parser.add_argument("--metrics", action="append")
     parser.add_argument("--multi-days", action="append")
+    parser.add_argument(
+        "--filter",
+        action="append",
+        nargs=3,
+        metavar=("FIELD", "OPERATOR", "VALUE[,VALUE...]"),
+        help=(
+            "Set one caller filter and override filters from --set/--input. "
+            "Multiple --filter values and --media combinations are rejected "
+            "because their combination logic is unproven."
+        ),
+    )
+    parser.add_argument(
+        "--custom-metric",
+        action="append",
+        help="Comma-separated custom metric names; overrides custom_metrics_list.",
+    )
+    parser.add_argument(
+        "--relate-dim",
+        action="append",
+        help="Comma-separated related dimension names; overrides relate_dims.",
+    )
 
 
 def _metadata(args: Any, object_input: Callable[[Any], Mapping[str, Any]]) -> Any:
@@ -306,6 +352,60 @@ def _split_values(values: Sequence[str] | None) -> list[str] | None:
         if part.strip()
     ]
     return selected or None
+
+
+def _filter_shortcut(values: Sequence[Sequence[str]] | None) -> dict[str, Any] | None:
+    if not values:
+        return None
+    if len(values) != 1:
+        raise InputValidationError(
+            "--filter currently accepts one condition because multiple-filter "
+            "combination logic is unproven",
+            field="filter",
+        )
+    field, operator, raw_values = (part.strip() for part in values[0])
+    if not field:
+        raise InputValidationError("--filter FIELD must not be empty", field="filter.field")
+    if not operator:
+        raise InputValidationError(
+            "--filter OPERATOR must not be empty", field="filter.operator"
+        )
+    selected = [part.strip() for part in raw_values.split(",")]
+    if not selected or any(not part for part in selected):
+        raise InputValidationError(
+            "--filter VALUE must contain non-empty comma-separated values",
+            field="filter.values",
+        )
+    return {
+        "field": field,
+        "operator": operator.upper(),
+        "values": [_json_scalar(item) for item in selected],
+    }
+
+
+def _shortcut_names(values: Sequence[str] | None, argument: str) -> list[str] | None:
+    if not values:
+        return None
+    selected = [part.strip() for value in values for part in value.split(",")]
+    if any(not part for part in selected):
+        flag = argument.replace("_", "-")
+        raise InputValidationError(
+            f"--{flag} must contain non-empty comma-separated names",
+            field=argument,
+        )
+    return selected
+
+
+def _json_scalar(value: str) -> Any:
+    try:
+        parsed = json.loads(value)
+    except json.JSONDecodeError:
+        return value
+    if isinstance(parsed, (Mapping, list)):
+        raise InputValidationError(
+            "--filter VALUE items must be JSON scalars", field="filter.values"
+        )
+    return parsed
 
 
 def _output_path(value: str) -> str:
