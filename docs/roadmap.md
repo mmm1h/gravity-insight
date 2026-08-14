@@ -41,8 +41,8 @@ ignored `tmp/codex/stable-coverage-gap/crossref.md`，权威结论落在本页�
 | `promotion.bilibili.account.list` | B 站账户/产品曝光、点击、CTR、CPC、CPM 和资金消耗如何；有非空且分页证据 | 补推广表现 Bilibili account profile；`1/1/1/1/1` | `advertiser_name` 保持省略；待实现 |
 | `promotion.bytedance.advertiser_performance.list` | 巨量广告主消耗、余额、预算模式和状态如何；有非空、无分页复验 | 补推广表现独立 profile；`1/1/1/1/1` | `advertiser_name`、`advertiser_remark`、`company`、`delay`、`operator_id`、`operator_name`、`project_list` 保持省略；待分页约束 |
 | `promotion.bytedance.custom_audience.list` | 可投人群覆盖数、上传数、来源和状态如何；有旧非空样本，stable 合同晚于样本 | 新增自定义人群覆盖与状态；`1/1/1/1/1` | `cid`、`company`、`create_user_id`、`create_user_name`、`tag`、`update_user_id`、`update_user_name` 保持省略；待实现 |
-| `material.bytedance_asset_text_title_package.list` | 普通标题包的标题数、计划数、历史成本和 CTR 如何；有旧非空样本，stable 合同晚于样本 | 补 D32 title-package family；与标准版共享 `1/1/1/1/1` | `title_list`、`create_user_id`、`create_user_name`、`update_user_id` 保持省略；待实现 |
-| `material.bytedance_std_asset_text_title_package.list` | 标准标题包的标题数、计划数、历史成本和 CTR 如何；有旧非空样本，stable 合同晚于样本 | 补 D32 title-package family；与普通版共享 `1/1/1/1/1` | 同上；待实现 |
+| `material.bytedance_asset_text_title_package.list` | 普通标题包的标题数、计划数、历史成本和 CTR 如何；旧非空样本与 stable v1 的字段/类型投影同形 | 已补 D32 `title_package` family；与标准版共享 `1/1/1/1/1` | `title_list`、`create_user_id`、`create_user_name`、`update_user_id` 保持省略；已实现，`package_kind=regular` |
+| `material.bytedance_std_asset_text_title_package.list` | 标准标题包的标题数、计划数、历史成本和 CTR 如何；旧非空样本与 stable v1 的字段/类型投影同形 | 已补 D32 `title_package` family；与普通版共享 `1/1/1/1/1` | 同上；已实现，`package_kind=standard` |
 | `material.bytedance.promotion_material.list` | 精确广告窗口内素材的消耗、曝光、点击、CTR、CPC、CPM、尺寸和时长如何；目标响应为空 | 补 D32；`1/1/1/1/1`，未知引用路径 3 次 | `cover_source`、`labels`、`material_info`、`organization_tags`、`poster_url`、`signature`、`star_author_id`、`url` 保持省略；等非空证据 |
 | `analysis.segment.user_detail.list` | 精确分群有哪些成员及其时间、渠道、版本和归因属性；无不可变非空样本 | 补分群详情；`1/1/1/1/1` | **已裁决不批准**，保持 reservation（理由见下方「对照裁决」）；不再计入待实现 |
 
@@ -60,6 +60,25 @@ promotion material 的目标响应为空；segment member 明细还涉及 `Clien
 stable 或 raw/legacy 入口而算作闭环。
 9 条 `export.analysis.*` 已判定结案（见[能力覆盖与缺口](capability-coverage.md)）：台账仍如实记为
 完全缺失，但属于隐私/合同边界，不作为工程排期缺口。
+
+### D32 title-package family 裁决（2026-08-14）
+
+**普通版与标准版同形，作为一条动线的两个显式变体实现。** 两份 2026-08-08 不可变非空
+Evidence 的 raw schema fingerprint 均为
+`c539fee4dae32cc58d0c9155990ba581822a68893ea7f0069eee5cf16bb96b63`，逐字段路径与类型一致；
+后来的两个 stable v1 合同也只有 operation identity、固定路径、resource 和描述不同，请求、分页、
+公开字段与已知省略字段一致。没有证据显示样本到 stable 之间发生字段漂移，因此本单元 0 次生产请求。
+
+Core `title_packages()`、CLI `materials title-packages`、SDK `title_packages()`、Plan
+`title_package` composite 与 Agent `composite:title_package` 共用
+`gravity-insight.title-package.v1`；调用方必须显式提供 `package_kind=regular|standard`，不合并两类
+结果，也不拍平差异。`title_list`、`create_user_id`、`create_user_name`、`update_user_id` 继续省略；
+不可变样本未发现其他用户级字段。省略正文后，包名、标题/计划数、历史与近三日成本和 CTR 仍能回答
+既定聚合问题。未知字段在产品边界 fail closed，完整分页触顶返回 `partial`，父资源、权限或未支持能力
+保持独立状态。已知输入 1 次、未知能力 2 次由 `gravity.agent-call-bound.v1` 声明。
+
+D32 是台账动线编号，不是已有可挂载的可执行产品；本实现新增独立 title-package family 入口，并把
+D32 更新为 Bytedance 标题包变体部分闭环。其他平台素材 draft 的稳定性、非空证据和阻塞裁决不变。
 
 ## 优先级
 

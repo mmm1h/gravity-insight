@@ -38,6 +38,11 @@ from .plan_material_performance_adapter import (
     project_material_performance_result,
     validate_material_performance_plan,
 )
+from .plan_title_package_adapter import (
+    TITLE_PACKAGE_NAME,
+    execute_title_package_plan,
+    validate_title_package_plan,
+)
 from .plan_promotion_performance_adapter import (
     PROMOTION_PERFORMANCE_NAME,
     execute_promotion_performance_plan,
@@ -76,6 +81,7 @@ _COMPOSITE_FIELDS = frozenset(
         "name", "app", "apps", "ref", "mode", "start", "end", "platforms", "include_hourly",
         "inputs", "include_total", "read_all", "metadata_inputs", "metrics",
         "input_schema_version", "max_charts",
+        "package_kind",
     }
 )
 _COMPOSITES = frozenset(
@@ -83,6 +89,7 @@ _COMPOSITES = frozenset(
         *fixed_plan.COMPOSITE_NAMES,
         *report_plan.COMPOSITE_NAMES, "saved_analysis", MULTIDIM_NAME,
         MATERIAL_PERFORMANCE_NAME,
+        TITLE_PACKAGE_NAME,
         PROMOTION_PERFORMANCE_NAME,
         analysis_plan.ANALYSIS_QUERY_NAME,
         *segment_plan.COMPOSITE_NAMES,
@@ -432,6 +439,9 @@ def _validate_composite(
     if name == MATERIAL_PERFORMANCE_NAME:
         validate_material_performance_plan(request, context, workspace)
         return
+    if name == TITLE_PACKAGE_NAME:
+        validate_title_package_plan(request, context, workspace)
+        return
     if name == PROMOTION_PERFORMANCE_NAME:
         validate_promotion_performance_plan(request, context, workspace)
         return
@@ -459,6 +469,8 @@ def _execute_composite(
         return execute_multidim_plan(sdk, request, context)
     if name == MATERIAL_PERFORMANCE_NAME:
         return execute_material_performance_plan(sdk, request, context)
+    if name == TITLE_PACKAGE_NAME:
+        return execute_title_package_plan(sdk, request, context)
     if name == PROMOTION_PERFORMANCE_NAME:
         return execute_promotion_performance_plan(sdk, request, context)
     if analysis_plan.is_analysis_composite(name):

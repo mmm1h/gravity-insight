@@ -28,6 +28,7 @@ Usage:
   gravity reports pulse --app <alias|id> --start <date> --end <date>
   gravity reports usage
   gravity materials performance --app <alias|id> --start <date> --end <date>
+  gravity materials title-packages --app <alias|id> --package-kind <regular|standard>
   gravity promotion performance --app <alias|id> --start <date> --end <date>
   gravity export run <operation-id> --input <json|file|-> --output <file>
   gravity insight <command> [options]

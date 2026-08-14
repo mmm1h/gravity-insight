@@ -276,6 +276,10 @@ def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
         from .agent_material_performance import material_performance_plan_request
 
         return material_performance_plan_request(card)
+    if composite == "title_package":
+        from .agent_title_package import title_package_plan_request
+
+        return title_package_plan_request(card)
     if composite == "monetization_detail":
         from .agent_monetization_guard import monetization_detail_plan_request
 

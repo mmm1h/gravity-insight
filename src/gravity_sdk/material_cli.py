@@ -15,6 +15,7 @@ from .material_performance import (
 )
 from .workspace import load_workspace
 from .workspace_app import resolve_workspace_app
+from .title_package import OPERATION_IDS, title_packages
 
 
 def add_material_commands(
@@ -64,12 +65,24 @@ def add_material_commands(
         "--output", type=_output_file,
         help="Write the complete JSON result to a local file.",
     )
+    packages = subcommands.add_parser(
+        "title-packages",
+        help="Read regular or standard Bytedance title-package summaries.",
+    )
+    packages.add_argument(
+        "--app", required=True, help="Workspace App alias or positive id."
+    )
+    packages.add_argument(
+        "--package-kind", required=True, choices=tuple(OPERATION_IDS)
+    )
+    packages.add_argument("--max-pages", type=positive_int, default=1_000)
+    packages.add_argument("--max-items", type=positive_int, default=100_000)
 
 
 def dispatch_material_command(args: Any, object_input: Callable[[Any], Any]) -> Any:
     """Dispatch old catalog commands unchanged or run the new product."""
 
-    if args.materials_command != "performance":
+    if args.materials_command in {"list", "tags", "reviews"}:
         client = runtime.build_client()
         operation_id = runtime.resolve_operation_id(
             client, DOMAIN_OPERATIONS[f"materials.{args.materials_command}"]
@@ -83,6 +96,16 @@ def dispatch_material_command(args: Any, object_input: Callable[[Any], Any]) -> 
             object_input(args.input),
             read_all=all_pages,
             **page_options(args, all_pages=all_pages, active=all_pages),
+        )
+    if args.materials_command == "title-packages":
+        workspace = load_workspace()
+        app_id = resolve_workspace_app(workspace, args.app)
+        return title_packages(
+            runtime.build_client(),
+            app_id,
+            args.package_kind,
+            max_pages=args.max_pages,
+            max_items=args.max_items,
         )
     workspace = load_workspace()
     apps = [

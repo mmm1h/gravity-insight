@@ -18,6 +18,7 @@ from .agent_company_usage import COMPANY_USAGE_CAPABILITY, COMPANY_USAGE_NAME
 from .agent_dashboard import DASHBOARD_ANALYSIS_CAPABILITY
 from .agent_multidim import MULTIDIM_CAPABILITY
 from .agent_material_performance import MATERIAL_PERFORMANCE_CAPABILITY
+from .agent_title_package import TITLE_PACKAGE_CAPABILITY, TITLE_PACKAGE_NAME
 from .agent_order_directory import (
     ORDER_DIRECTORY_CAPABILITY,
     ORDER_DIRECTORY_NAME,
@@ -159,6 +160,7 @@ _COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
     },
     MULTIDIM_CAPABILITY,
     MATERIAL_PERFORMANCE_CAPABILITY,
+    TITLE_PACKAGE_CAPABILITY,
     ORDER_DIRECTORY_CAPABILITY,
     ORDER_SPLIT_TRACE_CAPABILITY,
     PROMOTION_PERFORMANCE_CAPABILITY,
@@ -421,6 +423,7 @@ def authoritative_capability_cards(
             BUSINESS_PULSE_NAME,
             COMPANY_USAGE_NAME,
             "material_performance",
+            TITLE_PACKAGE_NAME,
             MONETIZATION_DETAIL_NAME,
             ORDER_DIRECTORY_NAME,
             ORDER_SPLIT_TRACE_NAME,

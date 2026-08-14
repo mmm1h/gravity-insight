@@ -65,5 +65,28 @@ class MaterialSdkMixin:
             max_items=max_items,
         )
 
+    def title_packages(
+        self,
+        app: str | int,
+        package_kind: str,
+        *,
+        max_pages: int = 1_000,
+        max_items: int = 100_000,
+        workspace: Any | None = None,
+    ) -> dict[str, Any]:
+        """Read regular or standard Bytedance title-package summaries."""
+
+        from .title_package import title_packages
+
+        selected = self._select_workspace(workspace)
+        app_id = self._resolve_app(selected, app)
+        return title_packages(
+            self.insight,
+            app_id,
+            package_kind,
+            max_pages=max_pages,
+            max_items=max_items,
+        )
+
 
 __all__ = ["MaterialSdkMixin"]

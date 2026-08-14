@@ -14,6 +14,7 @@ _STRICT_COMPOSITES = frozenset(
         "dashboard_analysis",
         "dashboard_snapshot",
         "material_performance",
+        "title_package",
         "monetization_detail",
         "order_directory",
         "order_split_trace",
@@ -154,6 +155,17 @@ def _exact_match(match: Mapping[str, Any], normalized: str) -> dict[str, Any]:
         **dict(match), "confidence": "strong", "coverage": 1.0,
         "matched_terms": [normalized], "missing_terms": [], "exact_selector": True,
     }
+
+
+_strict_composite_query_without_title_package = _strict_composite_query
+
+
+def _strict_composite_query(name: str, query: str) -> bool:
+    if name == "title_package":
+        from .agent_title_package import title_package_query
+
+        return title_package_query(query)
+    return _strict_composite_query_without_title_package(name, query)
 
 
 __all__ = ["composite_card"]

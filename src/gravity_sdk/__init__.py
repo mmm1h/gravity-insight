@@ -74,6 +74,7 @@ _EXPORTS = {
     "validate_segment_spec": (".segment_spec", "validate_segment_spec"),
     "business_pulse": (".business_pulse", "business_pulse"),
     "company_usage": (".company_usage", "company_usage"),
+    "title_packages": (".title_package", "title_packages"),
     "dashboard_snapshot": (".dashboard_snapshot", "dashboard_snapshot"),
     "promotion_performance": (
         ".promotion_performance", "promotion_performance"
