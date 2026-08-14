@@ -669,6 +669,19 @@ gravity reports usage --max-pages 1000 --max-items 100000
 fail closed。未知入口使用 `gravity agent "company resource usage" --domain report`，返回唯一
 `composite:company_usage`，无需补 App、日期或引用，发现后执行共两次调用。
 
+### Custom audiences
+
+自定义人群覆盖与状态是独立 Promotion 产品，不属于 promotion performance：
+
+```powershell
+gravity promotion custom-audiences --max-pages 1000 --max-items 100000
+```
+
+命令完整分页读取可投人群的覆盖数、上传数、来源和状态，返回
+`gravity-insight.custom-audience.v1`。`cid/company/create_user_*/tag/update_user_*` 固定省略，
+未登记字段失败关闭。未知入口使用 `gravity agent "custom audience coverage status"
+--domain promotion`，返回无缺失输入的唯一 `composite:custom_audience` 卡。
+
 ## Plan v1
 
 ```powershell

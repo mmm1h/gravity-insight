@@ -75,5 +75,23 @@ class PromotionSdkMixin:
             max_items=max_items,
         )
 
+    def custom_audiences(
+        self,
+        *,
+        max_pages: int = 1_000,
+        max_items: int = 100_000,
+    ) -> dict[str, Any]:
+        """Read all governed custom audiences and their delivery status."""
+
+        from .custom_audience import custom_audiences
+        from .sdk_report import _validate_limits
+
+        _validate_limits(max_pages, max_items, 1)
+        return custom_audiences(
+            self.insight,
+            max_pages=max_pages,
+            max_items=max_items,
+        )
+
 
 __all__ = ["PromotionSdkMixin"]

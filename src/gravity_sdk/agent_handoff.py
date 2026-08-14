@@ -272,6 +272,10 @@ def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
         from .agent_company_usage import company_usage_plan_request
 
         return company_usage_plan_request(card)
+    if composite == "custom_audience":
+        from .agent_custom_audience import custom_audience_plan_request
+
+        return custom_audience_plan_request(card)
     if composite == "material_performance":
         from .agent_material_performance import material_performance_plan_request
 
