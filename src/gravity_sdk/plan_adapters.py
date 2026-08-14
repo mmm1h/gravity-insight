@@ -45,6 +45,13 @@ from .plan_promotion_performance_adapter import (
     project_promotion_performance_result,
     validate_promotion_performance_plan,
 )
+from .plan_bilibili_account_performance_adapter import (
+    BILIBILI_ACCOUNT_PERFORMANCE_NAME,
+    execute_bilibili_account_performance_plan,
+    is_bilibili_account_performance_result,
+    project_bilibili_account_performance_result,
+    validate_bilibili_account_performance_plan,
+)
 from .plan_metadata_adapter import execute_metadata_plan, validate_metadata_plan
 from .resolver_support import build_inputs
 from .plan_adapter_support import (
@@ -84,6 +91,7 @@ _COMPOSITES = frozenset(
         *report_plan.COMPOSITE_NAMES, "saved_analysis", MULTIDIM_NAME,
         MATERIAL_PERFORMANCE_NAME,
         PROMOTION_PERFORMANCE_NAME,
+        BILIBILI_ACCOUNT_PERFORMANCE_NAME,
         analysis_plan.ANALYSIS_QUERY_NAME,
         *segment_plan.COMPOSITE_NAMES,
         user_journey_plan.USER_JOURNEY_NAME,
@@ -435,6 +443,9 @@ def _validate_composite(
     if name == PROMOTION_PERFORMANCE_NAME:
         validate_promotion_performance_plan(request, context, workspace)
         return
+    if name == BILIBILI_ACCOUNT_PERFORMANCE_NAME:
+        validate_bilibili_account_performance_plan(request, context, workspace)
+        return
     allowed_targets = {"/app"}
     _validate_exact_targets(context, frozenset(allowed_targets))
     dynamic_app = _has_dynamic(context, "/app")
@@ -461,6 +472,8 @@ def _execute_composite(
         return execute_material_performance_plan(sdk, request, context)
     if name == PROMOTION_PERFORMANCE_NAME:
         return execute_promotion_performance_plan(sdk, request, context)
+    if name == BILIBILI_ACCOUNT_PERFORMANCE_NAME:
+        return execute_bilibili_account_performance_plan(sdk, request, context)
     if analysis_plan.is_analysis_composite(name):
         return analysis_plan.execute_analysis_plan(sdk, request, context)
     if segment_plan.is_segment_composite(name):
@@ -495,6 +508,8 @@ def _project_composite(
         return project_material_performance_result(result, fields, context)
     if is_promotion_performance_result(result):
         return project_promotion_performance_result(result, fields, context)
+    if is_bilibili_account_performance_result(result):
+        return project_bilibili_account_performance_result(result, fields, context)
     return _composite_projection(result, fields, context)
 
 

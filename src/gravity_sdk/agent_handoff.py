@@ -292,6 +292,12 @@ def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
         from .agent_promotion_performance import promotion_performance_plan_request
 
         return promotion_performance_plan_request(card)
+    if composite == "bilibili_account_performance":
+        from .agent_bilibili_account_performance import (
+            bilibili_account_performance_plan_request,
+        )
+
+        return bilibili_account_performance_plan_request(card)
     return {"name": composite}
 
 
@@ -385,6 +391,16 @@ def _composite_product_requirements(
         return (
             list(PROMOTION_PERFORMANCE_REQUIRED_INPUTS),
             promotion_performance_input_template(),
+        )
+    if card.get("composite") == "bilibili_account_performance":
+        from .agent_bilibili_account_performance import (
+            BILIBILI_ACCOUNT_PERFORMANCE_REQUIRED_INPUTS,
+            bilibili_account_performance_input_template,
+        )
+
+        return (
+            list(BILIBILI_ACCOUNT_PERFORMANCE_REQUIRED_INPUTS),
+            bilibili_account_performance_input_template(),
         )
     return None
 

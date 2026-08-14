@@ -21,6 +21,9 @@ from .agent_order_trace import (
 from .agent_promotion_performance import (
     promotion_performance_blocks_operation_fallback,
 )
+from .agent_bilibili_account_performance import (
+    bilibili_account_performance_blocks_operation_fallback,
+)
 
 
 def operation_fallback_excluded(query: str) -> bool:
@@ -31,6 +34,7 @@ def operation_fallback_excluded(query: str) -> bool:
         or order_directory_blocks_operation_fallback(query)
         or order_split_trace_blocks_operation_fallback(query)
         or promotion_performance_blocks_operation_fallback(query)
+        or bilibili_account_performance_blocks_operation_fallback(query)
     )
 
 
@@ -65,6 +69,11 @@ def operation_fallback_gap(query: str) -> list[dict[str, Any]]:
         )
     elif monetization_guard_blocks_operation_fallback(query):
         reason = MONETIZATION_GAP_REASON
+    elif bilibili_account_performance_blocks_operation_fallback(query):
+        reason = (
+            "the explicit Bilibili Account Performance request is excluded by "
+            "its closed read-only product boundary"
+        )
     else:
         reason = (
             "the explicit Promotion Performance request is excluded by its "

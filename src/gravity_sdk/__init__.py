@@ -81,6 +81,12 @@ _EXPORTS = {
     "promotion_performance_input_schema": (
         ".promotion_performance", "promotion_performance_input_schema"
     ),
+    "bilibili_account_performance": (
+        ".bilibili_account_performance", "bilibili_account_performance"
+    ),
+    "validate_bilibili_account_request": (
+        ".bilibili_account_performance", "validate_bilibili_account_request"
+    ),
     "order_split_trace": (".order_trace", "order_split_trace"),
     "validate_order_split_trace_request": (
         ".order_trace", "validate_order_split_trace_request"

@@ -75,5 +75,37 @@ class PromotionSdkMixin:
             max_items=max_items,
         )
 
+    def bilibili_account_performance(
+        self,
+        start: str,
+        end: str,
+        *,
+        max_workers: int = 6,
+        max_pages: int = 1_000,
+        max_items: int = 100_000,
+    ) -> dict[str, Any]:
+        """Read Bilibili account/product metrics without App or metric selection."""
+
+        from .bilibili_account_performance import (
+            bilibili_account_performance,
+            validate_bilibili_account_request,
+        )
+
+        validate_bilibili_account_request(
+            start,
+            end,
+            max_workers=max_workers,
+            max_pages=max_pages,
+            max_items=max_items,
+        )
+        return bilibili_account_performance(
+            self.insight,
+            start,
+            end,
+            max_workers=max_workers,
+            max_pages=max_pages,
+            max_items=max_items,
+        )
+
 
 __all__ = ["PromotionSdkMixin"]
