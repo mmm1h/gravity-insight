@@ -258,6 +258,20 @@ Agent 不填写任何业务值，也不自动执行。泛 `business analysis/经
 `gravity-insight.company-usage.v1`。Agent 卡通过 `gravity.agent-call-bound.v1` 声明已知输入 1 次、
 未知能力 2 次，Plan adapter 固定使用一个上游 worker。
 
+自定义人群节点同样没有 binding target，也不接受 App、日期或筛选：
+
+```json
+{
+  "id": "custom_audiences",
+  "kind": "composite",
+  "request": {"name": "custom_audience"},
+  "limits": {"max_pages": 1000, "max_items": 100000}
+}
+```
+
+该节点一次完整分页返回 `gravity-insight.custom-audience.v1`，adapter 内固定一个上游 worker；
+空、分页截断、能力缺口和合同漂移保持不同结构化状态。
+
 ## Dashboard Snapshot composite
 
 看板控制面使用登记的 `dashboard_snapshot` composite。调用方必须给出 Workspace App 和看板

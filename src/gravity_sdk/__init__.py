@@ -75,6 +75,7 @@ _EXPORTS = {
     "business_pulse": (".business_pulse", "business_pulse"),
     "company_usage": (".company_usage", "company_usage"),
     "title_packages": (".title_package", "title_packages"),
+    "custom_audiences": (".custom_audience", "custom_audiences"),
     "dashboard_snapshot": (".dashboard_snapshot", "dashboard_snapshot"),
     "promotion_performance": (
         ".promotion_performance", "promotion_performance"

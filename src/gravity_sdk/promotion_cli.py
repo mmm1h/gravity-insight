@@ -82,6 +82,12 @@ def add_promotion_commands(
         "--output", type=_output_file,
         help="Write the complete JSON result to a local file.",
     )
+    audiences = subcommands.add_parser(
+        "custom-audiences",
+        help="Read custom-audience coverage, uploads, sources, and status.",
+    )
+    audiences.add_argument("--max-pages", type=positive_int, default=1_000)
+    audiences.add_argument("--max-items", type=positive_int, default=100_000)
 
 
 def add_query_shortcuts(parser: Any) -> None:
@@ -106,6 +112,8 @@ def dispatch_promotion_command(
 
     if args.promotion_command == "performance":
         return _performance(args)
+    if args.promotion_command == "custom-audiences":
+        return _custom_audiences(args)
     if args.promotion_command == "platforms":
         client = runtime.build_client()
         available = runtime.operation_ids(client.operations())
@@ -394,6 +402,16 @@ def _performance(args: Any) -> dict[str, Any]:
         platforms=platforms,
         metrics=metrics,
         max_workers=args.concurrency,
+        max_pages=args.max_pages,
+        max_items=args.max_items,
+    )
+
+
+def _custom_audiences(args: Any) -> dict[str, Any]:
+    from .custom_audience import custom_audiences
+
+    return custom_audiences(
+        runtime.build_client(),
         max_pages=args.max_pages,
         max_items=args.max_items,
     )

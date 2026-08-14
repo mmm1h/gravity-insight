@@ -11,6 +11,7 @@ _STRICT_COMPOSITES = frozenset(
     {
         "business_pulse",
         "company_usage",
+        "custom_audience",
         "dashboard_analysis",
         "dashboard_snapshot",
         "material_performance",

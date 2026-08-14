@@ -366,6 +366,12 @@ Plan request 同时展开 `platforms/include_hourly` 的中性默认值；泛 `b
 稳定 operation 投影固定排除 `user_count`。对应 Plan request 只有
 `{"name":"company_usage"}`；`capabilities("company resource usage")` 离线返回唯一卡。
 
+`custom_audiences(*, max_pages=1000, max_items=100000)` 完整读取公司范围的可投自定义人群，
+返回 `gravity-insight.custom-audience.v1`。每行只含合同批准的广告主/人群/数据源标识、名称、
+覆盖数、上传数、来源、状态和时间字段；人员、租户、公司与自由标签字段固定省略。对应 Plan
+request 为 `{"name":"custom_audience"}`；`capabilities("custom audience coverage status")`
+离线返回唯一卡。
+
 ## Multidim
 
 `multidim_input_schema()` 是 CLI、SDK、Plan 和 Agent 共用的闭合机器合同。公开 input 直接使用

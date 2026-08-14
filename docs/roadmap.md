@@ -40,7 +40,7 @@ ignored `tmp/codex/stable-coverage-gap/crossref.md`，权威结论落在本页�
 | `report.company_amount.query` | 公司每日广告、点击、成本、事件、画像、存储、追踪和素材传输用量如何变化；有非空且分页证据 | 新增公司资源用量趋势；`1/1/1/1/1` | `user_count` 保持省略；本轮实现 |
 | `promotion.bilibili.account.list` | B 站账户/产品曝光、点击、CTR、CPC、CPM 和资金消耗如何；有非空且分页证据 | 补推广表现 Bilibili account profile；`1/1/1/1/1` | `advertiser_name` 保持省略；待实现 |
 | `promotion.bytedance.advertiser_performance.list` | 巨量广告主消耗、余额、预算模式和状态如何；有非空、无分页复验 | 补推广表现独立 profile；`1/1/1/1/1` | `advertiser_name`、`advertiser_remark`、`company`、`delay`、`operator_id`、`operator_name`、`project_list` 保持省略；待分页约束 |
-| `promotion.bytedance.custom_audience.list` | 可投人群覆盖数、上传数、来源和状态如何；有旧非空样本，stable 合同晚于样本 | 新增自定义人群覆盖与状态；`1/1/1/1/1` | `cid`、`company`、`create_user_id`、`create_user_name`、`tag`、`update_user_id`、`update_user_name` 保持省略；待实现 |
+| `promotion.bytedance.custom_audience.list` | 可投人群覆盖数、上传数、来源和状态如何；2026-08-14 最小非空复验与旧样本 fingerprint 完全一致 | 自定义人群覆盖与状态已闭环；`1/1/1/1/1` | `cid`、`company`、`create_user_id`、`create_user_name`、`tag`、`update_user_id`、`update_user_name` 保持省略；确定实现 |
 | `material.bytedance_asset_text_title_package.list` | 普通标题包的标题数、计划数、历史成本和 CTR 如何；旧非空样本与 stable v1 的字段/类型投影同形 | 已补 D32 `title_package` family；与标准版共享 `1/1/1/1/1` | `title_list`、`create_user_id`、`create_user_name`、`update_user_id` 保持省略；已实现，`package_kind=regular` |
 | `material.bytedance_std_asset_text_title_package.list` | 标准标题包的标题数、计划数、历史成本和 CTR 如何；旧非空样本与 stable v1 的字段/类型投影同形 | 已补 D32 `title_package` family；与普通版共享 `1/1/1/1/1` | 同上；已实现，`package_kind=standard` |
 | `material.bytedance.promotion_material.list` | 精确广告窗口内素材的消耗、曝光、点击、CTR、CPC、CPM、尺寸和时长如何；目标响应为空 | 补 D32；`1/1/1/1/1`，未知引用路径 3 次 | `cover_source`、`labels`、`material_info`、`organization_tags`、`poster_url`、`signature`、`star_author_id`、`url` 保持省略；等非空证据 |
@@ -79,6 +79,25 @@ Core `title_packages()`、CLI `materials title-packages`、SDK `title_packages()
 
 D32 是台账动线编号，不是已有可挂载的可执行产品；本实现新增独立 title-package family 入口，并把
 D32 更新为 Bytedance 标题包变体部分闭环。其他平台素材 draft 的稳定性、非空证据和阻塞裁决不变。
+
+### 自定义人群覆盖与状态裁决（2026-08-14）
+
+本节取代上段“custom audience 保持产品缺口”的旧结论；其余候选裁决不变。
+
+**提案：**先比较 2026-08-08 不可变非空样本与 2026-08-11 stable 提升提交。后者只包含
+手写 transport fixture，没有同日生产响应证据，仓库内无法证明时间差期间只新增字段或既有字段
+保持不变；因此按不确定处理，只执行一次 `page=1,page_size=1` stable drift probe，再决定是否产品化。
+
+**判定：**最小 probe 成功且非空，恰好发出 1 次生产 POST；当前 raw schema fingerprint
+`f079040f010b823ea179fe1afb0d0b2bb2674a1e83bde245ab606b9c8b6add00` 与旧样本完全一致，
+逐字段类型、分页形状均未漂移，也没有发现新字段或新的用户级字段。实现独立
+`gravity-insight.custom-audience.v1` 动线：Core `custom_audiences()`、CLI
+`promotion custom-audiences`、SDK `GravitySDK.custom_audiences()`、Plan
+`custom_audience` composite 与 Agent `composite:custom_audience` 五面共用一次完整分页读取。
+未登记字段继续 fail closed；上述七个字段维持省略。卡与 Plan 节点用
+`gravity.agent-call-bound.v1` 声明已知输入 1 次、未知能力 2 次。本单元不改变 promotion
+performance 的产品语义。
+
 
 ## 优先级
 

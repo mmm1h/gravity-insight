@@ -149,6 +149,7 @@ def _positive_query_selectors(query: str) -> tuple[str, ...]:
     from .agent_analysis import analysis_query_spec_cards
     from .agent_business_pulse import business_pulse_intent
     from .agent_company_usage import company_usage_intent
+    from .agent_custom_audience import custom_audience_intent
     from .agent_dashboard import dashboard_analysis_intent, dashboard_snapshot_intent
     from .agent_material_performance import material_performance_intent
     from .agent_title_package import title_package_intent
@@ -175,6 +176,7 @@ def _positive_query_selectors(query: str) -> tuple[str, ...]:
         ("composite:multidim", multidim_intent(query)),
         ("composite:business_pulse", business_pulse_intent(query)),
         ("composite:company_usage", company_usage_intent(query)),
+        ("composite:custom_audience", custom_audience_intent(query)),
     )
     return tuple(selector for selector, claimed in claims if claimed)
 
