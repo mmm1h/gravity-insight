@@ -199,3 +199,16 @@ manager/feed 等无完整分页证据的 draft 还卡在 `pagination_unverified`
 - `app.onelink.list` 的稳定父绑定链路已被证明可用，但空样本仍不足以证明目标 item schema。
 - `analysis.default_val.list` 是本轮唯一非空候选响应；当前证据仍不足以关闭请求合同和响应投影 blocker。
 - 其余候选保持 fail-closed：空样本不证明字段、业务语义错误不证明请求合同、父资源为空不触发子请求、用户级标识无批准来源时不探测。
+
+## 2026-08-14 追加判定：App / 变现家族读语义
+
+静态取证读取了 snapshot 对应的 `appManageIndex-DCdX2wdf.js`、`csj-DQrv-k3Y.js` 和
+`tobid-DwnAMImZ.js`。实际生产业务请求共 3 次：`app.project.list` 1 次明确空，
+`app.app_info.get` 2 次均为 HTTP 200 但最终 `inconclusive`，`app.monetization_app.list` 0 次；
+没有认证交换、重试、翻页、扩窗或换 URL 追非空。
+
+| 动线 | 本轮判定 | 新证据与剩余阻塞 | 下一步 |
+| --- | --- | --- | --- |
+| 查找当前账号可读的 App 项目 | **推进但未闭环** | Project 组件在 mount/search/page change 时 POST `page/page_size/filters`，只消费项目表 `list/id/name/app_list_info` 与 `page_info`；create/delete 是独立 mutation。确认已登记；最小 probe 1 请求、HTTP 200 明确空，receipt 的 `method_verified/pagination_verified/parent_resolved` 均为 true，当前账号确无项目，但 item schema 未成立。 | 由有可读项目的租户做 1 次最小第一页 probe；只审查非空 item 字段，之后才考虑产品面。 |
+| 查看 App 的 OneLink 与公开信息绑定 | **推进但未闭环** | OneLink 父链仍明确空。appManage 证明 app-info URL 是调用方输入的 Google Play/App Store 下载链接而非 OneLink；公开 URL probe 2 请求均 HTTP 200，恢复七字段 schema 与四字段安全投影，但上游返回含 `data.error` 的 error-shaped 数据，结论 `inconclusive` 而非成功。 | 调用方提供一条已知可被 Gravity 抓取的公开商店 URL；仅做 1 次读取，成功非空后再确认当前安全投影。 |
+| 按平台、广告位和日期汇总变现结果（D28） | **仍然阻塞** | csj/tobid bundle 已证明 `app.monetization_app.list` 是账户下的平台应用关联目录读取：account 来自选中账户行、平台固定为 `csj`/`tobid`，表格只有平台应用/类型/包名/Gravity App 关联，mutation 另有路由。该 route 没有日期、广告位或结果指标，产品语义不匹配 D28；因此只登记读确认，目标 probe 0 次。 | 转向 `/report/api/v3/monetization_report/custom_get/` 与 `calc_total/` bundle，恢复日期、广告位、平台维度、指标和响应合同；独立做 D28 隐私审查，不复用 D27 批准。 |

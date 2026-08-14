@@ -49,6 +49,42 @@
       "path": "/turbo_engine/api/v2/event/realtime_event/list/",
       "reviewed_at": "2026-08-14",
       "reviewer": "hm"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In the hash-matched appManageIndex bundle the Project component calls this route on mount, search, page change and page-size change to populate a project table from data.list and page_info.total_number. Project creation and confirmed deletion use the separate /user/project/create/ mutation route, so this list call has no write side effect.",
+          "source": "docs/candidate-capability-matrix.md"
+        },
+        {
+          "detail": "The extracted exact-route consumers read data.list, item id/name/app_list_info and page_info; the request body is limited to page, page_size and optional name filters.",
+          "source": "src/gravity_sdk/census/data/route-response-fields.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "app.project.list",
+      "path": "/turbo_engine/api/v1/user/project/list/",
+      "reviewed_at": "2026-08-14",
+      "reviewer": "hm"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The hash-matched csj and tobid bundles open a RelationAppDrawer from a selected account-list row, pass rowData.account with a fixed monetization_platform value, and call this route to load the drawer's platform-app table. Sync, association and deletion use separate sync_app and app/edit mutation routes.",
+          "source": "docs/candidate-capability-matrix.md"
+        },
+        {
+          "detail": "The two extracted call sites bind account, the fixed csj/tobid platform value, page and page_size; the UI consumes platform app, app type, package name and Gravity-app association fields as table rows.",
+          "source": "src/gravity_sdk/census/data/route-params.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "app.monetization_app.list",
+      "path": "/turbo_engine/api/v1/monetization/app/list/",
+      "reviewed_at": "2026-08-14",
+      "reviewer": "hm"
     }
   ],
   "schema_version": "gravity-insight.probe-read-confirmations.v1"

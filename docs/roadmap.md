@@ -452,6 +452,24 @@ material 与 promotion），后续同族能力扩展现有行，不再按产品�
 更根本的判断：这张表在**补偿发现机制的不足**。`gravity agent` 本应让调用方知道有哪些产品可用，
 路由层现已先裁决多产品再决定是否进入 raw fallback；无法唯一判定时返回明确缺口。
 
+## App / 变现家族读语义取证（2026-08-14）
+
+本轮先读取 snapshot 对应的 `appManageIndex`、`csj` 和 `tobid` bundle，再做受控 probe。实际生产
+业务请求共 **3 次**：`app.project.list` 1 次，HTTP 200 明确空；`app.app_info.get` 2 次，均
+HTTP 200 但安全投影未达到 success，结论 `inconclusive`；`app.monetization_app.list` 0 次。
+认证令牌原本有效，没有额外 credential exchange、重试、翻页或扩窗。
+
+`app.project.list` 与 `app.monetization_app.list` 的 POST 读取控制流已分别登记为精确 route
+confirmation，闸门判据未改。probe receipt 现在把通过闸门后确实产生 HTTP observation 的读取记为
+`method_verified=true`；旧 receipt 不改写。已有 `pagination_verified=true` 的同 route 证据可复用，
+避免为一次第一页复核重复请求 page 2 和 safe-max。
+
+结论分三类：项目列表在当前账号明确为空，但非空 item schema 未成立；app-info 的调用方 URL 来源和
+七字段 schema 已恢复，`error/icon_url/image_data` 保持隐藏，但测试 URL 只产生 error-shaped 结果，
+仍缺成功数据；所谓 D28 候选其实是平台应用关联目录，不含日期、广告位或变现指标，不能拿它冒充
+聚合。D28 下一步转向 `monetization_report/custom_get` 与 `calc_total` 的真实报表合同，并单独做字段
+隐私审查；D27 的 identifier-free 批准不自动延伸。
+
 ## 明确不做
 
 - 不复刻 Web UI 概念：布局、收藏、拖拽、成员权限管理。`app.project_auth.detail` 与

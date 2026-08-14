@@ -190,6 +190,19 @@ def _verify_pagination(
     recording: RecordingSession, selected_family: str, discovery: HttpObservation | None,
 ) -> tuple[bool, dict[str, Any]]:
     pagination = updated["operation"]["pagination"]
+    prior = next(
+        (
+            item for item in reversed(updated.get("draft", {}).get("probe_evidence", []))
+            if item.get("pagination_verified") and item.get("path")
+        ),
+        None,
+    )
+    if pagination["kind"] != "none" and prior is not None:
+        return True, {
+            "kind": pagination["kind"], "verified_from": prior["path"],
+            "total_field_path": f"data.page_info.{pagination['total_page_field']}",
+            "upstream_hard_max": None,
+        }
     verified = pagination["kind"] == "none"
     detail: dict[str, Any] = {
         "kind": pagination["kind"],
@@ -294,6 +307,23 @@ def _evidence_document(
     }
 
 
+def _method_verified(evidence: Mapping[str, Any]) -> bool:
+    """A 2xx on the target route proves the method even when the body is empty.
+
+    Neither a parent observation nor a non-2xx reply proves it: 405 means the
+    upstream rejects this method outright.
+    """
+
+    if evidence.get("successful"):
+        return True
+    operation_id = evidence.get("operation_id")
+    return any(
+        item.get("operation_id") == operation_id
+        and 200 <= int(item.get("http_status") or 0) < 300
+        for item in evidence.get("http", [])
+    )
+
+
 def _persist_observed(
     updated: dict[str, Any], evidence: Mapping[str, Any], path: Path,
     fields: Sequence[Mapping[str, Any]], *, pagination_verified: bool,
@@ -313,7 +343,7 @@ def _persist_observed(
         "conclusion": evidence["conclusion"], "successful": evidence["successful"],
         "pagination_verified": pagination_verified,
         "parent_resolved": parent_resolved,
-        "method_verified": bool(evidence.get("successful")),
+        "method_verified": _method_verified(evidence),
         "raw_schema_fingerprint": raw_fingerprint,
         "projected_schema_fingerprint": projected_fingerprint,
     }
