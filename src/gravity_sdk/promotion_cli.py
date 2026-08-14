@@ -83,6 +83,19 @@ def add_promotion_commands(
         help="Write the complete JSON result to a local file.",
     )
 
+    advertiser = subcommands.add_parser(
+        "advertiser-profile",
+        help="Read governed Bytedance advertiser account profiles.",
+    )
+    advertiser.add_argument("--start", required=True)
+    advertiser.add_argument("--end", required=True)
+    advertiser.add_argument("--max-pages", type=positive_int, default=1_000)
+    advertiser.add_argument("--max-items", type=positive_int, default=100_000)
+    advertiser.add_argument(
+        "--output", type=_output_file,
+        help="Write the complete JSON result to a local file.",
+    )
+
 
 def add_query_shortcuts(parser: Any) -> None:
     """Register the preserved schema-aware promotion shortcut flags."""
@@ -106,6 +119,8 @@ def dispatch_promotion_command(
 
     if args.promotion_command == "performance":
         return _performance(args)
+    if args.promotion_command == "advertiser-profile":
+        return _advertiser_profile(args)
     if args.promotion_command == "platforms":
         client = runtime.build_client()
         available = runtime.operation_ids(client.operations())
@@ -394,6 +409,22 @@ def _performance(args: Any) -> dict[str, Any]:
         platforms=platforms,
         metrics=metrics,
         max_workers=args.concurrency,
+        max_pages=args.max_pages,
+        max_items=args.max_items,
+    )
+
+
+def _advertiser_profile(args: Any) -> dict[str, Any]:
+    from .advertiser_profile import advertiser_profile
+    from .composite_batch import validate_composite_bounds
+    from .promotion_performance_request import normalize_promotion_window
+
+    normalize_promotion_window(args.start, args.end)
+    validate_composite_bounds(args.max_pages, args.max_items, minimum_items=1)
+    return advertiser_profile(
+        runtime.build_client(),
+        args.start,
+        args.end,
         max_pages=args.max_pages,
         max_items=args.max_items,
     )

@@ -292,6 +292,10 @@ def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
         from .agent_promotion_performance import promotion_performance_plan_request
 
         return promotion_performance_plan_request(card)
+    if composite == "advertiser_profile":
+        from .agent_advertiser_profile import advertiser_profile_plan_request
+
+        return advertiser_profile_plan_request(card)
     return {"name": composite}
 
 

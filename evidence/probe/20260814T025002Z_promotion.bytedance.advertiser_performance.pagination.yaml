@@ -1,0 +1,57 @@
+{
+  "schema_version": "gravity-insight.pagination-reverification.v1",
+  "operation_id": "promotion.bytedance.advertiser_performance.list",
+  "probed_at": "2026-08-14T02:50:02Z",
+  "route": {
+    "method": "POST",
+    "path": "/turbo_engine/api/v1/bytedance/advertiser/list/"
+  },
+  "conclusion": "page_number_pagination_verified",
+  "successful": true,
+  "pagination": {
+    "kind": "page_info",
+    "verified": true,
+    "page_size": 1,
+    "requested_pages": [1, 2],
+    "response_pages": [1, 2],
+    "both_pages_nonempty": true,
+    "projected_rows_different": true,
+    "termination_fields_observed": ["total_number", "total_page"]
+  },
+  "http": [
+    {
+      "method": "POST",
+      "path": "/turbo_engine/api/v1/bytedance/advertiser/list/",
+      "http_status": 200,
+      "sdk_status": "success",
+      "requested_page": 1,
+      "row_count": 1
+    },
+    {
+      "method": "POST",
+      "path": "/turbo_engine/api/v1/bytedance/advertiser/list/",
+      "http_status": 200,
+      "sdk_status": "success",
+      "requested_page": 2,
+      "row_count": 1
+    }
+  ],
+  "privacy": {
+    "values_persisted": false,
+    "omitted_fields": [
+      "advertiser_name",
+      "advertiser_remark",
+      "company",
+      "delay",
+      "operator_id",
+      "operator_name",
+      "project_list"
+    ],
+    "additional_user_level_fields_observed": []
+  },
+  "request_stats": {
+    "total": 2,
+    "failed": 0,
+    "retries": 0
+  }
+}

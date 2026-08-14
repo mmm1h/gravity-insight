@@ -29,6 +29,7 @@ Usage:
   gravity reports usage
   gravity materials performance --app <alias|id> --start <date> --end <date>
   gravity promotion performance --app <alias|id> --start <date> --end <date>
+  gravity promotion advertiser-profile --start <date> --end <date>
   gravity export run <operation-id> --input <json|file|-> --output <file>
   gravity insight <command> [options]
   gravity metadata sync --all-apps
