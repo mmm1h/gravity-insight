@@ -12,7 +12,8 @@
   `src/gravity_sdk/contracts/routes/probe-read-confirmations.json`。每条必须包含 `reviewer`、
   `reviewed_at`、`decision=confirmed_read`，以及至少一条带 `source/detail` 的静态控制流证据；
   缺字段、重复记录、路径变化或确认文件损坏都失败关闭。确认前只读前端控制流、UI 文案和同作用域
-  调用链，不得用在线请求判断是否为写。
+  调用链，不得用在线请求判断是否为写。Draft prober 只对该文件完整校验通过的精确 POST 路径跨过
+  通用 Registry 的写词元守卫；这不修改 stable Registry，也不放行未确认路径或相邻 mutation。
 - 先通过全部离线合同、测试、隐私和质量门禁。
 - 使用合同声明的最小 App、时间、页数和字段。
 - 不为“找非空结果”扩大到长时间窗或用户级全量读取。

@@ -49,6 +49,62 @@
       "path": "/turbo_engine/api/v2/event/realtime_event/list/",
       "reviewed_at": "2026-08-14",
       "reviewer": "hm"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched MasterkeyAd-BgxTfClc.js, the Group component invokes this route on mount, search and page changes with date_list, filters, order_by, page and page_size; it assigns response list rows to the report table and page_info.total_number to the paginator. The route has no mutation feedback or write continuation.",
+          "source": "src/gravity_sdk/census/data/bundle-snapshot.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "report.masterkey_report_group.list",
+      "path": "/turbo_engine/api/v1/masterkey/report/group/list/",
+      "reviewed_at": "2026-08-14",
+      "reviewer": "codex/report-forensics"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched ReportCommonHeader-Ck1C9MQA.js, opening the saved-report dialog loads this route, renders response list rows and page_info.total_number, and reloads it on page or filter changes. Deletion uses the separate /datamanageconfig/report/update/ route with is_delete=1.",
+          "source": "src/gravity_sdk/census/data/bundle-snapshot.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "report.report.list",
+      "path": "/turbo_engine/api/v2/datamanageconfig/report/list/",
+      "reviewed_at": "2026-08-14",
+      "reviewer": "codex/report-forensics"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched NewReportCenter-Dxgo5EkI.js, MetricsPanel loads this route alongside the normal and owned custom-metric lists, assigns its response list to the shared-metric collection, merges it into the displayed metric catalog, and paginates the merged rows locally. Delete and share mutations use separate routes.",
+          "source": "src/gravity_sdk/census/data/bundle-snapshot.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "report.shared_to_me.list",
+      "path": "/turbo_engine/api/v3/confmetric/custom_metric/shared_to_me/list/",
+      "reviewed_at": "2026-08-14",
+      "reviewer": "codex/report-forensics"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched GeneralImportAd-CKb38unY.js, the Ad component invokes this route on mount, search, sort and page changes, assigns response list rows to the table, and consumes page_info.total_number in the paginator. app_id comes from AppSelect and ad_platform from the frontend's finite media-platform options; blank selectors are converted to undefined. Upload and delete use separate routes.",
+          "source": "src/gravity_sdk/census/data/bundle-snapshot.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "report.media_report.list",
+      "path": "/turbo_engine/api/v1/common/media_report/list/",
+      "reviewed_at": "2026-08-14",
+      "reviewer": "codex/report-forensics"
     }
   ],
   "schema_version": "gravity-insight.probe-read-confirmations.v1"
