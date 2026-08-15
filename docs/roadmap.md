@@ -617,6 +617,34 @@ App，峰值分别为 1/3；一个 App 权限失败时另外两个继续，外�
 因此总上游请求量是逐 App 单跑请求集合之和，只提高峰值在途数。v1 `app` 输入和 v1 result 分支
 保持原样；既有五类单 App batch 回归继续通过。
 
+### Analysis typed primitives 裁决（2026-08-16）
+
+对标 Mixpanel Headless 后，裁决是**有真实但很窄的组合缺口，应做 Analysis 领域层，不做通用层**。
+五类 compact Spec 已共享 condition/metric/event-step 机器 schema 和同一个 compiler，所以查询能力与
+合法形状没有缺口；但公开 SDK 只接受 `Mapping`，调用方复用 filter/metric/现有 segment reference
+仍靠仓外 dict 复制。`plan_recipes` 已覆盖 App、日期和预先存在 scalar filter value 的 typed 替换，
+batch v2 已覆盖同一 literal spec 的显式多 App 扇出；二者都不能追加 condition array item、替换完整
+metric object，或把同一受控片段放入另一 kind。这里是程序内结构组合缺口，不是 Plan 参数化缺口。
+
+本轮新增 `analysis_primitives.py`：`AnalysisFilter`、`AnalysisMetric`、`AnalysisCohort`、
+`AnalysisStep`、`AnalysisSpec`。`AnalysisCohort` 只表示现有 `user_segment` 引用，不提供 cohort CRUD
+或自由规则；`AnalysisSpec` 是不可变 `Mapping` wrapper，可无损包装旧 spec，并只开放已登记位置的
+App/日期/metric/filter 增量操作。位置错误在构造期失败；依赖 kind FieldPolicy 或 live metadata 的
+语义仍进入唯一 compiler/preflight 后 fail closed。typed/literal 五类回归固定同一 `query_id` 后，
+编译出的 operation input 按实际 JSON 序列化逐字节相等。
+
+typed 构造面新增 25 个 caller-recoverable 错误起点，全部有字段路径和替代动作，分档均为 B；
+actionable-error inventory 从 `974 + 25 = 999`，分档从 `A/B/C = 218/400/356` 变为
+`218/(400+25)/356 = 218/425/356`。这是新增公开输入边界的完整库存更新，不删除扫描范围、不改
+分档规则，也不把错误藏到未登记 helper。
+
+结果层不改。现有 envelope 的 schema/status/operation 与 batch `node_id/query_id/app` 身份对可靠比较、
+空值和 partial 对齐有帮助；调用方需要自行拆出各引擎 `result.data`，这是保留异构受治理结果的有意
+边界，不引入 pandas/DataFrame 依赖，也不做跨 App merge/sort/diff。没有新增 registry、DSL、Plan
+binding、adapter 分支、线程池、operation、CLI 参数、envelope 或退出码；`plan_adapters.py` 净增长
+`0`。台账可复算为 operation `185 + 0 = 185`，stable `176 + 0 = 176`，Analysis journey
+`既有行 + 0 = 既有行`。
+
 **底层参数化总体健康**，不需要通用化改造。日期窗、周月粒度、分组（≤20）、多指标（≤50 步）、
 AND/OR 条件、漏斗步数与窗口、留存 `offset`（1–365）、Multidim 常见指标维度都是改参数即可。
 留存 D7→D8 零开发，推广平台硬编码是 operation 合同必要绑定，推广指标用开放排除法——

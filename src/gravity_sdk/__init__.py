@@ -52,6 +52,11 @@ _EXPORTS = {
     "CompiledAnalysisQuery": (".analysis_spec", "CompiledAnalysisQuery"),
     "analysis_query_spec_schema": (".analysis_spec", "analysis_query_spec_schema"),
     "compile_query_spec": (".analysis_spec", "compile_query_spec"),
+    "AnalysisCohort": (".analysis_primitives", "AnalysisCohort"),
+    "AnalysisFilter": (".analysis_primitives", "AnalysisFilter"),
+    "AnalysisMetric": (".analysis_primitives", "AnalysisMetric"),
+    "AnalysisSpec": (".analysis_primitives", "AnalysisSpec"),
+    "AnalysisStep": (".analysis_primitives", "AnalysisStep"),
     "analysis_query_batch_schema": (
         ".analysis_query_batch", "analysis_query_batch_schema"
     ),
