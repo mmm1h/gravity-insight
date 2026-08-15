@@ -132,11 +132,12 @@ class Transport:
                 "Gravity request returned a redirect; cross-origin redirects are blocked"
             )
         _raise_for_status(status, response.retry_after_ms)
-        if not isinstance(response.payload, Mapping):
+        payload = {} if status == 204 and response.payload is None else response.payload
+        if not isinstance(payload, Mapping):
             raise TransportError("Gravity returned an unexpected JSON envelope")
-        if response.payload.get("code") in _AUTH_CODES:
+        if payload.get("code") in _AUTH_CODES:
             raise AuthenticationError("Gravity authorization is invalid or expired")
-        return TransportResponse(status, response.payload, response.fetched_at)
+        return TransportResponse(status, payload, response.fetched_at)
 
 
 def _raise_for_status(status: int, retry_after_ms: int | None) -> None:

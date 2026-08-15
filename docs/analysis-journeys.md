@@ -154,6 +154,16 @@ Plan 已实现本地 `receipt_query`，没有引用“设计不适用”例外�
 writer 拒绝非有限数字；operation、投影、请求、错误分类和退出码语义不变。调用方操作见
 [LLM 输出安全指南](guides/llm-output-safety.md)。
 
+2026-08-16 的 `semantic_error` 判定审计是横切纠错，不新增产品或 operation，台账仍为
+`48 = 33 / 0 / 15 → +0 / +0 / +0 = 48 = 33 / 0 / 15`，operation/stable 仍为 `185 / 176`。
+物理命中 `semantic_error` 文本的 787 份 evidence 中，只有 327 份真以它为 conclusion；程序化分类为
+`5 明确误判 + 0 明确真错误 + 782 信息不足 = 787`，其中 782 又是
+`322 个缺原始判据的标签 + 460 个仅命中 semantic_errors 容器键`。5 个明确误判均为 HTTP 204/null body，
+各落在不同 operation；它们没有单独支撑当前表中的缺失理由。D35 行则由已完成归因线的补充 evidence
+另行证明 `code=0/msg=成功/extra.error=无数据` 是明确空，故本表旧 `semantic error / 缺服务端证据`
+说法撤销；F40 对 D35 的依赖理由同步失效，共改写 2 行。本审计没有重探测这两条动线；分类器修复只用
+`promotion.kuaishou.developer.list` 做 1 次 GET 验证，HTTP 204/null body，无重试、翻页、扩窗或换 App。
+
 事件、漏斗、留存、属性四行的“已知 1 次”同时覆盖显式多 App：同一 spec 用
 `gravity.analysis-query-batch.v2` 的 `apps` 数组一次执行，逐 App 组件返回且不聚合。scatter 和其余
 产品仍按当前单 App/同层 Plan 合同，不据此增加新动线或改变下表计数。
@@ -205,8 +215,8 @@ writer 拒绝非有限数字；operation、投影、请求、错误分类和退�
 | 查找当前账号可读的 App 项目 | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `APP_PROJECT_ITEM_SCHEMA_MISSING`。`app.project.list` 的 path/body 只有筛选与分页、无 App 输入，认证上下文仅绑定账号/公司，故 App 枚举不适用。2026-08-16 唯一一次最小第一页 POST 为 HTTP 200 明确空；这是当前账号级事实，item schema 与前三个产品面仍缺。 |
 | 查看 App 的 OneLink 与公开信息绑定 | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `APP_ONELINK_PUBLIC_BINDING_SAMPLE_MISSING`。**推进但未闭环**：OneLink 仍由既有 GET 父链证明当前账号明确空。appManage 进一步证明 app-info 的 `url` 来自调用方输入的 Google Play/App Store 下载链接，并非 OneLink 项；公开 URL 的 2 次最小 GET 均 HTTP 200，已恢复 `app_id/error/icon_url/image_data/name/package_name/platform` schema，但结果为 error-shaped `inconclusive`，未获成功数据。下一步由调用方提供一条已知能被 Gravity 抓取的公开商店 URL，只做 1 次读取；非空后按投影总裁决登记并暴露全部字段，不能用当前 OneLink 空样本补绑定。 |
 | 按平台、广告位和日期汇总变现结果（D28） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `MONETIZATION_AGGREGATE_CONTRACT_MISSING`。**请求/读语义已证明，响应合同仍阻塞**：hash-matched `NewReportCenter` bundle 已恢复 `custom_get` 九字段和 `calc_total` 八字段 builder、条件省略、响应消费及纯客户端分页，两条精确 POST read confirmation 已登记。生产共 3 请求：`app.list` 与主 route 的 status/schema 因 one-shot 脚本未及时落盘而未知，按纪律不补发；`calc_total` 唯一请求 HTTP 200，只观察到无字段的 `data.list[]:object`。仍缺主 route shape、两 route 非空 item/total 字段及指标/维度值域；投机性标识符不登记为 omitted，取得实际 shape 后全部登记暴露。 |
-| 查询归因表现聚合（D35） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `ATTRIBUTION_AGGREGATE_CONTRACT_MISSING`。前端 body 已恢复，但最小请求仍 semantic error；缺服务端必填、值域和成功/明确空证据。 |
-| 下钻单用户归因明细（F40） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `USER_ATTRIBUTION_DETAIL_DEPENDENCY_MISSING`。D35 未成立；还缺调用方提供的授权标识来源、请求绑定、分页和响应合同。标识字段投影已全面放开，不再是阻塞。 |
+| 查询归因表现聚合（D35） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `ATTRIBUTION_AGGREGATE_CONTRACT_MISSING`。**2026-08-16 审计纠正**：旧 evidence 未保存 `code/msg/extra.error` 原值，且旧分类器把任意非空 `extra.error` 判成拒绝；已完成归因线另有同一精确 builder 的 `code=0/msg=成功/extra.error=无数据` 明确空证据。因此旧“semantic error / 缺服务端证据”不能成立，改记为**旧判定基于分类器误判，待重新取证**；本审计不复探测、不据并行分支直接提升状态。 |
+| 下钻单用户归因明细（F40） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `USER_ATTRIBUTION_DETAIL_DEPENDENCY_MISSING`。**2026-08-16 审计纠正**：依赖的 D35“服务端拒绝”理由已失效，待 D35 以修复后分类器重新取证；本行自身仍缺调用方提供的授权标识来源、请求绑定、分页和响应合同。标识字段投影已全面放开，不再是阻塞。 |
 | 按表名或 App 查询数据表当前 schema、字段和版本（F41） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `CURRENT_TABLE_SCHEMA_PARENT_MISSING`。list 为空且无可信表名/App 来源；detail/version 父链、`table_id` 类型和“当前版本”语义未证实。 |
 | 下钻非 Bytedance 平台的计划、组和创意表现（D33/D34） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `NON_BYTEDANCE_HIERARCHY_PARENT_MISSING`。Bilibili advertiser 与 Huya account 未产出父候选；后续 ID 链、report 父字段、分页和非空 schema 未成立。 |
 | 深查各平台专属素材与创意（D32） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `PLATFORM_SPECIFIC_CREATIVE_CONTRACT_MISSING`。除 Bytedance 外普遍没有最小非空响应合同；common 素材目录不能证明平台专属字段。Bytedance 标题包已单列为独立动线闭环，**但那是 D32 之下的一个具体产品，不是这条动线的进展**；本条仍是数据证据阻塞。 |

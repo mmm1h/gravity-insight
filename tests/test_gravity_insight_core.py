@@ -168,6 +168,7 @@ class FakeTransport:
             raise value
         payload = value._payload if isinstance(value, FakeResponse) else value
         status = value.status_code if isinstance(value, FakeResponse) else 200
+        payload = {} if status == 204 and payload is None else payload
         return TransportResponse(status, payload, "2026-08-08T06:00:00Z")
 
 
@@ -1972,6 +1973,19 @@ class GravityInsightCoreTests(unittest.TestCase):
             )
             self.assertEqual(0, response.payload["code"])
             self.assertEqual(2, len(session.calls))
+        with tempfile.TemporaryDirectory() as directory:
+            client, _ = client_for(
+                Path(directory),
+                [FakeResponse({"code": 0, "msg": "成功", "extra": {"error": "无数据"},
+                               "data": {"list": [], "page_info": {"page": 1, "total_page": 1}}})],
+            )
+            self.assertEqual("empty", client.read("example.items.list", {})["status"])
+        with tempfile.TemporaryDirectory() as directory:
+            client, _ = client_for(Path(directory), [FakeResponse({"code": 200, "data": {"list": []}})])
+            self.assertEqual("empty", client.read("example.items.list", {})["status"])
+        with tempfile.TemporaryDirectory() as directory:
+            client, _ = client_for(Path(directory), [FakeResponse(None, 204)])
+            self.assertEqual("empty", client.read("example.items.list", {})["status"])
         with tempfile.TemporaryDirectory() as directory:
             client, _ = client_for(
                 Path(directory),
