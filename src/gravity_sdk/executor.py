@@ -8,6 +8,12 @@ import math
 import re
 from typing import Any, Callable, Mapping
 
+from .analysis_projection_contract import (
+    ANALYSIS_DATE_RESPONSE_KEY_RE,
+    ANALYSIS_INDEX_RESPONSE_KEY_RE,
+    ANALYSIS_SAFE_RESPONSE_SCALARS,
+    funnel_mode_shape_changed,
+)
 from .drift import ProjectionDrift, projection_drift_status
 from .errors import PolicyViolation, UpstreamError
 from .models import OperationSpec, ReadResult, SemanticErrorRule
@@ -43,7 +49,7 @@ _ANALYSIS_NESTED_RESPONSE_KEYS = {
         }
     ),
     "analysis.funnel.query": frozenset(
-        {"count", "group", "rate", "ratio", "total", "value", "values"}
+        {"cnt", "count", "group", "rate", "ratio", "total", "value", "values"}
     ),
     "analysis.retention.query": frozenset(
         {
@@ -77,24 +83,6 @@ _ANALYSIS_NESTED_RESPONSE_KEYS = {
         {"cname", "data_type", "field", "method", "name", "target", "value"}
     ),
 }
-_ANALYSIS_SAFE_RESPONSE_SCALARS = frozenset(
-    {
-        "day",
-        "hour",
-        "minute",
-        "month",
-        "total",
-        "week",
-        "PresetAllCount",
-        "PresetUserCount",
-    }
-)
-_ANALYSIS_DATE_RESPONSE_KEY_RE = re.compile(
-    r"^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}(?::\d{2}){0,2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?$"
-)
-_ANALYSIS_INDEX_RESPONSE_KEY_RE = re.compile(r"^(?:-?\d+(?:\.\d+)?|[xX]\d{1,3})$")
-
-
 class ReadExecutor:
     def __init__(self, registry: Registry, policy: PolicyEngine, transport: Transport) -> None:
         self._registry = registry
@@ -616,7 +604,7 @@ def _project_analysis_aggregate(
         tuple(path.split(".")) for path in operation.response_projection.numeric_paths
     )
     projected: dict[str, Any] = {}
-    dropped = 0
+    dropped = int(funnel_mode_shape_changed(operation, data, values))
     for key in operation.response_projection.data_keys:
         if key not in data:
             continue
@@ -824,8 +812,8 @@ def _analysis_response_keys(
 def _allowed_analysis_response_key(name: str, response_keys: set[str]) -> bool:
     return bool(
         name in response_keys
-        or _ANALYSIS_DATE_RESPONSE_KEY_RE.fullmatch(name)
-        or _ANALYSIS_INDEX_RESPONSE_KEY_RE.fullmatch(name)
+        or ANALYSIS_DATE_RESPONSE_KEY_RE.fullmatch(name)
+        or ANALYSIS_INDEX_RESPONSE_KEY_RE.fullmatch(name)
     )
 
 
@@ -833,10 +821,10 @@ def _allowed_analysis_response_scalar(value: str, response_keys: set[str]) -> bo
     stripped = value.strip()
     return bool(
         stripped in response_keys
-        or stripped in _ANALYSIS_SAFE_RESPONSE_SCALARS
-        or _ANALYSIS_DATE_RESPONSE_KEY_RE.fullmatch(stripped)
+        or stripped in ANALYSIS_SAFE_RESPONSE_SCALARS
+        or ANALYSIS_DATE_RESPONSE_KEY_RE.fullmatch(stripped)
         or re.fullmatch(r"^\d{4}-(?:\d{2}|W\d{2})$", stripped)
-        or _ANALYSIS_INDEX_RESPONSE_KEY_RE.fullmatch(stripped)
+        or ANALYSIS_INDEX_RESPONSE_KEY_RE.fullmatch(stripped)
     )
 
 
@@ -845,7 +833,7 @@ def _sensitive_analysis_scalar(value: str, blocked: set[str]) -> bool:
     normalized = stripped.casefold().replace("-", "_")
     if _sensitive_key(normalized, blocked):
         return True
-    if _ANALYSIS_DATE_RESPONSE_KEY_RE.fullmatch(stripped) or re.fullmatch(
+    if ANALYSIS_DATE_RESPONSE_KEY_RE.fullmatch(stripped) or re.fullmatch(
         r"^\d{4}-(?:\d{2}|W\d{2})$", stripped
     ):
         return False

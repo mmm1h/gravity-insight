@@ -12,6 +12,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from gravity_sdk import cli, runtime
+from gravity_sdk.analysis_spec import analysis_query_spec_schema
 from gravity_sdk.domains import (
     ANALYSIS_AUXILIARY_OPERATIONS,
     ANALYSIS_DASHBOARD_OPERATIONS,
@@ -226,6 +227,27 @@ class GravityInsightCliTests(unittest.TestCase):
         self.assertEqual(client.operation_ids, set(client.schema_calls))
         self.assertEqual([], client.read_calls)
         self.assertEqual([], client.read_all_calls)
+
+    def test_analysis_spec_schema_preserves_every_required_property(self):
+        code, result, error, client = self.invoke(
+            ["analysis", "query", "--kind", "retention", "--spec-schema"]
+        )
+        self.assertEqual((0, None, []), (code, error, client.read_calls))
+        self.assertEqual(
+            analysis_query_spec_schema(),
+            {key: value for key, value in result.items() if key != "requested_kind"},
+        )
+        pending = [result]
+        while pending:
+            value = pending.pop()
+            if isinstance(value, dict):
+                if "properties" in value:
+                    self.assertTrue(set(value.get("required", ())) <= set(value["properties"]))
+                pending.extend(value.values())
+            elif isinstance(value, list):
+                pending.extend(value)
+        operator = result["definitions"]["condition"]["properties"]["operator"]
+        self.assertIn("EQUALS", operator["enum"])
 
     def test_runtime_reuses_one_long_lived_client(self):
         sentinel = object()

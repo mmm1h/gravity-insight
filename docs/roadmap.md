@@ -23,6 +23,30 @@
 
 `draft` 候选数量不等于排期数量：17 项候选归并进台账动线或按明确非目标排除，不按 operation 单独排期。
 
+### Analysis 自有合同投影修正（2026-08-15）
+
+**提案：**把消费方报告的两条阻断放在同一轮处理，但分别证明边界：公开 Spec schema 做进程内
+权威对象与 CLI JSON 的全树差分，不按已知字段点修；funnel 按日响应先用冻结前端控制流证明请求模式
+与消费分支，再以最多一次聚合级生产请求确认服务端形状。只把已证明的模式分支加入合同，缺少或畸形
+目标投影继续 `contract_changed`。
+
+**判定：**`analysis query --spec-schema` 的通用值脱敏曾把机器合同的
+`definitions.condition.properties.operator` 当作人员字段删除；全树差分与所有带 `properties` 节点的
+`required` 包含检查确认这是当前 schema 唯一被删除的结构键。schema envelope 现显式声明
+`operation_id=analysis.query.spec_schema`，使既有 Analysis 输出边界采用只删除会话凭据的策略；CLI 与
+进程内 schema 除 `requested_kind` 外保持逐值一致，`operator` 的完整受控 enum 重新公开。本项生产请求
+0 次。仓库另一条同类入口 `analysis segment evaluate --spec-schema` 也完成全树差分，因原本已有
+Analysis operation identity，CLI 与进程内合同完全一致，没有第二个受影响结构键。
+
+funnel 的冻结 `Funnel-DPNtPpg_.js` 与 `analysis-data-CVCbcwc0.js`（SHA-256 分别为
+`c24bb798…8f042`、`66736b5…81f0d`）证明 line 模式发送 `to_calc_each_day=true` 并消费
+`aggregate_by_date`，bar 模式消费 `aggregate_date.total/group`。随后唯一一次单日、两步、无筛选
+生产 POST 返回 HTTP 200：`aggregate_by_date` 为对象，`aggregate_date` 为 null，确认前提成立；没有
+重试、扩窗或值落盘。原 warning 并非 null 导致，而是同一响应 `date_list[].<date>[].cnt.*` 的合法
+数值树未登记，投影删除它后才把状态提升为 `contract_changed`。合同现登记该路径，执行器按
+`to_calc_each_day` 要求对应 aggregate 根必须为对象；合法按日形状为 `success`，目标根缺失、null 或
+畸形仍 fail closed。本轮不改变分析动线总数。
+
 ### Stable operation 正向交叉（2026-08-14）
 
 **提案：**从 176 条 stable operation 正向检查真实产品调用链，排除通用 `run`、legacy 快照、
