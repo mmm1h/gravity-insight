@@ -37,7 +37,7 @@ class ResultOutputTests(unittest.TestCase):
             with patch.object(tempfile._TemporaryFileWrapper, "write", half_write, create=True), self.assertRaises(OSError):
                 result_output.write_rendered_result(str(output), "new")
             self.assertEqual("old", output.read_text(encoding="utf-8"))
-            self.assertEqual([output], list(Path(folder).iterdir()))
+            self.assertFalse(any(path.suffix == ".tmp" for path in Path(folder).iterdir()))
 
     def test_sql_output_uses_same_receipt_and_keeps_partial_exit(self):
         item = {"ok": False, "status": "partial", "results": [{"ok": True}]}

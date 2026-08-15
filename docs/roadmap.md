@@ -781,6 +781,45 @@ SQL Evidence preflight 的 `OSError`、SQL verify 的 `OSError` 均改为 local/
 200 个普通地区枚举，其中 2 个不能用 GBK 编码。两次都未重试、未翻页，值只在内存中计数，未写入
 Evidence 或文档。operation、请求合同、响应投影、CLI 参数与 envelope shape 均未改变，stable/read
 能力无损失。
+
+## 运行环境健壮性审计（2026-08-15）
+
+**结论：离线覆盖编码、路径、原子提交与运行时后确认 3 个真实缺陷，其中 2 个涉及错误分类。**
+
+- 字面量 `~/...` 作为 `--output` 时，旧实现退出 0 却在当前目录创建名为 `~` 的子目录；共享
+  `result_output` 现于落盘前展开用户目录，receipt 返回实际路径。无法确定 home 时不猜路径，返回
+  `LOCAL_IO_ERROR/local/4`，next action 要求设置 `HOME/USERPROFILE` 或改用绝对路径。现实性：中。
+- 两个进程并发写同一 `--output` 时，旧实现让两者都退出 0，最后一次原子 replace 静默覆盖前者；现复用
+  kernel advisory process lock，同一目标一次只有一个 writer，冲突进程明确返回
+  `LOCAL_IO_ERROR/local/4`。锁文件保留诊断 owner，进程崩溃后由内核释放锁并可自动重获，不要求调用方
+  删除。现实性：高。
+- 同时缺少 `HOME/APPDATA/LOCALAPPDATA/USERPROFILE/HOMEDRIVE/HOMEPATH` 等全部用户根，且没有
+  `GRAVITY_CACHE_HOME` 的 Windows service/container，旧公共入口会在 import 阶段 traceback/exit 1；
+  `gravity`、`gravity-insight`、`gravity-sql` 现从共享 bootstrap catcher 输出标准 local/4 envelope，
+  next action 明确设置一个存在且可写的 `GRAVITY_CACHE_HOME`。仅缺 `HOME/APPDATA` 不触发问题。
+  现实性：低。
+
+分类错误共 2 处：并发冲突原为成功/0，bootstrap 本地环境错误原为无分类/1；tilde 是成功位置错误，
+不计责任域误类。三个新增回归都在独立子进程制造真实环境；修复前分别得到错误输出目录、`[0,0]` 双成功、
+traceback/exit 1，修复后分别得到正确 home 路径、`[0,4]` 且失败方为 local、标准 local/4 envelope。
+
+其余实测均无缺陷：`PYTHONIOENCODING=gbk/cp936/ascii/latin-1/未设` 与
+`PYTHONUTF8=0/1/未设` 共 15 个组合全部输出 strict UTF-8；stdout/stderr 的 pipe、文件、`NUL`，中文/空格
+workspace 与配置值、中文环境变量和输出路径、288 字符长路径、相对/绝对路径、已有/不存在/目录/只读
+输出目标均保持预期。NDJSON 文件固定 LF，Windows pipe 的 CRLF 也能逐行解析；同目录 staging 从实现上
+排除了跨卷 replace。只读已有文件保留旧内容并分类 local/4，目录目标与父路径为文件分类 caller/2。
+
+`requires-python >=3.11` 的**静态证据成立、动态证据不足**：用 Python 3.11 grammar 解析 `src` 下 315 个
+Python 文件为 0 失败；未发现 3.12+ 的语法或 `Path.walk`、`itertools.batched`、`typing.override`、
+`shutil.onexc` 等标准库调用；下界敏感的 `tomllib` 正好从 3.11 提供，requests/tzdata 及构建、测试依赖的
+metadata 也不高于 3.11。本机只有 CPython 3.14.6，故未把全量测试写成 3.11 实机通过。
+
+本轮生产 HTTP 请求为 0。operation 台账 `185 + 0 = 185`，stable 台账 `176 + 0 = 176`；产品动线
+`48（32 已闭环 / 0 部分 / 16 缺失）+ 0 = 48（32 / 0 / 16）`，因此不改
+`analysis-journeys.md`。技术债清单已复核：修复复用了既有 process lock 与共享结果 sink/bootstrap
+classifier，没有产生可由当前源码证明的新结构债。本机无法完成的实测是非 65001 attached Console 的屏幕
+渲染、目录 DACL/网络盘 ACL、SMB/NFS 锁语义、关闭 long-path policy 的机器，以及 CPython 3.11 动态门禁。
+
 ## Issue 12 / 18 登记投影漂移收口（2026-08-15）
 
 两条现象均在 `88edb84` 上复现，且未放宽未登记字段的 additive fail-closed 判定。
