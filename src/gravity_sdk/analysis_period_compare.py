@@ -11,6 +11,7 @@ from typing import Any
 
 from .analysis_spec import compile_query_spec, validate_query_spec
 from .errors import InputValidationError
+from .result_source import GOVERNED_PRODUCT, result_source
 
 
 SCHEMA_VERSION = "gravity-insight.analysis-period-compare.v1"
@@ -127,6 +128,7 @@ def _envelope(
     ok = status in {"success", "empty"}
     return {
         "schema_version": SCHEMA_VERSION,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": ok,
         "status": status,
         "kind": kind,
@@ -364,6 +366,7 @@ def _delta_unavailable(reason: str, *, detail: str | None = None) -> dict[str, A
 def _capability_gap(kind: str, detail: str, *, network_called: bool) -> dict[str, Any]:
     return {
         "schema_version": SCHEMA_VERSION,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": False,
         "status": "capability_gap",
         "kind": kind,

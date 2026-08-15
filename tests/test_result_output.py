@@ -48,4 +48,5 @@ class ResultOutputTests(unittest.TestCase):
                 self.assertEqual(3, _emit_query_result(envelope, None, None, str(output)))
             receipt = json.loads(stdout.getvalue())
             self.assertEqual({"ok": True, "status": "written", "output": str(output), "format": "json", "size_bytes": output.stat().st_size}, receipt)
-            self.assertEqual("partial", json.loads(output.read_text(encoding="utf-8"))["status"])
+            payload = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(("partial", "caller_defined"), (payload["status"], payload["result_source"]["tier"]))

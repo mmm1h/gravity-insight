@@ -18,6 +18,7 @@ from .errors import (
     exit_code_for_category,
     exit_code_for_error,
 )
+from .result_source import GOVERNED_PRODUCT, result_source
 
 
 SCHEMA_VERSION = "gravity-insight.segment-members.v1"
@@ -188,6 +189,7 @@ def _from_read(
     )
     return {
         "schema_version": SCHEMA_VERSION,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": not truncated,
         "status": result_status,
         "exit_code": exit_code_for_error(detail) if detail is not None else 0,
@@ -279,6 +281,7 @@ def _failure(
     )
     return {
         "schema_version": SCHEMA_VERSION,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": False,
         "status": status,
         "exit_code": exit_code,

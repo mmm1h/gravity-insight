@@ -754,9 +754,8 @@ def _ndjson_rows(result: Any) -> tuple[list[Any], dict[str, Any]]:
     if not isinstance(rows, list):
         rows = [value]
     metadata = {
-        "schema_version": "gravity-insight.ndjson-meta.v1",
-        "operation_id": value.get("operation_id") if isinstance(value, Mapping) else None,
-        "status": value.get("status") if isinstance(value, Mapping) else "success",
+        "schema_version": "gravity-insight.ndjson-meta.v1", "result_source": value.get("result_source") if isinstance(value, Mapping) else None,
+        "operation_id": value.get("operation_id") if isinstance(value, Mapping) else None, "status": value.get("status") if isinstance(value, Mapping) else "success",
         "truncated": value.get("truncated", False) if isinstance(value, Mapping) else False,
         "next_page_input": value.get("next_page_input") if isinstance(value, Mapping) else None,
         "total": value.get("total", value.get("count")) if isinstance(value, Mapping) else None,

@@ -24,6 +24,7 @@ from .plan_adapter_support import (
 )
 from .saved_analysis_result import saved_result_item_count
 from .saved_analysis_support import RESULT_STATUSES, bounds, safe_query_envelope, workers
+from .result_source import GOVERNED_PRODUCT, result_source
 from .template_replay import (
     PREVIEW_SCHEMA_VERSION,
     REPLAY_SCHEMA_VERSION,
@@ -71,7 +72,7 @@ OUTPUT_FIELDS = frozenset(
 _REQUEST_FIELDS = frozenset({"name", "scope", "app", "ref", "mode", "start", "end"})
 _TOP_FIELDS = frozenset(
     {
-        "schema_version", "ok", "status", "exit_code", "network_called",
+        "schema_version", "result_source", "ok", "status", "exit_code", "network_called",
         "definition_network_called", "query_executed", "template",
         "artifact_mode", "kind", "operation_id", "date_range",
         "date_override_applied", "limitations", "validation", "quarantine",
@@ -288,7 +289,8 @@ def safe_template_result(value: Any) -> dict[str, Any]:
     if not _valid_state(value, validation, quarantine):
         return _contract_failure()
     selected = {
-        "schema_version": value["schema_version"], "ok": value["ok"],
+        "schema_version": value["schema_version"],
+        "result_source": result_source(GOVERNED_PRODUCT), "ok": value["ok"],
         "status": value["status"], "exit_code": value["exit_code"],
         "network_called": True, "definition_network_called": True,
         "query_executed": value["query_executed"], "template": template,
@@ -399,7 +401,7 @@ def project_template_result(
     if not fields:
         return safe
     structural = {
-        "schema_version", "ok", "status", "exit_code", "network_called",
+        "schema_version", "result_source", "ok", "status", "exit_code", "network_called",
         "definition_network_called", "query_executed", "next_action",
     }
     return {
@@ -455,6 +457,7 @@ def _contract_failure() -> dict[str, Any]:
     )
     return {
         "schema_version": REPLAY_SCHEMA_VERSION,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": False,
         "status": "contract_changed",
         "exit_code": exit_code_for_error(detail),

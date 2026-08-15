@@ -16,6 +16,7 @@ from .metadata_vocabulary import (
     vocabulary_failures,
     vocabulary_rows,
 )
+from .result_source import LOCAL_CATALOG, result_source
 
 
 SCHEMA_VERSION = "gravity.metadata-search.v1"
@@ -86,6 +87,7 @@ def search_metadata(
     page = ordered[offset:] if limit is None else ordered[offset : offset + limit]
     result = {
         "schema_version": SCHEMA_VERSION,
+        "result_source": result_source(LOCAL_CATALOG),
         "ok": True,
         "status": "success",
         "offline": True,

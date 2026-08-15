@@ -21,12 +21,14 @@ from .bilibili_account_performance_validation import (
     safe_rows,
     safe_total,
 )
+from .result_source import GOVERNED_PRODUCT, result_source
 
 
 SCHEMA_VERSION = "gravity-insight.bilibili-account-performance.v1"
 
 _ENVELOPE_FIELDS = frozenset({
     "schema_version",
+    "result_source",
     "ok",
     "status",
     "exit_code",
@@ -44,7 +46,7 @@ _ERROR_FIELDS = frozenset({
     "retry_after_ms", "next_action",
 })
 _NATIVE_FIELDS = frozenset({
-    "schema_version", "status", "source", "fetched_at", "schema_fingerprint",
+    "schema_version", "result_source", "status", "source", "fetched_at", "schema_fingerprint",
     "operation_id", "contract_version", "request", "page", "data", "warnings",
     "error",
 })
@@ -90,7 +92,10 @@ def result_from_native(
     options = _options(operation_id, window, max_pages, max_items, max_workers)
     if isinstance(value, BaseException):
         return _failure_from_exception(value, **options)
-    if not isinstance(value, Mapping) or set(value) != _NATIVE_FIELDS:
+    if (
+        not isinstance(value, Mapping)
+        or set(value) - {"result_source"} != _NATIVE_FIELDS - {"result_source"}
+    ):
         return contract_result(**options)
     status = value.get("status")
     if status in {"contract_changed", "contract_changed_additive"}:
@@ -130,6 +135,7 @@ def success_result(
         raise ValueError("Bilibili account performance item budget is invalid")
     return {
         "schema_version": SCHEMA_VERSION,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": True,
         "status": "empty" if not safe_rows else "success",
         "exit_code": 0,
@@ -172,6 +178,7 @@ def failure_result(
     )
     return {
         "schema_version": SCHEMA_VERSION,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": False,
         "status": status,
         "exit_code": exit_code_for_error(detail),

@@ -8,6 +8,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from .errors import ErrorCategory, ErrorCode, ErrorDetail, exit_code_for_error
+from .result_source import GOVERNED_PRODUCT, result_source
 
 
 _FAILURE_STATUSES = frozenset(
@@ -64,6 +65,7 @@ def multidim_envelope(
         statuses.append(str(total.get("status", "error")))
     return {
         "schema_version": "gravity-insight.composite.multidim.v1",
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": not failures,
         "status": combined_status(statuses),
         "exit_code": max((_failure_exit_code(item) for item in failures), default=0),

@@ -15,16 +15,13 @@ from .export_contracts import (
 from .export_gateway import ExportTaskCenter, GravityExportGateway
 from .export_file import export_file_policies
 from .export_models import (
-    ExportCreationRequest,
-    ExportPollingPolicy,
-    ExportPrivacyContract,
-    ExportState,
-    _export_error,
-    _validate_creation_request,
+    ExportCreationRequest, ExportPollingPolicy, ExportPrivacyContract, ExportState,
+    _export_error, _validate_creation_request,
 )
 from .export_state import ExportOrchestrator
 from .registry import PolicyEngine, Registry
 from .paths import CONTRACT_ROOT
+from .result_source import GOVERNED_PRODUCT, result_source
 
 
 def load_export_components(
@@ -372,7 +369,7 @@ def _polling_policy(timeout_seconds: float) -> ExportPollingPolicy:
 
 def _export_snapshot_envelope(operation_id: str, snapshot: Any) -> dict[str, Any]:
     return {
-        "schema_version": "gravity-insight.export.v1",
+        "schema_version": "gravity-insight.export.v1", "result_source": result_source(GOVERNED_PRODUCT),
         "ok": True,
         "status": "success",
         "operation_id": operation_id,
@@ -406,7 +403,7 @@ def _export_failed_snapshot_envelope(
         ),
     )
     return {
-        "schema_version": "gravity-insight.error.v1",
+        "schema_version": "gravity-insight.error.v1", "result_source": result_source(GOVERNED_PRODUCT),
         "ok": False,
         "status": "error",
         "operation_id": operation_id,
@@ -423,6 +420,7 @@ def _export_result_envelope(operation_id: str, result: Any) -> dict[str, Any]:
         detail = _export_result_error_detail(operation_id, result)
         return {
             "schema_version": "gravity-insight.error.v1",
+            "result_source": result_source(GOVERNED_PRODUCT),
             "ok": False,
             "status": "error",
             "operation_id": operation_id,
@@ -434,6 +432,7 @@ def _export_result_envelope(operation_id: str, result: Any) -> dict[str, Any]:
         }
     return {
         "schema_version": "gravity-insight.export.v1",
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": True,
         "status": "success",
         "operation_id": operation_id,

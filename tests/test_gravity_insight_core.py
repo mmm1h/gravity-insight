@@ -461,6 +461,7 @@ class GravityInsightCoreTests(unittest.TestCase):
         self.assertEqual(
             {
                 "schema_version",
+                "result_source",
                 "status",
                 "source",
                 "fetched_at",

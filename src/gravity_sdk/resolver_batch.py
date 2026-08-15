@@ -17,6 +17,7 @@ from .errors import (
     exit_code_for_category,
 )
 from .resolver import resolve_and_run
+from .result_source import aggregate_result_sources, selector_result_source
 
 
 SCHEMA_VERSION = "gravity-insight.resolver-batch.v1"
@@ -122,6 +123,7 @@ def run_many(
     success_count = len(results) - len(failed)
     return {
         "schema_version": SCHEMA_VERSION,
+        "result_source": aggregate_result_sources(results),
         "ok": not failed,
         "status": "success" if not failed else "partial" if success_count else "error",
         "request_count": len(source),
@@ -397,6 +399,7 @@ def _result_item(item: _RunItem, result: Mapping[str, Any]) -> dict[str, Any]:
     wrapped: dict[str, Any] = {
         "request_id": item.request_id,
         "selector": item.selector,
+        "result_source": selector_result_source(item.selector),
         "app": item.app,
         "operation_id": result.get("operation_id"),
         "ok": ok,
@@ -423,6 +426,7 @@ def _exception_item(item: _RunItem, exc: Exception) -> dict[str, Any]:
     return {
         "request_id": item.request_id,
         "selector": item.selector,
+        "result_source": selector_result_source(item.selector),
         "app": item.app,
         "operation_id": None,
         "ok": False,

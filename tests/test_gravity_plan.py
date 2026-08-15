@@ -104,6 +104,7 @@ class PlanValidationTests(unittest.TestCase):
             dry_run=True,
         )
         self.assertEqual(result["status"], "validated")
+        self.assertEqual("raw_operation", result["result_source"]["tier"])
         self.assertEqual(calls, {"validate": 1, "execute": 0})
 
 

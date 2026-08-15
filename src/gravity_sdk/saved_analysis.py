@@ -31,6 +31,7 @@ from .saved_analysis_result import (
     replay_envelope,
     saved_result_item_count,
 )
+from .result_source import GOVERNED_PRODUCT, result_source
 from .saved_analysis_artifact import (
     compile_saved_artifact,
     inspect_saved_artifact,
@@ -151,6 +152,7 @@ def _inspection_envelope(
     )
     return {
         "schema_version": INSPECT_SCHEMA_VERSION,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": True,
         "status": "success",
         "exit_code": 0,
@@ -401,6 +403,7 @@ def _prepare_definition(
     metadata = safe_metadata(definition, app_id=app)
     return {
         "schema_version": PREVIEW_SCHEMA_VERSION,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": True,
         "status": "compiled",
         "exit_code": 0,

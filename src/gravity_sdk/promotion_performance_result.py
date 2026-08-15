@@ -23,6 +23,7 @@ from .promotion_performance_error import (
 )
 from .promotion_performance_binding import rows_match_performance_request
 from .promotion_projection import promotion_row_fields
+from .result_source import GOVERNED_PRODUCT, result_source
 
 
 SCHEMA_VERSION = "gravity-insight.promotion-performance.v1"
@@ -375,6 +376,7 @@ def contract_result() -> dict[str, Any]:
     )
     return {
         "schema_version": SCHEMA_VERSION,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": False,
         "status": "contract_changed",
         "exit_code": exit_code_for_error(detail),
@@ -416,6 +418,7 @@ def product_envelope(
     )
     return {
         "schema_version": SCHEMA_VERSION,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": not failures,
         "status": status,
         "exit_code": exit_code,

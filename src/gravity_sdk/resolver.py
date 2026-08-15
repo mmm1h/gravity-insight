@@ -30,6 +30,7 @@ from .resolver_support import (
     validation_diagnostic,
     validation_summary,
 )
+from .result_source import selector_result_source
 from .workspace import Recipe, Workspace
 
 
@@ -326,6 +327,7 @@ class _Resolver:
         persisted, path = persist_receipt(receipt, self.workspace.state_root)
         envelope: dict[str, Any] = {
             "schema_version": SCHEMA_VERSION,
+            "result_source": selector_result_source(self.selector),
             "ok": ok,
             "status": status,
             "exit_code": _resolver_exit_code(ok, status, self.diagnostics),

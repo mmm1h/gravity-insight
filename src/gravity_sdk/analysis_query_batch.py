@@ -24,6 +24,7 @@ from .analysis_query_multi_app import (
 )
 from .errors import InputValidationError
 from .plan import DEFAULT_MAX_ITEMS, PLAN_SCHEMA_VERSION
+from .result_source import GOVERNED_PRODUCT, result_source
 
 
 BATCH_SCHEMA_VERSION = "gravity.analysis-query-batch.v1"
@@ -365,6 +366,7 @@ def _safe_result(
     if version == BATCH_SCHEMA_VERSION:
         return {
             "schema_version": RESULT_SCHEMA_VERSION,
+            "result_source": result_source(GOVERNED_PRODUCT),
             "plan_result_schema_version": result.get("schema_version"),
             "query_count": query_count,
             **selected,

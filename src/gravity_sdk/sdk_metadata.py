@@ -12,6 +12,7 @@ from .errors import (
     error_detail_from_exception,
     exit_code_for_error,
 )
+from .result_source import LOCAL_CATALOG, result_source
 
 
 class MetadataSdkMixin:
@@ -129,6 +130,7 @@ def _lineage_failure(schema_version: str, error: GravityInsightError) -> dict[st
     detail = error_detail_from_exception(error)
     return {
         "schema_version": schema_version,
+        "result_source": result_source(LOCAL_CATALOG),
         "ok": False,
         "status": "error",
         "exit_code": exit_code_for_error(detail),
@@ -165,6 +167,7 @@ def _vocabulary_failure(
         detail = error_detail_from_exception(error)
     return {
         "schema_version": schema_version,
+        "result_source": result_source(LOCAL_CATALOG),
         "ok": False,
         "status": "error",
         "exit_code": exit_code_for_error(detail),

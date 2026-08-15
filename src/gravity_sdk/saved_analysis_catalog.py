@@ -20,6 +20,7 @@ from .saved_analysis_support import (
     selected_workspace,
     workers,
 )
+from .result_source import GOVERNED_PRODUCT, result_source
 from .workspace import Workspace
 from .workspace_app import resolve_workspace_app
 
@@ -61,6 +62,7 @@ def list_saved_analyses(
     rows = catalog_rows(envelope, app_id)
     return {
         "schema_version": CATALOG_SCHEMA_VERSION,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": True,
         "status": "empty" if not rows else "success",
         "exit_code": 0,

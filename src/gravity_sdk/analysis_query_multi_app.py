@@ -10,6 +10,7 @@ from typing import Any
 
 from .errors import InputValidationError
 from .plan import DEFAULT_MAX_ITEMS
+from .result_source import GOVERNED_PRODUCT, result_source
 
 
 MULTI_APP_BATCH_SCHEMA_VERSION = "gravity.analysis-query-batch.v2"
@@ -150,6 +151,7 @@ def decorate_multi_app_result(
     ]
     return {
         "schema_version": MULTI_APP_RESULT_SCHEMA_VERSION,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "plan_result_schema_version": result.get("schema_version"),
         "query_count": query_count,
         "component_count": len(queries),

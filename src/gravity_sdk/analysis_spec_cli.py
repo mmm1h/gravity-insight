@@ -10,6 +10,7 @@ from .analysis_spec import (
     prepare_query_spec,
     validate_query_spec,
 )
+from .result_source import GOVERNED_PRODUCT, add_result_source
 from .domains import ANALYSIS_QUERY_OPERATIONS, new_analysis_query_id
 from .errors import InputValidationError
 from .result_output import output_file
@@ -179,10 +180,10 @@ def _run_compact_query(
     compiled, _validation = validate_query_spec(
         client, args.kind, spec, **options
     )
-    return call_read(
-        client,
-        compiled.operation_id,
-        compiled.inputs,
+    return add_result_source(
+        call_read(client, compiled.operation_id, compiled.inputs),
+        GOVERNED_PRODUCT,
+        replace=True,
     )
 
 

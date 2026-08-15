@@ -14,6 +14,7 @@ from .multidim_service import (
     STANDARD_METRIC_OPERATION,
     MultidimService,
 )
+from .result_source import RAW_OPERATION, result_source
 
 
 class _PublicClient(Protocol):
@@ -123,6 +124,7 @@ class CompositeService:
         results = self._client.batch(requests, max_workers=max_workers) if requests else []
         return {
             "schema_version": "gravity-insight.composite.metadata.v1",
+            "result_source": result_source(RAW_OPERATION),
             "status": _batch_status(results),
             "coverage": {
                 **_batch_coverage(len(requests), results),

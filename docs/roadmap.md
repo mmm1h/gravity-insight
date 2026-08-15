@@ -9,7 +9,7 @@
 
 衡量单位是**分析动线**，不是 operation 数量。一条动线闭环 = 已知输入 1 次调用、未知 2 次调用完成，
 且 CLI+SDK+Plan+Agent card 四面可达，结果是带 `schema_version` 的 envelope
-（空/部分失败/能力缺口可区分），未登记字段 fail-closed。
+和离散 `result_source` 来源声明（空/部分失败/能力缺口可区分），未登记字段 fail-closed。
 
 ## 现状
 
@@ -55,6 +55,44 @@ origin 元数据。
 下游 LLM 不受数据诱导、不调用其他工具或不外传。严格 JSON、结构分离和 origin 元数据只能让调用方
 机械识别边界；工具 allowlist、权限隔离、输出目的地控制和高风险动作确认仍必须由调用方实现。
 本项 production HTTP 请求 **0 次**，无重试、翻页、扩窗或换 App。
+
+### 结果来源等级（2026-08-15）
+
+**提案：**所有执行结果纯加法增加同形 `result_source`，用离散事实区分
+`governed_product/product_contract`、`caller_defined/caller_responsible` 和
+`raw_operation/operation_contract_only`；Plan 的本地目录与异构聚合只增加必要的
+`local_catalog/catalog_contract`、`mixed/per_result`。不生成可信度分数，不改请求、operation、投影、
+状态、退出码或既有字段。外层既有 `schema_version` 按仓库可选字段纯加法惯例保持不变，新子合同独立
+使用 `gravity.result-source.v1`；合同版本、SQL Evidence 与 live 状态继续使用各自现有字段，不压成一个
+含义不清的通用布尔值。工作底稿位于 ignored `tmp/codex/result-provenance/proposal.md`。
+
+**判定：**来源等级采用三条执行责任边界：固定产品合同及产品投影形成的结果为
+`governed_product/product_contract`；workspace recipe 与 `sql query` 为
+`caller_defined/caller_responsible`；`gravity run <operation>` 及公共 `read/read_all/batch` 为
+`raw_operation/operation_contract_only`。离线 metadata 结果另用 `local_catalog/catalog_contract`，Plan
+同时包含不同来源时顶层为 `mixed/per_result` 且各 node result 保留自己的等级。这里没有正确率、置信度
+或 0--100 分数；`semantic_verification` 只陈述该路径验证到哪一层。CLI JSON 与 `--output` 直接序列化
+SDK/Core envelope，NDJSON summary 复制同一对象，Plan 顶层与逐 node、Agent 候选卡和其 Plan handoff
+均复用 `result_source.py` 的同一构造器。合同版本、HTTP live receipt/probe 状态和 SQL
+`evidence_reference` 仍保留原字段，不复制进来源子合同。
+
+既有外层 `schema_version` 不提升。仓库最近的纯加法惯例是 `d2833fe` 在
+`gravity.agent.v1` 与 `gravity.plan-result.v1` 增加 `call_bound` 时仍保持两个外层版本不变；本轮同样让
+旧调用方按未知字段忽略，并只给新嵌套合同独立的 `gravity.result-source.v1`。请求、operation、投影、
+状态、退出码均不变。
+
+Agent 发现面存在有条件的 SQL/raw 旁路。`agent_sources.catalog_cards()` 会装载 workspace SQL product，
+`_snapshot_product_card()` 生成 `kind=sql_product` 与 `gravity sql query`；在没有权威产品卡且未触发产品
+fallback exclusion 时，`agent._discover()` 还会调用 `discover_operation_cards()` 搜索 stable operation，
+`_operation_card()` 交付 `gravity run`。`agent_handoff._plan_request()` 分别把两者接到 `sql_product` 与
+`run` adapter，protocol/fallback 文案也明确在 Insight 无法表达时查看 SQL products。因此实际工具集
+并非“无受治理产品即硬停止”：强匹配的已登记 SQL product 或 stable operation 可以继续执行，语义
+正确性不会因 Agent 推荐而升级。该旁路不是无条件的；已有权威产品卡或 product-specific exclusion
+会优先返回产品/目标 gap，本轮按范围要求不改路由与 recognizer。
+
+本项是横切 envelope 字段，不新增产品动线、operation 或稳定性变更。可复算为
+`48 + 0 = 48`，`33 / 0 / 15 + 0 / 0 / 0 = 33 / 0 / 15`；operation 为
+`185 + 0 - 0 = 185`，stable 为 `176 + 0 - 0 = 176`。生产 HTTP 请求 **0 次**。
 
 ### Analysis 自有合同投影修正（2026-08-15）
 

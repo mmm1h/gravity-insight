@@ -17,14 +17,8 @@ from .dashboard_artifact import (
 )
 from .dashboard_conditions import DashboardPageConditions, page_condition_gap_envelope, read_dashboard_page_conditions
 from .dashboard_snapshot import (
-    DASHBOARD_SNAPSHOT_SOURCES,
-    DashboardIdentity,
-    _dashboard_identities,
-    _envelope_data,
-    _positive_app_id,
-    _read_tree,
-    _reference,
-    _resolve_dashboard,
+    DASHBOARD_SNAPSHOT_SOURCES, DashboardIdentity, _dashboard_identities,
+    _envelope_data, _positive_app_id, _read_tree, _reference, _resolve_dashboard,
 )
 from .errors import (
     ContractChangedError,
@@ -37,6 +31,7 @@ from .errors import (
     PaginationError,
     UnsupportedOperationError, exit_code_for_category,
 )
+from .result_source import GOVERNED_PRODUCT, result_source
 from .plan_execution import result_item_count
 
 
@@ -436,6 +431,7 @@ def _envelope(
     status = "partial" if failures else "prepared" if mode == "prepare" else "success"
     return {
         "schema_version": SCHEMA_VERSION,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": not failures,
         "status": status,
         "exit_code": _exit_code(error),

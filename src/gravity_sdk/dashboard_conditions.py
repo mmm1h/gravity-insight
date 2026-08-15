@@ -15,6 +15,7 @@ from .errors import (
     LocalIOError,
     exit_code_for_error,
 )
+from .result_source import GOVERNED_PRODUCT, result_source
 
 
 SOURCE_FIELD = "data.object.config.filter"
@@ -105,6 +106,7 @@ def page_condition_gap_envelope(
     error = detail.to_dict()
     return {
         "schema_version": schema_version,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": False,
         "status": "unsupported",
         "exit_code": exit_code_for_error(detail),

@@ -277,8 +277,14 @@ class AnalysisSdkMixin:
             start=start,
             end=end,
         )
-        return self.read(
-            compiled.operation_id, compiled.inputs, output_fields=output_fields
+        from .result_source import GOVERNED_PRODUCT, add_result_source
+
+        return add_result_source(
+            self.read(
+                compiled.operation_id, compiled.inputs, output_fields=output_fields
+            ),
+            GOVERNED_PRODUCT,
+            replace=True,
         )
 
     def prepare_segment_evaluation(
@@ -324,10 +330,16 @@ class AnalysisSdkMixin:
             start=start,
             end=end,
         )
-        return self.read(
-            compiled.operation_id,
-            compiled.inputs,
-            output_fields=output_fields,
+        from .result_source import GOVERNED_PRODUCT, add_result_source
+
+        return add_result_source(
+            self.read(
+                compiled.operation_id,
+                compiled.inputs,
+                output_fields=output_fields,
+            ),
+            GOVERNED_PRODUCT,
+            replace=True,
         )
 
     def business_pulse(

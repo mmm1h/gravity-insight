@@ -109,6 +109,8 @@ class AgentCallBoundTests(unittest.TestCase):
             insight_factory=lambda: self.fail("offline composite built a client")
         ).capabilities(query)["candidates"][0]
         self.assertEqual(cli_card["call_bound"], sdk_card["call_bound"])
+        self.assertEqual("governed_product", cli_card["result_source"]["tier"])
+        self.assertEqual(cli_card["result_source"], sdk_card["result_source"])
         self.assertEqual(cli_card["call_bound"], cli_card["plan_node"]["call_bound"])
         self.assertEqual(
             "required_inputs_known",

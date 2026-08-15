@@ -9,6 +9,7 @@ from typing import Any
 
 from ._order_read import finite_json_scalar
 from .errors import ErrorCode, ErrorDetail, exit_code_for_error
+from .result_source import GOVERNED_PRODUCT, result_source
 
 
 SCHEMA_VERSION = "gravity-insight.order-split-trace.v1"
@@ -84,6 +85,7 @@ def success_result(
     status = "empty" if returned == 0 else "success"
     return {
         "schema_version": SCHEMA_VERSION,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": True,
         "status": status,
         "exit_code": 0,
@@ -144,6 +146,7 @@ def failure_result(
     )
     return {
         "schema_version": SCHEMA_VERSION,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": False,
         "status": status,
         "exit_code": exit_code_for_error(detail),

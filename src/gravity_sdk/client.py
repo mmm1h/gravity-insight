@@ -31,6 +31,7 @@ from .pagination import read_all_pages, read_limited_pages
 from .paths import CONTRACT_ROOT, MANIFEST_ROOT, PROJECT_ROOT
 from .probe_inputs import resolve_probe_inputs
 from .registry import PolicyEngine, Registry
+from .result_source import RAW_OPERATION, result_source
 from .transport import Transport
 
 
@@ -53,13 +54,11 @@ class GravityInsightClient(CatalogInventoryMixin, ExportClientMixin):
         self._executor = executor
         self.allow_experimental = allow_experimental
         self._metadata_cache = metadata_cache or MetadataCache(
-            operation.operation_id for operation in registry.all() if is_metadata_operation(operation)
-        )
+            operation.operation_id for operation in registry.all() if is_metadata_operation(operation))
         self._operation_catalog = operation_catalog or OperationCatalog(registry.all())
         self._field_policy = field_policy or FieldPolicy()
         self._export_contracts, self._export_policy, self._export_runtime = (
-            export_components or (None, None, None)
-        )
+            export_components or (None, None, None))
         self._probe_lock = threading.Lock()
         self._probe_values: dict[str, Any] = {}
         self._executor._bind_call_guard(self._operation_catalog.guard)
@@ -691,7 +690,7 @@ class GravityInsightClient(CatalogInventoryMixin, ExportClientMixin):
             "+00:00", "Z"
         )
         return {
-            "schema_version": "gravity-insight.read.v1",
+            "schema_version": "gravity-insight.read.v1", "result_source": result_source(RAW_OPERATION),
             "ok": False,
             "operation_id": operation.operation_id,
             "contract_version": operation.contract_version,
