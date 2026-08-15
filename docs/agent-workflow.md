@@ -66,8 +66,7 @@ gravity run <operation-id> --input <json-or-file>
 
 `gravity agent` 完全离线，一次完成 bounded search + describe，优先返回匹配的 workspace recipe，再用 stable operation 补足默认 3 个、最多 5 个 capability cards。Recipe 卡片包含 `required_parameters`；operation 卡片包含压缩 input schema、`required_inputs`、父 operation、分页合同；两类都提供可直接调用的 `next.argv`。无 query 时运行 `gravity agent` 可取得 `gravity.agent.v1` 机器协议。明确且无冲突的 `monetization details/变现明细` 返回 value-free `monetization_detail` 卡；调用方只填 App/单日。用户/设备筛选或分组、动态字段、跨日、聚合、导出/写入及 raw-like 后缀仍由本地 Guard 报 gap，不扫描 raw inventory；精确 `analysis.monetization_detail.list` 保持专家入口。
 
-当能力和目录值都未知、但 App/平台等依赖上下文已知时，显式使用在线输入解析；必须写 JSON 文件，
-避免完整目录被 stdout 的 200 项安全上限截断：
+当能力和目录值都未知、但 App/平台等依赖上下文已知时，显式使用在线输入解析；必须写 JSON 文件，避免完整目录被 stdout 的 200 项安全上限截断：
 
 ```powershell
 gravity agent "run saved analysis" --resolve-inputs '{"app":"main"}' --output catalog.json
@@ -75,9 +74,7 @@ gravity agent "run saved analysis" --resolve-inputs '{"app":"main"}' --output ca
 gravity analysis saved run --app main --ref <selected-id> --start 2026-08-01 --end 2026-08-07
 ```
 
-第一条会联网读取目录，但不执行候选、不选择值。响应明确标记内部 HTTP 未减少；只有完整目录才把
-动态卡的对应 `call_bound` scenario 降到 2。若还不知道 App，先解析 App 的依赖仍存在，不得套用该
-次数。SDK 使用同形 `resolve_capabilities()`；默认 `capabilities()` 与 batch Agent 继续完全离线。
+第一条会联网读取目录，但不执行候选、不选择值。响应明确标记内部 HTTP 未减少；只有完整目录才把动态卡的对应 `call_bound` scenario 降到 2。若还不知道 App，先解析 App 的依赖仍存在，不得套用该次数。SDK 使用同形 `resolve_capabilities()`；默认 `capabilities()` 与 batch Agent 继续完全离线。
 
 多个问题不要逐个执行 `gravity agent`。一次提交带稳定 ID 的问题数组：
 
@@ -200,12 +197,7 @@ gravity metadata tables "publish"
 
 词汇同步固定读取 9 个 workspace source，各一次且不随 App 数增长；六类 kind 是 `metric/custom_metric/metric_tag/metric_tag_category/media_enum/template`，都不接受 `app_id`。指标卡只给可复制的 `request_fragment`，模板是 `catalog_only`，没有配置回放。`status=partial` 时必须保留并报告失败来源，不能宣称完整覆盖。
 
-已同步时直接离线查询一次；冷目录的两调用路径是先显式运行
-`gravity agent "<query>" --resolve-inputs '{"catalog_policy":"refresh"}' --output catalog.json`，再执行
-返回的 metadata search/table-lineage 节点。第一次只有在所有请求来源成功时才原子发布新 catalog；
-否则报错并保留旧库。第二次结果带同步时刻，只表示 observed snapshot。`events/properties` 是 App
-scope；`tables` 是 account scope，只陈述观察到的 ID/版本/动作/时间。所有本地词汇只提供物理候选，
-不自动执行或绑定业务查询。需要同时查 operation、recipe 和 metadata 时调用：
+已同步时直接离线查询一次；冷目录的两调用路径是先显式运行 `gravity agent "<query>" --resolve-inputs '{"catalog_policy":"refresh"}' --output catalog.json`，再执行返回的 metadata search/table-lineage 节点。第一次只有在所有请求来源成功时才原子发布新 catalog；否则报错并保留旧库。第二次结果带同步时刻，只表示 observed snapshot。`events/properties` 是 App scope；`tables` 是 account scope，只陈述观察到的 ID/版本/动作/时间。所有本地词汇只提供物理候选，不自动执行或绑定业务查询。需要同时查 operation、recipe 和 metadata 时调用：
 
 ```powershell
 gravity find "retention"

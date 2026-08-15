@@ -13,8 +13,10 @@
 
 ## 现状
 
-当前从仓库产品入口与 stable operation 正向交叉反推 43 条产品动线：**已闭环 19 / 部分闭环 9 / 完全缺失 15**；
+当前从仓库产品入口与 stable operation 正向交叉反推 47 条产品动线：**已闭环 32 / 部分闭环 0 / 完全缺失 15**；
 另有 2 条 legacy/SDK 便利面保留用于兼容与维护，但不计产品动线。
+上一快照是 `43 = 19 / 9 / 15`：9 条部分闭环由在线输入解析全部转入已闭环，另新增 4 条产品动线全部闭环，
+缺失数不变。**部分闭环归零不代表没有欠账**——15 条完全缺失里多数是证据或隐私边界阻塞。
 逐条状态、四面入口、调用次数和证据阻塞以[分析动线台账](analysis-journeys.md)为准；旧
 `21/14/6` 快照的逐条底稿未进入版本控制，无法复算，已停止作为排期事实。
 
@@ -62,12 +64,19 @@ workspace App、日期窗口、平台和物理指标绑定，调用方保证不�
 1 次、未知能力 2 次。`advertiser_name` 继续省略，未观察到其他用户级投影字段；本轮完全复用
 不可变 Evidence，生产请求 0 次。
 
-其余候选中，Bilibili account 与既有推广表现请求维度不同；Bytedance advertiser performance
-已在本轮验证实际翻页并以独立 advertiser profile 闭环；custom audience 已以独立动线闭环，
-两类 title package 已补进 D32；
-promotion material 的目标响应为空；segment member 明细还涉及 `ClientID`、`device_info`、
-`re_attribute_info` 与动态 `fields` 的用户级投影，本单元无批准权。它们保持显式产品缺口，不能因
-stable 或 raw/legacy 入口而算作闭环。
+**上表 8 条已全部结案（2026-08-15），不再有"待实现"项：**
+
+- **已实现 5 条**，各自独立产品面：`report.company_amount.query`、
+  `promotion.bilibili.account.list`、`promotion.bytedance.advertiser_performance.list`
+  （本轮实测翻页成立）、`promotion.bytedance.custom_audience.list`、
+  两类 `*_text_title_package.list`（共用一条 `title_package` 动线）。
+  **四条新动线都没有把跨平台 Promotion Performance 变体化**——后者明确排除广告主目录，
+  为了塞进去而放宽它会削弱既有调用方的保证。
+- **等非空证据 1 条**：`material.bytedance.promotion_material.list` 目标响应仍为空。
+- **已裁决不批准 1 条**：`analysis.segment.user_detail.list` 涉及 `ClientID`、`device_info`、
+  `re_attribute_info` 与动态 `fields` 的用户级投影（理由见下方「对照裁决」）。
+
+后两条保持显式产品缺口，不能因 stable 或 raw/legacy 入口而算作闭环。
 9 条 `export.analysis.*` 已判定结案（见[能力覆盖与缺口](capability-coverage.md)）：台账仍如实记为
 完全缺失，但属于隐私/合同边界，不作为工程排期缺口。
 

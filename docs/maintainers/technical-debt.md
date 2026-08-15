@@ -48,7 +48,37 @@
   使两条路径语义一致；确证无消费者时直接删除。**不要为它补 Agent 卡或 Plan 面**——
   那是在把未校验路径推给自动化调用方。静默忽略 shortcut 的行为无论保留与否都应改为显式报错。
 
-### 3. Census 把 214 条 POST 仅凭路径词元判为「未覆盖读」
+### 3. 在线输入解析的两次闭环依赖「上游稳定 ID 不复用」，而这证明不了
+
+- **Owner area**：Agent 输入解析（`agent_input_resolution.py`、`agent_input_catalogs.py`）。
+- **证据**：2026-08-15 的裁决把 9 条动线从 `1 / 3` 降到 `1 / 2`，做法是第一次调用同时交付
+  能力与完整目录、第二次重新在线解析后执行。该方案的正确性依赖两点：调用方按**稳定 ID** 选择，
+  以及第二次执行时重新解析。但**上游没有 revision/ETag**，无法证明它永不复用已删除对象的 ID。
+  实现方自己给出了这条反驳，并明确：一旦发现 ID 复用，必须撤销这 9 条的两次闭环判定。
+- **触发条件**：观察到任一目录对象的 ID 被复用；或上游开始提供 revision/ETag/版本号。
+- **退出条件**：上游提供可校验的版本标识后，把它纳入第二次解析的前置校验，ID 复用即 fail-closed；
+  在那之前**不扩大**该模式的适用面——不要把在线输入解析套用到新的动线上来降低调用次数。
+
+### 4. `REPORT_PRODUCTS` 的名字已经和它的内容对不上
+
+- **Owner area**：`agent_report_routing.py`。
+- **证据**：该 frozenset 现含 `advertiser_profile`、`custom_audience` 两个 promotion 产品，
+  常量名与模块 docstring 里的 "report" 已不成立（docstring 已改为 "bounded no-spec products"，
+  常量名没跟着改）。它实际的语义是「无 spec、边界固定的窄产品路由」，与 report 域无关。
+- **触发条件**：再加入第三个非 report 域产品，或有人据名字误以为该集合限定 report 域。
+- **退出条件**：触发时连同调用点一次改名到位（如 `NO_SPEC_PRODUCTS`）；单独为改名开一次提交不值得。
+
+### 5. `prober/transport.py` 跨模块 import 了 `read_semantics` 的私有函数
+
+- **Owner area**：Prober 读语义闸门。
+- **证据**：`transport.py` 用 `from .read_semantics import CONFIRMATIONS_PATH, _confirmation_keys`
+  判断某条 `(method, path)` 是否已有人工复核的读确认。`_confirmation_keys` 是下划线私有名，
+  跨模块使用意味着它已经是事实上的公开契约，却没有公开名的稳定性保证。
+- **触发条件**：下次修改 `read_semantics.py` 的确认记录读取逻辑。
+- **退出条件**：届时把 `_confirmation_keys` 提升为公开名并更新调用点。**不要顺手扩大闸门的
+  放行面**——当前放行需同时满足人工复核记录、路径精确相等、落在四个已知命名空间。
+
+### 6. Census 把 214 条 POST 仅凭路径词元判为「未覆盖读」
 
 **状态（2026-08-14）**：在线安全缺口已关闭；分类证据债务保留。
 
