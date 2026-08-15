@@ -73,7 +73,7 @@ class GravityInsightWriteRegistryTests(unittest.TestCase):
                 "analysis.from.tmp.segment.create",
             }
         }
-        self.assertEqual(362, len(source_routes))
+        self.assertEqual(355, len(source_routes))
         self.assertTrue(source_routes <= reserved_routes | stable_write_routes)
         self.assertEqual(7, len(stable_write_routes))
         self.assertEqual(407, len(self.reservations))
