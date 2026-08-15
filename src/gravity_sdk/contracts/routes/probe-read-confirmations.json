@@ -141,6 +141,62 @@
       "path": "/turbo_engine/api/v1/common/media_report/list/",
       "reviewed_at": "2026-08-14",
       "reviewer": "codex/report-forensics"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched Dashboard-DrzT0Orh.js, the Dashboard page calls this GET with app_id during initial load and App changes, reduces the returned space/folder/dashboard tree into selectable dashboard rows, selects an existing dashboard, and then invokes the separate dashboard-detail GET. Create, rename, move, share, transfer and delete actions use separate routes.",
+          "source": "src/gravity_sdk/census/data/bundle-snapshot.json"
+        }
+      ],
+      "method": "GET",
+      "operation_id": "analysis.dashboard.tree",
+      "path": "/turbo_engine/api/v2/datamanageconfig/kanban/tree/",
+      "reviewed_at": "2026-08-15",
+      "reviewer": "codex/setting-read-route"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched Dashboard-DrzT0Orh.js, selecting a tree item calls this GET with app_id, dashboard id and space_id, consumes ui_config as JSON, and stores the returned dashboard detail for rendering. Layout saves and report-setting changes call separate POST routes and display their own success feedback.",
+          "source": "src/gravity_sdk/census/data/bundle-snapshot.json"
+        }
+      ],
+      "method": "GET",
+      "operation_id": "analysis.dashboard.detail",
+      "path": "/turbo_engine/api/v2/datamanageconfig/kanban/dashboard/detial/",
+      "reviewed_at": "2026-08-15",
+      "reviewer": "codex/setting-read-route"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched Dashboard-DrzT0Orh.js, opening the add-chart flow calls this GET with app_id, optional subject filters, page and page_size, consumes response list rows, and JSON-parses a selected row's config before adding it locally. Saving the dashboard or changing a report uses separate POST routes.",
+          "source": "src/gravity_sdk/census/data/bundle-snapshot.json"
+        }
+      ],
+      "method": "GET",
+      "operation_id": "analysis.report_config.list",
+      "path": "/turbo_engine/api/v2/datamanageconfig/report_config/list/",
+      "reviewed_at": "2026-08-15",
+      "reviewer": "codex/setting-read-route"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "Across eight hash-matched Analysis page bundles, opening an existing saved analysis calls this GET with app_id and id, requires the returned config, JSON-parses it, and restores the analysis form plus name/remark display state. Saving edits uses the separate report_config/update POST route.",
+          "source": "src/gravity_sdk/census/data/bundle-snapshot.json"
+        }
+      ],
+      "method": "GET",
+      "operation_id": "analysis.report_config.get",
+      "path": "/turbo_engine/api/v2/datamanageconfig/report_config/info/",
+      "reviewed_at": "2026-08-15",
+      "reviewer": "codex/setting-read-route"
     }
   ],
   "schema_version": "gravity-insight.probe-read-confirmations.v1"

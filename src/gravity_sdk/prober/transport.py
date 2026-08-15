@@ -15,7 +15,7 @@ from gravity_sdk import runtime as tool_runtime
 from gravity_sdk.paths import PROJECT_ROOT
 
 from .privacy import response_schema_sketch
-from .read_semantics import CONFIRMATIONS_PATH, _confirmation_keys
+from .read_semantics import CONFIRMATIONS_PATH, confirmation_keys
 
 
 _CONFIRMED_READ_NAMESPACES = (
@@ -288,7 +288,12 @@ def build_probe_policy(
     parts: Mapping[str, Any], registry: Any, path: str, method: str = ""
 ) -> Any:
     policy_class = parts["registry"].PolicyEngine
-    confirmed_read = (method.upper(), path) in _confirmation_keys(CONFIRMATIONS_PATH)
+    # GET confirmations are retained as review evidence, but only a confirmed
+    # POST needs the narrow draft-policy exception guarded below.
+    confirmed_read = (
+        method.upper() == "POST"
+        and (method.upper(), path) in confirmation_keys(CONFIRMATIONS_PATH)
+    )
     if not path.startswith("/openapi/api/v1/") and not confirmed_read:
         return policy_class(registry, allow_experimental=True)
 

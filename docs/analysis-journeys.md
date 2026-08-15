@@ -10,10 +10,11 @@
 执行，内部 HTTP 数也没有减少。App/平台也未知时不适用该两次路径；默认离线 Agent 的原三次下界保留。
 `gravity.agent-call-bound.v1` 只在本次成功交付完整目录的卡与 Plan 节点上把对应 scenario 声明为 2。
 
-合并后重算：**48 条产品动线：已闭环 32 / 部分闭环 0 / 完全缺失 16**。可复算：上一快照
-`43 = 19 / 9 / 15`，本轮 9 条部分闭环由上述在线输入解析全部转入已闭环，另新增 4 条产品动线
-（标题包、自定义人群、B 站账户表现、巨量广告主 profile）全部闭环；缺失新增 1 条（Issue 19 精确素材预览/下载）。
-**部分闭环归零不等于没有欠账**——16 条完全缺失里多数是证据或隐私边界阻塞，逐行有记录。
+合并后重算：**47 条产品动线：已闭环 32 / 部分闭环 0 / 完全缺失 15**。可复算：上一快照
+`48 = 32 / 0 / 16`；2026-08-15 穷尽 route 取证确认第 64 行已经完整落在既有
+`dashboard_snapshot` / `saved_analysis` 稳定读取面内，故从产品动线与 completely missing 各减 1，
+得到 `47 = 32 / 0 / 15`。stable operation 仍为 185、其中 176 个 stable。
+**部分闭环归零不等于没有欠账**——15 条完全缺失里多数是证据或隐私边界阻塞，逐行有记录。
 另保留 2 条兼容/维护便利面供边界审计，
 但不计产品动线。旧快照 `21/14/6` 没有逐条证据，不能复算；本台账不还原已丢失的原始 41 条定义。
 D23/D29/D30 只剩依赖箭头、语义不可验证，故保留在此说明而不强挂到新动线。候选
@@ -61,7 +62,7 @@ D23/D29/D30 只剩依赖箭头、语义不可验证，故保留在此说明而�
 | 读取任意稳定元数据 operation 的统一快照 | 不计独立动线（SDK 便利面） | 设计不暴露 / 有 / 设计不暴露 / 设计不暴露 | 1 / 不提供 | inventory 驱动且会跳过缺必填 input 的 operation，不构成稳定调用方任务；在线固定上下文走 `analysis context`，离线发现走 `metadata search` / `metadata vocabulary`。 |
 | 查询分析默认值字典 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | 请求形状与无分页已证明；既有非空样本只证明已观察的 string-array 键，动态字典 key 投影未批准，且本轮同形状响应为空，不能完成非空确认。 |
 | 查询实时事件目录 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | 完整请求 builder 已证明且最小请求语义成功为空；item schema 与服务端分页仍未证实，`client_id/request_id/request_ip/raw_properties` 需单独隐私投影批准。 |
-| 查询分析空间或报表设置 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | 候选 `analysis.setting.query` 已由完整前端控制流证明为修改报表设置的 mutation，不是读取；自由文本/config 继续 fail-closed，须另找只读 route。 |
+| 查询分析空间或报表设置 | 不计独立动线（既有稳定读取面重复） | 有 / 有 / 有 / 有 | 1 / 2（引用未知、在线解析） | `analysis.setting.query` 仍由完整控制流证明为 mutation。冻结 inventory 的 987 个唯一 `(method,path)` 经 375/375 hash-matched bundle 重放完全一致；378 条语义超集展开为 52 条 owner 命名空间全集后，确认四条真读：`analysis.dashboard.tree/detail` 装载空间树和看板设置，`analysis.report_config.list/get` 装载保存分析配置。四条均已有 stable 合同、Core/CLI/SDK/Plan/Agent 卡和 `gravity.agent-call-bound.v1`；一条最小 `report_config.list` probe 为 HTTP 200 非空，未重试、翻页或扩窗。本行与“查看看板详情、成员和筛选收藏”及“按精确引用重放保存分析”重复，故不新建产品。若未来提出更宽的通用设置面，`config/ui_config/remark` 与人员字段先全部 `known_omitted`，等待逐项隐私裁决。 |
 | 查找自有、共享和 MasterKey 报表并读取其定义 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | **非空样本阻塞（读合同已解除）**：hash-matched bundle 已分别证明 `report.masterkey_report_group.list`、`report.report.list`、`report.shared_to_me.list` 的装载、分页和 `list` 消费，三条精确 read confirmation 已登记。本轮各 1 次最小第一页请求均 HTTP 200、明确空；既有分页证据保留，但 item schema 未成立，`report.report.detail` 仍无父项。下一步由有报表数据的租户提供 1 个非空列表项，再以内存父值做最小 detail。 |
 | 查看报表订阅清单 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | **明确空 / item schema 阻塞**：静态 read confirmation 已由 `reportSubscribe` 的装载、分页、响应消费及独立 mutation 路由证明；本轮唯一一次 `page=1/page_size=1` 请求 HTTP 200、`data.list=[]`，只证实 envelope 与 `page_info`，未取得 item schema，也未额外翻页。下一步在有订阅项的租户复用同形状取得 1 个非空 item，再单独判断分页和投影。 |
 | 查找可用的媒体报表 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | **明确空 / item schema 阻塞**：`GeneralImportAd` bundle 已证明列表装载、分页和响应消费；`app_id` 来自 `AppSelect`、`ad_platform` 来自有限平台选项，空选择按前端语义省略，精确 read confirmation 已登记。本轮当天、无筛选、`page_size=1` 的唯一请求 HTTP 200、明确空；既有分页证据保留，item schema 未成立。下一步只在有媒体报表的租户复用同形状，不猜 App 或平台值。 |

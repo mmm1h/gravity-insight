@@ -68,19 +68,9 @@
 - **触发条件**：再加入第三个非 report 域产品，或有人据名字误以为该集合限定 report 域。
 - **退出条件**：触发时连同调用点一次改名到位（如 `NO_SPEC_PRODUCTS`）；单独为改名开一次提交不值得。
 
-### 5. `prober/transport.py` 跨模块 import 了 `read_semantics` 的私有函数
-
-- **Owner area**：Prober 读语义闸门。
-- **证据**：`transport.py` 用 `from .read_semantics import CONFIRMATIONS_PATH, _confirmation_keys`
-  判断某条 `(method, path)` 是否已有人工复核的读确认。`_confirmation_keys` 是下划线私有名，
-  跨模块使用意味着它已经是事实上的公开契约，却没有公开名的稳定性保证。
-- **触发条件**：下次修改 `read_semantics.py` 的确认记录读取逻辑。
-- **退出条件**：届时把 `_confirmation_keys` 提升为公开名并更新调用点。**不要顺手扩大闸门的
-  放行面**——当前放行需同时满足人工复核记录、路径精确相等、落在四个已知命名空间。
-
 ### 6. Census 把 214 条 POST 仅凭路径词元判为「未覆盖读」
 
-**状态（2026-08-14）**：在线安全缺口已关闭；分类证据债务保留。
+**状态（2026-08-15）**：在线安全缺口已关闭；分类证据债务保留。
 
 - **Owner area**：Census 路由语义分类 / 探测安全。
 - **证据**：2026-08-14 取证证明 `analysis.setting.query`（`POST /kanban/report/setting/`）
@@ -102,7 +92,9 @@
 - **已完成**：`prober/read_semantics.py` 在凭据刷新和 transport 构造前预检显式 probe/batch，且
   `probe_draft` 在任何 discovery 请求前再次执行同一策略；本地策略错误为 exit 4。精确人工确认清单
   强制记录 reviewer、日期与静态证据。12 条静态抽样为 2 写 / 10 真读 / 0 不确定；这不证明多数
-  路由误判，但证明风险跨“发送验证码”和“修改报表设置”两个域，不是单一异常。
+  路由误判，但证明风险跨“发送验证码”和“修改报表设置”两个域，不是单一异常。2026-08-15 又逐条
+  补入 dashboard tree/detail 与 report-config list/get 四条 GET 的控制流确认；这四条是已审查真读，
+  `analysis.setting.query` 仍是 mutation，未据此批量修改剩余弱信号分类或扩张 census 提取器。
 - **剩余退出条件**：后续只在逐条静态取证时把弱信号替换为已审查证据；不扩张 census 提取器，
   不批量改 mutation。待弱证据 POST 不再需要依靠单独 probe 闸门时删除本条。
 
@@ -114,6 +106,9 @@
 不建议放宽或更新 baseline 来容纳增长。
 
 ## 已关闭结构债务
+
+2026-08-15 修改确认记录读取逻辑时，`_confirmation_keys` 已提升为公开 `confirmation_keys` 并更新跨模块
+调用点；精确 method/path、人工证据与已知命名空间三重闸门保持不变，原第 5 条债务关闭。
 
 Agent 相邻产品冲突已收口到 `agent_intent_routing.py`：按独立 owner 正向证据强度与 selector 精确度
 裁决，多个产品返回 `MULTIPLE_INTENTS`，历史紧邻冲突集中兼容；五个既有 owner 不再持有他产品负向词，
