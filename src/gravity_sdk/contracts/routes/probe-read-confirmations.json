@@ -160,6 +160,24 @@
       "decision": "confirmed_read",
       "evidence": [
         {
+          "detail": "In hash-matched NewReportCenter-Dxgo5EkI.js, ReportDetail invokes this route after loading or refreshing a monetization report, unwraps data.list/data.total (or data.extra_data.accumulate_data), and renders the rows, warning and local sort state. Report and template saves use separate create/edit routes; this call has no confirmation, persistence continuation or mutation feedback.",
+          "source": "src/gravity_sdk/census/data/bundle-snapshot.json"
+        },
+        {
+          "detail": "The extracted exact call site contains nine top-level body fields and no query or page fields; the shared table paginates the returned full list locally and displays an empty state when the consumed row array has no items.",
+          "source": "src/gravity_sdk/census/data/route-params.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "report.get.query",
+      "path": "/report/api/v3/monetization_report/custom_get/",
+      "reviewed_at": "2026-08-15",
+      "reviewer": "codex/d28-monetization"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
           "detail": "In hash-matched Dashboard-DrzT0Orh.js, selecting a tree item calls this GET with app_id, dashboard id and space_id, consumes ui_config as JSON, and stores the returned dashboard detail for rendering. Layout saves and report-setting changes call separate POST routes and display their own success feedback.",
           "source": "src/gravity_sdk/census/data/bundle-snapshot.json"
         }
@@ -197,6 +215,24 @@
       "path": "/turbo_engine/api/v2/datamanageconfig/report_config/info/",
       "reviewed_at": "2026-08-15",
       "reviewer": "codex/setting-read-route"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched NewReportCenter-Dxgo5EkI.js, ReportDetail calls calc_total only after the main result has loaded and a client-side condition or pivot needs totals recomputed, or when local filtering/row expansion changes. It sends already loaded row groups and uses only data.list to replace local summary or pivot rows; no server resource is created, edited or deleted.",
+          "source": "src/gravity_sdk/census/data/bundle-snapshot.json"
+        },
+        {
+          "detail": "The extracted exact call site contains eight top-level body fields, including data_list, and no query or page fields. The call is awaited sequentially rather than dispatched as an unconditional companion to the main report query.",
+          "source": "src/gravity_sdk/census/data/route-params.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "report.report_monetization_report_custom_get.calc_total",
+      "path": "/report/api/v3/monetization_report/custom_get/calc_total/",
+      "reviewed_at": "2026-08-15",
+      "reviewer": "codex/d28-monetization"
     }
   ],
   "schema_version": "gravity-insight.probe-read-confirmations.v1"
