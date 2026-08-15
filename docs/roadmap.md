@@ -534,7 +534,62 @@ Analysis Context 13 请求峰值 `1→6`；串并行请求 identity 完全相同
 `create→poll→download`、探测链不并发。fake transport 证明预算与语义，不代表生产 24 并发已完成
 soak；真实吞吐、尾延迟和 429 频率仍需在发布流程中做受控长时观察。
 
+## 投影边界总裁决：全面放开（2026-08-15）
+
+**本节推翻本页此前全部字段级隐藏裁决，是投影边界的唯一权威来源。** 下面三节
+（D27 变现明细批准边界、分群成员明细不批准、User Detail 134 字段不批准）**全部作废**，
+保留原文只为记录当时的理由和推翻过程。
+
+**判定：上游授权即产品边界。SDK 不再自建第二层访问控制。**
+
+理由是这层门禁在跟产品目标直接冲突。目标写的是"数据分析的任何工作都能完全脱离引力 Web 平台"。
+但 Web UI 对同一个已认证账号显示 `analysis.user_detail.list` 的 153 列，SDK 只给 19 列；
+分群成员明细在 Web 上点得开，在 SDK 里整条动线被判为不实现。**这不是保护，是能力退化**——
+调用方为了拿到这些数据只能退回 Web 平台，目标就没达成。
+
+访问控制在上游：服务端决定这个账号能读什么。SDK 在其之上再叠一层自造的字段门禁，
+既不增加任何实际保护（数据本来就对该账号可见），又让本仓库无法替代 Web 平台。
+
+### 具体放开范围
+
+- **`analysis.user_detail.list`**：134 个 `known_omitted` 顶层 key 全部登记并暴露，
+  含直接标识符（`user$device_id`、`user$ta_distinct_id`、`user$ta_account_id`、`userlogin_id`、
+  `useraccount_id`、`userlong_id`）、准标识符（地域/机型/性别/年龄等）、9 个 `bytedanceMid*`
+  语义未证实字段，以及既有的 `Name`、`WXOpenID`。
+- **`analysis.monetization_detail.list`（D27）**：原永久排除表全部解除——`user_id`、
+  `event_user_id`、`device_id`、`ClientID`、`TraceID`、`device_info` 整个嵌套对象、
+  `user$ad_count`、`user$ad_avg_ecpm`、`user$ad_ltv`、`Name`、`WXOpenID`。
+  **同时移除"不提供按用户维度筛选或分组"的 Guard**——那是纯隐私限制，且按用户分组是真实分析需求。
+- **`analysis.segment.user_detail.list`**：从"不批准、保持 reservation"改为**应实现**，
+  按闭环判据补齐五面。
+- **`export.analysis.*`**：3 条因"缺批准的用户级投影"阻塞的解除；另 6 条的请求/文件 schema
+  阻塞不受本裁决影响，仍需独立证据。
+- **实时事件目录**：`client_id`、`request_id`、`request_ip`、`raw_properties` 批准投影。
+  该动线的另一半阻塞（item schema 未证实）不受影响。
+- **各产品散落的 `known_omitted`**：`advertiser_name`、`advertiser_remark`、`company`、
+  `create_user_id/name`、`update_user_id/name`、`operator_id/name`、`tag`、`title_list`、
+  `project_list`、`cid`、`delay` 等一律登记并暴露。这些多数是组织内部元数据，本就不该隐藏。
+
+### 仍然保留的（与隐私无关，不挡任何动线）
+
+1. **凭据不进仓库**：`.env.gravity.local` 等继续 gitignore，不进提交、不进文档、不进 issue。
+2. **生产响应值不写入 evidence、文档、测试或提交**。合同靠 shape / 字段路径 / 类型 /
+   fingerprint 成立，回归测试用合成 fixture，两者都不需要真实值。这条约束的对象是
+   **git 历史**，不是 SDK 运行时返回给调用方的内容——后者已全面放开。
+3. **未登记字段继续 fail-closed**。这不是隐私机制，是合同漂移检测：上游新增字段时我们要知道。
+   **正确的响应是把它登记并暴露，不是把它隐藏。** user_detail 出现第 154 个 key 时仍应
+   `contract_changed_additive`。
+
+### 推翻条件
+
+若本项目范围将来扩展到把数据交付给非授权方（公开 agent、第三方消费者、跨租户共享），
+本裁决必须重新评估——那时的边界问题不是"SDK 该不该显示"，而是"交付给谁"，
+应在交付层解决，仍然不该退回字段级隐藏。
+
 ## 已批准的隐私投影边界：变现明细（D27）
+
+> **已作废（2026-08-15）**，被上方「投影边界总裁决：全面放开」取代。本节原文保留仅作历史记录，
+> 其中的"永久排除，不得通过任何参数打开"已不再是产品合同的一部分。
 
 `analysis.monetization_detail.list` 的 identifier-free 投影已批准，边界如下。
 这是产品合同的一部分，不是可调参数。
@@ -564,7 +619,12 @@ identifier-free envelope，并通过 CLI/SDK/Plan/Agent card 四面交付；本�
 `plan_adapters.py` 净增长 0。Guard 仅放行无冲突的产品意图，用户/设备筛选或分组、动态字段、跨日、
 聚合、导出/写入和 raw-like 请求继续本地报 gap。D28 聚合仍需独立账户绑定与合同证据，本轮未实现。
 
-### 对照裁决：分群成员明细**不批准**（2026-08-14）
+### 对照裁决：分群成员明细**不批准**（2026-08-14，已于 2026-08-15 推翻）
+
+> **已作废**，被「投影边界总裁决：全面放开」取代。该动线现判定为**应实现**。
+> 本节原文保留，因为它当时的第 1 条理由恰好说明了问题所在：
+> "做 identifier-free 投影会把区分它与聚合的那部分恰好剥掉——剥完就不再是这条动线"。
+> 这句是对的，结论错了：正确的结论是**不做那个投影**，而不是不做这条动线。
 
 `analysis.segment.user_detail.list` 在 stable 交叉中被列为"值得有产品面"，需要
 `ClientID`、`device_info`、`re_attribute_info` 与动态 `fields` 的投影批准。**判定：不批准，
@@ -623,7 +683,9 @@ confirmation，闸门判据未改。probe receipt 现在把通过闸门后确实
   `app.user_auth.list` 因此排除，不因取得非空样本而进入分析产品。
 - 业务语义属调用方：模块名称、活动 ID、SKU、投放窗口、指标好坏判断都不进本仓库。
 - 写操作保持 reservation。
-- 证据不足保持 fail-closed：不猜请求合同、不扩大探测找非空样本、不用未批准的用户级标识探测。
+- 证据不足保持 fail-closed：不猜请求合同、不扩大探测找非空样本。
+  （原第三项"不用未批准的用户级标识探测"已随
+  [投影边界总裁决](#投影边界总裁决全面放开2026-08-15)作废。）
 
 ## Issue 19 精确素材预览/下载裁决（2026-08-15）
 
@@ -702,7 +764,10 @@ Evidence 或文档。operation、请求合同、响应投影、CLI 参数与 env
 完整 value-free 请求账本、字段清单和不确定项在
 `tmp/codex/additive-drift-12-18/findings.md`；未保存 App ID、凭据或任何行值。
 
-### 裁决：User Detail 的 134 个未登记字段**全部不批准投影**（2026-08-15）
+### 裁决：User Detail 的 134 个未登记字段**全部不批准投影**（2026-08-15，同日推翻）
+
+> **已作废**，被「投影边界总裁决：全面放开」取代。134 个字段全部登记并暴露。
+> 本节原文保留作为推翻记录。
 
 Issue 18 的收口把 `analysis.user_detail.list` 默认响应的 153 个顶层 key 全部登记，其中 134 个记为
 `known_omitted` 并上报待裁决。**判定：一个都不批准，保持 `known_omitted`。**
