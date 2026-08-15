@@ -80,6 +80,7 @@
 - [厂商 Agent 形态横向调研](research/vendor-agent-landscape.md)
 - [语义层与 text-to-SQL 工程现状](research/semantic-layer-and-text2sql.md)
 - [Agent 可用性度量方法](research/agent-usability-methods.md)
+- [Agent 评测方法学与合同漂移检测](research/oss-eval-and-drift.md)
 - [Agent 场景的数据访问安全与治理](research/agent-security-governance.md)
 
 历史验收数字、临时业务裁决和 Merge 业务埋点字典不属于当前 SDK 文档。历史可以从 Git 追溯；业务口径由 `work-dashboard` 维护；机器运行合同位于 `src/gravity_sdk/contracts`。
