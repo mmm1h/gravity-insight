@@ -36,6 +36,87 @@ from gravity_sdk.prober.read_semantics import assert_probe_read_semantics
 
 
 
+
+
+def _route(
+    path: str = "/turbo_engine/api/v1/tencent/manager/account/by_company/",
+) -> dict[str, object]:
+    return {
+        "business_module": "推广平台",
+        "callers": ["loadAccounts"],
+        "contract_family": {
+            "family_id": "promotion.family.001",
+            "family_kind": "same_level_cross_platform",
+            "member_count": 3,
+        },
+        "estimated_implementation_cost": "低",
+        "first_occurrence": {"file": "raw/example.js", "offset": 10},
+        "manifest_operations": [],
+        "method": "GET",
+        "method_certainty": "high",
+        "method_evidence": ["same_request_options"],
+        "path": path,
+        "promotion_platform": "tencent",
+        "status": "uncovered_read",
+        "ui_texts": ["账户主体"],
+    }
+
+
+def _write_json(path: Path, value: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def _gate_ready_source() -> dict[str, object]:
+    source = build_draft(_route(), set())
+    source["operation"]["response_projection"] = {
+        "data_keys": ["list"],
+        "required_data_keys": ["list"],
+        "item_keys": ["name"],
+        "dynamic_item_fields": [],
+    }
+    source["draft"]["candidate_fields"] = [
+        {
+            "path": "data.list[].name",
+            "types": ["string"],
+            "presence": "observed",
+            "privacy_classification": "non_sensitive",
+            "classification_reason": "business_metadata_name_pattern",
+            "expose": True,
+        }
+    ]
+    source["draft"]["probe_evidence"] = [
+        {
+            "path": "evidence/probe/example.json",
+            "probed_at": "2026-08-09T00:00:00Z",
+            "conclusion": "success",
+            "successful": True,
+            "pagination_verified": True,
+            "raw_schema_fingerprint": "a" * 64,
+            "projected_schema_fingerprint": "b" * 64,
+        }
+    ]
+    return source
+
+
 class GravityInsightProberTests(unittest.TestCase):
     def setUp(self):
         self._temporary_directory = tempfile.TemporaryDirectory()
@@ -95,663 +176,563 @@ class GravityInsightProberTests(unittest.TestCase):
         assert runtime_kwargs["session"] is recording
         assert runtime_kwargs["credentials"] is credential
 
+    def test_draft_generator_uses_census_identity_and_fails_closed(self) -> None:
+        tmp_path = self.tmp_path
+        coverage = {"routes": [_route()]}
+        coverage_path = tmp_path / "coverage.json"
+        draft_root = tmp_path / "drafts"
+        operation_root = tmp_path / "operations"
+        _write_json(coverage_path, coverage)
 
-def _route(
-    path: str = "/turbo_engine/api/v1/tencent/manager/account/by_company/",
-) -> dict[str, object]:
-    return {
-        "business_module": "推广平台",
-        "callers": ["loadAccounts"],
-        "contract_family": {
-            "family_id": "promotion.family.001",
-            "family_kind": "same_level_cross_platform",
-            "member_count": 3,
-        },
-        "estimated_implementation_cost": "低",
-        "first_occurrence": {"file": "raw/example.js", "offset": 10},
-        "manifest_operations": [],
-        "method": "GET",
-        "method_certainty": "high",
-        "method_evidence": ["same_request_options"],
-        "path": path,
-        "promotion_platform": "tencent",
-        "status": "uncovered_read",
-        "ui_texts": ["账户主体"],
-    }
-
-
-def _write_json(path: Path, value: object) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
-
-
-def test_draft_generator_uses_census_identity_and_fails_closed(tmp_path: Path) -> None:
-    coverage = {"routes": [_route()]}
-    coverage_path = tmp_path / "coverage.json"
-    draft_root = tmp_path / "drafts"
-    operation_root = tmp_path / "operations"
-    _write_json(coverage_path, coverage)
-
-    created = create_drafts(
-        paths=[str(_route()["path"])],
-        coverage_path=coverage_path,
-        draft_root=draft_root,
-        operation_root=operation_root,
-    )
-
-    assert created[0]["operation_id"] == "promotion.tencent.account_company.list"
-    source = json.loads(
-        (draft_root / "promotion.tencent.account_company.list.json").read_text(
-            encoding="utf-8"
-        )
-    )
-    assert source["draft"]["status"] == "draft"
-    assert source["operation"]["executable"] is False
-    assert source["operation"]["response_projection"]["item_keys"] == []
-    assert source["draft"]["promotion_gate"]["eligible"] is False
-
-
-def test_draft_generator_rejects_stable_id_collision(tmp_path: Path) -> None:
-    coverage_path = tmp_path / "coverage.json"
-    draft_root = tmp_path / "drafts"
-    operation_root = tmp_path / "operations"
-    _write_json(coverage_path, {"routes": [_route()]})
-    _write_json(
-        operation_root / "existing.json",
-        {"operation": {"operation_id": "promotion.tencent.account_company.list"}},
-    )
-
-    with pytest.raises(ValueError, match="conflicts with stable"):
-        create_drafts(
+        created = create_drafts(
             paths=[str(_route()["path"])],
             coverage_path=coverage_path,
             draft_root=draft_root,
             operation_root=operation_root,
         )
 
+        assert created[0]["operation_id"] == "promotion.tencent.account_company.list"
+        source = json.loads(
+            (draft_root / "promotion.tencent.account_company.list.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        assert source["draft"]["status"] == "draft"
+        assert source["operation"]["executable"] is False
+        assert source["operation"]["response_projection"]["item_keys"] == []
+        assert source["draft"]["promotion_gate"]["eligible"] is False
 
-@pytest.mark.parametrize(
-    ("field", "expected"),
-    [
-        ("data.list[].advertiser_id", "non_sensitive"),
-        ("data.list[].campaign_name", "non_sensitive"),
-        ("data.list[].uid", "non_sensitive"),
-        ("data.list[].device_id", "non_sensitive"),
-        ("data.list[].phone", "non_sensitive"),
-        ("data.list[].idfa", "non_sensitive"),
-        ("data.list[].imei", "non_sensitive"),
-        ("data.list[].order_id", "non_sensitive"),
-        ("data.list[].email", "non_sensitive"),
-        ("data.list[].ip_address", "non_sensitive"),
-        ("data.list[].operator_id", "non_sensitive"),
-        ("data.list[].operator_name", "non_sensitive"),
-        ("data.list[].description", "manual_review"),
-    ],
-)
-def test_privacy_classifier_is_conservative(field: str, expected: str) -> None:
-    assert classify_field(field)[0] == expected
+    def test_draft_generator_rejects_stable_id_collision(self) -> None:
+        tmp_path = self.tmp_path
+        coverage_path = tmp_path / "coverage.json"
+        draft_root = tmp_path / "drafts"
+        operation_root = tmp_path / "operations"
+        _write_json(coverage_path, {"routes": [_route()]})
+        _write_json(
+            operation_root / "existing.json",
+            {"operation": {"operation_id": "promotion.tencent.account_company.list"}},
+        )
 
+        with pytest.raises(ValueError, match="conflicts with stable"):
+            create_drafts(
+                paths=[str(_route()["path"])],
+                coverage_path=coverage_path,
+                draft_root=draft_root,
+                operation_root=operation_root,
+            )
 
-def test_schema_sketch_and_projection_never_retain_values() -> None:
-    payload = {
-        "code": 0,
-        "data": {
-            "list": [
-                {
-                    "advertiser_id": "business-123",
-                    "name": "Example Account",
-                    "uid": "user-456",
-                    "description": "free form secret",
-                }
-            ],
-            "page_info": {
-                "page": 1,
-                "page_size": 10,
-                "total_page": 1,
-                "total_number": 1,
+    def test_privacy_classifier_is_conservative(self) -> None:
+        for field, expected in [('data.list[].advertiser_id', 'non_sensitive'), ('data.list[].campaign_name', 'non_sensitive'), ('data.list[].uid', 'non_sensitive'), ('data.list[].device_id', 'non_sensitive'), ('data.list[].phone', 'non_sensitive'), ('data.list[].idfa', 'non_sensitive'), ('data.list[].imei', 'non_sensitive'), ('data.list[].order_id', 'non_sensitive'), ('data.list[].email', 'non_sensitive'), ('data.list[].ip_address', 'non_sensitive'), ('data.list[].operator_id', 'non_sensitive'), ('data.list[].operator_name', 'non_sensitive'), ('data.list[].description', 'manual_review')]:
+            with self.subTest(field=field, expected=expected):
+                assert classify_field(field)[0] == expected
+
+    def test_schema_sketch_and_projection_never_retain_values(self) -> None:
+        payload = {
+            "code": 0,
+            "data": {
+                "list": [
+                    {
+                        "advertiser_id": "business-123",
+                        "name": "Example Account",
+                        "uid": "user-456",
+                        "description": "free form secret",
+                    }
+                ],
+                "page_info": {
+                    "page": 1,
+                    "page_size": 10,
+                    "total_page": 1,
+                    "total_number": 1,
+                },
             },
-        },
-    }
-
-    sketch = response_schema_sketch(payload)
-    rendered = json.dumps(sketch)
-    assert "business-123" not in rendered
-    assert "Example Account" not in rendered
-    assert "user-456" not in rendered
-    assert "free form secret" not in rendered
-
-    fields = candidate_fields(sketch)
-    projection = build_projection(payload, fields)
-    assert projection["item_keys"] == ["advertiser_id", "name", "uid"]
-    assert projection["known_omitted_item_keys"] == ["description"]
-    assert "uid" in projection["item_keys"]
-    assert "description" not in projection["item_keys"]
-
-
-def test_scalar_business_selector_list_is_typed_value_free_after_review() -> None:
-    payload = {"data": {"list": ["Private Company A", "Private Company B"]}}
-    sketch = response_schema_sketch(payload)
-
-    generic = candidate_fields(sketch)
-    reviewed = [
-        {
-            **generic[0],
-            "privacy_classification": "non_sensitive",
-            "classification_reason": "business_company_selector_manual_review",
-            "expose": True,
         }
-    ]
-    projection = build_projection(payload, reviewed)
 
-    assert generic[0]["path"] == "data.list[]"
-    assert generic[0]["privacy_classification"] == "manual_review"
-    assert reviewed[0]["privacy_classification"] == "non_sensitive"
-    assert reviewed[0]["classification_reason"] == "business_company_selector_manual_review"
-    assert projection == {
-        "data_keys": ["list"],
-        "required_data_keys": ["list"],
-        "item_keys": [],
-        "dynamic_item_fields": [],
-        "data_scalar_list_types": {"list": "string"},
-    }
-    rendered = json.dumps(
-        {"sketch": sketch, "fields": reviewed, "projection": projection}
-    )
-    assert "Private Company" not in rendered
+        sketch = response_schema_sketch(payload)
+        rendered = json.dumps(sketch)
+        assert "business-123" not in rendered
+        assert "Example Account" not in rendered
+        assert "user-456" not in rendered
+        assert "free form secret" not in rendered
 
+        fields = candidate_fields(sketch)
+        projection = build_projection(payload, fields)
+        assert projection["item_keys"] == ["advertiser_id", "name", "uid"]
+        assert projection["known_omitted_item_keys"] == ["description"]
+        assert "uid" in projection["item_keys"]
+        assert "description" not in projection["item_keys"]
 
-def test_free_text_review_remains_a_contract_question() -> None:
-    sketch = response_schema_sketch(
-        {"data": {"list": [{"remark": "not persisted"}]}}
-    )
+    def test_scalar_business_selector_list_is_typed_value_free_after_review(self) -> None:
+        payload = {"data": {"list": ["Private Company A", "Private Company B"]}}
+        sketch = response_schema_sketch(payload)
 
-    generic = candidate_fields(sketch)
-    reviewed = candidate_fields(
-        sketch, operation_id="metadata.property.list"
-    )
+        generic = candidate_fields(sketch)
+        reviewed = [
+            {
+                **generic[0],
+                "privacy_classification": "non_sensitive",
+                "classification_reason": "business_company_selector_manual_review",
+                "expose": True,
+            }
+        ]
+        projection = build_projection(payload, reviewed)
 
-    assert generic[0]["privacy_classification"] == "manual_review"
-    assert reviewed[0]["privacy_classification"] == "manual_review"
-    assert reviewed[0]["classification_reason"] == "free_text_field_review"
-
-
-def test_authorized_identifiers_are_exposed_but_credentials_are_not() -> None:
-    sketch = response_schema_sketch(
-        {"data": {"list": [{"user_id": "u-1", "email": "u@example.test", "password": "x"}]}}
-    )
-
-    fields = {item["path"].rsplit(".", 1)[-1]: item for item in candidate_fields(sketch)}
-
-    assert fields["user_id"]["privacy_classification"] == "non_sensitive"
-    assert fields["user_id"]["expose"] is True
-    assert fields["email"]["privacy_classification"] == "non_sensitive"
-    assert fields["email"]["expose"] is True
-    assert fields["password"]["privacy_classification"] == "sensitive"
-    assert fields["password"]["expose"] is False
-
-
-def test_route_specific_numeric_business_metric_review_stays_scoped() -> None:
-    sketch = response_schema_sketch(
-        {"data": {"list": [{"total_consume": 1.0}]}}
-    )
-
-    generic = candidate_fields(sketch)
-    reviewed = candidate_fields(
-        sketch, operation_id="promotion.bilibili.account.list"
-    )
-
-    assert generic[0]["privacy_classification"] == "manual_review"
-    assert reviewed[0]["privacy_classification"] == "non_sensitive"
-    assert reviewed[0]["classification_reason"] == "route_specific_field_review"
-
-
-def test_bare_order_is_a_reviewed_sort_index_not_an_order_identifier() -> None:
-    fields = candidate_fields(
-        response_schema_sketch({"data": {"list": [{"order": 3}]}})
-    )
-
-    assert fields[0]["privacy_classification"] == "non_sensitive"
-    assert fields[0]["classification_reason"] == "display_sort_index_review"
-    assert fields[0]["expose"] is True
-
-
-def _gate_ready_source() -> dict[str, object]:
-    source = build_draft(_route(), set())
-    source["operation"]["response_projection"] = {
-        "data_keys": ["list"],
-        "required_data_keys": ["list"],
-        "item_keys": ["name"],
-        "dynamic_item_fields": [],
-    }
-    source["draft"]["candidate_fields"] = [
-        {
-            "path": "data.list[].name",
-            "types": ["string"],
-            "presence": "observed",
-            "privacy_classification": "non_sensitive",
-            "classification_reason": "business_metadata_name_pattern",
-            "expose": True,
+        assert generic[0]["path"] == "data.list[]"
+        assert generic[0]["privacy_classification"] == "manual_review"
+        assert reviewed[0]["privacy_classification"] == "non_sensitive"
+        assert reviewed[0]["classification_reason"] == "business_company_selector_manual_review"
+        assert projection == {
+            "data_keys": ["list"],
+            "required_data_keys": ["list"],
+            "item_keys": [],
+            "dynamic_item_fields": [],
+            "data_scalar_list_types": {"list": "string"},
         }
-    ]
-    source["draft"]["probe_evidence"] = [
-        {
-            "path": "evidence/probe/example.json",
-            "probed_at": "2026-08-09T00:00:00Z",
-            "conclusion": "success",
-            "successful": True,
-            "pagination_verified": True,
-            "raw_schema_fingerprint": "a" * 64,
-            "projected_schema_fingerprint": "b" * 64,
+        rendered = json.dumps(
+            {"sketch": sketch, "fields": reviewed, "projection": projection}
+        )
+        assert "Private Company" not in rendered
+
+    def test_free_text_review_remains_a_contract_question(self) -> None:
+        sketch = response_schema_sketch(
+            {"data": {"list": [{"remark": "not persisted"}]}}
+        )
+
+        generic = candidate_fields(sketch)
+        reviewed = candidate_fields(
+            sketch, operation_id="metadata.property.list"
+        )
+
+        assert generic[0]["privacy_classification"] == "manual_review"
+        assert reviewed[0]["privacy_classification"] == "manual_review"
+        assert reviewed[0]["classification_reason"] == "free_text_field_review"
+
+    def test_authorized_identifiers_are_exposed_but_credentials_are_not(self) -> None:
+        sketch = response_schema_sketch(
+            {"data": {"list": [{"user_id": "u-1", "email": "u@example.test", "password": "x"}]}}
+        )
+
+        fields = {item["path"].rsplit(".", 1)[-1]: item for item in candidate_fields(sketch)}
+
+        assert fields["user_id"]["privacy_classification"] == "non_sensitive"
+        assert fields["user_id"]["expose"] is True
+        assert fields["email"]["privacy_classification"] == "non_sensitive"
+        assert fields["email"]["expose"] is True
+        assert fields["password"]["privacy_classification"] == "sensitive"
+        assert fields["password"]["expose"] is False
+
+    def test_route_specific_numeric_business_metric_review_stays_scoped(self) -> None:
+        sketch = response_schema_sketch(
+            {"data": {"list": [{"total_consume": 1.0}]}}
+        )
+
+        generic = candidate_fields(sketch)
+        reviewed = candidate_fields(
+            sketch, operation_id="promotion.bilibili.account.list"
+        )
+
+        assert generic[0]["privacy_classification"] == "manual_review"
+        assert reviewed[0]["privacy_classification"] == "non_sensitive"
+        assert reviewed[0]["classification_reason"] == "route_specific_field_review"
+
+    def test_bare_order_is_a_reviewed_sort_index_not_an_order_identifier(self) -> None:
+        fields = candidate_fields(
+            response_schema_sketch({"data": {"list": [{"order": 3}]}})
+        )
+
+        assert fields[0]["privacy_classification"] == "non_sensitive"
+        assert fields[0]["classification_reason"] == "display_sort_index_review"
+        assert fields[0]["expose"] is True
+
+    def test_promotion_gate_requires_classified_exposure(self) -> None:
+        source = _gate_ready_source()
+        assert evaluate_gate(source) == {"eligible": True, "missing": []}
+
+        source["draft"]["candidate_fields"][0]["privacy_classification"] = "manual_review"
+        assert "unclassified_or_sensitive_field_exposed" in evaluate_gate(source)["missing"]
+
+    def test_promotion_gate_accepts_a_reviewed_scalar_list_projection(self) -> None:
+        source = _gate_ready_source()
+        source["operation"]["response_projection"] = {
+            "data_keys": ["list"],
+            "required_data_keys": ["list"],
+            "item_keys": [],
+            "dynamic_item_fields": [],
+            "data_scalar_list_types": {"list": "string"},
         }
-    ]
-    return source
+        source["draft"]["candidate_fields"] = [
+            {
+                "path": "data.list[]",
+                "types": ["string"],
+                "presence": "observed",
+                "privacy_classification": "non_sensitive",
+                "classification_reason": "route_specific_field_review",
+                "expose": True,
+            }
+        ]
 
-
-def test_promotion_gate_requires_classified_exposure() -> None:
-    source = _gate_ready_source()
-    assert evaluate_gate(source) == {"eligible": True, "missing": []}
-
-    source["draft"]["candidate_fields"][0]["privacy_classification"] = "manual_review"
-    assert "unclassified_or_sensitive_field_exposed" in evaluate_gate(source)["missing"]
-
-
-def test_promotion_gate_accepts_a_reviewed_scalar_list_projection() -> None:
-    source = _gate_ready_source()
-    source["operation"]["response_projection"] = {
-        "data_keys": ["list"],
-        "required_data_keys": ["list"],
-        "item_keys": [],
-        "dynamic_item_fields": [],
-        "data_scalar_list_types": {"list": "string"},
-    }
-    source["draft"]["candidate_fields"] = [
-        {
-            "path": "data.list[]",
-            "types": ["string"],
-            "presence": "observed",
-            "privacy_classification": "non_sensitive",
-            "classification_reason": "route_specific_field_review",
-            "expose": True,
+        assert evaluate_gate(source) == {"eligible": True, "missing": []}
+        refreshed = refresh_structured_blockers(source)
+        assert refreshed["draft"]["promotion_gate"] == {
+            "eligible": True,
+            "missing": [],
         }
-    ]
+        assert [item["code"] for item in refreshed["draft"]["blockers"]] == [
+            "promotion_pending"
+        ]
 
-    assert evaluate_gate(source) == {"eligible": True, "missing": []}
-    refreshed = refresh_structured_blockers(source)
-    assert refreshed["draft"]["promotion_gate"] == {
-        "eligible": True,
-        "missing": [],
-    }
-    assert [item["code"] for item in refreshed["draft"]["blockers"]] == [
-        "promotion_pending"
-    ]
+    def test_promotion_gate_blocks_unsupported_parent_placeholder(self) -> None:
+        route = _route("/turbo_engine/api/v1/honor/manager/campaign/list/")
+        route["method"] = "POST"
+        route["promotion_platform"] = "honor"
+        source = build_draft(route, {"promotion.honor.account.list"})
+        source["operation"]["response_projection"]["item_keys"] = ["name"]
+        source["draft"]["candidate_fields"] = [
+            {
+                "path": "data.list[].name",
+                "types": ["string"],
+                "presence": "observed",
+                "privacy_classification": "non_sensitive",
+                "classification_reason": "business_metadata_name_pattern",
+                "expose": True,
+            }
+        ]
+        source["draft"]["probe_evidence"] = [
+            {
+                "successful": True,
+                "pagination_verified": True,
+            }
+        ]
 
+        assert "runtime_probe_placeholder_unsupported" in evaluate_gate(source)["missing"]
+        assert source["operation"]["required_parent"][0]["selection"] == "caller_select"
 
-def test_promotion_gate_blocks_unsupported_parent_placeholder() -> None:
-    route = _route("/turbo_engine/api/v1/honor/manager/campaign/list/")
-    route["method"] = "POST"
-    route["promotion_platform"] = "honor"
-    source = build_draft(route, {"promotion.honor.account.list"})
-    source["operation"]["response_projection"]["item_keys"] = ["name"]
-    source["draft"]["candidate_fields"] = [
-        {
-            "path": "data.list[].name",
-            "types": ["string"],
-            "presence": "observed",
-            "privacy_classification": "non_sensitive",
-            "classification_reason": "business_metadata_name_pattern",
-            "expose": True,
-        }
-    ]
-    source["draft"]["probe_evidence"] = [
-        {
-            "successful": True,
-            "pagination_verified": True,
-        }
-    ]
+    def test_promote_moves_only_gate_passing_draft(self) -> None:
+        tmp_path = self.tmp_path
+        draft_root = tmp_path / "drafts"
+        operation_root = tmp_path / "operations"
+        source = _gate_ready_source()
+        source["operation"]["privacy_policy"]["redact_fields"] = [
+            "authorization",
+            "token",
+        ]
+        operation_id = source["operation"]["operation_id"]
+        _write_json(draft_root / f"{operation_id}.json", source)
 
-    assert "runtime_probe_placeholder_unsupported" in evaluate_gate(source)["missing"]
-    assert source["operation"]["required_parent"][0]["selection"] == "caller_select"
-
-
-def test_promote_moves_only_gate_passing_draft(tmp_path: Path) -> None:
-    draft_root = tmp_path / "drafts"
-    operation_root = tmp_path / "operations"
-    source = _gate_ready_source()
-    source["operation"]["privacy_policy"]["redact_fields"] = [
-        "authorization",
-        "token",
-    ]
-    operation_id = source["operation"]["operation_id"]
-    _write_json(draft_root / f"{operation_id}.json", source)
-
-    result = promote_drafts(
-        [operation_id],
-        draft_root=draft_root,
-        operation_root=operation_root,
-        compile_products=False,
-    )
-
-    assert result[0]["status"] == "stable"
-    stable = json.loads(
-        (operation_root / f"{operation_id}.json").read_text(encoding="utf-8")
-    )
-    assert "draft" not in stable
-    assert stable["operation"]["stability"] == "stable"
-    assert stable["operation"]["executable"] is True
-    assert stable["operation"]["semantic_error_rules"]
-    assert {
-        "authorization",
-        "token",
-        "operator",
-        "callback_url",
-    } <= set(stable["operation"]["privacy_policy"]["redact_fields"])
-    assert stable["operation"]["provenance"]["family"] is None
-    assert stable["operation"]["provenance"]["applied_overrides"] == []
-    assert not (draft_root / f"{operation_id}.json").exists()
-
-
-def test_promote_restores_draft_when_compilation_fails(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    draft_root = tmp_path / "drafts"
-    operation_root = tmp_path / "operations"
-    source = _gate_ready_source()
-    operation_id = source["operation"]["operation_id"]
-    draft_path = draft_root / f"{operation_id}.json"
-    destination = operation_root / f"{operation_id}.json"
-    _write_json(draft_path, source)
-    original = draft_path.read_bytes()
-    compile_calls = 0
-
-    def compile_products() -> None:
-        nonlocal compile_calls
-        compile_calls += 1
-        if compile_calls == 1:
-            raise RuntimeError("prospective compilation failed")
-
-    monkeypatch.setattr(
-        "gravity_sdk.prober.promotion_transaction.compile_contract_products",
-        compile_products,
-    )
-
-    with pytest.raises(RuntimeError, match="prospective compilation failed"):
-        promote_drafts(
+        result = promote_drafts(
             [operation_id],
             draft_root=draft_root,
             operation_root=operation_root,
-            compile_products=True,
+            compile_products=False,
         )
 
-    assert compile_calls == 2
-    assert draft_path.read_bytes() == original
-    assert not destination.exists()
+        assert result[0]["status"] == "stable"
+        stable = json.loads(
+            (operation_root / f"{operation_id}.json").read_text(encoding="utf-8")
+        )
+        assert "draft" not in stable
+        assert stable["operation"]["stability"] == "stable"
+        assert stable["operation"]["executable"] is True
+        assert stable["operation"]["semantic_error_rules"]
+        assert {
+            "authorization",
+            "token",
+            "operator",
+            "callback_url",
+        } <= set(stable["operation"]["privacy_policy"]["redact_fields"])
+        assert stable["operation"]["provenance"]["family"] is None
+        assert stable["operation"]["provenance"]["applied_overrides"] == []
+        assert not (draft_root / f"{operation_id}.json").exists()
 
+    def test_promote_restores_draft_when_compilation_fails(self) -> None:
+        tmp_path = self.tmp_path
+        monkeypatch = pytest.MonkeyPatch()
+        self.addCleanup(monkeypatch.undo)
+        draft_root = tmp_path / "drafts"
+        operation_root = tmp_path / "operations"
+        source = _gate_ready_source()
+        operation_id = source["operation"]["operation_id"]
+        draft_path = draft_root / f"{operation_id}.json"
+        destination = operation_root / f"{operation_id}.json"
+        _write_json(draft_path, source)
+        original = draft_path.read_bytes()
+        compile_calls = 0
 
-def test_request_discipline_enforces_spacing_budget_and_family_stop() -> None:
-    now = [0.0]
-    sleeps: list[float] = []
+        def compile_products() -> None:
+            nonlocal compile_calls
+            compile_calls += 1
+            if compile_calls == 1:
+                raise RuntimeError("prospective compilation failed")
 
-    def clock() -> float:
-        return now[0]
+        monkeypatch.setattr(
+            "gravity_sdk.prober.promotion_transaction.compile_contract_products",
+            compile_products,
+        )
 
-    def sleeper(delay: float) -> None:
-        sleeps.append(delay)
-        now[0] += delay
+        with pytest.raises(RuntimeError, match="prospective compilation failed"):
+            promote_drafts(
+                [operation_id],
+                draft_root=draft_root,
+                operation_root=operation_root,
+                compile_products=True,
+            )
 
-    discipline = RequestDiscipline(
-        interval_seconds=0.3,
-        request_limit=4,
-        clock=clock,
-        sleeper=sleeper,
-    )
-    discipline.before_request("family-a")
-    discipline.after_response("family-a", 200)
-    discipline.before_request("family-a")
-    discipline.after_response("family-a", 500)
-    discipline.before_request("family-a")
-    discipline.after_response("family-a", 500)
-    discipline.before_request("family-a")
-    discipline.after_response("family-a", 500)
+        assert compile_calls == 2
+        assert draft_path.read_bytes() == original
+        assert not destination.exists()
 
-    assert sleeps == [0.3, 1.0, 2.0, 4.0]
-    assert discipline.total == 4
-    assert discipline.failed == 3
-    assert discipline.backoff_events == 3
-    assert discipline.backoff_terminations == 1
-    with pytest.raises(RuntimeError, match="terminated"):
+    def test_request_discipline_enforces_spacing_budget_and_family_stop(self) -> None:
+        now = [0.0]
+        sleeps: list[float] = []
+
+        def clock() -> float:
+            return now[0]
+
+        def sleeper(delay: float) -> None:
+            sleeps.append(delay)
+            now[0] += delay
+
+        discipline = RequestDiscipline(
+            interval_seconds=0.3,
+            request_limit=4,
+            clock=clock,
+            sleeper=sleeper,
+        )
         discipline.before_request("family-a")
+        discipline.after_response("family-a", 200)
+        discipline.before_request("family-a")
+        discipline.after_response("family-a", 500)
+        discipline.before_request("family-a")
+        discipline.after_response("family-a", 500)
+        discipline.before_request("family-a")
+        discipline.after_response("family-a", 500)
 
+        assert sleeps == [0.3, 1.0, 2.0, 4.0]
+        assert discipline.total == 4
+        assert discipline.failed == 3
+        assert discipline.backoff_events == 3
+        assert discipline.backoff_terminations == 1
+        with pytest.raises(RuntimeError, match="terminated"):
+            discipline.before_request("family-a")
 
-def test_request_discipline_rejects_unsafe_configuration() -> None:
-    with pytest.raises(ValueError, match="300ms"):
-        RequestDiscipline(interval_seconds=0.299)
-    with pytest.raises(ValueError, match="between 1 and 200"):
-        RequestDiscipline(request_limit=201)
+    def test_request_discipline_rejects_unsafe_configuration(self) -> None:
+        with pytest.raises(ValueError, match="300ms"):
+            RequestDiscipline(interval_seconds=0.299)
+        with pytest.raises(ValueError, match="between 1 and 200"):
+            RequestDiscipline(request_limit=201)
 
+    def test_request_discipline_stops_domain_across_operation_families(self) -> None:
+        discipline = RequestDiscipline(
+            interval_seconds=0.3,
+            request_limit=4,
+            clock=lambda: 0.0,
+            sleeper=lambda _: None,
+        )
+        for family in ("family-a", "family-b", "family-c"):
+            discipline.before_request(family)
+            discipline.after_response(family, 500)
 
-def test_request_discipline_stops_domain_across_operation_families() -> None:
-    discipline = RequestDiscipline(
-        interval_seconds=0.3,
-        request_limit=4,
-        clock=lambda: 0.0,
-        sleeper=lambda _: None,
-    )
-    for family in ("family-a", "family-b", "family-c"):
-        discipline.before_request(family)
-        discipline.after_response(family, 500)
+        assert discipline.domain_stopped is True
+        assert discipline.backoff_terminations == 1
+        with pytest.raises(RuntimeError, match="domain is terminated"):
+            discipline.before_request("family-d")
 
-    assert discipline.domain_stopped is True
-    assert discipline.backoff_terminations == 1
-    with pytest.raises(RuntimeError, match="domain is terminated"):
-        discipline.before_request("family-d")
+    def test_authentication_refresh_observation_cannot_become_target_primary(self) -> None:
+        class Response:
+            status_code = 200
+            headers: dict[str, str] = {}
 
+            @staticmethod
+            def json() -> dict[str, object]:
+                return {"data": {"user": {"id": 1}}}
 
-def test_authentication_refresh_observation_cannot_become_target_primary() -> None:
-    class Response:
-        status_code = 200
-        headers: dict[str, str] = {}
+        class Session:
+            headers: dict[str, str] = {}
 
-        @staticmethod
-        def json() -> dict[str, object]:
-            return {"data": {"user": {"id": 1}}}
+            @staticmethod
+            def request(method: str, url: str, **kwargs: object) -> Response:
+                return Response()
 
-    class Session:
-        headers: dict[str, str] = {}
+        recording = RecordingSession(
+            Session(), RequestDiscipline(sleeper=lambda _: None)
+        )
+        with recording.observing("promotion.example.list", "family", "discovery"):
+            recording.request(
+                "POST", "https://example.test/account_center/api/v1/user_login/v2/"
+            )
 
-        @staticmethod
-        def request(method: str, url: str, **kwargs: object) -> Response:
-            return Response()
+        assert recording.observations[0].operation_id == "authentication"
+        assert recording.observations[0].purpose == "authentication"
 
-    recording = RecordingSession(
-        Session(), RequestDiscipline(sleeper=lambda _: None)
-    )
-    with recording.observing("promotion.example.list", "family", "discovery"):
-        recording.request(
-            "POST", "https://example.test/account_center/api/v1/user_login/v2/"
+    def test_online_probe_rejects_non_read_route_segments(self) -> None:
+        for segment in ['create', 'update', 'delete', 'export', 'upload', 'set', 'submit_task']:
+            with self.subTest(segment=segment):
+                source = build_draft(_route(), set())
+                source["operation"]["path_template"] = f"/turbo_engine/api/v1/resource/{segment}/"
+
+                with pytest.raises(ValueError, match="refused"):
+                    assert_read_only_source(source)
+
+    def test_online_probe_allows_read_list_under_manage_directory(self) -> None:
+        source = build_draft(_route(), set())
+        source["operation"]["path_template"] = (
+            "/turbo_engine/api/v1/bytedance/manage/account/list/"
         )
 
-    assert recording.observations[0].operation_id == "authentication"
-    assert recording.observations[0].purpose == "authentication"
-
-
-@pytest.mark.parametrize(
-    "segment",
-    ["create", "update", "delete", "export", "upload", "set", "submit_task"],
-)
-def test_online_probe_rejects_non_read_route_segments(segment: str) -> None:
-    source = build_draft(_route(), set())
-    source["operation"]["path_template"] = f"/turbo_engine/api/v1/resource/{segment}/"
-
-    with pytest.raises(ValueError, match="refused"):
         assert_read_only_source(source)
 
+    def test_online_probe_still_rejects_mutation_under_manage_directory(self) -> None:
+        source = build_draft(_route(), set())
+        source["operation"]["path_template"] = (
+            "/turbo_engine/api/v1/bytedance/manage/account/delete/"
+        )
 
-def test_online_probe_allows_read_list_under_manage_directory() -> None:
-    source = build_draft(_route(), set())
-    source["operation"]["path_template"] = (
-        "/turbo_engine/api/v1/bytedance/manage/account/list/"
-    )
+        with pytest.raises(ValueError, match="refused"):
+            assert_read_only_source(source)
 
-    assert_read_only_source(source)
+    def test_probe_policy_honors_confirmed_read_with_blocked_path_segment(self) -> None:
+        source = json.loads(Path("src/gravity_sdk/contracts/drafts/report.subscribe.list.json").read_text(encoding="utf-8"))
+        parts = prober_transport.sdk_parts()
+        operation = parts["models"].load_operation_manifest({"operations": [prober_transport._source_to_runtime(source["operation"])]})[0]
+        registry = parts["registry"].Registry([operation])
+        prober_transport.build_probe_policy(parts, registry, operation.path_template, operation.upstream_method).authorize_operation(operation.operation_id)
 
+    def test_online_probe_rejects_non_read_effect(self) -> None:
+        source = build_draft(_route(), set())
+        source["operation"]["effect"] = "export"
 
-def test_online_probe_still_rejects_mutation_under_manage_directory() -> None:
-    source = build_draft(_route(), set())
-    source["operation"]["path_template"] = (
-        "/turbo_engine/api/v1/bytedance/manage/account/delete/"
-    )
+        with pytest.raises(ValueError, match="declared as read"):
+            assert_read_only_source(source)
 
-    with pytest.raises(ValueError, match="refused"):
-        assert_read_only_source(source)
+    def test_weak_post_probe_requires_traceable_static_confirmation(self) -> None:
+        tmp_path = self.tmp_path
+        monkeypatch = pytest.MonkeyPatch()
+        self.addCleanup(monkeypatch.undo)
+        source = build_draft(_route("/candidate/query/"), set())
+        route = source["draft"]["route_evidence"]
+        route["semantic_evidence"] = ["read_action_path_token"]
+        source["operation"]["upstream_method"] = "POST"
+        confirmations = tmp_path / "confirmations.json"
+        document = {
+            "schema_version": "gravity-insight.probe-read-confirmations.v1",
+            "confirmations": [],
+        }
+        _write_json(confirmations, document)
 
+        with pytest.raises(PolicyViolation, match="inferred only from a path token") as error:
+            assert_probe_read_semantics(source, confirmations_path=confirmations)
+        assert (error.value.code.value, error.value.category.value) == (
+            "UNSUPPORTED", "local"
+        )
+        assert exit_code_for_error(error.value) == 4
+        _write_json(tmp_path / "candidate.query.json", source)
+        monkeypatch.setattr(
+            online, "_session_or_default",
+            lambda _session: pytest.fail("probe session must not be constructed"),
+        )
+        with pytest.raises(PolicyViolation, match="inferred only from a path token"):
+            online.run_online_probes(["candidate.query"], draft_root=tmp_path)
 
-def test_probe_policy_honors_confirmed_read_with_blocked_path_segment() -> None:
-    source = json.loads(Path("src/gravity_sdk/contracts/drafts/report.subscribe.list.json").read_text(encoding="utf-8"))
-    parts = prober_transport.sdk_parts()
-    operation = parts["models"].load_operation_manifest({"operations": [prober_transport._source_to_runtime(source["operation"])]})[0]
-    registry = parts["registry"].Registry([operation])
-    prober_transport.build_probe_policy(parts, registry, operation.path_template, operation.upstream_method).authorize_operation(operation.operation_id)
-
-
-def test_online_probe_rejects_non_read_effect() -> None:
-    source = build_draft(_route(), set())
-    source["operation"]["effect"] = "export"
-
-    with pytest.raises(ValueError, match="declared as read"):
-        assert_read_only_source(source)
-
-
-def test_weak_post_probe_requires_traceable_static_confirmation(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    source = build_draft(_route("/candidate/query/"), set())
-    route = source["draft"]["route_evidence"]
-    route["semantic_evidence"] = ["read_action_path_token"]
-    source["operation"]["upstream_method"] = "POST"
-    confirmations = tmp_path / "confirmations.json"
-    document = {
-        "schema_version": "gravity-insight.probe-read-confirmations.v1",
-        "confirmations": [],
-    }
-    _write_json(confirmations, document)
-
-    with pytest.raises(PolicyViolation, match="inferred only from a path token") as error:
+        document["confirmations"] = [{
+            "method": "POST", "path": "/candidate/query/",
+            "decision": "confirmed_read", "reviewer": "maintainer@example.test",
+            "reviewed_at": "2026-08-14", "evidence": [{
+                "source": "raw/example.js#control-flow",
+                "detail": "The call only renders returned rows.",
+            }],
+        }]
+        _write_json(confirmations, document)
         assert_probe_read_semantics(source, confirmations_path=confirmations)
-    assert (error.value.code.value, error.value.category.value) == (
-        "UNSUPPORTED", "local"
-    )
-    assert exit_code_for_error(error.value) == 4
-    _write_json(tmp_path / "candidate.query.json", source)
-    monkeypatch.setattr(
-        online, "_session_or_default",
-        lambda _session: pytest.fail("probe session must not be constructed"),
-    )
-    with pytest.raises(PolicyViolation, match="inferred only from a path token"):
-        online.run_online_probes(["candidate.query"], draft_root=tmp_path)
 
-    document["confirmations"] = [{
-        "method": "POST", "path": "/candidate/query/",
-        "decision": "confirmed_read", "reviewer": "maintainer@example.test",
-        "reviewed_at": "2026-08-14", "evidence": [{
-            "source": "raw/example.js#control-flow",
-            "detail": "The call only renders returned rows.",
-        }],
-    }]
-    _write_json(confirmations, document)
-    assert_probe_read_semantics(source, confirmations_path=confirmations)
+        for method, evidence in (
+            ("GET", ["read_action_path_token"]),
+            ("GET", ["safe_http_method"]),
+            ("POST", ["route_registry:read_contract_not_verified"]),
+        ):
+            source["operation"]["upstream_method"] = method
+            route["semantic_evidence"] = evidence
+            assert_probe_read_semantics(
+                source, confirmations_path=tmp_path / "intentionally-missing.json"
+            )
 
-    for method, evidence in (
-        ("GET", ["read_action_path_token"]),
-        ("GET", ["safe_http_method"]),
-        ("POST", ["route_registry:read_contract_not_verified"]),
-    ):
-        source["operation"]["upstream_method"] = method
-        route["semantic_evidence"] = evidence
-        assert_probe_read_semantics(
-            source, confirmations_path=tmp_path / "intentionally-missing.json"
+    def test_probe_evidence_uses_privacy_guard_compatible_yaml(self) -> None:
+        tmp_path = self.tmp_path
+        path = evidence_path("metadata.example.list", tmp_path)
+
+        assert path.suffix == ".yaml"
+
+    def test_status_reports_unparseable_files_without_failing(self) -> None:
+        tmp_path = self.tmp_path
+        evidence_root = tmp_path / "evidence"
+        _write_json(
+            evidence_root / "20260809T000000Z_metadata.example.list.yaml",
+            {
+                "schema_version": "gravity-insight.probe-evidence.v1",
+                "request_stats": {
+                    "total": 2,
+                    "failed": 1,
+                    "backoff_terminations": 0,
+                },
+            },
+        )
+        (evidence_root / "20260809T000001Z_privacy_audit.yaml").write_text(
+            "schema_version: gravity-insight.privacy-audit.v1\n"
+            "summary:\n"
+            "  reviewed: true\n",
+            encoding="utf-8",
+        )
+        (evidence_root / "20260809T000002Z_broken.yaml").write_text(
+            '{"schema_version": "gravity-insight.probe-evidence.v1",',
+            encoding="utf-8",
         )
 
+        result = status_report(
+            draft_root=tmp_path / "drafts",
+            operation_root=tmp_path / "operations",
+            evidence_root=evidence_root,
+        )
 
-def test_probe_evidence_uses_privacy_guard_compatible_yaml(tmp_path: Path) -> None:
-    path = evidence_path("metadata.example.list", tmp_path)
+        assert result["ok"] is True
+        evidence = result["evidence"]
+        assert evidence["files"] == 1
+        assert evidence["request_total"] == 2
+        assert evidence["failed_total"] == 1
+        assert evidence["backoff_terminations"] == 0
+        assert evidence["skipped_file_count"] == 2
+        assert [item["reason"] for item in evidence["skipped_files"]] == [
+            "non_json_yaml",
+            "invalid_json",
+        ]
+        assert [Path(item["path"]).name for item in evidence["skipped_files"]] == [
+            "20260809T000001Z_privacy_audit.yaml",
+            "20260809T000002Z_broken.yaml",
+        ]
 
-    assert path.suffix == ".yaml"
-
-
-def test_status_reports_unparseable_files_without_failing(
-    tmp_path: Path,
-) -> None:
-    evidence_root = tmp_path / "evidence"
-    _write_json(
-        evidence_root / "20260809T000000Z_metadata.example.list.yaml",
-        {
-            "schema_version": "gravity-insight.probe-evidence.v1",
-            "request_stats": {
-                "total": 2,
-                "failed": 1,
-                "backoff_terminations": 0,
+    def test_batch_finalizer_reports_true_yaml_without_reading_it(self) -> None:
+        tmp_path = self.tmp_path
+        report_root = tmp_path / "report"
+        evidence_root = tmp_path / "evidence"
+        _write_json(
+            report_root / "layering.json",
+            {
+                "drafts": [
+                    {"operation_id": f"synthetic.operation.{index}", "tier": 1}
+                    for index in range(309)
+                ]
             },
-        },
-    )
-    (evidence_root / "20260809T000001Z_privacy_audit.yaml").write_text(
-        "schema_version: gravity-insight.privacy-audit.v1\n"
-        "summary:\n"
-        "  reviewed: true\n",
-        encoding="utf-8",
-    )
-    (evidence_root / "20260809T000002Z_broken.yaml").write_text(
-        '{"schema_version": "gravity-insight.probe-evidence.v1",',
-        encoding="utf-8",
-    )
+        )
+        evidence_root.mkdir()
+        (evidence_root / "20260809T000001Z_privacy_audit.yaml").write_text(
+            "schema_version: gravity-insight.privacy-audit.v1\n",
+            encoding="utf-8",
+        )
 
-    result = status_report(
-        draft_root=tmp_path / "drafts",
-        operation_root=tmp_path / "operations",
-        evidence_root=evidence_root,
-    )
+        result = finalize_batch_report(
+            task_evidence_floor="20260809T000000Z",
+            report_root=report_root,
+            draft_root=tmp_path / "drafts",
+            operation_root=tmp_path / "operations",
+            evidence_root=evidence_root,
+        )
 
-    assert result["ok"] is True
-    evidence = result["evidence"]
-    assert evidence["files"] == 1
-    assert evidence["request_total"] == 2
-    assert evidence["failed_total"] == 1
-    assert evidence["backoff_terminations"] == 0
-    assert evidence["skipped_file_count"] == 2
-    assert [item["reason"] for item in evidence["skipped_files"]] == [
-        "non_json_yaml",
-        "invalid_json",
-    ]
-    assert [Path(item["path"]).name for item in evidence["skipped_files"]] == [
-        "20260809T000001Z_privacy_audit.yaml",
-        "20260809T000002Z_broken.yaml",
-    ]
-
-
-def test_batch_finalizer_reports_true_yaml_without_reading_it(tmp_path: Path) -> None:
-    report_root = tmp_path / "report"
-    evidence_root = tmp_path / "evidence"
-    _write_json(
-        report_root / "layering.json",
-        {
-            "drafts": [
-                {"operation_id": f"synthetic.operation.{index}", "tier": 1}
-                for index in range(309)
-            ]
-        },
-    )
-    evidence_root.mkdir()
-    (evidence_root / "20260809T000001Z_privacy_audit.yaml").write_text(
-        "schema_version: gravity-insight.privacy-audit.v1\n",
-        encoding="utf-8",
-    )
-
-    result = finalize_batch_report(
-        task_evidence_floor="20260809T000000Z",
-        report_root=report_root,
-        draft_root=tmp_path / "drafts",
-        operation_root=tmp_path / "operations",
-        evidence_root=evidence_root,
-    )
-
-    assert result["skipped_evidence_file_count"] == 1
-    assert result["skipped_evidence_files"][0]["reason"] == "non_json_yaml"
+        assert result["skipped_evidence_file_count"] == 1
+        assert result["skipped_evidence_files"][0]["reason"] == "non_json_yaml"

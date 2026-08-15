@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 import json
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -36,89 +37,10 @@ def _open_develop_route() -> dict[str, Any]:
     }
 
 
-def test_open_develop_draft_has_stable_identity_and_runtime_gate() -> None:
-    source = build_draft(_open_develop_route(), set())
-    operation = source["operation"]
-
-    assert operation["operation_id"] == "developer.application.list"
-    assert operation["input_fields"] == {
-        "page": {"type": "integer", "default": 1},
-        "page_size": {"type": "integer", "default": 20},
-        "filters": {"type": "array", "default": []},
-    }
-    assert operation["request"]["body_fields"] == ["page", "page_size", "filters"]
-    assert "stable_runtime_route_unsupported" in evaluate_gate(source)["missing"]
 
 
-def test_signed_openapi_report_drafts_capture_documented_business_inputs() -> None:
-    report_route = _open_develop_route()
-    report_route.update(
-        {
-            "business_module": "报表",
-            "path": "/openapi/api/v1/report/adreport/custom_get/",
-        }
-    )
-    report = build_draft(report_route, set())
-    operation = report["operation"]
-
-    assert operation["operation_id"] == "report.adreport.query"
-    assert operation["auth_profile"] == "gravity_openapi_signature"
-    assert operation["request"]["body_fields"] == list(operation["input_fields"])
-    assert "sign" not in operation["input_fields"]
-    assert operation["input_fields"]["filters"]["required"] is True
-    assert "openapi_developer_credentials_unavailable" in evaluate_gate(report)["missing"]
-
-    metric_route = dict(report_route)
-    metric_route["path"] = "/openapi/api/v1/report/metrics/list/"
-    metric = build_draft(metric_route, set())["operation"]
-    assert metric["operation_id"] == "report.metric.list"
-    assert metric["input_fields"] == {
-        "data_topic": {
-            "type": "string", "default": "adreport", "enum": ["adreport"]
-        },
-        "metric_type": {
-            "type": "string", "required": True,
-            "enum": ["gravity_preset", "user_custom"],
-        },
-    }
 
 
-def test_live_options_evidence_resolves_unknown_method_for_draft(tmp_path: Path) -> None:
-    route = _open_develop_route()
-    route["method"] = "UNKNOWN"
-    route["method_certainty"] = "low"
-    coverage_path = tmp_path / "coverage.json"
-    evidence_path = tmp_path / "options.json"
-    coverage_path.write_text(json.dumps({"routes": [route]}), encoding="utf-8")
-    evidence_path.write_text(
-        json.dumps(
-            {
-                "routes": {
-                    "results": [
-                        {"path": route["path"], "options": {"allow": ["POST"]}}
-                    ]
-                }
-            }
-        ),
-        encoding="utf-8",
-    )
-
-    created = create_drafts(
-        paths=[route["path"]],
-        coverage_path=coverage_path,
-        draft_root=tmp_path / "drafts",
-        operation_root=tmp_path / "operations",
-        method_evidence_path=evidence_path,
-    )
-
-    assert created[0]["method"] == "POST"
-    source = json.loads(
-        (tmp_path / "drafts" / "developer.application.list.json").read_text(encoding="utf-8")
-    )
-    assert source["draft"]["route_evidence"]["method_evidence"] == [
-        "live_options_allow",
-        "same_request_options",
-    ]
 
 
 class _Response:
@@ -151,43 +73,6 @@ class _BaseRuntime:
         raise AssertionError("OpenAPI probe unexpectedly used the stable route profile")
 
 
-def test_openapi_probe_runtime_consumes_policy_receipt_and_records_request() -> None:
-    source = build_draft(_open_develop_route(), set())
-    parts = sdk_parts()
-    operation = parts["models"].load_operation_manifest(
-        {"operations": [_source_to_runtime(source["operation"])]}
-    )[0]
-    registry = parts["registry"].Registry([operation])
-    policy = build_probe_policy(parts, registry, operation.path_template)
-    inputs = {"page": 1, "page_size": 2, "filters": []}
-    authorization = policy._prepare_request(operation.operation_id, inputs)
-    session = _Session()
-    recording = RecordingSession(
-        session,
-        RequestDiscipline(
-            interval_seconds=0.3,
-            request_limit=2,
-            clock=lambda: 0.0,
-            sleeper=lambda _delay: None,
-        ),
-    )
-    runtime = _OpenApiProbeRuntime(_BaseRuntime(), recording, _Credentials())
-
-    response = runtime._request_insight(
-        "POST",
-        operation.path_template,
-        policy_authorization=authorization,
-        params={},
-        json_body=inputs,
-        attempts=1,
-    )
-
-    assert response.status_code == 200
-    assert response.payload["code"] == 0
-    assert len(recording.observations) == 1
-    assert session.calls[0][0] == "POST"
-    assert session.calls[0][1].endswith("/openapi/api/v1/open_develop/list/")
-    assert session.calls[0][2]["json"] == inputs
 
 
 class RepositoryOpenApiContractTests(unittest.TestCase):
@@ -241,3 +126,131 @@ class RepositoryOpenApiContractTests(unittest.TestCase):
             )
         with self.subTest(check="route_uniqueness"):
             self.assertTrue(draft_routes.isdisjoint(operation_routes))
+
+
+class OpenApiProberTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self._temporary_directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self._temporary_directory.cleanup)
+        self.tmp_path = Path(self._temporary_directory.name)
+
+    def test_open_develop_draft_has_stable_identity_and_runtime_gate(self) -> None:
+        source = build_draft(_open_develop_route(), set())
+        operation = source["operation"]
+
+        assert operation["operation_id"] == "developer.application.list"
+        assert operation["input_fields"] == {
+            "page": {"type": "integer", "default": 1},
+            "page_size": {"type": "integer", "default": 20},
+            "filters": {"type": "array", "default": []},
+        }
+        assert operation["request"]["body_fields"] == ["page", "page_size", "filters"]
+        assert "stable_runtime_route_unsupported" in evaluate_gate(source)["missing"]
+
+    def test_signed_openapi_report_drafts_capture_documented_business_inputs(self) -> None:
+        report_route = _open_develop_route()
+        report_route.update(
+            {
+                "business_module": "报表",
+                "path": "/openapi/api/v1/report/adreport/custom_get/",
+            }
+        )
+        report = build_draft(report_route, set())
+        operation = report["operation"]
+
+        assert operation["operation_id"] == "report.adreport.query"
+        assert operation["auth_profile"] == "gravity_openapi_signature"
+        assert operation["request"]["body_fields"] == list(operation["input_fields"])
+        assert "sign" not in operation["input_fields"]
+        assert operation["input_fields"]["filters"]["required"] is True
+        assert "openapi_developer_credentials_unavailable" in evaluate_gate(report)["missing"]
+
+        metric_route = dict(report_route)
+        metric_route["path"] = "/openapi/api/v1/report/metrics/list/"
+        metric = build_draft(metric_route, set())["operation"]
+        assert metric["operation_id"] == "report.metric.list"
+        assert metric["input_fields"] == {
+            "data_topic": {
+                "type": "string", "default": "adreport", "enum": ["adreport"]
+            },
+            "metric_type": {
+                "type": "string", "required": True,
+                "enum": ["gravity_preset", "user_custom"],
+            },
+        }
+
+    def test_live_options_evidence_resolves_unknown_method_for_draft(self) -> None:
+        tmp_path = self.tmp_path
+        route = _open_develop_route()
+        route["method"] = "UNKNOWN"
+        route["method_certainty"] = "low"
+        coverage_path = tmp_path / "coverage.json"
+        evidence_path = tmp_path / "options.json"
+        coverage_path.write_text(json.dumps({"routes": [route]}), encoding="utf-8")
+        evidence_path.write_text(
+            json.dumps(
+                {
+                    "routes": {
+                        "results": [
+                            {"path": route["path"], "options": {"allow": ["POST"]}}
+                        ]
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        created = create_drafts(
+            paths=[route["path"]],
+            coverage_path=coverage_path,
+            draft_root=tmp_path / "drafts",
+            operation_root=tmp_path / "operations",
+            method_evidence_path=evidence_path,
+        )
+
+        assert created[0]["method"] == "POST"
+        source = json.loads(
+            (tmp_path / "drafts" / "developer.application.list.json").read_text(encoding="utf-8")
+        )
+        assert source["draft"]["route_evidence"]["method_evidence"] == [
+            "live_options_allow",
+            "same_request_options",
+        ]
+
+    def test_openapi_probe_runtime_consumes_policy_receipt_and_records_request(self) -> None:
+        source = build_draft(_open_develop_route(), set())
+        parts = sdk_parts()
+        operation = parts["models"].load_operation_manifest(
+            {"operations": [_source_to_runtime(source["operation"])]}
+        )[0]
+        registry = parts["registry"].Registry([operation])
+        policy = build_probe_policy(parts, registry, operation.path_template)
+        inputs = {"page": 1, "page_size": 2, "filters": []}
+        authorization = policy._prepare_request(operation.operation_id, inputs)
+        session = _Session()
+        recording = RecordingSession(
+            session,
+            RequestDiscipline(
+                interval_seconds=0.3,
+                request_limit=2,
+                clock=lambda: 0.0,
+                sleeper=lambda _delay: None,
+            ),
+        )
+        runtime = _OpenApiProbeRuntime(_BaseRuntime(), recording, _Credentials())
+
+        response = runtime._request_insight(
+            "POST",
+            operation.path_template,
+            policy_authorization=authorization,
+            params={},
+            json_body=inputs,
+            attempts=1,
+        )
+
+        assert response.status_code == 200
+        assert response.payload["code"] == 0
+        assert len(recording.observations) == 1
+        assert session.calls[0][0] == "POST"
+        assert session.calls[0][1].endswith("/openapi/api/v1/open_develop/list/")
+        assert session.calls[0][2]["json"] == inputs

@@ -27,6 +27,31 @@ operation 为 `187 + 7 = 194`、stable 为 `178 + 7 = 185`。部分闭环的 Ana
 
 `draft` 候选数量不等于排期数量：17 项候选归并进台账动线或按明确非目标排除，不按 operation 单独排期。
 
+### pytest 迁移第三轮（2026-08-16）
+
+**提案：**把第二轮残留在四个混合测试模块中的 46 个模块级 `test_*` 全部纳入
+`unittest.TestCase`，不改断言、三引号字符串或生产源码。转换前先固定全仓测试定义名集合、四文件
+三引号 token 和 pytest 收集清单，转换后再把 unittest 与 pytest 的实际父测试集合做双向差集；同时
+审计参数化、动态生成、收集 hook、非 TestCase 测试类、异步/嵌套测试和非标准文件命名。
+
+**判定：**四文件残留按 `4 + 11 + 27 + 4 = 46` 全部迁移，`grep -cE "^def test_" tests/*.py`
+逐文件计数之和为 0。Probe semantics、Prober 和 Resolver 的剩余方法并入同领域现有 TestCase；为保持
+模块 helper 的作用域和定义顺序，三个类整体移到 helper 之后。OpenAPI 文件已有类只验证仓库合同，
+其余四项验证 draft/runtime 且需要临时目录，因此新建 `OpenApiProberTests`，不混合两类生命周期。
+
+转换前后全仓测试定义名集合均为 1039，缺失和新增名称均为 0；四文件所有显式断言与
+`pytest.raises` 的 AST 差异为 0。唯一三引号 token 位于 `test_resolver.py`，转换前后长度均为 155，
+SHA-256 均为 `253d63666ca27f2a07562fec337efafd60844e097575556a257978341e16f86f`。unittest 与
+pytest 的实际父测试集合均为 1054，双向差集均为空；仓库没有 `conftest.py`、pytest 收集配置或
+`PYTEST_ADDOPTS`，也没有参数化/收集 hook、动态测试、异步/嵌套测试或非 TestCase 测试方法残留。
+
+完整 unittest 为 `1008 + 46 = 1054`，无差额；完整 pytest 为 `1054 passed, 2842 subtests passed`。
+pytest 父测试由 1073 减少 19，可复算为三个参数化函数原有 22 个 case 收敛为 3 个父方法，
+即 `1073 - (22 - 3) = 1054`；22 个 case 全部转为 subTest，所以 subtest 由
+`2820 + 22 = 2842`。quality、compiler、文档测试、CLI help 和 diff check 全部通过。本轮不改产品
+源码、operation、stable 或分析动线，不新增 caller 可恢复错误点；新增错误点 0、新增 A 档 0。
+生产 HTTP 请求 **0 次**。
+
 ### pytest 迁移第二轮（2026-08-16）
 
 **提案：**保留首轮 15 个测试文件与 120 个 `unittest.TestCase` 方法的迁移结果，只修转换造成的

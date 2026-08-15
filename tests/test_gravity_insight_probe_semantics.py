@@ -40,45 +40,6 @@ SENSITIVE_VALUE = "must-never-appear"
 
 
 
-class GravityInsightProbeSemanticsTests(unittest.TestCase):
-    def setUp(self):
-        self._temporary_directory = tempfile.TemporaryDirectory()
-        self.addCleanup(self._temporary_directory.cleanup)
-        self.tmp_path = Path(self._temporary_directory.name)
-
-    def test_no_data_status_is_explicit_empty_and_auditable(self):
-        payload = {"code": 0, "msg": "成功", "extra": {"error": "无数据"}, "data": []}
-        observation = SimpleNamespace(
-            operation_id="example.items.list", purpose="probe", method="POST", path="/read",
-            status_code=200, request_shape={}, payload=payload,
-        )
-
-        assert conclusion(200, payload, None) == "available_empty"
-        assert conclusion(204, None, None) == "available_empty"
-        assert conclusion(204, {}, None) == "available_empty"
-        assert conclusion(200, {**payload, "extra": {"error": "暂无数据"}}, None) == "semantic_error"
-        assert observation_summary(observation)["protocol_status"] == {
-            "classification": "explicit_empty",
-            "code": {"present": True, "value": 0},
-            "msg": {"present": True, "value": "成功"},
-            "extra_error": {"present": True, "value": "无数据"},
-        }
-
-
-    def test_draft_probe_promotes_http_204_to_available_empty(self):
-        source = build_draft(_route(), set())
-        recording = SimpleNamespace(observations=[])
-        discovered = (source, {}, None, SimpleNamespace(status_code=204, payload=None), [])
-        with patch.object(draft_probe, "_discover", return_value=discovered), \
-                patch.object(draft_probe, "relative", side_effect=lambda path: path.as_posix()):
-            result = draft_probe.probe_draft(
-                source, stable_client=object(), runtime=object(), recording=recording,
-                evidence_root=self.tmp_path / "evidence", draft_root=self.tmp_path / "drafts",
-            )
-
-        evidence = json.loads(Path(result["evidence"]).read_text(encoding="utf-8"))
-        assert result["conclusion"] == "available_empty"
-        assert evidence["successful"] is True
 
 
 def _route(platform: str = "tencent") -> dict[str, object]:
@@ -153,176 +114,16 @@ def _exposed_response_fields(projection: dict[str, object]) -> set[str]:
     }
 
 
-def test_sensitive_observation_completes_probe_when_projection_hides_it(
-    tmp_path: Path,
-) -> None:
-    result, source = _probe(tmp_path)
-
-    assert result["conclusion"] == "success"
-    assert result["eligible"] is True
-    assert source["draft"]["probe_evidence"][-1]["successful"] is True
-    assert source["draft"]["probe_evidence"][-1]["method_verified"] is True
-    sensitive = [
-        item
-        for item in source["draft"]["candidate_fields"]
-        if item["privacy_classification"] == "sensitive"
-    ]
-    assert [item["path"] for item in sensitive] == [f"data[].{SENSITIVE_KEY}"]
-    assert SENSITIVE_KEY not in _exposed_response_fields(
-        source["operation"]["response_projection"]
-    )
 
 
-def test_manual_review_remains_blocked_after_successful_transport_probe(
-    tmp_path: Path,
-) -> None:
-    result, source = _probe(tmp_path, platform="bytedance", manual=True)
-
-    assert result["conclusion"] == "success"
-    assert source["draft"]["probe_evidence"][-1]["successful"] is True
-    assert result["eligible"] is False
-    assert "field_review_required" in result["missing"]
-    assert source["draft"]["manual_review_fields"] == ["data[].content"]
 
 
-def test_semantic_error_keeps_successfully_resolved_parent_attribution(
-    tmp_path: Path,
-) -> None:
-    source = build_draft(_route("bytedance"), set())
-    source["operation"]["input_fields"]["advertiser_id"] = {"type": "string"}
-    source["operation"]["required_parent"] = [
-        {
-            "operation_id": "promotion.bytedance.account.list",
-            "input_field": "advertiser_id",
-            "output_path": "data.list[].advertiser_id",
-            "selection": "caller_select",
-        }
-    ]
-    discovery = SimpleNamespace(
-        status_code=200,
-        payload={"code": 2015, "data": None},
-    )
-    parent_summary = {
-        "operation_id": "promotion.bytedance.account.list",
-        "output_path": "data.list[].advertiser_id",
-        "selection": "caller_select",
-        "candidate_count": 1,
-        "status": "resolved",
-    }
-    recording = SimpleNamespace(observations=[])
-    with (
-        patch.object(
-            draft_probe,
-            "_discover",
-            return_value=(source, {}, parent_summary, discovery, []),
-        ),
-        patch.object(draft_probe, "relative", side_effect=lambda path: path.as_posix()),
-    ):
-        result = draft_probe.probe_draft(
-            source,
-            stable_client=object(),
-            runtime=object(),
-            recording=recording,
-            evidence_root=tmp_path / "evidence",
-            draft_root=tmp_path / "drafts",
-        )
-
-    updated = json.loads(
-        (
-            tmp_path
-            / "drafts"
-            / f"{source['operation']['operation_id']}.json"
-        ).read_text(encoding="utf-8")
-    )
-    assert result["conclusion"] == "semantic_error"
-    assert updated["draft"]["probe_evidence"][-1]["successful"] is False
-    assert updated["draft"]["probe_evidence"][-1]["parent_resolved"] is True
 
 
-def test_probe_bounds_frontend_page_size_before_contract_confirmation(
-) -> None:
-    source = build_draft(_route(), set())
-    operation = source["operation"]
-    operation["input_fields"] = {
-        "page": {"type": "integer", "default": 1},
-        "page_size": {"type": "number", "default": 2_000.0},
-    }
-    operation["request"]["query_fields"] = ["page", "page_size"]
-    operation["request"]["defaults"] = {"page": 1, "page_size": 2_000.0}
-    operation["live_probe"]["inputs"] = {"page": 1, "page_size": 2_000.0}
-    payload = {
-        "code": 0,
-        "data": {
-            "list": [{"campaign_id": "campaign-1"}],
-            "page_info": {
-                "page": 1,
-                "page_size": 2_000,
-                "total_page": 1,
-                "total_number": 1,
-            },
-        },
-    }
-    updated, _pagination, _fields, _sketch = draft_probe._observed_contract(
-        source, payload
-    )
-    captured: dict[str, object] = {}
-
-    class _Client:
-        def read(self, operation_id: str, inputs: dict[str, object]) -> dict[str, str]:
-            captured.update({"operation_id": operation_id, "inputs": inputs})
-            return {"status": "success", "schema_fingerprint": "f" * 64}
-
-    recording = SimpleNamespace(
-        observing=lambda *_args: contextlib.nullcontext()
-    )
-    with patch.object(draft_probe, "build_draft_client", return_value=_Client()):
-        status, fingerprint = draft_probe._confirm(
-            updated,
-            {"page": 1, "page_size": 2_000.0},
-            object(),
-            recording,
-            "test-family",
-        )
-
-    assert captured["inputs"] == {"page": 1, "page_size": 100}
-    assert updated["operation"]["input_fields"]["page_size"] == {
-        "type": "integer",
-        "default": 100,
-    }
-    assert updated["operation"]["request"]["defaults"]["page_size"] == 100
-    assert updated["operation"]["live_probe"]["inputs"]["page_size"] == 100
-    assert (status, fingerprint) == ("success", "f" * 64)
 
 
-def test_probe_reuses_verified_pagination_without_more_requests() -> None:
-    source = build_draft(_route(), set())
-    source["operation"]["pagination"] = {
-        "kind": "page_info", "total_page_field": "total_page"
-    }
-    source["draft"]["probe_evidence"] = [
-        {"pagination_verified": True, "path": "old.yaml"}
-    ]
-    verified, detail = draft_probe._verify_pagination(
-        source, {}, object(), object(), "test-family", object()
-    )
-    assert verified is True and detail["verified_from"] == "old.yaml"
 
 
-def test_method_verified_needs_a_2xx_on_the_target_route() -> None:
-    def evidence(*observations: dict[str, object]) -> dict[str, object]:
-        return {
-            "operation_id": "app.project.list", "successful": False,
-            "http": list(observations),
-        }
-
-    target = {"operation_id": "app.project.list", "http_status": 200}
-    rejected = {"operation_id": "app.project.list", "http_status": 405}
-    parent = {"operation_id": "app.list", "http_status": 200}
-
-    assert draft_probe._method_verified(evidence(target)) is True
-    assert draft_probe._method_verified(evidence(rejected)) is False
-    assert draft_probe._method_verified(evidence(parent)) is False
-    assert draft_probe._method_verified(evidence()) is False
 
 
 class _StaticTransport:
@@ -404,105 +205,8 @@ class _ParentProbeTransport:
         return TransportResponse(200, payload, "2026-08-11T00:00:00Z")
 
 
-def test_public_probe_resolves_recursive_declared_parent_and_target_type() -> None:
-    root = Path(__file__).resolve().parents[1]
-    contract_root = root / "src" / "gravity_sdk" / "contracts" / "operations"
-    operation_ids = ("material.album.tree", "material.album.list")
-    metadata = {
-        operation_id: json.loads(
-            (contract_root / f"{operation_id}.json").read_text(encoding="utf-8")
-        )["operation"]
-        for operation_id in operation_ids
-    }
-    manifest_root = root / "src" / "gravity_sdk" / "manifests"
-    compiled = [
-        item
-        for path in manifest_root.glob("*.json")
-        for item in json.loads(path.read_text(encoding="utf-8"))["operations"]
-    ]
-    selected = [
-        item
-        for item in compiled
-        if item["operation_id"] in operation_ids
-    ]
-    operations = load_operation_manifest(
-        {"manifest_version": 1, "operations": selected}
-    )
-    registry = Registry(operations)
-    transport = _ParentProbeTransport()
-    client = GravityInsightClient(
-        registry,
-        ReadExecutor(registry, PolicyEngine(registry), transport),
-        operation_catalog=OperationCatalog(
-            operations,
-            contract_metadata=metadata,
-        ),
-    )
-
-    result = client.probe("material.album.list")
-
-    assert result["status"] == "success"
-    assert [call[0] for call in transport.calls] == [
-        "material.album.tree",
-        "material.album.list",
-    ]
-    assert transport.calls[1][1]["album_id"] == "17"
 
 
-def test_public_probe_reuses_one_parent_envelope_for_multiple_fields() -> None:
-    class ParentClient:
-        def __init__(self) -> None:
-            self.calls = 0
-            fields = {
-                name: SimpleNamespace(type="integer", item_type=None)
-                for name in ("advertiser_id", "project_id")
-            }
-            self._registry = SimpleNamespace(
-                get=lambda _operation_id: SimpleNamespace(fields=fields)
-            )
-
-        def describe(self, _operation_id: str) -> dict[str, object]:
-            return {
-                "required_parent": [
-                    {
-                        "operation_id": "promotion.bytedance.project_filter.list",
-                        "output_path": "data.list[].advertiser_id",
-                        "selection": "caller_select",
-                        "target_input": "advertiser_id",
-                    },
-                    {
-                        "operation_id": "promotion.bytedance.project_filter.list",
-                        "output_path": "data.list[].project_id",
-                        "selection": "caller_select",
-                        "target_input": "project_id",
-                    },
-                ]
-            }
-
-        def probe(self, _operation_id: str) -> dict[str, object]:
-            self.calls += 1
-            if self.calls > 1:
-                raise AssertionError("shared parent must be probed once")
-            return {
-                "data": {
-                    "list": [
-                        {"advertiser_id": "101", "project_id": "202"}
-                    ]
-                }
-            }
-
-    client = ParentClient()
-    resolved = resolve_probe_inputs(
-        client,
-        {
-            "advertiser_id": "$parent:advertiser_id",
-            "project_id": "$parent:project_id",
-        },
-        operation_id="material.bytedance.project_material.list",
-    )
-
-    assert resolved == {"advertiser_id": 101, "project_id": 202}
-    assert client.calls == 1
 
 
 def _surface_client() -> tuple[
@@ -578,40 +282,6 @@ def _surface_client() -> tuple[
     return client, projection, safe_total
 
 
-def test_unknown_field_value_is_hidden_while_its_drift_path_is_audited() -> None:
-    client, projection, safe_total = _surface_client()
-    assert SENSITIVE_KEY not in _exposed_response_fields(projection)
-    assert SENSITIVE_VALUE not in json.dumps(projection, sort_keys=True)
-
-    read_result = client.read("report.company_amount.query", {})
-    rendered_read = json.dumps(read_result, sort_keys=True)
-    assert SENSITIVE_VALUE not in rendered_read
-    assert SENSITIVE_KEY not in json.dumps(read_result["data"], sort_keys=True)
-    assert {
-        item["path"] for item in read_result["result_audit"]["response_drift"]["fields"]
-    } >= {f"/data/list/*/{SENSITIVE_KEY}", f"/data/total/*/{SENSITIVE_KEY}"}
-    assert read_result["data"] == {
-        "list": [{"ad_count": 3, "date": "2026-08-08"}],
-        "total": [safe_total],
-    }
-
-    described = client.describe("report.company_amount.query")
-    assert SENSITIVE_KEY not in _exposed_response_fields(
-        described["response_projection"]
-    )
-    assert SENSITIVE_VALUE not in json.dumps(described, sort_keys=True)
-
-    stdout = io.StringIO()
-    with (
-        patch("gravity_sdk.read_cli.runtime.build_client", return_value=client),
-        contextlib.redirect_stdout(stdout),
-    ):
-        assert cli.main(["read", "report.company_amount.query"]) == 0
-    rendered_cli = stdout.getvalue()
-    assert SENSITIVE_VALUE not in rendered_cli
-    cli_result = json.loads(rendered_cli)
-    assert SENSITIVE_KEY not in json.dumps(cli_result["data"], sort_keys=True)
-    assert "response_drift" in cli_result["result_audit"]
 
 
 def _legacy_evidence(source: dict[str, object], payload: dict[str, object]) -> dict[str, object]:
@@ -645,57 +315,6 @@ def _legacy_evidence(source: dict[str, object], payload: dict[str, object]) -> d
     }
 
 
-def test_offline_reevaluation_keeps_unverified_pagination_out_of_stable(
-    tmp_path: Path,
-) -> None:
-    draft_root = tmp_path / "drafts"
-    operation_root = tmp_path / "operations"
-    evidence_root = tmp_path / "evidence"
-    source = build_draft(_route(), set())
-    payload = {
-        "code": 0,
-        "data": {
-            "list": [{"campaign_id": "campaign-1", SENSITIVE_KEY: SENSITIVE_VALUE}],
-            "page_info": {"page": 1, "page_size": 20, "total_page": 1},
-        },
-    }
-    fields = candidate_fields(response_schema_sketch(payload))
-    source["operation"]["response_projection"] = build_projection(payload, fields)
-    source["operation"]["privacy_policy"]["classification"] = "user_level"
-    source["draft"]["candidate_fields"] = fields
-    evidence = _legacy_evidence(source, payload)
-    evidence_file = evidence_root / "legacy_paginated.yaml"
-    _write_json(evidence_file, evidence)
-    source["draft"]["probe_evidence"] = [
-        {
-            "path": evidence_file.name,
-            "probed_at": evidence["probed_at"],
-            "conclusion": "privacy_review_required",
-            "successful": False,
-            "pagination_verified": False,
-            "raw_schema_fingerprint": evidence["raw_schema_fingerprint"],
-            "projected_schema_fingerprint": None,
-        }
-    ]
-    operation_id = source["operation"]["operation_id"]
-    _write_json(draft_root / f"{operation_id}.json", source)
-
-    result = reevaluate_drafts(
-        draft_root=draft_root,
-        operation_root=operation_root,
-        evidence_root=evidence_root,
-        promote=False,
-        compile_products=False,
-    )
-
-    assert result["rejected"] == []
-    assert result["reevaluated"][0]["eligible"] is False
-    assert "pagination_unverified" in result["reevaluated"][0]["missing"]
-    updated = json.loads(
-        (draft_root / f"{operation_id}.json").read_text(encoding="utf-8")
-    )
-    assert updated["draft"]["probe_evidence"][-1]["successful"] is True
-    assert updated["draft"]["probe_evidence"][-1]["pagination_verified"] is False
 
 
 def _legacy_draft(
@@ -736,39 +355,425 @@ def _legacy_draft(
     return operation_id
 
 
-def test_offline_reevaluation_only_unlocks_classified_and_hidden_case(
-    tmp_path: Path,
-) -> None:
-    draft_root = tmp_path / "drafts"
-    operation_root = tmp_path / "operations"
-    evidence_root = tmp_path / "evidence"
-    allowed_id = _legacy_draft(
-        draft_root, evidence_root, platform="tencent", manual=False
-    )
-    blocked_id = _legacy_draft(
-        draft_root, evidence_root, platform="bytedance", manual=True
-    )
+class GravityInsightProbeSemanticsTests(unittest.TestCase):
+    def setUp(self):
+        self._temporary_directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self._temporary_directory.cleanup)
+        self.tmp_path = Path(self._temporary_directory.name)
 
-    result = reevaluate_drafts(
-        draft_root=draft_root,
-        operation_root=operation_root,
-        evidence_root=evidence_root,
-        promote=False,
-        compile_products=False,
-    )
+    def test_no_data_status_is_explicit_empty_and_auditable(self):
+        payload = {"code": 0, "msg": "成功", "extra": {"error": "无数据"}, "data": []}
+        observation = SimpleNamespace(
+            operation_id="example.items.list", purpose="probe", method="POST", path="/read",
+            status_code=200, request_shape={}, payload=payload,
+        )
 
-    assert result["network_called"] is False
-    assert result["drafts_examined"] == 2
-    assert result["manual_review_blocked"] == 1
-    assert (result["stable_before"], result["stable_after"]) == (0, 0)
-    assert [item["operation_id"] for item in result["reevaluated"]] == [allowed_id]
-    assert result["reevaluated"][0]["eligible"] is True
-    rejection = {item["operation_id"]: item["reasons"] for item in result["rejected"]}
-    assert "manual_review_required" in rejection[blocked_id]
-    allowed = json.loads(
-        (draft_root / f"{allowed_id}.json").read_text(encoding="utf-8")
-    )
-    assert allowed["draft"]["probe_evidence"][-1]["successful"] is True
-    derived = Path(result["reevaluated"][0]["derived_evidence"])
-    assert derived.suffix == ".yaml"
-    assert json.loads(derived.read_text(encoding="utf-8"))["offline_reevaluation"] is True
+        assert conclusion(200, payload, None) == "available_empty"
+        assert conclusion(204, None, None) == "available_empty"
+        assert conclusion(204, {}, None) == "available_empty"
+        assert conclusion(200, {**payload, "extra": {"error": "暂无数据"}}, None) == "semantic_error"
+        assert observation_summary(observation)["protocol_status"] == {
+            "classification": "explicit_empty",
+            "code": {"present": True, "value": 0},
+            "msg": {"present": True, "value": "成功"},
+            "extra_error": {"present": True, "value": "无数据"},
+        }
+
+
+    def test_draft_probe_promotes_http_204_to_available_empty(self):
+        source = build_draft(_route(), set())
+        recording = SimpleNamespace(observations=[])
+        discovered = (source, {}, None, SimpleNamespace(status_code=204, payload=None), [])
+        with patch.object(draft_probe, "_discover", return_value=discovered), \
+                patch.object(draft_probe, "relative", side_effect=lambda path: path.as_posix()):
+            result = draft_probe.probe_draft(
+                source, stable_client=object(), runtime=object(), recording=recording,
+                evidence_root=self.tmp_path / "evidence", draft_root=self.tmp_path / "drafts",
+            )
+
+        evidence = json.loads(Path(result["evidence"]).read_text(encoding="utf-8"))
+        assert result["conclusion"] == "available_empty"
+        assert evidence["successful"] is True
+
+    def test_sensitive_observation_completes_probe_when_projection_hides_it(self) -> None:
+        tmp_path = self.tmp_path
+        result, source = _probe(tmp_path)
+
+        assert result["conclusion"] == "success"
+        assert result["eligible"] is True
+        assert source["draft"]["probe_evidence"][-1]["successful"] is True
+        assert source["draft"]["probe_evidence"][-1]["method_verified"] is True
+        sensitive = [
+            item
+            for item in source["draft"]["candidate_fields"]
+            if item["privacy_classification"] == "sensitive"
+        ]
+        assert [item["path"] for item in sensitive] == [f"data[].{SENSITIVE_KEY}"]
+        assert SENSITIVE_KEY not in _exposed_response_fields(
+            source["operation"]["response_projection"]
+        )
+
+    def test_manual_review_remains_blocked_after_successful_transport_probe(self) -> None:
+        tmp_path = self.tmp_path
+        result, source = _probe(tmp_path, platform="bytedance", manual=True)
+
+        assert result["conclusion"] == "success"
+        assert source["draft"]["probe_evidence"][-1]["successful"] is True
+        assert result["eligible"] is False
+        assert "field_review_required" in result["missing"]
+        assert source["draft"]["manual_review_fields"] == ["data[].content"]
+
+    def test_semantic_error_keeps_successfully_resolved_parent_attribution(self) -> None:
+        tmp_path = self.tmp_path
+        source = build_draft(_route("bytedance"), set())
+        source["operation"]["input_fields"]["advertiser_id"] = {"type": "string"}
+        source["operation"]["required_parent"] = [
+            {
+                "operation_id": "promotion.bytedance.account.list",
+                "input_field": "advertiser_id",
+                "output_path": "data.list[].advertiser_id",
+                "selection": "caller_select",
+            }
+        ]
+        discovery = SimpleNamespace(
+            status_code=200,
+            payload={"code": 2015, "data": None},
+        )
+        parent_summary = {
+            "operation_id": "promotion.bytedance.account.list",
+            "output_path": "data.list[].advertiser_id",
+            "selection": "caller_select",
+            "candidate_count": 1,
+            "status": "resolved",
+        }
+        recording = SimpleNamespace(observations=[])
+        with (
+            patch.object(
+                draft_probe,
+                "_discover",
+                return_value=(source, {}, parent_summary, discovery, []),
+            ),
+            patch.object(draft_probe, "relative", side_effect=lambda path: path.as_posix()),
+        ):
+            result = draft_probe.probe_draft(
+                source,
+                stable_client=object(),
+                runtime=object(),
+                recording=recording,
+                evidence_root=tmp_path / "evidence",
+                draft_root=tmp_path / "drafts",
+            )
+
+        updated = json.loads(
+            (
+                tmp_path
+                / "drafts"
+                / f"{source['operation']['operation_id']}.json"
+            ).read_text(encoding="utf-8")
+        )
+        assert result["conclusion"] == "semantic_error"
+        assert updated["draft"]["probe_evidence"][-1]["successful"] is False
+        assert updated["draft"]["probe_evidence"][-1]["parent_resolved"] is True
+
+    def test_probe_bounds_frontend_page_size_before_contract_confirmation(self) -> None:
+        source = build_draft(_route(), set())
+        operation = source["operation"]
+        operation["input_fields"] = {
+            "page": {"type": "integer", "default": 1},
+            "page_size": {"type": "number", "default": 2_000.0},
+        }
+        operation["request"]["query_fields"] = ["page", "page_size"]
+        operation["request"]["defaults"] = {"page": 1, "page_size": 2_000.0}
+        operation["live_probe"]["inputs"] = {"page": 1, "page_size": 2_000.0}
+        payload = {
+            "code": 0,
+            "data": {
+                "list": [{"campaign_id": "campaign-1"}],
+                "page_info": {
+                    "page": 1,
+                    "page_size": 2_000,
+                    "total_page": 1,
+                    "total_number": 1,
+                },
+            },
+        }
+        updated, _pagination, _fields, _sketch = draft_probe._observed_contract(
+            source, payload
+        )
+        captured: dict[str, object] = {}
+
+        class _Client:
+            def read(self, operation_id: str, inputs: dict[str, object]) -> dict[str, str]:
+                captured.update({"operation_id": operation_id, "inputs": inputs})
+                return {"status": "success", "schema_fingerprint": "f" * 64}
+
+        recording = SimpleNamespace(
+            observing=lambda *_args: contextlib.nullcontext()
+        )
+        with patch.object(draft_probe, "build_draft_client", return_value=_Client()):
+            status, fingerprint = draft_probe._confirm(
+                updated,
+                {"page": 1, "page_size": 2_000.0},
+                object(),
+                recording,
+                "test-family",
+            )
+
+        assert captured["inputs"] == {"page": 1, "page_size": 100}
+        assert updated["operation"]["input_fields"]["page_size"] == {
+            "type": "integer",
+            "default": 100,
+        }
+        assert updated["operation"]["request"]["defaults"]["page_size"] == 100
+        assert updated["operation"]["live_probe"]["inputs"]["page_size"] == 100
+        assert (status, fingerprint) == ("success", "f" * 64)
+
+    def test_probe_reuses_verified_pagination_without_more_requests(self) -> None:
+        source = build_draft(_route(), set())
+        source["operation"]["pagination"] = {
+            "kind": "page_info", "total_page_field": "total_page"
+        }
+        source["draft"]["probe_evidence"] = [
+            {"pagination_verified": True, "path": "old.yaml"}
+        ]
+        verified, detail = draft_probe._verify_pagination(
+            source, {}, object(), object(), "test-family", object()
+        )
+        assert verified is True and detail["verified_from"] == "old.yaml"
+
+    def test_method_verified_needs_a_2xx_on_the_target_route(self) -> None:
+        def evidence(*observations: dict[str, object]) -> dict[str, object]:
+            return {
+                "operation_id": "app.project.list", "successful": False,
+                "http": list(observations),
+            }
+
+        target = {"operation_id": "app.project.list", "http_status": 200}
+        rejected = {"operation_id": "app.project.list", "http_status": 405}
+        parent = {"operation_id": "app.list", "http_status": 200}
+
+        assert draft_probe._method_verified(evidence(target)) is True
+        assert draft_probe._method_verified(evidence(rejected)) is False
+        assert draft_probe._method_verified(evidence(parent)) is False
+        assert draft_probe._method_verified(evidence()) is False
+
+    def test_public_probe_resolves_recursive_declared_parent_and_target_type(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        contract_root = root / "src" / "gravity_sdk" / "contracts" / "operations"
+        operation_ids = ("material.album.tree", "material.album.list")
+        metadata = {
+            operation_id: json.loads(
+                (contract_root / f"{operation_id}.json").read_text(encoding="utf-8")
+            )["operation"]
+            for operation_id in operation_ids
+        }
+        manifest_root = root / "src" / "gravity_sdk" / "manifests"
+        compiled = [
+            item
+            for path in manifest_root.glob("*.json")
+            for item in json.loads(path.read_text(encoding="utf-8"))["operations"]
+        ]
+        selected = [
+            item
+            for item in compiled
+            if item["operation_id"] in operation_ids
+        ]
+        operations = load_operation_manifest(
+            {"manifest_version": 1, "operations": selected}
+        )
+        registry = Registry(operations)
+        transport = _ParentProbeTransport()
+        client = GravityInsightClient(
+            registry,
+            ReadExecutor(registry, PolicyEngine(registry), transport),
+            operation_catalog=OperationCatalog(
+                operations,
+                contract_metadata=metadata,
+            ),
+        )
+
+        result = client.probe("material.album.list")
+
+        assert result["status"] == "success"
+        assert [call[0] for call in transport.calls] == [
+            "material.album.tree",
+            "material.album.list",
+        ]
+        assert transport.calls[1][1]["album_id"] == "17"
+
+    def test_public_probe_reuses_one_parent_envelope_for_multiple_fields(self) -> None:
+        class ParentClient:
+            def __init__(self) -> None:
+                self.calls = 0
+                fields = {
+                    name: SimpleNamespace(type="integer", item_type=None)
+                    for name in ("advertiser_id", "project_id")
+                }
+                self._registry = SimpleNamespace(
+                    get=lambda _operation_id: SimpleNamespace(fields=fields)
+                )
+
+            def describe(self, _operation_id: str) -> dict[str, object]:
+                return {
+                    "required_parent": [
+                        {
+                            "operation_id": "promotion.bytedance.project_filter.list",
+                            "output_path": "data.list[].advertiser_id",
+                            "selection": "caller_select",
+                            "target_input": "advertiser_id",
+                        },
+                        {
+                            "operation_id": "promotion.bytedance.project_filter.list",
+                            "output_path": "data.list[].project_id",
+                            "selection": "caller_select",
+                            "target_input": "project_id",
+                        },
+                    ]
+                }
+
+            def probe(self, _operation_id: str) -> dict[str, object]:
+                self.calls += 1
+                if self.calls > 1:
+                    raise AssertionError("shared parent must be probed once")
+                return {
+                    "data": {
+                        "list": [
+                            {"advertiser_id": "101", "project_id": "202"}
+                        ]
+                    }
+                }
+
+        client = ParentClient()
+        resolved = resolve_probe_inputs(
+            client,
+            {
+                "advertiser_id": "$parent:advertiser_id",
+                "project_id": "$parent:project_id",
+            },
+            operation_id="material.bytedance.project_material.list",
+        )
+
+        assert resolved == {"advertiser_id": 101, "project_id": 202}
+        assert client.calls == 1
+
+    def test_unknown_field_value_is_hidden_while_its_drift_path_is_audited(self) -> None:
+        client, projection, safe_total = _surface_client()
+        assert SENSITIVE_KEY not in _exposed_response_fields(projection)
+        assert SENSITIVE_VALUE not in json.dumps(projection, sort_keys=True)
+
+        read_result = client.read("report.company_amount.query", {})
+        rendered_read = json.dumps(read_result, sort_keys=True)
+        assert SENSITIVE_VALUE not in rendered_read
+        assert SENSITIVE_KEY not in json.dumps(read_result["data"], sort_keys=True)
+        assert {
+            item["path"] for item in read_result["result_audit"]["response_drift"]["fields"]
+        } >= {f"/data/list/*/{SENSITIVE_KEY}", f"/data/total/*/{SENSITIVE_KEY}"}
+        assert read_result["data"] == {
+            "list": [{"ad_count": 3, "date": "2026-08-08"}],
+            "total": [safe_total],
+        }
+
+        described = client.describe("report.company_amount.query")
+        assert SENSITIVE_KEY not in _exposed_response_fields(
+            described["response_projection"]
+        )
+        assert SENSITIVE_VALUE not in json.dumps(described, sort_keys=True)
+
+        stdout = io.StringIO()
+        with (
+            patch("gravity_sdk.read_cli.runtime.build_client", return_value=client),
+            contextlib.redirect_stdout(stdout),
+        ):
+            assert cli.main(["read", "report.company_amount.query"]) == 0
+        rendered_cli = stdout.getvalue()
+        assert SENSITIVE_VALUE not in rendered_cli
+        cli_result = json.loads(rendered_cli)
+        assert SENSITIVE_KEY not in json.dumps(cli_result["data"], sort_keys=True)
+        assert "response_drift" in cli_result["result_audit"]
+
+    def test_offline_reevaluation_keeps_unverified_pagination_out_of_stable(self) -> None:
+        tmp_path = self.tmp_path
+        draft_root = tmp_path / "drafts"
+        operation_root = tmp_path / "operations"
+        evidence_root = tmp_path / "evidence"
+        source = build_draft(_route(), set())
+        payload = {
+            "code": 0,
+            "data": {
+                "list": [{"campaign_id": "campaign-1", SENSITIVE_KEY: SENSITIVE_VALUE}],
+                "page_info": {"page": 1, "page_size": 20, "total_page": 1},
+            },
+        }
+        fields = candidate_fields(response_schema_sketch(payload))
+        source["operation"]["response_projection"] = build_projection(payload, fields)
+        source["operation"]["privacy_policy"]["classification"] = "user_level"
+        source["draft"]["candidate_fields"] = fields
+        evidence = _legacy_evidence(source, payload)
+        evidence_file = evidence_root / "legacy_paginated.yaml"
+        _write_json(evidence_file, evidence)
+        source["draft"]["probe_evidence"] = [
+            {
+                "path": evidence_file.name,
+                "probed_at": evidence["probed_at"],
+                "conclusion": "privacy_review_required",
+                "successful": False,
+                "pagination_verified": False,
+                "raw_schema_fingerprint": evidence["raw_schema_fingerprint"],
+                "projected_schema_fingerprint": None,
+            }
+        ]
+        operation_id = source["operation"]["operation_id"]
+        _write_json(draft_root / f"{operation_id}.json", source)
+
+        result = reevaluate_drafts(
+            draft_root=draft_root,
+            operation_root=operation_root,
+            evidence_root=evidence_root,
+            promote=False,
+            compile_products=False,
+        )
+
+        assert result["rejected"] == []
+        assert result["reevaluated"][0]["eligible"] is False
+        assert "pagination_unverified" in result["reevaluated"][0]["missing"]
+        updated = json.loads(
+            (draft_root / f"{operation_id}.json").read_text(encoding="utf-8")
+        )
+        assert updated["draft"]["probe_evidence"][-1]["successful"] is True
+        assert updated["draft"]["probe_evidence"][-1]["pagination_verified"] is False
+
+    def test_offline_reevaluation_only_unlocks_classified_and_hidden_case(self) -> None:
+        tmp_path = self.tmp_path
+        draft_root = tmp_path / "drafts"
+        operation_root = tmp_path / "operations"
+        evidence_root = tmp_path / "evidence"
+        allowed_id = _legacy_draft(
+            draft_root, evidence_root, platform="tencent", manual=False
+        )
+        blocked_id = _legacy_draft(
+            draft_root, evidence_root, platform="bytedance", manual=True
+        )
+
+        result = reevaluate_drafts(
+            draft_root=draft_root,
+            operation_root=operation_root,
+            evidence_root=evidence_root,
+            promote=False,
+            compile_products=False,
+        )
+
+        assert result["network_called"] is False
+        assert result["drafts_examined"] == 2
+        assert result["manual_review_blocked"] == 1
+        assert (result["stable_before"], result["stable_after"]) == (0, 0)
+        assert [item["operation_id"] for item in result["reevaluated"]] == [allowed_id]
+        assert result["reevaluated"][0]["eligible"] is True
+        rejection = {item["operation_id"]: item["reasons"] for item in result["rejected"]}
+        assert "manual_review_required" in rejection[blocked_id]
+        allowed = json.loads(
+            (draft_root / f"{allowed_id}.json").read_text(encoding="utf-8")
+        )
+        assert allowed["draft"]["probe_evidence"][-1]["successful"] is True
+        derived = Path(result["reevaluated"][0]["derived_evidence"])
+        assert derived.suffix == ".yaml"
+        assert json.loads(derived.read_text(encoding="utf-8"))["offline_reevaluation"] is True
