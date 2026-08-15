@@ -3,15 +3,27 @@
   "draft": {
     "blockers": [
       {
-        "code": "request_parameters_required",
-        "detail": "The observed request reached a semantic error; required request fields remain unknown.",
-        "evidence": "evidence/probe/20260808T232934Z_report.report_monetization_report_custom_get.calc_total.yaml",
+        "code": "request_value_domain_unverified",
+        "detail": "The hash-matched bundle proves the complete eight-field builder, defaults and omission rules, but metric/dimension value domains and server-required subsets are not published.",
+        "evidence": "src/gravity_sdk/census/data/bundle-snapshot.json",
         "status": "open"
       },
       {
         "code": "response_schema_unverified",
-        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
-        "evidence": "src/gravity_sdk/census/data/route-response-fields.json#/routes/204",
+        "detail": "The one allowed probe observed data.list[] as an object but no item key; no D28 result field is registered or approved for exposure.",
+        "evidence": "evidence/probe/20260815T112326Z_report.report_monetization_report_custom_get.calc_total.yaml",
+        "status": "open"
+      },
+      {
+        "code": "privacy_projection_approval_required",
+        "detail": "D27 privacy approval does not extend to this operation; all unregistered result keys remain omitted pending independent review.",
+        "evidence": "docs/roadmap.md#d28-变现聚合合同取证2026-08-15",
+        "status": "open"
+      },
+      {
+        "code": "field_review_required",
+        "detail": "The observed data.list container is retained for manual review and no list item field is approved.",
+        "evidence": "evidence/probe/20260815T112326Z_report.report_monetization_report_custom_get.calc_total.yaml",
         "status": "open"
       }
     ],
@@ -20,10 +32,10 @@
         "classification_reason": "frontend_static_consumer_unreviewed",
         "expose": false,
         "path": "data.list",
-        "presence": "unknown",
+        "presence": "observed",
         "privacy_classification": "manual_review",
         "types": [
-          "unknown"
+          "array"
         ]
       }
     ],
@@ -92,12 +104,25 @@
         "projected_schema_fingerprint": null,
         "raw_schema_fingerprint": "c9cb314c525f51e13190e17f7775ea5ec59fc9b7593d7df025c728c85fb222cc",
         "successful": false
+      },
+      {
+        "conclusion": "inconclusive_shape_only",
+        "method_verified": true,
+        "pagination_verified": true,
+        "parent_resolved": true,
+        "path": "evidence/probe/20260815T112326Z_report.report_monetization_report_custom_get.calc_total.yaml",
+        "probed_at": "2026-08-15T11:23:26Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "6d57dc755d2469b2a4f0a93e64b556528187f4ec988ae574d62682f42b2ce278",
+        "successful": false
       }
     ],
     "promotion_gate": {
       "eligible": false,
       "missing": [
-        "request_parameters_required",
+        "field_review_required",
+        "privacy_projection_approval_required",
+        "request_value_domain_unverified",
         "response_projection",
         "response_schema_unverified",
         "successful_probe"
@@ -264,62 +289,88 @@
   "operation": {
     "action": "calc_total",
     "auth_profile": "gravity_authorization",
-    "block_reason": "draft blockers: request_parameters_required, response_schema_unverified",
+    "block_reason": "draft blockers: request_value_domain_unverified, response_schema_unverified, privacy_projection_approval_required, field_review_required",
     "contract_version": 1,
-    "description": "Draft catalog entry inferred from census route POST /report/api/v3/monetization_report/custom_get/calc_total/; request binding, pagination, and response projection remain unverified.",
+    "description": "变现多维报表的条件过滤/透视合计重算；hash-matched bundle 已恢复完整请求 builder 与本地消费，响应 item 字段和独立隐私投影仍未成立。",
     "domain": "report",
     "effect": "read",
     "examples": [],
     "executable": false,
     "input_fields": {
       "custom_metrics_list": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "default": [],
+        "description": "Builder 恒发自定义指标 id 数组；空时 []，值域仍未证明。",
+        "item_type": "string",
+        "max_items": 500,
         "type": "array"
       },
       "data_conf": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "default": {
+          "asa_time_zone": "UTC",
+          "decimal_point": 2,
+          "minigame_pay_shared_ratio": 100,
+          "minigame_pay_shared_ratio_ios": 100,
+          "return_all_metrics": true
+        },
+        "description": "恒发且只由 decimal_point、两个分成比例、return_all_metrics=true、asa_time_zone 构成；不含 accumulate。",
         "type": "object"
       },
       "data_dims": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "default": [],
+        "description": "恒发非时间维度字符串数组；空时 []。",
+        "item_type": "string",
+        "max_items": 100,
         "type": "array"
       },
       "data_list": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "description": "恒发二维行组数组；平表为 [clientFilteredRows]，累计/透视按 bundle 规则生成分组，不发 null。",
+        "item_type": "any",
+        "min_items": 1,
         "type": "array"
       },
       "date_list": {
-        "description": "Probe candidate aligned with the verified stable report request pattern; not a server-required declaration.",
+        "description": "正常挂载发 YYYY-MM-DD 两元素数组；form ref 缺失时 undefined 并从 wire 省略。",
         "item_type": "string",
+        "max_items": 2,
+        "min_items": 2,
         "type": "array"
       },
       "metrics_list": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "description": "Builder 恒发普通指标 name 数组；具体值域和模板默认项未证明。",
+        "item_type": "string",
+        "max_items": 500,
         "type": "array"
       },
       "relate_dims": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
-        "type": "any"
+        "description": "仅有 related dimensions 时发父维度到关联维度数组的对象；否则 undefined 并省略，不发 [] 或 null。",
+        "type": "object"
       },
       "time_dims": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
-        "type": "any"
+        "default": "total",
+        "description": "从 hour/day/week/month 中取首个已选时间维度，否则 total；恒发字符串。",
+        "enum": ["hour", "day", "week", "month", "total"],
+        "type": "string"
       }
     },
     "live_probe": {
       "enabled": false,
       "inputs": {
         "custom_metrics_list": [],
-        "data_conf": {},
-        "data_dims": [],
-        "data_list": [],
+        "data_conf": {
+          "asa_time_zone": "UTC",
+          "decimal_point": 2,
+          "minigame_pay_shared_ratio": 100,
+          "minigame_pay_shared_ratio_ios": 100,
+          "return_all_metrics": true
+        },
+        "data_dims": ["monetization_platform", "ad_unit_id"],
+        "data_list": [[]],
         "date_list": [
           "$today",
           "$today"
         ],
-        "metrics_list": [],
-        "relate_dims": 0,
-        "time_dims": 3
+        "metrics_list": ["reporting_ad_revenue"],
+        "time_dims": "day"
       }
     },
     "operation_id": "report.report_monetization_report_custom_get.calc_total",
@@ -334,7 +385,7 @@
     "path_template": "/report/api/v3/monetization_report/custom_get/calc_total/",
     "platform": null,
     "privacy_policy": {
-      "classification": "configuration",
+      "classification": "unverified",
       "redact_fields": [
         "authorization",
         "access_token",
@@ -410,6 +461,35 @@
       "data_keys": [],
       "dynamic_item_fields": [],
       "item_keys": [],
+      "known_omitted_item_keys": [
+        "ClientID",
+        "Name",
+        "TraceID",
+        "WXOpenID",
+        "android_id",
+        "client_id",
+        "device_id",
+        "device_info",
+        "email",
+        "event_user_id",
+        "idfa",
+        "idfv",
+        "imei",
+        "ip",
+        "ip_address",
+        "mobile",
+        "oaid",
+        "open_id",
+        "openid",
+        "operator",
+        "operator_id",
+        "operator_name",
+        "phone",
+        "trace_id",
+        "uid",
+        "unionid",
+        "user_id"
+      ],
       "required_data_keys": []
     },
     "semantic_error_rules": [],

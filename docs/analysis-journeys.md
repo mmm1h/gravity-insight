@@ -14,6 +14,8 @@
 `43 = 19 / 9 / 15`，本轮 9 条部分闭环由上述在线输入解析全部转入已闭环，另新增 4 条产品动线
 （标题包、自定义人群、B 站账户表现、巨量广告主 profile）全部闭环；缺失新增 1 条（Issue 19 精确素材预览/下载）。
 **部分闭环归零不等于没有欠账**——16 条完全缺失里多数是证据或隐私边界阻塞，逐行有记录。
+本轮 D28 只恢复 draft 合同证据、没有新增产品面或 operation，故台账复算为
+`48 = 32/0/16 → D28 +0/-0 → 48 = 32/0/16`。
 另保留 2 条兼容/维护便利面供边界审计，
 但不计产品动线。旧快照 `21/14/6` 没有逐条证据，不能复算；本台账不还原已丢失的原始 41 条定义。
 D23/D29/D30 只剩依赖箭头、语义不可验证，故保留在此说明而不强挂到新动线。候选
@@ -67,7 +69,7 @@ D23/D29/D30 只剩依赖箭头、语义不可验证，故保留在此说明而�
 | 查找可用的媒体报表 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | **明确空 / item schema 阻塞**：`GeneralImportAd` bundle 已证明列表装载、分页和响应消费；`app_id` 来自 `AppSelect`、`ad_platform` 来自有限平台选项，空选择按前端语义省略，精确 read confirmation 已登记。本轮当天、无筛选、`page_size=1` 的唯一请求 HTTP 200、明确空；既有分页证据保留，item schema 未成立。下一步只在有媒体报表的租户复用同形状，不猜 App 或平台值。 |
 | 查找当前账号可读的 App 项目 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | **推进但未闭环**：hash-matched appManage 控制流证明 `app.project.list` 只装载项目表和分页，create/delete 走独立 mutation；确认记录已追加。最小第一页实际 1 次 POST，HTTP 200 明确空，新 receipt 为 `method_verified=true`、`pagination_verified=true`，因此可确定当前账号没有可读项目；item schema、成功非空与四个产品面仍缺。下一步由有可读项目的租户做 1 次 `page=1/page_size=1` probe，再审查 item 投影。 |
 | 查看 App 的 OneLink 与公开信息绑定 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | **推进但未闭环**：OneLink 仍由既有 GET 父链证明当前账号明确空。appManage 进一步证明 app-info 的 `url` 来自调用方输入的 Google Play/App Store 下载链接，并非 OneLink 项；公开 URL 的 2 次最小 GET 均 HTTP 200，已恢复 `app_id/error/icon_url/image_data/name/package_name/platform` schema，安全投影只保留前述非图像业务字段，但结果为 error-shaped `inconclusive`，未获成功数据。下一步需要调用方提供一条已知能被 Gravity 抓取的公开商店 URL；只做 1 次读取，非空后再确认投影，不能用当前 OneLink 空样本补绑定。 |
-| 按平台、广告位和日期汇总变现结果（D28） | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | **仍然阻塞**：csj/tobid bundle 证明 `app.monetization_app.list` 是账户行下的平台应用关联目录读取，固定平台为 `csj`/`tobid`，字段只有平台应用、应用类型、包名和 Gravity App 关联；同步/关联/删除另走 mutation。它不含日期、广告位或结果指标，不能实现 D28，故本轮确认其读语义但目标 probe 为 0 次。下一步改为取证真正的 `/report/api/v3/monetization_report/custom_get/` 及 `calc_total/` 请求/响应合同；D27 隐私批准不外延，D28 字段须独立审查。 |
+| 按平台、广告位和日期汇总变现结果（D28） | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | **请求/读语义已证明，响应合同仍阻塞**：hash-matched `NewReportCenter` bundle 已逐字段恢复 `custom_get` 九字段和 `calc_total` 八字段 builder、条件省略、响应消费及纯客户端分页；两条精确 POST read confirmation 已登记。生产共 3 请求：`app.list` 与主 route 的 status/schema 因 one-shot 脚本在后续本地校验失败前未 flush 而未知，按纪律不补发；`calc_total` 唯一请求 HTTP 200，只观察到无字段的 `data.list[]:object`，raw fingerprint 已登记。缺主 route 值无关 shape、两 route 真实非空 item/total 字段、指标/维度值域和独立隐私批准；动态字段及人/设备标识保持 `known_omitted`。合同不成立，未实现五面。 |
 | 查询归因表现聚合（D35） | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | 前端 body 已恢复，但最小请求仍 semantic error；缺服务端必填、值域和成功/明确空证据。 |
 | 下钻单用户归因明细（F40） | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | D35 未成立；还缺批准的测试级标识来源、请求绑定、分页、响应和隐私边界。 |
 | 按表名或 App 查询数据表当前 schema、字段和版本（F41） | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | list 为空且无可信表名/App 来源；detail/version 父链、`table_id` 类型和“当前版本”语义未证实。 |

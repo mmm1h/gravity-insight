@@ -1,0 +1,73 @@
+{
+  "conclusion": "inconclusive_shape_only",
+  "http": [
+    {
+      "http_status": 200,
+      "method": "POST",
+      "operation_id": "report.report_monetization_report_custom_get.calc_total",
+      "path": "/report/api/v3/monetization_report/custom_get/calc_total/",
+      "purpose": "single_observation",
+      "raw_schema_fingerprint": "6d57dc755d2469b2a4f0a93e64b556528187f4ec988ae574d62682f42b2ce278",
+      "request_fingerprint": "9122c79bd38ca3bf8c435bf38d0c1eb6602dde8c350e258601fdb39aa31ec413",
+      "request_shape": {
+        "paths": [
+          {"path": "$", "presence": "observed", "types": ["object"]},
+          {"path": "$.body", "presence": "observed", "types": ["object"]},
+          {"path": "$.body.custom_metrics_list", "presence": "observed", "types": ["array"]},
+          {"path": "$.body.custom_metrics_list[]", "presence": "observed", "types": ["unknown"]},
+          {"path": "$.body.data_conf", "presence": "observed", "types": ["object"]},
+          {"path": "$.body.data_conf.asa_time_zone", "presence": "observed", "types": ["string"]},
+          {"path": "$.body.data_conf.decimal_point", "presence": "observed", "types": ["integer"]},
+          {"path": "$.body.data_conf.minigame_pay_shared_ratio", "presence": "observed", "types": ["integer"]},
+          {"path": "$.body.data_conf.minigame_pay_shared_ratio_ios", "presence": "observed", "types": ["integer"]},
+          {"path": "$.body.data_conf.return_all_metrics", "presence": "observed", "types": ["boolean"]},
+          {"path": "$.body.data_dims", "presence": "observed", "types": ["array"]},
+          {"path": "$.body.data_dims[]", "presence": "observed", "types": ["string"]},
+          {"path": "$.body.data_list", "presence": "observed", "types": ["array"]},
+          {"path": "$.body.data_list[]", "presence": "observed", "types": ["array"]},
+          {"path": "$.body.data_list[][]", "presence": "observed", "types": ["unknown"]},
+          {"path": "$.body.date_list", "presence": "observed", "types": ["array"]},
+          {"path": "$.body.date_list[]", "presence": "observed", "types": ["string"]},
+          {"path": "$.body.metrics_list", "presence": "observed", "types": ["array"]},
+          {"path": "$.body.metrics_list[]", "presence": "observed", "types": ["string"]},
+          {"path": "$.body.time_dims", "presence": "observed", "types": ["string"]},
+          {"path": "$.query", "presence": "observed", "types": ["object"]}
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {"path": "$", "presence": "observed", "types": ["object"]},
+          {"path": "$.code", "presence": "observed", "types": ["integer"]},
+          {"path": "$.data", "presence": "observed", "types": ["object"]},
+          {"path": "$.data.list", "presence": "observed", "types": ["array"]},
+          {"path": "$.data.list[]", "presence": "observed", "types": ["object"]},
+          {"path": "$.extra", "presence": "observed", "types": ["null"]},
+          {"path": "$.msg", "presence": "observed", "types": ["string"]}
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    }
+  ],
+  "operation_id": "report.report_monetization_report_custom_get.calc_total",
+  "pagination": {"kind": "none", "verified": true},
+  "privacy": {
+    "candidate_fields": [],
+    "classified_non_sensitive": 0,
+    "classified_sensitive": 0,
+    "manual_review": 0,
+    "values_persisted": false
+  },
+  "probed_at": "2026-08-15T11:23:26Z",
+  "projected_schema_fingerprint": null,
+  "raw_schema_fingerprint": "6d57dc755d2469b2a4f0a93e64b556528187f4ec988ae574d62682f42b2ce278",
+  "request_stats": {"backoff_terminations": 0, "failed": 0, "total": 1},
+  "required_parent": null,
+  "route": {
+    "family": "report.report_monetization_report_custom_get.calc_total",
+    "method": "POST",
+    "path": "/report/api/v3/monetization_report/custom_get/calc_total/"
+  },
+  "semantic_errors": {"error_type": null, "permission_shape_observed": false},
+  "successful": false
+}

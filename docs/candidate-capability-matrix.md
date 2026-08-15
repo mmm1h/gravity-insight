@@ -231,3 +231,21 @@ rate-limit 分类未改变。
 | 查找当前账号可读的 App 项目 | **推进但未闭环** | Project 组件在 mount/search/page change 时 POST `page/page_size/filters`，只消费项目表 `list/id/name/app_list_info` 与 `page_info`；create/delete 是独立 mutation。确认已登记；最小 probe 1 请求、HTTP 200 明确空，receipt 的 `method_verified/pagination_verified/parent_resolved` 均为 true，当前账号确无项目，但 item schema 未成立。 | 由有可读项目的租户做 1 次最小第一页 probe；只审查非空 item 字段，之后才考虑产品面。 |
 | 查看 App 的 OneLink 与公开信息绑定 | **推进但未闭环** | OneLink 父链仍明确空。appManage 证明 app-info URL 是调用方输入的 Google Play/App Store 下载链接而非 OneLink；公开 URL probe 2 请求均 HTTP 200，恢复七字段 schema 与四字段安全投影，但上游返回含 `data.error` 的 error-shaped 数据，结论 `inconclusive` 而非成功。 | 调用方提供一条已知可被 Gravity 抓取的公开商店 URL；仅做 1 次读取，成功非空后再确认当前安全投影。 |
 | 按平台、广告位和日期汇总变现结果（D28） | **仍然阻塞** | csj/tobid bundle 已证明 `app.monetization_app.list` 是账户下的平台应用关联目录读取：account 来自选中账户行、平台固定为 `csj`/`tobid`，表格只有平台应用/类型/包名/Gravity App 关联，mutation 另有路由。该 route 没有日期、广告位或结果指标，产品语义不匹配 D28；因此只登记读确认，目标 probe 0 次。 | 转向 `/report/api/v3/monetization_report/custom_get/` 与 `calc_total/` bundle，恢复日期、广告位、平台维度、指标和响应合同；独立做 D28 隐私审查，不复用 D27 批准。 |
+
+## 2026-08-15 追加判定：D28 真实报表 route
+
+`NewReportCenter-Dxgo5EkI.js` 的 hash-matched 冻结正文已把两个弱证据 POST 提升为逐 route 人工确认的
+read：主 route 装载/刷新本地表格，`calc_total` 只按已加载行组重算本地合计。两者没有写 continuation，
+保存/编辑使用独立 route；确认仍受精确 method/path/namespace 三重约束。
+
+| Operation | 新证据 | 精确 blocker | 下一步最小证据与提供方 |
+| --- | --- | --- | --- |
+| `report.get.query` | 九个顶层 body 字段、六个 `data_conf` 子字段、filters 构造、undefined/`[]`/固定值规则及无 upstream pagination 均已静态证明；唯一 live 请求已经发送，但 one-shot 脚本在后续本地校验失败前未 flush 观察。 | `probe_receipt_missing`、`request_value_domain_unverified`、`response_schema_unverified`、`privacy_projection_approval_required`；HTTP status/fingerprint 不推断，也不补发。 | 网关/服务端日志维护者提供该次请求的值无关 status/schema，或调用方提供自然 Web 装载的脱敏 schema；有真实报表数据的租户管理员再提供非空 `list/total` shape；API owner 提供 metric/dimension 值域。 |
+| `report.report_monetization_report_custom_get.calc_total` | 八字段 builder、二维 `data_list`、条件调用关系已证明；唯一 HTTP 为 200，fingerprint `6d57dc755d2469b2a4f0a93e64b556528187f4ec988ae574d62682f42b2ce278`，只见 `data.list[]:object` 且无 item key。 | `request_value_domain_unverified`、`response_schema_unverified`、`field_review_required`、`privacy_projection_approval_required`；空行组只能证明 envelope，不能证明有效合计字段。 | 有真实非空主结果的租户管理员提供一次自然触发的 value-free `calc_total.list[]` shape；API owner 提供必填和值域；隐私批准者逐字段裁决。 |
+
+生产业务请求为 3：`app.list` 1、主 route 1、`calc_total` 1；无认证交换、重试、翻页、扩窗、App
+切换或平台/广告位猜值。只有最后一笔持久化了 HTTP 200 schema，前两笔 status 未登记。观察到的 live
+item 字段为零，因此没有可声称的用户级 live 字段；静态候选 `operator/operator_id/operator_name`
+按疑似人员标识列入 `known_omitted`，其余动态 key 语义不明且由空投影全隐藏。D27 的批准未复用。
+
+两项都不晋升，operation/stable 数保持 `185/176`，D28 仍为完全缺失；没有实现任何产品面。
