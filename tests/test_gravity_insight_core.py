@@ -1612,6 +1612,38 @@ class GravityInsightCoreTests(unittest.TestCase):
             any("unregistered" in warning for warning in result["warnings"])
         )
 
+    def test_multidim_paid_retention_implicit_count_is_omitted(self):
+        multidim = repository_manifest(
+            "report.multidim.metric.list", "report.multidim.query"
+        )
+        metrics = "standard_activate_cnt standard_1day_pay_uv standard_1day_pay_rate multi_day_1day_pay_user_retention_rate multi_day_pay_user_retention_cnt".split()
+        metadata = {
+            "code": 0,
+            "data": {"list": [{"name": name, "tag_ids": [], "exclusion_dims": []} for name in metrics]},
+        }
+        row = {
+            "stat_time": "2026-07-01", "standard_activate_cnt": 3,
+            "standard_1day_pay_uv": 2, "standard_1day_pay_rate": 0.5,
+            "multi_day_1day_pay_user_retention_rate_2": 0.25,
+            "multi_day_pay_user_retention_cnt_2": 1,
+            "multi_day_1day_pay_user_retention_cnt_2": 1,
+        }
+        business = {"code": 0, "data": {"list": [row], "total": row}}
+        inputs = {
+            "time_dims": "day", "date_list": ["2026-07-01", "2026-07-01"],
+            "metrics_list": metrics, "multi_keys": [2],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            client, _transport = client_for(
+                Path(directory), [FakeResponse(metadata), FakeResponse(business)], operation_manifest=multidim,
+            )
+            result = client.read("report.multidim.query", inputs)
+
+        expected = {key: value for key, value in row.items() if "_cnt_2" not in key or key == "multi_day_pay_user_retention_cnt_2"}
+        self.assertEqual("success", result["status"])
+        self.assertEqual(expected, result["data"]["list"][0])
+        self.assertEqual(expected, result["data"]["total"])
+
     def test_calc_total_data_rows_are_field_controlled_before_network(self):
         calc_only = repository_manifest(
             "report.multidim.query", "report.multidim.calc_total"

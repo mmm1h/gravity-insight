@@ -629,3 +629,31 @@ confirmation，闸门判据未改。probe receipt 现在把通过闸门后确实
 全部资产 host/path prefix 与重定向集合、图片/视频 MIME 和扩展名集合、最大尺寸、URL 过期规则，
 以及四种不可用状态的判别。取得这些证据后，先登记二进制 effect 合同与离线负向测试，再做一个最小、
 非空、串行 probe；不得通过任意 URL 参数或动态学习 host 来补证据。
+
+## Issue 12 / 18 登记投影漂移收口（2026-08-15）
+
+两条现象均在 `88edb84` 上复现，且未放宽未登记字段的 additive fail-closed 判定。
+
+- #12 的五指标、horizon 2 查询在 live metric validation 全过后，行和 `data.total` 同时多出
+  `multi_day_1day_pay_user_retention_cnt_2`。它是为留存率计算返回的聚合计数依赖，不是请求指标，
+  因而在两个容器都登记为 `known_omitted`；修复后同一公共产品请求返回 31 行、顶层与 query 均
+  `success`、exit 0。
+- 这不是 #10 引入的新漂移面。#10 的 `2bf56f7` 只为多天收入指标观察到的隐式金额依赖增加省略登记，
+  并增加有界 drift 诊断；没有修改上游请求形状或放宽投影。#12 是同一上游“返回公式依赖列”机制在
+  付费留存指标组合上的未覆盖形状。当前只登记实证的 horizon 2；其他 horizon 是否返回同名后缀列
+  未经在线证据，继续 fail closed。
+- #18 A 的 validator 已经把 operation `item_keys` 当固定字段，但 `AdGid`、`AdCid`、`CSite` 未进入
+  该集合，导致包含它们的整批显式字段被当作缺失自定义属性拒绝。三者分别是广告组、创意和版位业务
+  标识，与该 operation 已暴露的 `re_attribute_info` 同义字段一致，不是用户/设备标识；现登记为固定
+  可投影字段并进入 stable privacy review ledger。真正的自定义用户属性仍必须出现在 live metadata。
+- #18 B 的五行默认响应共观察到 153 个顶层 key：原合同已处理 16 个，本轮新投影上述 3 个，剩余
+  134 个全部登记为 `known_omitted`。其中 113 个是自定义或预置用户属性，12 个是逐用户点击/再归因
+  字段，9 个是语义尚未有权威说明的平台投放 ID；均不暴露，等待维护者逐字段裁决。既有 `Name`、
+  `WXOpenID` 继续省略。以后再出现第 154 个 key 仍会 `contract_changed_additive`。
+
+本轮生产 HTTP 请求实际 21 次，无认证请求、重试、429 或 5xx：`analysis.user_property.list`、
+`analysis.event_property.list`、`analysis.segment.list` 各 4 次，`analysis.user_detail.list` 3 次，
+`report.multidim.metric.list`、`report.multidim.query` 各 3 次。一次 Multidim 初探误加了正文没有的
+`data_dims`，query 返回语义错误；纠正后的修复前请求精确复现 additive drift，修复后成功。
+完整 value-free 请求账本、字段清单和不确定项在
+`tmp/codex/additive-drift-12-18/findings.md`；未保存 App ID、凭据或任何行值。
