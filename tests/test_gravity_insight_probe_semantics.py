@@ -115,6 +115,7 @@ def test_sensitive_observation_completes_probe_when_projection_hides_it(
     assert result["conclusion"] == "success"
     assert result["eligible"] is True
     assert source["draft"]["probe_evidence"][-1]["successful"] is True
+    assert source["draft"]["probe_evidence"][-1]["method_verified"] is True
     sensitive = [
         item
         for item in source["draft"]["candidate_fields"]
@@ -245,6 +246,37 @@ def test_probe_bounds_frontend_page_size_before_contract_confirmation(
     assert updated["operation"]["request"]["defaults"]["page_size"] == 100
     assert updated["operation"]["live_probe"]["inputs"]["page_size"] == 100
     assert (status, fingerprint) == ("success", "f" * 64)
+
+
+def test_probe_reuses_verified_pagination_without_more_requests() -> None:
+    source = build_draft(_route(), set())
+    source["operation"]["pagination"] = {
+        "kind": "page_info", "total_page_field": "total_page"
+    }
+    source["draft"]["probe_evidence"] = [
+        {"pagination_verified": True, "path": "old.yaml"}
+    ]
+    verified, detail = draft_probe._verify_pagination(
+        source, {}, object(), object(), "test-family", object()
+    )
+    assert verified is True and detail["verified_from"] == "old.yaml"
+
+
+def test_method_verified_needs_a_2xx_on_the_target_route() -> None:
+    def evidence(*observations: dict[str, object]) -> dict[str, object]:
+        return {
+            "operation_id": "app.project.list", "successful": False,
+            "http": list(observations),
+        }
+
+    target = {"operation_id": "app.project.list", "http_status": 200}
+    rejected = {"operation_id": "app.project.list", "http_status": 405}
+    parent = {"operation_id": "app.list", "http_status": 200}
+
+    assert draft_probe._method_verified(evidence(target)) is True
+    assert draft_probe._method_verified(evidence(rejected)) is False
+    assert draft_probe._method_verified(evidence(parent)) is False
+    assert draft_probe._method_verified(evidence()) is False
 
 
 class _StaticTransport:

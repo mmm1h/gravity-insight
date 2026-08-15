@@ -3,57 +3,81 @@
   "draft": {
     "blockers": [
       {
-        "code": "empty_sample",
-        "detail": "The observed tenant response was empty and cannot prove an item schema.",
-        "evidence": "evidence/probe/20260808T231132Z_app.app_info.get.yaml",
-        "status": "open"
-      },
-      {
-        "code": "response_schema_unverified",
-        "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
-        "evidence": "src/gravity_sdk/census/data/route-response-fields.json#/routes/753",
+        "code": "probe_inconclusive",
+        "detail": "The latest probe did not satisfy the promotion gate.",
+        "evidence": "evidence/probe/20260814T025415Z_app.app_info.get.yaml",
         "status": "open"
       }
     ],
     "candidate_fields": [
       {
-        "classification_reason": "frontend_static_consumer_unreviewed",
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.app_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "upstream_diagnostic_omitted",
         "expose": false,
-        "path": "data.icon_url",
-        "presence": "unknown",
+        "path": "data.error",
+        "presence": "observed",
         "privacy_classification": "sensitive",
         "types": [
-          "unknown"
+          "string"
         ]
       },
       {
-        "classification_reason": "frontend_static_consumer_unreviewed",
+        "classification_reason": "public_asset_url_omitted_until_successful_probe",
+        "expose": false,
+        "path": "data.icon_url",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "public_asset_payload_omitted_due_size",
         "expose": false,
         "path": "data.image_data",
-        "presence": "unknown",
-        "privacy_classification": "manual_review",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
         "types": [
-          "unknown"
+          "string"
         ]
       },
       {
-        "classification_reason": "frontend_static_consumer_unreviewed",
-        "expose": false,
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
         "path": "data.name",
-        "presence": "unknown",
+        "presence": "observed",
         "privacy_classification": "non_sensitive",
         "types": [
-          "unknown"
+          "string"
         ]
       },
       {
-        "classification_reason": "frontend_static_consumer_unreviewed",
-        "expose": false,
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
         "path": "data.package_name",
-        "presence": "unknown",
+        "presence": "observed",
         "privacy_classification": "non_sensitive",
         "types": [
-          "unknown"
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.platform",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
         ]
       }
     ],
@@ -100,14 +124,23 @@
         "projected_schema_fingerprint": null,
         "raw_schema_fingerprint": "1b898bf98211f851a2989bb1eb397aa45eb76a283568c75ab6a8dd0d96ac0e02",
         "successful": false
+      },
+      {
+        "conclusion": "inconclusive",
+        "method_verified": true,
+        "pagination_verified": true,
+        "parent_resolved": true,
+        "path": "evidence/probe/20260814T025415Z_app.app_info.get.yaml",
+        "probed_at": "2026-08-14T02:54:15Z",
+        "projected_schema_fingerprint": "be25f35947a109d55f3a135a6be4f605205741ca7aad15dae7816e7f0ad12813",
+        "raw_schema_fingerprint": "e6c0942c3293226731383667c413e2ff1fa8519e4b1a8a235afb6522f02db9e3",
+        "successful": false
       }
     ],
     "promotion_gate": {
       "eligible": false,
       "missing": [
-        "empty_sample",
-        "response_projection",
-        "response_schema_unverified",
+        "probe_inconclusive",
         "successful_probe"
       ]
     },
@@ -183,9 +216,9 @@
   "operation": {
     "action": "get",
     "auth_profile": "gravity_authorization",
-    "block_reason": "draft blockers: empty_sample, response_schema_unverified",
+    "block_reason": "draft blockers: probe_inconclusive",
     "contract_version": 1,
-    "description": "Draft catalog entry inferred from census route GET /turbo_engine/api/v1/user/open_app/fetch_app_info/; request binding, pagination, and response projection remain unverified.",
+    "description": "Read public App Store metadata from a caller-supplied store URL; the observed schema and privacy projection are bounded, but a successful data response remains unverified.",
     "domain": "app",
     "effect": "read",
     "examples": [],
@@ -199,7 +232,7 @@
     "live_probe": {
       "enabled": false,
       "inputs": {
-        "url": "1"
+        "url": "https://play.google.com/store/apps/details?id=com.google.android.apps.maps"
       }
     },
     "operation_id": "app.app_info.get",
@@ -279,9 +312,19 @@
     "required_parent": [],
     "resource": "app_info",
     "response_projection": {
-      "data_keys": [],
+      "data_keys": [
+        "app_id",
+        "name",
+        "package_name",
+        "platform"
+      ],
       "dynamic_item_fields": [],
       "item_keys": [],
+      "known_omitted_data_keys": [
+        "error",
+        "icon_url",
+        "image_data"
+      ],
       "required_data_keys": []
     },
     "semantic_error_rules": [],

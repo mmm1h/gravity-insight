@@ -860,5 +860,5 @@ def test_task_scope_tracks_integrated_exact_blocker_sets() -> None:
         ROOT / "src" / "gravity_sdk" / "contracts" / "drafts"
     )
 
-    # 标准投放项目已验证请求与父链，但当前租户仍只有空样本。
-    assert len(operation_ids) == 120
+    # app-info 已取得 schema 并移出 empty-sample 集合；其成功读取仍未成立。
+    assert len(operation_ids) == 119
