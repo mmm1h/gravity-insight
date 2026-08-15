@@ -170,7 +170,9 @@ Each record contains UTC run time, split, split/protected ordinals, suite
 version, Git HEAD, product-source fingerprint, case/trial counts, required
 purpose, evaluator-source fingerprint, worktree-dirty flag, the four original
 aggregate scores, the binary security receipt, and whether a final rerun
-override was used. Records form a SHA-256 append chain;
+override was used. External runs additionally record arm mode, protocol,
+plugin SHA-256, selector version strings, and networked-trial count without
+copying arbitrary plugin metadata. Records form a SHA-256 append chain;
 a malformed, edited, or reordered prior query record fails closed before a
 protected run. Version control remains the durable history and review surface.
 
@@ -207,6 +209,56 @@ does not claim visibility into an external LLM's shell/tools or text outside
 the returned card/error/warning structures. Production responses are not
 available in this network-free harness, so product-specific downstream
 projection paths still need their normal contract and quality tests.
+
+## External selector arm
+
+`run --selector-plugin <python-file>` replaces product discovery only inside the
+evaluator. For each of the suite's four trials, the evaluator starts the Python
+file once and writes one `gravity.agent-external-selector-request.v1` JSON
+object to stdin. The request contains every question (`id` and `query`) plus a
+frozen, value-free projection of `gravity agent-catalog`: category summaries
+and each capability's selector, source, name, description, stability, and
+executable flag. The plugin returns exactly one
+`gravity.agent-external-selector-response.v1` object on stdout:
+
+```json
+{
+  "schema_version": "gravity.agent-external-selector-response.v1",
+  "results": [
+    {"id": "case-id", "selectors": ["composite:business_pulse"], "reason": "..."}
+  ],
+  "metadata": {"selector": "provider/model/prompt-version", "network_called": false}
+}
+```
+
+Every input id must appear exactly once. A result may select zero through five
+unique selectors. Unknown selectors, duplicate/missing ids, extra row fields,
+malformed JSON, non-zero exit, and timeout fail the whole run before scoring.
+Zero selectors become an actionable `EXTERNAL_SELECTOR_ABSTAINED` gap; multiple
+selectors go through the same `MULTIPLE_INTENTS` fail-closed response as product
+routing; one selector is described from the supplied catalog and scored by the
+unchanged six layers. The evaluator repeats the plugin four times, so a real
+selector's nondeterminism appears in `pass^4` and `unstable_tasks`.
+
+The committed `scripts/agent_usability_selector_stub.py` is only a reproducible
+wiring fixture. It selects a composite when every token in the catalog name is
+literal in the question and otherwise abstains. Run it with:
+
+```powershell
+$env:PYTHONPATH=(Resolve-Path '.\src').Path
+python scripts\agent_usability_eval.py run --split development --selector-plugin scripts\agent_usability_selector_stub.py --label external-selector-stub
+```
+
+Its score is not LLM evidence. A real LLM comparison still requires a separately
+reviewed wrapper with pinned provider/model/prompt/decoding, credential and
+egress authorization, truthful network/usage/latency receipts, and protected
+split custody. The current catalog also omits Analysis compiler cards, local
+metadata handoffs, exports, and registered capability gaps, so those identities
+must be represented or explicitly scored as catalog-coverage failures before a
+whole-suite LLM score can be interpreted as selector quality. The parent process
+blocks its own sockets and all Gravity transport, but cannot police a child
+process's egress; plugin metadata and the external wrapper's audit log are
+therefore mandatory for a networked selector.
 
 ## Files
 

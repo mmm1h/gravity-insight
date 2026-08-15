@@ -164,6 +164,16 @@ development，未运行 protected split，生产 HTTP 0 次。当前集成树 de
 `240/240、175/175、65/65、5/5`，第五层 `PASS / 0`；参数与终点分母 `175 + 65 = 240`，
 selection/terminal 的 `pass^4` 分别为 `240/240`、`65/65`。
 
+2026-08-16 的自然语言三臂对照不新增产品、动线或 operation。臂 A recognizer 不改；臂 B 只在原链
+零候选且无专属 gap/阻断时，对既有 card/gap 文案做确定性 IDF 词法检索，阈值 0.375、至少两项证据，
+单命中复用原 card/gap，多命中仍返回 `MULTIPLE_INTENTS`，低分 abstain。development 前后六层均为
+`240/240、175/175、65/65、5/5、pass^1=pass^4、PASS/0`；当前 development 的 no-candidate 已为 0，
+所以实际净修复 0，shadow 28 个正确单命中不计新增通过。臂 C 外部 selector 协议与固定离线桩已完整
+跑 4 trials 并被原层评分，桩为 `27/240、27/27、0/65、5/5、PASS/0`，只证明可测。固定 holdout key
+在当前及文档指定 custody worktree 都不存在，未生成替代 key，故 holdout/final 查询仍为 0；不能声称
+达到 `228/240`。本线计数为 `49 = 37 / 1 / 11 → +0 / +0 / +0 = 49 = 37 / 1 / 11`，生产 HTTP 0 次；
+阈值、拟合风险和真实 LLM 所缺条件见[路线图](roadmap.md#自然语言路由三臂对照2026-08-16)。
+
 2026-08-15 的失败与降级路径审计自身不新增动线，在当时快照上的净变化为
 `48 + 0 = 48`、`32 / 0 / 16 + 0 / 0 / 0`；最终计数只因上述 setting route 重复记账消除而变为
 `47 = 32 / 0 / 15`。该审计横切核对了所有现有 composite、Plan 和 direct SDK/CLI

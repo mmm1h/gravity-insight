@@ -176,6 +176,7 @@ def append_query_record(
         "trials": int(result.get("trials", 0)),
         "four_layer_scores": scores,
         "security_compliance": _security_receipt(layers.get("security_compliance")),
+        "selector_arm": _selector_receipt(result.get("selector_arm"), layers),
         "final_rerun_override": bool(allow_final_rerun),
         "split_query_ordinal": counts[split] + 1,
         "protected_query_ordinal": counts["protected_total"] + 1,
@@ -208,6 +209,28 @@ def _security_receipt(value: Any) -> dict[str, Any]:
     return {
         "passed": value.get("passed") is True,
         "violation_count": int(value.get("violation_count", 0)),
+    }
+
+
+def _selector_receipt(value: Any, layers: Mapping[str, Any]) -> dict[str, Any]:
+    selected = value if isinstance(value, Mapping) else {}
+    trials = selected.get("trial_receipts", [])
+    identities = [
+        str(item.get("selector"))
+        for item in trials
+        if isinstance(item, Mapping) and item.get("selector")
+    ]
+    cost = layers.get("cost")
+    return {
+        "mode": str(selected.get("mode", "unspecified")),
+        "protocol": selected.get("protocol"),
+        "plugin_sha256": selected.get("plugin_sha256"),
+        "selector_versions": list(dict.fromkeys(identities)),
+        "network_trials": (
+            int(cost.get("external_selector_network_trials", 0))
+            if isinstance(cost, Mapping)
+            else 0
+        ),
     }
 
 

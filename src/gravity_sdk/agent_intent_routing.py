@@ -215,22 +215,33 @@ def multiple_intent_gap(query: str) -> list[dict[str, object]]:
     intents = multiple_product_intents(query)
     if not intents:
         return []
-    return [{
+    return [product_selection_gap(query, intents)]
+
+
+def product_selection_gap(
+    query: str,
+    selectors: Sequence[str],
+    *,
+    reason: str = (
+        "multiple authoritative product intents were identified; split the "
+        "request and discover each product independently"
+    ),
+) -> dict[str, object]:
+    """Centralize the fail-closed response for any multi-product selector."""
+
+    return {
         "kind": "capability_gap",
         "code": MULTIPLE_INTENTS,
         "query": query,
-        "reason": (
-            "multiple authoritative product intents were identified; split the "
-            "request and discover each product independently"
-        ),
+        "reason": reason,
         "next_action": (
             "For each candidate_selectors value, call gravity agent --input "
             "<selector> independently; execute only after each discovery returns "
             "one authoritative product card."
         ),
-        "candidate_selectors": list(intents),
+        "candidate_selectors": list(dict.fromkeys(map(str, selectors))),
         "weak_matches": [],
-    }]
+    }
 
 
 def unique_authoritative_cards(
@@ -257,5 +268,6 @@ __all__ = [
     "adjacent_product_conflict",
     "multiple_product_intents",
     "multiple_intent_gap",
+    "product_selection_gap",
     "unique_authoritative_cards",
 ]

@@ -38,6 +38,7 @@ from .agent_discovery_support import (
     materialize_candidates,
     select_authoritative_cards,
 )
+from .agent_lexical_retrieval import response_match_policy
 from .errors import InputValidationError
 
 
@@ -209,6 +210,16 @@ def _discover(
         )
         unified = unify_capability_candidates(page.catalog_cards, operations.matches)
         weak_operations = operations.weak
+    from .agent_lexical_retrieval import apply_lexical_fallback
+
+    lexical = apply_lexical_fallback(
+        request.query, existing_candidates=unified,
+        existing_semantic_gaps=page.semantic_gaps,
+        fallback_blocked=page.operation_fallback_excluded,
+        workspace=workspace, sources=sources,
+        domain=request.domain, platform=request.platform,
+    )
+    unified = list(lexical.candidates)
     fingerprint = candidates_fingerprint(unified)
     if (
         page.expected_candidates_fingerprint is not None
@@ -226,7 +237,7 @@ def _discover(
     candidates = materialize_candidates(
         client, unified[page.offset : page.offset + request.limit]
     )
-    gaps = [] if unified else page.semantic_gaps or capability_gaps_for_page(
+    gaps = [] if unified else list(lexical.gaps) or page.semantic_gaps or capability_gaps_for_page(
         request, client, weak_operations, page.operation_fallback_excluded)
     return _discovery_response(
         request,
@@ -238,6 +249,7 @@ def _discover(
         plan_node_namespace=plan_node_namespace,
         workspace_path=page.workspace_path,
         semantic_context=page.semantic_context,
+        lexical_receipt=lexical.receipt,
     )
 
 
@@ -252,6 +264,7 @@ def _discovery_response(
     plan_node_namespace: str | None,
     workspace_path: object | None,
     semantic_context: dict[str, Any] | None,
+    lexical_receipt: Mapping[str, Any],
 ) -> dict[str, Any]:
     candidates = [
         attach_plan_node(
@@ -289,10 +302,7 @@ def _discovery_response(
         "candidates": candidates,
         "capability_gaps": gaps,
         "catalog_warnings": page.catalog_warnings,
-        "match_policy": {
-            "success_requires": "at least 80% query-term coverage",
-            "partial_matches_are_executable": False,
-        },
+        "match_policy": response_match_policy(lexical_receipt),
         "execution": agent_execution_contract(workspace_path),
         "fallbacks": agent_fallbacks(safe_discovery_query(request.query), workspace_path),
         "next_action": (

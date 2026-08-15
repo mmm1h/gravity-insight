@@ -2701,3 +2701,75 @@ segment ID。该 ID 随后可直接交给 `analysis segment snapshot`、`members
 本线新增 caller-recoverable raise site **27** 个，全部 A 档：全仓从
 `1034 = 230 / 434 / 370` 变为 `1061 = 257 / 434 / 370`。技术债清单已复核：mutation policy、wire、
 Segment domain core/SDK/CLI 分文件，`registry.py` ratchet 继续收紧，未新增可由当前源码证明的结构债。
+
+## 自然语言路由三臂对照（2026-08-16）
+
+**书面提案：**臂 A 保留现有 recognizer，不改正向、负向或歧义判据。臂 B 采用纯 Python、离线、
+确定性的词法检索，只索引既有产品卡的 name/selector/description 与已登记 capability-gap 文案；
+仅在完整既有发现链得到零候选、且既有专属 gap/阻断未作判断时运行。单命中只重新物化既有 card/gap，
+两个及以上过阈值命中必须经集中层返回 `MULTIPLE_INTENTS`，低于阈值保留 capability gap，绝不按
+top-1 强选。臂 C 只扩展评测装置的外部 selector 协议并用固定离线桩证明可测，不接真实 LLM，
+不进入产品路径。
+
+阈值只用 development 做 shadow sweep：要求单命中精度 100%、相邻产品不被强选且低置信输入 abstain；
+满足约束的阈值中先取召回最高者，并列时取更高者。开工 development 六层为产品选择 `240/240`、
+参数可填 `175/175`、离线终点 `65/65`、错误恢复 `5/5`、安全门禁 `PASS/0`，产品选择和终点均
+`pass^1 = pass^4`；生产 HTTP 0 次。只有 implementation、development 六层和确定性全部固定后才允许
+一次 holdout 选臂查询；预期验证产品选择高于已记录臂 A `193/240`，且离线终点、安全和确定性不退化。
+不读取或运行 final，也不根据 holdout 聚合反馈调词、文案或阈值。完整工作提案在 ignored
+`tmp/codex/routing-arms/proposal.md`；最终数字、查询账本与拟合风险将在本节原位收口。
+
+**臂 B 实现与阈值：**现有 recognizer、负向词、selector 精确度和 operation fallback 判据均未修改。
+只有完整原链得到零候选、且专属 gap/semantic block 也未作判断时，才计算
+`idf_weighted_term_coverage.v1`。英文按去通用停用词的 word token，中文按 2/3 字符 gram；分数是 query
+token 的 IDF 加权覆盖率，范围 0--1。索引数据仅来自既有 card 的 name/selector/description、workspace
+recipe/SQL product 同名字段、已登记 gap 的 journey/code/reason/next_action；刻意不索引 aliases 和评测题。
+至少要有 2 项命中证据且分数达到 **0.375**。单命中重新使用既有 card/gap，多命中调用集中
+`product_selection_gap` 返回 `MULTIPLE_INTENTS`，不取 top-1；无命中保留原 capability gap。响应的
+`match_policy.zero_candidate_lexical_fallback` 暴露算法、阈值、最低证据数、top score、selector 和
+matched terms，同一输入不含随机数、时钟、hash iteration 或网络因素。
+
+阈值是在 development shadow mode 一次性固定的。代表性 sweep 为：`0.35 = 26 correct / 1 wrong /
+7 multiple / 206 abstain`，`0.365 = 27 / 0 / 5 / 208`，`0.37 = 28 / 0 / 3 / 209`，
+`0.375 = 28 / 0 / 3 / 209`，`0.38 = 26 / 0 / 3 / 211`，`0.39 = 26 / 1 / 2 / 211`。
+按提案先要求单命中错误为 0、相邻产品不强选，再在正确单命中最多的并列阈值中取更高者，故为 0.375。
+定低的实际失败模式是错误单命中，或更多请求只得到 `MULTIPLE_INTENTS`；定高则不会错选，但会把可解释
+的正确检索重新变成 gap。当前 development 原链已经 `240/240`，因此臂 B 实际修复的当前
+`no_candidate` 是 **0**；shadow 的 28 个正确单命中只是“若原链 abstain 时可恢复”的反事实上界，
+不是新增通过题数，更不能冒充留出证据。
+
+六层 development 前后对照为：
+
+| 层 | 臂 A before | 臂 B after | 变化 |
+| --- | ---: | ---: | ---: |
+| 首次产品选择 | `240/240` | `240/240` | `0` |
+| 已到达卡参数可填 | `175/175` | `175/175` | `0/0` |
+| 离线终点 | `65/65` | `65/65` | `0/0` |
+| 错误恢复 | `5/5` | `5/5` | `0` |
+| 重复可靠性 | selection `240/240`、terminal `65/65` | 同左 | `pass^1 = pass^4`，unstable 0 |
+| 安全遵守 | `PASS/0` | `PASS/0` | 0 violation |
+
+**臂 C 测量通路：**evaluator 的 `--selector-plugin <python-file>` 每个 trial 向独立进程发送整批
+question 和 `agent-catalog` 的 category/capability 投影；响应只允许每题 0--5 个目录内 selector。
+未知 selector、重复/缺失 ID、额外字段、malformed JSON、非零退出和 timeout 都在评分前 fail closed；
+0 个 selector 记 `EXTERNAL_SELECTOR_ABSTAINED`，多个仍走 `MULTIPLE_INTENTS`，单个 describe 后由原六层
+评分。固定离线桩完整跑通 4 trials：产品选择 `27/240`、参数 `27/27`、离线终点 `0/65`、错误恢复
+`5/5`、安全 `PASS/0`，selection `pass^1=pass^4=27/240`。该低分只证明通路真的在评分，桩明确登记
+`meaningful_accuracy_evidence=false`，不评价 LLM。真实 LLM 还缺 pinned provider/model/prompt/decoding、
+凭据与 egress 授权、可信用量/延迟/网络 receipt、protected split custody，以及对当前 catalog 未包含的
+Analysis compiler、metadata、export 和专属 gap 身份的覆盖裁决；父进程无法审计子进程 egress。
+
+**protected 查询与结论边界：**implementation、development 和门禁固定后，按预注册 purpose 准备执行
+唯一一次 holdout，但当前 worktree 与文档指定 custody worktree 的固定
+`.local/agent-usability/holdout.key` 均不存在；账本为 holdout 0 / final 0。既有密文不能用新 key 解密，
+没有生成替代 key、搜索其他位置、读取密文或运行 holdout/all/final。因此本轮 holdout **0 次**，不能声称
+从 `193/240` 达到 `228/240`；该目标仍需 custodian 恢复原配对 key 后按上面的已冻结 purpose 查询一次。
+
+**泛化与拟合判断：**较可信的是 zero-candidate-only 接点、aliases 排除、IDF 由运行时登记文案推导、
+低分 abstain 和集中多意图裁决；它们不依赖具体句子。偏拟合风险最高的是：被索引的 card/gap 文案本身
+曾随 development recognizer 轮次演进，0.375 又由同一 development suite 选择；中文字符 gram 还可能
+把共享短片段放大。没有加入 case id、完整句、词序特判或删除负向词，但在未查 holdout 前只能称候选臂，
+不能称泛化已证明。产品/动线/operation 计数均为 `+0`，生产 HTTP 0 次。
+本线新增 caller-recoverable error site `0` 个，因此新增 A/B/C 为 `0/0/0`；全仓审计仍为
+`1061 = 257 / 434 / 370`。技术债清单已复核：检索 core 和 selector harness 均在窄模块内，
+共享 `agent.py` 恢复到 500 SLOC 质量上限，未新增可由当前源码证明的结构债。

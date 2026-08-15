@@ -52,7 +52,15 @@ gravity agent "<your-query>"
   "limit": "<int>",
   "match_policy": {
     "partial_matches_are_executable": "<bool>",
-    "success_requires": "<str>"
+    "success_requires": "<str>",
+    "zero_candidate_lexical_fallback": {
+      "algorithm": "<str>",
+      "disposition": "<str>",
+      "matches": [],
+      "minimum_matched_terms": "<int>",
+      "minimum_score": "<float>",
+      "top_score": "<float>"
+    }
   },
   "mode": "<str>",
   "network_called": "<bool>",

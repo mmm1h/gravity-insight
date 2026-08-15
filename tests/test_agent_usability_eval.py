@@ -289,6 +289,53 @@ class AgentUsabilityEvalTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "integrity check"):
                     load_query_records(ledger)
 
+    def test_external_selector_stub_receives_catalog_and_is_scored(self) -> None:
+        from agent_usability_external_selector import external_selector_trials
+        from gravity_sdk.client import GravityInsightClient
+
+        cases = [{
+            "case_id": "stub-business-pulse",
+            "prompt": "business pulse",
+            "expected": {
+                "route_key": "business_pulse",
+                "gap_code": None,
+            },
+        }]
+        plugin = (
+            Path(__file__).resolve().parents[1]
+            / "scripts" / "agent_usability_selector_stub.py"
+        )
+        states, calls, observations, receipt = external_selector_trials(
+            cases,
+            GravityInsightClient.from_env(transport=self.subject.BlockedTransport()),
+            4,
+            plugin_path=plugin,
+            timeout_seconds=10,
+            route_score=self.subject.route_score,
+            parameter_score=self.subject.parameter_score,
+            terminal_score=self.subject.terminal_score,
+        )
+        self.assertEqual([True] * 4, states["stub-business-pulse"]["selection"])
+        self.assertEqual(4, calls)
+        self.assertEqual("external_selector", receipt["mode"])
+        self.assertEqual(1, len(observations))
+        self.assertEqual(
+            "composite:business_pulse",
+            observations[0]["result"]["candidates"][0]["selector"],
+        )
+
+    def test_external_selector_rejects_names_outside_supplied_catalog(self) -> None:
+        from agent_usability_external_selector import _validate_response
+
+        request = {"questions": [{"id": "q", "query": "anything"}]}
+        catalog = {"capabilities": [{"selector": "composite:business_pulse"}]}
+        response = {
+            "schema_version": "gravity.agent-external-selector-response.v1",
+            "results": [{"id": "q", "selectors": ["not:registered"]}],
+        }
+        with self.assertRaisesRegex(ValueError, "outside the supplied catalog"):
+            _validate_response(response, request, catalog)
+
 
 def _fake_result(split: str) -> dict:
     score = {"passed": 1, "total": 1, "rate": 1.0}

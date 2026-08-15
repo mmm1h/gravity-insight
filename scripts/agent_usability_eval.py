@@ -39,6 +39,7 @@ from agent_usability_expectations import (
     TARGETS_PATH as JOURNEY_TARGETS_PATH,
     derive_cases,
 )
+from agent_usability_external_selector import external_selector_trials
 
 SCHEMA_VERSION = "gravity.agent-usability-result.v1"
 COMPARE_SCHEMA_VERSION = "gravity.agent-usability-compare.v1"
@@ -468,6 +469,7 @@ def _evaluator_fingerprint() -> str:
         Path(__file__).resolve(),
         SCRIPT_ROOT / "agent_usability_governance.py",
         SCRIPT_ROOT / "agent_usability_expectations.py",
+        SCRIPT_ROOT / "agent_usability_external_selector.py",
         JOURNEY_TARGETS_PATH,
         JOURNEY_LEDGER_PATH,
     ):
@@ -558,7 +560,29 @@ def _run_evaluation_unrecorded(
         stack.enter_context(patch("socket.create_connection", network.block))
         from gravity_sdk.client import GravityInsightClient
         client = GravityInsightClient.from_env(transport=blocker)
-        states, batch_calls, observations = _discover_trials(cases, client, trials)
+        selector_path = (
+            Path(args.selector_plugin).resolve()
+            if getattr(args, "selector_plugin", None)
+            else None
+        )
+        if selector_path is None:
+            states, batch_calls, observations = _discover_trials(cases, client, trials)
+            selector_receipt = {
+                "mode": "product_recognizer_with_zero_candidate_lexical_fallback"
+            }
+            discovery_calls, selector_calls = batch_calls, 0
+        else:
+            states, batch_calls, observations, selector_receipt = external_selector_trials(
+                cases,
+                client,
+                trials,
+                plugin_path=selector_path,
+                timeout_seconds=float(args.selector_timeout),
+                route_score=route_score,
+                parameter_score=parameter_score,
+                terminal_score=terminal_score,
+            )
+            discovery_calls, selector_calls = 0, batch_calls
         recovery, recovery_calls = recovery_score(client)
         security = security_compliance_score(
             observations, client=client, blocked_transport=blocker
@@ -570,6 +594,11 @@ def _run_evaluation_unrecorded(
     terminal = _layer(states, 0, "terminal")
     terminal["skipped_production"] = sum(state["terminal"][0] is None for state in states.values())
     elapsed = perf_counter() - started
+    selector_network_trials = sum(
+        item.get("network_called") is True
+        for item in selector_receipt.get("trial_receipts", [])
+        if isinstance(item, Mapping)
+    )
     suite_version, suite_hashes = _suite_identity(manifest, split)
     result = {
         "schema_version": SCHEMA_VERSION,
@@ -582,6 +611,7 @@ def _run_evaluation_unrecorded(
         "run_label": args.label,
         "run_at": datetime.now(timezone.utc).isoformat(),
         "subject": _subject(manifest),
+        "selector_arm": selector_receipt,
         "layers": {
             "product_selection": {**selection, "failure_classes": _reason_counts(states, 0)},
             "parameter_fillability": {**parameters, "not_reached": sum(state["parameter"][0] is None for state in states.values()), "failure_classes": _reason_counts(states, 1)},
@@ -589,7 +619,7 @@ def _run_evaluation_unrecorded(
             "repeat_reliability": {"product_selection": _reliability(states, "selection"), "end_to_end": _reliability(states, "terminal")},
             "error_recovery": recovery,
             "security_compliance": security,
-            "cost": {"logical_question_invocations": len(cases) * trials, "discovery_batch_invocations": batch_calls, "recovery_top_level_invocations": recovery_calls, "production_http_requests": blocker.attempts, "socket_network_attempts": network.attempts, "elapsed_seconds": round(elapsed, 6)},
+            "cost": {"logical_question_invocations": len(cases) * trials, "discovery_batch_invocations": discovery_calls, "external_selector_invocations": selector_calls, "external_selector_network_trials": selector_network_trials, "recovery_top_level_invocations": recovery_calls, "production_http_requests": blocker.attempts, "socket_network_attempts": network.attempts, "elapsed_seconds": round(elapsed, 6)},
         },
     }
     result["security_hard_gate_passed"] = security["passed"]
@@ -707,6 +737,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
     run.add_argument("--holdout-key", help="independent key for holdout only")
     run.add_argument("--final-key", help="independent key for final only")
+    run.add_argument(
+        "--selector-plugin",
+        help=(
+            "Python file implementing gravity.agent-external-selector-response.v1; "
+            "the evaluator supplies each question and the local agent catalog"
+        ),
+    )
+    run.add_argument(
+        "--selector-timeout",
+        type=float,
+        default=120.0,
+        help="Maximum seconds for each external selector trial (default: 120)",
+    )
     run.add_argument(
         "--purpose",
         help="required audit purpose for every holdout or final query",
