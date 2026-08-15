@@ -49,6 +49,48 @@ funnel 的冻结 `Funnel-DPNtPpg_.js` 与 `analysis-data-CVCbcwc0.js`（SHA-256 
 `to_calc_each_day` 要求对应 aggregate 根必须为对象；合法按日形状为 `success`，目标根缺失、null 或
 畸形仍 fail closed。本轮不改变分析动线总数。
 
+### CLI 通用脱敏拆分（2026-08-15）
+
+**提案：**把 `cli.py` 的全树输出过滤拆成凭据清洗与业务字段过滤，只保留前者；用同一合成 SDK
+result 对比进程内对象和 CLI JSON，并覆盖 JSON、NDJSON、文件与错误 envelope 共用的输出边界。
+operation、响应投影和 envelope 均不改，调查底稿位于 ignored
+`tmp/codex/generic-redaction/proposal.md`。
+
+**作用面判定：**旧 `_redact` 不是统一 `gravity` 可执行程序的全局过滤。它覆盖 Insight CLI
+（`gravity insight ...`、省略 namespace 的兼容命令和 `gravity-insight`）的普通 JSON stdout、逐行
+NDJSON、通用 `--output` JSON/NDJSON 文件、写文件 receipt、非成功 result 及已捕获异常的 stderr
+envelope；递归作用于 `data/error/details/warnings/next_action` 等整个对象树。SQL、Census、静态帮助、
+统一启动器自己的 workspace 参数错误和领域命令自行生成的业务文件不经过这一个函数。stdout 的大值/
+行数摘要先执行，凭据清洗后执行；文件输出不采用 stdout 摘要，但采用同一凭据清洗。
+
+**拆分判定：**`_redact` 已改为语义明确的 `_sanitize_credentials`。保留 exact
+`authorization/cookie/password/secret/access_token/refresh_token/gravity_auth_token/`
+`gravity_authorization/session_token/token`、凭据后缀 `_password/_token/_secret/_authorization/_cookie`
+以及 Bearer、JWT 和错误文本中 credential assignment 的替换。删除 18 个业务 exact key、8 个业务
+suffix、`operator_*`/`dept_*` 两个前缀规则、Analysis domain 开关、filter `operator` enum 特判和
+identifier 通用豁免。由此重新公开 `email/email_address/phone/mobile/user_name/creator`，人员与部门
+字段，`callback_url/click_url/postback_url`，所有 `_url/_email/_phone/_mobile/_user_id/_user_name/`
+`_designer_id/_designer_name` 后缀字段，以及 `operator_*`/`dept_*`；具体包括 `icon_url`、
+`poster_url`、`file_url`、`thumbnail_url`。分页 `continuation_token` 是已发布业务游标，却与必须保留的
+`_token` 凭据规则同名冲突；本轮仅为这个已知 envelope key 保留显式 public-cursor 例外，待进一步
+裁决，不恢复 `user_id/event_user_id` 等通用豁免。
+
+**CLI/SDK 与合同判定：**SDK 直接对象从不经过 CLI sanitizer，旧 CLI 因此会在 SDK 结果上额外删除
+业务字段；这个额外字段集差异属实，现已删除，合成回归证明同一无凭据 SDK result 经 CLI 输出后业务
+字段和值保持一致。但 SDK 不是完全没有字段过滤：185/185 个 operation 源合同都声明
+`privacy_policy.redact_fields`，compiler 将其写为 manifest `redact_keys`，executor 用其清洗 response、
+items、page info 和输入摘要；非 `user_level` runtime 另有按名字推断的业务字段规则。client validate/
+wire、export finalizer、fingerprint 和隐私门禁也消费相应数据。`catalog.py` 第一处读取只清洗
+`operations describe` 的 fixed query/body，第二处只是展示清单。因而 `redact_fields` 不能整项删除：
+凭据项应保留，业务/人员项应由 `open-projection` 同步从合同和 runtime 规则删除；本单元没有越界修改。
+
+`analysis_spec_preview.redact_analysis_values` 清洗的是调用方的筛选、规则等业务输入值，不识别凭据；
+按本轮 A/B 二分属于 **B**。它是 SDK 与 CLI 共用、显式命名的 dry-run preview 合同，不是 CLI 通用
+输出过滤，本单元只记录判断，不改变其行为。
+
+operation 台账可复算为 **185 + 0 - 0 = 185**，stable 台账为 **176 + 0 - 0 = 176**；分析动线、
+CLI 参数、SDK 方法、envelope、退出码和生产请求数均未变化。本项生产 HTTP 请求 **0 次**。
+
 ### Stable operation 正向交叉（2026-08-14）
 
 **提案：**从 176 条 stable operation 正向检查真实产品调用链，排除通用 `run`、legacy 快照、

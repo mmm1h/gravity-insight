@@ -125,55 +125,7 @@ class AgentArgumentParser(argparse.ArgumentParser):
         )
 
 
-_SECRET_KEYS = {
-    "authorization",
-    "cookie",
-    "password",
-    "secret",
-    "access_token",
-    "refresh_token",
-    "gravity_auth_token",
-    "gravity_authorization",
-    "token",
-    "email",
-    "email_address",
-    "phone",
-    "mobile",
-    "user_name",
-    "creator",
-    "designer_id",
-    "designer_name",
-    "operator",
-    "operator_name",
-    "operator_id",
-    "dept",
-    "dept_name",
-    "dept_id",
-    "department",
-    "callback_url",
-    "click_url",
-    "postback_url",
-}
-
-
-_SECRET_KEY_SUFFIXES = (
-    "_password",
-    "_url",
-    "_token",
-    "_email",
-    "_phone",
-    "_mobile",
-    "_user_id",
-    "_user_name",
-    "_designer_id",
-    "_designer_name",
-)
-_CONTRACTED_IDENTIFIER_KEYS = {
-    "user_id",
-    "event_user_id",
-    "continuation_token",
-}
-_SESSION_SECRET_KEYS = {
+_CREDENTIAL_KEYS = {
     "authorization",
     "cookie",
     "password",
@@ -185,88 +137,59 @@ _SESSION_SECRET_KEYS = {
     "session_token",
     "token",
 }
-_SESSION_SECRET_SUFFIXES = (
+_CREDENTIAL_KEY_SUFFIXES = (
     "_password",
     "_token",
     "_secret",
     "_authorization",
     "_cookie",
 )
+_PUBLIC_CURSOR_KEYS = {"continuation_token"}
 _BEARER_RE = re.compile(r"(?i)\bBearer\s+[A-Za-z0-9._~+/-]+=*")
 _JWT_RE = re.compile(r"\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b")
+_CREDENTIAL_ASSIGNMENT_RE = re.compile(
+    r"(?i)\b(?P<label>(?:authorization|cookie|password|secret|access_token|"
+    r"refresh_token|gravity_auth_token|gravity_authorization|session_token|token|"
+    r"[A-Za-z0-9_]+_(?:password|token|secret|authorization|cookie)))"
+    r"(?P<separator>\s*[:=]\s*)"
+    r'(?:"[^"]*"|\'[^\']*\'|[^\r\n,}\]]+)',
+)
 
 
-def _redact(value: Any, *, allow_analysis_business_fields: bool = False) -> Any:
+def _sanitize_credentials(value: Any) -> Any:
+    """Remove credentials from an Insight CLI output tree."""
+
     value = runtime.to_jsonable(value)
     if isinstance(value, Mapping):
-        allow_analysis_business_fields = allow_analysis_business_fields or str(
-            value.get("operation_id", "")
-        ).startswith("analysis.")
         result: dict[str, Any] = {}
         for key, item in value.items():
             lowered = str(key).lower()
-            filter_operator = (
-                lowered == "operator"
-                and "field" in value
-                and "values" in value
-                and (
-                    str(item).upper()
-                    in {
-                        "EQUALS",
-                        "IN",
-                        "NOT_EQUALS",
-                        "NOT_IN",
-                        "CONTAINS",
-                        "GT",
-                        "GTE",
-                        "LT",
-                        "LTE",
-                    }
-                    or isinstance(item, int)
-                    and not isinstance(item, bool)
-                )
-            )
-            blocked_keys = (
-                _SESSION_SECRET_KEYS if allow_analysis_business_fields else _SECRET_KEYS
-            )
-            blocked_suffixes = (
-                _SESSION_SECRET_SUFFIXES
-                if allow_analysis_business_fields
-                else _SECRET_KEY_SUFFIXES
-            )
             if (
-                (lowered in blocked_keys and not filter_operator)
+                lowered in _CREDENTIAL_KEYS
                 or (
-                    lowered.endswith(blocked_suffixes)
-                    and lowered not in _CONTRACTED_IDENTIFIER_KEYS
+                    lowered.endswith(_CREDENTIAL_KEY_SUFFIXES)
+                    and lowered not in _PUBLIC_CURSOR_KEYS
                 )
-                or not allow_analysis_business_fields
-                and lowered.startswith("operator_")
-                or not allow_analysis_business_fields
-                and lowered.startswith("dept_")
             ):
                 continue
-            result[str(key)] = _redact(
-                item,
-                allow_analysis_business_fields=allow_analysis_business_fields,
-            )
+            result[str(key)] = _sanitize_credentials(item)
         return result
     if isinstance(value, list):
-        return [
-            _redact(
-                item,
-                allow_analysis_business_fields=allow_analysis_business_fields,
-            )
-            for item in value
-        ]
+        return [_sanitize_credentials(item) for item in value]
     if isinstance(value, str):
-        return _JWT_RE.sub("[REDACTED]", _BEARER_RE.sub("Bearer [REDACTED]", value))
+        sanitized = _BEARER_RE.sub("Bearer [REDACTED]", value)
+        sanitized = _JWT_RE.sub("[REDACTED]", sanitized)
+        return _CREDENTIAL_ASSIGNMENT_RE.sub(
+            r"\g<label>\g<separator>[REDACTED]", sanitized
+        )
     return value
 
 
 def _write_json(value: Any, *, stream=None) -> None:
     print(
-        json.dumps(_redact(value), ensure_ascii=False, indent=2, sort_keys=True),
+        json.dumps(
+            _sanitize_credentials(value), ensure_ascii=False, indent=2, sort_keys=True
+        ),
         file=stream or sys.stdout,
     )
 
@@ -847,15 +770,21 @@ def _iter_ndjson_lines(result: Any):
     if isinstance(result, Mapping) and result.get("schema_version") == "gravity.agent-batch.v1":
         from gravity_sdk.agent_batch import iter_ndjson_records
         for record in iter_ndjson_records(result):
-            yield json.dumps(_redact(record), ensure_ascii=False, sort_keys=True)
+            yield json.dumps(
+                _sanitize_credentials(record), ensure_ascii=False, sort_keys=True
+            )
         return
     rows, metadata = _ndjson_rows(result)
     for row in rows:
         yield json.dumps(
-            _redact(_safe_stdout_result(row)), ensure_ascii=False, sort_keys=True
+            _sanitize_credentials(_safe_stdout_result(row)),
+            ensure_ascii=False,
+            sort_keys=True,
         )
     yield json.dumps(
-        _redact({"_gravity_insight": metadata}), ensure_ascii=False, sort_keys=True
+        _sanitize_credentials({"_gravity_insight": metadata}),
+        ensure_ascii=False,
+        sort_keys=True,
     )
 
 
@@ -876,7 +805,10 @@ def _emit_success(args: argparse.Namespace, result: Any) -> None:
             rendered = _render_ndjson(result)
         else:
             rendered = json.dumps(
-                _redact(result), ensure_ascii=False, indent=2, sort_keys=True
+                _sanitize_credentials(result),
+                ensure_ascii=False,
+                indent=2,
+                sort_keys=True,
             ) + "\n"
         _write_json(result_output.write_rendered_result(
             output, rendered, output_format=output_format
