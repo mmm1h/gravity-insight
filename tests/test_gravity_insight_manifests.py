@@ -855,6 +855,11 @@ class GravityInsightManifestTests(unittest.TestCase):
                     "create_time",
                 ],
             },
+            "material.local.list": {
+                "material_consumed": ["bytedance", "kuaishou", "tencent"],
+                "material_report": ["create_time", "gravity_material_id"],
+                "material_used": ["bytedance", "kuaishou", "tencent"],
+            },
             "promotion.ai_trusteeship.detail": {
                 "conditions": ["day", "metrics_name", "value"],
                 "detail_list": ["advertiser_id", "count", "advertiser_name"],
