@@ -26,20 +26,13 @@ def unavailable_analysis_gap(query: str) -> dict[str, Any] | None:
         return unavailable_gap(
             query, code="USER_ATTRIBUTION_DETAIL_DEPENDENCY_MISSING",
             journey="single_user_attribution_detail",
-            reason="Single-user attribution detail depends on the still-unclosed attribution aggregate contract.",
-            next_action=(
-                "Close the attribution aggregate request and response contract first, then use one "
-                "caller-supplied authorized user identifier for a bounded shape-only detail probe."
+            reason=(
+                "The request needs a caller-selected registered testing-device row id, and "
+                "the detail response item fields and types lack successful or explicit-empty evidence."
             ),
-        )
-    if _attribution_aggregate(selected, words):
-        return unavailable_gap(
-            query, code="ATTRIBUTION_AGGREGATE_CONTRACT_MISSING",
-            journey="attribution_aggregate",
-            reason="The recovered attribution body still fails semantically; required fields and value domains are unknown.",
             next_action=(
-                "Obtain the server-required field list and valid value domains from the upstream owner, "
-                "then run one minimal bounded aggregate probe."
+                "Have the caller authorize one real testing-device row id, then send one detail "
+                "request and register every observed attribution, device, postback, and pay field."
             ),
         )
     if _current_table_schema(selected, words):
@@ -83,22 +76,6 @@ def _single_user_attribution(selected: str, words: frozenset[str]) -> bool:
     chinese = "用户" in selected and "归因" in selected and any(
         term in selected for term in ("明细", "来源", "下钻")
     )
-    return english or chinese
-
-
-def _attribution_aggregate(selected: str, words: frozenset[str]) -> bool:
-    configuration = {
-        "configuration", "configured", "lookback", "mapping", "mappings",
-        "rule", "rules", "setting", "settings", "window",
-    }
-    english = (
-        bool(words & {"attribution", "attributed"})
-        and bool(words & {"aggregate", "aggregated", "performance", "summary"})
-        and not bool(words & configuration)
-    )
-    chinese = "归因" in selected and any(
-        term in selected for term in ("汇总", "表现", "聚合")
-    ) and not any(term in selected for term in ("配置", "规则", "映射", "回溯", "设置", "窗口"))
     return english or chinese
 
 

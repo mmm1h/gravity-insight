@@ -1191,6 +1191,11 @@ class GravityInsightManifestTests(unittest.TestCase):
                         "WXOpenID",
                     ]
                 },
+                "attribution.attribution.query": {
+                    "items": ["ad_platform", "date"],
+                    "tips": [],
+                    "total": ["ad_platform", "date"],
+                },
                 "analysis.segment.detail": {
                     "update_date_range": ["start_date", "end_date"]
                 },

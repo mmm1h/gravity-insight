@@ -8,9 +8,9 @@ manifest 与 `gravity agent <query>` 为准；完整路由账本见
 
 | 范围 | 当前状态 |
 | --- | --- |
-| 编译 operation | 186 |
-| stable operation | 177 |
-| stable operation 产品面交叉 | 87 已覆盖 / 82 不应产品化 / 8 值得产品化 |
+| 编译 operation | 187（默认值字典 `+1`、D35 `+1`） |
+| stable operation | 178（默认值字典 `+1`、D35 `+1`） |
+| stable operation 产品面交叉 | 88 已覆盖 / 82 不应产品化 / 8 原快照待产品化；默认值字典与 D35 直接闭环 |
 | 推广 / 素材 stable 原子读取 | 64 / 24 |
 | Census 路由 | 987，全部有明确归类 |
 | Census 中 callable covered route | 173 |

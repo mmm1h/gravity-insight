@@ -13,6 +13,7 @@ _STRICT_COMPOSITES = frozenset(
         "analysis_context",
         "analysis_default_dictionary",
         "attribution_snapshot",
+        "attribution_performance",
         "company_usage",
         "custom_audience",
         "bilibili_account_performance",
@@ -199,6 +200,10 @@ def _strict_composite_query(name: str, query: str) -> bool:
         from .agent_title_package import title_package_query
 
         return title_package_query(query)
+    if name == "attribution_performance":
+        from .agent_attribution_performance import attribution_performance_query
+
+        return attribution_performance_query(query)
     return _strict_composite_query_without_title_package(name, query)
 
 

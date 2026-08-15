@@ -3387,6 +3387,221 @@
       ],
       "stability": "stable",
       "upstream_method": "GET"
+    },
+    {
+      "action": "query",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "按 App 和闭区间读取前端归因表现面板的受控指标组合；返回明细、列说明、提示与合计，服务端“无数据”被规范化为明确空结果。",
+      "domain": "attribution",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "description": "调用方从 App 目录选择的正整数 App 标识。",
+          "required": true,
+          "type": "integer"
+        },
+        "date_list": {
+          "description": "闭区间 [start, end]，两个元素均为 YYYY-MM-DD。",
+          "item_type": "string",
+          "max_items": 2,
+          "min_items": 2,
+          "required": true,
+          "type": "array"
+        },
+        "dims_list": {
+          "description": "前端四个归因表现请求实际使用的维度。",
+          "item_enum": [
+            "date",
+            "ad_platform"
+          ],
+          "item_type": "string",
+          "max_items": 2,
+          "min_items": 1,
+          "required": true,
+          "type": "array"
+        },
+        "metrics_list": {
+          "description": "前端四个归因表现请求实际使用的有限指标集合。",
+          "item_enum": [
+            "AdClick",
+            "AdShow",
+            "AppActivateBuried",
+            "AppActivateStandard",
+            "AppActivateUploaded",
+            "AppGamePayAmountReportingStandard",
+            "AppGamePayUserCntStandard",
+            "AppRealRegisterCnt",
+            "AppRegisterStandard"
+          ],
+          "item_type": "string",
+          "max_items": 5,
+          "min_items": 1,
+          "required": true,
+          "type": "array"
+        },
+        "statistics_caliber": {
+          "description": "前端调用点固定选择的统计口径。",
+          "enum": [
+            "behavior_occurred_time",
+            "user_activated_time"
+          ],
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "dims_list": [
+            "date",
+            "ad_platform"
+          ],
+          "metrics_list": [
+            "AppRealRegisterCnt"
+          ],
+          "statistics_caliber": "user_activated_time"
+        }
+      },
+      "operation_id": "attribution.attribution.query",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v3/adreport/attribution/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "aggregate",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "date_list",
+          "metrics_list",
+          "dims_list",
+          "statistics_caliber"
+        ],
+        "defaults": {},
+        "fixed_body": {
+          "aggregate_app": false,
+          "child_type": "measurement",
+          "decimal_point": 2,
+          "filtering": {
+            "ad_platform_list": [],
+            "advertiser_id_list": [],
+            "aid_list": [],
+            "channel_list": [],
+            "operator_list": [],
+            "os_platform_list": [],
+            "turbo_promoted_object_id_list": [],
+            "version_list": []
+          },
+          "multi_days": 30,
+          "need_all_metrics": true,
+          "need_cname": false,
+          "report_level": "day",
+          "time_zone": "utc"
+        },
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        {
+          "input_field": "app_id",
+          "operation_id": "app.list"
+        }
+      ],
+      "resource": "attribution",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "items": [
+            "metrics_list"
+          ],
+          "tips": [
+            "metrics_list"
+          ],
+          "total": [
+            "metrics_list"
+          ]
+        },
+        "data_item_keys": {
+          "items": [
+            "ad_platform",
+            "date"
+          ],
+          "tips": [],
+          "total": [
+            "ad_platform",
+            "date"
+          ]
+        },
+        "data_keys": [
+          "columns",
+          "items",
+          "static",
+          "tips",
+          "total"
+        ],
+        "data_scalar_list_types": {
+          "columns": "string",
+          "static": "string"
+        },
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": [
+          "columns",
+          "items",
+          "static",
+          "tips",
+          "total"
+        ]
+      },
+      "semantic_error_rules": [
+        {
+          "message": "Gravity rejected the attribution aggregate request; verify the catalog App id and YYYY-MM-DD date range, then retry once.",
+          "operator": "not_in",
+          "path": "code",
+          "values": [
+            0,
+            200,
+            "0",
+            "200"
+          ]
+        },
+        {
+          "message": "Gravity rejected the attribution aggregate request; verify the catalog App id and YYYY-MM-DD date range, then retry once.",
+          "operator": "not_in",
+          "path": "extra.error",
+          "values": [
+            null,
+            "",
+            "无数据"
+          ]
+        }
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
     }
   ]
 }

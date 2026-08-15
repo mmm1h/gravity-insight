@@ -14,11 +14,12 @@
 
 ## 现状
 
-当前从仓库产品入口与 stable operation 正向交叉反推 48 条产品动线：**已闭环 34 / 部分闭环 0 / 完全缺失 14**；
+当前从仓库产品入口与 stable operation 正向交叉反推 48 条产品动线：**已闭环 35 / 部分闭环 0 / 完全缺失 13**；
 另有 2 条 legacy/SDK 便利面、1 条重复能力审计行和 1 条已有结果上的调用方派生便利面保留，
-但不计产品动线。表格 52 行减去 4 条“不计独立动线”得到 48 条；六条明确空复验让默认值字典从缺失变为闭环，
-故 `48 = 33 / 0 / 15 + 1 / 0 / -1 = 34 / 0 / 14`。operation 为 186、其中 177 个 stable。
-**部分闭环归零不代表没有欠账**——14 条完全缺失里
+但不计产品动线。表格 52 行减去 4 条“不计独立动线”得到 48 条；默认值字典与 D35 各从缺失变为闭环，
+故 `48 = 33 / 0 / 15 + 1 / 0 / -1 + 1 / 0 / -1 = 35 / 0 / 13`。operation 为
+`185 + 1 + 1 = 187`、stable 为 `176 + 1 + 1 = 178`。
+**部分闭环归零不代表没有欠账**——13 条完全缺失里
 多数是请求、响应或非空证据阻塞；字段隐私不再是阻塞项。
 逐条状态、四面入口、调用次数和证据阻塞以[分析动线台账](analysis-journeys.md)为准；旧
 `21/14/6` 快照的逐条底稿未进入版本控制，无法复算，已停止作为排期事实。
@@ -841,10 +842,28 @@ fields/conditions/order 仍必须加载实时 metadata，未登记字段继续 f
 `relate_dims`。**多个扁平 filter 的 AND/OR 组合语义上游未经证明**，产品 schema 无 `filter_logic`；
 证明不了就只支持可确定语义的形态，不得假定默认值，更不得为此造通用布尔 DSL。
 
-## D35 归因请求合同：旧服务端阻塞已撤销，待重新取证
+## D35 / F40 归因结果合同（2026-08-16）
+
+### 提案与静态控制流
+
+本轮先复核 census 同快照前端 bundle 的 hash，并沿 `Measurement` 页面从状态初始化、目录装载、
+`Gt` builder 到每个 `/adreport/attribution/` 调用点逐字段恢复完整请求：区分固定字段、页面默认值、
+调用点枚举、App/项目目录绑定、配置返回值与调用方筛选，明确 `undefined` 省略和空数组保留规则。
+在 builder、值域来源和父依赖形成可复核静态证据前，生产业务请求保持 0 次。
+
+静态证明完成后，只从前端自然调用形状中选择单日、无筛选、无项目、无自定义拆分的最小形状，
+按 App catalog 顺序串行验证；同一 `(App, 请求形状)` 仅发一次，不重试、不翻页、不扩窗，取得首个
+成功或明确空响应立即停止。若服务端仍拒绝，保留具体错误路径与值无关响应形状，并把下一步收敛到
+一条未证明事实。只有 D35 的请求、响应、分页和错误合同成立，才提升 stable operation 并接通
+Core / CLI / SDK / Plan / Agent card；随后再以同样证据标准判断 F40 的标识来源、请求绑定、分页和
+响应合同，不能用字段投影已放开替代这些事实。
 
 `attribution.attribution.query` 的**前端 builder 已完整恢复**（从与 census 快照哈希匹配的
 `Measurement-BV1Ulzee.js` 中的同作用域 builder `Gt`），16 个顶层字段：
+该 bundle 的 SHA-256 为
+`fb9d486e882c783709794cecce8fb72849151e70eea26537603d7b222a7216ed`；入口
+`index-D9HAN43D.js` 为
+`aa67659c360861d73309b2f9ca93ac15d95d6b39a092912a32cb72b9f1662d6b`。
 
 `child_type`、`date_list`、`metrics_list`、`dims_list`、`report_level`、`statistics_caliber`、
 `decimal_point`、`app_id`、`project_id`、`aggregate_app`、`multi_days`、`dims_metrics_list`、
@@ -865,9 +884,72 @@ builder 记录到 `code=0`、`msg=成功`、`extra.error=无数据` 和空聚合
 证明该登记值语义为明确空，不是参数错误。它不能倒推出旧两次响应的具体正文，但足以撤销旧标签对
 “缺服务端必填/值域”的证明力。
 
-因此本分支不把 D35 写成已闭环，也不花本单元预算重探测；阻塞改为**旧判定基于分类器误判，待使用
-修复后会保存判据的 evidence 重新取证**。F40 的 D35 依赖理由同步失效；其自身标识来源、请求绑定、
-分页和响应合同仍需独立证据。
+语义审计本身未据并行工作提升 D35；随后归因线用会保存协议判据的新 evidence 完成重新取证并闭环 D35。
+F40 的旧 D35 依赖理由同步失效；其自身标识来源、请求绑定、分页和响应合同仍需独立证据。
+
+值域与依赖来自同一控制流，而不是猜测：`app_id` 取 App catalog 选择项，若页面未来设置
+`connect_app_id` 则优先使用它；当前 bundle 只观察到初始化/重置为 `0`，没有正值赋值。直接 App
+把 `project_id` 置为 `0`，所以最小请求省略它；页面没有归因方案 ID 的装载或选择父链。
+`date_list` 来自调用方日期区间；`report_level` 的页面枚举是空值/day/week/month，最小为 day；
+`statistics_caliber` 的四个实际调用点只用 `user_activated_time` 或
+`behavior_occurred_time`；`time_zone` 来自页面时区设置（默认 utc，也可 ortz）；精度开关只产生
+2 或 4。筛选值分别来自平台、OS、渠道、版本、运营商、推广对象、aid、广告主目录；最小请求不猜值，
+八项均为空数组。`dims_metrics_list` 来自调用方额外拆分，空时省略。
+
+四个前端调用画像已逐一登记为同一受控 operation 的有限输入：
+
+- `attributed_registrations`：`AppRealRegisterCnt`，`date/ad_platform`，激活时间口径；
+- `activation_and_pay`：`AppActivateStandard/AppGamePayAmountReportingStandard`，
+  `date/ad_platform`，行为发生时间口径；
+- `activation_conversion`：三种 `AppActivate*`，`date`，激活时间口径；
+- `overview`：`AdShow/AdClick/AppActivateStandard/AppRegisterStandard/`
+  `AppGamePayUserCntStandard`，`date`，激活时间口径。
+
+### 生产账本与 D35 裁决
+
+生产共 **3 次业务 HTTP**，全串行、无重试、无翻页、无扩窗，也未触发鉴权刷新：
+
+| 次序 | 目的 | 状态 | 结论 |
+| --- | --- | --- | --- |
+| 1 | `app.list` 目录事实，第一页 | HTTP 200，7 个候选 | 只在内存按目录顺序取 App；未保存名称 |
+| 2 | 首个 App，单日，`attributed_registrations` | HTTP 200；`code=0`、`msg=成功`、`extra.error=无数据` | 明确空；五个数据容器均存在，列表均空 |
+| 3 | 第二个 App，同一单日同一形状 | HTTP 200；`code=0`、`msg=成功`、`extra.error=""` | 非空；`columns=3/items=2/static=21/total=1`，立即停止枚举 |
+
+旧不可变 evidence 只保存 `semantic_error` 分类、shape fingerprint 和容器计数，**没有保存**
+`msg` 或 `extra.error` 的实际正文，因此不能追认某个服务端字段拒绝原因。新证据反而证明精确 builder
+是合法请求，并证明 `extra.error="无数据"` 是成功的明确空。故旧标签不足以证明“服务端拒绝 body”；
+本轮合同把 `code in {0,200}` 且 `extra.error in {null,"","无数据"}` 视为非错误，其他值 fail-closed。
+这既保留了未知拒绝，也修正了明确空被误分类的风险。
+
+**D35 已闭环。** `attribution.attribution.query` 晋升 stable v1，公开已观察的全部
+`columns/items/static/tips/total` 字段，并以动态指标字段绑定有限前端画像；分页为 none。Core
+`attribution_performance`、CLI `gravity attribution performance`、SDK、Plan
+`attribution_performance` 与 Agent card 共用 `gravity-insight.attribution-performance.v1`。
+已知输入 1 次顶层调用、未知 capability 2 次；未知 App 的离线默认场景为 3 次，均由
+`gravity.agent-call-bound.v1` 声明。四个内部 HTTP 共享一次 bounded batch 与 Plan worker 租借，
+不把内部请求数误算为调用方调用次数。
+
+### F40 精确剩余事实
+
+hash-matched `Device-TemCRn-D.js` 和 `userSearch-Bhwew5eC.js` 证明：搜索 route 的 body 是
+`{app_id,key_word:trimmed-or-undefined}`，响应消费 `data.attribution_list`；测试设备父目录 body 是
+`{app_id,page:1,page_size:1000}`，响应消费 `data.list`。调用方选中一行后，详情 body **仅为**
+`{app_id,device_id:Number(selected.data.list[].id)}`；这里的 `device_id` 是登记测试设备行的内部 id，
+不是可猜的原始设备标识。详情无服务端分页，前端完整消费 `device_white/attribution_list/`
+`postback_list/pay_list`。
+两 bundle 的 SHA-256 分别为
+`5a8a9ad1ee358899bbcbf09fc43711285c51015667431e5fe1892029a4bc3aae` 与
+`8a8fda10088a31c241ebd1e96624d8daf9a36e289f09bcf78204398a8c888069`。
+
+F40 仍完全缺失：本任务只授权枚举 App catalog，没有授权枚举用户级测试设备目录，也没有调用方提供的
+真实父行 id，因此生产请求为 0。还差两条具体事实：一条 caller-authorized `data.list[].id`（且父
+`app.testing_tool.list` 合同须 live 验证），以及一次详情成功或明确空响应，用于登记四个容器全部字段与
+类型。最小下一步是调用方选定并授权一个真实测试设备父行，只发一次详情请求；不得猜设备值。
+
+本线新增 **4 个** caller 可恢复错误点（App、日期区间、worker 上界、Plan request shape），
+**4 个均为 A 档**；本次集成树从 `1024 = 220 A + 434 B + 370 C` 变为
+`1028 = 224 A + 434 B + 370 C`。技术债清单已复核：领域 SDK mixin 与 fixed-composite family router 吸收新面，
+共享入口的 SLOC/复杂度 ratchet 未上调，也没有新增可证明的结构债。
 
 ### census 提取器的已知能力边界
 

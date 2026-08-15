@@ -194,6 +194,8 @@ class GravityInsightGoldenTests(unittest.TestCase):
         )
         operations = repository_operations()
         probed_additions = {
+            # D35：完整前端 builder 加明确空/非空生产证据后晋升。
+            "attribution.attribution.query",
             "material.asset_material_media_review_list.list",
             "metadata.promotion_gravity_metric.list",
             "metadata.property.list",

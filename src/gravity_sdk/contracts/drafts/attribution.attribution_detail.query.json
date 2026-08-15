@@ -3,18 +3,13 @@
   "draft": {
     "blockers": [
       {
-        "code": "not_probed",
-        "detail": "No live probe evidence exists for this route.",
+        "code": "authorized_identifier_required",
+        "detail": "A production probe requires one caller-authorized data.list[].id from the registered testing-device parent; App-catalog enumeration does not authorize this user-level selection.",
         "status": "open"
       },
       {
-        "code": "pagination_unverified",
-        "detail": "Pagination kind, field names, and limits have not been observed.",
-        "status": "open"
-      },
-      {
-        "code": "request_binding_unverified",
-        "detail": "Query/body fields and fixed request values have not been observed.",
+        "code": "parent_contract_unverified",
+        "detail": "Frontend control flow proves the parent data.list[].id binding, but app.testing_tool.list is not yet a stable live-verified contract.",
         "status": "open"
       },
       {
@@ -29,6 +24,26 @@
         "classification_reason": "frontend_static_consumer_unreviewed",
         "expose": false,
         "path": "data.attribution_list",
+        "presence": "unknown",
+        "privacy_classification": "manual_review",
+        "types": [
+          "unknown"
+        ]
+      },
+      {
+        "classification_reason": "frontend_static_consumer_unreviewed",
+        "expose": false,
+        "path": "data.pay_list",
+        "presence": "unknown",
+        "privacy_classification": "manual_review",
+        "types": [
+          "unknown"
+        ]
+      },
+      {
+        "classification_reason": "frontend_static_consumer_unreviewed",
+        "expose": false,
+        "path": "data.postback_list",
         "presence": "unknown",
         "privacy_classification": "manual_review",
         "types": [
@@ -60,9 +75,8 @@
     "promotion_gate": {
       "eligible": false,
       "missing": [
-        "not_probed",
-        "pagination_unverified",
-        "request_binding_unverified",
+        "authorized_identifier_required",
+        "parent_contract_unverified",
         "response_schema_unverified"
       ]
     },
@@ -72,7 +86,7 @@
         "Mt"
       ],
       "contract_family": null,
-      "cost_reason": "flat list/detail lookup with no evident parent dependency",
+      "cost_reason": "detail lookup with a caller-selected registered testing-device parent row",
       "estimated_implementation_cost": "低",
       "first_occurrence": {
         "column": 26857,
@@ -97,9 +111,9 @@
             "route_offset": 26856
           }
         ],
-        "contract_confidence": "medium",
+        "contract_confidence": "high",
         "learned_parameters": [],
-        "required_semantics": "frontend_observation_only",
+        "required_semantics": "frontend_builder_and_parent_selection_proven",
         "route": {
           "method": "POST",
           "path": "/turbo_engine/api/v1/user/device_white/testing_tool/attribution_detail/"
@@ -147,33 +161,32 @@
   "operation": {
     "action": "query",
     "auth_profile": "gravity_authorization",
-    "block_reason": "draft blockers: not_probed, pagination_unverified, request_binding_unverified, response_schema_unverified",
+    "block_reason": "draft blockers: authorized_identifier_required, parent_contract_unverified, response_schema_unverified",
     "contract_version": 1,
-    "description": "Draft catalog entry inferred from census route POST /turbo_engine/api/v1/user/device_white/testing_tool/attribution_detail/; request binding, pagination, and response projection remain unverified.",
+    "description": "Draft user-level attribution detail. Frontend control flow proves POST body {app_id, device_id:Number(selected data.list[].id)} and no server pagination; a caller-authorized parent row and response field/type evidence are still required.",
     "domain": "attribution",
     "effect": "read",
     "examples": [],
     "executable": false,
     "input_fields": {
       "app_id": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
-        "type": "any"
+        "description": "Positive App id bound from the selected testing-device parent.",
+        "required": true,
+        "type": "integer"
       },
       "device_id": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "description": "Internal registered testing-device row id selected by the caller from app.testing_tool.list data.list[].id; this is not a raw device identifier.",
+        "required": true,
         "type": "integer"
       }
     },
     "live_probe": {
       "enabled": false,
-      "inputs": {
-        "app_id": 0,
-        "device_id": 0
-      }
+      "inputs": {}
     },
     "operation_id": "attribution.attribution_detail.query",
     "pagination": {
-      "kind": "unverified",
+      "kind": "none",
       "list_path": "",
       "page_field": "",
       "page_info_path": "",
@@ -197,7 +210,9 @@
     },
     "provenance": {
       "applied_overrides": [
-        "frontend_route_parameter_contract"
+        "frontend_builder_contract",
+        "frontend_parent_selection",
+        "frontend_response_consumers"
       ],
       "family": null,
       "platform": null,
@@ -216,7 +231,14 @@
       "path_fields": [],
       "query_fields": []
     },
-    "required_parent": [],
+    "required_parent": [
+      {
+        "input_field": "device_id",
+        "operation_id": "app.testing_tool.list",
+        "output_path": "data.list[].id",
+        "selection": "caller_select"
+      }
+    ],
     "resource": "attribution_detail",
     "response_projection": {
       "data_keys": [],

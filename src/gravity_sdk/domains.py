@@ -493,6 +493,7 @@ ATTRIBUTION_SNAPSHOT_OPERATIONS = tuple(
         operation.operation_id
         for operation in COMPILED_CATALOG_OPERATIONS
         if operation.domain == "attribution"
+        and operation.resource != "attribution"
         and operation.stability == "stable"
         and operation.executable
     )

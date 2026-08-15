@@ -381,6 +381,24 @@
       "path": "/apprank/api/v1/rank/app_trend/public_list/",
       "reviewed_at": "2026-08-16",
       "reviewer": "codex/route-coverage"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched Measurement-BV1Ulzee.js, clicking Search invokes the attribution route four times with aggregate metric/dimension profiles, then consumes data.items and data.total to populate natural/promoted charts and conversion summary cards. Saved-report persistence uses separate ReportCommonHeader routes, and this call has no confirmation, write continuation or mutation feedback.",
+          "source": "src/gravity_sdk/census/data/bundle-snapshot.json"
+        },
+        {
+          "detail": "The recovered builder has fourteen always-emitted top-level keys, two conditional keys and a fixed eight-list filtering object. The direct-App natural/promoted activation call has no pagination or attribution-scheme parent and uses the catalog App id plus fixed frontend metric/dimension/caliber values.",
+          "source": "docs/roadmap.md#d35--f40-归因结果合同2026-08-16"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "attribution.attribution.query",
+      "path": "/report/api/v3/adreport/attribution/",
+      "reviewed_at": "2026-08-16",
+      "reviewer": "codex/attribution"
     }
   ],
   "schema_version": "gravity-insight.probe-read-confirmations.v1"

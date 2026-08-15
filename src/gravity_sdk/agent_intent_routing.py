@@ -163,6 +163,7 @@ def _positive_query_selectors(query: str) -> tuple[str, ...]:
     from .agent_order_directory import order_directory_intent
     from .agent_order_trace import order_split_trace_intent
     from .agent_promotion_performance import promotion_performance_intent
+    from .agent_attribution_performance import attribution_performance_intent
     from .agent_segment import segment_evaluate_intent
     from .agent_segment_snapshot import segment_snapshot_intent
     from .agent_segment_members import segment_members_intent
@@ -181,6 +182,7 @@ def _positive_query_selectors(query: str) -> tuple[str, ...]:
         ("composite:material_performance", material_performance_intent(query)),
         ("composite:title_package", title_package_intent(query)),
         ("composite:promotion_performance", promotion_performance_intent(query)),
+        ("composite:attribution_performance", attribution_performance_intent(query)),
         (
             "composite:bilibili_account_performance",
             bilibili_account_performance_intent(query),

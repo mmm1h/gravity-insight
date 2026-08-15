@@ -711,6 +711,7 @@ class DiscoveryUxTests(unittest.TestCase):
             "J30": "metadata:search", "J31": "metadata:table_lineage",
             "J32": "export.material.report.start",
             "J33": "composite:analysis_default_dictionary",
+            "J41": "composite:attribution_performance",
         }
         gaps = {
             "J19": "WORKSPACE_SQL_PRODUCT_NOT_CONFIGURED",
@@ -721,7 +722,6 @@ class DiscoveryUxTests(unittest.TestCase):
             "J38": "APP_PROJECT_ITEM_SCHEMA_MISSING",
             "J39": "APP_ONELINK_PUBLIC_BINDING_SAMPLE_MISSING",
             "J40": "MONETIZATION_AGGREGATE_CONTRACT_MISSING",
-            "J41": "ATTRIBUTION_AGGREGATE_CONTRACT_MISSING",
             "J42": "USER_ATTRIBUTION_DETAIL_DEPENDENCY_MISSING",
             "J43": "CURRENT_TABLE_SCHEMA_PARENT_MISSING",
             "J44": "NON_BYTEDANCE_HIERARCHY_PARENT_MISSING",

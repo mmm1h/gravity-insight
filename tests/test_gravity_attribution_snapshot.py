@@ -2,12 +2,23 @@ from __future__ import annotations
 
 import unittest
 
-from gravity_sdk.attribution import attribution_snapshot
+from gravity_sdk.agent import discover_capabilities
+from gravity_sdk.attribution import (
+    PERFORMANCE_OPERATION_ID,
+    PERFORMANCE_PROFILES,
+    attribution_performance,
+    attribution_snapshot,
+)
 from gravity_sdk.domains import (
     ATTRIBUTION_PAGINATED_OPERATIONS,
     ATTRIBUTION_SNAPSHOT_OPERATIONS,
 )
 from gravity_sdk.errors import InputValidationError
+from gravity_sdk.plan import AdapterContext
+from gravity_sdk.plan_attribution_adapter import (
+    execute_attribution_performance_plan,
+    validate_attribution_performance_plan,
+)
 
 
 class _Client:
@@ -155,6 +166,107 @@ class AttributionSnapshotTests(unittest.TestCase):
                     "attribution snapshot app_id must be a positive integer",
                     str(raised.exception),
                 )
+
+    def test_performance_uses_the_four_frontend_profiles_in_one_batch(self) -> None:
+        def with_data(items):
+            return [
+                {
+                    **item,
+                    "data": {
+                        "operation_id": item["operation_id"],
+                        "status": "success",
+                        "data": {"items": [], "total": []},
+                    },
+                }
+                for item in items
+            ]
+
+        client = _Client(results=with_data)
+        result = attribution_performance(
+            client, "101", "2026-08-15", "2026-08-15", max_workers=3
+        )
+
+        requests, concurrency = client.calls[0]
+        self.assertEqual((4, 3), (len(requests), concurrency))
+        self.assertEqual(
+            [profile[0] for profile in PERFORMANCE_PROFILES],
+            [request["request_id"] for request in requests],
+        )
+        self.assertTrue(
+            all(request["operation_id"] == PERFORMANCE_OPERATION_ID for request in requests)
+        )
+        for request, profile in zip(requests, PERFORMANCE_PROFILES, strict=True):
+            _, metrics, dimensions, caliber = profile
+            self.assertEqual(
+                {
+                    "app_id": 101,
+                    "date_list": ["2026-08-15", "2026-08-15"],
+                    "metrics_list": list(metrics),
+                    "dims_list": list(dimensions),
+                    "statistics_caliber": caliber,
+                },
+                request["inputs"],
+            )
+        self.assertEqual((4, "empty"), (result["source_count"], result["status"]))
+
+    def test_performance_agent_handoff_and_call_bound_are_machine_decidable(self) -> None:
+        result = discover_capabilities(
+            "汇总上周各渠道的归因新增、激活和付费表现。", client=None
+        )
+
+        self.assertEqual((1, 1), (result["count"], result["total"]))
+        card = result["candidates"][0]
+        self.assertEqual("attribution_performance", card["composite"])
+        self.assertEqual(["app", "start", "end"], card["missing_inputs"])
+        self.assertEqual(
+            "gravity.agent-call-bound.v1", card["call_bound"]["schema_version"]
+        )
+        self.assertEqual(
+            (1, 2),
+            (card["call_bound"]["known_inputs"], card["call_bound"]["unknown_capability"]),
+        )
+        self.assertEqual("attribution_performance", card["plan_node"]["request"]["name"])
+
+    def test_performance_rejects_invalid_bounds_before_batch(self) -> None:
+        for options in (
+            {"app_id": "bad"},
+            {"start": "2026-08-16", "end": "2026-08-15"},
+            {"max_workers": 0},
+        ):
+            with self.subTest(options=options):
+                client = _Client()
+                values = {
+                    "app_id": "101", "start": "2026-08-15",
+                    "end": "2026-08-15", **options,
+                }
+                with self.assertRaises(InputValidationError):
+                    attribution_performance(client, **values)
+                self.assertEqual([], client.calls)
+
+    def test_performance_plan_uses_the_global_worker_lease(self) -> None:
+        class Workspace:
+            def resolve_app(self, _value):
+                return 101
+
+        class SDK:
+            def attribution_performance(self, *args, **kwargs):
+                self.call = (args, kwargs)
+                return {"schema_version": "gravity-insight.attribution-performance.v1"}
+
+        workspace, sdk = Workspace(), SDK()
+        context = AdapterContext(
+            "node", "execution", "composite", workspace, (), (), 1, 100_000
+        )
+        request = {
+            "name": "attribution_performance", "app": "main",
+            "start": "2026-08-15", "end": "2026-08-15",
+        }
+
+        validate_attribution_performance_plan(request, context, workspace)
+        result = execute_attribution_performance_plan(sdk, request, context)
+
+        self.assertEqual("gravity-insight.attribution-performance.v1", result["schema_version"])
+        self.assertEqual(1, sdk.call[1]["max_workers"])
 
 
 if __name__ == "__main__":

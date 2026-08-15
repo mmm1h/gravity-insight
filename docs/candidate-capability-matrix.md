@@ -1,8 +1,8 @@
 # 候选能力证据矩阵
 
-本矩阵记录 17 项候选能力在 2026-08-12 受控只读探测后的真实状态，并原位追加后续取证结论，供开发决策使用。2026-08-16 多 App 复验后仓库基线为 [186 个 operation、其中 177 个 stable operation](capability-coverage.md)；`analysis.default_val.list` 已晋升，其他候选不因明确空而晋升。
+本矩阵记录 17 项候选能力在 2026-08-12 受控只读探测后的真实状态，并原位追加后续取证结论，供开发决策使用。2026-08-16 多 App 复验与 D35 闭环后仓库基线为 [187 个 operation、其中 178 个 stable operation](capability-coverage.md)；`analysis.default_val.list` 与 D35 已晋升，其余 15 个候选保持 draft。
 
-除 `analysis.default_val.list` 外，`analysis.setting.query` 保留在 draft 台账但 `effect=mutation`，其余候选仍是 read draft，promotion gate 均未满足。表中的“下一步最小证据”表示继续判断所需的最小输入，不代表晋升计划或交付承诺。后续在线验证仍须遵循[探测规范](maintainers/probing.md)，保持只读、限流、值不落盘和 fail-closed。
+`analysis.setting.query` 保留在 draft 台账但 `effect=mutation`，其余未晋升候选仍是 read draft，promotion gate 均未满足。表中的“下一步最小证据”表示继续判断所需的最小输入，不代表晋升计划或交付承诺。后续在线验证仍须遵循[探测规范](maintainers/probing.md)，保持只读、限流、值不落盘和 fail-closed。
 
 ## 逐项状态
 
@@ -24,9 +24,9 @@
 | `app.monetization_app.list` | `draft` | 本轮 0 次请求；沿用既有空样本；草案声明 `page_info`，本轮未复核；无父绑定。 | `empty_sample`、`response_schema_unverified` | 先证明账户与变现平台参数的可信来源，再以第一页最小请求取得 1 个非空样本；不得猜测账户或平台值。 |
 | `app.app_info.get` | `draft` | 本轮 0 次请求；沿用既有空样本；分页为 `none`，本轮未复核；无父绑定。 | `empty_sample`、`response_schema_unverified` | 从已存在的前端调用证据获得 1 个真实且可公开处理的 URL 绑定，再做 1 次最小读取并审查返回字段。 |
 | `app.user_auth.list` | `draft` | 3 次目标请求；HTTP 200、空样本；`page_info`、第二页行为和安全页上限已验证；无父绑定。 | `empty_sample`、`response_schema_unverified` | 在具备可读授权记录的环境取得 1 个非空样本，并重点审查权限、身份和个人信息字段，默认不暴露未知字段。 |
-| `attribution.attribution.query` | `draft` | 本轮 0 次请求。**2026-08-16 审计纠正**：旧 `semantic_error` evidence 没有保存 `code/msg/extra.error`，不能证明参数错误；旧分类器会把已另行证实为明确空的 `extra.error=无数据` 误判为拒绝。分页为 `none`，本轮不复探测。 | `response_schema_unverified`、`semantic_error_evidence_invalidated` | 使用修复后会保存协议判据的 evidence 重新取证；未知 `extra.error` 继续 fail-closed，不拿本轮预算重探测。完整 builder 已由 hash-matched bundle 恢复，不能再把静态 body 提取写成 blocker。 |
+| `attribution.attribution.query` | `stable v1`（D35 已闭环） | hash-matched `Measurement` bundle 完整证明 14 个恒发字段、`project_id/dims_metrics_list` 两条条件省略、八个恒发筛选数组和四个有限调用画像。生产 1 次 App catalog + 2 次单日目标 POST：首 App 明确空，第二 App 非空后停止；均 HTTP 200，无重试、翻页或扩窗。 | 无 promotion blocker；旧 evidence 未保存具体 error 正文，不能追认字段拒绝。新证据证明 `extra.error=无数据` 是 `code=0/msg=成功` 的明确空。 | 由 Core/CLI/SDK/Plan/Agent `attribution_performance` 消费；未知 semantic error 继续 fail-closed。 |
 
-| `attribution.attribution_detail.query` | `draft` | 本轮 0 次请求，且无既有 live probe；无样本，分页未验证；无父绑定。 | `not_probed`、`pagination_unverified`、`request_binding_unverified`、`response_schema_unverified` | 必须先证明完整请求绑定和响应合同；真实用户/设备标识可作为受控输入，但证据不足时仍不探测。 |
+| `attribution.attribution_detail.query` | `draft`（F40 静态绑定已证明） | hash-matched Device/userSearch 控制流证明父目录 `data.list[].id` 由调用方选择，详情 body 为 `{app_id,device_id:Number(id)}`，分页 `none`；前端消费 `device_white/attribution_list/postback_list/pay_list`。本轮没有用户级目录枚举授权，目标请求 0 次。 | `authorized_identifier_required`、`parent_contract_unverified`、`response_schema_unverified` | 调用方授权一个真实登记测试设备父行 id，只发 1 次详情请求；成功或明确空后登记四个容器全部观察字段与类型。 |
 
 ## 2026-08-16 追加判定：六条明确空的 App 维度复验
 

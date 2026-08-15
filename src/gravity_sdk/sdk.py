@@ -14,6 +14,7 @@ from typing import Any
 
 from .sdk_analysis import AnalysisSdkMixin
 from .sdk_analysis_default_dictionary import AnalysisDefaultDictionarySdkMixin
+from .sdk_attribution import AttributionSdkMixin
 from .sdk_derived_metrics import DerivedMetricsSdkMixin
 from .sdk_material import MaterialSdkMixin
 from .sdk_metadata import MetadataSdkMixin
@@ -33,6 +34,7 @@ class GravitySDK(
     DerivedMetricsSdkMixin,
     AnalysisSdkMixin,
     AnalysisDefaultDictionarySdkMixin,
+    AttributionSdkMixin,
     SegmentMembersSdkMixin,
     ReportSdkMixin,
     MaterialSdkMixin,
