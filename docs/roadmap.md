@@ -13,10 +13,12 @@
 
 ## 现状
 
-当前从仓库产品入口与 stable operation 正向交叉反推 48 条产品动线：**已闭环 32 / 部分闭环 0 / 完全缺失 16**；
+当前从仓库产品入口与 stable operation 正向交叉反推 47 条产品动线：**已闭环 32 / 部分闭环 0 / 完全缺失 15**；
 另有 2 条 legacy/SDK 便利面保留用于兼容与维护，但不计产品动线。
-上一快照是 `43 = 19 / 9 / 15`：9 条部分闭环由在线输入解析全部转入已闭环，另新增 4 条产品动线全部闭环，
-缺失新增 1 条（Issue 19 精确素材预览/下载）。**部分闭环归零不代表没有欠账**——16 条完全缺失里
+上一快照是 `48 = 32 / 0 / 16`；2026-08-15 的设置 route 穷尽取证确认其中 1 条完全缺失
+是既有 dashboard/saved-analysis 稳定读取面的重复记账，因此产品动线与 completely missing 各减 1，
+得到 `47 = 32 / 0 / 15`。stable operation 仍为 185、其中 176 个 stable。
+**部分闭环归零不代表没有欠账**——15 条完全缺失里
 多数是证据或隐私边界阻塞。
 逐条状态、四面入口、调用次数和证据阻塞以[分析动线台账](analysis-journeys.md)为准；旧
 `21/14/6` 快照的逐条底稿未进入版本控制，无法复算，已停止作为排期事实。
@@ -949,3 +951,48 @@ consumer release 执行，本仓库不添加兼容别名或双重 envelope。
 **185 + 0 - 0 = 185**；动线 **48 + 0 = 48**，闭环分布仍为 **32 / 0 / 16**。质量 baseline
 只删除已改善的 `Transport.request` complexity 16 项，没有放宽任何阈值。既有 composite
 result/error/pagination 模型差异继续按技术债裁决保留，不借本轮建立通用错误 DSL。
+
+## 分析空间 / 报表设置只读 route 裁决（2026-08-15）
+
+**裁决：存在真只读 route，但不存在新的独立产品缺口。** `analysis.setting.query` 仍是修改设置的
+mutation；真正的读取分别由既有 dashboard control plane 与 saved-analysis 产品承担。
+
+穷尽性取证先对冻结 `bundle-snapshot.json` 的 375 个文件逐一做 SHA-256，375/375 命中，0 缺失、
+0 不匹配；再用当前 parser 离线重放，2,023 个 route occurrence 收敛为 987 个唯一
+`(method,path)`，与冻结 inventory 逐条及集合完全相等，76 条未知 method 也包含在内。在 987 条全集
+并集搜索 setting/config/conf/preference/option、report/dashboard/kanban/board/chart、
+analysis/insight/workspace/space 与中文 UI 词族，得到 378 条宽松超集；沿命中的 owner 前缀展开为
+52 条精确命名空间全集：kanban 26、report_config 3、saved report 5、dashboard favourite 8、
+confmetric 6、filter_conf 1、base report metric 1、role report metric 2。所有计数来自完整程序断言，
+不依赖截断终端输出。
+
+hash-matched bundle 控制流确认四条真读：
+
+- `GET .../kanban/tree/` 在页面装载和 App 切换时读取空间/文件夹/看板树；
+- `GET .../kanban/dashboard/detial/` 在选中看板后读取并消费 `ui_config`；
+- `GET .../report_config/list/` 在添加图表时读取保存分析列表并消费所选 `config`；
+- `GET .../report_config/info/` 在八类 Analysis 页面打开既有引用时读取、解析并恢复表单。
+
+保存动作分别走 `dashboard/edit`、`report_config/update` 和 `kanban/report/setting`；后者提交
+`config/name/remark`、继续更新布局并提示“修改成功”，所以不能改判为读。成员 route 只读分享授权，
+favourite route 只读筛选收藏，report list/detail 读取另一类业务报表定义，confmetric 读取指标目录；
+`POST /report/api/v1/filter_conf/get/` 只有路径词元、无静态调用点，继续不确认。
+
+四条真读均已有 stable contract，Core/CLI/SDK/Plan/Agent 卡分别由 `dashboard_snapshot` 与
+`saved_analysis` 交付；Plan 已走窄 family router，`plan_adapters.py` 本轮净增长 0，
+`gravity.agent-call-bound.v1` 已声明两类 composite 的调用次数。因此第 64 行从“完全缺失”改为
+“不计独立动线（既有稳定读取面重复）”。计数从 `48 = 32 / 0 / 16` 减去一条重复 missing，得到
+`47 = 32 / 0 / 15`；operation 仍为 185、stable 仍为 176。
+
+静态确认后只发 1 次生产请求：stable `analysis.report_config.list`，第一页、`page_size=1`，HTTP 200、
+`success`、投影列表非空；没有重试、翻页、扩窗、换 App 或猜值。只记录字段/类型形状，fingerprint 为
+`b50713e0542c1ac1bc06b57a067e715065f6f952bfa7a1f1ff2cefad4a7a75d6`，App ID 与响应值未落盘。
+
+本单元不修改既有稳定输出。投影边界以本页「投影边界总裁决：全面放开」为准；未来若提出新的
+通用设置面，`config`、`ui_config`、`even_report.config`、`remark`、`share_members[].uid`、
+create/update user id/name、member name/uname 等已证实字段应全部登记并暴露。未登记字段仍按合同
+漂移 fail-closed，正确后续是登记并暴露，不以自由文本或人员信息另设隐私门禁。
+
+**推翻条件**：新的 hash-matched bundle/inventory 证明独立读取 route；上述 GET 控制流变成提交；
+或出现一个不能由 dashboard snapshot / saved analysis 回答的独立调用方问题，并取得所需字段的合同
+证据。批准 mutation、路径含 read 味词元或发现更多自由文本字段，均不足以推翻本裁决。

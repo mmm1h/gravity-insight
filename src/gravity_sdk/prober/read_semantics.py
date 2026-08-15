@@ -43,10 +43,11 @@ def _confirmation_key(record: Any, path: Path) -> tuple[str, str]:
             for item in evidence
         )
     )
+    method = str(record.get("method", "")).upper() if isinstance(record, Mapping) else ""
     valid = (
         isinstance(record, Mapping)
         and record.get("decision") == "confirmed_read"
-        and str(record.get("method", "")).upper() == "POST"
+        and method in {"GET", "POST"}
         and str(record.get("path", "")).startswith("/")
         and bool(str(record.get("reviewer", "")).strip())
         and bool(str(record.get("reviewed_at", "")).strip())
@@ -57,10 +58,10 @@ def _confirmation_key(record: Any, path: Path) -> tuple[str, str]:
             f"Probe read-semantics confirmation is incomplete or invalid: {path}.",
             next_action="Record method, path, reviewer, reviewed_at, confirmed_read decision, and static evidence.",
         )
-    return "POST", str(record["path"])
+    return method, str(record["path"])
 
 
-def _confirmation_keys(path: Path) -> set[tuple[str, str]]:
+def confirmation_keys(path: Path) -> set[tuple[str, str]]:
     try:
         document = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
@@ -79,7 +80,9 @@ def _confirmation_keys(path: Path) -> set[tuple[str, str]]:
     for record in records:
         key = _confirmation_key(record, path)
         if key in keys:
-            raise PolicyViolation(f"Duplicate probe read-semantics confirmation: POST {key[1]}.")
+            raise PolicyViolation(
+                f"Duplicate probe read-semantics confirmation: {key[0]} {key[1]}."
+            )
         keys.add(key)
     return keys
 
@@ -90,7 +93,7 @@ def assert_probe_read_semantics(
     """Reject a weak-evidence POST before any probe transport is constructed."""
 
     route = _weak_post_route(source)
-    if route is None or route in _confirmation_keys(confirmations_path):
+    if route is None or route in confirmation_keys(confirmations_path):
         return
     operation_id = str(source.get("operation", {}).get("operation_id", "unknown"))
     raise PolicyViolation(
@@ -141,6 +144,7 @@ def assert_probe_draft_directory(
 
 __all__ = [
     "CONFIRMATIONS_PATH",
+    "confirmation_keys",
     "assert_probe_draft_directory",
     "assert_probe_operation_ids",
     "assert_probe_read_semantics",
