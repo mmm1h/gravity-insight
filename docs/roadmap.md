@@ -1588,3 +1588,41 @@ JWT 和凭据赋值被替换。条件 `values`、原始请求/响应及其他可
 owner 文件因真实调用方错误而被触及时，把能证明安全的原始值和权威候选传到消息边界；不得用栈帧
 反射抓局部变量，也不得为提高 A 档比例回显凭据、filter values 或原始上游错误。该消息升级不改变
 `docs/analysis-journeys.md` 的动线完成度，operation 仍为 185、stable 仍为 176；本轮 0 次生产请求。
+
+## 字段策略层错误消息升级（2026-08-15）
+
+**提案：**承接 `8a27f87` 的 sanitizer、`actual_value` / `allowed_values` 和 N=20 上限，按 Agent
+最常撞到的筛选条件、事件、分群、控制、明细、metadata 顺序，把原始调用值和当前校验现场已有的
+权威 enum / live metadata 候选传到结构化错误；拿不到安全原值时停在 B，不回显 filter/condition/
+data-list values 或上游异常正文。`models.py` 与 `plan_validation.py` 只在六文件集群完成且质量门禁
+仍有安全余量时继续，不以升级条数替代单条可恢复性。
+
+**结论：六个高频字段策略文件的 176 条已全部脱离 C 档，`models.py` 与 `plan_validation.py`
+留待后续 owner 单元。** 逐文件固定审计如下：
+
+| owner 文件 | 升级前 A/B/C | 升级后 A/B/C | 净迁移 |
+| --- | ---: | ---: | ---: |
+| `_field_policy_conditions.py` | 0 / 0 / 45 | 39 / 6 / 0 | 39 C→A，6 C→B |
+| `_field_policy_event.py` | 0 / 0 / 26 | 26 / 0 / 0 | 26 C→A |
+| `_field_policy_segment.py` | 0 / 0 / 35 | 35 / 0 / 0 | 35 C→A |
+| `_field_policy_controls.py` | 0 / 0 / 27 | 19 / 8 / 0 | 19 C→A，8 C→B |
+| `_field_policy_detail.py` | 0 / 0 / 25 | 25 / 0 / 0 | 25 C→A |
+| `_field_policy_metadata.py` | 0 / 0 / 18 | 18 / 0 / 0 | 18 C→A |
+| **本集群合计** | **0 / 0 / 176** | **162 / 14 / 0** | **162 C→A，14 C→B** |
+
+全仓计数可复算为：`A 56 + 162 = 218`，`B 386 + 14 = 400`，`C 532 - 176 = 356`，
+总数仍为 **974**。审计抛点没有因拆分分支而增减；code、category、exit code、envelope、operation、
+请求形状和校验宽严均未改变。三个 owner 文件一度触发 SLOC 500 门禁，最终只压缩新增消息排版，
+没有移动或重构校验函数，质量 baseline 未改且门禁恢复 PASS。
+
+14 条 B 的原因分两类：6 条是 condition/group/filter map 容器或值类型错误，8 条是 account/dashboard/name filter、
+`filtering`、`data_list` 的值错误；这些值可能承载用户级标识、业务筛选值或整行输入。虽然投影边界已
+全面放开，错误会进入日志、监控和告警并产生比查询结果更宽的复制面，因此只回显字段路径、结构要求、
+安全的 item count / key/type 摘要和权威发现动作，不回显原值。metadata loader 捕获的上游异常正文
+同样继续丢弃；可安全观察的 operation、status、envelope type 和候选集合仍进入消息。所有实际回显
+均经过共享 credential sanitizer；长候选使用既有 N=20 截断和真实 CLI/raw-operation 发现命令。
+
+`models.py` 仍为 `0 / 0 / 28`，`plan_validation.py` 仍为 `0 / 35 / 22`。前者是 1079 行的通用合同
+模型热点，后者的 57 个 helper 抛点横跨完整 Plan 图、预算、binding 与 call-bound 语义；继续处理会
+从本轮高频字段策略扩到低频通用结构面，因此按优先级停止，不把它们包装成已完成。该升级不改变
+`docs/analysis-journeys.md` 的动线计数；operation 仍为 185、stable 仍为 176；本轮 0 次生产请求。

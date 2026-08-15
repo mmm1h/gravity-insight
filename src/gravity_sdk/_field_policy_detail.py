@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Mapping
 
+from .actionable_error_values import actual_value, allowed_values
 from ._field_policy_metadata import (
     load_event_property_rows,
     load_view,
@@ -45,6 +46,10 @@ _STATIC_DETAIL_FIELD_PROFILES = {
     ANALYSIS_MONETIZATION_DETAIL: (frozenset(SAFE_ROW_FIELDS),),
     ANALYSIS_ORDER_DETAIL: STATIC_ORDER_FIELD_PROFILES,
 }
+_DETAIL_TYPES = ANALYSIS_EVENT_TYPES | ANALYSIS_USER_TYPES | frozenset({"order", "cash", "default_order", "user_segment"})
+_SEGMENT_TYPES = frozenset({None, "", "LATEST", "DYNAMIC_MATCHING", "FIXED_VERSION"})
+_ORDER_DIRECTIONS = frozenset({0, 1, -1, "asc", "ASC", "desc", "DESC"})
+_SPEC_SCHEMA_ACTION = "gravity analysis query --kind event --spec-schema"
 
 
 @dataclass(frozen=True)
@@ -85,7 +90,7 @@ def validate_analysis_detail(
             if isinstance(row.get("cname"), str) and row.get("cname")
         )
     _validate_selected_fields(inputs.get("fields", ()), selected_fields)
-    _validate_detail_condition_sets(inputs, metadata, metadata_loader)
+    _validate_detail_condition_sets(inputs, metadata, metadata_loader, app_id)
     _validate_detail_logic(inputs)
     if "order_by_list" in inputs:
         validate_detail_order(inputs.get("order_by_list"), metadata.allowed_fields)
@@ -128,7 +133,9 @@ def _static_detail_product_request(
 def _validate_app_id(value: Any) -> str:
     if not isinstance(value, str) or not value or len(value) > 64:
         raise InputValidationError(
-            "analysis app_id must be a bounded identifier; request was not sent"
+            f"actual value: {actual_value(value)}; allowed value: a non-empty app_id "
+            "string of at most 64 characters",
+            field="app_id",
         )
     return value
 
@@ -138,8 +145,9 @@ def _validate_user_event_contract(inputs: Mapping[str, Any]) -> None:
     has_date_list = inputs.get("date_list") not in (None, (), [])
     if has_date == has_date_list:
         raise InputValidationError(
-            "analysis user-event requires exactly one date or date_list; "
-            "request was not sent"
+            f"actual value: {actual_value({'date_present': has_date, 'date_list_present': has_date_list})}; "
+            "allowed shape: provide exactly one of date or date_list",
+            field="date/date_list",
         )
     page = inputs.get("page", 1)
     page_size = inputs.get("page_size", 20)
@@ -152,8 +160,9 @@ def _validate_user_event_contract(inputs: Mapping[str, Any]) -> None:
         or not 1 <= page_size <= 200
     ):
         raise InputValidationError(
-            "analysis user-event pagination is outside its contract; "
-            "request was not sent"
+            f"actual value: {actual_value({'page': page, 'page_size': page_size})}; "
+            "allowed range: page is an integer >= 1 and page_size is 1 through 200",
+            field="page/page_size",
         )
 
 
@@ -217,8 +226,12 @@ def _validate_selected_fields(value: Any, selected_fields: set[str]) -> None:
     if not isinstance(value, (list, tuple)) or any(
         not isinstance(item, str) or item not in selected_fields for item in value
     ):
+        requested = value if isinstance(value, (list, tuple)) else [value]
+        missing = [item for item in requested if not isinstance(item, str) or item not in selected_fields]
         raise InputValidationError(
-            "analysis detail fields are absent from live metadata; request was not sent"
+            f"actual value absent from live metadata: {actual_value(missing)}; allowed fields: "
+            f"{allowed_values(selected_fields, discovery_action='gravity metadata properties \"\"')}",
+            field="fields",
         )
 
 
@@ -226,6 +239,7 @@ def _validate_detail_condition_sets(
     inputs: Mapping[str, Any],
     metadata: _DetailMetadata,
     loader: MetadataLoader,
+    app_id: str,
 ) -> None:
     for name in (
         "global_conditions",
@@ -241,15 +255,14 @@ def _validate_detail_condition_sets(
                 segment_ids=metadata.segment_ids,
                 dimension_tables=metadata.dimension_tables,
                 metadata_loader=loader,
+                app_id=app_id,
             )
 
 
 def _validate_detail_logic(inputs: Mapping[str, Any]) -> None:
     for name in ("user_cond_logic", "order_cond_logic", "postback_cond_logic"):
         if name in inputs and inputs.get(name) not in {"AND", "OR"}:
-            raise InputValidationError(
-                f"analysis {name} is invalid; request was not sent"
-            )
+            raise InputValidationError(f"actual value: {actual_value(inputs.get(name))}; allowed values: \"AND\", \"OR\"", field=name)
 
 
 def _validate_user_event_items(
@@ -268,8 +281,12 @@ def _validate_user_event_items(
     if not isinstance(event_list, (list, tuple)) or any(
         not isinstance(item, str) or item not in allowed_events for item in event_list
     ):
+        requested = event_list if isinstance(event_list, (list, tuple)) else [event_list]
+        missing = [item for item in requested if not isinstance(item, str) or item not in allowed_events]
         raise InputValidationError(
-            "analysis event_list is absent from live metadata; request was not sent"
+            f"actual value absent from live metadata: {actual_value(missing)}; allowed events: "
+            f"{allowed_values(allowed_events, discovery_action='gravity metadata events \"\"')}",
+            field="event_list",
         )
     validate_detail_query_items(
         inputs.get("query_item_list", ()),
@@ -290,9 +307,14 @@ def validate_detail_conditions(
     segment_ids: set[str],
     dimension_tables: Mapping[str, str],
     metadata_loader: MetadataLoader,
+    app_id: str,
 ) -> None:
     if not isinstance(value, (list, tuple)) or len(value) > 100:
-        raise InputValidationError(f"analysis {label} is invalid; request was not sent")
+        raise InputValidationError(
+            f"actual value: {len(value) if isinstance(value, (list, tuple)) else actual_value(type(value).__name__)}; "
+            "allowed value: an array with at most 100 conditions",
+            field=label,
+        )
     for item in value:
         _validate_detail_condition(
             item,
@@ -301,6 +323,7 @@ def validate_detail_conditions(
             segment_ids,
             dimension_tables,
             metadata_loader,
+            app_id,
         )
 
 
@@ -311,6 +334,7 @@ def _validate_detail_condition(
     segment_ids: set[str],
     dimension_tables: Mapping[str, str],
     loader: MetadataLoader,
+    app_id: str,
 ) -> None:
     require_exact_mapping(
         item,
@@ -329,34 +353,27 @@ def _validate_detail_condition(
     )
     operator = item.get("operator")
     if not isinstance(operator, str) or operator not in ANALYSIS_CONDITION_OPERATORS:
-        raise InputValidationError(
-            f"analysis {label} operator is invalid; request was not sent"
-        )
+        raise InputValidationError(f"actual value: {actual_value(operator)}; allowed operators: {allowed_values(ANALYSIS_CONDITION_OPERATORS, discovery_action=_SPEC_SCHEMA_ACTION)}", field=f"{label}[].operator")
     field = item.get("field")
     if not isinstance(field, str) or field not in allowed_fields:
         raise InputValidationError(
-            f"analysis {label} field is absent from metadata; request was not sent"
+            f"actual value absent from metadata: {actual_value(field)}; allowed fields: "
+            f"{allowed_values(allowed_fields, discovery_action='gravity metadata properties \"\"')}",
+            field=f"{label}[].field",
         )
     field_type = item.get("type")
-    allowed_types = ANALYSIS_EVENT_TYPES | ANALYSIS_USER_TYPES | frozenset(
-        {"order", "cash", "default_order", "user_segment"}
-    )
-    if not isinstance(field_type, str) or field_type not in allowed_types:
-        raise InputValidationError(
-            f"analysis {label} type is invalid; request was not sent"
-        )
+    if not isinstance(field_type, str) or field_type not in _DETAIL_TYPES:
+        raise InputValidationError(f"actual value: {actual_value(field_type)}; allowed values: {allowed_values(_DETAIL_TYPES)}", field=f"{label}[].type")
     validate_scalar_list(item.get("value", ()), f"analysis {label} value")
     _validate_detail_list_controls(item, label)
-    _validate_detail_segment(item, field, field_type, label, segment_ids, loader)
+    _validate_detail_segment(item, field, field_type, label, segment_ids, loader, app_id)
     _validate_detail_dimension(item, field, label, dimension_tables)
 
 
 def _validate_detail_list_controls(item: Mapping[str, Any], label: str) -> None:
     by_list_index = item.get("by_list_index")
     if by_list_index is not None and not isinstance(by_list_index, bool):
-        raise InputValidationError(
-            f"analysis {label} list flag is invalid; request was not sent"
-        )
+        raise InputValidationError(f"actual value: {actual_value(by_list_index)}; allowed values: null, true, false", field=f"{label}[].by_list_index")
     list_index = item.get("list_index_val")
     if list_index is not None and (
         not isinstance(list_index, int)
@@ -364,9 +381,7 @@ def _validate_detail_list_controls(item: Mapping[str, Any], label: str) -> None:
         or list_index == 0
         or not -10_000 <= list_index <= 10_000
     ):
-        raise InputValidationError(
-            f"analysis {label} list index is invalid; request was not sent"
-        )
+        raise InputValidationError(f"actual value: {actual_value(list_index)}; allowed range: a non-zero integer from -10000 through 10000", field=f"{label}[].list_index_val")
 
 
 def _validate_detail_segment(
@@ -376,46 +391,41 @@ def _validate_detail_segment(
     label: str,
     segment_ids: set[str],
     loader: MetadataLoader,
+    app_id: str,
 ) -> None:
     segment_type = item.get("segment_type")
     version_id = item.get("version_id")
-    if not isinstance(segment_type, (str, type(None))) or segment_type not in {
-        None,
-        "",
-        "LATEST",
-        "DYNAMIC_MATCHING",
-        "FIXED_VERSION",
-    }:
-        raise InputValidationError(
-            f"analysis {label} segment type is invalid; request was not sent"
-        )
+    if not isinstance(segment_type, (str, type(None))) or segment_type not in _SEGMENT_TYPES:
+        raise InputValidationError(f"actual value: {actual_value(segment_type)}; allowed values: {allowed_values(_SEGMENT_TYPES)}", field=f"{label}[].segment_type")
     if (field_type == "user_segment" or segment_type not in {None, ""}) and field not in segment_ids:
         raise InputValidationError(
-            f"analysis {label} segment is absent from metadata; request was not sent"
+            f"actual value absent from metadata: {actual_value(field)}; allowed segment ids: "
+            f"{allowed_values(segment_ids, discovery_action=f'gravity analysis metadata --app-id {app_id}')}",
+            field=f"{label}[].field",
         )
     if segment_type == "FIXED_VERSION":
         _validate_detail_segment_version(field, version_id, label, loader)
     elif version_id is not None and version_id != "":
-        raise InputValidationError(
-            f"analysis {label} segment version requires FIXED_VERSION; request was not sent"
-        )
+        raise InputValidationError(f"actual value: {actual_value(version_id)}; allowed value: null or \"\" unless segment_type is FIXED_VERSION", field=f"{label}[].version_id")
 
 
 def _validate_detail_segment_version(
     field: str, version_id: Any, label: str, loader: MetadataLoader
 ) -> None:
     if not isinstance(version_id, (str, int)) or isinstance(version_id, bool):
-        raise InputValidationError(
-            f"analysis {label} segment version is invalid; request was not sent"
-        )
+        raise InputValidationError(f"actual value: {actual_value(version_id)}; allowed value: a string or integer version id", field=f"{label}[].version_id")
     history = load_view(
         ANALYSIS_SEGMENT_HISTORY,
         {"segment_id": str(field), "page": 1, "page_size": 100},
         loader,
     )
-    if str(version_id) not in names(history.rows, keys=("version_id", "id")):
+    available = names(history.rows, keys=("version_id", "id"))
+    if str(version_id) not in available:
+        version_discovery = f"gravity run {ANALYSIS_SEGMENT_HISTORY} --input {actual_value({'segment_id': field, 'page': 1, 'page_size': 100})}"
         raise InputValidationError(
-            f"analysis {label} segment version is absent from metadata; request was not sent"
+            f"actual value absent from metadata: {actual_value(version_id)}; allowed versions: "
+            f"{allowed_values(available, discovery_action=version_discovery)}",
+            field=f"{label}[].version_id",
         )
 
 
@@ -431,46 +441,42 @@ def _validate_detail_dimension(
         or len(table) > 256
         or dimension_tables.get(field) != table
     ):
+        expected = dimension_tables.get(field)
         raise InputValidationError(
-            "analysis dimension table is absent from live metadata; request was not sent"
+            f"actual value absent from live metadata: {actual_value(table)}; allowed "
+            f"dimension table for {actual_value(field)}: {actual_value(expected)}",
+            field=f"{label}[].dim_using_table_name",
+            next_action="Run `gravity metadata properties \"\"` and use the field's listed dimension table.",
         )
 
 
 def validate_detail_order(value: Any, allowed_fields: set[str]) -> None:
     if not isinstance(value, (list, tuple)) or len(value) > 20:
         raise InputValidationError(
-            "analysis order_by_list is invalid; request was not sent"
+            f"actual value: {len(value) if isinstance(value, (list, tuple)) else actual_value(type(value).__name__)}; allowed value: an array with at most "
+            "20 order items",
+            field="order_by_list",
         )
     for item in value:
         require_exact_mapping(item, {"field", "sort", "data_type"}, "analysis order item")
         if item.get("field") not in allowed_fields:
             raise InputValidationError(
-                "analysis order field is absent from metadata; request was not sent"
+                f"actual value absent from metadata: {actual_value(item.get('field'))}; allowed fields: "
+                f"{allowed_values(allowed_fields, discovery_action='gravity metadata properties \"\"')}",
+                field="order_by_list[].field",
             )
         _validate_detail_order_controls(item)
 
 
 def _validate_detail_order_controls(item: Mapping[str, Any]) -> None:
     sort = item.get("sort")
-    if not isinstance(sort, (str, int)) or isinstance(sort, bool) or sort not in {
-        0,
-        1,
-        -1,
-        "asc",
-        "ASC",
-        "desc",
-        "DESC",
-    }:
-        raise InputValidationError(
-            "analysis order direction is invalid; request was not sent"
-        )
+    if not isinstance(sort, (str, int)) or isinstance(sort, bool) or sort not in _ORDER_DIRECTIONS:
+        raise InputValidationError(f"actual value: {actual_value(sort)}; allowed values: {allowed_values(_ORDER_DIRECTIONS)}", field="order_by_list[].sort")
     data_type = item.get("data_type")
     if data_type is not None and (
         not isinstance(data_type, str) or not data_type or len(data_type) > 64
     ):
-        raise InputValidationError(
-            "analysis order data_type is invalid; request was not sent"
-        )
+        raise InputValidationError(f"actual value: {actual_value(data_type)}; allowed value: null or a non-empty data type string of at most 64 characters", field="order_by_list[].data_type")
 
 
 def validate_detail_query_items(
@@ -484,7 +490,9 @@ def validate_detail_query_items(
 ) -> None:
     if not isinstance(value, (list, tuple)) or len(value) > 100:
         raise InputValidationError(
-            "analysis detail query_item_list is invalid; request was not sent"
+            f"actual value: {len(value) if isinstance(value, (list, tuple)) else actual_value(type(value).__name__)}; "
+            "allowed value: an array with at most 100 query items",
+            field="query_item_list",
         )
     for item in value:
         _validate_detail_query_item(
@@ -515,13 +523,14 @@ def _validate_detail_query_item(
     event_name = item.get("event_name")
     if event_name not in allowed_events:
         raise InputValidationError(
-            "analysis detail event is absent from metadata; request was not sent"
+            f"actual value absent from metadata: {actual_value(event_name)}; allowed events: "
+            f"{allowed_values(allowed_events, discovery_action='gravity metadata events \"\"')}",
+            field="query_item_list[].event_name",
         )
     validate_optional_label(item.get("event_label"), "event_label")
-    if item.get("cond_logic", "AND") not in {"AND", "OR"}:
-        raise InputValidationError(
-            "analysis detail cond_logic is invalid; request was not sent"
-        )
+    cond_logic = item.get("cond_logic", "AND")
+    if cond_logic not in {"AND", "OR"}:
+        raise InputValidationError(f"actual value: {actual_value(cond_logic)}; allowed values: \"AND\", \"OR\"", field="query_item_list[].cond_logic")
     event_rows = load_event_property_rows((str(event_name),), app_id, loader)
     validate_detail_conditions(
         item.get("conditions", ()),
@@ -533,4 +542,5 @@ def _validate_detail_query_item(
             **wire_dimension_tables(event_rows, "event"),
         },
         metadata_loader=loader,
+        app_id=app_id,
     )

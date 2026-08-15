@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 from typing import Any, Mapping
 
+from .actionable_error_values import actual_value, allowed_values
 from ._field_policy_conditions import validate_analysis_target
 from ._field_policy_shared import (
     ANALYSIS_CONDITION_OPERATORS,
@@ -42,6 +43,8 @@ SEGMENT_QUICK_RANGES = frozenset(
         "recent30day",
     }
 )
+_SEGMENT_SPEC_SCHEMA_ACTION = "gravity analysis segment evaluate --spec-schema"
+_SEGMENT_VERSION_MODES = frozenset({None, "", "LATEST", "DYNAMIC_MATCHING", "FIXED_VERSION"})
 
 
 def validate_analysis_segment_rule_shape(
@@ -74,20 +77,22 @@ def _validate_segment_header(inputs: Mapping[str, Any]) -> None:
     remark = inputs.get("remark", "")
     if not isinstance(name, str) or not name or len(name) > 128:
         raise InputValidationError(
-            "analysis segment name is invalid; request was not sent"
+            f"actual value: {actual_value(name)}; allowed value: a non-empty segment "
+            "name of at most 128 characters",
+            field="name",
         )
     if not isinstance(remark, str) or len(remark) > 2_000:
         raise InputValidationError(
-            "analysis segment remark is invalid; request was not sent"
+            f"actual value: {len(remark) if isinstance(remark, str) else actual_value(type(remark).__name__)}; "
+            "allowed value: a string of at most 2000 characters",
+            field="remark",
         )
-    if inputs.get("update_type") not in {"Manual", "Routine"}:
-        raise InputValidationError(
-            "analysis segment update_type is invalid; request was not sent"
-        )
-    if inputs.get("cond_logic") not in {"AND", "OR"}:
-        raise InputValidationError(
-            "analysis segment cond_logic is invalid; request was not sent"
-        )
+    update_type = inputs.get("update_type")
+    if update_type not in {"Manual", "Routine"}:
+        raise InputValidationError(f"actual value: {actual_value(update_type)}; allowed values: \"Manual\", \"Routine\"", field="update_type")
+    cond_logic = inputs.get("cond_logic")
+    if cond_logic not in {"AND", "OR"}:
+        raise InputValidationError(f"actual value: {actual_value(cond_logic)}; allowed values: \"AND\", \"OR\"", field="cond_logic")
 
 
 def validate_segment_update_date_range(value: Any) -> None:
@@ -101,7 +106,9 @@ def validate_segment_update_date_range(value: Any) -> None:
     end = parse_iso_calendar_date(raw_end, "segment end_date")
     if start > end:
         raise InputValidationError(
-            "analysis segment date range is reversed; request was not sent"
+            f"actual value: {actual_value({'start_date': value.get('start_date'), 'end_date': raw_end})}; "
+            "allowed order: start_date must be on or before end_date",
+            field="date_range",
         )
 
 
@@ -115,7 +122,9 @@ def validate_segment_property_rules(
     groups = value.get("groups")
     if not isinstance(groups, (list, tuple)) or len(groups) > 50:
         raise InputValidationError(
-            "analysis segment property groups are invalid; request was not sent"
+            f"actual value: {len(groups) if isinstance(groups, (list, tuple)) else actual_value(type(groups).__name__)}; "
+            "allowed value: an array with at most 50 property groups",
+            field="user_property_rules.groups",
         )
     for group in groups:
         _validate_segment_property_group(group, references)
@@ -131,7 +140,9 @@ def _validate_segment_property_group(
     conditions = group.get("conditions")
     if not isinstance(conditions, (list, tuple)) or len(conditions) > 100:
         raise InputValidationError(
-            "analysis segment property conditions are invalid; request was not sent"
+            f"actual value: {len(conditions) if isinstance(conditions, (list, tuple)) else actual_value(type(conditions).__name__)}; "
+            "allowed value: an array with at most 100 property conditions",
+            field="user_property_rules.groups[].conditions",
         )
     for condition in conditions:
         validate_segment_rule_condition(condition, references)
@@ -147,7 +158,9 @@ def validate_segment_event_rules(
     groups = value.get("groups")
     if not isinstance(groups, (list, tuple)) or len(groups) > 50:
         raise InputValidationError(
-            "analysis segment event groups are invalid; request was not sent"
+            f"actual value: {len(groups) if isinstance(groups, (list, tuple)) else actual_value(type(groups).__name__)}; "
+            "allowed value: an array with at most 50 event groups",
+            field="user_event_rules.groups",
         )
     for group in groups:
         _validate_segment_event_group(group, references)
@@ -163,7 +176,9 @@ def _validate_segment_event_group(
     events = group.get("conditions")
     if not isinstance(events, (list, tuple)) or len(events) > 100:
         raise InputValidationError(
-            "analysis segment events are invalid; request was not sent"
+            f"actual value: {len(events) if isinstance(events, (list, tuple)) else actual_value(type(events).__name__)}; "
+            "allowed value: an array with at most 100 event rules",
+            field="user_event_rules.groups[].conditions",
         )
     for event in events:
         validate_segment_rule_event(event, references)
@@ -188,13 +203,14 @@ def validate_segment_rule_event(
     event_name = value.get("event_name")
     if not isinstance(event_name, str) or not event_name or len(event_name) > 256:
         raise InputValidationError(
-            "analysis segment event_name is invalid; request was not sent"
+            f"actual value: {actual_value(event_name)}; allowed value: a non-empty "
+            "event name of at most 256 characters",
+            field="user_event_rules.groups[].conditions[].event_name",
+            next_action="Run `gravity metadata events \"\"` and retry with a listed event.",
         )
     references.events.add(event_name)
     if not isinstance(value.get("did"), bool):
-        raise InputValidationError(
-            "analysis segment event did flag is invalid; request was not sent"
-        )
+        raise InputValidationError(f"actual value: {actual_value(value.get('did'))}; allowed values: true, false", field="user_event_rules.groups[].conditions[].did")
     _validate_segment_event_target(value.get("target"), references)
     _validate_did_condition(value.get("did_condition"))
     validate_segment_event_date_range(value.get("date_range"))
@@ -202,7 +218,9 @@ def validate_segment_rule_event(
     conditions = value.get("conditions")
     if not isinstance(conditions, (list, tuple)) or len(conditions) > 100:
         raise InputValidationError(
-            "analysis segment event conditions are invalid; request was not sent"
+            f"actual value: {len(conditions) if isinstance(conditions, (list, tuple)) else actual_value(type(conditions).__name__)}; "
+            "allowed value: an array with at most 100 event-property conditions",
+            field="user_event_rules.groups[].conditions[].conditions",
         )
     for condition in conditions:
         validate_segment_rule_condition(condition, references)
@@ -229,9 +247,7 @@ def _validate_did_condition(value: Any) -> None:
     # conditions it has no frontend transformation for relative/boolean
     # pseudo-operators, so only the proven base operator vocabulary is valid.
     if value.get("operator") not in ANALYSIS_CONDITION_OPERATORS:
-        raise InputValidationError(
-            "analysis segment did operator is invalid; request was not sent"
-        )
+        raise InputValidationError(f"actual value: {actual_value(value.get('operator'))}; allowed operators: {allowed_values(ANALYSIS_CONDITION_OPERATORS, discovery_action=_SEGMENT_SPEC_SCHEMA_ACTION)}", field="user_event_rules.groups[].conditions[].did_condition.operator")
     validate_scalar_list(value.get("value"), "analysis segment did condition value")
 
 
@@ -260,13 +276,14 @@ def validate_segment_rule_condition(
     field = value.get("field")
     if not isinstance(field, str) or not field or len(field) > 256:
         raise InputValidationError(
-            "analysis segment condition field is invalid; request was not sent"
+            f"actual value: {actual_value(field)}; allowed value: a non-empty metadata "
+            "field name of at most 256 characters",
+            field="conditions[].field",
+            next_action="Run `gravity metadata properties \"\"` or `gravity metadata events \"\"` and retry with a listed field.",
         )
     reject_sensitive_analysis_field(field)
     if value.get("operator") not in SEGMENT_RULE_OPERATORS:
-        raise InputValidationError(
-            "analysis segment condition operator is invalid; request was not sent"
-        )
+        raise InputValidationError(f"actual value: {actual_value(value.get('operator'))}; allowed operators: {allowed_values(SEGMENT_RULE_OPERATORS, discovery_action=_SEGMENT_SPEC_SCHEMA_ACTION)}", field="conditions[].operator")
     validate_scalar_list(value.get("value"), "analysis segment condition value")
     _validate_segment_operator_shape(value)
     is_segment = _add_segment_condition_reference(value, field, references)
@@ -294,17 +311,15 @@ def _validate_segment_operator_shape(value: Mapping[str, Any]) -> None:
     if value.get("type") == "user_segment":
         if operator != "TRUE" or values:
             raise InputValidationError(
-                "analysis segment reference must use TRUE with an empty value; "
-                "request was not sent"
+                f"actual value: {actual_value({'operator': operator, 'value_count': len(values)})}; "
+                "allowed shape: a segment reference must use operator TRUE with an empty value array",
+                field="conditions[]",
             )
         _reject_segment_date_controls(value)
         return
     if operator in {"TRUE", "FALSE"}:
         if values:
-            raise InputValidationError(
-                "analysis segment boolean condition must use an empty value; "
-                "request was not sent"
-            )
+            raise InputValidationError(f"actual value: {len(values)} condition values; allowed value: an empty array when operator is {operator}", field="conditions[].value")
         _reject_segment_date_controls(value)
         return
     if operator == "CURRENT_DAY":
@@ -347,7 +362,9 @@ def _validate_relative_time_shape(
         return
     if relative_type not in {"day", "week", "month"} or values:
         raise InputValidationError(
-            "analysis segment relative-time condition is invalid; request was not sent"
+            f"actual value: {actual_value({'date_relative_type': relative_type, 'value_count': len(values)})}; "
+            "allowed values: date_relative_type day, week, or month with an empty value array",
+            field="conditions[]",
         )
     _reject_segment_date_controls(value, allowed={"date_relative_type"})
 
@@ -361,7 +378,9 @@ def _require_numeric_values(values: list[Any], count: int, label: str) -> None:
         for item in values
     ):
         raise InputValidationError(
-            f"analysis segment {label} values are invalid; request was not sent"
+            f"actual value: {actual_value({'count': len(values), 'types': [type(item).__name__ for item in values]})}; "
+            f"allowed value: exactly {count} finite, non-negative numeric {label} values",
+            field="conditions[].value",
         )
 
 
@@ -369,9 +388,7 @@ def _require_choices(
     value: Mapping[str, Any], key: str, allowed: set[str]
 ) -> None:
     if value.get(key) not in allowed:
-        raise InputValidationError(
-            f"analysis segment {key} is required; request was not sent"
-        )
+        raise InputValidationError(f"actual value: {actual_value(value.get(key))}; allowed values: {allowed_values(allowed)}", field=f"conditions[].{key}")
 
 
 def _reject_segment_date_controls(
@@ -384,8 +401,9 @@ def _reject_segment_date_controls(
     ]
     if invalid:
         raise InputValidationError(
-            "analysis segment condition contains date controls unavailable for "
-            "its operator; request was not sent"
+            f"actual value: {actual_value(invalid)}; allowed controls for operator "
+            f"{actual_value(value.get('operator'))}: {allowed_values(allowed)}",
+            field="conditions[]",
         )
 
 
@@ -398,9 +416,7 @@ def _add_segment_condition_reference(
     is_segment = field_type == "user_segment" or segment_type not in {None, ""}
     if is_segment:
         if field_type != "user_segment":
-            raise InputValidationError(
-                "analysis segment condition type is invalid; request was not sent"
-            )
+            raise InputValidationError(f"actual value: {actual_value(field_type)}; allowed value: \"user_segment\" when segment_type is present", field="conditions[].type")
         effective_type = _validate_segment_version(segment_type, version_id)
         references.segment_fields.add((field, effective_type, str(version_id or "")))
     elif field_type in ANALYSIS_EVENT_TYPES:
@@ -408,27 +424,19 @@ def _add_segment_condition_reference(
     elif field_type in ANALYSIS_USER_TYPES:
         references.user_fields.add(field)
     else:
-        raise InputValidationError(
-            "analysis segment condition type is invalid; request was not sent"
-        )
+        raise InputValidationError(f"actual value: {actual_value(field_type)}; allowed values: {allowed_values(ANALYSIS_EVENT_TYPES | ANALYSIS_USER_TYPES | frozenset({'user_segment'}))}", field="conditions[].type")
     return is_segment
 
 
 def _validate_segment_version(segment_type: Any, version_id: Any) -> str:
-    if segment_type not in {None, "", "LATEST", "DYNAMIC_MATCHING", "FIXED_VERSION"}:
-        raise InputValidationError(
-            "analysis segment condition version mode is invalid; request was not sent"
-        )
+    if segment_type not in _SEGMENT_VERSION_MODES:
+        raise InputValidationError(f"actual value: {actual_value(segment_type)}; allowed values: {allowed_values(_SEGMENT_VERSION_MODES)}", field="conditions[].segment_type")
     effective_type = str(segment_type or "LATEST")
     if effective_type == "FIXED_VERSION":
         if not isinstance(version_id, (str, int)) or isinstance(version_id, bool):
-            raise InputValidationError(
-                "analysis fixed segment version is invalid; request was not sent"
-            )
+            raise InputValidationError(f"actual value: {actual_value(version_id)}; allowed value: a string or integer version id when segment_type is FIXED_VERSION", field="conditions[].version_id")
     elif version_id not in {None, ""}:
-        raise InputValidationError(
-            "analysis segment version requires FIXED_VERSION; request was not sent"
-        )
+        raise InputValidationError(f"actual value: {actual_value(version_id)}; allowed value: null or \"\" unless segment_type is FIXED_VERSION", field="conditions[].version_id")
     return effective_type
 
 
@@ -443,7 +451,10 @@ def _add_segment_condition_dimension(
         return
     if is_segment or not isinstance(table, str) or len(table) > 256:
         raise InputValidationError(
-            "analysis segment dimension table is invalid; request was not sent"
+            f"actual value: {actual_value(table)}; allowed value: a metadata dimension "
+            "table name of at most 256 characters on an event or user condition",
+            field="conditions[].dim_using_table_name",
+            next_action="Run `gravity metadata properties \"\"` and retry with the field's listed dimension table.",
         )
     if value.get("type") in ANALYSIS_EVENT_TYPES:
         references.event_dimension_tables.add((field, table))
@@ -463,9 +474,7 @@ def validate_segment_condition_date_controls(value: Mapping[str, Any]) -> None:
     for key, allowed in enums.items():
         item = value.get(key)
         if item not in {None, ""} and item not in allowed:
-            raise InputValidationError(
-                f"analysis segment {key} is invalid; request was not sent"
-            )
+            raise InputValidationError(f"actual value: {actual_value(item)}; allowed values: null, \"\", {allowed_values(allowed)}", field=f"conditions[].{key}")
 
 
 def validate_segment_event_date_range(value: Any) -> None:
@@ -485,15 +494,11 @@ def validate_segment_event_date_range(value: Any) -> None:
     )
     date_type = value.get("date_type")
     if date_type not in {"static", "dynamic"}:
-        raise InputValidationError(
-            "analysis segment event date_type is invalid; request was not sent"
-        )
+        raise InputValidationError(f"actual value: {actual_value(date_type)}; allowed values: \"dynamic\", \"static\"", field="date_range.date_type")
     quick_select = value.get("quick_select")
     if quick_select not in {None, ""}:
         if quick_select not in SEGMENT_QUICK_RANGES:
-            raise InputValidationError(
-                "analysis segment quick date range is invalid; request was not sent"
-            )
+            raise InputValidationError(f"actual value: {actual_value(quick_select)}; allowed values: {allowed_values(SEGMENT_QUICK_RANGES)}", field="date_range.quick_select")
         return
     if date_type == "static":
         _validate_static_event_date_range(value.get("date"))
@@ -504,13 +509,17 @@ def validate_segment_event_date_range(value: Any) -> None:
 def _validate_static_event_date_range(value: Any) -> None:
     if not isinstance(value, (list, tuple)) or len(value) != 2:
         raise InputValidationError(
-            "analysis segment static date range is invalid; request was not sent"
+            f"actual value: {actual_value(value)}; allowed value: exactly two ISO "
+            "calendar dates [start, end]",
+            field="date_range.date",
         )
     start = parse_iso_calendar_date(value[0], "segment event start date")
     end = parse_iso_calendar_date(value[1], "segment event end date")
     if start > end:
         raise InputValidationError(
-            "analysis segment event date range is reversed; request was not sent"
+            f"actual value: {actual_value(value)}; allowed order: start date must be on "
+            "or before end date",
+            field="date_range.date",
         )
 
 
@@ -523,7 +532,9 @@ def _validate_dynamic_event_date_range(value: Mapping[str, Any]) -> None:
         "dynamic",
     }:
         raise InputValidationError(
-            "analysis segment dynamic date range is invalid; request was not sent"
+            f"actual value: {actual_value({'dynamic_start_type': start_type, 'dynamic_end_type': end_type})}; "
+            "allowed values: start type static/dynamic and end type today/yesterday/dynamic",
+            field="date_range",
         )
     if start_type == "static":
         parse_iso_calendar_date(value.get("start_date"), "segment dynamic start date")
@@ -535,13 +546,9 @@ def _validate_dynamic_event_date_range(value: Mapping[str, Any]) -> None:
 
 def validate_segment_day_offset(value: Any, label: str) -> None:
     if not isinstance(value, int) or isinstance(value, bool) or not 0 <= value <= 3_650:
-        raise InputValidationError(
-            f"analysis segment {label} day offset is invalid; request was not sent"
-        )
+        raise InputValidationError(f"actual value: {actual_value(value)}; allowed range: an integer from 0 through 3650", field=f"date_range.{label}_date_input")
 
 
 def validate_segment_logic(value: Any, label: str) -> None:
     if value not in {"AND", "OR"}:
-        raise InputValidationError(
-            f"analysis segment {label} logic is invalid; request was not sent"
-        )
+        raise InputValidationError(f"actual value: {actual_value(value)}; allowed values: \"AND\", \"OR\"", field=f"{label}.cond_logic")

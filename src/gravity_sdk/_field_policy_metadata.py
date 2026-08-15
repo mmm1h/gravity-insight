@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any, Mapping, Sequence
 
+from .actionable_error_values import actual_value, allowed_values
 from ._field_policy_operations import (
     ANALYSIS_EVENT,
     ANALYSIS_EVENT_INFO,
@@ -75,18 +76,26 @@ def load_view(
         envelope = loader(operation_id, inputs)
     except GravityInsightError:
         raise InputValidationError(
-            "required live field metadata is unavailable; business request was not sent"
+            "required live field metadata is unavailable; the upstream error is not "
+            "echoed because errors may enter logs",
+            field="metadata",
+            next_action=f"Run `gravity run {operation_id} --input {actual_value(inputs)}` and retry the business request only after metadata succeeds.",
         ) from None
     if not isinstance(envelope, Mapping):
         raise InputValidationError(
-            "required live field metadata has an invalid envelope; business request was not sent"
+            f"actual value: {actual_value(type(envelope).__name__)}; allowed metadata envelope type: object",
+            field="metadata",
+            next_action=f"Run `gravity run {operation_id} --input {actual_value(inputs)}` and stop if the envelope remains invalid.",
         )
     status = str(envelope.get("status", "error"))
     if status not in {"success", "empty"} and not _usable_segment_projection(
         operation_id, envelope
     ):
         raise InputValidationError(
-            "required live field metadata is unavailable; business request was not sent"
+            f"required live field metadata is unavailable; actual value: {actual_value(status)}; "
+            "allowed metadata statuses: \"empty\", \"success\"",
+            field="metadata.status",
+            next_action=f"Run `gravity run {operation_id} --input {actual_value(inputs)}` and retry the business request only after metadata succeeds.",
         )
     return MetadataView(operation_id, status, tuple(flatten_rows(rows(envelope))))
 
@@ -175,20 +184,25 @@ def _load_one_event_property(
     except GravityInsightError:
         raise InputValidationError(
             "required event-specific field metadata is unavailable; "
-            "business request was not sent"
+            "the upstream error is not echoed because errors may enter logs",
+            field="event_metadata",
+            next_action=f"Run `gravity run {ANALYSIS_EVENT_INFO} --input {actual_value({'app_id': app_id, 'event_name': event_name})}` and retry only after metadata succeeds.",
         ) from None
     if not isinstance(envelope, Mapping):
         raise InputValidationError(
-            "required event-specific field metadata is unavailable; "
-            "business request was not sent"
+            f"actual value: {actual_value(type(envelope).__name__)}; allowed event-specific metadata envelope type: object",
+            field="event_metadata",
+            next_action=f"Run `gravity run {ANALYSIS_EVENT_INFO} --input {actual_value({'app_id': app_id, 'event_name': event_name})}` and stop if the envelope remains invalid.",
         )
     status = str(envelope.get("status", "error"))
     if status not in {"success", "empty"} and not _usable_event_info_projection(
         envelope
     ):
         raise InputValidationError(
-            "required event-specific field metadata is unavailable; "
-            "business request was not sent"
+            f"required event-specific field metadata is unavailable; actual value: {actual_value(status)}; "
+            "allowed metadata statuses: \"empty\", \"success\"",
+            field="event_metadata.status",
+            next_action=f"Run `gravity run {ANALYSIS_EVENT_INFO} --input {actual_value({'app_id': app_id, 'event_name': event_name})}` and retry only after metadata succeeds.",
         )
     data = envelope.get("data")
     properties = data.get("properties") if isinstance(data, Mapping) else None
@@ -295,7 +309,9 @@ def select_rows(
     missing = [item for item in requested if item not in by_name]
     if missing:
         raise InputValidationError(
-            f"{label} contains values absent from live metadata (count={len(missing)}); request was not sent"
+            f"actual value absent from live metadata: {actual_value(missing)}; allowed values: "
+            f"{allowed_values(by_name, discovery_action='gravity multidim metadata')}",
+            field=label,
         )
     return tuple(by_name[item] for item in requested)
 
@@ -334,9 +350,12 @@ def _validate_events(
     if not references.events:
         return
     allowed = names(load_view(ANALYSIS_EVENT, metadata_inputs, loader).rows, keys=("name",))
-    if not references.events <= allowed:
+    missing = sorted(references.events - allowed)
+    if missing:
         raise InputValidationError(
-            "analysis event names are absent from live metadata; request was not sent"
+            f"actual value absent from live metadata: {actual_value(missing)}; allowed events: "
+            f"{allowed_values(allowed, discovery_action='gravity metadata events \"\"')}",
+            field="event_name",
         )
 
 
@@ -361,9 +380,13 @@ def _validate_event_fields(
     )
     property_rows = (*global_rows, *specific_rows)
     unresolved = references.event_fields - ANALYSIS_FIXED_EVENT_FIELDS
-    if unresolved and not unresolved <= names(property_rows, keys=("name",)):
+    allowed = names(property_rows, keys=("name",))
+    missing = sorted(unresolved - allowed)
+    if missing:
         raise InputValidationError(
-            "analysis event fields are absent from live metadata; request was not sent"
+            f"actual value absent from live metadata: {actual_value(missing)}; allowed event fields: "
+            f"{allowed_values(allowed, discovery_action='gravity metadata properties \"\"')}",
+            field="event_fields",
         )
     if unresolved:
         reject_sensitive_metadata_fields(property_rows, unresolved)
@@ -379,9 +402,13 @@ def _validate_user_fields(
         return
     properties = load_view(ANALYSIS_USER_PROPERTY, metadata_inputs, loader)
     unresolved = references.user_fields - ANALYSIS_FIXED_USER_FIELDS
-    if unresolved and not unresolved <= names(properties.rows, keys=("name",)):
+    allowed = names(properties.rows, keys=("name",))
+    missing = sorted(unresolved - allowed)
+    if missing:
         raise InputValidationError(
-            "analysis user fields are absent from live metadata; request was not sent"
+            f"actual value absent from live metadata: {actual_value(missing)}; allowed user fields: "
+            f"{allowed_values(allowed, discovery_action='gravity metadata properties \"\"')}",
+            field="user_fields",
         )
     if unresolved:
         reject_sensitive_metadata_fields(properties.rows, unresolved)
@@ -401,9 +428,16 @@ def _validate_segments(
         loader,
     )
     segment_ids = names(segments.rows, keys=("segment_id", "id"))
-    if not {item[0] for item in references.segment_fields} <= segment_ids:
+    missing = sorted({item[0] for item in references.segment_fields} - segment_ids)
+    segment_discovery = (
+        f"gravity run {ANALYSIS_SEGMENT} --input "
+        f"{actual_value({'app_id': app_id, 'page': 1, 'page_size': 100})}"
+    )
+    if missing:
         raise InputValidationError(
-            "analysis segment fields are absent from live metadata; request was not sent"
+            f"actual value absent from live metadata: {actual_value(missing)}; allowed segment ids: "
+            f"{allowed_values(segment_ids, discovery_action=segment_discovery)}",
+            field="segment_id",
         )
     for segment_id, segment_type, version_id in references.segment_fields:
         if segment_type != "FIXED_VERSION":
@@ -413,9 +447,16 @@ def _validate_segments(
             {"segment_id": segment_id, "page": 1, "page_size": 100},
             loader,
         )
-        if version_id not in names(history.rows, keys=("version_id", "id")):
+        available = names(history.rows, keys=("version_id", "id"))
+        if version_id not in available:
+            history_discovery = (
+                f"gravity run {ANALYSIS_SEGMENT_HISTORY} --input "
+                f"{actual_value({'segment_id': segment_id, 'page': 1, 'page_size': 100})}"
+            )
             raise InputValidationError(
-                "analysis segment version is absent from live metadata; request was not sent"
+                f"actual value absent from live metadata: {actual_value(version_id)}; allowed versions: "
+                f"{allowed_values(available, discovery_action=history_discovery)}",
+                field="version_id",
             )
 
 
@@ -428,11 +469,14 @@ def validate_analysis_property_values(
     property_name = inputs.get("property_name")
     if not isinstance(app_id, str) or not app_id:
         raise InputValidationError(
-            "analysis property enum requires app_id; request was not sent"
+            f"actual value: {actual_value(app_id)}; allowed value: a non-empty app_id string",
+            field="app_id",
         )
     if not isinstance(property_name, str) or not property_name:
         raise InputValidationError(
-            "analysis property enum requires property_name; request was not sent"
+            f"actual value: {actual_value(property_name)}; allowed value: a non-empty property name",
+            field="property_name",
+            next_action="Run `gravity metadata properties \"\"` and retry with an enumerable property.",
         )
     if property_kind == "user":
         _validate_user_property_value(app_id, property_name, metadata_loader)
@@ -448,9 +492,12 @@ def _validate_user_property_value(
         {"app_id": app_id, "page": 1, "page_size": 100},
         loader,
     )
-    if property_name not in enumerable_property_names(view.rows):
+    available = enumerable_property_names(view.rows)
+    if property_name not in available:
         raise InputValidationError(
-            "analysis user property is absent from enumerable metadata; request was not sent"
+            f"actual value absent from enumerable metadata: {actual_value(property_name)}; allowed properties: "
+            f"{allowed_values(available, discovery_action='gravity metadata properties \"\"')}",
+            field="property_name",
         )
 
 
@@ -463,7 +510,9 @@ def _validate_event_property_value(
     event_names = inputs.get("event_name_list")
     if not isinstance(event_names, (list, tuple)) or not event_names:
         raise InputValidationError(
-            "analysis event property enum requires event_name_list; request was not sent"
+            f"actual value: {actual_value(event_names)}; allowed value: a non-empty array of event names",
+            field="event_name_list",
+            next_action="Run `gravity metadata events \"\"` and retry with listed events.",
         )
     event_view = load_view(
         ANALYSIS_EVENT,
@@ -475,12 +524,18 @@ def _validate_event_property_value(
     for event_name in event_names:
         if not isinstance(event_name, str) or event_name not in allowed_events:
             raise InputValidationError(
-                "analysis event is absent from live metadata; request was not sent"
+                f"actual value absent from live metadata: {actual_value(event_name)}; allowed events: "
+                f"{allowed_values(allowed_events, discovery_action='gravity metadata events \"\"')}",
+                field="event_name_list[]",
             )
         normalized.append(event_name)
     for event_name in normalized:
         event_rows = load_event_property_rows((event_name,), app_id, loader)
-        if property_name not in enumerable_property_names(event_rows):
+        available = enumerable_property_names(event_rows)
+        if property_name not in available:
             raise InputValidationError(
-                "analysis event property is absent from enumerable metadata; request was not sent"
+                f"actual value absent from enumerable metadata for {actual_value(event_name)}: "
+                f"{actual_value(property_name)}; allowed properties: "
+                f"{allowed_values(available, discovery_action='gravity metadata properties \"\"')}",
+                field="property_name",
             )
