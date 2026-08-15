@@ -577,6 +577,14 @@ def test_online_probe_still_rejects_mutation_under_manage_directory() -> None:
         assert_read_only_source(source)
 
 
+def test_probe_policy_honors_confirmed_read_with_blocked_path_segment() -> None:
+    source = json.loads(Path("src/gravity_sdk/contracts/drafts/report.subscribe.list.json").read_text(encoding="utf-8"))
+    parts = prober_transport.sdk_parts()
+    operation = parts["models"].load_operation_manifest({"operations": [prober_transport._source_to_runtime(source["operation"])]})[0]
+    registry = parts["registry"].Registry([operation])
+    prober_transport.build_probe_policy(parts, registry, operation.path_template, operation.upstream_method).authorize_operation(operation.operation_id)
+
+
 def test_online_probe_rejects_non_read_effect() -> None:
     source = build_draft(_route(), set())
     source["operation"]["effect"] = "export"

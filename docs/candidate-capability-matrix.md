@@ -1,6 +1,6 @@
 # 候选能力证据矩阵
 
-本矩阵记录 17 项候选能力在 2026-08-12 受控只读探测后的真实状态，并原位追加后续取证结论，供开发决策使用。仓库基线仍为 [185 个 operation、其中 176 个 stable operation](capability-coverage.md)；本轮没有新增 stable operation，基线数量未变化。
+本矩阵记录 17 项候选能力在 2026-08-12 受控只读探测后的真实状态，并原位追加 2026-08-14 的后续取证结论，供开发决策使用。仓库基线仍为 [185 个 operation、其中 176 个 stable operation](capability-coverage.md)；本轮没有新增 stable operation，基线数量未变化。
 
 所有候选项仍未晋升；`analysis.setting.query` 保留在 draft 台账但 `effect=mutation`，其余候选仍是 read draft，promotion gate 均未满足。表中的“下一步最小证据”表示继续判断所需的最小输入，不代表晋升计划或交付承诺。后续在线验证仍须遵循[探测规范](maintainers/probing.md)，保持只读、限流、值不落盘和 fail-closed。
 
@@ -11,12 +11,12 @@
 | `analysis.default_val.list` | `draft`（部分证明） | 本轮 1 次目标请求；完整前端 builder 与 HTTP 200 语义成功空响应共同证明 body 为 caller-bound `app_id` + 固定 `$lib_version`，分页 `none`；既有非空样本只观察到 `data.api[]`、`data.cocoscreator[]` 为 string，前端按动态字典消费。 | `dynamic_key_projection_unapproved`、`successful_confirmation_required` | 在同一最小 App/同形状下取得另一个非空样本；随后批准有界 SDK-family key 投影。动态 `{dynamic_key}` 未批准前继续全隐藏。 |
 | `analysis.realtime_event.list` | `draft`（部分证明） | 本轮 1 次目标请求；完整 builder 与 HTTP 200 语义成功空 `data.list` 证明顶层 `app_id/filters/page/page_size/request_time` 及 7 个 filter 键；无 `page_info`，未翻页。 | `empty_sample`、`pagination_unverified`、`response_item_schema_unverified`、`privacy_projection_approval_required` | 同一最短当天窗口、第一页、`page_size=1` 取得 1 个非空 item；单独证明服务端分页。静态候选 `client_id/request_id/request_ip/raw_properties` 未获隐私投影批准。 |
 | `analysis.setting.query` | `draft`（mutation 负向证明） | 本轮 0 次请求；完整 Dashboard builder 证明该 POST 在修改图表时提交 `config/name/remark` 等字段，成功后继续改 dashboard layout 并提示修改成功；合同 `effect=mutation`，probe 在 transport 前拒绝。 | `mutation_route_not_read`、`free_text_fail_closed` | 原查询动线须找到另一条可证明只读的 route；本 route 属 mutation，在线 probe 被禁止，批准 mutation 也不能替代读取合同。 |
-| `report.masterkey_report_group.list` | `draft` | 3 次目标请求；HTTP 200、空样本；`page_info`、第二页行为和安全页上限已验证；无父绑定。 | `empty_sample` | 在相同最小日期窗口和第一页条件下取得 1 个非空列表样本，用于证明 item schema；不扩大时间范围寻找数据。 |
-| `report.report.list` | `draft` | 3 次目标请求；HTTP 200、空样本；`page_info`、第二页行为和安全页上限已验证；无父绑定。 | `empty_sample`、`response_schema_unverified` | 取得 1 个非空列表样本，并仅对实际观察到的 item 字段做投影与隐私审查。 |
-| `report.report.detail` | `draft` | 0 次请求；同批 `report.report.list` 为空，按约定跳过；沿用既有空样本；分页为 `none`，本轮未复核；前置资源未解析。 | `empty_sample`、`response_schema_unverified` | 先从同批列表得到 1 个可读候选，再仅以内存传入 1 次 detail 请求；随后审查 detail 字段，不持久化父值。 |
-| `report.shared_to_me.list` | `draft` | 3 次目标请求；HTTP 200、空样本；`page_info`、第二页行为和安全页上限已验证；无父绑定。 | `empty_sample`、`response_schema_unverified` | 取得 1 个非空共享报表样本，确认 item schema 后再做最小投影和隐私审查。 |
-| `report.subscribe.list` | `draft` | 0 次网络请求；本地只读策略拒绝当前路由，结论 `local_or_parent_inconclusive`；无样本，分页未验证；无父绑定。 | `pagination_unverified`、`probe_inconclusive`、`response_schema_unverified` | 先取得权威的只读语义和请求合同证据，使受控运行时可安全放行；之后仅需 1 次第一页最小请求，再按需要验证第二页。 |
-| `report.media_report.list` | `draft` | 本轮 0 次请求；沿用既有空样本；草案声明 `page_info`，本轮未复核；无父绑定。 | `empty_sample`、`response_schema_unverified` | 先证明应用与广告平台参数的可信绑定，再用最小日期窗口取得 1 个非空样本；不得使用猜测的平台值。 |
+| `report.masterkey_report_group.list` | `draft`（读合同已确认） | 本轮 1 次、累计 4 次目标请求；本次最小第一页 HTTP 200、明确空。Bundle 的列表装载/分页/响应消费已登记为 read confirmation；既有第二页和安全页上限证据保留。 | `empty_sample`、`successful_probe` | 在相同最小当天窗口取得 1 个非空列表样本，用于证明 item schema；不扩大时间范围寻找数据。 |
+| `report.report.list` | `draft`（读合同已确认） | 本轮 1 次、累计 4 次目标请求；本次最小第一页 HTTP 200、明确空。已存报表 bundle 证明列表装载、分页、`list` 消费，删除走独立 update 路由。 | `empty_sample`、`response_schema_unverified` | 在有自有报表的租户取得 1 个非空 item，并仅审查实际字段。 |
+| `report.report.detail` | `draft` | 0 次请求；本轮 `report.report.list` 仍为空，按约定跳过；分页为 `none`，前置资源未解析。 | `empty_sample`、`response_schema_unverified` | 先从同批列表得到 1 个可读候选，再仅以内存传入 1 次 detail 请求；随后审查 detail 字段，不持久化父值。 |
+| `report.shared_to_me.list` | `draft`（读合同已确认） | 本轮 1 次、累计 4 次目标请求；本次最小第一页 HTTP 200、明确空。Bundle 将响应 `list` 合并进共享指标目录并本地分页，写操作另有路由。 | `empty_sample`、`response_schema_unverified` | 在有共享项的租户取得 1 个非空 item，再做最小投影与隐私审查。 |
+| `report.subscribe.list` | `draft`（读合同已确认） | 本轮唯一 1 次 `page=1/page_size=1` 请求；HTTP 200、明确空，只观察到 `list` 空壳与 `page_info`，未翻页。Prober 已按精确 confirmation 放行，稳定 Registry 不变。 | `empty_sample`、`field_review_required`、`pagination_unverified`、`response_schema_unverified` | 在有订阅项的租户复用同形状取得 1 个非空 item；未知订阅字段保持隐藏，再按需单独验证第二页。 |
+| `report.media_report.list` | `draft`（读合同与绑定已确认） | 本轮 1 次、累计 4 次目标请求；当天、无 App/平台筛选、第一页 HTTP 200、明确空。Bundle 证明 `AppSelect`/有限平台选项绑定，空选择省略；既有分页证据保留。 | `empty_sample`、`response_schema_unverified` | 在有媒体报表的租户复用同形状取得 1 个非空 item；不得猜测 App 或平台值。 |
 | `app.project.list` | `draft` | 3 次目标请求；HTTP 200、空样本；`page_info`、第二页行为和安全页上限已验证；无父绑定。 | `empty_sample`、`response_schema_unverified` | 在具备可读项目的授权环境取得 1 个非空样本，并审查 item 字段的权限与隐私含义。 |
 | `app.project_auth.detail` | `draft` | 1 次稳定父请求、0 次目标请求；父资源返回空候选，子请求未发送；无目标样本，分页未验证；父绑定未解析。 | `parent_resource_required`、`probe_inconclusive`、`response_schema_unverified` | 由 `analysis.account_user.list` 提供 1 个可读候选，仅以内存传给 1 次目标请求；没有父候选时继续跳过。 |
 | `app.onelink.list` | `draft` | 共 5 次请求，其中父资源 2 次、目标 3 次；父绑定已解析且值仅在内存使用；目标 HTTP 200、空样本；`page_info`、第二页行为和安全页上限已验证。 | `empty_sample`、`response_schema_unverified` | 复用已证明的稳定父绑定取得 1 个非空目标样本，再审查 item schema；无需扩大父资源搜索范围。 |
@@ -37,9 +37,9 @@
 
 | 动线 | 判定 | 已有证据与精确阻塞 | 下一轮最有希望的取证 |
 | --- | --- | --- | --- |
-| 查找自有、共享和 MasterKey 报表并读取其定义 | **合同阻塞** | `report.masterkey_report_group.list`、`report.report.list`、`report.shared_to_me.list` 均被读语义闸门拦截；三者只有 `read_action_path_token`，旧空 receipt 又都是 `method_verified=false`。`report.report.detail` 是 GET，但列表未产出父候选。 | 分析 MasterKey/report/shared 对应 bundle 的装载控制流并形成逐 route 的 read confirmation；之后由有报表数据的租户或调用方样本提供一个父项，再做最小 detail。 |
-| 查看报表订阅清单 | **合同阻塞** | `NewReportCenter-Dxgo5EkI.js` 的 `reportSubscribe` 控制流把 `POST /subscribe/list/` 单独用于加载表格，body 为 `page/page_size/filters`，响应只读 `list/page_info.total_number`；create/edit/delete/export 是独立路由。因此 list 是读取，不是订阅 mutation。但当前确认文件没有该 route，preflight 仍失败，且 item schema 未在线证明。 | 复核并登记同一 bundle 的静态读证据，再做 1 次 `page=1/page_size=1` probe；非空时只审查表格实际消费字段。 |
-| 查找可用的媒体报表 | **合同阻塞** | `report.media_report.list` 被读语义闸门拦截；`app_id/ad_platform` 的 caller-bound 来源未证实，旧空样本不能证明猜测绑定正确，item schema 未成立。 | 分析 media-report bundle 的调用参数来源与列表消费；形成 read confirmation 后才做最短窗口、第一页、最小页大小 probe。 |
+| 查找自有、共享和 MasterKey 报表并读取其定义 | **非空样本阻塞** | 三个列表 POST 的 hash-matched bundle 控制流均证明装载、分页和响应消费，逐 route read confirmation 已登记；本轮各 1 次最小请求均 HTTP 200、明确空。`report.report.detail` 是 GET，但仍无父候选。 | 由有报表数据的租户提供 1 个非空列表项，再以内存父值做最小 detail；不扩窗找数据。 |
+| 查看报表订阅清单 | **明确空 / item schema 阻塞** | `reportSubscribe` 的 read confirmation 已登记；prober 对精确确认路径放行。本轮唯一 1 次最小第一页请求 HTTP 200、`data.list=[]`，未额外翻页，未知订阅字段继续隐藏。 | 在有订阅项的租户复用同形状取得 1 个非空 item，再单独判断分页与投影。 |
+| 查找可用的媒体报表 | **明确空 / item schema 阻塞** | Bundle 已恢复 `AppSelect` 与有限平台选项绑定，空选择省略；列表装载、分页和响应消费证明 read，confirmation 已登记。本轮当天最小请求 HTTP 200、明确空。 | 在有媒体报表的租户复用同形状取得 1 个非空 item，不猜 App 或平台值。 |
 | 查找当前账号可读的 App 项目 | **合同阻塞** | `app.project.list` 被读语义闸门拦截；旧空 receipt 虽证明分页壳，但 `method_verified=false`，不能排除请求合同或语义问题，也就不能定为数据阻塞。 | 分析 `appManageIndex-DCdX2wdf.js` 的列表装载与响应消费，登记静态读证据后做 1 次最小第一页 probe。 |
 | 查看 App 的 OneLink 与公开信息绑定 | **合同阻塞** | `app.onelink.list` 是 GET，稳定父绑定、分页和重复空目标已证明，当前账号没有可供下钻的 OneLink 项；但 `app.app_info.get` 虽也是 GET，历史 probe 使用的 URL 没有可信 caller 绑定，响应合同也未证实。组合动线仍卡合同。 | 从 appManage bundle 恢复 `fetch_app_info` 的 URL 来源与有效值约束，再用调用方提供的公开测试 URL 做 1 次最小 GET。 |
 | 按平台、广告位和日期汇总变现结果（D28） | **合同阻塞** | `app.monetization_app.list` 被读语义闸门拦截；`account/monetization_platform` 的来源和值域未绑定，旧空 receipt 不能证明请求有效，且非空 item schema 未成立。 | 分析 csj/tobid bundle 中 account 与平台的来源和列表消费；形成 read confirmation 后才做 1 次 `page=1/page_size=1` probe。 |
@@ -48,6 +48,9 @@
 `report.shared_to_me.list`、`report.subscribe.list`、`report.media_report.list`、
 `app.project.list`、`app.monetization_app.list`。`report.report.detail`、`app.onelink.list`、
 `app.app_info.get` 均为 GET，未命中。按探测纪律，命中后没有绕过、没有构造 transport、没有重试。
+
+**Report 追加状态：** 上述五条 `report.*` POST 的历史闸门状态已由本轮逐 route 静态确认替代；
+每条仅发 1 次最小第一页请求且全部明确空。读合同不再是 blocker，但空响应仍不能证明 item schema。
 
 六条均非 Web UI 布局/收藏/拖拽、成员权限、写操作或调用方业务语义，因此没有判为非目标，
 也没有从缺失清单移出；台账仍为 **42 条：已闭环 18 / 部分闭环 9 / 完全缺失 15**。

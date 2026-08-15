@@ -108,6 +108,22 @@ D32 更新为 Bytedance 标题包变体部分闭环。其他平台素材 draft �
 `gravity.agent-call-bound.v1` 声明已知输入 1 次、未知能力 2 次。本单元不改变 promotion
 performance 的产品语义。
 
+### Report 家族读语义取证（2026-08-14）
+
+**提案：**先对 Report census bundle 做零业务请求的控制流复核，仅在列表装载、分页和响应消费均
+成立时追加逐 route read confirmation；然后对已放行 route 各发 1 次第一页、`page_size=1` 的最小
+请求，不翻页、不重试、不扩日期窗，不用猜测的 App 或平台值换取非空。
+
+**判定：**`report.masterkey_report_group.list`、`report.report.list`、
+`report.shared_to_me.list` 和 `report.media_report.list` 均由 hash-matched bundle 证明为读取并完成
+精确确认；media 的 `app_id` 来自 `AppSelect`、`ad_platform` 来自有限平台选项，空选择会省略。
+`report.subscribe.list` 的既有确认有效，但其路径段 `subscribe` 还被通用 Registry 词元守卫拒绝；
+prober 现仅对 confirmation 文件中通过完整校验的精确 `POST + path` 放行，stable Registry 不变。
+
+实际共 5 次生产请求，五个 operation 各 1 次，均 HTTP 200、第一页 0 行、明确空；没有认证、权限、
+语义或 HTTP 错误，也没有持久化响应值。旧分页证据不因单页复核降级，订阅的未知 `data.list` 及
+`user_level` 边界继续保留。三条动线都从合同阻塞转为非空 item schema 阻塞，本轮新增 stable 与
+五面产品均为 0；下一步只能由有对应数据的租户提供同形状非空样本，不能扩大窗口寻找数据。
 
 ## 优先级
 

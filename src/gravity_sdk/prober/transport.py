@@ -15,6 +15,15 @@ from gravity_sdk import runtime as tool_runtime
 from gravity_sdk.paths import PROJECT_ROOT
 
 from .privacy import response_schema_sketch
+from .read_semantics import CONFIRMATIONS_PATH, _confirmation_keys
+
+
+_CONFIRMED_READ_NAMESPACES = (
+    "/account_center/api/",
+    "/apprank/api/",
+    "/report/api/",
+    "/turbo_engine/api/",
+)
 
 
 @dataclass
@@ -275,19 +284,28 @@ def _source_to_runtime(source_operation: Mapping[str, Any]) -> dict[str, Any]:
     return operation
 
 
-def build_probe_policy(parts: Mapping[str, Any], registry: Any, path: str) -> Any:
+def build_probe_policy(
+    parts: Mapping[str, Any], registry: Any, path: str, method: str = ""
+) -> Any:
     policy_class = parts["registry"].PolicyEngine
-    if not path.startswith("/openapi/api/v1/"):
+    confirmed_read = (method.upper(), path) in _confirmation_keys(CONFIRMATIONS_PATH)
+    if not path.startswith("/openapi/api/v1/") and not confirmed_read:
         return policy_class(registry, allow_experimental=True)
 
-    class OpenApiDraftPolicy(policy_class):
+    class ConfirmedDraftPolicy(policy_class):
         @staticmethod
         def _check_template(template: str) -> None:
             if template.startswith("/openapi/api/v1/"):
                 return
+            if (
+                confirmed_read
+                and template == path
+                and template.startswith(_CONFIRMED_READ_NAMESPACES)
+            ):
+                return
             policy_class._check_template(template)
 
-    return OpenApiDraftPolicy(registry, allow_experimental=True)
+    return ConfirmedDraftPolicy(registry, allow_experimental=True)
 
 
 def build_draft_client(source: Mapping[str, Any], runtime: Any) -> Any:
@@ -297,7 +315,9 @@ def build_draft_client(source: Mapping[str, Any], runtime: Any) -> Any:
         {"operations": [runtime_operation]}
     )[0]
     registry = parts["registry"].Registry([operation])
-    policy = build_probe_policy(parts, registry, operation.path_template)
+    policy = build_probe_policy(
+        parts, registry, operation.path_template, operation.upstream_method
+    )
     transport = parts["transport"].Transport(
         policy=policy, runtime=runtime, timeout=120.0, attempts=1
     )
