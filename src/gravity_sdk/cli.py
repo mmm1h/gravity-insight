@@ -837,7 +837,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             return result_output.terminal_result_exit_code(result)
         if isinstance(result, Mapping) and type(result.get("exit_code")) is int:
             _emit_success(args, result)
-            return int(result.get("exit_code", 4))
+            return int(result["exit_code"])
         if isinstance(result, Mapping) and result.get("ok") is False:
             stream = (
                 sys.stdout

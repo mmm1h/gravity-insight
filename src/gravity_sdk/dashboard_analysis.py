@@ -35,7 +35,7 @@ from .errors import (
     InputValidationError,
     LocalIOError,
     PaginationError,
-    UnsupportedOperationError,
+    UnsupportedOperationError, exit_code_for_category,
 )
 from .plan_execution import result_item_count
 
@@ -473,7 +473,7 @@ def _highest_error(
     ]
     if not details:
         return None
-    return copy.deepcopy(max(details, key=lambda item: {"caller": 2, "upstream": 3, "local": 4}.get(str(item.get("category")), 4)))
+    return copy.deepcopy(max(details, key=_exit_code))
 
 
 def _safe_compile_error(error: GravityInsightError) -> ErrorDetail:
@@ -549,7 +549,7 @@ def _status(value: Mapping[str, Any]) -> str:
 
 
 def _exit_code(error: Mapping[str, Any] | None) -> int:
-    return {"caller": 2, "upstream": 3, "local": 4}.get(str(error.get("category")), 4) if error else 0
+    return 0 if error is None else exit_code_for_category(str(error.get("category")), default=ErrorCategory.LOCAL)
 
 
 __all__ = [

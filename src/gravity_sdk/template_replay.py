@@ -15,10 +15,13 @@ from .dashboard_artifact import validate_dashboard_window
 from .domains import ANALYSIS_TEMPLATE_OPERATIONS
 from .errors import (
     ContractChangedError,
+    ErrorCategory,
     ErrorCode,
     GravityInsightError,
     InputValidationError,
     PaginationError,
+    exit_code_for_category,
+    exit_code_for_error,
 )
 from .runtime import call_read
 from .saved_analysis_result import execute_compiled, saved_result_item_count
@@ -67,6 +70,7 @@ def list_analysis_templates(
     page_workers = workers(max_workers)
     scopes = (_scope(scope),) if scope is not None else tuple(TEMPLATE_OPERATIONS)
     components: list[dict[str, Any]] = []
+    failure_exit_codes: list[int] = []
     rows: list[dict[str, Any]] = []
     remaining = items
     for selected_scope in scopes:
@@ -86,6 +90,7 @@ def list_analysis_templates(
             components.append(component)
         except GravityInsightError as exc:
             components.append(_component_error(selected_scope, operation_id, exc))
+            failure_exit_codes.append(exit_code_for_error(exc))
     successes = sum(item["ok"] is True for item in components)
     failures = len(components) - successes
     status = (
@@ -97,7 +102,7 @@ def list_analysis_templates(
         "schema_version": CATALOG_SCHEMA_VERSION,
         "ok": failures == 0,
         "status": status,
-        "exit_code": 0 if failures == 0 else 3,
+        "exit_code": max(failure_exit_codes, default=0),
         "network_called": True,
         "query_executed": False,
         "count": len(rows),
@@ -174,6 +179,7 @@ def run_analysis_template(
             **preview,
             "schema_version": REPLAY_SCHEMA_VERSION,
             "ok": False,
+            # exit-code-guard: allow - capability_gap is a caller selection result without ErrorDetail.
             "exit_code": 2,
             "next_action": (
                 "Do not execute this template until every quarantine item has a "
@@ -427,7 +433,7 @@ def _date_range(start: str, end: str) -> dict[str, Any]:
 def _result_exit_code(value: Mapping[str, Any]) -> int:
     error = value.get("error")
     category = error.get("category") if isinstance(error, Mapping) else None
-    return {"caller": 2, "upstream": 3, "local": 4}.get(str(category), 3)
+    return exit_code_for_category(str(category), default=ErrorCategory.UPSTREAM)
 
 
 __all__ = [

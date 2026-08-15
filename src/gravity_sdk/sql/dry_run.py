@@ -17,6 +17,7 @@ from gravity_sdk.sql.products import (
     normalize_app_ids,
     normalize_window,
 )
+from gravity_sdk.sql.query import sql_error_exit_code
 from gravity_sdk.workspace import WorkspaceError
 
 
@@ -47,7 +48,6 @@ def dry_run_override(
                 "No configured SQL product is available for offline validation",
                 category="contract",
                 code="SQL_DRY_RUN_WORKSPACE_INVALID",
-                exit_code=4,
             )
         return run_query_plan(args, configured_products)
     if args.command == "verify" or (
@@ -78,21 +78,18 @@ def run_query_plan(
             "SQL query input or local state could not be read",
             category="local_io",
             code="SQL_DRY_RUN_LOCAL_IO",
-            exit_code=4,
         )
     except (EvidenceFormatError, WorkspaceError, AssertionError):
         return emit_error(
             "SQL product contract failed offline validation",
             category="contract",
             code="SQL_DRY_RUN_CONTRACT_INVALID",
-            exit_code=4,
         )
     except (TypeError, ValueError):
         return emit_error(
             "SQL query input is invalid; run `gravity sql products` for the input contract",
             category="input",
             code="SQL_DRY_RUN_INPUT_INVALID",
-            exit_code=2,
         )
 
     payload = {
@@ -204,12 +201,12 @@ def emit_error(
     *,
     category: str,
     code: str,
-    exit_code: int,
     next_action: str = (
         "Run `gravity sql products`, correct the local request, and retry with "
         "--dry-run."
     ),
 ) -> int:
+    exit_code = sql_error_exit_code(category)
     payload = {
         "schema_version": SCHEMA_VERSION,
         "ok": False,
@@ -236,7 +233,6 @@ def reject_networked(args: argparse.Namespace) -> int:
         f"--dry-run cannot be combined with `{command}` because it may access external state",
         category="input",
         code="SQL_DRY_RUN_COMMAND_NOT_OFFLINE",
-        exit_code=2,
         next_action=(
             "Remove --dry-run and retry only when this external-state operation "
             "is explicitly intended."

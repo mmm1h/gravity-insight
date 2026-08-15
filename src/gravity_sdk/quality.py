@@ -46,6 +46,8 @@ _BUILD_TIME_FILES = {
     "src/gravity_sdk/compiler.py",
     "src/gravity_sdk/quality.py",
 }
+_EXIT_CODE_EXEMPTION = "exit-code-guard: allow - "
+_ERROR_CATEGORY_VALUES = frozenset({"caller", "upstream", "local"})
 
 
 @dataclass(frozen=True)
@@ -243,6 +245,127 @@ def _parse(source: str, path: str) -> ast.Module:
     return ast.parse(source, filename=path, feature_version=(3, 11))
 
 
+def _nonzero_integer_literal(node: ast.AST) -> bool:
+    return any(
+        isinstance(item, ast.Constant)
+        and type(item.value) is int
+        and item.value in {2, 3, 4}
+        for item in ast.walk(node)
+    )
+
+
+def _exit_code_target(node: ast.AST) -> bool:
+    return (
+        isinstance(node, ast.Name) and node.id == "exit_code"
+        or isinstance(node, ast.Attribute) and node.attr == "exit_code"
+    )
+
+
+def _category_literal(node: ast.AST | None) -> bool:
+    if isinstance(node, ast.Constant):
+        return node.value in _ERROR_CATEGORY_VALUES
+    return bool(
+        isinstance(node, ast.Attribute)
+        and node.attr == "value"
+        and isinstance(node.value, ast.Attribute)
+        and node.value.attr in {"CALLER", "UPSTREAM", "LOCAL"}
+        and isinstance(node.value.value, ast.Name)
+        and node.value.value.id == "ErrorCategory"
+    )
+
+
+class _HardcodedExitCodeVisitor(ast.NodeVisitor):
+    """Find only syntax whose names make an exit-code meaning unambiguous."""
+
+    def __init__(self) -> None:
+        self.candidates: list[ast.AST] = []
+
+    def _add(self, node: ast.AST) -> None:
+        if _nonzero_integer_literal(node):
+            self.candidates.append(node)
+
+    def visit_Dict(self, node: ast.Dict) -> None:
+        for key, value in zip(node.keys, node.values):
+            if isinstance(key, ast.Constant) and key.value == "exit_code":
+                self._add(value)
+        keys_are_categories = any(_category_literal(key) for key in node.keys)
+        values_are_categories = any(_category_literal(value) for value in node.values)
+        if keys_are_categories or values_are_categories:
+            self._add(node)
+        self.generic_visit(node)
+
+    def visit_Call(self, node: ast.Call) -> None:
+        for keyword in node.keywords:
+            if keyword.arg == "exit_code":
+                self._add(keyword.value)
+        if (
+            isinstance(node.func, ast.Attribute)
+            and node.func.attr == "get"
+            and len(node.args) > 1
+            and isinstance(node.args[0], ast.Constant)
+            and node.args[0].value == "exit_code"
+        ):
+            self._add(node.args[1])
+        self.generic_visit(node)
+
+    def visit_Assign(self, node: ast.Assign) -> None:
+        if any(_exit_code_target(target) for target in node.targets):
+            self._add(node.value)
+        if any(
+            isinstance(target, ast.Name) and "EXIT" in target.id
+            for target in node.targets
+        ):
+            self._add(node.value)
+        self.generic_visit(node)
+
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+        if node.value is not None and _exit_code_target(node.target):
+            self._add(node.value)
+        self.generic_visit(node)
+
+    def _visit_function(self, node: ast.FunctionDef | ast.AsyncFunctionDef) -> None:
+        before = len(self.candidates)
+        self.generic_visit(node)
+        if "exit_code" in node.name and len(self.candidates) == before:
+            self._add(node)
+
+    visit_FunctionDef = _visit_function
+    visit_AsyncFunctionDef = _visit_function
+
+
+def hardcoded_exit_code_errors(path: str, source: str, tree: ast.Module) -> list[str]:
+    """Reject numeric error exits unless a protocol exception gives a reason."""
+
+    if path == "src/gravity_sdk/errors.py":
+        return []
+    visitor = _HardcodedExitCodeVisitor()
+    visitor.visit(tree)
+    lines = source.splitlines()
+    errors: list[str] = []
+    seen: set[tuple[int, int]] = set()
+    for node in visitor.candidates:
+        location = (node.lineno, node.col_offset)
+        if location in seen:
+            continue
+        seen.add(location)
+        adjacent = lines[max(0, node.lineno - 2) : node.lineno]
+        marker_lines = [line for line in adjacent if _EXIT_CODE_EXEMPTION in line]
+        if marker_lines:
+            reason = marker_lines[-1].partition(_EXIT_CODE_EXEMPTION)[2].strip()
+            if reason:
+                continue
+            errors.append(
+                f"{path}:{node.lineno}: exit-code guard exemption requires a reason"
+            )
+            continue
+        errors.append(
+            f"{path}:{node.lineno}: hard-coded non-zero exit code must use the "
+            "shared error classification; for a non-ErrorDetail protocol value add "
+            f"`# {_EXIT_CODE_EXEMPTION}<reason>`"
+        )
+    return errors
+
+
 def _python_sources(
     root: Path, relative_root: Path, *, recursive: bool = True
 ) -> Iterable[tuple[str, str]]:
@@ -303,6 +426,7 @@ def inspect_repository(root: Path) -> QualityProfile:
         collector.visit(tree)
         functions.extend(collector.metrics)
         parsed[path] = tree
+        errors.extend(hardcoded_exit_code_errors(path, source, tree))
     known = set(operation_ids)
     literals: list[LiteralOccurrence] = []
     for path, tree in parsed.items():

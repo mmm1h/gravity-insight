@@ -6,7 +6,7 @@ from collections.abc import Mapping
 import re
 from typing import Any
 
-from .errors import ErrorCategory, ErrorCode, ErrorDetail
+from .errors import ErrorCategory, ErrorCode, ErrorDetail, exit_code_for_category
 
 
 _FAILURE_CODES = {
@@ -118,11 +118,9 @@ def failure_matches(status: str, code: str) -> bool:
 
 
 def error_exit_code(error: Mapping[str, Any]) -> int:
-    return {
-        ErrorCategory.CALLER.value: 2,
-        ErrorCategory.UPSTREAM.value: 3,
-        ErrorCategory.LOCAL.value: 4,
-    }.get(str(error.get("category")), 4)
+    return exit_code_for_category(
+        str(error.get("category")), default=ErrorCategory.LOCAL
+    )
 
 
 def _valid_retry_receipt(code: str, retryable: Any, retry_after: Any) -> bool:

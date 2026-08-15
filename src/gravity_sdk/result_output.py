@@ -10,7 +10,12 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
-from .errors import InputValidationError, LocalIOError
+from .errors import (
+    ErrorCategory,
+    InputValidationError,
+    LocalIOError,
+    exit_code_for_category,
+)
 from .support.documents import replace_atomic_durable
 from .support.process_lock import (
     LOCK_RECOVERY_GUIDANCE,
@@ -112,7 +117,7 @@ def terminal_result_exit_code(value: Mapping[str, Any]) -> int:
         return explicit
     error = value.get("error")
     category = error.get("category") if isinstance(error, Mapping) else None
-    return {"caller": 2, "upstream": 3, "local": 4}.get(str(category), 4)
+    return exit_code_for_category(str(category), default=ErrorCategory.LOCAL)
 
 
 def write_rendered_result(

@@ -21,6 +21,7 @@ from gravity_sdk.quality import (
     debt_snapshot,
     evaluate_ratchet,
     evaluate_slope,
+    hardcoded_exit_code_errors,
     inspect_repository,
     render_markdown,
     validate,
@@ -65,6 +66,50 @@ def _profile(
 
 
 class GravityInsightQualityTests(unittest.TestCase):
+    def test_exit_code_guard_rejects_direct_and_local_classifier_literals(self) -> None:
+        source = '''
+def product_result(truncated):
+    return {"exit_code": 3 if truncated else 0}
+
+def _component_exit_code(error):
+    return {"caller": 2, "upstream": 3, "local": 4}[error["category"]]
+'''
+        errors = hardcoded_exit_code_errors("src/gravity_sdk/sample.py", source, ast.parse(source))
+        self.assertEqual(2, len(errors), errors)
+        self.assertTrue(all("shared error classification" in item for item in errors))
+
+    def test_exit_code_guard_accepts_shared_classification_and_success_zero(self) -> None:
+        source = '''
+def product_result(detail):
+    return {"exit_code": exit_code_for_error(detail)}
+
+def success_result():
+    return {"exit_code": 0}
+'''
+        self.assertEqual(
+            [],
+            hardcoded_exit_code_errors("src/gravity_sdk/sample.py", source, ast.parse(source)),
+        )
+
+    def test_exit_code_guard_requires_an_exemption_reason(self) -> None:
+        allowed = '''
+def capability_gap():
+    # exit-code-guard: allow - caller selection status has no ErrorDetail
+    return {"exit_code": 2}
+'''
+        missing_reason = allowed.replace(
+            "allow - caller selection status has no ErrorDetail", "allow - "
+        )
+        self.assertEqual(
+            [], hardcoded_exit_code_errors("sample.py", allowed, ast.parse(allowed))
+        )
+        self.assertIn(
+            "requires a reason",
+            hardcoded_exit_code_errors(
+                "sample.py", missing_reason, ast.parse(missing_reason)
+            )[0],
+        )
+
     def test_privacy_consistency_covers_full_exposure_matrix(self) -> None:
         self.assertIn("value", exposed_field_names({"numeric_paths": ["list.[].value"]}))
         self.assertEqual(

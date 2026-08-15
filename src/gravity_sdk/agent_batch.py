@@ -13,7 +13,7 @@ from typing import Any
 from .agent import DEFAULT_LIMIT, discover_capabilities
 from .agent_batch_sources import AgentSourceSnapshot, snapshot_agent_sources
 from .agent_handoff import resolve_workspace_path, workspace_prefix
-from .errors import ErrorCategory, ErrorDetail
+from .errors import ErrorCategory, ErrorDetail, exit_code_for_error
 
 
 SCHEMA_VERSION = "gravity.agent-batch.v1"
@@ -219,15 +219,16 @@ def snapshot_failure(
         "Capability source snapshot failed locally.",
         category=ErrorCategory.LOCAL,
         next_action="Check the local workspace and operation catalog, then retry.",
-    ).to_dict()
+    )
+    exit_code = exit_code_for_error(detail)
     results = [
         {
             "question_id": item.question_id,
             "ok": False,
             "status": "error",
-            "exit_code": 4,
+            "exit_code": exit_code,
             "result": None,
-            "error": detail,
+            "error": detail.to_dict(),
         }
         for item in questions
     ]
@@ -239,7 +240,7 @@ def snapshot_failure(
         "success_count": 0,
         "capability_gap_count": 0,
         "failure_count": len(results),
-        "exit_code": 4,
+        "exit_code": exit_code,
         "results": results,
     }
 
@@ -279,7 +280,7 @@ def discover_one(
             "question_id": item.question_id,
             "ok": False,
             "status": "error",
-            "exit_code": 4,
+            "exit_code": exit_code_for_error(detail),
             "result": None,
             "error": detail.to_dict(),
         }

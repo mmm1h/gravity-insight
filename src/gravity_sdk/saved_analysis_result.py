@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from .domains import ANALYSIS_QUERY_OPERATIONS
-from .errors import ContractChangedError
+from .errors import ContractChangedError, ErrorCategory, exit_code_for_category
 from .runtime import call_read
 from .saved_analysis_support import SUCCESS_STATUSES, safe_query_envelope
 
@@ -113,7 +113,7 @@ def replay_envelope(
 def _exit_code(value: Mapping[str, Any]) -> int:
     error = value.get("error")
     category = error.get("category") if isinstance(error, Mapping) else None
-    return {"caller": 2, "upstream": 3, "local": 4}.get(str(category), 3)
+    return exit_code_for_category(str(category), default=ErrorCategory.UPSTREAM)
 
 
 def saved_result_item_count(operation_id: str, value: Any) -> int:

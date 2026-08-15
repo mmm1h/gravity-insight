@@ -13,7 +13,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from .dashboard_snapshot import MIN_SNAPSHOT_ITEMS, SCHEMA_VERSION
-from .errors import ErrorCategory, ErrorCode, ErrorDetail
+from .errors import ErrorCategory, ErrorCode, ErrorDetail, exit_code_for_category
 from .plan import AdapterContext
 from .plan_adapter_support import (
     has_dynamic,
@@ -243,20 +243,17 @@ def _aggregate_failure_detail(result: Mapping[str, Any]) -> ErrorDetail:
 
 
 _CATEGORY_EXIT = {
-    ErrorCategory.CALLER.value: 2,
-    ErrorCategory.UPSTREAM.value: 3,
-    ErrorCategory.LOCAL.value: 4,
+    category.value: exit_code_for_category(category) for category in ErrorCategory
 }
 
 
 def _category(value: Any, exit_code: Any) -> str:
     if value in _CATEGORY_EXIT:
         return str(value)
-    return {
-        2: ErrorCategory.CALLER.value,
-        3: ErrorCategory.UPSTREAM.value,
-        4: ErrorCategory.LOCAL.value,
-    }.get(exit_code, ErrorCategory.LOCAL.value)
+    for category in ErrorCategory:
+        if exit_code == exit_code_for_category(category):
+            return category.value
+    return ErrorCategory.LOCAL.value
 
 
 def _category_action(category: str) -> str:

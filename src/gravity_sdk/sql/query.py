@@ -6,7 +6,12 @@ from collections.abc import Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
-from gravity_sdk.errors import AuthenticationError, CredentialError
+from gravity_sdk.errors import (
+    AuthenticationError,
+    CredentialError,
+    ErrorCategory,
+    exit_code_for_category,
+)
 from gravity_sdk.http_runtime import MAX_SQL_CONCURRENCY
 from gravity_sdk.sql.products import (
     EvidenceFormatError,
@@ -21,6 +26,13 @@ QUERY_SCHEMA_VERSION = "gravity-sql.query.v1"
 _QUERY_FIELDS = frozenset(
     {"product", "start", "end", "app_id", "app_ids", "request_id"}
 )
+_SQL_ERROR_CATEGORIES = {
+    "input": ErrorCategory.CALLER,
+    "authentication": ErrorCategory.CALLER,
+    "runtime": ErrorCategory.UPSTREAM,
+    "contract": ErrorCategory.LOCAL,
+    "local_io": ErrorCategory.LOCAL,
+}
 
 
 class _RequestError(ValueError):
@@ -93,11 +105,15 @@ def _envelope(results: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def _exit_code(categories: set[str]) -> int:
-    if "contract" in categories:
-        return 4
-    if "runtime" in categories:
-        return 3
-    return 2 if categories else 0
+    return max((sql_error_exit_code(category) for category in categories), default=0)
+
+
+def sql_error_exit_code(category: str) -> int:
+    """Map the legacy SQL error vocabulary through the shared exit policy."""
+
+    return exit_code_for_category(
+        _SQL_ERROR_CATEGORIES.get(category, ErrorCategory.CALLER)
+    )
 
 
 def _run_one(
@@ -288,7 +304,7 @@ def _error(
     code: str,
     field: str | None = None,
 ) -> dict[str, Any]:
-    exit_code = 3 if category == "runtime" else 4 if category == "contract" else 2
+    exit_code = sql_error_exit_code(category)
     return {
         "request_id": request_id,
         "product": product,
@@ -305,9 +321,9 @@ def _error(
                 if category == "authentication"
                 else
                 "Run `gravity sql products`, correct this request, and retry."
-                if exit_code == 2
+                if category == "input"
                 else "Inspect the governed product contract and retry."
-                if exit_code == 4
+                if category in {"contract", "local_io"}
                 else "Retry after checking Gravity authentication and availability."
             ),
         },

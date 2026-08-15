@@ -8,6 +8,7 @@ from unittest.mock import patch
 from gravity_sdk.cli import build_parser
 from gravity_sdk.agent_capabilities import composite_capability_cards
 from gravity_sdk.agent_handoff import attach_plan_node
+from gravity_sdk.errors import PaginationLimitError
 from gravity_sdk.plan import AdapterContext
 from gravity_sdk.plan_dashboard_adapter import (
     execute_dashboard_plan,
@@ -15,6 +16,7 @@ from gravity_sdk.plan_dashboard_adapter import (
 )
 from gravity_sdk.sdk import GravitySDK
 from gravity_sdk.template_replay import (
+    list_analysis_templates,
     prepare_analysis_template,
     run_analysis_template,
 )
@@ -69,6 +71,17 @@ def _catalog(item: dict) -> dict:
 
 
 class AnalysisTemplateReplayTests(unittest.TestCase):
+    def test_catalog_pagination_limit_uses_shared_caller_exit(self) -> None:
+        with patch(
+            "gravity_sdk.template_replay.call_read",
+            side_effect=PaginationLimitError("catalog exceeded max_items"),
+        ):
+            result = list_analysis_templates(_Client(), scope="own")
+
+        self.assertEqual("error", result["status"])
+        self.assertEqual(2, result["exit_code"])
+        self.assertEqual("PAGINATION_LIMIT", result["components"][0]["error"]["code"])
+
     def test_compact_template_compiles_and_executes_once(self) -> None:
         item = _template(
             {

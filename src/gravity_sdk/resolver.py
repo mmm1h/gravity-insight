@@ -8,7 +8,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from .errors import ErrorCategory, GravityInsightError, InputValidationError
+from .errors import (
+    ErrorCategory,
+    GravityInsightError,
+    InputValidationError,
+    exit_code_for_category,
+)
 from .parent_resolution import resolve_declared_parents
 from .receipt import RequestCounter, build_receipt, count_http_requests, persist_receipt
 from .recipe import check_recipe
@@ -360,16 +365,16 @@ def _resolver_exit_code(
         if isinstance(error, Mapping)
     }
     if ErrorCategory.LOCAL.value in categories:
-        return 4
+        return exit_code_for_category(ErrorCategory.LOCAL)
     if ErrorCategory.UPSTREAM.value in categories:
-        return 3
+        return exit_code_for_category(ErrorCategory.UPSTREAM)
     if ErrorCategory.CALLER.value in categories or status in {
         "invalid",
         "stale",
         "needs_parent",
     }:
-        return 2
-    return 4
+        return exit_code_for_category(ErrorCategory.CALLER)
+    return exit_code_for_category(ErrorCategory.LOCAL)
 
 
 __all__ = ["parse_parameter_assignments", "resolve_and_run"]

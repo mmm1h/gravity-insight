@@ -7,7 +7,7 @@ from collections.abc import Mapping
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Any
 
-from .errors import ErrorCategory, ErrorDetail, GravityInsightError, InputValidationError
+from .errors import ErrorCategory, ErrorDetail, GravityInsightError, InputValidationError, exit_code_for_error
 from .plan import (
     MAX_EXPANDED_NODES,
     MAX_WORKERS,
@@ -512,7 +512,7 @@ def dry_run_result(plan: ValidatedPlan, workers: int) -> dict[str, Any]:
 
 
 def detail_exit_code(detail: ErrorDetail) -> int:
-    return {"caller": 2, "upstream": 3, "local": 4}[detail.category]
+    return exit_code_for_error(detail)
 
 
 def category_action(category: str, code: str) -> str:

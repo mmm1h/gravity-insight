@@ -717,13 +717,13 @@ Agent 面达标必须用**留出集**判定：题面在修复完成后由**未�
 前者不含分析类型信号，关键词层拿不到；而一个拿到 tool schema 的宿主 LLM
 处理这种语义匹配毫无压力——那正是 LLM 擅长而关键词表不擅长的事。
 
-**因此暂停继续投入 recognizer 调优**，等 [MCP 交付面可行性报告](mcp-feasibility.md)结论。
+**因此暂停继续投入 recognizer 调优**，等并行线的 MCP 交付面可行性结论。
 若改由宿主 LLM 选工具，这一层可能整体不需要；现在继续拟合题集是在为可能被替换的部件付钱。
 `nl-reachability` 已完成的修复保留——它对那 94 类问法是真实改进，且零回归。
 
 ### 对 MCP 试点验收判据的修正（2026-08-15）
 
-[MCP 可行性报告](mcp-feasibility.md)给出的停止判据是"**冻结题集**上未达
+并行线的 MCP 可行性报告给出的停止判据是"**冻结题集**上未达
 `18/20` 首选正确、`12/20` 合法答案，或没有真实采用方，就停止并退回 schema-only"。
 方向对，但**冻结题集正是上面那次留出测试证伪的东西**——该报告派发时留出结论还没出来。
 
@@ -1424,6 +1424,42 @@ consumer release 执行，本仓库不添加兼容别名或双重 envelope。
 后续 setting route 去重使最终台账成为 **47 = 32 / 0 / 15**。质量 baseline
 只删除已改善的 `Transport.request` complexity 16 项，没有放宽任何阈值。既有 composite
 result/error/pagination 模型差异继续按技术债裁决保留，不借本轮建立通用错误 DSL。
+
+## 退出码共享分类与门禁（2026-08-15）
+
+**提案：**对 `src/gravity_sdk` 做 AST 全集审计，把 `exit_code` 槽位、本地 category→数字映射与
+公共 CLI 直接返回分层计数；错误身份已经存在时一律走共享分类，确属非 `ErrorDetail` 协议状态时只允许
+带相邻理由的窄豁免。门禁直接接入现有 quality check，不建立 lint/规则框架。工作底稿位于 ignored
+`tmp/codex/exit-code-guard/proposal.md` 与 `audit-ledger.md`。
+
+审计快照上一共 **63 处 = 47 个具名 exit-code AST 上下文 + 16 个公共 CLI 直接返回表达式**。
+其中与已注册分类可证明不一致 **1 处**：Analysis Template 目录的聚合结果把所有组件失败固定为
+exit 3，但组件可以是 `PAGINATION_LIMIT/caller`。现按组件异常的共享分类聚合；目录因分页/
+item 上限中断时从 **exit 3 → exit 2**，调用方应提高文档内的分页或 item 上限后再请求，不应把原请求
+当作 upstream 故障退避重试。其余注册错误的数值均与分类一致；SQL/Census 与 onboarding 的若干旧
+命令返回没有内嵌 built-in `ErrorCode`，本轮只把数字改由明确共享 category 产生，不猜造错误身份，
+对外值不变。
+
+未合并的 Segment Members 不在上述 63 处内，也未修改其分支。合并时 `truncated` 应复用
+`PAGINATION_LIMIT`，构造并发布 `ErrorDetail`，由 `exit_code_for_error` 得到 **caller / false /
+exit 2**；当前 **exit 3 → exit 2**。原因是调用方给定的 `max_items`/分页预算不足，原样重试必然再次
+截断；无需新增 code。测试应同时把 partial 的期望 exit 改为 2，并断言 error code/category。
+
+质量门禁现以 Python AST 检查非零 2/3/4 是否出现在 `exit_code` dict/call/assignment/default、
+exit-code helper/constant 或 caller/upstream/local 数字映射中。成功 0、共享函数与普通业务数字不报；
+唯一保留的是 replay `capability_gap` 的 caller-selection exit 2，代码旁用
+`exit-code-guard: allow - <reason>` 明示理由，空理由本身会失败。因而新分支再写
+`3 if truncated else 0` 会在 `python -m gravity_sdk.quality check` 失败，且不进入 ratchet baseline。
+
+`failure-paths` 的 8 个 semantic sanitizer 复核结果为 **8 / 8 均是
+`INPUT_INVALID/caller/retryable=false/exit 2`**。advertiser profile、company usage、custom
+audience、title package 经 shared composite/batch 分类；Order Directory、Order Split Trace 直接
+调用 `exit_code_for_error`。复核发现 shared composite/batch 路径本身仍留一份本地 2/3/4 映射，
+Material/Promotion 也各留一份；三处数值虽正确，仍是会与注册表漂移的接缝，合计影响前 6 个产品。
+本轮均已改为 `exit_code_for_category`，最终 8 处全部走共享分类，没有同类数字硬编码。
+
+本轮没有新增 operation、请求形状、投影、CLI 参数、SDK 方法或分析动线；operation
+**185 + 0 - 0 = 185**，分析动线仍为 **47 + 0 = 47 = 32 / 0 / 15**。生产 HTTP 请求 **0 次**。
 
 ## 分析空间 / 报表设置只读 route 裁决（2026-08-15）
 
