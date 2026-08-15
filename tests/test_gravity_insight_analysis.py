@@ -696,7 +696,19 @@ class GravityInsightAnalysisTests(unittest.TestCase):
             self.assertEqual("+", before_after["formula"])
             self.assertEqual("two_point", before_after["decimal_point"])
             self.assertEqual("purchase", before_after["after"]["event_name"])
-            return {"code": 0, "data": {"total": [], "x": [], "y": []}}
+            row = {
+                "group_cols": [], "init_custom_before_components": [],
+                "init_custom_before_num": 0, "init_num": 2, "is_total": 1,
+                "percent_values": ["100.00%"], "percent_values_loss": ["0.00%"],
+                "values": [2], "values_another_event": [{"cumulative_total": 1, "period_calc_method": "SUM"}],
+                "values_loss": [1],
+            }
+            return {"code": 0, "data": {
+                "total": [row], "x": ["2026-08-07"],
+                "y": {"2026-08-07": [row]},
+                "date_to_week": {"2026-08-03": [row]},
+                "date_to_month": {"2026-08-01": [row]},
+            }}
 
         client, transport = client_for(
             "analysis.retention.query",
@@ -730,7 +742,7 @@ class GravityInsightAnalysisTests(unittest.TestCase):
             },
         }
         result = client.read("analysis.retention.query", inputs)
-        self.assertEqual("empty", result["status"])
+        self.assertEqual("success", result["status"])
         self.assertTrue(
             any(path.endswith("user/retention/") for _, path, _ in transport.calls)
         )

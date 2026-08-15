@@ -15,7 +15,7 @@ from .analysis_projection_contract import (
     funnel_mode_shape_changed,
 )
 from .drift import ProjectionDrift, projection_drift_status
-from .errors import PolicyViolation, UpstreamError
+from .errors import PolicyViolation, SemanticRejectedError
 from .models import OperationSpec, ReadResult, SemanticErrorRule
 from .multidim import projected_keys
 from .registry import PolicyEngine, Registry
@@ -53,16 +53,16 @@ _ANALYSIS_NESTED_RESPONSE_KEYS = {
     ),
     "analysis.retention.query": frozenset(
         {
-            "group_cols",
-            "init_custom_before_components",
-            "init_custom_before_num",
-            "init_num",
-            "is_total",
-            "percent_values",
-            "percent_values_loss",
-            "values",
-            "values_another_event",
-            "values_loss",
+            "_final_one_result_sum", "_valid_day_count", "cumulative_average",
+            "cumulative_total", "cumulative_uniques", "final_one_result",
+            "final_one_result_day_count_sum", "first_event_user_total", "group_cols",
+            "init_custom_before_components", "init_custom_before_num", "init_num",
+            "is_total", "original_final_one_result", "percent_values",
+            "percent_values_loss", "per_user", "period_calc_method",
+            "period_event_total", "period_event_total_average", "period_user_total",
+            "period_user_total_average", "time_diff", "to_use_final_one_result",
+            "totals", "uniques", "values",
+            "values_another_event", "values_loss",
         }
     ),
     "analysis.scatter.query": frozenset(
@@ -217,7 +217,7 @@ def _enforce_semantic_rules(operation: OperationSpec, payload: Mapping[str, Any]
             "not_in": exists and current not in rule.values,
         }[rule.operator]
         if triggered:
-            raise UpstreamError(rule.message)
+            raise SemanticRejectedError(rule.message)
 
 
 def _project(
@@ -823,7 +823,6 @@ def _allowed_analysis_response_scalar(value: str, response_keys: set[str]) -> bo
         stripped in response_keys
         or stripped in ANALYSIS_SAFE_RESPONSE_SCALARS
         or ANALYSIS_DATE_RESPONSE_KEY_RE.fullmatch(stripped)
-        or re.fullmatch(r"^\d{4}-(?:\d{2}|W\d{2})$", stripped)
         or ANALYSIS_INDEX_RESPONSE_KEY_RE.fullmatch(stripped)
     )
 
@@ -833,9 +832,7 @@ def _sensitive_analysis_scalar(value: str, blocked: set[str]) -> bool:
     normalized = stripped.casefold().replace("-", "_")
     if _sensitive_key(normalized, blocked):
         return True
-    if ANALYSIS_DATE_RESPONSE_KEY_RE.fullmatch(stripped) or re.fullmatch(
-        r"^\d{4}-(?:\d{2}|W\d{2})$", stripped
-    ):
+    if ANALYSIS_DATE_RESPONSE_KEY_RE.fullmatch(stripped):
         return False
     if "@" in stripped or stripped.startswith(("http://", "https://")):
         return True

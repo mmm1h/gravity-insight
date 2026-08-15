@@ -18,12 +18,21 @@ ANALYSIS_SAFE_RESPONSE_SCALARS = frozenset(
         "week",
         "PresetAllCount",
         "PresetUserCount",
+        # Retention v2 reports its aggregation mode alongside the buckets.
+        "SUM",
+        "WEIGHTED_AVG",
+        "DAY",
+        "WEEK",
+        "MONTH",
     }
 )
+# Time-bucket keys: day with optional timestamp, plus the month (``2026-08``)
+# and ISO week (``2026-W32``) buckets Retention v2 reports.
 ANALYSIS_DATE_RESPONSE_KEY_RE = re.compile(
-    r"^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}(?::\d{2}){0,2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?$"
+    r"^\d{4}-(?:W\d{2}"
+    r"|\d{2}(?:-\d{2}(?:[T ]\d{2}(?::\d{2}){0,2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?)?)$"
 )
-ANALYSIS_INDEX_RESPONSE_KEY_RE = re.compile(r"^(?:-?\d+(?:\.\d+)?|[xX]\d{1,3})$")
+ANALYSIS_INDEX_RESPONSE_KEY_RE = re.compile(r"^(?:-?\d+(?:\.\d+)?%?|[xX]\d{1,3})$")
 
 
 def funnel_mode_shape_changed(

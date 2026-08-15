@@ -83,6 +83,10 @@ class SegmentRuleSpecTests(unittest.TestCase):
         self.assertEqual(2, len(schema["definitions"]["condition"]["oneOf"]))
         dynamic = schema["definitions"]["event_date_range"]["oneOf"][2]
         self.assertEqual(2, len(dynamic["allOf"]))
+        self.assertEqual(
+            {"$MPShow", "$PayEvent"}, set(schema["event_support"]["events"])
+        )
+        self.assertEqual({"unsupported"}, {item["status"] for item in schema["event_support"]["events"].values()})
         allowed = {"array", "boolean", "integer", "null", "number", "object", "string"}
 
         def inspect(value: Any) -> None:
@@ -139,6 +143,15 @@ class SegmentRuleSpecTests(unittest.TestCase):
         for label, candidate, message in cases:
             with self.subTest(label=label), self.assertRaisesRegex(InputValidationError, message):
                 compile_segment_spec(candidate, app=101)
+
+    def test_known_unsupported_preset_events_fail_with_public_field_path(self) -> None:
+        for event_name in ("$MPShow", "$PayEvent"):
+            candidate = rich_spec()
+            candidate["event_rules"]["groups"][0]["rules"][0]["event"] = event_name
+            with self.subTest(event=event_name), self.assertRaises(InputValidationError) as caught:
+                compile_segment_spec(candidate, app=101)
+            self.assertEqual("event_rules.groups[0].rules[0].event", caught.exception.field)
+            self.assertIn("do not retry", str(caught.exception.next_action))
 
     def test_validation_delegates_metadata_and_preview_redacts_values(self) -> None:
         client = FakeClient()

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from .analysis_execution_support import segment_event_support_metadata
 from ._field_policy_segment import SEGMENT_QUICK_RANGES, SEGMENT_RULE_OPERATORS
 from ._field_policy_shared import ANALYSIS_CONDITION_OPERATORS, ANALYSIS_TARGET_METHODS
 from .domains import ANALYSIS_SEGMENT_OPERATIONS
@@ -24,6 +25,7 @@ def segment_rule_spec_schema() -> dict[str, Any]:
         "operation_id": ANALYSIS_SEGMENT_OPERATIONS["evaluate"],
         "spec_schema": _spec_schema(),
         "definitions": _definitions(),
+        "event_support": segment_event_support_metadata(),
         "handoff": {
             "natural_language_auto_execute": False,
             "metadata_validation": "delegate the compiled input to client.validate",

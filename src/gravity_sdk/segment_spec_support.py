@@ -7,6 +7,7 @@ from collections.abc import Mapping, Sequence
 from datetime import date
 from typing import Any
 
+from .analysis_execution_support import reject_unsupported_segment_event
 from ._field_policy_segment import SEGMENT_QUICK_RANGES, SEGMENT_RULE_OPERATORS
 from ._field_policy_shared import (
     ANALYSIS_CONDITION_OPERATORS,
@@ -239,8 +240,10 @@ def compile_event(value: Any, field: str) -> dict[str, Any]:
     if not isinstance(did, bool):
         raise InputValidationError(f"{field}.did must be boolean", field=f"{field}.did")
     conditions = sequence(source.get("conditions", []), f"{field}.conditions", 100)
+    event_name = text(source.get("event"), f"{field}.event", maximum=256)
+    reject_unsupported_segment_event(event_name, f"{field}.event")
     return {
-        "event_name": text(source.get("event"), f"{field}.event", maximum=256),
+        "event_name": event_name,
         "did": did,
         "target": compile_target(source.get("target"), f"{field}.target"),
         "did_condition": compile_did_condition(

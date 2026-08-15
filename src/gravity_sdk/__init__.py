@@ -122,6 +122,7 @@ for _error_name in (
     "ParentRequiredError",
     "PermissionUnavailableError",
     "PolicyViolation",
+    "SemanticRejectedError",
     "SqlResponseError",
     "SqlValidationError",
     "TransportError",
