@@ -211,7 +211,7 @@ gravity find "retention"
 
 ## 9. 导出
 
-已知完整输入直接一次 `gravity export run ... --output <file.xlsx>`；未知时一次 `gravity agent "material report export"` 加一次卡片 `next.argv`，自然语言不自动执行。当前唯一 callable create 是 `export.material.report.start`；status/cancel 和 blocked Analysis 导出不生成 executable 卡。
+已知完整输入直接一次 `gravity export run ... --output <file.xlsx>`；未知时一次 `gravity agent "material report export"` 加一次卡片 `next.argv`，自然语言不自动执行。当前唯一 callable create 是 `export.material.report.start`；status/cancel 和请求/文件合同未闭合的 Analysis 导出不生成 executable 卡。Analysis 的用户级投影已放开，不能再把它写成隐私 blocker。
 `--output` 是最终文件而非 JSON envelope；超时不取消，拿 `job_id` 走 status/wait/download，无可靠 ID 先 `export list`。分阶段命令只用于恢复；导出不进入 Plan v1。详见[导出指南](guides/export.md)。
 
 ## 10. 交付

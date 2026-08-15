@@ -2,8 +2,8 @@
 
 This module is intentionally separate from the executable export registry.  It
 can observe an unverified catalog route, but it cannot promote that route or
-relax the SDK's user-level export policy.  Evidence contains shapes and file
-metadata only; response values and tabular row values are never persisted.
+bypass the contracted file schema.  Evidence contains shapes and file metadata
+only; response values and tabular row values are never persisted.
 """
 
 from __future__ import annotations

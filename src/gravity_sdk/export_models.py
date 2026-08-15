@@ -10,7 +10,7 @@ from typing import Any, Mapping, Protocol
 from .blob import AuthorizedBlobSource, BlobReceipt, BlobTransferError
 
 _IDEMPOTENCY_KEY = re.compile(r"^[A-Za-z0-9._:-]{16,128}$")
-_NON_EXPORTABLE_CLASSIFICATIONS = frozenset({"restricted", "user_level"})
+_NON_EXPORTABLE_CLASSIFICATIONS = frozenset({"restricted"})
 
 class ExportState(str, Enum):
     CREATING = "CREATING"
@@ -122,6 +122,13 @@ class ExportPrivacyContract:
             raise ValueError("CSV delimiter must be one character")
         if not self.classification.strip():
             raise ValueError("export classification cannot be empty")
+
+    @property
+    def contracted_identifiers_allowed(self) -> bool:
+        return (
+            self.allow_contracted_identifiers
+            or self.classification.casefold() == "user_level"
+        )
 
 
 @dataclass(frozen=True)

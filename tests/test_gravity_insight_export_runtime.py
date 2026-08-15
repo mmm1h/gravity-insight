@@ -487,7 +487,7 @@ class ExportOrchestratorTests(unittest.TestCase):
         self.assertEqual("EXPORT_COLUMNS_INVALID", result.error.code)
         self.assertFalse(gateway.create_calls)
 
-    def test_user_level_classification_fails_before_gateway(self):
+    def test_restricted_classification_fails_before_gateway(self):
         gateway = FakeGateway()
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -499,7 +499,7 @@ class ExportOrchestratorTests(unittest.TestCase):
                 creation_request(),
                 "report.csv",
                 blob_policy(root),
-                privacy_contract(classification="user_level"),
+                privacy_contract(classification="restricted"),
             )
         self.assertEqual(ExportState.FAILED, result.state)
         self.assertEqual("EXPORT_PRIVACY_DENIED", result.error.code)

@@ -100,12 +100,12 @@ workspace App、日期窗口、平台和物理指标绑定，调用方保证不�
   **四条新动线都没有把跨平台 Promotion Performance 变体化**——后者明确排除广告主目录，
   为了塞进去而放宽它会削弱既有调用方的保证。
 - **等非空证据 1 条**：`material.bytedance.promotion_material.list` 目标响应仍为空。
-- **已裁决不批准 1 条**：`analysis.segment.user_detail.list` 涉及 `ClientID`、`device_info`、
-  `re_attribute_info` 与动态 `fields` 的用户级投影（理由见下方「对照裁决」）。
+- **原“不批准”裁决已作废 1 条**：`analysis.segment.user_detail.list` 的用户级投影已由
+  2026-08-15 总裁决全面放开；产品五面由对应单元推进，不再算隐私边界结案。
 
-后两条保持显式产品缺口，不能因 stable 或 raw/legacy 入口而算作闭环。
-9 条 `export.analysis.*` 已判定结案（见[能力覆盖与缺口](capability-coverage.md)）：台账仍如实记为
-完全缺失，但属于隐私/合同边界，不作为工程排期缺口。
+`material.bytedance.promotion_material.list` 仍保持显式产品缺口，不能因 stable 或 raw/legacy 入口而
+算作闭环。9 条 `export.analysis.*` 已于 2026-08-15 重新裁定（见下文及
+[能力覆盖与缺口](capability-coverage.md)）：隐私边界不再阻塞，但完整请求/文件合同仍使该动线完全缺失。
 
 ### D32 title-package family 裁决（2026-08-14）
 
@@ -609,8 +609,9 @@ Agent 面达标 = **至少一条中文自然语言问法和一条英文自然语
   **同时移除"不提供按用户维度筛选或分组"的 Guard**——那是纯隐私限制，且按用户分组是真实分析需求。
 - **`analysis.segment.user_detail.list`**：从"不批准、保持 reservation"改为**应实现**，
   按闭环判据补齐五面。
-- **`export.analysis.*`**：3 条因"缺批准的用户级投影"阻塞的解除；另 6 条的请求/文件 schema
-  阻塞不受本裁决影响，仍需独立证据。
+- **`export.analysis.*`**：复核后只有 `segment.result.start` 与 `user_event.start` 两条确实消除了
+  用户级投影阻塞；旧口径把聚合估算 `origin_event.evaluate` 也计入，属于误分。两条旧文件证据都
+  没有证明逻辑列类型，仍不能提升 executable；另 6 条的请求/文件 schema 阻塞不受本裁决影响。
 - **实时事件目录**：`client_id`、`request_id`、`request_ip`、`raw_properties` 批准投影。
   该动线的另一半阻塞（item schema 未证实）不受影响。
 - **各产品散落的 `known_omitted`**：`advertiser_name`、`advertiser_remark`、`company`、
@@ -632,6 +633,35 @@ Agent 面达标 = **至少一条中文自然语言问法和一条英文自然语
 若本项目范围将来扩展到把数据交付给非授权方（公开 agent、第三方消费者、跨租户共享），
 本裁决必须重新评估——那时的边界问题不是"SDK 该不该显示"，而是"交付给谁"，
 应在交付层解决，仍然不该退回字段级隐藏。
+
+### `export.analysis.*` 重新裁定（2026-08-15）
+
+**提案：**逐条拆开投影、请求、父依赖和完整文件 schema；只有列集合、逻辑类型、格式、表头及
+worksheet 语义都已证实的 create route 才复用现有 `export run` 提升，Plan v1 继续沿用上文已登记的
+“设计不适用”。工作底稿位于 ignored `tmp/codex/export-unblock/proposal.md`。
+
+**结论：旧“3 条只差投影”应纠正为 2 条，但本轮提升 executable 为 0。**
+
+| Operation | 精确阻塞 | 投影裁决影响 | 解锁证据提供方 |
+| --- | --- | --- | --- |
+| `origin_event.evaluate` | 自身估算请求/聚合响应已证实；配对 `origin_event.start` 的成功 create 与文件合同未证实，属于父工作流依赖 | 旧隐私措辞作废，但父依赖未解除 | 上游 API/前端 owner 给出成功 submit 合同，或有合法原始事件导出的租户提供一次值无关 shape |
+| `origin_event.start` | 既有最小 POST 为 HTTP 200 / semantic 1004、无 task id；成功请求绑定与完整文件 schema 均缺 | 未解除 | 同上 |
+| `monetization_detail.start` | create 曾返回 task id，但任务 FAILED；`field_map`/筛选语义及完整文件 schema 未成立 | 未解除 | 上游 API/前端 owner，或有可成功变现明细导出的租户 |
+| `segment.result.start` | create→poll→download、XLSX、单 worksheet、表头 `用户ID` 已观察；唯一数据行的存储/逻辑类型未记录 | 用户级投影阻塞已解除；类型合同仍缺 | 有非空分群的授权租户做一次同形最小导出，记录类型不记录值 |
+| `segment_user_detail.start` | create 曾返回 task id 后 FAILED；`field_map`、临时/持久分群父绑定和完整文件 schema 未成立 | 未解除 | 上游 API/前端 owner，或有合法分群明细导出的租户 |
+| `stream_event.start` | 请求合同和完整文件 schema 均未证实 | 未解除 | 上游 API/前端 owner先给出精确 payload，随后授权租户最小验证 |
+| `user_detail.start` | create 曾返回 task id 后 FAILED；`field_map`/条件绑定和完整文件 schema 未成立 | 未解除 | 上游 API/前端 owner，或有合法用户明细导出的租户 |
+| `user_event.start` | create→poll→download、XLSX、单 worksheet、5 个表头已观察；文件为 0 行，五列逻辑类型全部不可观察 | 用户级投影阻塞已解除；类型合同仍缺 | 有非空单用户事件日的授权租户做一次单日导出，记录类型不记录值 |
+| `pay_event.start` | create 曾返回 task id 后 FAILED；`field_map`/条件绑定和完整文件 schema 未成立 | 未解除 | 上游 API/前端 owner，或有合法付费事件导出的租户 |
+
+本轮生产复核总 HTTP **2 次**：`app.list` 最小第一页 GET 1 次、`analysis.segment.list` 最小第一页
+GET 1 次，均 HTTP 200；后者明确空，按停止条件未换 App、未翻页、未扩日期窗。create / poll /
+download 均为 0，重试为 0，上游新增任务为 0，本地无业务文件残留。投影总闸门已移除
+`user_level` 的本地禁出规则，但 route 仍须完整文件 schema 才能 executable；上游授权边界放开不替代
+合同漂移检测。
+
+分析动线计数不变：旧 `48 = 32 已闭环 / 0 部分闭环 / 16 完全缺失`，本轮状态迁移 `+0/-0`，
+新值仍为 `48 = 32 / 0 / 16`。该合成动线的 9 条均不可执行，故不能标部分闭环。
 
 ## 已批准的隐私投影边界：变现明细（D27）
 

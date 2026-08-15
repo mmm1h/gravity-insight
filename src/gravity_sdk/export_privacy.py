@@ -103,7 +103,7 @@ class ExportPrivacyFinalizer:
                             dict(row),
                             self._contract.redact_fields,
                             allow_contracted_identifiers=(
-                                self._contract.allow_contracted_identifiers
+                                self._contract.contracted_identifiers_allowed
                             ),
                         )
                         if not isinstance(projected, Mapping):
@@ -154,7 +154,7 @@ class ExportPrivacyFinalizer:
                             dict(value),
                             self._contract.redact_fields,
                             allow_contracted_identifiers=(
-                                self._contract.allow_contracted_identifiers
+                                self._contract.contracted_identifiers_allowed
                             ),
                         )
                         if not isinstance(projected, Mapping) or not projected:
@@ -432,7 +432,7 @@ def _redacted_columns(
     projected = _redact(
         sentinel,
         contract.redact_fields,
-        allow_contracted_identifiers=contract.allow_contracted_identifiers,
+        allow_contracted_identifiers=contract.contracted_identifiers_allowed,
     )
     if not isinstance(projected, Mapping):
         raise _export_error(

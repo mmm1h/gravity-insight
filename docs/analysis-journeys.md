@@ -11,17 +11,21 @@
 `gravity.agent-call-bound.v1` 只在本次成功交付完整目录的卡与 Plan 节点上把对应 scenario 声明为 2。
 
 合并后重算：**47 条产品动线：已闭环 32 / 部分闭环 0 / 完全缺失 15**。可复算：上一快照
-`48 = 32 / 0 / 16`；2026-08-15 穷尽 route 取证确认第 64 行已经完整落在既有
-`dashboard_snapshot` / `saved_analysis` 稳定读取面内，故从产品动线与 completely missing 各减 1，
-得到 `47 = 32 / 0 / 15`。stable operation 仍为 185、其中 176 个 stable。
-**部分闭环归零不等于没有欠账**——15 条完全缺失里多数是证据或隐私边界阻塞，逐行有记录。
+`43 = 19 / 9 / 15`，本轮 9 条部分闭环由上述在线输入解析全部转入已闭环，另新增 4 条产品动线
+（标题包、自定义人群、B 站账户表现、巨量广告主 profile）全部闭环，缺失新增 1 条（Issue 19
+精确素材预览/下载），得到 `48 = 32 / 0 / 16`；`export.analysis.*` 复核净变化 `0 / 0 / 0`；
+2026-08-15 穷尽 route 取证再确认原第 64 行已经完整落在既有 `dashboard_snapshot` /
+`saved_analysis` 稳定读取面内，故从产品动线与 completely missing 各减 1，最终得到
+`47 = 32 / 0 / 15`。stable operation 仍为 185、其中 176 个 stable。
+**部分闭环归零不等于没有欠账**——15 条完全缺失里多数是合同证据阻塞，逐行有记录。
 另保留 2 条兼容/维护便利面供边界审计，
 但不计产品动线。旧快照 `21/14/6` 没有逐条证据，不能复算；本台账不还原已丢失的原始 41 条定义。
 D23/D29/D30 只剩依赖箭头、语义不可验证，故保留在此说明而不强挂到新动线。候选
 `app.project_auth.detail`、`app.user_auth.list` 属成员权限管理，按 roadmap 非目标排除，不计动线。
 
-2026-08-15 的失败与降级路径审计不新增动线，故计数推导为
-**48 + 0 = 48，32 / 0 / 16 均不变**。它横切核对了所有现有 composite、Plan 和 direct SDK/CLI
+2026-08-15 的失败与降级路径审计自身不新增动线，在当时快照上的净变化为
+`48 + 0 = 48`、`32 / 0 / 16 + 0 / 0 / 0`；最终计数只因上述 setting route 重复记账消除而变为
+`47 = 32 / 0 / 15`。该审计横切核对了所有现有 composite、Plan 和 direct SDK/CLI
 入口：明确空保持 `ok=true/status=empty/exit 0`；独立组件失败保留完整成功兄弟并形成
 `status=partial` 与非零主错误 exit；Agent 无法形成可执行能力时保持 `status=capability_gap`，不伪装
 成 empty 或 upstream failure。单组件分页中断不发布未经完整性验证的页前缀，只有已声明 bounded
@@ -82,5 +86,5 @@ continuation 的 safe-max 产品可返回带 continuation 的 partial。三态�
 | 按表名或 App 查询数据表当前 schema、字段和版本（F41） | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | list 为空且无可信表名/App 来源；detail/version 父链、`table_id` 类型和“当前版本”语义未证实。 |
 | 下钻非 Bytedance 平台的计划、组和创意表现（D33/D34） | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | Bilibili advertiser 与 Huya account 未产出父候选；后续 ID 链、report 父字段、分页和非空 schema 未成立。 |
 | 深查各平台专属素材与创意（D32） | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | 除 Bytedance 外普遍没有最小非空响应合同；common 素材目录不能证明平台专属字段。Bytedance 标题包已单列为独立动线闭环，**但那是 D32 之下的一个具体产品，不是这条动线的进展**——本条的阻塞（当前账号没有非 Bytedance 投放数据）完全未变，仍是数据阻塞而非工程阻塞。 |
-| 导出事件、分群、用户、付费或变现分析结果 | 完全缺失 | 无 / 无 / 无 / 无 | 未验证 | 9 条 `export.analysis.*` 均不可执行：3 条缺批准的用户级投影，6 条请求或文件 schema 未证实。 |
+| 导出事件、分群、用户、付费或变现分析结果 | 完全缺失 | 无 / 无 / 设计不适用 / 无 | 未验证 | 9 条仍不可执行：`segment.result.start`、`user_event.start` 的投影阻塞已解除，但逻辑列类型未证实；`origin_event.evaluate` 受未证实的配对 create/file 父工作流阻塞；其余 6 条缺成功请求绑定或完整文件 schema。 |
 | 按精确平台素材引用预览或下载图片/视频（Issue 19） | 完全缺失 | 无 / 无 / 设计不适用 / 无 | 未验证 | API 列表已证明存在被隐藏的 `file_url` / `thumbnail_url`，前端直接交给媒体元素；但现有 census、bundle 和不留值的 probe evidence 均不能证明二进制 host/path、重定向集合及历史失效语义，故不能配置下载 allowlist 或发起最小二进制 probe。文件 effect 与 Plan v1 的无副作用数据节点不兼容。 |
