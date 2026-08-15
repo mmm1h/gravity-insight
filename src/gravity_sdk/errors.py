@@ -352,6 +352,13 @@ class UpstreamError(GravityInsightError):
     code = ErrorCode.UPSTREAM_UNAVAILABLE
 
 
+class SemanticRejectedError(UpstreamError):
+    """A deterministic upstream rejection of an authorized request shape."""
+
+    code = ErrorCode.INPUT_INVALID
+    category = ErrorCategory.CALLER
+
+
 class PaginationError(GravityInsightError):
     code = ErrorCode.PAGINATION_LIMIT
 

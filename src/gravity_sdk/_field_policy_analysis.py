@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
+from .analysis_execution_support import (
+    reject_unsupported_property_groups,
+    validate_segment_event_support_inputs,
+)
 from ._field_policy_conditions import (
     validate_analysis_conditions,
     validate_analysis_filter_map,
@@ -55,6 +59,7 @@ def validate_analysis_segment_rule(
     metadata_loader: MetadataLoader,
 ) -> None:
     references = validate_analysis_segment_rule_shape(inputs)
+    validate_segment_event_support_inputs(inputs)
     app_id = inputs.get("app_id")
     if not isinstance(app_id, str) or not app_id.isdecimal() or len(app_id) > 64:
         raise InputValidationError(
@@ -75,6 +80,7 @@ def validate_analysis_shape(
     references = new_analysis_references()
     validate_analysis_group_by(inputs.get("group_by_list", ()), references)
     if query_kind == "property":
+        reject_unsupported_property_groups(inputs.get("group_by_list", ()))
         _validate_property_query(inputs, references)
         return references
     validate_analysis_date_list(inputs.get("date_list"), query_kind)

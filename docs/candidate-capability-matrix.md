@@ -203,6 +203,22 @@ manager/feed 等无完整分页证据的 draft 还卡在 `pagination_unverified`
 - `analysis.default_val.list` 是本轮唯一非空候选响应；当前证据仍不足以关闭请求合同和响应投影 blocker。
 - 其余候选保持 fail-closed：空样本不证明字段、业务语义错误不证明请求合同、父资源为空不触发子请求、用户级标识无批准来源时不探测。
 
+## 2026-08-15 追加判定：Analysis semantic rejection 三案
+
+本轮不是 candidate 晋升，而是对三条 stable Analysis 动线做 value-free 合同复核；operation 总数与
+隐私边界不变。实际 33 次 HTTP read 的分项为：metadata 22 次、Retention 4 次、Segment 3 次、
+Property 4 次；每个 transport 仅尝试一次。
+
+| Issue | 在线可区分证据 | 当前合同结论 | 未决与精确下一步 |
+| --- | --- | --- | --- |
+| #11 Retention | 原 spec 当前返回非空 aggregate；过滤通道变体为空；两轮投影确认由 `contract_changed` 到 `success` | 上游当前接受原 wire；登记月桶、固定累计/周期字段、百分比和嵌套数值路径，Retention contract v2 | `ae0d449` 时 semantic rejection 的服务端原因已不可复现，保持 unknown；除非服务端再次拒绝且提供新约束证据，不猜历史原因 |
+| #15 Segment presets | `$MPShow`、`$PayEvent` 各自经过 event/event-property metadata 后都被 evaluation endpoint semantic reject；同 session metadata-backed custom control 成功 | 二者为 operation-specific unsupported；schema 暴露支持元数据，compact/raw 均 preflight caller error；普通 custom 路径未收窄 | 未证明其他 preset 的支持状态；下一次只有在出现具体 preset 需求时，先取一条同 session custom control，再各发一次目标 event，不把“registered”当“supported” |
+| #17 Property group | 原 spec失败；无 filter 仍失败；无 `$ea_gid` group 成功；`user_re_attribute` group 仍失败 | acquisition-ID group 当前 unsupported，网络前给出精确路径；不自动重写字段/type | accepted grouped wire 未知；解锁需要服务端合同，或 Web 自然生成该 group 的原生请求并一次只读复核。缺此证据前不扩大 group 支持 |
+
+三案共同的只有错误层：所有 manifest semantic rule 原先统一抛可重试 `UpstreamError`。该层现改为
+caller/non-retryable，同时保留 `semantic_error` 状态以便调用方识别服务端语义拒绝；transport、权限与
+rate-limit 分类未改变。
+
 ## 2026-08-14 追加判定：App / 变现家族读语义
 
 静态取证读取了 snapshot 对应的 `appManageIndex-DCdX2wdf.js`、`csj-DQrv-k3Y.js` 和

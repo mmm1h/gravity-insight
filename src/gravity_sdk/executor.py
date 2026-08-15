@@ -9,7 +9,7 @@ import re
 from typing import Any, Callable, Mapping
 
 from .drift import ProjectionDrift, projection_drift_status
-from .errors import PolicyViolation, UpstreamError
+from .errors import PolicyViolation, SemanticRejectedError
 from .models import OperationSpec, ReadResult, SemanticErrorRule
 from .multidim import projected_keys
 from .registry import PolicyEngine, Registry
@@ -47,16 +47,16 @@ _ANALYSIS_NESTED_RESPONSE_KEYS = {
     ),
     "analysis.retention.query": frozenset(
         {
-            "group_cols",
-            "init_custom_before_components",
-            "init_custom_before_num",
-            "init_num",
-            "is_total",
-            "percent_values",
-            "percent_values_loss",
-            "values",
-            "values_another_event",
-            "values_loss",
+            "_final_one_result_sum", "_valid_day_count", "cumulative_average",
+            "cumulative_total", "cumulative_uniques", "final_one_result",
+            "final_one_result_day_count_sum", "first_event_user_total", "group_cols",
+            "init_custom_before_components", "init_custom_before_num", "init_num",
+            "is_total", "original_final_one_result", "percent_values",
+            "percent_values_loss", "per_user", "period_calc_method",
+            "period_event_total", "period_event_total_average", "period_user_total",
+            "period_user_total_average", "time_diff", "to_use_final_one_result",
+            "totals", "uniques", "values",
+            "values_another_event", "values_loss",
         }
     ),
     "analysis.scatter.query": frozenset(
@@ -86,13 +86,13 @@ _ANALYSIS_SAFE_RESPONSE_SCALARS = frozenset(
         "total",
         "week",
         "PresetAllCount",
-        "PresetUserCount",
+        "PresetUserCount", "SUM", "WEIGHTED_AVG", "DAY", "WEEK", "MONTH",
     }
 )
 _ANALYSIS_DATE_RESPONSE_KEY_RE = re.compile(
     r"^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}(?::\d{2}){0,2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?$"
 )
-_ANALYSIS_INDEX_RESPONSE_KEY_RE = re.compile(r"^(?:-?\d+(?:\.\d+)?|[xX]\d{1,3})$")
+_ANALYSIS_INDEX_RESPONSE_KEY_RE = re.compile(r"^(?:-?\d+(?:\.\d+)?%?|[xX]\d{1,3})$")
 
 
 class ReadExecutor:
@@ -229,7 +229,7 @@ def _enforce_semantic_rules(operation: OperationSpec, payload: Mapping[str, Any]
             "not_in": exists and current not in rule.values,
         }[rule.operator]
         if triggered:
-            raise UpstreamError(rule.message)
+            raise SemanticRejectedError(rule.message)
 
 
 def _project(
@@ -824,7 +824,7 @@ def _analysis_response_keys(
 def _allowed_analysis_response_key(name: str, response_keys: set[str]) -> bool:
     return bool(
         name in response_keys
-        or _ANALYSIS_DATE_RESPONSE_KEY_RE.fullmatch(name)
+        or _ANALYSIS_DATE_RESPONSE_KEY_RE.fullmatch(name) or re.fullmatch(r"^\d{4}-(?:\d{2}|W\d{2})$", name)
         or _ANALYSIS_INDEX_RESPONSE_KEY_RE.fullmatch(name)
     )
 

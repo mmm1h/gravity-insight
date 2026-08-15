@@ -629,3 +629,38 @@ confirmation，闸门判据未改。probe receipt 现在把通过闸门后确实
 全部资产 host/path prefix 与重定向集合、图片/视频 MIME 和扩展名集合、最大尺寸、URL 过期规则，
 以及四种不可用状态的判别。取得这些证据后，先登记二进制 effect 合同与离线负向测试，再做一个最小、
 非空、串行 probe；不得通过任意 URL 参数或动态学习 host 来补证据。
+
+## Issues 11 / 15 / 17 Analysis semantic rejection 裁决（2026-08-15）
+
+**结论：三条没有共同的业务根因；共同的是错误包装缺陷。** 在 `88edb84` 上用原 compact spec
+离线复现时，三条仍都能编译并声明 `needs_live_metadata`。串行在线区分后：Retention 原请求已经被
+当前上游接受；两个 Segment preset 仍被 endpoint 拒绝；Property 的 acquisition-ID 分组仍被拒绝。
+因此没有证据支持一个统一 wire-shape 修复。
+
+- **#11**：原 `semantic_error` 已不能在当前上游复现，故不能反推 `ae0d449` 时的服务端拒绝原因。
+  未改 spec 的当前响应是非空 aggregate，但旧安全投影缺少月桶、累计/周期字段和百分比标量合同，
+  于是本地给出 `contract_changed`。Retention 合同升到 v2，只增加固定 aggregate 字段和数值路径，
+  不开放 identifier；同一 spec 的最终线上确认是 `success`。
+- **#15**：静态 bundle 与现有 request codec 的 `from_user_prop/from_event_prop/FE_CONFIG` 形状一致；
+  两个指定 preset 在 live metadata 放行后分别被 Segment endpoint 确定性拒绝。事件“已注册”不等于
+  “可用于 Segment 规则”。schema 现在公开 operation-specific `event_support`，把 `$MPShow`、
+  `$PayEvent` 标为 unsupported；compact compiler 和 raw field policy 都在网络前给出字段路径与替代动作。
+  其他 preset 未由这两次观察推断为支持或不支持，自定义事件继续走 live metadata 和既有执行路径。
+  同一轮对 metadata-backed custom event 的正向控制执行成功，证明该预检没有收窄普通事件能力。
+- **#17**：原请求失败；只去掉用户过滤仍失败，只去掉 `$ea_gid` group 后成功；把该 group 的物理
+  type 改成 `user_re_attribute` 也失败。证据只证明 Property endpoint 不接受当前 acquisition-ID
+  grouped cohort，不证明另一种 accepted wire。SDK 因此不猜转换，而是在 compact/raw 两个入口于
+  网络前拒绝该 group，字段指向 `group_by[0].field` / `group_by_list[0].field`，下一步是移除它或选用
+  metadata-backed 的非 acquisition user property。
+
+横切错误也已修正：manifest semantic rule 命中仍保留 `status=semantic_error`，但改为
+`INPUT_INVALID / caller / retryable=false`，CLI/Plan 分类从 exit 3 变为 exit 2。影响所有依赖
+`UPSTREAM_UNAVAILABLE`、`category=upstream` 或自动 retry 的既有调用方；它们应停止重试并按 caller
+错误处理。真正的 transport/upstream unavailable 仍为 exit 3 且可重试。
+
+本轮实际生产 HTTP read **33 次**：7 次 event metadata、7 次 event-property metadata、8 次
+user-property metadata、4 次 retention query、3 次 Segment evaluation、4 次 Property query；
+均单次尝试，无 retry、翻页、credential exchange 或旁路请求。输入/响应值和 App ID 均未持久化。
+输入能力未减少：Retention 仅扩大安全 aggregate 投影；#15/#17 新拒绝的精确形状已有重复线上失败
+证据，从“发出必失败请求”提升为可机械修复的 caller error；其他 Segment event 与 Property group
+路径不变。operation 总数仍为 185。

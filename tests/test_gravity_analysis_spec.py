@@ -167,6 +167,18 @@ class AnalysisQuerySpecTests(unittest.TestCase):
             )
         self.assertEqual([], sdk.insight.validated)
 
+    def test_property_acquisition_id_group_fails_before_client_validation(self) -> None:
+        sdk = GravitySDK(insight=FakeInsight())
+        with self.assertRaises(InputValidationError) as caught:
+            sdk.compile_analysis_query("property", {
+                "app": "101",
+                "property": {"field": "PresetUserCount", "aggregation": "PresetUserCount", "data_type": "INT"},
+                "group_by": [{"field": "$ea_gid", "source": "user"}],
+            })
+        self.assertEqual("group_by[0].field", caught.exception.field)
+        self.assertIn("Remove this group", str(caught.exception.next_action))
+        self.assertEqual([], sdk.insight.validated)
+
     def test_public_compile_uses_field_policy_and_redacts_preview_values(self) -> None:
         dated = {
             "app": "101",

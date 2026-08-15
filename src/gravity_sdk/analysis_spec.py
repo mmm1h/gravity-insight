@@ -13,6 +13,7 @@ from typing import Any
 
 from ._field_policy_analysis import validate_analysis_shape
 from .analysis_spec_preview import redact_analysis_values
+from .analysis_execution_support import reject_unsupported_property_groups
 from .analysis_spec_schema import ANALYSIS_SPEC_KINDS, analysis_query_spec_schema
 from .analysis_spec_controls import apply_scatter_zone, funnel_window, retention_controls
 from .domains import ANALYSIS_QUERY_OPERATIONS, new_analysis_query_id
@@ -131,6 +132,8 @@ def compile_query_spec(
     app_id = _resolve_app(selected_workspace, app if app is not None else values.get("app"))
     query_id = _bounded_string(values.get("query_id") or new_analysis_query_id(), "query_id")
     inputs: dict[str, Any] = {"query_id": query_id, "app_id": str(app_id)}
+    if selected_kind == "property":
+        reject_unsupported_property_groups(values.get("group_by", ()), field_root="group_by")
     inputs["group_by_list"] = _group_by(values)
     if selected_kind == "property":
         _compile_property(values, inputs)

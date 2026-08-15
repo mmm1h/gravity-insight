@@ -1910,6 +1910,9 @@ class GravityInsightCoreTests(unittest.TestCase):
             )
             semantic = client.read("example.items.list", {})
             self.assertEqual("semantic_error", semantic["status"])
+            self.assertEqual("INPUT_INVALID", semantic["error"]["code"])
+            self.assertEqual("caller", semantic["error"]["category"])
+            self.assertFalse(semantic["error"]["retryable"])
             self.assertNotIn("private upstream detail", json.dumps(semantic))
 
     def test_transport_auth_refresh_gets_one_retry_with_attempts_one(self):
