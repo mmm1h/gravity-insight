@@ -83,6 +83,9 @@
       "additionalProperties": {
         "$ref": "#/$defs/plan_recipe"
       }
+    },
+    "semantic_context": {
+      "$ref": "#/$defs/semantic_context"
     }
   },
   "$defs": {
@@ -319,6 +322,108 @@
           }
         }
       }
+    },
+    "semantic_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version"],
+      "properties": {
+        "schema_version": {"const": "gravity.semantic-context.v1"},
+        "instructions": {"type": "string", "pattern": "\\S"},
+        "terms": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/semantic_term"}
+        },
+        "exclusions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/semantic_exclusion"}
+        },
+        "verified_queries": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"$ref": "#/$defs/verified_query"}
+        }
+      },
+      "anyOf": [
+        {"required": ["instructions"]},
+        {"required": ["terms"]},
+        {"required": ["exclusions"]},
+        {"required": ["verified_queries"]}
+      ]
+    },
+    "semantic_term": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "phrases", "target"],
+      "properties": {
+        "name": {"$ref": "#/$defs/name"},
+        "phrases": {"$ref": "#/$defs/semantic_phrases"},
+        "description": {"type": "string"},
+        "target": {"$ref": "#/$defs/semantic_target"}
+      }
+    },
+    "semantic_exclusion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "when", "reason", "target"],
+      "properties": {
+        "name": {"$ref": "#/$defs/name"},
+        "when": {"$ref": "#/$defs/semantic_phrases"},
+        "reason": {"type": "string", "minLength": 1},
+        "target": {"$ref": "#/$defs/semantic_target"}
+      }
+    },
+    "semantic_target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "ref"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "product",
+            "operation",
+            "event",
+            "event_property",
+            "user_property",
+            "metric",
+            "custom_metric"
+          ]
+        },
+        "ref": {"type": "string", "minLength": 1},
+        "app": {"$ref": "#/$defs/name"}
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {"enum": ["event", "event_property", "user_property"]}
+            }
+          },
+          "then": {"required": ["app"]},
+          "else": {"not": {"required": ["app"]}}
+        }
+      ]
+    },
+    "verified_query": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "question", "operation", "input"],
+      "properties": {
+        "name": {"$ref": "#/$defs/name"},
+        "question": {"type": "string", "minLength": 1},
+        "description": {"type": "string"},
+        "operation": {"type": "string", "minLength": 1},
+        "input": {"type": "object"},
+        "all_pages": {"type": "boolean", "default": false}
+      }
+    },
+    "semantic_phrases": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
     },
     "input_path": {
       "type": "string",

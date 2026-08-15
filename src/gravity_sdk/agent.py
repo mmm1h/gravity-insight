@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .agent_capabilities import (
-    AGENT_SCOPE, authoritative_capability_cards,
+    AGENT_SCOPE,
     capability_handoff_cards,
     merge_catalog_handoff_cards,
     should_load_capability_catalog,
@@ -28,14 +28,17 @@ from .agent_export import export_inventory_for_query
 from .agent_sources import (
     catalog_cards,
     candidates_fingerprint,
-    describe_operation_cards,
     discover_operation_cards,
     workspace_catalog_fingerprint,
 )
 from .agent_batch_sources import AgentSourceSnapshot
 from .agent_client import DeferredAgentClient
+from .agent_discovery_support import (
+    capability_gaps_for_page,
+    materialize_candidates,
+    select_authoritative_cards,
+)
 from .errors import InputValidationError
-from .find import capability_gaps
 
 
 SCHEMA_VERSION = "gravity.agent.v1"
@@ -50,6 +53,8 @@ class _DiscoveryPage:
     offset: int
     workspace_path: object | None
     operation_fallback_excluded: bool
+    semantic_gaps: list[dict[str, Any]]
+    semantic_context: dict[str, Any] | None
 
 
 @dataclass(frozen=True)
@@ -175,7 +180,7 @@ def _discover(
     page = _discovery_page(
         request, request.query, client=client, workspace=workspace, sources=sources
     )
-    authoritative_cards = authoritative_capability_cards(page.catalog_cards)
+    authoritative_cards = select_authoritative_cards(page.catalog_cards)
     if authoritative_cards or page.operation_fallback_excluded:
         unified = [("catalog", card) for card in authoritative_cards]
         weak_operations: list[Mapping[str, Any]] = []
@@ -218,10 +223,10 @@ def _discover(
             "agent continuation no longer points to an available candidate",
             field="continuation",
         )
-    candidates = _materialize_candidates(
+    candidates = materialize_candidates(
         client, unified[page.offset : page.offset + request.limit]
     )
-    gaps = [] if unified else _capability_gaps(
+    gaps = [] if unified else page.semantic_gaps or capability_gaps_for_page(
         request, client, weak_operations, page.operation_fallback_excluded)
     return _discovery_response(
         request,
@@ -232,40 +237,8 @@ def _discover(
         candidates_fingerprint=fingerprint,
         plan_node_namespace=plan_node_namespace,
         workspace_path=page.workspace_path,
+        semantic_context=page.semantic_context,
     )
-
-
-def _capability_gaps(
-    request: _DiscoveryRequest,
-    client: Any,
-    weak_operations: list[Mapping[str, Any]],
-    operation_fallback_excluded: bool,
-) -> list[dict[str, Any]]:
-    if operation_fallback_excluded:
-        from .agent_discovery_policy import operation_fallback_gap
-        return operation_fallback_gap(request.query)
-    return capability_gaps(
-        client,
-        request.query,
-        domain=request.domain,
-        platform=request.platform,
-        limit=request.limit,
-        weak_operations=weak_operations,
-    )
-
-
-def _materialize_candidates(
-    client: Any, selected: list[tuple[str, Mapping[str, Any]]]
-) -> list[dict[str, Any]]:
-    described = iter(
-        describe_operation_cards(
-            client, [item for source, item in selected if source == "operation"]
-        )
-    )
-    return [
-        next(described) if source == "operation" else dict(item)
-        for source, item in selected
-    ]
 
 
 def _discovery_response(
@@ -278,6 +251,7 @@ def _discovery_response(
     candidates_fingerprint: str,
     plan_node_namespace: str | None,
     workspace_path: object | None,
+    semantic_context: dict[str, Any] | None,
 ) -> dict[str, Any]:
     candidates = [
         attach_plan_node(
@@ -328,6 +302,7 @@ def _discovery_response(
             if candidates
             else "Report capability_gaps; do not execute weak partial matches."
         ),
+        **({"semantic_context": semantic_context} if semantic_context is not None else {}),
     }
 
 
@@ -339,8 +314,9 @@ def _discovery_page(
     workspace: Any | None = None,
     sources: AgentSourceSnapshot | None = None,
 ) -> _DiscoveryPage:
-    selected_workspace = sources.workspace if sources is not None else workspace
-    workspace_path = resolve_workspace_path(selected_workspace)
+    workspace_path = resolve_workspace_path(sources.workspace if sources is not None else workspace)
+    from .agent_semantic_context import load_agent_workspace
+    selected_workspace = load_agent_workspace(workspace, sources)
     composite_inventory = (
         sources.composite_inventory if sources is not None else None
     )
@@ -366,7 +342,7 @@ def _discovery_page(
         catalog_excluded=catalog_excluded,
     ):
         catalog, _catalog_total, warnings, catalog_fingerprint = catalog_cards(
-            query, 100, workspace=workspace, sources=sources
+            query, 100, workspace=selected_workspace, sources=sources
         )
         selected_cards = merge_catalog_handoff_cards(
             query,
@@ -377,6 +353,15 @@ def _discovery_page(
             warnings=warnings,
             sources=sources,
         )
+    from .agent_semantic_context import resolve_semantic_context
+
+    semantic = resolve_semantic_context(
+        query, selected_workspace, selected_cards, client, args.domain, args.platform, sources
+    )
+    selected_cards = semantic.cards
+    catalog_excluded = catalog_excluded or semantic.block_fallback
+    if getattr(selected_workspace, "semantic_context", None) is not None:
+        catalog_fingerprint = workspace_catalog_fingerprint(selected_workspace)
     if args.continuation:
         continuation = _decode_continuation(
             args, safe_discovery_query(query), catalog_fingerprint=catalog_fingerprint
@@ -396,6 +381,8 @@ def _discovery_page(
         offset=offset,
         workspace_path=workspace_path,
         operation_fallback_excluded=catalog_excluded,
+        semantic_gaps=semantic.gaps,
+        semantic_context=semantic.public_context,
     )
 
 

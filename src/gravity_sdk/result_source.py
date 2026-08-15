@@ -87,6 +87,8 @@ def card_result_source(card: Mapping[str, Any]) -> dict[str, str]:
     """Declare the source of the execution result promised by an Agent card."""
 
     kind = str(card.get("kind", ""))
+    if card.get("description_origin") == "caller_workspace":
+        return result_source(CALLER_DEFINED)
     if kind == "operation":
         return result_source(RAW_OPERATION)
     if kind in {"recipe", "sql_product"}:

@@ -53,9 +53,9 @@ promotion performance；已登记的人员、公司、租户和自由标签字�
 
 ## 1. 业务语义先在调用项目解析
 
-如果用户说“幸运礼包”之类业务名称，先从业务知识库确定模块、活动 ID、SKU、时间窗和已审核埋点绑定。SDK 能验证某 App 有哪些物理事件/属性并执行受控分析，但不能从相似名称建立业务归属。
-
-无法解析业务口径时先向用户报告缺失信息，不要用事件中文名或字段名猜测。
+调用项目可在 workspace 的 `gravity.semantic-context.v1` 中声明术语到已登记产品/事件/属性/指标的字面映射、自由文本说明、结构化排除和 verified question→operation input；完整形状见
+[Workspace 参考](reference/workspace.md#调用方语义上下文)。Agent 只消费明确声明，不按相似名称选 App、日期、filter value 或物理对象；未知引用在本地 preflight 失败。没有声明时先从业务知识库解析，
+无法确定口径就报告缺失信息，不要用显示名或字段名猜测。
 
 ## 2. 未知能力：总共两次调用
 

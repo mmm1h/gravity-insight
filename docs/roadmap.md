@@ -1902,6 +1902,46 @@ text-to-SQL 只可作为隔离探索层，必须在响应中保留 resolution ti
 validation 与 allowed claims，不得静默并入现有 Agent 卡的受治理答案。完整证据与反例见
 [调研报告](research/semantic-layer-and-text2sql.md)。
 
+### 调用方语义上下文机制（2026-08-16）
+
+**提案：**保持“SDK 不维护业务语义”的边界，把负责人本应维护的内容放进 workspace 独立子合同
+`gravity.semantic-context.v1`；SDK 只提供术语映射、自由文本 instructions、结构化 exclusion、
+verified question→stable read operation input 的 schema、加载、精确引用校验和 Agent 消费。工作底稿位于
+ignored `tmp/codex/semantic-context/proposal.md`。示例只使用虚构名称；仓库没有新增业务词、业务值、
+operation、CLI 参数或执行旁路。
+
+**合同裁决：**term target 支持已登记 composite/workspace recipe/SQL product、stable read operation，
+以及本地 metadata catalog 中按 App scope + kind + 物理 name 精确定位的 event/event property/user property/
+metric/custom metric。workspace recipe、SQL product 与 operation 在加载时验证；built-in composite 和 metadata
+在 Agent preflight 验证，避免 workspace 启动路径反向依赖 Agent/runtime。目录缺失、零命中、多命中和
+未知引用统一为 `SEMANTIC_CONTEXT_INVALID/category=local/exit 4`，
+不降级 warning。verified query 的完整 input 在加载时按 operation 合同验证，命中后原样进入现有
+`run` Plan node；没有字符串插值，也不生成 App、日期、filter value 或其他业务值。
+
+**裁决方向：**verified query 仅在规范化整句精确相等时硬绑定，在既有 `MULTIPLE_INTENTS` 与 caller
+exclusion 门禁之后优先于普通 term 和单个目录候选；term/synonym 是正向证据，先和现有
+权威候选及集中多意图结果合并裁决。一个问句命中不同 caller targets，或 caller target 与仓库权威
+候选不同，均返回 `MULTIPLE_INTENTS`。product term 以“原问句 + 已登记 selector”复用原 recognizer；
+目标若被既有负向约束拒绝，返回 `SEMANTIC_CONTEXT_TARGET_REJECTED` 而不恢复候选，故仓库负向约束优先。
+调用方 exclusion 命中同样形成 gap 并阻止 raw fallback。实现没有修改 `agent_intent_routing.py` 或任何
+recognizer 关键词表。
+
+**来源与兼容：**真正由 term/verified query 选出的候选复用
+`description_origin=caller_workspace` 和 `gravity.result-source.v1` 的
+`caller_defined/caller_responsible`；匹配说明使用独立版本 `semantic_context` 子合同，不增加第三套
+provenance。无 `[semantic_context]` 时字段缺席，`composite:business_pulse` canonical Agent JSON 保持
+4442 bytes、SHA-256 `22b15703ecf1604065a05aa3c8609c298eb8a73b0f67db49c126050d32bc15a6`。
+
+**official：**本轮不纳入。`result_source` 是责任/验证层级而非排名；现有系统没有不影响歧义保护的
+全局 official 优先级判据。精确复用走 verified query，同义词继续保留在集中裁决中；待出现可证明的
+同 selector 多定义优先级问题后再单独设计。技术债清单已复核，本机制下沉到独立 workspace/Agent
+模块，没有触发现有条目的退出条件，也没有新增可由当前源码证明的结构债。
+
+本项是横切发现机制，不新增产品动线或结果 envelope，计数为
+`48 + 0 = 48`、`33 / 0 / 15 + 0 / 0 / 0 = 33 / 0 / 15`；operation 为
+`185 + 0 - 0 = 185`，stable 为 `176 + 0 - 0 = 176`。生产 HTTP 请求 **0 次**，无重试、翻页、扩窗
+或换 App。
+
 ## 可恢复错误消息分档与首轮升级（2026-08-15）
 
 本轮把“对外可恢复错误消息全集”固定为源码中所有显式抛出的 caller 类结构化错误起点：

@@ -140,8 +140,12 @@ def questions_use_only_local_catalog(
 def selected_workspace_and_warnings(
     workspace: Any | None,
 ) -> tuple[Any | None, list[str]]:
+    from .workspace_semantic_context import SemanticContextError
+
     try:
         return (load_workspace() if workspace is None else workspace), []
+    except SemanticContextError:
+        raise
     except (OSError, ValueError):
         return None, [
             "The workspace catalog could not be loaded; recipe and SQL product "

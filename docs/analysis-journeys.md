@@ -26,6 +26,16 @@
 CLI JSON/NDJSON/文件、SDK、Plan node/顶层与 Agent 执行 handoff 共用 `gravity.result-source.v1`，外层
 schema 版本不变。计数推导为 `48 + 0 = 48`、`33 / 0 / 15 + 0 / 0 / 0 = 33 / 0 / 15`；
 operation 为 `185 + 0 - 0 = 185`，stable 为 `176 + 0 - 0 = 176`。生产 HTTP 0 次。
+
+2026-08-16 的调用方语义上下文是横切发现机制，不新增独立分析产品或结果 envelope。workspace 可用
+`gravity.semantic-context.v1` 声明 literal term、instructions、structured exclusion 和 verified
+question→stable read operation input；未知产品/operation 在加载时、未知 event/property/metric 在 Agent
+preflight 时以 local/4 fail closed。verified question 精确硬绑定；term 与现有产品证据冲突仍返回
+`MULTIPLE_INTENTS`，产品负向约束优先。语义命中候选复用 `caller_defined/caller_responsible` 与
+`description_origin=caller_workspace`。计数推导为 `48 + 0 = 48`、
+`33 / 0 / 15 + 0 / 0 / 0 = 33 / 0 / 15`；operation `185 + 0 - 0 = 185`、stable
+`176 + 0 - 0 = 176`。生产 HTTP 0 次。
+
 D23/D29/D30 只剩依赖箭头、语义不可验证，故保留在此说明而不强挂到新动线。候选
 `app.project_auth.detail`、`app.user_auth.list` 属成员权限管理，按 roadmap 非目标排除，不计动线。
 

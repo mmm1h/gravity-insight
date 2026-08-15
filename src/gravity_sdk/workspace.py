@@ -19,6 +19,11 @@ from .workspace_plan_recipe import (
     PlanRecipeError,
     validate_plan_recipes,
 )
+from .workspace_semantic_context import (
+    SemanticContext,
+    SemanticContextError,
+    validate_semantic_context,
+)
 
 
 WORKSPACE_FILENAME = "gravity.toml"
@@ -62,6 +67,7 @@ class Workspace:
     products: Mapping[str, Mapping[str, Any]]
     recipes: Mapping[str, Recipe]
     plan_recipes: Mapping[str, PlanRecipe] = field(default_factory=dict)
+    semantic_context: SemanticContext | None = None
 
     @property
     def configured(self) -> bool:
@@ -195,15 +201,22 @@ def load_workspace(
             products={},
             recipes={},
             plan_recipes={},
+            semantic_context=None,
         )
 
     try:
         data = tomllib.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, tomllib.TOMLDecodeError) as exc:
         raise WorkspaceError(f"cannot read Gravity workspace {path}: {exc}") from exc
-    apps, defaults, datasources, products, recipes, plan_recipes = _validate_workspace(
-        data, path
-    )
+    (
+        apps,
+        defaults,
+        datasources,
+        products,
+        recipes,
+        plan_recipes,
+        semantic_context,
+    ) = _validate_workspace(data, path)
     state_root = _workspace_state_root(selected_cache, path)
     return Workspace(
         path=path,
@@ -215,6 +228,7 @@ def load_workspace(
         products=products,
         recipes=recipes,
         plan_recipes=plan_recipes,
+        semantic_context=semantic_context,
     )
 
 
@@ -251,6 +265,7 @@ def _validate_workspace(
     dict[str, Mapping[str, Any]],
     dict[str, Recipe],
     dict[str, PlanRecipe],
+    SemanticContext | None,
 ]:
     if not isinstance(value, dict):
         raise WorkspaceError(f"{path}: workspace root must be a table")
@@ -262,6 +277,7 @@ def _validate_workspace(
         "products",
         "recipes",
         "plan_recipes",
+        "semantic_context",
     }
     unknown = sorted(set(value) - allowed)
     if unknown:
@@ -284,7 +300,22 @@ def _validate_workspace(
         path,
         error=lambda message: PlanRecipeError(message, field="plan_recipes"),
     )
-    return apps, defaults, datasources, products, recipes, plan_recipes
+    semantic_context = validate_semantic_context(
+        value.get("semantic_context"),
+        apps=apps,
+        products=products,
+        recipes=recipes,
+        path=path,
+    )
+    return (
+        apps,
+        defaults,
+        datasources,
+        products,
+        recipes,
+        plan_recipes,
+        semantic_context,
+    )
 
 
 def _validate_apps(value: Mapping[str, Any], path: Path) -> dict[str, int]:
@@ -454,6 +485,8 @@ __all__ = [
     "WorkspaceDefaults",
     "WorkspaceError",
     "WorkspaceNotConfiguredError",
+    "SemanticContext",
+    "SemanticContextError",
     "Recipe",
     "RecipeBindings",
     "PlanRecipe",

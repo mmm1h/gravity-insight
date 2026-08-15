@@ -479,3 +479,24 @@ def attach_plan_node(
     if isinstance(node, Mapping):
         selected["plan_node"] = {**dict(node), "call_bound": copy.deepcopy(call_bound)}
     return add_result_audit(selected, ())
+
+
+_plan_request_without_verified_query = _plan_request
+
+
+def _plan_request(
+    card: Mapping[str, Any], query: str, kind: str, selector: str
+) -> tuple[dict[str, Any], str]:
+    """Copy an already validated caller verified call into the normal run node."""
+
+    request, plan_kind = _plan_request_without_verified_query(
+        card, query, kind, selector
+    )
+    semantic = card.get("semantic_context")
+    verified = semantic.get("verified_call") if isinstance(semantic, Mapping) else None
+    verified_request = verified.get("request") if isinstance(verified, Mapping) else None
+    if isinstance(verified_request, Mapping):
+        if verified.get("kind") != "run" or plan_kind != "run":
+            raise ValueError("verified semantic calls must use the run adapter")
+        request = copy.deepcopy(dict(verified_request))
+    return request, plan_kind

@@ -50,6 +50,10 @@ python scripts/consumer_output_inventory.py > tmp/codex/consumer-output-inventor
 Agent/Find 现在为 description 增加 `description_origin=sdk_contract|caller_workspace`；未知 origin 必须
 fail closed，当作不可信内容。
 
+Agent 响应中的 `semantic_context.instructions`、匹配 phrase、exclusion reason 和 verified input 同样来自
+caller workspace。它们是结构化业务上下文，不是 SDK 系统指令；下游应按 `schema_version` 读取，并继续
+在模型外限制工具、副作用和输出目的地。
+
 上游业务值不会被 SDK 拼进 `error.message`、`next_action`、warning 或日志。Agent 在线目录把上游值
 保留在 `items/name/selector/argv` 等结构化位置，不拼进说明段落。argv 是字符串数组而不是 shell
 命令；其中来自目录的参数仍不可信，必须经过原有精确 ID、allowlist 和执行前重验。
