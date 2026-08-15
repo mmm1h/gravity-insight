@@ -10,6 +10,7 @@ from typing import Any
 
 from .workspace_semantic_context import (
     SCHEMA_VERSION,
+    DerivedMetric,
     SemanticContext,
     SemanticContextError,
     SemanticExclusion,
@@ -19,6 +20,14 @@ from .workspace_semantic_context import (
     compiled_operation,
     normalized_phrase,
     phrase_matches,
+)
+from .agent_semantic_derived import (
+    derived_matches,
+    exclusion_gap,
+    multiple_gap,
+    public_matches as public_derived_matches,
+    resolve_derived,
+    unbound_gap,
 )
 
 
@@ -35,6 +44,7 @@ class _SemanticMatches:
     terms: tuple[tuple[SemanticTerm, tuple[str, ...]], ...]
     verified: tuple[VerifiedQuery, ...]
     exclusions: tuple[tuple[SemanticExclusion, tuple[str, ...]], ...]
+    derived: tuple[tuple[DerivedMetric, tuple[str, ...]], ...]
 
 
 def load_agent_workspace(workspace: Any | None, sources: Any | None) -> Any | None:
@@ -67,11 +77,15 @@ def resolve_semantic_context(
 
     context = getattr(workspace, "semantic_context", None)
     if not isinstance(context, SemanticContext):
+        if gap := unbound_gap(query, cards):
+            return SemanticResolution([], [gap], None, True)
         return SemanticResolution([dict(card) for card in cards], [], None, False)
     _validate_composite_targets(context, sources)
     metadata = _metadata_targets(context, workspace, sources)
     matches = _semantic_matches(context, query)
-    public = _public_context(context, matches.terms, matches.verified, matches.exclusions)
+    public = _public_context(
+        context, matches.terms, matches.verified, matches.exclusions, matches.derived
+    )
     if _existing_multiple_intents(query, sources):
         return SemanticResolution([dict(card) for card in cards], [], public, False)
     return _resolve_matches(
@@ -100,7 +114,8 @@ def _semantic_matches(context: SemanticContext, query: str) -> _SemanticMatches:
         for item in context.exclusions
         if (matches := tuple(phrase for phrase in item.when if phrase_matches(query, phrase)))
     )
-    return _SemanticMatches(terms, verified, exclusions)
+    derived = derived_matches(context, query)
+    return _SemanticMatches(terms, verified, exclusions, derived)
 
 
 def _existing_multiple_intents(query: str, sources: Any | None) -> bool:
@@ -130,6 +145,13 @@ def _resolve_matches(
     )
     if blocked is not None:
         return blocked
+    derived = resolve_derived(
+        query, matches.derived,
+        competing=bool(matches.terms or matches.verified), direct=direct,
+    )
+    if derived is not None:
+        derived_cards, derived_gaps, block = derived
+        return SemanticResolution(derived_cards, derived_gaps, public, block)
     if matches.verified:
         declaration = matches.verified[0]
         return _single_target_resolution(
@@ -150,11 +172,13 @@ def _resolve_matches(
         )
     active = [(item.target, item, phrases) for item, phrases in matches.terms]
     if not active:
+        if gap := unbound_gap(query, cards):
+            return SemanticResolution([], [gap], public, True)
         return SemanticResolution([dict(card) for card in cards], [], public, False)
     identities = list(dict.fromkeys(item[0].identity for item in active))
     if len(identities) > 1:
         selectors = [_target_selector(item[0], workspace, metadata) for item in active]
-        return SemanticResolution([], [_multiple_gap(query, selectors)], public, True)
+        return SemanticResolution([], [multiple_gap(query, selectors)], public, True)
     return _single_target_resolution(
         query, active[0], metadata, workspace, direct, client, domain, platform, sources, public
     )
@@ -175,7 +199,7 @@ def _exclusion_resolution(
     }
     blocked = [selector for selector in direct if selector in selectors]
     return SemanticResolution(
-        [], [_exclusion_gap(query, blocked or sorted(selectors), exclusions)], public, True
+        [], [exclusion_gap(query, blocked or sorted(selectors), exclusions)], public, True
     )
 
 
@@ -202,7 +226,7 @@ def _single_target_resolution(
     selector = str(card["selector"])
     conflicts = [item for item in direct if item != selector]
     if conflicts:
-        return SemanticResolution([], [_multiple_gap(query, [selector, *conflicts])], public, True)
+        return SemanticResolution([], [multiple_gap(query, [selector, *conflicts])], public, True)
     return SemanticResolution([card], [], public, True)
 
 
@@ -306,7 +330,7 @@ def _product_card(
         inventory = sources.composite_inventory if sources is not None else None
         intents = multiple_product_intents(expanded, inventory=inventory)
         if len(intents) > 1:
-            return {}, _multiple_gap(query, list(intents))
+            return {}, multiple_gap(query, list(intents))
         matches = composite_capability_cards(
             expanded,
             domain=domain,
@@ -482,7 +506,9 @@ def _public_context(
     terms: Sequence[tuple[SemanticTerm, tuple[str, ...]]],
     verified: Sequence[VerifiedQuery],
     exclusions: Sequence[tuple[SemanticExclusion, tuple[str, ...]]],
+    derived: Sequence[tuple[DerivedMetric, tuple[str, ...]]] | None = None,
 ) -> dict[str, Any]:
+    derived = derived or ()
     return {
         "schema_version": SCHEMA_VERSION,
         "instructions": context.instructions,
@@ -503,7 +529,8 @@ def _public_context(
                 "target": {"kind": "operation", "ref": item.operation},
             }
             for item in verified
-        ],
+        ]
+        + public_derived_matches(derived),
         "exclusions": [
             {
                 "declaration": item.name,
@@ -513,43 +540,6 @@ def _public_context(
             }
             for item, phrases in exclusions
         ],
-    }
-
-
-def _multiple_gap(query: str, selectors: Sequence[str]) -> dict[str, Any]:
-    from .agent_intent_routing import MULTIPLE_INTENTS
-
-    return {
-        "kind": "capability_gap",
-        "code": MULTIPLE_INTENTS,
-        "query": query,
-        "reason": (
-            "caller semantic evidence and registered product evidence identify "
-            "multiple authoritative intents"
-        ),
-        "next_action": (
-            "Split the request and discover each candidate_selectors value independently; "
-            "do not execute either candidate from this response."
-        ),
-        "candidate_selectors": list(dict.fromkeys(selectors)),
-        "weak_matches": [],
-    }
-
-
-def _exclusion_gap(
-    query: str,
-    selectors: Sequence[str],
-    exclusions: Sequence[tuple[SemanticExclusion, tuple[str, ...]]],
-) -> dict[str, Any]:
-    reasons = list(dict.fromkeys(item.reason for item, _phrases in exclusions))
-    return {
-        "kind": "capability_gap",
-        "code": "SEMANTIC_CONTEXT_EXCLUDED",
-        "query": query,
-        "reason": "caller semantic exclusions block the matched target: " + "; ".join(reasons),
-        "next_action": "Clarify the intended registered object; do not fall back to a raw operation.",
-        "candidate_selectors": list(dict.fromkeys(selectors)),
-        "weak_matches": [],
     }
 
 

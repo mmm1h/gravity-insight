@@ -53,9 +53,9 @@ promotion performance；已登记的人员、公司、租户和自由标签字�
 
 ## 1. 业务语义先在调用项目解析
 
-调用项目可在 workspace 的 `gravity.semantic-context.v1` 中声明术语到已登记产品/事件/属性/指标的字面映射、自由文本说明、结构化排除和 verified question→operation input；完整形状见
-[Workspace 参考](reference/workspace.md#调用方语义上下文)。Agent 只消费明确声明，不按相似名称选 App、日期、filter value 或物理对象；未知引用在本地 preflight 失败。没有声明时先从业务知识库解析，
-无法确定口径就报告缺失信息，不要用显示名或字段名猜测。
+调用项目可在 workspace 的 `gravity.semantic-context.v1` 中声明术语到已登记对象的字面映射、说明、排除和 verified question→operation input；完整形状见 [Workspace 参考](reference/workspace.md#调用方语义上下文)。Agent 只消费明确声明，不按相似名称选值；未知引用本地失败。没有声明时从业务知识库解析，无法确定就报告缺失信息。
+
+派生比率、占比、跨期变化和集合对账使用 `gravity derive --input` / `sdk.derive_metrics(source, spec)`；算子只保证 Decimal、精确键对齐和显式 null/partial。未声明公式返回 `DERIVED_METRIC_BINDING_REQUIRED`；`[[semantic_context.derived_metrics]]` 可声明 phrases/spec，命中后只缺 source，绝不从列名补分子、分母、总体、时期或 expected。
 
 ## 2. 未知能力：总共两次调用
 

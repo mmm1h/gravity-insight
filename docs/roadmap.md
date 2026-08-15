@@ -13,11 +13,12 @@
 
 ## 现状
 
-当前从仓库产品入口与 stable operation 正向交叉反推 48 条产品动线：**已闭环 33 / 部分闭环 0 / 完全缺失 15**；
+当前从仓库产品入口与 stable operation 正向交叉反推 49 条产品动线：**已闭环 34 / 部分闭环 0 / 完全缺失 15**；
 另有 2 条 legacy/SDK 便利面和 1 条重复能力审计行保留，但不计产品动线。
-本轮程序化复算发现旧摘要漏计表内 D28 缺失行：表格 51 行，减去 3 条“不计独立动线”，得到
-`48 = 33 / 0 / 15`；相对旧摘要 `47 = 33 / 0 / 14` 是 `+0 / +0 / +1`、总数 `+1`。
-这只是既有行的算术纠正，不是新增能力或放宽闭环判据。stable operation 仍为 185、其中 176 个 stable。
+前次程序化复算得到表格 51 行、减去 3 条“不计独立动线”的 `48 = 33 / 0 / 15`；
+派生指标与集合对账新增一条已闭环动线后，表格为 52 行，当前为
+`48 + 1 = 49`、`33 / 0 / 15 + 1 / 0 / 0 = 34 / 0 / 15`。
+这次变化是新增本地分析能力，不是 operation 提升或闭环判据放宽。stable operation 仍为 185、其中 176 个 stable。
 **部分闭环归零不代表没有欠账**——15 条完全缺失里
 多数是请求、响应或非空证据阻塞；字段隐私不再是阻塞项。
 逐条状态、四面入口、调用次数和证据阻塞以[分析动线台账](analysis-journeys.md)为准；旧
@@ -479,8 +480,11 @@ artifact 路径也走不通：当前账号 7 个 App 里 6 个的合法 Dashboar
 同时给 SQL product 增加 `output_semantics`，补上"只有字段名没有字段口径"这一块，
 它进入产品目录、Agent 匹配、dry-run 合同与查询摘要，但**不生成动态 warning 或业务判定**。
 
-**仍未偿还的部分**：动态 warning / notes / `partial` 状态、派生比率、声明集合对账。
-这些依赖业务字典，按边界属调用方；若将来判定应由 SDK 承担，需要先有不含业务绑定的设计。
+**这笔债已在 2026-08-16 以不含业务绑定的派生层偿还**：SDK 提供 `ratio/share/change/reconcile`
+四个纯算子、动态 warning/notes 和独立 `gravity.derived-metrics.v1` partial 合同；调用方提供列绑定、
+结果名、对齐键和声明集合。分母零、缺列、null/非法数、上游 partial、总量不完整、对齐缺边/重复键、
+float 输入与 Decimal 舍入均可由 SDK 机械判定。公式是否代表正确含义、总体是否正确、时期是否可比、
+单位是否兼容、声明集合是否权威仍属调用方；它们不是未完成的 SDK 债务，也不从字段名推断。
 历史在线证据截至 `2026-08-06`，此后上游是否漂移未验证，示例 datasource 保持 `pending_review`。
 
 `0.3` Multidim 收口经复核**无取数能力净损失**：raw query/total 仍可经
@@ -501,7 +505,7 @@ artifact 路径也走不通：当前账号 7 个 App 里 6 个的合法 Dashboar
   含 `minimum_calls`、`discovery_calls`、`unknown_inputs`、`catalog_status`、`input_sources` 与依赖。
   旧 Plan 不含该字段仍通过，字段不进运行态 `PlanNode`，不改变 request、并发或执行结果。
   Multidim 与 Promotion 的独立目录已用现有 batch 合为一次发现调用，selector 集合与分页数不变。
-- 当时 13 张固定 composite 卡（当前基线为 20 张）的 7 对意图重叠已收口：集中层按现有 owner 的正向证据强度与 selector
+- 当时 13 张固定 composite 卡（当前基线为 21 张）的 7 对意图重叠已收口：集中层按现有 owner 的正向证据强度与 selector
   精确度收集产品，命中多个产品即返回 `MULTIPLE_INTENTS`，不再搜索 raw operation。
   该判据不枚举产品对；显式 `and/以及/同时` 子句独立识别，wrapper 引用与历史紧邻冲突仍 fail closed。
 - 错误分类已对齐：permission 返回 upstream/3，本地 unsupported/policy/privacy 阻断返回 local/4；
@@ -890,7 +894,7 @@ Agent 面达标必须用**留出集**判定：题面在修复完成后由**未�
 **后果**：14 个 tool 的草案不能靠"落在最佳区间"自证，
 必须用本仓库自己的问题分布和目标宿主模型做 A/B。
 
-**顺带澄清一个计数**：本仓库实际有 **20 张 composite 卡**。
+**顺带澄清一个计数**：本段调研快照有 **20 张 composite 卡**；2026-08-16 派生层新增 1 张，当前为 21 张。
 此前流传的"15"是 roadmap 里**完全缺失动线**的条数，被误当成卡数引用。
 
 **三、ThinkingAI 的 MCP 属 `[厂商宣称]`，不可复现。**
@@ -974,8 +978,8 @@ HTTP/OAuth。** 完整论证、14-tool 草案、反方和分阶段判据见
 检验它是否优于手写 recognizer；而已闭环的漏斗、留存等仍由受治理的上游/领域 composite 计算，
 不把原始事件、任意 SQL 或 185 个 raw operation 交给模型。
 
-题设所称 15 张固定 composite 卡不是当前事实：`composite_capability_inventory()` 在本基线返回
-**20 张**，已超过每 server 5–15 tools 的经验区间；卡中的提示型 schema 也不全是合法 JSON Schema。
+题设所称 15 张固定 composite 卡不是当前事实：`composite_capability_inventory()` 在该调研基线返回
+**20 张**（派生层落地后为 21 张），已超过每 server 5–15 tools 的经验区间；卡中的提示型 schema 也不全是合法 JSON Schema。
 因此不能把卡 1:1 发布为 tools。候选面从 47 条计数动线重算：
 
 ```text
@@ -2033,3 +2037,47 @@ Spec contract、period-compare envelope 与公共 exit-code contract 生成 4 �
 其中 `B + 3`、`C + 4`：当前可复算总数为 `974 + 7 = 981`、`A=218`、`B=400+3=403`、
 `C=356+4=360`。这些是新 CLI 的 `limit`、`offset`、category、selector 和 action 的本地输入错误；
 不改变既有错误 code/category/exit 语义，也不放宽审计判据。
+
+## 派生指标与声明集合对账（2026-08-16）
+
+**提案：**在已有结果 envelope 上纯加法增加独立 `gravity.derived-metrics.v1` 子合同；原顶层
+`schema_version/status/ok/result_source/data` 全部原样保留。SDK 只实现不需要字段含义的
+`ratio/share/change/reconcile`，调用方通过 `gravity.derived-metrics-spec.v1` 声明 rows_path、列、结果名、
+时期标签、对齐键和 expected 集合。工作提案位于 ignored
+`tmp/codex/derived-metrics/proposal.md`。本单元不新增 operation、分析框架依赖或生产请求。
+
+**算子裁决：**ratio 是逐行两列相除；share 是一列占该输入完整行集总和；change 同时返回绝对差和
+相对变化，并复用时期比较的精确身份对齐与 baseline-zero 不可算语义，不按行位置猜配；reconcile
+返回 present/missing/unexpected。未纳入 sum/average、滚动窗口、加权比率、单位换算或留存算子：
+前两项不属于本轮闭环且会扩张聚合空值政策，后几项必须知道排序、权重、单位或业务含义。
+share 最贴近业务边界，因为“总体”选择会改变含义；实现因此要求调用方显式选择 rows_path，并在任一
+缺失/非法行或上游 partial 时拒绝用可见行重建总量。
+
+**数值与状态：**标准库 `Decimal` 精确消费整数和 decimal string；float 以其十进制文本消费并产生
+`BINARY_FLOAT_INPUT`。除法按调用方 `decimal_places=0..28` 和 half-even 舍入，以 decimal string 输出；
+发生舍入时产生 `PRECISION_ROUNDED`。金额类整数按最小单位进入时全程精确，不先转 binary float。
+分母零为 `not_calculable/denominator_zero` 且没有 value；缺列为
+`not_calculable/missing_column + missing_columns`，与零、null 和 invalid_number 分开。上游 partial 时
+子合同整体 partial，ratio/change 数值标 `calculated_from_partial`，share 以
+`upstream_partial_total` 拒算，reconcile 保留三分但 `missing_is_definitive=false`。
+
+**动态说明逐条裁决：**SDK 可生成上游 partial、分母零、缺列、null/非法数、非 object 行、share
+总量不完整、change 缺边/重复键/区间外行、reconcile 未分类/重复 observed、float 输入和 Decimal 舍入；
+这些完全由输入形状或算术事实决定。SDK 不生成“公式选对了”“总体是目标人群”“两期业务可比”
+“单位或币种兼容”“expected 是权威全集”“unexpected 是未知业务项”等说明；它们必须由调用方字典
+或审核给出。warnings 是稳定 code/count/message，notes 只做人读摘要，自动化按 code/status 分支。
+
+**四面与语义衔接：**CLI 为离线 `gravity derive --input`，SDK 为 `derive_metrics(source, spec)`，Plan
+复用 `composite/name=derived_metrics` 并经 Analysis family router 接入，`plan_adapters.py` 净增长 0。
+Agent 对未声明公式的 rate/ratio/share 意图返回 `DERIVED_METRIC_BINDING_REQUIRED`，不搜索 raw
+operation 或猜公式。`gravity.semantic-context.v1` 纯加法接受 `derived_metrics` 声明；加载时验证完整
+spec，命中后卡片预填 caller spec、只缺 source，补入 source 后同一 Plan 节点可真实执行。派生子合同
+和 Agent/Plan 来源均为 `caller_defined/caller_responsible`，同时在 `upstream.result_source` 保留输入
+来源事实。
+
+这是一条新的独立分析动线：权威表由 51 行增加到 52 行，仍减去 3 条不计项，故
+`48 + 1 = 49`；状态为 `33 / 0 / 15 + 1 / 0 / 0 = 34 / 0 / 15`。operation 为
+`185 + 0 = 185`、stable 为 `176 + 0 = 176`。生产 HTTP 请求 **0 次**，无重试、翻页、扩窗或换 App。
+本分支开工时 actionable-error 测试固定 **1022 = A218/B434/C370**；本单元新增 core spec 与 Plan
+output_fields 两个 caller-recoverable 抛点，均含字段路径、安全实际值和可执行修正动作，故为
+`1022 + 2 = 1024`、`A 218 + 2 = 220`、`B=434`、`C=370`，新增 A 档为 2/2。

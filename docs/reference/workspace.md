@@ -141,6 +141,12 @@ question = "show the orion applications"
 description = "Fictional caller-verified call."
 operation = "app.list"
 input = { page = 1, page_size = 20 }
+
+[[semantic_context.derived_metrics]]
+name = "orion-efficiency"
+phrases = ["orion efficiency"]
+description = "Fictional caller-owned formula."
+spec = { schema_version = "gravity.derived-metrics-spec.v1", rows_path = "/data/list", decimal_places = 4, calculations = [{ operator = "ratio", result_name = "orion_ratio", numerator = "orion_a", denominator = "orion_b" }] }
 ```
 
 `terms[].target.kind` 支持 `product / operation / event / event_property / user_property / metric /
@@ -156,6 +162,12 @@ composite 及 metadata 引用在 Agent preflight 校验，后者用已同步本�
 exclusion 命中时返回 capability gap，并阻止 raw fallback。verified query 只有在整句规范化后精确
 相等时硬绑定，在既有集中层的 `MULTIPLE_INTENTS` 与 caller exclusion 门禁之后优先于普通 term 和
 单个目录候选；其 `input` 在加载时按 operation 合同验证，并原样进入现有 `run` Plan node，Agent 仍不自动执行。
+
+`derived_metrics` 是调用方公式声明，不是 SDK 业务字典。每项的 phrases 仍只做字面匹配，spec 在
+workspace 加载时按 `gravity.derived-metrics-spec.v1` 完整验证。命中后 Agent 卡预填 spec，只把 source
+envelope 留作必填输入；调用方补入 source 后可由 `composite/name=derived_metrics` Plan 节点真实执行。
+没有对应声明的 rate/ratio/share 问题返回 `DERIVED_METRIC_BINDING_REQUIRED`；SDK 不根据结果名、列名
+或问题文本猜 numerator、denominator、总体、时期标签或声明集合。
 
 语义命中的候选继续使用现有来源字段：`description_origin=caller_workspace`，`result_source` 为
 `caller_defined/caller_responsible`。匹配到的声明、instructions 和 exclusion 使用独立版本的

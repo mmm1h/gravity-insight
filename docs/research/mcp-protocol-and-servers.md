@@ -311,7 +311,7 @@ Metadata: get_mcp_server_branch, get_mcp_server_version
 ### 先纠正基数
 
 - [实证] 题目给的 “185 operations、47 条分析动线”与当前仓库文档一致：roadmap 记录 176 stable / 185 total operations，以及 47 条 journeys（32 closed、0 partial、15 missing）。[roadmap](../roadmap.md)
-- [实证] 但“15 张固定 composite 卡”与当前源码不一致：`_COMPOSITE_CAPABILITIES` 当前机械计数是 20 项；15 是 roadmap 中尚缺失的 journey 数，不是 composite 卡数。[agent_capabilities.py](../../src/gravity_sdk/agent_capabilities.py)；[roadmap](../roadmap.md)
+- [实证] 2026-08-15 调研快照中，“15 张固定 composite 卡”与源码不一致：`_COMPOSITE_CAPABILITIES` 当时机械计数是 20 项；2026-08-16 派生层新增后为 21 项。15 是当时 roadmap 中尚缺失的 journey 数，不是 composite 卡数。[agent_capabilities.py](../../src/gravity_sdk/agent_capabilities.py)；[roadmap](../roadmap.md)
 - [推测] 如果另有尚未落库的“未来只公开 15 张 MCP 卡”方案，应按 15 评审；就当前代码做设计则必须按 20 评审。本报告不把计划数冒充现状。
 
 ### 推荐切法

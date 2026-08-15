@@ -65,7 +65,7 @@ user-controlled；三者不能互相替代。tool 的输入是 JSON Schema，结
 因此 MCP 不是第五份数据实现；它仍然会成为第五份**公开调用合同**。差别很重要：复用领域内核可以
 避免复制请求和投影逻辑，但 tool 名、描述、输入 schema、结果包装、资源 URI 和错误映射仍要同步维护。
 
-### 固定 composite 卡的实数是 20，不是 15
+### 固定 composite 卡的实数是 21，不是 15
 
 当前 `composite_capability_inventory()` 在本基线返回 **20** 张固定卡：
 
@@ -91,13 +91,13 @@ user-controlled；三者不能互相替代。tool 的输入是 JSON Schema，结
 20. `advertiser_profile`
 
 其中 17 张走 strict composite，`analysis_context`、`app_snapshot`、`attribution_snapshot` 仍走通用
-匹配。题设的 15 张是较早快照，不能作为“天然符合每 server 5–15 tools”的证据；当前 20 张反而超过
+匹配。题设的 15 张是较早快照，不能作为“天然符合每 server 5–15 tools”的证据；当前 21 张反而超过
 建议上限。卡也不是可直接发布的 MCP schema：例如现有提示型 schema 使用
 `"type": "string|integer"`，这不是合法 JSON Schema；部分描述还保留已经被
 [投影总裁决](roadmap.md#投影边界总裁决全面放开2026-08-15)推翻的字段隐藏文字。
 
 结论是：卡可以提供领域 owner、描述和 handoff 线索，MCP tool 必须从结果任务重新分组，并由合法
-JSON Schema/Pydantic 模型生成和校验，不能把 20 张卡机械转成 20 个工具。
+JSON Schema/Pydantic 模型生成和校验，不能把 21 张卡机械转成 21 个工具。
 
 ## 现有机器语义能否映射
 
@@ -360,7 +360,7 @@ SDK v2 也把高层服务器 API 从早期 `FastMCP` 调整为 `MCPServer`。这
 发生。再增加 14 个稳定 tool、8 个 resource URI 和 host 行为测试，意味着每个新结果任务都多一项
 发布判断。即使领域实现完全复用，这份合同也必须兼容、迁移和记录。
 
-更尖锐的是：MCP 不保证选对工具。当前卡 20 张已经过多；归并到 14 张虽符合经验上限，宽 family
+更尖锐的是：MCP 不保证选对工具。当前卡 21 张已经过多；归并到 14 张虽符合经验上限，宽 family
 仍可能让模型选错 variant。若没有实际 A/B，只是把 recognizer 失败换成更难复现的宿主模型失败。
 
 ### 3. 真实调用方需求尚未证明

@@ -162,3 +162,7 @@ workspace recipe 与 SDK contract 的同名 description 已用 additive origin �
 
 Analysis Spec schema 的结构键投影与 funnel 按日模式校验已在领域 schema/执行器和源合同内闭合；
 共享 CLI spine 未修改，真正畸形的模式投影继续 fail closed，本轮复核未产生新的结构债条目。
+
+派生指标与集合对账经独立 core、CLI/Agent owner 模块及既有 Analysis family router 接入；
+`plan_adapters.py` 净增长 0，没有新增通用表达式引擎、adapter registry、数据框依赖或业务字典，
+本轮复核未产生新的结构债条目。

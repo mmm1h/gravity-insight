@@ -101,7 +101,7 @@ from gravity_sdk.resolver_cli import add_resolver_command
 from gravity_sdk.agent import DeferredAgentClient, ndjson_metadata, run_agent_command
 from gravity_sdk.capability_cli import add_deepening_commands
 from gravity_sdk.read_cli import add_read_command
-from gravity_sdk.cli_root_commands import add_root_commands
+from gravity_sdk.cli_root_commands import add_root_commands, dispatch_root_command
 from gravity_sdk.plan_cli import add_plan_commands
 from gravity_sdk.plan_product_cli import dispatch as dispatch_plan
 
@@ -562,7 +562,7 @@ def run(args: argparse.Namespace) -> Any:
         return dispatch_material_command(args, _object_input)
     if args.command == "attribution":
         return _attribution(args)
-    raise ValueError("choose --dry-run or a command")
+    return dispatch_root_command(args)
 
 
 def _summary_reference(operation_id: str | None, path: str, value: Any) -> dict[str, Any]:

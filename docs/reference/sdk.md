@@ -239,6 +239,22 @@ timeout_seconds=300.0)` 原样委托 `GravityInsightClient.export_run()`。当�
 `export_wait()` 和 `export_download()` 恢复；创建结果不确定且无可靠 ID 时先 `export_list()`，
 不要重复创建。输入、列顺序、幂等键和目的路径都必须由调用方显式给出。
 
+## Derived Metrics
+
+`derive_metrics(source, spec)` 是不构造 Insight/SQL client 的本地 SDK 方法。它复制 source envelope，
+原样保留所有顶层字段，并增加 `gravity.derived-metrics.v1`。同名模块级函数可在不创建 `GravitySDK`
+时使用。spec 为 `gravity.derived-metrics-spec.v1`：
+
+- `ratio` 指定 `numerator/denominator/result_name`；
+- `share` 指定 `value/result_name`，只在完整行集上计算总量；
+- `change` 指定 `value/period/baseline/current/keys/result_name`，按 keys 精确对齐并同时返回绝对差、相对变化；
+- `reconcile` 指定 `observed/expected/result_name`，返回 present/missing/unexpected。
+
+计算使用标准库 `Decimal`，整数和 decimal string 精确转换；除法按 `decimal_places` 与 half-even 舍入，
+以 decimal string 交付。上游 partial 会把子合同提升为 partial；ratio/change 的值标为
+`calculated_from_partial`，share 不使用不完整总量，reconcile 的 `missing_is_definitive=false`。
+派生 `result_source` 为 `caller_defined/caller_responsible`，输入来源另保留在 `upstream.result_source`。
+
 ## Analysis Query Spec v1
 
 `compile_analysis_query(kind, spec, *, app=None, start=None, end=None, workspace=None)` 与

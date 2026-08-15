@@ -100,6 +100,43 @@ gravity plan run --recipe example --param date=2026-08-14 --param app=main
 
 词汇 kind 为 `metric/custom_metric/metric_tag/metric_tag_category/media_enum/template/vocabulary`，都是 workspace scope 且禁止 `app_id`。一次同步固定请求 9 个来源各一次；partial 结果保留成功行与失败来源。节点只返回安全投影；Agent 指标卡可附显式查询请求片段，模板仍是 `catalog_only`，不会从目录配置伪造回放或自动执行 Analysis 查询。
 
+## Derived Metrics composite
+
+本地派生复用现有 `composite` kind，并经 Analysis family router 执行；不增加 Plan node kind，也不调用
+网络。request 固定为 `name/source/spec`，不接受 binding 或 output_fields。Plan v1 只绑定 JSON scalar，
+因此 source envelope 必须由调用方显式放入 request；本产品没有把对象/数组 binding 扩进通用 Plan。
+
+```json
+{
+  "id": "orion_derive",
+  "kind": "composite",
+  "request": {
+    "name": "derived_metrics",
+    "source": {
+      "schema_version": "fictional.result.v1",
+      "status": "success",
+      "ok": true,
+      "data": {"list": [{"orion_a": 1, "orion_b": 8}]}
+    },
+    "spec": {
+      "schema_version": "gravity.derived-metrics-spec.v1",
+      "rows_path": "/data/list",
+      "decimal_places": 3,
+      "calculations": [{
+        "operator": "ratio",
+        "result_name": "orion_ratio",
+        "numerator": "orion_a",
+        "denominator": "orion_b"
+      }]
+    }
+  }
+}
+```
+
+Plan node 的 `result_source` 为 caller_defined。若 source 顶层已经是 partial，既有 Plan partial 保留规则
+继续生效；成功 source 中只有个别派生单元不可算时，节点 result 内的 derived sub-contract 明确为
+partial，但原 source 顶层字段仍按纯加法合同不变。
+
 ## Analysis Query composite
 
 五种稳定 Analysis 查询都可直接放进现有 `composite` 节点：`event`、`funnel`、

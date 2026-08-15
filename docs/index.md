@@ -10,6 +10,7 @@
 | 让 Agent 查询 Gravity | [Agent 工作流](agent-workflow.md) | [架构与概念](architecture.md) |
 | 十分钟内准备首次 Agent 分析 | [Agent 任务指南](agent-skills/index.md) | [快速上手](getting-started.md) |
 | 构造事件、漏斗、留存、属性或分布查询 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Analysis Spec](reference/cli.md#analysis-query-spec-v1) |
+| 对已有结果计算调用方绑定的比率、占比、变化或集合对账 | [Agent 工作流](agent-workflow.md#1-业务语义先在调用项目解析) | [CLI 参考：Derived Metrics](reference/cli.md#derived-metrics) |
 | 执行多维报表查询 | [Agent 工作流：Multidim](agent-workflow.md#multidim) | [CLI 参考：Multidim](reference/cli.md#multidim) |
 | 读取单日订单目录 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Order Directory](reference/cli.md#order-directory-v1) |
 | 按 TraceID 读取单日拆单明细 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Order Split Trace](reference/cli.md#order-split-trace-v1) |

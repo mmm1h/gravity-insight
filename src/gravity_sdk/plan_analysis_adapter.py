@@ -22,11 +22,16 @@ from .plan_adapter_support import (
     validate_exact_targets,
 )
 from . import plan_monetization_adapter as monetization_plan
+from . import plan_derived_metrics_adapter as derived_plan
 
 
 ANALYSIS_QUERY_NAME = "analysis_query"
 COMPOSITE_NAMES = frozenset(
-    {ANALYSIS_QUERY_NAME, monetization_plan.MONETIZATION_DETAIL_NAME}
+    {
+        ANALYSIS_QUERY_NAME,
+        derived_plan.DERIVED_METRICS_NAME,
+        monetization_plan.MONETIZATION_DETAIL_NAME,
+    }
 )
 ANALYSIS_QUERY_REQUEST_FIELDS = frozenset(
     {"name", "kind", "app", "spec", "start", "end", "compare_start", "compare_end"}
@@ -139,6 +144,9 @@ def validate_analysis_plan(
     request: Mapping[str, Any],
     context: AdapterContext,
 ) -> None:
+    if request.get("name") == derived_plan.DERIVED_METRICS_NAME:
+        derived_plan.validate_derived_metrics_plan(request, context)
+        return
     if request.get("name") == monetization_plan.MONETIZATION_DETAIL_NAME:
         monetization_plan.validate_monetization_detail_plan(
             request, context, workspace
@@ -150,6 +158,8 @@ def validate_analysis_plan(
 def execute_analysis_plan(
     sdk: Any, request: Mapping[str, Any], context: AdapterContext
 ) -> dict[str, Any]:
+    if request.get("name") == derived_plan.DERIVED_METRICS_NAME:
+        return derived_plan.execute_derived_metrics_plan(sdk, request, context)
     if request.get("name") == monetization_plan.MONETIZATION_DETAIL_NAME:
         return monetization_plan.execute_monetization_detail_plan(
             sdk, request, context
@@ -158,7 +168,7 @@ def execute_analysis_plan(
 
 
 def is_analysis_result(value: Any) -> bool:
-    return is_analysis_query_result(value) or (
+    return derived_plan.is_derived_metrics_result(value) or is_analysis_query_result(value) or (
         monetization_plan.is_monetization_detail_result(value)
     )
 
@@ -166,6 +176,8 @@ def is_analysis_result(value: Any) -> bool:
 def project_analysis_result(
     value: Any, fields: tuple[str, ...], context: AdapterContext
 ) -> dict[str, Any]:
+    if derived_plan.is_derived_metrics_result(value):
+        return derived_plan.project_derived_metrics_result(value, fields, context)
     if monetization_plan.is_monetization_detail_result(value):
         return monetization_plan.project_monetization_detail_result(
             value, fields, context
