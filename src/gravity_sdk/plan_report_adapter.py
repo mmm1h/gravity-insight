@@ -6,13 +6,18 @@ from collections.abc import Mapping
 from typing import Any
 
 from .agent_company_usage import COMPANY_USAGE_NAME
+from . import plan_custom_audience_adapter as custom_audience_plan
 from .plan import AdapterContext
 from .plan_adapter_support import input_error, validate_selected_fields
 from .plan_pulse_adapter import execute_business_pulse, validate_business_pulse
 
 
 BUSINESS_PULSE_NAME = "business_pulse"
-COMPOSITE_NAMES = frozenset({BUSINESS_PULSE_NAME, COMPANY_USAGE_NAME})
+COMPOSITE_NAMES = frozenset({
+    BUSINESS_PULSE_NAME,
+    COMPANY_USAGE_NAME,
+    custom_audience_plan.CUSTOM_AUDIENCE_NAME,
+})
 
 
 def is_report_composite(name: Any) -> bool:
@@ -28,6 +33,11 @@ def validate_report_composite(
     if request.get("name") == BUSINESS_PULSE_NAME:
         validate_business_pulse(request, context, workspace, output_fields)
         return
+    if request.get("name") == custom_audience_plan.CUSTOM_AUDIENCE_NAME:
+        custom_audience_plan.validate_custom_audience_plan(
+            request, context, output_fields
+        )
+        return
     if set(request) != {"name"}:
         raise input_error("company_usage request accepts only its name", "request")
     if context.dynamic_targets:
@@ -42,6 +52,10 @@ def execute_report_composite(
 ) -> Any:
     if request.get("name") == BUSINESS_PULSE_NAME:
         return execute_business_pulse(sdk, request, context)
+    if request.get("name") == custom_audience_plan.CUSTOM_AUDIENCE_NAME:
+        return custom_audience_plan.execute_custom_audience_plan(
+            sdk, request, context
+        )
     return sdk.company_usage(
         max_pages=context.max_pages,
         max_items=context.max_items,

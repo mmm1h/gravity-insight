@@ -18,7 +18,6 @@ from . import plan_fixed_composite_adapter as fixed_plan
 from . import plan_order_adapter as order_plan
 from .plan_binding import set_pointer
 from . import plan_report_adapter as report_plan
-from . import plan_custom_audience_adapter as custom_audience_plan
 from .plan_saved_analysis_adapter import (
     execute_saved_analysis_plan,
     is_saved_analysis_result,
@@ -99,7 +98,6 @@ _COMPOSITES = frozenset(
         MATERIAL_PERFORMANCE_NAME,
         TITLE_PACKAGE_NAME,
         PROMOTION_PERFORMANCE_NAME,
-        custom_audience_plan.CUSTOM_AUDIENCE_NAME,
         BILIBILI_ACCOUNT_PERFORMANCE_NAME,
         analysis_plan.ANALYSIS_QUERY_NAME,
         *segment_plan.COMPOSITE_NAMES,
@@ -455,11 +453,6 @@ def _validate_composite(
     if name == PROMOTION_PERFORMANCE_NAME:
         validate_promotion_performance_plan(request, context, workspace)
         return
-    if name == custom_audience_plan.CUSTOM_AUDIENCE_NAME:
-        custom_audience_plan.validate_custom_audience_plan(
-            request, context, _COMPOSITE_OUTPUT_FIELDS
-        )
-        return
     if name == BILIBILI_ACCOUNT_PERFORMANCE_NAME:
         validate_bilibili_account_performance_plan(request, context, workspace)
         return
@@ -491,8 +484,6 @@ def _execute_composite(
         return execute_title_package_plan(sdk, request, context)
     if name == PROMOTION_PERFORMANCE_NAME:
         return execute_promotion_performance_plan(sdk, request, context)
-    if name == custom_audience_plan.CUSTOM_AUDIENCE_NAME:
-        return custom_audience_plan.execute_custom_audience_plan(sdk, request, context)
     if name == BILIBILI_ACCOUNT_PERFORMANCE_NAME:
         return execute_bilibili_account_performance_plan(sdk, request, context)
     if analysis_plan.is_analysis_composite(name):

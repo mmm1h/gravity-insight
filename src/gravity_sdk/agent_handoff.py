@@ -264,18 +264,10 @@ def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
         from .agent_multidim import multidim_plan_request
 
         return multidim_plan_request(card)
-    if composite == "business_pulse":
-        from .agent_business_pulse import business_pulse_plan_request
+    from .agent_report_routing import REPORT_PRODUCTS, report_product_plan_request
 
-        return business_pulse_plan_request(card)
-    if composite == "company_usage":
-        from .agent_company_usage import company_usage_plan_request
-
-        return company_usage_plan_request(card)
-    if composite == "custom_audience":
-        from .agent_custom_audience import custom_audience_plan_request
-
-        return custom_audience_plan_request(card)
+    if composite in REPORT_PRODUCTS:
+        return report_product_plan_request(str(composite), card)
     if composite == "material_performance":
         from .agent_material_performance import material_performance_plan_request
 
