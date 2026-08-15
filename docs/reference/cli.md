@@ -45,6 +45,7 @@ Agent 优先从顶层机器协议开始：
 gravity agent
 gravity agent "retention" --limit 3
 gravity agent --input questions.json
+gravity agent "run saved analysis" --resolve-inputs '{"app":"main"}' --output catalog.json
 ```
 
 无 query 时返回两步协议；有 query 时优先返回匹配的 workspace recipe，再用 stable operation
@@ -53,6 +54,14 @@ gravity agent --input questions.json
 多个问题复用一次离线目录快照并按输入顺序返回；不能与 positional query、continuation、
 domain 或 platform 组合。需要完整 catalog 或 blocked 覆盖信息时再进入
 `operations search/describe`。
+
+`--resolve-inputs JSON|FILE|-` 是显式在线模式，只用于 App/平台等依赖上下文已知、引用或物理字段
+未知的场景。它把能力发现和完整 live catalog 读取放在第一条顶层命令中；不选择值、不执行候选。
+该模式要求 `--output <local-file>` 和 JSON 格式，保证目录不受 stdout 安全摘要上限影响。调用方从
+文件按稳定 ID（模板按 scope + ID）或物理名精确选择，再执行原命令/Plan，合计两次。响应中的
+`input_resolution.internal_http_calls_reduced=false` 明确表示目录 HTTP 没减少。冷 metadata/table
+catalog 使用 `{"catalog_policy":"refresh"}`；任一来源失败时不发布 staging catalog。默认 Agent
+和 `--input` batch 仍离线；App 或 Promotion 平台也未知时不能套用两次下界。
 
 | 命令组 | 用途 |
 | --- | --- |
@@ -153,9 +162,10 @@ input 只含 `date_list/time_dims/metrics_list/custom_metrics_list/data_dims/rel
 `x-cli-shortcuts.filter` 机器字段声明。已有版本化物理 `filters[]` 合同不收缩：专家仍可通过
 `--input`/`--set` 使用原合同形状，其语义与优先级不变。
 `--app` 接受 workspace alias 或正整数；专用入口不再接受 `--app-id` 或 `--parent-id`。Agent 不会填
-App、指标、维度、日期或 filter value。直接执行默认 6 workers、最大 24；Plan adapter 固定 1。`--include-total`
+App、日期或 filter value；物理指标/维度未知时可在 App 和其余业务输入已知的前提下用在线输入解析
+取得闭合 schema 与 live catalog，调用方仍精确选择。直接执行默认 6 workers、最大 24；Plan adapter 固定 1。`--include-total`
 才会在 query 后串行计算 total，`--all-pages` 使用受控分页。HTTP 数为去重 metadata `M` + query
-页数 `P` + 可选一次 total。已知输入一调用；未知入口是一次 Agent 发现加一次 Plan。多个查询
+页数 `P` + 可选一次 total。已知输入一调用；能力/物理字段未知时是一次在线 Agent 解析加一次 Plan。多个查询
 应放进一个 Plan，不新增 batch wrapper。
 
 产品结果固定为 `gravity-insight.composite.multidim.v1`；业务行读取
@@ -205,6 +215,9 @@ gravity promotion performance --app main --start 2026-08-01 --end 2026-08-07 `
 收据和 partial 失败信息。
 同一个指标数组会发给每个所选平台；多个平台只有在各自实时元数据都证明该同名物理指标时才应
 放进同一请求。平台原生指标名不同则使用同层 Plan 节点并发，SDK 不猜字段映射。
+平台已知而指标未知时，可先用
+`gravity agent "promotion performance" --resolve-inputs '{"platforms":["bytedance"]}' --output metrics.json`；
+调用方精确选择后第二次执行上面的产品命令，执行端仍由 FieldPolicy live 复验。平台也未知时不适用。
 `bing/xiaohongshu/taptap/wechat_video` 不满足共同合同，继续使用兼容的 `promotion query/snapshot`。
 
 批量 wrapper 可由机器自描述，不需要猜 JSON 字段：
@@ -514,9 +527,9 @@ favourite 五个来源，保留 scope、operation identity 与局部失败。目
 config 会被裁剪；本产品不编译该 config，也不运行、重放或渲染看板图表。
 
 CLI/SDK 外层并发默认 5、上限 24。Plan 使用 `{"name":"dashboard_snapshot","app":...,"ref":...}`；
-adapter 内部固定 1 worker，由 Plan 全局 pool 管理并发。引用已知时直接执行是一次调用；未知时
-先用 `gravity agent "dashboard snapshot"` 得到缺少 `app/ref` 的卡，再显式补齐并执行 Plan，共
-两次调用。自然语言发现不会猜引用或自动执行。
+adapter 内部固定 1 worker，由 Plan 全局 pool 管理并发。引用已知时直接执行是一次调用；App 已知、
+引用未知时先用 `agent --resolve-inputs '{"app":"main"}' --output dashboards.json` 取得完整 live tree，
+调用方精确选择稳定 ID 后执行 Plan，共两次。自然语言发现不会猜引用或自动执行。
 
 结果较大时可把 `--output <path> --format json|ndjson` 放在 `snapshot` 子命令参数末尾；不指定
 `--output` 时 JSON 输出仍受统一 stdout 裁剪保护，`--format ndjson` 可流式写到 stdout。
@@ -542,9 +555,9 @@ gravity analysis dashboard run --app main --ref "Growth Overview" `
 配置构造。它不是浏览器模拟器：不解释布局，不应用 favourite，也不模拟页面级 global filter；
 无法证明的 subject/config 以结构化 unsupported chart 返回，不猜字段或改用任意 HTTP。
 
-引用已知时 CLI/SDK 是一次顶层调用。引用或能力未知时先运行
-`gravity agent "run dashboard charts"`，填入卡片缺失的 `app/ref/start/end` 后执行其 Plan node，
-总共两次；自然语言卡永远不自动执行。
+引用已知时 CLI/SDK 是一次顶层调用。App/窗口已知、引用或能力未知时先运行带
+`--resolve-inputs` 的 Agent，精确选择 live tree 中的稳定 ID 后执行其 Plan node，总共两次；
+自然语言卡永远不自动执行。
 
 ### Segment Snapshot v1
 
@@ -561,8 +574,8 @@ gravity analysis segment snapshot --app main --ref <id-or-exact-name> `
 用户标识、规则定义、request 或原始异常；结果 schema 是 `gravity-insight.segment-snapshot.v1`，
 固定 `source_count=3`，最小 `max-items` 为 4（目录命中与三个来源）。
 
-已知输入时 CLI/SDK 是一次调用。未知时只有明确包含“分群快照/检查 + 详情 + 历史 + 单日计算
-结果”的强意图会返回 `segment_snapshot` 卡；调用方补齐 `app/ref/date` 后执行 Plan，共两次。
+已知输入时 CLI/SDK 是一次调用。App/日期已知、引用未知时，只有明确包含“分群快照/检查 + 详情 +
+历史 + 单日计算结果”的强意图才会在线返回完整分群目录；调用方精确选择稳定 ID 后执行 Plan，共两次。
 泛分群、规则评估、成员/用户列表、导出和写操作不会命中，且自然语言不会自动执行。
 
 ### Segment Rule Spec v1
@@ -631,8 +644,8 @@ opaque config 或其他 kind 均结构化失败，不降级为裸请求。显式
 Agent 查询 `run saved analysis <ref>`、`运行保存分析 <引用>`，包括 `--domain report`，唯一
 权威候选是 `composite:saved_analysis`。卡片明确缺失 `app/ref/start/end`，Plan request 为四项
 提供可机械填写的槽位，可选 `mode=prepare|run`；发现本身完全离线，也不会从自然语言提取引用
-或自动执行。已有引用和窗口但不知道能力时是 Agent + Plan 两次；引用未知时必须先 list 并由
-调用方选择，若还需 Agent 发现能力则至少三次。
+或自动执行。已有引用和窗口但不知道能力时是离线 Agent + Plan 两次；App/窗口已知而引用未知时，
+在线输入解析把能力卡和完整 safe catalog 放进第一调用，调用方按稳定 ID 选择后第二次执行。
 
 ### Business pulse
 
@@ -771,6 +784,12 @@ gravity find <query> [--backend operations] [--backend metadata]
 默认位置是用户私有缓存下的 `GravityInsight/metadata/catalog.sqlite3`。同步采用临时库构建和原子替换；除 App 目录外，固定读取 9 个 workspace Analysis 词汇来源各一次，请求数不随 App 增长。部分失败保留成功数据和失败来源；`status=partial` 不代表完整目录。
 查询命令以 SQLite 只读模式运行，不创建客户端、不读取凭据、不访问网络。
 `find` 对三个目录做稳定相关性排序；backend 是显式注册表。
+
+冷目录的两调用 Agent 路径使用
+`gravity agent <query> --resolve-inputs '{"catalog_policy":"refresh"}' --output catalog.json`。与普通
+`metadata sync` 可保留 partial 快照不同，这个集成 refresh 只有全部成功才发布；失败时旧 catalog
+原样保留且解析命令失败。第二调用执行 metadata/table Plan 节点，结果继续携带同步时刻和 observed
+语义。此模式合并顶层命令，不减少 sync 内部请求数。
 
 `vocabulary` 搜索物理/自定义指标、指标标签与分类、媒体枚举和 mine/shared/preset 模板。它们都是 workspace scope，不接受 `--app-id`。`gravity agent <query>` 对强匹配返回同 kind 的 `metadata_search` Plan node；指标卡的 `request_fragment` 可复制进显式 Analysis spec，但不会自动执行。模板只提供安全目录身份，标记 `catalog_only`，不包含配置且不可回放。
 

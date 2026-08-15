@@ -17,6 +17,31 @@ from .errors import (
 class MetadataSdkMixin:
     """Expose local catalogs without constructing an Insight or SQL client."""
 
+    def resolve_capabilities(
+        self,
+        query: str,
+        *,
+        known_inputs: dict[str, Any],
+        workspace: Any | None = None,
+        domain: str | None = None,
+        platform: str | None = None,
+        limit: int = 3,
+    ) -> dict[str, Any]:
+        """Discover a capability and its complete live input catalogs."""
+
+        from .agent_input_resolution import resolve_capabilities
+
+        selected_workspace = self._select_workspace(workspace)
+        return resolve_capabilities(
+            query,
+            known_inputs=known_inputs,
+            client=self.insight,
+            workspace=selected_workspace,
+            domain=domain,
+            platform=platform,
+            limit=limit,
+        )
+
     def analysis_vocabulary(
         self,
         query: str = "",

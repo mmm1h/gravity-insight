@@ -129,6 +129,17 @@ Resolver 的完成路径生成 `gravity.receipt.v1`，写到当前 workspace 的
 - 未知能力：一次 `gravity agent --input` 批量发现，一次 `gravity plan run`，共两次调用。
 - 自然语言发现只生成候选和 `plan_node`，永不自动联网执行；调用方必须显式选择和执行。
 
+默认 Agent 仍是离线的。若能力和引用/物理指标同时未知，但 App/平台依赖已知，调用方可显式使用
+`gravity agent <query> --resolve-inputs <known-inputs> --output <catalog.json>`。这次在线调用把 bounded
+能力发现和完整治理目录读取放在同一顶层调用中，不把选择放进执行；调用方按稳定 ID/物理名称精确
+选择后，第二调用走原 composite/Plan 并重新读取引用目录或 live metadata。SDK 同形入口是
+`resolve_capabilities()`。响应声明内部 HTTP 没有减少，只有完整目录会动态降低卡和 Plan 节点的
+`gravity.agent-call-bound.v1` scenario。App/平台也未知时依赖下界不变。
+
+冷 metadata/table-lineage catalog 可由同一入口显式指定 `catalog_policy=refresh`。refresh 在 staging
+SQLite 中构建，全部成功才原子替换默认 catalog；失败保留旧快照并终止解析。后续离线结果带
+`synced_at`，是 observed snapshot 而非当前态断言。默认离线发现、直接 sync/list 和执行入口都保留。
+
 ### 登记组合能力
 
 组合能力解决“同一分析上下文要调用十几条 operation”的重复劳动，同时保留底层原子合同：

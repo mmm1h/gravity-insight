@@ -250,6 +250,52 @@ artifact 路径也走不通：当前账号 7 个 App 里 6 个的合法 Dashboar
   operation、请求行为和错误 code 均未改变，没有读能力损失。这是有意的破坏性行为变更——
   调用方需更新 exit-code 分支：`3` 表示换账号或申请权限，`4` 表示请求未发出、停止改输入重试。
 
+## 九条 `1 / 3` 调用成本裁决（2026-08-14）
+
+**裁决：九条均可在 App/平台及其余业务输入已知时降到两次调用。** 本节在这些 scenario 上取代
+上面的三次下界；旧裁决只否定
+“把目录选择折进执行”：执行命令不能替调用方挑一个看起来合适的引用或物理字段，这一点继续
+成立。本轮新增的是显式在线输入解析：
+
+```powershell
+gravity agent "<query>" --resolve-inputs <known-inputs.json> --output <catalog.json>
+```
+
+SDK 同形入口是 `GravitySDK.resolve_capabilities(...)`。第一次调用完成能力发现，并读取完整、受治理的
+在线目录；metadata/table-lineage 冷目录则在 staging SQLite 中完整刷新后原子发布。调用方在返回值中
+按稳定 ID（模板按 `scope + id`）或物理名称精确选择，第二次仍走原有 CLI/SDK/Plan 执行入口。
+解析响应明确声明 `caller_call_unit=cli_or_sdk_invocation` 和
+`internal_http_calls_reduced=false`；它降低的是调用方顶层调用数，不降低、也不隐瞒目录 HTTP 数。
+
+七条在线目录路径分别复用 Dashboard tree、Saved Analysis catalog、Analysis template catalogs、
+Segment catalog、Multidim metadata 和逐平台 Promotion metric catalog。引用执行端会重新读取目录：
+删除的 ID 找不到即 fail closed，改名仍由同一稳定 ID 指向同一对象，新建对象不会改变已选 ID；
+Saved Analysis 还会核对目录与详情身份。Multidim 卡的闭合 schema 给出静态字段，完整 metadata
+给出指标、自定义指标及已证明的动态维度；第二次由 FieldPolicy live 复验指标、维度成员关系和排除
+关系。日期和 filter value 仍由调用方业务上下文提供，解析器不生成业务值。
+Promotion 第二次由 FieldPolicy 逐平台复验指标。在线解析前后都会清除进程内 metadata cache，
+同一 SDK 进程不会把解析前的旧目录带入第二次执行。
+
+metadata search 与 table lineage 过去仍是“冷机 3 次”，原因不是离线模式另有计数口径，而是首个
+Agent 调用坚持零网络：调用方随后还要单独 `metadata sync`，再执行离线查询。本轮只有在调用方显式
+指定 `catalog_policy=refresh` 时，第一次在线 Agent/SDK 调用才把发现和完整 refresh 合并。任一来源
+失败时 staging 库丢弃、旧 catalog 保留且本次解析报错；成功后的第二次查询返回带 `synced_at` 的
+observed snapshot，不把同步时刻之后的变化声称为当前事实。
+
+这是纯加法能力：默认离线 `gravity agent`、`GravitySDK.capabilities()`、直接 list/metadata sync 和
+所有既有执行入口保持不变。解析器只交付受批准投影中的候选，不根据名称相似度、业务口径或自然语言
+替调用方选值。若 App 也未知，或 Promotion 的平台也未知，依赖目录仍有先后关系，不能据此宣称两次；
+原 `unknown_app_and_*` 下界继续有效。动态卡和 `plan_node.call_bound` 同步使用
+`gravity.agent-call-bound.v1`，只有本次确实交付完整目录的 scenario 才降为 2。
+
+**最强反驳：这只是把原来的“Agent 发现 + 目录读取”组合成一条命令，HTTP 量和在线失败面没有减少，
+很容易被包装成虚假的成本优化。** 这个反驳对上游成本完全成立；本裁决只在台账既定的
+“调用方顶层 CLI/SDK 调用数”口径下成立，所以响应必须保留 live/refresh 收据并直说 HTTP 未减少。
+更接近实质失败的是两次调用间没有上游 revision/ETag：当前安全性依赖合同中的稳定 ID，并由第二次
+live re-resolution 防止删除或名称漂移选中别的对象；SDK 不能证明上游将来绝不违规复用 ID，也不能
+给同一对象的内容编辑提供点时快照。若上游出现 ID 复用证据，或产品要求执行第一次看到的历史版本，
+本裁决失效，必须先取得 revision/conditional-read 合同，不能继续按两次闭环计。
+
 ## 三处缺面裁决（2026-08-14）
 
 本轮先按调用方任务而非四面数量复核台账中的三处缺面，结论是**均不新增产品面**：
