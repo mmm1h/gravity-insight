@@ -38,7 +38,7 @@ ignored `tmp/codex/stable-coverage-gap/crossref.md`，权威结论落在本页�
 | Operation | 分析问题 / 非空证据 | 动线 / 最小五面成本 | 隐私投影与本轮裁决 |
 | --- | --- | --- | --- |
 | `report.company_amount.query` | 公司每日广告、点击、成本、事件、画像、存储、追踪和素材传输用量如何变化；有非空且分页证据 | 新增公司资源用量趋势；`1/1/1/1/1` | `user_count` 保持省略；本轮实现 |
-| `promotion.bilibili.account.list` | B 站账户/产品曝光、点击、CTR、CPC、CPM 和资金消耗如何；有非空且分页证据 | 补推广表现 Bilibili account profile；`1/1/1/1/1` | `advertiser_name` 保持省略；待实现 |
+| `promotion.bilibili.account.list` | B 站账户/产品曝光、点击、CTR、CPC、CPM 和资金消耗如何；有非空且分页证据 | 新增独立 B 站账户投放表现；`1/1/1/1/1` | `advertiser_name` 保持省略；本轮实现 |
 | `promotion.bytedance.advertiser_performance.list` | 巨量广告主消耗、余额、预算模式和状态如何；有非空、无分页复验 | 补推广表现独立 profile；`1/1/1/1/1` | `advertiser_name`、`advertiser_remark`、`company`、`delay`、`operator_id`、`operator_name`、`project_list` 保持省略；待分页约束 |
 | `promotion.bytedance.custom_audience.list` | 可投人群覆盖数、上传数、来源和状态如何；2026-08-14 最小非空复验与旧样本 fingerprint 完全一致 | 自定义人群覆盖与状态已闭环；`1/1/1/1/1` | `cid`、`company`、`create_user_id`、`create_user_name`、`tag`、`update_user_id`、`update_user_name` 保持省略；确定实现 |
 | `material.bytedance_asset_text_title_package.list` | 普通标题包的标题数、计划数、历史成本和 CTR 如何；旧非空样本与 stable v1 的字段/类型投影同形 | 已补 D32 `title_package` family；与标准版共享 `1/1/1/1/1` | `title_list`、`create_user_id`、`create_user_name`、`update_user_id` 保持省略；已实现，`package_kind=regular` |
@@ -53,8 +53,18 @@ ignored `tmp/codex/stable-coverage-gap/crossref.md`，权威结论落在本页�
 2 次由 `gravity.agent-call-bound.v1` 声明。Plan 通过 Report family router 接入，
 `plan_adapters.py` 净增长 0。本轮 0 次生产请求，完全复用不可变 Evidence，未触发 probe 读语义闸门。
 
-其余 7 条不在本轮实现：Bilibili account 与 Bytedance advertiser performance 同现有推广表现
-语义重叠但请求维度不同；custom audience 需要新动线，两类 title package 应补进 D32；
+**Bilibili account 裁决：**选择独立动线，不扩展 Promotion Performance。后者对既有平台继续强制
+workspace App、日期窗口、平台和物理指标绑定，调用方保证不变；Bilibili account 只有请求
+`date_list`，没有 App 或动态指标输入，结果行也没有日期字段，因此新 envelope 只声明
+`requested_date_range`，不声明 `window_applied`。Agent 以“B 站账户/产品 + 表现/曝光/点击/消耗”
+路由本动线，泛化“B 站推广表现”仍路由 Promotion Performance，显式同时请求两者仍返回
+`MULTIPLE_INTENTS`，相邻产品不靠猜测合并。Core、CLI、SDK、Plan 与 Agent 卡共用
+`gravity-insight.bilibili-account-performance.v1`，并以 `gravity.agent-call-bound.v1` 声明已知输入
+1 次、未知能力 2 次。`advertiser_name` 继续省略，未观察到其他用户级投影字段；本轮完全复用
+不可变 Evidence，生产请求 0 次。
+
+其余 6 条不在本轮实现：Bytedance advertiser performance 同现有推广表现语义重叠但请求维度
+不同；custom audience 需要新动线，两类 title package 应补进 D32；
 promotion material 的目标响应为空；segment member 明细还涉及 `ClientID`、`device_info`、
 `re_attribute_info` 与动态 `fields` 的用户级投影，本单元无批准权。它们保持显式产品缺口，不能因
 stable 或 raw/legacy 入口而算作闭环。

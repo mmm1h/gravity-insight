@@ -179,6 +179,12 @@ def promotion_performance_query(query: str) -> bool:
 def promotion_performance_intent(query: str) -> bool:
     """Return positive promotion evidence without applying conflict policy."""
 
+    from .agent_bilibili_account_performance import (
+        bilibili_account_performance_intent,
+    )
+
+    if bilibili_account_performance_intent(query):
+        return False
     selected = _normalize(query)
     return selected in _EXACT_INTENTS or _claims_product(selected)
 

@@ -12,6 +12,7 @@ _STRICT_COMPOSITES = frozenset(
         "business_pulse",
         "company_usage",
         "custom_audience",
+        "bilibili_account_performance",
         "dashboard_analysis",
         "dashboard_snapshot",
         "material_performance",
@@ -148,7 +149,11 @@ def _strict_composite_query(name: str, query: str) -> bool:
         from .agent_promotion_performance import promotion_performance_query
 
         return promotion_performance_query(query)
-    return False
+    from .agent_bilibili_account_performance import (
+        bilibili_account_performance_product_query,
+    )
+
+    return bilibili_account_performance_product_query(name, query)
 
 
 def _exact_match(match: Mapping[str, Any], normalized: str) -> dict[str, Any]:

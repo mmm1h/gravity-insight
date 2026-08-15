@@ -31,6 +31,7 @@ Usage:
   gravity materials title-packages --app <alias|id> --package-kind <regular|standard>
   gravity promotion performance --app <alias|id> --start <date> --end <date>
   gravity promotion custom-audiences
+  gravity promotion bilibili-account-performance --start <date> --end <date>
   gravity export run <operation-id> --input <json|file|-> --output <file>
   gravity insight <command> [options]
   gravity metadata sync --all-apps
