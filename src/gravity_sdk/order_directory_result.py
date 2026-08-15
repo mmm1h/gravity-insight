@@ -56,6 +56,7 @@ _ERROR_KEYS = frozenset(
 _SUCCESS_ACTION = "Consume the complete identifier-free physical order rows."
 _ACTIONS = {
     "read": "Inspect the safe read category and retry this bounded natural day.",
+    "caller": "Correct the rejected App or date input before retrying.",
     "budget": "Increase the bounded page or item limit and retry the same day.",
     "contract": "Stop automation until the Order Directory contract is re-verified.",
 }
@@ -107,7 +108,10 @@ def failure_result(
     retry_after_ms: int | None = None,
 ) -> dict[str, Any]:
     normalized = normalize_code(code)
-    resolved_stage = stage if stage in _ACTIONS else "contract"
+    resolved_stage = (
+        "caller" if normalized == ErrorCode.INPUT_INVALID.value
+        else stage if stage in _ACTIONS else "contract"
+    )
     detail = ErrorDetail.create(
         normalized,
         failure_message(normalized),

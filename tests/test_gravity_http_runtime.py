@@ -56,6 +56,9 @@ except ModuleNotFoundError:  # source checkout without an editable install
         browser_headers,
     )
 
+from gravity_sdk.errors import RateLimitedError, TransportError
+from gravity_sdk.transport import _raise_for_status
+
 
 NOW = datetime(2026, 8, 8, 8, 0, tzinfo=timezone.utc)
 
@@ -111,6 +114,27 @@ def runtime_for(session, **kwargs):
 
 
 class GravityHttpRuntimeTests(unittest.TestCase):
+    def test_login_transport_failures_remain_retryable_upstream_errors(self):
+        invalid_json = FakeResponse(None)
+        invalid_json.json = mock.Mock(side_effect=ValueError("truncated"))
+        cases = ((FakeResponse({}, 503), TransportError, None),
+                 (invalid_json, TransportError, None),
+                 (FakeResponse({}, 429, {"Retry-After": "3"}), RateLimitedError, 3000))
+        for response, error_type, retry_after in cases:
+            with self.subTest(status=response.status_code), tempfile.TemporaryDirectory() as directory:
+                provider = CredentialProvider(Path(directory) / ".env.gravity.local",
+                    environ={"GRAVITY_USERNAME": "user", "GRAVITY_PASSWORD": "password"}, persist=False)
+                runtime_for(QueueSession([response]), credentials=provider, attempts=1)
+                with self.assertRaises(error_type) as raised:
+                    provider.get(force_refresh=True)
+                self.assertEqual(("upstream", True, retry_after), (
+                    raised.exception.to_error_detail().category,
+                    raised.exception.to_error_detail().retryable,
+                    raised.exception.retry_after_ms))
+        with self.assertRaises(RateLimitedError) as raised:
+            _raise_for_status(429, 3000)
+        self.assertEqual(3000, raised.exception.retry_after_ms)
+
     def test_pool_has_spare_login_connection_and_browser_versions_align(self):
         self.assertEqual(25, CONNECTION_POOL_SIZE)
         session = _build_session()

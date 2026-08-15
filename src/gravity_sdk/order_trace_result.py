@@ -27,7 +27,7 @@ _STATUS_CODES = {
 _FAILURE_CODES = {
     "parent_required": frozenset({ErrorCode.PARENT_REQUIRED.value}),
     "permission_unavailable": frozenset({ErrorCode.PERMISSION_UNAVAILABLE.value}),
-    "semantic_error": frozenset({ErrorCode.UPSTREAM_UNAVAILABLE.value}),
+    "semantic_error": frozenset({ErrorCode.INPUT_INVALID.value}),
     "unavailable": frozenset(
         {
             ErrorCode.NOT_IMPLEMENTED.value,
@@ -45,6 +45,7 @@ _STAGE_STATUSES = frozenset(
 _SAFE_ACTIONS = {
     "parent": "Inspect the parent read receipt and retry this bounded natural day.",
     "child": "Inspect the child read category and retry the same bounded trace.",
+    "caller": "Correct the rejected App, date, or trace input before retrying.",
     "contract": "Stop automation until the Order Split Trace contract is re-verified.",
     "budget": "Increase max_items within the documented bound and retry.",
 }
@@ -117,7 +118,11 @@ def failure_result(
     """Build a value-free failure without copying native text or inputs."""
 
     normalized_code = _safe_code(code)
-    action_key = "budget" if normalized_code == ErrorCode.PAGINATION_LIMIT.value else stage
+    action_key = (
+        "budget" if normalized_code == ErrorCode.PAGINATION_LIMIT.value
+        else "caller" if normalized_code == ErrorCode.INPUT_INVALID.value
+        else stage
+    )
     action = _SAFE_ACTIONS.get(action_key, _SAFE_ACTIONS["contract"])
     detail = ErrorDetail.create(
         normalized_code,

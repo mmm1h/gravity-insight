@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import base64
+import email.utils
 import hashlib
 import json
+import math
 import os
 import threading
 from dataclasses import dataclass, field
@@ -24,7 +26,13 @@ from .credential_storage import (
     save_account_credentials,
     session_path,
 )
-from .errors import AuthenticationError, CredentialError
+from .errors import (
+    AuthenticationError,
+    CredentialError,
+    GravityInsightError,
+    RateLimitedError,
+    TransportError,
+)
 
 
 GRAVITY_HOST = "https://api-insight.gravity-engine.com"
@@ -361,7 +369,7 @@ class CredentialProvider:
                 payload = self._login(config.username, config.password)
             else:
                 payload = self._http_login(config.username, config.password)
-        except CredentialError:
+        except GravityInsightError:
             raise
         except Exception as exc:
             raise AuthenticationError("Gravity login failed") from exc
@@ -386,7 +394,7 @@ class CredentialProvider:
         if self._login_request is not None:
             try:
                 payload = self._login_request(body, self._timeout)
-            except CredentialError:
+            except GravityInsightError:
                 raise
             except Exception as exc:
                 raise AuthenticationError("Gravity login request failed") from exc
@@ -406,15 +414,23 @@ class CredentialProvider:
                     allow_redirects=False,
                 )
             except Exception as exc:
-                raise AuthenticationError("Gravity login request failed") from exc
-            if getattr(response, "status_code", 500) != 200:
+                raise TransportError("Gravity login request failed") from exc
+            status = int(getattr(response, "status_code", 0))
+            if status == 429:
+                raise RateLimitedError(
+                    "Gravity login failed with HTTP 429",
+                    retry_after_ms=_retry_after_ms(response, self._clock()),
+                )
+            if status >= 500:
+                raise TransportError(f"Gravity login failed with HTTP {status}")
+            if status != 200:
                 raise AuthenticationError("Gravity login was rejected")
             try:
                 payload = response.json()
             except (TypeError, ValueError) as exc:
-                raise AuthenticationError("Gravity login returned invalid JSON") from exc
+                raise TransportError("Gravity login returned invalid JSON") from exc
         if not isinstance(payload, Mapping):
-            raise AuthenticationError("Gravity login returned an invalid envelope")
+            raise TransportError("Gravity login returned an invalid envelope")
         return payload
 
     def _credential_from_login(self, payload: Mapping[str, Any]) -> Credential:
@@ -422,13 +438,13 @@ class CredentialProvider:
             raise AuthenticationError("Gravity login was rejected")
         data = payload.get("data", payload)
         if not isinstance(data, Mapping):
-            raise AuthenticationError("Gravity login returned an invalid envelope")
+            raise TransportError("Gravity login returned an invalid envelope")
         user = data.get("user", data)
         if not isinstance(user, Mapping):
-            raise AuthenticationError("Gravity login did not return a user context")
+            raise TransportError("Gravity login did not return a user context")
         token = user.get("Authorization") or user.get("authorization") or user.get("token")
         if not isinstance(token, str) or not token.strip():
-            raise AuthenticationError("Gravity login did not return an authorization token")
+            raise TransportError("Gravity login did not return an authorization token")
         now = self._clock()
         explicit_expiry = _jwt_expiry(token) or _parse_datetime(
             str(user.get("expires_at") or data.get("expires_at") or "") or None
@@ -457,6 +473,44 @@ class CredentialProvider:
             UPDATED_KEY: updated.astimezone(SHANGHAI).isoformat(timespec="seconds"),
         }
         _atomic_update_env(session_path(self.env_path), updates)
+
+
+def _retry_after_ms(response: Any, now: datetime) -> int | None:
+    """Return a bounded server delay without inventing one when it is absent."""
+
+    headers = getattr(response, "headers", {})
+    value = headers.get("Retry-After") if isinstance(headers, Mapping) else None
+    if not value:
+        return None
+    try:
+        seconds = float(value)
+    except (TypeError, ValueError):
+        try:
+            retry_at = email.utils.parsedate_to_datetime(str(value))
+            if retry_at.tzinfo is None:
+                retry_at = retry_at.replace(tzinfo=timezone.utc)
+            seconds = (retry_at - now).total_seconds()
+        except (TypeError, ValueError, OverflowError):
+            return None
+    return math.ceil(max(0.0, min(seconds, 30.0)) * 1_000)
+
+
+def validated_login_payload(
+    status: int, payload: Any, retry_after_ms: int | None = None
+) -> Mapping[str, Any]:
+    """Separate credential rejection from transient or malformed login responses."""
+
+    if status == 429:
+        raise RateLimitedError(
+            "Gravity login failed with HTTP 429", retry_after_ms=retry_after_ms
+        )
+    if status >= 500:
+        raise TransportError(f"Gravity login failed with HTTP {status}")
+    if status != 200:
+        raise AuthenticationError("Gravity login was rejected")
+    if not isinstance(payload, Mapping):
+        raise TransportError("Gravity login returned invalid JSON")
+    return payload
 
 
 def _jwt_expiry(token: str) -> datetime | None:

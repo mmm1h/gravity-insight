@@ -1,5 +1,5 @@
 from __future__ import annotations
-import copy, unittest
+import copy, importlib, unittest
 
 from gravity_sdk.errors import InputValidationError, LocalIOError, PaginationError
 from gravity_sdk.material_performance import (
@@ -56,6 +56,17 @@ class _BatchClient:
             for request in reversed(requests)]
 
 class MaterialPerformanceTests(unittest.TestCase):
+    def test_semantic_rejection_code_is_consistent_across_product_sanitizers(self):
+        modules = ("advertiser_profile", "company_usage", "custom_audience", "material_performance_result", "order_trace_result", "promotion_performance_error", "title_package")
+        policies = [importlib.import_module(f"gravity_sdk.{name}")._FAILURE_CODES for name in modules]
+        self.assertEqual([{"INPUT_INVALID"}] * 7,
+                         [policy["semantic_error"] for policy in policies])
+        directory = importlib.import_module("gravity_sdk._order_directory_failure")
+        self.assertEqual(("INPUT_INVALID", {"INPUT_INVALID"}),
+                         (directory._STATUS_CODES["semantic_error"], directory._SPECIAL_STATUS_CODES["semantic_error"]))
+        semantic = _failure("semantic_error", "INPUT_INVALID", "caller")
+        self.assertEqual("semantic_error", safe_component(semantic, "tencent", max_pages=3)["status"])
+
     def test_fans_out_by_platform_with_canonical_bounds_and_order(self):
         client = _BatchClient()
         result = material_performance(

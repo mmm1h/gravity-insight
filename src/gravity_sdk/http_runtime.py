@@ -27,6 +27,7 @@ from .credentials import (
     GRAVITY_HOST,
     Credential,
     CredentialProvider,
+    validated_login_payload,
 )
 from .errors import (
     AuthenticationError,
@@ -265,6 +266,7 @@ class RuntimeResponse:
     payload: Any
     fetched_at: str
     headers: Mapping[str, str]
+    retry_after_ms: int | None = None
 
 
 class _GravityRequester:
@@ -321,6 +323,7 @@ class _GravityRequester:
             "Referer": profile.referer,
         }
         for attempt in range(request_attempts):
+            retry_after_ms = None
             self.limiter.acquire(GRAVITY_HOST, self.sleeper)
             try:
                 response = perform_http_request(self.session.request,
@@ -348,6 +351,7 @@ class _GravityRequester:
                     random_source=self.random_source,
                 )
                 self.limiter.defer(GRAVITY_HOST, delay)
+                retry_after_ms = int(delay * 1_000)
             if status in _RETRYABLE_STATUS and attempt + 1 < request_attempts:
                 if status != 429:
                     self.sleeper(self._backoff(attempt))
@@ -365,7 +369,7 @@ class _GravityRequester:
                 if isinstance(raw_headers, Mapping)
                 else {}
             )
-            return RuntimeResponse(status, payload, fetched_at, response_headers)
+            return RuntimeResponse(status, payload, fetched_at, response_headers, retry_after_ms)
         raise TransportError("Gravity request failed after bounded retries")
 
     def login(self, body: Mapping[str, Any], timeout: float) -> Mapping[str, Any]:
@@ -376,11 +380,7 @@ class _GravityRequester:
             json_body=body,
             timeout=timeout,
         )
-        if response.status_code != 200:
-            raise AuthenticationError("Gravity login was rejected")
-        if response.payload is None:
-            raise AuthenticationError("Gravity login returned invalid JSON")
-        return response.payload
+        return validated_login_payload(response.status_code, response.payload, response.retry_after_ms)
 
     def _backoff(self, attempt: int) -> float:
         base = float(min(2 ** (attempt + 1), 8))

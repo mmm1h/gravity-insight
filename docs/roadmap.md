@@ -762,3 +762,41 @@ user-property metadata、4 次 retention query、3 次 Segment evaluation、4 �
 输入能力未减少：Retention 仅扩大安全 aggregate 投影；#15/#17 新拒绝的精确形状已有重复线上失败
 证据，从“发出必失败请求”提升为可机械修复的 caller error；其他 Segment event 与 Property group
 路径不变。operation 总数仍为 185。
+
+## 失败与降级路径一致性审计（2026-08-15）
+
+本轮以 fake session、stub client 和离线 manifest 覆盖 HTTP 429/5xx/连接故障、认证与权限、坏响应、
+明确空、semantic rejection、分页中断/safe-max，以及多组件 partial；生产 HTTP 请求 **0 次**。
+矩阵按共享边界选代表格，而不是制造 11 × 24 个重复组合：HTTP/runtime 覆盖所有 Insight、SQL、
+composite 和 Plan 列，所有拥有 semantic sanitizer 的产品则逐个检查。修复前新增回归集实际得到
+`11 failed, 1 passed`，证明两类缺陷；修复后同一断言全部通过。
+
+- 8 个产品边界仍把 native `INPUT_INVALID` semantic receipt 当作旧
+  `UPSTREAM_UNAVAILABLE`：advertiser profile、company usage、custom audience、material
+  performance、promotion performance、title package、order directory、order split trace。结果会被
+  重写为 contract drift/upstream/exit 3。现统一为 `INPUT_INVALID/caller/retryable=false/exit 2`，
+  order 两产品同时给出修正 App/date/domain input 的 caller action。
+- credential login/refresh 把最终 HTTP 503、HTTP 429、畸形/截断 JSON 全包装为
+  `AuthenticationError/caller/retryable=false/exit 2`。现保留 transport 类型：503 和坏响应为
+  `UPSTREAM_UNAVAILABLE`，429 为带 bounded `retry_after_ms` 的 `RATE_LIMITED`，均
+  upstream/retryable/exit 3；真正的 credential 缺失、4xx 拒绝和 semantic auth rejection 仍为
+  caller/non-retryable/exit 2。业务 429 也把同一 cooldown delay 交给错误 receipt。
+
+按调用方可观察路径，分类错 **11 处 = 8 个 caller→upstream + 3 个 upstream→caller**；按策略族
+是 2 类。`retryable` 布尔值错 **3 处**，即登录最终 503、坏响应、429 的 false→true。8 个 semantic
+子路径的旧 contract-drift receipt 本来也是 false，所以它们是分类/status/exit 错，不重复计入
+retryable 数。跨产品共审出 4 类差异：上述 2 类无合理领域原因，已统一；另 2 类保留——direct read
+的 `semantic_error`、产品项的 `error` 与 Plan 聚合的 `partial` 描述不同 envelope 层级，错误身份仍
+一致；单组件 page 2 失败不发布不完整 page 1，而 composite 保留已完整成功的独立兄弟，避免用不完整
+前缀做分析。
+
+这是两组显式破坏性分类变更。依赖上述 8 个产品 exit 3/upstream 自动重试或可用性告警的 direct
+SDK/CLI、Plan、Agent 消费者，应改为按 caller/exit 2 修正字段并停止重试；partial 中已成功兄弟仍可
+消费。Insight/SQL 刷新链路的消费者则应停止把 503/429/坏登录响应提示成“换凭据”，改为遵守总重试
+预算和 `retry_after_ms`；真正的密码/令牌拒绝仍要求调用方处理。仓库外 `work-dashboard` 的迁移由其
+consumer release 执行，本仓库不添加兼容别名或双重 envelope。
+
+没有新增 operation、请求形状、投影、CLI 参数、SDK 方法或分析动线：operation
+**185 + 0 - 0 = 185**；动线 **48 + 0 = 48**，闭环分布仍为 **32 / 0 / 16**。质量 baseline
+只删除已改善的 `Transport.request` complexity 16 项，没有放宽任何阈值。既有 composite
+result/error/pagination 模型差异继续按技术债裁决保留，不借本轮建立通用错误 DSL。

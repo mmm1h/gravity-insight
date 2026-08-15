@@ -35,7 +35,7 @@ _FAILURE_CODES = {
     "contract_changed": frozenset({ErrorCode.CONTRACT_CHANGED.value}),
     "parent_required": frozenset({ErrorCode.PARENT_REQUIRED.value}),
     "permission_unavailable": frozenset({ErrorCode.PERMISSION_UNAVAILABLE.value}),
-    "semantic_error": frozenset({ErrorCode.UPSTREAM_UNAVAILABLE.value}),
+    "semantic_error": frozenset({ErrorCode.INPUT_INVALID.value}),
     "unavailable": frozenset(
         {
             ErrorCode.NOT_IMPLEMENTED.value,
