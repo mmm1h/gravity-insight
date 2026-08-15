@@ -16,6 +16,7 @@ gravity run <selector>        单进程解析并执行 recipe 或 operation
 gravity sql <command>         受控 SQL 产品
 gravity census <command>      前端路由盘点
 gravity analysis context      并发读取一个 App 的分析上下文
+gravity analysis defaults     读取一个 App 的 Analysis 默认值字典
 gravity analysis dashboard snapshot  读取一个看板的控制面快照
 gravity analysis dashboard prepare|run  编译或执行一个看板的受支持图表
 gravity analysis segment snapshot  读取一个分群的详情、历史与单日计算结果
@@ -241,6 +242,7 @@ workspace 已绑定的 App alias，并按 alias 排序。外层并发保序且�
 
 ```powershell
 gravity analysis context --app main --concurrency 6
+gravity analysis defaults --app main
 gravity analysis dashboard snapshot --app main --ref <id-or-exact-name> --concurrency 5
 gravity analysis segment snapshot --app main --ref <id-or-exact-name> --date <YYYY-MM-DD> --concurrency 3
 gravity apps snapshot --app main --concurrency 6
@@ -252,6 +254,10 @@ context 固定 13 个词汇/模板来源，App snapshot 固定 6 个治理来源
 覆盖当前 8 个 stable attribution operation，其中两个 postback map 自动读取全部页。这三者
 默认并发 6；Dashboard snapshot 默认 5，Segment snapshot 默认 3；所有组合上限均为 24，按固定来源顺序返回并隔离局部
 失败。Attribution snapshot 不包含仍为 draft 的聚合归因和用户/设备级明细查询。
+
+`analysis defaults` 一次读取调用方精确选择 App 的已登记 SDK 默认值字典，结果 schema 为
+`gravity-insight.analysis-default-dictionary.v1`。当前完整键集合为 `api` 与 `cocoscreator`，
+值均为 string array；两键全部暴露，新增键不会静默透传而是返回合同漂移。
 
 ### Governed export
 

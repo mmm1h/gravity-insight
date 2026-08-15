@@ -692,6 +692,25 @@ Agent 卡的 request 保留 `app/ref/start/end` 可机械填写槽位且不会�
 固定 1 worker，只把 `max_pages` 用于精确名称目录解析；成员数触及 `max_items` 时返回
 `partial` / exit 3。只有 `/app` 可 binding，`ref/fields/segment_version_id` 必须是 literal。
 
+## Analysis Default Dictionary composite
+
+一个 App 的 Analysis SDK 默认值使用单请求 `analysis_default_dictionary` composite：
+
+```json
+{
+  "id": "analysis_defaults",
+  "kind": "composite",
+  "request": {"name": "analysis_default_dictionary", "app": "main"},
+  "limits": {"max_pages": 1, "max_items": 10},
+  "output_fields": ["operation_id", "dictionary_count", "value_count", "data"]
+}
+```
+
+只有 `/app` 可接受标量 binding；route 无分页，adapter 不创建内部 worker。结果 schema 为
+`gravity-insight.analysis-default-dictionary.v1`，只交付登记的 `api/cocoscreator` string array；
+新增字典键 fail-closed。已知 App 时一次 Plan；能力未知但 App 已知时是一次 Agent 发现加一次 Plan，
+App 也未知时 `gravity.agent-call-bound.v1` 明确声明三次下界。
+
 预检完整验证 schema、依赖、环、pointer、kind、动态 target 与最坏预算；失败时零网络请求。
 节点仅限 `run`、`sql_product`、`metadata_search`、`composite`，不接受裸 SQL、任意
 HTTP/Python、表达式、join/reduce、条件或循环。

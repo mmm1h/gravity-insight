@@ -39,7 +39,6 @@ _TIER_ONE_IDS = frozenset(
 
 _TIER_TWO_IDS = frozenset(
     {
-        "analysis.default_val.list",
         "analysis.realtime_event.list",
         "material.material_creative_person.list",
         "promotion.company.list",

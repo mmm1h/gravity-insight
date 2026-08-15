@@ -69,6 +69,7 @@ sql_result = gravity.query_sql_products(
 
 # 固定组合复用同一个 workspace App alias，并在组合外层并发。
 analysis = gravity.analysis_context("main", max_workers=6)
+defaults = gravity.analysis_default_dictionary("main")
 dashboard = gravity.dashboard_snapshot("main", "Growth Overview", max_workers=5)
 prepared_dashboard = gravity.prepare_dashboard_analysis(
     "main", "Growth Overview", start="2026-08-01", end="2026-08-08"
@@ -191,6 +192,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `business_pulse()` | 并发读取 App 经营概览与趋势，可选 workspace scope 小时对比 |
 | `company_usage()` | 完整读取 company scope 的按日资源用量趋势，无 App/日期输入 |
 | `analysis_context()` | 固定 13 个 Analysis 词汇/模板来源，外层并发、局部失败隔离 |
+| `analysis_default_dictionary()` | 读取一个 App 的 `api/cocoscreator` 默认值字典；新增键 fail-closed |
 | `dashboard_snapshot()` | 按稳定 ID 或精确名称读取一个看板的 5 源控制面快照；不执行图表 |
 | `prepare_dashboard_analysis()` / `run_dashboard_analysis()` | 编译或并发执行看板中受支持的五类 Analysis 图表；保序并隔离单图失败 |
 | `app_snapshot()` | 固定 6 个 App 治理来源，明确 company/App scope |

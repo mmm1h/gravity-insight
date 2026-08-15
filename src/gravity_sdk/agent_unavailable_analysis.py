@@ -12,16 +12,6 @@ from .agent_intent_text import affirmative_intent_text
 def unavailable_analysis_gap(query: str) -> dict[str, Any] | None:
     selected = affirmative_intent_text(query)
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
-    if _analysis_defaults(selected, words):
-        return unavailable_gap(
-            query, code="ANALYSIS_DEFAULT_DICTIONARY_CONTRACT_MISSING",
-            journey="analysis_default_dictionary",
-            reason="The dynamic default-dictionary item keys lack a non-empty registered contract.",
-            next_action=(
-                "Capture one authorized non-empty shape-only response, register every "
-                "observed key and type with synthetic fixtures, then run compiler and quality checks."
-            ),
-        )
     if _realtime_event_catalog(selected, words):
         return unavailable_gap(
             query, code="REALTIME_EVENT_CATALOG_CONTRACT_MISSING",
@@ -75,13 +65,6 @@ def unavailable_analysis_gap(query: str) -> dict[str, Any] | None:
             argv=["gravity", "export", "list-capabilities"],
         )
     return None
-
-
-def _analysis_defaults(selected: str, words: frozenset[str]) -> bool:
-    return (
-        {"default", "dictionary"} <= words
-        and bool(words & {"analysis", "value", "values"})
-    ) or ("默认值" in selected and "字典" in selected)
 
 
 def _realtime_event_catalog(selected: str, words: frozenset[str]) -> bool:

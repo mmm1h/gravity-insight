@@ -5,15 +5,15 @@
     "accounted_experimental": 6,
     "accounted_export_candidate": 22,
     "accounted_permission_unavailable": 1,
-    "accounted_read_candidate": 313,
+    "accounted_read_candidate": 312,
     "accounted_unsupported": 58,
-    "covered_executable": 172
+    "covered_executable": 173
   },
   "callability_summary": {
-    "candidate": 335,
+    "candidate": 334,
     "catalog_only": 8,
     "contract_only": 414,
-    "executable": 172,
+    "executable": 173,
     "unsupported": 58
   },
   "classification_policy": {
@@ -856,9 +856,9 @@
     }
   ],
   "family_summary": {
-    "coverage_ratio": 0.233236,
+    "coverage_ratio": 0.233918,
     "families": 45,
-    "uncovered_read_routes": 343,
+    "uncovered_read_routes": 342,
     "uncovered_read_routes_with_family": 80
   },
   "manifest_reconciliation": {
@@ -926,6 +926,14 @@
         "method": "GET",
         "operation_id": "analysis.dashboard.tree",
         "path": "/turbo_engine/api/v2/datamanageconfig/kanban/tree/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "analysis.json",
+        "method": "POST",
+        "operation_id": "analysis.default_val.list",
+        "path": "/turbo_engine/api/v2/event/conf_event_meta/default_val/list/",
         "similar_frontend_routes": []
       },
       {
@@ -2284,20 +2292,20 @@
       }
     ],
     "previously_missing_breakdown": {
-      "a_previously_unfetched_chunk": 172,
+      "a_previously_unfetched_chunk": 173,
       "b_normalization_false_gap_fixed": 0,
       "c_manifest_route_absent_from_frontend": 4
     },
-    "stable_operations": 176,
+    "stable_operations": 177,
     "summary": {
       "manifest_route_absent_from_frontend": 4,
-      "newly_covered_from_previously_unfetched_chunk": 172
+      "newly_covered_from_previously_unfetched_chunk": 173
     }
   },
   "manifest_summary": {
     "manifest_files": 11,
-    "operations": 185,
-    "stable_operations": 176
+    "operations": 186,
+    "stable_operations": 177
   },
   "module_summary": [
     {
@@ -2357,11 +2365,11 @@
       "uncovered_read": 20
     },
     {
-      "covered": 17,
+      "covered": 18,
       "module": "其它",
       "total": 139,
-      "uncovered": 122,
-      "uncovered_read": 54
+      "uncovered": 121,
+      "uncovered_read": 53
     }
   ],
   "promotion_gap_matrix": [
@@ -4370,7 +4378,7 @@
   ],
   "read_cost_summary": {
     "中": 73,
-    "低": 145,
+    "低": 144,
     "高": 125
   },
   "reservation_summary": {
@@ -55724,15 +55732,15 @@
     },
     {
       "business_module": "其它",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "w"
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "flat list/detail lookup with no evident parent dependency",
-      "estimated_implementation_cost": "低",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 40210,
         "file": "raw/web.gravity-engine.com/assets/Debug-hpZqESZ9.js",
@@ -55740,8 +55748,16 @@
         "offset": 40209,
         "url": "https://web.gravity-engine.com/assets/Debug-hpZqESZ9.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "POST",
+          "operation_id": "analysis.default_val.list",
+          "path": "/turbo_engine/api/v2/event/conf_event_meta/default_val/list/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "POST",
       "method_certainty": "high",
       "method_evidence": [
@@ -55754,16 +55770,16 @@
       "raw_paths": [
         "/event/conf_event_meta/default_val/list/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "read_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "增加或减少一个用户的某个 NUMBER 类型的 Profile 值",
         "存在则忽略，不存在则会自动创建",
@@ -59862,14 +59878,14 @@
   "summary": {
     "accounted": 987,
     "accounting_complete": true,
-    "callable_covered": 172,
-    "covered": 172,
+    "callable_covered": 173,
+    "covered": 173,
     "total_routes": 987,
     "unaccounted": 0,
     "unclassified": 0,
     "uncovered_auth_or_proxy": 30,
     "uncovered_export": 22,
-    "uncovered_read": 343,
+    "uncovered_read": 342,
     "uncovered_write": 414,
     "unsupported_non_api": 6
   }
