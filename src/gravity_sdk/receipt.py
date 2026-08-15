@@ -13,6 +13,10 @@ from pathlib import Path
 from typing import Any, Callable, Iterator, Mapping
 
 from .fingerprints import shape_fingerprint
+from .receipt_retention import (
+    http_receipt_path,
+    prune_http_receipts_after_write,
+)
 from .result_output import write_rendered_result
 
 
@@ -195,11 +199,12 @@ def persist_http_receipt(receipt: Mapping[str, Any], state_root: Path) -> Path:
     """Publish one completed-request receipt with file and replace durability."""
 
     receipt_id = str(receipt.get("receipt_id", "unknown"))
-    path = state_root / "receipts" / "http" / f"{receipt_id}.json"
+    path = http_receipt_path(state_root, receipt_id)
     rendered = json.dumps(
         dict(receipt), ensure_ascii=False, sort_keys=True, separators=(",", ":")
     ) + "\n"
     write_rendered_result(str(path), rendered)
+    prune_http_receipts_after_write(state_root)
     return path
 
 

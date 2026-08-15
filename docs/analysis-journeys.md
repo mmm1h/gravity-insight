@@ -25,6 +25,11 @@ transport 在 response 返回后、任何本地投影/分页/组件处理前，�
 `state_root/receipts/http/`；partial/error envelope 即使按既有安全合同省略组件内部结果，调用方仍可从
 该私有账本核对 method、合同 path、operation、status、页码和 retry attempt。
 
+同日的有界保留修正仍是横切可靠性工作，不新增产品、入口或 envelope：默认只保留最近 10,000 个且
+不老于 7 天的已结束运行 HTTP receipt，活动运行全部保护；首次写后及每 64 次写后以非阻塞 lease
+best-effort 清理。故台账仍为 `48 → +0 = 48`，`32 / 0 / 16 → +0 / +0 / +0 = 32 / 0 / 16`。
+逐 HTTP 文件没有公开读取 API，目前只用于知道私有 state root 的事后诊断，不据此新增分析动线。
+
 事件、漏斗、留存、属性四行的“已知 1 次”同时覆盖显式多 App：同一 spec 用
 `gravity.analysis-query-batch.v2` 的 `apps` 数组一次执行，逐 App 组件返回且不聚合。scatter 和其余
 产品仍按当前单 App/同层 Plan 合同，不据此增加新动线或改变下表计数。

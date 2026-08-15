@@ -860,6 +860,8 @@ token 由 SDK 私有缓存维护。不要把 token、Cookie 或密码作为命�
 
 Resolver Receipt 写在 workspace 对应的私有缓存 `state_root/receipts/`。`input_shape_fingerprint` 只哈希字段、容器结构和标量类型；相同结构换筛选值仍得到同一指纹。每个真实 HTTP response 另在 `state_root/receipts/http/` 同步写入 `gravity.http-receipt.v1`；它只记录 method、合同 path、operation、status、完成时刻、页码、attempt/retry 和请求 shape fingerprint，不记录请求值、响应体或凭据。该逐请求账本先于本地投影、分页聚合与 composite/Plan envelope 组装完成。
 
+逐 HTTP receipt 默认按数量与时间两者的更严格边界保留：最近 10,000 个且不老于 7 天，活动运行的全部 receipt 例外。可用正整数环境变量 `GRAVITY_HTTP_RECEIPT_MAX_FILES`、`GRAVITY_HTTP_RECEIPT_MAX_AGE_DAYS` 覆盖；非法值回退默认值。清理在当前 receipt 同步落盘后 best-effort 执行，失败只写 warning。该目录没有公开 list/get/export 命令，不应由调用方以 glob 当作稳定 API。
+
 ## 输出与退出码
 
 CLI 尽量输出带 `schema_version`、`status`、计数和结构化错误的 JSON envelope。业务数据是否为空与请求是否成功是两个维度。支持的 Windows shell 中，stdout/stderr 的文本 JSON 确定性地使用 UTF-8，不继承系统 ANSI code page；本地控制台或文件 I/O 失败属于 local/4。

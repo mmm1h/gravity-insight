@@ -223,6 +223,36 @@ transport 时仍可能缺 receipt。后两类都不宣称属于逐上游 wire-ho
 `48 = 32 / 0 / 16 → +0 / +0 / +0 = 48 = 32 / 0 / 16`。质量债只收紧：
 `http_runtime.py` 文件 SLOC ratchet `680 → -3 = 677`。本单元生产 HTTP 为 0。
 
+### 生产 HTTP 请求收据有界保留裁决（2026-08-15）
+
+**裁决：只保留同时属于最近 10,000 个且不老于 7 天的已结束运行 receipt；活动运行的全部
+receipt 不受数量和时间清理。** 两个正整数可分别由 `GRAVITY_HTTP_RECEIPT_MAX_FILES` 和
+`GRAVITY_HTTP_RECEIPT_MAX_AGE_DAYS` 覆盖；缺失、空白或非法值回退有限默认值，不提供因漏配置而
+无限增长的模式。v1 紧凑 JSON 每个约数百字节，10,000 个约 3–5 MiB 内容；按常见 4 KiB 分配单元
+约 40 MiB，另有目录项元数据。窗口是 `min(7 天, 10,000 / 实际 HTTP response 速率)`：100 次/天
+约 7 天，1 次/分钟约 6.9 天，1,000 次/小时约 10 小时。
+
+清理严格在当前 receipt 沿用 write/flush/fsync/atomic replace **成功返回以后**执行，不能进入 response
+返回与同步落盘之间。每个进程对每个 state root 首次成功写后扫一次，此后每 64 次写扫一次；10,000
+文件稳态下摊销约 157 个目录项检查/次写。进程间只竞争非阻塞 prune lease，拿不到立即跳过；私有文件名
+带 PID 与 run ID，清理器从已发布文件自身识别并排除所有存活进程的运行。写入仍用独立临时文件和
+atomic replace，清理只看已经发布的 `*.json`，因此不会碰别人正在写的临时文件。PID
+复用最多延后旧运行回收，不会把活动运行误判为可删。
+
+任何配置、租约、列举、stat 或 unlink 失败都留在 best-effort 边界，只追加固定
+`gravity_http_receipt_prune_failed`（非法配置另有固定 retention warning），不改变成功结果，也不覆盖
+后续解析/投影抛出的原始异常。两个硬约束意味着目录可以暂时超过默认值：两次 sweep 之间最多新增 63
+个；所有并发活动运行 receipt 继续保留；不可删除目标留到后续 sweep 并告警。真实子进程回归覆盖数量与
+时间配置、10,000/7 默认值、不可 unlink 目标不改 200 结果、两个重叠进程互相清理时两边当前 receipt
+都在；原强杀、投影/合同失败、分页中断和 retry 耐久测试继续通过。
+
+这些 HTTP receipt 当前**没有公开读取入口**：源码只有写入/清理，CLI/SDK 不提供 list/get/export，公开
+Resolver envelope 也不引用逐 HTTP 文件。它们目前给知道私有 `state_root` 布局的维护者或调用方做人肉
+事后排查，不是可承诺的程序化消费面。因此本轮不把私有文件布局升格为 API；若出现真实消费需求，应另轮
+先定义只读查询 envelope、稳定排序/分页和缺口语义，再据消费 SLA 重评 7 天/10,000 默认值，不能直接让
+调用方依赖目录 glob。本裁决不改 receipt schema、公开 envelope 或产品能力：operation
+`185 → +0 = 185`；产品动线 `48 = 32 / 0 / 16 → +0 / +0 / +0 = 48 = 32 / 0 / 16`；生产 HTTP 0 次。
+
 D32 本轮先估 22 次、实际只发 5 次最小 stable 根读取；5 次均为 HTTP 200 空样本。复用 D33
 的 Bilibili/Huya 3 次证据后，七个平台中只有 Bilibili account 曾非空，但其 advertiser 为空；
 其余六个平台在允许的根读取或最短单日 advertiser 窗口内均为空。没有权限失败、合同漂移、重试、
