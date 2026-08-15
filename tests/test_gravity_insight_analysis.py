@@ -1291,7 +1291,12 @@ class GravityInsightAnalysisTests(unittest.TestCase):
                     },
                     kwargs["body"],
                 )
-                return page([{"ClientID": "client-1"}], page_size=20)
+                return page([{
+                    "ClientID": "client-1",
+                    "Name": "member",
+                    "WXOpenID": "open-id",
+                    "device_info": {"Imei": "device-id"},
+                }], page_size=20)
             raise AssertionError(path)
 
         client, _transport = client_for(
@@ -1303,10 +1308,17 @@ class GravityInsightAnalysisTests(unittest.TestCase):
         )
         result = client.read(
             "analysis.segment.user_detail.list",
-            {"app_id": "101", "segment_id": "8", "fields": ["ClientID"]},
+            {
+                "app_id": "101",
+                "segment_id": "8",
+                "fields": ["ClientID", "Name", "WXOpenID", "device_info"],
+            },
         )
         self.assertEqual("success", result["status"])
         self.assertEqual("client-1", result["data"]["list"][0]["ClientID"])
+        self.assertEqual("member", result["data"]["list"][0]["Name"])
+        self.assertEqual("open-id", result["data"]["list"][0]["WXOpenID"])
+        self.assertEqual("device-id", result["data"]["list"][0]["device_info"]["Imei"])
         self.assertEqual(1, result["data"]["page_info"]["total_page"])
         self.assertIsNone(result["page"])
 

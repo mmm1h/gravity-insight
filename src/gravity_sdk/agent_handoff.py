@@ -248,10 +248,8 @@ def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
         from .agent_dashboard import dashboard_analysis_plan_request
 
         return dashboard_analysis_plan_request(card)
-    if composite == "segment_snapshot":
-        from .agent_segment_snapshot import segment_snapshot_plan_request
-
-        return segment_snapshot_plan_request(card)
+    if composite in {"segment_snapshot", "segment_members"}:
+        return _segment_plan_request(str(composite), card)
     if composite == "saved_analysis":
         from .agent_saved_analysis import saved_analysis_plan_request
 
@@ -299,6 +297,18 @@ def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
 
         return bilibili_account_performance_plan_request(card)
     return {"name": composite}
+
+
+def _segment_plan_request(
+    composite: str, card: Mapping[str, Any]
+) -> dict[str, Any]:
+    if composite == "segment_members":
+        from .agent_segment_members import segment_members_plan_request
+
+        return segment_members_plan_request(card)
+    from .agent_segment_snapshot import segment_snapshot_plan_request
+
+    return segment_snapshot_plan_request(card)
 
 
 def _handoff_requirements(

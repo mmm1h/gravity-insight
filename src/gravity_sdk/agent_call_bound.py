@@ -53,6 +53,15 @@ _REFERENCE_SOURCES: Mapping[str, tuple[str, list[str], str, bool]] = {
         "GravitySDK.read_all",
         True,
     ),
+    "segment_members": (
+        ANALYSIS_SEGMENT,
+        [
+            "gravity", "run", ANALYSIS_SEGMENT, "--input", "<app-input.json>",
+            "--all-pages", "--format", "ndjson",
+        ],
+        "GravitySDK.read_all",
+        True,
+    ),
     "analysis_template": (
         "analysis.template.catalog",
         ["gravity", "analysis", "template", "list"],

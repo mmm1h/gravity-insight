@@ -668,6 +668,30 @@ Agent 卡的 request 保留 `app/ref/start/end` 可机械填写槽位且不会�
 标识、规则定义、request、binding 值或原始异常。已知输入时一次 `plan run`；未知时 Agent 强
 意图卡给出 `app/ref/date` 占位符，调用方补齐并执行，仍是“发现一次 + Plan 一次”。
 
+## Segment Members composite
+
+成员名单与逐人属性使用同一 Segment family router 下的 `segment_members`：
+
+```json
+{
+  "id": "segment_members",
+  "kind": "composite",
+  "request": {
+    "name": "segment_members",
+    "app": "main",
+    "ref": "High-value users",
+    "fields": ["Name", "ClientID", "user$level"]
+  },
+  "limits": {"max_pages": 5, "max_items": 100000},
+  "output_fields": ["segment", "fields", "complete", "data"]
+}
+```
+
+`fields` 省略时交付完整登记 profile；动态项必须来自 live user-property metadata。可选
+`segment_version_id` 选择历史版本，日期不是此 route 的输入。上游忽略分页输入，因此 adapter
+固定 1 worker，只把 `max_pages` 用于精确名称目录解析；成员数触及 `max_items` 时返回
+`partial` / exit 3。只有 `/app` 可 binding，`ref/fields/segment_version_id` 必须是 literal。
+
 预检完整验证 schema、依赖、环、pointer、kind、动态 target 与最坏预算；失败时零网络请求。
 节点仅限 `run`、`sql_product`、`metadata_search`、`composite`，不接受裸 SQL、任意
 HTTP/Python、表达式、join/reduce、条件或循环。

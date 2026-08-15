@@ -1,0 +1,1356 @@
+{
+  "schema_version": "gravity-insight.probe-evidence.v1",
+  "operation_id": "analysis.segment.user_detail.list",
+  "probed_at": "2026-08-15T19:47:55.623646+08:00",
+  "successful": true,
+  "conclusion": "nonempty_schema_confirmed",
+  "probe_mode": "bounded_contract_verification",
+  "route": {
+    "family": "analysis.segment.user_detail.list",
+    "method": "POST",
+    "path": "/report/api/v3/dataanalysis/segment/user/detail/list/"
+  },
+  "http": [
+    {
+      "operation_id": "analysis.segment.user_detail.list",
+      "method": "POST",
+      "http_status": 200,
+      "purpose": "first_nonempty_envelope",
+      "request_shape": {
+        "fields": [
+          "app_id",
+          "tmp_segment_id",
+          "segment_id",
+          "to_update_segment"
+        ],
+        "page": 1,
+        "page_size": 1
+      },
+      "response_shape_fingerprint": "9758dfcd5988bacade76e88efa536bb6d4fd897a0700f0caf1e36dc50a74849f"
+    },
+    {
+      "operation_id": "analysis.segment.user_detail.list",
+      "method": "POST",
+      "http_status": 200,
+      "purpose": "complete_item_profile_and_local_fields",
+      "request_shape": {
+        "fields": [
+          "app_id",
+          "tmp_segment_id",
+          "segment_id",
+          "to_update_segment"
+        ],
+        "upstream_fields_sent": false
+      },
+      "response_shape_fingerprint": "9758dfcd5988bacade76e88efa536bb6d4fd897a0700f0caf1e36dc50a74849f"
+    },
+    {
+      "operation_id": "analysis.segment.user_detail.list",
+      "method": "POST",
+      "http_status": 200,
+      "purpose": "pagination_behavior_verification",
+      "request_shape": {
+        "fields": [
+          "app_id",
+          "tmp_segment_id",
+          "segment_id",
+          "to_update_segment"
+        ],
+        "page": 2,
+        "page_size": 1
+      },
+      "response_shape_fingerprint": "9758dfcd5988bacade76e88efa536bb6d4fd897a0700f0caf1e36dc50a74849f"
+    }
+  ],
+  "response_schema_sketch": {
+    "schema_version": "gravity-insight.raw-schema-sketch.v1",
+    "paths": [
+      {
+        "path": "$.code",
+        "presence": "observed",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "path": "$.data",
+        "presence": "observed",
+        "types": [
+          "object"
+        ]
+      },
+      {
+        "path": "$.data.list",
+        "presence": "observed",
+        "types": [
+          "array"
+        ]
+      },
+      {
+        "path": "$.data.list[].AdAid",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].AdCid",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].AdClickTime",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].AdGid",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].AdPlatform",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].AdvertiserID",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].CSite",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].Channel",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].ClientID",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].CreateTime",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].LatestLoginDay",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].Name",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].ReAttributeAdAid",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].ReAttributeAdCid",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].ReAttributeAdClickTime",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].ReAttributeAdGid",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].ReAttributeAdPlatform",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].ReAttributeAdvertiserID",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].ReAttributeCSite",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].ReAttributeChannel",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].ReAttributeCreateTime",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].ReAttributeTurboPromotedObjectID",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].RetargetingCount",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].TurboPromotedObjectID",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].Version",
+        "presence": "observed",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "path": "$.data.list[].WXOpenID",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].device_id",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].device_info",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].modify_time",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].re_attribute_info",
+        "presence": "observed",
+        "types": [
+          "object"
+        ]
+      },
+      {
+        "path": "$.data.list[].re_attribute_info.ReAttributeRetargetingCount",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ad_24h_avg_ecpm",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ad_24h_count",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ad_24h_ltv",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ad_avg_ecpm",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ad_count",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ad_ltv",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ad_max_ecpm",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$attribution_count",
+        "presence": "observed",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$banner_24h_count",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$banner_ad_24h_avg_ecpm",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$banner_ad_24h_ltv",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$banner_ad_avg_ecpm",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$banner_ad_count",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$banner_ad_ltv",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$banner_ad_max_ecpm",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$brand",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$bundle_id",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$channel",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$city",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$click_channel",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$country",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ea_advertiser_id",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ea_advertiser_id_reattribute",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ea_aid",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ea_aid_reattribute",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ea_cid",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ea_cid_reattribute",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ea_click_company",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ea_click_company_reattribute",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ea_click_time",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ea_click_time_reattribute",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ea_cum_reattribute",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ea_gid",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ea_gid_reattribute",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ea_id",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ea_id_reattribute",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ea_impression_time",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ea_impression_time_reattribute",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ea_receive_time",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ea_receive_time_reattribute",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$first_pay_method",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$first_pay_reason",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$first_pay_time",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$first_scene",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$interstitial_24h_count",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$interstitial_ad_24h_avg_ecpm",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$interstitial_ad_24h_ltv",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$interstitial_ad_avg_ecpm",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$interstitial_ad_count",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$interstitial_ad_ltv",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$interstitial_ad_max_ecpm",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$latest_attribution_company",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$latest_attribution_time",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$latest_reactive_time",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$manufacturer",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$model",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$native_24h_count",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$native_ad_24h_avg_ecpm",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$native_ad_24h_ltv",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$native_ad_avg_ecpm",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$native_ad_count",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$native_ad_ltv",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$native_ad_max_ecpm",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$os",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$os_version",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$pay_amount_sum",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$pay_count",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$pay_max_amount",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$province",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$reactive_count",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$reward_24h_count",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$reward_ad_24h_avg_ecpm",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$reward_ad_24h_ltv",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$reward_ad_avg_ecpm",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$reward_ad_count",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$reward_ad_ltv",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$reward_ad_max_ecpm",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$splash_24h_count",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$splash_ad_24_ltv",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$splash_ad_24h_avg_ecpm",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$splash_ad_24h_ltv",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$splash_ad_avg_ecpm",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$splash_ad_count",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$splash_ad_ltv",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$splash_ad_max_ecpm",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ta_account_id",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user$ta_distinct_id",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].user_id",
+        "presence": "observed",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "path": "$.data.list[].useraccount_id",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].userbind_channel",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].usercurrent_build",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].usercurrent_diamond",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].usercurrent_gold",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].usercurrent_level_line",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].usercurrent_level_user",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].usercurrent_power",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].userdevice_id",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].userfirst_login_time",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].userfirst_pay_time",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].userlast_login_time",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].userlast_pay_time",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].userlogin_id",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].userlong_id",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].userregister_time",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].userrole_name",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].usertotal_getdiamond_num",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].usertotal_getgold_num",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].usertotal_getpower_num",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].usertotal_login",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].usertotal_session_time",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].usertotal_usediamond_num",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].usertotal_usegold_num",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].usertotal_usepower_num",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].useruse_plot",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.list[].useruser_age",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].useruser_sex",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.data.list[].useruser_tpe",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.page_info",
+        "presence": "observed",
+        "types": [
+          "object"
+        ]
+      },
+      {
+        "path": "$.data.page_info.page",
+        "presence": "observed",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "path": "$.data.page_info.page_size",
+        "presence": "observed",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "path": "$.data.page_info.total_number",
+        "presence": "observed",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "path": "$.data.page_info.total_page",
+        "presence": "observed",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "path": "$.extra",
+        "presence": "observed",
+        "types": [
+          "null"
+        ]
+      },
+      {
+        "path": "$.msg",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      }
+    ]
+  },
+  "raw_schema_fingerprint": "9758dfcd5988bacade76e88efa536bb6d4fd897a0700f0caf1e36dc50a74849f",
+  "projected_schema_fingerprint": "1f2623c0afb67c6d185adeef477dc7894deb4b5349cfc5852fa3a748788f5874",
+  "item_schema": {
+    "top_level_key_count": 147,
+    "path_count": 148,
+    "top_level_keys": [
+      "AdAid",
+      "AdCid",
+      "AdClickTime",
+      "AdGid",
+      "AdPlatform",
+      "AdvertiserID",
+      "Channel",
+      "ClientID",
+      "CreateTime",
+      "CSite",
+      "device_id",
+      "device_info",
+      "LatestLoginDay",
+      "modify_time",
+      "Name",
+      "re_attribute_info",
+      "ReAttributeAdAid",
+      "ReAttributeAdCid",
+      "ReAttributeAdClickTime",
+      "ReAttributeAdGid",
+      "ReAttributeAdPlatform",
+      "ReAttributeAdvertiserID",
+      "ReAttributeChannel",
+      "ReAttributeCreateTime",
+      "ReAttributeCSite",
+      "ReAttributeTurboPromotedObjectID",
+      "RetargetingCount",
+      "TurboPromotedObjectID",
+      "user_id",
+      "user$ad_24h_avg_ecpm",
+      "user$ad_24h_count",
+      "user$ad_24h_ltv",
+      "user$ad_avg_ecpm",
+      "user$ad_count",
+      "user$ad_ltv",
+      "user$ad_max_ecpm",
+      "user$attribution_count",
+      "user$banner_24h_count",
+      "user$banner_ad_24h_avg_ecpm",
+      "user$banner_ad_24h_ltv",
+      "user$banner_ad_avg_ecpm",
+      "user$banner_ad_count",
+      "user$banner_ad_ltv",
+      "user$banner_ad_max_ecpm",
+      "user$brand",
+      "user$bundle_id",
+      "user$channel",
+      "user$city",
+      "user$click_channel",
+      "user$country",
+      "user$ea_advertiser_id",
+      "user$ea_advertiser_id_reattribute",
+      "user$ea_aid",
+      "user$ea_aid_reattribute",
+      "user$ea_cid",
+      "user$ea_cid_reattribute",
+      "user$ea_click_company",
+      "user$ea_click_company_reattribute",
+      "user$ea_click_time",
+      "user$ea_click_time_reattribute",
+      "user$ea_cum_reattribute",
+      "user$ea_gid",
+      "user$ea_gid_reattribute",
+      "user$ea_id",
+      "user$ea_id_reattribute",
+      "user$ea_impression_time",
+      "user$ea_impression_time_reattribute",
+      "user$ea_receive_time",
+      "user$ea_receive_time_reattribute",
+      "user$first_pay_method",
+      "user$first_pay_reason",
+      "user$first_pay_time",
+      "user$first_scene",
+      "user$interstitial_24h_count",
+      "user$interstitial_ad_24h_avg_ecpm",
+      "user$interstitial_ad_24h_ltv",
+      "user$interstitial_ad_avg_ecpm",
+      "user$interstitial_ad_count",
+      "user$interstitial_ad_ltv",
+      "user$interstitial_ad_max_ecpm",
+      "user$latest_attribution_company",
+      "user$latest_attribution_time",
+      "user$latest_reactive_time",
+      "user$manufacturer",
+      "user$model",
+      "user$native_24h_count",
+      "user$native_ad_24h_avg_ecpm",
+      "user$native_ad_24h_ltv",
+      "user$native_ad_avg_ecpm",
+      "user$native_ad_count",
+      "user$native_ad_ltv",
+      "user$native_ad_max_ecpm",
+      "user$os",
+      "user$os_version",
+      "user$pay_amount_sum",
+      "user$pay_count",
+      "user$pay_max_amount",
+      "user$province",
+      "user$reactive_count",
+      "user$reward_24h_count",
+      "user$reward_ad_24h_avg_ecpm",
+      "user$reward_ad_24h_ltv",
+      "user$reward_ad_avg_ecpm",
+      "user$reward_ad_count",
+      "user$reward_ad_ltv",
+      "user$reward_ad_max_ecpm",
+      "user$splash_24h_count",
+      "user$splash_ad_24_ltv",
+      "user$splash_ad_24h_avg_ecpm",
+      "user$splash_ad_24h_ltv",
+      "user$splash_ad_avg_ecpm",
+      "user$splash_ad_count",
+      "user$splash_ad_ltv",
+      "user$splash_ad_max_ecpm",
+      "user$ta_account_id",
+      "user$ta_distinct_id",
+      "useraccount_id",
+      "userbind_channel",
+      "usercurrent_build",
+      "usercurrent_diamond",
+      "usercurrent_gold",
+      "usercurrent_level_line",
+      "usercurrent_level_user",
+      "usercurrent_power",
+      "userdevice_id",
+      "userfirst_login_time",
+      "userfirst_pay_time",
+      "userlast_login_time",
+      "userlast_pay_time",
+      "userlogin_id",
+      "userlong_id",
+      "userregister_time",
+      "userrole_name",
+      "usertotal_getdiamond_num",
+      "usertotal_getgold_num",
+      "usertotal_getpower_num",
+      "usertotal_login",
+      "usertotal_session_time",
+      "usertotal_usediamond_num",
+      "usertotal_usegold_num",
+      "usertotal_usepower_num",
+      "useruse_plot",
+      "useruser_age",
+      "useruser_sex",
+      "useruser_tpe",
+      "Version",
+      "WXOpenID"
+    ],
+    "fingerprint": "1f2623c0afb67c6d185adeef477dc7894deb4b5349cfc5852fa3a748788f5874"
+  },
+  "pagination": {
+    "kind": "none",
+    "verified": true,
+    "requested_page_and_page_size_ignored": true,
+    "page_1_and_page_2_same_shape": true,
+    "complete_response": true
+  },
+  "fields_behavior": {
+    "upstream_fields_sent": false,
+    "selection": "local_after_complete_response",
+    "dynamic_discovery": "analysis.user_property.list"
+  },
+  "privacy": {
+    "boundary": "upstream_authorization",
+    "all_registered_fields_exposed": true,
+    "values_persisted": false,
+    "credentials_persisted": false
+  },
+  "request_stats": {
+    "total": 3,
+    "failed": 0,
+    "retries": 0,
+    "expanded_windows": 0
+  }
+}

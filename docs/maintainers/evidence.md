@@ -53,6 +53,7 @@ gravity sql status --json
 - 产品 partial：只有合同允许且 warnings 完整时才可继续评审；
 - 合同或 SQL hash 漂移：旧 Evidence 自动视为 stale，先审查改动；
 - 发布中断：保留已写的不可变 snapshot，不手工移动 latest；
-- 发现用户级或敏感数据：立即停止，不提交输出。
+- 发现用户级或标识符值：不把值写入 evidence；只保留字段路径、类型、shape fingerprint 与
+  脱敏状态继续完成合同取证。凭据值出现时立即停止并清理未提交输出。
 
 Evidence 不证明业务因果、财务净收入或活动归因；这些限制由 SDK 的通用 SQL 机制合同、项目 workspace 产品合同和输出中的 `forbidden_claims` 共同约束。

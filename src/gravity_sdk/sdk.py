@@ -20,6 +20,7 @@ from .sdk_order import OrderSdkMixin
 from .sdk_promotion import PromotionSdkMixin
 from .sdk_plan_recipe import PlanRecipeSdkMixin
 from .sdk_report import ReportSdkMixin
+from .sdk_segment_members import SegmentMembersSdkMixin
 from .template_replay_surface import TemplateSdkMixin
 
 
@@ -27,7 +28,7 @@ ClientFactory = Callable[[], Any]
 
 
 class GravitySDK(
-    AnalysisSdkMixin, ReportSdkMixin, MaterialSdkMixin, PromotionSdkMixin,
+    AnalysisSdkMixin, SegmentMembersSdkMixin, ReportSdkMixin, MaterialSdkMixin, PromotionSdkMixin,
     OrderSdkMixin, MetadataSdkMixin, MonetizationSdkMixin, TemplateSdkMixin,
     PlanRecipeSdkMixin,
 ):

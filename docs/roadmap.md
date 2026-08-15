@@ -13,12 +13,11 @@
 
 ## 现状
 
-当前从仓库产品入口与 stable operation 正向交叉反推 47 条产品动线：**已闭环 32 / 部分闭环 0 / 完全缺失 15**；
+当前从仓库产品入口与 stable operation 正向交叉反推 47 条产品动线：**已闭环 33 / 部分闭环 0 / 完全缺失 14**；
 另有 2 条 legacy/SDK 便利面保留用于兼容与维护，但不计产品动线。
-上一快照是 `48 = 32 / 0 / 16`；2026-08-15 的设置 route 穷尽取证确认其中 1 条完全缺失
-是既有 dashboard/saved-analysis 稳定读取面的重复记账，因此产品动线与 completely missing 各减 1，
-得到 `47 = 32 / 0 / 15`。stable operation 仍为 185、其中 176 个 stable。
-**部分闭环归零不代表没有欠账**——15 条完全缺失里
+合并前当前值是 `47 = 32 / 0 / 15`；分群成员明细从完全缺失转为已闭环，变化为
+`+1 / +0 / -1`，总数不变，得到 `47 = 33 / 0 / 14`。stable operation 仍为 185、其中 176 个 stable。
+**部分闭环归零不代表没有欠账**——14 条完全缺失里
 多数是请求、响应或非空证据阻塞；字段隐私不再是阻塞项。
 逐条状态、四面入口、调用次数和证据阻塞以[分析动线台账](analysis-journeys.md)为准；旧
 `21/14/6` 快照的逐条底稿未进入版本控制，无法复算，已停止作为排期事实。
@@ -115,7 +114,7 @@ ignored `tmp/codex/stable-coverage-gap/crossref.md`，权威结论落在本页�
 | `material.bytedance_asset_text_title_package.list` | 普通标题包的标题数、计划数、历史成本和 CTR 如何；旧非空样本与 stable v1 的字段/类型投影同形 | 已补 D32 `title_package` family；与标准版共享 `1/1/1/1/1` | `title_list` 与创建/更新人字段已登记；`package_kind=regular` |
 | `material.bytedance_std_asset_text_title_package.list` | 标准标题包的标题数、计划数、历史成本和 CTR 如何；旧非空样本与 stable v1 的字段/类型投影同形 | 已补 D32 `title_package` family；与普通版共享 `1/1/1/1/1` | 同上；`package_kind=standard` |
 | `material.bytedance.promotion_material.list` | 精确广告窗口内素材的消耗、曝光、点击、CTR、CPC、CPM、尺寸和时长如何；目标响应为空 | 补 D32；`1/1/1/1/1`，未知引用路径 3 次 | `cover_source`、`labels`、`material_info`、`organization_tags`、`poster_url`、`signature`、`star_author_id`、`url` 已按既有 shape 登记 |
-| `analysis.segment.user_detail.list` | 精确分群有哪些成员及其时间、渠道、版本和归因属性；无不可变非空样本 | 补分群详情；`1/1/1/1/1` | 字段投影已批准；实现归另一条产品线，本单元按明确范围不触碰 |
+| `analysis.segment.user_detail.list` | 精确分群有哪些成员及其时间、渠道、版本和归因属性；已取得非空 shape-only evidence | 分群成员明细已闭环；`1/1/1/1/1` | 全量投影；枚举 7 个 App 后第 3 个首次产出分群，目标 3 次均 HTTP 200 非空，登记 147 个顶层字段；分页输入被忽略，按一次完整响应交付 |
 
 本轮在 `report.company_amount.query` 已闭环的基础上继续实现 advertiser profile。公司用量的 Core、CLI
 `reports usage`、SDK `company_usage()`、Plan `company_usage` composite 与 Agent
@@ -133,17 +132,18 @@ workspace App、日期窗口、平台和物理指标绑定，调用方保证不�
 1 次、未知能力 2 次。`advertiser_name` 现已登记返回；本轮完全复用
 不可变 Evidence，生产请求 0 次。
 
-**上表 8 条已全部结案（2026-08-15），不再有"待实现"项：**
+**上表 8 条已有明确裁决（2026-08-15）：7 条产品化，1 条等待非空证据。**
 
-- **已实现 5 条**，各自独立产品面：`report.company_amount.query`、
+- **已实现 6 条产品动线**，各自独立产品面：`report.company_amount.query`、
   `promotion.bilibili.account.list`、`promotion.bytedance.advertiser_performance.list`
   （本轮实测翻页成立）、`promotion.bytedance.custom_audience.list`、
-  两类 `*_text_title_package.list`（共用一条 `title_package` 动线）。
+  两类 `*_text_title_package.list`（共用一条 `title_package` 动线），以及
+  `analysis.segment.user_detail.list` 的 `segment_members` 动线。
   **四条新动线都没有把跨平台 Promotion Performance 变体化**——后者明确排除广告主目录，
   为了塞进去而放宽它会削弱既有调用方的保证。
 - **等非空证据 1 条**：`material.bytedance.promotion_material.list` 目标响应仍为空。
-- **原“不批准”裁决已作废 1 条**：`analysis.segment.user_detail.list` 的用户级投影已由
-  2026-08-15 总裁决全面放开；产品五面由对应单元推进，不再算隐私边界结案。
+- `analysis.segment.user_detail.list` 的合同证据阻塞已解除：已取得非空 item schema，
+  确认分页输入不控制结果，并闭合 Core / CLI / SDK / Plan / Agent 卡。
 
 `material.bytedance.promotion_material.list` 仍保持显式产品缺口，不能因 stable 或 raw/legacy 入口而
 算作闭环。9 条 `export.analysis.*` 已于 2026-08-15 重新裁定（见下文及
@@ -948,6 +948,47 @@ download 均为 0，重试为 0，上游新增任务为 0，本地无业务文�
 分析动线在本单元当时快照上的状态迁移为 `0 / 0 / 0`：`48 = 32 / 0 / 16` 不变；后续
 setting route 去重使最终台账成为 `47 = 32 / 0 / 15`。该合成动线的 9 条均不可执行，故不能标
 部分闭环。
+## 分群成员明细合同取证（2026-08-15）
+
+**提案：**复用前两趟已经确定的请求、字段来源、历史版本绑定和相邻动线边界；授权重跑因本地脚本
+丢失结果而中断的父链：`app.list` 1 次，再逐 App 各 1 次 `analysis.segment.list`，首个非空即停。
+目标 route 仍最多 6 次，不重试失败请求、不扩窗、不猜业务值；发现结果每步立即写入 ignored scratch。
+
+**判定：非空 item schema、无分页语义与五面产品均已成立，本动线闭环。**
+
+- 目标是固定只读 `POST /report/api/v3/dataanalysis/segment/user/detail/list/`。必填事实是 App 与
+  精确分群，wire 发送 `app_id`、`tmp_segment_id`、`segment_id` 和固定
+  `to_update_segment=false`；`segment_version_id` 是可选的精确历史版本绑定。route 没有自然日
+  输入，不能把 `analysis.segment.uid_result.list` 的单日聚合日期移植过来。
+- 当前 `UserList-DvLxSIf4.js` 与既有 census 一致：目标请求不发送 `fields`、`page` 或
+  `page_size`，UI 收到成员行后在本地选列。`fields` 是 SDK 的投影输入，固定 profile 与动态用户
+  属性两者都支持；固定项由 operation describe 给出，动态项来自 live
+  `analysis.user_property.list` / 本地 metadata，调用方通过 metadata properties/search 发现。
+- 父链枚举到 7 个 App，第 1、2 个 `analysis.segment.list` 为空，第 3 个非空后立即停止；
+  `tmp/codex/segment-user-detail-3/discovery.json` 在每次请求后追加保存序号、HTTP 状态和父引用。
+  该文件被 gitignore，不进入证据、文档或提交。
+- 目标 route 共 3 次，均 HTTP 200 非空：页 1 最小请求确认 `data.list` / `data.page_info`；
+  页 1 完整行确认 147 个顶层字段、148 条 item shape path；页 2 复验与页 1 envelope/item fingerprint
+  完全一致，且响应的 `page/page_size` 不回显请求，确认分页输入被忽略、一次响应即完整结果。
+  envelope fingerprint 为 `9758dfcd5988bacade76e88efa536bb6d4fd897a0700f0caf1e36dc50a74849f`，
+  item fingerprint 为 `1f2623c0afb67c6d185adeef477dc7894deb4b5349cfc5852fa3a748788f5874`。
+- 生产账本总计 7 次（发现 4、目标 3/6）；HTTP 失败、重试、扩窗均为 0，未继续扫描第 4--7 个 App。
+  page 2 仅验证合同，不是为追非空翻页。提交的 evidence 只含 shape、类型和 fingerprint，不含值。
+
+语义边界保持互斥：`analysis.segment.list` 是定义目录，`analysis.segment.uid_result.list` 是单日聚合
+人数/状态，`analysis segment snapshot` 组合详情、历史和单日聚合；成员明细才回答“有哪些成员、
+各自什么属性”。未来 Agent owner 只声明成员/名单/逐人属性正向证据；若同一请求还明确要求规模/占比，
+集中 intent router 返回 `MULTIPLE_INTENTS`。Core、CLI `analysis segment members`、SDK
+`segment_members()`、Plan `segment_members` 与 Agent `composite:segment_members` 共用
+`gravity-insight.segment-members.v1`；Plan 走窄 Analysis Segment family router，`plan_adapters.py`
+净增长 0。147 个已证实顶层字段全部登记并按上游授权暴露，未登记字段继续按合同漂移 fail-closed；
+凭据键仍递归去除。上游完整响应超过 `max_items` 时只交付有界前缀并返回
+`partial` / exit 3。
+
+本分支只把该行从完全缺失改为已闭环，即 **已闭环 +1、完全缺失 -1、总数不变**；总数基线另有
+并行分支修正，本单元不改合并前总计。Agent 以仓库外给定问法实测：
+`gravity agent "这个分群里都有哪些人"` 与
+`gravity agent "list the members of this segment"` 均在第一次离线调用返回唯一正确产品卡。
 
 ## 已批准的隐私投影边界：变现明细（D27）
 

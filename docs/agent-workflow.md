@@ -12,7 +12,7 @@
 | 跨平台投放/素材表现 | 已知输入：`materials performance` / `promotion performance`；推广平台已知而指标未知时用在线输入解析；再 `plan run` | 1 / 2 |
 | 自定义人群覆盖与状态 | 已知输入：`promotion custom-audiences`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
 | 订单目录/拆单追踪/变现明细 | 已知 App/单日[/TraceID]：`analysis order directory` / `analysis order trace` / `analysis monetization detail`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
-| 人群规则/分群快照 | 已知 spec 或精确引用：`analysis segment evaluate` / `analysis segment snapshot`；引用未知时在线输入解析后精确选 ID，再执行 | 1 / 2 |
+| 人群规则/分群快照/成员明细 | 已知 spec 或精确引用：`analysis segment evaluate` / `analysis segment snapshot` / `analysis segment members`；未知能力且输入已知时发现后执行 | 1 / 2 |
 | 保存分析/分析模板 | 引用已知：`analysis saved run` / `analysis template run`；引用未知时在线输入解析后按稳定 ID（模板为 scope + ID）精确选择。模板仍只执行 compact Spec 或已证明 artifact | 1 / 2 |
 | 看板控制面/图表重放 | 已知引用：`analysis dashboard snapshot` / `analysis dashboard run`；引用未知时在线输入解析后精确选稳定 ID，再执行 | 1 / 2 |
 | Governed 导出 | 输入已知：`export run`；未知：`agent "material report export"` → `next.argv` | 1 / 2 |
@@ -31,6 +31,7 @@
 人群规则只接受显式紧凑 spec：Agent 强意图卡给完整 schema 和缺失的 `app/spec`，不会从自然语言生成规则。已知 spec 可直接 evaluate；交叉查询用 `segment_evaluate` composite，只有 `/app` 可绑定，结果仅 `part/percent/total`。
 
 分群检查已知精确 ID/名称与日期时直接 `gravity analysis segment snapshot --app ... --ref ... --date ...`；固定返回 detail/history/daily_result，不读取规则或成员。引用未知且 App/日期已知时，强意图在线解析在第一调用返回完整分群目录；调用方精确选择 ID 后第二次执行。自然语言不自动执行。
+分群成员与逐人属性用 `gravity analysis segment members --app ... --ref ...`。不传 fields 返回完整登记 profile；动态 fields 先由 `metadata properties/search` 发现，执行时 live 复验并在完整成员行上本地选列。历史成员只用 `segment_version_id`，不接收日期。规模/占比/历史/单日问法仍走 snapshot，成员/名单/逐人属性走 members；同一句显式要求两者返回 `MULTIPLE_INTENTS`。
 
 ### Multidim
 

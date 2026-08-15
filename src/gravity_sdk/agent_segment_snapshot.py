@@ -25,6 +25,9 @@ _ENGLISH_DAILY = frozenset({"daily", "day", "date", "yesterday"})
 _ENGLISH_RESULTS = frozenset({
     "result", "results", "calculation", "calculations", "count", "aggregate",
 })
+_ENGLISH_AGGREGATES = frozenset(
+    {"count", "population", "size", "share", "percent", "percentage", "ratio", "history", "historical", "daily"}
+)
 _ENGLISH_BLOCKED = frozenset(
     {"rule", "rules", "condition", "conditions", "member", "members", "export",
      "create", "update", "delete"}
@@ -71,8 +74,8 @@ def segment_snapshot_query(query: str) -> bool:
     if selected in _EXACT_SELECTORS:
         return True
     if selected.isascii():
-        return _english_snapshot_query(selected)
-    return _chinese_snapshot_query(selected)
+        return _english_snapshot_query(selected) or _english_aggregate_query(selected)
+    return _chinese_snapshot_query(selected) or _chinese_aggregate_query(selected)
 
 
 def segment_snapshot_intent(query: str) -> bool:
@@ -82,8 +85,63 @@ def segment_snapshot_intent(query: str) -> bool:
     if selected in _EXACT_SELECTORS:
         return True
     if selected.isascii():
-        return _english_snapshot_shape(selected)
-    return _chinese_snapshot_shape("".join(selected.split()))
+        return _english_snapshot_intent(selected)
+    return _chinese_snapshot_intent("".join(selected.split()))
+
+
+def _english_snapshot_intent(selected: str) -> bool:
+    words = frozenset(_ASCII_WORD.findall(selected))
+    groups = (
+        _ENGLISH_SUBJECTS, _ENGLISH_ACTIONS, _ENGLISH_DETAILS,
+        _ENGLISH_HISTORY, _ENGLISH_RESULTS,
+    )
+    complete = all(words & group for group in groups) and (
+        bool(words & _ENGLISH_DAILY) or _ISO_DATE.search(selected) is not None
+    )
+    return complete or (
+        bool(words & _ENGLISH_SUBJECTS)
+        and bool(words & _ENGLISH_AGGREGATES)
+        and not bool(words & {"rule", "rules", "condition", "conditions", "evaluate", "estimate"})
+    )
+
+
+def _chinese_snapshot_intent(compact: str) -> bool:
+    complete = (
+        any(term in compact for term in ("分群", "人群", "受众"))
+        and any(term in compact for term in ("快照", "检查", "查看"))
+        and "详情" in compact
+        and any(term in compact for term in ("历史", "历史版本"))
+        and (
+            any(term in compact for term in ("单日结果", "当日结果", "单日计算结果"))
+            or _ISO_DATE.search(compact) is not None
+        )
+    )
+    return _chinese_aggregate_intent(compact) or complete
+
+
+def _english_aggregate_query(selected: str) -> bool:
+    words = frozenset(_ASCII_WORD.findall(selected))
+    return (
+        bool(words & _ENGLISH_SUBJECTS)
+        and bool(words & _ENGLISH_AGGREGATES)
+        and not (words & _ENGLISH_BLOCKED)
+        and not any(term in selected for term in _ENGLISH_BLOCKED_PHRASES)
+    )
+
+
+def _chinese_aggregate_intent(compact: str) -> bool:
+    return (
+        not any(term in compact for term in ("规则", "条件", "评估", "预估", "估算", "测算"))
+        and any(term in compact for term in ("分群", "人群", "受众"))
+        and any(term in compact for term in ("人数", "规模", "占比", "比例", "历史", "单日"))
+    )
+
+
+def _chinese_aggregate_query(selected: str) -> bool:
+    compact = "".join(selected.split())
+    return _chinese_aggregate_intent(compact) and not any(
+        term in compact for term in _CHINESE_BLOCKED
+    )
 
 
 def _english_snapshot_query(selected: str) -> bool:

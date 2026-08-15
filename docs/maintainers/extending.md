@@ -107,6 +107,6 @@ Python 的 `GravitySDK/connect` 也是薄委托层。新增便利方法时只能
 
 - Agent 能从 `gravity agent` 得到 bounded capability card、必填输入和下一条 argv；
 - CLI 与 Python API 走同一实现，独立读取能使用正式 batch；
-- 新能力不包含业务实例，不泄露未知或敏感字段；
+- 新能力不包含业务实例；未登记字段 fail-closed，已登记且上游授权的用户级字段不再二次隐藏；
 - 文档只描述已经实现的命令和限制；覆盖数量以当前 catalog 输出为准；
 - 完整门禁通过，diff 中没有凭据、原始用户数据、临时探针文件或手改 manifest。

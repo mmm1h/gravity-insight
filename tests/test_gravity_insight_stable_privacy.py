@@ -147,6 +147,26 @@ def test_credential_fields_cannot_become_response_contracts() -> None:
         ]
 
 
+def test_explicit_sensitive_projection_approval_is_exact_and_reviewed() -> None:
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        _write_operation(
+            root,
+            _operation("analysis.member.list", resource="member", item_keys=["email"]),
+        )
+        _write_registry(root)
+        path = root / REGISTRY_PATH
+        registry = json.loads(path.read_text(encoding="utf-8"))
+        registry["approved_sensitive_exposures"] = {
+            "analysis.member.list": {
+                "data.list[].email": "Explicit upstream-authorization review."
+            }
+        }
+        path.write_text(json.dumps(registry), encoding="utf-8")
+
+        assert inspect_stable_response_privacy(root) == []
+
+
 def test_surface_registry_tracks_nested_dynamic_and_opaque_exposure() -> None:
     operation = _operation(
         "analysis.example.list",
