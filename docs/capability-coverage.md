@@ -27,6 +27,38 @@ stable 同样不等于已有分析产品：本轮首次从 176 条 stable operat
 分页证据、清晰独立语义和已批准投影，因此已通过 `reports usage` / SDK / Plan / Agent 四面闭环。
 其余 7 条的边界与 blocker 以 [路线图](roadmap.md#stable-operation-正向交叉2026-08-14) 为准。
 
+## 其余 155 条未覆盖读路由逐条复核（2026-08-16）
+
+本轮对 `343 - 188 = 155` 条非推广/素材 draft 路由逐条读取 Census、hash-matched frontend bundle、
+manifest 和既有合同证据。阶段一不发生产请求，互斥分类为：
+
+| 类别 | 离线初判 | 取证后最终 |
+| --- | ---: | ---: |
+| 已有等价产品覆盖 | 18 | 18 |
+| UI 辅助路由 | 89 | 89 |
+| mutation / 写操作 | 4 | 4 |
+| 有分析价值、证据可自取 | 18 | 0 |
+| 有分析价值、但数据/证据阻塞 | 21 | 39 |
+| 无法判定 | 5 | 5 |
+| **合计** | **155** | **155** |
+
+分母没有快照漂移：343 条 `uncovered_read` 中，draft 目录有 148 条 promotion 与 40 条 material
+唯一 path，排除后恰为 155。唯一 method 证据差异是 `promotion.promoted_object.list`：draft 为 POST，
+Census 对同一 path 仍为 UNKNOWN；按唯一 path 排除，未重复计数。逐条工作账本保存在本 worktree 的
+`tmp/codex/route-coverage/route-classification.md`，生成器断言 155 条无遗漏、无重复。
+
+阶段二按“实时事件 → 数据表 schema/版本 → 巨量项目素材表现 → AppRank 榜单/趋势/竞品 → 点击监测
+链接 → 兜底 eCPM → 自有多维模板详情”的分析师价值顺序复核 18 条候选。实际生产 HTTP **10 次**，
+低于 40 次预算；4 次 AppRank 根目录为 HTTP 200 semantic error，data-table list、两条点击监测目录与
+自有模板父目录为 HTTP 200 明确空，另 2 次为 App 目录父读取。其余目标在发送前因缺合法父值、值域
+或已有同租户空样本而 fail closed；没有重试、翻页、扩窗或猜业务值。18 条均未取得可晋升的成功非空
+响应合同，故最终全部转入“数据/证据阻塞”，本轮新增产品和分析动线均为 0。
+
+这次语义复核不改 Census 的机器 route status，也不把 UI route 包装成产品：编译 operation 仍为 185、
+stable 仍为 176、callable covered route 仍为 172、`uncovered_read` 仍为 343。现在可直接回答真正缺口：
+在这 155 条中有分析价值但尚无证据的路由是 39 条；另有 5 条因 method、请求/响应或服务端语义不足
+仍无法判定。下一轮只有在租户数据或服务端合同证据改变后才重启这 18 条，不重复当前租户的空探测。
+
 ## 平台纵深
 
 - Bytedance 已覆盖账户、广告主、项目、推广、筛选器、汇总表现和主要素材查询，是目前唯一

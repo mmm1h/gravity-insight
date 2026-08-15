@@ -233,6 +233,154 @@
       "path": "/report/api/v3/monetization_report/custom_get/calc_total/",
       "reviewed_at": "2026-08-15",
       "reviewer": "codex/d28-monetization"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The hash-matched DataSheet call site sends only app_id_list, name_like, page and page_size, loads the result as the data-table page, and consumes page_info. Creating, editing and deleting tables use the separately reserved /create/, /edit/ and /delete/ routes.",
+          "source": "src/gravity_sdk/census/data/route-params.json"
+        },
+        {
+          "detail": "The exact route is a list call and the same frontend scope exposes deletion through a distinct confirmed mutation reservation; no write field or write continuation reaches this route.",
+          "source": "src/gravity_sdk/contracts/reservations/metadata.dim.data.table.delete.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "metadata.data_table.list",
+      "path": "/turbo_engine/api/v2/event_dim/data_table/list/",
+      "reviewed_at": "2026-08-16",
+      "reviewer": "codex/route-coverage"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The exact DataSheet detail call sends only table_id and consumes column_list, ordered_column_list, related_prop and using_version_id as a table definition. Editing the table and switching the active version use separate reserved mutation routes.",
+          "source": "src/gravity_sdk/census/data/route-response-fields.json"
+        },
+        {
+          "detail": "The same route family reserves /edit/ and /change_using_version/ as mutations, while this /detail/ call contains no replacement data or version-selection field.",
+          "source": "src/gravity_sdk/contracts/reservations/metadata.table.using.version.state_change.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "metadata.data_table.detail",
+      "path": "/turbo_engine/api/v2/event_dim/data_table/detail/",
+      "reviewed_at": "2026-08-16",
+      "reviewer": "codex/route-coverage"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The AppRank page sends only filters, page and page_size to populate its App catalog. Editing an App uses the separately reserved /apprank/api/v1/app/edit/ mutation.",
+          "source": "src/gravity_sdk/census/data/route-params.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "app.apprank_app.list",
+      "path": "/apprank/api/v1/app/list/",
+      "reviewed_at": "2026-08-16",
+      "reviewer": "codex/route-coverage"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The public AppRank page sends only filters and pagination to load its App selector; the caller has no edit continuation or write feedback.",
+          "source": "src/gravity_sdk/census/data/route-params.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "app.app_public.list",
+      "path": "/apprank/api/v1/app/public_list/",
+      "reviewed_at": "2026-08-16",
+      "reviewer": "codex/route-coverage"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The AppRank publisher page sends only filters and pagination and consumes data.list[].id/name. Publisher changes use the separately reserved /publisher/manage/ mutation.",
+          "source": "src/gravity_sdk/census/data/route-response-fields.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "app.apprank_publisher.list",
+      "path": "/apprank/api/v1/publisher/list/",
+      "reviewed_at": "2026-08-16",
+      "reviewer": "codex/route-coverage"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The public publisher loader sends only page and page_size and consumes data.list; no mutation field or write continuation reaches the route.",
+          "source": "src/gravity_sdk/census/data/route-response-fields.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "app.publisher_public.list",
+      "path": "/apprank/api/v1/publisher/public_list/",
+      "reviewed_at": "2026-08-16",
+      "reviewer": "codex/route-coverage"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The authenticated ranking page sends only extra_fields, filters and pagination, then renders rank rows and an explicit empty state; App edits use a separate route.",
+          "source": "src/gravity_sdk/census/data/route-params.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "app.apprank_rank.list",
+      "path": "/apprank/api/v1/rank/list/",
+      "reviewed_at": "2026-08-16",
+      "reviewer": "codex/route-coverage"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The public ranking page sends only extra_fields, filters and pagination, then renders rank rows and an explicit empty state; no write control flow invokes the route.",
+          "source": "src/gravity_sdk/census/data/route-params.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "app.rank_public.list",
+      "path": "/apprank/api/v1/rank/public_list/",
+      "reviewed_at": "2026-08-16",
+      "reviewer": "codex/route-coverage"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The authenticated trend chart sends app_id, date_list, rank_genre and rank_type_list and renders popularity/play/revenue rank trends; it has no resource mutation controls.",
+          "source": "src/gravity_sdk/census/data/route-params.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "app.apprank_rank_app_trend.list",
+      "path": "/apprank/api/v1/rank/app_trend/list/",
+      "reviewed_at": "2026-08-16",
+      "reviewer": "codex/route-coverage"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "The public trend chart sends app_id, date_list, rank_genre and rank_type_list and renders popularity/play/revenue rank trends; it has no resource mutation controls.",
+          "source": "src/gravity_sdk/census/data/route-params.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "app.app_trend_public.list",
+      "path": "/apprank/api/v1/rank/app_trend/public_list/",
+      "reviewed_at": "2026-08-16",
+      "reviewer": "codex/route-coverage"
     }
   ],
   "schema_version": "gravity-insight.probe-read-confirmations.v1"

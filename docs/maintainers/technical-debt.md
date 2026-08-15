@@ -75,7 +75,8 @@
 
 ### 6. Census 把 214 条 POST 仅凭路径词元判为「未覆盖读」
 
-**状态（2026-08-15）**：在线安全缺口已关闭；分类证据债务保留。
+**状态（2026-08-16）**：在线安全缺口已关闭；非推广/素材 155 条已逐条分类，剩余分类证据债务收窄到
+188 条既有数据阻塞 draft 与 5 条仍无法判定 route。
 
 - **Owner area**：Census 路由语义分类 / 探测安全。
 - **证据**：2026-08-14 取证证明 `analysis.setting.query`（`POST /kanban/report/setting/`）
@@ -102,6 +103,11 @@
   `analysis.setting.query` 仍是 mutation，未据此批量修改剩余弱信号分类或扩张 census 提取器。
 - **剩余退出条件**：后续只在逐条静态取证时把弱信号替换为已审查证据；不扩张 census 提取器，
   不批量改 mutation。待弱证据 POST 不再需要依靠单独 probe 闸门时删除本条。
+- **2026-08-16 进展**：对 343 条 `uncovered_read` 排除 188 条 promotion/material draft 后的 155 条
+  完成互斥逐条复核，最终为 `18 等价覆盖 / 89 UI 辅助 / 4 mutation / 0 当前可取证 / 39 数据或证据阻塞 /
+  5 无法判定`。本轮把 10 条 AppRank/data-table POST 的 hash-matched 控制流登记为精确 read
+  confirmation，并用 10 次有界生产 HTTP 验证最高价值候选；没有用失败或空样本批量改 Census status。
+  `promotion.promoted_object.list` 的 draft POST 与 Census UNKNOWN method 差异继续保留为显式证据差异。
 
 ## 明确不登记为债务
 

@@ -2033,3 +2033,31 @@ Spec contract、period-compare envelope 与公共 exit-code contract 生成 4 �
 其中 `B + 3`、`C + 4`：当前可复算总数为 `974 + 7 = 981`、`A=218`、`B=400+3=403`、
 `C=356+4=360`。这些是新 CLI 的 `limit`、`offset`、category、selector 和 action 的本地输入错误；
 不改变既有错误 code/category/exit 语义，也不放宽审计判据。
+
+## 非推广/素材未覆盖读路由逐条复核（2026-08-16）
+
+**提案：**以 Census 的 343 条 `uncovered_read` 为固定分母，先按唯一 path 排除 188 条已判定数据阻塞的
+promotion/material draft；对余下每条只用保存的 Census、hash-matched frontend bundle、manifest、合同与
+既有 evidence 做互斥离线分类。只从“分析师会主动问”的可取证类按完整动线价值排序，在总计 40 次生产
+请求内依次取证；缺父值、已证值域或已有同租户空样本即在 transport 前停止。只有成功非空合同足以闭合
+Core / CLI / SDK / Plan / Agent 五面时才实现，否则保留 fail-closed。
+
+**结论：分母可复算且没有快照漂移。** 148 条 promotion 加 40 条 material draft 是 188 个唯一 path；
+`343 - 188 = 155`。187 条与 Census 的 `(method,path)` 精确一致；唯一差异
+`promotion.promoted_object.list` 是 draft POST / Census UNKNOWN，同 path 只排除一次。离线逐条初判为
+`18 已有等价覆盖 / 89 UI 辅助 / 4 mutation / 18 有价值且证据可自取 / 21 有价值但阻塞 / 5 无法判定`。
+阶段二按实时事件、数据表 schema/版本、巨量项目素材表现、AppRank、点击监测、兜底 eCPM、自有多维模板
+详情的顺序复核 18 条，最终全部因明确空、semantic error、缺合法父值或缺已证值域转为阻塞；最终分类
+为 **`18 / 89 / 4 / 0 / 39 / 5 = 155`**。
+
+生产总账为 **10 次 HTTP**：2 次 `app.list` 均 HTTP 200 非空目录；4 次 AppRank app/publisher public/
+tenant 根目录均 HTTP 200 semantic error；`metadata.data_table.list`、两条 promoted-object 点击监测目录、
+`report.multidim.template.mine.list` 均 HTTP 200 语义成功空。没有重试、翻页、扩日期窗、换 App 或猜业务
+值；其余 route 在请求前 fail closed。静态控制流只新增 10 条 AppRank/data-table 精确 read confirmation，
+不以此替代响应合同。没有 route 晋升，五面实现、新 caller-recoverable error 与 A 档新增均为 0。
+
+因此 operation `185 → +0 = 185`、stable `176 → +0 = 176`、Census callable covered route 172 与
+`uncovered_read=343` 均不变；分析动线为
+`48 = 33 / 0 / 15 → +0 / +0 / +0 = 48 = 33 / 0 / 15`。真正尚缺证据的分析 route 在这 155 条中为
+39 条，另 5 条仍无法判定；下一轮的最小动作不是重复当前租户，而是由有对应数据的租户提供一个非空
+父项，或由服务端合同补齐 project-material、AppRank rank/trend、fallback eCPM 所需值域后各做一次最小读取。
