@@ -6,6 +6,7 @@ Thumbs.db
 *.pem
 *.key
 .local/agent-usability/holdout.key
+.local/agent-usability/final.key
 *.p12
 *.pfx
 __pycache__/
@@ -23,3 +24,4 @@ evidence/latest.json
 evidence/daily-verification/
 *.log
 *.jsonl
+!evals/agent_usability/query-ledger.jsonl

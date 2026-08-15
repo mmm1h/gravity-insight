@@ -36,3 +36,30 @@ The old v1 manifest said `47 = 33 / 0 / 14`. Its cases already contained D28
 as J41 (`monetization_aggregate_gap`); the actual omitted counted ledger row was
 Issue 19. V2 keeps D28 and adds the row that was demonstrably absent rather than
 duplicating D28 under a second journey ID.
+
+## Independent final authorship
+
+The 48-case final suite was authored at `dev@810dde7` from the same two public
+sources above plus the evaluator's already-public route/gap identities. It did
+not read `cases/development.jsonl`, `cases/holdout.sealed.json`, the holdout key,
+decrypted holdout memory, prompt-level results, or holdout aggregates.
+
+Unlike development/holdout's ordinary Chinese/English, adjacent-boundary, and
+missing-input expression families, final rotates five different generation
+strategies across journey order so no product family owns one style:
+
+- 10 colloquial, elliptical requests;
+- 10 requests containing a realistic Chinese typo or English misspelling;
+- 10 Chinese-English code-switched requests;
+- 9 indirect requests that state the analysis purpose without naming the
+  product;
+- 9 first turns that deliberately leave the exact input for a later follow-up.
+
+The exact prompts were randomly composed and sealed in memory; no plaintext
+question file was written. The ignored one-time generator contained only the
+public ledger parser, strategy rules/word pools, and route/gap identities, and
+was deleted immediately after sealing. The repository contains only the
+authenticated ciphertext, aggregate construction counts, source revision, and
+hashes. No old prompt was opened for rewriting, similarity comparison, or
+cross-split deduplication; final uniqueness was checked only within the new 48
+in-memory cases.

@@ -168,3 +168,7 @@ workspace recipe 与 SDK contract 的同名 description 已用 additive origin �
 
 Analysis Spec schema 的结构键投影与 funnel 按日模式校验已在领域 schema/执行器和源合同内闭合；
 共享 CLI spine 未修改，真正畸形的模式投影继续 fail closed，本轮复核未产生新的结构债条目。
+
+三分评测装置把 protected 查询反馈、final 一次语义与安全遵守门禁收进独立 evaluator/support 模块，
+没有增长产品共享 spine 或 quality baseline。外部 LLM shell/tool trace 不在本仓装置可见范围，属于已披露的
+测量覆盖边界，不是当前源码中会提高后续开发成本的结构债；本轮复核不新增条目。
