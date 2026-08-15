@@ -112,6 +112,60 @@ adapter、也不发网络请求。
 日期等每次必须变化的值应声明为 required。这里没有字符串插值、模板继承、表达式、条件、循环、
 调度或通知。
 
+## 调用方语义上下文
+
+可选 `[semantic_context]` 是独立版本的 `gravity.semantic-context.v1` 子合同。SDK 负责结构、引用
+校验、字面匹配和 Agent 交接；术语、说明、排除项、样例问法和具体 input 全部由调用项目维护。
+下面只展示虚构形状：
+
+```toml
+[semantic_context]
+schema_version = "gravity.semantic-context.v1"
+instructions = "Use only literal caller mappings and keep request values explicit."
+
+[[semantic_context.terms]]
+name = "nebula-rollup"
+phrases = ["nebula rollup", "orion overview"]
+description = "Fictional caller-owned name for a registered product."
+target = { kind = "product", ref = "composite:business_pulse" }
+
+[[semantic_context.exclusions]]
+name = "archived-nebula"
+when = ["archived nebula"]
+reason = "This fictional shape must not select the overview product."
+target = { kind = "product", ref = "composite:business_pulse" }
+
+[[semantic_context.verified_queries]]
+name = "orion-app-list"
+question = "show the orion applications"
+description = "Fictional caller-verified call."
+operation = "app.list"
+input = { page = 1, page_size = 20 }
+```
+
+`terms[].target.kind` 支持 `product / operation / event / event_property / user_property / metric /
+custom_metric`。`product` 的 `ref` 必须是已登记的 `composite:<name>`、`@recipe` 或 `sql:<product>`；
+`operation` 必须是 stable、executable、read operation。事件和两类属性还必须声明 `[apps]` 中的
+`app` alias；指标是 workspace scope。workspace recipe、SQL product 和 operation 在加载时校验；built-in
+composite 及 metadata 引用在 Agent preflight 校验，后者用已同步本地 catalog 对 App scope、kind 和
+物理 `name` 做精确匹配。目录不存在、零命中或多命中都返回
+`SEMANTIC_CONTEXT_INVALID / category=local / exit 4`，不会降级 warning。
+
+同义词只做声明 phrase 的字面边界匹配，不做名称相似度或自动取值。它作为正向证据重新进入既有
+产品约束；与现有权威产品证据冲突时返回 `MULTIPLE_INTENTS`，产品自身负向约束优先。结构化
+exclusion 命中时返回 capability gap，并阻止 raw fallback。verified query 只有在整句规范化后精确
+相等时硬绑定，在既有集中层的 `MULTIPLE_INTENTS` 与 caller exclusion 门禁之后优先于普通 term 和
+单个目录候选；其 `input` 在加载时按 operation 合同验证，并原样进入现有 `run` Plan node，Agent 仍不自动执行。
+
+语义命中的候选继续使用现有来源字段：`description_origin=caller_workspace`，`result_source` 为
+`caller_defined/caller_responsible`。匹配到的声明、instructions 和 exclusion 使用独立版本的
+`semantic_context` 子合同返回，不另造 provenance 等级。没有 `[semantic_context]` 时该字段完全缺席，
+原候选、排序、Plan handoff 和 canonical JSON bytes 不变。
+
+本轮没有 `official` 标记。`result_source` 表示责任与验证边界，不是候选优先级；在尚无独立、可审计
+的全局排名判据前，把 official 当权重会改变歧义保护。常见且已确认的整句调用使用 verified query，
+术语映射继续保留在现有裁决内。
+
 ## 所有权边界
 
 SDK 只定义 workspace/recipe/Plan recipe schema、加载、校验、解析和执行机制。App ID、报表 ID、

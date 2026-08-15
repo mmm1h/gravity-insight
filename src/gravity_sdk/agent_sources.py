@@ -163,8 +163,12 @@ def catalog_cards(
     if sources is not None:
         selected_workspace = sources.workspace
     else:
+        from .workspace_semantic_context import SemanticContextError
+
         try:
             selected_workspace = load_workspace() if workspace is None else workspace
+        except SemanticContextError:
+            raise
         except (OSError, ValueError):
             selected_workspace = None
             warnings.append(
@@ -346,7 +350,9 @@ def workspace_catalog_fingerprint(workspace: Any | None) -> str:
             products.append(
                 {"selector": f"sql:{name}", "contract_sha256": _digest(contract)}
             )
-    return _digest({"recipes": recipes, "products": products})
+    from .workspace_semantic_context import semantic_fingerprint_fields
+    return _digest({"recipes": recipes, "products": products,
+                    **semantic_fingerprint_fields(workspace)})
 
 
 def candidates_fingerprint(

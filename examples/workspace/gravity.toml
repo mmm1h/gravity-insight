@@ -45,6 +45,29 @@ app_id = "Gravity App identifier for this aggregate row"
 event_name = "observed event name"
 event_count = "event row count in the left-closed, right-open query window"
 
+[semantic_context]
+schema_version = "gravity.semantic-context.v1"
+instructions = "Use only literal caller mappings and keep all request values explicit."
+
+[[semantic_context.terms]]
+name = "nebula-rollup"
+phrases = ["nebula rollup", "orion overview"]
+description = "Fictional caller-owned name for the registered overview product."
+target = { kind = "product", ref = "composite:business_pulse" }
+
+[[semantic_context.exclusions]]
+name = "archived-nebula"
+when = ["archived nebula"]
+reason = "This fictional phrase is intentionally excluded from the overview mapping."
+target = { kind = "product", ref = "composite:business_pulse" }
+
+[[semantic_context.verified_queries]]
+name = "orion-app-list"
+question = "show the orion applications"
+description = "Fictional caller-verified operation call."
+operation = "app.list"
+input = { page = 1, page_size = 20 }
+
 [recipes.demo-retention]
 operation = "analysis.retention.query"
 description = "Fictional project-owned retention recipe"
