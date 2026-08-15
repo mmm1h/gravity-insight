@@ -535,25 +535,4 @@ class AnalysisSdkMixin:
             max_items=max_items,
         )
 
-    def attribution_snapshot(
-        self,
-        app: str | int | None = None,
-        *,
-        max_workers: int = 6,
-        max_pages: int = 1_000,
-        max_items: int = 100_000,
-        workspace: Any | None = None,
-    ) -> dict[str, Any]:
-        from .attribution import attribution_snapshot
-
-        selected = self._select_workspace(workspace)
-        return attribution_snapshot(
-            self.insight,
-            self._resolve_app(selected, app),
-            concurrency=max_workers,
-            max_pages=max_pages,
-            max_items=max_items,
-        )
-
-
 __all__ = ["AnalysisSdkMixin"]

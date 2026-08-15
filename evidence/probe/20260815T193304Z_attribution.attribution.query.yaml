@@ -1,0 +1,286 @@
+{
+  "schema_version": "gravity-insight.probe-evidence.v1",
+  "operation_id": "attribution.attribution.query",
+  "probed_at": "2026-08-15T19:33:04.081174Z",
+  "successful": true,
+  "conclusion": "nonempty_schema_confirmed",
+  "probe_mode": "catalog_enumeration_until_first_nonempty",
+  "route": {
+    "family": "attribution.attribution.query",
+    "method": "POST",
+    "path": "/report/api/v3/adreport/attribution/"
+  },
+  "http": [
+    {
+      "operation_id": "attribution.attribution.query",
+      "method": "POST",
+      "http_status": 200,
+      "purpose": "single_day_explicit_empty",
+      "request_fingerprint": "d5e10b73f2003735b18d4aea9bed637044227d77d0316d3fe816723f7a660bde",
+      "raw_schema_fingerprint": "ac14099ea2fe3e4eb8b088d91e0f69bb67ed6997990bf16f9c727999d5df6c2a",
+      "receipt_id": "04b2871cc2e044e8845c4382045ce4aa"
+    },
+    {
+      "operation_id": "attribution.attribution.query",
+      "method": "POST",
+      "http_status": 200,
+      "purpose": "single_day_first_nonempty",
+      "request_fingerprint": "d5e10b73f2003735b18d4aea9bed637044227d77d0316d3fe816723f7a660bde",
+      "raw_schema_fingerprint": "22693d607e38325765a507bee851ce72dee3b1faa7bfe2556f9210122be1033f",
+      "receipt_id": "fa6b3bbef4e040878af068f723077b9d"
+    }
+  ],
+  "request_contract": {
+    "always_emitted": [
+      "child_type",
+      "date_list",
+      "metrics_list",
+      "dims_list",
+      "report_level",
+      "statistics_caliber",
+      "decimal_point",
+      "app_id",
+      "aggregate_app",
+      "multi_days",
+      "filtering",
+      "need_all_metrics",
+      "need_cname",
+      "time_zone"
+    ],
+    "conditional_omissions": {
+      "project_id": "falsy",
+      "dims_metrics_list": "empty"
+    },
+    "filtering_keys": [
+      "ad_platform_list",
+      "os_platform_list",
+      "channel_list",
+      "version_list",
+      "operator_list",
+      "turbo_promoted_object_id_list",
+      "aid_list",
+      "advertiser_id_list"
+    ],
+    "fixed_profile": {
+      "metrics_list": [
+        "AppRealRegisterCnt"
+      ],
+      "dims_list": [
+        "date",
+        "ad_platform"
+      ],
+      "statistics_caliber": "user_activated_time"
+    },
+    "values_persisted": false
+  },
+  "response_schema_sketch": {
+    "schema_version": "gravity-insight.raw-schema-sketch.v1",
+    "paths": [
+      {
+        "path": "$.code",
+        "presence": "observed",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "path": "$.data",
+        "presence": "observed",
+        "types": [
+          "object"
+        ]
+      },
+      {
+        "path": "$.data.columns",
+        "presence": "observed",
+        "types": [
+          "array"
+        ]
+      },
+      {
+        "path": "$.data.columns[]",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.items",
+        "presence": "observed",
+        "types": [
+          "array"
+        ]
+      },
+      {
+        "path": "$.data.items[]",
+        "presence": "observed",
+        "types": [
+          "object"
+        ]
+      },
+      {
+        "path": "$.data.items[].AppRealRegisterCnt",
+        "presence": "observed",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "path": "$.data.items[].ad_platform",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.items[].date",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.static",
+        "presence": "observed",
+        "types": [
+          "array"
+        ]
+      },
+      {
+        "path": "$.data.static[]",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.tips",
+        "presence": "observed",
+        "types": [
+          "object"
+        ]
+      },
+      {
+        "path": "$.data.tips.AppRealRegisterCnt",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.total",
+        "presence": "observed",
+        "types": [
+          "array"
+        ]
+      },
+      {
+        "path": "$.data.total[]",
+        "presence": "observed",
+        "types": [
+          "object"
+        ]
+      },
+      {
+        "path": "$.data.total[].AppRealRegisterCnt",
+        "presence": "observed",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "path": "$.data.total[].ad_platform",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.data.total[].date",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.extra.error",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "path": "$.msg",
+        "presence": "observed",
+        "types": [
+          "string"
+        ]
+      }
+    ]
+  },
+  "raw_schema_fingerprint": "22693d607e38325765a507bee851ce72dee3b1faa7bfe2556f9210122be1033f",
+  "projected_schema_fingerprint": null,
+  "observed_data_keys": [
+    "columns",
+    "items",
+    "static",
+    "tips",
+    "total"
+  ],
+  "observed_item_keys": {
+    "items": [
+      "AppRealRegisterCnt",
+      "ad_platform",
+      "date"
+    ],
+    "tips": [
+      "AppRealRegisterCnt"
+    ],
+    "total": [
+      "AppRealRegisterCnt",
+      "ad_platform",
+      "date"
+    ]
+  },
+  "empty_contract": {
+    "code": 0,
+    "msg": "成功",
+    "extra_error": "无数据",
+    "columns_count": 0,
+    "items_count": 0,
+    "static_count": 0,
+    "total_count": 0,
+    "classification": "explicit_empty"
+  },
+  "nonempty_contract": {
+    "code": 0,
+    "msg": "成功",
+    "extra_error_empty": true,
+    "columns_count": 3,
+    "items_count": 2,
+    "static_count": 21,
+    "total_count": 1
+  },
+  "pagination": {
+    "kind": "none",
+    "verified": true,
+    "frontend_page_fields": false,
+    "complete_response": true
+  },
+  "required_parent": null,
+  "privacy": {
+    "classification": "aggregate",
+    "all_observed_fields_approved": true,
+    "values_persisted": false,
+    "credentials_persisted": false
+  },
+  "request_stats": {
+    "catalog_requests": 1,
+    "target_requests": 2,
+    "failed": 0,
+    "retries": 0,
+    "expanded_windows": 0,
+    "pagination_requests": 0,
+    "stopped_at_first_nonempty": true
+  }
+}

@@ -1439,6 +1439,20 @@
       "data.list",
       "data.list[].enable"
     ],
+    "attribution.attribution.query": [
+      "@dynamic:data:items:metrics_list",
+      "@dynamic:data:tips:metrics_list",
+      "@dynamic:data:total:metrics_list",
+      "data.columns",
+      "data.items",
+      "data.items[].ad_platform",
+      "data.items[].date",
+      "data.static",
+      "data.tips",
+      "data.total",
+      "data.total[].ad_platform",
+      "data.total[].date"
+    ],
     "attribution.post_backtrack.list": [
       "data.list",
       "data.list[].app_id",

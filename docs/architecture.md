@@ -158,6 +158,7 @@ SQLite 中构建，全部成功才原子替换默认 catalog；失败保留旧�
 | Segment snapshot | `gravity analysis segment snapshot --app <alias|id> --ref <id-or-exact-name> --date <YYYY-MM-DD>` | `segment_snapshot()` | 精确解析一个分群后固定读取 detail、history、daily_result；不返回成员或规则定义 |
 | App snapshot | `gravity apps snapshot --app <alias|id>` | `app_snapshot()` | app detail、realtime event、capacity、permission menu、role、template，共 6 个来源 |
 | Attribution snapshot | `gravity attribution snapshot --app <alias|id>` | `attribution_snapshot()` | 当前 8 个 stable attribution 配置 operation |
+| Attribution performance | `gravity attribution performance --app <alias|id> --start ... --end ...` | `attribution_performance()` | 同一 stable v1 operation 的四个前端固定画像；一次 bounded batch，明确空与未知语义错误分离 |
 | User journey | `gravity analysis user journey --app ... --client-id ...` | `user_journey()` | 单用户 profile、event timeline、postback 三个受控来源；显式分页 |
 
 组合结果按固定来源顺序返回，每个来源带 scope 和 operation identity；局部失败隔离。Dashboard
@@ -214,8 +215,8 @@ worker 默认 6、上限 24，Plan adapter 固定 1，`max_items` 由父扫描�
 
 ### 候选能力不等于已交付能力
 
-当前基线是 185 个 operation、176 个 stable。本轮 17 个 Analysis、Report、App 和 Attribution
-候选均已得到明确探测结论，但新增 stable 数仍为 **0**；它们全部保持 `draft`。逐项证据、
+当前基线是 186 个 operation、177 个 stable。17 个 Analysis、Report、App 和 Attribution
+候选均已得到明确取证结论；D35 已晋升 stable，其余 16 个保持 `draft`。逐项证据、
 blocker 和下一步最小证据见[候选能力证据矩阵](candidate-capability-matrix.md)。尤其
 `attribution.attribution.query` 与 `attribution.attribution_detail.query` 仍不可作为正式 CLI/SDK
 查询能力宣传或执行。

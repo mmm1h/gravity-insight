@@ -299,6 +299,17 @@ def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
     return {"name": composite}
 
 
+_composite_plan_request_without_attribution = _composite_plan_request
+
+
+def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
+    if card.get("composite") == "attribution_performance":
+        from .agent_attribution_performance import attribution_performance_plan_request
+
+        return attribution_performance_plan_request(card)
+    return _composite_plan_request_without_attribution(card)
+
+
 def _segment_plan_request(
     composite: str, card: Mapping[str, Any]
 ) -> dict[str, Any]:
@@ -401,6 +412,16 @@ def _composite_product_requirements(
         return (
             list(PROMOTION_PERFORMANCE_REQUIRED_INPUTS),
             promotion_performance_input_template(),
+        )
+    if card.get("composite") == "attribution_performance":
+        from .agent_attribution_performance import (
+            ATTRIBUTION_PERFORMANCE_REQUIRED_INPUTS,
+            attribution_performance_input_template,
+        )
+
+        return (
+            list(ATTRIBUTION_PERFORMANCE_REQUIRED_INPUTS),
+            attribution_performance_input_template(),
         )
     if card.get("composite") == "bilibili_account_performance":
         from .agent_bilibili_account_performance import (

@@ -40,6 +40,10 @@ from .agent_promotion_performance import (
     PROMOTION_PERFORMANCE_CAPABILITY,
     PROMOTION_PERFORMANCE_NAME,
 )
+from .agent_attribution_performance import (
+    ATTRIBUTION_PERFORMANCE_CAPABILITY,
+    ATTRIBUTION_PERFORMANCE_NAME,
+)
 from .agent_saved_analysis import SAVED_ANALYSIS_CAPABILITY
 from .template_replay_surface import ANALYSIS_TEMPLATE_CAPABILITY
 from .agent_segment_snapshot import SEGMENT_SNAPSHOT_CAPABILITY
@@ -175,6 +179,7 @@ _COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
     ORDER_DIRECTORY_CAPABILITY,
     ORDER_SPLIT_TRACE_CAPABILITY,
     PROMOTION_PERFORMANCE_CAPABILITY,
+    ATTRIBUTION_PERFORMANCE_CAPABILITY,
     BUSINESS_PULSE_CAPABILITY,
     COMPANY_USAGE_CAPABILITY,
     CUSTOM_AUDIENCE_CAPABILITY,
@@ -453,6 +458,7 @@ def authoritative_capability_cards(
             ORDER_DIRECTORY_NAME,
             ORDER_SPLIT_TRACE_NAME,
             PROMOTION_PERFORMANCE_NAME,
+            ATTRIBUTION_PERFORMANCE_NAME,
             "multidim",
             "saved_analysis",
             "analysis_template",

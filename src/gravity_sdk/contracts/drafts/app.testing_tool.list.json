@@ -13,11 +13,6 @@
         "status": "open"
       },
       {
-        "code": "request_binding_unverified",
-        "detail": "Query/body fields and fixed request values have not been observed.",
-        "status": "open"
-      },
-      {
         "code": "response_schema_unverified",
         "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
         "evidence": "src/gravity_sdk/census/data/route-response-fields.json#/routes/700",
@@ -52,7 +47,6 @@
       "missing": [
         "not_probed",
         "pagination_unverified",
-        "request_binding_unverified",
         "response_schema_unverified"
       ]
     },
@@ -87,9 +81,9 @@
             "route_offset": 39096
           }
         ],
-        "contract_confidence": "medium",
+        "contract_confidence": "high",
         "learned_parameters": [],
-        "required_semantics": "frontend_observation_only",
+        "required_semantics": "frontend_builder_proven",
         "route": {
           "method": "POST",
           "path": "/turbo_engine/api/v1/user/device_white/testing_tool/list/"
@@ -152,36 +146,33 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "block_reason": "draft blockers: not_probed, pagination_unverified, request_binding_unverified, response_schema_unverified",
+    "block_reason": "draft blockers: not_probed, pagination_unverified, response_schema_unverified",
     "contract_version": 1,
-    "description": "Draft catalog entry inferred from census route POST /turbo_engine/api/v1/user/device_white/testing_tool/list/; request binding, pagination, and response projection remain unverified.",
+    "description": "Draft registered testing-device directory. Frontend control flow proves body {app_id,page:1,page_size:1000} and local UI pagination; server completeness and response item fields remain unverified.",
     "domain": "app",
     "effect": "read",
     "examples": [],
     "executable": false,
     "input_fields": {
       "app_id": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
-        "type": "any"
+        "description": "Positive App id selected by the caller.",
+        "required": true,
+        "type": "integer"
       },
       "page": {
         "default": 1,
-        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+        "description": "Frontend-fixed first page.",
         "type": "integer"
       },
       "page_size": {
-        "default": 1000.0,
-        "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
-        "type": "number"
+        "default": 1000,
+        "description": "Frontend-fixed one-shot page size; the UI paginates the returned list locally.",
+        "type": "integer"
       }
     },
     "live_probe": {
       "enabled": false,
-      "inputs": {
-        "app_id": 0,
-        "page": 1,
-        "page_size": 1000.0
-      }
+      "inputs": {}
     },
     "operation_id": "app.testing_tool.list",
     "pagination": {
@@ -209,7 +200,8 @@
     },
     "provenance": {
       "applied_overrides": [
-        "frontend_route_parameter_contract"
+        "frontend_builder_contract",
+        "frontend_local_pagination"
       ],
       "family": null,
       "platform": null,
@@ -225,7 +217,7 @@
       ],
       "defaults": {
         "page": 1,
-        "page_size": 1000.0
+        "page_size": 1000
       },
       "fixed_body": {},
       "fixed_query": {},

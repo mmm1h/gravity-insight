@@ -25,6 +25,7 @@ gravity analysis order directory  读取受控四字段的单日普通订单目�
 gravity analysis order trace  按显式 TraceID 读取单日拆单明细
 gravity apps snapshot         并发读取一个 App 的治理快照
 gravity attribution snapshot  并发读取一个 App 的归因配置快照
+gravity attribution performance 读取一个 App 日期区间的四组归因表现
 gravity reports pulse         并发读取 App 经营概览与趋势
 gravity reports usage         完整读取公司级按日资源用量趋势
 gravity materials performance 读取稳定的跨平台素材表现
@@ -245,13 +246,14 @@ gravity analysis dashboard snapshot --app main --ref <id-or-exact-name> --concur
 gravity analysis segment snapshot --app main --ref <id-or-exact-name> --date <YYYY-MM-DD> --concurrency 3
 gravity apps snapshot --app main --concurrency 6
 gravity attribution snapshot --app main --concurrency 6
+gravity attribution performance --app main --start <YYYY-MM-DD> --end <YYYY-MM-DD> --concurrency 4
 ```
 
 `--app` 接受 workspace alias 或正整数；归因命令继续接受 `--app-id` 兼容别名。Analysis
 context 固定 13 个词汇/模板来源，App snapshot 固定 6 个治理来源；Attribution snapshot 固定
 覆盖当前 8 个 stable attribution operation，其中两个 postback map 自动读取全部页。这三者
 默认并发 6；Dashboard snapshot 默认 5，Segment snapshot 默认 3；所有组合上限均为 24，按固定来源顺序返回并隔离局部
-失败。Attribution snapshot 不包含仍为 draft 的聚合归因和用户/设备级明细查询。
+失败。Attribution snapshot 不包含独立的归因表现产品，也不包含仍为 draft 的用户/设备级明细查询。
 
 ### Governed export
 
@@ -748,7 +750,7 @@ gravity plan run --input plan.json --concurrency 6
 | `run` | `selector`、`inputs`/`parameters`、可选 `app/start/end/all_pages` | operation 或 `@recipe` |
 | `sql_product` | `product` 及该 Workspace 产品的 App/时间输入 | 已登记产品，禁止裸 SQL |
 | `metadata_search` | `query`、可选 `kind/app_id/limit/offset` | 已同步的本地 catalog |
-| `composite` | `name`、组合所需 App/查询输入 | 仅登记的 analysis/segment query、context/dashboard/app/attribution snapshot、business pulse/company usage、multidim、material/promotion performance |
+| `composite` | `name`、组合所需 App/查询输入 | 仅登记的 analysis/segment query、context/dashboard/app/attribution snapshot/performance、business pulse/company usage、multidim、material/promotion performance |
 
 每个节点还可声明 `depends_on`、标量 `bindings`、一个有限 `foreach`、`limits` 和
 `output_fields`。binding/foreach 的 `from` 必须显式位于 `depends_on`，路径使用 RFC 6901 JSON

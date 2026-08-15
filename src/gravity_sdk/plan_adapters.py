@@ -112,6 +112,7 @@ _COMPOSITE_OUTPUT_FIELDS = frozenset(
         "include_hourly", "operation_count", "platforms",
         "paginated_operation_count", "query", "results", "scopes", "source_count",
         "total", "validation", "items", "saved_analysis", "source", "kind",
+        "profiles",
         "operation_id", "definition_network_called", "query_executed", "result",
     }
 )

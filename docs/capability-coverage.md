@@ -4,13 +4,13 @@
 manifest 与 `gravity agent <query>` 为准；完整路由账本见
 [`coverage-report.md`](../src/gravity_sdk/census/data/coverage-report.md)。
 
-## 2026-08-11 离线快照
+## 2026-08-11 离线快照（含 2026-08-16 D35 增量）
 
 | 范围 | 当前状态 |
 | --- | --- |
-| 编译 operation | 185 |
-| stable operation | 176 |
-| stable operation 产品面交叉 | 86 已覆盖 / 82 不应产品化 / 8 值得产品化（其中 1 条本轮闭环） |
+| 编译 operation | 186（D35 `+1`） |
+| stable operation | 177（D35 `+1`） |
+| stable operation 产品面交叉 | 87 已覆盖 / 82 不应产品化 / 8 原快照待产品化；新增 D35 直接闭环 |
 | 推广 / 素材 stable 原子读取 | 64 / 24 |
 | Census 路由 | 987，全部有明确归类 |
 | Census 中 callable covered route | 172 |

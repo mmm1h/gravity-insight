@@ -58,9 +58,11 @@
   TraceID 不会被复制或执行。
 - 已知推广 App、日期、平台和物理指标：一次 `gravity promotion performance`；未知入口：Agent
   返回待填写的 `promotion_performance` 节点，再执行一次 Plan。
+- 已知归因 App 与日期：一次 `gravity attribution performance`；它固定读取四组前端已证明的归因
+  表现画像。未知入口由 Agent 返回待填写的 `attribution_performance` 节点。
 - 发现只返回候选以及 Plan node 或受控编译交接，不会从自然语言自动执行。
 
-当前基线仍为 185 个 operation、176 个 stable。本轮 17 个候选新增 stable 数为 0；不要把
+当前基线为 186 个 operation、177 个 stable；17 个候选中 D35 已晋升，其余 16 个仍为 draft。不要把
 `draft` 能力写入生产 Plan。逐项 blocker 以[候选能力证据矩阵](candidate-capability-matrix.md)
 为准。
 

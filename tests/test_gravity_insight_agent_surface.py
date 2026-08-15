@@ -236,7 +236,7 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
         # 角色模板列表有已验证分页默认值，再增加一个完整 example。
         # 容量历史依赖当前租户的公司容量父级，不伪造静态示例。
         # 角色详情依赖运行时从角色列表选取 role_id，同样不伪造静态示例。
-        self.assertEqual((83, 93), (examples_complete, examples_unknown))
+        self.assertEqual((84, 93), (examples_complete, examples_unknown))
         # 本趟按父 response projection 与调用方选择语义补全 9 条边；剩余
         # 16 条涉及 runtime-v1 target 投影、递归、同一行关联或嵌套输入变换。
         # 素材相册列表再补一条递归父级边，公开 probe 会按目标字符串契约转换；
@@ -248,7 +248,7 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
         # AI 托管指标字典再补一条规则媒体类型父级边。
         # 容量历史再补一条当前公司 ID 父级边。
         # 角色详情再补一条角色列表 ID 父级边。
-        self.assertEqual((62, 16), (parents_complete, parents_unknown))
+        self.assertEqual((63, 16), (parents_complete, parents_unknown))
 
         transformed = self.client.describe("analysis.event.query")["required_parent"][0]
         self.assertEqual("data.list[].name", transformed["output_path"])

@@ -66,7 +66,7 @@ gravity run <operation-id> --input <json-or-file>
 ```
 
 `gravity agent` 完全离线，一次完成 bounded search + describe，优先返回匹配的 workspace recipe，再用 stable operation 补足默认 3 个、最多 5 个 capability cards。Recipe 卡片包含 `required_parameters`；operation 卡片包含压缩 input schema、`required_inputs`、父 operation、分页合同；两类都提供可直接调用的 `next.argv`。无 query 时运行 `gravity agent` 可取得 `gravity.agent.v1` 机器协议。明确且无冲突的 `monetization details/变现明细` 返回 value-free `monetization_detail` 卡；调用方只填 App/单日。用户/设备字段、筛选、分组或排序意图转到 `analysis.monetization_detail.list` raw discovery，并由 live metadata 校验；跨日、聚合、导出/写入、raw-like 后缀和相邻产品仍由本地 Guard 报 gap。
-
+明确的 `attribution performance/归因表现/归因汇总` 返回 value-free `attribution_performance` 卡；调用方只填 App、日期，执行四组已证明画像，不接收任意指标/维度或单用户明细；`gravity.agent-call-bound.v1` 声明已知输入 1 次、未知 capability 2 次、未知 App 默认 3 次。
 当能力和目录值都未知、但 App/平台等依赖上下文已知时，显式使用在线输入解析；必须写 JSON 文件，避免完整目录被 stdout 的 200 项安全上限截断：
 
 ```powershell

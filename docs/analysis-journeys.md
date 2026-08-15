@@ -10,12 +10,11 @@
 执行，内部 HTTP 数也没有减少。App/平台也未知时不适用该两次路径；默认离线 Agent 的原三次下界保留。
 `gravity.agent-call-bound.v1` 只在本次成功交付完整目录的卡与 Plan 节点上把对应 scenario 声明为 2。
 
-当前程序化重算：**48 条产品动线：已闭环 33 / 部分闭环 0 / 完全缺失 15**。可复算：下表 51 行，
+当前程序化重算：**48 条产品动线：已闭环 34 / 部分闭环 0 / 完全缺失 14**。可复算：下表 51 行，
 减去 2 条兼容/维护便利面和 1 条“既有稳定读取面重复”，得到 48 条；按状态直接分组为
-`48 = 33 / 0 / 15`。相对旧摘要 `47 = 33 / 0 / 14` 是 `+0 / +0 / +1`、总数 `+1`：旧摘要在 D28
-缺失行已经进入表格后仍写“净变化 0”，漏计了这一既有行。本轮只纠正算术，不把 D28 写成已实现，
-也不改变闭环判据。stable operation 仍为 185、其中 176 个 stable。
-**部分闭环归零不等于没有欠账**——15 条完全缺失里多数是合同证据阻塞，逐行有记录。
+`48 = 34 / 0 / 14`。从上一可复算基线 `48 = 33 / 0 / 15` 起，D35 从完全缺失迁入已闭环：
+`33 + 1 = 34`、`15 - 1 = 14`，总数不变。operation 为 `185 + 1 = 186`，stable 为
+`176 + 1 = 177`。**部分闭环归零不等于没有欠账**——14 条完全缺失里多数是合同证据阻塞。
 
 2026-08-16 的 Agent 渐进发现与生成任务指南是既有调用方入口的可读性改进，不新增 operation、结果 envelope 或产品动线：`48 + 0 = 48`、`33 / 0 / 15 + 0 / 0 / 0 = 33 / 0 / 15`，operation 仍为 `185 + 0 = 185`、stable 仍为 `176 + 0 = 176`。它的独立三层只读入口从既有 composite card 和 compiled manifest 派生；真实查询仍经既有 Agent card/Plan/CLI 合同。生产 HTTP 0 次。
 旧快照 `21/14/6` 没有逐条证据，不能复算；本台账不还原已丢失的原始 41 条定义。
@@ -163,8 +162,8 @@ writer 拒绝非有限数字；operation、投影、请求、错误分类和退�
 | 查找当前账号可读的 App 项目 | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `APP_PROJECT_ITEM_SCHEMA_MISSING`。**推进但未闭环**：hash-matched appManage 控制流证明 `app.project.list` 只装载项目表和分页，create/delete 走独立 mutation；确认记录已追加。最小第一页实际 1 次 POST，HTTP 200 明确空，新 receipt 为 `method_verified=true`、`pagination_verified=true`，因此可确定当前账号没有可读项目；item schema、成功非空与前三个产品面仍缺。下一步由有可读项目的租户做 1 次 `page=1/page_size=1` probe，再登记全部观察字段。 |
 | 查看 App 的 OneLink 与公开信息绑定 | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `APP_ONELINK_PUBLIC_BINDING_SAMPLE_MISSING`。**推进但未闭环**：OneLink 仍由既有 GET 父链证明当前账号明确空。appManage 进一步证明 app-info 的 `url` 来自调用方输入的 Google Play/App Store 下载链接，并非 OneLink 项；公开 URL 的 2 次最小 GET 均 HTTP 200，已恢复 `app_id/error/icon_url/image_data/name/package_name/platform` schema，但结果为 error-shaped `inconclusive`，未获成功数据。下一步由调用方提供一条已知能被 Gravity 抓取的公开商店 URL，只做 1 次读取；非空后按投影总裁决登记并暴露全部字段，不能用当前 OneLink 空样本补绑定。 |
 | 按平台、广告位和日期汇总变现结果（D28） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `MONETIZATION_AGGREGATE_CONTRACT_MISSING`。**请求/读语义已证明，响应合同仍阻塞**：hash-matched `NewReportCenter` bundle 已恢复 `custom_get` 九字段和 `calc_total` 八字段 builder、条件省略、响应消费及纯客户端分页，两条精确 POST read confirmation 已登记。生产共 3 请求：`app.list` 与主 route 的 status/schema 因 one-shot 脚本未及时落盘而未知，按纪律不补发；`calc_total` 唯一请求 HTTP 200，只观察到无字段的 `data.list[]:object`。仍缺主 route shape、两 route 非空 item/total 字段及指标/维度值域；投机性标识符不登记为 omitted，取得实际 shape 后全部登记暴露。 |
-| 查询归因表现聚合（D35） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `ATTRIBUTION_AGGREGATE_CONTRACT_MISSING`。前端 body 已恢复，但最小请求仍 semantic error；缺服务端必填、值域和成功/明确空证据。 |
-| 下钻单用户归因明细（F40） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `USER_ATTRIBUTION_DETAIL_DEPENDENCY_MISSING`。D35 未成立；还缺调用方提供的授权标识来源、请求绑定、分页和响应合同。标识字段投影已全面放开，不再是阻塞。 |
+| 查询归因表现聚合（D35） | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（实测；未知 App 离线默认 3） | hash-matched 前端控制流证明 14 恒发字段、2 条条件省略和四个固定指标画像。生产账本为 1 次 App catalog + 2 次单日目标 POST：首 App `code=0/msg=成功/extra.error=无数据` 明确空，第二 App 非空后立即停止；无重试、翻页或扩窗。stable `attribution.attribution.query` 暴露全部观察字段；Core/CLI/SDK/Plan/Agent 共用 `gravity-insight.attribution-performance.v1` 和 `gravity.agent-call-bound.v1`。旧 evidence 未保存 error 正文，不能声称服务端曾拒绝某字段；当前合同将“无数据”规范化为空，其他未知 error fail-closed。 |
+| 下钻单用户归因明细（F40） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `USER_ATTRIBUTION_DETAIL_DEPENDENCY_MISSING`。静态控制流现已证明详情 body 为 `{app_id,device_id:Number(selected testing-device data.list[].id)}`、分页 none，并消费 `device_white/attribution_list/postback_list/pay_list`。仍缺调用方授权的真实测试设备父行 id、父目录 live 合同，以及一次详情成功/明确空响应的完整字段/type；本轮未获用户级枚举授权，故 0 次 F40 请求。 |
 | 按表名或 App 查询数据表当前 schema、字段和版本（F41） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `CURRENT_TABLE_SCHEMA_PARENT_MISSING`。list 为空且无可信表名/App 来源；detail/version 父链、`table_id` 类型和“当前版本”语义未证实。 |
 | 下钻非 Bytedance 平台的计划、组和创意表现（D33/D34） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `NON_BYTEDANCE_HIERARCHY_PARENT_MISSING`。Bilibili advertiser 与 Huya account 未产出父候选；后续 ID 链、report 父字段、分页和非空 schema 未成立。 |
 | 深查各平台专属素材与创意（D32） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `PLATFORM_SPECIFIC_CREATIVE_CONTRACT_MISSING`。除 Bytedance 外普遍没有最小非空响应合同；common 素材目录不能证明平台专属字段。Bytedance 标题包已单列为独立动线闭环，**但那是 D32 之下的一个具体产品，不是这条动线的进展**；本条仍是数据证据阻塞。 |
