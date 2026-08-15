@@ -2,6 +2,7 @@ import copy
 import io
 import json
 import os
+import subprocess
 import tempfile
 import threading
 import time
@@ -12,6 +13,7 @@ from pathlib import Path
 from unittest import mock
 
 from gravity_sdk.sql import __main__ as gravity_cli
+from gravity_sdk.sql import products, provenance
 from gravity_sdk.sql.client import GravityClient
 try:
     from gravity_sdk.errors import AuthenticationError, CredentialError, TransportError
@@ -170,7 +172,7 @@ class GravityProductTests(unittest.TestCase):
             with mock.patch("gravity_sdk.sql.products.EVIDENCE_PATH", rolling), mock.patch(
                 "gravity_sdk.sql.products.EVIDENCE_PRODUCT_ROOT", product_root
             ), mock.patch(
-                "gravity_sdk.sql.products._git_state", return_value=("a" * 40, True)
+                "gravity_sdk.sql.products.git_state", return_value=("a" * 40, True)
             ), mock.patch(
                 "gravity_sdk.sql.products.load_workspace",
                 side_effect=AssertionError("publish reloaded its bound workspace"),
@@ -212,7 +214,7 @@ class GravityProductTests(unittest.TestCase):
                 "gravity_sdk.sql.products.EVIDENCE_PRODUCT_ROOT",
                 Path(temporary) / "gravity-daily-verification",
             ), mock.patch(
-                "gravity_sdk.sql.products._git_state", return_value=("a" * 40, True)
+                "gravity_sdk.sql.products.git_state", return_value=("a" * 40, True)
             ), mock.patch(
                 "gravity_sdk.sql.products.publish_json_snapshot",
                 side_effect=OSError("snapshot failed"),
@@ -818,6 +820,8 @@ class GravityProductTests(unittest.TestCase):
         binding.reference.return_value = {"snapshot_id": "snapshot", "result_sha256": "a" * 64}
 
         def fake_git(args, **_kwargs):
+            if args[1:3] == ["rev-parse", "--show-toplevel"]:
+                return mock.Mock(returncode=0, stdout="/consumer/repo\n")
             if args[1:3] == ["rev-parse", "HEAD"]:
                 return mock.Mock(returncode=0, stdout="b" * 40 + "\n")
             if args[1:3] == ["branch", "--show-current"]:
@@ -850,6 +854,7 @@ class GravityProductTests(unittest.TestCase):
                 "current_branch",
                 "git_sha",
                 "git_dirty",
+                "git_state",
                 "python_version",
                 "working_tree_clean_or_scoped",
                 "current_evidence",
@@ -862,6 +867,61 @@ class GravityProductTests(unittest.TestCase):
             set(result),
         )
         self.assertNotIn("token", str(result).lower())
+
+    def test_provenance_root_prefers_the_consumer_checkout_over_the_state_root(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            consumer = Path(tempdir) / "consumer"
+            state = Path(tempdir) / "state"
+            consumer.mkdir()
+            state.mkdir()
+            subprocess.run(["git", "init", "-q"], cwd=consumer, check=True)
+            workspace = mock.Mock(root=consumer, state_root=state)
+
+            resolved = provenance.provenance_root(workspace)
+
+            self.assertIsNotNone(resolved)
+            self.assertEqual(consumer.resolve(), resolved.resolve())
+
+            # The state root is never a checkout; probing it is what made every
+            # normal consumer fail preflight before this fix.
+            detached = mock.Mock(root=state, state_root=state)
+            with mock.patch.object(provenance, "ROOT", state):
+                self.assertIsNone(provenance.provenance_root(detached))
+
+    def test_preflight_git_report_covers_clean_dirty_detached_and_non_git(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            repo = Path(tempdir) / "consumer"
+            repo.mkdir()
+            run = lambda *args: subprocess.run(list(args), cwd=repo, check=True, capture_output=True)
+            run("git", "init", "-q", "-b", "work")
+            (repo / "gravity.toml").write_text("[apps]\n", encoding="utf-8")
+            run("git", "add", "-A")
+            run("git", "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "init")
+
+            clean = provenance.preflight_git_report(repo)
+            self.assertEqual(("resolved", "work", False), (clean["git_state"], clean["current_branch"], clean["git_dirty"]))
+            self.assertRegex(clean["git_sha"], r"^[0-9a-f]{40}$")
+
+            (repo / "untracked.sql").write_text("select 1\n", encoding="utf-8")
+            self.assertTrue(provenance.preflight_git_report(repo)["git_dirty"])
+            (repo / "untracked.sql").unlink()
+
+            run("git", "checkout", "-q", "--detach", clean["git_sha"])
+            detached = provenance.preflight_git_report(repo)
+            self.assertEqual(("resolved", "DETACHED", clean["git_sha"]), (detached["git_state"], detached["current_branch"], detached["git_sha"]))
+
+            outside = Path(tempdir) / "plain"
+            outside.mkdir()
+            self.assertIsNone(provenance.git_toplevel(outside))
+
+        report = provenance.preflight_git_report(None)
+        self.assertEqual("not_git_backed", report["git_state"])
+        self.assertEqual((None, None, None), (report["git_sha"], report["current_branch"], report["git_dirty"]))
+
+        # Publish must still fail closed: a report is not provenance.
+        with mock.patch.object(provenance, "provenance_root", return_value=None):
+            with self.assertRaises(EvidenceFormatError):
+                provenance.git_state(mock.Mock())
 
     def test_credential_source_accepts_account_password_login(self):
         with tempfile.TemporaryDirectory() as tempdir, mock.patch.dict(

@@ -11,7 +11,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Mapping
 
-from gravity_sdk.paths import EVIDENCE_ROOT, PACKAGE_ROOT, PROJECT_ROOT
+from gravity_sdk.paths import EVIDENCE_ROOT, PACKAGE_ROOT
 from gravity_sdk.support.documents import replace_atomic_durable
 from gravity_sdk.support.evidence import (
     EvidenceBinding,
@@ -20,6 +20,13 @@ from gravity_sdk.support.evidence import (
     serialize_json_result,
 )
 from gravity_sdk.sql.credential_source import credential_source as _credential_source
+from gravity_sdk.sql.provenance import (
+    ROOT,
+    git_state,
+    git_toplevel,
+    preflight_git_report,
+    provenance_root,
+)
 from gravity_sdk.sql.evidence_validation import (
     EvidenceFormatError,
     validate_evidence_document,
@@ -28,7 +35,6 @@ from gravity_sdk.sql.time_window import BEIJING, day_window, latest_safe_date, n
 from gravity_sdk.workspace import Workspace, WorkspaceError, load_workspace, require_products
 
 
-ROOT = PROJECT_ROOT
 EVIDENCE_PATH = EVIDENCE_ROOT / "latest.json"
 EVIDENCE_PRODUCT_ROOT = EVIDENCE_ROOT / "daily-verification"
 SQL_PRODUCT_CONTRACT_PATH = PACKAGE_ROOT / "contracts" / "sql-products" / "catalog.json"
@@ -262,7 +268,7 @@ def publish_evidence(
     selected = load_workspace() if workspace is None else workspace
     validate_evidence(evidence, workspace=selected)
     canonical_publish = path.resolve() == EVIDENCE_PATH.resolve()
-    snapshot_metadata = _snapshot_metadata(evidence) if canonical_publish else None
+    snapshot_metadata = _snapshot_metadata(evidence, selected) if canonical_publish else None
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary: Path | None = None
     try:
@@ -332,8 +338,10 @@ def read_evidence(
     return evidence
 
 
-def _snapshot_metadata(evidence: dict[str, Any]) -> dict[str, Any]:
-    git_sha, git_dirty = _git_state()
+def _snapshot_metadata(
+    evidence: dict[str, Any], workspace: Workspace | None = None
+) -> dict[str, Any]:
+    git_sha, git_dirty = git_state(workspace)
     window = evidence["window"]
     return {
         "schema_version": 1,
@@ -354,29 +362,6 @@ def _snapshot_metadata(evidence: dict[str, Any]) -> dict[str, Any]:
         "provenance_status": "complete",
         "unknown_fields": [],
     }
-
-
-def _git_state() -> tuple[str, bool]:
-    head = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        check=False,
-    )
-    if head.returncode or re.fullmatch(r"[0-9a-f]{40}", head.stdout.strip()) is None:
-        raise EvidenceFormatError("cannot publish evidence without a valid repository Git SHA")
-    status = subprocess.run(
-        ["git", "status", "--porcelain=v1", "--untracked-files=all"],
-        cwd=ROOT,
-        capture_output=True,
-        check=False,
-    )
-    if status.returncode:
-        raise EvidenceFormatError("cannot determine repository state for evidence provenance")
-    return head.stdout.strip(), bool(status.stdout.strip())
 
 
 def readiness_status(
@@ -465,35 +450,28 @@ def evidence_preflight(
     selected_day = target_day or safe_day
     if selected_day > safe_day:
         raise EvidenceFormatError(f"target date {selected_day} is newer than latest safe date {safe_day}")
-    head = subprocess.run(
-        ["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace", check=False
-    )
-    branch = subprocess.run(
-        ["git", "branch", "--show-current"], cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace", check=False
-    )
-    status = subprocess.run(
-        ["git", "status", "--porcelain=v1", "--untracked-files=all"], cwd=root, capture_output=True, check=False
-    )
-    git_sha = head.stdout.strip()
-    if head.returncode or re.fullmatch(r"[0-9a-f]{40}", git_sha) is None or branch.returncode or status.returncode:
-        raise EvidenceFormatError("cannot determine Git state for Evidence preflight")
-    git_dirty = bool(status.stdout.strip())
-    credential_source = _credential_source(root)
     selected = load_workspace() if workspace is None else workspace
+    repository_root = provenance_root(selected) if root is ROOT else git_toplevel(root)
+    credential_source = _credential_source(root)
     binding = resolve_current_evidence(product_root, workspace=selected)
     start_at, end_at = day_window(selected_day)
     current_status = readiness_status(binding, now, workspace=selected)
+    git = preflight_git_report(repository_root)
+    git_dirty = git["git_dirty"]
     blockers: list[str] = []
-    if git_dirty:
+    if git["git_state"] != "resolved":
+        blockers.append(f"consumer_workspace_{git['git_state']}")
+    elif git_dirty:
         blockers.append("working_tree_not_clean_or_scoped")
     if credential_source == "missing":
         blockers.append("gravity_read_only_credential_missing")
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "mode": "offline_preflight_only",
-        "working_tree_clean_or_scoped": not git_dirty,
-        "current_branch": branch.stdout.strip() or "DETACHED",
-        "git_sha": git_sha,
+        "working_tree_clean_or_scoped": git["git_state"] == "resolved" and not git_dirty,
+        "git_state": git["git_state"],
+        "current_branch": git["current_branch"],
+        "git_sha": git["git_sha"],
         "git_dirty": git_dirty,
         "python_version": platform.python_version(),
         "gravity_profile": "local_read_only",
