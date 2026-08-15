@@ -1,0 +1,22 @@
+{
+  "$schema": "../schema/operation-v2.schema.json", "source_schema_version": 2, "target_manifest": "analysis.json", "manifest_order": 20183,
+  "operation": {
+    "operation_id": "analysis.dataanalysis.segment.update", "domain": "analysis", "resource": "dataanalysis_segment", "action": "update", "contract_version": 1,
+    "upstream_method": "POST", "path_template": "/report/api/v3/dataanalysis/segment/save/", "auth_profile": "gravity_authorization",
+    "stability": "stable", "effect": "mutation", "executable": true,
+    "description": "更新分群名称/备注或删除经读回验证为 SDK 创建的分群；删除动作不能由调用方绕过标记闸门。",
+    "input_fields": {
+      "segment_id": {"type": "string", "required": true, "max_length": 64},
+      "segment_name": {"type": "string", "required": true, "max_length": 20},
+      "segment_remark": {"type": "string", "required": true, "max_length": 2000},
+      "action": {"type": "string", "required": true, "enum": ["UPDATE_NAME", "DEL"]}
+    },
+    "request": {"path_fields": [], "query_fields": [], "body_fields": ["segment_id", "segment_name", "segment_remark", "action"], "defaults": {}, "fixed_query": {}, "fixed_body": {}},
+    "response_projection": {"data_shape": "object", "data_keys": [], "required_data_keys": [], "item_keys": [], "dynamic_item_fields": []},
+    "pagination": {"kind": "none", "page_field": "", "page_size_field": "", "list_path": "", "page_info_path": "", "total_page_field": ""},
+    "semantic_error_rules": ["code", "extra.error"],
+    "privacy_policy": {"classification": "configuration", "redact_fields": ["authorization", "access_token", "token", "cookie", "password", "secret"]},
+    "required_parent": [], "live_probe": {"enabled": false, "inputs": {}}, "examples": [],
+    "provenance": {"source_files": ["operations/analysis.dataanalysis.segment.update.json"], "family": null, "platform": null, "applied_overrides": []}
+  }
+}

@@ -87,6 +87,8 @@ occurrence/call-site 和 coverage 分类，不能把三个口径混用。
 | `load_alias_has_no_static_call`（97 route） | 49 | 23 | 17 | 7 | 1 |
 | `unresolved_body_expression`（60 route） | 45 | 7 | **1（D35）** | 3 | 4 |
 
-写操作保持 reservation、auth/proxy 保持 unsupported，都不是取数缺口；已覆盖的 route 不需要再提取。
+本表是当轮静态提取优先级快照；其中写操作不是取数缺口。后续范围裁决只把 7 条已取得完整 wire
+证据的 Segment mutation 提升为 stable，表内其余写（尤其推广/素材）继续 reservation；auth/proxy
+保持 unsupported，已覆盖的 route 不需要再提取。
 真正相交的只有默认值字典与 D35，而这两条卡的是**服务端语义与非空证据**，不是静态提取能力——
 提取器修好了它们照样过不去。复算方法见上一段，逐 route 明细不入库（随 bundle 变化即过期）。

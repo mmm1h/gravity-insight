@@ -1,0 +1,17 @@
+{
+  "$schema": "../schema/operation-v2.schema.json", "source_schema_version": 2, "target_manifest": "analysis.json", "manifest_order": 20172,
+  "operation": {
+    "operation_id": "analysis.segment.by.manual.update", "domain": "analysis", "resource": "segment_by_manual", "action": "update", "contract_version": 1,
+    "upstream_method": "POST", "path_template": "/report/api/v3/dataanalysis/segment/by_manual/update/", "auth_profile": "gravity_authorization",
+    "stability": "stable", "effect": "mutation", "executable": true,
+    "description": "显式触发一个分群的手动刷新；单次发送且不自动重试。",
+    "input_fields": {"segment_id": {"type": "string", "required": true, "max_length": 64}},
+    "request": {"path_fields": [], "query_fields": [], "body_fields": ["segment_id"], "defaults": {}, "fixed_query": {}, "fixed_body": {}},
+    "response_projection": {"data_shape": "object", "data_keys": [], "required_data_keys": [], "item_keys": [], "dynamic_item_fields": []},
+    "pagination": {"kind": "none", "page_field": "", "page_size_field": "", "list_path": "", "page_info_path": "", "total_page_field": ""},
+    "semantic_error_rules": ["code", "extra.error"],
+    "privacy_policy": {"classification": "configuration", "redact_fields": ["authorization", "access_token", "token", "cookie", "password", "secret"]},
+    "required_parent": [], "live_probe": {"enabled": false, "inputs": {}}, "examples": [],
+    "provenance": {"source_files": ["operations/analysis.segment.by.manual.update.json"], "family": null, "platform": null, "applied_overrides": []}
+  }
+}

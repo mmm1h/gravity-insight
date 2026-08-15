@@ -258,9 +258,14 @@ def analysis_query_spec_cards(
     """Expose the offline Analysis compiler as a first-class Agent handoff."""
 
     from .agent_analysis import analysis_query_spec_cards as build_cards
-    from .agent_segment import segment_rule_spec_cards as segment_cards
+    from .agent_segment import (
+        segment_mutation_cards,
+        segment_rule_spec_cards as segment_cards,
+    )
 
-    return segment_cards(query, domain=domain, platform=platform) or build_cards(
+    return segment_mutation_cards(
+        query, domain=domain, platform=platform
+    ) or segment_cards(query, domain=domain, platform=platform) or build_cards(
         query, domain=domain, platform=platform
     )
 

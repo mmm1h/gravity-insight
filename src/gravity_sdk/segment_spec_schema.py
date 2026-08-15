@@ -39,7 +39,7 @@ def _spec_schema() -> dict[str, Any]:
         "required": ["name", "start"],
         "additionalProperties": False,
         "properties": {
-            "name": _string(128),
+            "name": _string(20),
             "remark": {"type": "string", "maxLength": 2_000},
             "update_type": _enum("Manual", "Routine"),
             "start": {"type": "string", "format": "date"},

@@ -175,6 +175,10 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `segment_evaluate()` | 执行受治理的聚合人群规则人数/占比评估 |
 | `segment_snapshot()` | 按稳定 ID 或精确名称读取分群 detail/history/daily_result；不返回成员或规则 |
 | `segment_members()` | 按稳定 ID 或精确名称返回完整成员行；动态字段由 user-property metadata 发现，历史用 `segment_version_id` |
+| `segment_create_from_analysis()` | 默认零网络预览，显式 `execute=True` 后把一个已验证 funnel step/loss 持久化为带标记分群 |
+| `segment_create_from_rule()` / `segment_create_from_history()` / `segment_create_from_tmp()` | 默认预览，显式确认后从规则、历史版本或临时分群创建带标记分群 |
+| `segment_update()` / `segment_update_rule()` / `segment_refresh()` | 默认预览；执行前读 exact preimage，单次更新且不自动重放 |
+| `segment_delete()` | 默认预览；执行时只删除 detail 读回仍带 SDK 标记的分群 |
 | `saved_analyses()` | 列出一个 App 的安全保存分析身份，不读取 opaque config |
 | `get_saved_analysis()` | 按 ID 或精确名称检查 Strict Replay 资格及 window 要求，不返回 config |
 | `prepare_saved_analysis()` | 在显式日期窗内读取 reference Web artifact 并严格编译，不执行最终查询；compact definition 旧模式兼容 |
@@ -238,6 +242,41 @@ timeout_seconds=300.0)` 原样委托 `GravityInsightClient.export_run()`。当�
 `job_id/resumable/error.next_action`。已有 job ID 时用 `gravity.insight.export_status()`、
 `export_wait()` 和 `export_download()` 恢复；创建结果不确定且无可靠 ID 时先 `export_list()`，
 不要重复创建。输入、列顺序、幂等键和目的路径都必须由调用方显式给出。
+
+## Segment Mutation v1
+
+所有 Segment mutation SDK 方法默认 `execute=False`，只返回
+`gravity-insight.segment-mutation.v1` 的零网络 preview。调用方审查 `request`/`request_template`、
+`target`、`impact` 与 `preconditions` 后，才以相同参数传 `execute=True`：
+
+```python
+preview = gravity.segment_create_from_analysis(
+    funnel_spec,
+    app="main",
+    name="SDK测试漏斗",
+    step=1,
+    is_loss=True,
+    idempotency_key="funnel-loss-20260816",
+)
+created = gravity.segment_create_from_analysis(
+    funnel_spec,
+    app="main",
+    name="SDK测试漏斗",
+    step=1,
+    is_loss=True,
+    idempotency_key="funnel-loss-20260816",
+    execute=True,
+)
+segment_id = created["target"]["segment_id"]
+delete_preview = gravity.segment_delete(segment_id)
+deleted = gravity.segment_delete(segment_id, execute=True)
+```
+
+create 用确定性 marker 做读前幂等检查，并在单次写后通过完整 segment list 和 detail 读回；跨进程
+重名由上游唯一约束返回 caller/2，不会自动重试。delete 的 ownership 只来自执行时的 detail preimage，
+调用方不能通过传 remark 绕过。`segment_update()` 与 `segment_update_rule()` 会保留读到的 marker；
+`segment_refresh()` 可能异步改变成员集合。历史/临时创建需要调用方给真实且已验证的父 ID，不做发现或
+猜测。自然语言 Agent 只交接 CLI 确认流程，这些方法不映射为 Plan v1 节点。
 
 ## Analysis Query Spec v1
 

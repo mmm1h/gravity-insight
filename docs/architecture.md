@@ -300,7 +300,8 @@ binding 只复制 RFC 6901 JSON Pointer 指向的值，`from` 必须位于 `depe
 
 ### 运行时硬底线
 
-- 固定 host、path、method 和 effect；默认拒绝写操作与未知 wire 字段；
+- 固定 host、path、method 和 effect；默认拒绝写操作与未知 wire 字段，仅 exact stable/executable
+  `effect=mutation` 合同可经独立一次性授权路径执行；
 - 凭据、Cookie、token 不进入日志、fixture、stdout 或 Git；生产响应值不进入 evidence、文档、测试或提交，运行时已登记字段按上游授权返回调用方；
 - 响应字段显式登记并投影；未登记字段因合同漂移 fail-closed，登记后的用户级、设备级和标识符字段
   按上游授权原样暴露，不作为第二层隐私门禁；
@@ -325,6 +326,8 @@ live probe 或 Evidence 刷新。文档改动、CLI 文案和纯重构也不应�
   合同漂移 fail closed，凭据键仍递归去除。
 - 普通 read 不发布 Evidence、不上传或分享文件，也不修改上游资源。
 - 导出是独立 effect，经过导出合同和本地落盘策略。
+- Segment mutation 是当前唯一业务写 effect：默认零网络预览、显式确认、单次发送、创建标记/读回、
+  删除前 detail 标记闸门；不进入普通 read executor 或 Plan v1。
 - Order Directory 的结果行只允许 `Amount/BackAmount/Status/CreateTime`；额外订单、用户、拆单或
   归因标识会使整个结果 fail closed，Agent 卡、continuation 和错误也不回显自然语言输入值。
 - Order Split Trace 的 TraceID、ClientID、拆单 ID 与 PayEventTime 只参与内存内精确派生；产品

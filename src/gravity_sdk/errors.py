@@ -133,6 +133,24 @@ def _default_next_action(code: str, operation_id: str | None) -> str:
         ErrorCode.EXPORT_TIMEOUT.value: (
             "Resume the export with its status operation; do not start a duplicate export."
         ),
+        "OBJECT_ALREADY_EXISTS": (
+            "Choose a different object name, or reuse the existing SDK-owned object."
+        ),
+        "OBJECT_REFERENCED": (
+            "Remove the reported references, then retry the delete once."
+        ),
+        "QUOTA_EXCEEDED": (
+            "Remove an unused SDK-owned object or ask the workspace owner to raise the quota."
+        ),
+        "CONCURRENT_MODIFICATION": (
+            "Read the object again, review the new state, then issue a new explicit write."
+        ),
+        "OWNERSHIP_MARKER_REQUIRED": (
+            "Do not retry through the SDK; manage this unmarked object in Gravity Web with its owner."
+        ),
+        "MUTATION_READBACK_FAILED": (
+            "Read the target by its exact identifier before deciding whether to issue another write."
+        ),
         ErrorCode.LOCAL_IO_ERROR.value: (
             "Check local console and filesystem I/O, then retry the same request."
         ),
@@ -237,6 +255,7 @@ class GravityInsightError(RuntimeError):
 
     code: ErrorCode | str = ErrorCode.UPSTREAM_UNAVAILABLE
     category: ErrorCategory | str | None = None
+    retryable: bool | None = None
 
     def __init__(
         self,
@@ -266,6 +285,7 @@ class GravityInsightError(RuntimeError):
             operation_id=operation_id,
             category=self.category,
             field=self.field,
+            retryable=self.retryable,
             retry_after_ms=self.retry_after_ms,
             next_action=next_action or self.next_action,
         )
@@ -357,6 +377,38 @@ class SemanticRejectedError(UpstreamError):
 
     code = ErrorCode.INPUT_INVALID
     category = ErrorCategory.CALLER
+
+
+class ObjectAlreadyExistsError(InputValidationError):
+    code = "OBJECT_ALREADY_EXISTS"
+    category = ErrorCategory.CALLER
+
+
+class ObjectReferencedError(InputValidationError):
+    code = "OBJECT_REFERENCED"
+    category = ErrorCategory.CALLER
+
+
+class QuotaExceededError(InputValidationError):
+    code = "QUOTA_EXCEEDED"
+    category = ErrorCategory.CALLER
+
+
+class ConcurrentModificationError(UpstreamError):
+    code = "CONCURRENT_MODIFICATION"
+    category = ErrorCategory.UPSTREAM
+    retryable = True
+
+
+class OwnershipMarkerRequiredError(InputValidationError):
+    code = "OWNERSHIP_MARKER_REQUIRED"
+    category = ErrorCategory.CALLER
+
+
+class MutationReadbackError(UpstreamError):
+    code = "MUTATION_READBACK_FAILED"
+    category = ErrorCategory.UPSTREAM
+    retryable = True
 
 
 class PaginationError(GravityInsightError):

@@ -1,0 +1,202 @@
+from __future__ import annotations
+
+import json
+import unittest
+from pathlib import Path
+from types import SimpleNamespace
+
+from gravity_sdk.agent_segment import segment_mutation_cards
+from gravity_sdk.errors import OwnershipMarkerRequiredError, PolicyViolation
+from gravity_sdk.models import load_operation_manifest
+from gravity_sdk.mutation import MutationExecutor
+from gravity_sdk.prober.read_semantics import assert_probe_read_semantics
+from gravity_sdk.registry import PolicyEngine, Registry, _consume_authorized_request
+from gravity_sdk.segment_mutation import (
+    create_segment_from_rule,
+    delete_segment,
+    is_sdk_segment_remark,
+)
+from gravity_sdk.transport import Transport
+
+
+ROOT = Path(__file__).resolve().parents[1]
+MANIFEST_ROOT = ROOT / "src" / "gravity_sdk" / "manifests"
+CONTRACT_ROOT = ROOT / "src" / "gravity_sdk" / "contracts"
+
+
+def _registry() -> Registry:
+    operations = []
+    for path in sorted(MANIFEST_ROOT.glob("*.json")):
+        operations.extend(load_operation_manifest(path))
+    return Registry(operations)
+
+
+class _Runtime:
+    def __init__(self) -> None:
+        self.calls: list[dict[str, object]] = []
+
+    def _request_insight(self, method, path, **kwargs):
+        query, body = _consume_authorized_request(
+            kwargs["policy_authorization"],
+            method=method,
+            path=path,
+            query=kwargs.get("params"),
+            body=kwargs.get("json_body"),
+        )
+        self.calls.append(
+            {
+                "method": method,
+                "path": path,
+                "query": query,
+                "body": body,
+                "attempts": kwargs.get("attempts"),
+            }
+        )
+        return SimpleNamespace(
+            status_code=200,
+            payload={"code": 0, "data": True},
+            fetched_at="2026-08-16T00:00:00Z",
+            retry_after_ms=None,
+        )
+
+
+class _ExistingClient:
+    def __init__(self) -> None:
+        self.preview_input = None
+        self.writes = 0
+
+    def _preview_mutation(self, operation_id, inputs):
+        self.preview_input = dict(inputs)
+        return {
+            "schema_version": "gravity-insight.mutation.v1",
+            "ok": True,
+            "status": "preview",
+            "operation_id": operation_id,
+            "network_called": False,
+            "request": {"method": "POST", "path": "/registered/", "body": dict(inputs)},
+        }
+
+    def read_all(self, operation_id, inputs, **kwargs):
+        marker = str(self.preview_input["remark"])
+        return {
+            "ok": True,
+            "status": "success",
+            "data": {
+                "list": [
+                    {
+                        "segment_id": "1",
+                        "app_id": "1",
+                        "segment_name": self.preview_input["name"],
+                        "segment_remark": marker,
+                    }
+                ]
+            },
+            "truncated": False,
+            "next_page_input": None,
+        }
+
+    def read(self, operation_id, inputs):
+        return {
+            "ok": True,
+            "status": "success",
+            "data": {
+                "segment_id": "1",
+                "app_id": "1",
+                "segment_name": self.preview_input["name"],
+                "segment_remark": self.preview_input["remark"],
+            },
+        }
+
+    def _execute_mutation(self, operation_id, inputs):
+        self.writes += 1
+        raise AssertionError("idempotent preflight must suppress the write")
+
+
+class _UnmarkedClient:
+    def __init__(self) -> None:
+        self.writes = 0
+
+    def read(self, operation_id, inputs):
+        return {
+            "ok": True,
+            "status": "success",
+            "data": {
+                "segment_id": str(inputs["segment_id"]),
+                "app_id": "1",
+                "segment_name": "同事手建",
+                "segment_remark": "manual",
+            },
+        }
+
+    def _execute_mutation(self, operation_id, inputs):
+        self.writes += 1
+        raise AssertionError("unmarked delete must not reach transport")
+
+
+class GravitySegmentMutationTests(unittest.TestCase):
+    def test_registered_mutation_preview_is_zero_network_and_execute_is_one_shot(self):
+        registry = _registry()
+        policy = PolicyEngine(registry)
+        runtime = _Runtime()
+        transport = Transport(policy=policy, runtime=runtime)
+        executor = MutationExecutor(registry, policy, transport)
+        executor.bind_call_guard(lambda _operation_id: {})
+        inputs = {"segment_id": "1"}
+
+        preview = executor.preview("analysis.segment.by.manual.update", inputs)
+        self.assertFalse(preview["network_called"])
+        self.assertEqual([], runtime.calls)
+
+        result = executor.execute("analysis.segment.by.manual.update", inputs)
+        self.assertTrue(result["network_called"])
+        self.assertEqual(1, result["attempts"])
+        self.assertEqual(1, len(runtime.calls))
+        self.assertEqual(1, runtime.calls[0]["attempts"])
+        self.assertEqual({"segment_id": 1}, runtime.calls[0]["body"])
+        with self.assertRaisesRegex(PolicyViolation, "read-only"):
+            policy.authorize_operation("analysis.segment.by.manual.update")
+
+    def test_same_marker_is_idempotent_and_sends_no_write(self):
+        client = _ExistingClient()
+        result = create_segment_from_rule(
+            client,
+            {"name": "SDK规则测试", "start": "2026-08-15"},
+            app=1,
+            execute=True,
+        )
+        self.assertEqual("already_exists", result["status"])
+        self.assertTrue(result["idempotent_reuse"])
+        self.assertEqual(0, client.writes)
+        self.assertTrue(is_sdk_segment_remark(client.preview_input["remark"]))
+
+    def test_delete_reads_preimage_and_refuses_unmarked_target(self):
+        client = _UnmarkedClient()
+        with self.assertRaises(OwnershipMarkerRequiredError) as captured:
+            delete_segment(client, "1", execute=True)
+        self.assertIn("Gravity Web", captured.exception.next_action)
+        self.assertEqual(0, client.writes)
+
+    def test_registered_mutation_passes_prober_gate_but_tampering_does_not(self):
+        path = CONTRACT_ROOT / "operations" / "analysis.segment.by.manual.update.json"
+        source = json.loads(path.read_text(encoding="utf-8"))
+        assert_probe_read_semantics(source)
+        source["operation"]["path_template"] = "/report/api/v3/dataanalysis/segment/delete/"
+        with self.assertRaisesRegex(PolicyViolation, "not an exact registered"):
+            assert_probe_read_semantics(source)
+
+    def test_agent_returns_confirmation_handoff_without_plan_node(self):
+        cards = segment_mutation_cards(
+            "把漏斗流失的人保存成分群", domain=None, platform=None
+        )
+        self.assertEqual(1, len(cards))
+        card = cards[0]
+        self.assertEqual("mutation", card["effect"])
+        self.assertFalse(card["plan_executable"])
+        self.assertFalse(card["natural_language_auto_execute"])
+        self.assertTrue(card["confirmation_required"])
+        self.assertEqual("--dry-run", card["next"]["argv"][-1])
+        self.assertEqual("--execute", card["next"]["then_argv"][-1])
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,8 +1,8 @@
 # 候选能力证据矩阵
 
-本矩阵记录 17 项候选能力在 2026-08-12 受控只读探测后的真实状态，并原位追加 2026-08-14 至 2026-08-15 的后续取证结论，供开发决策使用。仓库基线仍为 [185 个 operation、其中 176 个 stable operation](capability-coverage.md)；本轮没有新增 stable operation，基线数量未变化。
+本矩阵记录 17 项候选能力在 2026-08-12 受控只读探测后的真实状态，并原位追加 2026-08-14 至 2026-08-16 的后续取证结论，供开发决策使用。仓库当前基线为 [192 个 operation、其中 183 个 stable operation](capability-coverage.md)：既有 176 条 stable read 不变，另有 7 条已逐项治理的 Segment mutation；这些写 operation 不是本矩阵的 read candidate。
 
-所有候选项仍未晋升；`analysis.setting.query` 保留在 draft 台账但 `effect=mutation`，其余候选仍是 read draft，promotion gate 均未满足。表中的“下一步最小证据”表示继续判断所需的最小输入，不代表晋升计划或交付承诺。后续在线验证仍须遵循[探测规范](maintainers/probing.md)，保持只读、限流、值不落盘和 fail-closed。
+所有候选项仍未晋升；`analysis.setting.query` 保留在 draft 台账但 `effect=mutation`，其余候选仍是 read draft，promotion gate 均未满足。表中的“下一步最小证据”表示继续判断所需的最小输入，不代表晋升计划或交付承诺。候选在线验证仍须遵循[探测规范](maintainers/probing.md)，保持只读、限流、值不落盘和 fail-closed；已登记 Segment mutation 只能走自身的 dry-run→显式 execute→读回/清理流程，不能借 draft prober 的读确认旁路执行。
 
 ## 逐项状态
 

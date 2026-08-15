@@ -8,6 +8,11 @@
   census 的 `read_action_path_token`，默认以 `UNSUPPORTED/local`（CLI exit 4）失败关闭：路径词元
   只说明名字像读，不能排除写操作。GET、`safe_http_method` 和
   `route_registry:read_contract_not_verified` 不受这条弱证据闸门影响。
+- 已登记 mutation 不是 `confirmed_read` 的例外：只有 source operation 与仓库 operation 合同全对象
+  相等，且为 `stable + executable + effect=mutation + POST` 时，读语义 preflight 才按 mutation 身份
+  放行。它随后必须走产品自有 dry-run/execute 与一次性 mutation authorization，不能走普通 read
+  authorization。未登记 POST、draft/reservation、相邻路径及任何字段/method/effect 篡改继续在网络前
+  失败关闭。
 - 人工确认只按精确的 `method + path` 放行，记录在
   `src/gravity_sdk/contracts/routes/probe-read-confirmations.json`。每条必须包含 `reviewer`、
   `reviewed_at`、`decision=confirmed_read`，以及至少一条带 `source/detail` 的静态控制流证据；
@@ -21,6 +26,10 @@
 - `permission_unavailable`、`empty` 和 `contract_changed` 必须分开处理。
 - 发现未登记字段时以 `contract_changed_additive` 失败关闭；确认字段路径与类型后登记并暴露，
   按“上游授权即产品边界”交付，不把投影当作第二层访问控制；生产值仍不得写入 evidence 或 Git。
+
+mutation 不使用本节的可重复 `probe` 成功标准。其生产验证必须另有批准范围、写次数上限、明显测试
+名称、先 dry-run、单次发送且不自动重放、创建后 list/detail 读回、最终清理和脱敏账本。缺安全父对象
+时记录未验证，不为覆盖率猜 ID 或额外制造业务链。
 
 ## 浏览器边界
 

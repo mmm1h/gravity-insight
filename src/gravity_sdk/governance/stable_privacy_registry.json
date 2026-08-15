@@ -634,6 +634,8 @@
       "data.list[].segment_name",
       "data.list[].segment_remark",
       "data.list[].update_date_range",
+      "data.list[].update_date_range.end_date",
+      "data.list[].update_date_range.start_date",
       "data.list[].update_type",
       "data.list[].update_user_id",
       "data.list[].update_user_name",

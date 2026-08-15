@@ -46,6 +46,14 @@ gravity plan run --input plan.json --dry-run
 gravity plan run --input plan.json --concurrency 6
 ```
 
+## Effect 边界：Segment mutation 不进入 Plan v1
+
+Plan v1 节点是可预检、可调度的无副作用数据节点。Segment create/update/refresh/delete 是不可安全
+重放的 effect，还要求人工确认、执行时 preimage、写后 list/detail 读回和一次性授权，因此不接受
+mutation operation ID，也没有 `segment_mutation` node kind。调用方使用
+`gravity analysis segment ... --dry-run`，审查后再运行同一命令的 `--execute`；Agent 卡只交接这两步，
+不返回 Plan node。该“设计不适用”窄例外已按三条件登记在[路线图](../roadmap.md#写操作范围裁决与-segment-crud2026-08-16)：缺 Plan 不减少可完成任务，且不能推广到其他未登记写。
+
 ## Workspace 参数化 Plan
 
 调用项目可在 `gravity.toml` 的 `plan_recipes.<name>` 保存一份完整 literal Plan，并给会变化的

@@ -1,5 +1,5 @@
 {
-  "operation_count": 185,
+  "operation_count": 192,
   "operations": {
     "account.department.list": {
       "applied_overrides": [],
@@ -89,6 +89,14 @@
         "operations/analysis.dashboard.tree.json"
       ]
     },
+    "analysis.dataanalysis.segment.update": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.dataanalysis.segment.update.json"
+      ]
+    },
     "analysis.event.info": {
       "applied_overrides": [],
       "family": null,
@@ -135,6 +143,22 @@
       "platform": null,
       "source_files": [
         "operations/analysis.event_property_value.list.json"
+      ]
+    },
+    "analysis.from.history.version.create": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.from.history.version.create.json"
+      ]
+    },
+    "analysis.from.tmp.segment.create": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.from.tmp.segment.create.json"
       ]
     },
     "analysis.funnel.query": {
@@ -217,6 +241,14 @@
         "operations/analysis.scatter.query.json"
       ]
     },
+    "analysis.segment.by.manual.update": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.segment.by.manual.update.json"
+      ]
+    },
     "analysis.segment.detail": {
       "applied_overrides": [],
       "family": null,
@@ -231,6 +263,30 @@
       "platform": null,
       "source_files": [
         "operations/analysis.segment.evaluate_percent.json"
+      ]
+    },
+    "analysis.segment.from.analysis.create": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.segment.from.analysis.create.json"
+      ]
+    },
+    "analysis.segment.from.rule.create": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.segment.from.rule.create.json"
+      ]
+    },
+    "analysis.segment.from.rule.update": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.segment.from.rule.update.json"
       ]
     },
     "analysis.segment.history_version.list": {

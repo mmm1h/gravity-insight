@@ -6873,7 +6873,12 @@
           "origin_query"
         ],
         "known_omitted_nested_item_keys": {},
-        "nested_item_keys": {},
+        "nested_item_keys": {
+          "update_date_range": [
+            "start_date",
+            "end_date"
+          ]
+        },
         "numeric_paths": [],
         "opaque_json_item_keys": [],
         "recursive_data_item_keys": {},

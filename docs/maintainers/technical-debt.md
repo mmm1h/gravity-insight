@@ -162,3 +162,6 @@ workspace recipe 与 SDK contract 的同名 description 已用 additive origin �
 
 Analysis Spec schema 的结构键投影与 funnel 按日模式校验已在领域 schema/执行器和源合同内闭合；
 共享 CLI spine 未修改，真正畸形的模式投影继续 fail closed，本轮复核未产生新的结构债条目。
+
+Segment mutation 首轮把一次性授权、wire codec、领域 CRUD、CLI/SDK 与 Agent 交接拆入窄模块，
+`registry.py` ratchet 继续收紧且 Plan spine 未增长；本轮复核未产生新的活动结构债条目。

@@ -59,9 +59,24 @@ class GravityInsightWriteRegistryTests(unittest.TestCase):
             (item["method"], item["path"])
             for item in self.reservations
         }
+        stable_write_routes = {
+            (item["method"], item["path"])
+            for item in load_manifest_operations(MANIFEST_ROOT)
+            if item["stability"] == "stable"
+            and item["operation_id"] in {
+                "analysis.segment.from.analysis.create",
+                "analysis.segment.from.rule.create",
+                "analysis.segment.from.rule.update",
+                "analysis.segment.by.manual.update",
+                "analysis.dataanalysis.segment.update",
+                "analysis.from.history.version.create",
+                "analysis.from.tmp.segment.create",
+            }
+        }
         self.assertEqual(362, len(source_routes))
-        self.assertTrue(source_routes <= reserved_routes)
-        self.assertEqual(414, len(self.reservations))
+        self.assertTrue(source_routes <= reserved_routes | stable_write_routes)
+        self.assertEqual(7, len(stable_write_routes))
+        self.assertEqual(407, len(self.reservations))
         self.assertEqual(
             len(self.reservations),
             len({item["operation_id"] for item in self.reservations}),
@@ -99,7 +114,7 @@ class GravityInsightWriteRegistryTests(unittest.TestCase):
                 semantics["idempotency"],
                 {"idempotent", "non_idempotent", "conditional", "unknown"},
             )
-        self.assertEqual(414, sum(kinds.values()))
+        self.assertEqual(407, sum(kinds.values()))
         self.assertGreater(kinds["create"], 0)
         self.assertGreater(kinds["update"], 0)
         self.assertGreater(kinds["delete"], 0)
@@ -170,9 +185,9 @@ class GravityInsightWriteRegistryTests(unittest.TestCase):
         # 列表父级、固定产品参数和嵌套响应投影复验后升至 172。
         # 本测试的保证不是「这个数不变」，而是「它远小于 accounted，且
         # blocked_write 绝不被计入可调用」——即下面两条 414 断言。
-        self.assertEqual(172, rebuilt["summary"]["callable_covered"])
-        self.assertEqual(414, rebuilt["accounting_summary"]["accounted_blocked_write"])
-        self.assertEqual(414, rebuilt["callability_summary"]["contract_only"])
+        self.assertEqual(179, rebuilt["summary"]["callable_covered"])
+        self.assertEqual(407, rebuilt["accounting_summary"]["accounted_blocked_write"])
+        self.assertEqual(407, rebuilt["callability_summary"]["contract_only"])
 
     def test_new_unclassified_route_fails_the_cli_accounting_gate(self) -> None:
         routes = {

@@ -114,6 +114,12 @@
         "update_user_id",
         "update_user_name"
       ],
+      "nested_item_keys": {
+        "update_date_range": [
+          "start_date",
+          "end_date"
+        ]
+      },
       "known_omitted_item_keys": [
         "origin_query"
       ],

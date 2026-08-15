@@ -11,6 +11,11 @@ from .output_projection import project_output, validate_output_fields
 from .pagination_cli import page_options
 from .segment_snapshot import segment_snapshot, validate_segment_snapshot_request
 from .segment_members import segment_members, validate_segment_members_request
+from .segment_mutation_cli import (
+    MUTATION_ACTIONS,
+    add_segment_mutation_commands,
+    run_segment_mutation_command,
+)
 from .segment_spec import (
     compile_segment_spec,
     prepare_segment_spec,
@@ -99,6 +104,7 @@ def add_segment_product_commands(parser: Any) -> None:
     )
     snapshot.set_defaults(network_required=True)
     _add_segment_members_command(commands)
+    add_segment_mutation_commands(commands)
 
 
 def _add_segment_members_command(commands: Any) -> None:
@@ -149,6 +155,8 @@ def run_segment_command(
         return run_segment_snapshot_command(args, build_client)
     if getattr(args, "segment_action", None) == "members":
         return run_segment_members_command(args, build_client)
+    if getattr(args, "segment_action", None) in MUTATION_ACTIONS:
+        return run_segment_mutation_command(args, build_client, parse_object)
     kind = getattr(args, "kind", None)
     if kind is None:
         raise InputValidationError(

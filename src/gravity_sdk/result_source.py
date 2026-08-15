@@ -27,6 +27,7 @@ _GOVERNED_CARD_KINDS = {
     "composite",
     "export",
     "segment_rule_spec",
+    "segment_mutation",
 }
 
 

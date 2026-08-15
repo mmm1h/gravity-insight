@@ -116,6 +116,7 @@ def _clause_selectors(
         if card.get("kind") in {
             "analysis_query_spec",
             "segment_rule_spec",
+            "segment_mutation",
             "composite",
         }
     )
@@ -162,7 +163,7 @@ def _positive_query_selectors(query: str) -> tuple[str, ...]:
     from .agent_order_directory import order_directory_intent
     from .agent_order_trace import order_split_trace_intent
     from .agent_promotion_performance import promotion_performance_intent
-    from .agent_segment import segment_evaluate_intent
+    from .agent_segment import segment_evaluate_intent, segment_mutation_intent
     from .agent_segment_snapshot import segment_snapshot_intent
     from .agent_segment_members import segment_members_intent
 
@@ -173,6 +174,7 @@ def _positive_query_selectors(query: str) -> tuple[str, ...]:
         ("composite:dashboard_snapshot", dashboard_snapshot_intent(query)),
         ("composite:dashboard_analysis", dashboard_analysis_intent(query)),
         ("analysis.segment.rule.spec", segment_evaluate_intent(query)),
+        ("analysis.segment.mutation", segment_mutation_intent(query)),
         ("composite:segment_snapshot", segment_snapshot_intent(query)),
         ("composite:segment_members", segment_members_intent(query)),
         ("composite:order_directory", order_directory_intent(query)),

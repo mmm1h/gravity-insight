@@ -92,6 +92,17 @@ def assert_probe_read_semantics(
 ) -> None:
     """Reject a weak-evidence POST before any probe transport is constructed."""
 
+    operation = source.get("operation")
+    if isinstance(operation, Mapping) and operation.get("effect") == "mutation":
+        if _is_registered_mutation(operation):
+            return
+        operation_id = str(operation.get("operation_id", "unknown"))
+        raise PolicyViolation(
+            f"Probe blocked for {operation_id}: mutation is not an exact registered stable write operation.",
+            next_action=(
+                "Do not probe this POST. Register its exact mutation contract and use the product-owned dry-run/execute workflow, or keep it as a blocked_write reservation."
+            ),
+        )
     route = _weak_post_route(source)
     if route is None or route in confirmation_keys(confirmations_path):
         return
@@ -102,6 +113,26 @@ def assert_probe_read_semantics(
             "Review the frontend control flow and UI behavior without sending a request. If it proves a read, add a per-route confirmed_read record with reviewer and static evidence to "
             f"{_CONFIRMATIONS_DISPLAY}; if it proves a write, keep the route blocked and record mutation evidence instead."
         ),
+    )
+
+
+def _is_registered_mutation(operation: Mapping[str, Any]) -> bool:
+    operation_id = str(operation.get("operation_id", ""))
+    if not operation_id:
+        return False
+    path = CONTRACT_ROOT / "operations" / f"{operation_id}.json"
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return False
+    registered = document.get("operation") if isinstance(document, Mapping) else None
+    return (
+        isinstance(registered, Mapping)
+        and registered == operation
+        and registered.get("effect") == "mutation"
+        and registered.get("stability") == "stable"
+        and registered.get("executable", True) is True
+        and registered.get("upstream_method") == "POST"
     )
 
 

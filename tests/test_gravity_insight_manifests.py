@@ -412,7 +412,11 @@ class GravityInsightManifestTests(unittest.TestCase):
                 self.assertIsInstance(
                     projection.get("empty_object_as_empty_result", False), bool
                 )
-                if item["stability"] == "stable" and not projection["data_keys"]:
+                if (
+                    item["stability"] == "stable"
+                    and item["effect"] == "read"
+                    and not projection["data_keys"]
+                ):
                     self.assertEqual("list", projection.get("data_shape"))
 
                 pagination = item["pagination"]
@@ -570,6 +574,10 @@ class GravityInsightManifestTests(unittest.TestCase):
                 probe = operation["live_probe"]
                 inputs = probe["input"]
                 declared = operation["input_fields"]
+                if operation.get("effect") == "mutation":
+                    self.assertFalse(probe["enabled"])
+                    self.assertEqual({}, inputs)
+                    continue
                 self.assertTrue(probe["enabled"])
                 self.assertIsInstance(inputs, dict)
                 self.assertTrue(set(inputs) <= set(declared))
@@ -739,6 +747,9 @@ class GravityInsightManifestTests(unittest.TestCase):
             "analysis.account_user.list": {
                 "dept_info": ["id", "name", "is_enabled"],
                 "roles": ["id", "name", "code", "is_enabled"],
+            },
+            "analysis.segment.list": {
+                "update_date_range": ["start_date", "end_date"]
             },
             "analysis.event.info": {
                 "dim_table": ["name", "cname", "data_type", "dim_using_table_name"]
@@ -1581,6 +1592,10 @@ class GravityInsightManifestTests(unittest.TestCase):
 
     def test_no_registered_path_looks_like_a_write_or_export(self) -> None:
         for item in self.operations:
+            if item.get("effect") == "mutation":
+                self.assertEqual("stable", item["stability"])
+                self.assertFalse(item["live_probe"]["enabled"])
+                continue
             segments = {
                 segment.casefold()
                 for segment in item["path_template"].split("/")
