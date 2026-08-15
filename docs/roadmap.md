@@ -890,6 +890,10 @@ selector 精确度或把多个意图改成任选一个。冻结题单语义均�
 
 ## 可重复的 Agent 可用性基线（2026-08-15）
 
+> **v1 历史记录。** 本节原 47 条/470 题数字保留用于追溯；对应密封 key 已丢失，旧
+> `holdout.sealed.json` 不可恢复，且计数漏掉表末 Issue 19。当前可操作结论见下方
+> [留出集重建与可操作 key 托管](#留出集重建与可操作-key-托管2026-08-15)。
+
 **提案：**不再用卡注册或单一自然语言命中率自证；以 47 条 analysis journey 为评测单位，分别
 度量首次产品选择、参数来源可填、离线可验证终点、严格 `pass^4`、错误恢复和调用成本。工作提案
 位于 ignored `tmp/codex/agent-eval/proposal.md`。题集先于实现观察独立提交：
@@ -950,7 +954,7 @@ delta 全为 0。每次是 1,880 个 logical question-trials，经每批最多 3
 ```powershell
 $env:PYTHONPATH=(Resolve-Path '.\src').Path
 python scripts\agent_usability_eval.py run --split development --output-dir tmp\agent-usability
-python scripts\agent_usability_eval.py run --split holdout --holdout-key <custodian-key> --output-dir tmp\agent-usability
+python scripts\agent_usability_eval.py run --split holdout --holdout-key .local\agent-usability\holdout.key --output-dir tmp\agent-usability
 python scripts\agent_usability_eval.py compare <before.json> <after.json> --output-dir tmp\agent-usability
 ```
 
@@ -962,6 +966,89 @@ python scripts\agent_usability_eval.py compare <before.json> <after.json> --outp
 
 产品动线和 operation 台账净变化均为 0：`47 = 33 / 0 / 14 → +0 / +0 / +0 = 47 = 33 / 0 / 14`；
 stable operation `185 → +0 = 185`，其中 stable `176 → +0 = 176`。本轮只造尺子，不用尺子改被测物。
+
+## 留出集重建与可操作 key 托管（2026-08-15）
+
+**提案与计数纠正：**工作提案位于 ignored
+`tmp/codex/holdout-custody/proposal.md`。当前表有 51 行，其中 3 行明确“不计独立动线”；产品动线
+必须按 `33 已闭环 + 15 完全缺失 = 48` 计。旧结论 `47 = 33 / 0 / 14` 实际漏掉的是表末
+“按精确平台素材引用预览或下载图片/视频（Issue 19）”，变化为总数 `+1`、状态
+`+0 / +0 / +1`，所以新值为 **`48 = 33 / 0 / 15`**。旧 suite 的 J41 已经是 D28
+`monetization_aggregate_gap`，不能再重复添加一个 D28。operation 没有变化：
+`185 → +0 = 185`，其中 stable `176 → +0 = 176`。
+
+“重建 235 道”是旧 `47 × 5` 的派生值，与明确要求按 48 条组织不可能同时成立。v2 因此按
+`48 × 5 = 240` 重建留出，并给 development 补实际漏掉的 Issue 19 五题；两侧同构为 240，合计
+`48 × 10 = 480`。development 的迁移可复算为：产品选择
+`154 / 235 → +0 / +5 = 154 / 240`，离线终点
+`46 / 75 → +0 / +5 = 46 / 80`，参数可填保持 `108 / 108`。新增 J48 在当前被测物上 5 题均未
+到达目标 gap，这只暴露既有缺口，不改变任何产品状态。
+
+### 题面来源与提交边界
+
+新留出 240 题全部从 `docs/analysis-journeys.md` 与 `docs/agent-workflow.md` 的产品目标、相邻边界、
+缺参规则和专属能力缺口写作；没有读取 `agent_*.py`、selector、共享路由器或路由测试，也没有从
+公开 development 题面改写。每条留出仍是中文普通 1、英文普通 2、英文相邻边界 1、中文缺参/缺能力
+1；与 development 合并后是中文普通 3、英文普通 3、中英边界各 1、中英缺口各 1。两侧 480 个
+prompt 逐字去重。
+
+题集、manifest、来源声明和密封 payload 先以
+`3cbbf14 test(eval): rebuild sealed holdout suite` 提交；该提交与最终分支均不修改
+`src/gravity_sdk`，所以提交顺序能证明没有先改 recognizer 再按失败句造题。第一次整套聚合显示留出
+产品选择/离线终点比 development 低 15.00/26.25 个百分点，故判为题集难度失配；custodian 只查看
+“语言 × 表述家族 × 可执行/缺失”及每动线 0–5 的粗粒度聚合，不输出题面、case id、逐题结果或候选
+正文。随后统一把英文普通题收敛到调用方文档产品名，并把少数失衡缺失动线收敛到台账原名；没有按
+单句反馈加 token。校准过程和明文只存在于 ignored `tmp/codex/holdout-custody/`，最终密封后删除。
+
+### v2 六层基线
+
+产品树相对题集 source revision `7f73cf9` 无变化。每侧 240 题各独立运行 4 trials：
+
+| 层 | development | 新 holdout | 差异（holdout − development） |
+| --- | ---: | ---: | ---: |
+| 首次产品选择 | **154 / 240（64.17%）** | **147 / 240（61.25%）** | **−7 题 / −2.92 个百分点** |
+| 参数来源可填 | **108 / 108（100%）** | **105 / 105（100%）** | 比例 0；留出少到达 3 张正确卡 |
+| 端到端离线终点 | **46 / 80（57.50%）** | **42 / 80（52.50%）** | **−4 题 / −5.00 个百分点** |
+| 产品选择严格重复 | `pass^1 = pass^4 = 154 / 240` | `pass^1 = pass^4 = 147 / 240` | 两侧不稳定任务均 0 |
+| 终点严格重复 | `pass^1 = pass^4 = 46 / 80` | `pass^1 = pass^4 = 42 / 80` | 两侧不稳定任务均 0 |
+| 错误恢复 | **4 / 5（80%）** | **4 / 5（80%）** | 0 |
+
+两侧各跳过 160 条会触发生产读取的题；每侧 960 个 logical question-trials、32 次
+`capabilities_many` 顶层批调用和 9 次恢复步骤。生产 HTTP 与 socket 尝试均为 **0**，没有重试、
+翻页、扩窗或上游任务。选择差 2.92 个百分点、离线终点差 5.00 个百分点，不再是初版新题的系统性
+难度断层；残余主要来自 workspace SQL 环境 gap 和少数完全缺失动线在互补表达家族上的差异，不能
+解释为产品泛化退化，也不能把离线终点比例外推到 160 条生产读取题。
+
+### 固定 key 托管与丢失处理
+
+key 的唯一固定位置是仓库内 ignored 路径
+**`.local/agent-usability/holdout.key`**；本 worktree 的绝对路径是
+**`D:\git-pjt\wt-holdout-custody\.local\agent-usability\holdout.key`**。custodian 是 release-evaluation
+owner/process：它在评测 checkout 生成 key、发起整套正式留出运行，并只发布聚合；这不是口令恢复或
+外部 KMS 角色。生成命令只有这一条，使用独占创建，已有文件时拒绝覆盖：
+
+```powershell
+$env:PYTHONPATH=(Resolve-Path '.\src').Path; python -c "from pathlib import Path; import os; p=Path(r'.local/agent-usability/holdout.key'); p.parent.mkdir(parents=True, exist_ok=True); f=p.open('xb'); f.write(os.urandom(32)); f.close(); print(p.resolve())"
+```
+
+`.gitignore` 同时有通用 `*.key` 和固定路径规则；测试用 `git check-ignore` 断言固定路径被忽略，并用
+`git ls-files --error-unmatch` 断言它未被跟踪。正式运行使用确定路径，不再使用抽象 key 占位符：
+
+```powershell
+$env:PYTHONPATH=(Resolve-Path '.\src').Path
+python scripts\agent_usability_eval.py verify-suite --holdout-key .local\agent-usability\holdout.key
+python scripts\agent_usability_eval.py run --split holdout --holdout-key .local\agent-usability\holdout.key --output-dir tmp\agent-usability
+```
+
+key 没有口令派生、托管副本或恢复路径。**丢失后旧 payload 永久不可解，只能重建留出集**：把旧
+payload/hash 标为作废；按当时权威动线重新写一套新题；在同一固定路径生成新 32-byte key；密封为
+新 suite version 并更新明文/密文 hash；重新建立 development/holdout 基线。`suite.json` 的明文 hash
+只能校验候选明文，不能恢复它。
+
+**这不是同机管理员安全边界。** 控制 evaluator 主机或 key 的人可以改 runner、附加调试器、读取
+进程内存或直接解密 payload；同一 OS 身份若能找到固定 key 也能绕过。无限次观察整套聚合分数仍可
+做自适应过拟合。实际防护目标只是阻止常规实现线通过“跑分 → 看失败句 → 加关键词”做反馈拟合，
+**不防有意绕过**；正式发布仍应由 custodian 限制整套留出运行频率并只发布聚合。
 
 ## 投影边界总裁决：全面放开（2026-08-15）
 

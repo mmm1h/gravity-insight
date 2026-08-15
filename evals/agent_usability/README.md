@@ -47,7 +47,7 @@ an accidental overwrite fail:
 $env:PYTHONPATH=(Resolve-Path '.\src').Path; python -c "from pathlib import Path; import os; p=Path(r'.local/agent-usability/holdout.key'); p.parent.mkdir(parents=True, exist_ok=True); f=p.open('xb'); f.write(os.urandom(32)); f.close(); print(p.resolve())"
 ```
 
-Use the fixed path directly; there is no `<custodian-key>` placeholder:
+Use the fixed path directly; the command has no abstract key placeholder:
 
 ```powershell
 $env:PYTHONPATH=(Resolve-Path '.\src').Path
