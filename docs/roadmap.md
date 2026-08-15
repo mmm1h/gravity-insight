@@ -13,12 +13,12 @@
 
 ## 现状
 
-当前从仓库产品入口与 stable operation 正向交叉反推 48 条产品动线：**已闭环 33 / 部分闭环 1 / 完全缺失 14**；
+当前从仓库产品入口与 stable operation 正向交叉反推 48 条产品动线：**已闭环 34 / 部分闭环 1 / 完全缺失 13**；
 另有 2 条 legacy/SDK 便利面和 1 条重复能力审计行保留，但不计产品动线。
-本轮程序化复算发现旧摘要漏计表内 D28 缺失行：表格 51 行，减去 3 条“不计独立动线”，得到
-`48 = 33 / 1 / 14`；相对旧摘要 `47 = 33 / 0 / 14` 是 `+0 / +1 / +0`、总数 `+1`。
-这只是既有行的算术纠正，不是新增能力或放宽闭环判据。stable operation 仍为 185、其中 176 个 stable。
-部分闭环的 Analysis 导出只关闭了单用户事件子类；14 条完全缺失里
+表格 51 行减去 3 条“不计独立动线”得到 48 条；第三轮从上轮
+`48 = 33 / 1 / 14` 将 Issue 19 由完全缺失闭环，净变化 `+1 / +0 / -1`，所以当前为
+`48 = 34 / 1 / 13`。stable operation 仍为 185、其中 176 个 stable；新素材文件能力是产品 effect，
+不伪装成新的 upstream operation。部分闭环的 Analysis 导出只关闭了单用户事件子类；13 条完全缺失里
 多数是请求、响应或非空证据阻塞；字段隐私不再是阻塞项。
 逐条状态、四面入口、调用次数和证据阻塞以[分析动线台账](analysis-journeys.md)为准；旧
 `21/14/6` 快照的逐条底稿未进入版本控制，无法复算，已停止作为排期事实。
@@ -618,7 +618,8 @@ live re-resolution 防止删除或名称漂移选中别的对象；SDK 不能证
    一次顶层调用即可完成，Agent 卡直接交接该命令并声明发现后 1 次。
 3. 判定要写进台账该行（记"设计不适用"而非"无"）并在此处留下理由，可被后来者推翻。
 
-当前只有导出的 Plan 面适用此例外。**新增例外必须同时满足以上三条并在此登记**。
+当前只有治理导出与 response-bound 素材文件这两类直接文件 effect 的 Plan 面适用此例外；后者的
+逐条证明登记在本页第三轮 Issue 19 裁决。**新增例外必须同时满足以上三条并在此登记**。
 
 ## 使用成本：参数化程度审计结论
 
@@ -1735,6 +1736,69 @@ OSS/XLSX 与恢复协议，**不能复用这五列文件合同**：`segment.resu
 `185 + 0 = 185`，stable `176 + 0 = 176`；user-event 是现有 export route catalog 的状态迁移，
 不是新增 stable read operation。caller-recoverable error 抛点没有新增或删除，审计仍为
 `1022 = A 218 / B 434 / C 370`。
+
+### 第三轮：response-bound 素材文件合同（2026-08-16）
+
+**提案：**撤销“先证明完整 CDN shard allowlist”这个错误前提，把真实边界改为“URL 必须由本次
+产品调用刚执行的已登记 operation 响应返回”。调用方只提交 source、该 operation 的合同输入、精确
+素材引用、`file|thumbnail` 和输出路径；Core 重新读取 source 并从唯一匹配行取 URL。host/path/port
+不枚举、不校验、不限制，重定向跟随并只记录 initial/final host family、hop 数和是否跨 host。
+工作底稿在 ignored `tmp/codex/export-binary-3/proposal.md`；值无关证据与完整请求账本在
+[`evidence/forensics/20260816_export_binary_round3.json`](../evidence/forensics/20260816_export_binary_round3.json)。
+
+**生产取证在 7/20 次请求后停止。** 没有 App 枚举：Bytedance 项目筛选是 account-scope 目录，换 App
+不会改变该父链。项目目录第一页一次返回 20 个投影引用；跳过第二轮已知为空的首项后，依次检查
+catalog position 2–6 共 5 个项目，前四个为空，第 6 个首次非空并立即停止。随后只对这条自然
+`thumbnail_url` 发 64-byte Range GET，得到 HTTP 206、`Content-Range: bytes 0-63/109820`、
+`image/jpeg`、JPEG magic，host family 为 `p{shard}-sign.douyinpic.com`，无重定向。逐项为：
+
+| # | Operation / transport | HTTP | 结论 |
+| ---: | --- | ---: | --- |
+| 1 | `promotion.bytedance.project_filter.list` | 200 / code 0 | page 1/page_size 20；只在内存枚举。 |
+| 2 | `material.bytedance.project_material.list`，project position 2 | 200 / code 0 | 空。 |
+| 3 | 同 operation，position 3 | 200 / code 0 | 空。 |
+| 4 | 同 operation，position 4 | 200 / code 0 | 空。 |
+| 5 | 同 operation，position 5 | 200 / code 0 | 空。 |
+| 6 | 同 operation，position 6 | 200 / code 0 | 首次非空，停止枚举。 |
+| 7 | response-bound `thumbnail_url`，`Range: bytes=0-63` | 206 | 64 bytes、JPEG、无 redirect。 |
+
+0 次重试、0 次翻页、0 次扩窗、0 个构造失效 URL、0 次 bundle GET。第二轮已有一个平台视频的
+`video/mp4`/ISO-BMFF 和无 redirect 证据，本轮补上真实平台缩略图；本地 source 则独立保留四个 JPEG
+缩略图和三个 MP4 视频事实。两组没有互相代证，但都满足自己的 URL field、MIME/magic 和成功传输
+合同，所以不再拆成一条闭环、一条缺失：同一产品以 `local`、`bytedance_project` 两个显式 source
+family 分别登记，Issue 19 整条闭环。其他平台 source 没有被悄悄纳入。
+
+**机器合同与五面。** `contracts/material-asset-v1.json` 固定 `accepts_caller_url=false`；公开 Core
+`fetch_material_asset()`、CLI `gravity materials fetch`、SDK `GravitySDK.fetch_material_asset()` 和
+Agent `material.asset.fetch` 卡都不含 URL 参数。source input 先走对应 stable operation 的现有输入/
+投影/fail-closed 合同；只有这次响应内精确唯一匹配的行可进入 transport。完整文件经 stream、
+Content-Length、可用的 source size/MD5、MIME/magic、SHA-256、fsync 和同目录原子提交。调用方显式
+提供 CLI `--output` 或 SDK `destination` 就是在请求那个完整文件，也是完整下载的唯一产品触发条件；
+维护证据继续只取最小 Range。
+
+Plan 面登记为**设计不适用**，三项条件逐条成立：
+
+1. 这是写 caller 文件系统、需要 staging/fsync/atomic commit 且失败后不能当普通数据节点透明重试的
+   effect，与 Plan v1 无副作用 JSON 数据节点模型不兼容；不是实现成本裁决。
+2. 直接 CLI 和 SDK 都在一次顶层调用内完成 source read→download→commit；Agent 卡直接交接该命令并
+   声明 discovery 后 1 次调用，所以缺 Plan 不减少可完成任务集合。
+3. 本节与分析动线对应行同时显式登记“设计不适用”；后来若 Plan 获得正式文件-effect 语义，可推翻。
+
+**错误只按实际边界归三类。** source/ref/role/input 不可解析是 caller/exit 2；有效 response-bound
+URL 的 terminal HTTP 状态全部是 upstream/exit 3；staging/fsync/atomic commit 是 local/exit 4。
+200 是完整 GET 成功；带 Location 的 3xx 跟随，跨 host 不拦。401/403 是 upstream 权限拒绝，404/410
+是 upstream 当前不可取，408/425/429/5xx 为 retryable upstream；其他 terminal 非 200 同样为
+upstream，不创造 `not_found/expired/not_cached/permission` 状态。206 在本轮 Range probe 是成功；产品
+完整 GET 不发送 Range，因此若 terminal 206 会以不完整 upstream response 失败。实际累计观察到
+200、206、旧 HEAD 405；403/404/410 未自然观察，只登记 HTTP→category 行为且有离线测试，没有在线
+试探。
+
+可复算台账为：旧值 `48 = 33 / 1 / 14`；Issue 19 `+1 / +0 / -1`；新值
+**`48 = 34 / 1 / 13`**。operation `185 + 0 = 185`，stable `176 + 0 = 176`。caller-recoverable
+错误抛点从 `1022 = A 218 / B 434 / C 370` 增加 6 个且全部 A 档，成为
+**`1028 = A 224 / B 434 / C 370`**；HTTP/local 错误不属于 caller 审计分母。质量 baseline 未放宽。
+技术债清单已复核：实现下沉到素材领域模块，只给既有 Agent 路由追加同一 direct-effect 选择链，
+未触发现有结构债退出条件，也没有新增可证明的结构债。
 
 ## Issue 16 Windows CLI UTF-8 裁决（2026-08-15）
 

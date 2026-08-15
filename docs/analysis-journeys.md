@@ -10,12 +10,11 @@
 执行，内部 HTTP 数也没有减少。App/平台也未知时不适用该两次路径；默认离线 Agent 的原三次下界保留。
 `gravity.agent-call-bound.v1` 只在本次成功交付完整目录的卡与 Plan 节点上把对应 scenario 声明为 2。
 
-当前程序化重算：**48 条产品动线：已闭环 33 / 部分闭环 1 / 完全缺失 14**。可复算：下表 51 行，
+当前程序化重算：**48 条产品动线：已闭环 34 / 部分闭环 1 / 完全缺失 13**。可复算：下表 51 行，
 减去 2 条兼容/维护便利面和 1 条“既有稳定读取面重复”，得到 48 条；按状态直接分组为
-`48 = 33 / 1 / 14`。相对旧摘要 `47 = 33 / 0 / 14` 是 `+0 / +1 / +0`、总数 `+1`：旧摘要在 D28
-缺失行已经进入表格后仍写“净变化 0”，漏计了这一既有行。本轮只纠正算术，不把 D28 写成已实现，
-也不改变闭环判据。stable operation 仍为 185、其中 176 个 stable。
-部分闭环的 Analysis 导出只关闭了单用户事件子类；14 条完全缺失里多数是合同证据阻塞，逐行有记录。
+`48 = 34 / 1 / 13`。从第二轮 `48 = 33 / 1 / 14` 起，Issue 19 由完全缺失闭环，净变化
+`+1 / +0 / -1`；不改闭环判据。operation 仍为 185、其中 176 个 stable。部分闭环的 Analysis
+导出只关闭了单用户事件子类；13 条完全缺失里多数是合同证据阻塞，逐行有记录。
 
 2026-08-16 的 Agent 渐进发现与生成任务指南是既有调用方入口的可读性改进，不新增 operation、结果 envelope 或产品动线：`48 + 0 = 48`、`33 / 0 / 15 + 0 / 0 / 0 = 33 / 0 / 15`，operation 仍为 `185 + 0 = 185`、stable 仍为 `176 + 0 = 176`。它的独立三层只读入口从既有 composite card 和 compiled manifest 派生；真实查询仍经既有 Agent card/Plan/CLI 合同。生产 HTTP 0 次。
 旧快照 `21/14/6` 没有逐条证据，不能复算；本台账不还原已丢失的原始 41 条定义。
@@ -38,6 +37,16 @@ B 生产 HTTP 10 次，4 个自然缩略图的 64-byte Range GET 均为 206/JPEG
 检索。计数从 `48 = 33 / 0 / 15` 经 A `+0 / +1 / -1`、B `+0 / +0 / +0` 得
 **`48 = 33 / 1 / 14`**；operation 仍为 185、stable 仍为 176。详见
 [路线图第二轮判定](roadmap.md#第二轮纠错与闭环判定2026-08-16)。
+
+第三轮撤销 CDN shard allowlist 这个错误前提，改以“URL 必须来自产品刚执行的已登记 operation
+响应”为真实输入边界。公开 Core/CLI/SDK/Agent 都不接受 URL；host/path 不枚举、不限制，redirect
+跟随并只记录值无关 host family/cross-host 事实。项目目录第一页返回 20 个引用，跳过已知空首项后
+检查 5 个项目，在 position 6 首次非空并停止；加一次 64-byte 平台缩略图 Range GET，总计生产 HTTP
+7 次、0 重试/翻页/扩窗，得到 `p{shard}-sign.douyinpic.com` 的 206/JPEG/JPEG magic/无 redirect。
+本地与 Bytedance 平台各自有独立 JPEG+MP4 证据并分别登记 source family，Issue 19 整条闭环；Plan
+按文件 effect 的三项窄条件登记设计不适用。计数由 `48 = 33 / 1 / 14` 加 `+1 / +0 / -1` 得
+**`48 = 34 / 1 / 13`**；operation/stable 仍为 185/176。详见
+[路线图第三轮判定](roadmap.md#第三轮response-bound-素材文件合同2026-08-16)。
 
 2026-08-15 的结果来源等级是横切合同修正，不新增独立产品或结果 envelope。三条执行责任边界为
 `governed_product`（固定产品合同）、`caller_defined`（workspace recipe / SQL product，调用方负责口径）
@@ -188,4 +197,4 @@ writer 拒绝非有限数字；operation、投影、请求、错误分类和退�
 | 下钻非 Bytedance 平台的计划、组和创意表现（D33/D34） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `NON_BYTEDANCE_HIERARCHY_PARENT_MISSING`。Bilibili advertiser 与 Huya account 未产出父候选；后续 ID 链、report 父字段、分页和非空 schema 未成立。 |
 | 深查各平台专属素材与创意（D32） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `PLATFORM_SPECIFIC_CREATIVE_CONTRACT_MISSING`。除 Bytedance 外普遍没有最小非空响应合同；common 素材目录不能证明平台专属字段。Bytedance 标题包已单列为独立动线闭环，**但那是 D32 之下的一个具体产品，不是这条动线的进展**；本条仍是数据证据阻塞。 |
 | 导出事件、分群、用户、付费或变现分析结果 | 部分闭环 | 有 / 有 / 设计不适用 / 有 | 1 / 2（用户事件中英首问） | `user_event` 已有单日非空 create→poll→download、7 行完整 XLSX shape，并经 CLI/SDK/Agent 可调用。其余六个服务端导出只能复用任务协议，仍各缺自己的成功文件 shape；`stream_event` 前端不产生 server request，记为 `not_applicable` 而非缺口。精确请求其他六类时仍返回 `ANALYSIS_EXPORT_FILE_CONTRACT_MISSING`。 |
-| 按精确平台素材引用预览或下载图片/视频（Issue 19） | 完全缺失 | 无 / 无 / 设计不适用 / 有（目标 gap） | 未验证 | `file_url` / `thumbnail_url` 已登记暴露；视频已有 200/206、`video/mp4`/ISO-BMFF，四个缩略图均为 64-byte 206、`image/jpeg`/JPEG，所有样本无 redirect。累计观察 3 个 host；本地素材 host/path 可窄登记，但外部 CDN shard 全集和 `not_found/expired/not_cached/permission` 语义仍未知，不能配置通用 allowlist 或实现 effect。 |
+| 按精确平台素材引用预览或下载图片/视频（Issue 19） | 已闭环 | 有 / 有 / 设计不适用 / 有 | 1 / 2（中英首问） | `material.asset.fetch` 不接收 URL：一次调用先重读 `local` 或 `bytedance_project` stable source，再按精确引用从唯一行取 `file_url`/`thumbnail_url` 并完整原子下载。host/path 不枚举、不限制，跨 host redirect 跟随；本地与 Bytedance 的 JPEG/MP4 证据独立成立。HTTP terminal 状态统一归 upstream/3，不创造素材失效 taxonomy；完整文件由显式 output/destination 触发。 |

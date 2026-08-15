@@ -183,6 +183,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `prepare_multidim_query()` | 绑定 App 并本地预检 Multidim 物理输入；不执行查询、不回显 filter values |
 | `multidim_query()` | 校验实时指标后读取 Multidim 明细，可选 total 与全量分页 |
 | `material_performance()` | 按显式 App、日期窗和平台读取稳定素材表现；平台保序、共享预算、局部失败隔离 |
+| `fetch_material_asset()` | 从刚读取的已登记素材响应按精确引用完整下载图片/视频；不接受 URL |
 | `promotion_performance()` | 按一个显式 App、日期窗、平台和物理指标读取 21 个同构平台；平台保序、局部失败隔离 |
 | `order_directory()` | 完整读取一个 App 的单日普通订单目录；该产品每行含四个已登记物理字段，raw operation 仍可读取其他已登记列 |
 | `order_split_trace()` | 完整扫描一个 App 的单日父订单并按显式 TraceID 精确匹配，再读取一次安全拆单投影 |
@@ -451,6 +452,25 @@ alias/正整数或它们的显式序列。方法先解析并校验完整请求�
 分页 worker 固定 1。batch 将共享 item 预算按平台等额 floor 分配，未用份额不能借给 sibling。
 返回 `gravity-insight.material-performance.v1`，仅保留平台、白名单素材身份/物理指标、安全错误和
 分页收据。它不归一、换算、总计、排序、排名，也不解释业务或 Web opaque config。
+
+## Material Asset Fetch
+
+```python
+receipt = gravity.fetch_material_asset(
+    "bytedance_project",
+    {"advertiser_id": 101, "project_id": 202},
+    "material_id",
+    303,
+    "thumbnail",
+    "tmp/thumbnail.jpg",
+)
+```
+
+方法签名为 `fetch_material_asset(source, source_input, ref_field, ref, role, destination)`。它先执行
+source 对应的已登记 operation，并且只从这次响应的唯一匹配行读取 URL；公开方法没有 URL 参数。
+`destination` 是完整文件的触发条件和最终路径，结果为 `gravity.material-asset.v1` 收据，含大小、
+SHA-256、MIME/magic、完整性和重定向的值无关事实，不含完整 URL。错误分类与 CLI 相同；这是文件
+effect，不进入 Plan v1。
 
 ## Promotion Performance
 

@@ -719,6 +719,7 @@ class DiscoveryUxTests(unittest.TestCase):
             "J28": "composite:advertiser_profile", "J29": "composite:title_package",
             "J30": "metadata:search", "J31": "metadata:table_lineage",
             "J32": "export.material.report.start",
+            "J47": "material.asset.fetch",
         }
         gaps = {
             "J19": "WORKSPACE_SQL_PRODUCT_NOT_CONFIGURED",
@@ -736,7 +737,6 @@ class DiscoveryUxTests(unittest.TestCase):
             "J44": "NON_BYTEDANCE_HIERARCHY_PARENT_MISSING",
             "J45": "PLATFORM_SPECIFIC_CREATIVE_CONTRACT_MISSING",
             "J46": "ANALYSIS_EXPORT_FILE_CONTRACT_MISSING",
-            "J47": "PLATFORM_ASSET_BINARY_CONTRACT_MISSING",
         }
         path = Path(__file__).parent / "fixtures/nl_reachability_phrasings.md"
         questions = []

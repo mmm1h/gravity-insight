@@ -12,16 +12,6 @@ from .agent_intent_text import affirmative_intent_text
 def unavailable_promotion_gap(query: str) -> dict[str, Any] | None:
     selected = affirmative_intent_text(query)
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
-    if _platform_asset_download(selected, words):
-        return unavailable_gap(
-            query, code="PLATFORM_ASSET_BINARY_CONTRACT_MISSING",
-            journey="platform_asset_preview_download",
-            reason="List contracts expose media references, but binary hosts, redirects, and expiry semantics are unproven.",
-            next_action=(
-                "Obtain one authorized current media reference, prove the binary host/path and redirect allowlist "
-                "without committing bytes or URLs, then add the bounded download effect."
-            ),
-        )
     if _non_bytedance_hierarchy(selected, words):
         return unavailable_gap(
             query, code="NON_BYTEDANCE_HIERARCHY_PARENT_MISSING",
@@ -43,22 +33,6 @@ def unavailable_promotion_gap(query: str) -> dict[str, Any] | None:
             ),
         )
     return None
-
-
-def _platform_asset_download(selected: str, words: frozenset[str]) -> bool:
-    english = (
-        (bool(words & {"asset", "assets"}) or (
-            "creative" in words and bool(words & {"platform", "reference"})
-        ))
-        and bool(words & {"binary", "download", "fetch", "file", "image", "media", "preview", "video"})
-        and bool(words & {"binary", "download", "fetch", "file", "preview"})
-    )
-    chinese = (
-        any(term in selected for term in ("平台素材", "平台创意", "素材id", "素材 id", "创意引用", "精确素材"))
-        and any(term in selected for term in ("预览", "下载", "文件", "二进制"))
-        and any(term in selected for term in ("图片", "视频", "媒体", "文件", "二进制"))
-    )
-    return english or chinese
 
 
 def _non_bytedance_hierarchy(selected: str, words: frozenset[str]) -> bool:

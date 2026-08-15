@@ -15,7 +15,7 @@
 | 人群规则/分群快照/成员明细 | 已知 spec 或精确引用：`analysis segment evaluate` / `analysis segment snapshot` / `analysis segment members`；未知能力且输入已知时发现后执行 | 1 / 2 |
 | 保存分析/分析模板 | 引用已知：`analysis saved run` / `analysis template run`；引用未知时在线输入解析后按稳定 ID（模板为 scope + ID）精确选择。模板仍只执行 compact Spec 或已证明 artifact | 1 / 2 |
 | 看板控制面/图表重放 | 已知引用：`analysis dashboard snapshot` / `analysis dashboard run`；引用未知时在线输入解析后精确选稳定 ID，再执行 | 1 / 2 |
-| Governed 导出 | 输入已知：`export run`；未知：`agent "material report export"` → `next.argv` | 1 / 2 |
+| Governed 文件 effect | 输入已知：报表 `export run`，精确素材 `materials fetch`；未知入口：Agent 卡 → `next.argv` | 1 / 2 |
 | 多 selector / 已有 Plan | `gravity plan run --input <plan.json>` | 1 |
 | 用户旅程/数据表沿革 | `analysis user journey`；lineage catalog 冷机时用在线输入解析完成原子 refresh，再离线查询 | 1 / 2 |
 | 单个未知目标/operation 输入 | `gravity agent "<query>"` / `gravity agent <operation-id>` → 执行卡片 argv | 2 |

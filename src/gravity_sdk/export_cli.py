@@ -141,6 +141,8 @@ def dispatch_command(
 
 
 def output_argument(args: argparse.Namespace) -> str | None:
+    if bool(getattr(args, "product_file_output", False)):
+        return None
     if (
         getattr(args, "command", None) == "export"
         and getattr(args, "export_command", None) in {"download", "run"}

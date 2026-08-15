@@ -1,0 +1,137 @@
+{
+  "schema_version": "gravity-insight.material-binary-forensics.v3",
+  "observed_at": "2026-08-15T20:19:56Z",
+  "base_commit": "6c39f46",
+  "values_persisted": false,
+  "credentials_persisted": false,
+  "request_policy": {
+    "request_budget": 20,
+    "project_catalog_page": 1,
+    "project_catalog_page_advanced": false,
+    "known_empty_first_project_repeated": false,
+    "request_shape_retried": false,
+    "invalid_url_constructed": false,
+    "app_enumeration_used": false
+  },
+  "production_http": [
+    {
+      "sequence": 1,
+      "operation_id": "promotion.bytedance.project_filter.list",
+      "method": "POST",
+      "path": "/turbo_engine/api/v1/bytedance/report/project/filters/",
+      "http_status": 200,
+      "semantic_code": 0,
+      "conclusion": "page 1/page_size 20 returned twenty projected project references"
+    },
+    {
+      "sequence": 2,
+      "operation_id": "material.bytedance.project_material.list",
+      "project_catalog_position": 2,
+      "method": "POST",
+      "path": "/turbo_engine/api/v1/bytedance/project/material_get/",
+      "http_status": 200,
+      "semantic_code": 0,
+      "material_sample_count": 0
+    },
+    {
+      "sequence": 3,
+      "operation_id": "material.bytedance.project_material.list",
+      "project_catalog_position": 3,
+      "method": "POST",
+      "path": "/turbo_engine/api/v1/bytedance/project/material_get/",
+      "http_status": 200,
+      "semantic_code": 0,
+      "material_sample_count": 0
+    },
+    {
+      "sequence": 4,
+      "operation_id": "material.bytedance.project_material.list",
+      "project_catalog_position": 4,
+      "method": "POST",
+      "path": "/turbo_engine/api/v1/bytedance/project/material_get/",
+      "http_status": 200,
+      "semantic_code": 0,
+      "material_sample_count": 0
+    },
+    {
+      "sequence": 5,
+      "operation_id": "material.bytedance.project_material.list",
+      "project_catalog_position": 5,
+      "method": "POST",
+      "path": "/turbo_engine/api/v1/bytedance/project/material_get/",
+      "http_status": 200,
+      "semantic_code": 0,
+      "material_sample_count": 0
+    },
+    {
+      "sequence": 6,
+      "operation_id": "material.bytedance.project_material.list",
+      "project_catalog_position": 6,
+      "method": "POST",
+      "path": "/turbo_engine/api/v1/bytedance/project/material_get/",
+      "http_status": 200,
+      "semantic_code": 0,
+      "material_sample_count": 1,
+      "conclusion": "first non-empty project; enumeration stopped"
+    },
+    {
+      "sequence": 7,
+      "operation_id": "material.asset.range.probe",
+      "role": "thumbnail_url",
+      "method": "GET",
+      "host_family": "p{shard}-sign.douyinpic.com",
+      "requested_range": "bytes=0-63",
+      "http_status": 206,
+      "content_range": "bytes 0-63/109820",
+      "content_type": "image/jpeg",
+      "magic_type": "jpeg",
+      "bytes_observed": 64,
+      "redirect_count": 0,
+      "cross_host_redirect": false
+    }
+  ],
+  "platform_evidence": {
+    "project_catalog_count": 20,
+    "projects_requested": 5,
+    "selected_project_catalog_position": 6,
+    "new_thumbnail_sample": "206_image_jpeg_jpeg_magic_no_redirect",
+    "prior_video_sample": "200_head_and_206_range_video_mp4_iso_bmff_no_redirect",
+    "conclusion": "bytedance_project_source_family_verified"
+  },
+  "local_evidence_reused": {
+    "thumbnail_samples": 4,
+    "thumbnail_shape": "206_image_jpeg_jpeg_magic_no_redirect",
+    "video_samples": 3,
+    "video_shape": "200_video_mp4_no_redirect",
+    "conclusion": "local_source_family_verified"
+  },
+  "failure_semantics": {
+    "invented_asset_state_taxonomy": false,
+    "current_round_observed_http_statuses": [200, 206],
+    "prior_round_observed_http_statuses": [200, 206, 405],
+    "unobserved_but_registered_http_statuses": [403, 404, 410],
+    "classification": {
+      "registered_source_or_reference_input_error": "caller_exit_2",
+      "terminal_asset_http_status": "upstream_exit_3",
+      "local_staging_or_atomic_commit_error": "local_exit_4"
+    }
+  },
+  "product_contract": {
+    "accepts_caller_url": false,
+    "source_binding": "fresh_registered_operation_response",
+    "host_enumeration": false,
+    "host_validation": false,
+    "redirect_policy": "follow_and_record_without_cross_host_block",
+    "full_download_trigger": "explicit_cli_output_or_sdk_destination",
+    "plan_surface": "design_not_applicable"
+  },
+  "totals": {
+    "production_http_requests": 7,
+    "retries": 0,
+    "additional_data_pages": 0,
+    "date_window_expansions": 0,
+    "app_enumerations": 0,
+    "project_material_requests": 5,
+    "binary_range_requests": 1
+  }
+}
