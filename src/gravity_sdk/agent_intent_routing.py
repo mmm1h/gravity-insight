@@ -10,7 +10,9 @@ from typing import Any
 MULTIPLE_INTENTS = "MULTIPLE_INTENTS"
 
 _COORDINATOR = re.compile(r"\s+and\s+|以及|同时", re.IGNORECASE)
-_WRAPPER_SELECTORS = frozenset({"composite:saved_analysis", "composite:segment_snapshot"})
+_WRAPPER_SELECTORS = frozenset({
+    "composite:saved_analysis", "composite:segment_snapshot", "composite:segment_members"
+})
 
 
 def adjacent_product_conflict(owner: str, query: str) -> bool:
@@ -162,6 +164,7 @@ def _positive_query_selectors(query: str) -> tuple[str, ...]:
     from .agent_promotion_performance import promotion_performance_intent
     from .agent_segment import segment_evaluate_intent
     from .agent_segment_snapshot import segment_snapshot_intent
+    from .agent_segment_members import segment_members_intent
 
     analysis = analysis_query_spec_cards(query, domain=None, platform=None)
     claims = (
@@ -171,6 +174,7 @@ def _positive_query_selectors(query: str) -> tuple[str, ...]:
         ("composite:dashboard_analysis", dashboard_analysis_intent(query)),
         ("analysis.segment.rule.spec", segment_evaluate_intent(query)),
         ("composite:segment_snapshot", segment_snapshot_intent(query)),
+        ("composite:segment_members", segment_members_intent(query)),
         ("composite:order_directory", order_directory_intent(query)),
         ("composite:order_split_trace", order_split_trace_intent(query)),
         ("composite:material_performance", material_performance_intent(query)),

@@ -11,7 +11,7 @@ from typing import Any, Mapping, Sequence
 
 CHECK_NAME = "stable-response-privacy"
 REGISTRY_PATH = Path("src/gravity_sdk/governance/stable_privacy_registry.json")
-REGISTRY_VERSION = 1
+REGISTRY_VERSION = 2
 
 _ARRAY_KEYS = (
     "data_keys",
@@ -224,6 +224,7 @@ def registry_payload(root: Path) -> dict[str, Any]:
         "schema_version": REGISTRY_VERSION,
         "purpose": "Explicit review ledger for every stable response projection surface; not a non-sensitive classification.",
         "reviewed_exposures": reviewed,
+        "approved_sensitive_exposures": _existing_sensitive_approvals(root),
     }
 
 
@@ -231,17 +232,37 @@ def render_registry(root: Path) -> str:
     return json.dumps(registry_payload(root), ensure_ascii=False, indent=2) + "\n"
 
 
-def _load_registry(root: Path) -> tuple[dict[str, set[str]], list[str]]:
+def _existing_sensitive_approvals(root: Path) -> dict[str, dict[str, str]]:
+    try:
+        document = json.loads((root / REGISTRY_PATH).read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return {}
+    raw = document.get("approved_sensitive_exposures", {})
+    if not isinstance(raw, Mapping):
+        return {}
+    return {
+        str(operation_id): {
+            str(path): str(reason) for path, reason in values.items()
+            if isinstance(path, str) and isinstance(reason, str) and reason.strip()
+        }
+        for operation_id, values in raw.items()
+        if isinstance(values, Mapping)
+    }
+
+
+def _load_registry(
+    root: Path,
+) -> tuple[dict[str, set[str]], dict[str, set[str]], list[str]]:
     path = root / REGISTRY_PATH
     try:
         document = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-        return {}, [f"{CHECK_NAME}: cannot load {REGISTRY_PATH.as_posix()}: {exc}"]
+        return {}, {}, [f"{CHECK_NAME}: cannot load {REGISTRY_PATH.as_posix()}: {exc}"]
     if document.get("schema_version") != REGISTRY_VERSION:
-        return {}, [f"{CHECK_NAME}: registry schema_version must be {REGISTRY_VERSION}"]
+        return {}, {}, [f"{CHECK_NAME}: registry schema_version must be {REGISTRY_VERSION}"]
     raw = document.get("reviewed_exposures")
     if not isinstance(raw, Mapping):
-        return {}, [f"{CHECK_NAME}: reviewed_exposures must be an object"]
+        return {}, {}, [f"{CHECK_NAME}: reviewed_exposures must be an object"]
     reviewed: dict[str, set[str]] = {}
     errors: list[str] = []
     for operation_id, values in raw.items():
@@ -251,12 +272,40 @@ def _load_registry(root: Path) -> tuple[dict[str, set[str]], list[str]]:
         if values != sorted(set(values)):
             errors.append(f"{CHECK_NAME}: registry entry {operation_id!r} must be sorted and unique")
         reviewed[str(operation_id)] = set(values)
-    return reviewed, errors
+    approved, approval_errors = _load_sensitive_approvals(
+        document.get("approved_sensitive_exposures", {})
+    )
+    errors.extend(approval_errors)
+    return reviewed, approved, errors
+
+
+def _load_sensitive_approvals(
+    raw_approved: Any,
+) -> tuple[dict[str, set[str]], list[str]]:
+    approved: dict[str, set[str]] = {}
+    errors: list[str] = []
+    if not isinstance(raw_approved, Mapping):
+        errors.append(f"{CHECK_NAME}: approved_sensitive_exposures must be an object")
+    else:
+        for operation_id, values in raw_approved.items():
+            if not isinstance(values, Mapping) or any(
+                not isinstance(path, str)
+                or not isinstance(reason, str)
+                or not reason.strip()
+                for path, reason in values.items()
+            ):
+                errors.append(
+                    f"{CHECK_NAME}: sensitive approvals for {operation_id!r} "
+                    "must map paths to non-empty review reasons"
+                )
+                continue
+            approved[str(operation_id)] = set(values)
+    return approved, errors
 
 
 def inspect_stable_response_privacy(root: Path) -> list[str]:
     operations = _stable_operations(root)
-    reviewed, errors = _load_registry(root)
+    reviewed, approved_sensitive, errors = _load_registry(root)
     if errors:
         return errors
     for operation_id in sorted(set(operations) | set(reviewed)):
@@ -280,13 +329,37 @@ def inspect_stable_response_privacy(root: Path) -> list[str]:
             str(value).casefold()
             for value in privacy.get("redact_fields", [])
         } if isinstance(privacy, Mapping) else set()
-        for path in sorted(current):
-            reason = suspected_personal_reason(operation, path)
-            if reason is not None and _leaf(path).casefold() not in redacted:
-                errors.append(
-                    f"{CHECK_NAME}: {operation_id} exposes suspected personal field "
-                    f"{path!r} without redaction ({reason})"
-                )
+        errors.extend(_sensitive_errors(
+            operation_id,
+            operation,
+            current,
+            redacted,
+            approved_sensitive.get(operation_id, set()),
+        ))
+    return errors
+
+
+def _sensitive_errors(
+    operation_id: str,
+    operation: Mapping[str, Any],
+    current: set[str],
+    redacted: set[str],
+    approved: set[str],
+) -> list[str]:
+    errors: list[str] = []
+    for path in sorted(current):
+        reason = suspected_personal_reason(operation, path)
+        if reason is not None and _leaf(path).casefold() not in redacted and path not in approved:
+            errors.append(
+                f"{CHECK_NAME}: {operation_id} exposes suspected personal field "
+                f"{path!r} without redaction ({reason})"
+            )
+    for path in sorted(approved):
+        if path not in current or suspected_personal_reason(operation, path) is None:
+            errors.append(
+                f"{CHECK_NAME}: stale sensitive approval {operation_id} {path!r}; "
+                "remove or re-review it"
+            )
     return errors
 
 

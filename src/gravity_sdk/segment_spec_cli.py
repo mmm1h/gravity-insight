@@ -10,6 +10,7 @@ from .errors import InputValidationError
 from .output_projection import project_output, validate_output_fields
 from .pagination_cli import page_options
 from .segment_snapshot import segment_snapshot, validate_segment_snapshot_request
+from .segment_members import segment_members, validate_segment_members_request
 from .segment_spec import (
     compile_segment_spec,
     prepare_segment_spec,
@@ -96,6 +97,39 @@ def add_segment_product_commands(parser: Any) -> None:
         "--format", choices=("json", "ndjson"), default="json"
     )
     snapshot.set_defaults(network_required=True)
+    _add_segment_members_command(commands)
+
+
+def _add_segment_members_command(commands: Any) -> None:
+    members = commands.add_parser(
+        "members",
+        help="List every member and selected per-user properties for one segment.",
+    )
+    members.add_argument("--app", required=True, help="Workspace App alias or positive id.")
+    members.add_argument("--ref", required=True, help="Exact segment id or exact segment name.")
+    members.add_argument(
+        "--fields", action="append",
+        help="Comma-separated response fields; repeat for more. Default: complete profile.",
+    )
+    members.add_argument(
+        "--segment-version-id",
+        help="Optional historical segment version id; dates do not bind this route.",
+    )
+    members.add_argument(
+        "--concurrency", dest="segment_members_concurrency", type=int, default=6,
+        help="Global read worker bound (default 6, maximum 24).",
+    )
+    members.add_argument(
+        "--max-pages", dest="segment_members_max_pages", type=int, default=5,
+        help="Maximum pages while resolving a segment name (default 5).",
+    )
+    members.add_argument(
+        "--max-items", dest="segment_members_max_items", type=int, default=200,
+        help="Maximum member rows returned (default 200; partial when reached).",
+    )
+    members.add_argument("--output", help="Write JSON or NDJSON to this local path.")
+    members.add_argument("--format", choices=("json", "ndjson"), default="json")
+    members.set_defaults(network_required=True)
 
 
 def run_segment_command(
@@ -112,6 +146,8 @@ def run_segment_command(
         )
     if getattr(args, "segment_action", None) == "snapshot":
         return run_segment_snapshot_command(args, build_client)
+    if getattr(args, "segment_action", None) == "members":
+        return run_segment_members_command(args, build_client)
     kind = getattr(args, "kind", None)
     if kind is None:
         raise InputValidationError(
@@ -183,6 +219,47 @@ def run_segment_snapshot_command(
         max_pages=args.segment_snapshot_max_pages,
         max_items=args.segment_snapshot_max_items,
     )
+
+
+def run_segment_members_command(
+    args: Any, build_client: Callable[..., Any]
+) -> dict[str, Any]:
+    """Bind one workspace App, then return bounded complete member rows."""
+
+    if any(
+        (
+            getattr(args, "kind", None) is not None,
+            getattr(args, "input", None) is not None,
+            bool(getattr(args, "input_sets", None)),
+            bool(getattr(args, "all_pages", False)),
+        )
+    ):
+        raise InputValidationError(
+            "segment members cannot use legacy segment read arguments",
+            field="members",
+        )
+    workspace = load_workspace(getattr(args, "workspace", None))
+    app_id = resolve_workspace_app(workspace, args.app)
+    fields = _selected_fields(getattr(args, "fields", None))
+    validate_segment_members_request(
+        app_id,
+        args.ref,
+        fields=fields,
+        segment_version_id=args.segment_version_id,
+        max_workers=args.segment_members_concurrency,
+        max_pages=args.segment_members_max_pages,
+        max_items=args.segment_members_max_items,
+    )
+    return segment_members(
+        build_client(),
+        app_id,
+        args.ref,
+        fields=fields,
+        segment_version_id=args.segment_version_id,
+        max_workers=args.segment_members_concurrency,
+        max_pages=args.segment_members_max_pages,
+        max_items=args.segment_members_max_items,
+    )
 def run_segment_evaluate_command(
     args: Any,
     build_client: Callable[[], Any],
@@ -246,5 +323,6 @@ def _selected_fields(values: Sequence[str] | None) -> tuple[str, ...]:
 __all__ = [
     "add_segment_commands",
     "run_segment_command",
+    "run_segment_members_command",
     "run_segment_snapshot_command",
 ]

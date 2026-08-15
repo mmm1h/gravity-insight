@@ -7438,136 +7438,101 @@
       "upstream_method": "GET"
     },
     {
-      "action": "list",
-      "auth_profile": "gravity_authorization",
-      "block_reason": null,
-      "contract_version": "1",
-      "description": "分群用户详情；上游无分页，支持按元数据校验后的字段选择并返回内部分析标识与业务属性，成员姓名、外部开放标识和广告设备标识保持隐藏。",
+      "operation_id": "analysis.segment.user_detail.list",
       "domain": "analysis",
+      "resource": "segment_user_detail",
+      "action": "list",
+      "platform": null,
+      "description": "分群成员及逐人属性；上游一次返回完整成员行，fields 仅在本地选列，固定 profile 之外的用户属性须由 live user-property metadata 发现。",
+      "stability": "stable",
       "executable": true,
+      "block_reason": null,
+      "contract_version": "2",
+      "upstream_method": "POST",
+      "path_template": "/report/api/v3/dataanalysis/segment/user/detail/list/",
+      "auth_profile": "gravity_authorization",
       "input_fields": [
         {
+          "name": "app_id",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "enum": [],
           "default": {
             "present": false,
             "value": null
           },
           "description": "",
-          "enum": [],
-          "item_enum": [],
+          "sensitive": false,
           "item_type": null,
-          "max_depth": 5,
+          "item_enum": [],
+          "min_items": null,
           "max_items": null,
           "max_length": 64,
-          "min_items": null,
-          "name": "app_id",
-          "nullable": false,
-          "required": true,
-          "sensitive": false,
-          "type": "string"
+          "max_depth": 5
         },
         {
+          "name": "fields",
+          "type": "array",
+          "required": false,
+          "nullable": false,
+          "enum": [],
           "default": {
             "present": true,
             "value": []
           },
           "description": "",
-          "enum": [],
-          "item_enum": [],
+          "sensitive": false,
           "item_type": "string",
-          "max_depth": 5,
+          "item_enum": [],
+          "min_items": null,
           "max_items": 100,
           "max_length": null,
-          "min_items": null,
-          "name": "fields",
-          "nullable": false,
-          "required": false,
-          "sensitive": false,
-          "type": "array"
+          "max_depth": 5
         },
         {
-          "default": {
-            "present": false,
-            "value": null
-          },
-          "description": "",
-          "enum": [],
-          "item_enum": [],
-          "item_type": null,
-          "max_depth": 5,
-          "max_items": null,
-          "max_length": 64,
-          "min_items": null,
           "name": "segment_id",
-          "nullable": false,
+          "type": "string",
           "required": true,
-          "sensitive": false,
-          "type": "string"
-        },
-        {
+          "nullable": false,
+          "enum": [],
           "default": {
             "present": false,
             "value": null
           },
           "description": "",
-          "enum": [],
-          "item_enum": [],
+          "sensitive": false,
           "item_type": null,
-          "max_depth": 5,
+          "item_enum": [],
+          "min_items": null,
           "max_items": null,
           "max_length": 64,
-          "min_items": null,
+          "max_depth": 5
+        },
+        {
           "name": "segment_version_id",
-          "nullable": false,
+          "type": "string",
           "required": false,
+          "nullable": false,
+          "enum": [],
+          "default": {
+            "present": false,
+            "value": null
+          },
+          "description": "",
           "sensitive": false,
-          "type": "string"
+          "item_type": null,
+          "item_enum": [],
+          "min_items": null,
+          "max_items": null,
+          "max_length": 64,
+          "max_depth": 5
         }
       ],
-      "live_probe": {
-        "enabled": true,
-        "inputs": {
-          "app_id": "$first_app_id",
-          "segment_id": "$first_segment_id"
-        }
-      },
-      "operation_id": "analysis.segment.user_detail.list",
-      "pagination": {
-        "default_page_size": null,
-        "items_field": "list",
-        "kind": "none",
-        "list_path": "",
-        "max_page_size": null,
-        "page_field": "",
-        "page_info_field": "page_info",
-        "page_info_path": "",
-        "page_size_field": "",
-        "total_page_field": ""
-      },
-      "path_template": "/report/api/v3/dataanalysis/segment/user/detail/list/",
-      "platform": null,
-      "privacy_policy": {
-        "classification": "user_level",
-        "redact_fields": [
-          "authorization",
-          "password",
-          "token",
-          "gravity_email",
-          "access_token",
-          "cookie",
-          "secret",
-          "refresh_token",
-          "session_token",
-          "WXOpenID",
-          "Idfa",
-          "Idfv",
-          "Caid1",
-          "Caid2",
-          "Oaid",
-          "Imei",
-          "AndroidId"
-        ]
-      },
       "request": {
+        "location": "mixed",
+        "path_fields": [],
+        "query_fields": [],
         "body_fields": [
           "app_id",
           "segment_id",
@@ -7577,60 +7542,171 @@
         "defaults": {
           "fields": []
         },
-        "fixed_body": {},
         "fixed_query": {},
-        "location": "mixed",
-        "path_fields": [],
-        "query_fields": []
+        "fixed_body": {}
       },
-      "required_parent": [
-        {
-          "input_field": null,
-          "operation_id": "analysis.segment.list"
-        }
-      ],
-      "resource": "segment_user_detail",
       "response_projection": {
-        "data_dynamic_item_fields": {},
-        "data_item_keys": {
-          "page_info": [
-            "page",
-            "page_size",
-            "total_number",
-            "total_page"
-          ]
-        },
+        "data_shape": "object",
         "data_keys": [
           "list",
           "page_info"
         ],
-        "data_path_item_keys": {},
-        "data_scalar_list_types": {},
-        "data_shape": "object",
+        "required_data_keys": [
+          "list"
+        ],
+        "item_keys": [
+          "AdAid",
+          "AdCid",
+          "AdClickTime",
+          "AdGid",
+          "AdPlatform",
+          "AdvertiserID",
+          "Channel",
+          "ClientID",
+          "CreateTime",
+          "CSite",
+          "device_id",
+          "device_info",
+          "LatestLoginDay",
+          "modify_time",
+          "Name",
+          "re_attribute_info",
+          "ReAttributeAdAid",
+          "ReAttributeAdCid",
+          "ReAttributeAdClickTime",
+          "ReAttributeAdGid",
+          "ReAttributeAdPlatform",
+          "ReAttributeAdvertiserID",
+          "ReAttributeChannel",
+          "ReAttributeCreateTime",
+          "ReAttributeCSite",
+          "ReAttributeTurboPromotedObjectID",
+          "RetargetingCount",
+          "TurboPromotedObjectID",
+          "user_id",
+          "user$ad_24h_avg_ecpm",
+          "user$ad_24h_count",
+          "user$ad_24h_ltv",
+          "user$ad_avg_ecpm",
+          "user$ad_count",
+          "user$ad_ltv",
+          "user$ad_max_ecpm",
+          "user$attribution_count",
+          "user$banner_24h_count",
+          "user$banner_ad_24h_avg_ecpm",
+          "user$banner_ad_24h_ltv",
+          "user$banner_ad_avg_ecpm",
+          "user$banner_ad_count",
+          "user$banner_ad_ltv",
+          "user$banner_ad_max_ecpm",
+          "user$brand",
+          "user$bundle_id",
+          "user$channel",
+          "user$city",
+          "user$click_channel",
+          "user$country",
+          "user$ea_advertiser_id",
+          "user$ea_advertiser_id_reattribute",
+          "user$ea_aid",
+          "user$ea_aid_reattribute",
+          "user$ea_cid",
+          "user$ea_cid_reattribute",
+          "user$ea_click_company",
+          "user$ea_click_company_reattribute",
+          "user$ea_click_time",
+          "user$ea_click_time_reattribute",
+          "user$ea_cum_reattribute",
+          "user$ea_gid",
+          "user$ea_gid_reattribute",
+          "user$ea_id",
+          "user$ea_id_reattribute",
+          "user$ea_impression_time",
+          "user$ea_impression_time_reattribute",
+          "user$ea_receive_time",
+          "user$ea_receive_time_reattribute",
+          "user$first_pay_method",
+          "user$first_pay_reason",
+          "user$first_pay_time",
+          "user$first_scene",
+          "user$interstitial_24h_count",
+          "user$interstitial_ad_24h_avg_ecpm",
+          "user$interstitial_ad_24h_ltv",
+          "user$interstitial_ad_avg_ecpm",
+          "user$interstitial_ad_count",
+          "user$interstitial_ad_ltv",
+          "user$interstitial_ad_max_ecpm",
+          "user$latest_attribution_company",
+          "user$latest_attribution_time",
+          "user$latest_reactive_time",
+          "user$manufacturer",
+          "user$model",
+          "user$native_24h_count",
+          "user$native_ad_24h_avg_ecpm",
+          "user$native_ad_24h_ltv",
+          "user$native_ad_avg_ecpm",
+          "user$native_ad_count",
+          "user$native_ad_ltv",
+          "user$native_ad_max_ecpm",
+          "user$os",
+          "user$os_version",
+          "user$pay_amount_sum",
+          "user$pay_count",
+          "user$pay_max_amount",
+          "user$province",
+          "user$reactive_count",
+          "user$reward_24h_count",
+          "user$reward_ad_24h_avg_ecpm",
+          "user$reward_ad_24h_ltv",
+          "user$reward_ad_avg_ecpm",
+          "user$reward_ad_count",
+          "user$reward_ad_ltv",
+          "user$reward_ad_max_ecpm",
+          "user$splash_24h_count",
+          "user$splash_ad_24_ltv",
+          "user$splash_ad_24h_avg_ecpm",
+          "user$splash_ad_24h_ltv",
+          "user$splash_ad_avg_ecpm",
+          "user$splash_ad_count",
+          "user$splash_ad_ltv",
+          "user$splash_ad_max_ecpm",
+          "user$ta_account_id",
+          "user$ta_distinct_id",
+          "useraccount_id",
+          "userbind_channel",
+          "usercurrent_build",
+          "usercurrent_diamond",
+          "usercurrent_gold",
+          "usercurrent_level_line",
+          "usercurrent_level_user",
+          "usercurrent_power",
+          "userdevice_id",
+          "userfirst_login_time",
+          "userfirst_pay_time",
+          "userlast_login_time",
+          "userlast_pay_time",
+          "userlogin_id",
+          "userlong_id",
+          "userregister_time",
+          "userrole_name",
+          "usertotal_getdiamond_num",
+          "usertotal_getgold_num",
+          "usertotal_getpower_num",
+          "usertotal_login",
+          "usertotal_session_time",
+          "usertotal_usediamond_num",
+          "usertotal_usegold_num",
+          "usertotal_usepower_num",
+          "useruse_plot",
+          "useruser_age",
+          "useruser_sex",
+          "useruser_tpe",
+          "Version",
+          "WXOpenID"
+        ],
         "dynamic_item_fields": [
           "fields"
         ],
-        "empty_object_as_empty_page": false,
-        "empty_object_as_empty_result": false,
-        "item_keys": [
-          "CreateTime",
-          "ClientID",
-          "AdPlatform",
-          "Channel",
-          "Version",
-          "TurboPromotedObjectID",
-          "AdvertiserID",
-          "AdAid",
-          "device_info",
-          "re_attribute_info"
-        ],
-        "known_omitted_data_item_keys": {},
-        "known_omitted_data_keys": [],
-        "known_omitted_item_keys": [
-          "Name",
-          "WXOpenID"
-        ],
-        "known_omitted_nested_item_keys": {
+        "nested_item_keys": {
           "device_info": [
             "Idfa",
             "Idfv",
@@ -7638,11 +7714,7 @@
             "Caid2",
             "Oaid",
             "Imei",
-            "AndroidId"
-          ]
-        },
-        "nested_item_keys": {
-          "device_info": [
+            "AndroidId",
             "Android_Version",
             "Api_Version",
             "Rom_version",
@@ -7665,32 +7737,83 @@
             "ReAttributeAdClickTime"
           ]
         },
-        "numeric_paths": [],
-        "opaque_json_item_keys": [],
+        "known_omitted_nested_item_keys": {},
+        "data_item_keys": {
+          "page_info": [
+            "page",
+            "page_size",
+            "total_number",
+            "total_page"
+          ]
+        },
+        "scalar_list_item_types": {},
+        "data_scalar_list_types": {},
+        "data_path_item_keys": {},
+        "data_dynamic_item_fields": {},
+        "known_omitted_item_keys": [],
         "recursive_data_item_keys": {},
-        "required_data_keys": [
-          "list"
-        ],
-        "scalar_list_item_types": {}
+        "known_omitted_data_keys": [],
+        "known_omitted_data_item_keys": {},
+        "numeric_paths": [],
+        "empty_object_as_empty_page": false,
+        "empty_object_as_empty_result": false,
+        "opaque_json_item_keys": []
+      },
+      "pagination": {
+        "kind": "none",
+        "page_field": "",
+        "page_size_field": "",
+        "items_field": "list",
+        "page_info_field": "page_info",
+        "total_page_field": "",
+        "list_path": "",
+        "page_info_path": "",
+        "default_page_size": null,
+        "max_page_size": null
       },
       "semantic_error_rules": [
         {
-          "message": "Gravity rejected the read operation",
-          "operator": "truthy",
           "path": "code",
+          "operator": "truthy",
           "value": null,
-          "values": []
+          "values": [],
+          "message": "Gravity rejected the read operation"
         },
         {
-          "message": "Gravity rejected the read operation",
-          "operator": "truthy",
           "path": "extra.error",
+          "operator": "truthy",
           "value": null,
-          "values": []
+          "values": [],
+          "message": "Gravity rejected the read operation"
         }
       ],
-      "stability": "stable",
-      "upstream_method": "POST"
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_fields": [
+          "authorization",
+          "password",
+          "token",
+          "gravity_email",
+          "access_token",
+          "cookie",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "required_parent": [
+        {
+          "operation_id": "analysis.segment.list",
+          "input_field": null
+        }
+      ],
+      "live_probe": {
+        "enabled": true,
+        "inputs": {
+          "app_id": "$first_app_id",
+          "segment_id": "$first_segment_id"
+        }
+      }
     },
     {
       "action": "list",

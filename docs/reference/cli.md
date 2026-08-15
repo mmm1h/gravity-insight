@@ -19,6 +19,7 @@ gravity analysis context      并发读取一个 App 的分析上下文
 gravity analysis dashboard snapshot  读取一个看板的控制面快照
 gravity analysis dashboard prepare|run  编译或执行一个看板的受支持图表
 gravity analysis segment snapshot  读取一个分群的详情、历史与单日计算结果
+gravity analysis segment members   读取一个分群的完整成员行与逐人属性
 gravity analysis saved ...    列出、读取、准备或严格重放保存分析
 gravity analysis order directory  读取无标识的单日普通订单目录
 gravity analysis order trace  按显式 TraceID 读取单日拆单明细
@@ -577,6 +578,21 @@ gravity analysis segment snapshot --app main --ref <id-or-exact-name> `
 已知输入时 CLI/SDK 是一次调用。App/日期已知、引用未知时，只有明确包含“分群快照/检查 + 详情 +
 历史 + 单日计算结果”的强意图才会在线返回完整分群目录；调用方精确选择稳定 ID 后执行 Plan，共两次。
 泛分群、规则评估、成员/用户列表、导出和写操作不会命中，且自然语言不会自动执行。
+
+### Segment Members v1
+
+已知 App 与精确分群引用时，一次调用返回该分群的成员及逐人属性：
+
+```powershell
+gravity analysis segment members --app main --ref <id-or-exact-name> `
+  --fields 'Name,ClientID,user$level' --max-items 100000
+```
+
+不传 `--fields` 时返回登记的完整 profile；固定字段可直接填写，动态属性先用
+`gravity metadata properties --app ...` 或 `gravity metadata search ...` 发现 live user-property 名称，
+再原样传给 `--fields`。字段选择在完整上游响应之后本地执行，不发送给上游。历史成员不用日期，
+而用可选 `--segment-version-id`。上游 route 没有可控分页；结果超过 `--max-items` 时 envelope 为
+`partial` / exit 3，不伪造 continuation。schema 为 `gravity-insight.segment-members.v1`。
 
 ### Segment Rule Spec v1
 

@@ -43,6 +43,7 @@ from .agent_promotion_performance import (
 from .agent_saved_analysis import SAVED_ANALYSIS_CAPABILITY
 from .template_replay_surface import ANALYSIS_TEMPLATE_CAPABILITY
 from .agent_segment_snapshot import SEGMENT_SNAPSHOT_CAPABILITY
+from .agent_segment_members import SEGMENT_MEMBERS_CAPABILITY
 from .agent_monetization_guard import (
     MONETIZATION_DETAIL_CAPABILITY,
     MONETIZATION_DETAIL_NAME,
@@ -77,6 +78,7 @@ _COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
     DASHBOARD_ANALYSIS_CAPABILITY,
     MONETIZATION_DETAIL_CAPABILITY,
     SEGMENT_SNAPSHOT_CAPABILITY,
+    SEGMENT_MEMBERS_CAPABILITY,
     SAVED_ANALYSIS_CAPABILITY,
     ANALYSIS_TEMPLATE_CAPABILITY,
     {
@@ -446,6 +448,7 @@ def authoritative_capability_cards(
             "saved_analysis",
             "analysis_template",
             "segment_snapshot",
+            "segment_members",
             ADVERTISER_PROFILE_NAME,
         }
     ]

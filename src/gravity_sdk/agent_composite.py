@@ -25,6 +25,7 @@ _STRICT_COMPOSITES = frozenset(
         "saved_analysis",
         "analysis_template",
         "segment_snapshot",
+        "segment_members",
         "advertiser_profile",
     }
 )
@@ -111,10 +112,8 @@ def _strict_composite_query(name: str, query: str) -> bool:
         from .agent_dashboard import dashboard_analysis_query
 
         return dashboard_analysis_query(query)
-    if name == "segment_snapshot":
-        from .agent_segment_snapshot import segment_snapshot_query
-
-        return segment_snapshot_query(query)
+    if name in {"segment_snapshot", "segment_members"}:
+        return _segment_product_query(name, query)
     if name == "saved_analysis":
         from .agent_saved_analysis import saved_analysis_query
 
@@ -155,6 +154,16 @@ def _strict_composite_query(name: str, query: str) -> bool:
     )
 
     return bilibili_account_performance_product_query(name, query)
+
+
+def _segment_product_query(name: str, query: str) -> bool:
+    if name == "segment_members":
+        from .agent_segment_members import segment_members_query
+
+        return segment_members_query(query)
+    from .agent_segment_snapshot import segment_snapshot_query
+
+    return segment_snapshot_query(query)
 
 
 def _exact_match(match: Mapping[str, Any], normalized: str) -> dict[str, Any]:

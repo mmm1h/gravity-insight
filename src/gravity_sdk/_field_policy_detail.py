@@ -19,6 +19,7 @@ from ._field_policy_operations import (
     ANALYSIS_ORDER_DETAIL,
     ANALYSIS_SEGMENT,
     ANALYSIS_SEGMENT_HISTORY,
+    ANALYSIS_SEGMENT_USER_DETAIL,
     ANALYSIS_USER_EVENT,
     ANALYSIS_USER_PROPERTY,
 )
@@ -34,6 +35,7 @@ from ._field_policy_shared import (
     validate_optional_label,
     validate_scalar_list,
 )
+from ._field_policy_segment_members import validate_segment_member_fields
 from ._order_read import STATIC_ORDER_FIELD_PROFILES
 from .monetization_detail import validate_monetization_operation_request
 from .errors import InputValidationError
@@ -64,6 +66,9 @@ def validate_analysis_detail(
         _validate_user_event_contract(inputs)
     if operation.operation_id == ANALYSIS_MONETIZATION_DETAIL:
         validate_monetization_operation_request(operation, inputs)
+        return
+    if operation.operation_id == ANALYSIS_SEGMENT_USER_DETAIL:
+        validate_segment_member_fields(operation, inputs, app_id, metadata_loader)
         return
     if _static_detail_product_request(operation, inputs):
         parse_iso_calendar_date(inputs.get("date"), "date")

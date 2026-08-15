@@ -80,6 +80,9 @@ dashboard_results = gravity.run_dashboard_analysis(
 segment = gravity.segment_snapshot(
     "main", "High-value users", date="2026-08-01", max_workers=3
 )
+members = gravity.segment_members(
+    "main", "High-value users", fields=("Name", "ClientID", "user$level")
+)
 orders = gravity.order_directory("main", "2026-08-08", max_workers=6)
 app = gravity.app_snapshot("main", max_workers=6)
 attribution = gravity.attribution_snapshot("main", max_workers=6)
@@ -171,6 +174,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `prepare_segment_evaluation()` | 编译并离线校验紧凑 Segment Rule Spec，返回脱敏预览且不执行评估 |
 | `segment_evaluate()` | 执行受治理的聚合人群规则人数/占比评估 |
 | `segment_snapshot()` | 按稳定 ID 或精确名称读取分群 detail/history/daily_result；不返回成员或规则 |
+| `segment_members()` | 按稳定 ID 或精确名称返回完整成员行；动态字段由 user-property metadata 发现，历史用 `segment_version_id` |
 | `saved_analyses()` | 列出一个 App 的安全保存分析身份，不读取 opaque config |
 | `get_saved_analysis()` | 按 ID 或精确名称检查 Strict Replay 资格及 window 要求，不返回 config |
 | `prepare_saved_analysis()` | 在显式日期窗内读取 reference Web artifact 并严格编译，不执行最终查询；compact definition 旧模式兼容 |

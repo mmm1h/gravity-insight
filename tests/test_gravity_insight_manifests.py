@@ -914,7 +914,10 @@ class GravityInsightManifestTests(unittest.TestCase):
             "re_attribute_info": re_attribute_info,
         }
         expected["analysis.segment.user_detail.list"] = {
-            "device_info": device_info,
+            "device_info": [
+                "Idfa", "Idfv", "Caid1", "Caid2", "Oaid", "Imei", "AndroidId",
+                *device_info,
+            ],
             "re_attribute_info": re_attribute_info,
         }
         actual = {

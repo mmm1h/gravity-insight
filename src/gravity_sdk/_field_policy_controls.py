@@ -11,6 +11,7 @@ from ._field_policy_metadata import (
     select_rows,
 )
 from ._field_policy_operations import (
+    ANALYSIS_SEGMENT_USER_DETAIL,
     PROMOTION_METRIC,
     REPORT_BUSINESS_METRIC,
     REPORT_MULTIDIM_CUSTOM_METRIC,
@@ -259,13 +260,7 @@ def validate_dynamic_response_fields(
         for name, items in values.items()
         if items and not operation.fields[name].enum and not operation.fields[name].item_enum
     }
-    personal = sorted(
-        item
-        for items in requested.values()
-        for item in items
-        if is_direct_personal_response_field(item)
-    )
-    if personal:
+    if _reject_direct_personal_fields(operation, requested):
         raise InputValidationError(
             "dynamic response fields include direct personal identifiers; request was not sent"
         )
@@ -289,6 +284,18 @@ def validate_dynamic_response_fields(
         return
     raise InputValidationError(
         "dynamic response fields have no registered metadata validator; request was not sent"
+    )
+
+
+def _reject_direct_personal_fields(
+    operation: OperationSpec, requested: Mapping[str, Sequence[str]]
+) -> bool:
+    if operation.operation_id == ANALYSIS_SEGMENT_USER_DETAIL:
+        return False
+    return any(
+        is_direct_personal_response_field(item)
+        for items in requested.values()
+        for item in items
     )
 
 
