@@ -152,6 +152,10 @@ Analysis family router，`plan_adapters.py` 净增长 0，D28 聚合未被误纳
 Quality profile 已删除与 runtime root 同路径的冗余 CLI 扫描；每个函数 identity 仅产出一次，Markdown
 函数/复杂度超额与未修改的 baseline 一致，500/80/15/0 阈值和失败策略保持不变。
 
+Consumer-output 安全审计未新增结构债：上游业务内容继续留在结果容器，receipt/log 保持值无关；
+workspace recipe 与 SDK contract 的同名 description 已用 additive origin 元数据区分，公共 JSON writer
+统一拒绝非有限数字，不引入内容检测、评分或新的字段 DSL。
+
 多 App Analysis 扇出仅在领域 batch/surface 中把显式 `apps` 展开为现有同层 Plan 节点；没有新增
 线程池、worker 默认值、adapter registry、跨 App 结果抽象或共享 spine 分支。机器 quality ratchet
 保持，`plan_adapters.py` 未修改；本轮复核未产生新的结构债条目。

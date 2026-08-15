@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from gravity_sdk import json_output
 from gravity_sdk.http_runtime import MAX_SQL_CONCURRENCY
 from gravity_sdk.sql.cli_input import query_requests
 from gravity_sdk.sql.products import (
@@ -106,7 +106,14 @@ def run_query_plan(
             "read is intended."
         ),
     }
-    print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
+    print(
+        json_output.dumps(
+            payload,
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+        )
+    )
     return 0
 
 
@@ -221,7 +228,10 @@ def emit_error(
             "next_action": next_action,
         },
     }
-    print(json.dumps(payload, ensure_ascii=False, sort_keys=True), file=sys.stderr)
+    print(
+        json_output.dumps(payload, ensure_ascii=False, sort_keys=True),
+        file=sys.stderr,
+    )
     return exit_code
 
 

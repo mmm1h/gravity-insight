@@ -5,11 +5,13 @@ import json
 from pathlib import Path
 from typing import Any
 
+from gravity_sdk import json_output
+
 
 def json_bytes(value: Any) -> bytes:
-    return (json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode(
-        "utf-8"
-    )
+    return (
+        json_output.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    ).encode("utf-8")
 
 
 def write_json(path: Path, value: Any) -> None:

@@ -245,6 +245,7 @@ def snapshot_recipe_cards(
             "recipe": name,
             "operation_id": recipe.get("operation_id"),
             "description": recipe.get("description", ""),
+            "description_origin": "caller_workspace",
             "match": match,
             "required_parameters": list(recipe.get("required_parameters", [])),
             "parameter_bindings": dict(recipe.get("parameter_bindings", {})),
@@ -446,6 +447,7 @@ def _operation_card(
         "description": description.get(
             "description", search_item.get("description", "")
         ),
+        "description_origin": "sdk_contract",
         "domain": description.get("domain", search_item.get("domain")),
         "platform": description.get("platform", search_item.get("platform")),
         "stability": description.get("stability", search_item.get("stability")),
@@ -491,6 +493,7 @@ def _recipe_cards(
             "recipe": name,
             "operation_id": recipe.operation,
             "description": recipe.description,
+            "description_origin": "caller_workspace",
             "match": relevance,
             "required_parameters": list(recipe.required_parameters),
             "parameter_bindings": dict(recipe.parameters),

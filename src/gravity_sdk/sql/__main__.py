@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from collections.abc import Mapping, Sequence
 from datetime import date
 
+from gravity_sdk import json_output
 from gravity_sdk.http_runtime import MAX_SQL_CONCURRENCY
 from gravity_sdk.result_output import (
     output_file,
@@ -61,7 +61,7 @@ def _run_credentials(args: argparse.Namespace) -> int:
             )
         else:
             result = credentials.pull()
-        print(json.dumps(result, ensure_ascii=False))
+        print(json_output.dumps(result, ensure_ascii=False))
         return 0
     except CredentialSyncError as exc:
         print(f"ERROR: {exc}")
@@ -205,10 +205,10 @@ def _emit_query_result(
         if evidence_warning:
             payload["evidence_warning"] = evidence_warning
     if output and result_is_persistable(payload):
-        rendered = json.dumps(
+        rendered = json_output.dumps(
             payload, ensure_ascii=False, indent=2, sort_keys=True
         ) + "\n"
-        print(json.dumps(
+        print(json_output.dumps(
             write_rendered_result(output, rendered),
             ensure_ascii=False,
             indent=2,
@@ -216,7 +216,7 @@ def _emit_query_result(
         ))
     else:
         print(
-            json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True),
+            json_output.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True),
             file=sys.stderr if output else sys.stdout,
         )
     return int(envelope["exit_code"])
@@ -231,7 +231,7 @@ def _emit_query_error(
 ) -> int:
     exit_code = sql_error_exit_code(category)
     print(
-        json.dumps(
+        json_output.dumps(
             {
                 "schema_version": "gravity-sql.query.v1",
                 "ok": False,
@@ -338,7 +338,7 @@ def _run_products_command() -> int:
             "or pass the query_input JSON form with `--input`."
         ),
     }
-    print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
+    print(json_output.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
     return 0
 
 
@@ -353,7 +353,7 @@ def _run_status_command(args: argparse.Namespace) -> int:
         print(f"ERROR: {exc}", file=sys.stderr)
         return sql_error_exit_code("input")
     if args.json:
-        print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+        print(json_output.dumps(result, ensure_ascii=False, sort_keys=True))
         return 0
     readiness = "READY" if result["query_ready"] else "NOT_READY"
     print(f"{readiness} {result['status']}: {result['reason']}")
@@ -376,7 +376,7 @@ def _run_preflight_command(args: argparse.Namespace) -> int:
         print(f"ERROR: {exc}", file=sys.stderr)
         return sql_error_exit_code("input")
     if args.json:
-        print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+        print(json_output.dumps(result, ensure_ascii=False, sort_keys=True))
         return 0
     state = "PASS" if result["offline_checks_passed"] else "BLOCKED"
     print(f"{state} Evidence offline preflight for {result['target_date']}")
@@ -400,7 +400,7 @@ def _run_verify_command(args: argparse.Namespace) -> int:
         if args.publish:
             publish_evidence(evidence, workspace=workspace)
             print(f"PUBLISHED {EVIDENCE_PATH}", file=sys.stderr)
-        print(json.dumps(evidence, ensure_ascii=False, indent=2, sort_keys=True))
+        print(json_output.dumps(evidence, ensure_ascii=False, indent=2, sort_keys=True))
         return 0
     except (OSError, UnicodeEncodeError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)

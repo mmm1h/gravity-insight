@@ -204,6 +204,7 @@ def snapshot_recipes(workspace: Any | None) -> tuple[Mapping[str, Any], ...]:
             "name": str(name),
             "operation_id": recipe.operation,
             "description": recipe.description,
+            "description_origin": "caller_workspace",
             "required_parameters": list(recipe.required_parameters),
             "parameter_bindings": dict(recipe.parameters),
             "output_fields": list(recipe.output_fields),
