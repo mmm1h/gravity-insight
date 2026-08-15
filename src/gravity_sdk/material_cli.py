@@ -37,6 +37,25 @@ def add_material_commands(
         item = subcommands.add_parser(name)
         add_input(item)
         add_pagination(item)
+    fetch = subcommands.add_parser(
+        "fetch",
+        help="Fetch a file URL taken from a fresh registered material response.",
+    )
+    fetch.add_argument(
+        "--source", required=True, choices=("local", "bytedance_project")
+    )
+    add_input(fetch, required=True)
+    fetch.add_argument(
+        "--ref-field",
+        required=True,
+        choices=("id", "gravity_material_id", "material_id"),
+    )
+    fetch.add_argument("--ref", required=True)
+    fetch.add_argument("--role", required=True, choices=("file", "thumbnail"))
+    fetch.add_argument("--output", required=True, type=_output_file)
+    fetch.set_defaults(
+        operation_id="material.asset.fetch", product_file_output=True
+    )
     performance = subcommands.add_parser(
         "performance",
         help="Read platform material performance through one stable operation.",
@@ -96,6 +115,18 @@ def dispatch_material_command(args: Any, object_input: Callable[[Any], Any]) -> 
             object_input(args.input),
             read_all=all_pages,
             **page_options(args, all_pages=all_pages, active=all_pages),
+        )
+    if args.materials_command == "fetch":
+        from .material_asset import fetch_material_asset
+
+        return fetch_material_asset(
+            runtime.build_client(),
+            args.source,
+            object_input(args.input),
+            args.ref_field,
+            args.ref,
+            args.role,
+            args.output,
         )
     if args.materials_command == "title-packages":
         workspace = load_workspace()

@@ -290,8 +290,18 @@ def _fallback_input_schema(request: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def _column_description(privacy: Mapping[str, Any]) -> dict[str, Any]:
-    request_columns = [str(value) for value in privacy.get("request_columns", [])]
     physical_columns = [str(value) for value in privacy.get("allowed_columns", [])]
+    request_columns = [
+        str(value)
+        for value in privacy.get("request_columns", physical_columns)
+    ]
+    required_request_columns = [
+        str(value)
+        for value in privacy.get("request_required_columns", request_columns)
+    ]
+    file_schema = privacy.get("file_schema")
+    if not isinstance(file_schema, Mapping):
+        file_schema = {}
     labels = {
         code: physical_columns[index] if index < len(physical_columns) else None
         for index, code in enumerate(request_columns)
@@ -303,14 +313,13 @@ def _column_description(privacy: Mapping[str, Any]) -> dict[str, Any]:
             privacy.get("request_column_field")
         ),
         "allowed_codes": request_columns,
-        "required_codes": [
-            str(value) for value in privacy.get("request_required_columns", [])
-        ],
+        "required_codes": required_request_columns,
         "output_headers_by_code": labels,
         "required_output_headers": [
             str(value) for value in privacy.get("required_columns", [])
         ],
         "format": privacy.get("format"),
+        "file_schema": _plain(file_schema),
     }
 
 

@@ -855,6 +855,11 @@ class GravityInsightManifestTests(unittest.TestCase):
                     "create_time",
                 ],
             },
+            "material.local.list": {
+                "material_consumed": ["bytedance", "kuaishou", "tencent"],
+                "material_report": ["create_time", "gravity_material_id"],
+                "material_used": ["bytedance", "kuaishou", "tencent"],
+            },
             "promotion.ai_trusteeship.detail": {
                 "conditions": ["day", "metrics_name", "value"],
                 "detail_list": ["advertiser_id", "count", "advertiser_name"],
@@ -1271,7 +1276,15 @@ class GravityInsightManifestTests(unittest.TestCase):
                     ]
                 },
                 "material.bytedance.project_material.list": {
-                    "video_material_list": ["file_name", "material_id", "type"]
+                    "instant_play_material_list": [],
+                    "trial_play_material_list": [],
+                    "video_material_list": [
+                        "file_name",
+                        "file_url",
+                        "material_id",
+                        "thumbnail_url",
+                        "type",
+                    ]
                 },
                 "report.multidim.template.tree": {
                     "my_template": ["id", "name"],

@@ -327,11 +327,20 @@ class DiscoveryUxTests(unittest.TestCase):
                 self.assertEqual(300, card["timeout"]["default_seconds"])
         for blocked in (
             "export.analysis.segment.result.start",
-            "export.analysis.user_event.start",
             "export.task.cancel",
         ):
             result = discover_capabilities(blocked, client=self.client)
             self.assertNotIn(blocked, [card["selector"] for card in result["candidates"]])
+
+        user_event = "export.analysis.user_event.start"
+        for query in ("export user events", "导出用户事件结果", user_event):
+            with self.subTest(query=query):
+                result = discover_capabilities(query, client=self.client, limit=3)
+                card = result["candidates"][0]
+                self.assertEqual(("export", user_event), (card["kind"], card["selector"]))
+                self.assertFalse(card["plan_executable"])
+                self.assertEqual("xlsx", card["columns"]["format"])
+                self.assertEqual(5, len(card["columns"]["file_schema"]["columns"]))
 
     @patch("gravity_sdk.agent_batch_sources.search_metadata", return_value={"results": []})
     def test_agent_batch_snapshots_export_inventory_once(self, _metadata) -> None:
@@ -350,7 +359,7 @@ class DiscoveryUxTests(unittest.TestCase):
             )
         cards = [item["result"]["candidates"][0] for item in result["results"]]
         listing.assert_called_once_with()
-        describe.assert_called_once_with("export.material.report.start")
+        self.assertEqual(2, describe.call_count)
         self.assertEqual(["export", "export"], [card["kind"] for card in cards])
         self.assertTrue(all(card["plan_node"] is None for card in cards))
 
@@ -712,6 +721,7 @@ class DiscoveryUxTests(unittest.TestCase):
             "J32": "export.material.report.start",
             "J33": "composite:analysis_default_dictionary",
             "J41": "composite:attribution_performance",
+            "J47": "material.asset.fetch",
         }
         gaps = {
             "J19": "WORKSPACE_SQL_PRODUCT_NOT_CONFIGURED",
@@ -727,7 +737,6 @@ class DiscoveryUxTests(unittest.TestCase):
             "J44": "NON_BYTEDANCE_HIERARCHY_PARENT_MISSING",
             "J45": "PLATFORM_SPECIFIC_CREATIVE_CONTRACT_MISSING",
             "J46": "ANALYSIS_EXPORT_FILE_CONTRACT_MISSING",
-            "J47": "PLATFORM_ASSET_BINARY_CONTRACT_MISSING",
         }
         path = Path(__file__).parent / "fixtures/nl_reachability_phrasings.md"
         questions = []

@@ -32,6 +32,20 @@ _MATERIAL_ALIASES = (
     "素材数据导出",
     "导出素材数据",
 )
+_USER_EVENT_OPERATION = "export.analysis.user_event.start"
+_USER_EVENT_ALIASES = (
+    "user event export",
+    "export user event",
+    "export user events",
+    "export user event results",
+    "event timeline export",
+    "export event timeline",
+    "用户事件导出",
+    "导出用户事件",
+    "导出用户事件结果",
+    "事件时间线导出",
+    "导出事件时间线",
+)
 _SPACE = re.compile(r"[^a-z0-9_.]+", re.IGNORECASE)
 
 
@@ -45,6 +59,7 @@ def query_requests_export(query: str) -> bool:
         selected.startswith("export.")
         or normalized in _GENERIC_INTENTS
         or any(_contains_alias(query, alias) for alias in _MATERIAL_ALIASES)
+        or _user_event_export(query)
         or _material_export_workflow(query)
         or _material_file_export(query)
         or "导出" in selected
@@ -103,7 +118,9 @@ def export_capability_cards(
 ) -> list[dict[str, Any]]:
     """Build direct ``gravity export run`` cards from the safe snapshot."""
 
-    if platform is not None or domain not in {None, "export", "material", "report"}:
+    if platform is not None or domain not in {
+        None, "analysis", "export", "material", "report"
+    }:
         return []
     cards = [
         card
@@ -114,6 +131,8 @@ def export_capability_cards(
         cards,
         key=lambda card: (
             not bool(card["match"].get("exact_selector")),
+            not bool(card["match"].get("specific_intent")),
+            card["selector"] != "export.material.report.start",
             str(card["selector"]),
         ),
     )
@@ -142,7 +161,9 @@ def _export_card(
         or _material_export_workflow(query)
         or _material_file_export(query)
     )
-    if not (exact or generic or material):
+    user_event = operation_id == _USER_EVENT_OPERATION and _user_event_export(query)
+    route_match = material if operation_id != _USER_EVENT_OPERATION else user_event
+    if not (exact or generic or route_match):
         return None
     input_schema = _plain_mapping(description.get("input_schema"))
     columns = _plain_mapping(description.get("columns"))
@@ -155,7 +176,11 @@ def _export_card(
         "selector": operation_id,
         "operation_id": operation_id,
         "domain": "export",
-        "description": "创建、轮询并原子下载受治理的素材报表文件。",
+        "description": (
+            "创建、轮询并原子下载受治理的单用户事件文件。"
+            if operation_id == _USER_EVENT_OPERATION
+            else "创建、轮询并原子下载受治理的素材报表文件。"
+        ),
         "effect": _CREATE_EFFECT,
         "executable": True,
         "currently_callable": True,
@@ -190,7 +215,7 @@ def _export_card(
             "auto_cancel": bool(workflow.get("timeout_auto_cancel", False)),
         },
         "examples": examples,
-        "match": _export_match(operation_id, exact),
+        "match": _export_match(operation_id, exact, route_match),
         "next": {
             "ready_without_input": False,
             "argv": _run_argv(operation_id),
@@ -218,7 +243,9 @@ def _idempotency_template(examples: Sequence[Any]) -> Any:
     return first.get("idempotency_key_template") if isinstance(first, Mapping) else None
 
 
-def _export_match(operation_id: str, exact: bool) -> dict[str, Any]:
+def _export_match(
+    operation_id: str, exact: bool, specific_intent: bool
+) -> dict[str, Any]:
     return {
         "confidence": "strong",
         "coverage": 1.0,
@@ -226,6 +253,7 @@ def _export_match(operation_id: str, exact: bool) -> dict[str, Any]:
         "missing_terms": [],
         "score": 100,
         "exact_selector": exact,
+        "specific_intent": specific_intent,
         "intent_only": not exact,
     }
 
@@ -292,6 +320,11 @@ def _material_file_export(query: str) -> bool:
         and any(term in selected for term in ("文件", "数据", "报表"))
     )
     return english or chinese
+
+
+def _user_event_export(query: str) -> bool:
+    selected = affirmative_intent_text(query)
+    return any(_contains_alias(selected, alias) for alias in _USER_EVENT_ALIASES)
 
 
 __all__ = [

@@ -1,0 +1,386 @@
+{
+  "schema_version": "gravity-insight.export-binary-forensics.v2",
+  "observed_at": "2026-08-15T19:42:30Z",
+  "base_commit": "3a6a9b3",
+  "values_persisted": false,
+  "credentials_persisted": false,
+  "request_policy": {
+    "date": "2026-08-16",
+    "date_window_expanded": false,
+    "data_page": 1,
+    "data_page_advanced": false,
+    "attempts_per_request": 1,
+    "request_shape_retried": false,
+    "app_catalog_enumeration_authorized": true,
+    "project_switched": false,
+    "invalid_url_constructed": false
+  },
+  "line_a": {
+    "request_budget": 25,
+    "production_http_request_count": 9,
+    "catalog_app_count": 7,
+    "apps_enumerated": 3,
+    "selected_app_catalog_position": 3,
+    "selected_app_identity_persisted": false,
+    "day": "2026-08-16",
+    "http": [
+      {
+        "sequence": 1,
+        "operation_id": "app.list",
+        "method": "GET",
+        "path": "/turbo_engine/api/v1/user/open_app/list/",
+        "http_status": 200,
+        "semantic_code": 0,
+        "conclusion": "page 1 with the registered 6000-item catalog bound returned all seven visible Apps"
+      },
+      {
+        "sequence": 2,
+        "operation_id": "analysis.user_detail.list",
+        "method": "POST",
+        "path": "/report/api/v3/dataanalysis/user/detail/list/",
+        "http_status": 200,
+        "semantic_code": 0,
+        "app_catalog_position": 1,
+        "conclusion": "single-day first page was empty"
+      },
+      {
+        "sequence": 3,
+        "operation_id": "analysis.user_detail.list",
+        "method": "POST",
+        "path": "/report/api/v3/dataanalysis/user/detail/list/",
+        "http_status": 200,
+        "semantic_code": 0,
+        "app_catalog_position": 2,
+        "conclusion": "single-day first page returned one parent ClientID in memory"
+      },
+      {
+        "sequence": 4,
+        "operation_id": "analysis.user_event.list",
+        "method": "POST",
+        "path": "/report/api/v3/dataanalysis/user/event/list/",
+        "http_status": 200,
+        "semantic_code": 0,
+        "app_catalog_position": 2,
+        "conclusion": "single-day first-page event timeline was empty"
+      },
+      {
+        "sequence": 5,
+        "operation_id": "analysis.user_detail.list",
+        "method": "POST",
+        "path": "/report/api/v3/dataanalysis/user/detail/list/",
+        "http_status": 200,
+        "semantic_code": 0,
+        "app_catalog_position": 3,
+        "conclusion": "single-day first page returned one parent ClientID in memory"
+      },
+      {
+        "sequence": 6,
+        "operation_id": "analysis.user_event.list",
+        "method": "POST",
+        "path": "/report/api/v3/dataanalysis/user/event/list/",
+        "http_status": 200,
+        "semantic_code": 0,
+        "app_catalog_position": 3,
+        "conclusion": "single-day first-page event timeline was non-empty; enumeration stopped"
+      },
+      {
+        "sequence": 7,
+        "operation_id": "export.analysis.user_event.start",
+        "method": "POST",
+        "path": "/report/api/v3/dataanalysis/user/event/list/download/",
+        "http_status": 200,
+        "semantic_code": 0,
+        "conclusion": "the exact preceding event-list body plus task_name returned data.task_id"
+      },
+      {
+        "sequence": 8,
+        "operation_id": "export.task.progress",
+        "method": "GET",
+        "path": "/turbo_engine/api/v1/task/download/progress/",
+        "http_status": 200,
+        "semantic_code": 0,
+        "conclusion": "the first poll returned terminal status 2 READY with a direct XLSX URL"
+      },
+      {
+        "sequence": 9,
+        "operation_id": "export.analysis.user_event.download",
+        "method": "GET",
+        "host": "gravity-client-resource.oss-cn-hangzhou.aliyuncs.com",
+        "path_shape": "/{tenant}/excels/{opaque}.xlsx",
+        "http_status": 200,
+        "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "redirect_observed": false,
+        "conclusion": "6195-byte XLSX downloaded once, inspected, and deleted after verification"
+      }
+    ],
+    "file": {
+      "format": "xlsx",
+      "size_bytes": 6195,
+      "worksheet_count": 1,
+      "worksheet_name": "Sheet1",
+      "row_count": 7,
+      "column_count": 5,
+      "magic_prefix_hex": "504b0304",
+      "privacy_gate_passed": true,
+      "temporary_file_deleted": true,
+      "columns": [
+        {
+          "header": "客户(client_id)",
+          "cell_storage_types": ["s"],
+          "python_value_types": ["str"],
+          "number_formats": ["General"],
+          "logical_type": "identifier",
+          "observed_nonempty_cells": 7
+        },
+        {
+          "header": "用户注册时间",
+          "cell_storage_types": ["s"],
+          "python_value_types": ["str"],
+          "number_formats": ["General"],
+          "logical_type": "datetime",
+          "observed_nonempty_cells": 7
+        },
+        {
+          "header": "事件发生时间",
+          "cell_storage_types": ["d"],
+          "python_value_types": ["datetime"],
+          "number_formats": ["YYYY-MM-DD HH:MM:SS"],
+          "logical_type": "datetime",
+          "observed_nonempty_cells": 7
+        },
+        {
+          "header": "事件",
+          "cell_storage_types": ["s"],
+          "python_value_types": ["str"],
+          "number_formats": ["General"],
+          "logical_type": "text",
+          "observed_nonempty_cells": 7
+        },
+        {
+          "header": "事件属性",
+          "cell_storage_types": ["s"],
+          "python_value_types": ["str"],
+          "number_formats": ["General"],
+          "logical_type": "json_object_or_array",
+          "observed_nonempty_cells": 7
+        }
+      ]
+    },
+    "other_export_shape_decisions": [
+      {
+        "operation_id": "export.analysis.segment.result.start",
+        "shared_job_protocol": true,
+        "reuses_user_event_file_schema": false,
+        "requires_own_success_sample": true,
+        "reason": "its fixed 用户ID column still lacks observed storage and logical type"
+      },
+      {
+        "operation_id": "export.analysis.origin_event.start",
+        "shared_job_protocol": true,
+        "reuses_user_event_file_schema": false,
+        "requires_own_success_sample": true,
+        "reason": "event-selection output columns are a different family and no successful file exists"
+      },
+      {
+        "operation_id": "export.analysis.monetization_detail.start",
+        "shared_job_protocol": true,
+        "reuses_user_event_file_schema": false,
+        "requires_own_success_sample": true,
+        "reason": "field_map controls a distinct dynamic monetization schema"
+      },
+      {
+        "operation_id": "export.analysis.segment_user_detail.start",
+        "shared_job_protocol": true,
+        "reuses_user_event_file_schema": false,
+        "requires_own_success_sample": true,
+        "reason": "field_map and segment parent binding control a distinct dynamic member schema"
+      },
+      {
+        "operation_id": "export.analysis.user_detail.start",
+        "shared_job_protocol": true,
+        "reuses_user_event_file_schema": false,
+        "requires_own_success_sample": true,
+        "reason": "field_map controls a distinct dynamic profile schema"
+      },
+      {
+        "operation_id": "export.analysis.pay_event.start",
+        "shared_job_protocol": true,
+        "reuses_user_event_file_schema": false,
+        "requires_own_success_sample": true,
+        "reason": "field_map and order conditions control a distinct payment schema"
+      }
+    ],
+    "stream_event": {
+      "catalog_status": "not_applicable",
+      "frontend_produces_server_request": false,
+      "basis": "the hash-matched loader has no call site and the visible button invokes client-side table serialization",
+      "later_action": "do not probe the unused server route"
+    },
+    "conclusion": "user_event_closed_other_server_families_need_own_file_shapes"
+  },
+  "line_b": {
+    "request_budget": 15,
+    "production_http_request_count": 10,
+    "http": [
+      {
+        "sequence": 1,
+        "operation_id": "promotion.bytedance.project_filter.list",
+        "method": "POST",
+        "http_status": 200,
+        "semantic_code": 0,
+        "conclusion": "the first project was selected in memory"
+      },
+      {
+        "sequence": 2,
+        "operation_id": "material.bytedance.project_material.list",
+        "method": "POST",
+        "http_status": 200,
+        "semantic_code": 0,
+        "conclusion": "the first project currently returned no video materials; no retry or project switch"
+      },
+      {
+        "sequence": 3,
+        "operation_id": "material.local.list",
+        "method": "POST",
+        "http_status": 200,
+        "semantic_code": 0,
+        "conclusion": "root catalog page 1/page_size 5 returned five natural video references"
+      },
+      {
+        "sequence": 4,
+        "operation_id": "material.binary.get.probe",
+        "role": "thumbnail_url",
+        "method": "GET",
+        "host": "tos-accelerate.gravity-engine.com",
+        "path_shape": "/{tenant}/image/video_thumbnail_url_{opaque}.jpg",
+        "requested_range": "bytes=0-63",
+        "bytes_observed": 64,
+        "http_status": 206,
+        "content_type": "image/jpeg",
+        "magic_type": "jpeg",
+        "redirect_observed": false
+      },
+      {
+        "sequence": 5,
+        "operation_id": "material.binary.head.probe",
+        "role": "file_url",
+        "method": "HEAD",
+        "host": "tos-accelerate.gravity-engine.com",
+        "path_shape": "/{tenant}/video/{opaque}.mp4",
+        "http_status": 200,
+        "content_type": "video/mp4",
+        "redirect_observed": false
+      },
+      {
+        "sequence": 6,
+        "operation_id": "material.binary.get.probe",
+        "role": "thumbnail_url",
+        "method": "GET",
+        "host": "tos-accelerate.gravity-engine.com",
+        "path_shape": "/{tenant}/image/video_thumbnail_url_{opaque}.jpg",
+        "requested_range": "bytes=0-63",
+        "bytes_observed": 64,
+        "http_status": 206,
+        "content_type": "image/jpeg",
+        "magic_type": "jpeg",
+        "redirect_observed": false
+      },
+      {
+        "sequence": 7,
+        "operation_id": "material.binary.head.probe",
+        "role": "file_url",
+        "method": "HEAD",
+        "host": "tos-accelerate.gravity-engine.com",
+        "path_shape": "/{tenant}/video/{opaque}.mp4",
+        "http_status": 200,
+        "content_type": "video/mp4",
+        "redirect_observed": false
+      },
+      {
+        "sequence": 8,
+        "operation_id": "material.binary.get.probe",
+        "role": "thumbnail_url",
+        "method": "GET",
+        "host": "tos-accelerate.gravity-engine.com",
+        "path_shape": "/{tenant}/image/video_thumbnail_url_{opaque}.jpg",
+        "requested_range": "bytes=0-63",
+        "bytes_observed": 64,
+        "http_status": 206,
+        "content_type": "image/jpeg",
+        "magic_type": "jpeg",
+        "redirect_observed": false
+      },
+      {
+        "sequence": 9,
+        "operation_id": "material.binary.head.probe",
+        "role": "file_url",
+        "method": "HEAD",
+        "host": "tos-accelerate.gravity-engine.com",
+        "path_shape": "/{tenant}/video/{opaque}.mp4",
+        "http_status": 200,
+        "content_type": "video/mp4",
+        "redirect_observed": false
+      },
+      {
+        "sequence": 10,
+        "operation_id": "material.binary.get.probe",
+        "role": "thumbnail_url",
+        "method": "GET",
+        "host": "tos-accelerate.gravity-engine.com",
+        "path_shape": "/{tenant}/image/video_thumbnail_url_{opaque}.jpg",
+        "requested_range": "bytes=0-63",
+        "bytes_observed": 64,
+        "http_status": 206,
+        "content_type": "image/jpeg",
+        "magic_type": "jpeg",
+        "redirect_observed": false
+      }
+    ],
+    "source_sample_count": 5,
+    "source_hosts_this_round": ["tos-accelerate.gravity-engine.com"],
+    "cumulative_observed_hosts": [
+      "p26-sign.douyinpic.com",
+      "tos-accelerate.gravity-engine.com",
+      "v26-cc.oceanengine.com"
+    ],
+    "cumulative_redirect_hosts": [],
+    "host_set_converged": false,
+    "allowlist_decision": "the local-material family can use an exact tos-accelerate host with tenant image/video prefixes, but the general platform-material effect cannot claim the complete external vNN/pNN shard set from one prior sample per family",
+    "failure_semantics": {
+      "evidence_kind": "static",
+      "bundles_searched": 4,
+      "invalid_url_probe_count": 0,
+      "not_found": "unknown",
+      "expired": "unknown",
+      "not_cached": "unknown",
+      "permission_unavailable": "unknown",
+      "observed_only": [
+        "a missing url/file_url causes a generic cannot-preview tooltip",
+        "an item errorMessage is displayed verbatim without classification"
+      ]
+    },
+    "conclusion": "not_closed_host_shards_and_failure_semantics_remain_unverified"
+  },
+  "bundle_gets": {
+    "http_request_count": 4,
+    "unique_asset_count": 4,
+    "repeat_count": 0,
+    "status": 200,
+    "hash_matched": true,
+    "assets": [
+      {"name": "MaterialTable-B74wGXBj.js", "sha256": "1f5ec0131d194c3196984c04bfd4b4ff8dd966070746bcc76e8355d9b84e02f2"},
+      {"name": "materialSwiper-TdLw2y8C.js", "sha256": "01b29752fa18e024cc52b1e7a73a7267e831666d61a5f98c88b98a65e655f299"},
+      {"name": "materialSwiper-YAE_GJJR.js", "sha256": "1daf8fb92f88859ab9a033f26b7804edb243cbc5362a7fb2663cfc99f61afdd8"},
+      {"name": "ad-data-BoZxCaUe.js", "sha256": "4ac6aeea3ebfec65bf4d71996c468c61ea6f3eb118ac3c34a031ce0cc3e2046e"}
+    ]
+  },
+  "totals": {
+    "line_a_production_http": 9,
+    "line_b_production_http": 10,
+    "production_http_excluding_static_assets": 19,
+    "static_asset_http": 4,
+    "retries": 0,
+    "additional_data_pages": 0,
+    "date_window_expansions": 0
+  }
+}

@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from collections.abc import Mapping
+from pathlib import Path
 from typing import Any
 
 from .errors import InputValidationError
@@ -86,6 +88,29 @@ class MaterialSdkMixin:
             package_kind,
             max_pages=max_pages,
             max_items=max_items,
+        )
+
+    def fetch_material_asset(
+        self,
+        source: str,
+        source_input: Mapping[str, Any],
+        ref_field: str,
+        ref: str | int,
+        role: str,
+        destination: str | Path,
+    ) -> dict[str, Any]:
+        """Fetch a URL resolved from one fresh registered material response."""
+
+        from .material_asset import fetch_material_asset
+
+        return fetch_material_asset(
+            self.insight,
+            source,
+            source_input,
+            ref_field,
+            ref,
+            role,
+            destination,
         )
 
 

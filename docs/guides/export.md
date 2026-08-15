@@ -5,8 +5,8 @@
 
 ## 已知导出：一次调用
 
-当前唯一可直接创建的导出是 `export.material.report.start`。准备好 `describe` 合同中的完整
-request 后，直接执行：
+当前可直接创建的导出有两个：素材报表 `export.material.report.start` 与单用户事件
+`export.analysis.user_event.start`。准备好 `describe` 合同中的完整 request 后，直接执行：
 
 ```powershell
 gravity export run export.material.report.start `
@@ -18,9 +18,25 @@ gravity export run export.material.report.start `
 ```
 
 `--output` 是最终 XLSX 的显式目的路径；命令的 JSON envelope 仍写 stdout，绝不会把 JSON
-写进该文件。`--columns` 必须与 input 的 `export_col_list` 使用相同代码和顺序；不要从自然语言
-推断业务输入、列或日期。先用离线 `gravity export describe export.material.report.start` 取得
-完整 schema、verified example、列映射和规模限制。
+写进该文件。对素材报表，`--columns` 必须与 input 的 `export_col_list` 使用相同代码和顺序；不要从
+自然语言推断业务输入、列或日期。先用离线 `gravity export describe export.material.report.start`
+取得完整 schema、verified example、列映射和规模限制。
+
+单用户事件导出先用相同 App、ClientID 和单日执行一次第一页 `analysis.user_event.list`；只有
+`event_timeline` 含非空列表时，才精确复制其授权 body 并追加 `task_name`：
+
+```powershell
+gravity export describe export.analysis.user_event.start
+gravity export run export.analysis.user_event.start `
+  --input user-event-export.json `
+  --columns "客户(client_id),用户注册时间,事件发生时间,事件,事件属性" `
+  --idempotency-key user-event-20260816-001 `
+  --output D:\exports\user-event-20260816.xlsx `
+  --timeout 300
+```
+
+这五列顺序固定；`describe.columns.file_schema` 同时给出 worksheet、单元格存储类型和逻辑类型。
+App、ClientID、日期、事件名和结构化条件都必须来自调用方或成功父读取，不从自然语言推断。
 
 ## 未知导出：两次调用
 
@@ -33,10 +49,11 @@ gravity agent "material report export"
 导出卡直接交接到 run，不生成 Plan node，也不能放入 Plan v1。批量 Agent 问题复用同一份导出
 inventory。
 
-Agent 只暴露 `currently_callable=true` 且 `effect=export_job_create` 的卡。当前这会且只会得到
-`export.material.report.start`；task status/cancel 等支持路由不是创建候选。所有 Analysis 导出仍
-不可调用：用户级投影已全面放开，剩余阻塞是父工作流、成功请求绑定或完整文件 schema（尤其逻辑列
-类型）未证实。用 `export list-capabilities` 查看这些边界，不要把 catalog 条目当成可执行能力。
+Agent 只暴露 `currently_callable=true` 且 `effect=export_job_create` 的卡。当前会得到素材报表和
+单用户事件两个 creator；task status/cancel 等支持路由不是创建候选。其余六类服务端 Analysis 导出
+仍各缺自己的成功文件 shape，不能复用 user-event 的列合同。`stream_event` 的前端按钮只做客户端
+表格序列化，未调用声明的 loader，因此它不是待探测的 SDK 服务端缺口。用
+`export list-capabilities` 查看边界，不要把 catalog 条目当成可执行能力。
 
 ## 超时和分阶段恢复
 

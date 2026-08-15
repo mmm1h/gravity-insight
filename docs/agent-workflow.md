@@ -16,7 +16,7 @@
 | Analysis 默认值字典 | 已知 App：`analysis defaults --app ...`；未知能力但 App 已知：对应 Agent 卡 → `plan run` | 1 / 2 |
 | 保存分析/分析模板 | 引用已知：`analysis saved run` / `analysis template run`；引用未知时在线输入解析后按稳定 ID（模板为 scope + ID）精确选择。模板仍只执行 compact Spec 或已证明 artifact | 1 / 2 |
 | 看板控制面/图表重放 | 已知引用：`analysis dashboard snapshot` / `analysis dashboard run`；引用未知时在线输入解析后精确选稳定 ID，再执行 | 1 / 2 |
-| Governed 导出 | 输入已知：`export run`；未知：`agent "material report export"` → `next.argv` | 1 / 2 |
+| Governed 文件 effect | 输入已知：报表 `export run`，精确素材 `materials fetch`；未知入口：Agent 卡 → `next.argv` | 1 / 2 |
 | 多 selector / 已有 Plan | `gravity plan run --input <plan.json>` | 1 |
 | 用户旅程/数据表沿革 | `analysis user journey`；lineage catalog 冷机时用在线输入解析完成原子 refresh，再离线查询 | 1 / 2 |
 | 单个未知目标/operation 输入 | `gravity agent "<query>"` / `gravity agent <operation-id>` → 执行卡片 argv | 2 |
@@ -212,7 +212,7 @@ gravity find "retention"
 
 ## 9. 导出
 
-已知完整输入直接一次 `gravity export run ... --output <file.xlsx>`；未知时一次 `gravity agent "material report export"` 加一次卡片 `next.argv`，自然语言不自动执行。当前唯一 callable create 是 `export.material.report.start`；status/cancel 和请求/文件合同未闭合的 Analysis 导出不生成 executable 卡。Analysis 的用户级投影已放开，不能再把它写成隐私 blocker。
+已知完整输入直接一次 `gravity export run ... --output <file.xlsx>`；未知时一次 `gravity agent "material report export"` 或 `gravity agent "user event export"` 加一次卡片 `next.argv`，自然语言不自动执行。当前 callable creator 是 `export.material.report.start` 与 `export.analysis.user_event.start`；status/cancel 和其余请求/文件合同未闭合的 Analysis 导出不生成 executable 卡。`stream_event` 的前端按钮只做客户端导出，没有待探测的 server request。Analysis 的用户级投影已放开，不能再把它写成隐私 blocker。
 `--output` 是最终文件而非 JSON envelope；超时不取消，拿 `job_id` 走 status/wait/download，无可靠 ID 先 `export list`。分阶段命令只用于恢复；导出不进入 Plan v1。详见[导出指南](guides/export.md)。
 
 ## 10. 交付

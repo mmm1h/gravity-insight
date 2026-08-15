@@ -26,6 +26,7 @@ _GOVERNED_CARD_KINDS = {
     "analysis_query_spec",
     "composite",
     "export",
+    "material_asset",
     "segment_rule_spec",
 }
 

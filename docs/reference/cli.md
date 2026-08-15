@@ -31,6 +31,7 @@ gravity attribution performance 读取一个 App 日期区间的四组归因表�
 gravity reports pulse         并发读取 App 经营概览与趋势
 gravity reports usage         完整读取公司级按日资源用量趋势
 gravity materials performance 读取稳定的跨平台素材表现
+gravity materials fetch       从已登记素材响应按精确引用下载文件
 ```
 
 任意命令都可在顶层显式选择项目配置：
@@ -236,6 +237,36 @@ gravity materials performance --app main --app secondary `
 最多 4；每个平台分页 worker 固定 1。`max_items` 是共享声明预算，batch 实际给每个平台
 `floor(max_items/platform_count)` 的不可借用份额。结果按平台声明序，物理指标保持原名；不生成
 归一指标、总计、排名或业务结论。
+
+## Material Asset Fetch
+
+```powershell
+gravity materials fetch --source local `
+  --input '{"page":1,"page_size":20}' `
+  --ref-field id --ref <exact-id> --role thumbnail `
+  --output tmp/thumbnail.jpg
+
+gravity materials fetch --source bytedance_project `
+  --input '{"advertiser_id":<id>,"project_id":<id>}' `
+  --ref-field material_id --ref <exact-id> --role file `
+  --output tmp/video.mp4
+```
+
+`--input` 只接受所选 source 对应的已登记 operation 输入；命令先重新读取
+`material.local.list` 或 `material.bytedance.project_material.list`，再从这次通过投影的唯一匹配行
+取 `file_url` / `thumbnail_url`。没有 URL 参数，也不会从 `--input` 接受 URL。host、path 和重定向
+目标不枚举、不限制；重定向跟随，收据只返回 initial/final host family、redirect count 和是否跨 host，
+不回显完整 URL。
+
+`--output` 一旦给出就表示调用方确实需要文件，因此执行完整流式下载、Content-Length、已声明
+source size/MD5（存在时）、MIME、magic、SHA-256、fsync 和同目录原子提交；它不是 JSON 输出路径。
+维护探测只读 64-byte Range，不等于产品完整下载。当前 source 合同覆盖已实证的 JPEG thumbnail 与
+MP4 file；其他类型会作为 upstream contract drift 失败关闭，而不是按 host 拒绝。
+
+完整 GET 的 HTTP 200 才是成功；重定向继续跟随。terminal 401/403/404/410/429/5xx 及其他非 200
+状态都属于 upstream/exit 3，其中 408/425/429/5xx 标记 retryable；source/ref/role/input 错误属于
+caller/exit 2，本地 staging/fsync/atomic replace 错误属于 local/exit 4。不会生成
+`not_found/expired/not_cached/permission` 素材状态。
 
 ## Promotion Performance
 

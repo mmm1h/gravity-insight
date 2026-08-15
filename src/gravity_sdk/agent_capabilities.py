@@ -322,6 +322,7 @@ def capability_handoff_cards(
     from .agent_monetization_guard import (
         monetization_guard_blocks_operation_fallback,
     )
+    from .agent_material_asset import material_asset_capability_cards
     from .agent_discovery_policy import operation_fallback_excluded
     from .agent_export import export_capability_cards
     from .agent_intent_routing import multiple_product_intents
@@ -349,9 +350,12 @@ def capability_handoff_cards(
         return products, True
     if multiple_product_intents(query, inventory=composite_inventory):
         return [], True
-    exports = export_capability_cards(
-        query, domain=domain, platform=platform, inventory=export_inventory
-    )
+    direct_effects = [
+        *material_asset_capability_cards(query, domain=domain, platform=platform),
+        *export_capability_cards(
+            query, domain=domain, platform=platform, inventory=export_inventory
+        ),
+    ]
     metadata_search = metadata_search_capability_cards(
         query, domain=domain, platform=platform
     )
@@ -370,8 +374,8 @@ def capability_handoff_cards(
             inventory=composite_inventory,
         ),
     ]
-    return exports or metadata_search or lineage or journeys or products, bool(
-        exports
+    return direct_effects or metadata_search or lineage or journeys or products, bool(
+        direct_effects
         or metadata_search
         or lineage
         or journeys

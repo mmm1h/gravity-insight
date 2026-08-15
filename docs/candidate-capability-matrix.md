@@ -201,6 +201,51 @@ F41 状态不变。
 manager/feed 等无完整分页证据的 draft 还卡在 `pagination_unverified`。下一步只允许在有数据租户上复用
 同一最小范围，从对应断点开始；当前账号下不得重试或扩大范围。
 
+## 2026-08-16 追加判定：Analysis 导出与平台素材二进制
+
+两组候选都获得新证据但 **0 条晋升**。Analysis 导出的 8 条 frontend request binding 已从
+hash-matched bundle 恢复；`stream_event.start` 只存在未调用 loader，按钮实际做客户端导出。生产父链
+在首 App、单日、第一页明确空后停止，故没有 create/file/type 新证据。平台素材样本证明一个
+`file_url` 的 HEAD 200 与 1 KiB Range GET 206、MP4 magic 和无 redirect，另一个 `thumbnail_url`
+HEAD 405；这些事实不足以外推完整 CDN origin/path/redirect/expiry/size 与历史失败集合。两组均保持
+candidate/unverified，不动态学习 allowlist。既有 stable 项目素材读取按投影总裁决新增 URL 与空容器
+字段，不构成候选晋升。逐请求证据见
+[`evidence/forensics/20260816_export_binary.json`](../evidence/forensics/20260816_export_binary.json)。
+
+### 第二轮纠错（2026-08-16）
+
+按授权枚举 catalog App 后，第三个 App 首次产生非空单日用户事件；9 次生产 HTTP 完成唯一一次
+`user_event` create→首 poll READY→XLSX download，取得 7 行、5 列的完整单元格存储和逻辑类型。
+该 export route 现为 verified/callable，但不是本矩阵 draft read operation 的晋升，operation/stable
+仍为 185/176。其他六类只能复用任务传输协议，仍需各自成功文件；`stream_event` 已由无调用 loader
+与客户端序列化按钮证明为前端不产生 server request，记 `not_applicable`，不再作为后续探测缺口。
+
+素材侧 10 次生产 HTTP 从 `material.local.list` 的 5 个自然引用取得 4 个缩略图最小 Range 样本：均为
+206、`image/jpeg`、JPEG magic、无重定向；本轮 host 收敛到 `tos-accelerate.gravity-engine.com`，累计
+仍有 `v26-cc.oceanengine.com`、`p26-sign.douyinpic.com` 三个已观察 host。固定本地素材 host/path 可窄
+登记，但外部 CDN shard 全集和四类失效语义仍未证明，所以 Issue 19 保持未闭环。四份 bundle 各 GET
+一次后仅本地检索。完整账本见
+[`evidence/forensics/20260816_export_binary_round2.json`](../evidence/forensics/20260816_export_binary_round2.json)。
+
+### 第三轮：素材 URL 来源边界纠错（2026-08-16）
+
+本轮不晋升新的 upstream operation；纠正的是 Issue 19 产品 effect 的输入合同。调用方不能传 URL，
+只能传 `local|bytedance_project` source、对应 stable operation 输入和精确素材引用；产品在同一次调用
+里重新读取 source，并只跟随刚返回行中的 `file_url` / `thumbnail_url`。因此 CDN host shard、path 和
+redirect target 不再是本仓库自建门禁，不枚举、不限制；最终只记录 host family 与跨 host 事实。
+
+生产 HTTP 共 7 次：1 次项目目录第一页，跳过已知空首项后读取 project position 2–6 共 5 次，前四空、
+第 6 个首次非空；随后 1 次自然缩略图 64-byte Range GET 为 206、`image/jpeg`、JPEG magic、
+`Content-Range 0-63/109820`、无 redirect。0 重试、0 翻页、0 扩窗、0 App 枚举、0 失效 URL、0 bundle
+GET。结合第二轮平台 MP4 样本，Bytedance source 的 file/thumbnail 都有证据；本地 source 继续只用
+自己的 4 个 JPEG 与 3 个 MP4 样本，两者没有跨 source 外推。产品 Core/CLI/SDK/Agent 已闭合，Plan
+按文件 effect 窄例外登记设计不适用。完整账本见
+[`evidence/forensics/20260816_export_binary_round3.json`](../evidence/forensics/20260816_export_binary_round3.json)。
+
+失效语义不再按前端不存在的四状态分类：实际观察状态为 200/206 及旧 HEAD 405；403/404/410 未观察。
+合同把有效 response-bound URL 的所有 terminal 非 200 归 upstream/exit 3，source/ref/role/input 归
+caller/exit 2，本地文件提交归 local/exit 4；不构造任何失效 URL。
+
 ## 2026-08-14 追加判定：D22 看板条件合并语义
 
 **判定：证明不了，不是部分证明。** 本轮取证 HTTP 共 10 次：1 次公开 source-map GET 返回 404；

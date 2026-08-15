@@ -14,12 +14,13 @@
 
 ## 现状
 
-当前从仓库产品入口与 stable operation 正向交叉反推 48 条产品动线：**已闭环 35 / 部分闭环 0 / 完全缺失 13**；
+当前从仓库产品入口与 stable operation 正向交叉反推 48 条产品动线：**已闭环 36 / 部分闭环 1 / 完全缺失 11**；
 另有 2 条 legacy/SDK 便利面、1 条重复能力审计行和 1 条已有结果上的调用方派生便利面保留，
-但不计产品动线。表格 52 行减去 4 条“不计独立动线”得到 48 条；默认值字典与 D35 各从缺失变为闭环，
-故 `48 = 33 / 0 / 15 + 1 / 0 / -1 + 1 / 0 / -1 = 35 / 0 / 13`。operation 为
-`185 + 1 + 1 = 187`、stable 为 `176 + 1 + 1 = 178`。
-**部分闭环归零不代表没有欠账**——13 条完全缺失里
+但不计产品动线。表格 52 行减去 4 条“不计独立动线”得到 48 条。从 `dev@8d7150a` 的
+`48 = 34 / 0 / 14` 起，D35 与 Issue 19 各从完全缺失迁入已闭环，Analysis 导出从完全缺失迁入部分闭环，
+故 `48 = 34 / 0 / 14 + 1 / 0 / -1 + 1 / 0 / -1 + 0 / 1 / -1 = 36 / 1 / 11`。
+operation 为 `186 + 1 = 187`、stable 为 `177 + 1 = 178`；新素材文件能力是产品 effect，
+不伪装成新的 upstream operation。部分闭环的 Analysis 导出只关闭了单用户事件子类；11 条完全缺失里
 多数是请求、响应或非空证据阻塞；字段隐私不再是阻塞项。
 逐条状态、四面入口、调用次数和证据阻塞以[分析动线台账](analysis-journeys.md)为准；旧
 `21/14/6` 快照的逐条底稿未进入版本控制，无法复算，已停止作为排期事实。
@@ -712,7 +713,8 @@ live re-resolution 防止删除或名称漂移选中别的对象；SDK 不能证
    一次顶层调用即可完成，Agent 卡直接交接该命令并声明发现后 1 次。
 3. 判定要写进台账该行（记"设计不适用"而非"无"）并在此处留下理由，可被后来者推翻。
 
-当前只有导出的 Plan 面适用此例外。**新增例外必须同时满足以上三条并在此登记**。
+当前只有治理导出与 response-bound 素材文件这两类直接文件 effect 的 Plan 面适用此例外；后者的
+逐条证明登记在本页第三轮 Issue 19 裁决。**新增例外必须同时满足以上三条并在此登记**。
 
 ## 使用成本：参数化程度审计结论
 
@@ -1558,6 +1560,10 @@ worksheet 语义都已证实的 create route 才复用现有 `export run` 提升
 | `user_event.start` | create→poll→download、XLSX、单 worksheet、5 个表头已观察；文件为 0 行，五列逻辑类型全部不可观察 | 用户级投影阻塞已解除；类型合同仍缺 | 有非空单用户事件日的授权租户做一次单日导出，记录类型不记录值 |
 | `pay_event.start` | create 曾返回 task id 后 FAILED；`field_map`/条件绑定和完整文件 schema 未成立 | 未解除 | 上游 API/前端 owner，或有合法付费事件导出的租户 |
 
+> 本表冻结 2026-08-15 当轮判定。2026-08-16 第二轮已覆盖其中两行：`user_event.start` 完整闭环并
+> 可调用；`stream_event.start` 证明前端不产生 server request，改记 `not_applicable`。后续不得按本表
+> 的旧 blocker 重复探测，当前状态以本页后文“第二轮纠错与闭环判定”和导出 route catalog 为准。
+
 本轮生产复核总 HTTP **2 次**：`app.list` 最小第一页 GET 1 次、`analysis.segment.list` 最小第一页
 GET 1 次，均 HTTP 200；后者明确空，按停止条件未换 App、未翻页、未扩日期窗。create / poll /
 download 均为 0，重试为 0，上游新增任务为 0，本地无业务文件残留。投影总闸门已移除
@@ -1852,6 +1858,180 @@ operation 也保持 `185 → +0 → 185`（stable `176 → +0 → 176`）。
 全部资产 host/path prefix 与重定向集合、图片/视频 MIME 和扩展名集合、最大尺寸、URL 过期规则，
 以及四种不可用状态的判别。取得这些证据后，先登记二进制 effect 合同与离线负向测试，再做一个最小、
 非空、串行 probe；不得通过任意 URL 参数或动态学习 host 来补证据。
+
+## 最后两条可推动线复核：Analysis 导出 / 平台素材二进制（2026-08-16）
+
+**判定：两条都取得新事实，但都没有达到实现门槛；本轮不新增 effect 产品，不引用新的 Plan
+“设计不适用”例外。** 完整值无关证据与逐请求账本在
+[`evidence/forensics/20260816_export_binary.json`](../evidence/forensics/20260816_export_binary.json)。
+所有读 route 在 transport 构造前均通过 `prober/read_semantics.py`；它们都是已有 stable read 合同，
+不需要新增 `confirmed_read`。没有认证交换、重试、翻页、扩日期窗、换 App 或换项目。
+
+### 零业务请求控制流
+
+冻结 `bundle-snapshot.json` 对应的 14 个唯一 bundle 全部 SHA-256 匹配。A 的静态结论是：
+
+- `origin_event.evaluate/start` 共用同一个七字段 body；`segment.result.start` 是
+  `app_id/segment_id/version_id/task_name`；`user_event.start` 精确复用前一笔事件列表 body 并追加
+  `task_name`，默认 `group_by=day`。
+- monetization、segment-user-detail、user-detail、pay-event 的 `field_map` 和筛选/父引用绑定均已恢复；
+  三条明细导出只在当前表格非空时触发。它们过去取得 task id 后仍以 FAILED 结束，故静态绑定不能
+  替代成功文件 schema。
+- `stream_event.start` 只有一个从未调用的 POST loader；实际“导出数据”按钮调用客户端表格序列化
+  helper。由此只能证明 server route **没有自然调用证据**，不能猜空 body 或照 route 名发请求。
+
+B 的静态结论是 `file_url/thumbnail_url` 被直接交给 `<img>/<video>` 或浏览器下载任务；没有独立、
+固定的第一方二进制 route，也没有静态完整 origin、path prefix、redirect 或失效状态集合。
+
+控制流复核共发生 **31 次公开静态资源 GET / 14 个唯一 URL / 全部 HTTP 200**。其中 17 次是同一
+bundle 的重复读取，本可首次下载后在本地完成，属于本轮不必要的静态 HTTP；它们没有携带凭据或业务
+参数，也不计入下面的 7 次生产业务/二进制探测。后续同类复核必须先落 `tmp/` 缓存再搜索，避免重复。
+
+### 生产请求账本
+
+| 动线 | # | Operation / transport | HTTP | 结论 |
+| --- | ---: | --- | ---: | --- |
+| A | 1 | `app.list` | 200 / code 0 | 第一页取得首个 App，仅内存使用。 |
+| A | 2 | `analysis.user_detail.list` | 200 / code 0 | 首个 App、`2026-08-16` 单日、`page=1/page_size=1` 明确空；立即停止。 |
+| B | 1 | `promotion.bytedance.project_filter.list` | 200 / code 0 | 第一页取得首个项目，仅内存使用。 |
+| B | 2 | `material.bytedance.project_material.list` | 200 / code 0 | 取得一个视频条目的 `file_url/thumbnail_url`；URL 值未落盘。 |
+| B | 3 | observed `file_url`，HEAD | 200 | origin `v26-cc.oceanengine.com`，`video/mp4`，声明 bytes range，无 redirect。 |
+| B | 4 | 同一 `file_url`，`Range: bytes=0-1023` | 206 | 只读 1024 bytes；`video/mp4` 与 ISO-BMFF magic 一致，无 redirect，未下载完整文件。 |
+| B | 5 | observed `thumbnail_url`，HEAD | 405 | origin `p26-sign.douyinpic.com`；HEAD 不支持，未继续猜 GET 或取图片字节。 |
+
+A 合计 **2 次**；没有发送 `analysis.user_event.list`、export create、poll 或 download。此次空样本不能
+补 `user_event.start` 的五列逻辑类型；另外八条仍分别缺成功完整文件 schema，且
+`stream_event.start` 还缺可调用 server request。最小下一步分两件：在已知单日有用户事件的租户上
+复用同一 `page=1/page_size=1` 父链并只创建一个 `user_event` 任务；由上游 owner 或自然 Web 调用提供
+`stream_event` 的真实 server request，二者都不得靠扩大日期/App 猜取。
+
+B 合计 **5 次**。当前样本证明一个视频 origin/path shape、无重定向的 HEAD/206 Range GET 以及
+MP4 magic；但单一样本不能证明完整分片 host/path 集合，缩略图 GET/redirect/magic、最大尺寸、
+`x-expires` 语义及历史 `not_found/expired/not_cached/permission_unavailable` 均未知。因此不能把观察到
+的两个 host 动态写成下载 allowlist，也不能实现任意 URL 下载器。最小下一步是取得 CDN/API owner 的
+值无关合同或批准 trace，覆盖全部 origin/redirect、尺寸/过期和四类历史失败；该合同授权后，再对自然
+有效缩略图做一次 1 KiB Range GET。
+
+投影总裁决在本轮实际落地：`material.bytedance.project_material.list` 的 `file_url/thumbnail_url`
+与两个已观察为空的试玩容器已从 omitted 移入稳定投影；同一父请求新观察到的 `app.list`
+`download_url/icon_url/remark/sub_package_list` 也全部登记暴露。未登记 item 仍 additive fail-closed；
+试玩容器当前只登记空容器，未来出现未登记 item key 时继续 fail-closed。此变更只扩大已有 stable read
+结果，不新增独立动线或 caller 可恢复错误点。
+
+可复算计数：旧值 `48 = 33 / 0 / 15`；A `+0 / +0 / +0`，B `+0 / +0 / +0`；新值仍为
+**`48 = 33 / 0 / 15`**。operation `185 + 0 = 185`，stable `176 + 0 = 176`。由于没有闭环并发布
+新 effect，三个 Plan 例外条件没有被用于本轮判定：没有新增 effect/Plan 不兼容声明、没有新的直接
+CLI/SDK/Agent task-set 等价证明，也没有新增“设计不适用”表格登记。
+
+### 第二轮纠错与闭环判定（2026-08-16）
+
+**提案：**沿用第一轮的静态绑定和视频事实，只纠正两个错误前提：A 按已登记 App catalog 逐个复用
+同一单日、第一页请求，第一条非空事件时间线后立即停止并完成唯一一次导出；B 对自然返回的缩略图直接
+做最小 Range GET，并从同一只读素材目录抽取多个引用核对 host/path/redirect。四份目标 bundle 各只
+下载一次后转为本地检索；不扩日期、不翻数据页、不重试同形状、不换项目，也不构造失效 URL。工作提案
+位于 ignored `tmp/codex/export-binary-2/proposal.md`，值无关逐请求账本位于
+[`evidence/forensics/20260816_export_binary_round2.json`](../evidence/forensics/20260816_export_binary_round2.json)。
+
+**A 取得一个完整可发布子合同。** `app.list` 一次返回 7 个 catalog App；依次枚举 3 个 App，前两个
+没有可导出的当日事件，第三个首次返回非空事件时间线并立即停止。实际 9 次生产 HTTP 为：1 次 App
+catalog、3 次 `user_detail.list`、2 次 `user_event.list`、1 次 `user_event.start`、1 次首次即 READY
+的 progress poll、1 次无重定向 XLSX download。没有扩窗、数据翻页、重试或额外 poll。文件为
+6195 bytes、1 个 `Sheet1`、7 行、5 列；完整 shape 为：`客户(client_id)`=`s/str/identifier`，
+`用户注册时间`=`s/str/datetime`，`事件发生时间`=`d/datetime/datetime` 且 number format 为
+`YYYY-MM-DD HH:MM:SS`，`事件`=`s/str/text`，`事件属性`=`s/str/json_object_or_array`。临时文件在
+检查后删除，值未进入证据。
+
+因此 `export.analysis.user_event.start` 现为 verified/callable，CLI、SDK 与 Agent 复用既有治理导出
+effect；Plan 继续适用已登记的导出“设计不适用”判据。其他六类只能复用 create→poll→download、
+OSS/XLSX 与恢复协议，**不能复用这五列文件合同**：`segment.result` 的 `用户ID` 单元格存储/逻辑类型
+仍缺；`origin_event` 是独立事件选择列族；`monetization_detail`、`segment_user_detail`、
+`user_detail`、`pay_event` 均由各自 `field_map`/父绑定/排序控制不同的动态列。六类都仍需自己的非空
+成功文件 shape。`stream_event.start` 则定为 `not_applicable`：hash-matched loader 没有调用点，按钮
+调用客户端表格序列化，前端根本不产生该 server request；它不是 SDK 缺口，后续不得重复 probe。
+
+**B 补齐缩略图事实，但没有闭环 Issue 19。** 10 次生产 HTTP 为：项目父读取 1 次、项目素材空读取
+1 次、本地素材目录读取 1 次，以及对自然返回的 5 个视频引用发 4 次缩略图 64-byte Range GET、3 次
+视频 HEAD。四个缩略图均为 HTTP 206、`image/jpeg`、JPEG magic、无重定向；三个视频均为 HTTP 200、
+`video/mp4`、无重定向。本轮 5 个引用全部收敛到 `tos-accelerate.gravity-engine.com`，path family 为
+`/{tenant}/image/video_thumbnail_url_{opaque}.jpg` 与 `/{tenant}/video/{opaque}.mp4`。加上第一轮的
+`v26-cc.oceanengine.com` 和 `p26-sign.douyinpic.com`，累计观察到 3 个 host、0 个 redirect target。
+这足以给 `material.local.list` 的固定 host/path 家族做窄合同，却不能证明外部 `vNN/pNN` 分片全集，
+所以通用平台素材 effect 仍不能配置完整 allowlist。
+
+四份 hash-matched bundle 本轮各 GET 一次，共 **4 次公开静态资源 GET / 4 个唯一 URL**，之后只做
+本地检索，显著低于第一轮 31 次。没有找到 `not_found / expired / not_cached / permission` 的离散
+分支；只找到缺 URL 时的通用“无法预览”和原样展示 `errorMessage`。失效语义仍未知且只有静态负向
+证据，没有用在线失效 URL 试探。Issue 19 仍缺外部 CDN shard allowlist 与四类失效分类，B 保持完全
+缺失。
+
+可复算计数：旧值 `48 = 33 / 0 / 15`；A 的聚合导出动线由完全缺失变为部分闭环，
+`+0 / +1 / -1`；B 为 `+0 / +0 / +0`；最终 **`48 = 33 / 1 / 14`**。operation
+`185 + 0 = 185`，stable `176 + 0 = 176`；user-event 是现有 export route catalog 的状态迁移，
+不是新增 stable read operation。caller-recoverable error 抛点没有新增或删除，审计仍为
+`1022 = A 218 / B 434 / C 370`。
+
+### 第三轮：response-bound 素材文件合同（2026-08-16）
+
+**提案：**撤销“先证明完整 CDN shard allowlist”这个错误前提，把真实边界改为“URL 必须由本次
+产品调用刚执行的已登记 operation 响应返回”。调用方只提交 source、该 operation 的合同输入、精确
+素材引用、`file|thumbnail` 和输出路径；Core 重新读取 source 并从唯一匹配行取 URL。host/path/port
+不枚举、不校验、不限制，重定向跟随并只记录 initial/final host family、hop 数和是否跨 host。
+工作底稿在 ignored `tmp/codex/export-binary-3/proposal.md`；值无关证据与完整请求账本在
+[`evidence/forensics/20260816_export_binary_round3.json`](../evidence/forensics/20260816_export_binary_round3.json)。
+
+**生产取证在 7/20 次请求后停止。** 没有 App 枚举：Bytedance 项目筛选是 account-scope 目录，换 App
+不会改变该父链。项目目录第一页一次返回 20 个投影引用；跳过第二轮已知为空的首项后，依次检查
+catalog position 2–6 共 5 个项目，前四个为空，第 6 个首次非空并立即停止。随后只对这条自然
+`thumbnail_url` 发 64-byte Range GET，得到 HTTP 206、`Content-Range: bytes 0-63/109820`、
+`image/jpeg`、JPEG magic，host family 为 `p{shard}-sign.douyinpic.com`，无重定向。逐项为：
+
+| # | Operation / transport | HTTP | 结论 |
+| ---: | --- | ---: | --- |
+| 1 | `promotion.bytedance.project_filter.list` | 200 / code 0 | page 1/page_size 20；只在内存枚举。 |
+| 2 | `material.bytedance.project_material.list`，project position 2 | 200 / code 0 | 空。 |
+| 3 | 同 operation，position 3 | 200 / code 0 | 空。 |
+| 4 | 同 operation，position 4 | 200 / code 0 | 空。 |
+| 5 | 同 operation，position 5 | 200 / code 0 | 空。 |
+| 6 | 同 operation，position 6 | 200 / code 0 | 首次非空，停止枚举。 |
+| 7 | response-bound `thumbnail_url`，`Range: bytes=0-63` | 206 | 64 bytes、JPEG、无 redirect。 |
+
+0 次重试、0 次翻页、0 次扩窗、0 个构造失效 URL、0 次 bundle GET。第二轮已有一个平台视频的
+`video/mp4`/ISO-BMFF 和无 redirect 证据，本轮补上真实平台缩略图；本地 source 则独立保留四个 JPEG
+缩略图和三个 MP4 视频事实。两组没有互相代证，但都满足自己的 URL field、MIME/magic 和成功传输
+合同，所以不再拆成一条闭环、一条缺失：同一产品以 `local`、`bytedance_project` 两个显式 source
+family 分别登记，Issue 19 整条闭环。其他平台 source 没有被悄悄纳入。
+
+**机器合同与五面。** `contracts/material-asset-v1.json` 固定 `accepts_caller_url=false`；公开 Core
+`fetch_material_asset()`、CLI `gravity materials fetch`、SDK `GravitySDK.fetch_material_asset()` 和
+Agent `material.asset.fetch` 卡都不含 URL 参数。source input 先走对应 stable operation 的现有输入/
+投影/fail-closed 合同；只有这次响应内精确唯一匹配的行可进入 transport。完整文件经 stream、
+Content-Length、可用的 source size/MD5、MIME/magic、SHA-256、fsync 和同目录原子提交。调用方显式
+提供 CLI `--output` 或 SDK `destination` 就是在请求那个完整文件，也是完整下载的唯一产品触发条件；
+维护证据继续只取最小 Range。
+
+Plan 面登记为**设计不适用**，三项条件逐条成立：
+
+1. 这是写 caller 文件系统、需要 staging/fsync/atomic commit 且失败后不能当普通数据节点透明重试的
+   effect，与 Plan v1 无副作用 JSON 数据节点模型不兼容；不是实现成本裁决。
+2. 直接 CLI 和 SDK 都在一次顶层调用内完成 source read→download→commit；Agent 卡直接交接该命令并
+   声明 discovery 后 1 次调用，所以缺 Plan 不减少可完成任务集合。
+3. 本节与分析动线对应行同时显式登记“设计不适用”；后来若 Plan 获得正式文件-effect 语义，可推翻。
+
+**错误只按实际边界归三类。** source/ref/role/input 不可解析是 caller/exit 2；有效 response-bound
+URL 的 terminal HTTP 状态全部是 upstream/exit 3；staging/fsync/atomic commit 是 local/exit 4。
+200 是完整 GET 成功；带 Location 的 3xx 跟随，跨 host 不拦。401/403 是 upstream 权限拒绝，404/410
+是 upstream 当前不可取，408/425/429/5xx 为 retryable upstream；其他 terminal 非 200 同样为
+upstream，不创造 `not_found/expired/not_cached/permission` 状态。206 在本轮 Range probe 是成功；产品
+完整 GET 不发送 Range，因此若 terminal 206 会以不完整 upstream response 失败。实际累计观察到
+200、206、旧 HEAD 405；403/404/410 未自然观察，只登记 HTTP→category 行为且有离线测试，没有在线
+试探。
+
+export-binary 分支自身的可复算台账为：旧值 `48 = 33 / 1 / 14`；Issue 19 `+1 / +0 / -1`；新值
+**`48 = 34 / 1 / 13`**，operation/stable 均不变。本次集成树在该线前的 caller-recoverable
+错误抛点为 `1028 = A 224 / B 434 / C 370`；本线增加 6 个且全部 A 档，最终为
+**`1034 = A 230 / B 434 / C 370`**。HTTP/local 错误不属于 caller 审计分母，quality baseline 未放宽。
+技术债清单已复核：实现下沉到素材领域模块，只给既有 Agent 路由追加同一 direct-effect 选择链，
+未触发现有结构债退出条件，也没有新增可证明的结构债。
 
 ## Issue 16 Windows CLI UTF-8 裁决（2026-08-15）
 

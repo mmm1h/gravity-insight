@@ -63,7 +63,9 @@ def segment_evaluate_intent(query: str) -> bool:
 def is_authoritative_direct_card(card: Mapping[str, Any]) -> bool:
     """Identify direct cards that must suppress low-level operation fallback."""
 
-    return is_authoritative_export_card(card) or (
+    from .agent_material_asset import is_authoritative_material_asset_card
+
+    return is_authoritative_export_card(card) or is_authoritative_material_asset_card(card) or (
         card.get("kind") == "segment_rule_spec"
         and card.get("selector") == _SELECTOR
         and card.get("composite") == _COMPOSITE

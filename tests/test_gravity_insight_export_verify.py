@@ -147,33 +147,28 @@ def test_export_verification_client_id_resolver_uses_default_projection(
     assert resolved == {"client_id": "private-parent"}
 
 
-@pytest.mark.parametrize(
-    ("operation_id", "columns"),
-    [
-        ("export.analysis.segment.result.start", ["用户ID"]),
-        (
-            "export.analysis.user_event.start",
-            [
-                "客户(client_id)",
-                "用户注册时间",
-                "事件发生时间",
-                "事件",
-                "事件属性",
-            ],
-        ),
-    ],
-)
-def test_projection_open_user_exports_keep_exact_headers_but_need_column_types(
-    operation_id,
-    columns,
-) -> None:
-    route = load_catalog()[operation_id]
+def test_segment_result_export_still_needs_its_own_column_type() -> None:
+    route = load_catalog()["export.analysis.segment.result.start"]
 
     assert route["contract_status"] == "unverified"
     assert route["verification"]["online"] is True
     assert route["executable"] is False
     assert route["privacy"]["classification"] == "user_level"
-    assert route["privacy"]["allowed_columns"] == columns
-    assert route["privacy"]["required_columns"] == columns
+    assert route["privacy"]["allowed_columns"] == ["用户ID"]
+    assert route["privacy"]["required_columns"] == ["用户ID"]
     assert "type" in route["block_reason"]
     assert "privacy" not in route["block_reason"].casefold()
+
+
+def test_user_event_export_has_complete_observed_file_schema() -> None:
+    route = load_catalog()["export.analysis.user_event.start"]
+    schema = route["privacy"]["file_schema"]
+
+    assert route["contract_status"] == "verified"
+    assert route["executable"] is True
+    assert route["block_reason"] is None
+    assert schema["worksheet_count"] == 1
+    assert [item["logical_type"] for item in schema["columns"]] == [
+        "identifier", "datetime", "datetime", "text", "json_object_or_array"
+    ]
+    assert all(item["cell_storage_types"] for item in schema["columns"])
