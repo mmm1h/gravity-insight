@@ -26,6 +26,7 @@
 | 判断能力应扩展到哪一层 | [扩展地图](maintainers/extending.md) | [新增受控能力](maintainers/operations.md) |
 | 判断是否建设 MCP 交付面 | [MCP 可行性报告](mcp-feasibility.md) | [路线图](roadmap.md) |
 | 了解当前排期、并行约束与不做的事 | [路线图](roadmap.md) | [分析动线台账](analysis-journeys.md) |
+| 查看 Agent / MCP 方法调研 | [Agent 易用性](research/agent-usability-methods.md)、[Agent 安全](research/agent-security-governance.md) | [MCP 协议](research/mcp-protocol-and-servers.md)、[厂商版图](research/vendor-agent-landscape.md) |
 | 查看每条分析动线的完成度、四面入口与证据阻塞 | [分析动线台账](analysis-journeys.md) | [能力覆盖与缺口](capability-coverage.md) |
 | 查看架构热点与清理条件 | [技术债清单](maintainers/technical-debt.md) | [维护者入口](maintainers/index.md) |
 | 查看当前平台覆盖和不能直接上线的缺口 | [能力覆盖与缺口](capability-coverage.md) | [路由盘点](maintainers/census.md) |

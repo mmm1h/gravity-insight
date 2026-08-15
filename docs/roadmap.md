@@ -1558,3 +1558,33 @@ metric/dimension/filter/grain 的受治理组合层”和带 owner/version/proje
 text-to-SQL 只可作为隔离探索层，必须在响应中保留 resolution tier、definition version、generated SQL、
 validation 与 allowed claims，不得静默并入现有 Agent 卡的受治理答案。完整证据与反例见
 [调研报告](research/semantic-layer-and-text2sql.md)。
+
+## 可恢复错误消息分档与首轮升级（2026-08-15）
+
+本轮把“对外可恢复错误消息全集”固定为源码中所有显式抛出的 caller 类结构化错误起点：
+`InputValidationError` 及其 `ParentRequiredError`、`PlanRecipeError`、`PlanValidationError`、
+`SemanticRejectedError`、`SqlValidationError` 子类，以及 `UnknownOperationError`；同时沿返回注解纳入
+`input_error` / `invalid` 等窄 helper 的所有抛出点。转发已有错误的 `ErrorDetail.create` 不重复计数，
+upstream/local/contract 错误不属于调用方替换输入即可恢复的集合。`scripts/audit_actionable_errors.py`
+完整解析 `src/gravity_sdk/**/*.py`，按 `(source, line)` 断言无重复，并断言 A+B+C 等于全集；
+`tests/test_actionable_error_audit.py` 固定当前全集和分档，计数不依赖终端是否截断。
+
+基线 `ac03a0f` 的 **974** 个起点为 `A=0 / B=422 / C=552`。首轮升级 56 个，其中
+`36 B→A + 20 C→A`，所以当前为 **`A=56 / B=386 / C=532`**，推导为
+`0+36+20=56`、`422-36=386`、`552-20=532`，总数仍为 974。升级覆盖 Analysis / Segment
+紧凑 spec 的类型、长度、范围、enum、未知字段、日期关系、跨字段约束，以及已证实的 Segment preset
+和 Property acquisition-ID 拒绝；不改 code、category、exit code、envelope、operation 或校验宽严。
+
+实际值先经过与 CLI JSON 边界相同的 credential sanitizer；token/cookie/password 等键被删除，Bearer、
+JWT 和凭据赋值被替换。条件 `values`、原始请求/响应及其他可能承载用户级值的字段没有新增回显；
+`scalar_values` 因而仍留在 B。候选显示上限取 **N=20**：现有普通 enum 和 spec 顶层字段可完整显示，
+最长常见集合仍能留在 500 字符消息预算内；超过 20 时必须同时给 `showing N of total` 和可执行发现
+命令。本轮 25/29 项 Segment operator 通过
+`gravity analysis segment evaluate --spec-schema` 发现完整集合；动态 event/property 候选不内嵌，分别
+交给 `gravity metadata events ""` 与 `gravity metadata properties ""`。
+
+剩余 B/C 不批量猜值：B 的主要缺口是旧 helper 只有格式化后的 message/field、异常现场未把原始值或
+候选传入；C 还包含 workspace、prober、合同装载与内部不变量错误，部分不是字段替换问题。后续只在
+owner 文件因真实调用方错误而被触及时，把能证明安全的原始值和权威候选传到消息边界；不得用栈帧
+反射抓局部变量，也不得为提高 A 档比例回显凭据、filter values 或原始上游错误。该消息升级不改变
+`docs/analysis-journeys.md` 的动线完成度，operation 仍为 185、stable 仍为 176；本轮 0 次生产请求。

@@ -16,9 +16,9 @@
 
 ## 范围、方法与证据标记
 
-[实证] 本次实际使用了内置网页搜索与页面展开、PowerShell `Invoke-WebRequest`、`curl`、本机已有的 `pdftotext`、以及 `rg` 检索仓库和下载快照；关键 HTML、PDF、纯文本和 README 快照存于 `tmp/codex/r3-semantic-layer/sources/`。仓库没有 `.codegraph/`，所以按项目规则没有使用 CodeGraph。[抓取清单](../../tmp/codex/r3-semantic-layer/sources/manifest.md) [仓库调研规范](../../AGENTS.md)
+[实证] 本次实际使用了内置网页搜索与页面展开、PowerShell `Invoke-WebRequest`、`curl`、本机已有的 `pdftotext`、以及 `rg` 检索仓库和下载快照；关键 HTML、PDF、纯文本、README 快照和抓取清单存于未提交的 `tmp/codex/r3-semantic-layer/sources/`。仓库没有 `.codegraph/`，所以按项目规则没有使用 CodeGraph。[仓库调研规范](../../AGENTS.md)
 
-[实证] 失败和限制：Uber 两页对直接下载返回 HTTP 406，只能由网页搜索索引读取，故本地清单保留失败记录；Cube 公共文档能确认 MCP 存在，但未找到公开的精确 MCP tool schema；Kyligence 当前公开材料主要是产品页/新闻稿；ThoughtSpot 的 TML 与 Search API 有公开技术材料，但 Spotter 的硬边界和响应血缘没有找到同等强度的公开 API 规范。没有登录、注册、试用、付费访问或访问授权内容。[抓取清单](../../tmp/codex/r3-semantic-layer/sources/manifest.md)
+[实证] 失败和限制：Uber 两页对直接下载返回 HTTP 406，只能由网页搜索索引读取，故未提交的本地清单保留失败记录；Cube 公共文档能确认 MCP 存在，但未找到公开的精确 MCP tool schema；Kyligence 当前公开材料主要是产品页/新闻稿；ThoughtSpot 的 TML 与 Search API 有公开技术材料，但 Spotter 的硬边界和响应血缘没有找到同等强度的公开 API 规范。没有登录、注册、试用、付费访问或访问授权内容。
 
 本文把证据单元分为：实证（官方文档、源码、论文或可复现快照）、厂商宣称（产品页、新闻稿或只有厂商叙述的效果）、推测（基于已列证据的工程判断）。标签只计行首的方括号标记；末尾给出机械计数。
 
@@ -80,7 +80,7 @@
 
 [实证] 2026 年的生产代表性金融案例把“SQL 可执行但回答错意图”列为企业部署的静默失败，并定位到术语落错、锚点错、无意义 join、无依据 filter；不过它是 workshop 案例研究，不是公开事故复盘。[OpenReview](https://openreview.net/forum?id=e29unNZEhY)
 
-[实证] 本次没有找到一份可独立审计、公开披露影响金额/决策/根因/修复的企业 text-to-SQL 错数事故。能找到的是厂商工程团队对失败模式与护栏的公开讨论，以及论文中的生产代表性快照；报告不把它们冒充真实损失事故。[检索到的 Uber 讨论与案例清单](../../tmp/codex/r3-semantic-layer/sources/manifest.md)
+[实证] 本次没有找到一份可独立审计、公开披露影响金额/决策/根因/修复的企业 text-to-SQL 错数事故。能找到的是厂商工程团队对失败模式与护栏的公开讨论，以及论文中的生产代表性快照；报告不把它们冒充真实损失事故。检索到的 Uber 讨论与案例清单位于未提交的 `tmp/codex/r3-semantic-layer/sources/manifest.md`。
 
 ## B. 语义层 / 指标层到底做了什么
 
@@ -270,9 +270,9 @@ verified_queries:
 
 ## 没能查到的关键问题
 
-[实证] 没有找到独立、公开、可审计的企业 text-to-SQL 错数事故复盘；公开材料只能证明静默失败机制和内部团队的防护设计，不能量化真实业务损失。[本次来源与失败记录](../../tmp/codex/r3-semantic-layer/sources/manifest.md)
+[实证] 没有找到独立、公开、可审计的企业 text-to-SQL 错数事故复盘；公开材料只能证明静默失败机制和内部团队的防护设计，不能量化真实业务损失。本次来源与失败记录位于未提交的 `tmp/codex/r3-semantic-layer/sources/manifest.md`。
 
-[实证] 没有找到能把 NULL、大小写、去重、时区、自然周/月等单项错误按生产频率拆开的代表性数据集或事故统计。[本次论文来源清单](../../tmp/codex/r3-semantic-layer/sources/manifest.md)
+[实证] 没有找到能把 NULL、大小写、去重、时区、自然周/月等单项错误按生产频率拆开的代表性数据集或事故统计。本次论文来源清单位于未提交的 `tmp/codex/r3-semantic-layer/sources/manifest.md`。
 
 [实证] 没有找到 Cube 公共 MCP 的精确 tool 名称 / JSON schema；只确认官方支持 MCP、Chat 和 Meta API。[Cube Core Data APIs](https://docs.cube.dev/reference/core-data-apis)
 

@@ -7,15 +7,27 @@ explicit in the spec and are validated by the existing Analysis field policy.
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
 from ._field_policy_analysis import validate_analysis_shape
+from .actionable_error_values import actual_value, allowed_values
 from .analysis_spec_preview import redact_analysis_values
 from .analysis_execution_support import reject_unsupported_property_groups
 from .analysis_spec_schema import ANALYSIS_SPEC_KINDS, analysis_query_spec_schema
 from .analysis_spec_controls import apply_scatter_zone, funnel_window, retention_controls
+from .analysis_spec_validation import (
+    boolean as _boolean,
+    bounded_string as _bounded_string,
+    choice as _choice,
+    integer_range as _integer_range,
+    list_items as _list,
+    logic as _logic,
+    mapping as _mapping,
+    optional_string as _optional_string,
+    reject_keys as _reject_keys,
+)
 from .domains import ANALYSIS_QUERY_OPERATIONS, new_analysis_query_id
 from .errors import InputValidationError
 from .workspace import Workspace, load_workspace
@@ -281,7 +293,9 @@ def _property_order(value: Any) -> list[dict[str, Any]]:
         direction = item.get("sort")
         if direction not in {0, 1, -1, "asc", "desc", "ASC", "DESC"}:
             raise InputValidationError(
-                f"{field}.sort is not registered", field=f"{field}.sort"
+                f"actual value: {actual_value(direction)}; allowed values: "
+                f"{allowed_values({0, 1, -1, 'asc', 'desc', 'ASC', 'DESC'})}",
+                field=f"{field}.sort",
             )
         normalized: dict[str, Any] = {
             "field": _bounded_string(item.get("field"), f"{field}.field"),
@@ -351,7 +365,10 @@ def _metric(value: Any, field: str, *, require_data_type: bool = False) -> dict[
     elif "quantile" in item:
         quantile = item["quantile"]
         if not isinstance(quantile, (int, float)) or isinstance(quantile, bool):
-            raise InputValidationError(f"{field}.quantile must be numeric", field=f"{field}.quantile")
+            raise InputValidationError(
+                f"actual value: {actual_value(quantile)}; allowed type: number",
+                field=f"{field}.quantile",
+            )
         result["quantile_level"] = quantile
     if "dimension_table" in item:
         result["dim_using_table_name"] = _bounded_string(
@@ -387,7 +404,8 @@ def _group_by(spec: Mapping[str, Any]) -> list[dict[str, Any]]:
         source = _bounded_string(item.get("source"), f"group_by[{index}].source")
         if source not in _GROUP_SOURCES:
             raise InputValidationError(
-                "group_by source must be event, user, or segment",
+                f"actual value: {actual_value(source)}; allowed values: "
+                f"{allowed_values(_GROUP_SOURCES)}",
                 field=f"group_by[{index}].source",
             )
         group = {"type": _GROUP_SOURCES[source], "field": field, "group_by": field}
@@ -414,7 +432,10 @@ def _steps(value: Any, kind: str) -> list[Mapping[str, Any]]:
     )
     if not minimum <= len(items) <= maximum:
         qualifier = "exactly 2" if minimum == maximum else f"{minimum} through {maximum}"
-        raise InputValidationError(f"{kind} steps must contain {qualifier} items", field="steps")
+        raise InputValidationError(
+            f"actual value: {len(items)} items; allowed count: {qualifier} items",
+            field="steps",
+        )
     return [_mapping(item, f"steps[{index}]") for index, item in enumerate(items)]
 
 
@@ -422,14 +443,24 @@ def _date_range(start: Any, end: Any) -> dict[str, str]:
     from datetime import date
 
     if not isinstance(start, str) or not isinstance(end, str):
-        raise InputValidationError("start and end must be ISO dates", field="start/end")
+        raise InputValidationError(
+            f"actual value: {actual_value({'start': start, 'end': end})}; allowed "
+            "format: ISO dates for both fields",
+            field="start/end",
+        )
     try:
         start_date, end_date = date.fromisoformat(start), date.fromisoformat(end)
     except ValueError as exc:
-        raise InputValidationError("start and end must be ISO dates", field="start/end") from exc
+        raise InputValidationError(
+            f"actual value: {actual_value({'start': start, 'end': end})}; allowed "
+            "format: ISO dates for both fields",
+            field="start/end",
+        ) from exc
     if start_date > end_date or (end_date - start_date).days > 90:
         raise InputValidationError(
-            "start/end must be ordered and span no more than 90 days", field="start/end"
+            f"actual value: {actual_value({'start': start, 'end': end})}; allowed "
+            "range: ordered ISO dates spanning no more than 90 days",
+            field="start/end",
         )
     return {"start_date": start, "end_date": end}
 
@@ -443,7 +474,9 @@ def _resolve_app(workspace: Workspace, value: Any) -> int:
         return workspace.resolve_app(value)
     except ValueError:
         raise InputValidationError(
-            "app must reference a configured workspace App or positive id", field="app"
+            f"actual value: {actual_value(value)}; allowed alternatives: a configured "
+            "workspace App name or positive id; run `gravity apps list` to discover Apps",
+            field="app",
         ) from None
 
 
@@ -451,7 +484,9 @@ def _normalize_kind(value: Any) -> str:
     selected = str(value or "").strip().casefold()
     if selected not in ANALYSIS_SPEC_KINDS:
         raise InputValidationError(
-            "kind must be event, funnel, retention, property, or scatter", field="kind"
+            f"actual value: {actual_value(value)}; allowed values: "
+            f"{allowed_values(ANALYSIS_SPEC_KINDS)}",
+            field="kind",
         )
     return selected
 
@@ -461,76 +496,17 @@ def _validate_date_overrides(
 ) -> None:
     if (start is None) != (end is None):
         raise InputValidationError(
-            "start and end overrides must be provided together", field="start/end"
+            f"actual value: {actual_value({'start': start, 'end': end})}; allowed "
+            "alternatives: provide both overrides or remove both",
+            field="start/end",
         )
     if kind == "property" and start is not None:
         raise InputValidationError(
-            "property analysis does not accept start/end overrides", field="start/end"
+            f"actual value: {actual_value({'start': start, 'end': end})}; allowed "
+            "alternative: remove both overrides for property analysis",
+            field="start/end",
         )
 
 
 def _reject_unknown_fields(kind: str, value: Mapping[str, Any]) -> None:
     _reject_keys(value, _COMMON_FIELDS | _KIND_FIELDS[kind], "spec")
-
-
-def _reject_keys(value: Mapping[str, Any], allowed: set[str] | frozenset[str], field: str) -> None:
-    unknown = sorted(set(value) - set(allowed))
-    if unknown:
-        raise InputValidationError(
-            f"{field} contains unsupported fields: {', '.join(unknown)}", field=field
-        )
-
-
-def _mapping(value: Any, field: str) -> Mapping[str, Any]:
-    if not isinstance(value, Mapping):
-        raise InputValidationError(f"{field} must be an object", field=field)
-    return value
-
-
-def _list(value: Any, field: str, maximum: int) -> list[Any]:
-    if not isinstance(value, Sequence) or isinstance(value, (str, bytes)):
-        raise InputValidationError(f"{field} must be an array", field=field)
-    items = list(value)
-    if len(items) > maximum:
-        raise InputValidationError(f"{field} exceeds its {maximum}-item limit", field=field)
-    return items
-
-
-def _bounded_string(value: Any, field: str) -> str:
-    if not isinstance(value, str) or not value.strip() or len(value) > 256:
-        raise InputValidationError(f"{field} must be a non-empty bounded string", field=field)
-    return value.strip()
-
-
-def _optional_string(value: Any, field: str, default: str) -> str:
-    if value is None:
-        return default
-    if not isinstance(value, str) or len(value) > 256:
-        raise InputValidationError(f"{field} must be a bounded string", field=field)
-    return value
-
-
-def _boolean(value: Any, field: str) -> bool:
-    if not isinstance(value, bool):
-        raise InputValidationError(f"{field} must be a boolean", field=field)
-    return value
-
-
-def _logic(value: Any, field: str) -> str:
-    return _choice(value, {"AND", "OR"}, field)
-
-
-def _choice(value: Any, allowed: set[str], field: str) -> str:
-    if not isinstance(value, str) or value not in allowed:
-        raise InputValidationError(
-            f"{field} must be one of {', '.join(sorted(allowed))}", field=field
-        )
-    return value
-
-
-def _integer_range(value: Any, minimum: int, maximum: int, field: str) -> int:
-    if not isinstance(value, int) or isinstance(value, bool) or not minimum <= value <= maximum:
-        raise InputValidationError(
-            f"{field} must be an integer from {minimum} through {maximum}", field=field
-        )
-    return value

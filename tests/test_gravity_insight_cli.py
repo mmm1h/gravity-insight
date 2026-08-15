@@ -12,6 +12,11 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from gravity_sdk import cli, runtime
+from gravity_sdk.actionable_error_values import (
+    ALTERNATIVE_DISPLAY_LIMIT,
+    actual_value,
+    allowed_values,
+)
 from gravity_sdk.analysis_spec import analysis_query_spec_schema
 from gravity_sdk.domains import (
     ANALYSIS_AUXILIARY_OPERATIONS,
@@ -1743,6 +1748,17 @@ class GravityInsightCliTests(unittest.TestCase):
         ])
         self.assertNotIn("credential-ndjson", ndjson)
         self.assertIn('"file_url": "kept"', ndjson)
+
+    def test_actionable_values_are_sanitized_and_bounded(self):
+        rendered = actual_value("token=credential-value")
+        self.assertIn("[REDACTED]", rendered)
+        self.assertNotIn("credential-value", rendered)
+        total = ALTERNATIVE_DISPLAY_LIMIT + 3
+        alternatives = allowed_values(
+            range(total), discovery_action="gravity metadata search"
+        )
+        self.assertIn(f"showing {ALTERNATIVE_DISPLAY_LIMIT} of {total}", alternatives)
+        self.assertIn("gravity metadata search", alternatives)
 
     def test_cli_preserves_the_sdk_business_field_set(self):
         sdk_result = {

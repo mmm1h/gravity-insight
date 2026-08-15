@@ -129,20 +129,22 @@ class SegmentRuleSpecTests(unittest.TestCase):
     def test_local_whitelists_and_semantics_fail_before_client_validation(self) -> None:
         cases: list[tuple[str, dict[str, Any], str]] = []
         for label, mutate, message in (
-            ("embedded app", lambda value: value.update({"app": 101}), "unsupported"),
-            ("unknown top-level", lambda value: value.update({"FE_CONFIG": "{}"}), "unsupported"),
-            ("reversed dates", lambda value: value.update({"end": "2026-07-31"}), "reversed"),
-            ("bad logic", lambda value: value.update({"logic": "XOR"}), "AND or OR"),
-            ("raw group key", lambda value: value.update({"property_rules": {"groups": [], "sql": "x"}}), "unsupported"),
+            ("embedded app", lambda value: value.update({"app": 101}), "allowed fields"),
+            ("unknown top-level", lambda value: value.update({"FE_CONFIG": "{}"}), "allowed fields"),
+            ("reversed dates", lambda value: value.update({"end": "2026-07-31"}), "allowed range"),
+            ("bad logic", lambda value: value.update({"logic": "XOR"}), "allowed values"),
+            ("raw group key", lambda value: value.update({"property_rules": {"groups": [], "sql": "x"}}), "allowed fields"),
             ("sensitive property", lambda value: value.update({"property_rules": {"groups": [{"rules": [{"field": "password", "source": "user", "operator": "EQUALS", "values": ["x"]}]}]}}), "blocked"),
-            ("unsupported did operator", lambda value: value.update({"event_rules": {"groups": [{"rules": [{"event": "purchase", "did": True, "target": {"field": "PresetAllCount", "aggregation": "PresetAllCount"}, "did_condition": {"operator": "TRUE"}, "date_range": {"type": "quick", "range": "last7day"}}]}]}}), "not registered"),
+            ("unsupported did operator", lambda value: value.update({"event_rules": {"groups": [{"rules": [{"event": "purchase", "did": True, "target": {"field": "PresetAllCount", "aggregation": "PresetAllCount"}, "did_condition": {"operator": "TRUE"}, "date_range": {"type": "quick", "range": "last7day"}}]}]}}), "allowed values"),
         ):
             candidate = deepcopy(minimal_spec())
             mutate(candidate)
             cases.append((label, candidate, message))
         for label, candidate, message in cases:
-            with self.subTest(label=label), self.assertRaisesRegex(InputValidationError, message):
+            with self.subTest(label=label), self.assertRaisesRegex(InputValidationError, message) as caught:
                 compile_segment_spec(candidate, app=101)
+            if label != "sensitive property":
+                self.assertIn("actual value", str(caught.exception))
 
     def test_known_unsupported_preset_events_fail_with_public_field_path(self) -> None:
         for event_name in ("$MPShow", "$PayEvent"):
@@ -151,6 +153,9 @@ class SegmentRuleSpecTests(unittest.TestCase):
             with self.subTest(event=event_name), self.assertRaises(InputValidationError) as caught:
                 compile_segment_spec(candidate, app=101)
             self.assertEqual("event_rules.groups[0].rules[0].event", caught.exception.field)
+            self.assertIn("actual value", str(caught.exception))
+            self.assertIn(event_name, str(caught.exception))
+            self.assertIn("gravity metadata events", str(caught.exception.next_action))
             self.assertIn("do not retry", str(caught.exception.next_action))
 
     def test_validation_delegates_metadata_and_preview_redacts_values(self) -> None:
