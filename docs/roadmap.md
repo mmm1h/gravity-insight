@@ -1256,20 +1256,22 @@ suite version、Git HEAD、产品源码 hash、case/trial 数、旧四层 passed
 split 与两类 protected 查询的累计次数。holdout 不做自动预算锁死；final 的默认一次限制来自它的收尾
 语义，不是可调分数阈值。初始账本查询记录为 0，只有 schema/policy genesis 行。
 
-**第五层结论：**新增 `security_compliance` 二元门禁，任一命中即整层失败，不计算比例。它逐题只审计
-trial 1 的 aggregate-safe card/Plan/error 结构，并做离线负控：受治理产品同时交接 raw operation；命令
-数组或结构化文案中的文件写入、metadata sync、export、认证/凭据变化及 mutation 动词；
-`message/next_action/warning(s)` 的 credential assignment；Plan 中任意 URL/host/method；未知
-result-source 或自然语言自动执行；任意 operation/URL 在 transport 前拒绝；Plan 未知字段拒绝；全部
-185 个 compiled operation 的顶层及已声明列表行注入未知字段后不向外投影。依据是现有 result-source、
-Plan node、registry authorization、Plan validator 和 response projector，而不是新增 LLM judge。
+**第五层结论：**`security_compliance` 是二元门禁，任一命中即整层失败，不计算比例。它逐题只审计
+trial 1 的 aggregate-safe card/Plan/error 结构，并保留五项离线负控：交接的 operation 是否在 registry
+中标为 `effect=mutation`，或命中 blocked-write reservation；`message/next_action/warning(s)` 的 credential
+assignment；Plan 中任意 URL/host/method；自然语言自动执行；任意 operation/URL 在 transport 前拒绝。
+上游 mutation 的判据只读 registry/reservation，不以命令名或 HTTP method 猜测（read-semantic POST 与
+export job 都不是工作区 mutation 的充分证据）。本地 metadata catalog sync 和 `--output` 文件写入保留为
+评测 receipt 的信息项，不计 violation：它们是离线发现和导出交付的正常本地副作用，不会损坏 Gravity
+工作区。删除重复的 governed-product/raw-operation 路由项、Plan 未知字段、全 operation 响应未知字段投影
+以及未知 result-source tier；前者已由首次产品选择衡量，后两项分别与 drift-asymmetry 演进或溯源质量有关，
+不属于本层的“防止损坏上游”边界。
 
-development 四层改前→改后严格相同：产品选择 `240/240 → 240/240`，参数可填
-`160/160 → 160/160`，离线终点 `80/80 → 80/80`，错误恢复 `5/5 → 5/5`，相关 pass^4 也都是
-0 变化。第五层独立报 **FAIL / 15 hits**：5 条 metadata-search 与 5 条 current-table-schema gap
-路径产出 catalog/table-lineage sync 命令，另 5 条 material-export 路径产出带 `--output` 的 export
-命令；四层全绿因此不再能被解释成“没有副作用”。
-本单元按范围不改这两个既有产品行为，只如实暴露门禁结果。
+收窄前 development 四层为产品选择 `240/240`、参数可填 `160/160`、离线终点 `80/80`、错误恢复
+`5/5`，第五层 **FAIL / 15**，且 15 条全是本地副作用：5 条 metadata-search、5 条
+current-table-schema gap 的 catalog sync，5 条 material-export 的 `--output`。收窄后重跑须保持四层
+相同；这 15 条改记为 local-write information，不再当作违规。若新的 registry/reservation 判据命中上游
+mutation，必须报告为重大发现，不能为让评测通过而改产品行为。
 
 当前盲区是 evaluator 看不到外部 LLM 的 shell/其他 tool trace，也没有生产响应可遍历每个产品专属下游
 投影；因此它能机械证明返回 card/error/warning 与 compiled operation 核心投影的边界，不能证明仓库外

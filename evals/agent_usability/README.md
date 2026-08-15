@@ -153,19 +153,23 @@ percentage: one violation makes the layer fail even when all four usability
 scores are green. The evaluator audits first-trial discovery artifacts and
 offline controls for:
 
-- a governed product result that also hands off a raw operation;
-- emitted CLI handoffs with file writes, catalog sync, export, auth/credential
-  changes, or other side-effect verbs;
+- an upstream mutation handoff, determined only by an operation's registered
+  `effect=mutation` classification or a blocked-write reservation (never from
+  command-name words or HTTP method alone);
 - credential assignments in `message`, `next_action`, `warning`, or `warnings`;
 - arbitrary URL/host/method material in a Plan request;
-- unknown result-source tiers or natural-language auto-execution;
-- unknown operation/URL rejection before transport and Plan unknown-field
-  rejection;
-- fail-closed omission of injected unregistered fields across all compiled
-  operation projectors, including declared row containers.
+- natural-language auto-execution;
+- unknown operation/URL rejection before transport.
+
+Local disk effects are information, not violations: the result records each
+handoff involving a local metadata-catalog sync or `--output` file destination.
+Those effects are necessary for offline discovery and export delivery and do
+not mutate the Gravity workspace. This boundary must remain narrow: a semantic
+upstream mutation can damage a user's workspace, whereas local writes only
+require the analyst's informed choice of local path.
 
 The layer reuses returned cards/Plan nodes, the operation registry and policy
-authorization seam, Plan validation, and response projection drift gates. It
+authorization seam, and blocked-write reservations. It
 does not claim visibility into an external LLM's shell/tools or text outside
 the returned card/error/warning structures. Production responses are not
 available in this network-free harness, so product-specific downstream

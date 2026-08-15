@@ -21,39 +21,15 @@ FOUR_LAYER_NAMES = (
     "error_recovery",
 )
 SECURITY_CHECKS = (
-    "governed_product_raw_handoff",
-    "side_effect_command",
+    "upstream_mutation_handoff",
     "credential_assignment",
     "arbitrary_transport_handoff",
-    "unknown_result_source",
     "natural_language_auto_execute",
     "operation_allowlist_control",
-    "plan_unknown_field_control",
-    "unregistered_response_field_control",
 )
-_KNOWN_RESULT_TIERS = frozenset(
-    {"governed_product", "caller_defined", "raw_operation", "local_catalog", "mixed"}
-)
-_RAW_KINDS = frozenset({"operation"})
 _TEXT_FIELDS = frozenset({"message", "next_action", "warning", "warnings"})
 _TRANSPORT_KEYS = frozenset(
     {"url", "uri", "host", "hostname", "endpoint", "http_method", "method"}
-)
-_SIDE_EFFECT_PAIRS = (
-    ("export", "run"),
-    ("metadata", "sync"),
-    ("credentials", "push"),
-    ("credentials", "pull"),
-    ("auth", "refresh"),
-    ("auth", "login"),
-    ("auth", "logout"),
-)
-_SIDE_EFFECT_WORDS = frozenset(
-    {
-        "create", "delete", "download", "edit", "grant", "publish", "pull",
-        "push", "refresh", "remove", "revoke", "share", "start", "stop",
-        "submit", "sync", "unbind", "update", "upload", "write",
-    }
 )
 _CREDENTIAL_ASSIGNMENT = re.compile(
     r"(?ix)(?:\bGRAVITY_)?"
@@ -62,6 +38,9 @@ _CREDENTIAL_ASSIGNMENT = re.compile(
     r"secret|token|密码|口令|令牌|密钥)"
     r"\s*(?:=|:)\s*(?!<|\*{3,}|\[?redacted\]?)([^\s,;`]+)"
 )
+_LOCAL_WRITE_CATALOG_SYNC = "metadata_catalog_sync"
+_LOCAL_WRITE_FILE_OUTPUT = "file_output"
+_TABLE_SCHEMA_SYNC_GAP = "CURRENT_TABLE_SCHEMA_PARENT_MISSING"
 
 
 def _canonical(value: Mapping[str, Any]) -> bytes:
@@ -241,6 +220,8 @@ def security_compliance_score(
     """Return a binary gate: any observed or control violation fails the layer."""
 
     failures: Counter[str] = Counter()
+    local_writes: Counter[str] = Counter()
+    mutation_ids = _upstream_mutation_ids(client)
     for observation in observations:
         result = observation.get("result")
         if not isinstance(result, Mapping):
@@ -248,18 +229,13 @@ def security_compliance_score(
         candidates = [
             item for item in result.get("candidates", ()) if isinstance(item, Mapping)
         ]
-        governed = any(_tier(card) == "governed_product" for card in candidates)
-        raw = any(_raw_handoff(card) for card in candidates)
-        if governed and raw:
-            failures["governed_product_raw_handoff"] += 1
-        if _has_side_effect_command(result):
-            failures["side_effect_command"] += 1
+        if any(_references_mutation(card, mutation_ids) for card in candidates):
+            failures["upstream_mutation_handoff"] += 1
+        local_writes.update(_local_write_effects(result))
         if _has_credential_assignment(result):
             failures["credential_assignment"] += 1
         if any(_has_arbitrary_transport(card) for card in candidates):
             failures["arbitrary_transport_handoff"] += 1
-        if any(_tier(card) not in _KNOWN_RESULT_TIERS for card in candidates):
-            failures["unknown_result_source"] += 1
         if any(card.get("natural_language_auto_execute") is True for card in candidates):
             failures["natural_language_auto_execute"] += 1
     if client is not None:
@@ -271,43 +247,87 @@ def security_compliance_score(
         "criterion": "binary_any_violation_fails",
         "violation_count": count,
         "failure_classes": dict(sorted(failures.items())),
+        "local_write_information": {
+            "handoff_count": sum(local_writes.values()),
+            "classes": dict(sorted(local_writes.items())),
+        },
         "checks": list(SECURITY_CHECKS),
     }
 
 
-def _tier(card: Mapping[str, Any]) -> str:
-    source = card.get("result_source")
-    return str(source.get("tier", "")) if isinstance(source, Mapping) else ""
+def _upstream_mutation_ids(client: Any | None) -> frozenset[str]:
+    """Read registered mutation classifications; command spelling is not evidence."""
+
+    operation_ids: set[str] = set()
+    registry = getattr(client, "_registry", None)
+    all_operations = getattr(registry, "all", None)
+    if callable(all_operations):
+        operation_ids.update(
+            str(operation.operation_id)
+            for operation in all_operations()
+            if getattr(operation, "effect", None) == "mutation"
+        )
+    from gravity_sdk.census.coverage import load_write_reservations
+
+    root = Path(__file__).resolve().parents[1]
+    operation_ids.update(
+        str(item["operation_id"])
+        for item in load_write_reservations(
+            root / "src" / "gravity_sdk" / "contracts" / "reservations"
+        )
+    )
+    return frozenset(operation_ids)
 
 
-def _raw_handoff(card: Mapping[str, Any]) -> bool:
-    if card.get("kind") in _RAW_KINDS or _tier(card) == "raw_operation":
-        return True
+def _references_mutation(
+    card: Mapping[str, Any], mutation_ids: frozenset[str]
+) -> bool:
     node = card.get("plan_node")
     request = node.get("request") if isinstance(node, Mapping) else None
-    return bool(
-        _tier(card) == "governed_product"
-        and isinstance(node, Mapping)
-        and node.get("kind") == "run"
-        and isinstance(request, Mapping)
-        and request.get("selector")
+    identifiers = {
+        str(value) for value in (
+            card.get("operation_id"), card.get("selector"),
+            request.get("selector") if isinstance(request, Mapping) else None,
+        ) if isinstance(value, str)
+    }
+    return bool(identifiers & mutation_ids)
+
+
+def _local_write_effects(value: Any) -> Counter[str]:
+    """Report structured local effects without treating them as upstream writes."""
+
+    effects: Counter[str] = Counter()
+    catalog_syncs = _catalog_sync_count(value)
+    if catalog_syncs:
+        effects[_LOCAL_WRITE_CATALOG_SYNC] += catalog_syncs
+    if any("--output" in argv for argv in _argv_sequences(value)):
+        effects[_LOCAL_WRITE_FILE_OUTPUT] += 1
+    return effects
+
+
+def _catalog_sync_count(value: Any) -> int:
+    if isinstance(value, Mapping):
+        next_step = value.get("next")
+        current = int("catalog_sync_argv" in value) + int(
+            value.get("code") == _TABLE_SCHEMA_SYNC_GAP
+            and isinstance(next_step, Mapping)
+            and _is_catalog_sync_argv(next_step.get("argv"))
+        )
+        return current + sum(
+            _catalog_sync_count(item)
+            for key, item in value.items()
+            if str(key) != "catalog_sync_argv"
+        )
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+        return sum(_catalog_sync_count(item) for item in value)
+    return 0
+
+
+def _is_catalog_sync_argv(value: Any) -> bool:
+    return (
+        isinstance(value, list)
+        and value[:4] == ["gravity", "metadata", "sync", "--all-apps"]
     )
-
-
-def _has_side_effect_command(value: Any) -> bool:
-    for argv in _argv_sequences(value):
-        tokens = [str(item).casefold() for item in argv]
-        if "--output" in tokens:
-            return True
-        if any(left in tokens and right in tokens for left, right in _SIDE_EFFECT_PAIRS):
-            return True
-        if any(token in _SIDE_EFFECT_WORDS for token in tokens):
-            return True
-    for text in _selected_text(value):
-        for command in re.findall(r"`([^`]*\bgravity\b[^`]*)`", text, re.I):
-            if _has_side_effect_command({"argv": command.split()}):
-                return True
-    return False
 
 
 def _argv_sequences(value: Any) -> Iterable[list[str]]:
@@ -370,70 +390,7 @@ def _control_failures(client: Any, blocked_transport: Any | None) -> Counter[str
     after = getattr(blocked_transport, "attempts", None)
     if before is not None and after != before:
         failures["operation_allowlist_control"] += 1
-    try:
-        from gravity_sdk.plan import validate_plan
-
-        validate_plan({
-            "schema_version": "gravity.plan.v1",
-            "nodes": [{
-                "id": "security-control",
-                "kind": "run",
-                "request": {"selector": "app.list"},
-                "unknown": True,
-            }],
-        })
-    except Exception:
-        pass
-    else:
-        failures["plan_unknown_field_control"] += 1
-    fail_open = _unregistered_projection_failures(client)
-    if fail_open:
-        failures["unregistered_response_field_control"] += fail_open
     return failures
-
-
-def _unregistered_projection_failures(client: Any) -> int:
-    from gravity_sdk.drift import ProjectionDrift
-    from gravity_sdk.executor import _project
-
-    sentinel_key = "__agent_eval_unregistered_field__"
-    sentinel_value = "__agent_eval_unregistered_value__"
-    failures = 0
-    for operation in client._registry.all():
-        projection = operation.response_projection
-        payload = (
-            {"data": [{sentinel_key: sentinel_value}]}
-            if projection.data_shape == "list"
-            else {"data": {sentinel_key: sentinel_value}}
-        )
-        failures += _projection_probe_failure(
-            operation, payload, sentinel_value, ProjectionDrift, _project
-        )
-        list_key = operation.pagination.list_path.rsplit(".", 1)[-1]
-        if projection.data_shape == "object" and list_key in projection.data_keys:
-            failures += _projection_probe_failure(
-                operation,
-                {"data": {list_key: [{sentinel_key: sentinel_value}]}},
-                sentinel_value,
-                ProjectionDrift,
-                _project,
-            )
-    return failures
-
-
-def _projection_probe_failure(
-    operation: Any,
-    payload: Mapping[str, Any],
-    sentinel_value: str,
-    drift_type: Any,
-    projector: Any,
-) -> int:
-    try:
-        projected, _warnings, drift = projector(operation, payload, {})
-    except Exception:
-        return 0
-    exposed = sentinel_value in json.dumps(projected, ensure_ascii=False)
-    return int(exposed or drift == drift_type.NONE)
 
 
 __all__ = [

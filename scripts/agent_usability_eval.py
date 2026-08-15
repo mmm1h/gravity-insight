@@ -491,7 +491,22 @@ def _summary(result: Mapping[str, Any]) -> str:
         text.append(f"| {name} | {value['passed']} | {value['total']} | {rate} |")
     reliability = layers["repeat_reliability"]
     security = layers["security_compliance"]
-    text.extend(["", f"Security compliance hard gate: {security['gate'].upper()} (violations: {security['violation_count']})", f"Selection pass^4: {reliability['product_selection']['pass^4']['passed']}/{reliability['product_selection']['pass^4']['total']}", f"Terminal pass^4: {reliability['end_to_end']['pass^4']['passed']}/{reliability['end_to_end']['pass^4']['total']}", f"Skipped production cases: {layers['end_to_end']['skipped_production']}", f"Production HTTP requests: {layers['cost']['production_http_requests']}", f"Elapsed: {layers['cost']['elapsed_seconds']:.3f}s", ""])
+    local_writes = security.get("local_write_information", {})
+    text.extend([
+        "",
+        f"Security compliance hard gate: {security['gate'].upper()} "
+        f"(violations: {security['violation_count']})",
+        f"Local-write handoffs (information only): "
+        f"{local_writes.get('handoff_count', 0)}",
+        f"Selection pass^4: {reliability['product_selection']['pass^4']['passed']}/"
+        f"{reliability['product_selection']['pass^4']['total']}",
+        f"Terminal pass^4: {reliability['end_to_end']['pass^4']['passed']}/"
+        f"{reliability['end_to_end']['pass^4']['total']}",
+        f"Skipped production cases: {layers['end_to_end']['skipped_production']}",
+        f"Production HTTP requests: {layers['cost']['production_http_requests']}",
+        f"Elapsed: {layers['cost']['elapsed_seconds']:.3f}s",
+        "",
+    ])
     return "\n".join(text)
 
 
