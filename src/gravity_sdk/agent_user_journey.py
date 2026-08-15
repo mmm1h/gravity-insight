@@ -54,16 +54,16 @@ def _journey_match(query: str) -> dict[str, Any] | None:
     )
     english_events_postbacks = (
         bool(words & {"user", "users"})
-        and bool(words & {"event", "events", "journey"})
-        and bool(words & {"postback", "postbacks"})
+        and bool(words & {"event", "events", "journey", "timeline", "profile"})
+        and bool(words & {"postback", "postbacks", "callback", "callbacks"})
     )
     chinese = (
         "用户" in selected
         and any(
             term in selected
-            for term in ("单用户", "单个用户", "指定用户", "某个用户")
+            for term in ("单用户", "单个用户", "指定用户", "某个用户", "这个用户")
         )
-        and any(term in selected for term in ("旅程", "路径", "事件"))
+        and any(term in selected for term in ("旅程", "路径", "事件", "行为", "时间线", "画像"))
         and any(term in selected for term in ("回传", "回调", "postback"))
     )
     if not (exact or english_single_journey or english_events_postbacks or chinese):

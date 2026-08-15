@@ -15,18 +15,21 @@ from .segment_spec_schema import segment_rule_spec_schema
 _SELECTOR = "analysis.segment.rule.spec"
 _COMPOSITE = "segment_evaluate"
 _ASCII_WORD = re.compile(r"[a-z0-9_]+", re.IGNORECASE)
-_ENGLISH_SUBJECTS = frozenset({"segment", "audience", "cohort"})
+_ENGLISH_SUBJECTS = frozenset({"segment", "audience", "cohort", "user", "users"})
 _ENGLISH_RULES = frozenset({"rule", "rules", "condition", "conditions"})
 _ENGLISH_RESULTS = frozenset(
-    {"count", "population", "size", "percent", "percentage", "ratio"}
+    {"count", "population", "size", "percent", "percentage", "ratio", "share"}
 )
 _ENGLISH_ACTIONS = frozenset(
-    {"evaluate", "evaluation", "estimate", "estimation", "predict", "prediction"}
+    {
+        "evaluate", "evaluation", "estimate", "estimation", "predict",
+        "prediction", "match", "matches",
+    }
 )
 _CHINESE_SUBJECTS = ("人群", "受众", "分群")
 _CHINESE_RULES = ("规则", "条件")
-_CHINESE_RESULTS = ("人数", "规模", "占比", "比例", "命中")
-_CHINESE_ACTIONS = ("评估", "预估", "估算", "测算")
+_CHINESE_RESULTS = ("人数", "多少人", "规模", "占比", "比例", "命中", "占全部")
+_CHINESE_ACTIONS = ("评估", "预估", "估算", "测算", "圈中")
 _EXACT_SELECTORS = frozenset(
     {_SELECTOR, f"composite:{_COMPOSITE}", _COMPOSITE}
 )
@@ -81,7 +84,7 @@ def _requests_segment_evaluation(query: str) -> bool:
     selected = query.strip().casefold()
     if selected in _EXACT_SELECTORS:
         return True
-    if selected.isascii():
+    if re.search(r"[\u3400-\u9fff]", selected) is None:
         words = frozenset(_ASCII_WORD.findall(selected))
         return all(
             words & group

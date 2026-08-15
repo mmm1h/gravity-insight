@@ -50,9 +50,9 @@ def table_lineage_capability_cards(
         bool(words & {"lineage", "version", "change"})
         or {"operation", "log"} <= words
     )
-    chinese_intent = bool(
-        re.search(r"(?:数据表|(?<!报)表)的?(?:血缘|版本|变更|操作日志)", query)
-    )
+    chinese_intent = bool(re.search(
+        r"(?:数据表|(?<!报)表).{0,12}(?:血缘|版本|变更|操作日志)", query
+    ))
     selector = str(definition["selector"])
     exact = normalized in {
         selector.casefold(),

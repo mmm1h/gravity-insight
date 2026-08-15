@@ -16,11 +16,15 @@ _EXACT_SELECTORS = frozenset(
 _ASCII_WORD = re.compile(r"[a-z0-9_]+", re.IGNORECASE)
 _ISO_DATE = re.compile(r"(?<!\d)\d{4}-\d{2}-\d{2}(?!\d)")
 _ENGLISH_SUBJECTS = frozenset({"segment", "audience", "cohort"})
-_ENGLISH_ACTIONS = frozenset({"snapshot", "inspect", "inspection", "check", "audit"})
+_ENGLISH_ACTIONS = frozenset({
+    "snapshot", "inspect", "inspection", "check", "audit", "show", "view",
+})
 _ENGLISH_DETAILS = frozenset({"detail", "details"})
-_ENGLISH_HISTORY = frozenset({"history", "historical"})
-_ENGLISH_DAILY = frozenset({"daily", "day", "date"})
-_ENGLISH_RESULTS = frozenset({"result", "results", "calculation", "calculations"})
+_ENGLISH_HISTORY = frozenset({"history", "historical", "version", "versions"})
+_ENGLISH_DAILY = frozenset({"daily", "day", "date", "yesterday"})
+_ENGLISH_RESULTS = frozenset({
+    "result", "results", "calculation", "calculations", "count", "aggregate",
+})
 _ENGLISH_BLOCKED = frozenset(
     {"rule", "rules", "condition", "conditions", "member", "members", "export",
      "create", "update", "delete"}
@@ -78,38 +82,16 @@ def segment_snapshot_intent(query: str) -> bool:
     if selected in _EXACT_SELECTORS:
         return True
     if selected.isascii():
-        words = frozenset(_ASCII_WORD.findall(selected))
-        groups = (
-            _ENGLISH_SUBJECTS, _ENGLISH_ACTIONS, _ENGLISH_DETAILS,
-            _ENGLISH_HISTORY, _ENGLISH_RESULTS,
-        )
-        return all(words & group for group in groups) and (
-            bool(words & _ENGLISH_DAILY) or _ISO_DATE.search(selected) is not None
-        )
-    compact = "".join(selected.split())
-    return (
-        any(term in compact for term in ("分群", "人群", "受众"))
-        and any(term in compact for term in ("快照", "检查", "查看"))
-        and "详情" in compact
-        and any(term in compact for term in ("历史", "历史版本"))
-        and (
-            any(term in compact for term in ("单日结果", "当日结果", "单日计算结果"))
-            or _ISO_DATE.search(compact) is not None
-        )
-    )
+        return _english_snapshot_shape(selected)
+    return _chinese_snapshot_shape("".join(selected.split()))
 
 
 def _english_snapshot_query(selected: str) -> bool:
     words = frozenset(_ASCII_WORD.findall(selected))
-    groups = (
-        _ENGLISH_SUBJECTS, _ENGLISH_ACTIONS, _ENGLISH_DETAILS,
-        _ENGLISH_HISTORY, _ENGLISH_RESULTS,
-    )
     return (
         not (words & _ENGLISH_BLOCKED)
         and not any(term in selected for term in _ENGLISH_BLOCKED_PHRASES)
-        and all(words & group for group in groups)
-        and (bool(words & _ENGLISH_DAILY) or _ISO_DATE.search(selected) is not None)
+        and _english_snapshot_shape(selected)
     )
 
 
@@ -117,12 +99,36 @@ def _chinese_snapshot_query(selected: str) -> bool:
     compact = "".join(selected.split())
     return (
         not any(term in compact for term in _CHINESE_BLOCKED)
-        and any(term in compact for term in ("分群", "人群", "受众"))
-        and any(term in compact for term in ("快照", "检查", "查看"))
+        and _chinese_snapshot_shape(compact)
+    )
+
+
+def _english_snapshot_shape(selected: str) -> bool:
+    words = frozenset(_ASCII_WORD.findall(selected))
+    groups = (
+        _ENGLISH_SUBJECTS, _ENGLISH_ACTIONS, _ENGLISH_DETAILS,
+        _ENGLISH_HISTORY, _ENGLISH_RESULTS,
+    )
+    return all(words & group for group in groups) and (
+        bool(words & _ENGLISH_DAILY) or _ISO_DATE.search(selected) is not None
+    )
+
+
+def _chinese_snapshot_shape(compact: str) -> bool:
+    subjects = ("分群", "人群", "受众")
+    actions = ("快照", "检查", "查看")
+    history = ("历史", "历史版本", "版本", "版本记录")
+    results = (
+        "单日结果", "当日结果", "单日计算结果", "聚合人数结果", "人数结果",
+    )
+    return (
+        any(term in compact for term in subjects)
+        and any(term in compact for term in actions)
         and "详情" in compact
-        and any(term in compact for term in ("历史", "历史版本"))
+        and any(term in compact for term in history)
         and (
-            any(term in compact for term in ("单日结果", "当日结果", "单日计算结果"))
+            any(term in compact for term in results)
+            or "昨天" in compact
             or _ISO_DATE.search(compact) is not None
         )
     )

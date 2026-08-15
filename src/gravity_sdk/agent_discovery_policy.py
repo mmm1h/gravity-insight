@@ -32,8 +32,11 @@ from .agent_advertiser_profile import (
 def operation_fallback_excluded(query: str) -> bool:
     """Return whether an explicit product request must not become a raw card."""
 
+    from .agent_unavailable import unavailable_journey_gap
+
     return (
-        monetization_guard_blocks_operation_fallback(query)
+        unavailable_journey_gap(query) is not None
+        or monetization_guard_blocks_operation_fallback(query)
         or order_directory_blocks_operation_fallback(query)
         or order_split_trace_blocks_operation_fallback(query)
         or promotion_performance_blocks_operation_fallback(query)
@@ -57,6 +60,10 @@ def operation_fallback_gap(query: str) -> list[dict[str, Any]]:
     """Return one product-specific safe gap without consulting operations."""
 
     from .agent_intent_routing import multiple_intent_gap
+    from .agent_unavailable import unavailable_journey_gap
+
+    if unavailable := unavailable_journey_gap(query):
+        return [unavailable]
 
     if gap := multiple_intent_gap(query):
         gap[0]["query"] = safe_discovery_query(query)

@@ -751,6 +751,34 @@ HTTP/OAuth。** 完整论证、14-tool 草案、反方和分阶段判据见
 call-bound、进程退出码和 caller/upstream/local 分类没有 MCP 原生等价物，必须继续留在 Gravity
 envelope，毕业后另定义 MCP 调用单位，不能改名冒充原合同。远程多用户还需要逐用户 Gravity 身份或
 明确单租户 service identity；在 owner、IdP、租户和审计模型成立前，OAuth 没有实施价值。
+## 47 条动线重验与修复结论（2026-08-15）
+
+**提案：**先只依据分析动线和调用方产品文档冻结 47 条动线的中英自然语言问法，独立提交后
+才读取 recognizer；随后逐题做第一次离线调用、在领域 owner 内补正向证据或目标 gap、最后用原题
+全量回归。冻结题单提交为 `df363c4`，baseline 提交为 `d1b18c6`；工作底稿为
+`tmp/codex/nl-reachability/phrasings.md`、`baseline.md` 和 `after.md`。
+
+**baseline：**32 条已闭环中，中英都达标 **6**、只有一种语言达标 **7**、两种语言都不达标
+**19**，即 `6 + 7 + 19 = 32`，按语言只有 `6 × 2 + 7 = 19 / 64` 条首问达标。15 条完全缺失
+中，正确可执行产品为 0，目标明确且带 next action 的 gap 也为 0；实际错误包括通用 Analysis
+handoff、generic gap、相邻产品、raw operation 和两组伪 `MULTIPLE_INTENTS`。
+
+**修复后：**32 条已闭环成为 **32 / 0 / 0**；原先达标的 19 条语言问法全部保持，回归为 0。
+J19 在当前 worktree 没有对应 workspace product，按新判据返回专属
+`WORKSPACE_SQL_PRODUCT_NOT_CONFIGURED` gap 与 `gravity sql products` next argv。15 条完全缺失仍没有
+任何可执行结果，故没有漏记的已完成能力；但中英首问现在都返回各自动线的专属、可行动 gap，Agent
+一面为“有”，其他产品面和合同阻塞不变。
+
+修复只增加/收紧领域 recognizer、固定快照卡、class-level `metadata:search` handoff 和缺失动线 gap；
+`agent_intent_routing.py` 的集中裁决逻辑 **0 处修改**。J15 素材表现与 J21 看板重放的 baseline
+`MULTIPLE_INTENTS` 都是正向证据过宽造成的伪歧义，已在相邻 owner 内收紧；没有删除负向词、降低
+selector 精确度或把多个意图改成任选一个。冻结题单语义均明确，最终没有一条依赖
+`MULTIPLE_INTENTS` 达标；显式双产品冲突的既有回归仍通过。
+
+台账状态净变化为 `47 = 32 / 0 / 15 + 0 / 0 / 0 = 47 = 32 / 0 / 15`：没有已闭环动线掉出，
+也没有完全缺失动线因本轮获得可执行结果而提升。变化只发生在 Agent 一面：32 条已闭环逐行重验为
+“有”，15 条缺失逐行由“无”改为“有（目标 gap）”。本轮 94 次发现调用全部
+`offline=true/network_called=false`，生产 HTTP **0 次**，无重试、翻页、扩窗或上游任务。
 
 ## 投影边界总裁决：全面放开（2026-08-15）
 

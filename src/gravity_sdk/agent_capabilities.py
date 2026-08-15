@@ -309,7 +309,12 @@ def capability_handoff_cards(
     from .agent_export import export_capability_cards
     from .agent_intent_routing import multiple_product_intents
     from .agent_table_lineage import table_lineage_capability_cards
+    from .agent_metadata_search import metadata_search_capability_cards
     from .agent_user_journey import user_journey_capability_cards
+    from .agent_unavailable import unavailable_journey_gap
+
+    if unavailable_journey_gap(query) is not None:
+        return [], True
 
     if monetization_guard_blocks_operation_fallback(query):
         if multiple_product_intents(query, inventory=composite_inventory):
@@ -330,6 +335,9 @@ def capability_handoff_cards(
     exports = export_capability_cards(
         query, domain=domain, platform=platform, inventory=export_inventory
     )
+    metadata_search = metadata_search_capability_cards(
+        query, domain=domain, platform=platform
+    )
     lineage = table_lineage_capability_cards(
         query, domain=domain, platform=platform
     )
@@ -345,8 +353,9 @@ def capability_handoff_cards(
             inventory=composite_inventory,
         ),
     ]
-    return exports or lineage or journeys or products, bool(
+    return exports or metadata_search or lineage or journeys or products, bool(
         exports
+        or metadata_search
         or lineage
         or journeys
         or operation_fallback_excluded(query)

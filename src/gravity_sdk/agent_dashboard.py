@@ -73,6 +73,8 @@ def dashboard_snapshot_intent(query: str) -> bool:
     """Return positive snapshot evidence without applying adjacent-product policy."""
 
     selected = query.strip().casefold()
+    if dashboard_analysis_intent(query) and not _snapshot_exclusive_intent(selected):
+        return False
     english = (
         "snapshot", "context", "control", "detail", "member", "filter",
         "favourite", "favorite", "inspect", "show", "view", "check", "get",
@@ -106,7 +108,7 @@ def dashboard_analysis_intent(query: str) -> bool:
 
     selected = query.strip().casefold()
     english_action = ("run", "replay", "execute", "rerun", "refresh", "analyze")
-    chinese_action = ("执行", "运行", "重放", "重跑", "刷新", "分析")
+    chinese_action = ("执行", "运行", "重放", "重跑", "重新跑", "刷新", "分析")
     return (
         "dashboard" in selected
         and "chart" in selected
@@ -115,6 +117,16 @@ def dashboard_analysis_intent(query: str) -> bool:
         "看板" in selected
         and "图表" in selected
         and any(term in selected for term in chinese_action)
+    )
+
+
+def _snapshot_exclusive_intent(selected: str) -> bool:
+    return any(
+        term in selected
+        for term in (
+            "snapshot", "context", "control", "detail", "member", "favourite",
+            "favorite", "快照", "上下文", "控制面", "详情", "成员", "收藏",
+        )
     )
 
 
