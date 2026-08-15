@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+import json
 import sys
 from typing import Any
+
+
+_ENTRY_ERRORS = (OSError, RuntimeError, UnicodeError, ValueError, TypeError)
 
 
 def configure_utf8_stdio() -> None:
@@ -25,9 +29,52 @@ def insight_main() -> int:
     """Configure transport before entering the standalone Insight CLI script."""
 
     configure_utf8_stdio()
-    from .cli import main
+    try:
+        from .cli import main
 
-    return main()
+        return main()
+    except _ENTRY_ERRORS as exc:
+        return emit_entry_error(exc)
 
 
-__all__ = ["configure_utf8_stdio", "insight_main"]
+def sql_main() -> int:
+    """Configure transport before importing the standalone SQL CLI."""
+
+    configure_utf8_stdio()
+    try:
+        from .sql.__main__ import main
+
+        return main()
+    except _ENTRY_ERRORS as exc:
+        return emit_entry_error(exc)
+
+
+def emit_entry_error(error: BaseException) -> int:
+    """Emit a classified machine error for failures before a CLI owns control."""
+
+    from .errors import error_envelope, exit_code_for_error
+
+    next_action = None
+    if isinstance(error, RuntimeError) and "home directory" in str(error).casefold():
+        next_action = (
+            "Set GRAVITY_CACHE_HOME to an existing writable directory, then retry "
+            "the same command."
+        )
+    print(
+        json.dumps(
+            error_envelope(error, next_action=next_action),
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+        ),
+        file=sys.stderr,
+    )
+    return exit_code_for_error(error)
+
+
+__all__ = [
+    "configure_utf8_stdio",
+    "emit_entry_error",
+    "insight_main",
+    "sql_main",
+]
