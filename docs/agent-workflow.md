@@ -8,15 +8,15 @@
 | --- | --- | --- |
 | 已知 recipe / operation | `gravity run @<recipe> ...` / `gravity run <operation-id> ...` | 1 |
 | Analysis 编译/跨期对比（kind/字段已知或指标未知） | `analysis query [batch]`；指标未知先 `metadata vocabulary`；同 spec 两个日期窗加 `--compare-start/--compare-end`，一次调用返回双窗状态与已登记物理指标 delta | 1 / 2 |
-| 报表产品（Multidim / Business Pulse） | 已知输入：`multidim query` / `reports pulse`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
-| 跨平台投放/素材表现 | 已知输入：`materials performance` / `promotion performance`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
+| 报表产品（Multidim / Business Pulse） | 已知输入：`multidim query` / `reports pulse`；Multidim 物理指标/维度未知可用在线输入解析后精确选择；再 `plan run` | 1 / 2 |
+| 跨平台投放/素材表现 | 已知输入：`materials performance` / `promotion performance`；推广平台已知而指标未知时用在线输入解析；再 `plan run` | 1 / 2 |
 | 订单目录/拆单追踪/变现明细 | 已知 App/单日[/TraceID]：`analysis order directory` / `analysis order trace` / `analysis monetization detail`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
-| 人群规则/分群快照 | 已知 spec 或精确引用：`analysis segment evaluate` / `analysis segment snapshot`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
-| 保存分析/分析模板 | 引用已知：`analysis saved run` / `analysis template run`；未知能力：Agent 卡；未知引用：`analysis saved list` / `analysis template list` 后人工选择。模板只执行 compact Spec 或已证明 artifact，`originParams` 与 compare 逐字段隔离，不猜译 | 1 / 2 / 3 |
-| 看板控制面/图表重放 | 已知引用：`analysis dashboard snapshot` / `analysis dashboard run`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
+| 人群规则/分群快照 | 已知 spec 或精确引用：`analysis segment evaluate` / `analysis segment snapshot`；引用未知时在线输入解析后精确选 ID，再执行 | 1 / 2 |
+| 保存分析/分析模板 | 引用已知：`analysis saved run` / `analysis template run`；引用未知时在线输入解析后按稳定 ID（模板为 scope + ID）精确选择。模板仍只执行 compact Spec 或已证明 artifact | 1 / 2 |
+| 看板控制面/图表重放 | 已知引用：`analysis dashboard snapshot` / `analysis dashboard run`；引用未知时在线输入解析后精确选稳定 ID，再执行 | 1 / 2 |
 | Governed 导出 | 输入已知：`export run`；未知：`agent "material report export"` → `next.argv` | 1 / 2 |
 | 多 selector / 已有 Plan | `gravity plan run --input <plan.json>` | 1 |
-| 用户旅程/数据表沿革 | `analysis user journey`；目标未知：`agent "data table lineage"` → `plan run` | 1 / 2 |
+| 用户旅程/数据表沿革 | `analysis user journey`；lineage catalog 冷机时用在线输入解析完成原子 refresh，再离线查询 | 1 / 2 |
 | 单个未知目标/operation 输入 | `gravity agent "<query>"` / `gravity agent <operation-id>` → 执行卡片 argv | 2 |
 | 多个未知分析问题 | `gravity agent --input <questions.json>` → `plan run` | 2 |
 | 同时找 operation、recipe、metadata | `gravity find "<query>"` | 1 次发现 |
@@ -24,22 +24,22 @@
 `run` 已经完成 bind、validate、parents、exec 和 diagnose。不要在每次调用前机械执行 `recipe check`、`validate`、`parents resolve` 和 `doctor`；只有 `run` 的 diagnostics 要求时再执行对应命令。
 五种 Analysis kind（`event/funnel/retention/property/scatter`）使用 `gravity analysis query --kind <kind> --spec <json|file|->`；多个独立 spec 一次交给 `analysis query batch`，复用 Plan 并发。事件/属性用 `metadata search`，指标/标签/媒体枚举/模板用 `metadata vocabulary`；确认后执行。`--dry-run` 返回零网络安全预览，Spec 不接受自然语言自动执行。完整示例见 [CLI 参考](reference/cli.md#analysis-query-spec-v1)。
 经营概览和趋势直接一次调用 `gravity reports pulse --app main --start 2026-08-01 --end 2026-08-07 --include-hourly`；只有需要小时对比时加 `--include-hourly`，其结果是 `scope=workspace`。不知道入口时，明确的 `business pulse/经营脉搏` 意图离线返回唯一 composite，并展开 `apps/start/end/platforms/include_hourly`；调用方补齐后执行一次 Plan。泛 `business analysis/经营分析` 不由 Pulse 抢占，Agent 也不从自然语言填写 App、日期或平台。交叉 Plan 不要手工串行读取 overview/business。
-保存分析已知稳定 ID/精确名称和日期窗时直接 `gravity analysis saved run --app ... --ref ... --start ... --end ...`，不要先串行 list/get/prepare。reference Strict Replay 只接受已证明的五类 Web artifact，并严格复用现有编译器；`prepare --ref` 会联网解析引用但不执行最终查询。旧 compact reference/显式 `--definition` 可保留原日期语义，但 Agent 主路径仍要求窗口以覆盖 Web artifact。自然语言发现只返回 `composite:saved_analysis` 和缺失的 `app/ref/start/end`，不会猜引用或自动执行。引用未知时先 `saved list` 后人工选择再 run；若此前还需要 Agent 发现能力，就是三次调用，不能宣称“两次”。
-看板控制面仍用 `dashboard_snapshot`；图表执行用 `analysis dashboard run --app ... --ref ... --start ... --end ...`。后者只编译静态 Web artifact 中已证明的五类 Analysis 图表，不模拟布局、收藏或页面全局筛选，单图不支持时隔离报告。未知时 `agent "run dashboard charts"` 返回缺失 `app/ref/start/end` 的 `dashboard_analysis` 节点；自然语言不自动执行，Plan 内固定 1 worker。
+保存分析已知稳定 ID/精确名称和日期窗时直接 `gravity analysis saved run --app ... --ref ... --start ... --end ...`，不要先串行 list/get/prepare。reference Strict Replay 只接受已证明的五类 Web artifact，并严格复用现有编译器；`prepare --ref` 会联网解析引用但不执行最终查询。旧 compact reference/显式 `--definition` 可保留原日期语义，但 Agent 主路径仍要求窗口以覆盖 Web artifact。自然语言发现不会猜引用或自动执行。App 和窗口已知、引用未知时，第一次用 `agent --resolve-inputs` 取得完整 safe catalog，调用方精确选择稳定 ID，第二次 run；执行会重读目录和详情。
+看板控制面仍用 `dashboard_snapshot`；图表执行用 `analysis dashboard run --app ... --ref ... --start ... --end ...`。后者只编译静态 Web artifact 中已证明的五类 Analysis 图表，不模拟布局、收藏或页面全局筛选，单图不支持时隔离报告。引用未知且 App/窗口已知时，`agent --resolve-inputs` 在第一调用返回完整 live tree 和 `dashboard_analysis` 节点；调用方精确选择 ID 后第二次执行。自然语言不自动执行，Plan 内固定 1 worker。
 
 人群规则只接受显式紧凑 spec：Agent 强意图卡给完整 schema 和缺失的 `app/spec`，不会从自然语言生成规则。已知 spec 可直接 evaluate；交叉查询用 `segment_evaluate` composite，只有 `/app` 可绑定，结果仅 `part/percent/total`。
 
-分群检查已知精确 ID/名称与日期时直接 `gravity analysis segment snapshot --app ... --ref ... --date ...`；固定返回 detail/history/daily_result，不读取规则或成员。未知时只有同时表达分群快照/检查、详情、历史和单日计算结果的强意图才返回 `segment_snapshot` 卡；补齐 `app/ref/date` 后一次 Plan 执行，自然语言不自动执行。
+分群检查已知精确 ID/名称与日期时直接 `gravity analysis segment snapshot --app ... --ref ... --date ...`；固定返回 detail/history/daily_result，不读取规则或成员。引用未知且 App/日期已知时，强意图在线解析在第一调用返回完整分群目录；调用方精确选择 ID 后第二次执行。自然语言不自动执行。
 
 ### Multidim
 
-Multidim 使用物理输入，不新增 Spec。它直接使用闭合的 `date_list/time_dims/metrics_list/custom_metrics_list/data_dims/relate_dims/filters/multi_keys` 物理输入；已知 App 和完整输入时直接一次 CLI/SDK 调用；不知道入口时，Agent 对明确的中英文多维查询意图只返回 `composite:multidim`，调用方填写 `app/inputs`，并明确选择 `include_total/read_all` 后执行一次 Plan，共两次。Agent 生成的 Plan request 总是带当前 `input_schema_version`；调用方不得删除或改写，旧无版本形状会在联网前失败。CLI 执行始终显式使用 `--app`，消费端从 `query.data.list` 取行并校验顶层与 query 结构化状态。Agent 不选择 App、指标、维度、日期或 filter value，也不会把模板、布局、收藏、权限、经营 pulse 或 event/funnel Analysis 路由到这里。
+Multidim 使用物理输入，不新增 Spec。它直接使用闭合的 `date_list/time_dims/metrics_list/custom_metrics_list/data_dims/relate_dims/filters/multi_keys` 物理输入；已知 App 和完整输入时直接一次 CLI/SDK 调用。物理指标或维度未知而其余业务输入已知时，第一调用用在线输入解析取得闭合 schema 与完整 live Multidim metadata，调用方精确选择物理名，第二调用由 FieldPolicy 再次 live 校验成员关系及维度排除。Agent 生成的 Plan request 总是带当前 `input_schema_version`；调用方不得删除或改写。在线解析不生成 App、日期、filter value 或业务口径，也不会把模板、布局、收藏、权限、经营 pulse 或 event/funnel Analysis 路由到这里。
 
 ### Order Directory 与 Order Split Trace
 
 普通目录与变现明细已知 App 和严格单日时分别一次 `analysis order directory` / `analysis monetization detail` 完整读取 `P` 个分页，实测均为每页 1 POST、0 metadata；7 个同层空日订单节点为 7 POST。订单行严格只含 `Amount/BackAmount/Status/CreateTime`，完整结果使用可选 `--output <file.json>`，不支持 NDJSON/format。未知入口只返回 value-free composite，调用方补齐 `app/date`。已知 App、单日和显式 TraceID 时，一次 `analysis order trace` 完整读取有界父目录，本地精确匹配唯一父行后读取一次拆单明细。这些产品都不从自然语言选值或自动执行；否定、导出、写入、退款/净收入/成功解释、归因、旅程、相邻产品、推广/素材、模板/看板、分群/保存分析、UI/权限等冲突意图安全报缺口且不扫描 raw inventory。精确 raw selector 保持专家兼容；selector 后附任何自然语言则不再视为 exact，并安全报缺口。
 
-推广表现要求调用方先明确一个 App、日期、平台数组和物理指标数组；Agent 只对明确的 `promotion performance/跨平台推广报表` 返回 `promotion_performance` 节点，不从自然语言选值。否定、导出、写入、策略、素材/Pulse/Multidim/归因/看板/保存分析/分群/旅程、raw snapshot 及四个异构平台请求不会回落为 generic Promotion operation。
+推广表现要求调用方先明确一个 App、日期和平台数组；物理指标未知时，第一调用用在线输入解析读取每个已选平台的完整 live 指标目录，调用方精确选择，第二调用由 FieldPolicy 再次逐平台校验后执行。Agent 只对明确的 `promotion performance/跨平台推广报表` 返回 `promotion_performance` 节点，不从自然语言选值。平台也未知时不属于两次路径。否定、导出、写入、策略及相邻产品不会回落为 generic Promotion operation。
 
 多个独立多维查询作为同层 Plan 节点由全局 worker pool 并发，不建 batch wrapper 或逐条启动进程。direct 默认 6、最大 24 workers，Plan adapter 内固定 1，避免与分页/metadata 并发相乘；HTTP 数量为 `M + P + optional total`，其中 `M` 是去重指标 metadata 请求数、`P` 是 query 页数。
 
@@ -58,6 +58,19 @@ gravity run <operation-id> --input <json-or-file>
 ```
 
 `gravity agent` 完全离线，一次完成 bounded search + describe，优先返回匹配的 workspace recipe，再用 stable operation 补足默认 3 个、最多 5 个 capability cards。Recipe 卡片包含 `required_parameters`；operation 卡片包含压缩 input schema、`required_inputs`、父 operation、分页合同；两类都提供可直接调用的 `next.argv`。无 query 时运行 `gravity agent` 可取得 `gravity.agent.v1` 机器协议。明确且无冲突的 `monetization details/变现明细` 返回 value-free `monetization_detail` 卡；调用方只填 App/单日。用户/设备筛选或分组、动态字段、跨日、聚合、导出/写入及 raw-like 后缀仍由本地 Guard 报 gap，不扫描 raw inventory；精确 `analysis.monetization_detail.list` 保持专家入口。
+
+当能力和目录值都未知、但 App/平台等依赖上下文已知时，显式使用在线输入解析；必须写 JSON 文件，
+避免完整目录被 stdout 的 200 项安全上限截断：
+
+```powershell
+gravity agent "run saved analysis" --resolve-inputs '{"app":"main"}' --output catalog.json
+# 调用方从 catalog.json 精确选择稳定 ID
+gravity analysis saved run --app main --ref <selected-id> --start 2026-08-01 --end 2026-08-07
+```
+
+第一条会联网读取目录，但不执行候选、不选择值。响应明确标记内部 HTTP 未减少；只有完整目录才把
+动态卡的对应 `call_bound` scenario 降到 2。若还不知道 App，先解析 App 的依赖仍存在，不得套用该
+次数。SDK 使用同形 `resolve_capabilities()`；默认 `capabilities()` 与 batch Agent 继续完全离线。
 
 多个问题不要逐个执行 `gravity agent`。一次提交带稳定 ID 的问题数组：
 
@@ -180,7 +193,12 @@ gravity metadata tables "publish"
 
 词汇同步固定读取 9 个 workspace source，各一次且不随 App 数增长；六类 kind 是 `metric/custom_metric/metric_tag/metric_tag_category/media_enum/template`，都不接受 `app_id`。指标卡只给可复制的 `request_fragment`，模板是 `catalog_only`，没有配置回放。`status=partial` 时必须保留并报告失败来源，不能宣称完整覆盖。
 
-最短未知路径是 `sync` 一次，随后 `gravity agent "<指标或模板>"` 一次离线扫描并执行其 `metadata_search` Plan node；批量问题仍只加载 SQLite 一次。`events/properties` 是 App scope；`tables` 是 account scope，只陈述观察到的 ID/版本/动作/时间。所有本地词汇只提供物理候选，不自动执行或绑定业务查询。需要同时查 operation、recipe 和 metadata 时调用：
+已同步时直接离线查询一次；冷目录的两调用路径是先显式运行
+`gravity agent "<query>" --resolve-inputs '{"catalog_policy":"refresh"}' --output catalog.json`，再执行
+返回的 metadata search/table-lineage 节点。第一次只有在所有请求来源成功时才原子发布新 catalog；
+否则报错并保留旧库。第二次结果带同步时刻，只表示 observed snapshot。`events/properties` 是 App
+scope；`tables` 是 account scope，只陈述观察到的 ID/版本/动作/时间。所有本地词汇只提供物理候选，
+不自动执行或绑定业务查询。需要同时查 operation、recipe 和 metadata 时调用：
 
 ```powershell
 gravity find "retention"

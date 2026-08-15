@@ -156,6 +156,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | --- | --- |
 | `capabilities()` | `gravity agent` 同源的离线 recipe + stable operation 紧凑发现 |
 | `capabilities_many()` | 一次快照批量发现多个问题，保序返回并给每个候选附 `plan_node` |
+| `resolve_capabilities()` | 显式在线发现能力并交付完整 live 输入目录，或原子刷新冷 metadata catalog；不选择或执行候选 |
 | `run()` | `gravity run` 同源的绑定、父依赖、校验、诊断、有界/全量读取流水线 |
 | `run_many()` | `gravity batch run` 同源的 selector/App 展开、保序并发和失败隔离；支持批量默认 `output_fields`，绑定当前实例 workspace |
 | `read()` | `GravityInsightClient.read()` |
@@ -199,6 +200,16 @@ SQL product 的描述和执行仍使用同一个 workspace。
 `capabilities_many()` 接受字符串或带稳定 `id` 的对象数组，也接受
 `{"questions":[...]}` wrapper；每次最多 32 个问题，ID 必须唯一。它只扫描一次 Workspace、
 stable operation、SQL product 和本地 metadata 目录，单项失败不影响其他项。
+
+`resolve_capabilities(query, *, known_inputs, workspace=None, domain=None, platform=None, limit=3)` 是
+加法在线入口。`known_inputs` 只接受 `app`、`platforms`、`catalog_policy`：Dashboard/Saved/Segment
+目录要求已知 `app`，Promotion 指标目录要求已知 `platforms`，Multidim 交付闭合 schema 与完整
+metadata 供调用方选择指标/自定义指标/维度，
+metadata/table 冷目录显式使用 `catalog_policy="refresh"`。返回对象包含完整 safe catalog 和动态
+`gravity.agent-call-bound.v1`；调用方精确选择稳定 ID/物理名后，第二次走原执行方法或 Plan。
+默认 `capabilities()` 不联网且原三调用 scenario 不变。在线结果明确声明内部 HTTP 未减少；SDK
+在解析前后清空进程内 metadata cache。refresh 只有全部来源成功才原子替换默认 catalog，失败保留
+旧库并抛出结构化异常。App/平台也未知时依赖下界不变。
 
 `analysis_vocabulary(query="", *, kind="vocabulary", database=None, limit=20, offset=0)` 只读一次 `metadata sync --all-apps` 生成的 SQLite 快照。同步对 9 个 workspace source 各请求一次，不随 App 数增加；搜索 kind 为 `metric/custom_metric/metric_tag/metric_tag_category/media_enum/template/vocabulary`，不接受 App 归属。partial 快照会公开失败来源；模板只有安全目录身份、不可回放。Agent 指标卡提供 `metrics_list` 或 `custom_metrics_list` 请求片段，但自然语言发现绝不自动执行分析。
 
@@ -375,8 +386,10 @@ Plan request 同时展开 `platforms/include_hourly` 的中性默认值；泛 `b
 `prepare_multidim_query(inputs, *, app, workspace=None)` 只做安全预检；执行方法
 `multidim_query(inputs, *, app, include_total=False, read_all=False, max_pages=1000, max_items=100000,
 max_workers=6, workspace=None)` 使用同一合同。直接入口 worker 默认 6、最大 24；Plan adapter 固定为 1。实时请求数量为去重指标 metadata
-请求 `M` + query 页数 `P` + 显式 `include_total` 时的一次 total。已知完整输入是一调用；未知入口
-由 `capabilities()` 返回唯一 `composite:multidim` 卡，调用方补齐后执行 Plan，共两次。
+请求 `M` + query 页数 `P` + 显式 `include_total` 时的一次 total。已知完整输入是一调用；物理指标或
+维度未知而 App、日期/filter value 等其余业务输入已知时，`resolve_capabilities()` 在第一调用返回
+闭合 schema 与 live metadata，调用方精确选择物理名后第二次执行并重新 live 校验。filter value
+不由 SDK 生成。
 
 执行结果固定使用 `gravity-insight.composite.multidim.v1`，明细行为 `result["query"]["data"]["list"]`。
 消费者必须校验顶层 `schema_version/status/exit_code` 与 `query.status`，并对
@@ -406,6 +419,11 @@ alias/正整数或它们的显式序列。方法先解析并校验完整请求�
 max_items=100000, workspace=None)` 接受一个 workspace App alias/正整数，以及显式平台和物理指标
 序列。平台仅限 21 个同构 primary source；动态指标仍由对应平台的实时
 `promotion.metric.list` fail closed 校验，不维护第二份指标字典。
+
+平台已知而物理指标未知时，先调用
+`resolve_capabilities("promotion performance", known_inputs={"platforms": [...]})`；它返回逐平台完整
+live 指标目录但不选择字段。调用方精确选择后第二次调用 `promotion_performance()`，FieldPolicy 仍会
+重新读取 live metadata。平台本身也未知时不属于两次路径。
 
 每个平台一个 batch item且内部分页 worker 固定 1；direct 平台池范围 1..24。共享 item 预算按
 平台等额 floor 分配，结果按调用方平台序返回并隔离 sibling 失败。返回

@@ -94,6 +94,8 @@ def add_agent_command(commands: Any, limit_parser: Any) -> None:
             "with the positional query."
         ),
     )
+    from .agent_input_resolution import add_resolution_argument
+    add_resolution_argument(command)
     command.add_argument(
         "--format",
         choices=("json", "ndjson"),
@@ -105,22 +107,10 @@ def add_agent_command(commands: Any, limit_parser: Any) -> None:
 def run_agent_command(args: Any, client: Any) -> dict[str, Any]:
     """Return the protocol or a bounded set of executable capability cards."""
 
-    if getattr(args, "input", None) is not None:
-        if (
-            args.query is not None
-            or args.continuation is not None
-            or args.domain is not None
-            or args.platform is not None
-        ):
-            raise InputValidationError(
-                "agent --input cannot be combined with query, continuation, domain, or platform",
-                field="input",
-            )
-        from .agent_batch import capabilities_many
-        from .find_input import load_json_input
-
-        value = load_json_input(args.input, required=True)
-        return capabilities_many(value, client=client)
+    from .agent_input_resolution import optional_agent_input_command
+    selected = optional_agent_input_command(args, client)
+    if selected is not None:
+        return selected
     return discover_capabilities(
         args.query,
         client=client,

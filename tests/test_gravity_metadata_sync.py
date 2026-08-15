@@ -27,6 +27,7 @@ from gravity_sdk.metadata_sync import (
     _write_rows,
     sync_all_apps,
 )
+from gravity_sdk.agent_catalog_refresh import refresh_complete_catalog
 
 
 class FakeSyncClient:
@@ -351,6 +352,14 @@ class MetadataSyncTests(unittest.TestCase):
                 ).fetchall()
             self.assertEqual(4, len(failures))
             self.assertTrue(all(row[0] == "202" for row in failures))
+
+            database.write_bytes(b"previous-complete-catalog")
+            guarded = refresh_complete_catalog(
+                FakeSyncClient(failed_app="202"), database=database,
+                include_table_lineage=False,
+            )
+            self.assertEqual("partial", guarded["status"])
+            self.assertEqual(b"previous-complete-catalog", database.read_bytes())
 
         with tempfile.TemporaryDirectory() as temporary:
             malformed = sync_all_apps(
