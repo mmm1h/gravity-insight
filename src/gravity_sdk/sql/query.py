@@ -13,6 +13,8 @@ from gravity_sdk.errors import (
     exit_code_for_category,
 )
 from gravity_sdk.http_runtime import MAX_SQL_CONCURRENCY
+from gravity_sdk.receipt import capture_http_receipt_references
+from gravity_sdk.result_audit import add_result_audit
 from gravity_sdk.result_source import CALLER_DEFINED, result_source
 from gravity_sdk.sql.products import (
     EvidenceFormatError,
@@ -145,6 +147,17 @@ def _run_one(
 
 
 def _execute_one(
+    client: Any,
+    request_id: str | None,
+    normalized: dict[str, Any],
+    workspace: Workspace | None,
+) -> dict[str, Any]:
+    with capture_http_receipt_references() as references:
+        result = _execute_one_captured(client, request_id, normalized, workspace)
+    return add_result_audit(result, references)
+
+
+def _execute_one_captured(
     client: Any,
     request_id: str | None,
     normalized: dict[str, Any],

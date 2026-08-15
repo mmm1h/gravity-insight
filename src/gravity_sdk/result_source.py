@@ -11,6 +11,7 @@ GOVERNED_PRODUCT = "governed_product"
 CALLER_DEFINED = "caller_defined"
 RAW_OPERATION = "raw_operation"
 LOCAL_CATALOG = "local_catalog"
+LOCAL_AUDIT = "local_audit"
 MIXED = "mixed"
 
 _SEMANTIC_VERIFICATION = {
@@ -18,6 +19,7 @@ _SEMANTIC_VERIFICATION = {
     CALLER_DEFINED: "caller_responsible",
     RAW_OPERATION: "operation_contract_only",
     LOCAL_CATALOG: "catalog_contract",
+    LOCAL_AUDIT: "audit_contract",
     MIXED: "per_result",
 }
 _GOVERNED_CARD_KINDS = {
@@ -76,6 +78,8 @@ def plan_result_source(kind: object, request: object) -> dict[str, str]:
         return result_source(LOCAL_CATALOG)
     if selected_kind == "composite":
         return result_source(GOVERNED_PRODUCT)
+    if selected_kind == "receipt_query":
+        return result_source(LOCAL_AUDIT)
     raise ValueError(f"unknown Plan result source kind: {selected_kind}")
 
 
@@ -110,6 +114,7 @@ __all__ = [
     "CALLER_DEFINED",
     "GOVERNED_PRODUCT",
     "LOCAL_CATALOG",
+    "LOCAL_AUDIT",
     "MIXED",
     "RAW_OPERATION",
     "SCHEMA_VERSION",

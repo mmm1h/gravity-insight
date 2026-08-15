@@ -462,6 +462,7 @@ class GravityInsightCoreTests(unittest.TestCase):
             {
                 "schema_version",
                 "result_source",
+                "result_audit",
                 "status",
                 "source",
                 "fetched_at",
@@ -485,6 +486,11 @@ class GravityInsightCoreTests(unittest.TestCase):
         )
         self.assertTrue(described["currently_callable"])
         self.assertEqual("example.items.list", result["operation_id"])
+        self.assertEqual(
+            {"operation_id": "/operation_id", "contract_version": "/contract_version"},
+            result["result_audit"]["fact_paths"],
+        )
+        self.assertNotIn("operation_id", result["result_audit"])
         self.assertNotIn("operator_name", json.dumps(result))
         self.assertEqual(
             "private@example.invalid",

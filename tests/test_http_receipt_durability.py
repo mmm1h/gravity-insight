@@ -60,10 +60,11 @@ class HttpReceiptDurabilityTests(unittest.TestCase):
             root = Path(folder, "unavailable"); root.write_text("not a directory", encoding="ascii")
             client = client_for(root, [app_page(1), app_page(1)])
             with self.assertLogs("gravity_sdk", "WARNING") as logs:
-                client.read("app.list", {"page": 1, "page_size": 1})
+                result = client.read("app.list", {"page": 1, "page_size": 1})
                 with mock.patch("gravity_sdk.executor._project", side_effect=RuntimeError("original failure")):
                     with self.assertRaisesRegex(RuntimeError, "original failure"): client.read("app.list", {"page": 1, "page_size": 1})
             self.assertIn("gravity_http_receipt_write_failed", "".join(logs.output))
+            self.assertEqual("write_failed", result["result_audit"]["http_receipts"][0]["storage_status"])
 
     def test_page_three_transport_failure_keeps_first_two_page_receipts(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -83,6 +84,7 @@ class HttpReceiptDurabilityTests(unittest.TestCase):
             result = CompositeService(client).metadata_snapshot(
                 ["promotion.metric.list", "material.metric.list"], inputs_by_operation={name: {"media_type": "bytedance"} for name in ("promotion.metric.list", "material.metric.list")}, max_workers=1)
             self.assertEqual("partial", result["status"])
+            self.assertEqual(2, sum(len(item["result_audit"]["http_receipts"]) for item in result["results"]))
             self.assertEqual([("material.metric.list", 503), ("promotion.metric.list", 200)], sorted((item["operation_id"], item["http_status"]) for item in receipts(root)))
 
     def test_terminate_process_after_response_keeps_fsynced_receipt(self):

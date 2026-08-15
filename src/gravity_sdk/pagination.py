@@ -18,6 +18,7 @@ from .errors import InputValidationError, PaginationError
 from .fingerprints import shape_fingerprint
 from .http_runtime import MAX_CONCURRENCY
 from .models import OperationSpec, ReadResult
+from .result_audit import add_result_audit
 
 
 PageExecutor = Callable[[str, Mapping[str, Any]], ReadResult]
@@ -458,7 +459,10 @@ def _merge_pages(
         "max_workers": max_workers,
     }
     result["schema_fingerprint"] = shape_fingerprint(result["data"])
-    return result
+    return add_result_audit(
+        result,
+        [reference for page in pages for reference in page.http_receipts],
+    )
 
 
 def _validate_bounds(

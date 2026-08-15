@@ -17,6 +17,7 @@ ENVELOPE_FIELDS = frozenset(
         "succeeded_count", "failed_count", "question_count", "source_count",
         "operation_count", "paginated_operation_count", "app_id", "coverage", "scopes",
         "scope", "observed",
+        "result_audit",
     }
 )
 METADATA_FAILURE_FIELDS = frozenset(
@@ -49,7 +50,10 @@ def project_sql_item(item: Any, fields: tuple[str, ...]) -> Any:
     selected = {
         key: copy.deepcopy(value)
         for key, value in item.items()
-        if key in {"request_id", "product", "ok", "status", "exit_code", "error"}
+        if key in {
+            "request_id", "product", "ok", "status", "exit_code", "error",
+            "result_audit",
+        }
     }
     if item.get("ok") is False:
         return selected

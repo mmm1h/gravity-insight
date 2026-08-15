@@ -7,6 +7,7 @@ from gravity_sdk.models import BatchResult
 from gravity_sdk.result_source import (
     CALLER_DEFINED,
     GOVERNED_PRODUCT,
+    LOCAL_AUDIT,
     RAW_OPERATION,
     aggregate_result_sources,
     card_result_source,
@@ -18,7 +19,7 @@ from gravity_sdk.sql.query import _envelope
 
 class ResultSourceTests(unittest.TestCase):
     def test_tiers_are_discrete_facts_without_a_score(self) -> None:
-        for tier in (GOVERNED_PRODUCT, CALLER_DEFINED, RAW_OPERATION):
+        for tier in (GOVERNED_PRODUCT, CALLER_DEFINED, RAW_OPERATION, LOCAL_AUDIT):
             with self.subTest(tier=tier):
                 source = result_source(tier)
                 self.assertEqual(tier, source["tier"])

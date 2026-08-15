@@ -360,12 +360,55 @@ atomic replace，清理只看已经发布的 `*.json`，因此不会碰别人正
 时间配置、10,000/7 默认值、不可 unlink 目标不改 200 结果、两个重叠进程互相清理时两边当前 receipt
 都在；原强杀、投影/合同失败、分页中断和 retry 耐久测试继续通过。
 
-这些 HTTP receipt 当前**没有公开读取入口**：源码只有写入/清理，CLI/SDK 不提供 list/get/export，公开
+截至该轮，这些 HTTP receipt **没有公开读取入口**：源码只有写入/清理，CLI/SDK 不提供 list/get/export，公开
 Resolver envelope 也不引用逐 HTTP 文件。它们目前给知道私有 `state_root` 布局的维护者或调用方做人肉
 事后排查，不是可承诺的程序化消费面。因此本轮不把私有文件布局升格为 API；若出现真实消费需求，应另轮
 先定义只读查询 envelope、稳定排序/分页和缺口语义，再据消费 SLA 重评 7 天/10,000 默认值，不能直接让
 调用方依赖目录 glob。本裁决不改 receipt schema、公开 envelope 或产品能力：operation
 `185 → +0 = 185`；产品动线 `48 = 32 / 0 / 16 → +0 / +0 / +0 = 48 = 32 / 0 / 16`；生产 HTTP 0 次。
+
+### HTTP receipt 公开只读面与结果审计链（2026-08-16）
+
+**提案：**真实消费需求已经成立，但只提升读取和关联合同，不提升私有目录为 API。以独立
+`gravity.http-receipt-query.v1` 返回 `ok/status/items/page/gaps`：`items` 是既有值无关 receipt 的
+字段加离散 `run_status`，`page` 固定声明排序、快照时点、快照指纹和 opaque cursor，`gaps` 只使用
+机器枚举。SDK 提供 list/get/export；CLI 提供 `gravity receipts list|get|export`；Plan 使用本地
+`receipt_query` 节点。执行结果外层 schema 不升级，只加 `gravity.result-audit.v1` 子合同：
+`fact_paths` 用 JSON Pointer 指向 operation、contract version、SQL `evidence_reference`、Agent
+`call_bound` 等**原位事实**，`http_receipts` 只含 opaque `receipt_id` 与 `stored/write_failed`，不生成
+解释文字，也不复制原位事实值。
+
+**结论：四项前置条件已闭合，写入路径和耐久性裁决未改。** 列表按
+`(completed_at, receipt_id)` 倒序：`completed_at` 是既有固定六位微秒 UTC 完成时间，`receipt_id` 是
+每条完成 response 已生成的 128-bit UUID hex；重复 ID 直接归为损坏，因而该二元键在并发发布下形成
+全序。第一页冻结 `as_of` 和候选键/损坏 token 的 SHA-256 指纹；后续新完成且晚于 `as_of` 的 receipt
+不进入该次遍历，若旧完成时间的延迟发布、保留清理或损坏变化改写候选集，则返回
+`status=partial + gap=snapshot_changed`，不静默跳项或重项。cursor 同时绑定 operation filter 和最后一个
+二元键。真实子进程在两页之间并发落盘的回归证明新写不扰动第二页，同时间 receipt 由 ID 稳定裁决。
+
+缺口按结构机械区分：结果引用为 `stored` 但 get 已找不到时是 `retention_pruned`；私有文件仍属于存活
+writer process 时 item 为 `run_status=run_in_progress`，list/get 同时给同名 gap 并返回 partial；写入原
+best-effort 边界失败时结果引用直接为 `storage_status=write_failed`，get 无需猜目录即返回同名
+capability gap。无引用的任意 ID 另为 `unknown_receipt`。目录不存在是 `ok=true/status=empty`；目录不可读
+是 `capability_gap/storage_unreadable`；任一 entry 损坏或重复 ID 是 `partial/corrupt_receipt`，即使全坏
+也不伪装成 empty。读取器内部解析私有文件名只为沿用既有活动运行保护语义，公开 item、gap、cursor、
+SDK/CLI/Plan envelope 均不含磁盘路径、文件名、PID 或 run ID。
+
+Plan 的“设计不适用”例外**未使用**：本地 receipt 查询无副作用、预算有界且返回 JSON，与 Plan 数据
+节点相容，故例外条件 1（effect 与执行模型不兼容）不成立；既然第 1 条不成立，不以第 2 条“其他面可
+完成任务”或第 3 条登记要求绕过实现。`receipt_query` 复用全局 Plan worker 预算，不构造 Insight client；
+partial 与 capability-gap 查询均保留完整嵌套 envelope。
+
+保留默认值仍为 **7 天 / 10,000**。新消费需求证明“需要程序化读取”，没有提供复核响应时限、实测请求
+速率或存储预算，不能从需求本身推出更长 SLA；既有窗口算式和 3–5 MiB 内容/约 40 MiB 分配单元估算
+未被反证。后续只有在调用方给出超过 7 天的复核 SLA，或观测速率证明 10,000 上限先于 SLA 截断时才
+重评；当前 export 上限也保持 10,000，防止一次诊断绕过有界约束。
+
+本单元不新增 operation 或产品动线：operation `185 → +0 = 185`，stable `176 → +0 = 176`；动线
+`48 = 33 / 0 / 15 → +0 / +0 / +0 = 48 = 33 / 0 / 15`。错误清单因新增输入/存储/cursor fail-closed
+抛点净增 16：`974 + 16 = 990`，分档为 `A 218 + 0 = 218`、`B 400 + 6 = 406`、
+`C 356 + 10 = 366`；code/category/既有退出码语义未改。技术债清单复核无新结构项：读取、CLI 和 Plan
+分别下沉窄模块，共享入口只做最终注册。生产 HTTP 0 次。
 
 D32 本轮先估 22 次、实际只发 5 次最小 stable 根读取；5 次均为 HTTP 200 空样本。复用 D33
 的 Bilibili/Huya 3 次证据后，七个平台中只有 Bilibili account 曾非空，但其 advertiser 为空；

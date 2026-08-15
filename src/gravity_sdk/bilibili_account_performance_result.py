@@ -22,6 +22,7 @@ from .bilibili_account_performance_validation import (
     safe_total,
 )
 from .result_source import GOVERNED_PRODUCT, result_source
+from .result_audit import project_result_audit
 
 
 SCHEMA_VERSION = "gravity-insight.bilibili-account-performance.v1"
@@ -40,6 +41,7 @@ _ENVELOPE_FIELDS = frozenset({
     "data",
     "error",
     "next_action",
+    "result_audit",
 })
 _ERROR_FIELDS = frozenset({
     "code", "category", "message", "field", "retryable",
@@ -48,7 +50,7 @@ _ERROR_FIELDS = frozenset({
 _NATIVE_FIELDS = frozenset({
     "schema_version", "result_source", "status", "source", "fetched_at", "schema_fingerprint",
     "operation_id", "contract_version", "request", "page", "data", "warnings",
-    "error",
+    "error", "result_audit",
 })
 _SUCCESS_ACTION = (
     "Consume the governed Bilibili account and product performance rows; "
@@ -91,25 +93,29 @@ def result_from_native(
 
     options = _options(operation_id, window, max_pages, max_items, max_workers)
     if isinstance(value, BaseException):
-        return _failure_from_exception(value, **options)
+        return project_result_audit(_failure_from_exception(value, **options), value)
     if (
         not isinstance(value, Mapping)
-        or set(value) - {"result_source"} != _NATIVE_FIELDS - {"result_source"}
+        or set(value) - {"result_source", "result_audit"}
+        != _NATIVE_FIELDS - {"result_source", "result_audit"}
     ):
-        return contract_result(**options)
+        return project_result_audit(contract_result(**options), value)
     status = value.get("status")
     if status in {"contract_changed", "contract_changed_additive"}:
-        return failure_result(ErrorCode.CONTRACT_CHANGED, **options)
+        return project_result_audit(
+            failure_result(ErrorCode.CONTRACT_CHANGED, **options), value
+        )
     if status not in {"success", "empty"}:
-        return _failure_from_native(value, **options)
+        return project_result_audit(_failure_from_native(value, **options), value)
     selected = _native_success(value, **options)
     if selected is None:
-        return contract_result(**options)
+        return project_result_audit(contract_result(**options), value)
     rows, total, page = selected
     try:
-        return success_result(rows=rows, total=total, page=page, **options)
+        result = success_result(rows=rows, total=total, page=page, **options)
     except ValueError:
-        return contract_result(**options)
+        result = contract_result(**options)
+    return project_result_audit(result, value)
 
 
 def success_result(
@@ -206,7 +212,7 @@ def sanitize_product_result(
 
     options = _options(operation_id, window, max_pages, max_items, max_workers)
     if not _product_identity(value, **options):
-        return contract_result(**options)
+        return project_result_audit(contract_result(**options), value)
     assert isinstance(value, Mapping)
     if value.get("ok") is True and value.get("status") in {"success", "empty"}:
         rebuilt = _resanitize_success(value, **options)
@@ -214,7 +220,9 @@ def sanitize_product_result(
         rebuilt = _resanitize_failure(value, **options)
     else:
         rebuilt = None
-    return rebuilt if rebuilt is not None and value == rebuilt else contract_result(**options)
+    comparable = {key: item for key, item in value.items() if key != "result_audit"}
+    result = rebuilt if rebuilt is not None and comparable == rebuilt else contract_result(**options)
+    return project_result_audit(result, value)
 
 
 def contract_result(
@@ -347,7 +355,7 @@ def _resanitize_failure(value: Mapping[str, Any], **options: Any) -> dict[str, A
 def _product_identity(value: Any, **options: Any) -> bool:
     return bool(
         isinstance(value, Mapping)
-        and set(value) == _ENVELOPE_FIELDS
+        and set(value) - {"result_audit"} == _ENVELOPE_FIELDS - {"result_audit"}
         and value.get("schema_version") == SCHEMA_VERSION
         and value.get("operation_id") == options["operation_id"]
         and value.get("requested_date_range") == _date_range(options["window"])

@@ -30,6 +30,7 @@ from .resolver_support import (
     validation_diagnostic,
     validation_summary,
 )
+from .result_audit import add_result_audit, result_receipt_references
 from .result_source import selector_result_source
 from .workspace import Recipe, Workspace
 
@@ -351,6 +352,14 @@ class _Resolver:
             envelope["parents"] = parents
         if result is not None:
             envelope["result"] = dict(result)
+            fact_paths = {"operation_id": "/operation_id"}
+            if "contract_version" in result:
+                fact_paths["contract_version"] = "/result/contract_version"
+            envelope = add_result_audit(
+                envelope,
+                result_receipt_references(result),
+                fact_paths=fact_paths,
+            )
         return envelope
 
 

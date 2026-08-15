@@ -58,6 +58,7 @@ from .plan_bilibili_account_performance_adapter import (
     validate_bilibili_account_performance_plan,
 )
 from .plan_metadata_adapter import execute_metadata_plan, validate_metadata_plan
+from .plan_receipt_adapter import execute_receipt_query, validate_receipt_query
 from .resolver_support import build_inputs
 from .plan_adapter_support import (
     alias_mapping as _alias_mapping,
@@ -122,7 +123,7 @@ def build_plan_adapters(
     workspace: Any | None = None,
     metadata_database: str | Path | None = None,
 ) -> PlanAdapters:
-    """Bind the four Plan v1 kinds to one existing SDK facade and workspace."""
+    """Bind the five Plan v1 kinds to one existing SDK facade and workspace."""
 
     workspace = sdk.workspace if workspace is None else workspace
     insight = sdk.insight
@@ -181,6 +182,12 @@ def build_plan_adapters(
         validate_composite(request, replace(context, dynamic_targets=()))
         return _execute_composite(sdk, request, context)
 
+    def validate_receipts(request: Mapping[str, Any], context: AdapterContext) -> None:
+        validate_receipt_query(request, context)
+
+    def execute_receipts(request: Mapping[str, Any], context: AdapterContext) -> Any:
+        return execute_receipt_query(request, context)
+
     return PlanAdapters(
         run=PlanAdapter(execute_run, validate_run, _identity_projection),
         sql_product=PlanAdapter(execute_sql, validate_sql, _sql_projection),
@@ -190,6 +197,12 @@ def build_plan_adapters(
         composite=PlanAdapter(
             execute_composite, validate_composite, _project_composite,
             preserve_partial=True,
+        ),
+        receipt_query=PlanAdapter(
+            execute_receipts,
+            validate_receipts,
+            preserve_partial=True,
+            preserve_capability_gap=True,
         ),
     )
 

@@ -39,6 +39,7 @@ BILIBILI_ACCOUNT_PERFORMANCE_OUTPUT_FIELDS = frozenset({
 _TARGETS = frozenset({"/start", "/end"})
 _STRUCTURAL = frozenset({
     "schema_version", "ok", "status", "exit_code", "error", "next_action",
+    "result_audit",
 })
 
 

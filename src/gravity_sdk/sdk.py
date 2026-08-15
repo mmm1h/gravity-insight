@@ -331,6 +331,51 @@ class GravitySDK(
 
         return describe_products(self._select_workspace(workspace))
 
+    def list_http_receipts(
+        self,
+        *,
+        limit: int = 100,
+        cursor: str | None = None,
+        operation_id: str | None = None,
+    ) -> dict[str, Any]:
+        """List one stable page from this workspace's private receipt store."""
+
+        from .receipt_query import list_http_receipts
+
+        return list_http_receipts(
+            self._workspace.state_root,
+            limit=limit,
+            cursor=cursor,
+            operation_id=operation_id,
+        )
+
+    def get_http_receipt(
+        self, reference: str | Mapping[str, Any]
+    ) -> dict[str, Any]:
+        """Resolve an opaque result reference without exposing its backing file."""
+
+        from .receipt_query import get_http_receipt
+
+        return get_http_receipt(self._workspace.state_root, reference)
+
+    def export_http_receipts(
+        self,
+        destination: str | Path,
+        *,
+        max_items: int = 10_000,
+        operation_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Export one bounded receipt snapshot to a caller-selected path."""
+
+        from .receipt_query import export_http_receipts
+
+        return export_http_receipts(
+            self._workspace.state_root,
+            destination,
+            max_items=max_items,
+            operation_id=operation_id,
+        )
+
     def query_sql_products(
         self,
         requests: Mapping[str, Any] | Sequence[Mapping[str, Any]],
@@ -375,21 +420,41 @@ class GravitySDK(
         dry_run: bool = False,
         metadata_database: Any | None = None,
     ) -> dict[str, Any]:
-        """Execute one bounded Plan v1 through the four governed adapters."""
+        """Execute one bounded Plan v1 through the governed adapters."""
 
         from .plan import PlanAdapters, execute_plan, validate_plan
         from .plan_adapters import build_plan_adapters
 
         validated = validate_plan(plan)
-        metadata_only = all(
-            node.kind == "metadata_search" for node in validated.nodes
+        local_only = all(
+            node.kind in {"metadata_search", "receipt_query"}
+            for node in validated.nodes
         )
-        if metadata_only:
+        if local_only:
             from .plan_metadata_adapter import build_metadata_plan_adapter
+            from .plan_receipt_adapter import (
+                execute_receipt_query,
+                validate_receipt_query,
+            )
+            from .plan import PlanAdapter
 
             selected = self._workspace if workspace is None else workspace
             adapters = PlanAdapters(
-                metadata_search=build_metadata_plan_adapter(metadata_database)
+                metadata_search=(
+                    build_metadata_plan_adapter(metadata_database)
+                    if any(node.kind == "metadata_search" for node in validated.nodes)
+                    else None
+                ),
+                receipt_query=(
+                    PlanAdapter(
+                        execute_receipt_query,
+                        validate_receipt_query,
+                        preserve_partial=True,
+                        preserve_capability_gap=True,
+                    )
+                    if any(node.kind == "receipt_query" for node in validated.nodes)
+                    else None
+                ),
             )
         else:
             selected = self._select_workspace(workspace)

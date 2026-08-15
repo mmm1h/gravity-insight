@@ -15,11 +15,12 @@ from .material_performance_result import (
     product_envelope,
     safe_component,
 )
+from .result_audit import project_result_audit
 
 
 _PLATFORMS = frozenset({"bytedance", "tencent", "kuaishou", "bilibili"})
 _PROJECT_STRUCTURAL = frozenset(
-    {"schema_version", "ok", "status", "exit_code", "error", "next_action"}
+    {"schema_version", "ok", "status", "exit_code", "error", "next_action", "result_audit"}
 )
 
 
@@ -84,7 +85,8 @@ def sanitize_product_result(
         type(found) is type(wanted) and found == wanted
         for found, wanted in zip(actual, expected)
     )
-    return rebuilt if exact else contract_result()
+    result = rebuilt if exact else contract_result()
+    return project_result_audit(result, value)
 
 
 def is_material_performance_result(value: Any) -> bool:

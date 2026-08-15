@@ -17,6 +17,7 @@ from .composite_batch import (
 )
 from .composite_catalog import stable_operation
 from .errors import ContractChangedError, ErrorCode, ErrorDetail
+from .result_audit import project_result_audit
 
 
 SCHEMA_VERSION = "gravity-insight.company-usage.v1"
@@ -25,12 +26,12 @@ OPERATION_ID = stable_operation(
 ).operation_id
 _SUCCESS = frozenset({"success", "empty", "contract_changed_additive"})
 _BATCH_FIELDS = frozenset({
-    "operation_id", "request_id", "result_source", "ok", "status", "data", "error",
+    "operation_id", "request_id", "result_source", "ok", "status", "data", "error", "result_audit",
 })
 _NATIVE_FIELDS = frozenset({
     "schema_version", "result_source", "operation_id", "contract_version", "status", "source",
     "fetched_at", "schema_fingerprint", "request", "page", "data", "warnings",
-    "error", "truncated", "next_page_input", "total", "safety_limits",
+    "error", "truncated", "next_page_input", "total", "safety_limits", "result_audit",
 })
 _DATA_FIELDS = frozenset({"list", "page_info", "total"})
 _ROW_FIELDS = frozenset({
@@ -89,7 +90,7 @@ def company_usage(
     )
     result = ordered_results(batch, requests, component="company usage")[0]
     enforce_composite_item_budget([result], items)
-    safe = _safe_result(result)
+    safe = project_result_audit(_safe_result(result), result)
     annotated = annotate_result(safe, source="usage", scope="company")
     if safe.get("status") == "partial" and isinstance(safe.get("data"), Mapping):
         annotated["continuation"] = safe["data"].get("next_page_input")

@@ -466,6 +466,7 @@ def attach_plan_node(
     """Attach the additive call-bound contract to both card and Plan handoff."""
 
     from .agent_call_bound import call_bound_for_card
+    from .result_audit import add_result_audit
     from .result_source import card_result_source
 
     selected = _attach_plan_node_without_call_bound(
@@ -477,4 +478,4 @@ def attach_plan_node(
     node = selected.get("plan_node")
     if isinstance(node, Mapping):
         selected["plan_node"] = {**dict(node), "call_bound": copy.deepcopy(call_bound)}
-    return selected
+    return add_result_audit(selected, ())

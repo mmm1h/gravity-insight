@@ -18,6 +18,7 @@ from .receipt_retention import (
     http_receipt_path,
     prune_http_receipts_after_write,
 )
+from .result_audit import STORED, WRITE_FAILED, receipt_reference
 from .result_output import write_rendered_result
 
 
@@ -35,6 +36,9 @@ class _ActiveHttpReceipt:
 
 _ACTIVE_HTTP_RECEIPT: contextvars.ContextVar[_ActiveHttpReceipt | None] = (
     contextvars.ContextVar("gravity_active_http_receipt", default=None)
+)
+_ACTIVE_RESULT_RECEIPTS: contextvars.ContextVar[list[dict[str, str]] | None] = (
+    contextvars.ContextVar("gravity_result_http_receipts", default=None)
 )
 
 
@@ -62,6 +66,25 @@ def record_http_request() -> None:
     counter = _ACTIVE_REQUEST_COUNTER.get()
     if counter is not None:
         counter.count += 1
+
+
+@contextmanager
+def capture_http_receipt_references() -> Iterator[list[dict[str, str]]]:
+    """Collect receipt outcomes for one same-context result assembly."""
+
+    current = _ACTIVE_RESULT_RECEIPTS.get()
+    references = current if current is not None else []
+    token = _ACTIVE_RESULT_RECEIPTS.set(references) if current is None else None
+    try:
+        yield references
+    except BaseException as error:
+        from .result_audit import bind_error_receipts
+
+        bind_error_receipts(error, references)
+        raise
+    finally:
+        if token is not None:
+            _ACTIVE_RESULT_RECEIPTS.reset(token)
 
 
 def perform_http_request(
@@ -194,6 +217,12 @@ def record_completed_http_response(
         persist_http_receipt(receipt, state_root)
     except (InputValidationError, OSError, UnicodeError):
         _report_http_receipt_failure(receipt)
+        reference = receipt_reference(receipt["receipt_id"], WRITE_FAILED)
+    else:
+        reference = receipt_reference(receipt["receipt_id"], STORED)
+    target = _ACTIVE_RESULT_RECEIPTS.get()
+    if target is not None:
+        target.append(dict(reference))
 
 
 def persist_http_receipt(receipt: Mapping[str, Any], state_root: Path) -> Path:
@@ -282,6 +311,7 @@ def persist_receipt(
 
 __all__ = [
     "build_receipt",
+    "capture_http_receipt_references",
     "count_http_requests",
     "authorized_request_receipt_context",
     "perform_http_request",

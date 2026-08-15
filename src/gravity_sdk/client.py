@@ -31,6 +31,7 @@ from .pagination import read_all_pages, read_limited_pages
 from .paths import CONTRACT_ROOT, MANIFEST_ROOT, PROJECT_ROOT
 from .probe_inputs import resolve_probe_inputs
 from .registry import PolicyEngine, Registry
+from .result_audit import add_result_audit, error_receipt_references, result_receipt_references
 from .result_source import RAW_OPERATION, result_source
 from .transport import Transport
 
@@ -686,10 +687,8 @@ class GravityInsightClient(CatalogInventoryMixin, ExportClientMixin):
         detail = error_detail_from_exception(
             error, operation_id=operation_id, next_action=next_action
         )
-        fetched_at = datetime.now(timezone.utc).isoformat(timespec="seconds").replace(
-            "+00:00", "Z"
-        )
-        return {
+        fetched_at = datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+        return add_result_audit({
             "schema_version": "gravity-insight.read.v1", "result_source": result_source(RAW_OPERATION),
             "ok": False,
             "operation_id": operation.operation_id,
@@ -709,7 +708,7 @@ class GravityInsightClient(CatalogInventoryMixin, ExportClientMixin):
             "data": {},
             "warnings": [],
             "error": detail.to_dict(),
-        }
+        }, error_receipt_references(error))
 
     def read(self, operation_id: str, inputs: Mapping[str, Any] | None = None) -> dict[str, Any]:
         started = time.monotonic()
@@ -910,7 +909,7 @@ class GravityInsightClient(CatalogInventoryMixin, ExportClientMixin):
                     item.request_id,
                     dict(error_value)
                     if not ok and isinstance(error_value, Mapping)
-                    else None,
+                    else None, tuple(result_receipt_references(value)),
                 )
             except GravityInsightError as exc:
                 if fail_fast:
@@ -921,9 +920,8 @@ class GravityInsightClient(CatalogInventoryMixin, ExportClientMixin):
                     _error_status(exc),
                     None,
                     item.request_id,
-                    error_detail_from_exception(
-                        exc, operation_id=item.operation_id
-                    ),
+                    error_detail_from_exception(exc, operation_id=item.operation_id),
+                    tuple(error_receipt_references(exc)),
                 )
 
         workers = min(max_workers, len(normalized))

@@ -15,6 +15,7 @@ from urllib.parse import quote
 
 from .errors import ErrorDetail, InputValidationError, ManifestError, ParentRequiredError
 from .projection_validation import numeric_suffix_schema, validate_projection_bindings
+from .result_audit import add_result_audit, result_receipt_references
 from .result_source import RAW_OPERATION, result_source
 
 
@@ -936,10 +937,8 @@ class OperationSpec:
 
     def schema(self) -> dict[str, Any]:
         return {
-            "operation_id": self.operation_id,
-            "domain": self.domain,
-            "resource": self.resource,
-            "action": self.action,
+            "operation_id": self.operation_id, "domain": self.domain,
+            "resource": self.resource, "action": self.action,
             "contract_version": self.contract_version,
             "stability": self.stability,
             "platform": self.platform,
@@ -1072,9 +1071,10 @@ class ReadResult:
     error: Mapping[str, Any] | None = None
     items: tuple[Any, ...] = ()
     page_info: Mapping[str, Any] = field(default_factory=dict)
+    http_receipts: tuple[Mapping[str, str], ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        return add_result_audit({
             "schema_version": self.schema_version,
             "result_source": result_source(RAW_OPERATION),
             "status": self.status,
@@ -1088,7 +1088,7 @@ class ReadResult:
             "data": self.data,
             "warnings": list(self.warnings),
             "error": dict(self.error) if self.error is not None else None,
-        }
+        }, self.http_receipts)
 
 
 @dataclass(frozen=True)
@@ -1107,6 +1107,7 @@ class BatchResult:
     data: Any = None
     request_id: str | None = None
     error: ErrorDetail | Mapping[str, Any] | None = None
+    http_receipts: tuple[Mapping[str, str], ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         result = {
@@ -1120,11 +1121,9 @@ class BatchResult:
             result["request_id"] = self.request_id
         if self.error is not None:
             result["error"] = (
-                self.error.to_dict()
-                if isinstance(self.error, ErrorDetail)
-                else dict(self.error)
+                self.error.to_dict() if isinstance(self.error, ErrorDetail) else dict(self.error)
             )
-        return result
+        return add_result_audit(result, [*self.http_receipts, *result_receipt_references(self.data)])
 
 
 def load_operation_manifest(source: str | Path | Mapping[str, Any] | Sequence[Any]) -> tuple[OperationSpec, ...]:

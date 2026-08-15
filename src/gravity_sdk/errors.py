@@ -418,12 +418,15 @@ def error_envelope(
     operation_id: str | None = None,
     next_action: str | None = None,
 ) -> dict[str, Any]:
-    return ErrorEnvelope(
+    envelope = ErrorEnvelope(
         operation_id=operation_id,
         error=error_detail_from_exception(
             error, operation_id=operation_id, next_action=next_action
         ),
     ).to_dict()
+    from .result_audit import add_result_audit, error_receipt_references
+
+    return add_result_audit(envelope, error_receipt_references(error))
 
 
 def exit_code_for_category(

@@ -32,6 +32,7 @@ from .material_performance_result import (
     product_envelope as _product_envelope,
     safe_component as _safe_component,
 )
+from .result_audit import project_result_audit
 
 
 SCHEMA_VERSION = "gravity-insight.material-performance.v1"
@@ -87,7 +88,9 @@ def material_performance(
         max_pages=pages, max_items=items,
     )
     results = [
-        _safe_component(value, platform, max_pages=pages)
+        project_result_audit(
+            _safe_component(value, platform, max_pages=pages), value
+        )
         for platform, value in zip(selected_platforms, ordered, strict=True)
     ]
     per_platform_items = items // len(selected_platforms)

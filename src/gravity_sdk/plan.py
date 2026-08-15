@@ -13,7 +13,7 @@ from .plan_budget import PlanWorkerLease, SerialWorkerLease
 PLAN_SCHEMA_VERSION = "gravity.plan.v1"
 RESULT_SCHEMA_VERSION = "gravity.plan-result.v1"
 SCHEMA_SCHEMA_VERSION = "gravity.plan-schema.v1"
-NODE_KINDS = ("run", "sql_product", "metadata_search", "composite")
+NODE_KINDS = ("run", "sql_product", "metadata_search", "composite", "receipt_query")
 DEFAULT_MAX_WORKERS = 6
 MAX_WORKERS = 24
 DEFAULT_MAX_PAGES = 5
@@ -60,6 +60,7 @@ class PlanAdapter:
     validate: AdapterValidate
     project: AdapterProject | None = None
     preserve_partial: bool = False
+    preserve_capability_gap: bool = False
 
 
 @dataclass(frozen=True)
@@ -68,6 +69,7 @@ class PlanAdapters:
     sql_product: PlanAdapter | None = None
     metadata_search: PlanAdapter | None = None
     composite: PlanAdapter | None = None
+    receipt_query: PlanAdapter | None = None
 
 
 @dataclass(frozen=True)

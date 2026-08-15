@@ -112,6 +112,7 @@ class AgentCallBoundTests(unittest.TestCase):
         self.assertEqual("governed_product", cli_card["result_source"]["tier"])
         self.assertEqual(cli_card["result_source"], sdk_card["result_source"])
         self.assertEqual(cli_card["call_bound"], cli_card["plan_node"]["call_bound"])
+        self.assertEqual("/call_bound", cli_card["result_audit"]["fact_paths"]["call_bound"])
         self.assertEqual(
             "required_inputs_known",
             cli_card["call_bound"]["unknown_capability_assumes"],
