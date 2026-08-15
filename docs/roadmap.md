@@ -27,6 +27,26 @@ operation 为 `187 + 7 = 194`、stable 为 `178 + 7 = 185`。部分闭环的 Ana
 
 `draft` 候选数量不等于排期数量：17 项候选归并进台账动线或按明确非目标排除，不按 operation 单独排期。
 
+### pytest 迁移第二轮（2026-08-16）
+
+**提案：**保留首轮 15 个测试文件与 120 个 `unittest.TestCase` 方法的迁移结果，只修转换造成的
+行为差异；以迁移前 `HEAD` 为基线程序化对账测试名、参数案例、fixture 生命周期与全部字符串字面量，
+并同时完整运行 unittest/pytest 两套主门禁。工作底稿继续位于 ignored
+`tmp/codex/pytest-migrate/`，其中生成的测试副本改用 `.py.txt` 后缀，避免无参数 pytest 把底稿重复收集。
+
+**判定：**并发 receipt 测试的临时目录仍是每个测试独立创建，失败不是共享目录或时序抖动；转换器
+把三引号中的子进程源码一并缩进，导致首个子进程在写 ready 文件前以 `IndentationError` 退出。修复只
+恢复源码字面量和方法体缩进，双方当前 receipt 必须同时存在的原断言未变。相同审计另发现并修复一处
+中文 fixture 错误转码和一处被缩进的 TOML 字面量，并把跨模块 helper 边界误缩进、因而不再收集的
+42 个原 pytest 测试恢复为模块级测试；它们不再迁入 TestCase，所以 unittest 总数仍保持 1008。
+
+15 个文件迁移前后的 162 个测试名集合完全一致，隐藏测试定义为 0，不含 `TestCase` 的目标测试文件为
+0。定向批次为 `181 passed, 62 subtests passed`；完整 unittest 为 1008、完整 pytest 为
+`1073 passed, 2820 subtests passed`。pytest passed 从迁移前 1130 减少 57，可复算为 5 个参数化函数的
+62 个案例改为 5 个父测试与 62 个 subTest，即 `1130 - (62 - 5) = 1073`，没有丢失案例。quality、
+compiler、文档测试与 diff check 全部通过。本轮不改产品源码、operation、stable 或分析动线，不新增
+caller 可恢复错误点；新增错误点 0、新增 A 档 0。生产 HTTP 请求 **0 次**。
+
 ### 六条“明确空”多 App 复验（2026-08-16）
 
 **提案：**先读一次稳定 `app.list` catalog，只使用其实际返回的 App；对确有 App 输入的候选逐 App

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import unittest
+import tempfile
+
 import contextlib
 import io
 import json
@@ -36,39 +39,46 @@ SENSITIVE_KEY = "access_token"
 SENSITIVE_VALUE = "must-never-appear"
 
 
-def test_no_data_status_is_explicit_empty_and_auditable() -> None:
-    payload = {"code": 0, "msg": "成功", "extra": {"error": "无数据"}, "data": []}
-    observation = SimpleNamespace(
-        operation_id="example.items.list", purpose="probe", method="POST", path="/read",
-        status_code=200, request_shape={}, payload=payload,
-    )
 
-    assert conclusion(200, payload, None) == "available_empty"
-    assert conclusion(204, None, None) == "available_empty"
-    assert conclusion(204, {}, None) == "available_empty"
-    assert conclusion(200, {**payload, "extra": {"error": "暂无数据"}}, None) == "semantic_error"
-    assert observation_summary(observation)["protocol_status"] == {
-        "classification": "explicit_empty",
-        "code": {"present": True, "value": 0},
-        "msg": {"present": True, "value": "成功"},
-        "extra_error": {"present": True, "value": "无数据"},
-    }
+class GravityInsightProbeSemanticsTests(unittest.TestCase):
+    def setUp(self):
+        self._temporary_directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self._temporary_directory.cleanup)
+        self.tmp_path = Path(self._temporary_directory.name)
 
-
-def test_draft_probe_promotes_http_204_to_available_empty(tmp_path: Path) -> None:
-    source = build_draft(_route(), set())
-    recording = SimpleNamespace(observations=[])
-    discovered = (source, {}, None, SimpleNamespace(status_code=204, payload=None), [])
-    with patch.object(draft_probe, "_discover", return_value=discovered), \
-            patch.object(draft_probe, "relative", side_effect=lambda path: path.as_posix()):
-        result = draft_probe.probe_draft(
-            source, stable_client=object(), runtime=object(), recording=recording,
-            evidence_root=tmp_path / "evidence", draft_root=tmp_path / "drafts",
+    def test_no_data_status_is_explicit_empty_and_auditable(self):
+        payload = {"code": 0, "msg": "成功", "extra": {"error": "无数据"}, "data": []}
+        observation = SimpleNamespace(
+            operation_id="example.items.list", purpose="probe", method="POST", path="/read",
+            status_code=200, request_shape={}, payload=payload,
         )
 
-    evidence = json.loads(Path(result["evidence"]).read_text(encoding="utf-8"))
-    assert result["conclusion"] == "available_empty"
-    assert evidence["successful"] is True
+        assert conclusion(200, payload, None) == "available_empty"
+        assert conclusion(204, None, None) == "available_empty"
+        assert conclusion(204, {}, None) == "available_empty"
+        assert conclusion(200, {**payload, "extra": {"error": "暂无数据"}}, None) == "semantic_error"
+        assert observation_summary(observation)["protocol_status"] == {
+            "classification": "explicit_empty",
+            "code": {"present": True, "value": 0},
+            "msg": {"present": True, "value": "成功"},
+            "extra_error": {"present": True, "value": "无数据"},
+        }
+
+
+    def test_draft_probe_promotes_http_204_to_available_empty(self):
+        source = build_draft(_route(), set())
+        recording = SimpleNamespace(observations=[])
+        discovered = (source, {}, None, SimpleNamespace(status_code=204, payload=None), [])
+        with patch.object(draft_probe, "_discover", return_value=discovered), \
+                patch.object(draft_probe, "relative", side_effect=lambda path: path.as_posix()):
+            result = draft_probe.probe_draft(
+                source, stable_client=object(), runtime=object(), recording=recording,
+                evidence_root=self.tmp_path / "evidence", draft_root=self.tmp_path / "drafts",
+            )
+
+        evidence = json.loads(Path(result["evidence"]).read_text(encoding="utf-8"))
+        assert result["conclusion"] == "available_empty"
+        assert evidence["successful"] is True
 
 
 def _route(platform: str = "tencent") -> dict[str, object]:

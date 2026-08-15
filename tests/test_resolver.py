@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import unittest
+import tempfile
+
 import json
 import sqlite3
 from contextlib import closing
 from pathlib import Path
 
 import pytest
+
 
 from gravity_sdk.fingerprints import shape_fingerprint
 from gravity_sdk.metadata_sync import (
@@ -60,9 +64,15 @@ class _DescriptionClient:
         return self.description_value
 
 
-@pytest.mark.parametrize(
-    ("mutate", "reason"),
-    [
+
+class ResolverTests(unittest.TestCase):
+    def setUp(self):
+        self._temporary_directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self._temporary_directory.cleanup)
+        self.tmp_path = Path(self._temporary_directory.name)
+
+    def test_recipe_check_reports_each_required_stale_condition(self):
+        for (mutate, reason) in [
         (lambda value: value.update(stability="deprecated"), "operation_deprecated"),
         (
             lambda value: value["input_schema"].pop("date_list"),
@@ -72,32 +82,31 @@ class _DescriptionClient:
             lambda value: value["health"].update(contract_fingerprint="b" * 64),
             "contract_fingerprint_changed",
         ),
-    ],
-)
-def test_recipe_check_reports_each_required_stale_condition(mutate, reason) -> None:
-    description = _description()
-    mutate(description)
+    ]:
+            with self.subTest(mutate=mutate, reason=reason):
+                description = _description()
+                mutate(description)
 
-    result = check_recipe(_recipe(), _DescriptionClient(description))
+                result = check_recipe(_recipe(), _DescriptionClient(description))
 
-    assert result["ok"] is False
-    assert result["status"] == "stale"
-    assert reason in {item["code"] for item in result["reasons"]}
+                assert result["ok"] is False
+                assert result["status"] == "stale"
+                assert reason in {item["code"] for item in result["reasons"]}
 
 
-def test_input_shape_fingerprint_ignores_values_but_not_structure() -> None:
-    first = {
-        "app_id": "101",
-        "filters": [{"field": "event", "operator": "EQUALS", "values": ["A"]}],
-    }
-    same_shape = {
-        "app_id": "999",
-        "filters": [{"field": "other", "operator": "IN", "values": ["B"]}],
-    }
-    changed_shape = {**same_shape, "timezone": "Asia/Shanghai"}
+    def test_input_shape_fingerprint_ignores_values_but_not_structure(self):
+        first = {
+            "app_id": "101",
+            "filters": [{"field": "event", "operator": "EQUALS", "values": ["A"]}],
+        }
+        same_shape = {
+            "app_id": "999",
+            "filters": [{"field": "other", "operator": "IN", "values": ["B"]}],
+        }
+        changed_shape = {**same_shape, "timezone": "Asia/Shanghai"}
 
-    assert shape_fingerprint(first) == shape_fingerprint(same_shape)
-    assert shape_fingerprint(first) != shape_fingerprint(changed_shape)
+        assert shape_fingerprint(first) == shape_fingerprint(same_shape)
+        assert shape_fingerprint(first) != shape_fingerprint(changed_shape)
 
 
 def _workspace(tmp_path: Path) -> object:

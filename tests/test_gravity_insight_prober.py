@@ -1,10 +1,15 @@
 from __future__ import annotations
 
+import unittest
+from unittest import mock
+import tempfile
+
 import json
 from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+
 
 from gravity_sdk.errors import PolicyViolation, exit_code_for_error
 from gravity_sdk.prober import online, probe_support, transport as prober_transport
@@ -30,57 +35,65 @@ from gravity_sdk.prober.probe_support import (
 from gravity_sdk.prober.read_semantics import assert_probe_read_semantics
 
 
-def test_evidence_display_path_accepts_scoped_root_outside_default(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    default_root = tmp_path / "default"
-    monkeypatch.setattr(probe_support, "REPO_ROOT", default_root)
 
-    assert relative(default_root / "evidence" / "inside.yaml") == (
-        "evidence/inside.yaml"
-    )
-    outside = tmp_path / "repository" / "evidence" / "outside.yaml"
-    assert relative(outside) == outside.as_posix()
+class GravityInsightProberTests(unittest.TestCase):
+    def setUp(self):
+        self._temporary_directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self._temporary_directory.cleanup)
+        self.tmp_path = Path(self._temporary_directory.name)
+
+    def setattr(self, target, name, value):
+        patcher = mock.patch(target, new=name) if isinstance(target, str) else mock.patch.object(target, name, new=value)
+        self.addCleanup(patcher.stop)
+        patcher.start()
+
+    def test_evidence_display_path_accepts_scoped_root_outside_default(self):
+        default_root = self.tmp_path / "default"
+        self.setattr(probe_support, "REPO_ROOT", default_root)
+
+        assert relative(default_root / "evidence" / "inside.yaml") == (
+            "evidence/inside.yaml"
+        )
+        outside = self.tmp_path / "repository" / "evidence" / "outside.yaml"
+        assert relative(outside) == outside.as_posix()
 
 
-def test_probe_runtime_uses_project_credential_path(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    calls: dict[str, object] = {}
-    credential = object()
+    def test_probe_runtime_uses_project_credential_path(self):
+        calls: dict[str, object] = {}
+        credential = object()
 
-    class Provider:
-        @classmethod
-        def from_env(cls, path: Path, **kwargs: object) -> object:
-            calls["provider_path"] = path
-            calls["provider_kwargs"] = kwargs
-            return credential
+        class Provider:
+            @classmethod
+            def from_env(cls, path: Path, **kwargs: object) -> object:
+                calls["provider_path"] = path
+                calls["provider_kwargs"] = kwargs
+                return credential
 
-    class Runtime:
-        def __init__(self, **kwargs: object) -> None:
-            calls["runtime_kwargs"] = kwargs
+        class Runtime:
+            def __init__(self, **kwargs: object) -> None:
+                calls["runtime_kwargs"] = kwargs
 
-    monkeypatch.setattr(prober_transport, "PROJECT_ROOT", tmp_path)
-    monkeypatch.setattr(
-        prober_transport,
-        "sdk_parts",
-        lambda: {
-            "credentials": SimpleNamespace(CredentialProvider=Provider),
-            "http_runtime": SimpleNamespace(GravityHttpRuntime=Runtime),
-        },
-    )
-    recording = object()
+        self.setattr(prober_transport, "PROJECT_ROOT", self.tmp_path)
+        self.setattr(
+            prober_transport,
+            "sdk_parts",
+            lambda: {
+                "credentials": SimpleNamespace(CredentialProvider=Provider),
+                "http_runtime": SimpleNamespace(GravityHttpRuntime=Runtime),
+            },
+        )
+        recording = object()
 
-    prober_transport.build_runtime(recording)
+        prober_transport.build_runtime(recording)
 
-    expected = tmp_path / ".env.gravity.local"
-    assert calls["provider_path"] == expected
-    assert calls["provider_kwargs"] == {"session": recording, "persist": True}
-    runtime_kwargs = calls["runtime_kwargs"]
-    assert isinstance(runtime_kwargs, dict)
-    assert runtime_kwargs["env_path"] == expected
-    assert runtime_kwargs["session"] is recording
-    assert runtime_kwargs["credentials"] is credential
+        expected = self.tmp_path / ".env.gravity.local"
+        assert calls["provider_path"] == expected
+        assert calls["provider_kwargs"] == {"session": recording, "persist": True}
+        runtime_kwargs = calls["runtime_kwargs"]
+        assert isinstance(runtime_kwargs, dict)
+        assert runtime_kwargs["env_path"] == expected
+        assert runtime_kwargs["session"] is recording
+        assert runtime_kwargs["credentials"] is credential
 
 
 def _route(
