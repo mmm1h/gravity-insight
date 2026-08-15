@@ -52,13 +52,13 @@ class RecordingTransport:
                             "file_name": "example-video.mp4",
                             "material_id": 303,
                             "type": "VIDEO",
-                            "file_url": "https://hidden.example.test/video.mp4",
-                            "thumbnail_url": "https://hidden.example.test/thumb.jpg",
+                            "file_url": "https://media.example.test/video.mp4",
+                            "thumbnail_url": "https://media.example.test/thumb.jpg",
                             "new_item_field": "hidden by default",
                         }
                     ],
-                    "instant_play_material_list": [{"secret": "hidden"}],
-                    "trial_play_material_list": [{"secret": "hidden"}],
+                    "instant_play_material_list": [],
+                    "trial_play_material_list": [],
                     "new_data_field": "hidden by default",
                 },
             },
@@ -92,11 +92,11 @@ class ByteDanceProjectMaterialOperationTests(unittest.TestCase):
             dict(kwargs["body"]),
         )
         self.assertEqual(
-            {"file_name", "material_id", "type"},
+            {"file_name", "file_url", "material_id", "thumbnail_url", "type"},
             set(result["data"]["video_material_list"][0]),
         )
-        self.assertNotIn("instant_play_material_list", result["data"])
-        self.assertNotIn("trial_play_material_list", result["data"])
+        self.assertEqual([], result["data"]["instant_play_material_list"])
+        self.assertEqual([], result["data"]["trial_play_material_list"])
         self.assertNotIn("new_data_field", result["data"])
 
     def test_invalid_or_unverified_inputs_fail_before_network(self) -> None:

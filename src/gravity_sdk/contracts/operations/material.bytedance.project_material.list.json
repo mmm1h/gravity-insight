@@ -4,8 +4,8 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 2,
-    "description": "列出指定巨量项目可使用的素材；当前稳定投影开放视频素材的标识、文件名与类型。",
+    "contract_version": 3,
+    "description": "列出指定巨量项目可使用的素材；当前稳定投影开放已观察的视频素材标识、文件名、类型及文件/缩略图 URL，并保留已观察为空的试玩素材容器。",
     "domain": "material",
     "effect": "read",
     "examples": [],
@@ -89,27 +89,23 @@
     "resource": "project_material",
     "response_projection": {
       "data_item_keys": {
+        "instant_play_material_list": [],
+        "trial_play_material_list": [],
         "video_material_list": [
           "file_name",
+          "file_url",
           "material_id",
+          "thumbnail_url",
           "type"
         ]
       },
       "data_keys": [
+        "instant_play_material_list",
+        "trial_play_material_list",
         "video_material_list"
       ],
       "dynamic_item_fields": [],
       "item_keys": [],
-      "known_omitted_data_item_keys": {
-        "video_material_list": [
-          "file_url",
-          "thumbnail_url"
-        ]
-      },
-      "known_omitted_data_keys": [
-        "instant_play_material_list",
-        "trial_play_material_list"
-      ],
       "required_data_keys": []
     },
     "semantic_error_rules": [

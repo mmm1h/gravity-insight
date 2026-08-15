@@ -61,7 +61,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 2,
+      "contract_version": 3,
       "description": "当前账号可见 App 列表。",
       "domain": "app",
       "effect": "read",
@@ -136,18 +136,18 @@
           "platform",
           "cid",
           "create_time",
+          "download_url",
           "event_version",
+          "icon_url",
           "industry_id",
           "is_enabled",
           "is_iaa",
           "modify_time",
           "os",
+          "remark",
+          "sub_package_list",
           "wechat_app_id",
           "wechat_origin_id"
-        ],
-        "known_omitted_item_keys": [
-          "remark",
-          "sub_package_list"
         ],
         "required_data_keys": [
           "list"

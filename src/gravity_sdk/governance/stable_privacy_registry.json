@@ -1336,7 +1336,9 @@
       "data.list[].app_name",
       "data.list[].cid",
       "data.list[].create_time",
+      "data.list[].download_url",
       "data.list[].event_version",
+      "data.list[].icon_url",
       "data.list[].id",
       "data.list[].industry_id",
       "data.list[].is_enabled",
@@ -1346,7 +1348,9 @@
       "data.list[].os",
       "data.list[].package_name",
       "data.list[].platform",
+      "data.list[].remark",
       "data.list[].status",
+      "data.list[].sub_package_list",
       "data.list[].wechat_app_id",
       "data.list[].wechat_origin_id",
       "data.page_info"
@@ -1582,9 +1586,13 @@
       "data.page_info"
     ],
     "material.bytedance.project_material.list": [
+      "data.instant_play_material_list",
+      "data.trial_play_material_list",
       "data.video_material_list",
       "data.video_material_list[].file_name",
+      "data.video_material_list[].file_url",
       "data.video_material_list[].material_id",
+      "data.video_material_list[].thumbnail_url",
       "data.video_material_list[].type"
     ],
     "material.bytedance.promotion_material.list": [

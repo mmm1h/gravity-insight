@@ -1266,7 +1266,15 @@ class GravityInsightManifestTests(unittest.TestCase):
                     ]
                 },
                 "material.bytedance.project_material.list": {
-                    "video_material_list": ["file_name", "material_id", "type"]
+                    "instant_play_material_list": [],
+                    "trial_play_material_list": [],
+                    "video_material_list": [
+                        "file_name",
+                        "file_url",
+                        "material_id",
+                        "thumbnail_url",
+                        "type",
+                    ]
                 },
                 "report.multidim.template.tree": {
                     "my_template": ["id", "name"],
