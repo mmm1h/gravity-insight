@@ -7,6 +7,7 @@ from unittest import mock
 from gravity_sdk import Credential, GravityInsightClient
 from gravity_sdk.composite import CompositeService
 from gravity_sdk.http_runtime import GravityHttpRuntime, SQL_PROFILE
+from gravity_sdk.receipt_query import get_http_receipt
 
 
 class Response:
@@ -44,6 +45,26 @@ def receipts(root: Path) -> list[dict]:
 
 
 class HttpReceiptDurabilityTests(unittest.TestCase):
+    def test_additive_response_drift_keeps_query_usable_and_is_queryable(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            response = app_page(1)
+            response.payload["data"]["list"][0]["future_rank"] = 7
+            result = client_for(root, [response]).read(
+                "app.list", {"page": 1, "page_size": 1}
+            )
+            reference = result["result_audit"]["http_receipts"][0]
+            queried = get_http_receipt(root, reference)
+
+        self.assertEqual(("success", [{"id": 1, "name": "synthetic"}]),
+                         (result["status"], result["data"]["list"]))
+        drift = result["result_audit"]["response_drift"]
+        self.assertEqual(drift, queried["items"][0]["response_drift"])
+        self.assertEqual(
+            [{"path": "/data/list/*/future_rank", "observed_type": "integer"}],
+            drift["fields"],
+        )
+
     def test_projection_and_contract_failures_keep_completed_response_receipt(self):
         with tempfile.TemporaryDirectory() as folder:
             for stage in ("_project", "_enforce_semantic_rules"):

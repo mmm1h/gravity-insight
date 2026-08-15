@@ -19,6 +19,7 @@ from .fingerprints import shape_fingerprint
 from .http_runtime import MAX_CONCURRENCY
 from .models import OperationSpec, ReadResult
 from .result_audit import add_result_audit
+from .response_drift import merge_response_drifts
 
 
 PageExecutor = Callable[[str, Mapping[str, Any]], ReadResult]
@@ -462,6 +463,7 @@ def _merge_pages(
     return add_result_audit(
         result,
         [reference for page in pages for reference in page.http_receipts],
+        response_drift=merge_response_drifts([page.response_drift for page in pages]),
     )
 
 

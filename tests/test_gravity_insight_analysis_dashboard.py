@@ -437,9 +437,17 @@ class GravityInsightAnalysisDashboardTests(unittest.TestCase):
         self.assertEqual("empty", own["status"])
         self.assertEqual(1, own["data"]["page_info"]["page"])
         self.assertEqual("empty", shared["status"])
-        self.assertEqual("contract_changed_additive", internal["status"])
+        self.assertEqual("success", internal["status"])
+        self.assertIn("response_drift", internal["result_audit"])
         self.assertEqual([{"id": 1, "name": "internal"}], internal["data"]["list"])
-        self.assertNotIn("token", json.dumps(internal).casefold())
+        self.assertNotIn("token", json.dumps(internal["data"]).casefold())
+        self.assertIn(
+            "/data/list/*/token",
+            {
+                field["path"]
+                for field in internal["result_audit"]["response_drift"]["fields"]
+            },
+        )
         self.assertEqual(3, len(transport.calls))
         for method, _path, kwargs in transport.calls:
             self.assertEqual("GET", method)

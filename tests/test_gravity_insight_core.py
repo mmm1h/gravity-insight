@@ -480,7 +480,7 @@ class GravityInsightCoreTests(unittest.TestCase):
         )
         # Unknown response fields are additive: projection still omits them, but
         # the read remains callable and must not be escalated to fail-closed drift.
-        self.assertEqual("contract_changed_additive", result["status"])
+        self.assertEqual("success", result["status"])
         described = client.describe("example.items.list")
         self.assertEqual(
             "contract_changed_additive", described["health"]["status"]
@@ -492,7 +492,16 @@ class GravityInsightCoreTests(unittest.TestCase):
             result["result_audit"]["fact_paths"],
         )
         self.assertNotIn("operation_id", result["result_audit"])
-        self.assertNotIn("operator_name", json.dumps(result))
+        drift = result["result_audit"]["response_drift"]
+        self.assertEqual(
+            ("gravity.response-drift.v1", "response", "additive"),
+            (drift["schema_version"], drift["direction"], drift["classification"]),
+        )
+        self.assertIn(
+            {"path": "/data/unregistered", "observed_type": "object"},
+            drift["fields"],
+        )
+        self.assertNotIn("operator_name", json.dumps(result["data"]))
         self.assertEqual(
             "private@example.invalid",
             result["data"]["list"][0]["email_address"],
@@ -520,9 +529,20 @@ class GravityInsightCoreTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             client, _ = client_for(Path(directory), [FakeResponse(payload)])
             result = client.read("example.items.list", {"filter": "safe"})
-        self.assertEqual("contract_changed_additive", result["status"])
+        self.assertEqual("success", result["status"])
         self.assertEqual({"id": 1, "value": 4}, result["data"]["list"][0])
+        self.assertIn(
+            {"path": "/data/list/*/access_token", "observed_type": "string"},
+            result["result_audit"]["response_drift"]["fields"],
+        )
         self.assertNotIn("private", json.dumps(result))
+
+    def test_unregistered_request_field_still_fails_before_transport(self):
+        with tempfile.TemporaryDirectory() as directory:
+            client, transport = client_for(Path(directory), [])
+            with self.assertRaisesRegex(InputValidationError, "unknown operation input"):
+                client.read("example.items.list", {"future_request_field": True})
+        self.assertEqual([], transport.calls)
 
     def test_newly_stable_context_reads_project_sanitized_contract_fixtures(self):
         operation_ids = (
@@ -667,14 +687,12 @@ class GravityInsightCoreTests(unittest.TestCase):
                 for operation_id in operation_ids
             ]
         self.assertEqual(
-            [
-                "contract_changed_additive",
-                "success",
-                "success",
-                "contract_changed_additive",
-                "contract_changed_additive",
-            ],
+            ["success"] * 5,
             [result["status"] for result in results],
+        )
+        self.assertEqual(
+            3,
+            sum("response_drift" in result["result_audit"] for result in results),
         )
         serialized = json.dumps(results)
         for omitted_value in (
@@ -880,7 +898,7 @@ class GravityInsightCoreTests(unittest.TestCase):
             }
         }
 
-        projected, warnings, changed = project_response(operation, payload, {})
+        projected, warnings, changed, _ = project_response(operation, payload, {})
 
         self.assertTrue(changed)
         self.assertTrue(warnings)
@@ -912,7 +930,7 @@ class GravityInsightCoreTests(unittest.TestCase):
         denied = json.loads(json.dumps(controlled))
         denied["operations"][0]["response_projection"]["numeric_paths"] = []
         denied_operation = load_operation_manifest(denied)[0]
-        denied_projected, _, denied_changed = project_response(
+        denied_projected, _, denied_changed, _ = project_response(
             denied_operation, payload, {}
         )
         self.assertTrue(denied_changed)
@@ -1032,7 +1050,11 @@ class GravityInsightCoreTests(unittest.TestCase):
         self.assertEqual({"id": 1, "metric_a": 2}, result["data"]["list"][0])
         self.assertNotIn("metric_b", json.dumps(result["data"]))
         # metric_b is an additive upstream field; metric_a remains safely projected.
-        self.assertEqual("contract_changed_additive", result["status"])
+        self.assertEqual("success", result["status"])
+        self.assertIn(
+            {"path": "/data/list/*/metric_b", "observed_type": "integer"},
+            result["result_audit"]["response_drift"]["fields"],
+        )
         self.assertEqual(2, len(transport.calls))
 
         with self.assertRaisesRegex(InputValidationError, "live platform metadata"):
@@ -1185,7 +1207,7 @@ class GravityInsightCoreTests(unittest.TestCase):
             any("bytedance/advertiser" in call[1] for call in transport.calls)
         )
 
-    def test_contract_changed_metadata_cannot_attest_dynamic_fields(self):
+    def test_additive_metadata_drift_does_not_block_registered_dynamic_fields(self):
         dynamic = repository_manifest(
             "promotion.metric.list",
             "promotion.bytedance.advertiser.list",
@@ -1194,25 +1216,31 @@ class GravityInsightCoreTests(unittest.TestCase):
             "code": 0,
             "data": [{"name": "known_metric", "uncontracted_field": "hidden"}],
         }
+        business = {
+            "code": 0,
+            "data": {
+                "list": [{"id": 1, "known_metric": 2}],
+                "page_info": {"page": 1, "page_size": 10, "total_page": 1},
+            },
+        }
         with tempfile.TemporaryDirectory() as directory:
             client, transport = client_for(
                 Path(directory),
-                [FakeResponse(metadata_with_drift)],
+                [FakeResponse(metadata_with_drift), FakeResponse(business)],
                 operation_manifest=dynamic,
             )
-            with self.assertRaisesRegex(InputValidationError, "metadata is unavailable"):
-                client.read(
-                    "promotion.bytedance.advertiser.list",
-                    {
-                        "date_list": ["2026-08-07", "2026-08-07"],
-                        "query_fields": ["known_metric"],
-                    },
-                )
-        self.assertEqual(1, len(transport.calls))
+            result = client.read(
+                "promotion.bytedance.advertiser.list",
+                {
+                    "date_list": ["2026-08-07", "2026-08-07"],
+                    "query_fields": ["known_metric"],
+                },
+            )
+        self.assertEqual(("success", 2), (result["status"], len(transport.calls)))
+        self.assertEqual({"id": 1, "known_metric": 2}, result["data"]["list"][0])
         self.assertIn("promotion_metrics", transport.calls[0][1])
-        self.assertFalse(
-            any("bytedance/advertiser" in call[1] for call in transport.calls)
-        )
+        self.assertIn("bytedance", transport.calls[1][1])
+        self.assertIn("advertiser/list", transport.calls[1][1])
 
     def test_nested_promotion_filtering_is_rejected_before_network(self):
         controlled = repository_manifest("promotion.bytedance.advertiser.list")
@@ -1976,10 +2004,30 @@ class GravityInsightCoreTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             client, _ = client_for(
                 Path(directory),
-                [FakeResponse({"code": 0, "msg": "成功", "extra": {"error": "无数据"},
-                               "data": {"list": [], "page_info": {"page": 1, "total_page": 1}}})],
+                [FakeResponse({
+                    "code": 0,
+                    "data": {
+                        "list": [{"id": 1, "value": 2, "future_rank": 7}],
+                        "page_info": {"page": 1, "total_page": 1},
+                    },
+                })],
             )
-            self.assertEqual("empty", client.read("example.items.list", {})["status"])
+            drifted = client.read("example.items.list", {})
+            self.assertEqual("success", drifted["status"])
+            self.assertIn(
+                {"path": "/data/list/*/future_rank", "observed_type": "integer"},
+                drifted["result_audit"]["response_drift"]["fields"],
+            )
+        with tempfile.TemporaryDirectory() as directory:
+            client, _ = client_for(
+                Path(directory),
+                [FakeResponse({"code": 0, "msg": "成功", "extra": {"error": "无数据"},
+                               "data": {"list": [], "page_info": {"page": 1, "total_page": 1},
+                                        "future_empty": []}})],
+            )
+            explicit_empty = client.read("example.items.list", {})
+            self.assertEqual("empty", explicit_empty["status"])
+            self.assertNotIn("response_drift", explicit_empty["result_audit"])
         with tempfile.TemporaryDirectory() as directory:
             client, _ = client_for(Path(directory), [FakeResponse({"code": 200, "data": {"list": []}})])
             self.assertEqual("empty", client.read("example.items.list", {})["status"])

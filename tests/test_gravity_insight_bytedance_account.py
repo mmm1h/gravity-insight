@@ -99,7 +99,8 @@ class BytedanceAccountOperationTests(unittest.TestCase):
 
         result = client.read(OPERATION_ID, {})
 
-        self.assertEqual("contract_changed_additive", result["status"])
+        self.assertEqual("success", result["status"])
+        self.assertIn("response_drift", result["result_audit"])
         self.assertTrue(result["warnings"])
         method, path, kwargs = transport.calls[0]
         self.assertEqual("POST", method)

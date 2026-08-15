@@ -94,7 +94,8 @@ class AssetDirectionalPackageOperationTests(unittest.TestCase):
 
         result = client.read(OPERATION_ID, {})
 
-        self.assertEqual("contract_changed_additive", result["status"])
+        self.assertEqual("success", result["status"])
+        self.assertIn("response_drift", result["result_audit"])
         self.assertTrue(result["warnings"])
         self.assertEqual("POST", transport.calls[0][0])
         self.assertEqual(TARGET_PATH, transport.calls[0][1])

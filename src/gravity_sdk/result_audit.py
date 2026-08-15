@@ -5,6 +5,8 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from .response_drift import merge_response_drifts, normalize_response_drift
+
 
 SCHEMA_VERSION = "gravity.result-audit.v1"
 STORED = "stored"
@@ -35,6 +37,7 @@ def add_result_audit(
     references: Sequence[Mapping[str, Any]],
     *,
     fact_paths: Mapping[str, str] | None = None,
+    response_drift: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Add or merge the independent audit sub-contract without copying facts."""
 
@@ -43,22 +46,27 @@ def add_result_audit(
     current = selected.get("result_audit")
     existing_references: list[dict[str, str]] = []
     existing_paths: dict[str, str] = {}
+    existing_drift: dict[str, Any] | None = None
     if current is not None:
         if not isinstance(current, Mapping) or current.get("schema_version") != SCHEMA_VERSION:
             raise ValueError("result envelope has an incompatible result_audit")
         existing_references = _references(current.get("http_receipts", ()))
         existing_paths = _paths(current.get("fact_paths", {}))
+        if current.get("response_drift") is not None:
+            existing_drift = normalize_response_drift(current["response_drift"])
     paths = {
         **existing_paths,
         **(_paths(fact_paths) if fact_paths is not None else infer_fact_paths(selected)),
     }
     receipts = _deduplicate([*existing_references, *normalized])
-    if not paths and not receipts:
+    drift = merge_response_drifts((existing_drift, response_drift))
+    if not paths and not receipts and drift is None:
         return selected
     selected["result_audit"] = {
         "schema_version": SCHEMA_VERSION,
         "fact_paths": paths,
         "http_receipts": receipts,
+        **({"response_drift": drift} if drift is not None else {}),
     }
     return selected
 
@@ -93,6 +101,21 @@ def result_receipt_references(value: object) -> list[dict[str, str]]:
         return []
 
 
+def result_response_drift(value: object) -> dict[str, Any] | None:
+    if not isinstance(value, Mapping):
+        return None
+    audit = value.get("result_audit")
+    if not isinstance(audit, Mapping) or audit.get("schema_version") != SCHEMA_VERSION:
+        return None
+    drift = audit.get("response_drift")
+    if drift is None:
+        return None
+    try:
+        return normalize_response_drift(drift)
+    except ValueError:
+        return None
+
+
 def project_result_audit(
     target: Mapping[str, Any], source: object
 ) -> dict[str, Any]:
@@ -106,7 +129,19 @@ def project_result_audit(
     if isinstance(source, Mapping):
         references.extend(result_receipt_references(source.get("data")))
         references.extend(result_receipt_references(source.get("result")))
-    return add_result_audit(target, references)
+    drifts = [result_response_drift(source)]
+    if isinstance(source, Mapping):
+        drifts.extend(
+            (
+                result_response_drift(source.get("data")),
+                result_response_drift(source.get("result")),
+            )
+        )
+    return add_result_audit(
+        target,
+        references,
+        response_drift=merge_response_drifts(drifts),
+    )
 
 
 def aggregate_result_audit(
@@ -185,4 +220,5 @@ __all__ = [
     "project_result_audit",
     "receipt_reference",
     "result_receipt_references",
+    "result_response_drift",
 ]

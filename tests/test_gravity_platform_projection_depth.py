@@ -96,7 +96,8 @@ class PlatformProjectionDepthTests(unittest.TestCase):
             },
         )
 
-        self.assertEqual("contract_changed_additive", result["status"])
+        self.assertEqual("success", result["status"])
+        self.assertIn("response_drift", result["result_audit"])
         self.assertEqual({"columns": columns}, result["data"])
 
     def test_bilibili_account_total_is_projected_fail_closed(self) -> None:
@@ -138,7 +139,8 @@ class PlatformProjectionDepthTests(unittest.TestCase):
 
         result = client.read(operation_id, {"page": 1, "page_size": 20})
 
-        self.assertEqual("contract_changed_additive", result["status"])
+        self.assertEqual("success", result["status"])
+        self.assertIn("response_drift", result["result_audit"])
         self.assertEqual(total, result["data"]["total"])
         self.assertEqual(
             {
@@ -176,7 +178,8 @@ class PlatformProjectionDepthTests(unittest.TestCase):
 
         result = client.read(operation_id, {})
 
-        self.assertEqual("contract_changed", result["status"])
+        self.assertEqual("success", result["status"])
+        self.assertIn("response_drift", result["result_audit"])
         self.assertEqual(
             [
                 {
@@ -279,7 +282,8 @@ class PlatformProjectionDepthTests(unittest.TestCase):
 
         result = client.read(operation_id, {"page": 1, "page_size": 20})
 
-        self.assertEqual("contract_changed", result["status"])
+        self.assertEqual("success", result["status"])
+        self.assertIn("response_drift", result["result_audit"])
         self.assertEqual(
             safe_property,
             result["data"]["list"][0]["properties"]["common"][0],

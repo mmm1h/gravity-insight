@@ -107,7 +107,8 @@ class RoleDetailOperationTests(unittest.TestCase):
 
         result = client.read(OPERATION_ID, {"role_id": 7})
 
-        self.assertEqual("contract_changed_additive", result["status"])
+        self.assertEqual("success", result["status"])
+        self.assertIn("response_drift", result["result_audit"])
         method, path, kwargs = transport.calls[0]
         self.assertEqual("GET", method)
         self.assertEqual(TARGET_PATH, path)
@@ -146,7 +147,8 @@ class RoleDetailOperationTests(unittest.TestCase):
 
         result = client.probe(OPERATION_ID)
 
-        self.assertEqual("contract_changed_additive", result["status"])
+        self.assertEqual("success", result["status"])
+        self.assertIn("response_drift", result["result_audit"])
         self.assertEqual([PARENT_PATH, TARGET_PATH], [call[1] for call in transport.calls])
         self.assertEqual(
             {"need_menu": False, "page": 1, "page_size": 1},

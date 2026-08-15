@@ -18,10 +18,12 @@ from .drift import ProjectionDrift, projection_drift_status
 from .errors import PolicyViolation
 from .models import OperationSpec, ReadResult
 from .multidim import projected_keys
-from .receipt import capture_http_receipt_references
+from .receipt import capture_http_receipt_references, record_response_drift
+from .response_drift import ResponseDriftRecorder
 from .registry import PolicyEngine, Registry
 from .semantic_status import SEMANTIC_EXPLICIT_EMPTY, enforce_semantic_rules as _enforce_semantic_rules
 from .transport import Transport
+from .user_event_projection import project_analysis_user_event
 
 
 _ABSENT = object()
@@ -128,7 +130,10 @@ class ReadExecutor:
             )
         payload = response.payload
         semantic_status = _enforce_semantic_rules(operation, payload, http_receipts)
-        projected, drift_warnings, projection_drift = _project(operation, payload, values)
+        projected, drift_warnings, projection_drift, response_drift = _project_response(
+            operation, payload, values, semantic_status,
+            getattr(response, "status_code", 200), http_receipts,
+        )
         projected = _redact(
             projected,
             operation.privacy_policy.redact_fields,
@@ -191,6 +196,7 @@ class ReadExecutor:
             warnings=tuple(warnings), error=None,
             items=items, page_info=page_info,
             http_receipts=tuple(http_receipts),
+            response_drift=response_drift,
         )
 
 
@@ -200,374 +206,142 @@ def _read_status(
 ) -> str:
     if http_status == 204 or semantic_status == SEMANTIC_EXPLICIT_EMPTY:
         return "empty"
-    if projection_drift:
+    if projection_drift is ProjectionDrift.BREAKING:
         return projection_drift_status(projection_drift)
     return "empty" if is_empty else "success"
+
+
+def _project_response(
+    operation: OperationSpec, payload: Mapping[str, Any], values: Mapping[str, Any],
+    semantic_status: str, http_status: int, http_receipts: Any,
+) -> tuple[Any, tuple[str, ...], ProjectionDrift, Mapping[str, Any] | None]:
+    if http_status == 204 or semantic_status == SEMANTIC_EXPLICIT_EMPTY:
+        return _empty_projection(operation), (), ProjectionDrift.NONE, None
+    result = _project(operation, payload, values)
+    record_response_drift(http_receipts, result[3])
+    return result
+
+
+def _empty_projection(operation: OperationSpec) -> Any:
+    if operation.response_projection.data_shape == "list":
+        return []
+    item_field = operation.pagination.items_field
+    if operation.pagination.kind != "none" or item_field in operation.response_projection.data_keys:
+        return {item_field: []}
+    return {}
 
 
 def _project(
     operation: OperationSpec,
     payload: Mapping[str, Any],
     values: Mapping[str, Any],
-) -> tuple[Any, tuple[str, ...], ProjectionDrift]:
+) -> tuple[Any, tuple[str, ...], ProjectionDrift, Mapping[str, Any] | None]:
     data = payload.get("data")
+    recorder = ResponseDriftRecorder()
     if operation.operation_id == _ANALYSIS_USER_EVENT_OPERATION:
-        projected, warnings, changed = _project_analysis_user_event(operation, data, values)
-        return projected, warnings, (
-            ProjectionDrift.BREAKING if changed else ProjectionDrift.NONE
-        )
+        result = project_analysis_user_event(operation, data, values, recorder)
+        return *result, recorder.to_contract()
     if operation.operation_id in _ANALYSIS_AGGREGATE_OPERATIONS:
-        projected, warnings, changed = _project_analysis_aggregate(operation, data, values)
-        return projected, warnings, (
-            ProjectionDrift.BREAKING if changed else ProjectionDrift.NONE
-        )
+        result = _project_analysis_aggregate(operation, data, values, recorder)
+        return *result, recorder.to_contract()
     if operation.response_projection.empty_object_as_empty_result and data == {}:
-        return {}, (), ProjectionDrift.NONE
-    if operation.response_projection.empty_object_as_empty_page and data == {}:
-        data = {
-            "list": [],
-            "page_info": {
-                operation.pagination.page_field: values.get(
-                    operation.pagination.page_field, 1
-                ),
-                operation.pagination.page_size_field: values.get(
-                    operation.pagination.page_size_field,
-                    operation.pagination.default_page_size,
-                ),
-                operation.pagination.total_page_field: 1,
-                "total_number": 0,
-            },
-        }
+        return {}, (), ProjectionDrift.NONE, None
+    data = _normalize_empty_page(operation, data, values)
     if operation.response_projection.data_shape == "list":
         if not isinstance(data, list):
             return [], (
                 "response data shape changed; the uncontracted value was omitted",
-            ), ProjectionDrift.BREAKING
-        return _project_list_rows(operation, data, values)
+            ), ProjectionDrift.BREAKING, None
+        result = _project_list_rows(operation, data, values, recorder)
+        return *result, recorder.to_contract()
     if not isinstance(data, Mapping):
         return {}, (
             "response data shape changed; the uncontracted value was omitted",
-        ), ProjectionDrift.BREAKING
-    keys = operation.response_projection.data_keys
-    warnings: list[str] = []
-    missing_required = [
-        key
-        for key in operation.response_projection.required_data_keys
-        if _path_get(data, key) is _ABSENT
-    ]
-    drift = ProjectionDrift.BREAKING if missing_required else ProjectionDrift.NONE
-    if missing_required:
-        warnings.append(
-            f"required response data keys are absent (count={len(missing_required)})"
-        )
-    projected = {}
-    for key in keys:
+        ), ProjectionDrift.BREAKING, None
+    result = _project_mapping_data(operation, data, values, recorder)
+    return *result, recorder.to_contract()
+
+
+def _normalize_empty_page(
+    operation: OperationSpec, data: Any, values: Mapping[str, Any]
+) -> Any:
+    if not operation.response_projection.empty_object_as_empty_page or data != {}:
+        return data
+    return {
+        "list": [],
+        "page_info": {
+            operation.pagination.page_field: values.get(
+                operation.pagination.page_field, 1
+            ),
+            operation.pagination.page_size_field: values.get(
+                operation.pagination.page_size_field,
+                operation.pagination.default_page_size,
+            ),
+            operation.pagination.total_page_field: 1,
+            "total_number": 0,
+        },
+    }
+
+
+def _project_mapping_data(
+    operation: OperationSpec,
+    data: Mapping[str, Any],
+    values: Mapping[str, Any],
+    recorder: ResponseDriftRecorder,
+) -> tuple[Any, tuple[str, ...], ProjectionDrift]:
+    projection = operation.response_projection
+    required = set(projection.required_data_keys)
+    missing = [key for key in required if _path_get(data, key) is _ABSENT]
+    drift = ProjectionDrift.BREAKING if missing else ProjectionDrift.NONE
+    warnings = (
+        [f"required response data keys are absent (count={len(missing)})"]
+        if missing else []
+    )
+    projected: dict[str, Any] = {}
+    for key in projection.data_keys:
         value = _path_get(data, key)
         if value is not _ABSENT:
             projected[key] = value
-        elif key not in operation.response_projection.required_data_keys:
+        elif key not in required:
             warnings.append(f"optional response data key is absent: {key}")
-    unregistered = sorted(
-        str(key)
-        for key in set(data)
-        - set(keys)
-        - set(operation.response_projection.known_omitted_data_keys)
+    unknown = {str(key) for key in data} - set(projection.data_keys) - set(
+        projection.known_omitted_data_keys
     )
-    if unregistered:
-        drift = max(drift, ProjectionDrift.ADDITIVE)
+    if unknown:
+        recorder.add_unknown_fields(("data",), data, unknown)
         warnings.append(
-            f"unregistered response data keys were omitted (count={len(unregistered)})"
+            f"unregistered response data keys were omitted (count={len(unknown)})"
         )
-    primary_list_name = operation.pagination.list_path.rsplit(".", 1)[-1]
-    if not primary_list_name and "list" in operation.response_projection.data_keys:
-        primary_list_name = "list"
-    if primary_list_name not in operation.response_projection.data_scalar_list_types:
-        projected, item_warnings, item_drift = _project_list_rows(operation, projected, values)
+        drift = max(drift, ProjectionDrift.ADDITIVE)
+    primary = operation.pagination.list_path.rsplit(".", 1)[-1]
+    if not primary and "list" in projection.data_keys:
+        primary = "list"
+    if primary not in projection.data_scalar_list_types:
+        projected, item_warnings, item_drift = _project_list_rows(
+            operation, projected, values, recorder
+        )
         warnings.extend(item_warnings)
         drift = max(drift, item_drift)
-    projected, data_warnings, data_drift = _project_data_containers(
-        operation,
-        projected, values
+    projected, nested_warnings, nested_drift = _project_data_containers(
+        operation, projected, values, recorder
     )
-    warnings.extend(data_warnings)
-    drift = max(drift, data_drift)
-    return projected, tuple(warnings), drift
-
-
-def _project_analysis_user_event(
-    operation: OperationSpec,
-    data: Any,
-    values: Mapping[str, Any],
-) -> tuple[dict[str, Any], tuple[str, ...], bool]:
-    """Project event-flow trees and caller-selected metadata fields."""
-
-    if not isinstance(data, Mapping):
-        return {}, ("user event response data shape changed; value was omitted",), True
-    declared = set(operation.response_projection.data_keys)
-    omitted = set(operation.response_projection.known_omitted_data_keys)
-    unknown_top = {str(key) for key in data} - declared - omitted
-    warnings: list[str] = []
-    changed = bool(unknown_top)
-    requested_fields = {
-        item
-        for item in values.get("fields", ())
-        if isinstance(item, str) and item and len(item) <= 256
-    }
-    if unknown_top:
-        warnings.append(
-            f"unregistered user event data keys were omitted (count={len(unknown_top)})"
-        )
-
-    result: dict[str, Any] = {}
-    if "event_timeline" in data and "event_timeline" in declared:
-        projected, drift = _project_user_event_timeline(
-            data["event_timeline"], requested_fields
-        )
-        if projected is not _ABSENT:
-            result["event_timeline"] = projected
-        changed = changed or drift
-        if drift:
-            warnings.append("unregistered user event timeline values were omitted")
-    if "summary" in data and "summary" in declared:
-        projected, drift = _project_user_event_summary(data["summary"])
-        if projected is not _ABSENT:
-            result["summary"] = projected
-        changed = changed or drift
-        if drift:
-            warnings.append("unregistered user event summary values were omitted")
-    for key in ("device", "user"):
-        if key not in data or key not in declared:
-            continue
-        allowed = (
-            set(operation.response_projection.data_item_keys.get(key, ()))
-            | requested_fields
-        )
-        nested, drift = _project_user_event_profile(data[key], allowed)
-        if nested is not _ABSENT:
-            result[key] = nested
-        else:
-            changed = True
-            warnings.append(f"invalid contracted user event {key} data was omitted")
-        if drift:
-            changed = True
-            warnings.append(
-                f"invalid selected user event {key} values were omitted"
-            )
-    if "re_attribute_records" in data and "re_attribute_records" in declared:
-        allowed = (
-            set(
-                operation.response_projection.data_item_keys.get(
-                    "re_attribute_records", ()
-                )
-            )
-            | requested_fields
-        )
-        records, drift = _project_user_event_records(
-            data["re_attribute_records"], allowed
-        )
-        if records is not _ABSENT:
-            result["re_attribute_records"] = records
-        else:
-            changed = True
-            warnings.append(
-                "invalid contracted user event re_attribute_records were omitted"
-            )
-        if drift:
-            changed = True
-            warnings.append(
-                "invalid selected user event re_attribute values were omitted"
-            )
-    missing = set(operation.response_projection.required_data_keys) - set(result)
-    if missing:
-        warnings.append(
-            f"required user event response keys are absent (count={len(missing)})"
-        )
-        changed = True
-    return result, tuple(warnings), changed
-
-
-def _project_user_event_timeline(
-    value: Any, requested_fields: set[str]
-) -> tuple[Any, bool]:
-    if not isinstance(value, (list, tuple)) or len(value) > 10_000:
-        return _ABSENT, True
-    result: list[dict[str, Any]] = []
-    changed = False
-    for row in value:
-        if not isinstance(row, Mapping):
-            changed = True
-            continue
-        unknown = {str(key) for key in row} - {"timeline", "list"}
-        changed = changed or bool(unknown)
-        timeline = row.get("timeline")
-        events = row.get("list")
-        if not _bounded_json_scalar(timeline) or not isinstance(events, (list, tuple)):
-            changed = True
-            continue
-        safe_events: list[dict[str, Any]] = []
-        if len(events) > 10_000:
-            changed = True
-            events = events[:10_000]
-        for event in events:
-            if not isinstance(event, Mapping):
-                changed = True
-                continue
-            allowed_fields = {"事件名称", "事件时间"} | requested_fields
-            safe_event: dict[str, Any] = {}
-            for key in allowed_fields:
-                if key not in event:
-                    continue
-                normalized = _bounded_json_contract_value(event[key])
-                if normalized is _ABSENT:
-                    changed = True
-                    continue
-                safe_event[key] = normalized
-            if len(safe_event) != sum(key in event for key in allowed_fields):
-                changed = True
-            safe_events.append(safe_event)
-        result.append({"timeline": timeline, "list": safe_events})
-    return result, changed
-
-
-def _project_user_event_profile(
-    value: Any, allowed_fields: set[str]
-) -> tuple[Any, bool]:
-    if not isinstance(value, Mapping) or len(value) > 10_000:
-        return _ABSENT, True
-    result: dict[str, Any] = {}
-    changed = False
-    for key, item in value.items():
-        name = str(key)
-        if name not in allowed_fields:
-            continue
-        normalized = _bounded_json_contract_value(item)
-        if normalized is _ABSENT:
-            changed = True
-            continue
-        result[name] = normalized
-    return result, changed
-
-
-def _project_user_event_records(
-    value: Any, allowed_fields: set[str]
-) -> tuple[Any, bool]:
-    if not isinstance(value, (list, tuple)) or len(value) > 10_000:
-        return _ABSENT, True
-    result: list[dict[str, Any]] = []
-    changed = False
-    for row in value:
-        if not isinstance(row, Mapping):
-            changed = True
-            continue
-        projected, row_changed = _project_user_event_profile(row, allowed_fields)
-        if projected is _ABSENT:
-            changed = True
-            continue
-        result.append(projected)
-        changed = changed or row_changed
-    return result, changed
-
-
-def _project_user_event_summary(value: Any) -> tuple[Any, bool]:
-    if not isinstance(value, (list, tuple)) or len(value) > 10_000:
-        return _ABSENT, True
-    result: list[dict[str, Any]] = []
-    changed = False
-    for row in value:
-        if not isinstance(row, Mapping):
-            changed = True
-            continue
-        changed = changed or bool({str(key) for key in row} - {"timeline", "cnt", "list"})
-        timeline = row.get("timeline")
-        count = row.get("cnt")
-        items = row.get("list")
-        if (
-            not _bounded_json_scalar(timeline)
-            or not _is_finite_number(count)
-            or not isinstance(items, (list, tuple))
-        ):
-            changed = True
-            continue
-        safe_items: list[dict[str, Any]] = []
-        if len(items) > 10_000:
-            changed = True
-            items = items[:10_000]
-        for item in items:
-            if not isinstance(item, Mapping):
-                changed = True
-                continue
-            changed = changed or bool({str(key) for key in item} - {"event", "cnt"})
-            event = item.get("event")
-            event_count = item.get("cnt")
-            if not _bounded_json_scalar(event) or not _is_finite_number(event_count):
-                changed = True
-                continue
-            safe_items.append({"event": event, "cnt": event_count})
-        result.append({"timeline": timeline, "cnt": count, "list": safe_items})
-    return result, changed
-
-
-def _bounded_json_scalar(value: Any) -> bool:
-    return _is_json_scalar(value) and (
-        not isinstance(value, str) or len(value) <= 4_096
-    )
-
-
-def _bounded_json_contract_value(value: Any, *, depth: int = 0) -> Any:
-    if depth > 6:
-        return _ABSENT
-    if _bounded_json_scalar(value):
-        return value
-    if isinstance(value, (list, tuple)):
-        if len(value) > 10_000:
-            return _ABSENT
-        result: list[Any] = []
-        for item in value:
-            normalized = _bounded_json_contract_value(item, depth=depth + 1)
-            if normalized is _ABSENT:
-                return _ABSENT
-            result.append(normalized)
-        return result
-    if isinstance(value, Mapping):
-        if len(value) > 1_000:
-            return _ABSENT
-        blocked = {
-            "authorization",
-            "access_token",
-            "token",
-            "cookie",
-            "password",
-            "secret",
-        }
-        result: dict[str, Any] = {}
-        for key, item in value.items():
-            name = str(key)
-            if len(name) > 256 or _sensitive_key(
-                name,
-                blocked,
-                allow_contracted_identifiers=True,
-            ):
-                return _ABSENT
-            normalized = _bounded_json_contract_value(item, depth=depth + 1)
-            if normalized is _ABSENT:
-                return _ABSENT
-            result[name] = normalized
-        return result
-    return _ABSENT
+    warnings.extend(nested_warnings)
+    return projected, tuple(warnings), max(drift, nested_drift)
 
 
 def _project_analysis_aggregate(
     operation: OperationSpec,
     data: Any,
     values: Mapping[str, Any],
-) -> tuple[dict[str, Any], tuple[str, ...], bool]:
+    recorder: ResponseDriftRecorder,
+) -> tuple[dict[str, Any], tuple[str, ...], ProjectionDrift]:
     """Project dynamic aggregate trees using request-derived response keys."""
 
     if not isinstance(data, Mapping):
         return (
             {},
             ("analysis response data shape changed; value was omitted",),
-            True,
+            ProjectionDrift.BREAKING,
         )
     allowed = set(operation.response_projection.data_keys)
     unknown = (
@@ -575,6 +349,7 @@ def _project_analysis_aggregate(
         - allowed
         - set(operation.response_projection.known_omitted_data_keys)
     )
+    recorder.add_unknown_fields(("data",), data, unknown)
     blocked = {key.casefold() for key in operation.privacy_policy.redact_fields}
     allow_contracted_identifiers = (
         operation.privacy_policy.classification == "user_level"
@@ -590,6 +365,9 @@ def _project_analysis_aggregate(
     )
     projected: dict[str, Any] = {}
     dropped = int(funnel_mode_shape_changed(operation, data, values))
+    drift = ProjectionDrift.BREAKING if dropped else (
+        ProjectionDrift.ADDITIVE if unknown else ProjectionDrift.NONE
+    )
     for key in operation.response_projection.data_keys:
         if key not in data:
             continue
@@ -600,7 +378,7 @@ def _project_analysis_aggregate(
         ):
             projected[key] = ""
             continue
-        normalized, changed = _project_analysis_value(
+        normalized, value_drift = _project_analysis_value(
             data[key],
             blocked=blocked,
             response_keys=response_keys,
@@ -608,12 +386,14 @@ def _project_analysis_aggregate(
             path=(key,),
             depth=0,
             allow_contracted_identifiers=allow_contracted_identifiers,
+            recorder=recorder,
         )
         if normalized is _ABSENT:
             dropped += 1
             continue
         projected[key] = normalized
-        dropped += int(changed)
+        dropped += int(value_drift is ProjectionDrift.BREAKING)
+        drift = max(drift, value_drift)
     warnings: list[str] = []
     if unknown:
         warnings.append(
@@ -623,7 +403,7 @@ def _project_analysis_aggregate(
         warnings.append(
             f"unsafe or unbounded analysis response values were omitted (count={dropped})"
         )
-    return projected, tuple(warnings), bool(unknown or dropped)
+    return projected, tuple(warnings), drift
 
 
 def _project_analysis_value(
@@ -635,83 +415,125 @@ def _project_analysis_value(
     path: tuple[str, ...],
     depth: int,
     allow_contracted_identifiers: bool,
-) -> tuple[Any, bool]:
+    recorder: ResponseDriftRecorder,
+) -> tuple[Any, ProjectionDrift]:
     if depth > 10:
-        return _ABSENT, True
+        return _ABSENT, ProjectionDrift.BREAKING
     if _is_json_scalar(value):
-        if (
-            _is_finite_number(value)
-            and not allow_contracted_identifiers
-            and not _analysis_numeric_path_allowed(path, numeric_paths)
-        ):
-            return _ABSENT, True
-        if isinstance(value, str) and (
-            len(value) > 4_096
-            or (
-                not allow_contracted_identifiers
-                and (
-                    _sensitive_analysis_scalar(value, blocked)
-                    or not _allowed_analysis_response_scalar(value, response_keys)
-                )
-            )
-        ):
-            return _ABSENT, True
-        return value, False
+        normalized = _project_analysis_scalar(
+            value, blocked, response_keys, numeric_paths, path,
+            allow_contracted_identifiers,
+        )
+        drift = (
+            ProjectionDrift.BREAKING
+            if normalized is _ABSENT
+            else ProjectionDrift.NONE
+        )
+        return normalized, drift
+    arguments = (
+        blocked, response_keys, numeric_paths, path, depth,
+        allow_contracted_identifiers, recorder,
+    )
     if isinstance(value, Mapping):
-        if len(value) > 10_000:
-            return _ABSENT, True
-        result: dict[str, Any] = {}
-        changed = False
-        for key, item in value.items():
-            name = str(key)
-            if (
-                len(name) > 256
-                or _sensitive_key(
-                    name,
-                    blocked,
-                    allow_contracted_identifiers=allow_contracted_identifiers,
-                )
-                or not _allowed_analysis_response_key(name, response_keys)
-            ):
-                changed = True
-                continue
-            normalized, nested_changed = _project_analysis_value(
-                item,
-                blocked=blocked,
-                response_keys=response_keys,
-                numeric_paths=numeric_paths,
-                path=(*path, name),
-                depth=depth + 1,
-                allow_contracted_identifiers=allow_contracted_identifiers,
-            )
-            if normalized is _ABSENT:
-                changed = True
-                continue
-            result[name] = normalized
-            changed = changed or nested_changed
-        return result, changed
+        return _project_analysis_mapping(value, *arguments)
     if isinstance(value, (list, tuple)):
-        if len(value) > 100_000:
-            return _ABSENT, True
-        result: list[Any] = []
-        changed = False
-        for item in value:
-            normalized, nested_changed = _project_analysis_value(
-                item,
-                blocked=blocked,
-                response_keys=response_keys,
-                numeric_paths=numeric_paths,
-                path=(*path, "[]"),
-                depth=depth + 1,
-                allow_contracted_identifiers=allow_contracted_identifiers,
+        return _project_analysis_sequence(value, *arguments)
+    return _ABSENT, ProjectionDrift.BREAKING
+
+
+def _project_analysis_scalar(
+    value: Any,
+    blocked: set[str],
+    response_keys: set[str],
+    numeric_paths: tuple[tuple[str, ...], ...],
+    path: tuple[str, ...],
+    allow_identifiers: bool,
+) -> Any:
+    if (
+        _is_finite_number(value)
+        and not allow_identifiers
+        and not _analysis_numeric_path_allowed(path, numeric_paths)
+    ):
+        return _ABSENT
+    if isinstance(value, str) and (
+        len(value) > 4_096
+        or not allow_identifiers
+        and (
+            _sensitive_analysis_scalar(value, blocked)
+            or not _allowed_analysis_response_scalar(value, response_keys)
+        )
+    ):
+        return _ABSENT
+    return value
+
+
+def _project_analysis_mapping(
+    value: Mapping[Any, Any],
+    blocked: set[str],
+    response_keys: set[str],
+    numeric_paths: tuple[tuple[str, ...], ...],
+    path: tuple[str, ...],
+    depth: int,
+    allow_identifiers: bool,
+    recorder: ResponseDriftRecorder,
+) -> tuple[Any, ProjectionDrift]:
+    if len(value) > 10_000:
+        return _ABSENT, ProjectionDrift.BREAKING
+    result: dict[str, Any] = {}
+    drift = ProjectionDrift.NONE
+    for key, item in value.items():
+        name = str(key)
+        if (
+            len(name) > 256
+            or _sensitive_key(
+                name, blocked,
+                allow_contracted_identifiers=allow_identifiers,
             )
-            if normalized is _ABSENT:
-                changed = True
-                continue
+            or not _allowed_analysis_response_key(name, response_keys)
+        ):
+            audit_path = ("data", *("*" if part == "[]" else part for part in path))
+            recorder.add_unknown_fields(audit_path, value, {name})
+            drift = max(drift, ProjectionDrift.ADDITIVE)
+            continue
+        normalized, nested_drift = _project_analysis_value(
+            item, blocked=blocked, response_keys=response_keys,
+            numeric_paths=numeric_paths, path=(*path, name), depth=depth + 1,
+            allow_contracted_identifiers=allow_identifiers, recorder=recorder,
+        )
+        if normalized is _ABSENT:
+            drift = ProjectionDrift.BREAKING
+        else:
+            result[name] = normalized
+            drift = max(drift, nested_drift)
+    return result, drift
+
+
+def _project_analysis_sequence(
+    value: tuple[Any, ...] | list[Any],
+    blocked: set[str],
+    response_keys: set[str],
+    numeric_paths: tuple[tuple[str, ...], ...],
+    path: tuple[str, ...],
+    depth: int,
+    allow_identifiers: bool,
+    recorder: ResponseDriftRecorder,
+) -> tuple[Any, ProjectionDrift]:
+    if len(value) > 100_000:
+        return _ABSENT, ProjectionDrift.BREAKING
+    result: list[Any] = []
+    drift = ProjectionDrift.NONE
+    for item in value:
+        normalized, nested_drift = _project_analysis_value(
+            item, blocked=blocked, response_keys=response_keys,
+            numeric_paths=numeric_paths, path=(*path, "[]"), depth=depth + 1,
+            allow_contracted_identifiers=allow_identifiers, recorder=recorder,
+        )
+        if normalized is _ABSENT:
+            drift = ProjectionDrift.BREAKING
+        else:
             result.append(normalized)
-            changed = changed or nested_changed
-        return result, changed
-    return _ABSENT, True
+            drift = max(drift, nested_drift)
+    return result, drift
 
 
 def _analysis_numeric_path_allowed(
@@ -829,18 +651,18 @@ def _project_data_containers(
     operation: OperationSpec,
     projected: Any,
     values: Mapping[str, Any],
+    recorder: ResponseDriftRecorder,
 ) -> tuple[Any, tuple[str, ...], ProjectionDrift]:
     if not isinstance(projected, Mapping):
         return projected, (), ProjectionDrift.NONE
     copied = dict(projected)
     warnings: list[str] = []
     drift = ProjectionDrift.NONE
-    copied, path_warnings, path_changed, contracted_roots = _project_data_path_items(
-        operation, copied
+    copied, path_warnings, path_drift, contracted_roots = _project_data_path_items(
+        operation, copied, recorder
     )
     warnings.extend(path_warnings)
-    if path_changed:
-        drift = ProjectionDrift.BREAKING
+    drift = max(drift, path_drift)
     primary_list = operation.pagination.list_path.rsplit(".", 1)[-1]
     if not primary_list and "list" in operation.response_projection.data_keys:
         primary_list = "list"
@@ -861,30 +683,12 @@ def _project_data_containers(
         if name == primary_list and isinstance(value, list):
             continue
         if name == page_info_name and isinstance(value, Mapping):
-            allowed_page_keys = {
-                operation.pagination.page_field,
-                operation.pagination.page_size_field,
-                operation.pagination.total_page_field,
-                "total",
-                "total_number",
-            }
-            unknown = {str(key) for key in value} - allowed_page_keys
-            invalid_values = {
-                str(key)
-                for key, item in value.items()
-                if str(key) in allowed_page_keys and not _is_json_scalar(item)
-            }
-            copied[name] = {
-                str(key): item
-                for key, item in value.items()
-                if str(key) in allowed_page_keys and _is_json_scalar(item)
-            }
-            if unknown or invalid_values:
-                warnings.append(
-                    "unregistered or non-scalar page_info fields were omitted "
-                    f"(count={len(unknown | invalid_values)})"
-                )
-                drift = max(drift, ProjectionDrift.BREAKING if invalid_values else ProjectionDrift.ADDITIVE)
+            copied[name], warning, item_drift = _project_page_info(
+                operation, name, value, recorder
+            )
+            if warning:
+                warnings.append(warning)
+            drift = max(drift, item_drift)
             continue
         if _is_json_scalar(value):
             continue
@@ -895,9 +699,10 @@ def _project_data_containers(
             continue
         recursive_allowed = operation.response_projection.recursive_data_item_keys.get(name)
         if recursive_allowed is not None:
-            recursive, recursive_unknown, contracted = _project_recursive_collection(
-                value,
-                recursive_allowed,
+            recursive, recursive_unknown, recursive_breaking, contracted = (
+                _project_recursive_collection(
+                    value, recursive_allowed, recorder, ("data", name)
+                )
             )
             if not contracted:
                 copied.pop(name, None)
@@ -911,6 +716,8 @@ def _project_data_containers(
                         f"(count={len(recursive_unknown)})"
                     )
                     drift = max(drift, ProjectionDrift.ADDITIVE)
+                if recursive_breaking:
+                    drift = ProjectionDrift.BREAKING
             continue
         static_allowed = operation.response_projection.data_item_keys.get(name)
         dynamic_inputs = operation.response_projection.data_dynamic_item_fields.get(name, ())
@@ -921,12 +728,15 @@ def _project_data_containers(
             if static_allowed is not None or dynamic_inputs
             else None
         )
-        nested, unknown, contracted = _project_nested_item_value(
+        nested, unknown, nested_breaking, contracted = _project_nested_item_value(
             value,
             allowed,
             operation.response_projection.nested_item_keys,
             operation.response_projection.known_omitted_nested_item_keys,
             operation.response_projection.opaque_json_item_keys,
+            recorder,
+            ("data", name),
+            operation.response_projection.known_omitted_data_item_keys.get(name, ()),
         )
         unknown -= set(
             operation.response_projection.known_omitted_data_item_keys.get(name, ())
@@ -942,74 +752,121 @@ def _project_data_containers(
                 f"unregistered response data item keys were omitted (count={len(unknown)})"
             )
             drift = max(drift, ProjectionDrift.ADDITIVE)
+        if nested_breaking:
+            drift = ProjectionDrift.BREAKING
     return copied, tuple(warnings), drift
+
+
+def _project_page_info(
+    operation: OperationSpec,
+    name: str,
+    value: Mapping[Any, Any],
+    recorder: ResponseDriftRecorder,
+) -> tuple[dict[str, Any], str | None, ProjectionDrift]:
+    allowed = {
+        operation.pagination.page_field,
+        operation.pagination.page_size_field,
+        operation.pagination.total_page_field,
+        "total",
+        "total_number",
+    }
+    unknown = {str(key) for key in value} - allowed
+    invalid = {
+        str(key) for key, item in value.items()
+        if str(key) in allowed and not _is_json_scalar(item)
+    }
+    projected = {
+        str(key): item for key, item in value.items()
+        if str(key) in allowed and _is_json_scalar(item)
+    }
+    if not unknown and not invalid:
+        return projected, None, ProjectionDrift.NONE
+    recorder.add_unknown_fields(("data", name), value, unknown)
+    warning = (
+        "unregistered or non-scalar page_info fields were omitted "
+        f"(count={len(unknown | invalid)})"
+    )
+    drift = ProjectionDrift.BREAKING if invalid else ProjectionDrift.ADDITIVE
+    return projected, warning, drift
 
 
 def _project_recursive_collection(
     value: Any,
     allowed_keys: tuple[str, ...],
-) -> tuple[Any, set[str], bool]:
+    recorder: ResponseDriftRecorder,
+    path: tuple[str, ...],
+) -> tuple[Any, set[str], bool, bool]:
     allowed = set(allowed_keys)
 
-    def project_row(row: Mapping[Any, Any]) -> tuple[dict[str, Any], set[str]]:
+    def project_row(
+        row: Mapping[Any, Any], row_path: tuple[str, ...]
+    ) -> tuple[dict[str, Any], set[str], bool]:
         row_keys = {str(key) for key in row}
         unknown = row_keys - allowed
+        recorder.add_unknown_fields(row_path, row, unknown)
         result: dict[str, Any] = {}
+        breaking = False
         for key, item in row.items():
             name = str(key)
             if name not in allowed:
                 continue
             if name == "children":
-                nested, nested_unknown, contracted = _project_recursive_collection(
-                    item, allowed_keys
+                nested, nested_unknown, nested_breaking, contracted = (
+                    _project_recursive_collection(
+                        item, allowed_keys, recorder, (*row_path, name)
+                    )
                 )
                 if contracted:
                     result[name] = nested
                     unknown.update(nested_unknown)
+                    breaking = breaking or nested_breaking
                 else:
-                    unknown.add(name)
+                    breaking = True
             elif isinstance(item, (Mapping, list, tuple)) or not _is_json_scalar(item):
-                unknown.add(name)
+                breaking = True
             else:
                 result[name] = item
-        return result, unknown
+        return result, unknown, breaking
 
     if isinstance(value, Mapping):
-        projected, unknown = project_row(value)
-        return projected, unknown, True
+        projected, unknown, breaking = project_row(value, path)
+        return projected, unknown, breaking, True
     if isinstance(value, (list, tuple)):
         if any(not isinstance(item, Mapping) for item in value):
-            return None, set(), False
+            return None, set(), True, False
         result: list[dict[str, Any]] = []
         unknown: set[str] = set()
+        breaking = False
         for item in value:
-            projected, item_unknown = project_row(item)
+            projected, item_unknown, item_breaking = project_row(item, (*path, "*"))
             result.append(projected)
             unknown.update(item_unknown)
-        return result, unknown, True
-    return None, set(), False
+            breaking = breaking or item_breaking
+        return result, unknown, breaking, True
+    return None, set(), True, False
 
 
 def _project_data_path_items(
     operation: OperationSpec,
     projected: Mapping[str, Any],
-) -> tuple[dict[str, Any], tuple[str, ...], bool, set[str]]:
+    recorder: ResponseDriftRecorder,
+) -> tuple[dict[str, Any], tuple[str, ...], ProjectionDrift, set[str]]:
     rules_by_root: dict[str, dict[str, tuple[str, ...]]] = {}
     for path, keys in operation.response_projection.data_path_item_keys.items():
         root, child = path.split(".", 1)
         rules_by_root.setdefault(root, {})[child] = keys
     if not rules_by_root:
-        return dict(projected), (), False, set()
+        return dict(projected), (), ProjectionDrift.NONE, set()
 
     copied = dict(projected)
     warnings: list[str] = []
-    changed = False
+    drift = ProjectionDrift.NONE
     for root, child_rules in rules_by_root.items():
         value = projected.get(root)
         if not isinstance(value, Mapping):
             copied.pop(root, None)
             warnings.append("contracted nested response data is absent or invalid")
-            changed = True
+            drift = ProjectionDrift.BREAKING
             continue
         safe_root: dict[str, Any] = {}
         unknown_children = (
@@ -1022,23 +879,27 @@ def _project_data_path_items(
             )
         )
         if unknown_children:
+            recorder.add_unknown_fields(("data", root), value, unknown_children)
             warnings.append(
                 f"unregistered nested response paths were omitted (count={len(unknown_children)})"
             )
-            changed = True
+            drift = max(drift, ProjectionDrift.ADDITIVE)
         for child, allowed in child_rules.items():
             if child not in value:
                 continue
-            nested, unknown, contracted = _project_nested_item_value(
+            nested, unknown, nested_breaking, contracted = _project_nested_item_value(
                 value[child],
                 allowed,
                 operation.response_projection.nested_item_keys,
                 operation.response_projection.known_omitted_nested_item_keys,
                 operation.response_projection.opaque_json_item_keys,
+                recorder,
+                ("data", root, child),
+                operation.response_projection.known_omitted_data_item_keys.get(root, ()),
             )
             if not contracted:
                 warnings.append("invalid contracted nested response collection was omitted")
-                changed = True
+                drift = ProjectionDrift.BREAKING
                 continue
             safe_root[child] = nested
             unknown -= set(
@@ -1050,15 +911,18 @@ def _project_data_path_items(
                 warnings.append(
                     f"unregistered nested response item keys were omitted (count={len(unknown)})"
                 )
-                changed = True
+                drift = max(drift, ProjectionDrift.ADDITIVE)
+            if nested_breaking:
+                drift = ProjectionDrift.BREAKING
         copied[root] = safe_root
-    return copied, tuple(warnings), changed, set(rules_by_root)
+    return copied, tuple(warnings), drift, set(rules_by_root)
 
 
 def _project_list_rows(
     operation: OperationSpec,
     projected: Any,
     values: Mapping[str, Any],
+    recorder: ResponseDriftRecorder,
 ) -> tuple[Any, tuple[str, ...], ProjectionDrift]:
     allowed = projected_keys(
         operation.response_projection.item_keys,
@@ -1084,6 +948,12 @@ def _project_list_rows(
     uncontracted_containers = 0
     invalid_scalar_items = 0
     unknown_nested_keys: set[str] = set()
+    nested_breaking_items = 0
+    row_path = (
+        ("data", field_name, "*")
+        if isinstance(projected, Mapping)
+        else ("data", "*")
+    )
     for row in rows:
         if not isinstance(row, Mapping):
             # List contracts are row/object contracts.  Scalars and nested arrays
@@ -1091,49 +961,17 @@ def _project_list_rows(
             non_object_items += 1
             continue
         row_keys = {str(key) for key in row}
-        unknown.update(row_keys - allowed - known_omitted)
-        projected_row: dict[str, Any] = {}
-        for key, value in row.items():
-            name = str(key)
-            if name not in allowed:
-                continue
-            if isinstance(value, (Mapping, list, tuple)):
-                if name in operation.response_projection.opaque_json_item_keys:
-                    opaque_json, valid = _copy_json_value(value)
-                    if valid:
-                        projected_row[name] = opaque_json
-                    else:
-                        uncontracted_containers += 1
-                    continue
-                scalar_item_type = operation.response_projection.scalar_list_item_types.get(name)
-                if scalar_item_type is not None:
-                    scalar_list, valid = _project_scalar_list(value, scalar_item_type)
-                    if valid:
-                        projected_row[name] = scalar_list
-                    else:
-                        uncontracted_containers += 1
-                    continue
-                nested, nested_unknown, contracted = _project_nested_item_value(
-                    value,
-                    operation.response_projection.nested_item_keys.get(name),
-                    operation.response_projection.nested_item_keys,
-                    operation.response_projection.known_omitted_nested_item_keys,
-                    operation.response_projection.opaque_json_item_keys,
-                )
-                if not contracted:
-                    uncontracted_containers += 1
-                    continue
-                projected_row[name] = nested
-                nested_unknown -= set(
-                    operation.response_projection.known_omitted_nested_item_keys.get(
-                        name, ()
-                    )
-                )
-                unknown_nested_keys.update(nested_unknown)
-            elif _is_json_scalar(value):
-                projected_row[name] = value
-            else:
-                invalid_scalar_items += 1
+        row_unknown = row_keys - allowed - known_omitted
+        unknown.update(row_unknown)
+        recorder.add_unknown_fields(row_path, row, row_unknown)
+        projected_row, row_stats = _project_list_row(
+            operation, row, allowed, recorder, row_path
+        )
+        row_nested, row_containers, row_scalars, row_breaking = row_stats
+        unknown_nested_keys.update(row_nested)
+        uncontracted_containers += row_containers
+        invalid_scalar_items += row_scalars
+        nested_breaking_items += row_breaking
         filtered.append(projected_row)
     warnings: list[str] = []
     if not allowed:
@@ -1156,11 +994,16 @@ def _project_list_rows(
             "unregistered nested item keys were omitted "
             f"(count={len(unknown_nested_keys)})"
         )
+    if nested_breaking_items:
+        warnings.append(
+            "invalid contracted nested item values were omitted "
+            f"(count={nested_breaking_items})"
+        )
     breaking = bool(
         non_object_items
         or uncontracted_containers
         or invalid_scalar_items
-        or unknown_nested_keys
+        or nested_breaking_items
         or (rows and not allowed)
     )
     drift = ProjectionDrift.NONE
@@ -1173,6 +1016,56 @@ def _project_list_rows(
         copied[field_name] = filtered
         return copied, tuple(warnings), drift
     return filtered, tuple(warnings), drift
+
+
+def _project_list_row(
+    operation: OperationSpec,
+    row: Mapping[Any, Any],
+    allowed: set[str],
+    recorder: ResponseDriftRecorder,
+    row_path: tuple[str, ...],
+) -> tuple[dict[str, Any], tuple[set[str], int, int, int]]:
+    projected: dict[str, Any] = {}
+    unknown: set[str] = set()
+    containers = invalid_scalars = breaking = 0
+    projection = operation.response_projection
+    for key, value in row.items():
+        name = str(key)
+        if name not in allowed:
+            continue
+        if not isinstance(value, (Mapping, list, tuple)):
+            if _is_json_scalar(value):
+                projected[name] = value
+            else:
+                invalid_scalars += 1
+            continue
+        if name in projection.opaque_json_item_keys:
+            normalized, valid = _copy_json_value(value)
+        elif name in projection.scalar_list_item_types:
+            normalized, valid = _project_scalar_list(
+                value, projection.scalar_list_item_types[name]
+            )
+        else:
+            normalized, nested_unknown, nested_breaking, valid = (
+                _project_nested_item_value(
+                    value, projection.nested_item_keys.get(name),
+                    projection.nested_item_keys,
+                    projection.known_omitted_nested_item_keys,
+                    projection.opaque_json_item_keys, recorder,
+                    (*row_path, name),
+                    projection.known_omitted_nested_item_keys.get(name, ()),
+                )
+            )
+            nested_unknown -= set(
+                projection.known_omitted_nested_item_keys.get(name, ())
+            )
+            unknown.update(nested_unknown)
+            breaking += int(nested_breaking)
+        if valid:
+            projected[name] = normalized
+        else:
+            containers += 1
+    return projected, (unknown, containers, invalid_scalars, breaking)
 
 
 def _project_scalar_list(value: Any, item_type: str) -> tuple[list[Any] | None, bool]:
@@ -1221,7 +1114,10 @@ def _project_nested_item_value(
     nested_item_keys: Mapping[str, tuple[str, ...]] | None = None,
     known_omitted_nested_item_keys: Mapping[str, tuple[str, ...]] | None = None,
     opaque_json_item_keys: tuple[str, ...] | None = None,
-) -> tuple[Any, set[str], bool]:
+    recorder: ResponseDriftRecorder | None = None,
+    path: tuple[str, ...] = (),
+    known_omitted: Sequence[str] = (),
+) -> tuple[Any, set[str], bool, bool]:
     """Project one contracted nested object or list of objects.
 
     Scalar lists are intentionally unsupported: the manifest must first gain a
@@ -1229,15 +1125,17 @@ def _project_nested_item_value(
     """
 
     if allowed_keys is None:
-        return None, set(), False
-    allowed = set(allowed_keys)
-    nested_contracts = nested_item_keys or {}
-    known_omitted_contracts = known_omitted_nested_item_keys or {}
-    opaque_contracts = set(opaque_json_item_keys or ())
+        return None, set(), False, False
+    allowed = set(allowed_keys); nested_contracts = nested_item_keys or {}
+    known_omitted_contracts = known_omitted_nested_item_keys or {}; opaque_contracts = set(opaque_json_item_keys or ())
 
-    def project_mapping(item: Mapping[Any, Any]) -> tuple[dict[str, Any], set[str]]:
-        unknown = {str(key) for key in item} - allowed
-        result: dict[str, Any] = {}
+    def project_mapping(
+        item: Mapping[Any, Any], item_path: tuple[str, ...]
+    ) -> tuple[dict[str, Any], set[str], bool]:
+        unknown = {str(key) for key in item} - allowed - set(known_omitted)
+        if recorder is not None:
+            recorder.add_unknown_fields(item_path, item, unknown)
+        result: dict[str, Any] = {}; breaking = False
         for key, nested_value in item.items():
             name = str(key)
             if name not in allowed:
@@ -1248,45 +1146,53 @@ def _project_nested_item_value(
                     if valid:
                         result[name] = opaque_json
                     else:
-                        unknown.add(name)
+                        breaking = True
                     continue
                 nested_allowed = nested_contracts.get(name)
-                nested, nested_unknown, contracted = _project_nested_item_value(
+                nested, nested_unknown, nested_breaking, contracted = _project_nested_item_value(
                     nested_value,
                     nested_allowed,
                     nested_contracts,
                     known_omitted_contracts,
                     opaque_json_item_keys,
+                    recorder,
+                    (*item_path, name),
+                    known_omitted_contracts.get(name, ()),
                 )
                 if not contracted:
-                    unknown.add(name)
+                    breaking = True
                     continue
                 nested_unknown -= set(known_omitted_contracts.get(name, ()))
                 unknown.update(nested_unknown)
+                breaking = breaking or nested_breaking
                 result[name] = nested
                 continue
             if not _is_json_scalar(nested_value):
-                unknown.add(name)
+                breaking = True
                 continue
             result[name] = nested_value
-        return result, unknown
+        return result, unknown, breaking
 
     if isinstance(value, Mapping):
-        projected, unknown = project_mapping(value)
-        return projected, unknown, True
+        projected, unknown, breaking = project_mapping(value, path)
+        return projected, unknown, breaking, True
     if isinstance(value, (list, tuple)):
         if not value:
-            return [], set(), True
+            return [], set(), False, True
         projected_items: list[dict[str, Any]] = []
         unknown: set[str] = set()
+        breaking = False
         for item in value:
             if not isinstance(item, Mapping):
-                return None, set(), False
-            projected, item_unknown = project_mapping(item)
+                return None, set(), True, False
+            projected, item_unknown, item_breaking = project_mapping(
+                item, (*path, "*")
+            )
             projected_items.append(projected)
             unknown.update(item_unknown)
-        return projected_items, unknown, True
-    return None, set(), False
+            breaking = breaking or item_breaking
+        return projected_items, unknown, breaking, True
+    return None, set(), True, False
 
 
 def _is_finite_number(value: Any) -> bool:

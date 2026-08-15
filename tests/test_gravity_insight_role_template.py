@@ -87,7 +87,8 @@ class RoleTemplateOperationTests(unittest.TestCase):
 
         result = client.read(OPERATION_ID, {})
 
-        self.assertEqual("contract_changed", result["status"])
+        self.assertEqual("success", result["status"])
+        self.assertIn("response_drift", result["result_audit"])
         method, path, kwargs = transport.calls[0]
         self.assertEqual("GET", method)
         self.assertEqual(TARGET_PATH, path)

@@ -17,6 +17,7 @@ from .receipt_retention import _process_is_alive, _receipt_process_id
 from .result_audit import STORED, WRITE_FAILED, receipt_reference
 from .result_output import write_rendered_result
 from .result_source import LOCAL_AUDIT, result_source
+from .response_drift import normalize_response_drift
 
 
 QUERY_SCHEMA_VERSION = "gravity.http-receipt-query.v1"
@@ -315,7 +316,10 @@ def _read_entry(entry: os.DirEntry[str]) -> tuple[_StoredReceipt | None, str, st
 
 
 def _validated_receipt(value: object) -> dict[str, Any]:
-    if not isinstance(value, Mapping) or set(value) != _RECEIPT_FIELDS:
+    if not isinstance(value, Mapping) or set(value) not in {
+        _RECEIPT_FIELDS,
+        _RECEIPT_FIELDS | {"response_drift"},
+    }:
         raise ValueError("HTTP receipt fields changed")
     _validate_receipt_identity(value)
     completed_at = value.get("completed_at")
@@ -323,7 +327,10 @@ def _validated_receipt(value: object) -> dict[str, Any]:
         raise ValueError("HTTP receipt timestamp is invalid")
     _validate_receipt_route(value)
     _validate_receipt_attempt(value)
-    return dict(value)
+    selected = dict(value)
+    if value.get("response_drift") is not None:
+        selected["response_drift"] = normalize_response_drift(value["response_drift"])
+    return selected
 
 
 def _validate_receipt_identity(value: Mapping[str, Any]) -> None:
