@@ -629,3 +629,24 @@ confirmation，闸门判据未改。probe receipt 现在把通过闸门后确实
 全部资产 host/path prefix 与重定向集合、图片/视频 MIME 和扩展名集合、最大尺寸、URL 过期规则，
 以及四种不可用状态的判别。取得这些证据后，先登记二进制 effect 合同与离线负向测试，再做一个最小、
 非空、串行 probe；不得通过任意 URL 参数或动态学习 host 来补证据。
+
+## Issue 16 Windows CLI UTF-8 裁决（2026-08-15）
+
+**判定：缺陷位于通用 CLI 出站层与通用异常分类，不在 Analysis values operation。** Windows
+原生 Python 在未启用 UTF-8 mode 时让文本 stdout 继承 GBK；CLI 又以 `ensure_ascii=False` 打印 JSON，
+所以合法的非 GBK 标量在安全 envelope 写出阶段触发 `UnicodeEncodeError`。该异常继承 `ValueError`，
+旧的 fallback 因而生成 `INPUT_INVALID/caller` 和退出码 2。
+
+公共 `gravity`、`gravity-insight`、`gravity-sql` 以及 Census 入口现先把可重配置的 stdout/stderr 固定为
+strict UTF-8；显式文件输出仍沿用既有 UTF-8 原子发布。`UnicodeEncodeError` 在共享 classifier 中显式
+映射为 `LOCAL_IO_ERROR/local`、退出码 4，next action 改为检查本地 console/filesystem I/O，不再要求
+调用方修改 operation 输入。审计同时修正三处明确的硬编码误类：Census 的 `OSError/RuntimeError`、
+SQL Evidence preflight 的 `OSError`、SQL verify 的 `OSError` 均改为 local/4；其他混合异常因本轮证据
+不能唯一确定类别而保持原状。
+
+回归测试在子进程中强制 `PYTHONIOENCODING=gbk` 且移除 `PYTHONUTF8`，注入 `Łódź` 后按原生 stdout
+字节要求 UTF-8 解码、值原样保留且退出 0；同一测试锁定直接 `UnicodeEncodeError` 的 local/4 映射，
+因此不会因测试父进程已是 UTF-8 而假绿。生产读取共 2 次：第一次同形状请求成功为空；第二次成功返回
+200 个普通地区枚举，其中 2 个不能用 GBK 编码。两次都未重试、未翻页，值只在内存中计数，未写入
+Evidence 或文档。operation、请求合同、响应投影、CLI 参数与 envelope shape 均未改变，stable/read
+能力无损失。

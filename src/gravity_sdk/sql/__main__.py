@@ -368,7 +368,10 @@ def _run_preflight_command(args: argparse.Namespace) -> int:
             date.fromisoformat(args.date) if args.date else None,
             workspace=load_workspace(),
         )
-    except (EvidenceFormatError, OSError, ValueError) as exc:
+    except (OSError, UnicodeEncodeError) as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 4
+    except (EvidenceFormatError, ValueError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
     if args.json:
@@ -398,7 +401,10 @@ def _run_verify_command(args: argparse.Namespace) -> int:
             print(f"PUBLISHED {EVIDENCE_PATH}", file=sys.stderr)
         print(json.dumps(evidence, ensure_ascii=False, indent=2, sort_keys=True))
         return 0
-    except (GravityAuthError, EvidenceFormatError, OSError, RuntimeError, ValueError) as exc:
+    except (OSError, UnicodeEncodeError) as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 4
+    except (GravityAuthError, EvidenceFormatError, RuntimeError, ValueError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
 
@@ -474,6 +480,9 @@ def _run_query_command(
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    from ..cli_stdio import configure_utf8_stdio
+
+    configure_utf8_stdio()
     configured_products, workspace_error = _configured_products()
     parser = build_parser(configured_products)
     args = parser.parse_args(argv)

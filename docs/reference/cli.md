@@ -862,7 +862,7 @@ Resolver Receipt 写在 workspace 对应的私有缓存 `state_root/receipts/`�
 
 ## 输出与退出码
 
-CLI 尽量输出带 `schema_version`、`status`、计数和结构化错误的 JSON envelope。业务数据是否为空与请求是否成功是两个维度。
+CLI 尽量输出带 `schema_version`、`status`、计数和结构化错误的 JSON envelope。业务数据是否为空与请求是否成功是两个维度。支持的 Windows shell 中，stdout/stderr 的文本 JSON 确定性地使用 UTF-8，不继承系统 ANSI code page；本地控制台或文件 I/O 失败属于 local/4。
 
 | 退出码 | 类别 |
 | --- | --- |

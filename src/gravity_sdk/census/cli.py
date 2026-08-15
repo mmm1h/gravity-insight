@@ -254,11 +254,17 @@ def run(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    from ..cli_stdio import configure_utf8_stdio
+
+    configure_utf8_stdio()
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
         result, exit_code = run(args)
-    except (OSError, RuntimeError, ValueError, json.JSONDecodeError) as exc:
+    except (OSError, UnicodeEncodeError, RuntimeError) as exc:
+        sys.stderr.buffer.write(json_bytes({"status": "error", "error": str(exc)}))
+        return 4
+    except (ValueError, json.JSONDecodeError) as exc:
         sys.stderr.buffer.write(json_bytes({"status": "error", "error": str(exc)}))
         return 2
     sys.stdout.buffer.write(json_bytes(result))

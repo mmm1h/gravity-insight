@@ -67,6 +67,9 @@ def ensure_first_run_credentials(*, requires_credentials: bool) -> bool:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    from .cli_stdio import configure_utf8_stdio
+
+    configure_utf8_stdio()
     try:
         args = _extract_workspace(list(sys.argv[1:] if argv is None else argv))
     except ValueError as exc:

@@ -134,7 +134,7 @@ def _default_next_action(code: str, operation_id: str | None) -> str:
             "Resume the export with its status operation; do not start a duplicate export."
         ),
         ErrorCode.LOCAL_IO_ERROR.value: (
-            "Retry with an existing readable input path and a writable `--output` path."
+            "Check local console and filesystem I/O, then retry the same request."
         ),
     }
     return actions.get(code, describe)
@@ -391,7 +391,7 @@ def error_detail_from_exception(
         return error.to_error_detail(
             operation_id=operation_id, next_action=next_action
         )
-    if isinstance(error, OSError):
+    if isinstance(error, (OSError, UnicodeEncodeError)):
         code = ErrorCode.LOCAL_IO_ERROR
     elif isinstance(error, (ValueError, TypeError, KeyError)):
         code = ErrorCode.INPUT_INVALID
