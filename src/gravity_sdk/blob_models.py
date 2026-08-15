@@ -10,6 +10,8 @@ from typing import Any, Mapping, Protocol
 import requests
 
 from .errors import GravityInsightError
+from .paths import STATE_ROOT
+from .receipt import perform_http_request, request_receipt_context
 
 class BlobTransferError(GravityInsightError):
     """A structured, caller-safe transfer failure."""
@@ -193,12 +195,19 @@ class RequestsBlobTransport:
         headers: Mapping[str, str],
         timeout: float,
     ) -> requests.Response:
-        return self._session.get(
+        return perform_http_request(
+            self._session.get,
             url,
             headers=dict(headers),
             timeout=timeout,
             stream=True,
             allow_redirects=False,
+            http_receipt=request_receipt_context(
+                operation_id="export_blob_download",
+                method="GET",
+                path="/<authorized-export-blob>",
+            ),
+            receipt_root=STATE_ROOT,
         )
 
     def upload(
@@ -212,10 +221,18 @@ class RequestsBlobTransport:
         timeout: float,
     ) -> requests.Response:
         with file_path.open("rb") as handle:
-            return self._session.post(
+            return perform_http_request(
+                self._session.post,
                 url,
                 data=dict(form_fields),
                 files={file_field: (file_path.name, handle, content_type)},
                 timeout=timeout,
                 allow_redirects=False,
+                http_receipt=request_receipt_context(
+                    operation_id="export_blob_upload",
+                    method="POST",
+                    path="/<authorized-export-blob>",
+                    body={"form": dict(form_fields), "file": file_field},
+                ),
+                receipt_root=STATE_ROOT,
             )

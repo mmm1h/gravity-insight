@@ -8,7 +8,6 @@ session, credential provider, connection pool, and per-host rate-limit bucket.
 
 from __future__ import annotations
 
-import email.utils
 import os
 import random
 import re
@@ -36,7 +35,19 @@ from .errors import (
     SqlValidationError,
     TransportError,
 )
-from .receipt import perform_http_request
+from .http_retry import (
+    is_retryable_exception as _is_retryable_exception,
+    response_payload as _response_payload,
+    retry_delay as _retry_delay,
+    unit_random as _unit_random,
+)
+from .paths import STATE_ROOT
+from .receipt import (
+    authorized_request_receipt_context,
+    perform_http_request,
+    request_attempt_context,
+    request_receipt_context,
+)
 from .registry import _consume_authorized_request
 
 
@@ -280,6 +291,7 @@ class _GravityRequester:
         sleeper: Callable[[float], None] = time.sleep,
         wall_clock: Callable[[], datetime] | None = None,
         random_source: Callable[[], float] = random.random,
+        receipt_root: Path = STATE_ROOT,
     ) -> None:
         if timeout <= 0 or attempts < 1 or attempts > 5:
             raise ValueError("invalid Gravity timeout or retry count")
@@ -290,6 +302,7 @@ class _GravityRequester:
         self.sleeper = sleeper
         self.wall_clock = wall_clock or (lambda: datetime.now(timezone.utc))
         self.random_source = random_source
+        self.receipt_root = receipt_root
 
     def request(
         self,
@@ -302,6 +315,7 @@ class _GravityRequester:
         json_body: Mapping[str, Any] | None = None,
         timeout: float | None = None,
         attempts: int | None = None,
+        receipt_context: Mapping[str, Any] | None = None,
     ) -> RuntimeResponse:
         profile = _validated_profile(profile)
         normalized_method = method.upper()
@@ -322,6 +336,7 @@ class _GravityRequester:
         }
         for attempt in range(request_attempts):
             self.limiter.acquire(GRAVITY_HOST, self.sleeper)
+            attempt_receipt = request_attempt_context(receipt_context, attempt)
             try:
                 response = perform_http_request(self.session.request,
                     normalized_method,
@@ -331,6 +346,8 @@ class _GravityRequester:
                     json=dict(json_body) if json_body is not None else None,
                     timeout=request_timeout,
                     allow_redirects=False,
+                    http_receipt=attempt_receipt,
+                    receipt_root=self.receipt_root,
                 )
             except Exception as exc:
                 if attempt + 1 < request_attempts and _is_retryable_exception(exc):
@@ -375,6 +392,12 @@ class _GravityRequester:
             "/account_center/api/v1/user_login/v2/",
             json_body=body,
             timeout=timeout,
+            receipt_context=request_receipt_context(
+                operation_id="authentication",
+                method="POST",
+                path="/account_center/api/v1/user_login/v2/",
+                body=body,
+            ),
         )
         if response.status_code != 200:
             raise AuthenticationError("Gravity login was rejected")
@@ -409,6 +432,7 @@ class GravityHttpRuntime:
         sql_slots: threading.BoundedSemaphore | None = None,
         persist_credentials: bool = True,
         environ: MutableMapping[str, str] | None = None,
+        receipt_root: Path = STATE_ROOT,
     ) -> None:
         self.__session = session or _build_session()
         self.__limiter = limiter or HostRateLimiter(
@@ -427,6 +451,7 @@ class GravityHttpRuntime:
             sleeper=sleeper,
             wall_clock=wall_clock,
             random_source=random_source,
+            receipt_root=receipt_root,
         )
         if credentials is None:
             self.__credentials = CredentialProvider.from_env(
@@ -470,6 +495,13 @@ class GravityHttpRuntime:
             semantic_auth_codes=semantic_auth_codes,
             timeout=timeout,
             attempts=attempts,
+            receipt_context=request_receipt_context(
+                operation_id="sql.query",
+                method=method,
+                path=path,
+                query=params,
+                body=json_body,
+            ),
         )
 
     def _request_insight(
@@ -493,6 +525,13 @@ class GravityHttpRuntime:
             query=params,
             body=json_body,
         )
+        receipt_context = authorized_request_receipt_context(
+            policy_authorization,
+            method=method,
+            path=path,
+            query=wire_query,
+            body=wire_body,
+        )
         return self._authenticated_request(
             INSIGHT_PROFILE,
             method,
@@ -502,6 +541,7 @@ class GravityHttpRuntime:
             semantic_auth_codes=semantic_auth_codes,
             timeout=timeout,
             attempts=attempts,
+            receipt_context=receipt_context,
         )
 
     def _authenticated_request(
@@ -515,6 +555,7 @@ class GravityHttpRuntime:
         semantic_auth_codes: Collection[int],
         timeout: float | None,
         attempts: int | None,
+        receipt_context: Mapping[str, Any],
     ) -> RuntimeResponse:
         is_sql = profile is SQL_PROFILE
         if is_sql:
@@ -534,6 +575,7 @@ class GravityHttpRuntime:
                         json_body=json_body,
                         timeout=timeout,
                         attempts=attempts,
+                        receipt_context={**receipt_context, "retry": refreshed},
                     )
                     semantic_code = (
                         response.payload.get("code")
@@ -698,65 +740,11 @@ def _rate_from_environment() -> float:
     return DEFAULT_REQUESTS_PER_SECOND if not value else _validated_rate(value)
 
 
-def _response_payload(response: Any) -> Any:
-    try:
-        return response.json()
-    except (TypeError, ValueError):
-        return None
-
-
 def _refresh_if_rejected(provider: Any, credential: Credential) -> Credential:
     refresh = getattr(provider, "refresh_if_rejected", None)
     if callable(refresh):
         return refresh(credential)
     return provider.refresh()
-
-
-def _is_retryable_exception(exc: BaseException) -> bool:
-    try:
-        import requests
-    except ImportError:  # pragma: no cover
-        return isinstance(exc, (TimeoutError, OSError))
-    return isinstance(exc, (requests.Timeout, requests.ConnectionError))
-
-
-def _retry_delay(
-    response: Any,
-    attempt: int,
-    *,
-    wall_clock: Callable[[], datetime],
-    random_source: Callable[[], float],
-) -> float:
-    value = getattr(response, "headers", {}).get("Retry-After")
-    if value:
-        try:
-            minimum = max(0.0, min(float(value), 30.0))
-        except (TypeError, ValueError):
-            try:
-                retry_at = email.utils.parsedate_to_datetime(value)
-                if retry_at.tzinfo is None:
-                    retry_at = retry_at.replace(tzinfo=timezone.utc)
-                minimum = max(
-                    0.0,
-                    min((retry_at - wall_clock()).total_seconds(), 30.0),
-                )
-            except (TypeError, ValueError, OverflowError):
-                minimum = -1.0
-        if minimum >= 0:
-            # Positive-only jitter never retries earlier than Retry-After.
-            return minimum + min(1.0, max(0.05, minimum * 0.1)) * _unit_random(
-                random_source
-            )
-    base = float(min(2 ** (attempt + 1), 8))
-    return base * (1.0 + 0.2 * _unit_random(random_source))
-
-
-def _unit_random(source: Callable[[], float]) -> float:
-    try:
-        value = float(source())
-    except (TypeError, ValueError, OverflowError) as exc:
-        raise ValueError("random source must return a number") from exc
-    return max(0.0, min(value, 1.0))
 
 
 __all__ = [

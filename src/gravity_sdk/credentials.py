@@ -25,6 +25,8 @@ from .credential_storage import (
     session_path,
 )
 from .errors import AuthenticationError, CredentialError
+from .paths import STATE_ROOT
+from .receipt import perform_http_request, request_receipt_context
 
 
 GRAVITY_HOST = "https://api-insight.gravity-engine.com"
@@ -392,7 +394,8 @@ class CredentialProvider:
                 raise AuthenticationError("Gravity login request failed") from exc
         else:
             try:
-                response = session.request(
+                response = perform_http_request(
+                    session.request,
                     "POST",
                     GRAVITY_HOST + LOGIN_PATH,
                     headers={
@@ -404,6 +407,13 @@ class CredentialProvider:
                     json=body,
                     timeout=self._timeout,
                     allow_redirects=False,
+                    http_receipt=request_receipt_context(
+                        operation_id="authentication",
+                        method="POST",
+                        path=LOGIN_PATH,
+                        body=body,
+                    ),
+                    receipt_root=STATE_ROOT,
                 )
             except Exception as exc:
                 raise AuthenticationError("Gravity login request failed") from exc

@@ -12,7 +12,12 @@ from typing import Any, Callable, Iterator, Mapping
 from urllib.parse import urlsplit
 
 from gravity_sdk import runtime as tool_runtime
-from gravity_sdk.paths import PROJECT_ROOT
+from gravity_sdk.paths import PROJECT_ROOT, STATE_ROOT
+from gravity_sdk.receipt import (
+    authorized_request_receipt_context,
+    perform_http_request,
+    record_active_http_response,
+)
 
 from .privacy import response_schema_sketch
 from .read_semantics import CONFIRMATIONS_PATH, _confirmation_keys
@@ -134,6 +139,7 @@ class RecordingSession:
         family_id = self.context.family_id
         self.discipline.before_request(family_id)
         response = self._session.request(method, url, **kwargs)
+        record_active_http_response(response)
         try:
             payload = response.json()
         except (TypeError, ValueError, json.JSONDecodeError):
@@ -211,7 +217,15 @@ class _OpenApiProbeRuntime:
             "Origin": "https://web.gravity-engine.com",
             "Referer": "https://web.gravity-engine.com/",
         }
-        response = self._recording.request(
+        receipt_context = authorized_request_receipt_context(
+            policy_authorization,
+            method=method,
+            path=path,
+            query=query,
+            body=body,
+        )
+        response = perform_http_request(
+            self._recording.request,
             method,
             parts["credentials"].GRAVITY_HOST + path,
             headers=headers,
@@ -219,6 +233,8 @@ class _OpenApiProbeRuntime:
             json=body or None,
             timeout=timeout or 120.0,
             allow_redirects=False,
+            http_receipt=receipt_context,
+            receipt_root=STATE_ROOT,
         )
         try:
             payload = response.json()

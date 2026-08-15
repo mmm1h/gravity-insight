@@ -858,7 +858,7 @@ GRAVITY_PASSWORD=...
 
 token 由 SDK 私有缓存维护。不要把 token、Cookie 或密码作为命令行参数，也不要把本地凭据文件提交到 Git。
 
-Resolver Receipt 写在 workspace 对应的私有缓存 `state_root/receipts/`。`input_shape_fingerprint` 只哈希字段、容器结构和标量类型；相同结构换筛选值仍得到同一指纹。
+Resolver Receipt 写在 workspace 对应的私有缓存 `state_root/receipts/`。`input_shape_fingerprint` 只哈希字段、容器结构和标量类型；相同结构换筛选值仍得到同一指纹。每个真实 HTTP response 另在 `state_root/receipts/http/` 同步写入 `gravity.http-receipt.v1`；它只记录 method、合同 path、operation、status、完成时刻、页码、attempt/retry 和请求 shape fingerprint，不记录请求值、响应体或凭据。该逐请求账本先于本地投影、分页聚合与 composite/Plan envelope 组装完成。
 
 ## 输出与退出码
 

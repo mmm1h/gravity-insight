@@ -51,7 +51,7 @@ funnel 的冻结 `Funnel-DPNtPpg_.js` 与 `analysis-data-CVCbcwc0.js`（SHA-256 
 
 **提案：**从 176 条 stable operation 正向检查真实产品调用链，排除通用 `run`、legacy 快照、
 维护/诊断/权限/任务状态和纯 catalog 入口；对剩余分析结果判断非空证据、动线归属、最小五面成本与
-隐私边界，只实现有非空证据、语义闭合且不需要新投影批准的 1--3 条。逐 operation 工作底稿保留在
+字段合同，只实现有非空证据且语义闭合的 1--3 条。逐 operation 工作底稿保留在
 ignored `tmp/codex/stable-coverage-gap/crossref.md`，权威结论落在本页和动线台账。
 
 **判定：**实现前交叉为 **已被动线覆盖 86 / 不该有产品面 82 / 值得有产品面 8**，三类完备且
@@ -62,16 +62,16 @@ ignored `tmp/codex/stable-coverage-gap/crossref.md`，权威结论落在本页�
 `material.bytedance_std_asset_text_title_package.list`、
 `material.bytedance.promotion_material.list`、`analysis.segment.user_detail.list`。
 
-| Operation | 分析问题 / 非空证据 | 动线 / 最小五面成本 | 隐私投影与本轮裁决 |
+| Operation | 分析问题 / 非空证据 | 动线 / 最小五面成本 | 字段合同与本轮裁决 |
 | --- | --- | --- | --- |
-| `report.company_amount.query` | 公司每日广告、点击、成本、事件、画像、存储、追踪和素材传输用量如何变化；有非空且分页证据 | 新增公司资源用量趋势；`1/1/1/1/1` | `user_count` 保持省略；本轮实现 |
-| `promotion.bilibili.account.list` | B 站账户/产品曝光、点击、CTR、CPC、CPM 和资金消耗如何；有非空且分页证据 | 新增独立 B 站账户投放表现；`1/1/1/1/1` | `advertiser_name` 保持省略；本轮实现 |
-| `promotion.bytedance.advertiser_performance.list` | 巨量广告主消耗、余额、预算模式和状态如何；页码协议与实际翻页均已验证 | 新增独立 advertiser profile，不并入明确排除广告主目录的跨平台推广表现；`1/1/1/1/1` | `page_size=1` 的页 1/页 2 共 2 次生产请求，均 HTTP 200 / `success`，响应页码分别为 1/2、各 1 行且安全投影不同，裁决 `pagination.verified=true`；失败 0、重试 0。`advertiser_name`、`advertiser_remark`、`company`、`delay`、`operator_id`、`operator_name`、`project_list` 保持省略，未知字段继续 fail-closed。 |
-| `promotion.bytedance.custom_audience.list` | 可投人群覆盖数、上传数、来源和状态如何；2026-08-14 最小非空复验与旧样本 fingerprint 完全一致 | 自定义人群覆盖与状态已闭环；`1/1/1/1/1` | `cid`、`company`、`create_user_id`、`create_user_name`、`tag`、`update_user_id`、`update_user_name` 保持省略；确定实现 |
-| `material.bytedance_asset_text_title_package.list` | 普通标题包的标题数、计划数、历史成本和 CTR 如何；旧非空样本与 stable v1 的字段/类型投影同形 | 已补 D32 `title_package` family；与标准版共享 `1/1/1/1/1` | `title_list`、`create_user_id`、`create_user_name`、`update_user_id` 保持省略；已实现，`package_kind=regular` |
+| `report.company_amount.query` | 公司每日广告、点击、成本、事件、画像、存储、追踪和素材传输用量如何变化；有非空且分页证据 | 新增公司资源用量趋势；`1/1/1/1/1` | 原 `user_count` 省略裁决已作废；按总裁决登记并暴露；本轮实现 |
+| `promotion.bilibili.account.list` | B 站账户/产品曝光、点击、CTR、CPC、CPM 和资金消耗如何；有非空且分页证据 | 新增独立 B 站账户投放表现；`1/1/1/1/1` | 原 `advertiser_name` 省略裁决已作废；按总裁决登记并暴露；本轮实现 |
+| `promotion.bytedance.advertiser_performance.list` | 巨量广告主消耗、余额、预算模式和状态如何；页码协议与实际翻页均已验证 | 新增独立 advertiser profile，不并入明确排除广告主目录的跨平台推广表现；`1/1/1/1/1` | `page_size=1` 的页 1/页 2 共 2 次生产请求，均 HTTP 200 / `success`，响应页码分别为 1/2、各 1 行且安全投影不同，裁决 `pagination.verified=true`；失败 0、重试 0。原字段省略裁决已作废；登记字段全部暴露，未知字段继续 fail-closed。 |
+| `promotion.bytedance.custom_audience.list` | 可投人群覆盖数、上传数、来源和状态如何；2026-08-14 最小非空复验与旧样本 fingerprint 完全一致 | 自定义人群覆盖与状态已闭环；`1/1/1/1/1` | 原字段省略裁决已作废；按总裁决登记并暴露；确定实现 |
+| `material.bytedance_asset_text_title_package.list` | 普通标题包的标题数、计划数、历史成本和 CTR 如何；旧非空样本与 stable v1 的字段/类型投影同形 | 已补 D32 `title_package` family；与标准版共享 `1/1/1/1/1` | 原字段省略裁决已作废；按总裁决登记并暴露；已实现，`package_kind=regular` |
 | `material.bytedance_std_asset_text_title_package.list` | 标准标题包的标题数、计划数、历史成本和 CTR 如何；旧非空样本与 stable v1 的字段/类型投影同形 | 已补 D32 `title_package` family；与普通版共享 `1/1/1/1/1` | 同上；已实现，`package_kind=standard` |
-| `material.bytedance.promotion_material.list` | 精确广告窗口内素材的消耗、曝光、点击、CTR、CPC、CPM、尺寸和时长如何；目标响应为空 | 补 D32；`1/1/1/1/1`，未知引用路径 3 次 | `cover_source`、`labels`、`material_info`、`organization_tags`、`poster_url`、`signature`、`star_author_id`、`url` 保持省略；等非空证据 |
-| `analysis.segment.user_detail.list` | 精确分群有哪些成员及其时间、渠道、版本和归因属性；无不可变非空样本 | 补分群详情；`1/1/1/1/1` | **已裁决不批准**，保持 reservation（理由见下方「对照裁决」）；不再计入待实现 |
+| `material.bytedance.promotion_material.list` | 精确广告窗口内素材的消耗、曝光、点击、CTR、CPC、CPM、尺寸和时长如何；目标响应为空 | 补 D32；`1/1/1/1/1`，未知引用路径 3 次 | 原字段省略裁决已作废；按总裁决登记并暴露；仍等非空证据 |
+| `analysis.segment.user_detail.list` | 精确分群有哪些成员及其时间、渠道、版本和归因属性；无不可变非空样本 | 补分群详情；`1/1/1/1/1` | 旧“不批准”裁决已作废，reservation 解除；应按闭环判据实现 |
 
 本轮在 `report.company_amount.query` 已闭环的基础上继续实现 advertiser profile。公司用量的 Core、CLI
 `reports usage`、SDK `company_usage()`、Plan `company_usage` composite 与 Agent
@@ -188,6 +188,40 @@ prober 现仅对 confirmation 文件中通过完整校验的精确 `POST + path`
 NDJSON 只保留在已有明确逐记录编码合同的入口；本轮不把它扩到 composite。若以后有公开合同天然
 就是同构标量行数组，且所有状态与收据都有无损、版本化的独立承载，才可单独评估 CSV；不得为嵌套
 结果定义通用拍平规则。xlsx 仍只走治理导出 effect。
+
+### 生产 HTTP 请求收据耐久性裁决（2026-08-15）
+
+**裁决：每个 HTTP response 返回实际 transport 的同步边界，先把值无关请求收据写入
+`state_root/receipts/http/`，再解析响应体、判断重试、做投影/合同校验或组装分页、产品、composite、
+Plan envelope。** 每个 response/attempt 独立使用 `result_output.write_rendered_result` 的 write、flush、
+fsync 与 atomic replace；probe 完整 evidence 的最终写入也复用同一耐久原语。收据合同
+`gravity.http-receipt.v1` 只含 `operation_id/method/path/http_status/completed_at/page_number/attempt/retry`
+和 request shape fingerprint，不含请求值、响应体、App ID、凭据或业务标识值。
+
+修复前实际有七条后置记录路径：prober 内存 observation、单页 `ReadResult.page`、全分页 merge receipt、
+产品 sanitizer envelope、composite component、Plan partial、以及 Resolver/catalog/log。前六条都要等各自
+本地处理成功；Resolver 只在 `_finish` 写总 `request_count`，catalog/log 也在公开 read 退出时更新，且
+都不是逐请求 HTTP 账本。因此请求后投影或合同校验失败、分页中途异常、组件 projector 异常和进程强杀
+均可丢记录；日志 handler 与收尾函数不能补这个事实。
+
+两条独立复现分别落在同一窗口：d28 的 `app.list` 与 `report.get.query` response 已返回，但 prober
+observation 尚在内存，后续 `calc_total.data_list` 本地校验退出；agent-usability 的 Q13/Q14 则在分页
+聚合及产品/Plan 重建前失败，所以只能留下 3–11 次的界。修复用 fake session 注入并证明：200 response
+后的投影和合同校验异常仍有 status receipt；页 3 transport 异常前页 1/2 各有 receipt；503→200 retry
+的两个 attempt 各有 receipt；composite 失败组件的 503 仍有 receipt；写目标不可用不覆盖原错误；子进程
+进入 prober response body 解析后立即 `TerminateProcess`，已完成 response 的 receipt 已在盘。
+
+写目标不可用时请求结果和原始错误优先，SDK 只附加固定结构的
+`gravity_http_receipt_write_failed` 日志，不改变错误分类、operation、wire、退出码或既有 envelope 字段。
+因此对外 envelope 合同增减为 **0**；新增的是私有状态目录中的向后兼容旁路 artifact。不能宣称绝对不丢：
+response 返回与第一条记账指令之间仍有指令级 kill 窗口；transport 在返回 response 前抛错时，即使请求
+可能已到上游，SDK 也没有可登记的 HTTP status；写目标不可用、OS/硬件违背 fsync 承诺、Windows 缺少
+目录 fsync 等价物、requests 内部自动重定向的中间 hop、或调用方自定义 transport 绕过仓库 production
+transport 时仍可能缺 receipt。后两类都不宣称属于逐上游 wire-hop 的完整账本。
+
+本裁决不新增或升级 operation，`185 → +0 = 185`；不新增产品动线，台账
+`48 = 32 / 0 / 16 → +0 / +0 / +0 = 48 = 32 / 0 / 16`。质量债只收紧：
+`http_runtime.py` 文件 SLOC ratchet `680 → -3 = 677`。本单元生产 HTTP 为 0。
 
 D32 本轮先估 22 次、实际只发 5 次最小 stable 根读取；5 次均为 HTTP 200 空样本。复用 D33
 的 Bilibili/Huya 3 次证据后，七个平台中只有 Bilibili account 曾非空，但其 advertiser 为空；

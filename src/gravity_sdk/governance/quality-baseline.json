@@ -84,7 +84,7 @@
       "src/gravity_sdk/cli.py": 841,
       "src/gravity_sdk/client.py": 1095,
       "src/gravity_sdk/executor.py": 1469,
-      "src/gravity_sdk/http_runtime.py": 680,
+      "src/gravity_sdk/http_runtime.py": 677,
       "src/gravity_sdk/models.py": 1078,
       "src/gravity_sdk/prober/batch.py": 586,
       "src/gravity_sdk/prober/drafts.py": 1805,
