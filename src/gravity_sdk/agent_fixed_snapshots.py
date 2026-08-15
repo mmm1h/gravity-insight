@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import re
 
+from .agent_intent_text import affirmative_intent_text
+
 
 _EXACT = {
     "analysis_context": frozenset({
@@ -22,7 +24,7 @@ _EXACT = {
 
 
 def fixed_snapshot_query(name: str, query: str) -> bool:
-    selected = " ".join(query.strip().casefold().split())
+    selected = affirmative_intent_text(query)
     if selected in _EXACT.get(name, ()):
         return True
     if name == "analysis_context":
@@ -35,6 +37,8 @@ def fixed_snapshot_query(name: str, query: str) -> bool:
 
 
 def _analysis_context(selected: str) -> bool:
+    if any(term in selected for term in _EXACT["analysis_context"]):
+        return True
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
     english_groups = (
         {"event", "events"}, {"property", "properties", "attributes"},
@@ -42,7 +46,7 @@ def _analysis_context(selected: str) -> bool:
     )
     english = (
         sum(bool(words & group) for group in english_groups) >= 3
-        and bool(words & {"available", "building", "construct", "give", "new"})
+        and bool(words & {"available", "building", "construct", "fetch", "get", "give", "need", "needed", "new", "read"})
         and bool(words & {"analysis", "analytics", "app"})
     )
     chinese_groups = ("事件", "属性", "指标", "模板")
@@ -55,6 +59,8 @@ def _analysis_context(selected: str) -> bool:
 
 
 def _app_snapshot(selected: str) -> bool:
+    if any(term in selected for term in (*_EXACT["app_snapshot"], "治理快照")):
+        return True
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
     english_groups = (
         {"capacity"}, {"role", "roles"}, {"menu", "menus"},
@@ -72,6 +78,8 @@ def _app_snapshot(selected: str) -> bool:
 
 
 def _attribution_snapshot(selected: str) -> bool:
+    if any(term in selected for term in (*_EXACT["attribution_snapshot"], "归因设置")):
+        return True
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
     english_groups = (
         {"rule", "rules", "configuration", "configured"},

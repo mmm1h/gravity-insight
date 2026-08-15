@@ -6,6 +6,8 @@ import re
 from collections.abc import Mapping
 from typing import Any
 
+from .agent_intent_text import affirmative_intent_text
+
 
 ADVERTISER_PROFILE_NAME = "advertiser_profile"
 ADVERTISER_PROFILE_SELECTOR = f"composite:{ADVERTISER_PROFILE_NAME}"
@@ -59,7 +61,7 @@ ADVERTISER_PROFILE_CAPABILITY: Mapping[str, Any] = {
 
 
 def advertiser_profile_query(query: str) -> bool:
-    selected = " ".join(str(query or "").strip().casefold().split())
+    selected = affirmative_intent_text(query)
     if selected in _EXACT:
         return True
     if not selected:
@@ -81,7 +83,7 @@ def advertiser_profile_query(query: str) -> bool:
 
 
 def advertiser_profile_blocks_operation_fallback(query: str) -> bool:
-    selected = " ".join(str(query or "").strip().casefold().split())
+    selected = affirmative_intent_text(query)
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
     return (
         selected in _EXACT

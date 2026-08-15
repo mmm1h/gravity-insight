@@ -8,6 +8,7 @@ import re
 from typing import Any
 
 from .analysis_spec_schema import analysis_query_spec_schema
+from .agent_intent_text import affirmative_intent_text
 from .find import query_match
 
 
@@ -102,6 +103,7 @@ def analysis_query_spec_cards(
 
 
 def _analysis_kind(query: str) -> str | None:
+    query = affirmative_intent_text(query)
     selector = query.strip().casefold()
     for kind in _ANALYSIS_KINDS:
         if selector == f"analysis.query.spec:{kind}":
@@ -124,10 +126,10 @@ def _natural_analysis_kind(query: str) -> str | None:
     compact = "".join(selected.split())
     claims = (
         ("event", _natural_event(words, compact)),
-        ("funnel", _natural_funnel(words)),
+        ("funnel", _natural_funnel(words, compact)),
         ("retention", _natural_retention(words, compact)),
         ("property", _natural_property(words, compact)),
-        ("scatter", "scatter" in words or "散点" in compact),
+        ("scatter", _natural_scatter(words, compact)),
     )
     matched = [kind for kind, claimed in claims if claimed]
     return matched[0] if len(matched) == 1 else None
@@ -135,27 +137,44 @@ def _natural_analysis_kind(query: str) -> str | None:
 
 def _natural_event(words: frozenset[str], compact: str) -> bool:
     english = (
-        "event" in words
-        and bool(words & {"count", "counts", "trend", "trends"})
+        bool(words & {"activity", "behavior", "event"})
+        and bool(words & {"count", "counts", "frequency", "trend", "trends", "volume"})
         and bool(words & {"daily", "day", "week", "time", "channel"})
     )
-    chinese = "事件" in compact and any(
-        term in compact for term in ("每天", "次数", "趋势")
+    chinese = ("事件" in compact or "行为" in compact) and any(
+        term in compact for term in ("每天", "每小时", "次数", "频次", "发生量", "趋势")
     )
     return english or chinese
 
 
-def _natural_funnel(words: frozenset[str]) -> bool:
-    return "funnel" in words and bool(
+def _natural_funnel(words: frozenset[str], compact: str) -> bool:
+    explicit = "funnel" in words and bool(
         words & {"conversion", "convert", "step", "steps"}
     )
+    staged_conversion = "conversion" in words and "from" in words and bool(
+        words & {"through", "to"}
+    )
+    chinese = "转化" in compact and (
+        "多步" in compact
+        or "逐步" in compact
+        or "步骤" in compact
+        or "依次" in compact
+        or compact.count("到") >= 2
+    )
+    return explicit or staged_conversion or chinese
 
 
 def _natural_retention(words: frozenset[str], compact: str) -> bool:
-    english = "retention" in words and len(words) >= 2
+    english = "retention" in words and len(words) >= 2 or (
+        "return" in words and bool(words & {"rate", "rates"}) and "day" in words
+    )
     chinese = any(
-        term in compact for term in ("第1天", "第7天", "次日", "七日")
-    ) and any(term in compact for term in ("回来", "回访", "留存"))
+        term in compact
+        for term in (
+            "第1天", "第2天", "第7天", "第一天", "第二天", "第七天",
+            "次日", "次周", "次月", "七日",
+        )
+    ) and any(term in compact for term in ("回来", "回访", "复访", "留存"))
     return english or chinese
 
 
@@ -165,14 +184,29 @@ def _natural_property(words: frozenset[str], compact: str) -> bool:
         or {"property", "distribution"} <= words
     )
     chinese = (
-        "用户" in compact and "分布" in compact
-        and any(term in compact for term in ("属性", "城市", "渠道", "地区"))
+        any(term in compact for term in ("用户", "会员", "访客", "人群"))
+        and any(term in compact for term in ("分布", "占比", "比例", "构成", "集中"))
+        and any(term in compact for term in ("属性", "城市", "省份", "渠道", "地区", "机型", "性别", "年龄"))
     )
     return english or chinese
 
 
+def _natural_scatter(words: frozenset[str], compact: str) -> bool:
+    explicit = "scatter" in words or "散点" in compact
+    english = bool(words & {"relationship", "correlation"}) and (
+        "between" in words or "versus" in words
+    )
+    chinese = (
+        "关系" in compact and any(term in compact for term in ("和", "与", "之间"))
+    ) or (
+        any(term in compact for term in ("相关", "关联"))
+        and any(term in compact for term in ("是否", "与", "之间"))
+    )
+    return explicit or english or chinese
+
+
 def _period_compare_intent(query: str) -> bool:
-    selected = query.strip().casefold()
+    selected = affirmative_intent_text(query)
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
     english = (
         bool(words & {"compare", "comparison"})
@@ -186,7 +220,15 @@ def _period_compare_intent(query: str) -> bool:
         and any(term in selected for term in ("同一个", "同一份", "相同"))
         and "分析" in selected
     )
-    return english or chinese
+    return english or chinese or _same_definition_compare(selected)
+
+
+def _same_definition_compare(selected: str) -> bool:
+    return (
+        any(term in selected for term in ("同口径", "相同口径"))
+        and any(term in selected for term in ("跨期", "不同时期", "两个时期"))
+        and any(term in selected for term in ("对照", "对比", "比较"))
+    )
 
 
 def _matches_alias(query: str, aliases: Sequence[str]) -> bool:

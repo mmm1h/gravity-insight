@@ -6,6 +6,8 @@ from collections.abc import Mapping
 import re
 from typing import Any
 
+from .agent_intent_text import affirmative_intent_text
+
 
 SEGMENT_SNAPSHOT_NAME = "segment_snapshot"
 SEGMENT_SNAPSHOT_SELECTOR = f"composite:{SEGMENT_SNAPSHOT_NAME}"
@@ -70,7 +72,7 @@ SEGMENT_SNAPSHOT_CAPABILITY: Mapping[str, Any] = {
 def segment_snapshot_query(query: str) -> bool:
     """Recognize only a complete snapshot intent; broad segment text fails closed."""
 
-    selected = query.strip().casefold()
+    selected = affirmative_intent_text(query)
     if selected in _EXACT_SELECTORS:
         return True
     if selected.isascii():
@@ -81,7 +83,7 @@ def segment_snapshot_query(query: str) -> bool:
 def segment_snapshot_intent(query: str) -> bool:
     """Return positive complete-snapshot evidence without conflict exclusions."""
 
-    selected = query.strip().casefold()
+    selected = affirmative_intent_text(query)
     if selected in _EXACT_SELECTORS:
         return True
     if selected.isascii():

@@ -421,6 +421,7 @@ class DiscoveryUxTests(unittest.TestCase):
             ("dashboard snapshot run dashboard charts", ("composite:dashboard_snapshot", "composite:dashboard_analysis")),
             ("segment rule population estimate segment snapshot details history daily result", ("analysis.segment.rule.spec", "composite:segment_snapshot")),
             ("order directory order split trace", ("composite:order_directory", "composite:order_split_trace")),
+            ("show segment size but also the member list", ("composite:segment_snapshot", "composite:segment_members")),
             ("material performance promotion performance", ("composite:material_performance", "composite:promotion_performance")),
             ("多维报表和经营脉搏", ("composite:multidim", "composite:business_pulse")),
             ("run saved analysis and run dashboard charts", ("composite:saved_analysis", "composite:dashboard_analysis")),
@@ -431,7 +432,29 @@ class DiscoveryUxTests(unittest.TestCase):
                 gap = result["capability_gaps"][0]
                 self.assertEqual(("capability_gap", 0, "MULTIPLE_INTENTS"), (result["status"], result["count"], gap["code"]))
                 self.assertEqual(list(selectors), gap["candidate_selectors"])
+                self.assertIn("gravity agent --input <selector>", gap["next_action"])
                 self.assertFalse(any(card.get("kind") == "operation" for card in result["candidates"]))
+
+    def test_semantic_paraphrases_and_negative_contrasts_reach_the_owner(self) -> None:
+        cases = {
+            "按来源统计某个行为每小时的发生量。": "event",
+            "依次看注册、绑卡、首充三个步骤的转化。": "funnel",
+            "新客次周复访比例是多少？": "retention",
+            "会员按省份的构成比例。": "property",
+            "活跃度是否与客单价相关？": "scatter",
+            "不要成员名单，只看分群人数和历史。": "segment_snapshot",
+            "Not the segment size; show the audience member list.": "segment_members",
+            "Compare creative results across ad platforms.": "material_performance",
+            "Compare campaign performance across ad platforms.": "promotion_performance",
+        }
+        for query, expected in cases.items():
+            with self.subTest(query=query):
+                result = discover_capabilities(query, client=self.client)
+                card = result["candidates"][0]
+                self.assertEqual(expected, card.get("analysis_kind") or card.get("composite"))
+
+        negative = discover_capabilities("不要运行看板图表。", client=self.client)
+        self.assertEqual(("capability_gap", []), (negative["status"], negative["candidates"]))
 
     def test_business_pulse_is_strict_authoritative_and_mechanically_fillable(self) -> None:
         cases = {

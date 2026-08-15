@@ -6,10 +6,11 @@ import re
 from typing import Any
 
 from .agent_gap import unavailable_gap
+from .agent_intent_text import affirmative_intent_text
 
 
 def unavailable_analysis_gap(query: str) -> dict[str, Any] | None:
-    selected = " ".join(query.strip().casefold().split())
+    selected = affirmative_intent_text(query)
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
     if _analysis_defaults(selected, words):
         return unavailable_gap(
@@ -78,9 +79,9 @@ def unavailable_analysis_gap(query: str) -> dict[str, Any] | None:
 
 def _analysis_defaults(selected: str, words: frozenset[str]) -> bool:
     return (
-        {"analysis", "default", "dictionary"} <= words
-        and bool(words & {"value", "values"})
-    ) or ("分析" in selected and "默认值" in selected and "字典" in selected)
+        {"default", "dictionary"} <= words
+        and bool(words & {"analysis", "value", "values"})
+    ) or ("默认值" in selected and "字典" in selected)
 
 
 def _realtime_event_catalog(selected: str, words: frozenset[str]) -> bool:
@@ -103,36 +104,44 @@ def _single_user_attribution(selected: str, words: frozenset[str]) -> bool:
 
 
 def _attribution_aggregate(selected: str, words: frozenset[str]) -> bool:
-    metrics = {"activation", "activations", "payment", "payments", "channel", "users"}
+    configuration = {
+        "configuration", "configured", "lookback", "mapping", "mappings",
+        "rule", "rules", "setting", "settings", "window",
+    }
     english = (
         bool(words & {"attribution", "attributed"})
-        and bool(words & {"aggregate", "performance", "summary"})
-        and len(words & metrics) >= 2
+        and bool(words & {"aggregate", "aggregated", "performance", "summary"})
+        and not bool(words & configuration)
     )
     chinese = "归因" in selected and any(
         term in selected for term in ("汇总", "表现", "聚合")
-    ) and sum(term in selected for term in ("渠道", "新增", "激活", "付费")) >= 2
+    ) and not any(term in selected for term in ("配置", "规则", "映射", "回溯", "设置", "窗口"))
     return english or chinese
 
 
 def _current_table_schema(selected: str, words: frozenset[str]) -> bool:
     english = (
-        "table" in words and "current" in words and "schema" in words
-        and bool(words & {"field", "fields", "version"})
+        "current" in words and "schema" in words
+        and bool(words & {"field", "fields", "table", "version"})
     )
-    chinese = (
-        "数据表" in selected and "当前" in selected and "schema" in selected
-        and "字段" in selected and "版本" in selected
-    )
+    chinese = "当前" in selected and "schema" in selected
     return english or chinese
 
 
 def _analysis_export(selected: str, words: frozenset[str]) -> bool:
-    subjects = {"event", "segment", "user", "payment", "monetization"}
-    english = "export" in words and bool(words & {"result", "results"}) and len(words & subjects) >= 2
-    chinese = "导出" in selected and "结果" in selected and sum(
-        term in selected for term in ("事件", "分群", "用户", "付费", "变现")
-    ) >= 2
+    if re.search(r"(?<![a-z0-9_])export\.analysis\.", selected):
+        return False
+    analysis_families = {
+        "event", "funnel", "path", "property", "retention", "scatter", "segment", "user",
+    }
+    english = (
+        "export" in words and bool(words & {"result", "results"})
+        and ("analysis" in words or len(words & analysis_families) >= 2)
+    )
+    chinese = "导出" in selected and "结果" in selected and (
+        "analysis" in words
+        or any(term in selected for term in ("事件", "分群", "用户", "付费", "变现"))
+    )
     return english or chinese
 
 

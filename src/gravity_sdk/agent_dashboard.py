@@ -5,6 +5,8 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+from .agent_intent_text import affirmative_intent_text
+
 
 DASHBOARD_ANALYSIS_CAPABILITY: Mapping[str, Any] = {
     "name": "dashboard_analysis",
@@ -61,19 +63,19 @@ DASHBOARD_ANALYSIS_CAPABILITY: Mapping[str, Any] = {
 def dashboard_snapshot_query(query: str) -> bool:
     """Recognize control-plane requests without capturing chart execution."""
 
-    selected = query.strip().casefold()
+    selected = affirmative_intent_text(query)
     from .agent_intent_routing import adjacent_product_conflict
 
     if adjacent_product_conflict("dashboard_snapshot", selected):
         return False
-    return dashboard_snapshot_intent(query)
+    return dashboard_snapshot_intent(selected)
 
 
 def dashboard_snapshot_intent(query: str) -> bool:
     """Return positive snapshot evidence without applying adjacent-product policy."""
 
-    selected = query.strip().casefold()
-    if dashboard_analysis_intent(query) and not _snapshot_exclusive_intent(selected):
+    selected = affirmative_intent_text(query)
+    if dashboard_analysis_intent(selected) and not _snapshot_exclusive_intent(selected):
         return False
     english = (
         "snapshot", "context", "control", "detail", "member", "filter",
@@ -91,22 +93,22 @@ def dashboard_snapshot_intent(query: str) -> bool:
 def dashboard_analysis_query(query: str) -> bool:
     """Recognize explicit chart execution/replay without capturing snapshots."""
 
-    selected = query.strip().casefold()
+    selected = affirmative_intent_text(query)
     from .agent_intent_routing import adjacent_product_conflict
 
     # Here "saved" modifies dashboard; it is not evidence for the separate
     # Saved Analysis wrapper that the adjacent-product guard protects.
-    if "saved dashboard" in selected and dashboard_analysis_intent(query):
+    if "saved dashboard" in selected and dashboard_analysis_intent(selected):
         return True
     if adjacent_product_conflict("dashboard_analysis", selected):
         return False
-    return dashboard_analysis_intent(query)
+    return dashboard_analysis_intent(selected)
 
 
 def dashboard_analysis_intent(query: str) -> bool:
     """Return positive chart-replay evidence without adjacent-product policy."""
 
-    selected = query.strip().casefold()
+    selected = affirmative_intent_text(query)
     english_action = ("run", "replay", "execute", "rerun", "refresh", "analyze")
     chinese_action = ("执行", "运行", "重放", "重跑", "重新跑", "刷新", "分析")
     return (

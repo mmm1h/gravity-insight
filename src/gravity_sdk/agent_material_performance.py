@@ -8,6 +8,7 @@ import re
 from typing import Any
 
 from .material_performance import DEFAULT_PLATFORMS
+from .agent_intent_text import affirmative_intent_text
 
 
 MATERIAL_PERFORMANCE_NAME = "material_performance"
@@ -27,7 +28,7 @@ _EXACT = frozenset(
 )
 _ASCII_WORD = re.compile(r"[a-z0-9_]+", re.IGNORECASE)
 _ENGLISH_NEGATION_PHRASE = re.compile(r"\b(?:don['’]?t|do\s+not)\b")
-_ENGLISH_ACTIONS = frozenset({"performance", "report"})
+_ENGLISH_ACTIONS = frozenset({"performance", "report", "result", "results"})
 _ENGLISH_BLOCKED = frozenset(
     {
         "export", "download", "library", "catalog", "album", "tag", "tags",
@@ -98,7 +99,7 @@ MATERIAL_PERFORMANCE_CAPABILITY: Mapping[str, Any] = {
 def material_performance_query(query: str) -> bool:
     """Recognize aggregate material reporting and reject adjacent products."""
 
-    selected = " ".join(query.strip().casefold().split())
+    selected = affirmative_intent_text(query)
     words = frozenset(_ASCII_WORD.findall(selected))
     compact = "".join(selected.split())
     if _blocked_query(selected, words, compact):
@@ -109,7 +110,7 @@ def material_performance_query(query: str) -> bool:
 def material_performance_intent(query: str) -> bool:
     """Return positive aggregate-material evidence without adjacent exclusions."""
 
-    selected = " ".join(query.strip().casefold().split())
+    selected = affirmative_intent_text(query)
     words = frozenset(_ASCII_WORD.findall(selected))
     compact = "".join(selected.split())
     if selected in _EXACT:

@@ -6,6 +6,8 @@ from collections.abc import Mapping
 import re
 from typing import Any
 
+from .agent_intent_text import affirmative_intent_text
+
 
 TITLE_PACKAGE_NAME = "title_package"
 TITLE_PACKAGE_SELECTOR = f"composite:{TITLE_PACKAGE_NAME}"
@@ -52,14 +54,14 @@ TITLE_PACKAGE_CAPABILITY: Mapping[str, Any] = {
 
 
 def title_package_query(query: str) -> bool:
-    selected = " ".join(query.strip().casefold().split())
+    selected = affirmative_intent_text(query)
     if selected in _EXACT:
         return True
     if not selected or any(term in selected for term in ("导出", "创建", "删除")):
         return False
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
     english = "title" in words and bool(words & {"package", "packages"}) and bool(
-        words & {"metric", "metrics", "performance", "summary"}
+        words & {"campaign", "cost", "count", "metric", "metrics", "performance", "show", "summary"}
     )
     chinese = "标题包" in selected and any(
         term in selected for term in ("指标", "表现", "汇总", "成本", "点击率")

@@ -6,6 +6,8 @@ from collections.abc import Mapping, Sequence
 import re
 from typing import Any
 
+from .agent_intent_text import affirmative_intent_text
+
 
 _CREATE_EFFECT = "export_job_create"
 _GENERIC_INTENTS = frozenset({
@@ -36,6 +38,7 @@ _SPACE = re.compile(r"[^a-z0-9_.]+", re.IGNORECASE)
 def query_requests_export(query: str) -> bool:
     """Recognize explicit export intent without guessing a different product."""
 
+    query = affirmative_intent_text(query)
     selected = query.strip().casefold()
     normalized = _normalize(query)
     return (
@@ -43,6 +46,7 @@ def query_requests_export(query: str) -> bool:
         or normalized in _GENERIC_INTENTS
         or any(_contains_alias(query, alias) for alias in _MATERIAL_ALIASES)
         or _material_export_workflow(query)
+        or _material_file_export(query)
         or "导出" in selected
     )
 
@@ -129,12 +133,14 @@ def _export_card(
     if not _callable_creator(description):
         return None
     operation_id = str(description["operation_id"])
+    query = affirmative_intent_text(query)
     selected = query.strip().casefold()
     exact = selected == operation_id.casefold()
     generic = _normalize(query) in _GENERIC_INTENTS
     material = (
         any(_contains_alias(query, alias) for alias in _MATERIAL_ALIASES)
         or _material_export_workflow(query)
+        or _material_file_export(query)
     )
     if not (exact or generic or material):
         return None
@@ -270,6 +276,20 @@ def _material_export_workflow(query: str) -> bool:
         and "报表" in selected
         and any(term in selected for term in ("生成", "创建"))
         and any(term in selected for term in ("下载", "保存到本地"))
+    )
+    return english or chinese
+
+
+def _material_file_export(query: str) -> bool:
+    selected = affirmative_intent_text(query)
+    words = frozenset(re.findall(r"[a-z0-9_]+", selected))
+    english = (
+        bool(words & {"creative", "material"}) and "export" in words
+        and bool(words & {"data", "file", "report"})
+    )
+    chinese = (
+        "素材" in selected and "导出" in selected
+        and any(term in selected for term in ("文件", "数据", "报表"))
     )
     return english or chinese
 

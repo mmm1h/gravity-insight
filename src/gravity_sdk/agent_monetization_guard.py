@@ -6,6 +6,8 @@ import re
 from collections.abc import Mapping
 from typing import Any
 
+from .agent_intent_text import affirmative_intent_text
+
 from .monetization_detail import SAFE_ROW_FIELDS
 
 
@@ -93,10 +95,6 @@ _CHINESE_BLOCKED = (
     "聚合", "总计", "表现", "报告", "报表", "收入", "归因", "看板", "原始",
     "素材", "推广", "多维", "保存分析", "分群", "旅程", "脉搏",
 )
-_RANGE_PHRASE = re.compile(
-    r"\b(?:from|between|range|weekly|monthly|week|month)\b|\bto\b",
-    re.IGNORECASE,
-)
 _EXACT_EXPERT_SELECTORS = frozenset(
     {
         MONETIZATION_DETAIL_RAW_SELECTOR,
@@ -135,7 +133,7 @@ def monetization_open_dimension_query(query: str) -> bool:
 def monetization_detail_query(query: str) -> bool:
     """Recognize the approved product while rejecting adjacent semantics."""
 
-    selected = _normalize(query)
+    selected = affirmative_intent_text(query)
     if selected in _EXACT_PRODUCT_INTENTS:
         return True
     if _contains_near_raw_selector(selected):
@@ -193,7 +191,7 @@ def _blocked_product_query(selected: str) -> bool:
     compact = compact.replace(_LEGACY_IDENTIFIER_FREE_PHRASE, "")
     return bool(
         words & (_ENGLISH_BLOCKED | _ENGLISH_NEGATIONS)
-        or _RANGE_PHRASE.search(selected)
+        or _explicit_range(words)
         or any(term in compact for term in _CHINESE_BLOCKED)
     )
 
@@ -215,7 +213,7 @@ def _hard_blocked_query(selected: str) -> bool:
     )
     return bool(
         words & (_ENGLISH_HARD_BLOCKED | _ENGLISH_NEGATIONS)
-        or _RANGE_PHRASE.search(selected)
+        or _explicit_range(words)
         or any(term in compact for term in hard_chinese)
     )
 
@@ -230,6 +228,12 @@ def _without_legacy_exclusion_phrases(selected: str) -> str:
     for phrase in ("不要带用户标识", "不带用户标识", "无用户标识"):
         value = value.replace(phrase, "")
     return value
+
+
+def _explicit_range(words: frozenset[str]) -> bool:
+    return bool(words & {"between", "month", "monthly", "range", "week", "weekly"}) or {
+        "from", "to",
+    } <= words
 
 
 def _english_detail_shape(words: tuple[str, ...]) -> bool:

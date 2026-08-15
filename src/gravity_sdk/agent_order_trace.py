@@ -6,6 +6,8 @@ from collections.abc import Mapping
 import re
 from typing import Any
 
+from .agent_intent_text import affirmative_intent_text
+
 
 ORDER_SPLIT_TRACE_NAME = "order_split_trace"
 ORDER_SPLIT_TRACE_SELECTOR = f"composite:{ORDER_SPLIT_TRACE_NAME}"
@@ -238,7 +240,7 @@ ORDER_SPLIT_TRACE_CAPABILITY: Mapping[str, Any] = {
 def order_split_trace_query(query: str) -> bool:
     """Recognize an explicit read while rejecting every adjacent product."""
 
-    selected = _normalize(query)
+    selected = affirmative_intent_text(query)
     if selected in _EXACT_INTENTS:
         return True
     return _claims_product(selected) and not _blocked(selected)
@@ -247,7 +249,7 @@ def order_split_trace_query(query: str) -> bool:
 def order_split_trace_intent(query: str) -> bool:
     """Return positive split-trace evidence without applying conflict policy."""
 
-    selected = _normalize(query)
+    selected = affirmative_intent_text(query)
     return selected in _EXACT_INTENTS or _claims_product(selected)
 
 

@@ -6,10 +6,11 @@ import re
 from typing import Any
 
 from .agent_gap import unavailable_gap
+from .agent_intent_text import affirmative_intent_text
 
 
 def unavailable_report_gap(query: str) -> dict[str, Any] | None:
-    selected = " ".join(query.strip().casefold().split())
+    selected = affirmative_intent_text(query)
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
     if _report_directory(selected, words):
         return unavailable_gap(
@@ -56,42 +57,39 @@ def unavailable_report_gap(query: str) -> dict[str, Any] | None:
 
 def _report_directory(selected: str, words: frozenset[str]) -> bool:
     english = (
-        bool(words & {"report", "reports"}) and "masterkey" in words and "shared" in words
-        and bool(words & {"own", "definition", "definitions"})
+        bool(words & {"report", "reports"})
+        and bool(words & {"catalog", "definition", "definitions", "directory", "list"})
+        and not bool(words & {"subscribed", "subscription", "subscriptions"})
     )
     chinese = (
-        "报表" in selected and "masterkey" in selected and "共享" in selected
-        and any(term in selected for term in ("自己的", "自有"))
-        and "定义" in selected
+        "报表" in selected and any(term in selected for term in ("定义", "目录", "清单", "列表"))
+        and not any(term in selected for term in ("订阅", "已订阅"))
     )
     return english or chinese
 
 
 def _report_subscriptions(selected: str, words: frozenset[str]) -> bool:
-    english = bool(words & {"report", "reports"}) and bool(words & {"subscribed", "subscription", "subscriptions"})
-    return english or ("报表" in selected and any(term in selected for term in ("订阅了", "订阅清单", "报表订阅")))
+    english = bool(words & {"subscribed", "subscription", "subscriptions"}) and bool(
+        words & {"catalog", "list", "report", "reports"}
+    )
+    return english or any(term in selected for term in ("订阅清单", "报表订阅")) or (
+        "报表" in selected and "订阅" in selected
+    )
 
 
 def _media_reports(selected: str, words: frozenset[str]) -> bool:
-    english = "media" in words and bool(words & {"report", "reports"}) and bool(
-        words & {"available", "advertising", "current"}
-    )
-    chinese = "媒体" in selected and "报表" in selected and any(
-        term in selected for term in ("可用", "有哪些", "投放")
-    )
+    english = "media" in words and bool(words & {"report", "reports"})
+    chinese = "媒体" in selected and "报表" in selected
     return english or chinese
 
 
 def _monetization_aggregate(selected: str, words: frozenset[str]) -> bool:
     english = (
-        "monetization" in words and bool(words & {"summarize", "aggregate", "daily"})
-        and bool(words & {"placement", "placements"})
-        and len(words & {"revenue", "impressions", "ecpm"}) >= 2
+        "monetization" in words
+        and bool(words & {"aggregate", "aggregated", "breakdown", "daily", "summarize", "summary"})
     )
     chinese = (
-        "变现平台" in selected and "广告位" in selected
-        and any(term in selected for term in ("汇总", "聚合"))
-        and sum(term in selected for term in ("收入", "展示", "ecpm")) >= 2
+        "变现" in selected and any(term in selected for term in ("汇总", "聚合"))
     )
     return english or chinese
 

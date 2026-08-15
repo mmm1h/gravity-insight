@@ -6,6 +6,8 @@ from collections.abc import Mapping
 import re
 from typing import Any
 
+from .agent_intent_text import affirmative_intent_text
+
 
 USER_JOURNEY_SELECTOR = "composite:user_journey"
 _WORDS = re.compile(r"[a-z0-9_]+", re.IGNORECASE)
@@ -43,7 +45,7 @@ def is_user_journey_card(card: Mapping[str, Any]) -> bool:
 
 
 def _journey_match(query: str) -> dict[str, Any] | None:
-    selected = query.strip().casefold()
+    selected = affirmative_intent_text(query)
     normalized = " ".join(_WORDS.findall(selected.replace("-", " ")))
     words = frozenset(normalized.split())
     exact = selected in {USER_JOURNEY_SELECTOR, "user_journey", "user journey"}
@@ -57,15 +59,7 @@ def _journey_match(query: str) -> dict[str, Any] | None:
         and bool(words & {"event", "events", "journey", "timeline", "profile"})
         and bool(words & {"postback", "postbacks", "callback", "callbacks"})
     )
-    chinese = (
-        "用户" in selected
-        and any(
-            term in selected
-            for term in ("单用户", "单个用户", "指定用户", "某个用户", "这个用户")
-        )
-        and any(term in selected for term in ("旅程", "路径", "事件", "行为", "时间线", "画像"))
-        and any(term in selected for term in ("回传", "回调", "postback"))
-    )
+    chinese = _chinese_user_journey(selected)
     if not (exact or english_single_journey or english_events_postbacks or chinese):
         return None
     return {
@@ -77,6 +71,21 @@ def _journey_match(query: str) -> dict[str, Any] | None:
         "exact_selector": exact,
         "intent_only": not exact,
     }
+
+
+def _chinese_user_journey(selected: str) -> bool:
+    return (
+        "用户" in selected
+        and any(
+            term in selected
+            for term in ("单用户", "单个用户", "指定用户", "某个用户", "这个用户")
+        )
+        and any(term in selected for term in ("旅程", "路径", "事件", "行为", "时间线", "画像"))
+        and (
+            any(term in selected for term in ("回传", "回调", "postback"))
+            or any(term in selected for term in ("单用户旅程", "单个用户旅程", "指定用户旅程"))
+        )
+    )
 
 
 def _journey_card(match: Mapping[str, Any]) -> dict[str, Any]:

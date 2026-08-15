@@ -7,6 +7,7 @@ from collections.abc import Mapping
 from typing import Any, Callable
 
 from . import runtime
+from .agent_intent_text import affirmative_intent_text
 from .dashboard_artifact import validate_dashboard_window
 from .domains import ANALYSIS_QUERY_OPERATIONS
 from .errors import (
@@ -486,7 +487,8 @@ def _validate_window(start: Any, end: Any) -> None:
 
 
 def analysis_template_query(query: str) -> bool:
-    selected = " ".join(query.strip().casefold().split())
+    selected = affirmative_intent_text(query)
+    full = " ".join(query.strip().casefold().split())
     if selected in {ANALYSIS_TEMPLATE_NAME, f"composite:{ANALYSIS_TEMPLATE_NAME}"}:
         return True
     blocked = ("saved", "dashboard", "create", "update", "delete", "share",
@@ -496,7 +498,9 @@ def analysis_template_query(query: str) -> bool:
                "运行", "重放", "准备", "检查", "理解", "执行")
     return (
         ("analysis template" in selected or "chart template" in selected
-         or "分析模板" in selected or "图表模板" in selected)
+         or "分析模板" in selected or "图表模板" in selected
+         or any(term in selected for term in ("运行模板", "重放模板"))
+         and any(term in full for term in ("分析", "图表", "保存分析")))
         and any(action in selected for action in actions)
         and not any(term in selected for term in blocked)
     )

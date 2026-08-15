@@ -8,6 +8,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from .business_pulse import DEFAULT_PLATFORMS
+from .agent_intent_text import affirmative_intent_text
 
 
 BUSINESS_PULSE_NAME = "business_pulse"
@@ -151,7 +152,7 @@ BUSINESS_PULSE_CAPABILITY: Mapping[str, Any] = {
 def business_pulse_query(query: str) -> bool:
     """Recognize only explicit Pulse intent and reject adjacent products."""
 
-    selected = " ".join(query.strip().casefold().split())
+    selected = affirmative_intent_text(query)
     if selected in _EXACT_INTENTS:
         return True
     if not selected:
@@ -164,7 +165,7 @@ def business_pulse_query(query: str) -> bool:
 def business_pulse_intent(query: str) -> bool:
     """Return positive Pulse evidence without adjacent-product exclusions."""
 
-    selected = " ".join(query.strip().casefold().split())
+    selected = affirmative_intent_text(query)
     if selected in _EXACT_INTENTS:
         return True
     if not selected:

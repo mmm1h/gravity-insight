@@ -6,10 +6,11 @@ import re
 from typing import Any
 
 from .agent_gap import unavailable_gap
+from .agent_intent_text import affirmative_intent_text
 
 
 def unavailable_promotion_gap(query: str) -> dict[str, Any] | None:
-    selected = " ".join(query.strip().casefold().split())
+    selected = affirmative_intent_text(query)
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
     if _platform_asset_download(selected, words):
         return unavailable_gap(
@@ -46,29 +47,32 @@ def unavailable_promotion_gap(query: str) -> dict[str, Any] | None:
 
 def _platform_asset_download(selected: str, words: frozenset[str]) -> bool:
     english = (
-        bool(words & {"creative", "asset"}) and "exact" in words
-        and bool(words & {"preview", "download"})
-        and bool(words & {"image", "video"})
+        (bool(words & {"asset", "assets"}) or (
+            "creative" in words and bool(words & {"platform", "reference"})
+        ))
+        and bool(words & {"binary", "download", "fetch", "file", "image", "media", "preview", "video"})
+        and bool(words & {"binary", "download", "fetch", "file", "preview"})
     )
     chinese = (
-        "平台素材" in selected and "精确引用" in selected
-        and any(term in selected for term in ("预览", "下载"))
-        and any(term in selected for term in ("图片", "视频"))
+        any(term in selected for term in ("平台素材", "平台创意", "素材id", "素材 id", "创意引用", "精确素材"))
+        and any(term in selected for term in ("预览", "下载", "文件", "二进制"))
+        and any(term in selected for term in ("图片", "视频", "媒体", "文件", "二进制"))
     )
     return english or chinese
 
 
 def _non_bytedance_hierarchy(selected: str, words: frozenset[str]) -> bool:
     english = (
-        bool(words & {"kuaishou", "tencent"})
-        and bool(words & {"campaign", "campaigns"})
-        and bool(words & {"group", "groups"})
-        and bool(words & {"creative", "creatives"})
+        (bool(words & {"kuaishou", "tencent"}) or {"non", "bytedance"} <= words)
+        and len(words & {"campaign", "campaigns", "creative", "creatives", "group", "groups"}) >= 2
         and bool(words & {"performance", "drill"})
     )
     chinese = (
-        any(term in selected for term in ("快手", "腾讯"))
-        and "计划" in selected and "广告组" in selected and "创意" in selected
+        any(term in selected for term in ("快手", "腾讯", "非巨量"))
+        and (
+            sum(term in selected for term in ("计划", "广告组", "组", "创意", "层级")) >= 2
+            or "层级" in selected and "下钻" in selected
+        )
         and any(term in selected for term in ("表现", "下钻"))
     )
     return english or chinese
@@ -79,12 +83,11 @@ def _platform_specific_creatives(selected: str, words: frozenset[str]) -> bool:
         bool(words & {"platform", "platforms"}) and "specific" in words
         and bool(words & {"creative", "creatives"})
         and bool(words & {"asset", "assets", "field", "fields"})
-        and "common" in words
     )
     chinese = (
-        "投放平台" in selected and "专属" in selected
+        "平台" in selected and "专属" in selected
         and any(term in selected for term in ("素材", "创意"))
-        and "通用素材目录" in selected
+        and any(term in selected for term in ("字段", "深查", "详情", "创意"))
     )
     return english or chinese
 

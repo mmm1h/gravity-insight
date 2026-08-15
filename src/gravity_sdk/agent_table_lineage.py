@@ -6,6 +6,7 @@ import re
 from typing import Any
 
 from .agent_capabilities import agent_query_match, normalize_agent_query
+from .agent_intent_text import affirmative_intent_text
 
 
 _CAPABILITY = {
@@ -44,15 +45,16 @@ def table_lineage_capability_cards(
     definition = _CAPABILITY
     if platform is not None or domain not in {None, definition["domain"]}:
         return []
-    normalized = normalize_agent_query(query)
+    recognized = affirmative_intent_text(query)
+    normalized = normalize_agent_query(recognized)
     words = frozenset(re.findall(r"[a-z0-9_]+", normalized))
     english_intent = "table" in words and (
         bool(words & {"lineage", "version", "change"})
         or {"operation", "log"} <= words
     )
     chinese_intent = bool(re.search(
-        r"(?:数据表|(?<!报)表).{0,12}(?:血缘|版本|变更|操作日志)", query
-    ))
+        r"(?:数据表|(?<!报)表).{0,12}(?:血缘|版本|变更|操作日志)", recognized
+    )) or ("同步" in recognized and "沿革" in recognized)
     selector = str(definition["selector"])
     exact = normalized in {
         selector.casefold(),

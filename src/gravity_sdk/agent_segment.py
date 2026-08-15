@@ -9,6 +9,7 @@ from typing import Any
 
 from .find import query_match
 from .agent_export import is_authoritative_export_card
+from .agent_intent_text import affirmative_intent_text
 from .segment_spec_schema import segment_rule_spec_schema
 
 
@@ -28,7 +29,9 @@ _ENGLISH_ACTIONS = frozenset(
 )
 _CHINESE_SUBJECTS = ("人群", "受众", "分群")
 _CHINESE_RULES = ("规则", "条件")
-_CHINESE_RESULTS = ("人数", "多少人", "规模", "占比", "比例", "命中", "占全部")
+_CHINESE_RESULTS = (
+    "人数", "多少人", "规模", "占比", "比例", "命中", "覆盖", "占全部",
+)
 _CHINESE_ACTIONS = ("评估", "预估", "估算", "测算", "圈中")
 _EXACT_SELECTORS = frozenset(
     {_SELECTOR, f"composite:{_COMPOSITE}", _COMPOSITE}
@@ -81,7 +84,7 @@ def segment_rule_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def _requests_segment_evaluation(query: str) -> bool:
-    selected = query.strip().casefold()
+    selected = affirmative_intent_text(query)
     if selected in _EXACT_SELECTORS:
         return True
     if re.search(r"[\u3400-\u9fff]", selected) is None:
@@ -96,6 +99,11 @@ def _requests_segment_evaluation(query: str) -> bool:
             )
         )
     compact = "".join(selected.split())
+    full = "".join(query.strip().casefold().split())
+    if "规则" in compact and "覆盖" in compact and any(
+        term in compact for term in _CHINESE_ACTIONS
+    ) and any(term in full for term in _CHINESE_SUBJECTS):
+        return True
     return all(
         any(term in compact for term in group)
         for group in (

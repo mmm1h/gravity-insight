@@ -6,6 +6,8 @@ from collections.abc import Mapping
 import re
 from typing import Any
 
+from .agent_intent_text import affirmative_intent_text
+
 
 SEGMENT_MEMBERS_NAME = "segment_members"
 SEGMENT_MEMBERS_SELECTOR = f"composite:{SEGMENT_MEMBERS_NAME}"
@@ -48,7 +50,7 @@ SEGMENT_MEMBERS_CAPABILITY: Mapping[str, Any] = {
 
 
 def segment_members_query(query: str) -> bool:
-    selected = " ".join(query.strip().casefold().split())
+    selected = affirmative_intent_text(query)
     if selected in _EXACT:
         return True
     if selected.isascii():
@@ -60,24 +62,29 @@ def segment_members_query(query: str) -> bool:
             and not bool(words & _AGGREGATES)
         )
     compact = "".join(selected.split())
-    return (
-        any(term in compact for term in ("分群", "人群", "受众"))
-        and any(term in compact for term in ("成员", "名单", "哪些人", "都有谁"))
-        and not any(term in compact for term in ("人数", "规模", "占比", "比例", "历史", "单日"))
+    full = "".join(query.strip().casefold().split())
+    return _chinese_member_intent(compact, full) and not any(
+        term in compact for term in ("人数", "规模", "占比", "比例", "历史", "单日")
     )
 
 
 def segment_members_intent(query: str) -> bool:
-    selected = " ".join(query.strip().casefold().split())
+    selected = affirmative_intent_text(query)
     if selected in _EXACT:
         return True
     if selected.isascii():
         words = frozenset(_WORDS.findall(selected))
         return bool(words & _SUBJECTS) and bool(words & _MEMBERS) and bool(words & _ACTIONS)
     compact = "".join(selected.split())
-    return any(term in compact for term in ("分群", "人群", "受众")) and any(
-        term in compact for term in ("成员", "名单", "哪些人", "都有谁")
-    )
+    full = "".join(query.strip().casefold().split())
+    return _chinese_member_intent(compact, full)
+
+
+def _chinese_member_intent(compact: str, full: str) -> bool:
+    subject = any(term in compact for term in ("分群", "人群", "受众"))
+    contextual_subject = any(term in full for term in ("分群", "人群", "受众"))
+    members = any(term in compact for term in ("成员", "名单", "哪些人", "都有谁"))
+    return subject and members or "成员名单" in compact and contextual_subject
 
 
 def segment_members_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
