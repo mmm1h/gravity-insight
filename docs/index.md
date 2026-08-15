@@ -26,16 +26,14 @@
 | 新增或升级 operation | [新增受控能力](maintainers/operations.md) | [维护者入口](maintainers/index.md) |
 | 判断能力应扩展到哪一层 | [扩展地图](maintainers/extending.md) | [新增受控能力](maintainers/operations.md) |
 | 判断是否建设 MCP 交付面 | [MCP 可行性报告](mcp-feasibility.md) | [路线图](roadmap.md) |
-| 复核 Agent/MCP 的可用性、安全、协议与厂商证据 | [Agent 可用性方法](research/agent-usability-methods.md) | [安全治理](research/agent-security-governance.md)、[MCP 协议](research/mcp-protocol-and-servers.md)、[厂商版图](research/vendor-agent-landscape.md) |
+| 复核外部调研证据（可用性 / 安全 / 协议 / 语义层 / 厂商） | [外部调研索引](#外部调研) | [Agent 可用性方法](research/agent-usability-methods.md)、[安全治理](research/agent-security-governance.md) |
 | 了解当前排期、并行约束与不做的事 | [路线图](roadmap.md) | [分析动线台账](analysis-journeys.md) |
-| 查看 Agent / MCP 方法调研 | [Agent 易用性](research/agent-usability-methods.md)、[Agent 安全](research/agent-security-governance.md) | [MCP 协议](research/mcp-protocol-and-servers.md)、[厂商版图](research/vendor-agent-landscape.md) |
 | 查看每条分析动线的完成度、四面入口与证据阻塞 | [分析动线台账](analysis-journeys.md) | [能力覆盖与缺口](capability-coverage.md) |
 | 查看架构热点与清理条件 | [技术债清单](maintainers/technical-debt.md) | [维护者入口](maintainers/index.md) |
 | 查看当前平台覆盖和不能直接上线的缺口 | [能力覆盖与缺口](capability-coverage.md) | [路由盘点](maintainers/census.md) |
 | 查看本轮 17 个候选的真实状态 | [候选能力证据矩阵](candidate-capability-matrix.md) | [探测安全](maintainers/probing.md) |
 | 探测生产接口 | [探测安全](maintainers/probing.md) | [路由盘点](maintainers/census.md) |
 | 刷新 Evidence | [Evidence 运行手册](maintainers/evidence.md) | [维护者入口](maintainers/index.md) |
-| 查阅 Agent 调研依据 | [安全治理](research/agent-security-governance.md)、[可用性方法](research/agent-usability-methods.md) | [MCP 协议](research/mcp-protocol-and-servers.md)、[厂商能力](research/vendor-agent-landscape.md) |
 
 ## 三个必须先知道的边界
 
