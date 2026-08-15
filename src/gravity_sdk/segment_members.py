@@ -15,6 +15,8 @@ from .errors import (
     ErrorDetail,
     GravityInsightError,
     InputValidationError,
+    exit_code_for_category,
+    exit_code_for_error,
 )
 
 
@@ -172,11 +174,23 @@ def _from_read(
     selected = _select_rows(rows[:items], fields)
     truncated = value.get("truncated") is True
     result_status = "partial" if truncated else ("empty" if not selected else "success")
+    detail = (
+        ErrorDetail.create(
+            ErrorCode.PAGINATION_LIMIT,
+            "Segment member rows exceeded the supplied item limit.",
+            operation_id=ANALYSIS_SEGMENT_USER_DETAIL,
+            next_action=(
+                "Raise max_items within the documented limit and retry the same request."
+            ),
+        )
+        if truncated
+        else None
+    )
     return {
         "schema_version": SCHEMA_VERSION,
         "ok": not truncated,
         "status": result_status,
-        "exit_code": 3 if truncated else 0,
+        "exit_code": exit_code_for_error(detail) if detail is not None else 0,
         "operation_id": ANALYSIS_SEGMENT_USER_DETAIL,
         "app_id": app,
         "segment": dict(identity),
@@ -187,11 +201,8 @@ def _from_read(
         "complete": not truncated,
         "limits": {"max_workers": workers, "max_pages": pages, "max_items": items},
         "data": {"list": selected, "page_info": copy.deepcopy(page_info)},
-        "error": None,
-        "next_action": (
-            "Raise max_items within the documented limit and retry the same request."
-            if truncated else None
-        ),
+        "error": detail.to_dict() if detail is not None else None,
+        "next_action": detail.next_action if detail is not None else None,
     }
 
 
@@ -258,7 +269,7 @@ def _failure(
 ) -> dict[str, Any]:
     detail = _failure_detail(native)
     category = str(detail.get("category", ErrorCategory.UPSTREAM.value))
-    exit_code = {"caller": 2, "upstream": 3, "local": 4}.get(category, 4)
+    exit_code = exit_code_for_category(category, default=ErrorCategory.LOCAL)
     native_status = _status(native) if isinstance(native, Mapping) else ""
     status = "contract_changed" if native_status in _CONTRACT_CHANGED else (
         native_status if native_status in {

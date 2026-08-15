@@ -10,19 +10,13 @@
       },
       {
         "code": "response_schema_unverified",
-        "detail": "The one allowed probe observed data.list[] as an object but no item key; no D28 result field is registered or approved for exposure.",
+        "detail": "The one allowed probe observed data.list[] as an object but no item key; no D28 result field can be registered until a non-empty shape is observed.",
         "evidence": "evidence/probe/20260815T112326Z_report.report_monetization_report_custom_get.calc_total.yaml",
         "status": "open"
       },
       {
-        "code": "privacy_projection_approval_required",
-        "detail": "D27 privacy approval does not extend to this operation; all unregistered result keys remain omitted pending independent review.",
-        "evidence": "docs/roadmap.md#d28-变现聚合合同取证2026-08-15",
-        "status": "open"
-      },
-      {
         "code": "field_review_required",
-        "detail": "The observed data.list container is retained for manual review and no list item field is approved.",
+        "detail": "The observed data.list container is retained for contract review and no list item field has an observed shape to register.",
         "evidence": "evidence/probe/20260815T112326Z_report.report_monetization_report_custom_get.calc_total.yaml",
         "status": "open"
       }
@@ -121,7 +115,6 @@
       "eligible": false,
       "missing": [
         "field_review_required",
-        "privacy_projection_approval_required",
         "request_value_domain_unverified",
         "response_projection",
         "response_schema_unverified",
@@ -289,9 +282,9 @@
   "operation": {
     "action": "calc_total",
     "auth_profile": "gravity_authorization",
-    "block_reason": "draft blockers: request_value_domain_unverified, response_schema_unverified, privacy_projection_approval_required, field_review_required",
+    "block_reason": "draft blockers: request_value_domain_unverified, response_schema_unverified, field_review_required",
     "contract_version": 1,
-    "description": "变现多维报表的条件过滤/透视合计重算；hash-matched bundle 已恢复完整请求 builder 与本地消费，响应 item 字段和独立隐私投影仍未成立。",
+    "description": "变现多维报表的条件过滤/透视合计重算；hash-matched bundle 已恢复完整请求 builder 与本地消费，响应 item 字段仍未成立。",
     "domain": "report",
     "effect": "read",
     "examples": [],
@@ -431,35 +424,7 @@
       "data_keys": [],
       "dynamic_item_fields": [],
       "item_keys": [],
-      "known_omitted_item_keys": [
-        "ClientID",
-        "Name",
-        "TraceID",
-        "WXOpenID",
-        "android_id",
-        "client_id",
-        "device_id",
-        "device_info",
-        "email",
-        "event_user_id",
-        "idfa",
-        "idfv",
-        "imei",
-        "ip",
-        "ip_address",
-        "mobile",
-        "oaid",
-        "open_id",
-        "openid",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "phone",
-        "trace_id",
-        "uid",
-        "unionid",
-        "user_id"
-      ],
+      "known_omitted_item_keys": [],
       "required_data_keys": []
     },
     "semantic_error_rules": [],

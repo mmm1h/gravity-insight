@@ -982,8 +982,8 @@ setting route 去重使最终台账成为 `47 = 32 / 0 / 15`。该合成动线�
 `segment_members()`、Plan `segment_members` 与 Agent `composite:segment_members` 共用
 `gravity-insight.segment-members.v1`；Plan 走窄 Analysis Segment family router，`plan_adapters.py`
 净增长 0。147 个已证实顶层字段全部登记并按上游授权暴露，未登记字段继续按合同漂移 fail-closed；
-凭据键仍递归去除。上游完整响应超过 `max_items` 时只交付有界前缀并返回
-`partial` / exit 3。
+凭据键仍递归去除。上游完整响应超过 `max_items` 时只交付有界前缀并发布
+`PAGINATION_LIMIT / caller / retryable=false` 的 `ErrorDetail`，退出码由共享分类得到 2。
 
 本分支只把该行从完全缺失改为已闭环，即 **已闭环 +1、完全缺失 -1、总数不变**；总数基线另有
 并行分支修正，本单元不改合并前总计。Agent 以仓库外给定问法实测：
@@ -1170,15 +1170,14 @@ query 参数。
 method/path/body keys 后直接发唯一 POST。此前四次 `calc_total` 调用尝试均在网络前失败，HTTP observation 为 0，
 不计生产请求。
 
-### 独立隐私审查与精确退出条件
+### 响应合同与精确退出条件
 
 已持久化的 live schema 中，只有 `code/data/list/extra/msg` 外壳和一个无字段的 `list[]` object，
-因此**观察到的 item 用户级字段清单为空**；这不证明主响应没有用户级字段，因为主 route 的 schema
-receipt 已丢失。静态消费确认日期、`monetization_platform`、`ad_unit_id`、`app_id/app_name`、
-`ad_type` 是聚合维度候选；它们尚未获 D28 投影批准。共享 report 控制流中的
-`operator/operator_id/operator_name` 可定位员工，列为**疑似用户级**；所有动态/未登记 item key
-列为**语义不明**。两个 draft 已把上述人/设备标识族列入 `known_omitted_item_keys`，主响应的
-`list/total/extra_data/tips` 也保持 known-omitted/空投影；D27 批准没有复用。
+因此**观察到的 item 字段清单为空**；这不证明主响应没有其他字段，因为主 route 的 schema receipt
+已丢失。静态消费确认日期、`monetization_platform`、`ad_unit_id`、`app_id/app_name`、`ad_type`
+是聚合维度候选，`operator/operator_id/operator_name` 等只是可能出现的静态候选，均不能代替实际
+响应 shape。两个 draft 的投机性 `known_omitted_item_keys` 已清空；未登记字段继续
+`contract_changed_additive` fail-closed，取得真实字段后按投影总裁决登记并全部暴露。
 
 合同失败的精确原因与证据提供方：
 
@@ -1190,7 +1189,7 @@ receipt 已丢失。静态消费确认日期、`monetization_platform`、`ad_uni
    不能替代。
 3. 缺指标/维度服务端值域与必填集合。需要上游 report API owner 的 schema，或 hash-matched 自然
    请求证据；不能靠组合试探。
-4. 非空字段出现后仍需本单元之外的隐私批准者逐字段裁决；疑似用户级和语义不明字段继续 omitted。
+4. 非空字段出现后按投影总裁决登记并全部暴露；合同登记前继续 fail-closed，不另设隐私审批。
 
 因此无法同时满足“非空响应登记、empty/partial/能力缺口可区分、未登记字段 fail-closed”的实现门槛。
 动线计数不变：`48 = 32 已闭环 / 0 部分闭环 / 16 完全缺失 → 本轮 +0/-0 → 48 = 32/0/16`；

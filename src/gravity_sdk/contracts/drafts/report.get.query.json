@@ -19,12 +19,6 @@
         "detail": "No value-free response shape from the 2026-08-15 request is registered, and historical semantic-error envelopes do not prove list/total item fields.",
         "evidence": "docs/roadmap.md#d28-变现聚合合同取证2026-08-15",
         "status": "open"
-      },
-      {
-        "code": "privacy_projection_approval_required",
-        "detail": "D27 privacy approval does not extend to this operation; all unregistered result keys remain omitted pending independent review.",
-        "evidence": "docs/roadmap.md#d28-变现聚合合同取证2026-08-15",
-        "status": "open"
       }
     ],
     "candidate_fields": [],
@@ -164,7 +158,6 @@
     "promotion_gate": {
       "eligible": false,
       "missing": [
-        "privacy_projection_approval_required",
         "probe_receipt_missing",
         "request_value_domain_unverified",
         "response_projection",
@@ -339,9 +332,9 @@
   "operation": {
     "action": "query",
     "auth_profile": "gravity_authorization",
-    "block_reason": "draft blockers: request_value_domain_unverified, probe_receipt_missing, response_schema_unverified, privacy_projection_approval_required",
+    "block_reason": "draft blockers: request_value_domain_unverified, probe_receipt_missing, response_schema_unverified",
     "contract_version": 1,
-    "description": "变现多维报表受控查询；hash-matched bundle 已恢复完整请求 builder、消费和本地分页，目标响应 receipt、item schema 与独立隐私投影仍未成立。",
+    "description": "变现多维报表受控查询；hash-matched bundle 已恢复完整请求 builder、消费和本地分页，目标响应 receipt 与 item schema 仍未成立。",
     "domain": "report",
     "effect": "read",
     "examples": [],
@@ -521,35 +514,7 @@
         "tips",
         "total"
       ],
-      "known_omitted_item_keys": [
-        "ClientID",
-        "Name",
-        "TraceID",
-        "WXOpenID",
-        "android_id",
-        "client_id",
-        "device_id",
-        "device_info",
-        "email",
-        "event_user_id",
-        "idfa",
-        "idfv",
-        "imei",
-        "ip",
-        "ip_address",
-        "mobile",
-        "oaid",
-        "open_id",
-        "openid",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "phone",
-        "trace_id",
-        "uid",
-        "unionid",
-        "user_id"
-      ],
+      "known_omitted_item_keys": [],
       "required_data_keys": []
     },
     "semantic_error_rules": [

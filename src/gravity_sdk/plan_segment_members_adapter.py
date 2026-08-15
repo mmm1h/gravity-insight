@@ -6,7 +6,7 @@ import copy
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from .errors import ErrorCategory, ErrorCode, ErrorDetail
+from .errors import ErrorCategory, ErrorCode, ErrorDetail, exit_code_for_error
 from .plan import AdapterContext
 from .plan_adapter_support import (
     has_dynamic,
@@ -107,7 +107,7 @@ def safe_segment_members_envelope(result: Any) -> dict[str, Any]:
             "schema_version": SCHEMA_VERSION,
             "ok": False,
             "status": "contract_changed",
-            "exit_code": 3,
+            "exit_code": exit_code_for_error(detail),
             "error": detail.to_dict(),
             "next_action": "Refresh the registered response shape, then retry.",
         }

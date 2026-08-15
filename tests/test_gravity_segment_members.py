@@ -87,9 +87,17 @@ class SegmentMembersTests(unittest.TestCase):
         self.assertEqual(["ClientID", "Name"], client.calls[0][2]["fields"])
 
         partial = segment_members(_Client(_member_read(truncated=True)), 17, 8, max_items=1)
-        self.assertEqual((False, "partial", 3, False), (
+        self.assertEqual((False, "partial", 2, False), (
             partial["ok"], partial["status"], partial["exit_code"], partial["complete"]
         ))
+        self.assertEqual(
+            ("PAGINATION_LIMIT", "caller", False),
+            (
+                partial["error"]["code"],
+                partial["error"]["category"],
+                partial["error"]["retryable"],
+            ),
+        )
         self.assertEqual(1, partial["returned_items"])
 
     def test_exact_name_catalog_and_contract_change_fail_closed(self):
