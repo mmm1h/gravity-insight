@@ -282,7 +282,7 @@ artifact 路径也走不通：当前账号 7 个 App 里 6 个的合法 Dashboar
   含 `minimum_calls`、`discovery_calls`、`unknown_inputs`、`catalog_status`、`input_sources` 与依赖。
   旧 Plan 不含该字段仍通过，字段不进运行态 `PlanNode`，不改变 request、并发或执行结果。
   Multidim 与 Promotion 的独立目录已用现有 batch 合为一次发现调用，selector 集合与分页数不变。
-- 当时 13 张固定 composite 卡（现 15 张）的 7 对意图重叠已收口：集中层按现有 owner 的正向证据强度与 selector
+- 当时 13 张固定 composite 卡（当前基线为 20 张）的 7 对意图重叠已收口：集中层按现有 owner 的正向证据强度与 selector
   精确度收集产品，命中多个产品即返回 `MULTIPLE_INTENTS`，不再搜索 raw operation。
   该判据不枚举产品对；显式 `and/以及/同时` 子句独立识别，wrapper 引用与历史紧邻冲突仍 fail closed。
 - 错误分类已对齐：permission 返回 upstream/3，本地 unsupported/policy/privacy 阻断返回 local/4；
@@ -612,6 +612,44 @@ Agent 面达标 = **至少一条中文自然语言问法和一条英文自然语
 **为什么是收紧而不是放宽：** 目标写的是"对 Agent 友好"。
 **一个 Agent 拿不到的能力，对这个目标而言等于不存在。**
 把判据放宽到"卡注册了就算"，等于用一个恒真检验粉饰产品目标没达成。
+
+## MCP 交付面可行性裁决（2026-08-15）
+
+**裁决：应该做一个可撤回的本地 stdio 实验，但现在不把 MCP 定为强制第五交付面，也不建设远程
+HTTP/OAuth。** 完整论证、14-tool 草案、反方和分阶段判据见
+[MCP 交付面可行性报告](mcp-feasibility.md)。
+
+本裁决不是由同行采用 MCP 推出来的，而是由本仓库已经测出的缺陷触发：20 个真实问题中首调错路由
+8 个，自然语言到合法答案只完成 4 个。MCP 让宿主模型基于 tool schema 选择结果型能力，可以直接
+检验它是否优于手写 recognizer；而已闭环的漏斗、留存等仍由受治理的上游/领域 composite 计算，
+不把原始事件、任意 SQL 或 185 个 raw operation 交给模型。
+
+题设所称 15 张固定 composite 卡不是当前事实：`composite_capability_inventory()` 在本基线返回
+**20 张**，已超过每 server 5–15 tools 的经验区间；卡中的提示型 schema 也不全是合法 JSON Schema。
+因此不能把卡 1:1 发布为 tools。候选面从 47 条计数动线重算：
+
+```text
+47 = 32 已闭环 + 0 部分闭环 + 15 完全缺失
+32 = 7 核心分析 + 8 上下文/资产 + 3 报表 + 6 营销
+     + 4 用户/交易 + 1 SQL + 1 素材导出 + 2 离线发现
+14 tools = 6 + 3 + 1 + 1 + 1 + 1 + 1
+2 条离线发现 -> resources
+```
+
+15 条完全缺失不发布空壳，3 条明确不计数的 legacy/便利/重复面不纳入；raw
+`gravity run <operation>` 不进 MCP。账面没有变化：operation `185 + 0 - 0 = 185`，计数动线
+`47 + 0 - 0 = 47`。
+
+首轮若实施，只做 6 个核心分析 tool、App/分析词表 resource 和 stdio；不改共享 spine，不改
+`gravity agent`。旧自然语言层选择**保留但冻结**：不再扩关键词和 owner，只修严重回归；完整 14-tool
+面在两个真实宿主通过冻结题集且调用方迁移后，才进入弃用评估。毕业线为首选正确至少 `18/20`
+（当前 `12/20`）、合法答案至少 `12/20`（当前 `4/20`），并有一个现有调用方试用和第二个独立
+采用意向；否则停止 server，退回 schema-only 交付。
+
+现有 envelope、三态与 fail-closed 可由 MCP `structuredContent` 无损保留；CLI/SDK invocation
+call-bound、进程退出码和 caller/upstream/local 分类没有 MCP 原生等价物，必须继续留在 Gravity
+envelope，毕业后另定义 MCP 调用单位，不能改名冒充原合同。远程多用户还需要逐用户 Gravity 身份或
+明确单租户 service identity；在 owner、IdP、租户和审计模型成立前，OAuth 没有实施价值。
 
 ## 投影边界总裁决：全面放开（2026-08-15）
 

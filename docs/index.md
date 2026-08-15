@@ -10,9 +10,9 @@
 | 让 Agent 查询 Gravity | [Agent 工作流](agent-workflow.md) | [架构与概念](architecture.md) |
 | 构造事件、漏斗、留存、属性或分布查询 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Analysis Spec](reference/cli.md#analysis-query-spec-v1) |
 | 执行多维报表查询 | [Agent 工作流：Multidim](agent-workflow.md#multidim) | [CLI 参考：Multidim](reference/cli.md#multidim) |
-| 读取单日无标识订单目录 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Order Directory](reference/cli.md#order-directory-v1) |
+| 读取单日订单目录 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Order Directory](reference/cli.md#order-directory-v1) |
 | 按 TraceID 读取单日拆单明细 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Order Split Trace](reference/cli.md#order-split-trace-v1) |
-| 读取单日无标识变现明细 | [Agent 工作流](agent-workflow.md) | [维护者边界](maintainers/monetization-discovery-guard.md) |
+| 读取单日变现明细 | [Agent 工作流](agent-workflow.md) | [维护者边界](maintainers/monetization-discovery-guard.md) |
 | 读取跨平台素材表现 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Material Performance](reference/cli.md#material-performance) |
 | 读取跨平台推广表现 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Promotion Performance](reference/cli.md#promotion-performance) |
 | 查看自定义人群覆盖与状态 | [Agent 工作流](agent-workflow.md) | [CLI 参考](reference/cli.md#custom-audiences) |
@@ -24,6 +24,7 @@
 | 创建或下载异步导出 | [导出指南](guides/export.md) | [CLI 参考](reference/cli.md) |
 | 新增或升级 operation | [新增受控能力](maintainers/operations.md) | [维护者入口](maintainers/index.md) |
 | 判断能力应扩展到哪一层 | [扩展地图](maintainers/extending.md) | [新增受控能力](maintainers/operations.md) |
+| 判断是否建设 MCP 交付面 | [MCP 可行性报告](mcp-feasibility.md) | [路线图](roadmap.md) |
 | 了解当前排期、并行约束与不做的事 | [路线图](roadmap.md) | [分析动线台账](analysis-journeys.md) |
 | 查看每条分析动线的完成度、四面入口与证据阻塞 | [分析动线台账](analysis-journeys.md) | [能力覆盖与缺口](capability-coverage.md) |
 | 查看架构热点与清理条件 | [技术债清单](maintainers/technical-debt.md) | [维护者入口](maintainers/index.md) |
