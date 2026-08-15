@@ -78,7 +78,7 @@ def compile_segment_spec(
         )
     inputs = {
         "app_id": str(app_id),
-        "name": text(source.get("name"), "name", maximum=128),
+        "name": text(source.get("name"), "name", maximum=20),
         "remark": text(
             source.get("remark", ""),
             "remark",

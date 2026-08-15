@@ -8,12 +8,12 @@ manifest 与 `gravity agent <query>` 为准；完整路由账本见
 
 | 范围 | 当前状态 |
 | --- | --- |
-| 编译 operation | 187（默认值字典 `+1`、D35 `+1`） |
-| stable operation | 178（默认值字典 `+1`、D35 `+1`） |
-| stable operation 产品面交叉 | 88 已覆盖 / 82 不应产品化 / 8 原快照待产品化；默认值字典与 D35 直接闭环 |
+| 编译 operation | 194（dev 187 + Segment mutation 7） |
+| stable operation | 185（178 read / 7 governed Segment mutation） |
+| stable read operation 产品面交叉 | 88 已覆盖 / 82 不应产品化 / 8 原快照待产品化；默认值字典与 D35 已直接闭环 |
 | 推广 / 素材 stable 原子读取 | 64 / 24 |
 | Census 路由 | 987，全部有明确归类 |
-| Census 中 callable covered route | 174 |
+| Census 中 callable covered route | 181 |
 | 尚未覆盖的 read route | 341 |
 | 明确保留的推广 / 素材 write reservation | 110 / 49 |
 
@@ -21,7 +21,7 @@ manifest 与 `gravity agent <query>` 为准；完整路由账本见
 draft，但当前没有一个具有成功 probe；它们可用于说明缺口和准备最小探测，不能生成执行
 argv，也不能进入 stable manifest。
 
-stable 同样不等于已有分析产品：本轮首次从 176 条 stable operation 正向检查产品调用链，
+stable 同样不等于已有分析产品：既有正向交叉只统计 176 条 stable read operation，
 `gravity run <operation-id>`、legacy promotion snapshot 和 SDK inventory snapshot 均不算分析动线。
 实现前完整交叉为 `86 / 82 / 8`；8 条中只有 `report.company_amount.query` 同时具备成功非空与
 分页证据、清晰独立语义和已批准投影，因此已通过 `reports usage` / SDK / Plan / Agent 四面闭环。
@@ -64,8 +64,10 @@ Census 对同一 path 仍为 UNKNOWN；按唯一 path 排除，未重复计数�
 响应合同，故最终全部转入“数据/证据阻塞”，本轮新增产品和分析动线均为 0。
 
 这次语义复核自身不改 Census 的机器 route status，也不把 UI route 包装成产品；其派发快照为
-operation 185、stable 176、callable covered route 172、`uncovered_read=343`。合入随后完成的默认值字典
-与 D35 后，当前值统一为 operation 187、stable 178、callable covered route 174、`uncovered_read=341`。
+operation 185、stable 176、callable covered route 172、`uncovered_read=343`。随后默认值字典与 D35
+各晋升 1 条 read，Segment mutation 再把 7 条 reservation 提升为 stable，因此当前值统一为 operation
+`185 + 2 + 7 = 194`、stable `176 + 2 + 7 = 185`、callable covered route
+`172 + 2 + 7 = 181`、`uncovered_read=341`。
 现在可直接回答真正缺口：
 在这 155 条中有分析价值但尚无证据的路由是 39 条；另有 5 条因 method、请求/响应或服务端语义不足
 仍无法判定。下一轮只有在租户数据或服务端合同证据改变后才重启这 18 条，不重复当前租户的空探测。
@@ -82,8 +84,10 @@ operation 185、stable 176、callable covered route 172、`uncovered_read=343`�
   草稿最接近可验证状态。D32 已在当前账号完成最小根读取：只有 Bilibili account 曾非空，但
   advertiser 为空；其余六个平台在允许的根读取或最短单日 advertiser 窗口内均为空，且无权限
   失败或合同漂移。子级未发送，所有草稿继续等待有数据租户的最小非空 probe。
-- auth/proxy 路由和写操作不属于普通读取缺口。前者保持 unsupported，后者保持 reservation，
-  除非项目范围和安全模型明确扩展。
+- auth/proxy 路由和写操作不属于普通读取缺口。前者保持 unsupported。写操作边界已经显式扩大，
+  但只放行 7 条逐项登记的 Segment mutation：从漏斗、规则、历史版本或临时分群创建，规则/名称
+  更新、手动刷新和带标记删除。推广投放、素材、多维报表、权限、事件/事件属性删除及其他未登记
+  mutation 仍为 reservation/blocked write；范围依据是“补全探索式分析闭环”而不是 HTTP method。
 
 ## 四级能力状态
 
@@ -92,7 +96,18 @@ operation 185、stable 176、callable covered route 172、`uncovered_read=343`�
 | stable executable | 可以发现、描述、校验和执行 | 持续通过合同、隐私和漂移检查 |
 | stable projection gap | 端点可用，但部分响应字段仍 fail-closed | 已有成功、脱敏、非空字段证据即可深化 |
 | catalog-only draft | 只报告为 capability gap，不提供执行 argv | 请求绑定、非空响应、分页、隐私、父依赖和权限证据齐全 |
-| reservation / unsupported | 不作为待调用能力展示 | 必须先改变项目范围和治理设计 |
+| reservation / unsupported | 不作为待调用能力展示 | 新增 mutation family 必须另行改变范围并完成写治理；unsupported 需先取得可执行合同 |
+
+## 写操作边界（2026-08-16 裁决）
+
+Segment 是当前唯一进入 stable manifest 的业务 mutation family。每次 create 都把可见的
+`GSDK-<12 hex>` 放进 `segment_remark`，创建后经完整列表和 detail 读回；删除只接受 detail
+读回仍带该标记的对象。所有 mutation 默认只生成零网络 dry-run，执行必须显式选择 `--execute`，
+单次发送且不自动重放。标记用于识别 SDK 创建物，不过滤任何列表，也不是权限系统。
+
+其余写路由不因本次框架存在而自动获准。尤其 110 条推广写、49 条素材写、多维报表写、权限管理、
+`event/event_batch_delete` 与 `event_property_batch_delete` 继续 reservation；只有精确 source contract、
+`effect=mutation`、stable/executable 状态及产品层确认流程同时成立时，运行时才会签发一次性写授权。
 
 本轮已按第二级补齐 Bilibili 账户汇总、素材分类→标签树、推广变更审计 ID、multidim
 合计字段链路、overview 指标列映射，以及事件属性模板的 common/custom/preset 字典；未知

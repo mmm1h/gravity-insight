@@ -67,7 +67,7 @@ def _offline_flag_selected(args: Any) -> bool:
         bool(getattr(args, name, False))
         for name in (
             "dry_run", "query_spec_dry_run", "segment_spec_dry_run",
-            "analysis_query_batch_dry_run", "multidim_dry_run",
+            "segment_mutation_dry_run", "analysis_query_batch_dry_run", "multidim_dry_run",
         )
     )
 
@@ -98,6 +98,11 @@ def _segment_requires_credentials(args: Any) -> bool:
         return not legacy
     if action == "evaluate":
         return getattr(args, "spec", None) is not None
+    if action in {
+        "create-from-analysis", "create-from-rule", "create-from-history",
+        "create-from-tmp", "update", "update-rule", "refresh", "delete",
+    }:
+        return bool(getattr(args, "segment_mutation_execute", False))
     return getattr(args, "kind", None) is not None and (
         getattr(args, "input", None) is not None
         or bool(getattr(args, "input_sets", None))

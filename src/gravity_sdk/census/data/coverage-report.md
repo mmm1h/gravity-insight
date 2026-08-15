@@ -15,9 +15,9 @@
 
 | status | routes |
 | --- | ---: |
-| `covered` | 174 |
+| `covered` | 181 |
 | `uncovered_read` | 341 |
-| `uncovered_write` | 414 |
+| `uncovered_write` | 407 |
 | `uncovered_export` | 22 |
 | `uncovered_auth_or_proxy` | 30 |
 | `unsupported_non_api` | 6 |
@@ -26,26 +26,26 @@
 ## Route accounting vs callability
 
 - Accounted routes: **987**
-- Callable covered routes: **174**
+- Callable covered routes: **181**
 - Unaccounted routes: **0**
 
 | accounting state | routes |
 | --- | ---: |
-| `accounted_blocked_write` | 414 |
+| `accounted_blocked_write` | 407 |
 | `accounted_deprecated` | 1 |
 | `accounted_experimental` | 6 |
 | `accounted_export_candidate` | 22 |
 | `accounted_permission_unavailable` | 1 |
 | `accounted_read_candidate` | 311 |
 | `accounted_unsupported` | 58 |
-| `covered_executable` | 174 |
+| `covered_executable` | 181 |
 
 | callability | routes |
 | --- | ---: |
 | `candidate` | 333 |
 | `catalog_only` | 8 |
-| `contract_only` | 414 |
-| `executable` | 174 |
+| `contract_only` | 407 |
+| `executable` | 181 |
 | `unsupported` | 58 |
 
 ## Stable manifest reconciliation
@@ -53,7 +53,7 @@
 | category | stable operations |
 | --- | ---: |
 | Previously covered | 0 |
-| (a) Found in previously unfetched chunks | 174 |
+| (a) Found in previously unfetched chunks | 181 |
 | (b) Normalization false gap fixed | 0 |
 | (c) Manifest route absent from frontend | 4 |
 
@@ -70,7 +70,7 @@
 
 | module | covered | uncovered read | all uncovered | total |
 | --- | ---: | ---: | ---: | ---: |
-| 分析 | 20 | 7 | 48 | 68 |
+| 分析 | 27 | 7 | 41 | 68 |
 | 推广平台 | 58 | 145 | 268 | 326 |
 | 资产 | 6 | 17 | 72 | 78 |
 | 素材 | 19 | 42 | 93 | 112 |

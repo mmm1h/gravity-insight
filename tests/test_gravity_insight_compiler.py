@@ -60,7 +60,9 @@ class GravityInsightCompilerTests(unittest.TestCase):
         self.assertEqual(result.operation_count, len(operations))
         for operation in operations:
             with self.subTest(operation_id=operation["operation_id"]):
-                self.assertEqual("read", operation["effect"])
+                self.assertIn(operation["effect"], {"read", "mutation"})
+                if operation["effect"] == "mutation":
+                    self.assertFalse(operation["live_probe"]["enabled"])
                 self.assertNotIn("examples", operation)
                 self.assertNotIn("provenance", operation)
                 self.assertIn("input", operation["live_probe"])

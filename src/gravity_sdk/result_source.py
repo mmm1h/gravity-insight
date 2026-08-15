@@ -28,6 +28,7 @@ _GOVERNED_CARD_KINDS = {
     "export",
     "material_asset",
     "segment_rule_spec",
+    "segment_mutation",
 }
 
 

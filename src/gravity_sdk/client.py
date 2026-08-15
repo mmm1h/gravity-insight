@@ -27,6 +27,7 @@ from .http_runtime import (
     DEFAULT_CONCURRENCY, MAX_CONCURRENCY, GravityHttpRuntime, get_shared_runtime,
 )
 from .models import BatchRequest, BatchResult, OperationSpec, ReadResult, load_operation_manifest
+from .mutation_client import MutationClientMixin
 from .pagination import read_all_pages, read_limited_pages
 from .paths import CONTRACT_ROOT, MANIFEST_ROOT, PROJECT_ROOT
 from .probe_inputs import resolve_probe_inputs
@@ -37,7 +38,7 @@ from .transport import Transport
 
 
 _LOGGER = logging.getLogger("gravity_sdk")
-class GravityInsightClient(CatalogInventoryMixin, ExportClientMixin):
+class GravityInsightClient(MutationClientMixin, CatalogInventoryMixin, ExportClientMixin):
     """Stable facade over private, versioned Gravity read APIs."""
 
     def __init__(
@@ -54,16 +55,16 @@ class GravityInsightClient(CatalogInventoryMixin, ExportClientMixin):
         self._registry = registry
         self._executor = executor
         self.allow_experimental = allow_experimental
-        self._metadata_cache = metadata_cache or MetadataCache(
-            operation.operation_id for operation in registry.all() if is_metadata_operation(operation))
+        metadata_ids = (operation.operation_id for operation in registry.all() if is_metadata_operation(operation))
+        self._metadata_cache = metadata_cache or MetadataCache(metadata_ids)
         self._operation_catalog = operation_catalog or OperationCatalog(registry.all())
         self._field_policy = field_policy or FieldPolicy()
-        self._export_contracts, self._export_policy, self._export_runtime = (
-            export_components or (None, None, None))
+        self._export_contracts, self._export_policy, self._export_runtime = export_components or (None, None, None)
         self._probe_lock = threading.Lock()
         self._probe_values: dict[str, Any] = {}
         self._executor._bind_call_guard(self._operation_catalog.guard)
         self._executor._bind_field_validator(self._validate_field_request)
+        self._initialize_mutation_client()
 
     @classmethod
     def from_env(
@@ -89,8 +90,7 @@ class GravityInsightClient(CatalogInventoryMixin, ExportClientMixin):
             operations.extend(load_operation_manifest(path))
         registry = Registry(operations)
         policy = PolicyEngine(registry, allow_experimental=allow_experimental)
-        if transport is not None and runtime is not None:
-            raise ValueError("transport and runtime cannot both be supplied")
+        if transport is not None and runtime is not None: raise ValueError("transport and runtime cannot both be supplied")
         if transport is not None:
             request_transport = transport
         else:

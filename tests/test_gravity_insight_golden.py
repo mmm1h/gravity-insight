@@ -281,6 +281,14 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "app.role.detail",
             # 角色模板完成固定产品参数、分页和嵌套配置投影复验后晋升。
             "app.template.list",
+            # 写操作范围裁决后首批晋升；只允许显式确认的 Segment mutation。
+            "analysis.dataanalysis.segment.update",
+            "analysis.from.history.version.create",
+            "analysis.from.tmp.segment.create",
+            "analysis.segment.by.manual.update",
+            "analysis.segment.from.analysis.create",
+            "analysis.segment.from.rule.create",
+            "analysis.segment.from.rule.update",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]

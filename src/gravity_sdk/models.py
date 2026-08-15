@@ -14,6 +14,7 @@ from typing import Any, Mapping, Sequence
 from urllib.parse import quote
 
 from .errors import ErrorDetail, InputValidationError, ManifestError, ParentRequiredError
+from .operation_effect_policy import validate_operation_effect
 from .projection_validation import numeric_suffix_schema, validate_projection_bindings
 from .result_audit import add_result_audit, result_receipt_references
 from .result_source import RAW_OPERATION, result_source
@@ -802,12 +803,7 @@ class OperationSpec:
         block_reason = str(config.get("block_reason", "")).strip() or None
         if not executable and not block_reason:
             raise ManifestError("non-executable operations must declare block_reason")
-        if stability == "stable" and not executable:
-            raise ManifestError("stable operations must be executable")
-        if stability in _NON_EXECUTABLE_STABILITIES and executable:
-            raise ManifestError(
-                f"{stability} operations must be declared non-executable"
-            )
+        effect = str(config.get("effect", "read")).strip()
         pagination = PaginationSpec.from_dict(config.get("pagination"))
         if response_projection.empty_object_as_empty_page and (
             pagination.kind != "page_info"
@@ -823,8 +819,6 @@ class OperationSpec:
             raise ManifestError(
                 "empty-object result normalization requires an object response with no required keys"
             )
-        if stability == "stable" and response_projection.data_shape == "object" and not response_projection.data_keys:
-            raise ManifestError("stable object responses must declare explicit data_keys")
         if stability == "stable" and pagination.kind == "page_info":
             if pagination.default_page_size is None or pagination.max_page_size is None:
                 raise ManifestError(
@@ -839,8 +833,11 @@ class OperationSpec:
         if undeclared_parent_inputs:
             raise ManifestError("required_parent input fields must be declared operation inputs")
         live_probe = LiveProbe.from_value(config.get("live_probe"))
-        if stability == "stable" and not live_probe.enabled:
-            raise ManifestError("stable operations must declare an enabled minimum live probe")
+        validate_operation_effect(
+            stability=stability, effect=effect, executable=executable,
+            non_executable_stability=stability in _NON_EXECUTABLE_STABILITIES,
+            response_projection=response_projection, live_probe=live_probe,
+        )
         if set(live_probe.inputs) - set(names):
             raise ManifestError("live_probe inputs must reference declared operation inputs")
         required_probe_inputs = {field.name for field in fields if field.required}
@@ -868,7 +865,7 @@ class OperationSpec:
             live_probe=live_probe,
             platform=str(config["platform"]) if config.get("platform") else None,
             description=str(config.get("description", "")),
-            effect=str(config.get("effect", "read")),
+            effect=effect,
             executable=executable,
             block_reason=block_reason,
         )

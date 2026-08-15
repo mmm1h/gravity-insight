@@ -8,14 +8,18 @@
 
 一个候选接口成为 stable operation 前，必须回答：
 
-1. 它是否只读，或是否属于显式治理的 export effect；
+1. 它是否只读，或是否属于显式治理的 export / mutation effect；mutation 必须有逐 route 范围裁决，
+   不能因共享框架存在而自动放行；
 2. host、path、method 和请求形状是否已取得可复核证据；
 3. 输入字段、分页和错误语义是否明确；
 4. 响应字段是否完成 shape 登记、投影和访问边界复核；
-5. 是否存在最小、低成本、可重复的 live probe；
+5. read 是否存在最小、低成本、可重复的 live probe；mutation 是否明确禁用 repeatable probe，并有
+   受预算约束的 dry-run→单次写→读回→清理证据；
 6. 是否有脱敏 fixture、合同测试和漂移预期。
 
-缺少任何一项时保留为 draft、blocked 或 permission-unavailable，不得开放裸 HTTP 旁路。
+缺少任何一项时保留为 draft、blocked 或 permission-unavailable，不得开放裸 HTTP 旁路。mutation
+还必须声明 `effect=mutation`、只允许 stable/executable 精确合同签发一次性授权、禁用自动重试，并在
+产品层实现显式确认；标记/删除闸门等领域安全条件不得下沉为可选调用参数。
 
 ## 修改顺序
 
@@ -26,7 +30,7 @@
   → deterministic compile
   → fixture 与测试
   → offline gates
-  → minimum live probe
+  → minimum live probe（read）或有界 create/readback/cleanup（mutation）
   → stable
 ```
 
@@ -60,7 +64,9 @@ python -m gravity_sdk.compiler check
 
 ### 4. 在线验证
 
-在线 probe 只能在离线门禁通过后执行，并遵循 [探测安全](probing.md)。一次失败不能通过放宽 host、字段或隐私策略解决。
+在线 read probe 只能在离线门禁通过后执行，并遵循 [探测安全](probing.md)。mutation 不进入可重复
+probe；它只能走领域产品记录的有界生产验证，每次先 dry-run，显式执行一次，再读回和清理。一次失败
+不能通过放宽 host、字段、标记或隐私策略解决。
 
 ## 兼容性规则
 
@@ -71,4 +77,6 @@ python -m gravity_sdk.compiler check
 
 ## 完成定义
 
-stable 不是“页面上看到了接口”，而是请求/响应合同、测试和最小线上证据同时成立。最终运行完整门禁，并检查 `git diff` 中没有凭据、生产响应值或临时探针输出。
+stable 不是“页面上看到了接口”，而是请求/响应合同、测试和最小线上证据同时成立。mutation 的
+最小线上证据还要留下脱敏次数账本并证明无测试对象残留。最终运行完整门禁，并检查 `git diff` 中没有
+凭据、生产响应值或临时探针输出。

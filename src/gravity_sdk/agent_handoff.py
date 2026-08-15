@@ -96,6 +96,7 @@ def _card_depends_on_workspace(card: Mapping[str, Any]) -> bool:
         "analysis_query_spec",
         "analysis_task",
         "segment_rule_spec",
+        "segment_mutation",
     }
 
 

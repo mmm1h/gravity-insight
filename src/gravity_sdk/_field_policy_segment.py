@@ -75,10 +75,10 @@ def validate_analysis_segment_rule_shape(
 def _validate_segment_header(inputs: Mapping[str, Any]) -> None:
     name = inputs.get("name")
     remark = inputs.get("remark", "")
-    if not isinstance(name, str) or not name or len(name) > 128:
+    if not isinstance(name, str) or not name or len(name) > 20:
         raise InputValidationError(
             f"actual value: {actual_value(name)}; allowed value: a non-empty segment "
-            "name of at most 128 characters",
+            "name of at most 20 characters",
             field="name",
         )
     if not isinstance(remark, str) or len(remark) > 2_000:

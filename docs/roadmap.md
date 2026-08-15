@@ -14,13 +14,13 @@
 
 ## 现状
 
-当前从仓库产品入口与 stable operation 正向交叉反推 48 条产品动线：**已闭环 36 / 部分闭环 1 / 完全缺失 11**；
+当前从仓库产品入口与 stable operation 正向交叉反推 49 条产品动线：**已闭环 37 / 部分闭环 1 / 完全缺失 11**；
 另有 2 条 legacy/SDK 便利面、1 条重复能力审计行和 1 条已有结果上的调用方派生便利面保留，
-但不计产品动线。表格 52 行减去 4 条“不计独立动线”得到 48 条。从 `dev@8d7150a` 的
-`48 = 34 / 0 / 14` 起，D35 与 Issue 19 各从完全缺失迁入已闭环，Analysis 导出从完全缺失迁入部分闭环，
-故 `48 = 34 / 0 / 14 + 1 / 0 / -1 + 1 / 0 / -1 + 0 / 1 / -1 = 36 / 1 / 11`。
-operation 为 `186 + 1 = 187`、stable 为 `177 + 1 = 178`；新素材文件能力是产品 effect，
-不伪装成新的 upstream operation。部分闭环的 Analysis 导出只关闭了单用户事件子类；11 条完全缺失里
+但不计产品动线。表格 53 行减去 4 条“不计独立动线”得到 49 条。合并前 dev 的现状为
+`48 = 36 / 1 / 11`；“从分析结果或规则创建并管理可复用分群”是调用方能独立完成、并产出上游分群
+对象的任务，不与“查看已有分群详情/成员”合并，因此净增 1 条已闭环动线：
+`48 + 1 = 49`、`36 / 1 / 11 + 1 / 0 / 0 = 37 / 1 / 11`。
+operation 为 `187 + 7 = 194`、stable 为 `178 + 7 = 185`。部分闭环的 Analysis 导出只关闭了单用户事件子类；11 条完全缺失里
 多数是请求、响应或非空证据阻塞；字段隐私不再是阻塞项。
 逐条状态、四面入口、调用次数和证据阻塞以[分析动线台账](analysis-journeys.md)为准；旧
 `21/14/6` 快照的逐条底稿未进入版本控制，无法复算，已停止作为排期事实。
@@ -713,8 +713,9 @@ live re-resolution 防止删除或名称漂移选中别的对象；SDK 不能证
    一次顶层调用即可完成，Agent 卡直接交接该命令并声明发现后 1 次。
 3. 判定要写进台账该行（记"设计不适用"而非"无"）并在此处留下理由，可被后来者推翻。
 
-当前只有治理导出与 response-bound 素材文件这两类直接文件 effect 的 Plan 面适用此例外；后者的
-逐条证明登记在本页第三轮 Issue 19 裁决。**新增例外必须同时满足以上三条并在此登记**。
+当前只有治理导出、response-bound 素材文件这两类直接文件 effect，以及下文登记的 Segment mutation
+Plan 面适用此例外；素材文件的逐条证明登记在本页第三轮 Issue 19 裁决。
+**新增例外必须同时满足以上三条并在此登记**。
 
 ## 使用成本：参数化程度审计结论
 
@@ -2503,8 +2504,8 @@ tenant 根目录均 HTTP 200 semantic error；`metadata.data_table.list`、两�
 
 因此本线相对派发快照的 operation、stable、Census 与分析动线净变化均为 0；随后
 `analysis.default_val.list` 从原六类表的“UI 辅助路由”晋升，D35 归因表现也完成闭环。五线合并后
-当前值统一为 operation 187、stable 178、Census callable covered route 174、`uncovered_read=341`
-与 `48 = 36 / 1 / 11`。
+在五线合并完成时，值统一为 operation 187、stable 178、Census callable covered route 174、
+`uncovered_read=341` 与 `48 = 36 / 1 / 11`；Segment mutation 合入后的现状统一见本页顶部。
 真正尚缺证据的分析 route 在历史 155 条中为
 39 条，另 5 条仍无法判定；下一轮的最小动作不是重复当前租户，而是由有对应数据的租户提供一个非空
 父项，或由服务端合同补齐 project-material、AppRank rank/trend、fallback eCPM 所需值域后各做一次最小读取。
@@ -2531,7 +2532,7 @@ receipts 位于 ignored `tmp/codex/gravity-native-ai/`。
 若未来把它列为现有 recognizer、embedding/hybrid、结构化 LLM selector 之外的第四候选臂，输出仍须
 经过确定性 schema、物理引用、日期/operator 与失败分类校验，并在同一冻结 unseen 题集 A/B；本轮没有
 实施或批准该选项。本线相对派发快照的动线、operation 与 stable 净变化均为 0；合入默认值字典闭环后，
-当前为 `48 = 34 / 0 / 14`、operation 186、stable 177。技术债清单已复核，无条目达到退出条件，
+该单元合入默认值字典时为 `48 = 34 / 0 / 14`、operation 186、stable 177。技术债清单已复核，无条目达到退出条件，
 也没有新增结构债。
 完整请求/响应结构、前端消费和未决见[专项报告](research/gravity-native-ai.md)。
 
@@ -2610,3 +2611,93 @@ output_fields 两个 caller-recoverable 抛点，均含字段路径、安全实�
 `185 / 176`。生产 HTTP 共 1 次：`promotion.kuaishou.developer.list` 的受控 GET 返回 HTTP 204/null body，
 `protocol_status.classification=explicit_empty`，无重试、翻页、扩窗、换 App 或 credential exchange；
 运行时 `request_limit=1/attempts=1`。该 operation 不属于上述两条待重新取证动线。
+
+## 写操作范围裁决与 Segment CRUD（2026-08-16）
+
+**提案与范围：**工作底稿位于 ignored `tmp/codex/write-segments/proposal.md`。项目范围从“业务
+operation 全部只读”扩大为“允许逐项治理的分析闭环 mutation”，首批只批准 7 条 Segment route：
+`analysis.segment.from.analysis.create`、`analysis.segment.from.rule.create/update`、
+`analysis.from.history.version.create`、`analysis.from.tmp.segment.create`、
+`analysis.segment.by.manual.update` 与 `analysis.dataanalysis.segment.update`。推广投放、素材、
+多维报表、权限、测试设备白名单、`event/event_batch_delete`、
+`event_property_batch_delete` 和其余 mutation 不随框架自动获准，继续 reservation/blocked write。
+合入当前 dev 后，operation `187 + 7 = 194`，stable `178 + 7 = 185`，callable census route
+`174 + 7 = 181`。
+
+**标记与删除闸门：**创建标记放在上游 `segment_remark`，因为列表和 detail 都原样返回该字段，
+且它不改变分群规则或成员语义。当前格式为 17 字符 `GSDK-<12 hex>`，由 create kind、规范化语义
+请求和可选 idempotency key 的 SHA-256 前 48 bit 确定；可见、稳定、可列表检索，但绝不用于过滤
+列表。线上 `from_analysis` 曾接受旧 `gravity_sdk_v1_<16 hex>`，`from_rule` 对旧长格式加说明文字
+返回 remark invalid，因此默认收窄到紧凑格式，同时只为清理已经创建的旧对象保留旧格式识别。
+调用方说明只放在标记后的 ` | `，超出本地上限时只截说明；标记永不截断、删除或替换。若紧凑标记
+仍被某 route 拒绝，操作失败关闭，不做无标记重试。删除执行前必须用 exact ID 读 detail，从上游
+preimage 提取标记、名称和 App；没有标记返回 `OWNERSHIP_MARKER_REQUIRED / caller / exit 2`，调用方
+传入的名称/备注不能证明归属。该机制防 SDK 自误删，不是权限体系。
+
+**dry-run、幂等与不可重放：**7 条 mutation 的 `--dry-run` 只做合同校验和 wire 编译，返回固定
+method/path/query/body 或依赖 preimage 的 request template、目标、影响和前置条件，`offline=true`、
+`network_called=false`、`attempts=0`。执行使用与普通 read executor 分离的 mutation executor；每个
+exact wire 由 policy 签发一次性 nonce + digest 授权，transport 消费后立即失效，`attempts=1`，401、
+限流、超时或连接错误都不自动重放。create 在进程内锁下先完整读列表：同 marker+同名直接复用而不写，
+同名异 marker 或同 marker 异名以 caller/2 冲突失败。跨进程竞态仍由上游名称唯一约束收口：线上对
+完全相同的第二次 `from_analysis/create` 实际拒绝“名称已存在”，没有生成第二个对象。
+
+引用冲突不能从 Web 文案推断。线上用规则分群 B 引用分群 A 后删除 A，上游仍返回成功并在列表中
+消失，说明当前 route 没有可依赖的引用保护（或该类引用不阻止删除）。SDK 不伪造本地引用扫描；若
+上游以后明确返回“被引用/使用中”，映射为 `OBJECT_REFERENCED / caller / exit 2`，由调用方先解除
+引用。其余写失败沿用三类退出：已存在、被引用、配额超限、缺 ownership marker 为 caller/2；并发
+修改和写后读回不确定为 upstream/3，前者可由人重新读后再发但 SDK 不自动重放；本地合同/策略损坏为
+local/4。没有失败模式需要第四类退出码。
+
+**读语义与运行时不可绕过性：**`prober/read_semantics.py` 只在 source operation 与仓库
+`contracts/operations/<operation_id>.json` 全对象相等，且登记项同时为 `stable + executable +
+effect=mutation + POST` 时放行 mutation；它不读取 `confirmed_read` 文件来给写路由改身份。任意 path、
+method、effect、字段或稳定性篡改都会失去全对象相等并在 transport 构造前失败；普通 read policy 仍
+拒绝 mutation，真正执行还必须再经过 stable registry、mutation input validator、exact route/method
+校验和一次性授权。运行时调用方不能只传 operation ID 或伪造 POST 绕过；修改仓库 source contract
+本身属于需评审、编译和版本控制的权限变更，不是运行时旁路。
+
+**Plan 与 Agent 裁决：**Segment mutation 不进入 Plan v1，台账 Plan 面记“设计不适用”。它逐条满足
+窄例外三条件：(1) create/update/delete 是不可安全重放且需要确认、preimage 和写后读回的 effect，
+与 Plan v1 无副作用数据节点的重试/调度模型不兼容；(2) Core、顶层 CLI、SDK 均可完成任务，Agent
+卡直接给先 `--dry-run`、确认后 `--execute` 的明确命令交接，缺 Plan 不减少调用方任务集合；(3) 本节
+与 `docs/analysis-journeys.md` 已把该面登记为“设计不适用”而非“无”。自然语言只返回
+`confirmation_required=true`、`plan_executable=false`、`natural_language_auto_execute=false` 的卡，
+没有 Plan node，绝不创建或自动执行。
+
+**安全层同步建议：**第五层应把“编译后 stable operation 的 exact `effect=mutation` 身份 + 本次
+一次性 mutation policy receipt”作为合法 mutation 的共同必要条件；仅凭 POST、写词元或 Agent 卡不
+足够。未登记 route、draft/reservation、contract 不相等、普通 read authorization、receipt 缺失/复用/
+wire 不等仍判违规。本线不改评测装置，避免与 `safety-layer-narrow` 并行线冲突。
+
+**生产账本：**所有实际 write 之前均有零网络 dry-run，写预算上限 20，实际 **10** 次，全部
+`attempt=1`、无自动重试：(1) `from_analysis/create` 创建测试 A；(2) 同语义直达已登记 mutation，
+上游拒绝重名；(3) `from_rule/create` 旧长 remark 被拒；(4) 紧凑标记创建测试 B，上游成功但首次本地
+列表读回因 `update_date_range` 嵌套漂移失败，登记精确 nested keys 后读回确认；(5) B 引用 A 时
+`save/DEL` 仍成功删除 A；(6) `save/UPDATE_NAME` 成功并读回保留标记；(7) `from_rule/update` 的字符串
+ID 被上游拒绝；(8) 按前端数值 wire 修正后更新成功并读回；(9) `by_manual/update` 刷新成功并读回；
+(10) `save/DEL` 删除 B。最终再次读取完整列表，SDK 标记与 SDK 测试名称均为 0，生产无残留。
+历史版本另存和临时分群持久化已按 hash-matched 前端 wire 登记、dry-run 与测试覆盖，但当前账号在
+测试前没有现存分群/临时父对象，未为了覆盖 route 再造业务父链，故没有生产成功样本。
+
+本单元全部生产 HTTP 可由 receipt 复算为 **39**：read/preflight/readback 29 次——`app.list` 2、
+`analysis.event.list` 3、`analysis.event_property.list` 1、`analysis.funnel.query` 1、
+`analysis.segment.list` 11、`analysis.segment.detail` 11；mutation 10 次——
+`from_analysis/create` 2、`from_rule/create` 2、`from_rule/update` 2、`save` 3、manual refresh 1。
+transport 状态均为 HTTP 200；四次 mutation 的失败/不确定来自上游语义或本地读回合同，不把 HTTP 200
+误记为业务成功。两个实际创建对象都已清理。
+
+**端到端闭环：**调用方给 funnel spec、App、step 和 loss/matched 选择，先运行
+`gravity analysis segment create-from-analysis ... --dry-run` 查看精确 funnel 选择与持久化请求，再经
+人工确认运行同命令 `--execute`；产品先执行同一已验证漏斗、单次创建、列表/detail 读回并返回稳定
+segment ID。该 ID 随后可直接交给 `analysis segment snapshot`、`members` 或留存 spec 使用，最后由
+`analysis segment delete --segment-id ... --dry-run` / `--execute` 经标记闸门清理。因此
+“漏斗流失 → 保存分群 → 分析留存/成员”已不依赖 Gravity Web。按“一条动线 = 一个调用方能独立完成
+的分析任务”复核，保存/管理分群的任务终点是上游可复用分群对象，与读取已有分群详情或成员不是同一
+任务，因此从合并前 dev 的 `48 = 36 / 1 / 11` 新增 1 条已闭环动线，成为
+`49 = 37 / 1 / 11`。本行闭环只使用生产已验证的 `from_analysis`、`from_rule`、`by_manual` 与 `save`；
+`from_history_version/create` 和 `from_tmp_segment/create` 未生产验证，不计入闭环证据。
+
+本线新增 caller-recoverable raise site **27** 个，全部 A 档：全仓从
+`1034 = 230 / 434 / 370` 变为 `1061 = 257 / 434 / 370`。技术债清单已复核：mutation policy、wire、
+Segment domain core/SDK/CLI 分文件，`registry.py` ratchet 继续收紧，未新增可由当前源码证明的结构债。

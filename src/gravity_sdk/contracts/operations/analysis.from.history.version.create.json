@@ -1,0 +1,23 @@
+{
+  "$schema": "../schema/operation-v2.schema.json", "source_schema_version": 2, "target_manifest": "analysis.json", "manifest_order": 20176,
+  "operation": {
+    "operation_id": "analysis.from.history.version.create", "domain": "analysis", "resource": "from_history_version", "action": "create", "contract_version": 1,
+    "upstream_method": "POST", "path_template": "/report/api/v3/dataanalysis/segment/from_history_version/create/", "auth_profile": "gravity_authorization",
+    "stability": "stable", "effect": "mutation", "executable": true,
+    "description": "从一个现有分群的精确历史版本创建带 Gravity SDK 标记的新分群；单次发送且不自动重试。",
+    "input_fields": {
+      "app_id": {"type": "string", "required": true, "max_length": 64},
+      "segment_id": {"type": "string", "required": true, "max_length": 64},
+      "version_id": {"type": "string", "required": true, "max_length": 64},
+      "segment_name": {"type": "string", "required": true, "max_length": 20},
+      "segment_remark": {"type": "string", "required": true, "max_length": 2000}
+    },
+    "request": {"path_fields": [], "query_fields": [], "body_fields": ["app_id", "segment_id", "version_id", "segment_name", "segment_remark"], "defaults": {}, "fixed_query": {}, "fixed_body": {}},
+    "response_projection": {"data_shape": "object", "data_keys": [], "required_data_keys": [], "item_keys": [], "dynamic_item_fields": []},
+    "pagination": {"kind": "none", "page_field": "", "page_size_field": "", "list_path": "", "page_info_path": "", "total_page_field": ""},
+    "semantic_error_rules": ["code", "extra.error"],
+    "privacy_policy": {"classification": "configuration", "redact_fields": ["authorization", "access_token", "token", "cookie", "password", "secret"]},
+    "required_parent": [], "live_probe": {"enabled": false, "inputs": {}}, "examples": [],
+    "provenance": {"source_files": ["operations/analysis.from.history.version.create.json"], "family": null, "platform": null, "applied_overrides": []}
+  }
+}

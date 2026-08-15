@@ -1,0 +1,47 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "source_schema_version": 2,
+  "target_manifest": "analysis.json",
+  "manifest_order": 20175,
+  "operation": {
+    "operation_id": "analysis.segment.from.analysis.create",
+    "domain": "analysis",
+    "resource": "segment_from_analysis",
+    "action": "create",
+    "contract_version": 1,
+    "upstream_method": "POST",
+    "path_template": "/report/api/v3/dataanalysis/segment/from_analysis/create/",
+    "auth_profile": "gravity_authorization",
+    "stability": "stable",
+    "effect": "mutation",
+    "executable": true,
+    "description": "从一次已验证的未分组漏斗结果创建带 Gravity SDK 标记的用户分群；单次发送且不自动重试。",
+    "input_fields": {
+      "query_id": {"type": "string", "required": true, "max_length": 128},
+      "app_id": {"type": "string", "required": true, "max_length": 64},
+      "query_item_list": {"type": "array", "required": true, "item_type": "object", "min_items": 2, "max_items": 20},
+      "stat_time_window": {"type": "object", "required": true, "max_depth": 8},
+      "group_by_list": {"type": "array", "item_type": "object", "max_items": 0, "default": []},
+      "global_conditions": {"type": "array", "item_type": "object", "max_items": 100, "default": []},
+      "global_cond_logic": {"type": "string", "enum": ["AND", "OR"], "default": "AND"},
+      "date_list": {"type": "array", "required": true, "item_type": "object", "min_items": 1, "max_items": 1},
+      "to_calc_each_day": {"type": "boolean", "default": false},
+      "date_list_v2": {"type": "object", "required": true, "max_depth": 4},
+      "segment_conf": {"type": "object", "required": true, "max_depth": 4}
+    },
+    "request": {
+      "path_fields": [], "query_fields": [],
+      "body_fields": ["query_id", "app_id", "query_item_list", "stat_time_window", "group_by_list", "global_conditions", "global_cond_logic", "date_list", "to_calc_each_day", "date_list_v2", "segment_conf"],
+      "defaults": {"group_by_list": [], "global_conditions": [], "global_cond_logic": "AND", "to_calc_each_day": false},
+      "fixed_query": {}, "fixed_body": {}
+    },
+    "response_projection": {"data_shape": "object", "data_keys": [], "required_data_keys": [], "item_keys": [], "dynamic_item_fields": []},
+    "pagination": {"kind": "none", "page_field": "", "page_size_field": "", "list_path": "", "page_info_path": "", "total_page_field": ""},
+    "semantic_error_rules": ["code", "extra.error"],
+    "privacy_policy": {"classification": "configuration", "redact_fields": ["authorization", "access_token", "token", "cookie", "password", "secret", "uid", "user_id", "device_id"]},
+    "required_parent": [],
+    "live_probe": {"enabled": false, "inputs": {}},
+    "examples": [],
+    "provenance": {"source_files": ["operations/analysis.segment.from.analysis.create.json"], "family": null, "platform": null, "applied_overrides": []}
+  }
+}

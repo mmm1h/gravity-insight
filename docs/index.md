@@ -19,6 +19,7 @@
 | 按精确素材引用下载图片或视频 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Material Asset Fetch](reference/cli.md#material-asset-fetch) |
 | 读取跨平台推广表现 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Promotion Performance](reference/cli.md#promotion-performance) |
 | 查看自定义人群覆盖与状态 | [Agent 工作流](agent-workflow.md) | [CLI 参考](reference/cli.md#custom-audiences) |
+| 从漏斗/规则创建、更新、刷新或安全删除分群 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Segment Mutation](reference/cli.md#segment-mutation-v1) |
 | 批量发现并执行交叉查询 | [Agent 工作流：显式 Plan](agent-workflow.md#3-交叉查询一个显式-plan) | [CLI Plan 参考](reference/cli.md#plan-v1) |
 | 在 Python 中集成 SDK | [Python SDK 参考](reference/sdk.md) | [架构与概念](architecture.md) |
 | 把 SDK/CLI 输出交给 LLM | [LLM 输出安全指南](guides/llm-output-safety.md) | [Agent 工作流](agent-workflow.md) |
@@ -42,9 +43,7 @@
 ## 三个必须先知道的边界
 
 1. **Insight-first。** 能由 stable Insight operation 等价表达的查询，不走 SQL。
-2. **只执行已登记能力。** SDK 不接受任意 URL、HTTP 方法或未登记请求字段；未登记响应字段不投影，
-   但以结构化审计记录。Agent 面向的 SQL
-   只执行 workspace 已登记聚合产品。底层 `GravityClient` 不是 Agent 产品入口。
+2. **只执行已登记能力。** SDK 不接受任意 URL、HTTP 方法或未登记请求字段；未登记响应字段不投影，但以结构化审计记录。Agent 面向的 SQL 只执行 workspace 已登记聚合产品。底层 `GravityClient` 不是 Agent 产品入口。
 3. **SDK 不维护业务语义。** “幸运礼包”等模块名称、活动 ID、SKU、投放窗口和埋点关联由业务知识库维护；SDK 只校验和读取真实 Gravity 元数据。
 
 ## Agent 最短路径
@@ -64,12 +63,13 @@
   返回待填写的 `promotion_performance` 节点，再执行一次 Plan。
 - 已知归因 App 与日期：一次 `gravity attribution performance`；它固定读取四组前端已证明的归因
   表现画像。未知入口由 Agent 返回待填写的 `attribution_performance` 节点。
+- 已知漏斗 spec 或分群 ID：先运行 `gravity analysis segment ... --dry-run`，人工审查后运行同一
+  命令的 `--execute`。create 会写可见 SDK 标记并读回；delete 只删读回仍带标记的对象。Agent 不自动写，
+  Segment mutation 不进入 Plan v1。
 - 发现只返回候选以及 Plan node 或受控编译交接，不会从自然语言自动执行。
 
-当前基线为 187 个 operation、178 个 stable；17 个候选中 `analysis.default_val.list` 与 D35 已晋升，
-其余 15 个仍为 draft。不要把
-`draft` 能力写入生产 Plan。逐项 blocker 以[候选能力证据矩阵](candidate-capability-matrix.md)
-为准。
+当前基线为 194 个 operation、185 个 stable（178 read + 7 governed Segment mutation）。17 个候选中
+`analysis.default_val.list` 与 D35 已晋升，其余 15 个仍为 draft；不要把 `draft` 能力写入生产 Plan。逐项 blocker 以[候选能力证据矩阵](candidate-capability-matrix.md)为准。
 
 ## 文档层级
 

@@ -609,6 +609,12 @@
         "known_omitted_item_keys": [
           "origin_query"
         ],
+        "nested_item_keys": {
+          "update_date_range": [
+            "start_date",
+            "end_date"
+          ]
+        },
         "required_data_keys": [
           "list"
         ]
@@ -3682,6 +3688,727 @@
           "api": "string",
           "cocoscreator": "string"
         },
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "update",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "显式触发一个分群的手动刷新；单次发送且不自动重试。",
+      "domain": "analysis",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "segment_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.segment.by.manual.update",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v3/dataanalysis/segment/by_manual/update/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "segment_id"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "segment_by_manual",
+      "response_projection": {
+        "data_keys": [],
+        "data_shape": "object",
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "create",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "从一次已验证的未分组漏斗结果创建带 Gravity SDK 标记的用户分群；单次发送且不自动重试。",
+      "domain": "analysis",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "date_list": {
+          "item_type": "object",
+          "max_items": 1,
+          "min_items": 1,
+          "required": true,
+          "type": "array"
+        },
+        "date_list_v2": {
+          "max_depth": 4,
+          "required": true,
+          "type": "object"
+        },
+        "global_cond_logic": {
+          "default": "AND",
+          "enum": [
+            "AND",
+            "OR"
+          ],
+          "type": "string"
+        },
+        "global_conditions": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 100,
+          "type": "array"
+        },
+        "group_by_list": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 0,
+          "type": "array"
+        },
+        "query_id": {
+          "max_length": 128,
+          "required": true,
+          "type": "string"
+        },
+        "query_item_list": {
+          "item_type": "object",
+          "max_items": 20,
+          "min_items": 2,
+          "required": true,
+          "type": "array"
+        },
+        "segment_conf": {
+          "max_depth": 4,
+          "required": true,
+          "type": "object"
+        },
+        "stat_time_window": {
+          "max_depth": 8,
+          "required": true,
+          "type": "object"
+        },
+        "to_calc_each_day": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.segment.from.analysis.create",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v3/dataanalysis/segment/from_analysis/create/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "uid",
+          "user_id",
+          "device_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "query_id",
+          "app_id",
+          "query_item_list",
+          "stat_time_window",
+          "group_by_list",
+          "global_conditions",
+          "global_cond_logic",
+          "date_list",
+          "to_calc_each_day",
+          "date_list_v2",
+          "segment_conf"
+        ],
+        "defaults": {
+          "global_cond_logic": "AND",
+          "global_conditions": [],
+          "group_by_list": [],
+          "to_calc_each_day": false
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "segment_from_analysis",
+      "response_projection": {
+        "data_keys": [],
+        "data_shape": "object",
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "create",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "从一个现有分群的精确历史版本创建带 Gravity SDK 标记的新分群；单次发送且不自动重试。",
+      "domain": "analysis",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "segment_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "segment_name": {
+          "max_length": 20,
+          "required": true,
+          "type": "string"
+        },
+        "segment_remark": {
+          "max_length": 2000,
+          "required": true,
+          "type": "string"
+        },
+        "version_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.from.history.version.create",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v3/dataanalysis/segment/from_history_version/create/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "segment_id",
+          "version_id",
+          "segment_name",
+          "segment_remark"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "from_history_version",
+      "response_projection": {
+        "data_keys": [],
+        "data_shape": "object",
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "create",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "从显式 Segment Rule Spec 创建带 Gravity SDK 标记的用户分群；单次发送且不自动重试。",
+      "domain": "analysis",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "cond_logic": {
+          "default": "AND",
+          "enum": [
+            "AND",
+            "OR"
+          ],
+          "type": "string"
+        },
+        "date_range": {
+          "max_depth": 4,
+          "required": true,
+          "type": "object"
+        },
+        "name": {
+          "max_length": 20,
+          "required": true,
+          "type": "string"
+        },
+        "remark": {
+          "max_length": 2000,
+          "required": true,
+          "type": "string"
+        },
+        "update_type": {
+          "default": "Manual",
+          "enum": [
+            "Manual",
+            "Routine"
+          ],
+          "type": "string"
+        },
+        "user_event_rules": {
+          "max_depth": 12,
+          "required": true,
+          "type": "object"
+        },
+        "user_property_rules": {
+          "max_depth": 12,
+          "required": true,
+          "type": "object"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.segment.from.rule.create",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v3/dataanalysis/segment/from_rule/create/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "uid",
+          "user_id",
+          "device_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "name",
+          "remark",
+          "update_type",
+          "date_range",
+          "cond_logic",
+          "user_property_rules",
+          "user_event_rules"
+        ],
+        "defaults": {
+          "cond_logic": "AND",
+          "update_type": "Manual"
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "segment_from_rule",
+      "response_projection": {
+        "data_keys": [],
+        "data_shape": "object",
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "update",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "用显式规则更新一个用户分群并保留已有 SDK 标记；单次发送且不自动重试。",
+      "domain": "analysis",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "cond_logic": {
+          "default": "AND",
+          "enum": [
+            "AND",
+            "OR"
+          ],
+          "type": "string"
+        },
+        "date_range": {
+          "max_depth": 4,
+          "required": true,
+          "type": "object"
+        },
+        "name": {
+          "max_length": 20,
+          "required": true,
+          "type": "string"
+        },
+        "remark": {
+          "max_length": 2000,
+          "required": true,
+          "type": "string"
+        },
+        "segment_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "to_update_latest_result": {
+          "default": true,
+          "type": "boolean"
+        },
+        "update_type": {
+          "default": "Manual",
+          "enum": [
+            "Manual",
+            "Routine"
+          ],
+          "type": "string"
+        },
+        "user_event_rules": {
+          "max_depth": 12,
+          "required": true,
+          "type": "object"
+        },
+        "user_property_rules": {
+          "max_depth": 12,
+          "required": true,
+          "type": "object"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.segment.from.rule.update",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v3/dataanalysis/segment/from_rule/update/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "uid",
+          "user_id",
+          "device_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "segment_id",
+          "app_id",
+          "name",
+          "remark",
+          "update_type",
+          "date_range",
+          "cond_logic",
+          "user_property_rules",
+          "user_event_rules",
+          "to_update_latest_result"
+        ],
+        "defaults": {
+          "cond_logic": "AND",
+          "to_update_latest_result": true,
+          "update_type": "Manual"
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "segment_from_rule",
+      "response_projection": {
+        "data_keys": [],
+        "data_shape": "object",
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "create",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "从一个精确临时分群创建带 Gravity SDK 标记的持久分群；单次发送且不自动重试。",
+      "domain": "analysis",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "from_tmp_segment_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "segment_name": {
+          "max_length": 20,
+          "required": true,
+          "type": "string"
+        },
+        "segment_remark": {
+          "max_length": 2000,
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.from.tmp.segment.create",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v3/dataanalysis/segment/from_tmp_segment/create/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "from_tmp_segment_id",
+          "app_id",
+          "segment_name",
+          "segment_remark"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "from_tmp_segment",
+      "response_projection": {
+        "data_keys": [],
+        "data_shape": "object",
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "update",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "更新分群名称/备注或删除经读回验证为 SDK 创建的分群；删除动作不能由调用方绕过标记闸门。",
+      "domain": "analysis",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "action": {
+          "enum": [
+            "UPDATE_NAME",
+            "DEL"
+          ],
+          "required": true,
+          "type": "string"
+        },
+        "segment_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "segment_name": {
+          "max_length": 20,
+          "required": true,
+          "type": "string"
+        },
+        "segment_remark": {
+          "max_length": 2000,
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.dataanalysis.segment.update",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v3/dataanalysis/segment/save/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "segment_id",
+          "segment_name",
+          "segment_remark",
+          "action"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "dataanalysis_segment",
+      "response_projection": {
+        "data_keys": [],
+        "data_shape": "object",
         "dynamic_item_fields": [],
         "item_keys": [],
         "required_data_keys": []

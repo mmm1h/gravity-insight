@@ -33,7 +33,7 @@ class TransportResponse:
 
 
 class Transport:
-    """Transport that can only execute a manifest-owned read operation."""
+    """Transport for manifest-owned reads and separately authorized mutations."""
 
     def __init__(
         self,
@@ -139,11 +139,71 @@ class Transport:
             raise AuthenticationError("Gravity authorization is invalid or expired")
         return TransportResponse(status, payload, response.fetched_at)
 
+    def mutate(
+        self,
+        method: str,
+        path: str,
+        *,
+        operation: OperationSpec,
+        query: Mapping[str, Any] | None = None,
+        body: Mapping[str, Any] | None = None,
+        authorization: object | None = None,
+    ) -> TransportResponse:
+        """Dispatch one exact mutation once; mutation retries are forbidden."""
 
-def _raise_for_status(status: int, retry_after_ms: int | None) -> None:
+        method = method.upper()
+        try:
+            registered = self._policy.authorize_mutation_operation(
+                operation.operation_id
+            )
+        except UnknownOperationError:
+            raise PolicyViolation(
+                "transport mutation is not owned by its registry"
+            ) from None
+        if registered != operation:
+            raise PolicyViolation("transport mutation is not owned by its registry")
+        self._policy.authorize_mutation_request(operation, method, path)
+        if method != operation.upstream_method or method != "POST":
+            raise PolicyViolation(
+                "mutation method is not allowed by the operation contract"
+            )
+        if not path.startswith("/") or path.startswith("//") or not operation.matches_path(path):
+            raise PolicyViolation(
+                "mutation path is not allowed by the operation contract"
+            )
+        if body is not None and not isinstance(body, Mapping):
+            raise PolicyViolation("mutation body must be an object")
+        response = self._runtime._request_insight(
+            method,
+            path,
+            policy_authorization=authorization,
+            params=query,
+            json_body=body,
+            semantic_auth_codes=_AUTH_CODES,
+            timeout=self.timeout,
+            attempts=1,
+        )
+        status = response.status_code
+        if 300 <= status < 400:
+            raise TransportError(
+                "Gravity mutation returned a redirect; cross-origin redirects are blocked"
+            )
+        _raise_for_status(status, response.retry_after_ms, mutation=True)
+        if not isinstance(response.payload, Mapping):
+            raise TransportError("Gravity returned an unexpected mutation JSON envelope")
+        if response.payload.get("code") in _AUTH_CODES:
+            raise AuthenticationError("Gravity authorization is invalid or expired")
+        return TransportResponse(status, response.payload, response.fetched_at)
+
+
+def _raise_for_status(
+    status: int, retry_after_ms: int | None, *, mutation: bool = False
+) -> None:
     if status == 403:
         raise PermissionUnavailableError(
-            "the authenticated Gravity account cannot read this capability"
+            "the authenticated Gravity account cannot perform this mutation"
+            if mutation
+            else "the authenticated Gravity account cannot read this capability"
         )
     if status == 401:
         raise AuthenticationError("Gravity authorization is invalid or expired")

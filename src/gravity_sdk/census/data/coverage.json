@@ -1,19 +1,19 @@
 {
   "accounting_summary": {
-    "accounted_blocked_write": 414,
+    "accounted_blocked_write": 407,
     "accounted_deprecated": 1,
     "accounted_experimental": 6,
     "accounted_export_candidate": 22,
     "accounted_permission_unavailable": 1,
     "accounted_read_candidate": 311,
     "accounted_unsupported": 58,
-    "covered_executable": 174
+    "covered_executable": 181
   },
   "callability_summary": {
     "candidate": 333,
     "catalog_only": 8,
-    "contract_only": 414,
-    "executable": 174,
+    "contract_only": 407,
+    "executable": 181,
     "unsupported": 58
   },
   "classification_policy": {
@@ -932,6 +932,14 @@
         "category": "newly_covered_from_previously_unfetched_chunk",
         "manifest_file": "analysis.json",
         "method": "POST",
+        "operation_id": "analysis.dataanalysis.segment.update",
+        "path": "/report/api/v3/dataanalysis/segment/save/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "analysis.json",
+        "method": "POST",
         "operation_id": "analysis.default_val.list",
         "path": "/turbo_engine/api/v2/event/conf_event_meta/default_val/list/",
         "similar_frontend_routes": []
@@ -987,6 +995,22 @@
         "method": "POST",
         "operation_id": "analysis.event_property_value.list",
         "path": "/turbo_engine/api/v2/event/report_data_val_enum/event/list/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "analysis.json",
+        "method": "POST",
+        "operation_id": "analysis.from.history.version.create",
+        "path": "/report/api/v3/dataanalysis/segment/from_history_version/create/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "analysis.json",
+        "method": "POST",
+        "operation_id": "analysis.from.tmp.segment.create",
+        "path": "/report/api/v3/dataanalysis/segment/from_tmp_segment/create/",
         "similar_frontend_routes": []
       },
       {
@@ -1072,6 +1096,14 @@
       {
         "category": "newly_covered_from_previously_unfetched_chunk",
         "manifest_file": "analysis.json",
+        "method": "POST",
+        "operation_id": "analysis.segment.by.manual.update",
+        "path": "/report/api/v3/dataanalysis/segment/by_manual/update/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "analysis.json",
         "method": "GET",
         "operation_id": "analysis.segment.detail",
         "path": "/report/api/v3/dataanalysis/segment/detail/",
@@ -1083,6 +1115,30 @@
         "method": "POST",
         "operation_id": "analysis.segment.evaluate_percent",
         "path": "/report/api/v3/dataanalysis/segment/from_rule/evaluate_percent/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "analysis.json",
+        "method": "POST",
+        "operation_id": "analysis.segment.from.analysis.create",
+        "path": "/report/api/v3/dataanalysis/segment/from_analysis/create/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "analysis.json",
+        "method": "POST",
+        "operation_id": "analysis.segment.from.rule.create",
+        "path": "/report/api/v3/dataanalysis/segment/from_rule/create/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "analysis.json",
+        "method": "POST",
+        "operation_id": "analysis.segment.from.rule.update",
+        "path": "/report/api/v3/dataanalysis/segment/from_rule/update/",
         "similar_frontend_routes": []
       },
       {
@@ -2300,27 +2356,27 @@
       }
     ],
     "previously_missing_breakdown": {
-      "a_previously_unfetched_chunk": 174,
+      "a_previously_unfetched_chunk": 181,
       "b_normalization_false_gap_fixed": 0,
       "c_manifest_route_absent_from_frontend": 4
     },
-    "stable_operations": 178,
+    "stable_operations": 185,
     "summary": {
       "manifest_route_absent_from_frontend": 4,
-      "newly_covered_from_previously_unfetched_chunk": 174
+      "newly_covered_from_previously_unfetched_chunk": 181
     }
   },
   "manifest_summary": {
     "manifest_files": 11,
-    "operations": 187,
-    "stable_operations": 178
+    "operations": 194,
+    "stable_operations": 185
   },
   "module_summary": [
     {
-      "covered": 20,
+      "covered": 27,
       "module": "分析",
       "total": 68,
-      "uncovered": 48,
+      "uncovered": 41,
       "uncovered_read": 7
     },
     {
@@ -4390,7 +4446,7 @@
     "高": 124
   },
   "reservation_summary": {
-    "blocked_write_operations": 414,
+    "blocked_write_operations": 407,
     "route_classifications": 110
   },
   "routes": [
@@ -13658,7 +13714,7 @@
     },
     {
       "business_module": "分析",
-      "callability": "contract_only",
+      "callability": "executable",
       "callers": [
         "U"
       ],
@@ -13674,14 +13730,14 @@
         "offset": 3223,
         "url": "https://web.gravity-engine.com/assets/UserGroup-CXzHsUf1.js"
       },
-      "manifest_match_kind": "exact_reservation",
+      "manifest_match_kind": "exact_stable",
       "manifest_operations": [
         {
           "method": "POST",
           "operation_id": "analysis.segment.by.manual.update",
           "path": "/report/api/v3/dataanalysis/segment/by_manual/update/",
-          "source_type": "reservation",
-          "stability": "blocked_write"
+          "source_type": "manifest",
+          "stability": "stable"
         }
       ],
       "method": "POST",
@@ -13696,16 +13752,16 @@
       "raw_paths": [
         "/dataanalysis/segment/by_manual/update/"
       ],
-      "route_accounting": "accounted_blocked_write",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "write_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_write",
+      "status": "covered",
       "ui_texts": [
         "结果保存",
         "结果保存(${t})",
@@ -13818,7 +13874,7 @@
     },
     {
       "business_module": "分析",
-      "callability": "contract_only",
+      "callability": "executable",
       "callers": [],
       "contract_family": null,
       "contract_family_alternates": [],
@@ -13832,14 +13888,14 @@
         "offset": 24837,
         "url": "https://web.gravity-engine.com/assets/AnalysisTableDropdown-3HvMn-PJ.js"
       },
-      "manifest_match_kind": "exact_reservation",
+      "manifest_match_kind": "exact_stable",
       "manifest_operations": [
         {
           "method": "POST",
           "operation_id": "analysis.segment.from.analysis.create",
           "path": "/report/api/v3/dataanalysis/segment/from_analysis/create/",
-          "source_type": "reservation",
-          "stability": "blocked_write"
+          "source_type": "manifest",
+          "stability": "stable"
         }
       ],
       "method": "POST",
@@ -13854,16 +13910,16 @@
       "raw_paths": [
         "/dataanalysis/segment/from_analysis/create/"
       ],
-      "route_accounting": "accounted_blocked_write",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "write_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_write",
+      "status": "covered",
       "ui_texts": [
         "分群${e}",
         "请输入群名",
@@ -13872,7 +13928,7 @@
     },
     {
       "business_module": "分析",
-      "callability": "contract_only",
+      "callability": "executable",
       "callers": [
         "J"
       ],
@@ -13888,14 +13944,14 @@
         "offset": 3400,
         "url": "https://web.gravity-engine.com/assets/UserGroupDetail-DQZjkDs2.js"
       },
-      "manifest_match_kind": "exact_reservation",
+      "manifest_match_kind": "exact_stable",
       "manifest_operations": [
         {
           "method": "POST",
           "operation_id": "analysis.from.history.version.create",
           "path": "/report/api/v3/dataanalysis/segment/from_history_version/create/",
-          "source_type": "reservation",
-          "stability": "blocked_write"
+          "source_type": "manifest",
+          "stability": "stable"
         }
       ],
       "method": "POST",
@@ -13910,16 +13966,16 @@
       "raw_paths": [
         "/dataanalysis/segment/from_history_version/create/"
       ],
-      "route_accounting": "accounted_blocked_write",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "write_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_write",
+      "status": "covered",
       "ui_texts": [
         "不限",
         "每天 00:00:00",
@@ -13928,7 +13984,7 @@
     },
     {
       "business_module": "分析",
-      "callability": "contract_only",
+      "callability": "executable",
       "callers": [
         "O"
       ],
@@ -13944,14 +14000,14 @@
         "offset": 29126,
         "url": "https://web.gravity-engine.com/assets/CreateUserGroup-DLwO2tG8.js"
       },
-      "manifest_match_kind": "exact_reservation",
+      "manifest_match_kind": "exact_stable",
       "manifest_operations": [
         {
           "method": "POST",
           "operation_id": "analysis.segment.from.rule.create",
           "path": "/report/api/v3/dataanalysis/segment/from_rule/create/",
-          "source_type": "reservation",
-          "stability": "blocked_write"
+          "source_type": "manifest",
+          "stability": "stable"
         }
       ],
       "method": "POST",
@@ -13966,16 +14022,16 @@
       "raw_paths": [
         "/dataanalysis/segment/from_rule/create/"
       ],
-      "route_accounting": "accounted_blocked_write",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "write_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_write",
+      "status": "covered",
       "ui_texts": [
         "分群名称",
         "基础信息",
@@ -14040,7 +14096,7 @@
     },
     {
       "business_module": "分析",
-      "callability": "contract_only",
+      "callability": "executable",
       "callers": [
         "O"
       ],
@@ -14056,14 +14112,14 @@
         "offset": 29316,
         "url": "https://web.gravity-engine.com/assets/CreateUserGroup-DLwO2tG8.js"
       },
-      "manifest_match_kind": "exact_reservation",
+      "manifest_match_kind": "exact_stable",
       "manifest_operations": [
         {
           "method": "POST",
           "operation_id": "analysis.segment.from.rule.update",
           "path": "/report/api/v3/dataanalysis/segment/from_rule/update/",
-          "source_type": "reservation",
-          "stability": "blocked_write"
+          "source_type": "manifest",
+          "stability": "stable"
         }
       ],
       "method": "POST",
@@ -14078,16 +14134,16 @@
       "raw_paths": [
         "/dataanalysis/segment/from_rule/update/"
       ],
-      "route_accounting": "accounted_blocked_write",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "write_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_write",
+      "status": "covered",
       "ui_texts": [
         "分群名称",
         "基础信息",
@@ -14096,7 +14152,7 @@
     },
     {
       "business_module": "分析",
-      "callability": "contract_only",
+      "callability": "executable",
       "callers": [
         "N"
       ],
@@ -14112,14 +14168,14 @@
         "offset": 1822,
         "url": "https://web.gravity-engine.com/assets/UserList-DPqkZ6_d.js"
       },
-      "manifest_match_kind": "exact_reservation",
+      "manifest_match_kind": "exact_stable",
       "manifest_operations": [
         {
           "method": "POST",
           "operation_id": "analysis.from.tmp.segment.create",
           "path": "/report/api/v3/dataanalysis/segment/from_tmp_segment/create/",
-          "source_type": "reservation",
-          "stability": "blocked_write"
+          "source_type": "manifest",
+          "stability": "stable"
         }
       ],
       "method": "POST",
@@ -14134,16 +14190,16 @@
       "raw_paths": [
         "/dataanalysis/segment/from_tmp_segment/create/"
       ],
-      "route_accounting": "accounted_blocked_write",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "write_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_write",
+      "status": "covered",
       "ui_texts": [
         "${Ne.value}(版本日期:${Y.value})",
         "请输入群名",
@@ -14293,7 +14349,7 @@
     },
     {
       "business_module": "分析",
-      "callability": "contract_only",
+      "callability": "executable",
       "callers": [
         "I",
         "U"
@@ -14310,14 +14366,14 @@
         "offset": 1138,
         "url": "https://web.gravity-engine.com/assets/UserGroup-CXzHsUf1.js"
       },
-      "manifest_match_kind": "exact_reservation",
+      "manifest_match_kind": "exact_stable",
       "manifest_operations": [
         {
           "method": "POST",
           "operation_id": "analysis.dataanalysis.segment.update",
           "path": "/report/api/v3/dataanalysis/segment/save/",
-          "source_type": "reservation",
-          "stability": "blocked_write"
+          "source_type": "manifest",
+          "stability": "stable"
         }
       ],
       "method": "POST",
@@ -14332,16 +14388,16 @@
       "raw_paths": [
         "/dataanalysis/segment/save/"
       ],
-      "route_accounting": "accounted_blocked_write",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "write_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_write",
+      "status": "covered",
       "ui_texts": [
         "结果保存",
         "结果保存(${t})",
@@ -59894,15 +59950,15 @@
   "summary": {
     "accounted": 987,
     "accounting_complete": true,
-    "callable_covered": 174,
-    "covered": 174,
+    "callable_covered": 181,
+    "covered": 181,
     "total_routes": 987,
     "unaccounted": 0,
     "unclassified": 0,
     "uncovered_auth_or_proxy": 30,
     "uncovered_export": 22,
     "uncovered_read": 341,
-    "uncovered_write": 414,
+    "uncovered_write": 407,
     "unsupported_non_api": 6
   }
 }

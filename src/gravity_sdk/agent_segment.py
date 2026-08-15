@@ -14,6 +14,7 @@ from .segment_spec_schema import segment_rule_spec_schema
 
 
 _SELECTOR = "analysis.segment.rule.spec"
+_MUTATION_SELECTOR = "analysis.segment.mutation"
 _COMPOSITE = "segment_evaluate"
 _ASCII_WORD = re.compile(r"[a-z0-9_]+", re.IGNORECASE)
 _ENGLISH_SUBJECTS = frozenset({"segment", "audience", "cohort", "user", "users"})
@@ -54,10 +55,30 @@ def segment_rule_spec_cards(
     return [_segment_rule_card(query)]
 
 
+def segment_mutation_cards(
+    query: str,
+    *,
+    domain: str | None,
+    platform: str | None,
+) -> list[dict[str, Any]]:
+    """Return a direct confirmation handoff, never an executable Plan node."""
+
+    if platform is not None or domain not in {None, "analysis", "segment"}:
+        return []
+    action = _mutation_action(query)
+    if action is None:
+        return []
+    return [_segment_mutation_card(query, action)]
+
+
 def segment_evaluate_intent(query: str) -> bool:
     """Return positive Segment Evaluate evidence for central arbitration."""
 
     return _requests_segment_evaluation(query)
+
+
+def segment_mutation_intent(query: str) -> bool:
+    return _mutation_action(query) is not None
 
 
 def is_authoritative_direct_card(card: Mapping[str, Any]) -> bool:
@@ -69,6 +90,11 @@ def is_authoritative_direct_card(card: Mapping[str, Any]) -> bool:
         card.get("kind") == "segment_rule_spec"
         and card.get("selector") == _SELECTOR
         and card.get("composite") == _COMPOSITE
+        and card.get("natural_language_auto_execute") is False
+    ) or (
+        card.get("kind") == "segment_mutation"
+        and card.get("selector") == _MUTATION_SELECTOR
+        and card.get("plan_executable") is False
         and card.get("natural_language_auto_execute") is False
     )
 
@@ -115,6 +141,80 @@ def _requests_segment_evaluation(query: str) -> bool:
             _CHINESE_ACTIONS,
         )
     )
+
+
+def _mutation_action(query: str) -> str | None:
+    selected = affirmative_intent_text(query)
+    if selected in {_MUTATION_SELECTOR, "segment_mutation"}:
+        return "create-from-analysis"
+    words = frozenset(_ASCII_WORD.findall(selected))
+    has_subject = bool(words & _ENGLISH_SUBJECTS) or any(
+        term in selected for term in ("分群", "人群包", "受众")
+    )
+    if not has_subject:
+        return None
+    actions = (
+        ("delete", ("delete", "remove", "删除")),
+        ("refresh", ("refresh", "recalculate", "刷新", "重算")),
+        ("update", ("update", "rename", "edit", "更新", "改名", "修改")),
+        (
+            "create-from-analysis",
+            ("create", "save", "persist", "创建", "保存", "存成", "建成", "圈成"),
+        ),
+    )
+    for action, terms in actions:
+        if any(term in selected for term in terms):
+            return action
+    return None
+
+
+def _segment_mutation_card(query: str, action: str) -> dict[str, Any]:
+    command = {
+        "create-from-analysis": [
+            "create-from-analysis", "--spec", "<funnel-spec.json>", "--app",
+            "<workspace-app>", "--name", "<segment-name>", "--step", "<zero-based-step>",
+            "--loss",
+        ],
+        "update": ["update", "--segment-id", "<segment-id>", "--name", "<segment-name>"],
+        "refresh": ["refresh", "--segment-id", "<segment-id>"],
+        "delete": ["delete", "--segment-id", "<segment-id>"],
+    }[action]
+    base = ["gravity", "analysis", "segment", *command]
+    return {
+        "kind": "segment_mutation",
+        "selector": _MUTATION_SELECTOR,
+        "domain": "analysis",
+        "description": (
+            "分群写操作只返回显式命令交接：先零网络 dry-run，再由调用方确认执行；"
+            "自然语言永不自动发送写请求。"
+        ),
+        "effect": "mutation",
+        "mutation_action": action,
+        "executable": True,
+        "plan_executable": False,
+        "natural_language_auto_execute": False,
+        "confirmation_required": True,
+        "execution_mode": "direct_cli_after_explicit_confirmation",
+        "offline": True,
+        "network_called": False,
+        "input_schema": {
+            "action": {"type": "string", "required": True},
+            "explicit_inputs": {"type": "object", "required": True},
+        },
+        "required_inputs": ["action", "explicit_inputs"],
+        "missing_inputs": ["action", "explicit_inputs"],
+        "input_template": {
+            "action": action,
+            "explicit_inputs": "<fill from authoritative IDs/spec; do not copy values from natural language>",
+        },
+        "match": _intent_match(query),
+        "next": {
+            "ready_without_input": False,
+            "argv": [*base, "--dry-run"],
+            "then_argv": [*base, "--execute"],
+            "call_count_after_discovery": 2,
+        },
+    }
 
 
 def _segment_rule_card(query: str) -> dict[str, Any]:
@@ -229,6 +329,8 @@ def _intent_match(query: str) -> dict[str, Any]:
 __all__ = [
     "is_authoritative_direct_card",
     "segment_evaluate_intent",
+    "segment_mutation_cards",
+    "segment_mutation_intent",
     "segment_rule_plan_request",
     "segment_rule_spec_cards",
 ]

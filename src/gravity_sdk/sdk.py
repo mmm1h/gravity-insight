@@ -24,6 +24,7 @@ from .sdk_promotion import PromotionSdkMixin
 from .sdk_plan_recipe import PlanRecipeSdkMixin
 from .sdk_report import ReportSdkMixin
 from .sdk_segment_members import SegmentMembersSdkMixin
+from .sdk_segment_mutation import SegmentMutationSdkMixin
 from .template_replay_surface import TemplateSdkMixin
 
 
@@ -35,6 +36,7 @@ class GravitySDK(
     AnalysisSdkMixin,
     AnalysisDefaultDictionarySdkMixin,
     AttributionSdkMixin,
+    SegmentMutationSdkMixin,
     SegmentMembersSdkMixin,
     ReportSdkMixin,
     MaterialSdkMixin,
