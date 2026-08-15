@@ -289,6 +289,38 @@ artifact 路径也走不通：当前账号 7 个 App 里 6 个的合法 Dashboar
   operation、请求行为和错误 code 均未改变，没有读能力损失。这是有意的破坏性行为变更——
   调用方需更新 exit-code 分支：`3` 表示换账号或申请权限，`4` 表示请求未发出、停止改输入重试。
 
+### Agent 自然语言到答案实测（2026-08-15）
+
+本轮另做了 20 个端到端问题实测（中文 10 / 英文 10），测的是
+`gravity agent "<问题>"` 到业务答案、明确空或机器可判定 gap 的整条路径，**不是**下面“改参数要不要
+改代码”的 20 场景审计。覆盖事件/漏斗/留存/属性/散点/跨期/分群/用户画像、订单/拆单/变现、
+推广/素材/标题包/自定义人群/B 站/广告主、公司用量/业务脉搏、多维/SQL/metadata、多 App 与看板重放。
+预期在任何调用前冻结，生产请求没有通过换 App、扩窗、重试或额外翻页追非空。
+
+原始结果按“正确 `MULTIPLE_INTENTS` 或明确 capability gap 也算合法终点”是 **4 / 20**；若只算
+业务数据答案则是 **0 / 20**。首调错路由 **8 / 20**：漏斗卡夹带 App raw operation，属性/散点落到
+raw operation，素材被误判为素材+推广双意图，带日期和双类型的 title-package 落到 generic Analysis，
+广告主/metadata/看板重放报无能力。另有事件趋势、留存仍停在 generic Analysis handoff。
+
+当轮只在领域 `agent_*.py` 内修复了可复现的窄问题：事件趋势与留存现在返回 kind-specific 卡，
+素材弱 `ad` 词不再误触发 Promotion，字段式英文广告主问法和 `saved dashboard` 重放可达正确 owner，
+“变现表现”返回产品边界 gap 并给出可复制的 detail 重新发现命令。属性/散点已能把正确 Spec 卡排在
+第一，但共享 authoritative selection 仍夹带 raw operation，故仍不算唯一卡。原始 8 个错路由中
+修掉 3 个，剩 **5 个**；修复后的离线重放不改写原始首调数字。
+
+已完成执行的 Custom Audience 与 Bilibili 两题都严格用了 Agent + Plan 两次顶层调用，未发现
+`gravity.agent-call-bound.v1` 失配；前者以 upstream/3 `CONTRACT_CHANGED` 失败，且 next action 仍含
+`<operation-id>`，后者以 caller/2 `PAGINATION_LIMIT` partial 停止，且只说提高 bound。两个失败
+envelope 都没有保留逐页 HTTP receipt，所以只能证明加上 App catalog 后共 **3–11 次 HTTP**，不能
+事后伪造精确次数；这是观测缺口，也是下次生产实测必须先装脱敏 request observer 的前置条件。
+
+本实测自身在当时快照上的净变化为 0：`48 = 32 / 0 / 16` 加 `0 / 0 / 0` 后仍为
+`48 = 32 / 0 / 16`；后续 setting route 去重使最终台账成为 `47 = 32 / 0 / 15`。它没有改变任何
+产品面，只证明“四面存在”不等于自然语言入口真的可完成；其中 32 条的 Agent 面仍须按后文收紧的
+自然语言判据重验，不能把本节当成闭环确认。未修项是共享 authoritative selection、class-level
+metadata 产品卡、title-package 日期/双变体边界、Plan 错误 operation-id 投影、Bilibili 可复制分页
+动作和 SQL 缺配置的 local/4 统一；具体退出条件记在技术债和动线台账说明中。
+
 ## 九条 `1 / 3` 调用成本裁决（2026-08-14）
 
 **裁决：九条均可在 App/平台及其余业务输入已知时降到两次调用。** 本节在这些 scenario 上取代
@@ -660,8 +692,9 @@ download 均为 0，重试为 0，上游新增任务为 0，本地无业务文�
 `user_level` 的本地禁出规则，但 route 仍须完整文件 schema 才能 executable；上游授权边界放开不替代
 合同漂移检测。
 
-分析动线计数不变：旧 `48 = 32 已闭环 / 0 部分闭环 / 16 完全缺失`，本轮状态迁移 `+0/-0`，
-新值仍为 `48 = 32 / 0 / 16`。该合成动线的 9 条均不可执行，故不能标部分闭环。
+分析动线在本单元当时快照上的状态迁移为 `0 / 0 / 0`：`48 = 32 / 0 / 16` 不变；后续
+setting route 去重使最终台账成为 `47 = 32 / 0 / 15`。该合成动线的 9 条均不可执行，故不能标
+部分闭环。
 
 ## 已批准的隐私投影边界：变现明细（D27）
 
@@ -847,8 +880,8 @@ Python 文件为 0 失败；未发现 3.12+ 的语法或 `Path.walk`、`itertool
 metadata 也不高于 3.11。本机只有 CPython 3.14.6，故未把全量测试写成 3.11 实机通过。
 
 本轮生产 HTTP 请求为 0。operation 台账 `185 + 0 = 185`，stable 台账 `176 + 0 = 176`；产品动线
-`48（32 已闭环 / 0 部分 / 16 缺失）+ 0 = 48（32 / 0 / 16）`，因此不改
-`analysis-journeys.md`。技术债清单已复核：修复复用了既有 process lock 与共享结果 sink/bootstrap
+在本单元当时快照上 `48（32 / 0 / 16）+ 0 = 48（32 / 0 / 16）`，后续 setting route 去重使最终
+台账成为 `47 = 32 / 0 / 15`。技术债清单已复核：修复复用了既有 process lock 与共享结果 sink/bootstrap
 classifier，没有产生可由当前源码证明的新结构债。本机无法完成的实测是非 65001 attached Console 的屏幕
 渲染、目录 DACL/网络盘 ACL、SMB/NFS 锁语义、关闭 long-path policy 的机器，以及 CPython 3.11 动态门禁。
 
@@ -978,7 +1011,8 @@ SDK/CLI、Plan、Agent 消费者，应改为按 caller/exit 2 修正字段并停
 consumer release 执行，本仓库不添加兼容别名或双重 envelope。
 
 没有新增 operation、请求形状、投影、CLI 参数、SDK 方法或分析动线：operation
-**185 + 0 - 0 = 185**；动线 **48 + 0 = 48**，闭环分布仍为 **32 / 0 / 16**。质量 baseline
+**185 + 0 - 0 = 185**；本单元在当时台账上的净变化是 `48 + 0 = 48`、`32 / 0 / 16 + 0 / 0 / 0`，
+后续 setting route 去重使最终台账成为 **47 = 32 / 0 / 15**。质量 baseline
 只删除已改善的 `Transport.request` complexity 16 项，没有放宽任何阈值。既有 composite
 result/error/pagination 模型差异继续按技术债裁决保留，不借本轮建立通用错误 DSL。
 

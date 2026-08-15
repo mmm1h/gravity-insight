@@ -92,6 +92,10 @@ def dashboard_analysis_query(query: str) -> bool:
     selected = query.strip().casefold()
     from .agent_intent_routing import adjacent_product_conflict
 
+    # Here "saved" modifies dashboard; it is not evidence for the separate
+    # Saved Analysis wrapper that the adjacent-product guard protects.
+    if "saved dashboard" in selected and dashboard_analysis_intent(query):
+        return True
     if adjacent_product_conflict("dashboard_analysis", selected):
         return False
     return dashboard_analysis_intent(query)

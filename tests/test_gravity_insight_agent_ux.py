@@ -411,11 +411,9 @@ class DiscoveryUxTests(unittest.TestCase):
                         card["plan_node"]["request"],
                     )
                     self.assertFalse(card["natural_language_auto_execute"])
-        for query in ("run dashboard charts", "replay dashboard charts", "重放看板图表"):
+        for query in ("run dashboard charts", "replay dashboard charts", "重放看板图表", "Replay the charts on a saved dashboard for last week."):
             result = discover_capabilities(query, client=self.client, limit=5)
-            self.assertNotIn(
-                "dashboard_snapshot", [card.get("composite") for card in result["candidates"]]
-            )
+            self.assertEqual(["dashboard_analysis"], [card.get("composite") for card in result["candidates"]])
 
     def test_explicit_multiple_product_intents_fail_closed_before_raw_fallback(self) -> None:
         cases = (
@@ -692,14 +690,18 @@ class DiscoveryUxTests(unittest.TestCase):
             ("event analysis", "event"),
             ("analysis.query.spec:event", "event"),
             ("事件分析", "event"),
+            ("用同一个事件趋势定义看两个 App 最近 7 天的每日登录次数。", "event"),
+            ("看新注册用户次日和第七日的留存。", "retention"),
             ("funnel analysis", "funnel"),
             ("转化漏斗", "funnel"),
             ("property analysis", "property"),
             ("用户属性分析", "property"),
+            ("新用户渠道属性的分布", "property"),
             ("retention analysis", "retention"),
             ("留存分析", "retention"),
             ("scatter plot analysis", "scatter"),
             ("散点图", "scatter"),
+            ("看付费次数和付费金额这两个事件指标的散点关系。", "scatter"),
         )
         for query, kind in cases:
             with self.subTest(query=query):

@@ -183,9 +183,15 @@ def promotion_performance_intent(query: str) -> bool:
         bilibili_account_performance_intent,
     )
 
+    selected = _normalize(query)
+    words = frozenset(_ASCII_WORD.findall(selected.replace("-", " ")))
+    if (
+        words & {"creative", "material", "materials"}
+        and not words & {"advertising", "promotion", "promotions"}
+    ):
+        return False
     if bilibili_account_performance_intent(query):
         return False
-    selected = _normalize(query)
     return selected in _EXACT_INTENTS or _claims_product(selected)
 
 

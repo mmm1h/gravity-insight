@@ -190,7 +190,7 @@ class AdvertiserProfileTests(unittest.TestCase):
             ["promotion_performance"],
             [item["composite"] for item in promotion["candidates"]],
         )
-        advertiser = discover_capabilities("advertiser performance", client=None)
+        advertiser = discover_capabilities("Read the current Bytedance advertiser spend, balance, budget mode, and status.", client=None)
         self.assertEqual(
             ["advertiser_profile"],
             [item["composite"] for item in advertiser["candidates"]],
