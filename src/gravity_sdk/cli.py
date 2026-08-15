@@ -144,7 +144,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     commands = parser.add_subparsers(dest="command")
 
-    add_root_commands(commands, _agent_limit, _operation_limit)
+    add_root_commands(commands, _agent_limit, _operation_limit, _positive_int, _client)
 
     add_plan_commands(commands, _concurrency, _add_input, handler=dispatch_plan)
 

@@ -13,6 +13,7 @@ Usage:
   gravity [--workspace <gravity.toml|directory>] <command> [options]
   gravity agent [query]
   gravity agent --input <questions.json>
+  gravity agent-catalog categories|category <domain>|describe <selector>
   gravity plan schema
   gravity plan run --input <plan.json>
   gravity analysis saved list|get|prepare|run
