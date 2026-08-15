@@ -17,6 +17,7 @@ from .composite_batch import (
 )
 from .composite_catalog import stable_operation
 from .errors import ErrorCode, ErrorDetail, InputValidationError
+from .result_audit import project_result_audit
 
 
 SCHEMA_VERSION = "gravity-insight.title-package.v1"
@@ -35,12 +36,12 @@ TITLE_PACKAGE_FIELDS = frozenset({
     "title_list", "title_num", "title_package_name", "update_user_id",
 })
 _BATCH_FIELDS = frozenset({
-    "operation_id", "request_id", "result_source", "ok", "status", "data", "error",
+    "operation_id", "request_id", "result_source", "ok", "status", "data", "error", "result_audit",
 })
 _NATIVE_FIELDS = frozenset({
     "schema_version", "result_source", "operation_id", "contract_version", "status", "source",
     "fetched_at", "schema_fingerprint", "request", "page", "data", "warnings",
-    "error", "truncated", "next_page_input", "total", "safety_limits",
+    "error", "truncated", "next_page_input", "total", "safety_limits", "result_audit",
 })
 _PAGE_FIELDS = frozenset({
     "number", "size", "item_count", "total_pages", "total_items", "has_more",
@@ -104,7 +105,7 @@ def title_packages(
     )
     result = ordered_results(raw, requests, component="title package")[0]
     enforce_composite_item_budget([result], items)
-    safe = _safe_result(result, operation_id)
+    safe = project_result_audit(_safe_result(result, operation_id), result)
     annotated = annotate_result(safe, source=selected_kind, scope="bytedance")
     if safe.get("status") == "partial" and isinstance(safe.get("data"), Mapping):
         annotated["continuation"] = safe["data"].get("next_page_input")

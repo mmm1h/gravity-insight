@@ -86,7 +86,6 @@ from gravity_sdk.metadata_sync import (
 )
 from gravity_sdk.find import (
     add_find_command,
-    add_operation_commands,
     filter_operations,
     run_find_command,
     run_operation_command,
@@ -99,9 +98,10 @@ from gravity_sdk.find_input import (
 )
 from gravity_sdk.recipe import add_recipe_commands
 from gravity_sdk.resolver_cli import add_resolver_command
-from gravity_sdk.agent import DeferredAgentClient, add_agent_command, ndjson_metadata, run_agent_command
+from gravity_sdk.agent import DeferredAgentClient, ndjson_metadata, run_agent_command
 from gravity_sdk.capability_cli import add_deepening_commands
 from gravity_sdk.read_cli import add_read_command
+from gravity_sdk.cli_root_commands import add_root_commands
 from gravity_sdk.plan_cli import add_plan_commands
 from gravity_sdk.plan_product_cli import dispatch as dispatch_plan
 
@@ -134,11 +134,6 @@ def _write_json(value: Any, *, stream=None) -> None:
     )
 
 
-def _add_discovery_commands(commands: Any) -> None:
-    add_agent_command(commands, _agent_limit)
-    add_operation_commands(commands, _operation_limit)
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = AgentArgumentParser(prog="gravity", description="Governed Gravity Insight read and export operations.")
     parser.set_defaults(network_required=True)
@@ -149,7 +144,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     commands = parser.add_subparsers(dest="command")
 
-    _add_discovery_commands(commands)
+    add_root_commands(commands, _agent_limit, _operation_limit)
 
     add_plan_commands(commands, _concurrency, _add_input, handler=dispatch_plan)
 

@@ -18,6 +18,7 @@ from .composite_batch import (
 from .composite_catalog import stable_operation
 from .errors import ContractChangedError, ErrorCode, ErrorDetail
 from .promotion_performance_request import normalize_promotion_window
+from .result_audit import project_result_audit
 
 
 SCHEMA_VERSION = "gravity-insight.advertiser-profile.v1"
@@ -27,12 +28,12 @@ OPERATION_ID = stable_operation(
 INPUT_SCHEMA_VERSION = "gravity-insight.advertiser-profile-input.v1"
 _SUCCESS = frozenset({"success", "empty", "contract_changed_additive"})
 _BATCH_FIELDS = frozenset(
-    {"operation_id", "request_id", "result_source", "ok", "status", "data", "error"}
+    {"operation_id", "request_id", "result_source", "ok", "status", "data", "error", "result_audit"}
 )
 _NATIVE_FIELDS = frozenset({
     "schema_version", "result_source", "operation_id", "contract_version", "status", "source",
     "fetched_at", "schema_fingerprint", "request", "page", "data", "warnings",
-    "error", "truncated", "next_page_input", "total", "safety_limits",
+    "error", "truncated", "next_page_input", "total", "safety_limits", "result_audit",
 })
 _DATA_FIELDS = frozenset({"list", "page_info", "total", "update_at"})
 _ROW_FIELDS = frozenset({
@@ -102,7 +103,7 @@ def advertiser_profile(
     )
     result = ordered_results(batch, requests, component="advertiser profile")[0]
     enforce_composite_item_budget([result], items)
-    safe = _safe_result(result)
+    safe = project_result_audit(_safe_result(result), result)
     annotated = annotate_result(
         safe, source="advertisers", scope="bytedance"
     )

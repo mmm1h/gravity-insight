@@ -16,6 +16,7 @@ from .errors import (
     exit_code_for_category,
     exit_code_for_error,
 )
+from .result_audit import aggregate_result_audit
 from .result_source import GOVERNED_PRODUCT, result_source
 
 
@@ -369,7 +370,7 @@ def product_envelope(
         if all(item.get("status") == "empty" for item in results)
         else "success"
     )
-    return {
+    return aggregate_result_audit({
         "schema_version": SCHEMA_VERSION,
         "result_source": result_source(GOVERNED_PRODUCT),
         "ok": not failures,
@@ -397,7 +398,7 @@ def product_envelope(
             if not failures
             else "Inspect failed platforms; successful independent platforms remain usable."
         ),
-    }
+    }, results)
 
 
 def _component_exit_code(value: Mapping[str, Any]) -> int:

@@ -30,6 +30,7 @@ from .promotion_performance_result import (
     promotion_performance_item_count,
     safe_component,
 )
+from .result_audit import project_result_audit
 
 
 PROMOTION_PERFORMANCE_NAME = "promotion_performance"
@@ -45,7 +46,7 @@ PROMOTION_PERFORMANCE_OUTPUT_FIELDS = frozenset(
 )
 _TARGETS = frozenset({"/app", "/start", "/end"})
 _PROJECT_STRUCTURAL = frozenset(
-    {"schema_version", "ok", "status", "exit_code", "error", "next_action"}
+    {"schema_version", "ok", "status", "exit_code", "error", "next_action", "result_audit"}
 )
 
 
@@ -195,11 +196,12 @@ def sanitize_product_result(
         "metric_count", "total_count", "success_count", "failure_count",
         "returned_items",
     )
-    return rebuilt if all(
+    result = rebuilt if all(
         type(value.get(key)) is type(rebuilt[key])
         and value.get(key) == rebuilt[key]
         for key in checked
     ) else contract_result()
+    return project_result_audit(result, value)
 
 
 def is_promotion_performance_result(value: Any) -> bool:

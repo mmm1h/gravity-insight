@@ -306,7 +306,9 @@ def preserved_partial_result(
     node: PlanNode,
     context: AdapterContext,
 ) -> Mapping[str, Any] | None:
-    if not adapter.preserve_partial or str(result.get("status", "")).casefold() != "partial":
+    status = str(result.get("status", "")).casefold()
+    preserve = adapter.preserve_partial and status == "partial" or adapter.preserve_capability_gap and status == "capability_gap"
+    if not preserve:
         return None
     selected: Any = copy.deepcopy(dict(result))
     if node.output_fields:

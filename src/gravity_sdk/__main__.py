@@ -43,6 +43,7 @@ Usage:
   gravity recipe validate|check <name>
   gravity run @<recipe> [options]
   gravity run <operation-id> [options]
+  gravity receipts list|get|export
   gravity sql <command> [options]
   gravity census <command> [options]
 

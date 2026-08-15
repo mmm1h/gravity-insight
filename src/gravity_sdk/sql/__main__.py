@@ -13,6 +13,7 @@ from gravity_sdk.result_output import (
     write_rendered_result,
 )
 from gravity_sdk.result_source import CALLER_DEFINED, result_source
+from gravity_sdk.result_audit import add_result_audit, result_receipt_references
 from gravity_sdk.sql import credentials
 from gravity_sdk.sql.client import (
     GravityAuthError,
@@ -208,6 +209,14 @@ def _emit_query_result(
         payload["evidence_reference"] = evidence_reference
         if evidence_warning:
             payload["evidence_warning"] = evidence_warning
+    payload = add_result_audit(
+        payload,
+        [
+            reference
+            for result in results
+            for reference in result_receipt_references(result)
+        ],
+    )
     if output and result_is_persistable(payload):
         rendered = json_output.dumps(
             payload, ensure_ascii=False, indent=2, sort_keys=True

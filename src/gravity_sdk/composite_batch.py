@@ -13,6 +13,7 @@ from .errors import (
     PaginationError,
 )
 from .export_batch import batch_envelope
+from .result_audit import aggregate_result_audit
 from .result_source import GOVERNED_PRODUCT, result_source
 
 
@@ -117,13 +118,13 @@ def composite_envelope(
         if envelope["ok"]
         else "Inspect failed results by source; successful independent sources remain usable."
     )
-    return {
+    return aggregate_result_audit({
         **envelope,
         "schema_version": schema_version,
         "next_action": next_action,
         **dict(extra or {}),
         "result_source": result_source(GOVERNED_PRODUCT),
-    }
+    }, results)
 
 
 def annotate_result(

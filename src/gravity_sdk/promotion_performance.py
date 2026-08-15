@@ -44,6 +44,7 @@ from .promotion_performance_result import (
     safe_component as _safe_component,
 )
 from .promotion_snapshot_compat import promotion_snapshot_compat
+from .result_audit import project_result_audit
 
 
 _PROMOTION_EQUALS_OPERATOR = 1
@@ -131,13 +132,16 @@ def _read_platform_results(
         max_items=max_items,
     )
     results = [
-        _safe_component(
+        project_result_audit(
+            _safe_component(
+                value,
+                platform,
+                metrics=metrics,
+                expected_app_id=app,
+                expected_window=window,
+                max_pages=max_pages,
+            ),
             value,
-            platform,
-            metrics=metrics,
-            expected_app_id=app,
-            expected_window=window,
-            max_pages=max_pages,
         )
         for platform, value in zip(platforms, ordered, strict=True)
     ]

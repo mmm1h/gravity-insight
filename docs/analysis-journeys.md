@@ -83,7 +83,16 @@ transport 在 response 返回后、任何本地投影/分页/组件处理前，�
 同日的有界保留修正仍是横切可靠性工作，不新增产品、入口或 envelope：默认只保留最近 10,000 个且
 不老于 7 天的已结束运行 HTTP receipt，活动运行全部保护；首次写后及每 64 次写后以非阻塞 lease
 best-effort 清理。故台账仍为 `47 → +0 = 47`，`32 / 0 / 15 → +0 / +0 / +0 = 32 / 0 / 15`。
-逐 HTTP 文件没有公开读取 API，目前只用于知道私有 state root 的事后诊断，不据此新增分析动线。
+逐 HTTP 文件当时没有公开读取 API，只用于知道私有 state root 的事后诊断，不据此新增分析动线。
+
+2026-08-16 的结果可审计面把上一段的私有账本提升为 layout-independent 的只读诊断合同，但仍不新增
+业务产品或分析问题：SDK/CLI/Plan 共用 `gravity.http-receipt-query.v1`，结果以
+`gravity.result-audit.v1` 的 opaque 引用连接实际 HTTP receipt，并以 JSON Pointer 指向原位
+operation/contract/evidence/call-bound 事实。empty、partial corruption、storage capability gap、
+retention-pruned、active run 与 write-failed 均为离散状态；调用方不需也不能依赖私有文件名或路径。
+Plan 已实现本地 `receipt_query`，没有引用“设计不适用”例外；Agent 面不为维护诊断动作新增自然语言
+产品卡。最终台账仍为 `48 = 33 / 0 / 15 → +0 / +0 / +0 = 48 = 33 / 0 / 15`，operation
+`185 → +0 = 185`、stable `176 → +0 = 176`；生产 HTTP 0 次。
 
 同日的 LLM consumer-output 安全审计是横切结构修正，不新增或提升产品：台账仍为
 `48 + 0 = 48`、`33 / 0 / 15 + 0 / 0 / 0 = 33 / 0 / 15`。程序化清单覆盖 176 个 stable operation、

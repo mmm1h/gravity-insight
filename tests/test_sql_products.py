@@ -400,6 +400,11 @@ class GravityProductTests(unittest.TestCase):
         self.assertTrue(payload["ok"])
         self.assertEqual("complete", payload["status"])
         self.assertEqual("synthetic-snapshot", payload["evidence_reference"]["snapshot_id"])
+        self.assertEqual(
+            "/evidence_reference",
+            payload["result_audit"]["fact_paths"]["evidence_reference"],
+        )
+        self.assertNotIn("evidence_reference", payload["result_audit"])
 
     def test_products_command_is_one_safe_discovery_call(self):
         output = io.StringIO()

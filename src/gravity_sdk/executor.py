@@ -18,7 +18,9 @@ from .drift import ProjectionDrift, projection_drift_status
 from .errors import PolicyViolation, SemanticRejectedError
 from .models import OperationSpec, ReadResult, SemanticErrorRule
 from .multidim import projected_keys
+from .receipt import capture_http_receipt_references
 from .registry import PolicyEngine, Registry
+from .result_audit import bind_error_receipts
 from .transport import Transport
 
 
@@ -118,16 +120,14 @@ class ReadExecutor:
         values = operation.validate_inputs(inputs)
         self._field_validator(operation, values)
         authorization = self._policy._prepare_request(operation_id, values)
-        response = self._transport.request(
-            authorization.method,
-            authorization.path,
-            operation=operation,
-            query=authorization.query,
-            body=authorization.body,
-            authorization=authorization,
-        )
+        with capture_http_receipt_references() as http_receipts:
+            response = self._transport.request(
+                authorization.method, authorization.path, operation=operation,
+                query=authorization.query, body=authorization.body,
+                authorization=authorization,
+            )
         payload = response.payload
-        _enforce_semantic_rules(operation, payload)
+        _enforce_semantic_rules(operation, payload, http_receipts)
         projected, drift_warnings, projection_drift = _project(operation, payload, values)
         projected = _redact(
             projected,
@@ -189,21 +189,18 @@ class ReadExecutor:
                 "platform": operation.platform,
                 "contract_fingerprint": self._registry.fingerprint(operation_id),
             },
-            fetched_at=response.fetched_at,
-            schema_fingerprint=_shape_fingerprint(projected),
-            contract_version=operation.contract_version,
-            request={"inputs": safe_inputs},
+            fetched_at=response.fetched_at, schema_fingerprint=_shape_fingerprint(projected),
+            contract_version=operation.contract_version, request={"inputs": safe_inputs},
             page=page,
             data=projected,
             operation_id=operation.operation_id,
-            warnings=tuple(warnings),
-            error=None,
-            items=items,
-            page_info=page_info,
+            warnings=tuple(warnings), error=None,
+            items=items, page_info=page_info,
+            http_receipts=tuple(http_receipts),
         )
 
 
-def _enforce_semantic_rules(operation: OperationSpec, payload: Mapping[str, Any]) -> None:
+def _enforce_semantic_rules(operation: OperationSpec, payload: Mapping[str, Any], http_receipts: Any = ()) -> None:
     rules = operation.semantic_error_rules or (
         SemanticErrorRule("code", "not_in", values=(0, 200)),
         SemanticErrorRule("extra.error"),
@@ -221,7 +218,9 @@ def _enforce_semantic_rules(operation: OperationSpec, payload: Mapping[str, Any]
             "not_in": exists and current not in rule.values,
         }[rule.operator]
         if triggered:
-            raise SemanticRejectedError(rule.message)
+            error = SemanticRejectedError(rule.message)
+            bind_error_receipts(error, http_receipts)
+            raise error
 
 
 def _project(
