@@ -13,12 +13,12 @@
 
 ## 现状
 
-当前从仓库产品入口与 stable operation 正向交叉反推 48 条产品动线：**已闭环 34 / 部分闭环 0 / 完全缺失 14**；
+当前从仓库产品入口与 stable operation 正向交叉反推 48 条产品动线：**已闭环 34 / 部分闭环 1 / 完全缺失 13**；
 另有 2 条 legacy/SDK 便利面、1 条重复能力审计行和 1 条已有结果上的调用方派生便利面保留，
 但不计产品动线。表格 52 行减去 4 条“不计独立动线”得到 48 条；六条明确空复验让默认值字典从缺失变为闭环，
-故 `48 = 33 / 0 / 15 + 1 / 0 / -1 = 34 / 0 / 14`。operation 为 186、其中 177 个 stable。
-**部分闭环归零不代表没有欠账**——14 条完全缺失里
-多数是请求、响应或非空证据阻塞；字段隐私不再是阻塞项。
+Analysis 导出 `user_event` 子路径闭合让宽导出动线从缺失变为部分闭环，故
+`48 = 33 / 0 / 15 + 1 / 1 / -2 = 34 / 1 / 13`。operation 为 186、其中 177 个 stable。
+**部分闭环仍是欠账**——该行和 13 条完全缺失多数是请求、响应或非空证据阻塞；字段隐私不再是阻塞项。
 逐条状态、四面入口、调用次数和证据阻塞以[分析动线台账](analysis-journeys.md)为准；旧
 `21/14/6` 快照的逐条底稿未进入版本控制，无法复算，已停止作为排期事实。
 
@@ -1332,7 +1332,7 @@ mutation，必须报告为重大发现，不能为让评测通过而改产品行
 当前盲区是 evaluator 看不到外部 LLM 的 shell/其他 tool trace，也没有生产响应可遍历每个产品专属下游
 投影；因此它能机械证明返回 card/error/warning 与 compiled operation 核心投影的边界，不能证明仓库外
 Agent 没有另行越权。该线相对派发快照的产品动线与 operation 净变化均为 0；合入默认值字典闭环后，
-当前为 `48 = 34 / 0 / 14`、operation 186、stable 177。
+当前为 `48 = 34 / 1 / 13`、operation 186、stable 177。
 
 **第五批合并复验裁决：纯加法尚未成立，且不接受较小数字。** 只运行 development 后，四层实际为
 `235/240、160/160、75/80、5/5`，第五层 `PASS / 0`，本地写入信息项 15。10 个计数差异来自同一组
@@ -1342,6 +1342,38 @@ Agent 没有另行越权。该线相对派发快照的产品动线与 operation 
 `target_gap_missing`。恢复 240/240 只能修改这 5 条 development expectations、修改评分兼容逻辑，或让
 产品继续伪报旧 gap；前两项超出本次“不改题集/评分逻辑”，后一项会造成能力退化，均未执行。真实
 holdout/final 没有运行；在另行批准 development expectation 迁移前，本装置不能证明本批仍为纯加法。
+
+## 评测预期按动线台账派生（2026-08-16）
+
+**提案与边界：**工作提案位于 ignored `tmp/codex/eval-expectations/proposal.md`。题面和
+`journey_id` 保持冻结；没有修改 development 题面/归属，没有读取、解密、重建或运行 holdout/final，
+也没有接触 key、密文内容或 protected 分数。生产 HTTP 0 次。
+
+**单一状态事实源：**`scripts/agent_usability_expectations.py` 直接解析
+`docs/analysis-journeys.md` 的 48 个登记行和状态列；`evals/agent_usability/journey-targets.json`
+只保存冻结的 `journey_id → 台账行/产品目标/目标 gap`，不复制状态。装载时 case 原有
+`route_key/gap_code` 必须匹配该 ID 的一个冻结目标，否则 fail closed；随后才按状态选择形态。
+evaluator fingerprint 同时覆盖派生器、target registry 和本台账，结果另记两份 SHA-256 与状态计数。
+因此文档状态与程序状态不是两个可独立漂移的事实源。
+
+**部分闭环裁决：**部分闭环与完全缺失都期待整条动线的目标 gap。理由是现有 case 只密封到整条
+`journey_id`，没有子路径 ID；例如 J47 的 `user_event` 虽已通，其余六类仍未通，宽导出问法若接受
+单一子路径产品卡，会把未支持能力算成成功。将来只有在题集预先冻结了子路径身份时，子路径题才能独立
+期待卡；不能由实现线在闭环后补写归属。
+
+**离线结果：**同一 development 240 题从 `235/240、160/160、75/80、5/5` 恢复为
+`240/240、165/165、75/75、5/5`，第五层仍 `PASS / 0`，本地写入信息项仍 15；selection 与 terminal
+的 `pass^4` 分别为 `240/240`、`75/75`。J34 五题现在严格匹配
+`composite:analysis_default_dictionary`；注入 `composite:analysis_context` 的错误卡仍得到
+`wrong_product`。评分函数一行未改。参数/终点分母的 `+5/-5` 是 J34 从 gap 形态迁到产品卡形态后按
+既有层适用规则发生的守恒迁移：产品卡进入参数层，生产读取从离线终点层跳过；维持旧
+`160/160、80/80` 只能改层适用规则或把卡伪作离线执行终点，都会违反“不改评分”。
+
+**防回归：**测试使用同一个冻结 J34 case，只把临时台账副本的状态从已闭环改为部分闭环；派生结果
+必须自动从产品卡切回精确 `ANALYSIS_DEFAULT_DICTIONARY_CONTRACT_MISSING`。另有完整 48 行可达校验：
+任一台账标题缺失/重复、case 身份不匹配或目标形态未登记都会在评分前失败。
+本线没有修改 `src/gravity_sdk`，caller 可恢复错误点新增 `0`、其中 A 档 `0`；技术债复核未发现需要
+新增或关闭的结构条目，quality baseline 未改。
 
 ## 投影边界总裁决：全面放开（2026-08-15）
 

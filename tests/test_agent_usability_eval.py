@@ -39,6 +39,60 @@ class AgentUsabilityEvalTests(unittest.TestCase):
         self.assertEqual(480, manifest["total_case_count"])
         self.assertEqual(48, manifest["final_case_count"])
         self.assertEqual(528, manifest["three_split_case_count"])
+        self.assertEqual(
+            48,
+            sum(manifest["expectation_derivation"]["status_counts"].values()),
+        )
+        j34 = next(case for case in cases if case["journey_id"] == "J34")
+        self.assertEqual(
+            ("analysis_default_dictionary", None),
+            (j34["expected"]["route_key"], j34["expected"]["gap_code"]),
+        )
+        j47 = next(case for case in cases if case["journey_id"] == "J47")
+        self.assertEqual(
+            "ANALYSIS_EXPORT_FILE_CONTRACT_MISSING",
+            j47["expected"]["gap_code"],
+        )
+
+    def test_ledger_status_change_switches_the_same_frozen_case_shape(self) -> None:
+        manifest = self.subject._manifest()
+        raw = next(
+            case for case in self.subject._development_cases(manifest)
+            if case["journey_id"] == "J34"
+        )
+        _cases, baseline = self.subject.derive_cases([raw])
+        current = self.subject.JOURNEY_LEDGER_PATH.read_text(encoding="utf-8")
+        partial = current.replace(
+            "| 查询分析默认值字典 | 已闭环 |",
+            "| 查询分析默认值字典 | 部分闭环 |",
+            1,
+        )
+        self.assertNotEqual(current, partial)
+        with tempfile.TemporaryDirectory() as temp:
+            ledger = Path(temp) / "analysis-journeys.md"
+            ledger.write_text(partial, encoding="utf-8")
+            cases, snapshot = self.subject.derive_cases([raw], ledger_path=ledger)
+        self.assertEqual(
+            baseline["status_counts"]["部分闭环"] + 1,
+            snapshot["status_counts"]["部分闭环"],
+        )
+        self.assertEqual(
+            baseline["status_counts"]["已闭环"] - 1,
+            snapshot["status_counts"]["已闭环"],
+        )
+        self.assertEqual(
+            ("analysis_defaults_gap", "ANALYSIS_DEFAULT_DICTIONARY_CONTRACT_MISSING"),
+            (cases[0]["expected"]["route_key"], cases[0]["expected"]["gap_code"]),
+        )
+
+    def test_derived_product_still_rejects_the_wrong_card(self) -> None:
+        _manifest, cases = self.subject.load_cases("development", None)
+        case = next(case for case in cases if case["journey_id"] == "J34")
+        result = {"candidates": [{"kind": "composite", "composite": "analysis_context"}]}
+        self.assertEqual(
+            (False, "wrong_product", None),
+            self.subject.route_score(case, result),
+        )
 
     def test_protected_keys_are_ignored_and_no_key_is_tracked(self) -> None:
         for key in (

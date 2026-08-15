@@ -10,13 +10,14 @@
 执行，内部 HTTP 数也没有减少。App/平台也未知时不适用该两次路径；默认离线 Agent 的原三次下界保留。
 `gravity.agent-call-bound.v1` 只在本次成功交付完整目录的卡与 Plan 节点上把对应 scenario 声明为 2。
 
-当前程序化重算：**48 条产品动线：已闭环 34 / 部分闭环 0 / 完全缺失 14**。可复算：下表 52 行，
+当前程序化重算：**48 条产品动线：已闭环 34 / 部分闭环 1 / 完全缺失 13**。可复算：下表 52 行，
 减去 2 条兼容/维护便利面、1 条“既有稳定读取面重复”和 1 条“已有结果上的调用方派生便利面”，
 得到 48 条；按状态直接分组为
-`48 = 34 / 0 / 14`。相对复验前 `48 = 33 / 0 / 15` 是 `+1 / +0 / -1`：
+`48 = 34 / 1 / 13`。相对复验前 `48 = 33 / 0 / 15` 是 `+1 / +1 / -2`：
 `analysis.default_val.list` 在 catalog 第 2 个 App 首次非空，已闭环默认值字典产品；其余动线不因
-明确空而提升。operation 为 186、其中 177 个 stable。
-**部分闭环归零不等于没有欠账**——14 条完全缺失里多数是合同证据阻塞，逐行有记录。
+明确空而提升；Analysis 导出的 `user_event` 子路径闭合后，宽于该子路径的导出动线从完全缺失转为
+部分闭环。operation 为 186、其中 177 个 stable。
+**部分闭环仍是欠账**——该行和 13 条完全缺失多数是合同证据阻塞，逐行有记录。
 
 2026-08-16 的 Agent 渐进发现与生成任务指南是既有调用方入口的可读性改进，不新增 operation、结果 envelope 或产品动线：`48 + 0 = 48`、`33 / 0 / 15 + 0 / 0 / 0 = 33 / 0 / 15`，operation 仍为 `185 + 0 = 185`、stable 仍为 `176 + 0 = 176`。它的独立三层只读入口从既有 composite card 和 compiled manifest 派生；真实查询仍经既有 Agent card/Plan/CLI 合同。生产 HTTP 0 次。
 
@@ -106,6 +107,14 @@ holdout/all/final，protected query ledger 查询数仍为 0，生产 HTTP 0 次
 `composite:analysis_default_dictionary`，评分遂记为 `wrong_gap/target_gap_missing`。在“不改题集、不改评分
 逻辑、不让产品伪报旧 gap”的合并约束下，`240/240、160/160、80/80、5/5` 的纯加法结论尚未成立；
 本次未运行真实 holdout 或 final。
+
+2026-08-16 评测预期改为按本表状态派生：题面和 `journey_id` 仍由各 split 冻结，公开
+`evals/agent_usability/journey-targets.json` 只登记每个 ID 对应的本表精确行、产品目标和目标 gap；
+evaluator 直接解析本表状态列，不复制第二份状态台账。已闭环期待严格产品卡，完全缺失期待严格目标 gap；
+部分闭环也期待目标 gap，因为现有 case 的目标身份是整条动线、没有密封的子路径身份，接受一个子路径卡会把
+未支持的兄弟路径伪装成闭环。测试会把同一冻结 J34 case 的本表状态临时改成部分闭环，验证预期自动从
+`composite:analysis_default_dictionary` 切回其目标 gap；错误产品卡仍记 `wrong_product`。本次只跑
+development，未读取或运行 protected split，生产 HTTP 0 次。
 
 2026-08-15 的失败与降级路径审计自身不新增动线，在当时快照上的净变化为
 `48 + 0 = 48`、`32 / 0 / 16 + 0 / 0 / 0`；最终计数只因上述 setting route 重复记账消除而变为
@@ -210,5 +219,5 @@ writer 拒绝非有限数字；operation、投影、请求、错误分类和退�
 | 按表名或 App 查询数据表当前 schema、字段和版本（F41） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `CURRENT_TABLE_SCHEMA_PARENT_MISSING`。list 为空且无可信表名/App 来源；detail/version 父链、`table_id` 类型和“当前版本”语义未证实。 |
 | 下钻非 Bytedance 平台的计划、组和创意表现（D33/D34） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `NON_BYTEDANCE_HIERARCHY_PARENT_MISSING`。Bilibili advertiser 与 Huya account 未产出父候选；后续 ID 链、report 父字段、分页和非空 schema 未成立。 |
 | 深查各平台专属素材与创意（D32） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `PLATFORM_SPECIFIC_CREATIVE_CONTRACT_MISSING`。除 Bytedance 外普遍没有最小非空响应合同；common 素材目录不能证明平台专属字段。Bytedance 标题包已单列为独立动线闭环，**但那是 D32 之下的一个具体产品，不是这条动线的进展**；本条仍是数据证据阻塞。 |
-| 导出事件、分群、用户、付费或变现分析结果 | 完全缺失 | 无 / 无 / 设计不适用 / 有（目标 gap） | 未验证 | Agent 首问返回 `ANALYSIS_EXPORT_FILE_CONTRACT_MISSING`。9 条仍不可执行：`segment.result.start`、`user_event.start` 的投影阻塞已解除，但逻辑列类型未证实；`origin_event.evaluate` 受未证实的配对 create/file 父工作流阻塞；其余 6 条缺成功请求绑定或完整文件 schema。 |
+| 导出事件、分群、用户、付费或变现分析结果 | 部分闭环 | 部分 / 部分 / 设计不适用 / 有（整条动线的目标 gap） | 未验证 | `user_event` 子路径已闭合，其余六类仍缺完整产品合同。冻结评测 case 只标识整条导出动线、没有子路径身份，因此宽问法继续期待 `ANALYSIS_EXPORT_FILE_CONTRACT_MISSING`；只支持一个子路径的卡不能代表整条动线闭环。 |
 | 按精确平台素材引用预览或下载图片/视频（Issue 19） | 完全缺失 | 无 / 无 / 设计不适用 / 有（目标 gap） | 未验证 | Agent 首问返回 `PLATFORM_ASSET_BINARY_CONTRACT_MISSING`。API 列表已证明存在 `file_url` / `thumbnail_url` 且前端直接交给媒体元素；投影总裁决要求登记暴露这些字段，但现有证据仍不能证明二进制 host/path、重定向集合及历史失效语义，故不能配置下载 allowlist 或发起最小二进制 probe。文件 effect 与 Plan v1 的无副作用数据节点不兼容。 |

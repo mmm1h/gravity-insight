@@ -35,6 +35,39 @@ question-set commit. The source revision and content hashes are recorded in
 `suite.json`. The question set was committed before inspecting or changing the
 routing implementation.
 
+## Ledger-derived response shape
+
+Prompts and `journey_id` values remain frozen in every split. The historical
+`expected` object is retained as a target-identity guard, but the evaluator no
+longer treats its card-versus-gap shape as current fact. At load time it reads
+the status directly from `docs/analysis-journeys.md` and combines it with the
+public `journey-targets.json` mapping:
+
+- `已闭环` requires the journey's exact product card;
+- `完全缺失` requires the journey's exact actionable gap;
+- `部分闭环` also requires the whole journey's exact gap.
+
+Partial journeys fail closed because these cases identify a whole journey, not
+an independently frozen subpath. Accepting one supported subpath's card for a
+broad journey would silently certify its unsupported siblings. A future suite
+may score subpaths separately only if those identities are frozen when that
+suite is authored.
+
+The target registry deliberately contains no status field. Its exact ledger
+titles make the Markdown table machine-readable; missing or duplicate rows,
+unregistered case identities, and a status without its frozen target shape all
+fail before scoring. Evaluation receipts fingerprint the parser, target
+registry, and ledger and record their hashes and status counts.
+
+This applies after any development, holdout, or final payload is loaded. The
+protected payloads are not rebuilt: their sealed `journey_id` remains the target
+identity, while only response shape is derived outside the ciphertext. No
+protected key or decryption is needed to update the derivation mechanism.
+If an authorized custodian run ever finds a legacy payload without a registered
+`journey_id`, loading fails before scoring. The remedy is a new independently
+authored sealed suite version with the old payload retained read-only, not
+decrypting or reconstructing that payload on an implementation branch.
+
 ## Holdout boundary
 
 `cases/development.jsonl` is intentionally visible and may be used for local
