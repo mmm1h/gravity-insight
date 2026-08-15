@@ -10,6 +10,7 @@
 | 让 Agent 查询 Gravity | [Agent 工作流](agent-workflow.md) | [架构与概念](architecture.md) |
 | 十分钟内准备首次 Agent 分析 | [Agent 任务指南](agent-skills/index.md) | [快速上手](getting-started.md) |
 | 构造事件、漏斗、留存、属性或分布查询 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Analysis Spec](reference/cli.md#analysis-query-spec-v1) |
+| 对已有结果计算调用方绑定的比率、占比、变化或集合对账 | [Agent 工作流](agent-workflow.md#1-业务语义先在调用项目解析) | [CLI 参考：Derived Metrics](reference/cli.md#derived-metrics) |
 | 执行多维报表查询 | [Agent 工作流：Multidim](agent-workflow.md#multidim) | [CLI 参考：Multidim](reference/cli.md#multidim) |
 | 读取单日订单目录 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Order Directory](reference/cli.md#order-directory-v1) |
 | 按 TraceID 读取单日拆单明细 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Order Split Trace](reference/cli.md#order-split-trace-v1) |
@@ -28,7 +29,7 @@
 | 判断能力应扩展到哪一层 | [扩展地图](maintainers/extending.md) | [新增受控能力](maintainers/operations.md) |
 | 判断是否建设 MCP 交付面 | [MCP 可行性报告](mcp-feasibility.md) | [路线图](roadmap.md) |
 | 复核外部调研证据（可用性 / 安全 / 协议 / 语义层 / 厂商） | [外部调研索引](#外部调研) | [Agent 可用性方法](research/agent-usability-methods.md)、[安全治理](research/agent-security-governance.md) |
-| 了解本租户引力原生 AI 的真实行为 | [原生 AI 事件分析对话摸底](research/gravity-native-ai.md) | [路线图](roadmap.md#引力原生-ai-事件分析对话摸底2026-08-16) |
+| 了解本租户引力原生 AI 的真实行为 | [本租户能力摸底](#本租户能力摸底) | [路线图](roadmap.md#引力原生-ai-事件分析对话摸底2026-08-16) |
 | 了解当前排期、并行约束与不做的事 | [路线图](roadmap.md) | [分析动线台账](analysis-journeys.md) |
 | 查看每条分析动线的完成度、四面入口与证据阻塞 | [分析动线台账](analysis-journeys.md) | [能力覆盖与缺口](capability-coverage.md) |
 | 查看架构热点与清理条件 | [技术债清单](maintainers/technical-debt.md) | [维护者入口](maintainers/index.md) |

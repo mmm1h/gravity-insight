@@ -27,6 +27,7 @@ Usage:
   gravity analysis order trace --app <alias|id> --date <date> --trace-id <id>
   gravity analysis monetization detail --app <alias|id> --date <date>
   gravity multidim query --app <alias|id> --input <json|file|->
+  gravity derive --input <json|file|->
   gravity reports pulse --app <alias|id> --start <date> --end <date>
   gravity reports usage
   gravity materials performance --app <alias|id> --start <date> --end <date>

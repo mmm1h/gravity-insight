@@ -30,6 +30,7 @@ _STRICT_COMPOSITES = frozenset(
         "segment_snapshot",
         "segment_members",
         "advertiser_profile",
+        "derived_metrics",
     }
 )
 

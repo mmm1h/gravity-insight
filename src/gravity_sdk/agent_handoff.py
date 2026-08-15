@@ -462,6 +462,19 @@ def _plan_request(
     return request, plan_kind
 
 
+_composite_plan_request_without_derived_metrics = _composite_plan_request
+
+
+def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
+    """Preserve a caller-declared arithmetic spec without inventing source rows."""
+
+    if card.get("composite") == "derived_metrics":
+        from .agent_derived_metrics import derived_metrics_plan_request
+
+        return derived_metrics_plan_request(card)
+    return _composite_plan_request_without_derived_metrics(card)
+
+
 _attach_plan_node_without_call_bound = attach_plan_node
 
 

@@ -147,6 +147,7 @@ SQLite 中构建，全部成功才原子替换默认 catalog；失败保留旧�
 | 组合 | CLI | SDK | 当前固定内容 |
 | --- | --- | --- | --- |
 | Analysis context | `gravity analysis context --app <alias|id>` | `analysis_context()` | event、event property/group、user property、metric、media enum 与 mine/shared/preset template，共 13 个来源 |
+| Derived metrics | `gravity derive --input <request.json>` | `derive_metrics(source, spec)` | 对已有 envelope 执行 caller-bound ratio/share/change/reconcile；纯本地，不维护业务公式 |
 | Dashboard snapshot | `gravity analysis dashboard snapshot --app <alias|id> --ref <id-or-exact-name>` | `dashboard_snapshot()` | 精确解析一个看板后读取 detail、dashboard members、space members、condition favourites 与 default favourite，共 5 个控制面来源；不执行图表 |
 | Dashboard analysis | `gravity analysis dashboard prepare\|run --app ... --ref ... --start ... --end ...` | `prepare_dashboard_analysis()` / `run_dashboard_analysis()` | 静态 Web artifact 编译边界内的 event/funnel/retention/property/scatter chart；按声明序、单图失败隔离 |
 | Saved analysis | `gravity analysis saved prepare\|run --app ... --ref ... --start ... --end ...` | `prepare_saved_analysis()` / `run_saved_analysis()` | 精确解析一个保存分析；reference Web artifact 严格复用五类编译器和显式日期窗，compact definition 保持兼容 |

@@ -9,6 +9,7 @@ gravity insight <command>     结构化读取和导出
 gravity export <command>      一键治理导出及分阶段恢复
 gravity agent [query]         单问题发现；--input 批量发现并返回 Plan 节点
 gravity plan schema|run       预检或执行受控跨能力 DAG
+gravity derive --input        对已有结果执行调用方绑定的本地派生算术
 gravity metadata <command>    本地物理元数据目录
 gravity find <query>          跨 operation、recipe 与 metadata 检索
 gravity recipe <command>      离线校验 workspace recipe
@@ -132,6 +133,40 @@ Insight 普通批量读取默认并发为 6，显式上限为 24；Metadata 同�
 读取在首页有明确总页数时按小窗口并发并保持页序，未知总页数时串行；batch 内的分页读取
 强制单分页 worker，防止嵌套放大。这些是 worker 上限，实际请求仍受每 host 限流、重试和
 共享冷却约束。
+
+## Derived Metrics
+
+`gravity derive --input <request.json>` 完全离线地给已有结果 envelope 增加
+`gravity.derived-metrics.v1` 子合同。request 固定为 `source/spec`；source 是原 envelope，spec 使用
+`gravity.derived-metrics-spec.v1`，声明 `rows_path`、`decimal_places` 和 1–32 个 calculations。
+原 envelope 的顶层 schema、status、ok、result_source 和 data 不会改变。
+
+```json
+{
+  "source": {
+    "schema_version": "fictional.result.v1",
+    "status": "success",
+    "ok": true,
+    "data": {"list": [{"orion_a": 3, "orion_b": 4}]}
+  },
+  "spec": {
+    "schema_version": "gravity.derived-metrics-spec.v1",
+    "rows_path": "/data/list",
+    "decimal_places": 4,
+    "calculations": [{
+      "operator": "ratio",
+      "result_name": "orion_ratio",
+      "numerator": "orion_a",
+      "denominator": "orion_b"
+    }]
+  }
+}
+```
+
+执行 `gravity derive --input request.json` 后，数值为 decimal string；整数精确转换，除法使用
+half-even。分母零、缺列、null/非法数、上游 partial 和舍入都有稳定 status/reason 或 warning code。
+operator 只支持 `ratio/share/change/reconcile`，不会从列名推断公式。未在 workspace 声明公式的
+自然语言比率问题由 Agent 返回 `DERIVED_METRIC_BINDING_REQUIRED`，不会自动填 numerator/denominator。
 
 ## Multidim
 

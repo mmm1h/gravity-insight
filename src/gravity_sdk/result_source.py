@@ -77,6 +77,8 @@ def plan_result_source(kind: object, request: object) -> dict[str, str]:
     if selected_kind == "metadata_search":
         return result_source(LOCAL_CATALOG)
     if selected_kind == "composite":
+        if selected_request.get("name") == "derived_metrics":
+            return result_source(CALLER_DEFINED)
         return result_source(GOVERNED_PRODUCT)
     if selected_kind == "receipt_query":
         return result_source(LOCAL_AUDIT)
@@ -88,6 +90,8 @@ def card_result_source(card: Mapping[str, Any]) -> dict[str, str]:
 
     kind = str(card.get("kind", ""))
     if card.get("description_origin") == "caller_workspace":
+        return result_source(CALLER_DEFINED)
+    if kind == "composite" and card.get("composite") == "derived_metrics":
         return result_source(CALLER_DEFINED)
     if kind == "operation":
         return result_source(RAW_OPERATION)

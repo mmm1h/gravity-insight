@@ -172,3 +172,7 @@ Analysis Spec schema 的结构键投影与 funnel 按日模式校验已在领域
 三分评测装置把 protected 查询反馈、final 一次语义与安全遵守门禁收进独立 evaluator/support 模块，
 没有增长产品共享 spine 或 quality baseline。外部 LLM shell/tool trace 不在本仓装置可见范围，属于已披露的
 测量覆盖边界，不是当前源码中会提高后续开发成本的结构债；本轮复核不新增条目。
+
+派生指标与集合对账经独立 core、CLI/Agent owner 模块及既有 Analysis family router 接入；
+`plan_adapters.py` 净增长 0，没有新增通用表达式引擎、adapter registry、数据框依赖或业务字典，
+本轮复核未产生新的结构债条目。

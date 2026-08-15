@@ -135,6 +135,9 @@ def dispatch_command(
     object_input: Callable[[str | None], dict[str, Any]],
     fallback: Callable[[argparse.Namespace], Any],
 ) -> Any:
+    local_handler = getattr(args, "local_command_handler", None)
+    if callable(local_handler):
+        return local_handler(args)
     if args.command == "export":
         return run_export_command(args, client_factory(args), object_input)
     return fallback(args)

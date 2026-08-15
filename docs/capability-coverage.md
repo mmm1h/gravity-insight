@@ -17,7 +17,7 @@ manifest 与 `gravity agent <query>` 为准；完整路由账本见
 | 尚未覆盖的 read route | 342 |
 | 明确保留的推广 / 素材 write reservation | 110 / 49 |
 
-这些数字不等于“还有 343 个接口可以直接开发”。推广与素材共有 188 个 catalog-only
+这些数字不等于“还有 342 个接口可以直接开发”。推广与素材共有 188 个 catalog-only
 draft，但当前没有一个具有成功 probe；它们可用于说明缺口和准备最小探测，不能生成执行
 argv，也不能进入 stable manifest。
 
@@ -44,6 +44,12 @@ manifest 和既有合同证据。阶段一不发生产请求，互斥分类为�
 | 无法判定 | 5 | 5 |
 | **合计** | **155** | **155** |
 
+这张六类表冻结的是派发时的 343 条 `uncovered_read` 快照。随后晋升的
+`analysis.default_val.list` 在该表中原列为“UI 辅助路由”；晋升后它从 `uncovered_read` 移入
+callable covered。因此当前分母可复算为 `342 - 188 = 154`，对应六类为
+`18 / 88 / 4 / 0 / 39 / 5 = 154`，其余五类不变。上表仍保留 155 条逐路由复核的历史取证总账，
+不把事后的晋升倒写成当时遗漏。
+
 分母没有快照漂移：343 条 `uncovered_read` 中，draft 目录有 148 条 promotion 与 40 条 material
 唯一 path，排除后恰为 155。唯一 method 证据差异是 `promotion.promoted_object.list`：draft 为 POST，
 Census 对同一 path 仍为 UNKNOWN；按唯一 path 排除，未重复计数。逐条工作账本保存在本 worktree 的
@@ -56,8 +62,10 @@ Census 对同一 path 仍为 UNKNOWN；按唯一 path 排除，未重复计数�
 或已有同租户空样本而 fail closed；没有重试、翻页、扩窗或猜业务值。18 条均未取得可晋升的成功非空
 响应合同，故最终全部转入“数据/证据阻塞”，本轮新增产品和分析动线均为 0。
 
-这次语义复核不改 Census 的机器 route status，也不把 UI route 包装成产品：编译 operation 仍为 185、
-stable 仍为 176、callable covered route 仍为 172、`uncovered_read` 仍为 343。现在可直接回答真正缺口：
+这次语义复核自身不改 Census 的机器 route status，也不把 UI route 包装成产品；其派发快照为
+operation 185、stable 176、callable covered route 172、`uncovered_read=343`。合入随后完成的默认值字典
+晋升后，当前值统一为 operation 186、stable 177、callable covered route 173、`uncovered_read=342`。
+现在可直接回答真正缺口：
 在这 155 条中有分析价值但尚无证据的路由是 39 条；另有 5 条因 method、请求/响应或服务端语义不足
 仍无法判定。下一轮只有在租户数据或服务端合同证据改变后才重启这 18 条，不重复当前租户的空探测。
 

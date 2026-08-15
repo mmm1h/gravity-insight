@@ -21,8 +21,9 @@ from .plan_adapter_support import (
     request_object,
     validate_exact_targets,
 )
-from . import plan_monetization_adapter as monetization_plan
 from . import plan_analysis_default_adapter as defaults_plan
+from . import plan_derived_metrics_adapter as derived_plan
+from . import plan_monetization_adapter as monetization_plan
 
 
 ANALYSIS_QUERY_NAME = "analysis_query"
@@ -31,6 +32,7 @@ COMPOSITE_NAMES = frozenset(
         ANALYSIS_QUERY_NAME,
         monetization_plan.MONETIZATION_DETAIL_NAME,
         defaults_plan.ANALYSIS_DEFAULT_DICTIONARY_NAME,
+        derived_plan.DERIVED_METRICS_NAME,
     }
 )
 ANALYSIS_QUERY_REQUEST_FIELDS = frozenset(
@@ -149,6 +151,9 @@ def validate_analysis_plan(
             request, context, workspace
         )
         return
+    if request.get("name") == derived_plan.DERIVED_METRICS_NAME:
+        derived_plan.validate_derived_metrics_plan(request, context)
+        return
     if request.get("name") == monetization_plan.MONETIZATION_DETAIL_NAME:
         monetization_plan.validate_monetization_detail_plan(
             request, context, workspace
@@ -164,6 +169,8 @@ def execute_analysis_plan(
         return defaults_plan.execute_analysis_default_dictionary_plan(
             sdk, request, context
         )
+    if request.get("name") == derived_plan.DERIVED_METRICS_NAME:
+        return derived_plan.execute_derived_metrics_plan(sdk, request, context)
     if request.get("name") == monetization_plan.MONETIZATION_DETAIL_NAME:
         return monetization_plan.execute_monetization_detail_plan(
             sdk, request, context
@@ -174,6 +181,7 @@ def execute_analysis_plan(
 def is_analysis_result(value: Any) -> bool:
     return (
         defaults_plan.is_analysis_default_dictionary_result(value)
+        or derived_plan.is_derived_metrics_result(value)
         or is_analysis_query_result(value)
         or monetization_plan.is_monetization_detail_result(value)
     )
@@ -186,6 +194,8 @@ def project_analysis_result(
         return defaults_plan.project_analysis_default_dictionary_result(
             value, fields, context
         )
+    if derived_plan.is_derived_metrics_result(value):
+        return derived_plan.project_derived_metrics_result(value, fields, context)
     if monetization_plan.is_monetization_detail_result(value):
         return monetization_plan.project_monetization_detail_result(
             value, fields, context

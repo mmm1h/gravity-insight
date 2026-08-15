@@ -52,6 +52,10 @@ from .agent_monetization_guard import (
     MONETIZATION_DETAIL_CAPABILITY,
     MONETIZATION_DETAIL_NAME,
 )
+from .agent_derived_metrics import (
+    DERIVED_METRICS_CAPABILITY,
+    DERIVED_METRICS_NAME,
+)
 
 
 _ASCII_WORD = re.compile(r"[a-z0-9_]+", re.IGNORECASE)
@@ -86,6 +90,7 @@ _COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
     ANALYSIS_DEFAULT_DICTIONARY_CAPABILITY,
     SAVED_ANALYSIS_CAPABILITY,
     ANALYSIS_TEMPLATE_CAPABILITY,
+    DERIVED_METRICS_CAPABILITY,
     {
         "name": "dashboard_snapshot",
         "domain": "analysis",
@@ -465,6 +470,7 @@ def authoritative_capability_cards(
             "segment_members",
             ANALYSIS_DEFAULT_DICTIONARY_NAME,
             ADVERTISER_PROFILE_NAME,
+            DERIVED_METRICS_NAME,
         }
     ]
     return unique_authoritative_cards(

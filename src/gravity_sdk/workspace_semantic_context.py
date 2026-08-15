@@ -27,7 +27,10 @@ _TARGET_KINDS = frozenset(
 )
 _APP_TARGET_KINDS = frozenset({"event", "event_property", "user_property"})
 _ROOT_FIELDS = frozenset(
-    {"schema_version", "instructions", "terms", "exclusions", "verified_queries"}
+    {
+        "schema_version", "instructions", "terms", "exclusions", "verified_queries",
+        "derived_metrics",
+    }
 )
 
 
@@ -89,11 +92,20 @@ class VerifiedQuery:
 
 
 @dataclass(frozen=True)
+class DerivedMetric:
+    name: str
+    phrases: tuple[str, ...]
+    description: str
+    spec: Mapping[str, Any]
+
+
+@dataclass(frozen=True)
 class SemanticContext:
     instructions: str
     terms: tuple[SemanticTerm, ...]
     exclusions: tuple[SemanticExclusion, ...]
     verified_queries: tuple[VerifiedQuery, ...]
+    derived_metrics: tuple[DerivedMetric, ...] = ()
     schema_version: str = SCHEMA_VERSION
 
     def contract(self) -> dict[str, Any]:
@@ -130,6 +142,15 @@ class SemanticContext:
                     "all_pages": item.all_pages,
                 }
                 for item in self.verified_queries
+            ],
+            "derived_metrics": [
+                {
+                    "name": item.name,
+                    "phrases": list(item.phrases),
+                    "description": item.description,
+                    "spec": dict(item.spec),
+                }
+                for item in self.derived_metrics
             ],
         }
 
@@ -169,14 +190,16 @@ def validate_semantic_context(
         value.get("exclusions", []), apps, product_selectors, operations, path
     )
     verified = _verified_queries(value.get("verified_queries", []), operations, path)
-    if not (instructions or terms or exclusions or verified):
-        raise _invalid(path, field, "must declare instructions, terms, exclusions, or verified_queries")
-    _unique_triggers(terms, exclusions, verified, path)
+    derived = _derived_metrics(value.get("derived_metrics", []), path)
+    if not (instructions or terms or exclusions or verified or derived):
+        raise _invalid(path, field, "must declare instructions, terms, exclusions, verified_queries, or derived_metrics")
+    _unique_triggers(terms, exclusions, verified, derived, path)
     return SemanticContext(
         instructions=instructions,
         terms=tuple(terms),
         exclusions=tuple(exclusions),
         verified_queries=tuple(verified),
+        derived_metrics=tuple(derived),
     )
 
 
@@ -296,6 +319,36 @@ def _verified_queries(
     return result
 
 
+def _derived_metrics(value: Any, path: Path) -> list[DerivedMetric]:
+    from .derived_metrics import validate_derived_spec
+
+    rows = _object_array(value, "semantic_context.derived_metrics", path)
+    result: list[DerivedMetric] = []
+    for index, raw in enumerate(rows):
+        field = f"semantic_context.derived_metrics.{index}"
+        _fields(
+            raw,
+            field,
+            required={"name", "phrases", "spec"},
+            optional={"description"},
+            path=path,
+        )
+        specification = raw["spec"]
+        try:
+            validate_derived_spec(specification)
+        except (TypeError, ValueError) as exc:
+            raise _invalid(path, f"{field}.spec", f"is invalid: {exc}") from exc
+        result.append(
+            DerivedMetric(
+                name=_name(raw["name"], f"{field}.name", path),
+                phrases=tuple(_phrases(raw["phrases"], f"{field}.phrases", path)),
+                description=_text(raw.get("description", ""), f"{field}.description", path),
+                spec=dict(specification),
+            )
+        )
+    return result
+
+
 def _target(
     value: Any,
     field: str,
@@ -372,15 +425,17 @@ def _unique_triggers(
     terms: list[SemanticTerm],
     exclusions: list[SemanticExclusion],
     verified: list[VerifiedQuery],
+    derived: list[DerivedMetric],
     path: Path,
 ) -> None:
-    names = [item.name for item in (*terms, *exclusions, *verified)]
+    names = [item.name for item in (*terms, *exclusions, *verified, *derived)]
     if len(names) != len(set(names)):
         raise _invalid(path, "semantic_context", "declaration names must be unique")
     triggers: dict[str, str] = {}
     for owner, values in (
         *((item.name, item.phrases) for item in terms),
         *((item.name, (item.question,)) for item in verified),
+        *((item.name, item.phrases) for item in derived),
     ):
         for value in values:
             normalized = normalized_phrase(value)
@@ -467,6 +522,7 @@ __all__ = [
     "SemanticExclusion",
     "SemanticTarget",
     "SemanticTerm",
+    "DerivedMetric",
     "VerifiedQuery",
     "compiled_operation",
     "normalized_phrase",
