@@ -13,12 +13,12 @@
 
 ## 现状
 
-当前从仓库产品入口与 stable operation 正向交叉反推 48 条产品动线：**已闭环 33 / 部分闭环 0 / 完全缺失 15**；
+当前从仓库产品入口与 stable operation 正向交叉反推 48 条产品动线：**已闭环 33 / 部分闭环 1 / 完全缺失 14**；
 另有 2 条 legacy/SDK 便利面和 1 条重复能力审计行保留，但不计产品动线。
 本轮程序化复算发现旧摘要漏计表内 D28 缺失行：表格 51 行，减去 3 条“不计独立动线”，得到
-`48 = 33 / 0 / 15`；相对旧摘要 `47 = 33 / 0 / 14` 是 `+0 / +0 / +1`、总数 `+1`。
+`48 = 33 / 1 / 14`；相对旧摘要 `47 = 33 / 0 / 14` 是 `+0 / +1 / +0`、总数 `+1`。
 这只是既有行的算术纠正，不是新增能力或放宽闭环判据。stable operation 仍为 185、其中 176 个 stable。
-**部分闭环归零不代表没有欠账**——15 条完全缺失里
+部分闭环的 Analysis 导出只关闭了单用户事件子类；14 条完全缺失里
 多数是请求、响应或非空证据阻塞；字段隐私不再是阻塞项。
 逐条状态、四面入口、调用次数和证据阻塞以[分析动线台账](analysis-journeys.md)为准；旧
 `21/14/6` 快照的逐条底稿未进入版本控制，无法复算，已停止作为排期事实。
@@ -1326,6 +1326,10 @@ worksheet 语义都已证实的 create route 才复用现有 `export run` 提升
 | `user_event.start` | create→poll→download、XLSX、单 worksheet、5 个表头已观察；文件为 0 行，五列逻辑类型全部不可观察 | 用户级投影阻塞已解除；类型合同仍缺 | 有非空单用户事件日的授权租户做一次单日导出，记录类型不记录值 |
 | `pay_event.start` | create 曾返回 task id 后 FAILED；`field_map`/条件绑定和完整文件 schema 未成立 | 未解除 | 上游 API/前端 owner，或有合法付费事件导出的租户 |
 
+> 本表冻结 2026-08-15 当轮判定。2026-08-16 第二轮已覆盖其中两行：`user_event.start` 完整闭环并
+> 可调用；`stream_event.start` 证明前端不产生 server request，改记 `not_applicable`。后续不得按本表
+> 的旧 blocker 重复探测，当前状态以本页后文“第二轮纠错与闭环判定”和导出 route catalog 为准。
+
 本轮生产复核总 HTTP **2 次**：`app.list` 最小第一页 GET 1 次、`analysis.segment.list` 最小第一页
 GET 1 次，均 HTTP 200；后者明确空，按停止条件未换 App、未翻页、未扩日期窗。create / poll /
 download 均为 0，重试为 0，上游新增任务为 0，本地无业务文件残留。投影总闸门已移除
@@ -1684,6 +1688,53 @@ MP4 magic；但单一样本不能证明完整分片 host/path 集合，缩略图
 **`48 = 33 / 0 / 15`**。operation `185 + 0 = 185`，stable `176 + 0 = 176`。由于没有闭环并发布
 新 effect，三个 Plan 例外条件没有被用于本轮判定：没有新增 effect/Plan 不兼容声明、没有新的直接
 CLI/SDK/Agent task-set 等价证明，也没有新增“设计不适用”表格登记。
+
+### 第二轮纠错与闭环判定（2026-08-16）
+
+**提案：**沿用第一轮的静态绑定和视频事实，只纠正两个错误前提：A 按已登记 App catalog 逐个复用
+同一单日、第一页请求，第一条非空事件时间线后立即停止并完成唯一一次导出；B 对自然返回的缩略图直接
+做最小 Range GET，并从同一只读素材目录抽取多个引用核对 host/path/redirect。四份目标 bundle 各只
+下载一次后转为本地检索；不扩日期、不翻数据页、不重试同形状、不换项目，也不构造失效 URL。工作提案
+位于 ignored `tmp/codex/export-binary-2/proposal.md`，值无关逐请求账本位于
+[`evidence/forensics/20260816_export_binary_round2.json`](../evidence/forensics/20260816_export_binary_round2.json)。
+
+**A 取得一个完整可发布子合同。** `app.list` 一次返回 7 个 catalog App；依次枚举 3 个 App，前两个
+没有可导出的当日事件，第三个首次返回非空事件时间线并立即停止。实际 9 次生产 HTTP 为：1 次 App
+catalog、3 次 `user_detail.list`、2 次 `user_event.list`、1 次 `user_event.start`、1 次首次即 READY
+的 progress poll、1 次无重定向 XLSX download。没有扩窗、数据翻页、重试或额外 poll。文件为
+6195 bytes、1 个 `Sheet1`、7 行、5 列；完整 shape 为：`客户(client_id)`=`s/str/identifier`，
+`用户注册时间`=`s/str/datetime`，`事件发生时间`=`d/datetime/datetime` 且 number format 为
+`YYYY-MM-DD HH:MM:SS`，`事件`=`s/str/text`，`事件属性`=`s/str/json_object_or_array`。临时文件在
+检查后删除，值未进入证据。
+
+因此 `export.analysis.user_event.start` 现为 verified/callable，CLI、SDK 与 Agent 复用既有治理导出
+effect；Plan 继续适用已登记的导出“设计不适用”判据。其他六类只能复用 create→poll→download、
+OSS/XLSX 与恢复协议，**不能复用这五列文件合同**：`segment.result` 的 `用户ID` 单元格存储/逻辑类型
+仍缺；`origin_event` 是独立事件选择列族；`monetization_detail`、`segment_user_detail`、
+`user_detail`、`pay_event` 均由各自 `field_map`/父绑定/排序控制不同的动态列。六类都仍需自己的非空
+成功文件 shape。`stream_event.start` 则定为 `not_applicable`：hash-matched loader 没有调用点，按钮
+调用客户端表格序列化，前端根本不产生该 server request；它不是 SDK 缺口，后续不得重复 probe。
+
+**B 补齐缩略图事实，但没有闭环 Issue 19。** 10 次生产 HTTP 为：项目父读取 1 次、项目素材空读取
+1 次、本地素材目录读取 1 次，以及对自然返回的 5 个视频引用发 4 次缩略图 64-byte Range GET、3 次
+视频 HEAD。四个缩略图均为 HTTP 206、`image/jpeg`、JPEG magic、无重定向；三个视频均为 HTTP 200、
+`video/mp4`、无重定向。本轮 5 个引用全部收敛到 `tos-accelerate.gravity-engine.com`，path family 为
+`/{tenant}/image/video_thumbnail_url_{opaque}.jpg` 与 `/{tenant}/video/{opaque}.mp4`。加上第一轮的
+`v26-cc.oceanengine.com` 和 `p26-sign.douyinpic.com`，累计观察到 3 个 host、0 个 redirect target。
+这足以给 `material.local.list` 的固定 host/path 家族做窄合同，却不能证明外部 `vNN/pNN` 分片全集，
+所以通用平台素材 effect 仍不能配置完整 allowlist。
+
+四份 hash-matched bundle 本轮各 GET 一次，共 **4 次公开静态资源 GET / 4 个唯一 URL**，之后只做
+本地检索，显著低于第一轮 31 次。没有找到 `not_found / expired / not_cached / permission` 的离散
+分支；只找到缺 URL 时的通用“无法预览”和原样展示 `errorMessage`。失效语义仍未知且只有静态负向
+证据，没有用在线失效 URL 试探。Issue 19 仍缺外部 CDN shard allowlist 与四类失效分类，B 保持完全
+缺失。
+
+可复算计数：旧值 `48 = 33 / 0 / 15`；A 的聚合导出动线由完全缺失变为部分闭环，
+`+0 / +1 / -1`；B 为 `+0 / +0 / +0`；最终 **`48 = 33 / 1 / 14`**。operation
+`185 + 0 = 185`，stable `176 + 0 = 176`；user-event 是现有 export route catalog 的状态迁移，
+不是新增 stable read operation。caller-recoverable error 抛点没有新增或删除，审计仍为
+`1022 = A 218 / B 434 / C 370`。
 
 ## Issue 16 Windows CLI UTF-8 裁决（2026-08-15）
 

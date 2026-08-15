@@ -10,12 +10,12 @@
 执行，内部 HTTP 数也没有减少。App/平台也未知时不适用该两次路径；默认离线 Agent 的原三次下界保留。
 `gravity.agent-call-bound.v1` 只在本次成功交付完整目录的卡与 Plan 节点上把对应 scenario 声明为 2。
 
-当前程序化重算：**48 条产品动线：已闭环 33 / 部分闭环 0 / 完全缺失 15**。可复算：下表 51 行，
+当前程序化重算：**48 条产品动线：已闭环 33 / 部分闭环 1 / 完全缺失 14**。可复算：下表 51 行，
 减去 2 条兼容/维护便利面和 1 条“既有稳定读取面重复”，得到 48 条；按状态直接分组为
-`48 = 33 / 0 / 15`。相对旧摘要 `47 = 33 / 0 / 14` 是 `+0 / +0 / +1`、总数 `+1`：旧摘要在 D28
+`48 = 33 / 1 / 14`。相对旧摘要 `47 = 33 / 0 / 14` 是 `+0 / +1 / +0`、总数 `+1`：旧摘要在 D28
 缺失行已经进入表格后仍写“净变化 0”，漏计了这一既有行。本轮只纠正算术，不把 D28 写成已实现，
 也不改变闭环判据。stable operation 仍为 185、其中 176 个 stable。
-**部分闭环归零不等于没有欠账**——15 条完全缺失里多数是合同证据阻塞，逐行有记录。
+部分闭环的 Analysis 导出只关闭了单用户事件子类；14 条完全缺失里多数是合同证据阻塞，逐行有记录。
 
 2026-08-16 的 Agent 渐进发现与生成任务指南是既有调用方入口的可读性改进，不新增 operation、结果 envelope 或产品动线：`48 + 0 = 48`、`33 / 0 / 15 + 0 / 0 / 0 = 33 / 0 / 15`，operation 仍为 `185 + 0 = 185`、stable 仍为 `176 + 0 = 176`。它的独立三层只读入口从既有 composite card 和 compiled manifest 派生；真实查询仍经既有 Agent card/Plan/CLI 合同。生产 HTTP 0 次。
 旧快照 `21/14/6` 没有逐条证据，不能复算；本台账不还原已丢失的原始 41 条定义。
@@ -27,6 +27,17 @@
 origin/redirect/expiry/size 与历史失败合同。投影层把本轮观察字段全部登记暴露，但不把样本 host 动态
 学习成 allowlist。计数推导为 `48 = 33 / 0 / 15 + 0 / 0 / 0 = 48 = 33 / 0 / 15`；operation
 `185 + 0 = 185`、stable `176 + 0 = 176`。详见[路线图](roadmap.md#最后两条可推动线复核analysis-导出--平台素材二进制2026-08-16)。
+
+同日第二轮按授权枚举 3/7 个 catalog App，在第三个首次取得非空单日事件时间线后停止；A 生产 HTTP
+9 次，一次 create、首次 poll 即 READY、一次 download 得到 7 行/5 列且存储与逻辑类型完整的 XLSX。
+`user_event` 子类现可调用；其余六个服务端导出只共享任务协议，仍各需自己的成功文件 shape；
+`stream_event` 因 loader 无调用点、按钮走客户端序列化改记 `not_applicable`，不再当 SDK 缺口。
+B 生产 HTTP 10 次，4 个自然缩略图的 64-byte Range GET 均为 206/JPEG/无重定向，本轮五个素材引用
+同属 `tos-accelerate.gravity-engine.com`；累计 3 个 host 仍不足以证明外部 CDN shard 全集，且四类
+失效语义静态检索仍未知，故 Issue 19 不闭环。公开 bundle GET 为 4 次/4 个唯一 URL，此后全为本地
+检索。计数从 `48 = 33 / 0 / 15` 经 A `+0 / +1 / -1`、B `+0 / +0 / +0` 得
+**`48 = 33 / 1 / 14`**；operation 仍为 185、stable 仍为 176。详见
+[路线图第二轮判定](roadmap.md#第二轮纠错与闭环判定2026-08-16)。
 
 2026-08-15 的结果来源等级是横切合同修正，不新增独立产品或结果 envelope。三条执行责任边界为
 `governed_product`（固定产品合同）、`caller_defined`（workspace recipe / SQL product，调用方负责口径）
@@ -176,5 +187,5 @@ writer 拒绝非有限数字；operation、投影、请求、错误分类和退�
 | 按表名或 App 查询数据表当前 schema、字段和版本（F41） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `CURRENT_TABLE_SCHEMA_PARENT_MISSING`。list 为空且无可信表名/App 来源；detail/version 父链、`table_id` 类型和“当前版本”语义未证实。 |
 | 下钻非 Bytedance 平台的计划、组和创意表现（D33/D34） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `NON_BYTEDANCE_HIERARCHY_PARENT_MISSING`。Bilibili advertiser 与 Huya account 未产出父候选；后续 ID 链、report 父字段、分页和非空 schema 未成立。 |
 | 深查各平台专属素材与创意（D32） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `PLATFORM_SPECIFIC_CREATIVE_CONTRACT_MISSING`。除 Bytedance 外普遍没有最小非空响应合同；common 素材目录不能证明平台专属字段。Bytedance 标题包已单列为独立动线闭环，**但那是 D32 之下的一个具体产品，不是这条动线的进展**；本条仍是数据证据阻塞。 |
-| 导出事件、分群、用户、付费或变现分析结果 | 完全缺失 | 无 / 无 / 设计不适用 / 有（目标 gap） | 未验证 | Agent 首问返回 `ANALYSIS_EXPORT_FILE_CONTRACT_MISSING`。8 条真实 frontend binding 已恢复；`stream_event.start` 的 loader 无调用点且按钮实际做客户端导出，server request 不可猜。最小生产父链 2 次均 HTTP 200，但首 App 当日用户页为空，未创建任务。`segment.result.start` / `user_event.start` 仍缺逻辑列类型，其余条目仍缺成功完整文件 schema；投影不再是阻塞。 |
-| 按精确平台素材引用预览或下载图片/视频（Issue 19） | 完全缺失 | 无 / 无 / 设计不适用 / 有（目标 gap） | 未验证 | Agent 首问返回 `PLATFORM_ASSET_BINARY_CONTRACT_MISSING`。`file_url` / `thumbnail_url` 已登记暴露；样本视频 HEAD 200、1 KiB Range GET 206，`video/mp4`/ISO-BMFF 且无 redirect，缩略图 HEAD 405 后停止。仍缺完整 host/path/redirect、缩略图 GET、尺寸/过期与历史 `not_found/expired/not_cached/permission` 语义，故不能配置 allowlist 或实现 effect。 |
+| 导出事件、分群、用户、付费或变现分析结果 | 部分闭环 | 有 / 有 / 设计不适用 / 有 | 1 / 2（用户事件中英首问） | `user_event` 已有单日非空 create→poll→download、7 行完整 XLSX shape，并经 CLI/SDK/Agent 可调用。其余六个服务端导出只能复用任务协议，仍各缺自己的成功文件 shape；`stream_event` 前端不产生 server request，记为 `not_applicable` 而非缺口。精确请求其他六类时仍返回 `ANALYSIS_EXPORT_FILE_CONTRACT_MISSING`。 |
+| 按精确平台素材引用预览或下载图片/视频（Issue 19） | 完全缺失 | 无 / 无 / 设计不适用 / 有（目标 gap） | 未验证 | `file_url` / `thumbnail_url` 已登记暴露；视频已有 200/206、`video/mp4`/ISO-BMFF，四个缩略图均为 64-byte 206、`image/jpeg`/JPEG，所有样本无 redirect。累计观察 3 个 host；本地素材 host/path 可窄登记，但外部 CDN shard 全集和 `not_found/expired/not_cached/permission` 语义仍未知，不能配置通用 allowlist 或实现 effect。 |
