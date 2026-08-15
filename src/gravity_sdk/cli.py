@@ -100,6 +100,7 @@ from gravity_sdk.find_input import (
 from gravity_sdk.recipe import add_recipe_commands
 from gravity_sdk.resolver_cli import add_resolver_command
 from gravity_sdk.agent import DeferredAgentClient, add_agent_command, ndjson_metadata, run_agent_command
+from gravity_sdk.agent_catalog import add_agent_catalog_command, run_agent_catalog_command
 from gravity_sdk.capability_cli import add_deepening_commands
 from gravity_sdk.read_cli import add_read_command
 from gravity_sdk.plan_cli import add_plan_commands
@@ -136,6 +137,7 @@ def _write_json(value: Any, *, stream=None) -> None:
 
 def _add_discovery_commands(commands: Any) -> None:
     add_agent_command(commands, _agent_limit)
+    add_agent_catalog_command(commands, _positive_int)
     add_operation_commands(commands, _operation_limit)
 
 
@@ -506,6 +508,8 @@ def _auth_or_parents(args: argparse.Namespace) -> Any:
 def _run_discovery(args: argparse.Namespace) -> Any:
     if args.command == "agent":
         return run_agent_command(args, DeferredAgentClient(lambda: _client(args)))
+    if args.command == "agent-catalog":
+        return run_agent_catalog_command(args, _client(args))
     return run_operation_command(args, _client(args), filter_operations)
 
 
@@ -530,7 +534,7 @@ def run(args: argparse.Namespace) -> Any:
             "registered_operations": len(operation_ids),
             **checks,
         }
-    if args.command in {"operations", "agent"}:
+    if args.command in {"operations", "agent", "agent-catalog"}:
         return _run_discovery(args)
     if args.command == "validate":
         return _client(args).validate(

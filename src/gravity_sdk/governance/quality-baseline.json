@@ -79,7 +79,7 @@
       "src/gravity_sdk/census/coverage.py": 890,
       "src/gravity_sdk/census/params.py": 1568,
       "src/gravity_sdk/census/response.py": 551,
-      "src/gravity_sdk/cli.py": 718,
+      "src/gravity_sdk/cli.py": 722,
       "src/gravity_sdk/client.py": 1094,
       "src/gravity_sdk/executor.py": 1445,
       "src/gravity_sdk/http_runtime.py": 675,

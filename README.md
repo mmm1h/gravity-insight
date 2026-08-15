@@ -18,6 +18,8 @@ plan run --input <plan.json>`，一次目录快照批量发现、一次显式执
 Plan 时直接 `gravity run` / `gravity plan run`，只需一次调用。发现结果包含可复制 argv 和
 `plan_node`，但自然语言不会自动执行。多个独立读取共享一个有界 worker pool，不逐条起进程。
 
+首次接触仓库时，按[十分钟 Agent 上手路径](docs/agent-skills/ten-minute-path.md)逐层查看本地能力与 Analysis Spec；它不需要打开 Gravity Web，也不会自动执行查询。
+
 当前 `0.3` 是调用方 surface 的破坏性收口：Multidim 专用入口只有
 `gravity multidim query --app <alias|id> ...`，结果行位于 `query.data.list`；Plan request 必须带
 `input_schema_version="gravity-insight.multidim-input.v1"`。旧 `multidim query --app-id`、省略 App

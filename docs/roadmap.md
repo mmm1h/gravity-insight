@@ -1898,3 +1898,27 @@ data-list values 或上游异常正文。`models.py` 与 `plan_validation.py` �
 模型热点，后者的 57 个 helper 抛点横跨完整 Plan 图、预算、binding 与 call-bound 语义；继续处理会
 从本轮高频字段策略扩到低频通用结构面，因此按优先级停止，不把它们包装成已完成。该升级不改变
 `docs/analysis-journeys.md` 的动线计数；operation 仍为 185、stable 仍为 176；本轮 0 次生产请求。
+
+## Agent 渐进发现与生成任务指南（2026-08-16）
+
+**提案：**新增一个独立、只读的 `gravity agent-catalog` 三段式发现面，按既有 `domain` 做
+`categories → category <domain> → describe <selector>`；第一层只给数量和下钻 argv，第二层以有界
+selector 摘要分页，第三层复用 composite card 或 manifest-derived operation card。保留 `gravity agent`
+原有 parser、query 和 envelope 完全不变。类别不纳入 workspace recipe、SQL product 或 cached metadata：
+它们依赖调用方 workspace 或本地缓存，硬列入固定目录会形成第二套事实源。
+
+**结论：**`gravity.agent-catalog.v1` 仅派生现有 composite inventory 和 compiled manifest，未新增
+operation、参数、执行路径或 MCP surface。`scripts/generate_agent_skills.py` 从 Agent card、Analysis
+Spec contract、period-compare envelope 与公共 exit-code contract 生成 4 篇任务指南和十分钟路径；测试
+逐字比较重生成文本。覆盖事件趋势、同 Spec 跨期比较、capability gap 恢复与首次路径，选择依据是它们
+对应已闭环动线的高频起点和一个所有调用方都需处理的失败终点，不以 Skill 数量为目标。
+
+十分钟路径离线实走到 schema/compiled preview 成功；真实业务结果仍被三个事实性前置条件阻塞：没有
+调用方可用的登录、workspace App，或已登记的物理事件/指标。它们不是可安全猜测的 SDK 输入；路径明确
+列出而不伪称已取到业务结果。计数为 `48 + 0 = 48`、`33 / 0 / 15 + 0 / 0 / 0 = 33 / 0 / 15`，operation
+`185 + 0 = 185`、stable `176 + 0 = 176`；本轮生产 HTTP 0 次。
+
+新增 catalog 参数校验的 7 个 caller-recoverable raise sites 进入既有 actionable-error 审计，
+其中 `B + 3`、`C + 4`：当前可复算总数为 `974 + 7 = 981`、`A=218`、`B=400+3=403`、
+`C=356+4=360`。这些是新 CLI 的 `limit`、`offset`、category、selector 和 action 的本地输入错误；
+不改变既有错误 code/category/exit 语义，也不放宽审计判据。
