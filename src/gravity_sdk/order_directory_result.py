@@ -22,6 +22,7 @@ from ._order_directory_failure import (
     valid_retry_receipt,
 )
 from .errors import ErrorCode, ErrorDetail, exit_code_for_error
+from .result_source import GOVERNED_PRODUCT, result_source
 
 
 SCHEMA_VERSION = "gravity-insight.order-directory.v1"
@@ -29,6 +30,7 @@ SCHEMA_VERSION = "gravity-insight.order-directory.v1"
 _ENVELOPE_KEYS = frozenset(
     {
         "schema_version",
+        "result_source",
         "ok",
         "status",
         "exit_code",
@@ -82,6 +84,7 @@ def success_result(
     status = "empty" if not safe_rows else "success"
     return {
         "schema_version": SCHEMA_VERSION,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": True,
         "status": status,
         "exit_code": 0,
@@ -121,6 +124,7 @@ def failure_result(
     )
     return {
         "schema_version": SCHEMA_VERSION,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": False,
         "status": (
             "contract_changed"

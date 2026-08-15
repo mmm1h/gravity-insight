@@ -9,6 +9,7 @@ from .domains import ANALYSIS_QUERY_OPERATIONS
 from .errors import ContractChangedError, ErrorCategory, exit_code_for_category
 from .runtime import call_read
 from .saved_analysis_support import SUCCESS_STATUSES, safe_query_envelope
+from .result_source import GOVERNED_PRODUCT, result_source
 
 
 _PRIMARY_RESULT_KEYS = {
@@ -81,6 +82,7 @@ def replay_envelope(
     )
     return {
         "schema_version": schema_version,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": ok,
         "status": status,
         "exit_code": 0 if ok else _exit_code(result),

@@ -16,6 +16,7 @@ from .errors import (
     exit_code_for_category,
     exit_code_for_error,
 )
+from .result_source import GOVERNED_PRODUCT, result_source
 
 
 SCHEMA_VERSION = "gravity-insight.material-performance.v1"
@@ -330,6 +331,7 @@ def contract_result() -> dict[str, Any]:
     )
     return {
         "schema_version": SCHEMA_VERSION,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": False,
         "status": "contract_changed",
         "exit_code": exit_code_for_error(detail),
@@ -369,6 +371,7 @@ def product_envelope(
     )
     return {
         "schema_version": SCHEMA_VERSION,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": not failures,
         "status": status,
         "exit_code": exit_code,

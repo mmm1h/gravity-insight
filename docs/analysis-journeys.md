@@ -2,7 +2,7 @@
 
 本页是分析动线完成度的长期事实源。每行回答一个独立分析问题；同一产品的 list/prepare/run、batch、分页和日期模式不拆行，raw operation、维护命令、任务状态路由也不单列。新增独立产品合同或独立结果 envelope 时新增一行，能力、证据或入口变化时原位更新。
 
-闭环判据沿用[路线图](roadmap.md)：已知输入 1 次调用、未知输入 2 次调用，CLI/SDK/Plan/Agent 四面可达，结果为带 `schema_version` 的 envelope，能区分空、部分失败和能力缺口，未登记字段 fail-closed。Agent 一面不再以卡已注册或精确 selector 自证：每行至少一条中文和一条英文分析师问法都须第一次调用命中正确产品；真实歧义的 `MULTIPLE_INTENTS` 必须含正确候选，能力缺失则须返回目标明确且带可执行 next action 的 gap。调用次数是调用方顶层命令/SDK 调用数，不是 composite 内部 HTTP 数；`实测` 指本轮离线发现加 Plan dry-run，`控制流` 指离线发现实测后核对 handoff/Plan 路径，`未验证` 不作达标声明。
+闭环判据沿用[路线图](roadmap.md)：已知输入 1 次调用、未知输入 2 次调用，CLI/SDK/Plan/Agent 四面可达，结果为带 `schema_version` 与离散 `result_source` 的 envelope，能区分空、部分失败和能力缺口，未登记字段 fail-closed。Agent 一面不再以卡已注册或精确 selector 自证：每行至少一条中文和一条英文分析师问法都须第一次调用命中正确产品；真实歧义的 `MULTIPLE_INTENTS` 必须含正确候选，能力缺失则须返回目标明确且带可执行 next action 的 gap。调用次数是调用方顶层命令/SDK 调用数，不是 composite 内部 HTTP 数；`实测` 指本轮离线发现加 Plan dry-run，`控制流` 指离线发现实测后核对 handoff/Plan 路径，`未验证` 不作达标声明。
 
 下面原为 `1 / 3` 的 9 条动线现可显式使用在线输入解析：第一次
 `gravity agent --resolve-inputs ... --output ...`（SDK 为 `resolve_capabilities()`）同时发现能力并交付
@@ -16,6 +16,14 @@
 **部分闭环归零不等于没有欠账**——14 条完全缺失里多数是合同证据阻塞，逐行有记录。
 本轮 D28 只恢复 draft 合同证据、没有新增产品面或 operation，净变化为 `+0 / +0 / +0`，
 故台账仍为 `47 = 33 / 0 / 14`。
+
+2026-08-15 的结果来源等级是横切合同修正，不新增独立产品或结果 envelope。三条执行责任边界为
+`governed_product`（固定产品合同）、`caller_defined`（workspace recipe / SQL product，调用方负责口径）
+和 `raw_operation`（只保证 operation 合同）；离线目录及异构 Plan 分别使用 `local_catalog`、`mixed`。
+CLI JSON/NDJSON/文件、SDK、Plan node/顶层与 Agent 执行 handoff 共用 `gravity.result-source.v1`，外层
+schema 版本不变。计数推导为 `47 + 0 = 47`、`33 / 0 / 14 + 0 / 0 / 0 = 33 / 0 / 14`；
+operation 为 `185 + 0 - 0 = 185`，stable 为 `176 + 0 - 0 = 176`。生产 HTTP 0 次。
+
 另保留 2 条兼容/维护便利面供边界审计，
 但不计产品动线。旧快照 `21/14/6` 没有逐条证据，不能复算；本台账不还原已丢失的原始 41 条定义。
 D23/D29/D30 只剩依赖箭头、语义不可验证，故保留在此说明而不强挂到新动线。候选

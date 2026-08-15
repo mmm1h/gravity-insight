@@ -9,18 +9,12 @@ from typing import Any
 
 from .errors import ErrorCategory, ErrorDetail, GravityInsightError, InputValidationError, exit_code_for_error
 from .plan import (
-    MAX_EXPANDED_NODES,
-    MAX_WORKERS,
-    NODE_KINDS,
-    RESULT_SCHEMA_VERSION,
-    AdapterContext,
-    PlanAdapter,
-    PlanAdapters,
-    PlanNode,
-    ValidatedPlan,
+    MAX_EXPANDED_NODES, MAX_WORKERS, NODE_KINDS, RESULT_SCHEMA_VERSION,
+    AdapterContext, PlanAdapter, PlanAdapters, PlanNode, ValidatedPlan,
 )
 from .plan_binding import prepare_executions, validate_json
 from .plan_budget import PlanConcurrencyBudget
+from .result_source import aggregate_result_sources, plan_result_source
 from .plan_validation import bounded_int, validate_plan
 
 
@@ -430,6 +424,7 @@ def result_item(
         "node_id": node.node_id,
         "execution_id": execution_id,
         "kind": node.kind,
+        "result_source": plan_result_source(node.kind, node.request),
         "foreach_index": foreach_index,
         "ok": ok,
         "status": status,
@@ -480,7 +475,7 @@ def result_envelope(
     ok = failed == 0 and skipped == 0
     partial = any(item["status"] == "partial" for item in results)
     return {
-        "schema_version": RESULT_SCHEMA_VERSION,
+        "schema_version": RESULT_SCHEMA_VERSION, "result_source": aggregate_result_sources(results),
         "ok": ok,
         "status": "success" if ok else "partial" if succeeded or partial else "error",
         "dry_run": False,
@@ -499,6 +494,10 @@ def result_envelope(
 def dry_run_result(plan: ValidatedPlan, workers: int) -> dict[str, Any]:
     return {
         "schema_version": RESULT_SCHEMA_VERSION,
+        "result_source": aggregate_result_sources([
+            {"result_source": plan_result_source(node.kind, node.request)}
+            for node in plan.nodes
+        ]),
         "ok": True,
         "status": "validated",
         "dry_run": True,

@@ -13,6 +13,7 @@ from .errors import (
     PaginationError,
 )
 from .export_batch import batch_envelope
+from .result_source import GOVERNED_PRODUCT, result_source
 
 
 MAX_COMPOSITE_PAGES = 1_000
@@ -121,6 +122,7 @@ def composite_envelope(
         "schema_version": schema_version,
         "next_action": next_action,
         **dict(extra or {}),
+        "result_source": result_source(GOVERNED_PRODUCT),
     }
 
 

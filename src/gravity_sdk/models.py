@@ -15,6 +15,7 @@ from urllib.parse import quote
 
 from .errors import ErrorDetail, InputValidationError, ManifestError, ParentRequiredError
 from .projection_validation import numeric_suffix_schema, validate_projection_bindings
+from .result_source import RAW_OPERATION, result_source
 
 
 _OPERATION_ID_RE = re.compile(r"^[a-z][a-z0-9_.-]{2,127}$")
@@ -22,16 +23,10 @@ _FIELD_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_.-]*$")
 _RESPONSE_FIELD_NAME_RE = re.compile(r"^[A-Za-z_$][A-Za-z0-9_.$-]*$")
 _SAFE_PATH_RE = re.compile(r"^/[A-Za-z0-9_{}./-]+/$")
 _READ_METHODS = frozenset({"GET", "POST"})
-_STABILITY_VALUES = frozenset(
-    {
-        "stable",
-        "experimental",
-        "permission_unavailable",
-        "blocked_privacy",
-        "blocked_write",
-        "deprecated",
-    }
-)
+_STABILITY_VALUES = frozenset({
+    "stable", "experimental", "permission_unavailable", "blocked_privacy",
+    "blocked_write", "deprecated",
+})
 _NON_EXECUTABLE_STABILITIES = frozenset(
     {"permission_unavailable", "blocked_privacy", "blocked_write", "deprecated"}
 )
@@ -1081,6 +1076,7 @@ class ReadResult:
     def to_dict(self) -> dict[str, Any]:
         return {
             "schema_version": self.schema_version,
+            "result_source": result_source(RAW_OPERATION),
             "status": self.status,
             "source": dict(self.source),
             "fetched_at": self.fetched_at,
@@ -1115,6 +1111,7 @@ class BatchResult:
     def to_dict(self) -> dict[str, Any]:
         result = {
             "operation_id": self.operation_id,
+            "result_source": result_source(RAW_OPERATION),
             "ok": self.ok,
             "status": self.status,
             "data": self.data,

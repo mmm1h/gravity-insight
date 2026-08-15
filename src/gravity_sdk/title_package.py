@@ -35,10 +35,10 @@ TITLE_PACKAGE_FIELDS = frozenset({
     "title_list", "title_num", "title_package_name", "update_user_id",
 })
 _BATCH_FIELDS = frozenset({
-    "operation_id", "request_id", "ok", "status", "data", "error",
+    "operation_id", "request_id", "result_source", "ok", "status", "data", "error",
 })
 _NATIVE_FIELDS = frozenset({
-    "schema_version", "operation_id", "contract_version", "status", "source",
+    "schema_version", "result_source", "operation_id", "contract_version", "status", "source",
     "fetched_at", "schema_fingerprint", "request", "page", "data", "warnings",
     "error", "truncated", "next_page_input", "total", "safety_limits",
 })

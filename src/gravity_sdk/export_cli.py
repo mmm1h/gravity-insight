@@ -13,6 +13,7 @@ from .errors import (
     exit_code_for_category,
     exit_code_for_error,
 )
+from .result_source import GOVERNED_PRODUCT, result_source
 
 
 def add_export_commands(
@@ -204,6 +205,7 @@ def export_cli_error(
     )
     return {
         "schema_version": "gravity-insight.error.v1",
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": False,
         "status": "error",
         "operation_id": operation_id,

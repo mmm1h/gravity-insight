@@ -12,6 +12,7 @@ from gravity_sdk.result_output import (
     result_is_persistable,
     write_rendered_result,
 )
+from gravity_sdk.result_source import CALLER_DEFINED, result_source
 from gravity_sdk.sql import credentials
 from gravity_sdk.sql.client import (
     GravityAuthError,
@@ -195,6 +196,9 @@ def _emit_query_result(
     if len(results) == 1:
         payload = dict(results[0])
         payload["schema_version"] = envelope["schema_version"]
+        payload["result_source"] = envelope.get("result_source") or result_source(
+            CALLER_DEFINED
+        )
         payload["exit_code"] = envelope["exit_code"]
         payload["evidence_reference"] = evidence_reference
         if evidence_warning:
@@ -234,6 +238,7 @@ def _emit_query_error(
         json.dumps(
             {
                 "schema_version": "gravity-sql.query.v1",
+                "result_source": result_source(CALLER_DEFINED),
                 "ok": False,
                 "status": "error",
                 "exit_code": exit_code,

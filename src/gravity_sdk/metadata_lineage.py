@@ -22,6 +22,7 @@ from .find_metadata import (
     search_offset,
 )
 from .runtime import call_batch
+from .result_source import LOCAL_CATALOG, result_source
 
 
 SCHEMA_VERSION = "gravity.metadata-table-lineage.v1"
@@ -181,6 +182,7 @@ def search_table_lineage(
     page = results[offset : offset + limit]
     return {
         "schema_version": SCHEMA_VERSION,
+        "result_source": result_source(LOCAL_CATALOG),
         "ok": True,
         "status": "success",
         "offline": True,

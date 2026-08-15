@@ -16,6 +16,7 @@ from .segment_spec import (
     prepare_segment_spec,
     segment_rule_spec_schema,
 )
+from .result_source import GOVERNED_PRODUCT, add_result_source
 from .workspace import load_workspace
 from .workspace_app import resolve_workspace_app
 
@@ -297,12 +298,16 @@ def run_segment_evaluate_command(
             request_inputs=compiled.inputs,
         )
     result = call_read(client, compiled.operation_id, compiled.inputs)
-    return project_output(
-        client,
-        compiled.operation_id,
-        result,
-        fields or None,
-        request_inputs=compiled.inputs,
+    return add_result_source(
+        project_output(
+            client,
+            compiled.operation_id,
+            result,
+            fields or None,
+            request_inputs=compiled.inputs,
+        ),
+        GOVERNED_PRODUCT,
+        replace=True,
     )
 
 

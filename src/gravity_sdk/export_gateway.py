@@ -17,6 +17,7 @@ from .export_models import (
     ExportState,
     _export_error,
 )
+from .result_source import GOVERNED_PRODUCT, result_source
 from .export_policy import _AuthorizedEffectRequest
 from .registry import PolicyEngine
 
@@ -313,6 +314,7 @@ class ExportTaskCenter:
         )
         return {
             "schema_version": "gravity-insight.export-list.v2",
+            "result_source": result_source(GOVERNED_PRODUCT),
             "ok": True,
             "status": "success",
             "jobs": _sanitize_task_rows(rows, self.contracts),

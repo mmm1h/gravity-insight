@@ -5,6 +5,7 @@ import argparse
 from typing import Any, Callable, Mapping, Sequence
 
 from .errors import ErrorCategory, InputValidationError, exit_code_for_category
+from .result_source import RAW_OPERATION, result_source
 
 
 BATCH_ITEM_FIELDS = frozenset(
@@ -179,7 +180,7 @@ def batch_schema(example_operation: str) -> dict[str, Any]:
         "output": {
             "schema_version": "gravity-insight.batch.v1",
             "fields": [
-                "ok", "status", "total_count", "success_count",
+                "result_source", "ok", "status", "total_count", "success_count",
                 "failure_count", "exit_code", "results",
             ],
         },
@@ -205,6 +206,7 @@ def batch_envelope(results: Any) -> dict[str, Any]:
     exit_code = max((_item_exit_code(item) for item in failed), default=0)
     return {
         "schema_version": "gravity-insight.batch.v1",
+        "result_source": result_source(RAW_OPERATION),
         "ok": not failed,
         "status": "success" if not failed else "partial" if success_count else "error",
         "total_count": len(results),

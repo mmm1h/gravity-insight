@@ -33,6 +33,7 @@ from .monetization_projection import (
     SAFE_RE_ATTRIBUTE_FIELDS,
     SAFE_ROW_FIELDS,
 )
+from .result_source import GOVERNED_PRODUCT, result_source
 
 
 SCHEMA_VERSION = "gravity-insight.monetization-detail.v1"
@@ -47,6 +48,7 @@ _TIME_FIELDS = ("CreateTime", "AdEventTime")
 _ENVELOPE_KEYS = frozenset(
     {
         "schema_version",
+        "result_source",
         "ok",
         "status",
         "exit_code",
@@ -363,6 +365,7 @@ def _success_result(
     status = "empty" if not rows else "success"
     return {
         "schema_version": SCHEMA_VERSION,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": True,
         "status": status,
         "exit_code": 0,
@@ -459,6 +462,7 @@ def _failure_result(
     )
     return {
         "schema_version": SCHEMA_VERSION,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": False,
         "status": "contract_changed" if normalized == ErrorCode.CONTRACT_CHANGED.value else "error",
         "exit_code": exit_code_for_error(detail),

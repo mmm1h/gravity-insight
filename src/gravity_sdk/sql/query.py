@@ -13,6 +13,7 @@ from gravity_sdk.errors import (
     exit_code_for_category,
 )
 from gravity_sdk.http_runtime import MAX_SQL_CONCURRENCY
+from gravity_sdk.result_source import CALLER_DEFINED, result_source
 from gravity_sdk.sql.products import (
     EvidenceFormatError,
     normalize_app_ids,
@@ -94,6 +95,7 @@ def _envelope(results: list[dict[str, Any]]) -> dict[str, Any]:
     }
     return {
         "schema_version": QUERY_SCHEMA_VERSION,
+        "result_source": result_source(CALLER_DEFINED),
         "ok": failed == 0,
         "status": "success" if failed == 0 else ("partial" if succeeded else "error"),
         "requested_count": len(results),
@@ -190,7 +192,12 @@ def _execute_one(
             "Gravity SQL product query failed",
             code="SQL_PRODUCT_RUNTIME_FAILED",
         )
-    return {"request_id": request_id, "ok": True, **result}
+    return {
+        "request_id": request_id,
+        "ok": True,
+        **result,
+        "result_source": result_source(CALLER_DEFINED),
+    }
 
 
 def _normalize(
@@ -308,6 +315,7 @@ def _error(
     return {
         "request_id": request_id,
         "product": product,
+        "result_source": result_source(CALLER_DEFINED),
         "ok": False,
         "status": "error",
         "exit_code": exit_code,

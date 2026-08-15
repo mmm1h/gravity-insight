@@ -12,6 +12,7 @@ from typing import Any
 
 from .composite_result import combined_status
 from .errors import InputValidationError
+from .result_source import RAW_OPERATION, result_source
 
 
 _PRIMARY_RESOURCES = {
@@ -55,6 +56,7 @@ def promotion_snapshot_compat(
     )
     return {
         "schema_version": "gravity-insight.composite.promotion.v1",
+        "result_source": result_source(RAW_OPERATION),
         "status": _batch_status(results),
         "resource": resource,
         "coverage": _batch_coverage(len(selected), results),

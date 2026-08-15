@@ -25,6 +25,7 @@ from .errors import (
 )
 from .runtime import call_read
 from .saved_analysis_result import execute_compiled, saved_result_item_count
+from .result_source import GOVERNED_PRODUCT, result_source
 from .saved_analysis_support import (
     DEFAULT_MAX_ITEMS,
     DEFAULT_MAX_PAGES,
@@ -100,6 +101,7 @@ def list_analysis_templates(
     )
     return {
         "schema_version": CATALOG_SCHEMA_VERSION,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": failures == 0,
         "status": status,
         "exit_code": max(failure_exit_codes, default=0),
@@ -178,6 +180,7 @@ def run_analysis_template(
         return {
             **preview,
             "schema_version": REPLAY_SCHEMA_VERSION,
+            "result_source": result_source(GOVERNED_PRODUCT),
             "ok": False,
             # exit-code-guard: allow - capability_gap is a caller selection result without ErrorDetail.
             "exit_code": 2,
@@ -193,6 +196,7 @@ def run_analysis_template(
     ok = query["ok"] is True
     return {
         "schema_version": REPLAY_SCHEMA_VERSION,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": ok,
         "status": status,
         "exit_code": 0 if ok else _result_exit_code(query),
@@ -263,6 +267,7 @@ def _preview_envelope(
     supported = isinstance(report.get("compiled"), CompiledTemplate)
     return {
         "schema_version": PREVIEW_SCHEMA_VERSION,
+        "result_source": result_source(GOVERNED_PRODUCT),
         "ok": True,
         "status": "compiled" if supported else "capability_gap",
         "exit_code": 0,

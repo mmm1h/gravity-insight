@@ -27,10 +27,10 @@ OPERATION_ID = stable_operation(
 INPUT_SCHEMA_VERSION = "gravity-insight.advertiser-profile-input.v1"
 _SUCCESS = frozenset({"success", "empty", "contract_changed_additive"})
 _BATCH_FIELDS = frozenset(
-    {"operation_id", "request_id", "ok", "status", "data", "error"}
+    {"operation_id", "request_id", "result_source", "ok", "status", "data", "error"}
 )
 _NATIVE_FIELDS = frozenset({
-    "schema_version", "operation_id", "contract_version", "status", "source",
+    "schema_version", "result_source", "operation_id", "contract_version", "status", "source",
     "fetched_at", "schema_fingerprint", "request", "page", "data", "warnings",
     "error", "truncated", "next_page_input", "total", "safety_limits",
 })

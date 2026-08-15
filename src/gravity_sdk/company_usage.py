@@ -24,9 +24,11 @@ OPERATION_ID = stable_operation(
     "report", "company_amount", action="query"
 ).operation_id
 _SUCCESS = frozenset({"success", "empty", "contract_changed_additive"})
-_BATCH_FIELDS = frozenset({"operation_id", "request_id", "ok", "status", "data", "error"})
+_BATCH_FIELDS = frozenset({
+    "operation_id", "request_id", "result_source", "ok", "status", "data", "error",
+})
 _NATIVE_FIELDS = frozenset({
-    "schema_version", "operation_id", "contract_version", "status", "source",
+    "schema_version", "result_source", "operation_id", "contract_version", "status", "source",
     "fetched_at", "schema_fingerprint", "request", "page", "data", "warnings",
     "error", "truncated", "next_page_input", "total", "safety_limits",
 })
