@@ -108,6 +108,19 @@ card 已闭环，原自然语言固定 gap 仅对批准形状解除。D28 聚合
 - 隐私：本轮无线上响应，因此**不能宣称响应无隐私风险**。`column_val_list` 等未知字段仍可能
   承载业务值或用户级数据，继续默认隐藏。
 
+### 2026-08-16 复核
+
+已登记 `metadata.data_table.list/detail` 的逐条前端只读确认；唯一 catalog App 上的 list 最小第一页
+为 HTTP 200 语义成功空，因此 detail 与 version 均没有合法 `table_id` 父项，未发送。该结果只解除
+POST 读语义的探测安全疑问，不解除 item schema、父绑定或“当前版本”语义 blocker；三条继续 draft，
+F41 状态不变。
+
+同轮把其余非推广/素材 `uncovered_read` 全量逐条复核。18 条离线可取证候选按实时事件、数据表、巨量
+项目素材、AppRank、点击监测、兜底 eCPM、自有多维模板的价值顺序处理；共 10 次生产 HTTP 后没有
+成功非空合同。4 条 AppRank 根目录为 HTTP 200 semantic error；点击监测、data-table list 与自有模板
+父目录明确空；其他 route 因缺父值或已证值域未发送。最终 18 条全部进入证据阻塞，不晋升 operation；
+只有租户数据或服务端合同发生变化时才值得做下一次最小 probe。
+
 ## 2026-08-13 追加判定：非 Bytedance 平台投放层级（D33）
 
 选 Bilibili 与 Huya 两个平台做逐层父链取证（二者在候选中父链证据最完整）。
