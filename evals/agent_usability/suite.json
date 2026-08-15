@@ -1,18 +1,18 @@
 {
-  "development_case_count": 235,
-  "development_sha256": "c106de432fb9889d35bb1f8065c468a3a9b9f4c74fec4b27e3a2dd15d426180d",
-  "holdout_case_count": 235,
-  "holdout_plaintext_sha256": "7be6c6a4ffd707dade3c5df6c9d106bc036ce5137a05887d3e5fd51d9eca1760",
-  "holdout_sealed_sha256": "8d3c380c23a2aa01160b5e0b01c0ebffadc705b68f456196df20ac0eaa0c1148",
-  "journey_count": 47,
+  "development_case_count": 240,
+  "development_sha256": "1564ae4affc61fd34b118fb93aa6fe0db55395dbf73dec1d101a530a51feb998",
+  "holdout_case_count": 240,
+  "holdout_plaintext_sha256": "515cd51f877b7d86ec446dd4dfe41fcaf6aa3f7dccc694e18d7e2b7a03d77446",
+  "holdout_sealed_sha256": "e8819535ea949a16b72359872601aaa1b478e1c65ca9c0820012f176a995ab84",
+  "journey_count": 48,
   "schema_version": "gravity.agent-usability-suite.v1",
   "source_documents": [
     "docs/analysis-journeys.md",
     "docs/agent-workflow.md"
   ],
-  "source_revision": "ac03a0fa28dad214548ddd21d9e89d76beb8b1ed",
+  "source_revision": "7f73cf9c2499c8a3bc2b207d2526b250a7e7fad5",
   "split_unit": "journey-expression-family",
-  "suite_version": "gravity-agent-usability-2026-08-15.v1",
-  "total_case_count": 470,
+  "suite_version": "gravity-agent-usability-2026-08-15.v2",
+  "total_case_count": 480,
   "trials": 4
 }

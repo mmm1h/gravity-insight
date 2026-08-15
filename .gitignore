@@ -5,6 +5,7 @@ Thumbs.db
 !.env.example
 *.pem
 *.key
+.local/agent-usability/holdout.key
 *.p12
 *.pfx
 __pycache__/

@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import os
 from pathlib import Path
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -30,9 +31,21 @@ class AgentUsabilityEvalTests(unittest.TestCase):
 
     def test_public_suite_is_frozen_and_complete(self) -> None:
         manifest, cases = self.subject.load_cases("development", None)
-        self.assertEqual(235, len(cases))
-        self.assertEqual(47, len({item["journey_id"] for item in cases}))
-        self.assertEqual(470, manifest["total_case_count"])
+        self.assertEqual(240, len(cases))
+        self.assertEqual(48, len({item["journey_id"] for item in cases}))
+        self.assertEqual(480, manifest["total_case_count"])
+
+    def test_fixed_holdout_key_path_is_ignored_and_untracked(self) -> None:
+        key = ".local/agent-usability/holdout.key"
+        ignored = subprocess.run(
+            ["git", "check-ignore", "--quiet", key], cwd=ROOT, check=False
+        )
+        tracked = subprocess.run(
+            ["git", "ls-files", "--error-unmatch", key],
+            cwd=ROOT, check=False, capture_output=True,
+        )
+        self.assertEqual(0, ignored.returncode)
+        self.assertNotEqual(0, tracked.returncode)
 
     def test_route_parameter_and_terminal_layers_are_independent(self) -> None:
         case = {
