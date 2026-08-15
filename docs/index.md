@@ -67,5 +67,17 @@
 - 第 1 层：本页、[快速上手](getting-started.md)、[Agent 工作流](agent-workflow.md)。
 - 第 2 层：[架构与概念](architecture.md)、[CLI 参考](reference/cli.md)、专项指南。
 - 第 3 层：[维护者文档](maintainers/index.md)、包内 manifest、contract 与源码。
+- 旁支：[外部调研](#外部调研)——同类产品与方法学的取证记录，不是本 SDK 的行为合同。
+
+## 外部调研
+
+2026-08-15 对同类分析平台 Agent 形态、协议与方法学的调研。**这些是外部事实记录，
+不构成本仓库的行为承诺**；每条结论标注了 `[实证]` / `[厂商宣称]` / `[推测]`。
+
+- [MCP 协议与分析类 server 实现](research/mcp-protocol-and-servers.md)
+- [厂商 Agent 形态横向调研](research/vendor-agent-landscape.md)
+- [语义层与 text-to-SQL 工程现状](research/semantic-layer-and-text2sql.md)
+- [Agent 可用性度量方法](research/agent-usability-methods.md)
+- [Agent 场景的数据访问安全与治理](research/agent-security-governance.md)
 
 历史验收数字、临时业务裁决和 Merge 业务埋点字典不属于当前 SDK 文档。历史可以从 Git 追溯；业务口径由 `work-dashboard` 维护；机器运行合同位于 `src/gravity_sdk/contracts`。

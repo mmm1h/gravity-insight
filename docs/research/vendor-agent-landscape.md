@@ -12,10 +12,10 @@
 
 ## 方法、范围与失败入口
 
-- **[实证]** 实际使用了四类手段：搜索引擎检索；直接打开官方文档/API 页面；`curl` 抓取 HTML 与 Next.js 静态 bundle；对 npm 公共 registry 做匿名 GET。关键原文快照和失败响应保存在 `tmp/codex/vendor-agent-landscape/sources/`，URL 清单见[取证索引](../../tmp/codex/vendor-agent-landscape/sources/README.md)。
+- **[实证]** 实际使用了四类手段：搜索引擎检索；直接打开官方文档/API 页面；`curl` 抓取 HTML 与 Next.js 静态 bundle；对 npm 公共 registry 做匿名 GET。关键原文快照和失败响应保存在 `tmp/codex/vendor-agent-landscape/sources/`，URL 清单见取证索引（原始快照未进版本控制）。
 - **[实证]** ThinkingAI 侧实际尝试了官网首页、MCP/Skill/全域感知/私有化/五类 Agent 页面、发布博客、招聘页，旧 `doc.thinkingdata.cn` Open API 文档，站内限定搜索、公开 npm scope 搜索和前端 bundle 检索；除 `query_retention` 外没有找到第二个官方 MCP tool 名，也没有找到 MCP endpoint、`tools/list` 输出或 schema 页面。[MCP 页](https://www.thinkingai.cn/product/mcp-service/)｜[旧 Open API](https://doc.thinkingdata.cn/ta-manual/v3.0/technical_document/open_api/query_api.html)
 - **[实证]** 官方 YouTube 演示页能够读到标题 *Introducing Agentic Engine — ThinkingAI Product Demo*，但播放被 YouTube 的“登录以确认不是机器人”门槛阻断；本次没有登录。官网“申请体验”是表单，本次也没有填写。因此后文“真实交互”只描述官网可见的脚本化回放，不把它写成亲手操作过的 live demo。[YouTube 演示页](https://www.youtube.com/watch?v=s4HS1rscrS4)｜[LinkedIn 官方转发](https://www.linkedin.com/posts/thinkingaio_introducing-agentic-engine-thinkingai-product-activity-7450716499079532544-uSDa)
-- **[实证]** 火山引擎部分页面的普通 HTML 抓取只返回壳页，正文通过公开文档索引读取；GrowingIO 页面在本机 `curl` 出现 TLS handshake 失败，正文由搜索引擎缓存的官方页面读取。没有尝试绕过登录、付费或授权限制。[失败记录](../../tmp/codex/vendor-agent-landscape/sources/README.md#domestic-comparison)
+- **[实证]** 火山引擎部分页面的普通 HTML 抓取只返回壳页，正文通过公开文档索引读取；GrowingIO 页面在本机 `curl` 出现 TLS handshake 失败，正文由搜索引擎缓存的官方页面读取。没有尝试绕过登录、付费或授权限制。失败记录（原始快照未进版本控制）
 
 ## 先统一三个概念
 
@@ -109,7 +109,7 @@ POST /open/user-prop-analyze
 
 ### A7. ThinkingAI 仍未回答的关键问题
 
-- **[实证]** 未找到：完整 MCP tool 清单、任何 tool 的正式 input/output schema、`tools/list` 实录、OAuth scopes、错误分类、分页/调用次数、版本协商、公开 SDK/API 参考、可下载 Skill artifact、Agent handoff payload、私有化 sizing 表、MiniMax 部署责任矩阵。已尝试入口及 URL 见[取证索引](../../tmp/codex/vendor-agent-landscape/sources/README.md#thinkingai--thinkingdata)。
+- **[实证]** 未找到：完整 MCP tool 清单、任何 tool 的正式 input/output schema、`tools/list` 实录、OAuth scopes、错误分类、分页/调用次数、版本协商、公开 SDK/API 参考、可下载 Skill artifact、Agent handoff payload、私有化 sizing 表、MiniMax 部署责任矩阵。已尝试入口及 URL 见取证索引（原始快照未进版本控制）。
 - **[推测]** 因此 ThinkingAI 当前最可信的对标价值在“产品意图与分析方法呈现”，而不是“公开 Agent 合同”；依据是 Skill replay 的细节与 MCP 合同的空缺形成鲜明反差。[Skill 详情](https://www.thinkingai.cn/skills/payment-attribution-analysis/)｜[MCP 页](https://www.thinkingai.cn/product/mcp-service/)
 
 ## B. 国内其他平台
@@ -221,7 +221,7 @@ POST /open/user-prop-analyze
 ## 最可能出错的判断与未决清单
 
 - **[推测]** 最可能出错的是“ThinkingAI MCP 尚不可公开复现”。证据很强但带时间性：公开 npm 当天 404、官网没有 endpoint/schema；厂商可能使用登录后 registry、客户下载中心，或在本文完成后发布包。它不等于 MCP 在客户环境不存在。[npm endpoint](https://registry.npmjs.org/%40thinkingdata%2Fmcp-server)｜[MCP 页](https://www.thinkingai.cn/product/mcp-service/)
-- **[实证]** ThinkingAI 未决：MCP tool/schema、Skill artifact、Agent handoff wire、全域 connector 合同、私有化硬件、MiniMax 责任边界、可操作 demo/完整录像；逐项尝试入口见[取证索引](../../tmp/codex/vendor-agent-landscape/sources/README.md#thinkingai--thinkingdata)。
+- **[实证]** ThinkingAI 未决：MCP tool/schema、Skill artifact、Agent handoff wire、全域 connector 合同、私有化硬件、MiniMax 责任边界、可操作 demo/完整录像；逐项尝试入口见取证索引（原始快照未进版本控制）。
 - **[实证]** 国内未决：神策 CLI 的公开源码/稳定 schema、观远所谓 MCP 的正式文档、GrowingIO 漏斗/留存当前完成度、易观是否有未被公开索引的企业 Agent 产品。[神策 CLI](https://manual.sensorsdata.cn/sa/docs/1hEXIJZs/v0300)｜[观远](https://www.guandata.com/InsightAgent)｜[GrowingIO](https://www.growingio.com/products/IntelliQuery)｜[易观](https://www.analysys.cn/)
 - **[实证]** 国外未决：ThoughtSpot MCP 的公开 tool schema、Tableau 是否会开放 Pulse Agent API、Mixpanel Headless early access 的生产 SLA/版本兼容策略、各 MCP 在真实脏 taxonomy 上的独立准确率。[ThoughtSpot](https://www.thoughtspot.com/product/spotter-semantics)｜[Tableau](https://help.tableau.com/current/online/en-us/pulse_ask_discover_qa.htm)｜[Mixpanel](https://mixpanel.com/ai/headless)
 
