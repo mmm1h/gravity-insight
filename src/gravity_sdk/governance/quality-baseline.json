@@ -73,8 +73,7 @@
       "src/gravity_sdk/registry.py::_request_parts": 24,
       "src/gravity_sdk/sql/client.py::_extract_rows": 23,
       "src/gravity_sdk/sql/credentials.py::self_test": 16,
-      "src/gravity_sdk/support/evidence.py::validate_evidence_manifest": 50,
-      "src/gravity_sdk/transport.py::Transport.request": 16
+      "src/gravity_sdk/support/evidence.py::validate_evidence_manifest": 50
     },
     "file_sloc": {
       "src/gravity_sdk/catalog.py": 664,

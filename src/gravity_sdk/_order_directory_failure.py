@@ -17,12 +17,12 @@ _STATUS_CODES = {
     "contract_changed_additive": ErrorCode.CONTRACT_CHANGED.value,
     "parent_required": ErrorCode.PARENT_REQUIRED.value,
     "permission_unavailable": ErrorCode.PERMISSION_UNAVAILABLE.value,
-    "semantic_error": ErrorCode.UPSTREAM_UNAVAILABLE.value,
+    "semantic_error": ErrorCode.INPUT_INVALID.value,
 }
 _SPECIAL_STATUS_CODES = {
     "parent_required": frozenset({ErrorCode.PARENT_REQUIRED.value}),
     "permission_unavailable": frozenset({ErrorCode.PERMISSION_UNAVAILABLE.value}),
-    "semantic_error": frozenset({ErrorCode.UPSTREAM_UNAVAILABLE.value}),
+    "semantic_error": frozenset({ErrorCode.INPUT_INVALID.value}),
     "unavailable": frozenset(
         {ErrorCode.NOT_IMPLEMENTED.value, ErrorCode.UNKNOWN_OPERATION.value,
          ErrorCode.UNSUPPORTED.value}

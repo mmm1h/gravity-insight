@@ -19,6 +19,14 @@
 D23/D29/D30 只剩依赖箭头、语义不可验证，故保留在此说明而不强挂到新动线。候选
 `app.project_auth.detail`、`app.user_auth.list` 属成员权限管理，按 roadmap 非目标排除，不计动线。
 
+2026-08-15 的失败与降级路径审计不新增动线，故计数推导为
+**48 + 0 = 48，32 / 0 / 16 均不变**。它横切核对了所有现有 composite、Plan 和 direct SDK/CLI
+入口：明确空保持 `ok=true/status=empty/exit 0`；独立组件失败保留完整成功兄弟并形成
+`status=partial` 与非零主错误 exit；Agent 无法形成可执行能力时保持 `status=capability_gap`，不伪装
+成 empty 或 upstream failure。单组件分页中断不发布未经完整性验证的页前缀，只有已声明 bounded
+continuation 的 safe-max 产品可返回带 continuation 的 partial。三态因此可由 status、ok、exit 和
+结果/缺口容器机械区分，而不是依赖错误文案。
+
 事件、漏斗、留存、属性四行的“已知 1 次”同时覆盖显式多 App：同一 spec 用
 `gravity.analysis-query-batch.v2` 的 `apps` 数组一次执行，逐 App 组件返回且不聚合。scatter 和其余
 产品仍按当前单 App/同层 Plan 合同，不据此增加新动线或改变下表计数。

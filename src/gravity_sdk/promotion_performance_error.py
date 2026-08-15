@@ -15,7 +15,7 @@ _FAILURE_CODES = {
     "permission_unavailable": frozenset(
         {ErrorCode.PERMISSION_UNAVAILABLE.value}
     ),
-    "semantic_error": frozenset({ErrorCode.UPSTREAM_UNAVAILABLE.value}),
+    "semantic_error": frozenset({ErrorCode.INPUT_INVALID.value}),
     "unavailable": frozenset(
         {
             ErrorCode.NOT_IMPLEMENTED.value,

@@ -13,6 +13,7 @@ from .errors import (
     AuthenticationError,
     PermissionUnavailableError,
     PolicyViolation,
+    RateLimitedError,
     TransportError,
     UnknownOperationError,
 )
@@ -130,16 +131,25 @@ class Transport:
             raise TransportError(
                 "Gravity request returned a redirect; cross-origin redirects are blocked"
             )
-        if status == 403:
-            raise PermissionUnavailableError(
-                "the authenticated Gravity account cannot read this capability"
-            )
-        if status == 401:
-            raise AuthenticationError("Gravity authorization is invalid or expired")
-        if status >= 400:
-            raise TransportError(f"Gravity request failed with HTTP {status}")
+        _raise_for_status(status, response.retry_after_ms)
         if not isinstance(response.payload, Mapping):
             raise TransportError("Gravity returned an unexpected JSON envelope")
         if response.payload.get("code") in _AUTH_CODES:
             raise AuthenticationError("Gravity authorization is invalid or expired")
         return TransportResponse(status, response.payload, response.fetched_at)
+
+
+def _raise_for_status(status: int, retry_after_ms: int | None) -> None:
+    if status == 403:
+        raise PermissionUnavailableError(
+            "the authenticated Gravity account cannot read this capability"
+        )
+    if status == 401:
+        raise AuthenticationError("Gravity authorization is invalid or expired")
+    if status == 429:
+        raise RateLimitedError(
+            "Gravity request failed with HTTP 429",
+            retry_after_ms=retry_after_ms,
+        )
+    if status >= 400:
+        raise TransportError(f"Gravity request failed with HTTP {status}")
