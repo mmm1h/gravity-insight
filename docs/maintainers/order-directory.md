@@ -1,6 +1,6 @@
 # Order Directory v1
 
-本页定义一个单日、无标识的普通订单目录产品。它只调用既有 stable
+本页定义一个单日、受控四字段的普通订单目录产品。它只调用既有 stable
 `analysis.order_detail.list`，不新增 operation、筛选 DSL、订单业务语义或 Web 页面概念。
 
 ## 为什么是这个纵切
@@ -18,7 +18,7 @@ stable 合同、golden wire 和现有 Order Split Trace 已共同证明更窄的
 `gravity-insight.order-split-trace.v1` 的结果重建器逐标量验证，不需要猜测订单成功、退款或净收入。
 
 事件定义快照已被 metadata sync/search 覆盖，新增产品价值较低。Monetization Directory 的 profile
-分叉集中在广告位、设备和广告收入字段，尚无同等强度的无标识四字段边界，因此不在本轮实现。
+分叉集中在广告位、设备和广告收入字段，尚无同等强度的四字段产品合同，因此不在本轮实现。
 
 ## 公共接口
 

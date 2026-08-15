@@ -49,7 +49,8 @@ password 或 response 值。数字/UUID/非标 object key 会折叠为 `{dynamic
 ## 3. Projection 与闸门
 
 观察字段先进入 `draft.candidate_fields`，默认不等于 allowlist。字段名先匹配敏感规则，
-再匹配非敏感业务元数据规则；其余进入 `manual_review_fields` 并保持隐藏。
+再匹配已登记的上游授权数据规则；只有凭据字段进入 `sensitive`，语义或类型不能从现有证据确认的
+字段进入 `manual_review_fields`。人工复核解决的是合同证据，不再建立字段级访问控制。
 
 升级必须同时满足：
 

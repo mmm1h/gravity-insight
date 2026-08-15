@@ -133,6 +133,7 @@ class BytedancePromotionMaterialOperationTests(unittest.TestCase):
             {
                 "bit_rate",
                 "click_cnt",
+                "cover_source",
                 "cpc_platform",
                 "cpm_platform",
                 "create_time",
@@ -143,16 +144,25 @@ class BytedancePromotionMaterialOperationTests(unittest.TestCase):
                 "format",
                 "height",
                 "id",
+                "labels",
                 "material_id",
+                "material_info",
+                "organization_tags",
+                "poster_url",
                 "show_cnt",
+                "signature",
                 "size",
                 "source",
+                "star_author_id",
                 "stat_cost",
+                "url",
                 "video_cover_id",
                 "width",
             },
             set(result["data"]["list"][0]),
         )
+        self.assertIsInstance(result["data"]["list"][0]["material_info"], dict)
+        self.assertIsInstance(result["data"]["list"][0]["labels"], list)
 
     def test_invalid_or_unverified_inputs_fail_before_network(self) -> None:
         invalid_inputs = (

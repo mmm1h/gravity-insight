@@ -4,7 +4,7 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
+    "contract_version": 2,
     "description": "归因回传模式配置；已验证空列表及非空行合同，最小探针从 app.list 解析首个 App。",
     "domain": "attribution",
     "effect": "read",
@@ -38,20 +38,7 @@
         "access_token",
         "token",
         "cookie",
-        "password",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "email",
-        "phone",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url"
+        "password"
       ]
     },
     "provenance": {
@@ -90,9 +77,7 @@
         "app_id",
         "mode",
         "create_time",
-        "modify_time"
-      ],
-      "known_omitted_item_keys": [
+        "modify_time",
         "company"
       ],
       "required_data_keys": [

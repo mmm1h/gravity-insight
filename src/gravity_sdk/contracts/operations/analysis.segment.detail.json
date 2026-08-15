@@ -4,8 +4,8 @@
   "operation": {
     "action": "get",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
-    "description": "用户分群配置详情；输出分群状态、时间范围和聚合人数，固定省略人员字段及 origin_query。",
+    "contract_version": 2,
+    "description": "用户分群配置详情；输出分群状态、时间范围、聚合人数和已登记人员字段；未证实的 origin_query 仍省略。",
     "domain": "analysis",
     "effect": "read",
     "examples": [],
@@ -39,30 +39,7 @@
         "access_token",
         "token",
         "cookie",
-        "password",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "create_user_id",
-        "create_user_name",
-        "update_user_id",
-        "update_user_name",
-        "user_name",
-        "email",
-        "phone",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url",
-        "origin_query",
-        "client_id",
-        "clientid",
-        "trace_id",
-        "traceid",
-        "uid"
+        "password"
       ]
     },
     "provenance": {
@@ -113,15 +90,15 @@
         "update_type",
         "update_date_range",
         "create_time",
-        "modify_time"
+        "modify_time",
+        "create_user_id",
+        "create_user_name",
+        "update_user_id",
+        "update_user_name"
       ],
       "dynamic_item_fields": [],
       "item_keys": [],
       "known_omitted_data_keys": [
-        "create_user_id",
-        "create_user_name",
-        "update_user_id",
-        "update_user_name",
         "origin_query"
       ],
       "required_data_keys": [

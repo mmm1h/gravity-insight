@@ -16,10 +16,9 @@ CASES = {
     "promotion.ai_trusteeship.list": {
         "path": "/turbo_engine/api/v1/task/ai_trusteeship/list/",
         "safe_field": "name",
+        "exposed": ("cid", "create_user_id"),
         "hidden": (
-            "cid",
             "conditions",
-            "create_user_id",
             "target_values",
         ),
         "row": {
@@ -35,9 +34,8 @@ CASES = {
     "metadata.version.list": {
         "path": "/turbo_engine/api/v2/event_dim/data_table/version/list/",
         "safe_field": "version_id",
+        "exposed": ("cid", "create_user_name"),
         "hidden": (
-            "cid",
-            "create_user_name",
             "info",
             "name_en_cn_dict",
         ),
@@ -54,7 +52,8 @@ CASES = {
     "metadata.operation_log.list": {
         "path": "/turbo_engine/api/v2/event_dim/data_table/operation_log/list/",
         "safe_field": "action_type",
-        "hidden": ("cid", "create_user_id", "detail"),
+        "exposed": ("cid", "create_user_id"),
+        "hidden": ("detail",),
         "row": {
             "id": 1,
             "action_type": "UPDATE",
@@ -68,6 +67,7 @@ CASES = {
     "report.tag.list": {
         "path": "/turbo_engine/api/v3/confmetric/tag/list/",
         "safe_field": "category_id",
+        "exposed": (),
         "hidden": ("exclusion_tags", "remark"),
         "row": {
             "id": 1,
@@ -83,6 +83,7 @@ CASES = {
     "report.tag_category.list": {
         "path": "/turbo_engine/api/v3/confmetric/tag_category/list/",
         "safe_field": "data_topic",
+        "exposed": (),
         "hidden": ("remark",),
         "row": {
             "id": 1,
@@ -154,6 +155,8 @@ class PromotedConfigurationReadTests(unittest.TestCase):
                 self.assertEqual(100, body["page_size"])
                 row = result["data"]["list"][0]
                 self.assertIn(case["safe_field"], row)
+                for field in case["exposed"]:
+                    self.assertIn(field, row)
                 for field in case["hidden"]:
                     self.assertNotIn(field, row)
 

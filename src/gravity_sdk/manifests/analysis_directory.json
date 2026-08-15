@@ -4,8 +4,8 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "账号中心成员目录。仅允许 dept_id/role_id 的 INNERS(6) 过滤，返回内部成员标识、组织归属、角色、状态与时间；姓名、联系方式、头像和超管标志不进入分析响应。",
+      "contract_version": 2,
+      "description": "账号中心成员目录。仅允许 dept_id/role_id 的 INNERS(6) 过滤，返回已登记的成员标识、姓名、组织归属、角色、状态、联系方式、头像与时间。",
       "domain": "analysis",
       "effect": "read",
       "input_fields": {
@@ -55,12 +55,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "remark",
-          "avatar",
-          "email",
-          "is_superuser",
-          "phone"
+          "session_token"
         ]
       },
       "request": {
@@ -99,9 +94,7 @@
           "is_main",
           "modify_time",
           "roles",
-          "user_id"
-        ],
-        "known_omitted_item_keys": [
+          "user_id",
           "avatar",
           "email",
           "is_superuser",
@@ -137,7 +130,7 @@
     {
       "action": "get",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "当前看板属于当前账号的默认筛选收藏。固定读取 app_id/dashboard_id，完整返回 data.object 的 contracted 标量与 condition/config JSON；JSON 内的凭证和会话秘密仍递归脱敏。",
       "domain": "analysis",
       "effect": "read",
@@ -180,13 +173,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "condition",
-          "remark",
-          "create_user_name",
-          "update_user_name",
-          "create_user_id",
-          "update_user_id"
+          "session_token"
         ]
       },
       "request": {
@@ -220,7 +207,11 @@
             "modify_time",
             "name",
             "show_order",
-            "to_use"
+            "to_use",
+            "create_user_id",
+            "create_user_name",
+            "update_user_id",
+            "update_user_name"
           ]
         },
         "data_keys": [
@@ -241,25 +232,21 @@
           "modify_time",
           "name",
           "show_order",
-          "to_use"
+          "to_use",
+          "create_user_id",
+          "create_user_name",
+          "update_user_id",
+          "update_user_name"
         ],
         "known_omitted_data_item_keys": {
           "object": [
             "condition",
-            "create_user_id",
-            "create_user_name",
-            "remark",
-            "update_user_id",
-            "update_user_name"
+            "remark"
           ]
         },
         "known_omitted_item_keys": [
           "condition",
-          "create_user_id",
-          "create_user_name",
-          "remark",
-          "update_user_id",
-          "update_user_name"
+          "remark"
         ],
         "opaque_json_item_keys": [
           "config"

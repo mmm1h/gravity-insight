@@ -55,7 +55,7 @@ def _write_registry(root: Path) -> None:
     path.write_text(render_registry(root), encoding="utf-8")
 
 
-def test_stable_privacy_is_independent_of_draft_classifications() -> None:
+def test_stable_registry_accepts_authorized_personal_fields() -> None:
     with tempfile.TemporaryDirectory() as directory:
         root = Path(directory)
         _write_operation(
@@ -70,10 +70,7 @@ def test_stable_privacy_is_independent_of_draft_classifications() -> None:
 
         errors = inspect_stable_response_privacy(root)
 
-    assert errors == [
-        "stable-response-privacy: analysis.member.list exposes suspected personal "
-        "field 'data.list[].email' without redaction (direct_personal_identifier)"
-    ]
+    assert errors == []
 
 
 def test_member_name_context_does_not_flag_business_object_names() -> None:
@@ -106,9 +103,7 @@ def test_member_name_context_does_not_flag_business_object_names() -> None:
 
         errors = inspect_stable_response_privacy(root)
 
-    assert len(errors) == 1
-    assert "analysis.account_user.list" in errors[0]
-    assert "person_name_context" in errors[0]
+    assert errors == []
 
 
 def test_every_new_stable_projection_field_requires_registration() -> None:
@@ -128,11 +123,11 @@ def test_every_new_stable_projection_field_requires_registration() -> None:
 
     assert errors == [
         "stable-response-privacy: promotion.campaign.list exposes unreviewed field "
-        "'data.list[].budget'; review privacy and update the stable registry"
+        "'data.list[].budget'; review its contract and update the stable registry"
     ]
 
 
-def test_explicit_redaction_satisfies_high_confidence_field_check() -> None:
+def test_credential_fields_cannot_become_response_contracts() -> None:
     with tempfile.TemporaryDirectory() as directory:
         root = Path(directory)
         _write_operation(
@@ -140,13 +135,16 @@ def test_explicit_redaction_satisfies_high_confidence_field_check() -> None:
             _operation(
                 "analysis.member.list",
                 resource="member",
-                item_keys=["email"],
-                redact_fields=["email"],
+                item_keys=["access_token"],
+                redact_fields=["access_token"],
             ),
         )
         _write_registry(root)
 
-        assert inspect_stable_response_privacy(root) == []
+        assert inspect_stable_response_privacy(root) == [
+            "stable-response-privacy: analysis.member.list exposes credential field "
+            "'data.list[].access_token'"
+        ]
 
 
 def test_surface_registry_tracks_nested_dynamic_and_opaque_exposure() -> None:

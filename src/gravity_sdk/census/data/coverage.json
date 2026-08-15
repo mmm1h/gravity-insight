@@ -1,9 +1,8 @@
 {
   "accounting_summary": {
-    "accounted_blocked_privacy": 4,
     "accounted_blocked_write": 414,
     "accounted_deprecated": 1,
-    "accounted_experimental": 2,
+    "accounted_experimental": 6,
     "accounted_export_candidate": 22,
     "accounted_permission_unavailable": 1,
     "accounted_read_candidate": 313,
@@ -5194,7 +5193,7 @@
           "operation_id": "account.department.list",
           "path": "/account_center/api/v1/dept/list/",
           "source_type": "manifest",
-          "stability": "blocked_privacy"
+          "stability": "experimental"
         }
       ],
       "method": "GET",
@@ -5209,7 +5208,7 @@
       "raw_paths": [
         "/dept/list/"
       ],
-      "route_accounting": "accounted_blocked_privacy",
+      "route_accounting": "accounted_experimental",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
@@ -42970,7 +42969,7 @@
           "operation_id": "candidate.account.user_operation_log.list",
           "path": "/turbo_engine/api/v1/user/common/user_opera_log/list/",
           "source_type": "manifest",
-          "stability": "blocked_privacy"
+          "stability": "experimental"
         }
       ],
       "method": "GET",
@@ -42985,7 +42984,7 @@
       "raw_paths": [
         "/user/common/user_opera_log/list/"
       ],
-      "route_accounting": "accounted_blocked_privacy",
+      "route_accounting": "accounted_experimental",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
@@ -48426,7 +48425,7 @@
           "operation_id": "candidate.promotion_object.click_url.list",
           "path": "/turbo_engine/api/v1/user/promoted_object/click_url/list/",
           "source_type": "manifest",
-          "stability": "blocked_privacy"
+          "stability": "experimental"
         }
       ],
       "method": "GET",
@@ -48441,7 +48440,7 @@
       "raw_paths": [
         "/user/promoted_object/click_url/list/"
       ],
-      "route_accounting": "accounted_blocked_privacy",
+      "route_accounting": "accounted_experimental",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
@@ -48606,7 +48605,7 @@
           "operation_id": "candidate.promotion_object.extra_info.list",
           "path": "/turbo_engine/api/v1/user/promoted_object/extra_info/list/",
           "source_type": "manifest",
-          "stability": "blocked_privacy"
+          "stability": "experimental"
         }
       ],
       "method": "GET",
@@ -48621,7 +48620,7 @@
       "raw_paths": [
         "/user/promoted_object/extra_info/list/"
       ],
-      "route_accounting": "accounted_blocked_privacy",
+      "route_accounting": "accounted_experimental",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"

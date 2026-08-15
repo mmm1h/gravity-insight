@@ -4,8 +4,8 @@
   "operation": {
     "action": "get",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
-    "description": "素材审核功能开关配置（不是素材审核详情）。当前前端无参 GET；2026-08-08 最小探针 code=0，公开 enable 与安全标量元数据，规则和人员容器固定省略。",
+    "contract_version": 2,
+    "description": "素材审核功能开关配置（不是素材审核详情）。当前前端无参 GET；公开 enable 与已证实标量元数据，rule/users 子字段合同未证实而继续省略。",
     "domain": "material",
     "effect": "read",
     "examples": [
@@ -37,20 +37,7 @@
         "access_token",
         "token",
         "cookie",
-        "password",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "email",
-        "phone",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url"
+        "password"
       ]
     },
     "provenance": {

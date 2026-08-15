@@ -109,7 +109,7 @@
     {
       "action": "detail",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "看板详情；上游路径保留 detial 拼写，ui_config 与 even_report.config 均为前端直接 JSON.parse 的 JSON 字符串；共享成员只返回内部标识与权限。",
       "domain": "analysis",
       "effect": "read",
@@ -158,11 +158,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "remark",
-          "create_user_name",
-          "create_user_id",
-          "uname"
+          "session_token"
         ]
       },
       "request": {
@@ -191,7 +187,9 @@
           ],
           "share_members": [
             "uid",
-            "authority"
+            "authority",
+            "name",
+            "uname"
           ]
         },
         "data_keys": [
@@ -202,23 +200,17 @@
           "authority",
           "ui_config",
           "even_report",
-          "share_members"
+          "share_members",
+          "create_user_id",
+          "create_user_name"
         ],
         "dynamic_item_fields": [],
         "item_keys": [],
         "known_omitted_data_item_keys": {
           "even_report": [
             "remark"
-          ],
-          "share_members": [
-            "name",
-            "uname"
           ]
         },
-        "known_omitted_data_keys": [
-          "create_user_id",
-          "create_user_name"
-        ],
         "required_data_keys": [
           "id"
         ]
@@ -233,8 +225,8 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "看板创建人与授权成员目录；仅返回内部成员标识与权限，成员姓名保持隐藏。",
+      "contract_version": 2,
+      "description": "看板创建人与授权成员目录；返回已登记的内部成员标识、姓名与权限。",
       "domain": "analysis",
       "effect": "read",
       "input_fields": {
@@ -298,11 +290,13 @@
         "data_item_keys": {
           "authUsers": [
             "uid",
-            "authority"
+            "authority",
+            "name"
           ],
           "creator": [
             "id",
-            "uid"
+            "uid",
+            "name"
           ]
         },
         "data_keys": [
@@ -311,14 +305,6 @@
         ],
         "dynamic_item_fields": [],
         "item_keys": [],
-        "known_omitted_data_item_keys": {
-          "authUsers": [
-            "name"
-          ],
-          "creator": [
-            "name"
-          ]
-        },
         "required_data_keys": [
           "creator",
           "authUsers"
@@ -334,8 +320,8 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "看板空间创建人与授权成员目录；仅返回内部成员标识与权限，成员姓名保持隐藏。",
+      "contract_version": 2,
+      "description": "看板空间创建人与授权成员目录；返回已登记的内部成员标识、姓名与权限。",
       "domain": "analysis",
       "effect": "read",
       "input_fields": {
@@ -399,11 +385,13 @@
         "data_item_keys": {
           "authUsers": [
             "uid",
-            "authority"
+            "authority",
+            "name"
           ],
           "creator": [
             "id",
-            "uid"
+            "uid",
+            "name"
           ]
         },
         "data_keys": [
@@ -412,14 +400,6 @@
         ],
         "dynamic_item_fields": [],
         "item_keys": [],
-        "known_omitted_data_item_keys": {
-          "authUsers": [
-            "name"
-          ],
-          "creator": [
-            "name"
-          ]
-        },
         "required_data_keys": [
           "creator",
           "authUsers"
@@ -435,7 +415,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "看板筛选收藏目录；支持 dashboard/default/name 精确 filters，并完整返回已登记的 condition/config 动态 JSON 配置（会话凭证键仍递归脱敏）。",
       "domain": "analysis",
       "effect": "read",
@@ -500,8 +480,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "condition"
+          "session_token"
         ]
       },
       "request": {
@@ -563,7 +542,7 @@
     {
       "action": "get",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "看板已选事件的属性元数据；event_name_list 是前端逗号连接字符串，opaque extra/rules 与未建模维表固定省略。",
       "domain": "analysis",
       "effect": "read",
@@ -606,8 +585,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "remark"
+          "session_token"
         ]
       },
       "request": {
@@ -929,7 +907,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "我的图表/看板模板目录；支持完整前端分页、主题与精确 filters，并返回模板动态 config。",
       "domain": "analysis",
       "effect": "read",
@@ -993,12 +971,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "remark",
-          "create_user_name",
-          "update_user_name",
-          "create_user_id",
-          "update_user_id"
+          "session_token"
         ]
       },
       "request": {
@@ -1049,14 +1022,14 @@
           "sub_type",
           "subject_ids",
           "subject_names",
-          "template_type"
-        ],
-        "known_omitted_item_keys": [
+          "template_type",
           "create_user_id",
           "create_user_name",
-          "remark",
           "update_user_id",
           "update_user_name"
+        ],
+        "known_omitted_item_keys": [
+          "remark"
         ],
         "nested_item_keys": {
           "subject_names": [
@@ -1084,7 +1057,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "分享给我的图表/看板模板目录；支持完整前端分页、创建人/主题与精确 filters，并返回模板动态 config。",
       "domain": "analysis",
       "effect": "read",
@@ -1154,12 +1127,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "remark",
-          "create_user_name",
-          "update_user_name",
-          "create_user_id",
-          "update_user_id"
+          "session_token"
         ]
       },
       "request": {
@@ -1212,14 +1180,14 @@
           "sub_type",
           "subject_ids",
           "subject_names",
-          "template_type"
-        ],
-        "known_omitted_item_keys": [
+          "template_type",
           "create_user_id",
           "create_user_name",
-          "remark",
           "update_user_id",
           "update_user_name"
+        ],
+        "known_omitted_item_keys": [
+          "remark"
         ],
         "nested_item_keys": {
           "subject_names": [
@@ -1247,7 +1215,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "引力内置图表/看板模板目录；支持完整前端分页、主题与精确 filters，并返回模板动态 config。",
       "domain": "analysis",
       "effect": "read",
@@ -1311,12 +1279,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "remark",
-          "create_user_name",
-          "update_user_name",
-          "create_user_id",
-          "update_user_id"
+          "session_token"
         ]
       },
       "request": {
@@ -1367,14 +1330,14 @@
           "sub_type",
           "subject_ids",
           "subject_names",
-          "template_type"
-        ],
-        "known_omitted_item_keys": [
+          "template_type",
           "create_user_id",
           "create_user_name",
-          "remark",
           "update_user_id",
           "update_user_name"
+        ],
+        "known_omitted_item_keys": [
+          "remark"
         ],
         "nested_item_keys": {
           "subject_names": [

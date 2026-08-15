@@ -4,7 +4,7 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 2,
+    "contract_version": 3,
     "description": "指定 App 的推广对象列表；固定使用当前 Analysis/PostBackMap 页面已验证的 origin 与 performance_mode=1 profile，支持前端 5000 条页大小，最小探针从 app.list 解析首个 App。",
     "domain": "promotion",
     "effect": "read",
@@ -50,21 +50,7 @@
         "access_token",
         "token",
         "cookie",
-        "password",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "email",
-        "phone",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url",
-        "remark"
+        "password"
       ]
     },
     "provenance": {

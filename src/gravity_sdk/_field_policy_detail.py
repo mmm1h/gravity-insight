@@ -28,19 +28,19 @@ from ._field_policy_shared import (
     ANALYSIS_USER_TYPES,
     MetadataLoader,
     MetadataView,
-    is_direct_personal_response_field,
     parse_iso_calendar_date,
     require_exact_mapping,
     validate_optional_label,
     validate_scalar_list,
 )
 from ._order_read import STATIC_ORDER_FIELD_PROFILES
-from .monetization_detail import validate_monetization_operation_request
+from .monetization_detail import SAFE_ROW_FIELDS, validate_monetization_operation_request
 from .errors import InputValidationError
 from .models import OperationSpec
 
 
 _STATIC_DETAIL_FIELD_PROFILES = {
+    ANALYSIS_MONETIZATION_DETAIL: (frozenset(SAFE_ROW_FIELDS),),
     ANALYSIS_ORDER_DETAIL: STATIC_ORDER_FIELD_PROFILES,
 }
 
@@ -64,7 +64,6 @@ def validate_analysis_detail(
         _validate_user_event_contract(inputs)
     if operation.operation_id == ANALYSIS_MONETIZATION_DETAIL:
         validate_monetization_operation_request(operation, inputs)
-        return
     if _static_detail_product_request(operation, inputs):
         parse_iso_calendar_date(inputs.get("date"), "date")
         _validate_selected_fields(
@@ -215,14 +214,6 @@ def _validate_selected_fields(value: Any, selected_fields: set[str]) -> None:
     ):
         raise InputValidationError(
             "analysis detail fields are absent from live metadata; request was not sent"
-        )
-    if any(
-        is_direct_personal_response_field(item)
-        or item.casefold() in {"name", "uname"}
-        for item in value
-    ):
-        raise InputValidationError(
-            "analysis detail fields include direct personal identifiers; request was not sent"
         )
 
 

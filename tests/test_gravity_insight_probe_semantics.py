@@ -31,7 +31,7 @@ except ModuleNotFoundError:  # source checkout before editable installation
     from gravity_sdk.transport import TransportResponse
 
 
-SENSITIVE_KEY = "user_count"
+SENSITIVE_KEY = "access_token"
 SENSITIVE_VALUE = "must-never-appear"
 
 

@@ -31,10 +31,9 @@
 
 | accounting state | routes |
 | --- | ---: |
-| `accounted_blocked_privacy` | 4 |
 | `accounted_blocked_write` | 414 |
 | `accounted_deprecated` | 1 |
-| `accounted_experimental` | 2 |
+| `accounted_experimental` | 6 |
 | `accounted_export_candidate` | 22 |
 | `accounted_permission_unavailable` | 1 |
 | `accounted_read_candidate` | 313 |

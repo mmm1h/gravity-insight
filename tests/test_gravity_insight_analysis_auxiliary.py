@@ -165,7 +165,7 @@ class GravityInsightAnalysisAuxiliaryTests(unittest.TestCase):
             "analysis.report.hidden_property.list",
             {"report_id": "report-17", "app_id": "app-9"},
         )
-        self.assertEqual("success", result["status"])
+        self.assertEqual("contract_changed_additive", result["status"])
         self.assertEqual(
             {
                 "data_type": "mata_event",
@@ -214,17 +214,13 @@ class GravityInsightAnalysisAuxiliaryTests(unittest.TestCase):
             "analysis.task.pay_event.list",
             {"app_id": "app-9", "page": 1, "page_size": 20, "filters": filters},
         )
-        self.assertEqual("success", result["status"])
+        self.assertEqual("contract_changed_additive", result["status"])
         self.assertEqual(
-            {
-                key: value
-                for key, value in row.items()
-                if key not in {"token", "create_user_name"}
-            },
+            {key: value for key, value in row.items() if key != "token"},
             result["data"]["list"][0],
         )
         self.assertNotIn("token", result["data"]["list"][0])
-        self.assertNotIn("create_user_name", result["data"]["list"][0])
+        self.assertEqual("operator-a", result["data"]["list"][0]["create_user_name"])
         method, path, kwargs = transport.calls[0]
         self.assertEqual("POST", method)
         self.assertEqual("/turbo_engine/api/v1/task/user/pay_event/list/", path)
@@ -263,16 +259,9 @@ class GravityInsightAnalysisAuxiliaryTests(unittest.TestCase):
             {"app_id": "app-9", "page": 1, "page_size": 10, "filters": filters},
         )
         self.assertEqual("success", result["status"])
-        self.assertEqual(
-            {
-                key: value
-                for key, value in row.items()
-                if key not in {"create_user_id", "create_user_name"}
-            },
-            result["data"]["list"][0],
-        )
-        self.assertNotIn("create_user_id", result["data"]["list"][0])
-        self.assertNotIn("create_user_name", result["data"]["list"][0])
+        self.assertEqual(row, result["data"]["list"][0])
+        self.assertEqual("user-7", result["data"]["list"][0]["create_user_id"])
+        self.assertEqual("operator-b", result["data"]["list"][0]["create_user_name"])
         method, path, kwargs = transport.calls[0]
         self.assertEqual("POST", method)
         self.assertEqual("/turbo_engine/api/v1/task/user/other_event/list/", path)

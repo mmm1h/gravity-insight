@@ -4,7 +4,7 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
+    "contract_version": 2,
     "description": "巨量广告主表现分页列表；固定网页初始状态过滤与每页最多 10 行读取，明确排除会触发重新拉数的 real_data 参数。",
     "domain": "promotion",
     "effect": "read",
@@ -75,37 +75,7 @@
         "password",
         "secret",
         "refresh_token",
-        "session_token",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url",
-        "uid",
-        "user_id",
-        "device_id",
-        "phone",
-        "mobile",
-        "email",
-        "idfa",
-        "idfv",
-        "imei",
-        "oaid",
-        "android_id",
-        "order_id",
-        "ip",
-        "ip_address",
-        "openid",
-        "open_id",
-        "unionid",
-        "client_id",
-        "trace_id"
+        "session_token"
       ]
     },
     "provenance": {
@@ -176,9 +146,7 @@
         "advertiser_system_status",
         "app_id",
         "app_name",
-        "stat_cost"
-      ],
-      "known_omitted_item_keys": [
+        "stat_cost",
         "advertiser_name",
         "advertiser_remark",
         "company",
@@ -189,6 +157,9 @@
       ],
       "required_data_keys": [
         "list"
+      ],
+      "opaque_json_item_keys": [
+        "project_list"
       ]
     },
     "semantic_error_rules": [

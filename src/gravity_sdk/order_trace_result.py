@@ -1,4 +1,4 @@
-"""Request-bound, identifier-free result contract for Order Split Trace v1."""
+"""Request-bound result contract for Order Split Trace v1."""
 
 from __future__ import annotations
 
@@ -52,7 +52,7 @@ _MAX_RECEIPT_INTEGER = (1 << 31) - 1
 
 
 def order_split_trace_item_count(value: Any) -> int:
-    """Count only identifier-free child rows in a product envelope."""
+    """Count only registered child rows in a product envelope."""
 
     if not isinstance(value, Mapping) or value.get("ok") is not True:
         return 0
@@ -95,7 +95,7 @@ def success_result(
         "stages": _stages(parent_stage, child_stage),
         "data": {"list": safe_rows},
         "error": None,
-        "next_action": "Consume the identifier-free physical split-order rows.",
+        "next_action": "Consume the registered physical split-order rows.",
     }
 
 

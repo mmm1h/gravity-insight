@@ -9,7 +9,7 @@
 | Operation | Status | 本轮请求、样本、分页与父绑定 | 精确 blocker | 下一步最小证据 |
 | --- | --- | --- | --- | --- |
 | `analysis.default_val.list` | `draft`（部分证明） | 本轮 1 次目标请求；完整前端 builder 与 HTTP 200 语义成功空响应共同证明 body 为 caller-bound `app_id` + 固定 `$lib_version`，分页 `none`；既有非空样本只观察到 `data.api[]`、`data.cocoscreator[]` 为 string，前端按动态字典消费。 | `dynamic_key_projection_unapproved`、`successful_confirmation_required` | 在同一最小 App/同形状下取得另一个非空样本；随后批准有界 SDK-family key 投影。动态 `{dynamic_key}` 未批准前继续全隐藏。 |
-| `analysis.realtime_event.list` | `draft`（部分证明） | 本轮 1 次目标请求；完整 builder 与 HTTP 200 语义成功空 `data.list` 证明顶层 `app_id/filters/page/page_size/request_time` 及 7 个 filter 键；无 `page_info`，未翻页。 | `empty_sample`、`pagination_unverified`、`response_item_schema_unverified`、`privacy_projection_approval_required` | 同一最短当天窗口、第一页、`page_size=1` 取得 1 个非空 item；单独证明服务端分页。静态候选 `client_id/request_id/request_ip/raw_properties` 未获隐私投影批准。 |
+| `analysis.realtime_event.list` | `draft`（部分证明） | 本轮 1 次目标请求；完整 builder 与 HTTP 200 语义成功空 `data.list` 证明顶层 `app_id/filters/page/page_size/request_time` 及 7 个 filter 键；无 `page_info`，未翻页。 | `empty_sample`、`pagination_unverified`、`response_item_schema_unverified` | 同一最短当天窗口、第一页、`page_size=1` 取得 1 个非空 item；单独证明服务端分页。`client_id/request_id/request_ip/raw_properties` 已获字段投影裁决，但其类型和 `raw_properties` 子结构仍须非空样本。 |
 | `analysis.setting.query` | `draft`（mutation 负向证明） | 本轮 0 次请求；完整 Dashboard builder 证明该 POST 在修改图表时提交 `config/name/remark` 等字段，成功后继续改 dashboard layout 并提示修改成功；合同 `effect=mutation`，probe 在 transport 前拒绝。 | `mutation_route_not_read`、`free_text_fail_closed` | 原查询动线须找到另一条可证明只读的 route；本 route 属 mutation，在线 probe 被禁止，批准 mutation 也不能替代读取合同。 |
 | `report.masterkey_report_group.list` | `draft`（读合同已确认） | 本轮 1 次、累计 4 次目标请求；本次最小第一页 HTTP 200、明确空。Bundle 的列表装载/分页/响应消费已登记为 read confirmation；既有第二页和安全页上限证据保留。 | `empty_sample`、`successful_probe` | 在相同最小当天窗口取得 1 个非空列表样本，用于证明 item schema；不扩大时间范围寻找数据。 |
 | `report.report.list` | `draft`（读合同已确认） | 本轮 1 次、累计 4 次目标请求；本次最小第一页 HTTP 200、明确空。已存报表 bundle 证明列表装载、分页、`list` 消费，删除走独立 update 路由。 | `empty_sample`、`response_schema_unverified` | 在有自有报表的租户取得 1 个非空 item，并仅审查实际字段。 |
@@ -25,7 +25,7 @@
 | `app.user_auth.list` | `draft` | 3 次目标请求；HTTP 200、空样本；`page_info`、第二页行为和安全页上限已验证；无父绑定。 | `empty_sample`、`response_schema_unverified` | 在具备可读授权记录的环境取得 1 个非空样本，并重点审查权限、身份和个人信息字段，默认不暴露未知字段。 |
 | `attribution.attribution.query` | `draft` | 本轮 0 次请求；沿用既有 `semantic_error` 证据，无可用样本；分页为 `none`，本轮未复核；无父绑定。 | `request_parameters_required`、`response_schema_unverified` | 先取得可复核的现有调用方或同一 census 快照对应的 bundle 正文，且证据须包含请求构造、默认值和条件省略逻辑，以唯一证明完整 POST body 的全部字段名、JSON 类型、必填性及 `null`/空数组/空字符串语义；若只有脱敏浏览器网络记录，还须补充空值与省略规则证据。当前 `route-params` 的 2 个 load call 均未解析、`body_parameters` 为空，且仓库无 bundle 正文或调用方；补齐前保持 0 次请求且不做组合猜测。 |
 
-| `attribution.attribution_detail.query` | `draft` | 本轮 0 次请求，且无既有 live probe；无样本，分页未验证；无父绑定。 | `not_probed`、`pagination_unverified`、`request_binding_unverified`、`response_schema_unverified` | 必须先取得经批准的测试级标识来源、完整请求绑定和隐私边界；不得使用任意用户级设备标识。证据不足时保持不探测。 |
+| `attribution.attribution_detail.query` | `draft` | 本轮 0 次请求，且无既有 live probe；无样本，分页未验证；无父绑定。 | `not_probed`、`pagination_unverified`、`request_binding_unverified`、`response_schema_unverified` | 必须先证明完整请求绑定和响应合同；真实用户/设备标识可作为受控输入，但证据不足时仍不探测。 |
 
 ## 2026-08-14 追加判定：六条缺失动线批量定性
 
@@ -68,8 +68,8 @@
   前端对 `data.list` 做本地切片；setting 在修改图表后继续修改 dashboard layout 并提示修改成功。
 - Artifact：看板、模板、saved-analysis 语料未发现 default-val/realtime-event 请求；已有看板 artifact
   也没有独立的 setting 请求或响应样本。
-- 隐私：本轮空响应没有观察到敏感字段值；静态 item 消费候选 `client_id`、`request_id`、
-  `request_ip`、`raw_properties` 仅登记字段名并保持隐藏，需单独投影批准。setting 的
+- 字段合同：本轮空响应没有观察到 item 类型；静态消费候选 `client_id`、`request_id`、
+  `request_ip`、`raw_properties` 已获投影裁决，但仍因非空 schema 缺失而不登记。setting 的
   `name/remark/config` 未发送、未投影。
 
 `analysis.default_val.list` 的旧非空响应确实证明 `data.api[]` 与 `data.cocoscreator[]` 为 string，
@@ -77,7 +77,7 @@
 也没有形成获批的动态 key 投影。本轮同形状空响应只能确认请求可用，不能确认 item 投影。
 因此三条均未晋升：总 operation 仍为 185，stable 仍为 176。
 
-## 2026-08-13 追加判定：无标识变现明细（D27）
+## 2026-08-13 追加判定：变现明细（D27，字段边界已于 2026-08-15 推翻）
 
 `analysis.monetization_detail.list` 保持 stable 且未改 wire，本轮 0 次网络请求。已批准投影由产品层
 固定 fields allowlist、`re_attribute_info` 嵌套 allowlist 和逐结果重建强制；未知字段默认隐藏，
@@ -126,7 +126,7 @@ card 已闭环，原自然语言固定 gap 仅对批准形状解除。D28 聚合
 `average_cost_per_thousand`、`click_count`、`click_rate`、`cost_per_click`、`product_name`、
 `san_lian_launch_total_consume`、`show_count`、`total_cash_consume`、`total_consume`、
 `total_red_packet_consume`、`total_special_red_packet_consume`。
-`advertiser_name` 判为敏感并隐藏；未知字段暴露数为 0。
+`advertiser_name` 已按上游授权边界登记返回；未知字段暴露数为 0。
 
 **下一步最小证据：**
 
@@ -162,7 +162,7 @@ card 已闭环，原自然语言固定 gap 仅对批准形状解除。D28 聚合
 | 请求绑定 | stable 根读取已证明；多数 report draft 有前端观测请求形状，但 manager/feed 子级仍按各自 draft 记录，不能跨路由推断 |
 | 非空响应 | **全部目标 draft 缺失**；Bilibili 的非空 account 是 stable 父层证据，不是子级响应合同 |
 | 分页 | 多数 report draft 有既有 `page_info`、第二页和安全上限证据；Bilibili manager、UC manager/feed 等仍缺在线分页语义。分页证据不能替代非空 item schema |
-| 隐私 | 本轮空列表只证明响应壳，不证明 item 隐私。没有观察到需要新批准的字段；复用的 Bilibili account 中 `advertiser_name` 已按既有 stable 投影隐藏 |
+| 字段合同 | 本轮空列表只证明响应壳，不证明 item schema。复用的 Bilibili account 中 `advertiser_name` 已按 stable 投影登记返回。 |
 | 父依赖 | **全部目标 draft 未闭环**；分别断在 account 或 advertiser，未把任何父值写盘 |
 | 权限 | 5 个本轮根读取均可访问且语义成功为空；未发送的目标 draft 没有目标路由权限证据。没有 `permission_unavailable` |
 
@@ -201,12 +201,12 @@ manager/feed 等无完整分页证据的 draft 还卡在 `pagination_unverified`
 - 六个列表操作已得到可复用的 `page_info` 分页证据：`report.masterkey_report_group.list`、`report.report.list`、`report.shared_to_me.list`、`app.project.list`、`app.user_auth.list`、`app.onelink.list`。
 - `app.onelink.list` 的稳定父绑定链路已被证明可用，但空样本仍不足以证明目标 item schema。
 - `analysis.default_val.list` 是本轮唯一非空候选响应；当前证据仍不足以关闭请求合同和响应投影 blocker。
-- 其余候选保持 fail-closed：空样本不证明字段、业务语义错误不证明请求合同、父资源为空不触发子请求、用户级标识无批准来源时不探测。
+- 其余候选保持 fail-closed：空样本不证明字段、业务语义错误不证明请求合同、父资源为空不触发子请求；用户级标识可用，但不能替代请求绑定证据。
 
 ## 2026-08-15 追加判定：Analysis semantic rejection 三案
 
 本轮不是 candidate 晋升，而是对三条 stable Analysis 动线做 value-free 合同复核；operation 总数与
-隐私边界不变。实际 33 次 HTTP read 的分项为：metadata 22 次、Retention 4 次、Segment 3 次、
+字段级隐私裁决现由路线图总裁决取代；本段历史请求账本不变。实际 33 次 HTTP read 的分项为：metadata 22 次、Retention 4 次、Segment 3 次、
 Property 4 次；每个 transport 仅尝试一次。
 
 | Issue | 在线可区分证据 | 当前合同结论 | 未决与精确下一步 |
@@ -230,4 +230,4 @@ rate-limit 分类未改变。
 | --- | --- | --- | --- |
 | 查找当前账号可读的 App 项目 | **推进但未闭环** | Project 组件在 mount/search/page change 时 POST `page/page_size/filters`，只消费项目表 `list/id/name/app_list_info` 与 `page_info`；create/delete 是独立 mutation。确认已登记；最小 probe 1 请求、HTTP 200 明确空，receipt 的 `method_verified/pagination_verified/parent_resolved` 均为 true，当前账号确无项目，但 item schema 未成立。 | 由有可读项目的租户做 1 次最小第一页 probe；只审查非空 item 字段，之后才考虑产品面。 |
 | 查看 App 的 OneLink 与公开信息绑定 | **推进但未闭环** | OneLink 父链仍明确空。appManage 证明 app-info URL 是调用方输入的 Google Play/App Store 下载链接而非 OneLink；公开 URL probe 2 请求均 HTTP 200，恢复七字段 schema 与四字段安全投影，但上游返回含 `data.error` 的 error-shaped 数据，结论 `inconclusive` 而非成功。 | 调用方提供一条已知可被 Gravity 抓取的公开商店 URL；仅做 1 次读取，成功非空后再确认当前安全投影。 |
-| 按平台、广告位和日期汇总变现结果（D28） | **仍然阻塞** | csj/tobid bundle 已证明 `app.monetization_app.list` 是账户下的平台应用关联目录读取：account 来自选中账户行、平台固定为 `csj`/`tobid`，表格只有平台应用/类型/包名/Gravity App 关联，mutation 另有路由。该 route 没有日期、广告位或结果指标，产品语义不匹配 D28；因此只登记读确认，目标 probe 0 次。 | 转向 `/report/api/v3/monetization_report/custom_get/` 与 `calc_total/` bundle，恢复日期、广告位、平台维度、指标和响应合同；独立做 D28 隐私审查，不复用 D27 批准。 |
+| 按平台、广告位和日期汇总变现结果（D28） | **仍然阻塞** | csj/tobid bundle 已证明 `app.monetization_app.list` 是账户下的平台应用关联目录读取：account 来自选中账户行、平台固定为 `csj`/`tobid`，表格只有平台应用/类型/包名/Gravity App 关联，mutation 另有路由。该 route 没有日期、广告位或结果指标，产品语义不匹配 D28；因此只登记读确认，目标 probe 0 次。 | 转向 `/report/api/v3/monetization_report/custom_get/` 与 `calc_total/` bundle，恢复日期、广告位、平台维度、指标、分页和响应合同；字段隐私不再是阻塞。 |

@@ -4,9 +4,9 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "block_reason": "blocked_privacy",
-      "contract_version": 1,
-      "description": "当前账号可见部门树；data 为树形/数组响应。",
+      "block_reason": "response_schema_unverified",
+      "contract_version": 2,
+      "description": "当前账号可见部门树候选；旧隐私阻塞已解除，仍因响应树字段与类型未证实而保持不可执行。",
       "domain": "account",
       "effect": "read",
       "executable": false,
@@ -32,20 +32,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -68,13 +55,13 @@
         "code",
         "extra.error"
       ],
-      "stability": "blocked_privacy",
+      "stability": "experimental",
       "upstream_method": "GET"
     },
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "当前账号可见 App 列表。",
       "domain": "app",
       "effect": "read",
@@ -114,20 +101,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -189,7 +163,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "旧经营报表基础指标配置；data 为指标数组。2026-08-08 当前 Business 页面已改用 chunk 内静态经营指标，本接口在当前账号 code=0 空列表，保留为独立配置读取但不再作为 report.business.query 父级。",
       "domain": "report",
       "effect": "read",
@@ -215,20 +189,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -278,7 +239,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "经营分析报表受控查询。2026-08-08 当前 Business chunk 直接声明 6 个经营指标，并以 app_list、date_list、metrics_list、dims_list、filtering.ad_platform_list 调用 manager_report/list；公开 codec 仅允许前端已消费的非人员维度，并在网络边界构造 filtering。",
       "domain": "report",
       "effect": "read",
@@ -397,21 +358,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -489,9 +436,7 @@
           "account_id",
           "account_name",
           "app_id",
-          "app_name"
-        ],
-        "known_omitted_item_keys": [
+          "app_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -508,7 +453,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 2,
+      "contract_version": 3,
       "description": "指定 App 的推广对象列表；固定使用当前 Analysis/PostBackMap 页面已验证的 origin 与 performance_mode=1 profile，支持前端 5000 条页大小，最小探针从 app.list 解析首个 App。",
       "domain": "promotion",
       "effect": "read",
@@ -553,21 +498,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "remark"
+          "password"
         ]
       },
       "request": {
@@ -623,7 +554,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "归因回溯窗口配置；已验证空列表及非空行合同，最小探针从 app.list 解析首个 App。",
       "domain": "attribution",
       "effect": "read",
@@ -656,20 +587,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -697,9 +615,7 @@
           "minutes",
           "window_type",
           "create_time",
-          "modify_time"
-        ],
-        "known_omitted_item_keys": [
+          "modify_time",
           "company"
         ],
         "required_data_keys": [
@@ -716,7 +632,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "归因回传模式配置；已验证空列表及非空行合同，最小探针从 app.list 解析首个 App。",
       "domain": "attribution",
       "effect": "read",
@@ -749,20 +665,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -788,9 +691,7 @@
           "app_id",
           "mode",
           "create_time",
-          "modify_time"
-        ],
-        "known_omitted_item_keys": [
+          "modify_time",
           "company"
         ],
         "required_data_keys": [
@@ -807,8 +708,8 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "指定 App 的回传映射收藏列表；最小探针从 app.list 解析首个 App，映射 config 与人员字段不输出。",
+      "contract_version": 2,
+      "description": "指定 App 的回传映射收藏列表；最小探针从 app.list 解析首个 App；已登记人员字段返回，未证实的 config 与自由备注仍省略。",
       "domain": "attribution",
       "effect": "read",
       "input_fields": {
@@ -857,21 +758,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "remark"
+          "password"
         ]
       },
       "request": {
@@ -927,7 +814,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "素材相册树及图片/视频容量汇总。",
       "domain": "material",
       "effect": "read",
@@ -953,20 +840,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -1011,7 +885,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "本地素材库列表。",
       "domain": "material",
       "effect": "read",
@@ -1069,20 +943,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -1137,14 +998,14 @@
           "created_at",
           "updated_at",
           "create_time",
-          "update_time"
+          "update_time",
+          "cid"
         ],
         "known_omitted_item_keys": [
           "advertising_materials_label",
           "aspect_ratio",
           "aspect_ratio_int",
           "aspect_xy",
-          "cid",
           "copy_material_id",
           "derive_id",
           "designer_image_id",
@@ -1194,8 +1055,8 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "素材收藏列表。当前前端精确使用固定 favorites 视图 body（page=1,page_size=5000）；2026-08-08 最小探针 code=0，type/group/material 嵌套结构按静态直接消费字段投影，人员和 URL 容器固定省略。",
+      "contract_version": 2,
+      "description": "素材收藏列表。当前前端精确使用固定 favorites 视图 body（page=1,page_size=5000）；type/group/material 按已证实字段投影，未证实子结构的 create_user/album_authority/previews、自由备注和素材 URL 容器仍省略。",
       "domain": "material",
       "effect": "read",
       "input_fields": {
@@ -1240,21 +1101,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "remark"
+          "password"
         ]
       },
       "request": {
@@ -1341,7 +1188,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "素材标签列表；filters 是 JSON 字符串。",
       "domain": "material",
       "effect": "read",
@@ -1389,20 +1236,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -1460,7 +1294,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "素材标签分类列表。",
       "domain": "material",
       "effect": "read",
@@ -1500,20 +1334,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -1559,7 +1380,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "素材审核列表。",
       "domain": "material",
       "effect": "read",
@@ -1604,20 +1425,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -1684,7 +1492,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "指定媒体的素材指标配置；data 为指标数组。",
       "domain": "material",
       "effect": "read",
@@ -1720,20 +1528,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -1784,8 +1579,8 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "素材回收站只读列表；单页最小探针已验证，人员标识、URL、文件 MD5 与嵌套图片集合不输出。",
+      "contract_version": 2,
+      "description": "素材回收站只读列表；单页最小探针已验证；未登记的新字段触发 additive drift，文件 MD5、嵌套图片集合与自由备注因合同证据不足仍省略。",
       "domain": "material",
       "effect": "read",
       "input_fields": {
@@ -1829,23 +1624,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "designer_image_id",
-          "designer_image_name",
-          "remark"
+          "password"
         ]
       },
       "request": {
@@ -1932,7 +1711,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "Draft inferred from census route GET /turbo_engine/api/v1/const/promotion/gravity_metric/list/; response remains hidden until probe classification.",
       "domain": "metadata",
       "effect": "read",
@@ -1963,37 +1742,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -2030,7 +1779,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "事件属性模板元数据域的事件列表；返回模板关联事件及 common/custom/preset 属性的已验证结构化元数据，remark 和未知字段不输出。",
       "domain": "metadata",
       "effect": "read",
@@ -2075,38 +1824,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id",
-          "remark"
+          "session_token"
         ]
       },
       "request": {
@@ -2214,7 +1932,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "事件属性模板元数据域的属性列表；返回模板属性的标识、中英文名、数据类型、通用与预置标记、备注及创建修改时间。",
       "domain": "metadata",
       "effect": "read",
@@ -2259,38 +1977,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id",
-          "remark"
+          "session_token"
         ]
       },
       "request": {
@@ -2344,7 +2031,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "素材管理域的媒体审核记录列表；返回素材、媒体、广告与广告主标识和名称，以及审核类型、建议及建议标识。",
       "domain": "material",
       "effect": "read",
@@ -2389,38 +2076,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id",
-          "advertiser_name"
+          "session_token"
         ]
       },
       "request": {
@@ -2456,9 +2112,7 @@
           "media_type",
           "suggestion",
           "suggestion_id",
-          "type"
-        ],
-        "known_omitted_item_keys": [
+          "type",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -2475,7 +2129,7 @@
     {
       "action": "tree",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "素材管理域的标签分类树节点列表；返回分类标识、名称、来源、系统标记及分类下标签的标识与名称。",
       "domain": "material",
       "effect": "read",
@@ -2506,37 +2160,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -2578,8 +2202,8 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "数据表版本只读列表；返回表、版本标识和创建时间。2026-08-11 非空响应和分页合同复验通过，创建人、字段字典、字段顺序和租户标识固定省略。",
+      "contract_version": 2,
+      "description": "数据表版本只读列表；返回表、版本标识、创建时间、创建人与租户字段；字段字典和字段顺序因动态子结构未证实仍省略。",
       "domain": "metadata",
       "effect": "read",
       "executable": true,
@@ -2625,37 +2249,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -2686,12 +2280,12 @@
           "create_time",
           "id",
           "table_id",
-          "version_id"
-        ],
-        "known_omitted_item_keys": [
+          "version_id",
           "cid",
           "create_user_id",
-          "create_user_name",
+          "create_user_name"
+        ],
+        "known_omitted_item_keys": [
           "info",
           "name_en_cn_dict",
           "ordered_field_name_list"
@@ -2710,8 +2304,8 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "数据表操作日志只读列表；返回动作类型、表与版本标识和发生时间。2026-08-11 非空响应和分页合同复验通过，操作人、详情载荷和租户标识固定省略。",
+      "contract_version": 2,
+      "description": "数据表操作日志只读列表；返回动作类型、表与版本标识、发生时间、创建人与租户字段；详情载荷因子字段合同未证实仍省略。",
       "domain": "metadata",
       "effect": "read",
       "executable": true,
@@ -2757,37 +2351,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -2820,12 +2384,12 @@
           "create_time",
           "id",
           "table_id",
-          "version_id"
-        ],
-        "known_omitted_item_keys": [
+          "version_id",
           "cid",
           "create_user_id",
-          "create_user_name",
+          "create_user_name"
+        ],
+        "known_omitted_item_keys": [
           "detail"
         ],
         "required_data_keys": [
@@ -2842,8 +2406,8 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "事件属性模板的事件类型条目只读列表；返回条目标识、名称、模板类型和创建修改时间。2026-08-11 非空响应与分页合同复验通过，备注、人员和租户标识固定省略。",
+      "contract_version": 2,
+      "description": "事件属性模板的事件类型条目只读列表；返回条目标识、名称、模板类型、创建修改人员与租户字段；自由备注仍省略。",
       "domain": "metadata",
       "effect": "read",
       "executable": true,
@@ -2889,37 +2453,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -2951,15 +2485,15 @@
           "id",
           "modify_time",
           "name",
-          "template_type"
-        ],
-        "known_omitted_item_keys": [
+          "template_type",
           "cid",
           "create_user_id",
           "create_user_name",
-          "remark",
           "update_user_id",
           "update_user_name"
+        ],
+        "known_omitted_item_keys": [
+          "remark"
         ],
         "required_data_keys": [
           "list"
@@ -2975,7 +2509,7 @@
     {
       "action": "get",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "Draft inferred from census route GET /account_center/api/v1/company/capacity/info/; response remains hidden until probe classification.",
       "domain": "app",
       "effect": "read",
@@ -3006,26 +2540,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -3052,11 +2567,6 @@
         "item_keys": [],
         "known_omitted_nested_item_keys": {
           "capacity": [
-            "company_position",
-            "create_user_name",
-            "modify_user_name",
-            "our_salesman_id",
-            "our_salesman_remark",
             "silence"
           ],
           "product": [
@@ -3096,7 +2606,12 @@
             "start_time",
             "storage_amount_g",
             "storage_amount_g_usage",
-            "update_usage_time"
+            "update_usage_time",
+            "company_position",
+            "create_user_name",
+            "modify_user_name",
+            "our_salesman_id",
+            "our_salesman_remark"
           ],
           "product": [
             "company_id",
@@ -3130,7 +2645,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "应用实时事件配置只读查询；app_id 可由稳定的 app.list 选择。2026-08-11 已验证 GET 参数、非分页响应和字段投影；自由文本备注固定省略。",
       "domain": "app",
       "effect": "read",
@@ -3168,37 +2683,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -3251,7 +2736,7 @@
     {
       "action": "get",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "AI 托管媒体指标字典只读查询；media_type 可由稳定的 promotion.ai_trusteeship.list 选择。",
       "domain": "metadata",
       "effect": "read",
@@ -3289,37 +2774,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -3370,7 +2825,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "List the authenticated tenant's Gravity permission-menu tree.",
       "domain": "app",
       "effect": "read",
@@ -3401,37 +2856,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -3492,7 +2917,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "List the authenticated tenant's Gravity roles without embedded permission menus.",
       "domain": "app",
       "effect": "read",
@@ -3537,37 +2962,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -3623,7 +3018,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "List the authenticated tenant's Gravity role templates.",
       "domain": "app",
       "effect": "read",
@@ -3670,37 +3065,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -3765,7 +3130,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "List capacity records for the authenticated tenant's current company.",
       "domain": "app",
       "effect": "read",
@@ -3817,37 +3182,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -3907,14 +3242,14 @@
           "start_time",
           "storage_amount_g",
           "storage_amount_g_usage",
-          "update_usage_time"
-        ],
-        "known_omitted_item_keys": [
+          "update_usage_time",
           "company_position",
           "create_user_name",
           "modify_user_name",
           "our_salesman_id",
-          "our_salesman_remark",
+          "our_salesman_remark"
+        ],
+        "known_omitted_item_keys": [
           "silence"
         ],
         "known_omitted_nested_item_keys": {
@@ -3946,7 +3281,7 @@
     {
       "action": "detail",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "Read one role's permission configuration for the authenticated tenant.",
       "domain": "app",
       "effect": "read",
@@ -3984,37 +3319,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {

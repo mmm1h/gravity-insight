@@ -31,7 +31,7 @@ TITLE_PACKAGE_CAPABILITY: Mapping[str, Any] = {
     ),
     "description": (
         "按显式 App 和普通/标准类型读取巨量标题包名称、标题数、计划数、"
-        "历史与近三日成本和点击率；不返回标题正文或人员字段。"
+        "历史与近三日成本和点击率，并返回已登记的标题正文与人员字段。"
     ),
     "required_inputs": ("app", "package_kind"),
     "input_schema": {

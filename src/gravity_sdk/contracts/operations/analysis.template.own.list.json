@@ -4,7 +4,7 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
+    "contract_version": 2,
     "description": "我的图表/看板模板目录；支持完整前端分页、主题与精确 filters，并返回模板动态 config。",
     "domain": "analysis",
     "effect": "read",
@@ -78,12 +78,7 @@
         "password",
         "secret",
         "refresh_token",
-        "session_token",
-        "remark",
-        "create_user_name",
-        "update_user_name",
-        "create_user_id",
-        "update_user_id"
+        "session_token"
       ]
     },
     "provenance": {
@@ -142,14 +137,14 @@
         "sub_type",
         "subject_ids",
         "subject_names",
-        "template_type"
-      ],
-      "known_omitted_item_keys": [
+        "template_type",
         "create_user_id",
         "create_user_name",
-        "remark",
         "update_user_id",
         "update_user_name"
+      ],
+      "known_omitted_item_keys": [
+        "remark"
       ],
       "nested_item_keys": {
         "subject_names": [

@@ -4,7 +4,7 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
+    "contract_version": 2,
     "description": "视频号加热订单报表；实测可能返回 data={} 且 extra.error 非空，即使 code=0 也必须判为语义错误。",
     "domain": "promotion",
     "effect": "read",
@@ -67,20 +67,7 @@
         "access_token",
         "token",
         "cookie",
-        "password",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "email",
-        "phone",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url"
+        "password"
       ]
     },
     "provenance": {

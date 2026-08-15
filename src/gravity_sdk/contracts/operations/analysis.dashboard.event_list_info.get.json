@@ -4,7 +4,7 @@
   "operation": {
     "action": "get",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
+    "contract_version": 2,
     "description": "看板已选事件的属性元数据；event_name_list 是前端逗号连接字符串，opaque extra/rules 与未建模维表固定省略。",
     "domain": "analysis",
     "effect": "read",
@@ -48,8 +48,7 @@
         "password",
         "secret",
         "refresh_token",
-        "session_token",
-        "remark"
+        "session_token"
       ]
     },
     "provenance": {

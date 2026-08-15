@@ -485,14 +485,36 @@ class GravityInsightCoreTests(unittest.TestCase):
         self.assertTrue(described["currently_callable"])
         self.assertEqual("example.items.list", result["operation_id"])
         self.assertNotIn("operator_name", json.dumps(result))
-        self.assertNotIn("email_address", json.dumps(result))
-        self.assertNotIn("private@example.invalid", json.dumps(result))
+        self.assertEqual(
+            "private@example.invalid",
+            result["data"]["list"][0]["email_address"],
+        )
         self.assertNotIn("unregistered", result["data"])
         self.assertIn("contract_fingerprint", result["source"])
         self.assertNotEqual(result["schema_fingerprint"], result["source"]["contract_fingerprint"])
         sent = session.calls[0][2]["body"]
         self.assertEqual("safe", sent["filter"])
         self.assertEqual("safe", sent["read_mode"])
+
+    def test_unregistered_credential_field_is_drift_and_never_leaks(self):
+        payload = {
+            "code": 0,
+            "data": {
+                "list": [{"id": 1, "value": 4, "access_token": "private"}],
+                "page_info": {
+                    "page": 1,
+                    "page_size": 2,
+                    "total_page": 1,
+                    "total_number": 1,
+                },
+            },
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            client, _ = client_for(Path(directory), [FakeResponse(payload)])
+            result = client.read("example.items.list", {"filter": "safe"})
+        self.assertEqual("contract_changed_additive", result["status"])
+        self.assertEqual({"id": 1, "value": 4}, result["data"]["list"][0])
+        self.assertNotIn("private", json.dumps(result))
 
     def test_newly_stable_context_reads_project_sanitized_contract_fixtures(self):
         operation_ids = (
@@ -636,16 +658,24 @@ class GravityInsightCoreTests(unittest.TestCase):
                 )
                 for operation_id in operation_ids
             ]
-        self.assertTrue(all(result["status"] == "success" for result in results))
+        self.assertEqual(
+            [
+                "contract_changed_additive",
+                "success",
+                "success",
+                "contract_changed_additive",
+                "contract_changed_additive",
+            ],
+            [result["status"] for result in results],
+        )
         serialized = json.dumps(results)
-        for private_value in (
-            "private person",
-            "private company",
+        for omitted_value in (
             "private mapping configuration",
             "private fingerprint",
             "https://private.invalid",
         ):
-            self.assertNotIn(private_value, serialized)
+            self.assertNotIn(omitted_value, serialized)
+        self.assertIn("private company", serialized)
         self.assertEqual(
             "object-1", results[0]["data"]["list"][0]["turbo_promoted_object_id"]
         )

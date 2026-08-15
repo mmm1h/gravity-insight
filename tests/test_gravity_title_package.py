@@ -52,8 +52,13 @@ class Client:
             "last_3_day_cost": 5.0,
             "last_3_day_click_rate": 0.2,
         }]
-        if self.mode == "private_field":
-            rows[0]["title_list"] = "hidden title"
+        if self.mode == "registered_fields":
+            rows[0].update({
+                "title_list": "registered title",
+                "create_user_id": 3,
+                "create_user_name": "registered creator",
+                "update_user_id": 4,
+            })
         truncated = self.mode == "partial"
         status = "empty" if self.mode == "empty" else "success"
         native = {
@@ -120,7 +125,7 @@ class TitlePackageTests(unittest.TestCase):
                     {"max_workers": 1, "max_pages": 7,
                      "max_total_items": 40}, options
                 )
-    def test_empty_partial_gap_and_private_drift_are_explicit(self):
+    def test_empty_partial_gap_and_registered_fields_are_explicit(self):
         empty = title_packages(Client("empty"), 101, "regular")
         self.assertEqual((True, "empty", 0),
                          (empty["ok"], empty["status"], empty["returned_items"]))
@@ -135,9 +140,11 @@ class TitlePackageTests(unittest.TestCase):
                          (gap["ok"], gap["status"],
                           gap["results"][0]["error"]["code"]))
         self.assertNotIn("hidden", json.dumps(gap, ensure_ascii=False))
-        drift = title_packages(Client("private_field"), 101, "regular")
-        self.assertEqual("contract_changed", drift["status"])
-        self.assertNotIn("hidden title", json.dumps(drift, ensure_ascii=False))
+        opened = title_packages(Client("registered_fields"), 101, "regular")
+        self.assertEqual("success", opened["status"])
+        row = opened["results"][0]["data"]["data"]["list"][0]
+        self.assertEqual("registered title", row["title_list"])
+        self.assertIsInstance(row["create_user_id"], int)
     def test_sdk_cli_plan_and_agent_use_the_same_product(self):
         sdk = GravitySDK(insight=Client(), workspace=Workspace())
         self.assertEqual(

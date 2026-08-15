@@ -4,7 +4,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "多维报表模板树；category 为空时使用页面默认分类。",
       "domain": "report",
       "effect": "read",
@@ -40,20 +40,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -99,7 +86,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "预设模板列表；上游路径 perset_template 为既有拼写。",
       "domain": "report",
       "effect": "read",
@@ -144,21 +131,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "remark"
+          "password"
         ]
       },
       "request": {
@@ -208,7 +181,7 @@
     {
       "action": "get",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "预设模板安全详情。模板 id/category 从已登记预置模板列表解析；2026-08-08 最小探针 code=0，仅公开 name/remark，深层 columns/filterForm/extra_data 所在 config 容器固定省略。",
       "domain": "report",
       "effect": "read",
@@ -246,21 +219,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "remark"
+          "password"
         ]
       },
       "request": {
@@ -311,7 +270,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "当前账号的多维报表模板。",
       "domain": "report",
       "effect": "read",
@@ -356,21 +315,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "remark"
+          "password"
         ]
       },
       "request": {
@@ -420,7 +365,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "共享给当前账号的多维报表模板。",
       "domain": "report",
       "effect": "read",
@@ -465,21 +410,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "remark"
+          "password"
         ]
       },
       "request": {
@@ -529,7 +460,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "多维报表媒体枚举。",
       "domain": "report",
       "effect": "read",
@@ -555,20 +486,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -632,7 +550,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "多维报表基础指标元数据。",
       "domain": "report",
       "effect": "read",
@@ -677,20 +595,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -750,7 +655,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "当前账号自定义指标。",
       "domain": "report",
       "effect": "read",
@@ -795,20 +700,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -866,7 +758,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "共享给当前账号的自定义指标。",
       "domain": "report",
       "effect": "read",
@@ -911,20 +803,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -982,7 +861,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "指标标签分类。",
       "domain": "report",
       "effect": "read",
@@ -1027,21 +906,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "remark"
+          "password"
         ]
       },
       "request": {
@@ -1094,7 +959,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "指标标签。",
       "domain": "report",
       "effect": "read",
@@ -1139,21 +1004,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "remark"
+          "password"
         ]
       },
       "request": {
@@ -1211,7 +1062,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 3,
+      "contract_version": 4,
       "description": "执行已登记维度、指标和时间窗口的多维报表查询；支持受控关键日展开，并返回请求指标的数字后缀动态列。",
       "domain": "report",
       "effect": "read",
@@ -1363,20 +1214,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -1517,7 +1355,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "基于多维报表查询配置计算合计；支持受控关键日展开，并返回请求指标的数字后缀动态列。",
       "domain": "report",
       "effect": "read",
@@ -1661,20 +1499,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -1752,7 +1577,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "经营报表配置域的指标目录；返回指标中英文名、类型和提示说明，排除维度及标签标识不输出。",
       "domain": "report",
       "effect": "read",
@@ -1797,37 +1622,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -1878,8 +1673,8 @@
     {
       "action": "query",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "公司资源用量报表域的按日用量列表；返回日期及广告、广告创建、点击、成本、事件、画像、存储、追踪和素材传输用量，用户数不输出。",
+      "contract_version": 2,
+      "description": "公司资源用量报表域的按日用量列表；返回日期及广告、广告创建、点击、成本、事件、画像、存储、追踪、素材传输和用户用量。",
       "domain": "report",
       "effect": "read",
       "executable": true,
@@ -1923,37 +1718,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -1983,7 +1748,8 @@
             "material_transmit_g_usage",
             "profile_count",
             "storage_count",
-            "tracking_count"
+            "tracking_count",
+            "user_count"
           ]
         },
         "data_keys": [
@@ -2002,14 +1768,7 @@
           "material_transmit_g_usage",
           "profile_count",
           "storage_count",
-          "tracking_count"
-        ],
-        "known_omitted_data_item_keys": {
-          "total": [
-            "user_count"
-          ]
-        },
-        "known_omitted_item_keys": [
+          "tracking_count",
           "user_count"
         ],
         "required_data_keys": [
@@ -2026,7 +1785,7 @@
     {
       "action": "query",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "App 经营报表域的概览与趋势；返回概览指标的当前值、对比值和比率，以及按日广告成本、收入、活跃、注册、付费和 ROI 趋势。",
       "domain": "report",
       "effect": "read",
@@ -2083,37 +1842,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -2194,7 +1923,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "报表中心配置标签的只读列表；返回所属分类、名称、中英文展示名、数据主题、排序和创建修改时间，固定省略排除标签与备注。",
       "domain": "report",
       "effect": "read",
@@ -2241,37 +1970,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -2326,7 +2025,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "报表中心标签分类的只读列表；返回名称、中英文展示名、数据主题、排序和创建修改时间，固定省略备注。",
       "domain": "report",
       "effect": "read",
@@ -2373,37 +2072,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -2456,7 +2125,7 @@
     {
       "action": "query",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "当前账号可访问应用的今日/昨日小时级经营指标对比；返回字段说明及按小时汇总的注册、活跃、付费、广告收入、总收入等聚合指标。",
       "domain": "report",
       "effect": "read",
@@ -2487,37 +2156,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {

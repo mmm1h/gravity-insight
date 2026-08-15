@@ -4,7 +4,7 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
+    "contract_version": 2,
     "description": "用户分群历史版本及每版聚合人数；不返回分群成员。",
     "domain": "analysis",
     "effect": "read",
@@ -51,25 +51,7 @@
         "access_token",
         "token",
         "cookie",
-        "password",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "email",
-        "phone",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url",
-        "client_id",
-        "clientid",
-        "trace_id",
-        "traceid",
-        "uid"
+        "password"
       ]
     },
     "provenance": {

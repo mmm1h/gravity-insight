@@ -4,8 +4,8 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
-    "description": "巨量引擎标准版标题素材包的只读列表；返回包名、标题数量、计划数量、历史成本与点击率等汇总，固定省略标题正文与人员字段。",
+    "contract_version": 2,
+    "description": "巨量引擎标准版标题素材包的只读列表；返回包名、标题正文、数量、计划、成本、点击率及创建更新人员字段。",
     "domain": "material",
     "effect": "read",
     "examples": [],
@@ -74,37 +74,7 @@
         "password",
         "secret",
         "refresh_token",
-        "session_token",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url",
-        "uid",
-        "user_id",
-        "device_id",
-        "phone",
-        "mobile",
-        "email",
-        "idfa",
-        "idfv",
-        "imei",
-        "oaid",
-        "android_id",
-        "order_id",
-        "ip",
-        "ip_address",
-        "openid",
-        "open_id",
-        "unionid",
-        "client_id",
-        "trace_id"
+        "session_token"
       ]
     },
     "provenance": {
@@ -163,13 +133,14 @@
         "modify_time",
         "plan_num",
         "title_num",
-        "title_package_name"
-      ],
-      "known_omitted_item_keys": [
+        "title_package_name",
         "create_user_id",
         "create_user_name",
         "title_list",
         "update_user_id"
+      ],
+      "opaque_json_item_keys": [
+        "title_list"
       ],
       "required_data_keys": [
         "list"

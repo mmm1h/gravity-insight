@@ -4,9 +4,9 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "block_reason": "blocked_privacy",
-    "contract_version": 1,
-    "description": "Read path exposes click URLs; blocked until privacy projection is approved.",
+    "block_reason": "request_and_response_contract_unverified",
+    "contract_version": 2,
+    "description": "Catalog-only click-URL read; upstream-authorized fields may be exposed, but request binding and response schema remain unverified.",
     "domain": "promotion",
     "effect": "read",
     "examples": [],
@@ -33,20 +33,7 @@
         "access_token",
         "token",
         "cookie",
-        "password",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "email",
-        "phone",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url"
+        "password"
       ]
     },
     "provenance": {
@@ -77,7 +64,7 @@
       "code",
       "extra.error"
     ],
-    "stability": "blocked_privacy",
+    "stability": "experimental",
     "upstream_method": "GET"
   },
   "source_schema_version": 2,

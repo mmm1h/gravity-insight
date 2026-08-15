@@ -4,8 +4,8 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
-    "description": "AI 托管条件执行历史只读列表。最小 POST 请求、分页和响应投影已经验证；仅开放操作类型与条件结果中的目标标识，条件、指标、消息、操作结果与运行目标保持隐藏。",
+    "contract_version": 2,
+    "description": "AI 托管条件执行历史只读列表。广告主名称和租户标识已登记返回；条件、指标、消息、操作结果与运行目标因自由文本或嵌套合同未证实仍省略。",
     "domain": "promotion",
     "effect": "read",
     "examples": [
@@ -77,37 +77,7 @@
         "password",
         "secret",
         "refresh_token",
-        "session_token",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url",
-        "uid",
-        "user_id",
-        "device_id",
-        "phone",
-        "mobile",
-        "email",
-        "idfa",
-        "idfv",
-        "imei",
-        "oaid",
-        "android_id",
-        "order_id",
-        "ip",
-        "ip_address",
-        "openid",
-        "open_id",
-        "unionid",
-        "client_id",
-        "trace_id"
+        "session_token"
       ]
     },
     "provenance": {
@@ -154,11 +124,11 @@
         "operator_type",
         "target_id",
         "target_name",
-        "target_type"
+        "target_type",
+        "advertiser_name",
+        "cid"
       ],
       "known_omitted_item_keys": [
-        "advertiser_name",
-        "cid",
         "message",
         "operator_result",
         "target"

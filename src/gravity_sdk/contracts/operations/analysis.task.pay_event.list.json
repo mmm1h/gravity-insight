@@ -4,7 +4,7 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
+    "contract_version": 2,
     "description": "付费事件补报任务只读列表。当前 OrderSearch/CashSearch bundle 以 app_id、page、page_size、结构化 filters 发起 POST；用户与订单标识按显式行字段合同输出。",
     "domain": "analysis",
     "effect": "read",
@@ -62,8 +62,7 @@
         "password",
         "secret",
         "refresh_token",
-        "session_token",
-        "create_user_name"
+        "session_token"
       ]
     },
     "provenance": {
@@ -113,9 +112,7 @@
         "pay_amount",
         "task_status",
         "create_time",
-        "reason"
-      ],
-      "known_omitted_item_keys": [
+        "reason",
         "create_user_name"
       ],
       "required_data_keys": [

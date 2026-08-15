@@ -35,9 +35,11 @@ _NATIVE_FIELDS = frozenset({
 })
 _DATA_FIELDS = frozenset({"list", "page_info"})
 _ROW_FIELDS = frozenset({
-    "advertiser_id", "cover_num", "create_time", "custom_audience_id",
-    "data_source_id", "delivery_status", "id", "isdel", "modify_time", "name",
-    "source", "status", "upload_num",
+    "advertiser_id", "cid", "company", "cover_num", "create_time",
+    "create_user_id", "create_user_name", "custom_audience_id",
+    "data_source_id", "delivery_status", "id", "isdel", "modify_time",
+    "name", "source", "status", "tag", "update_user_id",
+    "update_user_name", "upload_num",
 })
 _PAGE_INFO_FIELDS = frozenset({"page", "page_size", "total_number", "total_page"})
 _PAGE_FIELDS = frozenset({

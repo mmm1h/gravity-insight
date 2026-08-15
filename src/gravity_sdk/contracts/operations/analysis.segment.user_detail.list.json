@@ -4,8 +4,8 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
-    "description": "分群用户详情；上游无分页，支持按元数据校验后的字段选择并返回内部分析标识与业务属性，成员姓名、外部开放标识和广告设备标识保持隐藏。",
+    "contract_version": 2,
+    "description": "分群用户详情；上游无分页，支持按元数据校验后的字段选择。本 operation 的完整成员投影由独立产品线迁移，本单元不改其既有字段集合。",
     "domain": "analysis",
     "effect": "read",
     "examples": [],
@@ -59,15 +59,7 @@
         "password",
         "secret",
         "refresh_token",
-        "session_token",
-        "WXOpenID",
-        "Idfa",
-        "Idfv",
-        "Caid1",
-        "Caid2",
-        "Oaid",
-        "Imei",
-        "AndroidId"
+        "session_token"
       ]
     },
     "provenance": {

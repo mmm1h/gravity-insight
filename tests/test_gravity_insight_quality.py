@@ -137,9 +137,9 @@ class GravityInsightQualityTests(unittest.TestCase):
             draft_path.write_text(json.dumps(draft), encoding="utf-8")
 
             before = inspect_privacy_classification_consistency(root)
-            self.assertTrue(any("field 'value' is exposed" in item for item in before))
             self.assertTrue(any("field 'target' is redacted" in item for item in before))
-            self.assertTrue(any("field 'order' is exposed" in item for item in before))
+            self.assertFalse(any("field 'value' is exposed" in item for item in before))
+            self.assertFalse(any("field 'order' is exposed" in item for item in before))
             self.assertFalse(any("field 'allowed'" in item for item in before))
             self.assertFalse(any("field 'undecided'" in item for item in before))
             self.assertFalse(any("field 'secret'" in item for item in before))
@@ -157,7 +157,7 @@ class GravityInsightQualityTests(unittest.TestCase):
             draft_path.write_text(json.dumps(draft), encoding="utf-8")
             self.assertEqual([], inspect_privacy_classification_consistency(root))
 
-    def test_privacy_consistency_rejects_exposed_sensitive_field_when_expose_is_false(
+    def test_privacy_consistency_does_not_treat_draft_labels_as_access_control(
         self,
     ) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -198,14 +198,7 @@ class GravityInsightQualityTests(unittest.TestCase):
                 encoding="utf-8",
             )
 
-            self.assertEqual(
-                [
-                    "privacy-classification-consistency: field 'remark' is exposed "
-                    "by stable operation(s) stable.report.list but draft "
-                    "classification is sensitive"
-                ],
-                inspect_privacy_classification_consistency(root),
-            )
+            self.assertEqual([], inspect_privacy_classification_consistency(root))
 
     def test_privacy_consistency_ignores_non_stable_operations(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

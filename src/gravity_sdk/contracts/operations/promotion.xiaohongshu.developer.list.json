@@ -4,7 +4,7 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
+    "contract_version": 2,
     "description": "小红书投放产品/开发者筛选辅助列表。",
     "domain": "promotion",
     "effect": "read",
@@ -64,21 +64,7 @@
         "access_token",
         "token",
         "cookie",
-        "password",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "email",
-        "phone",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url",
-        "advertiser_name"
+        "password"
       ]
     },
     "provenance": {
@@ -123,9 +109,7 @@
         "app_id",
         "app_name",
         "developer_id",
-        "developer_name"
-      ],
-      "known_omitted_item_keys": [
+        "developer_name",
         "advertiser_name"
       ],
       "required_data_keys": [

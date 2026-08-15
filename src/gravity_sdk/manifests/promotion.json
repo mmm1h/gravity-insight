@@ -4,7 +4,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "Returns an array of metric groups; each item exposes height, label, and children metric definitions.",
       "domain": "promotion",
       "effect": "read",
@@ -68,20 +68,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -134,7 +121,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "Lists saved report-field groups; filters is the encoded platform context.",
       "domain": "promotion",
       "effect": "read",
@@ -182,20 +169,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -230,11 +204,11 @@
           "updated_at",
           "create_time",
           "modify_time",
-          "subject"
+          "subject",
+          "uid"
         ],
         "known_omitted_item_keys": [
-          "config",
-          "uid"
+          "config"
         ],
         "required_data_keys": [
           "list"
@@ -250,7 +224,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "巨量引擎广告主报表。",
       "domain": "promotion",
       "effect": "read",
@@ -319,21 +293,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -409,16 +369,19 @@
           "app_name",
           "advertiser_budget_mode",
           "advertiser_system_status",
-          "stat_cost"
-        ],
-        "known_omitted_item_keys": [
+          "stat_cost",
           "advertiser_agent_id",
           "advertiser_agent_name",
-          "advertiser_balance",
-          "advertiser_budget",
           "advertiser_name",
           "advertiser_remark",
           "company",
+          "project_list"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_balance",
+          "advertiser_budget"
+        ],
+        "opaque_json_item_keys": [
           "project_list"
         ],
         "required_data_keys": [
@@ -435,7 +398,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "巨量引擎项目层报表。",
       "domain": "promotion",
       "effect": "read",
@@ -504,21 +467,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -616,16 +565,19 @@
           "roi_goal",
           "start_time",
           "stat_cost",
-          "status_second"
-        ],
-        "known_omitted_item_keys": [
+          "status_second",
           "advertiser_agent_id",
           "advertiser_agent_name",
-          "advertiser_balance",
-          "advertiser_budget",
           "advertiser_name",
           "advertiser_remark",
           "company",
+          "project_list"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_balance",
+          "advertiser_budget"
+        ],
+        "opaque_json_item_keys": [
           "project_list"
         ],
         "required_data_keys": [
@@ -642,7 +594,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "腾讯广告 3.0 广告主报表。",
       "domain": "promotion",
       "effect": "read",
@@ -720,21 +672,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -814,17 +752,20 @@
           "app_name",
           "advertiser_budget_mode",
           "advertiser_system_status",
-          "cost"
-        ],
-        "known_omitted_item_keys": [
+          "cost",
           "advertiser_agent_id",
           "advertiser_agent_name",
-          "advertiser_balance",
-          "advertiser_budget",
           "advertiser_name",
           "advertiser_remark",
           "company",
           "delay",
+          "project_list"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_balance",
+          "advertiser_budget"
+        ],
+        "opaque_json_item_keys": [
           "project_list"
         ],
         "required_data_keys": [
@@ -841,7 +782,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "磁力智投广告主报表。",
       "domain": "promotion",
       "effect": "read",
@@ -910,21 +851,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -992,9 +919,7 @@
           "account_id",
           "account_name",
           "app_id",
-          "app_name"
-        ],
-        "known_omitted_item_keys": [
+          "app_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -1011,7 +936,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "磁力智投账户筛选辅助列表。",
       "domain": "promotion",
       "effect": "read",
@@ -1052,21 +977,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -1103,9 +1014,7 @@
           "app_id",
           "app_name",
           "developer_id",
-          "developer_name"
-        ],
-        "known_omitted_item_keys": [
+          "developer_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -1122,7 +1031,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "磁力智投广告单元报表。",
       "domain": "promotion",
       "effect": "read",
@@ -1191,21 +1100,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -1273,9 +1168,7 @@
           "account_id",
           "account_name",
           "app_id",
-          "app_name"
-        ],
-        "known_omitted_item_keys": [
+          "app_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -1292,7 +1185,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "OPPO 营销账户辅助列表。",
       "domain": "promotion",
       "effect": "read",
@@ -1333,21 +1226,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -1383,9 +1262,7 @@
           "app_id",
           "app_name",
           "developer_id",
-          "developer_name"
-        ],
-        "known_omitted_item_keys": [
+          "developer_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -1402,7 +1279,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "OPPO 营销广告主报表。",
       "domain": "promotion",
       "effect": "read",
@@ -1471,21 +1348,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -1553,9 +1416,7 @@
           "account_id",
           "account_name",
           "app_id",
-          "app_name"
-        ],
-        "known_omitted_item_keys": [
+          "app_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -1572,7 +1433,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "B 站营销广告主报表。",
       "domain": "promotion",
       "effect": "read",
@@ -1641,21 +1502,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -1723,9 +1570,7 @@
           "account_id",
           "account_name",
           "app_id",
-          "app_name"
-        ],
-        "known_omitted_item_keys": [
+          "app_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -1742,7 +1587,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "百度营销广告主账户报表。",
       "domain": "promotion",
       "effect": "read",
@@ -1811,21 +1656,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -1893,9 +1724,7 @@
           "account_id",
           "account_name",
           "app_id",
-          "app_name"
-        ],
-        "known_omitted_item_keys": [
+          "app_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -1912,7 +1741,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "VIVO 营销账户辅助列表。",
       "domain": "promotion",
       "effect": "read",
@@ -1953,21 +1782,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -2003,9 +1818,7 @@
           "app_id",
           "app_name",
           "developer_id",
-          "developer_name"
-        ],
-        "known_omitted_item_keys": [
+          "developer_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -2022,7 +1835,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "VIVO 营销广告主报表。",
       "domain": "promotion",
       "effect": "read",
@@ -2091,21 +1904,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -2173,9 +1972,7 @@
           "account_id",
           "account_name",
           "app_id",
-          "app_name"
-        ],
-        "known_omitted_item_keys": [
+          "app_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -2192,7 +1989,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "爱奇艺麒麟广告主报表。",
       "domain": "promotion",
       "effect": "read",
@@ -2261,21 +2058,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -2343,9 +2126,7 @@
           "account_id",
           "account_name",
           "app_id",
-          "app_name"
-        ],
-        "known_omitted_item_keys": [
+          "app_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -2362,7 +2143,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "微博粉丝通账户辅助列表。",
       "domain": "promotion",
       "effect": "read",
@@ -2403,21 +2184,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -2453,9 +2220,7 @@
           "app_id",
           "app_name",
           "developer_id",
-          "developer_name"
-        ],
-        "known_omitted_item_keys": [
+          "developer_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -2472,7 +2237,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "微博粉丝通广告主报表。",
       "domain": "promotion",
       "effect": "read",
@@ -2541,21 +2306,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -2623,9 +2374,7 @@
           "account_id",
           "account_name",
           "app_id",
-          "app_name"
-        ],
-        "known_omitted_item_keys": [
+          "app_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -2642,7 +2391,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "Apple Search Ads（UI: ASA）广告主报表。",
       "domain": "promotion",
       "effect": "read",
@@ -2718,21 +2467,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -2802,9 +2537,7 @@
           "account_id",
           "account_name",
           "app_id",
-          "app_name"
-        ],
-        "known_omitted_item_keys": [
+          "app_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -2821,7 +2554,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "UC 超级汇川广告主报表。",
       "domain": "promotion",
       "effect": "read",
@@ -2890,21 +2623,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -2972,9 +2691,7 @@
           "account_id",
           "account_name",
           "app_id",
-          "app_name"
-        ],
-        "known_omitted_item_keys": [
+          "app_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -2991,7 +2708,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "华为鲸鸿广告主报表。",
       "domain": "promotion",
       "effect": "read",
@@ -3060,21 +2777,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -3142,9 +2845,7 @@
           "account_id",
           "account_name",
           "app_id",
-          "app_name"
-        ],
-        "known_omitted_item_keys": [
+          "app_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -3161,7 +2862,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "华为商店广告主报表。",
       "domain": "promotion",
       "effect": "read",
@@ -3230,21 +2931,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -3312,9 +2999,7 @@
           "account_id",
           "account_name",
           "app_id",
-          "app_name"
-        ],
-        "known_omitted_item_keys": [
+          "app_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -3331,7 +3016,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "荣耀媒体账户层报表。",
       "domain": "promotion",
       "effect": "read",
@@ -3400,21 +3085,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -3482,9 +3153,7 @@
           "account_id",
           "account_name",
           "app_id",
-          "app_name"
-        ],
-        "known_omitted_item_keys": [
+          "app_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -3501,7 +3170,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "荣耀账户筛选辅助列表。",
       "domain": "promotion",
       "effect": "read",
@@ -3542,21 +3211,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -3592,9 +3247,7 @@
           "app_id",
           "app_name",
           "developer_id",
-          "developer_name"
-        ],
-        "known_omitted_item_keys": [
+          "developer_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -3611,7 +3264,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "荣耀推广计划层报表。",
       "domain": "promotion",
       "effect": "read",
@@ -3680,21 +3333,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -3762,9 +3401,7 @@
           "account_id",
           "account_name",
           "app_id",
-          "app_name"
-        ],
-        "known_omitted_item_keys": [
+          "app_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -3781,7 +3418,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "荣耀推广单元层报表。",
       "domain": "promotion",
       "effect": "read",
@@ -3850,21 +3487,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -3932,9 +3555,7 @@
           "account_id",
           "account_name",
           "app_id",
-          "app_name"
-        ],
-        "known_omitted_item_keys": [
+          "app_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -3951,7 +3572,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "UBIX 账户筛选辅助列表。",
       "domain": "promotion",
       "effect": "read",
@@ -3992,21 +3613,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -4042,9 +3649,7 @@
           "app_id",
           "app_name",
           "developer_id",
-          "developer_name"
-        ],
-        "known_omitted_item_keys": [
+          "developer_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -4061,7 +3666,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "UBIX 广告组报表。",
       "domain": "promotion",
       "effect": "read",
@@ -4130,21 +3735,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -4212,9 +3803,7 @@
           "account_id",
           "account_name",
           "app_id",
-          "app_name"
-        ],
-        "known_omitted_item_keys": [
+          "app_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -4231,7 +3820,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "小红书投放产品/开发者筛选辅助列表。",
       "domain": "promotion",
       "effect": "read",
@@ -4280,21 +3869,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -4331,9 +3906,7 @@
           "app_id",
           "app_name",
           "developer_id",
-          "developer_name"
-        ],
-        "known_omitted_item_keys": [
+          "developer_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -4350,7 +3923,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "小红书广告账户列表。",
       "domain": "promotion",
       "effect": "read",
@@ -4396,21 +3969,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -4448,9 +4007,7 @@
           "app_id",
           "app_name",
           "developer_id",
-          "developer_name"
-        ],
-        "known_omitted_item_keys": [
+          "developer_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -4467,7 +4024,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "小米营销账户辅助列表。",
       "domain": "promotion",
       "effect": "read",
@@ -4508,21 +4065,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -4558,9 +4101,7 @@
           "app_id",
           "app_name",
           "developer_id",
-          "developer_name"
-        ],
-        "known_omitted_item_keys": [
+          "developer_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -4577,7 +4118,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "小米营销广告主报表。",
       "domain": "promotion",
       "effect": "read",
@@ -4646,21 +4187,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -4728,9 +4255,7 @@
           "account_id",
           "account_name",
           "app_id",
-          "app_name"
-        ],
-        "known_omitted_item_keys": [
+          "app_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -4747,7 +4272,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "360 营销账户辅助列表；API 路由前缀固定为 qihu360。",
       "domain": "promotion",
       "effect": "read",
@@ -4788,21 +4313,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -4838,9 +4349,7 @@
           "app_id",
           "app_name",
           "developer_id",
-          "developer_name"
-        ],
-        "known_omitted_item_keys": [
+          "developer_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -4857,7 +4366,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "360 营销广告主报表；API 路由前缀固定为 qihu360。",
       "domain": "promotion",
       "effect": "read",
@@ -4926,21 +4435,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -5008,9 +4503,7 @@
           "account_id",
           "account_name",
           "app_id",
-          "app_name"
-        ],
-        "known_omitted_item_keys": [
+          "app_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -5027,7 +4520,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "Sigmob 账户辅助列表。",
       "domain": "promotion",
       "effect": "read",
@@ -5068,21 +4561,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -5118,9 +4597,7 @@
           "app_id",
           "app_name",
           "developer_id",
-          "developer_name"
-        ],
-        "known_omitted_item_keys": [
+          "developer_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -5137,7 +4614,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "Sigmob 广告主报表。",
       "domain": "promotion",
       "effect": "read",
@@ -5206,21 +4683,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -5288,9 +4751,7 @@
           "account_id",
           "account_name",
           "app_id",
-          "app_name"
-        ],
-        "known_omitted_item_keys": [
+          "app_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -5307,7 +4768,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "网易有道账户辅助列表；API 路由前缀固定为 youdao。",
       "domain": "promotion",
       "effect": "read",
@@ -5348,21 +4809,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -5398,9 +4845,7 @@
           "app_id",
           "app_name",
           "developer_id",
-          "developer_name"
-        ],
-        "known_omitted_item_keys": [
+          "developer_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -5417,7 +4862,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "网易有道广告主报表；API 路由前缀固定为 youdao。",
       "domain": "promotion",
       "effect": "read",
@@ -5486,21 +4931,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -5568,9 +4999,7 @@
           "account_id",
           "account_name",
           "app_id",
-          "app_name"
-        ],
-        "known_omitted_item_keys": [
+          "app_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -5587,7 +5016,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "虎牙账户辅助列表。",
       "domain": "promotion",
       "effect": "read",
@@ -5628,21 +5057,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -5678,9 +5093,7 @@
           "app_id",
           "app_name",
           "developer_id",
-          "developer_name"
-        ],
-        "known_omitted_item_keys": [
+          "developer_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -5697,7 +5110,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "虎牙广告主报表。",
       "domain": "promotion",
       "effect": "read",
@@ -5766,21 +5179,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -5848,9 +5247,7 @@
           "account_id",
           "account_name",
           "app_id",
-          "app_name"
-        ],
-        "known_omitted_item_keys": [
+          "app_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -5867,7 +5264,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "支付宝灯火广告主报表；分页必须放在 query，业务筛选放在 JSON body。",
       "domain": "promotion",
       "effect": "read",
@@ -5943,21 +5340,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -6028,9 +5411,7 @@
           "account_id",
           "account_name",
           "app_id",
-          "app_name"
-        ],
-        "known_omitted_item_keys": [
+          "app_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -6047,7 +5428,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "BING 广告主列表；filters 保持 JSON 字符串，不转换为数组。",
       "domain": "promotion",
       "effect": "read",
@@ -6096,21 +5477,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -6148,9 +5515,7 @@
           "app_id",
           "app_name",
           "developer_id",
-          "developer_name"
-        ],
-        "known_omitted_item_keys": [
+          "developer_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -6167,7 +5532,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "视频号加热订单报表；实测可能返回 data={} 且 extra.error 非空，即使 code=0 也必须判为语义错误。",
       "domain": "promotion",
       "effect": "read",
@@ -6229,20 +5594,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -6298,7 +5650,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "TapTap 广告组报表。",
       "domain": "promotion",
       "effect": "read",
@@ -6360,21 +5712,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "advertiser_name"
+          "password"
         ]
       },
       "request": {
@@ -6439,9 +5777,7 @@
           "plan_id",
           "plan_name",
           "ad_id",
-          "ad_name"
-        ],
-        "known_omitted_item_keys": [
+          "ad_name",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -6458,7 +5794,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "巨量引擎推广报表域的项目筛选列表；返回广告主标识、项目标识和项目名称。",
       "domain": "promotion",
       "effect": "read",
@@ -6503,37 +5839,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -6577,7 +5883,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "巨量引擎推广报表域的广告筛选列表；返回广告主标识、项目标识、广告标识和广告名称。",
       "domain": "promotion",
       "effect": "read",
@@ -6622,37 +5928,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -6697,7 +5973,7 @@
     {
       "action": "get",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "推广账户管理域的最新媒体账户状态列表；返回媒体、媒体报表状态与时间及广告主修改时间，App、授权过期和投放禁用明细不输出。",
       "domain": "promotion",
       "effect": "read",
@@ -6728,37 +6004,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -6798,7 +6044,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "腾讯广告推广报表域的广告组筛选列表；返回广告主标识、广告组标识和广告组名称。",
       "domain": "promotion",
       "effect": "read",
@@ -6843,37 +6089,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -6917,7 +6133,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "哔哩哔哩推广报表域的广告主账户报表；返回广告主与产品名称，以及曝光、点击、点击率、点击与千次曝光成本和现金、红包、三连起飞等消耗指标。",
       "domain": "promotion",
       "effect": "read",
@@ -6989,38 +6205,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id",
-          "advertiser_name"
+          "session_token"
         ]
       },
       "request": {
@@ -7076,9 +6261,7 @@
           "total_cash_consume",
           "total_consume",
           "total_red_packet_consume",
-          "total_special_red_packet_consume"
-        ],
-        "known_omitted_item_keys": [
+          "total_special_red_packet_consume",
           "advertiser_name"
         ],
         "required_data_keys": [
@@ -7095,7 +6278,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "List ByteDance application metadata with verified pagination and a fail-closed response projection.",
       "domain": "promotion",
       "effect": "read",
@@ -7146,37 +6329,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -7215,10 +6368,10 @@
           "publish_time",
           "update_at",
           "update_time",
-          "version"
+          "version",
+          "cid"
         ],
         "known_omitted_item_keys": [
-          "cid",
           "download_url",
           "icon_url"
         ],
@@ -7236,8 +6389,8 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "字节跳动落地页只读列表。最小 POST 请求、分页和响应投影已经验证；仅暴露站点业务标识、名称、功能与分享类型及状态，广告主名称、租户标识和缩略图保持隐藏。",
+      "contract_version": 2,
+      "description": "字节跳动落地页只读列表。最小 POST 请求、分页和响应投影已经验证；广告主名称和租户标识已登记返回，缩略图因资源 URL 合同未证实仍省略。",
       "domain": "promotion",
       "effect": "read",
       "executable": true,
@@ -7294,37 +6447,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -7359,11 +6482,11 @@
           "share_type",
           "siteId",
           "siteType",
-          "status"
+          "status",
+          "advertiser_name",
+          "cid"
         ],
         "known_omitted_item_keys": [
-          "advertiser_name",
-          "cid",
           "thumbnail"
         ],
         "required_data_keys": [
@@ -7380,8 +6503,8 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "AI 托管条件执行历史只读列表。最小 POST 请求、分页和响应投影已经验证；仅开放操作类型与条件结果中的目标标识，条件、指标、消息、操作结果与运行目标保持隐藏。",
+      "contract_version": 2,
+      "description": "AI 托管条件执行历史只读列表。广告主名称和租户标识已登记返回；条件、指标、消息、操作结果与运行目标因自由文本或嵌套合同未证实仍省略。",
       "domain": "promotion",
       "effect": "read",
       "executable": true,
@@ -7442,37 +6565,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -7511,11 +6604,11 @@
           "operator_type",
           "target_id",
           "target_name",
-          "target_type"
+          "target_type",
+          "advertiser_name",
+          "cid"
         ],
         "known_omitted_item_keys": [
-          "advertiser_name",
-          "cid",
           "message",
           "operator_result",
           "target"
@@ -7546,8 +6639,8 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "AI 托管运行历史只读列表。最小 POST 请求、分页和响应投影已经验证；仅开放操作类型与目标值中的广告主标识，运行目标、广告主名称、目标值明细与自由文本保持隐藏。",
+      "contract_version": 2,
+      "description": "AI 托管运行历史只读列表。租户标识及 detail_list 的广告主标识与名称已登记；运行目标及未证实目标值明细仍省略。",
       "domain": "promotion",
       "effect": "read",
       "executable": true,
@@ -7607,37 +6700,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -7674,11 +6737,11 @@
           "operator_type",
           "target_type",
           "target_values",
-          "trigger"
+          "trigger",
+          "cid",
+          "detail_list"
         ],
         "known_omitted_item_keys": [
-          "cid",
-          "detail_list",
           "target"
         ],
         "known_omitted_nested_item_keys": {
@@ -7687,6 +6750,10 @@
           ]
         },
         "nested_item_keys": {
+          "detail_list": [
+            "advertiser_id",
+            "advertiser_name"
+          ],
           "target_values": [
             "advertiser_id"
           ]
@@ -7705,7 +6772,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "腾讯广告 3.0 广告组配置只读列表；按广告主读取广告组标识、名称、投放状态和有效日期。2026-08-11 复验非空响应；出价模式与出价/预算数值固定省略。",
       "domain": "promotion",
       "effect": "read",
@@ -7753,37 +6820,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -7844,8 +6881,8 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "AI 托管规则只读列表；支持受控分页。2026-08-11 非空响应和分页合同复验通过，人员、规则条件、通知计划和目标明细固定省略。",
+      "contract_version": 2,
+      "description": "AI 托管规则只读列表；创建人与更新人字段已登记；规则条件、通知计划和目标明细因嵌套合同未证实仍省略。",
       "domain": "promotion",
       "effect": "read",
       "executable": true,
@@ -7891,37 +6928,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -7963,23 +6970,23 @@
           "schedule_type",
           "status",
           "target",
-          "target_type"
+          "target_type",
+          "cid",
+          "create_user_id",
+          "create_user_name",
+          "update_user_id",
+          "update_user_name"
         ],
         "known_omitted_item_keys": [
           "check_custom",
-          "cid",
           "conditions",
-          "create_user_id",
-          "create_user_name",
           "detail_list",
           "disturb",
           "operator_type",
           "operator_values",
           "schedule",
           "send_way",
-          "target_values",
-          "update_user_id",
-          "update_user_name"
+          "target_values"
         ],
         "required_data_keys": [
           "list"
@@ -7995,8 +7002,8 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "巨量自定义人群只读列表；返回人群、广告主和数据源标识、名称、覆盖/上传数量及投放状态。2026-08-11 非空响应与分页合同复验通过，公司、标签、人员和租户标识固定省略。",
+      "contract_version": 2,
+      "description": "巨量自定义人群只读列表；返回已登记的人群、广告主、公司、租户、标签、人员、覆盖/上传数量及投放状态。",
       "domain": "promotion",
       "effect": "read",
       "executable": true,
@@ -8042,37 +7049,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -8112,9 +7089,7 @@
           "name",
           "source",
           "status",
-          "upload_num"
-        ],
-        "known_omitted_item_keys": [
+          "upload_num",
           "cid",
           "company",
           "create_user_id",
@@ -8137,7 +7112,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "列出已授权的巨量引擎广告主账户，供创意、素材等只读操作选择账户。",
       "domain": "promotion",
       "effect": "read",
@@ -8184,39 +7159,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id",
-          "account_email",
-          "advertiser_name"
+          "session_token"
         ]
       },
       "request": {
@@ -8261,44 +7204,44 @@
           "app_id",
           "grant_type",
           "media_status",
-          "put_status"
-        ],
-        "known_omitted_item_keys": [
+          "put_status",
           "account_email",
           "advertiser_name",
-          "advertiser_sort",
           "agent_id",
           "agent_name",
-          "balance",
-          "budget",
-          "budget_mode",
           "cid",
           "company",
-          "create_time",
           "create_user_id",
           "create_user_name",
-          "develop_app_id",
-          "financial_info",
           "first_agent_company_id",
           "first_agent_company_name",
           "first_agent_id",
           "first_agent_name",
+          "operator_id",
+          "operator_name",
+          "update_user_id",
+          "update_user_name"
+        ],
+        "known_omitted_item_keys": [
+          "advertiser_sort",
+          "balance",
+          "budget",
+          "budget_mode",
+          "create_time",
+          "develop_app_id",
+          "financial_info",
           "first_industry_name",
           "grant",
           "grant_source",
           "id",
           "modify_time",
-          "operator_id",
-          "operator_name",
           "parent_id",
           "put_status_modify_time",
           "remark",
           "second_industry_name",
           "self_operation_tag",
           "sum_quota",
-          "toutiao_parent_id",
-          "update_user_id",
-          "update_user_name"
+          "toutiao_parent_id"
         ],
         "required_data_keys": [
           "list"
@@ -8314,7 +7257,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "列出当前租户可选择的巨量账户主体名称，供广告账户、定向包等推广配置使用。",
       "domain": "promotion",
       "effect": "read",
@@ -8345,36 +7288,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -8410,7 +7324,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "列出巨量引擎账户下处于启用状态的普通项目，返回网页项目选择器及下游素材读取所需的最小字段。",
       "domain": "promotion",
       "effect": "read",
@@ -8449,37 +7363,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -8585,7 +7469,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "列出巨量引擎账户下处于可投放状态的广告，返回网页广告选择器所需的最小字段。",
       "domain": "promotion",
       "effect": "read",
@@ -8624,37 +7508,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -8708,7 +7562,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "巨量广告主表现分页列表；固定网页初始状态过滤与每页最多 10 行读取，明确排除会触发重新拉数的 real_data 参数。",
       "domain": "promotion",
       "effect": "read",
@@ -8765,37 +7619,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -8858,15 +7682,16 @@
           "advertiser_system_status",
           "app_id",
           "app_name",
-          "stat_cost"
-        ],
-        "known_omitted_item_keys": [
+          "stat_cost",
           "advertiser_name",
           "advertiser_remark",
           "company",
           "delay",
           "operator_id",
           "operator_name",
+          "project_list"
+        ],
+        "opaque_json_item_keys": [
           "project_list"
         ],
         "required_data_keys": [
@@ -8883,7 +7708,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "Draft inferred from census route GET /turbo_engine/api/v1/tencent/manager/account/by_company/; response remains hidden until probe classification.",
       "domain": "promotion",
       "effect": "read",
@@ -8914,37 +7739,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -8980,7 +7775,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "Draft inferred from census route GET /turbo_engine/api/v1/kuaishou/manager/account/by_company/; response remains hidden until probe classification.",
       "domain": "promotion",
       "effect": "read",
@@ -9019,37 +7814,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -9089,8 +7854,8 @@
     {
       "action": "detail",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "AI 托管规则只读详情；ai_id 可由稳定的 promotion.ai_trusteeship.list 选择。2026-08-11 已验证请求绑定、非分页响应和递归字段投影；人员、通知值及未审查配置固定省略。",
+      "contract_version": 2,
+      "description": "AI 托管规则只读详情；创建人与更新人以及广告主名称已登记；通知值及未证实配置子结构仍省略。",
       "domain": "promotion",
       "effect": "read",
       "executable": true,
@@ -9127,37 +7892,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "uid",
-          "user_id",
-          "device_id",
-          "phone",
-          "mobile",
-          "email",
-          "idfa",
-          "idfv",
-          "imei",
-          "oaid",
-          "android_id",
-          "order_id",
-          "ip",
-          "ip_address",
-          "openid",
-          "open_id",
-          "unionid",
-          "client_id",
-          "trace_id"
+          "session_token"
         ]
       },
       "request": {
@@ -9202,7 +7937,11 @@
             "status",
             "target",
             "target_type",
-            "target_values"
+            "target_values",
+            "create_user_id",
+            "create_user_name",
+            "update_user_id",
+            "update_user_name"
           ]
         },
         "data_keys": [
@@ -9213,21 +7952,14 @@
         "known_omitted_data_item_keys": {
           "data": [
             "check_custom",
-            "create_user_id",
-            "create_user_name",
             "disturb",
             "operator_type",
-            "schedule",
-            "update_user_id",
-            "update_user_name"
+            "schedule"
           ]
         },
         "known_omitted_nested_item_keys": {
           "conditions": [
             "operator_type"
-          ],
-          "detail_list": [
-            "advertiser_name"
           ],
           "send_way": [
             "values"
@@ -9244,7 +7976,8 @@
           ],
           "detail_list": [
             "advertiser_id",
-            "count"
+            "count",
+            "advertiser_name"
           ],
           "operator_values": [
             "boost_value",

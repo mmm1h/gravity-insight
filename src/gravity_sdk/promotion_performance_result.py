@@ -22,6 +22,7 @@ from .promotion_performance_error import (
     safe_performance_error as _safe_error,
 )
 from .promotion_performance_binding import rows_match_performance_request
+from .promotion_projection import promotion_row_fields
 
 
 SCHEMA_VERSION = "gravity-insight.promotion-performance.v1"
@@ -73,60 +74,7 @@ PROMOTION_PLATFORM_RESOURCES = MappingProxyType(
     }
 )
 
-_COMMON_ROW_FIELDS = frozenset(
-    {
-        "id",
-        "name",
-        "status",
-        "date",
-        "day",
-        "hour",
-        "week",
-        "month",
-        "advertiser_id",
-        "campaign_id",
-        "campaign_name",
-        "project_id",
-        "project_name",
-        "group_id",
-        "group_name",
-        "ad_group_id",
-        "ad_group_name",
-        "ad_unit_id",
-        "ad_unit_name",
-        "creative_id",
-        "creative_name",
-        "account_id",
-        "account_name",
-        "app_id",
-        "app_name",
-    }
-)
-PROMOTION_ROW_FIELDS = MappingProxyType(
-    {
-        platform: _COMMON_ROW_FIELDS
-        | (
-            frozenset(
-                {
-                    "advertiser_budget_mode",
-                    "advertiser_system_status",
-                    "stat_cost",
-                }
-            )
-            if platform == "bytedance"
-            else frozenset(
-                {
-                    "advertiser_budget_mode",
-                    "advertiser_system_status",
-                    "cost",
-                }
-            )
-            if platform == "tencent"
-            else frozenset()
-        )
-        for platform in SUPPORTED_PLATFORMS
-    }
-)
+PROMOTION_ROW_FIELDS = promotion_row_fields(SUPPORTED_PLATFORMS)
 # Identity, time, hierarchy and status fields are useful native output columns,
 # but they are not physical performance metrics.  Requiring metric inputs to
 # stay outside this set prevents static projection fields from bypassing the

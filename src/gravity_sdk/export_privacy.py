@@ -1,4 +1,4 @@
-"""Streaming privacy finalizers for verified exports."""
+"""Streaming contract finalizers for verified exports."""
 from __future__ import annotations
 
 import csv
@@ -18,7 +18,7 @@ from .export_models import (
 )
 
 class ExportPrivacyFinalizer:
-    """Validate actual tabular schema and apply executor-equivalent redaction."""
+    """Validate actual tabular schema and remove only contracted credentials."""
 
     def __init__(self, contract: ExportPrivacyContract) -> None:
         self._contract = contract
@@ -73,7 +73,7 @@ class ExportPrivacyFinalizer:
                 output_header = _redacted_columns(header, self._contract)
                 if not output_header:
                     raise _export_error(
-                        "privacy projection removed every export column",
+                        "contract projection removed every export column",
                         code="EXPORT_SCHEMA_MISMATCH",
                         stage="finalizer",
                     )
@@ -108,7 +108,7 @@ class ExportPrivacyFinalizer:
                         )
                         if not isinstance(projected, Mapping):
                             raise _export_error(
-                                "CSV privacy projection did not return an object",
+                                "CSV contract projection did not return an object",
                                 code="EXPORT_SCHEMA_MISMATCH",
                                 stage="finalizer",
                             )
@@ -159,7 +159,7 @@ class ExportPrivacyFinalizer:
                         )
                         if not isinstance(projected, Mapping) or not projected:
                             raise _export_error(
-                                "privacy projection removed every JSONL column",
+                                "contract projection removed every JSONL column",
                                 code="EXPORT_SCHEMA_MISMATCH",
                                 stage="finalizer",
                                 details={"line": line_number},
@@ -436,7 +436,7 @@ def _redacted_columns(
     )
     if not isinstance(projected, Mapping):
         raise _export_error(
-            "privacy projection did not return an object schema",
+            "contract projection did not return an object schema",
             code="EXPORT_SCHEMA_MISMATCH",
             stage="finalizer",
         )

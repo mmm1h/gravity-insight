@@ -99,6 +99,9 @@ class AppCapacityOperationTests(unittest.TestCase):
                 "ad_create_amount": 100,
                 "ad_create_amount_usage": 20,
                 "capacity_type": "LIMITED",
+                "company_position": "hidden",
+                "create_user_name": "hidden",
+                "our_salesman_id": 7,
                 "relation_package": [
                     {
                         "name": "standard",

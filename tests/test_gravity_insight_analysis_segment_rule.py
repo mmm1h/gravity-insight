@@ -159,7 +159,7 @@ class GravityInsightAnalysisSegmentRuleTests(unittest.TestCase):
         self.assertTrue(operation["live_probe"]["enabled"])
         self.assertNotIn("FE_CONFIG", operation["input_fields"])
         self.assertNotIn("FE_CONFIG", operation["request"]["body_fields"])
-        self.assertIn("FE_CONFIG", operation["privacy_policy"]["redact_keys"])
+        self.assertNotIn("FE_CONFIG", operation["privacy_policy"]["redact_keys"])
         serialized = json.dumps(operation, ensure_ascii=False)
         self.assertNotIn("raw_body", serialized)
 
@@ -357,8 +357,12 @@ class GravityInsightAnalysisSegmentRuleTests(unittest.TestCase):
             ),
             ensure_ascii=False,
         )
-        for secret in ("secret-segment-name", "private-remark", "north-secret"):
-            self.assertNotIn(secret, rendered)
+        for authorized_value in (
+            "secret-segment-name",
+            "private-remark",
+            "north-secret",
+        ):
+            self.assertIn(authorized_value, rendered)
 
 
 if __name__ == "__main__":  # pragma: no cover

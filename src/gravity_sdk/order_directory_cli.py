@@ -20,7 +20,7 @@ def add_order_directory_command(
     """Register ``analysis order directory`` as a JSON-only product."""
 
     directory = order_commands.add_parser(
-        "directory", help="Read one complete identifier-free daily order directory."
+        "directory", help="Read one complete bounded daily order directory."
     )
     directory.add_argument("--app", required=True)
     directory.add_argument("--date", required=True)

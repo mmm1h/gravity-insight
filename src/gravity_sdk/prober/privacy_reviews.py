@@ -26,9 +26,9 @@ def _review_map(document: Mapping[str, Any], key: str) -> Mapping[str, frozenset
 
 _DOCUMENT = json.loads(_REVIEW_PATH.read_text(encoding="utf-8"))
 REVIEWED_SAFE_FIELDS = _review_map(_DOCUMENT, "reviewed_safe_fields")
-ROUTE_REVIEWED_SENSITIVE_FIELDS = _review_map(
-    _DOCUMENT, "reviewed_sensitive_fields"
+ROUTE_REVIEWED_CONTRACT_FIELDS = _review_map(
+    _DOCUMENT, "reviewed_contract_fields"
 )
 
 
-__all__ = ["REVIEWED_SAFE_FIELDS", "ROUTE_REVIEWED_SENSITIVE_FIELDS"]
+__all__ = ["REVIEWED_SAFE_FIELDS", "ROUTE_REVIEWED_CONTRACT_FIELDS"]

@@ -185,9 +185,19 @@ def _discover(
                 "an Insight client is required for capability discovery",
                 field="client",
             )
+        from .agent_monetization_guard import (
+            MONETIZATION_DETAIL_RAW_SELECTOR,
+            monetization_open_dimension_query,
+        )
+
+        operation_query = (
+            MONETIZATION_DETAIL_RAW_SELECTOR
+            if monetization_open_dimension_query(request.query)
+            else request.query
+        )
         operations = discover_operation_cards(
             client,
-            request.query,
+            operation_query,
             domain=request.domain,
             platform=request.platform,
             inventory=(sources.operation_inventory if sources is not None else None),

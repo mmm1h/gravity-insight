@@ -1,4 +1,4 @@
-"""Value-free response sketches and fail-closed projection policy."""
+"""Value-free response sketches and fail-closed contract projection policy."""
 
 from __future__ import annotations
 
@@ -12,35 +12,31 @@ from .nested_projection import (
 )
 from .privacy_reviews import (
     REVIEWED_SAFE_FIELDS,
-    ROUTE_REVIEWED_SENSITIVE_FIELDS,
+    ROUTE_REVIEWED_CONTRACT_FIELDS,
 )
 from .schema_sketch import json_type, response_schema_sketch, safe_schema_key
 
 
-SENSITIVE_TOKENS = frozenset(
+CREDENTIAL_TOKENS = frozenset(
     {
-        "authorization", "cookie", "password", "secret", "token", "uid",
-        "user", "userid", "user_id", "device", "device_id", "phone",
-        "mobile", "email", "idfa", "idfv", "imei", "oaid", "androidid",
-        "android_id", "caid", "openid", "open_id", "unionid", "union_id",
-        "order", "order_id", "ip", "ip_address", "client_id", "trace_id",
-        "session_id",
-        "operator", "operator_id", "operator_name",
-        "creator", "creator_id", "creator_name", "dept", "department",
-        "designer", "latitude", "longitude", "gps", "url",
+        "access_token", "authorization", "cookie", "password", "private_key",
+        "refresh_token", "secret", "session_token", "token",
+    }
+)
+_CREDENTIAL_COMPACT = frozenset(item.replace("_", "") for item in CREDENTIAL_TOKENS)
+
+AUTHORIZED_DATA_FIELDS = frozenset(
+    {
+        "account_name", "advertiser_name", "after_value", "auth_ids", "avatar",
+        "before_value", "company", "company_name", "email", "idfa", "idfv",
+        "imei", "is_superuser", "mobile", "oaid", "openid", "phone",
+        "public_key", "real_name", "unionid", "username", "address",
+        "birthdate", "birthday", "gender", "home_address", "ip", "ip_address",
+        "precise_location", "url",
     }
 )
 
-SENSITIVE_EXACT_FIELDS = frozenset(
-    {
-        "account_name", "advertiser_name", "after_value", "auth_ids",
-        "before_value", "company", "company_name", "private_key",
-        "public_key", "real_name", "username", "address", "birthdate",
-        "birthday", "gender", "home_address", "precise_location",
-    }
-)
-
-REVIEWED_SENSITIVE_FIELDS: Mapping[str, str] = {
+REVIEWED_MANUAL_FIELDS: Mapping[str, str] = {
     "{dynamic_key}": "unbounded_dynamic_object_key_review",
     "app_dict": "unbounded_metadata_container_review",
     "col_name_en_cn_dict": "unbounded_metadata_container_review",
@@ -149,8 +145,8 @@ def _reviewed_safe_fields(operation_id: str | None) -> frozenset[str]:
     return REVIEWED_SAFE_FIELDS.get(normalized, frozenset()) | frozenset(family_fields)
 
 
-def _reviewed_sensitive_fields(operation_id: str | None) -> frozenset[str]:
-    return ROUTE_REVIEWED_SENSITIVE_FIELDS.get(str(operation_id), frozenset())
+def _reviewed_contract_fields(operation_id: str | None) -> frozenset[str]:
+    return ROUTE_REVIEWED_CONTRACT_FIELDS.get(str(operation_id), frozenset())
 
 
 def _is_metadata_dictionary_operation(operation_id: str | None) -> bool:
@@ -174,25 +170,32 @@ def _is_aggregate_report_operation(operation_id: str | None) -> bool:
 
 
 def classify_field(path: str) -> tuple[str, str]:
-    """Classify a field name conservatively; manual review stays hidden."""
+    """Classify credentials separately from authorized data and unknown fields."""
 
     field = path.rsplit(".", 1)[-1].replace("[]", "").casefold()
     tokens = set(re.findall(r"[a-z0-9]+", field))
     compact = field.replace("_", "")
-    sensitive_reason = REVIEWED_SENSITIVE_FIELDS.get(field)
-    if sensitive_reason is not None:
-        return "sensitive", sensitive_reason
+    manual_reason = REVIEWED_MANUAL_FIELDS.get(field)
+    if manual_reason is not None:
+        return "manual_review", manual_reason
     reviewed_reason = REVIEWED_NON_SENSITIVE_FIELDS.get(field)
     if reviewed_reason is not None:
         return "non_sensitive", reviewed_reason
     if (
-        field in SENSITIVE_EXACT_FIELDS
-        or field in SENSITIVE_TOKENS
-        or compact in SENSITIVE_TOKENS
-        or tokens & SENSITIVE_TOKENS
+        field in CREDENTIAL_TOKENS
+        or compact in _CREDENTIAL_COMPACT
+        or tokens & CREDENTIAL_TOKENS
         or any(token in field for token in ("password", "cookie", "authorization"))
     ):
-        return "sensitive", "sensitive_name_pattern"
+        return "sensitive", "credential_name_pattern"
+    if field in AUTHORIZED_DATA_FIELDS or any(
+        token in tokens
+        for token in {
+            "creator", "department", "dept", "designer", "device", "operator",
+            "user", "userid", "uid",
+        }
+    ):
+        return "non_sensitive", "upstream_authorized_data_field"
     if field in SAFE_TOKENS or field.endswith(SAFE_SUFFIXES):
         return "non_sensitive", "business_metadata_name_pattern"
     return "manual_review", "no_confident_name_pattern"
@@ -204,11 +207,11 @@ def classify_candidate_field(
     """Classify one observed field with narrowly scoped semantic context."""
 
     field_name = path.rsplit(".", 1)[-1].replace("[]", "")
-    if field_name.casefold() in _reviewed_sensitive_fields(operation_id):
-        return "sensitive", "route_specific_sensitive_field_review"
     classification, reason = classify_field(path)
     if classification != "manual_review":
         return classification, reason
+    if field_name.casefold() in _reviewed_contract_fields(operation_id):
+        return "manual_review", "route_specific_contract_field_review"
 
     reviewed = _reviewed_safe_fields(operation_id)
     if field_name in reviewed:

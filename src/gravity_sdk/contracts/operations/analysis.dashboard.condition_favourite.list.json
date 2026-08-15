@@ -4,7 +4,7 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
+    "contract_version": 2,
     "description": "看板筛选收藏目录；支持 dashboard/default/name 精确 filters，并完整返回已登记的 condition/config 动态 JSON 配置（会话凭证键仍递归脱敏）。",
     "domain": "analysis",
     "effect": "read",
@@ -70,8 +70,7 @@
         "password",
         "secret",
         "refresh_token",
-        "session_token",
-        "condition"
+        "session_token"
       ]
     },
     "provenance": {

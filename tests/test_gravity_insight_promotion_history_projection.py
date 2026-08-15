@@ -111,7 +111,7 @@ class PromotionHistoryProjectionTests(unittest.TestCase):
         row = result["data"]["list"][0]
         self.assertEqual("UPDATE", row["operator_type"])
         self.assertEqual([{"target_id": 99}], row["condition_result"])
-        self.assertNotIn("advertiser_name", row)
+        self.assertEqual("must remain hidden", row["advertiser_name"])
         self.assertNotIn("message", row)
         self.assertNotIn("operator_result", row)
         self.assertNotIn("target", row)
@@ -131,7 +131,15 @@ class PromotionHistoryProjectionTests(unittest.TestCase):
         row = result["data"]["list"][0]
         self.assertEqual("PAUSE", row["operator_type"])
         self.assertEqual({"advertiser_id": "202"}, row["target_values"])
-        self.assertNotIn("detail_list", row)
+        self.assertEqual(
+            [
+                {
+                    "advertiser_id": 201,
+                    "advertiser_name": "must remain hidden",
+                }
+            ],
+            row["detail_list"],
+        )
         self.assertNotIn("target", row)
         self.assertNotIn("values", row["target_values"])
         self.assertNotIn("unknown_nested", row["target_values"])

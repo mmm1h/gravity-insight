@@ -33,7 +33,14 @@ class Client:
             "advertiser_id": "synthetic-advertiser",
             "advertiser_balance": 10.5,
             "advertiser_budget_mode": "INFINITE",
+            "advertiser_name": "registered advertiser",
+            "advertiser_remark": "registered remark",
             "advertiser_system_status": "STATUS_ENABLE",
+            "company": "registered company",
+            "delay": 0,
+            "operator_id": 17,
+            "operator_name": "registered operator",
+            "project_list": [{"project_id": "project-1"}],
             "stat_cost": "1.25",
         }]
         count = len(rows)
@@ -142,7 +149,7 @@ class AdvertiserProfileTests(unittest.TestCase):
 
         def unknown_field(requests, **options):
             value = original(requests, **options)[0]
-            value["data"]["data"]["list"][0]["operator_name"] = "hidden"
+            value["data"]["data"]["list"][0]["new_upstream_field"] = "unknown"
             return [value]
 
         drift.batch = unknown_field

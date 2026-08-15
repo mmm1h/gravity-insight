@@ -4,7 +4,7 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
+    "contract_version": 2,
     "description": "本地素材库列表。",
     "domain": "material",
     "effect": "read",
@@ -75,20 +75,7 @@
         "access_token",
         "token",
         "cookie",
-        "password",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "email",
-        "phone",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url"
+        "password"
       ]
     },
     "provenance": {
@@ -151,14 +138,14 @@
         "created_at",
         "updated_at",
         "create_time",
-        "update_time"
+        "update_time",
+        "cid"
       ],
       "known_omitted_item_keys": [
         "advertising_materials_label",
         "aspect_ratio",
         "aspect_ratio_int",
         "aspect_xy",
-        "cid",
         "copy_material_id",
         "derive_id",
         "designer_image_id",

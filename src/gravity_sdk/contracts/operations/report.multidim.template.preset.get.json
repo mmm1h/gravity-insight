@@ -4,7 +4,7 @@
   "operation": {
     "action": "get",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
+    "contract_version": 2,
     "description": "预设模板安全详情。模板 id/category 从已登记预置模板列表解析；2026-08-08 最小探针 code=0，仅公开 name/remark，深层 columns/filterForm/extra_data 所在 config 容器固定省略。",
     "domain": "report",
     "effect": "read",
@@ -43,21 +43,7 @@
         "access_token",
         "token",
         "cookie",
-        "password",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "email",
-        "phone",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url",
-        "remark"
+        "password"
       ]
     },
     "provenance": {

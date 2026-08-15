@@ -4,8 +4,8 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
-    "description": "已保存分析配置列表；只输出图表标识、名称、类型、备注和更新时间，人员字段与不透明 config 固定省略。",
+    "contract_version": 2,
+    "description": "已保存分析配置列表；创建人与更新人字段已登记返回，不透明 config、未证实状态字段和自由备注仍省略。",
     "domain": "analysis",
     "effect": "read",
     "examples": [],
@@ -50,33 +50,7 @@
         "access_token",
         "token",
         "cookie",
-        "password",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "create_user_id",
-        "create_user_name",
-        "update_user_id",
-        "update_user_name",
-        "user_name",
-        "email",
-        "phone",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url",
-        "origin_query",
-        "query_sql",
-        "config",
-        "client_id",
-        "clientid",
-        "trace_id",
-        "traceid",
-        "uid",
-        "remark"
+        "password"
       ]
     },
     "provenance": {
@@ -122,14 +96,14 @@
         "app_id",
         "name",
         "subject",
-        "modify_time"
-      ],
-      "known_omitted_item_keys": [
-        "config",
+        "modify_time",
         "update_user_id",
         "update_user_name",
         "create_user_id",
-        "create_user_name",
+        "create_user_name"
+      ],
+      "known_omitted_item_keys": [
+        "config",
         "create_time",
         "is_deleted",
         "remark"

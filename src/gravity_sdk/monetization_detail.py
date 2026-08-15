@@ -1,4 +1,4 @@
-"""Complete, single-day, identifier-free monetization detail product."""
+"""Complete, single-day monetization detail product."""
 
 from __future__ import annotations
 
@@ -28,6 +28,11 @@ from ._field_policy_shared import parse_iso_calendar_date
 from .composite_catalog import stable_operation
 from .errors import ErrorCode, ErrorDetail, InputValidationError, exit_code_for_error
 from .models import OperationSpec
+from .monetization_projection import (
+    DEVICE_INFO_FIELDS,
+    SAFE_RE_ATTRIBUTE_FIELDS,
+    SAFE_ROW_FIELDS,
+)
 
 
 SCHEMA_VERSION = "gravity-insight.monetization-detail.v1"
@@ -35,40 +40,9 @@ OPERATION_ID = stable_operation(
     "analysis", "monetization_detail", action="list"
 ).operation_id
 
-# This is the approved privacy projection, not a caller-selectable profile.
-SAFE_ROW_FIELDS = (
-    "CreateTime",
-    "AdEventTime",
-    "AdPlatform",
-    "AdvertiserID",
-    "AdAid",
-    "TurboPromotedObjectID",
-    "event$ad_type",
-    "event$adn_type",
-    "event$ad_unit_id",
-    "event$ad_through",
-    "event$ad_source_id",
-    "event$ad_placement_id",
-    "event$ecpm",
-    "samount",
-    "re_attribute_info",
-)
-SAFE_RE_ATTRIBUTE_FIELDS = (
-    "ReAttributeAdAid",
-    "ReAttributeAdCid",
-    "ReAttributeAdGid",
-    "ReAttributeAdPlatform",
-    "ReAttributeAdvertiserID",
-    "ReAttributeCSite",
-    "ReAttributeChannel",
-    "ReAttributeCreateTime",
-    "ReAttributeTurboPromotedObjectID",
-    "ReAttributeRetargetingCount",
-    "ReAttributeAdClickTime",
-)
-
 _SAFE_FIELDS = frozenset(SAFE_ROW_FIELDS)
 _SAFE_RE_ATTRIBUTE = frozenset(SAFE_RE_ATTRIBUTE_FIELDS)
+_DEVICE_INFO_FIELDS = frozenset(DEVICE_INFO_FIELDS)
 _TIME_FIELDS = ("CreateTime", "AdEventTime")
 _ENVELOPE_KEYS = frozenset(
     {
@@ -103,7 +77,7 @@ _ACTIONS = {
     "budget": "Increase the bounded page or item limit and retry the same day.",
     "contract": "Stop automation until the Monetization Detail contract is re-verified.",
 }
-_SUCCESS_ACTION = "Consume the complete identifier-free monetization rows."
+_SUCCESS_ACTION = "Consume the complete contracted monetization rows."
 
 
 def monetization_detail(
@@ -115,7 +89,7 @@ def monetization_detail(
     max_pages: int = 1_000,
     max_items: int = 100_000,
 ) -> dict[str, Any]:
-    """Read all approved monetization rows for one natural day."""
+    """Read all contracted monetization rows for one natural day."""
 
     app, day, workers, pages, items = validate_monetization_detail_request(
         app_id,
@@ -177,18 +151,17 @@ def validate_monetization_detail_request(
 def validate_monetization_operation_request(
     operation: OperationSpec, inputs: Mapping[str, Any]
 ) -> None:
-    """Reject raw-operation controls outside the approved product boundary."""
+    """Validate wire-level detail bounds before static or metadata validation."""
 
     fields = inputs.get("fields")
-    allowed = set(SAFE_ROW_FIELDS) & set(operation.response_projection.item_keys)
     if (
         not isinstance(fields, (list, tuple))
         or not fields
-        or any(not isinstance(field, str) or field not in allowed for field in fields)
+        or any(not isinstance(field, str) or not field for field in fields)
         or len(fields) != len(set(fields))
     ):
         raise InputValidationError(
-            "monetization detail fields are outside the approved projection; request was not sent"
+            "monetization detail fields are invalid; request was not sent"
         )
     parse_iso_calendar_date(inputs.get("date"), "date")
     page, size = inputs.get("page", 1), inputs.get("page_size", 20)
@@ -200,13 +173,6 @@ def validate_monetization_operation_request(
     ):
         raise InputValidationError(
             "monetization detail pagination is outside its contract; request was not sent"
-        )
-    if any(
-        inputs.get(name) not in (None, (), [])
-        for name in ("global_conditions", "local_conditions", "order_by_list")
-    ):
-        raise InputValidationError(
-            "monetization detail filters and sorting are unavailable; request was not sent"
         )
 
 
@@ -302,6 +268,11 @@ def _raw_row(value: Any, day: str) -> dict[str, Any] | None:
             if nested is None:
                 return None
             selected[field] = nested
+        elif field == "device_info":
+            nested = _raw_device_info(raw)
+            if nested is None:
+                return None
+            selected[field] = nested
         elif not finite_json_scalar(raw):
             return None
         else:
@@ -326,6 +297,21 @@ def _raw_re_attribute(value: Any) -> dict[str, Any] | None:
     return None if invalid else selected
 
 
+def _raw_device_info(value: Any) -> dict[str, Any] | None:
+    if not isinstance(value, Mapping):
+        return None
+    selected = {
+        field: copy.deepcopy(value[field])
+        for field in DEVICE_INFO_FIELDS
+        if field in value and finite_json_scalar(value[field])
+    }
+    invalid = any(
+        field in value and not finite_json_scalar(value[field])
+        for field in DEVICE_INFO_FIELDS
+    )
+    return None if invalid else selected
+
+
 def _public_row(value: Any, day: Any) -> dict[str, Any] | None:
     if not isinstance(day, str) or not isinstance(value, Mapping):
         return None
@@ -336,6 +322,9 @@ def _public_row(value: Any, day: Any) -> dict[str, Any] | None:
         return None
     nested = value.get("re_attribute_info")
     if isinstance(nested, Mapping) and not set(nested) <= _SAFE_RE_ATTRIBUTE:
+        return None
+    device = value.get("device_info")
+    if isinstance(device, Mapping) and not set(device) <= _DEVICE_INFO_FIELDS:
         return None
     return selected
 
@@ -540,6 +529,7 @@ def _contract_failure(
 
 
 __all__ = [
+    "DEVICE_INFO_FIELDS",
     "OPERATION_ID",
     "SAFE_RE_ATTRIBUTE_FIELDS",
     "SAFE_ROW_FIELDS",

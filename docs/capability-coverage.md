@@ -65,7 +65,7 @@ stable 同样不等于已有分析产品：本轮首次从 176 条 stable operat
 
 | 分类 | 数量 | route | 结论 |
 | --- | --- | --- | --- |
-| 合同已验证，隐私 gate 阻塞 | 3 | `origin_event.evaluate`、`segment.result.start`、`user_event.start` | 在线 wire 与文件协议已验证，但导出内容落在用户级标识/用户事件上，缺经批准的投影。**保留项**，不因合同可用而放行 |
+| 合同已验证、产品面待迁移 | 3 | `origin_event.evaluate`、`segment.result.start`、`user_event.start` | 用户级字段投影已批准；本单元不新增导出产品面，三条 route 仍保持不可执行并等待独立交付迁移。 |
 | 合同未验证 | 6 | `origin_event.start`、`monetization_detail.start`、`segment_user_detail.start`、`stream_event.start`、`user_detail.start`、`pay_event.start` | 多数在线可建任务但任务失败，或返回 1004 无 task id；请求形状与文件 schema 未证明。**无新证据不重试** |
 
 这是分析动线里唯一确定不脱离引力 Web 的环节：分析结果的导出需要先有经批准的用户级数据投影，

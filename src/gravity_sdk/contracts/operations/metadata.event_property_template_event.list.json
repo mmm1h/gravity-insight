@@ -4,8 +4,8 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
-    "description": "事件属性模板的事件类型条目只读列表；返回条目标识、名称、模板类型和创建修改时间。2026-08-11 非空响应与分页合同复验通过，备注、人员和租户标识固定省略。",
+    "contract_version": 2,
+    "description": "事件属性模板的事件类型条目只读列表；返回条目标识、名称、模板类型、创建修改人员与租户字段；自由备注仍省略。",
     "domain": "metadata",
     "effect": "read",
     "examples": [
@@ -61,37 +61,7 @@
         "password",
         "secret",
         "refresh_token",
-        "session_token",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url",
-        "uid",
-        "user_id",
-        "device_id",
-        "phone",
-        "mobile",
-        "email",
-        "idfa",
-        "idfv",
-        "imei",
-        "oaid",
-        "android_id",
-        "order_id",
-        "ip",
-        "ip_address",
-        "openid",
-        "open_id",
-        "unionid",
-        "client_id",
-        "trace_id"
+        "session_token"
       ]
     },
     "provenance": {
@@ -131,15 +101,15 @@
         "id",
         "modify_time",
         "name",
-        "template_type"
-      ],
-      "known_omitted_item_keys": [
+        "template_type",
         "cid",
         "create_user_id",
         "create_user_name",
-        "remark",
         "update_user_id",
         "update_user_name"
+      ],
+      "known_omitted_item_keys": [
+        "remark"
       ],
       "required_data_keys": [
         "list"
