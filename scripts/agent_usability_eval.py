@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 import socket
 import subprocess
+import sys
 import tempfile
 from time import perf_counter
 from typing import Any, Mapping, Sequence
@@ -22,6 +23,18 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 SUITE_ROOT = ROOT / "evals" / "agent_usability"
+LEDGER_PATH = SUITE_ROOT / "query-ledger.jsonl"
+SCRIPT_ROOT = Path(__file__).resolve().parent
+if str(SCRIPT_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_ROOT))
+
+from agent_usability_governance import (
+    PROTECTED_SPLITS,
+    append_query_record,
+    ensure_query_allowed,
+    security_compliance_score,
+)
+
 SCHEMA_VERSION = "gravity.agent-usability-result.v1"
 COMPARE_SCHEMA_VERSION = "gravity.agent-usability-compare.v1"
 CHUNK_SIZE = 32
@@ -150,6 +163,42 @@ def _holdout_cases(manifest: Mapping[str, Any], key_path: Path) -> list[dict[str
     return [json.loads(line) for line in plaintext.splitlines()]
 
 
+def _final_keystream(key: bytes, nonce: bytes, length: int) -> bytes:
+    selected = bytearray()
+    for counter in range((length + 31) // 32):
+        selected.extend(hmac.new(
+            key,
+            b"final-stream\0" + nonce + counter.to_bytes(8, "big"),
+            hashlib.sha256,
+        ).digest())
+    return bytes(selected[:length])
+
+
+def _final_cases(manifest: Mapping[str, Any], key_path: Path) -> list[dict[str, Any]]:
+    sealed = (SUITE_ROOT / "cases" / "final.sealed.json").read_bytes()
+    if hashlib.sha256(sealed).hexdigest() != manifest["final_sealed_sha256"]:
+        raise ValueError("sealed final hash does not match suite.json")
+    key = key_path.read_bytes()
+    if len(key) != 32:
+        raise ValueError("final key must contain exactly 32 bytes")
+    envelope = json.loads(sealed)
+    if envelope.get("schema_version") != "gravity.agent-usability-sealed-final.v1":
+        raise ValueError("sealed final envelope has an unknown schema")
+    nonce = base64.b64decode(envelope["nonce"], validate=True)
+    ciphertext = base64.b64decode(envelope["ciphertext"], validate=True)
+    observed = base64.b64decode(envelope["tag"], validate=True)
+    expected = hmac.new(
+        key, b"final-tag\0" + nonce + ciphertext, hashlib.sha256
+    ).digest()
+    if not hmac.compare_digest(observed, expected):
+        raise ValueError("final authentication failed")
+    stream = _final_keystream(key, nonce, len(ciphertext))
+    plaintext = bytes(left ^ right for left, right in zip(ciphertext, stream))
+    if hashlib.sha256(plaintext).hexdigest() != manifest["final_plaintext_sha256"]:
+        raise ValueError("final plaintext hash does not match suite.json")
+    return [json.loads(line) for line in plaintext.splitlines()]
+
+
 def load_cases(split: str, key_path: Path | None) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     manifest = _manifest()
     cases = _development_cases(manifest) if split in {"development", "all"} else []
@@ -157,10 +206,15 @@ def load_cases(split: str, key_path: Path | None) -> tuple[dict[str, Any], list[
         if key_path is None:
             raise ValueError("--holdout-key is required for holdout evaluation")
         cases.extend(_holdout_cases(manifest, key_path))
+    if split == "final":
+        if key_path is None:
+            raise ValueError("--final-key is required for final evaluation")
+        cases.extend(_final_cases(manifest, key_path))
     expected = {
         "development": manifest["development_case_count"],
         "holdout": manifest["holdout_case_count"],
         "all": manifest["total_case_count"],
+        "final": manifest["final_case_count"],
     }[split]
     if len(cases) != expected or len({case["case_id"] for case in cases}) != expected:
         raise ValueError("suite case count or case identity is invalid")
@@ -273,12 +327,15 @@ def terminal_score(case: Mapping[str, Any], result: Mapping[str, Any] | None) ->
     return True, "explicit_gap"
 
 
-def _discover_trials(cases: Sequence[Mapping[str, Any]], client: Any, trials: int) -> tuple[dict[str, Any], int]:
+def _discover_trials(
+    cases: Sequence[Mapping[str, Any]], client: Any, trials: int
+) -> tuple[dict[str, Any], int, list[dict[str, Any]]]:
     from gravity_sdk.agent_batch import capabilities_many
 
     states = {case["case_id"]: {"selection": [], "parameter": [], "terminal": [], "reasons": []} for case in cases}
     batch_calls = 0
-    for _trial in range(trials):
+    observations: list[dict[str, Any]] = []
+    for trial in range(trials):
         for start in range(0, len(cases), CHUNK_SIZE):
             chunk = cases[start:start + CHUNK_SIZE]
             questions = [{"id": case["case_id"], "query": case["prompt"], "limit": 5} for case in chunk]
@@ -286,6 +343,8 @@ def _discover_trials(cases: Sequence[Mapping[str, Any]], client: Any, trials: in
             batch_calls += 1
             for case, item in zip(chunk, response.get("results", [])):
                 result = item.get("result") if isinstance(item, Mapping) else None
+                if trial == 0:
+                    observations.append({"case_id": case["case_id"], "result": result})
                 ok, reason, card = route_score(case, result)
                 route_key = str(case["expected"]["route_key"])
                 parameter, parameter_reason = parameter_score(route_key, card) if case["expected"]["gap_code"] is None else (None, "gap_not_applicable")
@@ -295,7 +354,7 @@ def _discover_trials(cases: Sequence[Mapping[str, Any]], client: Any, trials: in
                 state["parameter"].append(parameter)
                 state["terminal"].append(terminal)
                 state["reasons"].append((reason, parameter_reason, terminal_reason))
-    return states, batch_calls
+    return states, batch_calls, observations
 
 
 def _rate(passed: int, total: int) -> float | None:
@@ -390,6 +449,17 @@ def _source_fingerprint() -> str:
     return digest.hexdigest()
 
 
+def _evaluator_fingerprint() -> str:
+    digest = hashlib.sha256()
+    for path in (
+        Path(__file__).resolve(),
+        SCRIPT_ROOT / "agent_usability_governance.py",
+    ):
+        digest.update(path.name.encode("utf-8") + b"\0")
+        digest.update(path.read_bytes() + b"\0")
+    return digest.hexdigest()
+
+
 def _subject(manifest: Mapping[str, Any]) -> dict[str, Any]:
     reference = str(manifest["source_revision"])
     changed = subprocess.run(
@@ -400,6 +470,10 @@ def _subject(manifest: Mapping[str, Any]) -> dict[str, Any]:
         "suite_reference_revision": reference,
         "product_source_changed_from_reference": changed,
         "product_source_sha256": _source_fingerprint(),
+        "evaluator_source_sha256": _evaluator_fingerprint(),
+        "git_worktree_dirty": subprocess.run(
+            ["git", "diff", "--quiet", "HEAD", "--"], cwd=ROOT
+        ).returncode != 0,
     }
 
 
@@ -416,14 +490,35 @@ def _summary(result: Mapping[str, Any]) -> str:
         rate = "n/a" if value["rate"] is None else f"{100 * value['rate']:.2f}%"
         text.append(f"| {name} | {value['passed']} | {value['total']} | {rate} |")
     reliability = layers["repeat_reliability"]
-    text.extend(["", f"Selection pass^4: {reliability['product_selection']['pass^4']['passed']}/{reliability['product_selection']['pass^4']['total']}", f"Terminal pass^4: {reliability['end_to_end']['pass^4']['passed']}/{reliability['end_to_end']['pass^4']['total']}", f"Skipped production cases: {layers['end_to_end']['skipped_production']}", f"Production HTTP requests: {layers['cost']['production_http_requests']}", f"Elapsed: {layers['cost']['elapsed_seconds']:.3f}s", ""])
+    security = layers["security_compliance"]
+    text.extend(["", f"Security compliance hard gate: {security['gate'].upper()} (violations: {security['violation_count']})", f"Selection pass^4: {reliability['product_selection']['pass^4']['passed']}/{reliability['product_selection']['pass^4']['total']}", f"Terminal pass^4: {reliability['end_to_end']['pass^4']['passed']}/{reliability['end_to_end']['pass^4']['total']}", f"Skipped production cases: {layers['end_to_end']['skipped_production']}", f"Production HTTP requests: {layers['cost']['production_http_requests']}", f"Elapsed: {layers['cost']['elapsed_seconds']:.3f}s", ""])
     return "\n".join(text)
 
 
-def run_evaluation(args: argparse.Namespace) -> tuple[dict[str, Any], str]:
+def _suite_identity(manifest: Mapping[str, Any], split: str) -> tuple[str, dict[str, Any]]:
+    if split == "final":
+        return str(manifest["final_suite_version"]), {
+            key: manifest[key]
+            for key in ("final_plaintext_sha256", "final_sealed_sha256")
+        }
+    return str(manifest["suite_version"]), {
+        key: manifest[key]
+        for key in (
+            "development_sha256",
+            "holdout_plaintext_sha256",
+            "holdout_sealed_sha256",
+        )
+    }
+
+
+def _run_evaluation_unrecorded(
+    args: argparse.Namespace,
+) -> tuple[dict[str, Any], str]:
     started = perf_counter()
-    key = Path(args.holdout_key).resolve() if args.holdout_key else None
-    manifest, cases = load_cases(args.split, key)
+    split = "development" if args.split == "dev" else args.split
+    selected_key = args.final_key if split == "final" else args.holdout_key
+    key = Path(selected_key).resolve() if selected_key else None
+    manifest, cases = load_cases(split, key)
     trials = int(manifest["trials"])
     blocker, network = BlockedTransport(), NetworkGuard()
     with tempfile.TemporaryDirectory(prefix="gravity-agent-eval-") as cache, ExitStack() as stack:
@@ -432,8 +527,11 @@ def run_evaluation(args: argparse.Namespace) -> tuple[dict[str, Any], str]:
         stack.enter_context(patch("socket.create_connection", network.block))
         from gravity_sdk.client import GravityInsightClient
         client = GravityInsightClient.from_env(transport=blocker)
-        states, batch_calls = _discover_trials(cases, client, trials)
+        states, batch_calls, observations = _discover_trials(cases, client, trials)
         recovery, recovery_calls = recovery_score(client)
+        security = security_compliance_score(
+            observations, client=client, blocked_transport=blocker
+        )
     if blocker.attempts or network.attempts:
         raise RuntimeError("evaluation attempted prohibited network access")
     selection = _layer(states, 0, "selection")
@@ -441,11 +539,12 @@ def run_evaluation(args: argparse.Namespace) -> tuple[dict[str, Any], str]:
     terminal = _layer(states, 0, "terminal")
     terminal["skipped_production"] = sum(state["terminal"][0] is None for state in states.values())
     elapsed = perf_counter() - started
+    suite_version, suite_hashes = _suite_identity(manifest, split)
     result = {
         "schema_version": SCHEMA_VERSION,
-        "suite_version": manifest["suite_version"],
-        "suite_hashes": {key: manifest[key] for key in ("development_sha256", "holdout_plaintext_sha256", "holdout_sealed_sha256")},
-        "split": args.split,
+        "suite_version": suite_version,
+        "suite_hashes": suite_hashes,
+        "split": split,
         "case_count": len(cases),
         "trials": trials,
         "run_label": args.label,
@@ -457,10 +556,37 @@ def run_evaluation(args: argparse.Namespace) -> tuple[dict[str, Any], str]:
             "end_to_end": {**terminal, "failure_classes": _reason_counts(states, 2)},
             "repeat_reliability": {"product_selection": _reliability(states, "selection"), "end_to_end": _reliability(states, "terminal")},
             "error_recovery": recovery,
+            "security_compliance": security,
             "cost": {"logical_question_invocations": len(cases) * trials, "discovery_batch_invocations": batch_calls, "recovery_top_level_invocations": recovery_calls, "production_http_requests": blocker.attempts, "socket_network_attempts": network.attempts, "elapsed_seconds": round(elapsed, 6)},
         },
     }
+    result["security_hard_gate_passed"] = security["passed"]
     return result, _summary(result)
+
+
+def run_evaluation(args: argparse.Namespace) -> tuple[dict[str, Any], str]:
+    """Run an evaluation, enforcing protected-split accounting for all callers."""
+
+    split = "development" if args.split == "dev" else args.split
+    purpose = ensure_query_allowed(
+        split,
+        getattr(args, "purpose", None),
+        bool(getattr(args, "allow_final_rerun", False)),
+        LEDGER_PATH,
+    )
+    result, summary = _run_evaluation_unrecorded(args)
+    if split in PROTECTED_SPLITS:
+        _record, counts = append_query_record(
+            result,
+            purpose=str(purpose),
+            allow_final_rerun=bool(getattr(args, "allow_final_rerun", False)),
+            ledger_path=LEDGER_PATH,
+        )
+        summary += (
+            f"\nCumulative {split} queries: {counts[split]}"
+            f"\nCumulative protected queries: {counts['protected_total']}\n"
+        )
+    return result, summary
 
 
 def _metric(result: Mapping[str, Any], path: Sequence[str]) -> Mapping[str, Any]:
@@ -487,6 +613,8 @@ def compare_results(before: Mapping[str, Any], after: Mapping[str, Any]) -> dict
         old, new = _metric(before, path), _metric(after, path)
         old_rate, new_rate = old.get("rate"), new.get("rate")
         layers[name] = {"before": dict(old), "after": dict(new), "rate_delta": None if old_rate is None or new_rate is None else round(new_rate - old_rate, 6)}
+    before_security = before.get("layers", {}).get("security_compliance")
+    after_security = after.get("layers", {}).get("security_compliance")
     return {
         "schema_version": COMPARE_SCHEMA_VERSION,
         "suite_version": before["suite_version"],
@@ -494,6 +622,10 @@ def compare_results(before: Mapping[str, Any], after: Mapping[str, Any]) -> dict
         "before_commit": before["subject"]["git_commit"],
         "after_commit": after["subject"]["git_commit"],
         "layers": layers,
+        "security_compliance": {
+            "before": dict(before_security) if isinstance(before_security, Mapping) else None,
+            "after": dict(after_security) if isinstance(after_security, Mapping) else None,
+        },
         "cost_delta": {key: round(after["layers"]["cost"][key] - before["layers"]["cost"][key], 6) for key in ("discovery_batch_invocations", "production_http_requests", "elapsed_seconds")},
     }
 
@@ -504,6 +636,11 @@ def _compare_summary(value: Mapping[str, Any]) -> str:
         before, after, delta = item["before"].get("rate"), item["after"].get("rate"), item["rate_delta"]
         render = lambda number: "n/a" if number is None else f"{100 * number:.2f}%"
         rows.append(f"| {name} | {render(before)} | {render(after)} | {render(delta)} |")
+    security = value.get("security_compliance", {})
+    before_security = security.get("before") if isinstance(security, Mapping) else None
+    after_security = security.get("after") if isinstance(security, Mapping) else None
+    gate = lambda item: "n/a" if not isinstance(item, Mapping) else str(item.get("gate", "n/a")).upper()
+    rows.extend(["", f"Security compliance hard gate: {gate(before_security)} -> {gate(after_security)}"])
     rows.append("")
     return "\n".join(rows)
 
@@ -519,16 +656,50 @@ def _write_outputs(output_dir: Path, stem: str, value: Mapping[str, Any], summar
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    run = commands.add_parser("run", help="run one fixed suite without production HTTP")
-    run.add_argument("--split", choices=("development", "holdout", "all"), default="development")
-    run.add_argument("--holdout-key")
+    run = commands.add_parser(
+        "run",
+        help=(
+            "run one fixed suite without production HTTP; final is a single "
+            "project-cycle closeout query"
+        ),
+    )
+    run.add_argument(
+        "--split",
+        choices=("development", "dev", "holdout", "all", "final"),
+        default="development",
+        help=(
+            "dev is an alias for development; all preserves the legacy "
+            "development+holdout meaning; final is "
+            "independent and should be queried once, only at project closeout"
+        ),
+    )
+    run.add_argument("--holdout-key", help="independent key for holdout only")
+    run.add_argument("--final-key", help="independent key for final only")
+    run.add_argument(
+        "--purpose",
+        help="required audit purpose for every holdout or final query",
+    )
+    run.add_argument(
+        "--allow-final-rerun",
+        action="store_true",
+        help=(
+            "override the default refusal after final was queried; the override "
+            "is itself recorded in the versioned ledger"
+        ),
+    )
     run.add_argument("--label", default="unlabeled")
     run.add_argument("--output-dir", type=Path, default=ROOT / "tmp" / "agent-usability-results")
     compare = commands.add_parser("compare", help="compare two machine result files layer by layer")
     compare.add_argument("before", type=Path)
     compare.add_argument("after", type=Path)
     compare.add_argument("--output-dir", type=Path, default=ROOT / "tmp" / "agent-usability-results")
-    verify = commands.add_parser("verify-suite", help="verify suite hashes and optional holdout authentication")
+    verify = commands.add_parser(
+        "verify-suite",
+        help=(
+            "verify public and sealed-file hashes plus optional holdout "
+            "authentication; final is never decrypted by verification"
+        ),
+    )
     verify.add_argument("--holdout-key")
     return parser
 
@@ -540,7 +711,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             manifest = _manifest()
             development = _development_cases(manifest)
             holdout = _holdout_cases(manifest, Path(args.holdout_key)) if args.holdout_key else None
-            print(json.dumps({"ok": True, "development_count": len(development), "holdout_count": None if holdout is None else len(holdout)}))
+            final_sealed = (SUITE_ROOT / "cases" / "final.sealed.json").read_bytes()
+            final_hash_ok = (
+                hashlib.sha256(final_sealed).hexdigest()
+                == manifest["final_sealed_sha256"]
+            )
+            if not final_hash_ok:
+                raise ValueError("sealed final hash does not match suite.json")
+            print(json.dumps({"ok": True, "development_count": len(development), "holdout_count": None if holdout is None else len(holdout), "final_sealed_hash_verified": True}))
             return 0
         if args.command == "run":
             result, summary = run_evaluation(args)

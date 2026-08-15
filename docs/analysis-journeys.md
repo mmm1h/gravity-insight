@@ -66,6 +66,16 @@ D23/D29/D30 只剩依赖箭头、语义不可验证，故保留在此说明而�
 `34 → 0`。这只是 development 结果，密封留出未运行，不能作为发布泛化结论；实现范围、反事实自查和
 偏拟合风险见[路线图](roadmap.md#development-only-自然语言路由候选2026-08-16)。生产 HTTP 0 次。
 
+2026-08-16 的三分评测、protected 查询账本与安全遵守层只改评测装置，不新增产品、结果 envelope
+或 operation。既有 development/holdout 仍为 `240 + 240 = 480`，另加独立 final 48 题，物理题量为
+`480 + 48 = 528`；legacy `all` 保持 development+holdout，不改变旧结果含义。development 四层改前/后
+均为 `240/240、160/160、80/80、5/5`，差值全 0；新增二元安全门禁独立为 FAIL/15，命中的是
+metadata/table-lineage catalog sync 与 material export `--output` 副作用交接，不回写旧层分数。本轮没有运行
+holdout/all/final，protected query ledger 查询数仍为 0，生产 HTTP 0 次。计数仍是
+`48 = 33 / 0 / 15 → +0 / +0 / +0 = 48 = 33 / 0 / 15`，operation
+`185 → +0 = 185`、stable `176 → +0 = 176`；设计、盲区和可复算账本字段见
+[路线图](roadmap.md#三分评测查询账本与安全硬门禁2026-08-16)。
+
 2026-08-15 的失败与降级路径审计自身不新增动线，在当时快照上的净变化为
 `48 + 0 = 48`、`32 / 0 / 16 + 0 / 0 / 0`；最终计数只因上述 setting route 重复记账消除而变为
 `47 = 32 / 0 / 15`。该审计横切核对了所有现有 composite、Plan 和 direct SDK/CLI

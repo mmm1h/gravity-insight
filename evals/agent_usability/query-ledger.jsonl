@@ -1,0 +1,1 @@
+{"record_type":"ledger","schema_version":"gravity.agent-usability-query-ledger.v1","created_at":"2026-08-16","policy":"append-only protected-split query records; final is one closeout query by default"}

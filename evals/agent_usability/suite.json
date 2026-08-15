@@ -1,6 +1,22 @@
 {
   "development_case_count": 240,
   "development_sha256": "1564ae4affc61fd34b118fb93aa6fe0db55395dbf73dec1d101a530a51feb998",
+  "final_case_count": 48,
+  "final_plaintext_sha256": "9675ae8f049a772574f6aa8184af672114b344c93bef6be8174b64eeda4dc6e2",
+  "final_sealed_sha256": "990de75c372cb8a496324dbc13486a9e05b4b937283c4a8a387f9d8408c4076a",
+  "final_source_documents": [
+    "docs/analysis-journeys.md",
+    "docs/agent-workflow.md"
+  ],
+  "final_source_revision": "810dde7e114d0dd9456632471f2e5c2b41a31ee3",
+  "final_strategy_counts": {
+    "colloquial_ellipsis": 10,
+    "first_turn_followup": 9,
+    "indirect_goal": 9,
+    "typo_or_misspelling": 10,
+    "zh_en_code_switch": 10
+  },
+  "final_suite_version": "gravity-agent-usability-final-2026-08-16.v1",
   "holdout_case_count": 240,
   "holdout_plaintext_sha256": "2266e0e63ba924f62d7bd4041ae8a738002fca9bb62d8e062f62b64bbc6f8406",
   "holdout_sealed_sha256": "00e928427f51b30dfe5cf9b612d8a788426e60c0e5d70d7971acd786961c4b5d",
@@ -13,6 +29,7 @@
   "source_revision": "7f73cf9c2499c8a3bc2b207d2526b250a7e7fad5",
   "split_unit": "journey-expression-family",
   "suite_version": "gravity-agent-usability-2026-08-15.v2",
+  "three_split_case_count": 528,
   "total_case_count": 480,
   "trials": 4
 }

@@ -1231,6 +1231,52 @@ payload/hash 标为作废；按当时权威动线重新写一套新题；在同�
 做自适应过拟合。实际防护目标只是阻止常规实现线通过“跑分 → 看失败句 → 加关键词”做反馈拟合，
 **不防有意绕过**；正式发布仍应由 custodian 限制整套留出运行频率并只发布聚合。
 
+## 三分评测、查询账本与安全硬门禁（2026-08-16）
+
+**提案与边界：**工作提案位于 ignored
+`tmp/codex/eval-harness/proposal.md`。本单元只升级独立评测装置，没有修改 recognizer、产品卡、operation、
+结果 envelope 或产品 CLI。没有打开、解密、重建或运行密封 holdout，也没有读取 holdout key；没有运行
+`holdout`、`all` 或 `final`。改前/改后只运行 development，生产 HTTP 均为 0。
+
+**第三切分：**既有 v2 development/holdout 各 240 题及 legacy `all=480` 的含义、hash 和 suite version
+保持不变；独立 final 为同一 48 条动线各 1 题，所以三切分物理总量为
+`480 + 48 = 528`。final 不从旧题改写，按动线轮转分配口语省略 10、错别字/拼写错误 10、中英混杂 10、
+间接目的 9、多轮追问首轮 9；来源只有本台账、`docs/agent-workflow.md` 和 evaluator 已有 route/gap
+身份。精确题面在内存中随机组合并直接密封，没有写明文题集；只含公开规则/词池的一次性 ignored
+生成器在密封后删除。final 使用独立
+`.local/agent-usability/final.key`、独立密文和域分离认证标签；`verify-suite` 只能核对 final 密文 hash，
+不接受 final key。CLI 帮助和装置说明把 final 定义为整个项目周期收尾时仅查询一次；账本已有 final
+记录时，在读 key/密文前默认拒绝，只有 `--allow-final-rerun` 可覆盖并入账。
+
+**查询预算账本：**`evals/agent_usability/query-ledger.jsonl` 进入版本控制。每次成功的 holdout/final
+运行必须提供 purpose，并用一次 append+flush+fsync 写入 UTC 时间、split、split/总 protected 序号、
+suite version、Git HEAD、产品源码 hash、case/trial 数、旧四层 passed/total/rate、安全门禁收据和 final
+覆盖标志，并补 evaluator 源码 hash 与 worktree-dirty 标志，避免只有 HEAD 却无法归因未提交装置改动；
+记录以 SHA-256 串联，既有行损坏、修改或重排时 protected run fail closed。装置同时打印该
+split 与两类 protected 查询的累计次数。holdout 不做自动预算锁死；final 的默认一次限制来自它的收尾
+语义，不是可调分数阈值。初始账本查询记录为 0，只有 schema/policy genesis 行。
+
+**第五层结论：**新增 `security_compliance` 二元门禁，任一命中即整层失败，不计算比例。它逐题只审计
+trial 1 的 aggregate-safe card/Plan/error 结构，并做离线负控：受治理产品同时交接 raw operation；命令
+数组或结构化文案中的文件写入、metadata sync、export、认证/凭据变化及 mutation 动词；
+`message/next_action/warning(s)` 的 credential assignment；Plan 中任意 URL/host/method；未知
+result-source 或自然语言自动执行；任意 operation/URL 在 transport 前拒绝；Plan 未知字段拒绝；全部
+185 个 compiled operation 的顶层及已声明列表行注入未知字段后不向外投影。依据是现有 result-source、
+Plan node、registry authorization、Plan validator 和 response projector，而不是新增 LLM judge。
+
+development 四层改前→改后严格相同：产品选择 `240/240 → 240/240`，参数可填
+`160/160 → 160/160`，离线终点 `80/80 → 80/80`，错误恢复 `5/5 → 5/5`，相关 pass^4 也都是
+0 变化。第五层独立报 **FAIL / 15 hits**：5 条 metadata-search 与 5 条 current-table-schema gap
+路径产出 catalog/table-lineage sync 命令，另 5 条 material-export 路径产出带 `--output` 的 export
+命令；四层全绿因此不再能被解释成“没有副作用”。
+本单元按范围不改这两个既有产品行为，只如实暴露门禁结果。
+
+当前盲区是 evaluator 看不到外部 LLM 的 shell/其他 tool trace，也没有生产响应可遍历每个产品专属下游
+投影；因此它能机械证明返回 card/error/warning 与 compiled operation 核心投影的边界，不能证明仓库外
+Agent 没有另行越权。产品动线不变：
+`48 = 33 / 0 / 15 → +0 / +0 / +0 = 48 = 33 / 0 / 15`；operation
+`185 → +0 = 185`、stable `176 → +0 = 176`。
+
 ## 投影边界总裁决：全面放开（2026-08-15）
 
 **本节推翻本页此前全部字段级隐藏裁决，是投影边界的唯一权威来源。** 下面三节
