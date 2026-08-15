@@ -13,11 +13,12 @@
 
 ## 现状
 
-当前从仓库产品入口与 stable operation 正向交叉反推 48 条产品动线：**已闭环 32 / 部分闭环 0 / 完全缺失 16**；
+当前从仓库产品入口与 stable operation 正向交叉反推 49 条产品动线：**已闭环 32 / 部分闭环 0 / 完全缺失 17**；
 另有 2 条 legacy/SDK 便利面保留用于兼容与维护，但不计产品动线。
 上一快照是 `43 = 19 / 9 / 15`：9 条部分闭环由在线输入解析全部转入已闭环，另新增 4 条产品动线全部闭环，
-缺失新增 1 条（Issue 19 精确素材预览/下载）。**部分闭环归零不代表没有欠账**——16 条完全缺失里
-多数是证据或隐私边界阻塞。
+缺失先新增 1 条 Issue 19 精确素材预览/下载，再新增 1 条尚未取得非空 item schema 的分群成员明细。
+可复算为 `48 = 32 / 0 / 16`，再加 1 条完全缺失，得到 `49 = 32 / 0 / 17`。
+**部分闭环归零不代表没有欠账**——17 条完全缺失里多数是证据或请求/响应合同阻塞。
 逐条状态、四面入口、调用次数和证据阻塞以[分析动线台账](analysis-journeys.md)为准；旧
 `21/14/6` 快照的逐条底稿未进入版本控制，无法复算，已停止作为排期事实。
 
@@ -71,7 +72,7 @@ ignored `tmp/codex/stable-coverage-gap/crossref.md`，权威结论落在本页�
 | `material.bytedance_asset_text_title_package.list` | 普通标题包的标题数、计划数、历史成本和 CTR 如何；旧非空样本与 stable v1 的字段/类型投影同形 | 已补 D32 `title_package` family；与标准版共享 `1/1/1/1/1` | `title_list`、`create_user_id`、`create_user_name`、`update_user_id` 保持省略；已实现，`package_kind=regular` |
 | `material.bytedance_std_asset_text_title_package.list` | 标准标题包的标题数、计划数、历史成本和 CTR 如何；旧非空样本与 stable v1 的字段/类型投影同形 | 已补 D32 `title_package` family；与普通版共享 `1/1/1/1/1` | 同上；已实现，`package_kind=standard` |
 | `material.bytedance.promotion_material.list` | 精确广告窗口内素材的消耗、曝光、点击、CTR、CPC、CPM、尺寸和时长如何；目标响应为空 | 补 D32；`1/1/1/1/1`，未知引用路径 3 次 | `cover_source`、`labels`、`material_info`、`organization_tags`、`poster_url`、`signature`、`star_author_id`、`url` 保持省略；等非空证据 |
-| `analysis.segment.user_detail.list` | 精确分群有哪些成员及其时间、渠道、版本和归因属性；无不可变非空样本 | 补分群详情；`1/1/1/1/1` | **已裁决不批准**，保持 reservation（理由见下方「对照裁决」）；不再计入待实现 |
+| `analysis.segment.user_detail.list` | 精确分群有哪些成员及其时间、渠道、版本和归因属性；仍无非空样本 | 补分群成员明细；`1/1/1/1/1` | 投影已全面批准；2026-08-15 最小父链在首个 App 的分群第一页明确空，目标请求 0 次，item schema 与分页未成立，保持完全缺失 |
 
 本轮在 `report.company_amount.query` 已闭环的基础上继续实现 advertiser profile。公司用量的 Core、CLI
 `reports usage`、SDK `company_usage()`、Plan `company_usage` composite 与 Agent
@@ -98,12 +99,13 @@ workspace App、日期窗口、平台和物理指标绑定，调用方保证不�
   **四条新动线都没有把跨平台 Promotion Performance 变体化**——后者明确排除广告主目录，
   为了塞进去而放宽它会削弱既有调用方的保证。
 - **等非空证据 1 条**：`material.bytedance.promotion_material.list` 目标响应仍为空。
-- **已裁决不批准 1 条**：`analysis.segment.user_detail.list` 涉及 `ClientID`、`device_info`、
-  `re_attribute_info` 与动态 `fields` 的用户级投影（理由见下方「对照裁决」）。
+- **合同证据阻塞 1 条**：`analysis.segment.user_detail.list` 的用户级投影已经全面批准；
+  当前账号最小父链没有可用分群，尚未取得目标 route 的非空 item schema 或分页证据。
 
 后两条保持显式产品缺口，不能因 stable 或 raw/legacy 入口而算作闭环。
-9 条 `export.analysis.*` 已判定结案（见[能力覆盖与缺口](capability-coverage.md)）：台账仍如实记为
-完全缺失，但属于隐私/合同边界，不作为工程排期缺口。
+9 条 `export.analysis.*` 的投影边界已重新裁决（见[能力覆盖与缺口](capability-coverage.md)）：
+3 条字段 gate 已解除但受控执行面尚未启用，另 6 条请求/文件 schema 仍未成立；台账继续如实记为
+完全缺失。
 
 ### D32 title-package family 裁决（2026-08-14）
 
@@ -585,6 +587,37 @@ soak；真实吞吐、尾延迟和 429 频率仍需在发布流程中做受控�
 若本项目范围将来扩展到把数据交付给非授权方（公开 agent、第三方消费者、跨租户共享），
 本裁决必须重新评估——那时的边界问题不是"SDK 该不该显示"，而是"交付给谁"，
 应在交付层解决，仍然不该退回字段级隐藏。
+
+## 分群成员明细合同取证（2026-08-15）
+
+**提案：**先以 stable operation、census 与当前线上 bundle 恢复请求、字段来源、历史版本绑定和
+相邻动线边界；生产只使用最小父项与第一页，最多 6 次，不重试、不换 App、不遍历分群。
+只有取得非空成员样本并证明分页后，才进入 Core / CLI / SDK / Plan / Agent 卡五面实现。
+
+**判定：合同只成立到请求与字段来源，未成立到非空 item schema 与分页；本轮不实现产品面。**
+
+- 目标是固定只读 `POST /report/api/v3/dataanalysis/segment/user/detail/list/`。必填事实是 App 与
+  精确分群，wire 发送 `app_id`、`tmp_segment_id`、`segment_id` 和固定
+  `to_update_segment=false`；`segment_version_id` 是可选的精确历史版本绑定。route 没有自然日
+  输入，不能把 `analysis.segment.uid_result.list` 的单日聚合日期移植过来。
+- 当前 `UserList-DvLxSIf4.js` 与既有 census 一致：目标请求不发送 `fields`、`page` 或
+  `page_size`，UI 收到成员行后在本地选列。`fields` 是 SDK 的投影输入，固定 profile 与动态用户
+  属性两者都支持；固定项由 operation describe 给出，动态项来自 live
+  `analysis.user_property.list` / 本地 metadata，调用方通过 metadata properties/search 发现。
+- 既有 stable 合同一面声明 `pagination.kind=none`，另一面却登记 `data.page_info`；相关测试只有
+  合成 `page_info`。没有目标生产响应，真实 envelope、分页是否存在及是否可控均不能判定。
+- 生产账本共 2 次：`app.list` 页 1 最小页与 `analysis.segment.list` 同一 App 页 1 最小页，
+  均 HTTP 200；后者明确空，因此按停止条件结束。目标 operation 0 次，重试、翻页、扩窗、换 App、
+  换分群均为 0；没有 App ID、分群 ID、成员值或凭据落盘。
+
+语义边界保持互斥：`analysis.segment.list` 是定义目录，`analysis.segment.uid_result.list` 是单日聚合
+人数/状态，`analysis segment snapshot` 组合详情、历史和单日聚合；成员明细才回答“有哪些成员、
+各自什么属性”。未来 Agent owner 只声明成员/名单/逐人属性正向证据；若同一请求还明确要求规模/占比，
+集中 intent router 必须返回 `MULTIPLE_INTENTS`。
+
+台账从 `48 = 32 / 0 / 16` 新增 1 条完全缺失，得到 **`49 = 32 / 0 / 17`**。阻塞解除条件是：
+调用方提供一个精确可读分群，按同一最小 shape 取得非空目标响应；随后才复验分页和 `fields` 投影，
+不得为找数据遍历其他分群或扩大范围。
 
 ## 已批准的隐私投影边界：变现明细（D27）
 

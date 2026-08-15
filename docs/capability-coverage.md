@@ -61,16 +61,16 @@ stable 同样不等于已有分析产品：本轮首次从 176 条 stable operat
 5 条 `executable`：`export.material.report.start` 是唯一可创建的导出，其余 4 条
 （`export.task.list/progress/cancel`、`export.task_type.list`）是支持路由，不是创建候选。
 
-**9 条 `export.analysis.*` 全部不可执行，且本轮判定为不推进**：
+**9 条 `export.analysis.*` 在当前 catalog 仍不可执行**：
 
 | 分类 | 数量 | route | 结论 |
 | --- | --- | --- | --- |
-| 合同已验证，隐私 gate 阻塞 | 3 | `origin_event.evaluate`、`segment.result.start`、`user_event.start` | 在线 wire 与文件协议已验证，但导出内容落在用户级标识/用户事件上，缺经批准的投影。**保留项**，不因合同可用而放行 |
+| 合同已验证，待受控启用 | 3 | `origin_event.evaluate`、`segment.result.start`、`user_event.start` | 在线 wire 与文件协议已验证；2026-08-15 投影总裁决已解除用户级字段 gate。当前 catalog 尚未启用，仍须完成受控执行面与回归验证，不能把“已批准投影”写成“已经可执行” |
 | 合同未验证 | 6 | `origin_event.start`、`monetization_detail.start`、`segment_user_detail.start`、`stream_event.start`、`user_detail.start`、`pay_event.start` | 多数在线可建任务但任务失败，或返回 1004 无 task id；请求形状与文件 schema 未证明。**无新证据不重试** |
 
-这是分析动线里唯一确定不脱离引力 Web 的环节：分析结果的导出需要先有经批准的用户级数据投影，
-属于范围与安全模型问题，不是工程排期问题。调用方用 `export list-capabilities` 查看边界，
-不要把 catalog 条目当成可执行能力。
+字段级投影不再是导出阻塞；剩余边界是受控执行面是否启用，以及 6 条 route 的请求/文件 schema
+是否成立。调用方用 `export list-capabilities` 查看当前可执行状态，不要把 catalog 条目或投影批准
+当成已上线能力。
 
 ## 刷新与核对
 

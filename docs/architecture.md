@@ -301,8 +301,9 @@ binding 只复制 RFC 6901 JSON Pointer 指向的值，`from` 必须位于 `depe
 ### 运行时硬底线
 
 - 固定 host、path、method 和 effect；默认拒绝写操作与未知 wire 字段；
-- 凭据、Cookie、token 和原始用户级输出不进入日志、fixture、stdout 或 Git；
-- 响应字段显式投影，敏感字段递归剔除，新字段默认隐藏；
+- 凭据、Cookie、token 和生产用户级响应值不进入日志、fixture、stdout 或 Git；
+- 响应字段显式登记；未登记字段因合同漂移 fail-closed，登记后的用户级、设备级和标识符字段
+  按上游授权原样暴露；
 - 分页、结果规模、重试、并发和导出落盘有上限；
 - 单元测试不访问生产 Gravity，生产 probe 遵循授权流程。
 
