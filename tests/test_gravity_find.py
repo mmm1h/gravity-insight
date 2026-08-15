@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import unittest
+
 import argparse
 import sqlite3
 import tempfile
@@ -58,54 +60,56 @@ def _fixture_catalog(database: Path) -> None:
         connection.commit()
 
 
-def test_find_merges_operation_and_fixture_metadata_backends() -> None:
-    with tempfile.TemporaryDirectory() as temporary:
-        database = Path(temporary) / "metadata.sqlite3"
-        _fixture_catalog(database)
+
+class GravityFindTests(unittest.TestCase):
+    def test_find_merges_operation_and_fixture_metadata_backends(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            database = Path(temporary) / "metadata.sqlite3"
+            _fixture_catalog(database)
+            args = argparse.Namespace(
+                query="retention",
+                backends=None,
+                database=database,
+                app_id=None,
+                limit=20,
+            )
+            result = run_find_command(args, FindClient())
+
+        assert result["status"] == "success"
+        assert result["backends"] == {"operations": 1, "recipes": 0, "metadata": 1}
+        assert {item["backend"] for item in result["results"]} == {
+            "operations",
+            "metadata",
+        }
+
+
+    def test_find_keeps_operation_results_when_metadata_catalog_is_missing(self):
         args = argparse.Namespace(
             query="retention",
             backends=None,
-            database=database,
+            database=Path("missing-fixture.sqlite3"),
             app_id=None,
             limit=20,
         )
         result = run_find_command(args, FindClient())
 
-    assert result["status"] == "success"
-    assert result["backends"] == {"operations": 1, "recipes": 0, "metadata": 1}
-    assert {item["backend"] for item in result["results"]} == {
-        "operations",
-        "metadata",
-    }
+        assert result["status"] == "partial"
+        assert result["count"] == 1
+        assert result["errors"][0]["backend"] == "metadata"
 
 
-def test_find_keeps_operation_results_when_metadata_catalog_is_missing() -> None:
-    args = argparse.Namespace(
-        query="retention",
-        backends=None,
-        database=Path("missing-fixture.sqlite3"),
-        app_id=None,
-        limit=20,
-    )
-    result = run_find_command(args, FindClient())
+    def test_find_includes_workspace_recipe_backend(self):
+        args = argparse.Namespace(
+            query="retention",
+            backends=["recipes"],
+            database=Path("missing-fixture.sqlite3"),
+            app_id=None,
+            limit=20,
+        )
+        workspace = load_workspace(ROOT / "examples" / "workspace" / "gravity.toml")
 
-    assert result["status"] == "partial"
-    assert result["count"] == 1
-    assert result["errors"][0]["backend"] == "metadata"
+        result = run_find_command(args, FindClient(), workspace=workspace)
 
-
-def test_find_includes_workspace_recipe_backend() -> None:
-    args = argparse.Namespace(
-        query="retention",
-        backends=["recipes"],
-        database=Path("missing-fixture.sqlite3"),
-        app_id=None,
-        limit=20,
-    )
-    workspace = load_workspace(ROOT / "examples" / "workspace" / "gravity.toml")
-
-    result = run_find_command(args, FindClient(), workspace=workspace)
-
-    assert result["status"] == "success"
-    assert result["backends"] == {"recipes": 1}
-    assert result["results"][0]["name"] == "demo-retention"
+        assert result["status"] == "success"
+        assert result["backends"] == {"recipes": 1}
+        assert result["results"][0]["name"] == "demo-retention"

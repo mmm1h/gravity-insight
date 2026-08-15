@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import unittest
+import tempfile
+
 import json
 import sqlite3
 from contextlib import closing
 from pathlib import Path
 
 import pytest
+
 
 from gravity_sdk.fingerprints import shape_fingerprint
 from gravity_sdk.metadata_sync import (
@@ -60,44 +64,7 @@ class _DescriptionClient:
         return self.description_value
 
 
-@pytest.mark.parametrize(
-    ("mutate", "reason"),
-    [
-        (lambda value: value.update(stability="deprecated"), "operation_deprecated"),
-        (
-            lambda value: value["input_schema"].pop("date_list"),
-            "input_fields_changed",
-        ),
-        (
-            lambda value: value["health"].update(contract_fingerprint="b" * 64),
-            "contract_fingerprint_changed",
-        ),
-    ],
-)
-def test_recipe_check_reports_each_required_stale_condition(mutate, reason) -> None:
-    description = _description()
-    mutate(description)
 
-    result = check_recipe(_recipe(), _DescriptionClient(description))
-
-    assert result["ok"] is False
-    assert result["status"] == "stale"
-    assert reason in {item["code"] for item in result["reasons"]}
-
-
-def test_input_shape_fingerprint_ignores_values_but_not_structure() -> None:
-    first = {
-        "app_id": "101",
-        "filters": [{"field": "event", "operator": "EQUALS", "values": ["A"]}],
-    }
-    same_shape = {
-        "app_id": "999",
-        "filters": [{"field": "other", "operator": "IN", "values": ["B"]}],
-    }
-    changed_shape = {**same_shape, "timezone": "Asia/Shanghai"}
-
-    assert shape_fingerprint(first) == shape_fingerprint(same_shape)
-    assert shape_fingerprint(first) != shape_fingerprint(changed_shape)
 
 
 def _workspace(tmp_path: Path) -> object:
@@ -148,111 +115,10 @@ class _ResolverClient:
         return {"status": "success", "data": {"list": [{"id": "parent-1"}]}}
 
 
-def test_resolver_binds_app_alias_and_writes_value_free_receipt(tmp_path: Path) -> None:
-    description = {
-        "operation_id": "analysis.example.query",
-        "input_schema": {
-            "app_id": {"type": "string", "required": True},
-            "date_list": {"type": "array", "item_type": "object", "required": True},
-        },
-        "required_parent": [],
-        "health": {"contract_fingerprint": "c" * 64},
-    }
-    client = _ResolverClient(description)
-    executed: list[dict] = []
-
-    def read(_client, _operation_id, inputs, **_kwargs):
-        record_http_request()
-        executed.append(dict(inputs))
-        return {"ok": True, "status": "empty", "data": []}
-
-    result = resolve_and_run(
-        "analysis.example.query",
-        client=client,
-        workspace=_workspace(tmp_path),
-        app="main",
-        start="2026-08-01",
-        end="2026-08-07",
-        read=read,
-    )
-
-    assert executed[0]["app_id"] == "1001"
-    assert executed[0]["date_list"] == [
-        {"start_date": "2026-08-01", "end_date": "2026-08-07"}
-    ]
-    assert result["receipt"]["request_count"] == 1
-    assert result["receipt_storage"]["persisted"] is True
-    receipt_text = json.dumps(result["receipt"], ensure_ascii=False)
-    assert "1001" not in receipt_text
-    assert "2026-08-01" not in receipt_text
 
 
-@pytest.mark.parametrize(
-    "operation_id", ("report.multidim.query", "report.multidim.calc_total")
-)
-def test_exact_multidim_operations_remain_resolvable(
-    tmp_path: Path, operation_id: str
-) -> None:
-    description = {
-        "operation_id": operation_id,
-        "stability": "stable",
-        "executable": True,
-        "input_schema": {},
-        "required_parent": [],
-        "health": {"contract_fingerprint": "f" * 64},
-    }
-    executed: list[str] = []
-
-    result = resolve_and_run(
-        operation_id,
-        client=_ResolverClient(description),
-        workspace=_workspace(tmp_path),
-        read=lambda _client, selected, _inputs, **_kwargs: (
-            executed.append(selected)
-            or {"ok": True, "status": "empty", "data": {"list": []}}
-        ),
-    )
-
-    assert executed == [operation_id]
-    assert result["operation_id"] == operation_id
-    assert result["ok"] is True
 
 
-def test_resolver_returns_parent_candidates_without_guessing_selection(tmp_path: Path) -> None:
-    description = {
-        "operation_id": "report.child.list",
-        "input_schema": {"parent_id": {"type": "string", "required": True}},
-        "required_parent": [
-            {
-                "operation_id": "report.parent.list",
-                "output_path": "data.list[].id",
-                "selection": "caller_select",
-                "target_input": "parent_id",
-            }
-        ],
-        "health": {"contract_fingerprint": "d" * 64},
-    }
-    client = _ResolverClient(
-        description,
-        validation={
-            "ok": False,
-            "status": "invalid",
-            "network_called": False,
-            "error": {"category": "caller", "code": "INPUT_INVALID"},
-        },
-    )
-
-    result = resolve_and_run(
-        "report.child.list",
-        client=client,
-        workspace=_workspace(tmp_path),
-        read=lambda *_args, **_kwargs: pytest.fail("execution must be skipped"),
-    )
-
-    assert result["status"] == "needs_parent"
-    assert result["parents"]["bindings"][0]["candidates"] == ["parent-1"]
-    diagnostic = next(item for item in result["diagnostics"] if item["code"] == "parent_required")
-    assert diagnostic["candidates"] == ["parent-1"]
 
 
 def _metadata_catalog(path: Path) -> None:
@@ -278,30 +144,179 @@ def _metadata_catalog(path: Path) -> None:
         connection.commit()
 
 
-def test_empty_result_diagnoses_closest_local_event_name(tmp_path: Path) -> None:
-    database = tmp_path / "metadata.sqlite3"
-    _metadata_catalog(database)
-    description = {
-        "operation_id": "analysis.example.query",
-        "input_schema": {
-            "app_id": {"type": "string", "required": True},
-            "query_item_list": {"type": "array", "required": True},
-        },
-        "required_parent": [],
-        "health": {"contract_fingerprint": "e" * 64},
-    }
+class ResolverTests(unittest.TestCase):
+    def setUp(self):
+        self._temporary_directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self._temporary_directory.cleanup)
+        self.tmp_path = Path(self._temporary_directory.name)
 
-    result = resolve_and_run(
-        "analysis.example.query",
-        client=_ResolverClient(description),
-        workspace=_workspace(tmp_path),
-        supplied_input={"query_item_list": [{"event_name": "retention_rewad"}]},
-        app="main",
-        read=lambda *_args, **_kwargs: {"ok": True, "status": "empty", "data": []},
-        metadata_database=database,
-    )
+    def test_recipe_check_reports_each_required_stale_condition(self):
+        for (mutate, reason) in [
+        (lambda value: value.update(stability="deprecated"), "operation_deprecated"),
+        (
+            lambda value: value["input_schema"].pop("date_list"),
+            "input_fields_changed",
+        ),
+        (
+            lambda value: value["health"].update(contract_fingerprint="b" * 64),
+            "contract_fingerprint_changed",
+        ),
+    ]:
+            with self.subTest(mutate=mutate, reason=reason):
+                description = _description()
+                mutate(description)
 
-    diagnostic = next(
-        item for item in result["diagnostics"] if item["code"] == "closest_event_names"
-    )
-    assert diagnostic["suggestions"][0]["candidates"][0]["name"] == "retention_reward"
+                result = check_recipe(_recipe(), _DescriptionClient(description))
+
+                assert result["ok"] is False
+                assert result["status"] == "stale"
+                assert reason in {item["code"] for item in result["reasons"]}
+
+
+    def test_input_shape_fingerprint_ignores_values_but_not_structure(self):
+        first = {
+            "app_id": "101",
+            "filters": [{"field": "event", "operator": "EQUALS", "values": ["A"]}],
+        }
+        same_shape = {
+            "app_id": "999",
+            "filters": [{"field": "other", "operator": "IN", "values": ["B"]}],
+        }
+        changed_shape = {**same_shape, "timezone": "Asia/Shanghai"}
+
+        assert shape_fingerprint(first) == shape_fingerprint(same_shape)
+        assert shape_fingerprint(first) != shape_fingerprint(changed_shape)
+
+    def test_resolver_binds_app_alias_and_writes_value_free_receipt(self) -> None:
+        tmp_path = self.tmp_path
+        description = {
+            "operation_id": "analysis.example.query",
+            "input_schema": {
+                "app_id": {"type": "string", "required": True},
+                "date_list": {"type": "array", "item_type": "object", "required": True},
+            },
+            "required_parent": [],
+            "health": {"contract_fingerprint": "c" * 64},
+        }
+        client = _ResolverClient(description)
+        executed: list[dict] = []
+
+        def read(_client, _operation_id, inputs, **_kwargs):
+            record_http_request()
+            executed.append(dict(inputs))
+            return {"ok": True, "status": "empty", "data": []}
+
+        result = resolve_and_run(
+            "analysis.example.query",
+            client=client,
+            workspace=_workspace(tmp_path),
+            app="main",
+            start="2026-08-01",
+            end="2026-08-07",
+            read=read,
+        )
+
+        assert executed[0]["app_id"] == "1001"
+        assert executed[0]["date_list"] == [
+            {"start_date": "2026-08-01", "end_date": "2026-08-07"}
+        ]
+        assert result["receipt"]["request_count"] == 1
+        assert result["receipt_storage"]["persisted"] is True
+        receipt_text = json.dumps(result["receipt"], ensure_ascii=False)
+        assert "1001" not in receipt_text
+        assert "2026-08-01" not in receipt_text
+
+    def test_exact_multidim_operations_remain_resolvable(self) -> None:
+        for operation_id in ('report.multidim.query', 'report.multidim.calc_total'):
+            with self.subTest(operation_id=operation_id):
+                with tempfile.TemporaryDirectory() as directory:
+                    tmp_path = Path(directory)
+                    description = {
+                        "operation_id": operation_id,
+                        "stability": "stable",
+                        "executable": True,
+                        "input_schema": {},
+                        "required_parent": [],
+                        "health": {"contract_fingerprint": "f" * 64},
+                    }
+                    executed: list[str] = []
+
+                    result = resolve_and_run(
+                        operation_id,
+                        client=_ResolverClient(description),
+                        workspace=_workspace(tmp_path),
+                        read=lambda _client, selected, _inputs, **_kwargs: (
+                            executed.append(selected)
+                            or {"ok": True, "status": "empty", "data": {"list": []}}
+                        ),
+                    )
+
+                    assert executed == [operation_id]
+                    assert result["operation_id"] == operation_id
+                    assert result["ok"] is True
+
+    def test_resolver_returns_parent_candidates_without_guessing_selection(self) -> None:
+        tmp_path = self.tmp_path
+        description = {
+            "operation_id": "report.child.list",
+            "input_schema": {"parent_id": {"type": "string", "required": True}},
+            "required_parent": [
+                {
+                    "operation_id": "report.parent.list",
+                    "output_path": "data.list[].id",
+                    "selection": "caller_select",
+                    "target_input": "parent_id",
+                }
+            ],
+            "health": {"contract_fingerprint": "d" * 64},
+        }
+        client = _ResolverClient(
+            description,
+            validation={
+                "ok": False,
+                "status": "invalid",
+                "network_called": False,
+                "error": {"category": "caller", "code": "INPUT_INVALID"},
+            },
+        )
+
+        result = resolve_and_run(
+            "report.child.list",
+            client=client,
+            workspace=_workspace(tmp_path),
+            read=lambda *_args, **_kwargs: pytest.fail("execution must be skipped"),
+        )
+
+        assert result["status"] == "needs_parent"
+        assert result["parents"]["bindings"][0]["candidates"] == ["parent-1"]
+        diagnostic = next(item for item in result["diagnostics"] if item["code"] == "parent_required")
+        assert diagnostic["candidates"] == ["parent-1"]
+
+    def test_empty_result_diagnoses_closest_local_event_name(self) -> None:
+        tmp_path = self.tmp_path
+        database = tmp_path / "metadata.sqlite3"
+        _metadata_catalog(database)
+        description = {
+            "operation_id": "analysis.example.query",
+            "input_schema": {
+                "app_id": {"type": "string", "required": True},
+                "query_item_list": {"type": "array", "required": True},
+            },
+            "required_parent": [],
+            "health": {"contract_fingerprint": "e" * 64},
+        }
+
+        result = resolve_and_run(
+            "analysis.example.query",
+            client=_ResolverClient(description),
+            workspace=_workspace(tmp_path),
+            supplied_input={"query_item_list": [{"event_name": "retention_rewad"}]},
+            app="main",
+            read=lambda *_args, **_kwargs: {"ok": True, "status": "empty", "data": []},
+            metadata_database=database,
+        )
+
+        diagnostic = next(
+            item for item in result["diagnostics"] if item["code"] == "closest_event_names"
+        )
+        assert diagnostic["suggestions"][0]["candidates"][0]["name"] == "retention_reward"
