@@ -16,7 +16,7 @@
 
 ## 调研方法、取证边界与失败
 
-[实证] 本次实际使用了公开网页搜索、论文/规范官网、`curl` 下载 HTML/PDF、`pdftotext` 转文本，以及仓库源码和文档的只读检索；关键原文保存在 [`tmp/codex/agent-usability-methods/sources/`](../../tmp/codex/agent-usability-methods/sources/)。优先级是规范/官方文档、论文原文、官方源码库；搜索摘要只用于定位，未作为结论证据。
+[实证] 本次实际使用了公开网页搜索、论文/规范官网、`curl` 下载 HTML/PDF、`pdftotext` 转文本，以及仓库源码和文档的只读检索；关键原文曾保存在 ignored 工作底稿 `tmp/codex/agent-usability-methods/sources/`，不随仓库分发。优先级是规范/官方文档、论文原文、官方源码库；搜索摘要只用于定位，未作为结论证据。
 
 [实证] 两个 OpenReview PDF 地址返回 HTTP 403；ToolBench 与 MetaTool 均改从公开 arXiv 版本取证。没有尝试登录、付费页或授权资源。[ToolBench arXiv](https://arxiv.org/abs/2307.16789)、[MetaTool arXiv](https://arxiv.org/abs/2310.03128)
 

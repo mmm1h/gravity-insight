@@ -888,6 +888,81 @@ selector 精确度或把多个意图改成任选一个。冻结题单语义均�
 “有”，15 条缺失逐行由“无”改为“有（目标 gap）”。本轮 94 次发现调用全部
 `offline=true/network_called=false`，生产 HTTP **0 次**，无重试、翻页、扩窗或上游任务。
 
+## 可重复的 Agent 可用性基线（2026-08-15）
+
+**提案：**不再用卡注册或单一自然语言命中率自证；以 47 条 analysis journey 为评测单位，分别
+度量首次产品选择、参数来源可填、离线可验证终点、严格 `pass^4`、错误恢复和调用成本。工作提案
+位于 ignored `tmp/codex/agent-eval/proposal.md`。题集先于实现观察独立提交：
+`30ac62e test(agent): freeze usability evaluation suite`；之后才读取 recognizer，并在
+`e72a354 feat(eval): add layered agent usability runner` 加入装置。产品 `src/gravity_sdk` 相对
+`dev@ac03a0f` 无差异，装置没有修 recognizer、路由或产品行为。
+
+题集版本为 `gravity-agent-usability-2026-08-15.v1`，覆盖当前 **47 条**动线，每条 10 题：
+中文普通 3、英文普通 3、中英相邻产品边界各 1、中英缺信息/能力缺口各 1。因此总数可复算为
+`47 × (3 + 3 + 1 + 1 + 1 + 1) = 470`；开发/留出各取每条 5 题，均为
+`47 × 5 = 235`。按表述家族切分，不把同一句随机拆到两边。题意只来自
+`docs/analysis-journeys.md`、`docs/agent-workflow.md` 和真实分析场景；题集提交前没有读取
+`agent_*.py`、selector 或路由测试，也没有调用 recognizer 看反馈。suite manifest 固定 source
+revision 与三份内容 hash；产品源树实测 hash 为
+`b7fab15af01074c267313ce017843c530f33e249b222ede074264064c5449d51`。
+
+### 分层基线
+
+在产品树 `dev@ac03a0f` 上，合并开发/留出 470 题、每题独立运行 4 次，第一次运行的分层结果是：
+
+| 层 | 通过 / 分母 | 判定与不能外推的部分 |
+| --- | ---: | --- |
+| 首次产品选择 | **314 / 470（66.81%）** | 只认第一张正确产品卡或该缺失动线的专属 gap；失败 156 = 23 个伪/未解歧义 + 34 个无候选 + 55 个错误/generic gap + 44 个错误产品。 |
+| 参数来源可填 | **221 / 221（100%）** | 只在正确产品卡已到达时计分；要求每个 required input 都在 missing/template 中机械暴露，App/引用/物理字段等目录输入另须由 `call_bound.input_sources` 覆盖。另有 249 题不适用或未到达，不能把本行写成全体 470 题参数无问题。 |
+| 端到端离线终点 | **93 / 150（62.00%）** | 只计 14 条缺失动线的 140 题，加当前 workspace 未配置 SQL 产品的 10 题；必须得到精确 gap、非空 next action 和 `offline=true/network_called=false`。失败 57；其余 320 条稳定读取会触发生产 HTTP，按零网络约束跳过，dry-run 不冒充答案。 |
+| 重复可靠性 | 产品选择 `pass^1 = pass^4 = 314 / 470`；离线终点 `pass^1 = pass^4 = 93 / 150` | `pass^4` 是同题 4 次全部成功；不使用“4 次中成功一次”。两层不稳定任务均为 0，说明当前确定性 recognizer 稳定地成功，也稳定地失败。 |
+| 错误恢复 | **4 / 5（80.00%）** | 三类真实 Plan 预检错误按 next action 修正后可验证；受控暂时失败按 next action 重试后成功；`MULTIPLE_INTENTS` gap 没有自己的 next action，不能机械推进。 |
+
+单独切分仍没有漂亮数字：开发集产品选择 `154 / 235（65.53%）`、端到端
+`46 / 75（61.33%）`；密封留出集分别为 `160 / 235（68.09%）`、`47 / 75（62.67%）`。
+参数层在已到达卡上分别为 `108 / 108` 与 `113 / 113`。留出分数略高不构成泛化证明；合并结果仍有
+156 个首选失败。按可评分比例最差的是端到端离线终点 62.00%，更严重的覆盖限制是 320/470
+生产读取题没有在本装置中建立端到端答案基线，不能把 62.00% 外推到它们。
+
+### 留出结构与真实防线
+
+公开开发题在 `evals/agent_usability/cases/development.jsonl`；留出题只以带完整性校验的密封 payload
+存入 `holdout.sealed.json`，32-byte key 不进 Git。一次性明文生成底稿已从 worktree 删除。runner
+没有单题、留出子集或任意 prompt 参数；无 key 只能跑开发集。有 key 的正式运行也只保存 suite/
+split/层级计数、失败分类和成本，不保存题面、单题 pass/fail、候选正文或 traceback。正常执行线因此
+无法通过“跑分→复制失败句→加关键词”得到具体句子。
+
+**这不是同机管理员安全边界。** 控制 evaluator 主机或 key 的人可以改 runner、附加调试器、读取
+进程内存或直接解密 payload；同一 OS 身份若能找到外置 key 也能绕过。无限次观察整套聚合分数仍可
+做自适应过拟合。正式发布要把 key 托管与实现线分权，只发布整套聚合并限制留出运行频率；本仓装置
+只在这个边界内防止常规反馈泄漏，不作更强保证。
+
+### 可重复性、成本与未修问题
+
+正式全套单次（其中已含 4 trials）两次实测分别 **6.068 秒**和 **6.347 秒**；六个评分项比较
+delta 全为 0。每次是 1,880 个 logical question-trials，经每批最多 32 题形成 60 次顶层
+`capabilities_many`，另有 9 次恢复步骤。生产 HTTP **0 次**、socket 网络尝试 **0 次**；稳定读取题
+在执行前跳过，没有重试、翻页、扩窗或上游任务。机器 JSON、人读 Markdown 和比较文件位于 ignored
+`tmp/codex/agent-eval/final-run-1/`、`final-run-2/`、`final-comparison/`。
+
+重复入口：
+
+```powershell
+$env:PYTHONPATH=(Resolve-Path '.\src').Path
+python scripts\agent_usability_eval.py run --split development --output-dir tmp\agent-usability
+python scripts\agent_usability_eval.py run --split holdout --holdout-key <custodian-key> --output-dir tmp\agent-usability
+python scripts\agent_usability_eval.py compare <before.json> <after.json> --output-dir tmp\agent-usability
+```
+
+本单元只登记、不修以下问题：首次产品选择 156 个失败及其四类归因；150 个离线终点中 57 个未返回
+目标 gap；`MULTIPLE_INTENTS` 缺少 gap 自身可执行 next action；320 个生产读取题的端到端答案与 HTTP
+成本仍未在零生产装置中测得。最后一项是测量覆盖缺口，不等同于 320 个产品失败。技术债清单本轮已
+复核；这些是当前可用性结果/评测覆盖欠账，不符合该页“提高结构开发成本”的登记条件，故不伪装成
+结构债。
+
+产品动线和 operation 台账净变化均为 0：`47 = 33 / 0 / 14 → +0 / +0 / +0 = 47 = 33 / 0 / 14`；
+stable operation `185 → +0 = 185`，其中 stable `176 → +0 = 176`。本轮只造尺子，不用尺子改被测物。
+
 ## 投影边界总裁决：全面放开（2026-08-15）
 
 **本节推翻本页此前全部字段级隐藏裁决，是投影边界的唯一权威来源。** 下面三节
