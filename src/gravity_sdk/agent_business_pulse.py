@@ -37,6 +37,7 @@ _ENGLISH_SUBJECTS = frozenset(
 )
 _ENGLISH_OVERVIEW = frozenset({"overview", "summary"})
 _ENGLISH_TRENDS = frozenset({"trend", "trends"})
+_ENGLISH_HOURLY = frozenset({"hour", "hourly"})
 _ENGLISH_NEGATIONS = frozenset(
     {"avoid", "exclude", "never", "no", "not", "skip", "without"}
 )
@@ -69,6 +70,7 @@ _CHINESE_SUBJECTS = ("经营", "业务")
 _CHINESE_PULSE = ("脉搏", "脉薄", "脉动")
 _CHINESE_OVERVIEW = ("概览", "概况", "总览")
 _CHINESE_TRENDS = ("趋势", "走势")
+_CHINESE_HOURLY = ("逐小时", "每小时", "小时变化", "小时趋势")
 _CHINESE_NEGATIONS = (
     "不要", "无需", "无须", "不需要", "不必", "不做", "不用", "避免",
     "非经营", "非业务",
@@ -168,43 +170,45 @@ def business_pulse_intent(query: str) -> bool:
     if not selected:
         return False
     words = frozenset(_ASCII_WORD.findall(selected.replace("-", " ")))
-    subject = bool(words & _ENGLISH_SUBJECTS) or any(
-        term in selected for term in _CHINESE_SUBJECTS
-    )
-    pulse = "pulse" in words or any(term in selected for term in _CHINESE_PULSE)
-    overview = bool(words & _ENGLISH_OVERVIEW) or any(
-        term in selected for term in _CHINESE_OVERVIEW
-    )
-    trends = bool(words & _ENGLISH_TRENDS) or any(
-        term in selected for term in _CHINESE_TRENDS
-    )
-    return subject and (pulse or overview and trends)
+    subject, pulse, overview, trends, hourly = _pulse_signals(selected, words)
+    return subject and (pulse or overview and trends or trends and hourly)
 
 
 def _english_query(selected: str) -> bool:
     words = frozenset(_ASCII_WORD.findall(selected.replace("-", " ")))
     if _blocked_query(selected, words) or not words & _ENGLISH_SUBJECTS:
         return False
-    return "pulse" in words or bool(
-        words & _ENGLISH_OVERVIEW and words & _ENGLISH_TRENDS
-    )
+    _subject, pulse, overview, trends, hourly = _pulse_signals(selected, words)
+    return pulse or overview and trends or trends and hourly
 
 
 def _chinese_query(selected: str) -> bool:
     words = frozenset(_ASCII_WORD.findall(selected.replace("-", " ")))
     if _blocked_query(selected, words):
         return False
-    subject = bool(words & _ENGLISH_SUBJECTS) or any(
-        term in selected for term in _CHINESE_SUBJECTS
+    subject, pulse, overview, trends, hourly = _pulse_signals(selected, words)
+    return subject and (pulse or overview and trends or trends and hourly)
+
+
+def _pulse_signals(
+    selected: str, words: frozenset[str]
+) -> tuple[bool, bool, bool, bool, bool]:
+    return (
+        _signal(words, selected, _ENGLISH_SUBJECTS, _CHINESE_SUBJECTS),
+        _signal(words, selected, frozenset({"pulse"}), _CHINESE_PULSE),
+        _signal(words, selected, _ENGLISH_OVERVIEW, _CHINESE_OVERVIEW),
+        _signal(words, selected, _ENGLISH_TRENDS, _CHINESE_TRENDS),
+        _signal(words, selected, _ENGLISH_HOURLY, _CHINESE_HOURLY),
     )
-    pulse = "pulse" in words or any(term in selected for term in _CHINESE_PULSE)
-    overview = bool(words & _ENGLISH_OVERVIEW) or any(
-        term in selected for term in _CHINESE_OVERVIEW
-    )
-    trends = bool(words & _ENGLISH_TRENDS) or any(
-        term in selected for term in _CHINESE_TRENDS
-    )
-    return subject and (pulse or overview and trends)
+
+
+def _signal(
+    words: frozenset[str],
+    selected: str,
+    english: frozenset[str],
+    chinese: tuple[str, ...],
+) -> bool:
+    return bool(words & english) or any(term in selected for term in chinese)
 
 
 def _blocked_query(selected: str, words: frozenset[str]) -> bool:

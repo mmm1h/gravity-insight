@@ -116,7 +116,7 @@ def material_performance_intent(query: str) -> bool:
         return True
     if selected.isascii() and " " not in selected and "." in selected:
         return False
-    if words & {"material", "materials"} and words & _ENGLISH_ACTIONS:
+    if words & {"material", "materials", "creative", "creatives"} and words & _ENGLISH_ACTIONS:
         return True
     if selected.isascii():
         return False

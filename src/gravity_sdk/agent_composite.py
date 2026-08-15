@@ -10,6 +10,8 @@ from typing import Any
 _STRICT_COMPOSITES = frozenset(
     {
         "business_pulse",
+        "analysis_context",
+        "attribution_snapshot",
         "company_usage",
         "custom_audience",
         "bilibili_account_performance",
@@ -103,14 +105,12 @@ def _strict_composite_query(name: str, query: str) -> bool:
         name.casefold(), f"composite:{name}".casefold()
     }:
         return True
-    if name == "dashboard_snapshot":
-        from .agent_dashboard import dashboard_snapshot_query
+    if name in {"analysis_context", "app_snapshot", "attribution_snapshot"}:
+        from .agent_fixed_snapshots import fixed_snapshot_query
 
-        return dashboard_snapshot_query(query)
-    if name == "dashboard_analysis":
-        from .agent_dashboard import dashboard_analysis_query
-
-        return dashboard_analysis_query(query)
+        return fixed_snapshot_query(name, query)
+    if name in {"dashboard_snapshot", "dashboard_analysis"}:
+        return _dashboard_query(name, query)
     if name == "segment_snapshot":
         from .agent_segment_snapshot import segment_snapshot_query
 
@@ -155,6 +155,16 @@ def _strict_composite_query(name: str, query: str) -> bool:
     )
 
     return bilibili_account_performance_product_query(name, query)
+
+
+def _dashboard_query(name: str, query: str) -> bool:
+    from .agent_dashboard import dashboard_analysis_query, dashboard_snapshot_query
+
+    return (
+        dashboard_snapshot_query(query)
+        if name == "dashboard_snapshot"
+        else dashboard_analysis_query(query)
+    )
 
 
 def _exact_match(match: Mapping[str, Any], normalized: str) -> dict[str, Any]:

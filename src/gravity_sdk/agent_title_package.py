@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+import re
 from typing import Any
 
 
@@ -31,7 +32,7 @@ TITLE_PACKAGE_CAPABILITY: Mapping[str, Any] = {
     ),
     "description": (
         "按显式 App 和普通/标准类型读取巨量标题包名称、标题数、计划数、"
-        "历史与近三日成本和点击率；不返回标题正文或人员字段。"
+        "历史与近三日成本和点击率；已观察字段登记后按投影总裁决完整暴露。"
     ),
     "required_inputs": ("app", "package_kind"),
     "input_schema": {
@@ -56,8 +57,8 @@ def title_package_query(query: str) -> bool:
         return True
     if not selected or any(term in selected for term in ("导出", "创建", "删除")):
         return False
-    words = frozenset(selected.split())
-    english = "title" in words and "package" in words and bool(
+    words = frozenset(re.findall(r"[a-z0-9_]+", selected))
+    english = "title" in words and bool(words & {"package", "packages"}) and bool(
         words & {"metric", "metrics", "performance", "summary"}
     )
     chinese = "标题包" in selected and any(

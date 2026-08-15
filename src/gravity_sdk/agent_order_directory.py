@@ -1,4 +1,4 @@
-"""Strict, value-free Agent handoff for Order Directory v1."""
+"""Strict, value-free Agent handoff for the fixed-field Order Directory v1."""
 
 from __future__ import annotations
 
@@ -281,12 +281,12 @@ ORDER_DIRECTORY_CAPABILITY: Mapping[str, Any] = {
         "read one complete daily order directory",
         "list ordinary order detail for one explicit day",
         "读取一个显式单日的完整普通订单目录",
-        "列出单日普通订单的无标识物理明细",
+        "列出单日普通订单的已登记物理明细",
     ),
     "description": (
-        "按显式 App 和单日完整读取普通订单目录；每行只保留 "
-        "Amount/BackAmount/Status/CreateTime，不返回任何订单或用户标识，"
-        "不解释退款、净收入或支付成功。"
+        "按显式 App 和单日读取普通订单目录；当前登记字段为 "
+        "Amount/BackAmount/Status/CreateTime，未登记字段按合同漂移 fail-closed，"
+        "登记后按投影总裁决暴露；不解释退款、净收入或支付成功。"
     ),
     "required_inputs": ORDER_DIRECTORY_REQUIRED_INPUTS,
     "input_schema": {
@@ -425,6 +425,7 @@ def _chinese_product_shape(compact: str) -> bool:
 
 
 def _blocked(selected: str) -> bool:
+    selected = _without_legacy_exclusion_phrases(selected)
     words = frozenset(_ASCII_WORD.findall(selected.replace("-", " ")))
     compact = _compact(selected)
     return bool(
@@ -470,6 +471,18 @@ def _ambiguous_report(
 
 def _contains_any(value: str, terms: tuple[str, ...]) -> bool:
     return any(term in value for term in terms)
+
+
+def _without_legacy_exclusion_phrases(selected: str) -> str:
+    value = re.sub(
+        r"\bwithout\s+(?:any\s+)?user\s+identifiers?\b",
+        "",
+        selected,
+        flags=re.IGNORECASE,
+    )
+    for phrase in ("不要带用户标识", "不带用户标识", "无用户标识"):
+        value = value.replace(phrase, "")
+    return value
 
 
 __all__ = [

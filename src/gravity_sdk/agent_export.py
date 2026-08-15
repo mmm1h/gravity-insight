@@ -42,6 +42,7 @@ def query_requests_export(query: str) -> bool:
         selected.startswith("export.")
         or normalized in _GENERIC_INTENTS
         or any(_contains_alias(query, alias) for alias in _MATERIAL_ALIASES)
+        or _material_export_workflow(query)
         or "导出" in selected
     )
 
@@ -131,7 +132,10 @@ def _export_card(
     selected = query.strip().casefold()
     exact = selected == operation_id.casefold()
     generic = _normalize(query) in _GENERIC_INTENTS
-    material = any(_contains_alias(query, alias) for alias in _MATERIAL_ALIASES)
+    material = (
+        any(_contains_alias(query, alias) for alias in _MATERIAL_ALIASES)
+        or _material_export_workflow(query)
+    )
     if not (exact or generic or material):
         return None
     input_schema = _plain_mapping(description.get("input_schema"))
@@ -250,6 +254,24 @@ def _contains_alias(query: str, alias: str) -> bool:
     if alias.isascii():
         return f" {_normalize(alias)} " in f" {_normalize(query)} "
     return alias in "".join(query.strip().casefold().split())
+
+
+def _material_export_workflow(query: str) -> bool:
+    selected = query.strip().casefold()
+    words = frozenset(re.findall(r"[a-z0-9_]+", selected))
+    english = (
+        bool(words & {"material", "creative"})
+        and bool(words & {"report"})
+        and bool(words & {"create", "generate"})
+        and bool(words & {"download", "save"})
+    )
+    chinese = (
+        "素材" in selected
+        and "报表" in selected
+        and any(term in selected for term in ("生成", "创建"))
+        and any(term in selected for term in ("下载", "保存到本地"))
+    )
+    return english or chinese
 
 
 __all__ = [

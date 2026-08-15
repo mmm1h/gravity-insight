@@ -305,13 +305,21 @@ def _claims_product(selected: str) -> bool:
     split_trace = bool(words & _ENGLISH_TRACE) or _contains_any(
         compact, _CHINESE_TRACE
     )
-    chinese_split = "拆单" in compact or "订单拆分" in compact
+    chinese_split = _chinese_split_intent(compact)
     chinese_detail = _contains_any(compact, _CHINESE_DETAIL)
     explicit_trace_id = "traceid" in compact
     return bool(
         order_split and split_trace
         or chinese_split and split_trace
         or chinese_split and chinese_detail and explicit_trace_id
+    )
+
+
+def _chinese_split_intent(compact: str) -> bool:
+    return (
+        "拆单" in compact
+        or "订单拆分" in compact
+        or re.search(r"拆成.{0,8}订单", compact) is not None
     )
 
 

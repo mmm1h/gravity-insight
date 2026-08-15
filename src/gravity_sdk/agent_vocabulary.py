@@ -88,8 +88,11 @@ def is_vocabulary_discovery_query(query: str) -> bool:
 def is_authoritative_local_metadata_card(card: Mapping[str, Any]) -> bool:
     return (
         card.get("kind") == "metadata"
-        and str(card.get("metadata_kind", ""))
-        in AUTHORITATIVE_LOCAL_METADATA_KINDS
+        and (
+            card.get("selector") == "metadata:search"
+            or str(card.get("metadata_kind", ""))
+            in AUTHORITATIVE_LOCAL_METADATA_KINDS
+        )
     )
 
 

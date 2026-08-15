@@ -50,6 +50,10 @@ _ENGLISH_SUBJECTS = frozenset(
     {"ad", "ads", "advertising", "promotion", "promotions"}
 )
 _ENGLISH_ACTIONS = frozenset({"performance", "report", "reporting"})
+_ENGLISH_METRICS = frozenset({
+    "spend", "cost", "click", "clicks", "conversion", "conversions",
+    "impression", "impressions",
+})
 _ENGLISH_READ_ONLY_VERBS = frozenset({"query"})
 _ENGLISH_NEGATIONS = frozenset(
     {"avoid", "cannot", "exclude", "never", "no", "not", "skip", "without"}
@@ -80,6 +84,7 @@ _HETEROGENEOUS_ENGLISH = (
 )
 _CHINESE_SUBJECTS = ("推广", "投放")
 _CHINESE_ACTIONS = ("表现", "效果", "报表", "报告")
+_CHINESE_METRICS = ("消耗", "花费", "点击", "转化", "曝光")
 _CHINESE_READ_ONLY_VERBS = ("查询",)
 _CHINESE_NEGATIONS = (
     "不要", "无需", "无须", "不需要", "不必", "不做", "不用", "避免", "排除",
@@ -185,10 +190,13 @@ def promotion_performance_intent(query: str) -> bool:
 
     selected = _normalize(query)
     words = frozenset(_ASCII_WORD.findall(selected.replace("-", " ")))
+    compact = _compact(selected)
     if (
         words & {"creative", "material", "materials"}
         and not words & {"advertising", "promotion", "promotions"}
     ):
+        return False
+    if _material_specific_query(compact):
         return False
     if bilibili_account_performance_intent(query):
         return False
@@ -244,6 +252,8 @@ def _claims_product(selected: str) -> bool:
         return False
     words = frozenset(_ASCII_WORD.findall(selected.replace("-", " ")))
     compact = _compact(selected)
+    if _material_specific_query(compact) or _media_report_directory_query(compact):
+        return False
     subject, action, adjacent, heterogeneous = _intent_signals(words, compact)
     return bool(subject and (action or adjacent) or heterogeneous and action)
 
@@ -253,12 +263,16 @@ def _intent_signals(
 ) -> tuple[bool, bool, bool, bool]:
     """Combine English and Chinese subjects/actions without inferring values."""
 
+    metric_report = (
+        len(words & _ENGLISH_METRICS) >= 2
+        or sum(term in compact for term in _CHINESE_METRICS) >= 2
+    )
     subject = bool(words & _ENGLISH_SUBJECTS) or _contains_any(
         compact, _CHINESE_SUBJECTS
-    )
+    ) or "巨量" in compact and metric_report
     action = bool(words & _ENGLISH_ACTIONS) or _contains_any(
         compact, _CHINESE_ACTIONS
-    )
+    ) or metric_report
     adjacent = _has_blocked_term(words, compact)
     heterogeneous = _contains_any(compact, _HETEROGENEOUS_COMPACT)
     return subject, action, adjacent, heterogeneous
@@ -275,6 +289,20 @@ def _compact(value: str) -> str:
 
 def _contains_any(value: str, terms: tuple[str, ...]) -> bool:
     return any(term in value for term in terms)
+
+
+def _material_specific_query(compact: str) -> bool:
+    if not _contains_any(compact, ("素材", "创意")):
+        return False
+    return not _contains_any(
+        compact, ("推广表现", "投放表现", "推广报表", "投放报表")
+    )
+
+
+def _media_report_directory_query(compact: str) -> bool:
+    return "媒体" in compact and "报表" in compact and not _contains_any(
+        compact, ("表现", "效果", "消耗", "点击", "转化")
+    )
 
 
 def _has_blocked_term(words: frozenset[str], compact: str) -> bool:

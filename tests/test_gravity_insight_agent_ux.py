@@ -668,6 +668,69 @@ class DiscoveryUxTests(unittest.TestCase):
         self.assertTrue(exact["candidates"][0]["match"]["exact_selector"])
         self.assertEqual("app.list", plural["candidates"][0]["selector"])
 
+    def test_frozen_natural_language_journey_matrix_is_first_call_reachable(self) -> None:
+        selectors = {
+            "J01": "analysis.query.spec:event", "J02": "analysis.query.spec:funnel",
+            "J03": "analysis.query.spec:retention", "J04": "analysis.query.spec:property",
+            "J05": "analysis.query.spec:scatter", "J06": "analysis.query.spec",
+            "J07": "analysis.segment.rule.spec", "J08": "composite:analysis_context",
+            "J09": "composite:app_snapshot", "J10": "composite:attribution_snapshot",
+            "J11": "composite:user_journey", "J12": "composite:business_pulse",
+            "J13": "composite:company_usage", "J14": "composite:custom_audience",
+            "J15": "composite:material_performance", "J16": "composite:order_directory",
+            "J17": "composite:order_split_trace", "J18": "composite:monetization_detail",
+            "J20": "composite:dashboard_snapshot", "J21": "composite:dashboard_analysis",
+            "J22": "composite:saved_analysis", "J23": "composite:analysis_template",
+            "J24": "composite:segment_snapshot", "J25": "composite:multidim",
+            "J26": "composite:promotion_performance",
+            "J27": "composite:bilibili_account_performance",
+            "J28": "composite:advertiser_profile", "J29": "composite:title_package",
+            "J30": "metadata:search", "J31": "metadata:table_lineage",
+            "J32": "export.material.report.start",
+        }
+        gaps = {
+            "J19": "WORKSPACE_SQL_PRODUCT_NOT_CONFIGURED",
+            "J33": "ANALYSIS_DEFAULT_DICTIONARY_CONTRACT_MISSING",
+            "J34": "REALTIME_EVENT_CATALOG_CONTRACT_MISSING",
+            "J35": "REPORT_DIRECTORY_ITEM_SCHEMA_MISSING",
+            "J36": "REPORT_SUBSCRIPTION_ITEM_SCHEMA_MISSING",
+            "J37": "MEDIA_REPORT_ITEM_SCHEMA_MISSING",
+            "J38": "APP_PROJECT_ITEM_SCHEMA_MISSING",
+            "J39": "APP_ONELINK_PUBLIC_BINDING_SAMPLE_MISSING",
+            "J40": "MONETIZATION_AGGREGATE_CONTRACT_MISSING",
+            "J41": "ATTRIBUTION_AGGREGATE_CONTRACT_MISSING",
+            "J42": "USER_ATTRIBUTION_DETAIL_DEPENDENCY_MISSING",
+            "J43": "CURRENT_TABLE_SCHEMA_PARENT_MISSING",
+            "J44": "NON_BYTEDANCE_HIERARCHY_PARENT_MISSING",
+            "J45": "PLATFORM_SPECIFIC_CREATIVE_CONTRACT_MISSING",
+            "J46": "ANALYSIS_EXPORT_FILE_CONTRACT_MISSING",
+            "J47": "PLATFORM_ASSET_BINARY_CONTRACT_MISSING",
+        }
+        path = Path(__file__).parents[1] / "tmp/codex/nl-reachability/phrasings.md"
+        questions = []
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if line.startswith("| J"):
+                journey_id, _journey, chinese, english = (
+                    field.strip() for field in line.strip("|").split("|")
+                )
+                questions.extend(((journey_id, chinese), (journey_id, english)))
+        self.assertEqual(94, len(questions))
+        for journey_id, query in questions:
+            with self.subTest(journey_id=journey_id, query=query):
+                result = discover_capabilities(query, client=self.client, limit=3)
+                self.assertTrue(result["offline"])
+                self.assertFalse(result["network_called"])
+                if journey_id in selectors:
+                    self.assertEqual("success", result["status"])
+                    self.assertEqual(selectors[journey_id], result["candidates"][0]["selector"])
+                    if journey_id == "J06":
+                        self.assertTrue(result["candidates"][0]["period_compare"])
+                else:
+                    self.assertEqual("capability_gap", result["status"])
+                    gap = result["capability_gaps"][0]
+                    self.assertEqual(gaps[journey_id], gap["code"])
+                    self.assertTrue(gap["next_action"])
+
     def test_agent_analysis_query_compiler_hands_off_to_spec_schema(self) -> None:
         result = discover_capabilities(
             "analysis query compiler", client=self.client, limit=1

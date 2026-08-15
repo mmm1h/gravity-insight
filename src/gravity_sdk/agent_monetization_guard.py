@@ -1,4 +1,4 @@
-"""Identifier-free Agent product and fail-closed Monetization guard."""
+"""Single-day Agent product and fail-closed Monetization contract guard."""
 
 from __future__ import annotations
 
@@ -72,7 +72,7 @@ _ENGLISH_BLOCKED = frozenset(
 _ENGLISH_NEGATIONS = frozenset(
     {"avoid", "cannot", "exclude", "never", "no", "not", "skip", "without"}
 )
-_IDENTIFIER_FREE_NAME = "无标识"
+_LEGACY_IDENTIFIER_FREE_PHRASE = "无标识"
 _CHINESE_BLOCKED = (
     "不要", "无需", "不需要", "拒绝", "导出", "下载", "写入", "修改",
     "删除", "用户", "设备", "标识", "筛选", "过滤", "条件", "分组", "订单",
@@ -158,16 +158,29 @@ def _contains_near_raw_selector(selected: str) -> bool:
 
 
 def _blocked_product_query(selected: str) -> bool:
+    selected = _without_legacy_exclusion_phrases(selected)
     words = frozenset(_ASCII_WORD.findall(selected.replace("-", " ")))
     compact = _COMPACT_SEPARATORS.sub("", selected)
-    # "无标识" is this product's own approved name, so it must not trip the bare
-    # "标识" block that exists to refuse identifier-shaped requests.
-    compact = compact.replace(_IDENTIFIER_FREE_NAME, "")
+    # Keep recognizing the historical exclusion phrase without presenting it as
+    # a projection boundary. Projection is governed by the registered contract.
+    compact = compact.replace(_LEGACY_IDENTIFIER_FREE_PHRASE, "")
     return bool(
         words & (_ENGLISH_BLOCKED | _ENGLISH_NEGATIONS)
         or _RANGE_PHRASE.search(selected)
         or any(term in compact for term in _CHINESE_BLOCKED)
     )
+
+
+def _without_legacy_exclusion_phrases(selected: str) -> str:
+    value = re.sub(
+        r"\bwithout\s+(?:any\s+)?user\s+identifiers?\b",
+        "",
+        selected,
+        flags=re.IGNORECASE,
+    )
+    for phrase in ("不要带用户标识", "不带用户标识", "无用户标识"):
+        value = value.replace(phrase, "")
+    return value
 
 
 def _english_detail_shape(words: tuple[str, ...]) -> bool:
@@ -190,13 +203,13 @@ MONETIZATION_DETAIL_CAPABILITY: Mapping[str, Any] = {
     "domain": "analysis",
     "aliases": (
         "read one complete daily monetization detail",
-        "list identifier-free ad monetization rows for one explicit day",
-        "读取一个显式单日的完整无标识变现明细",
+        "list registered ad monetization rows for one explicit day",
+        "读取一个显式单日的已登记变现明细",
     ),
     "description": (
-        "按显式 App 和单日完整读取无标识变现明细；固定返回批准字段 "
+        "按显式 App 和单日完整读取固定合同的变现明细；当前登记字段为 "
         + "/".join(SAFE_ROW_FIELDS)
-        + "，未知字段默认隐藏，不提供用户维度筛选、分组或 raw 结果。"
+        + "；未登记字段按合同漂移 fail-closed，登记后按投影总裁决暴露。"
     ),
     "required_inputs": MONETIZATION_DETAIL_REQUIRED_INPUTS,
     "input_schema": {

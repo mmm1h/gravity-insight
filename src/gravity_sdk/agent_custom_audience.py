@@ -48,7 +48,10 @@ def custom_audience_query(query: str) -> bool:
     english = (
         "custom" in words
         and "audience" in words
-        and bool(words & {"coverage", "upload", "source", "status"})
+        and bool(words & {
+            "coverage", "cover", "covers", "covered", "upload", "source",
+            "status", "ready", "syncing", "failed",
+        })
     )
     chinese = bool(
         ("自定义人群" in selected or "可投人群" in selected)

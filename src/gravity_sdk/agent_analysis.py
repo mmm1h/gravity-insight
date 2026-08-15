@@ -94,6 +94,7 @@ def analysis_query_spec_cards(
         return [_analysis_card(query, selected)]
     if (
         _matches_alias(query, _GENERIC_ALIASES)
+        or _period_compare_intent(query)
         or _normalized(query) == "analysis.query.spec"
     ):
         return [_analysis_card(query, None)]
@@ -110,7 +111,82 @@ def _analysis_kind(query: str) -> str | None:
         for kind, aliases in _INTENT_ALIASES.items()
         if _matches_alias(query, aliases)
     ]
-    return matches[0] if len(matches) == 1 else None
+    if len(matches) == 1:
+        return matches[0]
+    return _natural_analysis_kind(query)
+
+
+def _natural_analysis_kind(query: str) -> str | None:
+    """Recognize analyst-shaped tasks while keeping kind evidence explicit."""
+
+    selected = query.strip().casefold()
+    words = frozenset(re.findall(r"[a-z0-9_]+", selected))
+    compact = "".join(selected.split())
+    claims = (
+        ("event", _natural_event(words, compact)),
+        ("funnel", _natural_funnel(words)),
+        ("retention", _natural_retention(words, compact)),
+        ("property", _natural_property(words, compact)),
+        ("scatter", "scatter" in words or "散点" in compact),
+    )
+    matched = [kind for kind, claimed in claims if claimed]
+    return matched[0] if len(matched) == 1 else None
+
+
+def _natural_event(words: frozenset[str], compact: str) -> bool:
+    english = (
+        "event" in words
+        and bool(words & {"count", "counts", "trend", "trends"})
+        and bool(words & {"daily", "day", "week", "time", "channel"})
+    )
+    chinese = "事件" in compact and any(
+        term in compact for term in ("每天", "次数", "趋势")
+    )
+    return english or chinese
+
+
+def _natural_funnel(words: frozenset[str]) -> bool:
+    return "funnel" in words and bool(
+        words & {"conversion", "convert", "step", "steps"}
+    )
+
+
+def _natural_retention(words: frozenset[str], compact: str) -> bool:
+    english = "retention" in words and len(words) >= 2
+    chinese = any(
+        term in compact for term in ("第1天", "第7天", "次日", "七日")
+    ) and any(term in compact for term in ("回来", "回访", "留存"))
+    return english or chinese
+
+
+def _natural_property(words: frozenset[str], compact: str) -> bool:
+    english = (
+        {"distribution", "users", "by"} <= words
+        or {"property", "distribution"} <= words
+    )
+    chinese = (
+        "用户" in compact and "分布" in compact
+        and any(term in compact for term in ("属性", "城市", "渠道", "地区"))
+    )
+    return english or chinese
+
+
+def _period_compare_intent(query: str) -> bool:
+    selected = query.strip().casefold()
+    words = frozenset(re.findall(r"[a-z0-9_]+", selected))
+    english = (
+        bool(words & {"compare", "comparison"})
+        and bool(words & {"week", "weeks", "month", "months", "period", "periods"})
+        and "same" in words
+        and bool(words & {"analysis", "definition", "spec"})
+    )
+    chinese = (
+        any(term in selected for term in ("对比", "比较"))
+        and any(term in selected for term in ("本周", "上周", "本月", "上月", "时期"))
+        and any(term in selected for term in ("同一个", "同一份", "相同"))
+        and "分析" in selected
+    )
+    return english or chinese
 
 
 def _matches_alias(query: str, aliases: Sequence[str]) -> bool:
@@ -378,7 +454,7 @@ def _analysis_card(query: str, selected_kind: str | None) -> dict[str, Any]:
     return _with_period_compare(
         _analysis_card_without_period_compare(query, selected_kind),
         selected_kind,
-        any(term in query.strip().casefold() for term in (
+        _period_compare_intent(query) or any(term in query.strip().casefold() for term in (
             "period compare", "compare analysis periods", "compare last week",
             "compare last month", "跨期对比", "对比上周", "对比上月",
             "比较本周和上周",

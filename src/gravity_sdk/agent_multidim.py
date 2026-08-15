@@ -39,8 +39,8 @@ _ENGLISH_BLOCKED = frozenset(
         "create", "update", "delete",
     }
 )
-_CHINESE_SUBJECTS = ("多维", "多个维度", "交叉维度", "维度交叉")
-_CHINESE_ACTIONS = ("查询", "报表", "分析", "统计", "合计")
+_CHINESE_SUBJECTS = ("多维", "多个维度", "交叉维度", "维度交叉", "物理维度")
+_CHINESE_ACTIONS = ("查询", "报表", "分析", "统计", "合计", "读取")
 _CHINESE_BLOCKED = (
     "模板", "布局", "收藏", "权限", "成员", "创建", "更新", "删除",
 )
