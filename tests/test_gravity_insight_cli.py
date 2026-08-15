@@ -1672,13 +1672,15 @@ class GravityInsightCliTests(unittest.TestCase):
             client.read_calls[0],
         )
 
-    def test_json_boundary_redacts_credentials_operators_departments_and_urls(self):
+    def test_json_boundary_preserves_business_fields_and_scrubs_credentials(self):
+        jwt = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmaXh0dXJlIn0.signature"
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
             cli._write_json(
                 {
-                    "authorization": "Bearer secret-value",
-                    "cookie": "secret",
+                    "authorization": "Bearer credential-authorization",
+                    "cookie": "credential-cookie",
+                    "access_token": "credential-access",
                     "operator_name": "Private Operator",
                     "dept": "Private Dept",
                     "callback_url": "https://private.invalid/callback",
@@ -1697,19 +1699,93 @@ class GravityInsightCliTests(unittest.TestCase):
                     "owner_mobile": "10001",
                     "owner_user_id": "private-id",
                     "owner_user_name": "Private Owner",
+                    "continuation_token": "cursor-1",
                     "filter": {"field": "app_id", "operator": "EQUALS", "values": [7]},
+                    "nested": {
+                        "refresh_token": "credential-refresh",
+                        "message": "Bearer credential-bearer",
+                        "rows": [
+                            {"jwt": jwt, "email": "nested@example.invalid"},
+                            {"gravity_authorization": "credential-nested"},
+                        ],
+                    },
                     "safe": "kept",
                 }
             )
-        self.assertEqual(
-            {
-                "safe": "kept",
-                "filter": {"field": "app_id", "operator": "EQUALS", "values": [7]},
-            },
-            json.loads(output.getvalue()),
-        )
+        rendered_text = output.getvalue()
+        rendered = json.loads(rendered_text)
+        for secret in (
+            "credential-authorization", "credential-cookie", "credential-access",
+            "credential-refresh", "credential-nested", "credential-bearer", jwt,
+        ):
+            self.assertNotIn(secret, rendered_text)
+        self.assertNotIn("authorization", rendered)
+        self.assertNotIn("cookie", rendered)
+        self.assertNotIn("access_token", rendered)
+        self.assertNotIn("token", rendered)
+        self.assertNotIn("session_token", rendered)
+        self.assertTrue({
+            "operator_name", "dept", "callback_url", "click_url", "postback_url",
+            "email_address", "phone", "mobile", "user_name", "creator", "asset_url",
+            "owner_email", "owner_phone", "owner_mobile", "owner_user_id",
+            "owner_user_name",
+        } <= rendered.keys())
+        self.assertEqual("Private Operator", rendered["operator_name"])
+        self.assertEqual("Private Dept", rendered["dept"])
+        self.assertEqual("https://private.invalid/asset", rendered["asset_url"])
+        self.assertEqual("private@example.invalid", rendered["owner_email"])
+        self.assertEqual("private-id", rendered["owner_user_id"])
+        self.assertEqual("cursor-1", rendered["continuation_token"])
+        self.assertEqual("[REDACTED]", rendered["nested"]["rows"][0]["jwt"])
+        self.assertEqual("nested@example.invalid", rendered["nested"]["rows"][0]["email"])
+        ndjson = cli._render_ndjson([
+            {"nested": [{"access_token": "credential-ndjson", "file_url": "kept"}]}
+        ])
+        self.assertNotIn("credential-ndjson", ndjson)
+        self.assertIn('"file_url": "kept"', ndjson)
 
-    def test_analysis_json_boundary_preserves_contracted_business_identifiers(self):
+    def test_cli_preserves_the_sdk_business_field_set(self):
+        sdk_result = {
+            "schema_version": "gravity-insight.read.v1",
+            "ok": True,
+            "status": "success",
+            "data": {
+                "email": "member@example.invalid",
+                "operator_name": "Operator",
+                "dept_id": 7,
+                "icon_url": "https://business.invalid/icon",
+                "owner_user_id": "user-1",
+                "continuation_token": "cursor-1",
+            },
+        }
+        stdout = io.StringIO()
+        with (
+            patch("gravity_sdk.cli.dispatch_command", return_value=sdk_result),
+            contextlib.redirect_stdout(stdout),
+        ):
+            self.assertEqual(0, cli.main(["doctor"]))
+        self.assertEqual(sdk_result, json.loads(stdout.getvalue()))
+
+    def test_error_output_scrubs_credential_assignments_bearer_and_jwt(self):
+        secrets = (
+            "credential-authorization", "credential-cookie", "credential-access",
+            "credential-bearer", "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJlcnJvciJ9.signature",
+        )
+        message = (
+            f"authorization={secrets[0]}, cookie={secrets[1]}, "
+            f"access_token={secrets[2]}, Bearer {secrets[3]}, jwt={secrets[4]}"
+        )
+        stderr = io.StringIO()
+        with (
+            patch("gravity_sdk.cli.dispatch_command", side_effect=RuntimeError(message)),
+            contextlib.redirect_stderr(stderr),
+        ):
+            self.assertEqual(4, cli.main(["doctor"]))
+        for secret in secrets:
+            self.assertNotIn(secret, stderr.getvalue())
+        self.assertIn("[REDACTED]", stderr.getvalue())
+
+    def test_analysis_json_boundary_uses_the_same_credential_only_policy(self):
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
             cli._write_json(
