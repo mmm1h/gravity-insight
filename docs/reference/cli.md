@@ -270,7 +270,7 @@ gravity export run export.material.report.start --input material-export.json `
 `input/columns/idempotency_key/output` 后执行 `next.argv`，总共两次且不自动执行自然语言。
 
 Agent 只为 `currently_callable=true` 的 `export_job_create` 返回 executable 卡；当前唯一操作是
-`export.material.report.start`。status/cancel 路由和 blocked Analysis exports 不作为创建候选。
+`export.material.report.start`。status/cancel 路由和请求/文件合同未闭合的 Analysis exports 不作为创建候选。
 卡片明确 `natural_language_auto_execute=false`、`plan_executable=false` 和 `plan_node=null`；导出
 不进入 Plan v1。
 

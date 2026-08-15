@@ -613,25 +613,24 @@ class GatewayAndCliTests(unittest.TestCase):
 
 
 class XlsxPrivacyFinalizerTests(unittest.TestCase):
-    def test_xlsx_schema_and_rows_are_verified_before_copy(self):
+    def test_user_level_xlsx_keeps_contracted_identifier_before_copy(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             source = root / "source.xlsx"
             output = root / "output.xlsx"
-            _write_xlsx(source, ("name", "material_id"), (("one", "7"),))
+            _write_xlsx(source, ("name", "client_id"), (("one", "7"),))
             contract = ExportPrivacyContract(
-                allowed_columns=("name", "material_id"),
-                required_columns=("name", "material_id"),
-                classification="material",
+                allowed_columns=("name", "client_id"),
+                required_columns=("name", "client_id"),
+                classification="user_level",
                 format="xlsx",
-                allow_contracted_identifiers=True,
             )
             result = ExportPrivacyFinalizer(contract).finalize(
                 source,
                 output,
                 _xlsx_metadata(source),
             )
-            self.assertEqual(("name", "material_id"), result.schema)
+            self.assertEqual(("name", "client_id"), result.schema)
             self.assertEqual(1, result.rows_processed)
             self.assertEqual(source.read_bytes(), output.read_bytes())
 

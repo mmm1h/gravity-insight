@@ -35,8 +35,8 @@ inventory。
 
 Agent 只暴露 `currently_callable=true` 且 `effect=export_job_create` 的卡。当前这会且只会得到
 `export.material.report.start`；task status/cancel 等支持路由不是创建候选。所有 Analysis 导出仍
-不可调用，其中隐私 blocked 的合同也不会获得 executable 卡。用 `export list-capabilities` 查看
-这些边界，不要把 catalog 条目当成可执行能力。
+不可调用：用户级投影已全面放开，剩余阻塞是父工作流、成功请求绑定或完整文件 schema（尤其逻辑列
+类型）未证实。用 `export list-capabilities` 查看这些边界，不要把 catalog 条目当成可执行能力。
 
 ## 超时和分阶段恢复
 

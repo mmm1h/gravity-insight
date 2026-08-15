@@ -163,15 +163,17 @@ def test_export_verification_client_id_resolver_uses_default_projection(
         ),
     ],
 )
-def test_verified_user_exports_keep_exact_allowlists_but_remain_disabled(
+def test_projection_open_user_exports_keep_exact_headers_but_need_column_types(
     operation_id,
     columns,
 ) -> None:
     route = load_catalog()[operation_id]
 
-    assert route["contract_status"] == "verified"
+    assert route["contract_status"] == "unverified"
     assert route["verification"]["online"] is True
     assert route["executable"] is False
     assert route["privacy"]["classification"] == "user_level"
     assert route["privacy"]["allowed_columns"] == columns
     assert route["privacy"]["required_columns"] == columns
+    assert "type" in route["block_reason"]
+    assert "privacy" not in route["block_reason"].casefold()

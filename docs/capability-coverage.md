@@ -61,16 +61,18 @@ stable 同样不等于已有分析产品：本轮首次从 176 条 stable operat
 5 条 `executable`：`export.material.report.start` 是唯一可创建的导出，其余 4 条
 （`export.task.list/progress/cancel`、`export.task_type.list`）是支持路由，不是创建候选。
 
-**9 条 `export.analysis.*` 全部不可执行，且本轮判定为不推进**：
+**9 条 `export.analysis.*` 仍全部不可执行；2026-08-15 投影放开后重新裁定如下**：
 
 | 分类 | 数量 | route | 结论 |
 | --- | --- | --- | --- |
-| 合同已验证，隐私 gate 阻塞 | 3 | `origin_event.evaluate`、`segment.result.start`、`user_event.start` | 在线 wire 与文件协议已验证，但导出内容落在用户级标识/用户事件上，缺经批准的投影。**保留项**，不因合同可用而放行 |
-| 合同未验证 | 6 | `origin_event.start`、`monetization_detail.start`、`segment_user_detail.start`、`stream_event.start`、`user_detail.start`、`pay_event.start` | 多数在线可建任务但任务失败，或返回 1004 无 task id；请求形状与文件 schema 未证明。**无新证据不重试** |
+| 父工作流依赖 | 1 | `origin_event.evaluate` | 自身估算请求与聚合响应已验证，但配对 `origin_event.start` 的成功 create 和文件合同未成立；旧口径把它误算成用户级投影阻塞 |
+| 投影已放开、文件类型未证实 | 2 | `segment.result.start`、`user_event.start` | 前者只有 1 行但未记录单元格存储/逻辑类型，后者为 0 行；两者虽有 XLSX 表头与单 worksheet 证据，仍不满足完整文件 schema |
+| 请求/文件合同未验证 | 6 | `origin_event.start`、`monetization_detail.start`、`segment_user_detail.start`、`stream_event.start`、`user_detail.start`、`pay_event.start` | 多数在线可建任务但任务失败，或返回 1004 无 task id；成功 payload/父绑定与完整文件 schema 未证明。**无新证据不重试** |
 
-这是分析动线里唯一确定不脱离引力 Web 的环节：分析结果的导出需要先有经批准的用户级数据投影，
-属于范围与安全模型问题，不是工程排期问题。调用方用 `export list-capabilities` 查看边界，
-不要把 catalog 条目当成可执行能力。
+SDK 已按投影总裁决移除 `user_level` 的本地禁出总闸门，但不会用该裁决替代请求或文件合同。
+本轮最小父资源复核在 2 次 HTTP 200 后因第一页分群为空停止，create/poll/download 均为 0；没有
+换 App、翻页、扩窗或重试。调用方用 `export list-capabilities` 查看边界，不要把 catalog 条目当成
+可执行能力。
 
 ## 刷新与核对
 

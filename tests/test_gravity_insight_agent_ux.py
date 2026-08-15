@@ -303,7 +303,7 @@ class DiscoveryUxTests(unittest.TestCase):
         )
         search.assert_not_called()
 
-    def test_agent_export_card_is_direct_and_privacy_blocked_routes_stay_hidden(self) -> None:
+    def test_agent_export_card_is_direct_and_catalog_only_routes_stay_hidden(self) -> None:
         operation_id = "export.material.report.start"
         for query in ("export", "导出素材报表", operation_id):
             with self.subTest(query=query):
