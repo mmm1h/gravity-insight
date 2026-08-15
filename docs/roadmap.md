@@ -233,6 +233,70 @@ NDJSON 只保留在已有明确逐记录编码合同的入口；本轮不把它�
 就是同构标量行数组，且所有状态与收据都有无损、版本化的独立承载，才可单独评估 CSV；不得为嵌套
 结果定义通用拍平规则。xlsx 仍只走治理导出 effect。
 
+### 生产 HTTP 请求收据耐久性裁决（2026-08-15）
+
+**裁决：每个 HTTP response 返回实际 transport 的同步边界，先把值无关请求收据写入
+`state_root/receipts/http/`，再解析响应体、判断重试、做投影/合同校验或组装分页、产品、composite、
+Plan envelope。** 每个 response/attempt 独立使用 `result_output.write_rendered_result` 的 write、flush、
+fsync 与 atomic replace；probe 完整 evidence 的最终写入也复用同一耐久原语。收据合同
+`gravity.http-receipt.v1` 只含 `operation_id/method/path/http_status/completed_at/page_number/attempt/retry`
+和 request shape fingerprint，不含请求值、响应体、App ID、凭据或业务标识值。
+
+修复前实际有七条后置记录路径：prober 内存 observation、单页 `ReadResult.page`、全分页 merge receipt、
+产品 sanitizer envelope、composite component、Plan partial、以及 Resolver/catalog/log。前六条都要等各自
+本地处理成功；Resolver 只在 `_finish` 写总 `request_count`，catalog/log 也在公开 read 退出时更新，且
+都不是逐请求 HTTP 账本。因此请求后投影或合同校验失败、分页中途异常、组件 projector 异常和进程强杀
+均可丢记录；日志 handler 与收尾函数不能补这个事实。
+
+两条独立复现分别落在同一窗口：d28 的 `app.list` 与 `report.get.query` response 已返回，但 prober
+observation 尚在内存，后续 `calc_total.data_list` 本地校验退出；agent-usability 的 Q13/Q14 则在分页
+聚合及产品/Plan 重建前失败，所以只能留下 3–11 次的界。修复用 fake session 注入并证明：200 response
+后的投影和合同校验异常仍有 status receipt；页 3 transport 异常前页 1/2 各有 receipt；503→200 retry
+的两个 attempt 各有 receipt；composite 失败组件的 503 仍有 receipt；写目标不可用不覆盖原错误；子进程
+进入 prober response body 解析后立即 `TerminateProcess`，已完成 response 的 receipt 已在盘。
+
+写目标不可用时请求结果和原始错误优先，SDK 只附加固定结构的
+`gravity_http_receipt_write_failed` 日志，不改变错误分类、operation、wire、退出码或既有 envelope 字段。
+因此对外 envelope 合同增减为 **0**；新增的是私有状态目录中的向后兼容旁路 artifact。不能宣称绝对不丢：
+response 返回与第一条记账指令之间仍有指令级 kill 窗口；transport 在返回 response 前抛错时，即使请求
+可能已到上游，SDK 也没有可登记的 HTTP status；写目标不可用、OS/硬件违背 fsync 承诺、Windows 缺少
+目录 fsync 等价物、requests 内部自动重定向的中间 hop、或调用方自定义 transport 绕过仓库 production
+transport 时仍可能缺 receipt。后两类都不宣称属于逐上游 wire-hop 的完整账本。
+
+本裁决不新增或升级 operation，`185 → +0 = 185`；不新增产品动线，台账
+`48 = 32 / 0 / 16 → +0 / +0 / +0 = 48 = 32 / 0 / 16`。质量债只收紧：
+`http_runtime.py` 文件 SLOC ratchet `680 → -3 = 677`。本单元生产 HTTP 为 0。
+
+### 生产 HTTP 请求收据有界保留裁决（2026-08-15）
+
+**裁决：只保留同时属于最近 10,000 个且不老于 7 天的已结束运行 receipt；活动运行的全部
+receipt 不受数量和时间清理。** 两个正整数可分别由 `GRAVITY_HTTP_RECEIPT_MAX_FILES` 和
+`GRAVITY_HTTP_RECEIPT_MAX_AGE_DAYS` 覆盖；缺失、空白或非法值回退有限默认值，不提供因漏配置而
+无限增长的模式。v1 紧凑 JSON 每个约数百字节，10,000 个约 3–5 MiB 内容；按常见 4 KiB 分配单元
+约 40 MiB，另有目录项元数据。窗口是 `min(7 天, 10,000 / 实际 HTTP response 速率)`：100 次/天
+约 7 天，1 次/分钟约 6.9 天，1,000 次/小时约 10 小时。
+
+清理严格在当前 receipt 沿用 write/flush/fsync/atomic replace **成功返回以后**执行，不能进入 response
+返回与同步落盘之间。每个进程对每个 state root 首次成功写后扫一次，此后每 64 次写扫一次；10,000
+文件稳态下摊销约 157 个目录项检查/次写。进程间只竞争非阻塞 prune lease，拿不到立即跳过；私有文件名
+带 PID 与 run ID，清理器从已发布文件自身识别并排除所有存活进程的运行。写入仍用独立临时文件和
+atomic replace，清理只看已经发布的 `*.json`，因此不会碰别人正在写的临时文件。PID
+复用最多延后旧运行回收，不会把活动运行误判为可删。
+
+任何配置、租约、列举、stat 或 unlink 失败都留在 best-effort 边界，只追加固定
+`gravity_http_receipt_prune_failed`（非法配置另有固定 retention warning），不改变成功结果，也不覆盖
+后续解析/投影抛出的原始异常。两个硬约束意味着目录可以暂时超过默认值：两次 sweep 之间最多新增 63
+个；所有并发活动运行 receipt 继续保留；不可删除目标留到后续 sweep 并告警。真实子进程回归覆盖数量与
+时间配置、10,000/7 默认值、不可 unlink 目标不改 200 结果、两个重叠进程互相清理时两边当前 receipt
+都在；原强杀、投影/合同失败、分页中断和 retry 耐久测试继续通过。
+
+这些 HTTP receipt 当前**没有公开读取入口**：源码只有写入/清理，CLI/SDK 不提供 list/get/export，公开
+Resolver envelope 也不引用逐 HTTP 文件。它们目前给知道私有 `state_root` 布局的维护者或调用方做人肉
+事后排查，不是可承诺的程序化消费面。因此本轮不把私有文件布局升格为 API；若出现真实消费需求，应另轮
+先定义只读查询 envelope、稳定排序/分页和缺口语义，再据消费 SLA 重评 7 天/10,000 默认值，不能直接让
+调用方依赖目录 glob。本裁决不改 receipt schema、公开 envelope 或产品能力：operation
+`185 → +0 = 185`；产品动线 `48 = 32 / 0 / 16 → +0 / +0 / +0 = 48 = 32 / 0 / 16`；生产 HTTP 0 次。
+
 D32 本轮先估 22 次、实际只发 5 次最小 stable 根读取；5 次均为 HTTP 200 空样本。复用 D33
 的 Bilibili/Huya 3 次证据后，七个平台中只有 Bilibili account 曾非空，但其 advertiser 为空；
 其余六个平台在允许的根读取或最短单日 advertiser 窗口内均为空。没有权限失败、合同漂移、重试、

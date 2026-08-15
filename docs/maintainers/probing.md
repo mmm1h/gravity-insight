@@ -20,7 +20,7 @@
 - 记录 operation、状态、合同指纹和脱敏错误；不记录 token、Cookie、请求头或原始用户行。
 - `permission_unavailable`、`empty` 和 `contract_changed` 必须分开处理。
 - 发现未登记字段时以 `contract_changed_additive` 失败关闭；确认字段路径与类型后登记并暴露，
-  不把漂移检测重新变成字段级隐藏。
+  按“上游授权即产品边界”交付，不把漂移检测重新变成字段级隐藏审批。
 
 ## 浏览器边界
 

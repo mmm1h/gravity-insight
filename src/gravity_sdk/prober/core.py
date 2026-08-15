@@ -16,6 +16,7 @@ from gravity_sdk.paths import (
     STATE_ROOT,
     TMP_ROOT as SDK_TMP_ROOT,
 )
+from gravity_sdk.result_output import write_rendered_result
 
 
 REPO_ROOT = STATE_ROOT
@@ -80,11 +81,8 @@ def iter_json_evidence(
 
 
 def write_json(path: Path, value: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
     payload = json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
-    temporary = path.with_name(path.name + ".tmp")
-    temporary.write_text(payload, encoding="utf-8", newline="\n")
-    temporary.replace(path)
+    write_rendered_result(str(path), payload)
 
 
 def display_path(path: Path) -> str:

@@ -14,6 +14,9 @@ from urllib.parse import urljoin, urlsplit
 
 import requests
 
+from gravity_sdk.paths import STATE_ROOT
+from gravity_sdk.receipt import perform_http_request, request_receipt_context
+
 from .io import sha256_bytes, stable_bundle_id, write_json
 
 
@@ -145,7 +148,22 @@ class StaticFetcher:
             if not self._reserve_attempt():
                 raise _FetchError("request budget exhausted", url=url)
             try:
-                response = self._session().get(url, timeout=self.timeout, allow_redirects=True)
+                response = perform_http_request(
+                    self._session().get,
+                    url,
+                    timeout=self.timeout,
+                    allow_redirects=True,
+                    http_receipt={
+                        **request_receipt_context(
+                            operation_id="census_fetch",
+                            method="GET",
+                            path=urlsplit(url).path,
+                        ),
+                        "attempt": attempt + 1,
+                        "retry": attempt > 0,
+                    },
+                    receipt_root=STATE_ROOT,
+                )
                 if 400 <= response.status_code < 500:
                     raise _FetchError(
                         f"GET returned non-retryable HTTP {response.status_code}: {url}",
