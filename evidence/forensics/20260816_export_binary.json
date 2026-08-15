@@ -1,0 +1,253 @@
+{
+  "schema_version": "gravity-insight.export-binary-forensics.v1",
+  "observed_at": "2026-08-15T19:13:13Z",
+  "values_persisted": false,
+  "credentials_persisted": false,
+  "request_policy": {
+    "attempts_per_request": 1,
+    "page": 1,
+    "page_size": 1,
+    "page_advanced": false,
+    "date": "2026-08-16",
+    "date_window_expanded": false,
+    "app_switched": false,
+    "project_switched": false
+  },
+  "static_asset_gets": {
+    "business_request_count": 0,
+    "http_request_count": 31,
+    "unique_asset_count": 14,
+    "avoidable_repeat_count": 17,
+    "status": 200,
+    "assets": [
+      {
+        "name": "Download-DlEV6nb1.js",
+        "request_count": 2,
+        "sha256": "a3310b44510c0c7fb5ebf266e530c4d2ddaf20fc876fc441987946660392fc89"
+      },
+      {
+        "name": "CashSearch-00g6muds.js",
+        "request_count": 3,
+        "sha256": "3ceb1347c303a19b5b10679746ed64ea58c6637c242dd9f0b86db42df0d958e2"
+      },
+      {
+        "name": "UserGroupDetail-DQZjkDs2.js",
+        "request_count": 2,
+        "sha256": "53395adf7e600b25c594ec61016acfaf2507c68b20a164228d55fbd3a638f95f"
+      },
+      {
+        "name": "UserList-DPqkZ6_d.js",
+        "request_count": 2,
+        "sha256": "a8f1b29994ddbb6e5e9dc9d41ae2396cd41b4b6bb698c4333058bd99fbb38d0c"
+      },
+      {
+        "name": "Debug-hpZqESZ9.js",
+        "request_count": 7,
+        "sha256": "36bf9a81a27fcf749242c8643e1c5ffef19b75b55ce5fab5da44e5095afe44bf"
+      },
+      {
+        "name": "search-B8IEKRTe.js",
+        "request_count": 3,
+        "sha256": "2195c075ae8f05b692999c973a8e0f53f1466ea3909dc1e7e809514b008fa33a"
+      },
+      {
+        "name": "sequence-d2be4mQE.js",
+        "request_count": 3,
+        "sha256": "8faa419513cd71e33b6d6b71aed1a3f380579c466bfb41fc08938f69842a98fb"
+      },
+      {
+        "name": "OrderSearch-CWst2Lj-.js",
+        "request_count": 3,
+        "sha256": "a93358d7db86771821ed8382c4729b470f0cc7df56b9387977e36b086d832bf6"
+      },
+      {
+        "name": "sequence-data-BLZG4_Oh.js",
+        "request_count": 1,
+        "sha256": "2b657c7b58620890f65f5c5b06c84a5b04d2c0b9c8a260538a20ffed8c760caf"
+      },
+      {
+        "name": "Clouddrive_pro-DZNkBF3z.js",
+        "request_count": 1,
+        "sha256": "25ba5a5c54cdd991a336aa5b5d002bbfa9f479e6dece7f35700ba797db3fcd42"
+      },
+      {
+        "name": "ad-data-BoZxCaUe.js",
+        "request_count": 1,
+        "sha256": "4ac6aeea3ebfec65bf4d71996c468c61ea6f3eb118ac3c34a031ce0cc3e2046e"
+      },
+      {
+        "name": "MaterialTable-B74wGXBj.js",
+        "request_count": 1,
+        "sha256": "1f5ec0131d194c3196984c04bfd4b4ff8dd966070746bcc76e8355d9b84e02f2"
+      },
+      {
+        "name": "materialSwiper-TdLw2y8C.js",
+        "request_count": 1,
+        "sha256": "01b29752fa18e024cc52b1e7a73a7267e831666d61a5f98c88b98a65e655f299"
+      },
+      {
+        "name": "materialSwiper-YAE_GJJR.js",
+        "request_count": 1,
+        "sha256": "1daf8fb92f88859ab9a033f26b7804edb243cbc5362a7fb2663cfc99f61afdd8"
+      }
+    ]
+  },
+  "line_a": {
+    "business_http_request_count": 2,
+    "read_semantics_preflight": [
+      "app.list",
+      "analysis.user_detail.list",
+      "analysis.user_event.list"
+    ],
+    "confirmed_read_records_added": [],
+    "http": [
+      {
+        "sequence": 1,
+        "operation_id": "app.list",
+        "method": "GET",
+        "path": "/turbo_engine/api/v1/user/open_app/list/",
+        "http_status": 200,
+        "semantic_code": 0,
+        "request_shape_fingerprint": "60bae6d70b3f71dbdd53c061c343439b51a522a7ca66dcba179422b912ed1be6",
+        "response_shape_fingerprint": "73c4a2578f8a6806e60edb86260a4b15c4acac39fe47f555a4cff0db81f66913",
+        "conclusion": "first app selected in memory"
+      },
+      {
+        "sequence": 2,
+        "operation_id": "analysis.user_detail.list",
+        "method": "POST",
+        "path": "/report/api/v3/dataanalysis/user/detail/list/",
+        "http_status": 200,
+        "semantic_code": 0,
+        "request_shape_fingerprint": "85bec80f071a70a09f52f91a7cc5dfa745d629577f049bfa7c4798a708ae591e",
+        "response_shape_fingerprint": "7c58ed2c08c62403763f03bf84baabf2f6609efc6064f87aa03b35d9b739c9ea",
+        "conclusion": "single-day first page was empty; stopped before user_event read or export create"
+      }
+    ],
+    "static_control_flow": {
+      "origin_event": "evaluate and create consume the same seven-field body; paired successful create/file workflow remains unproved",
+      "monetization_detail": "field_map is the visible code-to-label mapping and export is gated on a non-empty displayed result",
+      "segment_result": "body is app_id, segment_id, version_id, task_name",
+      "segment_user_detail": "body binds both temporary/persisted segment identifiers and the selected visible field_map",
+      "user_detail": "body reuses visible field_map plus global/postback conditions and logic and is gated on a non-empty displayed result",
+      "user_event": "body is the exact preceding event-list request plus task_name; default group_by is day",
+      "pay_event": "body reuses visible field_map plus global/order conditions and logic and is gated on a non-empty displayed result",
+      "stream_event": "the server download loader has no static invocation; the visible export button serializes the in-memory table in the browser"
+    },
+    "export_create_request_count": 0,
+    "conclusion": "not_closed",
+    "remaining_fact": "no non-empty current-day parent row was available to create a user_event export; stream_event still has no proved server request contract, and the other routes still lack successful complete file schemas or logical types",
+    "minimum_next_action": "on a tenant/day known to contain one user row, repeat the same page-1/page-size-1 chain and create exactly one user_event task; separately obtain an authoritative or naturally invoked stream-event server request before probing it"
+  },
+  "line_b": {
+    "production_http_request_count": 5,
+    "read_semantics_preflight": [
+      "promotion.bytedance.project_filter.list",
+      "material.bytedance.project_material.list"
+    ],
+    "confirmed_read_records_added": [],
+    "http": [
+      {
+        "sequence": 1,
+        "operation_id": "promotion.bytedance.project_filter.list",
+        "method": "POST",
+        "path": "/turbo_engine/api/v1/bytedance/report/project/filters/",
+        "http_status": 200,
+        "semantic_code": 0,
+        "conclusion": "first project selected in memory"
+      },
+      {
+        "sequence": 2,
+        "operation_id": "material.bytedance.project_material.list",
+        "method": "POST",
+        "path": "/turbo_engine/api/v1/bytedance/project/material_get/",
+        "http_status": 200,
+        "semantic_code": 0,
+        "conclusion": "one video item exposed file_url and thumbnail_url; values were not persisted"
+      },
+      {
+        "sequence": 3,
+        "operation_id": "material.binary.head.probe",
+        "method": "HEAD",
+        "host": "v26-cc.oceanengine.com",
+        "path_shape": "/{opaque}/{opaque}/video/tos/cn/tos-cn-ve-51/{opaque}",
+        "http_status": 200,
+        "content_type": "video/mp4",
+        "redirect_observed": false,
+        "conclusion": "range support advertised"
+      },
+      {
+        "sequence": 4,
+        "operation_id": "material.binary.get.probe",
+        "method": "GET",
+        "host": "v26-cc.oceanengine.com",
+        "path_shape": "/{opaque}/{opaque}/video/tos/cn/tos-cn-ve-51/{opaque}",
+        "http_status": 206,
+        "requested_range": "bytes=0-1023",
+        "bytes_observed": 1024,
+        "content_type": "video/mp4",
+        "magic_type": "iso-bmff",
+        "redirect_observed": false,
+        "prefix_sha256": "d5b5026a98509d929ea0462ad0c5e9387e10e80c2222ee6be45a3802a9e32246",
+        "conclusion": "sample video transport and integrity prefix confirmed without a full download"
+      },
+      {
+        "sequence": 5,
+        "operation_id": "material.binary.head.probe",
+        "method": "HEAD",
+        "host": "p26-sign.douyinpic.com",
+        "path_shape": "/tos-cn-v-{number}/{opaque}~tplv-noop.image",
+        "http_status": 405,
+        "content_type": "application/json; charset=utf-8",
+        "redirect_observed": false,
+        "conclusion": "HEAD is unsupported; no thumbnail bytes were requested"
+      }
+    ],
+    "static_control_flow": "file_url/thumbnail_url are passed directly to img/video src or browser download tasks; no fixed first-party binary route or complete origin/redirect set is present",
+    "observed_query_keys": {
+      "file_url": [
+        "a",
+        "br",
+        "bt",
+        "btag",
+        "cd",
+        "ch",
+        "cr",
+        "cs",
+        "cv",
+        "dr",
+        "ds",
+        "dy_q",
+        "feature_id",
+        "ft",
+        "l",
+        "mime_type",
+        "qs",
+        "rc"
+      ],
+      "thumbnail_url": [
+        "dy_q",
+        "l",
+        "x-expires",
+        "x-signature"
+      ]
+    },
+    "conclusion": "not_closed",
+    "remaining_facts": [
+      "one sample does not prove the complete sharded host/path set",
+      "thumbnail GET content, magic bytes and redirect behavior remain unknown after HEAD 405",
+      "redirect targets outside the two initial origins remain unproved",
+      "maximum sizes and URL expiry semantics remain unproved",
+      "historical deleted, expired, not-cached and permission-denied states cannot be classified from a currently valid item"
+    ],
+    "minimum_next_action": "obtain the upstream CDN contract or approved value-free traces covering every origin/redirect and the four historical failure states; then issue one 1 KiB range GET for a naturally valid thumbnail if that contract authorizes it"
+  },
+  "totals": {
+    "static_asset_http": 31,
+    "business_api_http": 4,
+    "binary_transport_http": 3,
+    "production_http_excluding_static_assets": 7,
+    "retries": 0,
+    "additional_pages": 0
+  }
+}

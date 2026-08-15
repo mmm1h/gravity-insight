@@ -1621,6 +1621,70 @@ operation 也保持 `185 → +0 → 185`（stable `176 → +0 → 176`）。
 以及四种不可用状态的判别。取得这些证据后，先登记二进制 effect 合同与离线负向测试，再做一个最小、
 非空、串行 probe；不得通过任意 URL 参数或动态学习 host 来补证据。
 
+## 最后两条可推动线复核：Analysis 导出 / 平台素材二进制（2026-08-16）
+
+**判定：两条都取得新事实，但都没有达到实现门槛；本轮不新增 effect 产品，不引用新的 Plan
+“设计不适用”例外。** 完整值无关证据与逐请求账本在
+[`evidence/forensics/20260816_export_binary.json`](../evidence/forensics/20260816_export_binary.json)。
+所有读 route 在 transport 构造前均通过 `prober/read_semantics.py`；它们都是已有 stable read 合同，
+不需要新增 `confirmed_read`。没有认证交换、重试、翻页、扩日期窗、换 App 或换项目。
+
+### 零业务请求控制流
+
+冻结 `bundle-snapshot.json` 对应的 14 个唯一 bundle 全部 SHA-256 匹配。A 的静态结论是：
+
+- `origin_event.evaluate/start` 共用同一个七字段 body；`segment.result.start` 是
+  `app_id/segment_id/version_id/task_name`；`user_event.start` 精确复用前一笔事件列表 body 并追加
+  `task_name`，默认 `group_by=day`。
+- monetization、segment-user-detail、user-detail、pay-event 的 `field_map` 和筛选/父引用绑定均已恢复；
+  三条明细导出只在当前表格非空时触发。它们过去取得 task id 后仍以 FAILED 结束，故静态绑定不能
+  替代成功文件 schema。
+- `stream_event.start` 只有一个从未调用的 POST loader；实际“导出数据”按钮调用客户端表格序列化
+  helper。由此只能证明 server route **没有自然调用证据**，不能猜空 body 或照 route 名发请求。
+
+B 的静态结论是 `file_url/thumbnail_url` 被直接交给 `<img>/<video>` 或浏览器下载任务；没有独立、
+固定的第一方二进制 route，也没有静态完整 origin、path prefix、redirect 或失效状态集合。
+
+控制流复核共发生 **31 次公开静态资源 GET / 14 个唯一 URL / 全部 HTTP 200**。其中 17 次是同一
+bundle 的重复读取，本可首次下载后在本地完成，属于本轮不必要的静态 HTTP；它们没有携带凭据或业务
+参数，也不计入下面的 7 次生产业务/二进制探测。后续同类复核必须先落 `tmp/` 缓存再搜索，避免重复。
+
+### 生产请求账本
+
+| 动线 | # | Operation / transport | HTTP | 结论 |
+| --- | ---: | --- | ---: | --- |
+| A | 1 | `app.list` | 200 / code 0 | 第一页取得首个 App，仅内存使用。 |
+| A | 2 | `analysis.user_detail.list` | 200 / code 0 | 首个 App、`2026-08-16` 单日、`page=1/page_size=1` 明确空；立即停止。 |
+| B | 1 | `promotion.bytedance.project_filter.list` | 200 / code 0 | 第一页取得首个项目，仅内存使用。 |
+| B | 2 | `material.bytedance.project_material.list` | 200 / code 0 | 取得一个视频条目的 `file_url/thumbnail_url`；URL 值未落盘。 |
+| B | 3 | observed `file_url`，HEAD | 200 | origin `v26-cc.oceanengine.com`，`video/mp4`，声明 bytes range，无 redirect。 |
+| B | 4 | 同一 `file_url`，`Range: bytes=0-1023` | 206 | 只读 1024 bytes；`video/mp4` 与 ISO-BMFF magic 一致，无 redirect，未下载完整文件。 |
+| B | 5 | observed `thumbnail_url`，HEAD | 405 | origin `p26-sign.douyinpic.com`；HEAD 不支持，未继续猜 GET 或取图片字节。 |
+
+A 合计 **2 次**；没有发送 `analysis.user_event.list`、export create、poll 或 download。此次空样本不能
+补 `user_event.start` 的五列逻辑类型；另外八条仍分别缺成功完整文件 schema，且
+`stream_event.start` 还缺可调用 server request。最小下一步分两件：在已知单日有用户事件的租户上
+复用同一 `page=1/page_size=1` 父链并只创建一个 `user_event` 任务；由上游 owner 或自然 Web 调用提供
+`stream_event` 的真实 server request，二者都不得靠扩大日期/App 猜取。
+
+B 合计 **5 次**。当前样本证明一个视频 origin/path shape、无重定向的 HEAD/206 Range GET 以及
+MP4 magic；但单一样本不能证明完整分片 host/path 集合，缩略图 GET/redirect/magic、最大尺寸、
+`x-expires` 语义及历史 `not_found/expired/not_cached/permission_unavailable` 均未知。因此不能把观察到
+的两个 host 动态写成下载 allowlist，也不能实现任意 URL 下载器。最小下一步是取得 CDN/API owner 的
+值无关合同或批准 trace，覆盖全部 origin/redirect、尺寸/过期和四类历史失败；该合同授权后，再对自然
+有效缩略图做一次 1 KiB Range GET。
+
+投影总裁决在本轮实际落地：`material.bytedance.project_material.list` 的 `file_url/thumbnail_url`
+与两个已观察为空的试玩容器已从 omitted 移入稳定投影；同一父请求新观察到的 `app.list`
+`download_url/icon_url/remark/sub_package_list` 也全部登记暴露。未登记 item 仍 additive fail-closed；
+试玩容器当前只登记空容器，未来出现未登记 item key 时继续 fail-closed。此变更只扩大已有 stable read
+结果，不新增独立动线或 caller 可恢复错误点。
+
+可复算计数：旧值 `48 = 33 / 0 / 15`；A `+0 / +0 / +0`，B `+0 / +0 / +0`；新值仍为
+**`48 = 33 / 0 / 15`**。operation `185 + 0 = 185`，stable `176 + 0 = 176`。由于没有闭环并发布
+新 effect，三个 Plan 例外条件没有被用于本轮判定：没有新增 effect/Plan 不兼容声明、没有新的直接
+CLI/SDK/Agent task-set 等价证明，也没有新增“设计不适用”表格登记。
+
 ## Issue 16 Windows CLI UTF-8 裁决（2026-08-15）
 
 **判定：缺陷位于通用 CLI 出站层与通用异常分类，不在 Analysis values operation。** Windows

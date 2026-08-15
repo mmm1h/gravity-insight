@@ -61,11 +61,11 @@
       "path": "/report/api/v3/dataanalysis/export/origin_event_data/submit_task/",
       "contract_status": "unverified",
       "executable": false,
-      "block_reason": "Online POST returned code 1004 without a task id; successful create binding and the complete file schema remain unverified",
+      "block_reason": "The exact seven-field frontend create binding is verified, but the earlier POST returned code 1004 without a task id; a successful create and the complete file schema remain unverified",
       "request": {"location": "body", "allowed_fields": ["app_id", "task_name", "task_type", "time_range", "event_name_list", "cond_logic", "conditions"], "required_fields": ["app_id", "task_name", "task_type", "time_range", "event_name_list", "cond_logic", "conditions"], "fixed_fields": {"task_type": "origin_event_data"}},
       "response": {"job_id_paths": ["data.task_id", "task_id"]},
       "privacy": {"classification": "user_level", "format": null, "allowed_columns": [], "required_columns": []},
-      "verification": {"method_source": "frontend_asset_and_online_attempt", "online": false, "attempted_online": true, "notes": "POST returned HTTP 200/code 1004 with no task id; request shape is not verified"}
+      "verification": {"method_source": "frontend_asset_and_online_attempt", "online": false, "attempted_online": true, "notes": "Hash-matched Download-DlEV6nb1.js proves evaluate/create share app_id, task_name, fixed task_type=origin_event_data, time_range, event_name_list, cond_logic and conditions. The earlier POST returned HTTP 200/code 1004 with no task id; success and file shape remain unverified"}
     },
     {
       "operation_id": "export.analysis.monetization_detail.start",
@@ -74,11 +74,11 @@
       "path": "/report/api/v3/dataanalysis/monetization_detail/download/",
       "contract_status": "unverified",
       "executable": false,
-      "block_reason": "Creation was accepted, but the task failed; field_map/filter binding and the complete file schema remain unverified",
+      "block_reason": "The exact visible field_map/filter frontend binding is verified, but the accepted task failed; a successful file and its complete schema remain unverified",
       "request": {"location": "body", "allowed_fields": ["app_id", "field_map", "global_conditions", "local_conditions", "task_name"], "required_fields": ["app_id", "field_map", "global_conditions", "local_conditions", "task_name"], "fixed_fields": {}},
       "response": {"job_id_paths": ["data.task_id", "task_id"]},
       "privacy": {"classification": "user_level", "format": null, "allowed_columns": [], "required_columns": []},
-      "verification": {"method_source": "frontend_asset_and_online_partial", "online": false, "attempted_online": true, "notes": "POST with field_map as a code-to-label object returned code 0 and data.task_id; first progress poll returned status 3 FAILED, so no file was available"}
+      "verification": {"method_source": "frontend_asset_and_online_partial", "online": false, "attempted_online": true, "notes": "Hash-matched CashSearch-00g6muds.js proves field_map is the visible code-to-label mapping with global/local conditions and a single-day create_time filter; export is gated on a non-empty displayed result. The earlier POST returned code 0/data.task_id then status 3 FAILED, so no file was available"}
     },
     {
       "operation_id": "export.analysis.segment.result.start",
@@ -100,11 +100,11 @@
       "path": "/report/api/v3/dataanalysis/segment/user/detail/download/",
       "contract_status": "unverified",
       "executable": false,
-      "block_reason": "Creation was accepted, but the task failed; field_map and tmp/persisted segment parent binding plus the complete file schema remain unverified",
+      "block_reason": "The exact selected field_map and tmp/persisted segment frontend binding is verified, but the accepted task failed; a successful file and its complete schema remain unverified",
       "request": {"location": "body", "allowed_fields": ["field_map", "task_name", "app_id", "tmp_segment_id", "segment_id"], "required_fields": ["field_map", "task_name", "app_id", "tmp_segment_id", "segment_id"], "fixed_fields": {}},
       "response": {"job_id_paths": ["data.task_id", "task_id"]},
       "privacy": {"classification": "user_level", "format": null, "allowed_columns": [], "required_columns": []},
-      "verification": {"method_source": "frontend_asset_and_online_partial", "online": false, "attempted_online": true, "notes": "POST returned code 0 and data.task_id; first progress poll returned status 3 FAILED, so no file schema was available"}
+      "verification": {"method_source": "frontend_asset_and_online_partial", "online": false, "attempted_online": true, "notes": "Hash-matched UserGroupDetail-DQZjkDs2.js proves field_map plus app_id, tmp_segment_id and segment_id binding. The earlier POST returned code 0/data.task_id then status 3 FAILED, so no file schema was available"}
     },
     {
       "operation_id": "export.analysis.stream_event.start",
@@ -113,11 +113,11 @@
       "path": "/report/api/v3/dataanalysis/stream/event/list/download/",
       "contract_status": "unverified",
       "executable": false,
-      "block_reason": "The request contract and complete file schema are unverified; projection approval does not establish either",
+      "block_reason": "The hash-matched frontend declares a loader for this route but never invokes it; the visible button performs client-side table export, so the server request contract and complete file schema remain unverified",
       "request": {"location": "body", "allowed_fields": [], "required_fields": [], "fixed_fields": {}},
       "response": {"job_id_paths": ["data.task_id", "task_id"]},
       "privacy": {"classification": "user_level", "format": null, "allowed_columns": [], "required_columns": []},
-      "verification": {"method_source": "census_high", "online": false}
+      "verification": {"method_source": "frontend_asset_uninvoked", "online": false, "notes": "Debug-hpZqESZ9.js constructs the POST loader but has no call site; its export button serializes the current in-memory table through the client-side export helper. No request may be guessed from the unused loader"}
     },
     {
       "operation_id": "export.analysis.user_detail.start",
@@ -126,11 +126,11 @@
       "path": "/report/api/v3/dataanalysis/user/detail/download/",
       "contract_status": "unverified",
       "executable": false,
-      "block_reason": "Creation was accepted, but the task failed; field_map/filter binding and the complete file schema remain unverified",
+      "block_reason": "The exact visible field_map/filter frontend binding is verified, but the accepted task failed; a successful file and its complete schema remain unverified",
       "request": {"location": "body", "allowed_fields": ["app_id", "field_map", "task_name", "global_conditions", "postback_conditions", "user_cond_logic", "postback_cond_logic"], "required_fields": ["app_id", "field_map", "task_name", "global_conditions", "postback_conditions", "user_cond_logic", "postback_cond_logic"], "fixed_fields": {}},
       "response": {"job_id_paths": ["data.task_id", "task_id"]},
       "privacy": {"classification": "user_level", "format": null, "allowed_columns": [], "required_columns": []},
-      "verification": {"method_source": "frontend_asset_and_online_partial", "online": false, "attempted_online": true, "notes": "POST with field_map as a code-to-label object returned code 0 and data.task_id; first progress poll returned status 3 FAILED, so no file was available"}
+      "verification": {"method_source": "frontend_asset_and_online_partial", "online": false, "attempted_online": true, "notes": "Hash-matched search-B8IEKRTe.js proves field_map plus global/postback conditions and logic binding; export is gated on a non-empty displayed result. The earlier POST returned code 0/data.task_id then status 3 FAILED, so no file was available"}
     },
     {
       "operation_id": "export.analysis.user_event.start",
@@ -143,7 +143,7 @@
       "request": {"location": "body", "allowed_fields": ["app_id", "client_id", "desc", "group_by", "event_list", "date_list", "page_info", "query_item_list", "task_name"], "required_fields": ["app_id", "client_id", "desc", "group_by", "event_list", "date_list", "page_info", "query_item_list", "task_name"], "fixed_fields": {}},
       "response": {"job_id_paths": ["data.task_id", "task_id"]},
       "privacy": {"classification": "user_level", "format": "xlsx", "extension": ".xlsx", "mime_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "allowed_columns": ["客户(client_id)", "用户注册时间", "事件发生时间", "事件", "事件属性"], "required_columns": ["客户(client_id)", "用户注册时间", "事件发生时间", "事件", "事件属性"], "allowed_hosts": ["gravity-client-resource.oss-cn-hangzhou.aliyuncs.com"], "allowed_redirect_hosts": [], "allowed_path_prefixes": {"gravity-client-resource.oss-cn-hangzhou.aliyuncs.com": ["/266183/excels/"]}},
-      "verification": {"method_source": "frontend_asset_and_online_partial", "online": true, "attempted_online": true, "notes": "Earlier POST returned data.task_id; progress reached status 2 READY; XLSX was 4999 bytes, 0 rows, 1 worksheet, and 5 fixed headers, so no logical column type was observable. The 2026-08-15 recheck stopped after the first App's first segment page was empty, before parent member resolution or create; no retry, paging, App switch, or date expansion"}
+      "verification": {"method_source": "frontend_asset_and_online_partial", "online": true, "attempted_online": true, "notes": "Hash-matched sequence-d2be4mQE.js proves the export body is the exact preceding event-list request plus task_name; sequence-data-BLZG4_Oh.js proves default group_by=day. Earlier create/poll produced a 4999-byte, zero-row XLSX with 1 worksheet and 5 fixed headers, so logical types remain unknown. The 2026-08-16 recheck stopped after app.list and the first App's single-day user_detail page returned empty; no event read, create, retry, paging, App switch or date expansion"}
     },
     {
       "operation_id": "export.analysis.pay_event.start",
@@ -152,11 +152,11 @@
       "path": "/report/api/v3/dataanalysis/user/pay_event/download/",
       "contract_status": "unverified",
       "executable": false,
-      "block_reason": "Creation was accepted, but the task failed; field_map/filter binding and the complete file schema remain unverified",
+      "block_reason": "The exact visible field_map/filter frontend binding is verified, but the accepted task failed; a successful file and its complete schema remain unverified",
       "request": {"location": "body", "allowed_fields": ["app_id", "field_map", "global_conditions", "order_conditions", "user_cond_logic", "order_cond_logic", "task_name"], "required_fields": ["app_id", "field_map", "global_conditions", "order_conditions", "user_cond_logic", "order_cond_logic", "task_name"], "fixed_fields": {}},
       "response": {"job_id_paths": ["data.task_id", "task_id"]},
       "privacy": {"classification": "user_level", "format": null, "allowed_columns": [], "required_columns": []},
-      "verification": {"method_source": "frontend_asset_and_online_partial", "online": false, "attempted_online": true, "notes": "POST with field_map as a code-to-label object returned code 0 and data.task_id; first progress poll returned status 3 FAILED, so no file was available"}
+      "verification": {"method_source": "frontend_asset_and_online_partial", "online": false, "attempted_online": true, "notes": "Hash-matched OrderSearch-CWst2Lj-.js proves field_map plus global/order conditions and logic binding; export is gated on a non-empty displayed result. The earlier POST returned code 0/data.task_id then status 3 FAILED, so no file was available"}
     },
     {
       "operation_id": "export.material.report.start",

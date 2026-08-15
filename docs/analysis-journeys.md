@@ -20,6 +20,14 @@
 2026-08-16 的 Agent 渐进发现与生成任务指南是既有调用方入口的可读性改进，不新增 operation、结果 envelope 或产品动线：`48 + 0 = 48`、`33 / 0 / 15 + 0 / 0 / 0 = 33 / 0 / 15`，operation 仍为 `185 + 0 = 185`、stable 仍为 `176 + 0 = 176`。它的独立三层只读入口从既有 composite card 和 compiled manifest 派生；真实查询仍经既有 Agent card/Plan/CLI 合同。生产 HTTP 0 次。
 旧快照 `21/14/6` 没有逐条证据，不能复算；本台账不还原已丢失的原始 41 条定义。
 
+2026-08-16 对最后两条工程可推动线做了静态控制流与最小生产取证，两条均推进但未闭环。A 的 8 条
+真实 frontend binding 已恢复，唯独 `stream_event` 的 server loader 没有调用点；首 App 当日用户第一页
+为空，故生产只读 2 次且没有 create/poll/download。B 生产 5 次，证明一个视频 URL 的 HEAD 200、
+1 KiB Range GET 206、`video/mp4`/ISO-BMFF magic 和无重定向，以及缩略图 HEAD 405；仍缺完整
+origin/redirect/expiry/size 与历史失败合同。投影层把本轮观察字段全部登记暴露，但不把样本 host 动态
+学习成 allowlist。计数推导为 `48 = 33 / 0 / 15 + 0 / 0 / 0 = 48 = 33 / 0 / 15`；operation
+`185 + 0 = 185`、stable `176 + 0 = 176`。详见[路线图](roadmap.md#最后两条可推动线复核analysis-导出--平台素材二进制2026-08-16)。
+
 2026-08-15 的结果来源等级是横切合同修正，不新增独立产品或结果 envelope。三条执行责任边界为
 `governed_product`（固定产品合同）、`caller_defined`（workspace recipe / SQL product，调用方负责口径）
 和 `raw_operation`（只保证 operation 合同）；离线目录及异构 Plan 分别使用 `local_catalog`、`mixed`。
@@ -168,5 +176,5 @@ writer 拒绝非有限数字；operation、投影、请求、错误分类和退�
 | 按表名或 App 查询数据表当前 schema、字段和版本（F41） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `CURRENT_TABLE_SCHEMA_PARENT_MISSING`。list 为空且无可信表名/App 来源；detail/version 父链、`table_id` 类型和“当前版本”语义未证实。 |
 | 下钻非 Bytedance 平台的计划、组和创意表现（D33/D34） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `NON_BYTEDANCE_HIERARCHY_PARENT_MISSING`。Bilibili advertiser 与 Huya account 未产出父候选；后续 ID 链、report 父字段、分页和非空 schema 未成立。 |
 | 深查各平台专属素材与创意（D32） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `PLATFORM_SPECIFIC_CREATIVE_CONTRACT_MISSING`。除 Bytedance 外普遍没有最小非空响应合同；common 素材目录不能证明平台专属字段。Bytedance 标题包已单列为独立动线闭环，**但那是 D32 之下的一个具体产品，不是这条动线的进展**；本条仍是数据证据阻塞。 |
-| 导出事件、分群、用户、付费或变现分析结果 | 完全缺失 | 无 / 无 / 设计不适用 / 有（目标 gap） | 未验证 | Agent 首问返回 `ANALYSIS_EXPORT_FILE_CONTRACT_MISSING`。9 条仍不可执行：`segment.result.start`、`user_event.start` 的投影阻塞已解除，但逻辑列类型未证实；`origin_event.evaluate` 受未证实的配对 create/file 父工作流阻塞；其余 6 条缺成功请求绑定或完整文件 schema。 |
-| 按精确平台素材引用预览或下载图片/视频（Issue 19） | 完全缺失 | 无 / 无 / 设计不适用 / 有（目标 gap） | 未验证 | Agent 首问返回 `PLATFORM_ASSET_BINARY_CONTRACT_MISSING`。API 列表已证明存在 `file_url` / `thumbnail_url` 且前端直接交给媒体元素；投影总裁决要求登记暴露这些字段，但现有证据仍不能证明二进制 host/path、重定向集合及历史失效语义，故不能配置下载 allowlist 或发起最小二进制 probe。文件 effect 与 Plan v1 的无副作用数据节点不兼容。 |
+| 导出事件、分群、用户、付费或变现分析结果 | 完全缺失 | 无 / 无 / 设计不适用 / 有（目标 gap） | 未验证 | Agent 首问返回 `ANALYSIS_EXPORT_FILE_CONTRACT_MISSING`。8 条真实 frontend binding 已恢复；`stream_event.start` 的 loader 无调用点且按钮实际做客户端导出，server request 不可猜。最小生产父链 2 次均 HTTP 200，但首 App 当日用户页为空，未创建任务。`segment.result.start` / `user_event.start` 仍缺逻辑列类型，其余条目仍缺成功完整文件 schema；投影不再是阻塞。 |
+| 按精确平台素材引用预览或下载图片/视频（Issue 19） | 完全缺失 | 无 / 无 / 设计不适用 / 有（目标 gap） | 未验证 | Agent 首问返回 `PLATFORM_ASSET_BINARY_CONTRACT_MISSING`。`file_url` / `thumbnail_url` 已登记暴露；样本视频 HEAD 200、1 KiB Range GET 206，`video/mp4`/ISO-BMFF 且无 redirect，缩略图 HEAD 405 后停止。仍缺完整 host/path/redirect、缩略图 GET、尺寸/过期与历史 `not_found/expired/not_cached/permission` 语义，故不能配置 allowlist 或实现 effect。 |

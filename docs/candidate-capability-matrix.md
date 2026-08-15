@@ -171,6 +171,17 @@ card 已闭环，原自然语言固定 gap 仅对批准形状解除。D28 聚合
 manager/feed 等无完整分页证据的 draft 还卡在 `pagination_unverified`。下一步只允许在有数据租户上复用
 同一最小范围，从对应断点开始；当前账号下不得重试或扩大范围。
 
+## 2026-08-16 追加判定：Analysis 导出与平台素材二进制
+
+两组候选都获得新证据但 **0 条晋升**。Analysis 导出的 8 条 frontend request binding 已从
+hash-matched bundle 恢复；`stream_event.start` 只存在未调用 loader，按钮实际做客户端导出。生产父链
+在首 App、单日、第一页明确空后停止，故没有 create/file/type 新证据。平台素材样本证明一个
+`file_url` 的 HEAD 200 与 1 KiB Range GET 206、MP4 magic 和无 redirect，另一个 `thumbnail_url`
+HEAD 405；这些事实不足以外推完整 CDN origin/path/redirect/expiry/size 与历史失败集合。两组均保持
+candidate/unverified，不动态学习 allowlist。既有 stable 项目素材读取按投影总裁决新增 URL 与空容器
+字段，不构成候选晋升。逐请求证据见
+[`evidence/forensics/20260816_export_binary.json`](../evidence/forensics/20260816_export_binary.json)。
+
 ## 2026-08-14 追加判定：D22 看板条件合并语义
 
 **判定：证明不了，不是部分证明。** 本轮取证 HTTP 共 10 次：1 次公开 source-map GET 返回 404；
