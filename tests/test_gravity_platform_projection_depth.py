@@ -141,7 +141,11 @@ class PlatformProjectionDepthTests(unittest.TestCase):
         self.assertEqual("contract_changed_additive", result["status"])
         self.assertEqual(total, result["data"]["total"])
         self.assertEqual(
-            {"advertiser_id": 7, "product_name": "fixture"},
+            {
+                "advertiser_id": 7,
+                "advertiser_name": "must stay hidden",
+                "product_name": "fixture",
+            },
             result["data"]["list"][0],
         )
 

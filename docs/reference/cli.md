@@ -20,7 +20,7 @@ gravity analysis dashboard snapshot  读取一个看板的控制面快照
 gravity analysis dashboard prepare|run  编译或执行一个看板的受支持图表
 gravity analysis segment snapshot  读取一个分群的详情、历史与单日计算结果
 gravity analysis saved ...    列出、读取、准备或严格重放保存分析
-gravity analysis order directory  读取无标识的单日普通订单目录
+gravity analysis order directory  读取受控四字段的单日普通订单目录
 gravity analysis order trace  按显式 TraceID 读取单日拆单明细
 gravity apps snapshot         并发读取一个 App 的治理快照
 gravity attribution snapshot  并发读取一个 App 的归因配置快照
@@ -462,7 +462,7 @@ user-event 尚无已证明的 `page_info`，因此 v1 只读取显式页并返�
 
 ### Order Directory v1
 
-已知 App 和严格单日时，一次完整读取无标识的普通订单目录：
+已知 App 和严格单日时，一次完整读取受控四字段的普通订单目录：
 
 ```powershell
 gravity analysis order directory --app main --date 2026-08-08 `
@@ -485,10 +485,11 @@ Plan adapter 固定 1。省略 `--output` 时输出安全 stdout 前缀；指定
 
 ### Monetization Detail v1
 
-`gravity analysis monetization detail --app main --date 2026-08-08` 固定使用已批准的无标识字段
-allowlist 和严格单日，不接受动态 fields/conditions/group。有效请求实测为 `P` 个明细 POST、
-0 metadata；最小空日为 1 HTTP。未知上游字段默认隐藏，永久排除字段与隐私投影边界见
-[路线图](../roadmap.md#已批准的隐私投影边界变现明细d27)。
+`gravity analysis monetization detail --app main --date 2026-08-08` 固定使用完整已登记字段集和严格单日。
+固定产品入口只接收 App、日期和分页预算；需要动态 fields/conditions/group/sort 时使用
+`analysis.monetization_detail.list`，字段和条件继续由 live metadata 校验。有效请求实测为 `P` 个
+明细 POST、0 metadata；最小空日为 1 HTTP。未登记字段仍返回
+`contract_changed_additive`，详见[投影总裁决](../roadmap.md#投影边界总裁决全面放开2026-08-15)。
 
 ### Order Split Trace v1
 
@@ -691,7 +692,7 @@ gravity promotion custom-audiences --max-pages 1000 --max-items 100000
 ```
 
 命令完整分页读取可投人群的覆盖数、上传数、来源和状态，返回
-`gravity-insight.custom-audience.v1`。`cid/company/create_user_*/tag/update_user_*` 固定省略，
+`gravity-insight.custom-audience.v1`。`cid/company/create_user_*/tag/update_user_*` 已登记返回，
 未登记字段失败关闭。未知入口使用 `gravity agent "custom audience coverage status"
 --domain promotion`，返回无缺失输入的唯一 `composite:custom_audience` 卡。
 

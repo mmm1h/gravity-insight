@@ -9,6 +9,7 @@ from typing import Any
 
 
 ROW_FIELDS = frozenset({
+    "advertiser_name",
     "advertiser_id",
     "average_cost_per_thousand",
     "click_count",
@@ -22,7 +23,7 @@ ROW_FIELDS = frozenset({
     "total_red_packet_consume",
     "total_special_red_packet_consume",
 })
-TOTAL_FIELDS = ROW_FIELDS - {"advertiser_id", "product_name"}
+TOTAL_FIELDS = ROW_FIELDS - {"advertiser_id", "advertiser_name", "product_name"}
 
 _COUNT_FIELDS = frozenset({"click_count", "show_count"})
 _NATIVE_DATA_FIELDS = frozenset({"list", "page_info", "total"})

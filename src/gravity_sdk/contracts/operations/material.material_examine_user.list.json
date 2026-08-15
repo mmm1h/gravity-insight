@@ -4,8 +4,8 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
-    "description": "List selectable material-review users while omitting email, organization, role, and superuser fields from the response.",
+    "contract_version": 2,
+    "description": "List selectable material-review users with the registered email, organization, role, and superuser fields.",
     "domain": "material",
     "effect": "read",
     "examples": [
@@ -42,37 +42,7 @@
         "password",
         "secret",
         "refresh_token",
-        "session_token",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url",
-        "uid",
-        "user_id",
-        "device_id",
-        "phone",
-        "mobile",
-        "email",
-        "idfa",
-        "idfv",
-        "imei",
-        "oaid",
-        "android_id",
-        "order_id",
-        "ip",
-        "ip_address",
-        "openid",
-        "open_id",
-        "unionid",
-        "client_id",
-        "trace_id"
+        "session_token"
       ]
     },
     "provenance": {
@@ -101,9 +71,7 @@
       "item_keys": [
         "cid",
         "id",
-        "name"
-      ],
-      "known_omitted_item_keys": [
+        "name",
         "company",
         "dept",
         "email",

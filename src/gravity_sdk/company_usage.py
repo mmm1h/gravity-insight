@@ -34,7 +34,7 @@ _DATA_FIELDS = frozenset({"list", "page_info", "total"})
 _ROW_FIELDS = frozenset({
     "date", "ad_count", "ad_create_amount_usage", "adclick_count", "cost_count",
     "event_count", "material_transmit_g_usage", "profile_count", "storage_count",
-    "tracking_count",
+    "tracking_count", "user_count",
 })
 _TOTAL_FIELDS = _ROW_FIELDS - {"date"}
 _PAGE_INFO_FIELDS = frozenset({"page", "page_size", "total_number", "total_page"})

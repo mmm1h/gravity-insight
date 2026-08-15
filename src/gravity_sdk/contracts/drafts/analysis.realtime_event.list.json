@@ -16,13 +16,7 @@
       },
       {
         "code": "response_item_schema_unverified",
-        "detail": "Static consumption and the live empty sample prove data.list only; no non-empty item schema or privacy projection is available.",
-        "evidence": "docs/candidate-capability-matrix.md",
-        "status": "open"
-      },
-      {
-        "code": "privacy_projection_approval_required",
-        "detail": "Frontend item consumers reference client_id, request_id, request_ip, and raw_properties; these unverified user-level or re-identifiable candidates remain hidden and require separate approval.",
+        "detail": "Static consumption and the live empty sample prove data.list only; no non-empty item schema or field types are available.",
         "evidence": "docs/candidate-capability-matrix.md",
         "status": "open"
       }
@@ -39,41 +33,41 @@
         ]
       },
       {
-        "classification_reason": "frontend_static_consumer_user_identifier_candidate",
+        "classification_reason": "upstream_authorized_pending_nonempty_type",
         "expose": false,
         "path": "data.list[].client_id",
         "presence": "unknown",
-        "privacy_classification": "sensitive",
+        "privacy_classification": "non_sensitive",
         "types": [
           "unknown"
         ]
       },
       {
-        "classification_reason": "frontend_static_consumer_request_identifier_candidate",
+        "classification_reason": "upstream_authorized_pending_nonempty_type",
         "expose": false,
         "path": "data.list[].request_id",
         "presence": "unknown",
-        "privacy_classification": "sensitive",
+        "privacy_classification": "non_sensitive",
         "types": [
           "unknown"
         ]
       },
       {
-        "classification_reason": "frontend_static_consumer_network_identifier_candidate",
+        "classification_reason": "upstream_authorized_pending_nonempty_type",
         "expose": false,
         "path": "data.list[].request_ip",
         "presence": "unknown",
-        "privacy_classification": "sensitive",
+        "privacy_classification": "non_sensitive",
         "types": [
           "unknown"
         ]
       },
       {
-        "classification_reason": "frontend_static_consumer_unbounded_event_payload_candidate",
+        "classification_reason": "upstream_authorized_pending_nonempty_schema",
         "expose": false,
         "path": "data.list[].raw_properties",
         "presence": "unknown",
-        "privacy_classification": "sensitive",
+        "privacy_classification": "manual_review",
         "types": [
           "unknown"
         ]
@@ -90,10 +84,7 @@
     "generated_at": "2026-08-08T20:23:09Z",
     "manual_review_fields": [
       "data.list",
-      "data.list[].client_id",
-      "data.list[].raw_properties",
-      "data.list[].request_id",
-      "data.list[].request_ip"
+      "data.list[].raw_properties"
     ],
     "probe_evidence": [
       {
@@ -147,7 +138,6 @@
         "empty_sample",
         "field_review_required",
         "pagination_unverified",
-        "privacy_projection_approval_required",
         "response_projection",
         "response_item_schema_unverified",
         "successful_probe"
@@ -267,7 +257,7 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "block_reason": "draft blockers: empty_sample, pagination_unverified, privacy_projection_approval_required, response_item_schema_unverified",
+    "block_reason": "draft blockers: empty_sample, pagination_unverified, response_item_schema_unverified",
     "contract_version": 1,
     "description": "Read the realtime event catalog for one App and one explicit time window. Item fields and server pagination remain fail-closed pending a non-empty sample.",
     "domain": "analysis",
@@ -329,37 +319,7 @@
         "password",
         "secret",
         "refresh_token",
-        "session_token",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url",
-        "uid",
-        "user_id",
-        "device_id",
-        "phone",
-        "mobile",
-        "email",
-        "idfa",
-        "idfv",
-        "imei",
-        "oaid",
-        "android_id",
-        "order_id",
-        "ip",
-        "ip_address",
-        "openid",
-        "open_id",
-        "unionid",
-        "client_id",
-        "trace_id"
+        "session_token"
       ]
     },
     "provenance": {

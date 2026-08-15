@@ -4,8 +4,8 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
-    "description": "指定 App 的回传映射收藏列表；最小探针从 app.list 解析首个 App，映射 config 与人员字段不输出。",
+    "contract_version": 2,
+    "description": "指定 App 的回传映射收藏列表；最小探针从 app.list 解析首个 App；已登记人员字段返回，未证实的 config 与自由备注仍省略。",
     "domain": "attribution",
     "effect": "read",
     "examples": [],
@@ -55,21 +55,7 @@
         "access_token",
         "token",
         "cookie",
-        "password",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "email",
-        "phone",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url",
-        "remark"
+        "password"
       ]
     },
     "provenance": {

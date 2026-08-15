@@ -16,7 +16,8 @@ CASES = {
     "metadata.event_property_template_event.list": {
         "path": "/turbo_engine/api/v2/event/property_template/event/list/",
         "safe_field": "template_type",
-        "hidden": ("cid", "create_user_id", "remark"),
+        "exposed": ("cid", "create_user_id"),
+        "hidden": ("remark",),
         "row": {
             "id": 1,
             "name": "safe event type",
@@ -29,7 +30,8 @@ CASES = {
     "promotion.bytedance.custom_audience.list": {
         "path": "/turbo_engine/api/v1/bytedance/custom_audience_list/v2/",
         "safe_field": "custom_audience_id",
-        "hidden": ("cid", "company", "create_user_name", "tag"),
+        "exposed": ("cid", "company", "create_user_name", "tag"),
+        "hidden": (),
         "row": {
             "id": 1,
             "custom_audience_id": 2,
@@ -101,6 +103,8 @@ class TemplateAudienceReadTests(unittest.TestCase):
                 )
                 row = result["data"]["list"][0]
                 self.assertIn(case["safe_field"], row)
+                for field in case["exposed"]:
+                    self.assertIn(field, row)
                 for field in case["hidden"]:
                     self.assertNotIn(field, row)
 

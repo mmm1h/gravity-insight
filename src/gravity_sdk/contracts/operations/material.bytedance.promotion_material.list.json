@@ -4,8 +4,8 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
-    "description": "巨量广告素材表现列表；按日期查询同一广告主、广告下的素材及网页端默认展示指标。",
+    "contract_version": 2,
+    "description": "巨量广告素材表现列表；按日期查询同一广告主、广告下的素材及网页端默认展示指标，并返回已登记的素材正文、标签、来源与 URL 字段。",
     "domain": "material",
     "effect": "read",
     "examples": [],
@@ -62,37 +62,7 @@
         "password",
         "secret",
         "refresh_token",
-        "session_token",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url",
-        "uid",
-        "user_id",
-        "device_id",
-        "phone",
-        "mobile",
-        "email",
-        "idfa",
-        "idfv",
-        "imei",
-        "oaid",
-        "android_id",
-        "order_id",
-        "ip",
-        "ip_address",
-        "openid",
-        "open_id",
-        "unionid",
-        "client_id",
-        "trace_id"
+        "session_token"
       ]
     },
     "provenance": {
@@ -164,9 +134,7 @@
         "source",
         "stat_cost",
         "video_cover_id",
-        "width"
-      ],
-      "known_omitted_item_keys": [
+        "width",
         "cover_source",
         "labels",
         "material_info",
@@ -178,7 +146,14 @@
       ],
       "required_data_keys": [
         "list"
-      ]
+      ],
+      "opaque_json_item_keys": [
+        "material_info"
+      ],
+      "scalar_list_item_types": {
+        "labels": "string",
+        "organization_tags": "string"
+      }
     },
     "semantic_error_rules": [
       "code",

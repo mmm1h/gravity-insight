@@ -24,6 +24,7 @@ from gravity_sdk.plan_bilibili_account_performance_adapter import (
 
 ROW = {
     "advertiser_id": 17,
+    "advertiser_name": "registered advertiser",
     "average_cost_per_thousand": 1.2,
     "click_count": 4,
     "click_rate": 0.25,
@@ -37,7 +38,7 @@ ROW = {
     "total_special_red_packet_consume": 0,
 }
 TOTAL = {key: value for key, value in ROW.items() if key not in {
-    "advertiser_id", "product_name"
+    "advertiser_id", "advertiser_name", "product_name"
 }}
 
 
@@ -126,7 +127,9 @@ class BilibiliAccountPerformanceTests(unittest.TestCase):
             ("gravity-insight.bilibili-account-performance.v1", "success", 1),
             (result["schema_version"], result["status"], result["returned_items"]),
         )
-        self.assertNotIn("advertiser_name", result["data"]["list"][0])
+        self.assertEqual(
+            "registered advertiser", result["data"]["list"][0]["advertiser_name"]
+        )
 
         sdk_result = GravitySDK(insight=Client()).bilibili_account_performance(
             "2026-08-01", "2026-08-07", max_items=2
@@ -166,7 +169,7 @@ class BilibiliAccountPerformanceTests(unittest.TestCase):
                 **value,
                 "data": {
                     **value["data"],
-                    "list": [{**value["data"]["list"][0], "advertiser_name": "hidden"}],
+                    "list": [{**value["data"]["list"][0], "future_field": "unknown"}],
                 },
             }),
             "2026-08-01",

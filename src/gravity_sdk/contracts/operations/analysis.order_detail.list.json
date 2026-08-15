@@ -4,8 +4,8 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
-    "description": "订单细查；接受结构化字段、条件、排序及单日快捷参数，返回订单、归因和内部分析标识，成员姓名保持隐藏。",
+    "contract_version": 2,
+    "description": "订单细查；接受结构化字段、条件、排序及单日快捷参数，返回已登记的订单、归因、内部分析标识与成员姓名。",
     "domain": "analysis",
     "effect": "read",
     "examples": [],
@@ -167,7 +167,8 @@
           "event$pay_method",
           "event$pay_reason",
           "user$pay_amount_sum",
-          "user$pay_max_amount"
+          "user$pay_max_amount",
+          "Name"
         ]
       },
       "data_keys": [
@@ -200,14 +201,7 @@
         "$postback_count",
         "$split_count",
         "$split_trace_id_list",
-        "re_attribute_info"
-      ],
-      "known_omitted_data_item_keys": {
-        "total": [
-          "Name"
-        ]
-      },
-      "known_omitted_item_keys": [
+        "re_attribute_info",
         "Name"
       ],
       "nested_item_keys": {

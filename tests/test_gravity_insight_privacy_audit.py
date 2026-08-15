@@ -20,6 +20,19 @@ from gravity_sdk.projection_validation import validate_projection_bindings
 @pytest.mark.parametrize(
     "field",
     [
+        "password",
+        "access_token",
+        "cookie",
+        "private_key",
+    ],
+)
+def test_only_credentials_remain_sensitive(field: str) -> None:
+    assert classify_field(f"data.list[].{field}")[0] == "sensitive"
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
         "uid",
         "user_id",
         "device_id",
@@ -42,36 +55,21 @@ from gravity_sdk.projection_validation import validate_projection_bindings
         "session_id",
         "operator_id",
         "operator_name",
-        "password",
-        "access_token",
-        "cookie",
-    ],
-)
-def test_known_sensitive_fields_remain_sensitive(field: str) -> None:
-    assert classify_field(f"data.list[].{field}")[0] == "sensitive"
-
-
-@pytest.mark.parametrize(
-    "field",
-    [
         "account_name",
         "advertiser_name",
         "company_name",
         "creator_id",
         "department_id",
-        "private_key",
         "public_key",
         "before_value",
         "after_value",
-        "download_url",
-        "callback_url",
-        "latitude",
-        "longitude",
         "gender",
     ],
 )
-def test_strict_identity_security_and_person_fields_are_sensitive(field: str) -> None:
-    assert classify_field(f"data.list[].{field}")[0] == "sensitive"
+def test_upstream_authorized_identity_and_person_fields_are_exposable(
+    field: str,
+) -> None:
+    assert classify_field(f"data.list[].{field}")[0] == "non_sensitive"
 
 
 @pytest.mark.parametrize(
@@ -101,16 +99,16 @@ def test_clear_business_objects_time_state_and_counts_are_non_sensitive(
 @pytest.mark.parametrize(
     ("field", "expected"),
     [
-        ("condition", "sensitive"),
+        ("condition", "manual_review"),
         ("content", "manual_review"),
         ("data_topic", "non_sensitive"),
-        ("description", "sensitive"),
+        ("description", "manual_review"),
         ("file_md5", "non_sensitive"),
-        ("message", "sensitive"),
+        ("message", "manual_review"),
         ("params_md5", "non_sensitive"),
-        ("remark", "sensitive"),
+        ("remark", "manual_review"),
         ("target", "non_sensitive"),
-        ("thumbnail", "sensitive"),
+        ("thumbnail", "manual_review"),
         ("value", "non_sensitive"),
     ],
 )
@@ -127,7 +125,7 @@ def test_cid_is_reviewed_as_a_tenant_identifier() -> None:
     )
 
 
-def test_cid_review_does_not_weaken_person_or_client_identifiers() -> None:
+def test_cid_and_person_or_client_identifiers_are_exposable() -> None:
     payload = {
         "data": {
             "list": [
@@ -151,11 +149,16 @@ def test_cid_review_does_not_weaken_person_or_client_identifiers() -> None:
     assert classifications == {
         "campaign_id": "non_sensitive",
         "cid": "non_sensitive",
-        "client_id": "sensitive",
-        "user_id": "sensitive",
+        "client_id": "non_sensitive",
+        "user_id": "non_sensitive",
     }
-    assert projection["item_keys"] == ["campaign_id", "cid"]
-    assert projection["known_omitted_item_keys"] == ["client_id", "user_id"]
+    assert projection["item_keys"] == [
+        "campaign_id",
+        "cid",
+        "client_id",
+        "user_id",
+    ]
+    assert "known_omitted_item_keys" not in projection
 
 
 def test_aggregate_metric_review_is_route_and_path_scoped() -> None:
@@ -240,12 +243,16 @@ def test_nested_object_projection_is_recursive_and_fail_closed() -> None:
     assert projection["data_keys"] == ["data"]
     assert projection["data_item_keys"] == {"data": ["capacity", "product"]}
     assert projection["nested_item_keys"] == {
-        "capacity": ["relation_package", "status", "total_count"],
+        "capacity": [
+            "create_user_name",
+            "relation_package",
+            "status",
+            "total_count",
+        ],
         "product": ["id", "status"],
         "relation_package": ["id", "name"],
     }
     assert projection["known_omitted_nested_item_keys"] == {
-        "capacity": ["create_user_name"],
         "product": ["remark"],
         "relation_package": ["remark"],
     }
@@ -253,14 +260,14 @@ def test_nested_object_projection_is_recursive_and_fail_closed() -> None:
     assert projection_exposes_path(
         "data.data.capacity.relation_package[].name", projection
     )
-    assert not projection_exposes_path(
+    assert projection_exposes_path(
         "data.data.capacity.create_user_name", projection
     )
     assert not projection_exposes_path("data.data.product.remark", projection)
     validate_projection_bindings(ResponseProjection.from_dict(projection), ())
 
 
-def test_metadata_dictionary_context_does_not_override_sensitive_names() -> None:
+def test_metadata_dictionary_context_allows_authorized_user_names() -> None:
     safe_path = "data.list[].name_en_cn_dict.item_price"
     sensitive_path = "data.list[].name_en_cn_dict.user_name"
 
@@ -269,18 +276,18 @@ def test_metadata_dictionary_context_does_not_override_sensitive_names() -> None
     ) == ("non_sensitive", "metadata_dictionary_field_review")
     assert classify_candidate_field(
         sensitive_path, operation_id="metadata.version.list"
-    )[0] == "sensitive"
+    )[0] == "non_sensitive"
 
 
-def test_route_context_does_not_weaken_sensitive_user_count_rule() -> None:
+def test_user_count_is_an_authorized_data_field() -> None:
     path = "data.list[].user_count"
 
-    assert classify_field(path)[0] == "sensitive"
+    assert classify_field(path)[0] == "non_sensitive"
     assert (
         classify_candidate_field(
             path, operation_id="report.company_amount.query"
         )[0]
-        == "sensitive"
+        == "non_sensitive"
     )
 
 
@@ -297,7 +304,7 @@ def test_bytedance_text_title_metrics_are_reviewed_by_operation_family() -> None
     assert classify_candidate_field(
         "data.list[].create_user_id",
         operation_id="material.bytedance_future_text_title.list",
-    )[0] == "sensitive"
+    )[0] == "non_sensitive"
 
 
 def test_ai_trusteeship_metrics_are_reviewed_by_operation_family() -> None:
@@ -312,7 +319,7 @@ def test_ai_trusteeship_metrics_are_reviewed_by_operation_family() -> None:
     )[0] == "manual_review"
 
 
-def test_bytedance_promotion_material_review_keeps_identity_and_urls_hidden() -> None:
+def test_bytedance_promotion_material_review_exposes_registered_fields() -> None:
     payload = {
         "data": {
             "list": [
@@ -353,8 +360,8 @@ def test_bytedance_promotion_material_review_keeps_identity_and_urls_hidden() ->
         "data.list[].material_info.star_author_id",
         "data.list[].material_info.url",
     ):
-        assert by_path[path]["privacy_classification"] == "sensitive"
-        assert by_path[path]["expose"] is False
+        assert by_path[path]["privacy_classification"] == "non_sensitive"
+        assert by_path[path]["expose"] is True
     assert not {
         item["path"]
         for item in fields
@@ -362,7 +369,7 @@ def test_bytedance_promotion_material_review_keeps_identity_and_urls_hidden() ->
     }
 
 
-def test_strict_sensitive_fields_never_enter_generated_projection() -> None:
+def test_credentials_alone_stay_out_of_generated_projection() -> None:
     payload = {
         "data": {
             "list": [
@@ -380,11 +387,13 @@ def test_strict_sensitive_fields_never_enter_generated_projection() -> None:
     fields = candidate_fields(response_schema_sketch(payload))
     projection = build_projection(payload, fields)
 
-    assert projection["item_keys"] == ["campaign_id"]
-    assert projection["known_omitted_item_keys"] == [
+    assert projection["item_keys"] == [
         "advertiser_name",
-        "callback_url",
+        "campaign_id",
         "company_name",
+    ]
+    assert projection["known_omitted_item_keys"] == [
+        "callback_url",
         "private_key",
     ]
 

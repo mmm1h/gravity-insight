@@ -119,7 +119,9 @@ class CapacityListOperationTests(unittest.TestCase):
                 "ad_create_amount_usage": 20,
                 "capacity_type": "LIMITED",
                 "company_id": 10,
+                "company_position": "hidden",
                 "id": 7,
+                "our_salesman_id": 8,
                 "relation_package": [
                     {
                         "name": "standard",

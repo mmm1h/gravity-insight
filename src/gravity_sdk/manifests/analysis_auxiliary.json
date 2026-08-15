@@ -4,7 +4,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "事件分析报表已隐藏或已删除字段列表。当前 Event bundle 以 report_id、app_id 发起 GET，并仅消费 data_type、action_type、data_cname、data_name。",
       "domain": "analysis",
       "effect": "read",
@@ -44,20 +44,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -101,7 +88,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "付费事件补报任务只读列表。当前 OrderSearch/CashSearch bundle 以 app_id、page、page_size、结构化 filters 发起 POST；用户与订单标识按显式行字段合同输出。",
       "domain": "analysis",
       "effect": "read",
@@ -158,8 +145,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "create_user_name"
+          "session_token"
         ]
       },
       "request": {
@@ -196,9 +182,7 @@
           "pay_amount",
           "task_status",
           "create_time",
-          "reason"
-        ],
-        "known_omitted_item_keys": [
+          "reason",
           "create_user_name"
         ],
         "required_data_keys": [
@@ -215,7 +199,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "其他事件补报任务只读列表。当前 EventFlowDialog 发送 create_time、create_user_id、task_status、client_id 的结构化 filters，页面大小为 10/20/30。",
       "domain": "analysis",
       "effect": "read",
@@ -272,9 +256,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "create_user_name",
-          "create_user_id"
+          "session_token"
         ]
       },
       "request": {
@@ -309,9 +291,7 @@
           "task_status",
           "client_id",
           "create_time",
-          "reason"
-        ],
-        "known_omitted_item_keys": [
+          "reason",
           "create_user_id",
           "create_user_name"
         ],
@@ -357,20 +337,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -427,20 +394,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {

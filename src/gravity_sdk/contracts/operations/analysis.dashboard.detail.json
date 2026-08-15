@@ -4,7 +4,7 @@
   "operation": {
     "action": "detail",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
+    "contract_version": 2,
     "description": "看板详情；上游路径保留 detial 拼写，ui_config 与 even_report.config 均为前端直接 JSON.parse 的 JSON 字符串；共享成员只返回内部标识与权限。",
     "domain": "analysis",
     "effect": "read",
@@ -54,11 +54,7 @@
         "password",
         "secret",
         "refresh_token",
-        "session_token",
-        "remark",
-        "create_user_name",
-        "create_user_id",
-        "uname"
+        "session_token"
       ]
     },
     "provenance": {
@@ -100,7 +96,9 @@
         ],
         "share_members": [
           "uid",
-          "authority"
+          "authority",
+          "name",
+          "uname"
         ]
       },
       "data_keys": [
@@ -111,23 +109,17 @@
         "authority",
         "ui_config",
         "even_report",
-        "share_members"
+        "share_members",
+        "create_user_id",
+        "create_user_name"
       ],
       "dynamic_item_fields": [],
       "item_keys": [],
       "known_omitted_data_item_keys": {
         "even_report": [
           "remark"
-        ],
-        "share_members": [
-          "name",
-          "uname"
         ]
       },
-      "known_omitted_data_keys": [
-        "create_user_id",
-        "create_user_name"
-      ],
       "required_data_keys": [
         "id"
       ]

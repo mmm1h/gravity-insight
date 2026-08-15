@@ -162,17 +162,17 @@ def test_draft_generator_rejects_stable_id_collision(tmp_path: Path) -> None:
     [
         ("data.list[].advertiser_id", "non_sensitive"),
         ("data.list[].campaign_name", "non_sensitive"),
-        ("data.list[].uid", "sensitive"),
-        ("data.list[].device_id", "sensitive"),
-        ("data.list[].phone", "sensitive"),
-        ("data.list[].idfa", "sensitive"),
-        ("data.list[].imei", "sensitive"),
-        ("data.list[].order_id", "sensitive"),
-        ("data.list[].email", "sensitive"),
-        ("data.list[].ip_address", "sensitive"),
-        ("data.list[].operator_id", "sensitive"),
-        ("data.list[].operator_name", "sensitive"),
-        ("data.list[].description", "sensitive"),
+        ("data.list[].uid", "non_sensitive"),
+        ("data.list[].device_id", "non_sensitive"),
+        ("data.list[].phone", "non_sensitive"),
+        ("data.list[].idfa", "non_sensitive"),
+        ("data.list[].imei", "non_sensitive"),
+        ("data.list[].order_id", "non_sensitive"),
+        ("data.list[].email", "non_sensitive"),
+        ("data.list[].ip_address", "non_sensitive"),
+        ("data.list[].operator_id", "non_sensitive"),
+        ("data.list[].operator_name", "non_sensitive"),
+        ("data.list[].description", "manual_review"),
     ],
 )
 def test_privacy_classifier_is_conservative(field: str, expected: str) -> None:
@@ -209,9 +209,9 @@ def test_schema_sketch_and_projection_never_retain_values() -> None:
 
     fields = candidate_fields(sketch)
     projection = build_projection(payload, fields)
-    assert projection["item_keys"] == ["advertiser_id", "name"]
-    assert projection["known_omitted_item_keys"] == ["description", "uid"]
-    assert "uid" not in projection["item_keys"]
+    assert projection["item_keys"] == ["advertiser_id", "name", "uid"]
+    assert projection["known_omitted_item_keys"] == ["description"]
+    assert "uid" in projection["item_keys"]
     assert "description" not in projection["item_keys"]
 
 
@@ -247,7 +247,7 @@ def test_scalar_business_selector_list_is_typed_value_free_after_review() -> Non
     assert "Private Company" not in rendered
 
 
-def test_global_sensitive_review_cannot_be_weakened_by_route_context() -> None:
+def test_free_text_review_remains_a_contract_question() -> None:
     sketch = response_schema_sketch(
         {"data": {"list": [{"remark": "not persisted"}]}}
     )
@@ -257,9 +257,24 @@ def test_global_sensitive_review_cannot_be_weakened_by_route_context() -> None:
         sketch, operation_id="metadata.property.list"
     )
 
-    assert generic[0]["privacy_classification"] == "sensitive"
-    assert reviewed[0]["privacy_classification"] == "sensitive"
+    assert generic[0]["privacy_classification"] == "manual_review"
+    assert reviewed[0]["privacy_classification"] == "manual_review"
     assert reviewed[0]["classification_reason"] == "free_text_field_review"
+
+
+def test_authorized_identifiers_are_exposed_but_credentials_are_not() -> None:
+    sketch = response_schema_sketch(
+        {"data": {"list": [{"user_id": "u-1", "email": "u@example.test", "password": "x"}]}}
+    )
+
+    fields = {item["path"].rsplit(".", 1)[-1]: item for item in candidate_fields(sketch)}
+
+    assert fields["user_id"]["privacy_classification"] == "non_sensitive"
+    assert fields["user_id"]["expose"] is True
+    assert fields["email"]["privacy_classification"] == "non_sensitive"
+    assert fields["email"]["expose"] is True
+    assert fields["password"]["privacy_classification"] == "sensitive"
+    assert fields["password"]["expose"] is False
 
 
 def test_route_specific_numeric_business_metric_review_stays_scoped() -> None:

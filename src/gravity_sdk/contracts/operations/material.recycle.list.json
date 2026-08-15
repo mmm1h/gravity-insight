@@ -4,8 +4,8 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
-    "description": "素材回收站只读列表；单页最小探针已验证，人员标识、URL、文件 MD5 与嵌套图片集合不输出。",
+    "contract_version": 2,
+    "description": "素材回收站只读列表；单页最小探针已验证；未登记的新字段触发 additive drift，文件 MD5、嵌套图片集合与自由备注因合同证据不足仍省略。",
     "domain": "material",
     "effect": "read",
     "examples": [
@@ -60,23 +60,7 @@
         "access_token",
         "token",
         "cookie",
-        "password",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "email",
-        "phone",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url",
-        "designer_image_id",
-        "designer_image_name",
-        "remark"
+        "password"
       ]
     },
     "provenance": {

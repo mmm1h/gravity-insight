@@ -4,7 +4,7 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
+    "contract_version": 2,
     "description": "Lists saved report-field groups; filters is the encoded platform context.",
     "domain": "promotion",
     "effect": "read",
@@ -63,20 +63,7 @@
         "access_token",
         "token",
         "cookie",
-        "password",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "email",
-        "phone",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url"
+        "password"
       ]
     },
     "provenance": {
@@ -119,11 +106,11 @@
         "updated_at",
         "create_time",
         "modify_time",
-        "subject"
+        "subject",
+        "uid"
       ],
       "known_omitted_item_keys": [
-        "config",
-        "uid"
+        "config"
       ],
       "required_data_keys": [
         "list"

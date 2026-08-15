@@ -4,7 +4,7 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
+    "contract_version": 2,
     "description": "归因回传映射列表。当前前端精确使用 GET JSON body，filters 为 JSON 字符串；2026-08-08 在可读 App 上取得 code=0 非空合同，条件、公司和回传值配置固定省略。",
     "domain": "attribution",
     "effect": "read",
@@ -50,20 +50,7 @@
         "access_token",
         "token",
         "cookie",
-        "password",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "email",
-        "phone",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url"
+        "password"
       ]
     },
     "provenance": {
@@ -120,10 +107,10 @@
         "ratio_type",
         "ratio_mode",
         "source_type",
-        "convert_type"
+        "convert_type",
+        "company"
       ],
       "known_omitted_item_keys": [
-        "company",
         "conditions",
         "sub_conditions",
         "circular_queue",

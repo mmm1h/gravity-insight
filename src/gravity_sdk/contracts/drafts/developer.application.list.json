@@ -22,11 +22,11 @@
     ],
     "candidate_fields": [
       {
-        "classification_reason": "sensitive_name_pattern",
+        "classification_reason": "parent_container_contract_unverified",
         "expose": false,
         "path": "data.list[].app_list[].icon_url",
         "presence": "observed",
-        "privacy_classification": "sensitive",
+        "privacy_classification": "non_sensitive",
         "types": [
           "string"
         ]
@@ -72,7 +72,7 @@
         ]
       },
       {
-        "classification_reason": "tenant_company_identifier_review",
+        "classification_reason": "upstream_authorized_observed_type",
         "expose": true,
         "path": "data.list[].cid",
         "presence": "observed",
@@ -92,21 +92,21 @@
         ]
       },
       {
-        "classification_reason": "sensitive_name_pattern",
-        "expose": false,
+        "classification_reason": "upstream_authorized_observed_type",
+        "expose": true,
         "path": "data.list[].create_user_id",
         "presence": "observed",
-        "privacy_classification": "sensitive",
+        "privacy_classification": "non_sensitive",
         "types": [
           "integer"
         ]
       },
       {
-        "classification_reason": "sensitive_name_pattern",
-        "expose": false,
+        "classification_reason": "upstream_authorized_observed_type",
+        "expose": true,
         "path": "data.list[].create_user_name",
         "presence": "observed",
-        "privacy_classification": "sensitive",
+        "privacy_classification": "non_sensitive",
         "types": [
           "string"
         ]
@@ -132,11 +132,11 @@
         ]
       },
       {
-        "classification_reason": "request_route_may_contain_identifiers_review",
-        "expose": false,
+        "classification_reason": "upstream_authorized_observed_type",
+        "expose": true,
         "path": "data.list[].last_request_api",
         "presence": "observed",
-        "privacy_classification": "sensitive",
+        "privacy_classification": "non_sensitive",
         "types": [
           "string"
         ]
@@ -173,11 +173,11 @@
         ]
       },
       {
-        "classification_reason": "free_text_field_review",
-        "expose": false,
+        "classification_reason": "upstream_authorized_observed_type",
+        "expose": true,
         "path": "data.list[].remark",
         "presence": "observed",
-        "privacy_classification": "sensitive",
+        "privacy_classification": "non_sensitive",
         "types": [
           "string"
         ]
@@ -193,31 +193,31 @@
         ]
       },
       {
-        "classification_reason": "free_text_field_review",
-        "expose": false,
+        "classification_reason": "upstream_authorized_observed_type",
+        "expose": true,
         "path": "data.list[].state_reason",
         "presence": "observed",
-        "privacy_classification": "sensitive",
+        "privacy_classification": "non_sensitive",
         "types": [
           "string"
         ]
       },
       {
-        "classification_reason": "sensitive_name_pattern",
-        "expose": false,
+        "classification_reason": "upstream_authorized_observed_type",
+        "expose": true,
         "path": "data.list[].update_user_id",
         "presence": "observed",
-        "privacy_classification": "sensitive",
+        "privacy_classification": "non_sensitive",
         "types": [
           "integer"
         ]
       },
       {
-        "classification_reason": "sensitive_name_pattern",
-        "expose": false,
+        "classification_reason": "upstream_authorized_observed_type",
+        "expose": true,
         "path": "data.list[].update_user_name",
         "presence": "observed",
-        "privacy_classification": "sensitive",
+        "privacy_classification": "non_sensitive",
         "types": [
           "string"
         ]
@@ -413,7 +413,7 @@
     "action": "list",
     "auth_profile": "gravity_authorization",
     "block_reason": "draft blockers: pagination_unverified, probe_inconclusive, stable_runtime_route_unsupported",
-    "contract_version": 1,
+    "contract_version": 2,
     "description": "Draft inferred from census route POST /openapi/api/v1/open_develop/list/; response remains hidden until probe classification.",
     "domain": "developer",
     "effect": "read",
@@ -467,37 +467,7 @@
         "password",
         "secret",
         "refresh_token",
-        "session_token",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url",
-        "uid",
-        "user_id",
-        "device_id",
-        "phone",
-        "mobile",
-        "email",
-        "idfa",
-        "idfv",
-        "imei",
-        "oaid",
-        "android_id",
-        "order_id",
-        "ip",
-        "ip_address",
-        "openid",
-        "open_id",
-        "unionid",
-        "client_id",
-        "trace_id"
+        "session_token"
       ]
     },
     "provenance": {
@@ -542,11 +512,7 @@
         "last_request_time",
         "modify_time",
         "name",
-        "state"
-      ],
-      "known_omitted_item_keys": [
-        "app_id_list",
-        "app_list",
+        "state",
         "cid",
         "create_user_id",
         "create_user_name",
@@ -555,6 +521,10 @@
         "state_reason",
         "update_user_id",
         "update_user_name"
+      ],
+      "known_omitted_item_keys": [
+        "app_id_list",
+        "app_list"
       ],
       "required_data_keys": [
         "list"

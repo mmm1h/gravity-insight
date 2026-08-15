@@ -320,6 +320,8 @@ live probe 或 Evidence 刷新。文档改动、CLI 文案和纯重构也不应�
 ## 数据与隐私边界
 
 - Metadata catalog 保存 App、事件和属性的物理事实，不推断模块、活动、SKU 或指标口径。
+- 上游授权是读取边界；已登记的用户、设备、人员和组织字段不再由 SDK 二次隐藏。未登记字段仍按
+  合同漂移 fail closed，凭据键仍递归去除。
 - 普通 read 不发布 Evidence、不上传或分享文件，也不修改上游资源。
 - 导出是独立 effect，经过导出合同和本地落盘策略。
 - Order Directory 的结果行只允许 `Amount/BackAmount/Status/CreateTime`；额外订单、用户、拆单或

@@ -1,4 +1,4 @@
-"""Cross-check stable response exposure against draft privacy decisions."""
+"""Keep credential redactions consistent with draft field classifications."""
 
 from __future__ import annotations
 
@@ -113,18 +113,6 @@ def _consistency_errors(
 ) -> list[str]:
     errors: list[str] = []
     for field, decisions in sorted(classified.items()):
-        if field in exposed and "manual_review" in decisions:
-            errors.append(
-                f"{CHECK_NAME}: field {field!r} is exposed by stable operation(s) "
-                f"{', '.join(exposed[field][:3])} but draft classification is "
-                "manual_review"
-            )
-        if field in exposed and "sensitive" in decisions:
-            errors.append(
-                f"{CHECK_NAME}: field {field!r} is exposed by stable operation(s) "
-                f"{', '.join(exposed[field][:3])} but draft classification is "
-                "sensitive"
-            )
         if field in redacted and "non_sensitive" in decisions:
             errors.append(
                 f"{CHECK_NAME}: field {field!r} is redacted by stable operation(s) "

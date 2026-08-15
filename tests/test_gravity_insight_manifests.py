@@ -148,26 +148,8 @@ SENSITIVE_REDACTIONS = {
     "token",
     "cookie",
     "password",
-    "operator",
-    "operator_id",
-    "operator_name",
-    "creator",
-    "user_name",
-    "email",
-    "phone",
-    "dept",
-    "department",
-    "callback_url",
-    "click_url",
-    "postback_url",
 }
-SESSION_REDACTIONS = {
-    "authorization",
-    "access_token",
-    "token",
-    "cookie",
-    "password",
-}
+SESSION_REDACTIONS = SENSITIVE_REDACTIONS
 ALLOWED_BUSINESS_NAMES = {
     "account_name",
     "app_name",
@@ -536,7 +518,8 @@ class GravityInsightManifestTests(unittest.TestCase):
         self.assertTrue(favorites["live_probe"]["enabled"])
         self.assertEqual(5000, favorites["live_probe"]["input"]["page_size"])
         department = self.by_id["account.department.list"]
-        self.assertEqual("blocked_privacy", department["stability"])
+        self.assertEqual("experimental", department["stability"])
+        self.assertEqual("response_schema_unverified", department["block_reason"])
         blocked = [
             item
             for item in self.operations
@@ -551,7 +534,14 @@ class GravityInsightManifestTests(unittest.TestCase):
         self.assertTrue(blocked)
         self.assertTrue(all(item["executable"] is False for item in blocked))
         self.assertTrue(
-            all(item["block_reason"] == item["stability"] for item in blocked)
+            all(
+                isinstance(item["block_reason"], str) and item["block_reason"]
+                for item in blocked
+            )
+        )
+        self.assertEqual(
+            "request_and_response_contract_unverified",
+            self.by_id["candidate.account.user_operation_log.list"]["block_reason"],
         )
         self.assertFalse(department["live_probe"]["enabled"])
 
@@ -644,17 +634,32 @@ class GravityInsightManifestTests(unittest.TestCase):
                     projection["item_keys"] or projection["dynamic_item_fields"]
                 )
 
-    def test_material_examine_user_projection_is_fail_closed(self) -> None:
+    def test_material_examine_user_projection_exposes_registered_user_fields(self) -> None:
         operation = self.by_id["material.material_examine_user.list"]
         projection = operation["response_projection"]
 
         self.assertEqual("user_level", operation["privacy_policy"]["classification"])
-        self.assertEqual(["cid", "id", "name"], projection["item_keys"])
         self.assertEqual(
-            ["company", "dept", "email", "is_superuser", "role"],
-            projection["known_omitted_item_keys"],
+            {"cid", "id", "name", "company", "dept", "email", "is_superuser", "role"},
+            set(projection["item_keys"]),
         )
+        self.assertNotIn("known_omitted_item_keys", projection)
         self.assertEqual({}, operation["input_fields"])
+
+    def test_user_and_monetization_detail_register_the_full_observed_profiles(self) -> None:
+        user_projection = self.by_id["analysis.user_detail.list"]["response_projection"]
+        self.assertEqual(153, len(user_projection["item_keys"]))
+        self.assertNotIn("known_omitted_item_keys", user_projection)
+        self.assertNotIn("known_omitted_nested_item_keys", user_projection)
+        self.assertEqual(14, len(user_projection["nested_item_keys"]["device_info"]))
+
+        monetization = self.by_id["analysis.monetization_detail.list"]
+        projection = monetization["response_projection"]
+        self.assertEqual(26, len(projection["item_keys"]))
+        self.assertEqual(["fields"], projection["dynamic_item_fields"])
+        self.assertNotIn("item_enum", monetization["input_fields"]["fields"])
+        self.assertNotIn("known_omitted_item_keys", projection)
+        self.assertNotIn("known_omitted_data_item_keys", projection)
 
     def test_verified_nested_projection_contracts_are_exact(self) -> None:
         expected = {
@@ -689,6 +694,11 @@ class GravityInsightManifestTests(unittest.TestCase):
                     "storage_amount_g",
                     "storage_amount_g_usage",
                     "update_usage_time",
+                    "company_position",
+                    "create_user_name",
+                    "modify_user_name",
+                    "our_salesman_id",
+                    "our_salesman_remark",
                 ],
                 "product": [
                     "company_id",
@@ -825,6 +835,11 @@ class GravityInsightManifestTests(unittest.TestCase):
                     "root_id",
                     "create_time",
                     "modify_time",
+                    "create_user_id",
+                    "create_user_name",
+                    "cid",
+                    "update_user_id",
+                    "update_user_name",
                 ],
                 "material": [
                     "id",
@@ -842,7 +857,7 @@ class GravityInsightManifestTests(unittest.TestCase):
             },
             "promotion.ai_trusteeship.detail": {
                 "conditions": ["day", "metrics_name", "value"],
-                "detail_list": ["advertiser_id", "count"],
+                "detail_list": ["advertiser_id", "count", "advertiser_name"],
                 "operator_values": ["boost_value", "type", "value"],
                 "send_way": ["type"],
                 "target_values": ["advertiser_id"],
@@ -851,6 +866,7 @@ class GravityInsightManifestTests(unittest.TestCase):
                 "condition_result": ["target_id"]
             },
             "promotion.history.list": {
+                "detail_list": ["advertiser_id", "advertiser_name"],
                 "target_values": ["advertiser_id"]
             },
             "metadata.metrics.get": {
@@ -907,10 +923,29 @@ class GravityInsightManifestTests(unittest.TestCase):
         ]
         re_attribute_info = expected["analysis.order_detail.list"]["re_attribute_info"]
         expected["analysis.monetization_detail.list"] = {
+            "device_info": [
+                *device_info,
+                "Idfa",
+                "Idfv",
+                "Caid1",
+                "Caid2",
+                "Oaid",
+                "Imei",
+                "AndroidId",
+            ],
             "re_attribute_info": re_attribute_info,
         }
         expected["analysis.user_detail.list"] = {
-            "device_info": device_info,
+            "device_info": [
+                *device_info,
+                "Idfa",
+                "Idfv",
+                "Caid1",
+                "Caid2",
+                "Oaid",
+                "Imei",
+                "AndroidId",
+            ],
             "re_attribute_info": re_attribute_info,
         }
         expected["analysis.segment.user_detail.list"] = {
@@ -922,7 +957,10 @@ class GravityInsightManifestTests(unittest.TestCase):
             for item in self.operations
             if "nested_item_keys" in item["response_projection"]
         }
-        self.assertEqual(expected, actual)
+        self.assertEqual(set(expected), set(actual))
+        for operation_id, nested in expected.items():
+            with self.subTest(operation_id=operation_id):
+                self.assertEqual(nested, actual[operation_id])
 
         attribution = self.by_id["attribution.postback_map_collect.list"]
         self.assertNotIn("config", attribution["response_projection"]["item_keys"])
@@ -941,18 +979,13 @@ class GravityInsightManifestTests(unittest.TestCase):
             ],
             self.by_id["promotion.object.list"]["response_projection"]["item_keys"],
         )
-        self.assertEqual(
-            ["company"],
-            self.by_id["attribution.post_backtrack.list"]["response_projection"][
-                "known_omitted_item_keys"
-            ],
-        )
-        self.assertEqual(
-            ["company"],
-            self.by_id["attribution.postback_mode.list"]["response_projection"][
-                "known_omitted_item_keys"
-            ],
-        )
+        for operation_id in (
+            "attribution.post_backtrack.list",
+            "attribution.postback_mode.list",
+        ):
+            self.assertIn(
+                "company", self.by_id[operation_id]["response_projection"]["item_keys"]
+            )
         self.assertEqual(
             ["file_md5", "image_set", "remark"],
             self.by_id["material.recycle.list"]["response_projection"][
@@ -963,9 +996,13 @@ class GravityInsightManifestTests(unittest.TestCase):
             ["list", "page_info", "user_delete", "company_delete"],
             self.by_id["material.recycle.list"]["response_projection"]["data_keys"],
         )
-        self.assertTrue(
+        self.assertFalse(
             {"designer_image_id", "designer_image_name"}
-            <= set(self.by_id["material.recycle.list"]["privacy_policy"]["redact_keys"])
+            & set(
+                self.by_id["material.recycle.list"]["privacy_policy"][
+                    "redact_keys"
+                ]
+            )
         )
         self.assertEqual(
             [
@@ -1065,15 +1102,15 @@ class GravityInsightManifestTests(unittest.TestCase):
                         "subject",
                         "config",
                     ],
-                    "share_members": ["uid", "authority"],
+                    "share_members": ["uid", "authority", "name", "uname"],
                 },
                 "analysis.dashboard.members.list": {
-                    "creator": ["id", "uid"],
-                    "authUsers": ["uid", "authority"],
+                    "creator": ["id", "uid", "name"],
+                    "authUsers": ["uid", "authority", "name"],
                 },
                 "analysis.dashboard.space_members.list": {
-                    "creator": ["id", "uid"],
-                    "authUsers": ["uid", "authority"],
+                    "creator": ["id", "uid", "name"],
+                    "authUsers": ["uid", "authority", "name"],
                 },
                 "analysis.dashboard.condition_favourite.default_to_me.get": {
                     "object": [
@@ -1091,6 +1128,10 @@ class GravityInsightManifestTests(unittest.TestCase):
                         "name",
                         "show_order",
                         "to_use",
+                        "create_user_id",
+                        "create_user_name",
+                        "update_user_id",
+                        "update_user_name",
                     ]
                 },
                 "analysis.template.subject.own.list": {
@@ -1114,6 +1155,7 @@ class GravityInsightManifestTests(unittest.TestCase):
                         "event$pay_reason",
                         "user$pay_amount_sum",
                         "user$pay_max_amount",
+                        "Name",
                     ]
                 },
                 "analysis.monetization_detail.list": {
@@ -1133,6 +1175,17 @@ class GravityInsightManifestTests(unittest.TestCase):
                         "event$ad_source_id",
                         "event$ad_placement_id",
                         "re_attribute_info",
+                        "user_id",
+                        "event_user_id",
+                        "device_id",
+                        "ClientID",
+                        "TraceID",
+                        "device_info",
+                        "user$ad_count",
+                        "user$ad_avg_ecpm",
+                        "user$ad_ltv",
+                        "Name",
+                        "WXOpenID",
                     ]
                 },
                 "analysis.segment.detail": {
@@ -1151,6 +1204,14 @@ class GravityInsightManifestTests(unittest.TestCase):
                         "Phone_Model",
                         "Rom",
                         "Rom_version",
+                        "AndroidId",
+                        "Caid1",
+                        "Caid2",
+                        "DeviceId",
+                        "Idfa",
+                        "Idfv",
+                        "Imei",
+                        "Oaid",
                     ],
                     "user": [
                         "ClientID",
@@ -1159,6 +1220,8 @@ class GravityInsightManifestTests(unittest.TestCase):
                         "CreateTime",
                         "LatestLoginDay",
                         "modify_time",
+                        "Name",
+                        "WXOpenID",
                     ],
                     "re_attribute_records": re_attribute_info,
                 },
@@ -1232,6 +1295,10 @@ class GravityInsightManifestTests(unittest.TestCase):
                         "target",
                         "target_type",
                         "target_values",
+                        "create_user_id",
+                        "create_user_name",
+                        "update_user_id",
+                        "update_user_name",
                     ]
                 },
                 "promotion.bytedance.advertiser.list": {"total": ["stat_cost"]},
@@ -1266,6 +1333,7 @@ class GravityInsightManifestTests(unittest.TestCase):
                         "profile_count",
                         "storage_count",
                         "tracking_count",
+                        "user_count",
                     ]
                 },
                 "report.multidim.query": {
@@ -1398,6 +1466,10 @@ class GravityInsightManifestTests(unittest.TestCase):
                 "analysis.template.own.list": {"subject_ids": "integer"},
                 "analysis.template.share.list": {"subject_ids": "integer"},
                 "analysis.template.internal.list": {"subject_ids": "integer"},
+                "material.bytedance.promotion_material.list": {
+                    "labels": "string",
+                    "organization_tags": "string",
+                },
                 "report.multidim.metric.list": {
                     "tag_ids": "integer",
                     "exclusion_dims": "string",

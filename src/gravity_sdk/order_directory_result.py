@@ -1,4 +1,4 @@
-"""Request-bound, identifier-free result contract for Order Directory v1."""
+"""Request-bound result contract for Order Directory v1."""
 
 from __future__ import annotations
 
@@ -53,7 +53,7 @@ _ERROR_KEYS = frozenset(
         "next_action",
     }
 )
-_SUCCESS_ACTION = "Consume the complete identifier-free physical order rows."
+_SUCCESS_ACTION = "Consume the complete registered physical order rows."
 _ACTIONS = {
     "read": "Inspect the safe read category and retry this bounded natural day.",
     "caller": "Correct the rejected App or date input before retrying.",

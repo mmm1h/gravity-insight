@@ -20,7 +20,7 @@ class OrderSdkMixin:
         max_items: int = 100_000,
         workspace: Any | None = None,
     ) -> dict[str, Any]:
-        """Read one complete identifier-free daily order directory."""
+        """Read one complete bounded daily order directory."""
 
         from .order_directory import order_directory, validate_order_directory_request
 

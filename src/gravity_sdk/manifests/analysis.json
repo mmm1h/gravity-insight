@@ -4,7 +4,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "分析页事件目录；只输出事件定义元数据，不输出事件记录。",
       "domain": "analysis",
       "effect": "read",
@@ -53,33 +53,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "client_id",
-          "clientid",
-          "trace_id",
-          "traceid",
-          "wxopenid",
-          "idfa",
-          "idfv",
-          "oaid",
-          "imei",
-          "androidid",
-          "caid1",
-          "caid2",
-          "remark"
+          "password"
         ]
       },
       "request": {
@@ -144,7 +118,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "分析页用户属性元数据；仅输出属性定义，不输出用户属性值。",
       "domain": "analysis",
       "effect": "read",
@@ -189,33 +163,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "client_id",
-          "clientid",
-          "trace_id",
-          "traceid",
-          "wxopenid",
-          "idfa",
-          "idfv",
-          "oaid",
-          "imei",
-          "androidid",
-          "caid1",
-          "caid2",
-          "remark"
+          "password"
         ]
       },
       "request": {
@@ -287,7 +235,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "分析页事件属性目录；静态包确认无需事件名即可分页读取。",
       "domain": "analysis",
       "effect": "read",
@@ -332,33 +280,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "client_id",
-          "clientid",
-          "trace_id",
-          "traceid",
-          "wxopenid",
-          "idfa",
-          "idfv",
-          "oaid",
-          "imei",
-          "androidid",
-          "caid1",
-          "caid2",
-          "remark"
+          "password"
         ]
       },
       "request": {
@@ -428,7 +350,7 @@
     {
       "action": "get",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "单事件属性详情；event_name 由稳定事件目录解析，输出 common/custom/preset 属性定义及维表字段白名单。",
       "domain": "analysis",
       "effect": "read",
@@ -466,33 +388,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "client_id",
-          "clientid",
-          "trace_id",
-          "traceid",
-          "wxopenid",
-          "idfa",
-          "idfv",
-          "oaid",
-          "imei",
-          "androidid",
-          "caid1",
-          "caid2",
-          "remark"
+          "password"
         ]
       },
       "request": {
@@ -614,8 +510,8 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "用户分群定义列表；过滤掉创建人、更新人和 origin_query，仅保留分群配置状态及聚合人数。",
+      "contract_version": 2,
+      "description": "用户分群定义列表；返回创建人与更新人字段、分群配置状态及聚合人数，未证实的 origin_query 仍省略。",
       "domain": "analysis",
       "effect": "read",
       "input_fields": {
@@ -659,30 +555,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "create_user_id",
-          "create_user_name",
-          "update_user_id",
-          "update_user_name",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "origin_query",
-          "client_id",
-          "clientid",
-          "trace_id",
-          "traceid",
-          "uid"
+          "password"
         ]
       },
       "request": {
@@ -727,14 +600,14 @@
           "segment_remark",
           "update_date_range",
           "update_type",
-          "user_cnt"
-        ],
-        "known_omitted_item_keys": [
+          "user_cnt",
           "create_user_id",
           "create_user_name",
-          "origin_query",
           "update_user_id",
           "update_user_name"
+        ],
+        "known_omitted_item_keys": [
+          "origin_query"
         ],
         "required_data_keys": [
           "list"
@@ -750,8 +623,8 @@
     {
       "action": "get",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "用户分群配置详情；输出分群状态、时间范围和聚合人数，固定省略人员字段及 origin_query。",
+      "contract_version": 2,
+      "description": "用户分群配置详情；输出分群状态、时间范围、聚合人数和已登记人员字段；未证实的 origin_query 仍省略。",
       "domain": "analysis",
       "effect": "read",
       "input_fields": {
@@ -784,30 +657,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "create_user_id",
-          "create_user_name",
-          "update_user_id",
-          "update_user_name",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "origin_query",
-          "client_id",
-          "clientid",
-          "trace_id",
-          "traceid",
-          "uid"
+          "password"
         ]
       },
       "request": {
@@ -845,15 +695,15 @@
           "update_type",
           "update_date_range",
           "create_time",
-          "modify_time"
+          "modify_time",
+          "create_user_id",
+          "create_user_name",
+          "update_user_id",
+          "update_user_name"
         ],
         "dynamic_item_fields": [],
         "item_keys": [],
         "known_omitted_data_keys": [
-          "create_user_id",
-          "create_user_name",
-          "update_user_id",
-          "update_user_name",
           "origin_query"
         ],
         "required_data_keys": [
@@ -870,7 +720,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "用户分群历史版本及每版聚合人数；不返回分群成员。",
       "domain": "analysis",
       "effect": "read",
@@ -916,25 +766,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "client_id",
-          "clientid",
-          "trace_id",
-          "traceid",
-          "uid"
+          "password"
         ]
       },
       "request": {
@@ -1922,7 +1754,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "漏斗页事件属性分组元数据；只输出分组标识和名称，固定省略 show/hide 中的事件集合。",
       "domain": "analysis",
       "effect": "read",
@@ -1955,30 +1787,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "create_user_id",
-          "create_user_name",
-          "update_user_id",
-          "update_user_name",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "origin_query",
-          "client_id",
-          "clientid",
-          "trace_id",
-          "traceid",
-          "uid"
+          "password"
         ]
       },
       "request": {
@@ -2032,8 +1841,8 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "已保存分析配置列表；只输出图表标识、名称、类型、备注和更新时间，人员字段与不透明 config 固定省略。",
+      "contract_version": 2,
+      "description": "已保存分析配置列表；创建人与更新人字段已登记返回，不透明 config、未证实状态字段和自由备注仍省略。",
       "domain": "analysis",
       "effect": "read",
       "input_fields": {
@@ -2077,33 +1886,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "create_user_id",
-          "create_user_name",
-          "update_user_id",
-          "update_user_name",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "origin_query",
-          "query_sql",
-          "config",
-          "client_id",
-          "clientid",
-          "trace_id",
-          "traceid",
-          "uid",
-          "remark"
+          "password"
         ]
       },
       "request": {
@@ -2136,14 +1919,14 @@
           "app_id",
           "name",
           "subject",
-          "modify_time"
-        ],
-        "known_omitted_item_keys": [
-          "config",
+          "modify_time",
           "update_user_id",
           "update_user_name",
           "create_user_id",
-          "create_user_name",
+          "create_user_name"
+        ],
+        "known_omitted_item_keys": [
+          "config",
           "create_time",
           "is_deleted",
           "remark"
@@ -2162,7 +1945,7 @@
     {
       "action": "get",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "读取已保存分析配置；配置 JSON 由受控专用投影解析，只开放已登记的结构化分析字段。",
       "domain": "analysis",
       "effect": "read",
@@ -2203,9 +1986,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "remark",
-          "update_user_name"
+          "session_token"
         ]
       },
       "request": {
@@ -2226,13 +2007,13 @@
       "response_projection": {
         "data_keys": [
           "config",
-          "name"
+          "name",
+          "update_user_name"
         ],
         "dynamic_item_fields": [],
         "item_keys": [],
         "known_omitted_data_keys": [
-          "remark",
-          "update_user_name"
+          "remark"
         ],
         "required_data_keys": [
           "config"
@@ -2248,8 +2029,8 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "订单细查；接受结构化字段、条件、排序及单日快捷参数，返回订单、归因和内部分析标识，成员姓名保持隐藏。",
+      "contract_version": 2,
+      "description": "订单细查；接受结构化字段、条件、排序及单日快捷参数，返回已登记的订单、归因、内部分析标识与成员姓名。",
       "domain": "analysis",
       "effect": "read",
       "input_fields": {
@@ -2397,7 +2178,8 @@
             "event$pay_method",
             "event$pay_reason",
             "user$pay_amount_sum",
-            "user$pay_max_amount"
+            "user$pay_max_amount",
+            "Name"
           ]
         },
         "data_keys": [
@@ -2430,14 +2212,7 @@
           "$postback_count",
           "$split_count",
           "$split_trace_id_list",
-          "re_attribute_info"
-        ],
-        "known_omitted_data_item_keys": {
-          "total": [
-            "Name"
-          ]
-        },
-        "known_omitted_item_keys": [
+          "re_attribute_info",
           "Name"
         ],
         "nested_item_keys": {
@@ -2581,8 +2356,8 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 2,
-      "description": "单日无标识变现明细；字段仅限批准广告维度，用户或设备筛选、分组、画像字段和设备信息永久关闭。",
+      "contract_version": 3,
+      "description": "单日变现明细；固定产品读取完整已登记字段，raw fields 仍由 live metadata 校验，用户与设备字段可用于结构化筛选。",
       "domain": "analysis",
       "effect": "read",
       "input_fields": {
@@ -2596,23 +2371,6 @@
           "type": "date"
         },
         "fields": {
-          "item_enum": [
-            "CreateTime",
-            "AdEventTime",
-            "AdPlatform",
-            "AdvertiserID",
-            "AdAid",
-            "TurboPromotedObjectID",
-            "event$ad_type",
-            "event$adn_type",
-            "event$ad_unit_id",
-            "event$ad_through",
-            "event$ad_source_id",
-            "event$ad_placement_id",
-            "event$ecpm",
-            "samount",
-            "re_attribute_info"
-          ],
           "item_type": "string",
           "max_items": 100,
           "min_items": 1,
@@ -2680,25 +2438,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "user_id",
-          "event_user_id",
-          "device_id",
-          "ClientID",
-          "TraceID",
-          "device_info",
-          "user$ad_count",
-          "user$ad_avg_ecpm",
-          "user$ad_ltv",
-          "Name",
-          "WXOpenID",
-          "Idfa",
-          "Idfv",
-          "Caid1",
-          "Caid2",
-          "Oaid",
-          "Imei",
-          "AndroidId"
+          "session_token"
         ]
       },
       "request": {
@@ -2745,7 +2485,18 @@
             "event$ad_through",
             "event$ad_source_id",
             "event$ad_placement_id",
-            "re_attribute_info"
+            "re_attribute_info",
+            "user_id",
+            "event_user_id",
+            "device_id",
+            "ClientID",
+            "TraceID",
+            "device_info",
+            "user$ad_count",
+            "user$ad_avg_ecpm",
+            "user$ad_ltv",
+            "Name",
+            "WXOpenID"
           ]
         },
         "data_keys": [
@@ -2753,7 +2504,9 @@
           "page_info",
           "total"
         ],
-        "dynamic_item_fields": [],
+        "dynamic_item_fields": [
+          "fields"
+        ],
         "item_keys": [
           "CreateTime",
           "AdEventTime",
@@ -2769,24 +2522,7 @@
           "event$ad_through",
           "event$ad_source_id",
           "event$ad_placement_id",
-          "re_attribute_info"
-        ],
-        "known_omitted_data_item_keys": {
-          "total": [
-            "user_id",
-            "event_user_id",
-            "device_id",
-            "ClientID",
-            "TraceID",
-            "device_info",
-            "user$ad_count",
-            "user$ad_avg_ecpm",
-            "user$ad_ltv",
-            "Name",
-            "WXOpenID"
-          ]
-        },
-        "known_omitted_item_keys": [
+          "re_attribute_info",
           "user_id",
           "event_user_id",
           "device_id",
@@ -2800,6 +2536,22 @@
           "WXOpenID"
         ],
         "nested_item_keys": {
+          "device_info": [
+            "Android_Version",
+            "Api_Version",
+            "Rom_version",
+            "Aspect_Ratio",
+            "Phone_Brand",
+            "Phone_Model",
+            "OS",
+            "Idfa",
+            "Idfv",
+            "Caid1",
+            "Caid2",
+            "Oaid",
+            "Imei",
+            "AndroidId"
+          ],
           "re_attribute_info": [
             "ReAttributeAdAid",
             "ReAttributeAdCid",
@@ -2828,8 +2580,8 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 2,
-      "description": "用户细查；支持结构化字段、筛选和排序，返回内部分析标识、非识别性设备属性与归因字段；姓名、外部开放标识和广告设备标识保持隐藏。",
+      "contract_version": 3,
+      "description": "用户细查；支持结构化字段、筛选和排序，返回全部 153 个已观察顶层字段及已登记设备信息。bytedanceMid1..8 与 bytedanceProjectId 按观察到的 JSON 标量类型交付，业务语义仍未证实。",
       "domain": "analysis",
       "effect": "read",
       "input_fields": {
@@ -2929,15 +2681,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "WXOpenID",
-          "Idfa",
-          "Idfv",
-          "Caid1",
-          "Caid2",
-          "Oaid",
-          "Imei",
-          "AndroidId"
+          "session_token"
         ]
       },
       "request": {
@@ -2998,9 +2742,7 @@
           "AdCid",
           "CSite",
           "device_info",
-          "re_attribute_info"
-        ],
-        "known_omitted_item_keys": [
+          "re_attribute_info",
           "Name",
           "WXOpenID",
           "AdClickTime",
@@ -3138,17 +2880,6 @@
           "useruser_sex",
           "useruser_tpe"
         ],
-        "known_omitted_nested_item_keys": {
-          "device_info": [
-            "Idfa",
-            "Idfv",
-            "Caid1",
-            "Caid2",
-            "Oaid",
-            "Imei",
-            "AndroidId"
-          ]
-        },
         "nested_item_keys": {
           "device_info": [
             "Android_Version",
@@ -3157,7 +2888,14 @@
             "Aspect_Ratio",
             "Phone_Brand",
             "Phone_Model",
-            "OS"
+            "OS",
+            "Idfa",
+            "Idfv",
+            "Caid1",
+            "Caid2",
+            "Oaid",
+            "Imei",
+            "AndroidId"
           ],
           "re_attribute_info": [
             "ReAttributeAdAid",
@@ -3187,8 +2925,8 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "单用户事件流；支持事件选择和结构化查询项，输出内部分析标识、非识别性设备属性、事件时间线及汇总；姓名、外部开放标识和广告设备标识保持隐藏。上游不返回 page_info，请显式递增 page，直到 event_timeline[*].list 为空。",
+      "contract_version": 2,
+      "description": "单用户事件流；支持事件选择和结构化查询项，输出已登记的用户、设备、事件时间线及汇总字段。上游不返回 page_info，请显式递增 page，直到 event_timeline[*].list 为空。",
       "domain": "analysis",
       "effect": "read",
       "input_fields": {
@@ -3285,16 +3023,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "WXOpenID",
-          "DeviceId",
-          "Idfa",
-          "Idfv",
-          "Caid1",
-          "Caid2",
-          "Oaid",
-          "Imei",
-          "AndroidId"
+          "session_token"
         ]
       },
       "request": {
@@ -3353,7 +3082,15 @@
             "Phone_Brand",
             "Phone_Model",
             "Rom",
-            "Rom_version"
+            "Rom_version",
+            "AndroidId",
+            "Caid1",
+            "Caid2",
+            "DeviceId",
+            "Idfa",
+            "Idfv",
+            "Imei",
+            "Oaid"
           ],
           "re_attribute_records": [
             "ReAttributeAdAid",
@@ -3374,7 +3111,9 @@
             "device_id",
             "CreateTime",
             "LatestLoginDay",
-            "modify_time"
+            "modify_time",
+            "Name",
+            "WXOpenID"
           ]
         },
         "data_keys": [
@@ -3388,22 +3127,6 @@
           "fields"
         ],
         "item_keys": [],
-        "known_omitted_data_item_keys": {
-          "device": [
-            "AndroidId",
-            "Caid1",
-            "Caid2",
-            "DeviceId",
-            "Idfa",
-            "Idfv",
-            "Imei",
-            "Oaid"
-          ],
-          "user": [
-            "Name",
-            "WXOpenID"
-          ]
-        },
         "required_data_keys": [
           "event_timeline"
         ]
@@ -3505,7 +3228,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "分群按日计算结果；该接口仅返回版本日期、聚合人数和计算状态，不返回 UID 成员。",
       "domain": "analysis",
       "effect": "read",
@@ -3556,25 +3279,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "client_id",
-          "clientid",
-          "trace_id",
-          "traceid",
-          "uid"
+          "password"
         ]
       },
       "request": {
@@ -3622,8 +3327,8 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "分群用户详情；上游无分页，支持按元数据校验后的字段选择并返回内部分析标识与业务属性，成员姓名、外部开放标识和广告设备标识保持隐藏。",
+      "contract_version": 2,
+      "description": "分群用户详情；上游无分页，支持按元数据校验后的字段选择。本 operation 的完整成员投影由独立产品线迁移，本单元不改其既有字段集合。",
       "domain": "analysis",
       "effect": "read",
       "input_fields": {
@@ -3676,15 +3381,7 @@
           "password",
           "secret",
           "refresh_token",
-          "session_token",
-          "WXOpenID",
-          "Idfa",
-          "Idfv",
-          "Caid1",
-          "Caid2",
-          "Oaid",
-          "Imei",
-          "AndroidId"
+          "session_token"
         ]
       },
       "request": {

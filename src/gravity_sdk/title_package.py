@@ -29,9 +29,10 @@ OPERATION_IDS = {
     ).operation_id,
 }
 TITLE_PACKAGE_FIELDS = frozenset({
-    "app_id", "cid", "create_time", "history_click_rate", "history_cost", "id",
-    "is_ai", "is_deleted", "last_3_day_click_rate", "last_3_day_cost",
-    "modify_time", "plan_num", "title_num", "title_package_name",
+    "app_id", "cid", "create_time", "create_user_id", "create_user_name",
+    "history_click_rate", "history_cost", "id", "is_ai", "is_deleted",
+    "last_3_day_click_rate", "last_3_day_cost", "modify_time", "plan_num",
+    "title_list", "title_num", "title_package_name", "update_user_id",
 })
 _BATCH_FIELDS = frozenset({
     "operation_id", "request_id", "ok", "status", "data", "error",

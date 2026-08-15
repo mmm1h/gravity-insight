@@ -4,8 +4,8 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
-    "description": "素材收藏列表。当前前端精确使用固定 favorites 视图 body（page=1,page_size=5000）；2026-08-08 最小探针 code=0，type/group/material 嵌套结构按静态直接消费字段投影，人员和 URL 容器固定省略。",
+    "contract_version": 2,
+    "description": "素材收藏列表。当前前端精确使用固定 favorites 视图 body（page=1,page_size=5000）；type/group/material 按已证实字段投影，未证实子结构的 create_user/album_authority/previews、自由备注和素材 URL 容器仍省略。",
     "domain": "material",
     "effect": "read",
     "examples": [
@@ -60,21 +60,7 @@
         "access_token",
         "token",
         "cookie",
-        "password",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "email",
-        "phone",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url",
-        "remark"
+        "password"
       ]
     },
     "provenance": {

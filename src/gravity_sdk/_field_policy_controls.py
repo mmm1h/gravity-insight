@@ -23,7 +23,6 @@ from ._field_policy_shared import (
     MetadataView,
     control_fields,
     dynamic_values,
-    is_direct_personal_response_field,
     is_sensitive_control_key,
     order_field,
     promotion_metadata_inputs,
@@ -259,16 +258,6 @@ def validate_dynamic_response_fields(
         for name, items in values.items()
         if items and not operation.fields[name].enum and not operation.fields[name].item_enum
     }
-    personal = sorted(
-        item
-        for items in requested.values()
-        for item in items
-        if is_direct_personal_response_field(item)
-    )
-    if personal:
-        raise InputValidationError(
-            "dynamic response fields include direct personal identifiers; request was not sent"
-        )
     if not requested:
         return
     if operation.domain == "promotion" and "query_fields" in requested:

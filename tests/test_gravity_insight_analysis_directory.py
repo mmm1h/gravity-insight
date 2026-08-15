@@ -158,10 +158,8 @@ class GravityInsightAnalysisDirectoryTests(unittest.TestCase):
         )
 
         self.assertEqual("success", result["status"])
-        hidden = {"avatar", "email", "is_superuser", "name", "phone", "remark"}
-        expected = {key: value for key, value in row.items() if key not in hidden}
-        self.assertEqual(expected, result["data"]["list"][0])
-        self.assertFalse(hidden & set(result["data"]["list"][0]))
+        self.assertEqual(row, result["data"]["list"][0])
+        self.assertIsInstance(result["data"]["list"][0]["is_superuser"], bool)
         self.assertEqual("dept", result["data"]["list"][0]["dept_info"]["name"])
         self.assertEqual("role", result["data"]["list"][0]["roles"][0]["name"])
         method, path, kwargs = transport.calls[0]

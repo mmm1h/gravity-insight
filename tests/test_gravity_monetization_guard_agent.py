@@ -36,11 +36,8 @@ class MonetizationGuardAgentTests(unittest.TestCase):
     def test_unapproved_shapes_remain_local_value_free_gaps(self):
         queries = (
             "not monetization details", "export monetization detail", "write monetization details",
-            "monetization details from 2026-08-01 to 2026-08-08", "monetization details ClientID north-secret",
-            "monetization details user_id north-secret", "monetization details fields AdPlatform",
-            "monetization details filter advertiser north-secret", "monetization details group by user",
-            "带标识变现明细", "无标识变现明细按用户分组", "变现明细按标识筛选", "无标识变现明细跨日",
-            "monetization details summary", "dashboard snapshot monetization details", "变现明细按用户分组",
+            "monetization details from 2026-08-01 to 2026-08-08", "无标识变现明细跨日",
+            "monetization details summary", "dashboard snapshot monetization details",
             "变现明细聚合报表", f"{READ} north-secret", f"{READ.rsplit('.', 1)[0]} north-secret",
             f"{READ.removeprefix('analysis.')} north-secret", f"{EXPORT} north-secret", "看昨天的变现表现。",
         )
@@ -55,6 +52,26 @@ class MonetizationGuardAgentTests(unittest.TestCase):
         with patch("gravity_sdk.agent_batch_sources.search_metadata", return_value={"results": []}):
             batch = capabilities_many(queries, client=NoScan())
         self.assertTrue(all(item["status"] == "capability_gap" for item in batch["results"]))
+    def test_user_device_field_filter_and_group_intents_reach_raw_discovery(self):
+        queries = (
+            "monetization details ClientID north-secret",
+            "monetization details user_id north-secret",
+            "monetization details fields AdPlatform",
+            "monetization details filter advertiser north-secret",
+            "monetization details group by user",
+            "带标识变现明细",
+            "无标识变现明细按用户分组",
+            "变现明细按标识筛选",
+            "变现明细按用户分组",
+            "变现明细按归因分组",
+        )
+        client = GravityInsightClient.from_env()
+        for query in queries:
+            with self.subTest(query=query):
+                result = discover_capabilities(query, client=client)
+                self.assertFalse(guarded(query))
+                self.assertEqual("success", result["status"])
+                self.assertEqual(READ, result["candidates"][0]["selector"])
     @patch("gravity_sdk.agent_batch_sources.search_metadata", return_value={"results": []})
     def test_exact_raw_and_other_user_level_discovery_stay_compatible(self, _metadata):
         for query in (

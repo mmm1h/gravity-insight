@@ -4,8 +4,8 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
-    "description": "巨量平台素材列表。当前前端精确使用 query {page,page_size} 与 body {advertiser_id,check_local_exist:1,filters:[]}；2026-08-08 最小探针 code=0 且取得非空合同，URL、人员、MD5 和图片容器固定省略。",
+    "contract_version": 2,
+    "description": "巨量平台素材列表。广告主名称和租户字段已登记返回；缓存状态、未证实文件元数据、MD5、标签与图片容器仍按现有合同省略。",
     "domain": "material",
     "effect": "read",
     "examples": [],
@@ -50,20 +50,7 @@
         "access_token",
         "token",
         "cookie",
-        "password",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "email",
-        "phone",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url"
+        "password"
       ]
     },
     "provenance": {
@@ -111,7 +98,9 @@
       "item_keys": [
         "file_name",
         "material_id",
-        "gravity_material_id"
+        "gravity_material_id",
+        "cid",
+        "advertiser_name"
       ],
       "known_omitted_item_keys": [
         "create_time",
@@ -130,7 +119,6 @@
         "id",
         "ad_created_time",
         "ad_modified_time",
-        "cid",
         "ad_platform",
         "advertiser_id",
         "derived_id",
@@ -145,8 +133,7 @@
         "file_md5",
         "derived_file_md5",
         "image_set",
-        "material_label_list",
-        "advertiser_name"
+        "material_label_list"
       ],
       "required_data_keys": [
         "list"

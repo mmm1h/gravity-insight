@@ -4,7 +4,7 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
+    "contract_version": 2,
     "description": "素材管理域的媒体审核记录列表；返回素材、媒体、广告与广告主标识和名称，以及审核类型、建议及建议标识。",
     "domain": "material",
     "effect": "read",
@@ -59,38 +59,7 @@
         "password",
         "secret",
         "refresh_token",
-        "session_token",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url",
-        "uid",
-        "user_id",
-        "device_id",
-        "phone",
-        "mobile",
-        "email",
-        "idfa",
-        "idfv",
-        "imei",
-        "oaid",
-        "android_id",
-        "order_id",
-        "ip",
-        "ip_address",
-        "openid",
-        "open_id",
-        "unionid",
-        "client_id",
-        "trace_id",
-        "advertiser_name"
+        "session_token"
       ]
     },
     "provenance": {
@@ -134,9 +103,7 @@
         "media_type",
         "suggestion",
         "suggestion_id",
-        "type"
-      ],
-      "known_omitted_item_keys": [
+        "type",
         "advertiser_name"
       ],
       "required_data_keys": [

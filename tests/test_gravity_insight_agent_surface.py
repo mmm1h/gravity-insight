@@ -209,7 +209,7 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
                     parents_unknown += 1
         # gi-reprobe 后为 (54, 81)；report.company_amount.query 与前趟两个
         # 成功 probe 可重放输入共增加三个完整 example。cid 复评又解锁
-        # promotion.bytedance.app.list，随后隐私复评解锁三条成功 probe，
+        # promotion.bytedance.app.list，随后字段复评解锁三条成功 probe，
         # stable 总数随后增加两条巨量标题素材、一条腾讯广告组配置，
         # 三条 AI 托管/数据表配置读取、两条模板/自定义人群读取，以及一条
         # 巨量素材定向包读取、两条报表标签配置读取和一条小时聚合对比均带

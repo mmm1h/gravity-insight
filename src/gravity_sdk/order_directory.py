@@ -1,4 +1,4 @@
-"""Bounded, single-day, identifier-free order directory product."""
+"""Bounded, single-day physical order directory product."""
 
 from __future__ import annotations
 

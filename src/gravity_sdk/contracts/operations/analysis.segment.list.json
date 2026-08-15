@@ -4,8 +4,8 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
-    "description": "用户分群定义列表；过滤掉创建人、更新人和 origin_query，仅保留分群配置状态及聚合人数。",
+    "contract_version": 2,
+    "description": "用户分群定义列表；返回创建人与更新人字段、分群配置状态及聚合人数，未证实的 origin_query 仍省略。",
     "domain": "analysis",
     "effect": "read",
     "examples": [],
@@ -50,30 +50,7 @@
         "access_token",
         "token",
         "cookie",
-        "password",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "create_user_id",
-        "create_user_name",
-        "update_user_id",
-        "update_user_name",
-        "user_name",
-        "email",
-        "phone",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url",
-        "origin_query",
-        "client_id",
-        "clientid",
-        "trace_id",
-        "traceid",
-        "uid"
+        "password"
       ]
     },
     "provenance": {
@@ -131,14 +108,14 @@
         "segment_remark",
         "update_date_range",
         "update_type",
-        "user_cnt"
-      ],
-      "known_omitted_item_keys": [
+        "user_cnt",
         "create_user_id",
         "create_user_name",
-        "origin_query",
         "update_user_id",
         "update_user_name"
+      ],
+      "known_omitted_item_keys": [
+        "origin_query"
       ],
       "required_data_keys": [
         "list"

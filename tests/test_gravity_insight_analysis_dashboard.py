@@ -437,7 +437,7 @@ class GravityInsightAnalysisDashboardTests(unittest.TestCase):
         self.assertEqual("empty", own["status"])
         self.assertEqual(1, own["data"]["page_info"]["page"])
         self.assertEqual("empty", shared["status"])
-        self.assertEqual("success", internal["status"])
+        self.assertEqual("contract_changed_additive", internal["status"])
         self.assertEqual([{"id": 1, "name": "internal"}], internal["data"]["list"])
         self.assertNotIn("token", json.dumps(internal).casefold())
         self.assertEqual(3, len(transport.calls))
@@ -531,7 +531,7 @@ class GravityInsightAnalysisDashboardTests(unittest.TestCase):
             shared.request.body_fields,
         )
 
-    def test_member_ids_and_authority_are_contracted_but_names_are_not(self) -> None:
+    def test_member_ids_authority_and_names_are_contracted(self) -> None:
         for operation_id in (
             "analysis.dashboard.detail",
             "analysis.dashboard.members.list",
@@ -543,12 +543,14 @@ class GravityInsightAnalysisDashboardTests(unittest.TestCase):
             self.assertIn("cookie", policy.redact_fields)
         members = self.by_id["analysis.dashboard.members.list"]
         self.assertEqual(
-            ("uid", "authority"),
+            ("uid", "authority", "name"),
             members.response_projection.data_item_keys["authUsers"],
         )
-        self.assertIn(
+        self.assertNotIn(
             "name",
-            members.response_projection.known_omitted_data_item_keys["authUsers"],
+            members.response_projection.known_omitted_data_item_keys.get(
+                "authUsers", ()
+            ),
         )
 
 

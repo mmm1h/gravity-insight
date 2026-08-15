@@ -249,7 +249,7 @@ def _order_requires_credentials(args: Any) -> bool:
 
 
 def _monetization_requires_credentials(args: Any) -> bool:
-    """Offer login only after the identifier-free request is locally valid."""
+    """Offer login only after the complete-detail request is locally valid."""
 
     if getattr(args, "monetization_command", None) != "detail":
         return False

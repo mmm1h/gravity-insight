@@ -129,9 +129,16 @@ class BytedanceAdvertiserPerformanceOperationTests(unittest.TestCase):
                 "advertiser_budget",
                 "advertiser_budget_mode",
                 "advertiser_id",
+                "advertiser_name",
+                "advertiser_remark",
                 "advertiser_system_status",
                 "app_id",
                 "app_name",
+                "company",
+                "delay",
+                "operator_id",
+                "operator_name",
+                "project_list",
                 "stat_cost",
             },
             set(result["data"]["list"][0]),
@@ -179,7 +186,7 @@ class BytedanceAdvertiserPerformanceOperationTests(unittest.TestCase):
             )
         for field in ("advertiser_remark", "delay"):
             self.assertEqual(
-                ("sensitive", "route_specific_sensitive_field_review"),
+                ("non_sensitive", "route_specific_field_review"),
                 classify_candidate_field(
                     f"data.list[].{field}", operation_id=OPERATION_ID
                 ),

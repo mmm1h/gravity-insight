@@ -230,50 +230,50 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "promotion.bytedance.custom_audience.list",
             # 修复歧义分页类型、完成非空分页复验并收窄筛选与响应投影后晋升。
             "material.asset_directional_package_bytedance.list",
-            # 收敛前端超大分页默认值并完成非空分页与隐私投影复验后晋升。
+            # 收敛前端超大分页默认值并完成非空分页与响应投影复验后晋升。
             "report.tag.list",
             "report.tag_category.list",
             # 固定全局范围并完成嵌套聚合字段白名单复验后晋升。
             "report.hour_comparison.query",
             # 素材审核用户列表经非空验证和人员敏感字段收窄后晋升。
             "material.material_examine_user.list",
-            # 素材相册列表经递归父级解析、分页复验和嵌套隐私投影后晋升。
+            # 素材相册列表经递归父级解析、分页复验和嵌套响应投影后晋升。
             "material.album.list",
-            # 巨量创意组件账户选择器完成精确请求绑定、分页和隐私复验后晋升。
+            # 巨量创意组件账户选择器完成精确请求绑定、分页和字段复验后晋升。
             "promotion.bytedance.account.list",
-            # 巨量账户主体选择器完成标量列表投影与隐私复验后晋升。
+            # 巨量账户主体选择器完成标量列表投影与字段复验后晋升。
             "promotion.bytedance.account_company.list",
-            # 巨量启用项目列表完成父级、固定过滤和保守隐私投影复验后晋升。
+            # 巨量启用项目列表完成父级、固定过滤和保守响应投影复验后晋升。
             "promotion.bytedance.manager_project.list",
-            # 巨量可投放广告列表完成账户父级、固定过滤和隐私投影复验后晋升。
+            # 巨量可投放广告列表完成账户父级、固定过滤和响应投影复验后晋升。
             "promotion.bytedance.manager_promotion.list",
-            # 巨量图片素材列表完成父级、整数参数、分页和隐私复验后晋升。
+            # 巨量图片素材列表完成父级、整数参数、分页和字段复验后晋升。
             "material.bytedance_asset_material.list",
-            # 巨量项目素材列表完成同源父级、非空样本和嵌套隐私投影后晋升。
+            # 巨量项目素材列表完成同源父级、非空样本和嵌套响应投影后晋升。
             "material.bytedance.project_material.list",
-            # 巨量广告素材表现完成同源父级、默认指标和隐私投影复验后晋升。
+            # 巨量广告素材表现完成同源父级、默认指标和响应投影复验后晋升。
             "material.bytedance.promotion_material.list",
-            # 巨量广告主表现首屏完成精确无拉数请求和隐私投影复验后晋升。
+            # 巨量广告主表现首屏完成精确无拉数请求和响应投影复验后晋升。
             "promotion.bytedance.advertiser_performance.list",
-            # 公司套餐容量完成精确 GET、嵌套投影和隐私复验后晋升。
+            # 公司套餐容量完成精确 GET、嵌套投影和字段复验后晋升。
             "app.capacity.get",
-            # 容量历史完成当前公司父级、分页和嵌套隐私投影复验后晋升。
+            # 容量历史完成当前公司父级、分页和嵌套响应投影复验后晋升。
             "app.capacity.list",
-            # 腾讯账户主体选择器完成标量类型和隐私复验后晋升。
+            # 腾讯账户主体选择器完成标量类型和字段复验后晋升。
             "promotion.tencent.account_company.list",
             # 快手账户主体选择器完成布尔请求和标量类型复验后晋升。
             "promotion.kuaishou.account_company.list",
-            # AI 托管详情完成规则列表父级、GET 参数和递归隐私投影复验后晋升。
+            # AI 托管详情完成规则列表父级、GET 参数和递归响应投影复验后晋升。
             "promotion.ai_trusteeship.detail",
             # 实时事件配置完成应用父级、GET 参数和自由文本隐私收口后晋升。
             "app.realtime_event.list",
-            # AI 托管指标字典完成媒体类型父级、嵌套字段和路由隐私复验后晋升。
+            # AI 托管指标字典完成媒体类型父级、嵌套字段和路由字段复验后晋升。
             "metadata.metrics.get",
-            # 权限菜单完成网页端固定产品参数、递归投影和隐私复验后晋升。
+            # 权限菜单完成网页端固定产品参数、递归投影和字段复验后晋升。
             "app.permission_menu.list",
-            # 角色列表完成固定菜单开关、分页上限和隐私复验后晋升。
+            # 角色列表完成固定菜单开关、分页上限和字段复验后晋升。
             "app.role.list",
-            # 角色详情完成角色列表父级、固定产品参数和嵌套隐私复验后晋升。
+            # 角色详情完成角色列表父级、固定产品参数和嵌套字段复验后晋升。
             "app.role.detail",
             # 角色模板完成固定产品参数、分页和嵌套配置投影复验后晋升。
             "app.template.list",

@@ -38,7 +38,9 @@ _DATA_FIELDS = frozenset({"list", "page_info", "total", "update_at"})
 _ROW_FIELDS = frozenset({
     "advertiser_agent_id", "advertiser_agent_name", "advertiser_balance",
     "advertiser_budget", "advertiser_budget_mode", "advertiser_id",
-    "advertiser_system_status", "app_id", "app_name", "stat_cost",
+    "advertiser_name", "advertiser_remark", "advertiser_system_status",
+    "app_id", "app_name", "company", "delay", "operator_id",
+    "operator_name", "project_list", "stat_cost",
 })
 _TOTAL_FIELDS = frozenset({"stat_cost"})
 _PAGE_INFO_FIELDS = frozenset(
@@ -248,7 +250,8 @@ def _safe_rows(
     rows: list[dict[str, Any]] = []
     for item in value:
         if not isinstance(item, Mapping) or set(item) - fields or any(
-            not _scalar(field_value) for field_value in item.values()
+            not _row_value(field, field_value)
+            for field, field_value in item.items()
         ):
             raise ContractChangedError(f"advertiser profile {label} changed")
         rows.append(copy.deepcopy(dict(item)))
@@ -297,6 +300,31 @@ def _scalar(value: Any) -> bool:
     if type(value) is int:
         return value.bit_length() <= 256
     return isinstance(value, float) and math.isfinite(value)
+
+
+def _row_value(field: str, value: Any) -> bool:
+    if field != "project_list":
+        return _scalar(value)
+    return _bounded_json(value)
+
+
+def _bounded_json(value: Any, *, depth: int = 0) -> bool:
+    if depth > 6:
+        return False
+    if _scalar(value):
+        return True
+    if isinstance(value, (list, tuple)):
+        return len(value) <= 10_000 and all(
+            _bounded_json(item, depth=depth + 1) for item in value
+        )
+    if isinstance(value, Mapping):
+        return len(value) <= 1_000 and all(
+            isinstance(key, str)
+            and len(key) <= 256
+            and _bounded_json(item, depth=depth + 1)
+            for key, item in value.items()
+        )
+    return False
 
 
 def _incomplete_result(

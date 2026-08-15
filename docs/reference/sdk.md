@@ -180,7 +180,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `multidim_query()` | 校验实时指标后读取 Multidim 明细，可选 total 与全量分页 |
 | `material_performance()` | 按显式 App、日期窗和平台读取稳定素材表现；平台保序、共享预算、局部失败隔离 |
 | `promotion_performance()` | 按一个显式 App、日期窗、平台和物理指标读取 21 个同构平台；平台保序、局部失败隔离 |
-| `order_directory()` | 完整读取一个 App 的单日普通订单目录；每行仅含四个无标识物理字段 |
+| `order_directory()` | 完整读取一个 App 的单日普通订单目录；该产品每行含四个已登记物理字段，raw operation 仍可读取其他已登记列 |
 | `order_split_trace()` | 完整扫描一个 App 的单日父订单并按显式 TraceID 精确匹配，再读取一次安全拆单投影 |
 | `analysis_vocabulary()` | 严格离线搜索已同步的 workspace 指标、标签、媒体枚举和模板目录 |
 | `table_lineage()` | 严格离线查询已同步的 account-scope 数据表版本与操作观察 |
@@ -379,7 +379,7 @@ Plan request 同时展开 `platforms/include_hourly` 的中性默认值；泛 `b
 
 `custom_audiences(*, max_pages=1000, max_items=100000)` 完整读取公司范围的可投自定义人群，
 返回 `gravity-insight.custom-audience.v1`。每行只含合同批准的广告主/人群/数据源标识、名称、
-覆盖数、上传数、来源、状态和时间字段；人员、租户、公司与自由标签字段固定省略。对应 Plan
+覆盖数、上传数、来源、状态和时间字段；已登记的人员、租户、公司与自由标签字段一并返回。对应 Plan
 request 为 `{"name":"custom_audience"}`；`capabilities("custom audience coverage status")`
 离线返回唯一卡。
 

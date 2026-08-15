@@ -1,4 +1,4 @@
-"""Audit stable Gravity Insight response fields without relying on drafts."""
+"""Audit registered stable response fields without relying on drafts."""
 
 from __future__ import annotations
 
@@ -54,6 +54,12 @@ _DIRECT_PERSONAL_COMPACT = frozenset(
     }
 )
 _PRIVILEGE_COMPACT = frozenset({"isadmin", "issuperuser"})
+_CREDENTIAL_COMPACT = frozenset(
+    {
+        "accesstoken", "authorization", "cookie", "password", "privatekey",
+        "refreshtoken", "secret", "sessiontoken", "token",
+    }
+)
 _PERSON_DETAIL_RESOURCES = frozenset(
     {
         "account_user",
@@ -265,7 +271,7 @@ def inspect_stable_response_privacy(root: Path) -> list[str]:
         for path in sorted(current - approved):
             errors.append(
                 f"{CHECK_NAME}: {operation_id} exposes unreviewed field {path!r}; "
-                "review privacy and update the stable registry"
+                "review its contract and update the stable registry"
             )
         for path in sorted(approved - current):
             errors.append(
@@ -275,17 +281,13 @@ def inspect_stable_response_privacy(root: Path) -> list[str]:
         operation = operations.get(operation_id)
         if operation is None:
             continue
-        privacy = operation.get("privacy_policy", {})
-        redacted = {
-            str(value).casefold()
-            for value in privacy.get("redact_fields", [])
-        } if isinstance(privacy, Mapping) else set()
         for path in sorted(current):
-            reason = suspected_personal_reason(operation, path)
-            if reason is not None and _leaf(path).casefold() not in redacted:
+            compact = _compact(_leaf(path))
+            if compact in _CREDENTIAL_COMPACT or any(
+                compact.endswith(suffix) for suffix in _CREDENTIAL_COMPACT
+            ):
                 errors.append(
-                    f"{CHECK_NAME}: {operation_id} exposes suspected personal field "
-                    f"{path!r} without redaction ({reason})"
+                    f"{CHECK_NAME}: {operation_id} exposes credential field {path!r}"
                 )
     return errors
 

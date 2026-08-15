@@ -4,7 +4,7 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
+    "contract_version": 2,
     "description": "腾讯广告 3.0 广告主报表。",
     "domain": "promotion",
     "effect": "read",
@@ -83,21 +83,7 @@
         "access_token",
         "token",
         "cookie",
-        "password",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "email",
-        "phone",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url",
-        "advertiser_name"
+        "password"
       ]
     },
     "provenance": {
@@ -185,21 +171,24 @@
         "app_name",
         "advertiser_budget_mode",
         "advertiser_system_status",
-        "cost"
-      ],
-      "known_omitted_item_keys": [
+        "cost",
         "advertiser_agent_id",
         "advertiser_agent_name",
-        "advertiser_balance",
-        "advertiser_budget",
         "advertiser_name",
         "advertiser_remark",
         "company",
         "delay",
         "project_list"
       ],
+      "known_omitted_item_keys": [
+        "advertiser_balance",
+        "advertiser_budget"
+      ],
       "required_data_keys": [
         "list"
+      ],
+      "opaque_json_item_keys": [
+        "project_list"
       ]
     },
     "semantic_error_rules": [

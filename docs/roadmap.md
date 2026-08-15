@@ -19,7 +19,7 @@
 是既有 dashboard/saved-analysis 稳定读取面的重复记账，因此产品动线与 completely missing 各减 1，
 得到 `47 = 32 / 0 / 15`。stable operation 仍为 185、其中 176 个 stable。
 **部分闭环归零不代表没有欠账**——15 条完全缺失里
-多数是证据或隐私边界阻塞。
+多数是请求、响应或非空证据阻塞；字段隐私不再是阻塞项。
 逐条状态、四面入口、调用次数和证据阻塞以[分析动线台账](analysis-journeys.md)为准；旧
 `21/14/6` 快照的逐条底稿未进入版本控制，无法复算，已停止作为排期事实。
 
@@ -95,7 +95,7 @@ CLI 参数、SDK 方法、envelope、退出码和生产请求数均未变化。�
 
 **提案：**从 176 条 stable operation 正向检查真实产品调用链，排除通用 `run`、legacy 快照、
 维护/诊断/权限/任务状态和纯 catalog 入口；对剩余分析结果判断非空证据、动线归属、最小五面成本与
-隐私边界，只实现有非空证据、语义闭合且不需要新投影批准的 1--3 条。逐 operation 工作底稿保留在
+字段合同边界，只实现有非空证据且语义闭合的 1--3 条。逐 operation 工作底稿保留在
 ignored `tmp/codex/stable-coverage-gap/crossref.md`，权威结论落在本页和动线台账。
 
 **判定：**实现前交叉为 **已被动线覆盖 86 / 不该有产品面 82 / 值得有产品面 8**，三类完备且
@@ -106,16 +106,16 @@ ignored `tmp/codex/stable-coverage-gap/crossref.md`，权威结论落在本页�
 `material.bytedance_std_asset_text_title_package.list`、
 `material.bytedance.promotion_material.list`、`analysis.segment.user_detail.list`。
 
-| Operation | 分析问题 / 非空证据 | 动线 / 最小五面成本 | 隐私投影与本轮裁决 |
+| Operation | 分析问题 / 非空证据 | 动线 / 最小五面成本 | 当前字段合同 |
 | --- | --- | --- | --- |
-| `report.company_amount.query` | 公司每日广告、点击、成本、事件、画像、存储、追踪和素材传输用量如何变化；有非空且分页证据 | 新增公司资源用量趋势；`1/1/1/1/1` | `user_count` 保持省略；本轮实现 |
-| `promotion.bilibili.account.list` | B 站账户/产品曝光、点击、CTR、CPC、CPM 和资金消耗如何；有非空且分页证据 | 新增独立 B 站账户投放表现；`1/1/1/1/1` | `advertiser_name` 保持省略；本轮实现 |
-| `promotion.bytedance.advertiser_performance.list` | 巨量广告主消耗、余额、预算模式和状态如何；页码协议与实际翻页均已验证 | 新增独立 advertiser profile，不并入明确排除广告主目录的跨平台推广表现；`1/1/1/1/1` | `page_size=1` 的页 1/页 2 共 2 次生产请求，均 HTTP 200 / `success`，响应页码分别为 1/2、各 1 行且安全投影不同，裁决 `pagination.verified=true`；失败 0、重试 0。`advertiser_name`、`advertiser_remark`、`company`、`delay`、`operator_id`、`operator_name`、`project_list` 保持省略，未知字段继续 fail-closed。 |
-| `promotion.bytedance.custom_audience.list` | 可投人群覆盖数、上传数、来源和状态如何；2026-08-14 最小非空复验与旧样本 fingerprint 完全一致 | 自定义人群覆盖与状态已闭环；`1/1/1/1/1` | `cid`、`company`、`create_user_id`、`create_user_name`、`tag`、`update_user_id`、`update_user_name` 保持省略；确定实现 |
-| `material.bytedance_asset_text_title_package.list` | 普通标题包的标题数、计划数、历史成本和 CTR 如何；旧非空样本与 stable v1 的字段/类型投影同形 | 已补 D32 `title_package` family；与标准版共享 `1/1/1/1/1` | `title_list`、`create_user_id`、`create_user_name`、`update_user_id` 保持省略；已实现，`package_kind=regular` |
-| `material.bytedance_std_asset_text_title_package.list` | 标准标题包的标题数、计划数、历史成本和 CTR 如何；旧非空样本与 stable v1 的字段/类型投影同形 | 已补 D32 `title_package` family；与普通版共享 `1/1/1/1/1` | 同上；已实现，`package_kind=standard` |
-| `material.bytedance.promotion_material.list` | 精确广告窗口内素材的消耗、曝光、点击、CTR、CPC、CPM、尺寸和时长如何；目标响应为空 | 补 D32；`1/1/1/1/1`，未知引用路径 3 次 | `cover_source`、`labels`、`material_info`、`organization_tags`、`poster_url`、`signature`、`star_author_id`、`url` 保持省略；等非空证据 |
-| `analysis.segment.user_detail.list` | 精确分群有哪些成员及其时间、渠道、版本和归因属性；无不可变非空样本 | 补分群详情；`1/1/1/1/1` | **已裁决不批准**，保持 reservation（理由见下方「对照裁决」）；不再计入待实现 |
+| `report.company_amount.query` | 公司每日广告、点击、成本、事件、画像、存储、追踪和素材传输用量如何变化；有非空且分页证据 | 新增公司资源用量趋势；`1/1/1/1/1` | `user_count` 已登记并返回；未登记字段仍 fail-closed |
+| `promotion.bilibili.account.list` | B 站账户/产品曝光、点击、CTR、CPC、CPM 和资金消耗如何；有非空且分页证据 | 新增独立 B 站账户投放表现；`1/1/1/1/1` | `advertiser_name` 已登记并返回 |
+| `promotion.bytedance.advertiser_performance.list` | 巨量广告主消耗、余额、预算模式和状态如何；页码协议与实际翻页均已验证 | 新增独立 advertiser profile，不并入明确排除广告主目录的跨平台推广表现；`1/1/1/1/1` | `advertiser_name`、`advertiser_remark`、`company`、`delay`、`operator_id/name`、`project_list` 已登记；未知字段继续 fail-closed |
+| `promotion.bytedance.custom_audience.list` | 可投人群覆盖数、上传数、来源和状态如何；2026-08-14 最小非空复验与旧样本 fingerprint 完全一致 | 自定义人群覆盖与状态已闭环；`1/1/1/1/1` | `cid`、`company`、创建/更新人及 `tag` 已登记并返回 |
+| `material.bytedance_asset_text_title_package.list` | 普通标题包的标题数、计划数、历史成本和 CTR 如何；旧非空样本与 stable v1 的字段/类型投影同形 | 已补 D32 `title_package` family；与标准版共享 `1/1/1/1/1` | `title_list` 与创建/更新人字段已登记；`package_kind=regular` |
+| `material.bytedance_std_asset_text_title_package.list` | 标准标题包的标题数、计划数、历史成本和 CTR 如何；旧非空样本与 stable v1 的字段/类型投影同形 | 已补 D32 `title_package` family；与普通版共享 `1/1/1/1/1` | 同上；`package_kind=standard` |
+| `material.bytedance.promotion_material.list` | 精确广告窗口内素材的消耗、曝光、点击、CTR、CPC、CPM、尺寸和时长如何；目标响应为空 | 补 D32；`1/1/1/1/1`，未知引用路径 3 次 | `cover_source`、`labels`、`material_info`、`organization_tags`、`poster_url`、`signature`、`star_author_id`、`url` 已按既有 shape 登记 |
+| `analysis.segment.user_detail.list` | 精确分群有哪些成员及其时间、渠道、版本和归因属性；无不可变非空样本 | 补分群详情；`1/1/1/1/1` | 字段投影已批准；实现归另一条产品线，本单元按明确范围不触碰 |
 
 本轮在 `report.company_amount.query` 已闭环的基础上继续实现 advertiser profile。公司用量的 Core、CLI
 `reports usage`、SDK `company_usage()`、Plan `company_usage` composite 与 Agent
@@ -130,7 +130,7 @@ workspace App、日期窗口、平台和物理指标绑定，调用方保证不�
 路由本动线，泛化“B 站推广表现”仍路由 Promotion Performance，显式同时请求两者仍返回
 `MULTIPLE_INTENTS`，相邻产品不靠猜测合并。Core、CLI、SDK、Plan 与 Agent 卡共用
 `gravity-insight.bilibili-account-performance.v1`，并以 `gravity.agent-call-bound.v1` 声明已知输入
-1 次、未知能力 2 次。`advertiser_name` 继续省略，未观察到其他用户级投影字段；本轮完全复用
+1 次、未知能力 2 次。`advertiser_name` 现已登记返回；本轮完全复用
 不可变 Evidence，生产请求 0 次。
 
 **上表 8 条已全部结案（2026-08-15），不再有"待实现"项：**
@@ -160,9 +160,9 @@ Evidence 的 raw schema fingerprint 均为
 Core `title_packages()`、CLI `materials title-packages`、SDK `title_packages()`、Plan
 `title_package` composite 与 Agent `composite:title_package` 共用
 `gravity-insight.title-package.v1`；调用方必须显式提供 `package_kind=regular|standard`，不合并两类
-结果，也不拍平差异。`title_list`、`create_user_id`、`create_user_name`、`update_user_id` 继续省略；
-不可变样本未发现其他用户级字段。省略正文后，包名、标题/计划数、历史与近三日成本和 CTR 仍能回答
-既定聚合问题。未知字段在产品边界 fail closed，完整分页触顶返回 `partial`，父资源、权限或未支持能力
+结果，也不拍平差异。`title_list`、`create_user_id`、`create_user_name`、`update_user_id` 已登记返回，
+其中 `title_list` 作为已观察到的 opaque JSON 正文交付。未知字段在产品边界 fail closed，完整分页触顶返回
+`partial`，父资源、权限或未支持能力
 保持独立状态。已知输入 1 次、未知能力 2 次由 `gravity.agent-call-bound.v1` 声明。
 
 D32 是台账动线编号，不是已有可挂载的可执行产品；本实现新增独立 title-package family 入口。
@@ -771,7 +771,8 @@ envelope，毕业后另定义 MCP 调用单位，不能改名冒充原合同。�
 ### 具体放开范围
 
 - **`analysis.user_detail.list`**：134 个 `known_omitted` 顶层 key 全部登记并暴露，
-  含直接标识符（`user$device_id`、`user$ta_distinct_id`、`user$ta_account_id`、`userlogin_id`、
+  含直接标识符（不可变证据中的实际 key 为 `userdevice_id`，另含 `user$ta_distinct_id`、
+  `user$ta_account_id`、`userlogin_id`、
   `useraccount_id`、`userlong_id`）、准标识符（地域/机型/性别/年龄等）、9 个 `bytedanceMid*`
   语义未证实字段，以及既有的 `Name`、`WXOpenID`。
 - **`analysis.monetization_detail.list`（D27）**：原永久排除表全部解除——`user_id`、
@@ -798,6 +799,27 @@ envelope，毕业后另定义 MCP 调用单位，不能改名冒充原合同。�
 3. **未登记字段继续 fail-closed**。这不是隐私机制，是合同漂移检测：上游新增字段时我们要知道。
    **正确的响应是把它登记并暴露，不是把它隐藏。** user_detail 出现第 154 个 key 时仍应
    `contract_changed_additive`。
+
+### 本单元落地结果（2026-08-15）
+
+本单元把裁决落实到 92 个 stable operation，并同步登记 1 个仍不可执行的 draft，共新增
+**412 个按 operation 去重的字段登记**：
+`analysis.user_detail.list` 143 个，`analysis.monetization_detail.list` 25 个，其余 90 个
+stable operation 236 个，`developer.application.list` draft 8 个。按实际投影槽位计是 440 条
+新增路径；其中 415 条由 `known_omitted` 原位迁入允许投影，另 25 条是嵌套、opaque JSON 或
+标量列表的逐子字段合同：D27 的 14 个 `device_info` 子字段占其中 14 条，旧合同只省略了整个
+容器、没有分别登记子字段。draft 仍因请求、分页和运行时路由未证实而不可执行，没有新增产品面。
+
+省略台账可复算为：stable `known_omitted` **791 → -407 → 384**；再加未取得读取权限的
+`candidate.material.kuaishou.list` 33 条，运行时 operation 合同合计 **824 → -407 → 417**。
+非执行 drafts 是 **193 → -8 → 185**；两者合计 **1017 → -415 → 602**。User Detail 现在有
+153 个顶层 `item_keys` 和 14 个 `device_info` 子字段；D27 有 26 个顶层 row fields 和 14 个
+`device_info` 子字段。未登记字段的 additive drift 判据未改。
+
+D27 的固定单日 composite 返回完整已登记 row；raw operation 的 `fields`、用户/设备字段条件和
+排序继续走 live metadata 正确性校验。Agent 对字段、筛选、分组和排序意图不再报隐私 gap，而是交给
+raw operation discovery。仍由 Guard 阻断的是跨日、聚合/报表、导出/写入、raw-like 后缀和相邻产品
+拼接；这些边界都不是字段隐私裁决。
 
 ### 推翻条件
 
@@ -924,7 +946,7 @@ confirmation，闸门判据未改。probe receipt 现在把通过闸门后确实
 七字段 schema 已恢复，`error/icon_url/image_data` 保持隐藏，但测试 URL 只产生 error-shaped 结果，
 仍缺成功数据；所谓 D28 候选其实是平台应用关联目录，不含日期、广告位或变现指标，不能拿它冒充
 聚合。D28 下一步转向 `monetization_report/custom_get` 与 `calc_total` 的真实报表合同，并单独做字段
-隐私审查；D27 的 identifier-free 批准不自动延伸。
+字段合同审查；该段原先对 D27 字段边界的引用已被本页投影总裁决推翻。
 
 ## 明确不做
 

@@ -4,8 +4,8 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
-    "description": "账号中心成员目录。仅允许 dept_id/role_id 的 INNERS(6) 过滤，返回内部成员标识、组织归属、角色、状态与时间；姓名、联系方式、头像和超管标志不进入分析响应。",
+    "contract_version": 2,
+    "description": "账号中心成员目录。仅允许 dept_id/role_id 的 INNERS(6) 过滤，返回已登记的成员标识、姓名、组织归属、角色、状态、联系方式、头像与时间。",
     "domain": "analysis",
     "effect": "read",
     "examples": [
@@ -66,12 +66,7 @@
         "password",
         "secret",
         "refresh_token",
-        "session_token",
-        "remark",
-        "avatar",
-        "email",
-        "is_superuser",
-        "phone"
+        "session_token"
       ]
     },
     "provenance": {
@@ -118,9 +113,7 @@
         "is_main",
         "modify_time",
         "roles",
-        "user_id"
-      ],
-      "known_omitted_item_keys": [
+        "user_id",
         "avatar",
         "email",
         "is_superuser",

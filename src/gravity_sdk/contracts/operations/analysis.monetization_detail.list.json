@@ -4,8 +4,8 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 2,
-    "description": "单日无标识变现明细；字段仅限批准广告维度，用户或设备筛选、分组、画像字段和设备信息永久关闭。",
+    "contract_version": 3,
+    "description": "单日变现明细；固定产品读取完整已登记字段，raw fields 仍由 live metadata 校验，用户与设备字段可用于结构化筛选。",
     "domain": "analysis",
     "effect": "read",
     "examples": [],
@@ -20,23 +20,6 @@
         "type": "date"
       },
       "fields": {
-        "item_enum": [
-          "CreateTime",
-          "AdEventTime",
-          "AdPlatform",
-          "AdvertiserID",
-          "AdAid",
-          "TurboPromotedObjectID",
-          "event$ad_type",
-          "event$adn_type",
-          "event$ad_unit_id",
-          "event$ad_through",
-          "event$ad_source_id",
-          "event$ad_placement_id",
-          "event$ecpm",
-          "samount",
-          "re_attribute_info"
-        ],
         "item_type": "string",
         "max_items": 100,
         "min_items": 1,
@@ -104,25 +87,7 @@
         "password",
         "secret",
         "refresh_token",
-        "session_token",
-        "user_id",
-        "event_user_id",
-        "device_id",
-        "ClientID",
-        "TraceID",
-        "device_info",
-        "user$ad_count",
-        "user$ad_avg_ecpm",
-        "user$ad_ltv",
-        "Name",
-        "WXOpenID",
-        "Idfa",
-        "Idfv",
-        "Caid1",
-        "Caid2",
-        "Oaid",
-        "Imei",
-        "AndroidId"
+        "session_token"
       ]
     },
     "provenance": {
@@ -182,7 +147,18 @@
           "event$ad_through",
           "event$ad_source_id",
           "event$ad_placement_id",
-          "re_attribute_info"
+          "re_attribute_info",
+          "user_id",
+          "event_user_id",
+          "device_id",
+          "ClientID",
+          "TraceID",
+          "device_info",
+          "user$ad_count",
+          "user$ad_avg_ecpm",
+          "user$ad_ltv",
+          "Name",
+          "WXOpenID"
         ]
       },
       "data_keys": [
@@ -190,7 +166,9 @@
         "page_info",
         "total"
       ],
-      "dynamic_item_fields": [],
+      "dynamic_item_fields": [
+        "fields"
+      ],
       "item_keys": [
         "CreateTime",
         "AdEventTime",
@@ -206,24 +184,7 @@
         "event$ad_through",
         "event$ad_source_id",
         "event$ad_placement_id",
-        "re_attribute_info"
-      ],
-      "known_omitted_data_item_keys": {
-        "total": [
-          "user_id",
-          "event_user_id",
-          "device_id",
-          "ClientID",
-          "TraceID",
-          "device_info",
-          "user$ad_count",
-          "user$ad_avg_ecpm",
-          "user$ad_ltv",
-          "Name",
-          "WXOpenID"
-        ]
-      },
-      "known_omitted_item_keys": [
+        "re_attribute_info",
         "user_id",
         "event_user_id",
         "device_id",
@@ -249,6 +210,22 @@
           "ReAttributeTurboPromotedObjectID",
           "ReAttributeRetargetingCount",
           "ReAttributeAdClickTime"
+        ],
+        "device_info": [
+          "Android_Version",
+          "Api_Version",
+          "Rom_version",
+          "Aspect_Ratio",
+          "Phone_Brand",
+          "Phone_Model",
+          "OS",
+          "Idfa",
+          "Idfv",
+          "Caid1",
+          "Caid2",
+          "Oaid",
+          "Imei",
+          "AndroidId"
         ]
       },
       "required_data_keys": [

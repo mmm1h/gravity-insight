@@ -69,7 +69,7 @@ def operation_fallback_gap(query: str) -> list[dict[str, Any]]:
     elif order_directory_blocks_operation_fallback(query):
         reason = (
             "the explicit Order Directory request is excluded by its closed "
-            "identifier-free single-day product boundary"
+            "bounded single-day product boundary"
         )
     elif monetization_guard_blocks_operation_fallback(query):
         reason = MONETIZATION_GAP_REASON

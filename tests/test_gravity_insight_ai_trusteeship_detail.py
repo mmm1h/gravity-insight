@@ -122,8 +122,8 @@ class AiTrusteeshipDetailOperationTests(unittest.TestCase):
         self.assertEqual({"ai_id": 8}, dict(kwargs["query"]))
         self.assertEqual({}, dict(kwargs["body"]))
         detail = result["data"]["data"]
-        self.assertNotIn("create_user_id", detail)
-        self.assertNotIn("create_user_name", detail)
+        self.assertEqual(5, detail["create_user_id"])
+        self.assertEqual("hidden", detail["create_user_name"])
         self.assertNotIn("schedule", detail)
         self.assertNotIn("new_upstream_field", detail)
         self.assertEqual(
@@ -131,7 +131,8 @@ class AiTrusteeshipDetailOperationTests(unittest.TestCase):
             detail["conditions"][0],
         )
         self.assertEqual(
-            {"advertiser_id": 6, "count": 7}, detail["detail_list"][0]
+            {"advertiser_id": 6, "advertiser_name": "hidden", "count": 7},
+            detail["detail_list"][0],
         )
         self.assertEqual(
             {"boost_value": 9, "type": "fixed", "value": 10},

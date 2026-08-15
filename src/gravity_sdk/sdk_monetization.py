@@ -6,7 +6,7 @@ from typing import Any
 
 
 class MonetizationSdkMixin:
-    """Expose the identifier-free monetization product without widening Analysis."""
+    """Expose complete registered monetization rows through the unified SDK."""
 
     def monetization_detail(
         self,
@@ -18,7 +18,7 @@ class MonetizationSdkMixin:
         max_items: int = 100_000,
         workspace: Any | None = None,
     ) -> dict[str, Any]:
-        """Read one complete identifier-free daily monetization detail."""
+        """Read one complete registered daily monetization detail."""
 
         from .monetization_detail import (
             monetization_detail,

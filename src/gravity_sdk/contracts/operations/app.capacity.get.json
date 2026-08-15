@@ -4,7 +4,7 @@
   "operation": {
     "action": "get",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
+    "contract_version": 2,
     "description": "Draft inferred from census route GET /account_center/api/v1/company/capacity/info/; response remains hidden until probe classification.",
     "domain": "app",
     "effect": "read",
@@ -42,26 +42,7 @@
         "password",
         "secret",
         "refresh_token",
-        "session_token",
-        "uid",
-        "user_id",
-        "device_id",
-        "phone",
-        "mobile",
-        "email",
-        "idfa",
-        "idfv",
-        "imei",
-        "oaid",
-        "android_id",
-        "order_id",
-        "ip",
-        "ip_address",
-        "openid",
-        "open_id",
-        "unionid",
-        "client_id",
-        "trace_id"
+        "session_token"
       ]
     },
     "provenance": {
@@ -96,11 +77,6 @@
       "item_keys": [],
       "known_omitted_nested_item_keys": {
         "capacity": [
-          "company_position",
-          "create_user_name",
-          "modify_user_name",
-          "our_salesman_id",
-          "our_salesman_remark",
           "silence"
         ],
         "product": [
@@ -140,7 +116,12 @@
           "start_time",
           "storage_amount_g",
           "storage_amount_g_usage",
-          "update_usage_time"
+          "update_usage_time",
+          "company_position",
+          "create_user_name",
+          "modify_user_name",
+          "our_salesman_id",
+          "our_salesman_remark"
         ],
         "product": [
           "company_id",

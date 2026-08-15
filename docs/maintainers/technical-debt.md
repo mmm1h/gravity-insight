@@ -20,11 +20,12 @@
 ### 1. Material/Promotion 重复实现多平台结果重建
 
 - **Owner area**：Material Performance / Promotion Performance result contracts。
-- **证据**：`material_performance_result.py`(406 SLOC) 与 `promotion_performance_result.py`(489 SLOC)
+- **证据**：`material_performance_result.py`(406 SLOC) 与 `promotion_performance_result.py`(437 SLOC)
   各自实现同名同构的 `safe_component`、`_safe_success`、`_safe_rows`、`_safe_page`、page receipt 校验、
   `product_envelope`、`_primary_error`。Promotion 上线后又经 `464b1d4`、`099ad46`、`81d0d02` 修补
   结果边界、request binding 与 Plan rows/output paths——相同不变量存在两份，修补时必须人工检查另一份。
-  Promotion 文件距 500 只剩 11 SLOC，`_safe_success` 复杂度 14。
+  本轮新增字段触及 500 SLOC 闸门后，已把纯字段登记下沉到 36 SLOC 的
+  `promotion_projection.py`；结果重建重复仍在，`_safe_success` 复杂度 14。
 - **触发条件**：任一产品再次修改 page receipt、标量行复制、component aggregate status/exit code/
   primary error；或出现第三个采用同一完整分页 batch envelope 的多平台产品。
 - **退出条件**：仅在触发发生时，把当次由两边现有测试证明完全相同的**一个**窄原语下沉复用；

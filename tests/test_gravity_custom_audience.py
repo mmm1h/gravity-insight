@@ -16,12 +16,16 @@ from gravity_sdk.plan_custom_audience_adapter import execute_custom_audience_pla
 
 
 SAFE_ROW = {
-    "advertiser_id": 11, "cover_num": 1200,
-    "create_time": "2026-08-01 12:00:00", "custom_audience_id": 22,
+    "advertiser_id": 11, "cid": 1, "company": "registered company",
+    "cover_num": 1200, "create_time": "2026-08-01 12:00:00",
+    "create_user_id": 2, "create_user_name": "registered creator",
+    "custom_audience_id": 22,
     "data_source_id": "source-1", "delivery_status": "available",
     "id": 33, "isdel": 0,
     "modify_time": "2026-08-02 12:00:00", "name": "retained audience",
-    "source": "upload", "status": 1, "upload_num": 1000,
+    "source": "upload", "status": 1, "tag": "registered tag",
+    "update_user_id": 3, "update_user_name": "registered updater",
+    "upload_num": 1000,
 }
 
 
@@ -128,10 +132,7 @@ class CustomAudienceTests(unittest.TestCase):
         ))
         self.assertNotIn("raw", gap["results"][0]["error"])
 
-        for field in (
-            "cid", "company", "create_user_id", "create_user_name", "tag",
-            "update_user_id", "update_user_name", "new_user_level_field",
-        ):
+        for field in ("new_user_level_field",):
             with self.subTest(field=field), self.assertRaises(ContractChangedError):
                 custom_audiences(Client(row={**SAFE_ROW, field: "hidden"}))
 

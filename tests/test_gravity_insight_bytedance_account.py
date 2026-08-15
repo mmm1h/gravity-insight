@@ -110,10 +110,12 @@ class BytedanceAccountOperationTests(unittest.TestCase):
         self.assertEqual(
             {
                 "account_id",
+                "account_email",
                 "account_name",
                 "account_role",
                 "ad_platform",
                 "advertiser_id",
+                "advertiser_name",
                 "app_id",
                 "grant_type",
                 "media_status",

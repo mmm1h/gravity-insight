@@ -4,8 +4,8 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
-    "description": "AI 托管运行历史只读列表。最小 POST 请求、分页和响应投影已经验证；仅开放操作类型与目标值中的广告主标识，运行目标、广告主名称、目标值明细与自由文本保持隐藏。",
+    "contract_version": 2,
+    "description": "AI 托管运行历史只读列表。租户标识及 detail_list 的广告主标识与名称已登记；运行目标及未证实目标值明细仍省略。",
     "domain": "promotion",
     "effect": "read",
     "examples": [
@@ -76,37 +76,7 @@
         "password",
         "secret",
         "refresh_token",
-        "session_token",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url",
-        "uid",
-        "user_id",
-        "device_id",
-        "phone",
-        "mobile",
-        "email",
-        "idfa",
-        "idfv",
-        "imei",
-        "oaid",
-        "android_id",
-        "order_id",
-        "ip",
-        "ip_address",
-        "openid",
-        "open_id",
-        "unionid",
-        "client_id",
-        "trace_id"
+        "session_token"
       ]
     },
     "provenance": {
@@ -151,11 +121,11 @@
         "operator_type",
         "target_type",
         "target_values",
-        "trigger"
+        "trigger",
+        "cid",
+        "detail_list"
       ],
       "known_omitted_item_keys": [
-        "cid",
-        "detail_list",
         "target"
       ],
       "known_omitted_nested_item_keys": {
@@ -164,6 +134,10 @@
         ]
       },
       "nested_item_keys": {
+        "detail_list": [
+          "advertiser_id",
+          "advertiser_name"
+        ],
         "target_values": [
           "advertiser_id"
         ]

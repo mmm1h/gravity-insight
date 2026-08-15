@@ -20,13 +20,13 @@ def add_monetization_detail_command(
     """Register ``analysis monetization detail`` as a closed JSON product."""
 
     monetization = analysis_commands.add_parser(
-        "monetization", help="Run governed identifier-free monetization reads."
+        "monetization", help="Run governed complete monetization reads."
     )
     commands = monetization.add_subparsers(
         dest="monetization_command", required=True
     )
     detail = commands.add_parser(
-        "detail", help="Read one complete identifier-free daily monetization detail."
+        "detail", help="Read one complete registered daily monetization detail."
     )
     detail.add_argument("--app", required=True)
     detail.add_argument("--date", required=True)
@@ -36,7 +36,7 @@ def add_monetization_detail_command(
     detail.add_argument(
         "--output",
         type=_output_file,
-        help="Write the complete identifier-free JSON result to a local file.",
+        help="Write the complete registered JSON result to a local file.",
     )
     detail.set_defaults(_gravity_handler=dispatch_monetization_detail)
 

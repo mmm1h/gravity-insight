@@ -896,7 +896,7 @@ class GravityInsightAnalysisTests(unittest.TestCase):
                             "ClientID": "client-1",
                             "user_id": "uid-1",
                             "device_id": "device-1",
-                            "Name": "must-not-leak",
+                            "Name": "registered-name",
                         }
                     ],
                     page_size=1,
@@ -926,16 +926,25 @@ class GravityInsightAnalysisTests(unittest.TestCase):
         self.assertEqual("client-1", result["data"]["list"][0]["ClientID"])
         self.assertEqual("uid-1", result["data"]["list"][0]["user_id"])
         self.assertEqual("device-1", result["data"]["list"][0]["device_id"])
-        self.assertNotIn("Name", result["data"]["list"][0])
+        self.assertEqual("registered-name", result["data"]["list"][0]["Name"])
         self.assertEqual(4, len(transport.calls))
 
-    def test_user_detail_rejects_direct_personal_dynamic_fields(self) -> None:
+    def test_user_detail_accepts_registered_personal_fields(self) -> None:
         def handler(_method: str, path: str, _kwargs: Mapping[str, Any]):
             if path.endswith(
                 ("user_property_list/", "event_property_list/", "segment/list/")
             ):
                 return page([])
-            raise AssertionError(f"personal-field request reached business endpoint: {path}")
+            if path.endswith("user/detail/list/"):
+                return page([{
+                    "AdClickTime": "2026-08-08 01:02:03",
+                    "Name": "registered-name",
+                    "WXOpenID": "registered-open-id",
+                    "bytedanceMid1": 7,
+                    "user$city": "registered-city",
+                    "userdevice_id": "registered-device",
+                }])
+            raise AssertionError(path)
 
         client, transport = client_for(
             "analysis.user_detail.list",
@@ -945,15 +954,61 @@ class GravityInsightAnalysisTests(unittest.TestCase):
             handler=handler,
         )
 
-        for field in ("Name", "WXOpenID", "Imei"):
-            with self.subTest(field=field), self.assertRaises(InputValidationError):
-                client.read(
-                    "analysis.user_detail.list",
-                    {"app_id": "101", "fields": [field]},
-                )
+        result = client.read(
+            "analysis.user_detail.list",
+            {
+                "app_id": "101",
+                "fields": [
+                    "AdClickTime",
+                    "Name",
+                    "WXOpenID",
+                    "bytedanceMid1",
+                    "user$city",
+                    "userdevice_id",
+                ],
+            },
+        )
 
-        self.assertTrue(transport.calls)
-        self.assertFalse(any(path.endswith("user/detail/list/") for _, path, _ in transport.calls))
+        self.assertEqual("success", result["status"])
+        self.assertEqual(
+            {
+                "AdClickTime": "2026-08-08 01:02:03",
+                "Name": "registered-name",
+                "WXOpenID": "registered-open-id",
+                "bytedanceMid1": 7,
+                "user$city": "registered-city",
+                "userdevice_id": "registered-device",
+            },
+            result["data"]["list"][0],
+        )
+        self.assertTrue(any(path.endswith("user/detail/list/") for _, path, _ in transport.calls))
+
+    def test_user_detail_154th_top_level_key_still_fails_closed(self) -> None:
+        def handler(_method: str, path: str, _kwargs: Mapping[str, Any]):
+            if path.endswith(
+                ("user_property_list/", "event_property_list/", "segment/list/")
+            ):
+                return page([])
+            if path.endswith("user/detail/list/"):
+                return page([{"Name": "registered", "future_154": "new"}])
+            raise AssertionError(path)
+
+        client, _transport = client_for(
+            "analysis.user_detail.list",
+            "analysis.user_property.list",
+            "analysis.event_property.list",
+            "analysis.segment.list",
+            handler=handler,
+        )
+
+        result = client.read(
+            "analysis.user_detail.list",
+            {"app_id": "101", "fields": ["Name"]},
+        )
+
+        self.assertEqual("contract_changed_additive", result["status"])
+        self.assertEqual({"Name": "registered"}, result["data"]["list"][0])
+        self.assertNotIn("future_154", result["data"]["list"][0])
 
     def test_order_and_monetization_project_selected_total_metrics(self) -> None:
         def handler(_method: str, path: str, _kwargs: Mapping[str, Any]):
@@ -1079,7 +1134,7 @@ class GravityInsightAnalysisTests(unittest.TestCase):
                         ],
                         "summary": [],
                         "device": {
-                            "Oaid": "must-not-leak",
+                            "Oaid": "registered-device-id",
                             "Phone_Brand": "brand",
                         },
                         "user": {"ClientID": "client-1", "user_id": "user-1"},
@@ -1113,7 +1168,7 @@ class GravityInsightAnalysisTests(unittest.TestCase):
         event = result["data"]["event_timeline"][0]["list"][0]
         self.assertEqual(3, event["amount"])
         self.assertNotIn("unselected", event)
-        self.assertNotIn("Oaid", result["data"]["device"])
+        self.assertEqual("registered-device-id", result["data"]["device"]["Oaid"])
         self.assertEqual("brand", result["data"]["device"]["Phone_Brand"])
         self.assertEqual("user-1", result["data"]["user"]["user_id"])
         self.assertEqual(

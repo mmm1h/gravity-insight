@@ -4,7 +4,7 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
+    "contract_version": 2,
     "description": "哔哩哔哩推广报表域的广告主账户报表；返回广告主与产品名称，以及曝光、点击、点击率、点击与千次曝光成本和现金、红包、三连起飞等消耗指标。",
     "domain": "promotion",
     "effect": "read",
@@ -93,38 +93,7 @@
         "password",
         "secret",
         "refresh_token",
-        "session_token",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url",
-        "uid",
-        "user_id",
-        "device_id",
-        "phone",
-        "mobile",
-        "email",
-        "idfa",
-        "idfv",
-        "imei",
-        "oaid",
-        "android_id",
-        "order_id",
-        "ip",
-        "ip_address",
-        "openid",
-        "open_id",
-        "unionid",
-        "client_id",
-        "trace_id",
-        "advertiser_name"
+        "session_token"
       ]
     },
     "provenance": {
@@ -188,9 +157,7 @@
         "total_cash_consume",
         "total_consume",
         "total_red_packet_consume",
-        "total_special_red_packet_consume"
-      ],
-      "known_omitted_item_keys": [
+        "total_special_red_packet_consume",
         "advertiser_name"
       ],
       "required_data_keys": [

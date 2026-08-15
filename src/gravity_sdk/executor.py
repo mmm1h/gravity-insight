@@ -23,6 +23,11 @@ from .transport import Transport
 
 
 _ABSENT = object()
+_RESPONSE_CREDENTIALS = frozenset(
+    {"access_token", "authorization", "cookie", "password", "private_key",
+     "refresh_token", "secret", "session_token", "token"}
+)
+_RESPONSE_CREDENTIAL_SUFFIXES = tuple(f"_{key}" for key in _RESPONSE_CREDENTIALS)
 _ANALYSIS_USER_EVENT_OPERATION = "analysis.user_event.list"
 _ANALYSIS_AGGREGATE_OPERATIONS = frozenset(
     {
@@ -124,11 +129,10 @@ class ReadExecutor:
         payload = response.payload
         _enforce_semantic_rules(operation, payload)
         projected, drift_warnings, projection_drift = _project(operation, payload, values)
-        allow_contracted_identifiers = operation.privacy_policy.classification == "user_level"
         projected = _redact(
             projected,
             operation.privacy_policy.redact_fields,
-            allow_contracted_identifiers=allow_contracted_identifiers,
+            allow_contracted_identifiers=True,
         )
         raw_items = _projected_items(operation, projected)
         items = (
@@ -136,7 +140,7 @@ class ReadExecutor:
                 _redact(
                     item,
                     operation.privacy_policy.redact_fields,
-                    allow_contracted_identifiers=allow_contracted_identifiers,
+                    allow_contracted_identifiers=True,
                 )
                 for item in raw_items
             )
@@ -148,7 +152,7 @@ class ReadExecutor:
             _redact(
                 dict(raw_page_info),
                 operation.privacy_policy.redact_fields,
-                allow_contracted_identifiers=allow_contracted_identifiers,
+                allow_contracted_identifiers=True,
             )
             if isinstance(raw_page_info, Mapping)
             else {}
@@ -913,7 +917,6 @@ def _project_data_containers(
             recursive, recursive_unknown, contracted = _project_recursive_collection(
                 value,
                 recursive_allowed,
-                privacy_keys=operation.privacy_policy.redact_fields,
             )
             if not contracted:
                 copied.pop(name, None)
@@ -964,16 +967,12 @@ def _project_data_containers(
 def _project_recursive_collection(
     value: Any,
     allowed_keys: tuple[str, ...],
-    *,
-    privacy_keys: tuple[str, ...],
 ) -> tuple[Any, set[str], bool]:
     allowed = set(allowed_keys)
-    blocked = {key.casefold() for key in privacy_keys}
 
     def project_row(row: Mapping[Any, Any]) -> tuple[dict[str, Any], set[str]]:
         row_keys = {str(key) for key in row}
-        privacy_omitted = {key for key in row_keys if _sensitive_key(key, blocked)}
-        unknown = row_keys - allowed - privacy_omitted
+        unknown = row_keys - allowed
         result: dict[str, Any] = {}
         for key, item in row.items():
             name = str(key)
@@ -981,7 +980,7 @@ def _project_recursive_collection(
                 continue
             if name == "children":
                 nested, nested_unknown, contracted = _project_recursive_collection(
-                    item, allowed_keys, privacy_keys=privacy_keys
+                    item, allowed_keys
                 )
                 if contracted:
                     result[name] = nested
@@ -1086,7 +1085,6 @@ def _project_list_rows(
         (), values, None,
     )
     known_omitted = set(operation.response_projection.known_omitted_item_keys)
-    privacy_blocked = {key.casefold() for key in operation.privacy_policy.redact_fields}
     field_name = operation.pagination.list_path.rsplit(".", 1)[-1]
     if isinstance(projected, Mapping):
         if not field_name or not isinstance(projected.get(field_name), list):
@@ -1112,18 +1110,7 @@ def _project_list_rows(
             non_object_items += 1
             continue
         row_keys = {str(key) for key in row}
-        privacy_omitted = {
-            key
-            for key in row_keys
-            if _sensitive_key(
-                key,
-                privacy_blocked,
-                allow_contracted_identifiers=(
-                    operation.privacy_policy.classification == "user_level"
-                ),
-            )
-        }
-        unknown.update(row_keys - allowed - known_omitted - privacy_omitted)
+        unknown.update(row_keys - allowed - known_omitted)
         projected_row: dict[str, Any] = {}
         for key, value in row.items():
             name = str(key)
@@ -1446,20 +1433,9 @@ def _sensitive_key(
 ) -> bool:
     normalized = key.casefold().replace("-", "_")
     if allow_contracted_identifiers:
-        return normalized in blocked or normalized in {
-            "authorization",
-            "cookie",
-            "password",
-            "secret",
-            "token",
-        } or normalized.endswith(
-            (
-                "_authorization",
-                "_cookie",
-                "_password",
-                "_secret",
-                "_token",
-            )
+        return (
+            normalized in _RESPONSE_CREDENTIALS
+            or normalized.endswith(_RESPONSE_CREDENTIAL_SUFFIXES)
         )
     if normalized in blocked or normalized in {
         "album_authority",

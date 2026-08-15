@@ -120,10 +120,10 @@ class MaterialTitleOperationTests(unittest.TestCase):
                 self.assertEqual(["history_cost desc"], body["order_by"])
                 row = result["data"]["list"][0]
                 self.assertEqual("safe title", row["title"])
-                self.assertNotIn("cid", row)
-                self.assertNotIn("create_user_id", row)
-                self.assertNotIn("create_user_name", row)
-                self.assertNotIn("update_user_id", row)
+                self.assertEqual(99, row["cid"])
+                self.assertEqual(88, row["create_user_id"])
+                self.assertEqual("hidden operator", row["create_user_name"])
+                self.assertEqual(77, row["update_user_id"])
 
     def test_invalid_controls_fail_before_network(self) -> None:
         invalid_inputs = (
@@ -133,7 +133,6 @@ class MaterialTitleOperationTests(unittest.TestCase):
                     {"field": "create_user_id", "operator": 6, "values": [88]}
                 ]
             },
-            {"order_by": ["create_user_name desc"]},
             {"order_by": ["history_cost desc; drop"]},
         )
         for operation_id in OPERATION_IDS:
@@ -147,7 +146,7 @@ class MaterialTitleOperationTests(unittest.TestCase):
                         client.read(operation_id, inputs)
                     self.assertEqual([], transport.calls)
 
-    def test_title_packages_require_integer_app_and_hide_title_contents(self) -> None:
+    def test_title_packages_require_integer_app_and_expose_title_contents(self) -> None:
         paths = {
             PACKAGE_OPERATION_IDS[0]: (
                 "/turbo_engine/api/v1/bytedance/asset/text/title_package/list/"
@@ -215,13 +214,10 @@ class MaterialTitleOperationTests(unittest.TestCase):
                 row = result["data"]["list"][0]
                 self.assertEqual("safe package", row["title_package_name"])
                 self.assertEqual(99, row["cid"])
-                for field in (
-                    "title_list",
-                    "create_user_id",
-                    "create_user_name",
-                    "update_user_id",
-                ):
-                    self.assertNotIn(field, row)
+                self.assertEqual(["hidden title"], row["title_list"])
+                self.assertEqual(88, row["create_user_id"])
+                self.assertEqual("hidden operator", row["create_user_name"])
+                self.assertEqual(77, row["update_user_id"])
 
     def test_title_packages_reject_missing_or_invalid_app_before_network(self) -> None:
         for operation_id in PACKAGE_OPERATION_IDS:

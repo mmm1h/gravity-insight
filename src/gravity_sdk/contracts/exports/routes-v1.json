@@ -327,7 +327,7 @@
       "path": "/turbo_engine/api/v1/user/promoted_object/click_url/export/",
       "contract_status": "unverified",
       "executable": false,
-      "block_reason": "Click URLs are privacy-blocked pending an approved projection",
+      "block_reason": "Request binding, response schema, file protocol, and output allowlist remain unverified",
       "request": {"location": "body", "allowed_fields": [], "required_fields": [], "fixed_fields": {}},
       "response": {"job_id_paths": ["data.task_id", "task_id"]},
       "privacy": {"classification": "restricted", "format": null, "allowed_columns": [], "required_columns": []},

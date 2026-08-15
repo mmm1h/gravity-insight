@@ -4,8 +4,8 @@
   "operation": {
     "action": "query",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
-    "description": "公司资源用量报表域的按日用量列表；返回日期及广告、广告创建、点击、成本、事件、画像、存储、追踪和素材传输用量，用户数不输出。",
+    "contract_version": 2,
+    "description": "公司资源用量报表域的按日用量列表；返回日期及广告、广告创建、点击、成本、事件、画像、存储、追踪、素材传输和用户用量。",
     "domain": "report",
     "effect": "read",
     "examples": [
@@ -59,37 +59,7 @@
         "password",
         "secret",
         "refresh_token",
-        "session_token",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url",
-        "uid",
-        "user_id",
-        "device_id",
-        "phone",
-        "mobile",
-        "email",
-        "idfa",
-        "idfv",
-        "imei",
-        "oaid",
-        "android_id",
-        "order_id",
-        "ip",
-        "ip_address",
-        "openid",
-        "open_id",
-        "unionid",
-        "client_id",
-        "trace_id"
+        "session_token"
       ]
     },
     "provenance": {
@@ -132,7 +102,8 @@
           "material_transmit_g_usage",
           "profile_count",
           "storage_count",
-          "tracking_count"
+          "tracking_count",
+          "user_count"
         ]
       },
       "dynamic_item_fields": [],
@@ -146,14 +117,7 @@
         "material_transmit_g_usage",
         "profile_count",
         "storage_count",
-        "tracking_count"
-      ],
-      "known_omitted_data_item_keys": {
-        "total": [
-          "user_count"
-        ]
-      },
-      "known_omitted_item_keys": [
+        "tracking_count",
         "user_count"
       ],
       "required_data_keys": [

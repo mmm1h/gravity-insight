@@ -4,9 +4,9 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "block_reason": "blocked_privacy",
-    "contract_version": 1,
-    "description": "当前账号可见部门树；data 为树形/数组响应。",
+    "block_reason": "response_schema_unverified",
+    "contract_version": 2,
+    "description": "当前账号可见部门树候选；旧隐私阻塞已解除，仍因响应树字段与类型未证实而保持不可执行。",
     "domain": "account",
     "effect": "read",
     "examples": [],
@@ -33,20 +33,7 @@
         "access_token",
         "token",
         "cookie",
-        "password",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "email",
-        "phone",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url"
+        "password"
       ]
     },
     "provenance": {
@@ -77,7 +64,7 @@
       "code",
       "extra.error"
     ],
-    "stability": "blocked_privacy",
+    "stability": "experimental",
     "upstream_method": "GET"
   },
   "source_schema_version": 2,

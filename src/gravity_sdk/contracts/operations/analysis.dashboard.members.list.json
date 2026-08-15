@@ -4,8 +4,8 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
-    "description": "看板创建人与授权成员目录；仅返回内部成员标识与权限，成员姓名保持隐藏。",
+    "contract_version": 2,
+    "description": "看板创建人与授权成员目录；返回已登记的内部成员标识、姓名与权限。",
     "domain": "analysis",
     "effect": "read",
     "examples": [],
@@ -83,11 +83,13 @@
       "data_item_keys": {
         "authUsers": [
           "uid",
-          "authority"
+          "authority",
+          "name"
         ],
         "creator": [
           "id",
-          "uid"
+          "uid",
+          "name"
         ]
       },
       "data_keys": [
@@ -96,14 +98,6 @@
       ],
       "dynamic_item_fields": [],
       "item_keys": [],
-      "known_omitted_data_item_keys": {
-        "authUsers": [
-          "name"
-        ],
-        "creator": [
-          "name"
-        ]
-      },
       "required_data_keys": [
         "creator",
         "authUsers"

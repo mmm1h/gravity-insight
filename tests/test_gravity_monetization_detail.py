@@ -9,6 +9,7 @@ import gravity_sdk
 from gravity_sdk import cli
 from gravity_sdk._field_policy_detail import validate_analysis_detail
 from gravity_sdk.monetization_detail import (
+    DEVICE_INFO_FIELDS,
     OPERATION_ID,
     SAFE_ROW_FIELDS,
     monetization_detail,
@@ -30,13 +31,13 @@ SAFE = {
         "ReAttributeAdPlatform": "demo-platform",
         "ReAttributeAdAid": "ad-safe",
     },
-}; EXCLUDED = {
+}; RESTORED = {
     "user_id": "user-secret",
     "event_user_id": "event-user-secret",
     "device_id": "device-secret",
     "ClientID": "client-secret",
     "TraceID": "trace-secret",
-    "device_info": {"Phone_Model": "fingerprint-secret"},
+    "device_info": {field: f"value-{field}" for field in DEVICE_INFO_FIELDS},
     "user$ad_count": 99,
     "user$ad_avg_ecpm": 88,
     "user$ad_ltv": 77,
@@ -50,7 +51,7 @@ def _read(row, *, workers=2):
         "operation_id": OPERATION_ID,
         "status": "empty" if not rows else "success",
         "error": None,
-        "data": {"list": rows, "total": {**EXCLUDED, "samount": 3}},
+        "data": {"list": rows, "total": {**RESTORED, "samount": 3}},
         "page": {
             "number": 1,
             "size": 100,
@@ -92,35 +93,31 @@ class ProductSDK:
         self.calls.append((args, kwargs))
         return copy.deepcopy(self.value)
 class MonetizationDetailTests(unittest.TestCase):
-    def test_happy_path_uses_fixed_fields_and_rebuilds_safe_rows(self):
-        raw = {**SAFE, **EXCLUDED, "future_user_metric": "future-secret"}
-        raw["re_attribute_info"] = {
-            **SAFE["re_attribute_info"], "FutureUserKey": "nested-secret"
-        }
+    def test_happy_path_uses_fixed_fields_and_returns_registered_identifiers(self):
+        raw = {**SAFE, **RESTORED}
         client = Client(_read(raw))
         result = monetization_detail(
             client, "007", DAY, max_workers=2, max_pages=5, max_items=10
         )
-        self.assertEqual(("success", "7", [SAFE]),
+        self.assertEqual(("success", "7", [raw]),
                          (result["status"], result["app_id"], result["data"]["list"]))
+        self.assertIsInstance(result["data"]["list"][0]["device_info"], dict)
+        self.assertIsInstance(result["data"]["list"][0]["user$ad_ltv"], int)
         operation, inputs, options = client.calls[0]
         self.assertEqual((OPERATION_ID, list(SAFE_ROW_FIELDS), 1, 100),
                          (operation, inputs["fields"], inputs["page"], inputs["page_size"]))
         self.assertEqual({"max_workers": 2, "max_pages": 5, "max_items": 10}, options)
         self.assertEqual(1, result["page"]["pages_fetched"])
-    def test_projection_fails_closed_and_never_exposes_excluded_values(self):
-        secrets = tuple(str(value) for value in EXCLUDED.values()) + (
-            "future-secret", "nested-secret", "exception-secret", "error-secret"
-        )
+    def test_failure_envelopes_do_not_copy_exception_or_error_values(self):
+        secrets = ("exception-secret", "error-secret")
         results = [
-            monetization_detail(Client(_read(EXCLUDED)), 7, DAY, max_workers=2),
             monetization_detail(Client(RuntimeError("exception-secret")), 7, DAY, max_workers=2),
             monetization_detail(Client({
                 "status": "permission_unavailable",
                 "error": {"code": "PERMISSION_UNAVAILABLE", "message": "error-secret"},
             }), 7, DAY, max_workers=2),
         ]
-        self.assertEqual(["contract_changed", "error", "error"],
+        self.assertEqual(["error", "error"],
                          [result["status"] for result in results])
         rendered = repr(results)
         self.assertFalse(any(secret in rendered for secret in secrets))
@@ -134,7 +131,7 @@ class MonetizationDetailTests(unittest.TestCase):
             (("app_id",), "8"),
             (("limits", "max_items"), 11),
             (("page", "pages_fetched"), 2),
-            (("data", "list", 0, "TraceID"), "public-secret"),
+            (("data", "list", 0, "UnregisteredField"), "public-secret"),
         ):
             forged = copy.deepcopy(result)
             target = forged
@@ -148,7 +145,7 @@ class MonetizationDetailTests(unittest.TestCase):
             )
             self.assertEqual("contract_changed", rebuilt["status"])
             self.assertNotIn("public-secret", repr(rebuilt))
-    def test_raw_operation_policy_allows_only_the_approved_projection(self):
+    def test_raw_operation_policy_uses_metadata_and_allows_user_filters(self):
         root = Path(__file__).resolve().parents[1]
         operation = next(
             item for item in load_operation_manifest(
@@ -156,48 +153,36 @@ class MonetizationDetailTests(unittest.TestCase):
             ) if item.operation_id == OPERATION_ID
         )
         calls = []
+        def loader(operation_id, inputs):
+            calls.append((operation_id, inputs))
+            return {"status": "empty", "data": {"list": []}}
         base = {"app_id": "7", "date": DAY, "page": 1, "page_size": 100}
         validate_analysis_detail(
             operation, {**base, "fields": list(SAFE_ROW_FIELDS)},
-            lambda *args: calls.append(args),
+            loader,
         )
         self.assertEqual([], calls)
         validate_analysis_detail(
-            operation, {**base, "fields": list(SAFE_ROW_FIELDS[:-1])},
-            lambda *args: calls.append(args),
+            operation, {**base, "fields": ["user_id"]}, loader,
         )
-        self.assertEqual([], calls)
-        rejected = [
-            {**base, "fields": [field]}
-            for field in (*EXCLUDED, "future_user_metric")
-        ]
-        rejected.extend((
-            {
-                **base,
-                "fields": list(SAFE_ROW_FIELDS),
-                "global_conditions": [{"field": "user_id"}],
-            },
-            {
-                **base,
-                "fields": list(SAFE_ROW_FIELDS),
-                "local_conditions": [{"field": "device_id"}],
-            },
-            {
-                **base,
-                "fields": list(SAFE_ROW_FIELDS),
-                "order_by_list": [{"field": "TraceID"}],
-            },
-        ))
-        for inputs in rejected:
-            with self.assertRaises(ValueError):
-                validate_analysis_detail(
-                    operation, inputs, lambda *args: calls.append(args)
-                )
+        self.assertEqual(3, len(calls))
+        condition = {
+            "operator": "EQUALS", "field": "user_id", "type": "default_user",
+            "value": ["user-1"],
+        }
+        validate_analysis_detail(
+            operation,
+            {**base, "fields": ["user_id"], "global_conditions": [condition]},
+            loader,
+        )
+        with self.assertRaisesRegex(ValueError, "absent from live metadata"):
+            validate_analysis_detail(
+                operation, {**base, "fields": ["future_user_metric"]}, loader
+            )
         with self.assertRaises(ValueError):
             operation.validate_inputs(
-                {**base, "fields": list(SAFE_ROW_FIELDS), "group_by": ["user_id"]}
+                {**base, "fields": list(SAFE_ROW_FIELDS), "future_control": True}
             )
-        self.assertEqual([], calls)
     def test_cli_sdk_and_plan_share_one_preflighted_product(self):
         base = [
             "analysis", "monetization", "detail", "--app", "main",

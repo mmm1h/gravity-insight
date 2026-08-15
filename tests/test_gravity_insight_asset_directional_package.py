@@ -106,12 +106,18 @@ class AssetDirectionalPackageOperationTests(unittest.TestCase):
             {
                 "advertiser_id",
                 "audience_name",
+                "cid",
+                "company",
                 "create_time",
+                "create_user_id",
+                "create_user_name",
                 "id",
                 "landing_type",
                 "media_targeting_id",
                 "media_type",
                 "modify_time",
+                "update_user_id",
+                "update_user_name",
             },
             set(result["data"]["list"][0]),
         )

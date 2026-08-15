@@ -4,7 +4,7 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
+    "contract_version": 2,
     "description": "事件分析报表已隐藏或已删除字段列表。当前 Event bundle 以 report_id、app_id 发起 GET，并仅消费 data_type、action_type、data_cname、data_name。",
     "domain": "analysis",
     "effect": "read",
@@ -45,20 +45,7 @@
         "access_token",
         "token",
         "cookie",
-        "password",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "email",
-        "phone",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url"
+        "password"
       ]
     },
     "provenance": {

@@ -4,7 +4,7 @@
   "operation": {
     "action": "get",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
+    "contract_version": 2,
     "description": "App 只读详情。当前前端精确使用 GET JSON body {app_id}；2026-08-08 最小探针 code=0，响应仅投影安全 App 元数据，下载、图标、回调和归因配置容器固定省略。",
     "domain": "app",
     "effect": "read",
@@ -38,21 +38,7 @@
         "access_token",
         "token",
         "cookie",
-        "password",
-        "operator",
-        "operator_id",
-        "operator_name",
-        "creator",
-        "creator_id",
-        "user_name",
-        "email",
-        "phone",
-        "dept",
-        "department",
-        "callback_url",
-        "click_url",
-        "postback_url",
-        "remark"
+        "password"
       ]
     },
     "provenance": {

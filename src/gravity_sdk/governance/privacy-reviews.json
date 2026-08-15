@@ -17,7 +17,9 @@
       "package_total_million_opt_usage",
       "package_total_million_usage",
       "storage_amount_g",
-      "storage_amount_g_usage"
+      "storage_amount_g_usage",
+      "company_position",
+      "our_salesman_id"
     ],
     "app.capacity.list": [
       "ad_create_amount",
@@ -36,7 +38,9 @@
       "package_total_million_opt_usage",
       "package_total_million_usage",
       "storage_amount_g",
-      "storage_amount_g_usage"
+      "storage_amount_g_usage",
+      "company_position",
+      "our_salesman_id"
     ],
     "app.permission_menu.list": [
       "person_num"
@@ -69,6 +73,11 @@
       "filename",
       "format",
       "height",
+      "cover_source",
+      "labels",
+      "organization_tags",
+      "signature",
+      "star_author_id",
       "size",
       "stat_cost",
       "width"
@@ -77,6 +86,8 @@
       "advertiser_balance",
       "advertiser_budget",
       "advertiser_budget_mode",
+      "advertiser_remark",
+      "delay",
       "stat_cost"
     ],
     "metadata.event_property_template_event_list.list": [
@@ -120,18 +131,14 @@
       "cost"
     ]
   },
-  "reviewed_sensitive_fields": {
+  "reviewed_contract_fields": {
     "app.capacity.get": [
-      "company_position",
       "formula",
-      "our_salesman_id",
       "our_salesman_remark",
       "silence"
     ],
     "app.capacity.list": [
-      "company_position",
       "formula",
-      "our_salesman_id",
       "our_salesman_remark",
       "silence"
     ],
@@ -140,16 +147,7 @@
       "remark",
       "sort_order"
     ],
-    "material.bytedance.promotion_material.list": [
-      "cover_source",
-      "labels",
-      "organization_tags",
-      "signature",
-      "star_author_id"
-    ],
-    "promotion.bytedance.advertiser_performance.list": [
-      "advertiser_remark",
-      "delay"
-    ]
+    "material.bytedance.promotion_material.list": [],
+    "promotion.bytedance.advertiser_performance.list": []
   }
 }

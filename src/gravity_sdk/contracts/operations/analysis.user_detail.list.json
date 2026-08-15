@@ -4,8 +4,8 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 2,
-    "description": "用户细查；支持结构化字段、筛选和排序，返回内部分析标识、非识别性设备属性与归因字段；姓名、外部开放标识和广告设备标识保持隐藏。",
+    "contract_version": 3,
+    "description": "用户细查；支持结构化字段、筛选和排序，返回全部 153 个已观察顶层字段及已登记设备信息。bytedanceMid1..8 与 bytedanceProjectId 按观察到的 JSON 标量类型交付，业务语义仍未证实。",
     "domain": "analysis",
     "effect": "read",
     "examples": [],
@@ -106,15 +106,7 @@
         "password",
         "secret",
         "refresh_token",
-        "session_token",
-        "WXOpenID",
-        "Idfa",
-        "Idfv",
-        "Caid1",
-        "Caid2",
-        "Oaid",
-        "Imei",
-        "AndroidId"
+        "session_token"
       ]
     },
     "provenance": {
@@ -188,9 +180,7 @@
         "AdCid",
         "CSite",
         "device_info",
-        "re_attribute_info"
-      ],
-      "known_omitted_item_keys": [
+        "re_attribute_info",
         "Name",
         "WXOpenID",
         "AdClickTime",
@@ -328,17 +318,6 @@
         "useruser_sex",
         "useruser_tpe"
       ],
-      "known_omitted_nested_item_keys": {
-        "device_info": [
-          "Idfa",
-          "Idfv",
-          "Caid1",
-          "Caid2",
-          "Oaid",
-          "Imei",
-          "AndroidId"
-        ]
-      },
       "nested_item_keys": {
         "device_info": [
           "Android_Version",
@@ -347,7 +326,14 @@
           "Aspect_Ratio",
           "Phone_Brand",
           "Phone_Model",
-          "OS"
+          "OS",
+          "Idfa",
+          "Idfv",
+          "Caid1",
+          "Caid2",
+          "Oaid",
+          "Imei",
+          "AndroidId"
         ],
         "re_attribute_info": [
           "ReAttributeAdAid",

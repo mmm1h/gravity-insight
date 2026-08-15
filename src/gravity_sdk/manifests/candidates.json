@@ -4,7 +4,7 @@
     {
       "action": "get",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "App 只读详情。当前前端精确使用 GET JSON body {app_id}；2026-08-08 最小探针 code=0，响应仅投影安全 App 元数据，下载、图标、回调和归因配置容器固定省略。",
       "domain": "app",
       "effect": "read",
@@ -37,21 +37,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url",
-          "remark"
+          "password"
         ]
       },
       "request": {
@@ -126,7 +112,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "归因回传映射列表。当前前端精确使用 GET JSON body，filters 为 JSON 字符串；2026-08-08 在可读 App 上取得 code=0 非空合同，条件、公司和回传值配置固定省略。",
       "domain": "attribution",
       "effect": "read",
@@ -171,20 +157,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -228,10 +201,10 @@
           "ratio_type",
           "ratio_mode",
           "source_type",
-          "convert_type"
+          "convert_type",
+          "company"
         ],
         "known_omitted_item_keys": [
-          "company",
           "conditions",
           "sub_conditions",
           "circular_queue",
@@ -251,7 +224,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "归因回溯窗口列表。当前前端精确使用 GET JSON body {app_id} 并消费 app_id/attributed_reason/minutes/days/window_type；2026-08-08 七个可读 App 均返回 code=0 空列表，公司字段固定省略。",
       "domain": "attribution",
       "effect": "read",
@@ -284,20 +257,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -343,7 +303,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "再归因配置列表。当前前端精确使用 GET JSON body {app_id}；2026-08-08 在可读 App 上取得 code=0 非空合同。",
       "domain": "attribution",
       "effect": "read",
@@ -376,20 +336,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -433,7 +380,7 @@
     {
       "action": "get",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "归因点击间隔配置。现行前端路径已迁移到 /user/open_app/attr_click_interval/list/，精确 GET JSON body {app_id}；合同字段为 is_enabled/unit/second/minute，2026-08-08 七个可读 App 均返回 code=0 空配置。",
       "domain": "attribution",
       "effect": "read",
@@ -466,20 +413,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -518,7 +452,7 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "展示点击归因开关列表。当前前端精确使用 GET JSON body {app_id} 并消费 company/enable；2026-08-08 七个可读 App 均返回 code=0 空列表，公司字段固定省略。",
       "domain": "attribution",
       "effect": "read",
@@ -551,20 +485,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -606,8 +527,8 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "巨量平台素材列表。当前前端精确使用 query {page,page_size} 与 body {advertiser_id,check_local_exist:1,filters:[]}；2026-08-08 最小探针 code=0 且取得非空合同，URL、人员、MD5 和图片容器固定省略。",
+      "contract_version": 2,
+      "description": "巨量平台素材列表。广告主名称和租户字段已登记返回；缓存状态、未证实文件元数据、MD5、标签与图片容器仍按现有合同省略。",
       "domain": "material",
       "effect": "read",
       "input_fields": {
@@ -651,20 +572,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -699,7 +607,9 @@
         "item_keys": [
           "file_name",
           "material_id",
-          "gravity_material_id"
+          "gravity_material_id",
+          "cid",
+          "advertiser_name"
         ],
         "known_omitted_item_keys": [
           "create_time",
@@ -718,7 +628,6 @@
           "id",
           "ad_created_time",
           "ad_modified_time",
-          "cid",
           "ad_platform",
           "advertiser_id",
           "derived_id",
@@ -733,8 +642,7 @@
           "file_md5",
           "derived_file_md5",
           "image_set",
-          "material_label_list",
-          "advertiser_name"
+          "material_label_list"
         ],
         "required_data_keys": [
           "list"
@@ -750,8 +658,8 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "腾讯平台素材列表。当前前端精确使用 query {page,page_size} 与 body {advertiser_id,check_local_exist:1,filters:[]}；2026-08-08 最小探针 code=0 且取得非空合同，URL、人员、MD5 和图片容器固定省略。",
+      "contract_version": 2,
+      "description": "腾讯平台素材列表。广告主名称和租户字段已登记返回；缓存状态、未证实文件元数据、MD5、标签与图片容器仍按现有合同省略。",
       "domain": "material",
       "effect": "read",
       "input_fields": {
@@ -795,20 +703,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -843,7 +738,9 @@
         "item_keys": [
           "file_name",
           "material_id",
-          "gravity_material_id"
+          "gravity_material_id",
+          "cid",
+          "advertiser_name"
         ],
         "known_omitted_item_keys": [
           "create_time",
@@ -862,7 +759,6 @@
           "id",
           "ad_created_time",
           "ad_modified_time",
-          "cid",
           "ad_platform",
           "advertiser_id",
           "derived_id",
@@ -877,8 +773,7 @@
           "file_md5",
           "derived_file_md5",
           "image_set",
-          "material_label_list",
-          "advertiser_name"
+          "material_label_list"
         ],
         "required_data_keys": [
           "list"
@@ -937,20 +832,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -1064,20 +946,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -1106,8 +975,8 @@
     {
       "action": "get",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "素材审核功能开关配置（不是素材审核详情）。当前前端无参 GET；2026-08-08 最小探针 code=0，公开 enable 与安全标量元数据，规则和人员容器固定省略。",
+      "contract_version": 2,
+      "description": "素材审核功能开关配置（不是素材审核详情）。当前前端无参 GET；公开 enable 与已证实标量元数据，rule/users 子字段合同未证实而继续省略。",
       "domain": "material",
       "effect": "read",
       "input_fields": {},
@@ -1132,20 +1001,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -1186,7 +1042,7 @@
     {
       "action": "query",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "平台素材安全聚合报表。当前 Business chunk 明确巨量/腾讯/磁力/B站指标映射；受控 codec 固定 material/total 聚合、平台与 App filters，并将 stat_list 收紧为空以禁止 designer_id 人员分组。2026-08-08 四个平台最小探针均 code=0 且响应合同一致。",
       "domain": "material",
       "effect": "read",
@@ -1255,20 +1111,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -1331,9 +1174,9 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "block_reason": "blocked_privacy",
-      "contract_version": 1,
-      "description": "Read path may expose promotion-object identifiers or sensitive metadata; blocked until privacy projection is approved.",
+      "block_reason": "request_and_response_contract_unverified",
+      "contract_version": 2,
+      "description": "Catalog-only read path; upstream-authorized fields may be exposed, but request binding and response schema remain unverified.",
       "domain": "promotion",
       "effect": "read",
       "executable": false,
@@ -1359,20 +1202,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -1395,15 +1225,15 @@
         "code",
         "extra.error"
       ],
-      "stability": "blocked_privacy",
+      "stability": "experimental",
       "upstream_method": "GET"
     },
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "block_reason": "blocked_privacy",
-      "contract_version": 1,
-      "description": "Read path exposes click URLs; blocked until privacy projection is approved.",
+      "block_reason": "request_and_response_contract_unverified",
+      "contract_version": 2,
+      "description": "Catalog-only click-URL read; upstream-authorized fields may be exposed, but request binding and response schema remain unverified.",
       "domain": "promotion",
       "effect": "read",
       "executable": false,
@@ -1429,20 +1259,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -1465,15 +1282,15 @@
         "code",
         "extra.error"
       ],
-      "stability": "blocked_privacy",
+      "stability": "experimental",
       "upstream_method": "GET"
     },
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "block_reason": "blocked_privacy",
-      "contract_version": 1,
-      "description": "Read path exposes click-URL edit history; blocked until privacy projection is approved.",
+      "block_reason": "request_and_response_contract_unverified",
+      "contract_version": 2,
+      "description": "Catalog-only click-URL history read; upstream-authorized fields may be exposed, but request binding and response schema remain unverified.",
       "domain": "promotion",
       "effect": "read",
       "executable": false,
@@ -1499,20 +1316,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -1535,15 +1339,15 @@
         "code",
         "extra.error"
       ],
-      "stability": "blocked_privacy",
+      "stability": "experimental",
       "upstream_method": "GET"
     },
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "block_reason": "blocked_privacy",
-      "contract_version": 1,
-      "description": "Read path exposes user operation history; blocked until privacy projection is approved.",
+      "block_reason": "request_and_response_contract_unverified",
+      "contract_version": 2,
+      "description": "Catalog-only user-operation history read; upstream-authorized fields may be exposed, but request binding and response schema remain unverified.",
       "domain": "account",
       "effect": "read",
       "executable": false,
@@ -1569,20 +1373,7 @@
           "access_token",
           "token",
           "cookie",
-          "password",
-          "operator",
-          "operator_id",
-          "operator_name",
-          "creator",
-          "creator_id",
-          "user_name",
-          "email",
-          "phone",
-          "dept",
-          "department",
-          "callback_url",
-          "click_url",
-          "postback_url"
+          "password"
         ]
       },
       "request": {
@@ -1605,7 +1396,7 @@
         "code",
         "extra.error"
       ],
-      "stability": "blocked_privacy",
+      "stability": "experimental",
       "upstream_method": "GET"
     }
   ]
