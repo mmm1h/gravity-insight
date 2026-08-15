@@ -68,7 +68,10 @@ def advertiser_profile_query(query: str) -> bool:
     if words & _BLOCKED:
         return False
     english = "advertiser" in words and bool(
-        words & {"account", "accounts", "performance", "profile", "profiles"}
+        words & {
+            "account", "accounts", "balance", "budget", "performance",
+            "profile", "profiles", "spend", "status",
+        }
     )
     chinese = "广告主" in selected and any(
         term in selected

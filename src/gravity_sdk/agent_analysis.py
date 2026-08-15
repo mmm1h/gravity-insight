@@ -20,6 +20,7 @@ _INTENT_ALIASES: Mapping[str, tuple[str, ...]] = {
         "analyze events",
         "事件分析",
         "事件查询",
+        "事件趋势",
         "事件趋势分析",
     ),
     "funnel": (
@@ -39,6 +40,8 @@ _INTENT_ALIASES: Mapping[str, tuple[str, ...]] = {
         "analyse properties",
         "analyze properties",
         "属性分析",
+        "属性分布",
+        "属性的分布",
         "用户属性分析",
     ),
     "retention": (
@@ -49,6 +52,7 @@ _INTENT_ALIASES: Mapping[str, tuple[str, ...]] = {
         "analyse retention",
         "analyze retention",
         "留存分析",
+        "留存",
         "用户留存",
     ),
     "scatter": (
@@ -58,6 +62,7 @@ _INTENT_ALIASES: Mapping[str, tuple[str, ...]] = {
         "analyse scatter",
         "analyze scatter",
         "散点分析",
+        "散点关系",
         "散点图",
     ),
 }
@@ -376,6 +381,7 @@ def _analysis_card(query: str, selected_kind: str | None) -> dict[str, Any]:
         any(term in query.strip().casefold() for term in (
             "period compare", "compare analysis periods", "compare last week",
             "compare last month", "跨期对比", "对比上周", "对比上月",
+            "比较本周和上周",
         )),
     )
 
@@ -388,4 +394,5 @@ _GENERIC_ALIASES = _GENERIC_ALIASES + (
     "跨期对比",
     "对比上周",
     "对比上月",
+    "比较本周和上周",
 )

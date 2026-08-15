@@ -106,6 +106,20 @@
 - **剩余退出条件**：后续只在逐条静态取证时把弱信号替换为已审查证据；不扩张 census 提取器，
   不批量改 mutation。待弱证据 POST 不再需要依靠单独 probe 闸门时删除本条。
 
+### 7. Agent authoritative selection 仍会把产品卡和 raw operation 混在一起
+
+- **Owner area**：`agent_capabilities.py` / `agent_sources.py` / `find.py` 的共享发现与权威卡选择。
+- **证据**：2026-08-15 的自然语言端到端实测中，明确漏斗问题同时返回
+  `analysis.query.spec:funnel`、`app.detail`、`app.list`；属性和散点问题在领域 recognizer 补齐后，
+  仍分别返回正确 Spec 卡加两张 raw operation。调用方无法从“唯一产品卡”机械推进。同期
+  class-level “search synchronized metadata for events and properties” 在本地 catalog 存在时仍返回
+  capability gap，因为当前 metadata 卡只能由强匹配的具体 row 生成。
+- **触发条件**：已成立，下一次修改共享 Agent discovery/authoritative selection 时处理。
+- **退出条件**：kind-specific Analysis Spec 卡命中后抑制普通 raw fallback，同时保留 exact raw
+  selector、recipe/SQL product 优先级和 `MULTIPLE_INTENTS`；为 event/property class-level metadata
+  查询增加一个 typed `metadata_search` 卡，冷目录继续走原子 refresh，空目录仍返回明确空而非伪候选。
+  要补反例证明不会把 workspace vocabulary 与 App-scoped event/property 混域。
+
 ## 明确不登记为债务
 
 以下模式经审计判定为**合理领域边界**，不因文件数量多而登记：25 个 `agent_*.py`、

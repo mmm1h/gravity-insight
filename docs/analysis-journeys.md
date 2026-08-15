@@ -19,6 +19,14 @@
 D23/D29/D30 只剩依赖箭头、语义不可验证，故保留在此说明而不强挂到新动线。候选
 `app.project_auth.detail`、`app.user_auth.list` 属成员权限管理，按 roadmap 非目标排除，不计动线。
 
+2026-08-15 的 20 题 Agent 端到端实测不改上述计数：旧值 `48 = 32 / 0 / 16`，增减项均为 0，
+新值仍为 `48 = 32 / 0 / 16`。它测的是自然语言路由与卡可执行性，不是重新做 closure audit。
+但它证明若干“已闭环”行的自然语言入口仍会中断：属性/散点的正确 Spec 卡会与 raw operation 并列，
+class-level metadata search 没有产品卡；title-package 的显式日期+双类型问题没有边界 gap；Custom
+Audience/ Bilibili 执行分别暴露不可复制的 contract/pagination next action。事件、留存、素材、广告主
+profile、看板重放的窄 recognizer 已在当轮领域模块修复。完整事前题单与逐题原始判定保存在本轮
+`tmp/codex/agent-usability/` 工作底稿；结论以 roadmap 的对应小节为准。
+
 事件、漏斗、留存、属性四行的“已知 1 次”同时覆盖显式多 App：同一 spec 用
 `gravity.analysis-query-batch.v2` 的 `apps` 数组一次执行，逐 App 组件返回且不聚合。scatter 和其余
 产品仍按当前单 App/同层 Plan 合同，不据此增加新动线或改变下表计数。

@@ -18,7 +18,9 @@ MONETIZATION_EXPORT_RAW_SELECTOR = ".".join(
 MONETIZATION_SAFE_QUERY = "monetization_detail"
 MONETIZATION_GAP_REASON = (
     "the request is outside the identifier-free single-day Monetization "
-    "Detail product boundary"
+    "Detail product boundary; rerun `gravity agent \"monetization details\"` "
+    "and fill app/date for detail, while aggregated monetization performance "
+    "is not registered"
 )
 MONETIZATION_DETAIL_NAME = "monetization_detail"
 MONETIZATION_DETAIL_SELECTOR = f"composite:{MONETIZATION_DETAIL_NAME}"
@@ -37,6 +39,7 @@ _CHINESE_SHAPES = (
     "变现明细",
     "变现目录",
     "变现列表",
+    "变现表现",
     "广告变现明细",
 )
 _EXACT_PRODUCT_INTENTS = frozenset(
@@ -74,7 +77,7 @@ _CHINESE_BLOCKED = (
     "不要", "无需", "不需要", "拒绝", "导出", "下载", "写入", "修改",
     "删除", "用户", "设备", "标识", "筛选", "过滤", "条件", "分组", "订单",
     "排序", "字段", "画像", "跨日", "日期范围", "时间范围", "汇总",
-    "聚合", "总计", "报告", "报表", "收入", "归因", "看板", "原始",
+    "聚合", "总计", "表现", "报告", "报表", "收入", "归因", "看板", "原始",
     "素材", "推广", "多维", "保存分析", "分群", "旅程", "脉搏",
 )
 _RANGE_PHRASE = re.compile(

@@ -42,7 +42,7 @@ class MonetizationGuardAgentTests(unittest.TestCase):
             "带标识变现明细", "无标识变现明细按用户分组", "变现明细按标识筛选", "无标识变现明细跨日",
             "monetization details summary", "dashboard snapshot monetization details", "变现明细按用户分组",
             "变现明细聚合报表", f"{READ} north-secret", f"{READ.rsplit('.', 1)[0]} north-secret",
-            f"{READ.removeprefix('analysis.')} north-secret", f"{EXPORT} north-secret",
+            f"{READ.removeprefix('analysis.')} north-secret", f"{EXPORT} north-secret", "看昨天的变现表现。",
         )
         for query in queries:
             with self.subTest(query=query):

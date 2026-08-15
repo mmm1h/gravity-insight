@@ -271,7 +271,7 @@ class MaterialPerformanceSurfaceTests(unittest.TestCase):
                     set(card["input_schema"]), set(card["input_template"])
                 )
                 self.assertNotIn("name", card["input_template"])
-        discovered = discover_capabilities("素材表现", client=None)
+        discovered = discover_capabilities("Compare creative material performance across all supported ad platforms for yesterday.", client=None)
         self.assertEqual((1, 1), (discovered["count"], discovered["total"]))
         self.assertEqual(
             "material_performance", discovered["candidates"][0]["composite"]
