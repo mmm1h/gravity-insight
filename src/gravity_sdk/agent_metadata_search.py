@@ -5,6 +5,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from .agent_intent_text import affirmative_intent_text
+
 
 SELECTOR = "metadata:search"
 
@@ -20,7 +22,7 @@ def metadata_search_capability_cards(
 
 
 def metadata_search_intent(query: str) -> bool:
-    selected = query.strip().casefold()
+    selected = affirmative_intent_text(query)
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
     english_groups = (
         {"event", "events"}, {"property", "properties", "attributes"},
@@ -37,7 +39,13 @@ def metadata_search_intent(query: str) -> bool:
         and any(term in selected for term in ("找", "查", "目录", "有哪些"))
         and any(term in selected for term in ("本地", "离线", "不联网", "目录"))
     )
-    return english or chinese
+    class_level = (
+        bool(words & {"metadata"})
+        and bool(words & {"discover", "find", "name", "names", "search"})
+    ) or (
+        "元数据" in selected and any(term in selected for term in ("发现", "名称", "搜索", "查找"))
+    )
+    return english or chinese or class_level
 
 
 def _card(query: str) -> dict[str, Any]:

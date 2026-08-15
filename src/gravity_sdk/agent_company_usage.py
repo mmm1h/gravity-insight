@@ -6,6 +6,8 @@ import re
 from collections.abc import Mapping
 from typing import Any
 
+from .agent_intent_text import affirmative_intent_text
+
 
 COMPANY_USAGE_NAME = "company_usage"
 COMPANY_USAGE_SELECTOR = f"composite:{COMPANY_USAGE_NAME}"
@@ -37,7 +39,7 @@ COMPANY_USAGE_CAPABILITY: Mapping[str, Any] = {
 
 
 def company_usage_query(query: str) -> bool:
-    selected = " ".join(query.strip().casefold().split())
+    selected = affirmative_intent_text(query)
     if selected in _EXACT:
         return True
     if not selected:
@@ -45,11 +47,11 @@ def company_usage_query(query: str) -> bool:
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
     if words & {"not", "without", "exclude", "export", "app"}:
         return False
-    english = "company" in words and bool(words & {"resource", "resources"}) and bool(
-        words & {"usage", "consumption", "amount"}
+    english = "company" in words and bool(words & {"usage", "consumption"}) and bool(
+        words & {"resource", "resources", "trend", "trends", "usage"}
     )
     chinese = "公司" in selected and "用量" in selected and any(
-        term in selected for term in ("资源", "消耗", "趋势")
+        term in selected for term in ("资源", "消耗", "趋势", "用量")
     )
     return english or chinese
 

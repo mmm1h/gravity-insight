@@ -6,6 +6,8 @@ from collections.abc import Mapping
 import re
 from typing import Any
 
+from .agent_intent_text import affirmative_intent_text
+
 
 ORDER_DIRECTORY_NAME = "order_directory"
 ORDER_DIRECTORY_SELECTOR = f"composite:{ORDER_DIRECTORY_NAME}"
@@ -312,7 +314,7 @@ ORDER_DIRECTORY_CAPABILITY: Mapping[str, Any] = {
 def order_directory_query(query: str) -> bool:
     """Recognize one explicit read while rejecting every adjacent product."""
 
-    selected = _normalize(query)
+    selected = affirmative_intent_text(query)
     if selected in _EXACT_INTENTS:
         return True
     return _claims_product(selected) and not _blocked(selected)
@@ -321,7 +323,7 @@ def order_directory_query(query: str) -> bool:
 def order_directory_intent(query: str) -> bool:
     """Return positive Directory evidence without applying conflict policy."""
 
-    selected = _normalize(query)
+    selected = affirmative_intent_text(query)
     words = frozenset(_ASCII_WORD.findall(selected))
     return (
         selected in _EXACT_INTENTS
@@ -335,6 +337,8 @@ def order_directory_blocks_operation_fallback(query: str) -> bool:
 
     selected = _normalize(query)
     if selected in ORDER_DIRECTORY_RAW_SELECTORS:
+        return False
+    if _funnel_analysis_shape(selected):
         return False
     return selected in _EXACT_INTENTS or _claims_product(selected)
 
@@ -471,6 +475,16 @@ def _ambiguous_report(
 
 def _contains_any(value: str, terms: tuple[str, ...]) -> bool:
     return any(term in value for term in terms)
+
+
+def _funnel_analysis_shape(selected: str) -> bool:
+    words = frozenset(_ASCII_WORD.findall(selected.replace("-", " ")))
+    compact = _compact(selected)
+    return (
+        "conversion" in words and "from" in words and bool(words & {"through", "to"})
+    ) or (
+        "转化" in compact and ("逐步" in compact or "多步" in compact or compact.count("到") >= 2)
+    )
 
 
 def _without_legacy_exclusion_phrases(selected: str) -> str:

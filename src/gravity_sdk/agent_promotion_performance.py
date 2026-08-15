@@ -7,6 +7,8 @@ from collections.abc import Mapping
 import re
 from typing import Any
 
+from .agent_intent_text import affirmative_intent_text
+
 from .domains import PROMOTION_PLATFORMS
 
 
@@ -175,8 +177,10 @@ PROMOTION_PERFORMANCE_CAPABILITY: Mapping[str, Any] = {
 def promotion_performance_query(query: str) -> bool:
     """Recognize explicit performance reads and reject adjacent products."""
 
-    selected = _normalize(query)
+    selected = affirmative_intent_text(query)
     if selected in _EXACT_INTENTS:
+        return True
+    if _product_level_performance(selected):
         return True
     return _claims_product(selected) and not _blocked(selected)
 
@@ -188,12 +192,12 @@ def promotion_performance_intent(query: str) -> bool:
         bilibili_account_performance_intent,
     )
 
-    selected = _normalize(query)
+    selected = affirmative_intent_text(query)
     words = frozenset(_ASCII_WORD.findall(selected.replace("-", " ")))
     compact = _compact(selected)
     if (
-        words & {"creative", "material", "materials"}
-        and not words & {"advertising", "promotion", "promotions"}
+        words & {"creative", "creatives", "material", "materials"}
+        and not words & {"campaign", "promotion", "promotions"}
     ):
         return False
     if _material_specific_query(compact):
@@ -256,6 +260,39 @@ def _claims_product(selected: str) -> bool:
         return False
     subject, action, adjacent, heterogeneous = _intent_signals(words, compact)
     return bool(subject and (action or adjacent) or heterogeneous and action)
+
+
+def _product_level_performance(selected: str) -> bool:
+    words = frozenset(_ASCII_WORD.findall(selected.replace("-", " ")))
+    compact = _compact(selected)
+    if (
+        _ENGLISH_NEGATION_PHRASE.search(selected)
+        or _CHINESE_BIE_NEGATION.search(selected)
+        or _contains_any(compact, _HETEROGENEOUS_COMPACT)
+    ):
+        return False
+    english = (
+        bool(words & _ENGLISH_SUBJECTS)
+        and bool(words & {"campaign", "hierarchy", "level"})
+        and bool(words & _ENGLISH_ACTIONS)
+        and not bool(
+            words
+            & (_ENGLISH_BLOCKED | _ENGLISH_NEGATIONS)
+            - _ENGLISH_READ_ONLY_VERBS
+            - {"campaign", "hierarchy", "level"}
+        )
+    )
+    chinese_blocked = tuple(
+        term for term in _CHINESE_BLOCKING_TERMS
+        if term not in {"活动", "系列", "层级"}
+    )
+    chinese = (
+        _contains_any(compact, _CHINESE_SUBJECTS)
+        and "层级" in compact
+        and _contains_any(compact, _CHINESE_ACTIONS)
+        and not _contains_any(compact, chinese_blocked)
+    )
+    return english or chinese
 
 
 def _intent_signals(

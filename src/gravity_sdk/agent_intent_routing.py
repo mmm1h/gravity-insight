@@ -214,6 +214,11 @@ def multiple_intent_gap(query: str) -> list[dict[str, object]]:
             "multiple authoritative product intents were identified; split the "
             "request and discover each product independently"
         ),
+        "next_action": (
+            "For each candidate_selectors value, call gravity agent --input "
+            "<selector> independently; execute only after each discovery returns "
+            "one authoritative product card."
+        ),
         "candidate_selectors": list(intents),
         "weak_matches": [],
     }]

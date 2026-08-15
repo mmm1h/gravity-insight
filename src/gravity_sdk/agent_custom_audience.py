@@ -6,6 +6,8 @@ import re
 from collections.abc import Mapping
 from typing import Any
 
+from .agent_intent_text import affirmative_intent_text
+
 
 CUSTOM_AUDIENCE_NAME = "custom_audience"
 CUSTOM_AUDIENCE_SELECTOR = f"composite:{CUSTOM_AUDIENCE_NAME}"
@@ -37,7 +39,7 @@ CUSTOM_AUDIENCE_CAPABILITY: Mapping[str, Any] = {
 
 
 def custom_audience_query(query: str) -> bool:
-    selected = " ".join(query.strip().casefold().split())
+    selected = affirmative_intent_text(query)
     if selected in _EXACT:
         return True
     if not selected:

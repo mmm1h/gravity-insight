@@ -6,10 +6,11 @@ import re
 from typing import Any
 
 from .agent_gap import unavailable_gap
+from .agent_intent_text import affirmative_intent_text
 
 
 def unavailable_app_gap(query: str) -> dict[str, Any] | None:
-    selected = " ".join(query.strip().casefold().split())
+    selected = affirmative_intent_text(query)
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
     if _readable_projects(selected, words):
         return unavailable_gap(
@@ -36,23 +37,23 @@ def unavailable_app_gap(query: str) -> dict[str, Any] | None:
 
 def _readable_projects(selected: str, words: frozenset[str]) -> bool:
     english = (
-        "app" in words and bool(words & {"project", "projects"})
-        and bool(words & {"account", "read", "allowed"})
+        bool(words & {"project", "projects"})
+        and bool(words & {"account", "allowed", "app", "catalog", "directory", "list", "read", "readable"})
     )
     chinese = (
-        "app" in words and "项目" in selected and "当前账号" in selected
-        and any(term in selected for term in ("权限读取", "可读", "有权限"))
+        "项目" in selected
+        and any(term in selected for term in ("app", "当前账号", "可读", "可以读取", "读取", "清单", "列表"))
     )
     return english or chinese
 
 
 def _onelink_public_info(selected: str, words: frozenset[str]) -> bool:
     english = (
-        "app" in words and "onelink" in words
+        "onelink" in words
         and bool(words & {"store", "public", "binding", "information"})
     )
     chinese = (
-        "app" in words and "onelink" in words
+        "onelink" in words
         and any(term in selected for term in ("应用商店", "公开信息", "绑定"))
     )
     return english or chinese

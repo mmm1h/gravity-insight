@@ -8,6 +8,7 @@ import re
 from typing import Any
 
 from .multidim_product import MULTIDIM_INPUT_SCHEMA_VERSION, multidim_input_schema
+from .agent_intent_text import affirmative_intent_text
 
 
 MULTIDIM_NAME = "multidim"
@@ -91,20 +92,20 @@ MULTIDIM_CAPABILITY: Mapping[str, Any] = {
 def multidim_query(query: str) -> bool:
     """Recognize only explicit Multidim product intent, never adjacent Web concepts."""
 
-    selected = " ".join(query.strip().casefold().split())
+    selected = affirmative_intent_text(query)
     from .agent_intent_routing import adjacent_product_conflict
 
     if selected in _EXACT_INTENTS:
         return True
     if adjacent_product_conflict("multidim", selected):
         return False
-    return multidim_intent(query)
+    return multidim_intent(selected)
 
 
 def multidim_intent(query: str) -> bool:
     """Return positive Multidim evidence without adjacent-product exclusions."""
 
-    selected = " ".join(query.strip().casefold().split())
+    selected = affirmative_intent_text(query)
     if selected in _EXACT_INTENTS:
         return True
     if selected.isascii():

@@ -6,20 +6,13 @@ import re
 from typing import Any
 
 from .agent_gap import unavailable_gap
+from .agent_intent_text import affirmative_intent_text
 
 
 def registered_sql_product_gap(query: str) -> dict[str, Any] | None:
-    selected = " ".join(query.strip().casefold().split())
+    selected = affirmative_intent_text(query)
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
-    english = (
-        "workspace" in words and "registered" in words
-        and "analysis" in words and bool(words & {"run", "execute"})
-    )
-    chinese = (
-        "workspace" in words and "登记" in selected and "分析" in selected
-        and any(term in selected for term in ("运行", "执行"))
-    )
-    if not (english or chinese):
+    if not (_english_registered_sql(words) or _chinese_registered_sql(selected, words)):
         return None
     return unavailable_gap(
         query, code="WORKSPACE_SQL_PRODUCT_NOT_CONFIGURED",
@@ -30,6 +23,26 @@ def registered_sql_product_gap(query: str) -> dict[str, Any] | None:
             "contract, then ask again using that exact human product name."
         ),
         argv=["gravity", "sql", "products"],
+    )
+
+
+def _english_registered_sql(words: frozenset[str]) -> bool:
+    return (
+        "workspace" in words and "registered" in words
+        and "analysis" in words and bool(words & {"run", "execute"})
+    ) or (
+        bool(words & {"registered", "governed"}) and "sql" in words
+        and bool(words & {"analysis", "product", "products", "run", "execute"})
+    )
+
+
+def _chinese_registered_sql(selected: str, words: frozenset[str]) -> bool:
+    return (
+        "workspace" in words and "登记" in selected and "分析" in selected
+        and any(term in selected for term in ("运行", "执行"))
+    ) or (
+        "登记" in selected and "sql" in words
+        and any(term in selected for term in ("分析", "产品", "运行", "执行", "只允许"))
     )
 
 
