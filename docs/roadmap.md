@@ -13,10 +13,11 @@
 
 ## 现状
 
-当前从仓库产品入口与 stable operation 正向交叉反推 47 条产品动线：**已闭环 32 / 部分闭环 0 / 完全缺失 15**；
+当前从仓库产品入口与 stable operation 正向交叉反推 48 条产品动线：**已闭环 32 / 部分闭环 0 / 完全缺失 16**；
 另有 2 条 legacy/SDK 便利面保留用于兼容与维护，但不计产品动线。
 上一快照是 `43 = 19 / 9 / 15`：9 条部分闭环由在线输入解析全部转入已闭环，另新增 4 条产品动线全部闭环，
-缺失数不变。**部分闭环归零不代表没有欠账**——15 条完全缺失里多数是证据或隐私边界阻塞。
+缺失新增 1 条（Issue 19 精确素材预览/下载）。**部分闭环归零不代表没有欠账**——16 条完全缺失里
+多数是证据或隐私边界阻塞。
 逐条状态、四面入口、调用次数和证据阻塞以[分析动线台账](analysis-journeys.md)为准；旧
 `21/14/6` 快照的逐条底稿未进入版本控制，无法复算，已停止作为排期事实。
 
@@ -96,8 +97,11 @@ Core `title_packages()`、CLI `materials title-packages`、SDK `title_packages()
 既定聚合问题。未知字段在产品边界 fail closed，完整分页触顶返回 `partial`，父资源、权限或未支持能力
 保持独立状态。已知输入 1 次、未知能力 2 次由 `gravity.agent-call-bound.v1` 声明。
 
-D32 是台账动线编号，不是已有可挂载的可执行产品；本实现新增独立 title-package family 入口，并把
-D32 更新为 Bytedance 标题包变体部分闭环。其他平台素材 draft 的稳定性、非空证据和阻塞裁决不变。
+D32 是台账动线编号，不是已有可挂载的可执行产品；本实现新增独立 title-package family 入口。
+**台账里 title-package 单列为自己的已闭环动线，D32 保持完全缺失**（2026-08-15 复核修正）：
+标题包是 D32 之下的一个具体产品，而 D32 这条动线的阻塞——当前账号没有非 Bytedance 投放数据——
+完全没有变化。把 D32 标成部分闭环会让人误以为还有工程活可做，实际它仍是数据阻塞。
+其他平台素材 draft 的稳定性、非空证据和阻塞裁决不变。
 
 ### 自定义人群覆盖与状态裁决（2026-08-14）
 
@@ -596,3 +600,32 @@ confirmation，闸门判据未改。probe receipt 现在把通过闸门后确实
 - 业务语义属调用方：模块名称、活动 ID、SKU、投放窗口、指标好坏判断都不进本仓库。
 - 写操作保持 reservation。
 - 证据不足保持 fail-closed：不猜请求合同、不扩大探测找非空样本、不用未批准的用户级标识探测。
+
+## Issue 19 精确素材预览/下载裁决（2026-08-15）
+
+**判定：产品缺口成立，但上游二进制路径尚不能安全证明，本轮不实现、不发生产请求。**
+
+- `material.bytedance.list` 已有非空合同，固定调用
+  `POST /turbo_engine/api/v1/asset/material/bytedance/list/`；投影有意隐藏本地缓存状态、文件元数据、
+  图片容器和其他未批准字段。另一个 stable
+  `POST /turbo_engine/api/v1/bytedance/project/material_get/` 的历史 probe 观察到视频条目的
+  `file_url` / `thumbnail_url` 字符串，但 evidence 明确 `values_persisted=false`。
+- 固定 census 快照中的 `Clouddrive_pro`、`ad-data`、`MaterialTable` 与 `materialSwiper` 控制流证明：
+  前端从 API 响应取 URL 后，直接绑定到图片或视频 `src`。没有发现由精确平台素材引用换取二进制的
+  独立固定下载 route。`GET /asset/material/manage/local/detail/` 只接收本地素材引用，且仍是未探测 draft；
+  `POST /asset/material/platform/save_to_local/` 会改变上游状态，不得作为读取旁路。
+- 因为 URL 值未保留，当前证据不能证明资产 origin、允许 path prefix、重定向目标集合、URL 过期编码，
+  也不能把上游的历史删除/未缓存/权限响应确定映射为 `not_found`、`expired`、`not_cached`、
+  `permission_unavailable`。只看到 URL 字段名不足以声明二进制合同；为发现 host 而先抓取未知 URL
+  也会倒置 allowlist 的安全顺序。
+- 仓库已有实现原语足够复用：`SafeBlobTransfer` 强制 HTTPS host/path/port 与重定向 allowlist，校验
+  声明和流式大小、MIME、扩展名、magic bytes 与 SHA-256，再用同目录 staging 原子提交；
+  `result_output.py` 同样执行 write/flush/fsync/atomic replace。缺的是上游合同证据，不是另一套下载器。
+- 该能力是显式输出路径的文件 effect。即使后续解锁，也沿用 export 的直接 CLI/SDK/Agent handoff，
+  Plan v1 继续判定“设计不适用”：Plan 数据节点不承诺本地文件副作用、原子提交、过期恢复或部分下载语义。
+  Agent 只能返回待填写卡，不得把自然语言里的素材引用或 URL 复制进可执行调用。
+
+解锁条件是由上游合同或批准的值无关网络证据一次性证明：API 响应中的 URL 与精确素材引用绑定、
+全部资产 host/path prefix 与重定向集合、图片/视频 MIME 和扩展名集合、最大尺寸、URL 过期规则，
+以及四种不可用状态的判别。取得这些证据后，先登记二进制 effect 合同与离线负向测试，再做一个最小、
+非空、串行 probe；不得通过任意 URL 参数或动态学习 host 来补证据。
