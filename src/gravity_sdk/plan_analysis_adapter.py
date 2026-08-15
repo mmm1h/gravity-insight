@@ -22,11 +22,16 @@ from .plan_adapter_support import (
     validate_exact_targets,
 )
 from . import plan_monetization_adapter as monetization_plan
+from . import plan_analysis_default_adapter as defaults_plan
 
 
 ANALYSIS_QUERY_NAME = "analysis_query"
 COMPOSITE_NAMES = frozenset(
-    {ANALYSIS_QUERY_NAME, monetization_plan.MONETIZATION_DETAIL_NAME}
+    {
+        ANALYSIS_QUERY_NAME,
+        monetization_plan.MONETIZATION_DETAIL_NAME,
+        defaults_plan.ANALYSIS_DEFAULT_DICTIONARY_NAME,
+    }
 )
 ANALYSIS_QUERY_REQUEST_FIELDS = frozenset(
     {"name", "kind", "app", "spec", "start", "end", "compare_start", "compare_end"}
@@ -139,6 +144,11 @@ def validate_analysis_plan(
     request: Mapping[str, Any],
     context: AdapterContext,
 ) -> None:
+    if request.get("name") == defaults_plan.ANALYSIS_DEFAULT_DICTIONARY_NAME:
+        defaults_plan.validate_analysis_default_dictionary_plan(
+            request, context, workspace
+        )
+        return
     if request.get("name") == monetization_plan.MONETIZATION_DETAIL_NAME:
         monetization_plan.validate_monetization_detail_plan(
             request, context, workspace
@@ -150,6 +160,10 @@ def validate_analysis_plan(
 def execute_analysis_plan(
     sdk: Any, request: Mapping[str, Any], context: AdapterContext
 ) -> dict[str, Any]:
+    if request.get("name") == defaults_plan.ANALYSIS_DEFAULT_DICTIONARY_NAME:
+        return defaults_plan.execute_analysis_default_dictionary_plan(
+            sdk, request, context
+        )
     if request.get("name") == monetization_plan.MONETIZATION_DETAIL_NAME:
         return monetization_plan.execute_monetization_detail_plan(
             sdk, request, context
@@ -158,14 +172,20 @@ def execute_analysis_plan(
 
 
 def is_analysis_result(value: Any) -> bool:
-    return is_analysis_query_result(value) or (
-        monetization_plan.is_monetization_detail_result(value)
+    return (
+        defaults_plan.is_analysis_default_dictionary_result(value)
+        or is_analysis_query_result(value)
+        or monetization_plan.is_monetization_detail_result(value)
     )
 
 
 def project_analysis_result(
     value: Any, fields: tuple[str, ...], context: AdapterContext
 ) -> dict[str, Any]:
+    if defaults_plan.is_analysis_default_dictionary_result(value):
+        return defaults_plan.project_analysis_default_dictionary_result(
+            value, fields, context
+        )
     if monetization_plan.is_monetization_detail_result(value):
         return monetization_plan.project_monetization_detail_result(
             value, fields, context

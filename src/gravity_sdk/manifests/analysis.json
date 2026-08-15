@@ -3609,6 +3609,89 @@
       ],
       "stability": "stable",
       "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "读取一个 App 的 Analysis SDK 默认值字典；仅暴露已观察的 api 与 cocoscreator 字符串数组，新增字典键失败关闭。",
+      "domain": "analysis",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "description": "Configured workspace App identifier selected by the caller.",
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id"
+        }
+      },
+      "operation_id": "analysis.default_val.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/event/conf_event_meta/default_val/list/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id"
+        ],
+        "defaults": {},
+        "fixed_body": {
+          "subject": "$lib_version"
+        },
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        {
+          "input_field": "app_id",
+          "operation_id": "app.list"
+        }
+      ],
+      "resource": "default_val",
+      "response_projection": {
+        "data_keys": [
+          "api",
+          "cocoscreator"
+        ],
+        "data_scalar_list_types": {
+          "api": "string",
+          "cocoscreator": "string"
+        },
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
     }
   ]
 }

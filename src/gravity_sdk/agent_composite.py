@@ -11,6 +11,7 @@ _STRICT_COMPOSITES = frozenset(
     {
         "business_pulse",
         "analysis_context",
+        "analysis_default_dictionary",
         "attribution_snapshot",
         "company_usage",
         "custom_audience",
@@ -112,8 +113,10 @@ def _strict_composite_query(name: str, query: str) -> bool:
         return fixed_snapshot_query(name, query)
     if name in {"dashboard_snapshot", "dashboard_analysis"}:
         return _dashboard_query(name, query)
-    if name in {"segment_snapshot", "segment_members"}:
-        return _segment_product_query(name, query)
+    if name in {
+        "segment_snapshot", "segment_members", "analysis_default_dictionary"
+    }:
+        return _analysis_product_query(name, query)
     if name == "saved_analysis":
         from .agent_saved_analysis import saved_analysis_query
 
@@ -166,7 +169,11 @@ def _dashboard_query(name: str, query: str) -> bool:
     )
 
 
-def _segment_product_query(name: str, query: str) -> bool:
+def _analysis_product_query(name: str, query: str) -> bool:
+    if name == "analysis_default_dictionary":
+        from .agent_analysis_default_dictionary import analysis_default_dictionary_query
+
+        return analysis_default_dictionary_query(query)
     if name == "segment_members":
         from .agent_segment_members import segment_members_query
 

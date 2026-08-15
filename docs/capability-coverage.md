@@ -4,17 +4,17 @@
 manifest 与 `gravity agent <query>` 为准；完整路由账本见
 [`coverage-report.md`](../src/gravity_sdk/census/data/coverage-report.md)。
 
-## 2026-08-11 离线快照
+## 当前离线快照（2026-08-16）
 
 | 范围 | 当前状态 |
 | --- | --- |
-| 编译 operation | 185 |
-| stable operation | 176 |
-| stable operation 产品面交叉 | 86 已覆盖 / 82 不应产品化 / 8 值得产品化（其中 1 条本轮闭环） |
+| 编译 operation | 186 |
+| stable operation | 177 |
+| stable operation 产品面交叉 | 87 已覆盖 / 82 不应产品化 / 8 值得产品化 |
 | 推广 / 素材 stable 原子读取 | 64 / 24 |
 | Census 路由 | 987，全部有明确归类 |
-| Census 中 callable covered route | 172 |
-| 尚未覆盖的 read route | 343 |
+| Census 中 callable covered route | 173 |
+| 尚未覆盖的 read route | 342 |
 | 明确保留的推广 / 素材 write reservation | 110 / 49 |
 
 这些数字不等于“还有 343 个接口可以直接开发”。推广与素材共有 188 个 catalog-only
@@ -26,6 +26,8 @@ stable 同样不等于已有分析产品：本轮首次从 176 条 stable operat
 实现前完整交叉为 `86 / 82 / 8`；8 条中只有 `report.company_amount.query` 同时具备成功非空与
 分页证据、清晰独立语义和已批准投影，因此已通过 `reports usage` / SDK / Plan / Agent 四面闭环。
 其余 7 条的边界与 blocker 以 [路线图](roadmap.md#stable-operation-正向交叉2026-08-14) 为准。
+2026-08-16 另将多 App 复验取得非空 shape 的 `analysis.default_val.list` 晋升并闭环默认值字典，
+所以当前交叉计数相对该历史快照增加 1 条“已覆盖”。
 
 ## 其余 155 条未覆盖读路由逐条复核（2026-08-16）
 

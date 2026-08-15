@@ -6,6 +6,7 @@ from typing import Any, Callable
 
 from . import runtime
 from .analysis_context import analysis_context
+from .analysis_default_dictionary import analysis_default_dictionary
 from .app_snapshot import app_snapshot
 from .cli_limits import positive_int
 from .order_cli import add_order_commands
@@ -30,6 +31,11 @@ def add_deepening_commands(
     )
     _add_app_and_concurrency(context, concurrency_parser)
     context.set_defaults(_gravity_handler=_dispatch_analysis_context)
+    defaults = analysis_commands.add_parser(
+        "defaults", help="Read the registered Analysis SDK default-value dictionary."
+    )
+    defaults.add_argument("--app", required=True)
+    defaults.set_defaults(_gravity_handler=_dispatch_analysis_defaults)
     add_order_commands(analysis_commands, concurrency_parser, positive_int)
     add_monetization_detail_command(
         analysis_commands, concurrency_parser, positive_int
@@ -47,6 +53,13 @@ def _dispatch_analysis_context(args: Any, _object_input: Any) -> dict[str, Any]:
         runtime.build_client(),
         resolve_workspace_app(workspace, args.app),
         max_workers=args.concurrency,
+    )
+
+
+def _dispatch_analysis_defaults(args: Any, _object_input: Any) -> dict[str, Any]:
+    workspace = load_workspace()
+    return analysis_default_dictionary(
+        runtime.build_client(), resolve_workspace_app(workspace, args.app)
     )
 
 

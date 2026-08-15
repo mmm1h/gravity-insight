@@ -1,5 +1,5 @@
 {
-  "operation_count": 185,
+  "operation_count": 186,
   "operations": {
     "account.department.list": {
       "applied_overrides": [],
@@ -87,6 +87,14 @@
       "platform": null,
       "source_files": [
         "operations/analysis.dashboard.tree.json"
+      ]
+    },
+    "analysis.default_val.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.default_val.list.json"
       ]
     },
     "analysis.event.info": {

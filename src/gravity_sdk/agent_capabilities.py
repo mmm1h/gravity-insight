@@ -15,6 +15,10 @@ from typing import Any
 from .find import query_match
 from .agent_business_pulse import BUSINESS_PULSE_CAPABILITY, BUSINESS_PULSE_NAME
 from .agent_company_usage import COMPANY_USAGE_CAPABILITY, COMPANY_USAGE_NAME
+from .agent_analysis_default_dictionary import (
+    ANALYSIS_DEFAULT_DICTIONARY_CAPABILITY,
+    ANALYSIS_DEFAULT_DICTIONARY_NAME,
+)
 from .agent_custom_audience import CUSTOM_AUDIENCE_CAPABILITY, CUSTOM_AUDIENCE_NAME
 from .agent_bilibili_account_performance import (
     BILIBILI_ACCOUNT_PERFORMANCE_CAPABILITY,
@@ -79,6 +83,7 @@ _COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
     MONETIZATION_DETAIL_CAPABILITY,
     SEGMENT_SNAPSHOT_CAPABILITY,
     SEGMENT_MEMBERS_CAPABILITY,
+    ANALYSIS_DEFAULT_DICTIONARY_CAPABILITY,
     SAVED_ANALYSIS_CAPABILITY,
     ANALYSIS_TEMPLATE_CAPABILITY,
     {
@@ -458,6 +463,7 @@ def authoritative_capability_cards(
             "analysis_template",
             "segment_snapshot",
             "segment_members",
+            ANALYSIS_DEFAULT_DICTIONARY_NAME,
             ADVERTISER_PROFILE_NAME,
         }
     ]

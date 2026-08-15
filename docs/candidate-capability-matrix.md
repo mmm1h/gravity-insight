@@ -1,24 +1,24 @@
 # 候选能力证据矩阵
 
-本矩阵记录 17 项候选能力在 2026-08-12 受控只读探测后的真实状态，并原位追加 2026-08-14 至 2026-08-15 的后续取证结论，供开发决策使用。仓库基线仍为 [185 个 operation、其中 176 个 stable operation](capability-coverage.md)；本轮没有新增 stable operation，基线数量未变化。
+本矩阵记录 17 项候选能力在 2026-08-12 受控只读探测后的真实状态，并原位追加后续取证结论，供开发决策使用。2026-08-16 多 App 复验后仓库基线为 [186 个 operation、其中 177 个 stable operation](capability-coverage.md)；`analysis.default_val.list` 已晋升，其他候选不因明确空而晋升。
 
-所有候选项仍未晋升；`analysis.setting.query` 保留在 draft 台账但 `effect=mutation`，其余候选仍是 read draft，promotion gate 均未满足。表中的“下一步最小证据”表示继续判断所需的最小输入，不代表晋升计划或交付承诺。后续在线验证仍须遵循[探测规范](maintainers/probing.md)，保持只读、限流、值不落盘和 fail-closed。
+除 `analysis.default_val.list` 外，`analysis.setting.query` 保留在 draft 台账但 `effect=mutation`，其余候选仍是 read draft，promotion gate 均未满足。表中的“下一步最小证据”表示继续判断所需的最小输入，不代表晋升计划或交付承诺。后续在线验证仍须遵循[探测规范](maintainers/probing.md)，保持只读、限流、值不落盘和 fail-closed。
 
 ## 逐项状态
 
 | Operation | Status | 本轮请求、样本、分页与父绑定 | 精确 blocker | 下一步最小证据 |
 | --- | --- | --- | --- | --- |
-| `analysis.default_val.list` | `draft`（部分证明） | 本轮 1 次目标请求；完整前端 builder 与 HTTP 200 语义成功空响应共同证明 body 为 caller-bound `app_id` + 固定 `$lib_version`，分页 `none`；既有非空样本只观察到 `data.api[]`、`data.cocoscreator[]` 为 string，前端按动态字典消费。 | `dynamic_key_projection_unapproved`、`successful_confirmation_required` | 在同一最小 App/同形状下取得另一个非空样本；随后批准有界 SDK-family key 投影。动态 `{dynamic_key}` 未批准前继续全隐藏。 |
+| `analysis.default_val.list` | **`stable`（已晋升）** | 2026-08-16 按 catalog 探测：`catalog#1` HTTP 200 空，`catalog#2` HTTP 200 非空后立即停止。当前样本观察 `data.cocoscreator[]: string`，并与既有 shape-only 样本的 `data.api[]: string` 合并；body 仍为 caller-bound `app_id` + 固定 `$lib_version`，分页 `none`。 | 无开放 blocker；闭合键集合为 `api/cocoscreator` | 保持两键全量暴露；出现第三个 SDK-family key 时按 additive drift fail-closed，取得 shape evidence 后再显式升级合同。 |
 | `analysis.setting.query` | `draft`（mutation 负向证明；查询动线已由既有产品覆盖） | 对本 mutation 仍为 0 次请求；完整 Dashboard builder 证明该 POST 提交 `config/name/remark`，随后修改 dashboard layout 并提示修改成功。2026-08-15 对 375/375 hash-matched bundle 的 987 条唯一 route 穷尽复核，另确认 `analysis.dashboard.tree/detail` 与 `analysis.report_config.list/get` 四条既有 stable GET 是装载设置的真读；仅对 stable `report_config.list` 做 1 次最小第一页 probe，HTTP 200 非空，无重试或翻页。 | `mutation_route_not_read`、`unregistered_fields_fail_closed`；不再有独立产品缺口 | 本 draft 永不晋升为 read。调用方分别使用既有 `dashboard_snapshot` 与 `saved_analysis`；若提出超出二者的新设置问题，先取得自由文本 config 与人员字段的合同证据，登记后全部暴露；未登记时只按合同漂移 fail-closed，不等待隐私裁决。 |
-| `analysis.realtime_event.list` | `draft`（部分证明） | 本轮 1 次目标请求；完整 builder 与 HTTP 200 语义成功空 `data.list` 证明顶层 `app_id/filters/page/page_size/request_time` 及 7 个 filter 键；无 `page_info`，未翻页。 | `empty_sample`、`pagination_unverified`、`response_item_schema_unverified` | 同一最短当天窗口、第一页、`page_size=1` 取得 1 个非空 item；单独证明服务端分页。`client_id/request_id/request_ip/raw_properties` 已获字段投影裁决，但其类型和 `raw_properties` 子结构仍须非空样本。 |
+| `analysis.realtime_event.list` | `draft`（租户级明确空） | 2026-08-16 对 catalog 的 7/7 个可绑定 App 各发 1 次最小请求，均 HTTP 200 明确空；0 个失败或未试 App，无重试、翻页或扩窗。 | `empty_sample`、`pagination_unverified`、`response_item_schema_unverified` | 由另一个有实时事件数据的租户在同一最短当天窗口取得 1 个非空 item；当前租户不再重复枚举。 |
 | `analysis.setting.query` | `draft`（mutation 负向证明；查询动线已由既有产品覆盖） | 对本 mutation 仍为 0 次请求；完整 Dashboard builder 证明该 POST 提交 `config/name/remark`，随后修改 dashboard layout 并提示修改成功。2026-08-15 对 375/375 hash-matched bundle 的 987 条唯一 route 穷尽复核，另确认 `analysis.dashboard.tree/detail` 与 `analysis.report_config.list/get` 四条既有 stable GET 是装载设置的真读；仅对 stable `report_config.list` 做 1 次最小第一页 probe，HTTP 200 非空，无重试或翻页。 | `mutation_route_not_read`、`unregistered_fields_fail_closed`；不再有独立产品缺口 | 本 draft 永不晋升为 read。调用方分别使用既有 `dashboard_snapshot` 与 `saved_analysis`；若提出超出二者的新设置问题，先取得自由文本 config 与人员字段的合同证据，登记后全部暴露；未登记时只按合同漂移 fail-closed，不等待隐私裁决。 |
-| `report.masterkey_report_group.list` | `draft`（读合同已确认） | 本轮 1 次、累计 4 次目标请求；本次最小第一页 HTTP 200、明确空。Bundle 的列表装载/分页/响应消费已登记为 read confirmation；既有第二页和安全页上限证据保留。 | `empty_sample`、`successful_probe` | 在相同最小当天窗口取得 1 个非空列表样本，用于证明 item schema；不扩大时间范围寻找数据。 |
-| `report.report.list` | `draft`（读合同已确认） | 本轮 1 次、累计 4 次目标请求；本次最小第一页 HTTP 200、明确空。已存报表 bundle 证明列表装载、分页、`list` 消费，删除走独立 update 路由。 | `empty_sample`、`response_schema_unverified` | 在有自有报表的租户取得 1 个非空 item，并仅审查实际字段。 |
-| `report.report.detail` | `draft` | 0 次请求；本轮 `report.report.list` 仍为空，按约定跳过；分页为 `none`，前置资源未解析。 | `empty_sample`、`response_schema_unverified` | 先从同批列表得到 1 个可读候选，再仅以内存传入 1 次 detail 请求；随后审查 detail 字段，不持久化父值。 |
-| `report.shared_to_me.list` | `draft`（读合同已确认） | 本轮 1 次、累计 4 次目标请求；本次最小第一页 HTTP 200、明确空。Bundle 将响应 `list` 合并进共享指标目录并本地分页，写操作另有路由。 | `empty_sample`、`response_schema_unverified` | 在有共享项的租户取得 1 个非空 item，再做最小投影与隐私审查。 |
-| `report.subscribe.list` | `draft`（读合同已确认） | 本轮唯一 1 次 `page=1/page_size=1` 请求；HTTP 200、明确空，只观察到 `list` 空壳与 `page_info`，未翻页。Prober 已按精确 confirmation 放行，稳定 Registry 不变。 | `empty_sample`、`field_review_required`、`pagination_unverified`、`response_schema_unverified` | 在有订阅项的租户复用同形状取得 1 个非空 item；未知订阅字段保持隐藏，再按需单独验证第二页。 |
-| `report.media_report.list` | `draft`（读合同与绑定已确认） | 本轮 1 次、累计 4 次目标请求；当天、无 App/平台筛选、第一页 HTTP 200、明确空。Bundle 证明 `AppSelect`/有限平台选项绑定，空选择省略；既有分页证据保留。 | `empty_sample`、`response_schema_unverified` | 在有媒体报表的租户复用同形状取得 1 个非空 item；不得猜测 App 或平台值。 |
-| `app.project.list` | `draft` | 3 次目标请求；HTTP 200、空样本；`page_info`、第二页行为和安全页上限已验证；无父绑定。 | `empty_sample`、`response_schema_unverified` | 在具备可读项目的授权环境取得 1 个非空样本，并审查 item 字段的权限与隐私含义。 |
+| `report.masterkey_report_group.list` | `draft`（账号级明确空） | 2026-08-16 最小第一页 HTTP 200 空。固定 path/body 无 App 输入，认证上下文只含账号/公司，因此 App 枚举不适用；既有 read confirmation 与分页证据保留。 | `empty_sample`、`successful_probe` | 由有 MasterKey 报表的账号取得 1 个非空 item；当前账号不重复请求。 |
+| `report.report.list` | `draft`（账号级明确空） | 2026-08-16 最小第一页 HTTP 200 空。固定 path/body 无 App 输入，认证上下文只含账号/公司；已存 bundle 仍证明列表装载和消费。 | `empty_sample`、`response_schema_unverified` | 由有自有报表的账号取得 1 个非空 item。 |
+| `report.report.detail` | `draft` | 0 次请求；2026-08-16 账号级 `report.report.list` 仍空，按父子纪律跳过；父值未产生也未落盘。 | `empty_sample`、`response_schema_unverified` | 先由同批列表取得 1 个父项，再以内存父值发 1 次 detail。 |
+| `report.shared_to_me.list` | `draft`（账号级明确空） | 2026-08-16 最小第一页 HTTP 200 空。固定 path/body 无 App 输入，认证上下文只含账号/公司；既有 read confirmation 保留。 | `empty_sample`、`response_schema_unverified` | 由有共享项的账号取得 1 个非空 item。 |
+| `report.subscribe.list` | `draft`（账号级明确空） | 2026-08-16 唯一一次 `page=1/page_size=1` 请求 HTTP 200、`data.list=[]`。固定 path/body 无 App 输入，认证上下文只含账号/公司；未翻页。 | `empty_sample`、`field_review_required`、`pagination_unverified`、`response_schema_unverified` | 由有订阅项的账号复用同形状取得 1 个非空 item。 |
+| `report.media_report.list` | `draft`（租户级明确空） | 2026-08-16 用当天窗口、无平台筛选、`page_size=1` 对 catalog 的 7/7 App 各发 1 次；均 HTTP 200 空，0 个失败或未试 App。 | `empty_sample`、`response_schema_unverified` | 由另一个有媒体报表的租户复用同形状取得 1 个非空 item；当前租户不再重复枚举。 |
+| `app.project.list` | `draft`（账号级明确空） | 2026-08-16 唯一一次最小第一页 POST 为 HTTP 200 空。固定 path/body 只有筛选与分页，无 App 输入，认证上下文只含账号/公司；App 枚举不适用。 | `empty_sample`、`response_schema_unverified` | 由具备可读项目的账号取得 1 个非空 item。 |
 | `app.project_auth.detail` | `draft` | 1 次稳定父请求、0 次目标请求；父资源返回空候选，子请求未发送；无目标样本，分页未验证；父绑定未解析。 | `parent_resource_required`、`probe_inconclusive`、`response_schema_unverified` | 由 `analysis.account_user.list` 提供 1 个可读候选，仅以内存传给 1 次目标请求；没有父候选时继续跳过。 |
 | `app.onelink.list` | `draft` | 共 5 次请求，其中父资源 2 次、目标 3 次；父绑定已解析且值仅在内存使用；目标 HTTP 200、空样本；`page_info`、第二页行为和安全页上限已验证。 | `empty_sample`、`response_schema_unverified` | 复用已证明的稳定父绑定取得 1 个非空目标样本，再审查 item schema；无需扩大父资源搜索范围。 |
 | `app.monetization_app.list` | `draft` | 本轮 0 次请求；沿用既有空样本；草案声明 `page_info`，本轮未复核；无父绑定。 | `empty_sample`、`response_schema_unverified` | 先证明账户与变现平台参数的可信来源，再以第一页最小请求取得 1 个非空样本；不得猜测账户或平台值。 |
@@ -27,6 +27,23 @@
 | `attribution.attribution.query` | `draft` | 本轮 0 次请求；沿用既有 `semantic_error` 证据，无可用样本；分页为 `none`，本轮未复核；无父绑定。 | `request_parameters_required`、`response_schema_unverified` | 先取得可复核的现有调用方或同一 census 快照对应的 bundle 正文，且证据须包含请求构造、默认值和条件省略逻辑，以唯一证明完整 POST body 的全部字段名、JSON 类型、必填性及 `null`/空数组/空字符串语义；若只有脱敏浏览器网络记录，还须补充空值与省略规则证据。当前 `route-params` 的 2 个 load call 均未解析、`body_parameters` 为空，且仓库无 bundle 正文或调用方；补齐前保持 0 次请求且不做组合猜测。 |
 
 | `attribution.attribution_detail.query` | `draft` | 本轮 0 次请求，且无既有 live probe；无样本，分页未验证；无父绑定。 | `not_probed`、`pagination_unverified`、`request_binding_unverified`、`response_schema_unverified` | 必须先证明完整请求绑定和响应合同；真实用户/设备标识可作为受控输入，但证据不足时仍不探测。 |
+
+## 2026-08-16 追加判定：六条明确空的 App 维度复验
+
+先用 1 次 `app.list` 取得 7 个可绑定 App，再按实际 route 维度执行。生产业务 HTTP 共 22 次，
+全部 HTTP 200；重试、翻页、扩窗、失败和未试 App 均为 0。完整逐请求账本见
+[roadmap 的复验章节](roadmap.md#六条明确空多-app-复验2026-08-16)。
+
+- **(a) 租户确实为空：2 条。** `report.media_report.list` 与
+  `analysis.realtime_event.list` 均枚举 7/7 App 后仍空。
+- **(b) 旧结论是假阴性：1 条。** `analysis.default_val.list` 在 `catalog#1` 空、
+  `catalog#2` 非空；旧探测在第一个空 App 停止，误把 App 局部事实写成租户结论。
+- **(c) App 维度不适用：3 条。** 报表目录（三个 list route）、订阅和 App 项目的请求
+  path/body 均无 App 输入，认证只绑定账号/公司上下文，各一次空响应就是账号级事实。
+
+默认值字典由此解除 `successful_confirmation_required` 与动态投影 blocker：当前非空样本加既有
+shape-only 样本只观察到 `api/cocoscreator` 两个 string-array 键，二者全部登记暴露；其他键继续
+additive fail-closed。该 operation 晋升 stable 并闭环五面产品，不把空样本用于推断任何 item schema。
 
 ## 2026-08-14 追加判定：六条缺失动线批量定性
 

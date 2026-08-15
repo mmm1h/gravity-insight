@@ -710,10 +710,10 @@ class DiscoveryUxTests(unittest.TestCase):
             "J28": "composite:advertiser_profile", "J29": "composite:title_package",
             "J30": "metadata:search", "J31": "metadata:table_lineage",
             "J32": "export.material.report.start",
+            "J33": "composite:analysis_default_dictionary",
         }
         gaps = {
             "J19": "WORKSPACE_SQL_PRODUCT_NOT_CONFIGURED",
-            "J33": "ANALYSIS_DEFAULT_DICTIONARY_CONTRACT_MISSING",
             "J34": "REALTIME_EVENT_CATALOG_CONTRACT_MISSING",
             "J35": "REPORT_DIRECTORY_ITEM_SCHEMA_MISSING",
             "J36": "REPORT_SUBSCRIPTION_ITEM_SCHEMA_MISSING",

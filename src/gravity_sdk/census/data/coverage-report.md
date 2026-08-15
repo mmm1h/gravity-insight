@@ -15,8 +15,8 @@
 
 | status | routes |
 | --- | ---: |
-| `covered` | 172 |
-| `uncovered_read` | 343 |
+| `covered` | 173 |
+| `uncovered_read` | 342 |
 | `uncovered_write` | 414 |
 | `uncovered_export` | 22 |
 | `uncovered_auth_or_proxy` | 30 |
@@ -26,7 +26,7 @@
 ## Route accounting vs callability
 
 - Accounted routes: **987**
-- Callable covered routes: **172**
+- Callable covered routes: **173**
 - Unaccounted routes: **0**
 
 | accounting state | routes |
@@ -36,16 +36,16 @@
 | `accounted_experimental` | 6 |
 | `accounted_export_candidate` | 22 |
 | `accounted_permission_unavailable` | 1 |
-| `accounted_read_candidate` | 313 |
+| `accounted_read_candidate` | 312 |
 | `accounted_unsupported` | 58 |
-| `covered_executable` | 172 |
+| `covered_executable` | 173 |
 
 | callability | routes |
 | --- | ---: |
-| `candidate` | 335 |
+| `candidate` | 334 |
 | `catalog_only` | 8 |
 | `contract_only` | 414 |
-| `executable` | 172 |
+| `executable` | 173 |
 | `unsupported` | 58 |
 
 ## Stable manifest reconciliation
@@ -53,7 +53,7 @@
 | category | stable operations |
 | --- | ---: |
 | Previously covered | 0 |
-| (a) Found in previously unfetched chunks | 172 |
+| (a) Found in previously unfetched chunks | 173 |
 | (b) Normalization false gap fixed | 0 |
 | (c) Manifest route absent from frontend | 4 |
 
@@ -78,7 +78,7 @@
 | App 与账号 | 16 | 29 | 114 | 130 |
 | 归因 | 5 | 5 | 19 | 24 |
 | 元数据 | 12 | 20 | 39 | 51 |
-| 其它 | 17 | 54 | 122 | 139 |
+| 其它 | 18 | 53 | 121 | 139 |
 
 ## Promotion platform x level uncovered reads
 
@@ -114,7 +114,7 @@
 ## Contract families
 
 - Families: **45**
-- Uncovered reads assigned to a family: **80 / 343 (23.3%)**
+- Uncovered reads assigned to a family: **80 / 342 (23.4%)**
 
 | family | kind | members | signature |
 | --- | --- | ---: | --- |
@@ -168,7 +168,7 @@
 
 | tier | uncovered reads | rule |
 | --- | ---: | --- |
-| 低 | 145 | Flat list/detail with no evident parent dependency |
+| 低 | 144 | Flat list/detail with no evident parent dependency |
 | 中 | 73 | Parent-resource dependency or structured selector |
 | 高 | 125 | Complex query/report body, proxy envelope, or dynamic path |
 
@@ -505,7 +505,7 @@ Cost is a scheduling heuristic, not an observed implementation duration.
 | `medium` | `POST` | `/turbo_engine/api/v2/event_dim/data_table/list/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v2/event_dim/data_table/version_id_set/` | `singleton` | `低` |
 
-### 其它 (54)
+### 其它 (53)
 
 | confidence | method | path | family | cost |
 | --- | --- | --- | --- | --- |
@@ -557,7 +557,6 @@ Cost is a scheduling heuristic, not an observed implementation duration.
 | `medium` | `POST` | `/turbo_engine/api/v1/task/batch/operate/list/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/task/task_batch_strategy/detail/` | `singleton` | `低` |
 | `medium` | `POST` | `/turbo_engine/api/v1/task/task_batch_strategy/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v2/event/conf_event_meta/default_val/list/` | `singleton` | `低` |
 | `medium` | `POST` | `/turbo_engine/api/v2/event/realtime_event/list/` | `singleton` | `低` |
 | `medium` | `POST` | `/turbo_engine/api/v3/subscribe/list/` | `singleton` | `低` |
 | `medium` | `UNKNOWN` | `/v3.0/docs/api/adgroups/get` | `singleton` | `中` |

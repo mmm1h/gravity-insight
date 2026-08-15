@@ -13,17 +13,70 @@
 
 ## 现状
 
-当前从仓库产品入口与 stable operation 正向交叉反推 48 条产品动线：**已闭环 33 / 部分闭环 0 / 完全缺失 15**；
+当前从仓库产品入口与 stable operation 正向交叉反推 48 条产品动线：**已闭环 34 / 部分闭环 0 / 完全缺失 14**；
 另有 2 条 legacy/SDK 便利面和 1 条重复能力审计行保留，但不计产品动线。
-本轮程序化复算发现旧摘要漏计表内 D28 缺失行：表格 51 行，减去 3 条“不计独立动线”，得到
-`48 = 33 / 0 / 15`；相对旧摘要 `47 = 33 / 0 / 14` 是 `+0 / +0 / +1`、总数 `+1`。
-这只是既有行的算术纠正，不是新增能力或放宽闭环判据。stable operation 仍为 185、其中 176 个 stable。
-**部分闭环归零不代表没有欠账**——15 条完全缺失里
+表格 51 行减去 3 条“不计独立动线”得到 48 条；六条明确空复验让默认值字典从缺失变为闭环，
+故 `48 = 33 / 0 / 15 + 1 / 0 / -1 = 34 / 0 / 14`。operation 为 186、其中 177 个 stable。
+**部分闭环归零不代表没有欠账**——14 条完全缺失里
 多数是请求、响应或非空证据阻塞；字段隐私不再是阻塞项。
 逐条状态、四面入口、调用次数和证据阻塞以[分析动线台账](analysis-journeys.md)为准；旧
 `21/14/6` 快照的逐条底稿未进入版本控制，无法复算，已停止作为排期事实。
 
 `draft` 候选数量不等于排期数量：17 项候选归并进台账动线或按明确非目标排除，不按 operation 单独排期。
+
+### 六条“明确空”多 App 复验（2026-08-16）
+
+**提案：**先读一次稳定 `app.list` catalog，只使用其实际返回的 App；对确有 App 输入的候选逐 App
+发一次最小第一页/无分页请求，首次非空即停。同一 `(App, operation)` 不重试，不扩日期窗、不翻页、
+不猜报表名、平台、事件名或筛选值。没有 App 输入且只依赖账号/公司认证上下文的 route 只发一次。
+工作提案与值无关的运行底稿位于 ignored `tmp/codex/empty-recheck/`；父值和 App 标识没有落盘。
+
+**请求账本：**catalog 返回 7 个均可绑定 App，0 个无法解析或未试。生产业务 HTTP **22 次**，
+认证 HTTP 0 次；全部 HTTP 200，失败、重试、翻页、扩窗和 429/5xx 均为 0。日期型请求只使用
+`2026-08-16` 当天窗口。`catalog#N` 只表示本次 catalog 顺序，不持久化 App ID 或名称。
+
+| # | 上下文 | operation | HTTP | 结果 |
+| ---: | --- | --- | ---: | --- |
+| 1 | catalog | `app.list` | 200 | 非空，7 个可绑定 App |
+| 2 | account | `report.masterkey_report_group.list` | 200 | 空 |
+| 3 | account | `report.report.list` | 200 | 空；无父项，detail 未发送 |
+| 4 | account | `report.shared_to_me.list` | 200 | 空 |
+| 5 | account | `report.subscribe.list` | 200 | 空 |
+| 6 | account | `app.project.list` | 200 | 空 |
+| 7 | `catalog#1` | `report.media_report.list` | 200 | 空 |
+| 8 | `catalog#1` | `analysis.realtime_event.list` | 200 | 空 |
+| 9 | `catalog#1` | `analysis.default_val.list` | 200 | 空 |
+| 10 | `catalog#2` | `report.media_report.list` | 200 | 空 |
+| 11 | `catalog#2` | `analysis.realtime_event.list` | 200 | 空 |
+| 12 | `catalog#2` | `analysis.default_val.list` | 200 | **非空；立即停止该 operation 枚举** |
+| 13 | `catalog#3` | `report.media_report.list` | 200 | 空 |
+| 14 | `catalog#3` | `analysis.realtime_event.list` | 200 | 空 |
+| 15 | `catalog#4` | `report.media_report.list` | 200 | 空 |
+| 16 | `catalog#4` | `analysis.realtime_event.list` | 200 | 空 |
+| 17 | `catalog#5` | `report.media_report.list` | 200 | 空 |
+| 18 | `catalog#5` | `analysis.realtime_event.list` | 200 | 空 |
+| 19 | `catalog#6` | `report.media_report.list` | 200 | 空 |
+| 20 | `catalog#6` | `analysis.realtime_event.list` | 200 | 空 |
+| 21 | `catalog#7` | `report.media_report.list` | 200 | 空 |
+| 22 | `catalog#7` | `analysis.realtime_event.list` | 200 | 空 |
+
+**六条判定：**媒体报表与实时事件目录为 **(a)**：7/7 App 均空，当前租户确实没有这类数据。
+默认值字典为 **(b)**：第 1 个 App 空、第 2 个 App 非空，旧结论是在首个空 App 停止造成的假阴性。
+报表目录、订阅和 App 项目为 **(c)**：这些 route 的固定 path/body 没有 App 输入，认证 header
+只提供账号/公司上下文；重复绑定 App 不会改变请求，因此其空是账号级事实。
+
+**闭环与方法修正：**非空响应观察到 `data.cocoscreator[]: string`，与既有 shape-only 证据中的
+`data.api[]: string` 合并后形成闭合 allowlist。`analysis.default_val.list` 从 draft 晋升 stable，
+Core、`gravity analysis defaults --app`、SDK `analysis_default_dictionary()`、Plan
+`analysis_default_dictionary` 与同名 Agent composite 共用
+`gravity-insight.analysis-default-dictionary.v1`；两键全部暴露，第三键按 additive drift fail-closed，
+卡和 Plan 节点声明 `gravity.agent-call-bound.v1`。这次复验再次证明“首个 App 明确空”不能推出
+租户级缺失：凡请求含 catalog 可枚举的 App 输入，缺失结论必须枚举完 catalog 或在首个非空处停止。
+
+台账净变化为 `48 = 33 / 0 / 15 + 1 / 0 / -1 = 34 / 0 / 14`；operation
+`185 + 1 = 186`，stable `176 + 1 = 177`。实现没有新增 caller 可恢复错误抛出点，故新增错误点
+`0`、新增 A 档 `0`。技术债复核没有产生新条目：Plan 复用既有 Analysis family router，Agent
+保留普通 `unknown_app=3` 下界，没有把无 revision/ETag 的在线两次解析扩张到本动线。
 
 ### 输出交给 LLM 的内容边界（2026-08-15）
 

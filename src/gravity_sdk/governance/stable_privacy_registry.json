@@ -199,6 +199,10 @@
       "data[].name",
       "data[].type"
     ],
+    "analysis.default_val.list": [
+      "data.api",
+      "data.cocoscreator"
+    ],
     "analysis.event.info": [
       "data.event_define",
       "data.event_define[].accepted",

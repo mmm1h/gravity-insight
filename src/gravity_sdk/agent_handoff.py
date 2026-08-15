@@ -248,8 +248,10 @@ def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
         from .agent_dashboard import dashboard_analysis_plan_request
 
         return dashboard_analysis_plan_request(card)
-    if composite in {"segment_snapshot", "segment_members"}:
-        return _segment_plan_request(str(composite), card)
+    if composite in {
+        "segment_snapshot", "segment_members", "analysis_default_dictionary"
+    }:
+        return _analysis_product_plan_request(str(composite), card)
     if composite == "saved_analysis":
         from .agent_saved_analysis import saved_analysis_plan_request
 
@@ -299,9 +301,15 @@ def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
     return {"name": composite}
 
 
-def _segment_plan_request(
+def _analysis_product_plan_request(
     composite: str, card: Mapping[str, Any]
 ) -> dict[str, Any]:
+    if composite == "analysis_default_dictionary":
+        from .agent_analysis_default_dictionary import (
+            analysis_default_dictionary_plan_request,
+        )
+
+        return analysis_default_dictionary_plan_request(card)
     if composite == "segment_members":
         from .agent_segment_members import segment_members_plan_request
 

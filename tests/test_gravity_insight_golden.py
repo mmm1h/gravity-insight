@@ -202,6 +202,8 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "promotion.latest_account_status.get",
             "promotion.tencent.adgroup_filter.list",
             "report.metric.list",
+            # 多 App 复验取得默认值字典非空 shape 后晋升 stable。
+            "analysis.default_val.list",
             # gi-reprobe：参数契约装配后新升 stable。
             # 本集合刻意保持显式登记而非动态计算——每个新增 stable 都必须
             # 在这里被看见，否则契约可以悄悄混进 catalog 而不被任何人察觉。

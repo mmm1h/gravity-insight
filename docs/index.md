@@ -61,7 +61,8 @@
   返回待填写的 `promotion_performance` 节点，再执行一次 Plan。
 - 发现只返回候选以及 Plan node 或受控编译交接，不会从自然语言自动执行。
 
-当前基线仍为 185 个 operation、176 个 stable。本轮 17 个候选新增 stable 数为 0；不要把
+当前基线为 186 个 operation、177 个 stable。2026-08-16 多 App 复验将
+`analysis.default_val.list` 晋升为 stable；不要把
 `draft` 能力写入生产 Plan。逐项 blocker 以[候选能力证据矩阵](candidate-capability-matrix.md)
 为准。
 
