@@ -119,6 +119,22 @@ class GravityFieldPolicyMetadataTests(unittest.TestCase):
             with self.subTest(operation_id=operation_id):
                 validate_analysis_detail(_operation(operation_id), inputs, loader)
 
+    def test_user_detail_fixed_attribution_fields_are_not_custom_metadata(self) -> None:
+        def loader(_operation_id: str, _inputs: Mapping[str, Any]) -> Mapping[str, Any]:
+            return {"status": "empty", "data": {"list": []}}
+
+        operation = _operation("analysis.user_detail.list")
+        fields = "CreateTime AdPlatform Channel TurboPromotedObjectID AdvertiserID AdGid AdAid AdCid CSite device_info".split()
+        validate_analysis_detail(
+            operation, {"app_id": "101", "fields": fields}, loader
+        )
+        with self.assertRaisesRegex(InputValidationError, "absent from live metadata"):
+            validate_analysis_detail(
+                operation,
+                {"app_id": "101", "fields": ["custom_user_property"]},
+                loader,
+            )
+
     def test_segment_contract_change_still_fails_closed_on_other_drift(self) -> None:
         unsafe_envelopes = (
             _segment_contract_change(

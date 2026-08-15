@@ -650,3 +650,57 @@ SQL Evidence preflight 的 `OSError`、SQL verify 的 `OSError` 均改为 local/
 200 个普通地区枚举，其中 2 个不能用 GBK 编码。两次都未重试、未翻页，值只在内存中计数，未写入
 Evidence 或文档。operation、请求合同、响应投影、CLI 参数与 envelope shape 均未改变，stable/read
 能力无损失。
+## Issue 12 / 18 登记投影漂移收口（2026-08-15）
+
+两条现象均在 `88edb84` 上复现，且未放宽未登记字段的 additive fail-closed 判定。
+
+- #12 的五指标、horizon 2 查询在 live metric validation 全过后，行和 `data.total` 同时多出
+  `multi_day_1day_pay_user_retention_cnt_2`。它是为留存率计算返回的聚合计数依赖，不是请求指标，
+  因而在两个容器都登记为 `known_omitted`；修复后同一公共产品请求返回 31 行、顶层与 query 均
+  `success`、exit 0。
+- 这不是 #10 引入的新漂移面。#10 的 `2bf56f7` 只为多天收入指标观察到的隐式金额依赖增加省略登记，
+  并增加有界 drift 诊断；没有修改上游请求形状或放宽投影。#12 是同一上游“返回公式依赖列”机制在
+  付费留存指标组合上的未覆盖形状。当前只登记实证的 horizon 2；其他 horizon 是否返回同名后缀列
+  未经在线证据，继续 fail closed。
+- #18 A 的 validator 已经把 operation `item_keys` 当固定字段，但 `AdGid`、`AdCid`、`CSite` 未进入
+  该集合，导致包含它们的整批显式字段被当作缺失自定义属性拒绝。三者分别是广告组、创意和版位业务
+  标识，与该 operation 已暴露的 `re_attribute_info` 同义字段一致，不是用户/设备标识；现登记为固定
+  可投影字段并进入 stable privacy review ledger。真正的自定义用户属性仍必须出现在 live metadata。
+- #18 B 的五行默认响应共观察到 153 个顶层 key：原合同已处理 16 个，本轮新投影上述 3 个，剩余
+  134 个全部登记为 `known_omitted`。其中 113 个是自定义或预置用户属性，12 个是逐用户点击/再归因
+  字段，9 个是语义尚未有权威说明的平台投放 ID；均不暴露，等待维护者逐字段裁决。既有 `Name`、
+  `WXOpenID` 继续省略。以后再出现第 154 个 key 仍会 `contract_changed_additive`。
+
+本轮生产 HTTP 请求实际 21 次，无认证请求、重试、429 或 5xx：`analysis.user_property.list`、
+`analysis.event_property.list`、`analysis.segment.list` 各 4 次，`analysis.user_detail.list` 3 次，
+`report.multidim.metric.list`、`report.multidim.query` 各 3 次。一次 Multidim 初探误加了正文没有的
+`data_dims`，query 返回语义错误；纠正后的修复前请求精确复现 additive drift，修复后成功。
+完整 value-free 请求账本、字段清单和不确定项在
+`tmp/codex/additive-drift-12-18/findings.md`；未保存 App ID、凭据或任何行值。
+
+### 裁决：User Detail 的 134 个未登记字段**全部不批准投影**（2026-08-15）
+
+Issue 18 的收口把 `analysis.user_detail.list` 默认响应的 153 个顶层 key 全部登记，其中 134 个记为
+`known_omitted` 并上报待裁决。**判定：一个都不批准，保持 `known_omitted`。**
+
+理由不是逐个字段敏感，而是**这条 operation 每一行就是一个用户**。它返回的不是带用户维度的聚合，
+而是用户档案本身；因此每多暴露一列，都是在给一个已经很敏感的产品加宽用户画像，而不是增加一个
+分析维度。这跟 [D27 变现明细](#已批准的隐私投影边界变现明细d27)的批准逻辑正好相反——D27 去掉标识后，
+广告位/平台/ecpm 维度仍能回答"变现表现如何"；这里去掉标识之后剩下的，恰恰就是标识本身的属性。
+
+三类具体理由：
+
+- **有些根本不可批准。** `user$device_id`、`user$ta_distinct_id`、`user$ta_account_id`、
+  `userlogin_id`、`useraccount_id`、`userlong_id` 是直接标识符。
+- **有些是准标识符。** `user$city`、`user$province`、`user$brand`、`user$model`、`user$os`、
+  `useruser_age`、`useruser_sex` 单看无害，但落在**逐用户行**上，几列组合即可重识别。
+- **9 个 `bytedanceMid*` / `bytedanceProjectId` 语义未证实。** 含义没搞清就不批准，这是既有规矩，
+  不因为"看起来像业务 ID"而放宽。
+
+**这不会让 issue 的诉求落空。** Issue 18 要回答的是"投放期字段（计划、创意、版位、推广对象 ID）
+到底有没有值"，那正是本轮已批准的 `AdGid`/`AdCid`/`CSite` 加上早已在册的 `AdAid`、`AdvertiserID`、
+`TurboPromotedObjectID`——诉求已被满足。需要在这些用户属性上做聚合（LTV、ecpm、留存）的调用方，
+走已闭环的「看用户或事件属性的分布与聚合」动线，那里返回的是聚合结果而不是逐用户行。
+
+**重新提出的条件**：给出具体分析问题，并说明为什么它必须落在逐用户行上、聚合动线答不了。
+按字段逐个提，不接受整批申请。
