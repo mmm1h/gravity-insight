@@ -281,7 +281,7 @@ prober 现仅对 confirmation 文件中通过完整校验的精确 `POST + path`
 | 序 | 动线 | 为什么排这里 | 阻塞 |
 | --- | --- | --- | --- |
 | 1 | **D22 看板页面条件忠实重放** | 已对非空 `data.object.config.filter` fail closed；空条件不受影响 | **合并发生在服务端，前端分析已穷尽**（见下） |
-| 2 | **D35 归因表现聚合** | 当前只能读归因配置，无法回答归因结果；且是 F40 的前置 | **前端 body 已恢复，缺服务端证据**（见下） |
+| 2 | **D35 归因表现聚合** | 当前只能读归因配置，无法回答归因结果；且是 F40 的前置 | **2026-08-16 审计撤销旧 semantic-error 阻塞，待重新取证**（见下） |
 | 3 | **D34 非 Bytedance 计划/组/创意下钻** | 跨平台产品多数只到顶层 | D32/D33 已证明当前账号的七个平台父链均无可下钻样本 |
 | 4 | **D32 平台专属素材/创意深查** | 最小取证已完成，未取得可升级的非空合同 | 当前账号无非空 advertiser 父候选；保持 draft，等待有数据租户 |
 
@@ -748,7 +748,7 @@ fields/conditions/order 仍必须加载实时 metadata，未登记字段继续 f
 `relate_dims`。**多个扁平 filter 的 AND/OR 组合语义上游未经证明**，产品 schema 无 `filter_logic`；
 证明不了就只支持可确定语义的形态，不得假定默认值，更不得为此造通用布尔 DSL。
 
-## D35 归因请求合同：部分证明，仍不能开工
+## D35 归因请求合同：旧服务端阻塞已撤销，待重新取证
 
 `attribution.attribution.query` 的**前端 builder 已完整恢复**（从与 census 快照哈希匹配的
 `Measurement-BV1Ulzee.js` 中的同作用域 builder `Gt`），16 个顶层字段：
@@ -765,17 +765,16 @@ fields/conditions/order 仍必须加载实时 metadata，未登记字段继续 f
 源码默认 `report_level="day"`、`aggregate_app=false`、`multi_days=30`、`decimal_point=2`、
 `time_zone="utc"`。
 
-**判定：不能开工。** 2 次最小 POST 均 HTTP 200 但分类 `semantic_error`——响应里出现了预期的
-`columns/items/static/tips/total` 聚合容器且结果数组为空，同时带 `extra.error`，
-因此既不能算成功也不能算明确 empty。**前端形状不等于服务端合同**；此时实现产品等于把未经
-服务端证明的形状包装成正式能力，调用方会以为拿到了归因结果。
+**2026-08-16 审计纠正：旧“服务端拒绝”判定不能成立。** 当时 2 次最小 POST 虽被记成
+`semantic_error`，evidence 只保留 shape/fingerprint，没有保存 `code`、`msg` 或 `extra.error` 原值；
+同时旧 prober 把任意非空 `extra.error` 一律当拒绝。已完成归因线的独立 committed evidence 使用精确
+builder 记录到 `code=0`、`msg=成功`、`extra.error=无数据` 和空聚合容器，随后同形状取得非空成功，
+证明该登记值语义为明确空，不是参数错误。它不能倒推出旧两次响应的具体正文，但足以撤销旧标签对
+“缺服务端必填/值域”的证明力。
 
-仍未知：14 个恒发字段中服务端真正必填的是哪些；metrics/dims/口径/时区的允许值域；
-8 个筛选数组的元素类型；`project_id` 与 `connect_app_id` 的覆盖规则；semantic error 的成因
-（App 能力 / 数据配置 / 字段值约束 / 其他服务端前置）。
-
-**解锁需要**：该页面一次脱敏的成功或明确空网络记录，或一个确知支持该报表的最小测试 App，
-或服务端 schema。三者任一即可，都拿不到就保持 fail-closed。
+因此本分支不把 D35 写成已闭环，也不花本单元预算重探测；阻塞改为**旧判定基于分类器误判，待使用
+修复后会保存判据的 evidence 重新取证**。F40 的 D35 依赖理由同步失效；其自身标识来源、请求绑定、
+分页和响应合同仍需独立证据。
 
 ### census 提取器的已知能力边界
 
@@ -788,10 +787,12 @@ fields/conditions/order 仍必须加载实时 metadata，未登记字段继续 f
 其中 49 条是写、23 条已覆盖、7 条 auth/proxy、1 条 export，只有 17 条未覆盖读。函数调用的
 `unresolved_body_expression` 影响 60 条 route、82 个 call site；45 条是写、7 条已覆盖、4 条 export、
 3 条 auth/proxy，唯一未覆盖读就是 D35。该 reason 只存在于内存 `_Shape`，序列化后折叠为
-`analysis.unresolved_calls` 计数，所以在 `route-params.json` 中 grep 为 0，并非 D35 结论错误。
+`analysis.unresolved_calls` 计数，所以在 `route-params.json` 中 grep 为 0；这仍解释静态提取边界，
+但不再为已撤销的 D35 服务端拒绝结论背书。
 
 与台账交叉后，15 条完全缺失、12 条部分闭环中，**当前阻塞根因属于这两类提取失败的均为 0**。
-D35 的前端 16 字段已经人工恢复，卡服务端成功/明确空证据；默认值字典已有另一 occurrence 提取出
+D35 的前端 16 字段已经人工恢复；旧服务端阻塞已在 2026-08-16 语义错误审计中撤销并待重新取证。
+默认值字典已有另一 occurrence 提取出
 `app_id`/`subject`，卡服务端必填语义与响应投影。其余相交项是写、已覆盖 route、helper、export，
 或另有父链/非空样本/隐私/产品面 blocker。实现函数内联和条件 callee 不会解锁排期动线，故保持
 现有静态分析边界，不为潜在未来收益扩张成通用求值器。明细见
@@ -2033,3 +2034,36 @@ Spec contract、period-compare envelope 与公共 exit-code contract 生成 4 �
 其中 `B + 3`、`C + 4`：当前可复算总数为 `974 + 7 = 981`、`A=218`、`B=400+3=403`、
 `C=356+4=360`。这些是新 CLI 的 `limit`、`offset`、category、selector 和 action 的本地输入错误；
 不改变既有错误 code/category/exit 语义，也不放宽审计判据。
+
+## `semantic_error` 判定与 evidence 审计（2026-08-16）
+
+**提案与分母。** 工作提案与程序化明细位于 ignored `tmp/codex/semantic-error-audit/`。仓库中有
+787 份 evidence 命中字符串 `semantic_error`，但其中 460 份只含统一 schema 的 `semantic_errors`
+容器键，实际 `conclusion=semantic_error` 为 327 份。三分法为
+`5 明确误判 + 0 明确真错误 + 782 信息不足 = 787`；信息不足可复算为
+`322 个缺判据的真实标签 + 460 个容器键命中 = 782`。其中 58 个标签虽可由 shape 与旧实现反推为
+旧 code predicate 命中，但原始 code/msg 已丢失；拿旧判据证明旧判据正确属于循环论证，仍归信息不足。
+5 份明确误判都是 HTTP 204/null body，分属
+`report.report_custom_get.calc_total`、`promotion.kuaishou.developer.list`、
+`promotion.alipay.batch_options.query`、`promotion.alipay.campaign_option.list`、
+`promotion.tencent.user_organization_authentication.get`，故“误判最多”是五项并列各 1。
+
+**根因与修复。** executor 的字符串 `semantic_error_rules` 默认按 truthy 执行，prober 的旧
+`semantic_success()` 也在 code 属成功集合后直接拒绝任意非空 `extra.error`；合同 loader 只解析规则，
+不另做语义区分。现在共享判定只把已有 evidence 登记的精确值 `无数据` 解释为 explicit empty，且要求
+成功 code 与业务 data 确实为空；HTTP 204/null 也归明确空。仓库 787 份旧 evidence 保存的
+`extra.error` 原值为 0 个；已完成 attribution 线的 committed evidence 只观察到 `无数据` 1 种/1 次，
+没有证据登记任何同义表达。其他非空值（包括形似同义词的 `暂无数据`）继续 fail-closed 为拒绝。
+
+**今后 evidence。** 每条 probe HTTP observation 新增 `protocol_status`，分别保存上游 `code`、`msg`、
+`extra.error` 的存在性和原始标量值，并保存本地离散 classification；异常结构只存类型、truthiness 和
+`value_persisted=false`。这些是决定整个响应能否进入业务投影的协议层状态，不是 `data` 下的业务响应值；
+`privacy.values_persisted=false` 仍准确表示未持久化业务数据值。
+
+**台账影响。** 5 份 HTTP 204 误判没有单独支撑当前分析动线表的缺失理由；D35 则由 attribution
+补充 evidence 独立证实旧 `semantic_error / 缺服务端证据` 理由无效，F40 对它的依赖随之失效，故
+`analysis-journeys.md` 共改写 2 行为“旧判定基于分类器误判，待重新取证”。本单元不重探测这些动线，
+不新增或提升产品：`48 = 33 / 0 / 15 → +0 / +0 / +0 = 48 = 33 / 0 / 15`，operation/stable 仍为
+`185 / 176`。生产 HTTP 共 1 次：`promotion.kuaishou.developer.list` 的受控 GET 返回 HTTP 204/null body，
+`protocol_status.classification=explicit_empty`，无重试、翻页、扩窗、换 App 或 credential exchange；
+运行时 `request_limit=1/attempts=1`。该 operation 不属于上述两条待重新取证动线。

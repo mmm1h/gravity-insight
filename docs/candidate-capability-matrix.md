@@ -24,7 +24,7 @@
 | `app.monetization_app.list` | `draft` | 本轮 0 次请求；沿用既有空样本；草案声明 `page_info`，本轮未复核；无父绑定。 | `empty_sample`、`response_schema_unverified` | 先证明账户与变现平台参数的可信来源，再以第一页最小请求取得 1 个非空样本；不得猜测账户或平台值。 |
 | `app.app_info.get` | `draft` | 本轮 0 次请求；沿用既有空样本；分页为 `none`，本轮未复核；无父绑定。 | `empty_sample`、`response_schema_unverified` | 从已存在的前端调用证据获得 1 个真实且可公开处理的 URL 绑定，再做 1 次最小读取并审查返回字段。 |
 | `app.user_auth.list` | `draft` | 3 次目标请求；HTTP 200、空样本；`page_info`、第二页行为和安全页上限已验证；无父绑定。 | `empty_sample`、`response_schema_unverified` | 在具备可读授权记录的环境取得 1 个非空样本，并重点审查权限、身份和个人信息字段，默认不暴露未知字段。 |
-| `attribution.attribution.query` | `draft` | 本轮 0 次请求；沿用既有 `semantic_error` 证据，无可用样本；分页为 `none`，本轮未复核；无父绑定。 | `request_parameters_required`、`response_schema_unverified` | 先取得可复核的现有调用方或同一 census 快照对应的 bundle 正文，且证据须包含请求构造、默认值和条件省略逻辑，以唯一证明完整 POST body 的全部字段名、JSON 类型、必填性及 `null`/空数组/空字符串语义；若只有脱敏浏览器网络记录，还须补充空值与省略规则证据。当前 `route-params` 的 2 个 load call 均未解析、`body_parameters` 为空，且仓库无 bundle 正文或调用方；补齐前保持 0 次请求且不做组合猜测。 |
+| `attribution.attribution.query` | `draft` | 本轮 0 次请求。**2026-08-16 审计纠正**：旧 `semantic_error` evidence 没有保存 `code/msg/extra.error`，不能证明参数错误；旧分类器会把已另行证实为明确空的 `extra.error=无数据` 误判为拒绝。分页为 `none`，本轮不复探测。 | `response_schema_unverified`、`semantic_error_evidence_invalidated` | 使用修复后会保存协议判据的 evidence 重新取证；未知 `extra.error` 继续 fail-closed，不拿本轮预算重探测。完整 builder 已由 hash-matched bundle 恢复，不能再把静态 body 提取写成 blocker。 |
 
 | `attribution.attribution_detail.query` | `draft` | 本轮 0 次请求，且无既有 live probe；无样本，分页未验证；无父绑定。 | `not_probed`、`pagination_unverified`、`request_binding_unverified`、`response_schema_unverified` | 必须先证明完整请求绑定和响应合同；真实用户/设备标识可作为受控输入，但证据不足时仍不探测。 |
 

@@ -446,7 +446,7 @@ def probe_draft(
         raw_fingerprint = canonical_fingerprint(sketch) if discovery else None
         evidence = _evidence_document(
             updated, recording.observations[start:], selected_family=selected_family,
-            result=discovery_result, successful=False,
+            result=discovery_result, successful=discovery_result == "available_empty",
             raw_fingerprint=raw_fingerprint, projected_fingerprint=None,
             pagination={"kind": pagination["kind"]},
             pagination_verified=pagination["kind"] == "none",

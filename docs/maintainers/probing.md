@@ -18,6 +18,10 @@
 - 使用合同声明的最小 App、时间、页数和字段。
 - 不为“找非空结果”扩大到长时间窗、翻页或全量读取。
 - 记录 operation、状态、合同指纹和脱敏错误；不记录 token、Cookie、请求头或原始用户行。
+- 每条 HTTP observation 在 `protocol_status` 中记录上游 `code`、`msg`、`extra.error` 的存在性与原始
+  标量分类值，以及本地离散 classification；异常数组/对象只记录类型和 truthiness，不落其内容。
+  这些字段决定整个 envelope 是成功、明确空还是拒绝，属于协议层状态，不是 `data` 下的业务值；
+  `privacy.values_persisted=false` 仍表示没有持久化业务响应值。
 - `permission_unavailable`、`empty` 和 `contract_changed` 必须分开处理。
 - 发现未登记字段时以 `contract_changed_additive` 失败关闭；确认字段路径与类型后登记并暴露，
   按“上游授权即产品边界”交付，不把投影当作第二层访问控制；生产值仍不得写入 evidence 或 Git。

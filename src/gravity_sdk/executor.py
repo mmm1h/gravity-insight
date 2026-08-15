@@ -15,12 +15,12 @@ from .analysis_projection_contract import (
     funnel_mode_shape_changed,
 )
 from .drift import ProjectionDrift, projection_drift_status
-from .errors import PolicyViolation, SemanticRejectedError
-from .models import OperationSpec, ReadResult, SemanticErrorRule
+from .errors import PolicyViolation
+from .models import OperationSpec, ReadResult
 from .multidim import projected_keys
 from .receipt import capture_http_receipt_references
 from .registry import PolicyEngine, Registry
-from .result_audit import bind_error_receipts
+from .semantic_status import SEMANTIC_EXPLICIT_EMPTY, enforce_semantic_rules as _enforce_semantic_rules
 from .transport import Transport
 
 
@@ -127,7 +127,7 @@ class ReadExecutor:
                 authorization=authorization,
             )
         payload = response.payload
-        _enforce_semantic_rules(operation, payload, http_receipts)
+        semantic_status = _enforce_semantic_rules(operation, payload, http_receipts)
         projected, drift_warnings, projection_drift = _project(operation, payload, values)
         projected = _redact(
             projected,
@@ -172,13 +172,7 @@ class ReadExecutor:
         if operation.stability == "experimental":
             warnings.append("operation contract is experimental")
         is_empty = _is_empty(projected, items)
-        status = (
-            projection_drift_status(projection_drift)
-            if projection_drift
-            else "empty"
-            if is_empty
-            else "success"
-        )
+        status = _read_status(getattr(response, "status_code", 200), semantic_status, projection_drift, is_empty)
         return ReadResult(
             schema_version="gravity-insight.read.v1",
             status=status,
@@ -200,27 +194,15 @@ class ReadExecutor:
         )
 
 
-def _enforce_semantic_rules(operation: OperationSpec, payload: Mapping[str, Any], http_receipts: Any = ()) -> None:
-    rules = operation.semantic_error_rules or (
-        SemanticErrorRule("code", "not_in", values=(0, 200)),
-        SemanticErrorRule("extra.error"),
-    )
-    for rule in rules:
-        current = _path_get(payload, rule.path)
-        exists = current is not _ABSENT
-        triggered = {
-            "equals": exists and current == rule.value,
-            "not_equals": exists and current != rule.value,
-            "exists": exists,
-            "truthy": exists and bool(current),
-            "falsy": exists and not bool(current),
-            "in": exists and current in rule.values,
-            "not_in": exists and current not in rule.values,
-        }[rule.operator]
-        if triggered:
-            error = SemanticRejectedError(rule.message)
-            bind_error_receipts(error, http_receipts)
-            raise error
+def _read_status(
+    http_status: int, semantic_status: str,
+    projection_drift: ProjectionDrift, is_empty: bool,
+) -> str:
+    if http_status == 204 or semantic_status == SEMANTIC_EXPLICIT_EMPTY:
+        return "empty"
+    if projection_drift:
+        return projection_drift_status(projection_drift)
+    return "empty" if is_empty else "success"
 
 
 def _project(

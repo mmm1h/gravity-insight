@@ -9,6 +9,13 @@ from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 from ..parent_resolution import coerce_parent_value, extract_parent_values
+from ..semantic_status import (
+    SEMANTIC_EXPLICIT_EMPTY,
+    SEMANTIC_SUCCESS,
+    classify_semantic_status,
+    protocol_status_evidence,
+    response_data_nonempty,
+)
 from .core import REPO_ROOT, canonical_fingerprint
 from .privacy import response_schema_sketch
 from .transport import HttpObservation, RecordingSession
@@ -147,37 +154,13 @@ def resolve_inputs(
 
 
 def semantic_success(payload: Any) -> bool:
-    if not isinstance(payload, Mapping):
-        return False
-    if payload.get("code") not in (None, 0, 200, "0", "200"):
-        return False
-    extra = payload.get("extra")
-    return not (isinstance(extra, Mapping) and extra.get("error"))
+    return classify_semantic_status(payload) in {
+        SEMANTIC_SUCCESS, SEMANTIC_EXPLICIT_EMPTY,
+    }
 
 
 def data_nonempty(payload: Any) -> bool:
-    if not isinstance(payload, Mapping):
-        return False
-    data = payload.get("data")
-    if data is None:
-        return False
-    if isinstance(data, Mapping):
-        if "list" in data and isinstance(data["list"], list):
-            return bool(data["list"])
-        return any(_contains_meaningful_value(item) for item in data.values())
-    if isinstance(data, (list, str)):
-        return bool(data)
-    return True
-
-
-def _contains_meaningful_value(value: Any) -> bool:
-    if value is None:
-        return False
-    if isinstance(value, Mapping):
-        return any(_contains_meaningful_value(item) for item in value.values())
-    if isinstance(value, (list, str)):
-        return bool(value)
-    return True
+    return response_data_nonempty(payload)
 
 
 def last_primary(
@@ -276,6 +259,9 @@ def observation_summary(item: HttpObservation) -> dict[str, Any]:
         "request_fingerprint": canonical_fingerprint(item.request_shape),
         "request_shape": item.request_shape, "response_schema_sketch": sketch,
         "raw_schema_fingerprint": canonical_fingerprint(sketch),
+        "protocol_status": protocol_status_evidence(
+            item.payload, http_status=item.status_code
+        ),
     }
 
 
@@ -311,7 +297,12 @@ def conclusion(status_code: int | None, payload: Any, confirmed_status: str | No
         return "local_or_parent_inconclusive"
     if not 200 <= status_code < 300:
         return "http_error"
-    if not semantic_success(payload):
+    if status_code == 204:
+        return "available_empty"
+    semantic_status = classify_semantic_status(payload)
+    if semantic_status == SEMANTIC_EXPLICIT_EMPTY:
+        return "available_empty"
+    if semantic_status != SEMANTIC_SUCCESS:
         return "semantic_error"
     if not data_nonempty(payload):
         return "inconclusive_empty"
