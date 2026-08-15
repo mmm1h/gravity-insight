@@ -1548,3 +1548,13 @@ create/update user id/name、member name/uname 等已证实字段应全部登记
 **推翻条件**：新的 hash-matched bundle/inventory 证明独立读取 route；上述 GET 控制流变成提交；
 或出现一个不能由 dashboard snapshot / saved analysis 回答的独立调用方问题，并取得所需字段的合同
 证据。批准 mutation、路径含 read 味词元或发现更多自由文本字段，均不足以推翻本裁决。
+
+## 语义层 / 指标层与 text-to-SQL 调研裁决（2026-08-15）
+
+公开证据支持继续以“上游分析产品 + versioned envelope + 未登记字段 fail-closed”为主干：企业
+text-to-SQL 的主要剩余风险是可执行但语义错误，语义层厂商也普遍把 join、metric、dimension 和 ACL
+前移。当前路线的真实短板是长尾覆盖，不是主干正确性。后续若扩大覆盖，优先研究“已登记
+metric/dimension/filter/grain 的受治理组合层”和带 owner/version/projection 的 verified query；自由
+text-to-SQL 只可作为隔离探索层，必须在响应中保留 resolution tier、definition version、generated SQL、
+validation 与 allowed claims，不得静默并入现有 Agent 卡的受治理答案。完整证据与反例见
+[调研报告](research/semantic-layer-and-text2sql.md)。
