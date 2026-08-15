@@ -1628,3 +1628,71 @@ metric/dimension/filter/grain 的受治理组合层”和带 owner/version/proje
 text-to-SQL 只可作为隔离探索层，必须在响应中保留 resolution tier、definition version、generated SQL、
 validation 与 allowed claims，不得静默并入现有 Agent 卡的受治理答案。完整证据与反例见
 [调研报告](research/semantic-layer-and-text2sql.md)。
+
+## 可恢复错误消息分档与首轮升级（2026-08-15）
+
+本轮把“对外可恢复错误消息全集”固定为源码中所有显式抛出的 caller 类结构化错误起点：
+`InputValidationError` 及其 `ParentRequiredError`、`PlanRecipeError`、`PlanValidationError`、
+`SemanticRejectedError`、`SqlValidationError` 子类，以及 `UnknownOperationError`；同时沿返回注解纳入
+`input_error` / `invalid` 等窄 helper 的所有抛出点。转发已有错误的 `ErrorDetail.create` 不重复计数，
+upstream/local/contract 错误不属于调用方替换输入即可恢复的集合。`scripts/audit_actionable_errors.py`
+完整解析 `src/gravity_sdk/**/*.py`，按 `(source, line)` 断言无重复，并断言 A+B+C 等于全集；
+`tests/test_actionable_error_audit.py` 固定当前全集和分档，计数不依赖终端是否截断。
+
+基线 `ac03a0f` 的 **974** 个起点为 `A=0 / B=422 / C=552`。首轮升级 56 个，其中
+`36 B→A + 20 C→A`，所以当前为 **`A=56 / B=386 / C=532`**，推导为
+`0+36+20=56`、`422-36=386`、`552-20=532`，总数仍为 974。升级覆盖 Analysis / Segment
+紧凑 spec 的类型、长度、范围、enum、未知字段、日期关系、跨字段约束，以及已证实的 Segment preset
+和 Property acquisition-ID 拒绝；不改 code、category、exit code、envelope、operation 或校验宽严。
+
+实际值先经过与 CLI JSON 边界相同的 credential sanitizer；token/cookie/password 等键被删除，Bearer、
+JWT 和凭据赋值被替换。条件 `values`、原始请求/响应及其他可能承载用户级值的字段没有新增回显；
+`scalar_values` 因而仍留在 B。候选显示上限取 **N=20**：现有普通 enum 和 spec 顶层字段可完整显示，
+最长常见集合仍能留在 500 字符消息预算内；超过 20 时必须同时给 `showing N of total` 和可执行发现
+命令。本轮 25/29 项 Segment operator 通过
+`gravity analysis segment evaluate --spec-schema` 发现完整集合；动态 event/property 候选不内嵌，分别
+交给 `gravity metadata events ""` 与 `gravity metadata properties ""`。
+
+剩余 B/C 不批量猜值：B 的主要缺口是旧 helper 只有格式化后的 message/field、异常现场未把原始值或
+候选传入；C 还包含 workspace、prober、合同装载与内部不变量错误，部分不是字段替换问题。后续只在
+owner 文件因真实调用方错误而被触及时，把能证明安全的原始值和权威候选传到消息边界；不得用栈帧
+反射抓局部变量，也不得为提高 A 档比例回显凭据、filter values 或原始上游错误。该消息升级不改变
+`docs/analysis-journeys.md` 的动线完成度，operation 仍为 185、stable 仍为 176；本轮 0 次生产请求。
+
+## 字段策略层错误消息升级（2026-08-15）
+
+**提案：**承接 `8a27f87` 的 sanitizer、`actual_value` / `allowed_values` 和 N=20 上限，按 Agent
+最常撞到的筛选条件、事件、分群、控制、明细、metadata 顺序，把原始调用值和当前校验现场已有的
+权威 enum / live metadata 候选传到结构化错误；拿不到安全原值时停在 B，不回显 filter/condition/
+data-list values 或上游异常正文。`models.py` 与 `plan_validation.py` 只在六文件集群完成且质量门禁
+仍有安全余量时继续，不以升级条数替代单条可恢复性。
+
+**结论：六个高频字段策略文件的 176 条已全部脱离 C 档，`models.py` 与 `plan_validation.py`
+留待后续 owner 单元。** 逐文件固定审计如下：
+
+| owner 文件 | 升级前 A/B/C | 升级后 A/B/C | 净迁移 |
+| --- | ---: | ---: | ---: |
+| `_field_policy_conditions.py` | 0 / 0 / 45 | 39 / 6 / 0 | 39 C→A，6 C→B |
+| `_field_policy_event.py` | 0 / 0 / 26 | 26 / 0 / 0 | 26 C→A |
+| `_field_policy_segment.py` | 0 / 0 / 35 | 35 / 0 / 0 | 35 C→A |
+| `_field_policy_controls.py` | 0 / 0 / 27 | 19 / 8 / 0 | 19 C→A，8 C→B |
+| `_field_policy_detail.py` | 0 / 0 / 25 | 25 / 0 / 0 | 25 C→A |
+| `_field_policy_metadata.py` | 0 / 0 / 18 | 18 / 0 / 0 | 18 C→A |
+| **本集群合计** | **0 / 0 / 176** | **162 / 14 / 0** | **162 C→A，14 C→B** |
+
+全仓计数可复算为：`A 56 + 162 = 218`，`B 386 + 14 = 400`，`C 532 - 176 = 356`，
+总数仍为 **974**。审计抛点没有因拆分分支而增减；code、category、exit code、envelope、operation、
+请求形状和校验宽严均未改变。三个 owner 文件一度触发 SLOC 500 门禁，最终只压缩新增消息排版，
+没有移动或重构校验函数，质量 baseline 未改且门禁恢复 PASS。
+
+14 条 B 的原因分两类：6 条是 condition/group/filter map 容器或值类型错误，8 条是 account/dashboard/name filter、
+`filtering`、`data_list` 的值错误；这些值可能承载用户级标识、业务筛选值或整行输入。虽然投影边界已
+全面放开，错误会进入日志、监控和告警并产生比查询结果更宽的复制面，因此只回显字段路径、结构要求、
+安全的 item count / key/type 摘要和权威发现动作，不回显原值。metadata loader 捕获的上游异常正文
+同样继续丢弃；可安全观察的 operation、status、envelope type 和候选集合仍进入消息。所有实际回显
+均经过共享 credential sanitizer；长候选使用既有 N=20 截断和真实 CLI/raw-operation 发现命令。
+
+`models.py` 仍为 `0 / 0 / 28`，`plan_validation.py` 仍为 `0 / 35 / 22`。前者是 1079 行的通用合同
+模型热点，后者的 57 个 helper 抛点横跨完整 Plan 图、预算、binding 与 call-bound 语义；继续处理会
+从本轮高频字段策略扩到低频通用结构面，因此按优先级停止，不把它们包装成已完成。该升级不改变
+`docs/analysis-journeys.md` 的动线计数；operation 仍为 185、stable 仍为 176；本轮 0 次生产请求。

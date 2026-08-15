@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping, Sequence
 
+from .actionable_error_values import actual_value, allowed_values
 from ._field_policy_metadata import (
     all_exclusion_dimensions,
     load_view,
@@ -45,21 +46,22 @@ def validate_request_controls(
         _validate_filters(operation, inputs, filters, controls, metadata_loader)
     filtering = inputs.get("filtering")
     if isinstance(filtering, Mapping) and filtering:
-        _validate_filtering(filtering, controls)
+        _validate_filtering(filtering, controls, operation.operation_id)
     data_list = inputs.get("data_list")
     if isinstance(data_list, (list, tuple)):
-        _validate_data_list(data_list, controls)
+        _validate_data_list(data_list, controls, operation.operation_id)
     order_by = inputs.get("order_by")
     if isinstance(order_by, (list, tuple)):
-        _validate_order_by(order_by, controls)
+        _validate_order_by(order_by, controls, operation.operation_id)
 
 
 def _validate_promotion_metric_type(inputs: Mapping[str, Any]) -> None:
     metric_type = inputs.get("metric_type")
     if metric_type is not None and inputs.get("media_type") != "tencentV3":
         raise InputValidationError(
-            "metric_type is only enabled for the verified Tencent metadata profile; "
-            "request was not sent"
+            f"actual value: {actual_value({'metric_type': metric_type, 'media_type': inputs.get('media_type')})}; "
+            "allowed shape: metric_type is only set when media_type is tencentV3",
+            field="metric_type",
         )
 
 
@@ -99,7 +101,7 @@ def _validate_filters(
             8,
         }
     for item in filters:
-        _validate_filter_item(item, controls, operators, rule)
+        _validate_filter_item(item, controls, operators, rule, operation.operation_id)
 
 
 def _validate_filter_item(
@@ -107,27 +109,47 @@ def _validate_filter_item(
     controls: set[str],
     operators: set[str | int],
     rule: Any,
+    operation_id: str,
 ) -> None:
     if not isinstance(item, Mapping):
-        raise InputValidationError("filter contract is invalid; request was not sent")
+        raise InputValidationError(
+            f"actual value: {actual_value(type(item).__name__)}; allowed value: a filter object",
+            field="filters[]",
+        )
     field_name = str(item.get("field", ""))
     operator = item.get("operator")
     if rule.exact_filter_profile is not None:
         allowed_operators = rule.exact_filter_profile.get(field_name)
         if allowed_operators is None or operator not in allowed_operators:
+            if allowed_operators is None:
+                observed = field_name
+                alternatives = allowed_values(
+                    rule.exact_filter_profile,
+                    discovery_action=f"gravity insight operations describe {operation_id}",
+                )
+                error_field = "filters[].field"
+            else:
+                observed = operator
+                alternatives = allowed_values(allowed_operators)
+                error_field = "filters[].operator"
             raise InputValidationError(
-                "filter field/operator pair is absent from the exact operation "
-                "profile; request was not sent"
+                f"actual value: {actual_value(observed)}; allowed filter field/operator "
+                f"profile values: {alternatives}",
+                field=error_field,
             )
         validate_exact_filter_values(rule.exact_filter_values, field_name, item)
         return
     if field_name not in controls:
         raise InputValidationError(
-            "filter field is absent from the operation field policy; request was not sent"
+            f"actual value: {actual_value(field_name)}; allowed fields: "
+            f"{allowed_values(controls, discovery_action=f'gravity insight operations describe {operation_id}')}",
+            field="filters[].field",
         )
     if operator not in operators:
         raise InputValidationError(
-            "filter operator is absent from the operation codec; request was not sent"
+            f"actual value: {actual_value(operator)}; allowed operators: "
+            f"{allowed_values(operators)}",
+            field="filters[].operator",
         )
 
 
@@ -140,10 +162,14 @@ def validate_exact_filter_values(
         _validate_named_filter_values(field_name, item)
 
 
-def _filter_values(item: Mapping[str, Any], message: str) -> Sequence[Any]:
+def _filter_values(item: Mapping[str, Any], field_name: str) -> Sequence[Any]:
     values = item.get("values", item.get("value", ()))
     if not isinstance(values, (list, tuple)) or not values:
-        raise InputValidationError(message)
+        raise InputValidationError(
+            "filter values must be a non-empty array; values are not echoed because "
+            "errors may enter logs",
+            field=f"filters[{field_name}].values",
+        )
     return values
 
 
@@ -152,7 +178,7 @@ def _validate_account_filter_values(
 ) -> None:
     values = _filter_values(
         item,
-        "account member filter values must be a non-empty array; request was not sent",
+        field_name,
     )
     if field_name in {"dept_id", "role_id"}:
         if any(
@@ -163,12 +189,16 @@ def _validate_account_filter_values(
             for value in values
         ):
             raise InputValidationError(
-                "account member identifier filter is invalid; request was not sent"
+                "account member identifier filter values must be non-empty strings or "
+                "integers of at most 64 characters; values are not echoed because errors may enter logs",
+                field=f"filters[{field_name}].values",
             )
         return
     if any(not isinstance(value, str) or len(value) > 256 for value in values):
         raise InputValidationError(
-            "account member text filter is invalid; request was not sent"
+            "account member text filter values must be strings of at most 256 "
+            "characters; values are not echoed because errors may enter logs",
+            field=f"filters[{field_name}].values",
         )
 
 
@@ -177,70 +207,106 @@ def _validate_named_filter_values(
 ) -> None:
     values = _filter_values(
         item,
-        "exact analysis filter values must be a non-empty array; request was not sent",
+        field_name,
     )
     if field_name == "template_type":
         if any(value not in {"report", "kanban"} for value in values):
             raise InputValidationError(
-                "template_type filter value is absent from the frontend contract; request was not sent"
+                f"actual value: {actual_value(values)}; allowed values: \"kanban\", \"report\"",
+                field="filters[template_type].values",
             )
     elif field_name == "name":
         if any(not isinstance(value, str) or len(value) > 256 for value in values):
             raise InputValidationError(
-                "analysis name filter value is invalid; request was not sent"
+                "analysis name filter values must be strings of at most 256 characters; "
+                "values are not echoed because errors may enter logs",
+                field="filters[name].values",
             )
     elif field_name == "dashboard_id":
         if any(not isinstance(value, str) or not value for value in values):
             raise InputValidationError(
-                "dashboard filter identifier is invalid; request was not sent"
+                "dashboard filter identifiers must be non-empty strings; values are "
+                "not echoed because errors may enter logs",
+                field="filters[dashboard_id].values",
             )
     elif field_name in {"default_to_one", "default_to_all"} and any(
         value != "1" for value in values
     ):
         raise InputValidationError(
-            "dashboard default filter value is invalid; request was not sent"
+            "dashboard default filter values must all equal \"1\"; values are not "
+            "echoed because errors may enter logs",
+            field=f"filters[{field_name}].values",
         )
 
 
-def _validate_filtering(value: Mapping[str, Any], controls: set[str]) -> None:
+def _validate_filtering(
+    value: Mapping[str, Any], controls: set[str], operation_id: str
+) -> None:
     allowed = controls | {"keyword", "search_keyword", "search_type"}
-    if any(str(key) not in allowed for key in value):
+    unknown = sorted(str(key) for key in value if str(key) not in allowed)
+    if unknown:
         raise InputValidationError(
-            "filtering contains fields absent from the operation policy; request was not sent"
+            f"actual value: {actual_value(unknown)}; allowed fields: "
+            f"{allowed_values(allowed, discovery_action=f'gravity insight operations describe {operation_id}')}",
+            field="filtering",
         )
     if any(
         item is None or isinstance(item, (Mapping, list, tuple))
         for item in value.values()
     ):
         raise InputValidationError(
-            "filtering values must be scalar; request was not sent"
+            "filtering values must be scalar and non-null; values are not echoed because "
+            "errors may enter logs",
+            field="filtering",
         )
 
 
-def _validate_data_list(value: Sequence[Any], controls: set[str]) -> None:
+def _validate_data_list(
+    value: Sequence[Any], controls: set[str], operation_id: str
+) -> None:
     for row in value:
         if not isinstance(row, Mapping):
             raise InputValidationError(
-                "data_list rows must be controlled objects; request was not sent"
+                f"actual value: {actual_value(type(row).__name__)}; allowed value: a controlled object",
+                field="data_list[]",
             )
         row_keys = {str(key) for key in row}
         if not row_keys <= controls or any(is_sensitive_control_key(key) for key in row_keys):
+            invalid = sorted(
+                key
+                for key in row_keys
+                if key not in controls or is_sensitive_control_key(key)
+            )
             raise InputValidationError(
-                "data_list contains fields absent from the operation policy; "
-                "request was not sent"
+                f"actual value: {actual_value(invalid)}; allowed fields: "
+                f"{allowed_values(controls, discovery_action=f'gravity insight operations describe {operation_id}')}",
+                field="data_list[]",
             )
         if any(isinstance(item, (Mapping, list, tuple)) for item in row.values()):
             raise InputValidationError(
-                "data_list values must be scalar; request was not sent"
+                "data_list values must be scalars; values are not echoed because errors "
+                "may enter logs",
+                field="data_list[]",
             )
 
 
-def _validate_order_by(value: Sequence[Any], controls: set[str]) -> None:
+def _validate_order_by(
+    value: Sequence[Any], controls: set[str], operation_id: str
+) -> None:
     for item in value:
         field_name = order_field(item)
         if field_name is None or field_name not in controls:
+            observed = (
+                field_name
+                if field_name is not None
+                else sorted(str(key) for key in item)
+                if isinstance(item, Mapping)
+                else type(item).__name__
+            )
             raise InputValidationError(
-                "order_by contains a field absent from the operation policy; request was not sent"
+                f"actual value: {actual_value(observed)}; "
+                f"allowed fields: {allowed_values(controls, discovery_action=f'gravity insight operations describe {operation_id}')}",
+                field="order_by[]",
             )
 
 
@@ -277,7 +343,10 @@ def validate_dynamic_response_fields(
         validate_multidim(operation, requested, metadata_loader)
         return
     raise InputValidationError(
-        "dynamic response fields have no registered metadata validator; request was not sent"
+        f"actual value: {actual_value(sorted(requested))}; allowed value: dynamic fields "
+        "with a registered metadata validator for this operation",
+        field="dynamic_response_fields",
+        next_action=f"Run `gravity insight operations describe {operation.operation_id}` and use its registered response fields.",
     )
 
 
@@ -292,16 +361,22 @@ def validate_promotion(
         return
     if not operation.platform:
         raise InputValidationError(
-            "promotion field metadata has no platform context; request was not sent"
+            f"actual value: {actual_value(operation.platform)}; allowed value: a registered platform context",
+            field="platform",
+            next_action=f"Run `gravity insight operations describe {operation.operation_id}` and select an operation with platform metadata.",
         )
-    view = load_view(
-        PROMOTION_METRIC,
-        promotion_metadata_inputs(operation, inputs),
-        metadata_loader,
-    )
-    if not unresolved <= names(view.rows, keys=("name",)):
+    profile = promotion_metadata_inputs(operation, inputs)
+    view = load_view(PROMOTION_METRIC, profile, metadata_loader)
+    available = names(view.rows, keys=("name",))
+    missing = sorted(unresolved - available)
+    if missing:
+        discovery_action = (
+            f"gravity run {PROMOTION_METRIC} --input {actual_value(profile)}"
+        )
         raise InputValidationError(
-            "query_fields contains values absent from live platform metadata; request was not sent"
+            f"actual value absent from live platform metadata: {actual_value(missing)}; allowed values: "
+            f"{allowed_values(available, discovery_action=discovery_action)}",
+            field="query_fields",
         )
 
 
@@ -316,12 +391,18 @@ def validate_business(
     view = load_view(REPORT_BUSINESS_METRIC, {}, metadata_loader)
     if not view.rows:
         raise InputValidationError(
-            "business metric metadata is empty; request was not sent"
+            "actual value: 0 metadata rows; allowed value: non-empty business metric metadata",
+            field="metrics_list",
+            next_action=f"Run `gravity run {REPORT_BUSINESS_METRIC} --input '{{}}'` and retry only after metadata is available.",
         )
     allowed = set(operation.response_projection.item_keys) | names(view.rows)
-    if not requested <= allowed:
+    missing = sorted(requested - allowed)
+    if missing:
+        discovery_action = f"gravity run {REPORT_BUSINESS_METRIC} --input '{{}}'"
         raise InputValidationError(
-            "business metrics/dimensions are absent from live metadata; request was not sent"
+            f"actual value: {actual_value(missing)}; allowed values: "
+            f"{allowed_values(allowed, discovery_action=discovery_action)}",
+            field="metrics_list/dims_list",
         )
 
 
@@ -348,11 +429,18 @@ def validate_multidim(
         exclusions, complete = all_exclusion_dimensions(selected_rows)
         if not complete:
             raise InputValidationError(
-                "selected metric exclusion metadata is incomplete; request was not sent"
+                f"actual value: {actual_value(list(metrics) + list(custom_metrics))}; "
+                "allowed value: metrics with complete exclusion metadata",
+                field="metrics_list/custom_metrics_list",
+                next_action="Run `gravity multidim metadata` and retry with a metric whose metadata is complete.",
             )
-        if set(dimensions) & exclusions:
+        conflicts = sorted(set(dimensions) & exclusions)
+        if conflicts:
             raise InputValidationError(
-                "selected dimensions conflict with live metric exclusions; request was not sent"
+                f"actual value: {actual_value(conflicts)}; allowed value: dimensions not "
+                "excluded by the selected metrics",
+                field="data_dims/relate_dims",
+                next_action="Run `gravity multidim metadata` and remove the reported excluded dimensions.",
             )
 
 
@@ -400,11 +488,17 @@ def _validate_nonstatic_dimensions(
     )
     if any(item.status not in {"success", "empty"} for item in all_views):
         raise InputValidationError(
-            "dimension metadata is incomplete; request was not sent"
+            f"actual value: {actual_value({item.operation_id: item.status for item in all_views})}; "
+            "allowed metadata statuses: success, empty",
+            field="data_dims/relate_dims",
+            next_action="Run `gravity multidim metadata` and retry only after metadata is complete.",
         )
     rows = tuple(row for item in all_views for row in item.rows)
     known, complete = all_exclusion_dimensions(rows)
     if not complete or not requested <= known:
+        missing = sorted(requested - known)
         raise InputValidationError(
-            "data_dims/relate_dims are absent from complete live metadata; request was not sent"
+            f"actual value for data_dims/relate_dims absent from complete live metadata: {actual_value(missing)}; allowed values: "
+            f"{allowed_values(known, discovery_action='gravity multidim metadata')}",
+            field="data_dims/relate_dims",
         )

@@ -706,7 +706,7 @@ class DiscoveryUxTests(unittest.TestCase):
             "J46": "ANALYSIS_EXPORT_FILE_CONTRACT_MISSING",
             "J47": "PLATFORM_ASSET_BINARY_CONTRACT_MISSING",
         }
-        path = Path(__file__).parents[1] / "tmp/codex/nl-reachability/phrasings.md"
+        path = Path(__file__).parent / "fixtures/nl-reachability-phrasings.md"
         questions = []
         for line in path.read_text(encoding="utf-8").splitlines():
             if line.startswith("| J"):

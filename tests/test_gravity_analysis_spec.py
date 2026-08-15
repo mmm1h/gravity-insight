@@ -176,7 +176,9 @@ class AnalysisQuerySpecTests(unittest.TestCase):
                 "group_by": [{"field": "$ea_gid", "source": "user"}],
             })
         self.assertEqual("group_by[0].field", caught.exception.field)
-        self.assertIn("Remove this group", str(caught.exception.next_action))
+        self.assertIn("actual value", str(caught.exception))
+        self.assertIn("$ea_gid", str(caught.exception))
+        self.assertIn("gravity metadata properties", str(caught.exception.next_action))
         self.assertEqual([], sdk.insight.validated)
 
     def test_public_compile_uses_field_policy_and_redacts_preview_values(self) -> None:
@@ -190,7 +192,7 @@ class AnalysisQuerySpecTests(unittest.TestCase):
             compile_query_spec(
                 "funnel", {**dated, "window": {"unit": "day", "value": 365}}
             )
-        with self.assertRaisesRegex(InputValidationError, "provided together"):
+        with self.assertRaisesRegex(InputValidationError, "provide both overrides"):
             compile_query_spec("event", {**dated, "steps": [step("open")]}, start="2026-08-03")
         private = "person@example.com"
         insight = FakeInsight()
