@@ -255,6 +255,34 @@ Spec 只简化结构，不替调用方决定语义：事件名、属性名、指
 必须显式填写。物理字段未知时，先通过 `gravity metadata search` 或本地 metadata API 确认，
 随后一次调用 `analysis_query()`；自然语言 capability discovery 不会自动执行查询。
 
+Python 调用方需要复用片段或增量修改已有 spec 时，可使用只属于 Analysis 的 typed primitives：
+`AnalysisFilter`、`AnalysisMetric`、`AnalysisCohort`、`AnalysisStep` 和 `AnalysisSpec`。
+`AnalysisCohort` 只引用一个已存在的 Gravity segment，不创建或修改分群。`AnalysisMetric` 按位置
+渲染已登记的 step target 或 property target；同一个带 `data_type` 的 metric 可跨五类 spec 复用，
+但不会把 property-only 字段塞进其他四类请求。
+
+```python
+from gravity_sdk import AnalysisFilter, AnalysisMetric, AnalysisSpec, AnalysisStep
+
+country = AnalysisFilter("country", "EQUALS", "user", ("CN",))
+count = AnalysisMetric("PresetAllCount", "PresetAllCount", data_type="INT")
+base = AnalysisSpec.event(
+    "2026-08-01", "2026-08-07", [AnalysisStep("app_open", count)]
+)
+query = base.with_app("main").add_step_filter(country)
+
+# AnalysisSpec 实现原有 Mapping 合同；无需新执行入口。
+result = sdk.analysis_query(query.kind, query)
+```
+
+`AnalysisSpec.from_mapping(kind, existing)` 可无损包装任意已有 compact spec；`with_app()`、
+`with_dates()`、`replace_step_metric()`、`replace_property_metric()`、`add_step_filter()`、
+`add_global_filter()`、`add_property_filter()` 与 `add_property_condition()` 都返回新对象，不修改原值。
+CLI 或 batch JSON 调用方用 `to_dict()` 取得普通 spec。位置上不可能的组合（例如 scatter global
+filter、property event step）在对象方法调用时失败；需要 kind-specific FieldPolicy 或 live metadata
+才能判断的组合仍由原 `compile_query_spec()` / batch / Plan preflight 在发请求前拒绝。typed 与 literal
+spec 最终进入同一个 compiler，不新增 operation、wire shape、CLI 参数、envelope 或退出码。
+
 `analysis_queries(payload, *, max_workers=6, workspace=None, dry_run=False)` 是多查询薄门面。
 payload 为 `gravity.analysis-query-batch.v1`，最多 32 个带唯一 ID 的 literal spec；方法先编译
 整批，再复用 Plan v1 的预检、同层并发、声明顺序和失败隔离。`dry_run=True` 零执行；成功或
