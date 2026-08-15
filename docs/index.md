@@ -79,6 +79,7 @@
 - [MCP 协议与分析类 server 实现](research/mcp-protocol-and-servers.md)
 - [厂商 Agent 形态横向调研](research/vendor-agent-landscape.md)
 - [语义层与 text-to-SQL 工程现状](research/semantic-layer-and-text2sql.md)
+- [GitHub 开源语义层与能力路由实现](research/oss-semantic-and-routing.md)
 - [Agent 可用性度量方法](research/agent-usability-methods.md)
 - [Agent 场景的数据访问安全与治理](research/agent-security-governance.md)
 
