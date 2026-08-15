@@ -2033,3 +2033,28 @@ Spec contract、period-compare envelope 与公共 exit-code contract 生成 4 �
 其中 `B + 3`、`C + 4`：当前可复算总数为 `974 + 7 = 981`、`A=218`、`B=400+3=403`、
 `C=356+4=360`。这些是新 CLI 的 `limit`、`offset`、category、selector 和 action 的本地输入错误；
 不改变既有错误 code/category/exit 语义，也不放宽审计判据。
+
+## 引力原生 AI 事件分析对话摸底（2026-08-16）
+
+**提案与范围：**只回答 census 中 AI conversation/message route 是什么；先以 hash-matched bundle 做
+零业务请求静态取证，只对静态无法证明的真实 envelope 做一次通用问法在线验证。不新增 operation、
+adapter、recognizer、评测臂或产品行为，不读取留出集，也不改变现有排期。工作底稿和 value-free HTTP
+receipts 位于 ignored `tmp/codex/gravity-native-ai/`。
+
+**裁决：窄范围“重叠”，不是聊天壳，也不是已验证捷径。** `Event-BKh0ym6c.js` 当前公开文件与 census
+快照同为 113,757 bytes、SHA-256
+`352233b7fb6ea74ec6b0c86e304dda84782669d52af1c01c7a84014eaa30e1a8`。前端先以问题作 title 建会话，
+再发送当前 App、会话 ID 和同一问题；成功分支读取 `backup_measure_json`，一键回填事件/自定义公式、过滤、
+分组、日期与图表类型。气泡只显示固定文案，不显示模型自由文本、结果数据或报表引用。conversation/message
+两个 list loader 存在但未调用；没有 SSE/WebSocket/前端工具调用或已观察多轮。
+
+唯一问法“最近 7 天的事件趋势”使用 catalog 首个 App 上下文。生产 HTTP 共 **4 次**：认证、`app.list`
+第一页 1 项、conversation create、message create；全部 HTTP 200、attempt 1，无重试、翻页、扩窗或换 App。
+最后响应为 `data: []`，没有 `backup_measure_json`，按纪律不换问法追非空。因此真实成功定义、两个 list
+合同、空结果原因、schema/version/provenance 和服务端内部模型/工具链仍未证明。
+
+若未来把它列为现有 recognizer、embedding/hybrid、结构化 LLM selector 之外的第四候选臂，输出仍须
+经过确定性 schema、物理引用、日期/operator 与失败分类校验，并在同一冻结 unseen 题集 A/B；本轮没有
+实施或批准该选项。动线净变化 `48 + 0 = 48`、`33 / 0 / 15 + 0 / 0 / 0 = 33 / 0 / 15`；operation
+`185 + 0 = 185`、stable `176 + 0 = 176`。技术债清单已复核，无条目达到退出条件，也没有新增结构债。
+完整请求/响应结构、前端消费和未决见[专项报告](research/gravity-native-ai.md)。
