@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any, Mapping, Sequence
 
-from .actionable_error_values import actual_value, allowed_values
+from .actionable_error_values import actual_value, live_metadata_miss
 from ._field_policy_operations import (
     ANALYSIS_EVENT,
     ANALYSIS_EVENT_INFO,
@@ -309,9 +309,9 @@ def select_rows(
     missing = [item for item in requested if item not in by_name]
     if missing:
         raise InputValidationError(
-            f"actual value absent from live metadata: {actual_value(missing)}; allowed values: "
-            f"{allowed_values(by_name, discovery_action='gravity multidim metadata')}",
+            live_metadata_miss(actual_value(missing)),
             field=label,
+            next_action="Run `gravity multidim metadata` and retry with a listed value.",
         )
     return tuple(by_name[item] for item in requested)
 
@@ -353,9 +353,9 @@ def _validate_events(
     missing = sorted(references.events - allowed)
     if missing:
         raise InputValidationError(
-            f"actual value absent from live metadata: {actual_value(missing)}; allowed events: "
-            f"{allowed_values(allowed, discovery_action='gravity metadata events \"\"')}",
+            live_metadata_miss(actual_value(missing), noun="events"),
             field="event_name",
+            next_action="Run `gravity metadata events \"\"` and retry with a listed event.",
         )
 
 
@@ -384,9 +384,9 @@ def _validate_event_fields(
     missing = sorted(unresolved - allowed)
     if missing:
         raise InputValidationError(
-            f"actual value absent from live metadata: {actual_value(missing)}; allowed event fields: "
-            f"{allowed_values(allowed, discovery_action='gravity metadata properties \"\"')}",
+            live_metadata_miss(actual_value(missing), noun="event fields"),
             field="event_fields",
+            next_action="Run `gravity metadata properties \"\"` and retry with a listed event field.",
         )
     if unresolved:
         reject_sensitive_metadata_fields(property_rows, unresolved)
@@ -406,9 +406,9 @@ def _validate_user_fields(
     missing = sorted(unresolved - allowed)
     if missing:
         raise InputValidationError(
-            f"actual value absent from live metadata: {actual_value(missing)}; allowed user fields: "
-            f"{allowed_values(allowed, discovery_action='gravity metadata properties \"\"')}",
+            live_metadata_miss(actual_value(missing), noun="user fields"),
             field="user_fields",
+            next_action="Run `gravity metadata properties \"\"` and retry with a listed user field.",
         )
     if unresolved:
         reject_sensitive_metadata_fields(properties.rows, unresolved)
@@ -435,9 +435,9 @@ def _validate_segments(
     )
     if missing:
         raise InputValidationError(
-            f"actual value absent from live metadata: {actual_value(missing)}; allowed segment ids: "
-            f"{allowed_values(segment_ids, discovery_action=segment_discovery)}",
+            live_metadata_miss(actual_value(missing), noun="segment ids"),
             field="segment_id",
+            next_action=f"Run `{segment_discovery}` and retry with a listed segment id.",
         )
     for segment_id, segment_type, version_id in references.segment_fields:
         if segment_type != "FIXED_VERSION":
@@ -454,9 +454,9 @@ def _validate_segments(
                 f"{actual_value({'segment_id': segment_id, 'page': 1, 'page_size': 100})}"
             )
             raise InputValidationError(
-                f"actual value absent from live metadata: {actual_value(version_id)}; allowed versions: "
-                f"{allowed_values(available, discovery_action=history_discovery)}",
+                live_metadata_miss(actual_value(version_id), noun="versions"),
                 field="version_id",
+                next_action=f"Run `{history_discovery}` and retry with a listed version id.",
             )
 
 
@@ -495,9 +495,13 @@ def _validate_user_property_value(
     available = enumerable_property_names(view.rows)
     if property_name not in available:
         raise InputValidationError(
-            f"actual value absent from enumerable metadata: {actual_value(property_name)}; allowed properties: "
-            f"{allowed_values(available, discovery_action='gravity metadata properties \"\"')}",
+            live_metadata_miss(
+                actual_value(property_name),
+                noun="enumerable properties",
+                source="enumerable metadata",
+            ),
             field="property_name",
+            next_action="Run `gravity metadata properties \"\"` and retry with a listed enumerable property.",
         )
 
 
@@ -524,9 +528,9 @@ def _validate_event_property_value(
     for event_name in event_names:
         if not isinstance(event_name, str) or event_name not in allowed_events:
             raise InputValidationError(
-                f"actual value absent from live metadata: {actual_value(event_name)}; allowed events: "
-                f"{allowed_values(allowed_events, discovery_action='gravity metadata events \"\"')}",
+                live_metadata_miss(actual_value(event_name), noun="events"),
                 field="event_name_list[]",
+                next_action="Run `gravity metadata events \"\"` and retry with a listed event.",
             )
         normalized.append(event_name)
     for event_name in normalized:
@@ -534,8 +538,11 @@ def _validate_event_property_value(
         available = enumerable_property_names(event_rows)
         if property_name not in available:
             raise InputValidationError(
-                f"actual value absent from enumerable metadata for {actual_value(event_name)}: "
-                f"{actual_value(property_name)}; allowed properties: "
-                f"{allowed_values(available, discovery_action='gravity metadata properties \"\"')}",
+                live_metadata_miss(
+                    actual_value(property_name),
+                    noun="enumerable event properties",
+                    source="enumerable metadata",
+                ),
                 field="property_name",
+                next_action="Run `gravity metadata properties \"\"` and retry with a listed enumerable event property.",
             )

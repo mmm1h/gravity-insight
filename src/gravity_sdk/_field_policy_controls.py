@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping, Sequence
 
-from .actionable_error_values import actual_value, allowed_values
+from .actionable_error_values import actual_value, allowed_values, live_metadata_miss
 from ._field_policy_metadata import (
     all_exclusion_dimensions,
     load_view,
@@ -141,9 +141,9 @@ def _validate_filter_item(
         return
     if field_name not in controls:
         raise InputValidationError(
-            f"actual value: {actual_value(field_name)}; allowed fields: "
-            f"{allowed_values(controls, discovery_action=f'gravity insight operations describe {operation_id}')}",
+            live_metadata_miss(actual_value(field_name), noun="filter fields"),
             field="filters[].field",
+            next_action=f"Run `gravity insight operations describe {operation_id}` and retry with a listed filter field.",
         )
     if operator not in operators:
         raise InputValidationError(
@@ -246,9 +246,9 @@ def _validate_filtering(
     unknown = sorted(str(key) for key in value if str(key) not in allowed)
     if unknown:
         raise InputValidationError(
-            f"actual value: {actual_value(unknown)}; allowed fields: "
-            f"{allowed_values(allowed, discovery_action=f'gravity insight operations describe {operation_id}')}",
+            live_metadata_miss(actual_value(unknown), noun="filtering fields"),
             field="filtering",
+            next_action=f"Run `gravity insight operations describe {operation_id}` and retry with listed filtering fields.",
         )
     if any(
         item is None or isinstance(item, (Mapping, list, tuple))
@@ -278,9 +278,9 @@ def _validate_data_list(
                 if key not in controls or is_sensitive_control_key(key)
             )
             raise InputValidationError(
-                f"actual value: {actual_value(invalid)}; allowed fields: "
-                f"{allowed_values(controls, discovery_action=f'gravity insight operations describe {operation_id}')}",
+                live_metadata_miss(actual_value(invalid), noun="data_list fields"),
                 field="data_list[]",
+                next_action=f"Run `gravity insight operations describe {operation_id}` and retry with listed data_list fields.",
             )
         if any(isinstance(item, (Mapping, list, tuple)) for item in row.values()):
             raise InputValidationError(
@@ -304,9 +304,9 @@ def _validate_order_by(
                 else type(item).__name__
             )
             raise InputValidationError(
-                f"actual value: {actual_value(observed)}; "
-                f"allowed fields: {allowed_values(controls, discovery_action=f'gravity insight operations describe {operation_id}')}",
+                live_metadata_miss(actual_value(observed), noun="order fields"),
                 field="order_by[]",
+                next_action=f"Run `gravity insight operations describe {operation_id}` and retry with a listed order field.",
             )
 
 
@@ -374,9 +374,13 @@ def validate_promotion(
             f"gravity run {PROMOTION_METRIC} --input {actual_value(profile)}"
         )
         raise InputValidationError(
-            f"actual value absent from live platform metadata: {actual_value(missing)}; allowed values: "
-            f"{allowed_values(available, discovery_action=discovery_action)}",
+            live_metadata_miss(
+                actual_value(missing),
+                noun="platform fields",
+                source="live platform metadata",
+            ),
             field="query_fields",
+            next_action=f"Run `{discovery_action}` and retry with a listed platform field.",
         )
 
 
@@ -400,9 +404,11 @@ def validate_business(
     if missing:
         discovery_action = f"gravity run {REPORT_BUSINESS_METRIC} --input '{{}}'"
         raise InputValidationError(
-            f"actual value: {actual_value(missing)}; allowed values: "
-            f"{allowed_values(allowed, discovery_action=discovery_action)}",
+            live_metadata_miss(
+                actual_value(missing), noun="business metrics and dimensions"
+            ),
             field="metrics_list/dims_list",
+            next_action=f"Run `{discovery_action}` and retry with listed metrics and dimensions.",
         )
 
 
@@ -498,7 +504,9 @@ def _validate_nonstatic_dimensions(
     if not complete or not requested <= known:
         missing = sorted(requested - known)
         raise InputValidationError(
-            f"actual value for data_dims/relate_dims absent from complete live metadata: {actual_value(missing)}; allowed values: "
-            f"{allowed_values(known, discovery_action='gravity multidim metadata')}",
+            live_metadata_miss(
+                actual_value(missing), noun="data_dims/relate_dims values"
+            ),
             field="data_dims/relate_dims",
+            next_action="Run `gravity multidim metadata` and retry with listed data dimensions.",
         )

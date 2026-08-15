@@ -42,4 +42,20 @@ def allowed_values(
     return rendered
 
 
-__all__ = ["ALTERNATIVE_DISPLAY_LIMIT", "actual_value", "allowed_values"]
+def live_metadata_miss(
+    rendered_value: str, *, noun: str = "values", source: str = "live metadata"
+) -> str:
+    """Describe a metadata miss without copying upstream values into the error."""
+
+    return (
+        f"actual value absent from {source}: {rendered_value}; allowed "
+        f"{noun} are not echoed because errors may enter logs"
+    )
+
+
+__all__ = [
+    "ALTERNATIVE_DISPLAY_LIMIT",
+    "actual_value",
+    "allowed_values",
+    "live_metadata_miss",
+]

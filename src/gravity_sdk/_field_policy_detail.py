@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Mapping
 
-from .actionable_error_values import actual_value, allowed_values
+from .actionable_error_values import actual_value, allowed_values, live_metadata_miss
 from ._field_policy_metadata import (
     load_event_property_rows,
     load_view,
@@ -229,9 +229,9 @@ def _validate_selected_fields(value: Any, selected_fields: set[str]) -> None:
         requested = value if isinstance(value, (list, tuple)) else [value]
         missing = [item for item in requested if not isinstance(item, str) or item not in selected_fields]
         raise InputValidationError(
-            f"actual value absent from live metadata: {actual_value(missing)}; allowed fields: "
-            f"{allowed_values(selected_fields, discovery_action='gravity metadata properties \"\"')}",
+            live_metadata_miss(actual_value(missing), noun="fields"),
             field="fields",
+            next_action="Run `gravity metadata properties \"\"` and retry with listed fields.",
         )
 
 
@@ -284,9 +284,9 @@ def _validate_user_event_items(
         requested = event_list if isinstance(event_list, (list, tuple)) else [event_list]
         missing = [item for item in requested if not isinstance(item, str) or item not in allowed_events]
         raise InputValidationError(
-            f"actual value absent from live metadata: {actual_value(missing)}; allowed events: "
-            f"{allowed_values(allowed_events, discovery_action='gravity metadata events \"\"')}",
+            live_metadata_miss(actual_value(missing), noun="events"),
             field="event_list",
+            next_action="Run `gravity metadata events \"\"` and retry with listed events.",
         )
     validate_detail_query_items(
         inputs.get("query_item_list", ()),
@@ -357,9 +357,9 @@ def _validate_detail_condition(
     field = item.get("field")
     if not isinstance(field, str) or field not in allowed_fields:
         raise InputValidationError(
-            f"actual value absent from metadata: {actual_value(field)}; allowed fields: "
-            f"{allowed_values(allowed_fields, discovery_action='gravity metadata properties \"\"')}",
+            live_metadata_miss(actual_value(field), noun="fields"),
             field=f"{label}[].field",
+            next_action="Run `gravity metadata properties \"\"` and retry with a listed field.",
         )
     field_type = item.get("type")
     if not isinstance(field_type, str) or field_type not in _DETAIL_TYPES:
@@ -398,10 +398,11 @@ def _validate_detail_segment(
     if not isinstance(segment_type, (str, type(None))) or segment_type not in _SEGMENT_TYPES:
         raise InputValidationError(f"actual value: {actual_value(segment_type)}; allowed values: {allowed_values(_SEGMENT_TYPES)}", field=f"{label}[].segment_type")
     if (field_type == "user_segment" or segment_type not in {None, ""}) and field not in segment_ids:
+        segment_discovery = f"gravity analysis metadata --app-id {app_id}"
         raise InputValidationError(
-            f"actual value absent from metadata: {actual_value(field)}; allowed segment ids: "
-            f"{allowed_values(segment_ids, discovery_action=f'gravity analysis metadata --app-id {app_id}')}",
+            live_metadata_miss(actual_value(field), noun="segment ids"),
             field=f"{label}[].field",
+            next_action=f"Run `{segment_discovery}` and retry with a listed segment id.",
         )
     if segment_type == "FIXED_VERSION":
         _validate_detail_segment_version(field, version_id, label, loader)
@@ -423,9 +424,9 @@ def _validate_detail_segment_version(
     if str(version_id) not in available:
         version_discovery = f"gravity run {ANALYSIS_SEGMENT_HISTORY} --input {actual_value({'segment_id': field, 'page': 1, 'page_size': 100})}"
         raise InputValidationError(
-            f"actual value absent from metadata: {actual_value(version_id)}; allowed versions: "
-            f"{allowed_values(available, discovery_action=version_discovery)}",
+            live_metadata_miss(actual_value(version_id), noun="versions"),
             field=f"{label}[].version_id",
+            next_action=f"Run `{version_discovery}` and retry with a listed version id.",
         )
 
 
@@ -441,10 +442,8 @@ def _validate_detail_dimension(
         or len(table) > 256
         or dimension_tables.get(field) != table
     ):
-        expected = dimension_tables.get(field)
         raise InputValidationError(
-            f"actual value absent from live metadata: {actual_value(table)}; allowed "
-            f"dimension table for {actual_value(field)}: {actual_value(expected)}",
+            live_metadata_miss(actual_value(table), noun="dimension tables"),
             field=f"{label}[].dim_using_table_name",
             next_action="Run `gravity metadata properties \"\"` and use the field's listed dimension table.",
         )
@@ -461,9 +460,9 @@ def validate_detail_order(value: Any, allowed_fields: set[str]) -> None:
         require_exact_mapping(item, {"field", "sort", "data_type"}, "analysis order item")
         if item.get("field") not in allowed_fields:
             raise InputValidationError(
-                f"actual value absent from metadata: {actual_value(item.get('field'))}; allowed fields: "
-                f"{allowed_values(allowed_fields, discovery_action='gravity metadata properties \"\"')}",
+                live_metadata_miss(actual_value(item.get("field")), noun="fields"),
                 field="order_by_list[].field",
+                next_action="Run `gravity metadata properties \"\"` and retry with a listed field.",
             )
         _validate_detail_order_controls(item)
 
@@ -523,9 +522,9 @@ def _validate_detail_query_item(
     event_name = item.get("event_name")
     if event_name not in allowed_events:
         raise InputValidationError(
-            f"actual value absent from metadata: {actual_value(event_name)}; allowed events: "
-            f"{allowed_values(allowed_events, discovery_action='gravity metadata events \"\"')}",
+            live_metadata_miss(actual_value(event_name), noun="events"),
             field="query_item_list[].event_name",
+            next_action="Run `gravity metadata events \"\"` and retry with a listed event.",
         )
     validate_optional_label(item.get("event_label"), "event_label")
     cond_logic = item.get("cond_logic", "AND")

@@ -11,7 +11,10 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from gravity_sdk import cli, json_output
+from gravity_sdk._field_policy_detail import _validate_detail_dimension
+from gravity_sdk._field_policy_metadata import select_rows
 from gravity_sdk.census.io import json_bytes
+from gravity_sdk.errors import InputValidationError
 from gravity_sdk.find import RecipeFindBackend
 
 
@@ -48,6 +51,21 @@ class ConsumerOutputSafetyTests(unittest.TestCase):
         [result] = RecipeFindBackend(workspace).search("daily", limit=1)
         self.assertEqual(result["description"], hostile)
         self.assertEqual(result["description_origin"], "caller_workspace")
+
+    def test_live_metadata_values_do_not_enter_sdk_error_text(self) -> None:
+        upstream = "upstream-business-sentinel"
+        with self.assertRaises(InputValidationError) as missing:
+            select_rows(({"name": upstream},), ("caller-missing",), "metrics_list")
+        with self.assertRaises(InputValidationError) as dimension:
+            _validate_detail_dimension(
+                {"dim_using_table_name": "caller-table"},
+                "caller-field",
+                "conditions",
+                {"caller-field": upstream},
+            )
+        for error in (missing.exception, dimension.exception):
+            self.assertNotIn(upstream, str(error))
+            self.assertNotIn(upstream, error.next_action or "")
 
     def test_inventory_is_offline_and_covers_current_authoritative_sets(self) -> None:
         completed = subprocess.run(
