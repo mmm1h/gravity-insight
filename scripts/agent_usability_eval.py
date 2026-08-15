@@ -34,6 +34,11 @@ from agent_usability_governance import (
     ensure_query_allowed,
     security_compliance_score,
 )
+from agent_usability_expectations import (
+    LEDGER_PATH as JOURNEY_LEDGER_PATH,
+    TARGETS_PATH as JOURNEY_TARGETS_PATH,
+    derive_cases,
+)
 
 SCHEMA_VERSION = "gravity.agent-usability-result.v1"
 COMPARE_SCHEMA_VERSION = "gravity.agent-usability-compare.v1"
@@ -74,6 +79,13 @@ ROUTES: dict[str, dict[str, str]] = {
     "metadata_search": {"kind": "metadata", "metadata_kind": "all"},
     "table_lineage": {"kind": "metadata", "metadata_kind": "table_lineage"},
     "material_export": {"kind": "export", "operation_id": "export.material.report.start"},
+    "analysis_default_dictionary": {
+        "kind": "composite", "composite": "analysis_default_dictionary",
+    },
+    "attribution_performance": {
+        "kind": "composite", "composite": "attribution_performance",
+    },
+    "material_asset": {"kind": "material_asset", "selector": "material.asset.fetch"},
 }
 
 CATALOG_INPUTS: dict[str, tuple[str, ...]] = {
@@ -81,7 +93,7 @@ CATALOG_INPUTS: dict[str, tuple[str, ...]] = {
         "event", "funnel", "retention", "property", "scatter", "period_compare",
         "segment_evaluate", "analysis_context", "app_governance", "attribution_settings",
         "user_journey", "order_directory", "order_split_trace", "monetization_detail",
-        "title_package",
+        "title_package", "attribution_performance",
     )
 }
 CATALOG_INPUTS.update({
@@ -218,7 +230,8 @@ def load_cases(split: str, key_path: Path | None) -> tuple[dict[str, Any], list[
     }[split]
     if len(cases) != expected or len({case["case_id"] for case in cases}) != expected:
         raise ValueError("suite case count or case identity is invalid")
-    return manifest, cases
+    cases, expectation_derivation = derive_cases(cases)
+    return {**manifest, "expectation_derivation": expectation_derivation}, cases
 
 
 def _card_value(card: Mapping[str, Any], key: str) -> Any:
@@ -454,8 +467,11 @@ def _evaluator_fingerprint() -> str:
     for path in (
         Path(__file__).resolve(),
         SCRIPT_ROOT / "agent_usability_governance.py",
+        SCRIPT_ROOT / "agent_usability_expectations.py",
+        JOURNEY_TARGETS_PATH,
+        JOURNEY_LEDGER_PATH,
     ):
-        digest.update(path.name.encode("utf-8") + b"\0")
+        digest.update(path.relative_to(ROOT).as_posix().encode("utf-8") + b"\0")
         digest.update(path.read_bytes() + b"\0")
     return digest.hexdigest()
 
@@ -559,6 +575,7 @@ def _run_evaluation_unrecorded(
         "schema_version": SCHEMA_VERSION,
         "suite_version": suite_version,
         "suite_hashes": suite_hashes,
+        "expectation_derivation": manifest["expectation_derivation"],
         "split": split,
         "case_count": len(cases),
         "trials": trials,

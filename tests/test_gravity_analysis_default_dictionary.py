@@ -45,7 +45,7 @@ class _Workspace:
 
 
 class AnalysisDefaultDictionaryTests(unittest.TestCase):
-    def test_core_exposes_registered_keys_and_fails_closed_on_additive_drift(self):
+    def test_core_exposes_registered_keys_and_audits_additive_drift(self):
         transport = _Transport({"api": ["v1"], "cocoscreator": ["v2"]})
         client = GravityInsightClient._from_manifest_for_tests(_manifest(), transport=transport)
         result = analysis_default_dictionary(client, 7)
@@ -58,7 +58,17 @@ class AnalysisDefaultDictionaryTests(unittest.TestCase):
         changed = GravityInsightClient._from_manifest_for_tests(
             _manifest(), transport=_Transport({"api": [], "new_sdk": ["v3"]})
         )
-        self.assertEqual("contract_changed", analysis_default_dictionary(changed, 7)["status"])
+        changed_result = analysis_default_dictionary(changed, 7)
+        self.assertEqual("empty", changed_result["status"])
+        self.assertEqual(
+            {
+                "schema_version": "gravity.response-drift.v1",
+                "direction": "response",
+                "classification": "additive",
+                "fields": [{"path": "/data/new_sdk", "observed_type": "array"}],
+            },
+            changed_result["result_audit"]["response_drift"],
+        )
 
     def test_cli_sdk_plan_and_agent_share_one_fillable_product(self):
         parsed = cli.build_parser().parse_args(["analysis", "defaults", "--app", "main"])

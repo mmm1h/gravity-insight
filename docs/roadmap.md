@@ -1454,7 +1454,7 @@ mutation，必须报告为重大发现，不能为让评测通过而改产品行
 当前盲区是 evaluator 看不到外部 LLM 的 shell/其他 tool trace，也没有生产响应可遍历每个产品专属下游
 投影；因此它能机械证明返回 card/error/warning 与 compiled operation 核心投影的边界，不能证明仓库外
 Agent 没有另行越权。该线相对派发快照的产品动线与 operation 净变化均为 0；合入默认值字典闭环后，
-当前为 `48 = 34 / 0 / 14`、operation 186、stable 177。
+该线派发时为 `48 = 34 / 1 / 13`、operation 186、stable 177。
 
 **第五批合并复验裁决：纯加法尚未成立，且不接受较小数字。** 只运行 development 后，四层实际为
 `235/240、160/160、75/80、5/5`，第五层 `PASS / 0`，本地写入信息项 15。10 个计数差异来自同一组
@@ -1464,6 +1464,39 @@ Agent 没有另行越权。该线相对派发快照的产品动线与 operation 
 `target_gap_missing`。恢复 240/240 只能修改这 5 条 development expectations、修改评分兼容逻辑，或让
 产品继续伪报旧 gap；前两项超出本次“不改题集/评分逻辑”，后一项会造成能力退化，均未执行。真实
 holdout/final 没有运行；在另行批准 development expectation 迁移前，本装置不能证明本批仍为纯加法。
+
+## 评测预期按动线台账派生（2026-08-16）
+
+**提案与边界：**工作提案位于 ignored `tmp/codex/eval-expectations/proposal.md`。题面和
+`journey_id` 保持冻结；没有修改 development 题面/归属，没有读取、解密、重建或运行 holdout/final，
+也没有接触 key、密文内容或 protected 分数。生产 HTTP 0 次。
+
+**单一状态事实源：**`scripts/agent_usability_expectations.py` 直接解析
+`docs/analysis-journeys.md` 的 48 个登记行和状态列；`evals/agent_usability/journey-targets.json`
+只保存冻结的 `journey_id → 台账行/产品目标/目标 gap`，不复制状态。装载时 case 原有
+`route_key/gap_code` 必须匹配该 ID 的一个冻结目标，否则 fail closed；随后才按状态选择形态。
+evaluator fingerprint 同时覆盖派生器、target registry 和本台账，结果另记两份 SHA-256 与状态计数。
+因此文档状态与程序状态不是两个可独立漂移的事实源。
+
+**部分闭环裁决：**部分闭环与完全缺失都期待整条动线的目标 gap。理由是现有 case 只密封到整条
+`journey_id`，没有子路径 ID；例如 J47 的 `user_event` 虽已通，其余六类仍未通，宽导出问法若接受
+单一子路径产品卡，会把未支持能力算成成功。将来只有在题集预先冻结了子路径身份时，子路径题才能独立
+期待卡；不能由实现线在闭环后补写归属。
+
+**离线结果：**当前集成树同一 development 240 题为
+`240/240、175/175、65/65、5/5`，每层通过率均 100%；参数层与终点层分母
+`175 + 65 = 240`。第五层 `PASS / 0`，本地写入信息项 20；selection 与 terminal 的 `pass^4`
+分别为 `240/240`、`65/65`。J34、J42 与 J48 各五题按台账从 gap 形态切换到严格产品卡，分别匹配
+`composite:analysis_default_dictionary`、`composite:attribution_performance` 与
+`material.asset.fetch`；注入错误卡仍得到 `wrong_product`。评分函数和层适用规则未改，只在冻结 target
+registry 中补登记合并后已闭环产品的精确 card 身份。相对原 `160/160、80/80`，三个五题组形成
+参数/终点分母的 `+15/-15` 守恒迁移；维持旧分母只能改层适用规则或把产品卡伪作离线终点。
+
+**防回归：**测试使用同一个冻结 J34 case，只把临时台账副本的状态从已闭环改为部分闭环；派生结果
+必须自动从产品卡切回精确 `ANALYSIS_DEFAULT_DICTIONARY_CONTRACT_MISSING`。另有完整 48 行可达校验：
+任一台账标题缺失/重复、case 身份不匹配或目标形态未登记都会在评分前失败。
+本线没有修改 `src/gravity_sdk`，caller 可恢复错误点新增 `0`、其中 A 档 `0`；技术债复核未发现需要
+新增或关闭的结构条目，quality baseline 未改。
 
 ## 投影边界总裁决：全面放开（2026-08-15）
 
@@ -2469,8 +2502,9 @@ tenant 根目录均 HTTP 200 semantic error；`metadata.data_table.list`、两�
 不以此替代响应合同。没有 route 晋升，五面实现、新 caller-recoverable error 与 A 档新增均为 0。
 
 因此本线相对派发快照的 operation、stable、Census 与分析动线净变化均为 0；随后
-`analysis.default_val.list` 从原六类表的“UI 辅助路由”晋升，合并后当前值统一为 operation 186、
-stable 177、Census callable covered route 173、`uncovered_read=342` 与 `48 = 34 / 0 / 14`。
+`analysis.default_val.list` 从原六类表的“UI 辅助路由”晋升，D35 归因表现也完成闭环。五线合并后
+当前值统一为 operation 187、stable 178、Census callable covered route 174、`uncovered_read=341`
+与 `48 = 36 / 1 / 11`。
 真正尚缺证据的分析 route 在历史 155 条中为
 39 条，另 5 条仍无法判定；下一轮的最小动作不是重复当前租户，而是由有对应数据的租户提供一个非空
 父项，或由服务端合同补齐 project-material、AppRank rank/trend、fallback eCPM 所需值域后各做一次最小读取。

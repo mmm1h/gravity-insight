@@ -140,6 +140,16 @@ holdout/all/final，protected query ledger 查询数仍为 0，生产 HTTP 0 次
 逻辑、不让产品伪报旧 gap”的合并约束下，`240/240、160/160、80/80、5/5` 的纯加法结论尚未成立；
 本次未运行真实 holdout 或 final。
 
+2026-08-16 评测预期改为按本表状态派生：题面和 `journey_id` 仍由各 split 冻结，公开
+`evals/agent_usability/journey-targets.json` 只登记每个 ID 对应的本表精确行、产品目标和目标 gap；
+evaluator 直接解析本表状态列，不复制第二份状态台账。已闭环期待严格产品卡，完全缺失期待严格目标 gap；
+部分闭环也期待目标 gap，因为现有 case 的目标身份是整条动线、没有密封的子路径身份，接受一个子路径卡会把
+未支持的兄弟路径伪装成闭环。测试会把同一冻结 J34 case 的本表状态临时改成部分闭环，验证预期自动从
+`composite:analysis_default_dictionary` 切回其目标 gap；错误产品卡仍记 `wrong_product`。本次只跑
+development，未运行 protected split，生产 HTTP 0 次。当前集成树 development 实测为
+`240/240、175/175、65/65、5/5`，第五层 `PASS / 0`；参数与终点分母 `175 + 65 = 240`，
+selection/terminal 的 `pass^4` 分别为 `240/240`、`65/65`。
+
 2026-08-15 的失败与降级路径审计自身不新增动线，在当时快照上的净变化为
 `48 + 0 = 48`、`32 / 0 / 16 + 0 / 0 / 0`；最终计数只因上述 setting route 重复记账消除而变为
 `47 = 32 / 0 / 15`。该审计横切核对了所有现有 composite、Plan 和 direct SDK/CLI
@@ -260,5 +270,5 @@ writer 拒绝非有限数字；operation、投影、请求、错误分类和退�
 | 按表名或 App 查询数据表当前 schema、字段和版本（F41） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `CURRENT_TABLE_SCHEMA_PARENT_MISSING`。list 为空且无可信表名/App 来源；detail/version 父链、`table_id` 类型和“当前版本”语义未证实。 |
 | 下钻非 Bytedance 平台的计划、组和创意表现（D33/D34） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `NON_BYTEDANCE_HIERARCHY_PARENT_MISSING`。Bilibili advertiser 与 Huya account 未产出父候选；后续 ID 链、report 父字段、分页和非空 schema 未成立。 |
 | 深查各平台专属素材与创意（D32） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `PLATFORM_SPECIFIC_CREATIVE_CONTRACT_MISSING`。除 Bytedance 外普遍没有最小非空响应合同；common 素材目录不能证明平台专属字段。Bytedance 标题包已单列为独立动线闭环，**但那是 D32 之下的一个具体产品，不是这条动线的进展**；本条仍是数据证据阻塞。 |
-| 导出事件、分群、用户、付费或变现分析结果 | 部分闭环 | 有 / 有 / 设计不适用 / 有 | 1 / 2（用户事件中英首问） | `user_event` 已有单日非空 create→poll→download、7 行完整 XLSX shape，并经 CLI/SDK/Agent 可调用。其余六个服务端导出只能复用任务协议，仍各缺自己的成功文件 shape；`stream_event` 前端不产生 server request，记为 `not_applicable` 而非缺口。精确请求其他六类时仍返回 `ANALYSIS_EXPORT_FILE_CONTRACT_MISSING`。 |
+| 导出事件、分群、用户、付费或变现分析结果 | 部分闭环 | 部分 / 部分 / 设计不适用 / 有（整条动线的目标 gap） | 1 / 2（用户事件子路径中英首问） | `user_event` 已有单日非空 create→poll→download、7 行完整 XLSX shape，并经 CLI/SDK/Agent 可调用。其余六个服务端导出只能复用任务协议，仍各缺自己的成功文件 shape；`stream_event` 前端不产生 server request，记为 `not_applicable` 而非缺口。冻结评测 case 只标识整条导出动线、没有子路径身份，所以宽问法继续期待 `ANALYSIS_EXPORT_FILE_CONTRACT_MISSING`。 |
 | 按精确平台素材引用预览或下载图片/视频（Issue 19） | 已闭环 | 有 / 有 / 设计不适用 / 有 | 1 / 2（中英首问） | `material.asset.fetch` 不接收 URL：一次调用先重读 `local` 或 `bytedance_project` stable source，再按精确引用从唯一行取 `file_url`/`thumbnail_url` 并完整原子下载。host/path 不枚举、不限制，跨 host redirect 跟随；本地与 Bytedance 的 JPEG/MP4 证据独立成立。HTTP terminal 状态统一归 upstream/3，不创造素材失效 taxonomy；完整文件由显式 output/destination 触发。 |

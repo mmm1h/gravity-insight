@@ -13,11 +13,11 @@ manifest 与 `gravity agent <query>` 为准；完整路由账本见
 | stable operation 产品面交叉 | 88 已覆盖 / 82 不应产品化 / 8 原快照待产品化；默认值字典与 D35 直接闭环 |
 | 推广 / 素材 stable 原子读取 | 64 / 24 |
 | Census 路由 | 987，全部有明确归类 |
-| Census 中 callable covered route | 173 |
-| 尚未覆盖的 read route | 342 |
+| Census 中 callable covered route | 174 |
+| 尚未覆盖的 read route | 341 |
 | 明确保留的推广 / 素材 write reservation | 110 / 49 |
 
-这些数字不等于“还有 342 个接口可以直接开发”。推广与素材共有 188 个 catalog-only
+这些数字不等于“还有 341 个接口可以直接开发”。推广与素材共有 188 个 catalog-only
 draft，但当前没有一个具有成功 probe；它们可用于说明缺口和准备最小探测，不能生成执行
 argv，也不能进入 stable manifest。
 
@@ -46,8 +46,9 @@ manifest 和既有合同证据。阶段一不发生产请求，互斥分类为�
 
 这张六类表冻结的是派发时的 343 条 `uncovered_read` 快照。随后晋升的
 `analysis.default_val.list` 在该表中原列为“UI 辅助路由”；晋升后它从 `uncovered_read` 移入
-callable covered。因此当前分母可复算为 `342 - 188 = 154`，对应六类为
-`18 / 88 / 4 / 0 / 39 / 5 = 154`，其余五类不变。上表仍保留 155 条逐路由复核的历史取证总账，
+callable covered；D35 随后也从“有分析价值、但数据/证据阻塞”闭环。因此当前分母可复算为
+`341 - 188 = 153`，对应六类为 `18 / 88 / 4 / 0 / 38 / 5 = 153`。上表仍保留 155 条逐路由
+复核的历史取证总账，
 不把事后的晋升倒写成当时遗漏。
 
 分母没有快照漂移：343 条 `uncovered_read` 中，draft 目录有 148 条 promotion 与 40 条 material
@@ -64,7 +65,7 @@ Census 对同一 path 仍为 UNKNOWN；按唯一 path 排除，未重复计数�
 
 这次语义复核自身不改 Census 的机器 route status，也不把 UI route 包装成产品；其派发快照为
 operation 185、stable 176、callable covered route 172、`uncovered_read=343`。合入随后完成的默认值字典
-晋升后，当前值统一为 operation 186、stable 177、callable covered route 173、`uncovered_read=342`。
+与 D35 后，当前值统一为 operation 187、stable 178、callable covered route 174、`uncovered_read=341`。
 现在可直接回答真正缺口：
 在这 155 条中有分析价值但尚无证据的路由是 39 条；另有 5 条因 method、请求/响应或服务端语义不足
 仍无法判定。下一轮只有在租户数据或服务端合同证据改变后才重启这 18 条，不重复当前租户的空探测。

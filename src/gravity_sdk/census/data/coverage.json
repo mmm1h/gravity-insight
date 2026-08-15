@@ -5,15 +5,15 @@
     "accounted_experimental": 6,
     "accounted_export_candidate": 22,
     "accounted_permission_unavailable": 1,
-    "accounted_read_candidate": 312,
+    "accounted_read_candidate": 311,
     "accounted_unsupported": 58,
-    "covered_executable": 173
+    "covered_executable": 174
   },
   "callability_summary": {
-    "candidate": 334,
+    "candidate": 333,
     "catalog_only": 8,
     "contract_only": 414,
-    "executable": 173,
+    "executable": 174,
     "unsupported": 58
   },
   "classification_policy": {
@@ -856,9 +856,9 @@
     }
   ],
   "family_summary": {
-    "coverage_ratio": 0.233918,
+    "coverage_ratio": 0.234604,
     "families": 45,
-    "uncovered_read_routes": 342,
+    "uncovered_read_routes": 341,
     "uncovered_read_routes_with_family": 80
   },
   "manifest_reconciliation": {
@@ -1315,6 +1315,14 @@
         "method": "GET",
         "operation_id": "attribution.attr_impress_click.list",
         "path": "/turbo_engine/api/v1/user/attr_impress_click/list/",
+        "similar_frontend_routes": []
+      },
+      {
+        "category": "newly_covered_from_previously_unfetched_chunk",
+        "manifest_file": "other.json",
+        "method": "POST",
+        "operation_id": "attribution.attribution.query",
+        "path": "/report/api/v3/adreport/attribution/",
         "similar_frontend_routes": []
       },
       {
@@ -2292,20 +2300,20 @@
       }
     ],
     "previously_missing_breakdown": {
-      "a_previously_unfetched_chunk": 173,
+      "a_previously_unfetched_chunk": 174,
       "b_normalization_false_gap_fixed": 0,
       "c_manifest_route_absent_from_frontend": 4
     },
-    "stable_operations": 177,
+    "stable_operations": 178,
     "summary": {
       "manifest_route_absent_from_frontend": 4,
-      "newly_covered_from_previously_unfetched_chunk": 173
+      "newly_covered_from_previously_unfetched_chunk": 174
     }
   },
   "manifest_summary": {
     "manifest_files": 11,
-    "operations": 186,
-    "stable_operations": 177
+    "operations": 187,
+    "stable_operations": 178
   },
   "module_summary": [
     {
@@ -2351,11 +2359,11 @@
       "uncovered_read": 29
     },
     {
-      "covered": 5,
+      "covered": 6,
       "module": "归因",
       "total": 24,
-      "uncovered": 19,
-      "uncovered_read": 5
+      "uncovered": 18,
+      "uncovered_read": 4
     },
     {
       "covered": 12,
@@ -4379,7 +4387,7 @@
   "read_cost_summary": {
     "中": 73,
     "低": 144,
-    "高": 125
+    "高": 124
   },
   "reservation_summary": {
     "blocked_write_operations": 414,
@@ -12418,15 +12426,15 @@
     },
     {
       "business_module": "归因",
-      "callability": "candidate",
+      "callability": "executable",
       "callers": [
         "v"
       ],
       "contract_family": null,
       "contract_family_alternates": [],
-      "cost_confidence": "medium",
-      "cost_reason": "dynamic path or complex query/report semantics",
-      "estimated_implementation_cost": "高",
+      "cost_confidence": null,
+      "cost_reason": null,
+      "estimated_implementation_cost": null,
       "first_occurrence": {
         "column": 8311,
         "file": "raw/web.gravity-engine.com/assets/Measurement-BV1Ulzee.js",
@@ -12434,8 +12442,16 @@
         "offset": 8310,
         "url": "https://web.gravity-engine.com/assets/Measurement-BV1Ulzee.js"
       },
-      "manifest_match_kind": "none",
-      "manifest_operations": [],
+      "manifest_match_kind": "exact_stable",
+      "manifest_operations": [
+        {
+          "method": "POST",
+          "operation_id": "attribution.attribution.query",
+          "path": "/report/api/v3/adreport/attribution/",
+          "source_type": "manifest",
+          "stability": "stable"
+        }
+      ],
       "method": "POST",
       "method_certainty": "high",
       "method_evidence": [
@@ -12448,16 +12464,16 @@
       "raw_paths": [
         "/adreport/attribution/"
       ],
-      "route_accounting": "accounted_read_candidate",
+      "route_accounting": "covered_executable",
       "route_classification": null,
       "route_evidence_kinds": [
         "request_call_candidate"
       ],
-      "semantic_confidence": "medium",
+      "semantic_confidence": "certain",
       "semantic_evidence": [
-        "read_action_path_token"
+        "stable_manifest_exact"
       ],
-      "status": "uncovered_read",
+      "status": "covered",
       "ui_texts": [
         "暂无数据",
         "激活数"
@@ -59878,14 +59894,14 @@
   "summary": {
     "accounted": 987,
     "accounting_complete": true,
-    "callable_covered": 173,
-    "covered": 173,
+    "callable_covered": 174,
+    "covered": 174,
     "total_routes": 987,
     "unaccounted": 0,
     "unclassified": 0,
     "uncovered_auth_or_proxy": 30,
     "uncovered_export": 22,
-    "uncovered_read": 342,
+    "uncovered_read": 341,
     "uncovered_write": 414,
     "unsupported_non_api": 6
   }

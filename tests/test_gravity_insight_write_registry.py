@@ -168,10 +168,10 @@ class GravityInsightWriteRegistryTests(unittest.TestCase):
         # 产品参数、分页和嵌套配置投影复验后升至 170；容量历史完成当前
         # 公司父级、分页和嵌套响应投影复验后升至 171；角色详情完成角色
         # 列表父级、固定产品参数和嵌套响应投影复验后升至 172；默认值
-        # 字典经多 App 非空复验后升至 173。
+        # 字典经多 App 非空复验后升至 173；D35 归因表现闭环后升至 174。
         # 本测试的保证不是「这个数不变」，而是「它远小于 accounted，且
         # blocked_write 绝不被计入可调用」——即下面两条 414 断言。
-        self.assertEqual(173, rebuilt["summary"]["callable_covered"])
+        self.assertEqual(174, rebuilt["summary"]["callable_covered"])
         self.assertEqual(414, rebuilt["accounting_summary"]["accounted_blocked_write"])
         self.assertEqual(414, rebuilt["callability_summary"]["contract_only"])
 
