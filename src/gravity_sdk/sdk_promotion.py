@@ -125,5 +125,29 @@ class PromotionSdkMixin:
             max_items=max_items,
         )
 
+    def advertiser_profile(
+        self,
+        start: str,
+        end: str,
+        *,
+        max_pages: int = 1_000,
+        max_items: int = 100_000,
+    ) -> dict[str, Any]:
+        """Read the complete governed Bytedance advertiser account directory."""
+
+        from .advertiser_profile import advertiser_profile
+        from .composite_batch import validate_composite_bounds
+        from .promotion_performance_request import normalize_promotion_window
+
+        normalize_promotion_window(start, end)
+        validate_composite_bounds(max_pages, max_items, minimum_items=1)
+        return advertiser_profile(
+            self.insight,
+            start,
+            end,
+            max_pages=max_pages,
+            max_items=max_items,
+        )
+
 
 __all__ = ["PromotionSdkMixin"]

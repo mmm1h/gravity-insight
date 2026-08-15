@@ -39,19 +39,18 @@ ignored `tmp/codex/stable-coverage-gap/crossref.md`，权威结论落在本页�
 | --- | --- | --- | --- |
 | `report.company_amount.query` | 公司每日广告、点击、成本、事件、画像、存储、追踪和素材传输用量如何变化；有非空且分页证据 | 新增公司资源用量趋势；`1/1/1/1/1` | `user_count` 保持省略；本轮实现 |
 | `promotion.bilibili.account.list` | B 站账户/产品曝光、点击、CTR、CPC、CPM 和资金消耗如何；有非空且分页证据 | 新增独立 B 站账户投放表现；`1/1/1/1/1` | `advertiser_name` 保持省略；本轮实现 |
-| `promotion.bytedance.advertiser_performance.list` | 巨量广告主消耗、余额、预算模式和状态如何；有非空、无分页复验 | 补推广表现独立 profile；`1/1/1/1/1` | `advertiser_name`、`advertiser_remark`、`company`、`delay`、`operator_id`、`operator_name`、`project_list` 保持省略；待分页约束 |
+| `promotion.bytedance.advertiser_performance.list` | 巨量广告主消耗、余额、预算模式和状态如何；页码协议与实际翻页均已验证 | 新增独立 advertiser profile，不并入明确排除广告主目录的跨平台推广表现；`1/1/1/1/1` | `page_size=1` 的页 1/页 2 共 2 次生产请求，均 HTTP 200 / `success`，响应页码分别为 1/2、各 1 行且安全投影不同，裁决 `pagination.verified=true`；失败 0、重试 0。`advertiser_name`、`advertiser_remark`、`company`、`delay`、`operator_id`、`operator_name`、`project_list` 保持省略，未知字段继续 fail-closed。 |
 | `promotion.bytedance.custom_audience.list` | 可投人群覆盖数、上传数、来源和状态如何；2026-08-14 最小非空复验与旧样本 fingerprint 完全一致 | 自定义人群覆盖与状态已闭环；`1/1/1/1/1` | `cid`、`company`、`create_user_id`、`create_user_name`、`tag`、`update_user_id`、`update_user_name` 保持省略；确定实现 |
 | `material.bytedance_asset_text_title_package.list` | 普通标题包的标题数、计划数、历史成本和 CTR 如何；旧非空样本与 stable v1 的字段/类型投影同形 | 已补 D32 `title_package` family；与标准版共享 `1/1/1/1/1` | `title_list`、`create_user_id`、`create_user_name`、`update_user_id` 保持省略；已实现，`package_kind=regular` |
 | `material.bytedance_std_asset_text_title_package.list` | 标准标题包的标题数、计划数、历史成本和 CTR 如何；旧非空样本与 stable v1 的字段/类型投影同形 | 已补 D32 `title_package` family；与普通版共享 `1/1/1/1/1` | 同上；已实现，`package_kind=standard` |
 | `material.bytedance.promotion_material.list` | 精确广告窗口内素材的消耗、曝光、点击、CTR、CPC、CPM、尺寸和时长如何；目标响应为空 | 补 D32；`1/1/1/1/1`，未知引用路径 3 次 | `cover_source`、`labels`、`material_info`、`organization_tags`、`poster_url`、`signature`、`star_author_id`、`url` 保持省略；等非空证据 |
 | `analysis.segment.user_detail.list` | 精确分群有哪些成员及其时间、渠道、版本和归因属性；无不可变非空样本 | 补分群详情；`1/1/1/1/1` | **已裁决不批准**，保持 reservation（理由见下方「对照裁决」）；不再计入待实现 |
 
-本轮只实现 `report.company_amount.query`：已有成功非空与分页证据，无 App、日期或父引用输入，
-稳定投影已排除 `user_count`，可作为独立的“查看公司资源用量趋势”一次完整分页闭环。Core、CLI
+本轮在 `report.company_amount.query` 已闭环的基础上继续实现 advertiser profile。公司用量的 Core、CLI
 `reports usage`、SDK `company_usage()`、Plan `company_usage` composite 与 Agent
 `composite:company_usage` 五面共用 `gravity-insight.company-usage.v1`；已知输入 1 次、未知能力
 2 次由 `gravity.agent-call-bound.v1` 声明。Plan 通过 Report family router 接入，
-`plan_adapters.py` 净增长 0。本轮 0 次生产请求，完全复用不可变 Evidence，未触发 probe 读语义闸门。
+Advertiser profile 以独立 Core / CLI / SDK / Plan / Agent 卡接入；`plan_adapters.py` 只追加新名称和路由分支。分页复验共 2 次生产请求，失败 0、重试 0；新值无关 evidence 记录页码回显和跨页差异，不保存广告主行值。
 
 **Bilibili account 裁决：**选择独立动线，不扩展 Promotion Performance。后者对既有平台继续强制
 workspace App、日期窗口、平台和物理指标绑定，调用方保证不变；Bilibili account 只有请求
@@ -63,8 +62,9 @@ workspace App、日期窗口、平台和物理指标绑定，调用方保证不�
 1 次、未知能力 2 次。`advertiser_name` 继续省略，未观察到其他用户级投影字段；本轮完全复用
 不可变 Evidence，生产请求 0 次。
 
-其余 6 条不在本轮实现：Bytedance advertiser performance 同现有推广表现语义重叠但请求维度
-不同；custom audience 需要新动线，两类 title package 应补进 D32；
+其余候选中，Bilibili account 与既有推广表现请求维度不同；Bytedance advertiser performance
+已在本轮验证实际翻页并以独立 advertiser profile 闭环；custom audience 已以独立动线闭环，
+两类 title package 已补进 D32；
 promotion material 的目标响应为空；segment member 明细还涉及 `ClientID`、`device_info`、
 `re_attribute_info` 与动态 `fields` 的用户级投影，本单元无批准权。它们保持显式产品缺口，不能因
 stable 或 raw/legacy 入口而算作闭环。

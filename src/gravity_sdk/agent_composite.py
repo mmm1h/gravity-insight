@@ -25,6 +25,7 @@ _STRICT_COMPOSITES = frozenset(
         "saved_analysis",
         "analysis_template",
         "segment_snapshot",
+        "advertiser_profile",
     }
 )
 

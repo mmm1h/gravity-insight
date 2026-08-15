@@ -5,8 +5,12 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-
-REPORT_PRODUCTS = frozenset({"business_pulse", "company_usage", "custom_audience"})
+REPORT_PRODUCTS = frozenset({
+    "advertiser_profile",
+    "business_pulse",
+    "company_usage",
+    "custom_audience",
+})
 
 
 def report_product_query(name: str, query: str) -> bool:
@@ -14,13 +18,19 @@ def report_product_query(name: str, query: str) -> bool:
         from .agent_business_pulse import business_pulse_query
 
         return business_pulse_query(query)
+    if name == "advertiser_profile":
+        from .agent_advertiser_profile import advertiser_profile_query
+
+        return advertiser_profile_query(query)
     if name == "company_usage":
         from .agent_company_usage import company_usage_query
 
         return company_usage_query(query)
-    from .agent_custom_audience import custom_audience_query
+    if name == "custom_audience":
+        from .agent_custom_audience import custom_audience_query
 
-    return custom_audience_query(query)
+        return custom_audience_query(query)
+    raise ValueError(f"unknown report product: {name}")
 
 
 def report_product_plan_request(
@@ -30,13 +40,19 @@ def report_product_plan_request(
         from .agent_business_pulse import business_pulse_plan_request
 
         return business_pulse_plan_request(card)
+    if name == "advertiser_profile":
+        from .agent_advertiser_profile import advertiser_profile_plan_request
+
+        return advertiser_profile_plan_request(card)
     if name == "company_usage":
         from .agent_company_usage import company_usage_plan_request
 
         return company_usage_plan_request(card)
-    from .agent_custom_audience import custom_audience_plan_request
+    if name == "custom_audience":
+        from .agent_custom_audience import custom_audience_plan_request
 
-    return custom_audience_plan_request(card)
+        return custom_audience_plan_request(card)
+    raise ValueError(f"unknown report product: {name}")
 
 
 __all__ = [

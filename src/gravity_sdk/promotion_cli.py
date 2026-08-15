@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from . import runtime
+from . import promotion_product_cli as product_cli
 from .cli_limits import validate_date_pair
 from .domains import (
     PROMOTION_EQUALS_OPERATOR,
@@ -82,29 +83,12 @@ def add_promotion_commands(
         "--output", type=_output_file,
         help="Write the complete JSON result to a local file.",
     )
-    audiences = subcommands.add_parser(
-        "custom-audiences",
-        help="Read custom-audience coverage, uploads, sources, and status.",
+    product_cli.add_product_commands(
+        subcommands,
+        concurrency_parser=concurrency_parser,
+        positive_int=positive_int,
+        output_file=_output_file,
     )
-    audiences.add_argument("--max-pages", type=positive_int, default=1_000)
-    audiences.add_argument("--max-items", type=positive_int, default=100_000)
-    bilibili_account = subcommands.add_parser(
-        "bilibili-account-performance",
-        help="Read Bilibili account and product delivery metrics.",
-    )
-    bilibili_account.add_argument("--start", required=True)
-    bilibili_account.add_argument("--end", required=True)
-    bilibili_account.add_argument(
-        "--concurrency", type=concurrency_parser, default=6,
-        help="Bounded page workers; Plan execution fixes this to one.",
-    )
-    bilibili_account.add_argument("--max-pages", type=positive_int, default=1_000)
-    bilibili_account.add_argument("--max-items", type=positive_int, default=100_000)
-    bilibili_account.add_argument(
-        "--output", type=_output_file,
-        help="Write the complete JSON result to a local file.",
-    )
-    bilibili_account.set_defaults(result_output_fail_closed=True)
 
 
 def add_query_shortcuts(parser: Any) -> None:
@@ -129,10 +113,8 @@ def dispatch_promotion_command(
 
     if args.promotion_command == "performance":
         return _performance(args)
-    if args.promotion_command == "custom-audiences":
-        return _custom_audiences(args)
-    if args.promotion_command == "bilibili-account-performance":
-        return _bilibili_account_performance(args)
+    if args.promotion_command in product_cli.PRODUCT_COMMANDS:
+        return product_cli.dispatch_product_command(args, runtime.build_client)
     if args.promotion_command == "platforms":
         client = runtime.build_client()
         available = runtime.operation_ids(client.operations())
@@ -420,39 +402,6 @@ def _performance(args: Any) -> dict[str, Any]:
         args.end,
         platforms=platforms,
         metrics=metrics,
-        max_workers=args.concurrency,
-        max_pages=args.max_pages,
-        max_items=args.max_items,
-    )
-
-
-def _custom_audiences(args: Any) -> dict[str, Any]:
-    from .custom_audience import custom_audiences
-
-    return custom_audiences(
-        runtime.build_client(),
-        max_pages=args.max_pages,
-        max_items=args.max_items,
-    )
-
-
-def _bilibili_account_performance(args: Any) -> dict[str, Any]:
-    from .bilibili_account_performance import (
-        bilibili_account_performance,
-        validate_bilibili_account_request,
-    )
-
-    validate_bilibili_account_request(
-        args.start,
-        args.end,
-        max_workers=args.concurrency,
-        max_pages=args.max_pages,
-        max_items=args.max_items,
-    )
-    return bilibili_account_performance(
-        runtime.build_client(),
-        args.start,
-        args.end,
         max_workers=args.concurrency,
         max_pages=args.max_pages,
         max_items=args.max_items,

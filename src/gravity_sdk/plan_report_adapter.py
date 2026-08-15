@@ -5,8 +5,9 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from .agent_company_usage import COMPANY_USAGE_NAME
+from . import plan_advertiser_profile_adapter as advertiser_plan
 from . import plan_custom_audience_adapter as custom_audience_plan
+from .agent_company_usage import COMPANY_USAGE_NAME
 from .plan import AdapterContext
 from .plan_adapter_support import input_error, validate_selected_fields
 from .plan_pulse_adapter import execute_business_pulse, validate_business_pulse
@@ -14,6 +15,7 @@ from .plan_pulse_adapter import execute_business_pulse, validate_business_pulse
 
 BUSINESS_PULSE_NAME = "business_pulse"
 COMPOSITE_NAMES = frozenset({
+    advertiser_plan.ADVERTISER_PROFILE_NAME,
     BUSINESS_PULSE_NAME,
     COMPANY_USAGE_NAME,
     custom_audience_plan.CUSTOM_AUDIENCE_NAME,
@@ -32,6 +34,11 @@ def validate_report_composite(
 ) -> None:
     if request.get("name") == BUSINESS_PULSE_NAME:
         validate_business_pulse(request, context, workspace, output_fields)
+        return
+    if request.get("name") == advertiser_plan.ADVERTISER_PROFILE_NAME:
+        advertiser_plan.validate_advertiser_profile_plan(
+            request, context, output_fields
+        )
         return
     if request.get("name") == custom_audience_plan.CUSTOM_AUDIENCE_NAME:
         custom_audience_plan.validate_custom_audience_plan(
@@ -52,6 +59,10 @@ def execute_report_composite(
 ) -> Any:
     if request.get("name") == BUSINESS_PULSE_NAME:
         return execute_business_pulse(sdk, request, context)
+    if request.get("name") == advertiser_plan.ADVERTISER_PROFILE_NAME:
+        return advertiser_plan.execute_advertiser_profile_plan(
+            sdk, request, context
+        )
     if request.get("name") == custom_audience_plan.CUSTOM_AUDIENCE_NAME:
         return custom_audience_plan.execute_custom_audience_plan(
             sdk, request, context

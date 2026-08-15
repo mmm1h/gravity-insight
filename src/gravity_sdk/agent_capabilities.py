@@ -20,6 +20,10 @@ from .agent_bilibili_account_performance import (
     BILIBILI_ACCOUNT_PERFORMANCE_CAPABILITY,
     BILIBILI_ACCOUNT_PERFORMANCE_NAME,
 )
+from .agent_advertiser_profile import (
+    ADVERTISER_PROFILE_CAPABILITY,
+    ADVERTISER_PROFILE_NAME,
+)
 from .agent_dashboard import DASHBOARD_ANALYSIS_CAPABILITY
 from .agent_multidim import MULTIDIM_CAPABILITY
 from .agent_material_performance import MATERIAL_PERFORMANCE_CAPABILITY
@@ -173,6 +177,7 @@ _COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
     COMPANY_USAGE_CAPABILITY,
     CUSTOM_AUDIENCE_CAPABILITY,
     BILIBILI_ACCOUNT_PERFORMANCE_CAPABILITY,
+    ADVERTISER_PROFILE_CAPABILITY,
 )
 
 
@@ -441,6 +446,7 @@ def authoritative_capability_cards(
             "saved_analysis",
             "analysis_template",
             "segment_snapshot",
+            ADVERTISER_PROFILE_NAME,
         }
     ]
     return unique_authoritative_cards(
