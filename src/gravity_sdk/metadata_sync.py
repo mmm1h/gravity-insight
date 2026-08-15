@@ -16,7 +16,7 @@ from .domains import (
     ANALYSIS_PAGINATED_OPERATIONS,
     DOMAIN_OPERATIONS,
 )
-from .errors import ContractChangedError, InputValidationError, UpstreamError
+from .errors import ContractChangedError, ErrorCategory, InputValidationError, UpstreamError, exit_code_for_category
 from .find_metadata import search_metadata
 from .cli_limits import metadata_limit, nonnegative_int
 from .metadata_lineage import (
@@ -536,11 +536,7 @@ def _write_catalog_metadata(
 
 
 def _failure_exit_code(failures: Sequence[Mapping[str, Any]]) -> int:
-    priorities = {"caller": 2, "upstream": 3, "local": 4}
-    return max(
-        (priorities.get(str(item.get("category")), 3) for item in failures),
-        default=0,
-    )
+    return max((exit_code_for_category(str(item.get("category")), default=ErrorCategory.UPSTREAM) for item in failures), default=0)
 
 
 def _chunks(values: Sequence[Any], size: int) -> list[Sequence[Any]]:

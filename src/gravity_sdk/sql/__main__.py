@@ -38,6 +38,7 @@ from gravity_sdk.sql.products import (
     run_product_queries,
     verify_all,
 )
+from gravity_sdk.sql.query import sql_error_exit_code
 from gravity_sdk.workspace import WorkspaceError, load_workspace
 
 
@@ -76,7 +77,7 @@ def _missing_products_error(
         "no SQL products are configured; add [products.<name>] to gravity.toml"
     )
     print(f"ERROR: {detail}", file=sys.stderr)
-    return 2
+    return sql_error_exit_code("input")
 
 
 def _configured_products() -> tuple[tuple[str, ...], str | None]:
@@ -226,9 +227,9 @@ def _emit_query_error(
     *,
     category: str,
     code: str,
-    exit_code: int,
     field: str | None = None,
 ) -> int:
+    exit_code = sql_error_exit_code(category)
     print(
         json.dumps(
             {
@@ -246,9 +247,9 @@ def _emit_query_error(
                         if category == "authentication"
                         else
                         "Run `gravity sql products`, correct this request, and retry."
-                        if exit_code == 2
+                        if category == "input"
                         else "Inspect the governed SQL product contract and local state."
-                        if exit_code == 4
+                        if category in {"contract", "local_io"}
                         else "Retry after checking Gravity authentication and availability."
                     ),
                 },
@@ -350,7 +351,7 @@ def _run_status_command(args: argparse.Namespace) -> int:
         )
     except (EvidenceFormatError, WorkspaceError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
-        return 2
+        return sql_error_exit_code("input")
     if args.json:
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
         return 0
@@ -370,10 +371,10 @@ def _run_preflight_command(args: argparse.Namespace) -> int:
         )
     except (OSError, UnicodeEncodeError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
-        return 4
+        return sql_error_exit_code("local_io")
     except (EvidenceFormatError, ValueError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
-        return 2
+        return sql_error_exit_code("input")
     if args.json:
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
         return 0
@@ -403,10 +404,10 @@ def _run_verify_command(args: argparse.Namespace) -> int:
         return 0
     except (OSError, UnicodeEncodeError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
-        return 4
+        return sql_error_exit_code("local_io")
     except (GravityAuthError, EvidenceFormatError, RuntimeError, ValueError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
-        return 2
+        return sql_error_exit_code("input")
 
 
 def _run_query_command(
@@ -432,21 +433,18 @@ def _run_query_command(
             category="input",
             code=exc.code,
             field=exc.field,
-            exit_code=2,
         )
     except GravityAuthError:
         return _emit_query_error(
             "Gravity SQL credentials are unavailable",
             category="authentication",
             code="SQL_PRODUCT_CREDENTIALS_UNAVAILABLE",
-            exit_code=2,
         )
     except OSError:
         return _emit_query_error(
             "SQL query input or local state could not be read",
             category="local_io",
             code="SQL_PRODUCT_LOCAL_IO",
-            exit_code=4,
             field="input",
         )
     except EvidenceFormatError:
@@ -454,28 +452,24 @@ def _run_query_command(
             "SQL product or Evidence violated its local contract",
             category="contract",
             code="SQL_PRODUCT_CONTRACT_VIOLATION",
-            exit_code=4,
         )
     except ValueError:
         return _emit_query_error(
             "SQL query input is invalid; run `gravity sql products` for the input contract",
             category="input",
             code="SQL_PRODUCT_INPUT_INVALID",
-            exit_code=2,
         )
     except TypeError:
         return _emit_query_error(
             "SQL query result violated its machine-output contract",
             category="contract",
             code="SQL_PRODUCT_OUTPUT_CONTRACT_INVALID",
-            exit_code=4,
         )
     except RuntimeError:
         return _emit_query_error(
             "Gravity SQL query failed",
             category="runtime",
             code="SQL_PRODUCT_RUNTIME_FAILED",
-            exit_code=3,
         )
 
 
@@ -512,7 +506,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.error(
         "Choose --dry-run, products, status, evidence-preflight, verify, query, or credentials."
     )
-    return 2
+    return sql_error_exit_code("input")
 
 
 def _client() -> GravityClient:

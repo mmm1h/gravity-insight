@@ -14,6 +14,7 @@ from .io import json_bytes, read_json, write_json
 from .parser import parse_snapshot
 
 from gravity_sdk.paths import CONTRACT_ROOT, MANIFEST_ROOT, PROJECT_ROOT, TMP_ROOT
+from gravity_sdk.errors import ErrorCategory, exit_code_for_category
 
 
 REPO_ROOT = PROJECT_ROOT
@@ -33,6 +34,9 @@ DEFAULT_DRAFTS = DEFAULT_CONTRACTS / "drafts"
 DEFAULT_BATCH_RESULTS = TMP_ROOT / "codex" / "gi-batch-probe" / "final-results.json"
 DEFAULT_RESERVATIONS = DEFAULT_CONTRACTS / "reservations"
 DEFAULT_ROUTE_REGISTRY = DEFAULT_CONTRACTS / "routes" / "registry.json"
+_CALLER_EXIT = exit_code_for_category(ErrorCategory.CALLER)
+_UPSTREAM_EXIT = exit_code_for_category(ErrorCategory.UPSTREAM)
+_LOCAL_EXIT = exit_code_for_category(ErrorCategory.LOCAL)
 
 
 def _path(value: str) -> Path:
@@ -169,7 +173,7 @@ def run(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
             snapshot_path=args.output,
             probe_manifests=not args.no_manifest_probes,
         )
-        return result["summary"], 3 if args.require_complete and not result["summary"]["complete"] else 0
+        return result["summary"], _UPSTREAM_EXIT if args.require_complete and not result["summary"]["complete"] else 0
     if args.command == "parse":
         result = parse_snapshot(args.snapshot, args.raw_dir, args.output)
         return result["summary"], 0
@@ -217,8 +221,8 @@ def run(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         incomplete = not bool(result.get("source", {}).get("bundle_complete", False))
         unaccounted = int(result.get("summary", {}).get("unaccounted", 0))
         if args.require_accounted and unaccounted:
-            return result["summary"], 4
-        return result["summary"], 3 if args.require_complete and incomplete else 0
+            return result["summary"], _LOCAL_EXIT
+        return result["summary"], _UPSTREAM_EXIT if args.require_complete and incomplete else 0
     if args.command == "diff":
         result = diff_files(args.old, args.new)
         if args.output:
@@ -244,7 +248,7 @@ def run(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         if args.overlay_output:
             write_json(args.overlay_output, overlay.snapshot())
         incomplete = not bool(result.get("census_complete"))
-        return result, 3 if args.require_complete and incomplete else 0
+        return result, _UPSTREAM_EXIT if args.require_complete and incomplete else 0
     if args.command == "check-upstream":
         result = check_upstream(args.site, read_json(args.baseline), timeout=args.timeout)
         if args.output:
@@ -263,9 +267,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         result, exit_code = run(args)
     except (OSError, UnicodeEncodeError, RuntimeError) as exc:
         sys.stderr.buffer.write(json_bytes({"status": "error", "error": str(exc)}))
-        return 4
+        return _LOCAL_EXIT
     except (ValueError, json.JSONDecodeError) as exc:
         sys.stderr.buffer.write(json_bytes({"status": "error", "error": str(exc)}))
-        return 2
+        return _CALLER_EXIT
     sys.stdout.buffer.write(json_bytes(result))
     return exit_code

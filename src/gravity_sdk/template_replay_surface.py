@@ -9,7 +9,13 @@ from typing import Any, Callable
 from . import runtime
 from .dashboard_artifact import validate_dashboard_window
 from .domains import ANALYSIS_QUERY_OPERATIONS
-from .errors import ContractChangedError, ErrorCode, InputValidationError
+from .errors import (
+    ContractChangedError,
+    ErrorCode,
+    ErrorDetail,
+    InputValidationError,
+    exit_code_for_error,
+)
 from .plan import AdapterContext
 from .plan_adapter_support import (
     input_error,
@@ -443,11 +449,15 @@ def _safe_quarantine(value: Any) -> list[dict[str, str]] | None:
 
 
 def _contract_failure() -> dict[str, Any]:
+    detail = ErrorDetail.create(
+        ErrorCode.CONTRACT_CHANGED,
+        "Analysis template result contract changed.",
+    )
     return {
         "schema_version": REPLAY_SCHEMA_VERSION,
         "ok": False,
         "status": "contract_changed",
-        "exit_code": 3,
+        "exit_code": exit_code_for_error(detail),
         "error": {
             "code": ErrorCode.CONTRACT_CHANGED.value,
             "category": "upstream",

@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse
 from typing import Any, Callable, Mapping, Sequence
 
-from .errors import ErrorCategory, InputValidationError
+from .errors import ErrorCategory, InputValidationError, exit_code_for_category
 
 
 BATCH_ITEM_FIELDS = frozenset(
@@ -218,11 +218,7 @@ def batch_envelope(results: Any) -> dict[str, Any]:
 def envelope_exit_code(result: Mapping[str, Any]) -> int:
     error = result.get("error")
     category = error.get("category") if isinstance(error, Mapping) else None
-    return {
-        ErrorCategory.CALLER.value: 2,
-        ErrorCategory.UPSTREAM.value: 3,
-        ErrorCategory.LOCAL.value: 4,
-    }.get(str(category), 4)
+    return _category_exit_code(category)
 
 
 def _batch_payload(payload: Any) -> list[Mapping[str, Any]]:
@@ -272,11 +268,11 @@ def batch_input_error(message: str, field: str) -> InputValidationError:
 def _item_exit_code(item: Mapping[str, Any]) -> int:
     error = item.get("error")
     category = error.get("category") if isinstance(error, Mapping) else None
-    return {
-        ErrorCategory.CALLER.value: 2,
-        ErrorCategory.UPSTREAM.value: 3,
-        ErrorCategory.LOCAL.value: 4,
-    }.get(str(category), 4)
+    return _category_exit_code(category)
+
+
+def _category_exit_code(category: Any) -> int:
+    return exit_code_for_category(str(category), default=ErrorCategory.LOCAL)
 
 
 __all__ = [

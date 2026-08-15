@@ -6,7 +6,7 @@ import copy
 from collections.abc import Mapping
 from typing import Any
 
-from .errors import ErrorCode, InputValidationError, PaginationError
+from .errors import ErrorCategory, ErrorCode, ErrorDetail, InputValidationError, PaginationError, exit_code_for_category, exit_code_for_error
 from .domains import ANALYSIS_QUERY_OPERATIONS
 from .plan import AdapterContext
 from .plan_adapter_support import (
@@ -53,6 +53,9 @@ _STRUCTURAL = frozenset(
         "error",
         "next_action",
     }
+)
+_ERROR_EXIT_CODES = frozenset(
+    exit_code_for_category(category) for category in ErrorCategory
 )
 _METADATA = frozenset(
     {
@@ -315,12 +318,15 @@ def _choice(value: Any, allowed: set[Any]) -> Any:
 
 
 def _safe_exit_code(value: Any, ok: bool) -> int:
-    return value if type(value) is int and value in {0, 2, 3, 4} else (0 if ok else 4)
+    valid = {0, *_ERROR_EXIT_CODES}
+    if type(value) is int and value in valid:
+        return value
+    return 0 if ok else exit_code_for_category(ErrorCategory.LOCAL)
 
 
 def _error_exit_code(value: Any) -> int:
     category = value.get("category") if isinstance(value, Mapping) else None
-    return {"caller": 2, "upstream": 3, "local": 4}.get(str(category), 4)
+    return exit_code_for_category(str(category), default=ErrorCategory.LOCAL)
 
 
 def _safe_native(value: Any) -> dict[str, Any] | None:
@@ -446,11 +452,16 @@ def _safe_date_range(value: Any) -> dict[str, Any] | None:
 
 
 def _contract_failure() -> dict[str, Any]:
+    detail = ErrorDetail.create(
+        ErrorCode.CONTRACT_CHANGED,
+        "Saved Analysis result contract changed.",
+        next_action="Stop this Plan until the Saved Analysis contract is re-verified.",
+    )
     return {
         "schema_version": REPLAY_SCHEMA_VERSION,
         "ok": False,
         "status": "contract_changed",
-        "exit_code": 3,
+        "exit_code": exit_code_for_error(detail),
         "error": {
             "code": ErrorCode.CONTRACT_CHANGED.value,
             "category": "upstream",

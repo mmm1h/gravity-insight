@@ -10,6 +10,7 @@ from .errors import (
     ErrorDetail,
     InputValidationError,
     error_envelope,
+    exit_code_for_category,
     exit_code_for_error,
 )
 
@@ -223,11 +224,7 @@ def command_error(
         envelope = export_cli_error(args, error)
         detail = envelope.get("error", {})
         category = detail.get("category") if isinstance(detail, Mapping) else None
-        code = {
-            ErrorCategory.CALLER.value: 2,
-            ErrorCategory.UPSTREAM.value: 3,
-            ErrorCategory.LOCAL.value: 4,
-        }.get(str(category), 4)
+        code = exit_code_for_category(str(category), default=ErrorCategory.LOCAL)
         return envelope, code
     return error_envelope(error, operation_id=operation_id), exit_code_for_error(error)
 

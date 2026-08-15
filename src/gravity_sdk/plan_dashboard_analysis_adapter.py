@@ -13,7 +13,7 @@ from collections.abc import Mapping
 from datetime import date
 from typing import Any
 
-from .errors import ErrorCategory, ErrorCode, ErrorDetail
+from .errors import ErrorCategory, ErrorCode, ErrorDetail, exit_code_for_error
 from .plan import AdapterContext
 from .plan_adapter_support import (
     has_dynamic,
@@ -322,7 +322,7 @@ def _failure(detail: ErrorDetail) -> dict[str, Any]:
         "schema_version": _SCHEMA_VERSION,
         "ok": False,
         "status": "error",
-        "exit_code": {"caller": 2, "upstream": 3, "local": 4}[detail.category],
+        "exit_code": exit_code_for_error(detail),
         "error": detail.to_dict(),
     }
 

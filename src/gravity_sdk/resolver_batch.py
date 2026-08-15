@@ -14,6 +14,7 @@ from .errors import (
     GravityInsightError,
     InputValidationError,
     error_detail_from_exception,
+    exit_code_for_category,
 )
 from .resolver import resolve_and_run
 
@@ -498,11 +499,7 @@ def _caller_safe_result_error(detail: ErrorDetail) -> ErrorDetail:
 def _item_exit_code(item: Mapping[str, Any]) -> int:
     error = item.get("error")
     category = error.get("category") if isinstance(error, Mapping) else None
-    return {
-        ErrorCategory.CALLER.value: 2,
-        ErrorCategory.UPSTREAM.value: 3,
-        ErrorCategory.LOCAL.value: 4,
-    }.get(str(category), 4)
+    return exit_code_for_category(str(category), default=ErrorCategory.LOCAL)
 
 
 def _validate_limits(max_workers: int, max_pages: int, max_items: int) -> None:

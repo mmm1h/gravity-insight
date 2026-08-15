@@ -9,7 +9,13 @@ import re
 from typing import Any
 
 from .composite_catalog import stable_operation
-from .errors import ErrorCategory, ErrorCode, ErrorDetail
+from .errors import (
+    ErrorCategory,
+    ErrorCode,
+    ErrorDetail,
+    exit_code_for_category,
+    exit_code_for_error,
+)
 
 
 SCHEMA_VERSION = "gravity-insight.material-performance.v1"
@@ -326,7 +332,7 @@ def contract_result() -> dict[str, Any]:
         "schema_version": SCHEMA_VERSION,
         "ok": False,
         "status": "contract_changed",
-        "exit_code": 3,
+        "exit_code": exit_code_for_error(detail),
         "operation_id": MATERIAL_REPORT_OPERATION,
         "error": detail.to_dict(),
         "next_action": detail.next_action,
@@ -394,11 +400,7 @@ def product_envelope(
 def _component_exit_code(value: Mapping[str, Any]) -> int:
     error = value.get("error")
     category = error.get("category") if isinstance(error, Mapping) else None
-    return {
-        ErrorCategory.CALLER.value: 2,
-        ErrorCategory.UPSTREAM.value: 3,
-        ErrorCategory.LOCAL.value: 4,
-    }.get(str(category), 4)
+    return exit_code_for_category(str(category), default=ErrorCategory.LOCAL)
 
 
 def _primary_error(failures: list[dict[str, Any]]) -> dict[str, Any] | None:

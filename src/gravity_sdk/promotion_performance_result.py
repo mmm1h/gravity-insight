@@ -15,7 +15,7 @@ from types import MappingProxyType
 from typing import Any
 
 from .domains import PROMOTION_PRIMARY_OPERATIONS
-from .errors import ErrorCategory, ErrorCode, ErrorDetail
+from .errors import ErrorCategory, ErrorCode, ErrorDetail, exit_code_for_error
 from .promotion_performance_error import (
     error_exit_code as _error_exit_code,
     failure_matches as _failure_matches,
@@ -408,7 +408,7 @@ def contract_component(platform: str) -> dict[str, Any]:
         **_component_identity(platform),
         "ok": False,
         "status": "contract_changed",
-        "exit_code": 3,
+        "exit_code": exit_code_for_error(detail),
         "data": None,
         "page": None,
         "window_applied": False,
@@ -429,7 +429,7 @@ def contract_result() -> dict[str, Any]:
         "schema_version": SCHEMA_VERSION,
         "ok": False,
         "status": "contract_changed",
-        "exit_code": 3,
+        "exit_code": exit_code_for_error(detail),
         "error": detail.to_dict(),
         "next_action": detail.next_action,
     }
@@ -501,9 +501,6 @@ def product_envelope(
 
 
 def _component_exit_code(value: Mapping[str, Any]) -> int:
-    exit_code = value.get("exit_code")
-    if type(exit_code) is int and exit_code in {2, 3, 4}:
-        return exit_code
     error = value.get("error")
     return _error_exit_code(error if isinstance(error, Mapping) else {})
 

@@ -77,11 +77,13 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 
 def _main(argv: Sequence[str] | None = None) -> int:
+    from .errors import ErrorCategory, exit_code_for_category
+
     try:
         args = _extract_workspace(list(sys.argv[1:] if argv is None else argv))
     except ValueError as exc:
         print(f"error: {exc}", file=sys.stderr)
-        return 2
+        return exit_code_for_category(ErrorCategory.CALLER)
 
     from . import cli as insight_cli
     from .census import cli as census_cli
@@ -89,7 +91,7 @@ def _main(argv: Sequence[str] | None = None) -> int:
 
     if not args:
         if not ensure_first_run_credentials(requires_credentials=True):
-            return 4
+            return exit_code_for_category(ErrorCategory.LOCAL)
         print(_HELP, end="")
         return 0
     if args == ["--help"] or args == ["-h"]:
@@ -121,7 +123,7 @@ def _main(argv: Sequence[str] | None = None) -> int:
     if not ensure_first_run_credentials(
         requires_credentials=requires_credentials
     ):
-        return 4
+        return exit_code_for_category(ErrorCategory.LOCAL)
     return command(command_args)
 
 

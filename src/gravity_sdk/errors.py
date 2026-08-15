@@ -426,12 +426,33 @@ def error_envelope(
     ).to_dict()
 
 
+def exit_code_for_category(
+    category: ErrorCategory | str,
+    *,
+    default: ErrorCategory | str | None = None,
+) -> int:
+    """Return the public process exit for one validated error category."""
+
+    normalized = (
+        category.value if isinstance(category, ErrorCategory) else str(category)
+    )
+    exits = {
+        ErrorCategory.CALLER.value: CALLER_ERROR_EXIT,
+        ErrorCategory.UPSTREAM.value: UPSTREAM_ERROR_EXIT,
+        ErrorCategory.LOCAL.value: LOCAL_ERROR_EXIT,
+    }
+    try:
+        return exits[normalized]
+    except KeyError as exc:
+        if default is not None:
+            fallback = default.value if isinstance(default, ErrorCategory) else str(default)
+            if fallback in exits:
+                return exits[fallback]
+        raise ValueError("error category must be caller, upstream, or local") from exc
+
+
 def exit_code_for_error(error: BaseException | ErrorDetail) -> int:
     detail = (
         error if isinstance(error, ErrorDetail) else error_detail_from_exception(error)
     )
-    return {
-        ErrorCategory.CALLER.value: CALLER_ERROR_EXIT,
-        ErrorCategory.UPSTREAM.value: UPSTREAM_ERROR_EXIT,
-        ErrorCategory.LOCAL.value: LOCAL_ERROR_EXIT,
-    }[detail.category]
+    return exit_code_for_category(detail.category)

@@ -7,7 +7,7 @@ from collections.abc import Mapping
 from datetime import date as date_type
 from typing import Any
 
-from .errors import ErrorCategory, ErrorCode, ErrorDetail
+from .errors import ErrorCategory, ErrorCode, ErrorDetail, exit_code_for_category
 from .plan import AdapterContext
 from .plan_adapter_support import (
     has_dynamic,
@@ -32,7 +32,9 @@ _STRUCTURAL_FIELDS = frozenset(
     }
 )
 _SAFE_FIELDS = _STRUCTURAL_FIELDS | SEGMENT_SNAPSHOT_OUTPUT_FIELDS
-_CATEGORY_EXIT = {"caller": 2, "upstream": 3, "local": 4}
+_CATEGORY_EXIT = {
+    category.value: exit_code_for_category(category) for category in ErrorCategory
+}
 
 
 def validate_segment_snapshot_plan(
@@ -220,7 +222,10 @@ def _aggregate_error(result: Mapping[str, Any]) -> ErrorDetail:
 def _category(value: Any, exit_code: Any) -> str:
     if value in _CATEGORY_EXIT:
         return str(value)
-    return {2: "caller", 3: "upstream", 4: "local"}.get(exit_code, "local")
+    for category in ErrorCategory:
+        if exit_code == exit_code_for_category(category):
+            return category.value
+    return ErrorCategory.LOCAL.value
 
 
 def _next_action(category: str) -> str:
