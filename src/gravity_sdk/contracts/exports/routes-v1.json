@@ -111,13 +111,13 @@
       "effect": "export_job_create",
       "method": "POST",
       "path": "/report/api/v3/dataanalysis/stream/event/list/download/",
-      "contract_status": "unverified",
+      "contract_status": "not_applicable",
       "executable": false,
-      "block_reason": "The hash-matched frontend declares a loader for this route but never invokes it; the visible button performs client-side table export, so the server request contract and complete file schema remain unverified",
+      "block_reason": "The hash-matched frontend never invokes this loader; the visible button performs client-side table export, so the frontend produces no server request for this journey and this route is not an SDK capability gap",
       "request": {"location": "body", "allowed_fields": [], "required_fields": [], "fixed_fields": {}},
       "response": {"job_id_paths": ["data.task_id", "task_id"]},
       "privacy": {"classification": "user_level", "format": null, "allowed_columns": [], "required_columns": []},
-      "verification": {"method_source": "frontend_asset_uninvoked", "online": false, "notes": "Debug-hpZqESZ9.js constructs the POST loader but has no call site; its export button serializes the current in-memory table through the client-side export helper. No request may be guessed from the unused loader"}
+      "verification": {"method_source": "frontend_absence_proved", "online": false, "notes": "Debug-hpZqESZ9.js constructs the POST loader but has no call site; its export button serializes the current in-memory table through the client-side export helper. The frontend therefore does not produce this server request, and later investigators must not probe the unused route"}
     },
     {
       "operation_id": "export.analysis.user_detail.start",
@@ -137,13 +137,101 @@
       "effect": "export_job_create",
       "method": "POST",
       "path": "/report/api/v3/dataanalysis/user/event/list/download/",
-      "contract_status": "unverified",
-      "executable": false,
-      "block_reason": "Projection is approved and create/poll/download plus five XLSX headers were observed, but the zero-row file proves no logical column types",
-      "request": {"location": "body", "allowed_fields": ["app_id", "client_id", "desc", "group_by", "event_list", "date_list", "page_info", "query_item_list", "task_name"], "required_fields": ["app_id", "client_id", "desc", "group_by", "event_list", "date_list", "page_info", "query_item_list", "task_name"], "fixed_fields": {}},
+      "contract_status": "verified",
+      "executable": true,
+      "block_reason": null,
+      "request": {
+        "location": "body",
+        "allowed_fields": ["app_id", "client_id", "desc", "group_by", "event_list", "date_list", "page_info", "query_item_list", "task_name"],
+        "required_fields": ["app_id", "client_id", "desc", "group_by", "event_list", "date_list", "page_info", "query_item_list", "task_name"],
+        "fixed_fields": {},
+        "input_schema": {
+          "type": "object",
+          "additional_properties": false,
+          "required": ["app_id", "client_id", "desc", "group_by", "event_list", "date_list", "page_info", "query_item_list", "task_name"],
+          "optional": [],
+          "properties": {
+            "app_id": {"type": "integer", "minimum": 1, "default": null, "has_default": false, "description": "Copy the exact App id used by the successful analysis.user_event.list preflight."},
+            "client_id": {"type": "string", "min_length": 1, "max_length": 256, "default": null, "has_default": false, "description": "Copy one ClientID returned by the same-day analysis.user_detail.list parent read; never infer it."},
+            "desc": {"type": "boolean", "default": null, "has_default": false, "description": "Copy the ordering flag from the successful user-event list request."},
+            "group_by": {"type": "string", "enum": ["day", "hour", "week", "month"], "default": null, "has_default": false, "description": "Copy the grouping from the successful user-event list request; day is the verified default."},
+            "event_list": {"type": "array", "item_type": "string", "max_items": 2000, "default": null, "has_default": false, "description": "Copy the caller-selected event list exactly; an empty list is verified and does not guess an event name."},
+            "date_list": {"type": "array", "item_type": "date", "min_items": 2, "max_items": 2, "default": null, "has_default": false, "description": "Inclusive start/end pair copied from a successful user-event list request; use one day unless the caller explicitly supplies another range."},
+            "page_info": {"type": "object", "default": null, "has_default": false, "description": "Copy page and page_size from the successful user-event list request. These fields do not bound exported file rows."},
+            "query_item_list": {"type": "array", "item_type": "object", "max_items": 100, "default": null, "has_default": false, "description": "Copy structured query items exactly; an empty list is verified."},
+            "task_name": {"type": "string", "min_length": 1, "max_length": 200, "default": null, "has_default": false, "description": "Caller-generated recovery label; do not include credentials or user-level values."}
+          }
+        },
+        "scale_controls": {
+          "page_size_limits_total_rows": false,
+          "controls": ["one exact app_id", "one exact client_id", "shortest caller-selected date_list"],
+          "recommended_first_run": "one App, one ClientID, and one day already confirmed non-empty by analysis.user_event.list",
+          "maximum_download_bytes": 104857600
+        },
+        "examples": [
+          {
+            "name": "verified_single_day_user_event",
+            "status": "verified_online",
+            "runnable_after_substitution": true,
+            "required_substitutions": {
+              "<app-id>": "Use the third catalog App only when the same-day parent reads remain non-empty; otherwise enumerate the registered App catalog and stop at the first non-empty event timeline.",
+              "<client-id>": "Use the first ClientID from the same App/day analysis.user_detail.list page; keep the value out of logs and evidence.",
+              "<date>": "Use the exact single date already confirmed non-empty by analysis.user_event.list."
+            },
+            "input": {
+              "app_id": "<app-id>",
+              "client_id": "<client-id>",
+              "desc": true,
+              "group_by": "day",
+              "event_list": [],
+              "date_list": ["<date>", "<date>"],
+              "page_info": {"page": 1, "page_size": 1},
+              "query_item_list": [],
+              "task_name": "agent-user-event-export"
+            },
+            "columns": ["客户(client_id)", "用户注册时间", "事件发生时间", "事件", "事件属性"],
+            "idempotency_key_template": "agent-user-event-<yyyymmdd>-<unique-suffix>",
+            "preflight": {
+              "operation_id": "analysis.user_event.list",
+              "describe_command": "gravity insight operations describe analysis.user_event.list",
+              "read_command": "gravity insight read analysis.user_event.list --input <preflight.json> --max-pages 1 --max-items 1",
+              "input_mapping": {"app_id": "app_id", "client_id": "client_id", "date_list": "date_list", "desc": "desc", "group_by": "group_by", "event_list": "event_list", "query_item_list": "query_item_list", "page": "page_info.page", "page_size": "page_info.page_size"},
+              "required_result": "exit code is 0 and data.event_timeline contains at least one non-empty list; copy the authorized request body exactly and append only task_name"
+            }
+          }
+        ]
+      },
       "response": {"job_id_paths": ["data.task_id", "task_id"]},
-      "privacy": {"classification": "user_level", "format": "xlsx", "extension": ".xlsx", "mime_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "allowed_columns": ["客户(client_id)", "用户注册时间", "事件发生时间", "事件", "事件属性"], "required_columns": ["客户(client_id)", "用户注册时间", "事件发生时间", "事件", "事件属性"], "allowed_hosts": ["gravity-client-resource.oss-cn-hangzhou.aliyuncs.com"], "allowed_redirect_hosts": [], "allowed_path_prefixes": {"gravity-client-resource.oss-cn-hangzhou.aliyuncs.com": ["/266183/excels/"]}},
-      "verification": {"method_source": "frontend_asset_and_online_partial", "online": true, "attempted_online": true, "notes": "Hash-matched sequence-d2be4mQE.js proves the export body is the exact preceding event-list request plus task_name; sequence-data-BLZG4_Oh.js proves default group_by=day. Earlier create/poll produced a 4999-byte, zero-row XLSX with 1 worksheet and 5 fixed headers, so logical types remain unknown. The 2026-08-16 recheck stopped after app.list and the first App's single-day user_detail page returned empty; no event read, create, retry, paging, App switch or date expansion"}
+      "privacy": {
+        "classification": "user_level",
+        "format": "xlsx",
+        "extension": ".xlsx",
+        "mime_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "allowed_columns": ["客户(client_id)", "用户注册时间", "事件发生时间", "事件", "事件属性"],
+        "required_columns": ["客户(client_id)", "用户注册时间", "事件发生时间", "事件", "事件属性"],
+        "allow_contracted_identifiers": true,
+        "file_schema": {
+          "worksheet_count": 1,
+          "worksheet_name": "Sheet1",
+          "columns": [
+            {"header": "客户(client_id)", "cell_storage_types": ["s"], "python_value_types": ["str"], "logical_type": "identifier"},
+            {"header": "用户注册时间", "cell_storage_types": ["s"], "python_value_types": ["str"], "logical_type": "datetime"},
+            {"header": "事件发生时间", "cell_storage_types": ["d"], "python_value_types": ["datetime"], "number_formats": ["YYYY-MM-DD HH:MM:SS"], "logical_type": "datetime"},
+            {"header": "事件", "cell_storage_types": ["s"], "python_value_types": ["str"], "logical_type": "text"},
+            {"header": "事件属性", "cell_storage_types": ["s"], "python_value_types": ["str"], "logical_type": "json_object_or_array"}
+          ]
+        },
+        "allowed_hosts": ["gravity-client-resource.oss-cn-hangzhou.aliyuncs.com"],
+        "allowed_redirect_hosts": [],
+        "allowed_path_prefixes": {"gravity-client-resource.oss-cn-hangzhou.aliyuncs.com": ["/266183/excels/"]},
+        "magic_prefix_utf8": "PK\u0003\u0004",
+        "download_authorization_ttl_seconds": 300,
+        "max_size_bytes": 104857600,
+        "max_uncompressed_size_bytes": 134217728,
+        "max_archive_entries": 1000,
+        "max_compression_ratio": 100.0
+      },
+      "verification": {"method_source": "frontend_asset_and_online", "online": true, "attempted_online": true, "notes": "Hash-matched sequence-d2be4mQE.js proves the export body is the exact preceding event-list request plus task_name; sequence-data-BLZG4_Oh.js proves default group_by=day. On 2026-08-16 the third catalog App was the first with a non-empty single-day event timeline; one create, one poll and one direct download produced a 6195-byte XLSX with 7 rows, one worksheet and all five fixed headers. Every column had seven non-empty cells, so storage and logical types are completely observed. No retry, data-page advance or date-window expansion occurred"}
     },
     {
       "operation_id": "export.analysis.pay_event.start",

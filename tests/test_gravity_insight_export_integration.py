@@ -196,6 +196,23 @@ class ExportContractTests(unittest.TestCase):
             description["columns"]["output_headers_by_code"]["file_name"],
         )
 
+    def test_user_event_export_description_exposes_complete_file_schema(self):
+        contracts = ExportContractRegistry.from_file(CONTRACT_PATH)
+        description = contracts.describe("export.analysis.user_event.start")
+        columns = description["columns"]
+
+        self.assertTrue(description["currently_callable"])
+        self.assertEqual([], description["input_schema"]["optional"])
+        expected = ["客户(client_id)", "用户注册时间", "事件发生时间", "事件", "事件属性"]
+        self.assertEqual(expected, columns["allowed_codes"])
+        self.assertEqual(expected, columns["required_codes"])
+        self.assertEqual(
+            ["identifier", "datetime", "datetime", "text", "json_object_or_array"],
+            [item["logical_type"] for item in columns["file_schema"]["columns"]],
+        )
+        self.assertEqual("complete", description["examples_status"])
+        self.assertFalse(description["pagination_and_scale"]["page_size_limits_total_rows"])
+
     def test_empty_export_input_reports_a_field_and_public_recovery_command(self):
         contracts = ExportContractRegistry.from_file(CONTRACT_PATH)
         client = object.__new__(GravityInsightClient)

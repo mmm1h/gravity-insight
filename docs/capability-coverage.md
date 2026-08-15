@@ -55,24 +55,26 @@ stable 同样不等于已有分析产品：本轮首次从 176 条 stable operat
 合计字段链路、overview 指标列映射，以及事件属性模板的 common/custom/preset 字典；未知
 字段继续 fail-closed。
 
-## 导出边界（2026-08-13 判定）
+## 导出边界（更新至 2026-08-16 第二轮）
 
-导出是独立 effect，账本在 `src/gravity_sdk/contracts/exports/routes-v1.json`。22 条 route 中只有
-5 条 `executable`：`export.material.report.start` 是唯一可创建的导出，其余 4 条
-（`export.task.list/progress/cancel`、`export.task_type.list`）是支持路由，不是创建候选。
+导出是独立 effect，账本在 `src/gravity_sdk/contracts/exports/routes-v1.json`。22 条 route 中有
+6 条 `executable`：`export.material.report.start` 和 `export.analysis.user_event.start` 是两个可创建
+导出；其余 4 条（`export.task.list/progress/cancel`、`export.task_type.list`）是支持路由，不是创建候选。
 
-**9 条 `export.analysis.*` 仍全部不可执行；2026-08-15 投影放开后重新裁定如下**：
+9 条 `export.analysis.*` 当前逐条裁定如下：
 
 | 分类 | 数量 | route | 结论 |
 | --- | --- | --- | --- |
+| 完整合同、可调用 | 1 | `user_event.start` | 同一单日非空父读取后，唯一一次 create、首次 poll READY、一次 download 得到 7 行/5 列 XLSX；worksheet、表头、存储类型和逻辑类型均完整 |
 | 父工作流依赖 | 1 | `origin_event.evaluate` | 自身估算请求与聚合响应已验证，但配对 `origin_event.start` 的成功 create 和文件合同未成立；旧口径把它误算成用户级投影阻塞 |
-| 投影已放开、文件类型未证实 | 2 | `segment.result.start`、`user_event.start` | 前者只有 1 行但未记录单元格存储/逻辑类型，后者为 0 行；两者虽有 XLSX 表头与单 worksheet 证据，仍不满足完整文件 schema |
-| 请求/文件合同未验证 | 6 | `origin_event.start`、`monetization_detail.start`、`segment_user_detail.start`、`stream_event.start`、`user_detail.start`、`pay_event.start` | 多数在线可建任务但任务失败，或返回 1004 无 task id；成功 payload/父绑定与完整文件 schema 未证明。**无新证据不重试** |
+| 投影已放开、文件类型未证实 | 1 | `segment.result.start` | 只有 1 行但未记录单元格存储/逻辑类型；XLSX 表头与单 worksheet 证据仍不满足完整文件 schema |
+| 请求/文件合同未验证 | 5 | `origin_event.start`、`monetization_detail.start`、`segment_user_detail.start`、`user_detail.start`、`pay_event.start` | 多数在线可建任务但任务失败，或返回 1004 无 task id；成功 payload/父绑定与各自完整文件 schema 未证明。**无新证据不重试** |
+| 前端无服务端路径 | 1 | `stream_event.start` | hash-matched loader 没有调用点，按钮走客户端表格序列化；记为 `not_applicable`，不是 SDK 缺口，不得 probe 未使用 route |
 
 SDK 已按投影总裁决移除 `user_level` 的本地禁出总闸门，但不会用该裁决替代请求或文件合同。
-本轮最小父资源复核在 2 次 HTTP 200 后因第一页分群为空停止，create/poll/download 均为 0；没有
-换 App、翻页、扩窗或重试。调用方用 `export list-capabilities` 查看边界，不要把 catalog 条目当成
-可执行能力。
+第二轮按 catalog 枚举 App，9 次生产 HTTP 在第三个 App 首次非空后完成 user-event 文件合同；没有
+翻数据页、扩窗或重试。调用方用 `export list-capabilities` 查看边界，不要把不可执行或
+`not_applicable` catalog 条目当成可执行能力。
 
 ## 刷新与核对
 

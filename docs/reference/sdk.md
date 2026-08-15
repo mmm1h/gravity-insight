@@ -229,9 +229,10 @@ Insight/SQL client。catalog 缺失或未同步 lineage 时返回结构化 calle
 允许，不能用它请求未知上游字段。
 
 `export_run(operation_id, payload, destination, *, requested_columns, idempotency_key,
-timeout_seconds=300.0)` 原样委托 `GravityInsightClient.export_run()`。当前唯一 callable create 是
-`export.material.report.start`；status/cancel 和请求/文件合同未闭合的 Analysis exports 不会成为 Agent executable
-卡。未知导出通过一次 `capabilities("material report export")` 加一次 `export_run()` 完成发现与
+timeout_seconds=300.0)` 原样委托 `GravityInsightClient.export_run()`。当前 callable creator 是
+`export.material.report.start` 与 `export.analysis.user_event.start`；status/cancel 和其余请求/文件合同
+未闭合的 Analysis exports 不会成为 Agent executable 卡。未知导出通过一次
+`capabilities("material report export")` 或 `capabilities("user event export")` 加一次 `export_run()` 完成发现与
 执行；卡片不自动执行自然语言、不生成 Plan node，导出也不进入 Plan v1。
 
 `destination` 是最终文件路径，不是 JSON 输出路径。timeout 不自动取消；结果保留安全的
