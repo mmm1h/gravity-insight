@@ -26,6 +26,7 @@ def analysis_query_spec_schema() -> dict[str, Any]:
     """Return the complete offline contract used by CLI and Agent discovery."""
 
     return {
+        "operation_id": "analysis.query.spec_schema",
         "schema_version": SPEC_SCHEMA_VERSION,
         "ok": True,
         "status": "success",

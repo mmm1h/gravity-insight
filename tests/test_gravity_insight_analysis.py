@@ -140,6 +140,28 @@ def event_inputs(**overrides: Any) -> dict[str, Any]:
 
 
 class GravityInsightAnalysisTests(unittest.TestCase):
+    def test_funnel_daily_projection_is_mode_aware_and_fail_closed(self) -> None:
+        operation = repository_manifest("analysis.funnel.query")["operations"][0]
+        inputs = json.loads(json.dumps(operation["live_probe"]["input"]))
+        inputs.update(app_id="101", query_id=QUERY_ID, to_calc_each_day=True)
+        daily = {
+            "date_list": [{"2026-08-07": [{"cnt": {"0": 3, "1": 2}, "group": None}]}],
+            "aggregate_by_date": {"2026-08-07": {"0": 3, "1": 2}},
+            "aggregate_date": None,
+            "window_funnel_mode": 0,
+        }
+        cases = ((daily, "success"), ({**daily, "aggregate_by_date": None}, "contract_changed"))
+        for data, status in cases:
+            client, _ = client_for(
+                "analysis.funnel.query",
+                handler=lambda *_args, data=data: {"code": 0, "data": data},
+            )
+            client._executor._field_validator = lambda *_args: None
+            result = client.read("analysis.funnel.query", inputs)
+            self.assertEqual(status, result["status"])
+            if status == "success":
+                self.assertEqual([], result["warnings"])
+
     def test_funnel_rejects_live_incompatible_user_property_type_offline(self) -> None:
         manifest = repository_manifest("analysis.funnel.query")
         inputs = json.loads(json.dumps(manifest["operations"][0]["live_probe"]["input"]))

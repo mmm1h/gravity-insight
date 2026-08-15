@@ -151,3 +151,6 @@ Quality profile 已删除与 runtime root 同路径的冗余 CLI 扫描；每个
 多 App Analysis 扇出仅在领域 batch/surface 中把显式 `apps` 展开为现有同层 Plan 节点；没有新增
 线程池、worker 默认值、adapter registry、跨 App 结果抽象或共享 spine 分支。机器 quality ratchet
 保持，`plan_adapters.py` 未修改；本轮复核未产生新的结构债条目。
+
+Analysis Spec schema 的结构键投影与 funnel 按日模式校验已在领域 schema/执行器和源合同内闭合；
+共享 CLI spine 未修改，真正畸形的模式投影继续 fail closed，本轮复核未产生新的结构债条目。

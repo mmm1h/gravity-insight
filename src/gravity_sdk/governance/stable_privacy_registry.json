@@ -317,6 +317,7 @@
       "data.aggregate_date.*.*",
       "data.aggregate_date.total.*",
       "data.date_list",
+      "data.date_list[].*[].cnt.*",
       "data.window_funnel_mode"
     ],
     "analysis.monetization_detail.list": [

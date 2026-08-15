@@ -1599,6 +1599,7 @@
           "window_funnel_mode",
           "aggregate_date.total.*",
           "aggregate_date.*.*",
+          "date_list.[].*.[].cnt.*",
           "aggregate_by_date.*.*",
           "aggregate_by_date.*.*.*"
         ],
