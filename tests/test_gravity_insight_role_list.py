@@ -81,7 +81,8 @@ class RoleListOperationTests(unittest.TestCase):
 
         result = client.read(OPERATION_ID, {"page": 2, "page_size": 2})
 
-        self.assertEqual("contract_changed_additive", result["status"])
+        self.assertEqual("success", result["status"])
+        self.assertIn("response_drift", result["result_audit"])
         method, path, kwargs = transport.calls[0]
         self.assertEqual("GET", method)
         self.assertEqual(TARGET_PATH, path)

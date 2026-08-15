@@ -1071,7 +1071,7 @@ class ReadResult:
     error: Mapping[str, Any] | None = None
     items: tuple[Any, ...] = ()
     page_info: Mapping[str, Any] = field(default_factory=dict)
-    http_receipts: tuple[Mapping[str, str], ...] = ()
+    http_receipts: tuple[Mapping[str, str], ...] = (); response_drift: Mapping[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return add_result_audit({
@@ -1088,7 +1088,7 @@ class ReadResult:
             "data": self.data,
             "warnings": list(self.warnings),
             "error": dict(self.error) if self.error is not None else None,
-        }, self.http_receipts)
+        }, self.http_receipts, response_drift=self.response_drift)
 
 
 @dataclass(frozen=True)

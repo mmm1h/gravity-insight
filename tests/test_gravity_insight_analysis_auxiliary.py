@@ -165,7 +165,8 @@ class GravityInsightAnalysisAuxiliaryTests(unittest.TestCase):
             "analysis.report.hidden_property.list",
             {"report_id": "report-17", "app_id": "app-9"},
         )
-        self.assertEqual("contract_changed_additive", result["status"])
+        self.assertEqual("success", result["status"])
+        self.assertIn("response_drift", result["result_audit"])
         self.assertEqual(
             {
                 "data_type": "mata_event",
@@ -214,7 +215,8 @@ class GravityInsightAnalysisAuxiliaryTests(unittest.TestCase):
             "analysis.task.pay_event.list",
             {"app_id": "app-9", "page": 1, "page_size": 20, "filters": filters},
         )
-        self.assertEqual("contract_changed_additive", result["status"])
+        self.assertEqual("success", result["status"])
+        self.assertIn("response_drift", result["result_audit"])
         self.assertEqual(
             {key: value for key, value in row.items() if key != "token"},
             result["data"]["list"][0],

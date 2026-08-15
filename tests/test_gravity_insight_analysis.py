@@ -678,10 +678,12 @@ class GravityInsightAnalysisTests(unittest.TestCase):
             },
         )
         encoded = json.dumps(result["data"], ensure_ascii=False)
-        self.assertEqual("contract_changed", result["status"])
+        self.assertEqual("success", result["status"])
+        self.assertIn("response_drift", result["result_audit"])
         self.assertNotIn("private", encoded)
         self.assertNotIn("uid", encoded.casefold())
-        self.assertTrue(any("unsafe" in warning for warning in result["warnings"]))
+        fields = result["result_audit"]["response_drift"]["fields"]
+        self.assertTrue(all(set(field) == {"path", "observed_type"} for field in fields))
         self.assertEqual(3, len(transport.calls))
 
     def test_retention_accepts_typed_before_after_and_rejects_unsafe_formula(
@@ -983,7 +985,7 @@ class GravityInsightAnalysisTests(unittest.TestCase):
         )
         self.assertTrue(any(path.endswith("user/detail/list/") for _, path, _ in transport.calls))
 
-    def test_user_detail_154th_top_level_key_still_fails_closed(self) -> None:
+    def test_user_detail_154th_top_level_key_is_recorded_additive_drift(self) -> None:
         def handler(_method: str, path: str, _kwargs: Mapping[str, Any]):
             if path.endswith(
                 ("user_property_list/", "event_property_list/", "segment/list/")
@@ -1006,7 +1008,8 @@ class GravityInsightAnalysisTests(unittest.TestCase):
             {"app_id": "101", "fields": ["Name"]},
         )
 
-        self.assertEqual("contract_changed_additive", result["status"])
+        self.assertEqual("success", result["status"])
+        self.assertIn("response_drift", result["result_audit"])
         self.assertEqual({"Name": "registered"}, result["data"]["list"][0])
         self.assertNotIn("future_154", result["data"]["list"][0])
 

@@ -166,6 +166,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `read_all()` | `GravityInsightClient.read_all()` |
 | `read_limited()` | Agent 安全前缀与显式 continuation，默认最多 5 页/200 项 |
 | `read_many()` | `GravityInsightClient.batch()` |
+| `list_http_receipts()` / `get_http_receipt()` / `export_http_receipts()` | 查询有界、布局无关的 `gravity.http-receipt-query.v1` 诊断合同 |
 | `export_run()` | 现有治理导出状态机：create、poll、download、隐私/schema 校验和原子提交 |
 | `describe_sql_products()` | 安全描述 workspace 产品，不返回 SQL 模板 |
 | `query_sql_products()` | `run_product_queries()`，支持单对象或批量、保序隔离失败 |
@@ -227,6 +228,12 @@ Insight/SQL client。catalog 缺失或未同步 lineage 时返回结构化 calle
 `read()`、`read_all()`、`read_limited()` 和 `run()` 都接受 `output_fields`。它只在本地裁剪合同
 允许的输出字段；默认 `None` 时保持原 envelope。动态字段必须同时由本次请求声明并被合同
 允许，不能用它请求未知上游字段。
+
+新增未登记响应字段不会中断已有查询，也不会进入 `data`；调用方以
+`result["result_audit"].get("response_drift")` 程序化发现 `gravity.response-drift.v1`，其中每项只含
+JSON Pointer `path` 与 `observed_type`。事后可把同一结果的
+`result["result_audit"]["http_receipts"][0]` 传给 `gravity.get_http_receipt()`，从有界只读 receipt
+取得同一漂移记录。已登记字段消失、类型变化、已声明枚举扩展和未登记请求字段仍 fail-closed。
 
 `export_run(operation_id, payload, destination, *, requested_columns, idempotency_key,
 timeout_seconds=300.0)` 原样委托 `GravityInsightClient.export_run()`。当前唯一 callable create 是

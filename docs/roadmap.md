@@ -9,7 +9,8 @@
 
 衡量单位是**分析动线**，不是 operation 数量。一条动线闭环 = 已知输入 1 次调用、未知 2 次调用完成，
 且 CLI+SDK+Plan+Agent card 四面可达，结果是带 `schema_version` 的 envelope
-和离散 `result_source` 来源声明（空/部分失败/能力缺口可区分），未登记字段 fail-closed。
+和离散 `result_source` 来源声明（空/部分失败/能力缺口可区分）；请求未知字段、响应字段消失/
+类型变化 fail-closed，新增响应字段放行但留下结构化审计。
 
 ## 现状
 
@@ -409,6 +410,42 @@ partial 与 capability-gap 查询均保留完整嵌套 envelope。
 抛点净增 16：`974 + 16 = 990`，分档为 `A 218 + 0 = 218`、`B 400 + 6 = 406`、
 `C 356 + 10 = 366`；code/category/既有退出码语义未改。技术债清单复核无新结构项：读取、CLI 和 Plan
 分别下沉窄模块，共享入口只做最终注册。生产 HTTP 0 次。
+
+### 响应合同漂移非对称裁决（2026-08-16）
+
+**提案与结论：以“是否可能让调用方静默算错”为分界。** 未登记的请求字段仍在联网前失败；已登记
+响应字段消失或类型不兼容仍返回既有 `contract_changed`；响应新增未登记字段不再把正确查询升级为
+`contract_changed_additive`，而是省略该字段、正常返回既有投影，并记录独立版本的
+`gravity.response-drift.v1`。这与 Pact 的可执行规范方向一致：provider
+[响应多键仍匹配](https://github.com/pact-foundation/pact-reference/blob/9930b06c31b66d835b6b3fe7b4d855f52d394b24/rust/pact_matching/tests/spec_testcases/v1/response/body/unexpected%20key%20with%20not%20null%20value.json)，consumer
+[请求多键不匹配](https://github.com/pact-foundation/pact-reference/blob/9930b06c31b66d835b6b3fe7b4d855f52d394b24/rust/pact_matching/tests/spec_testcases/v1/request/body/unexpected%20key%20with%20not%20null%20value.json)。
+本仓库投影仍只暴露已登记字段；本裁决没有新增过滤、检测、访问控制、operation、CLI 参数或退出码。
+
+漂移子合同位于结果的 `result_audit.response_drift`，固定声明 `direction=response`、
+`classification=additive`，`fields` 是按 JSON Pointer 与观察类型排序去重的对象数组，例如
+`{"path":"/data/list/*/future_rank","observed_type":"integer"}`；不保存响应值。相同子合同在投影后
+补入本次 `gravity.http-receipt.v1`，外层 `gravity.result-audit.v1`、HTTP receipt 和查询 envelope 的
+`schema_version` 均不提升。调用方可直接检查当前结果；事后以 `result_audit.http_receipts` 的 opaque
+引用调用 SDK `get_http_receipt()`，或使用 `gravity receipts get`，无需依赖私有目录布局。
+`OperationCatalog` 仍把带该结构化审计的成功结果记为 health `contract_changed_additive`，维护者现有
+describe/receipt 查询触发源没有丢失。
+
+响应枚举没有随新增字段放宽。当前通用 response projection 没有可声明的 enum 集合，因而不从任意
+标量样本臆测枚举；已在领域合同中穷举的 status/platform/pagination 分支仍按原校验 fail-closed。
+理由是新增枚举值会进入调用方分支决策，风险与单纯多一个未使用字段不同。维护文档只记录本政策和
+查询办法，**不复制运行时新字段清单**：字段清单随上游变化，写进 Markdown 会成为不完整且会过期的
+第二事实源；有界 receipt 查询才是应补登记项的机器事实源。
+
+本裁决是横切兼容性提升，不新增产品动线、operation 或 caller 可恢复错误点：operation
+`185 + 0 = 185`、stable `176 + 0 = 176`、动线 `48 = 33 / 0 / 15 + 0 / 0 / 0 = 48 = 33 / 0 / 15`。
+错误审计为 `1022 + 0 = 1022`，其中 A 档 `218 + 0 = 218`。
+代码排查发现一条产品路径曾用 additive metadata 状态阻止后续业务读取，现改为消费已登记 metadata、
+同时保留 drift audit；catalog health 的 additive 可发现性显式保留。测试盘点中 33 条既有用例把未知响应字段与失败状态绑定，
+现改为验证成功、既有投影与结构化 audit；1 条值保护用例把字段名也当秘密，现收窄为值和 `data`
+不泄露、字段名只出现在 drift path；另 1 条 `_project` 直接测试仅迁移四元返回接缝。最终触及
+37 个测试函数（35 条既有修改、2 条新增）；新增 2 条分别覆盖
+未知请求字段的零网络失败和 receipt 端到端可查询回归。技术债清单复核无新增结构项，quality baseline 仅收紧；
+生产 HTTP 0 次。
 
 D32 本轮先估 22 次、实际只发 5 次最小 stable 根读取；5 次均为 HTTP 200 空样本。复用 D33
 的 Bilibili/Huya 3 次证据后，七个平台中只有 Bilibili account 曾非空，但其 advertiser 为空；

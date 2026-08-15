@@ -2,7 +2,7 @@
 
 本页是分析动线完成度的长期事实源。每行回答一个独立分析问题；同一产品的 list/prepare/run、batch、分页和日期模式不拆行，raw operation、维护命令、任务状态路由也不单列。新增独立产品合同或独立结果 envelope 时新增一行，能力、证据或入口变化时原位更新。
 
-闭环判据沿用[路线图](roadmap.md)：已知输入 1 次调用、未知输入 2 次调用，CLI/SDK/Plan/Agent 四面可达，结果为带 `schema_version` 与离散 `result_source` 的 envelope，能区分空、部分失败和能力缺口，未登记字段 fail-closed。Agent 一面不再以卡已注册或精确 selector 自证：每行至少一条中文和一条英文分析师问法都须第一次调用命中正确产品；真实歧义的 `MULTIPLE_INTENTS` 必须含正确候选，能力缺失则须返回目标明确且带可执行 next action 的 gap。调用次数是调用方顶层命令/SDK 调用数，不是 composite 内部 HTTP 数；`实测` 指本轮离线发现加 Plan dry-run，`控制流` 指离线发现实测后核对 handoff/Plan 路径，`未验证` 不作达标声明。
+闭环判据沿用[路线图](roadmap.md)：已知输入 1 次调用、未知输入 2 次调用，CLI/SDK/Plan/Agent 四面可达，结果为带 `schema_version` 与离散 `result_source` 的 envelope，能区分空、部分失败和能力缺口；请求未知字段及响应字段消失/类型变化 fail-closed，新增响应字段省略后放行并写结构化 drift audit。Agent 一面不再以卡已注册或精确 selector 自证：每行至少一条中文和一条英文分析师问法都须第一次调用命中正确产品；真实歧义的 `MULTIPLE_INTENTS` 必须含正确候选，能力缺失则须返回目标明确且带可执行 next action 的 gap。调用次数是调用方顶层命令/SDK 调用数，不是 composite 内部 HTTP 数；`实测` 指本轮离线发现加 Plan dry-run，`控制流` 指离线发现实测后核对 handoff/Plan 路径，`未验证` 不作达标声明。
 
 下面原为 `1 / 3` 的 9 条动线现可显式使用在线输入解析：第一次
 `gravity agent --resolve-inputs ... --output ...`（SDK 为 `resolve_capabilities()`）同时发现能力并交付
@@ -104,6 +104,13 @@ operation/contract/evidence/call-bound 事实。empty、partial corruption、sto
 retention-pruned、active run 与 write-failed 均为离散状态；调用方不需也不能依赖私有文件名或路径。
 Plan 已实现本地 `receipt_query`，没有引用“设计不适用”例外；Agent 面不为维护诊断动作新增自然语言
 产品卡。最终台账仍为 `48 = 33 / 0 / 15 → +0 / +0 / +0 = 48 = 33 / 0 / 15`，operation
+`185 → +0 = 185`、stable `176 → +0 = 176`；生产 HTTP 0 次。
+
+同日的响应漂移非对称裁决也是横切兼容性修正，不新增产品、operation 或 envelope 外层版本：未登记
+响应字段从“中断查询”改为“保持既有投影并写 `gravity.response-drift.v1`”，字段消失、类型变化、
+已声明枚举扩展与未知请求字段继续 fail-closed。结果内 `result_audit.response_drift` 与对应 HTTP
+receipt 都可按 JSON Pointer/观察类型机械查询；维护者以 receipt 为待登记字段事实源，不另维护易过期的
+Markdown 清单。台账仍为 `48 = 33 / 0 / 15 → +0 / +0 / +0 = 48 = 33 / 0 / 15`，operation
 `185 → +0 = 185`、stable `176 → +0 = 176`；生产 HTTP 0 次。
 
 同日的 LLM consumer-output 安全审计是横切结构修正，不新增或提升产品：台账仍为

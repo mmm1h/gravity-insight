@@ -83,7 +83,8 @@ class AccountCompanyOperationTests(unittest.TestCase):
 
                 result = client.read(operation_id, {})
 
-                self.assertEqual("contract_changed_additive", result["status"])
+                self.assertEqual("success", result["status"])
+                self.assertIn("response_drift", result["result_audit"])
                 self.assertEqual(
                     expected_items,
                     result["data"]["list"],

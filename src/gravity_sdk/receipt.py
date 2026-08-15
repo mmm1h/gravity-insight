@@ -19,6 +19,7 @@ from .receipt_retention import (
     prune_http_receipts_after_write,
 )
 from .result_audit import STORED, WRITE_FAILED, receipt_reference
+from .response_drift import merge_response_drifts, normalize_response_drift
 from .result_output import write_rendered_result
 
 
@@ -34,10 +35,16 @@ class _ActiveHttpReceipt:
     recorded: bool = False
 
 
+class _ReceiptReferences(list[dict[str, str]]):
+    def __init__(self) -> None:
+        super().__init__()
+        self.paths: dict[str, Path] = {}
+
+
 _ACTIVE_HTTP_RECEIPT: contextvars.ContextVar[_ActiveHttpReceipt | None] = (
     contextvars.ContextVar("gravity_active_http_receipt", default=None)
 )
-_ACTIVE_RESULT_RECEIPTS: contextvars.ContextVar[list[dict[str, str]] | None] = (
+_ACTIVE_RESULT_RECEIPTS: contextvars.ContextVar[_ReceiptReferences | None] = (
     contextvars.ContextVar("gravity_result_http_receipts", default=None)
 )
 
@@ -69,11 +76,11 @@ def record_http_request() -> None:
 
 
 @contextmanager
-def capture_http_receipt_references() -> Iterator[list[dict[str, str]]]:
+def capture_http_receipt_references() -> Iterator[_ReceiptReferences]:
     """Collect receipt outcomes for one same-context result assembly."""
 
     current = _ACTIVE_RESULT_RECEIPTS.get()
-    references = current if current is not None else []
+    references = current if current is not None else _ReceiptReferences()
     token = _ACTIVE_RESULT_RECEIPTS.set(references) if current is None else None
     try:
         yield references
@@ -214,7 +221,7 @@ def record_completed_http_response(
         ),
     }
     try:
-        persist_http_receipt(receipt, state_root)
+        path = persist_http_receipt(receipt, state_root)
     except (InputValidationError, OSError, UnicodeError):
         _report_http_receipt_failure(receipt)
         reference = receipt_reference(receipt["receipt_id"], WRITE_FAILED)
@@ -223,6 +230,58 @@ def record_completed_http_response(
     target = _ACTIVE_RESULT_RECEIPTS.get()
     if target is not None:
         target.append(dict(reference))
+        if reference["storage_status"] == STORED:
+            target.paths[reference["receipt_id"]] = path
+
+
+def record_response_drift(
+    references: list[dict[str, str]], response_drift: Mapping[str, Any] | None
+) -> None:
+    """Attach structured drift to the already durable receipts for this result."""
+
+    if response_drift is None or not isinstance(references, _ReceiptReferences):
+        return
+    normalized = normalize_response_drift(response_drift)
+    for reference in references:
+        if reference.get("storage_status") != STORED:
+            continue
+        path = references.paths.get(str(reference.get("receipt_id")))
+        if path is None:
+            continue
+        receipt: Mapping[str, Any] = {}
+        try:
+            current = json.loads(path.read_text(encoding="utf-8"))
+            if (
+                not isinstance(current, Mapping)
+                or current.get("schema_version") != HTTP_SCHEMA_VERSION
+                or current.get("receipt_id") != reference.get("receipt_id")
+            ):
+                raise ValueError("HTTP receipt identity changed before drift recording")
+            receipt = current
+            drift = merge_response_drifts((current.get("response_drift"), normalized))
+            write_rendered_result(
+                str(path),
+                json.dumps(
+                    {**dict(current), "response_drift": drift},
+                    ensure_ascii=False,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+                + "\n",
+            )
+        except (OSError, UnicodeError, json.JSONDecodeError, ValueError, TypeError):
+            reference["storage_status"] = WRITE_FAILED
+            _report_response_drift_failure(receipt)
+
+
+def _report_response_drift_failure(receipt: Mapping[str, Any]) -> None:
+    try:
+        _LOGGER.warning(
+            "gravity_response_drift_receipt_write_failed",
+            extra={"gravity_operation_id": str(receipt.get("operation_id", "unknown"))},
+        )
+    except Exception:
+        pass
 
 
 def persist_http_receipt(receipt: Mapping[str, Any], state_root: Path) -> Path:
@@ -318,6 +377,7 @@ __all__ = [
     "persist_http_receipt",
     "persist_receipt",
     "record_active_http_response",
+    "record_response_drift",
     "request_attempt_context",
     "request_receipt_context",
     "record_completed_http_response",

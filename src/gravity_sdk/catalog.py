@@ -410,7 +410,7 @@ class OperationCatalog:
         warnings = envelope.get("warnings")
         self.record(
             operation_id,
-            status=str(envelope.get("status", "error")),
+            status=("contract_changed_additive" if str(envelope.get("status", "error")) in {"success", "empty"} and isinstance(envelope.get("result_audit"), Mapping) and envelope["result_audit"].get("response_drift") is not None else str(envelope.get("status", "error"))),
             schema_fingerprint=str(envelope["schema_fingerprint"]) if envelope.get("schema_fingerprint") is not None else None,
             warnings_count=len(warnings) if isinstance(warnings, (list, tuple)) else 0,
             verified_at=str(envelope["fetched_at"]) if envelope.get("fetched_at") is not None else None,

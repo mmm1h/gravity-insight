@@ -532,15 +532,18 @@ def _surface_client() -> tuple[
     return client, projection, safe_total
 
 
-def test_sensitive_field_is_hidden_from_projection_read_describe_and_cli() -> None:
+def test_unknown_field_value_is_hidden_while_its_drift_path_is_audited() -> None:
     client, projection, safe_total = _surface_client()
     assert SENSITIVE_KEY not in _exposed_response_fields(projection)
     assert SENSITIVE_VALUE not in json.dumps(projection, sort_keys=True)
 
     read_result = client.read("report.company_amount.query", {})
     rendered_read = json.dumps(read_result, sort_keys=True)
-    assert SENSITIVE_KEY not in rendered_read
     assert SENSITIVE_VALUE not in rendered_read
+    assert SENSITIVE_KEY not in json.dumps(read_result["data"], sort_keys=True)
+    assert {
+        item["path"] for item in read_result["result_audit"]["response_drift"]["fields"]
+    } >= {f"/data/list/*/{SENSITIVE_KEY}", f"/data/total/*/{SENSITIVE_KEY}"}
     assert read_result["data"] == {
         "list": [{"ad_count": 3, "date": "2026-08-08"}],
         "total": [safe_total],
@@ -559,8 +562,10 @@ def test_sensitive_field_is_hidden_from_projection_read_describe_and_cli() -> No
     ):
         assert cli.main(["read", "report.company_amount.query"]) == 0
     rendered_cli = stdout.getvalue()
-    assert SENSITIVE_KEY not in rendered_cli
     assert SENSITIVE_VALUE not in rendered_cli
+    cli_result = json.loads(rendered_cli)
+    assert SENSITIVE_KEY not in json.dumps(cli_result["data"], sort_keys=True)
+    assert "response_drift" in cli_result["result_audit"]
 
 
 def _legacy_evidence(source: dict[str, object], payload: dict[str, object]) -> dict[str, object]:
