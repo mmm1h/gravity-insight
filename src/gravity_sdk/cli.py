@@ -20,7 +20,7 @@ from gravity_sdk.domains import (
     ATTRIBUTION_STATUS_OPERATIONS,
     DOMAIN_OPERATIONS,
 )
-from gravity_sdk import nonempty_cli, runtime
+from gravity_sdk import json_output, nonempty_cli, runtime
 from gravity_sdk.cli_limits import (
     agent_limit as _agent_limit,
     operation_limit as _operation_limit,
@@ -187,7 +187,7 @@ def _sanitize_credentials(value: Any) -> Any:
 
 def _write_json(value: Any, *, stream=None) -> None:
     print(
-        json.dumps(
+        json_output.dumps(
             _sanitize_credentials(value), ensure_ascii=False, indent=2, sort_keys=True
         ),
         file=stream or sys.stdout,
@@ -635,7 +635,7 @@ def _summary_reference(operation_id: str | None, path: str, value: Any) -> dict[
         encoded = value
         value_type = "binary"
     else:
-        encoded = json.dumps(
+        encoded = json_output.dumps(
             runtime.to_jsonable(value),
             ensure_ascii=False,
             sort_keys=True,
@@ -685,9 +685,9 @@ def _safe_stdout_value(
         }:
             try:
                 encoded_size = len(
-                    json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode(
-                        "utf-8"
-                    )
+                    json_output.dumps(
+                        value, ensure_ascii=False, separators=(",", ":")
+                    ).encode("utf-8")
                 )
             except (TypeError, ValueError):
                 encoded_size = _LARGE_VALUE_BYTES + 1
@@ -770,18 +770,18 @@ def _iter_ndjson_lines(result: Any):
     if isinstance(result, Mapping) and result.get("schema_version") == "gravity.agent-batch.v1":
         from gravity_sdk.agent_batch import iter_ndjson_records
         for record in iter_ndjson_records(result):
-            yield json.dumps(
+            yield json_output.dumps(
                 _sanitize_credentials(record), ensure_ascii=False, sort_keys=True
             )
         return
     rows, metadata = _ndjson_rows(result)
     for row in rows:
-        yield json.dumps(
+        yield json_output.dumps(
             _sanitize_credentials(_safe_stdout_result(row)),
             ensure_ascii=False,
             sort_keys=True,
         )
-    yield json.dumps(
+    yield json_output.dumps(
         _sanitize_credentials({"_gravity_insight": metadata}),
         ensure_ascii=False,
         sort_keys=True,
@@ -804,7 +804,7 @@ def _emit_success(args: argparse.Namespace, result: Any) -> None:
         if output_format == "ndjson":
             rendered = _render_ndjson(result)
         else:
-            rendered = json.dumps(
+            rendered = json_output.dumps(
                 _sanitize_credentials(result),
                 ensure_ascii=False,
                 indent=2,

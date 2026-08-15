@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-import json
 import sys
 from typing import Any
+
+from . import json_output
 
 
 _ENTRY_ERRORS = (OSError, RuntimeError, UnicodeError, ValueError, TypeError)
@@ -61,7 +62,7 @@ def emit_entry_error(error: BaseException) -> int:
             "the same command."
         )
     print(
-        json.dumps(
+        json_output.dumps(
             error_envelope(error, next_action=next_action),
             ensure_ascii=False,
             indent=2,

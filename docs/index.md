@@ -18,6 +18,7 @@
 | 查看自定义人群覆盖与状态 | [Agent 工作流](agent-workflow.md) | [CLI 参考](reference/cli.md#custom-audiences) |
 | 批量发现并执行交叉查询 | [Agent 工作流：显式 Plan](agent-workflow.md#3-交叉查询一个显式-plan) | [CLI Plan 参考](reference/cli.md#plan-v1) |
 | 在 Python 中集成 SDK | [Python SDK 参考](reference/sdk.md) | [架构与概念](architecture.md) |
+| 把 SDK/CLI 输出交给 LLM | [LLM 输出安全指南](guides/llm-output-safety.md) | [Agent 工作流](agent-workflow.md) |
 | 判断用 Insight 还是 SQL | [架构与概念](architecture.md#查询路由) | [Agent 工作流](agent-workflow.md#选择-insight-还是-sql) |
 | 同步全部 App 的埋点目录 | [快速上手](getting-started.md#同步本地元数据目录) | [CLI 参考](reference/cli.md#metadata) |
 | 配置项目 App、SQL 产品或 recipe | [Workspace 参考](reference/workspace.md) | [架构与概念](architecture.md#发现workspace-与-resolver) |
@@ -32,6 +33,7 @@
 | 查看本轮 17 个候选的真实状态 | [候选能力证据矩阵](candidate-capability-matrix.md) | [探测安全](maintainers/probing.md) |
 | 探测生产接口 | [探测安全](maintainers/probing.md) | [路由盘点](maintainers/census.md) |
 | 刷新 Evidence | [Evidence 运行手册](maintainers/evidence.md) | [维护者入口](maintainers/index.md) |
+| 查阅 Agent 调研依据 | [安全治理](research/agent-security-governance.md)、[可用性方法](research/agent-usability-methods.md) | [MCP 协议](research/mcp-protocol-and-servers.md)、[厂商能力](research/vendor-agent-landscape.md) |
 
 ## 三个必须先知道的边界
 

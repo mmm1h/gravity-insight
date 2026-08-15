@@ -13,16 +13,48 @@
 
 ## 现状
 
-当前从仓库产品入口与 stable operation 正向交叉反推 47 条产品动线：**已闭环 33 / 部分闭环 0 / 完全缺失 14**；
-另有 2 条 legacy/SDK 便利面保留用于兼容与维护，但不计产品动线。
-合并前当前值是 `47 = 32 / 0 / 15`；分群成员明细从完全缺失转为已闭环，变化为
-`+1 / +0 / -1`，总数不变，得到 `47 = 33 / 0 / 14`。stable operation 仍为 185、其中 176 个 stable。
-**部分闭环归零不代表没有欠账**——14 条完全缺失里
+当前从仓库产品入口与 stable operation 正向交叉反推 48 条产品动线：**已闭环 33 / 部分闭环 0 / 完全缺失 15**；
+另有 2 条 legacy/SDK 便利面和 1 条重复能力审计行保留，但不计产品动线。
+本轮程序化复算发现旧摘要漏计表内 D28 缺失行：表格 51 行，减去 3 条“不计独立动线”，得到
+`48 = 33 / 0 / 15`；相对旧摘要 `47 = 33 / 0 / 14` 是 `+0 / +0 / +1`、总数 `+1`。
+这只是既有行的算术纠正，不是新增能力或放宽闭环判据。stable operation 仍为 185、其中 176 个 stable。
+**部分闭环归零不代表没有欠账**——15 条完全缺失里
 多数是请求、响应或非空证据阻塞；字段隐私不再是阻塞项。
 逐条状态、四面入口、调用次数和证据阻塞以[分析动线台账](analysis-journeys.md)为准；旧
 `21/14/6` 快照的逐条底稿未进入版本控制，无法复算，已停止作为排期事实。
 
 `draft` 候选数量不等于排期数量：17 项候选归并进台账动线或按明确非目标排除，不按 operation 单独排期。
+
+### 输出交给 LLM 的内容边界（2026-08-15）
+
+**提案：**保持投影全面放开，把 stable manifest、产品台账和源码中的 versioned envelope 构造点做
+离线程序化全集；逐类追踪 `data/request/error/warnings/diagnostics/log/receipt/Agent card`，只修业务值与
+我方说明文字混合及非标准 JSON，不做内容检测、评分或字段过滤。工作提案与完整生成结果位于 ignored
+`tmp/codex/consumer-safety/proposal.md`、`inventory-final.json`。
+
+**盘面结论：**`scripts/consumer_output_inventory.py` 从编译后 manifest 取得 176/176 个 stable
+operation 及全部投影路径，并从分析动线权威表取得 51 行产品/兼容记录。所有 operation 的
+`request.inputs` 和 `data` 都划为不可信内容区；175 个响应合同允许潜在文本，42 个含动态字段或
+opaque JSON。现有合同不登记每个字段的写入主体或完整标量类型，因此不能证明更窄的“确定由最终用户
+填写”全集；字段名启发式不作为安全边界。调用方使用完整上界，而不是等待本仓库猜测 provenance。
+
+**自然语言审计：**没有发现上游业务响应值进入 SDK 的 `error.message`、`next_action`、warning、
+diagnostics 或日志；semantic rejection 使用 manifest 固定文案，HTTP/运行 receipt 只含值无关元数据。
+Agent live catalog 的名称和值保留在 `items/name/selector/argv` 等结构化位置，没有拼入说明段落。
+发现的真实歧义是 workspace recipe 的调用方自定义 `description` 与 operation 的仓库文案共用同名字段；
+Find/Agent 卡现增加 `description_origin=sdk_contract|caller_workspace`，不改变 description 原值。
+
+**结构保证：**公共 Insight JSON/NDJSON、入口错误、SQL 与 Census serializer 现统一拒绝
+`NaN/Infinity`，仍使用 strict UTF-8 JSON；合成恶意换行、引号和伪标签 round-trip 后值完全相同，
+只作为一个 JSON string，不产生尾随结构。该保证解决解析歧义，不消除字符串内容对模型的影响。
+`docs/guides/llm-output-safety.md` 给出按 schema/status/code 分支、按内容根拆消息、模型外限制副作用与
+审计关联的调用方步骤。operation、投影、请求、错误分类和既有退出码语义均未改变；Agent/Find 仅新增
+origin 元数据。
+
+**不能保证：**SDK 不检测或识别 prompt injection，不打分，不隐藏、改写或删除业务值，也不能保证
+下游 LLM 不受数据诱导、不调用其他工具或不外传。严格 JSON、结构分离和 origin 元数据只能让调用方
+机械识别边界；工具 allowlist、权限隔离、输出目的地控制和高风险动作确认仍必须由调用方实现。
+本项 production HTTP 请求 **0 次**，无重试、翻页、扩窗或换 App。
 
 ### Analysis 自有合同投影修正（2026-08-15）
 

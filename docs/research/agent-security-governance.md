@@ -20,7 +20,7 @@
 
 **E06 [实证]** 报告中的计数单位是“带唯一 ID 的证据条目”，不是句子数；一条可以包含同一来源链支撑的一组紧密事实。`[实证]` 用于官方规范、官方技术文档、源码/API schema、CVE/GHSA、论文或可复现 PoC；`[厂商宣称]` 用于营销页、信任中心或无独立验证的比例；`[推测]` 只用于跨来源类比、样本归纳和对本仓库的条件性判断。
 
-**E07 [实证]** 仓库当前基线是：上游授权作为产品访问边界，SDK 不再另做字段级访问控制；同时继续要求凭据不入库、生产响应值不进入 evidence/文档/测试/提交、未登记字段按 contract drift fail closed。[投影边界总裁决](../roadmap.md#投影边界总裁决全面放开2026-08-15) 当前 `run` 把脱敏 receipt 写入私有 `state_root/receipts/`，不保存输入值或结果行；代码审计字段包括 `gravity_operation_id`、状态、耗时、页数和行数。[agent workflow](../agent-workflow.md#L185)、[client.py](/D:/git-pjt/wt-r5-security/src/gravity_sdk/client.py#L1117)
+**E07 [实证]** 仓库当前基线是：上游授权作为产品访问边界，SDK 不再另做字段级访问控制；同时继续要求凭据不入库、生产响应值不进入 evidence/文档/测试/提交、未登记字段按 contract drift fail closed。[投影边界总裁决](../roadmap.md#投影边界总裁决全面放开2026-08-15) 当前 `run` 把脱敏 receipt 写入私有 `state_root/receipts/`，不保存输入值或结果行；代码审计字段包括 `gravity_operation_id`、状态、耗时、页数和行数。[agent workflow](../agent-workflow.md#L185)、[client.py](../../src/gravity_sdk/client.py#L1117)
 
 ## A. MCP 的已知安全问题
 
@@ -177,7 +177,7 @@ cubes:
 
 **I08 [推测]** 结合 OWASP、Snowflake、Looker，面向本仓库的最小审计 envelope 可分成四组，而不必保存结果值：身份（MCP client/agent、认证 subject、represented user、上游账号/role）、意图与能力（tool 名、schema/version hash、只读/开放网络属性、参数名与敏感值摘要或 hash）、执行（request/operation/query ID、时间、状态、耗时、页数、行数/返回字节、调用次数）、数据边界（访问的对象/字段、命中的策略、输出目的地/是否经外部 tool）。这是从公开字段归纳出的建议 schema，不是 MCP 标准规定的统一 schema。依据是 E35–E38。
 
-**E39 [实证]** 本仓库当前“每个生产 HTTP 请求完成即落盘脱敏 receipt”的外部对应物不是一模一样的标准名称，而是 query/request ID、query history、access history、AI trace 和 Cloud Audit Logs：它们共同提供“完成后立即产生可关联事件”的能力。仓库已经记录 operation/status/duration/pages/rows 且不存输入值/结果行，但目前没有 agent identity、represented user、上游 role、tool manifest hash、输出目的地或字段访问清单。[本仓库 receipt](../agent-workflow.md#L185)、[本仓库审计字段](/D:/git-pjt/wt-r5-security/src/gravity_sdk/client.py#L1117)、[Snowflake QUERY_HISTORY](https://docs.snowflake.com/en/sql-reference/account-usage/query_history)、[Looker audit](https://docs.cloud.google.com/looker/docs/mcp#audit-logging)
+**E39 [实证]** 本仓库当前“每个生产 HTTP 请求完成即落盘脱敏 receipt”的外部对应物不是一模一样的标准名称，而是 query/request ID、query history、access history、AI trace 和 Cloud Audit Logs：它们共同提供“完成后立即产生可关联事件”的能力。仓库已经记录 operation/status/duration/pages/rows 且不存输入值/结果行，但目前没有 agent identity、represented user、上游 role、tool manifest hash、输出目的地或字段访问清单。[本仓库 receipt](../agent-workflow.md#L185)、[本仓库审计字段](../../src/gravity_sdk/client.py#L1117)、[Snowflake QUERY_HISTORY](https://docs.snowflake.com/en/sql-reference/account-usage/query_history)、[Looker audit](https://docs.cloud.google.com/looker/docs/mcp#audit-logging)
 
 **I09 [推测]** 因此仓库的 receipt 在“不把生产值写进证据”和逐请求计数方面比只保存聊天 transcript 更窄、更利于隐私；但在主体归因和跨层 lineage 上落后于 Snowflake/Looker 的组合日志。这个比较只涉及公开字段覆盖面，不代表三者的实际完整性、时效或防篡改能力相同。依据是 E36–E39。
 

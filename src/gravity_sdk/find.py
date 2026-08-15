@@ -69,6 +69,7 @@ class OperationFindBackend:
                 "id": item.get("operation_id"),
                 "name": item.get("operation_id"),
                 "description": item.get("description", ""),
+                "description_origin": "sdk_contract",
                 "domain": item.get("domain"),
                 "platform": item.get("platform"),
                 "stability": item.get("stability"),
@@ -117,6 +118,7 @@ class RecipeFindBackend:
                     "id": recipe.name,
                     "name": recipe.name,
                     "description": recipe.description,
+                    "description_origin": "caller_workspace",
                     "operation_id": recipe.operation,
                     "score": score,
                 }
@@ -295,6 +297,7 @@ def _draft_gap(client: Any, query: str, item: Mapping[str, Any]) -> dict[str, An
         "kind": "draft_capability_gap",
         "operation_id": operation_id,
         "description": item.get("description"),
+        "description_origin": "sdk_contract",
         "domain": item.get("domain"),
         "platform": item.get("platform"),
         "stability": item.get("stability"),
