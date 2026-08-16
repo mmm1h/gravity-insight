@@ -84,7 +84,7 @@
       "src/gravity_sdk/census/params.py::_extract_occurrence": 104,
       "src/gravity_sdk/census/params.py::_infer_expression": 200,
       "src/gravity_sdk/census/params.py::_tokenize": 108,
-      "src/gravity_sdk/census/parser.py::build_routes": 99,
+      "src/gravity_sdk/census/parser.py::build_routes": 93,
       "src/gravity_sdk/census/response.py::apply_response_fields_to_drafts": 86,
       "src/gravity_sdk/cli.py::build_parser": 146,
       "src/gravity_sdk/executor.py::ReadExecutor.execute": 84,

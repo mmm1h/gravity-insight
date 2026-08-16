@@ -35,6 +35,24 @@ fetch bundles
 
 ## 解释 coverage
 
+### 强制覆盖边界
+
+`bundle-snapshot.json.summary.complete=true` 只表示**该次入口可静态递归发现的同源 JS 图**无
+pending/failure，且抓取期间入口 HTML 稳定；它不表示平台、租户、角色或全部后端路由完整。
+生成的 `routes.json.source` 以
+`coverage_scope= "same_origin_static_js_graph_discoverable_from_site_entry"` 和
+`platform_complete=false` 固化这个区别，消费方不得从 `bundle_complete=true` 反推平台完整。
+任何引用 Census 数字的结论都必须同时写明：
+
+- 分母是冻结 snapshot 内的 route，不是平台总路由；
+- 对应 `bundle_id` 或抓取时间；
+- 入口、同源静态图和 parser 已知边界；
+- “未出现”只能解释为“该范围内未观察到”，范围外未知。
+
+覆盖率可用于同一 snapshot 内的合同对账和漂移比较，不能用于声称“平台只有这些路由”或
+“某能力不存在”。完整审计与推荐措辞见
+[Census 完整性与分母审计](../research/census-completeness-audit.md)。
+
 - 已登记 stable：仍需关注响应字段和上游 hash 漂移；
 - draft：只有静态证据，不代表差一次 probe 就能开放；
 - blocked-write / blocked-privacy：明确保留，不应追求 callable；

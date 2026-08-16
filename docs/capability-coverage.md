@@ -12,7 +12,7 @@ manifest 与 `gravity agent <query>` 为准；完整路由账本见
 | stable operation | 217（185 read / 32 governed mutation） |
 | stable read operation 产品面交叉 | 94 已覆盖 / 82 不应产品化 / 8 原快照待产品化；默认值字典、D35、F40、报表目录与订阅已直接闭环 |
 | 推广 / 素材 stable 原子读取 | 64 / 24 |
-| Census 路由 | 987，全部有明确归类 |
+| Census 路由 | 冻结 Web-entry 静态快照内 987，快照内全部有明确归类；不是平台总路由 |
 | Census 中 callable covered route | 210 |
 | 尚未覆盖的 read route | 335 |
 | 明确保留的推广 / 素材 write reservation | 110 / 49 |
@@ -20,6 +20,10 @@ manifest 与 `gravity agent <query>` 为准；完整路由账本见
 这些数字不等于“还有 335 个接口可以直接开发”。推广与素材共有 188 个 catalog-only
 draft，但当前没有一个具有成功 probe；它们可用于说明缺口和准备最小探测，不能生成执行
 argv，也不能进入 stable manifest。
+
+`987` 的入口、抓取时间、静态闭包与范围外未知项见
+[Census 完整性与分母审计](research/census-completeness-audit.md)。本页所有 Census 分解都只在该冻结
+集合内成立；未出现的能力不能据此判为平台不存在。
 
 stable 同样不等于已有分析产品：既有正向交叉只统计 176 条 stable read operation，
 `gravity run <operation-id>`、legacy promotion snapshot 和 SDK inventory snapshot 均不算分析动线。

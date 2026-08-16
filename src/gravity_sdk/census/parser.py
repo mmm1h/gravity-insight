@@ -339,6 +339,20 @@ def parse_text(
     return occurrences
 
 
+def _source_metadata(
+    snapshot: dict[str, Any], summary: dict[str, Any], missing_files: list[str]
+) -> dict[str, Any]:
+    return {
+        "site_url": snapshot.get("site_url"),
+        "bundle_id": snapshot.get("bundle_id"),
+        "bundle_files": summary.get("bundle_files", len(snapshot.get("files", []))),
+        "bundle_complete": bool(summary.get("complete", False)),
+        "coverage_scope": "same_origin_static_js_graph_discoverable_from_site_entry",
+        "platform_complete": False,
+        "missing_local_files": sorted(missing_files),
+    }
+
+
 def build_routes(snapshot: dict[str, Any], raw_dir: Path) -> dict[str, Any]:
     all_occurrences: list[dict[str, Any]] = []
     missing_files: list[str] = []
@@ -421,13 +435,7 @@ def build_routes(snapshot: dict[str, Any], raw_dir: Path) -> dict[str, Any]:
             unknown_reason_counts["request wrapper method could not be resolved statically"] += 1
     return {
         "schema_version": 1,
-        "source": {
-            "site_url": snapshot.get("site_url"),
-            "bundle_id": snapshot.get("bundle_id"),
-            "bundle_files": summary.get("bundle_files", len(snapshot.get("files", []))),
-            "bundle_complete": bool(summary.get("complete", False)),
-            "missing_local_files": sorted(missing_files),
-        },
+        "source": _source_metadata(snapshot, summary, missing_files),
         "parser": {
             "strategy": "hybrid lexical string scan plus request-call context and wrapper inference",
             "known_limitations": PARSER_LIMITATIONS,

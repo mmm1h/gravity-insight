@@ -7,8 +7,8 @@
 
 - [外部做法借鉴规划（P0 / P1 / P2 / P3）](borrow-roadmap.md) — 把下列调研变成可执行排期，
   含「明确不做」一档。
-- [授权写面普查与分析能力排期](write-surface-census.md) — 从 987 条 Census route 复算当前未覆盖写面，
-  按产品授权与“少一次回 Web”筛出真正值得建设的对象族，并校正 SQL 工作台与保存分析边界。
+- [授权写面普查与分析能力排期](write-surface-census.md) — 在冻结 Web-entry Census 的 987 条 route 内
+  复算未覆盖写面，按产品授权与“少一次回 Web”筛出真正值得建设的对象族。
 
 ## 架构评估
 
@@ -38,6 +38,8 @@
 依据本租户前端 bundle、仓库 census 与受控在线验证得出，**是当时的事实快照，不是永久结论**。
 
 - [引力原生 AI 事件分析对话摸底](gravity-native-ai.md)
+- [Census 完整性与分母审计](census-completeness-audit.md) — 还原 2026-08-09 抓取源、静态闭包和
+  SQL 工作台占位，量化模块/UNKNOWN method，并限定所有 987-route 推导的适用范围。
 - [分群删除能力调查](segment-delete-capability.md)
 - [维度表 wire 与分析价值探测](dimension-table-wire-probe.md) — 9 条写路由的请求形状；
   **属性绑定是单向门**（无法解除最后一条关联），因此未能证明分析价值。

@@ -6,11 +6,11 @@
 
 当前写面不能用“路径里像写动词”直接计数。可复算结论是：
 
-1. `routes.json` 有 **987** 个唯一 `(method, path)`；当前 operation 为 **226 = 194 read + 32 mutation**。其中 stable **217 = 185 read + 32 mutation**，另有 9 个 experimental read。
-2. 只按当前 Census 的动作词元分类，在精确扣除 226 个 operation 后得到 **334** 条疑似写，不是约 434。这个口径仍只是启发式。
-3. 更可靠的口径是 Census 已复核并生成 blocked-write reservation 的路由：旧 `coverage.json` 有 407 条；再扣除后来已经稳定覆盖的 25 个精确 route，得到 **382 条当前未覆盖写路由**，恰好对应 382 份 reservation。
-4. 382 条中，明确只读的推广/素材/资产/归因占 226 条，但产品方又明确授权“分群 / 人群包”，所以必须从这 226 条中保留 18 条 audience/directional/custom-audience 例外。最终划掉只读 **208** 条、维度表 **9** 条、仓库明确不做的看板收藏/成员权限 **9** 条，以及不属于给定分析对象 CRUD 的后台配置 **114** 条。
-5. 严格落在授权对象内的物理写路由是 **42 条**；能明确回答“不做会在哪一步回 Web”的只有 **9 条**。此外还有 **3 个不增加 route 数的产品能力洞**：编辑“我的报表”、编辑自己的 v3 报表模板、平台 SQL 工作台对象面。
+1. 冻结 Web-entry `routes.json` 有 **987** 个唯一 `(method, path)`；它不是平台总路由。当前 operation 为 **226 = 194 read + 32 mutation**。其中 stable **217 = 185 read + 32 mutation**，另有 9 个 experimental read。
+2. 只按该 Census 的动作词元分类，在精确扣除 226 个 operation 后得到 **334** 条疑似写，不是约 434。这个口径仍只是启发式。
+3. 在该 snapshot 内，更可靠的口径是已复核并生成 blocked-write reservation 的路由：旧 `coverage.json` 有 407 条；再扣除后来已经稳定覆盖的 25 个精确 route，得到 **382 条 snapshot 内当前未覆盖写路由**，恰好对应 382 份 reservation。
+4. 这 382 份 reservation 中，明确只读的推广/素材/资产/归因占 226 条，但产品方又明确授权“分群 / 人群包”，所以必须从这 226 条中保留 18 条 audience/directional/custom-audience 例外。最终划掉只读 **208** 条、维度表 **9** 条、仓库明确不做的看板收藏/成员权限 **9** 条，以及不属于给定分析对象 CRUD 的后台配置 **114** 条。
+5. 严格落在授权对象内、且已被该 snapshot 观察到的物理写路由是 **42 条**；能明确回答“不做会在哪一步回 Web”的只有 **9 条**。此外还有 **3 个不增加该 snapshot route 数的产品能力洞**：编辑“我的报表”、编辑自己的 v3 报表模板、平台 SQL 工作台对象面。snapshot 外还有多少未知。
 
 最该先做的不是把 42 条逐个提升，而是 `report_config/update` 的保存分析 CRUD。它是一条物理 route，却同时服务事件、漏斗、留存、属性、散点、订单、变现和用户分析；当前仓库能读和重放，但不能保存、修改或删除。
 
@@ -26,8 +26,8 @@
 | --- | ---: | --- | --- |
 | 当前 operation 精确对账后，按 `coverage.classify_semantics` 动作词元猜写 | 334 | 路径或 HTTP method 看起来像 mutation；auth/export 先于写分类 | 否，只能找候选 |
 | 旧 Census 已复核写面 | 407 | `coverage.json` 当时生成 reservation 的写 route | 否，包含后来已覆盖 route |
-| 当前未覆盖、已有 reservation 的写面 | **382** | 407 减当前精确覆盖的 25 个 route；与 382 份 reservation 一一对应 | 可作为物理写面母集 |
-| 产品授权且属于仓库分析对象的写面 | **42** | 再应用产品授权、仓库边界与人群包例外 | 是，但仍须按回 Web 卡点排序 |
+| Snapshot 内当前未覆盖、已有 reservation 的写面 | **382** | 407 减当前精确覆盖的 25 个 route；与 382 份 reservation 一一对应 | 可作为该冻结集合的物理写面母集，不是平台母集 |
+| Snapshot 内产品授权且属于仓库分析对象的写面 | **42** | 再应用产品授权、仓库边界与人群包例外 | 是，但仍须按回 Web 卡点排序 |
 | 有明确回 Web 卡点 | **9** | 42 中能回答“不做卡在哪一步”的 route | 是，进入 P0/P1/P2 |
 
 用户粗算无法在当前树上复现。尤其不能用无边界 substring：例如 `asset` 自带 `set`，会把整个资产族误判为写；也不能把 POST 自动当写，仓库已有大量 POST read。本文使用当前仓库自己的动作边界规则，并以 reservation 的逐 route 决议作为更强证据。
@@ -60,7 +60,7 @@
 | 看板收藏、默认收藏、space/dashboard 成员分享 | 9 | 仓库边界明确不做 favourites 与成员权限管理 |
 | 账号/App/开发者应用/归因配置/变现接入/管理员预置等 | 114 | 不在给定分析对象 CRUD 授权内 |
 | 严格授权写面 | **42** | 进入下一节；不是 42 个都值得实现 |
-| 合计 | **382** | 与 reservation 数一致 |
+| Snapshot 内合计 | **382** | 与 reservation 数一致；范围外未知 |
 
 ## 二、按授权模块归类的写面缺口
 
@@ -79,7 +79,8 @@
 
 - `report.report.update` 已是 stable route，合同字段也能表达带 `id` 的更新，但产品面只交付 create/delete；“编辑我的报表”缺 SDK/CLI/Agent 生命周期。
 - `report.template.update` 的同一路由 `/conftemplate/template/edit/` 已用于 `is_deleted=1` 删除；删除并不缺，缺的是 owner 校验后的 rename/config update。
-- 平台 SQL 工作台没有出现在当前 Census，因此缺口不能表示为已知 route 数。
+- 当前入口把平台 SQL 工作台列为 `/analysis/bi`，但该叶路由没有 component/import，哈希匹配的
+  375 个 JS 中也没有 custom-SQL 实现路径；因此缺口不能表示为已知 route 数，范围外实现未知。
 
 ## 三、逐族：不做会卡在哪一步
 
@@ -166,7 +167,7 @@
 
 能确定的结论是：**不是同一个产品 surface**；底层是否最终共用某个执行服务，当前证据不足。
 
-| 证据 | 本地 workspace SQL product | 平台侧当前 Census |
+| 证据 | 本地 workspace SQL product | 冻结 Web-entry Census 内观察 |
 | --- | --- | --- |
 | endpoint | `https://api-insight.gravity-engine.com/custom_sql/api/sql/execute` | 唯一含 SQL 的 route 是 `/report/api/v3/dataanalysis/query_sql/` |
 | 输入对象 | `[products.<name>] kind="custom-sql"`，只允许已登记 SQL、App、日期、limit、投影和禁止结论 | `analysis.event.query` 的结构化 event body；合同明确“不是自由 SQL” |
@@ -180,7 +181,12 @@
 - 查询历史；
 - 分享/复制查询（是否属于授权范围还需产品确认）。
 
-精确 method/path、owner 字段、请求和响应 schema **不确定**。当前 Census 是公开 Web bundle 的部分快照；“没发现 route”不能证明平台没有功能，也不能证明它和 `/custom_sql/api/sql/execute` 共用或不共用 backend。没有已知目标 route 时，生产探测也无法给出安全、可证伪的答案，所以本轮没有使用请求预算。
+精确 method/path、owner 字段、请求和响应 schema **不确定**。当前 snapshot 已完整抓取该入口可静态发现的
+同源 JS 图，但这个图只是平台子集。入口中的 SQL 菜单/路由是唯一没有 component/import 的叶路由，
+所以不是“未点击懒加载页”；375 个 JS 也没有 `/custom_sql/` 或 `sql/execute`。这仍不能证明平台没有
+功能，也不能证明它和 `/custom_sql/api/sql/execute` 共用或不共用 backend。没有已知目标 route 时，
+生产探测也无法给出安全、可证伪的答案，所以本轮没有使用请求预算。完整复核见
+[Census 完整性与分母审计](census-completeness-audit.md)。
 
 ## 五、与 `borrow-roadmap` 对齐的排期
 
@@ -189,9 +195,9 @@
 | 插入位置 | 项目 | 量级 | 为什么排这里 | 可证伪验收 |
 | --- | --- | --- | --- | --- |
 | **排在现有 P0-1 前** | 保存分析 create/update/delete | L | 一条 route 直接补“做完分析却存不下来”的闭环，覆盖八个 subject；价值比目录顺手性更直接 | 受支持的 event/funnel/retention/property/scatter 各能 preview→execute→list/get→按新日期 replay；update 后只改变审阅字段；owner 不符/缺失在 0 次写请求下拒绝；delete 后完整列表确认消失 |
-| **P0 证据线，与上项并行** | 找到平台 SQL 工作台的真实静态 surface | M | 当前是明确产品能力洞，但没有可实现 route；先把“不知道接口”变成可排工作 | 从正确入口/bundle 得到保存查询、目录/detail、历史及可选分享的 method/path、request shape、owner 字段与调用控制流；若该租户/版本没有此功能，也必须以入口与 bundle 证据明确否证，不能以当前 routes 零命中冒充 |
+| **P0 证据线，与上项并行** | 找到平台 SQL 工作台的真实 surface | M | 当前入口只含无 component 的菜单/路由占位，没有可实现 route；先把“不知道接口”变成可排工作 | 从正确租户/角色/入口或运行时证据得到保存查询、目录/detail、历史及可选分享的 method/path、request shape、owner 字段与调用控制流；若该租户/版本没有此功能，也必须以多入口证据明确否证，不能以当前 routes 零命中冒充 |
 | 保留现有 P0-1 | 目录优先宿主选路 | M | 仍影响所有自然语言旅程，但它解决“能力存在却选错”，不是新能力 | 沿用原冻结开发集/受保护门槛；本线不读取受保护 split |
-| **重写现有 P0-3 的前置条件** | 受治理语义组合层 | XL | 价值未被推翻，但不能再写成“等维度表 CRUD、SQL 工作台、自定义指标三项都完成”：维度表已 hold，自定义指标已完成，SQL 工作台尚无 route | 先冻结不依赖维度表的 3 个组合样例；只有 SQL/metadata 的真实输入面成立后才实现编译器，未知成员与禁止 join 保持 0 请求失败 |
+| **重写现有 P0-3 的前置条件** | 受治理语义组合层 | XL | 价值未被推翻，但不能再写成“等维度表 CRUD、SQL 工作台、自定义指标三项都完成”：维度表已 hold，自定义指标已完成，SQL 工作台在当前 snapshot 中尚无实现 route | 先冻结不依赖维度表的 3 个组合样例；只有 SQL/metadata 的真实输入面成立后才实现编译器，未知成员与禁止 join 保持 0 请求失败 |
 
 现有 P0-2“上游 owner 替代 marker”已经由三域 owner gate 交付，不再是未来排期；新 mutation 直接复用它并逐族验证。
 
@@ -233,7 +239,7 @@
 
 ## 七、交回判断题
 
-1. **真正授权写面缺口多少？** 物理 route **42**，其中 9 条值得做；另有 3 个不表现为新 route 的能力洞。382 条母集中：208 只读、9 hold、9 仓库边界排除、114 非授权分析对象、42 授权。
+1. **当前 snapshot 能确认的授权写面缺口多少？** 物理 route **42**，其中 9 条值得做；另有 3 个不表现为新 route 的能力洞。382 条冻结 reservation 母集中：208 只读、9 hold、9 仓库边界排除、114 非授权分析对象、42 授权；平台范围外未知。
 2. **答不上“在哪一步回 Web”的族？** 媒体人群包、额外临时分群、看板收藏/成员分享、模板主题/内部发布、元数据分组/显隐/批量清理、native AI、变现接入、App/账号和管理员/角色权限族。后两类甚至不属于给定分析对象授权。
 3. **SQL 工作台是否同一个东西？** 不是同一产品 surface。本地是 workspace 登记的 `/custom_sql/api/sql/execute` 只读产品；Census 唯一 `query_sql` 是结构化事件分析。平台 saved/history/share 的 route 与 backend 关系不确定。
 4. **保存分析现在能不能做，模板中心是哪族？** 现在能 list/get/replay，不能 create/update/delete。分析/看板模板中心是 v2 `analysis.template.*` / `datamanageconfig/template*`；v3 `conftemplate` 是多维报表中心。保存分析 create/edit/delete 可由 `report_config/update` 静态证明；saved-analysis share 不能证明。
@@ -246,5 +252,6 @@
 - 平台 SQL 工作台的精确 route、对象 schema、owner、history/share 语义及其与 custom-SQL backend 的关系不确定。
 - `report_config/update` 能证明保存分析 create/edit/delete，不能证明 saved-analysis share。
 - 模板 `change_internal` 与 share 的 recipient/owner 细节、订阅 edit 的完整 request body 仍不足以直接实现。
-- 42 是当前 987-route 快照内的物理 route 数；一个 route 可承载多个动作，Census 也可能遗漏由动态 URL 或未下载 bundle 提供的 route。因此 42 不是最终 operation 数，更不是完成度 KPI。
+- 42 是当前 987-route 快照内的物理 route 数；一个 route 可承载多个动作，Census 也会排除其他入口/
+  origin、运行时 URL 和后端-only route。因此 42 不是平台授权写面总数、最终 operation 数或完成度 KPI。
 - 本轮没有已知、安全且一次请求即可改变上述裁决的目标 route，故生产 HTTP 使用 **0 / 8**。
