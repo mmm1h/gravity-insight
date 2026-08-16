@@ -41,6 +41,14 @@ SQL 工作台不是漏抓的懒加载 chunk：入口把它列为 `/analysis/bi`�
 [Census 完整性与分母审计](research/census-completeness-audit.md)。本轮不重抓、不改 operation/产品卡/
 动线；生产业务 HTTP 与公开静态资源 HTTP 均为 0 次。
 
+### Census 覆盖边界机器门禁（2026-08-17）
+
+**提案与判定：**`build_routes()` 现在由回归测试锁定 `coverage_scope`、`platform_complete=false` 与
+`known_excluded_origins=["rank.gravity-engine.com"]`；删字段或将完整性翻为 true 均失败。coverage 命令
+输出 route 分母时同步输出这三个来源字段，明确 987 不是平台总路由；跨源排行榜因此不再只留在调研文字。
+为保持既有硬门禁，把 CLI coverage 分支下沉为窄 helper，并将 `run` 的 SLOC/复杂度 ratchet 从
+`96/30` 收紧到 `83/26`。本轮不重抓、不变更 route 内容、operation、产品卡或动线。
+
 ### 授权写面普查（2026-08-16）
 
 **提案与判定：**对冻结 Web-entry Census 内 987 个唯一 `(method, path)`、226 个当前 operation 和

@@ -43,6 +43,34 @@ def _path(value: str) -> Path:
     return Path(value).resolve()
 
 
+def _coverage_summary(result: dict[str, Any]) -> dict[str, Any]:
+    source = result.get("source", {})
+    return {
+        **result["summary"],
+        "coverage_scope": source.get("coverage_scope", "unrecorded"),
+        "platform_complete": source.get("platform_complete", False),
+        "known_excluded_origins": source.get("known_excluded_origins", []),
+    }
+
+
+def _run_coverage(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
+    result = coverage_files(
+        args.routes,
+        args.manifests,
+        args.output,
+        args.report,
+        args.baseline_routes,
+        args.reservations,
+        args.route_registry,
+    )
+    summary = _coverage_summary(result)
+    incomplete = not bool(result.get("source", {}).get("bundle_complete", False))
+    unaccounted = int(result.get("summary", {}).get("unaccounted", 0))
+    if args.require_accounted and unaccounted:
+        return summary, _LOCAL_EXIT
+    return summary, _UPSTREAM_EXIT if args.require_complete and incomplete else 0
+
+
 def _root_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="gravity census",
@@ -209,20 +237,7 @@ def run(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
             read_json(args.responses), args.drafts
         ), 0
     if args.command == "coverage":
-        result = coverage_files(
-            args.routes,
-            args.manifests,
-            args.output,
-            args.report,
-            args.baseline_routes,
-            args.reservations,
-            args.route_registry,
-        )
-        incomplete = not bool(result.get("source", {}).get("bundle_complete", False))
-        unaccounted = int(result.get("summary", {}).get("unaccounted", 0))
-        if args.require_accounted and unaccounted:
-            return result["summary"], _LOCAL_EXIT
-        return result["summary"], _UPSTREAM_EXIT if args.require_complete and incomplete else 0
+        return _run_coverage(args)
     if args.command == "diff":
         result = diff_files(args.old, args.new)
         if args.output:

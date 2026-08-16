@@ -11,6 +11,10 @@ from .io import read_json, write_json
 from .normalize import decode_js_escapes, looks_like_api_path, normalize_path
 
 
+COVERAGE_SCOPE = "same_origin_static_js_graph_discoverable_from_site_entry"
+KNOWN_EXCLUDED_ORIGINS = ("rank.gravity-engine.com",)
+
+
 _CHINESE_STRING = re.compile(
     r"['\"`](?P<value>(?:\\.|[^'\"`]){0,120}[\u3400-\u9fff](?:\\.|[^'\"`]){0,120})['\"`]"
 )
@@ -347,7 +351,8 @@ def _source_metadata(
         "bundle_id": snapshot.get("bundle_id"),
         "bundle_files": summary.get("bundle_files", len(snapshot.get("files", []))),
         "bundle_complete": bool(summary.get("complete", False)),
-        "coverage_scope": "same_origin_static_js_graph_discoverable_from_site_entry",
+        "coverage_scope": COVERAGE_SCOPE,
+        "known_excluded_origins": list(KNOWN_EXCLUDED_ORIGINS),
         "platform_complete": False,
         "missing_local_files": sorted(missing_files),
     }
