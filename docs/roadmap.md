@@ -5004,3 +5004,42 @@ B/C 未增长。`test_same_definition_id_versions_remain_distinct_in_results` �
 和 v1 查询不继承 v2 profile。Agent 指南生成器 `--check`、CLI help 与 `git diff --check` 均通过。
 实现/合同/manifest 新增 267 行，测试与 golden 新增 68 行，约 0.255，未超过三分之一；quality baseline
 未放宽。
+
+## 2026-08-17：raw CLI 分页可见性与请求纪律（提案）
+
+**已证实的问题与范围：**当前通用 raw CLI 的规范入口是 resolver `gravity run`，而较低层的
+`gravity read` 有相同默认值。两者在调用方没有给 `--all-pages` 时仍传入 stdout 的
+`max_pages=5/max_items=200`，因此 runtime 选择 `read_limited`。对 `page_info` operation，
+`read_limited` 为同时满足这两个预算把请求 page size
+压到 `floor(200/5)=40`，并在有 `total_page` 时读取最多五页。该行为不是 operation 的
+`max_page_size`：`report.multidim.metric.list` 合同的上限为 2000。SDK `read_limited`、batch 中
+显式 `read_all`、Plan 的显式 `read_all` 与各领域 CLI 的 `--all-pages` 是不同入口；本轮不改变它们
+的显式分页语义。
+
+**拟定收口：**通用 raw CLI 在未给 `--all-pages` 时只调用 `read`：一请求、保留调用方 page size，
+不再把 stdout 显示限制转化为上游请求限制或隐式翻页；`--all-pages` 继续是唯一的分页 opt-in。为让
+调用方不靠返回条数猜测，raw CLI 结果新增不改变既有字段语义的分页审计：实际请求数、请求与实际
+page size、已返回/声明总数、`has_more`、以及只在 `has_more=false` 且累计数等于 `total_items` 时为
+true 的完整性结论。`total_items` 或 `has_more` 缺失时结论是 `unknown`，不宣称完整。保留
+`read_limited` 的现有 clamp/continuation 合同给明确调用它的 SDK/内部面；不在缺乏上游证据时改动任何
+operation 的 `max_page_size`。
+
+**实施结论：**resolver `run`、直接 `read` 与 SDK `GravitySDK.run` 在未显式给分页预算时都改为调用单页 `read`；显式
+`--all-pages` 仍使用原有 1,000 页/100,000 项的完整读取，显式 `--max-pages` 或 `--max-items` 仍使用
+原有的有界 `read_limited` 行为。结果只新增 `pagination_audit`，不改 `result`、`page`、`receipt` 或
+既有 envelope 字段的语义。它分别报 primary operation 请求数、该命令的 HTTP 请求总数、requested /
+effective page size，以及严格 `complete|partial|unknown` 完整性结论。
+
+**生产复现与验证账本：**实际 **7/10** HTTP 请求，均 attempt 1、HTTP 200、`retry=false`，没有扩窗。
+复现命令为同一 raw path 的 `gravity read`（不重复消耗 5 次去执行已在上轮账本记录的 literal `run`）；
+#1 为 `authentication` `POST /account_center/api/v1/user_login/v2/`；#2--#6 为
+`report.multidim.metric.list` `POST /report/api/v3/confmetric/metric/list/` 的 page 1--5（请求 2000，实际
+40，返回前 200/1124）；#7 是改后同 operation page 1（请求/实际均 2000，1124/1124）。改前是 5 个
+operation 请求，改后是 1 个；改后 `pagination_audit` 为 `operation_requests_made=1`、
+`http_requests_made=1`、`page_size_clamped=false`、`has_more=false`、`complete`。
+
+**门禁与计数：**unittest `1131 + 1 = 1132` OK；pytest `1131 + 1 = 1132 passed`、subtests 保持
+`3083`；compiler `231 operations / 11 manifests`，quality PASS `operations=231`。错误审计仍为
+`1202 = A399/B434/C369`，本轮不新增 caller-recoverable error site。operation/stable/product card/
+selector 仍为 `231/222/89/329`，动线仍为 `56 = 48 / 1 / 7`；技术债复核不新增条目。未改 operation
+page-size 上限：现有代码和本轮 target 实测均不足以指认某一个上限错误。

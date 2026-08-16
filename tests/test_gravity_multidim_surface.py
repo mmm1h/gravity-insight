@@ -132,6 +132,9 @@ class MultidimSurfaceTests(unittest.TestCase):
                 result = getattr(args, "_gravity_handler")(args, cli._object_input)
             self.assertEqual(selector, result["operation_id"])
             self.assertEqual(selector, run.call_args.args[0])
+            self.assertEqual((None, None), (
+                run.call_args.kwargs["max_pages"], run.call_args.kwargs["max_items"]
+            ))
 
     def test_onboarding_requires_a_locally_complete_product_request(self):
         from gravity_sdk import cli

@@ -227,6 +227,34 @@ class ResolverTests(unittest.TestCase):
         assert "1001" not in receipt_text
         assert "2026-08-01" not in receipt_text
 
+    def test_resolver_pagination_audit_requires_both_completeness_facts(self) -> None:
+        description = {
+            "operation_id": "app.list", "input_schema": {}, "required_parent": [],
+            "health": {"contract_fingerprint": "a" * 64},
+        }
+
+        def read(*_args, **_kwargs):
+            record_http_request()
+            return {
+                "ok": True, "status": "success",
+                "request": {"inputs": {"page_size": 2000}},
+                "page": {"number": 1, "total_pages": 2, "item_count": 2000,
+                         "total_items": 4000},
+                "data": {"list": []},
+            }
+
+        result = resolve_and_run(
+            "app.list", client=_ResolverClient(description), workspace=_workspace(self.tmp_path),
+            supplied_input={"page_size": 2000}, read=read,
+        )
+
+        audit = result["pagination_audit"]
+        assert (audit["mode"], audit["operation_requests_made"], audit["http_requests_made"]) == (
+            "single_page", 1, 1
+        )
+        assert audit["page_size_clamped"] is False
+        assert audit["completeness"]["status"] == "partial"
+
     def test_exact_multidim_operations_remain_resolvable(self) -> None:
         for operation_id in ('report.multidim.query', 'report.multidim.calc_total'):
             with self.subTest(operation_id=operation_id):

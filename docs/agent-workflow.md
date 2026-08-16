@@ -172,11 +172,8 @@ batch 保持输入顺序、隔离单项失败并聚合退出码；默认并发 6
 
 ## 6. 控制结果规模
 
-先小范围读取，再扩大时间、分页或维度。大结果写文件，不把用户级数据完整输出到终端或对话：
-
-```powershell
-gravity run <operation-id> --input <input.json> --all-pages --max-pages 20 --max-items 5000 --concurrency 6 --output tmp/result.ndjson --format ndjson
-```
+先小范围读取，再扩大时间、分页或维度；完整的请求纪律、审计字段与命令见
+[分页与结果规模](reference/pagination.md)。
 
 只需要部分合同字段时使用本地输出裁剪，默认不变；非法字段会在联网前以 caller/2 失败：
 
