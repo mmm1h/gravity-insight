@@ -4101,3 +4101,63 @@ a992738…、7e3e529…、0dff52b…、f68b50b…、e76fae6…、c5c4147…、2e
 PASS（operations/provenance 226/226、operation literals 57），稳定投影 review ledger、Agent Skill 生成器
 check、CLI help 与 `git diff --check` 均通过。新增核心 source 远多于测试增量，符合实现/测试 3:1 棘轮；
 完整测试中的 holdout/final 文本只来自临时目录 synthetic fixture，没有读取或运行真实受保护 split。
+## 受治理写能力目录覆盖（2026-08-16）
+
+**提案与改造前实测：**书面提案位于 ignored `tmp/codex/catalog-coverage/proposal.md`。修改前实际执行
+`agent-catalog categories → category analysis/report → describe`；目录为
+`223 operation + 45 product + 9 gap = 277 selector`。30 条 stable mutation 全有 raw operation 行，
+但 canonical 产品卡只有 3 张，L3 分别只物化 `create-from-analysis`、`create-report`、`space.create`。
+raw mutation 的 L3 只给 `gravity run <operation-id>`；该通用入口会按 read policy 拒绝 mutation，且没有
+产品级 preflight、owner gate 或两步确认，所以“看见原子 operation”不等于“能正确调用写产品”。
+
+**表达裁决：**保留 3 个既有 selector 及默认动作，为其余 28 个真实调用方动作增加 action-qualified
+产品卡。最终为 Segment `8 actions / 7 operations`、报表/订阅 `4 / 3`、Kanban `19 / 18`，共 31 张
+mutation 卡；每卡显式携带 `mutation_action`、`operation_ids`、输入合同和成对 argv。三条底层 operation
+分别由两个调用方动作共享：Segment save 承载 update/delete，report update 承载 create/delete，
+Kanban dashboard delete 承载单删/批删。因此这是按 CLI/统一 SDK 产品动作表达，不是把 223 个 operation
+逐个包装成 tool。`report.template.create/update` 仍是订阅验证父对象的内部脚手架：没有调用方 CLI 或
+统一 SDK 动作，既不单列产品动线，也不伪装成目录产品；它们继续以 raw expert contract 可查。
+
+**改造后三层实测：**L1 为 `223 + 73 + 9 = 305 selector`；L2 为 analysis `47 product / 118 total`、
+report `9 / 39`，一次 `--limit 50` 可看到全部 31 张写卡；L3 对
+`analysis.segment.mutation:delete`、`kanban.mutation:dashboard.rename`、
+`report.mutation:delete-report` 均返回精确 operation、输入和 dry-run/execute 交接。
+`report.mutation:update-report` 实测为 caller exit 2 / `INPUT_INVALID`，因为产品面没有“更新报表”：
+`report.report.update` 的上游命名实际承载已治理的 create/delete，不能从 operation 名推导不存在的能力。
+
+**确认与 owner 边界：**本轮没有修改 operation、mutation core/executor、CLI parser、统一 SDK、Plan
+adapter 或 recognizer。31 张卡逐卡测试固定 `natural_language_auto_execute=false`、
+`confirmation_required=true`、`ready_without_input=false`，并要求 dry-run/execute 除末尾确认开关外参数
+完全相同；Kanban 另锁定 preview/execute Plan node，Segment 与报表继续 `plan_executable=false`。
+已有三域回归继续证明更新/删除只允许 `marker OR 已证实 upstream owner`，否则在写前 fail closed；
+目录卡没有新增任何执行路径，因此可发现性不会成为授权。
+
+**计数、门禁与边界：**operation/stable/manifest 保持 **223 / 214 / 11**，产品卡
+`45 + 28 = 73`，selector `277 + 28 = 305`，gap 仍为 9；产品动线仍为 `52 = 44 / 1 / 7`。
+unittest **1093**；pytest **1093 passed / 3040 subtests passed**；compiler **223 operations /
+11 manifests**；quality PASS（operations/provenance 223/223、operation literals 57）；生成器 `--check`、
+文档 4 项、CLI help 与 `git diff --check` 均通过。没有新增 caller-recoverable error site，故新增/A 档为
+**0/0**，审计保持 **1124 = A321 / B434 / C369**。技术债复核未发现新的结构债。生产 HTTP **0 次**；
+未碰 operation、recognizer、题集、评分、维度表、真实 holdout/final/key 或任何 GitHub/远端动作。
+
+## custom-metrics 与受治理写目录合并裁决（2026-08-16）
+
+**合并范围与冲突裁决：**将 `codex/custom-metrics@0f1d3d8` 与 `dev@59b60e5` 合并。README、Agent
+工作流、动线台账、文档索引和技术债保留两线能力并统一当前计数；本页完整保留两线各自结论。
+`agent_segment.py` 的 8 张动作卡（7 条底层 operation）与 custom-metric 权威卡接线同时保留；目录测试
+保留 dev 的全量 mutation handoff 断言并扩展到 custom-metric。生成的 Agent Skill 文档没有手工拼接，
+而是从合并后的 226 个 operation、77 张产品卡与 9 个 gap 重新生成。
+
+**合并交叉问题：**dev 的 mutation action 卡统一携带 `operation_ids`，本线 3 张 custom-metric mutation
+卡原先只携带单数 `operation_id`；单线各自成立，但合并后的跨域覆盖测试无法用一个字段机械审计全部动作。
+本轮给这 3 张卡补上等值的 `operation_ids`，不新增或删除 operation。最终 34 张 mutation 卡逐卡满足
+`natural_language_auto_execute=false`、`confirmation_required=true`、`ready_without_input=false`；其中
+custom-metric 的 create/update/delete 为 mutation，list 是无需写确认的 read 卡。
+
+**最终计数与门禁：**operation **226**；stable **217 = 185 read + 32 mutation**；产品卡 **77**；
+selector **312 = 226 + 77 + 9**；错误审计 **1145 = A342 / B434 / C369**；动线
+**53 = 45 / 1 / 7**。unittest **1099 tests OK**；pytest **1099 passed / 3055 subtests passed**；
+quality PASS（operations/provenance 226/226、operation literals 57）；compiler **226 operations /
+11 manifests**；Agent Skill 生成器 `--check` 与 `git diff --check` 均通过。L2 `analysis --limit 50`
+实测在 raw operation 前返回全部 47 张 analysis 产品卡，含 8 张 Segment 与 19 张 Kanban mutation 卡。
+本轮生产 HTTP **0 次**；未碰 recognizer、题集、评分、真实 holdout/final/key 或任何 GitHub/远端动作。

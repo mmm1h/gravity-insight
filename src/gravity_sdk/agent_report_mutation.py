@@ -6,9 +6,43 @@ import re
 from typing import Any
 
 from .agent_intent_text import affirmative_intent_text
+from .report_contracts import REPORT_UPDATE, SUBSCRIBE_CREATE, SUBSCRIBE_DELETE
 
 
 SELECTOR = "report.mutation"
+_ACTIONS = (
+    "create-report",
+    "delete-report",
+    "create-subscription",
+    "delete-subscription",
+)
+_COMMANDS = {
+    "create-report": [
+        "create", "--app-id", "<app-id>", "--name", "<test-name>",
+        "--config", "<config.json>",
+    ],
+    "delete-report": ["delete", "--report-id", "<report-id>"],
+    "create-subscription": [
+        "subscribe", "--report-id", "<report-id>", "--report-name",
+        "<report-name>", "--start", "<start>", "--end", "<end>",
+        "--column", "<column>",
+    ],
+    "delete-subscription": [
+        "unsubscribe", "--subscription-id", "<subscription-id>",
+    ],
+}
+_ACTION_OPERATIONS = {
+    "create-report": (REPORT_UPDATE,),
+    "delete-report": (REPORT_UPDATE,),
+    "create-subscription": (SUBSCRIBE_CREATE,),
+    "delete-subscription": (SUBSCRIBE_DELETE,),
+}
+_ACTION_SUMMARIES = {
+    "create-report": "创建带 SDK marker 的测试报表",
+    "delete-report": "删除 marker 或 owner 验证通过的报表",
+    "create-subscription": "创建 disabled、无收件人的报表订阅",
+    "delete-subscription": "删除 marker 或 owner 验证通过的报表订阅",
+}
 
 
 def report_mutation_cards(
@@ -25,9 +59,16 @@ def report_mutation_cards(
 
 
 def report_mutation_capability_inventory() -> tuple[dict[str, Any], ...]:
-    """Materialize the single canonical report-mutation handoff card."""
+    """Materialize every caller-facing report-mutation handoff card."""
 
-    return tuple(report_mutation_cards(SELECTOR, domain=None, platform=None))
+    return tuple(
+        _card(
+            SELECTOR,
+            action,
+            selector=(SELECTOR if action == _ACTIONS[0] else f"{SELECTOR}:{action}"),
+        )
+        for action in _ACTIONS
+    )
 
 
 def is_report_mutation_card(card: Any) -> bool:
@@ -68,21 +109,21 @@ def _has_intent(
     return bool(words & english) or any(term in selected for term in chinese)
 
 
-def _card(query: str, action: str) -> dict[str, Any]:
-    command = {
-        "create-report": ["create", "--app-id", "<app-id>", "--name", "<test-name>", "--config", "<config.json>"],
-        "delete-report": ["delete", "--report-id", "<report-id>"],
-        "create-subscription": ["subscribe", "--report-id", "<report-id>", "--report-name", "<report-name>", "--start", "<start>", "--end", "<end>", "--column", "<column>"],
-        "delete-subscription": ["unsubscribe", "--subscription-id", "<subscription-id>"],
-    }[action]
+def _card(query: str, action: str, *, selector: str = SELECTOR) -> dict[str, Any]:
+    command = _COMMANDS[action]
     base = ["gravity", "reports", *command]
     return {
         "kind": "report_mutation",
-        "selector": SELECTOR,
+        "selector": selector,
         "domain": "report",
-        "description": "报表写操作只交接显式 CLI：先零网络 dry-run，再由调用方确认执行；自然语言永不自动发送写请求。",
+        "description": (
+            f"报表受治理动作 `{action}`：{_ACTION_SUMMARIES[action]}；"
+            "只交接显式 CLI，先零网络 dry-run，再由调用方确认执行；"
+            "自然语言永不自动发送写请求。"
+        ),
         "effect": "mutation",
         "mutation_action": action,
+        "operation_ids": list(_ACTION_OPERATIONS[action]),
         "executable": True,
         "plan_executable": False,
         "natural_language_auto_execute": False,

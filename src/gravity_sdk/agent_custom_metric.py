@@ -98,6 +98,7 @@ def _card(query: str, action: str) -> dict[str, Any]:
     return _base(query, action, selector) | {
         "kind": "custom_metric_mutation", "effect": "mutation",
         "operation_id": CUSTOM_METRIC_DELETE if action == "delete" else CUSTOM_METRIC_UPSERT,
+        "operation_ids": [CUSTOM_METRIC_DELETE if action == "delete" else CUSTOM_METRIC_UPSERT],
         "mutation_action": action, "confirmation_required": True,
         "execution_mode": "explicit_plan_or_cli_after_human_review",
         "input_schema": custom_metric_mutation_schema()["actions"][action],
