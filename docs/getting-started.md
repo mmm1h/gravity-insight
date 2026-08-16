@@ -1,6 +1,6 @@
 # 快速上手
 
-完成本页后，你应能登录 Gravity、发现一个 operation、执行只读查询，并同步本地元数据目录。
+完成本页后，你应能登录 Gravity、用两次顶层调用完成首条事件分析，并继续发现其他只读能力。
 
 ## 1. 安装
 
@@ -52,7 +52,27 @@ gravity census --smoke
 
 这些命令验证本地合同，不应连接 Gravity。
 
-## 4. 发现并执行查询
+## 4. 两次调用完成首条事件分析
+
+先由你明确选择 App、日期窗和精确物理事件名；入口不会静默选择默认项目。然后运行：
+
+```powershell
+gravity analysis bootstrap `
+  --app <selected-app-id> `
+  --start 2026-08-01 --end 2026-08-07 `
+  --target <physical-event> --plan-output first-analysis-plan.json
+# 审阅 Plan 中的 App、日期、事件与 metadata 指纹
+gravity plan run --input first-analysis-plan.json
+```
+
+第一次调用按需登录和同步选定 App 的四类 metadata，只允许每类第一页，然后离线确认事件并写出已
+dry-run 验证的 Plan；它不执行分析。第二次使用 Plan 固定的 catalog 快照做合同校验，不重新读取
+live metadata，只发业务查询。空会话与空目录的完整上限是 `6 + 1 = 7 HTTP`，CLI 不自动重试。
+
+缺 App、日期或事件时，错误只返回一个确定的 `next_action`，不会代选；metadata 超过第一页时也不会
+自动扩量，而是要求你先审阅普通 sync 的更大预算。完整失败分支见[十分钟路径](agent-skills/ten-minute-path.md)。
+
+## 5. 发现并执行其他查询
 
 不要猜 operation ID。第一次盘点完整能力时先走三层离线目录：
 
@@ -92,7 +112,7 @@ gravity run <operation-id> --app <workspace-alias> --input <json>
 
 workspace 可由顶层 `--workspace`、显式 API 调用、`GRAVITY_WORKSPACE` 或 cwd 向上查找选中。SDK 只读该文件；执行回执写入用户缓存，不写项目目录。配置格式见 [Workspace 参考](reference/workspace.md)。
 
-## 5. 同步本地元数据目录
+## 6. 同步本地元数据目录
 
 先用明确的离线 status 入口检查私有 catalog；它不构造客户端、不读取生产，也不创建空库：
 

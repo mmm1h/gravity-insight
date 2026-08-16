@@ -46,6 +46,9 @@ def add_analysis_query_commands(
     parser = analysis_commands.add_parser("query")
     add_analysis_query_arguments(parser, add_input, add_shortcuts, concurrency_type)
     add_analysis_query_batch_subcommand(parser, add_input, concurrency_type)
+    from .analysis_bootstrap_cli import add_analysis_bootstrap_command
+
+    add_analysis_bootstrap_command(analysis_commands, concurrency_type)
     return parser
 
 

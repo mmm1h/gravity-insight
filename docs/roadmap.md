@@ -4618,3 +4618,72 @@ subtests `3078 + 4 = 3082 passed`。compiler 为 **231 operations / 11 manifests
 （operations/provenance 231/231、operation literals 57）；Agent 指南生成器 `--check`、CLI help 与
 `git diff --check` 均通过。没有真实运行 holdout/final/all、读取 key、改题集/评分/评测装置，也没有
 GitHub、push、tag 或其他对外动作。
+
+## 首条事件分析 guided cold start（2026-08-17）
+
+**提案与决策边界：**ignored 工作稿位于 `tmp/codex/cold-start/proposal.md`。先把
+`GRAVITY_CACHE_HOME`（receipt/workspace state）与 `LOCALAPPDATA`（metadata catalog）同时指向空目录，
+并移走旧 session 后逐条重走生成指南。保留给调用方的判断是：从可读目录选 App、选一个精确物理事件、
+给出日期窗、审阅 Plan 后决定执行；安装、目录浏览、认证、App 校验、metadata sync/status/search、
+`PresetAllCount` 事件计数 Spec 组装和 Plan dry-run 都是机械依赖。没有默认 App 或模糊事件回退。
+
+**旧路径实测：**当前 12 条命令及生产 HTTP 如下；这次严格空隔离实测为 **9**，不是旧文档写的 7：
+
+| # | 命令 | HTTP |
+| --- | --- | ---: |
+| 1 | `python -m pip install -e .` | 0 |
+| 2 | `gravity agent-catalog categories` | 0 |
+| 3 | `gravity agent-catalog category analysis --limit 20` | 0 |
+| 4 | `gravity agent-catalog describe analysis.query.spec:event` | 0 |
+| 5 | `gravity insight auth status` | 0 |
+| 6 | `gravity run app.list --input '{"page":1,"page_size":20}' --fields id,name` | 2（authentication + App） |
+| 7 | `gravity metadata sync --app-id <id> --max-pages 2 --dry-run` | 0 |
+| 8 | `gravity metadata sync --app-id <id> --max-pages 2` | 4（四类 metadata 各第一页） |
+| 9 | `gravity metadata status --app-id <id>` | 0 |
+| 10 | `gravity metadata events "" --app-id <id> --limit 20` | 0 |
+| 11 | `gravity analysis query --kind event --app <id> --spec analysis.json --dry-run` | 0 |
+| 12 | `gravity analysis query --kind event --app <id> --spec analysis.json` | 3（两类 live metadata + query） |
+
+全部 9 个 receipt 都是 HTTP 200 / attempt 1 / retry=false；三个可分页 metadata 只取第 1 页，未换 App、
+未扩日期、未为非零结果重试。多出的 2 次来自第 12 条在新进程重新读取
+`analysis.event.list + analysis.event_property.list`，不能用旧估计覆盖实际账本。
+
+**实现：**新增 `gravity analysis bootstrap --app --start --end --target --plan-output` 与
+`GravitySDK.bootstrap_event_analysis()`，没有新增 operation。第一次调用先在零网络阶段校验显式输入，
+再用既有 `app.list` 校验 App；catalog 非 ready 时复用单 App sync 和全局 bounded worker pool，四类
+metadata 固定各 1 页。CLI transport 固定 1 attempt，所以含首次登录的成功上限为 6 HTTP；达到页界
+只返回普通 `metadata sync --max-pages 2` 的下一动作，不自动扩大预算。事件只接受 catalog 中精确物理
+名称；随后生成事件计数 `gravity.plan.v1`、固定 catalog `synced_at + SHA-256 fingerprint + path` 并
+完成 Plan dry-run。第二次仍用既有 `plan run`；adapter 在执行前复验 fresh/complete catalog 和
+fingerprint，并以 context-local loader 让现有 FieldPolicy 使用该只读快照，最终只发 1 次业务查询。
+无 snapshot 的既有 Plan 保持原 live metadata 行为，合同漂移语义未放宽。
+
+**严格空缓存验收：**显式使用 App `26827043`、事件 `$AppLogin`、日期
+`2026-08-10..2026-08-16`，第一次输出 `status=plan_ready`、`status_before=missing`、
+`status_after=ready`、`sync_performed=true`、`http_requests_observed=6`，Plan snapshot fingerprint 为
+`02bd641b6149d0c2df66a0906ede394d9ffc4201daae65d2581dd149d1538803`。第二次输出
+`gravity.plan-result.v1 / success / success_count=1 / failure_count=0`；真实
+`analysis.event.query` 结果的 7 个日期值和阶段总和均为 0。最终本地 receipt 页恰有 **7** 项：
+authentication、App、四类 metadata 和 event query 各 1；全部 HTTP 200 / attempt 1 / retry=false，
+无追加页或扩窗。因此验收为 **2 次顶层调用 / 7 HTTP**，相对旧路径实际 `9 → 7`，没有把命令减少
+换成租户请求增加。
+
+**失败输出与错误审计：**省略 App 在 0 HTTP 时返回 `field=app`、观察值 `null`，唯一下一动作是运行
+`app.list` 并由调用方选择；不存在的事件返回 `field=target`、观察值
+`"__codex_missing_event__"`、exact match count 0，唯一下一动作是离线 `metadata events` 精确发现。
+后者只做 1 次 App 校验，其 stored receipt 已绑定到错误 envelope。认证拒绝、无可读 App、sync
+partial/失败、snapshot 漂移同样携带路径、观察值和合法替代或下一发现动作。caller-recoverable 审计为
+`1169 + 25 = 1194`，新增 **25/25 全部 A 档**：`A 366 + 25 = 391`、`B=434`、`C=369`。
+
+**计数与边界：**operation/stable `231/222 → +0/+0 = 231/222`；产品卡/selector
+`88/328 → +0/+0 = 88/328`；动线 `55 = 47 / 1 / 7 → +0 / +0 / +0 = 55 = 47 / 1 / 7`。
+`getting-started.md` 从 132 行重构为 152 行，未触及 160 行上限；生成的十分钟路径改为两调用入口。
+整个任务生产 HTTP 为 **28/30**：2 次作废隔离校正、9 次旧基线、3 次开发 smoke、5 次发现残留
+session 后作废的验收、7 次正式验收、2 次事件不存在失败复验；全部 HTTP 200、0 retry、0 额外分页、
+0 扩窗、0 换 App。未新增技术债，未碰 holdout/final/key、题集、评分或评测装置，未做 GitHub/push/tag。
+
+**最终门禁：**unittest `1111 + 9 =` **1120 tests OK**；pytest **1120 passed / 3082 subtests
+passed**。compiler **231 operations / 11 manifests**；quality PASS（operations/provenance 231/231、
+operation literals 57）；Agent 指南生成器 `--check`、文档可达性/行数、CLI help 与 `git diff --check`
+均通过。实现增量 884 行、测试增量 291 行，测试/实现比约 0.329，未超过三分之一；所有新模块都在
+500 SLOC 内，函数/复杂度/AST baseline 未放宽。

@@ -174,6 +174,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `query_sql_products()` | `run_product_queries()`，支持单对象或批量、保序隔离失败 |
 | `compile_analysis_query()` | 把 Analysis Spec v1 编译为稳定 operation input 并运行离线输入校验；带筛选值时预览脱敏且不返回 Plan node；零网络请求 |
 | `analysis_query()` | 使用同一编译器执行 `event/funnel/retention/property/scatter` 稳定查询 |
+| `bootstrap_event_analysis()` | 校验显式 App/日期/物理事件，按需同步单页 metadata 并返回已验证、固定 catalog 指纹的首条事件 Plan；不执行分析 |
 | `prepare_segment_evaluation()` | 编译并离线校验紧凑 Segment Rule Spec，返回脱敏预览且不执行评估 |
 | `segment_evaluate()` | 执行受治理的聚合人群规则人数/占比评估 |
 | `segment_snapshot()` | 按稳定 ID 或精确名称读取分群 detail/history/daily_result；不返回成员或规则 |
@@ -612,7 +613,9 @@ live 指标目录但不选择字段。调用方精确选择后第二次调用 `p
 
 Analysis Query Plan 通过现有 `validate_plan()` / `execute_plan()` 执行
 `composite` 节点。request 固定接受 `name="analysis_query"`、`kind/app/spec` 和可选的成对
-`start/end`；五种 kind 是 `event/funnel/retention/property/scatter`。`output_fields` 属于 Plan
+`start/end`；五种 kind 是 `event/funnel/retention/property/scatter`。bootstrap 生成的事件 Plan 另带
+闭合 `metadata_snapshot`：执行前验证 App、同步时间、freshness 和 catalog fingerprint，再从该只读
+快照完成 FieldPolicy，不重新请求 live metadata；缺失或漂移即 fail-closed。`output_fields` 属于 Plan
 节点、不放进 request，并按底层 operation 的 data-relative FieldPolicy 校验。
 
 Segment Rule 使用同一公开 `validate_plan()` / `execute_plan()`，composite request 为

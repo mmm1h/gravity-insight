@@ -372,6 +372,21 @@ Agent 只为 `currently_callable=true` 的 `export_job_create` 返回 executable
 ID 时先 `gravity export list --page 1 --page-size 100`，不要直接重跑。详见
 [导出指南](../guides/export.md)。
 
+### First Analysis Bootstrap
+
+调用方已经明确 App、日期窗和精确物理事件时，冷目录用两次顶层调用得到首条事件分析：
+
+```powershell
+gravity analysis bootstrap --app <id> --start <date> --end <date> `
+  --target <physical-event> --plan-output first-plan.json
+gravity plan run --input first-plan.json
+```
+
+bootstrap 先校验显式 App，必要时用现有 bounded worker pool 同步四类 Analysis metadata，离线精确
+匹配事件，再输出 `gravity.plan.v1` 并完成 dry-run；不会执行分析或选择默认 App/事件。`--max-pages`
+固定为 1，CLI transport 固定一次 attempt，所以空会话第一步最多 6 HTTP，Plan 执行只发一次业务
+查询。缺输入、无可读 App、事件不存在或同步不完整时返回路径、观察值和唯一 `next_action`。
+
 ### Analysis Query Spec v1
 
 `analysis query` 支持五种稳定分析：`event`、`funnel`、`retention`、`property`、`scatter`。
@@ -996,6 +1011,8 @@ Plan 中小时结果仍为 `scope=workspace`；adapter 内部 worker 固定为 1
 `analysis_query` 同样由全局 pool 调度；同层独立查询并发，adapter worker 固定 1。一个查询
 失败不取消 sibling，结果仍按节点声明顺序返回。节点 `max_items` 和 Plan 总预算共同限制结果
 规模；失败结果不回显 request、spec、binding 值或原始异常，筛选值遵守既有脱敏合同。
+bootstrap 生成的 event request 另带闭合 `metadata_snapshot`；执行前复验 App、freshness、同步时间和
+catalog fingerprint，并从只读快照完成 FieldPolicy。快照缺失或漂移时 fail-closed，不回退到 live metadata。
 
 外层并发默认 6、上限 24，adapter 内分页 worker 固定 1；SQL 的进程级并发仍为 2。声明节点
 最多 64、展开执行最多 256、总 `max_items` 不超过 100,000。每个 foreach 默认最多 32、硬
