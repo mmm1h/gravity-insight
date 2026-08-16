@@ -21,7 +21,12 @@ from gravity_sdk.semantic_compose_catalog import definition_by_id
 APP_ID = 17
 WINDOW = {"start": "2026-06-01", "end": "2026-07-10"}
 DEFINITION = {"definition_id": "report.ap-cost-observation", "version": 1}
+DEFINITION_V2 = {"definition_id": "report.ap-cost-observation", "version": 2}
 METRIC = {"definition_id": "report.metric.ap-cost", "version": 1}
+ACTIVATE_METRIC = {
+    "definition_id": "report.metric.adclick-standard-activate-count",
+    "version": 1,
+}
 CLICK_DIMENSION = {
     "definition_id": "report.dimension.click-company",
     "version": 1,
@@ -30,13 +35,21 @@ CLICK_JOIN = {
     "definition_id": "report.join.adreport-click-company",
     "version": 1,
 }
+CLICK_FILTER = {
+    "member": {"definition_id": "report.filter.click-company", "version": 1},
+    "operator": "IN",
+    "values": ["bytedance"],
+}
 
 
-def request(grain="total", *, dimensions=(), filters=(), joins=()):
+def request(
+    grain="total", *, definition=DEFINITION, metric=METRIC,
+    dimensions=(), filters=(), joins=(),
+):
     return {
-        "definition": copy.deepcopy(DEFINITION),
+        "definition": copy.deepcopy(definition),
         "window": copy.deepcopy(WINDOW),
-        "metric": copy.deepcopy(METRIC),
+        "metric": copy.deepcopy(metric),
         "dimensions": [copy.deepcopy(item) for item in dimensions],
         "filters": [copy.deepcopy(item) for item in filters],
         "grain": {"definition_id": f"report.grain.{grain}", "version": 1},
@@ -113,6 +126,12 @@ class SemanticComposeTests(unittest.TestCase):
     def test_metric_grain_conflict_fails_before_zero_upstream_requests(self):
         self._assert_zero_network_failure(request("hour"), "grain")
 
+    def test_v2_filter_requires_its_grouped_dimension_before_network(self):
+        self._assert_zero_network_failure(
+            request(definition=DEFINITION_V2, filters=[CLICK_FILTER]),
+            "filters",
+        )
+
     def test_three_analyst_combinations_compile_deterministically(self):
         combinations = (
             request("total", dimensions=[CLICK_DIMENSION], joins=[CLICK_JOIN]),
@@ -163,6 +182,32 @@ class SemanticComposeTests(unittest.TestCase):
             versions[1]["definition"]["fingerprint"],
         )
 
+    def test_real_v1_v2_definitions_coexist_and_v2_compiles_live_wire(self):
+        schema = semantic_compose_input_schema()
+        self.assertEqual(
+            [DEFINITION, DEFINITION_V2], schema["x-registered-definitions"]
+        )
+        v1 = compile_semantic_compose(request(), app_id=APP_ID)
+        filtered = request(
+            definition=DEFINITION_V2,
+            dimensions=[CLICK_DIMENSION],
+            filters=[CLICK_FILTER],
+            joins=[CLICK_JOIN],
+        )
+        v2 = compile_semantic_compose(filtered, app_id=APP_ID)
+        self.assertEqual([1, 2], [v1["definition"]["version"], v2["definition"]["version"]])
+        self.assertNotEqual(v1["definition"]["fingerprint"], v2["definition"]["fingerprint"])
+        self.assertNotIn("data_conf", v1["generated_query"]["inputs"])
+        self.assertFalse(v2["generated_query"]["inputs"]["data_conf"]["return_all_metrics"])
+        self.assertEqual(
+            {"field": "click_company", "operator": "IN", "values": ["bytedance"]},
+            v2["generated_query"]["inputs"]["filters"][0],
+        )
+        self._assert_zero_network_failure(
+            request("total", definition=DEFINITION_V2, metric=ACTIVATE_METRIC),
+            "grain",
+        )
+
     def test_result_carries_members_query_validation_and_allowed_claims(self):
         value = request("total", dimensions=[CLICK_DIMENSION], joins=[CLICK_JOIN])
         with patch(
@@ -183,7 +228,7 @@ class SemanticComposeTests(unittest.TestCase):
         schema = semantic_compose_input_schema()
         card = discover_capabilities("governed semantic composition", client=None)["candidates"][0]
         self.assertEqual(SEMANTIC_COMPOSE_INPUT_SCHEMA_VERSION, schema["schema_version"])
-        self.assertEqual(0, schema["properties"]["filters"]["maxItems"])
+        self.assertEqual(1, schema["properties"]["filters"]["maxItems"])
         self.assertEqual(schema, card["input_schema"]["inputs"]["machine_schema"])
         plan_request = {
             "name": "semantic_compose",

@@ -1125,6 +1125,14 @@
             {
               "decimal_point": 2,
               "return_all_metrics": true
+            },
+            {
+              "accumulate": false,
+              "asa_time_zone": "UTC",
+              "decimal_point": 2,
+              "minigame_pay_shared_ratio": 100,
+              "minigame_pay_shared_ratio_ios": 100,
+              "return_all_metrics": false
             }
           ],
           "type": "object"

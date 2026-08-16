@@ -244,9 +244,11 @@ gravity semantic compose --app main --input semantic-request.json
 ```
 
 input 必须逐项引用机器 schema 当前列出的 `{definition_id, version}`，并完整提供
-`definition/window/metric/dimensions/filters/grain/joins`。v1 只登记 `ap_cost`、day/week/total、
-`click_company` 与其 many-to-one embedded join；由于生产过滤实测被上游语义拒绝，过滤器登记为空，
-所以 `filters` 只能是 `[]`。hour 虽是已知物理粒度，但与该指标不兼容，编译时零网络拒绝。
+`definition/window/metric/dimensions/filters/grain/joins`。`report.ap-cost-observation@1` 保持只登记
+`ap_cost`、day/week/total、`click_company` 与其 many-to-one embedded join，且 `filters` 只能是 `[]`。
+`@2` 在同一成员面增加 `click_company IN`，但必须同时选择 click dimension 和该 join；还登记
+activate count、pay amount、total ROI 三个仅允许 day/week 的指标。`ap_cost` 在 v2 仍允许
+day/week/total。hour 或新指标 + total 等不兼容组合在编译时零网络拒绝。
 
 `--dry-run` 返回 `gravity.semantic-compose-compiled.v1`；同输入 canonical JSON 逐字节相同。执行返回
 `gravity.semantic-compose-result.v1`，包含 `resolution_tier`、定义 ID/版本/指纹、实际成员、生成的

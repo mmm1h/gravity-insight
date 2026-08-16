@@ -8,6 +8,7 @@ import re
 from datetime import date
 from typing import Any, Mapping
 
+from .actionable_error_values import actual_value
 from .composite_batch import validate_composite_bounds
 from .errors import InputValidationError
 from .multidim_service import (
@@ -29,6 +30,7 @@ _FIELDS = (
     "relate_dims",
     "filters",
     "multi_keys",
+    "data_conf",
 )
 _REQUIRED = frozenset({"date_list", "time_dims", "metrics_list"})
 _TIME_DIMS = ("hour", "day", "week", "month", "total")
@@ -77,6 +79,14 @@ _NAME_LIMITS = {
 }
 _MAX_FILTERS = 100
 _MAX_FILTER_VALUES = 100
+FRONTEND_ADREPORT_DATA_CONF = {
+    "accumulate": False,
+    "asa_time_zone": "UTC",
+    "decimal_point": 2,
+    "minigame_pay_shared_ratio": 100,
+    "minigame_pay_shared_ratio_ios": 100,
+    "return_all_metrics": False,
+}
 
 
 def multidim_input_schema() -> dict[str, Any]:
@@ -147,6 +157,7 @@ def multidim_input_schema() -> dict[str, Any]:
                 "uniqueItems": True,
                 "items": {"type": "integer", "minimum": 2, "maximum": 30},
             },
+            "data_conf": {"const": copy.deepcopy(FRONTEND_ADREPORT_DATA_CONF)},
         },
     }
     return copy.deepcopy(schema)
@@ -208,7 +219,23 @@ def normalize_multidim_inputs(inputs: Mapping[str, Any]) -> dict[str, Any]:
     )
     if "multi_keys" in inputs:
         normalized["multi_keys"] = _multi_keys(inputs.get("multi_keys"))
+    if "data_conf" in inputs:
+        normalized["data_conf"] = _data_conf(inputs.get("data_conf"))
     return normalized
+
+
+def _data_conf(value: Any) -> dict[str, Any]:
+    if value != FRONTEND_ADREPORT_DATA_CONF:
+        raise InputValidationError(
+            "data_conf does not match the frontend-proven adreport profile; "
+            f"actual value: {actual_value(value)}",
+            field="data_conf",
+            next_action=(
+                "Use the exact data_conf object published by the current input schema "
+                f"and retry: {actual_value(FRONTEND_ADREPORT_DATA_CONF)}"
+            ),
+        )
+    return copy.deepcopy(FRONTEND_ADREPORT_DATA_CONF)
 
 
 def bind_multidim_app(inputs: Mapping[str, Any], app_id: str | int) -> dict[str, Any]:
@@ -486,6 +513,7 @@ def _input_error(message: str, field: str) -> InputValidationError:
 
 
 __all__ = [
+    "FRONTEND_ADREPORT_DATA_CONF",
     "MULTIDIM_INPUT_SCHEMA_VERSION",
     "MULTIDIM_PREVIEW_SCHEMA_VERSION",
     "bind_multidim_app",

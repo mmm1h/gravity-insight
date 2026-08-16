@@ -32,6 +32,10 @@ _ROOT_FIELDS = frozenset(
         "allowed_claims",
     }
 )
+_SOURCE_FIELDS = frozenset(
+    {"product", "operation_id", "operation_contract_version", "fact_path"}
+)
+_REQUEST_PROFILES = frozenset({"frontend_adreport_current"})
 
 
 def semantic_definitions() -> tuple[dict[str, Any], ...]:
@@ -147,8 +151,16 @@ def _validate_claims(claims: Any) -> None:
 
 def _validate_source(value: Any) -> None:
     source = _object(value, "source")
-    expected = {"product", "operation_id", "operation_contract_version", "fact_path"}
-    if set(source) != expected or source.get("product") != "multidim":
+    source_fields = frozenset(source)
+    if (
+        source_fields
+        not in (_SOURCE_FIELDS, _SOURCE_FIELDS | {"request_profile"})
+        or source.get("product") != "multidim"
+        or (
+            "request_profile" in source
+            and source.get("request_profile") not in _REQUEST_PROFILES
+        )
+    ):
         raise ContractChangedError("semantic definition source changed")
     operation = compiled_operation(str(source.get("operation_id", "")))
     if (
@@ -179,6 +191,7 @@ def _validate_relationships(values: Mapping[str, list[Mapping[str, Any]]]) -> No
     }
     _validate_metric_relationships(values["metrics"], ids["grains"])
     _validate_dimension_relationships(values, ids)
+    _validate_filter_relationships(values, ids)
     _validate_physical_names(values)
 
 
@@ -206,6 +219,26 @@ def _validate_dimension_relationships(
             or join.get("realization") != "embedded_dimension"
         ):
             raise ContractChangedError("semantic join relationship is invalid")
+
+
+def _validate_filter_relationships(
+    values: Mapping[str, list[Mapping[str, Any]]], ids: Mapping[str, set[str]]
+) -> None:
+    dimensions = {
+        str(item["definition_id"]): item for item in values["dimensions"]
+    }
+    for item in values["filters"]:
+        operators = item.get("operators")
+        required = item.get("required_dimension")
+        if (
+            not isinstance(operators, list)
+            or not operators
+            or any(not isinstance(operator, str) or not operator for operator in operators)
+            or len(operators) != len(set(operators))
+            or required not in ids["dimensions"]
+            or item.get("physical_name") != dimensions[str(required)].get("physical_name")
+        ):
+            raise ContractChangedError("semantic filter relationship is invalid")
 
 
 def _validate_physical_names(

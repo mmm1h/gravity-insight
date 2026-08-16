@@ -19,7 +19,9 @@
 一条可复用上游对象闭环，推进到 `54 = 46 / 1 / 7`。保存分析 CRUD 再新增一条独立资产生命周期，
 真实重放响应最初未落盘，故先记部分闭环；2026-08-17 已用原样保存对象重放并把聚合值
 `235176.0` 与 governed response 落盘，推进为 `55 = 47 / 1 / 7`；受治理语义组合再以一个新结果
-合同闭合已登记 `ap_cost` 的 total/day/week 与 `click_company` 拆分，推进为 `56 = 48 / 1 / 7`。
+合同闭合已登记 `ap_cost` 的 total/day/week 与 `click_company` 拆分；同日 v2 又以完整前端 wire 和
+生产对照登记 dimension-bound `click_company IN` 与 3 个 day/week 指标。它扩展同一结果产品，不新增
+动线，故仍为 `56 = 48 / 1 / 7`。
 operation/stable 为 231 / 222（185 read + 37 governed mutation）；canonical 产品卡先由 45 增为 73，
 再加 4 张自定义指标卡、4 张模板动作卡和 3 张保存分析动作卡得到 84；本轮四个独立
 Analysis export creator 再增 4 张卡得到 88，语义组合增加 1 张卡得到 89。精确 gap 为 9，安装目录为
@@ -42,6 +44,12 @@ registry 或 worker pool。`report.ap-cost-observation@1` 只登记生产实证�
 分别返回 1 个渠道 total 行（10857257.59）、40 个日行和 6 个周行；定义指纹、实际成员、生成查询、
 验证与 scoped `allowed_claims` 随结果返回。未知成员、额外 join、hour 粒度在 0 次上游请求下失败。
 本单元生产 HTTP 20/25，全部 200/attempt 1/retry false/page 1，无扩窗；失败组合不发布 claims。
+随后过滤 wire 单元证明 `filters` 直接位于 adreport body，item 为 `{field,operator,values}`，且
+`bytedance` 是“巨量引擎”的内部 option code；早期 corrected `IN` 失败的关键缺项是未同步选择
+`click_company` dimension。v2 用相同 App/窗口得到 grouped bytedance `10857257.59`，换 tencent 后
+success empty，排除静默忽略；真实语义 activate/day 链返回 40 行和 scoped claims。v1 保持原样，v2
+新增 1 个 dimension-bound filter 和 3 个只允许 day/week 的指标。该单元 HTTP 21/25，含一次误触发的
+metric catalog page 2-5，已全部计入并停止；计数仍为 231/222、89 cards、329 selectors。
 
 2026-08-16 受治理写目录覆盖只改变发现表达，不新增产品动线或 operation。canonical inventory 保留
 3 个既有默认 mutation selector，并为其余 28 个调用方动作增加 action-qualified 卡：
@@ -463,7 +471,7 @@ operation 继续保留专家入口，但明确不是产品等价物；`app.realt
 | 查看精确分群成员及逐人属性 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（自然语言实测、卡面） | `gravity-insight.segment-members.v1` 全量交付上游授权字段；目标非空实证登记 147 个顶层字段，未登记字段仍 fail-closed。route 忽略 `page/page_size` 并一次返回完整结果；触及 `max_items` 显式 `partial`。`fields` 是固定 profile + live `analysis.user_property.list` 动态属性的本地选列输入；未知引用仍按 call-bound 显式声明 3 次，不扩大无 revision/ETag 的在线两次解析模式。 |
 | 从分析结果或规则创建并管理可复用分群 | 已闭环 | 有 / 有 / 设计不适用 / 有 | 2（dry-run / 显式 execute） | 独立任务产出上游分群对象，不与“查看已有分群详情/成员”合并计数。`from_analysis`、`from_rule`、`by_manual`、`save` 已有生产创建/更新/刷新/删除与读回证据；历史版本和临时分群两个 create 变体未生产验证，不作为本行闭环证据。Plan v1 不承诺不可重放写、人工确认、preimage 或写后读回，Agent 只交接两步命令。 |
 | 用显式物理维度、指标和筛选读取多维报表 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（物理字段未知、在线解析） | 闭合 schema + live metadata 提供物理指标/维度候选；日期和 filter value 仍须由调用方精确提供。 |
-| 用版本化语义成员组合已登记指标、维度与时间粒度 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（成员未知、机器 schema） | `gravity.semantic-compose-result.v1` 记录 definition/version/fingerprint、实际成员、生成查询、验证和 `allowed_claims`。v1 只支持 `ap_cost` 的 day/week/total 与可选 `click_company` 拆分；过滤实测失败，故 `filters` 只能为空。未知成员、禁止 join、hour 粒度均在发网前失败。 |
+| 用版本化语义成员组合已登记指标、维度与时间粒度 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（成员未知、机器 schema） | `gravity.semantic-compose-result.v1` 记录 definition/version/fingerprint、实际成员、生成查询、验证和 `allowed_claims`。`report.ap-cost-observation@1` 保持 `ap_cost` day/week/total、可选 click 拆分且 filter 为空；`@2` 增加必须和 click dimension + embedded join 同选的 `click_company IN`，以及 activate count/pay amount/total ROI 三个 day/week 指标。未知成员、缺失 filter dimension、禁止 join、指标粒度冲突均在发网前失败。 |
 | 定义、更新并在多维查询中使用可复用自定义指标 | 已闭环 | 有 / 有 / 有 / 有 | mutation 2（preview / execute）；查询 1 | 当前 turbo `edit` 是 create/update upsert，字符串 ID 省略为 create、带 ID 为 update；删除使用当前 turbo delete。生产闭环以 `ap_cost` 公式创建 marker 指标，更新名称/展示格式后由既有旧前缀 mine/shared metadata 目录验证，再发真实 Multidim 查询取得 40 个非空日行，最后删除并连续两次确认当前目录为空。四张产品卡分别表达 list/create/update/delete；自然语言不自动写，Plan 只接受显式 preview/execute。permission edit 会覆盖角色可见指标，未实现。 |
 | 创建并维护可复用的事件/属性元数据模板 | 已闭环 | 有 / 有 / 有 / 有 | mutation 2（preview / execute） | 生产创建 marker 模板并把源属性读回为独立成员 ID，随后按成员 preimage 移除并读回空集合，再软删 master 并确认 ID 消失；最终无残留。create/append 以 App 目录 ID 输入、按稳定名称映射成员读回，remove 明确使用模板成员 ID。既有模板变更须通过 `marker OR upstream owner`；四张 Agent 卡均不允许自然语言自动执行。分组 UI、无 owner 证据的属性批删和不可清理的 XLSX 导入不在产品内。 |
 | 按平台和物理指标读取推广表现 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（指标未知、在线解析） | 平台须已知；第二次执行重新按平台复验物理指标。 |

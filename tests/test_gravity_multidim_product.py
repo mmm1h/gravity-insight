@@ -5,6 +5,7 @@ import unittest
 
 from gravity_sdk.errors import ContractChangedError, InputValidationError, PaginationError
 from gravity_sdk.multidim_product import (
+    FRONTEND_ADREPORT_DATA_CONF,
     MULTIDIM_INPUT_SCHEMA_VERSION,
     MULTIDIM_PREVIEW_SCHEMA_VERSION,
     bind_multidim_app,
@@ -105,6 +106,14 @@ class GravityMultidimProductTests(unittest.TestCase):
             "filters": [{"field": "country", "operator": "EQUALS", "values": ["CN"]}],
         }
         self.assertEqual("country", normalize_multidim_inputs(dynamic)["filters"][0]["field"])
+        profiled = normalize_multidim_inputs(
+            {**_inputs(), "data_conf": FRONTEND_ADREPORT_DATA_CONF}
+        )
+        self.assertEqual(FRONTEND_ADREPORT_DATA_CONF, profiled["data_conf"])
+        with self.assertRaises(InputValidationError):
+            normalize_multidim_inputs(
+                {**_inputs(), "data_conf": {**FRONTEND_ADREPORT_DATA_CONF, "accumulate": True}}
+            )
 
     def test_binding_replaces_app_filters_and_prepare_is_value_safe_offline(self) -> None:
         supplied = _inputs()
