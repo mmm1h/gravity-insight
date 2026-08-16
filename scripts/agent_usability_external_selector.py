@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 import copy
 import hashlib
 import json
@@ -16,6 +16,9 @@ from typing import Any
 
 REQUEST_SCHEMA = "gravity.agent-external-selector-request.v1"
 RESPONSE_SCHEMA = "gravity.agent-external-selector-response.v1"
+TERMINAL_OFFLINE_MEASUREMENT_REASON = (
+    "selection-only harness does not execute products"
+)
 
 
 def external_selector_trials(
@@ -28,6 +31,7 @@ def external_selector_trials(
     route_score: Any,
     parameter_score: Any,
     terminal_score: Any,
+    production_http_requests: Callable[[], int],
 ) -> tuple[dict[str, Any], int, list[dict[str, Any]], dict[str, Any]]:
     """Run a selector process against one frozen local catalog and score its output."""
 
@@ -56,7 +60,14 @@ def external_selector_trials(
         receipts.append(metadata)
         for case in cases:
             item = selected[str(case["case_id"])]
-            result = _selection_result(case, item, inventory, client, metadata)
+            result = _selection_result(
+                case,
+                item,
+                inventory,
+                client,
+                metadata,
+                production_http_requests=production_http_requests,
+            )
             if trial == 0:
                 observations.append({"case_id": case["case_id"], "result": result})
             ok, reason, card = route_score(case, result)
@@ -66,6 +77,7 @@ def external_selector_trials(
                 if case["expected"]["gap_code"] is None
                 else (None, "gap_not_applicable")
             )
+            result.update(_terminal_network_fact(production_http_requests))
             terminal, terminal_reason = terminal_score(case, result)
             state = states[str(case["case_id"])]
             state["selection"].append(ok)
@@ -258,6 +270,8 @@ def _selection_result(
     inventory: Mapping[str, Mapping[str, Any]],
     client: Any,
     metadata: Mapping[str, Any],
+    *,
+    production_http_requests: Callable[[], int],
 ) -> dict[str, Any]:
     selectors = list(selected["selectors"])
     query = str(case["prompt"])
@@ -293,6 +307,7 @@ def _selection_result(
             ),
             "weak_matches": [],
         }]
+    terminal_network = _terminal_network_fact(production_http_requests)
     return {
         "schema_version": "gravity.agent-external-selector-result.v1",
         "ok": True,
@@ -300,10 +315,24 @@ def _selection_result(
         "offline": metadata.get("network_called") is not True,
         "network_called": metadata.get("network_called") is True,
         "selection_network_called": metadata.get("network_called") is True,
-        "execution_network_called": False,
+        **terminal_network,
         "selected_selectors": selectors,
         "candidates": candidates,
         "capability_gaps": gaps,
+    }
+
+
+def _terminal_network_fact(
+    production_http_requests: Callable[[], int],
+) -> dict[str, Any]:
+    """Snapshot the only production-HTTP fact available to this harness stage."""
+
+    attempts = production_http_requests()
+    return {
+        "execution_http_requests": attempts,
+        "execution_network_called": attempts > 0,
+        "terminal_offline_measured": False,
+        "terminal_offline_measurement_reason": TERMINAL_OFFLINE_MEASUREMENT_REASON,
     }
 
 

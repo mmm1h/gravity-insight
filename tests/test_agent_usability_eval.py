@@ -184,10 +184,18 @@ class AgentUsabilityEvalTests(unittest.TestCase):
                 cases = self.subject._final_cases(manifest, key_path)
             from agent_usability_external_selector import external_selector_trials
             from gravity_sdk.client import GravityInsightClient
-            states, _, _, receipt = external_selector_trials(cases, GravityInsightClient.from_env(
-                transport=self.subject.BlockedTransport()), 1, plugin_path=ROOT / "scripts" /
-                "agent_usability_selector_stub.py", timeout_seconds=10, route_score=self.subject.route_score,
-                parameter_score=self.subject.parameter_score, terminal_score=self.subject.terminal_score)
+            blocker = self.subject.BlockedTransport()
+            states, _, _, receipt = external_selector_trials(
+                cases,
+                GravityInsightClient.from_env(transport=blocker),
+                1,
+                plugin_path=ROOT / "scripts" / "agent_usability_selector_stub.py",
+                timeout_seconds=10,
+                route_score=self.subject.route_score,
+                parameter_score=self.subject.parameter_score,
+                terminal_score=self.subject.terminal_score,
+                production_http_requests=lambda: blocker.attempts,
+            )
             self.assertEqual(([True], "utf-8"), (states[case["case_id"]]["selection"],
                              receipt["trial_receipts"][0]["stdin_encoding"]))
 
@@ -375,6 +383,7 @@ class AgentUsabilityEvalTests(unittest.TestCase):
             route_score=self.subject.route_score,
             parameter_score=self.subject.parameter_score,
             terminal_score=self.subject.terminal_score,
+            production_http_requests=lambda: 0,
         )
         self.assertEqual([True] * 4, states["stub-business-pulse"]["selection"])
         self.assertEqual(4, calls)
@@ -428,11 +437,44 @@ class AgentUsabilityEvalTests(unittest.TestCase):
             inventory,
             client,
             {"network_called": False},
+            production_http_requests=lambda: 0,
         )
         self.assertEqual([], result["candidates"])
         self.assertEqual(
             "REALTIME_EVENT_CATALOG_CONTRACT_MISSING",
             result["capability_gaps"][0]["code"],
+        )
+
+    def test_external_selector_derives_terminal_network_from_http_counter(self) -> None:
+        from agent_usability_external_selector import _catalog, _selection_result
+        from gravity_sdk.client import GravityInsightClient
+
+        blocker = self.subject.BlockedTransport()
+        client = GravityInsightClient.from_env(transport=blocker)
+        _, inventory = _catalog(client)
+        with self.assertRaisesRegex(RuntimeError, "production HTTP is disabled"):
+            blocker.request({"operation_id": "synthetic.execution"})
+        result = _selection_result(
+            {"prompt": "real time event catalog"},
+            {
+                "selectors": ["gap:REALTIME_EVENT_CATALOG_CONTRACT_MISSING"],
+                "reason": "registered unavailable product",
+            },
+            inventory,
+            client,
+            {"network_called": True},
+            production_http_requests=lambda: blocker.attempts,
+        )
+        case = {"expected": {
+            "route_key": "realtime_event_catalog_gap",
+            "gap_code": "REALTIME_EVENT_CATALOG_CONTRACT_MISSING",
+        }}
+        self.assertEqual(1, blocker.attempts)
+        self.assertEqual(1, result["execution_http_requests"])
+        self.assertTrue(result["execution_network_called"])
+        self.assertFalse(result["terminal_offline_measured"])
+        self.assertEqual(
+            (False, "gap_not_offline"), self.subject.terminal_score(case, result)
         )
 
     def test_external_selector_rejects_names_outside_supplied_catalog(self) -> None:

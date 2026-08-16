@@ -4332,3 +4332,41 @@ unittest `1099 + 5 =` **1104 tests OK**；pytest `1099 + 5 =` **1104 passed**，
 CLI help 与 `git diff --check` 通过。实现代码远多于测试增量，核心按自然边界拆为 490/199 SLOC；
 500/80/15/0 和现有 quality baseline 均未放宽。未读取或运行真实 holdout/final/key，测试输出中的
 protected split 仅为既有 synthetic fixture；未做任何 GitHub、push、tag 或远端动作。
+
+## 评测终点网络字段由计数派生（2026-08-16）
+
+**提案与裁决：**工作提案位于 ignored `tmp/codex/eval-harden/proposal.md`。external-selector
+结果原先把 `execution_network_called` 写为字面量 `false`，而终点评分将该字段唯一地解释为
+`gap_not_offline` 的否决条件。这不是对“终点离线”的测量。现在 evaluator 将实际
+`BlockedTransport.attempts`（同时发布为 `layers.cost.production_http_requests`）的 reader 传入结果
+生产者；生产者快照其数值，输出 `execution_http_requests` 和
+`execution_network_called = execution_http_requests > 0`，并在调用终点评分器前再次刷新。计数在 transport 拦截点递增后立即出错，
+故它记录的是已被禁止、未出网的生产 HTTP 尝试；没有上游业务请求。
+
+**结构性限制显式化：**本 harness 仍只有选择和评分，没有产品执行阶段。因此 development 的
+计数结构性为零，派生值也结构性为 `false`，并不构成“实际测得终点离线”。每个 external-selector
+结果和顶层 machine result 都新增 `terminal_offline_measured: false`；后者还带
+`terminal_offline_measurement_reason: "selection-only harness does not execute products"`，human summary
+也逐字显示该标记。没有为使其可测而接入执行阶段。
+
+**反事实回归与 development 对照：**新回归先调用真实 `BlockedTransport.request()`，令其实际计数
+`0 → 1`（并在 wire 前抛错），随后走 `_selection_result()` 的生产路径；结果为
+`execution_http_requests=1`、`execution_network_called=true`，当前 `terminal_score()` 返回
+`(false, "gap_not_offline")`。旧 producer 的同一字段是常量 `false`，所以该断言会失败。先前锁定的
+外部 selector development 选择本体没有保存在 worktree，且不得重调外部模型；因此 80/81 的复算是
+由同一输入事实得出的语义复算，而非冒充一次新模型运行：`production_http_requests=0` 时，新旧字段均为
+`false`，故 **offline-terminal `80/81 → 80/81`**，没有语义变化。另跑的 deterministic catalog-name
+stub 仅用于 harness 接线，得到 `0/74`，不与该 80/81 外部 selector 数字混用。
+
+**其余断言/测量审阅：**网络相关代码审阅发现 external selector 的
+`metadata.network_called` 仍是 plugin 自报，只做 boolean schema 校验；由它投影的 `offline`、
+`network_called`、`selection_network_called` 和总计 `external_selector_network_trials` 都不是 harness
+测得的 selector 网络流量。它们是协议 receipt，不得作为已独立验证的网络测量解读；本线按范围不改。
+`production_http_requests` 与 `socket_network_attempts` 则分别来自拦截 transport/socket 的实际计数。
+
+**门禁与边界：**unittest **`1105 + 1 = 1106`**；pytest **1106 passed / 3071 subtests passed**；compiler
+**230 operations / 11 manifests**；quality PASS（operations/provenance 230/230、operation literals 57）；
+错误审计保持 **1168 = A365 / B434 / C369**，新增 caller-recoverable error site/A 档为 **0/0**；CLI help
+与 `git diff --check` 通过。没有改题集、recognizer、能力目录、产品卡、gap 或 operation；动线保持
+**54 = 46 / 1 / 7**。没有运行 holdout/final/all、读取 key 或查看/解密 sealed；没有 GitHub、push、tag 或
+任何上游业务请求。

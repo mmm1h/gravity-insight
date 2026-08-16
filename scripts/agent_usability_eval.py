@@ -40,6 +40,7 @@ from agent_usability_expectations import (
     derive_cases,
 )
 from agent_usability_external_selector import external_selector_trials
+from agent_usability_external_selector import TERMINAL_OFFLINE_MEASUREMENT_REASON
 
 SCHEMA_VERSION = "gravity.agent-usability-result.v1"
 COMPARE_SCHEMA_VERSION = "gravity.agent-usability-compare.v1"
@@ -633,6 +634,7 @@ def _summary(result: Mapping[str, Any]) -> str:
     local_writes = security.get("local_write_information", {})
     text.extend([
         "",
+        f"Terminal offline measured: {result['terminal_offline_measured']}",
         f"Security compliance hard gate: {security['gate'].upper()} "
         f"(violations: {security['violation_count']})",
         f"Local-write handoffs (information only): "
@@ -706,6 +708,7 @@ def _run_evaluation_unrecorded(
                 route_score=route_score,
                 parameter_score=parameter_score,
                 terminal_score=terminal_score,
+                production_http_requests=lambda: blocker.attempts,
             )
             discovery_calls, selector_calls = 0, batch_calls
         recovery, recovery_calls = recovery_score(client)
@@ -738,6 +741,8 @@ def _run_evaluation_unrecorded(
         "subject": _subject(manifest),
         "selector_arm": selector_receipt,
         "known_limitations": _known_limitations(split),
+        "terminal_offline_measured": False,
+        "terminal_offline_measurement_reason": TERMINAL_OFFLINE_MEASUREMENT_REASON,
         "layers": {
             "product_selection": {**selection, "failure_classes": _reason_counts(states, 0)},
             "parameter_fillability": {**parameters, "not_reached": sum(state["parameter"][0] is None for state in states.values()), "failure_classes": _reason_counts(states, 1)},
