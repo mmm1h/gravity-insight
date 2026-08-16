@@ -724,6 +724,14 @@ class DiscoveryUxTests(unittest.TestCase):
                 self.assertIn(journey_id, registry)
                 self.assertEqual(registry[journey_id]["ledger_title"], title)
 
+    def test_app_catalog_paraphrases_keep_the_member_journey_boundary(self) -> None:
+        for query in ("我需要账号可读取的 App 项目清单", "find readable app projects"):
+            with self.subTest(query=query):
+                result = discover_capabilities(query, client=self.client)
+                self.assertEqual("app.list", result["candidates"][0]["selector"])
+        member = discover_capabilities("查看用户画像、时间线和回传记录", client=self.client)
+        self.assertEqual("composite:user_journey", member["candidates"][0]["selector"])
+
     def test_frozen_natural_language_journey_matrix_is_first_call_reachable(self) -> None:
         selectors = {
             "J01": "analysis.query.spec:event", "J02": "analysis.query.spec:funnel",

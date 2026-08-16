@@ -36,6 +36,25 @@ from .operation_search import (
 )
 
 
+APP_LIST_OPERATION_ID = "app.list"
+_PARENT_INPUT_PLACEHOLDERS: Mapping[str, tuple[str, ...]] = {
+    APP_LIST_OPERATION_ID: ("$first_app_id",),
+    "analysis.event.list": ("$first_event_name",),
+    "analysis.event.info": ("$first_event_property_name",),
+    "analysis.user_property.list": ("$first_user_property_name",),
+    "analysis.segment.list": ("$first_segment_id",),
+    "analysis.report_config.list": ("$first_report_config_id",),
+    "analysis.dashboard.tree": ("$first_dashboard_id", "$first_dashboard_space_id"),
+    "analysis.dashboard.detail": ("$first_dashboard_id", "$first_dashboard_space_id"),
+    "analysis.order_detail.list": ("$first_order_*",),
+    "analysis.user_detail.list": ("$first_client_id",),
+    "report.multidim.template.preset.list": (
+        "$first_preset_template_id",
+        "$first_preset_template_category",
+    ),
+}
+
+
 def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -646,38 +665,17 @@ def _infer_target_input(
     source_operation: Mapping[str, Any], parent: Mapping[str, Any]
 ) -> str | None:
     operation_id = str(parent.get("operation_id", ""))
-    placeholders: tuple[str, ...]
-    if operation_id == "app.list":
-        placeholders = ("$first_app_id",)
-    elif operation_id == "analysis.event.list":
-        placeholders = ("$first_event_name",)
-    elif operation_id == "analysis.event.info":
-        placeholders = ("$first_event_property_name",)
-    elif operation_id == "analysis.user_property.list":
-        placeholders = ("$first_user_property_name",)
-    elif operation_id == "analysis.segment.list":
-        placeholders = ("$first_segment_id",)
-    elif operation_id == "analysis.report_config.list":
-        placeholders = ("$first_report_config_id",)
-    elif operation_id in {"analysis.dashboard.tree", "analysis.dashboard.detail"}:
-        placeholders = ("$first_dashboard_id", "$first_dashboard_space_id")
-    elif operation_id == "analysis.order_detail.list":
-        placeholders = ("$first_order_*",)
-    elif operation_id == "analysis.user_detail.list":
-        placeholders = ("$first_client_id",)
-    elif operation_id.startswith("promotion.") and operation_id.endswith(
+    placeholders = _PARENT_INPUT_PLACEHOLDERS.get(operation_id)
+    if placeholders is None and operation_id.startswith(
+        "promotion."
+    ) and operation_id.endswith(
         ".advertiser.list"
     ):
         platform = operation_id.split(".", 2)[1]
         placeholders = (f"$first_{platform}_advertiser_id",)
-    elif operation_id == "report.multidim.template.preset.list":
-        placeholders = (
-            "$first_preset_template_id",
-            "$first_preset_template_category",
-        )
-    elif operation_id == "report.multidim.query":
+    elif placeholders is None and operation_id == "report.multidim.query":
         return "data_list" if "data_list" in source_operation.get("input_fields", {}) else None
-    else:
+    elif placeholders is None:
         return None
     probe = source_operation.get("live_probe")
     inputs = probe.get("inputs") if isinstance(probe, Mapping) else None

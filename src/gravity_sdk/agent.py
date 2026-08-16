@@ -195,11 +195,12 @@ def _discover(
             MONETIZATION_DETAIL_RAW_SELECTOR,
             monetization_open_dimension_query,
         )
+        from .agent_app_catalog import app_catalog_operation_query
 
         operation_query = (
             MONETIZATION_DETAIL_RAW_SELECTOR
             if monetization_open_dimension_query(request.query)
-            else request.query
+            else app_catalog_operation_query(request.query)
         )
         operations = discover_operation_cards(
             client,
