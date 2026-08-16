@@ -21,9 +21,12 @@ Every journey contributes exactly two additions. Primary-family counts are
 `13 + 12 + 12 + 12 + 12 + 12 + 12 + 11 = 96`; the final 11 are a one-to-one
 cover of the current 11 completely missing journeys. The 12 `multiple_intents`
 cases intentionally require `MULTIPLE_INTENTS` under the workflow contract.
-The current single-journey scorer cannot represent that response as a pass;
-this known measurement limitation is reported with the development result and
-must not be repaired by changing recognizer behavior to return one product.
+V4 supplements their frozen primary `journey_id` with the other journey identity
+already named by the unchanged prompt. Scoring requires the exact public
+candidate-selector set derived from those identities, so `MULTIPLE_INTENTS`
+alone is not a free pass. Legacy single-journey cases retain their old behavior;
+the scorer change must not be repaired by changing recognizer behavior to return
+one product.
 
 ## V2 core
 

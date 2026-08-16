@@ -103,6 +103,36 @@ class AgentUsabilityEvalTests(unittest.TestCase):
             self.subject.route_score(case, result),
         )
 
+    def test_multiple_intents_require_the_exact_candidate_set(self) -> None:
+        _manifest, cases = self.subject.load_cases("development", None)
+        case = next(
+            case for case in cases if case["case_id"] == "J26.dev.v3.multiple"
+        )
+        selectors = list(case["expected"]["candidate_selectors"].values())
+        result = {"capability_gaps": [{
+            "code": "MULTIPLE_INTENTS",
+            "candidate_selectors": list(reversed(selectors)),
+        }]}
+        self.assertEqual(
+            (True, "correct_multiple_intents", None),
+            self.subject.route_score(case, result),
+        )
+        result["capability_gaps"][0]["candidate_selectors"] = [selectors[0]]
+        self.assertEqual(
+            (False, "wrong_intent_candidates", None),
+            self.subject.route_score(case, result),
+        )
+        result["capability_gaps"][0]["candidate_selectors"] = [*selectors, "extra"]
+        self.assertFalse(self.subject.route_score(case, result)[0])
+
+    def test_protected_legacy_expectations_are_marked_as_biased(self) -> None:
+        self.assertEqual([], self.subject._known_limitations("development"))
+        limitation = self.subject._known_limitations("holdout")
+        self.assertEqual(
+            "PROTECTED_LEGACY_MULTI_INTENT_EXPECTATION_BIAS",
+            limitation[0]["code"],
+        )
+
     def test_protected_keys_are_ignored_and_no_key_is_tracked(self) -> None:
         for key in (
             ".local/agent-usability/holdout.key",

@@ -12,7 +12,7 @@
     "zh_en_code_switch": 12
   },
   "development_legacy_case_count": 240,
-  "development_sha256": "90a81849b29a34cf407d3d4d6475f7997e41dce82b2652661e508741e7dea1c0",
+  "development_sha256": "c53968fad0dff4642988df4c7cb9cdbe6d0cc3b0c55b0c0cb0b888cb484db631",
   "final_case_count": 48,
   "final_plaintext_sha256": "9675ae8f049a772574f6aa8184af672114b344c93bef6be8174b64eeda4dc6e2",
   "final_sealed_sha256": "990de75c372cb8a496324dbc13486a9e05b4b937283c4a8a387f9d8408c4076a",
@@ -40,7 +40,7 @@
   ],
   "source_revision": "6c3b2dd63851b3c869208b500e67e9697d2e76d3",
   "split_unit": "journey-expression-family",
-  "suite_version": "gravity-agent-usability-2026-08-16.v3",
+  "suite_version": "gravity-agent-usability-2026-08-16.v4",
   "three_split_case_count": 624,
   "total_case_count": 576,
   "trials": 4

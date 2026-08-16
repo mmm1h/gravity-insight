@@ -7,6 +7,12 @@ or routing tests.
 
 ## Version and construction
 
+`gravity-agent-usability-2026-08-16.v4` preserves all 336 v3 prompt strings and
+adds explicit multi-journey expectations to only the 12 `multiple_intents`
+development cases. The v4 scorer requires both `MULTIPLE_INTENTS` and exact
+candidate-set equality; order does not matter, while a missing, extra, unknown,
+or duplicated selector fails.
+
 `gravity-agent-usability-2026-08-16.v3` preserves the original 240 public
 development cases byte-for-byte and appends two new cases for each J01–J48
 journey. The 96-case development-only expansion uses eight primary families:
@@ -33,7 +39,7 @@ expression family, not by randomly shuffling duplicate sentences.
 
 The independent `final` suite is additive: one newly authored case for each of
 the same 48 journeys. It is not part of `all`, whose meaning remains
-development+holdout. In v3 all three physical splits contain `336 + 240 + 48 =
+development+holdout. In v3/v4 all three physical splits contain `336 + 240 + 48 =
 624` cases. Final rotates five strategies across
 journey families: colloquial ellipsis 10, typo/misspelling 10, Chinese-English
 code-switching 10, indirect goal descriptions 9, and the first turn of a
@@ -42,14 +48,23 @@ sentence families.
 
 The original v2/final authorship boundaries remain recorded below. The v3
 expansion's separate source and negative-deduplication boundary is recorded in
-`SOURCES.md`. Source revisions and content hashes are recorded in `suite.json`.
+`SOURCES.md`; v4 changes only the 12 public expectations. Source revisions and
+content hashes are recorded in `suite.json`.
 
 ## Ledger-derived response shape
 
 Prompts and `journey_id` values remain frozen in every split. The original v2
 cases retain their historical `expected` object as a target-identity guard.
-The v3 development additions deliberately omit `expected`: their only target
+The 84 non-ambiguous v3 development additions omit `expected`: their only target
 identity is `journey_id`, so no card-versus-gap fact is copied into the case.
+Each of the 12 ambiguous cases instead declares an expectation such as:
+
+```json
+{"terminal_kind":"multiple_intents","journey_ids":["J24","J25"]}
+```
+
+The original single `journey_id` must remain in that set. Candidate selectors
+are derived from the public target registry rather than copied into case text.
 At load time the evaluator reads
 the status directly from `docs/analysis-journeys.md` and combines it with the
 public `journey-targets.json` mapping:
@@ -57,6 +72,8 @@ public `journey-targets.json` mapping:
 - `已闭环` requires the journey's exact product card;
 - `完全缺失` requires the journey's exact actionable gap;
 - `部分闭环` also requires the whole journey's exact gap.
+- an explicit `multiple_intents` declaration requires a `MULTIPLE_INTENTS` gap
+  whose candidate selectors map to exactly the declared journey set.
 
 Partial journeys fail closed because these cases identify a whole journey, not
 an independently frozen subpath. Accepting one supported subpath's card for a
@@ -67,13 +84,23 @@ suite is authored.
 The target registry deliberately contains no status field. Its exact ledger
 titles make the Markdown table machine-readable; missing or duplicate rows,
 unregistered case identities, and a status without its frozen target shape all
-fail before scoring. Evaluation receipts fingerprint the parser, target
+fail before scoring. Its `candidate_selectors` map records only public selectors
+needed to interpret ambiguity candidates; gap-only journeys remain target
+identities even when no executable selector exists. Evaluation receipts fingerprint the parser, target
 registry, and ledger and record their hashes and status counts.
 
 This applies after any development, holdout, or final payload is loaded. The
 protected payloads are not rebuilt: their sealed `journey_id` remains the target
 identity, while only response shape is derived outside the ciphertext. No
 protected key or decryption is needed to update the derivation mechanism.
+Because legacy protected cases do not carry the new explicit multi-journey
+declaration, they deliberately retain their old single-journey scoring and
+per-case outcomes. If either protected payload contains an ambiguous prompt,
+its score therefore keeps the known legacy bias. Results for `holdout`, `final`,
+and `all` expose this as
+`PROTECTED_LEGACY_MULTI_INTENT_EXPECTATION_BIAS`. Correcting such cases requires
+a future independently authored sealed suite; v4 does not inspect, decrypt, or
+rebuild either existing payload.
 If an authorized custodian run ever finds a legacy payload without a registered
 `journey_id`, loading fails before scoring. The remedy is a new independently
 authored sealed suite version with the old payload retained read-only, not
