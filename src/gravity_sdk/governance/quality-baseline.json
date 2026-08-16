@@ -2,7 +2,6 @@
   "baseline_version": 2,
   "debt": {
     "cyclomatic_complexity": {
-      "src/gravity_sdk/blob_archive.py::_inspect_zip": 20,
       "src/gravity_sdk/blob_headers.py::_preflight_headers": 23,
       "src/gravity_sdk/blob_policy.py::BlobPolicy.__post_init__": 35,
       "src/gravity_sdk/blob_transfer.py::SafeBlobTransfer.download": 25,

@@ -4,8 +4,8 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 4,
-    "description": "已保存分析配置完整列表；登记保存、所有权和写后读回所需字段，config 仍只由保存分析专用产品解析。",
+    "contract_version": 5,
+    "description": "已保存分析配置完整列表；page_size=1000 已在线成功并由 page_info 显式声明完整性，登记保存、所有权和写后读回所需字段。",
     "domain": "analysis",
     "effect": "read",
     "examples": [],
@@ -19,7 +19,7 @@
         "type": "integer"
       },
       "page_size": {
-        "default": 40,
+        "default": 1000,
         "type": "integer"
       }
     },
@@ -33,10 +33,10 @@
     },
     "operation_id": "analysis.report_config.list",
     "pagination": {
-      "default_page_size": 40,
+      "default_page_size": 1000,
       "kind": "page_info",
       "list_path": "data.list",
-      "max_page_size": 40,
+      "max_page_size": 1000,
       "page_field": "page",
       "page_info_path": "data.page_info",
       "page_size_field": "page_size",
@@ -65,7 +65,7 @@
       "body_fields": [],
       "defaults": {
         "page": 1,
-        "page_size": 40
+        "page_size": 1000
       },
       "fixed_body": {},
       "fixed_query": {},

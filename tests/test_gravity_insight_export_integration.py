@@ -154,6 +154,26 @@ class ExportContractTests(unittest.TestCase):
         )
         self.assertNotIn("export list`", raised.exception.next_action)
 
+    def test_monetization_export_records_shape_but_stays_blocked_on_truncation(self):
+        contracts = ExportContractRegistry.from_file(CONTRACT_PATH)
+        operation_id = "export.analysis.monetization_detail.start"
+        description = contracts.describe(operation_id)
+
+        self.assertFalse(description["currently_callable"])
+        self.assertIn("1000000", description["block_reason"])
+        self.assertEqual(
+            "upstream_silent_truncation",
+            description["pagination_and_scale"]["status"],
+        )
+        self.assertEqual(
+            ["事件发生时间", "客户ID"],
+            description["columns"]["required_output_headers"],
+        )
+        self.assertEqual(
+            192 * 1024 * 1024,
+            contracts.get(operation_id).privacy["max_uncompressed_size_bytes"],
+        )
+
     def test_material_export_description_is_complete_and_runnable(self):
         contracts = ExportContractRegistry.from_file(CONTRACT_PATH)
         description = contracts.describe("export.material.report.start")

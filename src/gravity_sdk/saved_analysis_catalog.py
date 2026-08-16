@@ -51,7 +51,7 @@ def list_saved_analyses(
     envelope = call_read(
         client,
         LIST_OPERATION_ID,
-        {"app_id": app_id, "page": 1, "page_size": 40},
+        {"app_id": app_id, "page": 1, "page_size": 1_000},
         read_all=True,
         max_pages=pages,
         max_items=items,

@@ -315,11 +315,16 @@ operation/stable 仍为 231/222。
 
 `origin_event` 对一个自然事件做一次 evaluate 但估算为 0，未发 create；它缺正数估算、
 成功任务和文件 shape。`monetization_detail` 的唯一 create 经 4 次有界退避轮询仍 RUNNING，
-后续通过精确 `task_name` 恢复后达 READY，但文件在共享下载栈触发 `BLOB_ARCHIVE_UNSAFE`；
-目标未提交，不冒充 `complete`。同 App/日期的自然 ClientID 窄化尝试又在本地 typed-condition
-校验阶段失败，所以第二个 create 为 0。两族仍是 gap，不放宽 archive 门禁，不从其他族猜 shape。
-完整 41 次生产 HTTP 账本、四份文件 shape 和六态证据见
+后续通过精确 `task_name` 恢复后达 READY；后续补证把共享下载栈的 `BLOB_ARCHIVE_UNSAFE` 精确定位为
+route 的 128 MiB `uncompressed_size_cap`。文件在保留其他守卫、仅把该 route 展开上限设为 192 MiB
+后安全通过，shape 为 `Sheet1`、1,000,000 行、`事件发生时间/客户ID`；但同 scope 明细
+`total_items=1,212,315`，任务和文件没有截断信号，empty shape 也未在线验证，故仍不冒充 `complete`。
+同 App/日期的自然 ClientID 窄化尝试又在本地 typed-condition 校验阶段失败，所以第二个 create 为 0。
+两族仍是 gap，不关闭共享 archive 门禁，不从其他族猜 shape。完整 41 次原轮生产 HTTP 账本、四份文件
+shape 和六态证据见
 [`20260817_export_families.json`](../evidence/forensics/20260817_export_families.json)。
+归档规则、实测数值、变现 shape 与静默截断补证见
+[`20260817_contract_evidence.json`](../evidence/forensics/20260817_contract_evidence.json)。
 
 ## 2026-08-14 追加判定：D22 看板条件合并语义
 

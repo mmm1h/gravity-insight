@@ -1,0 +1,115 @@
+{
+  "schema_version": "gravity-insight.contract-evidence.v1",
+  "observed_at": "2026-08-17T02:30:00+08:00",
+  "values_persisted": false,
+  "credentials_persisted": false,
+  "request_budget": {"limit": 20, "used": 19, "remaining": 1},
+  "discipline": {
+    "retries": 0,
+    "data_pages_advanced": 0,
+    "date_windows_expanded": 0,
+    "apps_switched_to_find_nonempty_data": 0,
+    "temporary_upstream_objects_created": 0,
+    "production_requests_after_stop": 0
+  },
+  "report_config_page_size": {
+    "operation_id": "analysis.report_config.list",
+    "method": "GET",
+    "path": "/turbo_engine/api/v2/datamanageconfig/report_config/list/",
+    "page": 1,
+    "observations": [
+      {"page_size": 40, "http_status": 200, "code": 0, "msg": "成功", "list_count": 40, "page_info": {"page": 1, "page_size": 40, "total_number": 93, "total_page": 3}, "receipt_id": "47936b43d8e44d78a7ffd3264c9109cf"},
+      {"page_size": 41, "http_status": 200, "code": 0, "msg": "成功", "list_count": 41, "page_info": {"page": 1, "page_size": 41, "total_number": 93, "total_page": 3}, "receipt_id": "45db8293a2db4d78b3c4fa61e1491fb6"},
+      {"page_size": 500, "http_status": 200, "code": 0, "msg": "成功", "list_count": 93, "page_info": {"page": 1, "page_size": 500, "total_number": 93, "total_page": 1}, "receipt_id": "9912ee3c99e04697b8f8bcb7b6c74bb5"},
+      {"page_size": 1000, "http_status": 200, "code": 0, "msg": "成功", "list_count": 93, "page_info": {"page": 1, "page_size": 1000, "total_number": 93, "total_page": 1}, "receipt_id": "ffa82bf9e84a42ebb4a76666bb84748b"}
+    ],
+    "verdict": {
+      "upstream_accepts_through_observed_value": 1000,
+      "absolute_upstream_maximum": "unknown; values above 1000 were not probed",
+      "contract_default_page_size": 1000,
+      "contract_max_page_size": 1000,
+      "previous_40_cap": "unsupported capability regression",
+      "previous_500_upper_limit_claim": "false as an upper-limit claim because 1000 succeeds; no immutable observation supported it",
+      "completeness": "A one-page caller compares list_count with page_info.total_number and checks page_info.total_page/has_more. The saved-analysis product uses read_all and rejects truncated=true or a non-null next_page_input."
+    }
+  },
+  "monetization_archive": {
+    "operation_id": "export.analysis.monetization_detail.start",
+    "recovered_task": {"catalog_position": 1, "task_type": "monetization_detail", "state": "READY"},
+    "original_policy_observation": {
+      "code": "BLOB_ARCHIVE_UNSAFE",
+      "stage": "archive_check",
+      "message": "archive declared uncompressed bytes 166678185 exceed cap 134217728 at 'xl/worksheets/sheet1.xml'",
+      "details": {
+        "rule": "uncompressed_size_cap",
+        "entry": "xl/worksheets/sheet1.xml",
+        "entry_file_size": 166667313,
+        "observed_uncompressed_bytes": 166678185,
+        "max_uncompressed_size_bytes": 134217728,
+        "next_action": "Produce a smaller archive or request a reviewed policy change."
+      }
+    },
+    "rejected_hypotheses": ["size_metadata_mismatch", "nested_archive_depth_cap", "ZIP64_or_data_descriptor_incompatibility"],
+    "policy_decision": {
+      "choice": "route_scoped_limit_increase",
+      "new_max_uncompressed_size_bytes": 201326592,
+      "shared_default_changed": false,
+      "unchanged_guards": ["compressed-size cap 104857600", "entry-count cap 1000", "compression-ratio cap 100", "nested depth 0", "symlink", "encryption", "path traversal", "metadata and real-read size checks"],
+      "basis": "The standard XLSX has 9 entries, 166683292 total uncompressed bytes and maximum entry ratio 12.269763; the old route default 128 MiB was the only failing rule."
+    },
+    "downloaded_file": {
+      "size_bytes": 13588076,
+      "sha256": "5f9e784f906604fb4f7b58df09b15c52c27f117de863eab84277b8723d3a87e7",
+      "archive_entries": 9,
+      "total_uncompressed_bytes": 166683292,
+      "maximum_entry_compression_ratio": 12.269763,
+      "worksheet_count": 1,
+      "worksheet_name": "Sheet1",
+      "rows": 1000000,
+      "columns": [
+        {"header": "事件发生时间", "storage_types": ["s"], "python_types": ["str"], "number_formats": ["General"], "logical_type": "datetime", "nonempty_cells": 1000000},
+        {"header": "客户ID", "storage_types": ["s"], "python_types": ["str"], "number_formats": ["General"], "logical_type": "identifier", "nonempty_cells": 1000000}
+      ],
+      "empty_upstream_shape": "unknown; no empty production task was submitted",
+      "local_header_only_finalizer_shape": "one Sheet1 worksheet, the two contracted headers preserved, rows=0; this is local contract evidence, not an upstream empty sample"
+    },
+    "completeness_check": {
+      "scope": "the exact catalog-position-3 App, 2026-08-16, AdEventTime + ClientID",
+      "list_http_status": 200,
+      "list_code": 0,
+      "list_total_items": 1212315,
+      "file_rows": 1000000,
+      "missing_rows": 212315,
+      "task_state": "READY",
+      "upstream_truncation_signal": null,
+      "verdict": "upstream_silent_truncation",
+      "route_executable": false,
+      "next_required_evidence": "server-side paged/sharded export, or a trustworthy row-count/truncation signal that the SDK can compare and fail closed"
+    }
+  },
+  "excluded_observation": {
+    "reason": "An initial completeness check used the saved-analysis App rather than the export task's fixed catalog-position-3 App; it is retained in the HTTP ledger but excluded from the export verdict.",
+    "total_items": 19196
+  },
+  "http_ledger": [
+    {"sequence": 1, "phase": "report_config_boundary", "operation_id": "authentication", "method": "POST", "http_status": 200, "receipt_id": "ffc88dfe62a84540a7938f4323312d33"},
+    {"sequence": 2, "phase": "report_config_boundary", "operation_id": "analysis.report_config.list", "method": "GET", "http_status": 200, "receipt_id": "47936b43d8e44d78a7ffd3264c9109cf"},
+    {"sequence": 3, "phase": "report_config_boundary", "operation_id": "analysis.report_config.list", "method": "GET", "http_status": 200, "receipt_id": "45db8293a2db4d78b3c4fa61e1491fb6"},
+    {"sequence": 4, "phase": "report_config_boundary", "operation_id": "analysis.report_config.list", "method": "GET", "http_status": 200, "receipt_id": "9912ee3c99e04697b8f8bcb7b6c74bb5"},
+    {"sequence": 5, "phase": "report_config_boundary", "operation_id": "analysis.report_config.list", "method": "GET", "http_status": 200, "receipt_id": "ffa82bf9e84a42ebb4a76666bb84748b"},
+    {"sequence": 6, "phase": "task_recovery", "operation_id": "export.task.list", "method": "POST", "http_status": 200, "receipt_id": "5f19e6d8ade4414a8faa5cd50b3d71d2"},
+    {"sequence": 7, "phase": "archive_original_policy", "operation_id": "export.task.progress", "method": "GET", "http_status": 200, "receipt_id": "1c0a85b1746d4132bfbf160b70e12979"},
+    {"sequence": 8, "phase": "archive_original_policy", "operation_id": "export_blob_download", "method": "GET", "http_status": 200, "receipt_id": "9f30410b3f344767b4f0e0889755cb77"},
+    {"sequence": 9, "phase": "archive_reviewed_policy", "operation_id": "export.task.progress", "method": "GET", "http_status": 200, "receipt_id": "33c87122ccd843cebc27a3bfa3a9d4f1"},
+    {"sequence": 10, "phase": "archive_reviewed_policy", "operation_id": "export_blob_download", "method": "GET", "http_status": 200, "receipt_id": "d8af194c5d7b4ec5b8df9d7668ec02f3"},
+    {"sequence": 11, "phase": "excluded_wrong_scope", "operation_id": "analysis.user_property.list", "method": "GET", "http_status": 200, "receipt_id": "debeb13de47d4223ab0765a61b600114"},
+    {"sequence": 12, "phase": "excluded_wrong_scope", "operation_id": "analysis.event_property.list", "method": "GET", "http_status": 200, "receipt_id": "bb10bcf5ad744c0f88bd03720cf068f4"},
+    {"sequence": 13, "phase": "excluded_wrong_scope", "operation_id": "analysis.segment.list", "method": "GET", "http_status": 200, "receipt_id": "806c75798c80427a9beb5120335d5bad"},
+    {"sequence": 14, "phase": "excluded_wrong_scope", "operation_id": "analysis.monetization_detail.list", "method": "POST", "http_status": 200, "receipt_id": "2b746511265544eda095ea504abdeceb"},
+    {"sequence": 15, "phase": "exact_scope_completeness", "operation_id": "app.list", "method": "GET", "http_status": 200, "receipt_id": "baad998ae8dd4e02b2fb2e1b0e821f36"},
+    {"sequence": 16, "phase": "exact_scope_completeness", "operation_id": "analysis.user_property.list", "method": "GET", "http_status": 200, "receipt_id": "77b2d4267ea4479baa018a692f4826a9"},
+    {"sequence": 17, "phase": "exact_scope_completeness", "operation_id": "analysis.event_property.list", "method": "GET", "http_status": 200, "receipt_id": "70494250f49141b3a05ecaae92cf080c"},
+    {"sequence": 18, "phase": "exact_scope_completeness", "operation_id": "analysis.segment.list", "method": "GET", "http_status": 200, "receipt_id": "8d8d9d03af764bbab25a978c9fa71d01"},
+    {"sequence": 19, "phase": "exact_scope_completeness", "operation_id": "analysis.monetization_detail.list", "method": "POST", "http_status": 200, "receipt_id": "0ef37a8b6f9c401e8bc3ef03211d9fa5"}
+  ]
+}
