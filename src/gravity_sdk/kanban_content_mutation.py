@@ -8,7 +8,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from .actionable_error_values import actual_value
-from .errors import InputValidationError, MutationReadbackError, OwnershipMarkerRequiredError
+from .errors import InputValidationError, MutationReadbackError
 from .kanban_mutation_contracts import (
     DASHBOARD_ORDER,
     DASHBOARD_UPDATE,
@@ -28,8 +28,10 @@ from .kanban_mutation_support import (
     read_detail,
     read_tree,
     report_list,
+    require_dashboard_authority,
     require_owned,
 )
+from .mutation_ownership import OwnerReference, require_mutation_authority
 
 
 def replace_notes(
@@ -67,13 +69,7 @@ def _replace_notes(
             field="dashboard_id",
             next_action="Choose an empty/note-only SDK dashboard; this action will not modify multidimensional report content.",
         )
-    name = detail.get("name")
-    if marker_from_text(name) is None:
-        raise OwnershipMarkerRequiredError(
-            f"actual value: {actual_value({'dashboard_id': dashboard, 'marker': None})}; allowed value: an SDK-marked dashboard",
-            field="dashboard_id",
-            next_action="Do not replace layout on an unmarked dashboard; create or copy an SDK-owned dashboard first.",
-        )
+    ownership = require_dashboard_authority(client, detail, dashboard)
     inputs = {
         "app_id": app,
         "id": dashboard,
@@ -83,7 +79,13 @@ def _replace_notes(
     }
     preview = mutation_preview(
         client._preview_mutation(DASHBOARD_UPDATE, inputs),
-        target={"kind": "dashboard", "id": dashboard, "space_id": space, "note_count": len(layout)},
+        target={
+            "kind": "dashboard",
+            "id": dashboard,
+            "space_id": space,
+            "note_count": len(layout),
+            "ownership": ownership.public(),
+        },
         preimage={"id": dashboard, "note_count": len(detail_notes(detail)), "report_count": 0},
         impact=f"Replace the note-only dashboard layout with {len(layout)} SDK-marked notes; report associations remain empty.",
         reads_performed=1,
@@ -147,16 +149,24 @@ def _delete_note(
             next_action="Read dashboard detail and choose one exact note `i` value before another write.",
         )
     marker = marker_from_text(matches[0].get("name"))
-    if marker is None:
-        raise OwnershipMarkerRequiredError(
-            f"actual value: {actual_value({'note_id': note_id, 'marker': None})}; allowed value: an SDK-marked note",
-            field="note_id",
-            next_action="Do not delete this unmarked note through the SDK; ask its owner to manage it.",
-        )
+    ownership = require_mutation_authority(
+        client,
+        marker=marker,
+        owner=OwnerReference(None, None, "not_exposed"),
+        object_kind="Kanban note",
+        object_id=note_id,
+        field="note_id",
+    )
     inputs = {"app_id": app, "id": dashboard, "i": note_id, "space_id": space}
     preview = mutation_preview(
         client._preview_mutation(NOTE_DELETE, inputs),
-        target={"kind": "note", "id": note_id, "dashboard_id": dashboard, "marker": marker},
+        target={
+            "kind": "note",
+            "id": note_id,
+            "dashboard_id": dashboard,
+            "marker": marker,
+            "ownership": ownership.public(),
+        },
         preimage={"id": note_id, "name": matches[0].get("name"), "marker": marker},
         impact="Permanently delete this exact SDK-marked dashboard note.",
         reads_performed=1,
@@ -202,12 +212,7 @@ def _unlink_reports(
     send: bool,
 ) -> dict[str, Any]:
     detail = read_detail(client, app, space, dashboard)
-    if marker_from_text(detail.get("name")) is None:
-        raise OwnershipMarkerRequiredError(
-            f"actual value: {actual_value({'dashboard_id': dashboard, 'marker': None})}; allowed value: an SDK-marked dashboard",
-            field="dashboard_id",
-            next_action="Do not change report associations on an unmarked dashboard through the SDK.",
-        )
+    ownership = require_dashboard_authority(client, detail, dashboard)
     existing = {int(item["report_id"]) for item in report_list(detail) if str(item.get("report_id", "")).isdecimal()}
     if not set(report_ids) <= existing:
         raise InputValidationError(
@@ -218,7 +223,12 @@ def _unlink_reports(
     inputs = {"app_id": app, "dashboard_id": dashboard, "ids": report_ids, "space_id": space}
     preview = mutation_preview(
         client._preview_mutation(REPORT_UNLINK, inputs),
-        target={"kind": "dashboard_report_association", "dashboard_id": dashboard, "report_ids": report_ids},
+        target={
+            "kind": "dashboard_report_association",
+            "dashboard_id": dashboard,
+            "report_ids": report_ids,
+            "ownership": ownership.public(),
+        },
         impact=f"Remove {len(report_ids)} chart associations from this dashboard; the underlying saved reports are not deleted or modified.",
         reads_performed=1,
     )
@@ -252,12 +262,7 @@ def save_order(
 
 def _save_order(client: Any, app: int, supplied: list[dict[str, Any]], *, send: bool) -> dict[str, Any]:
     current, objects = read_tree(client, app)
-    if not any(marker_from_text(item.name) for item in objects):
-        raise OwnershipMarkerRequiredError(
-            "actual value: Kanban tree has no SDK-marked object; allowed value: an order containing at least one SDK-owned object",
-            field="order_detail",
-            next_action="Create an SDK-marked Kanban object before using the governed order route.",
-        )
+    ownership = [require_owned(client, app, item) for item in objects]
     if _canonical_tree(current) != _canonical_tree(supplied):
         raise InputValidationError(
             "actual value: order_detail changes fields, membership, or parents; allowed value: the current tree with sibling arrays reordered only",
@@ -267,7 +272,11 @@ def _save_order(client: Any, app: int, supplied: list[dict[str, Any]], *, send: 
     inputs = {"app_id": app, "order_detail": supplied}
     preview = mutation_preview(
         client._preview_mutation(DASHBOARD_ORDER, inputs),
-        target={"kind": "kanban_order", "object_count": len(objects)},
+        target={
+            "kind": "kanban_order",
+            "object_count": len(objects),
+            "ownership": [item.public() for item in ownership],
+        },
         impact="Persist sibling ordering only; object fields, parents, and membership are unchanged.",
         reads_performed=1,
     )

@@ -3726,3 +3726,128 @@ caller-recoverable 审计从两侧增量合并为 **`1121 = A318 / B434 / C369`*
 （operations/provenance **223/223**、operation literals 57），生成器 check 与 `git diff --check` 均通过。
 本次纯合并生产 Gravity HTTP **0 次**；未运行真实 holdout/final/all、未读 key，未修改 recognizer、
 题集或评分逻辑，也未实现任何 share 语义。合并与交叉测试没有发现任一父线的实现缺陷。
+
+## 三域 mutation 归属守卫改为 marker OR owner（2026-08-16）
+
+**提案与开工证据：**工作提案保存在 ignored `tmp/codex/owner-gate/proposal.md`。本轮先创建
+marker space/dashboard，再读取登录 principal、space membership 与 dashboard detail/members；literal
+`creator[].uid == gravity_id` **没有证成，且线上形状反驳了该写法**：`creator` 实际为单个 object，只有
+`id/name`。可证成的是同一对象的 `creator.id == gravity_id`，以及 dashboard
+`create_user_id == gravity_id`；两条 owner ID 与登录 principal 完全相等。未用空数组、字段名猜测或 marker
+替代这项证明。
+
+逐写对象族的稳定 owner 事实并不一致：Segment list/detail、v2 report list/detail、v3 自有模板
+list/detail、subscription list 与 dashboard detail/tree 使用 `create_user_id/create_user_name`；Kanban
+space 的 membership 使用 `creator.id/name`。Kanban folder 与 note 没有已证实的直接 owner 字段，故非
+marker folder/note 必须 fail closed。notes replace 与 report unlink 的直接授权目标仍是 dashboard，可使用
+dashboard owner；note delete 的直接目标是 note，只能使用 note marker。tree 本轮线上观察到的 dashboard
+`create_time/create_user_id/create_user_name/modify_time/refresh_type/update_user_id/update_user_name` 已全部加入
+v2 投影、golden 与稳定隐私复核；没有把这些 union 字段推断成 folder owner。
+
+**共享 principal、授权与 marker 裁决：**登录 `gravity_id` 现在以 `GRAVITY_PRINCIPAL_ID` 随 token 缓存，
+由 `CredentialConfig/CredentialProvider → GravityHttpRuntime → Transport → MutationClientMixin` 提供只读共享
+principal；旧 token cache 缺 principal 时只刷新一次，marker 路径不要求登录刷新。三域统一由
+`mutation_ownership.py` 判定 `GSDK marker OR proven owner == current principal`，否则
+`OWNERSHIP_REQUIRED/caller/2` 同时报告对象 ID、owner ID/name/field、current principal 与下一步；marker
+继续只承担创建来源和幂等关联。
+
+`mutation_policy.py` 删除 action 单词 allowlist。mutation authority 只来自 registry 中完整相等的
+`stable + executable + effect=mutation + exact auth_profile + exact method/path` contract、一次性 nonce、wire
+snapshot 与 digest；transport 仍固定 mutation `attempts=1`。因此接新域不再修改动作词表，只能新增并评审
+精确稳定 operation contract。本轮没有改 one-shot executor。
+
+**自然拆分与质量：**原 `report_mutation.py` 为 499 physical lines。按 report/template 与 subscription
+边界拆为 `report_mutation.py` **330 SLOC / 348 physical lines**、`report_subscription_mutation.py`
+**175 / 189**，共享 catalog/detail/readback/owner 原语位于 `report_mutation_support.py` **331 / 383**；没有
+压行或创建 CRUD DSL。Kanban dashboard delete 同样因本轮触及自然下沉为独立 143 SLOC 文件，原 dashboard
+模块 414 SLOC，所有新文件低于 500/80/15 门禁。`http_runtime.py` 的通用 principal/refresh 原语下沉后 AST
+从 3765 降至 3747，quality baseline 只收紧该值。
+
+**有意能力收紧清单：**以下调用过去可能发 write，现在会在写前拒绝；这是本轮获授权的安全例外。
+
+1. Segment `update`（名称/备注）、`update-rule`、`refresh`：目标无 marker 且
+   `create_user_id != principal` 或 owner 缺失。
+2. Kanban `space.rename`：space 无 marker 且 membership `creator.id != principal` 或 creator 缺失。
+3. Kanban `folder.rename`：folder 无 marker；当前 folder 无直接 owner，故只能改 SDK marker folder。
+4. Kanban `dashboard.rename`：dashboard 无 marker且 `create_user_id != principal` 或 owner 缺失。
+5. Kanban `dashboard.copy`：source 无 marker且 owner 不匹配/缺失；此外 destination space/folder 也必须
+   分别通过 marker-or-owner。
+6. Kanban `dashboard.order.save`：旧逻辑只要求整棵树存在任意一个 marker；现在提交树中的**每个**对象都
+   必须通过。任一非 marker folder 因无直接 owner 会使整次 order fail closed。
+7. 既有 marker-guarded `folder.move`、`dashboard.move-folder`、`dashboard.move` 新增 destination guard：
+   即使 source 合法，foreign/unowned destination space 或非 marker folder 也会拒绝；copy 的 destination
+   收紧已列于第 5 项。
+
+其余原 marker-guarded delete/transfer/content 动作没有收紧 marker 行为；self-owned 非 marker Segment、
+Report/template/subscription、space/dashboard 反而新增可写能力。folder/note 的限制来自上游不返回可证明
+owner，不是本地产品选择。
+
+**生产端到端与缺口：**同一 principal 的非 marker 情形确实成功，不由 marker 回归冒充：dashboard
+`248508` 先经稳定 rename route 去 marker，再由正式 dashboard delete 以 `basis=upstream_owner` 删除；
+Segment `44546` 与 Report `16793804` 均由 SDK 创建、稳定 update 去 marker，再由正式 delete 以
+`basis=upstream_owner` 删除并通过完整 list readback。marker 回归由 space `276503` 的正式 delete 以
+`basis=sdk_source_marker` 成功证明；三域 marker 行为另有回归测试。
+
+真实 foreign 生产样本**没有取得，不能记为通过**：Segment 和 Report 删除后的完整目录都没有 foreign
+owner 行；dashboard tree 也没有 foreign dashboard。最后再读取完整 tree 并检查当前唯一 space 的
+membership，creator 仍是当前 principal。没有为了制造样本而把对象转让给真实其他用户，也没有伪造
+principal。foreign/missing-owner 的写前零 write 拒绝由三域测试覆盖，但生产第三情形仍是明确证据缺口。
+
+所有本轮创建对象已清理：dashboard `248508`、space `276503`、Segment `44546`、Report `16793804`
+均由各自写后 readback 证明消失；Report 首次去 marker 在本地因响应 ID 为 integer 而合同要求 string 被拒，
+没有发送 HTTP，随后规范化 ID 后复用同一对象完成 owner 删除。残留清单为空。
+
+**生产 HTTP 逐条账本：**合计 **41 / 45**。每条均 HTTP 200、attempt 1、`retry=false`；只有明确列为
+`page=1` 的目录首屏，没有第二页、扩窗、换 App 或自动重试。#10 是 create 已成功后的本地
+ungrouped `null/0` 读回比较错误，没有重发 create；实现已修正该比较。
+
+```text
+01 authentication | POST | 200 | page=- | retry=false
+02 app.list | GET | 200 | page=1 | retry=false
+03 analysis.dashboard.tree | GET | 200 | page=- | retry=false
+04 analysis.datamanageconfig.kanban.space.create | POST | 200 | page=- | retry=false
+05 analysis.dashboard.tree | GET | 200 | page=- | retry=false
+06 analysis.dashboard.space_members.list | GET | 200 | page=- | retry=false
+07 authentication | POST | 200 | page=- | retry=false
+08 analysis.dashboard.tree | GET | 200 | page=- | retry=false
+09 analysis.datamanageconfig.kanban.dashboard.create | POST | 200 | page=- | retry=false
+10 analysis.dashboard.tree | GET | 200 | page=- | retry=false
+11 authentication | POST | 200 | page=- | retry=false
+12 analysis.dashboard.tree | GET | 200 | page=- | retry=false
+13 analysis.dashboard.detail | GET | 200 | page=- | retry=false
+14 analysis.dashboard.members.list | GET | 200 | page=- | retry=false
+15 authentication | POST | 200 | page=- | retry=false
+16 analysis.datamanageconfig.kanban.dashboard.dc7858a7.update | POST | 200 | page=- | retry=false
+17 analysis.dashboard.tree | GET | 200 | page=- | retry=false
+18 analysis.dashboard.detail | GET | 200 | page=- | retry=false
+19 analysis.datamanageconfig.kanban.dashboard.delete | POST | 200 | page=- | retry=false
+20 analysis.dashboard.tree | GET | 200 | page=- | retry=false
+21 analysis.dashboard.tree | GET | 200 | page=- | retry=false
+22 analysis.datamanageconfig.kanban.space.delete | GET | 200 | page=- | retry=false
+23 analysis.dashboard.tree | GET | 200 | page=- | retry=false
+24 analysis.segment.list | GET | 200 | page=1 | retry=false
+25 analysis.segment.from.rule.create | POST | 200 | page=- | retry=false
+26 analysis.segment.list | GET | 200 | page=1 | retry=false
+27 analysis.segment.detail | GET | 200 | page=- | retry=false
+28 analysis.dataanalysis.segment.update | POST | 200 | page=- | retry=false
+29 analysis.segment.detail | GET | 200 | page=- | retry=false
+30 analysis.dataanalysis.segment.update | POST | 200 | page=- | retry=false
+31 analysis.segment.list | GET | 200 | page=1 | retry=false
+32 report.report.list | POST | 200 | page=1 | retry=false
+33 report.report.update | POST | 200 | page=- | retry=false
+34 report.report.list | POST | 200 | page=1 | retry=false
+35 report.report.detail | GET | 200 | page=- | retry=false
+36 report.report.update | POST | 200 | page=- | retry=false
+37 report.report.detail | GET | 200 | page=- | retry=false
+38 report.report.update | POST | 200 | page=- | retry=false
+39 report.report.list | POST | 200 | page=1 | retry=false
+40 analysis.dashboard.tree | GET | 200 | page=- | retry=false
+41 analysis.dashboard.space_members.list | GET | 200 | page=- | retry=false
+```
+
+**门禁与边界：**caller-recoverable 审计从 `1121 = A318/B434/C369` 变为
+**`1124 = A321/B434/C369`**，新增 **3/3 全 A**。unittest **1092**、pytest **1092 passed /
+3009 subtests passed**；compiler **223 operations / 11 manifests**，quality PASS
+（operations/provenance 223/223、operation literals 57），CLI help、稳定隐私审计与 `git diff --check`
+均通过。本轮没有接四个新域、没有增加推广/素材/资产/归因写能力，没有改 Plan/Agent/recognizer、题集、
+评分、holdout/final/key，也没有做 GitHub、push、PR、tag 或 release 动作。

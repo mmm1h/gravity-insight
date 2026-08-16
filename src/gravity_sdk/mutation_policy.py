@@ -25,10 +25,6 @@ class MutationPolicyMixin:
             raise PolicyViolation("mutation operation is not a stable executable contract")
         if operation.effect != "mutation":
             raise PolicyViolation("operation effect is not mutation")
-        if operation.upstream_method not in {"GET", "POST"}:
-            raise PolicyViolation("mutation operation must use its registered GET or POST method")
-        if operation.action.casefold() not in {"create", "update", "delete", "move", "copy"}:
-            raise PolicyViolation("mutation action is outside the governed write set")
         if operation.auth_profile != "gravity_authorization":
             raise PolicyViolation("operation uses an unsupported authentication profile")
         self._check_template(operation.path_template, allow_mutation=True)

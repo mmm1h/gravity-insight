@@ -16,6 +16,7 @@ SESSION_ENV_NAME = ".env.gravity.session.local"
 TOKEN_KEYS = ("GRAVITY_AUTH_TOKEN", "GRAVITY_AUTHORIZATION")
 EXPIRY_KEY = "GRAVITY_AUTH_TOKEN_EXPIRES_AT_ASIA_SHANGHAI"
 UPDATED_KEY = "GRAVITY_AUTH_UPDATED_AT"
+PRINCIPAL_ID_KEY = "GRAVITY_PRINCIPAL_ID"
 
 
 def read_env_file(path: Path) -> dict[str, str]:
@@ -54,7 +55,13 @@ def save_account_credentials(username: str, password: str, path: Path) -> None:
             "GRAVITY_USERNAME": normalized_username,
             "GRAVITY_PASSWORD": password,
         },
-        remove_keys={*TOKEN_KEYS, EXPIRY_KEY, UPDATED_KEY, "GRAVITY_SDK_HOME"},
+        remove_keys={
+            *TOKEN_KEYS,
+            EXPIRY_KEY,
+            UPDATED_KEY,
+            PRINCIPAL_ID_KEY,
+            "GRAVITY_SDK_HOME",
+        },
     )
     session_path(path).unlink(missing_ok=True)
 
@@ -71,6 +78,7 @@ def clear_account_credentials(path: Path) -> None:
             *TOKEN_KEYS,
             EXPIRY_KEY,
             UPDATED_KEY,
+            PRINCIPAL_ID_KEY,
             "GRAVITY_SDK_HOME",
         },
     )
@@ -93,12 +101,19 @@ def migrate_legacy_session(path: Path) -> bool:
                 "GRAVITY_AUTH_TOKEN": token,
                 EXPIRY_KEY: values.get(EXPIRY_KEY, ""),
                 UPDATED_KEY: values.get(UPDATED_KEY, ""),
+                PRINCIPAL_ID_KEY: values.get(PRINCIPAL_ID_KEY, ""),
             },
         )
     atomic_update_env(
         selected_path,
         {},
-        remove_keys={*TOKEN_KEYS, EXPIRY_KEY, UPDATED_KEY, "GRAVITY_SDK_HOME"},
+        remove_keys={
+            *TOKEN_KEYS,
+            EXPIRY_KEY,
+            UPDATED_KEY,
+            PRINCIPAL_ID_KEY,
+            "GRAVITY_SDK_HOME",
+        },
     )
     return True
 

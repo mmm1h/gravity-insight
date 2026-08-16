@@ -9,7 +9,6 @@ from .errors import MutationReadbackError
 from .kanban_mutation_contracts import (
     SPACE_CREATE,
     SPACE_DELETE,
-    SPACE_MEMBERS,
     SPACE_TRANSFER,
     SPACE_UPDATE,
 )
@@ -21,10 +20,12 @@ from .kanban_mutation_support import (
     find_object,
     idempotent,
     marked_name,
+    marker_from_text,
     mutation_preview,
     positive_id,
     preserve_marker,
     read_tree,
+    read_space_owner,
     require_owned,
 )
 
@@ -86,11 +87,16 @@ def _rename_space(
 ) -> dict[str, Any]:
     _tree, objects = read_tree(client, app)
     preimage = find_object(objects, "space", space_id)
+    ownership = require_owned(client, app, preimage)
     wire_name = preserve_marker(name, preimage.name)
     inputs = {"app_id": app, "id": space_id, "name": wire_name}
     preview = mutation_preview(
         client._preview_mutation(SPACE_UPDATE, inputs),
-        target={**preimage.public(), "new_name": wire_name},
+        target={
+            **preimage.public(),
+            "new_name": wire_name,
+            "ownership": ownership.public(),
+        },
         preimage=preimage.public(),
         impact="Rename this exact Kanban space without changing its descendants or ownership.",
         reads_performed=1,
@@ -105,7 +111,12 @@ def _rename_space(
             "Kanban space rename did not round-trip",
             next_action="Read the exact space and review its current name before another write.",
         )
-    return completed(preview, mutation, updated.public(), status="updated")
+    return completed(
+        preview,
+        mutation,
+        {**updated.public(), "ownership": ownership.public()},
+        status="updated",
+    )
 
 
 def delete_space(
@@ -125,7 +136,7 @@ def delete_space(
 def _delete_space(client: Any, app: int, space_id: int, *, send: bool) -> dict[str, Any]:
     _tree, objects = read_tree(client, app)
     preimage = find_object(objects, "space", space_id)
-    marker = require_owned(preimage)
+    ownership = require_owned(client, app, preimage)
     affected = descendants(objects, preimage)
     folders = [item for item in affected if item.kind == "folder"]
     dashboards = [item for item in affected if item.kind == "dashboard"]
@@ -140,7 +151,11 @@ def _delete_space(client: Any, app: int, space_id: int, *, send: bool) -> dict[s
     }
     preview = mutation_preview(
         client._preview_mutation(SPACE_DELETE, inputs),
-        target={**preimage.public(), "marker": marker},
+        target={
+            **preimage.public(),
+            "marker": marker_from_text(preimage.name),
+            "ownership": ownership.public(),
+        },
         preimage=preimage.public(),
         cascade=cascade,
         impact=cascade["warning"],
@@ -163,6 +178,7 @@ def _delete_space(client: Any, app: int, space_id: int, *, send: bool) -> dict[s
             next_action="Stop writes and inspect the affected dashboard IDs; do not retry the parent delete.",
         )
     target = _deleted_space_target(preimage, dashboards, remaining_dashboards)
+    target["ownership"] = ownership.public()
     return completed(preview, mutation, target, status="deleted")
 
 
@@ -199,11 +215,16 @@ def _transfer_space(
 ) -> dict[str, Any]:
     _tree, objects = read_tree(client, app)
     preimage = find_object(objects, "space", space_id)
-    marker = require_owned(preimage)
+    ownership = require_owned(client, app, preimage)
     inputs = {"app_id": app, "space_id": space_id, "uid": uid}
     preview = mutation_preview(
         client._preview_mutation(SPACE_TRANSFER, inputs),
-        target={**preimage.public(), "marker": marker, "new_owner_uid": uid},
+        target={
+            **preimage.public(),
+            "marker": marker_from_text(preimage.name),
+            "new_owner_uid": uid,
+            "ownership": ownership.public(),
+        },
         preimage=preimage.public(),
         impact="Transfer ownership of this exact SDK-marked space and all contained hierarchy to one explicit user ID.",
         reads_performed=1,
@@ -211,18 +232,22 @@ def _transfer_space(
     if not send:
         return preview
     mutation = client._execute_mutation(SPACE_TRANSFER, inputs)
-    membership = client.read(
-        SPACE_MEMBERS, {"app_id": str(app), "space_id": str(space_id)}
-    )
-    data = membership.get("data") if isinstance(membership, Mapping) else None
-    creator = data.get("creator") if isinstance(data, Mapping) else None
-    creator_id = creator.get("uid", creator.get("id")) if isinstance(creator, Mapping) else None
-    if str(creator_id) != str(uid):
+    owner = read_space_owner(client, app, space_id)
+    if owner.owner_id != str(uid):
         raise MutationReadbackError(
             "space transfer acknowledgement did not round-trip to the requested creator",
             next_action="Inspect the exact space membership and ownership before another transfer.",
         )
-    return completed(preview, mutation, {**preimage.public(), "owner_uid": uid}, status="transferred")
+    return completed(
+        preview,
+        mutation,
+        {
+            **preimage.public(),
+            "owner_uid": uid,
+            "ownership": ownership.public(),
+        },
+        status="transferred",
+    )
 
 
 __all__ = ["create_space", "delete_space", "rename_space", "transfer_space"]

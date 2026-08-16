@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import json
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
 from gravity_sdk.agent_segment import segment_mutation_cards
-from gravity_sdk.errors import OwnershipMarkerRequiredError, PolicyViolation
+from gravity_sdk.errors import InputValidationError, PolicyViolation
 from gravity_sdk.models import load_operation_manifest
 from gravity_sdk.mutation import MutationExecutor
 from gravity_sdk.prober.read_semantics import assert_probe_read_semantics
@@ -115,8 +116,15 @@ class _ExistingClient:
 
 
 class _UnmarkedClient:
-    def __init__(self) -> None:
+    def __init__(self, *, owner_id="2", principal_id="1", allow_write=False) -> None:
         self.writes = 0
+        self.owner_id = owner_id
+        self.principal_id = principal_id
+        self.allow_write = allow_write
+        self.deleted = False
+
+    def _current_principal_id(self):
+        return self.principal_id
 
     def read(self, operation_id, inputs):
         return {
@@ -127,12 +135,29 @@ class _UnmarkedClient:
                 "app_id": "1",
                 "segment_name": "同事手建",
                 "segment_remark": "manual",
+                "create_user_id": self.owner_id,
+                "create_user_name": "owner",
             },
         }
 
+    def read_all(self, operation_id, inputs, **kwargs):
+        return {
+            "ok": True,
+            "status": "empty" if self.deleted else "success",
+            "data": {"list": []},
+            "truncated": False,
+            "next_page_input": None,
+        }
+
+    def _preview_mutation(self, operation_id, inputs):
+        return {"operation_id": operation_id, "status": "preview"}
+
     def _execute_mutation(self, operation_id, inputs):
         self.writes += 1
-        raise AssertionError("unmarked delete must not reach transport")
+        if not self.allow_write:
+            raise AssertionError("foreign delete must not reach transport")
+        self.deleted = True
+        return {"operation_id": operation_id, "attempts": 1}
 
 
 class GravitySegmentMutationTests(unittest.TestCase):
@@ -197,10 +222,21 @@ class GravitySegmentMutationTests(unittest.TestCase):
 
     def test_delete_reads_preimage_and_refuses_unmarked_target(self):
         client = _UnmarkedClient()
-        with self.assertRaises(OwnershipMarkerRequiredError) as captured:
+        with self.assertRaises(InputValidationError) as captured:
             delete_segment(client, "1", execute=True)
-        self.assertIn("Gravity Web", captured.exception.next_action)
+        self.assertEqual("OWNERSHIP_REQUIRED", captured.exception.code)
+        self.assertIn("owner", captured.exception.next_action)
         self.assertEqual(0, client.writes)
+
+        owned = _UnmarkedClient(owner_id="1", allow_write=True)
+        result = delete_segment(owned, "1", execute=True)
+        self.assertEqual(("deleted", 1), (result["status"], owned.writes))
+
+    def test_registered_mutation_action_name_is_not_an_authorization_boundary(self):
+        operation = _registry().get("analysis.segment.by.manual.update")
+        shared = replace(operation, action="share")
+        policy = PolicyEngine(Registry([shared]))
+        self.assertEqual(shared, policy.authorize_mutation_operation(shared.operation_id))
 
     def test_registered_mutation_passes_prober_gate_but_tampering_does_not(self):
         path = CONTRACT_ROOT / "operations" / "analysis.segment.by.manual.update.json"

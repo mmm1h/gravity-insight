@@ -4,7 +4,7 @@
     {
       "action": "tree",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
+      "contract_version": 2,
       "description": "看板空间、文件夹和看板目录；固定只读树路由，递归节点按显式字段投影。",
       "domain": "analysis",
       "effect": "read",
@@ -85,7 +85,14 @@
             "space_id",
             "folder_id",
             "authority",
-            "ui_config"
+            "ui_config",
+            "create_time",
+            "create_user_id",
+            "create_user_name",
+            "modify_time",
+            "refresh_type",
+            "update_user_id",
+            "update_user_name"
           ],
           "folder_or_dashboard": [
             "id",
@@ -97,6 +104,13 @@
             "folder_id",
             "authority",
             "ui_config",
+            "create_time",
+            "create_user_id",
+            "create_user_name",
+            "modify_time",
+            "refresh_type",
+            "update_user_id",
+            "update_user_name",
             "dashboards"
           ]
         },

@@ -17,6 +17,7 @@ from zoneinfo import ZoneInfo
 
 from .credential_storage import (
     EXPIRY_KEY,
+    PRINCIPAL_ID_KEY,
     TOKEN_KEYS,
     UPDATED_KEY,
     _atomic_update_env,
@@ -79,6 +80,7 @@ class CredentialConfig:
     expires_at: datetime | None = None
     updated_at: datetime | None = None
     token_source: str | None = None
+    gravity_id: str | None = field(default=None, repr=False)
 
     @classmethod
     def from_env(
@@ -126,6 +128,7 @@ class CredentialConfig:
             expires_at=(_jwt_expiry(token) or configured_expiry) if token else configured_expiry,
             updated_at=_parse_datetime(token_values.get(UPDATED_KEY)),
             token_source=token_source,
+            gravity_id=token_values.get(PRINCIPAL_ID_KEY, "").strip() or None,
         )
 
 
@@ -260,7 +263,12 @@ class CredentialProvider:
         self._config = config
         if not config.token:
             return None
-        return Credential(config.token, config.expires_at, config.updated_at)
+        return Credential(
+            config.token,
+            config.expires_at,
+            config.updated_at,
+            config.gravity_id,
+        )
 
     def get(self, *, force_refresh: bool = False) -> Credential:
         return self._get(force_refresh=force_refresh, rejected_token=None)
@@ -318,6 +326,14 @@ class CredentialProvider:
     def refresh(self) -> Credential:
         return self.get(force_refresh=True)
 
+    def current_principal_id(self) -> str | None:
+        """Return the cached login principal, refreshing one legacy cache once."""
+
+        credential = self.get()
+        if credential.gravity_id is None:
+            credential = self.refresh()
+        return credential.gravity_id
+
     def refresh_if_rejected(self, rejected: Credential | str) -> Credential:
         """Refresh only if *rejected* is still the current token.
 
@@ -353,6 +369,10 @@ class CredentialProvider:
                     self._credential.token,
                     self._clock() - timedelta(seconds=1),
                     self._credential.updated_at,
+                    self._credential.gravity_id,
+                    self._credential.company_id,
+                    self._credential.is_superuser,
+                    self._credential.email,
                 )
 
     def authorization_headers(self) -> dict[str, str]:
@@ -481,6 +501,7 @@ class CredentialProvider:
             "GRAVITY_AUTH_TOKEN": credential.token,
             EXPIRY_KEY: expiry.astimezone(SHANGHAI).isoformat(timespec="seconds") if expiry else "",
             UPDATED_KEY: updated.astimezone(SHANGHAI).isoformat(timespec="seconds"),
+            PRINCIPAL_ID_KEY: credential.gravity_id or "",
         }
         _atomic_update_env(session_path(self.env_path), updates)
 

@@ -155,6 +155,9 @@ def _default_next_action(code: str, operation_id: str | None) -> str:
         "OWNERSHIP_MARKER_REQUIRED": (
             "Do not retry through the SDK; manage this unmarked object in Gravity Web with its owner."
         ),
+        "OWNERSHIP_REQUIRED": (
+            "Choose an SDK-marked object or one whose upstream owner matches the current gravity_id."
+        ),
         "MUTATION_READBACK_FAILED": (
             "Read the target by its exact identifier before deciding whether to issue another write."
         ),

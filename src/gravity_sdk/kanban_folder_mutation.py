@@ -19,6 +19,7 @@ from .kanban_mutation_support import (
     find_object,
     idempotent,
     marked_name,
+    marker_from_text,
     mutation_preview,
     positive_id,
     preserve_marker,
@@ -90,11 +91,16 @@ def _rename_folder(
     _tree, objects = read_tree(client, app)
     preimage = find_object(objects, "folder", folder_id)
     _same_space(preimage.space_id, space, "space_id")
+    ownership = require_owned(client, app, preimage)
     wire_name = preserve_marker(name, preimage.name)
     inputs = {"app_id": app, "id": folder_id, "name": wire_name, "space_id": space}
     preview = mutation_preview(
         client._preview_mutation(FOLDER_UPDATE, inputs),
-        target={**preimage.public(), "new_name": wire_name},
+        target={
+            **preimage.public(),
+            "new_name": wire_name,
+            "ownership": ownership.public(),
+        },
         preimage=preimage.public(),
         impact="Rename this exact folder without changing its dashboard membership.",
         reads_performed=1,
@@ -109,7 +115,12 @@ def _rename_folder(
             "Kanban folder rename did not round-trip",
             next_action="Read the exact folder and parent space before another write.",
         )
-    return completed(preview, mutation, updated.public(), status="updated")
+    return completed(
+        preview,
+        mutation,
+        {**updated.public(), "ownership": ownership.public()},
+        status="updated",
+    )
 
 
 def move_folder(
@@ -136,9 +147,10 @@ def _move_folder(
 ) -> dict[str, Any]:
     _tree, objects = read_tree(client, app)
     preimage = find_object(objects, "folder", folder_id)
-    require_owned(preimage)
+    ownership = require_owned(client, app, preimage)
     _same_space(preimage.space_id, source, "from_space_id")
-    find_object(objects, "space", destination)
+    destination_space = find_object(objects, "space", destination)
+    require_owned(client, app, destination_space)
     children = descendants(objects, preimage)
     inputs = {
         "app_id": app,
@@ -154,7 +166,11 @@ def _move_folder(
     }
     preview = mutation_preview(
         client._preview_mutation(FOLDER_MOVE, inputs),
-        target={**preimage.public(), "to_space_id": destination},
+        target={
+            **preimage.public(),
+            "to_space_id": destination,
+            "ownership": ownership.public(),
+        },
         preimage=preimage.public(),
         cascade=cascade,
         impact=cascade["warning"],
@@ -171,7 +187,12 @@ def _move_folder(
             "folder move did not preserve the reviewed descendants at the destination",
             next_action="Read both spaces and inspect the folder/dashboard identities before another move.",
         )
-    return completed(preview, mutation, moved.public(), status="moved")
+    return completed(
+        preview,
+        mutation,
+        {**moved.public(), "ownership": ownership.public()},
+        status="moved",
+    )
 
 
 def delete_folder(
@@ -196,7 +217,7 @@ def _delete_folder(
 ) -> dict[str, Any]:
     _tree, objects = read_tree(client, app)
     preimage = find_object(objects, "folder", folder_id)
-    marker = require_owned(preimage)
+    ownership = require_owned(client, app, preimage)
     _same_space(preimage.space_id, space, "space_id")
     dashboards = descendants(objects, preimage)
     inputs = {"app_id": app, "folder_id": folder_id, "space_id": space}
@@ -210,7 +231,11 @@ def _delete_folder(
     }
     preview = mutation_preview(
         client._preview_mutation(FOLDER_DELETE, inputs),
-        target={**preimage.public(), "marker": marker},
+        target={
+            **preimage.public(),
+            "marker": marker_from_text(preimage.name),
+            "ownership": ownership.public(),
+        },
         preimage=preimage.public(),
         cascade=cascade,
         impact=cascade["warning"],
@@ -234,7 +259,12 @@ def _delete_folder(
     return completed(
         preview,
         mutation,
-        {**preimage.public(), "deleted": True, "relocated_dashboard_ids": [item.object_id for item in dashboards]},
+        {
+            **preimage.public(),
+            "deleted": True,
+            "relocated_dashboard_ids": [item.object_id for item in dashboards],
+            "ownership": ownership.public(),
+        },
         status="deleted",
     )
 

@@ -14,7 +14,7 @@ from gravity_sdk.agent_report_directory import (
     report_subscriptions_query,
 )
 from gravity_sdk.cli import main
-from gravity_sdk.errors import OwnershipMarkerRequiredError
+from gravity_sdk.errors import InputValidationError
 from gravity_sdk.plan import AdapterContext
 from gravity_sdk.plan_report_adapter import (
     execute_report_composite,
@@ -76,11 +76,15 @@ class CatalogClient:
 
 
 class MutationClient:
-    def __init__(self, *, report=None) -> None:
+    def __init__(self, *, report=None, principal_id="1") -> None:
         self.report = report
+        self.principal_id = principal_id
         self.preview_input = None
         self.reads = 0
         self.writes = 0
+
+    def _current_principal_id(self):
+        return self.principal_id
 
     def _preview_mutation(self, operation_id, inputs):
         self.preview_input = dict(inputs)
@@ -142,10 +146,19 @@ class GravityReportDirectoryTests(unittest.TestCase):
         unmarked = MutationClient(report={
             "id": "7", "name": "手建", "subject": "measurement_report",
             "report_group_id": 0, "config": "{}", "remark": "manual",
+            "create_user_id": "2", "create_user_name": "owner",
         })
-        with self.assertRaises(OwnershipMarkerRequiredError):
+        with self.assertRaises(InputValidationError) as captured:
             delete_report(unmarked, 7, execute=True)
+        self.assertEqual("OWNERSHIP_REQUIRED", captured.exception.code)
         self.assertEqual(0, unmarked.writes)
+
+        owned = MutationClient(report={
+            "id": "7", "name": "自建", "subject": "measurement_report",
+            "report_group_id": 0, "config": "{}", "remark": "manual",
+            "create_user_id": "1", "create_user_name": "me",
+        })
+        self.assertEqual("deleted", delete_report(owned, 7, execute=True)["status"])
 
         subscription = MutationClient()
         subscribe_preview = create_subscription(

@@ -92,6 +92,9 @@ class Transport:
         self.host = GRAVITY_HOST
         self._runtime = runtime
 
+    def current_principal_id(self) -> str | None:
+        return self._runtime.current_principal_id()
+
     def request(
         self,
         method: str,

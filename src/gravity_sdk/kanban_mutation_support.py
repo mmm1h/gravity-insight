@@ -15,11 +15,21 @@ from .errors import (
     InputValidationError,
     MutationReadbackError,
     ObjectAlreadyExistsError,
-    OwnershipMarkerRequiredError,
 )
-from .kanban_mutation_contracts import DETAIL, TREE
+from .kanban_mutation_contracts import DETAIL, SPACE_MEMBERS, TREE
+from .mutation_lifecycle import (
+    MARKER_PREFIX,
+    WRITE_LOCK,
+    mutation_digest as digest,
+    mutation_marker as segment_marker,
+)
+from .mutation_ownership import (
+    OwnerReference,
+    create_user_owner,
+    creator_owner,
+    require_mutation_authority,
+)
 from .result_source import GOVERNED_PRODUCT, result_source
-from .segment_mutation_support import MARKER_PREFIX, WRITE_LOCK, digest, segment_marker
 
 
 SCHEMA_VERSION = "gravity-insight.kanban-mutation.v1"
@@ -34,6 +44,8 @@ class KanbanObject:
     name: str
     space_id: int
     folder_id: int | None = None
+    owner_id: str | None = None
+    owner_name: str | None = None
 
     def public(self) -> dict[str, Any]:
         return {
@@ -43,6 +55,8 @@ class KanbanObject:
             "space_id": self.space_id,
             "folder_id": self.folder_id,
             "marker": marker_from_text(self.name),
+            "create_user_id": self.owner_id,
+            "create_user_name": self.owner_name,
         }
 
 
@@ -144,12 +158,20 @@ def _flatten_tree(rows: Sequence[Mapping[str, Any]]) -> list[KanbanObject]:
                 "Kanban tree exceeded the supported hierarchy depth",
                 next_action="Stop Kanban writes until the upstream hierarchy is reviewed and the bounded walker is updated.",
             )
-        object_id, name, space_id, folder, kind = _tree_node_identity(
+        object_id, name, space_id, folder, kind, owner_id, owner_name = _tree_node_identity(
             node, inherited_space, root
         )
         current_folder = object_id if folder else inherited_folder
         result.append(
-            KanbanObject(kind, object_id, name, space_id, None if kind != "dashboard" else inherited_folder)
+            KanbanObject(
+                kind,
+                object_id,
+                name,
+                space_id,
+                None if kind != "dashboard" else inherited_folder,
+                owner_id,
+                owner_name,
+            )
         )
         children: list[tuple[Mapping[str, Any], int | None]] = []
         direct = node.get("folder_or_dashboard")
@@ -170,7 +192,7 @@ def _flatten_tree(rows: Sequence[Mapping[str, Any]]) -> list[KanbanObject]:
 
 def _tree_node_identity(
     node: Mapping[str, Any], inherited_space: int | None, root: bool
-) -> tuple[int, str, int, bool, str]:
+) -> tuple[int, str, int, bool, str, str | None, str | None]:
     folder = not root and (node.get("is_folder") is True or "dashboards" in node)
     object_id = (
         _response_nonzero_id(node.get("id"), "tree.folder.id")
@@ -182,7 +204,8 @@ def _tree_node_identity(
         node.get("space_id", inherited_space), "tree.space_id"
     )
     kind = "space" if root else "folder" if folder else "dashboard"
-    return object_id, name, space_id, folder, kind
+    owner = create_user_owner(node)
+    return object_id, name, space_id, folder, kind, owner.owner_id, owner.owner_name
 
 
 def _child_rows(value: Any, field: str) -> list[Mapping[str, Any]]:
@@ -205,15 +228,67 @@ def find_object(objects: Sequence[KanbanObject], kind: str, object_id: int) -> K
     return matches[0]
 
 
-def require_owned(target: KanbanObject) -> str:
+def require_owned(
+    client: Any,
+    app_id: int,
+    target: KanbanObject,
+    *,
+    detail: Mapping[str, Any] | None = None,
+) -> Any:
     marker = marker_from_text(target.name)
-    if marker is None:
-        raise OwnershipMarkerRequiredError(
-            f"actual value: {actual_value({'kind': target.kind, 'id': target.object_id, 'marker': None})}; allowed value: a target name carrying GSDK-<12 hex>",
-            field=f"{target.kind}_id",
-            next_action=f"Do not retry through the SDK; manage this unmarked {target.kind} with its owner.",
+    owner = (
+        OwnerReference(target.owner_id, target.owner_name, "create_user_id")
+        if target.kind == "dashboard"
+        else OwnerReference(None, None, "not_exposed")
+    )
+    if marker is None and target.kind == "space":
+        owner = read_space_owner(client, app_id, target.object_id)
+    elif marker is None and target.kind == "dashboard" and owner.owner_id is None:
+        selected = detail or read_detail(
+            client, app_id, target.space_id, target.object_id
         )
-    return marker
+        owner = create_user_owner(selected)
+    return require_mutation_authority(
+        client,
+        marker=marker,
+        owner=owner,
+        object_kind=f"Kanban {target.kind}",
+        object_id=target.object_id,
+        field=f"{target.kind}_id",
+    )
+
+
+def require_dashboard_authority(
+    client: Any,
+    detail: Mapping[str, Any],
+    dashboard_id: int,
+) -> Any:
+    return require_mutation_authority(
+        client,
+        marker=marker_from_text(detail.get("name")),
+        owner=create_user_owner(detail),
+        object_kind="Kanban dashboard",
+        object_id=dashboard_id,
+        field="dashboard_id",
+    )
+
+
+def read_space_owner(client: Any, app_id: int, space_id: int) -> OwnerReference:
+    value = client.read(
+        SPACE_MEMBERS, {"app_id": str(app_id), "space_id": str(space_id)}
+    )
+    data = value.get("data") if isinstance(value, Mapping) else None
+    if (
+        not isinstance(value, Mapping)
+        or value.get("error") is not None
+        or value.get("status") not in _SUCCESS
+        or not isinstance(data, Mapping)
+    ):
+        raise MutationReadbackError(
+            "Kanban space creator could not be read for ownership preflight",
+            next_action="Restore the exact space-members read before another space mutation.",
+        )
+    return creator_owner(data.get("creator"))
 
 
 def descendants(objects: Sequence[KanbanObject], target: KanbanObject) -> list[KanbanObject]:
@@ -308,7 +383,7 @@ def mutation_preview(
         "preimage": copy.deepcopy(dict(preimage)) if preimage is not None else None,
         "preconditions": [
             "Re-read the exact target and hierarchy before sending a write.",
-            "Refuse destructive actions unless the target still carries GSDK-<12 hex>.",
+            "Refuse unless the target carries GSDK-<12 hex> or its proven owner equals the authenticated gravity_id.",
             "Send at most one non-retried mutation through an exact one-shot authorization.",
             "Read the affected hierarchy/detail after acknowledgement and verify the promised effect.",
         ],
@@ -443,7 +518,9 @@ __all__ = [
     "positive_id",
     "preserve_marker",
     "read_detail",
+    "read_space_owner",
     "read_tree",
     "report_list",
+    "require_dashboard_authority",
     "require_owned",
 ]
