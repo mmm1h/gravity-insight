@@ -577,6 +577,7 @@ def _evaluator_fingerprint() -> str:
         SCRIPT_ROOT / "agent_usability_governance.py",
         SCRIPT_ROOT / "agent_usability_expectations.py",
         SCRIPT_ROOT / "agent_usability_external_selector.py",
+        SCRIPT_ROOT / "agent_usability_selector_measurements.py",
         JOURNEY_TARGETS_PATH,
         JOURNEY_LEDGER_PATH,
     ):
@@ -653,6 +654,16 @@ def _summary(result: Mapping[str, Any]) -> str:
         f"Production HTTP requests: {layers['cost']['production_http_requests']}",
         f"Elapsed: {layers['cost']['elapsed_seconds']:.3f}s",
     ])
+    measurements = result.get("selector_self_report_measurements")
+    if isinstance(measurements, Mapping):
+        for name, measurement in measurements.items():
+            if not isinstance(measurement, Mapping):
+                continue
+            state = "MEASURED" if measurement.get("measured") is True else "UNMEASURABLE"
+            text.append(f"Selector self-report {name}: {state}")
+            reason = measurement.get("measurement_reason")
+            if reason:
+                text.append(f"Selector self-report {name} reason: {reason}")
     for limitation in result.get("known_limitations", []):
         text.append(f"Known limitation: {limitation['code']}")
     text.append("")
@@ -732,6 +743,9 @@ def _run_evaluation_unrecorded(
         if isinstance(item, Mapping)
     )
     selection_network_measured = selector_path is None
+    selector_self_report_measurements = selector_receipt.get(
+        "selector_self_report_measurements", {}
+    )
     suite_version, suite_hashes = _suite_identity(manifest, split)
     result = {
         "schema_version": SCHEMA_VERSION,
@@ -745,6 +759,7 @@ def _run_evaluation_unrecorded(
         "run_at": datetime.now(timezone.utc).isoformat(),
         "subject": _subject(manifest),
         "selector_arm": selector_receipt,
+        "selector_self_report_measurements": selector_self_report_measurements,
         "known_limitations": _known_limitations(split),
         "selection_network_measured": selection_network_measured,
         "selection_network_measurement_reason": (
