@@ -233,6 +233,26 @@ App、日期或 filter value；物理指标/维度未知时可在 App 和其余�
 Multidim 不回放 template，不处理图表/透视、layout、收藏、拖拽、成员权限或业务指标语义；这些
 边界也不会通过 `--input` 扩张。
 
+## Semantic Compose
+
+这是 Multidim 之上的窄受治理组合面，不接受物理字段名或裸 SQL：
+
+```powershell
+gravity semantic compose --input-schema
+gravity semantic compose --app main --input semantic-request.json --dry-run
+gravity semantic compose --app main --input semantic-request.json
+```
+
+input 必须逐项引用机器 schema 当前列出的 `{definition_id, version}`，并完整提供
+`definition/window/metric/dimensions/filters/grain/joins`。v1 只登记 `ap_cost`、day/week/total、
+`click_company` 与其 many-to-one embedded join；由于生产过滤实测被上游语义拒绝，过滤器登记为空，
+所以 `filters` 只能是 `[]`。hour 虽是已知物理粒度，但与该指标不兼容，编译时零网络拒绝。
+
+`--dry-run` 返回 `gravity.semantic-compose-compiled.v1`；同输入 canonical JSON 逐字节相同。执行返回
+`gravity.semantic-compose-result.v1`，包含 `resolution_tier`、定义 ID/版本/指纹、实际成员、生成的
+Multidim 查询、验证结果和按 App/窗口/成员收窄的 `allowed_claims`。未知成员、禁止 join 或粒度冲突
+均不会构造客户端。该面复用既有 `report.multidim.query`，没有新增 operation，也不提供 Text-to-SQL。
+
 ## Material Performance
 
 `materials list/tags/reviews` 保持原有兼容入口；新产品使用独立子命令：

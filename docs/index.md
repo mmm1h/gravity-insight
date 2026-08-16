@@ -12,6 +12,7 @@
 | 构造事件、漏斗、留存、属性或分布查询 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Analysis Spec](reference/cli.md#analysis-query-spec-v1) |
 | 对已有结果计算调用方绑定的比率、占比、变化或集合对账 | [Agent 工作流](agent-workflow.md#1-业务语义先在调用项目解析) | [CLI 参考：Derived Metrics](reference/cli.md#derived-metrics) |
 | 执行多维报表查询 | [Agent 工作流：Multidim](agent-workflow.md#multidim) | [CLI 参考：Multidim](reference/cli.md#multidim) |
+| 用已登记语义成员组合指标、维度与粒度 | [Agent 工作流：报表入口](agent-workflow.md#multidim) | [CLI 参考：Semantic Compose](reference/cli.md#semantic-compose) |
 | 读取单日订单目录 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Order Directory](reference/cli.md#order-directory-v1) |
 | 按 TraceID 读取单日拆单明细 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Order Split Trace](reference/cli.md#order-split-trace-v1) |
 | 读取单日完整已登记变现明细 | [Agent 工作流](agent-workflow.md) | [维护者边界](maintainers/monetization-discovery-guard.md) |
@@ -68,7 +69,7 @@
   订阅固定 disabled、无收件人，不调用 test route，也不进入 Plan v1。
 - 发现只返回候选以及 Plan node 或受控编译交接，不会从自然语言自动执行。
 
-当前安装时目录为 328 个 selector：231 个 operation、88 张产品卡与 9 个精确 gap；222 个 stable
+当前安装时目录为 329 个 selector：231 个 operation、89 张产品卡与 9 个精确 gap；222 个 stable
 operation 由 185 read + 37 governed mutation 组成。17 个候选中
 `analysis.default_val.list`、D35、F40、报表目录与订阅清单已晋升；不要把其余 `draft` 能力写入生产 Plan。
 逐项 blocker 以[候选能力证据矩阵](candidate-capability-matrix.md)为准。

@@ -1,0 +1,87 @@
+{
+  "$schema": "../schema/semantic-compose-definition-v1.schema.json",
+  "schema_version": "gravity.semantic-definition.v1",
+  "definition_id": "report.ap-cost-observation",
+  "version": 1,
+  "description": "Observe the registered ap_cost metric through the governed Multidim product without causal or budget interpretation.",
+  "source": {
+    "product": "multidim",
+    "operation_id": "report.multidim.query",
+    "operation_contract_version": 4,
+    "fact_path": "/result/query/data/list"
+  },
+  "access_scope": {
+    "kind": "app_bound",
+    "physical_filter": "app_id"
+  },
+  "limits": {
+    "metrics": 1,
+    "dimensions": 1,
+    "filters": 0,
+    "joins": 1
+  },
+  "metrics": [
+    {
+      "definition_id": "report.metric.ap-cost",
+      "version": 1,
+      "physical_name": "ap_cost",
+      "metadata_operation": "report.multidim.metric.list",
+      "allowed_grains": [
+        "report.grain.day",
+        "report.grain.week",
+        "report.grain.total"
+      ]
+    }
+  ],
+  "dimensions": [
+    {
+      "definition_id": "report.dimension.click-company",
+      "version": 1,
+      "physical_name": "click_company",
+      "required_join": "report.join.adreport-click-company"
+    }
+  ],
+  "filters": [],
+  "grains": [
+    {
+      "definition_id": "report.grain.day",
+      "version": 1,
+      "physical_name": "day"
+    },
+    {
+      "definition_id": "report.grain.week",
+      "version": 1,
+      "physical_name": "week"
+    },
+    {
+      "definition_id": "report.grain.total",
+      "version": 1,
+      "physical_name": "total"
+    },
+    {
+      "definition_id": "report.grain.hour",
+      "version": 1,
+      "physical_name": "hour"
+    }
+  ],
+  "joins": [
+    {
+      "definition_id": "report.join.adreport-click-company",
+      "version": 1,
+      "left_source": "report.adreport",
+      "right_member": "report.dimension.click-company",
+      "cardinality": "many_to_one",
+      "realization": "embedded_dimension"
+    }
+  ],
+  "allowed_claims": [
+    {
+      "claim_id": "observed-metric-value",
+      "statement": "State returned ap_cost values only for the selected App, inclusive date window, grain, dimensions, and explicit filters."
+    },
+    {
+      "claim_id": "within-result-comparison",
+      "statement": "Compare returned ap_cost rows within this result when their returned dimension and time keys are stated."
+    }
+  ]
+}

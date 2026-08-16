@@ -526,3 +526,25 @@ HTTP 为 0；返回合同明确列出执行期可能需要的 event 与 event-pr
 运行当前同一测试，Saved surface 实际返回空依赖并在完整依赖断言失败；下钻后的 client collector 也会在
 第一项 event 处停止，而最终执行 receipt 实际观察到两项。Dashboard、Saved Analysis 与 Analysis Template
 共用同一传播路径，不把此修复限定在 saved replay。
+
+## 2026-08-17 追加判定：受治理语义组合首个切片
+
+这不是新增 route candidate。组合层复用 stable `report.multidim.metric.list` 与
+`report.multidim.query`，所以 operation/stable 保持 `231/222`。机器定义
+`report.ap-cost-observation@1` 只登记生产验证成立的一个指标、一个维度、三个可执行粒度和一个
+many-to-one embedded join；hour 只作为已登记但与该指标冲突的粒度，用于发网前拒绝。
+
+固定 App 29034827 与 `2026-06-01..2026-07-10` 的生产结论如下：
+
+| 组合 | 结果 | 合同裁决 |
+| --- | --- | --- |
+| `ap_cost` / total / `click_company` | `bytedance = 10857257.59` | 维度与 join 可冻结；只允许陈述该 App/窗口/粒度的返回观察值。 |
+| `ap_cost` / day | 40 个非空日行，首尾为 `225988.82` / `122530.94` | day 可冻结；可在同一结果内按返回日期比较。 |
+| `ap_cost` / week | 6 行：`2713799.09, 2208883.51, 1682448.66, 1317221.50, 2000062.82, 934842.01` | week 可冻结；日期键分别为 06-01、06-08、06-15、06-22、06-29、07-06。 |
+| `click_company=bytedance` filter | `EQUALS` 与既有 CLI 映射 `IN` 均 HTTP 200 但产品 `INPUT_INVALID` | 不登记过滤器；不能因物理字段存在就声称其过滤语义可用。 |
+
+最终三组都带同一 definition fingerprint
+`e9ac825a4563a8c6c00f6147d55d23daf4a18cd8d85415a0caa6afa4e6971798`。编译前未知成员、禁止 join、
+hour 粒度分别以 0 次上游调用失败；执行错误的 filter 结果发布 `allowed_claims=[]`。生产 HTTP 为
+20/25，全部 HTTP 200、attempt 1、retry=false、page 1；无翻页、重试或扩窗。新增 1 张 canonical
+产品卡，故产品卡 `88→89`、selector `328→329`，并新增 1 条闭环动线；不新增 SQL 或第二套 registry。

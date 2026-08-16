@@ -12,6 +12,53 @@ class ReportSdkMixin:
     """Expose governed report products without duplicating their execution core."""
 
     @staticmethod
+    def semantic_compose_input_schema() -> dict[str, Any]:
+        """Return the registered semantic composition contract offline."""
+
+        from .semantic_compose import semantic_compose_input_schema
+
+        return semantic_compose_input_schema()
+
+    def prepare_semantic_compose(
+        self,
+        inputs: Mapping[str, Any],
+        *,
+        app: str | int | None,
+        workspace: Any | None = None,
+    ) -> dict[str, Any]:
+        """Resolve App scope and deterministically compile without a client."""
+
+        from .semantic_compose import compile_semantic_compose
+
+        selected = self._select_workspace(workspace)
+        app_id = self._resolve_app(selected, app)
+        return compile_semantic_compose(inputs, app_id=app_id)
+
+    def semantic_compose(
+        self,
+        inputs: Mapping[str, Any],
+        *,
+        app: str | int | None,
+        max_pages: int = 1_000,
+        max_items: int = 100_000,
+        workspace: Any | None = None,
+    ) -> dict[str, Any]:
+        """Execute one compiled semantic definition through Multidim."""
+
+        from .semantic_compose import run_semantic_compose
+
+        selected = self._select_workspace(workspace)
+        app_id = self._resolve_app(selected, app)
+        _validate_limits(max_pages, max_items, 1)
+        return run_semantic_compose(
+            self.insight,
+            inputs,
+            app_id=app_id,
+            max_pages=max_pages,
+            max_items=max_items,
+        )
+
+    @staticmethod
     def multidim_input_schema() -> dict[str, Any]:
         """Return the closed Multidim product input contract entirely offline."""
 

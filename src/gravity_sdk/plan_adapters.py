@@ -26,11 +26,11 @@ from .plan_saved_analysis_adapter import (
 )
 from .plan_multidim_adapter import (
     MULTIDIM_NAME,
-    execute_multidim_plan,
     is_multidim_result,
     project_multidim_result,
     validate_multidim_plan,
 )
+from . import plan_semantic_compose_adapter as semantic_plan
 from .plan_material_performance_adapter import (
     MATERIAL_PERFORMANCE_NAME,
     execute_material_performance_plan,
@@ -86,6 +86,7 @@ _COMPOSITES = frozenset(
     {
         *fixed_plan.COMPOSITE_NAMES,
         *report_plan.COMPOSITE_NAMES, "saved_analysis", MULTIDIM_NAME, MATERIAL_PERFORMANCE_NAME,
+        semantic_plan.SEMANTIC_COMPOSE_NAME,
         TITLE_PACKAGE_NAME,
         promotion_plan.PROMOTION_PERFORMANCE_NAME,
         bilibili_plan.BILIBILI_ACCOUNT_PERFORMANCE_NAME,
@@ -452,6 +453,9 @@ def _validate_composite(
     if name == MULTIDIM_NAME:
         validate_multidim_plan(insight, workspace, request, context)
         return
+    if name == semantic_plan.SEMANTIC_COMPOSE_NAME:
+        semantic_plan.validate_semantic_compose_plan(workspace, request, context)
+        return
     if name == MATERIAL_PERFORMANCE_NAME:
         validate_material_performance_plan(request, context, workspace)
         return
@@ -484,8 +488,8 @@ def _execute_composite(
         return report_plan.execute_report_composite(sdk, request, context)
     if name == "saved_analysis":
         return execute_saved_analysis_plan(sdk, request, context)
-    if name == MULTIDIM_NAME:
-        return execute_multidim_plan(sdk, request, context)
+    if name in {MULTIDIM_NAME, semantic_plan.SEMANTIC_COMPOSE_NAME}:
+        return semantic_plan.execute_multidim_or_semantic(sdk, request, context)
     if name == MATERIAL_PERFORMANCE_NAME:
         return execute_material_performance_plan(sdk, request, context)
     if name == TITLE_PACKAGE_NAME:
@@ -526,6 +530,8 @@ def _project_composite(
         return project_saved_analysis_result(result, fields, context)
     if is_multidim_result(result):
         return project_multidim_result(result, fields, context)
+    if semantic_plan.is_semantic_compose_result(result):
+        return semantic_plan.project_semantic_compose_result(result, fields, context)
     if is_material_performance_result(result):
         return project_material_performance_result(result, fields, context)
     if promotion_plan.is_promotion_performance_result(result):
