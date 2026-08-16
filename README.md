@@ -13,7 +13,7 @@ SDK 还提供本地元数据检索、跨目录发现与 workspace recipe：`grav
 metadata sync/search`、`gravity find` 和 `gravity run` 让 Agent 无需临时 Python/JSON
 脚本即可完成常见查询链路。
 
-当前机器目录覆盖 **205 个 operation** 与 **42 张 Agent 产品卡**；196 个 stable operation
+当前机器目录覆盖 **205 个 operation** 与 **44 张 Agent 产品卡**；196 个 stable operation
 由 184 个 read 和 12 个 governed mutation 组成。写面只开放逐项登记的分群，以及 marker-governed
 报表/订阅创建与删除；所有写入均先零网络 `--dry-run`，再由调用方显式确认 `--execute`，不会从
 自然语言或 Plan 自动执行。
@@ -41,6 +41,7 @@ operation；这不绕过 operation 版本、字段投影或 fail-closed 合同�
 python -m pip install -e .
 gravity
 gravity agent-catalog categories
+gravity agent-catalog category analysis --limit 20
 gravity agent-catalog describe analysis.query.spec:event
 gravity agent "event analysis"
 gravity agent --input questions.json
@@ -48,7 +49,8 @@ gravity plan schema
 gravity multidim query --input-schema
 gravity analysis query batch --input queries.json --concurrency 6
 gravity analysis user journey --app main --client-id <id> --date 2026-08-12
-gravity metadata sync --all-apps
+gravity metadata sync --app-id <id> --max-pages 2 --dry-run
+gravity metadata status --app-id <id>
 gravity reports --help
 ```
 

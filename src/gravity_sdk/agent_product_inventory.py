@@ -13,6 +13,7 @@ from .agent_capabilities import (
 from .agent_export import export_capability_inventory
 from .agent_material_asset import material_asset_capability_inventory
 from .agent_metadata_search import metadata_search_capability_inventory
+from .agent_metadata_onboarding import metadata_onboarding_capability_inventory
 from .agent_report_mutation import report_mutation_capability_inventory
 from .agent_segment import segment_capability_inventory
 from .agent_table_lineage import table_lineage_capability_inventory
@@ -40,6 +41,7 @@ def canonical_capability_cards(client: Any) -> tuple[dict[str, Any], ...]:
         *user_journey_capability_inventory(),
         *material_asset_capability_inventory(),
         *metadata_search_capability_inventory(),
+        *metadata_onboarding_capability_inventory(),
         *table_lineage_capability_inventory(),
         *export_capability_inventory(client),
     )

@@ -79,7 +79,7 @@ from gravity_sdk.dashboard_snapshot_cli import add_dashboard_commands
 from gravity_sdk.saved_analysis_cli import add_saved_analysis_commands
 from gravity_sdk.multidim_cli import add_multidim_commands, multidim_ndjson_view
 from gravity_sdk.user_journey_cli import add_user_journey_command
-from gravity_sdk.metadata_sync import (
+from gravity_sdk.metadata_cli import (
     add_metadata_commands,
     run_analysis_metadata,
     run_metadata_command,

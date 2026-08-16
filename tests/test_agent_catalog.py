@@ -64,7 +64,7 @@ class AgentCatalogTests(unittest.TestCase):
             item["gap_code"]: item for item in inventory
             if item["identity_kind"] == "capability_gap"
         }
-        self.assertEqual(42, len(products))
+        self.assertEqual(44, len(products))
         self.assertEqual({card["selector"] for card in products}, set(product_items))
         self.assertEqual({gap["code"] for gap in gaps}, set(gap_items))
         self.assertTrue(all(not item["executable"] for item in gap_items.values()))
@@ -118,6 +118,35 @@ class AgentCatalogTests(unittest.TestCase):
         self.assertFalse(result["capability"]["executable"])
         self.assertEqual("unavailable", result["capability"]["availability"])
         self.assertIn("non-empty catalog", result["next_action"])
+
+    def test_products_precede_raw_operations_and_metadata_cards_are_actionable(self) -> None:
+        inventory = _inventory(self.client)
+        ranks = {"product": 0, "raw_operation": 1, "capability_gap": 2}
+        for domain in {item["domain"] for item in inventory}:
+            ordered = [
+                ranks[item["identity_kind"]]
+                for item in inventory if item["domain"] == domain
+            ]
+            self.assertEqual(sorted(ordered), ordered, domain)
+
+        first_page = run_agent_catalog_command(
+            _args("category", name="analysis", limit=20, offset=0), self.client
+        )
+        selectors = [item["selector"] for item in first_page["capabilities"]]
+        self.assertIn("analysis.query.spec:event", selectors)
+        self.assertTrue(all(
+            item["identity_kind"] == "product"
+            for item in first_page["capabilities"]
+        ))
+
+        for query, selector, kind in (
+            ("只同步指定 App 的元数据", "metadata:sync_app", "composite"),
+            ("show local metadata status", "metadata:status", "metadata_search"),
+        ):
+            result = discover_capabilities(query, client=self.client)
+            card = result["candidates"][0]
+            self.assertEqual(selector, card["selector"])
+            self.assertEqual(kind, card["plan_node"]["kind"])
 
 
 class AgentGuideGenerationTests(unittest.TestCase):

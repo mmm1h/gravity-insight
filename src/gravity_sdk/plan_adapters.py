@@ -96,8 +96,7 @@ _COMPOSITE_FIELDS = frozenset(
 _COMPOSITES = frozenset(
     {
         *fixed_plan.COMPOSITE_NAMES,
-        *report_plan.COMPOSITE_NAMES, "saved_analysis", MULTIDIM_NAME,
-        MATERIAL_PERFORMANCE_NAME,
+        *report_plan.COMPOSITE_NAMES, "saved_analysis", MULTIDIM_NAME, MATERIAL_PERFORMANCE_NAME,
         TITLE_PACKAGE_NAME,
         PROMOTION_PERFORMANCE_NAME,
         BILIBILI_ACCOUNT_PERFORMANCE_NAME,
@@ -183,7 +182,7 @@ def build_plan_adapters(
 
     def execute_composite(request: Mapping[str, Any], context: AdapterContext) -> Any:
         validate_composite(request, replace(context, dynamic_targets=()))
-        return _execute_composite(sdk, request, context)
+        return _execute_composite(sdk, request, context, database)
 
     def validate_receipts(request: Mapping[str, Any], context: AdapterContext) -> None:
         validate_receipt_query(request, context)
@@ -472,22 +471,17 @@ def _validate_composite(
     if name == BILIBILI_ACCOUNT_PERFORMANCE_NAME:
         validate_bilibili_account_performance_plan(request, context, workspace)
         return
-    allowed_targets = {"/app"}
-    _validate_exact_targets(context, frozenset(allowed_targets))
-    dynamic_app = _has_dynamic(context, "/app")
-    app_id = None if dynamic_app else workspace.resolve_app(request.get("app"))
-    _validate_selected_fields(
-        context.output_fields, _COMPOSITE_OUTPUT_FIELDS, "output_fields"
-    )
+    _validate_exact_targets(context, frozenset({"/app"}))
+    _validate_selected_fields(context.output_fields, _COMPOSITE_OUTPUT_FIELDS, "output_fields")
     fixed_plan.validate_fixed_composite(request, context, str(name))
 
 
 def _execute_composite(
-    sdk: Any, request: Mapping[str, Any], context: AdapterContext
+    sdk: Any, request: Mapping[str, Any], context: AdapterContext, database: Path | None
 ) -> Any:
     name = str(request["name"])
     if fixed_plan.is_fixed_composite(name):
-        return fixed_plan.execute_fixed_composite(sdk, request, context)
+        return fixed_plan.execute_fixed_composite(sdk, request, context, database=database)
     if report_plan.is_report_composite(name):
         return report_plan.execute_report_composite(sdk, request, context)
     if name == "saved_analysis":

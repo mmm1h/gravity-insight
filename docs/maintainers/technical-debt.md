@@ -118,7 +118,7 @@
 
 ## 已关闭结构债务
 
-Agent catalog 产品/gap 共源债务已关闭：目录从现有 card owner 程序化覆盖 42/42 张 canonical 产品卡，
+Agent catalog 产品/gap 共源债务已关闭：目录从现有 card owner 程序化覆盖 44/44 张 canonical 产品卡，
 投影 10/10 个登记 gap，并以双向 product/manifest/ledger parity 门禁区分 product、raw operation 与
 不可执行 gap；没有新增第二套 registry，原唯一 J35 状态冲突归零。
 

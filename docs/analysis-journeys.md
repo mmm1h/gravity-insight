@@ -25,6 +25,14 @@
 结构化 `CONTRACT_CHANGED` 诊断。两次横切修正都不新增产品动线，因此总账严格为 `51 + 0 = 51`、
 `42 / 1 / 8 + 0 / 0 / 0 = 42 / 1 / 8`，operation/stable 仍为 `205 / 196`。
 
+同日冷启动收口没有新增分析产品动线：单 App metadata sync 与 status 是既有“离线查找物理名称”动线的
+onboarding/维护入口，category 排序只改变展示顺序。因此总账仍为 `51 = 42 / 1 / 8`、operation/stable
+仍为 `205 / 196`；canonical 卡由 42 增为 44。全新独立 SQLite 的生产实走为 12 条主路径命令、7 次
+HTTP：认证、`app.list`、四类单 App metadata 和最终事件分析各一次，全部 HTTP 200 / attempt 1 / 0
+retry；metadata 四类均只读第一页并写入 177 个物理对象，离线 status 为 ready。旧版本的温目录实测为
+12 命令/3 HTTP；若严格冷目录再插入唯一的 `sync --all-apps`，为 13 命令，当前 7-App 租户可证明最少
+41 HTTP，但由于每 App 分页无界，精确值无法在同步前由代码确定。
+
 2026-08-16 F40 按 catalog 顺序枚举 6 个 App，在第 6 个首次取得 1 条测试设备后立即停止，并以内存
 父行 ID 只发 1 次详情请求。生产共 8 次业务 HTTP：1 次 `app.list`、6 次
 `app.testing_tool.list`、1 次 `attribution.attribution_detail.query`；全部 HTTP 200，0 重试、翻页、

@@ -108,6 +108,34 @@ gravity plan run --recipe example --param date=2026-08-14 --param app=main
 
 词汇 kind 为 `metric/custom_metric/metric_tag/metric_tag_category/media_enum/template/vocabulary`，都是 workspace scope 且禁止 `app_id`。一次同步固定请求 9 个来源各一次；partial 结果保留成功行与失败来源。节点只返回安全投影；Agent 指标卡可附显式查询请求片段，模板仍是 `catalog_only`，不会从目录配置伪造回放或自动执行 Analysis 查询。
 
+metadata status 复用同一个离线 `metadata_search` kind：
+
+```json
+{
+  "id": "metadata_status",
+  "kind": "metadata_search",
+  "request": {"kind": "status", "app_id": "1001", "max_age_hours": 24},
+  "limits": {"max_pages": 1, "max_items": 20}
+}
+```
+
+它不构造生产 client；结果报告 catalog 存在/兼容、App 同步时间、对象/失败数和 freshness。单 App
+有界同步复用已登记 `composite` kind：
+
+```json
+{
+  "id": "sync_metadata",
+  "kind": "composite",
+  "request": {"name": "metadata_sync", "app": "main"},
+  "limits": {"max_pages": 2, "max_items": 100000}
+}
+```
+
+`request.app` 接受 workspace alias 或 App ID；只有 `/app` 可作标量 binding。`limits.max_pages` 只能为
+1..8，并直接形成 `3 * max_pages + 1` 的逻辑请求上限；adapter 从 Plan 全局 worker pool 借用最多 4 个
+worker，不叠加独立池。执行结果报告实际页/对象/请求与 partial；Plan dry-run 只做合同和最坏预算预检，
+不会执行同步。
+
 ## Derived Metrics composite
 
 本地派生复用现有 `composite` kind，并经 Analysis family router 执行；不增加 Plan node kind，也不调用

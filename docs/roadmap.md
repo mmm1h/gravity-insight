@@ -3375,3 +3375,60 @@ caller-recoverable 审计仍为 `1075 = A271 / B434 / C370`；本轮只增强一
 上下文，并由 breaking status 生成返回值 ErrorDetail，没有新增 raise site，因此新增错误点/A 档为
 `0/0`。验证为 unittest **1077**、pytest **1077 passed / 2955 subtests passed**、文档测试 **4 passed**、
 compiler **205 operations / 11 manifests**；quality、CLI help 与 `git diff --check` 均通过。
+
+## 冷启动 metadata onboarding 与产品卡排序（2026-08-16）
+
+**提案与边界：**工作提案保存在 ignored `tmp/codex/metadata-onboarding/proposal.md`。单 App sync 的
+“界”定义为**一个显式 App + 固定四类 Analysis metadata + 每个分页 operation 的页上限**：事件、事件
+属性、用户属性三个分页 operation 各最多 `max_pages` 页，事件属性分组固定一次，故逻辑请求上限为
+`3 * max_pages + 1`；默认 7、硬上限 25。选择这个界是因为 App、对象集合与页数都能在第一次请求前
+机械计算，同时不把其他 App、9 类 workspace 词汇或 account lineage 拖进冷启动。runtime 固定 retry 与
+最多一次鉴权刷新不计入这个逻辑界；dry-run 明示该事实，执行后从 HTTP receipt 另报实际次数与 retry。
+
+**实现结论：**`metadata sync --app-id ... --dry-run` 零网络/零写入给出界；真实执行只替换目标 App，
+保留兼容库中的其他 App、词汇与 lineage，按 operation 报告实际页、对象数、完整/截断和失败。触及页界
+时保存安全前缀并返回 `partial/PAGE_BOUND_REACHED`，不冒充完整。`metadata status` 以 SQLite read-only
+回答目录存在/兼容、已同步 App、同步时间、年龄/过期、四类对象数与失败；状态为
+`missing/not_synced/partial/stale/ready/incompatible`，不构造生产 client。它不能回答上游此刻是否已变、
+凭据/权限是否仍有效，也不建立业务词到物理事件的绑定。既有 `sync --all-apps`、workspace vocabulary 与
+lineage 行为不变。
+
+**四路与排序：**CLI 为 `metadata sync --app-id/status`；SDK 为 `sync_metadata_app/metadata_status`；Plan
+以 `composite(name=metadata_sync)` 和 `metadata_search(kind=status)` 复用现有两类节点；Agent 新增
+`metadata:sync_app` 与 `metadata:status` 两张 canonical 卡，并交付同一 Plan。catalog category 的机械排序
+固定为 `product(0) → raw_operation(1) → capability_gap(2)`，同类再按 selector 升序；analysis 首 20 项
+实测全部为 product 且包含 `analysis.query.spec:event`。回归锁位于 `tests/test_agent_catalog.py`；四路执行
+分别由 metadata sync、Plan 与 Agent 定向测试覆盖。
+
+**冷启动成绩：**上一轮温目录实测是 **12 条命令 / 3 HTTP**。严格冷目录在旧版本只能再插入一次
+`sync --all-apps`，所以是 **13 条命令**；本租户已知 7 个 App 时，代码可证明最低为
+`3 + 1(app.list) + 7*4(App metadata) + 9(workspace sources) = 41 HTTP`，但每 App 自动分页没有页界，
+所以旧版精确 HTTP **无法在执行前确定**。新版按生成指南从不存在的独立 SQLite 实走为
+**12 条命令 / 7 HTTP**，第 12 条成功得到 `analysis.event.query` governed success；事件来自刚同步的
+物理目录，日期是调用方固定单日，没有换 App、扩窗或为非空重试。
+
+**生产 HTTP 账本：**实际 7 次，均 HTTP 200、attempt 1、`retry=false`；认证与最终分析无分页，三个
+分页 metadata operation 和 `app.list` 都只读 page 1，非分页分组 operation 的 page 为 null。同步前
+上限 7，实际 4 个 metadata HTTP、0 retry，写入 177 个对象，status 离线为 ready。
+
+| # | operation | method | page | HTTP | retry |
+| --- | --- | --- | --- | --- | --- |
+| 1 | `authentication` | POST | - | 200 | false |
+| 2 | `app.list` | GET | 1 | 200 | false |
+| 3 | `analysis.event.list` | GET | 1 | 200 | false |
+| 4 | `analysis.user_property.list` | GET | 1 | 200 | false |
+| 5 | `analysis.event_property.list` | GET | 1 | 200 | false |
+| 6 | `analysis.event_property_group.list` | GET | - | 200 | false |
+| 7 | `analysis.event.query` | POST | - | 200 | false |
+
+**计数、错误与不改项：**本轮不新增 operation、stable operation 或分析产品动线，仍为 `205 / 196` 与
+`51 = 42 / 1 / 8`；canonical product card 为 `42 + 2 = 44`，selector 为 259。caller-recoverable
+基线 `1075 = A271 / B434 / C370` 变为 `1084 = A281 / B434 / C369`：新增 10 个 raise site 全部 A 档，
+并删除旧的“sync 只能 all-apps”C 档点，所以总数净增 9。没有修改 recognizer、题集、评分、评测装置、
+holdout/final、operation 合同、词汇/lineage 范围、raw delete、其他业务域或 consumer 项目；没有读取 key、
+解密或运行真实 protected split。技术债清单已逐项复核；领域 CLI/core/Plan/Agent 下沉且共享 quality ratchet
+未放宽，没有新增活动结构债。
+
+**验证：**unittest **1083**（基线 1077，+6），pytest **1083 passed / 2955 subtests passed**，文档测试
+**4 passed**；compiler **205 operations / 11 manifests**，quality、生成器 check、CLI help 与
+`git diff --check` 全部通过。

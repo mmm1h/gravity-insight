@@ -65,6 +65,10 @@ gravity agent "run saved analysis" --resolve-inputs '{"app":"main"}' --output ca
 精确 `gap_code`、`reason` 和 `next_action`。不得因为相邻 raw operation 的 `executable=true` 就把缺失
 产品改判为可执行。目录和 describe 均完全离线，也不会执行能力。
 
+`category` 的顺序是合同而不是模糊相关性：每个 category 内固定按
+`product → raw_operation → capability_gap` 排序，同类再按 selector 升序。于是第一页先展示 canonical
+产品卡；调用方只有在产品不能表达任务时才继续浏览 raw operation。
+
 无 query 时返回两步协议；有 query 时优先返回匹配的 workspace recipe，再用 stable operation
 补足 capability cards；可由 Plan 执行的卡含必填输入、下一条 `argv` 和 `plan_node`，默认 3 个、
 最多 5 个，不访问网络。`--input` 接受最多 32 个唯一 ID 问题的 `{"questions":[...]}`，为
@@ -894,8 +898,8 @@ gravity plan run --input plan.json --concurrency 6
 | --- | --- | --- |
 | `run` | `selector`、`inputs`/`parameters`、可选 `app/start/end/all_pages` | operation 或 `@recipe` |
 | `sql_product` | `product` 及该 Workspace 产品的 App/时间输入 | 已登记产品，禁止裸 SQL |
-| `metadata_search` | `query`、可选 `kind/app_id/limit/offset` | 已同步的本地 catalog |
-| `composite` | `name`、组合所需 App/查询输入 | 仅登记的 analysis/segment query、context/dashboard/app/attribution snapshot/performance、business pulse/company usage、multidim、material/promotion performance |
+| `metadata_search` | `query`、可选 `kind/app_id/limit/offset/max_age_hours` | 已同步的本地 catalog；`kind=status` 严格离线 |
+| `composite` | `name`、组合所需 App/查询输入 | 仅登记的 analysis/segment query、context/dashboard/app/attribution snapshot/performance、business pulse/company usage、multidim、material/promotion performance 与单 App `metadata_sync` |
 
 每个节点还可声明 `depends_on`、标量 `bindings`、一个有限 `foreach`、`limits` 和
 `output_fields`。binding/foreach 的 `from` 必须显式位于 `depends_on`，路径使用 RFC 6901 JSON
@@ -936,6 +940,8 @@ Plan 中小时结果仍为 `scope=workspace`；adapter 内部 worker 固定为 1
 ## Metadata
 
 ```powershell
+gravity metadata status [--app-id <id>] [--max-age-hours 24] [--database <path>]
+gravity metadata sync --app-id <id> [--max-pages 1..8] [--database <path>] [--dry-run]
 gravity metadata sync --all-apps [--database <path>] [--concurrency 1..24]
 gravity metadata search [query] [--app-id <id>] [--database <path>]
 gravity metadata events [query] [--app-id <id>] [--database <path>]
@@ -945,8 +951,21 @@ gravity metadata tables [query] [--database <path>]
 gravity find <query> [--backend operations] [--backend metadata]
 ```
 
-默认位置是用户私有缓存下的 `GravityInsight/metadata/catalog.sqlite3`。同步采用临时库构建和原子替换；除 App 目录外，固定读取 9 个 workspace Analysis 词汇来源各一次，请求数不随 App 增长。部分失败保留成功数据和失败来源；`status=partial` 不代表完整目录。
-查询命令以 SQLite 只读模式运行，不创建客户端、不读取凭据、不访问网络。
+默认位置是用户私有缓存下的 `GravityInsight/metadata/catalog.sqlite3`。`status` 与查询命令都以 SQLite
+只读模式运行，不创建客户端、不读取凭据、不访问网络；status 回答目录是否存在/兼容、哪些 App 同步过、
+同步时间、年龄/过期、四类对象数和失败数。它不能证明上游此刻是否变化、账号权限是否仍有效或业务词
+如何绑定物理事件。
+
+单 App sync 只替换目标 App，保留兼容 catalog 中其他 App、workspace 词汇与 lineage。它固定读取事件、
+事件属性、用户属性和事件属性分组四类对象；其中三个分页 operation 各受 `--max-pages` 限制，另一个
+非分页 operation 一次，所以同步前可机械得到逻辑请求上限 `3 * max_pages + 1`（默认 7，硬上限 25）。
+`--dry-run` 零网络、零写入返回该界；执行摘要返回实际逻辑请求、receipt 可见的 HTTP/重试、各 operation
+页数、对象数和失败。达到页界时保留安全前缀并显式标记 `partial/PAGE_BOUND_REACHED`，不冒充完整快照。
+逻辑界不包含 transport 固定 retry 或一次鉴权刷新，两者只在执行后从 receipt 报告。
+
+全 App 同步继续采用 staging 构建和原子替换；除 App 目录外，固定读取 9 个 workspace Analysis 词汇来源
+各一次，请求数不随 App 增长，但 App 数与分页使总请求无法预先收敛到单 App 的 25 次界。部分失败保留
+成功数据和失败来源；`status=partial` 不代表完整目录。
 `find` 对三个目录做稳定相关性排序；backend 是显式注册表。
 
 冷目录的两调用 Agent 路径使用
@@ -970,7 +989,7 @@ recipe 参数用 `--param name=value`，`start/end` 有同名快捷参数。`--a
 
 workspace 的发现顺序、最小配置和 recipe 字段见 [Workspace 参考](workspace.md)。
 
-`operations`、`validate`、`find`、`recipe validate/check`、`metadata search/events/properties/vocabulary/tables` 等 parser 标记为不需要网络客户端，因此不会触发首次凭据向导。新增离线命令必须在自己的 parser 上声明相同属性。
+`operations`、`validate`、`find`、`recipe validate/check`、`metadata status/search/events/properties/vocabulary/tables` 以及单 App sync 的 `--dry-run` 都不需要网络客户端，因此不会触发首次凭据向导。新增离线命令必须在自己的 parser 上声明相同属性。
 
 ## SQL
 

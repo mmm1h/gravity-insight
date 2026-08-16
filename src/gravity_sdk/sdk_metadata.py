@@ -6,6 +6,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
+from .actionable_error_values import actual_value
 from .errors import (
     GravityInsightError,
     LocalIOError,
@@ -17,6 +18,57 @@ from .result_source import LOCAL_CATALOG, result_source
 
 class MetadataSdkMixin:
     """Expose local catalogs without constructing an Insight or SQL client."""
+
+    def sync_metadata_app(
+        self,
+        app_id: str | int,
+        *,
+        database: str | Path | None = None,
+        max_pages: int = 2,
+        concurrency: int = 8,
+        dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """Refresh one App under a declared page/request bound."""
+
+        from .metadata_onboarding import estimate_app_sync, sync_app
+
+        if not isinstance(dry_run, bool):
+            from .errors import InputValidationError
+
+            raise InputValidationError(
+                "metadata dry_run actual value must be a boolean: "
+                f"{actual_value(dry_run)}",
+                field="dry_run",
+                next_action="Replace dry_run with true or false, then retry the same App sync.",
+            )
+        if dry_run:
+            return estimate_app_sync(
+                app_id, database=database, max_pages=max_pages
+            )
+        return sync_app(
+            self.insight,
+            app_id,
+            database=database,
+            max_pages=max_pages,
+            concurrency=concurrency,
+        )
+
+    def metadata_status(
+        self,
+        *,
+        database: str | Path | None = None,
+        app_id: str | int | None = None,
+        max_age_hours: int = 24,
+    ) -> dict[str, Any]:
+        """Inspect local App coverage and freshness with zero network access."""
+
+        from .metadata_status import metadata_status
+
+        return metadata_status(
+            database=database,
+            app_id=app_id,
+            max_age_hours=max_age_hours,
+        )
 
     def resolve_capabilities(
         self,

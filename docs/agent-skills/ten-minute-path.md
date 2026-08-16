@@ -4,15 +4,19 @@
 ```powershell
 python -m pip install -e .
 gravity agent-catalog categories
+gravity agent-catalog category analysis --limit 20
 gravity agent-catalog describe analysis.query.spec:event
 gravity insight auth status
 ```
 先用真实账号枚举 App；只消费 `status=success`，或当前合同明确允许消费的已登记投影：
 ```powershell
 gravity run app.list --input '{"page":1,"page_size":20}' --fields id,name
-gravity metadata search "" --app-id <selected-app-id> --limit 20
+gravity metadata sync --app-id <selected-app-id> --max-pages 2 --dry-run
+gravity metadata sync --app-id <selected-app-id> --max-pages 2
+gravity metadata status --app-id <selected-app-id>
+gravity metadata events "" --app-id <selected-app-id> --limit 20
 ```
-从 search 结果精确复制一个物理事件名。事件计数指标 `PresetAllCount` 来自上述 describe 返回的 metric schema enum；日期由调用方明确提供。把下面内容保存为 `analysis.json`：
+dry-run 在联网前给出默认 7 次逻辑请求上限；执行摘要给出实际页数、对象数、HTTP receipt 与失败。status 必须为 `ready`，或由调用方明确接受带失败来源的 `partial`。从 events 结果精确复制一个物理事件名。事件计数指标 `PresetAllCount` 来自上述 describe 返回的 metric schema enum；日期由调用方明确提供。把下面内容保存为 `analysis.json`：
 ```json
 {
   "start": "<caller-start-date>",
@@ -60,4 +64,4 @@ gravity analysis query --kind event --app <selected-app-id> --spec analysis.json
 
 ## 下一步
 
-`metadata search` 只读已有本地快照。若目录缺失或过期，显式运行 `gravity metadata sync --all-apps` 并审查同步摘要；它会产生多次生产读取，不能算作固定十分钟或固定 HTTP 预算内的一步。最终结果为 0 或 empty 也是真实响应状态，不能改写成业务未发生。
+这条冷目录路径共 12 条命令；其中安装、目录三层、status、events 和 Analysis dry-run 都是零生产 HTTP。单 App sync 的逻辑界只覆盖四类登记 Analysis metadata page request，不包含 runtime 固定 retry 或一次鉴权刷新；后两者以实际 receipt 为准。最终结果为 0 或 empty 也是真实响应状态，不能改写成业务未发生。
