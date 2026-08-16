@@ -344,7 +344,10 @@ writer 拒绝非有限数字；operation、投影、请求、错误分类和退�
 operation 继续保留专家入口，但明确不是产品等价物；`app.realtime_event.list` 是应用配置 raw 读，
 `REALTIME_EVENT_CATALOG_CONTRACT_MISSING` 才是“实时事件目录”动线状态。本轮 development 臂 A/C 为
 `260/336` 与 `334/336`；臂 C 的两处失败均是“一个产品 + 一个 gap”的混合多意图在冻结 scorer 中没有
-第二个 candidate selector，未修改评分逻辑。未运行 holdout/final，生产 HTTP 0 次。
+第二个 candidate selector，未修改评分逻辑。后续以 fresh Windows AppContainer 中的 pinned
+`claude-sonnet-4-6` 重测干净外部臂 C 为 `325/336`：仍比 A 多 65 题、比被污染 C 少 9 题；八族为
+`11/12、11/13、11/12、12/12、12/12、12/12、10/12、11/11`。该测量没有改变本表状态或产品事实；
+未查询受保护 split，Gravity 生产 HTTP 0 次。
 
 | 动线 | 状态 | 四面可达（CLI / SDK / Plan / Agent 中英首问） | 调用次数（已知 / 未知） | 阻塞 |
 | --- | --- | --- | --- | --- |
