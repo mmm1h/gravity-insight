@@ -37,5 +37,7 @@
 
 - [引力原生 AI 事件分析对话摸底](gravity-native-ai.md)
 - [分群删除能力调查](segment-delete-capability.md)
+- [维度表 wire 与分析价值探测](dimension-table-wire-probe.md) — 9 条写路由的请求形状；
+  **属性绑定是单向门**（无法解除最后一条关联），因此未能证明分析价值。
 - [维度表 wire 与分析价值探测](dimension-table-wire-probe.md) — 还原 9 条预留路由并在绑定前的
   空关联清理预检失败后停止；含请求账本和零残留证据。
