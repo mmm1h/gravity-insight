@@ -34,11 +34,11 @@ class AgentUsabilityEvalTests(unittest.TestCase):
 
     def test_public_suite_is_frozen_and_complete(self) -> None:
         manifest, cases = self.subject.load_cases("development", None)
-        self.assertEqual(240, len(cases))
+        self.assertEqual(336, len(cases))
         self.assertEqual(48, len({item["journey_id"] for item in cases}))
-        self.assertEqual(480, manifest["total_case_count"])
+        self.assertEqual(576, manifest["total_case_count"])
         self.assertEqual(48, manifest["final_case_count"])
-        self.assertEqual(528, manifest["three_split_case_count"])
+        self.assertEqual(624, manifest["three_split_case_count"])
         self.assertEqual(
             48,
             sum(manifest["expectation_derivation"]["status_counts"].values()),
@@ -57,6 +57,11 @@ class AgentUsabilityEvalTests(unittest.TestCase):
         j48 = next(case for case in cases if case["journey_id"] == "J48")
         self.assertEqual("attribution_performance", j42["expected"]["route_key"])
         self.assertEqual("material_asset", j48["expected"]["route_key"])
+        raw_new = next(
+            case for case in self.subject._development_cases(manifest)
+            if case["case_id"] == "J01.dev.v3.indirect-goal"
+        )
+        self.assertNotIn("expected", raw_new)
 
     def test_ledger_status_change_switches_the_same_frozen_case_shape(self) -> None:
         manifest = self.subject._manifest()

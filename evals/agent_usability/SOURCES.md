@@ -1,5 +1,32 @@
 # Question authorship sources
 
+## Development v3 expansion
+
+The 96 development-only additions were authored at
+`dev@6c3b2dd63851b3c869208b500e67e9697d2e76d3` from only:
+
+- the counted journey goals, statuses, blockers, and exact target identities in
+  `docs/analysis-journeys.md` and the public journey target registry; and
+- the caller tasks, input ownership, adjacent-product boundaries, and explicit
+  ambiguity rules in `docs/agent-workflow.md`.
+
+Existing development prompts were read only as a negative style/deduplication
+check so the new cases would not reuse their normal/boundary/missing-input
+templates. They did not supply product facts or new wording. No protected
+payload, key, decrypted memory, prompt-level protected result, recognizer source,
+or routing test was used. The recognizer was first invoked only after the 96
+questions and their journey IDs were frozen.
+
+Every journey contributes exactly two additions. Primary-family counts are
+`13 + 12 + 12 + 12 + 12 + 12 + 12 + 11 = 96`; the final 11 are a one-to-one
+cover of the current 11 completely missing journeys. The 12 `multiple_intents`
+cases intentionally require `MULTIPLE_INTENTS` under the workflow contract.
+The current single-journey scorer cannot represent that response as a pass;
+this known measurement limitation is reported with the development result and
+must not be repaired by changing recognizer behavior to return one product.
+
+## V2 core
+
 The v2 suite was authored from these caller-facing facts at
 `codex/agent-eval@7f73cf9`:
 

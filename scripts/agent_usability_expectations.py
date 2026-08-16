@@ -93,21 +93,25 @@ def derive_cases(
                 f"{journey_id!r}; allowed values: {sorted(targets)!r}"
             )
         original = case.get("expected")
-        if not isinstance(original, Mapping):
+        if original is None:
+            expectation: dict[str, Any] = {}
+        elif not isinstance(original, Mapping):
             raise ValueError(
                 f"case {case.get('case_id')!r} expected is invalid; actual value: "
-                f"{type(original).__name__}; required value: an expectation object"
+                f"{type(original).__name__}; required value: an expectation object or omission"
             )
-        alternatives = [
-            value for key in ("product", "gap")
-            if isinstance((value := target.get(key)), Mapping)
-        ]
-        if _shape_signature(original) not in map(_shape_signature, alternatives):
-            raise ValueError(
-                f"case {case.get('case_id')!r} target identity is not frozen to {journey_id}; "
-                f"actual value: {_shape_signature(original)!r}; allowed values: "
-                f"{[_shape_signature(value) for value in alternatives]!r}"
-            )
+        else:
+            alternatives = [
+                value for key in ("product", "gap")
+                if isinstance((value := target.get(key)), Mapping)
+            ]
+            if _shape_signature(original) not in map(_shape_signature, alternatives):
+                raise ValueError(
+                    f"case {case.get('case_id')!r} target identity is not frozen to {journey_id}; "
+                    f"actual value: {_shape_signature(original)!r}; allowed values: "
+                    f"{[_shape_signature(value) for value in alternatives]!r}"
+                )
+            expectation = dict(original)
         status = statuses[journey_id]
         shape_name = "product" if status == "已闭环" else "gap"
         shape = target.get(shape_name)
@@ -116,7 +120,6 @@ def derive_cases(
                 f"journey target {journey_id}.{shape_name} is missing; actual value: {shape!r}; "
                 "required action: register the frozen product or target-gap identity before changing ledger status"
             )
-        expectation = dict(original)
         expectation.update(shape)
         expectation["gap_code"] = shape.get("gap_code")
         expectation["terminal_kind"] = (
