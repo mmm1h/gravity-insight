@@ -10553,7 +10553,7 @@
       "auth_profile": "gravity_authorization",
       "block_reason": null,
       "contract_version": "4",
-      "description": "当前账号可见 App 列表；sub_package_list 为 nullable string array。",
+      "description": "列出当前账号有权限读取的 App 项目（当前账号可见 App 列表）；List the app projects that the current account is allowed to read. sub_package_list is a nullable string array.",
       "domain": "app",
       "executable": true,
       "input_fields": [

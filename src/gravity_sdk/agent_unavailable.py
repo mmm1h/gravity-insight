@@ -11,7 +11,6 @@ _REGISTERED_GAP_QUERIES = (
     "analysis export results",
     "media reports",
     "monetization aggregate",
-    "readable app projects",
     "onelink public store binding",
     "non bytedance campaign group creative performance",
     "platform specific creative fields",

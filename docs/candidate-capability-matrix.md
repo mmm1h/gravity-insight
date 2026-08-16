@@ -395,3 +395,19 @@ marker space 仍以 `sdk_source_marker` 删除。当前目录没有 foreign Segm
 creator 也是当前 principal，故真实 foreign 拒绝没有生产样本，不能作为已验证 capability evidence；
 测试锁定 foreign/missing-owner 零 write fail-closed。folder/note 的非 marker 限制继续是上游证据 blocker，
 不能跨对象族推断 owner 字段。
+## 2026-08-16 追加判定：设置入口与 D28 当前配置 route
+
+本轮以引力自然页面动作识别真实入口，再用现有只读 SDK 对 D28 做有界反证。App 页面取得非空；
+F41 页面明确空；D28 在目标上限 8 次前停于 7 次。没有 write、重试、扩窗、换 App、模板修改或
+主结果 route 补发，也没有把静态字段候选登记为响应合同。
+
+| 动线 | 判定 | 实测证据 | 产品结论 / 下一步 |
+| --- | --- | --- | --- |
+| 查找当前账号可读的 App 项目 | **已闭环；旧候选不是目标端点** | 设置 → 应用管理自然发出 `GET /turbo_engine/api/v1/user/open_app/list/`，HTTP 200、首屏 7 行。观察 17 个 item 字段和 4 个 `page_info` 字段，键与类型均已由既有 stable `app.list` v4 全量登记；raw schema fingerprint 为 `a4a2bf907a0e45f47de2656f0354c766850c2c06460b1008477664b5d14d3491`。 | J39 改由 `app.list` 的 CLI/SDK/Plan/Agent 卡承载；不晋升、改写或冒充账号级明确空的 `app.project.list`。两 route 分别是 open-app GET 与 project POST，不是同一个端点。 |
+| 按表名或 App 查询数据表当前 schema、字段和版本（F41） | **租户当前明确空；保持缺失** | 设置 → 元数据自然发出 `POST /turbo_engine/api/v2/event_dim/data_table/list/`，body 为 `app_id_list=[]/name_like=""/page=1/page_size=10`；HTTP 200，`data.list=[]`，`page_info` 可见，fingerprint `6135b90704b9718bb844941db7a86a9a19037bfa269c6f822e4ca5fa67ea4341`。 | 没有表名或 `table_id` 父值，detail/version 0 次；不能证明 item schema、“当前版本”或 CRUD 读回语义。维度表 CRUD 目前没有安全执行与验证前提。只有租户出现自然表项或 API owner 给出合同后才值得重探。 |
+| 按平台、广告位和日期汇总变现结果（D28） | **三选一：请求参数/路由不对；仍未闭环** | 当前 `NewReportCenter` 用 `/turbo_engine/api/v3/confmetric/metric/list/` 和同命名空间 permission route，并以 `data_topic EQUALS monetization_report`、`is_media EQUALS false|true` 取配置。现有 stable operation 仍指向旧 `/report/api/v3/confmetric/metric/list/`。7 次旧 route 均 HTTP 200：1 次错误 `IN` 语义拒绝；一次空 filter 调用自动读 5 页、200/1124 行无目标 topic；1 次当前正确 filter 仍被旧 route 语义拒绝。 | 判据是**同一当前 bundle 的 route 与现有请求不一致，且正确 filter 在旧 route 仍失败**。这不能判定租户没数据，也不能判定权限未生效；permission、主结果、非空 item/total 和值域均未知。下一步应先单次验证当前 turbo config/permission，再用其真实物理字段自然触发主结果；不得继续在旧 route 换参数。 |
+
+三条目标尝试为 `App 1 / F41 1 / D28 7`；连同页面自然触发的 7 次辅助业务读取，实际生产业务
+HTTP 共 16 次，全部在全局 40 次上限内。逐请求账本与辅助/目标边界见[路线图当前章节](roadmap.md#设置应用元数据与变现报表复核2026-08-16)。
+J39 从完全缺失转已闭环，台账由 `52 = 43 / 1 / 8` 变为 **`52 = 44 / 1 / 7`**；F41 与 D28
+保持完全缺失。operation/stable 仍为 223/214；canonical 产品卡仍 45，精确 gap 为 9。

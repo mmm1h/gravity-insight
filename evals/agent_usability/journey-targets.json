@@ -18,6 +18,7 @@
     "J32": "metadata:table_lineage",
     "J33": "export.material.report.start",
     "J34": "composite:analysis_default_dictionary",
+    "J39": "app.list",
     "J42": "composite:attribution_performance",
     "J43": "composite:attribution_user_detail",
     "J48": "material.asset.fetch"
@@ -61,7 +62,7 @@
     "J36":{"ledger_title":"查找自有、共享和 MasterKey 报表并读取其定义","product":{"route_key":"report_directory"},"gap":{"route_key":"report_directory_gap","gap_code":"REPORT_DIRECTORY_ITEM_SCHEMA_MISSING"}},
     "J37":{"ledger_title":"查看报表订阅清单","product":{"route_key":"report_subscriptions"},"gap":{"route_key":"report_subscription_gap","gap_code":"REPORT_SUBSCRIPTION_ITEM_SCHEMA_MISSING"}},
     "J38":{"ledger_title":"查找可用的媒体报表","gap":{"route_key":"media_report_gap","gap_code":"MEDIA_REPORT_ITEM_SCHEMA_MISSING"}},
-    "J39":{"ledger_title":"查找当前账号可读的 App 项目","gap":{"route_key":"app_project_gap","gap_code":"APP_PROJECT_ITEM_SCHEMA_MISSING"}},
+    "J39":{"ledger_title":"查找当前账号可读的 App 项目","product":{"route_key":"app_catalog"},"gap":{"route_key":"app_project_gap","gap_code":"APP_PROJECT_ITEM_SCHEMA_MISSING"}},
     "J40":{"ledger_title":"查看 App 的 OneLink 与公开信息绑定","gap":{"route_key":"onelink_gap","gap_code":"APP_ONELINK_PUBLIC_BINDING_SAMPLE_MISSING"}},
     "J41":{"ledger_title":"按平台、广告位和日期汇总变现结果（D28）","gap":{"route_key":"monetization_aggregate_gap","gap_code":"MONETIZATION_AGGREGATE_CONTRACT_MISSING"}},
     "J42":{"ledger_title":"查询归因表现聚合（D35）","product":{"route_key":"attribution_performance"},"gap":{"route_key":"attribution_aggregate_gap","gap_code":"ATTRIBUTION_AGGREGATE_CONTRACT_MISSING"}},
