@@ -3793,3 +3793,32 @@ caller-recoverable error site，因此新增错误点/A 档为 **0/0**，审计�
 **1090 passed / 3009 subtests passed**、compiler **223 operations / 11 manifests**；quality、Agent Skill
 生成器 check、CLI help 与 `git diff --check` 全部通过。unittest 的 protected-split 治理用例只在临时目录
 生成 synthetic fixture；仓库真实 query ledger 无改动，没有读取或运行真实 holdout/final。
+
+## 维度表 wire 与分析价值探测（2026-08-16）
+
+**提案与边界：**本轮只用 hash-matched 前端还原 9 条维度表预留 wire，并在不超过 50 次生产 HTTP 内
+创建、读回和清理唯一 marker 对象；不改 operation、manifest、产品卡或动线。真正绑定前必须先证明
+最后一条属性关联能解除，否则立即停止。完整逐 route wire、响应 fingerprint 和账本见
+[维度表 wire 与分析价值探测](research/dimension-table-wire-probe.md)。
+
+**实测裁决：**三份 bundle 与冻结 SHA-256 逐字一致，9 条 body 均已还原。绑定前分析基线固定
+App `26827043`、`order_status.order_id` 和 2026-08-15 单日；第一次因漏 `create_time` 被语义拒绝，
+按离线 compiler 修正后返回 5,000 个分组、72,402 次事件。create 成功产生 marker 表
+`71ccfb34acd94f6aa3ef69d9ce1976fd`、两列、三行和生效版本 1；list/detail/edit 均成功。
+
+绑定前对未绑定自建表发送 `prop_list=[]`，上游明确返回 `code=1004 / prop_list is empty`；前端也强制
+至少保留一条关联。因而没有可证明的解除最后一条绑定路径，本轮按条件立即停止，没有发送非空绑定、
+新版本、版本切换或绑定后分析。delete 成功后 marker list 为 0，version-id-set 为 `[]`，且属性绑定从未
+创建，残留为 0。生产实际为 **13 HTTP = 1 authentication + 12 business**，全部 attempt 1、无重试、
+翻页、换 App 或扩窗。
+
+**排期裁决：**本轮未证明“裸 ID → 业务属性 → 分析分组/筛选”，所以剩余 8 条预留路由暂不实现；
+`dl/column_and_val` 还被前端证明是 export/download task，不是 reservation 名称声称的 delete。下一单
+必须先取得 API owner 的精确解绑合同，再做解绑回读和绑定前/后同查询对照。动线状态、operation/stable、
+产品卡和 selector 均净增 0；`52 = 44 / 1 / 7`、`223 / 214`、45 张产品卡与 277 selector 保持不变。
+
+**验证：**文档定向测试 **4 passed**；unittest **1090 tests OK**；pytest
+**1090 passed / 3009 subtests passed**；compiler **223 operations / 11 manifests**；quality、Agent Skill
+生成器 check、CLI help 与 `git diff --check` 全部通过。新增 caller-recoverable error site 为 **0**，审计基线
+保持 **1121 = A318 / B434 / C369**。unittest 的 protected-split 用例只在临时目录生成 synthetic fixture；
+仓库真实 query ledger 未改动，没有读取或运行真实 holdout/final。
