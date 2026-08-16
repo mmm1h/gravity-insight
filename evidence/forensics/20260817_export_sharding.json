@@ -1,0 +1,161 @@
+{
+  "schema_version": "gravity-insight.export-sharding-evidence.v1",
+  "observed_at": "2026-08-17T05:23:50+08:00",
+  "scope": "fixed catalog-position-3 App; no App switching to seek a favorable result",
+  "credentials_persisted": false,
+  "user_level_values_persisted": false,
+  "request_budget": {"limit": 45, "used": 44, "remaining": 1},
+  "discipline": {
+    "attempts_per_request": 1,
+    "retries": 0,
+    "data_pages_advanced": 0,
+    "apps_switched_to_find_nonempty_data": 0,
+    "busy_polling": false,
+    "temporary_files_remaining": 0,
+    "note": "The shared receipt directory also contained four overlapping report.multidim requests from another process. They were excluded by process id and are not part of this probe."
+  },
+  "frontend_snapshot": {
+    "root": "work-dashboard/tmp/codex/gi-census-full/final",
+    "javascript_files": 375,
+    "monetization_asset": {
+      "name": "CashSearch-00g6muds.js",
+      "sha256": "3ceb1347c303a19b5b10679746ed64ea58c6637c242dd9f0b86db42df0d958e2",
+      "declaration": "When page_info.total_number > 1e6, both the result and export tooltips state that data is truncated to the first 100W rows in descending event-time order."
+    },
+    "origin_event_asset": {
+      "name": "Download-DlEV6nb1.js",
+      "sha256": "a3310b44510c0c7fb5ebf266e530c4d2ddaf20fc876fc441987946660392fc89",
+      "evaluate_contract": "evaluate_data and submit_task receive the same app_id/task_name/task_type/time_range/event_name_list/cond_logic/conditions body; evaluate_data.data.total is displayed as the estimate",
+      "limit_behavior": "submit is disabled unless 0 < evaluated total <= 1e6; above the limit the UI asks the user to shorten the time range or reduce events",
+      "shard_controls_observed": [],
+      "maximum_date_span_days": 30
+    },
+    "task_surfaces": {
+      "task_list_consumed_fields": ["id", "task_name", "status", "create_user_name", "task_type", "create_time", "download_url", "message"],
+      "progress_mock_fields": ["download_url", "progress", "status", "task_id", "message"],
+      "row_count_or_truncation_fields": [],
+      "task_type_list_role": "labels, icons and colors only"
+    }
+  },
+  "window_observations": [
+    {
+      "window": ["2026-08-16 00:00:00", "2026-08-16 23:59:59"],
+      "managed_total_items": 1212315,
+      "file_rows": 1000000,
+      "missing_rows": 212315,
+      "task_state": "READY",
+      "task_or_file_truncation_signal": null,
+      "verdict": "upstream_silent_truncation"
+    },
+    {
+      "window": ["2026-08-17 00:00:00", "2026-08-17 23:59:59"],
+      "managed_total_items_at_recovery": 111792,
+      "file_rows": 110966,
+      "difference_at_recovery": 826,
+      "file_size_bytes": 1455676,
+      "file_sha256": "3944e8071a796f679d0a7a7d983b786feeaaeb5886f98e5ed11b8c64e9d3f1b2",
+      "task_state": "READY",
+      "task_or_file_truncation_signal": null,
+      "verdict": "below_limit_file_observed_but_exact_parity_inconclusive",
+      "reason": "This was the still-growing current day. The task was created before the recovery total was read, and the create-time total was not retained, so the 826-row difference cannot be classified as truncation."
+    }
+  ],
+  "additional_window_attempts": {
+    "hour_subwindow": {
+      "requested_window": ["2026-08-16 00:00:00", "2026-08-16 00:59:59"],
+      "managed_total_items": 1212325,
+      "verdict": "not_a_shard_boundary",
+      "reason": "The endpoint returned the full-day magnitude; the timestamp condition cannot be treated as an hour shard."
+    },
+    "different_above_limit_day": {
+      "date": "2026-08-15",
+      "known_fact": "The managed total was above 1000000 and distinct from 1212315, then create returned no task id.",
+      "exact_total": null,
+      "file_rows": null,
+      "accepted_as_cap_proof": false,
+      "reason": "The exact total was not persisted before the bounded probe failed; no file existed to compare."
+    }
+  },
+  "truncation_signal": {
+    "found_on_task_list": false,
+    "found_on_task_progress": false,
+    "found_in_xlsx": false,
+    "managed_list_total_available": true,
+    "reliably_bound_to_async_task_snapshot": false,
+    "sdk_current_behavior": "The route remains unverified and executable=false, so the SDK cannot return a misleading complete result. It has no runtime task-bound missing-row calculation."
+  },
+  "sharding": {
+    "server_side_paging_or_shard_protocol_found": false,
+    "evaluate_data_supports_sharding": false,
+    "daily_sharding_conditionally_possible": true,
+    "daily_sharding_solves_target_day": false,
+    "reason": "The target 2026-08-16 day itself exceeds 1000000 rows and hour conditions are not an observed shard boundary.",
+    "request_cost": "For N immutable days whose individual totals are all <= 1000000: N total reads + N creates + N downloads + sum(polls); with one successful poll per task this is 4N HTTP requests.",
+    "completeness_proof": "Require file_rows(day) == managed_total_items(day) for every immutable day, then require sum(file_rows) == sum(managed_total_items)."
+  },
+  "four_family_reconciliation": {
+    "segment.result": {"file_rows": 1, "total_items": 1, "total_source": "analysis.segment.list.latest_user_cnt", "matches": true},
+    "segment_user_detail": {"file_rows": 1, "total_items": 1, "total_source": "analysis.segment.user_detail.list.page_info", "matches": true},
+    "user_detail": {"file_rows": 255, "total_items": 255, "total_source": "analysis.user_detail.list.page_info", "matches": true},
+    "pay_event": {"file_rows": 217, "total_items": 217, "total_source": "analysis.order_detail.list.page_info", "matches": true}
+  },
+  "final_verdict": {
+    "hard_limit": "confirmed by the explicit frontend contract plus the 1212315-to-1000000 production observation; the below-limit file also proves exports are not unconditionally padded to 1000000",
+    "promotion_criterion": null,
+    "contract_status": "unverified",
+    "executable": false,
+    "reason": "Criterion A is unavailable and criterion B lacks a trustworthy total bound to the asynchronous task snapshot."
+  },
+  "uncertainties": [
+    "Exact create-time total for the still-growing 2026-08-17 task was not retained, so below-limit parity is not proved.",
+    "The exact 2026-08-15 above-limit total and semantic create code were not retained; that attempt produced no task id and no file.",
+    "No documented or observed sub-day shard key exists.",
+    "Whether an unobserved upstream task-detail surface binds a snapshot row count remains unknown."
+  ],
+  "http_ledger": [
+    {"sequence":1,"phase":"initial_preflight","operation_id":"authentication","method":"POST","path":"/account_center/api/v1/user_login/v2/","http_status":200,"semantic_code":0},
+    {"sequence":2,"phase":"initial_preflight","operation_id":"app.list","method":"GET","path":"/turbo_engine/api/v1/user/open_app/list/","http_status":200,"semantic_code":0},
+    {"sequence":3,"phase":"initial_preflight","operation_id":"export.task_type.list","method":"GET","path":"/turbo_engine/api/v1/task/download/task_type/list/","http_status":200,"semantic_code":0},
+    {"sequence":4,"phase":"initial_preflight","operation_id":"export.task.list","method":"POST","path":"/turbo_engine/api/v1/task/download/list/","http_status":200,"semantic_code":0},
+    {"sequence":5,"phase":"initial_preflight","operation_id":"export.task.progress","method":"GET","path":"/turbo_engine/api/v1/task/download/progress/","http_status":200,"semantic_code":0},
+    {"sequence":6,"phase":"initial_preflight","operation_id":"analysis.user_property.list","method":"GET","path":"/turbo_engine/api/v2/event/user_property_list/","http_status":200,"semantic_code":0},
+    {"sequence":7,"phase":"initial_preflight","operation_id":"analysis.event_property.list","method":"GET","path":"/turbo_engine/api/v2/event/event_property_list/","http_status":200,"semantic_code":0},
+    {"sequence":8,"phase":"initial_preflight","operation_id":"analysis.segment.list","method":"GET","path":"/report/api/v3/dataanalysis/segment/list/","http_status":200,"semantic_code":0},
+    {"sequence":9,"phase":"initial_preflight","operation_id":"analysis.user_detail.list","method":"POST","path":"/report/api/v3/dataanalysis/user/detail/list/","http_status":200,"semantic_code":0},
+    {"sequence":10,"phase":"initial_preflight","operation_id":"analysis.segment.list","method":"GET","path":"/report/api/v3/dataanalysis/segment/list/","http_status":200,"semantic_code":0},
+    {"sequence":11,"phase":"initial_preflight","operation_id":"analysis.order_detail.list","method":"POST","path":"/report/api/v3/dataanalysis/user/pay_event/list/","http_status":200,"semantic_code":0},
+    {"sequence":12,"phase":"initial_preflight","operation_id":"analysis.segment.list","method":"GET","path":"/report/api/v3/dataanalysis/segment/list/","http_status":200,"semantic_code":0},
+    {"sequence":13,"phase":"reconcile_retry","operation_id":"app.list","method":"GET","path":"/turbo_engine/api/v1/user/open_app/list/","http_status":200,"semantic_code":0},
+    {"sequence":14,"phase":"reconcile_retry","operation_id":"analysis.user_property.list","method":"GET","path":"/turbo_engine/api/v2/event/user_property_list/","http_status":200,"semantic_code":0},
+    {"sequence":15,"phase":"reconcile_retry","operation_id":"analysis.event_property.list","method":"GET","path":"/turbo_engine/api/v2/event/event_property_list/","http_status":200,"semantic_code":0},
+    {"sequence":16,"phase":"reconcile_retry","operation_id":"analysis.segment.list","method":"GET","path":"/report/api/v3/dataanalysis/segment/list/","http_status":200,"semantic_code":0},
+    {"sequence":17,"phase":"reconcile_retry","operation_id":"analysis.user_detail.list","method":"POST","path":"/report/api/v3/dataanalysis/user/detail/list/","http_status":200,"semantic_code":0},
+    {"sequence":18,"phase":"reconcile_retry","operation_id":"analysis.segment.list","method":"GET","path":"/report/api/v3/dataanalysis/segment/list/","http_status":200,"semantic_code":0},
+    {"sequence":19,"phase":"reconcile_retry","operation_id":"analysis.order_detail.list","method":"POST","path":"/report/api/v3/dataanalysis/user/pay_event/list/","http_status":200,"semantic_code":0},
+    {"sequence":20,"phase":"reconcile_retry","operation_id":"analysis.segment.list","method":"GET","path":"/report/api/v3/dataanalysis/segment/list/","http_status":200,"semantic_code":0},
+    {"sequence":21,"phase":"wrong_scope_diagnostic","operation_id":"app.list","method":"GET","path":"/turbo_engine/api/v1/user/open_app/list/","http_status":200,"semantic_code":0},
+    {"sequence":22,"phase":"wrong_scope_diagnostic","operation_id":"analysis.segment.list","method":"GET","path":"/report/api/v3/dataanalysis/segment/list/","http_status":200,"semantic_code":0},
+    {"sequence":23,"phase":"fixed_scope_preflight","operation_id":"app.list","method":"GET","path":"/turbo_engine/api/v1/user/open_app/list/","http_status":200,"semantic_code":0},
+    {"sequence":24,"phase":"fixed_scope_preflight","operation_id":"analysis.user_detail.list","method":"POST","path":"/report/api/v3/dataanalysis/user/detail/list/","http_status":200,"semantic_code":0},
+    {"sequence":25,"phase":"fixed_scope_preflight","operation_id":"analysis.order_detail.list","method":"POST","path":"/report/api/v3/dataanalysis/user/pay_event/list/","http_status":200,"semantic_code":0},
+    {"sequence":26,"phase":"fixed_scope_preflight","operation_id":"analysis.segment.list","method":"GET","path":"/report/api/v3/dataanalysis/segment/list/","http_status":200,"semantic_code":0},
+    {"sequence":27,"phase":"fixed_scope_preflight","operation_id":"analysis.segment.user_detail.list","method":"POST","path":"/report/api/v3/dataanalysis/segment/user/detail/list/","http_status":200,"semantic_code":0},
+    {"sequence":28,"phase":"fixed_scope_preflight","operation_id":"analysis.segment.history_version.list","method":"GET","path":"/report/api/v3/dataanalysis/segment/history_version/list/","http_status":200,"semantic_code":0},
+    {"sequence":29,"phase":"fixed_scope_preflight","operation_id":"analysis.monetization_detail.list","method":"POST","path":"/report/api/v3/dataanalysis/monetization_detail/list/","http_status":200,"semantic_code":1004},
+    {"sequence":30,"phase":"subday_probe","operation_id":"app.list","method":"GET","path":"/turbo_engine/api/v1/user/open_app/list/","http_status":200,"semantic_code":0},
+    {"sequence":31,"phase":"subday_probe","operation_id":"analysis.monetization_detail.list","method":"POST","path":"/report/api/v3/dataanalysis/monetization_detail/list/","http_status":200,"semantic_code":0},
+    {"sequence":32,"phase":"subday_probe","operation_id":"analysis.monetization_detail.list","method":"POST","path":"/report/api/v3/dataanalysis/monetization_detail/list/","http_status":200,"semantic_code":0},
+    {"sequence":33,"phase":"window_create","operation_id":"app.list","method":"GET","path":"/turbo_engine/api/v1/user/open_app/list/","http_status":200,"semantic_code":0},
+    {"sequence":34,"phase":"window_create","operation_id":"analysis.monetization_detail.list","method":"POST","path":"/report/api/v3/dataanalysis/monetization_detail/list/","http_status":200,"semantic_code":0},
+    {"sequence":35,"phase":"window_create","operation_id":"analysis.monetization_detail.list","method":"POST","path":"/report/api/v3/dataanalysis/monetization_detail/list/","http_status":200,"semantic_code":0},
+    {"sequence":36,"phase":"window_create","operation_id":"export.analysis.monetization_detail.start","method":"POST","path":"/report/api/v3/dataanalysis/monetization_detail/download/","http_status":200,"semantic_code":0},
+    {"sequence":37,"phase":"window_create","operation_id":"export.analysis.monetization_detail.start","method":"POST","path":"/report/api/v3/dataanalysis/monetization_detail/download/","http_status":200,"semantic_code":null,"note":"response omitted task_id; exact semantic code was not retained"},
+    {"sequence":38,"phase":"final_reconciliation","operation_id":"analysis.user_detail.list","method":"POST","path":"/report/api/v3/dataanalysis/user/detail/list/","http_status":200,"semantic_code":0},
+    {"sequence":39,"phase":"final_reconciliation","operation_id":"analysis.order_detail.list","method":"POST","path":"/report/api/v3/dataanalysis/user/pay_event/list/","http_status":200,"semantic_code":0},
+    {"sequence":40,"phase":"final_reconciliation","operation_id":"analysis.segment.list","method":"GET","path":"/report/api/v3/dataanalysis/segment/list/","http_status":200,"semantic_code":0},
+    {"sequence":41,"phase":"final_reconciliation","operation_id":"analysis.segment.user_detail.list","method":"POST","path":"/report/api/v3/dataanalysis/segment/user/detail/list/","http_status":200,"semantic_code":0},
+    {"sequence":42,"phase":"below_limit_recovery","operation_id":"analysis.monetization_detail.list","method":"POST","path":"/report/api/v3/dataanalysis/monetization_detail/list/","http_status":200,"semantic_code":0},
+    {"sequence":43,"phase":"below_limit_recovery","operation_id":"export.task.list","method":"POST","path":"/turbo_engine/api/v1/task/download/list/","http_status":200,"semantic_code":0},
+    {"sequence":44,"phase":"below_limit_recovery","operation_id":"export.analysis.monetization_detail.start.download","method":"GET","path":"/{tenant}/excels/{opaque}.xlsx","http_status":200,"semantic_code":null}
+  ]
+}

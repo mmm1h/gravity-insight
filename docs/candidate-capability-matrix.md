@@ -326,6 +326,20 @@ shape 和六态证据见
 归档规则、实测数值、变现 shape 与静默截断补证见
 [`20260817_contract_evidence.json`](../evidence/forensics/20260817_contract_evidence.json)。
 
+第五轮完整性复核没有改变晋升结论。冻结的 375 个 JS 中，`CashSearch-00g6muds.js` 已明确声明
+`total_number > 1e6` 时列表和导出只保留事件时间降序前 100W 条；这与 `1,212,315 → 1,000,000`
+生产结果一致。任务 list/progress/file 都没有 task-bound total 或 truncated；另一套 origin-event
+`evaluate_data` 只返回预估 total，并在超过 1e6 时禁用提交，没有 shard/page/continuation 控制。
+当前日小窗口文件为 110,966 行，恢复时列表已增长到 111,792，因 create-time total 未保留而不能宣称
+精确对平；小时条件又返回全日量级 1,212,325。故日切窗不能解决已经单日超限的目标，小时切窗也未成立，
+`monetization_detail` 继续 `unverified/executable=false`。
+
+已晋升四族的同 scope 完整性补证全部通过：`segment.result` 1/1、`segment_user_detail` 1/1、
+`user_detail` 255/255、`pay_event` 217/217（文件行/受管总数），无需降级。44 次生产 HTTP 的逐条账本与
+不确定项见
+[`20260817_export_sharding.json`](../evidence/forensics/20260817_export_sharding.json)；operation/stable 仍为
+231/222。
+
 ## 2026-08-14 追加判定：D22 看板条件合并语义
 
 **判定：证明不了，不是部分证明。** 本轮取证 HTTP 共 10 次：1 次公开 source-map GET 返回 404；
