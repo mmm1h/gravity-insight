@@ -1,0 +1,97 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 20873,
+  "operation": {
+    "action": "update",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "保存看板树同级顺序；治理产品拒绝字段、成员或父级变化。",
+    "domain": "analysis",
+    "effect": "mutation",
+    "examples": [],
+    "executable": true,
+    "input_fields": {
+      "app_id": {
+        "type": "integer",
+        "required": true
+      },
+      "order_detail": {
+        "type": "array",
+        "required": true,
+        "item_type": "object",
+        "min_items": 1,
+        "max_items": 1000
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {}
+    },
+    "operation_id": "analysis.kanban.dashboard.order.update",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/dashboard/order/save/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.kanban.dashboard.order.update.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "app_id",
+        "order_detail"
+      ],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "analysis.dashboard.tree",
+        "output_path": null,
+        "selection": "caller_select"
+      }
+    ],
+    "resource": "kanban_dashboard_order",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis_dashboard.json"
+}

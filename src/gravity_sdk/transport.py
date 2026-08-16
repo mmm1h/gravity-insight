@@ -163,7 +163,7 @@ class Transport:
         if registered != operation:
             raise PolicyViolation("transport mutation is not owned by its registry")
         self._policy.authorize_mutation_request(operation, method, path)
-        if method != operation.upstream_method or method != "POST":
+        if method != operation.upstream_method or method not in {"GET", "POST"}:
             raise PolicyViolation(
                 "mutation method is not allowed by the operation contract"
             )

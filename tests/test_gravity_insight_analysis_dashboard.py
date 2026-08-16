@@ -6,6 +6,8 @@ import unittest
 from pathlib import Path
 from typing import Any, Mapping
 
+from gravity_sdk.kanban_mutation_contracts import KANBAN_MUTATION_OPERATIONS
+
 try:
     from gravity_sdk import GravityInsightClient
     from gravity_sdk.errors import InputValidationError
@@ -129,8 +131,8 @@ class GravityInsightAnalysisDashboardTests(unittest.TestCase):
                 "/turbo_engine/api/v2/datamanageconfig/template_internal/list/",
             ),
         }
-        self.assertEqual(set(expected_routes), set(self.by_id))
-        self.assertEqual(12, len(self.operations))
+        self.assertEqual(set(expected_routes) | KANBAN_MUTATION_OPERATIONS, set(self.by_id))
+        self.assertEqual(30, len(self.operations))
         self.assertEqual(
             expected_routes,
             {
@@ -139,6 +141,7 @@ class GravityInsightAnalysisDashboardTests(unittest.TestCase):
                     operation.path_template,
                 )
                 for operation in self.operations
+                if operation.operation_id in expected_routes
             },
         )
 
@@ -155,7 +158,9 @@ class GravityInsightAnalysisDashboardTests(unittest.TestCase):
         for operation in self.operations:
             if operation.operation_id in stable:
                 self.assertTrue(operation.executable)
-                self.assertTrue(operation.live_probe.enabled)
+                self.assertEqual(
+                    operation.effect == "read", operation.live_probe.enabled
+                )
 
     def test_dashboard_tree_uses_exact_get_query_and_recursive_projection(self) -> None:
         payload = {
@@ -200,6 +205,7 @@ class GravityInsightAnalysisDashboardTests(unittest.TestCase):
                 {
                     "id": 1,
                     "name": "space",
+                    "children": None,
                     "folder_or_dashboard": [
                         {
                             "id": 2,
@@ -214,6 +220,7 @@ class GravityInsightAnalysisDashboardTests(unittest.TestCase):
                                     "is_folder": False,
                                     "space_id": 1,
                                     "authority": 2,
+                                    "ui_config": "opaque-layout",
                                 }
                             ],
                         }

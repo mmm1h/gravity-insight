@@ -67,33 +67,36 @@
           "name",
           "type",
           "authority",
+          "app_id",
+          "space_id",
+          "folder_id",
+          "is_folder",
           "folder_or_dashboard",
-          "dashboards"
-        ],
-        "known_omitted_item_keys": [
+          "dashboards",
           "children"
         ],
-        "known_omitted_nested_item_keys": {
-          "dashboards": [
-            "ui_config"
-          ]
-        },
         "nested_item_keys": {
           "dashboards": [
             "id",
             "name",
             "type",
             "is_folder",
+            "app_id",
             "space_id",
-            "authority"
+            "folder_id",
+            "authority",
+            "ui_config"
           ],
           "folder_or_dashboard": [
             "id",
             "name",
             "type",
             "is_folder",
+            "app_id",
             "space_id",
+            "folder_id",
             "authority",
+            "ui_config",
             "dashboards"
           ]
         },
@@ -183,7 +186,8 @@
             "report_id",
             "name",
             "subject",
-            "config"
+            "config",
+            "remark"
           ],
           "share_members": [
             "uid",
@@ -206,11 +210,6 @@
         ],
         "dynamic_item_fields": [],
         "item_keys": [],
-        "known_omitted_data_item_keys": {
-          "even_report": [
-            "remark"
-          ]
-        },
         "required_data_keys": [
           "id"
         ]
@@ -1354,6 +1353,1504 @@
         "scalar_list_item_types": {
           "subject_ids": "integer"
         }
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "copy",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "复制不含报表关联的看板，并给副本名称添加 SDK 标记。",
+      "domain": "analysis",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "form_space_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "id": {
+          "required": true,
+          "type": "integer"
+        },
+        "name": {
+          "max_length": 128,
+          "required": true,
+          "type": "string"
+        },
+        "to_folder_id": {
+          "required": false,
+          "type": "integer"
+        },
+        "to_space_id": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.datamanageconfig.kanban.dashboard.copy",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/dashboard/copy/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "form_space_id",
+          "id",
+          "name",
+          "to_folder_id",
+          "to_space_id"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.dashboard.tree"
+      ],
+      "resource": "kanban_dashboard",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "create",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "在精确空间/文件夹下创建带 SDK 可见标记的空看板。",
+      "domain": "analysis",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "folder_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "name": {
+          "max_length": 128,
+          "required": true,
+          "type": "string"
+        },
+        "space_id": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.datamanageconfig.kanban.dashboard.create",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/dashboard/create/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "folder_id",
+          "name",
+          "space_id"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.dashboard.tree"
+      ],
+      "resource": "kanban_dashboard",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "delete",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "删除 SDK 标记且不含报表关联的看板，并在 dry-run 报告内嵌 note 数。",
+      "domain": "analysis",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "dashboard_ids": {
+          "item_type": "integer",
+          "max_items": 100,
+          "min_items": 1,
+          "required": true,
+          "type": "array"
+        },
+        "space_id": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.datamanageconfig.kanban.dashboard.delete",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/dashboard/delete/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "dashboard_ids",
+          "space_id"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.dashboard.tree"
+      ],
+      "resource": "kanban_dashboard",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "update",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "保存看板布局；治理产品只允许 note-only 布局并原样保留空报表关联。",
+      "domain": "analysis",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "id": {
+          "required": true,
+          "type": "integer"
+        },
+        "report_list": {
+          "item_type": "object",
+          "max_items": 20,
+          "min_items": 0,
+          "required": true,
+          "type": "array"
+        },
+        "space_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "ui_config": {
+          "max_length": 100000,
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.datamanageconfig.kanban.dashboard.update",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/dashboard/edit/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "id",
+          "report_list",
+          "space_id",
+          "ui_config"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.dashboard.tree"
+      ],
+      "resource": "kanban_dashboard",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "move",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "在同一空间内把 SDK 标记看板移动到精确文件夹或未分组。",
+      "domain": "analysis",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "dashboard_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "folder_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "space_id": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.kanban.dashboard.folder.move",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/dashboard/folder/move/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "dashboard_id",
+          "folder_id",
+          "space_id"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.dashboard.tree"
+      ],
+      "resource": "kanban_dashboard_folder",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "move",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "按精确来源坐标跨空间/文件夹移动 SDK 标记看板。",
+      "domain": "analysis",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "dashboards": {
+          "item_type": "object",
+          "max_items": 100,
+          "min_items": 1,
+          "required": true,
+          "type": "array"
+        },
+        "to_folder_id": {
+          "required": false,
+          "type": "integer"
+        },
+        "to_space_id": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.datamanageconfig.kanban.dashboard.move",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/dashboard/move/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "dashboards",
+          "to_folder_id",
+          "to_space_id"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.dashboard.tree"
+      ],
+      "resource": "kanban_dashboard",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "update",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "保存看板树同级顺序；治理产品拒绝字段、成员或父级变化。",
+      "domain": "analysis",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "order_detail": {
+          "item_type": "object",
+          "max_items": 1000,
+          "min_items": 1,
+          "required": true,
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.kanban.dashboard.order.update",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/dashboard/order/save/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "order_detail"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.dashboard.tree"
+      ],
+      "resource": "kanban_dashboard_order",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "update",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "重命名看板并保留已有 SDK 标记；与 dashboard/edit 是独立端点。",
+      "domain": "analysis",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "id": {
+          "required": true,
+          "type": "integer"
+        },
+        "name": {
+          "max_length": 128,
+          "required": true,
+          "type": "string"
+        },
+        "space_id": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.datamanageconfig.kanban.dashboard.dc7858a7.update",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/dashboard/rename/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "id",
+          "name",
+          "space_id"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.dashboard.tree"
+      ],
+      "resource": "kanban_dashboard_name",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "create",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "在精确空间下创建带 SDK 可见标记的文件夹。",
+      "domain": "analysis",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "name": {
+          "max_length": 128,
+          "required": true,
+          "type": "string"
+        },
+        "space_id": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.datamanageconfig.kanban.folder.create",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/folder/create/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "space_id",
+          "name"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.dashboard.tree"
+      ],
+      "resource": "kanban_folder",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "delete",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "删除 SDK 标记文件夹；上游把后代看板迁到未分组/共享给我。",
+      "domain": "analysis",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "folder_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "space_id": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.datamanageconfig.kanban.folder.delete",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/folder/delete/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "app_id",
+          "folder_id",
+          "space_id"
+        ]
+      },
+      "required_parent": [
+        "analysis.dashboard.tree"
+      ],
+      "resource": "kanban_folder",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "move",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "跨空间移动 SDK 标记文件夹及其后代看板。",
+      "domain": "analysis",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "form_folder_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "form_space_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "to_space_id": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.datamanageconfig.kanban.folder.move",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/folder/move/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "form_folder_id",
+          "form_space_id",
+          "to_space_id"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.dashboard.tree"
+      ],
+      "resource": "kanban_folder",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "update",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "重命名看板文件夹并保留已有 SDK 标记。",
+      "domain": "analysis",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "id": {
+          "required": true,
+          "type": "integer"
+        },
+        "name": {
+          "max_length": 128,
+          "required": true,
+          "type": "string"
+        },
+        "space_id": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.datamanageconfig.kanban.folder.update",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/folder/rename/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "id",
+          "name",
+          "space_id"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.dashboard.tree"
+      ],
+      "resource": "kanban_folder",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "delete",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "从 SDK 标记看板移除精确图表关联，不删除或修改底层保存报表。",
+      "domain": "analysis",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "dashboard_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "ids": {
+          "item_type": "integer",
+          "max_items": 100,
+          "min_items": 1,
+          "required": true,
+          "type": "array"
+        },
+        "space_id": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.engine.datamanageconfig.kanban.delete",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/report/delete/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "dashboard_id",
+          "ids",
+          "space_id"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.dashboard.tree"
+      ],
+      "resource": "kanban_report_association",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "update",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "删除精确 SDK 标记的看板内嵌 note。",
+      "domain": "analysis",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "i": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "id": {
+          "required": true,
+          "type": "integer"
+        },
+        "space_id": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.datamanageconfig.kanban.note.update",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/report/note/edit/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "id",
+          "i",
+          "space_id"
+        ],
+        "defaults": {},
+        "fixed_body": {
+          "deleted": 1
+        },
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.dashboard.tree"
+      ],
+      "resource": "kanban_note",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "create",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "创建带 SDK 可见标记的看板空间。",
+      "domain": "analysis",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "name": {
+          "max_length": 128,
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.datamanageconfig.kanban.space.create",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/space/create/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "name"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.dashboard.tree"
+      ],
+      "resource": "kanban_space",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "delete",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "删除 SDK 标记空间；上游把后代看板迁回各创建者未分组目录。",
+      "domain": "analysis",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "space_id": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.datamanageconfig.kanban.space.delete",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/space/delete/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "app_id",
+          "space_id"
+        ]
+      },
+      "required_parent": [
+        "analysis.dashboard.tree"
+      ],
+      "resource": "kanban_space",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "update",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "重命名看板空间并保留已有 SDK 标记。",
+      "domain": "analysis",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "id": {
+          "required": true,
+          "type": "integer"
+        },
+        "name": {
+          "max_length": 128,
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.datamanageconfig.kanban.space.update",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/space/rename/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "id",
+          "name"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.dashboard.tree"
+      ],
+      "resource": "kanban_space",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "move",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "把 SDK 标记空间及其层级移交给精确用户。",
+      "domain": "analysis",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "space_id": {
+          "required": true,
+          "type": "integer"
+        },
+        "uid": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.datamanageconfig.kanban.space.move",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/space/transfer/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "space_id",
+          "uid"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        "analysis.dashboard.tree"
+      ],
+      "resource": "kanban_space",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
       },
       "semantic_error_rules": [
         "code",

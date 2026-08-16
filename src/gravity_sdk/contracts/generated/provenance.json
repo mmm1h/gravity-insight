@@ -1,5 +1,5 @@
 {
-  "operation_count": 205,
+  "operation_count": 223,
   "operations": {
     "account.department.list": {
       "applied_overrides": [],
@@ -97,12 +97,140 @@
         "operations/analysis.dataanalysis.segment.update.json"
       ]
     },
+    "analysis.datamanageconfig.kanban.dashboard.copy": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.datamanageconfig.kanban.dashboard.copy.json"
+      ]
+    },
+    "analysis.datamanageconfig.kanban.dashboard.create": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.datamanageconfig.kanban.dashboard.create.json"
+      ]
+    },
+    "analysis.datamanageconfig.kanban.dashboard.dc7858a7.update": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.datamanageconfig.kanban.dashboard.dc7858a7.update.json"
+      ]
+    },
+    "analysis.datamanageconfig.kanban.dashboard.delete": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.datamanageconfig.kanban.dashboard.delete.json"
+      ]
+    },
+    "analysis.datamanageconfig.kanban.dashboard.move": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.datamanageconfig.kanban.dashboard.move.json"
+      ]
+    },
+    "analysis.datamanageconfig.kanban.dashboard.update": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.datamanageconfig.kanban.dashboard.update.json"
+      ]
+    },
+    "analysis.datamanageconfig.kanban.folder.create": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.datamanageconfig.kanban.folder.create.json"
+      ]
+    },
+    "analysis.datamanageconfig.kanban.folder.delete": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.datamanageconfig.kanban.folder.delete.json"
+      ]
+    },
+    "analysis.datamanageconfig.kanban.folder.move": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.datamanageconfig.kanban.folder.move.json"
+      ]
+    },
+    "analysis.datamanageconfig.kanban.folder.update": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.datamanageconfig.kanban.folder.update.json"
+      ]
+    },
+    "analysis.datamanageconfig.kanban.note.update": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.datamanageconfig.kanban.note.update.json"
+      ]
+    },
+    "analysis.datamanageconfig.kanban.space.create": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.datamanageconfig.kanban.space.create.json"
+      ]
+    },
+    "analysis.datamanageconfig.kanban.space.delete": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.datamanageconfig.kanban.space.delete.json"
+      ]
+    },
+    "analysis.datamanageconfig.kanban.space.move": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.datamanageconfig.kanban.space.move.json"
+      ]
+    },
+    "analysis.datamanageconfig.kanban.space.update": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.datamanageconfig.kanban.space.update.json"
+      ]
+    },
     "analysis.default_val.list": {
       "applied_overrides": [],
       "family": null,
       "platform": null,
       "source_files": [
         "operations/analysis.default_val.list.json"
+      ]
+    },
+    "analysis.engine.datamanageconfig.kanban.delete": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.engine.datamanageconfig.kanban.delete.json"
       ]
     },
     "analysis.event.info": {
@@ -175,6 +303,22 @@
       "platform": null,
       "source_files": [
         "operations/analysis.funnel.query.json"
+      ]
+    },
+    "analysis.kanban.dashboard.folder.move": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.kanban.dashboard.folder.move.json"
+      ]
+    },
+    "analysis.kanban.dashboard.order.update": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.kanban.dashboard.order.update.json"
       ]
     },
     "analysis.monetization_detail.list": {

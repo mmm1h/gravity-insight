@@ -17,12 +17,18 @@ from .segment_mutation_contracts import (
     MANUAL_UPDATE,
     SAVE,
 )
+from .kanban_wire_validation import validate_kanban_wire
+from .kanban_mutation_contracts import KANBAN_MUTATION_OPERATIONS
 
 
 def validate_mutation_inputs(
     operation_id: str, values: Mapping[str, Any]
 ) -> None:
     """Validate nested request fields that the flat manifest schema cannot express."""
+
+    if operation_id in KANBAN_MUTATION_OPERATIONS:
+        validate_kanban_wire(operation_id, values)
+        return
 
     if operation_id == FROM_ANALYSIS_CREATE:
         _from_analysis(values)

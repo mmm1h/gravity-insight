@@ -3376,6 +3376,129 @@ caller-recoverable 审计仍为 `1075 = A271 / B434 / C370`；本轮只增强一
 `0/0`。验证为 unittest **1077**、pytest **1077 passed / 2955 subtests passed**、文档测试 **4 passed**、
 compiler **205 operations / 11 manifests**；quality、CLI help 与 `git diff --check` 均通过。
 
+## Kanban / Dashboard 全 CRUD 与持久化工作区（2026-08-16）
+
+**提案与范围裁决：**工作提案保存在 ignored `tmp/codex/write-kanban/proposal.md`。点名代码块实际有
+19 个 operation；它来自 21 个 Kanban reservation 排除两条显式 `*.share`。逐 route 与 hash-matched
+bundle 复核后，`space.093dd36e.delete` 的真实 path 是 `space/share/delete/`，不是普通 space delete 的
+参数变体；当前 bundle 只有未调用 loader，payload 仍未知。因此本轮实际晋升 **18** 条 stable mutation，
+该哈希 share-delete 与两条显式 share 共 3 条 reservation 保持 blocked。另一哈希路由
+`dashboard.dc7858a7.update` 明确是 `/dashboard/rename/`，body 为 `app_id/id/name/space_id`；普通
+`dashboard.update` 是 `/dashboard/edit/`，body 为 `app_id/id/report_list/space_id/ui_config`，两者按独立
+端点登记。operation/stable 从 `205/196` 增到 **`223/214`**，即 184 read + 30 governed mutation。
+
+**真实层级与危险语义：**生产 tree 证明 space 根 ID 为正；两个系统 folder 使用负 ID，自建 folder
+使用正 ID；dashboard 的 space/folder 坐标由树继承。note 是 dashboard `ui_config` 中
+`subject=notes` 的嵌入项，不是 space→folder→dashboard 之后的第四层目录资源。各 move 的含义不同：
+`space.move` 是向精确 `uid` 移交所有权；`folder.move` 是携后代跨 space；`dashboard.move` 是 batch/跨
+space；`dashboard.folder.move` 是同 space 拖入 folder/未分组；order route 只保存同级顺序。
+
+父删除不是级联删 dashboard。folder delete 的生产 dry-run 在写前报告
+`descendant_count=1, dashboards_moved=1, dashboards_deleted=0`，执行后 dashboard `248507` 仍可见；
+space delete 的生产 dry-run报告 `descendant_count=2, dashboards_moved=2, dashboards_deleted=0`，执行后
+dashboard `248506/248507` 均迁到创建者 space `276292` 的系统 folder `-1`。测试
+`test_parent_delete_preview_reports_relocation_before_write` 还用含负 ID 系统 folder 的树锁定“预览先读、
+精确计数、write=0”。dashboard 删除则先逐个读 detail，任何 report association 都拒绝；本轮最后以
+一个 batch write 删除两个 marker-owned、report_count=0 的 dashboard。
+
+**治理框架扩展：**原 mutation policy 只允许 POST/create|update|delete，不能表达 upstream 的两个 GET
+delete 与 move/copy。本轮只扩展注册 operation 的 exact GET/POST 及 create/update/delete/move/copy action；
+authorization 仍是一次性快照，transport 固定 attempts=1，自动重试仍禁止。Kanban 父删除 dry-run
+允许只读 tree/detail 以计算影响，但不铸造写授权；execute 会重新读 preimage、逐对象校验
+`GSDK-<12 hex>`、只发一次写，再读回。负数系统 folder 只在响应模型中允许，调用方目标仍必须是正 ID
+或显式 `0=未分组`。CLI/SDK/Plan/Agent 共用同一 action router；Plan 只允许显式 `preview|execute`，Agent
+card 声明 `natural_language_auto_execute=false`。共享 CLI/Plan/Agent spine 均保持原 quality ratchet。
+
+**端到端实录：**全部 preview 均 `write_sent=false`，全部 execute 均 `attempts=1`、mutation status
+`success`。实际步骤和返回为：
+
+1. `space.create(app=27018426, SDK Kanban E2E)` → `created`, id `276502`, marker `GSDK-acceefa3acd0`。
+2. `folder.create(space=276502, SDK Folder E2E)` → `created`, id `170568`, marker `GSDK-c65a9fb6b3b8`。
+3. `dashboard.create(space=276502, folder=170568)` → `created`, id `248506`, marker `GSDK-666a6eb5b7e8`。
+4. `dashboard.rename(id=248506)` → `updated`，新名保留同一 marker。
+5. `dashboard.move-folder(id=248506, folder=0)` → `moved`，读回 `folder_id=null`。
+6. `dashboard.copy(id=248506, to_folder=170568)` → `copied`, id `248507`, marker `GSDK-76ffe1d1e43a`。
+7. `dashboard.notes.replace(id=248506, notes=1)` → `updated`，读回 note `notes_8b13ad987afb`、marker `GSDK-8b13ad987afb`、report_count `0`。
+8. `note.delete(notes_8b13ad987afb)` → `deleted`，detail 读回确认不存在。
+9. `folder.delete(170568)` → `deleted`；dry-run/execute 均明确迁移 dashboard `248507`，删除 dashboard 数 `0`。
+10. `space.delete(276502)` → `deleted`；dry-run/execute 均明确迁移两个 dashboard，删除 dashboard 数 `0`。
+11. `dashboard.delete-many([248506,248507], space=276292)` → `deleted`，删除前两份 detail 均无 report。
+12. 最终 `analysis.dashboard.tree` → `GSDK-` marker count **0**，本轮 space/folder/dashboard/note 全无残留。
+
+**生产请求账本：**Gravity operation HTTP 共 **53** 次，另有 2 次不带凭据的公开静态 bundle GET；
+合计 **55 < 60**。以下 53 条均来自本地 HTTP receipt，全部 HTTP 200、attempt 1、`retry=false`。#04 是
+首次写前 guard 发现负数系统 folder 后的安全失败（没有发 write），#05 是值无关 shape 诊断；随后修正
+响应模型并完成一次闭环。同期 receipt 目录中的 Segment 请求属于另一执行流，不计入本单元。
+
+```text
+01 authentication | POST | 200 | retry=false
+02 app.list | GET | 200 | retry=false
+03 analysis.dashboard.tree | GET | 200 | retry=false
+04 analysis.dashboard.tree | GET | 200 | retry=false
+05 analysis.dashboard.tree | GET | 200 | retry=false
+06 analysis.dashboard.tree | GET | 200 | retry=false
+07 analysis.datamanageconfig.kanban.space.create | POST | 200 | retry=false
+08 analysis.dashboard.tree | GET | 200 | retry=false
+09 analysis.dashboard.tree | GET | 200 | retry=false
+10 analysis.datamanageconfig.kanban.folder.create | POST | 200 | retry=false
+11 analysis.dashboard.tree | GET | 200 | retry=false
+12 analysis.dashboard.tree | GET | 200 | retry=false
+13 analysis.datamanageconfig.kanban.dashboard.create | POST | 200 | retry=false
+14 analysis.dashboard.tree | GET | 200 | retry=false
+15 analysis.dashboard.tree | GET | 200 | retry=false
+16 analysis.dashboard.tree | GET | 200 | retry=false
+17 analysis.datamanageconfig.kanban.dashboard.dc7858a7.update | POST | 200 | retry=false
+18 analysis.dashboard.tree | GET | 200 | retry=false
+19 analysis.dashboard.tree | GET | 200 | retry=false
+20 analysis.dashboard.tree | GET | 200 | retry=false
+21 analysis.kanban.dashboard.folder.move | POST | 200 | retry=false
+22 analysis.dashboard.tree | GET | 200 | retry=false
+23 analysis.dashboard.tree | GET | 200 | retry=false
+24 analysis.dashboard.detail | GET | 200 | retry=false
+25 analysis.dashboard.tree | GET | 200 | retry=false
+26 analysis.dashboard.detail | GET | 200 | retry=false
+27 analysis.datamanageconfig.kanban.dashboard.copy | POST | 200 | retry=false
+28 analysis.dashboard.tree | GET | 200 | retry=false
+29 analysis.dashboard.detail | GET | 200 | retry=false
+30 analysis.dashboard.detail | GET | 200 | retry=false
+31 analysis.datamanageconfig.kanban.dashboard.update | POST | 200 | retry=false
+32 analysis.dashboard.detail | GET | 200 | retry=false
+33 analysis.dashboard.detail | GET | 200 | retry=false
+34 analysis.dashboard.detail | GET | 200 | retry=false
+35 analysis.datamanageconfig.kanban.note.update | POST | 200 | retry=false
+36 analysis.dashboard.detail | GET | 200 | retry=false
+37 analysis.dashboard.tree | GET | 200 | retry=false
+38 analysis.dashboard.tree | GET | 200 | retry=false
+39 analysis.datamanageconfig.kanban.folder.delete | GET | 200 | retry=false
+40 analysis.dashboard.tree | GET | 200 | retry=false
+41 analysis.dashboard.tree | GET | 200 | retry=false
+42 analysis.dashboard.tree | GET | 200 | retry=false
+43 analysis.datamanageconfig.kanban.space.delete | GET | 200 | retry=false
+44 analysis.dashboard.tree | GET | 200 | retry=false
+45 analysis.dashboard.tree | GET | 200 | retry=false
+46 analysis.dashboard.detail | GET | 200 | retry=false
+47 analysis.dashboard.detail | GET | 200 | retry=false
+48 analysis.dashboard.tree | GET | 200 | retry=false
+49 analysis.dashboard.detail | GET | 200 | retry=false
+50 analysis.dashboard.detail | GET | 200 | retry=false
+51 analysis.datamanageconfig.kanban.dashboard.delete | POST | 200 | retry=false
+52 analysis.dashboard.tree | GET | 200 | retry=false
+53 analysis.dashboard.tree | GET | 200 | retry=false
+```
+
+两次公开静态 GET 分别读取 hash-matched Dashboard 与 Layout bundle，均 HTTP 200、无重试；只用于确认
+路由调用关系，不携带业务凭据或对象数据。没有发送 share、space transfer、跨 space move、order save、
+report unlink、任何多维报表/素材/资产 mutation，也没有触碰 holdout/final、key、recognizer、题集或评分。
+
+**动线与错误审计：**新增“创建并管理可持久化的看板工作区与分析便签”1 条闭环动线；表从
+`51 = 42 / 1 / 8` 变为 **`52 = 43 / 1 / 8`**。canonical 产品卡从 42 增到 43。caller-recoverable
+全仓审计为 **`1112 = A308 / B434 / C370`**；相对基线新增 **37** 个点，**37/37 均为 A 档**。
+
+**最终验证：**unittest **1080/1080**；pytest **1080 passed / 3009 subtests passed**；文档测试
+**4 passed**，agent skill 生成器 `--check` 通过；compiler **223 operations / 11 manifests**；quality
+**PASS operations=223 / provenance=223 / operation_literals=57**；CLI help 与 `git diff --check` 均通过。
+相对题面基线，主测试数只增不减（`1077 → 1080`）。
+
 ## 冷启动 metadata onboarding 与产品卡排序（2026-08-16）
 
 **提案与边界：**工作提案保存在 ignored `tmp/codex/metadata-onboarding/proposal.md`。单 App sync 的
@@ -3583,3 +3706,23 @@ quality PASS（operations=205）、CLI help 与 `git diff --check` 均通过。c
 compiler 为 **205 operations / 11 manifests**，quality 和 CLI help 通过。caller-recoverable 审计为
 `1084 = A281 / B434 / C369`。本次纯合并生产 Gravity HTTP **0 次**；未运行真实 holdout/final/all、
 未读 key，未修改 recognizer、题集或评分逻辑。
+
+## Kanban 写能力合入 dev（2026-08-16）
+
+**合并裁决：**将 `origin/dev@4646347` 以 merge 方式合入 `codex/write-kanban`，共同祖先为
+`3295e62`。17 个共同修改文件中，`roadmap.md`、`analysis-journeys.md`、`index.md` 与
+`technical-debt.md` 同时保留 Kanban 和 dev 四条线的追加结论；README、Agent workflow 与 CLI
+参考按合并后的真实能力重写计数和边界。`docs/agent-skills/*` 没有手工拼接，而是在合并
+`generate_agent_skills.py`、产品卡和 operation 源后统一重新生成并通过 `--check`。
+
+能力集合同时保留 `kanban.mutation`、`metadata:sync_app` 与 `metadata:status` 三张相对共同基线新增的
+canonical 卡，产品卡从 `42 + 1 + 2` 得到 **45**，45 个 selector 全部唯一；Plan 同时保留 Kanban
+显式 `preview|execute` 路由、metadata database 传递与固定 composite 的 metadata-aware 执行。
+caller-recoverable 审计从两侧增量合并为 **`1121 = A318 / B434 / C369`**，计数断言按实际集合更新，
+没有以任一父提交的旧值覆盖另一边。
+
+**计数与验证：**动线表按状态列重数为 **`52 = 43 / 1 / 8`**；unittest **1090**，pytest
+**1090 passed / 3009 subtests passed**；compiler **223 operations / 11 manifests**；quality PASS
+（operations/provenance **223/223**、operation literals 57），生成器 check 与 `git diff --check` 均通过。
+本次纯合并生产 Gravity HTTP **0 次**；未运行真实 holdout/final/all、未读 key，未修改 recognizer、
+题集或评分逻辑，也未实现任何 share 语义。合并与交叉测试没有发现任一父线的实现缺陷。
