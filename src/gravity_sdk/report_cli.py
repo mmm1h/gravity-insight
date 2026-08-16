@@ -10,6 +10,7 @@ from .report_mutation import (
     create_report, create_subscription, delete_report, delete_subscription,
 )
 from .report_products import report_directory, report_subscriptions
+from .custom_metric_cli import add_custom_metric_commands
 
 
 def add_report_commands(
@@ -69,6 +70,8 @@ def add_report_commands(
     unsubscribe.add_argument("--subscription-id", required=True, type=positive_int)
     _mode(unsubscribe)
     unsubscribe.set_defaults(_gravity_handler=_dispatch_unsubscribe)
+
+    add_custom_metric_commands(commands, positive_int)
 
 
 def _dispatch_directory(args: Any, _object_input: Any) -> dict[str, Any]:

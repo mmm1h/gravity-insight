@@ -497,6 +497,35 @@ Plan request 同时展开 `platforms/include_hourly` 的中性默认值；泛 `b
 request 为 `{"name":"custom_audience"}`；`capabilities("custom audience coverage status")`
 离线返回唯一卡。
 
+## Custom Metric Definitions
+
+`custom_metrics(max_pages=1000, max_items=100000)` 完整读取当前 turbo confmetric 目录。
+`custom_metric_mutation_schema()` 与 `custom_metric_mutation(action, inputs, execute=False)` 提供统一闭合合同；
+也可直接调用 `create_custom_metric(...)`、`update_custom_metric(...)` 和
+`delete_custom_metric(metric_id, execute=False)`。创建/更新共用 upstream upsert，但 SDK 只暴露不同动作：
+
+```python
+preview = gravity.create_custom_metric(
+    name="Cost definition", formula="ap_cost", description="reviewed",
+    display_format=1, idempotency_key="ticket-123", execute=False,
+)
+created = gravity.create_custom_metric(
+    name="Cost definition", formula="ap_cost", description="reviewed",
+    display_format=1, idempotency_key="ticket-123", execute=True,
+)
+metric_id = created["target"]["id"]  # opaque string; never coerce to int
+updated = gravity.update_custom_metric(
+    metric_id=metric_id, name="Cost definition v2", formula="ap_cost",
+    description="reviewed update", display_format=2, execute=True,
+)
+deleted = gravity.delete_custom_metric(metric_id, execute=True)
+```
+
+create 写 `GSDK-<12 hex>` 并读回；update/delete 复用共享 marker-or-owner gate，写后再次读回。
+返回 `gravity-insight.custom-metric-mutation.v1`，不自动重放。Plan composite 名为
+`custom_metric_mutation`，只接受显式 `preview|execute`；四张 Agent 卡分别表达 list/create/update/delete。
+权限可见范围更新和 share 不在此面。
+
 ## Multidim
 
 `multidim_input_schema()` 是 CLI、SDK、Plan 和 Agent 共用的闭合机器合同。公开 input 直接使用

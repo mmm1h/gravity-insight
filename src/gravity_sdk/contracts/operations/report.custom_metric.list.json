@@ -1,0 +1,40 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 20953,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 2,
+    "description": "从当前 turbo confmetric 命名空间读取账号自定义指标，供 CRUD 读回与分析引用。",
+    "domain": "report",
+    "effect": "read",
+    "examples": [{"name": "minimum_read", "description": "Read the first bounded page.", "inputs": {"filters": [], "page": 1, "page_size": 20}}],
+    "input_fields": {
+      "filters": {"type": "array", "default": []},
+      "page": {"type": "integer", "default": 1},
+      "page_size": {"type": "integer", "default": 5000}
+    },
+    "live_probe": {"enabled": true, "inputs": {"filters": [], "page": 1, "page_size": 1}},
+    "operation_id": "report.custom_metric.list",
+    "pagination": {"default_page_size": 5000, "kind": "page_info", "list_path": "data.list", "max_page_size": 5000, "page_field": "page", "page_info_path": "data.page_info", "page_size_field": "page_size", "total_page_field": "total_page"},
+    "path_template": "/turbo_engine/api/v3/confmetric/custom_metric/list/",
+    "platform": null,
+    "privacy_policy": {"classification": "configuration", "redact_fields": ["authorization", "access_token", "token", "cookie", "password", "secret", "refresh_token", "session_token"]},
+    "provenance": {"applied_overrides": [], "family": null, "platform": null, "source_files": ["operations/report.custom_metric.list.json"]},
+    "request": {"body_fields": ["page", "page_size", "filters"], "defaults": {"filters": [], "page": 1, "page_size": 5000}, "fixed_body": {}, "fixed_query": {}, "path_fields": [], "query_fields": []},
+    "required_parent": [],
+    "resource": "confmetric_custom_metric_current",
+    "response_projection": {
+      "data_keys": ["list", "page_info"],
+      "dynamic_item_fields": [],
+      "item_keys": ["id", "name", "cname", "metric_type", "tag_ids", "exclusion_dims", "tip", "label", "status", "created_at", "updated_at", "formula", "config", "display_format", "format", "show_format", "broken_words", "date", "cid", "create_time", "create_user_id", "create_user_name", "data_topic", "invalid", "is_multi_day", "modify_time", "share_list", "system_msg", "update_user_id", "update_user_name"],
+      "required_data_keys": ["list"],
+      "scalar_list_item_types": {"broken_words": "string", "exclusion_dims": "string", "tag_ids": "integer"}
+    },
+    "semantic_error_rules": ["code", "extra.error"],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "report.json"
+}

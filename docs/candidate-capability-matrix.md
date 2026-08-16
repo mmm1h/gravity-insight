@@ -2,8 +2,8 @@
 
 本矩阵记录 17 项候选能力在 2026-08-12 受控只读探测后的真实状态，并原位追加 2026-08-14 至
 2026-08-16 的后续取证结论，供开发决策使用。仓库当前基线为
-[223 个 operation、其中 214 个 stable operation](capability-coverage.md)：184 条 stable read 加
-30 条逐项治理的 mutation（7 条 Segment、5 条报表/订阅、18 条 Kanban）；写 operation 不是本矩阵的 read candidate，
+[226 个 operation、其中 217 个 stable operation](capability-coverage.md)：185 条 stable read 加
+32 条逐项治理的 mutation（7 条 Segment、5 条报表/订阅、18 条 Kanban、2 条自定义指标）；写 operation 不是本矩阵的 read candidate，
 但本页追加其解锁读合同的生产证据。
 
 `analysis.default_val.list`、D35、F40、`report.report.list/detail` 与 `report.subscribe.list` 已晋升，其余候选
@@ -411,3 +411,22 @@ F41 页面明确空；D28 在目标上限 8 次前停于 7 次。没有 write、
 HTTP 共 16 次，全部在全局 40 次上限内。逐请求账本与辅助/目标边界见[路线图当前章节](roadmap.md#设置应用元数据与变现报表复核2026-08-16)。
 J39 从完全缺失转已闭环，台账由 `52 = 43 / 1 / 8` 变为 **`52 = 44 / 1 / 7`**；F41 与 D28
 保持完全缺失。operation/stable 仍为 223/214；canonical 产品卡仍 45，精确 gap 为 9。
+
+## 2026-08-16 追加判定：自定义指标口径定义
+
+这不是 17 项 read candidate 的替代；它新增一个受治理语义对象产品。hash-matched 当前前端证明
+turbo `custom_metric/edit` 是 create/update upsert、turbo `delete` 是当前删除，生产再证明当前 turbo
+create 的对象会被旧 `/report/.../custom_metric/list` 读到并供 Multidim live metadata 使用。当前和旧
+前缀因此并存，旧 stable read 不迁移。哈希 delete 后缀 `8ef6d12d` 是新 method/path 与旧 operation ID
+碰撞后的 SHA-256 前八位，不是第三种删除语义。
+
+生产固定 App 29034827、2026-06-01 至 2026-07-10、公式 `ap_cost`。标准对照和自定义指标查询各返回
+40 个日行；自定义结果 40/40 行都含 non-null 请求指标列。平台 ID 实证为 opaque string
+`pIgEhWsPjMvEfWrW_277516`；更新后删除，当前目录两次明确空、残留 0。新增 stable 当前 list/upsert/delete
+3 条 operation，并新增 list/create/update/delete 四张独立产品卡；当前总数为 226/217、49 卡、284
+selector，动线为 `53 = 45 / 1 / 7`。完整权限裁决、40 条旧前缀清单和 18 次 HTTP 账本见
+[路线图当前章节](roadmap.md#自定义指标口径-crud-与-confmetric-前缀裁决2026-08-16)。
+
+`metadata.engine.datamanageconfig.metrics.create` 已证明是 role-level `metrics_dict` 保存，不是自定义指标
+create；`report.engine.confmetric.permission.update` 会覆盖角色可见指标/维度并影响其他用户，因此两者
+都保持 blocked reservation，permission 未发送生产请求。share 同样不在本轮范围。

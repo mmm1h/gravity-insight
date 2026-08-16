@@ -25,6 +25,8 @@ _SEMANTIC_VERIFICATION = {
 _GOVERNED_CARD_KINDS = {
     "analysis_query_spec",
     "composite",
+    "custom_metric_list",
+    "custom_metric_mutation",
     "export",
     "material_asset",
     "report_mutation",

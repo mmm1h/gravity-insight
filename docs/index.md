@@ -21,6 +21,7 @@
 | 查看自定义人群覆盖与状态 | [Agent 工作流](agent-workflow.md) | [CLI 参考](reference/cli.md#custom-audiences) |
 | 从漏斗/规则创建、更新、刷新或安全删除分群 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Segment Mutation](reference/cli.md#segment-mutation-v1)、[分群删除能力调查](research/segment-delete-capability.md) |
 | 创建或安全删除报表与报表订阅 | [Agent 工作流：受治理写入](agent-workflow.md#受治理写入统一两步确认) | [CLI 参考：报表目录与订阅](reference/cli.md#报表目录与订阅) |
+| 创建、更新、查询或安全删除自定义指标口径 | [Agent 工作流：受治理写入](agent-workflow.md#受治理写入统一两步确认) | [CLI 参考：自定义指标](reference/cli.md#自定义指标口径-crud) |
 | 声明调用方业务词和派生指标公式 | [调用方语义任务指南](agent-skills/caller-semantics.md) | [Workspace 参考：调用方语义上下文](reference/workspace.md#调用方语义上下文) |
 | 批量发现并执行交叉查询 | [Agent 工作流：显式 Plan](agent-workflow.md#3-交叉查询一个显式-plan) | [CLI Plan 参考](reference/cli.md#plan-v1) |
 | 在 Python 中集成 SDK | [Python SDK 参考](reference/sdk.md) | [架构与概念](architecture.md) |
@@ -67,8 +68,8 @@
   订阅固定 disabled、无收件人，不调用 test route，也不进入 Plan v1。
 - 发现只返回候选以及 Plan node 或受控编译交接，不会从自然语言自动执行。
 
-当前安装时目录为 277 个 selector：223 个 operation、45 张产品卡与 9 个精确 gap；214 个 stable
-operation 由 184 read + 30 governed mutation 组成。17 个候选中
+当前安装时目录为 284 个 selector：226 个 operation、49 张产品卡与 9 个精确 gap；217 个 stable
+operation 由 185 read + 32 governed mutation 组成。17 个候选中
 `analysis.default_val.list`、D35、F40、报表目录与订阅清单已晋升；不要把其余 `draft` 能力写入生产 Plan。
 逐项 blocker 以[候选能力证据矩阵](candidate-capability-matrix.md)为准。
 

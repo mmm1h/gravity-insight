@@ -112,14 +112,14 @@
 
 ## 明确不登记为债务
 
-以下模式经审计判定为**合理领域边界**，不因文件数量多而登记：45 个 `agent_*.py`、
-10 个 `_field_policy_*.py`、21 个 `*_cli.py`。不建议合并它们，不建议把 `*_cli.py` 换成动态命令
+以下模式经审计判定为**合理领域边界**，不因文件数量多而登记：66 个 `agent_*.py`、
+11 个 `_field_policy_*.py`、30 个 `*_cli.py`。不建议合并它们，不建议把 `*_cli.py` 换成动态命令
 注册，不建议增加字段 DSL，不建议统一所有 composite result/error/pagination 模型，
 不建议放宽或更新 baseline 来容纳增长。
 
 ## 已关闭结构债务
 
-Agent catalog 产品/gap 共源债务已关闭：目录从现有 card owner 程序化覆盖 45/45 张 canonical 产品卡，
+Agent catalog 产品/gap 共源债务已关闭：目录从现有 card owner 程序化覆盖 49/49 张 canonical 产品卡，
 投影 9/9 个登记 gap，并以双向 product/manifest/ledger parity 门禁区分 product、raw operation 与
 不可执行 gap；没有新增第二套 registry，原唯一 J35 状态冲突归零。
 
@@ -201,3 +201,7 @@ Kanban mutation 复用既有 one-shot authorization、marker、preimage/readback
 330/175 SLOC，331 SLOC support 承担既有目录/readback；共享 principal 与 marker-or-owner 判据下沉为窄
 lifecycle/ownership 原语，one-shot executor 未改。Kanban dashboard delete 随同一触发下沉后原模块为
 414 SLOC；quality ratchet 只收紧，没有新增活动结构债条目。
+
+自定义指标 CRUD 复用同一 marker-or-owner gate、one-shot executor 和已有 card/composite/Plan 三件套；
+confmetric family core、wire、CLI、SDK 与 Agent 卡均下沉到领域模块，Plan 只把既有 Kanban 单点分派收进
+窄 mutation family router。共享 spine 未触发 SLOC/复杂度阈值，本轮复核不新增活动结构债条目。

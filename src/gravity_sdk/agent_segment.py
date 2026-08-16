@@ -100,8 +100,9 @@ def is_authoritative_direct_card(card: Mapping[str, Any]) -> bool:
     from .agent_material_asset import is_authoritative_material_asset_card
     from .agent_kanban_mutation import is_kanban_mutation_card
     from .agent_report_mutation import is_report_mutation_card
+    from .agent_custom_metric import is_custom_metric_card
 
-    return is_authoritative_export_card(card) or is_authoritative_material_asset_card(card) or is_kanban_mutation_card(card) or is_report_mutation_card(card) or (
+    return is_authoritative_export_card(card) or is_authoritative_material_asset_card(card) or is_kanban_mutation_card(card) or is_report_mutation_card(card) or is_custom_metric_card(card) or (
         card.get("kind") == "segment_rule_spec"
         and card.get("selector") == _SELECTOR
         and card.get("composite") == _COMPOSITE

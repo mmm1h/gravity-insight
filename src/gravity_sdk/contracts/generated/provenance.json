@@ -1,5 +1,5 @@
 {
-  "operation_count": 223,
+  "operation_count": 226,
   "operations": {
     "account.department.list": {
       "applied_overrides": [],
@@ -1567,6 +1567,30 @@
       "platform": null,
       "source_files": [
         "operations/report.company_amount.query.json"
+      ]
+    },
+    "report.confmetric.custom.metric.8ef6d12d.delete": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.confmetric.custom.metric.8ef6d12d.delete.json"
+      ]
+    },
+    "report.confmetric.custom.metric.update": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.confmetric.custom.metric.update.json"
+      ]
+    },
+    "report.custom_metric.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.custom_metric.list.json"
       ]
     },
     "report.hour_comparison.query": {

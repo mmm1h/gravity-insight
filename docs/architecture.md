@@ -216,7 +216,7 @@ worker 默认 6、上限 24，Plan adapter 固定 1，`max_items` 由父扫描�
 
 ### 候选能力不等于已交付能力
 
-当前基线是 223 个 operation、214 个 stable。17 个 Analysis、Report、App 和 Attribution
+当前基线是 226 个 operation、217 个 stable。17 个 Analysis、Report、App 和 Attribution
 候选均已得到明确取证结论；D35 与 F40 已晋升 stable，其余未晋升项保持 `draft`。逐项证据、
 blocker 和下一步最小证据见[候选能力证据矩阵](candidate-capability-matrix.md)。
 `attribution.attribution.query` 与 `attribution.attribution_detail.query` 均已有正式受治理产品面；

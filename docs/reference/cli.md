@@ -871,6 +871,28 @@ gravity reports unsubscribe --subscription-id <marked-subscription-id> --dry-run
 后三条也只有在人审 preview 后，才用原参数将 `--dry-run` 改为 `--execute`。ID、名称、配置、日期和
 列名必须来自调用方或已登记目录，不从自然语言复制或猜测。
 
+### 自定义指标口径 CRUD
+
+当前 turbo confmetric 目录提供完整的 list/create/update/delete 产品面。create 和 update 共用上游
+`edit` upsert：省略字符串 ID 是创建，带列表返回的精确字符串 ID 是更新；调用方不直接构造 wire
+`config`。所有 mutation 默认只做零网络 preview，执行时单次写入、无自动重放并在写前后完整读回。
+
+```powershell
+gravity reports custom-metrics schema
+gravity reports custom-metrics list
+gravity reports custom-metrics create --name <name> --formula <formula> `
+  --description <text> --display-format 1 --idempotency-key <key> --dry-run
+gravity reports custom-metrics update --metric-id <string-id> --name <name> `
+  --formula <formula> --description <text> --display-format 2 --dry-run
+gravity reports custom-metrics delete --metric-id <string-id> --dry-run
+```
+
+人工审查后只把同一命令的 `--dry-run` 改为 `--execute`。create 在 `tip` 写
+`GSDK-<12 hex>`；update/delete 必须由该 marker 或列表暴露的 `create_user_id == current principal`
+通过共享 owner gate。删除后再次完整读取当前目录并证明 ID 消失。Plan 使用
+`custom_metric_mutation` composite 的显式 `preview|execute`，Agent 分别提供
+`custom_metric.list/create/update/delete` 四张卡；自然语言不会自动写。指标权限和 share 不属于本产品。
+
 ### Custom audiences
 
 自定义人群覆盖与状态是独立 Promotion 产品，不属于 promotion performance：

@@ -222,6 +222,7 @@
       "data_item_keys": {
         "extra_data": [],
         "total": [
+          "ap_cost",
           "stat_time"
         ]
       },
@@ -268,6 +269,7 @@
       "item_keys": [
         "advertiser_id",
         "app_id",
+        "ap_cost",
         "click_company",
         "day",
         "gid",

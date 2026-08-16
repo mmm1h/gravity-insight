@@ -47,7 +47,7 @@ from . import plan_promotion_performance_adapter as promotion_plan
 from . import plan_bilibili_account_performance_adapter as bilibili_plan
 from .plan_metadata_adapter import execute_metadata_plan, validate_metadata_plan
 from .plan_receipt_adapter import execute_receipt_query, validate_receipt_query
-from . import plan_kanban_mutation_adapter as kanban_plan
+from . import plan_mutation_adapter as mutation_plan
 from .resolver_support import build_inputs
 from .plan_adapter_support import (
     alias_mapping as _alias_mapping,
@@ -93,7 +93,7 @@ _COMPOSITES = frozenset(
         *segment_plan.COMPOSITE_NAMES,
         user_journey_plan.USER_JOURNEY_NAME,
         *dashboard_plan.COMPOSITE_NAMES,
-        kanban_plan.NAME,
+        *mutation_plan.NAMES,
     }
 )
 _COMPOSITE_OUTPUT_FIELDS = frozenset(
@@ -414,8 +414,8 @@ def _validate_composite(
     workspace: Any,
 ) -> None:
     name = request.get("name")
-    if name == kanban_plan.NAME:
-        kanban_plan.validate_kanban_plan(request, context)
+    if mutation_plan.accepts(name):
+        mutation_plan.validate_mutation_plan(request, context)
         return
     if analysis_plan.is_analysis_composite(name):
         analysis_plan.validate_analysis_plan(
@@ -476,8 +476,8 @@ def _execute_composite(
     sdk: Any, request: Mapping[str, Any], context: AdapterContext, database: Path | None
 ) -> Any:
     name = str(request["name"])
-    if name == kanban_plan.NAME:
-        return kanban_plan.execute_kanban_plan(sdk, request, context)
+    if mutation_plan.accepts(name):
+        return mutation_plan.execute_mutation_plan(sdk, request, context)
     if fixed_plan.is_fixed_composite(name):
         return fixed_plan.execute_fixed_composite(sdk, request, context, database=database)
     if report_plan.is_report_composite(name):
@@ -510,8 +510,8 @@ def _execute_composite(
 def _project_composite(
     result: Any, fields: tuple[str, ...], context: AdapterContext
 ) -> Any:
-    if kanban_plan.is_kanban_result(result):
-        return kanban_plan.project_kanban_result(result, fields, context)
+    if mutation_plan.is_mutation_result(result):
+        return mutation_plan.project_mutation_result(result, fields, context)
     if analysis_plan.is_analysis_result(result):
         return analysis_plan.project_analysis_result(result, fields, context)
     if segment_plan.is_segment_result(result):

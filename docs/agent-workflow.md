@@ -6,7 +6,7 @@
 
 ### 完整目录
 
-第一次接触仓库、或需要确认“现在到底能做什么”时，`agent-catalog categories → category <category> → describe <selector>` 是首要入口，不是附属的 operation 调试命令。三层完全离线，依次回答领域、selector 和完整执行合同，当前覆盖 223 个 operation、45 张产品卡和 9 个精确 gap。category 内机械按 `product → raw_operation → capability_gap`、同类 selector 升序排列，因此产品卡不会被 raw operation 挤出首屏；优先选择 `identity_kind=product`。raw operation 只是专家入口，gap 不可执行。第二层返回 `next_offset` 不代表必须翻页；已知 selector 直接 describe。逐层示例见[完整目录任务指南](agent-skills/catalog-discovery.md)。
+第一次接触仓库、或需要确认“现在到底能做什么”时，`agent-catalog categories → category <category> → describe <selector>` 是首要入口，不是附属的 operation 调试命令。三层完全离线，依次回答领域、selector 和完整执行合同，当前覆盖 226 个 operation、49 张产品卡和 9 个精确 gap。category 内机械按 `product → raw_operation → capability_gap`、同类 selector 升序排列，因此产品卡不会被 raw operation 挤出首屏；优先选择 `identity_kind=product`。raw operation 只是专家入口，gap 不可执行。第二层返回 `next_offset` 不代表必须翻页；已知 selector 直接 describe。逐层示例见[完整目录任务指南](agent-skills/catalog-discovery.md)。
 
 | 已知信息 | 直接执行 | 正常命令数 |
 | --- | --- | --- |
@@ -20,6 +20,7 @@
 | Analysis 默认值字典 | 已知 App：`analysis defaults --app ...`；未知能力但 App 已知：对应 Agent 卡 → `plan run` | 1 / 2 |
 | 创建、更新、刷新或删除分群 | Agent 只交接明确的 `analysis segment ... --dry-run`；人确认后把同一命令改为 `--execute` | 2（预览 / 执行） |
 | 创建/删除报表或创建/删除订阅 | Agent 只交接明确的 `reports create/delete/subscribe/unsubscribe ... --dry-run`；人确认后把同一命令改为 `--execute` | 2（预览 / 执行） |
+| 创建、更新或删除自定义指标 | `reports custom-metrics create|update|delete ... --dry-run`；审查公式、marker 和目标 ID 后同参数 `--execute`，或使用显式 `custom_metric_mutation` Plan preview/execute node | 2（预览 / 执行） |
 | 创建、整理或删除 Kanban 工作区 | `analysis dashboard kanban mutate --action ... --dry-run`；审查层级影响后同参数 `--execute`，或使用显式 `kanban_mutation` Plan preview/execute node | 2（预览 / 执行） |
 | 保存分析/分析模板 | 引用已知：`analysis saved run` / `analysis template run`；引用未知时在线输入解析后按稳定 ID（模板为 scope + ID）精确选择。模板仍只执行 compact Spec 或已证明 artifact | 1 / 2 |
 | 看板控制面/图表重放 | 已知引用：`analysis dashboard snapshot` / `analysis dashboard run`；引用未知时在线输入解析后精确选稳定 ID，再执行 | 1 / 2 |
@@ -43,7 +44,8 @@
 
 ### 受治理写入：统一两步确认
 
-当前 30 条 stable mutation 由 7 条 Segment、5 条报表/订阅与 18 条 Kanban 底层 operation 组成。统一协议是：用权威输入运行 `--dry-run`，人工审查后同一参数只改为 `--execute`；单次发送且不自动重放。Segment 支持 create/update/refresh/delete 家族，报表面使用 `reports create/delete/subscribe/unsubscribe`，Kanban 使用 exact action + JSON input；create 写可读回 marker，delete 执行时重读 marker。Kanban 父删除预览会只读 tree/detail 并在写前报告迁移/删除数；它是唯一可进入 Plan 的写产品，且必须显式选择 `preview|execute`。订阅固定 disabled、空收件人，永不调用 test route。Agent 不从自然语言填值或自动执行。可复制两步命令见[受治理写入任务指南](agent-skills/governed-writes.md)，完整参数见[CLI 参考](reference/cli.md#kanban-受治理写入)。
+当前 32 条 stable mutation 由 7 条 Segment、5 条报表/订阅、18 条 Kanban 和 2 条自定义指标底层 operation 组成。统一协议是：用权威输入运行 `--dry-run`，人工审查后同一参数只改为 `--execute`；单次发送且不自动重放。Segment 支持 create/update/refresh/delete 家族，报表面使用 `reports create/delete/subscribe/unsubscribe`，Kanban 使用 exact action + JSON input，自定义指标使用当前 turbo upsert/delete；create 写可读回 marker，update/delete 执行时重读 marker 或上游 owner。Kanban 和自定义指标可进入 Plan，但必须显式选择 `preview|execute`；前者在父删除预览中报告迁移/删除数，后者在写前展示公式、格式和精确字符串 ID。订阅固定 disabled、空收件人，永不调用 test route。Agent 不从自然语言填值或自动执行。可复制两步命令见[受治理写入任务指南](agent-skills/governed-writes.md)，完整参数见[CLI 参考](reference/cli.md#自定义指标口径-crud)。
+
 ### Multidim
 
 Multidim 使用物理输入，不新增 Spec。它直接使用闭合的 `date_list/time_dims/metrics_list/custom_metrics_list/data_dims/relate_dims/filters/multi_keys` 物理输入；已知 App 和完整输入时直接一次 CLI/SDK 调用。物理指标或维度未知而其余业务输入已知时，第一调用用在线输入解析取得闭合 schema 与完整 live Multidim metadata，调用方精确选择物理名，第二调用由 FieldPolicy 再次 live 校验成员关系及维度排除。Agent 生成的 Plan request 总是带当前 `input_schema_version`；调用方不得删除或改写。在线解析不生成 App、日期、filter value 或业务口径，也不会把模板、布局、收藏、权限、经营 pulse 或 event/funnel Analysis 路由到这里。

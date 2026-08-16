@@ -1,0 +1,31 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 20955,
+  "operation": {
+    "action": "delete",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "通过当前 turbo confmetric 路由删除一个读回后仍满足 marker-or-owner 判据的自定义指标。",
+    "domain": "report",
+    "effect": "mutation",
+    "examples": [],
+    "executable": true,
+    "input_fields": {"id": {"type": "string", "required": true, "max_length": 128}},
+    "live_probe": {"enabled": false, "inputs": {}},
+    "operation_id": "report.confmetric.custom.metric.8ef6d12d.delete",
+    "pagination": {"kind": "none", "list_path": "", "page_field": "", "page_info_path": "", "page_size_field": "", "total_page_field": ""},
+    "path_template": "/turbo_engine/api/v3/confmetric/custom_metric/delete/",
+    "platform": null,
+    "privacy_policy": {"classification": "configuration", "redact_fields": ["authorization", "access_token", "token", "cookie", "password", "secret", "refresh_token", "session_token"]},
+    "provenance": {"applied_overrides": [], "family": null, "platform": null, "source_files": ["operations/report.confmetric.custom.metric.8ef6d12d.delete.json"]},
+    "request": {"body_fields": ["id"], "defaults": {}, "fixed_body": {}, "fixed_query": {}, "path_fields": [], "query_fields": []},
+    "required_parent": [{"input_field": "id", "operation_id": "report.custom_metric.list", "output_path": "data.list[].id", "selection": "caller_select"}],
+    "resource": "confmetric_custom_metric_current",
+    "response_projection": {"data_keys": [], "dynamic_item_fields": [], "item_keys": [], "required_data_keys": []},
+    "semantic_error_rules": ["code", "extra.error"],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "report.json"
+}

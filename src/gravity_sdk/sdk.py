@@ -26,6 +26,7 @@ from .sdk_report import ReportSdkMixin
 from .sdk_segment_members import SegmentMembersSdkMixin
 from .sdk_segment_mutation import SegmentMutationSdkMixin
 from .sdk_kanban_mutation import KanbanMutationSdkMixin
+from .sdk_custom_metric import CustomMetricSdkMixin
 from .template_replay_surface import TemplateSdkMixin
 
 
@@ -39,6 +40,7 @@ class GravitySDK(
     AttributionSdkMixin,
     SegmentMutationSdkMixin,
     KanbanMutationSdkMixin,
+    CustomMetricSdkMixin,
     SegmentMembersSdkMixin,
     ReportSdkMixin,
     MaterialSdkMixin,

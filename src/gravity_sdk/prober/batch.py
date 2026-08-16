@@ -30,7 +30,6 @@ _TIER_ONE_IDS = frozenset(
         "promotion.batch_config.list",
         "promotion.media_directional_package.list",
         "report.confmetric_permission.list",
-        "report.custom_metric.list",
         "report.metric.list",
         "report.report_confmetric_permission.list",
         "report.shared_to_me.list",

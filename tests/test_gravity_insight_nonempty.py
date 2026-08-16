@@ -851,4 +851,4 @@ class GravityInsightNonemptyTests(unittest.TestCase):
         )
 
         # app-info 已取得 schema 并移出 empty-sample 集合；其成功读取仍未成立。
-        assert len(operation_ids) == 117
+        assert len(operation_ids) == 116

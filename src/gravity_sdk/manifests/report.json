@@ -763,12 +763,32 @@
           "label",
           "status",
           "created_at",
-          "updated_at"
+          "updated_at",
+          "formula",
+          "config",
+          "display_format",
+          "format",
+          "show_format",
+          "broken_words",
+          "date",
+          "cid",
+          "create_time",
+          "create_user_id",
+          "create_user_name",
+          "data_topic",
+          "invalid",
+          "is_multi_day",
+          "modify_time",
+          "share_list",
+          "system_msg",
+          "update_user_id",
+          "update_user_name"
         ],
         "required_data_keys": [
           "list"
         ],
         "scalar_list_item_types": {
+          "broken_words": "string",
           "exclusion_dims": "string",
           "tag_ids": "integer"
         }
@@ -1290,6 +1310,7 @@
         "data_item_keys": {
           "extra_data": [],
           "total": [
+            "ap_cost",
             "stat_time"
           ]
         },
@@ -1321,6 +1342,7 @@
         "item_keys": [
           "advertiser_id",
           "app_id",
+          "ap_cost",
           "click_company",
           "day",
           "gid",
@@ -2558,6 +2580,312 @@
           "id"
         ],
         "data_shape": "object",
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 2,
+      "description": "从当前 turbo confmetric 命名空间读取账号自定义指标，供 CRUD 读回与分析引用。",
+      "domain": "report",
+      "effect": "read",
+      "input_fields": {
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 5000,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "filters": [],
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "report.custom_metric.list",
+      "pagination": {
+        "default_page_size": 5000,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 5000,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v3/confmetric/custom_metric/list/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "page",
+          "page_size",
+          "filters"
+        ],
+        "defaults": {
+          "filters": [],
+          "page": 1,
+          "page_size": 5000
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "confmetric_custom_metric_current",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "cname",
+          "metric_type",
+          "tag_ids",
+          "exclusion_dims",
+          "tip",
+          "label",
+          "status",
+          "created_at",
+          "updated_at",
+          "formula",
+          "config",
+          "display_format",
+          "format",
+          "show_format",
+          "broken_words",
+          "date",
+          "cid",
+          "create_time",
+          "create_user_id",
+          "create_user_name",
+          "data_topic",
+          "invalid",
+          "is_multi_day",
+          "modify_time",
+          "share_list",
+          "system_msg",
+          "update_user_id",
+          "update_user_name"
+        ],
+        "required_data_keys": [
+          "list"
+        ],
+        "scalar_list_item_types": {
+          "broken_words": "string",
+          "exclusion_dims": "string",
+          "tag_ids": "integer"
+        }
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "delete",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "通过当前 turbo confmetric 路由删除一个读回后仍满足 marker-or-owner 判据的自定义指标。",
+      "domain": "report",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "id": {
+          "max_length": 128,
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "report.confmetric.custom.metric.8ef6d12d.delete",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v3/confmetric/custom_metric/delete/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "id"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        {
+          "input_field": "id",
+          "operation_id": "report.custom_metric.list"
+        }
+      ],
+      "resource": "confmetric_custom_metric_current",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "update",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "创建或更新 adreport 自定义指标；id 省略为创建，带 id 为 marker-or-owner 治理的更新。",
+      "domain": "report",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "cname": {
+          "max_length": 128,
+          "required": true,
+          "type": "string"
+        },
+        "config": {
+          "max_length": 8192,
+          "required": true,
+          "type": "string"
+        },
+        "display_format": {
+          "enum": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "required": true,
+          "type": "integer"
+        },
+        "formula": {
+          "max_length": 4096,
+          "required": true,
+          "type": "string"
+        },
+        "id": {
+          "max_length": 128,
+          "type": "string"
+        },
+        "tip": {
+          "max_length": 2000,
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "report.confmetric.custom.metric.update",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v3/confmetric/custom_metric/edit/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "cname",
+          "tip",
+          "formula",
+          "display_format",
+          "config",
+          "id"
+        ],
+        "defaults": {},
+        "fixed_body": {
+          "data_topic": "adreport"
+        },
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "confmetric_custom_metric_current",
+      "response_projection": {
+        "data_keys": [],
         "dynamic_item_fields": [],
         "item_keys": [],
         "required_data_keys": []

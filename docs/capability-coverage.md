@@ -8,8 +8,8 @@ manifest 与 `gravity agent <query>` 为准；完整路由账本见
 
 | 范围 | 当前状态 |
 | --- | --- |
-| 编译 operation | 223（原 205 + Kanban 18） |
-| stable operation | 214（184 read / 30 governed mutation） |
+| 编译 operation | 226（原 205 + Kanban 18 + 当前自定义指标 3） |
+| stable operation | 217（185 read / 32 governed mutation） |
 | stable read operation 产品面交叉 | 94 已覆盖 / 82 不应产品化 / 8 原快照待产品化；默认值字典、D35、F40、报表目录与订阅已直接闭环 |
 | 推广 / 素材 stable 原子读取 | 64 / 24 |
 | Census 路由 | 987，全部有明确归类 |

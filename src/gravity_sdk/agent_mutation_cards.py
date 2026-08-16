@@ -6,6 +6,7 @@ from typing import Any
 
 from .agent_kanban_mutation import kanban_mutation_cards
 from .agent_report_mutation import report_mutation_cards
+from .agent_custom_metric import custom_metric_cards
 
 
 def mutation_cards(
@@ -14,6 +15,7 @@ def mutation_cards(
     return [
         *kanban_mutation_cards(query, domain=domain, platform=platform),
         *report_mutation_cards(query, domain=domain, platform=platform),
+        *custom_metric_cards(query, domain=domain, platform=platform),
     ]
 
 

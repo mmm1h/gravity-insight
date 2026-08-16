@@ -10,12 +10,12 @@
 执行，内部 HTTP 数也没有减少。App/平台也未知时不适用该两次路径；默认离线 Agent 的原三次下界保留。
 `gravity.agent-call-bound.v1` 只在本次成功交付完整目录的卡与 Plan 节点上把对应 scenario 声明为 2。
 
-当前程序化重算：**52 条产品动线：已闭环 44 / 部分闭环 1 / 完全缺失 7**。可复算：下表 56 行，
+当前程序化重算：**53 条产品动线：已闭环 45 / 部分闭环 1 / 完全缺失 7**。可复算：下表 57 行，
 减去 2 条兼容/维护便利面、1 条“既有稳定读取面重复”和 1 条“已有结果上的调用方派生便利面”，
-得到 52 条；按状态直接分组为 `52 = 44 / 1 / 7`。本单元开始时 dev 为
-`52 = 43 / 1 / 8`；设置 → 应用管理的真实列表 route 证明 J39 应由既有 stable `app.list` 承载，
-故 `43 + 1 = 44`、`8 - 1 = 7`，总数与部分闭环不变。operation/stable 仍为
-223 / 214（184 read + 30 governed mutation）；canonical 产品卡仍为 45，精确 gap 从 10 减为 9。
+得到 53 条；按状态直接分组为 `53 = 45 / 1 / 7`。设置 → 应用管理先把基线推进到
+`52 = 44 / 1 / 7`；本单元新增“定义、更新并在真实多维查询中使用自定义指标”这一条独立闭环，
+故总数和已闭环各加 1。operation/stable 为 226 / 217（185 read + 32 governed mutation）；
+canonical 产品卡为 49，精确 gap 为 9，安装目录共 284 个 selector。
 部分闭环的 Analysis 导出只关闭了单用户事件子类；7 条完全缺失里多数是合同证据阻塞，逐行有记录。
 
 2026-08-16 沿设置 → 应用管理 / 元数据和多维报表入口做受控生产复核。App 管理的账号级 GET
@@ -28,6 +28,13 @@ HTTP 200 明确空；没有合法 `table_id`，detail/version 均未发送，F41
 虽均为 200，但一次错误 operator、一次正确当前 filter 都被语义拒绝，中间一次宽查询自动读取 5 页且
 1124 个旧目录项中没有 `monetization_report`。因此本轮三选一判为“请求参数/路由不对”，不能据此断言
 租户无数据或权限未生效；在每线 8 次上限前停手，不发送主结果 route，不登记任何推测响应字段。
+
+2026-08-16 自定义指标闭环使用当前 turbo `custom_metric/list|edit|delete` 创建并读回
+`GSDK-67f4c39fba2d`，平台分配字符串 ID `pIgEhWsPjMvEfWrW_277516`；更新后，既有旧前缀
+`report.multidim.custom_metric.list` 与 shared 目录完成 live metadata 校验，随后
+`report.multidim.query` 在 App 29034827、2026-06-01 至 2026-07-10 返回 40/40 个含请求指标值的日行。
+删除后当前目录连续两次明确空，残留 0。该任务的定义对象、更新/删除治理和查询消费均可由
+CLI/SDK/Plan/四张独立 Agent 产品卡完成，新增 1 条已闭环动线。
 
 2026-08-16 从 README/索引按十分钟路径生产复验，12 条主路径命令、3 次 HTTP 后取得既有
 `analysis.event.query` 的真实 governed result；认证、`app.list`、最终查询均 HTTP 200，无重试、翻页、
@@ -404,6 +411,7 @@ operation 继续保留专家入口，但明确不是产品等价物；`app.realt
 | 查看精确分群成员及逐人属性 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（自然语言实测、卡面） | `gravity-insight.segment-members.v1` 全量交付上游授权字段；目标非空实证登记 147 个顶层字段，未登记字段仍 fail-closed。route 忽略 `page/page_size` 并一次返回完整结果；触及 `max_items` 显式 `partial`。`fields` 是固定 profile + live `analysis.user_property.list` 动态属性的本地选列输入；未知引用仍按 call-bound 显式声明 3 次，不扩大无 revision/ETag 的在线两次解析模式。 |
 | 从分析结果或规则创建并管理可复用分群 | 已闭环 | 有 / 有 / 设计不适用 / 有 | 2（dry-run / 显式 execute） | 独立任务产出上游分群对象，不与“查看已有分群详情/成员”合并计数。`from_analysis`、`from_rule`、`by_manual`、`save` 已有生产创建/更新/刷新/删除与读回证据；历史版本和临时分群两个 create 变体未生产验证，不作为本行闭环证据。Plan v1 不承诺不可重放写、人工确认、preimage 或写后读回，Agent 只交接两步命令。 |
 | 用显式物理维度、指标和筛选读取多维报表 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（物理字段未知、在线解析） | 闭合 schema + live metadata 提供物理指标/维度候选；日期和 filter value 仍须由调用方精确提供。 |
+| 定义、更新并在多维查询中使用可复用自定义指标 | 已闭环 | 有 / 有 / 有 / 有 | mutation 2（preview / execute）；查询 1 | 当前 turbo `edit` 是 create/update upsert，字符串 ID 省略为 create、带 ID 为 update；删除使用当前 turbo delete。生产闭环以 `ap_cost` 公式创建 marker 指标，更新名称/展示格式后由既有旧前缀 mine/shared metadata 目录验证，再发真实 Multidim 查询取得 40 个非空日行，最后删除并连续两次确认当前目录为空。四张产品卡分别表达 list/create/update/delete；自然语言不自动写，Plan 只接受显式 preview/execute。permission edit 会覆盖角色可见指标，未实现。 |
 | 按平台和物理指标读取推广表现 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（指标未知、在线解析） | 平台须已知；第二次执行重新按平台复验物理指标。 |
 | 查看 B 站账户/产品投放表现 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（日期未知） | 独立于 Promotion Performance；只声明请求日期范围，不伪称结果行有日期或 App/物理指标绑定。`advertiser_name` 等已观察字段受投影总裁决约束：登记后全部暴露，不再按本地隐私策略省略。 |
 | 读取巨量广告主消耗、余额、预算模式和状态 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | 独立 `advertiser_profile` 完整读取，不并入明确排除广告主目录的跨平台推广表现；本轮 `page_size=1` 的页 1/页 2 各 1 次，均 HTTP 200 / `success`，页码回显 1/2 且登记投影行不同，页码分页已验证。 |

@@ -1427,7 +1427,7 @@ class GravityInsightManifestTests(unittest.TestCase):
                 },
                 "report.multidim.query": {
                     "extra_data": [],
-                    "total": ["stat_time"],
+                    "total": ["ap_cost", "stat_time"],
                 },
                 # gi-final-unlock：overview 只暴露在线验证过的聚合列表字段。
                 "report.overview.query": {
@@ -1567,6 +1567,12 @@ class GravityInsightManifestTests(unittest.TestCase):
                 "report.multidim.custom_metric.list": {
                     "tag_ids": "integer",
                     "exclusion_dims": "string",
+                    "broken_words": "string",
+                },
+                "report.custom_metric.list": {
+                    "tag_ids": "integer",
+                    "exclusion_dims": "string",
+                    "broken_words": "string",
                 },
                 "report.multidim.custom_metric.shared.list": {
                     "tag_ids": "integer",

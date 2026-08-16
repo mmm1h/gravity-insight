@@ -106,12 +106,32 @@
         "label",
         "status",
         "created_at",
-        "updated_at"
+        "updated_at",
+        "formula",
+        "config",
+        "display_format",
+        "format",
+        "show_format",
+        "broken_words",
+        "date",
+        "cid",
+        "create_time",
+        "create_user_id",
+        "create_user_name",
+        "data_topic",
+        "invalid",
+        "is_multi_day",
+        "modify_time",
+        "share_list",
+        "system_msg",
+        "update_user_id",
+        "update_user_name"
       ],
       "required_data_keys": [
         "list"
       ],
       "scalar_list_item_types": {
+        "broken_words": "string",
         "exclusion_dims": "string",
         "tag_ids": "integer"
       }

@@ -19,8 +19,8 @@ class ActionableErrorAuditTests(unittest.TestCase):
     def test_actionable_error_inventory_is_complete_and_reproducible(self):
         rows = inventory(ROOT / "src" / "gravity_sdk")
         counts = Counter(item["grade"] for item in rows)
-        assert len(rows) == 1124
-        assert counts == {"A": 321, "B": 434, "C": 369}
+        assert len(rows) == 1145
+        assert counts == {"A": 342, "B": 434, "C": 369}
         assert sum(counts.values()) == len(rows)
 
 

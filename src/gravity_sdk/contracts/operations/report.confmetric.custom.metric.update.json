@@ -1,0 +1,45 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 20956,
+  "operation": {
+    "action": "update",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "创建或更新 adreport 自定义指标；id 省略为创建，带 id 为 marker-or-owner 治理的更新。",
+    "domain": "report",
+    "effect": "mutation",
+    "examples": [],
+    "executable": true,
+    "input_fields": {
+      "cname": {"type": "string", "required": true, "max_length": 128},
+      "config": {"type": "string", "required": true, "max_length": 8192},
+      "display_format": {"type": "integer", "required": true, "enum": [1, 2, 3, 4, 5, 6]},
+      "formula": {"type": "string", "required": true, "max_length": 4096},
+      "id": {"type": "string", "max_length": 128},
+      "tip": {"type": "string", "required": true, "max_length": 2000}
+    },
+    "live_probe": {"enabled": false, "inputs": {}},
+    "operation_id": "report.confmetric.custom.metric.update",
+    "pagination": {"kind": "none", "list_path": "", "page_field": "", "page_info_path": "", "page_size_field": "", "total_page_field": ""},
+    "path_template": "/turbo_engine/api/v3/confmetric/custom_metric/edit/",
+    "platform": null,
+    "privacy_policy": {"classification": "configuration", "redact_fields": ["authorization", "access_token", "token", "cookie", "password", "secret", "refresh_token", "session_token"]},
+    "provenance": {"applied_overrides": [], "family": null, "platform": null, "source_files": ["operations/report.confmetric.custom.metric.update.json"]},
+    "request": {
+      "body_fields": ["cname", "tip", "formula", "display_format", "config", "id"],
+      "defaults": {},
+      "fixed_body": {"data_topic": "adreport"},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [],
+    "resource": "confmetric_custom_metric_current",
+    "response_projection": {"data_keys": [], "dynamic_item_fields": [], "item_keys": [], "required_data_keys": []},
+    "semantic_error_rules": ["code", "extra.error"],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "report.json"
+}

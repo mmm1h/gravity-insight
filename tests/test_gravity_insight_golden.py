@@ -321,6 +321,11 @@ class GravityInsightGoldenTests(unittest.TestCase):
             # F40 完成测试设备父行枚举、单次详情和完整已观察投影后晋升。
             "app.testing_tool.list",
             "attribution.attribution_detail.query",
+            # Current confmetric custom-metric CRUD completed one live
+            # create/read/update/query/delete lifecycle without replacing old routes.
+            "report.custom_metric.list",
+            "report.confmetric.custom.metric.update",
+            "report.confmetric.custom.metric.8ef6d12d.delete",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]

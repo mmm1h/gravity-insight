@@ -3946,3 +3946,158 @@ App `26827043`、`order_status.order_id` 和 2026-08-15 单日；第一次因漏
 生成器 check、CLI help 与 `git diff --check` 全部通过。新增 caller-recoverable error site 为 **0**，审计基线
 保持 **1121 = A318 / B434 / C369**。unittest 的 protected-split 用例只在临时目录生成 synthetic fixture；
 仓库真实 query ledger 未改动，没有读取或运行真实 holdout/final。
+
+## 自定义指标口径 CRUD 与 confmetric 前缀裁决（2026-08-16）
+
+**提案与边界：**书面提案位于 ignored `tmp/codex/custom-metrics/proposal.md`。本轮只实现平台
+自定义指标定义的 list/create/update/delete，并证明该指标能被真实 Multidim 查询消费；不做 share、
+指标权限、维度表、报表模板或其他业务域写入，不读取或运行 holdout/final/key，不执行 GitHub、push、
+PR、tag 或 release 动作。生产总上限 40 HTTP，所有 runtime attempts 固定为 1。
+
+**静态合同裁决：**本机 Census 原始 bundle 与仓库冻结快照逐 SHA-256 相等。当前
+`report-table-DX9hp3vy.js` 证明 `/turbo_engine/api/v3/confmetric/custom_metric/edit/` 是 upsert：body
+固定 `data_topic=adreport`，`id` 省略为 create、存在为 update，`config` 精确编码
+`{formula,display_format}`。`NewReportCenter-Dxgo5EkI.js` 使用当前 turbo delete；Role bundle 仍从旧
+`/report/api/v3/confmetric/custom_metric/list|delete/` 读删同类对象，并从当前 turbo edit 保存。
+生产上由当前 turbo create 产生的字符串 ID 随后被旧 mine 目录直接读到并用于 live metadata 校验，
+所以两前缀是**仍在共同承载同一对象族的并存入口**，不是可据当前证据整体替换的 deprecated/active
+关系。旧 stable route 不迁移、不覆盖。
+
+哈希 delete 不是第三种业务语义：`sha256("POST /turbo_engine/api/v3/confmetric/custom_metric/delete/")`
+前 8 位正是 `8ef6d12d`。reservation 生成器只在 operation ID 冲突时追加该后缀；普通 ID 保留旧
+`/report/.../delete/` reservation，哈希 ID 晋升当前 `/turbo_engine/.../delete/` stable operation。
+两者 body 都是 `{id}`，但 method/path 身份不同，不能合并成同一 operation，也不能用新 route 覆盖旧项。
+
+点名的 `metadata.engine.datamanageconfig.metrics.create` 并非自定义指标 create。Role 控制流在角色
+新增/编辑后发送 `{edit,role_id,metrics_dict}` 到
+`/turbo_engine/api/v2/datamanageconfig/report_metrics/create/`，它保存角色级报表指标权限配置，继续
+保持 blocked reservation。`report.engine.confmetric.permission.update` 的 Role 标签和 payload
+`role_id/data_topic/data_dims_limit/metric_list/metric_permission_type/multi_metric_limit` 证明它改的是
+**角色能看哪些指标/维度**，会覆盖现有角色范围并影响其他用户与非 SDK 指标；按任务停止条件不实现、
+不发生产请求。`custom.metric.share` 同样未实现。
+
+**旧前缀清点：**当前 operation 目录共有 **40** 条 `/report/*`：38 条 stable/executable，加两条
+`analysis.ai.*` experimental/blocked。confmetric 子族正好 5 条，均为旧前缀 stable read；其清单和
+路径如下：
+
+- `report.multidim.custom_metric.list` → `/report/api/v3/confmetric/custom_metric/list/`
+- `report.multidim.custom_metric.shared.list` → `/report/api/v3/confmetric/custom_metric/shared_to_me/list/`
+- `report.multidim.metric.list` → `/report/api/v3/confmetric/metric/list/`
+- `report.multidim.metric_tag.list` → `/report/api/v3/confmetric/tag/list/`
+- `report.multidim.metric_tag_category.list` → `/report/api/v3/confmetric/tag_category/list/`
+
+其余 35 条 `/report/*` operation ID 为：
+
+```text
+analysis.ai.conversation.list [experimental/blocked]
+analysis.ai.message.list [experimental/blocked]
+analysis.dataanalysis.segment.update
+analysis.event.query
+analysis.from.history.version.create
+analysis.from.tmp.segment.create
+analysis.funnel.query
+analysis.monetization_detail.list
+analysis.order_detail.list
+analysis.order_split_detail.list
+analysis.property.query
+analysis.retention.query
+analysis.scatter.query
+analysis.segment.by.manual.update
+analysis.segment.detail
+analysis.segment.evaluate_percent
+analysis.segment.from.analysis.create
+analysis.segment.from.rule.create
+analysis.segment.from.rule.update
+analysis.segment.history_version.list
+analysis.segment.list
+analysis.segment.uid_result.list
+analysis.segment.user_detail.list
+analysis.user_detail.list
+analysis.user_event.list
+analysis.user_postback_log.list
+attribution.attribution.query
+material.report.query
+report.business.query
+report.company_amount.query
+report.hour_comparison.query
+report.multidim.calc_total
+report.multidim.media_enum.list
+report.multidim.query
+report.overview.query
+```
+
+同一当前快照内同时存在 `/report/api/v3/dataanalysis/*`、`/report/api/v3/adreport/*` 和
+`/turbo_engine/api/v3/confmetric/*`；没有“前端整体从 report 迁到 turbo_engine”的控制流证据。
+因此本轮只给新证据充分的 current custom-metric 族新增并存合同，不做 40 条批量改前缀。
+
+**产品实现：**新增 3 条 stable operation：当前 turbo custom-metric list、edit upsert、delete；create
+与 update 是同一 method/path 的两个产品动作，不能伪造重复 operation。Core 统一生成
+`GSDK-<12 hex>`，创建读回 marker/定义，更新与删除复用 `mutation_ownership.py` 的共享
+marker-or-owner gate，写后再完整读回。生产首次读回还纠正了静态 reservation 的错误推断：平台 ID
+是有界 opaque string `pIgEhWsPjMvEfWrW_277516`，不是整数；contracts、CLI、SDK、Plan、Agent 和测试
+均以字符串收紧。当前和旧 mine 列表观察到的 `cid/create_time/create_user_id/create_user_name/
+data_topic/invalid/is_multi_day/modify_time/share_list/system_msg/update_user_id/update_user_name` 已全部登记
+暴露，因而本人无 marker 指标也可由既有 `create_user_owner` 分支证明 owner；共享 gate 源码无需扩展。
+
+四路入口均已闭合：CLI `reports custom-metrics`、SDK `custom_metrics/custom_metric_mutation` 及三个便利
+方法、Plan `custom_metric_mutation` 显式 preview/execute、Agent 四张独立
+`custom_metric.list/create/update/delete` 产品卡。不是“五条相邻 route 压成一张泛卡”。canonical 卡
+由 45 增至 **49**；operation/stable 由 223/214 增至 **226/217**（185 read + 32 mutation）；安装目录
+为 `226 + 49 + 9 = 284` selector。
+
+**真实分析闭环：**先在已有成功证据的同一 App `merge2-main`（29034827）与固定窗口
+2026-06-01 至 2026-07-10 查询标准 `ap_cost`，返回 40 个日行。随后创建公式 `ap_cost` 的 marker 指标，
+更新名称、描述和 `display_format=2`，再执行以下公开产品输入：
+
+```json
+{"date_list":["2026-06-01","2026-07-10"],"time_dims":"day","metrics_list":[],"custom_metrics_list":["pIgEhWsPjMvEfWrW_277516"],"data_dims":[],"relate_dims":[],"filters":[]}
+```
+
+live validation 明确使用旧 `report.multidim.custom_metric.list` 与 shared list，检查 1 个自定义指标；
+`report.multidim.query` 返回 `status=success`、40 行、40 行均含非 null 的请求指标列，首行只持久化字段
+形状 `stat_time + pIgEhWsPjMvEfWrW_277516`，不把生产业务值写入 Git。删除以
+`basis=sdk_source_marker` 通过共享 gate；删除后产品自带读回和额外最终读取都为当前目录 `empty`，
+marker/ID 残留均为 0。
+
+**生产 HTTP 逐请求账本：**实际 **18 / 40**。全部 HTTP 200、attempt 1、retry=false；所有分页项都
+只是 page 1。第 1--2 笔属于首次脚本的保护分支：Multidim 产品在离线拒绝三个底层字段后没有发送标准
+查询或写入，finally 仍完成一次当前目录空校验。第 8 笔是 create 已成功后，本地把 opaque ID 错转
+整数而触发的最终目录核验；纠正合同后从精确字符串 ID 继续，没有重复 create。
+
+| # | operation | method / route | HTTP | retry / page | 结果 |
+| ---: | --- | --- | ---: | --- | --- |
+| 1 | `authentication` | POST `/account_center/api/v1/user_login/v2/` | 200 | false / - | 单次认证 |
+| 2 | `report.custom_metric.list` | POST `/turbo_engine/api/v3/confmetric/custom_metric/list/` | 200 | false / 1 | 首次保护分支；empty，0 write |
+| 3 | `report.multidim.metric.list` | POST `/report/api/v3/confmetric/metric/list/` | 200 | false / 1 | 标准 `ap_cost` live metadata |
+| 4 | `report.multidim.query` | POST `/report/api/v3/adreport/custom_get/` | 200 | false / 1 | 标准对照成功 40 行 |
+| 5 | `report.custom_metric.list` | POST current list | 200 | false / 1 | create preflight empty |
+| 6 | `report.confmetric.custom.metric.update` | POST current edit | 200 | false / - | create，字符串 ID 分配 |
+| 7 | `report.custom_metric.list` | POST current list | 200 | false / 1 | create marker/定义读回 |
+| 8 | `report.custom_metric.list` | POST current list | 200 | false / 1 | ID 类型漂移后的保护核验，1 条 |
+| 9 | `report.custom_metric.list` | POST current list | 200 | false / 1 | update preimage/marker/owner |
+| 10 | `report.confmetric.custom.metric.update` | POST current edit | 200 | false / - | update，一次写 |
+| 11 | `report.custom_metric.list` | POST current list | 200 | false / 1 | update 定义逐字段读回 |
+| 12 | `report.multidim.custom_metric.list` | POST old mine list | 200 | false / 1 | 旧前缀读到新对象并校验 |
+| 13 | `report.multidim.custom_metric.shared.list` | POST old shared list | 200 | false / 1 | shared metadata 明确空 |
+| 14 | `report.multidim.query` | POST `/report/api/v3/adreport/custom_get/` | 200 | false / 1 | 自定义指标成功 40/40 非 null |
+| 15 | `report.custom_metric.list` | POST current list | 200 | false / 1 | delete preimage/marker/owner |
+| 16 | `report.confmetric.custom.metric.8ef6d12d.delete` | POST current delete | 200 | false / - | delete，一次写 |
+| 17 | `report.custom_metric.list` | POST current list | 200 | false / 1 | delete 产品读回 empty |
+| 18 | `report.custom_metric.list` | POST current list | 200 | false / 1 | 独立最终核验 empty、残留 0 |
+
+receipt ID 顺序为 `add5e145…、76b87b7…、22deaa1…、4486d05…、baf15fb…、5613d7c…、
+a992738…、7e3e529…、0dff52b…、f68b50b…、e76fae6…、c5c4147…、2ec6dff…、eede827…、
+8e738cb…、142d1d2…、33832ff…、985f923…`；完整值只在私有 HTTP receipt store，不复制请求或响应体。
+
+**动线、错误与停手：**自定义指标定义是可复用上游语义对象，且本轮真实用于查询，因此新增 1 条已
+闭环产品动线：`52 = 44 / 1 / 7` → **`53 = 45 / 1 / 7`**。新增 caller-recoverable error site 为
+21，全部 A 档；总审计为 **`1145 = A342 / B434 / C369`**。本轮明确忍住未做：角色指标权限、share、
+误命名的 role metric config create、旧 delete 迁移、40 条 `/report/*` 批量迁移、D28 主结果修复、
+维度表、非本账号报表模板，以及任何推广/素材/资产/归因写入。原因分别是影响他人可见性、范围明确
+排除、语义不是目标能力、缺 deprecated 证据、超出本单元或已有产品/安全停止条件。
+
+**最终门禁：**独立 worktree `.venv` 的 unittest 为 **1098 tests OK**；pytest 为
+**1098 passed / 3021 subtests passed**。compiler check 为 **226 operations / 11 manifests**；quality
+PASS（operations/provenance 226/226、operation literals 57），稳定投影 review ledger、Agent Skill 生成器
+check、CLI help 与 `git diff --check` 均通过。新增核心 source 远多于测试增量，符合实现/测试 3:1 棘轮；
+完整测试中的 holdout/final 文本只来自临时目录 synthetic fixture，没有读取或运行真实受保护 split。
