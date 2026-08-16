@@ -326,6 +326,12 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "report.custom_metric.list",
             "report.confmetric.custom.metric.update",
             "report.confmetric.custom.metric.8ef6d12d.delete",
+            # Event/property template lifecycle completed a bounded
+            # create/member-readback/remove/delete production loop.
+            "metadata.event.property.template.079c8246.create",
+            "metadata.event.property.template.create",
+            "metadata.property.template.event.delete",
+            "metadata.property.template.property.delete",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]

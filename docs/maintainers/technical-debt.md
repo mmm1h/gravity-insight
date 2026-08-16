@@ -205,3 +205,8 @@ lifecycle/ownership 原语，one-shot executor 未改。Kanban dashboard delete 
 自定义指标 CRUD 复用同一 marker-or-owner gate、one-shot executor 和已有 card/composite/Plan 三件套；
 confmetric family core、wire、CLI、SDK 与 Agent 卡均下沉到领域模块，Plan 只把既有 Kanban 单点分派收进
 窄 mutation family router。共享 spine 未触发 SLOC/复杂度阈值，本轮复核不新增活动结构债条目。
+
+事件/属性模板 CRUD 将 master、成员身份映射、CLI/SDK/Plan/Agent 分拆到窄领域模块，核心保持在质量
+硬顶内。生产发现 mutation 写后 metadata readback 会命中 10 分钟旧缓存；共享 mutation client 已在
+成功写后统一失效 metadata cache，并由单测和真实 remove/delete 读回锁定。该问题已关闭，不保留为
+活动债务；one-shot authorization、read cache TTL、owner gate 与质量 baseline 均未放宽。

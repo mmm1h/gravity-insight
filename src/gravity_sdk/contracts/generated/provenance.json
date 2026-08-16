@@ -1,5 +1,5 @@
 {
-  "operation_count": 226,
+  "operation_count": 230,
   "operations": {
     "account.department.list": {
       "applied_overrides": [],
@@ -977,6 +977,22 @@
         "operations/material.tencent.list.json"
       ]
     },
+    "metadata.event.property.template.079c8246.create": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/metadata.event.property.template.079c8246.create.json"
+      ]
+    },
+    "metadata.event.property.template.create": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/metadata.event.property.template.create.json"
+      ]
+    },
     "metadata.event_property_template_event.list": {
       "applied_overrides": [],
       "family": null,
@@ -1023,6 +1039,22 @@
       "platform": null,
       "source_files": [
         "operations/metadata.property.list.json"
+      ]
+    },
+    "metadata.property.template.event.delete": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/metadata.property.template.event.delete.json"
+      ]
+    },
+    "metadata.property.template.property.delete": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/metadata.property.template.property.delete.json"
       ]
     },
     "metadata.version.list": {

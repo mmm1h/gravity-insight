@@ -26,7 +26,11 @@ class MutationClientMixin:
     def _execute_mutation(
         self, operation_id: str, inputs: Mapping[str, Any]
     ) -> dict[str, Any]:
-        return self._mutation_executor.execute(operation_id, inputs)
+        result = self._mutation_executor.execute(operation_id, inputs)
+        # Mutation guards must observe upstream state, never a pre-write metadata
+        # cache entry retained by the shared read client.
+        self._metadata_cache.clear()
+        return result
 
     def _current_principal_id(self) -> str | None:
         """Return the shared runtime principal for domain ownership preflight."""

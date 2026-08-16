@@ -14904,11 +14904,30 @@
       "action": "list",
       "auth_profile": "gravity_authorization",
       "block_reason": null,
-      "contract_version": "2",
+      "contract_version": "3",
       "description": "事件属性模板元数据域的事件列表；返回模板关联事件及 common/custom/preset 属性的已验证结构化元数据，remark 和未知字段不输出。",
       "domain": "metadata",
       "executable": true,
       "input_fields": [
+        {
+          "default": {
+            "present": true,
+            "value": []
+          },
+          "description": "",
+          "enum": [],
+          "item_enum": [],
+          "item_type": "object",
+          "max_depth": 5,
+          "max_items": 1,
+          "max_length": null,
+          "min_items": 0,
+          "name": "filters",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "array"
+        },
         {
           "default": {
             "present": true,
@@ -14987,9 +15006,11 @@
       "request": {
         "body_fields": [
           "page",
-          "page_size"
+          "page_size",
+          "filters"
         ],
         "defaults": {
+          "filters": [],
           "page": 1,
           "page_size": 20
         },

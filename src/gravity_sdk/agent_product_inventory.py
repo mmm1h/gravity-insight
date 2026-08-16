@@ -20,6 +20,7 @@ from .agent_segment import segment_capability_inventory
 from .agent_table_lineage import table_lineage_capability_inventory
 from .agent_user_journey import user_journey_capability_inventory
 from .agent_custom_metric import custom_metric_capability_inventory
+from .agent_metadata_template import metadata_template_capability_inventory
 
 
 def canonical_capability_cards(client: Any) -> tuple[dict[str, Any], ...]:
@@ -42,6 +43,7 @@ def canonical_capability_cards(client: Any) -> tuple[dict[str, Any], ...]:
         *kanban_mutation_capability_inventory(),
         *report_mutation_capability_inventory(),
         *custom_metric_capability_inventory(),
+        *metadata_template_capability_inventory(),
         *user_journey_capability_inventory(),
         *material_asset_capability_inventory(),
         *metadata_search_capability_inventory(),

@@ -1815,12 +1815,19 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 2,
+      "contract_version": 3,
       "description": "事件属性模板元数据域的事件列表；返回模板关联事件及 common/custom/preset 属性的已验证结构化元数据，remark 和未知字段不输出。",
       "domain": "metadata",
       "effect": "read",
       "executable": true,
       "input_fields": {
+        "filters": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 1,
+          "min_items": 0,
+          "type": "array"
+        },
         "page": {
           "default": 1,
           "type": "integer"
@@ -1866,9 +1873,11 @@
       "request": {
         "body_fields": [
           "page",
-          "page_size"
+          "page_size",
+          "filters"
         ],
         "defaults": {
+          "filters": [],
           "page": 1,
           "page_size": 20
         },
@@ -1968,12 +1977,19 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 2,
+      "contract_version": 3,
       "description": "事件属性模板元数据域的属性列表；返回模板属性的标识、中英文名、数据类型、通用与预置标记、备注及创建修改时间。",
       "domain": "metadata",
       "effect": "read",
       "executable": true,
       "input_fields": {
+        "filters": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 1,
+          "min_items": 0,
+          "type": "array"
+        },
         "page": {
           "default": 1,
           "type": "integer"
@@ -2019,9 +2035,11 @@
       "request": {
         "body_fields": [
           "page",
-          "page_size"
+          "page_size",
+          "filters"
         ],
         "defaults": {
+          "filters": [],
           "page": 1,
           "page_size": 20
         },
@@ -3873,6 +3891,385 @@
           "postback_list",
           "pay_list"
         ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "update",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "向 marker-or-owner 已验证的事件/属性模板追加精确事件或属性成员，并强制读回成员集合。",
+      "domain": "metadata",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "type": "integer"
+        },
+        "id": {
+          "required": true,
+          "type": "integer"
+        },
+        "name": {
+          "max_length": 128,
+          "required": true,
+          "type": "string"
+        },
+        "need_common": {
+          "default": false,
+          "type": "boolean"
+        },
+        "remark": {
+          "default": "",
+          "max_length": 2000,
+          "type": "string"
+        },
+        "target_id_list": {
+          "item_type": "integer",
+          "max_items": 100,
+          "min_items": 1,
+          "required": true,
+          "type": "array"
+        },
+        "template_type": {
+          "enum": [
+            "meta_property",
+            "event_property",
+            "user_property"
+          ],
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "metadata.event.property.template.create",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/event/property_template/append/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "id",
+          "name",
+          "template_type",
+          "target_id_list",
+          "need_common",
+          "app_id",
+          "remark"
+        ],
+        "defaults": {
+          "need_common": false,
+          "remark": ""
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        {
+          "input_field": "id",
+          "operation_id": "metadata.event_property_template_event.list"
+        }
+      ],
+      "resource": "event_property_template_membership",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "update",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "创建带 GSDK 名称标记的事件/属性模板，或在 marker-or-owner 与删除读回保护下软删同一模板。",
+      "domain": "metadata",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "type": "integer"
+        },
+        "id": {
+          "type": "integer"
+        },
+        "is_deleted": {
+          "enum": [
+            1
+          ],
+          "type": "integer"
+        },
+        "name": {
+          "max_length": 128,
+          "required": true,
+          "type": "string"
+        },
+        "need_common": {
+          "type": "boolean"
+        },
+        "remark": {
+          "max_length": 2000,
+          "type": "string"
+        },
+        "target_id_list": {
+          "item_type": "integer",
+          "max_items": 100,
+          "min_items": 1,
+          "type": "array"
+        },
+        "template_type": {
+          "enum": [
+            "meta_property",
+            "event_property",
+            "user_property"
+          ],
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "metadata.event.property.template.079c8246.create",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/event/property_template/create/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "id",
+          "name",
+          "template_type",
+          "target_id_list",
+          "need_common",
+          "app_id",
+          "remark",
+          "is_deleted"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "event_property_template_master",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "delete",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "在模板 owner gate 与精确成员 preimage 后移除事件成员，并读回确认成员 ID 消失。",
+      "domain": "metadata",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "event_id_list": {
+          "item_type": "integer",
+          "max_items": 100,
+          "min_items": 1,
+          "required": true,
+          "type": "array"
+        },
+        "template_id": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "metadata.property.template.event.delete",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/event/property_template/event_delete/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "template_id",
+          "event_id_list"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        {
+          "input_field": "template_id",
+          "operation_id": "metadata.event_property_template_event.list"
+        }
+      ],
+      "resource": "event_property_template_event_membership",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "delete",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "在模板 owner gate 与精确成员 preimage 后移除事件/用户属性成员，并读回确认成员 ID 消失。",
+      "domain": "metadata",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "property_id_list": {
+          "item_type": "integer",
+          "max_items": 100,
+          "min_items": 1,
+          "required": true,
+          "type": "array"
+        },
+        "template_id": {
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "metadata.property.template.property.delete",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/event/property_template/property_delete/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "template_id",
+          "property_id_list"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        {
+          "input_field": "template_id",
+          "operation_id": "metadata.event_property_template_event.list"
+        }
+      ],
+      "resource": "event_property_template_property_membership",
+      "response_projection": {
+        "data_keys": [],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
       },
       "semantic_error_rules": [
         "code",

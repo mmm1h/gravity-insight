@@ -4161,3 +4161,82 @@ quality PASS（operations/provenance 226/226、operation literals 57）；compil
 11 manifests**；Agent Skill 生成器 `--check` 与 `git diff --check` 均通过。L2 `analysis --limit 50`
 实测在 raw operation 前返回全部 47 张 analysis 产品卡，含 8 张 Segment 与 19 张 Kanban mutation 卡。
 本轮生产 HTTP **0 次**；未碰 recognizer、题集、评分、真实 holdout/final/key 或任何 GitHub/远端动作。
+
+## 事件/属性元数据模板治理 CRUD（2026-08-16）
+
+**书面提案与范围裁决：**ignored 工作稿位于 `tmp/codex/metadata-crud/proposal.md`。题面代码块是 8 条
+operation，加“另有一条 hash create”才是 9；Census 复核为 9/9 全部存在、全部 POST，没有缺条。
+实际只晋升能形成可复用模板生命周期的 4 条：hash `/event/property_template/create/` 承载 create 与
+soft delete，`/append/` 追加成员，`/event_delete/` 与 `/property_delete/` 分别移除事件/属性成员。
+不做 5 条：group/sub-group 三条只保存 Gravity Web 分类、顺序、显隐，SDK 分析不消费；
+`event_property_batch_delete` 没有 marker/owner 字段或同族受治理 create，无法 owner-gate；
+`user_property/import` 会经 XLSX 创建属性，但候选族没有可验证 owner 的清理路由。当前 bundle 另有 Census
+未提取的事件/用户属性写调用点，未绕过 route census 与合同治理接入。Census 同前缀的
+`GET /event/property_template/use_template/` 已是 draft，但前端实际用它按模板创建事件，不是模板 read；
+缺事件 owner/清理链，故不晋升。三条 template list route 已 stable 并复用为治理读回；`event_dim` 按
+产品决定完全搁置。
+
+**产品与安全面：**新增 `metadata_template_mutation` create/append/remove/delete 四个动作，CLI 为
+`gravity metadata property-templates`，统一 SDK、Plan preview/execute 和四张 action-qualified Agent 卡
+共用同一 core。每张 mutation 卡都有复数 `operation_ids`，并锁定
+`natural_language_auto_execute=false`、`confirmation_required=true`、`ready_without_input=false`。
+create/append 输入 App 目录 target ID，但平台会为模板成员重新分配 ID；core 因而以已登记稳定 `name`
+做源目录与成员读回映射，remove 显式接收 `member_ids`。既有模板的 append/remove/delete 都复用
+`require_mutation_authority`：marker 存在即放行，否则必须证明当前 principal 等于 `create_user_id`；
+foreign/missing owner 在写前 `OWNERSHIP_REQUIRED`。remove 先读精确成员 preimage、写后确认成员 ID 消失；
+master delete 先读 master、写后确认 ID 消失。测试另锁定“上游确认但对象仍存在”必须抛
+`ContractChangedError`，不能把 HTTP 200 当删除成功。
+
+**真实闭环输出：**`agent-catalog describe metadata_template.create|remove` 先离线交付上述动作卡；创建
+以 App 27018426 的 event-property 源 ID 2573861 发起，输出经脱敏摘录如下：
+
+```json
+CREATE_PREVIEW={"operation_id":"metadata.event.property.template.079c8246.create","dry_run":true,"network_called":false,"write_sent":false,"confirmation_required":true,"marker":"GSDK-6c612a3c1f78"}
+CREATE_READBACK={"template_id":121075,"name":"metadata CRUD acceptance [GSDK-6c612a3c1f78]","template_type":"event_property","member_ids":[669697]}
+REMOVE_EXECUTE={"status":"updated","operation_id":"metadata.property.template.property.delete","attempts":1,"write_sent":true,"ownership_basis":"sdk_source_marker","changed_member_ids":[669697],"member_ids":[]}
+DELETE_EXECUTE={"status":"deleted","operation_id":"metadata.event.property.template.079c8246.create","attempts":1,"write_sent":true,"ownership_basis":"sdk_source_marker","template_id":121075,"deleted":true}
+```
+
+源 ID 2573861 与成员 ID 669697 不相等是实测事实，不再把两种 ID 混用。第一次 create 后的同进程
+master readback 命中写前 10 分钟 metadata cache，产品按 fail-closed 报“marker 未 round-trip”，没有
+继续写；新进程独立读取证明对象实际已创建。根因是共享 mutation client 成功写后没有失效 metadata
+cache，这会让所有基于 metadata read 的 delete guard 看到旧 preimage。框架现只在成功 mutation 后
+执行一次 cache clear，不改变单次授权、重试或只读缓存策略；单测锁定 clear，生产后续 remove/delete
+各自真实发出写后读回并成功。最终成员为空、master ID 消失，没有测试对象残留。append 与 event-member
+remove 有静态当前 bundle wire、精确合同和异 ID 单测，但本租户闭环只实际执行 property-member remove，
+不把另外两条伪称为生产已执行。
+
+**生产 HTTP 逐请求账本：**实际 **24 / 25**。全部 HTTP 200、attempt 1、retry=false；没有自动重放。
+第 3--12 笔是前置对象可用性调查，其中两个默认 `read_all` 各读取 5 页，已计入预算；第 13--24 笔为
+创建、独立读回、移除和清理。公开静态 bundle 另读取 9 次，不带租户凭据，不计生产 Gravity 预算。
+
+| # | operation | method / route | page | receipt | 作用 |
+| ---: | --- | --- | ---: | --- | --- |
+| 1 | `authentication` | POST `/account_center/api/v1/user_login/v2/` | - | `ab3f29b…` | 单次认证 |
+| 2 | `metadata.event_property_template_event.list` | POST `/event/property_template/event/list/` | 1 | `82ba2991…` | master 可用性/owner shape |
+| 3--7 | `metadata.property.list` | POST `/event/property_template/property_list/` | 1--5 | `b760ac52…` 至 `f0ec14d5…` | 属性模板成员族调查 |
+| 8--12 | `metadata.event_property_template_event_list.list` | POST `/event/property_template/event_list/` | 1--5 | `9e1ccfc3…` 至 `1d3ae831…` | 事件模板成员族调查 |
+| 13 | `analysis.event_property.list` | GET `/event/event_property_list/` | 1 | `ad9d61fd…` | 校验源属性 2573861 |
+| 14 | `metadata.event_property_template_event.list` | POST master list | 1 | `5d64e0ce…` | create preflight |
+| 15 | `metadata.event.property.template.079c8246.create` | POST `/event/property_template/create/` | - | `0ff36039…` | create，一次写 |
+| 16 | `metadata.event_property_template_event.list` | POST master list | 1 | `850bed1b…` | 新进程 marker/master 独立读回 |
+| 17 | `metadata.property.list` | POST property member list | 1 | `2e4440e5…` | 读回成员 669697 |
+| 18 | `metadata.event_property_template_event.list` | POST master list | 1 | `cf107974…` | remove owner gate |
+| 19 | `metadata.property.list` | POST property member list | 1 | `b0c72e76…` | remove preimage |
+| 20 | `metadata.property.template.property.delete` | POST `/event/property_template/property_delete/` | - | `16a55256…` | 移除成员，一次写 |
+| 21 | `metadata.property.list` | POST property member list | 1 | `06f743b5…` | delete-guard 读回空集合 |
+| 22 | `metadata.event_property_template_event.list` | POST master list | 1 | `126d73b9…` | master delete owner gate |
+| 23 | `metadata.event.property.template.079c8246.create` | POST `/event/property_template/create/` | - | `6b2edb3d…` | soft delete，一次写 |
+| 24 | `metadata.event_property_template_event.list` | POST master list | 1 | `2f8ffe00…` | master delete-guard，ID 消失 |
+
+**计数与门禁推导：**operation `226 + 4 = 230`；read `185 + 0 = 185`；mutation
+`32 + 4 = 36`；stable `217 + 4 = 221`。canonical 产品卡 `77 + 4 = 81`；selector
+`312 + 4 operation + 4 product = 320`；gap 仍为 9。产品动线新增一个可复用上游元数据对象任务：
+`53 = 45 / 1 / 7` → `54 = 46 / 1 / 7`。caller-recoverable error site
+`1145 + 23 = 1168`，新增 23/23 全部 A 档，故 `A 342 + 23 = 365`、`B=434`、`C=369`。
+unittest `1099 + 5 =` **1104 tests OK**；pytest `1099 + 5 =` **1104 passed**，subtests
+`3055 + 16 =` **3071 passed**；compiler **230 operations /
+11 manifests**；quality PASS（operations/provenance 230/230、operation literals 57），Agent Skill 生成器、
+CLI help 与 `git diff --check` 通过。实现代码远多于测试增量，核心按自然边界拆为 490/199 SLOC；
+500/80/15/0 和现有 quality baseline 均未放宽。未读取或运行真实 holdout/final/key，测试输出中的
+protected split 仅为既有 synthetic fixture；未做任何 GitHub、push、tag 或远端动作。
