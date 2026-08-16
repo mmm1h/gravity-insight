@@ -5004,3 +5004,48 @@ B/C 未增长。`test_same_definition_id_versions_remain_distinct_in_results` �
 和 v1 查询不继承 v2 profile。Agent 指南生成器 `--check`、CLI help 与 `git diff --check` 均通过。
 实现/合同/manifest 新增 267 行，测试与 golden 新增 68 行，约 0.255，未超过三分之一；quality baseline
 未放宽。
+
+## J39 recognizer 目标迁移回归（2026-08-17）
+
+**提案与实测：**ignored 工作提案位于
+`tmp/codex/recognizer-regression/proposal.md`。同一 v4 development、同一内置离线 recognizer 在
+`f3f3795` 实测为 **260/336**，在本线修改前 `f25ecac` 为 **254/336**；两次均为 4 trial、选择不稳定
+0、生产 HTTP 与 socket 尝试 0。逐题 identity 差分只有 7 题：6 题由对转错，全部属于 J39；0 题由错
+转对；另 1 题 J11 前后都错，只是 raw fallback 从 `analysis.account_user.list` 变成 `app.list`。六条
+J39 分别为 `zh.normal-1`、`zh.normal-2`、`en.normal-1`、`zh.boundary`、`en.missing` 与
+`v3.code-switch`；旧提交均返回 `APP_PROJECT_ITEM_SCHEMA_MISSING`，修改前当前提交均没有强候选。
+
+**二分与分类：**以实测 260 为 good、低于 260 为 bad，对 `f3f3795..f25ecac` 做 development 二分，
+首个坏提交为 **`7bad145 feat(agent): route readable app projects to app catalog`**：父提交 `4d32f29`
+仍为 260，该提交立即为 254。它删除 J39 的专用 gap recognizer、gap 调用方语言和登记入口，只把
+`app.list` operation 描述及两条同文 smoke 改为 App 项目语义；带复盘、查找或相邻产品边界的问法
+没有等价的 product route。紧随其后的 **`594eff2`** 才把动线从完全缺失改为已闭环，并把 evaluator
+target 从 gap 改成 `app_catalog`；其父子实测都为 254。因此降分断点只有 `7bad145`，而缺陷由
+“先删 gap matcher、后切 product target、只验两条同文 smoke”这组晋升动作共同暴露。
+
+这 6 题不是“旧正确产品仍然正确却被新卡抢走”的同口径真退化：`f3f3795` 的 gap 在取得非空
+`app.list` 合同后已不再是正确终点。它们也不是冻结题集仍坚持旧答案的题集老化，因为 v4 会按当前
+动线状态和 target registry 派生答案，`594eff2` 已正确切到 `app.list`。准确分类是 **0 条同口径真退化、
+0 条冻结预期老化、6 条 target 迁移后的产品接线缺失**；只看两个 revision 的总分会把第三类误叫成
+能力退化。
+
+**产品修复与门禁决定：**新增窄 `agent_app_catalog` owner，复用原 J39 中英意图边界，但把终点改为
+精确 existing `app.list`；普通成员/单用户时间线仍由其 owner 处理。没有增加或隐藏产品卡，没有修改
+operation、suite、scorer 或阈值。正式 development 恢复为 **260/336**，参数可填写为 **209/209**，
+终点 **53/74**、恢复 **5/5**，selection/terminal unstable 均 0、安全 PASS、生产 HTTP 0。
+operation/stable/产品卡/selector 仍为 **231 / 222 / 89 / 329**，动线仍为 **56 = 48 / 1 / 7**；
+技术债复核不新增活动结构项。
+
+**最终验证：**unittest **1132 tests OK**；pytest **1132 passed / 3085 subtests passed**；compiler
+**231 operations / 11 manifests**；quality PASS（operations/provenance 231/231、operation literals 57）。
+为复用既有 `app.list` operation identity，把 `catalog._infer_target_input` 的同一静态 parent→placeholder
+分支改为数据表；旧复杂度债 20 已消失，`catalog.py` AST ratchet 从 5282 收紧到 5247，没有放宽 baseline。
+错误审计保持 **1202 = A399 / B434 / C369**，本线新增 caller-recoverable site/A 档为 **0/0**；文档
+**4 passed**、Agent 指南生成器 `--check`、CLI help 与 `git diff --check` 全部通过。产品 Python 新增
+`2 + 25 + 48 = 75` 行，测试新增 8 行，约 **0.107**，低于三分之一；生产 HTTP 与外部 LLM 均为 0。
+
+以后每次增加/晋升产品卡，或修改 selector、description、caller language、意图边界、gap 状态或 journey
+target，都应运行这套约 10 秒的 development recognizer，并审阅逐题双向差分；不是只看总分单调。
+门禁还应把 target fingerprint 变化单列：target 不变时任何由对转错都需解释或修复；target 变化时，
+必须先证明新 target 的代表性中英问法和相邻边界可达，再删除旧 gap。这样既能发现选择面撞车，也不会
+把合法能力晋升误判成冻结题集回归。

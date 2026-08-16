@@ -8,7 +8,6 @@
       "src/gravity_sdk/blob_transfer.py::SafeBlobTransfer.upload": 18,
       "src/gravity_sdk/catalog.py::OperationCatalog.coverage": 19,
       "src/gravity_sdk/catalog.py::OperationCatalog.describe": 19,
-      "src/gravity_sdk/catalog.py::_infer_target_input": 20,
       "src/gravity_sdk/census/cli.py::run": 26,
       "src/gravity_sdk/census/coverage.py::build_coverage": 60,
       "src/gravity_sdk/census/coverage.py::identify_contract_families": 18,
@@ -181,7 +180,7 @@
   "legacy_files": {
     "src/gravity_sdk/catalog.py": {
       "ast_hard_limit": 5332,
-      "ast_nodes": 5282,
+      "ast_nodes": 5247,
       "migration_sloc": 664,
       "sloc_hard_limit": 722
     },
