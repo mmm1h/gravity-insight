@@ -239,10 +239,10 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
         # 默认值字典以 caller-selected App 示例晋升，再增加一个完整 example。
         # D35 归因聚合以固定画像晋升，再增加一个完整 example。
         # F40 测试设备目录与单用户明细均依赖运行时父行，不伪造静态示例。
-        # Segment/report/Kanban/custom-metric/metadata-template mutations deliberately have no
+        # Segment/report/Kanban/custom-metric/metadata-template/saved-analysis mutations deliberately have no
         # replayable examples; custom-metric list has fixed safe pagination,
         # while its two writes require explicit reviewed inputs.
-        self.assertEqual((88, 133), (examples_complete, examples_unknown))
+        self.assertEqual((88, 134), (examples_complete, examples_unknown))
         # 本趟按父 response projection 与调用方选择语义补全 9 条边；剩余
         # 16 条涉及 runtime-v1 target 投影、递归、同一行关联或嵌套输入变换。
         # 素材相册列表再补一条递归父级边，公开 probe 会按目标字符串契约转换；

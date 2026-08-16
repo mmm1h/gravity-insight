@@ -4,8 +4,8 @@
   "operation": {
     "action": "get",
     "auth_profile": "gravity_authorization",
-    "contract_version": 2,
-    "description": "读取已保存分析配置；配置 JSON 由受控专用投影解析，只开放已登记的结构化分析字段。",
+    "contract_version": 3,
+    "description": "读取已保存分析配置与创建/更新身份；配置 JSON 由受控专用产品解析。",
     "domain": "analysis",
     "effect": "read",
     "examples": [],
@@ -79,17 +79,28 @@
     "resource": "report_config",
     "response_projection": {
       "data_keys": [
+        "id",
+        "app_id",
         "config",
         "name",
+        "subject",
+        "remark",
+        "create_time",
+        "modify_time",
+        "create_user_id",
+        "create_user_name",
+        "update_user_id",
         "update_user_name"
       ],
       "dynamic_item_fields": [],
       "item_keys": [],
-      "known_omitted_data_keys": [
-        "remark"
-      ],
       "required_data_keys": [
-        "config"
+        "id",
+        "app_id",
+        "config",
+        "name",
+        "subject",
+        "create_user_id"
       ]
     },
     "semantic_error_rules": [

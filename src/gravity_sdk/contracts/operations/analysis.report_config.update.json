@@ -1,0 +1,86 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "source_schema_version": 2,
+  "target_manifest": "analysis.json",
+  "manifest_order": 20184,
+  "operation": {
+    "operation_id": "analysis.report_config.update",
+    "domain": "analysis",
+    "resource": "report_config",
+    "action": "update",
+    "contract_version": 1,
+    "upstream_method": "POST",
+    "path_template": "/turbo_engine/api/v2/datamanageconfig/report_config/update/",
+    "auth_profile": "gravity_authorization",
+    "stability": "stable",
+    "effect": "mutation",
+    "executable": true,
+    "description": "创建、更新或软删除已证明可严格重放的五类保存分析；动作由 id 有无与 is_deleted=true 区分，完整 config 作为 JSON 字符串提交。",
+    "input_fields": {
+      "app_id": {"type": "string", "required": true, "max_length": 64},
+      "id": {"type": "string", "max_length": 256},
+      "subject": {
+        "type": "string",
+        "required": true,
+        "enum": [
+          "analysis_event",
+          "analysis_funnel",
+          "analysis_retention",
+          "analysis_scatter",
+          "analysis_user_property"
+        ]
+      },
+      "name": {"type": "string", "required": true, "max_length": 256},
+      "config": {"type": "string", "required": true, "max_length": 1000000},
+      "remark": {"type": "string", "required": true, "max_length": 2000},
+      "is_deleted": {"type": "boolean", "enum": [true]}
+    },
+    "request": {
+      "path_fields": [],
+      "query_fields": [],
+      "body_fields": ["app_id", "id", "subject", "name", "config", "remark", "is_deleted"],
+      "defaults": {},
+      "fixed_query": {},
+      "fixed_body": {}
+    },
+    "response_projection": {
+      "data_shape": "object",
+      "data_keys": ["object"],
+      "data_item_keys": {"object": ["id", "app_id"]},
+      "required_data_keys": [],
+      "item_keys": [],
+      "dynamic_item_fields": []
+    },
+    "pagination": {
+      "kind": "none",
+      "page_field": "",
+      "page_size_field": "",
+      "list_path": "",
+      "page_info_path": "",
+      "total_page_field": ""
+    },
+    "semantic_error_rules": ["code", "extra.error"],
+    "privacy_policy": {
+      "classification": "configuration",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "required_parent": [],
+    "live_probe": {"enabled": false, "inputs": {}},
+    "examples": [],
+    "provenance": {
+      "source_files": ["operations/analysis.report_config.update.json"],
+      "family": null,
+      "platform": null,
+      "applied_overrides": []
+    }
+  }
+}

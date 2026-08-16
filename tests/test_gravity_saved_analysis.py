@@ -153,7 +153,7 @@ class SavedAnalysisTests(unittest.TestCase):
         self.assertEqual("unchecked", result["items"][0]["replay_status"])
         self.assertNotIn("config", result["items"][0])
         self.assertEqual(
-            [("read_all", LIST_OPERATION_ID, {"app_id": "101", "page": 1, "page_size": 1})],
+            [("read_all", LIST_OPERATION_ID, {"app_id": "101", "page": 1, "page_size": 500})],
             client.calls,
         )
 

@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from .sdk_analysis import AnalysisSdkMixin
+from .sdk_saved_analysis import SavedAnalysisSdkMixin
 from .sdk_analysis_default_dictionary import AnalysisDefaultDictionarySdkMixin
 from .sdk_attribution import AttributionSdkMixin
 from .sdk_derived_metrics import DerivedMetricsSdkMixin
@@ -36,6 +37,7 @@ ClientFactory = Callable[[], Any]
 
 class GravitySDK(
     DerivedMetricsSdkMixin,
+    SavedAnalysisSdkMixin,
     AnalysisSdkMixin,
     AnalysisDefaultDictionarySdkMixin,
     AttributionSdkMixin,
@@ -50,12 +52,7 @@ class GravitySDK(
     OrderSdkMixin, MetadataSdkMixin, MonetizationSdkMixin, TemplateSdkMixin,
     PlanRecipeSdkMixin,
 ):
-    """Lazy, process-friendly entry point for the Gravity SDK.
-
-    ``insight`` and ``sql`` are built only when first used.  Direct convenience
-    methods delegate to the existing clients, so envelopes and exceptions stay
-    identical to the specialized APIs.
-    """
+    """Lazy facade; specialized clients retain their native policy and envelopes."""
 
     def __init__(
         self,

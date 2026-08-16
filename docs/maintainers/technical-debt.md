@@ -210,3 +210,7 @@ confmetric family core、wire、CLI、SDK 与 Agent 卡均下沉到领域模块�
 硬顶内。生产发现 mutation 写后 metadata readback 会命中 10 分钟旧缓存；共享 mutation client 已在
 成功写后统一失效 metadata cache，并由单测和真实 remove/delete 读回锁定。该问题已关闭，不保留为
 活动债务；one-shot authorization、read cache TTL、owner gate 与质量 baseline 均未放宽。
+
+保存分析 CRUD 复用同一 one-shot mutation、marker-or-owner、完整目录和写后读回原语；保存分析 SDK
+facade 从接近硬顶的 analysis facade 下沉到窄 mixin，共享 spine 与 quality/AST baseline 均未放宽。
+list/get 不属于 metadata cache operation，delete guard 仍使用完整新列表；本轮不新增活动结构债条目。

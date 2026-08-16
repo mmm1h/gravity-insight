@@ -1847,8 +1847,8 @@
     {
       "action": "list",
       "auth_profile": "gravity_authorization",
-      "contract_version": 2,
-      "description": "已保存分析配置列表；创建人与更新人字段已登记返回，不透明 config、未证实状态字段和自由备注仍省略。",
+      "contract_version": 3,
+      "description": "已保存分析配置完整列表；登记保存、所有权和写后读回所需字段，config 仍只由保存分析专用产品解析。",
       "domain": "analysis",
       "effect": "read",
       "input_fields": {
@@ -1861,7 +1861,7 @@
           "type": "integer"
         },
         "page_size": {
-          "default": 1,
+          "default": 500,
           "type": "integer"
         }
       },
@@ -1875,10 +1875,10 @@
       },
       "operation_id": "analysis.report_config.list",
       "pagination": {
-        "default_page_size": 1,
+        "default_page_size": 500,
         "kind": "page_info",
         "list_path": "data.list",
-        "max_page_size": 1,
+        "max_page_size": 500,
         "page_field": "page",
         "page_info_path": "data.page_info",
         "page_size_field": "page_size",
@@ -1899,7 +1899,7 @@
         "body_fields": [],
         "defaults": {
           "page": 1,
-          "page_size": 1
+          "page_size": 500
         },
         "fixed_body": {},
         "fixed_query": {},
@@ -1929,11 +1929,10 @@
           "update_user_id",
           "update_user_name",
           "create_user_id",
-          "create_user_name"
-        ],
-        "known_omitted_item_keys": [
+          "create_user_name",
           "config",
           "create_time",
+          "dashboards",
           "is_deleted",
           "remark"
         ],
@@ -1951,8 +1950,8 @@
     {
       "action": "get",
       "auth_profile": "gravity_authorization",
-      "contract_version": 2,
-      "description": "读取已保存分析配置；配置 JSON 由受控专用投影解析，只开放已登记的结构化分析字段。",
+      "contract_version": 3,
+      "description": "读取已保存分析配置与创建/更新身份；配置 JSON 由受控专用产品解析。",
       "domain": "analysis",
       "effect": "read",
       "input_fields": {
@@ -2012,17 +2011,28 @@
       "resource": "report_config",
       "response_projection": {
         "data_keys": [
+          "id",
+          "app_id",
           "config",
           "name",
+          "subject",
+          "remark",
+          "create_time",
+          "modify_time",
+          "create_user_id",
+          "create_user_name",
+          "update_user_id",
           "update_user_name"
         ],
         "dynamic_item_fields": [],
         "item_keys": [],
-        "known_omitted_data_keys": [
-          "remark"
-        ],
         "required_data_keys": [
-          "config"
+          "id",
+          "app_id",
+          "config",
+          "name",
+          "subject",
+          "create_user_id"
         ]
       },
       "semantic_error_rules": [
@@ -4408,6 +4418,124 @@
       "resource": "dataanalysis_segment",
       "response_projection": {
         "data_keys": [],
+        "data_shape": "object",
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "update",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "创建、更新或软删除已证明可严格重放的五类保存分析；动作由 id 有无与 is_deleted=true 区分，完整 config 作为 JSON 字符串提交。",
+      "domain": "analysis",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "config": {
+          "max_length": 1000000,
+          "required": true,
+          "type": "string"
+        },
+        "id": {
+          "max_length": 256,
+          "type": "string"
+        },
+        "is_deleted": {
+          "enum": [
+            true
+          ],
+          "type": "boolean"
+        },
+        "name": {
+          "max_length": 256,
+          "required": true,
+          "type": "string"
+        },
+        "remark": {
+          "max_length": 2000,
+          "required": true,
+          "type": "string"
+        },
+        "subject": {
+          "enum": [
+            "analysis_event",
+            "analysis_funnel",
+            "analysis_retention",
+            "analysis_scatter",
+            "analysis_user_property"
+          ],
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "analysis.report_config.update",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/report_config/update/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "id",
+          "subject",
+          "name",
+          "config",
+          "remark",
+          "is_deleted"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "report_config",
+      "response_projection": {
+        "data_item_keys": {
+          "object": [
+            "id",
+            "app_id"
+          ]
+        },
+        "data_keys": [
+          "object"
+        ],
         "data_shape": "object",
         "dynamic_item_fields": [],
         "item_keys": [],

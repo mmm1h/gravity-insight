@@ -17,6 +17,7 @@ Usage:
   gravity plan schema
   gravity plan run --input <plan.json>
   gravity analysis saved list|get|prepare|run
+  gravity analysis saved create|update|delete --dry-run|--execute
   gravity analysis template list|prepare|run
   gravity analysis query batch --input <queries.json> [--dry-run]
   gravity analysis dashboard prepare|run --app <alias|id> --ref <id|name> --start <date> --end <date>

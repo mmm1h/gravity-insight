@@ -2,8 +2,9 @@
 
 本矩阵记录 17 项候选能力在 2026-08-12 受控只读探测后的真实状态，并原位追加 2026-08-14 至
 2026-08-16 的后续取证结论，供开发决策使用。仓库当前基线为
-[226 个 operation、其中 217 个 stable operation](capability-coverage.md)：185 条 stable read 加
-32 条逐项治理的 mutation（7 条 Segment、5 条报表/订阅、18 条 Kanban、2 条自定义指标）；写 operation 不是本矩阵的 read candidate，
+[231 个 operation、其中 222 个 stable operation](capability-coverage.md)：185 条 stable read 加
+37 条逐项治理的 mutation（7 条 Segment、5 条报表/订阅、18 条 Kanban、2 条自定义指标、
+4 条事件/属性模板和 1 条保存分析）；写 operation 不是本矩阵的 read candidate，
 但本页追加其解锁读合同的生产证据。
 
 `analysis.default_val.list`、D35、F40、`report.report.list/detail` 与 `report.subscribe.list` 已晋升，其余候选
@@ -467,3 +468,23 @@ route 早已 stable，本轮直接用于 owner、preimage 和写后读回，不�
 新增 4 条 stable mutation、4 张 action-qualified 产品卡和 1 条已闭环动线：operation
 `226 + 4 = 230`，stable `217 + 4 = 221 = 185 read + 36 mutation`，产品卡 `77 + 4 = 81`，selector
 `312 + 4 operation + 4 product = 320`，动线 `53 = 45 / 1 / 7` → `54 = 46 / 1 / 7`。
+
+## 2026-08-16 追加判定：保存分析 CRUD
+
+`analysis.report_config.update` 一条物理 route 承载三种动作：create 无 `id/is_deleted`，update 带 `id`
+且无 `is_deleted`，delete 带 `id/is_deleted=true`；`config` 始终为 JSON string，删除回送当前完整定义。
+生产观察五类 detail 外层 shape 同构而内层 config fingerprint 不同，所以登记一个带 subject 的 operation，
+但受治理产品只接受已有 strict compiler 的 event/funnel/retention/scatter/user-property 五类。
+cash/order/user 本租户无样本，保持未开放而不是猜测 config；share 与 v3 conftemplate 不在范围。
+
+事件分析的 create/list/get/update/readback/replay/delete/final-list 全部真实发出并 HTTP 200，更新把
+`calculateBody.group_by_list` 从 1 项改为 0 项，删除后 marker matches 为 0。owner 实测字段为
+`create_user_id`，闸门等式是 `create_user_id == gravity_id`；仅在未来出现单对象 creator 时接受
+`creator.id == gravity_id`。list/get 都不是 metadata-cacheable operation，成功写又会清共享 metadata
+cache，delete guard 因此读取完整新列表。重放响应的真实聚合数字未在验收脚本异常前持久化，故新增
+资产动线暂记部分闭环；请求实际 41/40，发现后停止且清理已完成。完整 shape/fingerprint/receipt 见
+[`20260816_saved_analysis_crud.json`](../evidence/forensics/20260816_saved_analysis_crud.json)。
+
+本线新增 1 条 stable mutation、3 张 action-qualified 产品卡：operation `230 + 1 = 231`，stable
+`221 + 1 = 222 = 185 read + 37 mutation`，产品卡 `81 + 3 = 84`，selector
+`320 + 1 operation + 3 product = 324`，动线 `54 = 46 / 1 / 7` → `55 = 46 / 2 / 7`。

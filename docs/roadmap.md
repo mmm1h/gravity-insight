@@ -1,7 +1,7 @@
 # 路线图
 
 本页是当前开发的唯一权威排期依据，取代历史上不进版本控制的临时目标文件。
-盘点快照：`dev@9db7f81`，2026-08-16。
+盘点快照：`codex/saved-analysis`（基于 `dev@69ac207`），2026-08-16。
 
 ## 目标
 
@@ -14,13 +14,14 @@
 
 ## 现状
 
-当前从仓库产品入口与 stable operation 正向交叉反推 53 条产品动线：**已闭环 45 / 部分闭环 1 / 完全缺失 7**；
+当前从仓库产品入口与 stable operation 正向交叉反推 55 条产品动线：**已闭环 46 / 部分闭环 2 / 完全缺失 7**；
 另有 2 条 legacy/SDK 便利面、1 条重复能力审计行和 1 条已有结果上的调用方派生便利面保留，
 但不计产品动线。表格 57 行减去 4 条“不计独立动线”得到 53 条。设置 → 应用管理把
 `51 = 42 / 1 / 8` 推进到 `51 = 43 / 1 / 7`，归因聚合与自定义指标再各新增一条闭环，故为
-`53 = 45 / 1 / 7`。operation 为 **226 = 194 read + 32 mutation**，stable 为
-**217 = 185 read + 32 mutation**。部分闭环的 Analysis 导出只关闭了单用户事件子类；7 条完全缺失里
-多数是请求、响应或非空证据阻塞；字段隐私不再是阻塞项。
+`53 = 45 / 1 / 7`；事件/属性模板治理增加 1 条闭环，保存分析资产生命周期增加 1 条部分闭环，故为
+`55 = 46 / 2 / 7`。operation 为 **231**，stable 为 **222 = 185 read + 37 mutation**。
+两条部分闭环分别是 Analysis 导出的单用户事件子类，以及尚缺真实聚合数字持久证据的保存分析 CRUD；
+7 条完全缺失里多数是请求、响应或非空证据阻塞；字段隐私不再是阻塞项。
 逐条状态、四面入口、调用次数和证据阻塞以[分析动线台账](analysis-journeys.md)为准；旧
 `21/14/6` 快照的逐条底稿未进入版本控制，无法复算，已停止作为排期事实。
 
@@ -34,8 +35,9 @@ reservation 做离线精确对账。当前真正未被 operation 覆盖且已有
 **42 条 route，其中 9 条有明确回 Web 卡点**。完整归类、逐族卡点、SQL 工作台证据和 P0/P1/P2/
 不做排期见[授权写面普查与分析能力排期](research/write-surface-census.md)。
 
-排期结论是把保存分析 `report_config/update` 的 create/update/delete 插到现有 P0-1 前，并行做平台
-SQL 工作台静态 surface 取证；现有 P0-2 已由三域 owner gate 完成。P0-3 的价值保留，但原“依赖
+保存分析 `report_config/update` 的 create/update/delete 已实现五类受证明资产并完成事件类 CRUD、读回、
+重放与清理；因真实聚合数字未写入 evidence，动线仍是部分闭环，补证后才可转已闭环。下一项恢复为
+原 P0-1，并行做平台 SQL 工作台静态 surface 取证；现有 P0-2 已由三域 owner gate 完成。P0-3 的价值保留，但原“依赖
 自定义指标 CRUD、维度表 CRUD、SQL 工作台”的叙述已过时：自定义指标已闭环，维度表已 hold，平台
 SQL 工作台尚无已知 route。报表模板 delete 已由 v3 `template/edit + is_deleted=1` 安全交付，下一项
 是 owner-verified edit，不重复建设 delete。
@@ -4332,3 +4334,71 @@ unittest `1099 + 5 =` **1104 tests OK**；pytest `1099 + 5 =` **1104 passed**，
 CLI help 与 `git diff --check` 通过。实现代码远多于测试增量，核心按自然边界拆为 490/199 SLOC；
 500/80/15/0 和现有 quality baseline 均未放宽。未读取或运行真实 holdout/final/key，测试输出中的
 protected split 仅为既有 synthetic fixture；未做任何 GitHub、push、tag 或远端动作。
+
+## 保存分析 CRUD 与严格重放闭环（2026-08-16 至 2026-08-17）
+
+**书面提案与范围裁决：**ignored 工作稿位于 `tmp/codex/saved-analysis/proposal.md`。当前前端
+`reportConfigDialog-VzlrPtPX.js` 与 `Event-BKh0ym6c.js` 加生产 wire 共同证明同一
+`POST /turbo_engine/api/v2/datamanageconfig/report_config/update/` 的三种动作：create 省略 `id` 和
+`is_deleted`，update 带 `id` 且省略 `is_deleted`，delete 带 `id` 且固定 `is_deleted=true`；三者都提交
+`app_id/subject/name/config/remark`，其中 `config` 是 JSON string，删除也回送完整当前定义。没有
+`action` 字段。分享没有证据，v3 `conftemplate` 属于多维报表中心，两者均未接入。
+
+生产目录共观察 93 个保存分析。五个有样本 subject 的 detail 外层 shape 同构，fingerprint 均为
+`010e973263d34fe1d19185b369f0ab52f303ebab3bdb8411d0b9650e5be55661`；内层 config 明确异构：
+event `143 / 50c36295…`、funnel `68 / 0def5f2f…`、retention `96 / 80fd7c2a…`、scatter
+`65 / c566f423…`、user-property `71 / 6d3dc62c…`（路径数 / fingerprint）。因此底层只登记一条物理
+operation，由显式 `subject` 区分，但产品面只开放现有 strict replay 能完整校验的这五类；
+`analysis_cash/order/user` 在本租户无样本，不能从共享外层 body 推断其 config，保持未开放。这不是
+判定三类“不该保存”，而是证据不足；没有证据表明八类中任何一类产品语义上不应保存。
+
+**产品与治理：**新增 `analysis.report_config.update` stable mutation 和
+`saved_analysis_mutation` create/update/delete 三个动作，CLI 为
+`gravity analysis saved create|update|delete`，统一 SDK 公开同名方法。create/update 先用既有五类
+artifact 编译器做完整 config preflight；所有动作都要求零网络 dry-run、人工审查后同参数 execute，
+写请求单发且不重试。三张动作卡都使用复数 `operation_ids`，并固定
+`natural_language_auto_execute=false`、`confirmation_required=true`、
+`ready_without_input=false`；Plan v1 不承诺人工确认和不可重放写，故 `plan_executable=false`。
+update/delete 在写前读取完整目录和精确 detail：GSDK marker 命中即放行，否则只接受
+`create_user_id == authenticated gravity_id`；未来若响应是单个 `creator` object，仅接受
+`creator.id == gravity_id`，从不接受 `creator[].uid` 或 `creator.uid`。delete 在 HTTP 200 后重新完整
+列目录，ID 仍存在就抛 `ContractChangedError`。
+
+`analysis.report_config.list/get` 不在 `is_metadata_operation()` 的 cache allowlist 中，本身不会从
+metadata cache 读取；共享 `_execute_mutation` 又会在成功写后清空 metadata cache。因此 list/detail
+写后读回和 delete guard 都不会命中写前 metadata 状态。合同把 list 页大小提升到上游已证明上限 500，
+读回仍使用 `read_all` 和既有总页数有界并发，不能用第一页缺失冒充删除成功。
+
+**真实事件分析生命周期输出：**使用唯一 `GSDK-saved-analysis-20260816` marker。先 create 并由 list/get
+各确认一次，再把 `calculateBody.group_by_list` 从 1 项改为 0 项并由 list/get 确认；随后按保存定义执行
+真实 `analysis.event.query`，最后软删并由完整列表确认 marker 为 0。脱敏实际输出如下：
+
+```json
+CREATE={"http_status":200,"receipt_id":"2e5b378f6c8c4c54a10eba73646203ff","list_matches":1,"detail_readback":"name/subject/remark/config round-tripped"}
+UPDATE={"http_status":200,"receipt_id":"80cb58fa113b43f0a9459a3bf80d3524","changed":"calculateBody.group_by_list","before_count":1,"after_count":0}
+REPLAY={"operation_id":"analysis.event.query","http_status":200,"receipt_id":"86a99b12be2c403e90fa79cdd86fa475","request_shape_fingerprint":"c3eb70768d9d844683254e86f1d8050bd9fec471f62d3c6feefceda1f3787cba","real_aggregate_value_persisted":false}
+DELETE={"http_status":200,"receipt_id":"2664bc5060f7450bbd38aca2c4b30e69","post_delete_list_receipt_id":"4a082a452d434a7cb5066365867fe857","marker_matches":0}
+```
+
+CRUD、读回、真实查询 HTTP 200 和清理均已完成，但验收脚本要求找到 numeric path，并在把 governed
+response 的真实聚合数字写进 value-free evidence 前抛错；receipt 按安全设计不保留值，无法事后重建。
+因此“保存后重新执行返回真实数字”这一条没有可贴的数字证据，本轮不宣称端到端验收完整，新增动线
+记为部分闭环。请求上限也发生一次明确超限：实际 **41 / 40**，拆分为认证 1、list 16、get 15、
+update 6、event metadata 2、event query 1；原因是最终 replay 在离线校验后额外做了 2 次 live metadata
+读取，预算估算遗漏。发现后请求为 0，未自行扩额；删除和最终 marker=0 已在超限发现前完成。
+完整 value-free evidence 见
+[`20260816_saved_analysis_crud.json`](../evidence/forensics/20260816_saved_analysis_crud.json)。
+
+**目录、J06 与计数：**本线接入新的 analysis 产品卡，正好修改 external catalog summary 投影，故同步在
+`analysis.query.spec` description 补上“用同一分析定义比较两个时期”；不改题集、评分或 recognizer。
+operation `230 + 1 = 231`；stable `221 + 1 = 222 = 185 read + 37 mutation`；产品卡
+`81 + 3 = 84`；selector `320 + 1 operation + 3 product = 324`；动线
+`54 = 46 / 1 / 7` → `55 = 46 / 2 / 7`。新增 caller-recoverable error site 1 个且为 A 档，故错误审计
+`1168 + 1 = 1169 = A366 / B434 / C369`。保存分析 SDK facade 从触顶的 `sdk_analysis.py` 下沉为窄
+`sdk_saved_analysis.py` mixin，未放宽 500/80/15/0 或 AST ratchet；技术债复核不新增活动条目。
+
+**最终门禁：**相对题面 `dev@69ac207` 基线，unittest `1105 + 4 = 1109`；pytest
+`1105 + 4 = 1109 passed`，subtests `3071 + 7 = 3078 passed`。compiler 为 **231 operations /
+11 manifests**；quality PASS（operations/provenance 231/231、operation literals 57）；Agent Skill
+生成器 `--check`、CLI help 与 `git diff --check` 均通过。生产凭据与 `.env.gravity.local` 未进入版本控制；
+未碰 holdout/final/key、题集或评分逻辑，也未做 GitHub、push、tag 或其他远端动作。
