@@ -81,33 +81,36 @@
         "name",
         "type",
         "authority",
+        "app_id",
+        "space_id",
+        "folder_id",
+        "is_folder",
         "folder_or_dashboard",
-        "dashboards"
-      ],
-      "known_omitted_item_keys": [
+        "dashboards",
         "children"
       ],
-      "known_omitted_nested_item_keys": {
-        "dashboards": [
-          "ui_config"
-        ]
-      },
       "nested_item_keys": {
         "dashboards": [
           "id",
           "name",
           "type",
           "is_folder",
+          "app_id",
           "space_id",
-          "authority"
+          "folder_id",
+          "authority",
+          "ui_config"
         ],
         "folder_or_dashboard": [
           "id",
           "name",
           "type",
           "is_folder",
+          "app_id",
           "space_id",
+          "folder_id",
           "authority",
+          "ui_config",
           "dashboards"
         ]
       },

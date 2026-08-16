@@ -92,7 +92,8 @@
           "report_id",
           "name",
           "subject",
-          "config"
+          "config",
+          "remark"
         ],
         "share_members": [
           "uid",
@@ -115,11 +116,6 @@
       ],
       "dynamic_item_fields": [],
       "item_keys": [],
-      "known_omitted_data_item_keys": {
-        "even_report": [
-          "remark"
-        ]
-      },
       "required_data_keys": [
         "id"
       ]
