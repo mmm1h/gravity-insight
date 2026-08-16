@@ -12,16 +12,6 @@ from .agent_intent_text import affirmative_intent_text
 def unavailable_app_gap(query: str) -> dict[str, Any] | None:
     selected = affirmative_intent_text(query)
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
-    if _readable_projects(selected, words):
-        return unavailable_gap(
-            query, code="APP_PROJECT_ITEM_SCHEMA_MISSING",
-            journey="readable_app_projects",
-            reason="The project-list request and pagination are verified, but the current account returned an empty first page.",
-            next_action=(
-                "Use an account with one readable project for a single page=1/page_size=1 shape probe, "
-                "then register the item projection before adding product surfaces."
-            ),
-        )
     if _onelink_public_info(selected, words):
         return unavailable_gap(
             query, code="APP_ONELINK_PUBLIC_BINDING_SAMPLE_MISSING",
@@ -33,19 +23,6 @@ def unavailable_app_gap(query: str) -> dict[str, Any] | None:
             ),
         )
     return None
-
-
-def _readable_projects(selected: str, words: frozenset[str]) -> bool:
-    english = (
-        bool(words & {"project", "projects"})
-        and bool(words & {"account", "allowed", "app", "catalog", "directory", "list", "read", "readable"})
-    )
-    chinese = (
-        "项目" in selected
-        and any(term in selected for term in ("app", "当前账号", "可读", "可以读取", "读取", "清单", "列表"))
-    )
-    return english or chinese
-
 
 def _onelink_public_info(selected: str, words: frozenset[str]) -> bool:
     english = (
