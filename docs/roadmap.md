@@ -1544,6 +1544,101 @@ registry 中补登记合并后已闭环产品的精确 card 身份。相对原 `
 本线没有修改 `src/gravity_sdk`，caller 可恢复错误点新增 `0`、其中 A 档 `0`；技术债复核未发现需要
 新增或关闭的结构条目，quality baseline 未改。
 
+## Development 题集扩充（2026-08-16）
+
+**提案与边界：**工作提案位于 ignored `tmp/codex/dev-expand/proposal.md`。本单元只扩充公开
+development 并补齐“新增 case 可省略历史 `expected`、由 journey registry 与本台账状态完整派生”的
+装载能力；`route_score`、参数/终点/恢复/安全评分及层适用规则未改。原 240 行的 diff 为
+`+0 / -0`，只在文件尾追加 96 行；recognizer、产品行为与 `src/gravity_sdk` 均未修改。未读取 key，
+未查看、解密或重建 sealed payload，未运行 `holdout`、`final` 或 `all`，生产 HTTP 0 次。
+
+**构造与覆盖：**题面事实只来自本台账、公开 journey target registry 与
+`docs/agent-workflow.md`；现有 development 只用于反向检查没有复用旧 normal/boundary/missing-input
+模板。每条 J01–J48 恰好新增 2 题，所以 `48 × 2 = 96`、每条覆盖 `5 → 7`，development
+`240 + 96 = 336`。八个互斥 primary family 的配比为：
+
+| 新题族 | 数量 | 配比理由 |
+| --- | ---: | --- |
+| 只描述业务目的 | 13 | 最大单族，直接切断产品词词表捷径 |
+| 口语省略与语气词 | 12 | 检查非书面完整句 |
+| 错别字、拼音或同音字 | 12 | 检查字面词命中脆弱性 |
+| 中英混杂 | 12 | 检查双语词元组合 |
+| 多轮追问首轮 | 12 | 产品仍可辨但值留待下一轮，要求卡片暴露缺参 |
+| 反向或否定 | 12 | 检查负向边界是否压过正向目标 |
+| 跨产品多意图 | 12 | 按工作流应返回 `MULTIPLE_INTENTS` |
+| 目标 gap | 11 | 与当前 11 条完全缺失动线一一对应 |
+
+总数为 `13 + 6 × 12 + 11 = 96`。suite 从 v2 升为
+`gravity-agent-usability-2026-08-16.v3`；holdout/final 文件与 hash 完全不变。development 336、
+legacy `all = development + holdout = 576`、三切分物理总数 `576 + 48 = 624`。
+
+**六层实测：**扩充前同机 development 为 `240/240、175/175、65/65、5/5`，selection/terminal
+`pass^4 = 240/240、65/65`，security `PASS/0`。扩充后同一产品源码为：
+
+| 层 | 扩充后 |
+| --- | ---: |
+| 首次产品选择 | 261/336（77.68%） |
+| 已到达卡的参数可填 | 188/188（100%） |
+| 离线终点 | 73/91（80.22%） |
+| 重复可靠性 | selection `261/336`、terminal `73/91`，均 `pass^1 = pass^4`，不稳定题 0 |
+| 错误恢复 | 5/5（100%） |
+| 安全遵守 | PASS / 0 violations；本地写交接信息 29 |
+
+生产 HTTP 与 socket 尝试均为 0。旧 240 题继续全过，所以 75 个首次选择失败全部来自新增题，机械归因为
+`13 wrong_product + 43 no_candidate + 16 wrong_gap + 3 ambiguous = 75`。按新增 primary family 的
+机械通过为：业务目的 `1/13`、口语省略 `0/12`、错别字/拼音 `3/12`、中英混杂 `9/12`、多轮首轮
+`1/12`、反向否定 `1/12`、多意图 `4/12`、目标 gap `2/11`；没有一个新题族满分，中英混杂最稳但仍
+有 3 个失败。
+
+**多意图读数限制：**12 个跨产品题的合同正确答案都是 `MULTIPLE_INTENTS`，但现有 target registry
+按单 `journey_id` 只能派生一个产品或目标 gap。人工核对显示只有 J26/J30/J31 三题真实返回
+`MULTIPLE_INTENTS`；它们被机械记为 `ambiguous` 失败。J28/J29/J32 只返回目标产品、J47 只返回目标
+gap，却被机械记为通过；另外五题返回错误产品。故该族语义实际为 `3/12`，机械 `4/12` 不能指导
+recognizer 修改。全部 12 题保留给产品负责人裁决；若未来要自动计分，必须新增预先冻结的多目标身份，
+不能在实现后借评分兼容吸收。
+
+**与臂 B 集成后的复测：**将扩题提交合入已含 zero-candidate 词法兜底的 `dev` 后，只运行
+development，六层仍为 `261/336、188/188、73/91、5/5、selection pass^4 261/336、terminal
+pass^4 73/91、PASS/0`，四类机械失败仍为 `13 / 43 / 16 / 3`，逐项变化均为 0。以响应中的
+`zero_candidate_lexical_fallback.disposition != not_needed` 为触发定义，336 题中臂 B 触发 52 次：
+`0 correct / 0 wrong / 0 MULTIPLE_INTENTS / 52 below-threshold abstain`，净救回 0。43 个最终
+`no_candidate` 中 40 个进入臂 B，另 3 个（J14/J16/J17 的反向否定题）已被原链显式产品边界阻断，
+不允许 fallback；另有 12 个最终 `wrong_gap` 题进入臂 B后同样 abstain。
+
+“新题与词法索引普遍零重叠”的解释被数据推翻：40 个 `no_candidate` 触发里 35 个 top score 非零、
+只有 5 个为 0，最高为 0.244262；全部 52 次触发为 47 个非零、5 个零，最高为 0.285469，均低于
+固定阈值 0.375。实际原因是重叠覆盖不足，不是普遍没有重叠；而且索引除 card name/description 外还含
+selector 与登记 gap 文案。12 个多意图题的实际返回和机械/语义判断与上段完全一致，确认评分表达缺口
+同时造成 3 个假失败和 4 个假通过。J10 的 first-turn 题实际为 `no_candidate`，臂 B top score 0.038036
+后 abstain；该题要求用不存在的“上次”上下文恢复未明说的产品，`配置和回看范围` 只能让归因设置成为
+合理猜测，不能唯一决定 J10，因此不适合作为严格单产品首轮评分题。本轮按约束未修改题面或评分器。
+正式复测命令为：
+
+```powershell
+$env:PYTHONPATH='D:\git-pjt\gravity-sdk-dev\src'; python scripts/agent_usability_eval.py run --split development --output-dir tmp/merge-devexpand
+```
+
+离线逐题诊断复用同一 development loader、blocked transport 与 socket guard，两者生产 HTTP 均为 0。
+
+**命令账本：**正式评测只执行以下三条，均为 development：
+
+```powershell
+$env:PYTHONPATH='D:\git-pjt\wt-dev-expand\src'; python scripts\agent_usability_eval.py run --split development --label "pre-expand-240" --output-dir tmp\codex\dev-expand\baseline
+$env:PYTHONPATH='D:\git-pjt\wt-dev-expand\src'; python scripts\agent_usability_eval.py run --split development --label "post-expand-336" --output-dir tmp\codex\dev-expand\expanded
+$env:PYTHONPATH='D:\git-pjt\wt-dev-expand\src'; python scripts\agent_usability_eval.py run --split development --label "final-expanded-336" --output-dir tmp\codex\dev-expand\final
+```
+
+另对公开新增 96 题执行以下两个单 trial 离线诊断视图，只复用 evaluator 的 development loader 与
+network guard 来提取失败类别；它们没有 split 参数：
+
+```powershell
+$env:PYTHONPATH='D:\git-pjt\wt-dev-expand\src'; python tmp\codex\dev-expand\diagnose_new_cases.py
+$env:PYTHONPATH='D:\git-pjt\wt-dev-expand\src'; $env:DEV_EXPAND_DIAG='multiple'; python tmp\codex\dev-expand\diagnose_new_cases.py
+```
+
+技术债复核未发现需要新增或关闭的结构条目；
+本线新增 caller 可恢复错误点 0、A 档 0，quality baseline 未改。
+
 ## 投影边界总裁决：全面放开（2026-08-15）
 
 **本节推翻本页此前全部字段级隐藏裁决，是投影边界的唯一权威来源。** 下面三节

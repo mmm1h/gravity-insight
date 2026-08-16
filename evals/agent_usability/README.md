@@ -7,6 +7,16 @@ or routing tests.
 
 ## Version and construction
 
+`gravity-agent-usability-2026-08-16.v3` preserves the original 240 public
+development cases byte-for-byte and appends two new cases for each J01–J48
+journey. The 96-case development-only expansion uses eight primary families:
+indirect business goal 13, colloquial ellipsis 12, typo/pinyin 12,
+Chinese-English code switching 12, first-turn follow-up 12, negated/reverse 12,
+multiple intents 12, and target gap 11. The 11 target-gap cases cover every
+currently `完全缺失` registered journey once. Development is therefore
+`240 + 48 × 2 = 336`; the unchanged holdout remains 240, `all` is now 576,
+and the unchanged independent final adds 48 for a physical total of 624.
+
 `gravity-agent-usability-2026-08-15.v2` covers all 48 counted rows in
 `docs/analysis-journeys.md`: 33 executable journeys and 15 explicitly missing
 journeys. Every journey contributes ten prompts:
@@ -16,30 +26,31 @@ journeys. Every journey contributes ten prompts:
 - one Chinese and one English adjacent-product boundary phrasing;
 - one Chinese and one English missing-input/capability-gap phrasing.
 
-The count is therefore `48 journeys × (3 zh normal + 3 en normal + 2 boundary
-+ 2 missing) = 480 cases`. Development and holdout each contain five cases per
-journey, so `48 × 5 = 240` in each split. The split is by expression family,
-not by randomly shuffling duplicate sentences.
+The v2 core count is therefore `48 journeys × (3 zh normal + 3 en normal + 2
+boundary + 2 missing) = 480 cases`. Its development and holdout each contain
+five cases per journey, so `48 × 5 = 240` in each split. The split was by
+expression family, not by randomly shuffling duplicate sentences.
 
 The independent `final` suite is additive: one newly authored case for each of
-the same 48 journeys. It is not part of the legacy `all` split, whose meaning
-remains development+holdout so old results stay reproducible. Across all three
-splits there are `480 + 48 = 528` cases. Final rotates five strategies across
+the same 48 journeys. It is not part of `all`, whose meaning remains
+development+holdout. In v3 all three physical splits contain `336 + 240 + 48 =
+624` cases. Final rotates five strategies across
 journey families: colloquial ellipsis 10, typo/misspelling 10, Chinese-English
 code-switching 10, indirect goal descriptions 9, and the first turn of a
 multi-turn follow-up 9. These are not variants of the old ordinary/boundary/gap
 sentence families.
 
-The author read only the journey ledger and caller-facing workflow before the
-question-set commit. The source revision and content hashes are recorded in
-`suite.json`. The question set was committed before inspecting or changing the
-routing implementation.
+The original v2/final authorship boundaries remain recorded below. The v3
+expansion's separate source and negative-deduplication boundary is recorded in
+`SOURCES.md`. Source revisions and content hashes are recorded in `suite.json`.
 
 ## Ledger-derived response shape
 
-Prompts and `journey_id` values remain frozen in every split. The historical
-`expected` object is retained as a target-identity guard, but the evaluator no
-longer treats its card-versus-gap shape as current fact. At load time it reads
+Prompts and `journey_id` values remain frozen in every split. The original v2
+cases retain their historical `expected` object as a target-identity guard.
+The v3 development additions deliberately omit `expected`: their only target
+identity is `journey_id`, so no card-versus-gap fact is copied into the case.
+At load time the evaluator reads
 the status directly from `docs/analysis-journeys.md` and combines it with the
 public `journey-targets.json` mapping:
 
