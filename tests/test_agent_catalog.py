@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from types import SimpleNamespace
 import importlib.util
 from pathlib import Path
@@ -64,7 +65,7 @@ class AgentCatalogTests(unittest.TestCase):
             item["gap_code"]: item for item in inventory
             if item["identity_kind"] == "capability_gap"
         }
-        self.assertEqual(45, len(products))
+        self.assertEqual(73, len(products))
         self.assertEqual({card["selector"] for card in products}, set(product_items))
         self.assertEqual({gap["code"] for gap in gaps}, set(gap_items))
         self.assertTrue(all(not item["executable"] for item in gap_items.values()))
@@ -106,6 +107,76 @@ class AgentCatalogTests(unittest.TestCase):
                 operations=operations,
                 gaps=gaps,
             )
+
+    def test_every_public_mutation_action_has_a_safe_catalog_handoff(self) -> None:
+        from gravity_sdk.kanban_mutation import kanban_mutation_schema
+        from gravity_sdk.segment_mutation_cli import MUTATION_ACTIONS
+
+        cards = [
+            card for card in canonical_capability_cards(self.client)
+            if card.get("effect") == "mutation"
+        ]
+        by_kind = {
+            kind: {card["mutation_action"] for card in cards if card["kind"] == kind}
+            for kind in ("segment_mutation", "report_mutation", "kanban_mutation")
+        }
+        self.assertEqual(set(MUTATION_ACTIONS), by_kind["segment_mutation"])
+        self.assertEqual(
+            {
+                "create-report", "delete-report",
+                "create-subscription", "delete-subscription",
+            },
+            by_kind["report_mutation"],
+        )
+        self.assertEqual(
+            set(kanban_mutation_schema()["actions"]),
+            by_kind["kanban_mutation"],
+        )
+        self.assertEqual(31, len(cards))
+
+        stable_mutations = {
+            item["operation_id"]
+            for item in self.client.operations(stability="stable")
+            if self.client.describe(item["operation_id"]).get("effect") == "mutation"
+        }
+        coverage = Counter(
+            operation_id for card in cards for operation_id in card["operation_ids"]
+        )
+        scaffolding = {"report.template.create", "report.template.update"}
+        self.assertEqual(stable_mutations - scaffolding, set(coverage))
+        self.assertTrue(scaffolding.isdisjoint(coverage))
+        self.assertEqual(
+            {
+                "analysis.dataanalysis.segment.update",
+                "analysis.datamanageconfig.kanban.dashboard.delete",
+                "report.report.update",
+            },
+            {operation_id for operation_id, count in coverage.items() if count == 2},
+        )
+        self.assertTrue(all(count in {1, 2} for count in coverage.values()))
+
+        for card in cards:
+            with self.subTest(selector=card["selector"]):
+                self.assertFalse(card["natural_language_auto_execute"])
+                self.assertTrue(card["confirmation_required"])
+                self.assertIn(card["mutation_action"], card["match"]["matched_terms"])
+                self.assertFalse(card["next"]["ready_without_input"])
+                self.assertEqual("--dry-run", card["next"]["argv"][-1])
+                self.assertEqual("--execute", card["next"]["then_argv"][-1])
+                self.assertEqual(
+                    card["next"]["argv"][:-1], card["next"]["then_argv"][:-1]
+                )
+                if card["kind"] == "kanban_mutation":
+                    self.assertTrue(card["plan_executable"])
+                    self.assertEqual(
+                        ("preview", "execute"),
+                        (
+                            card["next"]["plan_node"]["request"]["mode"],
+                            card["next"]["then_plan_node"]["request"]["mode"],
+                        ),
+                    )
+                else:
+                    self.assertFalse(card["plan_executable"])
 
     def test_gap_describe_is_explicitly_unavailable(self) -> None:
         result = run_agent_catalog_command(

@@ -66,6 +66,9 @@ def render_documents() -> dict[Path, str]:
         card["selector"]: card
         for card in canonical_capability_cards(_OfflineClient())
     }
+    segment_mutations = _mutation_cards(cards, "segment_mutation")
+    report_mutations = _mutation_cards(cards, "report_mutation")
+    kanban_mutations = _mutation_cards(cards, "kanban_mutation")
     event_card = cards["analysis.query.spec:event"]
     compare_card = analysis_query_spec_cards("analysis period compare", domain=None, platform=None)[0]
     event_preview = prepare_query_spec(
@@ -99,8 +102,7 @@ def render_documents() -> dict[Path, str]:
         OUTPUT / "capability-gap.md": _capability_gap(protocol, discovery_gap, exits),
         OUTPUT / "ten-minute-path.md": _ten_minute_path(event_card, contract, exits),
         OUTPUT / "governed-writes.md": _governed_writes(
-            cards["analysis.segment.mutation"], cards["report.mutation"],
-            cards["kanban.mutation"], exits
+            segment_mutations, report_mutations, kanban_mutations, exits
         ),
         OUTPUT / "caller-semantics.md": _caller_semantics(
             SEMANTIC_VERSION, DERIVED_SPEC_VERSION
@@ -203,26 +205,70 @@ def _ten_minute_path(card: dict[str, Any], contract: dict[str, Any], exits: dict
 
 
 def _governed_writes(
-    segment_card: dict[str, Any], report_card: dict[str, Any],
-    kanban_card: dict[str, Any], exits: dict[str, str]
+    segment_cards: list[dict[str, Any]], report_cards: list[dict[str, Any]],
+    kanban_cards: list[dict[str, Any]], exits: dict[str, str]
 ) -> str:
+    segment_card = _action_card(segment_cards, "delete")
+    report_card = _action_card(report_cards, "create-subscription")
+    kanban_card = _action_card(kanban_cards, "dashboard.rename")
+    all_cards = [*segment_cards, *report_cards, *kanban_cards]
     return _guide(
         "受治理写入：dry-run → 人工确认 → execute",
         [
-            "先从完整目录读取三张 mutation 产品卡：",
-            "```powershell\ngravity agent-catalog describe " + segment_card["selector"] + "\ngravity agent-catalog describe " + report_card["selector"] + "\ngravity agent-catalog describe " + kanban_card["selector"] + "\n```",
-            "分群卡给出的最小两步交接为：",
+            "先从完整目录读取 action-qualified mutation 产品卡；analysis 的 27 张写卡都在产品区，`--limit 50` 可一次列出：",
+            "```powershell\ngravity agent-catalog categories\ngravity agent-catalog category analysis --limit 50\ngravity agent-catalog category report --limit 50\ngravity agent-catalog describe <selected-mutation-selector>\n```",
+            _mutation_table(all_cards),
+            "例如，删除分群卡给出的最小两步交接为：",
             "```powershell\n" + _argv(segment_card["next"]["argv"]) + "\n# 审查 preview 后，原参数只把 --dry-run 改为 --execute\n" + _argv(segment_card["next"]["then_argv"]) + "\n```",
-            "报表卡给出的最小两步交接为：",
+            "创建报表订阅卡给出的最小两步交接为：",
             "```powershell\n" + _argv(report_card["next"]["argv"]) + "\n# 审查 preview 后，原参数只把 --dry-run 改为 --execute\n" + _argv(report_card["next"]["then_argv"]) + "\n```",
-            "Kanban 卡给出的最小两步交接为：",
+            "重命名看板卡给出的最小两步交接为：",
             "```powershell\n" + _argv(kanban_card["next"]["argv"]) + "\n# 审查 preview 后，原参数只把 --dry-run 改为 --execute\n" + _argv(kanban_card["next"]["then_argv"]) + "\n```",
-            "同一确认协议覆盖 `analysis segment create-from-analysis/create-from-rule/create-from-history/create-from-tmp/update/update-rule/refresh/delete`、`reports create/delete/subscribe/unsubscribe` 与 `analysis dashboard kanban mutate`。每个命令都显式二选一 `--dry-run` / `--execute`；Kanban 另提供显式 `preview|execute` Plan node，但自然语言和预览都不是写授权。",
+            "31 张 action 卡覆盖 `analysis segment create-from-analysis/create-from-rule/create-from-history/create-from-tmp/update/update-rule/refresh/delete`、`reports create/delete/subscribe/unsubscribe` 与全部 19 个 `analysis dashboard kanban mutate --action`。每张卡都显式二选一 `--dry-run` / `--execute`；Kanban 另提供显式 `preview|execute` Plan node，但自然语言和预览都不是写授权。",
         ],
-        {"segment": segment_card["next"], "report": report_card["next"], "kanban": kanban_card["next"]},
+        {
+            "mutation_card_count": len(all_cards),
+            "action_card": {
+                key: segment_card[key]
+                for key in (
+                    "selector", "mutation_action", "operation_ids",
+                    "natural_language_auto_execute", "confirmation_required", "next",
+                )
+            },
+            "kanban_plan_handoff": {
+                "plan_node": kanban_card["next"]["plan_node"],
+                "then_plan_node": kanban_card["next"]["then_plan_node"],
+            },
+        },
         exits,
-        "create 写入可读回的 SDK marker；delete/unsubscribe 只处理执行时读回仍带 marker 的对象。Kanban 父删除 dry-run 先读树并报告迁移数；报表订阅固定 disabled、无收件人且永不调用 test route。",
+        "create 写入可读回的 SDK marker；update/delete/unsubscribe 要求 marker 或已证实 upstream owner，否则 fail closed。Kanban 父删除 dry-run 先读树并报告迁移数；报表订阅固定 disabled、无收件人且永不调用 test route。",
     )
+
+
+def _mutation_cards(
+    cards: dict[str, dict[str, Any]], kind: str
+) -> list[dict[str, Any]]:
+    return sorted(
+        (card for card in cards.values() if card.get("kind") == kind),
+        key=lambda card: str(card["selector"]),
+    )
+
+
+def _action_card(cards: list[dict[str, Any]], action: str) -> dict[str, Any]:
+    return next(card for card in cards if card["mutation_action"] == action)
+
+
+def _mutation_table(cards: list[dict[str, Any]]) -> str:
+    rows = [
+        "| selector | action | governed operation |",
+        "| --- | --- | --- |",
+    ]
+    rows.extend(
+        "| `" + str(card["selector"]) + "` | `" + str(card["mutation_action"])
+        + "` | `" + "`, `".join(card["operation_ids"]) + "` |"
+        for card in cards
+    )
+    return "\n".join(rows)
 
 
 def _caller_semantics(semantic_version: str, derived_version: str) -> str:

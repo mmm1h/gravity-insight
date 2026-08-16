@@ -10,6 +10,15 @@ from typing import Any
 from .find import query_match
 from .agent_export import is_authoritative_export_card
 from .agent_intent_text import affirmative_intent_text
+from .segment_mutation_contracts import (
+    FROM_ANALYSIS_CREATE,
+    FROM_HISTORY_CREATE,
+    FROM_RULE_CREATE,
+    FROM_RULE_UPDATE,
+    FROM_TMP_CREATE,
+    MANUAL_UPDATE,
+    SAVE,
+)
 from .segment_spec_schema import segment_rule_spec_schema
 
 
@@ -38,6 +47,65 @@ _EXACT_SELECTORS = frozenset(
     {_SELECTOR, f"composite:{_COMPOSITE}", _COMPOSITE}
 )
 _CONTRACT = segment_rule_spec_schema()
+_MUTATION_ACTIONS = (
+    "create-from-analysis",
+    "create-from-rule",
+    "create-from-history",
+    "create-from-tmp",
+    "update",
+    "update-rule",
+    "refresh",
+    "delete",
+)
+_MUTATION_COMMANDS = {
+    "create-from-analysis": [
+        "create-from-analysis", "--spec", "<funnel-spec.json>", "--app",
+        "<workspace-app>", "--name", "<segment-name>", "--step",
+        "<zero-based-step>", "--loss",
+    ],
+    "create-from-rule": [
+        "create-from-rule", "--spec", "<segment-rule-spec.json>", "--app",
+        "<workspace-app>",
+    ],
+    "create-from-history": [
+        "create-from-history", "--app", "<workspace-app>",
+        "--source-segment-id", "<segment-id>", "--version-id", "<version-id>",
+        "--name", "<segment-name>",
+    ],
+    "create-from-tmp": [
+        "create-from-tmp", "--app", "<workspace-app>", "--tmp-segment-id",
+        "<tmp-segment-id>", "--name", "<segment-name>",
+    ],
+    "update": [
+        "update", "--segment-id", "<segment-id>", "--name", "<segment-name>",
+    ],
+    "update-rule": [
+        "update-rule", "--segment-id", "<segment-id>", "--spec",
+        "<segment-rule-spec.json>", "--app", "<workspace-app>",
+    ],
+    "refresh": ["refresh", "--segment-id", "<segment-id>"],
+    "delete": ["delete", "--segment-id", "<segment-id>"],
+}
+_MUTATION_OPERATIONS = {
+    "create-from-analysis": (FROM_ANALYSIS_CREATE,),
+    "create-from-rule": (FROM_RULE_CREATE,),
+    "create-from-history": (FROM_HISTORY_CREATE,),
+    "create-from-tmp": (FROM_TMP_CREATE,),
+    "update": (SAVE,),
+    "update-rule": (FROM_RULE_UPDATE,),
+    "refresh": (MANUAL_UPDATE,),
+    "delete": (SAVE,),
+}
+_MUTATION_SUMMARIES = {
+    "create-from-analysis": "把漏斗命中或流失结果保存为分群",
+    "create-from-rule": "从显式 Segment Rule Spec 创建分群",
+    "create-from-history": "从精确历史版本复制分群",
+    "create-from-tmp": "把精确临时分群持久化",
+    "update": "更新分群名称和备注",
+    "update-rule": "替换分群的显式规则",
+    "refresh": "手动刷新分群计算",
+    "delete": "删除 marker 或 owner 验证通过的分群",
+}
 
 
 def segment_rule_spec_cards(
@@ -78,9 +146,19 @@ def segment_capability_inventory() -> tuple[dict[str, Any], ...]:
         segment_rule_spec_cards(
             _SELECTOR, domain=None, platform=None
         )[0],
-        segment_mutation_cards(
-            _MUTATION_SELECTOR, domain=None, platform=None
-        )[0],
+        *(
+            _segment_mutation_card(
+                _MUTATION_SELECTOR,
+                action,
+                selector=(
+                    _MUTATION_SELECTOR
+                    if action == _MUTATION_ACTIONS[0]
+                    else f"{_MUTATION_SELECTOR}:{action}"
+                ),
+                catalog_card=True,
+            )
+            for action in _MUTATION_ACTIONS
+        ),
     )
 
 
@@ -183,28 +261,27 @@ def _mutation_action(query: str) -> str | None:
     return None
 
 
-def _segment_mutation_card(query: str, action: str) -> dict[str, Any]:
-    command = {
-        "create-from-analysis": [
-            "create-from-analysis", "--spec", "<funnel-spec.json>", "--app",
-            "<workspace-app>", "--name", "<segment-name>", "--step", "<zero-based-step>",
-            "--loss",
-        ],
-        "update": ["update", "--segment-id", "<segment-id>", "--name", "<segment-name>"],
-        "refresh": ["refresh", "--segment-id", "<segment-id>"],
-        "delete": ["delete", "--segment-id", "<segment-id>"],
-    }[action]
+def _segment_mutation_card(
+    query: str,
+    action: str,
+    *,
+    selector: str = _MUTATION_SELECTOR,
+    catalog_card: bool = False,
+) -> dict[str, Any]:
+    command = _MUTATION_COMMANDS[action]
     base = ["gravity", "analysis", "segment", *command]
     return {
         "kind": "segment_mutation",
-        "selector": _MUTATION_SELECTOR,
+        "selector": selector,
         "domain": "analysis",
         "description": (
-            "分群写操作只返回显式命令交接：先零网络 dry-run，再由调用方确认执行；"
+            f"分群受治理动作 `{action}`：{_MUTATION_SUMMARIES[action]}；"
+            "只返回显式命令交接，先零网络 dry-run，再由调用方确认执行；"
             "自然语言永不自动发送写请求。"
         ),
         "effect": "mutation",
         "mutation_action": action,
+        "operation_ids": list(_MUTATION_OPERATIONS[action]),
         "executable": True,
         "plan_executable": False,
         "natural_language_auto_execute": False,
@@ -222,7 +299,17 @@ def _segment_mutation_card(query: str, action: str) -> dict[str, Any]:
             "action": action,
             "explicit_inputs": "<fill from authoritative IDs/spec; do not copy values from natural language>",
         },
-        "match": _intent_match(query),
+        "match": (
+            {
+                "confidence": "strong",
+                "coverage": 1.0,
+                "exact_selector": True,
+                "matched_terms": [action],
+                "missing_terms": [],
+            }
+            if catalog_card
+            else _intent_match(query)
+        ),
         "next": {
             "ready_without_input": False,
             "argv": [*base, "--dry-run"],

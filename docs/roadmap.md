@@ -3946,3 +3946,42 @@ App `26827043`、`order_status.order_id` 和 2026-08-15 单日；第一次因漏
 生成器 check、CLI help 与 `git diff --check` 全部通过。新增 caller-recoverable error site 为 **0**，审计基线
 保持 **1121 = A318 / B434 / C369**。unittest 的 protected-split 用例只在临时目录生成 synthetic fixture；
 仓库真实 query ledger 未改动，没有读取或运行真实 holdout/final。
+
+## 受治理写能力目录覆盖（2026-08-16）
+
+**提案与改造前实测：**书面提案位于 ignored `tmp/codex/catalog-coverage/proposal.md`。修改前实际执行
+`agent-catalog categories → category analysis/report → describe`；目录为
+`223 operation + 45 product + 9 gap = 277 selector`。30 条 stable mutation 全有 raw operation 行，
+但 canonical 产品卡只有 3 张，L3 分别只物化 `create-from-analysis`、`create-report`、`space.create`。
+raw mutation 的 L3 只给 `gravity run <operation-id>`；该通用入口会按 read policy 拒绝 mutation，且没有
+产品级 preflight、owner gate 或两步确认，所以“看见原子 operation”不等于“能正确调用写产品”。
+
+**表达裁决：**保留 3 个既有 selector 及默认动作，为其余 28 个真实调用方动作增加 action-qualified
+产品卡。最终为 Segment `8 actions / 7 operations`、报表/订阅 `4 / 3`、Kanban `19 / 18`，共 31 张
+mutation 卡；每卡显式携带 `mutation_action`、`operation_ids`、输入合同和成对 argv。三条底层 operation
+分别由两个调用方动作共享：Segment save 承载 update/delete，report update 承载 create/delete，
+Kanban dashboard delete 承载单删/批删。因此这是按 CLI/统一 SDK 产品动作表达，不是把 223 个 operation
+逐个包装成 tool。`report.template.create/update` 仍是订阅验证父对象的内部脚手架：没有调用方 CLI 或
+统一 SDK 动作，既不单列产品动线，也不伪装成目录产品；它们继续以 raw expert contract 可查。
+
+**改造后三层实测：**L1 为 `223 + 73 + 9 = 305 selector`；L2 为 analysis `47 product / 118 total`、
+report `9 / 39`，一次 `--limit 50` 可看到全部 31 张写卡；L3 对
+`analysis.segment.mutation:delete`、`kanban.mutation:dashboard.rename`、
+`report.mutation:delete-report` 均返回精确 operation、输入和 dry-run/execute 交接。
+`report.mutation:update-report` 实测为 caller exit 2 / `INPUT_INVALID`，因为产品面没有“更新报表”：
+`report.report.update` 的上游命名实际承载已治理的 create/delete，不能从 operation 名推导不存在的能力。
+
+**确认与 owner 边界：**本轮没有修改 operation、mutation core/executor、CLI parser、统一 SDK、Plan
+adapter 或 recognizer。31 张卡逐卡测试固定 `natural_language_auto_execute=false`、
+`confirmation_required=true`、`ready_without_input=false`，并要求 dry-run/execute 除末尾确认开关外参数
+完全相同；Kanban 另锁定 preview/execute Plan node，Segment 与报表继续 `plan_executable=false`。
+已有三域回归继续证明更新/删除只允许 `marker OR 已证实 upstream owner`，否则在写前 fail closed；
+目录卡没有新增任何执行路径，因此可发现性不会成为授权。
+
+**计数、门禁与边界：**operation/stable/manifest 保持 **223 / 214 / 11**，产品卡
+`45 + 28 = 73`，selector `277 + 28 = 305`，gap 仍为 9；产品动线仍为 `52 = 44 / 1 / 7`。
+unittest **1093**；pytest **1093 passed / 3040 subtests passed**；compiler **223 operations /
+11 manifests**；quality PASS（operations/provenance 223/223、operation literals 57）；生成器 `--check`、
+文档 4 项、CLI help 与 `git diff --check` 均通过。没有新增 caller-recoverable error site，故新增/A 档为
+**0/0**，审计保持 **1124 = A321 / B434 / C369**。技术债复核未发现新的结构债。生产 HTTP **0 次**；
+未碰 operation、recognizer、题集、评分、维度表、真实 holdout/final/key 或任何 GitHub/远端动作。

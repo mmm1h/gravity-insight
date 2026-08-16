@@ -15,8 +15,16 @@
 得到 52 条；按状态直接分组为 `52 = 44 / 1 / 7`。本单元开始时 dev 为
 `52 = 43 / 1 / 8`；设置 → 应用管理的真实列表 route 证明 J39 应由既有 stable `app.list` 承载，
 故 `43 + 1 = 44`、`8 - 1 = 7`，总数与部分闭环不变。operation/stable 仍为
-223 / 214（184 read + 30 governed mutation）；canonical 产品卡仍为 45，精确 gap 从 10 减为 9。
+223 / 214（184 read + 30 governed mutation）；canonical 产品卡由 45 增为 73，精确 gap 为 9。
 部分闭环的 Analysis 导出只关闭了单用户事件子类；7 条完全缺失里多数是合同证据阻塞，逐行有记录。
+
+2026-08-16 受治理写目录覆盖只改变发现表达，不新增产品动线或 operation。canonical inventory 保留
+3 个既有默认 mutation selector，并为其余 28 个调用方动作增加 action-qualified 卡：
+Segment `8 actions / 7 operations`、报表/订阅 `4 / 3`、Kanban `19 / 18`，故产品卡
+`45 + 28 = 73`、安装目录 `223 + 73 + 9 = 305`。31 张 mutation 卡覆盖 28/30 条底层写 operation；
+3 条共享 operation 各承载两个产品动作。剩余 `report.template.create/update` 是订阅验证父对象的内部
+脚手架，没有调用方 CLI/统一 SDK 动作，不伪装成独立产品。所有 action 卡仍只交付 dry-run、人工审查、
+同参数 execute；Segment/报表不进入 Plan，Kanban 只接受显式 preview/execute，owner gate 未改变。
 
 2026-08-16 沿设置 → 应用管理 / 元数据和多维报表入口做受控生产复核。App 管理的账号级 GET
 `/turbo_engine/api/v1/user/open_app/list/` 首屏 HTTP 200 非空 7 行；观察字段与既有 `app.list` v4
