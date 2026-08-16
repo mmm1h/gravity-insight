@@ -119,6 +119,46 @@ operation/stable/产品卡/selector 均保持 **231 / 222 = 185 read + 37 mutati
 compiler **231 operations / 11 manifests**、quality **PASS**；Agent Skill 生成器 `--check`、文档测试、
 CLI help 与 `git diff --check` 同时通过，测试数只增不减。
 
+### 变现导出百万行上限与四族完整性复核（2026-08-17）
+
+**提案与上游声明：**本轮先验证上限和完整性信号，再判断分片，不以拿到 READY 文件代替完整结果。
+冻结 Census 的 **375** 个 JS 中，hash-matched `CashSearch-00g6muds.js` 在
+`page_info.total_number > 1e6` 时同时提示列表和导出“截断”，并明确只取事件时间降序前 **100W** 条。
+任务页只消费 `id/task_name/status/create_user_name/task_type/create_time/download_url/message`；progress 的
+已观察/静态 shape 只有 `download_url/progress/status/task_id/message`，二者及 XLSX 都没有 total、row count
+或 truncated。因而上游确实声明了上限，却没有把截断事实绑定进异步任务结果。
+
+**两个窗口的可证伪对照：**已完成日 `2026-08-16` 的受管列表为 **1,212,315**，对应 READY 文件恰好
+**1,000,000** 行，静默缺 **212,315** 行。仍在增长的 `2026-08-17` 任务文件为 **110,966** 行；恢复任务时
+列表已增长到 **111,792**，相差 826。后一组证明文件不会无条件补齐到 100 万，但不能证明小窗口精确对平：
+create 时的 total 没有被持久化，恢复读发生在任务创建之后，826 既不能判为截断也不能判为导出错误。
+另一个已完成日 `2026-08-15` 的列表曾确认大于 100 万且不同于 1,212,315，但 create 没有返回 task id；
+精确 total 未在失败前保存，故不把它冒充第二份超限文件证据。
+
+**信号与分片判定：**`Download-DlEV6nb1.js` 证明 `evaluate_data` 与 `submit_task` 接收同一七字段 body，
+前者只把 `data.total` 用作预估；`total > 1e6` 时前端禁用提交并要求缩短时间或减少事件。未发现 shard、page、
+offset 或 continuation 参数，所以它不是分片接口。自行按日切窗只对“每个单日都不超过 100 万”的范围成立：
+N 天需要 N 次 total read + N 次 create + N 次 download + 所有 poll；每任务一次成功 poll 时为 **4N** 次请求。
+完整性必须逐日满足 `file_rows == total_items`，再满足两边累计和相等。目标日自身已经超限，故按日切分不能解决；
+一次 `00:00..00:59` 条件仍返回全日量级 **1,212,325**，也不能把该条件当成小时 shard。
+
+**四族复核与最终判定：**同一固定 App/日期/字段重新对账：`segment.result` **1/1**、
+`segment_user_detail` **1/1**、`user_detail` **255/255**、`pay_event` **217/217**（文件行/受管总数），
+四族均无需降级。`monetization_detail` 不满足 A：没有能覆盖单日超限的分片；也不满足 B：managed list total
+没有与异步任务 snapshot 的可信绑定，当前日实测已经展示这个竞态。route 因此继续
+`contract_status=unverified / executable=false`；SDK 当前的 fail-closed 能力是拒绝执行该族，而不是在下载后
+可靠返回 `partial + missing_rows`。若未来出现任务绑定 total/truncated，或可自证的服务端分片，再重判晋升。
+
+本轮生产 HTTP 为 **44 / 45**，全部 HTTP 200、单次尝试，无重试、翻页、为找非空换 App 或 busy-loop；
+剩余 1 次未使用。下载的 1,455,676-byte 临时 XLSX 已删除，凭据文件未提交。逐请求账本、静态 hash、窗口数字、
+四族对账与不确定项见
+[`20260817_export_sharding.json`](../evidence/forensics/20260817_export_sharding.json)。本轮不新增 operation、
+产品卡、selector、动线或 caller-recoverable 错误点，故 **231 / 222 / 89 / 329** 与
+**56 = 48 / 1 / 7** 均不变。最终门禁为 unittest **1129 OK**、pytest
+**1129 passed / 3083 subtests passed**、compiler **231 operations / 11 manifests**、quality **PASS**；
+错误审计保持 **1201 = A398 / B434 / C369**，本线新增/A 档错误点为 **0/0**。文档 4 项、Agent 指南
+生成器 `--check`、CLI help 与 `git diff --check` 同时通过，测试数未减少。
+
 ### Census 完整性与分母审计（2026-08-16）
 
 **提案与判定：**复验冻结 snapshot、仍存的哈希匹配 raw bundle、抓取器、解析器、前端菜单/路由表

@@ -219,8 +219,9 @@ list/get 不属于 metadata cache operation，delete guard 仍使用完整新列
 退避轮询、SafeBlobTransfer、XLSX finalizer、HTTP receipt 和原子提交；未产生按族复制的下载栈或新 registry。
 六态也是既有 Export result envelope 的窄增量。后续变现补证仅为该 route 登记实测可容纳文件的 192 MiB
 展开上限，共享 entry/ratio/encryption/symlink/traversal/nesting/metadata 守卫均保留；通用归档错误统一携带
-规则、实测值和 next action，没有按导出族分叉检查器。变现上游的 1,000,000 行静默截断仍是合同证据
-blocker，不以结构绕过；本轮复核不新增活动结构债。
+规则、实测值和 next action，没有按导出族分叉检查器。变现上游的 1,000,000 行截断现在有前端明确声明和
+生产文件交叉证据，但 task list/progress/file 均没有与任务 snapshot 绑定的 total/truncated；该合同证据
+blocker 不以结构绕过。四个已晋升族的文件行数均与各自受管总数一致，本轮复核不新增活动结构债。
 
 保存分析离线边界复核把 metadata dependency 枚举下沉到窄 FieldPolicy helper，并用独立 offline loader
 收紧 `client.py` AST ratchet；Dashboard、Saved Analysis、Template 与 Plan 只传播同一合同，不建立第二套

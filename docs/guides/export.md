@@ -64,7 +64,9 @@ inventory。
 Agent 只暴露 `currently_callable=true` 且 `effect=export_job_create` 的卡。当前会得到上述六个
 creator；task status/cancel 等支持路由不是创建候选。`origin_event` 因唯一有界估算为零而未提交 create；
 `monetization_detail` 的 READY XLSX 已通过保留全部安全规则的 route-scoped 192 MiB 展开上限，但文件只有
-1,000,000 行，同 scope 受管列表为 1,212,315 行，且上游没有截断信号，所以仍是 gap。
+1,000,000 行，同 scope 受管列表为 1,212,315 行。前端明确提示超过 100 万时只导出前 100W 条，
+但 task list/progress/file 没有与任务 snapshot 绑定的 total/truncated，按日也无法拆开已经单日超限的目标，
+所以仍是 gap。四个已晋升 Analysis 族已分别完成文件行数与受管总数对账（1/1、1/1、255/255、217/217）。
 `stream_event` 的前端按钮只做客户端
 表格序列化，未调用声明的 loader，因此它不是待探测的 SDK 服务端缺口。用
 `export list-capabilities` 查看边界，不要把 catalog 条目当成可执行能力。
