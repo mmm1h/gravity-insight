@@ -376,9 +376,54 @@ def terminal_score(case: Mapping[str, Any], result: Mapping[str, Any] | None) ->
         return False, "target_gap_missing"
     if not str(selected.get("next_action", "")).strip():
         return False, "gap_next_action_missing"
-    if result.get("offline") is not True or result.get("network_called") is not False:
+    if "execution_network_called" in result:
+        terminal_offline = result.get("execution_network_called") is False
+    else:
+        terminal_offline = (
+            result.get("offline") is True and result.get("network_called") is False
+        )
+    if not terminal_offline:
         return False, "gap_not_offline"
     return True, "explicit_gap"
+
+
+def _selection_identity(result: Mapping[str, Any] | None) -> tuple[str, ...]:
+    """Return the exact scored selection, independent of whether it was correct."""
+
+    if result is None:
+        return ("result:none",)
+    direct = result.get("selected_selectors")
+    if isinstance(direct, Sequence) and not isinstance(direct, (str, bytes)):
+        return ("selectors", *sorted(str(value) for value in direct))
+    identities: list[str] = []
+    candidates = result.get("candidates")
+    if isinstance(candidates, Sequence) and candidates:
+        card = candidates[0]
+        if isinstance(card, Mapping):
+            fields = [
+                f"{key}:{card[key]}"
+                for key in (
+                    "selector", "composite", "operation_id", "metadata_kind", "kind"
+                )
+                if card.get(key) is not None
+            ]
+            identities.append(":".join(("candidate", *fields)))
+    gaps = result.get("capability_gaps")
+    if isinstance(gaps, Sequence):
+        for gap in gaps:
+            if not isinstance(gap, Mapping):
+                continue
+            selectors = gap.get("candidate_selectors")
+            selected = (
+                sorted(map(str, selectors))
+                if isinstance(selectors, Sequence)
+                and not isinstance(selectors, (str, bytes))
+                else []
+            )
+            identities.append(":".join(("gap", str(gap.get("code", "unknown")), *selected)))
+    if identities:
+        return tuple(sorted(identities))
+    return ("selection:none",)
 
 
 def _discover_trials(
@@ -386,7 +431,13 @@ def _discover_trials(
 ) -> tuple[dict[str, Any], int, list[dict[str, Any]]]:
     from gravity_sdk.agent_batch import capabilities_many
 
-    states = {case["case_id"]: {"selection": [], "parameter": [], "terminal": [], "reasons": []} for case in cases}
+    states = {
+        case["case_id"]: {
+            "selection": [], "selected": [], "parameter": [], "terminal": [],
+            "reasons": [],
+        }
+        for case in cases
+    }
     batch_calls = 0
     observations: list[dict[str, Any]] = []
     for trial in range(trials):
@@ -405,6 +456,7 @@ def _discover_trials(
                 terminal, terminal_reason = terminal_score(case, result)
                 state = states[case["case_id"]]
                 state["selection"].append(ok)
+                state["selected"].append(_selection_identity(result))
                 state["parameter"].append(parameter)
                 state["terminal"].append(terminal)
                 state["reasons"].append((reason, parameter_reason, terminal_reason))
@@ -422,14 +474,27 @@ def _layer(states: Mapping[str, Mapping[str, Any]], index: int, key: str) -> dic
 
 
 def _reliability(states: Mapping[str, Mapping[str, Any]], key: str) -> dict[str, Any]:
-    eligible = [state[key] for state in states.values() if state[key][0] is not None]
-    pass1 = sum(values[0] is True for values in eligible)
-    pass4 = sum(all(value is True for value in values) for values in eligible)
-    unstable = sum(len(set(values)) > 1 for values in eligible)
+    eligible = [
+        (case_id, state) for case_id, state in states.items()
+        if state[key][0] is not None
+    ]
+    values = [state[key] for _case_id, state in eligible]
+    pass1 = sum(series[0] is True for series in values)
+    pass4 = sum(all(value is True for value in series) for series in values)
+    unstable = sorted(
+        case_id for case_id, state in eligible
+        if len(set(state["selected"])) > 1
+    )
+    variants = {
+        case_id: [list(value) for value in sorted(set(states[case_id]["selected"]))]
+        for case_id in unstable
+    }
     return {
-        "pass^1": {"passed": pass1, "total": len(eligible), "rate": _rate(pass1, len(eligible))},
-        "pass^4": {"passed": pass4, "total": len(eligible), "rate": _rate(pass4, len(eligible))},
-        "unstable_tasks": unstable,
+        "pass^1": {"passed": pass1, "total": len(values), "rate": _rate(pass1, len(values))},
+        "pass^4": {"passed": pass4, "total": len(values), "rate": _rate(pass4, len(values))},
+        "unstable_tasks": len(unstable),
+        "unstable_case_ids": unstable,
+        "unstable_selections": variants,
     }
 
 
@@ -576,6 +641,8 @@ def _summary(result: Mapping[str, Any]) -> str:
         f"{reliability['product_selection']['pass^4']['total']}",
         f"Terminal pass^4: {reliability['end_to_end']['pass^4']['passed']}/"
         f"{reliability['end_to_end']['pass^4']['total']}",
+        f"Selection unstable tasks: {reliability['product_selection']['unstable_tasks']}",
+        f"Terminal unstable tasks: {reliability['end_to_end']['unstable_tasks']}",
         f"Skipped production cases: {layers['end_to_end']['skipped_production']}",
         f"Production HTTP requests: {layers['cost']['production_http_requests']}",
         f"Elapsed: {layers['cost']['elapsed_seconds']:.3f}s",

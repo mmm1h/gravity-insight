@@ -35,7 +35,8 @@ def external_selector_trials(
     blind_questions, aliases, blind_receipt = _blind_questions(cases)
     states = {
         str(case["case_id"]): {
-            "selection": [], "parameter": [], "terminal": [], "reasons": []
+            "selection": [], "selected": [], "parameter": [], "terminal": [],
+            "reasons": []
         }
         for case in cases
     }
@@ -68,6 +69,9 @@ def external_selector_trials(
             terminal, terminal_reason = terminal_score(case, result)
             state = states[str(case["case_id"])]
             state["selection"].append(ok)
+            state["selected"].append(tuple(
+                ["selectors", *sorted(map(str, item["selectors"]))]
+            ))
             state["parameter"].append(parameter)
             state["terminal"].append(terminal)
             state["reasons"].append((reason, parameter_reason, terminal_reason))
@@ -295,6 +299,9 @@ def _selection_result(
         "status": "success" if candidates else "capability_gap",
         "offline": metadata.get("network_called") is not True,
         "network_called": metadata.get("network_called") is True,
+        "selection_network_called": metadata.get("network_called") is True,
+        "execution_network_called": False,
+        "selected_selectors": selectors,
         "candidates": candidates,
         "capability_gaps": gaps,
     }

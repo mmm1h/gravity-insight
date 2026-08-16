@@ -4161,3 +4161,63 @@ quality PASS（operations/provenance 226/226、operation literals 57）；compil
 11 manifests**；Agent Skill 生成器 `--check` 与 `git diff --check` 均通过。L2 `analysis --limit 50`
 实测在 raw operation 前返回全部 47 张 analysis 产品卡，含 8 张 Segment 与 19 张 Kanban mutation 卡。
 本轮生产 HTTP **0 次**；未碰 recognizer、题集、评分、真实 holdout/final/key 或任何 GitHub/远端动作。
+
+## 评测装置阶段网络与实际选择稳定性（2026-08-16）
+
+**提案与冲突定位：**工作提案位于 ignored `tmp/codex/eval-holes/proposal.md`。派发基线
+`9db7f81` 的 `scripts/agent_usability_external_selector.py:296-297` 在 `_selection_result()` 中把插件
+元数据 `network_called=true` 同时投影成整个结果的 `offline=false/network_called=true`；随后
+`scripts/agent_usability_eval.py:379-380` 的 `terminal_score()` 断言
+`offline is True and network_called is False`，否则固定返回 `gap_not_offline`。因此真实联网 selector
+即使选中了精确、可执行 next action 的 gap，也会被这条机械断言判负；上一轮 81 个终点中 80 个正是
+这一路径，另 1 个是独立的 `target_gap_missing`。
+
+**语义裁决与反事实：**选择“按阶段记账”：外部结果保留整体 `network_called=true`，另显式记录
+`selection_network_called=true` 与 `execution_network_called=false`。终点层只豁免选择模型的网络，
+仍要求精确目标 gap、非空 next action，并在 `execution_network_called=true` 时返回
+`gap_not_offline`；没有阶段字段的既有 recognizer 结果继续执行原来的
+`offline=true/network_called=false` 判据。没有把联网臂记 `not_applicable`，因为那会删除不同 selector
+在同一 gap 安全终点上的可比证据，并可能用空分母抬高总分；也没有无条件忽略 `network_called`，因为
+真正的执行阶段请求仍必须判负。具体反例已锁进测试：正确 gap 但
+`execution_network_called=true` 仍是失败，不是永真判据。
+
+**同一 development 数据复算：**没有重调模型，而是把新判据应用到上一节同一份 336 题、4 trial
+锁定选择。终点从 **`0/81 → 80/81`**：80 个 `gap_not_offline` 改为 `explicit_gap`，同一个
+`target_gap_missing` 保持失败；产品选择、参数、错误恢复和安全分数不变。旧稳定性只看四个布尔分数，
+所以 **`unstable_tasks=0`**；新口径比较实际 selector 集合后为 **`7`**，新增题号如下：
+
+- `J06.dev.zh.normal-1`
+- `J06.dev.zh.normal-2`
+- `J06.dev.en.normal-1`
+- `J06.dev.zh.boundary`
+- `J06.dev.en.missing`
+- `J06.dev.v3.colloquial`
+- `J06.dev.v3.first-turn`
+
+这七题 trial 1 均选 `composite:derived_metrics`，trial 2--4 均选
+`composite:saved_analysis`；两者都错，所以 `pass^1=pass^4` 不变。结果 envelope 现同时输出
+`unstable_case_ids` 和各题 `unstable_selections`，补上旧结果只有计数、不能从结果本身审计具体抖动选择
+的附带缺口。fixture 明确证明旧布尔集合大小为 1、而新实际选择集合大小为 2。
+
+**temperature 0 与 J06 裁决：**evaluator 在 trial 循环外只构造一次 catalog 和盲化 questions，四次
+receipt 的 request SHA-256 也完全相同，因此可以排除候选顺序变化和 evaluator prompt 非确定内容。
+能确定的只到这里：compatible gateway、provider serving 与模型采样层中究竟哪一层造成不同响应，现有
+代码和 receipt 不能区分，不能把根因武断归给某一层。J06 registry 期待 `period_compare →
+analysis.query.spec`；实现卡确有 `same_spec_required`、成对 `compare_start/compare_end` 和双窗执行面，
+工作流也指定该入口，故题目没有写错。缺口在外部目录投影：`analysis.query.spec` summary 只写
+event/funnel/retention/property/scatter，未写同 Spec 跨期；`agent_caller_language.py` 虽有正确动线标题，
+external catalog summary 没有投影它。应由独立 Agent catalog/产品描述线补表达，不能在本评测线改题或
+顺手调目录；改题会隐藏真实可发现性缺口并破坏冻结纪律。
+
+**边界与计数：**本轮只改 evaluator、其 README 和两个紧凑回归断言；公开 development recognizer
+另跑 1 趟、4 trial，结果 `254/336、203/203、53/74、5/5`，两类不稳定题均 0，Gravity HTTP 与 socket
+尝试均 0。外部 LLM 调用 **0 次 / US$0**，生产 Gravity HTTP **0 次**，没有重试、翻页、扩窗或换 App。
+没有运行 holdout/final/all，没有读取 key 或查看/解密 sealed payload；没有改题、recognizer、目录、
+产品卡、gap、operation 或评分阈值。动线严格为 `53 + 0 = 53 = 45 / 1 / 7`，operation/stable 严格为
+`226 + 0 = 226 / 217`。技术债复核未产生新的活动结构债；本轮未新增 caller-recoverable error site。
+
+**最终门禁：**unittest 为 **`1099 + 1 = 1100`**；pytest 为 **1100 passed / 3055 subtests
+passed**；文档测试 **4 passed**；compiler **226 operations / 11 manifests**；quality PASS
+（operations/provenance 226/226、operation literals 57）；Agent Skill 生成器 `--check`、CLI help 与
+`git diff --check` 均通过。错误审计严格保持 **`1145 + 0 = 1145 = A342 / B434 / C369`**，故本线新增
+错误点/A 档为 **0/0**。实现新增 84 行、测试新增 21 行，测试增量为实现的 25%，满足 1:3 上限。

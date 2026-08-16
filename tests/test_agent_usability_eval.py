@@ -221,14 +221,14 @@ class AgentUsabilityEvalTests(unittest.TestCase):
         self.assertEqual((None, "skipped_production"),
                          self.subject.terminal_score(case, result))
 
-    def test_exact_actionable_gap_is_an_offline_terminal(self) -> None:
+    def test_online_selection_can_reach_an_offline_gap_terminal(self) -> None:
         case = {"expected": {
             "route_key": "analysis_defaults_gap",
             "gap_code": "ANALYSIS_DEFAULT_DICTIONARY_CONTRACT_MISSING",
         }}
         result = {
-            "offline": True,
-            "network_called": False,
+            "offline": False, "network_called": True,
+            "selection_network_called": True, "execution_network_called": False,
             "candidates": [],
             "capability_gaps": [{
                 "code": "ANALYSIS_DEFAULT_DICTIONARY_CONTRACT_MISSING",
@@ -236,8 +236,26 @@ class AgentUsabilityEvalTests(unittest.TestCase):
             }],
         }
         self.assertTrue(self.subject.route_score(case, result)[0])
+        self.assertFalse(result["offline"] is True and result["network_called"] is False)
         self.assertEqual((True, "explicit_gap"),
                          self.subject.terminal_score(case, result))
+        result["execution_network_called"] = True
+        self.assertEqual(
+            (False, "gap_not_offline"), self.subject.terminal_score(case, result)
+        )
+
+    def test_reliability_uses_actual_selection_not_boolean_score(self) -> None:
+        states = {"J06.dev": {"selection": [False] * 4,
+                  "selected": [
+                      ("wrong:a",), ("wrong:b",), ("wrong:b",), ("wrong:b",),
+                  ]}}
+        self.assertEqual(1, len(set(states["J06.dev"]["selection"])))
+        self.assertEqual((1, ["J06.dev"]), (
+            self.subject._reliability(states, "selection")["unstable_tasks"],
+            self.subject._reliability(states, "selection")["unstable_case_ids"],
+        ))
+        self.assertEqual(2, len(self.subject._reliability(
+            states, "selection")["unstable_selections"]["J06.dev"]))
 
     def test_recovery_suite_uses_no_transport(self) -> None:
         from gravity_sdk.client import GravityInsightClient
