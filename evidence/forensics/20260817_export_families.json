@@ -1,0 +1,108 @@
+{
+  "schema_version": "gravity-insight.export-families-evidence.v1",
+  "generated_at": "2026-08-17T01:12:00+08:00",
+  "scope": "frozen Web-entry Census subset; absence is not a platform-wide claim",
+  "request_budget": {"limit": 60, "used": 41, "remaining": 19},
+  "discipline": {
+    "retries": 0,
+    "data_pages_advanced": 0,
+    "date_windows_expanded": 0,
+    "apps_switched": 0,
+    "poll_delays_seconds": [2, 4, 8, 16],
+    "maximum_polls_per_create_run": 4,
+    "credentials_persisted": false,
+    "user_level_values_persisted": false,
+    "temporary_objects_created": 0,
+    "temporary_files_remaining": 0
+  },
+  "family_verdicts": [
+    {
+      "operation_id": "export.analysis.segment.result.start",
+      "verdict": "callable",
+      "result": {"completion_status": "complete", "create_semantic_code": 0, "poll_states": [2], "downloads": 1},
+      "file": {"bytes": 4940, "sha256": "1020e34c259d324c37a36146efa76571381b7966f7d59aae1b5cec9e6c9f542a", "worksheets": ["Sheet1"], "rows": 1, "columns": [{"header": "用户ID", "storage_types": ["s"], "python_types": ["str"], "number_formats": ["General"], "logical_type": "identifier", "nonempty_cells": 1}]}
+    },
+    {
+      "operation_id": "export.analysis.segment_user_detail.start",
+      "verdict": "callable",
+      "result": {"completion_status": "complete", "create_semantic_code": 0, "poll_states": [2], "downloads": 1},
+      "file": {"bytes": 4889, "sha256": "dd51e4c56ef9196c08c0cb785bc2b75b012ccd539d059003253507c2f4c7caa8", "worksheets": ["Sheet1"], "rows": 1, "columns": [{"header": "客户ID", "storage_types": ["s"], "python_types": ["str"], "number_formats": ["General"], "logical_type": "identifier", "nonempty_cells": 1}, {"header": "注册时间", "storage_types": ["s"], "python_types": ["str"], "number_formats": ["General"], "logical_type": "datetime", "nonempty_cells": 1}]}
+    },
+    {
+      "operation_id": "export.analysis.user_detail.start",
+      "verdict": "callable",
+      "result": {"completion_status": "complete", "create_semantic_code": 0, "poll_states": [2], "downloads": 1},
+      "file": {"bytes": 13619, "sha256": "99c2d37034fb2c5b8a10391907e4881d5af959183f6dafd43af0cf38128ce1c3", "worksheets": ["Sheet1"], "rows": 255, "columns": [{"header": "客户ID", "storage_types": ["s"], "python_types": ["str"], "number_formats": ["General"], "logical_type": "identifier", "nonempty_cells": 255}, {"header": "注册时间", "storage_types": ["s"], "python_types": ["str"], "number_formats": ["General"], "logical_type": "datetime", "nonempty_cells": 255}]}
+    },
+    {
+      "operation_id": "export.analysis.pay_event.start",
+      "verdict": "callable",
+      "result": {"completion_status": "complete", "create_semantic_code": 0, "poll_states": [2], "downloads": 1},
+      "file": {"bytes": 11648, "sha256": "e9e29b83e3bde342cb8a49d3bd5438195cd43952cebc7c095e28b6208781bfeb", "worksheets": ["Sheet1"], "rows": 217, "columns": [{"header": "客户ID", "storage_types": ["s"], "python_types": ["str"], "number_formats": ["General"], "logical_type": "identifier", "nonempty_cells": 217}, {"header": "订单ID", "storage_types": ["s"], "python_types": ["str"], "number_formats": ["General"], "logical_type": "identifier", "nonempty_cells": 217}]}
+    },
+    {
+      "operation_id": "export.analysis.monetization_detail.start",
+      "verdict": "gap",
+      "attempts": {"creates": 1, "initial_poll_states": [1, 1, 1, 1], "recovery_poll_states": [1, 2], "downloads": 1, "narrow_create_attempts": 0},
+      "blocker": {"stage": "archive_check", "code": "BLOB_ARCHIVE_UNSAFE", "detail": "READY download failed the unchanged shared archive-safety gate; no file was committed and no successful file shape is known"},
+      "narrow_attempt": "A same-App/same-day natural ClientID was obtained, but the narrowed parent condition failed local typed-condition validation before create; no duplicate task was submitted."
+    },
+    {
+      "operation_id": "export.analysis.origin_event.start",
+      "verdict": "gap",
+      "attempts": {"event_catalog_reads": 1, "positive_yesterday_events": 0, "evaluate_requests": 1, "positive_estimates": 0, "creates": 0},
+      "blocker": "The one exact natural event in the fixed App/day evaluated to zero rows; create was not sent, so successful task and file shape remain unknown."
+    }
+  ],
+  "completion_status_evidence": {
+    "empty": "A header-only XLSX using each route's own contracted headers finalizes with rows=0 and completion_status=empty.",
+    "partial": "Injected BLOB_TRANSPORT_ERROR after task creation maps to completion_status=partial and never complete.",
+    "truncated": "Injected BLOB_SIZE_LIMIT maps to completion_status=truncated/PAGINATION_LIMIT and never complete.",
+    "expired": "Injected EXPORT_UPSTREAM_EXPIRED, the code emitted for task status 5, maps to completion_status=expired and never complete.",
+    "complete": "Requires a committed receipt with rows>0; four production files satisfy it.",
+    "gap": "An uncallable route description reports completion_status=gap; origin-event and monetization-detail remain uncallable."
+  },
+  "http_ledger": [
+    {"sequence": 1, "phase": "discovery", "operation_id": "authentication", "method": "POST", "path": "/account_center/api/v1/user_login/v2/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 2, "phase": "discovery", "operation_id": "app.list", "method": "GET", "path": "/turbo_engine/api/v1/user/open_app/list/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 3, "phase": "discovery", "operation_id": "analysis.user_detail.list", "method": "GET", "path": "/turbo_engine/api/v2/event/user_property_list/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 4, "phase": "discovery", "operation_id": "analysis.user_detail.list", "method": "GET", "path": "/turbo_engine/api/v2/event/event_property_list/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 5, "phase": "discovery", "operation_id": "analysis.user_detail.list", "method": "GET", "path": "/report/api/v3/dataanalysis/segment/list/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 6, "phase": "discovery", "operation_id": "analysis.user_detail.list", "method": "POST", "path": "/report/api/v3/dataanalysis/user/detail/list/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 7, "phase": "discovery", "operation_id": "analysis.order_detail.list", "method": "GET", "path": "/report/api/v3/dataanalysis/segment/list/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 8, "phase": "discovery", "operation_id": "analysis.order_detail.list", "method": "POST", "path": "/report/api/v3/dataanalysis/user/pay_event/list/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 9, "phase": "discovery", "operation_id": "analysis.monetization_detail.list", "method": "GET", "path": "/report/api/v3/dataanalysis/segment/list/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 10, "phase": "discovery", "operation_id": "analysis.monetization_detail.list", "method": "POST", "path": "/report/api/v3/dataanalysis/monetization_detail/list/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 11, "phase": "discovery", "operation_id": "analysis.segment.list", "method": "GET", "path": "/report/api/v3/dataanalysis/segment/list/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 12, "phase": "discovery", "operation_id": "analysis.segment.user_detail.list", "method": "POST", "path": "/report/api/v3/dataanalysis/segment/user/detail/list/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 13, "phase": "discovery", "operation_id": "analysis.segment.history_version.list", "method": "GET", "path": "/report/api/v3/dataanalysis/segment/history_version/list/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 14, "phase": "discovery", "operation_id": "analysis.event.list", "method": "GET", "path": "/turbo_engine/api/v2/event/event_list/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 15, "phase": "discovery", "operation_id": "export.analysis.origin_event.evaluate", "method": "POST", "path": "/report/api/v3/dataanalysis/export/origin_event_data/evaluate_data/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 16, "phase": "file_runs", "operation_id": "export.analysis.segment.result.start", "method": "POST", "path": "/report/api/v3/dataanalysis/segment/download_result/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 17, "phase": "file_runs", "operation_id": "export.task.progress", "method": "GET", "path": "/turbo_engine/api/v1/task/download/progress/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 18, "phase": "file_runs", "operation_id": "export.analysis.segment.result.start.download", "method": "GET", "path": "/{tenant}/excels/{opaque}.xlsx", "http_status": 200, "semantic_code": null},
+    {"sequence": 19, "phase": "file_runs", "operation_id": "export.analysis.segment_user_detail.start", "method": "POST", "path": "/report/api/v3/dataanalysis/segment/user/detail/download/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 20, "phase": "file_runs", "operation_id": "export.task.progress", "method": "GET", "path": "/turbo_engine/api/v1/task/download/progress/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 21, "phase": "file_runs", "operation_id": "export.analysis.segment_user_detail.start.download", "method": "GET", "path": "/{tenant}/excels/{opaque}.xlsx", "http_status": 200, "semantic_code": null},
+    {"sequence": 22, "phase": "file_runs", "operation_id": "export.analysis.user_detail.start", "method": "POST", "path": "/report/api/v3/dataanalysis/user/detail/download/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 23, "phase": "file_runs", "operation_id": "export.task.progress", "method": "GET", "path": "/turbo_engine/api/v1/task/download/progress/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 24, "phase": "file_runs", "operation_id": "export.analysis.user_detail.start.download", "method": "GET", "path": "/{tenant}/excels/{opaque}.xlsx", "http_status": 200, "semantic_code": null},
+    {"sequence": 25, "phase": "file_runs", "operation_id": "export.analysis.pay_event.start", "method": "POST", "path": "/report/api/v3/dataanalysis/user/pay_event/download/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 26, "phase": "file_runs", "operation_id": "export.task.progress", "method": "GET", "path": "/turbo_engine/api/v1/task/download/progress/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 27, "phase": "file_runs", "operation_id": "export.analysis.pay_event.start.download", "method": "GET", "path": "/{tenant}/excels/{opaque}.xlsx", "http_status": 200, "semantic_code": null},
+    {"sequence": 28, "phase": "file_runs", "operation_id": "export.analysis.monetization_detail.start", "method": "POST", "path": "/report/api/v3/dataanalysis/monetization_detail/download/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 29, "phase": "file_runs", "operation_id": "export.task.progress", "method": "GET", "path": "/turbo_engine/api/v1/task/download/progress/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 30, "phase": "file_runs", "operation_id": "export.task.progress", "method": "GET", "path": "/turbo_engine/api/v1/task/download/progress/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 31, "phase": "file_runs", "operation_id": "export.task.progress", "method": "GET", "path": "/turbo_engine/api/v1/task/download/progress/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 32, "phase": "file_runs", "operation_id": "export.task.progress", "method": "GET", "path": "/turbo_engine/api/v1/task/download/progress/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 33, "phase": "monetization_recovery", "operation_id": "export.task.list", "method": "POST", "path": "/turbo_engine/api/v1/task/download/list/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 34, "phase": "monetization_recovery", "operation_id": "export.task.progress", "method": "GET", "path": "/turbo_engine/api/v1/task/download/progress/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 35, "phase": "monetization_recovery", "operation_id": "export.task.progress", "method": "GET", "path": "/turbo_engine/api/v1/task/download/progress/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 36, "phase": "monetization_recovery", "operation_id": "export.analysis.monetization_detail.start.download", "method": "GET", "path": "/{tenant}/excels/{opaque}.xlsx", "http_status": 200, "semantic_code": null},
+    {"sequence": 37, "phase": "monetization_narrow_preflight", "operation_id": "app.list", "method": "GET", "path": "/turbo_engine/api/v1/user/open_app/list/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 38, "phase": "monetization_narrow_preflight", "operation_id": "analysis.monetization_detail.list", "method": "GET", "path": "/turbo_engine/api/v2/event/user_property_list/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 39, "phase": "monetization_narrow_preflight", "operation_id": "analysis.monetization_detail.list", "method": "GET", "path": "/turbo_engine/api/v2/event/event_property_list/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 40, "phase": "monetization_narrow_preflight", "operation_id": "analysis.monetization_detail.list", "method": "GET", "path": "/report/api/v3/dataanalysis/segment/list/", "http_status": 200, "semantic_code": 0},
+    {"sequence": 41, "phase": "monetization_narrow_preflight", "operation_id": "analysis.monetization_detail.list", "method": "POST", "path": "/report/api/v3/dataanalysis/monetization_detail/list/", "http_status": 200, "semantic_code": 0}
+  ]
+}

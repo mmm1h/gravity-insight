@@ -303,6 +303,24 @@ GET。结合第二轮平台 MP4 样本，Bytedance source 的 file/thumbnail 都
 合同把有效 response-bound URL 的所有 terminal 非 200 归 upstream/exit 3，source/ref/role/input 归
 caller/exit 2，本地文件提交归 local/exit 4；不构造任何失效 URL。
 
+### 第四轮：六类 Analysis 服务端导出重判（2026-08-17）
+
+字段投影不再是 blocker。固定 catalog 第三个 App 和 `2026-08-16` 单日的父读取分别返回：
+user detail 1 行、pay event 1 行、monetization detail 1 行、已完成分群 1 个、分群成员 1 行和
+正数版本 1 个。因而没有创建临时分群，也没有清理写请求。以上游请求为真实边界，
+`segment.result`、`segment_user_detail`、`user_detail`、`pay_event` 四族各自取得非空
+create→poll→download→validate 文件，并以独立的 worksheet/header/storage/Python/logical type 合同晋升
+verified/callable。这是 export route catalog 的 effect 状态变更，不是 stable read operation 晋升；
+operation/stable 仍为 231/222。
+
+`origin_event` 对一个自然事件做一次 evaluate 但估算为 0，未发 create；它缺正数估算、
+成功任务和文件 shape。`monetization_detail` 的唯一 create 经 4 次有界退避轮询仍 RUNNING，
+后续通过精确 `task_name` 恢复后达 READY，但文件在共享下载栈触发 `BLOB_ARCHIVE_UNSAFE`；
+目标未提交，不冒充 `complete`。同 App/日期的自然 ClientID 窄化尝试又在本地 typed-condition
+校验阶段失败，所以第二个 create 为 0。两族仍是 gap，不放宽 archive 门禁，不从其他族猜 shape。
+完整 41 次生产 HTTP 账本、四份文件 shape 和六态证据见
+[`20260817_export_families.json`](../evidence/forensics/20260817_export_families.json)。
+
 ## 2026-08-14 追加判定：D22 看板条件合并语义
 
 **判定：证明不了，不是部分证明。** 本轮取证 HTTP 共 10 次：1 次公开 source-map GET 返回 404；

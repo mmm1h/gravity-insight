@@ -24,7 +24,7 @@ from gravity_sdk.errors import (
     PolicyViolation,
 )
 from gravity_sdk.client import GravityInsightClient
-from gravity_sdk.export_contracts import ExportContractRegistry
+from gravity_sdk.export_contracts import ExportContractRegistry, validate_wire_projection
 from gravity_sdk.export_gateway import (
     ExportTaskCenter,
     GravityExportGateway,
@@ -37,6 +37,7 @@ from gravity_sdk.export_models import (
     ExportState,
 )
 from gravity_sdk.export_privacy import ExportPrivacyFinalizer
+from gravity_sdk.export_results import export_result_envelope
 from gravity_sdk.models import load_operation_manifest
 from gravity_sdk.registry import (
     EffectRoute,
@@ -212,6 +213,31 @@ class ExportContractTests(unittest.TestCase):
         )
         self.assertEqual("complete", description["examples_status"])
         self.assertFalse(description["pagination_and_scale"]["page_size_limits_total_rows"])
+
+    def test_export_completion_statuses_are_mutually_distinct(self):
+        receipt = SimpleNamespace(
+            destination=Path("fixture.xlsx"), size_bytes=1, source_size_bytes=1,
+            source_sha256="0" * 64, committed_sha256="0" * 64, content_type="xlsx",
+            extension=".xlsx", etag=None, last_modified=None,
+            finalization=SimpleNamespace(schema=("id",), rows_processed=0),
+        )
+        def status(error=None):
+            result = SimpleNamespace(state=ExportState.COMMITTED if error is None else ExportState.FAILED,
+                job_id="19", history=(), receipt=receipt if error is None else None,
+                error=error, resumable=error is not None)
+            return export_result_envelope("export.fixture", result)["completion_status"]
+        statuses = {status(), *(status(BlobTransferError(name, code=code, stage="test")) for name, code in (
+            ("partial", "BLOB_TRANSPORT_ERROR"), ("truncated", "BLOB_SIZE_LIMIT"),
+            ("expired", "EXPORT_UPSTREAM_EXPIRED")))}
+        receipt.finalization.rows_processed = 1
+        statuses.update((status(), ExportContractRegistry.from_file(CONTRACT_PATH).describe(
+            "export.analysis.origin_event.start")["completion_status"]))
+        self.assertEqual({"empty", "partial", "truncated", "expired", "complete", "gap"}, statuses)
+        contract = ExportContractRegistry.from_file(CONTRACT_PATH).get("export.analysis.user_detail.start")
+        validate_wire_projection(contract, SimpleNamespace(
+            payload={"field_map": {"ClientID": "客户ID", "CreateTime": "注册时间"}},
+            requested_columns=("ClientID", "CreateTime"),
+        ))
 
     def test_empty_export_input_reports_a_field_and_public_recovery_command(self):
         contracts = ExportContractRegistry.from_file(CONTRACT_PATH)
@@ -630,26 +656,20 @@ class GatewayAndCliTests(unittest.TestCase):
 
 
 class XlsxPrivacyFinalizerTests(unittest.TestCase):
-    def test_user_level_xlsx_keeps_contracted_identifier_before_copy(self):
+    def test_promoted_xlsx_shapes_keep_headers_for_empty_and_nonempty_files(self):
+        headers = (("用户ID",), ("客户ID", "注册时间"),
+                   ("客户ID", "注册时间"), ("客户ID", "订单ID"))
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            source = root / "source.xlsx"
-            output = root / "output.xlsx"
-            _write_xlsx(source, ("name", "client_id"), (("one", "7"),))
-            contract = ExportPrivacyContract(
-                allowed_columns=("name", "client_id"),
-                required_columns=("name", "client_id"),
-                classification="user_level",
-                format="xlsx",
-            )
-            result = ExportPrivacyFinalizer(contract).finalize(
-                source,
-                output,
-                _xlsx_metadata(source),
-            )
-            self.assertEqual(("name", "client_id"), result.schema)
-            self.assertEqual(1, result.rows_processed)
-            self.assertEqual(source.read_bytes(), output.read_bytes())
+            for family, header in enumerate(headers):
+                for rows in ((), (tuple("value" for _ in header),)):
+                    source, output = root / f"source-{family}-{len(rows)}.xlsx", root / f"output-{family}-{len(rows)}.xlsx"
+                    _write_xlsx(source, header, rows)
+                    contract = ExportPrivacyContract(allowed_columns=header,
+                        required_columns=header, classification="user_level", format="xlsx")
+                    result = ExportPrivacyFinalizer(contract).finalize(source, output, _xlsx_metadata(source))
+                    self.assertEqual((header, len(rows)), (result.schema, result.rows_processed))
+                    self.assertEqual(source.read_bytes(), output.read_bytes())
 
     def test_xlsx_unknown_column_is_rejected_without_output(self):
         with tempfile.TemporaryDirectory() as directory:

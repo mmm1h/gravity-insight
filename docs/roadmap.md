@@ -1,7 +1,7 @@
 # 路线图
 
 本页是当前开发的唯一权威排期依据，取代历史上不进版本控制的临时目标文件。
-盘点快照：`codex/saved-analysis`（基于 `dev@69ac207`），2026-08-16。
+盘点快照：`codex/export-families`（基于 `dev@df12f5e`），2026-08-17。
 
 ## 目标
 
@@ -16,11 +16,11 @@
 
 当前从仓库产品入口与 stable operation 正向交叉反推 55 条产品动线：**已闭环 46 / 部分闭环 2 / 完全缺失 7**；
 另有 2 条 legacy/SDK 便利面、1 条重复能力审计行和 1 条已有结果上的调用方派生便利面保留，
-但不计产品动线。表格 57 行减去 4 条“不计独立动线”得到 53 条。设置 → 应用管理把
+但不计产品动线。表格 59 行减去 4 条“不计独立动线”得到 55 条。设置 → 应用管理把
 `51 = 42 / 1 / 8` 推进到 `51 = 43 / 1 / 7`，归因聚合与自定义指标再各新增一条闭环，故为
 `53 = 45 / 1 / 7`；事件/属性模板治理增加 1 条闭环，保存分析资产生命周期增加 1 条部分闭环，故为
 `55 = 46 / 2 / 7`。operation 为 **231**，stable 为 **222 = 185 read + 37 mutation**。
-两条部分闭环分别是 Analysis 导出的单用户事件子类，以及尚缺真实聚合数字持久证据的保存分析 CRUD；
+两条部分闭环分别是 Analysis 导出已闭合的五个服务端子类，以及尚缺真实聚合数字持久证据的保存分析 CRUD；
 7 条完全缺失里多数是请求、响应或非空证据阻塞；字段隐私不再是阻塞项。
 逐条状态、四面入口、调用次数和证据阻塞以[分析动线台账](analysis-journeys.md)为准；旧
 `21/14/6` 快照的逐条底稿未进入版本控制，无法复算，已停止作为排期事实。
@@ -4455,3 +4455,64 @@ operation `230 + 1 = 231`；stable `221 + 1 = 222 = 185 read + 37 mutation`；�
 11 manifests**；quality PASS（operations/provenance 231/231、operation literals 57）；Agent Skill
 生成器 `--check`、CLI help 与 `git diff --check` 均通过。生产凭据与 `.env.gravity.local` 未进入版本控制；
 未碰 holdout/final/key、题集或评分逻辑，也未做 GitHub、push、tag 或其他远端动作。
+
+## 六类 Analysis 服务端导出重判与四族闭环（2026-08-17）
+
+**书面提案与范围：**本轮先在 ignored `tmp/codex/export-families/proposal.md` 写出重判、请求预算与
+放行判据，再做生产请求。六个目标族是 segment result、segment user detail、user detail、pay event、
+monetization detail、origin event；origin evaluate 只是 origin 的前置估算，不是第七族。`stream_event`
+的 hash-matched 前端路径仍只做客户端表格序列化，没有 server request，继续 `not_applicable`，且对该族
+本轮生产请求为 0。结论只覆盖冻结入口的同源静态 JS census；census 之外未知，不把“未找到”写成“不存在”。
+
+**先重判样本：**固定使用同一个 catalog App 与 `2026-08-16` 单日，不换 App、不扩日期、不翻数据页。
+user detail、pay event、monetization 父读取均非空；segment catalog 中已有一个完成且正人数的持久分群，
+其成员页和历史版本也都非空，所以没有创建临时分群，也没有清理请求。origin event catalog 共 129 行，
+昨日正数事件为 0；对一个自然事件做 1 次 evaluate，估算仍为 0，因此没有发 create。历史“六族都缺
+安全非空样本”已失效：四族可直接做；origin 仍缺正数估算；monetization 已有非空父数据，阻塞点已经
+变成 READY 文件未通过原有 archive-safety 门禁。
+
+**四族真实完整链路与各自文件合同：**四个 create 均为 HTTP 200/code 0，第一次有界 poll 即 READY，
+下载均为 HTTP 200，并通过固定 host/path、MIME、magic、XLSX schema、字节/hash 与原子提交校验。值无关
+实际输出如下；每族只使用自己的观察结果，没有套用 user-event 或相邻族合同：
+
+```json
+{"operation_id":"export.analysis.segment.result.start","completion_status":"complete","poll_states":[2],"file":{"bytes":4940,"sha256":"1020e34c259d324c37a36146efa76571381b7966f7d59aae1b5cec9e6c9f542a","sheet":"Sheet1","rows":1,"columns":[["用户ID","s","str","General","identifier"]]}}
+{"operation_id":"export.analysis.segment_user_detail.start","completion_status":"complete","poll_states":[2],"file":{"bytes":4889,"sha256":"dd51e4c56ef9196c08c0cb785bc2b75b012ccd539d059003253507c2f4c7caa8","sheet":"Sheet1","rows":1,"columns":[["客户ID","s","str","General","identifier"],["注册时间","s","str","General","datetime"]]}}
+{"operation_id":"export.analysis.user_detail.start","completion_status":"complete","poll_states":[2],"file":{"bytes":13619,"sha256":"99c2d37034fb2c5b8a10391907e4881d5af959183f6dafd43af0cf38128ce1c3","sheet":"Sheet1","rows":255,"columns":[["客户ID","s","str","General","identifier"],["注册时间","s","str","General","datetime"]]}}
+{"operation_id":"export.analysis.pay_event.start","completion_status":"complete","poll_states":[2],"file":{"bytes":11648,"sha256":"e9e29b83e3bde342cb8a49d3bd5438195cd43952cebc7c095e28b6208781bfeb","sheet":"Sheet1","rows":217,"columns":[["客户ID","s","str","General","identifier"],["订单ID","s","str","General","identifier"]]}}
+```
+
+四族各自的 empty 合同都是同一个 worksheet、保留本族表头、数据行数 0；本地真实构造每族 header-only
+XLSX 并通过既有 finalizer，结果均为 `rows_processed=0`。monetization create 后 4 次初始 poll 仍为
+RUNNING；通过 task list 恢复后再 poll 2 次到 READY，唯一下载虽为 HTTP 200，却在未放宽的共享门禁以
+`BLOB_ARCHIVE_UNSAFE/archive_check` 失败，未提交文件，公开状态为 `partial`，成功 shape 仍未知。随后
+同 App/日取得自然 ClientID，但窄化条件在本地 typed-condition 校验失败，故窄 create 为 0，没有重复任务。
+
+**六态机械分类：**`complete` 只来自已原子提交、schema 通过且 `rows>0` 的 receipt；同样成功 receipt 的
+`rows=0` 为 `empty`。确定性本地故障注入分别用下载阶段 `BLOB_TRANSPORT_ERROR` 制造 `partial`、用
+`BLOB_SIZE_LIMIT` 制造 `truncated`（公开错误为 `PAGINATION_LIMIT`）、用 task status 5 对应的
+`EXPORT_UPSTREAM_EXPIRED` 制造 `expired`；未验证 route 的 describe 为 `gap`。测试断言六值恰好为
+`empty/partial/truncated/expired/complete/gap`，前三种故障与过期均不可能落到 complete。没有为了造状态
+破坏生产文件、伪造过期授权或额外消耗生产预算。
+
+**生产 HTTP 账本：**共 **41 / 60**，剩余 19；认证/父数据发现 15，五族文件 run 17（create 5、poll 8、
+download 4），monetization 恢复 4（task list 1、poll 2、download 1），monetization 窄化 preflight 5。
+重试 0、数据页推进 0、日期扩张 0、App 切换 0；轮询退避为 2/4/8/16 秒且每次 create 最多 4 poll。
+逐请求 method/path/status、六族 verdict、shape 与六态证据见
+[`20260817_export_families.json`](../evidence/forensics/20260817_export_families.json)。凭据、业务值、task/App/
+segment/client 标识均未落入证据；四个检查文件已删除，临时业务对象与残留文件均为 0。
+
+**产品、动线与计数：**没有增加 operation：`231 + 0 = 231`，stable 保持
+`222 = 185 read + 37 mutation`。四个 verified creator 各新增一张直接 export 产品卡，故产品卡
+`84 + 4 = 88`，selector `324 + 4 = 328 = 231 operation + 88 product + 9 gap`；导出目录为
+22 routes、10 callable、6 callable creators（原 2 + 本轮 4）。四个子族完成，但 origin/monetization
+两个精确 gap 仍会迫使用户回 Web 或停在文件门禁，因此聚合动线保持 **`55 = 46 / 2 / 7`**，对应的
+服务端导出动线仍是“部分闭环”，P1-5 不冒充全部完成。新增 caller-recoverable raise site/A 档为
+**0/0**，错误审计保持 **`1169 = A366 / B434 / C369`**。`export_client.py` 撞到 500 SLOC 门禁后，
+仅把纯 envelope/完成态分类拆到窄 `export_results.py`，没有抬门禁或新增下载栈；技术债复核无新增活动项。
+
+**最终门禁：**相对 `dev@df12f5e`，unittest `1110 + 1 = 1111`；pytest `1110 + 1 = 1111 passed`，
+subtests `3078 + 4 = 3082 passed`。compiler 为 **231 operations / 11 manifests**；quality PASS
+（operations/provenance 231/231、operation literals 57）；Agent 指南生成器 `--check`、CLI help 与
+`git diff --check` 均通过。没有真实运行 holdout/final/all、读取 key、改题集/评分/评测装置，也没有
+GitHub、push、tag 或其他对外动作。

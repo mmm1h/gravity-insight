@@ -38,14 +38,17 @@ def unavailable_analysis_gap(query: str) -> dict[str, Any] | None:
             query, code="ANALYSIS_EXPORT_FILE_CONTRACT_MISSING",
             journey="analysis_result_export",
             reason=(
-                "User-event export is callable, but the other six server-generated "
-                "analysis export families still lack their own successful file shape; "
+                "User-event, segment-result, segment-user-detail, user-detail, and "
+                "pay-event exports are callable. Origin-event has no non-empty "
+                "evaluated sample, and monetization-detail reached READY but its file "
+                "failed the shared archive-safety gate; "
                 "stream-event export is client-side and has no frontend server request."
             ),
             next_action=(
-                "For user-event results, select export.analysis.user_event.start. For any "
-                "other exact family, obtain one authorized successful non-empty file and "
-                "register its worksheet, headers, storage types, logical types, and request binding."
+                "Run `gravity export list-capabilities` for the five callable Analysis "
+                "families. Re-probe origin-event only after its exact evaluate request "
+                "returns a positive estimate; re-probe monetization only after a file "
+                "passes the unchanged shared archive policy."
             ),
             argv=["gravity", "export", "list-capabilities"],
         )
@@ -70,9 +73,11 @@ def _current_table_schema(selected: str, words: frozenset[str]) -> bool:
 
 
 def _analysis_export(selected: str, words: frozenset[str]) -> bool:
+    from .agent_export import analysis_export_is_specific
+
     if re.search(r"(?<![a-z0-9_])export\.analysis\.", selected):
         return False
-    if _specific_user_event_export(selected):
+    if analysis_export_is_specific(selected):
         return False
     analysis_families = {
         "event", "funnel", "path", "property", "retention", "scatter", "segment", "user",
@@ -85,18 +90,6 @@ def _analysis_export(selected: str, words: frozenset[str]) -> bool:
         "analysis" in words
         or any(term in selected for term in ("事件", "分群", "用户", "付费", "变现"))
     )
-    return english or chinese
-
-
-def _specific_user_event_export(selected: str) -> bool:
-    english = bool(re.search(
-        r"\b(?:export\s+(?:user\s+events?|event\s+timeline)|"
-        r"(?:user\s+events?|event\s+timeline)\s+export)\b",
-        selected,
-    ))
-    chinese = any(term in selected for term in (
-        "导出用户事件", "用户事件导出", "导出事件时间线", "事件时间线导出"
-    ))
     return english or chinese
 
 
