@@ -26,10 +26,25 @@
 
 `draft` 候选数量不等于排期数量：17 项候选归并进台账动线或按明确非目标排除，不按 operation 单独排期。
 
+### Census 完整性与分母审计（2026-08-16）
+
+**提案与判定：**复验冻结 snapshot、仍存的哈希匹配 raw bundle、抓取器、解析器、前端菜单/路由表
+和所有 76 条 UNKNOWN method。`987` 不是平台路由全集，而是 2026-08-09 公开入口当时可静态递归发现的
+同源 JS 图内候选；`summary.complete=true` 只证明这个静态图闭合。今后 coverage 分母和缺席判断必须带
+入口/时点/静态图边界，未出现只能写成该范围内未观察到。
+
+SQL 工作台不是漏抓的懒加载 chunk：入口把它列为 `/analysis/bi`，但它是 210 个 route-like 条目中唯一
+没有 component/import 的叶路由，375 个哈希匹配 JS 也没有 custom-SQL 路径。该构建只证明菜单/路由
+占位；真实实现位置和 route 未知。`382 = 208 + 9 + 9 + 114 + 42` 仍是冻结 reservation 子集内的闭合
+分类，不再表述为平台完整写面。完整证据、模块下界和重抓代价见
+[Census 完整性与分母审计](research/census-completeness-audit.md)。本轮不重抓、不改 operation/产品卡/
+动线；生产业务 HTTP 与公开静态资源 HTTP 均为 0 次。
+
 ### 授权写面普查（2026-08-16）
 
-**提案与判定：**对 987 个唯一 `(method, path)`、226 个当前 operation 和 382 份 blocked-write
-reservation 做离线精确对账。当前真正未被 operation 覆盖且已有写语义决议的物理 route 为 382；
+**提案与判定：**对冻结 Web-entry Census 内 987 个唯一 `(method, path)`、226 个当前 operation 和
+382 份 blocked-write reservation 做离线精确对账。该 snapshot 中未被 operation 覆盖且已有写语义
+决议的物理 route 为 382；
 应用产品授权、只读边界、维度表 hold、人群包例外和仓库产品边界后，严格授权写面为
 **42 条 route，其中 9 条有明确回 Web 卡点**。完整归类、逐族卡点、SQL 工作台证据和 P0/P1/P2/
 不做排期见[授权写面普查与分析能力排期](research/write-surface-census.md)。
@@ -37,7 +52,8 @@ reservation 做离线精确对账。当前真正未被 operation 覆盖且已有
 排期结论是把保存分析 `report_config/update` 的 create/update/delete 插到现有 P0-1 前，并行做平台
 SQL 工作台静态 surface 取证；现有 P0-2 已由三域 owner gate 完成。P0-3 的价值保留，但原“依赖
 自定义指标 CRUD、维度表 CRUD、SQL 工作台”的叙述已过时：自定义指标已闭环，维度表已 hold，平台
-SQL 工作台尚无已知 route。报表模板 delete 已由 v3 `template/edit + is_deleted=1` 安全交付，下一项
+SQL 工作台在该 snapshot 中尚无实现 route，范围外未知。报表模板 delete 已由 v3
+`template/edit + is_deleted=1` 安全交付，下一项
 是 owner-verified edit，不重复建设 delete。
 
 本次只更新普查和排期，不改变 operation、产品卡或动线状态；生产 HTTP 0 次。

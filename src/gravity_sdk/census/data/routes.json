@@ -34049,7 +34049,9 @@
     "bundle_complete": true,
     "bundle_files": 375,
     "bundle_id": "eb1d37edb5d1ee1c59d8944dd0b21db09aef097f5c7fb7f7455b8278716424b4",
+    "coverage_scope": "same_origin_static_js_graph_discoverable_from_site_entry",
     "missing_local_files": [],
+    "platform_complete": false,
     "site_url": "https://web.gravity-engine.com/"
   },
   "summary": {
