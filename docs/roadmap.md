@@ -4568,3 +4568,99 @@ subtests `3078 + 4 = 3082 passed`。compiler 为 **231 operations / 11 manifests
 （operations/provenance 231/231、operation literals 57）；Agent 指南生成器 `--check`、CLI help 与
 `git diff --check` 均通过。没有真实运行 holdout/final/all、读取 key、改题集/评分/评测装置，也没有
 GitHub、push、tag 或其他对外动作。
+
+## 受治理语义组合首个窄切片（2026-08-17）
+
+**提案与范围裁决：**ignored 工作稿位于 `tmp/codex/semantic-compose/proposal.md`。本轮只冻结一个
+版本化 definition contract、复用既有 Multidim 执行三组真实查询，并把结果接到 Core/CLI/SDK/Plan/
+Agent；没有做通用语义平台、第二套 capability registry、Text-to-SQL、Tier C SQL、conftemplate 或
+分享。自定义指标 CRUD 已闭合；维度表被产品方搁置；SQL 工作台 route 在 Census 中不存在，所以
+P0-3 不再等待原来的“三项全部完成”前提，但新增成员仍逐项要求现有合同和生产证据。
+
+**冻结合同：**源定义为 `gravity.semantic-definition.v1` 的
+`report.ap-cost-observation@1`，最终 canonical SHA-256 fingerprint 为
+`e9ac825a4563a8c6c00f6147d55d23daf4a18cd8d85415a0caa6afa4e6971798`。输入合同是闭合的
+`gravity.semantic-compose-input.v1`：definition、metric、dimension、grain、join 都必须是精确
+`{definition_id, version}`；窗口是闭区间 ISO date；所有字段必须出现。v1 登记面如下：
+
+- metric：`report.metric.ap-cost@1` → `ap_cost`；实时 metadata 由既有
+  `report.multidim.metric.list` 复验；允许 day/week/total。
+- dimension：`report.dimension.click-company@1` → `click_company`；必须同时声明
+  `report.join.adreport-click-company@1`，其基数为 many-to-one、实现为 embedded dimension。
+- grain：day/week/total 可执行；hour 是已登记但不在该 metric allowlist 的冲突成员，编译即拒绝。
+- filter：v1 登记为空、`maxItems=0`。`click_company=bytedance` 用 `EQUALS` 和既有 CLI 映射 `IN`
+  都得到上游 `INPUT_INVALID`，没有为了凑能力把它写进合同。
+- access：App 由调用面显式解析并编译为唯一 `app_id EQUALS` 约束；结果不声称跨 App。
+
+编译输出是 `gravity.semantic-compose-compiled.v1`，记录 `resolution_tier=tier_b_governed_semantic`、
+definition ID/version/fingerprint、实际成员、生成的 Multidim query、六项 validation 和 scoped
+`allowed_claims`。执行输出是 `gravity.semantic-compose-result.v1`，失败或语义错误时 claims 固定为空。
+两条允许声明逐字为：
+
+1. `observed-metric-value`：只陈述选定 App、闭区间窗口、粒度、维度和显式过滤条件下实际返回的
+   `ap_cost` 值。
+2. `within-result-comparison`：只在同一结果内部、明确引用返回的时间/维度键时比较 `ap_cost` 行。
+
+因果、预算充分性、全量覆盖、未返回渠道为零、跨查询可加性都不在 claims 内。生成查询若成功也不会
+扩大这两条声明。
+
+**三个真实组合：**固定 App 29034827、窗口 `2026-06-01..2026-07-10`。这三问分别对应投放渠道
+分配、日级 pacing/异常定位、周级节奏复盘，都是分析师常见问题；它们不是为了证明 API 而引入的新
+成员，也都没有专用产品。三组 final 定义指纹一致，重复编译的 canonical bytes 完全相等：total/
+day/week 的编译 SHA-256 分别为 `55f9b8805d4ee5410fe899a9de8136d3bd0a4a942b005487ce5cc6841353a89c`、
+`d8768f5e59240c25d9fb8fe7607a5bed705b488cff2a768219c0a3a35cf67c5b`、
+`094addbe1ae72f3f0f8bd4fdeac75bd0904af37fdeec46fd17fbe89a7caa6d88`。
+
+```json
+{"combination":"ap_cost total by click_company","rows":[{"click_company":"bytedance","ap_cost":10857257.59}],"allowed_claims":["observed-metric-value scoped to app/window/total/click_company/no filters","within-result-comparison scoped to returned click_company keys"]}
+{"combination":"ap_cost weekly","rows":[{"stat_time":"2026-06-01","ap_cost":2713799.09},{"stat_time":"2026-06-08","ap_cost":2208883.51},{"stat_time":"2026-06-15","ap_cost":1682448.66},{"stat_time":"2026-06-22","ap_cost":1317221.50},{"stat_time":"2026-06-29","ap_cost":2000062.82},{"stat_time":"2026-07-06","ap_cost":934842.01}],"allowed_claims":["observed-metric-value scoped to app/window/week/no dimensions/no filters","within-result-comparison scoped to returned week keys"]}
+{"combination":"ap_cost daily","rows":[{"stat_time":"2026-06-01","ap_cost":225988.82},{"stat_time":"2026-06-02","ap_cost":170459.42},{"stat_time":"2026-06-03","ap_cost":209434.35},{"stat_time":"2026-06-04","ap_cost":307436.77},{"stat_time":"2026-06-05","ap_cost":327135.37},{"stat_time":"2026-06-06","ap_cost":596423.36},{"stat_time":"2026-06-07","ap_cost":876921.0},{"stat_time":"2026-06-08","ap_cost":574670.4},{"stat_time":"2026-06-09","ap_cost":348563.5},{"stat_time":"2026-06-10","ap_cost":235817.26},{"stat_time":"2026-06-11","ap_cost":105068.8},{"stat_time":"2026-06-12","ap_cost":84517.14},{"stat_time":"2026-06-13","ap_cost":380878.89},{"stat_time":"2026-06-14","ap_cost":479367.52},{"stat_time":"2026-06-15","ap_cost":323065.58},{"stat_time":"2026-06-16","ap_cost":198633.94},{"stat_time":"2026-06-17","ap_cost":154776.47},{"stat_time":"2026-06-18","ap_cost":195318.25},{"stat_time":"2026-06-19","ap_cost":273202.44},{"stat_time":"2026-06-20","ap_cost":232999.84},{"stat_time":"2026-06-21","ap_cost":304452.14},{"stat_time":"2026-06-22","ap_cost":150449.93},{"stat_time":"2026-06-23","ap_cost":234983.98},{"stat_time":"2026-06-24","ap_cost":248813.44},{"stat_time":"2026-06-25","ap_cost":275153.39},{"stat_time":"2026-06-26","ap_cost":155816.29},{"stat_time":"2026-06-27","ap_cost":125773.74},{"stat_time":"2026-06-28","ap_cost":126230.73},{"stat_time":"2026-06-29","ap_cost":108308.24},{"stat_time":"2026-06-30","ap_cost":91991.92},{"stat_time":"2026-07-01","ap_cost":155216.44},{"stat_time":"2026-07-02","ap_cost":144071.02},{"stat_time":"2026-07-03","ap_cost":311384.82},{"stat_time":"2026-07-04","ap_cost":590727.72},{"stat_time":"2026-07-05","ap_cost":598362.66},{"stat_time":"2026-07-06","ap_cost":325789.49},{"stat_time":"2026-07-07","ap_cost":281162.34},{"stat_time":"2026-07-08","ap_cost":102469.6},{"stat_time":"2026-07-09","ap_cost":102889.64},{"stat_time":"2026-07-10","ap_cost":122530.94}],"allowed_claims":["observed-metric-value scoped to app/window/day/no dimensions/no filters","within-result-comparison scoped to returned day keys"]}
+```
+
+**发网前失败与版本：**`tests/test_semantic_compose.py` 用只要访问 `read/read_all/batch/request` 就计数并
+抛错的 client，分别证明 unknown metric、已登记但对无维度请求禁止的 join、`ap_cost + hour` 粒度冲突
+都抛 `InputValidationError` 且 `calls=0`。同文件把同一 definition ID 临时构造为 v1/v2，经同一结果
+入口断言 `(definition_id, version)` 分别为 1/2 且 fingerprint 不同；结果不会被新定义静默重解释。
+
+**生产 HTTP 逐请求账本：**实际 **20 / 25**。下面只列本单元自 `18:20:33Z` 起产生的 receipt；同一
+私有 state root 在 18:21--18:27 有其他任务并发 receipt，不计入本单元。20 笔均 HTTP 200、attempt 1、
+retry=false；分页操作均 page 1，页推进/窗口扩张均为 0。HTTP 200 只说明协议调用完成：#8、#11、
+#13 的产品语义失败分别是 advertiser-filter、weekly-filter 和 corrected-IN-filter，均未发布 claims。
+
+| # | operation | receipt | HTTP / retry / page | 作用 |
+| ---: | --- | --- | --- | --- |
+| 1 | `authentication` | `8688418e…` | 200 / false / - | 单次认证 |
+| 2 | `app.list` | `e4d00447…` | 200 / false / 1 | 只读首屏 7 App；最初误选首项，未遍历 |
+| 3 | `report.multidim.metric.list` | `6e82ace4…` | 200 / false / 1 | 1124 行目录与 `ap_cost` metadata |
+| 4 | `report.multidim.query` | `cbe0607f…` | 200 / false / 1 | 首 App 固定窗口明确空 |
+| 5 | `report.multidim.metric.list` | `4deaf9d4…` | 200 / false / 1 | App 29034827 total 组合 metadata |
+| 6 | `report.multidim.query` | `4ab5c7ac…` | 200 / false / 1 | raw total by click_company 非空 |
+| 7 | `report.multidim.metric.list` | `509b9544…` | 200 / false / 1 | advertiser/filter 组合 metadata |
+| 8 | `report.multidim.query` | `d2c6ce94…` | 200 / false / 1 | advertiser + weekly + EQUALS filter，产品 `INPUT_INVALID` |
+| 9 | `report.multidim.metric.list` | `9e2f6704…` | 200 / false / 1 | 首次 semantic surface metadata |
+| 10 | `report.multidim.query` | `32ad71c6…` | 200 / false / 1 | semantic total by click_company 成功 |
+| 11 | `report.multidim.query` | `3dda0060…` | 200 / false / 1 | semantic weekly + EQUALS filter，产品 `INPUT_INVALID` 后停止脚本 |
+| 12 | `report.multidim.metric.list` | `12a7fd79…` | 200 / false / 1 | corrected-IN filter metadata |
+| 13 | `report.multidim.query` | `81cabe10…` | 200 / false / 1 | total + IN filter，产品 `INPUT_INVALID` |
+| 14 | `report.multidim.metric.list` | `400f875a…` | 200 / false / 1 | 无过滤 weekly 隔离 metadata |
+| 15 | `report.multidim.query` | `c0f912c7…` | 200 / false / 1 | weekly 成功，证明应撤销 filter 而非 weekly |
+| 16 | `report.multidim.metric.list` | `2dadf55c…` | 200 / false / 1 | 最终定义 total/day 共用 metadata |
+| 17 | `report.multidim.query` | `a4f9dff6…` | 200 / false / 1 | final total by click_company |
+| 18 | `report.multidim.query` | `321d9c13…` | 200 / false / 1 | final daily 40 行 |
+| 19 | `report.multidim.metric.list` | `29cbe16f…` | 200 / false / 1 | final weekly metadata |
+| 20 | `report.multidim.query` | `9d0325a2…` | 200 / false / 1 | final weekly 6 行、最终定义指纹 |
+
+**能力边界与计数：**当前登记面足够支撑上述三个真实问题，但不足以支撑任何用户可选过滤器、其他
+指标/维度、跨数据集 join、hour 或任意 SQL。明确不支持跨产品 many-to-many/未经证明 join、把日级
+指标下钻到小时、把 raw SQL 成功解释为业务口径正确，以及任何超出 claims 的因果/完整性结论。
+未新增 operation：组合只调用已有 `report.multidim.metric.list/query`；新增 operation 反而会复制固定
+route 和治理。canonical 产品卡 `88→89`，selector `328→329`，动线
+`55 = 47 / 1 / 7 → 56 = 48 / 1 / 7`。共享 spine 未越门禁，技术债复核不新增活动条目。
+
+**最终门禁：**相对 `dev@3754fbe`，unittest **1118 tests OK**；pytest **1118 passed / 3083
+subtests passed**。compiler **231 operations / 11 manifests**；quality PASS（operations/provenance
+231/231、operation literals 57）；错误审计 **1176 = A373 / B434 / C369**，新增 7/7 个
+caller-recoverable site 全为 A 档。Agent 指南生成器 `--check`、CLI help、input-schema、文档架构与
+`git diff --check` 通过。实现增量显著多于测试增量，500/80/15/0 和 quality baseline 未放宽。
+没有运行真实 holdout/final/all、读取 key、改题集/评分/评测装置；全量测试只运行其标明 synthetic 的
+临时 fixture。没有 GitHub、push、tag 或其他对外动作。

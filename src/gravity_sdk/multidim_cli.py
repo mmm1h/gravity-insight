@@ -88,6 +88,9 @@ def add_multidim_commands(
         query,
     ):
         parser.set_defaults(_gravity_handler=handler)
+    from .semantic_compose_cli import add_semantic_compose_commands
+
+    add_semantic_compose_commands(commands, add_input)
 
 
 def _handler() -> Callable[[Any, Any], Any]:

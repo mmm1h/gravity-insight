@@ -6,13 +6,13 @@
 
 ### 完整目录
 
-第一次接触仓库、或需要确认“现在到底能做什么”时，`agent-catalog categories → category <category> → describe <selector>` 是首要入口，不是附属的 operation 调试命令。三层完全离线，依次回答领域、selector 和完整执行合同，当前覆盖 231 个 operation、88 张产品卡和 9 个精确 gap。category 内机械按 `product → raw_operation → capability_gap`、同类 selector 升序排列，因此产品卡不会被 raw operation 挤出首屏；优先选择 `identity_kind=product`。raw operation 只是专家入口，gap 不可执行。第二层返回 `next_offset` 不代表必须翻页；已知 selector 直接 describe。逐层示例见[完整目录任务指南](agent-skills/catalog-discovery.md)。
+第一次接触仓库、或需要确认“现在到底能做什么”时，`agent-catalog categories → category <category> → describe <selector>` 是首要入口，不是附属的 operation 调试命令。三层完全离线，依次回答领域、selector 和完整执行合同，当前覆盖 231 个 operation、89 张产品卡和 9 个精确 gap。category 内机械按 `product → raw_operation → capability_gap`、同类 selector 升序排列，因此产品卡不会被 raw operation 挤出首屏；优先选择 `identity_kind=product`。raw operation 只是专家入口，gap 不可执行。第二层返回 `next_offset` 不代表必须翻页；已知 selector 直接 describe。逐层示例见[完整目录任务指南](agent-skills/catalog-discovery.md)。
 
 | 已知信息 | 直接执行 | 正常命令数 |
 | --- | --- | --- |
 | 已知 recipe / operation | `gravity run @<recipe> ...` / `gravity run <operation-id> ...` | 1 |
 | Analysis 编译/跨期对比（kind/字段已知或指标未知） | `analysis query [batch]`；指标未知先 `metadata vocabulary`；同 spec 两个日期窗加 `--compare-start/--compare-end`，一次调用返回双窗状态与已登记物理指标 delta | 1 / 2 |
-| 报表产品（Multidim / Business Pulse） | 已知输入：`multidim query` / `reports pulse`；Multidim 物理指标/维度未知可用在线输入解析后精确选择；再 `plan run` | 1 / 2 |
+| 报表产品（Multidim / Semantic Compose / Business Pulse） | 已知输入：`multidim query` / `semantic compose` / `reports pulse`；未知能力先按 schema/metadata 精确选成员，再 `plan run` | 1 / 2 |
 | 跨平台投放/素材表现 | 已知输入：`materials performance` / `promotion performance`；推广平台已知而指标未知时用在线输入解析；再 `plan run` | 1 / 2 |
 | 自定义人群覆盖与状态 | 已知输入：`promotion custom-audiences`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
 | 订单目录/拆单追踪/变现明细 | 已知 App/单日[/TraceID]：`analysis order directory` / `analysis order trace` / `analysis monetization detail`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |

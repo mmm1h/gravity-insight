@@ -29,6 +29,7 @@ _STRICT_COMPOSITES = frozenset(
         "order_split_trace",
         "promotion_performance",
         "multidim",
+        "semantic_compose",
         "saved_analysis",
         "analysis_template",
         "segment_snapshot",
@@ -215,3 +216,14 @@ def _strict_composite_query(name: str, query: str) -> bool:
 
 
 __all__ = ["composite_card"]
+
+
+_strict_composite_query_without_semantic_compose = _strict_composite_query
+
+
+def _strict_composite_query(name: str, query: str) -> bool:
+    if name == "semantic_compose":
+        from .agent_semantic_compose import semantic_compose_query
+
+        return semantic_compose_query(query)
+    return _strict_composite_query_without_semantic_compose(name, query)

@@ -96,6 +96,9 @@ _ANALYSIS_JOURNEY_TITLES: dict[str, tuple[str, ...]] = {
     "composite:multidim": (
         "用显式物理维度、指标和筛选读取多维报表",
     ),
+    "composite:semantic_compose": (
+        "用版本化语义成员组合已登记指标、维度与时间粒度",
+    ),
     "composite:promotion_performance": (
         "按平台和物理指标读取推广表现",
     ),

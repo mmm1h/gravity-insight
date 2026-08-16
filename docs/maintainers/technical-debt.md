@@ -222,3 +222,8 @@ list/get 不属于 metadata cache operation，delete guard 仍使用完整新列
 保存分析离线边界复核把 metadata dependency 枚举下沉到窄 FieldPolicy helper，并用独立 offline loader
 收紧 `client.py` AST ratchet；Dashboard、Saved Analysis、Template 与 Plan 只传播同一合同，不建立第二套
 校验器或网络上下文。真实值仍只在 governed evidence，HTTP receipt 合同未改；本轮不新增活动结构债条目。
+
+受治理语义组合首个切片把定义目录、编译/执行、CLI、Plan adapter 与 Agent card 分拆到窄领域模块；
+既有 Multidim core 和全局 Plan worker 继续复用。共享 spine 通过现有 report family router 接线，
+`agent_capabilities.py` 的静态 composite inventory 同时下沉为 value-free 数据模块；500/80/15/0 门禁未
+放宽，没有新增 registry、SQL 执行器或活动结构债条目。

@@ -495,6 +495,17 @@ def _plan_request(
     return request, plan_kind
 
 
+_composite_plan_request_without_semantic_compose = _composite_plan_request
+
+
+def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
+    if card.get("composite") == "semantic_compose":
+        from .agent_semantic_compose import semantic_compose_plan_request
+
+        return semantic_compose_plan_request(card)
+    return _composite_plan_request_without_semantic_compose(card)
+
+
 _composite_plan_request_without_derived_metrics = _composite_plan_request
 
 
