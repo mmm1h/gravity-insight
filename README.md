@@ -3,7 +3,7 @@
 面向数据分析团队的 Gravity Python SDK 与 Agent 优先 CLI。两种入口共享 operation 合同、
 认证、运行时、分页、并发、字段投影和结构化错误；CLI 负责开箱即用，SDK 负责长期集成。
 
-它提供三条边界清晰的线上能力：
+它提供三条边界清晰的主要读取入口：
 
 - `gravity insight`：结构化 Insight 查询与导出，日常分析首选；
 - `gravity sql`：Insight 无法等价表达时使用的受控 SQL 产品；
@@ -13,12 +13,20 @@ SDK 还提供本地元数据检索、跨目录发现与 workspace recipe：`grav
 metadata sync/search`、`gravity find` 和 `gravity run` 让 Agent 无需临时 Python/JSON
 脚本即可完成常见查询链路。
 
-Agent 的默认路径最多两步：未知问题用 `gravity agent --input <questions.json> → gravity
-plan run --input <plan.json>`，一次目录快照批量发现、一次显式执行；已知 recipe、operation 或
-Plan 时直接 `gravity run` / `gravity plan run`，只需一次调用。发现结果包含可复制 argv 和
-`plan_node`，但自然语言不会自动执行。多个独立读取共享一个有界 worker pool，不逐条起进程。
+当前机器目录覆盖 **205 个 operation** 与 **42 张 Agent 产品卡**；196 个 stable operation
+由 184 个 read 和 12 个 governed mutation 组成。写面只开放逐项登记的分群，以及 marker-governed
+报表/订阅创建与删除；所有写入均先零网络 `--dry-run`，再由调用方显式确认 `--execute`，不会从
+自然语言或 Plan 自动执行。
 
-首次接触仓库时，按[十分钟 Agent 上手路径](docs/agent-skills/ten-minute-path.md)逐层查看本地能力与 Analysis Spec；它不需要打开 Gravity Web，也不会自动执行查询。
+Agent 第一次盘点能力时先用 `gravity agent-catalog categories → category → describe` 三层离线目录；
+它完整区分产品卡、raw operation 和精确 gap。进入具体问题后，默认路径最多两步：未知问题用
+`gravity agent --input <questions.json> → gravity plan run --input <plan.json>`，一次目录快照批量发现、
+一次显式执行；已知 recipe、operation 或 Plan 时直接 `gravity run` / `gravity plan run`，只需一次调用。
+发现结果包含可复制 argv 和 `plan_node`，但自然语言不会自动执行。多个独立读取共享一个有界 worker
+pool，不逐条起进程。
+
+首次接触仓库时，按[十分钟 Agent 上手路径](docs/agent-skills/ten-minute-path.md)完成能力发现、App/物理
+事件选择、零网络编译和一次显式真实分析；它不需要打开 Gravity Web，也不会猜业务输入。
 
 当前 `0.3` 是调用方 surface 的破坏性收口：Multidim 专用入口只有
 `gravity multidim query --app <alias|id> ...`，结果行位于 `query.data.list`；Plan request 必须带
@@ -32,6 +40,8 @@ operation；这不绕过 operation 版本、字段投影或 fail-closed 合同�
 ```powershell
 python -m pip install -e .
 gravity
+gravity agent-catalog categories
+gravity agent-catalog describe analysis.query.spec:event
 gravity agent "event analysis"
 gravity agent --input questions.json
 gravity plan schema
@@ -39,6 +49,7 @@ gravity multidim query --input-schema
 gravity analysis query batch --input queries.json --concurrency 6
 gravity analysis user journey --app main --client-id <id> --date 2026-08-12
 gravity metadata sync --all-apps
+gravity reports --help
 ```
 
 首次在交互式终端运行 `gravity` 会询问 Gravity 用户名和密码，验证登录并在用户私有目录维护会话。`--help`、operation 搜索、`find`、recipe 检查和本地 metadata 查询不会触发登录。使用者不需要配置或维护 token。
@@ -73,6 +84,7 @@ result = gravity.read("app.list", {"page": 1, "page_size": 20})
 
 ```powershell
 python -m unittest discover -s tests
+python -m pytest -q
 python -m gravity_sdk.compiler check
 python -m gravity_sdk.quality check
 python -m gravity_sdk --help

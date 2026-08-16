@@ -4,6 +4,10 @@
 
 ## 0. 先选最短入口
 
+### 完整目录
+
+第一次接触仓库、或需要确认“现在到底能做什么”时，`agent-catalog categories → category <category> → describe <selector>` 是首要入口，不是附属的 operation 调试命令。三层完全离线，依次回答领域、selector 和完整执行合同，当前覆盖 205 个 operation、42 张产品卡和 10 个精确 gap。优先选择 `identity_kind=product`；raw operation 只是专家入口，gap 不可执行。第二层返回 `next_offset` 不代表必须翻页；已知 selector 直接 describe。逐层示例见[完整目录任务指南](agent-skills/catalog-discovery.md)。
+
 | 已知信息 | 直接执行 | 正常命令数 |
 | --- | --- | --- |
 | 已知 recipe / operation | `gravity run @<recipe> ...` / `gravity run <operation-id> ...` | 1 |
@@ -15,6 +19,7 @@
 | 人群规则/分群快照/成员明细 | 已知 spec 或精确引用：`analysis segment evaluate` / `analysis segment snapshot` / `analysis segment members`；未知能力且输入已知时发现后执行 | 1 / 2 |
 | Analysis 默认值字典 | 已知 App：`analysis defaults --app ...`；未知能力但 App 已知：对应 Agent 卡 → `plan run` | 1 / 2 |
 | 创建、更新、刷新或删除分群 | Agent 只交接明确的 `analysis segment ... --dry-run`；人确认后把同一命令改为 `--execute` | 2（预览 / 执行） |
+| 创建/删除报表或创建/删除订阅 | Agent 只交接明确的 `reports create/delete/subscribe/unsubscribe ... --dry-run`；人确认后把同一命令改为 `--execute` | 2（预览 / 执行） |
 | 保存分析/分析模板 | 引用已知：`analysis saved run` / `analysis template run`；引用未知时在线输入解析后按稳定 ID（模板为 scope + ID）精确选择。模板仍只执行 compact Spec 或已证明 artifact | 1 / 2 |
 | 看板控制面/图表重放 | 已知引用：`analysis dashboard snapshot` / `analysis dashboard run`；引用未知时在线输入解析后精确选稳定 ID，再执行 | 1 / 2 |
 | Governed 文件 effect | 输入已知：报表 `export run`，精确素材 `materials fetch`；未知入口：Agent 卡 → `next.argv` | 1 / 2 |
@@ -32,7 +37,11 @@
 
 人群规则只接受显式紧凑 spec：Agent 强意图卡给完整 schema 和缺失的 `app/spec`，不会从自然语言生成规则。已知 spec 可直接 evaluate；交叉查询用 `segment_evaluate` composite，只有 `/app` 可绑定，结果仅 `part/percent/total`。
 分群检查已知精确 ID/名称与日期时直接 `gravity analysis segment snapshot --app ... --ref ... --date ...`；固定返回 detail/history/daily_result，不读取规则或成员。引用未知且 App/日期已知时，强意图在线解析在第一调用返回完整分群目录；调用方精确选择 ID 后第二次执行。自然语言不自动执行。
-分群成员与逐人属性用 `gravity analysis segment members --app ... --ref ...`。不传 fields 返回完整登记 profile；动态 fields 先由 `metadata properties/search` 发现，执行时 live 复验并在完整成员行上本地选列。历史成员只用 `segment_version_id`，不接收日期。规模/占比/历史/单日问法仍走 snapshot，成员/名单/逐人属性走 members；同一句显式要求两者返回 `MULTIPLE_INTENTS`。分群写必须把 preview 和执行拆成两次人工可见步骤：`create-from-analysis` 持久化已验证漏斗的一步命中/流失，另有 `create-from-rule/history/tmp`、`update`、`update-rule`、`refresh`、`delete`。命令显式二选一 `--dry-run` / `--execute`；create 写入可见 `GSDK-…` remark 并读回，delete 执行时再读 detail 且只删带标记对象。Agent 卡不生成 Plan node、不从自然语言填 spec 或自动执行，只返回 dry-run argv 和确认后的 execute argv。
+分群成员与逐人属性用 `gravity analysis segment members --app ... --ref ...`。不传 fields 返回完整登记 profile；动态 fields 先由 `metadata properties/search` 发现，执行时 live 复验并在完整成员行上本地选列。历史成员只用 `segment_version_id`，不接收日期。规模/占比/历史/单日问法仍走 snapshot，成员/名单/逐人属性走 members；同一句显式要求两者返回 `MULTIPLE_INTENTS`。
+
+### 受治理写入：统一两步确认
+
+当前 12 条 stable mutation 由 7 条 Segment 与 5 条报表/订阅底层 operation 组成。统一协议是：用权威输入运行 `--dry-run`，人工审查后同一参数只改为 `--execute`；单次发送且不自动重放。Segment 支持 create/update/refresh/delete 家族，报表面使用 `reports create/delete/subscribe/unsubscribe`；create 写可读回 marker，delete 执行时重读 marker。订阅固定 disabled、空收件人，永不调用 test route。Agent 不生成写 Plan、不从自然语言填值或自动执行。可复制两步命令见[受治理写入任务指南](agent-skills/governed-writes.md)，完整参数见[CLI 参考](reference/cli.md#报表目录与订阅)。
 ### Multidim
 
 Multidim 使用物理输入，不新增 Spec。它直接使用闭合的 `date_list/time_dims/metrics_list/custom_metrics_list/data_dims/relate_dims/filters/multi_keys` 物理输入；已知 App 和完整输入时直接一次 CLI/SDK 调用。物理指标或维度未知而其余业务输入已知时，第一调用用在线输入解析取得闭合 schema 与完整 live Multidim metadata，调用方精确选择物理名，第二调用由 FieldPolicy 再次 live 校验成员关系及维度排除。Agent 生成的 Plan request 总是带当前 `input_schema_version`；调用方不得删除或改写。在线解析不生成 App、日期、filter value 或业务口径，也不会把模板、布局、收藏、权限、经营 pulse 或 event/funnel Analysis 路由到这里。
@@ -43,11 +52,7 @@ Multidim 使用物理输入，不新增 Spec。它直接使用闭合的 `date_li
 
 推广表现要求调用方先明确一个 App、日期和平台数组；物理指标未知时，第一调用用在线输入解析读取每个已选平台的完整 live 指标目录，调用方精确选择，第二调用由 FieldPolicy 再次逐平台校验后执行。Agent 只对明确的 `promotion performance/跨平台推广报表` 返回 `promotion_performance` 节点，不从自然语言选值。平台也未知时不属于两次路径。否定、导出、写入、策略及相邻产品不会回落为 generic Promotion operation。
 
-自定义人群覆盖与状态是独立无输入产品：已知入口一次
-`gravity promotion custom-audiences` 完整分页；未知入口由明确的
-`custom audience coverage status/自定义人群覆盖与状态` 意图返回 value-free
-`custom_audience` 节点，再执行一次 Plan。它不接受 App、日期、筛选或用户字段，也不路由到
-promotion performance；已登记的人员、公司、租户和自由标签字段随结果返回。
+自定义人群覆盖与状态是独立无输入产品：已知入口一次 `gravity promotion custom-audiences` 完整分页；未知入口由明确的 `custom audience coverage status/自定义人群覆盖与状态` 意图返回 value-free `custom_audience` 节点，再执行一次 Plan。它不接受 App、日期、筛选或用户字段，也不路由到 promotion performance；已登记的人员、公司、租户和自由标签字段随结果返回。
 
 多个独立多维查询作为同层 Plan 节点由全局 worker pool 并发，不建 batch wrapper 或逐条启动进程。direct 默认 6、最大 24 workers，Plan adapter 内固定 1，避免与分页/metadata 并发相乘；HTTP 数量为 `M + P + optional total`，其中 `M` 是去重指标 metadata 请求数、`P` 是 query 页数。
 
@@ -56,6 +61,8 @@ promotion performance；已登记的人员、公司、租户和自由标签字�
 调用项目可在 workspace 的 `gravity.semantic-context.v1` 中声明术语到已登记对象的字面映射、说明、排除和 verified question→operation input；完整形状见 [Workspace 参考](reference/workspace.md#调用方语义上下文)。Agent 只消费明确声明，不按相似名称选值；未知引用本地失败。没有声明时从业务知识库解析，无法确定就报告缺失信息。
 
 派生比率、占比、跨期变化和集合对账使用 `gravity derive --input` / `sdk.derive_metrics(source, spec)`；算子只保证 Decimal、精确键对齐和显式 null/partial。未声明公式返回 `DERIVED_METRIC_BINDING_REQUIRED`；`[[semantic_context.derived_metrics]]` 可声明 phrases/spec，命中后只缺 source，绝不从列名补分子、分母、总体、时期或 expected。
+
+可直接复制的最小 `gravity.toml` 与 derive request 见[调用方语义与派生指标任务指南](agent-skills/caller-semantics.md)；其中所有虚构值都必须替换为调用项目 alias 与 metadata 中精确存在的物理名。
 
 ## 2. 未知能力：总共两次调用
 
@@ -143,8 +150,7 @@ gravity sql query <product> --start <inclusive-iso> --end <exclusive-iso>
 
 ## 5. 独立任务一次并发
 
-多个 App、日期段、Analysis spec 或 operation 彼此独立时，使用正式 batch，而不是逐条起 CLI 进程或临时
-线程脚本。首次不确定 wrapper 时查看一次 schema：
+多个 App、日期段、Analysis spec 或 operation 彼此独立时，使用正式 batch，而不是逐条起 CLI 进程或临时线程脚本。首次不确定 wrapper 时查看一次 schema：
 
 ```powershell
 gravity insight batch schema
@@ -154,23 +160,17 @@ gravity insight batch read --input <batch.json> --concurrency 6
 最小 `batch.json`：
 
 ```json
-{"requests": [
-  {"operation_id": "app.list", "request_id": "page-1", "input": {"page": 1, "page_size": 1}},
-  {"operation_id": "app.list", "request_id": "page-2", "input": {"page": 2, "page_size": 1}}
-]}
+{"requests":[{"operation_id":"app.list","request_id":"page-1","input":{"page":1,"page_size":1}},{"operation_id":"app.list","request_id":"page-2","input":{"page":2,"page_size":1}}]}
 ```
 
 batch 保持输入顺序、隔离单项失败并聚合退出码；默认并发 6、上限 24。单个 operation 的 `--all-pages` 只在首页返回明确 `total_page` 时按小窗口并发并保持页序；未知总页数串行。batch 内 `read_all` 固定单分页 worker，避免嵌套并发放大；不要在外层套线程池绕过进程/host 限流；SQL query 也接受单个、数组或 requests wrapper，并发上限独立且为 2。
 
 ## 6. 控制结果规模
 
-先小范围读取，再扩大时间、分页或维度。大结果写文件，不把用户级数据完整输出到终端或
-对话：
+先小范围读取，再扩大时间、分页或维度。大结果写文件，不把用户级数据完整输出到终端或对话：
 
 ```powershell
-gravity run <operation-id> --input <input.json> `
-  --all-pages --max-pages 20 --max-items 5000 --concurrency 6 `
-  --output tmp/result.ndjson --format ndjson
+gravity run <operation-id> --input <input.json> --all-pages --max-pages 20 --max-items 5000 --concurrency 6 --output tmp/result.ndjson --format ndjson
 ```
 
 只需要部分合同字段时使用本地输出裁剪，默认不变；非法字段会在联网前以 caller/2 失败：
@@ -180,11 +180,9 @@ gravity read app.list --input '{"page":1,"page_size":20}' --fields id,name
 gravity run app.list --input '{"page":1,"page_size":20}' --fields id,name
 ```
 
-`--fields` 只能选择合同允许的输出字段；动态字段还必须由本次请求显式声明。它不是绕过响应
-投影的方式，也不会让未登记上游字段进入结果。
+`--fields` 只能选择合同允许的输出字段；动态字段还必须由本次请求显式声明。它不是绕过响应投影的方式，也不会让未登记上游字段进入结果。
 
-`run` 写脱敏 Receipt 到 workspace 私有 `state_root/receipts/`。它不保存输入值或结果行；
-交付时可引用 operation、合同指纹、状态和请求数。
+`run` 写脱敏 Receipt 到 workspace 私有 `state_root/receipts/`。它不保存输入值或结果行；交付时可引用 operation、合同指纹、状态和请求数。
 
 ## 7. 离线元数据与 Analysis 词汇
 
@@ -216,5 +214,6 @@ gravity find "retention"
 `--output` 是最终文件而非 JSON envelope；超时不取消，拿 `job_id` 走 status/wait/download，无可靠 ID 先 `export list`。分阶段命令只用于恢复；导出不进入 Plan v1。详见[导出指南](guides/export.md)。
 
 ## 10. 交付
+
 至少说明：业务口径、`operation_id` 或 SQL product、App、时间范围、选择 Insight/SQL 的理由、成功/空/部分失败/能力缺口，以及不能支持的结论。不要把“没有查到”改写成“没有发生”。
 CLI 退出码：`0` 成功（包括合同允许的 empty）；`2` 调用方错误，改输入或 selector 后可重试；`3` 上游/权限错误，换账号或申请权限；`4` 本地合同/隐私/策略错误，请求未发出，不要改输入重试。批量命令按最高严重级别聚合退出码，仍需读取每项结果。

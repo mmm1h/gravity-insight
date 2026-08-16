@@ -18,6 +18,13 @@
 `194 + 2 = 196`（184 read + 12 governed mutation）。部分闭环的 Analysis 导出只关闭了单用户事件
 子类；8 条完全缺失里多数是合同证据阻塞，逐行有记录。
 
+2026-08-16 从 README/索引按十分钟路径生产复验，12 条主路径命令、3 次 HTTP 后取得既有
+`analysis.event.query` 的真实 governed result；认证、`app.list`、最终查询均 HTTP 200，无重试、翻页、
+换 App 或扩窗。`app.list` 外层为 `contract_changed`，只因同一 App 也存在于成功的本地 metadata 快照
+才继续本次复验，不能视为普通成功。此次只修发现、任务指南和写/语义文档，不新增产品或 envelope，
+因此总账严格为 `51 + 0 = 51`、`42 / 1 / 8 + 0 / 0 / 0 = 42 / 1 / 8`，operation/stable 仍为
+`205 / 196`。
+
 2026-08-16 F40 按 catalog 顺序枚举 6 个 App，在第 6 个首次取得 1 条测试设备后立即停止，并以内存
 父行 ID 只发 1 次详情请求。生产共 8 次业务 HTTP：1 次 `app.list`、6 次
 `app.testing_tool.list`、1 次 `attribution.attribution_detail.query`；全部 HTTP 200，0 重试、翻页、

@@ -54,7 +54,15 @@ gravity census --smoke
 
 ## 4. 发现并执行查询
 
-不要猜 operation ID。Agent 用两条命令完成发现、描述和执行：
+不要猜 operation ID。第一次盘点完整能力时先走三层离线目录：
+
+```powershell
+gravity agent-catalog categories
+gravity agent-catalog category app
+gravity agent-catalog describe app.list
+```
+
+进入具体问题后，Agent 用两条命令完成发现、描述和执行：
 
 ```powershell
 gravity agent "app"
@@ -86,7 +94,9 @@ workspace 可由顶层 `--workspace`、显式 API 调用、`GRAVITY_WORKSPACE` �
 
 ## 5. 同步本地元数据目录
 
-跨 App 盘点事件和属性时，使用正式同步命令：
+先用 `gravity metadata search "" --app-id <selected-app-id> --limit 20` 检查已有私有 catalog 与
+`catalog.synced_at/status`。已有成功且足够新的快照时直接离线使用；冷目录或调用方明确要求刷新时，
+再使用正式全 App 同步命令：
 
 ```powershell
 gravity metadata sync --all-apps
@@ -94,11 +104,15 @@ gravity metadata sync --all-apps
 
 它会自动分页同步所有可见 App 的事件、事件属性、用户属性和属性分组，并写入用户私有 SQLite。通常不需要指定路径；只有调用方明确管理落盘位置时才使用 `--database`。
 
+`sync --all-apps` 会产生多次生产读取，不能当成固定一次网络请求；必须审查同步摘要里的失败来源与
+快照时间。当前没有单 App sync 入口。
+
 同步结果只表示 Gravity 中真实存在的物理元数据，不会推断“业务模块 → 事件”的关系。
 
 ## 下一步
 
 - 执行真实分析任务：[Agent 工作流](agent-workflow.md)
+- 从完整目录走到第一次真实结果：[十分钟路径](agent-skills/ten-minute-path.md)
 - 在服务或 notebook 中使用：[Python SDK 参考](reference/sdk.md)
 - 理解 Insight、SQL 和合同层：[架构与概念](architecture.md)
 - 查完整命令分组：[CLI 参考](reference/cli.md)

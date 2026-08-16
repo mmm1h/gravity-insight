@@ -815,6 +815,8 @@ gravity reports usage --max-pages 1000 --max-items 100000
 fail closed。未知入口使用 `gravity agent "company resource usage" --domain report`，返回唯一
 `composite:company_usage`，无需补 App、日期或引用，发现后执行共两次调用。
 
+### 报表目录与订阅
+
 报表目录与订阅都是无 App 输入的账号级产品：
 
 ```powershell
@@ -828,6 +830,21 @@ gravity reports subscriptions --max-pages 1000 --max-items 100000
 订阅。create 写入 `GSDK-<12 hex>`，delete 只处理执行时读回仍带 marker 的对象。Agent 只返回预览与
 确认后的两步 argv，`natural_language_auto_execute=false`，写操作不进入 Plan v1；永不调用
 `subscribe/test`。
+
+最小确认流程如下；第二条必须与第一条参数完全相同，只改变确认开关：
+
+```powershell
+gravity reports create --app-id <app-id> --name <name> --config <config.json> --dry-run
+gravity reports create --app-id <app-id> --name <name> --config <config.json> --execute
+
+gravity reports delete --report-id <marked-report-id> --dry-run
+gravity reports subscribe --report-id <v3-report-id> --report-name <exact-name> `
+  --start <date> --end <date> --column <exact-column> --dry-run
+gravity reports unsubscribe --subscription-id <marked-subscription-id> --dry-run
+```
+
+后三条也只有在人审 preview 后，才用原参数将 `--dry-run` 改为 `--execute`。ID、名称、配置、日期和
+列名必须来自调用方或已登记目录，不从自然语言复制或猜测。
 
 ### Custom audiences
 
