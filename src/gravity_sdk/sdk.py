@@ -293,8 +293,9 @@ class GravitySDK(
         from .resolver import resolve_and_run
         from .runtime import call_read
         selected_workspace = self._select_workspace(workspace)
-        effective_pages = max_pages if max_pages is not None else (1_000 if all_pages else 5)
-        effective_items = max_items if max_items is not None else (100_000 if all_pages else 200)
+        fallback = (1_000, 100_000) if all_pages else (5, 200) if max_pages is not None or max_items is not None else (None, None)
+        effective_pages = max_pages if max_pages is not None else fallback[0]
+        effective_items = max_items if max_items is not None else fallback[1]
         return resolve_and_run(
             selector,
             client=self.insight,

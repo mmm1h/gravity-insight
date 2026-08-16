@@ -45,8 +45,13 @@ def add_resolver_command(
 
 def dispatch(args: Any, object_input: Callable[[Any], Mapping[str, Any]]) -> Any:
     all_pages = bool(args.all_pages)
-    max_pages = int(args.max_pages or (1_000 if all_pages else 5))
-    max_items = int(args.max_items or (100_000 if all_pages else 200))
+    bounded = all_pages or args.max_pages is not None or args.max_items is not None
+    max_pages = (
+        int(args.max_pages or (1_000 if all_pages else 5)) if bounded else None
+    )
+    max_items = (
+        int(args.max_items or (100_000 if all_pages else 200)) if bounded else None
+    )
     return resolve_and_run(
         args.selector,
         client=runtime.build_client(),

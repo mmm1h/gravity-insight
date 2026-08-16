@@ -7,6 +7,7 @@ from typing import Any, Callable, Mapping
 from . import runtime
 from .errors import InputValidationError
 from .output_projection import project_output, validate_output_fields
+from .pagination_audit import pagination_audit
 from .pagination_cli import page_limits
 
 
@@ -36,16 +37,32 @@ def dispatch(args: Any, object_input: Callable[[Any], Mapping[str, Any]]) -> Any
             "--limit and --max-items cannot be combined", field="max_items"
         )
     all_pages = bool(args.all_pages)
-    max_pages, max_items = page_limits(args, all_pages=all_pages)
-    if args.limit is not None:
-        max_items = args.limit
     client = runtime.build_client()
     inputs = dict(object_input(args.input))
     fields = _field_values(args.fields)
     schema = client.schema(args.operation_id)
     if fields is not None:
         validate_output_fields(schema, fields, request_inputs=inputs)
-    result = runtime.call_read(
+    bounded = _bounded(args, all_pages)
+    result = _read_result(args, client, inputs, all_pages, bounded)
+    if isinstance(result, Mapping):
+        result = {**result, "pagination_audit": pagination_audit(
+            result, inputs, all_pages=all_pages, bounded=bounded
+        )}
+    return project_output(
+        schema, args.operation_id, result, fields, request_inputs=inputs
+    )
+
+
+def _read_result(
+    args: Any, client: Any, inputs: Mapping[str, Any], all_pages: bool, bounded: bool
+) -> Any:
+    if not bounded:
+        return runtime.call_read(client, args.operation_id, inputs)
+    max_pages, max_items = page_limits(args, all_pages=all_pages)
+    if args.limit is not None:
+        max_items = args.limit
+    return runtime.call_read(
         client,
         args.operation_id,
         inputs,
@@ -54,8 +71,11 @@ def dispatch(args: Any, object_input: Callable[[Any], Mapping[str, Any]]) -> Any
         max_items=max_items,
         max_workers=args.concurrency,
     )
-    return project_output(
-        schema, args.operation_id, result, fields, request_inputs=inputs
+
+
+def _bounded(args: Any, all_pages: bool) -> bool:
+    return all_pages or any(
+        getattr(args, name, None) is not None for name in ("limit", "max_pages", "max_items")
     )
 
 

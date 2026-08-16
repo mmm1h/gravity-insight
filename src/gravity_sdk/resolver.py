@@ -19,6 +19,7 @@ from .errors import (
     semantic_envelope_ok,
 )
 from .parent_resolution import resolve_declared_parents
+from .pagination_audit import pagination_audit
 from .receipt import RequestCounter, build_receipt, count_http_requests, persist_receipt
 from .recipe import check_recipe
 from .resolver_support import (
@@ -359,6 +360,17 @@ class _Resolver:
             envelope["parents"] = parents
         if result is not None:
             envelope["result"] = dict(result)
+            envelope["pagination_audit"] = pagination_audit(
+                result,
+                self.inputs,
+                all_pages=self.read_all,
+                bounded=(
+                    self.read_all
+                    or self.max_pages is not None
+                    or self.max_items is not None
+                ),
+                http_requests_made=receipt["request_count"],
+            )
             fact_paths = {"operation_id": "/operation_id"}
             if "contract_version" in result:
                 fact_paths["contract_version"] = "/result/contract_version"

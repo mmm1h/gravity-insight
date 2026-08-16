@@ -322,6 +322,12 @@ class GravitySDKTests(unittest.TestCase):
         self.assertEqual(10, call["max_items"])
         self.assertEqual(2, call["max_workers"])
 
+        with patch("gravity_sdk.resolver.resolve_and_run", return_value=resolved) as run:
+            sdk.run("app.list")
+        self.assertEqual((None, None), (
+            run.call_args.kwargs["max_pages"], run.call_args.kwargs["max_items"]
+        ))
+
     def test_run_many_uses_the_instance_bound_workspace(self) -> None:
         insight = _Insight()
         workspace = object()
