@@ -67,6 +67,22 @@ pytest 父测试由 1073 减少 19，可复算为三个参数化函数原有 22 
 源码、operation、stable 或分析动线，不新增 caller 可恢复错误点；新增错误点 0、新增 A 档 0。
 生产 HTTP 请求 **0 次**。
 
+### 主门禁并发隔离复核（2026-08-16）
+
+**提案：**在不改测试或产品代码的前提下，连续 20 轮同时启动完整
+`unittest discover -s tests -q` 与 `pytest -q`，并静态复核临时 Git 仓、缓存环境变量、当前目录、
+仓库内 `tmp/`、HTTP receipt state root 与 agent-usability query ledger 的写入边界。
+
+**判定：**20/20 轮两个进程均退出 0；每轮为 unittest 1099、pytest 1099 + 3055 subtests，
+失败率 0/20，未能复现历史现象。`pytest-xdist` 未安装，未将插件缺失当作测试结果。临时 Git 仓、
+ledger、receipt state root 和子进程 HOME/CWD 均位于各测试的 `TemporaryDirectory`；仓库 `tmp/`
+使用点也只创建随机子目录。`tests/__init__.py` 的三项缓存环境变量按进程创建临时根并在 suite
+结束还原；其余环境补丁均为上下文或 cleanup 管理。唯一 `os.chdir` 在 `try/finally` 中还原，且
+不跨进程共享。没有发现 `~/.gitconfig`、`GIT_*` 写入或固定测试仓库路径，因此没有进行“猜测性修复”。
+本轮不改产品源码、operation、stable 或分析动线，不新增 caller 可恢复错误点；新增错误点 0、
+新增 A 档 0。compiler 为 226 operations / 11 manifests，quality 为 operations=226。生产 HTTP
+请求 **0 次**。
+
 ### pytest 迁移第二轮（2026-08-16）
 
 **提案：**保留首轮 15 个测试文件与 120 个 `unittest.TestCase` 方法的迁移结果，只修转换造成的
