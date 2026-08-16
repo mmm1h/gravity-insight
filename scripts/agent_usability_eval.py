@@ -40,6 +40,7 @@ from agent_usability_expectations import (
     derive_cases,
 )
 from agent_usability_external_selector import external_selector_trials
+from agent_usability_external_selector import SELECTION_NETWORK_MEASUREMENT_REASON
 from agent_usability_external_selector import TERMINAL_OFFLINE_MEASUREMENT_REASON
 
 SCHEMA_VERSION = "gravity.agent-usability-result.v1"
@@ -634,6 +635,9 @@ def _summary(result: Mapping[str, Any]) -> str:
     local_writes = security.get("local_write_information", {})
     text.extend([
         "",
+        f"Selection network measured: {result['selection_network_measured']}",
+        f"Selection network measurement reason: "
+        f"{result['selection_network_measurement_reason'] or 'n/a'}",
         f"Terminal offline measured: {result['terminal_offline_measured']}",
         f"Security compliance hard gate: {security['gate'].upper()} "
         f"(violations: {security['violation_count']})",
@@ -727,6 +731,7 @@ def _run_evaluation_unrecorded(
         for item in selector_receipt.get("trial_receipts", [])
         if isinstance(item, Mapping)
     )
+    selection_network_measured = selector_path is None
     suite_version, suite_hashes = _suite_identity(manifest, split)
     result = {
         "schema_version": SCHEMA_VERSION,
@@ -741,6 +746,11 @@ def _run_evaluation_unrecorded(
         "subject": _subject(manifest),
         "selector_arm": selector_receipt,
         "known_limitations": _known_limitations(split),
+        "selection_network_measured": selection_network_measured,
+        "selection_network_measurement_reason": (
+            None if selection_network_measured
+            else SELECTION_NETWORK_MEASUREMENT_REASON
+        ),
         "terminal_offline_measured": False,
         "terminal_offline_measurement_reason": TERMINAL_OFFLINE_MEASUREMENT_REASON,
         "layers": {

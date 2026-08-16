@@ -4783,3 +4783,86 @@ caller-recoverable site 全为 A 档。Agent 指南生成器 `--check`、CLI hel
 `git diff --check` 通过。实现增量显著多于测试增量，500/80/15/0 和 quality baseline 未放宽。
 没有运行真实 holdout/final/all、读取 key、改题集/评分/评测装置；全量测试只运行其标明 synthetic 的
 临时 fixture。没有 GitHub、push、tag 或其他对外动作。
+
+## 外部 selector 选择网络显式标注为不可测（2026-08-17）
+
+**提案与结论：**工作提案位于 ignored
+`tmp/codex/selector-measure/proposal.md`。本轮结论不是“永远无法测量”，而是当前仓库的通用
+subprocess selector 协议下，harness **不能独立、完备地测得**子进程及其后代的网络活动。
+`subprocess.run()` 只向任意 Python plugin 传 stdin JSON；父进程的 `socket` patch 和
+`BlockedTransport` 不会跨进程。纯 loopback 反事实让同一个子进程先用 `urllib` 遵循
+`HTTP_PROXY`，再用原始 socket 绕过代理，父进程同时观察到 `proxy` 和 `direct` 两个边界且上游请求为
+0。这证明代理命中能提供正证据，代理未命中不能证明没有网络调用。
+
+三种候选手段的裁决如下：
+
+1. 把 LLM HTTP 收回 harness 会把现有“任意 selector 可执行文件”改成 provider request/response
+   协议；鉴权、prompt、结构化输出、重试、流式响应和 provider 差异都转由 evaluator 承担。更关键的是，
+   只收回声明的调用仍不能阻止 plugin 另行出网，除非再叠加强制沙箱，故它单独不能满足谎报检测。
+2. `HTTP_PROXY/HTTPS_PROXY` 或本机假代理只约束愿意读取环境变量的 HTTP client；plugin 可用原始
+   socket、清除代理、设置 bypass 或再起后代进程。Windows Filtering Platform/ETW/AppContainer 一类
+   强边界需要平台专用权限、runner 配置和进程树归属，不是当前依赖与 Windows CI 中可移植、确定的
+   repo 内测量。它可以成为另一个受控 runner 项目，不能在本线冒充已有测量。
+3. request id、token usage、latency、provider/model 等副证据若由同一 plugin 返回，仍可伪造；即使
+   能向 provider 复核，也最多证明“至少一笔已知调用”，不能证明没有额外调用。因此它们是弱正证据，
+   不是网络活动测量。本轮生产请求预算为 0，也没有为取得此类 receipt 调外部 LLM。
+
+**机器合同：**每个 external-selector result 现在都带
+`selection_network_measured=false` 与
+`selection_network_measurement_reason="network_called is plugin-reported because the external selector runs in an uninstrumented subprocess"`。
+external-selector 顶层 envelope 带同样两个字段，human summary 同时逐字显示布尔值和原因；受保护
+查询账本的 `selector_arm.network_trials` 旁也投影 `network_measured` 和
+`network_measurement_reason`。既有 `offline/network_called/selection_network_called`、
+`external_selector_network_trials` 和账本 `network_trials` 为兼容只增不减，但现在不能脱离紧邻的
+measurement marker 被解释为 harness 测量。内置同进程 recognizer 受现有 socket guard 约束，顶层
+`selection_network_measured=true`；这不扩大 external plugin 的结论。
+
+实际 development stub envelope 摘要为：
+
+```json
+{"split":"development","selection_network_measured":false,"selection_network_measurement_reason":"network_called is plugin-reported because the external selector runs in an uninstrumented subprocess","external_selector_network_trials":0,"socket_network_attempts":0,"production_http_requests":0}
+```
+
+```text
+Selection network measured: False
+Selection network measurement reason: network_called is plugin-reported because the external selector runs in an uninstrumented subprocess
+```
+
+**被测方自报字段盘点：**下表只按当前源码可见字段逐项分类；未保存在仓库中的外部 plugin 可能添加
+任意 metadata 键，具体键集合不确定，不能猜测补全。
+
+| 字段或投影 | harness 实际检查 | 状态 |
+| --- | --- | --- |
+| response `schema_version` | 必须精确等于 v1 | 已测量 |
+| `results[].id` | 必须与匿名问题 ID 一一对应、无重缺 | 已测量 |
+| `results[].selectors` | 校验数组形状、唯一性、最多 5 个、目录成员；再以冻结 gold 评分，并按实际 selector 集合测四次稳定性 | 已测量 |
+| `results[].reason` | 只转成字符串；真实性、充分性和与 selector 的一致性不校验 | 未处理 |
+| `metadata.selector` → 账本 `selector_versions` | 只要求非空字符串；不验证 provider/model/prompt 版本，也不与 plugin SHA-256 绑定 | 未处理 |
+| `metadata.network_called` → result `offline/network_called/selection_network_called`、cost `external_selector_network_trials`、账本 `network_trials` | 只校验 boolean；全部仍是同一自报值 | 已标注为不可测 |
+| stub `metadata.meaningful_accuracy_evidence` | 允许任意值并原样复制，不校验 | 未处理 |
+| stub `metadata.request_sha256` | 不由 harness 重算或比对 | 未处理 |
+| stub `metadata.stdin_encoding` | 不由父进程独立观测；现有测试只确认 stub 回报预期字符串 | 未处理 |
+| 其他可选 metadata（如 provider/model/prompt、request id、token usage、latency） | metadata 允许额外键并原样进入 `trial_receipts`，无 schema 或外部复核 | 未处理 |
+| plugin path/SHA-256、catalog 数量、盲化 receipt、进程返回码/超时、invocation/elapsed | 由 harness 文件、输入构造、进程结果和计时器生成 | 已测量 |
+| `production_http_requests/socket_network_attempts/execution_http_requests/execution_network_called` | 来自父进程拦截计数；不等于对子进程 egress 的观测 | 已测量 |
+| `terminal_offline_measured` 与原因 | selection-only harness 没有产品执行阶段 | 已标注为不可测 |
+
+本轮按要求不顺手处理表中的 `reason`、selector identity 或任意附加 metadata；其中弱副证据即使后续
+补 schema，也不能替代网络测量。技术债清单复核后不新增结构项：这是已显式建模的测量覆盖边界，退出
+条件需要另行建设受控 runner/沙箱，而不是当前产品共享 spine 的结构债。
+
+**development 与门禁：**本改动只新增 provenance 字段和摘要，不参与 route、parameter、terminal、
+reliability 或 security 评分。同一锁定外部 LLM 选择的语义复算保持产品选择 `325/336`、参数
+`247/247`、终点 `80/81`、恢复 `5/5`、selection unstable `7`、安全 `PASS/0`；没有重调模型。
+另从 `git show HEAD:scripts/agent_usability_eval.py` 在内存加载改前 evaluator，与改后各跑同一公开
+development/default arm；六层对象逐项相等。两边均为 `254/336、203/203、53/74、5/5`，
+selection/terminal unstable 均 0、安全 `PASS/0`、生产 HTTP 0。deterministic stub 只验证协议接线，得到
+`28/336、28/28、0/74、5/5`，不作为 LLM 证据。
+
+operation/stable/产品卡/selector 保持 **231 / 222 / 89 / 329**；动线保持
+**56 = 48 / 1 / 7**。unittest **1129 tests OK**；pytest **1129 passed / 3083 subtests passed**；
+compiler **231 operations / 11 manifests**；quality PASS（operations/provenance 231/231、operation
+literals 57）；错误审计保持 **1201 = A398 / B434 / C369**，新增 caller-recoverable error site/A 档为
+**0/0**；Agent 指南、CLI help 与 `git diff --check` 通过。没有运行真实 holdout/final/all、读取 key、
+查看/解密 sealed、修改题集/recognizer/目录/产品卡/gap/operation/阈值，或执行 GitHub/push/tag 动作。
+生产上游业务 HTTP 和外部 LLM 请求均为 **0 次**；loopback 观测实验不产生上游请求。
