@@ -24,6 +24,14 @@ from .plan_adapter_support import (
     validate_selected_fields,
 )
 from .saved_analysis_result import saved_result_item_count
+from ._field_policy_operations import (
+    ANALYSIS_EVENT,
+    ANALYSIS_EVENT_INFO,
+    ANALYSIS_EVENT_PROPERTY,
+    ANALYSIS_SEGMENT,
+    ANALYSIS_SEGMENT_HISTORY,
+    ANALYSIS_USER_PROPERTY,
+)
 from .saved_analysis_support import RESULT_STATUSES, bounds, safe_query_envelope, workers
 from .result_source import GOVERNED_PRODUCT, result_source
 from .template_replay import (
@@ -384,9 +392,25 @@ def _safe_validation(value: Any) -> dict[str, Any] | None:
     if not isinstance(value, Mapping) or set(value) != {"status", "live_metadata_dependencies"}:
         return None
     dependencies = value.get("live_metadata_dependencies")
-    if value.get("status") not in {"valid_offline", "needs_live_metadata"} or dependencies != []:
+    allowed = {
+        ANALYSIS_EVENT,
+        ANALYSIS_EVENT_INFO,
+        ANALYSIS_EVENT_PROPERTY,
+        ANALYSIS_SEGMENT,
+        ANALYSIS_SEGMENT_HISTORY,
+        ANALYSIS_USER_PROPERTY,
+    }
+    if (
+        value.get("status") not in {"valid_offline", "needs_live_metadata"}
+        or not isinstance(dependencies, list)
+        or any(item not in allowed for item in dependencies)
+        or len(dependencies) != len(set(dependencies))
+    ):
         return None
-    return {"status": value["status"], "live_metadata_dependencies": []}
+    return {
+        "status": value["status"],
+        "live_metadata_dependencies": list(dependencies),
+    }
 
 
 def is_template_result(value: Any) -> bool:

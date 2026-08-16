@@ -1,7 +1,7 @@
 # 路线图
 
 本页是当前开发的唯一权威排期依据，取代历史上不进版本控制的临时目标文件。
-盘点快照：`codex/export-families`（基于 `dev@df12f5e`），2026-08-17。
+盘点快照：`codex/export-families` 与 `codex/offline-evidence`（均基于 `dev@df12f5e`），2026-08-17。
 
 ## 目标
 
@@ -14,18 +14,62 @@
 
 ## 现状
 
-当前从仓库产品入口与 stable operation 正向交叉反推 55 条产品动线：**已闭环 46 / 部分闭环 2 / 完全缺失 7**；
+当前从仓库产品入口与 stable operation 正向交叉反推 55 条产品动线：**已闭环 47 / 部分闭环 1 / 完全缺失 7**；
 另有 2 条 legacy/SDK 便利面、1 条重复能力审计行和 1 条已有结果上的调用方派生便利面保留，
 但不计产品动线。表格 59 行减去 4 条“不计独立动线”得到 55 条。设置 → 应用管理把
 `51 = 42 / 1 / 8` 推进到 `51 = 43 / 1 / 7`，归因聚合与自定义指标再各新增一条闭环，故为
 `53 = 45 / 1 / 7`；事件/属性模板治理增加 1 条闭环，保存分析资产生命周期增加 1 条部分闭环，故为
-`55 = 46 / 2 / 7`。operation 为 **231**，stable 为 **222 = 185 read + 37 mutation**。
-两条部分闭环分别是 Analysis 导出已闭合的五个服务端子类，以及尚缺真实聚合数字持久证据的保存分析 CRUD；
+`55 = 46 / 2 / 7`；2026-08-17 保存分析真实聚合值补证后成为 `55 = 47 / 1 / 7`。
+operation 为 **231**，stable 为 **222 = 185 read + 37 mutation**。
+唯一部分闭环是 Analysis 导出：同日已闭合五个服务端子类（单用户事件加分群结果、分群用户明细、
+用户明细、付费事件），变现明细与原始事件导出仍是精确 gap；
 7 条完全缺失里多数是请求、响应或非空证据阻塞；字段隐私不再是阻塞项。
 逐条状态、四面入口、调用次数和证据阻塞以[分析动线台账](analysis-journeys.md)为准；旧
 `21/14/6` 快照的逐条底稿未进入版本控制，无法复算，已停止作为排期事实。
 
 `draft` 候选数量不等于排期数量：17 项候选归并进台账动线或按明确非目标排除，不按 operation 单独排期。
+
+### 保存分析离线边界与真实数字补证（2026-08-17）
+
+**提案与定位：**先区分“离线编译”和“执行前 live metadata 校验”，再补真实数字。代码检查证明
+`GravityInsightClient.validate` 使用只记录依赖并抛出的 offline loader，本身不调用 transport；真实联网
+发生在 `ReadExecutor.execute` 调用绑定的 field validator 后，由 `_load_field_metadata` 走受管读取，最后
+才发 analysis query。该执行路径不是 saved replay 特例：Dashboard、Saved Analysis 与 Analysis Template
+共用 Dashboard/Analysis Spec compiler。旧 Saved/Template surface 分别丢弃或硬编码空依赖，且旧 collector
+在第一个 metadata dependency 处停止，所以调用方只能看见第一项，实际执行还能继续读第二项。
+
+**判定与修法：**选择“把会联网的 prepare/replay 边界写进合同”。离线 shape 校验继续由不可到达 HTTP
+的 loader 硬阻断；本地 `AnalysisReferences` 静态枚举所有可能 live metadata operation，并由 Dashboard、
+Saved、Template、Plan 安全投影完整传播。没有引入全局禁网上下文，因为现有 loader 已在生产代码路径上
+物理阻断 transport，额外上下文只会扩大共享热点；没有把 metadata 前置为离线阶段，因为那会把“离线”
+改成联网或重复执行安全检查。真实执行仍在 query 前复验 live membership，安全语义不降级。
+
+生产路径回归使用真实 `GravityInsightClient.from_env`、`GravityHttpRuntime` 与生产 `Transport`，只把底层
+session 设成计数且触网即抛；编译 Web artifact 后断言完整依赖为
+`analysis.event.list + analysis.event_property.list`，并断言 session 零调用。在 detached `df12f5e` 上运行
+当前同一测试，Saved surface 返回空依赖，断言以 `expected [event, event-property] != actual []` 失败；进一步
+下钻 client collector 时它也只会在第一项 event 处停止。零调用断言修复前仍成立，反证“离线函数自身
+偷偷联网”不是事实，真实缺陷是执行期依赖被合同隐藏。最终 receipt 又独立观察到 event 与 event-property
+两次读取。
+
+**线上补证与伴随合同修正：**`analysis.report_config.list` 的上一轮 500 页大小在线返回语义错误；40 页大小
+读取 93 条成功。非空 `dashboards` 此前无法投影并使整个目录 fail-closed；v4 因而把页上限收回 40，
+并将该已观察数组登记为 opaque JSON 完整暴露，保存分析产品仍只消费自身字段。完整目录
+同时证明正常 event artifact 会携带执行器本来就用显式 App/日期覆盖的 `calculateBody.app_id/date_list`
+和不参与请求的 UI 镜像字段；这些精确已观察字段被登记，未知字段仍 fail-closed。精确 GET 的原样保存对象
+在 `2026-06-01..2026-06-07` 重放成功，`analysis.event.query` HTTP 200，真实聚合值为
+**`235176.0`**，governed response 路径为
+`/result/data/list/0/0/list/0/阶段总和`。完整响应、四张最终 receipt、依赖对账与请求账本见
+[`20260817_saved_analysis_replay.json`](../evidence/forensics/20260817_saved_analysis_replay.json)。
+
+生产请求严格为 **15/15**：认证 1、report-config list 8、get 3、event metadata 2、event query 1；
+达到上限后请求 0。全程只读，创建临时对象 0、残留 0。receipt 仍为 `gravity.http-receipt.v1` 且值无关，
+真实业务值只存在 governed replay evidence。operation/stable/产品卡/selector 均保持
+231 / 222 / 84 / 324；动线 `55 = 46 / 2 / 7 → 55 = 47 / 1 / 7`。按仓库固定范围
+`src/gravity_sdk` 运行错误审计仍是 `1169 = A366 / B434 / C369`，故本线新增错误点 0、A 档新增 0。
+最终门禁为 unittest **1110 OK**、pytest **1110 passed / 3078 subtests passed**、compiler
+**231 operations / 11 manifests**、quality **PASS**；stable privacy、生成文档、CLI help 与
+`git diff --check` 同时通过，测试数未减少。
 
 ### Census 完整性与分母审计（2026-08-16）
 
@@ -59,7 +103,7 @@ SQL 工作台不是漏抓的懒加载 chunk：入口把它列为 `/analysis/bi`�
 不做排期见[授权写面普查与分析能力排期](research/write-surface-census.md)。
 
 保存分析 `report_config/update` 的 create/update/delete 已实现五类受证明资产并完成事件类 CRUD、读回、
-重放与清理；因真实聚合数字未写入 evidence，动线仍是部分闭环，补证后才可转已闭环。下一项恢复为
+重放与清理；真实聚合数字已写入 evidence，动线转为已闭环。下一项恢复为
 原 P0-1，并行做平台 SQL 工作台静态 surface 取证；现有 P0-2 已由三域 owner gate 完成。P0-3 的价值保留，但原“依赖
 自定义指标 CRUD、维度表 CRUD、SQL 工作台”的叙述已过时：自定义指标已闭环，维度表已 hold，平台
 SQL 工作台在该 snapshot 中尚无实现 route，范围外未知。报表模板 delete 已由 v3

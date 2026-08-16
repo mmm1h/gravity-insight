@@ -218,3 +218,7 @@ list/get 不属于 metadata cache operation，delete guard 仍使用完整新列
 四个 Analysis 导出族只扩充 route contract 和 Agent export owner，继续复用唯一 task gateway、
 退避轮询、SafeBlobTransfer、XLSX finalizer、HTTP receipt 和原子提交；未产生按族复制的下载栈或新 registry。
 六态也是既有 Export result envelope 的窄增量，未放宽任何 quality/archive 门禁；本轮复核不新增活动结构债。
+
+保存分析离线边界复核把 metadata dependency 枚举下沉到窄 FieldPolicy helper，并用独立 offline loader
+收紧 `client.py` AST ratchet；Dashboard、Saved Analysis、Template 与 Plan 只传播同一合同，不建立第二套
+校验器或网络上下文。真实值仍只在 governed evidence，HTTP receipt 合同未改；本轮不新增活动结构债条目。

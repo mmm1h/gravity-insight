@@ -33,6 +33,7 @@ class CompiledDashboardChart:
     operation_id: str
     inputs: dict[str, Any]
     validation_status: str
+    live_metadata_dependencies: tuple[str, ...]
     date_override_applied: bool
     limitations: tuple[str, ...] = ()
 
@@ -47,6 +48,7 @@ class CompiledDashboardChart:
             "operation_id": self.operation_id,
             "supported": True,
             "validation_status": self.validation_status,
+            "live_metadata_dependencies": list(self.live_metadata_dependencies),
             "date_override_applied": self.date_override_applied,
             "limitations": list(self.limitations),
         }
@@ -104,6 +106,7 @@ def compile_dashboard_chart(
         operation_id=operation_id,
         inputs=inputs,
         validation_status=_validation_status(validation.get("status")),
+        live_metadata_dependencies=_validation_dependencies(validation),
         date_override_applied=applied,
         limitations=limitations,
     )
@@ -323,8 +326,13 @@ def _validate_ui_config(kind: str, config: Mapping[str, Any]) -> None:
         _optional_object(config, "groupByCreateTime")
         _optional_object(config, "aggregate_config", fields=None)
         _optional_date_list(config, "date_list")
-        for field in ("groupBy", "queryItemList", "customQueryItemList"):
+        for field in (
+            "getSelectQueryList", "globalFiltering", "groupBy", "queryItemList",
+            "customQueryItemList", "splitEvent",
+        ):
             _optional_array(config, field)
+        _optional_object(config, "extra_data", fields=None)
+        _optional_object(config, "splitEventOtherData", fields=None)
         for field in ("cascaderValue", "checkIndexList", "viewNumValue"):
             _optional_array(config, field)
         _optional_sort(config)
@@ -441,6 +449,15 @@ def _date_window(start: str, end: str) -> None:
 def _validation_status(value: Any) -> str:
     selected = str(value or "").strip().casefold()
     return selected if selected in {"valid_offline", "needs_live_metadata"} else "valid_offline"
+
+
+def _validation_dependencies(value: Mapping[str, Any]) -> tuple[str, ...]:
+    dependencies = value.get("live_metadata_dependencies", ())
+    if not isinstance(dependencies, (list, tuple)):
+        return ()
+    return tuple(dict.fromkeys(
+        item for item in dependencies if isinstance(item, str) and item
+    ))
 
 
 def _parse_date(value: Any, field: str) -> datetime:

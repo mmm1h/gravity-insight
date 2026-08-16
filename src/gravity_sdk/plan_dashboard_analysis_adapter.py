@@ -72,6 +72,7 @@ _CHART_FIELDS = frozenset(
         "supported",
         "query_executed",
         "validation_status",
+        "live_metadata_dependencies",
         "date_override_applied",
         "limitations",
         "result",

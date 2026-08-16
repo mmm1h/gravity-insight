@@ -331,7 +331,9 @@ output_fields=None)` 支持 `event`、`funnel`、`retention`、`property`、`sca
 编译结果使用 `gravity-insight.analysis-query-compiled.v1`，包含现有稳定 `operation_id`、
 `compiled_input`、`validation` 和无敏感筛选值时可直接加入 Plan 的 `plan_node`；`offline=true` 且
 `network_called=false`。执行方法会先调用同一编译和离线校验，再通过公共 `read()` 执行，
-因此不需要在每次查询前单独编译。
+因此不需要在每次查询前单独编译。`validation.live_metadata_dependencies` 完整列出该 Analysis
+引用组合在执行期可能读取的登记 metadata operation；离线编译不会执行其中任何一项，真正的
+`read()` 会先按实时 metadata 复验成员关系，再发送最终 query。
 
 Spec 只简化结构，不替调用方决定语义：事件名、属性名、指标、聚合、日期、窗口、分组和条件
 必须显式填写。物理字段未知时，先通过 `gravity metadata search` 或本地 metadata API 确认，

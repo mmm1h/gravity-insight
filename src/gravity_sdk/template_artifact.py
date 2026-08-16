@@ -31,6 +31,7 @@ class CompiledTemplate:
     operation_id: str
     inputs: dict[str, Any]
     validation_status: str
+    live_metadata_dependencies: tuple[str, ...]
     date_override_applied: bool
     limitations: tuple[str, ...]
 
@@ -81,7 +82,8 @@ def _compile_web(
         return _compile_gap("web_artifact", exc)
     normalized = CompiledTemplate(
         "web_artifact", compiled.kind, compiled.operation_id, compiled.inputs,
-        compiled.validation_status, compiled.date_override_applied,
+        compiled.validation_status, compiled.live_metadata_dependencies,
+        compiled.date_override_applied,
         compiled.limitations,
     )
     return _success(normalized)
@@ -101,9 +103,10 @@ def _compile_compact(
     if not isinstance(validation, Mapping) or validation.get("ok") is not True:
         return _gap("compact_spec", [_quarantine("config", "stable_validation_failed")])
     status = str(validation.get("status") or "valid_offline")
+    dependencies = _dependencies(validation)
     return _success(CompiledTemplate(
         "compact_spec", kind, compiled.operation_id, compiled.inputs,
-        status, kind != "property", (),
+        status, dependencies, kind != "property", (),
     ))
 
 
@@ -113,6 +116,7 @@ def _success(compiled: CompiledTemplate) -> dict[str, Any]:
         "kind": compiled.kind,
         "operation_id": compiled.operation_id,
         "validation_status": compiled.validation_status,
+        "live_metadata_dependencies": list(compiled.live_metadata_dependencies),
         "date_override_applied": compiled.date_override_applied,
         "limitations": list(compiled.limitations),
         "quarantine": [],
@@ -214,6 +218,15 @@ def _text(value: Any, field: str) -> str:
     if not isinstance(value, str) or not value.strip() or len(value) > 256:
         raise UnsupportedOperationError(f"Analysis template {field} is invalid")
     return value.strip()
+
+
+def _dependencies(value: Mapping[str, Any]) -> tuple[str, ...]:
+    dependencies = value.get("live_metadata_dependencies", ())
+    if not isinstance(dependencies, (list, tuple)):
+        return ()
+    return tuple(dict.fromkeys(
+        item for item in dependencies if isinstance(item, str) and item
+    ))
 
 
 __all__ = ["CompiledTemplate", "compile_template_artifact"]

@@ -16,9 +16,11 @@ UI_FIELDS = {
         "aggregate_config", "calculateBody", "cascaderInput", "cascaderValue",
         "checkIndexList", "compareList",
         "currentSelectCompare", "customQueryItemList", "date_extra_data",
-        "date_list", "getDateConfig", "groupBy", "groupByCreateTime",
+        "date_list", "extra_data", "filterCondition", "getDateConfig",
+        "getSelectQueryList", "globalFiltering", "groupBy", "groupByCreateTime",
         "isDateTotal", "isHandelHeader", "isShowSum", "queryItemList",
-        "seriesType", "stageSumSetting", "tableShowType", "tableType",
+        "seriesType", "splitEvent", "splitEventOtherData", "stageSumSetting",
+        "tableShowType", "tableType",
         "tempSettingList", "showEchartsNumber", "isShowTime", "viewNumValue",
         "customSortData",
     }),
@@ -50,7 +52,7 @@ UI_FIELDS = {
 
 BODY_FIELDS = {
     "event": frozenset({
-        "custom_query_item_list", "extra_data", "global_cond_logic",
+        "app_id", "custom_query_item_list", "date_list", "extra_data", "global_cond_logic",
         "global_conditions", "group_by_list", "query_item_list", "split_event",
         "user_filtering",
     }),

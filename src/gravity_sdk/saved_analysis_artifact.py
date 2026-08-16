@@ -142,7 +142,7 @@ def compile_saved_artifact(
             operation_id=compiled.operation_id,
             inputs=compiled.inputs,
             validation_status=compiled.validation_status,
-            live_metadata_dependencies=(),
+            live_metadata_dependencies=compiled.live_metadata_dependencies,
             date_range=_date_range(start, end),
             date_override_applied=compiled.date_override_applied,
             limitations=compiled.limitations,

@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 from typing import Any
 
+from gravity_sdk import Credential, GravityInsightClient
 from gravity_sdk.errors import (
     ContractChangedError,
     InputValidationError,
@@ -22,7 +23,22 @@ from gravity_sdk.saved_analysis import (
 )
 from gravity_sdk.saved_analysis_result import saved_result_item_count
 from gravity_sdk.domains import ANALYSIS_QUERY_OPERATIONS
+from gravity_sdk.http_runtime import GravityHttpRuntime
 from gravity_sdk.workspace import Workspace, WorkspaceDefaults
+
+
+class NetworkForbiddenSession:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def request(self, *_args: Any, **_kwargs: Any) -> None:
+        self.calls += 1
+        raise AssertionError("offline validation reached HTTP")
+
+
+class StaticCredentials:
+    def get(self, *, force_refresh: bool = False) -> Credential:
+        return Credential("opaque")
 
 
 def workspace() -> Workspace:
@@ -153,7 +169,7 @@ class SavedAnalysisTests(unittest.TestCase):
         self.assertEqual("unchecked", result["items"][0]["replay_status"])
         self.assertNotIn("config", result["items"][0])
         self.assertEqual(
-            [("read_all", LIST_OPERATION_ID, {"app_id": "101", "page": 1, "page_size": 500})],
+            [("read_all", LIST_OPERATION_ID, {"app_id": "101", "page": 1, "page_size": 40})],
             client.calls,
         )
 
@@ -312,6 +328,18 @@ class SavedAnalysisTests(unittest.TestCase):
         self.assertIsNone(prepared["compiled_input"])
         self.assertTrue(prepared["input_values_redacted"])
         self.assertEqual("2026-08-01", prepared["date_range"]["start"])
+        session = NetworkForbiddenSession()
+        runtime = GravityHttpRuntime(session=session, credentials=StaticCredentials())
+        real_client = GravityInsightClient.from_env(runtime=runtime, attempts=1)
+        real_prepared = compile_saved_analysis_definition(
+            real_client, web_definition(), "main", workspace=workspace(),
+            start="2026-08-01", end="2026-08-07",
+        )
+        self.assertEqual(
+            ["analysis.event.list", "analysis.event_property.list"],
+            real_prepared["validation"]["live_metadata_dependencies"],
+        )
+        self.assertEqual(0, session.calls)
 
     def test_web_artifact_unknown_semantics_and_query_errors_are_safe(self) -> None:
         client = Client()

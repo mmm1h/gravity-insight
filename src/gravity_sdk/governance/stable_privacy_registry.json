@@ -582,6 +582,7 @@
       "data.update_user_name"
     ],
     "analysis.report_config.list": [
+      "@opaque:data.list[].dashboards",
       "data.list",
       "data.list[].app_id",
       "data.list[].config",

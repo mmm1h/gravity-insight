@@ -282,7 +282,12 @@ def _preview_envelope(
         "date_override_applied": report.get("date_override_applied", False),
         "limitations": list(report.get("limitations", [])),
         "validation": (
-            {"status": report.get("validation_status"), "live_metadata_dependencies": []}
+            {
+                "status": report.get("validation_status"),
+                "live_metadata_dependencies": list(
+                    report.get("live_metadata_dependencies", [])
+                ),
+            }
             if supported else None
         ),
         "quarantine": list(report.get("quarantine", [])),

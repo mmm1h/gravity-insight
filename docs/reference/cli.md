@@ -811,7 +811,9 @@ opaque config 或其他 kind 均结构化失败，不降级为裸请求。显式
 四个命令也都接受 `--concurrency 1..24`（默认 6），只在目录首页证明总页数后并发读取后续页，
 结果仍按页码保序；未知总页数保持串行。Plan adapter 固定分页 worker 为 1，避免与 Plan 全局并发相乘。
 `prepare --ref` 为解析引用会读取在线目录以及必要详情，所以它不是离线 dry-run；它与 `run`
-的区别是不会发送最终分析查询。`list/get` 也会访问已登记的 stable 只读 operation。
+的区别是不会发送最终分析查询。定义编译自身保持零网络，并在
+`validation.live_metadata_dependencies` 完整声明执行期可能需要的 metadata；只有 `run` 在最终 query
+前执行这些实时成员关系校验。`list/get` 也会访问已登记的 stable 只读 operation。
 
 `create/update/delete` 共用 `analysis.report_config.update`，但卡和 CLI 按调用方动作分开。
 create/update 的 `--config` 接受 inline JSON、文件或 `-`，并在写前复用五类 strict replay compiler；
