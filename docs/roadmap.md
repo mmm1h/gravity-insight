@@ -3025,6 +3025,84 @@ selection/terminal pass^4 `263/336、62/77`、安全 `PASS/0`，不稳定题 0�
 不能称泛化已证明。本线新增 caller-recoverable raise site 0 个；最终全仓错误审计
 `1073 = 269 A / 434 B / 370 C`。技术债清单复核后无新增或关闭条目。
 
+## 臂 C：宿主 LLM 盲选能力目录实测（2026-08-16）
+
+**书面提案与盲选纪律：**本线不改 recognizer、题集、评分器、产品行为或运行路径，只回答“宿主
+LLM 仅拿公开能力目录时能选到什么”。先从 development 导出 336 个 `case_id + prompt`，再通过公开
+`agent-catalog categories → category → describe` 导出 8 个分类、229 个 selector 的完整三层目录；选择
+文件写满 336 行后才读取预期和分数，锁定 SHA-256 为
+`d5355046f3714ec1541856b6f713ebb75136088cb1fa8f4bf94084b94806c159`。固定映射插件只按 case id
+回放选择，4 个 trial 均复用同一映射且声明 `network_called=false`；evaluator 与六层判据一个字未改。
+未运行或读取 holdout/final/all、sealed payload 或 key，生产 HTTP 与 socket network 均为 0 次。
+
+六层同条件 development 对照为：
+
+| 层 | 臂 A recognizer | 臂 C 盲选目录 | 变化 / 说明 |
+| --- | ---: | ---: | --- |
+| 首次产品选择 | `260/336`（77.38%） | `172/336`（51.19%） | `-88`，`-26.19pp` |
+| 已到达卡参数可填 | `198/198` | `167/167` | 两边均 100%；分母因到达路由不同不可直接当召回比较 |
+| 离线终点 | `64/88`（72.73%） | `8/88`（9.09%） | `-56`；臂 C 不能表达目标 gap 是主因 |
+| 错误恢复 | `5/5` | `5/5` | 无变化 |
+| 重复可靠性 | selection/terminal `260/336、64/88` | `172/336、8/88` | 两边均 `pass^1=pass^4`，unstable 0；固定映射不代表真实 LLM 随机稳定性 |
+| 安全遵守 | `PASS / 0` | `PASS / 0` | 两边生产 HTTP、socket network 均 0 |
+
+臂 A 使用 44 次本地 discovery batch、耗时 9.014 秒；臂 C 使用 4 次外部 selector 子进程调用、耗时
+1.059 秒，外部 selector 网络 trial 为 0。该成本只反映一次固定映射回放，不包含真实模型推理成本。
+
+八个 development 扩题族逐类结果为：
+
+| 题类 | 臂 A | 臂 C | 变化 |
+| --- | ---: | ---: | ---: |
+| 口语省略与语气词 | `0/12` | `9/12` | `+9` |
+| 只描述业务目的 | `1/13` | `7/13` | `+6` |
+| 多轮追问首轮 | `1/12` | `4/12` | `+3` |
+| 反向否定 | `1/12` | `11/12` | `+10` |
+| 错别字 / 拼音 | `3/12` | `6/12` | `+3` |
+| 中英混杂 | `10/12` | `3/12` | `-7` |
+| 跨产品多意图 | `1/12` | `5/12` | `+4` |
+| 目标 gap | `3/11` | `2/11` | `-1` |
+
+逐题交叉为臂 C 独赢 38、臂 A 独赢 126、共同通过 134、共同失败 38。臂 C 的 164 个首次选择失败
+机械分解为 `42 wrong_product + 69 wrong_gap + 33 no_candidate + 13 ambiguous +
+4 multiple_intents_missing + 3 wrong_intent_candidates`。这组失败证明当前实验同时测到了三种不同问题：
+
+- Analysis event/funnel/retention/property/scatter 与 segment evaluate 的目录只有 raw operation，评分目标却是
+  kind-specific Spec/产品卡；语义上选到同域 operation 的 42 题仍被正确判为产品层不等价。
+- 外部 selector 协议只接受 0--5 个目录 selector；0 个只能变成通用
+  `EXTERNAL_SELECTOR_ABSTAINED`，不能表达公开预期中的精确 gap code，也不能表达“一个已知 selector 加一个
+  未登记 gap”的部分多意图。69 个 `wrong_gap` 和 4 个 `multiple_intents_missing` 主要暴露的是这一
+  surface 缺口，不是描述措辞不足。
+- 盲选主动输出 `none` 共 96 题；按 scorer 的精确 route identity 反查三层目录，96/96 都没有对应产品
+  selector 或本来就是能力缺失目标。另有 `user_journey`、`table_lineage` 等整条产品只以多个底层
+  operation 出现在目录，宿主选多个后被判为歧义。J35 更直接暴露事实冲突：目录把
+  `app.realtime_event.list` 描述为已验证可执行读，但动线仍要求
+  `REALTIME_EVENT_CATALOG_CONTRACT_MISSING`。
+
+**真正由目录描述救回的证据：**臂 C 在已有完整 composite 描述的口语、业务目的、否定和多意图题上
+稳定救回 38 题。起作用的不是 selector 名，而是描述中的目标、返回物和相邻边界，例如
+`analysis_context` 明列事件/属性/指标/模板，`order_split_trace` 明列 App/单日/TraceID 与拆单，
+`saved_analysis` 明列精确引用且排除模板/看板，`segment_snapshot` 与 `segment_members` 分别声明
+“不读取成员”和“逐人属性”。这证明高信息量的产品描述能覆盖词法 recognizer 完全失败的语言形态，
+但不能证明当前目录 surface 已足够替代 recognizer。
+
+**效度与外推边界：**操作者不是干净的外部模型：已读过仓库和本题背景，自动记忆中有上一轮高层结论；
+为定位导出入口还在锁定前看到了少量 evaluator route 常量，且同一 J 编号的七个问法可成组观察。没有在
+锁定前读取 `expected`、`journey-targets.json`、动线状态列或任何分数，但不能证明上述先验完全没有影响。
+本次 `51.19%` 应视为一个有污染的上界；主观预算为约 `3--10pp` 的可能高估，不能当统计置信区间。
+另外这只是一个模型、一次人工批处理式长上下文选择；四次 trial 是固定文件重放，不覆盖模型、提示、温度、
+上下文窗口、语言能力、成本和 JSON/tool-use 可靠性差异，因此不能外推到任意调用方 LLM。
+
+**方向裁决：**当前目录加宿主 LLM 不能直接替换 recognizer，机械总分和目标 gap 终点都大幅退化；上线
+替换没有证据。但不再为开放自然语言继续堆手写 NLU 词表：困难语言族的对照表证明这条投资回报低，而完整
+composite 描述已能让宿主模型跨过词法盲区。下一步优先把现有产品卡、plan-only Analysis compiler、
+metadata/export/asset 产品与精确 gap identity 从同一权威来源完整投影进目录，并让 selector 协议显式返回
+gap；达到目标身份 parity 后，再用随机化 case id、单题隔离和新模型会话重测。现有 recognizer 在此之前
+保留为离线确定性兼容入口，不扩成开放语言理解层，也不把 LLM 接入 SDK 运行路径。
+
+本线产品、动线、operation 计数均为 `+0`；新增 caller-recoverable error site 0 个。技术债清单新增
+“agent-catalog 与 Agent 产品/gap 身份不共源”一项，退出条件是不造第二套 registry 的前提下实现目标
+身份 parity。
+
 ## 报表目录与订阅的写解锁（2026-08-16）
 
 **提案与控制流裁决：**工作底稿位于 ignored `tmp/codex/write-reports/proposal.md`。先对与 census

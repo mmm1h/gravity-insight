@@ -109,6 +109,23 @@
   confirmation，并用 10 次有界生产 HTTP 验证最高价值候选；没有用失败或空样本批量改 Census status。
   `promotion.promoted_object.list` 的 draft POST 与 Census UNKNOWN method 差异继续保留为显式证据差异。
 
+### 7. `agent-catalog` 与 Agent 产品 / gap 身份不共源
+
+- **Owner area**：`agent_catalog.py`、Agent 产品卡来源、外部 selector 协议。
+- **证据**：2026-08-16 的 336 题 development 盲选中，三层目录含 229 个 operation/composite selector，
+  但没有 Analysis kind-specific Spec、period compare、user journey、metadata search/table lineage、
+  material export/asset 等 evaluator 正在评分的产品身份，也没有任何目标 gap identity。结果是事件/漏斗/
+  留存/属性/散点/分群规则的 42 题只能选到语义相符的 raw operation，却按产品层正确判为
+  `wrong_product`；96 个 `none` 逐题反查均没有精确目标目录项；外部协议又只能把空数组变成
+  `EXTERNAL_SELECTOR_ABSTAINED`，不能返回目标 gap code。J35 还出现目录把
+  `app.realtime_event.list` 声明为已验证可执行，而动线目标仍是合同缺失 gap 的事实冲突。
+- **触发条件**：任何宿主 LLM、MCP 或其他调用方把 `agent-catalog` 当 canonical capability interface；
+  或新增/迁移一个只存在于 recognizer/evaluator、没有目录身份的产品或 gap。
+- **退出条件**：复用现有 composite / plan adapter / Agent card 权威来源，让所有公开 journey target
+  identity 在目录中可发现；非执行 gap 也有稳定 code、reason、next action，并允许外部 selector 显式
+  选择。增加机械 parity 门禁，证明每个公开目标恰有一个目录身份或被明确登记为 workspace 外部来源。
+  **不新建第二套 registry，不把 raw operation 冒充产品卡，也不为达标修改评分目标。**
+
 ## 明确不登记为债务
 
 以下模式经审计判定为**合理领域边界**，不因文件数量多而登记：45 个 `agent_*.py`、
