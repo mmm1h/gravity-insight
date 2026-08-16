@@ -548,3 +548,25 @@ many-to-one embedded join；hour 只作为已登记但与该指标冲突的粒�
 hour 粒度分别以 0 次上游调用失败；执行错误的 filter 结果发布 `allowed_claims=[]`。生产 HTTP 为
 20/25，全部 HTTP 200、attempt 1、retry=false、page 1；无翻页、重试或扩窗。新增 1 张 canonical
 产品卡，故产品卡 `88→89`、selector `328→329`，并新增 1 条闭环动线；不新增 SQL 或第二套 registry。
+
+## 2026-08-17 追加判定：过滤 wire 与语义定义 v2
+
+本判定不推翻上节的 v1 历史事实。完整 JS 证明当前 adreport body 直接携带
+`filters:[{field,operator,values}]`；`click_company` 由 `ad_platform_list` 编译为 `IN`，而 option 表明确
+`label=巨量引擎, value=bytedance`。因此上一轮 `bytedance` 值形态没有错，corrected `IN` 仍失败的
+已证差异是没有同时选中 `data_dims=[click_company]`。
+
+| 候选 | 静态/生产证据 | v2 裁决 |
+| --- | --- | --- |
+| `click_company IN` | 同一 App/窗口下 unfiltered grouped total 为 bytedance `10857257.59`；无 dimension 时 `INPUT_INVALID`，带 click dimension 时仍为 `10857257.59`；改为 tencent 后 success empty/total 0 | 登记，但 filter 必须与 click dimension 和 embedded join 同时出现 |
+| `advertiser_id IN` | JS 会构造该 item；实际返回的非零内部 ID 在带 advertiser dimension 时仍 `INPUT_INVALID` | 不登记；脱敏响应不足以区分依赖、权限或维度规则 |
+| `adclick_standard_activate_cnt` | live metric metadata；day 40 行、week 6 行、total 单独失败 | day/week |
+| `adclick_standard_pay_amount` | live metric metadata；day 40 行、week 6 行、total 单独失败 | day/week |
+| `adclick_total_roi` | live metric metadata；day 40 行、week 6 行、total 单独失败 | day/week |
+
+新增 `report.ap-cost-observation@2`，fingerprint
+`7273eb90dab433099b6a1f883cdef9c88626cae77c6d0dc83b7ea6516a50e461`；v1 文件与 fingerprint
+`e9ac825a4563a8c6c00f6147d55d23daf4a18cd8d85415a0caa6afa4e6971798` 保持不变。真实 v2
+activate/day/filter 链返回 40 行（首尾 `18195/13100`）和非空 claims。生产 HTTP 21/25；其中
+metric catalog 的 page 2-5 是已计入预算的误续页，之后停止，无重试/扩窗。operation、产品卡、selector、
+动线计数均不变。

@@ -566,16 +566,18 @@ Agent 和 SDK 不解释模板、布局、收藏、权限、图表，也不生成
 
 ## Semantic Compose
 
-`semantic_compose_input_schema()` 离线返回 `gravity.semantic-compose-input.v1`。当前 v1 只登记
-`report.ap-cost-observation@1`，成员为 `report.metric.ap-cost@1`、day/week/total，以及可选的
-`report.dimension.click-company@1` 与必需 join；过滤器数组上限为 0。`prepare_semantic_compose(inputs,
-*, app, workspace=None)` 输出 `gravity.semantic-compose-compiled.v1`，并持久化定义 ID/版本/指纹、
-实际成员、生成查询、零网络验证和 scoped `allowed_claims`。
+`semantic_compose_input_schema()` 离线返回 `gravity.semantic-compose-input.v1`，并显式列出
+`report.ap-cost-observation@1` 与 `@2`。`@1` 保持 `report.metric.ap-cost@1`、day/week/total、可选
+click dimension + 必需 join，且过滤器上限为 0。`@2` 增加 dimension-bound `click_company IN` 和
+activate count、pay amount、total ROI 三个 day/week 指标；filter 必须同时选择 click dimension 与 join，
+`ap_cost` 仍允许 day/week/total。`prepare_semantic_compose(inputs, *, app, workspace=None)` 输出
+`gravity.semantic-compose-compiled.v1`，并持久化定义 ID/版本/指纹、实际成员、生成查询、零网络验证和
+scoped `allowed_claims`。
 
 `semantic_compose(inputs, *, app, max_pages=1000, max_items=100000, workspace=None)` 复用相同编译器，
 再委托既有 Multidim query；adapter 内 worker 固定 1，不叠加调度器。结果为
-`gravity.semantic-compose-result.v1`，调用方只可依据 `allowed_claims` 陈述返回的 `ap_cost` 观察值或同一
-结果内按返回键的比较。因果、预算充分性、全量覆盖、缺失对象为零均不在声明范围。执行失败或语义错误
+`gravity.semantic-compose-result.v1`，调用方只可依据 `allowed_claims` 陈述选定已登记指标的观察值或
+同一结果内按返回键的比较。因果、预算充分性、全量覆盖、缺失对象为零均不在声明范围。执行失败或语义错误
 时 `allowed_claims=[]`。Plan 名称为 `semantic_compose`；不接受裸 SQL、物理字段名或未版本化成员。
 
 ## Material Performance

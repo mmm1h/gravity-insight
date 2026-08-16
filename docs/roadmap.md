@@ -20,7 +20,9 @@
 `51 = 42 / 1 / 8` 推进到 `51 = 43 / 1 / 7`，归因聚合与自定义指标再各新增一条闭环，故为
 `53 = 45 / 1 / 7`；事件/属性模板治理增加 1 条闭环，保存分析资产生命周期增加 1 条部分闭环，故为
 `55 = 46 / 2 / 7`；2026-08-17 保存分析真实聚合值补证后成为 `55 = 47 / 1 / 7`；
-受治理语义组合首片闭合已登记 `ap_cost` 的 total/day/week 与 `click_company` 拆分，推进为 `56 = 48 / 1 / 7`。
+受治理语义组合首片闭合已登记 `ap_cost` 的 total/day/week 与 `click_company` 拆分；同日 v2 又以
+前端 wire 和生产对照证明 dimension-bound `click_company IN` 可执行，并登记 3 个 day/week 指标，
+能力扩面但不新增产品动线，故仍为 `56 = 48 / 1 / 7`。
 operation 为 **231**，stable 为 **222 = 185 read + 37 mutation**。
 唯一部分闭环是 Analysis 导出：同日已闭合五个服务端子类（单用户事件加分群结果、分群用户明细、
 用户明细、付费事件），变现明细与原始事件导出仍是精确 gap；
@@ -4783,3 +4785,100 @@ caller-recoverable site 全为 A 档。Agent 指南生成器 `--check`、CLI hel
 `git diff --check` 通过。实现增量显著多于测试增量，500/80/15/0 和 quality baseline 未放宽。
 没有运行真实 holdout/final/all、读取 key、改题集/评分/评测装置；全量测试只运行其标明 synthetic 的
 临时 fixture。没有 GitHub、push、tag 或其他对外动作。
+
+## 语义组合过滤 wire 与 v2（2026-08-17）
+
+**提案与证据顺序：**ignored 工作稿位于 `tmp/codex/filter-wire/proposal.md`。本轮先以 Census
+定位 route，再读 hash 已校验的 375 文件原始 JS；生产请求只验证从前端导出的 payload，不猜 operator。
+`routes.json:4893-4932` 只证明 `POST /report/api/v3/adreport/custom_get/` 调用点，完整请求由以下 JS 冻结：
+
+- `NewReportCenter-Dxgo5EkI.js` line 1、offset 234539 的 `Lc(e)` 生成
+  `{field:\`click_company\`,operator:\`IN\`,values:ad_platform_list}`；`app_id/project_id` 标量用
+  `EQUALS`，选项列表用 `IN`，该 builder 只出现这两个 operator literal。
+- 同文件 line 1、offset 306363 把 `filters:[...Lc(e)]` 与 `time_dims/date_list/data_dims/relate_dims/
+  metrics_list/custom_metrics_list/data_conf/data_topic` 同层放进 `Te({body:r})`。本 route 不使用
+  `global_conditions/local_conditions`。
+- `index-D9HAN43D.js` line 2、offset 1008445（column 992158）定义
+  `{label:\`巨量引擎\`,value:\`bytedance\`}` 和 `{label:\`腾讯广告\`,value:\`tencent\`}`。
+  所以 `bytedance` 是前端实际发送的内部 option code，显示名是“巨量引擎”，不是漏传的数字 ID。
+- `BilibiliAd-47iK5OH4.js` line 1、offset 49359 的 `ct(e)` 独立使用相同
+  `{field,operator,values}` wire，并给出当前六字段 `data_conf` profile；其专用 builder 还对
+  `advertiser_remark` 使用 `LIKE`。这些是当前前端 builder 的枚举证据，不冒充完整后端 enum；v2 只登记
+  生产实证成立的 click-company `IN` 配对。
+
+**失败根因与可证伪对照：**固定 App 29034827、窗口 `2026-06-01..2026-07-10`。无过滤、按
+`click_company` 分组的 total 只有 `bytedance = 10857257.59`。前端原样
+`click_company IN [bytedance]` 在 `data_dims=[]` 时仍为 `INPUT_INVALID`；只增加
+`data_dims=[click_company]` 后成功并仍返回 `10857257.59`。同一 grouped request 改为
+`tencent` 后业务 success、`list=[]`、`page_info.total=0`，证明过滤没有被静默忽略。故 v2 的可执行
+合同不是任意物理 filter，而是“`click_company IN` + 同时选中 `click_company` dimension + 其
+many-to-one embedded join”。上一轮 corrected `IN` 的已证错误是漏了该 dimension；早期 `EQUALS`
+同时偏离前端 operator 且漏 dimension，现有证据不能隔离二者哪一个单独导致那次失败。
+
+`advertiser_id` 不随前端出现而开放：先无过滤分组取得真实内部 ID，再用非零 ID 及
+`data_dims=[advertiser_id]` 请求，仍为 `INPUT_INVALID`。脱敏错误不能区分必填依赖、权限或该维度
+自身规则，当前结论只能是“不得登记 advertiser filter”，不能猜后台原因。
+
+**v1/v2 与成员裁决：**`report.ap-cost-observation@1` 原文件和 fingerprint
+`e9ac825a4563a8c6c00f6147d55d23daf4a18cd8d85415a0caa6afa4e6971798` 不变；新增
+`report.ap-cost-observation@2` fingerprint 为
+`7273eb90dab433099b6a1f883cdef9c88626cae77c6d0dc83b7ea6516a50e461`。两版由同一闭合 input
+schema 显式列出，member refs 去重后不会产生重复 `oneOf` 分支。v2 的 filter 上限为 1，编译前要求
+匹配 dimension，缺失时以 `InputValidationError` 和可执行 next action 零网络拒绝；v1 继续
+`filters.maxItems=0`，生成查询不被 v2 profile 静默改变。
+
+本轮没有倒入 1124 行 metric 目录，只从当前 live metadata 挑 3 个分析师常问成员，并逐粒度实测：
+
+| v2 metric | metadata 口径来源 | day | week | total | allowlist |
+| --- | --- | --- | --- | --- | --- |
+| `adclick_standard_activate_cnt` | `标准_激活数(点击时间)`；末次点击归因的 MPLaunch/AppStart 用户数 | 40 行，首尾 `18195/13100` | 6 行，首尾 `185315/78793` | 单指标 `INPUT_INVALID` | day/week |
+| `adclick_standard_pay_amount` | `标准_总付费金额(点击时间)`；末次点击归因的付费事件金额 | 40 行，首尾 `81502.0/15888.0` | 6 行，首尾 `1005575.0/184830.0` | 单指标 `INPUT_INVALID` | day/week |
+| `adclick_total_roi` | `总ROI(点击时间)`；metadata 定义为总收入/平台消耗 | 40 行，首尾 `0.4/0.15` | 6 行，首尾 `0.4/0.22` | 单指标 `INPUT_INVALID` | day/week |
+
+三者 live metadata 的 `exclusion_dims=[]` 只是成员候选证据，day/week 成功和各自 total 失败才是 grain
+allowlist 证据。`ap_cost` 在 v2 仍保留 day/week/total。完整语义链以 activate/day、同维度 join、
+`bytedance` filter 编译并实际返回 40 行（首尾 `18195/13100`）及非空 `allowed_claims`；metadata 复用
+本轮已取的当前目录行，没有再次翻 29 页。
+
+**生产 HTTP 逐请求账本：**实际 **21/25**，此后停止。21 笔均 HTTP 200、attempt 1、retry=false；
+query 均 page 1、固定同一 App/窗口、无重试或扩窗。#2-#6 是明确记录的操作失误：`gravity run`
+把请求的 metric page size clamp 为 40 后自动跟随默认五页；这 5 笔全部计入预算，只使用返回的前
+200 个成员，随后不再分页。
+
+| # | operation | receipt | page | 产品观察 |
+| ---: | --- | --- | ---: | --- |
+| 1 | `authentication` | `c78e604d…` | - | login success |
+| 2 | `report.multidim.metric.list` | `f3e31b68…` | 1 | 目录 1-40 |
+| 3 | `report.multidim.metric.list` | `3aaecae5…` | 2 | 误续页 |
+| 4 | `report.multidim.metric.list` | `66ce5866…` | 3 | 误续页 |
+| 5 | `report.multidim.metric.list` | `1ca34c65…` | 4 | 误续页 |
+| 6 | `report.multidim.metric.list` | `393c38af…` | 5 | 误续页；观察 200/1124 |
+| 7 | `report.multidim.query` | `f43ff337…` | 1 | unfiltered grouped total `10857257.59` |
+| 8 | `report.multidim.query` | `e1a46436…` | 1 | bytedance/no dimension `INPUT_INVALID` |
+| 9 | `report.multidim.query` | `23ab8cfa…` | 1 | tencent/no dimension `INPUT_INVALID` |
+| 10 | `report.multidim.query` | `a60bb43f…` | 1 | bytedance/with dimension `10857257.59` |
+| 11 | `report.multidim.query` | `ed4b60f9…` | 1 | advertiser grouping non-empty |
+| 12 | `report.multidim.query` | `e95c40f0…` | 1 | returned advertiser ID/no dimension `INPUT_INVALID` |
+| 13 | `report.multidim.query` | `eedf61ac…` | 1 | nonzero advertiser ID/with dimension `INPUT_INVALID` |
+| 14 | `report.multidim.query` | `bee295bb…` | 1 | 3 new metrics/day, 40 rows |
+| 15 | `report.multidim.query` | `f78ed63e…` | 1 | 3 new metrics/week, 6 rows |
+| 16 | `report.multidim.query` | `55dfacc6…` | 1 | 3 new metrics/total `INPUT_INVALID` |
+| 17 | `report.multidim.query` | `bccd73aa…` | 1 | activate/total `INPUT_INVALID` |
+| 18 | `report.multidim.query` | `f25f7e54…` | 1 | pay amount/total `INPUT_INVALID` |
+| 19 | `report.multidim.query` | `949b45c2…` | 1 | total ROI/total `INPUT_INVALID` |
+| 20 | `report.multidim.query` | `327c0e67…` | 1 | semantic v2/day, 40 rows + claims |
+| 21 | `report.multidim.query` | `7a17208a…` | 1 | tencent/with dimension success empty |
+
+本地另有一次 enum 容器类型错误在 transport 前失败，HTTP=0，不列为请求。能力计数不变：仍为
+231 operations、222 stable、89 canonical 产品卡、329 selectors、`56 = 48 / 1 / 7`。没有新增 route、
+SQL、registry、worker 或活动结构债；未碰 holdout/final/key/评测装置，也没有 GitHub/push/tag。
+
+**最终门禁：**unittest **1131 tests OK**；pytest **1131 passed / 3083 subtests passed**，相对
+`dev@5c75402` 的 1129 测试只增不减。compiler **231 operations / 11 manifests**；quality PASS
+（operations/provenance 231/231、operation literals 57）。错误审计由
+`1201 = A398/B434/C369` 收紧为 **1202 = A399/B434/C369**，新增 caller-recoverable site 为 A 档，
+B/C 未增长。`test_same_definition_id_versions_remain_distinct_in_results` 原断言保留，另以
+`test_real_v1_v2_definitions_coexist_and_v2_compiles_live_wire` 覆盖仓库真实两版定义、不同 fingerprint
+和 v1 查询不继承 v2 profile。Agent 指南生成器 `--check`、CLI help 与 `git diff --check` 均通过。
+实现/合同/manifest 新增 267 行，测试与 golden 新增 68 行，约 0.255，未超过三分之一；quality baseline
+未放宽。

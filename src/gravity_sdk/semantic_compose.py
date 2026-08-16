@@ -9,7 +9,11 @@ from datetime import date
 from typing import Any, Mapping, NoReturn, Sequence
 
 from .errors import InputValidationError
-from .multidim_product import MULTIDIM_INPUT_SCHEMA_VERSION, run_multidim_query
+from .multidim_product import (
+    FRONTEND_ADREPORT_DATA_CONF,
+    MULTIDIM_INPUT_SCHEMA_VERSION,
+    run_multidim_query,
+)
 from .multidim_service import MULTIDIM_QUERY_OPERATION
 from .plan_multidim_result import sanitize_multidim_result
 from .result_source import GOVERNED_PRODUCT, result_source
@@ -104,11 +108,16 @@ def _schema_inventory(
     definitions: Sequence[Mapping[str, Any]],
 ) -> tuple[dict[str, list[dict[str, Any]]], list[str], dict[str, int]]:
     members = {
-        kind: [
-            {"definition_id": member["definition_id"], "version": member["version"]}
-            for definition in definitions
-            for member in definition[kind]
-        ]
+        kind: _unique_refs(
+            [
+                {
+                    "definition_id": member["definition_id"],
+                    "version": member["version"],
+                }
+                for definition in definitions
+                for member in definition[kind]
+            ]
+        )
         for kind in ("metrics", "dimensions", "filters", "grains", "joins")
     }
     operators = sorted(
@@ -124,6 +133,17 @@ def _schema_inventory(
         for kind in ("dimensions", "filters", "joins")
     }
     return members, operators, limits
+
+
+def _unique_refs(values: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    unique = {
+        (str(item["definition_id"]), int(item["version"])): {
+            "definition_id": str(item["definition_id"]),
+            "version": int(item["version"]),
+        }
+        for item in values
+    }
+    return [unique[key] for key in sorted(unique)]
 
 
 def compile_semantic_compose(inputs: Mapping[str, Any], *, app_id: int) -> dict[str, Any]:
@@ -146,6 +166,7 @@ def compile_semantic_compose(inputs: Mapping[str, Any], *, app_id: int) -> dict[
     joins = _member_array(definition, "joins", request.get("joins"), "joins")
     _validate_grain(metric, grain)
     _validate_joins(dimensions, joins)
+    _validate_filter_dimensions(filters, dimensions)
     return _compiled_output(
         definition, app, window, metric, dimensions, filters, grain, joins
     )
@@ -172,19 +193,23 @@ def _compiled_output(
     physical_filters.append(
         {"field": definition["access_scope"]["physical_filter"], "operator": "EQUALS", "values": [app]}
     )
+    generated_inputs = {
+        "date_list": [window["start"], window["end"]],
+        "time_dims": grain["physical_name"],
+        "metrics_list": [metric["physical_name"]],
+        "custom_metrics_list": [],
+        "data_dims": [item["physical_name"] for item in dimensions],
+        "relate_dims": [],
+        "filters": physical_filters,
+    }
+    if definition["source"].get("request_profile") == "frontend_adreport_current":
+        generated_inputs["multi_keys"] = list(range(2, 31))
+        generated_inputs["data_conf"] = copy.deepcopy(FRONTEND_ADREPORT_DATA_CONF)
     generated_query = {
         "name": "multidim",
         "input_schema_version": MULTIDIM_INPUT_SCHEMA_VERSION,
         "app": app,
-        "inputs": {
-            "date_list": [window["start"], window["end"]],
-            "time_dims": grain["physical_name"],
-            "metrics_list": [metric["physical_name"]],
-            "custom_metrics_list": [],
-            "data_dims": [item["physical_name"] for item in dimensions],
-            "relate_dims": [],
-            "filters": physical_filters,
-        },
+        "inputs": generated_inputs,
         "include_total": False,
         "read_all": False,
     }
@@ -384,6 +409,21 @@ def _validate_joins(dimensions: Sequence[Mapping[str, Any]], joins: Sequence[Map
         _fail("semantic join is registered but forbidden for the selected dimensions", "joins", sorted(selected), sorted(required))
     if required - selected:
         _fail("semantic dimensions require an allowed join", "joins", sorted(selected), sorted(required))
+
+
+def _validate_filter_dimensions(
+    filters: Sequence[Mapping[str, Any]], dimensions: Sequence[Mapping[str, Any]]
+) -> None:
+    selected = {str(item["definition_id"]) for item in dimensions}
+    required = {str(item["member"]["required_dimension"]) for item in filters}
+    missing = sorted(item for item in required if item not in selected)
+    if missing:
+        _fail(
+            "semantic filters require their grouped dimensions",
+            "filters",
+            sorted(selected),
+            sorted(required),
+        )
 
 
 def _window(value: Any) -> dict[str, str]:

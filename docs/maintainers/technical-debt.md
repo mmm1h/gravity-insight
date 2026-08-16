@@ -230,3 +230,7 @@ blocker，不以结构绕过；本轮复核不新增活动结构债。
 既有 Multidim core 和全局 Plan worker 继续复用。共享 spine 通过现有 report family router 接线，
 `agent_capabilities.py` 的静态 composite inventory 同时下沉为 value-free 数据模块；500/80/15/0 门禁未
 放宽，没有新增 registry、SQL 执行器或活动结构债条目。
+
+语义过滤 v2 继续复用同一定义目录和 Multidim core，只给已证 filter 增加 dimension 关系校验与一个
+闭合前端 request profile；v1 不改写，成员 refs 在现有 schema inventory 内去重。没有第二套 registry、
+filter compiler、scheduler 或活动结构债条目，500/80/15/0 与 quality baseline 均未放宽。
