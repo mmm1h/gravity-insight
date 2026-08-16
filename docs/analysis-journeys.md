@@ -390,6 +390,15 @@ operation 继续保留专家入口，但明确不是产品等价物；`app.realt
 `11/12、11/13、11/12、12/12、12/12、12/12、10/12、11/11`。该测量没有改变本表状态或产品事实；
 未查询受保护 split，Gravity 生产 HTTP 0 次。
 
+2026-08-16 评测装置按阶段拆开外部 selector 网络与产品执行网络，并把重复可靠性的“不稳定”从布尔
+对错改为实际 selector 集合。对上段同一份锁定 development trial 复算：离线终点从 `0/81` 修正为
+`80/81`，保留 1 个 `target_gap_missing`；产品选择 `unstable_tasks` 从 `0` 修正为 `7`，全部是 J06
+七种问法在 `composite:derived_metrics` 与 `composite:saved_analysis` 间切换。J06 目标
+`analysis.query.spec` 与实现、本文工作流一致，题目没有写错；外部 selector 得到的 catalog summary
+只描述五种 Analysis kind，未表达同 Spec 跨期模式，因此是目录文案缺口，留给独立目录线修复。本线
+没有修改题面、recognizer、目录、operation 或本表状态，总账仍为 `53 = 45 / 1 / 7`、operation/stable
+仍为 `226 / 217`；未运行 protected split，生产 HTTP 0 次。
+
 | 动线 | 状态 | 四面可达（CLI / SDK / Plan / Agent 中英首问） | 调用次数（已知 / 未知） | 阻塞 |
 | --- | --- | --- | --- | --- |
 | 看某事件随时间、分组和条件的变化 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | - |

@@ -275,8 +275,14 @@ malformed JSON, non-zero exit, and timeout fail the whole run before scoring.
 Zero selectors become an actionable `EXTERNAL_SELECTOR_ABSTAINED` gap; multiple
 selectors go through the same `MULTIPLE_INTENTS` fail-closed response as product
 routing; one selector is described from the supplied catalog and scored by the
-unchanged six layers. The evaluator repeats the plugin four times, so a real
-selector's nondeterminism appears in `pass^4` and `unstable_tasks`.
+same six layers. The plugin's `network_called` records selection-stage network
+activity. The evaluator separately records `execution_network_called=false`
+because this protocol selects but never executes a capability; the offline
+terminal layer checks that execution-stage field and still fails a missing or
+non-actionable target gap or any execution-stage network call. The evaluator
+repeats the plugin four times: `pass^4` still uses correctness, while
+`unstable_tasks`, `unstable_case_ids`, and `unstable_selections` compare and
+expose the exact selected selector sets regardless of correctness.
 
 The committed `scripts/agent_usability_selector_stub.py` is only a reproducible
 wiring fixture. It selects a composite when every token in the catalog name is
