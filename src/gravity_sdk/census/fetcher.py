@@ -434,7 +434,12 @@ class StaticFetcher:
         return snapshot
 
 
-def check_upstream(site_url: str, baseline: dict[str, Any], *, timeout: float = 30.0) -> dict[str, Any]:
+def check_upstream(
+    site_url: str,
+    baseline: dict[str, Any],
+    *,
+    timeout: float = 30.0,
+) -> dict[str, Any]:
     fetcher = StaticFetcher(max_attempts=3, max_requests=3, timeout=timeout)
     response = fetcher._get(site_url)
     text = response.content.decode(response.encoding or "utf-8", errors="replace")

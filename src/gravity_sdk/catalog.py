@@ -59,7 +59,9 @@ def _json_copy(value: Mapping[str, Any]) -> dict[str, Any]:
     return json.loads(json.dumps(value, ensure_ascii=False))
 
 
-def _load_catalog_drafts(compiled_ids: set[str]) -> tuple[tuple[OperationSpec, ...], dict[str, Mapping[str, Any]]]:
+def _load_catalog_drafts(
+    compiled_ids: set[str],
+) -> tuple[tuple[OperationSpec, ...], dict[str, Mapping[str, Any]]]:
     draft_root = Path(__file__).resolve().parent / "contracts" / "drafts"
     if not draft_root.is_dir():
         return (), {}
@@ -84,7 +86,9 @@ def _load_catalog_drafts(compiled_ids: set[str]) -> tuple[tuple[OperationSpec, .
     return tuple(specs), metadata
 
 
-def _draft_description(metadata: Mapping[str, Any], provenance: Mapping[str, Any]) -> dict[str, Any]:
+def _draft_description(
+    metadata: Mapping[str, Any], provenance: Mapping[str, Any]
+) -> dict[str, Any]:
     draft = metadata.get("draft")
     if not isinstance(draft, Mapping):
         return {}

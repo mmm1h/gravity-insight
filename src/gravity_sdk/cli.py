@@ -540,9 +540,12 @@ def run(args: argparse.Namespace) -> Any:
         )
         batch_command = args.batch_command
         expected_schema = batch_schema_version(args)
-        if not isinstance(result, Mapping): raise RuntimeError("batch command returned a non-object envelope")
-        if result.get("schema_version") != expected_schema: raise RuntimeError("batch command returned the wrong public schema")
-        if batch_command in {"read", "run"} and "exit_code" not in result: raise RuntimeError("batch execution omitted its aggregate exit code")
+        if not isinstance(result, Mapping):
+            raise RuntimeError("batch command returned a non-object envelope")
+        if result.get("schema_version") != expected_schema:
+            raise RuntimeError("batch command returned the wrong public schema")
+        if batch_command in {"read", "run"} and "exit_code" not in result:
+            raise RuntimeError("batch execution omitted its aggregate exit code")
         return result
     if args.command in {"auth", "parents"}:
         return _auth_or_parents(args)

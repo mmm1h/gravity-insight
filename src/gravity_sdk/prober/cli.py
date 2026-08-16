@@ -171,6 +171,21 @@ def _ensure_auth() -> dict[str, Any]:
     return status
 
 
+def _probe_auth(operation_id: Sequence[str], stable: bool) -> dict[str, Any]:
+    preflight_online_probes(operation_id, stable=stable)
+    return _ensure_auth()
+
+
+def _batch_probe_auth() -> dict[str, Any]:
+    assert_probe_draft_directory()
+    return _ensure_auth()
+
+
+def _parameter_reprobe_auth() -> dict[str, Any]:
+    preflight_parameter_reprobes()
+    return _ensure_auth()
+
+
 def run(args: argparse.Namespace) -> Mapping[str, Any]:
     if args.command == "draft":
         if args.all_high_certainty:
@@ -212,7 +227,7 @@ def run(args: argparse.Namespace) -> Mapping[str, Any]:
             "summary": summary,
         }
     if args.command == "probe":
-        preflight_online_probes(args.operation_id, stable=args.stable); auth = _ensure_auth()
+        auth = _probe_auth(args.operation_id, args.stable)
         kwargs: dict[str, Any] = {}
         if args.evidence_root is not None:
             kwargs["evidence_root"] = args.evidence_root.resolve()
@@ -229,7 +244,7 @@ def run(args: argparse.Namespace) -> Mapping[str, Any]:
         }
         return result
     if args.command == "probe-batch":
-        assert_probe_draft_directory(); auth = _ensure_auth()
+        auth = _batch_probe_auth()
         result = run_batch_probes(
             interval_seconds=args.interval_ms / 1000.0,
             request_limit=args.request_limit,
@@ -243,7 +258,7 @@ def run(args: argparse.Namespace) -> Mapping[str, Any]:
     if args.command == "assemble-params":
         return assemble_draft_parameters()
     if args.command == "reprobe-params":
-        preflight_parameter_reprobes(); auth = _ensure_auth()
+        auth = _parameter_reprobe_auth()
         result = run_parameter_reprobes(
             interval_seconds=args.interval_ms / 1000.0,
             request_limit=args.request_limit,

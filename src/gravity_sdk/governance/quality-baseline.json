@@ -1,5 +1,5 @@
 {
-  "baseline_version": 1,
+  "baseline_version": 2,
   "debt": {
     "cyclomatic_complexity": {
       "src/gravity_sdk/blob_archive.py::_inspect_zip": 20,
@@ -41,7 +41,7 @@
       "src/gravity_sdk/http_runtime.py::_GravityRequester.request": 22,
       "src/gravity_sdk/models.py::InputField.from_value": 40,
       "src/gravity_sdk/models.py::InputField.validate": 31,
-      "src/gravity_sdk/models.py::OperationSpec.from_dict": 50,
+      "src/gravity_sdk/models.py::OperationSpec.from_dict": 48,
       "src/gravity_sdk/models.py::OperationSpec.validate_inputs": 23,
       "src/gravity_sdk/models.py::load_operation_manifest": 16,
       "src/gravity_sdk/prober/batch.py::finalize_batch_report": 55,
@@ -69,23 +69,6 @@
       "src/gravity_sdk/sql/credentials.py::self_test": 16,
       "src/gravity_sdk/support/evidence.py::validate_evidence_manifest": 50
     },
-    "file_sloc": {
-      "src/gravity_sdk/catalog.py": 664,
-      "src/gravity_sdk/census/coverage.py": 890,
-      "src/gravity_sdk/census/params.py": 1568,
-      "src/gravity_sdk/census/response.py": 551,
-      "src/gravity_sdk/cli.py": 715,
-      "src/gravity_sdk/client.py": 1087,
-      "src/gravity_sdk/executor.py": 1330,
-      "src/gravity_sdk/http_runtime.py": 675,
-      "src/gravity_sdk/models.py": 1071,
-      "src/gravity_sdk/prober/batch.py": 585,
-      "src/gravity_sdk/prober/drafts.py": 1805,
-      "src/gravity_sdk/prober/export_verify.py": 655,
-      "src/gravity_sdk/prober/promotion.py": 581,
-      "src/gravity_sdk/registry.py": 746,
-      "src/gravity_sdk/sql/products.py": 533
-    },
     "function_sloc": {
       "src/gravity_sdk/blob_headers.py::_preflight_headers": 104,
       "src/gravity_sdk/blob_policy.py::BlobPolicy.__post_init__": 83,
@@ -107,7 +90,7 @@
       "src/gravity_sdk/executor.py::ReadExecutor.execute": 84,
       "src/gravity_sdk/executor.py::_project_data_containers": 108,
       "src/gravity_sdk/executor.py::_project_list_rows": 94,
-      "src/gravity_sdk/models.py::OperationSpec.from_dict": 126,
+      "src/gravity_sdk/models.py::OperationSpec.from_dict": 125,
       "src/gravity_sdk/models.py::OperationSpec.schema": 102,
       "src/gravity_sdk/prober/batch.py::finalize_batch_report": 191,
       "src/gravity_sdk/prober/batch.py::run_batch_probes": 214,
@@ -119,7 +102,7 @@
       "src/gravity_sdk/prober/drafts.py::structured_blockers": 182,
       "src/gravity_sdk/prober/export_verify.py::ExportVerificationRunner._download_and_inspect": 102,
       "src/gravity_sdk/prober/promotion.py::reevaluate_drafts": 101,
-      "src/gravity_sdk/prober/reprobe.py::run_parameter_reprobes": 134,
+      "src/gravity_sdk/prober/reprobe.py::run_parameter_reprobes": 127,
       "src/gravity_sdk/prober/reprobe.py::run_scoped_reprobes": 93,
       "src/gravity_sdk/support/evidence.py::validate_evidence_manifest": 108
     },
@@ -186,6 +169,106 @@
         "material.report.query": 1,
         "report.business.query": 1
       }
+    }
+  },
+  "growth_ledger": [
+    {
+      "from": 8597,
+      "path": "src/gravity_sdk/models.py",
+      "reason": "extract duplicate-field validation so readable line breaks keep OperationSpec.from_dict below its existing function ratchet",
+      "to": 8622
+    }
+  ],
+  "legacy_files": {
+    "src/gravity_sdk/catalog.py": {
+      "ast_hard_limit": 5332,
+      "ast_nodes": 5282,
+      "migration_sloc": 664,
+      "sloc_hard_limit": 722
+    },
+    "src/gravity_sdk/census/coverage.py": {
+      "ast_hard_limit": 5950,
+      "ast_nodes": 5900,
+      "migration_sloc": 890,
+      "sloc_hard_limit": 928
+    },
+    "src/gravity_sdk/census/params.py": {
+      "ast_hard_limit": 11818,
+      "ast_nodes": 11768,
+      "migration_sloc": 1568,
+      "sloc_hard_limit": 1701
+    },
+    "src/gravity_sdk/census/response.py": {
+      "ast_hard_limit": 4085,
+      "ast_nodes": 4035,
+      "migration_sloc": 551,
+      "sloc_hard_limit": 593
+    },
+    "src/gravity_sdk/cli.py": {
+      "ast_hard_limit": 4167,
+      "ast_nodes": 4117,
+      "migration_sloc": 715,
+      "sloc_hard_limit": 788
+    },
+    "src/gravity_sdk/client.py": {
+      "ast_hard_limit": 6765,
+      "ast_nodes": 6715,
+      "migration_sloc": 1087,
+      "sloc_hard_limit": 1161
+    },
+    "src/gravity_sdk/executor.py": {
+      "ast_hard_limit": 9149,
+      "ast_nodes": 9099,
+      "migration_sloc": 1330,
+      "sloc_hard_limit": 1430
+    },
+    "src/gravity_sdk/http_runtime.py": {
+      "ast_hard_limit": 3815,
+      "ast_nodes": 3765,
+      "migration_sloc": 675,
+      "sloc_hard_limit": 751
+    },
+    "src/gravity_sdk/models.py": {
+      "ast_hard_limit": 8647,
+      "ast_nodes": 8622,
+      "migration_sloc": 1071,
+      "sloc_hard_limit": 1158
+    },
+    "src/gravity_sdk/prober/batch.py": {
+      "ast_hard_limit": 3802,
+      "ast_nodes": 3752,
+      "migration_sloc": 585,
+      "sloc_hard_limit": 626
+    },
+    "src/gravity_sdk/prober/drafts.py": {
+      "ast_hard_limit": 13109,
+      "ast_nodes": 13059,
+      "migration_sloc": 1805,
+      "sloc_hard_limit": 1931
+    },
+    "src/gravity_sdk/prober/export_verify.py": {
+      "ast_hard_limit": 4541,
+      "ast_nodes": 4491,
+      "migration_sloc": 655,
+      "sloc_hard_limit": 708
+    },
+    "src/gravity_sdk/prober/promotion.py": {
+      "ast_hard_limit": 4432,
+      "ast_nodes": 4382,
+      "migration_sloc": 581,
+      "sloc_hard_limit": 627
+    },
+    "src/gravity_sdk/registry.py": {
+      "ast_hard_limit": 4798,
+      "ast_nodes": 4748,
+      "migration_sloc": 746,
+      "sloc_hard_limit": 822
+    },
+    "src/gravity_sdk/sql/products.py": {
+      "ast_hard_limit": 3672,
+      "ast_nodes": 3622,
+      "migration_sloc": 533,
+      "sloc_hard_limit": 602
     }
   },
   "scope": [

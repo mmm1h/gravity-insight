@@ -31,7 +31,13 @@ from gravity_sdk.sql.evidence_validation import (
     EvidenceFormatError,
     validate_evidence_document,
 )
-from gravity_sdk.sql.time_window import BEIJING, day_window, latest_safe_date, normalize_window, parse_timestamp
+from gravity_sdk.sql.time_window import (
+    BEIJING,
+    day_window,
+    latest_safe_date,
+    normalize_window,
+    parse_timestamp,
+)
 from gravity_sdk.workspace import Workspace, WorkspaceError, load_workspace, require_products
 
 

@@ -3375,3 +3375,44 @@ caller-recoverable 审计仍为 `1075 = A271 / B434 / C370`；本轮只增强一
 上下文，并由 breaking status 生成返回值 ErrorDetail，没有新增 raise site，因此新增错误点/A 档为
 `0/0`。验证为 unittest **1077**、pytest **1077 passed / 2955 subtests passed**、文档测试 **4 passed**、
 compiler **205 operations / 11 manifests**；quality、CLI help 与 `git diff --check` 均通过。
+
+## 质量棘轮去物理压行（2026-08-16）
+
+**提案与只读调查：**工作提案与逐项调查底稿位于 ignored
+`tmp/codex/quality-ratchet/proposal.md`、`investigation.md`。先在 `3295e62` 上冻结清单，再修改代码；
+393 个门禁文件中 **17** 个 headroom=0（15 个旧大文件 baseline 等于当前值，另有 2 个正好 500），
+headroom≤10 为 **33** 个。Token/AST 扫描得到 **41** 个互斥密度点：10 个分号并行、8 个单行 suite、
+10 条 >100 字符单行 import、13 条 >100 字符单行函数签名。Git patch 能直接证明 parent 已顶格且把
+两行压成一行的是 **6** 处：`client.py` 1（`1e699ce`）、`executor.py` 3（`db6bf26`）、
+`models.py` 2（`db6bf26`、`3295e62`）。另有 4 条长 import 的当前形态在顶格提交中形成或扩展，但
+原始动机不能由 Git 证明；其余随初始 baseline 出现或引入时仍有余量，不冒充因果。
+
+**v2 规则：**500 SLOC/文件、80 SLOC/函数、复杂度 15、operation literal 0 四个阈值不变。15 个旧大
+文件改用 Python 3.11 AST 节点数 ratchet；格式换行、import/签名换行和分号拆行均不改变该值。每个旧
+大文件同时冻结两个不可抬升硬顶：SLOC 硬顶等于 `3295e62` 的原始物理行数，AST 硬顶等于迁移节点数
+加 50 个生命周期节点。AST baseline 默认只降；确有必要的增长必须通过
+`baseline --record-ast-growth PATH=REASON` 追加精确 from/to/reason，仍不得越过 AST 硬顶。CI 与 PR base
+比较 legacy 文件集合、两个硬顶、原始迁移值和 append-only 台账；新文件仍不得超过 500。
+
+选择 AST 节点而非语句数，是为了让新增参数、import alias 和表达式结构也计入增长；保留 SLOC 硬顶，
+是为了不让格式空间无限膨胀。没有采用普通 SLOC allowance，因为它仍奖励分号；也没有采用可自由抬升
+的 SLOC baseline，因为它没有生命周期上界。相对 v1，**未登记行为增长更严格**，但两个维度有意变松：
+格式可在冻结的原始行数内展开；有理由的 AST baseline 可在固定 50 节点总预算内抬升。因此它不是每个
+维度都点对点不弱于旧规则；防无限膨胀的硬顶不弱，必要新增有了有限、可审计出口。
+
+**损害修复与反事实：**41 个密度点已修为 **0**。其中 `models.py` 两个 dataclass 字段、receipt/drift
+字段均恢复逐行声明，`client.py` 的 257 字符 errors import 改为括号列表；原来位于超长函数内的探针
+分号下沉为窄 helper，80 SLOC 硬门没有放宽。`models.py` 为抽出重复字段校验并守住既有函数 ratchet，
+登记一次 AST `8597 → 8622`，理由入台账，仍低于不可变硬顶 8647；其余格式修复 AST 不变。
+`test_semicolon_packing_has_no_ast_ratchet_benefit` 明确证明两行合一虽使 SLOC `2 → 1`，AST 与 ratchet
+结果不变；`test_fifty_added_code_lines_exceed_legacy_ast_hard_limit` 加 50 条赋值并证明固定 AST 硬顶拒绝。
+
+本轮不新增产品动线、operation、stable 能力或 caller-recoverable error site：`51 + 0 = 51`、
+`42 / 1 / 8 + 0 / 0 / 0 = 42 / 1 / 8`、operation/stable 仍为 `205 / 196`。生产 HTTP 为 **0 次**；
+没有运行 holdout/final/all、读取 key、修改 recognizer、题集或评分逻辑。caller 审计仍为
+`1075 = A271 / B434 / C370`，故本线新增错误点/A 档为 `0/0`。
+
+验证为 unittest **1081**（`1077 + 4`）、pytest **1081 passed / 2955 subtests passed**、文档测试
+**4 passed**、compiler **205 operations / 11 manifests**；quality 普通检查与对 v1 `HEAD` 的迁移比较、
+CLI help、密度清单复扫和 `git diff --check` 全部通过。密度复扫推导为
+`41 - 10 semicolon - 8 inline suite - 10 long import - 13 long signature = 0`。

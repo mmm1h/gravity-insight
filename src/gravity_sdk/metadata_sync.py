@@ -16,7 +16,13 @@ from .domains import (
     ANALYSIS_PAGINATED_OPERATIONS,
     DOMAIN_OPERATIONS,
 )
-from .errors import ContractChangedError, ErrorCategory, InputValidationError, UpstreamError, exit_code_for_category
+from .errors import (
+    ContractChangedError,
+    ErrorCategory,
+    InputValidationError,
+    UpstreamError,
+    exit_code_for_category,
+)
 from .find_metadata import search_metadata
 from .cli_limits import metadata_limit, nonnegative_int
 from .metadata_lineage import (

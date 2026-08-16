@@ -284,6 +284,24 @@ def failure_comparison(
     }
 
 
+def _write_parameter_selection(
+    report_root: Path,
+    draft_root: Path,
+    operation_ids: Sequence[str],
+    skipped: Sequence[Mapping[str, Any]],
+) -> None:
+    assert_probe_operation_ids(operation_ids, draft_root=draft_root)
+    write_json(
+        report_root / "selection.json",
+        {
+            "parameter_targets": len(operation_ids)
+            - int(DEVELOPER_APPLICATION_OPERATION in operation_ids),
+            "operation_ids": operation_ids,
+            "skipped": skipped,
+        },
+    )
+
+
 def run_parameter_reprobes(
     *, interval_seconds: float = 0.31, request_limit: int = 850,
     draft_root: Path = DRAFT_ROOT, operation_root: Path = OPERATION_ROOT,
@@ -305,14 +323,7 @@ def run_parameter_reprobes(
     operation_ids, skipped = select_parameter_reprobes(draft_root)
     if (draft_root / f"{DEVELOPER_APPLICATION_OPERATION}.json").is_file():
         operation_ids.append(DEVELOPER_APPLICATION_OPERATION)
-    assert_probe_operation_ids(operation_ids, draft_root=draft_root); write_json(
-        report_root / "selection.json",
-        {
-            "parameter_targets": len(operation_ids) - int(DEVELOPER_APPLICATION_OPERATION in operation_ids),
-            "operation_ids": operation_ids,
-            "skipped": skipped,
-        },
-    )
+    _write_parameter_selection(report_root, draft_root, operation_ids, skipped)
 
     discipline = RequestDiscipline(
         interval_seconds=interval_seconds,

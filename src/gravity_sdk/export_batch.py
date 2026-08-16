@@ -4,7 +4,12 @@ from __future__ import annotations
 import argparse
 from typing import Any, Callable, Mapping, Sequence
 
-from .errors import ErrorCategory, InputValidationError, exit_code_for_category, exit_code_for_status
+from .errors import (
+    ErrorCategory,
+    InputValidationError,
+    exit_code_for_category,
+    exit_code_for_status,
+)
 from .result_source import RAW_OPERATION, result_source
 
 

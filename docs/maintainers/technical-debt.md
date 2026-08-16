@@ -9,7 +9,8 @@
 ## 维护规则
 
 - 记录 owner area、证据、触发条件和退出条件；没有证据的“以后可能”不登记。
-- 修改热点附近功能时优先下沉到领域模块，不放宽 SLOC/复杂度 baseline。
+- 修改热点附近功能时优先下沉到领域模块；不抬 legacy SLOC/AST 硬顶。确需在旧大文件增加少量
+  AST 节点时，必须在固定生命周期预算内记录精确 path/from/to/reason，不能用物理压行换余量。
 - 重构必须保持公共 operation/envelope/CLI 兼容；不借一次纵切重写无关模块。
 - 每轮完成后删除已关闭条目，或把其结果压成一行历史记录，避免清单本身变成档案库。
 
@@ -161,6 +162,9 @@ Analysis family router，`plan_adapters.py` 净增长 0，D28 聚合未被误纳
 
 Quality profile 已删除与 runtime root 同路径的冗余 CLI 扫描；每个函数 identity 仅产出一次，Markdown
 函数/复杂度超额与未修改的 baseline 一致，500/80/15/0 阈值和失败策略保持不变。
+
+Quality ratchet v2 已把 15 个旧大文件从当前物理 SLOC 等值锁改为格式无关 AST 节点 ratchet，并冻结
+迁移 SLOC/AST 双硬顶与 append-only 增长理由；500/80/15/0 不变，分号合并不再产生指标收益。
 
 Consumer-output 安全审计未新增结构债：上游业务内容继续留在结果容器，receipt/log 保持值无关；
 workspace recipe 与 SDK contract 的同名 description 已用 additive origin 元数据区分，公共 JSON writer

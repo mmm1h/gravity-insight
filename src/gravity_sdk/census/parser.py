@@ -199,7 +199,11 @@ def _api_exported_bases(text: str) -> tuple[dict[str, str], dict[str, str]]:
     return local, exported
 
 
-def _base_aliases(text: str, exported_bases: dict[str, str], own_bases: dict[str, str]) -> dict[str, str]:
+def _base_aliases(
+    text: str,
+    exported_bases: dict[str, str],
+    own_bases: dict[str, str],
+) -> dict[str, str]:
     aliases = dict(own_bases)
     for match in _IMPORT_API.finditer(text):
         for public, local in _split_aliases(match.group("items")):
