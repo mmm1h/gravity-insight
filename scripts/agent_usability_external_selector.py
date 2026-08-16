@@ -19,6 +19,10 @@ RESPONSE_SCHEMA = "gravity.agent-external-selector-response.v1"
 TERMINAL_OFFLINE_MEASUREMENT_REASON = (
     "selection-only harness does not execute products"
 )
+SELECTION_NETWORK_MEASUREMENT_REASON = (
+    "network_called is plugin-reported because the external selector runs in "
+    "an uninstrumented subprocess"
+)
 
 
 def external_selector_trials(
@@ -315,6 +319,10 @@ def _selection_result(
         "offline": metadata.get("network_called") is not True,
         "network_called": metadata.get("network_called") is True,
         "selection_network_called": metadata.get("network_called") is True,
+        "selection_network_measured": False,
+        "selection_network_measurement_reason": (
+            SELECTION_NETWORK_MEASUREMENT_REASON
+        ),
         **terminal_network,
         "selected_selectors": selectors,
         "candidates": candidates,
@@ -360,5 +368,6 @@ def _described_card(
 __all__ = [
     "REQUEST_SCHEMA",
     "RESPONSE_SCHEMA",
+    "SELECTION_NETWORK_MEASUREMENT_REASON",
     "external_selector_trials",
 ]

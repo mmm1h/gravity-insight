@@ -340,6 +340,9 @@ class AgentUsabilityEvalTests(unittest.TestCase):
                 self.assertEqual(0, self.subject.main(holdout))
                 records = load_query_records(ledger)
                 self.assertEqual([1, 2], [item["split_query_ordinal"] for item in records])
+                self.assertFalse(records[-1]["selector_arm"]["network_measured"])
+                self.assertEqual("synthetic unmeasured selector", records[-1][
+                    "selector_arm"]["network_measurement_reason"])
 
                 final = ["run", "--split", "final", "--final-key", "unused",
                          "--purpose", "project closeout", "--output-dir", str(output)]
@@ -395,6 +398,9 @@ class AgentUsabilityEvalTests(unittest.TestCase):
             "composite:business_pulse",
             observations[0]["result"]["candidates"][0]["selector"],
         )
+        self.assertFalse(observations[0]["result"]["selection_network_measured"])
+        self.assertIn("plugin-reported", observations[0]["result"][
+            "selection_network_measurement_reason"])
         self.assertEqual("utf-8", receipt["trial_receipts"][0]["stdin_encoding"])
         failed = subprocess.CompletedProcess([], 7, "", "synthetic bridge crash")
         with patch("agent_usability_external_selector.subprocess.run", return_value=failed), self.assertRaisesRegex(
@@ -497,6 +503,8 @@ def _fake_result(split: str) -> dict:
         "split": split,
         "case_count": 1,
         "trials": 1,
+        "selection_network_measured": False,
+        "selection_network_measurement_reason": "synthetic unmeasured selector",
         "run_at": "2026-08-16T00:00:00+00:00",
         "subject": {"git_commit": "a" * 40, "product_source_sha256": "b" * 64},
         "layers": {

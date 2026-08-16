@@ -275,11 +275,18 @@ malformed JSON, non-zero exit, and timeout fail the whole run before scoring.
 Zero selectors become an actionable `EXTERNAL_SELECTOR_ABSTAINED` gap; multiple
 selectors go through the same `MULTIPLE_INTENTS` fail-closed response as product
 routing; one selector is described from the supplied catalog and scored by the
-same six layers. The plugin's `network_called` records selection-stage network
-activity. The evaluator separately records `execution_network_called=false`
-because this protocol selects but never executes a capability; the offline
-terminal layer checks that execution-stage field and still fails a missing or
-non-actionable target gap or any execution-stage network call. The evaluator
+same six layers. The plugin's `network_called` **reports** selection-stage
+network activity; the evaluator validates only that it is boolean. Per-result
+and top-level `selection_network_measured=false` plus
+`selection_network_measurement_reason` make this boundary machine-readable;
+the same marker accompanies the query-ledger selector receipt. The legacy
+`offline`, `network_called`, `selection_network_called`, and
+`external_selector_network_trials` fields remain additive-compatible reported
+values, not harness measurements. `execution_network_called` is derived from
+the blocked Gravity transport attempt counter, but
+`terminal_offline_measured=false` because this selection-only protocol never
+executes a capability. The offline terminal layer still fails a missing or
+non-actionable target gap or any execution-stage network attempt. The evaluator
 repeats the plugin four times: `pass^4` still uses correctness, while
 `unstable_tasks`, `unstable_case_ids`, and `unstable_selections` compare and
 expose the exact selected selector sets regardless of correctness.
@@ -301,8 +308,8 @@ metadata handoffs, exports, and registered capability gaps, so those identities
 must be represented or explicitly scored as catalog-coverage failures before a
 whole-suite LLM score can be interpreted as selector quality. The parent process
 blocks its own sockets and all Gravity transport, but cannot police a child
-process's egress; plugin metadata and the external wrapper's audit log are
-therefore mandatory for a networked selector.
+process's egress. Plugin metadata and an external wrapper's audit log remain
+useful provenance, but neither is an independent harness measurement.
 
 ## Files
 
