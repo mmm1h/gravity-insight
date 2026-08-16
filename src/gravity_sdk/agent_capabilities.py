@@ -33,10 +33,7 @@ from .agent_dashboard import DASHBOARD_ANALYSIS_CAPABILITY
 from .agent_multidim import MULTIDIM_CAPABILITY
 from .agent_material_performance import MATERIAL_PERFORMANCE_CAPABILITY
 from .agent_title_package import TITLE_PACKAGE_CAPABILITY, TITLE_PACKAGE_NAME
-from .agent_order_directory import (
-    ORDER_DIRECTORY_CAPABILITY,
-    ORDER_DIRECTORY_NAME,
-)
+from .agent_order_directory import ORDER_DIRECTORY_CAPABILITY, ORDER_DIRECTORY_NAME
 from .agent_order_trace import (
     ORDER_SPLIT_TRACE_CAPABILITY,
     ORDER_SPLIT_TRACE_NAME,
@@ -49,6 +46,7 @@ from .agent_attribution_performance import (
     ATTRIBUTION_PERFORMANCE_CAPABILITY,
     ATTRIBUTION_PERFORMANCE_NAME,
 )
+from .agent_attribution_user_detail import ATTRIBUTION_USER_DETAIL_CAPABILITY
 from .agent_saved_analysis import SAVED_ANALYSIS_CAPABILITY
 from .template_replay_surface import ANALYSIS_TEMPLATE_CAPABILITY
 from .agent_segment_snapshot import SEGMENT_SNAPSHOT_CAPABILITY
@@ -191,6 +189,7 @@ _COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
     ORDER_SPLIT_TRACE_CAPABILITY,
     PROMOTION_PERFORMANCE_CAPABILITY,
     ATTRIBUTION_PERFORMANCE_CAPABILITY,
+    ATTRIBUTION_USER_DETAIL_CAPABILITY,
     BUSINESS_PULSE_CAPABILITY,
     COMPANY_USAGE_CAPABILITY,
     report_agent.REPORT_DIRECTORY_CAPABILITY,
@@ -485,6 +484,7 @@ def authoritative_capability_cards(
             ORDER_SPLIT_TRACE_NAME,
             PROMOTION_PERFORMANCE_NAME,
             ATTRIBUTION_PERFORMANCE_NAME,
+            "attribution_user_detail",
             "multidim",
             "saved_analysis",
             "analysis_template",

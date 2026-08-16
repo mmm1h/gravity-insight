@@ -2,11 +2,11 @@
 
 本矩阵记录 17 项候选能力在 2026-08-12 受控只读探测后的真实状态，并原位追加 2026-08-14 至
 2026-08-16 的后续取证结论，供开发决策使用。仓库当前基线为
-[203 个 operation、其中 194 个 stable operation](capability-coverage.md)：182 条 stable read 加
+[205 个 operation、其中 196 个 stable operation](capability-coverage.md)：184 条 stable read 加
 12 条逐项治理的 mutation（7 条 Segment、5 条报表/订阅）；写 operation 不是本矩阵的 read candidate，
 但本页追加其解锁读合同的生产证据。
 
-`analysis.default_val.list`、D35、`report.report.list/detail` 与 `report.subscribe.list` 已晋升，其余候选
+`analysis.default_val.list`、D35、F40、`report.report.list/detail` 与 `report.subscribe.list` 已晋升，其余候选
 保持原位；`analysis.setting.query`
 保留在 draft 台账但 `effect=mutation`，其他未晋升候选仍是 read draft，promotion gate 均未满足。
 表中的“下一步最小证据”表示继续判断所需的最小输入，不代表晋升计划或交付承诺。候选在线验证
@@ -35,7 +35,7 @@ mutation 只能走自身的 dry-run→显式 execute→读回/清理流程，不
 | `app.user_auth.list` | `draft` | 3 次目标请求；HTTP 200、空样本；`page_info`、第二页行为和安全页上限已验证；无父绑定。 | `empty_sample`、`response_schema_unverified` | 在具备可读授权记录的环境取得 1 个非空样本，并重点审查权限、身份和个人信息字段，默认不暴露未知字段。 |
 | `attribution.attribution.query` | `stable v1`（D35 已闭环） | hash-matched `Measurement` bundle 完整证明 14 个恒发字段、`project_id/dims_metrics_list` 两条条件省略、八个恒发筛选数组和四个有限调用画像。生产 1 次 App catalog + 2 次单日目标 POST：首 App 明确空，第二 App 非空后停止；均 HTTP 200，无重试、翻页或扩窗。 | 无 promotion blocker；旧 evidence 未保存具体 error 正文，不能追认字段拒绝。新证据证明 `extra.error=无数据` 是 `code=0/msg=成功` 的明确空。 | 由 Core/CLI/SDK/Plan/Agent `attribution_performance` 消费；未知 semantic error 继续 fail-closed。 |
 
-| `attribution.attribution_detail.query` | `draft`（F40 静态绑定已证明） | hash-matched Device/userSearch 控制流证明父目录 `data.list[].id` 由调用方选择，详情 body 为 `{app_id,device_id:Number(id)}`，分页 `none`；前端消费 `device_white/attribution_list/postback_list/pay_list`。本轮没有用户级目录枚举授权，目标请求 0 次。 | `authorized_identifier_required`、`parent_contract_unverified`、`response_schema_unverified` | 调用方授权一个真实登记测试设备父行 id，只发 1 次详情请求；成功或明确空后登记四个容器全部观察字段与类型。 |
+| `attribution.attribution_detail.query` | **`stable v1`（F40 已闭环）** | 1 次 App catalog 后顺序枚举 6 个 `app.testing_tool.list`，前 5 个明确空、第 6 个返回 1 条后停止；目录行 13 个顶层字段、`device_info` 3 个子字段及 `page_info` 4 字段全部登记。以内存父行 `id` 发唯一 1 次详情 POST，HTTP 200 / `code=0`；`device_white` 为同形 object，另外三个列表均明确为空。 | 无 promotion blocker；`attribution_list/postback_list/pay_list` 的 item schema 未观察，不能猜测，未来非空时 fail-closed。 | 由 Core/CLI/SDK/Plan/Agent `attribution_user_detail` 消费；父行只接受 `app.testing_tool.list` 的精确内部 ID。 |
 
 ## 2026-08-16 追加判定：报表与订阅写解锁
 

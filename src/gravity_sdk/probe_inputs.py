@@ -9,6 +9,7 @@ from typing import Any, Mapping
 
 from .errors import PermissionUnavailableError, PolicyViolation
 from .parent_resolution import coerce_parent_value, extract_parent_values
+from .attribution_user_detail import first_probe_testing_device_field
 
 
 ParentCache = dict[str, Mapping[str, Any]]
@@ -92,6 +93,8 @@ def _placeholder(
         "$first_event_property_name": client._first_probe_event_property_name,
         "$first_report_config_id": client._first_probe_report_config_id,
         "$first_segment_id": client._first_probe_segment_id,
+        "$first_testing_device_app_id": lambda: first_probe_testing_device_field(client, "app_id"),
+        "$first_testing_device_id": lambda: first_probe_testing_device_field(client, "device_id"),
         "$first_user_property_name": client._first_probe_user_property_name,
     }
     if value == "$today":

@@ -10,13 +10,17 @@ from .plan_adapter_support import input_error
 
 
 COMPOSITE_NAMES = frozenset(
-    {"analysis_context", "app_snapshot", "attribution_snapshot", "attribution_performance"}
+    {
+        "analysis_context", "app_snapshot", "attribution_snapshot",
+        "attribution_performance", "attribution_user_detail",
+    }
 )
 _REQUIRED_ITEMS = {
     "analysis_context": 13,
     "app_snapshot": 6,
     "attribution_snapshot": 8,
     "attribution_performance": 4,
+    "attribution_user_detail": 1,
 }
 
 
@@ -31,6 +35,11 @@ def validate_fixed_composite(
         from .plan_attribution_adapter import validate_attribution_performance_plan
 
         validate_attribution_performance_plan(request, context, context.workspace)
+        return
+    if name == "attribution_user_detail":
+        from .plan_attribution_adapter import validate_attribution_user_detail_plan
+
+        validate_attribution_user_detail_plan(request, context, context.workspace)
         return
     if set(request) - {"name", "app"}:
         raise input_error("composite request contains fields unavailable for this name", "request")
@@ -48,6 +57,10 @@ def execute_fixed_composite(
         from .plan_attribution_adapter import execute_attribution_performance_plan
 
         return execute_attribution_performance_plan(sdk, request, context)
+    if name == "attribution_user_detail":
+        from .plan_attribution_adapter import execute_attribution_user_detail_plan
+
+        return execute_attribution_user_detail_plan(sdk, request, context)
     options = {
         "max_pages": context.max_pages,
         "max_items": context.max_items,

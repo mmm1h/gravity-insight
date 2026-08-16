@@ -1,5 +1,5 @@
 {
-  "operation_count": 203,
+  "operation_count": 205,
   "operations": {
     "account.department.list": {
       "applied_overrides": [],
@@ -505,6 +505,14 @@
         "operations/app.template.list.json"
       ]
     },
+    "app.testing_tool.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/app.testing_tool.list.json"
+      ]
+    },
     "attribution.attr_backtrack.list": {
       "applied_overrides": [],
       "family": null,
@@ -535,6 +543,14 @@
       "platform": null,
       "source_files": [
         "operations/attribution.attribution.query.json"
+      ]
+    },
+    "attribution.attribution_detail.query": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/attribution.attribution_detail.query.json"
       ]
     },
     "attribution.post_backtrack.list": {

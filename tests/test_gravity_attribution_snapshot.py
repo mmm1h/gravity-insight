@@ -1,23 +1,31 @@
 from __future__ import annotations
 
+import json
 import unittest
+from pathlib import Path
 
+from gravity_sdk import GravityInsightClient, GravitySDK
 from gravity_sdk.agent import discover_capabilities
 from gravity_sdk.attribution import (
     PERFORMANCE_OPERATION_ID,
     PERFORMANCE_PROFILES,
+    USER_DETAIL_OPERATION_ID,
     attribution_performance,
     attribution_snapshot,
+    attribution_user_detail,
 )
 from gravity_sdk.domains import (
     ATTRIBUTION_PAGINATED_OPERATIONS,
     ATTRIBUTION_SNAPSHOT_OPERATIONS,
 )
 from gravity_sdk.errors import InputValidationError
+from gravity_sdk.transport import TransportResponse
 from gravity_sdk.plan import AdapterContext
 from gravity_sdk.plan_attribution_adapter import (
     execute_attribution_performance_plan,
+    execute_attribution_user_detail_plan,
     validate_attribution_performance_plan,
+    validate_attribution_user_detail_plan,
 )
 
 
@@ -52,6 +60,48 @@ class _Client:
             for item in values
         ]
         return self.results(results) if self.results is not None else results
+
+
+def _detail_data() -> dict:
+    return {
+        "device_white": {
+            "app_id": 101, "create_time": "", "device_info": {
+                "android_id": "", "imei": "", "oaid": "",
+            },
+            "id": 202, "is_template": False, "modify_time": "", "name": "",
+            "remark": "", "reuse_from_device_id": 0, "testing_company": "",
+            "testing_end_time": None, "testing_start_time": None,
+            "testing_status": 0,
+        },
+        "attribution_list": [], "postback_list": [], "pay_list": [],
+    }
+
+
+class _DetailClient:
+    def __init__(self, data=None) -> None:
+        self.data = _detail_data() if data is None else data
+        self.calls = []
+
+    def read(self, operation_id, inputs):
+        self.calls.append((operation_id, inputs))
+        return {
+            "schema_version": "gravity-insight.read.v1", "operation_id": operation_id,
+            "status": "success", "data": self.data, "error": None,
+        }
+
+
+class _DetailTransport:
+    is_test_transport = True
+
+    def __init__(self) -> None:
+        self.calls = []
+
+    def request(self, method, path, **kwargs):
+        self.calls.append((method, path, kwargs))
+        return TransportResponse(
+            200, {"code": 0, "msg": "success", "extra": None,
+                  "data": _detail_data()}, "2026-08-16T00:00:00Z"
+        )
 
 
 class AttributionSnapshotTests(unittest.TestCase):
@@ -267,6 +317,81 @@ class AttributionSnapshotTests(unittest.TestCase):
 
         self.assertEqual("gravity-insight.attribution-performance.v1", result["schema_version"])
         self.assertEqual(1, sdk.call[1]["max_workers"])
+
+    def test_user_detail_is_one_strict_governed_read(self) -> None:
+        client = _DetailClient()
+
+        result = attribution_user_detail(client, "101", "202")
+
+        self.assertEqual(
+            [(USER_DETAIL_OPERATION_ID, {"app_id": 101, "device_id": 202})],
+            client.calls,
+        )
+        self.assertEqual("gravity-insight.attribution-user-detail.v1", result["schema_version"])
+        self.assertEqual((True, "success", _detail_data()),
+                         (result["ok"], result["status"], result["data"]))
+
+    def test_user_detail_stable_manifest_projects_the_observed_object_shape(self) -> None:
+        root = Path(__file__).resolve().parents[1] / "src/gravity_sdk/contracts/operations"
+        operation_ids = ("app.list", "app.testing_tool.list", USER_DETAIL_OPERATION_ID)
+        manifest = {"manifest_version": 1, "operations": [
+            json.loads((root / f"{name}.json").read_text(encoding="utf-8"))["operation"]
+            for name in operation_ids
+        ]}
+        transport = _DetailTransport()
+        client = GravityInsightClient._from_manifest_for_tests(manifest, transport=transport)
+
+        result = attribution_user_detail(client, 101, 202)
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(_detail_data(), result["data"])
+        self.assertEqual(
+            ("POST", {"app_id": 101, "device_id": 202}),
+            (transport.calls[0][0], dict(transport.calls[0][2]["body"])),
+        )
+
+    def test_user_detail_rejects_input_and_future_unregistered_items(self) -> None:
+        client = _DetailClient()
+        with self.assertRaises(InputValidationError):
+            attribution_user_detail(client, "101", "not-a-parent-row")
+        self.assertEqual([], client.calls)
+
+        changed = _detail_data()
+        changed["postback_list"] = [{"new_field": "not-yet-registered"}]
+        result = attribution_user_detail(_DetailClient(changed), 101, 202)
+        self.assertEqual((False, "CONTRACT_CHANGED"),
+                         (result["ok"], result["error"]["code"]))
+
+    def test_user_detail_agent_plan_and_parent_call_bounds_are_explicit(self) -> None:
+        discovered = discover_capabilities("下钻单个用户归因明细", client=None)
+        card = discovered["candidates"][0]
+        self.assertEqual("attribution_user_detail", card["composite"])
+        self.assertEqual(["app", "device_id"], card["missing_inputs"])
+        bounds = {item["id"]: item["minimum_calls"]
+                  for item in card["call_bound"]["scenarios"]}
+        self.assertEqual({"unknown_app": 3, "unknown_reference": 3,
+                          "unknown_app_and_reference": 4}, bounds)
+
+        class Workspace:
+            def resolve_app(self, _value): return 101
+
+        class SDK:
+            def attribution_user_detail(self, *args, **kwargs):
+                self.call = (args, kwargs)
+                return {"schema_version": "gravity-insight.attribution-user-detail.v1"}
+
+        workspace, sdk = Workspace(), SDK()
+        core_client = _DetailClient()
+        facade = GravitySDK(workspace=workspace, insight_factory=lambda: core_client)
+        self.assertTrue(facade.attribution_user_detail("main", 202)["ok"])
+        self.assertEqual({"app_id": 101, "device_id": 202}, core_client.calls[0][1])
+        context = AdapterContext("node", "execution", "composite", workspace,
+                                 (), (), 1, 1000)
+        request = {"name": "attribution_user_detail", "app": "main", "device_id": 202}
+        validate_attribution_user_detail_plan(request, context, workspace)
+        result = execute_attribution_user_detail_plan(sdk, request, context)
+        self.assertEqual(("main", 202), sdk.call[0])
+        self.assertEqual("gravity-insight.attribution-user-detail.v1", result["schema_version"])
 
 
 if __name__ == "__main__":

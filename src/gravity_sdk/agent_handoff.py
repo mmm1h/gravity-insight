@@ -252,7 +252,7 @@ def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
         return dashboard_analysis_plan_request(card)
     if composite in {
         "segment_snapshot", "segment_members", "analysis_default_dictionary",
-        "attribution_performance",
+        "attribution_performance", "attribution_user_detail",
     }:
         return _analysis_product_plan_request(str(composite), card)
     if composite == "saved_analysis":
@@ -311,6 +311,10 @@ def _analysis_product_plan_request(
         from .agent_attribution_performance import attribution_performance_plan_request
 
         return attribution_performance_plan_request(card)
+    if composite == "attribution_user_detail":
+        from .agent_attribution_user_detail import attribution_user_detail_plan_request
+
+        return attribution_user_detail_plan_request(card)
     if composite == "analysis_default_dictionary":
         from .agent_analysis_default_dictionary import (
             analysis_default_dictionary_plan_request,
@@ -427,6 +431,10 @@ def _composite_product_requirements(
             list(ATTRIBUTION_PERFORMANCE_REQUIRED_INPUTS),
             attribution_performance_input_template(),
         )
+    if card.get("composite") == "attribution_user_detail":
+        from .agent_attribution_user_detail import ATTRIBUTION_USER_DETAIL_REQUIRED_INPUTS, attribution_user_detail_input_template
+
+        return list(ATTRIBUTION_USER_DETAIL_REQUIRED_INPUTS), attribution_user_detail_input_template()
     if card.get("composite") == "bilibili_account_performance":
         from .agent_bilibili_account_performance import (
             BILIBILI_ACCOUNT_PERFORMANCE_REQUIRED_INPUTS,

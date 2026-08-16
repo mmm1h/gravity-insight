@@ -11,6 +11,7 @@ from .dashboard_snapshot import TREE_OPERATION
 from .domains import MULTIDIM_METADATA_OPERATIONS
 from .metadata_sync import APP_OPERATION_ID
 from .saved_analysis_catalog import LIST_OPERATION_ID
+from .attribution_user_detail import TESTING_DEVICE_OPERATION_ID
 
 
 SCHEMA_VERSION = "gravity.agent-call-bound.v1"
@@ -68,6 +69,15 @@ _REFERENCE_SOURCES: Mapping[str, tuple[str, list[str], str, bool]] = {
         "GravitySDK.analysis_templates",
         False,
     ),
+    "attribution_user_detail": (
+        TESTING_DEVICE_OPERATION_ID,
+        [
+            "gravity", "run", TESTING_DEVICE_OPERATION_ID, "--input",
+            "<app-input.json>",
+        ],
+        "GravitySDK.read",
+        True,
+    ),
 }
 
 
@@ -97,7 +107,13 @@ def call_bound_for_card(card: Mapping[str, Any]) -> dict[str, Any]:
     composite = str(card.get("composite", ""))
     if composite in _REFERENCE_SOURCES:
         selector, argv, sdk_method, app_scoped = _REFERENCE_SOURCES[composite]
-        reference_inputs = ["scope", "ref"] if composite == "analysis_template" else ["ref"]
+        reference_inputs = (
+            ["scope", "ref"]
+            if composite == "analysis_template"
+            else ["device_id"]
+            if composite == "attribution_user_detail"
+            else ["ref"]
+        )
         reference_source = _source(
             reference_inputs,
             "upstream_catalog",

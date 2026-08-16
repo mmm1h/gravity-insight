@@ -88,6 +88,9 @@ ROUTES: dict[str, dict[str, str]] = {
     "attribution_performance": {
         "kind": "composite", "composite": "attribution_performance",
     },
+    "attribution_user_detail": {
+        "kind": "composite", "composite": "attribution_user_detail",
+    },
     "material_asset": {"kind": "material_asset", "selector": "material.asset.fetch"},
 }
 
@@ -96,7 +99,7 @@ CATALOG_INPUTS: dict[str, tuple[str, ...]] = {
         "event", "funnel", "retention", "property", "scatter", "period_compare",
         "segment_evaluate", "analysis_context", "app_governance", "attribution_settings",
         "user_journey", "order_directory", "order_split_trace", "monetization_detail",
-        "title_package", "attribution_performance",
+        "title_package", "attribution_performance", "attribution_user_detail",
     )
 }
 CATALOG_INPUTS.update({

@@ -238,9 +238,10 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
         # 角色详情依赖运行时从角色列表选取 role_id，同样不伪造静态示例。
         # 默认值字典以 caller-selected App 示例晋升，再增加一个完整 example。
         # D35 归因聚合以固定画像晋升，再增加一个完整 example。
+        # F40 测试设备目录与单用户明细均依赖运行时父行，不伪造静态示例。
         # Segment/report mutations deliberately have no replayable examples;
         # the two account-level report lists do have verified minimum reads.
-        self.assertEqual((87, 107), (examples_complete, examples_unknown))
+        self.assertEqual((87, 109), (examples_complete, examples_unknown))
         # 本趟按父 response projection 与调用方选择语义补全 9 条边；剩余
         # 16 条涉及 runtime-v1 target 投影、递归、同一行关联或嵌套输入变换。
         # 素材相册列表再补一条递归父级边，公开 probe 会按目标字符串契约转换；
@@ -254,8 +255,9 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
         # 角色详情再补一条角色列表 ID 父级边。
         # 默认值字典再补一条调用方选择 App 的完整父级边。
         # D35 归因聚合再补一条调用方选择 App 的完整父级边。
+        # F40 目录补一条 App 父级边，详情补两条同一设备行父级边。
         # Report/detail and subscription-parent wiring add four complete edges.
-        self.assertEqual((68, 16), (parents_complete, parents_unknown))
+        self.assertEqual((71, 16), (parents_complete, parents_unknown))
 
         transformed = self.client.describe("analysis.event.query")["required_parent"][0]
         self.assertEqual("data.list[].name", transformed["output_path"])

@@ -52,5 +52,23 @@ class AttributionSdkMixin:
             max_items=max_items,
         )
 
+    def attribution_user_detail(
+        self,
+        app: str | int | None,
+        device_id: str | int,
+        *,
+        workspace: Any | None = None,
+    ) -> dict[str, Any]:
+        """Read one caller-selected registered testing-device attribution detail."""
+
+        from .attribution import attribution_user_detail
+
+        selected = self._select_workspace(workspace)
+        return attribution_user_detail(
+            self.insight,
+            self._resolve_app(selected, app),
+            device_id,
+        )
+
 
 __all__ = ["AttributionSdkMixin"]

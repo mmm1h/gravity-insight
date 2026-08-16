@@ -87,6 +87,7 @@ members = gravity.segment_members(
 orders = gravity.order_directory("main", "2026-08-08", max_workers=6)
 app = gravity.app_snapshot("main", max_workers=6)
 attribution = gravity.attribution_snapshot("main", max_workers=6)
+user_detail = gravity.attribution_user_detail("main", "<testing-device-row-id>")
 
 # 用紧凑、显式的分析语义代替 Web wire 结构；编译阶段不发送网络请求。
 event_spec = {
@@ -203,6 +204,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `prepare_dashboard_analysis()` / `run_dashboard_analysis()` | 编译或并发执行看板中受支持的五类 Analysis 图表；保序并隔离单图失败 |
 | `app_snapshot()` | 固定 6 个 App 治理来源，明确 company/App scope |
 | `attribution_snapshot()` | 当前 8 个 stable attribution 配置来源，不包含 draft 查询 |
+| `attribution_user_detail()` | 按 App 与测试设备目录内部行 ID 读取 F40 详情；三类当前明确空的 item 列表未来非空时 fail-closed |
 | `validate_plan()` | 离线校验 Plan schema、依赖、预算和 adapter 请求；不发网络请求 |
 | `execute_plan()` | 使用内建四类受控 adapter 执行 Plan DAG |
 

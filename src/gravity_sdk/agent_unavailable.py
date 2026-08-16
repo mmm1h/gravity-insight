@@ -7,7 +7,6 @@ from typing import Any
 
 _REGISTERED_GAP_QUERIES = (
     "real time event catalog",
-    "single user attribution detail",
     "current table schema",
     "analysis export results",
     "media reports",

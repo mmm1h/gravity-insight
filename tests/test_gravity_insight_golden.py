@@ -299,6 +299,9 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "analysis.segment.from.analysis.create",
             "analysis.segment.from.rule.create",
             "analysis.segment.from.rule.update",
+            # F40 完成测试设备父行枚举、单次详情和完整已观察投影后晋升。
+            "app.testing_tool.list",
+            "attribution.attribution_detail.query",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]

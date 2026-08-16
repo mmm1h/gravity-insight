@@ -14,13 +14,11 @@
 
 ## 现状
 
-当前从仓库产品入口与 stable operation 正向交叉反推 49 条产品动线：**已闭环 37 / 部分闭环 1 / 完全缺失 11**；
+当前从仓库产品入口与 stable operation 正向交叉反推 51 条产品动线：**已闭环 42 / 部分闭环 1 / 完全缺失 8**；
 另有 2 条 legacy/SDK 便利面、1 条重复能力审计行和 1 条已有结果上的调用方派生便利面保留，
-但不计产品动线。表格 53 行减去 4 条“不计独立动线”得到 49 条。合并前 dev 的现状为
-`48 = 36 / 1 / 11`；“从分析结果或规则创建并管理可复用分群”是调用方能独立完成、并产出上游分群
-对象的任务，不与“查看已有分群详情/成员”合并，因此净增 1 条已闭环动线：
-`48 + 1 = 49`、`36 / 1 / 11 + 1 / 0 / 0 = 37 / 1 / 11`。
-operation 为 `187 + 7 = 194`、stable 为 `178 + 7 = 185`。部分闭环的 Analysis 导出只关闭了单用户事件子类；11 条完全缺失里
+但不计产品动线。表格 55 行减去 4 条“不计独立动线”得到 51 条。F40 派发前为
+`51 = 41 / 1 / 9`；本轮将它从完全缺失转为闭环，所以 `41+1=42`、`9-1=8`，总数和部分闭环不变。
+operation 为 `203 + 2 = 205`、stable 为 `194 + 2 = 196`。部分闭环的 Analysis 导出只关闭了单用户事件子类；8 条完全缺失里
 多数是请求、响应或非空证据阻塞；字段隐私不再是阻塞项。
 逐条状态、四面入口、调用次数和证据阻塞以[分析动线台账](analysis-journeys.md)为准；旧
 `21/14/6` 快照的逐条底稿未进入版本控制，无法复算，已停止作为排期事实。
@@ -382,7 +380,7 @@ prober 现仅对 confirmation 文件中通过完整校验的精确 `POST + path`
 | 序 | 动线 | 为什么排这里 | 阻塞 |
 | --- | --- | --- | --- |
 | 1 | **D22 看板页面条件忠实重放** | 已对非空 `data.object.config.filter` fail closed；空条件不受影响 | **合并发生在服务端，前端分析已穷尽**（见下） |
-| 2 | **D35 归因表现聚合** | 当前只能读归因配置，无法回答归因结果；且是 F40 的前置 | **2026-08-16 审计撤销旧 semantic-error 阻塞，待重新取证**（见下） |
+| 2 | **D35 / F40 归因结果**（已完成） | D35 与 F40 均已取得独立生产合同 | **两条均已闭环，不再排期**（见下） |
 | 3 | **D34 非 Bytedance 计划/组/创意下钻** | 跨平台产品多数只到顶层 | D32/D33 已证明当前账号的七个平台父链均无可下钻样本 |
 | 4 | **D32 平台专属素材/创意深查** | 最小取证已完成，未取得可升级的非空合同 | 当前账号无非空 advertiser 父候选；保持 draft，等待有数据租户 |
 
@@ -933,7 +931,7 @@ builder 记录到 `code=0`、`msg=成功`、`extra.error=无数据` 和空聚合
 “缺服务端必填/值域”的证明力。
 
 语义审计本身未据并行工作提升 D35；随后归因线用会保存协议判据的新 evidence 完成重新取证并闭环 D35。
-F40 的旧 D35 依赖理由同步失效；其自身标识来源、请求绑定、分页和响应合同仍需独立证据。
+F40 的旧 D35 依赖理由同步失效；其独立证据已由下节的测试设备目录与唯一详情请求补齐。
 
 值域与依赖来自同一控制流，而不是猜测：`app_id` 取 App catalog 选择项，若页面未来设置
 `connect_app_id` 则优先使用它；当前 bundle 只观察到初始化/重置为 `0`，没有正值赋值。直接 App
@@ -977,7 +975,7 @@ F40 的旧 D35 依赖理由同步失效；其自身标识来源、请求绑定�
 `gravity.agent-call-bound.v1` 声明。四个内部 HTTP 共享一次 bounded batch 与 Plan worker 租借，
 不把内部请求数误算为调用方调用次数。
 
-### F40 精确剩余事实
+### F40 生产账本与裁决
 
 hash-matched `Device-TemCRn-D.js` 和 `userSearch-Bhwew5eC.js` 证明：搜索 route 的 body 是
 `{app_id,key_word:trimmed-or-undefined}`，响应消费 `data.attribution_list`；测试设备父目录 body 是
@@ -989,15 +987,35 @@ hash-matched `Device-TemCRn-D.js` 和 `userSearch-Bhwew5eC.js` 证明：搜索 r
 `5a8a9ad1ee358899bbcbf09fc43711285c51015667431e5fe1892029a4bc3aae` 与
 `8a8fda10088a31c241ebd1e96624d8daf9a36e289f09bcf78204398a8c888069`。
 
-F40 仍完全缺失：本任务只授权枚举 App catalog，没有授权枚举用户级测试设备目录，也没有调用方提供的
-真实父行 id，因此生产请求为 0。还差两条具体事实：一条 caller-authorized `data.list[].id`（且父
-`app.testing_tool.list` 合同须 live 验证），以及一次详情成功或明确空响应，用于登记四个容器全部字段与
-类型。最小下一步是调用方选定并授权一个真实测试设备父行，只发一次详情请求；不得猜设备值。
+旧的“未授权枚举用户级测试设备目录”约束已由项目裁决撤销。生产请求严格串行，共 **8 次业务 HTTP**，
+全部 HTTP 200，未触发鉴权刷新、重试、翻页、扩窗或详情重发：
 
-本线新增 **4 个** caller 可恢复错误点（App、日期区间、worker 上界、Plan request shape），
-**4 个均为 A 档**；本次集成树从 `1024 = 220 A + 434 B + 370 C` 变为
-`1028 = 224 A + 434 B + 370 C`。技术债清单已复核：领域 SDK mixin 与 fixed-composite family router 吸收新面，
-共享入口的 SLOC/复杂度 ratchet 未上调，也没有新增可证明的结构债。
+| 次序 | Operation | 目的与结果 |
+| --- | --- | --- |
+| 1 | `app.list` | 取得 7 个 catalog App，只在内存按目录顺序选择。 |
+| 2–6 | `app.testing_tool.list` | catalog #1–#5 均 `code=0/msg=成功` 且 `data.list=[]`。 |
+| 7 | `app.testing_tool.list` | catalog #6 首次返回 1 条，立即停止；父行 ID 仅在内存中使用。 |
+| 8 | `attribution.attribution_detail.query` | 唯一详情请求，body 为 `{app_id,device_id:Number(data.list[].id)}`；`code=0/msg=成功`。 |
+
+目录非空行完整字段为 `app_id:int/create_time:string/device_info:object/id:int/is_template:bool/`
+`modify_time:string/name:string/remark:string/reuse_from_device_id:int/testing_company:string/`
+`testing_end_time:null/testing_start_time:null/testing_status:int`；`device_info` 子字段为
+`android_id:string/imei:string/oaid:string`。分页壳为 `page/page_size/total_number/total_page:int`；前端
+固定请求 `page=1/page_size=1000` 并做本地展示分页，本轮按纪律未翻页。
+
+详情 `device_white` 为与目录行相同的完整 object；`attribution_list`、`postback_list`、`pay_list`
+均为明确空 array。空数组没有 item 字段证据，故不猜 schema；公开产品严格接受本次已登记空合同，未来
+出现非空 item 时返回 `CONTRACT_CHANGED`，待新 shape evidence 登记后再升级。
+
+**F40 已闭环。** `app.testing_tool.list` 与 `attribution.attribution_detail.query` 晋升 stable v1；
+Core、CLI `gravity attribution user-detail`、SDK、Plan `attribution_user_detail` 与 Agent card 共用
+`gravity-insight.attribution-user-detail.v1`。`gravity.agent-call-bound.v1` 声明已知输入 1、未知
+capability 2、未知 App 3、未知设备父行 3、二者均未知 4；父目录依赖不能被凑成无依赖的 2 次。
+
+在此前 D35 新增 4 个 A 档错误点基础上，F40 新增 **2 个** caller 可恢复错误点（详情正整数输入、
+Plan request shape），**2 个均为 A 档**；当前集成树从 `1073 = 269 A + 434 B + 370 C` 变为
+`1075 = 271 A + 434 B + 370 C`。技术债清单已复核：详情 core 和测试设备 probe 解析均下沉到领域模块，
+共享入口的 SLOC/复杂度 ratchet 未上调，也没有新增可由当前源码证明的结构债。
 
 ### census 提取器的已知能力边界
 

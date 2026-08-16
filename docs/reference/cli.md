@@ -29,6 +29,7 @@ gravity analysis order trace  按显式 TraceID 读取单日拆单明细
 gravity apps snapshot         并发读取一个 App 的治理快照
 gravity attribution snapshot  并发读取一个 App 的归因配置快照
 gravity attribution performance 读取一个 App 日期区间的四组归因表现
+gravity attribution user-detail 读取一个 App 下已登记测试设备的单用户归因明细
 gravity reports pulse         并发读取 App 经营概览与趋势
 gravity reports usage         完整读取公司级按日资源用量趋势
 gravity reports directory|subscriptions  完整读取报表目录/定义或订阅清单
@@ -318,6 +319,7 @@ gravity analysis segment snapshot --app main --ref <id-or-exact-name> --date <YY
 gravity apps snapshot --app main --concurrency 6
 gravity attribution snapshot --app main --concurrency 6
 gravity attribution performance --app main --start <YYYY-MM-DD> --end <YYYY-MM-DD> --concurrency 4
+gravity attribution user-detail --app main --device-id <testing-device-row-id>
 ```
 
 `--app` 接受 workspace alias 或正整数；归因命令继续接受 `--app-id` 兼容别名。Analysis

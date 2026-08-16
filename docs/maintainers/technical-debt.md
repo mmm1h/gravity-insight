@@ -179,3 +179,7 @@ Analysis Spec schema 的结构键投影与 funnel 按日模式校验已在领域
 
 Segment mutation 首轮把一次性授权、wire codec、领域 CRUD、CLI/SDK 与 Agent 交接拆入窄模块，
 `registry.py` ratchet 继续收紧且 Plan spine 未增长；本轮复核未产生新的活动结构债条目。
+
+F40 单用户归因明细把严格结果重建与测试设备父目录解析下沉到领域模块；共享 client、Agent/Plan
+路由均保持既有质量 ratchet，空 item 容器按未来非空 fail-closed 而未引入通用动态 schema，
+本轮复核未产生新的活动结构债条目。

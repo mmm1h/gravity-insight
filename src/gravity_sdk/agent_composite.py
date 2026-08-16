@@ -14,6 +14,7 @@ _STRICT_COMPOSITES = frozenset(
         "analysis_default_dictionary",
         "attribution_snapshot",
         "attribution_performance",
+        "attribution_user_detail",
         "company_usage",
         "report_directory",
         "report_subscriptions",
@@ -206,6 +207,10 @@ def _strict_composite_query(name: str, query: str) -> bool:
         from .agent_attribution_performance import attribution_performance_query
 
         return attribution_performance_query(query)
+    if name == "attribution_user_detail":
+        from .agent_attribution_user_detail import attribution_user_detail_query
+
+        return attribution_user_detail_query(query)
     return _strict_composite_query_without_title_package(name, query)
 
 
