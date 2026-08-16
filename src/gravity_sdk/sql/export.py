@@ -150,7 +150,12 @@ def _fetch_page(
         raise GravityExportError(f"{label}: page={page_index} request failed") from exc
 
 
-def _execute_page(client: SqlClient, sql: str, page_size: int, offset: int) -> tuple[list[dict], float]:
+def _execute_page(
+    client: SqlClient,
+    sql: str,
+    page_size: int,
+    offset: int,
+) -> tuple[list[dict], float]:
     started = perf_counter()
     page = client.execute_sql(build_paged_sql(sql, page_size, offset))
     return page, perf_counter() - started

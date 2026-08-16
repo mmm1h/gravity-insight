@@ -11,8 +11,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping, Protocol, Sequence
 
-from .domains import ANALYSIS_METADATA_OPERATIONS, ANALYSIS_PAGINATED_OPERATIONS, DOMAIN_OPERATIONS
-from .errors import ContractChangedError, ErrorCategory, InputValidationError, UpstreamError, exit_code_for_category
+from .domains import (
+    ANALYSIS_METADATA_OPERATIONS,
+    ANALYSIS_PAGINATED_OPERATIONS,
+    DOMAIN_OPERATIONS,
+)
+from .errors import (
+    ContractChangedError,
+    ErrorCategory,
+    InputValidationError,
+    UpstreamError,
+    exit_code_for_category,
+)
 from .metadata_lineage import (
     TABLE_LINEAGE_OPERATIONS,
     create_table_lineage_schema,

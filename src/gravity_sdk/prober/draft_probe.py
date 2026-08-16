@@ -413,12 +413,17 @@ def _write_inconclusive_evidence(
     }
 
 
+def _preflight_probe_draft(source: Mapping[str, Any]) -> None:
+    assert_probe_read_semantics(source)
+    assert_read_only_source(source)
+
+
 def probe_draft(
     source: Mapping[str, Any], *, stable_client: Any, runtime: Any,
     recording: RecordingSession, evidence_root: Path = EVIDENCE_ROOT,
     draft_root: Path = DRAFT_ROOT,
 ) -> dict[str, Any]:
-    assert_probe_read_semantics(source); assert_read_only_source(source)
+    _preflight_probe_draft(source)
     operation_id = str(source["operation"]["operation_id"])
     selected_family = family_id(source)
     start = len(recording.observations)

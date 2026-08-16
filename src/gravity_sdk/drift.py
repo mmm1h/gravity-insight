@@ -479,7 +479,8 @@ def operation_availability(
     stability: str, *, executable: bool = True, block_reason: str | None = None,
     health_overlay: HealthOverlay | None = None, operation_id: str = "",
 ) -> str:
-    if not executable: return block_reason or "catalog_only"
+    if not executable:
+        return block_reason or "catalog_only"
     status = {"stable": "available", "experimental": "opt_in_required",
               "permission_unavailable": "permission_unavailable", "blocked_privacy": "blocked_privacy",
               "blocked_write": "blocked_write", "deprecated": "deprecated"}.get(stability, "unavailable")

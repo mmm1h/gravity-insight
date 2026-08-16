@@ -16,6 +16,7 @@ from gravity_sdk.quality import (
     LiteralOccurrence,
     QualityProfile,
     compare_baselines,
+    count_ast_nodes,
     count_sloc,
     cyclomatic_complexity,
     debt_snapshot,
@@ -23,6 +24,7 @@ from gravity_sdk.quality import (
     evaluate_slope,
     hardcoded_exit_code_errors,
     inspect_repository,
+    migration_source_errors,
     render_markdown,
     validate,
 )
@@ -38,6 +40,8 @@ ROOT = Path(__file__).resolve().parents[1]
 def _profile(
     *,
     file_sloc: int = FILE_SLOC_LIMIT,
+    ast_nodes: int = 100,
+    file_lines: int | None = None,
     function_sloc: int = FUNCTION_SLOC_LIMIT,
     complexity: int = COMPLEXITY_LIMIT,
     literals: int = 0,
@@ -48,6 +52,8 @@ def _profile(
     )
     return QualityProfile(
         file_sloc={"src/gravity_sdk/sample.py": file_sloc},
+        file_ast_nodes={"src/gravity_sdk/sample.py": ast_nodes},
+        file_lines={"src/gravity_sdk/sample.py": file_lines or file_sloc},
         functions=(
             FunctionMetric(
                 "src/gravity_sdk/sample.py",
@@ -333,17 +339,76 @@ def sample(value):
         self.assertTrue(any("cyclomatic complexity current=16, threshold=15" in item for item in errors))
         self.assertTrue(any("operation ID literal count current=1, threshold=0" in item for item in errors))
 
-    def test_improvement_requires_baseline_tightening(self) -> None:
-        baseline = debt_snapshot(_profile(file_sloc=550))
-        errors = evaluate_ratchet(_profile(file_sloc=540), baseline)
-        self.assertTrue(any("improved current=540" in error for error in errors), errors)
+    def test_ast_improvement_requires_baseline_tightening(self) -> None:
+        baseline = debt_snapshot(_profile(file_sloc=550, ast_nodes=100))
+        errors = evaluate_ratchet(_profile(file_sloc=540, ast_nodes=99), baseline)
+        self.assertTrue(any("AST nodes improved current=99" in error for error in errors), errors)
 
     def test_base_baseline_cannot_be_relaxed_or_gain_debt(self) -> None:
         base = debt_snapshot(_profile(file_sloc=550))
         relaxed = debt_snapshot(_profile(file_sloc=551, literals=1))
         errors = compare_baselines(relaxed, base)
-        self.assertTrue(any("baseline relaxation rejected for file SLOC" in item for item in errors))
+        self.assertTrue(any("immutable sloc_hard_limit relaxation rejected" in item for item in errors))
         self.assertTrue(any("baseline relaxation rejected for operation ID" in item for item in errors))
+
+    def test_semicolon_packing_has_no_ast_ratchet_benefit(self) -> None:
+        expanded = "first = 1\nsecond = 2\n"
+        packed = "first = 1; second = 2\n"
+        self.assertEqual(2, count_sloc(expanded))
+        self.assertEqual(1, count_sloc(packed))
+        self.assertEqual(count_ast_nodes(expanded), count_ast_nodes(packed))
+        baseline = debt_snapshot(
+            _profile(file_sloc=550, ast_nodes=count_ast_nodes(expanded))
+        )
+        packed_profile = _profile(file_sloc=549, ast_nodes=count_ast_nodes(packed))
+        self.assertEqual([], evaluate_ratchet(packed_profile, baseline))
+
+    def test_fifty_added_code_lines_exceed_legacy_ast_hard_limit(self) -> None:
+        original = "value = 0\n"
+        added = original + "".join(f"value_{index} = {index}\n" for index in range(50))
+        baseline = debt_snapshot(
+            _profile(
+                file_sloc=550,
+                file_lines=600,
+                ast_nodes=count_ast_nodes(original),
+            )
+        )
+        errors = evaluate_ratchet(
+            _profile(
+                file_sloc=600,
+                file_lines=600,
+                ast_nodes=count_ast_nodes(added),
+            ),
+            baseline,
+        )
+        self.assertTrue(any("AST nodes current=" in item and "hard limit=" in item for item in errors))
+
+    def test_bounded_ast_growth_requires_an_append_only_reason(self) -> None:
+        path = "src/gravity_sdk/sample.py"
+        base_profile = _profile(file_sloc=550, ast_nodes=100)
+        base = debt_snapshot(base_profile)
+        current = debt_snapshot(
+            _profile(file_sloc=550, ast_nodes=110),
+            base,
+            {path: "add one request-bound result field"},
+        )
+        self.assertEqual([], compare_baselines(current, base))
+        with self.assertRaisesRegex(ValueError, "AST growth requires"):
+            debt_snapshot(_profile(file_sloc=550, ast_nodes=111), current)
+
+    def test_migration_hard_limits_are_derived_from_base_source(self) -> None:
+        path = "src/gravity_sdk/sample.py"
+        source = "# formatting reserve\n" * 599 + "value = 1\n"
+        baseline = debt_snapshot(
+            _profile(
+                file_sloc=550,
+                file_lines=600,
+                ast_nodes=count_ast_nodes(source),
+            )
+        )
+        self.assertEqual([], migration_source_errors(baseline, {path: source}))
+        baseline["legacy_files"][path]["sloc_hard_limit"] += 1
+        self.assertTrue(migration_source_errors(baseline, {path: source}))
 
     def test_contract_expansion_requires_zero_src_python_slope(self) -> None:
         profile = replace(
@@ -386,6 +451,7 @@ def sample(value):
         complexity_excess = sum(max(0, item.complexity - COMPLEXITY_LIMIT) for item in profile.functions)
         self.assertEqual(len(identities), len(profile.functions))
         self.assertEqual(baseline["debt"], debt_snapshot(profile)["debt"])
+        self.assertEqual(baseline["legacy_files"], debt_snapshot(profile, baseline)["legacy_files"])
         self.assertIn(
             f"函数超额 `{function_excess}` SLOC，复杂度超额 `{complexity_excess}`",
             render_markdown(profile),

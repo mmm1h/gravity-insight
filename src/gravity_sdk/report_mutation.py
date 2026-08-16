@@ -317,7 +317,12 @@ def delete_subscription_report(
         return _completed(preview, mutation, {"id": selected_id, "marker": marker, "deleted": True}, "deleted", preimage)
 
 
-def delete_subscription(client: Any, subscription_id: int | str, *, execute: bool = False) -> dict[str, Any]:
+def delete_subscription(
+    client: Any,
+    subscription_id: int | str,
+    *,
+    execute: bool = False,
+) -> dict[str, Any]:
     """Preview or delete one list-readback-verified marked subscription."""
 
     selected_id = _positive_id(subscription_id, "subscription_id")
@@ -419,7 +424,12 @@ def _template_detail(client: Any, report_id: str) -> Mapping[str, Any]:
     return detail
 
 
-def _unique_marker(rows: Sequence[Mapping[str, Any]], marker: str, *, fields: Sequence[str]) -> Mapping[str, Any] | None:
+def _unique_marker(
+    rows: Sequence[Mapping[str, Any]],
+    marker: str,
+    *,
+    fields: Sequence[str],
+) -> Mapping[str, Any] | None:
     matches = [row for row in rows if _marker(row, fields) == marker]
     if len(matches) > 1:
         raise MutationReadbackError(
@@ -429,7 +439,14 @@ def _unique_marker(rows: Sequence[Mapping[str, Any]], marker: str, *, fields: Se
     return matches[0] if matches else None
 
 
-def _require_created(client: Any, operation_id: str, marker: str, *, fields: Sequence[str], name: str) -> Mapping[str, Any]:
+def _require_created(
+    client: Any,
+    operation_id: str,
+    marker: str,
+    *,
+    fields: Sequence[str],
+    name: str,
+) -> Mapping[str, Any]:
     match = _unique_marker(_catalog(client, operation_id), marker, fields=fields)
     if match is None or match.get("name") != name:
         raise MutationReadbackError(
@@ -453,7 +470,9 @@ def _marker(row: Mapping[str, Any], fields: Sequence[str]) -> str | None:
     return None
 
 
-def _preview(preview: Mapping[str, Any], *, target: Mapping[str, Any], impact: str) -> dict[str, Any]:
+def _preview(
+    preview: Mapping[str, Any], *, target: Mapping[str, Any], impact: str
+) -> dict[str, Any]:
     return {
         **copy.deepcopy(dict(preview)),
         "schema_version": SCHEMA_VERSION,
@@ -491,7 +510,13 @@ def _dependent_preview(operation_id: str, target: Mapping[str, Any], impact: str
     }
 
 
-def _completed(preview: Mapping[str, Any], mutation: Mapping[str, Any], target: Mapping[str, Any], status: str, preimage: Mapping[str, Any] | None = None) -> dict[str, Any]:
+def _completed(
+    preview: Mapping[str, Any],
+    mutation: Mapping[str, Any],
+    target: Mapping[str, Any],
+    status: str,
+    preimage: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
     return {
         "schema_version": SCHEMA_VERSION,
         "result_source": result_source(GOVERNED_PRODUCT),

@@ -33,6 +33,11 @@ retry；metadata 四类均只读第一页并写入 177 个物理对象，离线 
 12 命令/3 HTTP；若严格冷目录再插入唯一的 `sync --all-apps`，为 13 命令，当前 7-App 租户可证明最少
 41 HTTP，但由于每 App 分页无界，精确值无法在同步前由代码确定。
 
+metadata onboarding 与 `dev@d5cc59b` 合并后再次按表格状态列重算：质量棘轮、分群删除调查、干净
+selector 测量和 metadata onboarding 都没有新增独立产品动线或改变现有行状态。表中仍有 55 个数据行，
+扣除 4 个明确标为“不计独立动线”的便利/重复面，得到 51 条；直接分组为
+`42 已闭环 + 1 部分闭环 + 8 完全缺失 = 51`。
+
 2026-08-16 F40 按 catalog 顺序枚举 6 个 App，在第 6 个首次取得 1 条测试设备后立即停止，并以内存
 父行 ID 只发 1 次详情请求。生产共 8 次业务 HTTP：1 次 `app.list`、6 次
 `app.testing_tool.list`、1 次 `attribution.attribution_detail.query`；全部 HTTP 200，0 重试、翻页、
@@ -352,7 +357,10 @@ writer 拒绝非有限数字；operation、投影、请求、错误分类和退�
 operation 继续保留专家入口，但明确不是产品等价物；`app.realtime_event.list` 是应用配置 raw 读，
 `REALTIME_EVENT_CATALOG_CONTRACT_MISSING` 才是“实时事件目录”动线状态。本轮 development 臂 A/C 为
 `260/336` 与 `334/336`；臂 C 的两处失败均是“一个产品 + 一个 gap”的混合多意图在冻结 scorer 中没有
-第二个 candidate selector，未修改评分逻辑。未运行 holdout/final，生产 HTTP 0 次。
+第二个 candidate selector，未修改评分逻辑。后续以 fresh Windows AppContainer 中的 pinned
+`claude-sonnet-4-6` 重测干净外部臂 C 为 `325/336`：仍比 A 多 65 题、比被污染 C 少 9 题；八族为
+`11/12、11/13、11/12、12/12、12/12、12/12、10/12、11/11`。该测量没有改变本表状态或产品事实；
+未查询受保护 split，Gravity 生产 HTTP 0 次。
 
 | 动线 | 状态 | 四面可达（CLI / SDK / Plan / Agent 中英首问） | 调用次数（已知 / 未知） | 阻塞 |
 | --- | --- | --- | --- | --- |

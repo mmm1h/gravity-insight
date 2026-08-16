@@ -17,7 +17,20 @@ from .batch_limits import MAX_READ_ITEMS, MAX_READ_PAGES, validate_batch_limits
 from .catalog import OperationCatalog
 from .catalog_inventory import CatalogInventoryMixin
 from .credentials import CredentialProvider
-from .errors import ErrorCode, ErrorDetail, GravityInsightError, InputValidationError, PaginationError, ParentRequiredError, PermissionUnavailableError, PolicyViolation, UnknownOperationError, UpstreamError, error_detail_from_exception, semantic_envelope_ok
+from .errors import (
+    ErrorCode,
+    ErrorDetail,
+    GravityInsightError,
+    InputValidationError,
+    PaginationError,
+    ParentRequiredError,
+    PermissionUnavailableError,
+    PolicyViolation,
+    UnknownOperationError,
+    UpstreamError,
+    error_detail_from_exception,
+    semantic_envelope_ok,
+)
 from .executor import ReadExecutor
 from .export_batch import batch_input_error, validate_batch_item
 from .export_client import ExportClientMixin, load_export_components
@@ -90,7 +103,8 @@ class GravityInsightClient(MutationClientMixin, CatalogInventoryMixin, ExportCli
             operations.extend(load_operation_manifest(path))
         registry = Registry(operations)
         policy = PolicyEngine(registry, allow_experimental=allow_experimental)
-        if transport is not None and runtime is not None: raise ValueError("transport and runtime cannot both be supplied")
+        if transport is not None and runtime is not None:
+            raise ValueError("transport and runtime cannot both be supplied")
         if transport is not None:
             request_transport = transport
         else:

@@ -13,7 +13,13 @@ from types import MappingProxyType
 from typing import Any, Mapping, Sequence
 from urllib.parse import quote
 
-from .errors import ErrorDetail, InputValidationError, ManifestError, ParentRequiredError, is_success_status
+from .errors import (
+    ErrorDetail,
+    InputValidationError,
+    ManifestError,
+    ParentRequiredError,
+    is_success_status,
+)
 from .operation_effect_policy import validate_operation_effect
 from .projection_validation import numeric_suffix_schema, validate_projection_bindings
 from .result_audit import add_result_audit, result_receipt_references
@@ -50,7 +56,8 @@ _DEFAULT_ARRAY_CONSTRAINTS: Mapping[str, tuple[str, int, int]] = {
 
 
 def _mapping(value: Any, label: str) -> Mapping[str, Any]:
-    if not isinstance(value, Mapping): raise ManifestError(f"{label} must be an object")
+    if not isinstance(value, Mapping):
+        raise ManifestError(f"{label} must be an object")
     return value
 
 
@@ -89,6 +96,13 @@ def _numeric_path_tuple(value: Any) -> tuple[str, ...]:
                 "response_projection.numeric_paths contains an invalid JSON path"
             )
     return paths
+
+
+def _input_field_names(fields: Sequence["InputField"]) -> list[str]:
+    names = [item.name for item in fields]
+    if len(names) != len(set(names)):
+        raise ManifestError("input_fields contains duplicate names")
+    return names
 
 
 def _frozen_mapping(value: Mapping[str, Any] | None) -> Mapping[str, Any]:
@@ -766,8 +780,7 @@ class OperationSpec:
                     fields.append(InputField.from_value(name, item_config))
         else:
             raise ManifestError("input_fields must be an object or list")
-        names = [item.name for item in fields]
-        if len(names) != len(set(names)): raise ManifestError("input_fields contains duplicate names")
+        names = _input_field_names(fields)
 
         request = RequestSpec.from_dict(config.get("request", {}))
         placeholders = tuple(field_name for _, field_name, _, _ in string.Formatter().parse(path) if field_name)
@@ -1054,7 +1067,8 @@ class OperationSpec:
 
 @dataclass(frozen=True)
 class ReadResult:
-    schema_version: str; status: str
+    schema_version: str
+    status: str
     source: Mapping[str, Any]
     fetched_at: str
     schema_fingerprint: str
@@ -1067,7 +1081,8 @@ class ReadResult:
     error: Mapping[str, Any] | None = None
     items: tuple[Any, ...] = ()
     page_info: Mapping[str, Any] = field(default_factory=dict)
-    http_receipts: tuple[Mapping[str, str], ...] = (); response_drift: Mapping[str, Any] | None = None
+    http_receipts: tuple[Mapping[str, str], ...] = ()
+    response_drift: Mapping[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return add_result_audit({
@@ -1123,7 +1138,9 @@ class BatchResult:
         return add_result_audit(result, [*self.http_receipts, *result_receipt_references(self.data)])
 
 
-def load_operation_manifest(source: str | Path | Mapping[str, Any] | Sequence[Any]) -> tuple[OperationSpec, ...]:
+def load_operation_manifest(
+    source: str | Path | Mapping[str, Any] | Sequence[Any],
+) -> tuple[OperationSpec, ...]:
     """Load a JSON operation manifest without accepting executable formats."""
 
     raw: Any

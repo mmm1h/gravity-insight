@@ -3432,3 +3432,154 @@ holdout/final、operation 合同、词汇/lineage 范围、raw delete、其他�
 **验证：**unittest **1083**（基线 1077，+6），pytest **1083 passed / 2955 subtests passed**，文档测试
 **4 passed**；compiler **205 operations / 11 manifests**，quality、生成器 check、CLI help 与
 `git diff --check` 全部通过。
+## 质量棘轮去物理压行（2026-08-16）
+
+**提案与只读调查：**工作提案与逐项调查底稿位于 ignored
+`tmp/codex/quality-ratchet/proposal.md`、`investigation.md`。先在 `3295e62` 上冻结清单，再修改代码；
+393 个门禁文件中 **17** 个 headroom=0（15 个旧大文件 baseline 等于当前值，另有 2 个正好 500），
+headroom≤10 为 **33** 个。Token/AST 扫描得到 **41** 个互斥密度点：10 个分号并行、8 个单行 suite、
+10 条 >100 字符单行 import、13 条 >100 字符单行函数签名。Git patch 能直接证明 parent 已顶格且把
+两行压成一行的是 **6** 处：`client.py` 1（`1e699ce`）、`executor.py` 3（`db6bf26`）、
+`models.py` 2（`db6bf26`、`3295e62`）。另有 4 条长 import 的当前形态在顶格提交中形成或扩展，但
+原始动机不能由 Git 证明；其余随初始 baseline 出现或引入时仍有余量，不冒充因果。
+
+**v2 规则：**500 SLOC/文件、80 SLOC/函数、复杂度 15、operation literal 0 四个阈值不变。15 个旧大
+文件改用 Python 3.11 AST 节点数 ratchet；格式换行、import/签名换行和分号拆行均不改变该值。每个旧
+大文件同时冻结两个不可抬升硬顶：SLOC 硬顶等于 `3295e62` 的原始物理行数，AST 硬顶等于迁移节点数
+加 50 个生命周期节点。AST baseline 默认只降；确有必要的增长必须通过
+`baseline --record-ast-growth PATH=REASON` 追加精确 from/to/reason，仍不得越过 AST 硬顶。CI 与 PR base
+比较 legacy 文件集合、两个硬顶、原始迁移值和 append-only 台账；新文件仍不得超过 500。
+
+选择 AST 节点而非语句数，是为了让新增参数、import alias 和表达式结构也计入增长；保留 SLOC 硬顶，
+是为了不让格式空间无限膨胀。没有采用普通 SLOC allowance，因为它仍奖励分号；也没有采用可自由抬升
+的 SLOC baseline，因为它没有生命周期上界。相对 v1，**未登记行为增长更严格**，但两个维度有意变松：
+格式可在冻结的原始行数内展开；有理由的 AST baseline 可在固定 50 节点总预算内抬升。因此它不是每个
+维度都点对点不弱于旧规则；防无限膨胀的硬顶不弱，必要新增有了有限、可审计出口。
+
+**损害修复与反事实：**41 个密度点已修为 **0**。其中 `models.py` 两个 dataclass 字段、receipt/drift
+字段均恢复逐行声明，`client.py` 的 257 字符 errors import 改为括号列表；原来位于超长函数内的探针
+分号下沉为窄 helper，80 SLOC 硬门没有放宽。`models.py` 为抽出重复字段校验并守住既有函数 ratchet，
+登记一次 AST `8597 → 8622`，理由入台账，仍低于不可变硬顶 8647；其余格式修复 AST 不变。
+`test_semicolon_packing_has_no_ast_ratchet_benefit` 明确证明两行合一虽使 SLOC `2 → 1`，AST 与 ratchet
+结果不变；`test_fifty_added_code_lines_exceed_legacy_ast_hard_limit` 加 50 条赋值并证明固定 AST 硬顶拒绝。
+
+本轮不新增产品动线、operation、stable 能力或 caller-recoverable error site：`51 + 0 = 51`、
+`42 / 1 / 8 + 0 / 0 / 0 = 42 / 1 / 8`、operation/stable 仍为 `205 / 196`。生产 HTTP 为 **0 次**；
+没有运行 holdout/final/all、读取 key、修改 recognizer、题集或评分逻辑。caller 审计仍为
+`1075 = A271 / B434 / C370`，故本线新增错误点/A 档为 `0/0`。
+
+验证为 unittest **1081**（`1077 + 4`）、pytest **1081 passed / 2955 subtests passed**、文档测试
+**4 passed**、compiler **205 operations / 11 manifests**；quality 普通检查与对 v1 `HEAD` 的迁移比较、
+CLI help、密度清单复扫和 `git diff --check` 全部通过。密度复扫推导为
+`41 - 10 semicolon - 8 inline suite - 10 long import - 13 long signature = 0`。
+## 干净外部 LLM 的 development 臂 C（2026-08-16）
+
+**提案与安全边界：**工作提案位于 ignored `tmp/codex/clean-selector/proposal.md`。本轮只查询公开的
+development 336 题；没有运行受保护 split、读取仓库内 key、查看或解密 sealed suite，Gravity 生产
+HTTP 为 **0**。recognizer、题集、评分器、产品卡、gap 登记和目录描述均未修改；结论而非一次性 selector
+实现进入版本控制。
+
+**`codex exec` 退出 1 的根因已查清：**最小嵌套 `codex exec --ephemeral --ignore-user-config
+--ignore-rules` 在独立临时 cwd 成功，排除了会话锁、`CODEX_HOME` 争用、登录和非交互 flag 缺失。按上轮
+adapter 的原 schema 重放后，Codex JSONL stdout 明确返回 HTTP 400 `invalid_json_schema`：
+`selectors` 数组使用了结构化输出不允许的 `uniqueItems`。旧 adapter 只把 stderr 放进错误，然而结构化
+API error 在 stdout，故表面现象是 exit 1 且 stderr 为空。该 400 在生成前失败、无模型 token；另一次
+最小诊断确实生成 8,085 tokens、耗时 8.904 秒，但不属于 selector 测量。
+
+**冻结 selector 与隔离：**首次模型调用前固定为配置的 Anthropic-compatible gateway
+（endpoint host 只在 ignored receipt 中保存，host SHA-256 为
+`cbbc6105f609684fd699bec44a0d9a2090a8562b64fa1bac70359961fe9da671`）、Messages
+`2023-06-01`、`claude-sonnet-4-6`、temperature 0、max output 24,000、省略 top-p/top-k、强制单一
+`submit_catalog_selections` tool 且禁止 parallel tool use。唯一 system prompt 的 SHA-256 为
+`67d19fb7ecd36ad012e5eca7d95f3e9e4ce9990cbef59dacab91b8b8e27b8924`，全文为：
+
+> You are the only semantic selector in a blinded routing evaluation. Use only catalog and questions from the user request. You have no repository, memory, tools, expected answers, route constants, or case identities. Return one result for every anonymous question id. Choose only exact selector strings from catalog.capabilities. Prefer a product identity over a raw operation when the product covers the request. Choose an exact registered gap only when its catalog description matches an unavailable requested capability. Use an empty selector array only when no supplied product, operation, or gap matches. Return multiple selectors only for genuinely independent multi-intent questions. Do not infer hidden labels or revise earlier choices based on later questions. Set reason to an empty string for every row.
+
+承载真实 Messages 请求的 C# 进程每次都在新建 Windows AppContainer 中启动，只有 `internetClient`
+capability、无 host filesystem mount；`APPDATA/LOCALAPPDATA/USERPROFILE/TEMP` 全指向该临时 profile，退出
+即删除。它只从 stdin 取得 evaluator 的匿名题面和目录投影；provider 凭据/endpoint 是唯一业务外环境。
+同一隔离机制的正向探针可读自身 executable，反向探针对 `AGENTS.md`、evaluator route 常量、公开 target
+registry 和 Codex 全局状态四个 sentinel 全部读失败；环境名中没有 `CODEX*` 或 OpenViking，profile 删除
+receipt 为 true。evaluator 启动的 Python transport bridge 本身仍处于 host 环境，但它只校验/原样转发
+stdin、启动隔离进程、锁定 stdout 和追加 receipt，不做语义选择；若把“selector 进程”严格定义为连这个
+transport bridge 也必须没有文件 ACL，则第 1 条只由代码审计而非 OS 权限满足，这是没有消除的边界。
+
+**合成通路与盲选纪律：**唯一一次 authenticated synthetic protected fixture 经
+loader → SHA-256 盲化 → selector 子进程 → 257-selector 目录选择 → 完整选择锁 → 冻结评分器通过；模型
+HTTP 200、4.055 秒、32,612 input / 50 output tokens。正式 development 仍使用题面清单 SHA-256
+`ef463aec89f8ef2b5f6d0aaf818d852b12da623df6e8c076e77b06fcb596f3f6` 确定性打散，按 journey
+去分组并断言相邻题 journey 不同，再匿名为 `q-0001...q-0336`。每个 trial 的 336 行在 plugin stdout
+前原子锁定并核对 SHA-256，之后才进入原评分器。
+
+| 层 | 臂 A recognizer | 被污染臂 C | 干净外部 LLM 臂 C | 说明 |
+| --- | ---: | ---: | ---: | --- |
+| 首次产品选择 | `260/336`（77.38%） | `334/336`（99.40%） | **`325/336`（96.73%）** | 比 A `+65` / `+19.35pp`，比污染 C `-9` / `-2.68pp` |
+| 参数可填写性 | `248/248` | `248/248` | `247/247` | 只统计首次选择到达的产品 route |
+| 离线终点 | `64/88` | `88/88` | `0/81` | 真实 selector 必须 `network_called=true`，现有 scorer 因而把 80 个 gap 记 `gap_not_offline`；此层不能与 replay 公平比较 |
+| 错误恢复 | `5/5` | `5/5` | `5/5` | action hard gate 全过 |
+| 重复可靠性 | `260/336、64/88` | `334/336、88/88` | `325/336、0/81` | 干净臂为 `pass^1=pass^4`、scored unstable tasks 0 |
+| 安全门禁 | PASS / 0 | PASS / 0 | PASS / 0 | Gravity production HTTP 0，违规 0 |
+
+| development 扩题族 | 臂 A | 被污染臂 C | 干净外部 LLM 臂 C |
+| --- | ---: | ---: | ---: |
+| 口语省略 | `0/12` | `12/12` | `11/12` |
+| 只描述业务目的 | `1/13` | `13/13` | `11/13` |
+| 多轮追问首轮 | `1/12` | `12/12` | `11/12` |
+| 反向否定 | `1/12` | `12/12` | `12/12` |
+| 错别字 / 拼音 | `3/12` | `12/12` | `12/12` |
+| 中英混杂 | `10/12` | `12/12` | `12/12` |
+| 跨产品多意图 | `1/12` | `10/12` | `10/12` |
+| 目标 gap | `3/11` | `11/11` | `11/11` |
+
+干净臂的 11 个首次失败为 9 个 `wrong_product` 和 2 个 `wrong_intent_candidates`。J06 同口径跨期比较的
+7 种问法整组都错；另有 workspace SQL 与分析模板各 1 个间接业务目的错误，以及与污染臂相同的 2 个
+混合多意图失败。四 trial 的正确/错误集合完全相同，但 exact mapping 并非完全确定：trial 1 的 J06
+七题选择 `composite:derived_metrics`，trial 2--4 改为 `composite:saved_analysis`，两者都错；因此现有
+`unstable_tasks=0` 只证明评分布尔值稳定，不能证明模型答案逐字稳定。
+
+**调用、token 与成本账本：**只试 **1 个 selector prompt**。selector 共 2 次 evaluator run：1 次合成
+fixture（1 个模型调用）和 1 次正式 development（固定 4 个独立模型调用）；无 prompt 变体、无提分重跑、
+无 selector retry。正式 4 调用均 HTTP 200，provider/model returned 与 pinned model 一致，单次延迟
+87.862 / 87.744 / 86.744 / 88.523 秒；合计 185,268 input、33,544 output、5,333 cache-write、
+15,999 cache-read tokens。含合成调用总计 **5 个模型调用**、217,880 input、33,594 output、8,656
+cache-write、15,999 cache-read tokens。按 [Anthropic 公开 Sonnet 4.6 标准价](https://www.anthropic.com/news/claude-sonnet-4-6)
+`$3/$15` 每百万 input/output、
+5 分钟 cache write `$3.75`、cache read `$0.30` 粗估约 **US$1.19**（正式约 US$1.08）；实际 gateway
+账单未提供，不能把估值当实扣。模型列表 GET 1 次和 Codex schema 400 各不产生推理 token；上述 Codex
+8,085-token 诊断走 ChatGPT 登录，未获独立价格 receipt。
+
+**结论与效度：**`325/336` 介于两臂之间，但明显更接近 `334`（差 9）而不是 `260`（差 65），八族中
+反向否定、错拼、中英、多意图和 gap 完全复现污染臂，故“宿主 LLM 拿完整目录能显著胜过 recognizer”
+获得第一份较可信 development 证据；不能再把 `334` 当真实模型测量值，也不能把 9 题下降抹掉。尚未
+消除的威胁是：host transport bridge 没有 OS 级文件拒绝、compatible gateway 只能由返回 model ID/
+usage/response ID 自证底层权重、endpoint 为非 TLS HTTP 因而 receipt/内容可能受中间层影响、temperature 0
+仍出现 exact mapping 波动、同一大批输入可能触发 provider cache，以及 offline-terminal scorer 与必须
+联网的 selector 定义机械冲突。下一步可以花 **一次 holdout** 检验开发集问法泛化，但前提是先决定是否
+接受上述 bridge/gateway 证据等级；若要求四条判据逐字无保留满足，应先把 evaluator transport 也移入
+OS 隔离并换成可独立认证的 TLS provider，再使用唯一留出机会。
+
+本轮不新增产品动线、operation、stable 能力或 caller-recoverable error site；技术债清单已复核，
+AppContainer 与 bridge 都是 ignored 测量装置，不进入产品结构债。验证为 unittest **1077**、pytest
+**1077 passed / 2955 subtests passed**、文档测试 **4 passed**、compiler **205 operations / 11 manifests**；
+quality PASS（operations=205）、CLI help 与 `git diff --check` 均通过。caller-recoverable 审计保持
+`1075 = A271 / B434 / C370`，新增错误点/A 档为 `0/0`。
+
+## Metadata onboarding 合入 AST 质量棘轮（2026-08-16）
+
+**合并裁决：**将 `origin/dev@d5cc59b` 以 merge 方式合入 `codex/metadata-onboarding`，保留双方原始
+提交对象。六个共同修改文件中，`analysis-journeys.md` 同时保留 metadata 冷启动说明和干净 selector
+测量，`index.md` 同时保留 metadata 入口/259 selector 更新和分群删除调查链接，`technical-debt.md`
+同时保留 44/44 产品卡结论和 AST ratchet v2 规则，`roadmap.md` 保留双方完整追加章节。`cli.py` 的自动
+合并同时保留 metadata CLI 下沉和 dev 的可读多行校验；`metadata_sync.py` 保留 dev 的多行 import 格式，
+但不恢复已经随 CLI 函数迁到 `metadata_cli.py` 的未使用 import。没有丢失任一边的文档或调用能力。
+
+**AST 决策：**选择把新增 CLI 注册与 dispatch 留在独立 `metadata_cli.py`，不登记 legacy 增长。
+合并后 `cli.py` 为 **4117 AST nodes**，与 dev baseline 的 4117 相同；不可抬升硬顶为 4167，余量 50。
+因此没有 `cli.py` 的 from/to/reason 记录，也没有改写既有 baseline 或门禁实现。
+
+**计数与验证：**动线表按状态列重数为 55 个数据行，减 4 个明确不计行后为
+`51 = 42 已闭环 / 1 部分闭环 / 8 完全缺失`；双方本轮净变化均为 0。测试数从共同基线 1077 加 dev
+质量线 4 个、metadata 线 6 个，得到 unittest **1087**、pytest **1087 passed / 2955 subtests passed**。
+compiler 为 **205 operations / 11 manifests**，quality 和 CLI help 通过。caller-recoverable 审计为
+`1084 = A281 / B434 / C369`。本次纯合并生产 Gravity HTTP **0 次**；未运行真实 holdout/final/all、
+未读 key，未修改 recognizer、题集或评分逻辑。

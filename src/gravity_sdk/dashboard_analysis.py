@@ -15,7 +15,11 @@ from .dashboard_artifact import (
     compile_dashboard_chart,
     validate_dashboard_window,
 )
-from .dashboard_conditions import DashboardPageConditions, page_condition_gap_envelope, read_dashboard_page_conditions
+from .dashboard_conditions import (
+    DashboardPageConditions,
+    page_condition_gap_envelope,
+    read_dashboard_page_conditions,
+)
 from .dashboard_snapshot import (
     DASHBOARD_SNAPSHOT_SOURCES, DashboardIdentity, _dashboard_identities,
     _envelope_data, _positive_app_id, _read_tree, _reference, _resolve_dashboard,

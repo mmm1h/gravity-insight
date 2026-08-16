@@ -21,7 +21,10 @@ from .multidim import projected_keys
 from .receipt import capture_http_receipt_references, record_response_drift
 from .response_drift import ResponseDriftRecorder
 from .registry import PolicyEngine, Registry
-from .semantic_status import SEMANTIC_EXPLICIT_EMPTY, enforce_semantic_rules as _enforce_semantic_rules
+from .semantic_status import (
+    SEMANTIC_EXPLICIT_EMPTY,
+    enforce_semantic_rules as _enforce_semantic_rules,
+)
 from .transport import Transport
 from .user_event_projection import project_analysis_user_event
 
@@ -100,7 +103,10 @@ class ReadExecutor:
         self._field_validator: Callable[[OperationSpec, Mapping[str, Any]], None] | None = None
         self._call_guard: Callable[[str], Mapping[str, Any]] | None = None
 
-    def _bind_field_validator(self, validator: Callable[[OperationSpec, Mapping[str, Any]], None]) -> None:
+    def _bind_field_validator(
+        self,
+        validator: Callable[[OperationSpec, Mapping[str, Any]], None],
+    ) -> None:
         if not callable(validator):
             raise TypeError("executor field validator must be callable")
         if self._field_validator is not None:
@@ -1118,16 +1124,14 @@ def _project_nested_item_value(
     path: tuple[str, ...] = (),
     known_omitted: Sequence[str] = (),
 ) -> tuple[Any, set[str], bool, bool]:
-    """Project one contracted nested object or list of objects.
-
-    Scalar lists are intentionally unsupported: the manifest must first gain a
-    typed scalar-list contract instead of treating an arbitrary container as safe.
-    """
+    """Project a contracted object or object list; scalar lists need typed contracts."""
 
     if allowed_keys is None:
         return None, set(), False, False
-    allowed = set(allowed_keys); nested_contracts = nested_item_keys or {}
-    known_omitted_contracts = known_omitted_nested_item_keys or {}; opaque_contracts = set(opaque_json_item_keys or ())
+    allowed = set(allowed_keys)
+    nested_contracts = nested_item_keys or {}
+    known_omitted_contracts = known_omitted_nested_item_keys or {}
+    opaque_contracts = set(opaque_json_item_keys or ())
 
     def project_mapping(
         item: Mapping[Any, Any], item_path: tuple[str, ...]
@@ -1135,7 +1139,8 @@ def _project_nested_item_value(
         unknown = {str(key) for key in item} - allowed - set(known_omitted)
         if recorder is not None:
             recorder.add_unknown_fields(item_path, item, unknown)
-        result: dict[str, Any] = {}; breaking = False
+        result: dict[str, Any] = {}
+        breaking = False
         for key, nested_value in item.items():
             name = str(key)
             if name not in allowed:

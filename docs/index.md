@@ -19,7 +19,7 @@
 | 按精确素材引用下载图片或视频 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Material Asset Fetch](reference/cli.md#material-asset-fetch) |
 | 读取跨平台推广表现 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Promotion Performance](reference/cli.md#promotion-performance) |
 | 查看自定义人群覆盖与状态 | [Agent 工作流](agent-workflow.md) | [CLI 参考](reference/cli.md#custom-audiences) |
-| 从漏斗/规则创建、更新、刷新或安全删除分群 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Segment Mutation](reference/cli.md#segment-mutation-v1) |
+| 从漏斗/规则创建、更新、刷新或安全删除分群 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Segment Mutation](reference/cli.md#segment-mutation-v1)、[分群删除能力调查](research/segment-delete-capability.md) |
 | 创建或安全删除报表与报表订阅 | [Agent 工作流：受治理写入](agent-workflow.md#受治理写入统一两步确认) | [CLI 参考：报表目录与订阅](reference/cli.md#报表目录与订阅) |
 | 声明调用方业务词和派生指标公式 | [调用方语义任务指南](agent-skills/caller-semantics.md) | [Workspace 参考：调用方语义上下文](reference/workspace.md#调用方语义上下文) |
 | 批量发现并执行交叉查询 | [Agent 工作流：显式 Plan](agent-workflow.md#3-交叉查询一个显式-plan) | [CLI Plan 参考](reference/cli.md#plan-v1) |

@@ -7,7 +7,8 @@ from collections.abc import Mapping
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Any
 
-from .errors import ErrorCategory, ErrorDetail, GravityInsightError, InputValidationError, exit_code_for_error
+from .errors import (ErrorCategory, ErrorDetail, GravityInsightError,
+                     InputValidationError, exit_code_for_error)
 from .plan import (
     MAX_EXPANDED_NODES, MAX_WORKERS, NODE_KINDS, RESULT_SCHEMA_VERSION,
     AdapterContext, PlanAdapter, PlanAdapters, PlanNode, ValidatedPlan,
@@ -36,8 +37,7 @@ def execute_plan(
     preflight_adapters(validated, selected, workspace)
     if dry_run:
         return dry_run_result(validated, workers)
-    registry, results = run_layers(validated, selected, workspace, workers)
-    del registry
+    _, results = run_layers(validated, selected, workspace, workers)
     return result_envelope(validated, results, workers)
 
 
