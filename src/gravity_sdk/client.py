@@ -41,6 +41,7 @@ from .http_runtime import (
 )
 from .models import BatchRequest, BatchResult, OperationSpec, ReadResult, load_operation_manifest
 from .mutation_client import MutationClientMixin
+from .offline_validation import OfflineMetadataLoader, OfflineMetadataRequired
 from .pagination import read_all_pages, read_limited_pages
 from .paths import CONTRACT_ROOT, MANIFEST_ROOT, PROJECT_ROOT
 from .probe_inputs import resolve_probe_inputs
@@ -247,17 +248,15 @@ class GravityInsightClient(MutationClientMixin, CatalogInventoryMixin, ExportCli
         state = "valid_offline"
         dependencies: list[str] = []
 
-        def offline_metadata_loader(
-            dependency_operation_id: str, _inputs: Mapping[str, Any]
-        ) -> Mapping[str, Any]:
-            dependencies.append(dependency_operation_id)
-            raise _OfflineMetadataRequired(dependency_operation_id)
+        offline_metadata_loader = OfflineMetadataLoader(
+            self._field_policy, operation, normalized, dependencies
+        )
 
         try:
             self._field_policy.validate(
                 operation, normalized, offline_metadata_loader
             )
-        except _OfflineMetadataRequired:
+        except OfflineMetadataRequired:
             state = "needs_live_metadata"
         except GravityInsightError as exc:
             return _validation_error(operation_id, exc)
@@ -936,10 +935,6 @@ class GravityInsightClient(MutationClientMixin, CatalogInventoryMixin, ExportCli
         workers = min(max_workers, len(normalized))
         with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="gravity-read") as pool:
             return [item.to_dict() for item in pool.map(run, normalized)]
-
-
-class _OfflineMetadataRequired(Exception):
-    pass
 
 
 def _validation_error(operation_id: str, error: GravityInsightError) -> dict[str, Any]:

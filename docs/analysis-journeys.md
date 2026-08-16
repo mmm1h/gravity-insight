@@ -10,18 +10,19 @@
 执行，内部 HTTP 数也没有减少。App/平台也未知时不适用该两次路径；默认离线 Agent 的原三次下界保留。
 `gravity.agent-call-bound.v1` 只在本次成功交付完整目录的卡与 Plan 节点上把对应 scenario 声明为 2。
 
-当前程序化重算：**55 条产品动线：已闭环 46 / 部分闭环 2 / 完全缺失 7**。可复算：下表 59 行，
+当前程序化重算：**55 条产品动线：已闭环 47 / 部分闭环 1 / 完全缺失 7**。可复算：下表 59 行，
 减去 2 条兼容/维护便利面、1 条“既有稳定读取面重复”和 1 条“已有结果上的调用方派生便利面”，
-得到 55 条；按状态直接分组为 `55 = 46 / 2 / 7`。设置 → 应用管理先把基线推进到
+得到 55 条；按状态直接分组为 `55 = 47 / 1 / 7`。设置 → 应用管理先把基线推进到
 `52 = 43 / 1 / 8`；设置 → 应用管理的真实列表 route 证明 J39 应由既有 stable `app.list` 承载，
 故 `43 + 1 = 44`、`8 - 1 = 7`，总数与部分闭环不变；随后新增“定义、更新并在真实多维查询中使用
 自定义指标”这一条独立闭环，故 `52 = 44 / 1 / 7` → `53 = 45 / 1 / 7`；事件/属性模板治理再新增
 一条可复用上游对象闭环，推进到 `54 = 46 / 1 / 7`。保存分析 CRUD 再新增一条独立资产生命周期，
-但真实重放响应的聚合数字没有落入 value-free evidence，故先记部分闭环，当前为 `55 = 46 / 2 / 7`。
+真实重放响应最初未落盘，故先记部分闭环；2026-08-17 已用原样保存对象重放并把聚合值
+`235176.0` 与 governed response 落盘，推进为 `55 = 47 / 1 / 7`。
 operation/stable 为 231 / 222（185 read + 37 governed mutation）；canonical 产品卡先由 45 增为 73，
 再加 4 张自定义指标卡、4 张模板动作卡和 3 张保存分析动作卡得到 84；精确 gap 为 9，安装目录为
-`231 + 84 + 9 = 324` 个 selector。两条部分闭环分别是只关闭单用户事件子类的 Analysis 导出，
-以及缺少真实聚合数字持久证据的保存分析资产闭环；7 条完全缺失里多数是合同证据阻塞，逐行有记录。
+`231 + 84 + 9 = 324` 个 selector。唯一部分闭环是只关闭单用户事件子类的 Analysis 导出；
+7 条完全缺失里多数是合同证据阻塞，逐行有记录。
 
 2026-08-16 受治理写目录覆盖只改变发现表达，不新增产品动线或 operation。canonical inventory 保留
 3 个既有默认 mutation selector，并为其余 28 个调用方动作增加 action-qualified 卡：
@@ -437,7 +438,7 @@ operation 继续保留专家入口，但明确不是产品等价物；`app.realt
 | 忠实重放看板图表及页面条件（D22） | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（引用未知、在线解析） | 能力边界不变：非空页面 `config.filter` 仍 fail-closed；bundle 只证明页面与图表条件分字段发往服务端，异维度组合与同维度冲突仍无权威语义。 |
 | 创建并管理可持久化的看板工作区与分析便签 | 已闭环 | 有 / 有 / 有 / 有 | 2（dry-run / 人工确认后同参数 execute） | `space → folder → dashboard` 是上游目录层级，note 是 dashboard `ui_config` 中的嵌入项，不是第四层目录资源。生产闭环完成 create/rename/move/copy/note update+delete/readback/父删除迁移/批量清理；父删除 dry-run 在写前给出精确迁移数与 `dashboards_deleted=0`。所有可删除对象须有 `GSDK-<12 hex>` marker；Plan 只接受显式 `preview/execute` mode，Agent 自然语言永不自动写。share、所有权 transfer、含报表 dashboard、素材/资产均不在闭环证据内。 |
 | 按精确引用重放保存分析 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（引用未知、在线解析） | - |
-| 创建、更新、重放并删除可复用保存分析 | 部分闭环 | 有 / 有 / 设计不适用 / 有 | mutation 2（dry-run / 显式 execute）；重放 1 | `report_config/update` 以无 `id` 创建、带 `id` 更新、带 `id + is_deleted=true` 删除；事件分析已生产完成 create/list/get/update/readback/replay/delete/消失确认且最终 marker 为 0。重放 `analysis.event.query` HTTP 200，但验收脚本在把真实聚合数字写入 value-free evidence 前失败，回执无法重建值，所以不宣称完整端到端验收。五类已证明 strict replay 的 subject 可写；`analysis_cash/order/user` 因本租户无样本且内部 config 异构而保持未开放。三张 mutation 卡只交接同参数 dry-run/execute，自然语言不自动写；share 不在产品内。 |
+| 创建、更新、重放并删除可复用保存分析 | 已闭环 | 有 / 有 / 设计不适用 / 有 | mutation 2（dry-run / 显式 execute）；重放 1 | `report_config/update` 以无 `id` 创建、带 `id` 更新、带 `id + is_deleted=true` 删除；事件分析已生产完成 create/list/get/update/readback/replay/delete/消失确认且最终 marker 为 0。2026-08-17 又以精确 GET 的原样保存对象重放 `analysis.event.query`，HTTP 200，`2026-06-01..07` 聚合值 `235176.0` 已随 governed response 落入 `evidence/forensics/20260817_saved_analysis_replay.json`；receipt 保持值无关。离线编译零网络，返回完整 live metadata 依赖；真正执行在 query 前联网复验。五类已证明 strict replay 的 subject 可写；`analysis_cash/order/user` 因本租户无样本且内部 config 异构而保持未开放。三张 mutation 卡只交接同参数 dry-run/execute，自然语言不自动写；share 不在产品内。 |
 | 按精确引用重放分析模板 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（引用未知、在线解析） | 未经证明的 artifact 继续隔离，不因目录可选而放宽回放合同。 |
 | 查看分群详情、版本和单日聚合结果 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（引用未知、在线解析） | - |
 | 查看精确分群成员及逐人属性 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（自然语言实测、卡面） | `gravity-insight.segment-members.v1` 全量交付上游授权字段；目标非空实证登记 147 个顶层字段，未登记字段仍 fail-closed。route 忽略 `page/page_size` 并一次返回完整结果；触及 `max_items` 显式 `partial`。`fields` 是固定 profile + live `analysis.user_property.list` 动态属性的本地选列输入；未知引用仍按 call-bound 显式声明 3 次，不扩大无 revision/ETag 的在线两次解析模式。 |

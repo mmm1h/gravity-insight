@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 from ._field_policy_analysis import (
+    analysis_metadata_dependencies,
     validate_analysis_query,
     validate_analysis_segment_rule,
 )
@@ -46,3 +47,12 @@ class FieldPolicy:
         if not operation.response_projection.dynamic_item_fields:
             return
         validate_dynamic_response_fields(operation, inputs, metadata_loader)
+
+    @staticmethod
+    def dependencies(
+        operation: OperationSpec, inputs: Mapping[str, Any]
+    ) -> tuple[str, ...]:
+        rule = operation_rule(operation.operation_id)
+        if rule.request_kind != "analysis_query":
+            return ()
+        return analysis_metadata_dependencies(str(rule.query_kind), inputs)

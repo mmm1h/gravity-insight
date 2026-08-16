@@ -488,3 +488,18 @@ cache，delete guard 因此读取完整新列表。重放响应的真实聚合�
 本线新增 1 条 stable mutation、3 张 action-qualified 产品卡：operation `230 + 1 = 231`，stable
 `221 + 1 = 222 = 185 read + 37 mutation`，产品卡 `81 + 3 = 84`，selector
 `320 + 1 operation + 3 product = 324`，动线 `54 = 46 / 1 / 7` → `55 = 46 / 2 / 7`。
+
+## 2026-08-17 追加判定：保存分析重放证据与离线合同
+
+精确 GET 的现有 `analysis_event` 保存对象以原样 config 通过 strict compiler，在显式窗口
+`2026-06-01..2026-06-07` 执行 `analysis.event.query`，HTTP 200，governed response 的
+`/result/data/list/0/0/list/0/阶段总和` 为 **235176.0**。完整值只写入
+[`20260817_saved_analysis_replay.json`](../evidence/forensics/20260817_saved_analysis_replay.json)，四张最终 HTTP
+receipt 仍为 value-free v1。该证据补齐上一轮 CRUD 生命周期唯一缺口，动线从
+`55 = 46 / 2 / 7` 转为 `55 = 47 / 1 / 7`；operation、stable、产品卡与 selector 不变。
+
+离线 compiler 的生产路径测试使用真实 client/runtime/transport，并以计数且触网即抛的底层 session 证明
+HTTP 为 0；返回合同明确列出执行期可能需要的 event 与 event-property metadata。detached `df12f5e` 上
+运行当前同一测试，Saved surface 实际返回空依赖并在完整依赖断言失败；下钻后的 client collector 也会在
+第一项 event 处停止，而最终执行 receipt 实际观察到两项。Dashboard、Saved Analysis 与 Analysis Template
+共用同一传播路径，不把此修复限定在 saved replay。

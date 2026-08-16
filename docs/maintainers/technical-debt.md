@@ -214,3 +214,7 @@ confmetric family core、wire、CLI、SDK 与 Agent 卡均下沉到领域模块�
 保存分析 CRUD 复用同一 one-shot mutation、marker-or-owner、完整目录和写后读回原语；保存分析 SDK
 facade 从接近硬顶的 analysis facade 下沉到窄 mixin，共享 spine 与 quality/AST baseline 均未放宽。
 list/get 不属于 metadata cache operation，delete guard 仍使用完整新列表；本轮不新增活动结构债条目。
+
+保存分析离线边界复核把 metadata dependency 枚举下沉到窄 FieldPolicy helper，并用独立 offline loader
+收紧 `client.py` AST ratchet；Dashboard、Saved Analysis、Template 与 Plan 只传播同一合同，不建立第二套
+校验器或网络上下文。真实值仍只在 governed evidence，HTTP receipt 合同未改；本轮不新增活动结构债条目。

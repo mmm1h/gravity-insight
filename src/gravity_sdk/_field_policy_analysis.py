@@ -27,10 +27,19 @@ from ._field_policy_event import (
     validate_event_query_labels,
 )
 from ._field_policy_metadata import validate_analysis_reference_membership
+from ._field_policy_operations import (
+    ANALYSIS_EVENT,
+    ANALYSIS_EVENT_INFO,
+    ANALYSIS_EVENT_PROPERTY,
+    ANALYSIS_SEGMENT,
+    ANALYSIS_SEGMENT_HISTORY,
+    ANALYSIS_USER_PROPERTY,
+)
 from ._field_policy_retention import validate_retention_before_after
 from ._field_policy_segment import validate_analysis_segment_rule_shape
 from ._field_policy_shared import (
     ANALYSIS_QUERY_ID_RE,
+    ANALYSIS_FIXED_EVENT_FIELDS,
     AnalysisReferences,
     MetadataLoader,
     new_analysis_references,
@@ -52,6 +61,31 @@ def validate_analysis_query(
             "analysis app_id must be a bounded identifier; request was not sent"
         )
     validate_analysis_reference_membership(app_id, references, metadata_loader)
+
+
+def analysis_metadata_dependencies(
+    query_kind: str, inputs: Mapping[str, Any]
+) -> tuple[str, ...]:
+    """Return every live metadata read that offline Analysis validation may need."""
+
+    references = validate_analysis_shape(query_kind, inputs)
+    dependencies: list[str] = []
+    if references.events:
+        dependencies.append(ANALYSIS_EVENT)
+    if references.event_fields or references.event_dimension_tables:
+        dependencies.append(ANALYSIS_EVENT_PROPERTY)
+    if (
+        references.event_fields - ANALYSIS_FIXED_EVENT_FIELDS
+        or references.event_dimension_tables
+    ):
+        dependencies.append(ANALYSIS_EVENT_INFO)
+    if references.user_fields or references.user_dimension_tables:
+        dependencies.append(ANALYSIS_USER_PROPERTY)
+    if references.segment_fields:
+        dependencies.append(ANALYSIS_SEGMENT)
+    if any(item[1] == "FIXED_VERSION" for item in references.segment_fields):
+        dependencies.append(ANALYSIS_SEGMENT_HISTORY)
+    return tuple(dependencies)
 
 
 def validate_analysis_segment_rule(

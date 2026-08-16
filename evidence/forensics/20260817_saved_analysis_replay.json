@@ -1,0 +1,342 @@
+{
+  "schema_version": "gravity.saved-analysis-replay-evidence.v1",
+  "observed_at": "2026-08-17",
+  "scope": {
+    "app_id": "29034827",
+    "saved_analysis_reference": "dd91ac75e7484364b3579ad5eb04199a",
+    "definition_operation_id": "analysis.report_config.get",
+    "window": {
+      "start": "2026-06-01",
+      "end": "2026-06-07"
+    },
+    "existing_saved_analysis_read_only": true
+  },
+  "definition_read": {
+    "ok": true,
+    "status": "success",
+    "result_audit": {
+      "schema_version": "gravity.result-audit.v1",
+      "fact_paths": {
+        "operation_id": "/operation_id",
+        "contract_version": "/contract_version"
+      },
+      "http_receipts": [
+        {
+          "receipt_id": "e2ce0eaf51614eeb867165fa09cc7f88",
+          "storage_status": "stored"
+        }
+      ]
+    },
+    "normalization": {
+      "mode": "verbatim_saved_artifact",
+      "calculate_body_unchanged": true,
+      "removed_ui_fields": []
+    }
+  },
+  "aggregate": {
+    "persisted_before_extraction": true,
+    "found": true,
+    "json_pointer_from_governed_replay_result_data": "/list/0/0/list/0/阶段总和",
+    "value": 235176.0
+  },
+  "governed_replay": {
+    "schema_version": "gravity-insight.saved-analysis-replay.v1",
+    "result_source": {
+      "schema_version": "gravity.result-source.v1",
+      "tier": "governed_product",
+      "semantic_verification": "product_contract"
+    },
+    "ok": true,
+    "status": "success",
+    "exit_code": 0,
+    "source": "definition",
+    "network_called": true,
+    "definition_network_called": false,
+    "query_executed": true,
+    "saved_analysis": {
+      "id": "dd91ac75e7484364b3579ad5eb04199a",
+      "name": "基础数据",
+      "subject": "analysis_event",
+      "modify_time": "2026-05-22 13:45:13",
+      "app_id": "29034827",
+      "kind": "event",
+      "subject_supported": true,
+      "replay_supported": true
+    },
+    "artifact_mode": "web_artifact",
+    "kind": "event",
+    "operation_id": "analysis.event.query",
+    "date_range": {
+      "start": "2026-06-01",
+      "end": "2026-06-07",
+      "inclusive": true
+    },
+    "date_override_applied": true,
+    "limitations": [],
+    "validation": {
+      "status": "needs_live_metadata",
+      "live_metadata_dependencies": [
+        "analysis.event.list"
+      ]
+    },
+    "result": {
+      "schema_version": "gravity-insight.read.v1",
+      "operation_id": "analysis.event.query",
+      "ok": true,
+      "status": "success",
+      "data": {
+        "list": [
+          [
+            {
+              "start_date": "2026-06-01",
+              "end_date": "2026-06-07",
+              "target": "新增用户数",
+              "list": [
+                {
+                  "阶段总和": 235176.0,
+                  "2026-06-01": 29588,
+                  "2026-06-02": 25606,
+                  "2026-06-03": 25910,
+                  "2026-06-04": 21101,
+                  "2026-06-05": 23500,
+                  "2026-06-06": 49350,
+                  "2026-06-07": 60121
+                }
+              ],
+              "event_index": 0
+            }
+          ],
+          [
+            {
+              "start_date": "2026-06-01",
+              "end_date": "2026-06-07",
+              "target": "活跃用户数",
+              "list": [
+                {
+                  "阶段总和": 398887.0,
+                  "2026-06-01": 51969,
+                  "2026-06-02": 49947,
+                  "2026-06-03": 47275,
+                  "2026-06-04": 41938,
+                  "2026-06-05": 46569,
+                  "2026-06-06": 73273,
+                  "2026-06-07": 87916
+                }
+              ],
+              "event_index": 1
+            }
+          ],
+          [
+            {
+              "start_date": "2026-06-01",
+              "end_date": "2026-06-07",
+              "target": "付费用户数",
+              "list": [
+                {
+                  "阶段总和": 9354.0,
+                  "2026-06-01": 1439,
+                  "2026-06-02": 1347,
+                  "2026-06-03": 1372,
+                  "2026-06-04": 1239,
+                  "2026-06-05": 1102,
+                  "2026-06-06": 1347,
+                  "2026-06-07": 1508
+                }
+              ],
+              "event_index": 2
+            }
+          ],
+          [
+            {
+              "start_date": "2026-06-01",
+              "end_date": "2026-06-07",
+              "target": "付费金额",
+              "list": [
+                {
+                  "阶段总和": 275284,
+                  "2026-06-01": 45143.0,
+                  "2026-06-02": 37907.0,
+                  "2026-06-03": 36315.0,
+                  "2026-06-04": 33097.0,
+                  "2026-06-05": 35597.0,
+                  "2026-06-06": 43589.0,
+                  "2026-06-07": 43636.0
+                }
+              ],
+              "event_index": 3
+            }
+          ],
+          [
+            {
+              "start_date": "2026-06-01",
+              "end_date": "2026-06-07",
+              "target": "付费率",
+              "list": [
+                {
+                  "阶段总和": 0.18,
+                  "2026-06-01": 0.03,
+                  "2026-06-02": 0.03,
+                  "2026-06-03": 0.03,
+                  "2026-06-04": 0.03,
+                  "2026-06-05": 0.02,
+                  "2026-06-06": 0.02,
+                  "2026-06-07": 0.02
+                }
+              ],
+              "event_index": 4
+            }
+          ],
+          [
+            {
+              "start_date": "2026-06-01",
+              "end_date": "2026-06-07",
+              "target": "ARPU",
+              "list": [
+                {
+                  "阶段总和": 5.04,
+                  "2026-06-01": 0.87,
+                  "2026-06-02": 0.76,
+                  "2026-06-03": 0.77,
+                  "2026-06-04": 0.79,
+                  "2026-06-05": 0.76,
+                  "2026-06-06": 0.59,
+                  "2026-06-07": 0.5
+                }
+              ],
+              "event_index": 5
+            }
+          ],
+          [
+            {
+              "start_date": "2026-06-01",
+              "end_date": "2026-06-07",
+              "target": "ARPPU",
+              "list": [
+                {
+                  "阶段总和": 206.29,
+                  "2026-06-01": 31.37,
+                  "2026-06-02": 28.14,
+                  "2026-06-03": 26.47,
+                  "2026-06-04": 26.71,
+                  "2026-06-05": 32.3,
+                  "2026-06-06": 32.36,
+                  "2026-06-07": 28.94
+                }
+              ],
+              "event_index": 6
+            }
+          ],
+          [
+            {
+              "start_date": "2026-06-01",
+              "end_date": "2026-06-07",
+              "target": "人均在线时长（分钟）",
+              "list": [
+                {
+                  "阶段总和": 115.57,
+                  "2026-06-01": 18.91,
+                  "2026-06-02": 15.87,
+                  "2026-06-03": 15.68,
+                  "2026-06-04": 17.32,
+                  "2026-06-05": 16.89,
+                  "2026-06-06": 15.29,
+                  "2026-06-07": 15.61
+                }
+              ],
+              "event_index": 7
+            }
+          ]
+        ],
+        "target_list": [
+          "新增用户数",
+          "活跃用户数",
+          "付费用户数",
+          "付费金额",
+          "付费率",
+          "ARPU",
+          "ARPPU",
+          "人均在线时长（分钟）"
+        ],
+        "default_limit": 5000,
+        "date_list": [
+          {
+            "start_date": "2026-06-01",
+            "end_date": "2026-06-07",
+            "date_list": [
+              "2026-06-01",
+              "2026-06-02",
+              "2026-06-03",
+              "2026-06-04",
+              "2026-06-05",
+              "2026-06-06",
+              "2026-06-07"
+            ]
+          }
+        ]
+      },
+      "error": null
+    },
+    "next_action": "Consume the governed Analysis result."
+  },
+  "post_capture_contract_reconciliation": {
+    "captured_offline_dependencies": [
+      "analysis.event.list"
+    ],
+    "observed_execution_metadata_receipts": [
+      {
+        "operation_id": "analysis.event.list",
+        "receipt_id": "fbe51652f0a94174a097b6df4d1b0b2d"
+      },
+      {
+        "operation_id": "analysis.event_property.list",
+        "receipt_id": "3b0ae8f3ad4347d29ed3789532bf0566"
+      }
+    ],
+    "fixed_offline_dependencies": [
+      "analysis.event.list",
+      "analysis.event_property.list"
+    ],
+    "finding": "the pre-fix collector stopped after the first required metadata operation; the final contract enumerates all possible Analysis metadata dependencies without network access"
+  },
+  "final_replay_receipts": [
+    {
+      "operation_id": "analysis.report_config.get",
+      "receipt_id": "e2ce0eaf51614eeb867165fa09cc7f88",
+      "http_status": 200
+    },
+    {
+      "operation_id": "analysis.event.list",
+      "receipt_id": "fbe51652f0a94174a097b6df4d1b0b2d",
+      "http_status": 200
+    },
+    {
+      "operation_id": "analysis.event_property.list",
+      "receipt_id": "3b0ae8f3ad4347d29ed3789532bf0566",
+      "http_status": 200
+    },
+    {
+      "operation_id": "analysis.event.query",
+      "receipt_id": "9af91692a6fb41f993afee16939c20cb",
+      "http_status": 200
+    }
+  ],
+  "request_budget": {
+    "limit": 15,
+    "actual": 15,
+    "breakdown": {
+      "authentication": 1,
+      "report_config_list": 8,
+      "report_config_get": 3,
+      "analysis_event_metadata": 2,
+      "analysis_event_query": 1
+    },
+    "requests_after_limit_reached": 0
+  },
+  "cleanup": {
+    "temporary_objects_created": 0,
+    "temporary_objects_remaining": 0,
+    "status": "not_applicable_read_only_evidence"
+  },
+  "receipt_contract_value_free": true,
+  "process_id": 15384
+}
