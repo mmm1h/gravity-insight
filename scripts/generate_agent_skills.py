@@ -99,7 +99,8 @@ def render_documents() -> dict[Path, str]:
         OUTPUT / "capability-gap.md": _capability_gap(protocol, discovery_gap, exits),
         OUTPUT / "ten-minute-path.md": _ten_minute_path(event_card, contract, exits),
         OUTPUT / "governed-writes.md": _governed_writes(
-            cards["analysis.segment.mutation"], cards["report.mutation"], exits
+            cards["analysis.segment.mutation"], cards["report.mutation"],
+            cards["kanban.mutation"], exits
         ),
         OUTPUT / "caller-semantics.md": _caller_semantics(
             SEMANTIC_VERSION, DERIVED_SPEC_VERSION
@@ -119,7 +120,7 @@ def _index(catalog: dict[str, int]) -> str:
 | 十分钟内从本地能力走到第一次真实分析 | [十分钟路径](ten-minute-path.md) |
 | 看一个事件的趋势 | [事件趋势](event-trend.md) |
 | 用同一分析定义比较两个时期 | [时期对比](period-comparison.md) |
-| 预览并确认执行分群、报表或订阅写入 | [受治理写入](governed-writes.md) |
+| 预览并确认执行分群、报表、订阅或 Kanban 写入 | [受治理写入](governed-writes.md) |
 | 声明调用方语义和派生指标 | [调用方语义与派生指标](caller-semantics.md) |
 | Agent 返回 `capability_gap` | [能力缺口](capability-gap.md) |
 """
@@ -202,22 +203,25 @@ def _ten_minute_path(card: dict[str, Any], contract: dict[str, Any], exits: dict
 
 
 def _governed_writes(
-    segment_card: dict[str, Any], report_card: dict[str, Any], exits: dict[str, str]
+    segment_card: dict[str, Any], report_card: dict[str, Any],
+    kanban_card: dict[str, Any], exits: dict[str, str]
 ) -> str:
     return _guide(
         "受治理写入：dry-run → 人工确认 → execute",
         [
-            "先从完整目录读取两张 mutation 产品卡：",
-            "```powershell\ngravity agent-catalog describe " + segment_card["selector"] + "\ngravity agent-catalog describe " + report_card["selector"] + "\n```",
+            "先从完整目录读取三张 mutation 产品卡：",
+            "```powershell\ngravity agent-catalog describe " + segment_card["selector"] + "\ngravity agent-catalog describe " + report_card["selector"] + "\ngravity agent-catalog describe " + kanban_card["selector"] + "\n```",
             "分群卡给出的最小两步交接为：",
             "```powershell\n" + _argv(segment_card["next"]["argv"]) + "\n# 审查 preview 后，原参数只把 --dry-run 改为 --execute\n" + _argv(segment_card["next"]["then_argv"]) + "\n```",
             "报表卡给出的最小两步交接为：",
             "```powershell\n" + _argv(report_card["next"]["argv"]) + "\n# 审查 preview 后，原参数只把 --dry-run 改为 --execute\n" + _argv(report_card["next"]["then_argv"]) + "\n```",
-            "同一确认协议覆盖 `analysis segment create-from-analysis/create-from-rule/create-from-history/create-from-tmp/update/update-rule/refresh/delete` 与 `reports create/delete/subscribe/unsubscribe`。每个命令都显式二选一 `--dry-run` / `--execute`；不得把自然语言、预览或 Plan 当作写授权。",
+            "Kanban 卡给出的最小两步交接为：",
+            "```powershell\n" + _argv(kanban_card["next"]["argv"]) + "\n# 审查 preview 后，原参数只把 --dry-run 改为 --execute\n" + _argv(kanban_card["next"]["then_argv"]) + "\n```",
+            "同一确认协议覆盖 `analysis segment create-from-analysis/create-from-rule/create-from-history/create-from-tmp/update/update-rule/refresh/delete`、`reports create/delete/subscribe/unsubscribe` 与 `analysis dashboard kanban mutate`。每个命令都显式二选一 `--dry-run` / `--execute`；Kanban 另提供显式 `preview|execute` Plan node，但自然语言和预览都不是写授权。",
         ],
-        {"segment": segment_card["next"], "report": report_card["next"]},
+        {"segment": segment_card["next"], "report": report_card["next"], "kanban": kanban_card["next"]},
         exits,
-        "create 写入可读回的 SDK marker；delete/unsubscribe 只处理执行时读回仍带 marker 的对象。报表订阅固定 disabled、无收件人且永不调用 test route。",
+        "create 写入可读回的 SDK marker；delete/unsubscribe 只处理执行时读回仍带 marker 的对象。Kanban 父删除 dry-run 先读树并报告迁移数；报表订阅固定 disabled、无收件人且永不调用 test route。",
     )
 
 

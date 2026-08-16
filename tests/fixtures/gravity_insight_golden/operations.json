@@ -1023,7 +1023,8 @@
             "report_id",
             "name",
             "subject",
-            "config"
+            "config",
+            "remark"
           ],
           "share_members": [
             "uid",
@@ -1051,11 +1052,7 @@
         "empty_object_as_empty_page": false,
         "empty_object_as_empty_result": false,
         "item_keys": [],
-        "known_omitted_data_item_keys": {
-          "even_report": [
-            "remark"
-          ]
-        },
+        "known_omitted_data_item_keys": {},
         "known_omitted_data_keys": [],
         "known_omitted_item_keys": [],
         "known_omitted_nested_item_keys": {},
@@ -1723,35 +1720,40 @@
           "name",
           "type",
           "authority",
+          "app_id",
+          "space_id",
+          "folder_id",
+          "is_folder",
           "folder_or_dashboard",
-          "dashboards"
+          "dashboards",
+          "children"
         ],
         "known_omitted_data_item_keys": {},
         "known_omitted_data_keys": [],
-        "known_omitted_item_keys": [
-          "children"
-        ],
-        "known_omitted_nested_item_keys": {
-          "dashboards": [
-            "ui_config"
-          ]
-        },
+        "known_omitted_item_keys": [],
+        "known_omitted_nested_item_keys": {},
         "nested_item_keys": {
           "dashboards": [
             "id",
             "name",
             "type",
             "is_folder",
+            "app_id",
             "space_id",
-            "authority"
+            "folder_id",
+            "authority",
+            "ui_config"
           ],
           "folder_or_dashboard": [
             "id",
             "name",
             "type",
             "is_folder",
+            "app_id",
             "space_id",
+            "folder_id",
             "authority",
+            "ui_config",
             "dashboards"
           ]
         },
@@ -7102,101 +7104,128 @@
       "upstream_method": "GET"
     },
     {
-      "operation_id": "analysis.segment.user_detail.list",
-      "domain": "analysis",
-      "resource": "segment_user_detail",
       "action": "list",
-      "platform": null,
-      "description": "分群成员及逐人属性；上游一次返回完整成员行，fields 仅在本地选列，固定 profile 与 live user-property metadata 发现的动态属性均按登记合同暴露。",
-      "stability": "stable",
-      "executable": true,
+      "auth_profile": "gravity_authorization",
       "block_reason": null,
       "contract_version": "2",
-      "upstream_method": "POST",
-      "path_template": "/report/api/v3/dataanalysis/segment/user/detail/list/",
-      "auth_profile": "gravity_authorization",
+      "description": "分群成员及逐人属性；上游一次返回完整成员行，fields 仅在本地选列，固定 profile 与 live user-property metadata 发现的动态属性均按登记合同暴露。",
+      "domain": "analysis",
+      "executable": true,
       "input_fields": [
         {
-          "name": "app_id",
-          "type": "string",
-          "required": true,
-          "nullable": false,
-          "enum": [],
           "default": {
             "present": false,
             "value": null
           },
           "description": "",
-          "sensitive": false,
-          "item_type": null,
+          "enum": [],
           "item_enum": [],
-          "min_items": null,
+          "item_type": null,
+          "max_depth": 5,
           "max_items": null,
           "max_length": 64,
-          "max_depth": 5
+          "min_items": null,
+          "name": "app_id",
+          "nullable": false,
+          "required": true,
+          "sensitive": false,
+          "type": "string"
         },
         {
-          "name": "fields",
-          "type": "array",
-          "required": false,
-          "nullable": false,
-          "enum": [],
           "default": {
             "present": true,
             "value": []
           },
           "description": "",
-          "sensitive": false,
-          "item_type": "string",
+          "enum": [],
           "item_enum": [],
-          "min_items": null,
+          "item_type": "string",
+          "max_depth": 5,
           "max_items": 100,
           "max_length": null,
-          "max_depth": 5
-        },
-        {
-          "name": "segment_id",
-          "type": "string",
-          "required": true,
-          "nullable": false,
-          "enum": [],
-          "default": {
-            "present": false,
-            "value": null
-          },
-          "description": "",
-          "sensitive": false,
-          "item_type": null,
-          "item_enum": [],
           "min_items": null,
-          "max_items": null,
-          "max_length": 64,
-          "max_depth": 5
-        },
-        {
-          "name": "segment_version_id",
-          "type": "string",
+          "name": "fields",
+          "nullable": false,
           "required": false,
-          "nullable": false,
-          "enum": [],
+          "sensitive": false,
+          "type": "array"
+        },
+        {
           "default": {
             "present": false,
             "value": null
           },
           "description": "",
-          "sensitive": false,
-          "item_type": null,
+          "enum": [],
           "item_enum": [],
-          "min_items": null,
+          "item_type": null,
+          "max_depth": 5,
           "max_items": null,
           "max_length": 64,
-          "max_depth": 5
+          "min_items": null,
+          "name": "segment_id",
+          "nullable": false,
+          "required": true,
+          "sensitive": false,
+          "type": "string"
+        },
+        {
+          "default": {
+            "present": false,
+            "value": null
+          },
+          "description": "",
+          "enum": [],
+          "item_enum": [],
+          "item_type": null,
+          "max_depth": 5,
+          "max_items": null,
+          "max_length": 64,
+          "min_items": null,
+          "name": "segment_version_id",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "string"
         }
       ],
+      "live_probe": {
+        "enabled": true,
+        "inputs": {
+          "app_id": "$first_app_id",
+          "segment_id": "$first_segment_id"
+        }
+      },
+      "operation_id": "analysis.segment.user_detail.list",
+      "pagination": {
+        "default_page_size": null,
+        "items_field": "list",
+        "kind": "none",
+        "list_path": "",
+        "max_page_size": null,
+        "page_field": "",
+        "page_info_field": "page_info",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v3/dataanalysis/segment/user/detail/list/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_fields": [
+          "authorization",
+          "password",
+          "token",
+          "gravity_email",
+          "access_token",
+          "cookie",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
       "request": {
-        "location": "mixed",
-        "path_fields": [],
-        "query_fields": [],
         "body_fields": [
           "app_id",
           "segment_id",
@@ -7206,18 +7235,41 @@
         "defaults": {
           "fields": []
         },
+        "fixed_body": {},
         "fixed_query": {},
-        "fixed_body": {}
+        "location": "mixed",
+        "path_fields": [],
+        "query_fields": []
       },
+      "required_parent": [
+        {
+          "input_field": null,
+          "operation_id": "analysis.segment.list"
+        }
+      ],
+      "resource": "segment_user_detail",
       "response_projection": {
-        "data_shape": "object",
+        "data_dynamic_item_fields": {},
+        "data_item_keys": {
+          "page_info": [
+            "page",
+            "page_size",
+            "total_number",
+            "total_page"
+          ]
+        },
         "data_keys": [
           "list",
           "page_info"
         ],
-        "required_data_keys": [
-          "list"
+        "data_path_item_keys": {},
+        "data_scalar_list_types": {},
+        "data_shape": "object",
+        "dynamic_item_fields": [
+          "fields"
         ],
+        "empty_object_as_empty_page": false,
+        "empty_object_as_empty_result": false,
         "item_keys": [
           "AdAid",
           "AdCid",
@@ -7367,9 +7419,10 @@
           "Version",
           "WXOpenID"
         ],
-        "dynamic_item_fields": [
-          "fields"
-        ],
+        "known_omitted_data_item_keys": {},
+        "known_omitted_data_keys": [],
+        "known_omitted_item_keys": [],
+        "known_omitted_nested_item_keys": {},
         "nested_item_keys": {
           "device_info": [
             "Idfa",
@@ -7401,83 +7454,32 @@
             "ReAttributeAdClickTime"
           ]
         },
-        "known_omitted_nested_item_keys": {},
-        "data_item_keys": {
-          "page_info": [
-            "page",
-            "page_size",
-            "total_number",
-            "total_page"
-          ]
-        },
-        "scalar_list_item_types": {},
-        "data_scalar_list_types": {},
-        "data_path_item_keys": {},
-        "data_dynamic_item_fields": {},
-        "known_omitted_item_keys": [],
-        "recursive_data_item_keys": {},
-        "known_omitted_data_keys": [],
-        "known_omitted_data_item_keys": {},
         "numeric_paths": [],
-        "empty_object_as_empty_page": false,
-        "empty_object_as_empty_result": false,
-        "opaque_json_item_keys": []
-      },
-      "pagination": {
-        "kind": "none",
-        "page_field": "",
-        "page_size_field": "",
-        "items_field": "list",
-        "page_info_field": "page_info",
-        "total_page_field": "",
-        "list_path": "",
-        "page_info_path": "",
-        "default_page_size": null,
-        "max_page_size": null
+        "opaque_json_item_keys": [],
+        "recursive_data_item_keys": {},
+        "required_data_keys": [
+          "list"
+        ],
+        "scalar_list_item_types": {}
       },
       "semantic_error_rules": [
         {
-          "path": "code",
+          "message": "Gravity rejected the read operation",
           "operator": "truthy",
+          "path": "code",
           "value": null,
-          "values": [],
-          "message": "Gravity rejected the read operation"
+          "values": []
         },
         {
-          "path": "extra.error",
+          "message": "Gravity rejected the read operation",
           "operator": "truthy",
+          "path": "extra.error",
           "value": null,
-          "values": [],
-          "message": "Gravity rejected the read operation"
+          "values": []
         }
       ],
-      "privacy_policy": {
-        "classification": "user_level",
-        "redact_fields": [
-          "authorization",
-          "password",
-          "token",
-          "gravity_email",
-          "access_token",
-          "cookie",
-          "secret",
-          "refresh_token",
-          "session_token"
-        ]
-      },
-      "required_parent": [
-        {
-          "operation_id": "analysis.segment.list",
-          "input_field": null
-        }
-      ],
-      "live_probe": {
-        "enabled": true,
-        "inputs": {
-          "app_id": "$first_app_id",
-          "segment_id": "$first_segment_id"
-        }
-      }
+      "stability": "stable",
+      "upstream_method": "POST"
     },
     {
       "action": "list",

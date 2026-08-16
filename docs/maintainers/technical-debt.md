@@ -187,3 +187,8 @@ Segment mutation 首轮把一次性授权、wire codec、领域 CRUD、CLI/SDK �
 F40 单用户归因明细把严格结果重建与测试设备父目录解析下沉到领域模块；共享 client、Agent/Plan
 路由均保持既有质量 ratchet，空 item 容器按未来非空 fail-closed 而未引入通用动态 schema，
 本轮复核未产生新的活动结构债条目。
+
+Kanban mutation 复用既有 one-shot authorization、marker、preimage/readback 与 mutation executor；
+父删除影响计算、负数系统 folder、内容和生命周期逻辑均下沉到 Kanban 领域模块。CLI 由 dashboard
+领域路由接入，Agent direct mutation 由窄 router 聚合，Plan spine 通过压缩既有同类 imports/分派保持
+500 SLOC/15 complexity 闸门；没有新增 mutation registry、重试机制或活动结构债条目。

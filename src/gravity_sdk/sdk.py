@@ -25,6 +25,7 @@ from .sdk_plan_recipe import PlanRecipeSdkMixin
 from .sdk_report import ReportSdkMixin
 from .sdk_segment_members import SegmentMembersSdkMixin
 from .sdk_segment_mutation import SegmentMutationSdkMixin
+from .sdk_kanban_mutation import KanbanMutationSdkMixin
 from .template_replay_surface import TemplateSdkMixin
 
 
@@ -37,6 +38,7 @@ class GravitySDK(
     AnalysisDefaultDictionarySdkMixin,
     AttributionSdkMixin,
     SegmentMutationSdkMixin,
+    KanbanMutationSdkMixin,
     SegmentMembersSdkMixin,
     ReportSdkMixin,
     MaterialSdkMixin,

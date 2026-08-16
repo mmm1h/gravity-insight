@@ -21,6 +21,7 @@ gravity analysis context      并发读取一个 App 的分析上下文
 gravity analysis defaults     读取一个 App 的 Analysis 默认值字典
 gravity analysis dashboard snapshot  读取一个看板的控制面快照
 gravity analysis dashboard prepare|run  编译或执行一个看板的受支持图表
+gravity analysis dashboard kanban schema|mutate  查看或执行 Kanban 受治理写合同
 gravity analysis segment snapshot  读取一个分群的详情、历史与单日计算结果
 gravity analysis segment members   读取一个分群的完整成员行与逐人属性
 gravity analysis segment create-from-*|update|update-rule|refresh|delete  预览或显式执行受治理分群写
@@ -622,6 +623,26 @@ adapter 内部固定 1 worker，由 Plan 全局 pool 管理并发。引用已知
 
 结果较大时可把 `--output <path> --format json|ndjson` 放在 `snapshot` 子命令参数末尾；不指定
 `--output` 时 JSON 输出仍受统一 stdout 裁剪保护，`--format ndjson` 可流式写到 stdout。
+
+### Kanban 受治理写入
+
+先离线查看完整 action/字段合同，再用同一个 action 和 JSON input 完成两步确认：
+
+```powershell
+gravity analysis dashboard kanban schema
+gravity analysis dashboard kanban mutate --action dashboard.create --input kanban-input.json --dry-run
+# 人工审查 request、target、impact/cascade 与 preview_fingerprint
+gravity analysis dashboard kanban mutate --action dashboard.create --input kanban-input.json --execute
+```
+
+create/copy 名称自动添加 `GSDK-<12 hex>`；rename 保留 marker。delete 执行前重读 target marker，
+含 report association 的 dashboard 不允许删除。folder/space delete 的 dry-run 会只读最新 tree，明确
+报告 folder container、迁移 dashboard 和实际删除 dashboard 的数量；execute 再读一次 preimage，
+只发一个 attempts=1 写请求，随后读回。share、未标记对象和多维报表内容不在本产品范围。
+
+SDK 使用 `sdk.kanban_mutation(action, inputs, execute=False|True)`。Plan composite request 为
+`{"name":"kanban_mutation","mode":"preview|execute","inputs":{"action":...,"inputs":...}}`；
+只有调用方显式给出 execute mode 才能发送写请求，自然语言 Agent 卡永不自动写。
 
 ### Dashboard Analysis Replay v2
 

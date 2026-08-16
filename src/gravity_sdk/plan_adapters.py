@@ -43,22 +43,11 @@ from .plan_title_package_adapter import (
     execute_title_package_plan,
     validate_title_package_plan,
 )
-from .plan_promotion_performance_adapter import (
-    PROMOTION_PERFORMANCE_NAME,
-    execute_promotion_performance_plan,
-    is_promotion_performance_result,
-    project_promotion_performance_result,
-    validate_promotion_performance_plan,
-)
-from .plan_bilibili_account_performance_adapter import (
-    BILIBILI_ACCOUNT_PERFORMANCE_NAME,
-    execute_bilibili_account_performance_plan,
-    is_bilibili_account_performance_result,
-    project_bilibili_account_performance_result,
-    validate_bilibili_account_performance_plan,
-)
+from . import plan_promotion_performance_adapter as promotion_plan
+from . import plan_bilibili_account_performance_adapter as bilibili_plan
 from .plan_metadata_adapter import execute_metadata_plan, validate_metadata_plan
 from .plan_receipt_adapter import execute_receipt_query, validate_receipt_query
+from . import plan_kanban_mutation_adapter as kanban_plan
 from .resolver_support import build_inputs
 from .plan_adapter_support import (
     alias_mapping as _alias_mapping,
@@ -99,12 +88,13 @@ _COMPOSITES = frozenset(
         *report_plan.COMPOSITE_NAMES, "saved_analysis", MULTIDIM_NAME,
         MATERIAL_PERFORMANCE_NAME,
         TITLE_PACKAGE_NAME,
-        PROMOTION_PERFORMANCE_NAME,
-        BILIBILI_ACCOUNT_PERFORMANCE_NAME,
+        promotion_plan.PROMOTION_PERFORMANCE_NAME,
+        bilibili_plan.BILIBILI_ACCOUNT_PERFORMANCE_NAME,
         analysis_plan.ANALYSIS_QUERY_NAME,
         *segment_plan.COMPOSITE_NAMES,
         user_journey_plan.USER_JOURNEY_NAME,
         *dashboard_plan.COMPOSITE_NAMES,
+        kanban_plan.NAME,
     }
 )
 _COMPOSITE_OUTPUT_FIELDS = frozenset(
@@ -425,6 +415,9 @@ def _validate_composite(
     workspace: Any,
 ) -> None:
     name = request.get("name")
+    if name == kanban_plan.NAME:
+        kanban_plan.validate_kanban_plan(request, context)
+        return
     if analysis_plan.is_analysis_composite(name):
         analysis_plan.validate_analysis_plan(
             insight, workspace, request, context
@@ -466,11 +459,14 @@ def _validate_composite(
     if name == TITLE_PACKAGE_NAME:
         validate_title_package_plan(request, context, workspace)
         return
-    if name == PROMOTION_PERFORMANCE_NAME:
-        validate_promotion_performance_plan(request, context, workspace)
-        return
-    if name == BILIBILI_ACCOUNT_PERFORMANCE_NAME:
-        validate_bilibili_account_performance_plan(request, context, workspace)
+    if name in {
+        promotion_plan.PROMOTION_PERFORMANCE_NAME,
+        bilibili_plan.BILIBILI_ACCOUNT_PERFORMANCE_NAME,
+    }:
+        {
+            promotion_plan.PROMOTION_PERFORMANCE_NAME: promotion_plan.validate_promotion_performance_plan,
+            bilibili_plan.BILIBILI_ACCOUNT_PERFORMANCE_NAME: bilibili_plan.validate_bilibili_account_performance_plan,
+        }[name](request, context, workspace)
         return
     allowed_targets = {"/app"}
     _validate_exact_targets(context, frozenset(allowed_targets))
@@ -486,6 +482,8 @@ def _execute_composite(
     sdk: Any, request: Mapping[str, Any], context: AdapterContext
 ) -> Any:
     name = str(request["name"])
+    if name == kanban_plan.NAME:
+        return kanban_plan.execute_kanban_plan(sdk, request, context)
     if fixed_plan.is_fixed_composite(name):
         return fixed_plan.execute_fixed_composite(sdk, request, context)
     if report_plan.is_report_composite(name):
@@ -498,10 +496,10 @@ def _execute_composite(
         return execute_material_performance_plan(sdk, request, context)
     if name == TITLE_PACKAGE_NAME:
         return execute_title_package_plan(sdk, request, context)
-    if name == PROMOTION_PERFORMANCE_NAME:
-        return execute_promotion_performance_plan(sdk, request, context)
-    if name == BILIBILI_ACCOUNT_PERFORMANCE_NAME:
-        return execute_bilibili_account_performance_plan(sdk, request, context)
+    if name == promotion_plan.PROMOTION_PERFORMANCE_NAME:
+        return promotion_plan.execute_promotion_performance_plan(sdk, request, context)
+    if name == bilibili_plan.BILIBILI_ACCOUNT_PERFORMANCE_NAME:
+        return bilibili_plan.execute_bilibili_account_performance_plan(sdk, request, context)
     if analysis_plan.is_analysis_composite(name):
         return analysis_plan.execute_analysis_plan(sdk, request, context)
     if segment_plan.is_segment_composite(name):
@@ -518,6 +516,8 @@ def _execute_composite(
 def _project_composite(
     result: Any, fields: tuple[str, ...], context: AdapterContext
 ) -> Any:
+    if kanban_plan.is_kanban_result(result):
+        return kanban_plan.project_kanban_result(result, fields, context)
     if analysis_plan.is_analysis_result(result):
         return analysis_plan.project_analysis_result(result, fields, context)
     if segment_plan.is_segment_result(result):
@@ -534,10 +534,10 @@ def _project_composite(
         return project_multidim_result(result, fields, context)
     if is_material_performance_result(result):
         return project_material_performance_result(result, fields, context)
-    if is_promotion_performance_result(result):
-        return project_promotion_performance_result(result, fields, context)
-    if is_bilibili_account_performance_result(result):
-        return project_bilibili_account_performance_result(result, fields, context)
+    if promotion_plan.is_promotion_performance_result(result):
+        return promotion_plan.project_promotion_performance_result(result, fields, context)
+    if bilibili_plan.is_bilibili_account_performance_result(result):
+        return bilibili_plan.project_bilibili_account_performance_result(result, fields, context)
     return _composite_projection(result, fields, context)
 
 

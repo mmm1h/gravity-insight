@@ -1,0 +1,115 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 20865,
+  "operation": {
+    "action": "copy",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "复制不含报表关联的看板，并给副本名称添加 SDK 标记。",
+    "domain": "analysis",
+    "effect": "mutation",
+    "examples": [],
+    "executable": true,
+    "input_fields": {
+      "app_id": {
+        "type": "integer",
+        "required": true
+      },
+      "form_space_id": {
+        "type": "integer",
+        "required": true
+      },
+      "id": {
+        "type": "integer",
+        "required": true
+      },
+      "name": {
+        "type": "string",
+        "required": true,
+        "max_length": 128
+      },
+      "to_folder_id": {
+        "type": "integer",
+        "required": false
+      },
+      "to_space_id": {
+        "type": "integer",
+        "required": true
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {}
+    },
+    "operation_id": "analysis.datamanageconfig.kanban.dashboard.copy",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/dashboard/copy/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.datamanageconfig.kanban.dashboard.copy.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "app_id",
+        "form_space_id",
+        "id",
+        "name",
+        "to_folder_id",
+        "to_space_id"
+      ],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "analysis.dashboard.tree",
+        "output_path": null,
+        "selection": "caller_select"
+      }
+    ],
+    "resource": "kanban_dashboard",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis_dashboard.json"
+}

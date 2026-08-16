@@ -2,8 +2,8 @@
 
 本矩阵记录 17 项候选能力在 2026-08-12 受控只读探测后的真实状态，并原位追加 2026-08-14 至
 2026-08-16 的后续取证结论，供开发决策使用。仓库当前基线为
-[205 个 operation、其中 196 个 stable operation](capability-coverage.md)：184 条 stable read 加
-12 条逐项治理的 mutation（7 条 Segment、5 条报表/订阅）；写 operation 不是本矩阵的 read candidate，
+[223 个 operation、其中 214 个 stable operation](capability-coverage.md)：184 条 stable read 加
+30 条逐项治理的 mutation（7 条 Segment、5 条报表/订阅、18 条 Kanban）；写 operation 不是本矩阵的 read candidate，
 但本页追加其解锁读合同的生产证据。
 
 `analysis.default_val.list`、D35、F40、`report.report.list/detail` 与 `report.subscribe.list` 已晋升，其余候选
@@ -12,6 +12,9 @@
 表中的“下一步最小证据”表示继续判断所需的最小输入，不代表晋升计划或交付承诺。候选在线验证
 仍须遵循[探测规范](maintainers/probing.md)，保持只读、限流、值不落盘和 fail-closed；已登记 Segment
 mutation 只能走自身的 dry-run→显式 execute→读回/清理流程，不能借 draft prober 的读确认旁路执行。
+
+Kanban 追加取证同样只走产品级两步治理。两条显式 `*.share` 与实际命中
+`space/share/delete/` 的哈希 operation 继续保持 blocked reservation；它们不是本轮 mutation 合同。
 
 ## 逐项状态
 
@@ -36,6 +39,25 @@ mutation 只能走自身的 dry-run→显式 execute→读回/清理流程，不
 | `attribution.attribution.query` | `stable v1`（D35 已闭环） | hash-matched `Measurement` bundle 完整证明 14 个恒发字段、`project_id/dims_metrics_list` 两条条件省略、八个恒发筛选数组和四个有限调用画像。生产 1 次 App catalog + 2 次单日目标 POST：首 App 明确空，第二 App 非空后停止；均 HTTP 200，无重试、翻页或扩窗。 | 无 promotion blocker；旧 evidence 未保存具体 error 正文，不能追认字段拒绝。新证据证明 `extra.error=无数据` 是 `code=0/msg=成功` 的明确空。 | 由 Core/CLI/SDK/Plan/Agent `attribution_performance` 消费；未知 semantic error 继续 fail-closed。 |
 
 | `attribution.attribution_detail.query` | **`stable v1`（F40 已闭环）** | 1 次 App catalog 后顺序枚举 6 个 `app.testing_tool.list`，前 5 个明确空、第 6 个返回 1 条后停止；目录行 13 个顶层字段、`device_info` 3 个子字段及 `page_info` 4 字段全部登记。以内存父行 `id` 发唯一 1 次详情 POST，HTTP 200 / `code=0`；`device_white` 为同形 object，另外三个列表均明确为空。 | 无 promotion blocker；`attribution_list/postback_list/pay_list` 的 item schema 未观察，不能猜测，未来非空时 fail-closed。 | 由 Core/CLI/SDK/Plan/Agent `attribution_user_detail` 消费；父行只接受 `app.testing_tool.list` 的精确内部 ID。 |
+
+## 2026-08-16 追加判定：Kanban 写与父删除语义
+
+19 个点名的非显式-share operation 中，18 个取得精确 request contract 并晋升 stable；剩余
+`analysis.datamanageconfig.kanban.space.093dd36e.delete` 的真实 path 是
+`POST /datamanageconfig/kanban/space/share/delete/`，属于撤销分享且 payload 未由调用点证明，继续 blocked。
+另一组哈希 operation `dashboard.dc7858a7.update` 则是独立的 dashboard rename POST；普通
+`dashboard.update` 是保存 `report_list/ui_config` 的 edit POST，二者没有合并。
+
+真实树与生产闭环证明：space 根 ID 为正数；系统“未分组/共享给我”folder 使用负 ID，自建 folder
+使用正 ID；dashboard 继承 space/folder 坐标；note 嵌在 dashboard `ui_config`，删除走精确 note `i`。
+folder 删除会移除容器并迁移 dashboard，space 删除会把 dashboard 迁到创建者 My Dashboard/未分组；
+两者都不删除 dashboard。生产样本中 folder dry-run 为 `1 moved / 0 deleted`，space dry-run 为
+`2 moved / 0 deleted`，写后树分别验证对象仍在；最终批量 dashboard delete 后全树 SDK marker 为 0。
+
+本轮未对所有权 transfer、跨 space folder/dashboard move、order save 或 report unlink 发生产写：
+前三者会影响额外层级/用户状态，order 会改变既有目录顺序，report unlink 需要含真实报表的 dashboard，
+与“不创建、修改或删除多维报表”边界不相容。它们只按 hash-matched builder、精确合同、dry-run 和
+fail-closed 测试登记；没有借现存用户对象补样本。
 
 ## 2026-08-16 追加判定：报表与订阅写解锁
 

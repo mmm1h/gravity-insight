@@ -330,7 +330,7 @@ def capability_handoff_cards(
         monetization_guard_blocks_operation_fallback,
     )
     from .agent_material_asset import material_asset_capability_cards
-    from .agent_report_mutation import report_mutation_cards
+    from .agent_mutation_cards import mutation_cards
     from .agent_discovery_policy import operation_fallback_excluded
     from .agent_export import export_capability_cards
     from .agent_intent_routing import multiple_product_intents
@@ -359,7 +359,7 @@ def capability_handoff_cards(
     if multiple_product_intents(query, inventory=composite_inventory):
         return [], True
     direct_effects = [
-        *report_mutation_cards(query, domain=domain, platform=platform),
+        *mutation_cards(query, domain=domain, platform=platform),
         *material_asset_capability_cards(query, domain=domain, platform=platform),
         *export_capability_cards(
             query, domain=domain, platform=platform, inventory=export_inventory

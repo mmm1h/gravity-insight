@@ -13,10 +13,11 @@ SDK 还提供本地元数据检索、跨目录发现与 workspace recipe：`grav
 metadata sync/search`、`gravity find` 和 `gravity run` 让 Agent 无需临时 Python/JSON
 脚本即可完成常见查询链路。
 
-当前机器目录覆盖 **205 个 operation** 与 **42 张 Agent 产品卡**；196 个 stable operation
-由 184 个 read 和 12 个 governed mutation 组成。写面只开放逐项登记的分群，以及 marker-governed
-报表/订阅创建与删除；所有写入均先零网络 `--dry-run`，再由调用方显式确认 `--execute`，不会从
-自然语言或 Plan 自动执行。
+当前机器目录覆盖 **223 个 operation** 与 **43 张 Agent 产品卡**；214 个 stable operation
+由 184 个 read 和 30 个 governed mutation 组成。写面只开放逐项登记的分群、marker-governed
+报表/订阅和 Kanban 工作区；所有写入均先 `--dry-run`，再由调用方显式确认同参数 `--execute`。
+create 预览零网络；需要层级影响数的 Kanban 预览只读 tree/detail。自然语言永不自动执行写入；
+Kanban 可由显式 `preview|execute` Plan node 调用，其他写产品仍不进入 Plan。
 
 Agent 第一次盘点能力时先用 `gravity agent-catalog categories → category → describe` 三层离线目录；
 它完整区分产品卡、raw operation 和精确 gap。进入具体问题后，默认路径最多两步：未知问题用

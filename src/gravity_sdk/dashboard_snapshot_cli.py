@@ -10,6 +10,7 @@ from . import runtime
 from .dashboard_snapshot import dashboard_snapshot
 from .domains import ANALYSIS_DASHBOARD_OPERATIONS, ANALYSIS_PAGINATED_OPERATIONS
 from .errors import InputValidationError
+from .kanban_mutation_cli import add_kanban_commands
 from .pagination_cli import page_options
 from .workspace import load_workspace
 from .workspace_app import resolve_workspace_app
@@ -291,6 +292,7 @@ def add_dashboard_commands(
         commands=commands,
     )
     add_dashboard_analysis_commands(commands, concurrency_type, positive_int)
+    add_kanban_commands(commands, _add_input)
     return parser
 
 

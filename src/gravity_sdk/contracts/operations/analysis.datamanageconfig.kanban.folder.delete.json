@@ -1,0 +1,99 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 20877,
+  "operation": {
+    "action": "delete",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "删除 SDK 标记文件夹；上游把后代看板迁到未分组/共享给我。",
+    "domain": "analysis",
+    "effect": "mutation",
+    "examples": [],
+    "executable": true,
+    "input_fields": {
+      "app_id": {
+        "type": "integer",
+        "required": true
+      },
+      "folder_id": {
+        "type": "integer",
+        "required": true
+      },
+      "space_id": {
+        "type": "integer",
+        "required": true
+      }
+    },
+    "live_probe": {
+      "enabled": false,
+      "inputs": {}
+    },
+    "operation_id": "analysis.datamanageconfig.kanban.folder.delete",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v2/datamanageconfig/kanban/folder/delete/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.datamanageconfig.kanban.folder.delete.json"
+      ]
+    },
+    "request": {
+      "body_fields": [],
+      "defaults": {},
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": [
+        "app_id",
+        "folder_id",
+        "space_id"
+      ]
+    },
+    "required_parent": [
+      {
+        "input_field": null,
+        "operation_id": "analysis.dashboard.tree",
+        "output_path": null,
+        "selection": "caller_select"
+      }
+    ],
+    "resource": "kanban_folder",
+    "response_projection": {
+      "data_keys": [],
+      "dynamic_item_fields": [],
+      "item_keys": [],
+      "required_data_keys": []
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "GET"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis_dashboard.json"
+}

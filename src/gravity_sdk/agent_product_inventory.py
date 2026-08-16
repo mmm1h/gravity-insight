@@ -12,6 +12,7 @@ from .agent_capabilities import (
 )
 from .agent_export import export_capability_inventory
 from .agent_material_asset import material_asset_capability_inventory
+from .agent_kanban_mutation import kanban_mutation_capability_inventory
 from .agent_metadata_search import metadata_search_capability_inventory
 from .agent_report_mutation import report_mutation_capability_inventory
 from .agent_segment import segment_capability_inventory
@@ -36,6 +37,7 @@ def canonical_capability_cards(client: Any) -> tuple[dict[str, Any], ...]:
         *composites,
         *analysis_query_spec_inventory(),
         *segment_capability_inventory(),
+        *kanban_mutation_capability_inventory(),
         *report_mutation_capability_inventory(),
         *user_journey_capability_inventory(),
         *material_asset_capability_inventory(),
