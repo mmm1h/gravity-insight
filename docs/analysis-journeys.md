@@ -10,13 +10,21 @@
 执行，内部 HTTP 数也没有减少。App/平台也未知时不适用该两次路径；默认离线 Agent 的原三次下界保留。
 `gravity.agent-call-bound.v1` 只在本次成功交付完整目录的卡与 Plan 节点上把对应 scenario 声明为 2。
 
-当前程序化重算：**49 条产品动线：已闭环 37 / 部分闭环 1 / 完全缺失 11**。可复算：下表 53 行，
+当前程序化重算：**51 条产品动线：已闭环 41 / 部分闭环 1 / 完全缺失 9**。可复算：下表 55 行，
 减去 2 条兼容/维护便利面、1 条“既有稳定读取面重复”和 1 条“已有结果上的调用方派生便利面”，
-得到 49 条；按状态直接分组为 `49 = 37 / 1 / 11`。合并前 dev 为
-`48 = 36 / 1 / 11`，Segment mutation 新增 1 条已闭环动线，所以推导为
-`48 + 1 = 49`、`36 + 1 = 37`、`1 + 0 = 1`、`11 + 0 = 11`。
-operation 为 `187 + 7 = 194`，stable 为 `178 + 7 = 185`。部分闭环的 Analysis 导出只关闭了
-单用户事件子类；11 条完全缺失里多数是合同证据阻塞，逐行有记录。
+得到 51 条；按状态直接分组为 `51 = 41 / 1 / 9`。本单元开始时 dev 为
+`49 = 37 / 1 / 11`：两条既有报表读取动线由缺失转闭环，另按独立任务口径新增报表 CRUD 与订阅
+CRUD 两条闭环写动线，所以推导为 `49 + 2 = 51`、`37 + 2 + 2 = 41`、`1 + 0 = 1`、
+`11 - 2 = 9`。operation 为 `194 + 9 = 203`，stable 为 `185 + 9 = 194`。部分闭环的
+Analysis 导出只关闭了单用户事件子类；9 条完全缺失里多数是合同证据阻塞，逐行有记录。
+
+2026-08-16 以受控生产写解开报表目录与订阅的非空 item schema。旧报表在 `remark`、v3 订阅父报表
+在 `remark`、订阅在 `name/wildcard_name` 原样 round-trip `GSDK-<12 hex>`；所有真写均先 dry-run，
+删除前由列表或 detail 重读 marker，删除后完整列表确认消失。两条既有读取动线因此从完全缺失转为
+已闭环；同时沿用 Segment 的“调用方可独立完成任务、终点是可复用上游对象”口径，把报表 CRUD 与
+订阅 CRUD 各计 1 条新增闭环动线。v3 父报表只是订阅 CRUD 的实现脚手架，不另拆动线。写任务的
+Plan 面逐条登记为设计不适用，读任务仍是无副作用 Plan composite。生产实际 7 次单次、不重放的
+write 和 32 次 read；最终旧报表、订阅与 v3 父报表三份完整列表的 SDK marker 均为 0。
 
 2026-08-16 的写操作范围裁决新增 7 条 stable Segment mutation，把“运行漏斗 → 将某一步命中或
 流失用户持久化为分群 → 继续做留存/成员分析”的中间桥接从 Web 移入 SDK。按本台账“一个调用方
@@ -46,7 +54,7 @@ HTTP 后，18 条可自取证候选均因明确空、semantic error、缺父值�
 完整 spec 时才预填公式并生成可执行 Plan 节点。该节点补入 source 后已离线端到端算出结果，但它变换
 已有 envelope，不独立取得上游数据，故保留审计行而不新增产品动线：
 `48 + 0 = 48`、`34 / 0 / 14 + 0 / 0 / 0 = 34 / 0 / 14`；operation/stable 均 `+0`，
-该单元派发时为 186/177，生产 HTTP 0 次；合并后当前总账统一见顶部 `37 / 1 / 11` 与 194/185。
+该单元派发时为 186/177，生产 HTTP 0 次；合并后当前总账统一见顶部 `41 / 1 / 9` 与 203/194。
 
 2026-08-16 对最后两条工程可推动线做了静态控制流与最小生产取证，两条均推进但未闭环。A 的 8 条
 真实 frontend binding 已恢复，唯独 `stream_event` 的 server loader 没有调用点；首 App 当日用户第一页
@@ -78,7 +86,7 @@ B 生产 HTTP 10 次，4 个自然缩略图的 64-byte Range GET 均为 206/JPEG
 [路线图第三轮判定](roadmap.md#第三轮response-bound-素材文件合同2026-08-16)。
 
 上述三轮是 export-binary 分支从自身派发基线的局部推导；合入默认值字典、D35 与派生便利面后，
-当前总账统一为 `49 = 37 / 1 / 11`，operation 194、stable 185。
+当前总账统一为 `51 = 41 / 1 / 9`，operation 203、stable 194。
 
 2026-08-15 的结果来源等级是横切合同修正，不新增独立产品或结果 envelope。三条执行责任边界为
 `governed_product`（固定产品合同）、`caller_defined`（workspace recipe / SQL product，调用方负责口径）
@@ -194,6 +202,18 @@ development 为 `240 + 48 × 2 = 336`，每条覆盖 `5 → 7`。新增 96 题�
 J10 first-turn 因依赖不存在的上一轮而不能唯一决定产品，判为不公平但保持原题与评分不动。详见
 [路线图](roadmap.md#development-题集扩充2026-08-16)。
 
+2026-08-16 合入报表目录/订阅闭环后，development 仍为同一 336 题且题面逐字不变。历史 NL 回归矩阵
+此前漏列 registry 的 J25 分群成员，导致原 J25–J47 的 23 条现有问法编号整体早一位；本次仅把这些
+编号改引 J26–J48，并把矩阵标题对齐 `journey-targets.json`，没有改变任何中文或英文 query 的文本或
+语义归属。新测试逐行要求 ID 存在且标题与 registry 完全相等。报表两条已闭环动线改为精确 selector
+目标后，评分 matcher 只接受 `composite:report_directory` 与 `composite:report_subscriptions`；订阅卡
+补齐“报表 + 订阅/订了/订的/定时发/定期发/自动发”正向证据，目录卡保留原负向边界且复用同一证据
+排除订阅抢占。development 六层从 `261/336、188/188、73/91、5/5、selection/terminal pass^4
+261/336 与 73/91、PASS/0` 变为 `262/336、201/201、61/77、5/5、selection/terminal pass^4
+262/336 与 61/77、PASS/0`，两轮不稳定题均为 0、本地写交接均为 29、生产 HTTP 均为 0。14 条报表题
+由原 `12 target_gap + 2 wrong_gap` 变为 `13 correct + 1 no_candidate`，故首次选择净增恰为 1；其余层
+分母变化来自 13 条正确结果由 gap 终点迁移到产品卡参数层，不是评分算法、层定义或阈值变化。
+
 2026-08-15 的失败与降级路径审计自身不新增动线，在当时快照上的净变化为
 `48 + 0 = 48`、`32 / 0 / 16 + 0 / 0 / 0`；最终计数只因上述 setting route 重复记账消除而变为
 `47 = 32 / 0 / 15`。该审计横切核对了所有现有 composite、Plan 和 direct SDK/CLI
@@ -304,8 +324,10 @@ writer 拒绝非有限数字；operation、投影、请求、错误分类和退�
 | 查询分析默认值字典 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（App 已知；App 未知 3） | 2026-08-16 按 catalog 枚举：第 1 个 App HTTP 200 空，第 2 个 App HTTP 200 非空后立即停止。`gravity-insight.analysis-default-dictionary.v1` 登记并暴露已观察的 `api`、`cocoscreator` string array；新增字典键继续 fail-closed。Core/CLI/SDK/Plan/Agent 共用产品合同，卡与 Plan 节点声明 `gravity.agent-call-bound.v1`。 |
 | 查询实时事件目录 | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `REALTIME_EVENT_CATALOG_CONTRACT_MISSING`。2026-08-16 已按 catalog 枚举 **7 个可绑定 App**：7 次最小请求均 HTTP 200 明确空，0 个失败或未试 App；因此这是当前租户事实，不再归因于单 App 探测。item schema 与服务端分页仍未证实。`client_id/request_id/request_ip/raw_properties` 已由投影总裁决批准，取得 shape 后应登记并暴露。 |
 | 查询分析空间或报表设置 | 不计独立动线（既有稳定读取面重复） | 有 / 有 / 有 / 有 | 1 / 2（引用未知、在线解析） | `analysis.setting.query` 仍由完整控制流证明为 mutation。冻结 inventory 的 987 个唯一 `(method,path)` 经 375/375 hash-matched bundle 重放完全一致；378 条语义超集展开为 52 条 owner 命名空间全集后，确认四条真读：`analysis.dashboard.tree/detail` 装载空间树和看板设置，`analysis.report_config.list/get` 装载保存分析配置。四条均已有 stable 合同、Core/CLI/SDK/Plan/Agent 卡和 `gravity.agent-call-bound.v1`；一条最小 `report_config.list` probe 为 HTTP 200 非空，未重试、翻页或扩窗。本行与“查看看板详情、成员和筛选收藏”及“按精确引用重放保存分析”重复，故不新建产品。若未来提出更宽的通用设置面，`config/ui_config/remark` 与人员字段须先取得合同证据并登记后全部暴露；未登记时仅按合同漂移 fail-closed，不等待隐私批准。 |
-| 查找自有、共享和 MasterKey 报表并读取其定义 | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `REPORT_DIRECTORY_ITEM_SCHEMA_MISSING`。**账号级非空样本阻塞（读合同已解除）**：三条 route 的 path/body 均无 App 输入，认证上下文仅绑定账号/公司，故 App 枚举不适用。2026-08-16 对 `report.masterkey_report_group.list`、`report.report.list`、`report.shared_to_me.list` 各发 1 次最小第一页请求，均 HTTP 200 明确空；`report.report.detail` 因无父项未发送。空是当前账号级事实，item schema 仍未成立。 |
-| 查看报表订阅清单 | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `REPORT_SUBSCRIPTION_ITEM_SCHEMA_MISSING`。**账号级明确空 / item schema 阻塞**：route 的 path/body 无 App 输入，认证上下文仅绑定账号/公司，App 枚举不适用。2026-08-16 唯一一次 `page=1/page_size=1` 请求 HTTP 200、`data.list=[]`；未翻页，item schema 未成立。 |
+| 查找自有、共享和 MasterKey 报表并读取其定义 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问、卡面） | 写入 1 条 marker-owned 自有报表后，`report.report.list` 与父值绑定的 `report.report.detail` 均取得非空 schema；旧 shared/MasterKey 账号级空合同仍保留，不把空样本伪作 item schema。`gravity-insight.report-directory.v1` 完整分页后有界并发读 detail；列表/detail 观察字段全部登记暴露，新增字段继续 drift fail-closed。 |
+| 查看报表订阅清单 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问、卡面） | 创建 1 条 disabled、`send_way=[]`、无收件人的 marker-owned 订阅后，`report.subscribe.list` 取得非空 schema；`gravity-insight.report-subscriptions.v1` 完整分页返回全部登记字段。未调用 `subscribe/test`，清理后列表确认空。 |
+| 创建或删除可复用报表 | 已闭环 | 有 / 有 / 设计不适用 / 有 | 2（dry-run / 显式 execute） | 独立任务终点是可复用上游报表对象，不与目录读取合并计数。`report.report.update` 已生产验证 create/delete；marker 在 `remark` 经 list/detail round-trip，删除前 detail 闸门、删除后完整列表确认。Plan v1 不承诺人工确认、不可重放写、preimage 或写后读回，Agent 只交接两步命令且自然语言不自动执行。 |
+| 创建或删除报表订阅 | 已闭环 | 有 / 有 / 设计不适用 / 有 | 2（dry-run / 显式 execute） | 独立任务终点是可管理的上游订阅对象；生产验证 v3 报表父项 create/delete 与 subscription create/delete。订阅 marker 在 `name/wildcard_name` round-trip；创建强制 disabled 与空收件人，绝不调用 test route。v3 父项是本任务脚手架，不另拆动线；Plan 窄例外与报表写相同并逐条登记。 |
 | 查找可用的媒体报表 | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `MEDIA_REPORT_ITEM_SCHEMA_MISSING`。2026-08-16 使用最短当天窗口、无平台筛选、`page_size=1`，按 catalog 枚举 **7 个可绑定 App**；7 次请求均 HTTP 200 明确空，0 个失败或未试 App。当前租户确实无可用媒体报表；既有分页证据保留，item schema 未成立。 |
 | 查找当前账号可读的 App 项目 | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `APP_PROJECT_ITEM_SCHEMA_MISSING`。`app.project.list` 的 path/body 只有筛选与分页、无 App 输入，认证上下文仅绑定账号/公司，故 App 枚举不适用。2026-08-16 唯一一次最小第一页 POST 为 HTTP 200 明确空；这是当前账号级事实，item schema 与前三个产品面仍缺。 |
 | 查看 App 的 OneLink 与公开信息绑定 | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `APP_ONELINK_PUBLIC_BINDING_SAMPLE_MISSING`。**推进但未闭环**：OneLink 仍由既有 GET 父链证明当前账号明确空。appManage 进一步证明 app-info 的 `url` 来自调用方输入的 Google Play/App Store 下载链接，并非 OneLink 项；公开 URL 的 2 次最小 GET 均 HTTP 200，已恢复 `app_id/error/icon_url/image_data/name/package_name/platform` schema，但结果为 error-shaped `inconclusive`，未获成功数据。下一步由调用方提供一条已知能被 Gravity 抓取的公开商店 URL，只做 1 次读取；非空后按投影总裁决登记并暴露全部字段，不能用当前 OneLink 空样本补绑定。 |

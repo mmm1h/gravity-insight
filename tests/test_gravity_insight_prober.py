@@ -590,7 +590,7 @@ class GravityInsightProberTests(unittest.TestCase):
             assert_read_only_source(source)
 
     def test_probe_policy_honors_confirmed_read_with_blocked_path_segment(self) -> None:
-        source = json.loads(Path("src/gravity_sdk/contracts/drafts/report.subscribe.list.json").read_text(encoding="utf-8"))
+        source = json.loads(Path("src/gravity_sdk/contracts/operations/report.subscribe.list.json").read_text(encoding="utf-8"))
         parts = prober_transport.sdk_parts()
         operation = parts["models"].load_operation_manifest({"operations": [prober_transport._source_to_runtime(source["operation"])]})[0]
         registry = parts["registry"].Registry([operation])

@@ -107,6 +107,62 @@ class ReportSdkMixin:
             max_items=max_items,
         )
 
+    def report_directory(
+        self, *, max_pages: int = 1_000, max_items: int = 100_000,
+        max_workers: int = 6,
+    ) -> dict[str, Any]:
+        """Read all owned reports and their definitions."""
+
+        from .report_products import report_directory
+
+        _validate_limits(max_pages, max_items, max_workers)
+        return report_directory(
+            self.insight, max_pages=max_pages, max_items=max_items,
+            max_workers=max_workers,
+        )
+
+    def report_subscriptions(
+        self, *, max_pages: int = 1_000, max_items: int = 100_000,
+    ) -> dict[str, Any]:
+        """Read the complete bounded report-subscription list."""
+
+        from .report_products import report_subscriptions
+
+        _validate_limits(max_pages, max_items, 1)
+        return report_subscriptions(
+            self.insight, max_pages=max_pages, max_items=max_items,
+        )
+
+    def create_report(self, **options: Any) -> dict[str, Any]:
+        """Preview or explicitly create one marked report."""
+
+        from .report_mutation import create_report
+
+        return create_report(self.insight, **options)
+
+    def delete_report(self, report_id: int, *, execute: bool = False) -> dict[str, Any]:
+        """Preview or explicitly delete one marked report."""
+
+        from .report_mutation import delete_report
+
+        return delete_report(self.insight, report_id, execute=execute)
+
+    def create_report_subscription(self, **options: Any) -> dict[str, Any]:
+        """Preview or explicitly create one disabled marked subscription."""
+
+        from .report_mutation import create_subscription
+
+        return create_subscription(self.insight, **options)
+
+    def delete_report_subscription(
+        self, subscription_id: int, *, execute: bool = False,
+    ) -> dict[str, Any]:
+        """Preview or explicitly delete one marked subscription."""
+
+        from .report_mutation import delete_subscription
+
+        return delete_subscription(self.insight, subscription_id, execute=execute)
+
 
 def _validate_limits(max_pages: Any, max_items: Any, max_workers: Any) -> None:
     for field, value, maximum in (

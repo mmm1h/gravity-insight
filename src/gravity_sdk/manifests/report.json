@@ -346,10 +346,35 @@
           "id",
           "name",
           "category",
-          "modify_time"
+          "modify_time",
+          "remark",
+          "app_id",
+          "cid",
+          "create_time",
+          "create_user_id",
+          "create_user_name",
+          "is_preset",
+          "is_public",
+          "is_share",
+          "order",
+          "project_id",
+          "project_name",
+          "share_list",
+          "source_id",
+          "sub_type",
+          "subject_ids",
+          "subscribe",
+          "subscribe_list",
+          "subscriber_list",
+          "template_type",
+          "update_user_id",
+          "update_user_name"
         ],
-        "known_omitted_item_keys": [
-          "remark"
+        "opaque_json_item_keys": [
+          "share_list",
+          "subject_ids",
+          "subscribe_list",
+          "subscriber_list"
         ],
         "required_data_keys": [
           "list"
@@ -2210,6 +2235,970 @@
           "today",
           "yesterday"
         ],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "读取当前账号可见的自有报表目录；支持有界完整分页。",
+      "domain": "report",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "filters": [],
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "report.report.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/report/list/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filters",
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "filters": [],
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "report",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "data_shape": "object",
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "subject",
+          "report_group_id",
+          "config",
+          "remark",
+          "app_id",
+          "project_id",
+          "create_time",
+          "update_time",
+          "cid",
+          "create_user_id",
+          "create_user_name",
+          "modify_time",
+          "update_user_id",
+          "update_user_name"
+        ],
+        "required_data_keys": [
+          "list",
+          "page_info"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "detail",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "按报表目录返回的精确 ID 读取完整报表定义。",
+      "domain": "report",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "id": "1"
+        }
+      },
+      "operation_id": "report.report.detail",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/report/detail/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "id"
+        ]
+      },
+      "required_parent": [
+        {
+          "input_field": "id",
+          "operation_id": "report.report.list"
+        }
+      ],
+      "resource": "report",
+      "response_projection": {
+        "data_keys": [
+          "id",
+          "name",
+          "subject",
+          "report_group_id",
+          "config",
+          "remark",
+          "app_id",
+          "project_id",
+          "create_time",
+          "update_time",
+          "cid",
+          "create_user_id",
+          "create_user_name",
+          "modify_time",
+          "update_user_id",
+          "update_user_name"
+        ],
+        "data_shape": "object",
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": [
+          "id",
+          "name",
+          "subject",
+          "config",
+          "remark"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "update",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "创建或删除带 Gravity SDK 标记的测试报表；单次发送且不自动重试。",
+      "domain": "report",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "max_length": 64,
+          "type": "string"
+        },
+        "config": {
+          "max_length": 100000,
+          "required": true,
+          "type": "string"
+        },
+        "id": {
+          "max_length": 64,
+          "type": "string"
+        },
+        "is_delete": {
+          "enum": [
+            1
+          ],
+          "type": "integer"
+        },
+        "name": {
+          "max_length": 128,
+          "required": true,
+          "type": "string"
+        },
+        "project_id": {
+          "max_length": 64,
+          "type": "string"
+        },
+        "remark": {
+          "max_length": 2000,
+          "required": true,
+          "type": "string"
+        },
+        "report_group_id": {
+          "max_length": 64,
+          "type": "string"
+        },
+        "subject": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "report.report.update",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v2/datamanageconfig/report/update/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "id",
+          "name",
+          "remark",
+          "subject",
+          "app_id",
+          "project_id",
+          "report_group_id",
+          "config",
+          "is_delete"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "report",
+      "response_projection": {
+        "data_keys": [
+          "id"
+        ],
+        "data_shape": "object",
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "detail",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "按 v3 模板目录返回的精确 ID 读取订阅父报表定义。",
+      "domain": "report",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "subscribe": {
+          "default": 1,
+          "enum": [
+            1
+          ],
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "id": "1",
+          "subscribe": 1
+        }
+      },
+      "operation_id": "report.my_template.detail",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v3/conftemplate/my_template/detail/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {
+          "subscribe": 1
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "id",
+          "subscribe"
+        ]
+      },
+      "required_parent": [
+        {
+          "input_field": "id",
+          "operation_id": "report.multidim.template.mine.list"
+        }
+      ],
+      "resource": "my_template",
+      "response_projection": {
+        "data_item_keys": {
+          "detail": [
+            "id",
+            "name",
+            "remark",
+            "category",
+            "config",
+            "app_id",
+            "project_id",
+            "create_time",
+            "update_time",
+            "share_list",
+            "cid",
+            "create_user_id",
+            "create_user_name",
+            "is_preset",
+            "is_public",
+            "is_share",
+            "modify_time",
+            "order",
+            "source_id",
+            "sub_type",
+            "subject_ids",
+            "subscribe",
+            "template_type",
+            "update_user_id",
+            "update_user_name"
+          ]
+        },
+        "data_keys": [
+          "detail"
+        ],
+        "data_shape": "object",
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "share_list",
+          "subject_ids"
+        ],
+        "opaque_json_item_keys": [
+          "share_list",
+          "subject_ids"
+        ],
+        "required_data_keys": [
+          "detail"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
+      "action": "create",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "创建仅用于安全订阅验证的带标记 v3 报表父项；单次发送且不自动重试。",
+      "domain": "report",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "category": {
+          "enum": [
+            "adreport"
+          ],
+          "required": true,
+          "type": "string"
+        },
+        "config": {
+          "max_depth": 16,
+          "required": true,
+          "type": "object"
+        },
+        "name": {
+          "max_length": 20,
+          "required": true,
+          "type": "string"
+        },
+        "project_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "remark": {
+          "max_length": 2000,
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "report.template.create",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v3/conftemplate/template/create/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "name",
+          "remark",
+          "category",
+          "config",
+          "app_id",
+          "project_id"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "template",
+      "response_projection": {
+        "data_keys": [
+          "id"
+        ],
+        "data_shape": "object",
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": [
+          "id"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "update",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "删除完整列表读回确认含 Gravity SDK 标记的 v3 订阅父报表；单次发送且不自动重试。",
+      "domain": "report",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "is_deleted": {
+          "enum": [
+            1
+          ],
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "report.template.update",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v3/conftemplate/template/edit/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "id",
+          "is_deleted"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        {
+          "input_field": "id",
+          "operation_id": "report.multidim.template.mine.list"
+        }
+      ],
+      "resource": "template",
+      "response_projection": {
+        "data_keys": [],
+        "data_shape": "object",
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "读取当前账号的报表订阅清单；支持有界完整分页。",
+      "domain": "report",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "filters": {
+          "default": [],
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 20,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "filters": [],
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "report.subscribe.list",
+      "pagination": {
+        "default_page_size": 20,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v3/subscribe/list/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "filters",
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "filters": [],
+          "page": 1,
+          "page_size": 20
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "subscribe",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "data_shape": "object",
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "id",
+          "name",
+          "wildcard_name",
+          "report_conf_template_id",
+          "report_type",
+          "subscribe_status",
+          "start_time",
+          "end_time",
+          "send_way",
+          "subscribe_time",
+          "hourly_send_periods",
+          "subscribe_content",
+          "subscribe_selected_columns",
+          "subscribe_all_columns",
+          "category",
+          "app_id",
+          "project_id",
+          "create_user_id",
+          "create_user_name",
+          "create_time",
+          "update_time",
+          "report_name",
+          "period",
+          "subscribe_info",
+          "cid",
+          "modify_time",
+          "project_name",
+          "update_user_id",
+          "update_user_name"
+        ],
+        "required_data_keys": [
+          "list",
+          "page_info"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "create",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "创建禁用态、无收件人的 Gravity SDK 标记测试订阅；单次发送且不自动重试。",
+      "domain": "report",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "edit_id": {
+          "max_length": 64,
+          "type": "string"
+        },
+        "hourly_send_periods": {
+          "max_length": 10000,
+          "type": "string"
+        },
+        "id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "name": {
+          "max_length": 128,
+          "required": true,
+          "type": "string"
+        },
+        "report_conf_template_id": {
+          "max_length": 64,
+          "required": true,
+          "type": "string"
+        },
+        "report_type": {
+          "required": true,
+          "type": "integer"
+        },
+        "send_way": {
+          "max_length": 10000,
+          "required": true,
+          "sensitive": true,
+          "type": "string"
+        },
+        "subscribe_content": {
+          "required": true,
+          "type": "array"
+        },
+        "subscribe_selected_columns": {
+          "max_length": 100000,
+          "required": true,
+          "type": "string"
+        },
+        "subscribe_status": {
+          "enum": [
+            0
+          ],
+          "required": true,
+          "type": "integer"
+        },
+        "subscribe_time": {
+          "required": true,
+          "type": "array"
+        },
+        "wildcard_name": {
+          "max_length": 256,
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "report.subscribe.create",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v3/subscribe/create/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "send_way"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "id",
+          "edit_id",
+          "wildcard_name",
+          "name",
+          "report_type",
+          "subscribe_status",
+          "subscribe_time",
+          "hourly_send_periods",
+          "send_way",
+          "report_conf_template_id",
+          "subscribe_content",
+          "subscribe_selected_columns"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        {
+          "input_field": "report_conf_template_id",
+          "operation_id": "report.multidim.template.mine.list"
+        }
+      ],
+      "resource": "subscribe",
+      "response_projection": {
+        "data_keys": [
+          "id"
+        ],
+        "data_shape": "object",
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "delete",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "删除读回确认含 Gravity SDK 标记的报表订阅；单次发送且不自动重试。",
+      "domain": "report",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "ids": {
+          "required": true,
+          "type": "array"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "report.subscribe.delete",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v3/subscribe/delete/",
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "ids"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "subscribe",
+      "response_projection": {
+        "data_keys": [],
+        "data_shape": "object",
         "dynamic_item_fields": [],
         "item_keys": [],
         "required_data_keys": []

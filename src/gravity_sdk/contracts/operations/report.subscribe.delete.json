@@ -1,0 +1,21 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "source_schema_version": 2,
+  "target_manifest": "report.json",
+  "manifest_order": 20978,
+  "operation": {
+    "operation_id": "report.subscribe.delete",
+    "domain": "report", "resource": "subscribe", "action": "delete", "contract_version": 1,
+    "upstream_method": "POST", "path_template": "/turbo_engine/api/v3/subscribe/delete/", "auth_profile": "gravity_authorization",
+    "stability": "stable", "effect": "mutation", "executable": true,
+    "description": "删除读回确认含 Gravity SDK 标记的报表订阅；单次发送且不自动重试。",
+    "input_fields": {"ids": {"type": "array", "required": true}},
+    "request": {"path_fields": [], "query_fields": [], "body_fields": ["ids"], "defaults": {}, "fixed_query": {}, "fixed_body": {}},
+    "response_projection": {"data_shape": "object", "data_keys": [], "required_data_keys": [], "item_keys": [], "dynamic_item_fields": []},
+    "pagination": {"kind": "none", "page_field": "", "page_size_field": "", "list_path": "", "page_info_path": "", "total_page_field": ""},
+    "semantic_error_rules": ["code", "extra.error"],
+    "privacy_policy": {"classification": "user_level", "redact_fields": ["authorization", "access_token", "token", "cookie", "password", "secret", "refresh_token", "session_token"]},
+    "required_parent": [], "live_probe": {"enabled": false, "inputs": {}}, "examples": [],
+    "provenance": {"source_files": ["operations/report.subscribe.delete.json"], "family": null, "platform": null, "applied_overrides": []}
+  }
+}

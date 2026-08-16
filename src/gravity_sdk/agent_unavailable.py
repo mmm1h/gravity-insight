@@ -10,8 +10,6 @@ _REGISTERED_GAP_QUERIES = (
     "single user attribution detail",
     "current table schema",
     "analysis export results",
-    "report directory",
-    "report subscriptions",
     "media reports",
     "monetization aggregate",
     "readable app projects",

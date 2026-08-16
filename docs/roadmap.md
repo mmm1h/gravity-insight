@@ -2913,3 +2913,89 @@ Analysis compiler、metadata、export 和专属 gap 身份的覆盖裁决；父�
 本线新增 caller-recoverable error site `0` 个，因此新增 A/B/C 为 `0/0/0`；全仓审计仍为
 `1061 = 257 / 434 / 370`。技术债清单已复核：检索 core 和 selector harness 均在窄模块内，
 共享 `agent.py` 恢复到 500 SLOC 质量上限，未新增可由当前源码证明的结构债。
+## 报表目录与订阅的写解锁（2026-08-16）
+
+**提案与控制流裁决：**工作底稿位于 ignored `tmp/codex/write-reports/proposal.md`。先对与 census
+快照 hash-matched 的公开 bundle 做零业务请求复核，再发送任何生产请求。旧报表创建入口已找到：
+`POST /turbo_engine/api/v2/datamanageconfig/report/update/`；create body 为
+`name/remark/subject/app_id/project_id/config`，同一路由以 `id/name/subject/report_group_id/config/
+remark/is_delete=1` 删除。订阅 create/delete 为已知 v3 `/subscribe/create/` 与 `/subscribe/delete/`。
+静态控制流同时证明订阅父值必须来自 v3 conftemplate，所以父报表创建/删除分别登记
+`/conftemplate/template/create/` 与 `/conftemplate/template/edit/`。`/subscribe/test/` 会产生真实通知，
+不属于任何产品入口，本轮没有调用。
+
+**标记与失败关闭：**旧报表和 v3 父报表把 `GSDK-<12 hex>` 放进 `remark`；订阅没有 remark，故同时
+放进 `name` 与 `wildcard_name`。这三个字段都不改变报表计算或订阅收件人语义，并已由 list/detail
+原样 round-trip。上游没有拒绝紧凑 marker 格式。第一次把旧 v2 报表 ID 传给订阅 create 时，上游
+明确拒绝“找不到报表”；SDK 没有重放、换格式或无 marker 降级，而是改用前端已证明的 v3 父类型。
+删除前旧报表走 detail、订阅与 v3 父项走完整 list，均要求读回 marker；缺 marker 为 caller/2。
+删除 acknowledgement 后仍可见属于写后读回不确定，返回 upstream/3 且不自动重放；响应合同或本地
+policy 损坏仍为 local/4，没有新增退出码类别。
+
+**非空 item 合同：**旧报表 list 与 detail 同次观察并登记 14 个字段：`app_id`、`cid`、`config`、
+`create_time`、`create_user_id`、`create_user_name`、`id`、`modify_time`、`name`、`project_id`、
+`remark`、`subject`、`update_user_id`、`update_user_name`。订阅 list 观察并登记 23 个字段：
+`app_id`、`category`、`cid`、`create_time`、`create_user_id`、`create_user_name`、`end_time`、
+`hourly_send_periods`、`id`、`modify_time`、`name`、`project_id`、`project_name`、
+`report_conf_template_id`、`report_type`、`send_way`、`start_time`、`subscribe_content`、
+`subscribe_selected_columns`、`subscribe_status`、`update_user_id`、`update_user_name`、`wildcard_name`。
+所有观察字段均公开投影；未知新增字段仍省略并形成结构化 drift，删除/类型变化 fail-closed。
+
+**五面与 Plan 裁决：**读产品 `gravity-insight.report-directory.v1` 与
+`gravity-insight.report-subscriptions.v1` 均有 Core / CLI / SDK / Plan / Agent；目录完整分页后用全局预算
+内的有界 worker pool 读取 detail，订阅完整分页读取。Agent 卡共用 `gravity.agent-call-bound.v1`，
+已知输入 1 次，未知能力 2 次。两条写产品共用 `gravity-insight.report-mutation.v1`，有 Core / CLI /
+SDK / Agent，且 `natural_language_auto_execute=false`、发现后固定 dry-run / execute 两次交接。
+
+报表写与订阅写的 Plan 面逐条记“设计不适用”，引用 Segment 的同一窄例外，并分别满足三条件：
+(1) create/delete 是持久化 effect，必须显式确认、不可自动重放、删除前读 preimage/marker、写后读回，
+Plan v1 的无副作用数据节点合同没有这些语义；(2) Core、CLI、SDK 和 Agent 两步交接已能独立完成任务，
+没有因为缺 Plan 减少调用方任务集合；(3) 本节和 `docs/analysis-journeys.md` 都显式登记例外及边界，
+将来 Plan 有 mutation effect/confirmation/replay 合同时可单独撤销。读产品不是例外，正常进入 Plan。
+
+**生产请求账本与零残留：**所有 7 次真写之前都执行了同类 dry-run，均
+`offline=true/network_called=false`；真写 `attempts=1`、无 mutation retry，低于 15 次上限。UTC
+`2026-08-15T23:35Z` 至 `23:44Z` 的 receipt 复算为 **39 次 HTTP = 32 read + 7 write**，transport
+均为 HTTP 200。只有首次 App 解析按默认完整读取走了 `app.list` 5 页；目标报表/订阅列表没有额外翻页，
+没有日期窗可扩，也没有换 App 追数据。
+
+- Read 32：`app.list` 5；`report.report.list` 6；`report.report.detail` 3；
+  `report.subscribe.list` 8；`report.multidim.template.mine.list` 7；
+  `report.my_template.detail` 3。
+- Write 7：`report.report.update` 2（create/delete）；`report.subscribe.create` 2（旧父类型被拒 1、
+  v3 父成功 1）；`report.subscribe.delete` 1；`report.template.create` 1；
+  `report.template.update` 1。
+
+实际对象序列为：旧报表创建成功；旧父类型订阅 create 被拒且未创建对象；v3 父报表创建成功；disabled、
+空收件人订阅创建成功；订阅删除；v3 父报表删除；旧报表删除。v3 父 create/delete 的即时 list 曾因
+上游最终一致性返回写后读回不确定，SDK 按 upstream/3 失败关闭且没有重发写；随后独立完整 list 分别
+确认创建只出现 1 项、删除后消失。最终 UTC `23:44Z` 的三次独立完整读回为：
+`report_directory.item_count=0`、`report_subscriptions.item_count=0`、v3 自有模板 `data.list=[] /
+total_number=0`。三类列表中均无 `GSDK-` marker，故生产环境零残留。
+
+**台账与质量：**两条原缺失读动线各因非空 schema 转闭环，`49 = 37 / 1 / 11` 先变为
+`49 = 39 / 1 / 9`。沿用 Segment 的独立任务口径，创建/删除可复用报表与创建/删除订阅各新增 1 条
+闭环写动线；v3 父报表只是订阅实现脚手架，不另计。因此最终为 `49 + 2 = 51`、
+`39 + 2 = 41`，即 **`51 = 41 / 1 / 9`**。新增 4 read + 5 mutation operation，operation
+`194 + 9 = 203`、stable `185 + 9 = 194`。本线新增 caller-recoverable raise site **12** 个，
+全部 A 档：全仓从 `1061 = A257 / B434 / C370` 变为 `1073 = A269 / B434 / C370`。技术债清单已
+复核；实现按 report core/contract/support/CLI 分域，质量 ratchet 没有放宽，未新增可由当前源码证明的
+结构债。
+
+**合并评测收口：**两条读取动线在公开 target registry 中由目标 gap 切到产品目标，evaluator 只新增
+`selector=composite:report_directory` 与 `selector=composite:report_subscriptions` 两个精确 matcher；
+评分算法、层定义和阈值未改。write-reports 已删除这两个 gap recognizer，合并时同步从 Arm B 的既有
+gap 查询清单移除相应失效引用；索引来源和 `0.375` 阈值均未改变。历史 NL 回归矩阵漏了 registry 的
+J25 分群成员，故原 J25–J47 的 23 条 query 仅把编号改引 J26–J48，J01–J24 不变；47 条中英文 query
+列与改前逐字相等。未被任何测试引用的旧连字符版重复 fixture 已删除，现行矩阵逐行校验 ID 存在且
+标题等于 registry 的 `ledger_title`，从而不再维护独立动线编号/标题真值。
+
+订阅 recognizer 新增的是产品级正向证据集合：英文仍要求 report + subscription，中文要求“报表”与
+“订阅/订了/订的/定时发/定期发/自动发”之一共同出现；没有写死题句或词序。目录 recognizer 没有删除
+负向词，并以同一订阅证据排除抢占。三条新增同义问法“我订了哪些报表”“有哪些报表会定时发给我”
+“请查看定期发送给我的报表”均首卡到 `composite:report_subscriptions`，目录题仍只到
+`composite:report_directory`。development 336 题从 `261/336、188/188、73/91、5/5、selection/
+terminal pass^4 261/336 与 73/91、PASS/0` 变为 `262/336、201/201、61/77、5/5、selection/
+terminal pass^4 262/336 与 61/77、PASS/0`；不稳定题仍为 0、本地写交接仍为 29、生产 HTTP 为 0。
+14 条报表题的选择结果从 `12 target_gap + 2 wrong_gap` 变为 `13 correct + 1 no_candidate`，所以净提升
+1 只来自两条闭环目标迁移与订阅可达性修复；参数/终点分母变化是正确产品卡替代 gap 的层间迁移。

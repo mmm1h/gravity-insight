@@ -1,0 +1,22 @@
+{
+  "$schema": "../schema/operation-v2.schema.json", "source_schema_version": 2,
+  "target_manifest": "report.json", "manifest_order": 20972,
+  "operation": {
+    "operation_id": "report.template.create", "domain": "report", "resource": "template", "action": "create", "contract_version": 1,
+    "upstream_method": "POST", "path_template": "/turbo_engine/api/v3/conftemplate/template/create/", "auth_profile": "gravity_authorization",
+    "stability": "stable", "effect": "mutation", "executable": true,
+    "description": "创建仅用于安全订阅验证的带标记 v3 报表父项；单次发送且不自动重试。",
+    "input_fields": {
+      "name": {"type": "string", "required": true, "max_length": 20}, "remark": {"type": "string", "required": true, "max_length": 2000},
+      "category": {"type": "string", "enum": ["adreport"], "required": true}, "config": {"type": "object", "required": true, "max_depth": 16},
+      "app_id": {"type": "string", "required": true, "max_length": 64}, "project_id": {"type": "string", "required": true, "max_length": 64}
+    },
+    "request": {"path_fields": [], "query_fields": [], "body_fields": ["name", "remark", "category", "config", "app_id", "project_id"], "defaults": {}, "fixed_query": {}, "fixed_body": {}},
+    "response_projection": {"data_shape": "object", "data_keys": ["id"], "required_data_keys": ["id"], "item_keys": [], "dynamic_item_fields": []},
+    "pagination": {"kind": "none", "page_field": "", "page_size_field": "", "list_path": "", "page_info_path": "", "total_page_field": ""},
+    "semantic_error_rules": ["code", "extra.error"],
+    "privacy_policy": {"classification": "configuration", "redact_fields": ["authorization", "access_token", "token", "cookie", "password", "secret", "refresh_token", "session_token"]},
+    "required_parent": [], "live_probe": {"enabled": false, "inputs": {}}, "examples": [],
+    "provenance": {"source_files": ["operations/report.template.create.json"], "family": null, "platform": null, "applied_overrides": []}
+  }
+}

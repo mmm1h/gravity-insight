@@ -80,7 +80,7 @@ _BLOCKED_TERMINAL_TOKENS = _BLOCKED_PATH_SEGMENTS | frozenset(
 _EXACT_READ_ONLY_PATH_EXCEPTIONS = frozenset({
     "/turbo_engine/api/v2/event/in_report/hide_or_delete_prop/",
     "/turbo_engine/api/v2/datamanageconfig/template/subject/share/list/",
-    "/turbo_engine/api/v2/datamanageconfig/template/share/list/",
+    "/turbo_engine/api/v2/datamanageconfig/template/share/list/", "/turbo_engine/api/v3/subscribe/list/",
 })
 _MATERIAL_REPORT_METRICS: Mapping[str, tuple[str, ...]] = MappingProxyType(
     {

@@ -31,6 +31,8 @@ gravity attribution snapshot  并发读取一个 App 的归因配置快照
 gravity attribution performance 读取一个 App 日期区间的四组归因表现
 gravity reports pulse         并发读取 App 经营概览与趋势
 gravity reports usage         完整读取公司级按日资源用量趋势
+gravity reports directory|subscriptions  完整读取报表目录/定义或订阅清单
+gravity reports create|delete|subscribe|unsubscribe  预览或显式执行 marker-governed 写
 gravity materials performance 读取稳定的跨平台素材表现
 gravity materials fetch       从已登记素材响应按精确引用下载文件
 ```
@@ -802,6 +804,20 @@ gravity reports usage --max-pages 1000 --max-items 100000
 返回 `gravity-insight.company-usage.v1`；稳定投影固定排除 `user_count`，未知上游字段继续
 fail closed。未知入口使用 `gravity agent "company resource usage" --domain report`，返回唯一
 `composite:company_usage`，无需补 App、日期或引用，发现后执行共两次调用。
+
+报表目录与订阅都是无 App 输入的账号级产品：
+
+```powershell
+gravity reports directory --max-pages 1000 --max-items 100000 --concurrency 6
+gravity reports subscriptions --max-pages 1000 --max-items 100000
+```
+
+目录完整分页后对每个精确 ID 读取 detail，返回 `gravity-insight.report-directory.v1`；订阅返回
+`gravity-insight.report-subscriptions.v1`。两者均可直接进入 Plan。写操作必须显式二选一
+`--dry-run` / `--execute`：`create/delete` 管理旧报表，`subscribe/unsubscribe` 管理 disabled、空收件人
+订阅。create 写入 `GSDK-<12 hex>`，delete 只处理执行时读回仍带 marker 的对象。Agent 只返回预览与
+确认后的两步 argv，`natural_language_auto_execute=false`，写操作不进入 Plan v1；永不调用
+`subscribe/test`。
 
 ### Custom audiences
 

@@ -1,0 +1,28 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "source_schema_version": 2,
+  "target_manifest": "report.json",
+  "manifest_order": 20977,
+  "operation": {
+    "operation_id": "report.subscribe.create",
+    "domain": "report", "resource": "subscribe", "action": "create", "contract_version": 1,
+    "upstream_method": "POST", "path_template": "/turbo_engine/api/v3/subscribe/create/", "auth_profile": "gravity_authorization",
+    "stability": "stable", "effect": "mutation", "executable": true,
+    "description": "创建禁用态、无收件人的 Gravity SDK 标记测试订阅；单次发送且不自动重试。",
+    "input_fields": {
+      "id": {"type": "string", "required": true, "max_length": 64}, "edit_id": {"type": "string", "max_length": 64},
+      "wildcard_name": {"type": "string", "required": true, "max_length": 256}, "name": {"type": "string", "required": true, "max_length": 128},
+      "report_type": {"type": "integer", "required": true}, "subscribe_status": {"type": "integer", "enum": [0], "required": true},
+      "subscribe_time": {"type": "array", "required": true}, "hourly_send_periods": {"type": "string", "max_length": 10000},
+      "send_way": {"type": "string", "required": true, "max_length": 10000, "sensitive": true}, "report_conf_template_id": {"type": "string", "required": true, "max_length": 64},
+      "subscribe_content": {"type": "array", "required": true}, "subscribe_selected_columns": {"type": "string", "required": true, "max_length": 100000}
+    },
+    "request": {"path_fields": [], "query_fields": [], "body_fields": ["id", "edit_id", "wildcard_name", "name", "report_type", "subscribe_status", "subscribe_time", "hourly_send_periods", "send_way", "report_conf_template_id", "subscribe_content", "subscribe_selected_columns"], "defaults": {}, "fixed_query": {}, "fixed_body": {}},
+    "response_projection": {"data_shape": "object", "data_keys": ["id"], "required_data_keys": [], "item_keys": [], "dynamic_item_fields": []},
+    "pagination": {"kind": "none", "page_field": "", "page_size_field": "", "list_path": "", "page_info_path": "", "total_page_field": ""},
+    "semantic_error_rules": ["code", "extra.error"],
+    "privacy_policy": {"classification": "user_level", "redact_fields": ["authorization", "access_token", "token", "cookie", "password", "secret", "refresh_token", "session_token", "send_way"]},
+    "required_parent": [{"operation_id": "report.multidim.template.mine.list", "input_field": "report_conf_template_id", "output_path": "data.list[].id", "selection": "caller_select"}], "live_probe": {"enabled": false, "inputs": {}}, "examples": [],
+    "provenance": {"source_files": ["operations/report.subscribe.create.json"], "family": null, "platform": null, "applied_overrides": []}
+  }
+}

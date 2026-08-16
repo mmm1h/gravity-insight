@@ -22,33 +22,33 @@
 | J15 | 比较已支持平台的素材表现 | 对比一下各个已支持投放平台的素材表现，看看哪些素材消耗高但转化差。 | Compare creative performance across supported ad platforms and identify creatives with high spend but poor conversion. |
 | J16 | 读取单日订单目录 | 给我 8 月 1 日的完整已登记订单目录。 | Give me the complete registered order directory for August 1. |
 | J17 | 按 TraceID 追踪单日订单拆单结果 | 我有一个 TraceID，帮我追踪它在 8 月 1 日拆成了哪些订单。 | I have a TraceID; trace which orders it was split into on August 1. |
-| J18 | 读取单日完整已登记变现明细 | 查一下 8 月 1 日完整已登记的逐笔变现明细。 | Retrieve the complete registered row-level monetization details for August 1. |
+| J18 | 读取单日完整已登记变现明细（D27） | 查一下 8 月 1 日完整已登记的逐笔变现明细。 | Retrieve the complete registered row-level monetization details for August 1. |
 | J19 | 执行 workspace 登记的聚合 SQL 分析产品 | 运行 workspace 里登记好的“每日付费汇总”分析。 | Run the registered “daily payment summary” analysis from this workspace. |
 | J20 | 查看看板详情、成员和筛选收藏 | 打开这个看板的详情，顺便告诉我有哪些成员和保存的筛选条件。 | Show this dashboard's details, including its members and saved filters. |
-| J21 | 忠实重放看板图表及页面条件 | 按看板原来的图表配置和页面筛选条件，把整张看板重新跑一遍。 | Replay the whole dashboard using its original chart configuration and page-level filters. |
+| J21 | 忠实重放看板图表及页面条件（D22） | 按看板原来的图表配置和页面筛选条件，把整张看板重新跑一遍。 | Replay the whole dashboard using its original chart configuration and page-level filters. |
 | J22 | 按精确引用重放保存分析 | 我有一个已保存分析的精确引用，按它原来的定义重新跑出结果。 | I have the exact reference to a saved analysis; rerun it with its original definition. |
 | J23 | 按精确引用重放分析模板 | 按这个分析模板的精确引用重放一次，不要改模板里的定义。 | Replay this analysis template by its exact reference without changing its definition. |
 | J24 | 查看分群详情、版本和单日聚合结果 | 查看这个分群的详情、版本记录，以及昨天的聚合人数结果。 | Show this segment's details, version history, and aggregate user count for yesterday. |
-| J25 | 用显式物理维度、指标和筛选读取多维报表 | 按省份和渠道两个物理维度，读取收入和付费人数指标，并筛选安卓用户。 | Read a multidimensional report by the physical dimensions province and channel, with revenue and payer-count metrics, filtered to Android users. |
-| J26 | 按平台和物理指标读取推广表现 | 查巨量平台上这些 App 上周的消耗、点击和转化表现。 | Show spend, clicks, and conversions for these apps on the Bytedance ad platform last week. |
-| J27 | 查看 B 站账户/产品投放表现 | 看一下 B 站账户和产品最近七天的投放表现。 | Show advertising performance for the Bilibili account and products over the last seven days. |
-| J28 | 读取巨量广告主消耗、余额、预算模式和状态 | 列出巨量广告主的消耗、账户余额、预算模式和当前状态。 | List each Bytedance advertiser's spend, account balance, budget mode, and current status. |
-| J29 | 读取巨量普通/标准标题包的标题数、计划数与成本表现 | 对比巨量普通标题包和标准标题包的标题数、关联计划数和成本表现。 | Compare regular and standard Bytedance title packages by title count, linked campaign count, and cost performance. |
-| J30 | 离线查找可用于分析的事件、属性、指标和模板名称 | 不联网，帮我找一下本地目录里有哪些和“付费”相关的事件、属性、指标或分析模板。 | Without going online, find events, properties, metrics, or analysis templates related to “payment” in the local catalog. |
-| J31 | 查询已同步的数据表版本与变更观察 | 查一下已经同步过的数据表有哪些版本，并告诉我观察到哪些变更。 | Show the versions of synced data tables and the changes that have been observed. |
-| J32 | 创建、轮询并下载素材分析报表 | 帮我生成一份素材分析报表，等它完成后下载到本地。 | Create a creative-analysis report, wait for it to finish, and download it locally. |
-| J33 | 查询分析默认值字典 | 我想查看分析页面可用的默认值字典。 | Show the default-value dictionary available to analysis queries. |
-| J34 | 查询实时事件目录 | 列出当前能看到的实时事件目录，并告诉我每条事件的基本信息。 | List the real-time event catalog I can access and show the basic details for each event. |
-| J35 | 查找自有、共享和 MasterKey 报表并读取其定义 | 帮我找出我自己的、别人共享给我的以及 MasterKey 报表，并读取报表定义。 | Find my own reports, reports shared with me, and MasterKey reports, then read their definitions. |
-| J36 | 查看报表订阅清单 | 列出我当前订阅了哪些报表。 | List the reports I am currently subscribed to. |
-| J37 | 查找可用的媒体报表 | 帮我找一下现在有哪些可用的媒体投放报表。 | Find the media advertising reports that are currently available. |
-| J38 | 查找当前账号可读的 App 项目 | 列出当前账号有权限读取的 App 项目。 | List the app projects that the current account is allowed to read. |
-| J39 | 查看 App 的 OneLink 与公开信息绑定 | 查看这个 App 绑定的 OneLink 和应用商店公开信息。 | Show this app's OneLink binding and its public app-store information. |
-| J40 | 按平台、广告位和日期汇总变现结果 | 按变现平台和广告位汇总上周每天的收入、展示和 eCPM。 | Summarize daily revenue, impressions, and eCPM for last week by monetization platform and ad placement. |
-| J41 | 查询归因表现聚合 | 汇总上周各渠道的归因新增、激活和付费表现。 | Aggregate attributed new users, activations, and payments by channel for last week. |
-| J42 | 下钻单用户归因明细 | 我想下钻查看某个用户的归因来源和完整归因明细。 | Drill down into a specific user's attribution source and full attribution details. |
-| J43 | 按表名或 App 查询数据表当前 schema、字段和版本 | 按表名查出这张数据表当前的 schema、字段列表和版本。 | Look up this data table by name and show its current schema, fields, and version. |
-| J44 | 下钻非 Bytedance 平台的计划、组和创意表现 | 下钻查看快手和腾讯平台的计划、广告组和创意表现。 | Drill down into campaign, ad-group, and creative performance on Kuaishou and Tencent. |
-| J45 | 深查各平台专属素材与创意 | 查看各投放平台专属的素材和创意字段，不要只给通用素材目录。 | Show platform-specific creative assets and fields, not just the common creative catalog. |
-| J46 | 导出事件、分群、用户、付费或变现分析结果 | 把这次事件、分群、用户、付费或变现分析的结果导出成文件。 | Export the results of this event, segment, user, payment, or monetization analysis to a file. |
-| J47 | 按精确平台素材引用预览或下载图片/视频 | 我有一个平台素材的精确引用，帮我预览或下载对应的图片和视频。 | I have the exact reference to a platform creative; preview or download its image and video. |
+| J26 | 用显式物理维度、指标和筛选读取多维报表 | 按省份和渠道两个物理维度，读取收入和付费人数指标，并筛选安卓用户。 | Read a multidimensional report by the physical dimensions province and channel, with revenue and payer-count metrics, filtered to Android users. |
+| J27 | 按平台和物理指标读取推广表现 | 查巨量平台上这些 App 上周的消耗、点击和转化表现。 | Show spend, clicks, and conversions for these apps on the Bytedance ad platform last week. |
+| J28 | 查看 B 站账户/产品投放表现 | 看一下 B 站账户和产品最近七天的投放表现。 | Show advertising performance for the Bilibili account and products over the last seven days. |
+| J29 | 读取巨量广告主消耗、余额、预算模式和状态 | 列出巨量广告主的消耗、账户余额、预算模式和当前状态。 | List each Bytedance advertiser's spend, account balance, budget mode, and current status. |
+| J30 | 读取巨量普通/标准标题包的标题数、计划数与成本表现 | 对比巨量普通标题包和标准标题包的标题数、关联计划数和成本表现。 | Compare regular and standard Bytedance title packages by title count, linked campaign count, and cost performance. |
+| J31 | 离线查找可用于分析的事件、属性、指标和模板名称 | 不联网，帮我找一下本地目录里有哪些和“付费”相关的事件、属性、指标或分析模板。 | Without going online, find events, properties, metrics, or analysis templates related to “payment” in the local catalog. |
+| J32 | 查询已同步的数据表版本与变更观察 | 查一下已经同步过的数据表有哪些版本，并告诉我观察到哪些变更。 | Show the versions of synced data tables and the changes that have been observed. |
+| J33 | 创建、轮询并下载素材分析报表 | 帮我生成一份素材分析报表，等它完成后下载到本地。 | Create a creative-analysis report, wait for it to finish, and download it locally. |
+| J34 | 查询分析默认值字典 | 我想查看分析页面可用的默认值字典。 | Show the default-value dictionary available to analysis queries. |
+| J35 | 查询实时事件目录 | 列出当前能看到的实时事件目录，并告诉我每条事件的基本信息。 | List the real-time event catalog I can access and show the basic details for each event. |
+| J36 | 查找自有、共享和 MasterKey 报表并读取其定义 | 帮我找出我自己的、别人共享给我的以及 MasterKey 报表，并读取报表定义。 | Find my own reports, reports shared with me, and MasterKey reports, then read their definitions. |
+| J37 | 查看报表订阅清单 | 列出我当前订阅了哪些报表。 | List the reports I am currently subscribed to. |
+| J38 | 查找可用的媒体报表 | 帮我找一下现在有哪些可用的媒体投放报表。 | Find the media advertising reports that are currently available. |
+| J39 | 查找当前账号可读的 App 项目 | 列出当前账号有权限读取的 App 项目。 | List the app projects that the current account is allowed to read. |
+| J40 | 查看 App 的 OneLink 与公开信息绑定 | 查看这个 App 绑定的 OneLink 和应用商店公开信息。 | Show this app's OneLink binding and its public app-store information. |
+| J41 | 按平台、广告位和日期汇总变现结果（D28） | 按变现平台和广告位汇总上周每天的收入、展示和 eCPM。 | Summarize daily revenue, impressions, and eCPM for last week by monetization platform and ad placement. |
+| J42 | 查询归因表现聚合（D35） | 汇总上周各渠道的归因新增、激活和付费表现。 | Aggregate attributed new users, activations, and payments by channel for last week. |
+| J43 | 下钻单用户归因明细（F40） | 我想下钻查看某个用户的归因来源和完整归因明细。 | Drill down into a specific user's attribution source and full attribution details. |
+| J44 | 按表名或 App 查询数据表当前 schema、字段和版本（F41） | 按表名查出这张数据表当前的 schema、字段列表和版本。 | Look up this data table by name and show its current schema, fields, and version. |
+| J45 | 下钻非 Bytedance 平台的计划、组和创意表现（D33/D34） | 下钻查看快手和腾讯平台的计划、广告组和创意表现。 | Drill down into campaign, ad-group, and creative performance on Kuaishou and Tencent. |
+| J46 | 深查各平台专属素材与创意（D32） | 查看各投放平台专属的素材和创意字段，不要只给通用素材目录。 | Show platform-specific creative assets and fields, not just the common creative catalog. |
+| J47 | 导出事件、分群、用户、付费或变现分析结果 | 把这次事件、分群、用户、付费或变现分析的结果导出成文件。 | Export the results of this event, segment, user, payment, or monetization analysis to a file. |
+| J48 | 按精确平台素材引用预览或下载图片/视频（Issue 19） | 我有一个平台素材的精确引用，帮我预览或下载对应的图片和视频。 | I have the exact reference to a platform creative; preview or download its image and video. |

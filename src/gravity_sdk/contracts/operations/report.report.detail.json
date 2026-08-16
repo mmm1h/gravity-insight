@@ -1,0 +1,24 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "source_schema_version": 2,
+  "target_manifest": "report.json",
+  "manifest_order": 20894,
+  "operation": {
+    "operation_id": "report.report.detail",
+    "domain": "report", "resource": "report", "action": "detail", "contract_version": 1,
+    "upstream_method": "GET", "path_template": "/turbo_engine/api/v2/datamanageconfig/report/detail/", "auth_profile": "gravity_authorization",
+    "stability": "stable", "effect": "read", "executable": true,
+    "description": "按报表目录返回的精确 ID 读取完整报表定义。",
+    "input_fields": {"id": {"type": "string", "required": true, "max_length": 64}},
+    "request": {"path_fields": [], "query_fields": ["id"], "body_fields": [], "defaults": {}, "fixed_query": {}, "fixed_body": {}},
+    "response_projection": {
+      "data_shape": "object", "data_keys": ["id", "name", "subject", "report_group_id", "config", "remark", "app_id", "project_id", "create_time", "update_time", "cid", "create_user_id", "create_user_name", "modify_time", "update_user_id", "update_user_name"],
+      "required_data_keys": ["id", "name", "subject", "config", "remark"], "item_keys": [], "dynamic_item_fields": []
+    },
+    "pagination": {"kind": "none", "page_field": "", "page_size_field": "", "list_path": "", "page_info_path": "", "total_page_field": ""},
+    "semantic_error_rules": ["code", "extra.error"],
+    "privacy_policy": {"classification": "configuration", "redact_fields": ["authorization", "access_token", "token", "cookie", "password", "secret", "refresh_token", "session_token"]},
+    "required_parent": [{"operation_id": "report.report.list", "input_field": "id", "output_path": "data.list[].id", "selection": "caller_select"}], "live_probe": {"enabled": true, "inputs": {"id": "1"}}, "examples": [],
+    "provenance": {"source_files": ["operations/report.report.detail.json"], "family": null, "platform": null, "applied_overrides": []}
+  }
+}

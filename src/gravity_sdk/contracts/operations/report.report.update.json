@@ -1,0 +1,26 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "source_schema_version": 2,
+  "target_manifest": "report.json",
+  "manifest_order": 20897,
+  "operation": {
+    "operation_id": "report.report.update",
+    "domain": "report", "resource": "report", "action": "update", "contract_version": 1,
+    "upstream_method": "POST", "path_template": "/turbo_engine/api/v2/datamanageconfig/report/update/", "auth_profile": "gravity_authorization",
+    "stability": "stable", "effect": "mutation", "executable": true,
+    "description": "创建或删除带 Gravity SDK 标记的测试报表；单次发送且不自动重试。",
+    "input_fields": {
+      "id": {"type": "string", "max_length": 64}, "name": {"type": "string", "required": true, "max_length": 128},
+      "remark": {"type": "string", "required": true, "max_length": 2000}, "subject": {"type": "string", "required": true, "max_length": 64},
+      "app_id": {"type": "string", "max_length": 64}, "project_id": {"type": "string", "max_length": 64}, "report_group_id": {"type": "string", "max_length": 64},
+      "config": {"type": "string", "required": true, "max_length": 100000}, "is_delete": {"type": "integer", "enum": [1]}
+    },
+    "request": {"path_fields": [], "query_fields": [], "body_fields": ["id", "name", "remark", "subject", "app_id", "project_id", "report_group_id", "config", "is_delete"], "defaults": {}, "fixed_query": {}, "fixed_body": {}},
+    "response_projection": {"data_shape": "object", "data_keys": ["id"], "required_data_keys": [], "item_keys": [], "dynamic_item_fields": []},
+    "pagination": {"kind": "none", "page_field": "", "page_size_field": "", "list_path": "", "page_info_path": "", "total_page_field": ""},
+    "semantic_error_rules": ["code", "extra.error"],
+    "privacy_policy": {"classification": "configuration", "redact_fields": ["authorization", "access_token", "token", "cookie", "password", "secret", "refresh_token", "session_token"]},
+    "required_parent": [], "live_probe": {"enabled": false, "inputs": {}}, "examples": [],
+    "provenance": {"source_files": ["operations/report.report.update.json"], "family": null, "platform": null, "applied_overrides": []}
+  }
+}

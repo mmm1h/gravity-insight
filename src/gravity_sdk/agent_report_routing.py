@@ -10,6 +10,8 @@ REPORT_PRODUCTS = frozenset({
     "business_pulse",
     "company_usage",
     "custom_audience",
+    "report_directory",
+    "report_subscriptions",
 })
 
 
@@ -30,6 +32,16 @@ def report_product_query(name: str, query: str) -> bool:
         from .agent_custom_audience import custom_audience_query
 
         return custom_audience_query(query)
+    if name in {"report_directory", "report_subscriptions"}:
+        from .agent_report_directory import (
+            report_directory_query, report_subscriptions_query,
+        )
+
+        return (
+            report_directory_query(query)
+            if name == "report_directory"
+            else report_subscriptions_query(query)
+        )
     raise ValueError(f"unknown report product: {name}")
 
 
@@ -52,6 +64,10 @@ def report_product_plan_request(
         from .agent_custom_audience import custom_audience_plan_request
 
         return custom_audience_plan_request(card)
+    if name in {"report_directory", "report_subscriptions"}:
+        from .agent_report_directory import report_read_plan_request
+
+        return report_read_plan_request(name, card)
     raise ValueError(f"unknown report product: {name}")
 
 

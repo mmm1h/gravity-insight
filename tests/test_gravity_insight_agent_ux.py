@@ -700,6 +700,28 @@ class DiscoveryUxTests(unittest.TestCase):
         self.assertTrue(exact["candidates"][0]["match"]["exact_selector"])
         self.assertEqual("app.list", plural["candidates"][0]["selector"])
 
+    def test_natural_language_journey_matrix_uses_registry_identities(self) -> None:
+        root = Path(__file__).parents[1]
+        registry = json.loads(
+            (root / "evals/agent_usability/journey-targets.json").read_text(
+                encoding="utf-8"
+            )
+        )["journeys"]
+        matrix = root / "tests/fixtures/nl_reachability_phrasings.md"
+        identities = []
+        for line in matrix.read_text(encoding="utf-8").splitlines():
+            if line.startswith("| J"):
+                journey_id, title, _chinese, _english = (
+                    field.strip() for field in line.strip("|").split("|")
+                )
+                identities.append((journey_id, title))
+        self.assertEqual(47, len(identities))
+        self.assertEqual(47, len({journey_id for journey_id, _title in identities}))
+        for journey_id, title in identities:
+            with self.subTest(journey_id=journey_id):
+                self.assertIn(journey_id, registry)
+                self.assertEqual(registry[journey_id]["ledger_title"], title)
+
     def test_frozen_natural_language_journey_matrix_is_first_call_reachable(self) -> None:
         selectors = {
             "J01": "analysis.query.spec:event", "J02": "analysis.query.spec:funnel",
@@ -713,30 +735,30 @@ class DiscoveryUxTests(unittest.TestCase):
             "J17": "composite:order_split_trace", "J18": "composite:monetization_detail",
             "J20": "composite:dashboard_snapshot", "J21": "composite:dashboard_analysis",
             "J22": "composite:saved_analysis", "J23": "composite:analysis_template",
-            "J24": "composite:segment_snapshot", "J25": "composite:multidim",
-            "J26": "composite:promotion_performance",
-            "J27": "composite:bilibili_account_performance",
-            "J28": "composite:advertiser_profile", "J29": "composite:title_package",
-            "J30": "metadata:search", "J31": "metadata:table_lineage",
-            "J32": "export.material.report.start",
-            "J33": "composite:analysis_default_dictionary",
-            "J41": "composite:attribution_performance",
-            "J47": "material.asset.fetch",
+            "J24": "composite:segment_snapshot", "J26": "composite:multidim",
+            "J27": "composite:promotion_performance",
+            "J28": "composite:bilibili_account_performance",
+            "J29": "composite:advertiser_profile", "J30": "composite:title_package",
+            "J31": "metadata:search", "J32": "metadata:table_lineage",
+            "J33": "export.material.report.start",
+            "J34": "composite:analysis_default_dictionary",
+            "J36": "composite:report_directory",
+            "J37": "composite:report_subscriptions",
+            "J42": "composite:attribution_performance",
+            "J48": "material.asset.fetch",
         }
         gaps = {
             "J19": "WORKSPACE_SQL_PRODUCT_NOT_CONFIGURED",
-            "J34": "REALTIME_EVENT_CATALOG_CONTRACT_MISSING",
-            "J35": "REPORT_DIRECTORY_ITEM_SCHEMA_MISSING",
-            "J36": "REPORT_SUBSCRIPTION_ITEM_SCHEMA_MISSING",
-            "J37": "MEDIA_REPORT_ITEM_SCHEMA_MISSING",
-            "J38": "APP_PROJECT_ITEM_SCHEMA_MISSING",
-            "J39": "APP_ONELINK_PUBLIC_BINDING_SAMPLE_MISSING",
-            "J40": "MONETIZATION_AGGREGATE_CONTRACT_MISSING",
-            "J42": "USER_ATTRIBUTION_DETAIL_DEPENDENCY_MISSING",
-            "J43": "CURRENT_TABLE_SCHEMA_PARENT_MISSING",
-            "J44": "NON_BYTEDANCE_HIERARCHY_PARENT_MISSING",
-            "J45": "PLATFORM_SPECIFIC_CREATIVE_CONTRACT_MISSING",
-            "J46": "ANALYSIS_EXPORT_FILE_CONTRACT_MISSING",
+            "J35": "REALTIME_EVENT_CATALOG_CONTRACT_MISSING",
+            "J38": "MEDIA_REPORT_ITEM_SCHEMA_MISSING",
+            "J39": "APP_PROJECT_ITEM_SCHEMA_MISSING",
+            "J40": "APP_ONELINK_PUBLIC_BINDING_SAMPLE_MISSING",
+            "J41": "MONETIZATION_AGGREGATE_CONTRACT_MISSING",
+            "J43": "USER_ATTRIBUTION_DETAIL_DEPENDENCY_MISSING",
+            "J44": "CURRENT_TABLE_SCHEMA_PARENT_MISSING",
+            "J45": "NON_BYTEDANCE_HIERARCHY_PARENT_MISSING",
+            "J46": "PLATFORM_SPECIFIC_CREATIVE_CONTRACT_MISSING",
+            "J47": "ANALYSIS_EXPORT_FILE_CONTRACT_MISSING",
         }
         path = Path(__file__).parent / "fixtures/nl_reachability_phrasings.md"
         questions = []

@@ -1,0 +1,23 @@
+{
+  "$schema": "../schema/operation-v2.schema.json", "source_schema_version": 2,
+  "target_manifest": "report.json", "manifest_order": 20971,
+  "operation": {
+    "operation_id": "report.my_template.detail", "domain": "report", "resource": "my_template", "action": "detail", "contract_version": 1,
+    "upstream_method": "GET", "path_template": "/turbo_engine/api/v3/conftemplate/my_template/detail/", "auth_profile": "gravity_authorization",
+    "stability": "stable", "effect": "read", "executable": true,
+    "description": "按 v3 模板目录返回的精确 ID 读取订阅父报表定义。",
+    "input_fields": {"id": {"type": "string", "required": true, "max_length": 64}, "subscribe": {"type": "integer", "enum": [1], "default": 1}},
+    "request": {"path_fields": [], "query_fields": ["id", "subscribe"], "body_fields": [], "defaults": {"subscribe": 1}, "fixed_query": {}, "fixed_body": {}},
+    "response_projection": {
+      "data_shape": "object", "data_keys": ["detail"], "required_data_keys": ["detail"], "item_keys": ["share_list", "subject_ids"], "dynamic_item_fields": [],
+      "data_item_keys": {"detail": ["id", "name", "remark", "category", "config", "app_id", "project_id", "create_time", "update_time", "share_list", "cid", "create_user_id", "create_user_name", "is_preset", "is_public", "is_share", "modify_time", "order", "source_id", "sub_type", "subject_ids", "subscribe", "template_type", "update_user_id", "update_user_name"]},
+      "opaque_json_item_keys": ["share_list", "subject_ids"]
+    },
+    "pagination": {"kind": "none", "page_field": "", "page_size_field": "", "list_path": "", "page_info_path": "", "total_page_field": ""},
+    "semantic_error_rules": ["code", "extra.error"],
+    "privacy_policy": {"classification": "configuration", "redact_fields": ["authorization", "access_token", "token", "cookie", "password", "secret", "refresh_token", "session_token"]},
+    "required_parent": [{"operation_id": "report.multidim.template.mine.list", "input_field": "id", "output_path": "data.list[].id", "selection": "caller_select"}],
+    "live_probe": {"enabled": true, "inputs": {"id": "1", "subscribe": 1}}, "examples": [],
+    "provenance": {"source_files": ["operations/report.my_template.detail.json"], "family": null, "platform": null, "applied_overrides": []}
+  }
+}

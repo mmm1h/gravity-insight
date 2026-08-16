@@ -15,6 +15,8 @@ _STRICT_COMPOSITES = frozenset(
         "attribution_snapshot",
         "attribution_performance",
         "company_usage",
+        "report_directory",
+        "report_subscriptions",
         "custom_audience",
         "bilibili_account_performance",
         "dashboard_analysis",

@@ -77,7 +77,7 @@ class AgentLexicalRetrievalTests(unittest.TestCase):
     def test_retrieval_is_deterministic(self) -> None:
         decisions = [
             retrieve_registered_products(
-                "own shared MasterKey report lists",
+                "custom_audience",
                 composite_inventory=self.inventory,
             ).receipt()
             for _ in range(4)
@@ -85,7 +85,7 @@ class AgentLexicalRetrievalTests(unittest.TestCase):
         self.assertTrue(all(item == decisions[0] for item in decisions))
         self.assertEqual("single_match", decisions[0]["disposition"])
         self.assertEqual(
-            "gap:REPORT_DIRECTORY_ITEM_SCHEMA_MISSING",
+            "composite:custom_audience",
             decisions[0]["matches"][0]["selector"],
         )
 

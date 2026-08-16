@@ -1,0 +1,30 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "source_schema_version": 2,
+  "target_manifest": "report.json",
+  "manifest_order": 20976,
+  "operation": {
+    "operation_id": "report.subscribe.list",
+    "domain": "report", "resource": "subscribe", "action": "list", "contract_version": 1,
+    "upstream_method": "POST", "path_template": "/turbo_engine/api/v3/subscribe/list/", "auth_profile": "gravity_authorization",
+    "stability": "stable", "effect": "read", "executable": true,
+    "description": "读取当前账号的报表订阅清单；支持有界完整分页。",
+    "input_fields": {
+      "filters": {"type": "array", "default": []},
+      "page": {"type": "integer", "default": 1},
+      "page_size": {"type": "integer", "default": 20}
+    },
+    "request": {"path_fields": [], "query_fields": [], "body_fields": ["filters", "page", "page_size"], "defaults": {"filters": [], "page": 1, "page_size": 20}, "fixed_query": {}, "fixed_body": {}},
+    "response_projection": {
+      "data_shape": "object", "data_keys": ["list", "page_info"], "required_data_keys": ["list", "page_info"],
+      "item_keys": ["id", "name", "wildcard_name", "report_conf_template_id", "report_type", "subscribe_status", "start_time", "end_time", "send_way", "subscribe_time", "hourly_send_periods", "subscribe_content", "subscribe_selected_columns", "subscribe_all_columns", "category", "app_id", "project_id", "create_user_id", "create_user_name", "create_time", "update_time", "report_name", "period", "subscribe_info", "cid", "modify_time", "project_name", "update_user_id", "update_user_name"],
+      "dynamic_item_fields": []
+    },
+    "pagination": {"kind": "page_info", "page_field": "page", "page_size_field": "page_size", "default_page_size": 20, "max_page_size": 100, "list_path": "data.list", "page_info_path": "data.page_info", "total_page_field": "total_page"},
+    "semantic_error_rules": ["code", "extra.error"],
+    "privacy_policy": {"classification": "user_level", "redact_fields": ["authorization", "access_token", "token", "cookie", "password", "secret", "refresh_token", "session_token"]},
+    "required_parent": [], "live_probe": {"enabled": true, "inputs": {"filters": [], "page": 1, "page_size": 1}},
+    "examples": [{"name": "minimum_read", "description": "Minimum input copied from the enabled, contract-verified live probe.", "inputs": {"filters": [], "page": 1, "page_size": 1}}],
+    "provenance": {"source_files": ["operations/report.subscribe.list.json"], "family": null, "platform": null, "applied_overrides": []}
+  }
+}

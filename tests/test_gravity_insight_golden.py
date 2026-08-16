@@ -281,6 +281,16 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "app.role.detail",
             # 角色模板完成固定产品参数、分页和嵌套配置投影复验后晋升。
             "app.template.list",
+            # 报表/订阅以 marker-governed 写取得非空 schema 后晋升。
+            "report.my_template.detail",
+            "report.report.detail",
+            "report.report.list",
+            "report.report.update",
+            "report.subscribe.create",
+            "report.subscribe.delete",
+            "report.subscribe.list",
+            "report.template.create",
+            "report.template.update",
             # 写操作范围裁决后首批晋升；只允许显式确认的 Segment mutation。
             "analysis.dataanalysis.segment.update",
             "analysis.from.history.version.create",
