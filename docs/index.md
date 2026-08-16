@@ -89,12 +89,7 @@ operation 由 184 read + 30 governed mutation 组成。17 个候选中
 2026-08-15 对同类分析平台 Agent 形态、协议与方法学的调研。**这些是外部事实记录，
 不构成本仓库的行为承诺**；每条结论标注了 `[实证]` / `[厂商宣称]` / `[推测]`。
 
-- [MCP 协议与分析类 server 实现](research/mcp-protocol-and-servers.md)
-- [厂商 Agent 形态横向调研](research/vendor-agent-landscape.md)
-- [语义层与 text-to-SQL 工程现状](research/semantic-layer-and-text2sql.md)
-- [GitHub 开源语义层与能力路由实现](research/oss-semantic-and-routing.md)
-- [Agent 可用性度量方法](research/agent-usability-methods.md)
-- [Agent 评测方法学与合同漂移检测](research/oss-eval-and-drift.md)
-- [Agent 场景的数据访问安全与治理](research/agent-security-governance.md)
+- [调研索引](research/index.md) — 七份外部调研、两份本租户调查，以及把它们变成排期的
+  [借鉴规划](research/borrow-roadmap.md)（含「明确不做」一档）。
 
 历史验收数字、临时业务裁决和 Merge 业务埋点字典不属于当前 SDK 文档。历史可以从 Git 追溯；业务口径由 `work-dashboard` 维护；机器运行合同位于 `src/gravity_sdk/contracts`。
