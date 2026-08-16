@@ -21,6 +21,7 @@ WORKSPACE_VOCABULARY_KINDS = frozenset({
 AUTHORITATIVE_LOCAL_METADATA_KINDS = frozenset({
     *WORKSPACE_VOCABULARY_KINDS,
     "table_lineage",
+    "status",
 })
 
 _KIND_TERMS: Mapping[str, tuple[str, ...]] = {

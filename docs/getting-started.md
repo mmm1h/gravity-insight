@@ -94,18 +94,32 @@ workspace 可由顶层 `--workspace`、显式 API 调用、`GRAVITY_WORKSPACE` �
 
 ## 5. 同步本地元数据目录
 
-先用 `gravity metadata search "" --app-id <selected-app-id> --limit 20` 检查已有私有 catalog 与
-`catalog.synced_at/status`。已有成功且足够新的快照时直接离线使用；冷目录或调用方明确要求刷新时，
-再使用正式全 App 同步命令：
+先用明确的离线 status 入口检查私有 catalog；它不构造客户端、不读取生产，也不创建空库：
 
 ```powershell
-gravity metadata sync --all-apps
+gravity metadata status --app-id <selected-app-id>
 ```
 
-它会自动分页同步所有可见 App 的事件、事件属性、用户属性和属性分组，并写入用户私有 SQLite。通常不需要指定路径；只有调用方明确管理落盘位置时才使用 `--database`。
+`missing/not_synced/partial/stale/ready/incompatible` 分别说明本地目录缺失、该 App 未同步、存在失败、
+超过 freshness 阈值、可用或 schema 不兼容；每个已同步 App 同时报告时间、年龄、过期时间、四类对象数
+和失败数。默认 freshness 阈值 24 小时，可用 `--max-age-hours` 覆盖。
 
-`sync --all-apps` 会产生多次生产读取，不能当成固定一次网络请求；必须审查同步摘要里的失败来源与
-快照时间。当前没有单 App sync 入口。
+冷目录先做零网络估算，再只同步选定 App：
+
+```powershell
+gravity metadata sync --app-id <selected-app-id> --max-pages 2 --dry-run
+gravity metadata sync --app-id <selected-app-id> --max-pages 2
+```
+
+单 App 的“界”是：只读固定四类 Analysis 对象，并把三个分页 operation 各限制为 `max_pages` 页；
+另一个非分页 operation 只读一次，因此逻辑请求上限为 `3 * max_pages + 1`，默认 7、硬上限 25。
+这个界不包含 runtime 固定策略产生的 HTTP retry 或一次鉴权刷新；执行结果会另外报告实际逻辑请求、
+receipt 可见的 HTTP 次数/重试、各 operation 页数、对象数与失败。选这个边界是因为 App、对象集合和
+页数都能在首次请求前机械计算，同时不会把账号下其他 App 或 workspace 词汇拖进冷启动预算。
+
+已有 `sync --all-apps [--include-table-lineage]` 保留给明确需要完整账号目录、workspace 词汇或数据表沿革
+的调用方；它的请求量依赖可见 App 数和分页，不属于单 App 有界入口。两种同步都使用 staging SQLite
+和原子替换。通常不需要指定路径；只有调用方明确管理落盘位置时才使用 `--database`。
 
 同步结果只表示 Gravity 中真实存在的物理元数据，不会推断“业务模块 → 事件”的关系。
 

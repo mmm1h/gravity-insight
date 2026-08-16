@@ -110,7 +110,7 @@ def _inventory(client: Any) -> tuple[dict[str, Any], ...]:
     ]
     unavailable = [_gap_entry(item) for item in gaps]
     inventory = tuple(sorted(
-        [*products, *operations, *unavailable], key=lambda item: item["selector"]
+        [*products, *operations, *unavailable], key=_catalog_sort_key
     ))
     validate_catalog_parity(
         inventory,
@@ -222,6 +222,11 @@ def _summary(item: Mapping[str, Any]) -> dict[str, Any]:
             next_action=item["next_action"],
         )
     return summary
+
+
+def _catalog_sort_key(item: Mapping[str, Any]) -> tuple[int, str]:
+    rank = {"product": 0, "raw_operation": 1, "capability_gap": 2}
+    return rank[str(item["identity_kind"])], str(item["selector"])
 
 
 def _product_entry(

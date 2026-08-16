@@ -433,7 +433,10 @@ def _composite_product_requirements(
             attribution_performance_input_template(),
         )
     if card.get("composite") == "attribution_user_detail":
-        from .agent_attribution_user_detail import ATTRIBUTION_USER_DETAIL_REQUIRED_INPUTS, attribution_user_detail_input_template
+        from .agent_attribution_user_detail import (
+            ATTRIBUTION_USER_DETAIL_REQUIRED_INPUTS,
+            attribution_user_detail_input_template,
+        )
 
         return list(ATTRIBUTION_USER_DETAIL_REQUIRED_INPUTS), attribution_user_detail_input_template()
     if card.get("composite") == "bilibili_account_performance":

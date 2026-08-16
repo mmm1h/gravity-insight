@@ -19,14 +19,14 @@
 | 按精确素材引用下载图片或视频 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Material Asset Fetch](reference/cli.md#material-asset-fetch) |
 | 读取跨平台推广表现 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Promotion Performance](reference/cli.md#promotion-performance) |
 | 查看自定义人群覆盖与状态 | [Agent 工作流](agent-workflow.md) | [CLI 参考](reference/cli.md#custom-audiences) |
-| 从漏斗/规则创建、更新、刷新或安全删除分群 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Segment Mutation](reference/cli.md#segment-mutation-v1) |
+| 从漏斗/规则创建、更新、刷新或安全删除分群 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Segment Mutation](reference/cli.md#segment-mutation-v1)、[分群删除能力调查](research/segment-delete-capability.md) |
 | 创建或安全删除报表与报表订阅 | [Agent 工作流：受治理写入](agent-workflow.md#受治理写入统一两步确认) | [CLI 参考：报表目录与订阅](reference/cli.md#报表目录与订阅) |
 | 声明调用方业务词和派生指标公式 | [调用方语义任务指南](agent-skills/caller-semantics.md) | [Workspace 参考：调用方语义上下文](reference/workspace.md#调用方语义上下文) |
 | 批量发现并执行交叉查询 | [Agent 工作流：显式 Plan](agent-workflow.md#3-交叉查询一个显式-plan) | [CLI Plan 参考](reference/cli.md#plan-v1) |
 | 在 Python 中集成 SDK | [Python SDK 参考](reference/sdk.md) | [架构与概念](architecture.md) |
 | 把 SDK/CLI 输出交给 LLM | [LLM 输出安全指南](guides/llm-output-safety.md) | [Agent 工作流](agent-workflow.md) |
 | 判断用 Insight 还是 SQL | [架构与概念](architecture.md#查询路由) | [Agent 工作流](agent-workflow.md#选择-insight-还是-sql) |
-| 同步全部 App 的埋点目录 | [快速上手](getting-started.md#同步本地元数据目录) | [CLI 参考](reference/cli.md#metadata) |
+| 检查本地 metadata 状态或有界同步一个 App | [快速上手](getting-started.md#同步本地元数据目录) | [CLI 参考](reference/cli.md#metadata) |
 | 配置项目 App、SQL 产品或 recipe | [Workspace 参考](reference/workspace.md) | [架构与概念](architecture.md#发现workspace-与-resolver) |
 | 创建或下载异步导出 | [导出指南](guides/export.md) | [CLI 参考](reference/cli.md) |
 | 新增或升级 operation | [新增受控能力](maintainers/operations.md) | [维护者入口](maintainers/index.md) |
@@ -67,7 +67,7 @@
   订阅固定 disabled、无收件人，不调用 test route，也不进入 Plan v1。
 - 发现只返回候选以及 Plan node 或受控编译交接，不会从自然语言自动执行。
 
-当前安装时目录为 276 个 selector：223 个 operation、43 张产品卡与 10 个精确 gap；214 个 stable
+当前安装时目录为 278 个 selector：223 个 operation、45 张产品卡与 10 个精确 gap；214 个 stable
 operation 由 184 read + 30 governed mutation 组成。17 个候选中
 `analysis.default_val.list`、D35、F40、报表目录与订阅清单已晋升；不要把其余 `draft` 能力写入生产 Plan。
 逐项 blocker 以[候选能力证据矩阵](candidate-capability-matrix.md)为准。

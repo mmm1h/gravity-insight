@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import threading
+import tempfile
 import time
 import unittest
 from copy import deepcopy
@@ -298,6 +299,54 @@ class PlanExecutionTests(unittest.TestCase):
         lineage_result = result["results"][3]["result"]
         self.assertEqual(("account", "7"), (lineage_result["scope"], lineage_result["results"][0]["table_id"]))
         self.assertNotIn("database", lineage_result)
+
+    def test_metadata_sync_and_status_plan_handoffs_use_bounded_adapters(self):
+        workspace = load_workspace(Path(__file__).resolve().parents[1] / "examples/workspace")
+
+        class Insight:
+            def operations(self, **_options):
+                return []
+
+        class SDK:
+            insight = Insight()
+
+            def __init__(self):
+                self.options = None
+
+            def sync_metadata_app(self, app_id, **options):
+                self.options = (app_id, options)
+                return {
+                    "schema_version": "gravity-insight.metadata-sync.v1",
+                    "ok": True, "status": "success", "scope": "single_app",
+                    "app_id": str(app_id), "rows_written": 4,
+                }
+
+        sdk = SDK()
+        with tempfile.TemporaryDirectory() as temporary:
+            database = Path(temporary) / "metadata.sqlite3"
+            plan = _plan(
+                _node(
+                    "sync", {"name": "metadata_sync", "app": "demo"},
+                    kind="composite", limits={"max_pages": 2, "max_items": 20},
+                ),
+                _node(
+                    "status", {"kind": "status", "app_id": "101"},
+                    kind="metadata_search", limits={"max_pages": 1, "max_items": 20},
+                ),
+            )
+            result = execute_plan(
+                plan,
+                adapters=build_plan_adapters(
+                    sdk, workspace=workspace, metadata_database=database
+                ),
+                workspace=workspace,
+            )
+
+        self.assertEqual(2, result["success_count"])
+        self.assertEqual((1001, 2), (sdk.options[0], sdk.options[1]["max_pages"]))
+        self.assertEqual(4, result["results"][0]["result"]["rows_written"])
+        self.assertEqual("missing", result["results"][1]["result"]["status"])
+        self.assertFalse(result["results"][1]["result"]["network_called"])
 
     def test_analysis_query_composite_preflights_and_sanitizes(self):
         workspace = load_workspace(

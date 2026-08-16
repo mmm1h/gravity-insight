@@ -115,7 +115,13 @@ def _dispatch_unsubscribe(args: Any, _object_input: Any) -> dict[str, Any]:
     )
 
 
-def _bounds(parser: Any, positive_int: Callable[[str], int], concurrency: Callable[[str], int], *, workers: bool) -> None:
+def _bounds(
+    parser: Any,
+    positive_int: Callable[[str], int],
+    concurrency: Callable[[str], int],
+    *,
+    workers: bool,
+) -> None:
     parser.add_argument("--max-pages", type=positive_int, default=1_000)
     parser.add_argument("--max-items", type=positive_int, default=100_000)
     if workers:

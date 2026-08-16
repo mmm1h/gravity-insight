@@ -14,6 +14,7 @@ ENVELOPE_FIELDS = frozenset(
     {
         "schema_version", "ok", "status", "exit_code", "count", "total", "limit",
         "offset", "offline", "catalog", "kind", "requested_count",
+        "network_called",
         "succeeded_count", "failed_count", "question_count", "source_count",
         "operation_count", "paginated_operation_count", "app_id", "coverage", "scopes",
         "scope", "observed",

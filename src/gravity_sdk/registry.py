@@ -371,7 +371,8 @@ def _request_parts(
         "analysis.account_user.list": analysis_account_user_request_parts,
         "app.onelink.list": app_onelink_request_parts,
     }.get(operation.operation_id)
-    if builder: return builder(values)
+    if builder:
+        return builder(values)
     if operation.operation_id == "analysis.order_detail.list":
         return _analysis_order_detail_request_parts(values)
     if operation.operation_id == "analysis.monetization_detail.list":

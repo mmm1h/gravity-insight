@@ -194,6 +194,8 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `promotion_performance()` | 按一个显式 App、日期窗、平台和物理指标读取 21 个同构平台；平台保序、局部失败隔离 |
 | `order_directory()` | 完整读取一个 App 的单日普通订单目录；该产品每行含四个已登记物理字段，raw operation 仍可读取其他已登记列 |
 | `order_split_trace()` | 完整扫描一个 App 的单日父订单并按显式 TraceID 精确匹配，再读取一次安全拆单投影 |
+| `sync_metadata_app()` | 在固定四类 Analysis metadata 与每类分页上限内只刷新一个 App；`dry_run=True` 零网络返回请求界 |
+| `metadata_status()` | 严格离线报告本地 catalog/App 的存在性、兼容性、同步时间、对象数、失败与 freshness |
 | `analysis_vocabulary()` | 严格离线搜索已同步的 workspace 指标、标签、媒体枚举和模板目录 |
 | `table_lineage()` | 严格离线查询已同步的 account-scope 数据表版本与操作观察 |
 | `business_pulse()` | 并发读取 App 经营概览与趋势，可选 workspace scope 小时对比 |
@@ -224,6 +226,18 @@ metadata/table 冷目录显式使用 `catalog_policy="refresh"`。返回对象�
 默认 `capabilities()` 不联网且原三调用 scenario 不变。在线结果明确声明内部 HTTP 未减少；SDK
 在解析前后清空进程内 metadata cache。refresh 只有全部来源成功才原子替换默认 catalog，失败保留
 旧库并抛出结构化异常。App/平台也未知时依赖下界不变。
+
+`sync_metadata_app(app_id, *, database=None, max_pages=2, concurrency=8, dry_run=False)` 只刷新一个
+显式 App 的事件、事件属性、用户属性和事件属性分组。三个分页 operation 各最多 `max_pages` 页，
+一个非分页 operation 一次，故逻辑请求上限为 `3 * max_pages + 1`；`max_pages` 为 1..8，默认界 7、
+硬上限 25。`dry_run=True` 不惰性构造 Insight client，也不写 SQLite；真实结果报告 request budget、
+实际逻辑请求、receipt 可见的 HTTP/重试、每类页数/对象数和失败。transport 固定 retry 与一次鉴权
+刷新不计入逻辑界，只在执行后作为 observation 报告。
+
+`metadata_status(*, database=None, app_id=None, max_age_hours=24)` 不构造任何生产 client。它返回
+`missing/not_synced/partial/stale/ready/incompatible`，并列出每个 App 的 `synced_at`、`age_seconds`、
+`expires_at`、`row_count`、`operation_rows` 和 `failures`。freshness 是调用方给定阈值相对于本地时间戳的判断；
+该方法不能证明上游当前是否变化、凭据/权限是否仍有效，也不建立业务词到物理事件的绑定。
 
 `analysis_vocabulary(query="", *, kind="vocabulary", database=None, limit=20, offset=0)` 只读一次 `metadata sync --all-apps` 生成的 SQLite 快照。同步对 9 个 workspace source 各请求一次，不随 App 数增加；搜索 kind 为 `metric/custom_metric/metric_tag/metric_tag_category/media_enum/template/vocabulary`，不接受 App 归属。partial 快照会公开失败来源；模板只有安全目录身份、不可回放。Agent 指标卡提供 `metrics_list` 或 `custom_metrics_list` 请求片段，但自然语言发现绝不自动执行分析。
 

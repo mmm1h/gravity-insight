@@ -42,7 +42,8 @@ Usage:
   gravity promotion advertiser-profile --start <date> --end <date>
   gravity export run <operation-id> --input <json|file|-> --output <file>
   gravity insight <command> [options]
-  gravity metadata sync --all-apps
+  gravity metadata sync --app-id <id>|--all-apps
+  gravity metadata status [--app-id <id>]
   gravity metadata search|events|properties|vocabulary [query]
   gravity metadata tables [query]
   gravity find <query>

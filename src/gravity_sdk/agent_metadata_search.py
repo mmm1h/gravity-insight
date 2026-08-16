@@ -14,6 +14,13 @@ SELECTOR = "metadata:search"
 def metadata_search_capability_cards(
     query: str, *, domain: str | None, platform: str | None
 ) -> list[dict[str, Any]]:
+    from .agent_metadata_onboarding import metadata_onboarding_capability_cards
+
+    onboarding = metadata_onboarding_capability_cards(
+        query, domain=domain, platform=platform
+    )
+    if onboarding:
+        return onboarding
     if platform is not None or domain not in {None, "analysis", "metadata"}:
         return []
     if not metadata_search_intent(query):

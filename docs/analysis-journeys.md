@@ -26,6 +26,19 @@ stable mutation，当前为 223 operation / 214 stable（184 read + 30 governed 
 结构化 `CONTRACT_CHANGED` 诊断。两次横切修正都不新增产品动线，因此总账严格为 `51 + 0 = 51`、
 `42 / 1 / 8 + 0 / 0 / 0 = 42 / 1 / 8`，operation/stable 仍为 `205 / 196`。
 
+同日冷启动收口没有新增分析产品动线：单 App metadata sync 与 status 是既有“离线查找物理名称”动线的
+onboarding/维护入口，category 排序只改变展示顺序。因此总账仍为 `51 = 42 / 1 / 8`、operation/stable
+仍为 `205 / 196`；canonical 卡由 42 增为 44。全新独立 SQLite 的生产实走为 12 条主路径命令、7 次
+HTTP：认证、`app.list`、四类单 App metadata 和最终事件分析各一次，全部 HTTP 200 / attempt 1 / 0
+retry；metadata 四类均只读第一页并写入 177 个物理对象，离线 status 为 ready。旧版本的温目录实测为
+12 命令/3 HTTP；若严格冷目录再插入唯一的 `sync --all-apps`，为 13 命令，当前 7-App 租户可证明最少
+41 HTTP，但由于每 App 分页无界，精确值无法在同步前由代码确定。
+
+metadata onboarding 与 `dev@d5cc59b` 合并后再次按表格状态列重算：质量棘轮、分群删除调查、干净
+selector 测量和 metadata onboarding 都没有新增独立产品动线或改变现有行状态。表中仍有 55 个数据行，
+扣除 4 个明确标为“不计独立动线”的便利/重复面，得到 51 条；直接分组为
+`42 已闭环 + 1 部分闭环 + 8 完全缺失 = 51`。
+
 2026-08-16 F40 按 catalog 顺序枚举 6 个 App，在第 6 个首次取得 1 条测试设备后立即停止，并以内存
 父行 ID 只发 1 次详情请求。生产共 8 次业务 HTTP：1 次 `app.list`、6 次
 `app.testing_tool.list`、1 次 `attribution.attribution_detail.query`；全部 HTTP 200，0 重试、翻页、
@@ -345,7 +358,10 @@ writer 拒绝非有限数字；operation、投影、请求、错误分类和退�
 operation 继续保留专家入口，但明确不是产品等价物；`app.realtime_event.list` 是应用配置 raw 读，
 `REALTIME_EVENT_CATALOG_CONTRACT_MISSING` 才是“实时事件目录”动线状态。本轮 development 臂 A/C 为
 `260/336` 与 `334/336`；臂 C 的两处失败均是“一个产品 + 一个 gap”的混合多意图在冻结 scorer 中没有
-第二个 candidate selector，未修改评分逻辑。未运行 holdout/final，生产 HTTP 0 次。
+第二个 candidate selector，未修改评分逻辑。后续以 fresh Windows AppContainer 中的 pinned
+`claude-sonnet-4-6` 重测干净外部臂 C 为 `325/336`：仍比 A 多 65 题、比被污染 C 少 9 题；八族为
+`11/12、11/13、11/12、12/12、12/12、12/12、10/12、11/11`。该测量没有改变本表状态或产品事实；
+未查询受保护 split，Gravity 生产 HTTP 0 次。
 
 | 动线 | 状态 | 四面可达（CLI / SDK / Plan / Agent 中英首问） | 调用次数（已知 / 未知） | 阻塞 |
 | --- | --- | --- | --- | --- |

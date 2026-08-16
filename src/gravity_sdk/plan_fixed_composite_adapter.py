@@ -3,16 +3,19 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from pathlib import Path
 from typing import Any
 
 from .plan import AdapterContext
-from .plan_adapter_support import input_error
+from .plan_adapter_support import has_dynamic, input_error
+from . import plan_metadata_sync_adapter as metadata_sync_plan
 
 
 COMPOSITE_NAMES = frozenset(
     {
         "analysis_context", "app_snapshot", "attribution_snapshot",
         "attribution_performance", "attribution_user_detail",
+        metadata_sync_plan.NAME,
     }
 )
 _REQUIRED_ITEMS = {
@@ -31,6 +34,9 @@ def is_fixed_composite(name: Any) -> bool:
 def validate_fixed_composite(
     request: Mapping[str, Any], context: AdapterContext, name: str
 ) -> None:
+    if metadata_sync_plan.is_metadata_sync(name):
+        metadata_sync_plan.validate_metadata_sync(request, context)
+        return
     if name == "attribution_performance":
         from .plan_attribution_adapter import validate_attribution_performance_plan
 
@@ -47,12 +53,22 @@ def validate_fixed_composite(
         raise input_error(
             "composite fixed sources exceed this node max_items", "limits.max_items"
         )
+    if not has_dynamic(context, "/app"):
+        context.workspace.resolve_app(request.get("app"))
 
 
 def execute_fixed_composite(
-    sdk: Any, request: Mapping[str, Any], context: AdapterContext
+    sdk: Any,
+    request: Mapping[str, Any],
+    context: AdapterContext,
+    *,
+    database: Path | None = None,
 ) -> Any:
     name, app = str(request["name"]), request.get("app")
+    if metadata_sync_plan.is_metadata_sync(name):
+        return metadata_sync_plan.execute_metadata_sync(
+            sdk, request, context, database=database
+        )
     if name == "attribution_performance":
         from .plan_attribution_adapter import execute_attribution_performance_plan
 

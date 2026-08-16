@@ -6,7 +6,15 @@ import copy
 from collections.abc import Mapping
 from typing import Any
 
-from .errors import ErrorCategory, ErrorCode, ErrorDetail, InputValidationError, PaginationError, exit_code_for_category, exit_code_for_error
+from .errors import (
+    ErrorCategory,
+    ErrorCode,
+    ErrorDetail,
+    InputValidationError,
+    PaginationError,
+    exit_code_for_category,
+    exit_code_for_error,
+)
 from .domains import ANALYSIS_QUERY_OPERATIONS
 from .plan import AdapterContext
 from .plan_adapter_support import (

@@ -6,7 +6,7 @@
 
 ### 完整目录
 
-第一次接触仓库、或需要确认“现在到底能做什么”时，`agent-catalog categories → category <category> → describe <selector>` 是首要入口，不是附属的 operation 调试命令。三层完全离线，依次回答领域、selector 和完整执行合同，当前覆盖 223 个 operation、43 张产品卡和 10 个精确 gap。优先选择 `identity_kind=product`；raw operation 只是专家入口，gap 不可执行。第二层返回 `next_offset` 不代表必须翻页；已知 selector 直接 describe。逐层示例见[完整目录任务指南](agent-skills/catalog-discovery.md)。
+第一次接触仓库、或需要确认“现在到底能做什么”时，`agent-catalog categories → category <category> → describe <selector>` 是首要入口，不是附属的 operation 调试命令。三层完全离线，依次回答领域、selector 和完整执行合同，当前覆盖 223 个 operation、45 张产品卡和 10 个精确 gap。category 内机械按 `product → raw_operation → capability_gap`、同类 selector 升序排列，因此产品卡不会被 raw operation 挤出首屏；优先选择 `identity_kind=product`。raw operation 只是专家入口，gap 不可执行。第二层返回 `next_offset` 不代表必须翻页；已知 selector 直接 describe。逐层示例见[完整目录任务指南](agent-skills/catalog-discovery.md)。
 
 | 已知信息 | 直接执行 | 正常命令数 |
 | --- | --- | --- |
@@ -28,6 +28,7 @@
 | 用户旅程/数据表沿革 | `analysis user journey`；lineage catalog 冷机时用在线输入解析完成原子 refresh，再离线查询 | 1 / 2 |
 | 单个未知目标/operation 输入 | `gravity agent "<query>"` / `gravity agent <operation-id>` → 执行卡片 argv | 2 |
 | 多个未知分析问题 | `gravity agent --input <questions.json>` → `plan run` | 2 |
+| 检查/刷新本地 metadata | `metadata status` 离线检查；单 App 冷目录先 `sync --app-id ... --dry-run` 再执行 | 1 / 2（估算 / 同步） |
 | 同时找 operation、recipe、metadata | `gravity find "<query>"` | 1 次发现 |
 | 多个独立 operation | `gravity insight batch read ...` | 1 次批量执行 |
 `run` 已经完成 bind、validate、parents、exec 和 diagnose。不要在每次调用前机械执行 `recipe check`、`validate`、`parents resolve` 和 `doctor`；只有 `run` 的 diagnostics 要求时再执行对应命令。
@@ -187,15 +188,11 @@ gravity run app.list --input '{"page":1,"page_size":20}' --fields id,name
 
 ## 7. 离线元数据与 Analysis 词汇
 
-一次同步同时保存 App 事件/属性和 workspace Analysis 词汇；可选保存 account 数据表沿革：
-```powershell
-gravity metadata sync --all-apps --include-table-lineage
-gravity metadata search "purchase"
-gravity metadata vocabulary "revenue" --kind metric
-gravity metadata tables "publish"
-```
+明确需要账号完整目录时，运行 `gravity metadata sync --all-apps --include-table-lineage`；随后可离线执行 `metadata search "purchase"`、`metadata vocabulary "revenue" --kind metric` 和 `metadata tables "publish"`。
 
 词汇同步固定读取 9 个 workspace source，各一次且不随 App 数增长；六类 kind 是 `metric/custom_metric/metric_tag/metric_tag_category/media_enum/template`，都不接受 `app_id`。指标卡只给可复制的 `request_fragment`，模板是 `catalog_only`，没有配置回放。`status=partial` 时必须保留并报告失败来源，不能宣称完整覆盖。
+
+冷启动只需要一个 App 的物理事件时，不做全账号同步：先离线 `metadata status --app-id`，再用 `metadata sync --app-id ... --max-pages 2 --dry-run` 取得 `3 * max_pages + 1` 的逻辑界，执行同一 sync 后用 `metadata events` 选物理事件；执行摘要报告实际页/对象/HTTP receipt，达到页界显式 partial。完整命令见 [CLI Metadata](reference/cli.md#metadata)。
 
 已同步时直接离线查询一次；冷目录的两调用路径是先显式运行 `gravity agent "<query>" --resolve-inputs '{"catalog_policy":"refresh"}' --output catalog.json`，再执行返回的 metadata search/table-lineage 节点。第一次只有在所有请求来源成功时才原子发布新 catalog；否则报错并保留旧库。第二次结果带同步时刻，只表示 observed snapshot。`events/properties` 是 App scope；`tables` 是 account scope，只陈述观察到的 ID/版本/动作/时间。所有本地词汇只提供物理候选，不自动执行或绑定业务查询。需要同时查 operation、recipe 和 metadata 时调用：
 

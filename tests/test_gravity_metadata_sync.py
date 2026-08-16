@@ -7,10 +7,11 @@ import sqlite3
 import tempfile
 import unittest
 from contextlib import closing
+from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import patch
 
-from gravity_sdk import cli
+from gravity_sdk import GravitySDK, cli
 from gravity_sdk.domains import ANALYSIS_METADATA_OPERATIONS
 from gravity_sdk.errors import ContractChangedError, UpstreamError
 from gravity_sdk.find_metadata import search_metadata
@@ -27,6 +28,8 @@ from gravity_sdk.metadata_sync import (
     _write_rows,
     sync_all_apps,
 )
+from gravity_sdk.metadata_onboarding import sync_app
+from gravity_sdk.metadata_status import metadata_status
 from gravity_sdk.agent_catalog_refresh import refresh_complete_catalog
 
 
@@ -334,6 +337,128 @@ class MetadataSyncTests(unittest.TestCase):
             self.assertEqual(8, row_count)
             self.assertEqual("success", status)
             self.assertEqual(0, failure_count)
+
+    def test_single_app_sync_is_bounded_preserves_apps_and_status_is_offline(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            database = Path(temporary) / "metadata.sqlite3"
+            self._fixture_catalog(database)
+            client = FakeSyncClient()
+
+            result = sync_app(
+                client, "202", database=database, max_pages=2, concurrency=4
+            )
+            status = metadata_status(
+                database=database,
+                app_id="202",
+                now=datetime.now(timezone.utc),
+            )
+            all_status = metadata_status(database=database)
+            stale_status = metadata_status(
+                database=database,
+                app_id="202",
+                now=datetime(2099, 1, 1, tzinfo=timezone.utc),
+            )
+            sdk = GravitySDK(
+                insight_factory=lambda: (_ for _ in ()).throw(
+                    AssertionError("dry-run must not construct Insight")
+                )
+            )
+            dry_run_sdk = sdk.sync_metadata_app("202", database=database, dry_run=True)
+            status_sdk = sdk.metadata_status(database=database, app_id="202")
+
+        self.assertEqual(("single_app", 7, 4), (
+            result["scope"],
+            result["request_budget"]["logical_request_upper_bound"],
+            result["logical_requests_made"],
+        ))
+        self.assertEqual(2, result["catalog_app_count"])
+        self.assertEqual(4, result["rows_written"])
+        self.assertEqual(("ready", 4, False), (
+            status["status"], status["results"][0]["row_count"],
+            status["network_called"],
+        ))
+        self.assertEqual({"101", "202"}, {
+            item["app_id"] for item in all_status["results"]
+        })
+        self.assertEqual("stale", stale_status["status"])
+        self.assertFalse(dry_run_sdk["network_called"])
+        self.assertEqual("ready", status_sdk["status"])
+
+    def test_empty_compatible_catalog_is_not_ready(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            database = Path(temporary) / "metadata.sqlite3"
+            with closing(sqlite3.connect(database)) as connection:
+                _create_schema(connection)
+                connection.commit()
+
+            status = metadata_status(database=database)
+
+        self.assertEqual(("not_synced", 0, False), (
+            status["status"], status["count"], status["network_called"]
+        ))
+
+    def test_single_app_page_bound_persists_prefix_as_explicit_partial(self) -> None:
+        class PagedClient(FakeSyncClient):
+            def batch(self, requests: list[dict], max_workers: int = 6):
+                results = super().batch(requests, max_workers=max_workers)
+                for request, result in zip(requests, results, strict=True):
+                    if request["operation_id"] == "analysis.event.list":
+                        result["data"]["page"] = {
+                            "number": request["inputs"]["page"], "total_pages": 3,
+                        }
+                return results
+
+        with tempfile.TemporaryDirectory() as temporary:
+            database = Path(temporary) / "metadata.sqlite3"
+            result = sync_app(PagedClient(), "101", database=database, max_pages=2)
+            status = metadata_status(database=database, app_id="101")
+
+        self.assertEqual("partial", result["status"])
+        self.assertEqual(2, result["operation_pages"]["analysis.event.list"]["pages_fetched"])
+        self.assertEqual("PAGE_BOUND_REACHED", result["failures"][0]["code"])
+        self.assertEqual(("partial", 1), (
+            status["status"], status["results"][0]["failure_count"]
+        ))
+
+    def test_metadata_status_and_sync_estimate_cli_do_not_build_client(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            database = Path(temporary) / "catalog.sqlite3"
+            for argv, expected in (
+                (["metadata", "status", "--database", str(database)], "missing"),
+                ([
+                    "metadata", "sync", "--app-id", "101", "--max-pages", "2",
+                    "--database", str(database), "--dry-run",
+                ], "estimate"),
+            ):
+                stdout = io.StringIO()
+                with (
+                    patch("gravity_sdk.cli.runtime.build_client") as build_client,
+                    contextlib.redirect_stdout(stdout),
+                ):
+                    exit_code = cli.main(argv)
+                self.assertEqual(0, exit_code)
+                self.assertEqual(expected, json.loads(stdout.getvalue())["status"])
+                build_client.assert_not_called()
+
+            expected = {
+                "schema_version": "gravity-insight.metadata-sync.v1",
+                "ok": True, "status": "success", "exit_code": 0,
+            }
+            stdout = io.StringIO()
+            with (
+                patch("gravity_sdk.cli.runtime.build_client", return_value=object()),
+                patch("gravity_sdk.metadata_cli.sync_app", return_value=expected) as app_sync,
+                contextlib.redirect_stdout(stdout),
+            ):
+                exit_code = cli.main([
+                    "metadata", "sync", "--app-id", "101", "--max-pages", "2",
+                    "--database", str(database),
+                ])
+            self.assertEqual(0, exit_code)
+            self.assertEqual("success", json.loads(stdout.getvalue())["status"])
+            self.assertEqual(("101", 2), (
+                app_sync.call_args.args[1], app_sync.call_args.kwargs["max_pages"]
+            ))
 
     def test_partial_sync_records_failures_and_returns_upstream_exit(self) -> None:
         client = FakeSyncClient(failed_app="202")

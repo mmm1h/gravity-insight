@@ -492,7 +492,7 @@ def authoritative_capability_cards(
             "segment_members",
             ANALYSIS_DEFAULT_DICTIONARY_NAME,
             ADVERTISER_PROFILE_NAME,
-            DERIVED_METRICS_NAME,
+            DERIVED_METRICS_NAME, "metadata_sync",
         }
     ]
     return unique_authoritative_cards(

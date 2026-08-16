@@ -188,17 +188,17 @@ def _ten_minute_path(card: dict[str, Any], contract: dict[str, Any], exits: dict
     return _guide(
         "十分钟路径：从仓库到第一次真实分析",
         [
-            "```powershell\npython -m pip install -e .\ngravity agent-catalog categories\ngravity agent-catalog describe " + card["selector"] + "\ngravity insight auth status\n```",
+            "```powershell\npython -m pip install -e .\ngravity agent-catalog categories\ngravity agent-catalog category analysis --limit 20\ngravity agent-catalog describe " + card["selector"] + "\ngravity insight auth status\n```",
             "先用真实账号枚举 App；只消费 `status=success`，或当前合同明确允许消费的已登记投影：",
-            "```powershell\ngravity run app.list --input '{\"page\":1,\"page_size\":20}' --fields id,name\ngravity metadata search \"\" --app-id <selected-app-id> --limit 20\n```",
-            "从 search 结果精确复制一个物理事件名。事件计数指标 `PresetAllCount` 来自上述 describe 返回的 metric schema enum；日期由调用方明确提供。把下面内容保存为 `analysis.json`：",
+            "```powershell\ngravity run app.list --input '{\"page\":1,\"page_size\":20}' --fields id,name\ngravity metadata sync --app-id <selected-app-id> --max-pages 2 --dry-run\ngravity metadata sync --app-id <selected-app-id> --max-pages 2\ngravity metadata status --app-id <selected-app-id>\ngravity metadata events \"\" --app-id <selected-app-id> --limit 20\n```",
+            "dry-run 在联网前给出默认 7 次逻辑请求上限；执行摘要给出实际页数、对象数、HTTP receipt 与失败。status 必须为 `ready`，或由调用方明确接受带失败来源的 `partial`。从 events 结果精确复制一个物理事件名。事件计数指标 `PresetAllCount` 来自上述 describe 返回的 metric schema enum；日期由调用方明确提供。把下面内容保存为 `analysis.json`：",
             "```json\n{\n  \"start\": \"<caller-start-date>\",\n  \"end\": \"<caller-end-date>\",\n  \"time_grain\": \"day\",\n  \"steps\": [{\n    \"event\": \"<physical-event-from-metadata-search>\",\n    \"metric\": {\"field\": \"PresetAllCount\", \"aggregation\": \"PresetAllCount\"}\n  }]\n}\n```",
             "同一份输入先零网络编译，再原样执行；不要为了非空结果换 App、扩日期窗或重试：",
             "```powershell\ngravity analysis query --kind event --app <selected-app-id> --spec analysis.json --dry-run\ngravity analysis query --kind event --app <selected-app-id> --spec analysis.json\n```",
         ],
         {"schema_version": card["spec_schema_version"], "required_inputs": card["required_inputs"], "next": card["next"]},
         exits,
-        "`metadata search` 只读已有本地快照。若目录缺失或过期，显式运行 `gravity metadata sync --all-apps` 并审查同步摘要；它会产生多次生产读取，不能算作固定十分钟或固定 HTTP 预算内的一步。最终结果为 0 或 empty 也是真实响应状态，不能改写成业务未发生。",
+        "这条冷目录路径共 12 条命令；其中安装、目录三层、status、events 和 Analysis dry-run 都是零生产 HTTP。单 App sync 的逻辑界只覆盖四类登记 Analysis metadata page request，不包含 runtime 固定 retry 或一次鉴权刷新；后两者以实际 receipt 为准。最终结果为 0 或 empty 也是真实响应状态，不能改写成业务未发生。",
     )
 
 

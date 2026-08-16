@@ -21,12 +21,16 @@ from .plan_adapter_support import (
 )
 
 
-REQUEST_FIELDS = frozenset({"query", "app_id", "kind", "limit", "offset"})
+REQUEST_FIELDS = frozenset(
+    {"query", "app_id", "kind", "limit", "offset", "max_age_hours"}
+)
 OUTPUT_FIELDS = frozenset(
     {
         "backend", "kind", "scope", "source", "app_id", "operation_id",
         "name", "cname", "payload", "score",
         "table_id", "observed", "versions", "operations",
+        "synced_at", "age_seconds", "expires_at", "stale", "fresh",
+        "sync_status", "row_count", "operation_rows", "failure_count", "failures",
     }
 )
 VOCABULARY_KINDS = frozenset(
@@ -40,7 +44,9 @@ VOCABULARY_KINDS = frozenset(
         "vocabulary",
     }
 )
-KINDS = frozenset({"all", "event", "property", "table_lineage"}) | VOCABULARY_KINDS
+KINDS = frozenset(
+    {"all", "event", "property", "table_lineage", "status"}
+) | VOCABULARY_KINDS
 
 
 def validate_metadata_plan(
@@ -64,11 +70,15 @@ def validate_metadata_plan(
             f"metadata kind {kind} is not App-scoped and does not accept app_id",
             "app_id",
         )
-    if app_id is not None and not isinstance(app_id, str):
-        raise input_error("metadata app_id must be a string", "app_id")
+    if app_id is not None and (
+        isinstance(app_id, bool) or not isinstance(app_id, (str, int))
+    ):
+        raise input_error("metadata app_id must be a string or integer", "app_id")
     limit = request.get("limit", min(20, context.max_items))
     bounded_optional(limit, 1, min(100, context.max_items), "limit")
     bounded_optional(request.get("offset", 0), 0, 2**31 - 1, "offset")
+    if kind == "status":
+        bounded_optional(request.get("max_age_hours", 24), 1, 8_760, "max_age_hours")
     validate_selected_fields(context.output_fields, OUTPUT_FIELDS, "output_fields")
 
 
@@ -87,7 +97,15 @@ def execute_metadata_plan(
         "limit": limit,
         "offset": request.get("offset", 0),
     }
-    if kind == "table_lineage":
+    if kind == "status":
+        from .metadata_status import metadata_status
+
+        result = metadata_status(
+            database=database,
+            app_id=request.get("app_id"),
+            max_age_hours=request.get("max_age_hours", 24),
+        )
+    elif kind == "table_lineage":
         result = search_table_lineage(str(request.get("query", "")), **options)
     else:
         result = search_metadata(
