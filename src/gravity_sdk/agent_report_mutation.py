@@ -24,6 +24,12 @@ def report_mutation_cards(
     return [] if action is None else [_card(query, action)]
 
 
+def report_mutation_capability_inventory() -> tuple[dict[str, Any], ...]:
+    """Materialize the single canonical report-mutation handoff card."""
+
+    return tuple(report_mutation_cards(SELECTOR, domain=None, platform=None))
+
+
 def is_report_mutation_card(card: Any) -> bool:
     return isinstance(card, dict) and (
         card.get("kind") == "report_mutation"
@@ -111,4 +117,9 @@ def selected_exact(query: str) -> bool:
     return affirmative_intent_text(query) in {SELECTOR, "report_mutation"}
 
 
-__all__ = ["SELECTOR", "is_report_mutation_card", "report_mutation_cards"]
+__all__ = [
+    "SELECTOR",
+    "is_report_mutation_card",
+    "report_mutation_capability_inventory",
+    "report_mutation_cards",
+]

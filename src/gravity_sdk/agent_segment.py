@@ -71,6 +71,19 @@ def segment_mutation_cards(
     return [_segment_mutation_card(query, action)]
 
 
+def segment_capability_inventory() -> tuple[dict[str, Any], ...]:
+    """Materialize the canonical read and mutation cards from this owner."""
+
+    return (
+        segment_rule_spec_cards(
+            _SELECTOR, domain=None, platform=None
+        )[0],
+        segment_mutation_cards(
+            _MUTATION_SELECTOR, domain=None, platform=None
+        )[0],
+    )
+
+
 def segment_evaluate_intent(query: str) -> bool:
     """Return positive Segment Evaluate evidence for central arbitration."""
 
@@ -330,6 +343,7 @@ def _intent_match(query: str) -> dict[str, Any]:
 __all__ = [
     "is_authoritative_direct_card",
     "segment_evaluate_intent",
+    "segment_capability_inventory",
     "segment_mutation_cards",
     "segment_mutation_intent",
     "segment_rule_plan_request",

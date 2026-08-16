@@ -21,6 +21,14 @@ def metadata_search_capability_cards(
     return [_card(query)]
 
 
+def metadata_search_capability_inventory() -> tuple[dict[str, Any], ...]:
+    """Materialize the canonical class-level metadata handoff."""
+
+    return tuple(
+        metadata_search_capability_cards(SELECTOR, domain=None, platform=None)
+    )
+
+
 def metadata_search_intent(query: str) -> bool:
     selected = affirmative_intent_text(query)
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
@@ -93,4 +101,9 @@ def _card(query: str) -> dict[str, Any]:
     }
 
 
-__all__ = ["SELECTOR", "metadata_search_capability_cards", "metadata_search_intent"]
+__all__ = [
+    "SELECTOR",
+    "metadata_search_capability_cards",
+    "metadata_search_capability_inventory",
+    "metadata_search_intent",
+]

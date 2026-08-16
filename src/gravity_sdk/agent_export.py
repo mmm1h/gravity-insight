@@ -138,6 +138,19 @@ def export_capability_cards(
     )
 
 
+def export_capability_inventory(client: Any) -> tuple[dict[str, Any], ...]:
+    """Materialize every currently callable export card from export contracts."""
+
+    descriptions = load_export_agent_inventory(client)
+    cards = [
+        _export_card(str(item["operation_id"]), item)
+        for item in descriptions
+    ]
+    if any(card is None for card in cards):
+        raise RuntimeError("callable export inventory cannot reproduce its Agent cards")
+    return tuple(card for card in cards if card is not None)
+
+
 def is_authoritative_export_card(card: Mapping[str, Any]) -> bool:
     return (
         card.get("kind") == "export"
@@ -329,6 +342,7 @@ def _user_event_export(query: str) -> bool:
 
 __all__ = [
     "export_capability_cards",
+    "export_capability_inventory",
     "export_inventory_for_query",
     "is_authoritative_export_card",
     "load_export_agent_inventory",

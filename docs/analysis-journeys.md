@@ -330,6 +330,15 @@ writer 拒绝非有限数字；operation、投影、请求、错误分类和退�
 `gravity.analysis-query-batch.v2` 的 `apps` 数组一次执行，逐 App 组件返回且不聚合。scatter 和其余
 产品仍按当前单 App/同层 Plan 合同，不据此增加新动线或改变下表计数。
 
+2026-08-16 的目录 parity 单元不新增产品动线、operation 或执行能力，当前总账仍为
+`51 = 41 / 1 / 9`、operation 203、stable 194。安装时可枚举的 canonical Agent 产品卡由既有 owner
+程序化重算为 41 张，`agent-catalog` 从原 `26/41` 补到 `41/41`；另投影 11 个已登记 gap，其中覆盖
+本表 9 条完全缺失和 1 条部分闭环，额外 1 条是“workspace 未配置 SQL 产品”的环境条件 gap。raw
+operation 继续保留专家入口，但明确不是产品等价物；`app.realtime_event.list` 是应用配置 raw 读，
+`REALTIME_EVENT_CATALOG_CONTRACT_MISSING` 才是“实时事件目录”动线状态。本轮 development 臂 A/C 为
+`260/336` 与 `334/336`；臂 C 的两处失败均是“一个产品 + 一个 gap”的混合多意图在冻结 scorer 中没有
+第二个 candidate selector，未修改评分逻辑。未运行 holdout/final，生产 HTTP 0 次。
+
 | 动线 | 状态 | 四面可达（CLI / SDK / Plan / Agent 中英首问） | 调用次数（已知 / 未知） | 阻塞 |
 | --- | --- | --- | --- | --- |
 | 看某事件随时间、分组和条件的变化 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | - |
