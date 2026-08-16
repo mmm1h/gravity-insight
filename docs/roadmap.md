@@ -4908,6 +4908,88 @@ literals 57）；错误审计保持 **1201 = A398 / B434 / C369**，新增 calle
 **0/0**；Agent 指南、CLI help 与 `git diff --check` 通过。没有运行真实 holdout/final/all、读取 key、
 查看/解密 sealed、修改题集/recognizer/目录/产品卡/gap/operation/阈值，或执行 GitHub/push/tag 动作。
 生产上游业务 HTTP 和外部 LLM 请求均为 **0 次**；loopback 观测实验不产生上游请求。
+
+## external selector 六类自报字段收口（2026-08-17）
+
+**提案与边界：**工作提案位于 ignored
+`tmp/codex/eval-selfreport/proposal.md`。本轮只修改 external-selector evaluator、协议说明、结果
+envelope、人类摘要和查询账本 receipt；没有修改题集、recognizer、能力目录、产品卡、gap、operation 或
+评分阈值。没有运行 holdout/final/all、读取 key、查看或解密 sealed 文件，也没有调用外部 LLM。
+
+**逐类裁决：**六类没有保留“未处理”第三状态。机器字段
+`selector_self_report_measurements` 固定含以下六项，并进入每个 external-selector result、顶层
+evaluation envelope、`selector_arm` receipt 和受保护查询账本 receipt；human summary 逐项打印
+`MEASURED` 或 `UNMEASURABLE`，后者同时打印原因。
+
+| 类别 | 最终状态 | harness 依据或不可测边界 |
+| --- | --- | --- |
+| `results[].reason` | 已标注不可测 | 可观察文本和最终 selector，但没有 opaque selector 的决策轨迹，不能验证理由真实性、充分性或因果一致性。 |
+| `metadata.selector` → `selector_versions` 与 plugin SHA | 已测量 | harness 在 trial 前后重算文件 SHA；同一 SHA 的四次 trial 只能有一个去空白版本串，受保护账本追加时还与同 SHA 的历史版本比对。 |
+| `metadata.meaningful_accuracy_evidence` | 已标注不可测 | 冻结题集得分由 harness 自己测量，但该 metadata 没有独立 evidence 引用，不能证明其“有意义”声明。 |
+| `metadata.request_sha256` | 已测量 | 父进程把实际 stdin 请求固定为排序键、compact separators 的 canonical JSON，再按 UTF-8 字节计算 SHA-256；plugin 一旦提供该字段，缺少精确匹配就 fail closed。 |
+| `metadata.stdin_encoding` | 已标注不可测 | 父进程能证明发送 UTF-8 字节并设置 `PYTHONIOENCODING`，不能独立观察任意子进程实际 decoder 或 `sys.stdin.encoding`。 |
+| 任意附加 metadata | 已标注不可测 | 可保存键和值并列出额外键，但没有 provider/model/request-id/token/latency 的外部权威 receipt；父进程自己的总耗时也不能验证 provider latency 或 token 语义。 |
+
+`selector_identity={plugin_sha256,selector_version}` 将两个值放在同一 receipt。这个绑定能检出同一文件
+SHA 在一次运行内改报版本、运行前后文件 SHA 漂移，以及受保护账本中同 SHA 的跨运行版本冲突；不能证明
+版本串里的 provider/model/prompt/decoding 为真，也不能约束动态导入、外部服务版本、运行中改后复原或
+额外网络调用。development 不写查询账本，所以跨 development 运行只输出可比较 binding，不持久化拒绝。
+
+**谎报反事实：**新增两条测试均走生产函数。`test_external_selector_rejects_a_false_request_hash`
+通过 `_invoke_plugin` 的真实 response decode/validate 路径回报 `"0" * 64`；
+`test_one_plugin_sha_rejects_changing_selector_versions` 真实启动同一个临时 plugin 两次，由未变 plugin
+文件分别回报 `liar.v1/v2`。当前两条均 fail closed。把 `f25ecac` 的
+`agent_usability_external_selector.py` 直接载入内存复演相同输入，实际结果为：
+
+```text
+f25ecac_false_request_sha256=ACCEPTED
+f25ecac_same_sha_version_drift=ACCEPTED
+```
+
+**实际 development 输出：**deterministic stub 的顶层 envelope 为（SHA 为本轮实际文件摘要）：
+
+```json
+{"selector_identity":{"plugin_sha256":"caf3d7523f8a4a28e208b21ed87d98a3af912bf1309df4f410e005c8743c2f3e","selector_version":"deterministic_catalog_name_stub.v1"},"request_sha256_verified_trials":4,"selector_self_report_measurements":{"result_reason":{"measured":false},"selector_version_plugin_sha_binding":{"measured":true},"meaningful_accuracy_evidence":{"measured":false},"request_sha256":{"measured":true},"stdin_encoding":{"measured":false},"additional_metadata":{"measured":false}},"production_http_requests":0,"socket_network_attempts":0}
+```
+
+human summary 实际输出为：
+
+```text
+Selector self-report result_reason: UNMEASURABLE
+Selector self-report result_reason reason: the harness observes the text and selected selectors but has no independent selector decision trace
+Selector self-report selector_version_plugin_sha_binding: MEASURED
+Selector self-report meaningful_accuracy_evidence: UNMEASURABLE
+Selector self-report meaningful_accuracy_evidence reason: meaningful_accuracy_evidence is plugin-reported without an independently verifiable evidence reference
+Selector self-report request_sha256: MEASURED
+Selector self-report stdin_encoding: UNMEASURABLE
+Selector self-report stdin_encoding reason: the parent sends UTF-8 bytes but cannot observe the arbitrary child process's decoder or sys.stdin.encoding value
+Selector self-report additional_metadata: UNMEASURABLE
+Selector self-report additional_metadata reason: additional provider, model, request, token, or latency metadata is reported by the uninstrumented plugin without an external receipt
+```
+
+同一个 development result 经真实 `append_query_record` 生产路径投影到临时合成 ledger（没有加载受保护
+题集）后，`selector_arm` receipt 同时含上述完整六项 measurement map、同一
+`selector_identity`、`selector_versions=["deterministic_catalog_name_stub.v1"]` 和
+`request_sha256_verified_trials=4`。实际不可测原因也保存在每个 `measured=false` 项中，不依赖文档解释。
+
+**盘点完整性修正：**上一轮表漏掉了任意 response 顶层附加键。修复前，除
+`schema_version/results/metadata` 外的键会被 JSON parser 接受后静默丢弃；现在顶层严格 allowlist 并有
+回归测试，因此该协议形状为已测量。成功进程写到 stderr 的非字段文本不会进入 response 或 receipt；
+在当前 JSON 协议内，除已测量的 schema/id/selectors、已显式标注的 `network_called`、本轮六类以及这项
+顶层形状外，没有再发现被接受的自报字段。未保存在仓库中的未来 metadata 键名仍不确定，但统一落入
+`additional_metadata` 不可测类别和 `additional_metadata_keys` 实际键清单，不再形成未分类状态。
+
+**复算与门禁：**评分逻辑未改。公开 development/default arm 保持
+`254/336、203/203、53/74、5/5`，selection/terminal unstable 均 0、安全 `PASS/0`；deterministic
+stub 保持 `28/336、28/28、0/74、5/5`，selection/terminal unstable 均 0、安全 `PASS/0`。两次
+production HTTP 均为 0。operation/stable/产品卡/selector 保持 **231 / 222 / 89 / 329**；动线保持
+**56 = 48 / 1 / 7**。unittest **1133 tests OK**；pytest **1133 passed / 3083 subtests passed**；
+compiler **231 operations / 11 manifests**；quality PASS（operations/provenance 231/231、operation
+literals 57）；错误审计保持 **1202 = A399 / B434 / C369**。新增 evaluator 错误位于 `scripts/`，不在
+该审计器的 `src/` 与 typed caller-error 统计域内，故审计口径增量仍为 **0/0**；七个新增
+`ValueError` fail-closed 点都给出具体恢复动作。
+窄测量模块使 external-selector 主文件保持 431 行，没有放宽 500/80/15/0 或 quality baseline；新增
+实现 230 行、测试 76 行，测试增量不超过实现增量三分之一。技术债清单复核后不新增活动条目。
 ## 语义组合过滤 wire 与 v2（2026-08-17）
 
 **提案与证据顺序：**ignored 工作稿位于 `tmp/codex/filter-wire/proposal.md`。本轮先以 Census

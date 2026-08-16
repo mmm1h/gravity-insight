@@ -161,6 +161,8 @@ def append_query_record(
     if not isinstance(subject, Mapping):
         raise ValueError("evaluation result has no code revision")
     previous_hash = str(records[-1]["entry_sha256"]) if records else None
+    selector_receipt = _selector_receipt(result, layers)
+    _validate_selector_version_history(records, selector_receipt)
     record: dict[str, Any] = {
         "schema_version": LEDGER_SCHEMA_VERSION,
         "record_type": "query",
@@ -176,7 +178,7 @@ def append_query_record(
         "trials": int(result.get("trials", 0)),
         "four_layer_scores": scores,
         "security_compliance": _security_receipt(layers.get("security_compliance")),
-        "selector_arm": _selector_receipt(result, layers),
+        "selector_arm": selector_receipt,
         "final_rerun_override": bool(allow_final_rerun),
         "split_query_ordinal": counts[split] + 1,
         "protected_query_ordinal": counts["protected_total"] + 1,
@@ -224,11 +226,21 @@ def _selector_receipt(
         if isinstance(item, Mapping) and item.get("selector")
     ]
     cost = layers.get("cost")
+    identity = selected.get("selector_identity")
+    measurements = selected.get("selector_self_report_measurements")
     return {
         "mode": str(selected.get("mode", "unspecified")),
         "protocol": selected.get("protocol"),
         "plugin_sha256": selected.get("plugin_sha256"),
         "selector_versions": list(dict.fromkeys(identities)),
+        "selector_identity": _copy_mapping(identity),
+        "selector_self_report_measurements": _copy_mapping(measurements),
+        "request_sha256_verified_trials": int(
+            selected.get("request_sha256_verified_trials", 0)
+        ),
+        "additional_metadata_keys": list(
+            selected.get("additional_metadata_keys", [])
+        ),
         "network_measured": result.get("selection_network_measured") is True,
         "network_measurement_reason": result.get(
             "selection_network_measurement_reason"
@@ -239,6 +251,41 @@ def _selector_receipt(
             else 0
         ),
     }
+
+
+def _copy_mapping(value: Any) -> dict[str, Any]:
+    return json.loads(json.dumps(value)) if isinstance(value, Mapping) else {}
+
+
+def _validate_selector_version_history(
+    records: Sequence[Mapping[str, Any]], current: Mapping[str, Any]
+) -> None:
+    plugin_sha256 = current.get("plugin_sha256")
+    versions = {
+        str(version) for version in current.get("selector_versions", []) if version
+    }
+    if not plugin_sha256:
+        return
+    if len(versions) != 1:
+        raise ValueError(
+            "external selector query receipt requires exactly one selector version "
+            "for its plugin SHA-256; rerun with one stable metadata.selector value"
+        )
+    current_version = next(iter(versions))
+    for record in records:
+        arm = record.get("selector_arm")
+        if not isinstance(arm, Mapping) or arm.get("plugin_sha256") != plugin_sha256:
+            continue
+        previous_versions = {
+            str(version) for version in arm.get("selector_versions", []) if version
+        }
+        if previous_versions and previous_versions != {current_version}:
+            rendered = ", ".join(sorted(previous_versions))
+            raise ValueError(
+                "selector version conflicts with an earlier query receipt for plugin "
+                f"SHA-256 {plugin_sha256}: {rendered} != {current_version}; use the "
+                "recorded version or change the plugin bytes before rerunning"
+            )
 
 
 def security_compliance_score(

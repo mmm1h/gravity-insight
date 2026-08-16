@@ -265,13 +265,25 @@ executable flag. The plugin returns exactly one
   "results": [
     {"id": "case-id", "selectors": ["composite:business_pulse"], "reason": "..."}
   ],
-  "metadata": {"selector": "provider/model/prompt-version", "network_called": false}
+  "metadata": {
+    "selector": "provider/model/prompt-version",
+    "network_called": false,
+    "request_sha256": "optional canonical-request SHA-256"
+  }
 }
 ```
 
 Every input id must appear exactly once. A result may select zero through five
 unique selectors. Unknown selectors, duplicate/missing ids, extra row fields,
-malformed JSON, non-zero exit, and timeout fail the whole run before scoring.
+extra top-level response fields, malformed JSON, non-zero exit, and timeout fail
+the whole run before scoring.
+When `metadata.request_sha256` is present, the evaluator recomputes SHA-256 over
+the exact canonical UTF-8 request payload and rejects any mismatch. Across
+the four trials, one harness-measured plugin SHA-256 must report one stable
+`metadata.selector` version; a protected query receipt also rejects a version
+conflict with an earlier receipt for the same SHA. This consistency binding
+does not verify that provider/model/prompt claims inside the version string are
+true.
 Zero selectors become an actionable `EXTERNAL_SELECTOR_ABSTAINED` gap; multiple
 selectors go through the same `MULTIPLE_INTENTS` fail-closed response as product
 routing; one selector is described from the supplied catalog and scored by the
@@ -310,6 +322,16 @@ whole-suite LLM score can be interpreted as selector quality. The parent process
 blocks its own sockets and all Gravity transport, but cannot police a child
 process's egress. Plugin metadata and an external wrapper's audit log remain
 useful provenance, but neither is an independent harness measurement.
+
+Every external-selector result, the top-level result, human summary, and query
+ledger selector receipt carry the same six-entry
+`selector_self_report_measurements` map. `request_sha256` and the selector
+version/plugin-SHA binding are measured. Result `reason`,
+`meaningful_accuracy_evidence`, the child's claimed `stdin_encoding`, and any
+additional provider/model/request/token/latency metadata are explicitly marked
+unmeasurable with field-specific reasons. The parent does measure the UTF-8
+bytes it sends and total subprocess elapsed time; those facts do not make the
+child's decoder or provider-specific claims independently observable.
 
 ## Files
 

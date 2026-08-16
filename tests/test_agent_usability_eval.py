@@ -343,6 +343,8 @@ class AgentUsabilityEvalTests(unittest.TestCase):
                 self.assertFalse(records[-1]["selector_arm"]["network_measured"])
                 self.assertEqual("synthetic unmeasured selector", records[-1][
                     "selector_arm"]["network_measurement_reason"])
+                self.assertEqual(6, len(records[-1]["selector_arm"][
+                    "selector_self_report_measurements"]))
 
                 final = ["run", "--split", "final", "--final-key", "unused",
                          "--purpose", "project closeout", "--output-dir", str(output)]
@@ -402,6 +404,15 @@ class AgentUsabilityEvalTests(unittest.TestCase):
         self.assertIn("plugin-reported", observations[0]["result"][
             "selection_network_measurement_reason"])
         self.assertEqual("utf-8", receipt["trial_receipts"][0]["stdin_encoding"])
+        measurements = receipt["selector_self_report_measurements"]
+        self.assertEqual(6, len(measurements))
+        self.assertTrue(measurements["request_sha256"]["measured"])
+        self.assertFalse(measurements["result_reason"]["measured"])
+        self.assertEqual(measurements, observations[0]["result"][
+            "selector_self_report_measurements"])
+        self.assertEqual(4, receipt["request_sha256_verified_trials"])
+        self.assertEqual(receipt["plugin_sha256"], receipt["selector_identity"][
+            "plugin_sha256"])
         failed = subprocess.CompletedProcess([], 7, "", "synthetic bridge crash")
         with patch("agent_usability_external_selector.subprocess.run", return_value=failed), self.assertRaisesRegex(
             ValueError, "stage=subprocess_execute.*exit code 7.*synthetic bridge crash"):
@@ -442,7 +453,8 @@ class AgentUsabilityEvalTests(unittest.TestCase):
             },
             inventory,
             client,
-            {"network_called": False},
+            {"selector": "synthetic.v1", "network_called": False},
+            plugin_sha256="a" * 64,
             production_http_requests=lambda: 0,
         )
         self.assertEqual([], result["candidates"])
@@ -468,7 +480,8 @@ class AgentUsabilityEvalTests(unittest.TestCase):
             },
             inventory,
             client,
-            {"network_called": True},
+            {"selector": "synthetic.v1", "network_called": True},
+            plugin_sha256="a" * 64,
             production_http_requests=lambda: blocker.attempts,
         )
         case = {"expected": {
@@ -494,9 +507,65 @@ class AgentUsabilityEvalTests(unittest.TestCase):
         }
         with self.assertRaisesRegex(ValueError, "outside the supplied catalog"):
             _validate_response(response, request, catalog)
+        response["results"][0]["selectors"] = []
+        response["unexpected"] = True
+        with self.assertRaisesRegex(ValueError, "unsupported top-level fields"):
+            _validate_response(response, request, catalog)
+
+    def test_external_selector_rejects_a_false_request_hash(self) -> None:
+        from agent_usability_external_selector import _invoke_plugin, RESPONSE_SCHEMA
+
+        response = {
+            "schema_version": RESPONSE_SCHEMA,
+            "results": [{"id": "q", "selectors": [], "reason": "none"}],
+            "metadata": {
+                "selector": "liar.v1",
+                "network_called": False,
+                "request_sha256": "0" * 64,
+            },
+        }
+        completed = subprocess.CompletedProcess([], 0, self.subject.json.dumps(response), "")
+        with patch(
+            "agent_usability_external_selector.subprocess.run", return_value=completed
+        ), self.assertRaisesRegex(ValueError, "request_sha256 does not match"):
+            _invoke_plugin(
+                Path(__file__), {"capabilities": []},
+                [{"id": "q", "query": "anything"}], timeout_seconds=10,
+            )
+
+    def test_one_plugin_sha_rejects_changing_selector_versions(self) -> None:
+        from agent_usability_external_selector import external_selector_trials
+        from gravity_sdk.client import GravityInsightClient
+
+        plugin_source = """import hashlib, json, sys
+from pathlib import Path
+request = json.load(sys.stdin)
+counter = Path(__file__).with_suffix('.count')
+trial = int(counter.read_text()) + 1 if counter.exists() else 1
+counter.write_text(str(trial))
+request_sha256 = hashlib.sha256(json.dumps(request, ensure_ascii=False, sort_keys=True, separators=(',', ':')).encode('utf-8')).hexdigest()
+json.dump({'schema_version': 'gravity.agent-external-selector-response.v1', 'results': [{'id': item['id'], 'selectors': [], 'reason': 'none'} for item in request['questions']], 'metadata': {'selector': f'liar.v{trial}', 'network_called': False, 'request_sha256': request_sha256}}, sys.stdout)
+"""
+        with tempfile.TemporaryDirectory() as temp:
+            plugin = Path(temp) / "selector.py"
+            plugin.write_text(plugin_source, encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "changed for one plugin SHA-256"):
+                external_selector_trials(
+                    [{"case_id": "case", "prompt": "anything", "expected": {
+                        "route_key": "synthetic", "gap_code": "SYNTHETIC",
+                    }}],
+                    GravityInsightClient.from_env(transport=self.subject.BlockedTransport()),
+                    2, plugin_path=plugin, timeout_seconds=10,
+                    route_score=lambda *_: (True, "ok", None),
+                    parameter_score=lambda *_: (None, "not_applicable"),
+                    terminal_score=lambda *_: (None, "skipped_production"),
+                    production_http_requests=lambda: 0,
+                )
 
 
 def _fake_result(split: str) -> dict:
+    from agent_usability_selector_measurements import self_report_measurements
+
     score = {"passed": 1, "total": 1, "rate": 1.0}
     return {
         "suite_version": "synthetic-suite.v1",
@@ -505,6 +574,11 @@ def _fake_result(split: str) -> dict:
         "trials": 1,
         "selection_network_measured": False,
         "selection_network_measurement_reason": "synthetic unmeasured selector",
+        "selector_arm": {
+            "mode": "external_selector", "plugin_sha256": "c" * 64,
+            "trial_receipts": [{"selector": "synthetic.v1"}],
+            "selector_self_report_measurements": self_report_measurements(),
+        },
         "run_at": "2026-08-16T00:00:00+00:00",
         "subject": {"git_commit": "a" * 40, "product_source_sha256": "b" * 64},
         "layers": {

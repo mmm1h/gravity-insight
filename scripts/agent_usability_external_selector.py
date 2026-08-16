@@ -13,6 +13,11 @@ import subprocess
 import sys
 from typing import Any
 
+from agent_usability_selector_measurements import canonical_request_text
+from agent_usability_selector_measurements import self_report_measurements
+from agent_usability_selector_measurements import validate_request_sha256
+from agent_usability_selector_measurements import validate_selector_version_binding
+
 
 REQUEST_SCHEMA = "gravity.agent-external-selector-request.v1"
 RESPONSE_SCHEMA = "gravity.agent-external-selector-response.v1"
@@ -39,6 +44,9 @@ def external_selector_trials(
 ) -> tuple[dict[str, Any], int, list[dict[str, Any]], dict[str, Any]]:
     """Run a selector process against one frozen local catalog and score its output."""
 
+    if not plugin_path.is_file():
+        raise ValueError("--selector-plugin must name one readable Python file")
+    plugin_sha256 = hashlib.sha256(plugin_path.read_bytes()).hexdigest()
     catalog, inventory = _catalog(client)
     blind_questions, aliases, blind_receipt = _blind_questions(cases)
     states = {
@@ -70,6 +78,7 @@ def external_selector_trials(
                 inventory,
                 client,
                 metadata,
+                plugin_sha256=plugin_sha256,
                 production_http_requests=production_http_requests,
             )
             if trial == 0:
@@ -91,11 +100,45 @@ def external_selector_trials(
             state["parameter"].append(parameter)
             state["terminal"].append(terminal)
             state["reasons"].append((reason, parameter_reason, terminal_reason))
-    return states, trials, observations, {
+    receipt = _external_selector_receipt(
+        plugin_path, plugin_sha256, catalog, blind_receipt, receipts
+    )
+    return states, trials, observations, receipt
+
+
+def _external_selector_receipt(
+    plugin_path: Path,
+    plugin_sha256: str,
+    catalog: Mapping[str, Any],
+    blind_receipt: Mapping[str, Any],
+    receipts: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    selector_version = validate_selector_version_binding(
+        receipts, plugin_path=plugin_path, plugin_sha256=plugin_sha256
+    )
+    known_metadata = {
+        "selector", "network_called", "meaningful_accuracy_evidence",
+        "request_sha256", "stdin_encoding",
+    }
+    return {
         "mode": "external_selector",
         "protocol": REQUEST_SCHEMA,
         "plugin_path": str(plugin_path),
-        "plugin_sha256": hashlib.sha256(plugin_path.read_bytes()).hexdigest(),
+        "plugin_sha256": plugin_sha256,
+        "selector_identity": {
+            "plugin_sha256": plugin_sha256,
+            "selector_version": selector_version,
+        },
+        "selector_self_report_measurements": self_report_measurements(),
+        "request_sha256_verified_trials": sum(
+            "request_sha256" in receipt for receipt in receipts
+        ),
+        "additional_metadata_keys": sorted({
+            str(key)
+            for receipt in receipts
+            for key in receipt
+            if key not in known_metadata
+        }),
         "catalog_capability_count": len(catalog["capabilities"]),
         "catalog_category_count": len(catalog["categories"]),
         "blind_presentation": blind_receipt,
@@ -136,9 +179,10 @@ def _invoke_plugin(
         "questions": [dict(question) for question in questions],
     }
     try:
+        request_text = canonical_request_text(request)
         completed = subprocess.run(
             [sys.executable, str(plugin_path)],
-            input=json.dumps(request, ensure_ascii=False, sort_keys=True),
+            input=request_text,
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -222,6 +266,11 @@ def _validate_response(
 ) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
     if not isinstance(response, Mapping) or response.get("schema_version") != RESPONSE_SCHEMA:
         raise ValueError(f"external selector response must use {RESPONSE_SCHEMA}")
+    if set(response) - {"schema_version", "results", "metadata"}:
+        raise ValueError(
+            "external selector response allows only schema_version, results, and "
+            "metadata; remove unsupported top-level fields and rerun"
+        )
     rows = response.get("results")
     if not isinstance(rows, list):
         raise ValueError("external selector response results must be an array")
@@ -265,7 +314,10 @@ def _validate_response(
         raise ValueError("external selector metadata.selector must name the selector version")
     if not isinstance(metadata.get("network_called"), bool):
         raise ValueError("external selector metadata.network_called must be boolean")
-    return selected, copy.deepcopy(dict(metadata))
+    validate_request_sha256(metadata, request)
+    validated_metadata = copy.deepcopy(dict(metadata))
+    validated_metadata["selector"] = str(metadata["selector"]).strip()
+    return selected, validated_metadata
 
 
 def _selection_result(
@@ -275,6 +327,7 @@ def _selection_result(
     client: Any,
     metadata: Mapping[str, Any],
     *,
+    plugin_sha256: str,
     production_http_requests: Callable[[], int],
 ) -> dict[str, Any]:
     selectors = list(selected["selectors"])
@@ -323,6 +376,11 @@ def _selection_result(
         "selection_network_measurement_reason": (
             SELECTION_NETWORK_MEASUREMENT_REASON
         ),
+        "selector_identity": {
+            "plugin_sha256": plugin_sha256,
+            "selector_version": str(metadata["selector"]).strip(),
+        },
+        "selector_self_report_measurements": self_report_measurements(),
         **terminal_network,
         "selected_selectors": selectors,
         "candidates": candidates,
