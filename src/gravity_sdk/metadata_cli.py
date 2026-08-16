@@ -25,6 +25,7 @@ from .metadata_status import max_age_hours, metadata_status
 from . import metadata_sync
 from . import metadata_vocabulary as vocabulary
 from .runtime import call_batch
+from .metadata_template_cli import add_metadata_template_commands
 
 
 def add_metadata_commands(
@@ -81,6 +82,7 @@ def add_metadata_commands(
         metadata_commands, metadata_limit, nonnegative_int
     )
     add_table_lineage_commands(metadata_commands, sync)
+    add_metadata_template_commands(metadata_commands, input_adder)
     return apps_commands, metadata_commands
 
 

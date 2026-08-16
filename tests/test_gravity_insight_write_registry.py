@@ -17,6 +17,7 @@ from gravity_sdk.census.coverage import (
 from gravity_sdk.compiler import ContractCompiler
 from gravity_sdk.kanban_mutation_contracts import KANBAN_MUTATION_OPERATIONS
 from gravity_sdk.custom_metric_contracts import CUSTOM_METRIC_MUTATIONS
+from gravity_sdk.metadata_template_contracts import TEMPLATE_MUTATIONS
 
 try:
     from gravity_sdk import GravityInsightClient
@@ -66,7 +67,7 @@ class GravityInsightWriteRegistryTests(unittest.TestCase):
             for item in load_manifest_operations(MANIFEST_ROOT)
             if item["stability"] == "stable"
             and item["operation_id"]
-            in KANBAN_MUTATION_OPERATIONS | CUSTOM_METRIC_MUTATIONS | {
+            in KANBAN_MUTATION_OPERATIONS | CUSTOM_METRIC_MUTATIONS | TEMPLATE_MUTATIONS | {
                 "analysis.segment.from.analysis.create",
                 "analysis.segment.from.rule.create",
                 "analysis.segment.from.rule.update",
@@ -83,8 +84,8 @@ class GravityInsightWriteRegistryTests(unittest.TestCase):
         }
         self.assertEqual(355, len(source_routes))
         self.assertTrue(source_routes <= reserved_routes | stable_write_routes)
-        self.assertEqual(32, len(stable_write_routes))
-        self.assertEqual(382, len(self.reservations))
+        self.assertEqual(36, len(stable_write_routes))
+        self.assertEqual(378, len(self.reservations))
         self.assertEqual(
             len(self.reservations),
             len({item["operation_id"] for item in self.reservations}),
@@ -122,7 +123,7 @@ class GravityInsightWriteRegistryTests(unittest.TestCase):
                 semantics["idempotency"],
                 {"idempotent", "non_idempotent", "conditional", "unknown"},
             )
-        self.assertEqual(382, sum(kinds.values()))
+        self.assertEqual(378, sum(kinds.values()))
         self.assertGreater(kinds["create"], 0)
         self.assertGreater(kinds["update"], 0)
         self.assertGreater(kinds["delete"], 0)
@@ -194,10 +195,10 @@ class GravityInsightWriteRegistryTests(unittest.TestCase):
         # 字典经多 App 非空复验后升至 173；D35 归因表现闭环后升至 174；
         # F40 测试设备目录与单用户归因明细闭环后升至 176。
         # 本测试的保证不是「这个数不变」，而是「它远小于 accounted，且
-        # blocked_write 绝不被计入可调用」——即下面两条 382 断言。
-        self.assertEqual(213, rebuilt["summary"]["callable_covered"])
-        self.assertEqual(382, rebuilt["accounting_summary"]["accounted_blocked_write"])
-        self.assertEqual(382, rebuilt["callability_summary"]["contract_only"])
+        # blocked_write 绝不被计入可调用」——即下面两条 378 断言。
+        self.assertEqual(217, rebuilt["summary"]["callable_covered"])
+        self.assertEqual(378, rebuilt["accounting_summary"]["accounted_blocked_write"])
+        self.assertEqual(378, rebuilt["callability_summary"]["contract_only"])
 
     def test_new_unclassified_route_fails_the_cli_accounting_gate(self) -> None:
         routes = {

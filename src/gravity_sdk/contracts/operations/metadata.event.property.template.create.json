@@ -1,0 +1,45 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "source_schema_version": 2,
+  "target_manifest": "other.json",
+  "manifest_order": 20925,
+  "operation": {
+    "operation_id": "metadata.event.property.template.create",
+    "domain": "metadata",
+    "resource": "event_property_template_membership",
+    "action": "update",
+    "description": "向 marker-or-owner 已验证的事件/属性模板追加精确事件或属性成员，并强制读回成员集合。",
+    "contract_version": 1,
+    "upstream_method": "POST",
+    "path_template": "/turbo_engine/api/v2/event/property_template/append/",
+    "auth_profile": "gravity_authorization",
+    "stability": "stable",
+    "executable": true,
+    "input_fields": {
+      "app_id": {"type": "integer"},
+      "id": {"type": "integer", "required": true},
+      "name": {"type": "string", "required": true, "max_length": 128},
+      "need_common": {"type": "boolean", "default": false},
+      "remark": {"type": "string", "default": "", "max_length": 2000},
+      "target_id_list": {"type": "array", "item_type": "integer", "required": true, "min_items": 1, "max_items": 100},
+      "template_type": {"type": "string", "required": true, "enum": ["meta_property", "event_property", "user_property"]}
+    },
+    "request": {
+      "path_fields": [],
+      "query_fields": [],
+      "body_fields": ["id", "name", "template_type", "target_id_list", "need_common", "app_id", "remark"],
+      "defaults": {"need_common": false, "remark": ""},
+      "fixed_query": {},
+      "fixed_body": {}
+    },
+    "response_projection": {"data_keys": [], "required_data_keys": [], "item_keys": [], "dynamic_item_fields": []},
+    "pagination": {"kind": "none", "page_field": "", "page_size_field": "", "list_path": "", "page_info_path": "", "total_page_field": ""},
+    "semantic_error_rules": ["code", "extra.error"],
+    "privacy_policy": {"classification": "configuration", "redact_fields": ["authorization", "access_token", "token", "cookie", "password", "secret", "refresh_token", "session_token"]},
+    "required_parent": [{"input_field": "id", "operation_id": "metadata.event_property_template_event.list", "output_path": "data.list[].id", "selection": "caller_select"}],
+    "live_probe": {"enabled": false, "inputs": {}},
+    "effect": "mutation",
+    "examples": [],
+    "provenance": {"source_files": ["operations/metadata.event.property.template.create.json"], "family": null, "platform": null, "applied_overrides": []}
+  }
+}

@@ -99,6 +99,7 @@ def _card_depends_on_workspace(card: Mapping[str, Any]) -> bool:
         "report_mutation",
         "custom_metric_mutation",
         "custom_metric_list",
+        "metadata_template_mutation",
         "segment_rule_spec",
         "segment_mutation",
     }

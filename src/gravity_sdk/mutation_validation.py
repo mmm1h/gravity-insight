@@ -21,6 +21,8 @@ from .kanban_wire_validation import validate_kanban_wire
 from .kanban_mutation_contracts import KANBAN_MUTATION_OPERATIONS
 from .custom_metric_contracts import CUSTOM_METRIC_MUTATIONS
 from .custom_metric_wire import validate_custom_metric_wire
+from .metadata_template_contracts import TEMPLATE_MUTATIONS
+from .metadata_template_wire import validate_metadata_template_wire
 
 
 def validate_mutation_inputs(
@@ -33,6 +35,9 @@ def validate_mutation_inputs(
         return
     if operation_id in CUSTOM_METRIC_MUTATIONS:
         validate_custom_metric_wire(operation_id, values)
+        return
+    if operation_id in TEMPLATE_MUTATIONS:
+        validate_metadata_template_wire(operation_id, values)
         return
 
     if operation_id == FROM_ANALYSIS_CREATE:

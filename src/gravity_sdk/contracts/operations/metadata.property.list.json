@@ -4,7 +4,7 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 2,
+    "contract_version": 3,
     "description": "事件属性模板元数据域的属性列表；返回模板属性的标识、中英文名、数据类型、通用与预置标记、备注及创建修改时间。",
     "domain": "metadata",
     "effect": "read",
@@ -20,6 +20,13 @@
     ],
     "executable": true,
     "input_fields": {
+      "filters": {
+        "default": [],
+        "item_type": "object",
+        "max_items": 1,
+        "min_items": 0,
+        "type": "array"
+      },
       "page": {
         "default": 1,
         "type": "integer"
@@ -73,9 +80,11 @@
     "request": {
       "body_fields": [
         "page",
-        "page_size"
+        "page_size",
+        "filters"
       ],
       "defaults": {
+        "filters": [],
         "page": 1,
         "page_size": 20
       },

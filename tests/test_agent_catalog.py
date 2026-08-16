@@ -65,7 +65,7 @@ class AgentCatalogTests(unittest.TestCase):
             item["gap_code"]: item for item in inventory
             if item["identity_kind"] == "capability_gap"
         }
-        self.assertEqual(77, len(products))
+        self.assertEqual(81, len(products))
         self.assertEqual({card["selector"] for card in products}, set(product_items))
         self.assertEqual({gap["code"] for gap in gaps}, set(gap_items))
         self.assertTrue(all(not item["executable"] for item in gap_items.values()))
@@ -110,6 +110,7 @@ class AgentCatalogTests(unittest.TestCase):
 
     def test_every_public_mutation_action_has_a_safe_catalog_handoff(self) -> None:
         from gravity_sdk.kanban_mutation import kanban_mutation_schema
+        from gravity_sdk.metadata_template_mutation import metadata_template_mutation_schema
         from gravity_sdk.segment_mutation_cli import MUTATION_ACTIONS
 
         cards = [
@@ -120,7 +121,7 @@ class AgentCatalogTests(unittest.TestCase):
             kind: {card["mutation_action"] for card in cards if card["kind"] == kind}
             for kind in (
                 "segment_mutation", "report_mutation", "kanban_mutation",
-                "custom_metric_mutation",
+                "custom_metric_mutation", "metadata_template_mutation",
             )
         }
         self.assertEqual(set(MUTATION_ACTIONS), by_kind["segment_mutation"])
@@ -139,7 +140,11 @@ class AgentCatalogTests(unittest.TestCase):
             {"create", "update", "delete"},
             by_kind["custom_metric_mutation"],
         )
-        self.assertEqual(34, len(cards))
+        self.assertEqual(
+            set(metadata_template_mutation_schema()["actions"]),
+            by_kind["metadata_template_mutation"],
+        )
+        self.assertEqual(38, len(cards))
 
         stable_mutations = {
             item["operation_id"]
@@ -160,6 +165,7 @@ class AgentCatalogTests(unittest.TestCase):
                 "analysis.datamanageconfig.kanban.dashboard.delete",
                 "report.report.update",
                 "report.confmetric.custom.metric.update",
+                "metadata.event.property.template.079c8246.create",
             },
             {operation_id for operation_id, count in coverage.items() if count == 2},
         )
@@ -176,7 +182,10 @@ class AgentCatalogTests(unittest.TestCase):
                 self.assertEqual(
                     card["next"]["argv"][:-1], card["next"]["then_argv"][:-1]
                 )
-                if card["kind"] in {"kanban_mutation", "custom_metric_mutation"}:
+                if card["kind"] in {
+                    "kanban_mutation", "custom_metric_mutation",
+                    "metadata_template_mutation",
+                }:
                     self.assertTrue(card["plan_executable"])
                     self.assertEqual(
                         ("preview", "execute"),

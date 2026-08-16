@@ -430,3 +430,40 @@ selector，动线为 `53 = 45 / 1 / 7`。完整权限裁决、40 条旧前缀清
 `metadata.engine.datamanageconfig.metrics.create` 已证明是 role-level `metrics_dict` 保存，不是自定义指标
 create；`report.engine.confmetric.permission.update` 会覆盖角色可见指标/维度并影响其他用户，因此两者
 都保持 blocked reservation，permission 未发送生产请求。share 同样不在本轮范围。
+
+## 2026-08-16 追加判定：事件/属性元数据模板治理
+
+题面代码块列 8 个 operation ID，并另写“带 hash 后缀的 template create”，合计 9；Census 当前快照中
+9/9 都存在，且均为 POST。复核后的精确 method/path 与产品裁决如下：
+
+| Operation | Path | 裁决 | 分析价值或停止理由 |
+| --- | --- | --- | --- |
+| `metadata.event.property.template.079c8246.create` | `/turbo_engine/api/v2/event/property_template/create/` | 做 | 同一路由创建或软删模板 master；可形成可复用分析元数据对象并安全清理。 |
+| `metadata.event.property.template.create` | `/turbo_engine/api/v2/event/property_template/append/` | 做 | 向既有模板追加 App 目录事件/属性，补齐生命周期。 |
+| `metadata.property.template.event.delete` | `/turbo_engine/api/v2/event/property_template/event_delete/` | 做 | 从 `meta_property` 模板移除事件成员；删除前后均可用模板成员目录保护。 |
+| `metadata.property.template.property.delete` | `/turbo_engine/api/v2/event/property_template/property_delete/` | 做 | 从事件/用户属性模板移除成员；生产已完成该分支读回。 |
+| `metadata.event.property.group.update` | `/turbo_engine/api/v2/datamanageconfig/conf_event_property_group/save/` | 不做 | 只保存 Gravity Web 分类、顺序和显隐；SDK 分析不消费这套布局，建得出但不增加分析能力。 |
+| `metadata.property.sub.group.batch` | `/turbo_engine/api/v2/datamanageconfig/conf_event_property_sub_group/batch_save/` | 不做 | 同上，是批量 UI 子分组配置。 |
+| `metadata.property.sub.group.update` | `/turbo_engine/api/v2/datamanageconfig/conf_event_property_sub_group/save/` | 不做 | 同上，是单项 UI 子分组配置。 |
+| `metadata.event.event.property.batch` | `/turbo_engine/api/v2/event/event_property_batch_delete/` | 不做 | 真正批删 App 事件属性，但现有 stable 目录没有 owner/marker，候选族也没有受治理 create；无法满足 owner gate。 |
+| `metadata.event.user.property.import` | `/turbo_engine/api/v2/event/user_property/import/` | 不做 | multipart XLSX 导入会创建属性；候选族没有可验证 owner 的清理 route，生产验证会留下垃圾对象。 |
+
+同一当前 bundle 还含 Census 没提取到的事件/用户属性 create/edit/relation/delete 调用点；原因是 alias
+baseURL 静态解析边界。它们不是这 9 条已登记候选，且未完成 route census、owner 与响应合同，故没有
+绕过治理直接接入。Census 同前缀另有已登记 draft
+`GET /event/property_template/use_template/`：前端语义是“按模板创建事件”，不是读取模板；它会产生
+事件对象且本线没有事件 owner/清理链，因此不晋升。master/event-member/property-member 三条 list
+route 早已 stable，本轮直接用于 owner、preimage 和写后读回，不重复新增 operation。维度表
+`event_dim` 家族按产品裁决完全不在本轮范围。
+
+生产闭环使用 App 27018426 的 event property 源 ID 2573861：创建分配模板 ID 121075、模板成员 ID
+669697，并以 `GSDK-6c612a3c1f78` round-trip。源目录 ID 与模板成员 ID 不相等，create/append 因而按
+稳定 metadata `name` 校验效果，remove 改收精确 `member_ids`。成员删除读回空集合，master 软删后
+完整目录确认 ID 消失，最终零残留。首次 create 后读回命中了 10 分钟 metadata cache 的旧 preimage；
+共享 mutation client 现只在成功写后清空 metadata cache，保证所有既有写产品的 delete guard 都读取
+上游当前状态。生产 HTTP 为 24/25，全部 200、attempt 1、retry=false；完整逐请求账本见
+[路线图当前章节](roadmap.md#事件属性元数据模板治理-crud2026-08-16)。
+
+新增 4 条 stable mutation、4 张 action-qualified 产品卡和 1 条已闭环动线：operation
+`226 + 4 = 230`，stable `217 + 4 = 221 = 185 read + 36 mutation`，产品卡 `77 + 4 = 81`，selector
+`312 + 4 operation + 4 product = 320`，动线 `53 = 45 / 1 / 7` → `54 = 46 / 1 / 7`。
