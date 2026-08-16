@@ -131,7 +131,7 @@
 ### P1-5 补齐 6 类服务端导出
 
 - **来源**：Mixpanel Headless 把查询和导出做成可重放的 typed CLI/Python 工作流；MCP 的长任务/进度模型和 dbt `truncated` 标志都强调异步或截断状态必须显式，不应假装已拿到完整结果。见[厂商 landscape 的 Mixpanel Headless](vendor-agent-landscape.md)和 [MCP 调研的任务、分页与截断](mcp-protocol-and-servers.md)。
-- **我们现在是什么样**：`user_event`、`segment.result`、`segment_user_detail`、`user_detail`、`pay_event` 已各用自己的成功文件形态闭环；`origin_event` 仍缺正数 evaluate，`monetization_detail` 的 READY 文件仍被 archive-safety 拒绝，聚合动线因此保持部分闭环。`stream_event` 已判定不适用。
+- **我们现在是什么样**：`user_event`、`segment.result`、`segment_user_detail`、`user_detail`、`pay_event` 已各用自己的成功文件形态闭环；`origin_event` 仍缺正数 evaluate。`monetization_detail` 的 READY 文件已通过 route-scoped archive policy，但 1,000,000 文件行小于同 scope 的 1,212,315 明细总数且无截断信号，聚合动线因此保持部分闭环。`stream_event` 已判定不适用。
 - **借鉴什么**：在获得安全证据后，逐导出族复用统一 task 状态、进度、分页/截断、下载校验和 receipt；每族保持独立合同，不能用一个成功文件猜另一个。所有状态必须区分 empty、partial、truncated、gap、expired 和 complete。
 - **为什么值得**：这是“现在做不到”。不做时，分析师完成查询后会在拿完整文件这一步回 Web 或写临时脚本；做完后，适用的服务端导出能在同一 SDK/CLI/Plan 动线闭环。
 - **代价**：L，且受每族成功文件证据约束；涉及导出合同、轮询/下载适配器、receipt、隐私复核和每族一个边界测试。没有证据的族保持 gap，不可用猜测推进。

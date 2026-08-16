@@ -52,9 +52,11 @@ session 设成计数且触网即抛；编译 Web artifact 后断言完整依赖�
 偷偷联网”不是事实，真实缺陷是执行期依赖被合同隐藏。最终 receipt 又独立观察到 event 与 event-property
 两次读取。
 
-**线上补证与伴随合同修正：**`analysis.report_config.list` 的上一轮 500 页大小在线返回语义错误；40 页大小
-读取 93 条成功。非空 `dashboards` 此前无法投影并使整个目录 fail-closed；v4 因而把页上限收回 40，
-并将该已观察数组登记为 opaque JSON 完整暴露，保存分析产品仍只消费自身字段。完整目录
+**线上补证与伴随合同修正：**当轮提交把 `analysis.report_config.list` 从 500 收回 40，但不可变 evidence
+只记录了 8 次请求总数，没有保存各次 `page_size`、状态或响应；因此“500 返回语义错误”不能由当轮产物
+复核，`dashboards` 投影修正也不能证明分页上限。2026-08-17 的独立边界补证已确认 40、41、500、1000
+全部成功，并以 v5 恢复到已验证的 1000；详见下节。非空 `dashboards` 的 opaque JSON 投影修正仍有效，
+保存分析产品只消费自身字段。完整目录
 同时证明正常 event artifact 会携带执行器本来就用显式 App/日期覆盖的 `calculateBody.app_id/date_list`
 和不参与请求的 UI 镜像字段；这些精确已观察字段被登记，未知字段仍 fail-closed。精确 GET 的原样保存对象
 在 `2026-06-01..2026-06-07` 重放成功，`analysis.event.query` HTTP 200，真实聚合值为
@@ -70,6 +72,51 @@ session 设成计数且触网即抛；编译 Web artifact 后断言完整依赖�
 最终门禁为 unittest **1110 OK**、pytest **1110 passed / 3078 subtests passed**、compiler
 **231 operations / 11 manifests**、quality **PASS**；stable privacy、生成文档、CLI help 与
 `git diff --check` 同时通过，测试数未减少。
+
+### Report-config 分页与变现归档边界补证（2026-08-17）
+
+**书面提案与判定：**本轮只补两条可证伪合同边界，不扩大产品面。`analysis.report_config.list` 在同一
+App、第一页分别请求 `page_size=40/41/500/1000`，四次均 HTTP 200、`code=0/msg=成功`；返回行数依次
+为 40/41/93/93，`page_info.page_size` 原样为 40/41/500/1000，`total_number=93`，`total_page`
+依次为 3/3/1/1。因此 40 不是上游上限，v4 的无声收回是能力退化；v5 将默认值和 SDK 请求恢复到
+**1000 这一已验证安全请求值**。它不是绝对上游硬上限：大于 1000 未探测。旧路线图的“上游已证明
+上限 500”同样错误——500 当时没有可复核的逐请求证据，而且本轮 1000 已成功。历史变更的精确因果
+无法从提交产物确定；可确定的流程缺陷是分页变更与 `dashboards` 修复被捆绑，合同、测试同步改小却没有
+保存输入/响应或单独决策说明。
+
+完整性不是从“成功”推断：raw `ReadResult.page` 暴露 `item_count/total_items/total_pages/has_more`，
+调用方必须在 `has_more=false` 且已收齐 `total_items` 时才声称完整；保存分析目录本身使用 `read_all` 和
+`_require_complete`，若仍有 `next_page_input` 或 `truncated=true` 就拒绝。v5 description 明示完整性
+来自 `page_info`，而不是默认页大小。
+
+**归档规则与变现结论：**原 128 MiB route policy 的实际拒绝规则为 `uncompressed_size_cap`，触发条目
+`xl/worksheets/sheet1.xml`：该条目声明 166,667,313 bytes，累计声明展开量 166,678,185 bytes，超过
+134,217,728 bytes。它不是 metadata mismatch、nested archive、data descriptor 或 ZIP64 问题。诊断性
+复验只把该 route 的展开上限提高到 256 MiB，保留 entry-count、ratio、加密、symlink、路径穿越、嵌套
+和元数据一致性检查；文件随即通过。文件 13,588,076 bytes、9 entries、总展开 166,683,292 bytes、
+最高压缩比 12.269763，故最终只给 `monetization_detail` 设置 **192 MiB** 展开上限，共享守卫及其他上限
+不放宽。`BLOB_ARCHIVE_UNSAFE` 现在同时返回 `details.rule`、条目、实测值、上限和 `next_action`，调用方
+能区分应缩小导出、修复路径/加密问题、还是申请有审查的 route policy 变更。
+
+该文件为 `Sheet1`，有 1,000,000 数据行，两列：`事件发生时间`（XLSX storage `s` / Python `str` /
+logical datetime）和 `客户ID`（`s` / `str` / identifier）。但同 App、同日、同字段的受管明细读取报告
+`total_items=1,212,315`；READY 任务和文件都没有 truncation 标志。因此安全归档可以放行，
+**变现导出族仍不能晋升**：上游静默少了 212,315 行。上游 empty 文件形态也未在线验证，本轮不从本地
+header-only 构造外推。route 保持 `unverified/executable=false`，Analysis 导出动线仍为
+`55 = 47 / 1 / 7` 中唯一的部分闭环。
+
+生产 HTTP 严格为 **19 / 20**：认证 1、report-config 4、任务恢复/两次下载 4、首次用错 App scope 的
+完整性读取 4、纠正到任务精确 scope 的完整性读取 6；全部 HTTP 200，无重试、翻页、扩窗或新建任务。
+错误 scope 的 19,196 行观察保留在账本但从判定中排除。完整逐请求 receipt、四个分页响应、归档错误原文、
+文件 shape 与一致性判定见
+[`20260817_contract_evidence.json`](../evidence/forensics/20260817_contract_evidence.json)。
+
+operation/stable/产品卡/selector 均保持 **231 / 222 = 185 read + 37 mutation / 88 / 328**，动线仍为
+**55 = 47 / 1 / 7**。本线新增 caller-recoverable raise site 0；既有 archive 错误只补结构化详情，错误
+审计仍为 **1169 = A366 / B434 / C369**。归档函数拆分后质量棘轮删除旧 `_inspect_zip` complexity 20
+债项，只收紧不放宽。最终门禁为 unittest **1113 OK**、pytest **1113 passed / 3082 subtests passed**、
+compiler **231 operations / 11 manifests**、quality **PASS**；Agent Skill 生成器 `--check`、文档测试、
+CLI help 与 `git diff --check` 同时通过，测试数只增不减。
 
 ### Census 完整性与分母审计（2026-08-16）
 
@@ -4471,7 +4518,8 @@ update/delete 在写前读取完整目录和精确 detail：GSDK marker 命中�
 
 `analysis.report_config.list/get` 不在 `is_metadata_operation()` 的 cache allowlist 中，本身不会从
 metadata cache 读取；共享 `_execute_mutation` 又会在成功写后清空 metadata cache。因此 list/detail
-写后读回和 delete guard 都不会命中写前 metadata 状态。合同把 list 页大小提升到上游已证明上限 500，
+写后读回和 delete guard 都不会命中写前 metadata 状态。当轮把 list 页大小写成“上游已证明上限 500”，
+但不可变 evidence 没有逐请求观察，且 2026-08-17 已证明 1000 成功；该历史表述现由上方边界补证纠正。
 读回仍使用 `read_all` 和既有总页数有界并发，不能用第一页缺失冒充删除成功。
 
 **真实事件分析生命周期输出：**使用唯一 `GSDK-saved-analysis-20260816` marker。先 create 并由 list/get
@@ -4521,7 +4569,7 @@ user detail、pay event、monetization 父读取均非空；segment catalog 中�
 其成员页和历史版本也都非空，所以没有创建临时分群，也没有清理请求。origin event catalog 共 129 行，
 昨日正数事件为 0；对一个自然事件做 1 次 evaluate，估算仍为 0，因此没有发 create。历史“六族都缺
 安全非空样本”已失效：四族可直接做；origin 仍缺正数估算；monetization 已有非空父数据，阻塞点已经
-变成 READY 文件未通过原有 archive-safety 门禁。
+从 READY 文件的 archive-safety 诊断进一步定位为上游静默行截断；原始当轮结论由上方边界补证取代。
 
 **四族真实完整链路与各自文件合同：**四个 create 均为 HTTP 200/code 0，第一次有界 poll 即 READY，
 下载均为 HTTP 200，并通过固定 host/path、MIME、magic、XLSX schema、字节/hash 与原子提交校验。值无关
@@ -4537,7 +4585,9 @@ user detail、pay event、monetization 父读取均非空；segment catalog 中�
 四族各自的 empty 合同都是同一个 worksheet、保留本族表头、数据行数 0；本地真实构造每族 header-only
 XLSX 并通过既有 finalizer，结果均为 `rows_processed=0`。monetization create 后 4 次初始 poll 仍为
 RUNNING；通过 task list 恢复后再 poll 2 次到 READY，唯一下载虽为 HTTP 200，却在未放宽的共享门禁以
-`BLOB_ARCHIVE_UNSAFE/archive_check` 失败，未提交文件，公开状态为 `partial`，成功 shape 仍未知。随后
+`BLOB_ARCHIVE_UNSAFE/archive_check` 失败；当轮未记录具体规则，故当时未提交文件且成功 shape 未知。后续
+补证确认规则是 128 MiB `uncompressed_size_cap`，文件在 route-scoped 192 MiB 下安全，但 1,000,000 行
+小于同 scope 明细总数 1,212,315，因静默截断仍不提交为 complete。随后
 同 App/日取得自然 ClientID，但窄化条件在本地 typed-condition 校验失败，故窄 create 为 0，没有重复任务。
 
 **六态机械分类：**`complete` 只来自已原子提交、schema 通过且 `rows>0` 的 receipt；同样成功 receipt 的

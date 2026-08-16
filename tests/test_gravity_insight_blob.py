@@ -371,7 +371,10 @@ class SafeBlobTransferTests(unittest.TestCase):
             max_entries=10,
             max_compression_ratio=10_000,
         )
-        self._assert_zip_rejected(data, archive_policy)
+        error = self._assert_zip_rejected(data, archive_policy)
+        self.assertEqual("uncompressed_size_cap", error.details["rule"])
+        self.assertEqual(100, error.details["observed_uncompressed_bytes"])
+        self.assertEqual(10, error.details["max_uncompressed_size_bytes"])
 
     def test_zip_bomb_entry_count_cap_fails_closed(self):
         data = zip_bytes([("a.txt", b"a"), ("b.txt", b"b")])
@@ -382,6 +385,21 @@ class SafeBlobTransferTests(unittest.TestCase):
             max_compression_ratio=10_000,
         )
         self._assert_zip_rejected(data, archive_policy)
+
+    def test_zip_bomb_compression_ratio_reports_rule_and_measured_values(self):
+        data = zip_bytes([("repeated.txt", b"x" * 1_000)])
+        archive_policy = ArchivePolicy(
+            enabled=True,
+            max_uncompressed_size_bytes=10_000,
+            max_entries=10,
+            max_compression_ratio=2,
+        )
+        error = self._assert_zip_rejected(data, archive_policy)
+        self.assertEqual("compression_ratio_cap", error.details["rule"])
+        self.assertEqual("repeated.txt", error.details["entry"])
+        self.assertEqual(1_000, error.details["declared_uncompressed_size"])
+        self.assertGreater(error.details["observed_compression_ratio"], 2)
+        self.assertIn("next_action", error.details)
 
     def test_zip_bomb_nested_archive_depth_cap_fails_closed(self):
         child = zip_bytes([("inside.txt", b"value")])
@@ -411,6 +429,7 @@ class SafeBlobTransferTests(unittest.TestCase):
             self.assertEqual("BLOB_ARCHIVE_UNSAFE", raised.exception.code)
             self.assertFalse((root / "report.zip").exists())
             self.assertFalse(list(root.glob(".blob-*")))
+            return raised.exception
 
     def test_missing_content_length_still_enforces_streaming_cap(self):
         data = b"id," + b"x" * 20
