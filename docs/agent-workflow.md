@@ -195,7 +195,7 @@ gravity run app.list --input '{"page":1,"page_size":20}' --fields id,name
 
 词汇同步固定读取 9 个 workspace source，各一次且不随 App 数增长；六类 kind 是 `metric/custom_metric/metric_tag/metric_tag_category/media_enum/template`，都不接受 `app_id`。指标卡只给可复制的 `request_fragment`，模板是 `catalog_only`，没有配置回放。`status=partial` 时必须保留并报告失败来源，不能宣称完整覆盖。
 
-冷启动只需要一个 App 的物理事件时，不做全账号同步：先离线 `metadata status --app-id`，再用 `metadata sync --app-id ... --max-pages 2 --dry-run` 取得 `3 * max_pages + 1` 的逻辑界，执行同一 sync 后用 `metadata events` 选物理事件；执行摘要报告实际页/对象/HTTP receipt，达到页界显式 partial。完整命令见 [CLI Metadata](reference/cli.md#metadata)。
+冷启动只需要一个 App 的物理事件时，不做全账号同步：调用方明确 App、日期和精确事件后，用 `analysis bootstrap --plan-output` 在一次调用内完成 App 校验、必要的单 App metadata sync、离线事件确认和 Plan dry-run；审阅后第二次 `plan run`。bootstrap 每类 metadata 固定一页且 CLI 不重试，空会话完整路径最多 7 HTTP；页界只返回普通 sync 的下一动作，不自动扩量。完整命令见[十分钟路径](agent-skills/ten-minute-path.md)。
 
 已同步时直接离线查询一次；冷目录的两调用路径是先显式运行 `gravity agent "<query>" --resolve-inputs '{"catalog_policy":"refresh"}' --output catalog.json`，再执行返回的 metadata search/table-lineage 节点。第一次只有在所有请求来源成功时才原子发布新 catalog；否则报错并保留旧库。第二次结果带同步时刻，只表示 observed snapshot。`events/properties` 是 App scope；`tables` 是 account scope，只陈述观察到的 ID/版本/动作/时间。所有本地词汇只提供物理候选，不自动执行或绑定业务查询。需要同时查 operation、recipe 和 metadata 时调用：
 

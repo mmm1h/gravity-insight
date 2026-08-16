@@ -20,6 +20,7 @@ Usage:
   gravity analysis saved create|update|delete --dry-run|--execute
   gravity analysis template list|prepare|run
   gravity analysis query batch --input <queries.json> [--dry-run]
+  gravity analysis bootstrap --app <id> --start <date> --end <date> --target <event> --plan-output <plan.json>
   gravity analysis dashboard prepare|run --app <alias|id> --ref <id|name> --start <date> --end <date>
   gravity analysis user journey --app <alias|id> --client-id <id> --date <date>
   gravity analysis segment snapshot --app <alias|id> --ref <id|name> --date <date>

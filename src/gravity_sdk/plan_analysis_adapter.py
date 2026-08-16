@@ -13,6 +13,11 @@ from .analysis_spec import (
     validate_query_spec,
 )
 from .output_projection import validate_output_fields
+from .field_metadata_override import use_field_metadata_loader
+from .metadata_catalog_snapshot import (
+    metadata_snapshot_loader,
+    validate_metadata_snapshot,
+)
 from .plan import AdapterContext
 from .plan_adapter_support import (
     has_dynamic,
@@ -36,7 +41,10 @@ COMPOSITE_NAMES = frozenset(
     }
 )
 ANALYSIS_QUERY_REQUEST_FIELDS = frozenset(
-    {"name", "kind", "app", "spec", "start", "end", "compare_start", "compare_end"}
+    {
+        "name", "kind", "app", "spec", "start", "end", "compare_start",
+        "compare_end", "metadata_snapshot",
+    }
 )
 _ANALYSIS_OPERATIONS = frozenset(ANALYSIS_QUERY_OPERATIONS.values())
 _SAFE_ENVELOPE_FIELDS = frozenset(
@@ -102,6 +110,11 @@ def validate_analysis_query_plan(
         start=request.get("start"),
         end=request.get("end"),
     )
+    if "metadata_snapshot" in request:
+        validate_metadata_snapshot(
+            request.get("metadata_snapshot"),
+            expected_app=compiled.inputs.get("app_id"),
+        )
     compare_start, compare_end = request.get("compare_start"), request.get("compare_end")
     if (compare_start is None) != (compare_end is None):
         raise input_error(
@@ -216,18 +229,26 @@ def execute_analysis_query_plan(
         request,
         replace(context, dynamic_targets=()),
     )
-    result = sdk.analysis_query(
-        request.get("kind"),
-        request.get("spec"),
-        app=request.get("app"),
-        start=request.get("start"),
-        end=request.get("end"),
-        compare_start=request.get("compare_start"),
-        compare_end=request.get("compare_end"),
-        max_workers=1,
-        workspace=context.workspace,
-        output_fields=context.output_fields or None,
-    )
+    options = {
+        "app": request.get("app"),
+        "start": request.get("start"),
+        "end": request.get("end"),
+        "compare_start": request.get("compare_start"),
+        "compare_end": request.get("compare_end"),
+        "max_workers": 1,
+        "workspace": context.workspace,
+        "output_fields": context.output_fields or None,
+    }
+    snapshot = request.get("metadata_snapshot")
+    if snapshot is None:
+        result = sdk.analysis_query(
+            request.get("kind"), request.get("spec"), **options
+        )
+    else:
+        with use_field_metadata_loader(metadata_snapshot_loader(snapshot)):
+            result = sdk.analysis_query(
+                request.get("kind"), request.get("spec"), **options
+            )
     return safe_analysis_envelope(
         result,
         expected_operation=expected_operation,

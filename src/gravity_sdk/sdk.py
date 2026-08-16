@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from .sdk_analysis import AnalysisSdkMixin
+from .sdk_bootstrap import BootstrapSdkMixin
 from .sdk_saved_analysis import SavedAnalysisSdkMixin
 from .sdk_analysis_default_dictionary import AnalysisDefaultDictionarySdkMixin
 from .sdk_attribution import AttributionSdkMixin
@@ -36,6 +37,7 @@ ClientFactory = Callable[[], Any]
 
 
 class GravitySDK(
+    BootstrapSdkMixin,
     DerivedMetricsSdkMixin,
     SavedAnalysisSdkMixin,
     AnalysisSdkMixin,

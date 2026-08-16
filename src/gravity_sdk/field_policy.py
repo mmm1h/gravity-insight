@@ -17,6 +17,7 @@ from ._field_policy_detail import validate_analysis_detail
 from ._field_policy_metadata import validate_analysis_property_values
 from ._field_policy_operations import operation_rule
 from ._field_policy_shared import MetadataLoader
+from .field_metadata_override import selected_metadata_loader
 from .models import OperationSpec
 
 
@@ -29,6 +30,7 @@ class FieldPolicy:
         inputs: Mapping[str, Any],
         metadata_loader: MetadataLoader,
     ) -> None:
+        metadata_loader = selected_metadata_loader(metadata_loader)
         rule = operation_rule(operation.operation_id)
         if rule.request_kind == "analysis_segment":
             validate_analysis_segment_rule(inputs, metadata_loader)

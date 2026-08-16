@@ -26,6 +26,15 @@ Analysis export creator 再增 4 张卡得到 88。精确 gap 为 9，安装目�
 （单用户事件、分群结果、分群用户明细、用户明细、付费事件），变现明细与原始事件导出仍是精确 gap；
 7 条完全缺失里多数是合同证据阻塞，逐行有记录。
 
+2026-08-17 的 guided cold start 只缩短既有“事件分析 + 离线物理名称”调用链，不新增独立结果
+产品、operation、产品卡或 gap，故台账严格保持 `55 = 47 / 1 / 7 → +0 / +0 / +0 = 55 = 47 / 1 / 7`，
+operation/stable 仍为 `231 / 222`，产品卡/selector 仍为 `88 / 328`。当前代码在严格空会话与空 catalog
+下重走旧指南实际是 **12 条命令 / 9 HTTP**：登录、App、四类 metadata、最终查询前的两类 live
+metadata 与业务查询；这修正了旧文档的 7 HTTP 估计。新 `analysis bootstrap` 保留 App、精确事件、
+日期窗和 Plan 审阅四个调用方决策，把其余机械依赖合并后生产实测为 **2 次顶层调用 / 7 HTTP**。
+Plan 固定完整 catalog 的同步时间与 fingerprint，执行时本地复验并只发业务查询；fingerprint 漂移、
+metadata 第一页不完整或证据缺失均 fail-closed，不通过增加请求或默认选择来达标。
+
 2026-08-16 受治理写目录覆盖只改变发现表达，不新增产品动线或 operation。canonical inventory 保留
 3 个既有默认 mutation selector，并为其余 28 个调用方动作增加 action-qualified 卡：
 Segment `8 actions / 7 operations`、报表/订阅 `4 / 3`、Kanban `19 / 18`，故产品卡
