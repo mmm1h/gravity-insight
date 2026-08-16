@@ -67,7 +67,7 @@
   订阅固定 disabled、无收件人，不调用 test route，也不进入 Plan v1。
 - 发现只返回候选以及 Plan node 或受控编译交接，不会从自然语言自动执行。
 
-当前安装时目录为 278 个 selector：223 个 operation、45 张产品卡与 10 个精确 gap；214 个 stable
+当前安装时目录为 277 个 selector：223 个 operation、45 张产品卡与 9 个精确 gap；214 个 stable
 operation 由 184 read + 30 governed mutation 组成。17 个候选中
 `analysis.default_val.list`、D35、F40、报表目录与订阅清单已晋升；不要把其余 `draft` 能力写入生产 Plan。
 逐项 blocker 以[候选能力证据矩阵](candidate-capability-matrix.md)为准。

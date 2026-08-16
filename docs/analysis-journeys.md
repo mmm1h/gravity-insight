@@ -10,14 +10,24 @@
 执行，内部 HTTP 数也没有减少。App/平台也未知时不适用该两次路径；默认离线 Agent 的原三次下界保留。
 `gravity.agent-call-bound.v1` 只在本次成功交付完整目录的卡与 Plan 节点上把对应 scenario 声明为 2。
 
-当前程序化重算：**52 条产品动线：已闭环 43 / 部分闭环 1 / 完全缺失 8**。可复算：下表 56 行，
+当前程序化重算：**52 条产品动线：已闭环 44 / 部分闭环 1 / 完全缺失 7**。可复算：下表 56 行，
 减去 2 条兼容/维护便利面、1 条“既有稳定读取面重复”和 1 条“已有结果上的调用方派生便利面”，
-得到 52 条；按状态直接分组为 `52 = 43 / 1 / 8`。本单元开始时 dev 为
-`51 = 41 / 1 / 9`；F40 从完全缺失转闭环，因此 `41 + 1 = 42`、`9 - 1 = 8`，总数与部分闭环
-均不变。新增测试设备目录和归因详情 2 条 stable read，operation 为 `203 + 2 = 205`，stable 为
-`194 + 2 = 196`（184 read + 12 governed mutation）。Kanban 写单元再新增 1 条闭环动线和 18 条
-stable mutation，当前为 223 operation / 214 stable（184 read + 30 governed mutation）。部分闭环的 Analysis 导出只关闭了单用户事件
-子类；8 条完全缺失里多数是合同证据阻塞，逐行有记录。
+得到 52 条；按状态直接分组为 `52 = 44 / 1 / 7`。本单元开始时 dev 为
+`52 = 43 / 1 / 8`；设置 → 应用管理的真实列表 route 证明 J39 应由既有 stable `app.list` 承载，
+故 `43 + 1 = 44`、`8 - 1 = 7`，总数与部分闭环不变。operation/stable 仍为
+223 / 214（184 read + 30 governed mutation）；canonical 产品卡仍为 45，精确 gap 从 10 减为 9。
+部分闭环的 Analysis 导出只关闭了单用户事件子类；7 条完全缺失里多数是合同证据阻塞，逐行有记录。
+
+2026-08-16 沿设置 → 应用管理 / 元数据和多维报表入口做受控生产复核。App 管理的账号级 GET
+`/turbo_engine/api/v1/user/open_app/list/` 首屏 HTTP 200 非空 7 行；观察字段与既有 `app.list` v4
+投影完全相等，因此不新增 operation，只解除 J39 的错误 gap 并补中英首问。元数据页自然发出的
+`POST /turbo_engine/api/v2/event_dim/data_table/list/` 使用空 `app_id_list`、空 `name_like` 和第一页，
+HTTP 200 明确空；没有合法 `table_id`，detail/version 均未发送，F41 不变。D28 当前
+`NewReportCenter` 使用 `/turbo_engine/api/v3/confmetric/{metric,permission}/list/`，而 SDK 现有
+`report.multidim.metric.list` 仍发往旧 `/report/api/v3/confmetric/metric/list/`；7 次旧 route HTTP
+虽均为 200，但一次错误 operator、一次正确当前 filter 都被语义拒绝，中间一次宽查询自动读取 5 页且
+1124 个旧目录项中没有 `monetization_report`。因此本轮三选一判为“请求参数/路由不对”，不能据此断言
+租户无数据或权限未生效；在每线 8 次上限前停手，不发送主结果 route，不登记任何推测响应字段。
 
 2026-08-16 从 README/索引按十分钟路径生产复验，12 条主路径命令、3 次 HTTP 后取得既有
 `analysis.event.query` 的真实 governed result；认证、`app.list`、最终查询均 HTTP 200，无重试、翻页、
@@ -411,12 +421,12 @@ operation 继续保留专家入口，但明确不是产品等价物；`app.realt
 | 创建或删除可复用报表 | 已闭环 | 有 / 有 / 设计不适用 / 有 | 2（dry-run / 显式 execute） | 独立任务终点是可复用上游报表对象，不与目录读取合并计数。`report.report.update` 已生产验证 create/delete；marker 在 `remark` 经 list/detail round-trip，删除前 detail 闸门、删除后完整列表确认。Plan v1 不承诺人工确认、不可重放写、preimage 或写后读回，Agent 只交接两步命令且自然语言不自动执行。 |
 | 创建或删除报表订阅 | 已闭环 | 有 / 有 / 设计不适用 / 有 | 2（dry-run / 显式 execute） | 独立任务终点是可管理的上游订阅对象；生产验证 v3 报表父项 create/delete 与 subscription create/delete。订阅 marker 在 `name/wildcard_name` round-trip；创建强制 disabled 与空收件人，绝不调用 test route。v3 父项是本任务脚手架，不另拆动线；Plan 窄例外与报表写相同并逐条登记。 |
 | 查找可用的媒体报表 | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `MEDIA_REPORT_ITEM_SCHEMA_MISSING`。2026-08-16 使用最短当天窗口、无平台筛选、`page_size=1`，按 catalog 枚举 **7 个可绑定 App**；7 次请求均 HTTP 200 明确空，0 个失败或未试 App。当前租户确实无可用媒体报表；既有分页证据保留，item schema 未成立。 |
-| 查找当前账号可读的 App 项目 | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `APP_PROJECT_ITEM_SCHEMA_MISSING`。`app.project.list` 的 path/body 只有筛选与分页、无 App 输入，认证上下文仅绑定账号/公司，故 App 枚举不适用。2026-08-16 唯一一次最小第一页 POST 为 HTTP 200 明确空；这是当前账号级事实，item schema 与前三个产品面仍缺。 |
+| 查找当前账号可读的 App 项目 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | 设置 → 应用管理的真实账号级列表为既有 stable `app.list`：`GET /turbo_engine/api/v1/user/open_app/list/`，不是 `app.project.list` 的 `POST /turbo_engine/api/v1/user/project/list/`。自然页面首屏 HTTP 200 非空 7 行；`cid/create_time/download_url/event_version/icon_url/id/industry_id/is_enabled/is_iaa/modify_time/name/os/package_name/remark/sub_package_list/wechat_app_id/wechat_origin_id` 与 `page_info.page/page_size/total_number/total_page` 均已在 v4 投影登记暴露。CLI/SDK/Plan 复用 raw operation，Agent 中英首问均交付 `app.list` 卡；英文冻结问法为 “List the app projects that the current account is allowed to read.”。 |
 | 查看 App 的 OneLink 与公开信息绑定 | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `APP_ONELINK_PUBLIC_BINDING_SAMPLE_MISSING`。**推进但未闭环**：OneLink 仍由既有 GET 父链证明当前账号明确空。appManage 进一步证明 app-info 的 `url` 来自调用方输入的 Google Play/App Store 下载链接，并非 OneLink 项；公开 URL 的 2 次最小 GET 均 HTTP 200，已恢复 `app_id/error/icon_url/image_data/name/package_name/platform` schema，但结果为 error-shaped `inconclusive`，未获成功数据。下一步由调用方提供一条已知能被 Gravity 抓取的公开商店 URL，只做 1 次读取；非空后按投影总裁决登记并暴露全部字段，不能用当前 OneLink 空样本补绑定。 |
-| 按平台、广告位和日期汇总变现结果（D28） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `MONETIZATION_AGGREGATE_CONTRACT_MISSING`。**请求/读语义已证明，响应合同仍阻塞**：hash-matched `NewReportCenter` bundle 已恢复 `custom_get` 九字段和 `calc_total` 八字段 builder、条件省略、响应消费及纯客户端分页，两条精确 POST read confirmation 已登记。生产共 3 请求：`app.list` 与主 route 的 status/schema 因 one-shot 脚本未及时落盘而未知，按纪律不补发；`calc_total` 唯一请求 HTTP 200，只观察到无字段的 `data.list[]:object`。仍缺主 route shape、两 route 非空 item/total 字段及指标/维度值域；投机性标识符不登记为 omitted，取得实际 shape 后全部登记暴露。 |
+| 按平台、广告位和日期汇总变现结果（D28） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `MONETIZATION_AGGREGATE_CONTRACT_MISSING`。本轮三选一为**请求参数/路由不对**：当前 hash-matched `NewReportCenter` 从 `/turbo_engine/api/v3/confmetric/metric/list/` 与同命名空间 permission route 取 `monetization_report` 配置，现有 stable metric operation 却仍发旧 `/report/api/v3/...`。旧 route 7 次均 HTTP 200；错误 operator 与当前正确 filter 各被语义拒绝，宽目录自动 5 页共 200/1124 行也无目标 topic。该判据只证明 SDK 请求错误，不能证明“没数据”或“权限没生效”；主 route 未再发送，非空 item/total shape 与指标/维度值域仍缺，投机字段不登记。 |
 | 查询归因表现聚合（D35） | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（实测；未知 App 离线默认 3） | hash-matched 前端控制流证明 14 恒发字段、2 条条件省略和四个固定指标画像。生产账本为 1 次 App catalog + 2 次单日目标 POST：首 App `code=0/msg=成功/extra.error=无数据` 明确空，第二 App 非空后立即停止；无重试、翻页或扩窗。stable `attribution.attribution.query` 暴露全部观察字段；Core/CLI/SDK/Plan/Agent 共用 `gravity-insight.attribution-performance.v1` 和 `gravity.agent-call-bound.v1`。旧 evidence 未保存 error 正文，不能声称服务端曾拒绝某字段；当前合同将“无数据”规范化为空，其他未知 error fail-closed。 |
 | 下钻单用户归因明细（F40） | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（未知 App 3；未知设备父行 3；二者均未知 4） | 第 6 个 catalog App 的 `app.testing_tool.list` 首次非空后停止；完整目录行与 `page_info` 字段/type 已登记。以内存 `data.list[].id` 构造整数 `device_id`，详情仅发 1 次且成功；`device_white` 完整字段/type 已登记，`attribution_list/postback_list/pay_list` 明确为空。三种 item schema 仍是未观察事实，未来非空即 fail-closed，不作为本次明确空闭环的猜测字段。Core/CLI/SDK/Plan/Agent 共用 `gravity-insight.attribution-user-detail.v1` 与 `gravity.agent-call-bound.v1`。 |
-| 按表名或 App 查询数据表当前 schema、字段和版本（F41） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `CURRENT_TABLE_SCHEMA_PARENT_MISSING`。list 为空且无可信表名/App 来源；detail/version 父链、`table_id` 类型和“当前版本”语义未证实。 |
+| 按表名或 App 查询数据表当前 schema、字段和版本（F41） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `CURRENT_TABLE_SCHEMA_PARENT_MISSING`。设置 → 元数据已找到真实 `POST /turbo_engine/api/v2/event_dim/data_table/list/`；自然页面以空 `app_id_list`/空 `name_like`/第一页请求得到 HTTP 200 明确空。仍拿不到表名或 `table_id`，detail/version 没有合法父值且未发送，“当前版本”语义也未证实。维度表 CRUD 因而没有可发现、可读回、可验证的父对象前提，当前不能安全闭环。 |
 | 下钻非 Bytedance 平台的计划、组和创意表现（D33/D34） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `NON_BYTEDANCE_HIERARCHY_PARENT_MISSING`。Bilibili advertiser 与 Huya account 未产出父候选；后续 ID 链、report 父字段、分页和非空 schema 未成立。 |
 | 深查各平台专属素材与创意（D32） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `PLATFORM_SPECIFIC_CREATIVE_CONTRACT_MISSING`。除 Bytedance 外普遍没有最小非空响应合同；common 素材目录不能证明平台专属字段。Bytedance 标题包已单列为独立动线闭环，**但那是 D32 之下的一个具体产品，不是这条动线的进展**；本条仍是数据证据阻塞。 |
 | 导出事件、分群、用户、付费或变现分析结果 | 部分闭环 | 部分 / 部分 / 设计不适用 / 有（整条动线的目标 gap） | 1 / 2（用户事件子路径中英首问） | `user_event` 已有单日非空 create→poll→download、7 行完整 XLSX shape，并经 CLI/SDK/Agent 可调用。其余六个服务端导出只能复用任务协议，仍各缺自己的成功文件 shape；`stream_event` 前端不产生 server request，记为 `not_applicable` 而非缺口。冻结评测 case 只标识整条导出动线、没有子路径身份，所以宽问法继续期待 `ANALYSIS_EXPORT_FILE_CONTRACT_MISSING`。 |

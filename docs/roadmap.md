@@ -3726,3 +3726,70 @@ caller-recoverable 审计从两侧增量合并为 **`1121 = A318 / B434 / C369`*
 （operations/provenance **223/223**、operation literals 57），生成器 check 与 `git diff --check` 均通过。
 本次纯合并生产 Gravity HTTP **0 次**；未运行真实 holdout/final/all、未读 key，未修改 recognizer、
 题集或评分逻辑，也未实现任何 share 语义。合并与交叉测试没有发现任一父线的实现缺陷。
+
+## 设置、应用、元数据与变现报表复核（2026-08-16）
+
+**提案与边界：**书面提案位于 ignored `tmp/codex/settings-monetization/proposal.md`。本轮先从引力自然
+页面动作确认“设置 → 应用管理 / 元数据”的真实请求，再只用现有 stable read 复核 D28；不绕过 POST
+读语义闸门，不写业务对象，不修改多维报表模板，也不读取 holdout/final/key。公开
+`NewReportCenter-Dxgo5EkI.js` 只 GET 一次并以内存核对，SHA-256 与本页既有 D28 冻结记录一致；
+静态资源、CORS preflight 与 telemetry 不计下表生产业务 API。
+
+**三条裁决：**
+
+- 设置 → 应用管理的真实账号级目录是既有 `app.list`：
+  `GET /turbo_engine/api/v1/user/open_app/list/`。首屏 HTTP 200 非空 7 行；17 个 item wire 字段和
+  `page/page_size/total_number/total_page` 已全部存在于 v4 投影（另有兼容别名），故不新增 operation。
+  它与 `app.project.list` 的 `POST /turbo_engine/api/v1/user/project/list/` **不是同一端点**；后者的
+  账号级明确空事实继续保留，但不再阻塞 J39。删除 `APP_PROJECT_ITEM_SCHEMA_MISSING` gap 后，中英首问
+  都交付可执行 `app.list` raw-operation 卡；CLI/SDK/Plan 使用同一 stable 合同。
+- 设置 → 元数据的真实表目录是
+  `POST /turbo_engine/api/v2/event_dim/data_table/list/`。页面自然请求
+  `app_id_list=[]/name_like=""/page=1/page_size=10` 返回 HTTP 200 明确空；没有表名或 `table_id`，所以
+  detail/version 均未发送，“当前版本”也无权威语义。F41 保持完全缺失；没有可发现父对象、读回和
+  删除后验证时，排期中的维度表 CRUD 不能安全实施或闭环。
+- D28 三选一判为**请求参数/路由不对**。当前 hash-matched `NewReportCenter` 从
+  `/turbo_engine/api/v3/confmetric/metric/list/` 与同命名空间 permission route 读取
+  `monetization_report` 配置，filter operator 为 `EQUALS`，并按 `is_media=false|true` 区分预估/实际；
+  现有 stable `report.multidim.metric.list` 仍指向旧 `/report/api/v3/confmetric/metric/list/`。错误
+  operator 和当前正确 filter 在旧 route 都被语义拒绝；宽目录 5 页也没有目标 topic。这一判据能确认
+  **我们当前的请求错了**，却不能确认底层租户没数据或权限未生效。主结果与 `calc_total` 本轮均未补发，
+  所以没有登记任何非空 item/total、指标或维度字段。
+
+**生产业务 HTTP 逐请求账本：**目标尝试为 `App 1 / F41 1 / D28 7`；辅助请求是打开对应自然页面时
+自动触发的只读配置读取。总计 **16**，全部 attempt 1、无 retry；只有第 11--15 笔是分页，不是重试。
+第 11 笔所在 CLI 调用未显式设 `max_pages=1`，因上游把 page size 限为 40 而自动读到默认 5 页；发现后
+没有继续翻页或换参数追数据。D28 在 7/8 次目标上限时停手。
+
+| # | 归属 | operation / method / route | HTTP | 重试 / 翻页 | 结果 |
+| ---: | --- | --- | --- | --- | --- |
+| 1 | App 目标 | `app.list` — GET `/turbo_engine/api/v1/user/open_app/list/` | 200 | 否 / 仅页 1 | 非空 7 行；shape 与 v4 投影一致 |
+| 2 | App 页面辅助 | `account user list` — GET `/account_center/api/v1/user/list/` | 200 | 否 / 否 | 应用管理页面配套读取；不作为 J39 目标合同 |
+| 3 | F41 页面辅助 | `event list` — GET `/turbo_engine/api/v2/event/event_list/` | **未知** | 否 / 否 | 请求已发送；浏览器结束捕获前未收到状态，不据此作合同结论 |
+| 4 | F41 目标 | `metadata.data_table.list` — POST `/turbo_engine/api/v2/event_dim/data_table/list/` | 200 | 否 / 仅页 1 | 明确空；detail/version 0 次 |
+| 5 | D28 页面辅助 | `tutorial mark` — GET `/account_center/api/v1/baseconf/tutorial_mark/` | 200 | 否 / 否 | 配置读取 1 |
+| 6 | D28 页面辅助 | `tutorial mark` — GET `/account_center/api/v1/baseconf/tutorial_mark/` | 200 | 否 / 否 | 配置读取 2 |
+| 7 | D28 页面辅助 | `template tree` — GET `/turbo_engine/api/v3/conftemplate/template/tree/` | 200 | 否 / 否 | 报表页目录配置 |
+| 8 | D28 页面辅助 | `advertiser status` — GET `/turbo_engine/api/v1/media_manager/advertiser_state_message/latest_account_status/` | 200 | 否 / 否 | 账户状态配置 |
+| 9 | D28 页面辅助 | `preset template list` — POST `/turbo_engine/api/v3/conftemplate/perset_template/list/` | 200 | 否 / 否 | 只读模板目录；未修改模板 |
+| 10 | D28 目标 1 | `report.multidim.metric.list` — POST `/report/api/v3/confmetric/metric/list/` | 200 | 否 / 页 1 | `IN monetization_report`，语义拒绝；receipt `605019d4ec044a6599c9e1992797e97c` |
+| 11 | D28 目标 2 | 同上 | 200 | 否 / 页 1 | 空 filter 宽目录；receipt `7e55605874e54f1dbeedff98fe74536e` |
+| 12 | D28 目标 3 | 同上 | 200 | 否 / 页 2 | 同一次宽目录分页；receipt `c0024e6fad30455abf351ffb3413f692` |
+| 13 | D28 目标 4 | 同上 | 200 | 否 / 页 3 | 同一次宽目录分页；receipt `4786a35eb1fa40459c8f72883e3591b7` |
+| 14 | D28 目标 5 | 同上 | 200 | 否 / 页 4 | 同一次宽目录分页；receipt `1ee65e5f7fdb4fd2ad4726fff9fa0df1` |
+| 15 | D28 目标 6 | 同上 | 200 | 否 / 页 5 | 累计 200/1124 行，无 `monetization_report`；receipt `18a9304c6772428fb1713fea45e8eb04` |
+| 16 | D28 目标 7 | 同上 | 200 | 否 / 页 1 | 当前 `EQUALS data_topic + is_media=false` filter 在旧 route 语义拒绝；receipt `463247b528014ed988cf096928aa18f0` |
+
+**计数与停止判断：**只有 J39 从完全缺失转已闭环，因此台账由 `52 = 43 / 1 / 8` 变为
+**`52 = 44 / 1 / 7`**。operation/stable 为 223/214 不变，canonical 产品卡仍为 45；删除一个已解除
+gap 后安装目录为 `223 + 45 + 9 = 277` selector。F41 应停：当前租户没有父表，重复第一页不能产生
+schema。D28 也应停：7 次已经定位为旧 route 问题，剩余 1 次不足以依次证明当前 config、permission、
+主结果和 total，继续在旧 route 换参数只会消耗预算。下一轮只能从当前 turbo config/permission 的
+一次自然请求开始；若仍无可用物理字段，再把事实归为权限或数据，而不是猜主请求。
+
+本轮产品实现只删除错误的 J39 gap 和补强既有 `app.list` 的 Agent 发现描述；没有新增
+caller-recoverable error site，因此新增错误点/A 档为 **0/0**，审计应保持
+`1121 = A318 / B434 / C369`。最终验证为 unittest **1090**、pytest
+**1090 passed / 3009 subtests passed**、compiler **223 operations / 11 manifests**；quality、Agent Skill
+生成器 check、CLI help 与 `git diff --check` 全部通过。unittest 的 protected-split 治理用例只在临时目录
+生成 synthetic fixture；仓库真实 query ledger 无改动，没有读取或运行真实 holdout/final。
