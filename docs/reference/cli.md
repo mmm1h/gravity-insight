@@ -8,6 +8,7 @@
 gravity insight <command>     结构化读取和导出
 gravity export <command>      一键治理导出及分阶段恢复
 gravity agent [query]         单问题发现；--input 批量发现并返回 Plan 节点
+gravity agent-catalog ...     渐进浏览产品、raw operation 与登记 gap
 gravity plan schema|run       预检或执行受控跨能力 DAG
 gravity derive --input        对已有结果执行调用方绑定的本地派生算术
 gravity metadata <command>    本地物理元数据目录
@@ -55,6 +56,13 @@ gravity agent "retention" --limit 3
 gravity agent --input questions.json
 gravity agent "run saved analysis" --resolve-inputs '{"app":"main"}' --output catalog.json
 ```
+
+完整能力面使用 `gravity agent-catalog categories` → `category <name>` →
+`describe <selector>` 渐进浏览。目录项的 `identity_kind` 是机器边界：`product` 是 canonical Agent
+产品卡；`raw_operation` 只是 manifest operation，固定 `product_equivalent=false`；
+`capability_gap` 是登记但当前不可执行的缺口。`catalog_status=registered_unavailable` 的 gap 同时给出
+精确 `gap_code`、`reason` 和 `next_action`。不得因为相邻 raw operation 的 `executable=true` 就把缺失
+产品改判为可执行。目录和 describe 均完全离线，也不会执行能力。
 
 无 query 时返回两步协议；有 query 时优先返回匹配的 workspace recipe，再用 stable operation
 补足 capability cards；可由 Plan 执行的卡含必填输入、下一条 `argv` 和 `plan_node`，默认 3 个、

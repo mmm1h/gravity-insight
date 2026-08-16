@@ -108,4 +108,15 @@ def table_lineage_capability_cards(
     }]
 
 
-__all__ = ["table_lineage_capability_cards"]
+def table_lineage_capability_inventory() -> tuple[dict[str, Any], ...]:
+    """Materialize the canonical table-lineage handoff."""
+
+    return tuple(table_lineage_capability_cards(
+        str(_CAPABILITY["selector"]), domain=None, platform=None
+    ))
+
+
+__all__ = [
+    "table_lineage_capability_cards",
+    "table_lineage_capability_inventory",
+]

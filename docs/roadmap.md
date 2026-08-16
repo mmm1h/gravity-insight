@@ -3189,3 +3189,86 @@ terminal pass^4 261/336 与 73/91、PASS/0` 变为 `262/336、201/201、61/77、
 terminal pass^4 262/336 与 61/77、PASS/0`；不稳定题仍为 0、本地写交接仍为 29、生产 HTTP 为 0。
 14 条报表题的选择结果从 `12 target_gap + 2 wrong_gap` 变为 `13 correct + 1 no_candidate`，所以净提升
 1 只来自两条闭环目标迁移与订阅可达性修复；参数/终点分母变化是正确产品卡替代 gap 的层间迁移。
+
+## Agent Catalog 产品事实 parity 与改进臂 C（2026-08-16）
+
+**提案与范围：**工作提案位于 ignored `tmp/codex/catalog-parity/proposal.md`。本轮只把既有 Agent
+产品卡、compiled manifest 与登记 gap 投影为同一个离线目录；没有改 recognizer、Arm B 阈值、题集、
+评分函数或 SDK 执行路径，也没有运行 holdout/final/all。生产 HTTP 和 socket network 均为 0。
+
+**canonical 全集与覆盖推导：**安装时可枚举的产品卡不是另一份手写表，而是从原 owner 逐个物化：
+26 张 `composite_capability_inventory` 卡，加 15 张既有非 inventory 卡——Analysis Spec 6（generic/跨期
+身份及 event/funnel/property/retention/scatter）、Segment rule 1、Segment mutation 1、Report mutation
+1、User Journey 1、Material Asset 1、Metadata Search/Table Lineage 2、受治理 Export 2——合计
+`26 + 15 = 41`。旧目录 `229 = 26 product + 203 raw operation`，所以覆盖为 `26/41`；新目录
+`255 = 41 product + 203 raw operation + 11 registered gap`，覆盖为 **`41/41`**，缺项 0。新增的
+mutation 卡不在 336 题目标里，说明全集不是按题目答案裁剪。workspace recipe/SQL product 是所选
+workspace 的动态卡，不属于安装时静态全集；当前未选择 workspace 时仍由既有
+`WORKSPACE_SQL_PRODUCT_NOT_CONFIGURED` 条件 gap 表达，未伪造静态产品。
+
+11 个 gap 全部直接来自 `registered_unavailable_gaps()`，category summary 与 describe 都暴露精确
+`gap:<CODE>` selector、`gap_code/reason/next_action`，并固定 `identity_kind=capability_gap`、
+`catalog_status=registered_unavailable`、`executable=false`。台账当前 9 条完全缺失、1 条部分闭环均在
+其中；第 11 条是 workspace 未配置 SQL 产品的环境条件 gap。调用方据 `identity_kind` 区分可执行
+`product`、仅专家使用且 `product_equivalent=false` 的 `raw_operation` 与不可执行 gap。
+
+**状态冲突审计与保险：**修复前逐条对照当前 10 条未闭环动线和 203 个 manifest operation，只有 1 处
+把不同层身份写成同一能力：J35 的 `app.realtime_event.list` 是已验证的“应用实时事件配置”raw 读，
+而“Analysis 实时事件目录”仍完全缺失。其余 9 条没有目录项同时声称同一产品已执行。修复后 J35 raw
+项保留 `executable=true`，但明确为 `raw_operation/product_equivalent=false`；并列的精确产品状态是
+`gap:REALTIME_EVENT_CATALOG_CONTRACT_MISSING`，故冲突 `1 → 0`，没有牺牲 raw 读取能力。
+`validate_catalog_parity` 双向比较 41 张 owner card、203 条 manifest operation、11 个 gap 与目录身份和
+executable flag；测试还解析动线台账，要求当前未闭环目标 gap 全在目录中。反事实测试复制目录并把
+`app.realtime_event.list.executable` 人为从 true 翻成 false，确定失败为
+`catalog operation executable-status drift: ['app.realtime_event.list']`，证明门禁不是只测 happy path。
+
+**改进盲选纪律：**development 的 336 题在 selector 可见前用题面清单 SHA-256
+`ef463aec89f8ef2b5f6d0aaf818d852b12da623df6e8c076e77b06fcb596f3f6` 作确定性随机种子；每轮按 journey
+去分组，机械断言相邻题不属于同一 journey，再按打散后序号改成 `q-0001...q-0336`。selector 只收到
+匿名 ID、prompt 与 10 类/255 selector 的目录。整批选择写满 336 行、12 个多意图均明确后才评分；
+锁定文件 SHA-256 为 `a0aeebde2216a0ae411224624baf71eab6a7a15a2174f786c3f08c835acaf242`，固定插件
+SHA-256 为 `9e7304427c46bc6b1686d6f8b73864ac16c88b79a86501a1145aefe1161353e6`。4 trials 只回放同一映射，
+`network_called=false`，不代表真实模型随机稳定性。
+
+| 层 | 臂 A recognizer | 改进臂 C 目录盲选 | 变化 |
+| --- | ---: | ---: | ---: |
+| 首次产品选择 | `260/336`（77.38%） | `334/336`（99.40%） | `+74`，`+22.02pp` |
+| 已到达卡参数可填 | `198/198` | `248/248` | 均 100%，分母不同 |
+| 离线终点 | `64/88`（72.73%） | `88/88`（100%） | `+24`，`+27.27pp` |
+| 错误恢复 | `5/5` | `5/5` | 无变化 |
+| 重复可靠性 | `260/336、64/88` | `334/336、88/88` | 均 `pass^1=pass^4` |
+| 安全遵守 | `PASS / 0` | `PASS / 0` | 生产 HTTP / socket 均 0 |
+
+| development 扩题族 | 臂 A | 改进臂 C |
+| --- | ---: | ---: |
+| 口语省略与语气词 | `0/12` | `12/12` |
+| 只描述业务目的 | `1/13` | `13/13` |
+| 多轮追问首轮 | `1/12` | `12/12` |
+| 反向否定 | `1/12` | `12/12` |
+| 错别字 / 拼音 | `3/12` | `12/12` |
+| 中英混杂 | `10/12` | `12/12` |
+| 跨产品多意图 | `1/12` | `10/12` |
+| 目标 gap | `3/11` | `11/11` |
+
+臂 C 的 failure class 只剩 2 个 `wrong_intent_candidates`。两题分别要求“已同步表沿革 + 当前 schema”
+和“用户事件文件 + 素材原视频”，选择已如实锁成 `product + gap`；冻结 scorer 的
+`candidate_selectors` 对 gap journey 没有 selector，却又要求 observed candidate 数等于两条 journey，
+所以在不改评分逻辑下机械不可通过。没有为了拿满分删除 gap 或把它伪装成 product。
+
+与上一轮 `172/336` 相比净增 162。旧失败中的 `42 wrong_product + 69 wrong_gap + 33 no_candidate +
+4 multiple_intents_missing = 148` 属目录/协议不可表达面；扣除本轮仍不可由冻结 candidate-set 表达的两条
+混合多意图，**146/162** 可作为结构缺口被移除的机械解释，但没有旧逐题映射，不能冒充逐题因果证明。
+其余 16 题来自第二次整批判断与呈现条件共同变化，无法在本实验内把随机化、匿名化和模型判断方差拆开；
+随机去分组本意是减少泄漏，不应事后当作正向增益来源。
+
+**效度与贴题自查：**随机化、去分组和匿名 ID 已移除上一轮最明显的 J 编号/相邻七问泄漏；主观高估预算
+由 `3–10pp` 收窄为约 **`1–4pp`**，仍不是统计置信区间。操作者在实现前已读过仓库产品事实、公开 target
+registry 与 evaluator route 常量，因此不是干净外部模型；这项先验仍可能抬高语义选择。代码侧没有把任何
+题句、J 编号或新增同义词写入描述：15 张补入卡全部复用原 card owner，11 个 gap 全部复用原 registry；
+最接近“贴题”的地方只在本次一次性选择文件，而它位于 ignored `tmp/`、不进入 SDK。产品、动线、operation
+计数均 `+0`；新增 caller-recoverable error site 0 个。技术债中的 catalog 共源项按退出条件关闭。
+
+**验证：**`unittest discover` 为 **1072**（基线 1068，+4），`pytest` 为 **1072 passed / 2939
+subtests passed**，文档测试为 **4 passed**；compiler 仍为 203 operations / 11 manifests，quality、CLI
+help 与 `git diff --check` 全部通过。caller-recoverable 全仓审计为 `1076 = A269 / B434 / C373`，与本轮
+基线快照完全相同，因此本线新增点为 `0/0`、A 档率按约定为 100%。

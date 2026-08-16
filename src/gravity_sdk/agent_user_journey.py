@@ -34,6 +34,12 @@ def user_journey_capability_cards(
     return [_journey_card(match)]
 
 
+def user_journey_capability_inventory() -> tuple[dict[str, Any], ...]:
+    """Materialize the canonical single-user journey card."""
+
+    return tuple(user_journey_capability_cards(USER_JOURNEY_SELECTOR))
+
+
 def is_user_journey_card(card: Mapping[str, Any]) -> bool:
     """Identify the exclusive journey handoff without trusting its position."""
 
@@ -153,4 +159,5 @@ __all__ = [
     "USER_JOURNEY_SELECTOR",
     "is_user_journey_card",
     "user_journey_capability_cards",
+    "user_journey_capability_inventory",
 ]

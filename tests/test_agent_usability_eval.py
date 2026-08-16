@@ -353,10 +353,55 @@ class AgentUsabilityEvalTests(unittest.TestCase):
         self.assertEqual([True] * 4, states["stub-business-pulse"]["selection"])
         self.assertEqual(4, calls)
         self.assertEqual("external_selector", receipt["mode"])
+        self.assertTrue(receipt["blind_presentation"]["randomized"])
+        self.assertTrue(receipt["blind_presentation"]["case_ids_anonymized"])
         self.assertEqual(1, len(observations))
         self.assertEqual(
             "composite:business_pulse",
             observations[0]["result"]["candidates"][0]["selector"],
+        )
+
+    def test_external_selector_blinds_ids_and_degroups_journeys(self) -> None:
+        from agent_usability_external_selector import _blind_questions
+
+        cases = [
+            {
+                "case_id": f"J{journey}-{variant}",
+                "journey_id": f"J{journey}",
+                "prompt": f"p{journey}-{variant}",
+            }
+            for variant in range(3)
+            for journey in range(1, 5)
+        ]
+        questions, aliases, receipt = _blind_questions(cases)
+        groups_by_alias = {
+            aliases[case["case_id"]]: case["journey_id"] for case in cases
+        }
+        ordered = [groups_by_alias[question["id"]] for question in questions]
+        self.assertTrue(all(question["id"].startswith("q-") for question in questions))
+        self.assertFalse(any(left == right for left, right in zip(ordered, ordered[1:])))
+        self.assertTrue(receipt["journey_degrouped"])
+
+    def test_external_selector_can_select_an_exact_registered_gap(self) -> None:
+        from agent_usability_external_selector import _catalog, _selection_result
+        from gravity_sdk.client import GravityInsightClient
+
+        client = GravityInsightClient.from_env(transport=self.subject.BlockedTransport())
+        _, inventory = _catalog(client)
+        result = _selection_result(
+            {"prompt": "real time event catalog"},
+            {
+                "selectors": ["gap:REALTIME_EVENT_CATALOG_CONTRACT_MISSING"],
+                "reason": "registered unavailable product",
+            },
+            inventory,
+            client,
+            {"network_called": False},
+        )
+        self.assertEqual([], result["candidates"])
+        self.assertEqual(
+            "REALTIME_EVENT_CATALOG_CONTRACT_MISSING",
+            result["capability_gaps"][0]["code"],
         )
 
     def test_external_selector_rejects_names_outside_supplied_catalog(self) -> None:

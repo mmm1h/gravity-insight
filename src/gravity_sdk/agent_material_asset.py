@@ -80,6 +80,14 @@ def material_asset_capability_cards(
     ]
 
 
+def material_asset_capability_inventory() -> tuple[dict[str, Any], ...]:
+    """Materialize the canonical response-bound file card."""
+
+    return tuple(
+        material_asset_capability_cards(SELECTOR, domain=None, platform=None)
+    )
+
+
 def is_authoritative_material_asset_card(card: Mapping[str, Any]) -> bool:
     return (
         card.get("kind") == "material_asset"
@@ -112,5 +120,6 @@ def _material_asset_intent(selected: str, words: frozenset[str]) -> bool:
 __all__ = [
     "SELECTOR",
     "is_authoritative_material_asset_card",
+    "material_asset_capability_inventory",
     "material_asset_capability_cards",
 ]

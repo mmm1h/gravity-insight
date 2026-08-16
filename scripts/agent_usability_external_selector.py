@@ -7,6 +7,7 @@ import copy
 import hashlib
 import json
 from pathlib import Path
+import random
 import subprocess
 import sys
 from typing import Any
@@ -30,6 +31,7 @@ def external_selector_trials(
     """Run a selector process against one frozen local catalog and score its output."""
 
     catalog, inventory = _catalog(client)
+    blind_questions, aliases, blind_receipt = _blind_questions(cases)
     states = {
         str(case["case_id"]): {
             "selection": [], "parameter": [], "terminal": [], "reasons": []
@@ -42,9 +44,13 @@ def external_selector_trials(
         selected, metadata = _invoke_plugin(
             plugin_path,
             catalog,
-            cases,
+            blind_questions,
             timeout_seconds=timeout_seconds,
         )
+        selected = {
+            str(case["case_id"]): selected[aliases[str(case["case_id"])]]
+            for case in cases
+        }
         receipts.append(metadata)
         for case in cases:
             item = selected[str(case["case_id"])]
@@ -71,6 +77,7 @@ def external_selector_trials(
         "plugin_sha256": hashlib.sha256(plugin_path.read_bytes()).hexdigest(),
         "catalog_capability_count": len(catalog["capabilities"]),
         "catalog_category_count": len(catalog["categories"]),
+        "blind_presentation": blind_receipt,
         "trial_receipts": receipts,
     }
 
@@ -89,7 +96,7 @@ def _catalog(client: Any) -> tuple[dict[str, Any], dict[str, Mapping[str, Any]]]
 def _invoke_plugin(
     plugin_path: Path,
     catalog: Mapping[str, Any],
-    cases: Sequence[Mapping[str, Any]],
+    questions: Sequence[Mapping[str, str]],
     *,
     timeout_seconds: float,
 ) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
@@ -98,10 +105,7 @@ def _invoke_plugin(
     request = {
         "schema_version": REQUEST_SCHEMA,
         "catalog": catalog,
-        "questions": [
-            {"id": str(case["case_id"]), "query": str(case["prompt"])}
-            for case in cases
-        ],
+        "questions": [dict(question) for question in questions],
     }
     try:
         completed = subprocess.run(
@@ -130,6 +134,53 @@ def _invoke_plugin(
             f"external selector must return one valid {RESPONSE_SCHEMA} JSON object"
         ) from error
     return _validate_response(response, request, catalog)
+
+
+def _blind_questions(
+    cases: Sequence[Mapping[str, Any]],
+) -> tuple[list[dict[str, str]], dict[str, str], dict[str, Any]]:
+    """Shuffle by journey and replace case identities before selector access."""
+
+    fingerprint = hashlib.sha256(json.dumps(
+        [(str(case["case_id"]), str(case["prompt"])) for case in cases],
+        ensure_ascii=False,
+        separators=(",", ":"),
+    ).encode("utf-8")).hexdigest()
+    rng = random.Random(int(fingerprint, 16))
+    groups: dict[str, list[Mapping[str, Any]]] = {}
+    for case in cases:
+        group = str(case.get("journey_id", case["case_id"]))
+        groups.setdefault(group, []).append(case)
+    for rows in groups.values():
+        rng.shuffle(rows)
+    ordered: list[Mapping[str, Any]] = []
+    previous: str | None = None
+    while any(groups.values()):
+        active = [key for key, rows in groups.items() if rows]
+        rng.shuffle(active)
+        if len(active) > 1 and active[0] == previous:
+            active[0], active[1] = active[1], active[0]
+        for key in active:
+            ordered.append(groups[key].pop())
+            previous = key
+    ordered_groups = [str(case.get("journey_id", case["case_id"])) for case in ordered]
+    if any(left == right for left, right in zip(ordered_groups, ordered_groups[1:])):
+        raise RuntimeError("blind selector order cannot place one journey adjacently")
+    aliases = {
+        str(case["case_id"]): f"q-{index:04d}"
+        for index, case in enumerate(ordered, start=1)
+    }
+    questions = [
+        {"id": aliases[str(case["case_id"])], "query": str(case["prompt"])}
+        for case in ordered
+    ]
+    return questions, aliases, {
+        "randomized": True,
+        "journey_degrouped": True,
+        "case_ids_anonymized": True,
+        "order_seed_sha256": fingerprint,
+        "question_count": len(questions),
+    }
 
 
 def _validate_response(
@@ -204,8 +255,15 @@ def _selection_result(
         )]
         candidates: list[dict[str, Any]] = []
     elif len(selectors) == 1:
-        candidates = [_described_card(selectors[0], inventory, client, query)]
-        gaps = []
+        item = inventory[selectors[0]]
+        if item["source"] == "gap":
+            gap = copy.deepcopy(dict(item["card"]))
+            gap["query"] = query
+            candidates = []
+            gaps = [gap]
+        else:
+            candidates = [_described_card(selectors[0], inventory, client, query)]
+            gaps = []
     else:
         candidates = []
         gaps = [{
@@ -236,19 +294,11 @@ def _described_card(
     client: Any,
     query: str,
 ) -> dict[str, Any]:
-    from gravity_sdk.agent_capabilities import composite_capability_cards
+    from gravity_sdk.agent_catalog import _capability_for_item
     from gravity_sdk.agent_handoff import attach_plan_node
-    from gravity_sdk.agent_sources import describe_operation_cards
 
     item = inventory[selector]
-    if item["source"] == "composite":
-        cards = composite_capability_cards(
-            selector, domain=None, platform=None
-        )
-        card = next(value for value in cards if value.get("selector") == selector)
-    else:
-        card = describe_operation_cards(client, [item["operation"]])[0]
-    card = copy.deepcopy(dict(card))
+    card = _capability_for_item(item, client)
     card["match"] = {
         "confidence": "external_selector",
         "coverage": None,

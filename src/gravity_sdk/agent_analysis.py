@@ -102,6 +102,18 @@ def analysis_query_spec_cards(
     return []
 
 
+def analysis_query_spec_inventory() -> tuple[dict[str, Any], ...]:
+    """Materialize every canonical Analysis Spec card from its owner."""
+
+    selectors = ("analysis.query.spec", *(
+        f"analysis.query.spec:{kind}" for kind in _ANALYSIS_KINDS
+    ))
+    return tuple(
+        analysis_query_spec_cards(selector, domain=None, platform=None)[0]
+        for selector in selectors
+    )
+
+
 def _analysis_kind(query: str) -> str | None:
     query = affirmative_intent_text(query)
     selector = query.strip().casefold()
@@ -446,7 +458,7 @@ def _schema_argv(selected_kind: str | None) -> list[str]:
     return ["gravity", "analysis", "query", "--kind", kind, "--spec-schema"]
 
 
-__all__ = ["analysis_query_spec_cards"]
+__all__ = ["analysis_query_spec_cards", "analysis_query_spec_inventory"]
 
 
 def _with_period_compare(
