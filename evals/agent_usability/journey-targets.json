@@ -19,6 +19,7 @@
     "J33": "export.material.report.start",
     "J34": "composite:analysis_default_dictionary",
     "J42": "composite:attribution_performance",
+    "J43": "composite:attribution_user_detail",
     "J48": "material.asset.fetch"
   },
   "journeys": {
@@ -64,7 +65,7 @@
     "J40":{"ledger_title":"查看 App 的 OneLink 与公开信息绑定","gap":{"route_key":"onelink_gap","gap_code":"APP_ONELINK_PUBLIC_BINDING_SAMPLE_MISSING"}},
     "J41":{"ledger_title":"按平台、广告位和日期汇总变现结果（D28）","gap":{"route_key":"monetization_aggregate_gap","gap_code":"MONETIZATION_AGGREGATE_CONTRACT_MISSING"}},
     "J42":{"ledger_title":"查询归因表现聚合（D35）","product":{"route_key":"attribution_performance"},"gap":{"route_key":"attribution_aggregate_gap","gap_code":"ATTRIBUTION_AGGREGATE_CONTRACT_MISSING"}},
-    "J43":{"ledger_title":"下钻单用户归因明细（F40）","gap":{"route_key":"user_attribution_gap","gap_code":"USER_ATTRIBUTION_DETAIL_DEPENDENCY_MISSING"}},
+    "J43":{"ledger_title":"下钻单用户归因明细（F40）","product":{"route_key":"attribution_user_detail"},"gap":{"route_key":"user_attribution_gap","gap_code":"USER_ATTRIBUTION_DETAIL_DEPENDENCY_MISSING"}},
     "J44":{"ledger_title":"按表名或 App 查询数据表当前 schema、字段和版本（F41）","gap":{"route_key":"current_schema_gap","gap_code":"CURRENT_TABLE_SCHEMA_PARENT_MISSING"}},
     "J45":{"ledger_title":"下钻非 Bytedance 平台的计划、组和创意表现（D33/D34）","gap":{"route_key":"non_bytedance_hierarchy_gap","gap_code":"NON_BYTEDANCE_HIERARCHY_PARENT_MISSING"}},
     "J46":{"ledger_title":"深查各平台专属素材与创意（D32）","gap":{"route_key":"platform_creative_gap","gap_code":"PLATFORM_SPECIFIC_CREATIVE_CONTRACT_MISSING"}},

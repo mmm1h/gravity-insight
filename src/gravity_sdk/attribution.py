@@ -20,6 +20,14 @@ from .composite_batch import (
 )
 from .composite_catalog import stable_operation
 from .errors import InputValidationError
+from .attribution_user_detail import (
+    OPERATION_ID as USER_DETAIL_OPERATION_ID,
+    SCHEMA_VERSION as USER_DETAIL_SCHEMA_VERSION,
+    TESTING_DEVICE_OPERATION_ID,
+    read_user_detail as attribution_user_detail,
+    result as attribution_user_detail_result,
+    validate_request as validate_attribution_user_detail_request,
+)
 from .workspace import load_workspace
 from .workspace_app import resolve_workspace_app
 
@@ -76,6 +84,7 @@ def add_snapshot_command(
     snapshot.add_argument("--concurrency", type=concurrency_type, default=6)
     snapshot.set_defaults(_gravity_handler=_dispatch_snapshot)
     add_performance_command(subcommands, concurrency_type)
+    add_user_detail_command(subcommands)
 
 
 def add_performance_command(
@@ -92,6 +101,22 @@ def add_performance_command(
     performance.add_argument("--end", required=True, help="Inclusive YYYY-MM-DD.")
     performance.add_argument("--concurrency", type=concurrency_type, default=4)
     performance.set_defaults(_gravity_handler=_dispatch_performance)
+
+
+def add_user_detail_command(subcommands: Any) -> None:
+    detail = subcommands.add_parser(
+        "user-detail",
+        help="Read one registered testing device's governed attribution detail.",
+    )
+    app = detail.add_mutually_exclusive_group(required=True)
+    app.add_argument("--app", help="Workspace app alias or literal app id.")
+    app.add_argument("--app-id", help="Compatibility alias for --app.")
+    detail.add_argument(
+        "--device-id",
+        required=True,
+        help="Internal row id selected from app.testing_tool.list.",
+    )
+    detail.set_defaults(_gravity_handler=_dispatch_user_detail)
 
 
 def _dispatch_snapshot(args: Any, _object_input: Any) -> dict[str, Any]:
@@ -113,6 +138,16 @@ def _dispatch_performance(args: Any, _object_input: Any) -> dict[str, Any]:
         args.start,
         args.end,
         max_workers=args.concurrency,
+    )
+
+
+def _dispatch_user_detail(args: Any, _object_input: Any) -> dict[str, Any]:
+    workspace = load_workspace()
+    selected = args.app if args.app is not None else args.app_id
+    return attribution_user_detail(
+        runtime.build_client(),
+        resolve_workspace_app(workspace, selected),
+        args.device_id,
     )
 
 
@@ -345,9 +380,15 @@ __all__ = [
     "PERFORMANCE_PROFILES",
     "PERFORMANCE_SCHEMA_VERSION",
     "SCHEMA_VERSION",
+    "TESTING_DEVICE_OPERATION_ID",
+    "USER_DETAIL_OPERATION_ID",
+    "USER_DETAIL_SCHEMA_VERSION",
     "add_performance_command",
     "add_snapshot_command",
     "attribution_performance",
     "attribution_snapshot",
+    "attribution_user_detail",
+    "attribution_user_detail_result",
     "validate_attribution_performance_request",
+    "validate_attribution_user_detail_request",
 ]

@@ -90,6 +90,7 @@ _COMPOSITE_FIELDS = frozenset(
         "inputs", "include_total", "read_all", "metadata_inputs", "metrics",
         "input_schema_version", "max_charts",
         "package_kind",
+        "device_id",
     }
 )
 _COMPOSITES = frozenset(
@@ -113,6 +114,7 @@ _COMPOSITE_OUTPUT_FIELDS = frozenset(
         "paginated_operation_count", "query", "results", "scopes", "source_count",
         "total", "validation", "items", "item_count", "saved_analysis", "source", "sources", "truncated", "kind",
         "profiles",
+        "data", "device_id",
         "operation_id", "definition_network_called", "query_executed", "result",
     }
 )

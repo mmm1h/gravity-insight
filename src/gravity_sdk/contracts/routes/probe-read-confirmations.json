@@ -386,6 +386,34 @@
       "decision": "confirmed_read",
       "evidence": [
         {
+          "detail": "In hash-matched Device-TemCRn-D.js, the testing-device table sends only app_id plus the fixed page=1/page_size=1000 load shape, consumes data.list as its directory, and performs display pagination locally. Creating, editing and deleting test devices use separate routes; this list call has no write continuation or mutation feedback.",
+          "source": "docs/roadmap.md#d35--f40-归因结果合同2026-08-16"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "app.testing_tool.list",
+      "path": "/turbo_engine/api/v1/user/device_white/testing_tool/list/",
+      "reviewed_at": "2026-08-16",
+      "reviewer": "codex/f40-attribution"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched Device-TemCRn-D.js, selecting an existing testing-device row sends exactly app_id and Number(data.list[].id) to this detail route, then renders device_white, attribution_list, postback_list and pay_list without a save, confirmation or mutation continuation.",
+          "source": "docs/roadmap.md#d35--f40-归因结果合同2026-08-16"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "attribution.attribution_detail.query",
+      "path": "/turbo_engine/api/v1/user/device_white/testing_tool/attribution_detail/",
+      "reviewed_at": "2026-08-16",
+      "reviewer": "codex/f40-attribution"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
           "detail": "In hash-matched Measurement-BV1Ulzee.js, clicking Search invokes the attribution route four times with aggregate metric/dimension profiles, then consumes data.items and data.total to populate natural/promoted charts and conversion summary cards. Saved-report persistence uses separate ReportCommonHeader routes, and this call has no confirmation, write continuation or mutation feedback.",
           "source": "src/gravity_sdk/census/data/bundle-snapshot.json"
         },

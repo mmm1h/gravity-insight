@@ -22,19 +22,6 @@ def unavailable_analysis_gap(query: str) -> dict[str, Any] | None:
                 "record item paths, types, and pagination without response values."
             ),
         )
-    if _single_user_attribution(selected, words):
-        return unavailable_gap(
-            query, code="USER_ATTRIBUTION_DETAIL_DEPENDENCY_MISSING",
-            journey="single_user_attribution_detail",
-            reason=(
-                "The request needs a caller-selected registered testing-device row id, and "
-                "the detail response item fields and types lack successful or explicit-empty evidence."
-            ),
-            next_action=(
-                "Have the caller authorize one real testing-device row id, then send one detail "
-                "request and register every observed attribution, device, postback, and pay field."
-            ),
-        )
     if _current_table_schema(selected, words):
         return unavailable_gap(
             query, code="CURRENT_TABLE_SCHEMA_PARENT_MISSING",
@@ -71,17 +58,6 @@ def _realtime_event_catalog(selected: str, words: frozenset[str]) -> bool:
         and "real" in words and "time" in words
     )
     return english or "实时事件目录" in selected
-
-
-def _single_user_attribution(selected: str, words: frozenset[str]) -> bool:
-    english = (
-        "attribution" in words and bool(words & {"user", "users"})
-        and bool(words & {"detail", "details", "drill", "source"})
-    )
-    chinese = "用户" in selected and "归因" in selected and any(
-        term in selected for term in ("明细", "来源", "下钻")
-    )
-    return english or chinese
 
 
 def _current_table_schema(selected: str, words: frozenset[str]) -> bool:

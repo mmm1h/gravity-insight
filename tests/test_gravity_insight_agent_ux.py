@@ -745,6 +745,7 @@ class DiscoveryUxTests(unittest.TestCase):
             "J36": "composite:report_directory",
             "J37": "composite:report_subscriptions",
             "J42": "composite:attribution_performance",
+            "J43": "composite:attribution_user_detail",
             "J48": "material.asset.fetch",
         }
         gaps = {
@@ -754,7 +755,6 @@ class DiscoveryUxTests(unittest.TestCase):
             "J39": "APP_PROJECT_ITEM_SCHEMA_MISSING",
             "J40": "APP_ONELINK_PUBLIC_BINDING_SAMPLE_MISSING",
             "J41": "MONETIZATION_AGGREGATE_CONTRACT_MISSING",
-            "J43": "USER_ATTRIBUTION_DETAIL_DEPENDENCY_MISSING",
             "J44": "CURRENT_TABLE_SCHEMA_PARENT_MISSING",
             "J45": "NON_BYTEDANCE_HIERARCHY_PARENT_MISSING",
             "J46": "PLATFORM_SPECIFIC_CREATIVE_CONTRACT_MISSING",

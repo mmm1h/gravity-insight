@@ -1,0 +1,55 @@
+{
+  "schema_version": "gravity-insight.probe-evidence.v1",
+  "operation_id": "attribution.attribution_detail.query",
+  "probed_at": "2026-08-16T03:15:36.202078Z",
+  "successful": true,
+  "conclusion": "explicit_empty_item_containers_confirmed",
+  "probe_mode": "single_parent_bound_request",
+  "route": {
+    "family": "attribution.attribution_detail.query",
+    "method": "POST",
+    "path": "/turbo_engine/api/v1/user/device_white/testing_tool/attribution_detail/"
+  },
+  "http": [
+    {"http_status": 200, "purpose": "selected_parent_detail_once", "receipt_id": "92f1cc25132e4fc2b22b05d20ef599db", "request_shape_fingerprint": "4aef1a395d2f8766ac9a88d8683a622a18c0466036e087ee01f1c2fba3e4409a", "raw_schema_fingerprint": "d12661844b222908556bd57430c1e3e713f09be9e2a0505e53dd6c71173c26b9"}
+  ],
+  "response_schema_sketch": {
+    "schema_version": "gravity-insight.raw-schema-sketch.v1",
+    "paths": [
+      {"path": "$.code", "presence": "observed", "types": ["integer"]},
+      {"path": "$.data", "presence": "observed", "types": ["object"]},
+      {"path": "$.data.attribution_list", "presence": "observed", "types": ["array"]},
+      {"path": "$.data.device_white", "presence": "observed", "types": ["object"]},
+      {"path": "$.data.device_white.app_id", "presence": "observed", "types": ["integer"]},
+      {"path": "$.data.device_white.create_time", "presence": "observed", "types": ["string"]},
+      {"path": "$.data.device_white.device_info", "presence": "observed", "types": ["object"]},
+      {"path": "$.data.device_white.device_info.android_id", "presence": "observed", "types": ["string"]},
+      {"path": "$.data.device_white.device_info.imei", "presence": "observed", "types": ["string"]},
+      {"path": "$.data.device_white.device_info.oaid", "presence": "observed", "types": ["string"]},
+      {"path": "$.data.device_white.id", "presence": "observed", "types": ["integer"]},
+      {"path": "$.data.device_white.is_template", "presence": "observed", "types": ["boolean"]},
+      {"path": "$.data.device_white.modify_time", "presence": "observed", "types": ["string"]},
+      {"path": "$.data.device_white.name", "presence": "observed", "types": ["string"]},
+      {"path": "$.data.device_white.remark", "presence": "observed", "types": ["string"]},
+      {"path": "$.data.device_white.reuse_from_device_id", "presence": "observed", "types": ["integer"]},
+      {"path": "$.data.device_white.testing_company", "presence": "observed", "types": ["string"]},
+      {"path": "$.data.device_white.testing_end_time", "presence": "observed", "types": ["null"]},
+      {"path": "$.data.device_white.testing_start_time", "presence": "observed", "types": ["null"]},
+      {"path": "$.data.device_white.testing_status", "presence": "observed", "types": ["integer"]},
+      {"path": "$.data.pay_list", "presence": "observed", "types": ["array"]},
+      {"path": "$.data.postback_list", "presence": "observed", "types": ["array"]},
+      {"path": "$.extra", "presence": "observed", "types": ["null"]},
+      {"path": "$.msg", "presence": "observed", "types": ["string"]}
+    ]
+  },
+  "containers": {
+    "device_white": {"type": "object", "field_schema_confirmed": true},
+    "attribution_list": {"type": "array", "item_count": 0, "item_schema": "unobserved"},
+    "postback_list": {"type": "array", "item_count": 0, "item_schema": "unobserved"},
+    "pay_list": {"type": "array", "item_count": 0, "item_schema": "unobserved"}
+  },
+  "pagination": {"kind": "none", "verified": true, "complete_response": true},
+  "required_parent": {"operation_id": "app.testing_tool.list", "app_field": "data.list[].app_id", "device_field": "data.list[].id", "wire_device_type": "integer", "values_persisted": false},
+  "privacy": {"classification": "user_level", "all_observed_fields_approved": true, "values_persisted": false, "credentials_persisted": false},
+  "request_stats": {"total": 1, "failed": 0, "retries": 0, "page_turns": 0, "expanded_windows": 0}
+}

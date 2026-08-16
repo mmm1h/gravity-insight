@@ -671,6 +671,12 @@ class GravityInsightManifestTests(unittest.TestCase):
 
     def test_verified_nested_projection_contracts_are_exact(self) -> None:
         expected = {
+            "app.testing_tool.list": {
+                "device_info": ["android_id", "imei", "oaid"]
+            },
+            "attribution.attribution_detail.query": {
+                "device_info": ["android_id", "imei", "oaid"]
+            },
             "app.capacity.get": {
                 "capacity": [
                     "ad_create_amount",
@@ -1051,6 +1057,26 @@ class GravityInsightManifestTests(unittest.TestCase):
         }
         self.assertEqual(
             {
+                "attribution.attribution_detail.query": {
+                    "attribution_list": [],
+                    "device_white": [
+                        "app_id",
+                        "create_time",
+                        "device_info",
+                        "id",
+                        "is_template",
+                        "modify_time",
+                        "name",
+                        "remark",
+                        "reuse_from_device_id",
+                        "testing_company",
+                        "testing_end_time",
+                        "testing_start_time",
+                        "testing_status",
+                    ],
+                    "pay_list": [],
+                    "postback_list": [],
+                },
                 "report.my_template.detail": {
                     "detail": [
                         "id", "name", "remark", "category", "config", "app_id",

@@ -144,7 +144,7 @@ _ANALYSIS_JOURNEY_TITLES: dict[str, tuple[str, ...]] = {
     "composite:attribution_performance": (
         "查询归因表现聚合",
     ),
-    "gap:USER_ATTRIBUTION_DETAIL_DEPENDENCY_MISSING": (
+    "composite:attribution_user_detail": (
         "下钻单用户归因明细",
     ),
     "gap:CURRENT_TABLE_SCHEMA_PARENT_MISSING": (

@@ -1,0 +1,63 @@
+{
+  "schema_version": "gravity-insight.probe-evidence.v1",
+  "operation_id": "app.testing_tool.list",
+  "probed_at": "2026-08-16T03:15:33.629674Z",
+  "successful": true,
+  "conclusion": "nonempty_schema_confirmed",
+  "probe_mode": "catalog_enumeration_until_first_nonempty",
+  "route": {
+    "family": "app.testing_tool.list",
+    "method": "POST",
+    "path": "/turbo_engine/api/v1/user/device_white/testing_tool/list/"
+  },
+  "http": [
+    {"catalog_ordinal": 1, "http_status": 200, "row_count": 0, "receipt_id": "c59facc4aa8e443597ab2a078a1ef6c5", "request_shape_fingerprint": "d0530748326c058d470b764451f2bfb900d5c3664deade585883eb1e8257e6b3", "raw_schema_fingerprint": "7c58ed2c08c62403763f03bf84baabf2f6609efc6064f87aa03b35d9b739c9ea"},
+    {"catalog_ordinal": 2, "http_status": 200, "row_count": 0, "receipt_id": "bd268fe4b6e6494cb73dc2866f8198f9", "request_shape_fingerprint": "d0530748326c058d470b764451f2bfb900d5c3664deade585883eb1e8257e6b3", "raw_schema_fingerprint": "7c58ed2c08c62403763f03bf84baabf2f6609efc6064f87aa03b35d9b739c9ea"},
+    {"catalog_ordinal": 3, "http_status": 200, "row_count": 0, "receipt_id": "199927bf6dba463a8deb71e729f5b77f", "request_shape_fingerprint": "d0530748326c058d470b764451f2bfb900d5c3664deade585883eb1e8257e6b3", "raw_schema_fingerprint": "7c58ed2c08c62403763f03bf84baabf2f6609efc6064f87aa03b35d9b739c9ea"},
+    {"catalog_ordinal": 4, "http_status": 200, "row_count": 0, "receipt_id": "f12b3738cc194fe6a9ffe88afc08c48a", "request_shape_fingerprint": "d0530748326c058d470b764451f2bfb900d5c3664deade585883eb1e8257e6b3", "raw_schema_fingerprint": "7c58ed2c08c62403763f03bf84baabf2f6609efc6064f87aa03b35d9b739c9ea"},
+    {"catalog_ordinal": 5, "http_status": 200, "row_count": 0, "receipt_id": "d9704d2c1d23425c843f40299ee42114", "request_shape_fingerprint": "d0530748326c058d470b764451f2bfb900d5c3664deade585883eb1e8257e6b3", "raw_schema_fingerprint": "7c58ed2c08c62403763f03bf84baabf2f6609efc6064f87aa03b35d9b739c9ea"},
+    {"catalog_ordinal": 6, "http_status": 200, "row_count": 1, "receipt_id": "2c21901acba5491396474827134e6282", "request_shape_fingerprint": "d0530748326c058d470b764451f2bfb900d5c3664deade585883eb1e8257e6b3", "raw_schema_fingerprint": "f1a5fde81a49150394bf9091239bb85802af7ad256eb0c8ce1335d6d2b0c2b87"}
+  ],
+  "response_schema_sketch": {
+    "schema_version": "gravity-insight.raw-schema-sketch.v1",
+    "paths": [
+      {"path": "$.code", "presence": "observed", "types": ["integer"]},
+      {"path": "$.data", "presence": "observed", "types": ["object"]},
+      {"path": "$.data.list", "presence": "observed", "types": ["array"]},
+      {"path": "$.data.list[]", "presence": "observed", "types": ["object"]},
+      {"path": "$.data.list[].app_id", "presence": "observed", "types": ["integer"]},
+      {"path": "$.data.list[].create_time", "presence": "observed", "types": ["string"]},
+      {"path": "$.data.list[].device_info", "presence": "observed", "types": ["object"]},
+      {"path": "$.data.list[].device_info.android_id", "presence": "observed", "types": ["string"]},
+      {"path": "$.data.list[].device_info.imei", "presence": "observed", "types": ["string"]},
+      {"path": "$.data.list[].device_info.oaid", "presence": "observed", "types": ["string"]},
+      {"path": "$.data.list[].id", "presence": "observed", "types": ["integer"]},
+      {"path": "$.data.list[].is_template", "presence": "observed", "types": ["boolean"]},
+      {"path": "$.data.list[].modify_time", "presence": "observed", "types": ["string"]},
+      {"path": "$.data.list[].name", "presence": "observed", "types": ["string"]},
+      {"path": "$.data.list[].remark", "presence": "observed", "types": ["string"]},
+      {"path": "$.data.list[].reuse_from_device_id", "presence": "observed", "types": ["integer"]},
+      {"path": "$.data.list[].testing_company", "presence": "observed", "types": ["string"]},
+      {"path": "$.data.list[].testing_end_time", "presence": "observed", "types": ["null"]},
+      {"path": "$.data.list[].testing_start_time", "presence": "observed", "types": ["null"]},
+      {"path": "$.data.list[].testing_status", "presence": "observed", "types": ["integer"]},
+      {"path": "$.data.page_info", "presence": "observed", "types": ["object"]},
+      {"path": "$.data.page_info.page", "presence": "observed", "types": ["integer"]},
+      {"path": "$.data.page_info.page_size", "presence": "observed", "types": ["integer"]},
+      {"path": "$.data.page_info.total_number", "presence": "observed", "types": ["integer"]},
+      {"path": "$.data.page_info.total_page", "presence": "observed", "types": ["integer"]},
+      {"path": "$.extra", "presence": "observed", "types": ["null"]},
+      {"path": "$.msg", "presence": "observed", "types": ["string"]}
+    ]
+  },
+  "pagination": {
+    "kind": "page_info",
+    "server_fields_observed": true,
+    "request_fields": ["page", "page_size"],
+    "frontend_fixed_request": {"page": 1, "page_size": 1000},
+    "frontend_display_pagination": "local",
+    "page_turns": 0
+  },
+  "privacy": {"classification": "user_level", "all_observed_fields_approved": true, "values_persisted": false, "credentials_persisted": false},
+  "request_stats": {"catalog_requests": 1, "target_requests": 6, "failed": 0, "retries": 0, "stopped_at_first_nonempty": true}
+}

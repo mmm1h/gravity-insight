@@ -3635,6 +3635,248 @@
       ],
       "stability": "stable",
       "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "已登记测试设备目录；前端固定发送 app_id/page=1/page_size=1000 并在本地分页，生产枚举在第六个 catalog App 取得首个非空行后停止。",
+      "domain": "app",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "description": "Positive App id selected by the caller.",
+          "required": true,
+          "type": "integer"
+        },
+        "page": {
+          "default": 1,
+          "description": "Server page accepted by the fixed frontend request.",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 1000,
+          "description": "Frontend one-shot page size; the displayed table paginates locally.",
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_app_id",
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "app.testing_tool.list",
+      "pagination": {
+        "default_page_size": 1000,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 1000,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/user/device_white/testing_tool/list/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 1000
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        {
+          "input_field": "app_id",
+          "operation_id": "app.list"
+        }
+      ],
+      "resource": "testing_tool",
+      "response_projection": {
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "app_id",
+          "create_time",
+          "device_info",
+          "id",
+          "is_template",
+          "modify_time",
+          "name",
+          "remark",
+          "reuse_from_device_id",
+          "testing_company",
+          "testing_end_time",
+          "testing_start_time",
+          "testing_status"
+        ],
+        "nested_item_keys": {
+          "device_info": [
+            "android_id",
+            "imei",
+            "oaid"
+          ]
+        },
+        "required_data_keys": [
+          "list",
+          "page_info"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "query",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "单个已登记测试设备的归因明细；详情无分页，当前生产样本完整观察 device_white，另外三个明细列表明确为空并在出现 item 字段时失败关闭。",
+      "domain": "attribution",
+      "effect": "read",
+      "input_fields": {
+        "app_id": {
+          "description": "Positive App id bound from the selected testing-device parent row.",
+          "required": true,
+          "type": "integer"
+        },
+        "device_id": {
+          "description": "Internal registered testing-device row id from app.testing_tool.list; not a raw device identifier.",
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "app_id": "$first_testing_device_app_id",
+          "device_id": "$first_testing_device_id"
+        }
+      },
+      "operation_id": "attribution.attribution_detail.query",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v1/user/device_white/testing_tool/attribution_detail/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "device_id"
+        ],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        {
+          "input_field": "app_id",
+          "operation_id": "app.testing_tool.list"
+        },
+        {
+          "input_field": "device_id",
+          "operation_id": "app.testing_tool.list"
+        }
+      ],
+      "resource": "attribution_detail",
+      "response_projection": {
+        "data_item_keys": {
+          "attribution_list": [],
+          "device_white": [
+            "app_id",
+            "create_time",
+            "device_info",
+            "id",
+            "is_template",
+            "modify_time",
+            "name",
+            "remark",
+            "reuse_from_device_id",
+            "testing_company",
+            "testing_end_time",
+            "testing_start_time",
+            "testing_status"
+          ],
+          "pay_list": [],
+          "postback_list": []
+        },
+        "data_keys": [
+          "device_white",
+          "attribution_list",
+          "postback_list",
+          "pay_list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "nested_item_keys": {
+          "device_info": [
+            "android_id",
+            "imei",
+            "oaid"
+          ]
+        },
+        "required_data_keys": [
+          "device_white",
+          "attribution_list",
+          "postback_list",
+          "pay_list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
     }
   ]
 }
