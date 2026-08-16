@@ -12,6 +12,7 @@ from .errors import InputValidationError
 from .result_output import output_file
 from .workspace import load_workspace
 from .workspace_app import resolve_workspace_app
+from .report_cli import add_report_commands
 
 
 def add_business_pulse_command(
@@ -56,6 +57,7 @@ def add_business_pulse_command(
     usage.add_argument("--max-pages", type=positive_int, default=1_000)
     usage.add_argument("--max-items", type=positive_int, default=100_000)
     usage.set_defaults(_gravity_handler=_dispatch_company_usage)
+    add_report_commands(report_commands, positive_int, concurrency_parser)
 
 
 def _dispatch_business_pulse(args: Any, _object_input: Any) -> dict[str, Any]:

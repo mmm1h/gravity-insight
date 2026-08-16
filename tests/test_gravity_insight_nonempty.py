@@ -861,4 +861,4 @@ def test_task_scope_tracks_integrated_exact_blocker_sets() -> None:
     )
 
     # app-info 已取得 schema 并移出 empty-sample 集合；其成功读取仍未成立。
-    assert len(operation_ids) == 119
+    assert len(operation_ids) == 117

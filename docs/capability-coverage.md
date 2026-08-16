@@ -8,12 +8,12 @@ manifest 与 `gravity agent <query>` 为准；完整路由账本见
 
 | 范围 | 当前状态 |
 | --- | --- |
-| 编译 operation | 194（dev 187 + Segment mutation 7） |
-| stable operation | 185（178 read / 7 governed Segment mutation） |
-| stable read operation 产品面交叉 | 88 已覆盖 / 82 不应产品化 / 8 原快照待产品化；默认值字典与 D35 已直接闭环 |
+| 编译 operation | 203（原 194 + 报表/订阅 9） |
+| stable operation | 194（182 read / 12 governed mutation） |
+| stable read operation 产品面交叉 | 92 已覆盖 / 82 不应产品化 / 8 原快照待产品化；默认值字典、D35、报表目录与订阅已直接闭环 |
 | 推广 / 素材 stable 原子读取 | 64 / 24 |
 | Census 路由 | 987，全部有明确归类 |
-| Census 中 callable covered route | 181 |
+| Census 中 callable covered route | 190 |
 | 尚未覆盖的 read route | 341 |
 | 明确保留的推广 / 素材 write reservation | 110 / 49 |
 
@@ -65,9 +65,10 @@ Census 对同一 path 仍为 UNKNOWN；按唯一 path 排除，未重复计数�
 
 这次语义复核自身不改 Census 的机器 route status，也不把 UI route 包装成产品；其派发快照为
 operation 185、stable 176、callable covered route 172、`uncovered_read=343`。随后默认值字典与 D35
-各晋升 1 条 read，Segment mutation 再把 7 条 reservation 提升为 stable，因此当前值统一为 operation
-`185 + 2 + 7 = 194`、stable `176 + 2 + 7 = 185`、callable covered route
-`172 + 2 + 7 = 181`、`uncovered_read=341`。
+各晋升 1 条 read，Segment mutation 再把 7 条 reservation 提升为 stable；报表/订阅写解锁再新增
+4 read + 5 mutation。因此当前值统一为 operation `185 + 2 + 7 + 9 = 203`、stable
+`176 + 2 + 7 + 9 = 194`、callable covered route `172 + 2 + 7 + 9 = 190`、
+`uncovered_read=337`。
 现在可直接回答真正缺口：
 在这 155 条中有分析价值但尚无证据的路由是 39 条；另有 5 条因 method、请求/响应或服务端语义不足
 仍无法判定。下一轮只有在租户数据或服务端合同证据改变后才重启这 18 条，不重复当前租户的空探测。
@@ -85,8 +86,8 @@ operation 185、stable 176、callable covered route 172、`uncovered_read=343`�
   advertiser 为空；其余六个平台在允许的根读取或最短单日 advertiser 窗口内均为空，且无权限
   失败或合同漂移。子级未发送，所有草稿继续等待有数据租户的最小非空 probe。
 - auth/proxy 路由和写操作不属于普通读取缺口。前者保持 unsupported。写操作边界已经显式扩大，
-  但只放行 7 条逐项登记的 Segment mutation：从漏斗、规则、历史版本或临时分群创建，规则/名称
-  更新、手动刷新和带标记删除。推广投放、素材、多维报表、权限、事件/事件属性删除及其他未登记
+  但只放行 12 条逐项登记的 mutation：7 条 Segment，以及 5 条 marker-governed 报表/订阅
+  create/delete 脚手架。推广投放、素材、多维报表、权限、事件/事件属性删除及其他未登记
   mutation 仍为 reservation/blocked write；范围依据是“补全探索式分析闭环”而不是 HTTP method。
 
 ## 四级能力状态

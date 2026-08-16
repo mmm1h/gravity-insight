@@ -1051,6 +1051,16 @@ class GravityInsightManifestTests(unittest.TestCase):
         }
         self.assertEqual(
             {
+                "report.my_template.detail": {
+                    "detail": [
+                        "id", "name", "remark", "category", "config", "app_id",
+                        "project_id", "create_time", "update_time", "share_list",
+                        "cid", "create_user_id", "create_user_name", "is_preset",
+                        "is_public", "is_share", "modify_time", "order", "source_id",
+                        "sub_type", "subject_ids", "subscribe", "template_type",
+                        "update_user_id", "update_user_name",
+                    ]
+                },
                 "analysis.event.info": {
                     "event_define": [
                         "accepted",
@@ -1620,6 +1630,11 @@ class GravityInsightManifestTests(unittest.TestCase):
                 if segment
             }
             with self.subTest(operation_id=item["operation_id"]):
+                if item["operation_id"] == "report.subscribe.list":
+                    self.assertEqual(
+                        "/turbo_engine/api/v3/subscribe/list/", item["path_template"]
+                    )
+                    continue
                 self.assertFalse(segments & WRITE_SEGMENTS)
                 self.assertNotRegex(
                     item["path_template"],

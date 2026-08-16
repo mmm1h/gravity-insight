@@ -28655,17 +28655,42 @@
           "id",
           "name",
           "category",
-          "modify_time"
+          "modify_time",
+          "remark",
+          "app_id",
+          "cid",
+          "create_time",
+          "create_user_id",
+          "create_user_name",
+          "is_preset",
+          "is_public",
+          "is_share",
+          "order",
+          "project_id",
+          "project_name",
+          "share_list",
+          "source_id",
+          "sub_type",
+          "subject_ids",
+          "subscribe",
+          "subscribe_list",
+          "subscriber_list",
+          "template_type",
+          "update_user_id",
+          "update_user_name"
         ],
         "known_omitted_data_item_keys": {},
         "known_omitted_data_keys": [],
-        "known_omitted_item_keys": [
-          "remark"
-        ],
+        "known_omitted_item_keys": [],
         "known_omitted_nested_item_keys": {},
         "nested_item_keys": {},
         "numeric_paths": [],
-        "opaque_json_item_keys": [],
+        "opaque_json_item_keys": [
+          "share_list",
+          "subject_ids",
+          "subscribe_list",
+          "subscriber_list"
+        ],
         "recursive_data_item_keys": {},
         "required_data_keys": [
           "list"

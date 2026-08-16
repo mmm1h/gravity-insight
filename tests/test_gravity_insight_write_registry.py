@@ -71,12 +71,17 @@ class GravityInsightWriteRegistryTests(unittest.TestCase):
                 "analysis.dataanalysis.segment.update",
                 "analysis.from.history.version.create",
                 "analysis.from.tmp.segment.create",
+                "report.report.update",
+                "report.subscribe.create",
+                "report.subscribe.delete",
+                "report.template.create",
+                "report.template.update",
             }
         }
         self.assertEqual(355, len(source_routes))
         self.assertTrue(source_routes <= reserved_routes | stable_write_routes)
-        self.assertEqual(7, len(stable_write_routes))
-        self.assertEqual(407, len(self.reservations))
+        self.assertEqual(12, len(stable_write_routes))
+        self.assertEqual(402, len(self.reservations))
         self.assertEqual(
             len(self.reservations),
             len({item["operation_id"] for item in self.reservations}),
@@ -114,7 +119,7 @@ class GravityInsightWriteRegistryTests(unittest.TestCase):
                 semantics["idempotency"],
                 {"idempotent", "non_idempotent", "conditional", "unknown"},
             )
-        self.assertEqual(407, sum(kinds.values()))
+        self.assertEqual(402, sum(kinds.values()))
         self.assertGreater(kinds["create"], 0)
         self.assertGreater(kinds["update"], 0)
         self.assertGreater(kinds["delete"], 0)
@@ -186,9 +191,9 @@ class GravityInsightWriteRegistryTests(unittest.TestCase):
         # 字典经多 App 非空复验后升至 173；D35 归因表现闭环后升至 174。
         # 本测试的保证不是「这个数不变」，而是「它远小于 accounted，且
         # blocked_write 绝不被计入可调用」——即下面两条 407 断言。
-        self.assertEqual(181, rebuilt["summary"]["callable_covered"])
-        self.assertEqual(407, rebuilt["accounting_summary"]["accounted_blocked_write"])
-        self.assertEqual(407, rebuilt["callability_summary"]["contract_only"])
+        self.assertEqual(190, rebuilt["summary"]["callable_covered"])
+        self.assertEqual(402, rebuilt["accounting_summary"]["accounted_blocked_write"])
+        self.assertEqual(402, rebuilt["callability_summary"]["contract_only"])
 
     def test_new_unclassified_route_fails_the_cli_accounting_gate(self) -> None:
         routes = {

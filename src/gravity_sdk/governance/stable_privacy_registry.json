@@ -199,6 +199,7 @@
       "data[].name",
       "data[].type"
     ],
+    "analysis.dataanalysis.segment.update": [],
     "analysis.default_val.list": [
       "data.api",
       "data.cocoscreator"
@@ -335,6 +336,8 @@
     "analysis.event_property_value.list": [
       "data.list"
     ],
+    "analysis.from.history.version.create": [],
+    "analysis.from.tmp.segment.create": [],
     "analysis.funnel.query": [
       "data.aggregate_by_date",
       "data.aggregate_by_date.*.*",
@@ -582,6 +585,7 @@
       "data.zone_tags.val_list[].*",
       "data.zone_tags.val_list_to_aggregate_date_group[].*"
     ],
+    "analysis.segment.by.manual.update": [],
     "analysis.segment.detail": [
       "data.analysis_scene",
       "data.app_id",
@@ -609,6 +613,9 @@
       "data.percent",
       "data.total"
     ],
+    "analysis.segment.from.analysis.create": [],
+    "analysis.segment.from.rule.create": [],
+    "analysis.segment.from.rule.update": [],
     "analysis.segment.history_version.list": [
       "data.list",
       "data.list[].calculation_status",
@@ -3938,11 +3945,37 @@
       "data.total[].stat_time"
     ],
     "report.multidim.template.mine.list": [
+      "@opaque:data.list[].share_list",
+      "@opaque:data.list[].subject_ids",
+      "@opaque:data.list[].subscribe_list",
+      "@opaque:data.list[].subscriber_list",
       "data.list",
+      "data.list[].app_id",
       "data.list[].category",
+      "data.list[].cid",
+      "data.list[].create_time",
+      "data.list[].create_user_id",
+      "data.list[].create_user_name",
       "data.list[].id",
+      "data.list[].is_preset",
+      "data.list[].is_public",
+      "data.list[].is_share",
       "data.list[].modify_time",
       "data.list[].name",
+      "data.list[].order",
+      "data.list[].project_id",
+      "data.list[].project_name",
+      "data.list[].remark",
+      "data.list[].share_list",
+      "data.list[].source_id",
+      "data.list[].sub_type",
+      "data.list[].subject_ids",
+      "data.list[].subscribe",
+      "data.list[].subscribe_list",
+      "data.list[].subscriber_list",
+      "data.list[].template_type",
+      "data.list[].update_user_id",
+      "data.list[].update_user_name",
       "data.page_info"
     ],
     "report.multidim.template.preset.get": [
@@ -3973,6 +4006,40 @@
       "data.share_template[].id",
       "data.share_template[].name"
     ],
+    "report.my_template.detail": [
+      "@opaque:data.detail[].share_list",
+      "@opaque:data.detail[].subject_ids",
+      "@opaque:data[].share_list",
+      "@opaque:data[].subject_ids",
+      "data.detail",
+      "data.detail[].app_id",
+      "data.detail[].category",
+      "data.detail[].cid",
+      "data.detail[].config",
+      "data.detail[].create_time",
+      "data.detail[].create_user_id",
+      "data.detail[].create_user_name",
+      "data.detail[].id",
+      "data.detail[].is_preset",
+      "data.detail[].is_public",
+      "data.detail[].is_share",
+      "data.detail[].modify_time",
+      "data.detail[].name",
+      "data.detail[].order",
+      "data.detail[].project_id",
+      "data.detail[].remark",
+      "data.detail[].share_list",
+      "data.detail[].source_id",
+      "data.detail[].sub_type",
+      "data.detail[].subject_ids",
+      "data.detail[].subscribe",
+      "data.detail[].template_type",
+      "data.detail[].update_time",
+      "data.detail[].update_user_id",
+      "data.detail[].update_user_name",
+      "data[].share_list",
+      "data[].subject_ids"
+    ],
     "report.overview.query": [
       "data.columns",
       "data.columns[].AdCost",
@@ -4002,6 +4069,84 @@
       "data.trend_overview2[].AppRevenueReco",
       "data.trend_overview2[].date"
     ],
+    "report.report.detail": [
+      "data.app_id",
+      "data.cid",
+      "data.config",
+      "data.create_time",
+      "data.create_user_id",
+      "data.create_user_name",
+      "data.id",
+      "data.modify_time",
+      "data.name",
+      "data.project_id",
+      "data.remark",
+      "data.report_group_id",
+      "data.subject",
+      "data.update_time",
+      "data.update_user_id",
+      "data.update_user_name"
+    ],
+    "report.report.list": [
+      "data.list",
+      "data.list[].app_id",
+      "data.list[].cid",
+      "data.list[].config",
+      "data.list[].create_time",
+      "data.list[].create_user_id",
+      "data.list[].create_user_name",
+      "data.list[].id",
+      "data.list[].modify_time",
+      "data.list[].name",
+      "data.list[].project_id",
+      "data.list[].remark",
+      "data.list[].report_group_id",
+      "data.list[].subject",
+      "data.list[].update_time",
+      "data.list[].update_user_id",
+      "data.list[].update_user_name",
+      "data.page_info"
+    ],
+    "report.report.update": [
+      "data.id"
+    ],
+    "report.subscribe.create": [
+      "data.id"
+    ],
+    "report.subscribe.delete": [],
+    "report.subscribe.list": [
+      "data.list",
+      "data.list[].app_id",
+      "data.list[].category",
+      "data.list[].cid",
+      "data.list[].create_time",
+      "data.list[].create_user_id",
+      "data.list[].create_user_name",
+      "data.list[].end_time",
+      "data.list[].hourly_send_periods",
+      "data.list[].id",
+      "data.list[].modify_time",
+      "data.list[].name",
+      "data.list[].period",
+      "data.list[].project_id",
+      "data.list[].project_name",
+      "data.list[].report_conf_template_id",
+      "data.list[].report_name",
+      "data.list[].report_type",
+      "data.list[].send_way",
+      "data.list[].start_time",
+      "data.list[].subscribe_all_columns",
+      "data.list[].subscribe_content",
+      "data.list[].subscribe_info",
+      "data.list[].subscribe_selected_columns",
+      "data.list[].subscribe_status",
+      "data.list[].subscribe_time",
+      "data.list[].update_time",
+      "data.list[].update_user_id",
+      "data.list[].update_user_name",
+      "data.list[].wildcard_name",
+      "data.page_info"
+    ],
     "report.tag.list": [
       "data.list",
       "data.list[].category_id",
@@ -4024,6 +4169,10 @@
       "data.list[].name",
       "data.list[].order",
       "data.page_info"
-    ]
+    ],
+    "report.template.create": [
+      "data.id"
+    ],
+    "report.template.update": []
   }
 }

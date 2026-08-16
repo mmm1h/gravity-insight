@@ -111,7 +111,7 @@ _COMPOSITE_OUTPUT_FIELDS = frozenset(
         "app_count", "app_id", "components", "coverage", "date_range",
         "include_hourly", "operation_count", "platforms",
         "paginated_operation_count", "query", "results", "scopes", "source_count",
-        "total", "validation", "items", "saved_analysis", "source", "kind",
+        "total", "validation", "items", "item_count", "saved_analysis", "source", "sources", "truncated", "kind",
         "profiles",
         "operation_id", "definition_network_called", "query_executed", "result",
     }

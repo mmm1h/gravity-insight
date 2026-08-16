@@ -1,5 +1,5 @@
 {
-  "operation_count": 194,
+  "operation_count": 203,
   "operations": {
     "account.department.list": {
       "applied_overrides": [],
@@ -1529,12 +1529,68 @@
         "operations/report.multidim.template.tree.json"
       ]
     },
+    "report.my_template.detail": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.my_template.detail.json"
+      ]
+    },
     "report.overview.query": {
       "applied_overrides": [],
       "family": null,
       "platform": null,
       "source_files": [
         "operations/report.overview.query.json"
+      ]
+    },
+    "report.report.detail": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.report.detail.json"
+      ]
+    },
+    "report.report.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.report.list.json"
+      ]
+    },
+    "report.report.update": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.report.update.json"
+      ]
+    },
+    "report.subscribe.create": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.subscribe.create.json"
+      ]
+    },
+    "report.subscribe.delete": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.subscribe.delete.json"
+      ]
+    },
+    "report.subscribe.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.subscribe.list.json"
       ]
     },
     "report.tag.list": {
@@ -1551,6 +1607,22 @@
       "platform": null,
       "source_files": [
         "operations/report.tag_category.list.json"
+      ]
+    },
+    "report.template.create": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.template.create.json"
+      ]
+    },
+    "report.template.update": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/report.template.update.json"
       ]
     }
   },

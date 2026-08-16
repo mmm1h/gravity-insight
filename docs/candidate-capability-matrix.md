@@ -2,10 +2,12 @@
 
 本矩阵记录 17 项候选能力在 2026-08-12 受控只读探测后的真实状态，并原位追加 2026-08-14 至
 2026-08-16 的后续取证结论，供开发决策使用。仓库当前基线为
-[194 个 operation、其中 185 个 stable operation](capability-coverage.md)：178 条 stable read 加
-7 条逐项治理的 Segment mutation；这些写 operation 不是本矩阵的 read candidate。
+[203 个 operation、其中 194 个 stable operation](capability-coverage.md)：182 条 stable read 加
+12 条逐项治理的 mutation（7 条 Segment、5 条报表/订阅）；写 operation 不是本矩阵的 read candidate，
+但本页追加其解锁读合同的生产证据。
 
-`analysis.default_val.list` 与 D35 已晋升，其余 15 个候选保持 draft；`analysis.setting.query`
+`analysis.default_val.list`、D35、`report.report.list/detail` 与 `report.subscribe.list` 已晋升，其余候选
+保持原位；`analysis.setting.query`
 保留在 draft 台账但 `effect=mutation`，其他未晋升候选仍是 read draft，promotion gate 均未满足。
 表中的“下一步最小证据”表示继续判断所需的最小输入，不代表晋升计划或交付承诺。候选在线验证
 仍须遵循[探测规范](maintainers/probing.md)，保持只读、限流、值不落盘和 fail-closed；已登记 Segment
@@ -20,10 +22,10 @@ mutation 只能走自身的 dry-run→显式 execute→读回/清理流程，不
 | `analysis.realtime_event.list` | `draft`（租户级明确空） | 2026-08-16 对 catalog 的 7/7 个可绑定 App 各发 1 次最小请求，均 HTTP 200 明确空；0 个失败或未试 App，无重试、翻页或扩窗。 | `empty_sample`、`pagination_unverified`、`response_item_schema_unverified` | 由另一个有实时事件数据的租户在同一最短当天窗口取得 1 个非空 item；当前租户不再重复枚举。 |
 | `analysis.setting.query` | `draft`（mutation 负向证明；查询动线已由既有产品覆盖） | 对本 mutation 仍为 0 次请求；完整 Dashboard builder 证明该 POST 提交 `config/name/remark`，随后修改 dashboard layout 并提示修改成功。2026-08-15 对 375/375 hash-matched bundle 的 987 条唯一 route 穷尽复核，另确认 `analysis.dashboard.tree/detail` 与 `analysis.report_config.list/get` 四条既有 stable GET 是装载设置的真读；仅对 stable `report_config.list` 做 1 次最小第一页 probe，HTTP 200 非空，无重试或翻页。 | `mutation_route_not_read`、`unregistered_fields_fail_closed`；不再有独立产品缺口 | 本 draft 永不晋升为 read。调用方分别使用既有 `dashboard_snapshot` 与 `saved_analysis`；若提出超出二者的新设置问题，先取得自由文本 config 与人员字段的合同证据，登记后全部暴露；未登记时只按合同漂移 fail-closed，不等待隐私裁决。 |
 | `report.masterkey_report_group.list` | `draft`（账号级明确空） | 2026-08-16 最小第一页 HTTP 200 空。固定 path/body 无 App 输入，认证上下文只含账号/公司，因此 App 枚举不适用；既有 read confirmation 与分页证据保留。 | `empty_sample`、`successful_probe` | 由有 MasterKey 报表的账号取得 1 个非空 item；当前账号不重复请求。 |
-| `report.report.list` | `draft`（账号级明确空） | 2026-08-16 最小第一页 HTTP 200 空。固定 path/body 无 App 输入，认证上下文只含账号/公司；已存 bundle 仍证明列表装载和消费。 | `empty_sample`、`response_schema_unverified` | 由有自有报表的账号取得 1 个非空 item。 |
-| `report.report.detail` | `draft` | 0 次请求；2026-08-16 账号级 `report.report.list` 仍空，按父子纪律跳过；父值未产生也未落盘。 | `empty_sample`、`response_schema_unverified` | 先由同批列表取得 1 个父项，再以内存父值发 1 次 detail。 |
+| `report.report.list` | **`stable v1`（已晋升）** | 先 dry-run，再由 `report.report.update` 创建唯一 marker-owned 测试报表；列表非空读回并登记 14 个观察字段。请求仍为账号级 `{page,page_size,filters}`，完整分页合同沿用 hash-matched bundle。 | 无开放 promotion blocker。 | 由 `report_directory` Core/CLI/SDK/Plan/Agent 消费；未知新增字段继续 additive drift fail-closed。 |
+| `report.report.detail` | **`stable v1`（已晋升）** | 使用同次列表内存父 ID 发 1 次 GET detail；14 个观察字段全部登记，`remark` 的 marker 与列表原样 round-trip。 | 无开放 promotion blocker。 | 只接受 `report.report.list` 返回的精确 ID；目录产品有界并发 fan-out。 |
 | `report.shared_to_me.list` | `draft`（账号级明确空） | 2026-08-16 最小第一页 HTTP 200 空。固定 path/body 无 App 输入，认证上下文只含账号/公司；既有 read confirmation 保留。 | `empty_sample`、`response_schema_unverified` | 由有共享项的账号取得 1 个非空 item。 |
-| `report.subscribe.list` | `draft`（账号级明确空） | 2026-08-16 唯一一次 `page=1/page_size=1` 请求 HTTP 200、`data.list=[]`。固定 path/body 无 App 输入，认证上下文只含账号/公司；未翻页。 | `empty_sample`、`field_review_required`、`pagination_unverified`、`response_schema_unverified` | 由有订阅项的账号复用同形状取得 1 个非空 item。 |
+| `report.subscribe.list` | **`stable v1`（已晋升）** | 先创建 marker-owned v3 父报表，再创建 disabled、`send_way=[]`、无收件人的订阅；列表非空读回并登记 23 个观察字段。请求仍为账号级 `{page,page_size,filters}`；删除后列表确认空。 | 无开放 promotion blocker；`subscribe/test` 明确未调用。 | 由 `report_subscriptions` Core/CLI/SDK/Plan/Agent 消费；未知新增字段继续 additive drift fail-closed。 |
 | `report.media_report.list` | `draft`（租户级明确空） | 2026-08-16 用当天窗口、无平台筛选、`page_size=1` 对 catalog 的 7/7 App 各发 1 次；均 HTTP 200 空，0 个失败或未试 App。 | `empty_sample`、`response_schema_unverified` | 由另一个有媒体报表的租户复用同形状取得 1 个非空 item；当前租户不再重复枚举。 |
 | `app.project.list` | `draft`（账号级明确空） | 2026-08-16 唯一一次最小第一页 POST 为 HTTP 200 空。固定 path/body 只有筛选与分页，无 App 输入，认证上下文只含账号/公司；App 枚举不适用。 | `empty_sample`、`response_schema_unverified` | 由具备可读项目的账号取得 1 个非空 item。 |
 | `app.project_auth.detail` | `draft` | 1 次稳定父请求、0 次目标请求；父资源返回空候选，子请求未发送；无目标样本，分页未验证；父绑定未解析。 | `parent_resource_required`、`probe_inconclusive`、`response_schema_unverified` | 由 `analysis.account_user.list` 提供 1 个可读候选，仅以内存传给 1 次目标请求；没有父候选时继续跳过。 |
@@ -34,6 +36,31 @@ mutation 只能走自身的 dry-run→显式 execute→读回/清理流程，不
 | `attribution.attribution.query` | `stable v1`（D35 已闭环） | hash-matched `Measurement` bundle 完整证明 14 个恒发字段、`project_id/dims_metrics_list` 两条条件省略、八个恒发筛选数组和四个有限调用画像。生产 1 次 App catalog + 2 次单日目标 POST：首 App 明确空，第二 App 非空后停止；均 HTTP 200，无重试、翻页或扩窗。 | 无 promotion blocker；旧 evidence 未保存具体 error 正文，不能追认字段拒绝。新证据证明 `extra.error=无数据` 是 `code=0/msg=成功` 的明确空。 | 由 Core/CLI/SDK/Plan/Agent `attribution_performance` 消费；未知 semantic error 继续 fail-closed。 |
 
 | `attribution.attribution_detail.query` | `draft`（F40 静态绑定已证明） | hash-matched Device/userSearch 控制流证明父目录 `data.list[].id` 由调用方选择，详情 body 为 `{app_id,device_id:Number(id)}`，分页 `none`；前端消费 `device_white/attribution_list/postback_list/pay_list`。本轮没有用户级目录枚举授权，目标请求 0 次。 | `authorized_identifier_required`、`parent_contract_unverified`、`response_schema_unverified` | 调用方授权一个真实登记测试设备父行 id，只发 1 次详情请求；成功或明确空后登记四个容器全部观察字段与类型。 |
+
+## 2026-08-16 追加判定：报表与订阅写解锁
+
+hash-matched 前端控制流确认旧报表创建/删除共用
+`POST /turbo_engine/api/v2/datamanageconfig/report/update/`：create body 为
+`name/remark/subject/app_id/project_id/config`，delete body 另带 `id/report_group_id/is_delete=1`。
+订阅 create/delete 分别为 `/turbo_engine/api/v3/subscribe/create/` 与 `/delete/`；前者引用 v3
+`conftemplate` 报表 ID，旧报表 ID 的唯一一次尝试被上游明确拒绝“找不到报表”，没有退化或重放。
+因此用已静态证明的 v3 `conftemplate/template/create/` 建一个 marker-owned 父报表，清理走同命名空间
+`template/edit/` 的 `is_deleted=1`。`subscribe/test` 不属于闭环且会通知真实用户，始终没有调用。
+
+本次新增 4 条 stable read（旧报表 list/detail、订阅 list、v3 父报表 detail）与 5 条 stable mutation
+（旧报表 update、订阅 create/delete、v3 父报表 create/update）；既有 v3 自有模板 list 同步登记
+非空观察字段。旧报表 list/detail 的非空 item 观察字段为：`app_id/cid/config/create_time/
+create_user_id/create_user_name/id/modify_time/name/project_id/remark/subject/update_user_id/
+update_user_name`。订阅 list 的非空 item 观察字段为：`app_id/category/cid/create_time/
+create_user_id/create_user_name/end_time/hourly_send_periods/id/modify_time/name/project_id/
+project_name/report_conf_template_id/report_type/send_way/start_time/subscribe_content/
+subscribe_selected_columns/subscribe_status/update_user_id/update_user_name/wildcard_name`。字段全部登记
+暴露；未观察但前端合同已知的可选字段仍是显式白名单，其他新增字段继续 drift fail-closed。
+
+marker 只放在能原样读回且不改变数据口径的文本字段：旧报表与 v3 父报表用 `remark`，订阅同时用
+`name/wildcard_name`。三类均验证 `GSDK-<12 hex>` round-trip；上游未拒绝该紧凑格式。旧报表 ID
+不能作为 v3 订阅父 ID 的拒绝属于父对象类型错误，不是 marker 格式拒绝。删除前必须重读 marker，
+删除后再次读取完整列表证明 ID 消失。
 
 ## 2026-08-16 追加判定：六条明确空的 App 维度复验
 
