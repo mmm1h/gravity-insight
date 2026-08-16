@@ -26,6 +26,17 @@ class ExportState(str, Enum):
     CANCELLED = "CANCELLED"
 
 
+class ExportCompletionStatus(str, Enum):
+    """Machine-decidable completeness of the requested export file journey."""
+
+    EMPTY = "empty"
+    PARTIAL = "partial"
+    TRUNCATED = "truncated"
+    EXPIRED = "expired"
+    COMPLETE = "complete"
+    GAP = "gap"
+
+
 _TERMINAL_STATES = frozenset(
     {
         ExportState.COMMITTED,

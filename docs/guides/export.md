@@ -5,8 +5,9 @@
 
 ## 已知导出：一次调用
 
-当前可直接创建的导出有两个：素材报表 `export.material.report.start` 与单用户事件
-`export.analysis.user_event.start`。准备好 `describe` 合同中的完整 request 后，直接执行：
+当前可直接创建的导出有六个：素材报表，以及 Analysis 的单用户事件、
+分群结果、分群用户明细、用户明细和付费事件。准备好 `describe` 合同中的完整
+request 后，直接执行：
 
 ```powershell
 gravity export run export.material.report.start `
@@ -38,6 +39,17 @@ gravity export run export.analysis.user_event.start `
 这五列顺序固定；`describe.columns.file_schema` 同时给出 worksheet、单元格存储类型和逻辑类型。
 App、ClientID、日期、事件名和结构化条件都必须来自调用方或成功父读取，不从自然语言推断。
 
+其余四个 Analysis creator 分别使用：
+
+- `export.analysis.segment.result.start`：`用户ID`；
+- `export.analysis.segment_user_detail.start`：`ClientID,CreateTime` 对应 `客户ID,注册时间`；
+- `export.analysis.user_detail.start`：`ClientID,CreateTime` 对应 `客户ID,注册时间`；
+- `export.analysis.pay_event.start`：`ClientID,TraceID` 对应 `客户ID,订单ID`。
+
+同名两列不代表两个族共用文件合同；每个 route 在 `describe.columns.file_schema` 中
+保持独立的 worksheet、空文件、表头、存储类型和逻辑类型证据。四个族都要先用同一
+App/日期或分群做非空父读取，再精确复制请求条件。
+
 ## 未知导出：两次调用
 
 ```powershell
@@ -49,9 +61,10 @@ gravity agent "material report export"
 导出卡直接交接到 run，不生成 Plan node，也不能放入 Plan v1。批量 Agent 问题复用同一份导出
 inventory。
 
-Agent 只暴露 `currently_callable=true` 且 `effect=export_job_create` 的卡。当前会得到素材报表和
-单用户事件两个 creator；task status/cancel 等支持路由不是创建候选。其余六类服务端 Analysis 导出
-仍各缺自己的成功文件 shape，不能复用 user-event 的列合同。`stream_event` 的前端按钮只做客户端
+Agent 只暴露 `currently_callable=true` 且 `effect=export_job_create` 的卡。当前会得到上述六个
+creator；task status/cancel 等支持路由不是创建候选。`origin_event` 因唯一有界估算为零、
+未提交 create，`monetization_detail` 因 READY 文件未通过共享 archive-safety 门禁，都继续是 gap。
+`stream_event` 的前端按钮只做客户端
 表格序列化，未调用声明的 loader，因此它不是待探测的 SDK 服务端缺口。用
 `export list-capabilities` 查看边界，不要把 catalog 条目当成可执行能力。
 
@@ -79,4 +92,5 @@ gravity export download <job-id> --operation-id export.material.report.start `
 - 目的路径必须明确、可写且位于受控目录；不要写入仓库、共享目录或对话输出。
 - 合同漂移、隐私校验、格式/扩展名、host/path、大小或 schema 校验失败时均不提交目标文件。
 - 成功后核对 `file.path`、大小、哈希、格式、行数和 schema；`status=partial` 不代表完整导出。
+- `completion_status` 只使用 `empty / partial / truncated / expired / complete / gap`；只有原子提交且行数大于 0 才是 `complete`，头部完整但 0 数据行是 `empty`。
 - 取消任务前确认 operation 支持 cancel；取消是上游写操作，且请求取消不等于已经终止。

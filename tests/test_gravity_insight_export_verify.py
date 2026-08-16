@@ -156,17 +156,21 @@ class GravityInsightExportVerifyTests(unittest.TestCase):
         assert resolved == {"client_id": "private-parent"}
 
 
-    def test_segment_result_export_still_needs_its_own_column_type(self):
-        route = load_catalog()["export.analysis.segment.result.start"]
-
-        assert route["contract_status"] == "unverified"
-        assert route["verification"]["online"] is True
-        assert route["executable"] is False
-        assert route["privacy"]["classification"] == "user_level"
-        assert route["privacy"]["allowed_columns"] == ["用户ID"]
-        assert route["privacy"]["required_columns"] == ["用户ID"]
-        assert "type" in route["block_reason"]
-        assert "privacy" not in route["block_reason"].casefold()
+    def test_four_export_families_have_independent_complete_file_shapes(self):
+        catalog = load_catalog()
+        expected = {
+            "export.analysis.segment.result.start": ["identifier"],
+            "export.analysis.segment_user_detail.start": ["identifier", "datetime"],
+            "export.analysis.user_detail.start": ["identifier", "datetime"],
+            "export.analysis.pay_event.start": ["identifier", "identifier"],
+        }
+        for operation_id, logical_types in expected.items():
+            with self.subTest(operation_id=operation_id):
+                route = catalog[operation_id]
+                schema = route["privacy"]["file_schema"]
+                assert (route["contract_status"], route["executable"], route["block_reason"]) == ("verified", True, None)
+                assert [column["logical_type"] for column in schema["columns"]] == logical_types
+                assert schema["empty_file"] == {"row_count": 0, "headers_preserved": True}
 
 
     def test_user_event_export_has_complete_observed_file_schema(self):

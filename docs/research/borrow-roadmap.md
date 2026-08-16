@@ -131,14 +131,20 @@
 ### P1-5 补齐 6 类服务端导出
 
 - **来源**：Mixpanel Headless 把查询和导出做成可重放的 typed CLI/Python 工作流；MCP 的长任务/进度模型和 dbt `truncated` 标志都强调异步或截断状态必须显式，不应假装已拿到完整结果。见[厂商 landscape 的 Mixpanel Headless](vendor-agent-landscape.md)和 [MCP 调研的任务、分页与截断](mcp-protocol-and-servers.md)。
-- **我们现在是什么样**：导出动线只有 `user_event` 已用成功文件形态闭环；segment/user/pay/monetization 等 6 类服务端导出仍缺安全的成功样本与文件合同，`stream_event` 已判定不适用。分析师能在仓库查询部分数据，却不能对这些产品稳定完成“提交—轮询—下载—验证”。
-- **借鉴什么**：在获得安全证据后，逐导出族复用统一 task 状态、进度、分页/截断、下载校验和 receipt；每族保持独立合同，不能用一个成功文件猜另一个。所有状态必须区分 empty、partial、gap、expired 和 complete。
+- **我们现在是什么样**：`user_event`、`segment.result`、`segment_user_detail`、`user_detail`、`pay_event` 已各用自己的成功文件形态闭环；`origin_event` 仍缺正数 evaluate，`monetization_detail` 的 READY 文件仍被 archive-safety 拒绝，聚合动线因此保持部分闭环。`stream_event` 已判定不适用。
+- **借鉴什么**：在获得安全证据后，逐导出族复用统一 task 状态、进度、分页/截断、下载校验和 receipt；每族保持独立合同，不能用一个成功文件猜另一个。所有状态必须区分 empty、partial、truncated、gap、expired 和 complete。
 - **为什么值得**：这是“现在做不到”。不做时，分析师完成查询后会在拿完整文件这一步回 Web 或写临时脚本；做完后，适用的服务端导出能在同一 SDK/CLI/Plan 动线闭环。
-- **代价**：L，且受安全非空样本约束；涉及导出合同、轮询/下载适配器、receipt、隐私复核和每族一个边界测试。没有证据的族保持 gap，不可用猜测推进。
+- **代价**：L，且受每族成功文件证据约束；涉及导出合同、轮询/下载适配器、receipt、隐私复核和每族一个边界测试。没有证据的族保持 gap，不可用猜测推进。
 - **优先级**：**P1**。
 - **能力还是顺手**：能力缺口。
 - **不做会卡在哪一步**：`提交服务端导出 → 判断完成 → 下载并验证文件`；目前只有一个变体能完成全链路。
 - **可证伪验收**：6 个适用变体各自有经过隐私审查的成功合同，能从提交轮询到下载并验证非空/空文件；故意制造 expired、partial、truncated 时状态不得被误报为 complete。任何拿不到安全样本的变体继续记为 gap，不算完成。
+
+**2026-08-17 进展：**历史“缺非空样本”理由已对六族重判。现有分群和单日明细足以直接解锁
+`segment.result`、`segment_user_detail`、`user_detail`、`pay_event` 四族，均已用自己的非空
+XLSX shape 晋升。`origin_event` 仍缺正数 evaluate 样本；`monetization_detail` 不是缺父数据，
+而是 READY 文件未通过未放宽的 archive-safety 门禁。聚合动线仍为部分闭环，P1-5 也仍未全部完成；
+后续只围绕这两个精确证据条件，不再以“其余六族均缺非空样本”排期。
 
 ## P2：记着但先不做
 

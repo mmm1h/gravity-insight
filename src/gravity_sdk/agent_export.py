@@ -46,6 +46,29 @@ _USER_EVENT_ALIASES = (
     "事件时间线导出",
     "导出事件时间线",
 )
+_ANALYSIS_EXPORT_ALIASES = {
+    _USER_EVENT_OPERATION: _USER_EVENT_ALIASES,
+    "export.analysis.segment.result.start": (
+        "segment result export", "export segment result", "分群结果导出", "导出分群结果",
+    ),
+    "export.analysis.segment_user_detail.start": (
+        "segment user detail export", "segment member export", "分群用户明细导出", "分群成员导出",
+    ),
+    "export.analysis.user_detail.start": (
+        "user detail export", "export user details", "用户明细导出", "导出用户明细",
+    ),
+    "export.analysis.pay_event.start": (
+        "pay event export", "payment detail export", "付费事件导出", "订单明细导出",
+    ),
+}
+_EXPORT_DESCRIPTIONS = {
+    _USER_EVENT_OPERATION: "创建、轮询并原子下载受治理的单用户事件文件。",
+    "export.analysis.segment.result.start": "创建、轮询并原子下载受治理的分群结果文件。",
+    "export.analysis.segment_user_detail.start": "创建、轮询并原子下载受治理的分群用户明细文件。",
+    "export.analysis.user_detail.start": "创建、轮询并原子下载受治理的用户明细文件。",
+    "export.analysis.pay_event.start": "创建、轮询并原子下载受治理的付费事件文件。",
+}
+_MATERIAL_OPERATION = "export.material.report.start"
 _SPACE = re.compile(r"[^a-z0-9_.]+", re.IGNORECASE)
 
 
@@ -59,7 +82,7 @@ def query_requests_export(query: str) -> bool:
         selected.startswith("export.")
         or normalized in _GENERIC_INTENTS
         or any(_contains_alias(query, alias) for alias in _MATERIAL_ALIASES)
-        or _user_event_export(query)
+        or _analysis_export_match(query)
         or _material_export_workflow(query)
         or _material_file_export(query)
         or "导出" in selected
@@ -174,8 +197,11 @@ def _export_card(
         or _material_export_workflow(query)
         or _material_file_export(query)
     )
-    user_event = operation_id == _USER_EVENT_OPERATION and _user_event_export(query)
-    route_match = material if operation_id != _USER_EVENT_OPERATION else user_event
+    route_match = (
+        material
+        if operation_id == _MATERIAL_OPERATION
+        else _analysis_export_match(query, operation_id)
+    )
     if not (exact or generic or route_match):
         return None
     input_schema = _plain_mapping(description.get("input_schema"))
@@ -189,10 +215,8 @@ def _export_card(
         "selector": operation_id,
         "operation_id": operation_id,
         "domain": "export",
-        "description": (
-            "创建、轮询并原子下载受治理的单用户事件文件。"
-            if operation_id == _USER_EVENT_OPERATION
-            else "创建、轮询并原子下载受治理的素材报表文件。"
+        "description": _EXPORT_DESCRIPTIONS.get(
+            operation_id, "创建、轮询并原子下载受治理的素材报表文件。"
         ),
         "effect": _CREATE_EFFECT,
         "executable": True,
@@ -340,7 +364,33 @@ def _user_event_export(query: str) -> bool:
     return any(_contains_alias(selected, alias) for alias in _USER_EVENT_ALIASES)
 
 
+def _analysis_export_match(query: str, operation_id: str | None = None) -> bool:
+    normalized = _normalize(query)
+    exact_operations = {
+        candidate
+        for candidate, values in _ANALYSIS_EXPORT_ALIASES.items()
+        if any(_normalize(alias) == normalized for alias in values)
+    }
+    if operation_id is not None and exact_operations:
+        return operation_id in exact_operations
+    aliases = (
+        _ANALYSIS_EXPORT_ALIASES.get(operation_id, ())
+        if operation_id is not None
+        else tuple(
+            alias
+            for values in _ANALYSIS_EXPORT_ALIASES.values()
+            for alias in values
+        )
+    )
+    return any(_contains_alias(query, alias) for alias in aliases)
+
+
+def analysis_export_is_specific(query: str) -> bool:
+    return _analysis_export_match(query)
+
+
 __all__ = [
+    "analysis_export_is_specific",
     "export_capability_cards",
     "export_capability_inventory",
     "export_inventory_for_query",

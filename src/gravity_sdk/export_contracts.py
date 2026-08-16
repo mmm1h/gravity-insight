@@ -114,6 +114,7 @@ class ExportRouteContract:
             "contract_status": self.contract_status,
             "executable": self.executable,
             "currently_callable": currently_callable,
+            "completion_status": None if currently_callable else "gap",
             "block_reason": self.block_reason,
             "describe_command": (
                 "gravity export describe "
@@ -143,6 +144,7 @@ class ExportRouteContract:
             "contract_status": self.contract_status,
             "executable": self.executable,
             "currently_callable": currently_callable,
+            "completion_status": None if currently_callable else "gap",
             "block_reason": self.block_reason,
             "input_schema": _plain(input_schema),
             "columns": _column_description(self.privacy),
@@ -358,9 +360,13 @@ def validate_wire_projection(contract: Any, request: Any) -> None:
     if column_field is None:
         return
     actual = request.payload.get(str(column_field))
-    matches = isinstance(actual, (list, tuple)) and tuple(
-        str(value) for value in actual
-    ) == request.requested_columns
+    if isinstance(actual, Mapping):
+        actual_columns = tuple(str(value) for value in actual)
+    elif isinstance(actual, (list, tuple)):
+        actual_columns = tuple(str(value) for value in actual)
+    else:
+        actual_columns = ()
+    matches = actual_columns == request.requested_columns
     if not matches:
         raise _export_error(
             "wire export columns do not match the approved request projection",

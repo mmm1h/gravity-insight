@@ -214,3 +214,7 @@ confmetric family core、wire、CLI、SDK 与 Agent 卡均下沉到领域模块�
 保存分析 CRUD 复用同一 one-shot mutation、marker-or-owner、完整目录和写后读回原语；保存分析 SDK
 facade 从接近硬顶的 analysis facade 下沉到窄 mixin，共享 spine 与 quality/AST baseline 均未放宽。
 list/get 不属于 metadata cache operation，delete guard 仍使用完整新列表；本轮不新增活动结构债条目。
+
+四个 Analysis 导出族只扩充 route contract 和 Agent export owner，继续复用唯一 task gateway、
+退避轮询、SafeBlobTransfer、XLSX finalizer、HTTP receipt 和原子提交；未产生按族复制的下载栈或新 registry。
+六态也是既有 Export result envelope 的窄增量，未放宽任何 quality/archive 门禁；本轮复核不新增活动结构债。
