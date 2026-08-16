@@ -65,7 +65,7 @@ class AgentCatalogTests(unittest.TestCase):
             item["gap_code"]: item for item in inventory
             if item["identity_kind"] == "capability_gap"
         }
-        self.assertEqual(81, len(products))
+        self.assertEqual(84, len(products))
         self.assertEqual({card["selector"] for card in products}, set(product_items))
         self.assertEqual({gap["code"] for gap in gaps}, set(gap_items))
         self.assertTrue(all(not item["executable"] for item in gap_items.values()))
@@ -122,6 +122,7 @@ class AgentCatalogTests(unittest.TestCase):
             for kind in (
                 "segment_mutation", "report_mutation", "kanban_mutation",
                 "custom_metric_mutation", "metadata_template_mutation",
+                "saved_analysis_mutation",
             )
         }
         self.assertEqual(set(MUTATION_ACTIONS), by_kind["segment_mutation"])
@@ -144,7 +145,11 @@ class AgentCatalogTests(unittest.TestCase):
             set(metadata_template_mutation_schema()["actions"]),
             by_kind["metadata_template_mutation"],
         )
-        self.assertEqual(38, len(cards))
+        self.assertEqual(
+            {"create", "update", "delete"},
+            by_kind["saved_analysis_mutation"],
+        )
+        self.assertEqual(41, len(cards))
 
         stable_mutations = {
             item["operation_id"]
@@ -169,7 +174,11 @@ class AgentCatalogTests(unittest.TestCase):
             },
             {operation_id for operation_id, count in coverage.items() if count == 2},
         )
-        self.assertTrue(all(count in {1, 2} for count in coverage.values()))
+        self.assertEqual(
+            {"analysis.report_config.update"},
+            {operation_id for operation_id, count in coverage.items() if count == 3},
+        )
+        self.assertTrue(all(count in {1, 2, 3} for count in coverage.values()))
 
         for card in cards:
             with self.subTest(selector=card["selector"]):

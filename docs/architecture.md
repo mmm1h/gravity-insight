@@ -150,7 +150,7 @@ SQLite 中构建，全部成功才原子替换默认 catalog；失败保留旧�
 | Derived metrics | `gravity derive --input <request.json>` | `derive_metrics(source, spec)` | 对已有 envelope 执行 caller-bound ratio/share/change/reconcile；纯本地，不维护业务公式 |
 | Dashboard snapshot | `gravity analysis dashboard snapshot --app <alias|id> --ref <id-or-exact-name>` | `dashboard_snapshot()` | 精确解析一个看板后读取 detail、dashboard members、space members、condition favourites 与 default favourite，共 5 个控制面来源；不执行图表 |
 | Dashboard analysis | `gravity analysis dashboard prepare\|run --app ... --ref ... --start ... --end ...` | `prepare_dashboard_analysis()` / `run_dashboard_analysis()` | 静态 Web artifact 编译边界内的 event/funnel/retention/property/scatter chart；按声明序、单图失败隔离 |
-| Saved analysis | `gravity analysis saved prepare\|run --app ... --ref ... --start ... --end ...` | `prepare_saved_analysis()` / `run_saved_analysis()` | 精确解析一个保存分析；reference Web artifact 严格复用五类编译器和显式日期窗，compact definition 保持兼容 |
+| Saved analysis | `gravity analysis saved prepare\|run\|create\|update\|delete ...` | `prepare_saved_analysis()` / `run_saved_analysis()` / 三个同名 CRUD 方法 | 精确解析或受治理维护一个保存分析；reference Web artifact 与写入定义严格复用五类编译器，写动作必须两步确认且不含 share |
 | Multidim | `gravity multidim query --app <alias\|id> --input <json>` | `multidim_query()` | 闭合物理输入、实时指标校验、有界分页与可选 total；不引入 Spec DSL 或 Web 模板语义 |
 | Material performance | `gravity materials performance --app <alias\|id> --start ... --end ...` | `material_performance()` | 仅组合 stable `material.report.query`，按平台保序聚合原生指标；不做跨平台归一或排名 |
 | Promotion performance | `gravity promotion performance --app <alias\|id> --start ... --end ... --platform ... --metric ...` | `promotion_performance()` | 组合 21 个同构平台的 stable primary operation 与实时物理指标校验；不统一口径或生成策略 |
@@ -173,6 +173,9 @@ favourite，也不模拟页面级 global filter。已知 App/ref/window 是一�
 
 Saved analysis 的 reference 模式也只消费已登记目录/详情：按稳定 ID 或精确名称解析后，把已证明
 的 Web artifact 交给既有 `event/funnel/retention/property/scatter` 编译器，不维护第二套翻译器。
+CRUD 共用一条 `report_config/update` 物理 operation，并按 `id/is_deleted` 组合区分动作；产品卡按
+create/update/delete 分开，便于 Agent 正确选择和填参。update/delete 的 owner gate、单发 mutation、
+完整 list/detail 写后读回均复用现有治理原语；Plan 不承诺这类人工确认写入。
 Web artifact 的 `prepare/run` 必须显式给出成对日期窗（`end-start` 不超过 90 天）；compact
 reference/definition 仍兼容其原有日期语义。它不复刻 template、layout、favourite、权限或页面状态，Agent 卡也只提供待填写的
 `app/ref/start/end`，绝不从自然语言选择引用或执行查询。

@@ -323,9 +323,14 @@ def _multi_app_batch_template(kind: str, spec: Any) -> dict[str, Any]:
 
 def _description(selected_kind: str | None) -> str:
     scope = "事件、漏斗、留存、属性或散点" if selected_kind is None else selected_kind
+    comparison = (
+        "；也可用同一分析定义比较两个时期"
+        if selected_kind is None
+        else ""
+    )
     return (
         f"用现有 Analysis Spec v1 合同描述{scope}分析，再由登记的 analysis_query "
-        "composite 编译和执行；自然语言不会填充业务字段。"
+        f"composite 编译和执行{comparison}；自然语言不会填充业务字段。"
     )
 
 

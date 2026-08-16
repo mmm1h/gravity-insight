@@ -568,22 +568,41 @@
       "data.list[].data_type"
     ],
     "analysis.report_config.get": [
+      "data.app_id",
       "data.config",
+      "data.create_time",
+      "data.create_user_id",
+      "data.create_user_name",
+      "data.id",
+      "data.modify_time",
       "data.name",
+      "data.remark",
+      "data.subject",
+      "data.update_user_id",
       "data.update_user_name"
     ],
     "analysis.report_config.list": [
       "data.list",
       "data.list[].app_id",
+      "data.list[].config",
+      "data.list[].create_time",
       "data.list[].create_user_id",
       "data.list[].create_user_name",
+      "data.list[].dashboards",
       "data.list[].id",
+      "data.list[].is_deleted",
       "data.list[].modify_time",
       "data.list[].name",
+      "data.list[].remark",
       "data.list[].subject",
       "data.list[].update_user_id",
       "data.list[].update_user_name",
       "data.page_info"
+    ],
+    "analysis.report_config.update": [
+      "data.object",
+      "data.object[].app_id",
+      "data.object[].id"
     ],
     "analysis.retention.query": [
       "data.*.*[].init_custom_before_components[]",

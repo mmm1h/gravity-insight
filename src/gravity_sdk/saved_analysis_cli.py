@@ -16,6 +16,7 @@ from .saved_analysis import (
 )
 from .saved_analysis_artifact import preflight_saved_definition, validate_saved_window
 from .saved_analysis_support import (
+    SUBJECT_KINDS,
     bounds,
     normalize_definition,
     normalize_reference,
@@ -66,6 +67,21 @@ def add_saved_analysis_commands(
         "--definition",
         help="Inline JSON, JSON file, or '-' for a caller-supplied definition.",
     )
+    create = commands.add_parser(
+        "create", help="Preview or create one marked reusable saved Analysis."
+    )
+    _add_mutation_definition(create, include_id=False)
+    create.add_argument("--idempotency-key")
+    update = commands.add_parser(
+        "update", help="Preview or replace one saved Analysis full definition."
+    )
+    _add_mutation_definition(update, include_id=True)
+    delete = commands.add_parser(
+        "delete", help="Preview or delete one marker-or-owner saved Analysis."
+    )
+    delete.add_argument("--app", required=True, type=_nonempty_app)
+    delete.add_argument("--id", required=True)
+    _mutation_mode(delete)
     inspect = commands.add_parser(
         "get", help="Inspect replay eligibility without returning opaque config."
     )
@@ -73,7 +89,7 @@ def add_saved_analysis_commands(
         inspect, positive_int, include_reference=True, requires_reference=True,
         window=True,
     )
-    for parser in (listing, inspect, prepare, execute):
+    for parser in (listing, inspect, prepare, execute, create, update, delete):
         parser.set_defaults(_gravity_handler=dispatch_saved_analysis)
     # Only an explicit definition can compile without catalog/detail reads.
     prepare.set_defaults(network_required=True)
@@ -84,6 +100,8 @@ def add_saved_analysis_commands(
 
 
 def dispatch_saved_analysis(args: Any, object_input: Callable[[Any], Mapping[str, Any]]) -> Any:
+    if args.saved_command in {"create", "update", "delete"}:
+        return _dispatch_mutation(args, object_input)
     reference, definition = _selected_source(args, object_input)
     start, end = getattr(args, "start", None), getattr(args, "end", None)
     validate_saved_window(start, end)
@@ -143,6 +161,46 @@ def dispatch_saved_analysis(args: Any, object_input: Callable[[Any], Mapping[str
         start=start,
         end=end,
         **options,
+    )
+
+
+def _dispatch_mutation(
+    args: Any, object_input: Callable[[Any], Mapping[str, Any]]
+) -> dict[str, Any]:
+    from .saved_analysis_mutation import (
+        create_saved_analysis,
+        delete_saved_analysis,
+        update_saved_analysis,
+    )
+
+    workspace = load_workspace()
+    app_id = resolve_workspace_app(workspace, args.app)
+    options = {
+        "app_id": app_id,
+        "workspace": workspace,
+        "execute": bool(args.saved_execute),
+    }
+    if args.saved_command == "delete":
+        return delete_saved_analysis(
+            runtime.build_client(), args.id, **options
+        )
+    definition = {
+        "name": args.name,
+        "subject": args.subject,
+        "config": object_input(args.config),
+        "remark": args.remark,
+        "start": args.start,
+        "end": args.end,
+    }
+    if args.saved_command == "create":
+        return create_saved_analysis(
+            runtime.build_client(),
+            **options,
+            **definition,
+            idempotency_key=args.idempotency_key,
+        )
+    return update_saved_analysis(
+        runtime.build_client(), args.id, **options, **definition
     )
 
 
@@ -210,6 +268,26 @@ class _OfflineDefinition(argparse.Action):
     ) -> None:
         setattr(namespace, self.dest, values)
         setattr(namespace, "network_required", False)
+
+
+def _add_mutation_definition(parser: Any, *, include_id: bool) -> None:
+    parser.add_argument("--app", required=True, type=_nonempty_app)
+    if include_id:
+        parser.add_argument("--id", required=True)
+    parser.add_argument("--name", required=True)
+    parser.add_argument("--subject", required=True, choices=sorted(SUBJECT_KINDS))
+    parser.add_argument("--config", required=True, help="Analysis config JSON/file/'-'.")
+    parser.add_argument("--remark", default="")
+    parser.add_argument("--start", help="Validation window start for a Web artifact.")
+    parser.add_argument("--end", help="Validation window end for a Web artifact.")
+    _mutation_mode(parser)
+
+
+def _mutation_mode(parser: Any) -> None:
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--dry-run", dest="saved_dry_run", action="store_true")
+    mode.add_argument("--execute", dest="saved_execute", action="store_true")
+    parser.set_defaults(network_required=False)
 
 
 def _output_path(value: str) -> str:

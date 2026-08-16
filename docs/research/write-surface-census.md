@@ -251,6 +251,27 @@
 
 - 平台 SQL 工作台的精确 route、对象 schema、owner、history/share 语义及其与 custom-SQL backend 的关系不确定。
 - `report_config/update` 能证明保存分析 create/edit/delete，不能证明 saved-analysis share。
+
+## 后续 wire 与产品裁决（2026-08-16）
+
+后续静态调用点和生产最小请求把本普查的 P0 假设收敛为精确合同：同一
+`report_config/update` 对 create 省略 `id/is_deleted`，对 update 只增加 `id`，对 delete 增加 `id` 并
+固定 `is_deleted=true`；三者均提交 `app_id/subject/name/config/remark`，`config` 为 JSON string。
+因此没有 `action` 字段，也不是仅靠 ID 有无区分删除。
+
+生产 93 条目录样本只观察到 event/funnel/retention/scatter/user-property 五类。五类 detail 外层 shape
+一致，但 config 的路径数和 fingerprint 分别为 143/`50c36295…`、68/`0def5f2f…`、96/`80fd7c2a…`、
+65/`c566f423…`、71/`6d3dc62c…`，明确不同构。实现因此选择“一条物理 operation + 显式 subject”，
+调用方动作卡仍按 create/update/delete 分开；产品只开放五个已有严格 compiler 的 subject。
+cash/order/user 不是被判定为不该保存，而是租户无样本、config 未证明，保持 fail-closed。
+
+事件类已完成真实 create/list/get/update/readback/query/delete/final-list，最终 marker 为 0；但 query 的
+真实聚合数字没有在验收脚本异常前写入 value-free evidence，所以资产动线只记部分闭环。owner 字段
+实测为 `create_user_id`，精确等式是 `create_user_id == gravity_id`；单对象 creator 只允许
+`creator.id` fallback。list/get 不走 metadata cache，mutation 成功后仍统一清 cache，删除读回使用完整
+新列表。请求实际 41/40，超限原因、逐类计数和 receipt 见
+[`20260816_saved_analysis_crud.json`](../../evidence/forensics/20260816_saved_analysis_crud.json)；发现后未再请求，
+对象已清理。share 仍无证据，未实现；v3 conftemplate 边界不变。
 - 模板 `change_internal` 与 share 的 recipient/owner 细节、订阅 edit 的完整 request body 仍不足以直接实现。
 - 42 是当前 987-route 快照内的物理 route 数；一个 route 可承载多个动作，Census 也会排除其他入口/
   origin、运行时 URL 和后端-only route。因此 42 不是平台授权写面总数、最终 operation 数或完成度 KPI。

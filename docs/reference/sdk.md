@@ -476,6 +476,14 @@ ISO date/timestamp（两端下发且 `end-start` 不超过 90 天），严格复
 `compile_saved_analysis_definition()` 路径保持旧兼容，
 直接提供本地 definition 才是零网络编译。
 
+受治理写方法为 `create_saved_analysis(*, app, name, subject, config, remark="",
+idempotency_key=None, start=None, end=None, execute=False, workspace=None)`、
+`update_saved_analysis(analysis_id, *, app, name, subject, config, remark="", start=None, end=None,
+execute=False, workspace=None)` 和 `delete_saved_analysis(analysis_id, *, app, execute=False,
+workspace=None)`。默认 `execute=False` 返回零网络预览；人工确认后用完全相同业务参数改为
+`execute=True`。create/update 只接受五类可严格编译 definition；update/delete 要求 GSDK marker 或
+已证实 owner，删除还会用完整新目录确认 ID 消失。SDK 不提供 saved-analysis share。
+
 `business_pulse(apps, start, end, *, platforms=(...), include_hourly=False,
 max_workers=6, max_pages=1000, max_items=100000, workspace=None)` 接受一个 App 或 App 序列；
 每项是 workspace alias 或正整数。结果固定按 `overview/business/hourly_comparison` 排序，最后一项

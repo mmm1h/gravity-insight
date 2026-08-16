@@ -1,0 +1,132 @@
+{
+  "schema_version": "gravity.saved-analysis-crud-evidence.v1",
+  "observed_at": "2026-08-16",
+  "raw_values_persisted": false,
+  "credentials_persisted": false,
+  "scope": {
+    "route": "POST /turbo_engine/api/v2/datamanageconfig/report_config/update/",
+    "share_tested": false,
+    "conftemplate_tested": false
+  },
+  "wire_decision": {
+    "create": {
+      "discriminator": "id omitted; is_deleted omitted",
+      "body_fields": ["app_id", "subject", "name", "config", "remark"],
+      "request_shape_fingerprint": "693cbd8b3398d59a3f8e0bf7d2f58973e1b6afd44dec643e0f5724643e14a554"
+    },
+    "update": {
+      "discriminator": "id present; is_deleted omitted",
+      "body_fields": ["app_id", "id", "subject", "name", "config", "remark"],
+      "request_shape_fingerprint": "34399512a1546285136bc56223e3398f835f33fc0259d368a1d88faf7ff3f0b7"
+    },
+    "delete": {
+      "discriminator": "id present; is_deleted=true",
+      "body_fields": ["app_id", "id", "subject", "name", "config", "remark", "is_deleted"],
+      "request_shape_fingerprint": "820998ebfcd07edf51a11b57d680a0842548ce60f5be80c04fee8525f26dd99a"
+    },
+    "config_wire_type": "string",
+    "full_definition_required": true,
+    "static_sources": [
+      "reportConfigDialog-VzlrPtPX.js delete call",
+      "Event-BKh0ym6c.js create/update call"
+    ]
+  },
+  "subject_shapes": {
+    "outer_detail_shape_homologous": true,
+    "outer_detail_shape_fingerprint": "010e973263d34fe1d19185b369f0ab52f303ebab3bdb8411d0b9650e5be55661",
+    "inner_config_homologous": false,
+    "observed": {
+      "analysis_event": {
+        "path_count": 143,
+        "fingerprint": "50c36295117b035f8dde9de8e9774c80f2b2d4d18815973f66976506e8170a35"
+      },
+      "analysis_funnel": {
+        "path_count": 68,
+        "fingerprint": "0def5f2f83e7a204948212135426ee18a183b1e49c038f997abe8c8063cca38a"
+      },
+      "analysis_retention": {
+        "path_count": 96,
+        "fingerprint": "80fd7c2a58aa02ecdc87ea0cc197496a3ee8003375386f1da1d86e2c148241f5"
+      },
+      "analysis_scatter": {
+        "path_count": 65,
+        "fingerprint": "c566f423baf5df10aefe41523bfd41790a71c2bbc6d83d8adcf20a61e1d965a7"
+      },
+      "analysis_user_property": {
+        "path_count": 71,
+        "fingerprint": "6d3dc62c704173794483f8875b6674ea07c315c0737d9e96b0f152a254b56183"
+      }
+    },
+    "not_observed_on_tenant": ["analysis_cash", "analysis_order", "analysis_user"],
+    "product_supported": [
+      "analysis_event",
+      "analysis_funnel",
+      "analysis_retention",
+      "analysis_scatter",
+      "analysis_user_property"
+    ],
+    "product_held_for_evidence": ["analysis_cash", "analysis_order", "analysis_user"]
+  },
+  "final_lifecycle": {
+    "marker": "GSDK-saved-analysis-20260816",
+    "create": {
+      "http_status": 200,
+      "receipt_id": "2e5b378f6c8c4c54a10eba73646203ff",
+      "list_readback": "marker found once",
+      "detail_readback": "name, subject, remark, and config round-tripped"
+    },
+    "update": {
+      "http_status": 200,
+      "receipt_id": "80cb58fa113b43f0a9459a3bf80d3524",
+      "changed_parameter": "calculateBody.group_by_list",
+      "before_count": 1,
+      "after_count": 0,
+      "detail_readback": "updated definition round-tripped"
+    },
+    "replay": {
+      "operation_id": "analysis.event.query",
+      "http_status": 200,
+      "receipt_id": "86a99b12be2c403e90fa79cdd86fa475",
+      "request_shape_fingerprint": "c3eb70768d9d844683254e86f1d8050bd9fec471f62d3c6feefceda1f3787cba",
+      "real_aggregate_value_persisted": false,
+      "acceptance_status": "incomplete",
+      "reason": "the acceptance script required a numeric path and raised before persisting the governed response; the value cannot be reconstructed from value-free receipts"
+    },
+    "delete": {
+      "http_status": 200,
+      "receipt_id": "2664bc5060f7450bbd38aca2c4b30e69",
+      "post_delete_list_receipt_id": "4a082a452d434a7cb5066365867fe857",
+      "post_delete_marker_matches": 0
+    },
+    "cleanup_completed": true
+  },
+  "ownership": {
+    "observed_owner_field": "create_user_id",
+    "accepted_equalities": [
+      "create_user_id == authenticated gravity_id",
+      "creator.id == authenticated gravity_id when creator is a single object"
+    ],
+    "rejected_fallbacks": ["creator[].uid", "creator.uid"]
+  },
+  "cache": {
+    "list_cacheable_as_metadata": false,
+    "get_cacheable_as_metadata": false,
+    "mutation_success_clears_shared_metadata_cache": true,
+    "delete_guard_reads_fresh_complete_list": true
+  },
+  "request_budget": {
+    "limit": 40,
+    "actual": 41,
+    "over_by": 1,
+    "breakdown": {
+      "authentication": 1,
+      "report_config_list": 16,
+      "report_config_get": 15,
+      "report_config_update": 6,
+      "analysis_event_metadata": 2,
+      "analysis_event_query": 1
+    },
+    "reason": "final replay execution added two live metadata reads after offline validation; the estimate included neither",
+    "requests_after_limit_discovered": 0
+  }
+}

@@ -143,7 +143,11 @@ def catalog_rows(envelope: Mapping[str, Any], app_id: str) -> list[dict[str, Any
         seen_ids.add(item_id)
         item = {
             key: raw[key]
-            for key in ("id", "app_id", "name", "subject", "modify_time")
+            for key in (
+                "id", "app_id", "name", "subject", "create_time", "modify_time",
+                "create_user_id", "create_user_name", "update_user_id",
+                "update_user_name", "is_deleted", "remark",
+            )
             if key in raw
         }
         item.update(

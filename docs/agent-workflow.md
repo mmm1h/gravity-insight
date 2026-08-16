@@ -6,7 +6,7 @@
 
 ### 完整目录
 
-第一次接触仓库、或需要确认“现在到底能做什么”时，`agent-catalog categories → category <category> → describe <selector>` 是首要入口，不是附属的 operation 调试命令。三层完全离线，依次回答领域、selector 和完整执行合同，当前覆盖 226 个 operation、77 张产品卡和 9 个精确 gap。category 内机械按 `product → raw_operation → capability_gap`、同类 selector 升序排列，因此产品卡不会被 raw operation 挤出首屏；优先选择 `identity_kind=product`。raw operation 只是专家入口，gap 不可执行。第二层返回 `next_offset` 不代表必须翻页；已知 selector 直接 describe。逐层示例见[完整目录任务指南](agent-skills/catalog-discovery.md)。
+第一次接触仓库、或需要确认“现在到底能做什么”时，`agent-catalog categories → category <category> → describe <selector>` 是首要入口，不是附属的 operation 调试命令。三层完全离线，依次回答领域、selector 和完整执行合同，当前覆盖 231 个 operation、84 张产品卡和 9 个精确 gap。category 内机械按 `product → raw_operation → capability_gap`、同类 selector 升序排列，因此产品卡不会被 raw operation 挤出首屏；优先选择 `identity_kind=product`。raw operation 只是专家入口，gap 不可执行。第二层返回 `next_offset` 不代表必须翻页；已知 selector 直接 describe。逐层示例见[完整目录任务指南](agent-skills/catalog-discovery.md)。
 
 | 已知信息 | 直接执行 | 正常命令数 |
 | --- | --- | --- |
@@ -36,6 +36,7 @@
 五种 Analysis kind（`event/funnel/retention/property/scatter`）使用 `gravity analysis query --kind <kind> --spec <json|file|->`；多个独立 spec 一次交给 `analysis query batch`，复用 Plan 并发。事件/属性用 `metadata search`，指标/标签/媒体枚举/模板用 `metadata vocabulary`；确认后执行。`--dry-run` 返回零网络安全预览，Spec 不接受自然语言自动执行。完整示例见 [CLI 参考](reference/cli.md#analysis-query-spec-v1)。
 经营概览和趋势直接一次调用 `gravity reports pulse --app main --start 2026-08-01 --end 2026-08-07 --include-hourly`；只有需要小时对比时加 `--include-hourly`，其结果是 `scope=workspace`。不知道入口时，明确的 `business pulse/经营脉搏` 意图离线返回唯一 composite，并展开 `apps/start/end/platforms/include_hourly`；调用方补齐后执行一次 Plan。泛 `business analysis/经营分析` 不由 Pulse 抢占，Agent 也不从自然语言填写 App、日期或平台。交叉 Plan 不要手工串行读取 overview/business。
 保存分析已知稳定 ID/精确名称和日期窗时直接 `gravity analysis saved run --app ... --ref ... --start ... --end ...`，不要先串行 list/get/prepare。reference Strict Replay 只接受已证明的五类 Web artifact，并严格复用现有编译器；`prepare --ref` 会联网解析引用但不执行最终查询。旧 compact reference/显式 `--definition` 可保留原日期语义，但 Agent 主路径仍要求窗口以覆盖 Web artifact。自然语言发现不会猜引用或自动执行。App 和窗口已知、引用未知时，第一次用 `agent --resolve-inputs` 取得完整 safe catalog，调用方精确选择稳定 ID，第二次 run；执行会重读目录和详情。
+保存分析 create/update/delete 同样只接受五类已证明 definition。Agent 分别返回三张动作卡，先执行零网络 `--dry-run`，人工审查后原参数改 `--execute`；自然语言不填 config、不自动写，share 意图不映射到这些动作。update/delete 执行阶段以 GSDK marker 或精确 upstream owner 放行，并做完整读回。
 看板控制面仍用 `dashboard_snapshot`；图表执行用 `analysis dashboard run --app ... --ref ... --start ... --end ...`。后者只编译静态 Web artifact 中已证明的五类 Analysis 图表，不模拟布局、收藏或页面全局筛选，单图不支持时隔离报告。引用未知且 App/窗口已知时，`agent --resolve-inputs` 在第一调用返回完整 live tree 和 `dashboard_analysis` 节点；调用方精确选择 ID 后第二次执行。自然语言不自动执行，Plan 内固定 1 worker。
 
 人群规则只接受显式紧凑 spec：Agent 强意图卡给完整 schema 和缺失的 `app/spec`，不会从自然语言生成规则。已知 spec 可直接 evaluate；交叉查询用 `segment_evaluate` composite，只有 `/app` 可绑定，结果仅 `part/percent/total`。
@@ -44,7 +45,8 @@
 
 ### 受治理写入：统一两步确认
 
-当前 32 条 stable mutation 由 7 条 Segment、5 条报表/订阅、18 条 Kanban 和 2 条自定义指标底层 operation 组成；目录用 34 张 action-qualified mutation 产品卡表达 8 个 Segment、4 个报表/订阅、19 个 Kanban 和 3 个自定义指标调用方动作，而不是把底层 operation 逐条包装成产品。统一协议是：用权威输入运行 `--dry-run`，人工审查后同一参数只改为 `--execute`；单次发送且不自动重放。Segment 支持 create/update/refresh/delete 家族，报表面使用 `reports create/delete/subscribe/unsubscribe`，Kanban 使用 exact action + JSON input，自定义指标使用当前 turbo upsert/delete；create 写可读回 marker，update/delete/unsubscribe 执行时重读 marker 或上游 owner，否则 fail closed。Kanban 父删除预览会只读 tree/detail 并在写前报告迁移/删除数；Kanban 和自定义指标可进入 Plan，但必须显式选择 `preview|execute`，后者还会在写前展示公式、格式和精确字符串 ID。订阅固定 disabled、空收件人，永不调用 test route。Agent 不从自然语言填值或自动执行。可复制两步命令见[受治理写入任务指南](agent-skills/governed-writes.md)，完整参数见[CLI 参考](reference/cli.md#自定义指标口径-crud)。
+当前 37 条 stable mutation 由 7 条 Segment、5 条报表/订阅、18 条 Kanban、2 条自定义指标、4 条事件/属性模板和 1 条保存分析底层 operation 组成；目录用 41 张 action-qualified mutation 产品卡表达 8 个 Segment、4 个报表/订阅、19 个 Kanban、3 个自定义指标、4 个模板和 3 个保存分析动作。统一协议是权威输入 `--dry-run`，人工审查后同参数只改 `--execute`；单发且不自动重放。create 写后读回 marker，update/delete/unsubscribe 重读 marker 或 upstream owner，否则 fail closed。Kanban 父删除预览报告迁移/删除数；只有 Kanban 和自定义指标进入显式 `preview|execute` Plan。订阅固定 disabled、空收件人且永不 test；Agent 不从自然语言填值或自动执行。两步命令见[受治理写入任务指南](agent-skills/governed-writes.md)，保存分析参数见[CLI 参考](reference/cli.md#saved-analysis-v3)。
+
 ### Multidim
 
 Multidim 使用物理输入，不新增 Spec。它直接使用闭合的 `date_list/time_dims/metrics_list/custom_metrics_list/data_dims/relate_dims/filters/multi_keys` 物理输入；已知 App 和完整输入时直接一次 CLI/SDK 调用。物理指标或维度未知而其余业务输入已知时，第一调用用在线输入解析取得闭合 schema 与完整 live Multidim metadata，调用方精确选择物理名，第二调用由 FieldPolicy 再次 live 校验成员关系及维度排除。Agent 生成的 Plan request 总是带当前 `input_schema_version`；调用方不得删除或改写。在线解析不生成 App、日期、filter value 或业务口径，也不会把模板、布局、收藏、权限、经营 pulse 或 event/funnel Analysis 路由到这里。

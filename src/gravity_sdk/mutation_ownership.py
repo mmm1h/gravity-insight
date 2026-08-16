@@ -65,6 +65,18 @@ def creator_owner(value: Any) -> OwnerReference:
     return candidates[0]
 
 
+def single_creator_owner(value: Any) -> OwnerReference:
+    """Read the proven single-object creator.id shape without uid/array fallback."""
+
+    if not isinstance(value, Mapping):
+        return OwnerReference(None, None, "creator.id")
+    return OwnerReference(
+        _identifier(value.get("id")),
+        _optional_text(value.get("name")),
+        "creator.id",
+    )
+
+
 def require_mutation_authority(
     client: Any,
     *,
@@ -142,5 +154,6 @@ __all__ = [
     "OwnershipDecision",
     "create_user_owner",
     "creator_owner",
+    "single_creator_owner",
     "require_mutation_authority",
 ]

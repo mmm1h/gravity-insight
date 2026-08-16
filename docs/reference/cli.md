@@ -757,7 +757,7 @@ gravity analysis segment evaluate --app main --spec segment.json --fields part,p
 `segment_evaluate` composite Plan 节点；自然语言不生成规则或自动执行。泛分群、成员、历史、
 详情和导出不会误配此卡。
 
-### Saved Analysis v2
+### Saved Analysis v3
 
 保存分析入口把稳定的保存目录、详情读取和现有 Analysis Spec 编译器连成一条受控路径。已知
 引用时不要手工执行 `operations search/describe`，直接运行：
@@ -779,6 +779,20 @@ gravity analysis saved prepare --app main --definition <json-object-or-file>
 # reference Web artifact：一次解析、严格编译并执行
 gravity analysis saved run --app main --ref <id-or-exact-name> `
   --start 2026-08-01 --end 2026-08-07
+
+# create/update 都提交完整、可严格重放的五类定义；先预览，再原参数确认
+gravity analysis saved create --app main --name "GSDK analysis" `
+  --subject analysis_event --config event-config.json --dry-run
+gravity analysis saved create --app main --name "GSDK analysis" `
+  --subject analysis_event --config event-config.json --execute
+
+gravity analysis saved update --app main --id <saved-analysis-id> --name "GSDK analysis v2" `
+  --subject analysis_event --config event-config-v2.json --dry-run
+gravity analysis saved update --app main --id <saved-analysis-id> --name "GSDK analysis v2" `
+  --subject analysis_event --config event-config-v2.json --execute
+
+gravity analysis saved delete --app main --id <saved-analysis-id> --dry-run
+gravity analysis saved delete --app main --id <saved-analysis-id> --execute
 ```
 
 `--app` 接受 workspace alias 或正整数。`--ref` 只接受稳定 ID 或精确名称；精确名称命中
@@ -798,6 +812,13 @@ opaque config 或其他 kind 均结构化失败，不降级为裸请求。显式
 结果仍按页码保序；未知总页数保持串行。Plan adapter 固定分页 worker 为 1，避免与 Plan 全局并发相乘。
 `prepare --ref` 为解析引用会读取在线目录以及必要详情，所以它不是离线 dry-run；它与 `run`
 的区别是不会发送最终分析查询。`list/get` 也会访问已登记的 stable 只读 operation。
+
+`create/update/delete` 共用 `analysis.report_config.update`，但卡和 CLI 按调用方动作分开。
+create/update 的 `--config` 接受 inline JSON、文件或 `-`，并在写前复用五类 strict replay compiler；
+只开放 event/funnel/retention/scatter/user-property，另外三类 config 尚未证明而 fail closed。create 写入
+GSDK marker；update/delete 执行时要求 marker 或 `create_user_id == gravity_id`，删除 HTTP 200 后还会
+完整列目录确认 ID 消失。三种动作均须二选一显式传 `--dry-run` 或 `--execute`；自然语言 Agent 卡只
+给出两步命令，不自动写。分享不属于本入口。
 
 Agent 查询 `run saved analysis <ref>`、`运行保存分析 <引用>`，包括 `--domain report`，唯一
 权威候选是 `composite:saved_analysis`。卡片明确缺失 `app/ref/start/end`，Plan request 为四项

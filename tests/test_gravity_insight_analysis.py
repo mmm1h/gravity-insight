@@ -1337,9 +1337,17 @@ class GravityInsightAnalysisTests(unittest.TestCase):
                 {
                     "code": 0,
                     "data": {
+                        "id": "1",
+                        "app_id": 101,
                         "config": '{"commonFilter":[]}',
                         "name": "saved-analysis",
+                        "subject": "analysis_event",
                         "remark": "",
+                        "create_time": "2026-08-01T00:00:00Z",
+                        "modify_time": "2026-08-02T00:00:00Z",
+                        "create_user_id": 7,
+                        "create_user_name": "creator",
+                        "update_user_id": 8,
                         "update_user_name": "operator",
                     },
                     "extra": {},

@@ -4957,8 +4957,8 @@
       "action": "get",
       "auth_profile": "gravity_authorization",
       "block_reason": null,
-      "contract_version": "2",
-      "description": "读取已保存分析配置；配置 JSON 由受控专用投影解析，只开放已登记的结构化分析字段。",
+      "contract_version": "3",
+      "description": "读取已保存分析配置与创建/更新身份；配置 JSON 由受控专用产品解析。",
       "domain": "analysis",
       "executable": true,
       "input_fields": [
@@ -5060,8 +5060,17 @@
         "data_dynamic_item_fields": {},
         "data_item_keys": {},
         "data_keys": [
+          "id",
+          "app_id",
           "config",
           "name",
+          "subject",
+          "remark",
+          "create_time",
+          "modify_time",
+          "create_user_id",
+          "create_user_name",
+          "update_user_id",
           "update_user_name"
         ],
         "data_path_item_keys": {},
@@ -5072,9 +5081,7 @@
         "empty_object_as_empty_result": false,
         "item_keys": [],
         "known_omitted_data_item_keys": {},
-        "known_omitted_data_keys": [
-          "remark"
-        ],
+        "known_omitted_data_keys": [],
         "known_omitted_item_keys": [],
         "known_omitted_nested_item_keys": {},
         "nested_item_keys": {},
@@ -5082,7 +5089,12 @@
         "opaque_json_item_keys": [],
         "recursive_data_item_keys": {},
         "required_data_keys": [
-          "config"
+          "id",
+          "app_id",
+          "config",
+          "name",
+          "subject",
+          "create_user_id"
         ],
         "scalar_list_item_types": {}
       },
@@ -5109,8 +5121,8 @@
       "action": "list",
       "auth_profile": "gravity_authorization",
       "block_reason": null,
-      "contract_version": "2",
-      "description": "已保存分析配置列表；创建人与更新人字段已登记返回，不透明 config、未证实状态字段和自由备注仍省略。",
+      "contract_version": "3",
+      "description": "已保存分析配置完整列表；登记保存、所有权和写后读回所需字段，config 仍只由保存分析专用产品解析。",
       "domain": "analysis",
       "executable": true,
       "input_fields": [
@@ -5155,7 +5167,7 @@
         {
           "default": {
             "present": true,
-            "value": 1
+            "value": 500
           },
           "description": "",
           "enum": [],
@@ -5182,11 +5194,11 @@
       },
       "operation_id": "analysis.report_config.list",
       "pagination": {
-        "default_page_size": 1,
+        "default_page_size": 500,
         "items_field": "list",
         "kind": "page_info",
         "list_path": "data.list",
-        "max_page_size": 1,
+        "max_page_size": 500,
         "page_field": "page",
         "page_info_field": "page_info",
         "page_info_path": "data.page_info",
@@ -5210,7 +5222,7 @@
         "body_fields": [],
         "defaults": {
           "page": 1,
-          "page_size": 1
+          "page_size": 500
         },
         "fixed_body": {},
         "fixed_query": {},
@@ -5251,16 +5263,16 @@
           "update_user_id",
           "update_user_name",
           "create_user_id",
-          "create_user_name"
-        ],
-        "known_omitted_data_item_keys": {},
-        "known_omitted_data_keys": [],
-        "known_omitted_item_keys": [
+          "create_user_name",
           "config",
           "create_time",
+          "dashboards",
           "is_deleted",
           "remark"
         ],
+        "known_omitted_data_item_keys": {},
+        "known_omitted_data_keys": [],
+        "known_omitted_item_keys": [],
         "known_omitted_nested_item_keys": {},
         "nested_item_keys": {},
         "numeric_paths": [],

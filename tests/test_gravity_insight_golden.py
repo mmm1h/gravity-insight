@@ -332,6 +332,9 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "metadata.event.property.template.create",
             "metadata.property.template.event.delete",
             "metadata.property.template.property.delete",
+            # Saved Analysis CRUD completed the shared update-route wire and
+            # one event create/read/update/replay/delete production loop.
+            "analysis.report_config.update",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]

@@ -196,9 +196,9 @@ class GravityInsightWriteRegistryTests(unittest.TestCase):
         # F40 测试设备目录与单用户归因明细闭环后升至 176。
         # 本测试的保证不是「这个数不变」，而是「它远小于 accounted，且
         # blocked_write 绝不被计入可调用」——即下面两条 378 断言。
-        self.assertEqual(217, rebuilt["summary"]["callable_covered"])
-        self.assertEqual(378, rebuilt["accounting_summary"]["accounted_blocked_write"])
-        self.assertEqual(378, rebuilt["callability_summary"]["contract_only"])
+        self.assertEqual(218, rebuilt["summary"]["callable_covered"])
+        self.assertEqual(377, rebuilt["accounting_summary"]["accounted_blocked_write"])
+        self.assertEqual(377, rebuilt["callability_summary"]["contract_only"])
 
     def test_new_unclassified_route_fails_the_cli_accounting_gate(self) -> None:
         routes = {

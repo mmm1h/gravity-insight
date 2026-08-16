@@ -1210,6 +1210,9 @@ class GravityInsightManifestTests(unittest.TestCase):
                         "update_user_name",
                     ]
                 },
+                "analysis.report_config.update": {
+                    "object": ["id", "app_id"]
+                },
                 "analysis.template.subject.own.list": {
                     "page_info": ["page", "page_size", "total_number", "total_page"]
                 },
