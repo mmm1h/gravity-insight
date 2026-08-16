@@ -101,12 +101,13 @@ operation 185、stable 176、callable covered route 172、`uncovered_read=343`�
 
 ## 写操作边界（2026-08-16 裁决）
 
-Segment 是当前唯一进入 stable manifest 的业务 mutation family。每次 create 都把可见的
-`GSDK-<12 hex>` 放进 `segment_remark`，创建后经完整列表和 detail 读回；删除只接受 detail
-读回仍带该标记的对象。所有 mutation 默认只生成零网络 dry-run，执行必须显式选择 `--execute`，
-单次发送且不自动重放。标记用于识别 SDK 创建物，不过滤任何列表，也不是权限系统。
+当前只开放 12 条逐项登记的 stable mutation：7 条 Segment，以及 5 条 marker-governed 报表/订阅
+operation。Segment create 把可见 `GSDK-<12 hex>` 放进 `segment_remark`；报表放进 `remark`；订阅
+同时放进 `name/wildcard_name`。创建后经完整列表或 detail 读回，删除只接受执行时读回仍带标记的
+对象。所有 mutation 默认只生成零网络 dry-run，执行必须显式选择 `--execute`，单次发送且不自动
+重放。标记用于识别 SDK 创建物，不过滤任何列表，也不是权限系统。
 
-其余写路由不因本次框架存在而自动获准。尤其 110 条推广写、49 条素材写、多维报表写、权限管理、
+其余写路由不因本次框架存在而自动获准。尤其 110 条推广写、49 条素材写、多维查询模板写、权限管理、
 `event/event_batch_delete` 与 `event_property_batch_delete` 继续 reservation；只有精确 source contract、
 `effect=mutation`、stable/executable 状态及产品层确认流程同时成立时，运行时才会签发一次性写授权。
 

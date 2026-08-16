@@ -3290,3 +3290,36 @@ registry 与 evaluator route 常量，因此不是干净外部模型；这项先
 subtests passed**，文档测试为 **4 passed**；compiler 仍为 203 operations / 11 manifests，quality、CLI
 help 与 `git diff --check` 全部通过。caller-recoverable 全仓审计为 `1076 = A269 / B434 / C373`，与本轮
 基线快照完全相同，因此本线新增点为 `0/0`、A 档率按约定为 100%。
+
+## 十分钟主路径生产复验与文档收口（2026-08-16）
+
+**提案与纪律：**从 README 和文档索引开始，按现有十分钟指南模拟首次调用方；事件和指标只从
+metadata 或产品卡 schema 取得，固定一个文档已有的单日窗口，不换 App、不扩窗、不翻页、不重试。
+只修改文档与 `scripts/generate_agent_skills.py`，不改 product、operation、CLI 参数、recognizer 或评测
+装置。完整命令记录保存在 ignored `tmp/codex/docs-primary-path/revalidation.md`，不作为长期事实源。
+
+**实走结论：**12 条主路径命令、3 次生产 HTTP 后取得 `analysis.event.query` 的真实 governed result。
+请求账本为：认证 POST 200、`app.list` GET 200、事件分析 POST 200；均 attempt 1，列表只读 page 1，
+日期保持单日。`app.list` 虽投影出已登记 id/name，却以 `contract_changed`、exit 0、`ok=true` 和
+action-required diagnostics 的组合返回；本次仅因同一 App 也存在于 2026-08-13 成功本地 catalog 才继续
+复验，不能把它写成普通自动化可安全忽略的状态。最终聚合值不进入文档，也不外推为业务未发生。
+
+**剩余卡点：**旧十分钟生成指南要求从 `category analysis --limit 20` 选择一个实际不在首 20 条中的
+产品 selector，属于文档/生成器缺口；已修为直接三层 describe 后再选值。冷 metadata 目录只有
+`sync --all-apps`，没有选定 App 的有界同步，因此全新用户不保证在固定十分钟或小 HTTP 预算内取得物理
+事件，属于本轮不改的产品 surface 缺口。凭据在本轮已就位，不是阻塞；分析日期仍是调用方必须提供的
+天然业务输入。
+
+**文档与生成器结论：**README、索引和 Agent 工作流现在把三层 `agent-catalog` 作为首要全量发现入口，
+并显式写出当前 `257 = 205 operation + 42 product card + 10 gap`。分群、报表和订阅写共用
+`dry-run → 人工确认 → 同参数 execute`，在工作流、CLI 参考和生成任务指南均可达；调用方语义上下文与
+派生指标各有可复制的虚构最小示例。生成器从手摘 Analysis 卡改为消费 canonical 产品卡、compiled
+manifest、export contract 和 workspace/derived schema version，产物由 4 篇增为 7 篇。canonical
+mutation 卡仍只物化每个 family 的默认 create 动作，不枚举全部 CLI action；文档列出完整动作并把该
+机器输入缺口保留为已知限制，不修改产品卡。
+
+本轮不新增产品动线、operation、stable 能力或 caller-recoverable error site：`51 + 0 = 51`，
+`42 / 1 / 8 + 0 / 0 / 0 = 42 / 1 / 8`，operation/stable 仍为 `205 / 196`，新增错误点 `0/0`。
+验证为 unittest **1076**、pytest **1076 passed / 2955 subtests passed**、文档测试 **4 passed**、
+compiler **205 operations / 11 manifests**，quality、生成器 check、CLI help 与 `git diff --check` 均通过。
+caller-recoverable 审计为 `1075 = A271 / B434 / C370`；本轮新增点为 0，故新增 A 档仍为 `0/0`。
