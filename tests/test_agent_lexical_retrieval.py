@@ -5,9 +5,14 @@ import unittest
 from gravity_sdk import GravityInsightClient
 from gravity_sdk.agent import discover_capabilities
 from gravity_sdk.agent_capabilities import composite_capability_inventory
+from gravity_sdk.agent_caller_language import (
+    CALLER_LANGUAGE_SOURCES,
+    caller_language_fields,
+)
 from gravity_sdk.agent_lexical_retrieval import (
     ALGORITHM,
     MINIMUM_SCORE,
+    registered_documents,
     retrieve_registered_products,
 )
 
@@ -74,6 +79,17 @@ class AgentLexicalRetrievalTests(unittest.TestCase):
             result["match_policy"]["zero_candidate_lexical_fallback"]["disposition"],
         )
 
+        negated = discover_capabilities(
+            "不要运行看板图表。", client=self.client, limit=5
+        )
+        self.assertEqual(("capability_gap", []), (
+            negated["status"], negated["candidates"]
+        ))
+        self.assertEqual(
+            "not_needed",
+            negated["match_policy"]["zero_candidate_lexical_fallback"]["disposition"],
+        )
+
     def test_retrieval_is_deterministic(self) -> None:
         decisions = [
             retrieve_registered_products(
@@ -88,6 +104,26 @@ class AgentLexicalRetrievalTests(unittest.TestCase):
             "composite:custom_audience",
             decisions[0]["matches"][0]["selector"],
         )
+
+    def test_authoritative_caller_language_is_indexed(self) -> None:
+        decision = retrieve_registered_products(
+            "看起始行为后的用户留存",
+            composite_inventory=self.inventory,
+        )
+
+        self.assertEqual(
+            ["analysis.query.spec:retention"],
+            [match.document.selector for match in decision.matches],
+        )
+        self.assertEqual(
+            ("docs/analysis-journeys.md", "docs/agent-workflow.md"),
+            CALLER_LANGUAGE_SOURCES,
+        )
+        self.assertEqual([], [
+            document.selector
+            for document in registered_documents(composite_inventory=self.inventory)
+            if not caller_language_fields(document.selector)
+        ])
 
 
 if __name__ == "__main__":

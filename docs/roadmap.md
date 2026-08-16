@@ -2963,6 +2963,68 @@ Analysis compiler、metadata、export 和专属 gap 身份的覆盖裁决；父�
 本线新增 caller-recoverable error site `0` 个，因此新增 A/B/C 为 `0/0/0`；全仓审计仍为
 `1061 = 257 / 434 / 370`。技术债清单已复核：检索 core 和 selector harness 均在窄模块内，
 共享 `agent.py` 恢复到 500 SLOC 质量上限，未新增可由当前源码证明的结构债。
+
+## 自然语言路由第二轮：调用方语言索引与分布阈值（2026-08-16）
+
+**预承诺与边界：**阈值 sweep 前先在 `tmp/codex/routing-semantic/threshold-criterion.md` 写死规则：
+排除评分表达不可信的 12 道 `multiple_intents` 后，在 324 题上不新增 wrong product、错误/泛化 gap
+或错误歧义，且旧 240 逐题不退化；可行点取 correct 最多，平局取更高阈值。看完 index-only 分布、
+但未看任何候选结果时，固定 `0.125..0.375`、步长 0.025 的 11 点网格。只运行 development；
+未运行/读取 holdout、final、all、sealed payload 或 key，生产 HTTP 0 次。
+
+**索引增量：**`agent_caller_language.py` 只保存早于扩题存在的 `docs/analysis-journeys.md` 动线标题与
+`docs/agent-workflow.md` 产品独立任务描述，并声明这两个来源；没有 `evals/` 内容、题面片段、变体、
+case ID 或词序规则。development 内臂 B 的 48 个可安全重物化 card/gap identity 全部取得调用方语言，
+共 60 个字段；runtime export inventory 另按 selector 取得素材导出标题。
+三条 governed mutation 动线仍由原 recognizer 解析具体 action 并交接 dry-run/人工确认；静态 fallback
+不物化 exact-selector 的默认写 action，故没有扩大写能力或 fail-closed 边界。
+
+阈值保持 0.375 时，扩索引单独净救回 **0**，六层前后均为产品选择 `262/336`、参数 `201/201`、
+离线终点 `61/77`、错误恢复 `5/5`、selection/terminal pass^4 `262/336、61/77`、安全 `PASS/0`，
+不稳定题 0。52 个 fallback 触发仍全部 abstain，但 top score 右移：非零 `47→49`，P25
+`.020359→.022781`、P50 `.038222→.053143`、P75 `.065549→.118219`、P90
+`.105248→.195502`、P95 `.177314→.235632`、最大 `.285469→.320407`。当前 44 个
+no-candidate 中 41 个属于固定触发队列；该子集 P50 `.038036→.051293`、P90 `.104290→.165080`、最大
+`.244262→.241796`，证明文档扩充不会让每题单调增分。
+
+**完整权衡曲线与选择：**固定扩索引时原 52 个 fallback 位点，完整门禁进一步发现其中 5 个纯否定
+且没有明确正向重述；最终实现对这 5 个 fail closed 并在检索前返回 `not_needed`，下表把它们计入
+abstain，实际进入词法评分的是 47 个：
+
+| 阈值 | correct | wrong | multiple | abstain |
+| ---: | ---: | ---: | ---: | ---: |
+| 0.125 | 7 | 0 | 3 | 42 |
+| 0.150 | 7 | 0 | 2 | 43 |
+| 0.175 | 5 | 0 | 2 | 45 |
+| 0.200 | 3 | 1 | 1 | 47 |
+| 0.225 | 2 | 1 | 1 | 48 |
+| 0.250 | 0 | 1 | 1 | 50 |
+| 0.275 | 0 | 0 | 1 | 51 |
+| **0.300** | **1** | **0** | **0** | **51** |
+| 0.325 | 0 | 0 | 0 | 52 |
+| 0.350 | 0 | 0 | 0 | 52 |
+| 0.375 | 0 | 0 | 0 | 52 |
+
+0.175 的两个 multiple 是 J35/J43 中英混杂目标-gap 题，不属于被排除的多意图族；评分器机械上仍
+称 `wrong_gap`，语义上却是新错误歧义，故按预承诺淘汰。0.275 仍有一个 multiple；0.300 是最低的
+clean 点，且比更高 clean 点多救回 1 题，最终 `MINIMUM_SCORE=0.300`。唯一救回是
+`J35.dev.v3.code-switch` 从 wrong gap 到精确 `REALTIME_EVENT_CATALOG_CONTRACT_MISSING`。
+
+**最终结果：**六层成为产品选择 `263/336`、参数 `201/201`、离线终点 `62/77`、错误恢复 `5/5`、
+selection/terminal pass^4 `263/336、62/77`、安全 `PASS/0`，不稳定题 0。当前 HEAD 全 336 机械
+失败归因 `44 no_candidate / 14 wrong_gap / 13 wrong_product / 3 ambiguous` 变为
+`44 / 13 / 13 / 3`；排除 12 道多意图后为 `44 / 14 / 8 / 0 → 44 / 13 / 8 / 0`，失败基数
+`66→65`。派发背景的 43 个 no-candidate 全部仍未恢复；当前第 44 个是报表闭环后新增的 J36。
+旧 240 题 240/240，逐题候选、gap、reason、fallback disposition 与 top score 差异 0；receipt 的
+`minimum_score` 按设计 `0.375→0.300`，不伪称字节不变。口语省略仍 `0/12`、只描述业务目的仍
+`1/13`，因此安全阈值下词法路线对这两族无效。
+
+**泛化边界：**调用方语料来自题集之前的全量产品文档，且 selector、负向词、多意图和 fail-closed
+判据均未修改；这部分不依赖具体题面。偏拟合风险仍高：0.300 由同一公开 development 分布选择，
+净收益只落在 J35 一题，中文 2/3 字 gram 与 IDF 又会随文档频率改变。未查询留出前只能称保守候选，
+不能称泛化已证明。本线新增 caller-recoverable raise site 0 个；最终全仓错误审计
+`1073 = 269 A / 434 B / 370 C`。技术债清单复核后无新增或关闭条目。
+
 ## 报表目录与订阅的写解锁（2026-08-16）
 
 **提案与控制流裁决：**工作底稿位于 ignored `tmp/codex/write-reports/proposal.md`。先对与 census

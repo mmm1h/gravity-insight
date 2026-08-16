@@ -13,7 +13,7 @@ from typing import Any
 
 
 ALGORITHM = "idf_weighted_term_coverage.v1"
-MINIMUM_SCORE = 0.375
+MINIMUM_SCORE = 0.300
 MINIMUM_MATCHED_TERMS = 2
 
 _ASCII_WORD = re.compile(r"[a-z0-9]+", re.IGNORECASE)
@@ -100,7 +100,14 @@ def apply_lexical_fallback(
 ) -> AppliedLexicalFallback:
     """Apply retrieval only after the complete existing route chain abstains."""
 
-    if existing_candidates or existing_semantic_gaps or fallback_blocked:
+    from .agent_intent_text import affirmative_intent_text
+
+    if (
+        existing_candidates
+        or existing_semantic_gaps
+        or fallback_blocked
+        or not affirmative_intent_text(query)
+    ):
         return AppliedLexicalFallback(
             tuple(existing_candidates), (), _not_needed_receipt()
         )
@@ -441,6 +448,7 @@ def _export_documents(
 def _gap_documents(domain: str | None) -> list[LexicalDocument]:
     if domain is not None:
         return []
+    from .agent_caller_language import caller_language_fields
     from .agent_unavailable import registered_unavailable_gaps
 
     return [
@@ -448,9 +456,12 @@ def _gap_documents(domain: str | None) -> list[LexicalDocument]:
             identity=f"gap:{gap['code']}",
             selector=f"gap:{gap['code']}",
             document_kind="gap",
-            fields=tuple(str(gap.get(key, "")) for key in (
-                "journey", "code", "reason", "next_action"
-            )),
+            fields=(
+                *tuple(str(gap.get(key, "")) for key in (
+                    "journey", "code", "reason", "next_action"
+                )),
+                *caller_language_fields(f"gap:{gap['code']}"),
+            ),
             payload=gap,
         )
         for gap in registered_unavailable_gaps()
@@ -458,6 +469,8 @@ def _gap_documents(domain: str | None) -> list[LexicalDocument]:
 
 
 def _card_document(card: Mapping[str, Any], *, name: str | None = None) -> LexicalDocument:
+    from .agent_caller_language import caller_language_fields
+
     selector = str(card["selector"])
     selected_name = name or str(
         card.get("composite")
@@ -471,7 +484,12 @@ def _card_document(card: Mapping[str, Any], *, name: str | None = None) -> Lexic
         identity=f"card:{selector}",
         selector=selector,
         document_kind="card",
-        fields=(selected_name, selector, str(card.get("description", ""))),
+        fields=(
+            selected_name,
+            selector,
+            str(card.get("description", "")),
+            *caller_language_fields(selector),
+        ),
         payload=card,
     )
 
