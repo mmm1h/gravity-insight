@@ -252,10 +252,44 @@ def _gap(result: Mapping[str, Any], code: str) -> Mapping[str, Any] | None:
     return next((item for item in gaps if isinstance(item, Mapping) and item.get("code") == code), None)
 
 
+def _multiple_intent_score(
+    expected: Mapping[str, Any], result: Mapping[str, Any]
+) -> tuple[bool, str, None]:
+    gap = _gap(result, "MULTIPLE_INTENTS")
+    if gap is None:
+        return False, "multiple_intents_missing", None
+    observed = gap.get("candidate_selectors")
+    if (
+        not isinstance(observed, Sequence)
+        or isinstance(observed, (str, bytes))
+        or not all(isinstance(value, str) for value in observed)
+        or len(set(observed)) != len(observed)
+    ):
+        return False, "wrong_intent_candidates", None
+    wanted = expected.get("candidate_selectors")
+    journey_ids = expected.get("journey_ids")
+    selector_journeys = {
+        selector: journey_id for journey_id, selector in wanted.items()
+    } if isinstance(wanted, Mapping) else {}
+    observed_journeys = [selector_journeys.get(selector) for selector in observed]
+    matched = (
+        isinstance(journey_ids, Sequence)
+        and not isinstance(journey_ids, (str, bytes))
+        and None not in observed_journeys
+        and len(observed_journeys) == len(journey_ids)
+        and set(observed_journeys) == set(journey_ids)
+    )
+    return matched, "correct_multiple_intents" if matched else "wrong_intent_candidates", None
+
+
 def route_score(case: Mapping[str, Any], result: Mapping[str, Any] | None) -> tuple[bool, str, Mapping[str, Any] | None]:
     if result is None:
         return False, "discovery_error", None
     expected = case["expected"]
+    if expected.get("gap_code") == "MULTIPLE_INTENTS" and isinstance(
+        expected.get("journey_ids"), Sequence
+    ):
+        return _multiple_intent_score(expected, result)
     gap_code = expected.get("gap_code")
     if isinstance(gap_code, str):
         return (_gap(result, gap_code) is not None, "target_gap" if _gap(result, gap_code) else "wrong_gap", None)
@@ -497,6 +531,22 @@ def _subject(manifest: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def _known_limitations(split: str) -> list[dict[str, Any]]:
+    protected = [split] if split in PROTECTED_SPLITS else (
+        ["holdout"] if split == "all" else []
+    )
+    if not protected:
+        return []
+    return [{
+        "code": "PROTECTED_LEGACY_MULTI_INTENT_EXPECTATION_BIAS",
+        "splits": protected,
+        "detail": (
+            "Protected cases without an explicit multiple-intent declaration retain "
+            "legacy single-journey scoring; any such ambiguous prompts may be biased."
+        ),
+    }]
+
+
 def _summary(result: Mapping[str, Any]) -> str:
     layers = result["layers"]
     rows = [
@@ -525,8 +575,10 @@ def _summary(result: Mapping[str, Any]) -> str:
         f"Skipped production cases: {layers['end_to_end']['skipped_production']}",
         f"Production HTTP requests: {layers['cost']['production_http_requests']}",
         f"Elapsed: {layers['cost']['elapsed_seconds']:.3f}s",
-        "",
     ])
+    for limitation in result.get("known_limitations", []):
+        text.append(f"Known limitation: {limitation['code']}")
+    text.append("")
     return "\n".join(text)
 
 
@@ -614,6 +666,7 @@ def _run_evaluation_unrecorded(
         "run_at": datetime.now(timezone.utc).isoformat(),
         "subject": _subject(manifest),
         "selector_arm": selector_receipt,
+        "known_limitations": _known_limitations(split),
         "layers": {
             "product_selection": {**selection, "failure_classes": _reason_counts(states, 0)},
             "parameter_fillability": {**parameters, "not_reached": sum(state["parameter"][0] is None for state in states.values()), "failure_classes": _reason_counts(states, 1)},

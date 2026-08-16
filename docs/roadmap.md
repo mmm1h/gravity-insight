@@ -1597,6 +1597,56 @@ gap，却被机械记为通过；另外五题返回错误产品。故该族语�
 recognizer 修改。全部 12 题保留给产品负责人裁决；若未来要自动计分，必须新增预先冻结的多目标身份，
 不能在实现后借评分兼容吸收。
 
+## 多意图评分表达修正（2026-08-16）
+
+**提案与边界：**工作提案和差分证据位于 ignored
+`tmp/codex/multi-intent-scoring/`。本单元只把 12 个公开 development case 的冻结主
+`journey_id` 补全为题面本来就同时要求的 journey 集，并让 scorer 严格比较
+`MULTIPLE_INTENTS.candidate_selectors`；题面、recognizer、产品、层定义、`pass^k`、安全门禁和阈值
+均未改。suite 升为 v4，holdout/final 密文与 hash 未改；未读取 key、未查看或运行 protected split，
+生产 HTTP 与 socket 尝试均为 0。
+
+历史 NL 矩阵漏了当前 J25 分群成员，所以其旧 J25–J47 对应当前 registry J26–J48；派发说明中点名的
+旧 `J26/J30/J31/J28/J29/J32/J47` 因而映射为当前
+`J27/J31/J32/J29/J30/J33/J48`。公开 development 自扩题提交起已经按 registry 编号，不能再机械加一。
+当前 12 个 raw case 与冻结多目标如下：
+
+| 当前 case | 精确 journey 集 | 当前返回裁决 |
+| --- | --- | --- |
+| J25 | J24 + J25 | 只返回 J24 |
+| J26 | J26 + J02 | 精确 `MULTIPLE_INTENTS` |
+| J27 | J27 + J15 | 未返回 `MULTIPLE_INTENTS` |
+| J28 | J28 + J27 | 只返回 J28 |
+| J29 | J29 + J27 | 只返回 J29 |
+| J30 | J30 + J33 | `MULTIPLE_INTENTS`，但把 J33 错成 J15 |
+| J31 | J31 + J01 | `MULTIPLE_INTENTS`，但把 J31 错成 J09 |
+| J32 | J32 + J44 | 只返回 J32 |
+| J33 | J33 + J15 | 错返 J48 |
+| J34 | J34 + J31 | 错返 J08 |
+| J42 | J10 + J42 | 只返回 J10 |
+| J47 | J47 + J48 | 只返回 J47 的 target gap |
+
+这也修正了上一节只检查 gap code 得出的“语义 3/12”：J30/J31 虽返回 `MULTIPLE_INTENTS`，候选集合
+并不正确；按公开合同的精确候选要求，recognizer 真正答对只有 **1/12**。这不是另改 gold 迁就实现：
+每个 raw expectation 只保存 `terminal_kind=multiple_intents` 与 journey IDs，精确 public selector 从 v2
+target registry 派生；原单 `journey_id` 必须仍在集合中。少候选、多候选、未知候选和重复候选均失败。
+
+**逐题兼容与差分：**改前先冻结原 240 题四次 trial。改后其 raw/derived case SHA-256 仍分别为
+`d34f4a38e83cd9e97d7cd42f05d2bef4781d89099e459fd4a8c21e7f0e73a872` 与
+`b4287e055514ac9bb4aa040ce733264a8ab1dbd964dc1c73ee213bde2603980c`，240 个 case ID 相同，逐题
+selection/parameter/terminal/reasons 差异为空。全 336 题把同一响应分别送入 legacy 与 v4 声明后，只有
+上表 12 题状态变化，另外 324 题完全一致。六层从
+`262/336、201/201、61/77、5/5、selection/terminal pass^4 262/336 与 61/77、PASS/0` 变为
+`259/336、198/198、63/88、5/5、selection/terminal pass^4 259/336 与 63/88、PASS/0`。selection
+可复算为 `262 - 4 个假通过 + 1 个精确多意图 = 259`；参数层移除 3 个错误单卡，终点层按既有规则把
+12 个显式歧义 gap 纳入，其中 3 个当前 `MULTIPLE_INTENTS` 都有可执行离线终点，候选正确性仍由选择层
+独立约束。
+
+**protected 兼容方案：**没有显式多目标字段的旧 case 完全走旧分支，所以密封 payload 无需重建且
+逐题结果保持不变。代价是 holdout/final 若含同类题，仍保留单 journey 的已知偏差；运行结果会机器标注
+`PROTECTED_LEGACY_MULTI_INTENT_EXPECTATION_BIAS`。要消除偏差只能由独立 custodian 将来另行编写并密封
+新 suite，不能在实现分支解密、推断或重建现有 payload。
+
 **与臂 B 集成后的复测：**将扩题提交合入已含 zero-candidate 词法兜底的 `dev` 后，只运行
 development，六层仍为 `261/336、188/188、73/91、5/5、selection pass^4 261/336、terminal
 pass^4 73/91、PASS/0`，四类机械失败仍为 `13 / 43 / 16 / 3`，逐项变化均为 0。以响应中的

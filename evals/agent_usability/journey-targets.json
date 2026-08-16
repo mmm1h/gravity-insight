@@ -1,6 +1,26 @@
 {
-  "schema_version": "gravity.agent-usability-journey-targets.v1",
+  "schema_version": "gravity.agent-usability-journey-targets.v2",
   "partial_status_policy": "target_gap",
+  "candidate_selectors": {
+    "J01": "analysis.query.spec:event",
+    "J02": "analysis.query.spec:funnel",
+    "J09": "composite:app_snapshot",
+    "J10": "composite:attribution_snapshot",
+    "J15": "composite:material_performance",
+    "J24": "composite:segment_snapshot",
+    "J25": "composite:segment_members",
+    "J26": "composite:multidim",
+    "J27": "composite:promotion_performance",
+    "J28": "composite:bilibili_account_performance",
+    "J29": "composite:advertiser_profile",
+    "J30": "composite:title_package",
+    "J31": "metadata:search",
+    "J32": "metadata:table_lineage",
+    "J33": "export.material.report.start",
+    "J34": "composite:analysis_default_dictionary",
+    "J42": "composite:attribution_performance",
+    "J48": "material.asset.fetch"
+  },
   "journeys": {
     "J01":{"ledger_title":"看某事件随时间、分组和条件的变化","product":{"route_key":"event"}},
     "J02":{"ledger_title":"看多步行为的转化漏斗","product":{"route_key":"funnel"}},

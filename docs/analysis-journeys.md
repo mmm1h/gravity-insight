@@ -214,6 +214,20 @@ J10 first-turn 因依赖不存在的上一轮而不能唯一决定产品，判�
 由原 `12 target_gap + 2 wrong_gap` 变为 `13 correct + 1 no_candidate`，故首次选择净增恰为 1；其余层
 分母变化来自 13 条正确结果由 gap 终点迁移到产品卡参数层，不是评分算法、层定义或阈值变化。
 
+2026-08-16 多意图评分 v4 只补全 12 个公开 development case 的多 journey gold，不改题面、产品或
+recognizer。raw case 以 `terminal_kind=multiple_intents + journey_ids` 声明题面原有的两个目标，scorer
+要求 `MULTIPLE_INTENTS` 且 public candidate selector 集合精确相等；少、多、未知或重复候选都失败。
+历史 NL 矩阵的旧 J25–J47 对应当前 registry J26–J48，但 development case 自扩题提交起已按 registry
+编号，当前 12 题是 J25–J34 中的 10 题、J42 和 J47。旧 240 题 raw/derived SHA-256 与四次 trial 的
+逐题 selection/parameter/terminal/reasons 前后完全一致；全 336 题只有这 12 题变化，324 题不变。
+六层由 `262/336、201/201、61/77、5/5、pass^4 262/336 与 61/77、PASS/0` 变为
+`259/336、198/198、63/88、5/5、pass^4 259/336 与 63/88、PASS/0`。此前 3 个
+`MULTIPLE_INTENTS` 只按 code 人工计对；精确候选复核后，J30 把素材导出 J33 错成素材表现 J15，J31
+把 metadata search J31 错成 app governance J09，仅 J26 的 J26+J02 精确，所以真实为 **1/12**。
+protected case 缺少新字段时继续逐题走旧评分；结果机器标注
+`PROTECTED_LEGACY_MULTI_INTENT_EXPECTATION_BIAS`，现有密文不读取、不重建。完整多目标表与可复算账本见
+[路线图](roadmap.md#多意图评分表达修正2026-08-16)。
+
 2026-08-15 的失败与降级路径审计自身不新增动线，在当时快照上的净变化为
 `48 + 0 = 48`、`32 / 0 / 16 + 0 / 0 / 0`；最终计数只因上述 setting route 重复记账消除而变为
 `47 = 32 / 0 / 15`。该审计横切核对了所有现有 composite、Plan 和 direct SDK/CLI

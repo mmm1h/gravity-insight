@@ -13,14 +13,17 @@ from typing import Any, Mapping, Sequence
 ROOT = Path(__file__).resolve().parents[1]
 TARGETS_PATH = ROOT / "evals" / "agent_usability" / "journey-targets.json"
 LEDGER_PATH = ROOT / "docs" / "analysis-journeys.md"
-TARGETS_SCHEMA = "gravity.agent-usability-journey-targets.v1"
+TARGETS_SCHEMA = "gravity.agent-usability-journey-targets.v2"
 STATUSES = frozenset({"已闭环", "部分闭环", "完全缺失"})
+MULTIPLE_INTENTS = "MULTIPLE_INTENTS"
 _LEDGER_ROW = re.compile(
     r"^\| (?P<title>.*?) \| (?P<status>已闭环|部分闭环|完全缺失) \|"
 )
 
 
-def _targets(path: Path) -> tuple[dict[str, Mapping[str, Any]], str]:
+def _targets(
+    path: Path,
+) -> tuple[dict[str, Mapping[str, Any]], dict[str, str], str]:
     payload = path.read_bytes()
     document = json.loads(payload)
     if document.get("schema_version") != TARGETS_SCHEMA:
@@ -40,7 +43,29 @@ def _targets(path: Path) -> tuple[dict[str, Mapping[str, Any]], str]:
             f"{type(journeys).__name__} with {len(journeys) if isinstance(journeys, Mapping) else 0} entries; "
             "required value: exactly 48 journey targets"
         )
-    return {str(key): value for key, value in journeys.items()}, hashlib.sha256(payload).hexdigest()
+    targets = {str(key): value for key, value in journeys.items()}
+    candidate_selectors = document.get("candidate_selectors")
+    if not isinstance(candidate_selectors, Mapping):
+        raise ValueError(
+            "journey-targets.json candidate_selectors is invalid; actual value: "
+            f"{type(candidate_selectors).__name__}; required value: a journey-to-selector object"
+        )
+    selectors = {
+        str(key): value for key, value in candidate_selectors.items()
+        if isinstance(value, str)
+    }
+    invalid = sorted(
+        str(journey_id) for journey_id, selector in candidate_selectors.items()
+        if journey_id not in targets or not isinstance(selector, str) or not selector
+    )
+    if invalid or len(selectors) != len(candidate_selectors) or len(
+        set(selectors.values())
+    ) != len(selectors):
+        raise ValueError(
+            "journey-targets.json candidate_selectors is inconsistent; actual invalid journeys: "
+            f"{invalid!r}; required value: unique non-empty selectors for registered journeys"
+        )
+    return targets, selectors, hashlib.sha256(payload).hexdigest()
 
 
 def _ledger_statuses(
@@ -73,6 +98,60 @@ def _shape_signature(value: Mapping[str, Any]) -> tuple[Any, Any]:
     return value.get("route_key"), value.get("gap_code")
 
 
+def _multiple_intent_expectation(
+    case: Mapping[str, Any],
+    original: Mapping[str, Any],
+    targets: Mapping[str, Mapping[str, Any]],
+    candidate_selectors: Mapping[str, str],
+) -> dict[str, Any] | None:
+    if original.get("terminal_kind") != "multiple_intents":
+        return None
+    if set(original) != {"terminal_kind", "journey_ids"}:
+        raise ValueError(
+            f"case {case.get('case_id')!r} multiple-intent expectation is invalid; "
+            "required fields: terminal_kind and journey_ids"
+        )
+    journey_ids = original.get("journey_ids")
+    if (
+        not isinstance(journey_ids, Sequence)
+        or isinstance(journey_ids, (str, bytes))
+        or len(journey_ids) < 2
+        or len(set(map(str, journey_ids))) != len(journey_ids)
+    ):
+        raise ValueError(
+            f"case {case.get('case_id')!r} journey_ids is invalid; actual value: "
+            f"{journey_ids!r}; required value: at least two unique journey IDs"
+        )
+    selected = list(map(str, journey_ids))
+    primary = str(case.get("journey_id", ""))
+    invalid = sorted(set(selected) - set(targets))
+    if primary not in selected or invalid:
+        raise ValueError(
+            f"case {case.get('case_id')!r} journey_ids do not preserve its target identity; "
+            f"actual value: {selected!r}; primary: {primary!r}; unregistered: {invalid!r}"
+        )
+    selectors = [candidate_selectors.get(journey_id) for journey_id in selected]
+    missing_products = [
+        journey_id for journey_id, selector in zip(selected, selectors)
+        if selector is None and isinstance(targets[journey_id].get("product"), Mapping)
+    ]
+    if missing_products:
+        raise ValueError(
+            f"case {case.get('case_id')!r} product journeys lack candidate selectors; "
+            f"actual value: {missing_products!r}; required action: register exact public selectors"
+        )
+    return {
+        "route_key": "multiple_intents",
+        "gap_code": MULTIPLE_INTENTS,
+        "terminal_kind": "capability_gap",
+        "journey_ids": selected,
+        "candidate_selectors": {
+            journey_id: selector for journey_id, selector in zip(selected, selectors)
+            if selector is not None
+        },
+    }
+
+
 def derive_cases(
     cases: Sequence[Mapping[str, Any]],
     *,
@@ -81,7 +160,7 @@ def derive_cases(
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Return cases with only their expected response shape replaced."""
 
-    targets, targets_hash = _targets(targets_path)
+    targets, candidate_selectors, targets_hash = _targets(targets_path)
     statuses, ledger_hash = _ledger_statuses(targets, ledger_path)
     derived: list[dict[str, Any]] = []
     for case in cases:
@@ -101,6 +180,12 @@ def derive_cases(
                 f"{type(original).__name__}; required value: an expectation object or omission"
             )
         else:
+            multiple = _multiple_intent_expectation(
+                case, original, targets, candidate_selectors
+            )
+            if multiple is not None:
+                derived.append({**case, "expected": multiple})
+                continue
             alternatives = [
                 value for key in ("product", "gap")
                 if isinstance((value := target.get(key)), Mapping)
