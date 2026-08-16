@@ -221,6 +221,7 @@ class ResolverTests(unittest.TestCase):
             {"start_date": "2026-08-01", "end_date": "2026-08-07"}
         ]
         assert result["receipt"]["request_count"] == 1
+        assert (result["ok"], result["status"], result["exit_code"]) == (True, "empty", 0)
         assert result["receipt_storage"]["persisted"] is True
         receipt_text = json.dumps(result["receipt"], ensure_ascii=False)
         assert "1001" not in receipt_text
@@ -254,6 +255,15 @@ class ResolverTests(unittest.TestCase):
                     assert executed == [operation_id]
                     assert result["operation_id"] == operation_id
                     assert result["ok"] is True
+
+    def test_resolver_statuses_mechanically_control_ok_exit_and_diagnostics(self) -> None:
+        description = {"operation_id": "app.list", "input_schema": {},
+                       "required_parent": [], "health": {"contract_fingerprint": "f" * 64}}
+        result = resolve_and_run("app.list", client=_ResolverClient(description), workspace=_workspace(
+            self.tmp_path), read=lambda *_a, **_k: {"status": "contract_changed", "data": {}, "error": None})
+        diagnostic = next(item for item in result["diagnostics"] if item["code"] == "execution_failed")
+        self.assertEqual((False, 3, "CONTRACT_CHANGED"),
+                         (result["ok"], result["exit_code"], diagnostic["error"]["code"]))
 
     def test_resolver_returns_parent_candidates_without_guessing_selection(self) -> None:
         tmp_path = self.tmp_path

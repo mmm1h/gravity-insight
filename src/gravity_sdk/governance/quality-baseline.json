@@ -75,7 +75,7 @@
       "src/gravity_sdk/census/params.py": 1568,
       "src/gravity_sdk/census/response.py": 551,
       "src/gravity_sdk/cli.py": 715,
-      "src/gravity_sdk/client.py": 1092,
+      "src/gravity_sdk/client.py": 1087,
       "src/gravity_sdk/executor.py": 1330,
       "src/gravity_sdk/http_runtime.py": 675,
       "src/gravity_sdk/models.py": 1071,

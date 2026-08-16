@@ -12,7 +12,11 @@ from .errors import (
     ErrorCategory,
     GravityInsightError,
     InputValidationError,
+    error_for_status,
     exit_code_for_category,
+    exit_code_for_status,
+    is_success_status,
+    semantic_envelope_ok,
 )
 from .parent_resolution import resolve_declared_parents
 from .receipt import RequestCounter, build_receipt, count_http_requests, persist_receipt
@@ -272,7 +276,7 @@ class _Resolver:
         self.pipeline["exec"] = {"status": status}
         self._diagnose_result(result, status)
         return self._finish(
-            result.get("ok") is not False,
+            semantic_envelope_ok(result),
             status,
             output=result.get("data"),
             result=result,
@@ -295,8 +299,11 @@ class _Resolver:
                 self.description,
                 database=self.metadata_database,
             )
-        elif result.get("ok") is False or status not in {"success", "empty"}:
+        elif result.get("ok") is False or not is_success_status(status):
             error = result.get("error")
+            implied = error_for_status(status, operation_id=self.operation_id)
+            if not isinstance(error, Mapping) and implied is not None:
+                error = implied
             self.diagnostics.append({
                 "code": "execution_failed",
                 "priority": 10,
@@ -368,6 +375,9 @@ def _resolver_exit_code(
 ) -> int:
     if ok:
         return 0
+    implied = exit_code_for_status(status, ok=ok)
+    if implied != exit_code_for_category(ErrorCategory.LOCAL):
+        return implied
     categories = {
         str(error.get("category"))
         for item in diagnostics

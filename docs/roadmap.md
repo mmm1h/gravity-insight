@@ -3323,3 +3323,55 @@ mutation 卡仍只物化每个 family 的默认 create 动作，不枚举全部 
 验证为 unittest **1076**、pytest **1076 passed / 2955 subtests passed**、文档测试 **4 passed**、
 compiler **205 operations / 11 manifests**，quality、生成器 check、CLI help 与 `git diff --check` 均通过。
 caller-recoverable 审计为 `1075 = A271 / B434 / C370`；本轮新增点为 0，故新增 A 档仍为 `0/0`。
+
+## Protected selector 桥接与 read envelope 语义收口（2026-08-16）
+
+**提案与安全边界：**工作提案位于 ignored `tmp/codex/bridge-and-envelope/proposal.md`。selector 只用
+测试内即时生成的 authenticated synthetic protected fixture；没有运行 holdout/final/all、读取真实 key、
+查看或解密 sealed suite。`app.list` 合同核对使用 4 次生产 HTTP 后停止，未逐 operation 在线试错。
+
+**selector 根因与修复：**父 evaluator 用 UTF-8 编码 subprocess stdin，但 Windows 子 Python 默认把
+`sys.stdin` 当 GBK。普通 development locked-replay 插件读取后不需要重新发布题面，乱码仍可能形成合法
+JSON；protected one-shot bridge 则在 `json.load(sys.stdin)` 后立刻 canonicalize 为 UTF-8 并写 request，
+GBK 解码产生的 surrogate 会在 `encode("utf-8")` 处退出，所以 request 尚未落盘。两种 loader 最终都产出
+普通 JSON dict；根因不是解密后 case 结构、临时路径或不可序列化对象。桥接器现显式给子 Python 设置
+`PYTHONIOENCODING=utf-8`。合成 protected fixture 经真实 loader→blind questions→subprocess→catalog
+selection→原评分链跑通；固定 stub 还会重新 canonicalize request，故能覆盖原失败点。非零退出现在报告
+`stage=subprocess_execute`、exit code 与限长单行 stderr；例如合成 exit 7 明确暴露
+`synthetic bridge crash`；超时与非法 JSON 也分别标明 subprocess/response-decode stage 并保留限长
+stderr，不再只有通用错误。
+
+**`app.list` 合同判定：**一次 `page_size=1` shape 只观察到 `sub_package_list=null`，状态为 success；
+同页 `page_size=20` 的 7 行则证明该字段当前为 `null | list[string]`，list 长度为 0 或 1，未观察到 object
+item。v3 只把字段名加入 `item_keys`，没有登记 `scalar_list_item_types`，执行器因此把 4 个 list 值归为
+`uncontracted nested item containers`，形成 breaking `contract_changed`，且 `response_drift=None`。这是本地
+合同登记漏项，不是上游本轮 breaking change；源合同升为 v4，精确登记 string-list，未知或混合 item 类型
+仍 fail closed，没有改投影判据。
+
+**统一的机械规则：**公共 read 的 `ok` 表示语义成功，不表示“函数/HTTP 已完成”。`success`、`empty`
+及既有 `contract_changed_additive` 状态为成功集合；新增字段在当前 raw executor 继续保留原 `success/empty`
+并写 `result_audit.response_drift`。其余状态均非成功。exit 0 只对应语义成功；caller 错误为 2，upstream
+错误为 3，local/unclassified 为 4，breaking `contract_changed` 固定为 upstream/exit 3。raw read 现显式
+带派生 `ok`；breaking drift 同时生成 `CONTRACT_CHANGED/upstream/retryable=false/next_action`。resolver 只有
+在 execute 已返回非成功结果时添加 `execution_failed`，并携带该结构化 error；empty/additive success 不再
+产生该 diagnostic。batch、raw CLI 与 resolver 共用同一成功判定/退出映射。
+
+**离线同类盘点与计数：**当前私有 OperationCatalog 快照离线筛 `probe.status=contract_changed` 为
+**1 条：`app.list`**；提交内 probe evidence 另有 `report.multidim.query` 的 additive 记录，不属于 breaking
+矛盾。旧代码结构上会让任意 raw operation 的 breaking status 被 resolver 当成功，修复覆盖全部 205 条
+operation；已有 evidence 能证明实际命中的清单只有上述 1 条，不能把“潜在影响面”冒充“已发生数量”。
+修复后当前已知矛盾清单为 0。产品/动线/operation/stable 均不新增：`51 + 0 = 51`、
+`42 / 1 / 8 + 0 / 0 / 0 = 42 / 1 / 8`、`205 + 0 = 205`、`196 + 0 = 196`。技术债清单已复核；共享
+状态原语有 raw/model、batch、CLI 和 resolver 多个调用点，client SLOC ratchet 从 1092 收紧到 1087，
+未新增活动结构债。
+
+**生产 HTTP 账本：**共 **4 次**。① authentication POST，HTTP 200，attempt 1；② `app.list` GET，
+HTTP 200，`page=1/page_size=1`，响应后本地 shape 摘要器处理 null 失败；③ 相同 `app.list` GET，HTTP 200，
+显式作为本地诊断恢复重试，证明首行字段为 null/success；④ `app.list` GET，HTTP 200，
+`page=1/page_size=20`，一次取得当前 7 行 shape 并证明 null|string-list/contract_changed。所有 SDK 请求均
+`attempts=1`；没有自动 HTTP 重试、翻页、换 App、扩日期窗或其他 operation 请求。
+
+caller-recoverable 审计仍为 `1075 = A271 / B434 / C370`；本轮只增强一个既有 selector ValueError 的
+上下文，并由 breaking status 生成返回值 ErrorDetail，没有新增 raise site，因此新增错误点/A 档为
+`0/0`。验证为 unittest **1077**、pytest **1077 passed / 2955 subtests passed**、文档测试 **4 passed**、
+compiler **205 operations / 11 manifests**；quality、CLI help 与 `git diff --check` 均通过。

@@ -682,9 +682,9 @@ class GravityInsightProbeSemanticsTests(unittest.TestCase):
         stdout = io.StringIO()
         with (
             patch("gravity_sdk.read_cli.runtime.build_client", return_value=client),
-            contextlib.redirect_stdout(stdout),
+            contextlib.redirect_stderr(stdout),
         ):
-            assert cli.main(["read", "report.company_amount.query"]) == 0
+            assert cli.main(["read", "report.company_amount.query"]) == 3
         rendered_cli = stdout.getvalue()
         assert SENSITIVE_VALUE not in rendered_cli
         cli_result = json.loads(rendered_cli)

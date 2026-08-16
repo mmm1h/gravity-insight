@@ -6,6 +6,7 @@ from collections.abc import Mapping, Sequence
 import copy
 import hashlib
 import json
+import os
 from pathlib import Path
 import random
 import subprocess
@@ -93,6 +94,13 @@ def _catalog(client: Any) -> tuple[dict[str, Any], dict[str, Mapping[str, Any]]]
     }, {str(item["selector"]): item for item in items}
 
 
+def _stderr_summary(value: Any) -> str:
+    if isinstance(value, bytes):
+        value = value.decode("utf-8", errors="replace")
+    rendered = " ".join(str(value or "").splitlines()).strip()
+    return rendered[:2_000] or "<empty>"
+
+
 def _invoke_plugin(
     plugin_path: Path,
     catalog: Mapping[str, Any],
@@ -114,24 +122,28 @@ def _invoke_plugin(
             capture_output=True,
             text=True,
             encoding="utf-8",
+            env={**os.environ, "PYTHONIOENCODING": "utf-8"},
             timeout=timeout_seconds,
             check=False,
         )
     except subprocess.TimeoutExpired as error:
         raise ValueError(
-            "external selector timed out; retry with a responsive plugin or raise "
-            "--selector-timeout"
+            "external selector stage=subprocess_execute timed out after "
+            f"{timeout_seconds}s; stderr: {_stderr_summary(error.stderr)}; retry "
+            "with a responsive plugin or raise --selector-timeout"
         ) from error
     if completed.returncode != 0:
         raise ValueError(
-            "external selector failed; run the plugin directly and return one valid "
-            f"{RESPONSE_SCHEMA} JSON object"
+            "external selector stage=subprocess_execute failed with exit code "
+            f"{completed.returncode}; stderr: {_stderr_summary(completed.stderr)}; run the plugin directly "
+            f"and return one valid {RESPONSE_SCHEMA} JSON object"
         )
     try:
         response = json.loads(completed.stdout)
     except (UnicodeError, json.JSONDecodeError) as error:
         raise ValueError(
-            f"external selector must return one valid {RESPONSE_SCHEMA} JSON object"
+            "external selector stage=response_decode failed; stderr: "
+            f"{_stderr_summary(completed.stderr)}; return one valid {RESPONSE_SCHEMA} JSON object"
         ) from error
     return _validate_response(response, request, catalog)
 

@@ -20,10 +20,10 @@
 
 2026-08-16 从 README/索引按十分钟路径生产复验，12 条主路径命令、3 次 HTTP 后取得既有
 `analysis.event.query` 的真实 governed result；认证、`app.list`、最终查询均 HTTP 200，无重试、翻页、
-换 App 或扩窗。`app.list` 外层为 `contract_changed`，只因同一 App 也存在于成功的本地 metadata 快照
-才继续本次复验，不能视为普通成功。此次只修发现、任务指南和写/语义文档，不新增产品或 envelope，
-因此总账严格为 `51 + 0 = 51`、`42 / 1 / 8 + 0 / 0 / 0 = 42 / 1 / 8`，operation/stable 仍为
-`205 / 196`。
+换 App 或扩窗。当时 `app.list` 外层出现 `contract_changed/ok=true/exit 0` 矛盾；同日后续修复证明
+`sub_package_list` 的登记漏了 `list[string]` 类型，并把 breaking drift 统一为 `ok=false/exit 3` 和
+结构化 `CONTRACT_CHANGED` 诊断。两次横切修正都不新增产品动线，因此总账严格为 `51 + 0 = 51`、
+`42 / 1 / 8 + 0 / 0 / 0 = 42 / 1 / 8`，operation/stable 仍为 `205 / 196`。
 
 2026-08-16 F40 按 catalog 顺序枚举 6 个 App，在第 6 个首次取得 1 条测试设备后立即停止，并以内存
 父行 ID 只发 1 次详情请求。生产共 8 次业务 HTTP：1 次 `app.list`、6 次

@@ -464,6 +464,7 @@ class GravityInsightCoreTests(unittest.TestCase):
                 "schema_version",
                 "result_source",
                 "result_audit",
+                "ok",
                 "status",
                 "source",
                 "fetched_at",
@@ -717,7 +718,8 @@ class GravityInsightCoreTests(unittest.TestCase):
             client, _ = client_for(Path(directory), [FakeResponse({"code": 0, "data": {}})])
             drift = client.read("example.items.list", {})
             self.assertEqual("contract_changed", drift["status"])
-            self.assertIsNone(drift["error"])
+            self.assertFalse(drift["ok"])
+            self.assertEqual("CONTRACT_CHANGED", drift["error"]["code"])
             self.assertTrue(drift["warnings"])
             self.assertEqual(
                 "upstream_changed",

@@ -155,7 +155,7 @@ class AgentUsabilityEvalTests(unittest.TestCase):
 
     def test_final_loader_uses_an_independent_authenticated_fixture(self) -> None:
         case = {"case_id": "final-J01-01", "journey_id": "J01",
-                "prompt": "synthetic", "expected": {"route_key": "event", "gap_code": None}}
+                "prompt": "business pulse 测", "expected": {"route_key": "business_pulse", "gap_code": None}}
         plaintext = self.subject._json_bytes(case)
         key, nonce = b"f" * 32, b"n" * 32
         stream = self.subject._final_keystream(key, nonce, len(plaintext))
@@ -181,7 +181,15 @@ class AgentUsabilityEvalTests(unittest.TestCase):
                 "final_plaintext_sha256": hashlib.sha256(plaintext).hexdigest(),
             }
             with patch.object(self.subject, "SUITE_ROOT", root):
-                self.assertEqual([case], self.subject._final_cases(manifest, key_path))
+                cases = self.subject._final_cases(manifest, key_path)
+            from agent_usability_external_selector import external_selector_trials
+            from gravity_sdk.client import GravityInsightClient
+            states, _, _, receipt = external_selector_trials(cases, GravityInsightClient.from_env(
+                transport=self.subject.BlockedTransport()), 1, plugin_path=ROOT / "scripts" /
+                "agent_usability_selector_stub.py", timeout_seconds=10, route_score=self.subject.route_score,
+                parameter_score=self.subject.parameter_score, terminal_score=self.subject.terminal_score)
+            self.assertEqual(([True], "utf-8"), (states[case["case_id"]]["selection"],
+                             receipt["trial_receipts"][0]["stdin_encoding"]))
 
     def test_route_parameter_and_terminal_layers_are_independent(self) -> None:
         case = {
@@ -325,7 +333,7 @@ class AgentUsabilityEvalTests(unittest.TestCase):
                     load_query_records(ledger)
 
     def test_external_selector_stub_receives_catalog_and_is_scored(self) -> None:
-        from agent_usability_external_selector import external_selector_trials
+        from agent_usability_external_selector import _invoke_plugin, external_selector_trials
         from gravity_sdk.client import GravityInsightClient
 
         cases = [{
@@ -360,6 +368,11 @@ class AgentUsabilityEvalTests(unittest.TestCase):
             "composite:business_pulse",
             observations[0]["result"]["candidates"][0]["selector"],
         )
+        self.assertEqual("utf-8", receipt["trial_receipts"][0]["stdin_encoding"])
+        failed = subprocess.CompletedProcess([], 7, "", "synthetic bridge crash")
+        with patch("agent_usability_external_selector.subprocess.run", return_value=failed), self.assertRaisesRegex(
+            ValueError, "stage=subprocess_execute.*exit code 7.*synthetic bridge crash"):
+            _invoke_plugin(plugin, {"capabilities": []}, [], timeout_seconds=10)
 
     def test_external_selector_blinds_ids_and_degroups_journeys(self) -> None:
         from agent_usability_external_selector import _blind_questions

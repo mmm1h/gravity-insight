@@ -4,8 +4,8 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 3,
-    "description": "当前账号可见 App 列表。",
+    "contract_version": 4,
+    "description": "当前账号可见 App 列表；sub_package_list 为 nullable string array。",
     "domain": "app",
     "effect": "read",
     "examples": [
@@ -112,7 +112,10 @@
       ],
       "required_data_keys": [
         "list"
-      ]
+      ],
+      "scalar_list_item_types": {
+        "sub_package_list": "string"
+      }
     },
     "semantic_error_rules": [
       "code",

@@ -15,7 +15,7 @@ from .analysis_projection_contract import (
     funnel_mode_shape_changed,
 )
 from .drift import ProjectionDrift, projection_drift_status
-from .errors import PolicyViolation
+from .errors import PolicyViolation, error_for_status
 from .models import OperationSpec, ReadResult
 from .multidim import projected_keys
 from .receipt import capture_http_receipt_references, record_response_drift
@@ -193,7 +193,7 @@ class ReadExecutor:
             page=page,
             data=projected,
             operation_id=operation.operation_id,
-            warnings=tuple(warnings), error=None,
+            warnings=tuple(warnings), error=error_for_status(status, operation_id=operation.operation_id),
             items=items, page_info=page_info,
             http_receipts=tuple(http_receipts),
             response_drift=response_drift,

@@ -1530,6 +1530,7 @@ class GravityInsightManifestTests(unittest.TestCase):
         self.assertEqual(
             {
                 "analysis.order_detail.list": {"$split_trace_id_list": "string"},
+                "app.list": {"sub_package_list": "string"},
                 "app.template.list": {"menu_config": "integer"},
                 "analysis.template.own.list": {"subject_ids": "integer"},
                 "analysis.template.share.list": {"subject_ids": "integer"},

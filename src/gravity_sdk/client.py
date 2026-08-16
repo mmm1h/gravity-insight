@@ -17,7 +17,7 @@ from .batch_limits import MAX_READ_ITEMS, MAX_READ_PAGES, validate_batch_limits
 from .catalog import OperationCatalog
 from .catalog_inventory import CatalogInventoryMixin
 from .credentials import CredentialProvider
-from .errors import ErrorCode, ErrorDetail, GravityInsightError, InputValidationError, PaginationError, ParentRequiredError, PermissionUnavailableError, PolicyViolation, UnknownOperationError, UpstreamError, error_detail_from_exception
+from .errors import ErrorCode, ErrorDetail, GravityInsightError, InputValidationError, PaginationError, ParentRequiredError, PermissionUnavailableError, PolicyViolation, UnknownOperationError, UpstreamError, error_detail_from_exception, semantic_envelope_ok
 from .executor import ReadExecutor
 from .export_batch import batch_input_error, validate_batch_item
 from .export_client import ExportClientMixin, load_export_components
@@ -894,12 +894,7 @@ class GravityInsightClient(MutationClientMixin, CatalogInventoryMixin, ExportCli
                         "batch item exceeded its aggregate item safety share"
                     )
                 status = str(value.get("status", "success"))
-                ok = status not in {
-                    "semantic_error",
-                    "parent_required",
-                    "permission_unavailable",
-                    "error",
-                }
+                ok = semantic_envelope_ok(value)
                 error_value = value.get("error")
                 return BatchResult(
                     item.operation_id,

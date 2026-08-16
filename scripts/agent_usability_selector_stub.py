@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import sys
@@ -10,6 +11,9 @@ from typing import Any, Mapping
 
 def main() -> int:
     request = json.load(sys.stdin)
+    request_sha256 = hashlib.sha256(json.dumps(
+        request, ensure_ascii=False, sort_keys=True, separators=(",", ":"),
+    ).encode("utf-8")).hexdigest()
     capabilities = request.get("catalog", {}).get("capabilities", [])
     questions = request.get("questions", [])
     results = [
@@ -24,6 +28,8 @@ def main() -> int:
             "selector": "deterministic_catalog_name_stub.v1",
             "network_called": False,
             "meaningful_accuracy_evidence": False,
+            "request_sha256": request_sha256,
+            "stdin_encoding": sys.stdin.encoding,
         },
     }, sys.stdout, ensure_ascii=False, sort_keys=True)
     return 0

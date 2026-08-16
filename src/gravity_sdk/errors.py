@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
+from typing import Any, Mapping
 
 
 class ErrorCode(str, Enum):
@@ -36,6 +36,7 @@ class ErrorCategory(str, Enum):
 CALLER_ERROR_EXIT = 2
 UPSTREAM_ERROR_EXIT = 3
 LOCAL_ERROR_EXIT = 4
+SUCCESS_STATUSES = frozenset({"success", "empty", "contract_changed_additive"})
 
 _EXTENSION_CODE_RE = re.compile(r"^[A-Z][A-Z0-9_]{2,63}$")
 _CODE_DEFAULTS: dict[str, tuple[ErrorCategory, bool]] = {
@@ -61,6 +62,12 @@ def _code_value(code: ErrorCode | str) -> str:
     if not _EXTENSION_CODE_RE.fullmatch(value):
         raise ValueError("error code must be an uppercase extension identifier")
     return value
+
+
+def is_success_status(status: Any) -> bool:
+    """Return whether an envelope status represents semantic success."""
+
+    return isinstance(status, str) and status in SUCCESS_STATUSES
 
 
 def _single_line(message: Any, *, limit: int = 500) -> str:
@@ -511,3 +518,42 @@ def exit_code_for_error(error: BaseException | ErrorDetail) -> int:
         error if isinstance(error, ErrorDetail) else error_detail_from_exception(error)
     )
     return exit_code_for_category(detail.category)
+
+
+def semantic_envelope_ok(value: Mapping[str, Any]) -> bool:
+    """Derive semantic success without treating a completed call as a successful read."""
+
+    return is_success_status(value.get("status")) and value.get("ok") is not False
+
+
+def error_for_status(
+    status: Any, *, operation_id: str | None = None
+) -> Mapping[str, Any] | None:
+    """Return the canonical structured error implied by a failure status."""
+
+    if status != "contract_changed":
+        return None
+    return ErrorDetail.create(
+        ErrorCode.CONTRACT_CHANGED,
+        "The upstream response no longer matches the registered response contract.",
+        operation_id=operation_id,
+    ).to_dict()
+
+
+def exit_code_for_status(
+    status: Any,
+    *,
+    ok: Any = None,
+    error: Mapping[str, Any] | None = None,
+    default: ErrorCategory | str = ErrorCategory.LOCAL,
+) -> int:
+    """Map one envelope status and optional structured error to a process exit."""
+
+    if is_success_status(status) and ok is not False:
+        return 0
+    if status == "contract_changed":
+        return exit_code_for_category(ErrorCategory.UPSTREAM)
+    if status in {"invalid", "stale", "needs_parent"}:
+        return exit_code_for_category(ErrorCategory.CALLER)
+    category = error.get("category") if isinstance(error, Mapping) else default
+    return exit_code_for_category(str(category), default=default)

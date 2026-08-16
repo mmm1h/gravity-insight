@@ -13,7 +13,7 @@ from types import MappingProxyType
 from typing import Any, Mapping, Sequence
 from urllib.parse import quote
 
-from .errors import ErrorDetail, InputValidationError, ManifestError, ParentRequiredError
+from .errors import ErrorDetail, InputValidationError, ManifestError, ParentRequiredError, is_success_status
 from .operation_effect_policy import validate_operation_effect
 from .projection_validation import numeric_suffix_schema, validate_projection_bindings
 from .result_audit import add_result_audit, result_receipt_references
@@ -1054,8 +1054,7 @@ class OperationSpec:
 
 @dataclass(frozen=True)
 class ReadResult:
-    schema_version: str
-    status: str
+    schema_version: str; status: str
     source: Mapping[str, Any]
     fetched_at: str
     schema_fingerprint: str
@@ -1074,6 +1073,7 @@ class ReadResult:
         return add_result_audit({
             "schema_version": self.schema_version,
             "result_source": result_source(RAW_OPERATION),
+            "ok": is_success_status(self.status),
             "status": self.status,
             "source": dict(self.source),
             "fetched_at": self.fetched_at,
