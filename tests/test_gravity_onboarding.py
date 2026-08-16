@@ -40,7 +40,10 @@ class GravityOnboardingTests(unittest.TestCase):
                         "code": 0,
                         "data": {
                             "day": 7,
-                            "user": {"Authorization": f"session-for-{username}"},
+                            "user": {
+                                "Authorization": f"session-for-{username}",
+                                "id": "17",
+                            },
                         },
                     },
                 )
@@ -65,6 +68,9 @@ class GravityOnboardingTests(unittest.TestCase):
             config = CredentialConfig.from_env(env_path, environ={})
             self.assertEqual("internal_session", config.token_source)
             self.assertEqual("session-for-analyst@example.invalid", config.token)
+            self.assertEqual("17", config.gravity_id)
+            cached = CredentialProvider(env_path, environ={}, persist=False)
+            self.assertEqual("17", cached.current_principal_id())
 
     def test_noninteractive_run_does_not_prompt_or_write(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

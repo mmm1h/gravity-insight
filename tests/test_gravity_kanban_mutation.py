@@ -6,8 +6,9 @@ from pathlib import Path
 
 from gravity_sdk.agent_kanban_mutation import kanban_mutation_cards
 from gravity_sdk.cli import build_parser
-from gravity_sdk.kanban_folder_mutation import delete_folder
-from gravity_sdk.kanban_space_mutation import delete_space
+from gravity_sdk.errors import InputValidationError
+from gravity_sdk.kanban_folder_mutation import delete_folder, rename_folder
+from gravity_sdk.kanban_space_mutation import delete_space, rename_space
 from gravity_sdk.plan import AdapterContext
 from gravity_sdk.plan_kanban_mutation_adapter import validate_kanban_plan
 from gravity_sdk.sdk import GravitySDK
@@ -67,6 +68,39 @@ class _PreviewClient:
         }
 
 
+class _OwnerPreviewClient(_PreviewClient):
+    def __init__(self, *, owner_id: int, principal_id: int) -> None:
+        super().__init__()
+        self.owner_id = owner_id
+        self.principal_id = principal_id
+
+    def _current_principal_id(self):
+        return self.principal_id
+
+    def read(self, operation_id, inputs):
+        self.reads += 1
+        if operation_id == "analysis.dashboard.space_members.list":
+            return {
+                "ok": True,
+                "status": "success",
+                "data": {"creator": {"id": self.owner_id, "name": "owner"}, "authUsers": []},
+            }
+        return {
+            "ok": True,
+            "status": "success",
+            "data": [{
+                "id": 10,
+                "name": "Manual Space",
+                "folder_or_dashboard": [{
+                    "id": 20,
+                    "name": "Manual Folder",
+                    "is_folder": True,
+                    "space_id": 10,
+                    "dashboards": [],
+                }],
+            }],
+        }
+
 class GravityKanbanMutationTests(unittest.TestCase):
     def test_parent_delete_preview_reports_relocation_before_write(self) -> None:
         client = _PreviewClient()
@@ -96,6 +130,20 @@ class GravityKanbanMutationTests(unittest.TestCase):
         self.assertEqual("/turbo_engine/api/v2/datamanageconfig/kanban/space/share/delete/", share_delete["path_template"])
         self.assertEqual(18, len(promoted))
         self.assertEqual(3, len(remaining))
+
+    def test_space_owner_allows_unmarked_rename_but_folder_without_owner_fails_closed(self) -> None:
+        owned = _OwnerPreviewClient(owner_id=7, principal_id=7)
+        self.assertEqual(
+            "upstream_owner",
+            rename_space(owned, app_id=1, space_id=10, name="Mine")["target"]["ownership"]["basis"],
+        )
+        foreign = _OwnerPreviewClient(owner_id=8, principal_id=7)
+        with self.assertRaises(InputValidationError) as captured:
+            rename_space(foreign, app_id=1, space_id=10, name="No")
+        self.assertEqual("OWNERSHIP_REQUIRED", captured.exception.code)
+        with self.assertRaises(InputValidationError) as folder_error:
+            rename_folder(owned, app_id=1, space_id=10, folder_id=20, name="No")
+        self.assertIn("no proven direct owner", folder_error.exception.next_action)
 
     def test_sdk_cli_plan_and_agent_expose_the_same_confirmation_boundary(self) -> None:
         client = _PreviewClient()

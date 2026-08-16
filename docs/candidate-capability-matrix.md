@@ -382,6 +382,19 @@ item 字段为零，因此没有可声称的 live item 字段；静态候选不�
 
 两项都不晋升，operation/stable 数保持 `185/176`，D28 仍为完全缺失；没有实现任何产品面。
 
+## 2026-08-16 追加判定：三域 mutation owner 证据
+
+本轮没有晋升 operation；223/214 总数不变。受控创建/readback 证明登录 `gravity_id` 与 Kanban
+dashboard `create_user_id`、space-members `creator.id` 相等。原假设的 `creator[].uid` 不符合实际响应：
+`creator` 是 object，字段为 `id/name`。Segment、v2 report、v3 template、subscription 与 dashboard
+使用 `create_user_id/create_user_name`；space 使用 `creator.id/name`；folder/note 没有已证实直接 owner。
+
+三域 mutation 判据因此统一为 `GSDK marker OR proven owner == authenticated gravity_id`。线上用稳定 route
+去掉 SDK marker 后，dashboard、Segment、Report 均由正式 delete 以 `upstream_owner` 成功并读回消失；
+marker space 仍以 `sdk_source_marker` 删除。当前目录没有 foreign Segment/Report/dashboard，唯一 space 的
+creator 也是当前 principal，故真实 foreign 拒绝没有生产样本，不能作为已验证 capability evidence；
+测试锁定 foreign/missing-owner 零 write fail-closed。folder/note 的非 marker 限制继续是上游证据 blocker，
+不能跨对象族推断 owner 字段。
 ## 2026-08-16 追加判定：设置入口与 D28 当前配置 route
 
 本轮以引力自然页面动作识别真实入口，再用现有只读 SDK 对 D28 做有界反证。App 页面取得非空；

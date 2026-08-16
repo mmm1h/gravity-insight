@@ -24,7 +24,6 @@ from .content_encoding import ACCEPT_ENCODING
 from .credentials import (
     DEFAULT_ENV_PATH,
     GRAVITY_HOST,
-    Credential,
     CredentialProvider,
     validated_login_payload,
 )
@@ -50,6 +49,10 @@ from .receipt import (
     request_receipt_context,
 )
 from .registry import _consume_authorized_request
+from .runtime_principal import (
+    current_principal_id as _current_principal_id,
+    refresh_if_rejected as _refresh_if_rejected,
+)
 
 
 DEFAULT_REQUESTS_PER_SECOND = 10.0
@@ -467,6 +470,11 @@ class GravityHttpRuntime:
                     self.__requester.login,
                 )
 
+    def current_principal_id(self) -> str | None:
+        """Expose only the authenticated upstream account identifier."""
+
+        return _current_principal_id(self.__credentials)
+
     def request(
         self,
         profile: RequestProfile,
@@ -736,13 +744,6 @@ def _validated_rate(value: float) -> float:
 def _rate_from_environment() -> float:
     value = os.environ.get("GRAVITY_REQUESTS_PER_SECOND", "").strip()
     return DEFAULT_REQUESTS_PER_SECOND if not value else _validated_rate(value)
-
-
-def _refresh_if_rejected(provider: Any, credential: Credential) -> Credential:
-    refresh = getattr(provider, "refresh_if_rejected", None)
-    if callable(refresh):
-        return refresh(credential)
-    return provider.refresh()
 
 
 __all__ = [

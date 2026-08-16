@@ -1,5 +1,5 @@
 
-"""Governed Segment CRUD with visible ownership markers and readback gates."""
+"""Governed Segment CRUD with marker-or-upstream-owner readback gates."""
 
 from __future__ import annotations
 
@@ -12,7 +12,6 @@ from .actionable_error_values import actual_value
 from .errors import (
     InputValidationError,
     MutationReadbackError,
-    OwnershipMarkerRequiredError,
 )
 from .segment_mutation_contracts import (
     DETAIL_OPERATION,
@@ -46,6 +45,7 @@ from .segment_mutation_support import (
     name as _name,
     row_id as _row_id,
     run_analysis as _run_analysis,
+    require_segment_authority as _require_segment_authority,
     same_app as _same_app,
     segment_catalog as _segment_catalog,
     segment_detail as _segment_detail,
@@ -282,6 +282,7 @@ def update_segment_metadata(
         )
     with _WRITE_LOCK:
         preimage = _segment_detail(client, selected_id)
+        ownership = _require_segment_authority(client, preimage)
         marker = _marker_from_remark(preimage.get("segment_remark"))
         selected_remark = _marked_remark(marker, note) if marker else note
         inputs = {
@@ -298,7 +299,12 @@ def update_segment_metadata(
                 "segment metadata update did not round-trip",
                 next_action="Read the segment by exact ID and review its current name/remark before issuing another write.",
             )
-        return _completed(preview, mutation, after, preimage=preimage)
+        return _completed(
+            preview,
+            mutation,
+            {**after, "ownership": ownership.public()},
+            preimage=preimage,
+        )
 
 
 def update_segment_rule(
@@ -321,6 +327,7 @@ def update_segment_rule(
         )
     with _WRITE_LOCK:
         preimage = _segment_detail(client, selected_id)
+        ownership = _require_segment_authority(client, preimage)
         _same_app(preimage, str(compiled.inputs["app_id"]))
         marker = _marker_from_remark(preimage.get("segment_remark"))
         note = str(compiled.inputs.get("remark", ""))
@@ -338,7 +345,12 @@ def update_segment_rule(
                 "segment rule update did not preserve the SDK marker",
                 next_action="Stop writes and read the segment detail before deciding whether manual repair is needed.",
             )
-        return _completed(preview, mutation, after, preimage=preimage)
+        return _completed(
+            preview,
+            mutation,
+            {**after, "ownership": ownership.public()},
+            preimage=preimage,
+        )
 
 
 def refresh_segment(
@@ -357,9 +369,15 @@ def refresh_segment(
         return envelope
     with _WRITE_LOCK:
         preimage = _segment_detail(client, selected_id)
+        ownership = _require_segment_authority(client, preimage)
         mutation = client._execute_mutation(MANUAL_UPDATE, inputs)
         after = _segment_detail(client, selected_id)
-        return _completed(envelope, mutation, after, preimage=preimage)
+        return _completed(
+            envelope,
+            mutation,
+            {**after, "ownership": ownership.public()},
+            preimage=preimage,
+        )
 
 
 def delete_segment(
@@ -376,13 +394,8 @@ def delete_segment(
         )
     with _WRITE_LOCK:
         preimage = _segment_detail(client, selected_id)
+        ownership = _require_segment_authority(client, preimage)
         marker = _marker_from_remark(preimage.get("segment_remark"))
-        if marker is None:
-            raise OwnershipMarkerRequiredError(
-                "SDK deletion refused because the upstream segment detail has no Gravity SDK ownership marker",
-                field="segment_id",
-                next_action="Do not retry this delete through the SDK; ask the segment owner to manage the unmarked object in Gravity Web.",
-            )
         name = _name(preimage.get("segment_name"))
         app_id = _identifier(preimage.get("app_id"), "app_id")
         inputs = {
@@ -402,7 +415,12 @@ def delete_segment(
         return _completed(
             preview,
             mutation,
-            {"segment_id": selected_id, "deleted": True, "marker": marker},
+            {
+                "segment_id": selected_id,
+                "deleted": True,
+                "marker": marker,
+                "ownership": ownership.public(),
+            },
             preimage=preimage,
             status="deleted",
         )

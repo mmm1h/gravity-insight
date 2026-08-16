@@ -196,3 +196,8 @@ Kanban mutation 复用既有 one-shot authorization、marker、preimage/readback
 父删除影响计算、负数系统 folder、内容和生命周期逻辑均下沉到 Kanban 领域模块。CLI 由 dashboard
 领域路由接入，Agent direct mutation 由窄 router 聚合，Plan spine 通过压缩既有同类 imports/分派保持
 500 SLOC/15 complexity 闸门；没有新增 mutation registry、重试机制或活动结构债条目。
+
+三域 owner gate 已把 499 行 `report_mutation.py` 按 report/template 与 subscription 自然边界拆为
+330/175 SLOC，331 SLOC support 承担既有目录/readback；共享 principal 与 marker-or-owner 判据下沉为窄
+lifecycle/ownership 原语，one-shot executor 未改。Kanban dashboard delete 随同一触发下沉后原模块为
+414 SLOC；quality ratchet 只收紧，没有新增活动结构债条目。

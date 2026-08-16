@@ -3,10 +3,7 @@
 from __future__ import annotations
 
 import copy
-import hashlib
-import json
 import re
-import threading
 from collections.abc import Mapping
 from typing import Any, Callable
 
@@ -19,12 +16,18 @@ from .errors import (
     ObjectAlreadyExistsError,
     PaginationError,
 )
+from .mutation_lifecycle import (
+    MARKER_PREFIX,
+    WRITE_LOCK,
+    mutation_digest as digest,
+    mutation_marker as segment_marker,
+)
+from .mutation_ownership import create_user_owner, require_mutation_authority
 from .result_source import GOVERNED_PRODUCT, result_source
 from .segment_mutation_contracts import DETAIL_OPERATION, LIST_OPERATION, SAVE
 
 
 SCHEMA_VERSION = "gravity-insight.segment-mutation.v1"
-MARKER_PREFIX = "GSDK-"
 _LEGACY_MARKER_PREFIX = "gravity_sdk_v1_"
 MARKER_PATTERN = re.compile(
     r"^(?:GSDK-[0-9a-f]{12}|gravity_sdk_v1_[0-9a-f]{16})(?:\s*\||$)"
@@ -32,34 +35,6 @@ MARKER_PATTERN = re.compile(
 MAX_NAME_LENGTH = 20
 MAX_REMARK_LENGTH = 2_000
 _SUCCESS = frozenset({"success", "empty", "contract_changed_additive"})
-WRITE_LOCK = threading.Lock()
-
-
-def segment_marker(
-    create_kind: str,
-    semantic_request: Mapping[str, Any],
-    *,
-    idempotency_key: str | None = None,
-) -> str:
-    """Return the deterministic, visible ownership marker for one create."""
-
-    selected_kind = text(create_kind, "create_kind", 64)
-    key = "" if idempotency_key is None else text(
-        idempotency_key, "idempotency_key", 128
-    )
-    payload = json.dumps(
-        {
-            "create_kind": selected_kind,
-            "idempotency_key": key,
-            "request": semantic_request,
-        },
-        ensure_ascii=True,
-        sort_keys=True,
-        separators=(",", ":"),
-    ).encode("utf-8")
-    return MARKER_PREFIX + hashlib.sha256(payload).hexdigest()[:12]
-
-
 def is_sdk_segment_remark(value: Any) -> bool:
     return isinstance(value, str) and MARKER_PATTERN.match(value) is not None
 
@@ -201,6 +176,17 @@ def segment_detail(client: Any, segment_id: str) -> Mapping[str, Any]:
     return data
 
 
+def require_segment_authority(client: Any, detail: Mapping[str, Any]) -> Any:
+    return require_mutation_authority(
+        client,
+        marker=marker_from_remark(detail.get("segment_remark")),
+        owner=create_user_owner(detail),
+        object_kind="segment",
+        object_id=row_id(detail),
+        field="segment_id",
+    )
+
+
 def create_preview(
     preview: Mapping[str, Any], *, app_id: str, name: str, marker: str,
     impact: str, analysis_request: Mapping[str, Any] | None = None,
@@ -261,7 +247,7 @@ def dependent_preview(
         "preconditions": [
             f"GET segment detail for exact ID {segment_id} at execution time.",
             "Use the upstream name and remark from that preimage; never trust caller-supplied ownership data.",
-            "For DEL, refuse unless the readback remark starts with a valid Gravity SDK marker.",
+            "Refuse unless the readback carries a valid GSDK marker or create_user_id matches the authenticated gravity_id.",
         ],
         "request_template": {
             "method": "POST",
@@ -337,6 +323,7 @@ def safe_target(value: Mapping[str, Any] | None) -> dict[str, Any] | None:
         for key in (
             "id", "segment_id", "app_id", "segment_name", "segment_remark",
             "analysis_scene", "update_type", "operation_status", "deleted", "marker",
+            "create_user_id", "create_user_name", "ownership",
         )
         if key in value
     }
@@ -452,14 +439,3 @@ def step(value: Any) -> int:
             field="step",
         )
     return value
-
-
-def digest(value: Mapping[str, Any]) -> str:
-    encoded = json.dumps(
-        value,
-        ensure_ascii=True,
-        sort_keys=True,
-        separators=(",", ":"),
-        default=str,
-    ).encode("utf-8")
-    return hashlib.sha256(encoded).hexdigest()

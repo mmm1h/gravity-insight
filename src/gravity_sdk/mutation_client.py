@@ -28,5 +28,10 @@ class MutationClientMixin:
     ) -> dict[str, Any]:
         return self._mutation_executor.execute(operation_id, inputs)
 
+    def _current_principal_id(self) -> str | None:
+        """Return the shared runtime principal for domain ownership preflight."""
+
+        return self._executor._transport.current_principal_id()
+
 
 __all__ = ["MutationClientMixin"]
