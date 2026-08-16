@@ -6,7 +6,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from gravity_sdk.census.cli import build_parser
+from gravity_sdk.census.cli import _coverage_summary, build_parser
 from gravity_sdk.census.coverage import build_coverage
 from gravity_sdk.census.diffing import diff_routes
 from gravity_sdk.census.fetcher import StaticFetcher, _looks_like_vite_chunk, check_upstream
@@ -24,6 +24,8 @@ class GravityCensusCliTests(unittest.TestCase):
         self.assertTrue(parser.format_usage().startswith("usage: gravity census"))
         coverage = parser.parse_args(["coverage"])
         self.assertEqual("coverage", coverage.command)
+        summary = _coverage_summary({"summary": {"total_routes": 987}, "source": {"coverage_scope": "same_origin_static_js_graph_discoverable_from_site_entry", "platform_complete": False, "known_excluded_origins": ["rank.gravity-engine.com"]}})
+        self.assertEqual((summary["total_routes"], summary["coverage_scope"], summary["platform_complete"], summary["known_excluded_origins"]), (987, "same_origin_static_js_graph_discoverable_from_site_entry", False, ["rank.gravity-engine.com"]))
 
 
 class GravityCensusNormalizationTests(unittest.TestCase):
@@ -82,9 +84,11 @@ class GravityCensusParserTests(unittest.TestCase):
                 "files": files,
                 "summary": {"bundle_files": 1, "complete": True},
             }
-            first = json_bytes(build_routes(snapshot, raw_dir))
+            first = json_bytes(first_document := build_routes(snapshot, raw_dir))
             second = json_bytes(build_routes(snapshot, raw_dir))
             self.assertEqual(first, second)
+            source = first_document["source"]
+            self.assertEqual((source["coverage_scope"], source["platform_complete"], source["known_excluded_origins"]), ("same_origin_static_js_graph_discoverable_from_site_entry", False, ["rank.gravity-engine.com"]))
 
     def test_resolves_esm_exported_base_url_and_type_method(self) -> None:
         api_source = (
