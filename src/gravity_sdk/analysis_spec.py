@@ -222,7 +222,7 @@ def validate_query_spec(
         error = validation.get("error") if isinstance(validation, Mapping) else None
         details = error if isinstance(error, Mapping) else {}
         raise InputValidationError(
-            str(details.get("message") or "compiled Analysis query is invalid"),
+            f"actual value: {actual_value(spec)}; " + (str(details.get("message") or "compiled Analysis query is invalid")),
             field=str(details.get("field") or "spec"),
             next_action=str(
                 details.get("next_action")

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from typing import Any
+from .actionable_error_values import actual_value
 
 
 class AnalysisSdkMixin:
@@ -106,7 +107,7 @@ class AnalysisSdkMixin:
             from .errors import InputValidationError
 
             raise InputValidationError(
-                "compare_start and compare_end must be provided together",
+                f"actual value: {actual_value((compare_start, compare_end))}; " + ("compare_start and compare_end must be provided together"),
                 field="compare_start/compare_end",
             )
         if compare_start is not None:

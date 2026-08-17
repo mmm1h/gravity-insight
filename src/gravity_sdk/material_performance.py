@@ -33,6 +33,7 @@ from .material_performance_result import (
     safe_component as _safe_component,
 )
 from .result_audit import project_result_audit
+from .actionable_error_values import actual_value
 
 
 SCHEMA_VERSION = "gravity-insight.material-performance.v1"
@@ -153,14 +154,14 @@ def normalize_material_apps(values: Sequence[str | int]) -> tuple[str, ...]:
         values, Sequence
     ):
         raise InputValidationError(
-            "material performance apps must be a non-empty array",
+            f"actual value: {actual_value(values)}; " + ("material performance apps must be a non-empty array"),
             field="apps",
         )
     selected: list[str] = []
     for value in values:
         if isinstance(value, bool) or not isinstance(value, (str, int)):
             raise InputValidationError(
-                "material performance apps must contain positive App ids",
+                f"actual value: {actual_value(value)}; " + ("material performance apps must contain positive App ids"),
                 field="apps",
             )
         rendered = str(value).strip()
@@ -172,19 +173,19 @@ def normalize_material_apps(values: Sequence[str | int]) -> tuple[str, ...]:
             or int(rendered) <= 0
         ):
             raise InputValidationError(
-                "material performance apps must contain positive App ids",
+                f"actual value: {actual_value(rendered)}; " + ("material performance apps must contain positive App ids"),
                 field="apps",
             )
         normalized = str(int(rendered))
         if normalized in selected:
             raise InputValidationError(
-                "material performance apps must be unique",
+                f"actual value: {actual_value(normalized)}; " + ("material performance apps must be unique"),
                 field="apps",
             )
         selected.append(normalized)
     if not 1 <= len(selected) <= MAX_APPS:
         raise InputValidationError(
-            f"material performance apps must contain 1 through {MAX_APPS} unique ids",
+            f"actual value: {actual_value(normalized)}; " + (f"material performance apps must contain 1 through {MAX_APPS} unique ids"),
             field="apps",
         )
     return tuple(selected)
@@ -198,7 +199,7 @@ def normalize_material_window(start: Any, end: Any) -> tuple[str, str]:
         for value in (start, end)
     ):
         raise InputValidationError(
-            "material performance dates must use YYYY-MM-DD",
+            f"actual value: {actual_value((start, end))}; " + ("material performance dates must use YYYY-MM-DD"),
             field="start/end",
         )
     try:
@@ -206,18 +207,18 @@ def normalize_material_window(start: Any, end: Any) -> tuple[str, str]:
         last = date.fromisoformat(end)
     except (TypeError, ValueError):
         raise InputValidationError(
-            "material performance dates must use YYYY-MM-DD",
+            f"actual value: {actual_value((start, end))}; " + ("material performance dates must use YYYY-MM-DD"),
             field="start/end",
         ) from None
     if first > last:
         raise InputValidationError(
-            "material performance start must not follow end",
+            f"actual value: {actual_value((start, end))}; " + ("material performance start must not follow end"),
             field="start/end",
         )
     normalized = first.isoformat(), last.isoformat()
     if normalized != (start, end):
         raise InputValidationError(
-            "material performance dates must use YYYY-MM-DD",
+            f"actual value: {actual_value(normalized)}; " + ("material performance dates must use YYYY-MM-DD"),
             field="start/end",
         )
     return normalized
@@ -228,7 +229,7 @@ def normalize_material_platforms(values: Sequence[str]) -> tuple[str, ...]:
 
     if isinstance(values, (str, bytes, bytearray)) or not isinstance(values, Sequence):
         raise InputValidationError(
-            "material performance platforms must be an array",
+            f"actual value: {actual_value(values)}; " + ("material performance platforms must be an array"),
             field="platforms",
         )
     selected: list[str] = []
@@ -240,13 +241,13 @@ def normalize_material_platforms(values: Sequence[str]) -> tuple[str, ...]:
             )
         if value in selected:
             raise InputValidationError(
-                "material performance platforms must be unique",
+                f"actual value: {actual_value(value)}; " + ("material performance platforms must be unique"),
                 field="platforms",
             )
         selected.append(value)
     if not selected:
         raise InputValidationError(
-            "material performance requires at least one platform",
+            f"actual value: {actual_value(selected)}; " + ("material performance requires at least one platform"),
             field="platforms",
         )
     return tuple(selected)
@@ -255,7 +256,7 @@ def normalize_material_platforms(values: Sequence[str]) -> tuple[str, ...]:
 def normalize_material_workers(value: Any) -> int:
     if type(value) is not int or not 1 <= value <= MAX_CONCURRENCY:
         raise InputValidationError(
-            f"material performance max_workers must be between 1 and {MAX_CONCURRENCY}",
+            f"actual value: {actual_value(value)}; " + (f"material performance max_workers must be between 1 and {MAX_CONCURRENCY}"),
             field="max_workers",
         )
     return value

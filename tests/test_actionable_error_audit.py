@@ -20,7 +20,7 @@ class ActionableErrorAuditTests(unittest.TestCase):
         rows = inventory(ROOT / "src" / "gravity_sdk")
         counts = Counter(item["grade"] for item in rows)
         assert len(rows) == 1225
-        assert counts == {"A": 422, "B": 434, "C": 369}
+        assert counts == {"A": 833, "B": 23, "C": 369}
         assert sum(counts.values()) == len(rows)
 
 
@@ -56,3 +56,22 @@ class ActionableErrorAuditTests(unittest.TestCase):
             )
         assert caught.exception.field == "global_conditions"
         assert "user-level-value-must-not-spread" not in str(caught.exception)
+
+
+    def test_plan_and_batch_errors_include_sanitized_actual_values(self):
+        from gravity_sdk.analysis_query_batch import run_analysis_query_batch
+        from gravity_sdk.plan import PlanValidationError
+        from gravity_sdk.plan_validation import validate_plan
+
+        with self.assertRaises(PlanValidationError) as plan_error:
+            validate_plan("token=credential-value")
+        self.assertIn("actual value:", str(plan_error.exception))
+        self.assertIn("[REDACTED]", str(plan_error.exception))
+        self.assertNotIn("credential-value", str(plan_error.exception))
+        with self.assertRaises(PlanValidationError) as schema_error:
+            validate_plan({"schema_version": "nope", "nodes": []})
+        self.assertIn('actual value: "nope"', str(schema_error.exception))
+        with self.assertRaises(InputValidationError) as batch_error:
+            run_analysis_query_batch(object(), {"schema_version": "bad"}, dry_run="yes")
+        self.assertIn('actual value: "yes"', str(batch_error.exception))
+        self.assertEqual(batch_error.exception.field, "dry_run")

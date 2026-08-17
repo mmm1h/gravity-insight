@@ -527,19 +527,15 @@ def _safe_identity(value: Any, *, fallback: str = "unknown") -> str:
 
 def _workers(value: Any) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= MAX_CONCURRENCY:
-        raise InputValidationError(
-            f"dashboard analysis max_workers must be between 1 and {MAX_CONCURRENCY}",
-            field="max_workers",
-        )
+        from .actionable_error_values import actual_value
+        raise InputValidationError(f"actual value: {actual_value(value)}; dashboard analysis max_workers must be between 1 and {MAX_CONCURRENCY}", field="max_workers")
     return value
 
 
 def _chart_cap(value: Any) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= HARD_MAX_CHARTS:
-        raise InputValidationError(
-            f"max_charts must be between 1 and {HARD_MAX_CHARTS}",
-            field="max_charts",
-        )
+        from .actionable_error_values import actual_value
+        raise InputValidationError(f"actual value: {actual_value(value)}; max_charts must be between 1 and {HARD_MAX_CHARTS}", field="max_charts")
     return value
 
 

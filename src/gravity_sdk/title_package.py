@@ -18,6 +18,7 @@ from .composite_batch import (
 from .composite_catalog import stable_operation
 from .errors import ErrorCode, ErrorDetail, InputValidationError
 from .result_audit import project_result_audit
+from .actionable_error_values import actual_value
 
 
 SCHEMA_VERSION = "gravity-insight.title-package.v1"
@@ -129,14 +130,14 @@ def title_packages(
 def normalize_package_kind(value: Any) -> str:
     if not isinstance(value, str) or value not in OPERATION_IDS:
         raise InputValidationError(
-            "package_kind must be regular or standard", field="package_kind"
+            f"actual value: {actual_value(value)}; " + ("package_kind must be regular or standard"), field="package_kind"
         )
     return value
 
 
 def _app_id(value: Any) -> int:
     if type(value) is not int or value < 1:
-        raise InputValidationError("app_id must be a positive integer", field="app")
+        raise InputValidationError(f"actual value: {actual_value(value)}; " + ("app_id must be a positive integer"), field="app")
     return value
 
 

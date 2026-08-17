@@ -7,6 +7,7 @@ from typing import Any
 
 from .composite_batch import validate_composite_bounds
 from .errors import InputValidationError
+from .actionable_error_values import actual_value
 
 
 DEFAULT_CONCURRENCY = 3
@@ -46,7 +47,7 @@ def positive_id(value: Any, field: str) -> str:
     )
     if not rendered.isascii() or not rendered.isdigit() or int(rendered) <= 0:
         raise InputValidationError(
-            f"segment snapshot {field} must be a positive integer", field=field
+            f"actual value: {actual_value(value)}; " + (f"segment snapshot {field} must be a positive integer"), field=field
         )
     return str(int(rendered))
 
@@ -55,7 +56,7 @@ def reference(value: Any) -> str:
     selected = bounded_text(value) if not isinstance(value, bool) else None
     if selected is None:
         raise InputValidationError(
-            "segment snapshot ref must be a bounded id or exact name", field="ref"
+            f"actual value: {actual_value(selected)}; " + ("segment snapshot ref must be a bounded id or exact name"), field="ref"
         )
     return selected
 
@@ -76,7 +77,7 @@ def canonical_date(value: Any) -> str:
         raise _date_error() from None
     if parsed.isoformat() != value:
         raise InputValidationError(
-            "segment snapshot date must use canonical YYYY-MM-DD", field="date"
+            f"actual value: {actual_value(value)}; " + ("segment snapshot date must use canonical YYYY-MM-DD"), field="date"
         )
     return value
 
@@ -88,7 +89,7 @@ def workers(value: Any) -> int:
         or not 1 <= value <= MAX_CONCURRENCY
     ):
         raise InputValidationError(
-            f"segment snapshot max_workers must be between 1 and {MAX_CONCURRENCY}",
+            f"actual value: {actual_value(value)}; " + (f"segment snapshot max_workers must be between 1 and {MAX_CONCURRENCY}"),
             field="max_workers",
         )
     return value

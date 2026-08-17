@@ -8,6 +8,7 @@ from typing import Any
 
 from .agent_input_catalogs import live_catalog_for_card, resolvable_scenario
 from .errors import InputValidationError, UpstreamError
+from .actionable_error_values import actual_value
 
 
 SCHEMA_VERSION = "gravity.agent-input-resolution.v1"
@@ -51,17 +52,17 @@ def optional_agent_input_command(args: Any, client: Any) -> dict[str, Any] | Non
         return None
     if not getattr(args, "output", None):
         raise InputValidationError(
-            "agent --resolve-inputs requires --output so catalogs are not truncated",
+            f"actual value: {actual_value(getattr(args, 'output', None))}; " + ("agent --resolve-inputs requires --output so catalogs are not truncated"),
             field="output",
         )
     if getattr(args, "format", "json") != "json":
         raise InputValidationError(
-            "agent --resolve-inputs requires JSON file output",
+            f"actual value: {actual_value(getattr(args, 'format', 'json'))}; " + ("agent --resolve-inputs requires JSON file output"),
             field="format",
         )
     if args.query is None or args.continuation is not None:
         raise InputValidationError(
-            "agent --resolve-inputs requires one query and cannot use continuation",
+            f"actual value: {actual_value(args.query)}; " + ("agent --resolve-inputs requires one query and cannot use continuation"),
             field="resolve_inputs",
         )
     from .find_input import load_json_input
@@ -191,7 +192,7 @@ def _discover(query: str, **options: Any) -> dict[str, Any]:
 def _validate_context(value: Mapping[str, Any]) -> dict[str, Any]:
     if not isinstance(value, Mapping):
         raise InputValidationError(
-            "agent resolve inputs must be an object", field="resolve_inputs"
+            f"actual value: {actual_value(value)}; " + ("agent resolve inputs must be an object"), field="resolve_inputs"
         )
     unknown = sorted(set(value) - _CONTEXT_FIELDS)
     if unknown:
@@ -201,7 +202,7 @@ def _validate_context(value: Mapping[str, Any]) -> dict[str, Any]:
     policy = value.get("catalog_policy", "none")
     if policy not in _REFRESH_POLICIES:
         raise InputValidationError(
-            "catalog_policy must be none or refresh",
+            f"actual value: {actual_value(policy)}; " + ("catalog_policy must be none or refresh"),
             field="resolve_inputs.catalog_policy",
         )
     return {**copy.deepcopy(dict(value)), "catalog_policy": policy}

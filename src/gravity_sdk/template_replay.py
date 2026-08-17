@@ -38,6 +38,7 @@ from .saved_analysis_support import (
 )
 from .workspace_app import resolve_workspace_app
 from .template_artifact import CompiledTemplate, compile_template_artifact
+from .actionable_error_values import actual_value
 
 
 CATALOG_SCHEMA_VERSION = "gravity-insight.analysis-template-catalog.v1"
@@ -384,14 +385,14 @@ def _component_error(scope: str, operation_id: str, exc: Exception) -> dict[str,
 def _scope(value: Any) -> str:
     selected = str(value or "").strip().casefold()
     if selected not in TEMPLATE_OPERATIONS:
-        raise InputValidationError("template scope must be own, share, or internal", field="scope")
+        raise InputValidationError(f"actual value: {actual_value(selected)}; " + ("template scope must be own, share, or internal"), field="scope")
     return selected
 
 
 def _reference(value: Any) -> tuple[str, str]:
     if isinstance(value, Mapping):
         if set(value) not in ({"id"}, {"name"}):
-            raise InputValidationError("template reference must contain exactly id or name", field="reference")
+            raise InputValidationError(f"actual value: {actual_value(value)}; " + ("template reference must contain exactly id or name"), field="reference")
         mode = next(iter(value))
         selected = value[mode]
         if mode == "id":

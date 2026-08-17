@@ -25,6 +25,7 @@ from .export_results import (
 from .export_state import ExportOrchestrator
 from .registry import PolicyEngine, Registry
 from .paths import CONTRACT_ROOT
+from .actionable_error_values import actual_value
 
 
 def load_export_components(
@@ -119,7 +120,7 @@ class ExportClientMixin:
         timeout = float(timeout_seconds)
         if interval < 2:
             raise InputValidationError(
-                "export wait interval must be at least 2 seconds",
+                f"actual value: {actual_value(interval)}; " + ("export wait interval must be at least 2 seconds"),
                 field="interval",
                 next_action=(
                     "Run `gravity export wait "
@@ -129,7 +130,7 @@ class ExportClientMixin:
             )
         if timeout <= 0 or timeout > 300:
             raise InputValidationError(
-                "export wait timeout must be between 0 and 300 seconds",
+                f"actual value: {actual_value(timeout)}; " + ("export wait timeout must be between 0 and 300 seconds"),
                 field="timeout",
                 next_action=(
                     "Run `gravity export wait "
@@ -263,7 +264,7 @@ class ExportClientMixin:
         contracts, policy, export_runtime = self._export_components()
         if page < 1:
             raise InputValidationError(
-                "export list page must be at least 1",
+                f"actual value: {actual_value(page)}; " + ("export list page must be at least 1"),
                 field="page",
                 next_action=(
                     "Run `gravity export list --page 1 "
@@ -272,7 +273,7 @@ class ExportClientMixin:
             )
         if not 1 <= page_size <= 300:
             raise InputValidationError(
-                "export list page_size must be between 1 and 300",
+                f"actual value: {actual_value(page_size)}; " + ("export list page_size must be between 1 and 300"),
                 field="page_size",
                 next_action=(
                     "Run `gravity export list --page 1 "

@@ -24,6 +24,7 @@ from .composite_batch import (
 )
 from .composite_catalog import stable_operation
 from .errors import InputValidationError
+from .actionable_error_values import actual_value
 
 
 SCHEMA_VERSION = "gravity-insight.business-pulse.v1"
@@ -97,7 +98,7 @@ def business_pulse(
     selected_platforms = _platforms(platforms)
     if not isinstance(include_hourly, bool):
         raise InputValidationError(
-            "business pulse include_hourly must be a boolean",
+            f"actual value: {actual_value(include_hourly)}; " + ("business pulse include_hourly must be a boolean"),
             field="include_hourly",
         )
     workers = _workers(max_workers)
@@ -190,7 +191,7 @@ def _request(
 def _app_ids(values: Sequence[str | int]) -> tuple[str, ...]:
     if isinstance(values, (str, bytes)) or not isinstance(values, Sequence):
         raise InputValidationError(
-            "business pulse app_ids must be a non-empty array",
+            f"actual value: {actual_value(values)}; " + ("business pulse app_ids must be a non-empty array"),
             field="app_ids",
         )
     normalized = tuple(
@@ -198,7 +199,7 @@ def _app_ids(values: Sequence[str | int]) -> tuple[str, ...]:
     )
     if not normalized or len(normalized) > 100:
         raise InputValidationError(
-            "business pulse app_ids must contain between 1 and 100 apps",
+            f"actual value: {actual_value(normalized)}; " + ("business pulse app_ids must contain between 1 and 100 apps"),
             field="app_ids",
         )
     return normalized
@@ -210,12 +211,12 @@ def _date_range(start: str, end: str) -> tuple[str, str]:
         last = date.fromisoformat(end)
     except (TypeError, ValueError):
         raise InputValidationError(
-            "business pulse dates must use YYYY-MM-DD",
+            f"actual value: {actual_value((start, end))}; " + ("business pulse dates must use YYYY-MM-DD"),
             field="date_range",
         ) from None
     if first > last:
         raise InputValidationError(
-            "business pulse start date must not be after end date",
+            f"actual value: {actual_value((start, end))}; " + ("business pulse start date must not be after end date"),
             field="date_range",
         )
     return first.isoformat(), last.isoformat()
@@ -224,19 +225,19 @@ def _date_range(start: str, end: str) -> tuple[str, str]:
 def _platforms(values: Sequence[str]) -> tuple[str, ...]:
     if isinstance(values, (str, bytes)) or not isinstance(values, Sequence):
         raise InputValidationError(
-            "business pulse platforms must be an array",
+            f"actual value: {actual_value(values)}; " + ("business pulse platforms must be an array"),
             field="platforms",
         )
     if any(not isinstance(value, str) for value in values):
         raise InputValidationError(
-            "business pulse platforms must contain strings",
+            f"actual value: {actual_value(values)}; " + ("business pulse platforms must contain strings"),
             field="platforms",
         )
     selected = tuple(dict.fromkeys(values))
     unknown = [value for value in selected if value not in DEFAULT_PLATFORMS]
     if not selected or unknown:
         raise InputValidationError(
-            "business pulse platforms must use bytedance, tencent, or kuaishou",
+            f"actual value: {actual_value(selected)}; " + ("business pulse platforms must use bytedance, tencent, or kuaishou"),
             field="platforms",
         )
     return selected
@@ -249,7 +250,7 @@ def _workers(value: int) -> int:
         or not 1 <= value <= MAX_CONCURRENCY
     ):
         raise InputValidationError(
-            f"business pulse max_workers must be between 1 and {MAX_CONCURRENCY}",
+            f"actual value: {actual_value(value)}; " + (f"business pulse max_workers must be between 1 and {MAX_CONCURRENCY}"),
             field="max_workers",
         )
     return value

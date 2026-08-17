@@ -42,6 +42,7 @@ from .template_replay import (
     run_analysis_template,
 )
 from .workspace import load_workspace
+from .actionable_error_values import actual_value
 
 
 ANALYSIS_TEMPLATE_NAME = "analysis_template"
@@ -249,7 +250,7 @@ def validate_template_plan(
         raise input_error("analysis_template scope is invalid", "scope")
     _validate_reference(request.get("ref"))
     if request.get("mode", "run") not in _MODES:
-        raise input_error("analysis_template mode must be prepare or run", "mode")
+        raise input_error(f"actual value: {actual_value(request)}; " + ("analysis_template mode must be prepare or run"), "mode")
     _validate_window(request.get("start"), request.get("end"))
     validate_selected_fields(context.output_fields, OUTPUT_FIELDS, "output_fields")
 
@@ -504,7 +505,7 @@ def _validate_reference(value: Any) -> None:
 
 def _validate_window(start: Any, end: Any) -> None:
     if not isinstance(start, str) or not isinstance(end, str):
-        raise input_error("analysis_template requires start and end", "start/end")
+        raise input_error(f"actual value: {actual_value(start)}; " + ("analysis_template requires start and end"), "start/end")
     try:
         validate_dashboard_window(start, end)
     except InputValidationError as exc:

@@ -14,6 +14,7 @@ from .plan_adapter_support import (
     validate_selected_fields,
 )
 from .promotion_performance_request import normalize_promotion_window
+from .actionable_error_values import actual_value
 
 
 ADVERTISER_PROFILE_FIELDS = frozenset({"name", "start", "end"})
@@ -39,7 +40,7 @@ def validate_advertiser_profile_plan(
         raise input_error(str(exc), "start/end") from None
     if context.max_pages < 1 or context.max_items < 1:
         raise input_error(
-            "advertiser_profile requires positive pagination limits", "limits"
+            f"actual value: {actual_value((context.max_pages, context.max_items))}; " + ("advertiser_profile requires positive pagination limits"), "limits"
         )
     validate_selected_fields(context.output_fields, output_fields, "output_fields")
 

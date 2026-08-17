@@ -26,6 +26,7 @@ from .saved_analysis import PREVIEW_SCHEMA_VERSION, REPLAY_SCHEMA_VERSION
 from .saved_analysis_artifact import validate_saved_window
 from .saved_analysis_result import saved_result_item_count
 from .saved_analysis_support import SUBJECT_KINDS
+from .actionable_error_values import actual_value
 
 
 SAVED_ANALYSIS_NAME = "saved_analysis"
@@ -124,7 +125,7 @@ def validate_saved_analysis(
     _validate_reference(request.get("ref"))
     mode = request.get("mode", "run")
     if not isinstance(mode, str) or mode not in _MODES:
-        raise input_error("saved_analysis mode must be prepare or run", "mode")
+        raise input_error(f"actual value: {actual_value(mode)}; " + ("saved_analysis mode must be prepare or run"), "mode")
     _validate_window(request.get("start"), request.get("end"))
     validate_selected_fields(
         context.output_fields,
@@ -524,26 +525,26 @@ def _validate_app(workspace: Any, value: Any) -> None:
         workspace.resolve_app(value)
     except (KeyError, TypeError, ValueError):
         raise input_error(
-            "saved_analysis app must select a configured workspace App", "app"
+            f"actual value: {actual_value(value)}; " + ("saved_analysis app must select a configured workspace App"), "app"
         ) from None
 
 
 def _validate_reference(value: Any) -> None:
     if isinstance(value, bool) or not isinstance(value, (str, int)):
         raise input_error(
-            "saved_analysis ref must be an explicit id or exact name", "ref"
+            f"actual value: {actual_value(value)}; " + ("saved_analysis ref must be an explicit id or exact name"), "ref"
         )
     rendered = str(value).strip()
     if not rendered or len(rendered) > 256:
         raise input_error(
-            "saved_analysis ref must be a bounded id or exact name", "ref"
+            f"actual value: {actual_value(rendered)}; " + ("saved_analysis ref must be a bounded id or exact name"), "ref"
         )
 
 
 def _validate_window(start: Any, end: Any) -> None:
     if not isinstance(start, str) or not isinstance(end, str):
         raise input_error(
-            "saved_analysis requires literal start and end", "start/end"
+            f"actual value: {actual_value(start)}; " + ("saved_analysis requires literal start and end"), "start/end"
         )
     try:
         validate_saved_window(start, end)

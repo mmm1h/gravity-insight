@@ -190,7 +190,7 @@ def normalize_multidim_inputs(inputs: Mapping[str, Any]) -> dict[str, Any]:
     """Normalize the product fields without invoking a client or adding a DSL."""
 
     if not isinstance(inputs, Mapping):
-        raise _input_error("multidimensional inputs must be an object", "inputs")
+        raise _input_error(f"actual value: {actual_value(inputs)}; " + ("multidimensional inputs must be an object"), "inputs")
     unknown = set(inputs) - set(_FIELDS)
     missing = _REQUIRED - set(inputs)
     if unknown:
@@ -335,22 +335,22 @@ def run_multidim_query(
 
 def _dates(value: Any) -> list[str]:
     if not isinstance(value, (list, tuple)) or len(value) != 2:
-        raise _input_error("date_list must contain exactly two ISO dates", "date_list")
+        raise _input_error(f"actual value: {actual_value(value)}; " + ("date_list must contain exactly two ISO dates"), "date_list")
     parsed: list[date] = []
     result: list[str] = []
     for item in value:
         if not isinstance(item, str):
-            raise _input_error("date_list must contain canonical ISO dates", "date_list")
+            raise _input_error(f"actual value: {actual_value(item)}; " + ("date_list must contain canonical ISO dates"), "date_list")
         try:
             day = date.fromisoformat(item)
         except ValueError:
-            raise _input_error("date_list must contain valid ISO dates", "date_list") from None
+            raise _input_error(f"actual value: {actual_value(value)}; " + ("date_list must contain valid ISO dates"), "date_list") from None
         if day.isoformat() != item:
-            raise _input_error("date_list must contain canonical ISO dates", "date_list")
+            raise _input_error(f"actual value: {actual_value(value)}; " + ("date_list must contain canonical ISO dates"), "date_list")
         parsed.append(day)
         result.append(item)
     if parsed[0] > parsed[1]:
-        raise _input_error("date_list start must not be after end", "date_list")
+        raise _input_error(f"actual value: {actual_value(parsed[0])}; " + ("date_list start must not be after end"), "date_list")
     return result
 
 
@@ -362,10 +362,10 @@ def _time_dim(value: Any) -> str:
 
 def _names(value: Any, field: str) -> list[str]:
     if not isinstance(value, (list, tuple)) or len(value) > _NAME_LIMITS[field]:
-        raise _input_error(f"{field} must be a bounded string array", field)
+        raise _input_error(f"actual value: {actual_value(value)}; " + (f"{field} must be a bounded string array"), field)
     selected = list(value)
     if any(not isinstance(item, str) or not item or len(item) > 4_096 for item in selected):
-        raise _input_error(f"{field} must contain bounded non-empty strings", field)
+        raise _input_error(f"actual value: {actual_value(selected)}; " + (f"{field} must contain bounded non-empty strings"), field)
     return selected
 
 
@@ -385,7 +385,7 @@ def _filters(
     value: Any, *, allowed_fields: frozenset[str] | set[str]
 ) -> list[dict[str, Any]]:
     if not isinstance(value, (list, tuple)) or len(value) > _MAX_FILTERS:
-        raise _input_error("filters must be a bounded array", "filters")
+        raise _input_error(f"actual value: {actual_value(value)}; " + ("filters must be a bounded array"), "filters")
     return [_filter_item(item, allowed_fields=allowed_fields) for item in value]
 
 
@@ -399,7 +399,7 @@ def _filter_item(
         or "field" not in value
         or "operator" not in value
     ):
-        raise _input_error("filter items must match the closed product shape", "filters")
+        raise _input_error(f"actual value: {actual_value(value)}; " + ("filter items must match the closed product shape"), "filters")
     field = _filter_field(value.get("field"))
     if field not in allowed_fields:
         raise _input_error(
@@ -417,7 +417,7 @@ def _filter_item(
 def _filter_field(value: Any) -> str:
     if not isinstance(value, str) or len(value) > 128 or not _FIELD_RE.fullmatch(value):
         raise _input_error(
-            "filter field must be a bounded field name", "filters[].field"
+            f"actual value: {actual_value(value)}; " + ("filter field must be a bounded field name"), "filters[].field"
         )
     return value
 
@@ -463,7 +463,7 @@ def _multi_keys(value: Any) -> list[int]:
         or list(value) != sorted(value)
     ):
         raise _input_error(
-            "multi_keys must be unique ascending integers from 2 to 30",
+            f"actual value: {actual_value(value)}; " + ("multi_keys must be unique ascending integers from 2 to 30"),
             "multi_keys",
         )
     return list(value)
@@ -471,10 +471,10 @@ def _multi_keys(value: Any) -> list[int]:
 
 def _positive_app_id(value: Any) -> str:
     if isinstance(value, bool) or not isinstance(value, (str, int)):
-        raise _input_error("app_id must be a positive integer", "app_id")
+        raise _input_error(f"actual value: {actual_value(value)}; " + ("app_id must be a positive integer"), "app_id")
     if isinstance(value, int):
         if value <= 0 or value.bit_length() > 426:
-            raise _input_error("app_id must be a bounded positive integer", "app_id")
+            raise _input_error(f"actual value: {actual_value(value)}; " + ("app_id must be a bounded positive integer"), "app_id")
         rendered = str(value)
     else:
         rendered = value.strip()
@@ -485,7 +485,7 @@ def _positive_app_id(value: Any) -> str:
         or not rendered.isdigit()
         or not any(character != "0" for character in rendered)
     ):
-        raise _input_error("app_id must be a positive integer", "app_id")
+        raise _input_error(f"actual value: {actual_value(rendered)}; " + ("app_id must be a positive integer"), "app_id")
     return rendered.lstrip("0")
 
 
@@ -496,7 +496,7 @@ def _workers(value: Any) -> int:
         or not 1 <= value <= MAX_MULTIDIM_WORKERS
     ):
         raise _input_error(
-            f"max_workers must be between 1 and {MAX_MULTIDIM_WORKERS}",
+            f"actual value: {actual_value(value)}; " + (f"max_workers must be between 1 and {MAX_MULTIDIM_WORKERS}"),
             "max_workers",
         )
     return value
@@ -504,7 +504,7 @@ def _workers(value: Any) -> int:
 
 def _boolean(value: Any, field: str) -> bool:
     if not isinstance(value, bool):
-        raise _input_error(f"{field} must be boolean", field)
+        raise _input_error(f"actual value: {actual_value(value)}; " + (f"{field} must be boolean"), field)
     return value
 
 

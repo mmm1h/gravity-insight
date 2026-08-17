@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from .errors import InputValidationError
+from .actionable_error_values import actual_value
 
 
 class ReportSdkMixin:
@@ -248,13 +249,13 @@ def _validate_limits(max_pages: Any, max_items: Any, max_workers: Any) -> None:
     ):
         if type(value) is not int or not 1 <= value <= maximum:
             raise InputValidationError(
-                f"{field} must be between 1 and {maximum}", field=field
+                f"actual value: {actual_value(value)}; " + (f"{field} must be between 1 and {maximum}"), field=field
             )
 
 
 def _boolean(value: Any, field: str) -> None:
     if not isinstance(value, bool):
-        raise InputValidationError(f"{field} must be a boolean", field=field)
+        raise InputValidationError(f"actual value: {actual_value(value)}; " + (f"{field} must be a boolean"), field=field)
 
 
 __all__ = ["ReportSdkMixin"]

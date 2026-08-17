@@ -15,6 +15,7 @@ from .plan_adapter_support import (
     validate_selected_fields,
 )
 from .user_journey import SCHEMA_VERSION, user_journey, validate_user_journey_input
+from .actionable_error_values import actual_value
 
 
 USER_JOURNEY_NAME = "user_journey"
@@ -63,14 +64,14 @@ def validate_user_journey_plan(
     dynamic_app = has_dynamic(context, "/app")
     dynamic_client = has_dynamic(context, "/client_id")
     if not dynamic_app and "app" not in request:
-        raise input_error("user journey requires app", "app")
+        raise input_error(f"actual value: {actual_value(dynamic_app)}; " + ("user journey requires app"), "app")
     if not dynamic_client and "client_id" not in request:
-        raise input_error("user journey requires client_id", "client_id")
+        raise input_error(f"actual value: {actual_value(dynamic_client)}; " + ("user journey requires client_id"), "client_id")
     try:
         app_id = 1 if dynamic_app else workspace.resolve_app(request.get("app"))
     except (KeyError, TypeError, ValueError):
         raise input_error(
-            "user journey app must select a configured workspace App", "app"
+            f"actual value: {actual_value(request.get('app'))}; " + ("user journey app must select a configured workspace App"), "app"
         ) from None
     validate_user_journey_input(
         app_id,
@@ -141,7 +142,7 @@ def _options(request: Mapping[str, Any]) -> dict[str, Any]:
 
 def _array(value: Any, field: str) -> Sequence[str]:
     if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
-        raise input_error(f"user journey {field} must be an array", field)
+        raise input_error(f"actual value: {actual_value(value)}; " + (f"user journey {field} must be an array"), field)
     return value
 
 

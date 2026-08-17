@@ -220,13 +220,10 @@ class ExportContractRegistry:
         try:
             return self._contracts[operation_id]
         except KeyError as exc:
-            raise UnknownOperationError(
-                f"unknown Gravity export operation: {operation_id}",
+            from .actionable_error_values import actual_value; raise UnknownOperationError(
+                f"actual value: {actual_value(operation_id)}; unknown Gravity export operation: {operation_id}",
                 field="operation_id",
-                next_action=(
-                    "Run `gravity export list-capabilities` "
-                    "and use an operation_id from the results."
-                ),
+                next_action="Run `gravity export list-capabilities` and use an operation_id from the results.",
             ) from exc
 
     def describe(self, operation_id: str) -> dict[str, Any]:
@@ -489,13 +486,9 @@ def _matches_export_item(value: Any, expected: str) -> bool:
 
 
 def _raise_export_input(operation_id: str, message: str, field: str) -> None:
-    raise InputValidationError(
-        message,
-        field=field,
-        next_action=(
-            "Run `gravity export describe "
-            f"{operation_id}` and retry with the documented input."
-        ),
+    from .actionable_error_values import actual_value; raise InputValidationError(
+        f"actual value: {actual_value(field)}; {message}", field=field,
+        next_action=f"Run `gravity export describe {operation_id}` and retry with the documented input.",
     )
 
 

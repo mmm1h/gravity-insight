@@ -34,6 +34,7 @@ from gravity_sdk.pagination_cli import (
 )
 from gravity_sdk import result_output
 from gravity_sdk.credential_sanitization import sanitize_credentials as _sanitize_credentials
+from .actionable_error_values import actual_value
 
 try:
     from gravity_sdk.errors import (
@@ -317,7 +318,7 @@ def _enforce_output_policy(args: argparse.Namespace) -> None:
     if getattr(args, "output", None) or getattr(args, "format", "json") == "ndjson":
         return
     raise InputValidationError(
-        "--all-pages requires --output <path> or --format ndjson",
+        f"actual value: {actual_value(getattr(args, 'all_pages', None))}; " + ("--all-pages requires --output <path> or --format ndjson"),
         field="all_pages",
         next_action=(
             "Retry with `--output <path>` for JSON or `--format ndjson` for a stream."
@@ -735,7 +736,7 @@ def _emit_success(args: argparse.Namespace, result: Any) -> None:
     if output:
         if output == "-":
             raise InputValidationError(
-                "--output must be a file path; use --format ndjson for stdout",
+                f"actual value: {actual_value(output)}; " + ("--output must be a file path; use --format ndjson for stdout"),
                 field="output",
             )
         if output_format == "ndjson":

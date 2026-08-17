@@ -14,6 +14,7 @@ from .kanban_mutation_cli import add_kanban_commands
 from .pagination_cli import page_options
 from .workspace import load_workspace
 from .workspace_app import resolve_workspace_app
+from .actionable_error_values import actual_value
 
 
 _DASHBOARD_ANALYSIS_COMMANDS = frozenset({"prepare", "run"})
@@ -301,11 +302,11 @@ def dispatch_dashboard_read(args: Any, object_input: Any) -> dict[str, Any]:
 
     if args.kind is None:
         raise InputValidationError(
-            "analysis dashboard requires --kind, snapshot, prepare, or run", field="kind"
+            f"actual value: {actual_value(args.kind)}; " + ("analysis dashboard requires --kind, snapshot, prepare, or run"), field="kind"
         )
     if args.input is None:
         raise InputValidationError(
-            "analysis dashboard read requires --input", field="input"
+            f"actual value: {actual_value(args.input)}; " + ("analysis dashboard read requires --input"), field="input"
         )
     operation_id = ANALYSIS_DASHBOARD_OPERATIONS[args.kind]
     read_all = bool(getattr(args, "all_pages", False))
@@ -331,7 +332,7 @@ def dispatch_dashboard_snapshot(args: Any, _object_input: Any) -> dict[str, Any]
 
     if _has_legacy_dashboard_arguments(args):
         raise InputValidationError(
-            "dashboard snapshot cannot use legacy dashboard read arguments",
+            f"actual value: {actual_value({'kind': getattr(args, 'kind', None), 'input': getattr(args, 'input', None), 'all_pages': getattr(args, 'all_pages', None)})}; " + ("dashboard snapshot cannot use legacy dashboard read arguments"),
             field="snapshot",
             next_action="Remove --kind, --input, and --all-pages before snapshot.",
         )
@@ -352,7 +353,7 @@ def dispatch_dashboard_analysis(args: Any, _object_input: Any) -> dict[str, Any]
 
     if _has_legacy_dashboard_arguments(args):
         raise InputValidationError(
-            "dashboard analysis cannot use legacy dashboard read arguments",
+            f"actual value: {actual_value({'kind': getattr(args, 'kind', None), 'input': getattr(args, 'input', None), 'all_pages': getattr(args, 'all_pages', None)})}; " + ("dashboard analysis cannot use legacy dashboard read arguments"),
             field="dashboard",
             next_action="Remove --kind, --input, and --all-pages before prepare or run.",
         )

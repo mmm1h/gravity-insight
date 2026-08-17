@@ -15,6 +15,7 @@ from .errors import (
     UnsupportedOperationError,
 )
 from .workspace import Workspace, load_workspace
+from .actionable_error_values import actual_value
 
 
 DEFAULT_MAX_PAGES = 1_000
@@ -67,7 +68,7 @@ def validate_definition_shape(value: Any) -> None:
 def _definition_fields(value: Any) -> dict[str, Any]:
     if not isinstance(value, Mapping):
         raise InputValidationError(
-            "saved Analysis definition must be an object", field="definition"
+            f"actual value: {actual_value(value)}; " + ("saved Analysis definition must be an object"), field="definition"
         )
     unknown = sorted(set(value) - DEFINITION_FIELDS)
     if unknown:
@@ -78,7 +79,7 @@ def _definition_fields(value: Any) -> dict[str, Any]:
         )
     if "subject" not in value or "config" not in value:
         raise InputValidationError(
-            "saved Analysis definition requires subject and config",
+            f"actual value: {actual_value(value)}; " + ("saved Analysis definition requires subject and config"),
             field="definition",
         )
     supported_subject(value.get("subject"))
@@ -185,7 +186,7 @@ def select_reference(
     unique = {str(row.get("id")): row for row in matches}
     if not unique:
         raise InputValidationError(
-            "saved Analysis reference was not found in the selected App",
+            f"actual value: {actual_value(value)}; " + ("saved Analysis reference was not found in the selected App"),
             field="reference",
             next_action=(
                 "List saved analyses and retry with an explicit id or exact name."
@@ -193,7 +194,7 @@ def select_reference(
         )
     if len(unique) != 1:
         raise InputValidationError(
-            "saved Analysis reference is ambiguous in the selected App",
+            f"actual value: {actual_value(value)}; " + ("saved Analysis reference is ambiguous in the selected App"),
             field="reference",
             next_action="Retry with an explicit `{\"id\": \"...\"}` reference.",
         )
@@ -204,7 +205,7 @@ def normalize_reference(value: Any) -> tuple[str, str]:
     if isinstance(value, Mapping):
         if set(value) not in ({"id"}, {"name"}):
             raise InputValidationError(
-                "saved Analysis reference must contain exactly id or name",
+                f"actual value: {actual_value(value)}; " + ("saved Analysis reference must contain exactly id or name"),
                 field="reference",
             )
         mode = next(iter(value))
@@ -389,7 +390,7 @@ def bounds(max_pages: Any, max_items: Any) -> tuple[int, int]:
         or not 1 <= max_pages <= DEFAULT_MAX_PAGES
     ):
         raise InputValidationError(
-            f"saved Analysis max_pages must be between 1 and {DEFAULT_MAX_PAGES}",
+            f"actual value: {actual_value(max_pages)}; " + (f"saved Analysis max_pages must be between 1 and {DEFAULT_MAX_PAGES}"),
             field="max_pages",
         )
     if (
@@ -398,7 +399,7 @@ def bounds(max_pages: Any, max_items: Any) -> tuple[int, int]:
         or not 1 <= max_items <= DEFAULT_MAX_ITEMS
     ):
         raise InputValidationError(
-            f"saved Analysis max_items must be between 1 and {DEFAULT_MAX_ITEMS}",
+            f"actual value: {actual_value(max_items)}; " + (f"saved Analysis max_items must be between 1 and {DEFAULT_MAX_ITEMS}"),
             field="max_items",
         )
     return max_pages, max_items
@@ -407,7 +408,7 @@ def bounds(max_pages: Any, max_items: Any) -> tuple[int, int]:
 def workers(value: Any) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= MAX_WORKERS:
         raise InputValidationError(
-            f"saved Analysis max_workers must be between 1 and {MAX_WORKERS}",
+            f"actual value: {actual_value(value)}; " + (f"saved Analysis max_workers must be between 1 and {MAX_WORKERS}"),
             field="max_workers",
         )
     return value
@@ -416,19 +417,19 @@ def workers(value: Any) -> int:
 def identifier(value: Any, field: str) -> str:
     if isinstance(value, bool) or not isinstance(value, (str, int)):
         raise InputValidationError(
-            f"{field} must be a string or integer", field=field
+            f"actual value: {actual_value(value)}; " + (f"{field} must be a string or integer"), field=field
         )
     selected = str(value).strip()
     if not selected or len(selected) > 256:
         raise InputValidationError(
-            f"{field} must be a bounded identifier", field=field
+            f"actual value: {actual_value(selected)}; " + (f"{field} must be a bounded identifier"), field=field
         )
     return selected
 
 
 def text(value: Any, field: str) -> str:
     if not isinstance(value, str) or not value.strip() or len(value) > 256:
-        raise InputValidationError(f"{field} must be a bounded string", field=field)
+        raise InputValidationError(f"actual value: {actual_value(value)}; " + (f"{field} must be a bounded string"), field=field)
     return value.strip()
 
 

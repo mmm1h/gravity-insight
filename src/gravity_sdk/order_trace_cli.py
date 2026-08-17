@@ -9,6 +9,7 @@ from . import runtime
 from .errors import InputValidationError
 from .workspace import load_workspace
 from .workspace_app import resolve_workspace_app
+from .actionable_error_values import actual_value
 
 
 def add_order_trace_command(
@@ -37,7 +38,7 @@ def prepare_order_trace_request(args: Any) -> tuple[str, str, str]:
 
     if not isinstance(args.app, str) or not args.app.strip():
         raise InputValidationError(
-            "--app must be a non-empty workspace alias or positive id",
+            f"actual value: {actual_value(args.app)}; " + ("--app must be a non-empty workspace alias or positive id"),
             field="app",
         )
     options = {

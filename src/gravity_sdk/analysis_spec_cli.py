@@ -14,6 +14,7 @@ from .result_source import GOVERNED_PRODUCT, add_result_source
 from .domains import ANALYSIS_QUERY_OPERATIONS, new_analysis_query_id
 from .errors import InputValidationError
 from .result_output import output_file
+from .actionable_error_values import actual_value
 
 
 def add_analysis_query_arguments(
@@ -94,7 +95,7 @@ def run_analysis_query_command(
 ) -> dict[str, Any]:
     if args.kind is None:
         raise InputValidationError(
-            "analysis query requires --kind unless the batch subcommand is used",
+            f"actual value: {actual_value(args.kind)}; " + ("analysis query requires --kind unless the batch subcommand is used"),
             field="kind",
             next_action=(
                 "Run `gravity analysis query --kind <kind> --help`, or use "
@@ -102,7 +103,7 @@ def run_analysis_query_command(
             ),
         )
     if getattr(args, "apps", None) and args.spec is None:
-        raise InputValidationError("--apps requires --spec", field="apps")
+        raise InputValidationError(f"actual value: {actual_value(getattr(args, 'apps', None))}; " + ("--apps requires --spec"), field="apps")
     if bool(getattr(args, "spec_schema", False)):
         if args.spec is not None or args.input is not None:
             raise InputValidationError(
@@ -114,7 +115,7 @@ def run_analysis_query_command(
         return result
     if args.spec is None and bool(getattr(args, "query_spec_dry_run", False)):
         raise InputValidationError(
-            "--dry-run requires --spec; raw --input cannot be executed in dry-run mode",
+            f"actual value: {actual_value(args.spec)}; " + ("--dry-run requires --spec; raw --input cannot be executed in dry-run mode"),
             field="dry_run",
         )
     compare_start, compare_end = _compare_dates(args)
@@ -233,14 +234,14 @@ def _compare_dates(args: Any) -> tuple[str | None, str | None]:
     concurrency = getattr(args, "compare_concurrency", None)
     if (start is None) != (end is None):
         raise InputValidationError(
-            "--compare-start and --compare-end must be provided together",
+            f"actual value: {actual_value((start, end))}; " + ("--compare-start and --compare-end must be provided together"),
             field="compare_start/compare_end",
         )
     if start is not None and args.spec is None:
-        raise InputValidationError("period compare requires --spec", field="spec")
+        raise InputValidationError(f"actual value: {actual_value(args.spec)}; " + ("period compare requires --spec"), field="spec")
     if concurrency is not None and start is None:
         raise InputValidationError(
-            "--compare-concurrency requires a compare window",
+            f"actual value: {actual_value(concurrency)}; " + ("--compare-concurrency requires a compare window"),
             field="compare_concurrency",
         )
     return start, end

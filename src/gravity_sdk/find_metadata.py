@@ -17,6 +17,7 @@ from .metadata_vocabulary import (
     vocabulary_rows,
 )
 from .result_source import LOCAL_CATALOG, result_source
+from .actionable_error_values import actual_value
 
 
 SCHEMA_VERSION = "gravity.metadata-search.v1"
@@ -58,7 +59,7 @@ def search_metadata(
     catalog = catalog.expanduser().resolve()
     if not catalog.is_file():
         raise InputValidationError(
-            "metadata catalog does not exist; run `gravity metadata sync --all-apps`",
+            f"actual value: {actual_value(str(catalog))}; " + ("metadata catalog does not exist; run `gravity metadata sync --all-apps`"),
             field="database",
         )
     with closing(sqlite3.connect(f"{catalog.as_uri()}?mode=ro", uri=True)) as connection:
@@ -259,7 +260,7 @@ def _validate_schema(connection: sqlite3.Connection) -> None:
         "catalog_metadata",
     } <= tables:
         raise InputValidationError(
-            "metadata catalog schema is unsupported; run `gravity metadata sync --all-apps`",
+            f"actual value: {actual_value(version)}; " + ("metadata catalog schema is unsupported; run `gravity metadata sync --all-apps`"),
             field="database",
         )
 
@@ -274,7 +275,7 @@ def _catalog_values(connection: sqlite3.Connection) -> dict[str, str]:
 def search_limit(value: Any) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= 100:
         raise InputValidationError(
-            "metadata search limit must be between 1 and 100", field="limit"
+            f"actual value: {actual_value(value)}; " + ("metadata search limit must be between 1 and 100"), field="limit"
         )
     return value
 
@@ -282,7 +283,7 @@ def search_limit(value: Any) -> int:
 def search_offset(value: Any) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or value < 0:
         raise InputValidationError(
-            "metadata search offset must be a non-negative integer", field="offset"
+            f"actual value: {actual_value(value)}; " + ("metadata search offset must be a non-negative integer"), field="offset"
         )
     return value
 

@@ -19,6 +19,7 @@ from .errors import (
 )
 from .find_metadata import search_metadata
 from .workspace import Recipe, Workspace
+from .actionable_error_values import actual_value
 
 
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}(?:[T ][^ ]+)?$")
@@ -28,11 +29,11 @@ def parse_parameter_assignments(values: list[str] | None) -> dict[str, Any]:
     result: dict[str, Any] = {}
     for assignment in values or []:
         if "=" not in assignment:
-            raise InputValidationError("--param must use NAME=VALUE", field="param")
+            raise InputValidationError(f"actual value: {actual_value(raw)}; " + ("--param must use NAME=VALUE"), field="param")
         name, raw = assignment.split("=", 1)
         if not name or "." in name:
             raise InputValidationError(
-                "--param name must be a non-empty recipe parameter", field="param"
+                f"actual value: {actual_value(name)}; " + ("--param name must be a non-empty recipe parameter"), field="param"
             )
         try:
             result[name] = json.loads(raw)

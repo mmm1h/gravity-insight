@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .errors import InputValidationError
+from .actionable_error_values import actual_value
 
 
 class MaterialSdkMixin:
@@ -43,7 +44,7 @@ class MaterialSdkMixin:
             values = list(apps)
         else:
             raise InputValidationError(
-                "material performance apps must be a non-empty array",
+                f"actual value: {actual_value(apps)}; " + ("material performance apps must be a non-empty array"),
                 field="apps",
             )
         app_ids = [self._resolve_app(selected, value) for value in values]

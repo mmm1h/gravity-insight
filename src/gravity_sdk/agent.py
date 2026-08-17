@@ -41,6 +41,7 @@ from .agent_discovery_support import (
 from .agent_lexical_retrieval import response_match_policy
 from .errors import InputValidationError
 from .agent_output import ndjson_metadata
+from .actionable_error_values import actual_value
 
 
 SCHEMA_VERSION = "gravity.agent.v1"
@@ -155,7 +156,7 @@ def discover_capabilities(
 
     if type(limit) is not int or not 1 <= limit <= 5:
         raise InputValidationError(
-            "agent limit must be between 1 and 5",
+            f"actual value: {actual_value(limit)}; " + ("agent limit must be between 1 and 5"),
             field="limit",
         )
     from .agent_host_selection import host_routing_discovery

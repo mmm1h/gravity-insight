@@ -31,6 +31,7 @@ from .promotion_performance_result import (
     safe_component,
 )
 from .result_audit import project_result_audit
+from .actionable_error_values import actual_value
 
 
 PROMOTION_PERFORMANCE_NAME = "promotion_performance"
@@ -321,7 +322,7 @@ def _resanitize_component(
 def _literal_platforms(value: Any) -> tuple[str, ...]:
     if not isinstance(value, list):
         raise input_error(
-            "promotion_performance platforms must be a literal array", "platforms"
+            f"actual value: {actual_value(value)}; " + ("promotion_performance platforms must be a literal array"), "platforms"
         )
     try:
         return normalize_promotion_platforms(value)
@@ -332,7 +333,7 @@ def _literal_platforms(value: Any) -> tuple[str, ...]:
 def _literal_metrics(value: Any) -> tuple[str, ...]:
     if not isinstance(value, list):
         raise input_error(
-            "promotion_performance metrics must be a literal array", "metrics"
+            f"actual value: {actual_value(value)}; " + ("promotion_performance metrics must be a literal array"), "metrics"
         )
     try:
         return normalize_promotion_metrics(value)
@@ -349,7 +350,7 @@ def _validate_app(
         normalize_promotion_app(workspace.resolve_app(request.get("app")))
     except (KeyError, TypeError, ValueError):
         raise input_error(
-            "promotion_performance app must select a configured workspace App",
+            f"actual value: {actual_value(request.get('app'))}; " + ("promotion_performance app must select a configured workspace App"),
             "app",
         ) from None
 

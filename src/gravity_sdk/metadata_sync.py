@@ -31,6 +31,7 @@ from .metadata_lineage import (
 )
 from . import metadata_vocabulary as vocabulary
 from .runtime import call_batch
+from .actionable_error_values import actual_value
 
 
 SCHEMA_VERSION = "gravity-insight.metadata-sync.v1"
@@ -79,7 +80,7 @@ def sync_all_apps(
 
     if isinstance(concurrency, bool) or not 1 <= concurrency <= MAX_CONCURRENCY:
         raise InputValidationError(
-            f"metadata sync concurrency must be between 1 and {MAX_CONCURRENCY}",
+            f"actual value: {actual_value(concurrency)}; " + (f"metadata sync concurrency must be between 1 and {MAX_CONCURRENCY}"),
             field="concurrency",
         )
     destination = (Path(database) if database is not None else default_catalog_path()).expanduser().resolve()

@@ -22,6 +22,7 @@ from .plan_adapter_support import (
     validate_exact_targets,
     validate_selected_fields,
 )
+from .actionable_error_values import actual_value
 
 
 DASHBOARD_SNAPSHOT_NAME = "dashboard_snapshot"
@@ -75,11 +76,11 @@ def validate_dashboard_snapshot_plan(
     validate_exact_targets(context, _DYNAMIC_TARGETS)
     if not has_dynamic(context, "/app"):
         if "app" not in request:
-            raise input_error("dashboard snapshot requires app", "app")
+            raise input_error(f"actual value: {actual_value(request.get('app'))}; " + ("dashboard snapshot requires app"), "app")
         _resolve_literal_app(workspace, request["app"])
     if not has_dynamic(context, "/ref"):
         if "ref" not in request:
-            raise input_error("dashboard snapshot requires ref", "ref")
+            raise input_error(f"actual value: {actual_value(request.get('ref'))}; " + ("dashboard snapshot requires ref"), "ref")
         _validate_reference(request["ref"])
 
     if context.max_items < DASHBOARD_SNAPSHOT_MIN_ITEMS:
@@ -285,14 +286,14 @@ def _resolve_literal_app(workspace: Any, value: Any) -> None:
     rendered = str(value).strip() if isinstance(value, (str, int)) and not isinstance(value, bool) else ""
     if not rendered or len(rendered) > 256:
         raise input_error(
-            "dashboard snapshot app must select a configured workspace App",
+            f"actual value: {actual_value(rendered)}; " + ("dashboard snapshot app must select a configured workspace App"),
             "app",
         )
     try:
         workspace.resolve_app(value)
     except (KeyError, TypeError, ValueError):
         raise input_error(
-            "dashboard snapshot app must select a configured workspace App",
+            f"actual value: {actual_value(value)}; " + ("dashboard snapshot app must select a configured workspace App"),
             "app",
         ) from None
 
@@ -302,13 +303,13 @@ def _validate_reference(value: Any) -> None:
 
     if isinstance(value, bool) or not isinstance(value, (str, int)):
         raise input_error(
-            "dashboard snapshot ref must be an explicit id or exact name",
+            f"actual value: {actual_value(value)}; " + ("dashboard snapshot ref must be an explicit id or exact name"),
             "ref",
         )
     rendered = str(value).strip()
     if not rendered or len(rendered) > 256:
         raise input_error(
-            "dashboard snapshot ref must be a bounded id or exact name",
+            f"actual value: {actual_value(rendered)}; " + ("dashboard snapshot ref must be a bounded id or exact name"),
             "ref",
         )
 

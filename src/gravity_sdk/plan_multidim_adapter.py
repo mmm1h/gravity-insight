@@ -23,6 +23,7 @@ from .plan_multidim_result import (
     project_multidim_result,
     sanitize_multidim_result,
 )
+from .actionable_error_values import actual_value
 
 
 MULTIDIM_NAME = "multidim"
@@ -172,7 +173,7 @@ def _resolve_app(workspace: Any, value: Any) -> int:
 def _switches(request: Mapping[str, Any]) -> None:
     for field in ("include_total", "read_all"):
         if field in request and not isinstance(request[field], bool):
-            raise input_error("multidim switches must be booleans", field)
+            raise input_error(f"actual value: {actual_value(request.get(field))}; " + ("multidim switches must be booleans"), field)
 
 
 def _validate_output_fields(context: AdapterContext) -> None:

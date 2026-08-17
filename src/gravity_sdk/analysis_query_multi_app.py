@@ -11,6 +11,7 @@ from typing import Any
 from .errors import InputValidationError
 from .plan import DEFAULT_MAX_ITEMS
 from .result_source import GOVERNED_PRODUCT, result_source
+from .actionable_error_values import actual_value
 
 
 MULTI_APP_BATCH_SCHEMA_VERSION = "gravity.analysis-query-batch.v2"
@@ -88,7 +89,7 @@ def parse_multi_app_queries(source: Sequence[Any]) -> tuple[MultiAppComponent, .
         identifiers.append(query_id)
         values.extend(components)
     if len(set(identifiers)) != len(identifiers):
-        raise _input_error("query ids must be unique", "queries.id")
+        raise _input_error(f"actual value: {actual_value(identifiers)}; " + ("query ids must be unique"), "queries.id")
     if len(values) > MAX_COMPONENTS:
         raise _input_error(
             f"multi-App expansion supports at most {MAX_COMPONENTS} components",
@@ -100,7 +101,7 @@ def parse_multi_app_queries(source: Sequence[Any]) -> tuple[MultiAppComponent, .
 def _query(value: Any, index: int) -> tuple[str, tuple[MultiAppComponent, ...]]:
     field = f"queries[{index}]"
     if not isinstance(value, Mapping):
-        raise _input_error("batch queries must be objects", field)
+        raise _input_error(f"actual value: {actual_value(value)}; " + ("batch queries must be objects"), field)
     _reject_unknown(value, _QUERY_FIELDS, field)
     query_id = value.get("id")
     if not isinstance(query_id, str) or not _QUERY_ID_RE.fullmatch(query_id):
@@ -108,12 +109,12 @@ def _query(value: Any, index: int) -> tuple[str, tuple[MultiAppComponent, ...]]:
     kind = str(value.get("kind", "")).strip().casefold()
     if kind not in MULTI_APP_KINDS:
         raise _input_error(
-            "multi-App kind must be event, funnel, retention, or property",
+            f"actual value: {actual_value(kind)}; " + ("multi-App kind must be event, funnel, retention, or property"),
             f"{field}.kind",
         )
     spec = value.get("spec")
     if not isinstance(spec, Mapping):
-        raise _input_error("spec must be an object", f"{field}.spec")
+        raise _input_error(f"actual value: {actual_value(spec)}; " + ("spec must be an object"), f"{field}.spec")
     options = {
         "kind": kind,
         "spec": copy.deepcopy(dict(spec)),
@@ -162,27 +163,27 @@ def decorate_multi_app_result(
 
 def _apps(value: Any, field: str) -> tuple[str | int, ...]:
     if not isinstance(value, Sequence) or isinstance(value, (str, bytes, bytearray)):
-        raise _input_error("apps must be an array", f"{field}.apps")
+        raise _input_error(f"actual value: {actual_value(value)}; " + ("apps must be an array"), f"{field}.apps")
     apps = tuple(item.strip() if isinstance(item, str) else item for item in value)
     if not apps:
-        raise _input_error("apps must not be empty", f"{field}.apps")
+        raise _input_error(f"actual value: {actual_value(apps)}; " + ("apps must not be empty"), f"{field}.apps")
     if any(not _is_app(item) or item == "*" for item in apps):
         raise _input_error(
-            "apps items must be explicit workspace aliases or positive ids",
+            f"actual value: {actual_value(apps)}; " + ("apps items must be explicit workspace aliases or positive ids"),
             f"{field}.apps",
         )
     if len(set(apps)) != len(apps):
-        raise _input_error("apps must be unique", f"{field}.apps")
+        raise _input_error(f"actual value: {actual_value(apps)}; " + ("apps must be unique"), f"{field}.apps")
     return apps
 
 
 def _limits(value: Any, field: str) -> int:
     if not isinstance(value, Mapping):
-        raise _input_error("limits must be an object", f"{field}.limits")
+        raise _input_error(f"actual value: {actual_value(value)}; " + ("limits must be an object"), f"{field}.limits")
     _reject_unknown(value, frozenset({"max_items"}), f"{field}.limits")
     maximum = value.get("max_items", DEFAULT_MAX_ITEMS)
     if type(maximum) is not int:
-        raise _input_error("max_items must be an integer", f"{field}.limits.max_items")
+        raise _input_error(f"actual value: {actual_value(maximum)}; " + ("max_items must be an integer"), f"{field}.limits.max_items")
     return maximum
 
 
@@ -190,14 +191,14 @@ def _output_fields(value: Any, field: str) -> tuple[str, ...]:
     if value is None:
         return ()
     if not isinstance(value, Sequence) or isinstance(value, (str, bytes, bytearray)):
-        raise _input_error("output_fields must be an array", f"{field}.output_fields")
+        raise _input_error(f"actual value: {actual_value(value)}; " + ("output_fields must be an array"), f"{field}.output_fields")
     selected = tuple(item.strip() for item in value if isinstance(item, str))
     if len(selected) != len(value) or not selected:
         raise _input_error(
-            "output_fields must be a non-empty string array", f"{field}.output_fields"
+            f"actual value: {actual_value(selected)}; " + ("output_fields must be a non-empty string array"), f"{field}.output_fields"
         )
     if len(set(selected)) != len(selected):
-        raise _input_error("output_fields must be unique", f"{field}.output_fields")
+        raise _input_error(f"actual value: {actual_value(selected)}; " + ("output_fields must be unique"), f"{field}.output_fields")
     return selected
 
 
@@ -205,7 +206,7 @@ def _optional_text(value: Any, field: str) -> str | None:
     if value is None:
         return None
     if not isinstance(value, str) or not value.strip():
-        raise _input_error(f"{field} must be a non-empty string", field)
+        raise _input_error(f"actual value: {actual_value(value)}; " + (f"{field} must be a non-empty string"), field)
     return value.strip()
 
 

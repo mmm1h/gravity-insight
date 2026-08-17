@@ -22,6 +22,7 @@ from .plan_adapter_support import (
     validate_exact_targets,
     validate_selected_fields,
 )
+from .actionable_error_values import actual_value
 
 
 DASHBOARD_ANALYSIS_NAME = "dashboard_analysis"
@@ -113,13 +114,13 @@ def validate_dashboard_analysis_plan(
     validate_exact_targets(context, _DYNAMIC_TARGETS)
     if not has_dynamic(context, "/app"):
         if "app" not in request:
-            raise input_error("dashboard analysis requires app", "app")
+            raise input_error(f"actual value: {actual_value(request.get('app'))}; " + ("dashboard analysis requires app"), "app")
         _resolve_literal_app(workspace, request["app"])
 
     _validate_reference(request.get("ref"))
     mode = request.get("mode", "run")
     if mode not in _MODES:
-        raise input_error("dashboard analysis mode must be prepare or run", "mode")
+        raise input_error(f"actual value: {actual_value(mode)}; " + ("dashboard analysis mode must be prepare or run"), "mode")
     _validate_window(request.get("start"), request.get("end"))
     if context.max_items < DASHBOARD_ANALYSIS_MIN_ITEMS:
         raise input_error(
@@ -278,7 +279,7 @@ def _chart_budget(value: Any, max_items: int) -> int:
         or not 1 <= value <= DASHBOARD_ANALYSIS_MAX_CHARTS
     ):
         raise input_error(
-            f"dashboard analysis max_charts must be between 1 and {DASHBOARD_ANALYSIS_MAX_CHARTS}",
+            f"actual value: {actual_value(value)}; " + (f"dashboard analysis max_charts must be between 1 and {DASHBOARD_ANALYSIS_MAX_CHARTS}"),
             "max_charts",
         )
     return min(value, max_items - 2)
@@ -286,36 +287,36 @@ def _chart_budget(value: Any, max_items: int) -> int:
 
 def _validate_window(start: Any, end: Any) -> None:
     if not isinstance(start, str) or not isinstance(end, str):
-        raise input_error("dashboard analysis requires literal start and end", "start/end")
+        raise input_error(f"actual value: {actual_value((start, end))}; " + ("dashboard analysis requires literal start and end"), "start/end")
     try:
         start_day, end_day = date.fromisoformat(start), date.fromisoformat(end)
     except (TypeError, ValueError):
         raise input_error(
-            "dashboard analysis start and end must be ISO dates",
+            f"actual value: {actual_value((start, end))}; " + ("dashboard analysis start and end must be ISO dates"),
             "start/end",
         ) from None
     if start_day > end_day or (end_day - start_day).days > 90:
         raise input_error(
-            "dashboard analysis inclusive date window must not exceed 90 days",
+            f"actual value: {actual_value((start, end))}; " + ("dashboard analysis inclusive date window must not exceed 90 days"),
             "start/end",
         )
 
 
 def _resolve_literal_app(workspace: Any, value: Any) -> None:
     if isinstance(value, bool) or not isinstance(value, (str, int)):
-        raise input_error("dashboard analysis app must select a workspace App", "app")
+        raise input_error(f"actual value: {actual_value(value)}; " + ("dashboard analysis app must select a workspace App"), "app")
     try:
         workspace.resolve_app(value)
     except (KeyError, TypeError, ValueError):
-        raise input_error("dashboard analysis app must select a workspace App", "app") from None
+        raise input_error(f"actual value: {actual_value(value)}; " + ("dashboard analysis app must select a workspace App"), "app") from None
 
 
 def _validate_reference(value: Any) -> None:
     if isinstance(value, bool) or not isinstance(value, (str, int)):
-        raise input_error("dashboard analysis ref must be an explicit id or exact name", "ref")
+        raise input_error(f"actual value: {actual_value(value)}; " + ("dashboard analysis ref must be an explicit id or exact name"), "ref")
     rendered = str(value).strip()
     if not rendered or len(rendered) > 256:
-        raise input_error("dashboard analysis ref must be a bounded id or exact name", "ref")
+        raise input_error(f"actual value: {actual_value(rendered)}; " + ("dashboard analysis ref must be a bounded id or exact name"), "ref")
 
 
 def _failure(detail: ErrorDetail) -> dict[str, Any]:

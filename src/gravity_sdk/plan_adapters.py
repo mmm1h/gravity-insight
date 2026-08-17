@@ -67,6 +67,7 @@ from .plan_adapter_support import (
 )
 from .sql.products import normalize_app_ids
 from .sql.time_window import normalize_window
+from .actionable_error_values import actual_value
 
 
 _RUN_FIELDS = frozenset(
@@ -210,7 +211,7 @@ def _validate_run(
     _request_object(request, _RUN_FIELDS, "run")
     selector = request.get("selector")
     if not isinstance(selector, str) or not selector.strip():
-        raise _input("run request requires selector", "selector")
+        raise _input(f"actual value: {actual_value(selector)}; " + ("run request requires selector"), "selector")
     operation_id, recipe = _resolve_selector(selector, workspace, stable_operations)
     description = insight.describe(operation_id)
     fields = description.get("input_schema", {})
@@ -340,9 +341,9 @@ def _validate_run_options(
         workspace.resolve_app(request.get("app"))
     for field in ("start", "end"):
         if field in request and not isinstance(request[field], str):
-            raise _input("run time bounds must be strings", field)
+            raise _input(f"actual value: {actual_value(request.get(field))}; " + ("run time bounds must be strings"), field)
     if "all_pages" in request and not isinstance(request["all_pages"], bool):
-        raise _input("run all_pages must be a boolean", "all_pages")
+        raise _input(f"actual value: {actual_value(request.get('all_pages'))}; " + ("run all_pages must be a boolean"), "all_pages")
 
 
 def _validate_recipe_parameters(
@@ -368,7 +369,7 @@ def _validate_sql(
     _validate_exact_targets(context, frozenset({"/start", "/end", "/app_id"}))
     product = request.get("product")
     if not isinstance(product, str) or not product.strip():
-        raise _input("SQL product request requires product", "product")
+        raise _input(f"actual value: {actual_value(product)}; " + ("SQL product request requires product"), "product")
     try:
         definition = workspace.product(product)
     except (KeyError, ValueError) as exc:
@@ -380,7 +381,7 @@ def _validate_sql(
     start, end = request.get("start"), request.get("end")
     for field, value in (("start", start), ("end", end)):
         if f"/{field}" not in dynamic and not isinstance(value, str):
-            raise _input("SQL product requires start and end", "start/end")
+            raise _input(f"actual value: {actual_value((request.get('start'), request.get('end')))}; " + ("SQL product requires start and end"), "start/end")
     if not ({"/start", "/end"} & dynamic):
         normalize_window(start, end)
     _validate_sql_apps(request, product, workspace, dynamic)

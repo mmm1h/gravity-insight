@@ -531,11 +531,7 @@ class GravitySDK(
             return workspace.resolve_app(value)
         except ValueError:
             from .errors import InputValidationError
-
-            raise InputValidationError(
-                "app must reference a configured workspace App or positive id",
-                field="app",
-            ) from None
+            raise InputValidationError("app must reference a configured workspace App or positive id", field="app") from None
 
     def _select_workspace(self, workspace: Any | None) -> Any:
         return self._workspace if workspace is None else _load_workspace(workspace)

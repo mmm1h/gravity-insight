@@ -18,6 +18,7 @@ from .promotion_performance_result import (
     PROMOTION_NON_METRIC_FIELDS,
     SUPPORTED_PLATFORMS,
 )
+from .actionable_error_values import actual_value
 
 
 INPUT_SCHEMA_VERSION = "gravity-insight.promotion-performance-input.v1"
@@ -133,11 +134,11 @@ def normalize_promotion_app(value: str | int) -> str:
 
     if isinstance(value, bool) or not isinstance(value, (str, int)):
         raise _input_error(
-            "promotion performance app_id must be a positive App id", "app_id"
+            f"actual value: {actual_value(value)}; " + ("promotion performance app_id must be a positive App id"), "app_id"
         )
     if isinstance(value, int) and (value <= 0 or value.bit_length() > 426):
         raise _input_error(
-            "promotion performance app_id must be a positive App id", "app_id"
+            f"actual value: {actual_value(value)}; " + ("promotion performance app_id must be a positive App id"), "app_id"
         )
     rendered = str(value)
     if (
@@ -149,7 +150,7 @@ def normalize_promotion_app(value: str | int) -> str:
         or int(rendered) <= 0
     ):
         raise _input_error(
-            "promotion performance app_id must be a positive App id", "app_id"
+            f"actual value: {actual_value(rendered)}; " + ("promotion performance app_id must be a positive App id"), "app_id"
         )
     return str(int(rendered))
 
@@ -162,23 +163,23 @@ def normalize_promotion_window(start: Any, end: Any) -> tuple[str, str]:
         for value in (start, end)
     ):
         raise _input_error(
-            "promotion performance dates must use YYYY-MM-DD", "start/end"
+            f"actual value: {actual_value((start, end))}; " + ("promotion performance dates must use YYYY-MM-DD"), "start/end"
         )
     try:
         first = date.fromisoformat(start)
         last = date.fromisoformat(end)
     except (TypeError, ValueError):
         raise _input_error(
-            "promotion performance dates must use YYYY-MM-DD", "start/end"
+            f"actual value: {actual_value((start, end))}; " + ("promotion performance dates must use YYYY-MM-DD"), "start/end"
         ) from None
     if first > last:
         raise _input_error(
-            "promotion performance start must not follow end", "start/end"
+            f"actual value: {actual_value((start, end))}; " + ("promotion performance start must not follow end"), "start/end"
         )
     normalized = first.isoformat(), last.isoformat()
     if normalized != (start, end):
         raise _input_error(
-            "promotion performance dates must use YYYY-MM-DD", "start/end"
+            f"actual value: {actual_value(normalized)}; " + ("promotion performance dates must use YYYY-MM-DD"), "start/end"
         )
     return normalized
 
@@ -190,7 +191,7 @@ def normalize_promotion_platforms(values: Sequence[str]) -> tuple[str, ...]:
         values, Sequence
     ):
         raise _input_error(
-            "promotion performance platforms must be an array", "platforms"
+            f"actual value: {actual_value(values)}; " + ("promotion performance platforms must be an array"), "platforms"
         )
     selected: list[str] = []
     for value in values:
@@ -201,12 +202,12 @@ def normalize_promotion_platforms(values: Sequence[str]) -> tuple[str, ...]:
             )
         if value in selected:
             raise _input_error(
-                "promotion performance platforms must be unique", "platforms"
+                f"actual value: {actual_value(value)}; " + ("promotion performance platforms must be unique"), "platforms"
             )
         selected.append(value)
     if not selected:
         raise _input_error(
-            "promotion performance requires at least one platform", "platforms"
+            f"actual value: {actual_value(selected)}; " + ("promotion performance requires at least one platform"), "platforms"
         )
     return tuple(selected)
 
@@ -218,7 +219,7 @@ def normalize_promotion_metrics(values: Sequence[str]) -> tuple[str, ...]:
         values, Sequence
     ):
         raise _input_error(
-            "promotion performance metrics must be an array", "metrics"
+            f"actual value: {actual_value(values)}; " + ("promotion performance metrics must be an array"), "metrics"
         )
     selected: list[str] = []
     for value in values:
@@ -232,17 +233,17 @@ def normalize_promotion_metrics(values: Sequence[str]) -> tuple[str, ...]:
             or value in PROMOTION_NON_METRIC_FIELDS
         ):
             raise _input_error(
-                "promotion performance metrics must be safe physical metric names",
+                f"actual value: {actual_value(value)}; " + ("promotion performance metrics must be safe physical metric names"),
                 "metrics",
             )
         if value in selected:
             raise _input_error(
-                "promotion performance metrics must be unique", "metrics"
+                f"actual value: {actual_value(value)}; " + ("promotion performance metrics must be unique"), "metrics"
             )
         selected.append(value)
     if not 1 <= len(selected) <= MAX_METRICS:
         raise _input_error(
-            f"promotion performance metrics must contain 1 through {MAX_METRICS} values",
+            f"actual value: {actual_value(selected)}; " + (f"promotion performance metrics must contain 1 through {MAX_METRICS} values"),
             "metrics",
         )
     return tuple(selected)
@@ -271,7 +272,7 @@ def _credential_field(value: str) -> bool:
 def normalize_promotion_workers(value: Any) -> int:
     if type(value) is not int or not 1 <= value <= MAX_CONCURRENCY:
         raise _input_error(
-            f"promotion performance max_workers must be between 1 and {MAX_CONCURRENCY}",
+            f"actual value: {actual_value(value)}; " + (f"promotion performance max_workers must be between 1 and {MAX_CONCURRENCY}"),
             "max_workers",
         )
     return value

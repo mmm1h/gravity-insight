@@ -16,6 +16,7 @@ from .composite_batch import (
 )
 from .composite_catalog import identity_contains, identity_excludes, stable_operation
 from .errors import InputValidationError
+from .actionable_error_values import actual_value
 
 
 SCHEMA_VERSION = "gravity-insight.analysis-context.v1"
@@ -125,7 +126,7 @@ def _request(source: AnalysisContextSource, app_id: str) -> dict[str, Any]:
 def _workers(value: int) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= MAX_CONCURRENCY:
         raise InputValidationError(
-            f"analysis context max_workers must be between 1 and {MAX_CONCURRENCY}",
+            f"actual value: {actual_value(value)}; " + (f"analysis context max_workers must be between 1 and {MAX_CONCURRENCY}"),
             field="max_workers",
         )
     return value

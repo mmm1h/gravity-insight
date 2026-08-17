@@ -18,6 +18,7 @@ from .errors import (
 )
 from .resolver import resolve_and_run
 from .result_source import aggregate_result_sources, selector_result_source
+from .actionable_error_values import actual_value
 
 
 SCHEMA_VERSION = "gravity-insight.resolver-batch.v1"
@@ -246,9 +247,9 @@ def _request_payload(
             )
         value = value.get("requests")
     if not isinstance(value, (list, tuple)) or not value:
-        raise _input_error("resolver batch requires a non-empty requests array", "requests")
+        raise _input_error(f"actual value: {actual_value(value)}; " + ("resolver batch requires a non-empty requests array"), "requests")
     if not all(isinstance(item, Mapping) for item in value):
-        raise _input_error("resolver batch requests must be objects", "requests")
+        raise _input_error(f"actual value: {actual_value(value)}; " + ("resolver batch requests must be objects"), "requests")
     return [dict(item) for item in value]
 
 
@@ -297,27 +298,27 @@ def _validate_item(
     unknown = sorted(set(value) - ITEM_FIELDS)
     if unknown:
         raise _input_error(
-            "unknown resolver batch request fields: " + ", ".join(unknown)
-            + "; allowed fields: " + ", ".join(sorted(ITEM_FIELDS)),
+            f"actual value: {actual_value(unknown)}; " + ("unknown resolver batch request fields: " + ", ".join(unknown)
+            + "; allowed fields: " + ", ".join(sorted(ITEM_FIELDS))),
             unknown[0],
         )
     selector = value.get("selector")
     if not isinstance(selector, str) or not selector.strip():
-        raise _input_error("resolver batch selector must be a non-empty string", "selector")
+        raise _input_error(f"actual value: {actual_value(selector)}; " + ("resolver batch selector must be a non-empty string"), "selector")
     inputs, parameters = _item_bindings(value)
     if "app" in value and "apps" in value:
         raise _input_error("resolver batch app and apps cannot be combined", "apps")
     start, end = value.get("start"), value.get("end")
     if start is not None and not isinstance(start, str):
-        raise _input_error("resolver batch start must be a string", "start")
+        raise _input_error(f"actual value: {actual_value(start)}; " + ("resolver batch start must be a string"), "start")
     if end is not None and not isinstance(end, str):
-        raise _input_error("resolver batch end must be a string", "end")
+        raise _input_error(f"actual value: {actual_value(end)}; " + ("resolver batch end must be a string"), "end")
     all_pages = value.get("all_pages", False)
     if not isinstance(all_pages, bool):
-        raise _input_error("resolver batch all_pages must be a boolean", "all_pages")
+        raise _input_error(f"actual value: {actual_value(all_pages)}; " + ("resolver batch all_pages must be a boolean"), "all_pages")
     request_id = value.get("request_id", f"item-{index + 1}")
     if not isinstance(request_id, str) or not request_id.strip():
-        raise _input_error("resolver batch request_id must be a non-empty string", "request_id")
+        raise _input_error(f"actual value: {actual_value(request_id)}; " + ("resolver batch request_id must be a non-empty string"), "request_id")
     output_fields = (
         _output_fields(value.get("output_fields"))
         if "output_fields" in value
@@ -342,7 +343,7 @@ def _output_fields(value: Any) -> tuple[str, ...] | None:
     if not isinstance(value, (list, tuple)) or not value or not all(
         isinstance(item, str) and item.strip() for item in value
     ):
-        raise _input_error("resolver batch output_fields must be a non-empty string array", "output_fields")
+        raise _input_error(f"actual value: {actual_value(value)}; " + ("resolver batch output_fields must be a non-empty string array"), "output_fields")
     return tuple(item.strip() for item in value)
 
 
@@ -352,9 +353,9 @@ def _item_bindings(value: Mapping[str, Any]) -> tuple[Mapping[str, Any], Mapping
     inputs = value.get("input", value.get("inputs", {}))
     parameters = value.get("parameters", {})
     if not isinstance(inputs, Mapping):
-        raise _input_error("resolver batch inputs must be an object", "inputs")
+        raise _input_error(f"actual value: {actual_value(inputs)}; " + ("resolver batch inputs must be an object"), "inputs")
     if not isinstance(parameters, Mapping):
-        raise _input_error("resolver batch parameters must be an object", "parameters")
+        raise _input_error(f"actual value: {actual_value(parameters)}; " + ("resolver batch parameters must be an object"), "parameters")
     return inputs, parameters
 
 
@@ -372,10 +373,10 @@ def _item_apps(
             key=lambda alias: (alias.casefold(), alias),
         )
         if not aliases:
-            raise _input_error("apps='*' requires bound workspace apps", "apps")
+            raise _input_error(f"actual value: {actual_value(aliases)}; " + ("apps='*' requires bound workspace apps"), "apps")
         return aliases, aliases
     if not isinstance(selected, (list, tuple)) or not selected:
-        raise _input_error("resolver batch apps must be '*' or a non-empty array", "apps")
+        raise _input_error(f"actual value: {actual_value(selected)}; " + ("resolver batch apps must be '*' or a non-empty array"), "apps")
     apps = list(selected)
     for app in apps:
         _validate_app(app, "apps")
@@ -389,7 +390,7 @@ def _validate_app(value: Any, field: str) -> None:
         isinstance(value, str) and bool(value.strip()) and value != "*"
     ) or (type(value) is int and value > 0)
     if not valid:
-        raise _input_error("resolver batch app references must be aliases or positive ids", field)
+        raise _input_error(f"actual value: {actual_value(valid)}; " + ("resolver batch app references must be aliases or positive ids"), field)
 
 
 def _result_item(item: _RunItem, result: Mapping[str, Any]) -> dict[str, Any]:
@@ -508,10 +509,10 @@ def _item_exit_code(item: Mapping[str, Any]) -> int:
 
 def _validate_limits(max_workers: int, max_pages: int, max_items: int) -> None:
     if type(max_workers) is not int or not 1 <= max_workers <= MAX_CONCURRENCY:
-        raise _input_error("resolver batch concurrency must be between 1 and 24", "concurrency")
+        raise _input_error(f"actual value: {actual_value(max_workers)}; " + ("resolver batch concurrency must be between 1 and 24"), "concurrency")
     for field, value in (("max_pages", max_pages), ("max_items", max_items)):
         if type(value) is not int or value <= 0:
-            raise _input_error(f"resolver batch {field} must be a positive integer", field)
+            raise _input_error(f"actual value: {actual_value(value)}; " + (f"resolver batch {field} must be a positive integer"), field)
 
 
 def _input_error(message: str, field: str) -> InputValidationError:

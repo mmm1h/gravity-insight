@@ -9,6 +9,7 @@ from .errors import InputValidationError
 from .output_projection import project_output, validate_output_fields
 from .pagination_audit import pagination_audit
 from .pagination_cli import page_limits
+from .actionable_error_values import actual_value
 
 
 def add_read_command(
@@ -94,7 +95,7 @@ def _validate_output_mode(args: Any) -> None:
     if getattr(args, "output", None) or getattr(args, "format", "json") == "ndjson":
         return
     raise InputValidationError(
-        "--all-pages requires --output <path> or --format ndjson",
+        f"actual value: {actual_value(getattr(args, 'all_pages', None))}; " + ("--all-pages requires --output <path> or --format ndjson"),
         field="all_pages",
     )
 

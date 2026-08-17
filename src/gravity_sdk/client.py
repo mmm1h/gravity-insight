@@ -49,6 +49,7 @@ from .registry import PolicyEngine, Registry
 from .result_audit import add_result_audit, error_receipt_references, result_receipt_references
 from .result_source import RAW_OPERATION, result_source
 from .transport import Transport
+from .actionable_error_values import actual_value
 
 
 _LOGGER = logging.getLogger("gravity_sdk")
@@ -1151,18 +1152,18 @@ def _batch_request(
     item = validate_batch_item(value)
     operation_id = item.get("operation_id")
     if not isinstance(operation_id, str) or not operation_id.strip():
-        raise batch_input_error("batch operation_id must be a non-empty string", "operation_id")
+        raise batch_input_error(f"actual value: {actual_value(operation_id)}; " + ("batch operation_id must be a non-empty string"), "operation_id")
     normalized_operation_id = operation_id.strip()
     inputs = item.get("inputs", item.get("input", {}))
     if not isinstance(inputs, Mapping):
-        raise batch_input_error("batch inputs must be an object", "inputs")
+        raise batch_input_error(f"actual value: {actual_value(inputs)}; " + ("batch inputs must be an object"), "inputs")
     normalized_inputs = dict(inputs)
     request_id = item.get("request_id")
     if request_id is not None and not isinstance(request_id, str):
-        raise batch_input_error("batch request_id must be a string", "request_id")
+        raise batch_input_error(f"actual value: {actual_value(request_id)}; " + ("batch request_id must be a string"), "request_id")
     read_all = item.get("read_all", False)
     if not isinstance(read_all, bool):
-        raise batch_input_error("batch read_all must be a boolean", "read_all")
+        raise batch_input_error(f"actual value: {actual_value(read_all)}; " + ("batch read_all must be a boolean"), "read_all")
     return BatchRequest(normalized_operation_id, normalized_inputs, request_id, read_all)
 
 

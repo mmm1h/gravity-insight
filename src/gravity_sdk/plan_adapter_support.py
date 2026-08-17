@@ -8,6 +8,7 @@ from typing import Any
 
 from .errors import InputValidationError
 from .plan import AdapterContext
+from .actionable_error_values import actual_value
 
 
 ENVELOPE_FIELDS = frozenset(
@@ -147,7 +148,7 @@ def request_object(
     request: Mapping[str, Any], allowed: frozenset[str], label: str
 ) -> None:
     if not isinstance(request, Mapping):
-        raise input_error(f"{label} request must be an object", "request")
+        raise input_error(f"actual value: {actual_value(request)}; " + (f"{label} request must be an object"), "request")
     if set(request) - allowed:
         raise input_error(f"{label} request contains an unknown field", "request")
 
@@ -162,14 +163,14 @@ def alias_mapping(
 
 def mapping(value: Any, field: str) -> Mapping[str, Any]:
     if not isinstance(value, Mapping):
-        raise input_error(f"{field} must be an object", field)
+        raise input_error(f"actual value: {actual_value(value)}; " + (f"{field} must be an object"), field)
     return value
 
 
 def nested_mapping(value: Any, field: str) -> None:
     selected = mapping(value, field)
     if any(not isinstance(item, Mapping) for item in selected.values()):
-        raise input_error(f"{field} values must be objects", field)
+        raise input_error(f"actual value: {actual_value(value)}; " + (f"{field} values must be objects"), field)
 
 
 def validate_selected_fields(
@@ -199,7 +200,7 @@ def bounded_optional(
     if allow_none and value is None:
         return
     if type(value) is not int or not minimum <= value <= maximum:
-        raise input_error(f"{field} is outside its allowed bound", field)
+        raise input_error(f"actual value: {actual_value(value)}; " + (f"{field} is outside its allowed bound"), field)
 
 
 def array(value: Any) -> bool:

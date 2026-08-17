@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from .errors import InputValidationError
+from .actionable_error_values import actual_value
 
 
 def load_json_input(source: Any, *, required: bool = False) -> Any:
@@ -68,12 +69,12 @@ def normalize_input_arguments(args: argparse.Namespace) -> None:
 
 def set_input_path(target: dict[str, Any], assignment: str) -> None:
     if "=" not in assignment:
-        raise InputValidationError("--set must use PATH=VALUE", field="set")
+        raise InputValidationError(f"actual value: {actual_value(raw)}; " + ("--set must use PATH=VALUE"), field="set")
     path, raw_value = assignment.split("=", 1)
     parts = path.split(".")
     if not path or any(not part for part in parts):
         raise InputValidationError(
-            "--set path must contain non-empty dot-separated names", field="set"
+            f"actual value: {actual_value(path)}; " + ("--set path must contain non-empty dot-separated names"), field="set"
         )
     try:
         value = json.loads(raw_value)

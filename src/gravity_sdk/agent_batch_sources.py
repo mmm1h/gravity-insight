@@ -26,6 +26,7 @@ from .find import _metadata_card
 from .find_metadata import search_metadata
 from .agent_vocabulary import is_workspace_vocabulary
 from .workspace import load_workspace
+from .actionable_error_values import actual_value
 
 
 @dataclass(frozen=True)
@@ -163,7 +164,7 @@ def operation_inventory(client: Any) -> tuple[Mapping[str, Any], ...]:
         )
     if not callable(getattr(client, "operations", None)):
         raise InputValidationError(
-            "capabilities_many requires the complete offline operation inventory",
+            f"actual value: {actual_value(type(client).__name__)}; " + ("capabilities_many requires the complete offline operation inventory"),
             field="client",
         )
     return tuple(
