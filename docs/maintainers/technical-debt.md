@@ -266,3 +266,7 @@ filter compiler、scheduler 或活动结构债条目，500/80/15/0 与 quality b
 
 Read→write 效果隔离拆为 source/action 校验、Plan 编译和 SDK 执行三个窄模块；共享 `sdk.py`、
 `plan_adapters.py` 与评测阈值未增长，quality 500/80/15/0 全过，不新增活动结构债条目。
+
+投影引擎把 `_project_data_containers` / `_project_list_rows` 下沉到
+`response_projection.py` 与 `list_row_projection.py`，函数债务删除、`executor.py` AST
+ratchet 收紧到 4753，硬顶 9149 未抬；本轮不新增活动结构债条目。

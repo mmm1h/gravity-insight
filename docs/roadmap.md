@@ -5988,3 +5988,23 @@ segment spec 标量 values、funnel `global_conditions` 用户属性）。凭据
 `plan_adapters.py` 13，以及 `_input` / `_date_error` / `_app_id_error` 这类缺 `field=`
 的 helper。质量门禁未放宽：新文件仍 ≤500；`catalog.py` / `cli.py` / `client.py` 的 AST
 增长记入 ledger，硬顶未抬。生产 HTTP **0**。不 push、不碰 GitHub。
+
+## 投影引擎降复杂度（2026-08-17）
+
+**提案：**`executor.py::_project_data_containers`（108 SLOC / 复杂度 25）与
+`_project_list_rows`（94 / 28）都超过函数 80 / 复杂度 15。本周分页修复和 D28 都动过这段
+投影语义，先把这两个热点拆到门槛内。不改公开签名、返回类型、异常类型或警告文本；
+不碰 `models.py`；不新增 `growth_ledger`；生产 HTTP 0。
+
+**拆法：**按投影对象拆成两个新模块，而不是继续堆在 `executor.py` 里。容器投影
+（标量列表、page_info、递归集合、嵌套 data container）落到
+`response_projection.py`；列表行扫描与警告/drift 汇总落到 `list_row_projection.py`。
+理由：两个入口共享 `_project_nested_item_value` / `_project_scalar_list` /
+`_copy_json_value`，但决策树互不嵌套；继续留在 `executor.py` 会把 AST 从 8912 抬过
+硬顶 9149。辅助函数只做原文分支搬迁，警告字符串按原字面保留。
+
+**结果：**`_project_data_containers` 29 / 6，`_project_list_rows` 32 / 4，均低于 80 / 15。
+新文件 `response_projection.py` 441 SLOC、`list_row_projection.py` 201 SLOC，都低于 500。
+`executor.py` AST ratchet `8912→4753`，硬顶 9149 未抬；函数债务删除上述两项，
+`ReadExecutor.execute` 84 未动。`growth_ledger` 未追加。能力台账 233 / 224 / 92 / 7 / 329
+与动线 `56 = 50 / 1 / 5` 本轮不重算。生产 HTTP **0**。不 push、不碰 GitHub。
