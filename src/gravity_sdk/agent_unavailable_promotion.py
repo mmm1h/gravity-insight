@@ -22,14 +22,15 @@ def unavailable_promotion_gap(query: str) -> dict[str, Any] | None:
                 "Tencent advertiser and ad-group report roots are now non-empty and "
                 "promotion.tencent.tencent_adgroup_v2.list is a stable read, but Tencent "
                 "creative performance (promotion.tencent.ad.list) still returns "
-                "permission_unavailable on the declared parent, and Kuaishou delivery rows "
-                "remain empty."
+                "permission_unavailable on the declared parent, and Kuaishou campaign "
+                "and creative lists remain empty after confirmed-read probes."
             ),
             next_action=(
                 "Call promotion.tencent.tencent_adgroup_v2.list for Tencent ad-group "
-                "performance; do not treat Kuaishou company IDs as delivery rows, and do "
+                "performance; do not treat Kuaishou company IDs as delivery rows, do "
                 "not retry promotion.tencent.ad.list after its declared-parent "
-                "permission_unavailable."
+                "permission_unavailable, and do not invent a Kuaishou campaign or "
+                "creative item schema from the empty confirmed-read samples."
             ),
         )
     if _platform_specific_creatives(selected, words):
@@ -38,13 +39,15 @@ def unavailable_promotion_gap(query: str) -> dict[str, Any] | None:
             journey="platform_specific_creatives",
             reason=(
                 "Tencent asset-material and medium-creative lists now have non-empty "
-                "platform-specific contracts, but other non-Bytedance creative drafts still "
-                "lack confirmed-read semantics or a non-empty item schema."
+                "platform-specific contracts, but Tencent title-library and Kuaishou "
+                "creative drafts still lack a non-empty item schema after confirmed-read "
+                "probes."
             ),
             next_action=(
                 "Call material.tencent.list or material.tencent_medium_creative.list for "
                 "Tencent; do not substitute the common material catalog, and do not invent "
-                "Kuaishou or other unbound-platform creative contracts."
+                "Tencent title-library or Kuaishou creative item schemas from the empty "
+                "confirmed-read samples."
             ),
         )
     return None

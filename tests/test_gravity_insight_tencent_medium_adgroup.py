@@ -207,6 +207,29 @@ class TencentAdgroupReportAndCreativeTests(unittest.TestCase):
         self.assertEqual(9, row["dynamic_creative_id"])
         self.assertEqual({"video_id": "v1"}, row["creative_components"])
 
+    def test_empty_tencent_kuaishou_reads_stay_confirmed_and_uninvented(self) -> None:
+        from gravity_sdk.agent_unavailable_promotion import unavailable_promotion_gap
+        from gravity_sdk.prober.read_semantics import (
+            CONFIRMATIONS_PATH,
+            confirmation_keys,
+        )
+
+        keys = confirmation_keys(CONFIRMATIONS_PATH)
+        self.assertTrue(
+            {
+                ("POST", "/turbo_engine/api/v1/tencent/asset/text/title/list/"),
+                ("POST", "/turbo_engine/api/v1/kuaishou/campaign/list/"),
+                ("POST", "/turbo_engine/api/v1/kuaishou/creative/list/"),
+            }
+            <= keys
+        )
+        hierarchy = unavailable_promotion_gap("下钻非巨量平台的计划、组和创意表现。")
+        creative = unavailable_promotion_gap("深查各平台专属素材和创意字段。")
+        self.assertEqual("NON_BYTEDANCE_HIERARCHY_PARENT_MISSING", hierarchy["code"])
+        self.assertIn("Kuaishou campaign", hierarchy["reason"])
+        self.assertEqual("PLATFORM_SPECIFIC_CREATIVE_CONTRACT_MISSING", creative["code"])
+        self.assertIn("title-library", creative["reason"])
+
 
 def _operations_manifest(*operation_ids: str) -> dict[str, Any]:
     operations = []

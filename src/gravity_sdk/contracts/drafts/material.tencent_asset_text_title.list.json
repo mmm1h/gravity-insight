@@ -5,7 +5,7 @@
       {
         "code": "empty_sample",
         "detail": "The observed tenant response was empty and cannot prove an item schema.",
-        "evidence": "evidence/probe/20260808T205532Z_material.tencent_asset_text_title.list.yaml",
+        "evidence": "evidence/probe/20260817T151707Z_material.tencent_asset_text_title.list.yaml",
         "status": "open"
       },
       {
@@ -17,21 +17,11 @@
       {
         "code": "response_schema_unverified",
         "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
-        "evidence": "evidence/probe/20260808T205532Z_material.tencent_asset_text_title.list.yaml",
+        "evidence": "evidence/probe/20260817T151707Z_material.tencent_asset_text_title.list.yaml",
         "status": "open"
       }
     ],
     "candidate_fields": [
-      {
-        "classification_reason": "frontend_static_consumer_unreviewed",
-        "expose": false,
-        "path": "data.list",
-        "presence": "unknown",
-        "privacy_classification": "manual_review",
-        "types": [
-          "unknown"
-        ]
-      },
       {
         "classification_reason": "business_metadata_name_pattern",
         "expose": true,
@@ -94,6 +84,17 @@
         "projected_schema_fingerprint": null,
         "raw_schema_fingerprint": "7c58ed2c08c62403763f03bf84baabf2f6609efc6064f87aa03b35d9b739c9ea",
         "successful": false
+      },
+      {
+        "conclusion": "inconclusive_empty",
+        "method_verified": true,
+        "pagination_verified": true,
+        "parent_resolved": false,
+        "path": "evidence/probe/20260817T151707Z_material.tencent_asset_text_title.list.yaml",
+        "probed_at": "2026-08-17T15:17:07Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "7c58ed2c08c62403763f03bf84baabf2f6609efc6064f87aa03b35d9b739c9ea",
+        "successful": false
       }
     ],
     "promotion_gate": {
@@ -101,8 +102,8 @@
       "missing": [
         "empty_sample",
         "parent_resource_required",
-        "response_schema_unverified",
         "response_projection",
+        "response_schema_unverified",
         "successful_probe"
       ]
     },
@@ -154,6 +155,14 @@
           "path": "/turbo_engine/api/v1/tencent/asset/text/title/list/"
         },
         "source": "src/gravity_sdk/census/data/route-params.json",
+        "stable_parent_candidates": [
+          {
+            "input_field": "app_id",
+            "operation_id": "app.list",
+            "output_path": "data.list[].id",
+            "selection": "caller_select"
+          }
+        ],
         "status": "extracted",
         "top_level_parameters": [
           {
@@ -215,32 +224,8 @@
               "unknown"
             ]
           }
-        ],
-        "stable_parent_candidates": [
-          {
-            "input_field": "app_id",
-            "operation_id": "app.list",
-            "output_path": "data.list[].id",
-            "selection": "caller_select"
-          }
         ]
       },
-      "path": "/turbo_engine/api/v1/tencent/asset/text/title/list/",
-      "promotion_level": null,
-      "promotion_platform": null,
-      "semantic_confidence": "medium",
-      "semantic_evidence": [
-        "read_action_path_token"
-      ],
-      "status": "uncovered_read",
-      "ui_texts": [
-        "产品",
-        "关联创意数",
-        "文案库",
-        "请输入标题名称",
-        "近30日消耗",
-        "近30日点击率"
-      ],
       "parent_resolution": {
         "basis": "declared_parent_probe",
         "bindings": [
@@ -261,7 +246,23 @@
           "A successful or explicit permission response from every declared parent operation."
         ],
         "replacement_blocker": null
-      }
+      },
+      "path": "/turbo_engine/api/v1/tencent/asset/text/title/list/",
+      "promotion_level": null,
+      "promotion_platform": null,
+      "semantic_confidence": "medium",
+      "semantic_evidence": [
+        "read_action_path_token"
+      ],
+      "status": "uncovered_read",
+      "ui_texts": [
+        "产品",
+        "关联创意数",
+        "文案库",
+        "请输入标题名称",
+        "近30日消耗",
+        "近30日点击率"
+      ]
     },
     "status": "draft"
   },
@@ -290,10 +291,12 @@
         "type": "array"
       },
       "page": {
+        "default": 1,
         "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
         "type": "integer"
       },
       "page_size": {
+        "default": 20,
         "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
         "type": "integer"
       }
@@ -301,21 +304,22 @@
     "live_probe": {
       "enabled": false,
       "inputs": {
-        "app_id": "$parent:app_id",
         "filters": [],
         "order_by": [],
         "page": 1,
-        "page_size": 20
+        "page_size": 1
       }
     },
     "operation_id": "material.tencent_asset_text_title.list",
     "pagination": {
-      "kind": "none",
-      "list_path": "",
-      "page_field": "",
-      "page_info_path": "",
-      "page_size_field": "",
-      "total_page_field": ""
+      "default_page_size": 20,
+      "kind": "page_info",
+      "list_path": "data.list",
+      "max_page_size": 100,
+      "page_field": "page",
+      "page_info_path": "data.page_info",
+      "page_size_field": "page_size",
+      "total_page_field": "total_page"
     },
     "path_template": "/turbo_engine/api/v1/tencent/asset/text/title/list/",
     "platform": "tencent",
@@ -351,7 +355,10 @@
         "page",
         "page_size"
       ],
-      "defaults": {},
+      "defaults": {
+        "page": 1,
+        "page_size": 20
+      },
       "fixed_body": {},
       "fixed_query": {},
       "path_fields": [],

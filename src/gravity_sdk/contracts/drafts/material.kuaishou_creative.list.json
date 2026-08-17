@@ -3,36 +3,19 @@
   "draft": {
     "blockers": [
       {
-        "code": "parent_resource_required",
-        "detail": "No declared parent binding exists and the child has not returned a semantic success without one.",
-        "evidence": "evidence/probe/20260809T145638Z_material.kuaishou_creative.list.yaml",
-        "status": "open"
-      },
-      {
-        "code": "request_parameters_required",
-        "detail": "The observed request reached a semantic error; required request fields remain unknown.",
-        "evidence": "evidence/probe/20260809T144339Z_material.kuaishou_creative.list.yaml",
+        "code": "empty_sample",
+        "detail": "The observed tenant response was empty and cannot prove an item schema.",
+        "evidence": "evidence/probe/20260817T151810Z_material.kuaishou_creative.list.yaml",
         "status": "open"
       },
       {
         "code": "response_schema_unverified",
         "detail": "No response field is approved for exposure; response shape and item types remain unverified.",
-        "evidence": "evidence/probe/20260809T144339Z_material.kuaishou_creative.list.yaml",
+        "evidence": "evidence/probe/20260817T151810Z_material.kuaishou_creative.list.yaml",
         "status": "open"
       }
     ],
-    "candidate_fields": [
-      {
-        "classification_reason": "frontend_static_consumer_unreviewed",
-        "expose": false,
-        "path": "data.update_at",
-        "presence": "unknown",
-        "privacy_classification": "non_sensitive",
-        "types": [
-          "unknown"
-        ]
-      }
-    ],
+    "candidate_fields": [],
     "coverage_reference": {
       "coverage_path": "src/gravity_sdk/census/data/coverage.json",
       "json_pointer": "/routes/481",
@@ -76,15 +59,25 @@
         "projected_schema_fingerprint": null,
         "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
         "successful": false
+      },
+      {
+        "conclusion": "inconclusive_empty",
+        "method_verified": true,
+        "pagination_verified": true,
+        "parent_resolved": true,
+        "path": "evidence/probe/20260817T151810Z_material.kuaishou_creative.list.yaml",
+        "probed_at": "2026-08-17T15:18:10Z",
+        "projected_schema_fingerprint": null,
+        "raw_schema_fingerprint": "0751bd66bb21616136a915ba5366aa7b2d6a86ed0510e5bc270430dfb0d45c3e",
+        "successful": false
       }
     ],
     "promotion_gate": {
       "eligible": false,
       "missing": [
-        "parent_resource_required",
-        "request_parameters_required",
-        "response_schema_unverified",
+        "empty_sample",
         "response_projection",
+        "response_schema_unverified",
         "successful_probe"
       ]
     },
@@ -227,6 +220,17 @@
           }
         ]
       },
+      "parent_resolution": {
+        "basis": "no_proven_binding",
+        "bindings": [],
+        "conclusion": "undetermined",
+        "detail": "No declared parent binding exists and the child has not returned a semantic success without one.",
+        "evidence": "evidence/probe/20260809T145638Z_material.kuaishou_creative.list.yaml",
+        "missing_evidence": [
+          "A frontend request binding, a semantic error naming the parent field, or a successful child request without a parent selector."
+        ],
+        "replacement_blocker": null
+      },
       "path": "/turbo_engine/api/v1/kuaishou/creative/list/",
       "promotion_level": null,
       "promotion_platform": null,
@@ -239,18 +243,7 @@
         "不限",
         "计划已暂停",
         "计划超预算"
-      ],
-      "parent_resolution": {
-        "basis": "no_proven_binding",
-        "bindings": [],
-        "conclusion": "undetermined",
-        "detail": "No declared parent binding exists and the child has not returned a semantic success without one.",
-        "evidence": "evidence/probe/20260809T145638Z_material.kuaishou_creative.list.yaml",
-        "missing_evidence": [
-          "A frontend request binding, a semantic error naming the parent field, or a successful child request without a parent selector."
-        ],
-        "replacement_blocker": null
-      }
+      ]
     },
     "status": "draft"
   },
@@ -258,7 +251,7 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "block_reason": "draft blockers: parent_resource_required, request_parameters_required, response_schema_unverified",
+    "block_reason": "draft blockers: empty_sample, response_schema_unverified",
     "contract_version": 1,
     "description": "Draft catalog entry inferred from census route POST /turbo_engine/api/v1/kuaishou/creative/list/; request binding, pagination, and response projection remain unverified.",
     "domain": "material",
@@ -267,8 +260,9 @@
     "executable": false,
     "input_fields": {
       "date_list": {
-        "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
-        "type": "string"
+        "description": "Frontend KuaishouAd Creative sends a two-item YYYY-MM-DD date_list on every list load; presence describes frontend calls and is not a server-required declaration.",
+        "item_type": "string",
+        "type": "array"
       },
       "filtering": {
         "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
@@ -304,12 +298,15 @@
     "live_probe": {
       "enabled": false,
       "inputs": {
-        "date_list": "",
+        "date_list": [
+          "$today",
+          "$today"
+        ],
         "filtering": {},
         "filters": [],
         "order_by": [],
         "page": 1,
-        "page_size": 20,
+        "page_size": 1,
         "query_fields": [],
         "real_data": 1
       }
@@ -373,6 +370,10 @@
       "data_keys": [],
       "dynamic_item_fields": [],
       "item_keys": [],
+      "known_omitted_data_keys": [
+        "list",
+        "total"
+      ],
       "required_data_keys": []
     },
     "semantic_error_rules": [],

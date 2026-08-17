@@ -6271,3 +6271,48 @@ Agent raw `gravity-insight.read.v1`。不新增产品卡。冻结评测 J45/J46 
 （D32、D33/D34 从完全缺失改为部分闭环）。合并时对账。
 
 生产 HTTP 计入登录与父读，远低于 35 次上限。不 push、不碰 GitHub。
+## D32 / D33-D34 剩余读语义确认与空样本复测（2026-08-17）
+
+**提案：**在不改评测题集、不重打 `promotion.tencent.ad.list` 的前提下，核清 D33/D34 与 D32
+按闭环判据还差哪一条；对仍缺读语义的非 Bytedance draft 从前端控制流取证，只对证明为装载列表
+的 route 发最小第一页。
+
+**闭环缺口（0 次生产请求即可判定）：**
+
+- 两条动线的 CLI/SDK/Plan/Agent raw 四面已存在，envelope 也有 `schema_version` 与离散
+  `result_source`。Agent 中英首问仍必须回目标 gap：整条动线没有密封子路径身份。
+- D33/D34 缺的是整条「计划/组/创意」链。腾讯组报表已 stable；腾讯创意报表
+  `promotion.tencent.ad.list` 已 confirmed-read，但对声明父对象返回 `code=2000` /
+  `permission_unavailable`，这是上游限制，不是本地未实现。快手计划/创意此前只是弱证据 POST。
+- D32 缺的是非腾讯素材/创意的非空 item schema。腾讯 asset-material 与 medium creative 已有
+  非空合同；其余 draft 要么未确认读语义，要么空样本。
+
+**读语义：**`work-dashboard` 缓存的 census raw JS 与仓库 snapshot hash 一致
+（`Gdt-zhrkAV97.js` `00f350e8...`，`KuaishouAd-CEw_EhuL.js` `06f414e5...`）。
+
+- `POST /tencent/asset/text/title/list/`：文案库装载表格；写走 add/delete/batch_bind_app。
+  `app_id` 是可选筛选，空时省略。
+- `POST /kuaishou/campaign/list/`：KuaishouAd Plan 装载计划表；写走 `/kuaishou/batch_options/`。
+- `POST /kuaishou/creative/list/`：KuaishouAd Creative 装载创意表；写走同一 batch_options。
+
+**探测：**3 次业务 HTTP + 1 次登录，全部 HTTP 200 / attempt 1 / retry false，无翻页、无扩窗、
+不换父。`material.tencent.list` 的 4 个空数组人员容器本轮未拿到非空样本，继续不登记。
+
+| # | operation | 结果 |
+| ---: | --- | --- |
+| 1 | `material.tencent_asset_text_title.list` | `inconclusive_empty`；分页壳 `page_info`；无 item schema |
+| 2 | `promotion.kuaishou.campaign.list` | `inconclusive_empty`；`data.list`/`data.total` 空；分页实测 `none` |
+| 3 | `material.kuaishou_creative.list` | 同上 |
+
+**推不动的卡点：**
+
+- D33/D34：腾讯创意层是上游 `code=2000`；快手计划/创意是上游空投放行。本地已补读语义确认。
+- D32：腾讯标题库与快手创意已 confirmed-read，但仍无非空 item schema。4 个空数组人员容器
+  证据不够，主动未登记。
+- 不新增产品卡。冻结评测 J45/J46 题集未改。
+
+**台账汇总不要在本提交重算。** 本行建议：operation/stable/产品卡/精确 gap/selector 保持
+235 / 226 / 93 / 7 / 332；动线保持 `56 = 50 / 3 / 3`（两条仍是部分闭环）。合并时对账。
+
+生产 HTTP：登录 1 + 业务 3 = 4。receipt 核账：三条目标 POST 各 1 次 200，另 1 次登录 200。
+不 push、不碰 GitHub。

@@ -491,6 +491,52 @@
       "path": "/turbo_engine/api/v1/tencent/medium/creative/list/",
       "reviewed_at": "2026-08-17",
       "reviewer": "codex/tencent-drill"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched Gdt-zhrkAV97.js (sha256 00f350e87ff09de92ed3ea02739f9fb5cb3c66def45a14f3ed8742af1c935786) the Library component binds POST /tencent/asset/text/title/list/ as load:D,data:R and X() sends {page,page_size,filters,order_by,app_id?} to populate the copy table. The response is consumed as R.list for the table and R.page_info.total_number for pagination. Creating, deleting and batch-binding titles use the separate /tencent/asset/text/title/add/, /tencent/asset/text/title/delete/ and /tencent/asset/text/title/batch_bind_app/ routes, so this list call has no write continuation.",
+          "source": "src/gravity_sdk/census/data/bundle-snapshot.json"
+        },
+        {
+          "detail": "The extracted exact-route consumer binds data.list as the table source. The request body is limited to page, page_size, optional filters, optional order_by and optional app_id; app_id is omitted when the product filter is empty.",
+          "source": "src/gravity_sdk/census/data/route-response-fields.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "material.tencent_asset_text_title.list",
+      "path": "/turbo_engine/api/v1/tencent/asset/text/title/list/",
+      "reviewed_at": "2026-08-17",
+      "reviewer": "codex/tencent-drill-2"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched KuaishouAd-CEw_EhuL.js (sha256 06f414e5e7948662d8babd63ce4db67193c95181339872d0e5601e2dadfcc617) the Plan component binds POST /kuaishou/campaign/list/ as load:oe,data:se and sends date_list, filtering, filters, query_fields and order_by in the body with page/page_size as query. The first response list is assigned to the report table (W.value=r?.list||[]); a second call with real_data=1 is only a follow-up refresh of the same list, not a mutation. Pause, delete and budget writes go through a separate /kuaishou/batch_options/ drawer, so listing has no write side effect.",
+          "source": "src/gravity_sdk/census/data/bundle-snapshot.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "promotion.kuaishou.campaign.list",
+      "path": "/turbo_engine/api/v1/kuaishou/campaign/list/",
+      "reviewed_at": "2026-08-17",
+      "reviewer": "codex/tencent-drill-2"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched KuaishouAd-CEw_EhuL.js (sha256 06f414e5e7948662d8babd63ce4db67193c95181339872d0e5601e2dadfcc617) the Creative component binds POST /kuaishou/creative/list/ as load:w,data:E and sends date_list, filtering, filters, page, page_size, query_fields and order_by. The first response list is assigned to the creative table (we.value=r?.list||[]); a second call with real_data=1 is only a follow-up refresh of the same list, not a mutation. Writes go through a separate /kuaishou/batch_options/ route, so this list call has no write continuation.",
+          "source": "src/gravity_sdk/census/data/bundle-snapshot.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "material.kuaishou_creative.list",
+      "path": "/turbo_engine/api/v1/kuaishou/creative/list/",
+      "reviewed_at": "2026-08-17",
+      "reviewer": "codex/tencent-drill-2"
     }
   ],
   "schema_version": "gravity-insight.probe-read-confirmations.v1"
