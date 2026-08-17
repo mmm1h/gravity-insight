@@ -11,7 +11,7 @@ from gravity_sdk.agent_saved_analysis_mutation import (
     saved_analysis_mutation_cards,
 )
 from gravity_sdk.cache import is_metadata_operation
-from gravity_sdk.errors import ContractChangedError
+from gravity_sdk.errors import ContractChangedError, InputValidationError
 from gravity_sdk.mutation_ownership import single_creator_owner
 from gravity_sdk.saved_analysis_catalog import GET_OPERATION_ID, LIST_OPERATION_ID
 from gravity_sdk.saved_analysis_mutation import (
@@ -175,6 +175,49 @@ class SavedAnalysisMutationTests(unittest.TestCase):
         self.assertTrue(delete_wire["is_deleted"])
         self.assertTrue(create_wire["remark"].startswith("GSDK-"))
         self.assertEqual(UPDATE_OPERATION_ID, created["operation_id"])
+
+    def test_unmarked_owner_delete_is_allowed_and_foreign_is_rejected(self) -> None:
+        owned = _Client()
+        owned.rows.append({
+            "id": "9", "app_id": "101", "name": "web owned",
+            "subject": "analysis_event", "config": "{}", "remark": "",
+            "create_user_id": 7, "create_user_name": "owner",
+        })
+        deleted = delete_saved_analysis(
+            owned, "9", app_id=101, workspace=_workspace(), execute=True
+        )
+        self.assertEqual("upstream_owner", deleted["target"]["ownership"]["basis"])
+        self.assertTrue(deleted["target"]["deleted"])
+        self.assertEqual(1, len(owned.writes))
+
+        marked = _Client()
+        marked.rows.append({
+            "id": "8", "app_id": "101", "name": "marked",
+            "subject": "analysis_event", "config": "{}",
+            "remark": "GSDK-aabbccddeeff",
+            "create_user_id": 99, "create_user_name": "other",
+        })
+        kept = delete_saved_analysis(
+            marked, "8", app_id=101, workspace=_workspace(), execute=True
+        )
+        self.assertEqual("sdk_source_marker", kept["target"]["ownership"]["basis"])
+
+        foreign = _Client()
+        foreign.rows.append({
+            "id": "7", "app_id": "101", "name": "foreign",
+            "subject": "analysis_event", "config": "{}", "remark": "",
+            "create_user_id": 99, "create_user_name": "other",
+        })
+        with self.assertRaises(InputValidationError) as captured:
+            delete_saved_analysis(
+                foreign, "7", app_id=101, workspace=_workspace(), execute=True
+            )
+        error = captured.exception
+        self.assertEqual("OWNERSHIP_REQUIRED", error.code)
+        self.assertIn('"object_id":"7"', str(error))
+        self.assertIn('"owner_id":"99"', str(error))
+        self.assertIn('"current_principal_id":"7"', str(error))
+        self.assertEqual(0, len(foreign.writes))
 
     def test_delete_acknowledgement_without_disappearance_is_contract_change(self) -> None:
         client = _Client(retain_deleted=True)

@@ -224,13 +224,38 @@ class GravitySegmentMutationTests(unittest.TestCase):
         client = _UnmarkedClient()
         with self.assertRaises(InputValidationError) as captured:
             delete_segment(client, "1", execute=True)
-        self.assertEqual("OWNERSHIP_REQUIRED", captured.exception.code)
-        self.assertIn("owner", captured.exception.next_action)
+        error = captured.exception
+        self.assertEqual("OWNERSHIP_REQUIRED", error.code)
+        self.assertIn("owner", error.next_action)
+        self.assertIn("actual value:", str(error))
+        self.assertIn('"object_id":"1"', str(error))
+        self.assertIn('"owner_id":"2"', str(error))
+        self.assertIn('"owner_field":"create_user_id"', str(error))
+        self.assertIn('"current_principal_id":"1"', str(error))
+        self.assertIn("create_user_id=2", error.next_action)
         self.assertEqual(0, client.writes)
 
         owned = _UnmarkedClient(owner_id="1", allow_write=True)
         result = delete_segment(owned, "1", execute=True)
         self.assertEqual(("deleted", 1), (result["status"], owned.writes))
+        self.assertEqual("upstream_owner", result["target"]["ownership"]["basis"])
+
+        marked = _UnmarkedClient(owner_id="9", allow_write=True)
+        marked.read = lambda operation_id, inputs: {
+            "ok": True,
+            "status": "success",
+            "data": {
+                "segment_id": str(inputs["segment_id"]),
+                "app_id": "1",
+                "segment_name": "SDK分群",
+                "segment_remark": "GSDK-aabbccddeeff",
+                "create_user_id": "9",
+                "create_user_name": "other",
+            },
+        }
+        kept = delete_segment(marked, "1", execute=True)
+        self.assertEqual("sdk_source_marker", kept["target"]["ownership"]["basis"])
+        self.assertEqual(1, marked.writes)
 
     def test_registered_mutation_action_name_is_not_an_authorization_boundary(self):
         operation = _registry().get("analysis.segment.by.manual.update")

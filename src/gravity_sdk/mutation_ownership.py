@@ -107,15 +107,15 @@ def require_mutation_authority(
     }
     if principal is None:
         next_action = (
-            "Refresh Gravity authentication so the cached session contains the current gravity_id, then retry this exact object once."
+            f"Refresh Gravity authentication so the cached session contains the current gravity_id, then retry {object_kind} {object_id} once."
         )
     elif owner.owner_id is None:
         next_action = (
-            f"Use an SDK-created {object_kind} carrying its GSDK marker; this object family exposes no proven direct owner for unmarked objects."
+            f"Use an SDK-created {object_kind} carrying its GSDK marker, or refresh {object_kind} {object_id} after the upstream {owner.field} is present; unmarked objects without a proven owner stay rejected."
         )
     else:
         next_action = (
-            f"Choose a {object_kind} whose {owner.field} equals the current principal, or ask owner {owner.owner_name or owner.owner_id} to make the change."
+            f"Choose {object_kind} {object_id} whose {owner.field}={owner.owner_id} equals the current principal {principal}, or ask owner {owner.owner_name or owner.owner_id} to make the change."
         )
     raise _ownership_error(
         actual=actual_value(observed),

@@ -782,8 +782,9 @@ gravity analysis segment delete --segment-id <id> --dry-run
 
 create 在 `segment_remark` 前缀写入可见 `GSDK-<12 hex>`，完整列表和 detail 读回后才返回 created；
 同 marker+同名复用已存在对象，同名冲突为 caller/2。update/update-rule 保留已有 marker。delete
-不信任调用方提供的归属信息，执行时用 exact ID 重新读取 detail，缺 marker 时以
-`OWNERSHIP_MARKER_REQUIRED` / exit 2 失败且不发删除。结果 schema 为
+不信任调用方提供的归属信息，执行时用 exact ID 重新读取 detail：GSDK marker 或
+`create_user_id == gravity_id` 即放行；否则以 `OWNERSHIP_REQUIRED` / exit 2 失败且不发删除，
+错误同时报告对象 ID、owner ID/name/字段、当前 principal 和下一步。结果 schema 为
 `gravity-insight.segment-mutation.v1`。自然语言只返回 dry-run→execute 命令交接，不自动执行，
 这些 effect 不进入 Plan v1。
 

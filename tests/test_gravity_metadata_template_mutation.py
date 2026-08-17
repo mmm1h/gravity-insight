@@ -159,11 +159,25 @@ class MetadataTemplateMutationTests(unittest.TestCase):
         }]
         with self.assertRaises(InputValidationError) as captured:
             delete_metadata_template(client, template_id=50, execute=True)
-        self.assertEqual("OWNERSHIP_REQUIRED", captured.exception.code)
+        error = captured.exception
+        self.assertEqual("OWNERSHIP_REQUIRED", error.code)
+        self.assertIn('"object_id":"50"', str(error))
+        self.assertIn('"owner_id":"8"', str(error))
+        self.assertIn('"owner_field":"create_user_id"', str(error))
+        self.assertIn('"current_principal_id":"7"', str(error))
         self.assertEqual(0, client.writes)
         client.templates[0]["create_user_id"] = 7
         result = delete_metadata_template(client, template_id=50, execute=True)
         self.assertEqual("upstream_owner", result["target"]["ownership"]["basis"])
+        missing = _Client()
+        missing.templates = [{
+            "id": 52, "name": "NoOwner", "template_type": "event_property",
+        }]
+        with self.assertRaises(InputValidationError) as missing_owner:
+            delete_metadata_template(missing, template_id=52, execute=True)
+        self.assertEqual("OWNERSHIP_REQUIRED", missing_owner.exception.code)
+        self.assertIn("without a proven owner", missing_owner.exception.next_action)
+        self.assertEqual(0, missing.writes)
 
     def test_delete_guard_rejects_acknowledgement_without_disappearance(self) -> None:
         client = _Client()
