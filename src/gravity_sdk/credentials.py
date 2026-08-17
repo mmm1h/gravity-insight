@@ -18,9 +18,11 @@ from zoneinfo import ZoneInfo
 from .credential_storage import (
     EXPIRY_KEY,
     PRINCIPAL_ID_KEY,
+    SESSION_USERNAME_KEY,
     TOKEN_KEYS,
     UPDATED_KEY,
     _atomic_update_env,
+    bound_session_values,
     clear_account_credentials,
     migrate_legacy_session,
     read_env_file as _read_env_file,
@@ -89,37 +91,16 @@ class CredentialConfig:
         environ: Mapping[str, str] | None = None,
     ) -> "CredentialConfig":
         file_values = _read_env_file(path)
-        session_values = _read_env_file(session_path(path))
         # Explicit mappings are deterministic overrides. Ambient process values can be
         # stale after the refresh workflow updates the file and user environment because
         # a child process cannot mutate its parent's already-inherited environment.
         environment = os.environ if environ is None else environ
         environment_values = _gravity_values(environment)
-        values = dict(file_values)
-        values.update(environment_values)
-        session_token = _token_from(session_values)
-        explicit_token = (
-            _token_from(environment_values) if environ is not None else None
+        values = {**file_values, **environment_values}
+        session_values = bound_session_values(path, values.get("GRAVITY_USERNAME"))
+        token, token_values, token_source = _resolved_token(
+            file_values, environment_values, session_values, ambient=environ is None
         )
-        if explicit_token:
-            token, token_values, token_source = (
-                explicit_token,
-                environment_values,
-                "process_environment",
-            )
-        elif session_token:
-            token, token_values, token_source = (
-                session_token,
-                session_values,
-                "internal_session",
-            )
-        else:
-            # Backward-compatible read for installations that still have a token
-            # in the account file or process environment. New writes always go to
-            # the private session file.
-            token, token_values, token_source = _select_token_source(
-                file_values, environment_values, ambient=environ is None
-            )
         configured_expiry = _parse_datetime(token_values.get(EXPIRY_KEY))
         return cls(
             username=values.get("GRAVITY_USERNAME", "").strip() or None,
@@ -130,6 +111,22 @@ class CredentialConfig:
             token_source=token_source,
             gravity_id=token_values.get(PRINCIPAL_ID_KEY, "").strip() or None,
         )
+
+
+def _resolved_token(
+    file_values: Mapping[str, str],
+    environment_values: Mapping[str, str],
+    session_values: Mapping[str, str],
+    *,
+    ambient: bool,
+) -> tuple[str | None, Mapping[str, str], str | None]:
+    explicit_token = _token_from(environment_values) if not ambient else None
+    if explicit_token:
+        return explicit_token, environment_values, "process_environment"
+    session_token = _token_from(session_values)
+    if session_token:
+        return session_token, session_values, "internal_session"
+    return _select_token_source(file_values, environment_values, ambient=ambient)
 
 
 def _gravity_values(values: Mapping[str, str]) -> dict[str, str]:
@@ -497,11 +494,13 @@ class CredentialProvider:
     def _persist_credential(self, credential: Credential) -> None:
         updated = credential.updated_at or self._clock()
         expiry = credential.expires_at
+        config = self._config or CredentialConfig.from_env(self.env_path, self._environ)
         updates = {
             "GRAVITY_AUTH_TOKEN": credential.token,
             EXPIRY_KEY: expiry.astimezone(SHANGHAI).isoformat(timespec="seconds") if expiry else "",
             UPDATED_KEY: updated.astimezone(SHANGHAI).isoformat(timespec="seconds"),
             PRINCIPAL_ID_KEY: credential.gravity_id or "",
+            SESSION_USERNAME_KEY: config.username or "",
         }
         _atomic_update_env(session_path(self.env_path), updates)
 

@@ -5826,3 +5826,59 @@ operation/stable `232/223 → 233/224`（read `186→187`）。产品卡 `91→9
 **门禁：**unittest **1153**、pytest **1153 passed / 3098 subtests**，高于基线 1151。
 compiler 232 / 11 manifests；quality PASS；错误审计仍 **1225 = A422/B434/C369**。
 产品卡/selector/动线计数不变。不 push、不碰 GitHub。
+## 权限误分类与换号 session 失效（2026-08-17）
+
+**提案与边界：**本轮只做如实报告，不实施访问控制、字段过滤或敏感内容检测。不新建账号、不改角色、
+不改 D28 台账状态，不碰 holdout/final/key/sealed 评测装置。生产 HTTP 上限 60。
+
+### 1. `code=2000` 改在协议层
+
+映射落在 `semantic_status.classify_semantic_status` / `enforce_semantic_rules`，不是逐个
+operation 打补丁。232 个 operation 都走同一套 `semantic_error_rules`；仓库原先完全不认识
+`code=2000`，因此任何账号在任何 operation 上的「权限不足」都会被 `SemanticRejectedError`
+误报成 `caller/INPUT_INVALID/exit 2`。协议层一次改完读路径；mutation 的二次分类同步识别
+`2000` / 「权限不足」，避免写面再走输入错误。
+
+修复后同一低权限 `app.role.list` 为 `permission_unavailable / PERMISSION_UNAVAILABLE /
+upstream / 不可重试 / exit 3`。`next_action` 写明缺的是哪个 operation 能力，并要求向
+workspace owner 申请后用同一输入重试，不再让调用方改输入。
+
+有界核对其它错误码：`1004` 仍是参数拒绝，保持 `INPUT_INVALID`；`2001/10000/10001` 已是
+认证刷新码；`0/200` 仍是成功或明确空。未实测到的其它码不猜测，继续 fail-closed 为未登记
+语义状态。
+
+### 2. 换账号必须让缓存 session 失效
+
+判据是 **`GRAVITY_USERNAME`**，不是 principal。用户名在发登录前就已知，环境覆盖账号文件时
+也立刻可见；principal 要等登录成功才有，不能用来决定旧 token 能不能复用。无绑定用户名的旧
+session 在用户名变化时同样丢弃。默认账号继续读 `.env.gravity.session.local`；其它账号文件
+使用 `<stem>.session.local`，避免两套凭据共用一份 token 缓存。
+
+### 3. 双账号权限差异矩阵
+
+18 个代表性 operation（含 2 个写面 dry-run）落在
+`evidence/forensics/20260817_permission_account_matrix.json`。低权限账号被拒绝 **4** 项：
+`app.permission_menu.list`、`app.role.list`、`promotion.bytedance.account.list`、未登记的
+D28 `custom_get`。4 项两边都是 **成功空集**：`analysis.segment.list`、`report.report.list`、
+`report.subscribe.list`、`analysis.monetization_detail.list`。写面只做 preview，0 次 mutation。
+
+### 4. D28 决定性实验
+
+同一已证形状 `POST /report/api/v3/monetization_report/custom_get/`，默认窗
+`2026-08-10..2026-08-16`、首个合法 App：低权限 `HTTP 200 / code=2000 /
+msg=您当前账号暂无权限操作`；高权限 `HTTP 200 / code=0 / list=[] / page_info.total=0 /
+total={}`。因此高权限账号的空是真空，D28「数据为空，不是权限不足」对高权限账号成立。
+**未改台账状态。** 第一次高权限请求因本地 filter 字段名写错得到 `code=1004`，不作为判定。
+
+### 生产 HTTP 与门禁
+
+实际 **45 / 60**，全部 HTTP 200、attempt 1、`retry=false`。5 次 login、2 次 live metadata
+附带读（变现明细字段校验触发 `user_property.list` / `event_property.list` / 再读
+`segment.list`）。每累计约 10 条从私有 receipt query 核账。剩余 15 次预算未用。
+
+operation/stable/产品卡/selector/动线保持 **232 / 223 / 91 / 329 / 56 = 49 / 1 / 6**。
+unittest / pytest **`1151 + 1 = 1152`**，subtests 仍为 **3098**。
+错误审计 caller-recoverable 全集仍为 **`1225 = A422/B434/C369`**：权限错误改走
+`PermissionUnavailableError`，不进入 caller 审计分母；该 raise 本身按
+field + actual value + next_action 为 **A 级**。quality baseline 未放宽。
+没有 GitHub、push、PR、tag 或 release。

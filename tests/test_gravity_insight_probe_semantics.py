@@ -372,6 +372,11 @@ class GravityInsightProbeSemanticsTests(unittest.TestCase):
         assert conclusion(204, None, None) == "available_empty"
         assert conclusion(204, {}, None) == "available_empty"
         assert conclusion(200, {**payload, "extra": {"error": "暂无数据"}}, None) == "semantic_error"
+        assert conclusion(
+            200,
+            {"code": 2000, "msg": "权限不足", "data": {}, "extra": {"error": ""}},
+            None,
+        ) == "permission_or_auth_unavailable"
         assert observation_summary(observation)["protocol_status"] == {
             "classification": "explicit_empty",
             "code": {"present": True, "value": 0},

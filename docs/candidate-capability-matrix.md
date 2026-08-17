@@ -118,7 +118,7 @@ additive fail-closed。该 operation 晋升 stable 并闭环五面产品，不�
 | 查找可用的媒体报表 | **明确空 / item schema 阻塞** | Bundle 已恢复 `AppSelect` 与有限平台选项绑定，空选择省略；列表装载、分页和响应消费证明 read，confirmation 已登记。本轮当天最小请求 HTTP 200、明确空。 | 在有媒体报表的租户复用同形状取得 1 个非空 item，不猜 App 或平台值。 |
 | 查找当前账号可读的 App 项目 | **合同阻塞** | `app.project.list` 被读语义闸门拦截；旧空 receipt 虽证明分页壳，但 `method_verified=false`，不能排除请求合同或语义问题，也就不能定为数据阻塞。 | 分析 `appManageIndex-DCdX2wdf.js` 的列表装载与响应消费，登记静态读证据后做 1 次最小第一页 probe。 |
 | 查看 App 的 OneLink 与公开信息绑定 | **已闭环** | `app.onelink.list` 的既有稳定父链继续证明当前账号明确空；调用方提供的第 1 条 App Store URL 使 `app.app_info.get` 首次取得 HTTP 200 / `code=0` 成功非空合同，并登记全部成功字段和旧 `error` 字段。 | 维持 stable live probe；若 Google Play 成功形状出现新字段，按 additive drift 登记并暴露。 |
-| 按平台、广告位和日期汇总变现结果（D28） | **已闭环** | 2026-08-17 按 catalog 枚举 7 个可绑定 App；`catalog#1` 在 `2026-07-17..2026-08-16` 明确空，`catalog#2` 同窗 13 行非空后停止。item/total 观察 `stat_time/monetization_platform/ad_unit_id` 加请求指标动态列；分页为实测 `none`（`page_info` 只有 `total`，无 page/page_size）。 | 维持 stable live probe；未观察维度/指标继续 fail-closed，不猜 item 字段。 |
+| 按平台、广告位和日期汇总变现结果（D28） | **已闭环** | 2026-08-17 按 catalog 枚举 7 个可绑定 App；`catalog#1` 在 `2026-07-17..2026-08-16` 明确空，`catalog#2` 同窗 13 行非空后停止。item/total 观察 `stat_time/monetization_platform/ad_unit_id` 加请求指标动态列；分页为实测 `none`（`page_info` 只有 `total`，无 page/page_size）。同日双账号实验另证这条 route 上权限型空与真空**可区分**：低权限账号返回 `code=2000 / 您当前账号暂无权限操作`，高权限账号返回 `code=0`，因此 `catalog#1` 的空是真空而非权限所致。 | 维持 stable live probe；未观察维度/指标继续 fail-closed，不猜 item 字段。 |
 
 **闸门命中：** `report.masterkey_report_group.list`、`report.report.list`、
 `report.shared_to_me.list`、`report.subscribe.list`、`report.media_report.list`、

@@ -11,6 +11,7 @@ from typing import Any, Mapping, Sequence
 from ..parent_resolution import coerce_parent_value, extract_parent_values
 from ..semantic_status import (
     SEMANTIC_EXPLICIT_EMPTY,
+    SEMANTIC_PERMISSION,
     SEMANTIC_SUCCESS,
     classify_semantic_status,
     protocol_status_evidence,
@@ -299,9 +300,15 @@ def conclusion(status_code: int | None, payload: Any, confirmed_status: str | No
         return "http_error"
     if status_code == 204:
         return "available_empty"
+    return _semantic_conclusion(payload, confirmed_status)
+
+
+def _semantic_conclusion(payload: Any, confirmed_status: str | None) -> str:
     semantic_status = classify_semantic_status(payload)
     if semantic_status == SEMANTIC_EXPLICIT_EMPTY:
         return "available_empty"
+    if semantic_status == SEMANTIC_PERMISSION:
+        return "permission_or_auth_unavailable"
     if semantic_status != SEMANTIC_SUCCESS:
         return "semantic_error"
     if not data_nonempty(payload):

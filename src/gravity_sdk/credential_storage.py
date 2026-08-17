@@ -17,6 +17,7 @@ TOKEN_KEYS = ("GRAVITY_AUTH_TOKEN", "GRAVITY_AUTHORIZATION")
 EXPIRY_KEY = "GRAVITY_AUTH_TOKEN_EXPIRES_AT_ASIA_SHANGHAI"
 UPDATED_KEY = "GRAVITY_AUTH_UPDATED_AT"
 PRINCIPAL_ID_KEY = "GRAVITY_PRINCIPAL_ID"
+SESSION_USERNAME_KEY = "GRAVITY_SESSION_USERNAME"
 
 
 def read_env_file(path: Path) -> dict[str, str]:
@@ -36,9 +37,30 @@ def read_env_file(path: Path) -> dict[str, str]:
 
 
 def session_path(env_path: Path) -> Path:
-    """Return the private, SDK-managed token cache beside the account file."""
+    """Return the private token cache that belongs to this account file."""
 
-    return Path(env_path).with_name(SESSION_ENV_NAME)
+    selected = Path(env_path)
+    dedicated = selected.with_name(f"{selected.stem}.session.local")
+    if dedicated.exists() or selected.name != ".env.gravity.local":
+        return dedicated
+    return selected.with_name(SESSION_ENV_NAME)
+
+
+def bound_session_values(
+    env_path: Path, username: str | None
+) -> dict[str, str]:
+    """Return the cached session only when it still belongs to *username*."""
+
+    selected_path = session_path(env_path)
+    values = read_env_file(selected_path)
+    if not values:
+        return {}
+    expected = (username or "").strip()
+    bound = values.get(SESSION_USERNAME_KEY, "").strip()
+    if not expected or bound == expected:
+        return values
+    selected_path.unlink(missing_ok=True)
+    return {}
 
 
 def save_account_credentials(username: str, password: str, path: Path) -> None:
@@ -102,6 +124,7 @@ def migrate_legacy_session(path: Path) -> bool:
                 EXPIRY_KEY: values.get(EXPIRY_KEY, ""),
                 UPDATED_KEY: values.get(UPDATED_KEY, ""),
                 PRINCIPAL_ID_KEY: values.get(PRINCIPAL_ID_KEY, ""),
+                SESSION_USERNAME_KEY: values.get("GRAVITY_USERNAME", ""),
             },
         )
     atomic_update_env(

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
-from .errors import SemanticRejectedError
+from .errors import PermissionUnavailableError, SemanticRejectedError
 from .models import OperationSpec, SemanticErrorRule
 from .result_audit import bind_error_receipts
 
@@ -12,10 +12,13 @@ from .result_audit import bind_error_receipts
 SEMANTIC_SUCCESS = "success"
 SEMANTIC_EXPLICIT_EMPTY = "explicit_empty"
 SEMANTIC_REJECTED = "rejected"
+SEMANTIC_PERMISSION = "permission_unavailable"
 SEMANTIC_INVALID_ENVELOPE = "invalid_envelope"
 
 SUCCESS_CODES = (None, 0, 200, "0", "200")
+PERMISSION_CODES = frozenset({2000, "2000"})
 EXPLICIT_EMPTY_EXTRA_ERRORS = frozenset({"无数据"})
+PERMISSION_MESSAGE = "权限不足"
 _ABSENT = object()
 
 
@@ -28,6 +31,8 @@ def classify_semantic_status(payload: Any) -> str:
 
     if not isinstance(payload, Mapping):
         return SEMANTIC_INVALID_ENVELOPE
+    if _permission_denied(payload):
+        return SEMANTIC_PERMISSION
     if payload.get("code") not in SUCCESS_CODES:
         return SEMANTIC_REJECTED
     extra = payload.get("extra")
@@ -52,26 +57,10 @@ def enforce_semantic_rules(
         SemanticErrorRule("extra.error"),
     )
     for rule in rules:
-        if (
-            semantic_status in {SEMANTIC_SUCCESS, SEMANTIC_EXPLICIT_EMPTY}
-            and rule.path == "code"
-        ):
-            continue
-        if semantic_status == SEMANTIC_EXPLICIT_EMPTY and rule.path == "extra.error":
-            continue
-        current = _path_get(payload, rule.path)
-        exists = current is not _ABSENT
-        triggered = {
-            "equals": exists and current == rule.value,
-            "not_equals": exists and current != rule.value,
-            "exists": exists,
-            "truthy": exists and bool(current),
-            "falsy": exists and not bool(current),
-            "in": exists and current in rule.values,
-            "not_in": exists and current not in rule.values,
-        }[rule.operator]
-        if triggered:
-            _raise_semantic(rule.message, http_receipts)
+        if _rule_matches(semantic_status, payload, rule):
+            _raise_rule(semantic_status, operation.operation_id, payload, rule, http_receipts)
+    if semantic_status == SEMANTIC_PERMISSION:
+        _raise_permission(operation.operation_id, payload, http_receipts)
     if semantic_status == SEMANTIC_REJECTED:
         _raise_semantic("Gravity returned an unregistered semantic status", http_receipts)
     return semantic_status
@@ -132,6 +121,74 @@ def _path_get(value: Any, path: str) -> Any:
             return _ABSENT
         current = current[part]
     return current
+
+
+def _rule_matches(
+    semantic_status: str, payload: Mapping[str, Any], rule: SemanticErrorRule
+) -> bool:
+    if (
+        semantic_status in {SEMANTIC_SUCCESS, SEMANTIC_EXPLICIT_EMPTY}
+        and rule.path == "code"
+    ):
+        return False
+    if semantic_status == SEMANTIC_EXPLICIT_EMPTY and rule.path == "extra.error":
+        return False
+    current = _path_get(payload, rule.path)
+    exists = current is not _ABSENT
+    return {
+        "equals": exists and current == rule.value,
+        "not_equals": exists and current != rule.value,
+        "exists": exists,
+        "truthy": exists and bool(current),
+        "falsy": exists and not bool(current),
+        "in": exists and current in rule.values,
+        "not_in": exists and current not in rule.values,
+    }[rule.operator]
+
+
+def _raise_rule(
+    semantic_status: str,
+    operation_id: str,
+    payload: Mapping[str, Any],
+    rule: SemanticErrorRule,
+    http_receipts: Any,
+) -> None:
+    if semantic_status == SEMANTIC_PERMISSION:
+        _raise_permission(operation_id, payload, http_receipts)
+    _raise_semantic(rule.message, http_receipts)
+
+
+def _permission_denied(payload: Mapping[str, Any]) -> bool:
+    return (
+        payload.get("code") in PERMISSION_CODES
+        or PERMISSION_MESSAGE in _protocol_message(payload)
+    )
+
+
+def _protocol_message(payload: Mapping[str, Any]) -> str:
+    extra = payload.get("extra")
+    extra_error = extra.get("error") if isinstance(extra, Mapping) else None
+    for value in (extra_error, payload.get("msg"), payload.get("message")):
+        if isinstance(value, str) and value.strip():
+            return " ".join(value.splitlines()).strip()
+    return ""
+
+
+def _raise_permission(
+    operation_id: str | None, payload: Mapping[str, Any], http_receipts: Any
+) -> None:
+    capability = operation_id or "this Gravity capability"
+    error = PermissionUnavailableError(
+        f"the authenticated Gravity account cannot read {capability}",
+        field="permission",
+        next_action=(
+            f"actual value: authenticated account lacks {capability}; "
+            "allowed next action: request that Gravity capability from the "
+            "workspace owner, then retry with the same input."
+        ),
+    )
+    bind_error_receipts(error, http_receipts)
+    raise error
 
 
 def _raise_semantic(message: str, http_receipts: Any) -> None:

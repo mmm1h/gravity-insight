@@ -1,0 +1,232 @@
+{
+  "schema_version": "gravity-insight.permission-account-matrix.v1",
+  "observed_at": "2026-08-17T17:16:50+08:00",
+  "values_persisted": false,
+  "credentials_persisted": false,
+  "accounts": {
+    "low": {"principal_id": "278569", "role": "test"},
+    "high": {"principal_id": "277516", "role": "primary"}
+  },
+  "request_budget": {
+    "limit": 60,
+    "used": 45,
+    "remaining": 15,
+    "audit_points": ["after_10_low", "high_after_5", "high_after_10", "high_after_14", "after_d28_high", "d28_both"]
+  },
+  "discipline": {
+    "retries": 0,
+    "data_pages_advanced": 0,
+    "date_windows_expanded": 0,
+    "apps_switched_to_find_nonempty_data": 0,
+    "temporary_upstream_objects_created": 0,
+    "mutations_executed": 0,
+    "production_requests_after_stop": 0
+  },
+  "classification_fix": {
+    "layer": "src/gravity_sdk/semantic_status.py",
+    "reason": "Every registered operation already shares classify_semantic_status / enforce_semantic_rules. Mapping code=2000 there is warehouse-wide and does not patch operations one by one.",
+    "before": {
+      "status": "semantic_error",
+      "error_category": "caller",
+      "error_code": "INPUT_INVALID",
+      "exit_code": 2
+    },
+    "after": {
+      "status": "permission_unavailable",
+      "error_category": "upstream",
+      "error_code": "PERMISSION_UNAVAILABLE",
+      "exit_code": 3,
+      "next_action_grade": "A"
+    },
+    "other_codes_checked": {
+      "1004": "caller-shaped parameter rejection; remains INPUT_INVALID",
+      "2001/10000/10001": "already treated as auth refresh codes, not permission",
+      "0/200": "success or explicit empty",
+      "unobserved_codes": "not remapped; fail closed as unregistered semantic status"
+    }
+  },
+  "session_invalidation": {
+    "identity": "GRAVITY_USERNAME",
+    "reason": "Username is known before login and uniquely identifies the account file plus environment override. Principal id is only assigned after login, so it cannot decide whether a cached token is safe to reuse.",
+    "session_path": "beside the account file, named <account-stem>.session.local"
+  },
+  "operations": [
+    {
+      "operation": "app.list",
+      "family": "metadata",
+      "low": {"sdk_status": "success", "item_count": 1, "upstream_code": 0, "receipt_id": "a6af7edfecc84365a8b3a6d0a2731049"},
+      "high": {"sdk_status": "success", "item_count": 1, "upstream_code": 0, "receipt_id": "238d0751ae1b491890840ed2cfc39959"},
+      "distinguishable": false
+    },
+    {
+      "operation": "app.permission_menu.list",
+      "family": "metadata",
+      "low": {"sdk_status": "permission_unavailable", "item_count": null, "upstream_code": 2000, "receipt_id": "f66598f1c04c4d9bb8f6fa3e881d8a74"},
+      "high": {"sdk_status": "success", "item_count": 10, "upstream_code": 0, "receipt_id": "8f9b33ebd3ba4c96b57aa36d1c365f9c"},
+      "distinguishable": true
+    },
+    {
+      "operation": "app.role.list",
+      "family": "metadata",
+      "low": {"sdk_status": "permission_unavailable", "item_count": null, "upstream_code": 2000, "receipt_id": "33c6e9ed18424680b40ae36ff0320532"},
+      "high": {"sdk_status": "success", "item_count": 1, "upstream_code": 0, "receipt_id": "d60535a1d9664cd5880c2987105c4094"},
+      "distinguishable": true
+    },
+    {
+      "operation": "analysis.account_user.list",
+      "family": "analysis",
+      "low": {"sdk_status": "success", "item_count": 1, "upstream_code": 0, "receipt_id": "d095580871ef46e58e268b563245a464"},
+      "high": {"sdk_status": "success", "item_count": 1, "upstream_code": 0, "receipt_id": "1638f9e380014ce082142b10e2c6d95d"},
+      "distinguishable": false
+    },
+    {
+      "operation": "analysis.event.list",
+      "family": "analysis",
+      "low": {"sdk_status": "success", "item_count": 1, "upstream_code": 0, "receipt_id": "a189e40897a3444cbb5c24b57866804d"},
+      "high": {"sdk_status": "success", "item_count": 1, "upstream_code": 0, "receipt_id": "d0ed2e2b7e0e4d2398924a5c51620c9e"},
+      "distinguishable": false
+    },
+    {
+      "operation": "analysis.segment.list",
+      "family": "analysis",
+      "low": {"sdk_status": "empty", "item_count": 0, "upstream_code": 0, "receipt_id": "75004dcc740e40a8a3b86bfc88b94d2b"},
+      "high": {"sdk_status": "empty", "item_count": 0, "upstream_code": 0, "receipt_id": "689506cc544e426f9e2a557fcf71d8f4"},
+      "distinguishable": false,
+      "note": "successful empty on both accounts; not a permission denial"
+    },
+    {
+      "operation": "analysis.dashboard.tree",
+      "family": "dashboard",
+      "low": {"sdk_status": "success", "item_count": 1, "upstream_code": 0, "receipt_id": "995ade70e52342ef983abdc17e016fde"},
+      "high": {"sdk_status": "success", "item_count": 1, "upstream_code": 0, "receipt_id": "0d7e842f989e49ee8f7832f2dc3d0f6b"},
+      "distinguishable": false
+    },
+    {
+      "operation": "report.report.list",
+      "family": "dashboard",
+      "low": {"sdk_status": "empty", "item_count": 0, "upstream_code": 0, "receipt_id": "fc875bd91c6447d1b69498c31e7f95d6"},
+      "high": {"sdk_status": "empty", "item_count": 0, "upstream_code": 0, "receipt_id": "44dd7589a2e74bf48d00de5c67f9c82d"},
+      "distinguishable": false,
+      "note": "successful empty on both accounts; not a permission denial"
+    },
+    {
+      "operation": "report.subscribe.list",
+      "family": "dashboard",
+      "low": {"sdk_status": "empty", "item_count": 0, "upstream_code": 0, "receipt_id": "0b5b1c87ed664c0198ecf743f1e0af7f"},
+      "high": {"sdk_status": "empty", "item_count": 0, "upstream_code": 0, "receipt_id": "fc3f1bef3ce349e496d76b7b0bce719c"},
+      "distinguishable": false,
+      "note": "successful empty on both accounts; not a permission denial"
+    },
+    {
+      "operation": "report.multidim.metric.list",
+      "family": "analysis",
+      "low": {"sdk_status": "success", "item_count": 1, "upstream_code": 0, "receipt_id": "9177dab48ed942639504c74c6b164b32"},
+      "high": {"sdk_status": "success", "item_count": 1, "upstream_code": 0, "receipt_id": "0cb496544aa04e7b956a93cb0a52bb29"},
+      "distinguishable": false
+    },
+    {
+      "operation": "promotion.bytedance.account.list",
+      "family": "promotion",
+      "low": {"sdk_status": "permission_unavailable", "item_count": null, "upstream_code": 2000, "receipt_id": "76ef22fc12ad4541a268d1ca9460f0ab"},
+      "high": {"sdk_status": "success", "item_count": 1, "upstream_code": 0, "receipt_id": "f090f606723a4dc4966062c6203f056c"},
+      "distinguishable": true
+    },
+    {
+      "operation": "material.local.list",
+      "family": "material",
+      "low": {"sdk_status": "contract_changed", "item_count": 1, "upstream_code": 0, "receipt_id": "2e75c88ba0954b10936e7ab1c0c0e48a"},
+      "high": {"sdk_status": "contract_changed", "item_count": 1, "upstream_code": 0, "receipt_id": "90fc8a084f2d4f26888728d26d19dbf9"},
+      "distinguishable": false,
+      "note": "both accounts returned HTTP 200 with unregistered response fields; not a permission denial"
+    },
+    {
+      "operation": "metadata.property.list",
+      "family": "metadata",
+      "low": {"sdk_status": "success", "item_count": 1, "upstream_code": 0, "receipt_id": "dafa45787bc447469874a1efd2b12bb1"},
+      "high": {"sdk_status": "success", "item_count": 1, "upstream_code": 0, "receipt_id": "75f11d45668a4c838af88f7be688976e"},
+      "distinguishable": false
+    },
+    {
+      "operation": "metadata.version.list",
+      "family": "metadata",
+      "low": {"sdk_status": "success", "item_count": 1, "upstream_code": 0, "receipt_id": "8fa8e80f90624d3e9e0294893958e2b5"},
+      "high": {"sdk_status": "success", "item_count": 1, "upstream_code": 0, "receipt_id": "41242efacc29440f983d0562b6fdd47d"},
+      "distinguishable": false
+    },
+    {
+      "operation": "analysis.monetization_detail.list",
+      "family": "monetization",
+      "low": {"sdk_status": "empty", "item_count": 0, "upstream_code": 0, "receipt_id": "f5f0dbc8ade24b178e1f38bcd479f97e"},
+      "high": {"sdk_status": "empty", "item_count": 0, "upstream_code": 0, "receipt_id": "7d44e2ed688c47459665c85a69187bcd"},
+      "distinguishable": false,
+      "note": "successful empty on both accounts for the first App and one day; not a permission denial"
+    },
+    {
+      "operation": "d28.monetization_report.custom_get",
+      "family": "monetization",
+      "registered": false,
+      "path": "/report/api/v3/monetization_report/custom_get/",
+      "window": "2026-08-10..2026-08-16",
+      "low": {"sdk_status": null, "item_count": null, "upstream_code": 2000, "msg": "您当前账号暂无权限操作", "receipt_id": "7f9a565967954a5d815ffa43daa5842b"},
+      "high": {"sdk_status": null, "item_count": 0, "upstream_code": 0, "msg": "成功", "page_info_total": 0, "total_empty_object": true, "receipt_id": "65bf36e346674dbf82324c6fe87a2b16"},
+      "distinguishable": true
+    },
+    {
+      "operation": "analysis.segment.from.rule.create",
+      "family": "write",
+      "low": {"sdk_status": "preview_only", "network_called": false, "upstream_code": null},
+      "high": {"sdk_status": "preview_only", "network_called": false, "upstream_code": null},
+      "distinguishable": false,
+      "note": "write family covered by dry-run only; no mutation was executed"
+    },
+    {
+      "operation": "report.report.update",
+      "family": "write",
+      "low": {"sdk_status": "preview_only", "network_called": false, "upstream_code": null},
+      "high": {"sdk_status": "preview_only", "network_called": false, "upstream_code": null},
+      "distinguishable": false,
+      "note": "write family covered by dry-run only; no mutation was executed"
+    }
+  ],
+  "summary": {
+    "sampled_operations": 18,
+    "low_account_denied": 4,
+    "denied_ids": [
+      "app.permission_menu.list",
+      "app.role.list",
+      "promotion.bytedance.account.list",
+      "d28.monetization_report.custom_get"
+    ],
+    "successful_empty_on_both": [
+      "analysis.segment.list",
+      "report.report.list",
+      "report.subscribe.list",
+      "analysis.monetization_detail.list"
+    ],
+    "d28_verdict": "high_account_true_empty"
+  },
+  "d28": {
+    "question": "Does the high-account empty custom_get mean no permission or no data?",
+    "low": {"http_status": 200, "code": 2000, "msg": "您当前账号暂无权限操作"},
+    "high": {"http_status": 200, "code": 0, "msg": "成功", "list": [], "page_info.total": 0, "total": {}},
+    "verdict": "The high-account empty set is a true empty for the first App and default window. The same route returns code=2000 when the account lacks permission. D28's 'data is empty, not permission' conclusion stands for the high account. Journey status was not changed.",
+    "first_high_attempt": {
+      "receipt_id": "1e99aa96744545f88b146baa37035684",
+      "code": 1004,
+      "msg": "参数错误",
+      "reason": "local filter field name was wrong; not used as the decisive observation"
+    }
+  },
+  "http_ledger": {
+    "count": 45,
+    "all_http_200": true,
+    "all_attempt_1": true,
+    "all_retry_false": true,
+    "includes_authentication": 5,
+    "includes_live_metadata_side_reads": [
+      "analysis.user_property.list",
+      "analysis.event_property.list",
+      "analysis.segment.list"
+    ]
+  }
+}

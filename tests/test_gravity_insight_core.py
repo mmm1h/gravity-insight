@@ -26,7 +26,8 @@ try:
         PolicyViolation,
         UnknownOperationError,
     )
-    from gravity_sdk.credentials import _atomic_update_env
+    from gravity_sdk.credentials import CredentialConfig, _atomic_update_env, session_path
+    from gravity_sdk.errors import exit_code_for_status
     from gravity_sdk.executor import _project as project_response
     from gravity_sdk.models import load_operation_manifest
     from gravity_sdk.http_runtime import GravityHttpRuntime
@@ -50,7 +51,8 @@ except ModuleNotFoundError:  # source checkout without an editable install
         PolicyViolation,
         UnknownOperationError,
     )
-    from gravity_sdk.credentials import _atomic_update_env
+    from gravity_sdk.credentials import CredentialConfig, _atomic_update_env, session_path
+    from gravity_sdk.errors import exit_code_for_status
     from gravity_sdk.executor import _project as project_response
     from gravity_sdk.models import load_operation_manifest
     from gravity_sdk.http_runtime import GravityHttpRuntime
@@ -2072,6 +2074,21 @@ class GravityInsightCoreTests(unittest.TestCase):
             self.assertEqual("caller", semantic["error"]["category"])
             self.assertFalse(semantic["error"]["retryable"])
             self.assertNotIn("private upstream detail", json.dumps(semantic))
+            denied = client_for(
+                Path(directory),
+                [FakeResponse({"code": 2000, "msg": "权限不足", "data": {}, "extra": {"error": ""}})],
+            )[0].read("example.items.list", {})
+            self.assertEqual(
+                ("permission_unavailable", "PERMISSION_UNAVAILABLE", "upstream", 3),
+                (
+                    denied["status"],
+                    denied["error"]["code"],
+                    denied["error"]["category"],
+                    exit_code_for_status(denied["status"], error=denied["error"]),
+                ),
+            )
+            self.assertIn("example.items.list", denied["error"]["next_action"])
+            self.assertNotIn("documented input", denied["error"]["next_action"])
 
     def test_transport_auth_refresh_gets_one_retry_with_attempts_one(self):
         class Credentials:
@@ -2698,3 +2715,30 @@ class GravityInsightCoreTests(unittest.TestCase):
             path = env_file(Path(directory), token="file-token")
             provider = CredentialProvider(path, environ={"GRAVITY_AUTH_TOKEN": "env-token"}, persist=False)
             self.assertEqual("env-token", provider.get().token)
+
+    def test_username_change_discards_cached_session_token(self):
+        login = lambda username, password: {
+            "code": 0,
+            "data": {"day": 7, "user": {"Authorization": f"token-for-{username}", "id": "17"}},
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / ".env.gravity.local"
+            path.write_text(
+                "GRAVITY_USERNAME=primary@example.invalid\nGRAVITY_PASSWORD=primary-secret\n",
+                encoding="utf-8",
+            )
+            self.assertEqual(
+                "token-for-primary@example.invalid",
+                CredentialProvider(path, environ={}, persist=True, login=login).get().token,
+            )
+            path.write_text(
+                "GRAVITY_USERNAME=tester@example.invalid\nGRAVITY_PASSWORD=tester-secret\n",
+                encoding="utf-8",
+            )
+            switched = CredentialConfig.from_env(path, environ={})
+            self.assertIsNone(switched.token)
+            self.assertFalse(session_path(path).exists())
+            self.assertEqual(
+                "token-for-tester@example.invalid",
+                CredentialProvider(path, environ={}, persist=True, login=login).get().token,
+            )
