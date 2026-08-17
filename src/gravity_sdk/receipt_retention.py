@@ -147,15 +147,44 @@ def _root_key(directory: Path) -> str:
 def _process_is_alive(pid: int) -> bool:
     if pid <= 0:
         return False
+    if os.name == "nt":
+        return _windows_process_is_alive(pid)
     try:
         os.kill(pid, 0)
     except ProcessLookupError:
         return False
     except PermissionError:
         return True
-    except OSError as error:
-        return getattr(error, "winerror", None) not in {87, 1168}
+    except OSError:
+        return True
     return True
+
+
+def _windows_process_is_alive(pid: int) -> bool:
+    """Query a PID without delivering a console control event.
+
+    ``os.kill(pid, 0)`` is unsafe on Windows: ``signal.CTRL_C_EVENT`` is 0, so
+    that call becomes ``GenerateConsoleCtrlEvent``. ``OpenProcess`` plus
+    ``GetExitCodeProcess`` only inspects the process object.
+    """
+
+    import ctypes
+    from ctypes import wintypes
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.OpenProcess.restype = wintypes.HANDLE
+    kernel32.GetExitCodeProcess.restype = wintypes.BOOL
+    kernel32.CloseHandle.restype = wintypes.BOOL
+    handle = kernel32.OpenProcess(0x1000, False, pid)
+    if not handle:
+        return ctypes.get_last_error() not in {87, 1168}
+    try:
+        code = wintypes.DWORD()
+        if not kernel32.GetExitCodeProcess(handle, ctypes.byref(code)):
+            return True
+        return code.value == 259
+    finally:
+        kernel32.CloseHandle(handle)
 
 
 def _try_lock(handle: BinaryIO) -> bool:

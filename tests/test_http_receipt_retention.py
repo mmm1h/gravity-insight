@@ -80,3 +80,29 @@ while not Path(sys.argv[4]).exists() and time.time()<deadline: time.sleep(.01)
         stdout, stderr = first.communicate(timeout=10)
         assert first.returncode == 0, stderr
         assert json.loads(stdout) == {"status": 200}
+
+    def test_windows_liveness_probe_does_not_deliver_console_events(self):
+        from unittest import mock
+        from gravity_sdk import receipt_retention
+        from gravity_sdk.receipt_query import list_http_receipts
+        from gravity_sdk.receipt_retention import _process_is_alive
+        child = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"])
+        self.addCleanup(lambda: child.terminate() or child.wait(timeout=5))
+        identifier = "a" * 32
+        stale = _old_receipt(self.tmp_path / "receipts" / "http", f"{child.pid}-{'0'*32}-{identifier}.json")
+        stale.write_text(json.dumps({"schema_version":"gravity.http-receipt.v1","receipt_id":identifier,"completed_at":"2026-01-16T00:00:00.000001Z","operation_id":"app.list","method":"GET","path":"/account_center/api/v1/app/list/","http_status":200,"page_number":1,"attempt":1,"retry":False,"request_shape_fingerprint":"a"*64}), encoding="utf-8")
+        listed = list_http_receipts(self.tmp_path)
+        completed = subprocess.run([sys.executable, "-c", REQUEST_SCRIPT, str(self.tmp_path), "alive.new"],
+            env=_environment(GRAVITY_HTTP_RECEIPT_MAX_FILES="1", GRAVITY_HTTP_RECEIPT_MAX_AGE_DAYS="36500"), check=True, capture_output=True, text=True)
+        assert json.loads(completed.stdout) == {"status": 200} and stale.exists() and child.poll() is None
+        assert listed["items"][0]["run_status"] == "run_in_progress"
+        if os.name != "nt":
+            return
+        import signal
+        calls = []
+        def record_kill(pid, sig):
+            calls.append((pid, sig)); raise AssertionError("Windows liveness must not call os.kill")
+        with mock.patch.object(receipt_retention.os, "kill", side_effect=record_kill):
+            assert _process_is_alive(os.getpid()) and _process_is_alive(child.pid)
+            list_http_receipts(self.tmp_path)
+        assert calls == [] and signal.CTRL_C_EVENT == 0
