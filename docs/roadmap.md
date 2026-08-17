@@ -5648,3 +5648,61 @@ manifest semantic error 执行器，不新增 raise site。`src/gravity_sdk` add
 或活动结构债。公开 development target 只登记 J40 新产品身份；没有改题目、prompt、阈值、评分算法或
 holdout/final。全量测试中的 protected 文本只来自隔离临时目录 synthetic fixture；没有读取真实 key 或
 sealed 数据，也没有 GitHub、push、PR、tag 或 release 动作。
+
+## 当前 91 卡目录上的合法宿主选择（2026-08-17，不切默认）
+
+**范围：**只在 `codex/host-rescore` 上取得当前目录的合法宿主选择并重放 development。不切默认、不改
+recognizer、不改评测装置/题集/评分/层定义/阈值、不放松 `HOST_SELECTION_DECISION_MISMATCH`、不读
+holdout/final/key。Gravity 生产 HTTP **0**。选择缓存与重放插件只落在 ignored `tmp/codex/host-rescore/`。
+
+**上次 malformed 归因：**补卡后第二次模型输出有一行把 **1 个候选**标成 `decision=multiple_intents`。
+合同 `_validate_decision()` 要求 `len(candidates)==1 → selected`、`>1 → multiple_intents`、`0 →
+abstained`；不一致即整批 `HOST_SELECTION_DECISION_MISMATCH`，不部分修正。schema 本身允许三个
+decision 枚举，严格点在候选数与 decision 必须一致。这是**模型自相矛盾**，不是合同过严；提示词只写了
+“独立多意图才用多个 selector”，没有把“单候选必须写 selected”写成硬约束。本轮不改合同。
+
+**当前目录：**`host_product_catalog()` 现场投影 **99 = 91 product + 8 gap**，
+`catalog_sha256=11cef3d9d3c617bccad03e01796aaf208763a76679f425664f87bea4aef311c6`。完整 inventory
+仍为 `232 + 91 + 8 - 2 = 329`。含 `app.list` 与 `app.app_info.get`。
+
+**合法选择：**由本轮人工/Grok 按当前目录逐题给出 0..N 候选，336 行全部通过
+`assess_host_product_selection`（`selected 324 / multiple_intents 12 / abstained 0`）。缓存
+`tmp/codex/host-rescore/host-selection-cache-91card.json`，
+`locked_selection_sha256=5917971767247ce09ba4542c8607aa8d6019851a519c72816775e71e846e85c1`。
+四 trial 的 locked sha 与 request sha 完全相同；这是**重放确定性，不是模型跨次稳定性**。
+
+**development 实测：**
+
+| 层 | recognizer 默认（本机复测） | 91 卡合法宿主重放 |
+| --- | ---: | ---: |
+| 首次产品选择 | `256/336` | **`334/336`** |
+| 参数可填 | `209/210` | `262/269` |
+| 离线终点 | `48/67` | `67/67` |
+| 错误恢复 | `5/5` | `5/5` |
+| 安全 | `PASS/0` | `PASS/0` |
+| selection pass^4 | `256/336` | `334/336` |
+
+宿主失败仍是冻结 scorer 的既有机制限制：`J32.dev.v3.multiple` 与 `J47.dev.v3.multiple` 语义上分别选对
+`metadata:table_lineage + CURRENT_TABLE_SCHEMA_PARENT_MISSING` 与
+`ANALYSIS_EXPORT_FILE_CONTRACT_MISSING + material.asset.fetch`，但 `candidate_selectors` 只登记产品
+journey，按既有逻辑计 `wrong_intent_candidates`。参数层 7 个 `input_template_missing` 全是 J40
+`app.app_info.get` 的 `url` 未进 `input_template`；7 个 J19 走环境 gap，不进参数层。
+
+**与 `327/336` 不可比：**旧 327 是补 `app.list` 前、约 90 卡目录上的外部模型选择锁重放；本轮是当前
+91 卡目录上的人工/Grok 选择 + 同一锁四次重放。不同模型、不同目录、不同缓存。本轮比 327 多对的是
+7 道 J39（现有 `app.list` 卡）和 7 道已闭环 J40（`app.app_info.get`），减去仍失败的 J32/J47。
+
+**recognizer 256 不是本轮回退：**`f798d39` 记的 `260/336` 期望 J40 仍是
+`APP_ONELINK_PUBLIC_BINDING_SAMPLE_MISSING`。`0043dba` 把 J40 改成产品后，recognizer 只稳定命中
+`J40.dev.zh.normal-1`，其余 6 道 J40 无候选。本轮未改 recognizer。
+
+默认 CLI 不写 `--routing` 仍是 `recognizer` / `mode=discover_and_describe` /
+`analysis.query.spec:event`。是否切默认仍只由 custodian 的一次受保护 paired 运行决定；本轮没有查询
+受保护集。开发集相对本机 recognizer `+78 / +23.21pp`，安全零回归，但选择锁不是独立模型、也不是
+holdout 证据。
+
+**计数与门禁：**operation/stable **232/223**，产品卡 91，精确 gap 8，selector 329，动线
+`56 = 49 / 1 / 6`。unittest **1151 tests OK**（无色终端）；带色 help 的 3 个 CLI 断言失败是
+`FORCE_COLOR` 环境问题，不是源码回归。pytest **1151 passed / 3098 subtests passed**。compiler
+**232 / 11 manifests**；quality PASS operations=232；错误审计 **1225 = A422/B434/C369**；文档 4
+passed、skills `--check`、CLI help、`git diff --check` 全过。没有 GitHub、push、tag 或其他对外动作。
