@@ -5,8 +5,8 @@
 
 ## 已知导出：一次调用
 
-当前可直接创建的导出有七个：素材报表，以及 Analysis 的单用户事件、
-分群结果、分群用户明细、用户明细、付费事件和变现明细。准备好 `describe` 合同中的完整
+当前可直接创建的导出有八个：素材报表，以及 Analysis 的单用户事件、
+分群结果、分群用户明细、用户明细、付费事件、变现明细和原始事件。准备好 `describe` 合同中的完整
 request 后，直接执行：
 
 ```powershell
@@ -45,7 +45,8 @@ App、ClientID、日期、事件名和结构化条件都必须来自调用方或
 - `export.analysis.segment_user_detail.start`：`ClientID,CreateTime` 对应 `客户ID,注册时间`；
 - `export.analysis.user_detail.start`：`ClientID,CreateTime` 对应 `客户ID,注册时间`；
 - `export.analysis.pay_event.start`：`ClientID,TraceID` 对应 `客户ID,订单ID`；
-- `export.analysis.monetization_detail.start`：`AdEventTime,ClientID` 对应 `事件发生时间,客户ID`。
+- `export.analysis.monetization_detail.start`：`AdEventTime,ClientID` 对应 `事件发生时间,客户ID`；
+- `export.analysis.origin_event.start`：固定五列 `客户ID(client_id),用户注册时间,事件发生时间,事件,事件属性`，文件是 gzip CSV。
 
 同名两列不代表两个族共用文件合同；每个 route 在 `describe.columns.file_schema` 中
 保持独立的 worksheet、空文件、表头、存储类型和逻辑类型证据。四个族都要先用同一
@@ -62,8 +63,8 @@ gravity agent "material report export"
 导出卡直接交接到 run，不生成 Plan node，也不能放入 Plan v1。批量 Agent 问题复用同一份导出
 inventory。
 
-Agent 只暴露 `currently_callable=true` 且 `effect=export_job_create` 的卡。当前会得到上述七个
-creator；task status/cancel 等支持路由不是创建候选。`origin_event` 因唯一有界估算为零而未提交 create。
+Agent 只暴露 `currently_callable=true` 且 `effect=export_job_create` 的卡。当前会得到上述八个
+creator；task status/cancel 等支持路由不是创建候选。`origin_event` 先用 `evaluate_data` 确认 `data.total > 0`，再提交 create；`analysis.event.list.yesterday_count` 不能当门。
 `monetization_detail` 的 READY XLSX 已通过保留全部安全规则的 route-scoped 192 MiB 展开上限。
 task list/progress/file 仍无任务绑定 total；SDK 在 create 前用同一 App/日列表第一页钉住
 `page.total_items`，标注 `create_time_preflight`。钉住总量大于 100 万且文件恰为 1,000,000 行时

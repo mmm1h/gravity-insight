@@ -185,3 +185,5 @@ class GravityInsightExportVerifyTests(unittest.TestCase):
             "identifier", "datetime", "datetime", "text", "json_object_or_array"
         ]
         assert all(item["cell_storage_types"] for item in schema["columns"])
+        origin = load_catalog()["export.analysis.origin_event.start"]
+        assert origin["privacy"]["extension"] == ".csv.gz"

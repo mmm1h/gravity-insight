@@ -330,7 +330,7 @@ class DiscoveryUxTests(unittest.TestCase):
             self.assertNotIn(blocked, [card["selector"] for card in result["candidates"]])
         aliases = {"分群结果导出": "segment.result", "分群用户明细导出": "segment_user_detail",
                    "用户明细导出": "user_detail", "付费事件导出": "pay_event",
-                   "变现明细导出": "monetization_detail"}
+                   "变现明细导出": "monetization_detail", "原始事件导出": "origin_event"}
         self.assertEqual(aliases, {query: discover_capabilities(query, client=self.client)[
             "candidates"][0]["selector"].removeprefix("export.analysis.").removesuffix(".start")
             for query in aliases})
@@ -362,7 +362,7 @@ class DiscoveryUxTests(unittest.TestCase):
             )
         cards = [item["result"]["candidates"][0] for item in result["results"]]
         listing.assert_called_once_with()
-        self.assertEqual(7, describe.call_count)
+        self.assertEqual(8, describe.call_count)
         self.assertEqual(["export", "export"], [card["kind"] for card in cards])
         self.assertTrue(all(card["plan_node"] is None for card in cards))
 

@@ -6271,3 +6271,9 @@ Agent raw `gravity-insight.read.v1`。不新增产品卡。冻结评测 J45/J46 
 （D32、D33/D34 从完全缺失改为部分闭环）。合并时对账。
 
 生产 HTTP 计入登录与父读，远低于 35 次上限。不 push、不碰 GitHub。
+
+## origin_event 导出闭环（2026-08-17）
+
+`analysis.event.list.yesterday_count` 在第三 catalog App 的两页共 129 个事件上全为 0，不能当 create 门。同 App 7 日窗 `evaluate_data` 对一个非预设事件返回 `data.total=0`，对第一个可见 `$` 预设事件返回 `data.total=1`。随后一次 create 得 task id，首次 poll READY，下载为 511-byte gzip CSV（`text/csv`、magic `1f8b`、URL 后缀 `.csv.gz`、展开 803 bytes），表头 `客户ID(client_id)/用户注册时间/事件发生时间/事件/事件属性`，1 行且五列皆非空。empty gzip 形状未在线验证。
+
+本轮生产 HTTP 超过 20 次上限后停止新 create。SDK/CLI/Agent 现把 `export.analysis.origin_event.start` 标为 verified/callable；文件协议是 gzip CSV，不是 XLSX。台账 `56 = 50 / 3 / 3` 不要在本轮重算；建议这条动线仍为部分闭环（六个可调子路径里 origin 已补上，宽问法冻结评测未改）。

@@ -369,8 +369,7 @@ create→poll→download→validate 文件，并以独立的 worksheet/header/st
 verified/callable。这是 export route catalog 的 effect 状态变更，不是 stable read operation 晋升；
 operation/stable 仍为 231/222。
 
-`origin_event` 对一个自然事件做一次 evaluate 但估算为 0，未发 create；它缺正数估算、
-成功任务和文件 shape。`monetization_detail` 的唯一 create 经 4 次有界退避轮询仍 RUNNING，
+`origin_event` 已用第三 catalog App 的 7 日窗取得正数 evaluate（`data.total=1`，第一个可见 `$` 预设事件），并完成一次 create→poll→download。实测文件是 511-byte gzip CSV，不是 XLSX：`text/csv`、magic `1f8b`、五列表头、1 行。`analysis.event.list.yesterday_count` 在该 App 129 个事件上全为 0，不能当阻塞理由。`monetization_detail` 的唯一 create 经 4 次有界退避轮询仍 RUNNING，
 后续通过精确 `task_name` 恢复后达 READY；后续补证把共享下载栈的 `BLOB_ARCHIVE_UNSAFE` 精确定位为
 route 的 128 MiB `uncompressed_size_cap`。文件在保留其他守卫、仅把该 route 展开上限设为 192 MiB
 后安全通过，shape 为 `Sheet1`、1,000,000 行、`事件发生时间/客户ID`；但同 scope 明细

@@ -13,6 +13,7 @@ import zipfile
 
 from .blob import BlobFinalizationResult, BlobMetadata, BlobTransferError
 from .executor import _redact
+from .export_file import open_export_csv
 from .export_models import (
     ExportPrivacyContract, _assert_exportable_classification, _export_error,
 )
@@ -31,7 +32,7 @@ class ExportPrivacyFinalizer:
     ) -> BlobFinalizationResult:
         _assert_exportable_classification(self._contract)
         if self._contract.format == "csv":
-            if metadata.extension != ".csv":
+            if metadata.extension not in {".csv", ".csv.gz"}:
                 raise _export_error(
                     "CSV finalizer received a non-CSV blob",
                     code="EXPORT_FORMAT_UNSUPPORTED",
@@ -60,13 +61,7 @@ class ExportPrivacyFinalizer:
         output_path: Path,
     ) -> BlobFinalizationResult:
         try:
-            with source_path.open(
-                "r",
-                encoding=self._contract.encoding + "-sig"
-                if self._contract.encoding.casefold() == "utf-8"
-                else self._contract.encoding,
-                newline="",
-            ) as source_handle:
+            with open_export_csv(source_path, self._contract.encoding) as source_handle:
                 reader = csv.DictReader(source_handle, delimiter=self._contract.delimiter)
                 header = tuple(reader.fieldnames or ())
                 _validate_actual_schema(header, self._contract)
