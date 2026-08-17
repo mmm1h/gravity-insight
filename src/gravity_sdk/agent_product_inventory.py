@@ -8,6 +8,7 @@ from typing import Any
 from .agent_analysis import analysis_query_spec_inventory
 from .agent_app_catalog import app_catalog_capability_inventory
 from .agent_app_public_info import app_public_info_capability_inventory
+from .agent_monetization_aggregate import monetization_aggregate_capability_inventory
 from .agent_capabilities import (
     composite_capability_cards,
     composite_capability_inventory,
@@ -45,6 +46,7 @@ def canonical_capability_cards(client: Any) -> tuple[dict[str, Any], ...]:
         *composites,
         *app_catalog_capability_inventory(),
         *app_public_info_capability_inventory(),
+        *monetization_aggregate_capability_inventory(),
         *analysis_query_spec_inventory(),
         *segment_capability_inventory(),
         *kanban_mutation_capability_inventory(),

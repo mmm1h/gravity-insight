@@ -6,7 +6,7 @@
 
 ### 完整目录
 
-第一次接触仓库、或需要确认“现在到底能做什么”时，`agent-catalog categories → category <category> → describe <selector>` 是首要入口，不是附属的 operation 调试命令。三层完全离线，依次回答领域、selector 和完整执行合同，当前覆盖 232 个 operation、91 张产品卡和 8 个精确 gap；`app.list` 与 `app.app_info.get` 两组产品卡/raw operation 同身份去重后共 329 个 selector。category 内机械按 `product → raw_operation → capability_gap`、同类 selector 升序排列，因此产品卡不会被 raw operation 挤出首屏；优先选择 `identity_kind=product`。raw operation 只是专家入口，gap 不可执行。宿主模型先读取 `agent-catalog host` 的 99 项紧凑产品/gap 投影，只返回严格 `gravity.host-product-selection.v1`；调用方再显式用 `agent --routing host_catalog --host-selection <json>` 交给仓库 describe，省略 `--routing` 时仍固定走 recognizer。第二层返回 `next_offset` 不代表必须翻页；已知 selector 直接 describe。逐层示例见[完整目录任务指南](agent-skills/catalog-discovery.md)。
+第一次接触仓库、或需要确认“现在到底能做什么”时，`agent-catalog categories → category <category> → describe <selector>` 是首要入口，不是附属的 operation 调试命令。三层完全离线，依次回答领域、selector 和完整执行合同，当前覆盖 233 个 operation、92 张产品卡和 7 个精确 gap；`app.list`、`app.app_info.get` 与 `report.get.query` 三组产品卡/raw operation 同身份去重后共 329 个 selector。category 内机械按 `product → raw_operation → capability_gap`、同类 selector 升序排列，因此产品卡不会被 raw operation 挤出首屏；优先选择 `identity_kind=product`。raw operation 只是专家入口，gap 不可执行。宿主模型先读取 `agent-catalog host` 的 99 项紧凑产品/gap 投影，只返回严格 `gravity.host-product-selection.v1`；调用方再显式用 `agent --routing host_catalog --host-selection <json>` 交给仓库 describe，省略 `--routing` 时仍固定走 recognizer。第二层返回 `next_offset` 不代表必须翻页；已知 selector 直接 describe。逐层示例见[完整目录任务指南](agent-skills/catalog-discovery.md)。
 
 | 已知信息 | 直接执行 | 正常命令数 |
 | --- | --- | --- |

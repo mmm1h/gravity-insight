@@ -1136,6 +1136,21 @@
       "declared_pagination": "none",
       "evidence_level": "production",
       "evidence_sources": [
+        "evidence/probe/20260817T082308Z_report.get.query.yaml"
+      ],
+      "observed_shape": "B",
+      "operation_id": "report.get.query",
+      "review_reason": "the nonempty production response returned data.page_info.total only; the frontend slices the full data.list locally and does not send page or page_size",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
         "evidence/probe/20260811T050921Z_app.capacity.get.yaml",
         "evidence/probe/20260811T071537Z_app.capacity.list.yaml"
       ],
@@ -3620,18 +3635,18 @@
   "schema_version": "gravity-insight.pagination-contract-audit.v1",
   "summary": {
     "declared_kinds": {
-      "none": 113,
+      "none": 114,
       "page_info": 119
     },
     "none_review_statuses": {
       "collection_completeness_unknown": 34,
       "manual_empty_page_protocol": 1,
-      "no_page_info_in_observed_response": 31,
+      "no_page_info_in_observed_response": 32,
       "not_collection_semantics": 46,
       "wire_pagination_signal": 1
     },
     "none_silent_completeness_risks": 27,
-    "operations": 232,
+    "operations": 233,
     "page_info_evidence_levels": {
       "production": 62,
       "template_default": 49,

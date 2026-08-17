@@ -10,7 +10,7 @@
 执行，内部 HTTP 数也没有减少。App/平台也未知时不适用该两次路径；默认离线 Agent 的原三次下界保留。
 `gravity.agent-call-bound.v1` 只在本次成功交付完整目录的卡与 Plan 节点上把对应 scenario 声明为 2。
 
-当前程序化重算：**56 条产品动线：已闭环 49 / 部分闭环 1 / 完全缺失 6**。可复算：下表 61 行，
+当前程序化重算：**56 条产品动线：已闭环 50 / 部分闭环 1 / 完全缺失 5**。可复算：下表 61 行，
 减去 2 条兼容/维护便利面、1 条“既有稳定读取面重复”、1 条“已有结果上的调用方派生便利面”和
 1 条“既有语义组合的调查编排便利面”，
 得到 56 条；按状态直接分组为 `56 = 48 / 1 / 7`。设置 → 应用管理先把基线推进到
@@ -24,16 +24,18 @@
 生产对照登记 dimension-bound `click_company IN` 与 3 个 day/week 指标。它扩展同一结果产品，不新增
 动线；v3 再保留 v2 的 4 个成员并增加 9 个 day/week 成员，注册数因 day/week 均空而排除。v3 的
 dimension/filter 证据分为 4 个实测代表与 5 个同族外推，三条新语义组合均真实返回数字和 scoped
-claims，仍不新增产品或结果合同，故先为 `56 = 48 / 1 / 7`；本轮 `app.app_info.get` 的调用方公开
+claims，仍不新增产品或结果合同，故先为 `56 = 48 / 1 / 7`；`app.app_info.get` 的调用方公开
 商店 URL 首次取得成功非空合同，OneLink/公开信息组合动线从完全缺失转已闭环，故为
-**`56 = 49 / 1 / 6`**。
-operation/stable 为 232 / 223（186 read + 37 governed mutation）；canonical 产品卡先由 45 增为 73，
-再加 4 张自定义指标卡、4 张模板动作卡和 3 张保存分析动作卡得到 84；本轮四个独立
-Analysis export creator 再增 4 张卡得到 88，语义组合、`app.list` 与 `app.app_info.get` 各增加 1 张卡得到 91。
-精确 gap 由 9 减为 8；`app.list` 产品卡与 raw operation 同身份去重，因此安装目录为
-`232 + 91 + 8 - 2 = 329` 个 selector。唯一部分闭环是只关闭五个服务端子类的 Analysis 导出
+`56 = 49 / 1 / 6`；本轮 D28 在 catalog#2、`2026-07-17..2026-08-16` 取得非空 item/total 后晋升
+`report.get.query`，故为 **`56 = 50 / 1 / 5`**。
+operation/stable 为 233 / 224（187 read + 37 governed mutation）；canonical 产品卡先由 45 增为 73，
+再加 4 张自定义指标卡、4 张模板动作卡和 3 张保存分析动作卡得到 84；四个独立
+Analysis export creator 再增 4 张卡得到 88，语义组合、`app.list` 与 `app.app_info.get` 各增加 1 张卡得到 91，
+D28 再增 1 张得到 92。精确 gap 由 8 减为 7；`app.list`、`app.app_info.get` 与 `report.get.query`
+三组产品卡与 raw operation 同身份去重，因此安装目录为
+`233 + 92 + 7 - 3 = 329` 个 selector。唯一部分闭环是只关闭五个服务端子类的 Analysis 导出
 （单用户事件、分群结果、分群用户明细、用户明细、付费事件），变现明细与原始事件导出仍是精确 gap；
-6 条完全缺失里多数是合同证据阻塞，逐行有记录。
+5 条完全缺失里多数是合同证据阻塞，逐行有记录。
 
 2026-08-17 的 guided cold start 只缩短既有“事件分析 + 离线物理名称”调用链，不新增独立结果
 产品、operation、产品卡或 gap，故台账严格保持 `55 = 47 / 1 / 7 → +0 / +0 / +0 = 55 = 47 / 1 / 7`，
@@ -511,11 +513,11 @@ operation 继续保留专家入口，但明确不是产品等价物；`app.realt
 | 查找可用的媒体报表 | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `MEDIA_REPORT_ITEM_SCHEMA_MISSING`。2026-08-16 使用最短当天窗口、无平台筛选、`page_size=1`，按 catalog 枚举 **7 个可绑定 App**；7 次请求均 HTTP 200 明确空，0 个失败或未试 App。当前租户确实无可用媒体报表；既有分页证据保留，item schema 未成立。 |
 | 查找当前账号可读的 App 项目 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | 设置 → 应用管理的真实账号级列表为既有 stable `app.list`：`GET /turbo_engine/api/v1/user/open_app/list/`，不是 `app.project.list` 的 `POST /turbo_engine/api/v1/user/project/list/`。自然页面首屏 HTTP 200 非空 7 行；`cid/create_time/download_url/event_version/icon_url/id/industry_id/is_enabled/is_iaa/modify_time/name/os/package_name/remark/sub_package_list/wechat_app_id/wechat_origin_id` 与 `page_info.page/page_size/total_number/total_page` 均已在 v4 投影登记暴露。CLI/SDK/Plan 复用 raw operation，Agent 中英首问均交付 `app.list` 卡；英文冻结问法为 “List the app projects that the current account is allowed to read.”。 |
 | 查看 App 的 OneLink 与公开信息绑定 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（公开 URL 已知 / 未知） | OneLink 仍由既有 GET 父链证明当前账号明确空，不拿空样本补成功合同。调用方第 1 条 URL `https://apps.apple.com/cn/app/id414478124` 的唯一 GET 即 HTTP 200 / `code=0` 成功，随后按停止条件未请求第 2/3 条；成功字段 `app_id/icon_url/image_data/name/package_name/platform/version` 与旧 error-shaped 样本的 `error` 全部登记暴露。stable `app.app_info.get` 固定上游 host/path/method，`data.error` 离散为 `semantic_error`；raw operation 由 CLI/SDK/Plan/Agent 共用 `gravity-insight.read.v1` 与 `gravity.result-source.v1`。 |
-| 按平台、广告位和日期汇总变现结果（D28） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问仍返回 `MONETIZATION_AGGREGATE_CONTRACT_MISSING`。hash-matched bundle 证明配置在 turbo v3、主结果仍在 report v3，变现维度是静态 `day/os_family/click_company/monetization_platform/user_type/ad_type/app_id/ad_unit_id/bundle_id/channel`；current metric route 以 `data_topic EQUALS(1) + is_media EQUALS(1)` 返回 6 个指标，permission route 对当前 role 返回成功空配置。主 route 的 filter operator 是字符串 `EQUALS/IN`，不是配置 route 的整数枚举；无 App 与整数 operator 两次分别被 `请传入合法的AppID`、`过滤字段条件不合法` 拒绝。首个合法 App、默认 `D-7..D-1`、`day + monetization_platform + ad_unit_id + reporting_ad_revenue` 最终 HTTP 200 / `code=0`，返回 `list=[]/page_info.total=0/total={}`。三选一因此是**数据为空（仅此 App/窗口）**，不是权限不足或形状仍错；按不换 App/不扩窗纪律保留 gap，非空 item/total 字段仍不猜。 |
+| 按平台、广告位和日期汇总变现结果（D28） | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | 2026-08-17 按 catalog 枚举：7 个可绑定 App，0 个失败；`catalog#1` 在 `2026-07-17..2026-08-16` HTTP 200 / `code=0` 明确空，`catalog#2` 同窗首次非空（13 行）后立即停止，其余 5 个未试。item/total 观察字段为 `stat_time/monetization_platform/ad_unit_id` 加请求指标动态列；`page_info` 只有 `total`，bundle 对完整 `data.list` 做客户端 slice，故分页声明为实测 `none`，不复制模板 `page_info`。stable `report.get.query` 由 CLI `gravity run`、SDK `read`、Plan operation node 与 Agent 产品卡共用 `gravity-insight.read.v1` + `gravity.result-source.v1`。 |
 | 查询归因表现聚合（D35） | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（实测；未知 App 离线默认 3） | hash-matched 前端控制流证明 14 恒发字段、2 条条件省略和四个固定指标画像。生产账本为 1 次 App catalog + 2 次单日目标 POST：首 App `code=0/msg=成功/extra.error=无数据` 明确空，第二 App 非空后立即停止；无重试、翻页或扩窗。stable `attribution.attribution.query` 暴露全部观察字段；Core/CLI/SDK/Plan/Agent 共用 `gravity-insight.attribution-performance.v1` 和 `gravity.agent-call-bound.v1`。旧 evidence 未保存 error 正文，不能声称服务端曾拒绝某字段；当前合同将“无数据”规范化为空，其他未知 error fail-closed。 |
 | 下钻单用户归因明细（F40） | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（未知 App 3；未知设备父行 3；二者均未知 4） | 第 6 个 catalog App 的 `app.testing_tool.list` 首次非空后停止；完整目录行与 `page_info` 字段/type 已登记。以内存 `data.list[].id` 构造整数 `device_id`，详情仅发 1 次且成功；`device_white` 完整字段/type 已登记，`attribution_list/postback_list/pay_list` 明确为空。三种 item schema 仍是未观察事实，未来非空即 fail-closed，不作为本次明确空闭环的猜测字段。Core/CLI/SDK/Plan/Agent 共用 `gravity-insight.attribution-user-detail.v1` 与 `gravity.agent-call-bound.v1`。 |
 | 按表名或 App 查询数据表当前 schema、字段和版本（F41） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问仍返回 `CURRENT_TABLE_SCHEMA_PARENT_MISSING`。2026-08-16 获准自建唯一 marker 表后，create/list/detail 实证恢复表 ID、两列、三行与 `using_version_id=1`，随后 delete/list/version-id-set 证明零残留；因此旧“无父对象无法取 shape”已解除。但 `conf_related_prop/override` 对未绑定自建表的 `prop_list=[]` 明确返回 `code=1004 / prop_list is empty`，前端也不能移除最后一条关联；按停止条件未绑定、未建新版本、未做业务属性分析。F41 的读产品和维度表写产品均未实现，详情见[维度表 wire 与分析价值探测](research/dimension-table-wire-probe.md)。 |
 | 下钻非 Bytedance 平台的计划、组和创意表现（D33/D34） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `NON_BYTEDANCE_HIERARCHY_PARENT_MISSING`。Bilibili advertiser 与 Huya account 未产出父候选；后续 ID 链、report 父字段、分页和非空 schema 未成立。 |
 | 深查各平台专属素材与创意（D32） | 完全缺失 | 无 / 无 / 无 / 有（目标 gap） | 未验证 | Agent 首问返回 `PLATFORM_SPECIFIC_CREATIVE_CONTRACT_MISSING`。除 Bytedance 外普遍没有最小非空响应合同；common 素材目录不能证明平台专属字段。Bytedance 标题包已单列为独立动线闭环，**但那是 D32 之下的一个具体产品，不是这条动线的进展**；本条仍是数据证据阻塞。 |
-| 导出事件、分群、用户、付费或变现分析结果 | 部分闭环 | 部分 / 部分 / 设计不适用 / 有（五个具体卡；宽问法目标 gap） | 1 / 2（五个可调子路径中英首问） | `user_event`、`segment.result`、`segment_user_detail`、`user_detail`、`pay_event` 均已有各自的非空 create→poll→download→validate XLSX shape，并经 CLI/SDK/Agent 可调用；后四族文件行/受管总数复核为 1/1、1/1、255/255、217/217，无需降级。`origin_event` 因固定 App/日期内唯一自然事件估算为 0 而未 create。`monetization_detail` 的 READY 文件已证明是安全 ZIP：13,588,076 bytes、9 entries、总展开 166,683,292 bytes、最高压缩比 12.269763，route-scoped 192 MiB policy 可通过；shape 为 `Sheet1`、1,000,000 行、`事件发生时间/客户ID` 两列。同 scope 受管列表 `total_items=1,212,315`，前端明确声明超过 1e6 时只导出前 100W 条，但 task list/progress/file 都没有 task-bound total/truncated。当前日小文件 110,966 行而恢复时列表已增长到 111,792，不能用异步重读可靠计算缺失量；目标日又单日超限，小时条件仍返回全日量级。因此 A/B 均未满足，继续保持不可调用 gap。`completion_status` 将 `empty/partial/truncated/expired/complete/gap` 机械分开；只有原子提交且完整的非空文件是 `complete`。`stream_event` 仍为 `not_applicable`。聚合动线因两个 gap 保持部分闭环，冻结评测宽问法继续期待 `ANALYSIS_EXPORT_FILE_CONTRACT_MISSING`。 |
+| 导出事件、分群、用户、付费或变现分析结果 | 部分闭环 | 部分 / 部分 / 设计不适用 / 有（五个具体卡；宽问法目标 gap） | 1 / 2（五个可调子路径中英首问） | `user_event`、`segment.result`、`segment_user_detail`、`user_detail`、`pay_event` 均已有各自的非空 create→poll→download→validate XLSX shape，并经 CLI/SDK/Agent 可调用；后四族文件行/受管总数复核为 1/1、1/1、255/255、217/217，无需降级。`origin_event` 因固定 App/日期内唯一自然事件估算为 0 而未 create。`monetization_detail` 的 READY 文件已证明是安全 ZIP：13,588,076 bytes、9 entries、总展开 166,683,292 bytes、最高压缩比 12.269763，route-scoped 192 MiB policy 可通过；shape 为 `Sheet1`、1,000,000 行、`事件发生时间/客户ID` 两列。同 scope 受管列表 `total_items=1,212,315`，前端明确声明超过 1e6 时只导出前 100W 条，但 task list/progress/file 都没有 task-bound total/truncated。当前日小文件 110,966 行而恢复时列表已增长到 111,792，不能用异步重读可靠计算缺失量；目标日又单日超限，小时条件仍返回全日量级。因此 A/B 均未满足，继续保持不可调用 gap。`completion_status` 将 `empty/partial/truncated/expired/complete/gap` 机械分开；只有原子提交且完整的非空文件是 `complete`。`stream_event` 仍为 `not_applicable`。D28 本轮已证明当前租户有变现聚合数据，故变现明细导出不再是“无数据”，仍是既有超限/无 task-bound total 的文件合同阻塞。聚合动线因两个 gap 保持部分闭环，冻结评测宽问法继续期待 `ANALYSIS_EXPORT_FILE_CONTRACT_MISSING`。 |
 | 按精确平台素材引用预览或下载图片/视频（Issue 19） | 已闭环 | 有 / 有 / 设计不适用 / 有 | 1 / 2（中英首问） | `material.asset.fetch` 不接收 URL：一次调用先重读 `local` 或 `bytedance_project` stable source，再按精确引用从唯一行取 `file_url`/`thumbnail_url` 并完整原子下载。host/path 不枚举、不限制，跨 host redirect 跟随；本地与 Bytedance 的 JPEG/MP4 证据独立成立。HTTP terminal 状态统一归 upstream/3，不创造素材失效 taxonomy；完整文件由显式 output/destination 触发。 |

@@ -19,9 +19,9 @@ class PaginationContractAuditTests(unittest.TestCase):
             for path in OPERATIONS.glob("*.json")
         }
 
-        self.assertEqual(232, len(records))
+        self.assertEqual(233, len(records))
         self.assertEqual(operation_ids, {item["operation_id"] for item in records})
-        self.assertEqual({"page_info": 119, "none": 113}, audit["summary"]["declared_kinds"])
+        self.assertEqual({"page_info": 119, "none": 114}, audit["summary"]["declared_kinds"])
         self.assertEqual({"A": 59, "B": 1, "unknown": 59}, audit["summary"]["page_info_shapes"])
         self.assertTrue(all(item["evidence_sources"] for item in records))
         by_id = {item["operation_id"]: item for item in records}

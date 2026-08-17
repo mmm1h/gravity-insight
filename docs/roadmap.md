@@ -14,7 +14,7 @@
 
 ## 现状
 
-当前从仓库产品入口与 stable operation 正向交叉反推 56 条产品动线：**已闭环 49 / 部分闭环 1 / 完全缺失 6**；
+当前从仓库产品入口与 stable operation 正向交叉反推 56 条产品动线：**已闭环 50 / 部分闭环 1 / 完全缺失 5**；
 另有 2 条 legacy/SDK 便利面、1 条重复能力审计行、1 条已有结果上的调用方派生便利面和 1 条既有
 语义组合调查编排便利面保留，但不计产品动线。表格 61 行减去 5 条“不计独立动线”得到 56 条。设置 → 应用管理把
 `51 = 42 / 1 / 8` 推进到 `51 = 43 / 1 / 7`，归因聚合与自定义指标再各新增一条闭环，故为
@@ -23,12 +23,13 @@
 受治理语义组合首片闭合已登记 `ap_cost` 的 total/day/week 与 `click_company` 拆分；同日 v2 又以
 前端 wire 和生产对照证明 dimension-bound `click_company IN` 可执行，并登记 3 个 day/week 指标，
 能力扩面但不新增产品动线；v3 又增加 9 个 day/week 成员并排除已证空的注册数，故仍为
-`56 = 48 / 1 / 7`；本轮公开商店 URL 成功合同再把 OneLink/公开信息组合动线从完全缺失转为闭环，
-故为 **`56 = 49 / 1 / 6`**。
-operation 为 **232**，stable 为 **223 = 186 read + 37 mutation**。
+`56 = 48 / 1 / 7`；公开商店 URL 成功合同再把 OneLink/公开信息组合动线从完全缺失转为闭环，
+故为 `56 = 49 / 1 / 6`；本轮 D28 在 catalog#2 取得非空 item/total 后晋升 `report.get.query`，
+故为 **`56 = 50 / 1 / 5`**。
+operation 为 **233**，stable 为 **224 = 187 read + 37 mutation**。
 唯一部分闭环是 Analysis 导出：同日已闭合五个服务端子类（单用户事件加分群结果、分群用户明细、
 用户明细、付费事件），变现明细与原始事件导出仍是精确 gap；
-6 条完全缺失里多数是请求、响应或非空证据阻塞；字段隐私不再是阻塞项。
+5 条完全缺失里多数是请求、响应或非空证据阻塞；字段隐私不再是阻塞项。
 逐条状态、四面入口、调用次数和证据阻塞以[分析动线台账](analysis-journeys.md)为准；旧
 `21/14/6` 快照的逐条底稿未进入版本控制，无法复算，已停止作为排期事实。
 
@@ -5648,3 +5649,38 @@ manifest semantic error 执行器，不新增 raise site。`src/gravity_sdk` add
 或活动结构债。公开 development target 只登记 J40 新产品身份；没有改题目、prompt、阈值、评分算法或
 holdout/final。全量测试中的 protected 文本只来自隔离临时目录 synthetic fixture；没有读取真实 key 或
 sealed 数据，也没有 GitHub、push、PR、tag 或 release 动作。
+
+## D28 租户枚举与非空晋升（2026-08-17）
+
+**提案与边界：**本轮只把 D28 从“单 App/默认窗为空”推进到可判定事实。其余五条完全缺失动线
+0 请求。没有写、没有 GitHub、没有改评测题集/holdout/final。
+
+**窗口：**一次使用 `2026-07-17..2026-08-16`（D-31..D-1）。前端默认是 D-7..D-1，且 catalog#1
+已在该默认窗明确空；用一个月窗一次打掉“只是默认 7 日切片为空”的假阴性，避免逐日试探烧请求。
+
+**枚举账本：**1 次 `app.list` 取得 7 个可绑定 App，0 个无法解析。每个 App 1 次最小主请求：
+`day + monetization_platform + ad_unit_id + reporting_ad_revenue`，App 用字符串 `EQUALS`。
+`catalog#1` HTTP 200 / `code=0` / `list=[]/page_info.total=0/total={}`；`catalog#2` HTTP 200 /
+`code=0` / `list` 13 行后立即停止，其余 5 个未试。失败、重试、翻页均为 0。
+
+**非空 shape：**item 与 total 均观察 `stat_time:string`、`monetization_platform:string`、
+`ad_unit_id:string`，加上请求指标动态列 `reporting_ad_revenue:number`。`data_dims` 回显为
+`[stat_time, monetization_platform, ad_unit_id]`，`time_dims` 回显 `"day"`，`extra_data={}`，
+`tips=""`。`page_info` 只有 `total:integer=13`，没有 `page/page_size`；bundle 对完整
+`data.list` 做客户端 slice。分页因此登记为实测 `none`，不复制模板 `page_info`。
+
+**产品面：**`report.get.query` 从 draft 晋升 stable。CLI `gravity run`、SDK `read`、Plan
+operation node 与 Agent 产品卡共用 `gravity-insight.read.v1` + `gravity.result-source.v1`。
+App 必填 `EQUALS` filter 走精确 filter profile，不再误走 live metadata 字段校验。已知输入
+1 次调用，未知 2 次。
+
+**变现明细导出：**D28 已证明当前租户有变现聚合数据，所以变现明细导出不再能写成“无数据”。
+它仍被既有超限/无 task-bound total 的文件合同挡住；本轮不实现拿不到完整样本的导出。
+
+**生产 HTTP：**本轮业务请求计入：`app.list` 3（失败扫描 1、试射 1、全量扫描 1）+
+`report.get.query` 4（试射 catalog#1 1、全量 catalog#1/2 各 1、shape 复核 1）。另有 7 次
+本地 `InputValidationError` 未出网。认证沿用既有 session。每 5 次从私有 receipt query 核账。
+
+**能力台账：**D28 状态变化一条：`56 = 49 / 1 / 6` → **`56 = 50 / 1 / 5`**。
+operation/stable `232/223 → 233/224`（read `186→187`）。产品卡 `91→92`，精确 gap `8→7`；
+扣除三组卡/raw 同身份后 selector 仍为 `233 + 92 + 7 - 3 = 329`。

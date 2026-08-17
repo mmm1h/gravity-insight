@@ -242,7 +242,7 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
         # Segment/report/Kanban/custom-metric/metadata-template/saved-analysis mutations deliberately have no
         # replayable examples; custom-metric list has fixed safe pagination,
         # while its two writes require explicit reviewed inputs.
-        self.assertEqual((89, 134), (examples_complete, examples_unknown))
+        self.assertEqual((90, 134), (examples_complete, examples_unknown))
         # 本趟按父 response projection 与调用方选择语义补全 9 条边；剩余
         # 16 条涉及 runtime-v1 target 投影、递归、同一行关联或嵌套输入变换。
         # 素材相册列表再补一条递归父级边，公开 probe 会按目标字符串契约转换；

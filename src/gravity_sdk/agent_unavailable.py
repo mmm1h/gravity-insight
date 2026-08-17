@@ -10,7 +10,6 @@ _REGISTERED_GAP_QUERIES = (
     "current table schema",
     "analysis export results",
     "media reports",
-    "monetization aggregate",
     "non bytedance campaign group creative performance",
     "platform specific creative fields",
     "registered sql analysis product",

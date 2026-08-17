@@ -2291,6 +2291,250 @@
       "upstream_method": "POST"
     },
     {
+      "action": "query",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "按平台、广告位和日期汇总变现结果；按变现平台和广告位汇总上周每天的收入、展示和 eCPM。Summarize daily revenue, impressions, and eCPM for last week by monetization platform and ad placement. App is required as an EQUALS filter; the server returns the full list plus page_info.total and does not accept page or page_size.",
+      "domain": "report",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "custom_metrics_list": {
+          "default": [],
+          "item_type": "string",
+          "max_items": 500,
+          "type": "array"
+        },
+        "data_conf": {
+          "default": {
+            "accumulate": false,
+            "asa_time_zone": "UTC",
+            "decimal_point": 2,
+            "minigame_pay_shared_ratio": 100,
+            "minigame_pay_shared_ratio_ios": 100,
+            "return_all_metrics": true
+          },
+          "description": "恒发六键对象；默认 2/100/100/true/false/UTC。",
+          "type": "object"
+        },
+        "data_dims": {
+          "default": [],
+          "item_enum": [
+            "os_family",
+            "click_company",
+            "monetization_platform",
+            "user_type",
+            "ad_type",
+            "app_id",
+            "ad_unit_id",
+            "bundle_id",
+            "channel"
+          ],
+          "item_type": "string",
+          "max_items": 100,
+          "type": "array"
+        },
+        "data_topic": {
+          "default": "monetization_report",
+          "enum": [
+            "monetization_report"
+          ],
+          "type": "string"
+        },
+        "date_list": {
+          "description": "闭区间 [start, end]，两个 YYYY-MM-DD。",
+          "item_type": "string",
+          "max_items": 2,
+          "min_items": 2,
+          "required": true,
+          "type": "array"
+        },
+        "filters": {
+          "default": [],
+          "item_type": "object",
+          "max_items": 100,
+          "type": "array"
+        },
+        "metrics_list": {
+          "item_enum": [
+            "reporting_ad_cnt",
+            "reporting_ad_ecpm",
+            "reporting_ad_ipu",
+            "reporting_ad_revenue",
+            "reporting_ad_uv",
+            "reporting_standard_activate_cnt"
+          ],
+          "item_type": "string",
+          "max_items": 500,
+          "min_items": 1,
+          "required": true,
+          "type": "array"
+        },
+        "relate_dims": {
+          "description": "仅有关联维度时发送；省略时不发 [] 或 null。",
+          "type": "object"
+        },
+        "time_dims": {
+          "default": "total",
+          "enum": [
+            "hour",
+            "day",
+            "week",
+            "month",
+            "total"
+          ],
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "custom_metrics_list": [],
+          "data_conf": {
+            "accumulate": false,
+            "asa_time_zone": "UTC",
+            "decimal_point": 2,
+            "minigame_pay_shared_ratio": 100,
+            "minigame_pay_shared_ratio_ios": 100,
+            "return_all_metrics": true
+          },
+          "data_dims": [
+            "monetization_platform",
+            "ad_unit_id"
+          ],
+          "data_topic": "monetization_report",
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filters": [
+            {
+              "field": "app_id",
+              "operator": "EQUALS",
+              "values": [
+                "$first_app_id"
+              ]
+            }
+          ],
+          "metrics_list": [
+            "reporting_ad_revenue"
+          ],
+          "time_dims": "day"
+        }
+      },
+      "operation_id": "report.get.query",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/report/api/v3/monetization_report/custom_get/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "custom_metrics_list",
+          "data_conf",
+          "data_dims",
+          "data_topic",
+          "date_list",
+          "filters",
+          "metrics_list",
+          "relate_dims",
+          "time_dims"
+        ],
+        "defaults": {
+          "custom_metrics_list": [],
+          "data_conf": {
+            "accumulate": false,
+            "asa_time_zone": "UTC",
+            "decimal_point": 2,
+            "minigame_pay_shared_ratio": 100,
+            "minigame_pay_shared_ratio_ios": 100,
+            "return_all_metrics": true
+          },
+          "data_dims": [],
+          "data_topic": "monetization_report",
+          "filters": [],
+          "time_dims": "total"
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "monetization_report",
+      "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "data_dims",
+            "metrics_list",
+            "custom_metrics_list",
+            "time_dims"
+          ]
+        },
+        "data_item_keys": {
+          "extra_data": [],
+          "page_info": [
+            "total"
+          ],
+          "total": [
+            "stat_time",
+            "monetization_platform",
+            "ad_unit_id"
+          ]
+        },
+        "data_keys": [
+          "data_dims",
+          "extra_data",
+          "list",
+          "page_info",
+          "time_dims",
+          "tips",
+          "total"
+        ],
+        "data_scalar_list_types": {
+          "data_dims": "string"
+        },
+        "dynamic_item_fields": [
+          "data_dims",
+          "metrics_list",
+          "custom_metrics_list",
+          "time_dims"
+        ],
+        "item_keys": [
+          "stat_time",
+          "monetization_platform",
+          "ad_unit_id"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
       "action": "list",
       "auth_profile": "gravity_authorization",
       "contract_version": 1,
