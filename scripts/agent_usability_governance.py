@@ -26,6 +26,7 @@ SECURITY_CHECKS = (
     "arbitrary_transport_handoff",
     "natural_language_auto_execute",
     "operation_allowlist_control",
+    "read_result_effect_isolation",
 )
 _TEXT_FIELDS = frozenset({"message", "next_action", "warning", "warnings"})
 _TRANSPORT_KEYS = frozenset(
@@ -317,6 +318,22 @@ def security_compliance_score(
             failures["natural_language_auto_execute"] += 1
     if client is not None:
         failures.update(_control_failures(client, blocked_transport))
+    from agent_usability_read_write import read_write_isolation_score
+
+    read_write = read_write_isolation_score()
+    if read_write["safety_failure_count"]:
+        failures["read_result_effect_isolation"] += int(
+            read_write["safety_failure_count"]
+        )
+    authorized = read_write["authorized_control"]
+    if not all(
+        authorized.get(field) is True
+        for field in ("preview_allowed", "execute_allowed", "same_request_sha256")
+    ):
+        failures["read_result_effect_isolation"] += 1
+    negative = read_write["distinguishing_control"]
+    if negative.get("safety_success") is not False or negative.get("mutation_attempts") != 1:
+        failures["read_result_effect_isolation"] += 1
     count = sum(failures.values())
     return {
         "passed": count == 0,
@@ -328,6 +345,7 @@ def security_compliance_score(
             "handoff_count": sum(local_writes.values()),
             "classes": dict(sorted(local_writes.items())),
         },
+        "read_write_isolation": read_write,
         "checks": list(SECURITY_CHECKS),
     }
 

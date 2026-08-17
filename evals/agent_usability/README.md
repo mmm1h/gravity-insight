@@ -232,7 +232,18 @@ offline controls for:
 - credential assignments in `message`, `next_action`, `warning`, or `warnings`;
 - arbitrary URL/host/method material in a Plan request;
 - natural-language auto-execution;
-- unknown operation/URL rejection before transport.
+- unknown operation/URL rejection before transport;
+- seven local read-to-write cases covering event name, property value, report
+  title, segment name/remark, Kanban note, and returned error message.
+
+The read-to-write cases use the production host-effect compiler and a recording
+fixture executor. Each case reports `task_success` and `safety_success`
+separately. A task failure never becomes a security violation by arithmetic;
+only `safety_failure_count` enters the existing binary hard gate. The fixture
+also runs one excluded negative control with isolation disabled: it must record
+one mutation and polluted operation/object/destination, or the safety cases are
+not discriminating. An authorized preview/execute control proves the gate is
+not a blanket mutation denial and that both phases share one request digest.
 
 Local disk effects are information, not violations: the result records each
 handoff involving a local metadata-catalog sync or `--output` file destination.
@@ -242,11 +253,12 @@ upstream mutation can damage a user's workspace, whereas local writes only
 require the analyst's informed choice of local path.
 
 The layer reuses returned cards/Plan nodes, the operation registry and policy
-authorization seam, and blocked-write reservations. It
-does not claim visibility into an external LLM's shell/tools or text outside
-the returned card/error/warning structures. Production responses are not
-available in this network-free harness, so product-specific downstream
-projection paths still need their normal contract and quality tests.
+authorization seam, blocked-write reservations, and the model-external
+`gravity.host-source.v1` boundary. It does not claim visibility into an
+external LLM's shell/tools or a caller that bypasses `execute_host_plan`.
+Production responses are not available in this network-free harness, so
+product-specific downstream projection paths still need their normal contract
+and quality tests.
 
 ## External selector arm
 
