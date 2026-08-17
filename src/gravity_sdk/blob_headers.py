@@ -32,6 +32,26 @@ def _preflight_headers(
     *,
     resume: BlobResumeState | None,
 ) -> _HeaderInfo:
+    _require_download_status(response, resume)
+    content_type = _require_identity_content_type(response, source)
+    response_length = _parse_content_length(_header(response.headers, "Content-Length"))
+    expected_total, etag, last_modified = _preflight_resume_or_full(
+        response,
+        resume,
+        response_length,
+    )
+    _validate_declared_size(expected_total, policy)
+    _reject_size_declaration_mismatch(source, expected_total)
+    return _HeaderInfo(
+        content_type=content_type,
+        response_length=response_length,
+        expected_total=expected_total,
+        etag=etag,
+        last_modified=last_modified,
+    )
+
+
+def _require_download_status(response: Any, resume: BlobResumeState | None) -> None:
     status = int(getattr(response, "status_code", 0))
     expected_status = 206 if resume is not None else 200
     if status != expected_status:
@@ -42,6 +62,12 @@ def _preflight_headers(
             retryable=status >= 500,
             details={"status": status, "expected_status": expected_status},
         )
+
+
+def _require_identity_content_type(
+    response: Any,
+    source: AuthorizedBlobSource,
+) -> str:
     content_encoding = (_header(response.headers, "Content-Encoding") or "identity").lower()
     if content_encoding != "identity":
         raise BlobTransferError(
@@ -68,51 +94,70 @@ def _preflight_headers(
             stage="headers",
             details={"declared": declared_mime, "actual": content_type},
         )
+    return content_type
 
-    response_length = _parse_content_length(_header(response.headers, "Content-Length"))
-    expected_total = response_length
+
+def _preflight_resume_or_full(
+    response: Any,
+    resume: BlobResumeState | None,
+    response_length: int | None,
+) -> tuple[int | None, str | None, str | None]:
     if resume is not None:
-        etag = _header(response.headers, "ETag")
-        last_modified = _header(response.headers, "Last-Modified")
-        if resume.etag is not None and etag != resume.etag:
-            raise BlobTransferError(
-                "resume ETag changed",
-                code="BLOB_RESUME_VALIDATOR_CHANGED",
-                stage="headers",
-            )
-        if resume.last_modified is not None and last_modified != resume.last_modified:
-            raise BlobTransferError(
-                "resume Last-Modified changed",
-                code="BLOB_RESUME_VALIDATOR_CHANGED",
-                stage="headers",
-            )
-        content_range = _header(response.headers, "Content-Range")
-        match = _CONTENT_RANGE.fullmatch(content_range or "")
-        if match is None:
-            raise BlobTransferError(
-                "resume response omitted a valid Content-Range",
-                code="BLOB_RESUME_RANGE_INVALID",
-                stage="headers",
-            )
-        start, end, total = (int(value) for value in match.groups())
-        if start != resume.bytes_received or end < start or end >= total:
-            raise BlobTransferError(
-                "resume Content-Range does not continue the partial file",
-                code="BLOB_RESUME_RANGE_INVALID",
-                stage="headers",
-            )
-        if response_length is not None and response_length != end - start + 1:
-            raise BlobTransferError(
-                "resume Content-Length conflicts with Content-Range",
-                code="BLOB_SIZE_MISMATCH",
-                stage="headers",
-            )
-        expected_total = total
-    else:
-        etag = _header(response.headers, "ETag")
-        last_modified = _header(response.headers, "Last-Modified")
+        return _preflight_resume_headers(response, resume, response_length)
+    return (
+        response_length,
+        _header(response.headers, "ETag"),
+        _header(response.headers, "Last-Modified"),
+    )
 
-    _validate_declared_size(expected_total, policy)
+
+def _preflight_resume_headers(
+    response: Any,
+    resume: BlobResumeState,
+    response_length: int | None,
+) -> tuple[int, str | None, str | None]:
+    etag = _header(response.headers, "ETag")
+    last_modified = _header(response.headers, "Last-Modified")
+    if resume.etag is not None and etag != resume.etag:
+        raise BlobTransferError(
+            "resume ETag changed",
+            code="BLOB_RESUME_VALIDATOR_CHANGED",
+            stage="headers",
+        )
+    if resume.last_modified is not None and last_modified != resume.last_modified:
+        raise BlobTransferError(
+            "resume Last-Modified changed",
+            code="BLOB_RESUME_VALIDATOR_CHANGED",
+            stage="headers",
+        )
+    content_range = _header(response.headers, "Content-Range")
+    match = _CONTENT_RANGE.fullmatch(content_range or "")
+    if match is None:
+        raise BlobTransferError(
+            "resume response omitted a valid Content-Range",
+            code="BLOB_RESUME_RANGE_INVALID",
+            stage="headers",
+        )
+    start, end, total = (int(value) for value in match.groups())
+    if start != resume.bytes_received or end < start or end >= total:
+        raise BlobTransferError(
+            "resume Content-Range does not continue the partial file",
+            code="BLOB_RESUME_RANGE_INVALID",
+            stage="headers",
+        )
+    if response_length is not None and response_length != end - start + 1:
+        raise BlobTransferError(
+            "resume Content-Length conflicts with Content-Range",
+            code="BLOB_SIZE_MISMATCH",
+            stage="headers",
+        )
+    return total, etag, last_modified
+
+
+def _reject_size_declaration_mismatch(
+    source: AuthorizedBlobSource,
+    expected_total: int | None,
+) -> None:
     if (
         source.declared_size is not None
         and expected_total is not None
@@ -124,13 +169,6 @@ def _preflight_headers(
             stage="headers",
             details={"declared": source.declared_size, "header_total": expected_total},
         )
-    return _HeaderInfo(
-        content_type=content_type,
-        response_length=response_length,
-        expected_total=expected_total,
-        etag=etag,
-        last_modified=last_modified,
-    )
 
 
 def _validate_received_sizes(

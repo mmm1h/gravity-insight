@@ -2,10 +2,6 @@
   "baseline_version": 2,
   "debt": {
     "cyclomatic_complexity": {
-      "src/gravity_sdk/blob_headers.py::_preflight_headers": 23,
-      "src/gravity_sdk/blob_policy.py::BlobPolicy.__post_init__": 35,
-      "src/gravity_sdk/blob_transfer.py::SafeBlobTransfer.download": 25,
-      "src/gravity_sdk/blob_transfer.py::SafeBlobTransfer.upload": 18,
       "src/gravity_sdk/catalog.py::OperationCatalog.coverage": 19,
       "src/gravity_sdk/catalog.py::OperationCatalog.describe": 19,
       "src/gravity_sdk/census/cli.py::run": 26,
@@ -61,10 +57,6 @@
       "src/gravity_sdk/support/evidence.py::validate_evidence_manifest": 50
     },
     "function_sloc": {
-      "src/gravity_sdk/blob_headers.py::_preflight_headers": 104,
-      "src/gravity_sdk/blob_policy.py::BlobPolicy.__post_init__": 83,
-      "src/gravity_sdk/blob_transfer.py::SafeBlobTransfer.download": 190,
-      "src/gravity_sdk/blob_transfer.py::SafeBlobTransfer.upload": 115,
       "src/gravity_sdk/catalog.py::OperationCatalog.describe": 109,
       "src/gravity_sdk/census/cli.py::run": 83,
       "src/gravity_sdk/census/coverage.py::build_coverage": 265,

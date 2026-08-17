@@ -39,90 +39,155 @@ class BlobPolicy:
     require_effect_receipt: bool = False
 
     def __post_init__(self) -> None:
-        extensions = frozenset(_normalize_extension(value) for value in self.allowed_extensions)
-        mime_types = frozenset(_normalize_mime(value) for value in self.allowed_mime_types)
-        hosts = frozenset(_normalize_host(value) for value in self.allowed_hosts)
-        redirect_hosts = frozenset(
-            _normalize_host(value) for value in self.allowed_redirect_hosts
+        normalized = _normalize_policy_fields(self)
+        _validate_policy_numeric_limits(self)
+        _validate_policy_type_bindings(
+            normalized[0],
+            normalized[1],
+            normalized[4],
+            normalized[5],
         )
-        magic = {
-            _normalize_extension(extension): tuple(signatures)
-            for extension, signatures in self.magic_signatures.items()
-        }
-        mime_by_extension = {
-            _normalize_extension(extension): tuple(
-                _normalize_mime(mime) for mime in extension_mimes
-            )
-            for extension, extension_mimes in self.mime_types_by_extension.items()
-        }
-        prefixes: dict[str, tuple[str, ...]] = {}
-        for host, values in self.allowed_path_prefixes.items():
-            normalized_host = _normalize_host(host)
-            normalized_values = tuple(_normalize_path_prefix(value) for value in values)
-            prefixes[normalized_host] = normalized_values
+        _commit_normalized_policy(self, normalized)
 
-        if self.max_declared_size_bytes <= 0 or self.max_stream_size_bytes <= 0:
-            raise ValueError("blob size caps must be positive")
-        if self.max_redirects < 0:
-            raise ValueError("max_redirects cannot be negative")
-        if self.chunk_size <= 0:
-            raise ValueError("chunk_size must be positive")
-        if self.request_timeout_seconds <= 0:
-            raise ValueError("request timeout must be positive")
-        if self.overwrite_policy not in {"deny", "replace"}:
-            raise ValueError("overwrite_policy must be 'deny' or 'replace'")
-        if not self.allowed_https_ports or any(
-            port < 1 or port > 65535 for port in self.allowed_https_ports
-        ):
-            raise ValueError("allowed HTTPS ports must be between 1 and 65535")
-        if not set(magic).issubset(extensions):
-            raise ValueError("magic signatures must be keyed by an allowed extension")
-        if not set(mime_by_extension).issubset(extensions):
-            raise ValueError("MIME bindings must be keyed by an allowed extension")
-        if any(not signatures for signatures in magic.values()):
-            raise ValueError("each magic binding must contain at least one signature")
-        if any(
-            not isinstance(signature, MagicSignature)
-            for signatures in magic.values()
-            for signature in signatures
-        ):
-            raise ValueError("magic bindings must contain MagicSignature values")
-        if any(not values for values in mime_by_extension.values()):
-            raise ValueError("each extension MIME binding must be non-empty")
-        if any(
-            mime not in mime_types
-            for values in mime_by_extension.values()
-            for mime in values
-        ):
-            raise ValueError("extension MIME bindings must use allowed MIME types")
 
-        object.__setattr__(self, "allowed_extensions", extensions)
-        object.__setattr__(self, "allowed_mime_types", mime_types)
-        object.__setattr__(self, "allowed_hosts", hosts)
-        object.__setattr__(self, "allowed_redirect_hosts", redirect_hosts)
-        object.__setattr__(self, "allowed_https_ports", frozenset(self.allowed_https_ports))
-        object.__setattr__(self, "magic_signatures", MappingProxyType(magic))
-        object.__setattr__(
-            self,
-            "mime_types_by_extension",
-            MappingProxyType(mime_by_extension),
+def _normalize_policy_fields(
+    policy: BlobPolicy,
+) -> tuple[
+    frozenset[str],
+    frozenset[str],
+    frozenset[str],
+    frozenset[str],
+    dict[str, tuple[MagicSignature, ...]],
+    dict[str, tuple[str, ...]],
+    dict[str, tuple[str, ...]],
+]:
+    extensions = frozenset(_normalize_extension(value) for value in policy.allowed_extensions)
+    mime_types = frozenset(_normalize_mime(value) for value in policy.allowed_mime_types)
+    hosts = frozenset(_normalize_host(value) for value in policy.allowed_hosts)
+    redirect_hosts = frozenset(
+        _normalize_host(value) for value in policy.allowed_redirect_hosts
+    )
+    magic = {
+        _normalize_extension(extension): tuple(signatures)
+        for extension, signatures in policy.magic_signatures.items()
+    }
+    mime_by_extension = {
+        _normalize_extension(extension): tuple(
+            _normalize_mime(mime) for mime in extension_mimes
         )
-        object.__setattr__(self, "allowed_path_prefixes", MappingProxyType(prefixes))
-        object.__setattr__(
-            self,
-            "destination_root",
-            Path(self.destination_root) if self.destination_root is not None else None,
-        )
-        object.__setattr__(
-            self,
-            "temporary_root",
-            Path(self.temporary_root) if self.temporary_root is not None else None,
-        )
-        object.__setattr__(
-            self,
-            "upload_root",
-            Path(self.upload_root) if self.upload_root is not None else None,
-        )
+        for extension, extension_mimes in policy.mime_types_by_extension.items()
+    }
+    prefixes: dict[str, tuple[str, ...]] = {}
+    for host, values in policy.allowed_path_prefixes.items():
+        normalized_host = _normalize_host(host)
+        normalized_values = tuple(_normalize_path_prefix(value) for value in values)
+        prefixes[normalized_host] = normalized_values
+    return (
+        extensions,
+        mime_types,
+        hosts,
+        redirect_hosts,
+        magic,
+        mime_by_extension,
+        prefixes,
+    )
+
+
+def _validate_policy_numeric_limits(policy: BlobPolicy) -> None:
+    if policy.max_declared_size_bytes <= 0 or policy.max_stream_size_bytes <= 0:
+        raise ValueError("blob size caps must be positive")
+    if policy.max_redirects < 0:
+        raise ValueError("max_redirects cannot be negative")
+    if policy.chunk_size <= 0:
+        raise ValueError("chunk_size must be positive")
+    if policy.request_timeout_seconds <= 0:
+        raise ValueError("request timeout must be positive")
+    if policy.overwrite_policy not in {"deny", "replace"}:
+        raise ValueError("overwrite_policy must be 'deny' or 'replace'")
+    if not policy.allowed_https_ports or any(
+        port < 1 or port > 65535 for port in policy.allowed_https_ports
+    ):
+        raise ValueError("allowed HTTPS ports must be between 1 and 65535")
+
+
+def _validate_policy_type_bindings(
+    extensions: frozenset[str],
+    mime_types: frozenset[str],
+    magic: Mapping[str, tuple[MagicSignature, ...]],
+    mime_by_extension: Mapping[str, tuple[str, ...]],
+) -> None:
+    if not set(magic).issubset(extensions):
+        raise ValueError("magic signatures must be keyed by an allowed extension")
+    if not set(mime_by_extension).issubset(extensions):
+        raise ValueError("MIME bindings must be keyed by an allowed extension")
+    if any(not signatures for signatures in magic.values()):
+        raise ValueError("each magic binding must contain at least one signature")
+    if any(
+        not isinstance(signature, MagicSignature)
+        for signatures in magic.values()
+        for signature in signatures
+    ):
+        raise ValueError("magic bindings must contain MagicSignature values")
+    if any(not values for values in mime_by_extension.values()):
+        raise ValueError("each extension MIME binding must be non-empty")
+    if any(
+        mime not in mime_types
+        for values in mime_by_extension.values()
+        for mime in values
+    ):
+        raise ValueError("extension MIME bindings must use allowed MIME types")
+
+
+def _commit_normalized_policy(
+    policy: BlobPolicy,
+    normalized: tuple[
+        frozenset[str],
+        frozenset[str],
+        frozenset[str],
+        frozenset[str],
+        dict[str, tuple[MagicSignature, ...]],
+        dict[str, tuple[str, ...]],
+        dict[str, tuple[str, ...]],
+    ],
+) -> None:
+    (
+        extensions,
+        mime_types,
+        hosts,
+        redirect_hosts,
+        magic,
+        mime_by_extension,
+        prefixes,
+    ) = normalized
+    object.__setattr__(policy, "allowed_extensions", extensions)
+    object.__setattr__(policy, "allowed_mime_types", mime_types)
+    object.__setattr__(policy, "allowed_hosts", hosts)
+    object.__setattr__(policy, "allowed_redirect_hosts", redirect_hosts)
+    object.__setattr__(policy, "allowed_https_ports", frozenset(policy.allowed_https_ports))
+    object.__setattr__(policy, "magic_signatures", MappingProxyType(magic))
+    object.__setattr__(
+        policy,
+        "mime_types_by_extension",
+        MappingProxyType(mime_by_extension),
+    )
+    object.__setattr__(policy, "allowed_path_prefixes", MappingProxyType(prefixes))
+    object.__setattr__(
+        policy,
+        "destination_root",
+        Path(policy.destination_root) if policy.destination_root is not None else None,
+    )
+    object.__setattr__(
+        policy,
+        "temporary_root",
+        Path(policy.temporary_root) if policy.temporary_root is not None else None,
+    )
+    object.__setattr__(
+        policy,
+        "upload_root",
+        Path(policy.upload_root) if policy.upload_root is not None else None,
+    )
+
+
 def _validate_authorized_source(
     source: AuthorizedBlobSource,
     policy: BlobPolicy,

@@ -143,6 +143,8 @@
 
 ## 已关闭结构债务
 
+2026-08-17：blob 传输四个超限函数（`SafeBlobTransfer.download` / `upload`、`BlobPolicy.__post_init__`、`_preflight_headers`）已拆到 80/15 以下并收紧 baseline；判定真值未改，未新增 `growth_ledger`。
+
 2026-08-17 复核：本轮只改协议层权限分类与账号级 session 绑定，未新增可由当前源码证明的结构债，
 也未放宽 quality baseline。
 
