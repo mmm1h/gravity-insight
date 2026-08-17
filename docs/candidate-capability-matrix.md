@@ -307,12 +307,37 @@ probe evidence 里留下字段形状（`date_list` 为 string/`$today`），没�
 **推进与卡住处：**
 
 - D33 父候选已成立：腾讯 advertiser / adgroup_filter / medium_adgroup 均可选。
-- D34：`promotion.tencent.tencent_adgroup_v2.list` 已 `confirmed_read`、非空 `page_info` 实测并晋升；`promotion.tencent.ad.list` 已确认读语义，但对声明父对象 `code=2000`。`promotion.kuaishou.campaign.list` 已 confirmed-read，最小第一页明确空。
-- D32：`material.tencent.list` 既有非空合同；`material.tencent_medium_creative.list` 已 `confirmed_read`、非空 item schema、分页实测 `none` 并晋升。`material.tencent_asset_text_title.list` 与 `material.kuaishou_creative.list` 已 confirmed-read，最小第一页明确空。
+- D34：`promotion.tencent.tencent_adgroup_v2.list` 已 `confirmed_read`、非空 `page_info` 实测并晋升；`promotion.tencent.ad.list` 已确认读语义，但对声明父对象 `code=2000`。`promotion.kuaishou.campaign.list` 已 confirmed-read，最小第一页明确空。2026-08-18 前提反查未再打该 route：见下节。
+- D32：`material.tencent.list` 既有非空合同；`material.tencent_medium_creative.list` 已 `confirmed_read`、非空 item schema、分页实测 `none` 并晋升。`material.tencent_asset_text_title.list` 与 `material.kuaishou_creative.list` 已 confirmed-read，最小第一页明确空。2026-08-18 前提反查未再打这两条。
 - 不改评测题集：冻结评测 J45/J46 仍期待原 gap code。
 
 **能力台账不变：**operation 233、stable 224、产品卡 92、精确 gap 7、selector 329、
 动线 `56 = 50 / 1 / 5`。
+
+## 2026-08-18 复测：先问投放前提，再决定是否打空 route
+
+**提案：**不再用卡住的快手/腾讯标题 route 枚举空列表。先用已闭环的 D35/D28 反查这两个投放相关 App 实际出现过哪些平台值。
+
+**决定性实验（4 次业务 HTTP，全部走 stable read，无卡住 route）：**
+
+| # | operation | App | 窗/筛选 | 结果 |
+| ---: | --- | ---: | --- | --- |
+| 1 | `attribution.attribution.query` | 29034827（甜甜旅行抖音） | `date_list=["2026-07-19","2026-08-17"]`，`dims_list=["date","ad_platform"]`，`metrics_list=["AppRealRegisterCnt"]`，`statistics_caliber=user_activated_time` | `status=success` / `items=60`；`ad_platform` 仅 `bytedance` 30 + `natural` 30 |
+| 2 | `report.get.query` | 29034827 | 同窗，`data_dims=["monetization_platform"]`，`time_dims=total`，`metrics_list=["reporting_ad_revenue"]`，`app_id` 字符串 EQUALS | `status=success` / `list=2`；`monetization_platform` 仅 `dy_mini_game` 与空串。这是变现平台，不是投放平台 |
+| 3 | `attribution.attribution.query` | 27018426（甜甜旅行快手） | 与 #1 同形状 | `status=empty`；无 `ad_platform` 行 |
+| 4 | `report.get.query` | 27018426 | 与 #2 同形状 | `status=empty` / `list=0` |
+
+**因此确定：**这两个 App、该 30 日窗内没有可绑定的非 Bytedance `ad_platform`。按分流未再请求 `promotion.kuaishou.campaign.list`、`material.kuaishou_creative.list`、`material.tencent_asset_text_title.list`。
+
+**不从本实验推出的：**不否定 2026-08-17 腾讯 advertiser/adgroup/material 账号级非空；那些是账号目录，不是这两个 App 的归因投放平台。`natural` 是自然量，`dy_mini_game` 是变现。
+
+**相关 route 行：**
+
+| Operation | Status | 本轮请求、样本、分页与父绑定 | 精确 blocker | 下一步最小证据 |
+| --- | --- | --- | --- | --- |
+| `promotion.kuaishou.campaign.list` | `confirmed_read`，最小第一页曾明确空；本轮 0 次 | 2026-08-18 未重打。D35 在快手 App 明确空，在抖音 App 无 `kuaishou` 平台值。 | `empty_sample` 现可归因于这两个 App 无快手投放，不是未试请求形状 | 换一个 D35 `ad_platform` 含 `kuaishou` 的租户/App 再取 1 个非空 item；当前这两个 App 不必再打。 |
+| `material.kuaishou_creative.list` | `confirmed_read`，最小第一页曾明确空；本轮 0 次 | 同上，未重打。 | 同上 | 同上。 |
+| `material.tencent_asset_text_title.list` | `confirmed_read`，最小第一页曾明确空；本轮 0 次 | 未重打。D35 在这两个 App 无 `tencent` 平台值，故本趟没有可绑定的 App+平台对。 | `empty_sample`；账号级腾讯素材非空不能外推到本条标题包 | 仅当某个 App 的 D35 出现 `tencent` 后再打 1 次最小第一页；不要用 08-17 的账号级腾讯目录当本条的 App 绑定。 |
 
 ## 2026-08-16 追加判定：Analysis 导出与平台素材二进制
 
