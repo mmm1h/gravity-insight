@@ -60,6 +60,7 @@ SDK 不为尚未迁移的调用项目保留 CLI alias、隐式 mode 或旧 envel
 python -m unittest discover -s tests
 python -m gravity_sdk.compiler check
 python -m gravity_sdk.quality check
+$env:PYTHONPATH='src'; python scripts/agent_usability_eval.py run --split development --output-dir tmp/agent-usability-gate > tmp/agent-usability-gate.log 2>&1; if ($LASTEXITCODE) { exit $LASTEXITCODE }
 python -m gravity_sdk --help
 git diff --check
 ```

@@ -111,6 +111,7 @@ python -m unittest discover -s tests
 python -m pytest -q
 python -m gravity_sdk.compiler check
 python -m gravity_sdk.quality check
+$env:PYTHONPATH='src'; python scripts/agent_usability_eval.py run --split development --output-dir tmp/agent-usability-gate > tmp/agent-usability-gate.log 2>&1; if ($LASTEXITCODE) { exit $LASTEXITCODE }
 python -m gravity_sdk --help
 git diff --check
 ```

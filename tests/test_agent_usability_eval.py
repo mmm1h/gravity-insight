@@ -4,6 +4,7 @@ import base64
 import hashlib
 import hmac
 import importlib.util
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -62,6 +63,22 @@ class AgentUsabilityEvalTests(unittest.TestCase):
             if case["case_id"] == "J01.dev.v3.indirect-goal"
         )
         self.assertNotIn("expected", raw_new)
+
+    def test_product_route_keys_are_registered_in_routes(self) -> None:
+        journeys = json.loads(
+            self.subject.JOURNEY_TARGETS_PATH.read_text(encoding="utf-8")
+        )["journeys"]
+        missing = sorted(
+            {
+                str(product["route_key"])
+                for target in journeys.values()
+                if isinstance(target, dict)
+                and isinstance((product := target.get("product")), dict)
+                and "route_key" in product
+                and product["route_key"] not in self.subject.ROUTES
+            }
+        )
+        self.assertEqual([], missing)
 
     def test_ledger_status_change_switches_the_same_frozen_case_shape(self) -> None:
         manifest = self.subject._manifest()
