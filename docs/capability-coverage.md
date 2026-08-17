@@ -124,17 +124,18 @@ operation。Segment create 把可见 `GSDK-<12 hex>` 放进 `segment_remark`；�
 ## 导出边界（更新至 2026-08-16 第二轮）
 
 导出是独立 effect，账本在 `src/gravity_sdk/contracts/exports/routes-v1.json`。22 条 route 中有
-6 条 `executable`：`export.material.report.start` 和 `export.analysis.user_event.start` 是两个可创建
-导出；其余 4 条（`export.task.list/progress/cancel`、`export.task_type.list`）是支持路由，不是创建候选。
+7 条可创建导出加 4 条支持路由可执行：`export.material.report.start` 与六个 Analysis creator
+（含现已可调用的 `export.analysis.monetization_detail.start`）；其余 4 条
+（`export.task.list/progress/cancel`、`export.task_type.list`）是支持路由，不是创建候选。
 
 9 条 `export.analysis.*` 当前逐条裁定如下：
 
 | 分类 | 数量 | route | 结论 |
 | --- | --- | --- | --- |
-| 完整合同、可调用 | 1 | `user_event.start` | 同一单日非空父读取后，唯一一次 create、首次 poll READY、一次 download 得到 7 行/5 列 XLSX；worksheet、表头、存储类型和逻辑类型均完整 |
+| 完整合同、可调用 | 6 | `user_event.start`、`segment.result.start`、`segment_user_detail.start`、`user_detail.start`、`pay_event.start`、`monetization_detail.start` | 前五族已有非空 create→poll→download 文件合同。`monetization_detail` 现可调用：create 前钉住同 scope 列表 `total_items`，触达上游 100W 上限时标 `truncated` 并同时返回钉住总量与文件行数 |
 | 父工作流依赖 | 1 | `origin_event.evaluate` | 自身估算请求与聚合响应已验证，但配对 `origin_event.start` 的成功 create 和文件合同未成立；旧口径把它误算成用户级投影阻塞 |
 | 投影已放开、文件类型未证实 | 1 | `segment.result.start` | 只有 1 行但未记录单元格存储/逻辑类型；XLSX 表头与单 worksheet 证据仍不满足完整文件 schema |
-| 请求/文件合同未验证 | 5 | `origin_event.start`、`monetization_detail.start`、`segment_user_detail.start`、`user_detail.start`、`pay_event.start` | 多数在线可建任务但任务失败，或返回 1004 无 task id；成功 payload/父绑定与各自完整文件 schema 未证明。**无新证据不重试** |
+| 请求/文件合同未验证 | 1 | `origin_event.start` | 固定 App/日期内唯一自然事件估算为 0，未取得成功 create 与文件 schema。**无新证据不重试** |
 | 前端无服务端路径 | 1 | `stream_event.start` | hash-matched loader 没有调用点，按钮走客户端表格序列化；记为 `not_applicable`，不是 SDK 缺口，不得 probe 未使用 route |
 
 SDK 已按投影总裁决移除 `user_level` 的本地禁出总闸门，但不会用该裁决替代请求或文件合同。

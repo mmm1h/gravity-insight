@@ -60,6 +60,13 @@ _ANALYSIS_EXPORT_ALIASES = {
     "export.analysis.pay_event.start": (
         "pay event export", "payment detail export", "付费事件导出", "订单明细导出",
     ),
+    "export.analysis.monetization_detail.start": (
+        "monetization detail export",
+        "export monetization detail",
+        "export monetization details",
+        "变现明细导出",
+        "导出变现明细",
+    ),
 }
 _EXPORT_DESCRIPTIONS = {
     _USER_EVENT_OPERATION: "创建、轮询并原子下载受治理的单用户事件文件。",
@@ -67,6 +74,9 @@ _EXPORT_DESCRIPTIONS = {
     "export.analysis.segment_user_detail.start": "创建、轮询并原子下载受治理的分群用户明细文件。",
     "export.analysis.user_detail.start": "创建、轮询并原子下载受治理的用户明细文件。",
     "export.analysis.pay_event.start": "创建、轮询并原子下载受治理的付费事件文件。",
+    "export.analysis.monetization_detail.start": (
+        "创建、轮询并原子下载受治理的变现明细文件；超限时标注 truncated 并给出创建时钉住的总量。"
+    ),
 }
 _MATERIAL_OPERATION = "export.material.report.start"
 _SPACE = re.compile(r"[^a-z0-9_.]+", re.IGNORECASE)

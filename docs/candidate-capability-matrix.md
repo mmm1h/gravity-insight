@@ -383,7 +383,7 @@ shape 和六态证据见
 `evaluate_data` 只返回预估 total，并在超过 1e6 时禁用提交，没有 shard/page/continuation 控制。
 当前日小窗口文件为 110,966 行，恢复时列表已增长到 111,792，因 create-time total 未保留而不能宣称
 精确对平；小时条件又返回全日量级 1,212,325。故日切窗不能解决已经单日超限的目标，小时切窗也未成立，
-`monetization_detail` 继续 `unverified/executable=false`。
+`monetization_detail` 现为 `verified/executable=true`：create 前钉住同 scope 列表 `total_items`，触达 100W 上限时标 `truncated` 并同时返回钉住总量与文件行数。
 
 已晋升四族的同 scope 完整性补证全部通过：`segment.result` 1/1、`segment_user_detail` 1/1、
 `user_detail` 255/255、`pay_event` 217/217（文件行/受管总数），无需降级。44 次生产 HTTP 的逐条账本与
