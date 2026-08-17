@@ -46,6 +46,56 @@ gravity plan run --input plan.json --dry-run
 gravity plan run --input plan.json --concurrency 6
 ```
 
+## metric-anomaly-localization@1
+
+这是仓库唯一的版本化分析 playbook。它不增加 Plan node kind：四个网络步骤都编译为现有
+`composite/name=semantic_compose`，本地 breakdown、hypothesis 与 conclusion 只整理受管结果。
+先查看闭合输入、步骤 DAG、停止条件与 `allowed_claims`：
+
+```powershell
+gravity analysis playbook schema
+gravity analysis playbook run --input anomaly.json --dry-run
+gravity analysis playbook run --input anomaly.json --output result.json
+```
+
+v1 只支持 `report.ap-cost-observation@2` 已登记的 `ap_cost`、`click_company`、total、embedded join
+与 dimension-bound `click_company IN`。必要输入是问题、一个显式 App、等长且不重叠的 reference/current
+闭区间，以及恰好一个精确 `click_company` 假设值。它比较的是各窗口**返回的** `click_company`
+行及其和，不把未返回渠道当零，也不把行之和称为完整 App total。
+
+完整 DAG 是：
+
+```text
+compare_current ─┬─> breakdown_current -> hypothesis -> validate_current ─┐
+compare_reference┘                                  -> validate_reference ├─> conclusion
+        └──────────────────────> breakdown_reference ─────────────────────┘
+```
+
+两个 compare 和两个 validate 是 semantic composite；其余步骤本地执行。`breakdown_reference` 在
+definition 中声明于 hypothesis 之后，却只依赖 compare，用于锁定“下游按 DAG、不是按声明/执行顺序”。
+
+结果内 `checkpoint` 固定 playbook fingerprint、规范化输入、每步 own-input fingerprint、状态与原
+Plan item。替换 hypothesis 后续跑：
+
+```powershell
+gravity analysis playbook run --input anomaly-tencent.json `
+  --checkpoint result.json --output resumed.json
+```
+
+只失效 `hypothesis/validate_current/validate_reference/conclusion`；两个 compare 与两个 breakdown
+必须标为 `reused`，子 Plan 只含两个 validate。definition fingerprint、旧结果 fingerprint 或直接输入
+变化会按同一 DAG 扩大失效集合，不能静默套用旧解释。
+
+每个查询步骤保留原 `gravity.result-audit.v1`，并给出该 playbook result 内 rows、operation identity
+与 audit 的精确 JSON Pointer；结论另列它实际引用的 scalar paths。完整证据才发布三条 scoped
+`allowed_claims`。任一步为 `partial/capability_gap/error/skipped/empty`，或语义 identity、有限数值、
+selected slice 与 breakdown 对不上时，固定返回 `status=evidence_incomplete`、`conclusion=null`、
+`allowed_claims=[]` 和缺失步骤；已有 sibling 不能拿来凑结论。
+
+Python 使用 `sdk.metric_anomaly_playbook_schema()`、`sdk.prepare_metric_anomaly_playbook()` 与
+`sdk.metric_anomaly_playbook()`；第三个方法把上次完整 result 或其中的 checkpoint 作为
+`checkpoint=` 即可续跑。
+
 ## Effect 边界：Segment mutation 不进入 Plan v1
 
 Plan v1 节点是可预检、可调度的无副作用数据节点。Segment create/update/refresh/delete 是不可安全

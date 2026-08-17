@@ -1,0 +1,143 @@
+{
+  "$schema": "../schema/analysis-playbook-definition-v1.schema.json",
+  "schema_version": "gravity.analysis-playbook-definition.v1",
+  "playbook_id": "metric-anomaly-localization",
+  "version": 1,
+  "goal": "Compare the sum and per-key changes of returned click_company ap_cost rows between two equal non-overlapping windows, then test one caller-selected click_company hypothesis without claiming causality or unreturned values.",
+  "semantic_definition": {
+    "definition_id": "report.ap-cost-observation",
+    "version": 2
+  },
+  "members": {
+    "metric": {
+      "definition_id": "report.metric.ap-cost",
+      "version": 1
+    },
+    "dimension": {
+      "definition_id": "report.dimension.click-company",
+      "version": 1
+    },
+    "filter": {
+      "definition_id": "report.filter.click-company",
+      "version": 1
+    },
+    "grain": {
+      "definition_id": "report.grain.total",
+      "version": 1
+    },
+    "join": {
+      "definition_id": "report.join.adreport-click-company",
+      "version": 1
+    }
+  },
+  "required_inputs": [
+    "schema_version",
+    "question",
+    "app",
+    "current_window",
+    "reference_window",
+    "hypothesis"
+  ],
+  "steps": [
+    {
+      "id": "compare_current",
+      "kind": "query",
+      "product": "semantic_compose",
+      "contract": "gravity.semantic-compose-input.v1",
+      "depends_on": [],
+      "input_dependencies": ["app", "current_window"],
+      "fact_path": "/result/result/query/data/list"
+    },
+    {
+      "id": "compare_reference",
+      "kind": "query",
+      "product": "semantic_compose",
+      "contract": "gravity.semantic-compose-input.v1",
+      "depends_on": [],
+      "input_dependencies": ["app", "reference_window"],
+      "fact_path": "/result/result/query/data/list"
+    },
+    {
+      "id": "breakdown_current",
+      "kind": "local",
+      "product": "returned_dimension_breakdown",
+      "contract": "gravity.returned-dimension-breakdown.v1",
+      "depends_on": ["compare_current", "compare_reference"],
+      "input_dependencies": [],
+      "fact_path": null
+    },
+    {
+      "id": "hypothesis",
+      "kind": "local",
+      "product": "caller_hypothesis",
+      "contract": "gravity.metric-anomaly-hypothesis.v1",
+      "depends_on": ["breakdown_current"],
+      "input_dependencies": ["hypothesis"],
+      "fact_path": null
+    },
+    {
+      "id": "validate_current",
+      "kind": "query",
+      "product": "semantic_compose",
+      "contract": "gravity.semantic-compose-input.v1",
+      "depends_on": ["hypothesis"],
+      "input_dependencies": [],
+      "fact_path": "/result/result/query/data/list"
+    },
+    {
+      "id": "validate_reference",
+      "kind": "query",
+      "product": "semantic_compose",
+      "contract": "gravity.semantic-compose-input.v1",
+      "depends_on": ["hypothesis"],
+      "input_dependencies": [],
+      "fact_path": "/result/result/query/data/list"
+    },
+    {
+      "id": "breakdown_reference",
+      "kind": "local",
+      "product": "returned_dimension_breakdown",
+      "contract": "gravity.returned-dimension-breakdown.v1",
+      "depends_on": ["compare_current", "compare_reference"],
+      "input_dependencies": [],
+      "fact_path": null
+    },
+    {
+      "id": "conclusion",
+      "kind": "local",
+      "product": "playbook_summary",
+      "contract": "gravity.metric-anomaly-conclusion.v1",
+      "depends_on": ["validate_current", "validate_reference", "breakdown_reference"],
+      "input_dependencies": ["question"],
+      "fact_path": null
+    }
+  ],
+  "stop_conditions": [
+    {
+      "condition": "A required query step is partial, capability_gap, error, skipped, or missing.",
+      "outcome": "Return evidence_incomplete with conclusion=null and allowed_claims=[]."
+    },
+    {
+      "condition": "A required returned dimension row, finite metric value, semantic identity, or result audit cannot be verified.",
+      "outcome": "Return evidence_incomplete with the exact blocking step and no final conclusion."
+    },
+    {
+      "condition": "The selected hypothesis slice has no returned row in either window.",
+      "outcome": "Return evidence_incomplete; absence is not converted to zero."
+    }
+  ],
+  "allowed_claims": [
+    {
+      "claim_id": "window-metric-change",
+      "statement": "State the sum of returned click_company ap_cost rows and its numeric change between the explicit equal-length current and reference windows for the selected App, without calling it a complete App total."
+    },
+    {
+      "claim_id": "returned-dimension-change",
+      "statement": "Compare ap_cost only for click_company keys returned in both window breakdowns, with both fact paths cited."
+    },
+    {
+      "claim_id": "selected-slice-observation",
+      "statement": "State whether the one caller-selected click_company slice changed in the same observed direction as the sum of returned click_company rows and its numeric share of that returned-row change; do not claim causality, completeness, or unreturned values."
+    }
+  ]
+}

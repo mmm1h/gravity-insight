@@ -14,6 +14,7 @@ from .multidim_product import (
     MULTIDIM_INPUT_SCHEMA_VERSION,
     run_multidim_query,
 )
+from .result_audit import add_result_audit, result_receipt_references
 from .multidim_service import MULTIDIM_QUERY_OPERATION
 from .plan_multidim_result import sanitize_multidim_result
 from .result_source import GOVERNED_PRODUCT, result_source
@@ -296,7 +297,7 @@ def run_semantic_compose(
         "live_metadata": copy.deepcopy(safe.get("validation")),
         "result_eligible": ok,
     }
-    return {
+    result = {
         "schema_version": SEMANTIC_COMPOSE_RESULT_SCHEMA_VERSION,
         "result_source": result_source(GOVERNED_PRODUCT),
         "resolution_tier": compiled["resolution_tier"],
@@ -315,6 +316,9 @@ def run_semantic_compose(
         "next_action": safe.get("next_action"),
         "result": safe,
     }
+    query = safe.get("query") if isinstance(safe, Mapping) else None
+    references = result_receipt_references(query)
+    return add_result_audit(result, references)
 
 
 def is_semantic_compose_result(value: Any) -> bool:

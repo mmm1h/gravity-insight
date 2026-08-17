@@ -80,6 +80,11 @@ def native_result(app_id=APP_ID, rows=None):
             "ok": True,
             "status": "success",
             "data": {"list": rows or [{"click_company": "bytedance", "ap_cost": 12.5}]},
+            "result_audit": {
+                "schema_version": "gravity.result-audit.v1",
+                "fact_paths": {"operation_id": "/operation_id"},
+                "http_receipts": [{"receipt_id": "a" * 32, "storage_status": "stored"}],
+            },
         },
         "total": None,
     }
@@ -223,6 +228,7 @@ class SemanticComposeTests(unittest.TestCase):
         self.assertTrue(result["validation"]["result_eligible"])
         self.assertEqual(2, len(result["allowed_claims"]))
         self.assertEqual(12.5, result["result"]["query"]["data"]["list"][0]["ap_cost"])
+        self.assertEqual("a" * 32, result["result_audit"]["http_receipts"][0]["receipt_id"])
 
     def test_schema_agent_and_plan_preflight_share_one_contract(self):
         schema = semantic_compose_input_schema()

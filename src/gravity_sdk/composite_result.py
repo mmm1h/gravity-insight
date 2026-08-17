@@ -8,6 +8,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from .errors import ErrorCategory, ErrorCode, ErrorDetail, exit_code_for_error
+from .result_audit import project_result_audit
 from .result_source import GOVERNED_PRODUCT, result_source
 
 
@@ -200,7 +201,7 @@ def _safe_component(
         page = _safe_page(envelope.get("page"))
         if page is not None:
             selected["page"] = page
-        return selected
+        return project_result_audit(selected, envelope)
     selected = {
         "operation_id": operation_id,
         "ok": False,
@@ -212,7 +213,7 @@ def _safe_component(
     diagnostics = _safe_drift_diagnostics(envelope, operation_id=operation_id)
     if diagnostics is not None:
         selected["drift_diagnostics"] = diagnostics
-    return selected
+    return project_result_audit(selected, envelope)
 
 
 def _safe_drift_diagnostics(

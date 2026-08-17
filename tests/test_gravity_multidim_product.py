@@ -209,7 +209,7 @@ class GravityMultidimProductTests(unittest.TestCase):
         }
         safe = run_multidim_query(client, value, app_id=7)
         self.assertEqual(
-            {"schema_version", "operation_id", "ok", "status", "data", "page"},
+            {"schema_version", "operation_id", "ok", "status", "data", "page", "result_audit"},
             set(safe["query"]),
         )
         self.assertNotIn("token=secret", repr(safe))

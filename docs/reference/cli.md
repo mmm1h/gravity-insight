@@ -966,6 +966,22 @@ gravity promotion custom-audiences --max-pages 1000 --max-items 100000
 未登记字段失败关闭。未知入口使用 `gravity agent "custom audience coverage status"
 --domain promotion`，返回无缺失输入的唯一 `composite:custom_audience` 卡。
 
+## Analysis playbook
+
+```powershell
+gravity analysis playbook schema
+gravity analysis playbook run --input anomaly.json --dry-run
+gravity analysis playbook run --input anomaly.json --output result.json
+gravity analysis playbook run --input changed.json --checkpoint result.json --output resumed.json
+```
+
+当前只有 `metric-anomaly-localization@1`。它把四个现有 `semantic_compose` 查询编译为普通
+`gravity.plan.v1`，并在结果 checkpoint 中保存可复用 Plan item；修改 hypothesis 时只执行两个
+validate 后继。完整结论只针对两个窗口中返回的 `click_company/ap_cost` 行及其和，不代表未返回渠道
+或完整 App total。任何 partial、capability gap、error、skipped、empty 或证据 identity 不一致都返回
+`conclusion=null` 与空 `allowed_claims`。完整 DAG、事实路径和恢复规则见
+[Plan 参考](plan.md#metric-anomaly-localization1)。
+
 ## Plan v1
 
 ```powershell

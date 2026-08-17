@@ -12,6 +12,35 @@ class ReportSdkMixin:
     """Expose governed report products without duplicating their execution core."""
 
     @staticmethod
+    def metric_anomaly_playbook_schema() -> dict[str, Any]:
+        from .analysis_playbook import metric_anomaly_playbook_schema
+
+        return metric_anomaly_playbook_schema()
+
+    def prepare_metric_anomaly_playbook(
+        self, inputs: Mapping[str, Any], *, checkpoint: Mapping[str, Any] | None = None,
+        max_workers: int = 6,
+    ) -> dict[str, Any]:
+        """Compile and preflight the full/resumed playbook with zero network."""
+
+        return self.metric_anomaly_playbook(
+            inputs, checkpoint=checkpoint, max_workers=max_workers, dry_run=True
+        )
+
+    def metric_anomaly_playbook(
+        self, inputs: Mapping[str, Any], *, checkpoint: Mapping[str, Any] | None = None,
+        max_workers: int = 6, dry_run: bool = False,
+    ) -> dict[str, Any]:
+        """Run or resume metric-anomaly-localization@1 through Plan v1."""
+
+        from .analysis_playbook import run_metric_anomaly_playbook
+
+        return run_metric_anomaly_playbook(
+            self, inputs, checkpoint=checkpoint, max_workers=max_workers,
+            dry_run=dry_run,
+        )
+
+    @staticmethod
     def semantic_compose_input_schema() -> dict[str, Any]:
         """Return the registered semantic composition contract offline."""
 
