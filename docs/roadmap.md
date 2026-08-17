@@ -35,6 +35,23 @@ operation 为 **233**，stable 为 **224 = 187 read + 37 mutation**。
 
 `draft` 候选数量不等于排期数量：17 项候选归并进台账动线或按明确非目标排除，不按 operation 单独排期。
 
+### F41 读产品证据复核（2026-08-17）
+
+**提案与边界：**核对 8-16 marker 自建表是否足以支撑“按表名或 App 查询当前 schema / 字段 / 版本”读产品。只读既有 route；不新建、不绑定、不删除任何表或版本；不改错误分类、评测装置或质量 baseline。
+
+**实测裁决：证据不够，读产品未实现。** 8-16 只证明当时那张已删除 marker 表的 list/detail 计数（两列、三行、`using_version_id=1`），没有字段级 item schema，也不能外推到租户现表。本轮最小读：
+
+| # | route | HTTP / semantic | 翻页 | 结果 |
+| ---: | --- | --- | --- | --- |
+| 1 | `metadata.data_table.list` `page=1` / `page_size=1` | 200 / `code=0` | 否 | 明确空；`page_info` 仅 `page/page_size/total` |
+| 2 | 已 stable 的 `metadata.version.list` `page=1` / `page_size=1` | 200 / `code=0` | 否 | 非空 1 行；`table_id` 为 32 位字符串 |
+| 3 | `metadata.data_table.detail`，内存传入上表 `table_id` | 200 / `code=1004` | 否 | 空 `data`；不能当成功 schema |
+| 4 | `GET version_id_set`，同一内存 `table_id` | 200 / `code=0` | 否 | `data` 为整数数组（本样本 17 项） |
+
+因此缺的是**当前可发现父表上的成功 detail schema**，不是写产品。`version.list` 不能替代 `data_table.list` 做父绑定。三条 draft 不晋升；动线保持完全缺失。本线不改 operation/stable/产品卡/selector，汇总数字不重算。
+
+**生产 HTTP：**本轮 F41 相关业务 receipt 10 次（`list` 1、`version.list` 4、`detail` 3、`version_id_set` 2），另加首次 list 的 1 次 authentication；全部 attempt 1、无 retry、无 `--max-pages`/`--max-items`。其中 2 次 `detail` 与 1 次 `version_id_set` 是脚本落盘失败后的重复最小读，不是换父项或扩窗。预算 30 次未超。
+
 ### 不可信读结果与写效果隔离（2026-08-17）
 
 **提案与形态：**本轮只控制仓库可观察的效果，不识别 prompt injection、不检查可疑词、不删改业务值。
