@@ -1247,6 +1247,159 @@
       ],
       "stability": "stable",
       "upstream_method": "POST"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "腾讯广告 3.0 创意配置只读列表。按广告主读取动态创意标识、审核状态和已观察字段；异构 creative_components 按 opaque JSON 暴露。",
+      "domain": "material",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "advertiser_id": {
+          "description": "腾讯广告主标识；可由 promotion.tencent.adgroup_filter.list 选择。",
+          "max_length": 64,
+          "type": "string"
+        },
+        "filtering": {
+          "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "item_type": "object",
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 1,
+          "description": "Frontend trusteeship picker can request a large page; the verified live probe uses page_size=1 and the observed response has no page_info.",
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "advertiser_id": "$parent:advertiser_id",
+          "filtering": [],
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "material.tencent_medium_creative.list",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v1/tencent/medium/creative/list/",
+      "platform": "tencent",
+      "privacy_policy": {
+        "classification": "material",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "advertiser_id",
+          "filtering",
+          "page",
+          "page_size"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 1
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        {
+          "input_field": "advertiser_id",
+          "operation_id": "promotion.tencent.adgroup_filter.list"
+        }
+      ],
+      "resource": "tencent_medium_creative",
+      "response_projection": {
+        "data_keys": [
+          "list"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "adgroup_id",
+          "click_tracking_url",
+          "configured_status",
+          "created_time",
+          "creative_components",
+          "creative_set_approval_status",
+          "creative_template_id",
+          "delivery_mode",
+          "dynamic_creative_id",
+          "dynamic_creative_name",
+          "dynamic_creative_type",
+          "enable_breakthrough_siteset",
+          "impression_tracking_url",
+          "is_deleted",
+          "last_modified_time",
+          "page_track_url"
+        ],
+        "opaque_json_item_keys": [
+          "creative_components"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
     }
   ]
 }

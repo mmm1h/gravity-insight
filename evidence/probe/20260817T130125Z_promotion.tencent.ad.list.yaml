@@ -1,0 +1,554 @@
+{
+  "conclusion": "permission_or_auth_unavailable",
+  "http": [
+    {
+      "http_status": 200,
+      "method": "POST",
+      "operation_id": "promotion.tencent.adgroup_filter.list",
+      "path": "/turbo_engine/api/v1/tencent/report/adgroup/filters/",
+      "protocol_status": {
+        "classification": "success",
+        "code": {
+          "present": true,
+          "value": 0
+        },
+        "extra_error": {
+          "present": false
+        },
+        "msg": {
+          "present": true,
+          "value": "成功"
+        }
+      },
+      "purpose": "parent",
+      "raw_schema_fingerprint": "ba36ebdfe53e35ddbef41c88956daa8d4f060c22b6d4ff0a85a7c8d6191c2ad2",
+      "request_fingerprint": "1a2493726042eb8c5ade38fa25fa13cd90255649bc32429d1401bdd500439223",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body.page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.body.page_size",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.code",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].adgroup_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].adgroup_name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].advertiser_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.page_info",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.page_info.page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.page_size",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.total_number",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.total_page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.extra",
+            "presence": "observed",
+            "types": [
+              "null"
+            ]
+          },
+          {
+            "path": "$.msg",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    },
+    {
+      "http_status": 200,
+      "method": "POST",
+      "operation_id": "promotion.tencent.adgroup_filter.list",
+      "path": "/turbo_engine/api/v1/tencent/report/adgroup/filters/",
+      "protocol_status": {
+        "classification": "success",
+        "code": {
+          "present": true,
+          "value": 0
+        },
+        "extra_error": {
+          "present": false
+        },
+        "msg": {
+          "present": true,
+          "value": "成功"
+        }
+      },
+      "purpose": "parent",
+      "raw_schema_fingerprint": "ba36ebdfe53e35ddbef41c88956daa8d4f060c22b6d4ff0a85a7c8d6191c2ad2",
+      "request_fingerprint": "1a2493726042eb8c5ade38fa25fa13cd90255649bc32429d1401bdd500439223",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body.page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.body.page_size",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.code",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].adgroup_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].adgroup_name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].advertiser_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.page_info",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.page_info.page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.page_size",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.total_number",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.total_page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.extra",
+            "presence": "observed",
+            "types": [
+              "null"
+            ]
+          },
+          {
+            "path": "$.msg",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    },
+    {
+      "http_status": 200,
+      "method": "POST",
+      "operation_id": "promotion.tencent.ad.list",
+      "path": "/turbo_engine/api/v1/tencent/ad/list/",
+      "protocol_status": {
+        "classification": "permission_unavailable",
+        "code": {
+          "present": true,
+          "value": 2000
+        },
+        "extra_error": {
+          "present": true,
+          "value": ""
+        },
+        "msg": {
+          "present": true,
+          "value": "您当前账号暂无权限操作"
+        }
+      },
+      "purpose": "discovery",
+      "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
+      "request_fingerprint": "fe6661c7d96b3efbc6bb0c4808d6c3cf561ad9c67eb4fef2fde8b37a056bb8cd",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body.adgroup_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.body.advertiser_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.body.end_time",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.body.query_fields",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.body.query_fields[]",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.body.start_time",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.body.time_line",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.code",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.extra",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.extra.error",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.msg",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    }
+  ],
+  "operation_id": "promotion.tencent.ad.list",
+  "pagination": {
+    "kind": "none",
+    "verified": true
+  },
+  "privacy": {
+    "candidate_fields": [],
+    "classified_non_sensitive": 0,
+    "classified_sensitive": 0,
+    "manual_review": 0,
+    "values_persisted": false
+  },
+  "probed_at": "2026-08-17T13:01:25Z",
+  "projected_schema_fingerprint": null,
+  "raw_schema_fingerprint": "1c0f070a5440e32818e6f5d30c6acb499805055e4f8ea106d9b6ced6f5a4c307",
+  "request_stats": {
+    "backoff_terminations": 0,
+    "failed": 0,
+    "total": 3
+  },
+  "required_parent": {
+    "bindings": [
+      {
+        "candidate_count": 1,
+        "operation_id": "promotion.tencent.adgroup_filter.list",
+        "output_path": "data.list[].adgroup_id",
+        "probe_selection": "first",
+        "selection": "caller_select",
+        "status": "resolved"
+      },
+      {
+        "candidate_count": 1,
+        "operation_id": "promotion.tencent.adgroup_filter.list",
+        "output_path": "data.list[].advertiser_id",
+        "probe_selection": "first",
+        "selection": "caller_select",
+        "status": "resolved"
+      }
+    ],
+    "status": "resolved"
+  },
+  "route": {
+    "family": "promotion.tencent.ad.list",
+    "method": "POST",
+    "path": "/turbo_engine/api/v1/tencent/ad/list/"
+  },
+  "schema_version": "gravity-insight.probe-evidence.v1",
+  "semantic_errors": {
+    "missing_parameter": {
+      "attempted": false,
+      "shape_observed": false
+    },
+    "parameter_adjustments": [],
+    "permission_shape_observed": false,
+    "rules": []
+  },
+  "successful": false
+}

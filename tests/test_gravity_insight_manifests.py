@@ -1422,6 +1422,7 @@ class GravityInsightManifestTests(unittest.TestCase):
                 },
                 "promotion.bytedance.project.list": {"total": ["stat_cost"]},
                 "promotion.tencent.advertiser.list": {"total": ["cost"]},
+                "promotion.tencent.tencent_adgroup_v2.list": {"total": ["cost"]},
                 "promotion.taptap.group.list": {"total": []},
                 "report.company_amount.query": {
                     "total": [

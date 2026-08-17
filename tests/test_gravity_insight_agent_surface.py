@@ -242,7 +242,7 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
         # Segment/report/Kanban/custom-metric/metadata-template/saved-analysis mutations deliberately have no
         # replayable examples; custom-metric list has fixed safe pagination,
         # while its two writes require explicit reviewed inputs.
-        self.assertEqual((90, 134), (examples_complete, examples_unknown))
+        self.assertEqual((91, 135), (examples_complete, examples_unknown))
         # 本趟按父 response projection 与调用方选择语义补全 9 条边；剩余
         # 16 条涉及 runtime-v1 target 投影、递归、同一行关联或嵌套输入变换。
         # 素材相册列表再补一条递归父级边，公开 probe 会按目标字符串契约转换；
@@ -259,7 +259,7 @@ class GravityInsightAgentSurfaceTests(unittest.TestCase):
         # F40 目录补一条 App 父级边，详情补两条同一设备行父级边。
         # Report/detail and subscription-parent wiring add four complete edges;
         # custom-metric delete adds a complete current-list ID edge.
-        self.assertEqual((75, 34), (parents_complete, parents_unknown))
+        self.assertEqual((76, 34), (parents_complete, parents_unknown))
 
         transformed = self.client.describe("analysis.event.query")["required_parent"][0]
         self.assertEqual("data.list[].name", transformed["output_path"])

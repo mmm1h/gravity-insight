@@ -115,4 +115,26 @@ def build_container_contract(
         _merge_descendants(
             nested, nested_omitted, descendants, descendant_hidden
         )
+    nested, nested_omitted = _reachable_nested(safe, nested, nested_omitted)
     return sorted(safe), sorted(all_keys - safe), nested, nested_omitted
+
+
+def _reachable_nested(
+    safe: set[str], nested: NestedFields, nested_omitted: NestedFields
+) -> tuple[NestedFields, NestedFields]:
+    reachable = set(safe)
+    pending = list(safe)
+    while pending:
+        parent = pending.pop()
+        for child in nested.get(parent, ()):
+            if child not in reachable:
+                reachable.add(child)
+                pending.append(child)
+    kept = {
+        name: fields
+        for name, fields in nested.items()
+        if name in reachable and fields
+    }
+    return kept, {
+        name: fields for name, fields in nested_omitted.items() if name in kept
+    }

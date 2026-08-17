@@ -645,8 +645,8 @@ prober 现仅对 confirmation 文件中通过完整校验的精确 `POST + path`
 | --- | --- | --- | --- |
 | 1 | **D22 看板页面条件忠实重放** | 已对非空 `data.object.config.filter` fail closed；空条件不受影响 | **合并发生在服务端，前端分析已穷尽**（见下） |
 | 2 | **D35 / F40 归因结果**（已完成） | D35 与 F40 均已取得独立生产合同 | **两条均已闭环，不再排期**（见下） |
-| 3 | **D34 非 Bytedance 计划/组/创意下钻** | 跨平台产品多数只到顶层 | 当前租户腾讯广告主/广告组根已非空；卡在 campaign/ad/creative report draft 的 confirmed-read，不是没数据 |
-| 4 | **D32 平台专属素材/创意深查** | 腾讯 asset-material 已有非空合同 | 卡在 Tencent medium creative 及其他平台创意 draft 的 confirmed-read / 非空 schema |
+| 3 | **D34 非 Bytedance 计划/组/创意下钻** | 跨平台产品多数只到顶层 | 腾讯广告组报表已晋升；卡在 `promotion.tencent.ad.list` 声明父对象 `code=2000` 与快手空投放行 |
+| 4 | **D32 平台专属素材/创意深查** | 腾讯 asset-material 与 medium creative 已有非空合同 | 卡在其他非 Bytedance 创意 draft 的 confirmed-read / 非空 schema |
 
 完整动线的逐条判定与最小证据要求见[分析动线台账](analysis-journeys.md)；本页只维护排期与约束。
 
@@ -6243,3 +6243,31 @@ development recognizer 首选仍 `251/336`，0 生产请求。不 push、不碰 
 Agent 增加变现明细导出卡。本轮 **0** 次生产 HTTP；文件 shape 与 1,212,315 / 1,000,000
 对照沿用既有证据。台账该行状态由维护者按闭环判据另判，本轮不重算 `56 = x / y / z`。
 不 push、不碰 GitHub。
+## D32 / D34 腾讯层级与素材下钻读语义确认（2026-08-17）
+
+**提案：**#161 已证明当前租户有腾讯广告主/广告组/素材，但计划/组/创意 report 与 Tencent
+medium creative 仍是弱证据 POST。本轮先核本机 hash-matched census JS，只对证明为装载列表
+的 route 登记 `confirmed_read`，再发最小非空请求。
+
+**读语义：**`work-dashboard` 缓存的 census raw JS 与仓库 snapshot hash 一致
+（`index-D9HAN43D.js` `aa67659c...`，`Rules-ChMHnW7I.js` `92f4ddab...`）。
+
+- `POST /tencent/adgroup/list/v2/`：TencentAdReport 装载表格；写走 `/tencent/batch_options/`。
+- `POST /tencent/ad/list/`：CreativeDrawer 装载创意表；写走 status/batch 独立 route。
+- `POST /tencent/medium/creative/list/`：托管规则抽屉装载可选创意；写走
+  `/task/ai_trusteeship/create/`。
+
+**探测：**`promotion.tencent.tencent_adgroup_v2.list` 第一页非空，分页实测 `page_info`
+（`total_page`，前端默认 `page_size=10`），已晋升。`material.tencent_medium_creative.list`
+第一页非空，分页实测 `none`，`creative_components` 按 opaque JSON 暴露，已晋升。
+`promotion.tencent.ad.list` 对声明父对象返回 `code=2000` / `permission_unavailable`，
+不再换父重试。4 个空数组人员容器仍未登记。
+
+**四面：**两条新 stable 走既有 `gravity run` / SDK `read` / Plan operation node /
+Agent raw `gravity-insight.read.v1`。不新增产品卡。冻结评测 J45/J46 题集未改。
+
+**台账汇总不要在本提交重算。** 本行建议：operation 233→235、stable 224→226；产品卡 92、
+精确 gap 7、selector 329 不变；动线 `56 = 50 / 1 / 5` 应变为 `56 = 50 / 3 / 3`
+（D32、D33/D34 从完全缺失改为部分闭环）。合并时对账。
+
+生产 HTTP 计入登录与父读，远低于 35 次上限。不 push、不碰 GitHub。

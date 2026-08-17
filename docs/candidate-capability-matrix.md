@@ -307,11 +307,9 @@ probe evidence 里留下字段形状（`date_list` 为 string/`$today`），没�
 **推进与卡住处：**
 
 - D33 父候选已成立：腾讯 advertiser / adgroup_filter / medium_adgroup 均可选。
-- D34 卡在 `promotion.tencent.tencent_adgroup_v2.list`、`promotion.tencent.ad.list` 等
-  计划/组/创意 report draft：弱证据 POST，无 `confirmed_read`，本轮主动未探测。
-- D32：`material.tencent.list` 已登记实测 URL/人员字段并暴露；Tencent medium creative
-  仍是弱证据 POST，未探测。common 素材目录仍不能替代平台创意合同。
-- 不新增产品卡/动线：冻结评测 J45/J46 仍期待原 gap code。
+- D34：`promotion.tencent.tencent_adgroup_v2.list` 已 `confirmed_read`、非空 `page_info` 实测并晋升；`promotion.tencent.ad.list` 已确认读语义，但对声明父对象 `code=2000`。
+- D32：`material.tencent.list` 既有非空合同；`material.tencent_medium_creative.list` 已 `confirmed_read`、非空 item schema、分页实测 `none` 并晋升。
+- 不改评测题集：冻结评测 J45/J46 仍期待原 gap code。
 
 **能力台账不变：**operation 233、stable 224、产品卡 92、精确 gap 7、selector 329、
 动线 `56 = 50 / 1 / 5`。

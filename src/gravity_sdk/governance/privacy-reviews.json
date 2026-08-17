@@ -82,13 +82,21 @@
       "stat_cost",
       "width"
     ],
-    "promotion.bytedance.advertiser_performance.list": [
-      "advertiser_balance",
-      "advertiser_budget",
-      "advertiser_budget_mode",
-      "advertiser_remark",
-      "delay",
-      "stat_cost"
+    "material.tencent_medium_creative.list": [
+      "button_text",
+      "click_tracking_url",
+      "content",
+      "delivery_mode",
+      "enable_breakthrough_siteset",
+      "finder_object_visibility",
+      "floating_zone_button_text",
+      "floating_zone_desc",
+      "floating_zone_switch",
+      "impression_tracking_url",
+      "mini_game_tracking_parameter",
+      "page_track_url",
+      "social_skill_first_comment",
+      "social_skill_first_comment_switch"
     ],
     "metadata.event_property_template_event_list.list": [
       "is_common",
@@ -113,6 +121,14 @@
       "total_red_packet_consume",
       "total_special_red_packet_consume"
     ],
+    "promotion.bytedance.advertiser_performance.list": [
+      "advertiser_balance",
+      "advertiser_budget",
+      "advertiser_budget_mode",
+      "advertiser_remark",
+      "delay",
+      "stat_cost"
+    ],
     "promotion.bytedance.site.list": [
       "siteId",
       "siteType"
@@ -122,6 +138,36 @@
     ],
     "promotion.tencent.account_company.list": [
       "list"
+    ],
+    "promotion.tencent.tencent_adgroup_v2.list": [
+      "adgroup_auto_acquisition_budget",
+      "adgroup_auto_acquisition_enabled",
+      "advertiser_balance",
+      "advertiser_budget",
+      "advertiser_budget_mode",
+      "advertiser_remark",
+      "auto_derived_creative_enabled",
+      "bid_amount",
+      "bid_mode",
+      "bid_strategy",
+      "cost",
+      "daily_budget",
+      "deep_bid_amount",
+      "deep_conversion_behavior_advanced_spec_goal",
+      "deep_conversion_behavior_bid",
+      "deep_conversion_behavior_spec_goal",
+      "deep_conversion_worth_advanced_rate",
+      "deep_conversion_worth_advanced_spec_goal",
+      "deep_conversion_worth_spec_goal",
+      "deep_goal",
+      "delay",
+      "expand_enabled",
+      "expected_roi",
+      "exploration_strategy",
+      "optimization_goal",
+      "priority_site_set",
+      "site_set",
+      "time_series"
     ],
     "report.company_amount.query": [
       "ad_create_amount_usage",

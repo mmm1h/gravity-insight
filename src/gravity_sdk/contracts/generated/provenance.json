@@ -1,5 +1,5 @@
 {
-  "operation_count": 233,
+  "operation_count": 235,
   "operations": {
     "account.department.list": {
       "applied_overrides": [],
@@ -993,6 +993,14 @@
         "operations/material.tencent.list.json"
       ]
     },
+    "material.tencent_medium_creative.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "tencent",
+      "source_files": [
+        "operations/material.tencent_medium_creative.list.json"
+      ]
+    },
     "metadata.event.property.template.079c8246.create": {
       "applied_overrides": [],
       "family": null,
@@ -1479,6 +1487,14 @@
       "platform": "tencent",
       "source_files": [
         "operations/promotion.tencent.medium_adgroup.list.json"
+      ]
+    },
+    "promotion.tencent.tencent_adgroup_v2.list": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": "tencent",
+      "source_files": [
+        "operations/promotion.tencent.tencent_adgroup_v2.list.json"
       ]
     },
     "promotion.ubix.account.list": {

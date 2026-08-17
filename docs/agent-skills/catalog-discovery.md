@@ -2,6 +2,7 @@
 # 完整目录发现：category → selector → contract
 
 完整目录当前有 330 个 selector：233 个 operation、93 张产品卡与 7 个精确 gap。先看分类，不要先猜命令：
+完整目录当前有 331 个 selector：235 个 operation、92 张产品卡与 7 个精确 gap。先看分类，不要先猜命令：
 ```powershell
 gravity agent-catalog categories
 gravity agent-catalog category <category>
