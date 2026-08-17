@@ -4,7 +4,7 @@
     "blockers": [
       {
         "code": "empty_sample",
-        "detail": "The observed tenant response was empty and cannot prove an item schema.",
+        "detail": "The observed tenant response was empty and cannot prove an item schema. 2026-08-18 hash-matched GeneralImportAd-CKb38unY.js proves omitting ad_platform means unfiltered; 11 first-page POSTs on app 29034827 with bytedance/bytedance_std/bytedance_star/bytedance_dy_game/gravity/tiktok and string/int/omitted app_id were all HTTP 200 empty.",
         "evidence": "evidence/probe/20260814T025920Z_report.media_report.list.yaml",
         "status": "open"
       },

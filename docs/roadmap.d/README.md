@@ -76,3 +76,7 @@
 格式：列表项，链接指向真实存在的 `*.md` 文件名，后面跟一句话。只加你自己那一行。
 
 - [实时事件目录：前端形状 + 含此刻窗仍空](realtime-event-catalog.md) — 未拿到非空 item；空的是关闭入库开关 + 已试形状。
+**新增文件后必须在这里加一行**，否则 `test_every_doc_is_reachable_from_the_docs_index` 会判定你的文件是孤儿文档。
+格式：一条 Markdown 链接，目标是同目录下的 `job-slug.md`，后面跟破折号和一句话。只加你自己那一行。
+
+- [媒体报表：枚举 ad_platform 仍空](media-report-ad-platform.md) — 2026-08-18：省略平台即查全集；投放中 App 上枚举平台后仍空。
