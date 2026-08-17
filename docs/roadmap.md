@@ -6129,3 +6129,53 @@ selector / 动线保持基线 `233 / 224 / 92 / 7 / 329`，动线 `56 = 50 / 1 /
 unittest 1163 OK；pytest 1163 passed / 3104 subtests；compiler 233 / 11 manifests；
 quality PASS operations=233 / provenance=233；错误审计仍 `1225 = A833 / B23 / C369`；
 development recognizer 首选仍 `251/336`，0 生产请求。不 push、不碰 GitHub。
+## 短窗假阴性重判（2026-08-17）
+
+**提案：**#160 只读列出四处短窗可疑点，本轮先分类再决定打哪几条。有时间窗的按 D28
+方法扩到 `2026-07-17..2026-08-16`、枚举可绑定对象、首次非空即停；无时间窗且无 App
+输入的不扩窗重打；已被后续非空样本覆盖的只确认覆盖成立。不改错误分类或结果信封
+（权限型空另由 `codex/perm-empty` 处理）。不晋升、不改评测、不碰 GitHub。
+
+**分类：**
+
+| 条目 | 扩窗/枚举是否适用 | 本轮动作 |
+| --- | --- | --- |
+| `attribution.attribution.query`（D35） | 适用：必填 `date_list` + `app_id` | 宽窗重测；一拿到非空即停 |
+| `report.masterkey_report_group.list` | 部分适用：合同有 `date_list`，无 App 输入 | 账号级宽窗打 1 次；不枚举 App |
+| `report.shared_to_me.list` / `app.project.list` | 不适用：只有 `filters/page/page_size` | 不重打；把“扩窗不适用”写进台账 |
+| `report.report.list` / `report.subscribe.list` | 不适用；且已被 08-16 marker 非空覆盖 | 不重打；确认覆盖成立 |
+| 08-16「不扩日期窗」纪律 | 已由实时事件/媒体报表宽窗重判收窄 | 本轮只补归因与 MasterKey |
+
+**本轮请求（业务 HTTP 4，认证 0，本地未出网 1）：**
+
+| 次序 | 目的 | 请求 | 结果 |
+| ---: | --- | --- | --- |
+| 1 | catalog | `app.list` `page=1` `page_size=6000` | HTTP 200，7 个可绑定 App；receipt `08f7948dfd6045b7a4e2c13b81b0fbb9` |
+| 2 | D35 `catalog#1` | `date_list=["2026-07-17","2026-08-16"]`，`dims_list=["date","ad_platform"]`，`metrics_list=["AppRealRegisterCnt"]`，`statistics_caliber=user_activated_time` | envelope `status=empty`；receipt `9bcca2aa4ae4429086b307239e4711c7` |
+| 3 | D35 `catalog#2` | 同上 | envelope `status=success`，`columns=3` / `items=23` / `static=21` / `total=1`；立即停止；receipt `71dc6a0080ce4bcaaf46135f925be942` |
+| — | MasterKey 首次 | 同一宽窗，但 `RecordingSession(None)` | 本地 `TransportError`，0 次出网，不计业务预算 |
+| 4 | MasterKey | `date_list=["2026-07-17","2026-08-16"]`，`filtering={}`，`filters=[]`，`order_by=[]`，`query_fields=[]`，`real_data=1`，`page=1`，`page_size=1` | HTTP 200 / `code=0` / `msg=成功` / `data.list=[]` / `page_info.total_number=0` / `total_page=0`，无 `extra.error`；receipt `419fb092865447b3a5a453630c87c546` |
+
+失败、重试、翻页、429/5xx 均为 0。每累计约 10 条核一次 receipt：本会话
+`app.list` 1、`attribution.attribution.query` 2、`report.masterkey_report_group.list` 1，
+与上表业务次数一致。剩余 26 次预算未用。
+
+**判定：**
+
+- D35 短窗下的“无数据”**站不住作为租户真空**。它只对 08-16 单日窗的 `catalog#1` 成立；
+  同画像宽窗下 `catalog#1` 仍空，`catalog#2` 非空（23 行）后停止。产品已闭环，本轮
+  只把取证参数写进台账。
+- MasterKey 在已记录宽窗和空筛选下仍是账号级明确空；08-16 把它与无 `date_list` 的
+  目录 route 一并写成“账号级事实”不完整，但扩窗没有翻出数据。
+- `report.shared_to_me.list` 与 `app.project.list` 扩窗毫无意义；后者也不是设置 →
+  应用管理的真实列表（那是 `app.list`）。
+- `report.report.list` / `report.subscribe.list` 的 08-16 空结论已被同日 marker 自建
+  非空 schema 覆盖。#159 另证低权限账号在这两条上也可拿到成功空集；本行非空来自
+  高权限账号的 marker，不改错误分类。
+- 08-16「不扩日期窗」纪律本身是方法缺陷。实时事件与媒体报表已在同日宽窗重判后
+  仍空（真空）；归因是假阴性；MasterKey 扩窗后仍空。空结论必须带窗、筛选、枚举
+  对象数和请求次数，不能写“当前租户事实”。
+
+**能力台账不变。** operation / stable / 产品卡 / 精确 gap / selector 保持
+233 / 224 / 92 / 7 / 329。动线状态未变；汇总数字本轮不重算。生产 HTTP **4**。
+不 push、不碰 GitHub。
