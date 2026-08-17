@@ -87,3 +87,4 @@
 - [blob 下载路径 5 条疑似 bug](blob-bugs.md) — 核实 #175 留下的 5 条下载疑点
 - [为什么还没到 95%](gap-to-95.md) — 4 条租户不可达与 52/56 上限；条件不在 SDK 侧。
 - [导出宽问法：不建 dispatcher](export-wide-dispatcher.md) — 七个子类输入不可互换，宽问法 gap 是正确澄清，不建统一导出产品。
+- [识别器召回收尾：J36 回归与防过拟合](recognizer-recall.md) — 否定抽取不再截断「别人」；对着题集加的词已撤；development 选择层 267/336。

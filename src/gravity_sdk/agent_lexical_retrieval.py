@@ -11,6 +11,11 @@ import re
 import unicodedata
 from typing import Any
 
+from .agent_app_catalog import APP_CATALOG_SELECTOR
+from .agent_app_public_info import APP_PUBLIC_INFO_SELECTOR
+from .agent_export import MATERIAL_EXPORT_OPERATION
+from .agent_monetization_aggregate import MONETIZATION_AGGREGATE_SELECTOR
+
 
 ALGORITHM = "idf_weighted_term_coverage.v1"
 MINIMUM_SCORE = 0.300
@@ -35,10 +40,10 @@ _DIRECT_SELECTORS = (
     "metadata:search",
     "metadata:table_lineage",
     "material.asset.fetch",
-    "app.list",
-    "app.app_info.get",
-    "report.get.query",
-    "export.material.report.start",
+    APP_CATALOG_SELECTOR,
+    APP_PUBLIC_INFO_SELECTOR,
+    MONETIZATION_AGGREGATE_SELECTOR,
+    MATERIAL_EXPORT_OPERATION,
 )
 
 

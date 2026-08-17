@@ -84,7 +84,7 @@ def _chinese_user_journey(selected: str) -> bool:
         "用户" in selected
         and any(
             term in selected
-            for term in ("单用户", "单个用户", "指定用户", "某个用户", "这个用户", "某位用户")
+            for term in ("单用户", "单个用户", "指定用户", "某个用户", "这个用户")
         )
         and any(term in selected for term in ("旅程", "路径", "事件", "行为", "时间线", "画像"))
         and (
@@ -100,7 +100,7 @@ def _journey_card(match: Mapping[str, Any]) -> dict[str, Any]:
         "selector": USER_JOURNEY_SELECTOR,
         "composite": "user_journey",
         "domain": "analysis",
-        "description": "并发读取单用户画像、事件时间线、当天行为和回传状态。",
+        "description": "并发读取单用户画像、事件时间线与回传状态。",
         "effect": "read",
         "executable": True,
         "plan_executable": True,

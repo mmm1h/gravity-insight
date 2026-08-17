@@ -148,29 +148,36 @@ def saved_analysis_query(query: str) -> bool:
     """Recognize explicit replay/inspection intent and reject Web UI concepts."""
 
     selected = affirmative_intent_text(query) or " ".join(query.strip().casefold().split())
-    from .agent_order_directory import order_directory_adjacent_intent
-
     if selected in _EXACT_SELECTORS:
         return True
     if selected.isascii():
-        words = frozenset(_ASCII_WORD.findall(selected))
-        return (
-            "saved" in words
-            and bool(
-                words & _ENGLISH_SUBJECTS
-                or order_directory_adjacent_intent(selected)
-            )
-            and bool(words & _ENGLISH_ACTIONS)
-            and not bool(words & _ENGLISH_BLOCKED)
-        )
+        return _english_saved_analysis(selected)
+    return _chinese_saved_analysis(selected)
+
+
+def _english_saved_analysis(selected: str) -> bool:
+    from .agent_order_directory import order_directory_adjacent_intent
+
+    words = frozenset(_ASCII_WORD.findall(selected))
+    return (
+        "saved" in words
+        and bool(words & _ENGLISH_SUBJECTS or order_directory_adjacent_intent(selected))
+        and bool(words & _ENGLISH_ACTIONS)
+        and not bool(words & _ENGLISH_BLOCKED)
+    )
+
+
+def _chinese_saved_analysis(selected: str) -> bool:
+    from .agent_order_directory import order_directory_adjacent_intent
+
     compact = "".join(selected.split())
     return (
-        any(marker in compact for marker in ("保存", "已存", "已保存"))
+        any(marker in compact for marker in ("保存", "已存"))
         and (
             any(subject in compact for subject in _CHINESE_SUBJECTS)
             or order_directory_adjacent_intent(selected)
         )
-        and any(action in compact for action in (*_CHINESE_ACTIONS, "重跑", "精确引用"))
+        and any(action in compact for action in _CHINESE_ACTIONS)
         and not any(term in compact for term in _CHINESE_BLOCKED)
     )
 

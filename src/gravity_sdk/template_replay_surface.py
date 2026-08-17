@@ -525,10 +525,9 @@ def analysis_template_query(query: str) -> bool:
     return (
         ("analysis template" in selected or "chart template" in selected
          or "分析模板" in selected or "图表模板" in selected
-         or "查询骨架" in selected
          or any(term in selected for term in ("运行模板", "重放模板"))
          and any(term in full for term in ("分析", "图表", "保存分析")))
-        and any(action in selected for action in (*actions, "重新跑"))
+        and any(action in selected for action in actions)
         and not any(term in selected for term in blocked)
     )
 

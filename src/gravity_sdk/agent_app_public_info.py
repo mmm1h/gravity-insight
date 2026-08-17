@@ -18,7 +18,7 @@ APP_PUBLIC_INFO_CAPABILITY: Mapping[str, Any] = {
     "domain": "app",
     "description": (
         "读取调用方提供的 App Store 或 Google Play 公开下载链接，返回已登记的公开 App 信息；"
-        "覆盖商店公开资料、OneLink 与公开信息绑定；当前账号 OneLink 目录明确为空，"
+        "覆盖 OneLink 与公开信息绑定；当前账号 OneLink 目录明确为空，"
         "本产品不把空 OneLink 样本伪装成绑定。"
     ),
     "effect": "read",
@@ -68,7 +68,7 @@ def app_public_info_query(query: str) -> bool:
         bool(words & {"onelink", "store"})
         or bool(words & {"public"}) and bool(words & {"info", "information", "binding"})
     ) and bool(words & {"app", "apps", "application"})
-    chinese = any(term in selected for term in ("onelink", "商店公开", "公开信息")) and (
+    chinese = any(term in selected for term in ("onelink", "公开信息")) and (
         "app" in words or "应用" in selected
     )
     return english or chinese

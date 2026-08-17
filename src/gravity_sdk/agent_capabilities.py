@@ -171,31 +171,45 @@ def capability_handoff_cards(
 ) -> tuple[list[dict[str, Any]], bool]:
     """Select direct product handoffs and whether they exclude local catalogs."""
 
-    from .agent_monetization_guard import (
-        monetization_guard_blocks_operation_fallback,
-    )
-    from .agent_material_asset import material_asset_capability_cards
-    from .agent_mutation_cards import mutation_cards
-    from .agent_discovery_policy import operation_fallback_excluded
-    from .agent_export import export_capability_cards
-    from .agent_intent_routing import multiple_product_intents
-    from .agent_table_lineage import table_lineage_capability_cards
-    from .agent_metadata_search import metadata_search_capability_cards
-    from .agent_user_journey import user_journey_capability_cards
     from .agent_unavailable import unavailable_journey_gap
-    from .agent_app_catalog import app_catalog_capability_cards
-    from .agent_app_public_info import app_public_info_capability_cards
-    from .agent_monetization_aggregate import monetization_aggregate_capability_cards
 
     if unavailable_journey_gap(query) is not None:
         return [], True
+    guarded = _guarded_handoff_cards(
+        query,
+        domain=domain,
+        platform=platform,
+        composite_inventory=composite_inventory,
+    )
+    if guarded is not None:
+        return guarded
+    return _routed_handoff_cards(
+        query,
+        domain=domain,
+        platform=platform,
+        export_inventory=export_inventory,
+        composite_inventory=composite_inventory,
+    )
+
+
+def _guarded_handoff_cards(
+    query: str,
+    *,
+    domain: str | None,
+    platform: str | None,
+    composite_inventory: Sequence[Mapping[str, Any]] | None,
+) -> tuple[list[dict[str, Any]], bool] | None:
+    from .agent_intent_routing import multiple_product_intents
+    from .agent_monetization_aggregate import monetization_aggregate_capability_cards
+    from .agent_monetization_guard import (
+        monetization_guard_blocks_operation_fallback,
+    )
 
     aggregate = monetization_aggregate_capability_cards(
         query, domain=domain, platform=platform
     )
     if aggregate:
         return aggregate, False
-
     if monetization_guard_blocks_operation_fallback(query):
         if multiple_product_intents(query, inventory=composite_inventory):
             return [], True
@@ -212,6 +226,27 @@ def capability_handoff_cards(
         return products, True
     if multiple_product_intents(query, inventory=composite_inventory):
         return [], True
+    return None
+
+
+def _routed_handoff_cards(
+    query: str,
+    *,
+    domain: str | None,
+    platform: str | None,
+    export_inventory: Sequence[Mapping[str, Any]],
+    composite_inventory: Sequence[Mapping[str, Any]] | None,
+) -> tuple[list[dict[str, Any]], bool]:
+    from .agent_app_catalog import app_catalog_capability_cards
+    from .agent_app_public_info import app_public_info_capability_cards
+    from .agent_discovery_policy import operation_fallback_excluded
+    from .agent_export import export_capability_cards
+    from .agent_material_asset import material_asset_capability_cards
+    from .agent_metadata_search import metadata_search_capability_cards
+    from .agent_mutation_cards import mutation_cards
+    from .agent_table_lineage import table_lineage_capability_cards
+    from .agent_user_journey import user_journey_capability_cards
+
     direct_effects = [
         *mutation_cards(query, domain=domain, platform=platform),
         *material_asset_capability_cards(query, domain=domain, platform=platform),

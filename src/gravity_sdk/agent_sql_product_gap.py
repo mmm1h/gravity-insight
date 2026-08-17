@@ -48,10 +48,6 @@ def _chinese_registered_sql(selected: str, words: frozenset[str]) -> bool:
     ) or (
         "登记" in selected and "sql" in words
         and any(term in selected for term in ("分析", "产品", "运行", "执行", "只允许"))
-    ) or (
-        "登记" in selected
-        and any(term in selected for term in ("跨表", "汇总口径", "聚合产品"))
-        and any(term in selected for term in ("运行", "执行", "跑出来", "时间窗"))
     )
 
 

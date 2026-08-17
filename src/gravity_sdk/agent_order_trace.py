@@ -43,7 +43,6 @@ _EXACT_INTENTS = frozenset(
         "按trace id查拆单明细",
         "用traceid查拆单明细",
         "用trace id查拆单明细",
-        "追踪号拆单",
     }
 )
 _ENGLISH_ORDER = frozenset({"order", "orders"})
@@ -190,7 +189,7 @@ _CHINESE_BLOCKED = (
     "原始",
     "快照",
 )
-_CHINESE_TRACE = ("追踪", "追溯", "链路", "追踪号")
+_CHINESE_TRACE = ("追踪", "追溯", "链路")
 _CHINESE_DETAIL = ("明细", "详情")
 _CHINESE_BLOCKING_TERMS = (*_CHINESE_NEGATIONS, *_CHINESE_BLOCKED)
 
@@ -323,7 +322,6 @@ def _chinese_split_intent(compact: str) -> bool:
         "拆单" in compact
         or "订单拆分" in compact
         or re.search(r"拆成.{0,8}订单", compact) is not None
-        or ("追踪号" in compact and any(term in compact for term in ("拆", "明细")))
     )
 
 

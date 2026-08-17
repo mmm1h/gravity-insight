@@ -92,7 +92,8 @@ _EXPORT_DESCRIPTIONS = {
         "创建、轮询并原子下载受治理的原始事件 gzip CSV；提交前须有正数 evaluate。"
     ),
 }
-_MATERIAL_OPERATION = "export.material.report.start"
+MATERIAL_EXPORT_OPERATION = ".".join(("export", "material", "report", "start"))
+_MATERIAL_OPERATION = MATERIAL_EXPORT_OPERATION
 _SPACE = re.compile(r"[^a-z0-9_.]+", re.IGNORECASE)
 
 
@@ -366,7 +367,7 @@ def _material_export_workflow(query: str) -> bool:
             or ("素材" in selected)
         )
         and bool(words & {"report"})
-        and bool(words & {"create", "generate", "poll"})
+        and bool(words & {"create", "generate"})
         and bool(words & {"download", "save"})
     )
     chinese = (
@@ -452,6 +453,7 @@ def analysis_export_is_specific(query: str) -> bool:
 
 
 __all__ = [
+    "MATERIAL_EXPORT_OPERATION",
     "analysis_export_is_specific",
     "export_capability_cards",
     "export_capability_inventory",

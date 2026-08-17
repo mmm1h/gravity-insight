@@ -150,8 +150,15 @@ class AgentLexicalRetrievalTests(unittest.TestCase):
             "",
             affirmative_intent_text("不要运行看板图表。"),
         )
+        shared = "帮我找出我自己的、别人共享给我的以及 masterkey 报表，并读取报表定义。"
+        self.assertEqual(shared, affirmative_intent_text(shared))
+        self.assertEqual("", affirmative_intent_text("别给我素材报表"))
+        self.assertEqual(
+            "横比各平台素材表现",
+            affirmative_intent_text("不是查计划或账户余额，我要横比各平台素材表现。"),
+        )
         onelink = retrieve_registered_products(
-            "核对商店公开资料与 App 的关联",
+            "查看 App 的 OneLink 与公开信息绑定",
             composite_inventory=self.inventory,
         )
         self.assertEqual("single_match", onelink.disposition)
