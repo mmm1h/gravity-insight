@@ -194,9 +194,9 @@ def normalize_multidim_inputs(inputs: Mapping[str, Any]) -> dict[str, Any]:
     unknown = set(inputs) - set(_FIELDS)
     missing = _REQUIRED - set(inputs)
     if unknown:
-        raise _input_error("multidimensional inputs contain unsupported fields", "inputs")
+        raise _input_error("multidimensional inputs contain unsupported fields; must use only declared fields; remove extras", "inputs")
     if missing:
-        raise _input_error("multidimensional inputs are missing required fields", "inputs")
+        raise _input_error("multidimensional inputs are missing required fields; must include every required field", "inputs")
 
     normalized: dict[str, Any] = {
         "date_list": _dates(inputs.get("date_list")),
@@ -246,7 +246,7 @@ def bind_multidim_app(inputs: Mapping[str, Any], app_id: str | int) -> dict[str,
     retained = [item for item in normalized["filters"] if item["field"] != "app_id"]
     if len(retained) >= _MAX_FILTERS:
         raise _input_error(
-            "filters leave no bounded slot for the required app_id binding",
+            "filters leave no bounded slot for the required app_id binding; must leave a slot for app_id; remove one filter",
             "filters",
         )
     retained.append(
@@ -356,7 +356,7 @@ def _dates(value: Any) -> list[str]:
 
 def _time_dim(value: Any) -> str:
     if not isinstance(value, str) or value not in _TIME_DIMS:
-        raise _input_error("time_dims is not a supported grain", "time_dims")
+        raise _input_error("time_dims is not a supported grain; must be one of the documented Multidim grains", "time_dims")
     return value
 
 
@@ -376,7 +376,7 @@ def _require_metric_for_dimensions(inputs: Mapping[str, Any]) -> None:
         and (inputs["data_dims"] or inputs["relate_dims"])
     ):
         raise _input_error(
-            "data_dims/relate_dims require at least one selected metric",
+            "data_dims/relate_dims require at least one selected metric; must add metrics_list",
             "data_dims/relate_dims",
         )
 
@@ -403,7 +403,7 @@ def _filter_item(
     field = _filter_field(value.get("field"))
     if field not in allowed_fields:
         raise _input_error(
-            "filter field is absent from the explicit Multidim controls",
+            "filter field is absent from the explicit Multidim controls; must use an explicit Multidim control field",
             "filters[].field",
         )
     operator = _filter_operator(value.get("operator"))
@@ -424,7 +424,7 @@ def _filter_field(value: Any) -> str:
 
 def _filter_operator(value: Any) -> str:
     if not isinstance(value, str) or value not in _FILTER_OPERATORS:
-        raise _input_error("filter operator is not supported", "filters[].operator")
+        raise _input_error("filter operator is not supported; must be one of the documented Multidim operators", "filters[].operator")
     return value
 
 

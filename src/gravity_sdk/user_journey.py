@@ -344,7 +344,7 @@ def _event_window(
     if date_value is not None:
         if start is not None or end is not None:
             raise InputValidationError(
-                "user journey date cannot be combined with start/end", field="date"
+                "user journey date cannot be combined with start/end", field="date", next_action="Omit either date or start/end, then retry."
             )
         return {"date": _iso_date(date_value, "date")}
     if start is None or end is None:
@@ -420,7 +420,7 @@ def _strings(value: Any, field: str, *, maximum: int) -> tuple[str, ...]:
         not isinstance(item, str) or not item or len(item) > 256 for item in selected
     ):
         raise InputValidationError(
-            f"user journey {field} is outside its contract", field=field
+            f"user journey {field} is outside its contract", field=field, next_action="Correct that field to a documented value and retry."
         )
     return selected
 

@@ -45,8 +45,10 @@ def _validate(value: Any, allowed: set[str]) -> None:
         not isinstance(item, str) or item not in allowed for item in value
     ):
         raise InputValidationError(
-            "segment member fields are absent from live user-property metadata; "
-            "request was not sent"
+            "segment member fields must exist in live user-property metadata; "
+            "run `gravity metadata properties \"\"` and retry with a listed field; "
+            "request was not sent",
+            field="fields",
         )
 
 

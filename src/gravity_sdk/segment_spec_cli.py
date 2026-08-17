@@ -172,7 +172,7 @@ def run_segment_command(
     read_all = bool(getattr(args, "all_pages", False))
     if read_all and operation_id not in ANALYSIS_PAGINATED_OPERATIONS:
         raise InputValidationError(
-            f"--all-pages is unavailable for {operation_id}", field="all_pages"
+            f"--all-pages is unavailable for {operation_id}", field="all_pages", next_action="Omit --all-pages for this non-paginated operation."
         )
     client = build_client()
     stability = client.schema(operation_id).get("stability", "stable")
@@ -180,7 +180,7 @@ def run_segment_command(
         if not bool(getattr(args, "experimental", False)):
             raise InputValidationError(
                 "experimental analysis reads require --experimental",
-                field="experimental",
+                field="experimental", next_action="Add --experimental and retry the same request.",
             )
         client = build_client(allow_experimental=True)
     return call_read(
@@ -246,7 +246,7 @@ def run_segment_members_command(
     ):
         raise InputValidationError(
             "segment members cannot use legacy segment read arguments",
-            field="members",
+            field="members", next_action="Omit legacy segment read arguments when requesting members.",
         )
     workspace = load_workspace(getattr(args, "workspace", None))
     app_id = resolve_workspace_app(workspace, args.app)
@@ -281,7 +281,7 @@ def run_segment_evaluate_command(
     if bool(getattr(args, "spec_schema", False)):
         if args.spec is not None:
             raise InputValidationError(
-                "--spec-schema cannot be combined with --spec", field="spec_schema"
+                "--spec-schema cannot be combined with --spec", field="spec_schema", next_action="Omit either --spec-schema or --spec/--input, then retry."
             )
         return segment_rule_spec_schema()
     if args.spec is None:

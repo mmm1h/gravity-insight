@@ -44,7 +44,7 @@ def optional_agent_input_command(args: Any, client: Any) -> dict[str, Any] | Non
     if batch_input is not None and resolution_input is not None:
         raise InputValidationError(
             "agent --input cannot be combined with --resolve-inputs",
-            field="resolve_inputs",
+            field="resolve_inputs", next_action="Omit either --input or --resolve-inputs, then retry.",
         )
     if batch_input is not None:
         return _batch_command(args, client, batch_input)
@@ -142,7 +142,7 @@ def _resolve_online(
     if resolved + refreshed == 0:
         raise InputValidationError(
             "selected Agent capability has no online input catalog to resolve",
-            field="query",
+            field="query", next_action="Pick a capability that exposes an online input catalog.",
         )
     response = copy.deepcopy(dict(result))
     response.update(
@@ -175,7 +175,7 @@ def _batch_command(args: Any, client: Any, input_value: Any) -> dict[str, Any]:
     ):
         raise InputValidationError(
             "agent --input cannot be combined with query, continuation, domain, or platform",
-            field="input",
+            field="input", next_action="Omit --input or omit query/continuation/domain/platform, then retry.",
         )
     from .agent_batch import capabilities_many
     from .find_input import load_json_input
@@ -197,7 +197,7 @@ def _validate_context(value: Mapping[str, Any]) -> dict[str, Any]:
     unknown = sorted(set(value) - _CONTEXT_FIELDS)
     if unknown:
         raise InputValidationError(
-            "agent resolve inputs contains unknown fields", field="resolve_inputs"
+            "agent resolve inputs contains unknown fields", field="resolve_inputs", next_action="Omit either --input or --resolve-inputs, then retry."
         )
     policy = value.get("catalog_policy", "none")
     if policy not in _REFRESH_POLICIES:

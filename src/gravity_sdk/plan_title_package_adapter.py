@@ -23,9 +23,9 @@ def validate_title_package_plan(
     request: Mapping[str, Any], context: AdapterContext, workspace: Any
 ) -> None:
     if set(request) - TITLE_PACKAGE_FIELDS:
-        raise input_error("title_package request contains unavailable fields", "request")
+        raise input_error("title_package request contains unavailable fields; must use only available fields; remove extras", "request")
     if request.get("name") != TITLE_PACKAGE_NAME:
-        raise input_error("title_package name is invalid", "name")
+        raise input_error("title_package name is invalid; must match the documented composite name", "name")
     validate_exact_targets(context, frozenset({"/app", "/package_kind"}))
     dynamic = set(context.dynamic_targets)
     if "/app" not in dynamic:
@@ -48,7 +48,7 @@ def validate_title_package_plan(
     unknown = set(context.output_fields) - TITLE_PACKAGE_OUTPUT_FIELDS
     if unknown:
         raise input_error(
-            "title_package output_fields contain unavailable fields", "output_fields"
+            "title_package output_fields contain unavailable fields; must stay inside the adapter contract; remove extras", "output_fields"
         )
 
 

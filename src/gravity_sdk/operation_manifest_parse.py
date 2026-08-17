@@ -108,18 +108,28 @@ def validate_input_field(
     if value is None:
         if field.nullable:
             return None
-        raise InputValidationError(f"input {field.name!r} must not be null")
+        raise InputValidationError(
+            f"input {field.name!r} must not be null",
+            field=field.name,
+        )
     expected = field.type
     valid = _input_type_valid(expected, value, is_bounded_json_value)
     if valid is None:
         raise InputValidationError(
-            f"input {field.name!r} declares unsupported type {expected!r}"
+            f"input {field.name!r} must use a supported type, not {expected!r}",
+            field=field.name,
         )
     if not valid:
-        raise InputValidationError(f"input {field.name!r} must be {expected}")
+        raise InputValidationError(
+            f"input {field.name!r} must be {expected}",
+            field=field.name,
+        )
     _validate_object_and_enum(field, value, expected, is_bounded_json_value)
     if expected == "string" and field.max_length is not None and len(value) > field.max_length:
-        raise InputValidationError(f"input {field.name!r} exceeds its length limit")
+        raise InputValidationError(
+            f"input {field.name!r} must stay at or below its length limit of {field.max_length}",
+            field=field.name,
+        )
     if expected == "array":
         return _validate_array_value(
             field,
@@ -306,9 +316,15 @@ def _validate_object_and_enum(
     if expected == "object" and not is_bounded_json_value(
         value, max_depth=field.max_depth
     ):
-        raise InputValidationError(f"input {field.name!r} exceeds the nested object limits")
+        raise InputValidationError(
+            f"input {field.name!r} must stay inside the nested object limits",
+            field=field.name,
+        )
     if field.enum and value not in field.enum:
-        raise InputValidationError(f"input {field.name!r} is not an allowed value")
+        raise InputValidationError(
+            f"input {field.name!r} is not an allowed value",
+            field=field.name,
+        )
 
 
 def _validate_array_value(
@@ -321,18 +337,26 @@ def _validate_array_value(
 ) -> list[Any]:
     normalized = list(value)
     if field.min_items is not None and len(normalized) < field.min_items:
-        raise InputValidationError(f"input {field.name!r} has too few items")
+        raise InputValidationError(
+            f"input {field.name!r} must contain at least {field.min_items} items",
+            field=field.name,
+        )
     if field.max_items is not None and len(normalized) > field.max_items:
-        raise InputValidationError(f"input {field.name!r} has too many items")
+        raise InputValidationError(
+            f"input {field.name!r} must contain at most {field.max_items} items",
+            field=field.name,
+        )
     if field.item_type and any(
         not matches_input_type(item, field.item_type) for item in normalized
     ):
         raise InputValidationError(
-            f"input {field.name!r} must contain only {field.item_type} items"
+            f"input {field.name!r} must contain only {field.item_type} items",
+            field=field.name,
         )
     if field.item_enum and any(item not in field.item_enum for item in normalized):
         raise InputValidationError(
-            f"input {field.name!r} contains an item outside its allowlist"
+            f"input {field.name!r} contains an item outside its allowlist; must use an allowlisted value",
+            field=field.name,
         )
     if field.name == "date_list" and field.item_type == "string":
         validate_date_range(normalized)

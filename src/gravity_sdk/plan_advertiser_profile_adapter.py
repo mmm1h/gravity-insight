@@ -28,7 +28,7 @@ def validate_advertiser_profile_plan(
 ) -> None:
     if set(request) - ADVERTISER_PROFILE_FIELDS:
         raise input_error(
-            "advertiser_profile request contains an unknown field", "request"
+            "advertiser_profile request contains an unknown field; must use only declared fields; remove extras", "request"
         )
     validate_exact_targets(context, _TARGETS)
     dynamic = set(context.dynamic_targets)
@@ -37,7 +37,7 @@ def validate_advertiser_profile_plan(
     try:
         normalize_promotion_window(start, end)
     except InputValidationError as exc:
-        raise input_error(str(exc), "start/end") from None
+        raise input_error(("must correct: " + str(str(exc))), "start/end") from None
     if context.max_pages < 1 or context.max_items < 1:
         raise input_error(
             f"actual value: {actual_value((context.max_pages, context.max_items))}; " + ("advertiser_profile requires positive pagination limits"), "limits"

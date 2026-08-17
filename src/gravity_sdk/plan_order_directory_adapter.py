@@ -41,10 +41,10 @@ def validate_order_directory_plan(
 
     if set(request) != ORDER_DIRECTORY_FIELDS:
         raise input_error(
-            "order_directory request fields are incomplete or unavailable", "request"
+            "order_directory request fields are incomplete or unavailable; must include the required product fields", "request"
         )
     if request.get("name") != ORDER_DIRECTORY_NAME:
-        raise input_error("order_directory name is invalid", "name")
+        raise input_error("order_directory name is invalid; must match the documented composite name", "name")
     validate_exact_targets(context, _TARGETS)
     _validate_bound_request(request, set(context.dynamic_targets), workspace, context)
     validate_selected_fields(
@@ -75,7 +75,7 @@ def execute_order_directory_plan(
             max_items=context.max_items,
         )
     except (KeyError, TypeError, ValueError):
-        raise input_error("order_directory bound request is invalid", "request") from None
+        raise input_error("order_directory bound request is invalid; must pass product validation", "request") from None
     result = sdk.order_directory(
         request["app"],
         canonical[1],
@@ -94,7 +94,7 @@ def execute_order_directory_plan(
     )
     if order_directory_item_count(safe) > context.max_items:
         raise input_error(
-            "order_directory exceeded its Plan item budget", "limits.max_items"
+            "order_directory exceeded its Plan item budget; must stay at or below this node max_items; raise limits.max_items", "limits.max_items"
         )
     if isinstance(safe.get("data"), Mapping):
         safe["data"] = _VerifiedData(safe["data"])
@@ -161,7 +161,7 @@ def _validate_bound_request(
             max_items=context.max_items,
         )
     except (KeyError, TypeError, ValueError):
-        raise input_error("order_directory request is invalid", "request") from None
+        raise input_error("order_directory request is invalid; must pass product validation", "request") from None
 
 
 __all__ = [

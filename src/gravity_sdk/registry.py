@@ -190,7 +190,7 @@ class Registry:
         try:
             return self._operations[operation_id]
         except KeyError as exc:
-            raise UnknownOperationError(f"unknown Gravity operation: {operation_id}") from exc
+            raise UnknownOperationError(f"unknown Gravity operation: {operation_id}; run `gravity insight operations search <query>` and retry with a listed operation_id", field="operation_id") from exc
 
     def all(self) -> tuple[OperationSpec, ...]:
         return tuple(self._operations[key] for key in sorted(self._operations))

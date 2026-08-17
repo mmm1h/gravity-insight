@@ -70,11 +70,17 @@ def bounded_text(value: Any) -> str | None:
 
 def canonical_date(value: Any) -> str:
     if not isinstance(value, str):
-        raise _date_error()
+        raise _date_error(
+            field="date",
+            next_action="Retry with a canonical YYYY-MM-DD date.",
+        )
     try:
         parsed = date_type.fromisoformat(value)
     except ValueError:
-        raise _date_error() from None
+        raise _date_error(
+            field="date",
+            next_action="Retry with a canonical YYYY-MM-DD date.",
+        ) from None
     if parsed.isoformat() != value:
         raise InputValidationError(
             f"actual value: {actual_value(value)}; " + ("segment snapshot date must use canonical YYYY-MM-DD"), field="date"
@@ -102,9 +108,11 @@ def matches_app(value: Any, app_id: str) -> bool:
         return False
 
 
-def _date_error() -> InputValidationError:
+def _date_error(*, field: str, next_action: str) -> InputValidationError:
     return InputValidationError(
-        "segment snapshot date must be an ISO natural day", field="date"
+        "segment snapshot date must be an ISO natural day",
+        field=field,
+        next_action=next_action,
     )
 
 

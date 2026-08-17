@@ -40,7 +40,7 @@ def validate_segment_members_plan(
 ) -> None:
     request_object(request, SEGMENT_MEMBERS_REQUEST_FIELDS, SEGMENT_MEMBERS_NAME)
     if request.get("name") != SEGMENT_MEMBERS_NAME:
-        raise input_error("segment members composite name is invalid", "name")
+        raise input_error("segment members composite name is invalid; must match the documented composite name", "name")
     validate_exact_targets(context, frozenset({"/app"}))
     app_id: str | int = "1"
     if not has_dynamic(context, "/app"):
@@ -63,7 +63,7 @@ def validate_segment_members_plan(
             max_items=context.max_items,
         )
     except Exception as exc:
-        raise input_error(str(exc), getattr(exc, "field", None) or "request") from None
+        raise input_error(("must correct: " + str(str(exc))), getattr(exc, "field", None) or "request") from None
     validate_selected_fields(
         context.output_fields, SEGMENT_MEMBERS_OUTPUT_FIELDS, "output_fields"
     )

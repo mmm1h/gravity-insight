@@ -79,13 +79,19 @@ def set_pointer(document: dict[str, Any], pointer: str, value: Any) -> None:
 
 def validate_pointer(value: Any, field: str, *, allow_root: bool) -> str:
     if not isinstance(value, str) or (not allow_root and not value):
-        raise PlanValidationError("JSON Pointer is invalid", field=field)
+        raise PlanValidationError(
+            "JSON Pointer must start with / and use only RFC 6901 escapes",
+            field=field,
+        )
     if value and not value.startswith("/"):
         raise PlanValidationError(f"actual value: {actual_value(value)}; " + ("JSON Pointer must start with /"), field=field)
     try:
         pointer_tokens(value)
     except ValueError as exc:
-        raise PlanValidationError("JSON Pointer escape is invalid", field=field) from exc
+        raise PlanValidationError(
+            "JSON Pointer escape must use ~0 or ~1 only",
+            field=field,
+        ) from exc
     return value
 
 

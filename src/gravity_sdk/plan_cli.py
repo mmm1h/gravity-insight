@@ -95,7 +95,10 @@ def run_plan_command(
         )
 
         if getattr(args, "input_sets", []):
-            raise PlanRecipeError("--set cannot be combined with --recipe", field="set")
+            raise PlanRecipeError(
+                "--set must not be combined with --recipe; omit one",
+                field="set",
+            )
         value = expand_plan_recipe(
             workspace.plan_recipe(args.recipe),
             parse_plan_recipe_parameters(getattr(args, "parameters", [])),

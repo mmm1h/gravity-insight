@@ -88,7 +88,7 @@ def set_input_path(target: dict[str, Any], assignment: str) -> None:
             cursor[part] = child
         if not isinstance(child, dict):
             raise InputValidationError(
-                f"--set path crosses non-object field: {part}", field="set"
+                f"--set path crosses non-object field: {part}", field="set", next_action="Replace the --set path so every prefix is an object."
             )
         cursor = child
     cursor[parts[-1]] = value

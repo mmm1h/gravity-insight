@@ -50,11 +50,11 @@ def validate_segment_members_request(
         else _bounded_identifier(segment_version_id, "segment_version_id", 64)
     )
     if type(max_workers) is not int or not 1 <= max_workers <= MAX_CONCURRENCY:
-        raise InputValidationError("segment members max_workers is outside 1..24", field="max_workers")
+        raise InputValidationError("segment members max_workers is outside 1..24", field="max_workers", next_action="Set max_workers to an integer from 1 through 24.")
     if type(max_pages) is not int or not 1 <= max_pages <= 10_000:
-        raise InputValidationError("segment members max_pages is outside 1..10000", field="max_pages")
+        raise InputValidationError("segment members max_pages is outside 1..10000", field="max_pages", next_action="Set max_pages to an integer from 1 through 10000.")
     if type(max_items) is not int or not 1 <= max_items <= 1_000_000:
-        raise InputValidationError("segment members max_items is outside 1..1000000", field="max_items")
+        raise InputValidationError("segment members max_items is outside 1..1000000", field="max_items", next_action="Omit either --limit or --max-items, then retry.")
     return app, selected_ref, selected_fields, version, max_workers, max_pages, max_items
 
 
@@ -327,10 +327,10 @@ def _row_id(row: Mapping[str, Any]) -> str:
 
 def _bounded_identifier(value: Any, field: str, limit: int) -> str:
     if isinstance(value, bool) or not isinstance(value, (str, int)):
-        raise InputValidationError(f"segment members {field} is invalid", field=field)
+        raise InputValidationError(f"segment members {field} is invalid", field=field, next_action="Correct that field to a documented value and retry.")
     selected = str(value).strip()
     if not selected or len(selected) > limit:
-        raise InputValidationError(f"segment members {field} is invalid", field=field)
+        raise InputValidationError(f"segment members {field} is invalid", field=field, next_action="Correct that field to a documented value and retry.")
     return selected
 
 
@@ -343,7 +343,7 @@ def _fields(value: Sequence[str] | None) -> tuple[str, ...]:
     if len(selected) > 100 or len(set(selected)) != len(selected) or any(
         not isinstance(item, str) or not item or len(item) > 256 for item in selected
     ):
-        raise InputValidationError("segment members fields are invalid", field="fields")
+        raise InputValidationError("segment members fields are invalid", field="fields", next_action="Use live user-property names from `gravity metadata properties \"\"`.")
     return selected
 
 

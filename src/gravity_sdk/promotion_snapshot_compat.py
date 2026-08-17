@@ -72,15 +72,18 @@ def _selection(
     selected = list(dict.fromkeys(_ids(platforms)))
     if not selected:
         raise InputValidationError(
-            "promotion snapshot requires at least one platform"
+            "promotion snapshot requires at least one platform",
+            field="platforms",
         )
     if not isinstance(resource, str) or not resource:
         raise InputValidationError(
-            "promotion snapshot resource must be a non-empty string"
+            "promotion snapshot resource must be a non-empty string",
+            field="resource",
         )
     if set(dict(inputs_by_platform or {})) - set(selected):
         raise InputValidationError(
-            "promotion inputs reference an unselected platform"
+            "promotion inputs must name a selected platform; remove the extra keys",
+            field="inputs_by_platform",
         )
     return selected
 
@@ -194,7 +197,8 @@ def _ids(values: Sequence[str]) -> list[str]:
         not isinstance(item, str) or not item for item in values
     ):
         raise InputValidationError(
-            "operation/platform identifiers must be non-empty strings"
+            "operation/platform identifiers must be non-empty strings",
+            field="platforms",
         )
     return list(values)
 

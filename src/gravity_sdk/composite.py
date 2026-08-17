@@ -79,7 +79,10 @@ class CompositeService:
             selected = list(dict.fromkeys(_operation_ids(operation_ids)))
         unknown_inputs = set(inputs_map) - set(selected)
         if unknown_inputs:
-            raise InputValidationError("metadata inputs reference an unselected operation")
+            raise InputValidationError(
+                "metadata inputs must name a selected operation; remove the extra keys",
+                field="inputs",
+            )
         requests: list[dict[str, Any]] = []
         skipped_input_required: list[dict[str, Any]] = []
         for operation_id in selected:
@@ -104,7 +107,8 @@ class CompositeService:
                 if explicit_selection:
                     raise InputValidationError(
                         f"metadata operation {operation_id} requires inputs: "
-                        + ", ".join(missing_fields)
+                        + ", ".join(missing_fields),
+                        field=missing_fields[0],
                     )
                 skipped_input_required.append(
                     {
@@ -180,7 +184,10 @@ class CompositeService:
 
 def _operation_ids(values: Sequence[str]) -> list[str]:
     if isinstance(values, (str, bytes)) or any(not isinstance(item, str) or not item for item in values):
-        raise InputValidationError("operation/platform identifiers must be non-empty strings")
+        raise InputValidationError(
+            "operation/platform identifiers must be non-empty strings",
+            field="operation_ids",
+        )
     return list(values)
 
 

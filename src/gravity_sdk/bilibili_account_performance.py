@@ -113,22 +113,22 @@ def normalize_bilibili_account_window(start: Any, end: Any) -> tuple[str, str]:
     """Return one canonical inclusive request date range."""
 
     if not all(isinstance(value, str) and _ISO_DATE.fullmatch(value) for value in (start, end)):
-        raise _date_error("dates must use YYYY-MM-DD")
+        raise _date_error("dates must use YYYY-MM-DD", field="start/end")
     try:
         first, last = date.fromisoformat(start), date.fromisoformat(end)
     except ValueError:
-        raise _date_error("dates must use YYYY-MM-DD") from None
+        raise _date_error("dates must use YYYY-MM-DD", field="start/end") from None
     if first > last:
-        raise _date_error("start must not follow end")
+        raise _date_error("start must not follow end", field="start/end")
     if (first.isoformat(), last.isoformat()) != (start, end):
-        raise _date_error("dates must use YYYY-MM-DD")
+        raise _date_error("dates must use YYYY-MM-DD", field="start/end")
     return start, end
 
 
-def _date_error(message: str) -> InputValidationError:
+def _date_error(message: str, *, field: str) -> InputValidationError:
     return InputValidationError(
         f"Bilibili account performance {message}",
-        field="start/end",
+        field=field,
         next_action=(
             "Retry with explicit inclusive start and end dates; no App or metric "
             "selection belongs to this account-level product."

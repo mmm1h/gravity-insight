@@ -232,7 +232,7 @@ def _validate_segment_version(result: Mapping[str, Any], field: str) -> None:
     if result.get("type") != "user_segment":
         if segment_type is not None or version_id is not None:
             raise InputValidationError(
-                f"{field} version controls require source segment", field=field
+                f"{field} version controls require source segment", field=field, next_action="Correct that field to a documented value and retry."
             )
         return
     if segment_type not in {None, "LATEST", "DYNAMIC_MATCHING", "FIXED_VERSION"}:

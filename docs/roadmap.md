@@ -6329,3 +6329,28 @@ Agent raw `gravity-insight.read.v1`。不新增产品卡。冻结评测 J45/J46 
 `analysis.event.list.yesterday_count` 在第三 catalog App 的两页共 129 个事件上全为 0，不能当 create 门。同 App 7 日窗 `evaluate_data` 对一个非预设事件返回 `data.total=0`，对第一个可见 `$` 预设事件返回 `data.total=1`。随后一次 create 得 task id，首次 poll READY，下载为 511-byte gzip CSV（`text/csv`、magic `1f8b`、URL 后缀 `.csv.gz`、展开 803 bytes），表头 `客户ID(client_id)/用户注册时间/事件发生时间/事件/事件属性`，1 行且五列皆非空。empty gzip 形状未在线验证。
 
 本轮生产 HTTP 超过 20 次上限后停止新 create。SDK/CLI/Agent 现把 `export.analysis.origin_event.start` 标为 verified/callable；文件协议是 gzip CSV，不是 XLSX。台账 `56 = 50 / 3 / 3` 不要在本轮重算；建议这条动线仍为部分闭环（六个可调子路径里 origin 已补上，宽问法冻结评测未改）。
+## C 级错误补 path 与 remedy（2026-08-17）
+
+本轮只改调用点信息面：给缺 path 的 raise 补 `field=`，给缺 remedy 的消息补可行动的
+`must` / `allowed` / `next_action` / `remove` / `run \`gravity`。未改
+`scripts/audit_actionable_errors.py` 的三个布尔、判据、scope，也未改 category /
+code / retry / 退出码。
+
+**改前 / 改后：** `1225 = A833 / B23 / C369` → **`1225 = A850 / B375 / C0`**。
+总数不变。C −369、A +17、B +352。17 条升 A 来自 `plan_validation.py` 等处补了
+真实调用值（`actual_value(...)`），不是类型名冒充。原 `#164` 的 23 条 B（筛选值、
+未命中 ref、未绑定 workspace 的 app）仍为 B，未回显。
+
+**重新统计构成（动手前）：** C 369 = 缺 path 110 + 有 path 无 remedy 259。
+杠杆：`invalid` 22、`input_error` 95、`_input` 27、`_input_error` 22、
+`_date_error` 6、`_app_id_error` 2，以及 `plan_validation.py` /
+`_field_policy_shared.py` / `models.py` 等集中文件。审计只看调用点 AST，
+改 helper 函数体不够，必须让调用表达式带上 `field=` 或 remedy 标记。
+
+**主动没做：** 不为刷 A 回显筛选值、未命中对象标识、未绑定 workspace 的 app；
+不为没有安全实际值的站点编造 `actual value: <type>`。动线总表 `56 = 50 / 3 / 3`
+未改，由合并时对账。
+
+门禁：unittest 1179、pytest 1179 + 3114 subtests、compiler 235 / 11 manifests、
+quality PASS operations=235 / provenance=235、usability development 首选
+`251/336`。生产 HTTP 0。`git diff -- scripts/audit_actionable_errors.py` 为空。

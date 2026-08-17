@@ -86,7 +86,7 @@ def sync_all_apps(
     destination = (Path(database) if database is not None else default_catalog_path()).expanduser().resolve()
     if destination.exists() and destination.is_dir():
         raise InputValidationError(
-            "metadata sync database path points to a directory", field="database"
+            "metadata sync database path points to a directory", field="database", next_action="Point --database at a file path, not a directory."
         )
 
     apps = _load_apps(client)

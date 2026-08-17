@@ -67,7 +67,7 @@ def run_agent_catalog_command(args: Any, client: Any) -> dict[str, Any]:
         return _category_response(inventory, str(args.name), args.limit, args.offset)
     if action == "describe":
         return _describe_response(inventory, str(args.selector), client)
-    raise InputValidationError("unknown agent catalog action", field="agent_catalog_command")
+    raise InputValidationError("unknown agent catalog action", field="agent_catalog_command", next_action="Run `gravity agent catalog --help` and pick a documented action.")
 
 
 def _inventory(client: Any) -> tuple[dict[str, Any], ...]:
@@ -164,13 +164,13 @@ def _category_response(
 ) -> dict[str, Any]:
     entries = [item for item in inventory if item["domain"] == name]
     if not entries:
-        raise InputValidationError("agent catalog category is not registered", field="name")
+        raise InputValidationError("agent catalog category is not registered", field="name", next_action="Use the documented composite or catalog name and retry.")
     if not 1 <= limit <= MAX_LIMIT:
         raise InputValidationError(
             f"actual value: {actual_value(limit)}; " + (f"agent catalog limit must be between 1 and {MAX_LIMIT}"), field="limit"
         )
     if offset >= len(entries):
-        raise InputValidationError("agent catalog offset has no entries", field="offset")
+        raise InputValidationError("agent catalog offset has no entries", field="offset", next_action="Restart from offset 0.")
     selected = entries[offset : offset + limit]
     next_offset = offset + len(selected)
     return _envelope(
@@ -194,7 +194,7 @@ def _describe_response(
 ) -> dict[str, Any]:
     selected = next((item for item in inventory if item["selector"] == selector), None)
     if selected is None:
-        raise InputValidationError("agent catalog selector is not registered", field="selector")
+        raise InputValidationError("agent catalog selector is not registered", field="selector", next_action="Run `gravity insight operations search` and retry with a listed selector.")
     capability = _capability_for_item(selected, client)
     return _envelope(
         "describe_capability",

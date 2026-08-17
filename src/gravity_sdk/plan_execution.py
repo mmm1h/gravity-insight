@@ -260,14 +260,14 @@ def preflight_adapters(
             from .plan import PlanValidationError
 
             raise PlanValidationError(
-                str(exc),
+                f"must correct the adapter request: {exc}",
                 field=_adapter_validation_field(index, exc.field),
             ) from None
         except Exception:
             from .plan import PlanValidationError
 
             raise PlanValidationError(
-                "plan adapter rejected a declared request",
+                "plan adapter must accept the declared request; correct that node request and retry",
                 field=f"nodes[{index}].request",
             ) from None
 

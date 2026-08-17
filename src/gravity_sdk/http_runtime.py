@@ -701,14 +701,26 @@ def _validate_profile_payload(
     if profile is not SQL_PROFILE:
         return
     if params:
-        raise SqlValidationError("Gravity SQL does not accept query parameters")
+        raise SqlValidationError(
+            "Gravity SQL must omit query parameters; send only the JSON body",
+            field="params",
+        )
     if not isinstance(json_body, Mapping) or set(json_body) != {"sql", "tabId"}:
-        raise SqlValidationError("Gravity SQL body must contain only sql and tabId")
+        raise SqlValidationError(
+            "Gravity SQL body must contain only sql and tabId",
+            field="sql",
+        )
     sql = json_body.get("sql")
     if not isinstance(sql, str) or not sql.strip():
-        raise SqlValidationError("Gravity SQL text must be a non-empty string")
+        raise SqlValidationError(
+            "Gravity SQL text must be a non-empty string",
+            field="sql",
+        )
     if json_body.get("tabId") != "1":
-        raise SqlValidationError("Gravity SQL tabId is fixed")
+        raise SqlValidationError(
+            "Gravity SQL tabId must be the fixed value 1",
+            field="tabId",
+        )
 
 
 def _canonical_host(host: str) -> str:

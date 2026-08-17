@@ -90,12 +90,12 @@ def _build_recipe_inputs(
     unknown = sorted(set(values) - set(recipe.parameters))
     if unknown:
         raise InputValidationError(
-            "unknown recipe parameters: " + ", ".join(unknown), field="param"
+            "unknown recipe parameters must be removed: " + ", ".join(unknown), field="param"
         )
     missing = sorted(set(recipe.required_parameters) - set(values))
     if missing:
         raise InputValidationError(
-            "missing required recipe parameters: " + ", ".join(missing), field="param"
+            "missing required recipe parameters must be supplied: " + ", ".join(missing), field="param"
         )
     for name, value in values.items():
         set_input_path(inputs, recipe.parameters[name], value)
@@ -123,7 +123,7 @@ def _build_direct_inputs(
     operation_id = str(description.get("operation_id", ""))
     if parameters:
         raise InputValidationError(
-            "--param is available only with @recipe selectors", field="param"
+            "--param must be used only with @recipe selectors", field="param"
         )
     if app is not None:
         _bind_direct_app(inputs, description, workspace.resolve_app(app), operation_id)
@@ -139,7 +139,7 @@ def _bind_direct_app(
 ) -> None:
     fields = description.get("input_schema", {})
     if not isinstance(fields, Mapping) or "app_id" not in fields:
-        raise InputValidationError(f"{operation_id} does not accept --app", field="app")
+        raise InputValidationError(f"{operation_id} does not accept --app", field="app", next_action="Omit --app or switch to an App-scoped operation.")
     inputs["app_id"] = str(app_id)
 
 
@@ -151,7 +151,10 @@ def _bind_direct_dates(
     operation_id: str,
 ) -> None:
     if (start is None) != (end is None):
-        raise InputValidationError("--start and --end must be supplied together")
+        raise InputValidationError(
+            "--start and --end must be supplied together",
+            field="start",
+        )
     if start is None:
         return
     fields = description.get("input_schema", {})
@@ -167,7 +170,7 @@ def _bind_direct_dates(
         inputs["date_list"] = [start, end]
     else:
         raise InputValidationError(
-            f"{operation_id} does not expose a schema-derived date input; use --input or --set",
+            f"{operation_id} must receive dates through --input or --set; it has no schema-derived date input",
             field="start",
         )
 
@@ -192,12 +195,18 @@ def set_input_path(target: dict[str, Any], path: str, value: Any) -> None:
     elif isinstance(cursor, dict):
         cursor[leaf] = value
     else:
-        raise InputValidationError(f"recipe input path crosses a non-object at {leaf}")
+        raise InputValidationError(
+            f"recipe input path must stay on objects until {leaf}; replace that binding path",
+            field="param",
+        )
 
 
 def _array_child(value: Any, index: int, next_is_index: bool) -> Any:
     if not isinstance(value, list):
-        raise InputValidationError(f"recipe input path requires an array at {index}")
+        raise InputValidationError(
+            f"recipe input path requires an array at {index}",
+            field="param",
+        )
     while len(value) <= index:
         value.append([] if next_is_index else {})
     return value[index]
@@ -205,7 +214,10 @@ def _array_child(value: Any, index: int, next_is_index: bool) -> Any:
 
 def _object_child(value: Any, name: str, next_is_index: bool) -> Any:
     if not isinstance(value, dict):
-        raise InputValidationError(f"recipe input path crosses a non-object at {name}")
+        raise InputValidationError(
+            f"recipe input path must stay on objects at {name}; replace that binding path",
+            field="param",
+        )
     child = value.get(name)
     if child is None:
         child = [] if next_is_index else {}
@@ -215,7 +227,10 @@ def _object_child(value: Any, name: str, next_is_index: bool) -> Any:
 
 def _set_array_value(value: Any, index: int, selected: Any) -> None:
     if not isinstance(value, list):
-        raise InputValidationError(f"recipe input path requires an array at {index}")
+        raise InputValidationError(
+            f"recipe input path requires an array at {index}",
+            field="param",
+        )
     while len(value) <= index:
         value.append(None)
     value[index] = selected

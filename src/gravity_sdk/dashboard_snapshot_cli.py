@@ -313,7 +313,7 @@ def dispatch_dashboard_read(args: Any, object_input: Any) -> dict[str, Any]:
     if read_all and operation_id not in ANALYSIS_PAGINATED_OPERATIONS:
         raise InputValidationError(
             f"--all-pages is not supported for non-paginated operation {operation_id}",
-            field="all_pages",
+            field="all_pages", next_action="Omit --all-pages for this non-paginated operation.",
         )
     options = page_options(args, all_pages=True, active=read_all)
     if read_all and options["max_workers"] is None:

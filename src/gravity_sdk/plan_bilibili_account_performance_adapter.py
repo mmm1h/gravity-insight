@@ -55,11 +55,11 @@ def validate_bilibili_account_performance_plan(
 ) -> None:
     if set(request) != BILIBILI_ACCOUNT_PERFORMANCE_FIELDS:
         raise input_error(
-            "bilibili_account_performance request fields are incomplete or unavailable",
+            "bilibili_account_performance request fields are incomplete or unavailable; must include the required product fields",
             "request",
         )
     if request.get("name") != BILIBILI_ACCOUNT_PERFORMANCE_NAME:
-        raise input_error("bilibili_account_performance name is invalid", "name")
+        raise input_error("bilibili_account_performance name is invalid; must match the documented composite name", "name")
     validate_exact_targets(context, _TARGETS)
     _validate_dates(request, set(context.dynamic_targets))
     if context.max_items < 1:
@@ -83,7 +83,7 @@ def execute_bilibili_account_performance_plan(
         window = normalize_bilibili_account_window(request["start"], request["end"])
     except (InputValidationError, KeyError):
         raise input_error(
-            "bilibili_account_performance bound dates are invalid", "start/end"
+            "bilibili_account_performance bound dates are invalid; must use YYYY-MM-DD and start must not follow end", "start/end"
         ) from None
     value = sdk.bilibili_account_performance(
         window[0],
@@ -102,7 +102,7 @@ def execute_bilibili_account_performance_plan(
     )
     if product_item_count(safe) > context.max_items:
         raise input_error(
-            "bilibili_account_performance exceeded its Plan item budget",
+            "bilibili_account_performance exceeded its Plan item budget; must stay at or below this node max_items; raise limits.max_items",
             "limits.max_items",
         )
     data = safe.get("data")
@@ -141,7 +141,7 @@ def _validate_dates(request: Mapping[str, Any], dynamic: set[str]) -> None:
             normalize_bilibili_account_window(start, start)
             normalize_bilibili_account_window(end, end)
     except InputValidationError as exc:
-        raise input_error(str(exc), "start/end") from None
+        raise input_error(("must correct: " + str(str(exc))), "start/end") from None
 
 
 def _verified(value: Any) -> bool:

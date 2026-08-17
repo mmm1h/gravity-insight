@@ -132,7 +132,8 @@ def run_analysis_metadata(
         operation_input = supplied.get(operation_id, {}) if keyed_input else supplied
         if not isinstance(operation_input, Mapping):
             raise InputValidationError(
-                f"analysis metadata input for {operation_id} must be an object"
+                f"analysis metadata input for {operation_id} must be an object",
+                field="input",
             )
         inputs = {"app_id": str(args.app_id), **dict(operation_input)}
         if operation_id in ANALYSIS_PAGINATED_OPERATIONS:

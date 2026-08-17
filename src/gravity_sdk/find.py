@@ -418,7 +418,7 @@ def run_find_command(
     unknown = sorted(selected - available)
     if unknown:
         raise InputValidationError(
-            "unknown find backend: " + ", ".join(unknown), field="backend"
+            "unknown find backend: " + ", ".join(unknown), field="backend", next_action="Use a documented find backend and retry."
         )
 
     results: list[dict[str, Any]] = []

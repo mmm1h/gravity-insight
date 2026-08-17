@@ -162,7 +162,7 @@ def sync_analysis_vocabulary(
         if not isinstance(batch, Sequence) or isinstance(batch, (str, bytes)):
             raise InputValidationError(
                 "Analysis vocabulary batch returned an invalid result collection",
-                field="result",
+                field="result", next_action="Retry after the batch returns object results.",
             )
         chunk_sources = {
             str(request["request_id"]): str(request["operation_id"])
@@ -284,7 +284,7 @@ def vocabulary_failures(connection: sqlite3.Connection) -> list[dict[str, str]]:
 
 def validate_vocabulary_kind(kind: str) -> str:
     if kind not in VOCABULARY_SEARCH_KINDS:
-        raise InputValidationError("unknown metadata search kind", field="kind")
+        raise InputValidationError("unknown metadata search kind", field="kind", next_action="Use a documented metadata search kind and retry.")
     return kind
 
 
@@ -293,7 +293,7 @@ def vocabulary_kind(source: str) -> str:
         return _SOURCE_KINDS[source]
     except KeyError as error:
         raise InputValidationError(
-            "unknown Analysis vocabulary source", field="source"
+            "unknown Analysis vocabulary source", field="source", next_action="Use a documented Analysis vocabulary source and retry."
         ) from error
 
 
@@ -316,7 +316,7 @@ def _index_results(
         if not isinstance(result, Mapping):
             raise InputValidationError(
                 "Analysis vocabulary batch returned a non-object result",
-                field="result",
+                field="result", next_action="Retry after the batch returns object results.",
             )
         request_id = result.get("request_id")
         operation_id = result.get("operation_id")
@@ -329,19 +329,19 @@ def _index_results(
         if source not in expected:
             raise InputValidationError(
                 "Analysis vocabulary batch returned an unknown result identity",
-                field="request_id",
+                field="request_id", next_action="Use unique request_id values that match submitted requests.",
             )
         if source in indexed:
             raise InputValidationError(
                 "Analysis vocabulary batch returned a duplicate result identity",
-                field="request_id",
+                field="request_id", next_action="Use unique request_id values that match submitted requests.",
             )
         if isinstance(operation_id, str) and operation_id:
             expected_operation = expected[source]
             if operation_id != expected_operation:
                 raise InputValidationError(
                     "Analysis vocabulary batch result operation_id did not match its source",
-                    field="operation_id",
+                    field="operation_id", next_action="Use a registered Gravity operation_id and retry.",
                 )
         indexed[source] = result
     return indexed

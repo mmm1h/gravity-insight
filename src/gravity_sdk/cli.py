@@ -122,6 +122,7 @@ class AgentArgumentParser(argparse.ArgumentParser):
     def error(self, message: str) -> None:
         raise InputValidationError(
             message,
+            field="argv",
             next_action="Run `gravity --help` and retry with valid arguments.",
         )
 

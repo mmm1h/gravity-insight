@@ -66,14 +66,14 @@ def validate_multidim_plan(
     del insight
     request_object(request, MULTIDIM_REQUEST_FIELDS, "multidim")
     if request.get("name") != MULTIDIM_NAME:
-        raise input_error("multidim request has the wrong composite name", "name")
+        raise input_error("multidim request has the wrong composite name; must use the documented Multidim composite name", "name")
     _require_product_version(request)
     _switches(request)
     _validate_output_fields(context)
 
     raw_inputs = mapping(request.get("inputs", {}), "inputs")
     if request.get("app") is None and "/app" not in context.dynamic_targets:
-        raise input_error("Multidim requests require an explicit App", "app")
+        raise input_error("Multidim requests require an explicit App; must supply app and retry", "app")
     dynamic_names = _dynamic_input_names(context.dynamic_targets)
     fields = _product_schema()["properties"]
     validate_exact_targets(
@@ -134,7 +134,7 @@ def _product_schema() -> dict[str, Any]:
 
     schema = multidim_input_schema()
     if not isinstance(schema.get("properties"), Mapping):
-        raise input_error("multidim product schema is invalid", "name")
+        raise input_error("multidim product schema is invalid; must match the current Multidim contract", "name")
     return schema
 
 
@@ -149,13 +149,13 @@ def _validate_product_inputs(inputs: Mapping[str, Any], app_id: int) -> None:
     bound = bind_multidim_app(normalized, app_id)
     preview = prepare_multidim_query(None, bound, app_id=app_id)
     if preview.get("ok") is not True or preview.get("network_called") is not False:
-        raise input_error("multidim product preflight failed", "inputs")
+        raise input_error("multidim product preflight failed; must correct inputs and retry", "inputs")
 
 
 def _require_product_version(request: Mapping[str, Any]) -> None:
     if request.get("input_schema_version") != MULTIDIM_INPUT_SCHEMA_VERSION:
         raise input_error(
-            "multidim requests require the current input schema version",
+            "multidim requests require the current input schema version; must use the current input schema version",
             "input_schema_version",
         )
 
@@ -164,9 +164,9 @@ def _resolve_app(workspace: Any, value: Any) -> int:
     try:
         app_id = workspace.resolve_app(value)
     except (KeyError, TypeError, ValueError):
-        raise input_error("multidim App is not configured", "app") from None
+        raise input_error("multidim App is not configured; must be listed in gravity.toml [apps]", "app") from None
     if type(app_id) is not int or app_id <= 0:
-        raise input_error("multidim App is invalid", "app")
+        raise input_error("multidim App is invalid; must be a configured workspace App or positive id", "app")
     return app_id
 
 

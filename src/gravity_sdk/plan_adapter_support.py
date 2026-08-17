@@ -37,7 +37,7 @@ def sql_projection(
     result: Any, fields: tuple[str, ...], _context: AdapterContext
 ) -> Any:
     if not isinstance(result, Mapping):
-        raise input_error("SQL product result is invalid", "result")
+        raise input_error("SQL product result must be an object envelope", "result")
     selected = envelope(result)
     items = result.get("results")
     selected["results"] = [
@@ -48,7 +48,7 @@ def sql_projection(
 
 def project_sql_item(item: Any, fields: tuple[str, ...]) -> Any:
     if not isinstance(item, Mapping):
-        raise input_error("SQL product item is invalid", "result")
+        raise input_error("SQL product item must be an object", "result")
     selected = {
         key: copy.deepcopy(value)
         for key, value in item.items()
@@ -70,7 +70,7 @@ def metadata_projection(
     result: Any, fields: tuple[str, ...], _context: AdapterContext
 ) -> Any:
     if not isinstance(result, Mapping):
-        raise input_error("metadata result is invalid", "result")
+        raise input_error("metadata result must be an object envelope", "result")
     selected = envelope(result)
     rows = result.get("results")
     selected["results"] = [
@@ -96,7 +96,7 @@ def composite_projection(
     result: Any, fields: tuple[str, ...], _context: AdapterContext
 ) -> Any:
     if not isinstance(result, Mapping):
-        raise input_error("composite result is invalid", "result")
+        raise input_error("composite result must be an object envelope", "result")
     selected = envelope(result)
     selected.update(
         {field: copy.deepcopy(result[field]) for field in fields if field in result}
@@ -134,14 +134,14 @@ def validate_input_names(
 ) -> None:
     fields = schema.get("input_fields", schema.get("input_schema", {}))
     if not isinstance(fields, Mapping):
-        raise input_error("operation input contract is invalid", "selector")
+        raise input_error("operation input contract must be a mapping of field names", "selector")
     dynamic_names = {
         target.split("/", 2)[2]
         for target in targets
         if target.startswith(("/input/", "/inputs/")) and target.count("/") == 2
     }
     if (set(inputs) | dynamic_names) - set(fields):
-        raise input_error("run inputs contain an unknown operation field", "inputs")
+        raise input_error("run inputs must use only declared operation fields; remove the extra keys", "inputs")
 
 
 def request_object(
@@ -150,14 +150,14 @@ def request_object(
     if not isinstance(request, Mapping):
         raise input_error(f"actual value: {actual_value(request)}; " + (f"{label} request must be an object"), "request")
     if set(request) - allowed:
-        raise input_error(f"{label} request contains an unknown field", "request")
+        raise input_error(f"{label} request must use only declared fields; remove the extra keys", "request")
 
 
 def alias_mapping(
     request: Mapping[str, Any], first: str, second: str
 ) -> Mapping[str, Any]:
     if first in request and second in request:
-        raise input_error("run input aliases cannot be combined", second)
+        raise input_error("run input aliases must not be combined; keep only one of input or inputs", second)
     return mapping(request.get(second, request.get(first, {})), second)
 
 
@@ -177,12 +177,12 @@ def validate_selected_fields(
     fields: tuple[str, ...], allowed: frozenset[str], field: str
 ) -> None:
     if set(fields) - allowed:
-        raise input_error("output_fields contains a field outside the adapter contract", field)
+        raise input_error("output_fields must stay inside the adapter contract; remove the extra field", field)
 
 
 def validate_exact_targets(context: AdapterContext, allowed: frozenset[str]) -> None:
     if set(context.dynamic_targets) - allowed:
-        raise input_error("binding target is outside the adapter contract", "bindings")
+        raise input_error("binding target must stay inside the adapter contract; remove the extra binding", "bindings")
 
 
 def has_dynamic(context: AdapterContext, target: str) -> bool:

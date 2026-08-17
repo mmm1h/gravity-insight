@@ -76,19 +76,19 @@ def run_many(
     source = _request_payload(requests)
     if len(source) > MAX_EXPANDED_ITEMS:
         raise _input_error(
-            f"resolver batch contains more than {MAX_EXPANDED_ITEMS} requests",
+            f"resolver batch contains more than {MAX_EXPANDED_ITEMS} requests; must stay at or below that bound; split the batch",
             "requests",
         )
     default_fields = _output_fields(output_fields)
     expanded = _expand_requests(source, workspace, default_fields)
     if len(expanded) > MAX_EXPANDED_ITEMS:
         raise _input_error(
-            f"resolver batch expands to more than {MAX_EXPANDED_ITEMS} items",
+            f"resolver batch expands to more than {MAX_EXPANDED_ITEMS} items; must stay at or below that bound; split the batch",
             "requests",
         )
     if len(expanded) * max_items > MAX_AGGREGATE_ITEMS:
         raise _input_error(
-            f"resolver batch aggregate max_items exceeds {MAX_AGGREGATE_ITEMS}",
+            f"resolver batch aggregate max_items exceeds {MAX_AGGREGATE_ITEMS}; must stay at or below that aggregate bound",
             "max_items",
         )
 
@@ -242,7 +242,7 @@ def _request_payload(
         unknown = sorted(set(value) - {"requests"})
         if unknown:
             raise _input_error(
-                "unknown resolver batch wrapper fields: " + ", ".join(unknown),
+                ("unknown resolver batch wrapper fields: " + ", ".join(unknown)) + "; must use only declared fields; remove extras",
                 unknown[0],
             )
         value = value.get("requests")
@@ -284,7 +284,7 @@ def _expand_requests(
             )
             if len(expanded) > MAX_EXPANDED_ITEMS:
                 raise _input_error(
-                    f"resolver batch expands to more than {MAX_EXPANDED_ITEMS} items",
+                    f"resolver batch expands to more than {MAX_EXPANDED_ITEMS} items; must stay at or below that bound; split the batch",
                     "requests",
                 )
     return expanded
@@ -307,7 +307,7 @@ def _validate_item(
         raise _input_error(f"actual value: {actual_value(selector)}; " + ("resolver batch selector must be a non-empty string"), "selector")
     inputs, parameters = _item_bindings(value)
     if "app" in value and "apps" in value:
-        raise _input_error("resolver batch app and apps cannot be combined", "apps")
+        raise _input_error("resolver batch app and apps cannot be combined; must keep only one of the conflicting fields", "apps")
     start, end = value.get("start"), value.get("end")
     if start is not None and not isinstance(start, str):
         raise _input_error(f"actual value: {actual_value(start)}; " + ("resolver batch start must be a string"), "start")
@@ -349,7 +349,7 @@ def _output_fields(value: Any) -> tuple[str, ...] | None:
 
 def _item_bindings(value: Mapping[str, Any]) -> tuple[Mapping[str, Any], Mapping[str, Any]]:
     if "input" in value and "inputs" in value:
-        raise _input_error("resolver batch input and inputs aliases cannot be combined", "inputs")
+        raise _input_error("resolver batch input and inputs aliases cannot be combined; must keep only one of the conflicting fields", "inputs")
     inputs = value.get("input", value.get("inputs", {}))
     parameters = value.get("parameters", {})
     if not isinstance(inputs, Mapping):

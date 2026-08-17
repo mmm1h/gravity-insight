@@ -237,7 +237,7 @@ def normalize_material_platforms(values: Sequence[str]) -> tuple[str, ...]:
         if not isinstance(value, str) or value not in DEFAULT_PLATFORMS:
             raise InputValidationError(
                 "material performance platform is outside the supported set",
-                field="platforms",
+                field="platforms", next_action="Use one of the documented platforms and retry.",
             )
         if value in selected:
             raise InputValidationError(
