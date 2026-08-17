@@ -1293,6 +1293,21 @@
       "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/app.user.realtime.event.update.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "app.user.realtime.event.update",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
         "src/gravity_sdk/contracts/operations/attribution.attr_backtrack.list.json#/operation/pagination"
       ],
       "observed_shape": "not_page_info",
@@ -3678,7 +3693,7 @@
       "wire_pagination_signal": 1
     },
     "none_silent_completeness_risks": 27,
-    "operations": 235,
+    "operations": 236,
     "page_info_evidence_levels": {
       "production": 63,
       "template_default": 49,
@@ -3699,7 +3714,7 @@
       "report.multidim.query"
     ],
     "audit_baseline_declared_kinds": {
-      "none": 115,
+      "none": 116,
       "page_info": 120
     },
     "current_kinds_source": "computed by reconcile_pagination_audit from current contracts; never stored as a HEAD fact in this snapshot"

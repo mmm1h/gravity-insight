@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import re
 from collections.abc import Mapping
+from datetime import datetime
 from typing import Any
 
 from .actionable_error_values import actual_value
@@ -19,6 +20,7 @@ _SUCCESS = frozenset({"success", "empty", "contract_changed_additive"})
 _DATETIME = re.compile(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$")
 _REQUIRED = frozenset({"app_id", "is_enabled", "start_time", "end_time"})
 _OPTIONAL = frozenset({"time_slot"})
+_READBACK_SKEW_SECONDS = 120
 
 
 def realtime_event_mutation_schema() -> dict[str, Any]:
@@ -40,7 +42,7 @@ def run_realtime_event_mutation(
     client: Any, inputs: Mapping[str, Any], *, execute: bool = False
 ) -> dict[str, Any]:
     if not isinstance(inputs, Mapping):
-        raise _input(
+        raise _realtime_input_error(
             actual_value(type(inputs).__name__),
             "an input object",
             "inputs",
@@ -49,7 +51,7 @@ def run_realtime_event_mutation(
     unknown = set(inputs) - _REQUIRED - _OPTIONAL
     missing = _REQUIRED - set(inputs)
     if missing or unknown:
-        raise _input(
+        raise _realtime_input_error(
             actual_value({"missing": sorted(missing), "unknown": sorted(unknown)}),
             actual_value({"required": sorted(_REQUIRED), "optional": sorted(_OPTIONAL)}),
             "inputs",
@@ -74,7 +76,7 @@ def run_realtime_event_mutation(
 def _wire(inputs: Mapping[str, Any]) -> dict[str, Any]:
     enabled = inputs["is_enabled"]
     if type(enabled) is not int or enabled not in {0, 1}:
-        raise _input(
+        raise _realtime_input_error(
             actual_value(enabled),
             "0 or 1",
             "is_enabled",
@@ -82,7 +84,7 @@ def _wire(inputs: Mapping[str, Any]) -> dict[str, Any]:
         )
     slot = inputs.get("time_slot", 2)
     if type(slot) is not int or slot != 2:
-        raise _input(
+        raise _realtime_input_error(
             actual_value(slot),
             "2",
             "time_slot",
@@ -117,7 +119,7 @@ def _read_conf(client: Any, app_id: int) -> Mapping[str, Any]:
 def _require_readback(conf: Mapping[str, Any], wire: Mapping[str, Any]) -> None:
     observed = {
         "app_id": conf.get("app_id"),
-        "is_enabled": conf.get("is_enabled"),
+        "is_enabled": _flag(conf.get("is_enabled")),
         "start_time": conf.get("start_time"),
         "end_time": conf.get("end_time"),
     }
@@ -127,11 +129,36 @@ def _require_readback(conf: Mapping[str, Any], wire: Mapping[str, Any]) -> None:
         "start_time": wire["start_time"],
         "end_time": wire["end_time"],
     }
-    if observed != expected:
+    if (
+        observed["app_id"] != expected["app_id"]
+        or observed["is_enabled"] != expected["is_enabled"]
+        or not _near(observed["start_time"], expected["start_time"])
+        or not _near(observed["end_time"], expected["end_time"])
+    ):
         raise ContractChangedError(
-            "realtime-event configuration did not round-trip the acknowledged write",
+            "realtime-event configuration did not round-trip the acknowledged write; "
+            f"actual value: {actual_value(observed)}; allowed value: {actual_value(expected)}",
             next_action="Stop writes and inspect app.realtime_event.list for this App before another update.",
         )
+
+
+def _flag(value: Any) -> Any:
+    if value in {0, 1} or type(value) is bool:
+        return int(value)
+    return value
+
+
+def _near(actual: Any, expected: Any) -> bool:
+    if actual == expected:
+        return True
+    if not isinstance(actual, str) or not isinstance(expected, str):
+        return False
+    try:
+        left = datetime.strptime(actual, "%Y-%m-%d %H:%M:%S")
+        right = datetime.strptime(expected, "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        return False
+    return abs((left - right).total_seconds()) <= _READBACK_SKEW_SECONDS
 
 
 def _preview(
@@ -182,7 +209,7 @@ def _completed(
 
 def _app_id(value: Any) -> int:
     if type(value) is not int or value < 1:
-        raise _input(
+        raise _realtime_input_error(
             actual_value(value),
             "a positive integer App id",
             "app_id",
@@ -193,7 +220,7 @@ def _app_id(value: Any) -> int:
 
 def _timestamp(value: Any, field: str) -> str:
     if not isinstance(value, str) or not _DATETIME.fullmatch(value):
-        raise _input(
+        raise _realtime_input_error(
             actual_value(value),
             "YYYY-MM-DD HH:MM:SS",
             field,
@@ -202,7 +229,7 @@ def _timestamp(value: Any, field: str) -> str:
     return value
 
 
-def _input(actual: str, allowed: str, field: str, next_action: str) -> InputValidationError:
+def _realtime_input_error(actual: str, allowed: str, field: str, next_action: str) -> InputValidationError:
     return InputValidationError(
         f"actual value: {actual}; allowed value: {allowed}",
         field=field,

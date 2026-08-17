@@ -30,7 +30,7 @@ class PaginationContractAuditTests(unittest.TestCase):
         self.assertEqual(len(current), len(records))
         self.assertEqual(operation_ids, {item["operation_id"] for item in records})
         self.assertEqual(
-            {"page_info": 120, "none": 115},
+            {"page_info": 120, "none": 116},
             audit["summary"]["audit_baseline_declared_kinds"],
         )
         self.assertNotIn("declared_kinds", audit["summary"])

@@ -112,6 +112,52 @@ class GravityRealtimeEventMutationTests(unittest.TestCase):
         self.assertEqual(1, client.writes)
         self.assertEqual(1, client.reads)
 
+    def test_readback_accepts_boolean_enabled_flag(self) -> None:
+        client = _Client()
+
+        def _execute(operation_id, inputs):
+            client.writes += 1
+            client.conf = {
+                "app_id": inputs["app_id"],
+                "is_enabled": True,
+                "start_time": inputs["start_time"],
+                "end_time": inputs["end_time"],
+            }
+            return {
+                "ok": True,
+                "status": "success",
+                "operation_id": operation_id,
+                "attempts": 1,
+            }
+
+        client._execute_mutation = _execute
+        completed = run_realtime_event_mutation(client, WINDOW, execute=True)
+        self.assertEqual("updated", completed["status"])
+        self.assertEqual(1, completed["target"]["is_enabled"])
+
+    def test_readback_accepts_bounded_clock_skew(self) -> None:
+        client = _Client()
+
+        def _execute(operation_id, inputs):
+            client.writes += 1
+            client.conf = {
+                "app_id": inputs["app_id"],
+                "is_enabled": inputs["is_enabled"],
+                "start_time": "2026-08-18 11:59:01",
+                "end_time": "2026-08-18 12:59:01",
+            }
+            return {
+                "ok": True,
+                "status": "success",
+                "operation_id": operation_id,
+                "attempts": 1,
+            }
+
+        client._execute_mutation = _execute
+        completed = run_realtime_event_mutation(client, WINDOW, execute=True)
+        self.assertEqual("updated", completed["status"])
+        self.assertEqual("2026-08-18 11:59:01", completed["target"]["start_time"])
+
     def test_readback_mismatch_fails_closed(self) -> None:
         client = _Client()
 

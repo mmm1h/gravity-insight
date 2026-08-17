@@ -2,9 +2,15 @@
 
 from __future__ import annotations
 
+from .composite_catalog import stable_operation
 
-REALTIME_EVENT_LIST = "app.realtime_event.list"
-REALTIME_EVENT_UPDATE = "app.user.realtime.event.update"
+
+def _operation(resource: str, action: str) -> str:
+    return stable_operation("app", resource, action=action).operation_id
+
+
+REALTIME_EVENT_LIST = _operation("realtime_event", "list")
+REALTIME_EVENT_UPDATE = _operation("user_realtime_event", "update")
 REALTIME_EVENT_MUTATIONS = frozenset({REALTIME_EVENT_UPDATE})
 
 

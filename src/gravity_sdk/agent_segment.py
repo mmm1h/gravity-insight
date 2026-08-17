@@ -183,12 +183,33 @@ def is_authoritative_direct_card(card: Mapping[str, Any]) -> bool:
     from .agent_saved_analysis_mutation import is_saved_analysis_mutation_card
     from .agent_realtime_event import is_realtime_event_mutation_card
 
-    return is_authoritative_export_card(card) or is_authoritative_material_asset_card(card) or is_kanban_mutation_card(card) or is_report_mutation_card(card) or is_custom_metric_card(card) or is_metadata_template_card(card) or is_saved_analysis_mutation_card(card) or is_realtime_event_mutation_card(card) or (
+    return any(
+        (
+            is_authoritative_export_card(card),
+            is_authoritative_material_asset_card(card),
+            is_kanban_mutation_card(card),
+            is_report_mutation_card(card),
+            is_custom_metric_card(card),
+            is_metadata_template_card(card),
+            is_saved_analysis_mutation_card(card),
+            is_realtime_event_mutation_card(card),
+            _is_segment_rule_spec_card(card),
+            _is_segment_mutation_card(card),
+        )
+    )
+
+
+def _is_segment_rule_spec_card(card: Mapping[str, Any]) -> bool:
+    return (
         card.get("kind") == "segment_rule_spec"
         and card.get("selector") == _SELECTOR
         and card.get("composite") == _COMPOSITE
         and card.get("natural_language_auto_execute") is False
-    ) or (
+    )
+
+
+def _is_segment_mutation_card(card: Mapping[str, Any]) -> bool:
+    return (
         card.get("kind") == "segment_mutation"
         and card.get("selector") == _MUTATION_SELECTOR
         and card.get("plan_executable") is False
