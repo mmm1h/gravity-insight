@@ -37,10 +37,6 @@
       "src/gravity_sdk/executor.py::_project_list_rows": 28,
       "src/gravity_sdk/governance/stable_privacy.py::operation_exposure_paths": 32,
       "src/gravity_sdk/http_runtime.py::_GravityRequester.request": 22,
-      "src/gravity_sdk/models.py::InputField.from_value": 40,
-      "src/gravity_sdk/models.py::InputField.validate": 31,
-      "src/gravity_sdk/models.py::OperationSpec.from_dict": 48,
-      "src/gravity_sdk/models.py::load_operation_manifest": 16,
       "src/gravity_sdk/prober/batch.py::finalize_batch_report": 55,
       "src/gravity_sdk/prober/batch.py::run_batch_probes": 47,
       "src/gravity_sdk/prober/cli.py::run": 17,
@@ -87,7 +83,6 @@
       "src/gravity_sdk/executor.py::ReadExecutor.execute": 84,
       "src/gravity_sdk/executor.py::_project_data_containers": 108,
       "src/gravity_sdk/executor.py::_project_list_rows": 94,
-      "src/gravity_sdk/models.py::OperationSpec.from_dict": 125,
       "src/gravity_sdk/models.py::OperationSpec.schema": 98,
       "src/gravity_sdk/prober/batch.py::finalize_batch_report": 191,
       "src/gravity_sdk/prober/batch.py::run_batch_probes": 214,
@@ -251,7 +246,7 @@
     },
     "src/gravity_sdk/models.py": {
       "ast_hard_limit": 8647,
-      "ast_nodes": 8504,
+      "ast_nodes": 5976,
       "migration_sloc": 1071,
       "sloc_hard_limit": 1158
     },
