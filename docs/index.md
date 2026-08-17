@@ -54,9 +54,9 @@
 
 ## Agent 最短路径
 
-- 第一次盘点仓库能力：离线执行 `agent-catalog categories → category → describe`；先选产品卡，再读完整输入合同。raw operation 只作专家入口，精确 gap 不可执行。
+- 第一次盘点仓库能力：离线执行 `agent-catalog categories → category → describe`；调用方能产出选择时再读 `agent-catalog host` 并提交 `gravity.host-product-selection.v1`。raw operation 只作专家入口，精确 gap 不可执行。
 - 已知 selector 或已有 Plan：一次 `gravity run` / `gravity plan run`。
-- 未知问题：一次 `gravity agent --input` 批量发现，再一次 `gravity plan run`，总共两次。
+- 未知问题：调用方能产出选择时用 `--routing host_catalog --host-selection`；否则一次默认 `gravity agent --input`，再一次 `gravity plan run`。recognizer 是默认地板。
 - 多个独立 Analysis spec，或同一事件/漏斗/留存/属性 spec 的显式多 App 数组：一次 `gravity analysis query batch`；单用户明细链用一次 `gravity analysis user journey`，不手工串行三条 operation。
 - 已知 Multidim 物理输入：一次 `gravity multidim query`；未知能力：一次 Agent 发现加一次 Plan 执行。CLI 显式要求 `--app`，Plan 显式要求当前 `input_schema_version`，结果行读取 `query.data.list`。多个独立查询放进同一个 Plan，不逐条启动命令。
 - 已知 App 与单日：一次 `gravity analysis order directory`；需要拆单明细时再提供 TraceID，执行 `gravity analysis order trace`。未知入口由 Agent 返回待填写节点，再执行一次 Plan；自然语言中的 TraceID 不会被复制或执行。

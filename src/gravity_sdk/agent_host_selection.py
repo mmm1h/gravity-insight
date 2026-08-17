@@ -43,8 +43,9 @@ def add_host_routing_arguments(command: Any) -> None:
         choices=ROUTING_MODES,
         default=DEFAULT_ROUTING_MODE,
         help=(
-            "Discovery router (default: recognizer); host_catalog consumes an "
-            "already-produced strict selection without invoking a model."
+            "Discovery router (default: recognizer floor). Prefer host_catalog "
+            "when the caller can emit gravity.host-product-selection.v1; "
+            "host_catalog consumes that selection without invoking a model."
         ),
     )
     command.add_argument(
@@ -98,8 +99,9 @@ def _validate_routing_inputs(routing: str, selection: Any) -> None:
             "without host_selection, or host_catalog with one complete selection",
             field="routing",
             next_action=(
-                "Use recognizer for the offline fallback, or fetch the host catalog "
-                "and pass its exact selection with host_catalog routing."
+                "Use recognizer as the offline floor when the caller cannot emit "
+                "a selection, or fetch the host catalog and pass its exact "
+                "selection with host_catalog routing."
             ),
         )
 

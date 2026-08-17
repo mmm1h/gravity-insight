@@ -19,8 +19,8 @@ metadata sync/search`、`gravity find` 和 `gravity run` 让 Agent 无需临时 
 create 预览零网络；需要层级影响数的 Kanban 预览只读 tree/detail。自然语言永不自动执行写入；
 Kanban 和自定义指标可由显式 `preview|execute` Plan node 调用，其他写产品仍不进入 Plan。
 
-Agent 第一次盘点能力时先用 `gravity agent-catalog categories → category → describe` 三层离线目录；
-宿主模型用 `gravity agent-catalog host` 取得 99 项紧凑产品/gap 合同，再显式提交严格选择；它们都不执行产品。进入具体问题后，默认 recognizer 路径最多两步：未知问题用
+Agent 第一次盘点能力时先用 `gravity agent-catalog categories → category → describe` 三层离线目录。
+调用方能产出选择时推荐宿主臂：`agent-catalog host` 取紧凑产品/gap 合同，只返回 `gravity.host-product-selection.v1`，再 `agent --routing host_catalog --host-selection`；省略 `--routing` 时默认 recognizer 是够不着宿主时的地板。它们都不执行产品。未知问题仍最多两步：
 `gravity agent --input <questions.json> → gravity plan run --input <plan.json>`，一次目录快照批量发现、
 一次显式执行；已知 recipe、operation 或 Plan 时直接 `gravity run` / `gravity plan run`，只需一次调用。
 发现结果包含可复制 argv 和 `plan_node`，但自然语言不会自动执行。多个独立读取共享一个有界 worker
