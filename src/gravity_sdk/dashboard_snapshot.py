@@ -29,6 +29,7 @@ from .errors import (
     LocalIOError,
     PaginationError,
 )
+from .actionable_error_values import actual_value
 
 
 SCHEMA_VERSION = "gravity-insight.dashboard-snapshot.v1"
@@ -285,7 +286,7 @@ def _resolve_dashboard(
         return matches[0]
     if len(matches) > 1:
         raise InputValidationError(
-            "dashboard ref matches more than one exact dashboard name",
+            f"actual value: {actual_value(len(matches))}; " + ("dashboard ref matches more than one exact dashboard name"),
             field="ref",
             next_action="Retry with the stable dashboard id from `analysis dashboard --kind tree`.",
         )
@@ -446,14 +447,14 @@ def _result_items(results: Sequence[Mapping[str, Any]]) -> int:
 def _positive_app_id(value: Any) -> str:
     rendered = str(value).strip() if isinstance(value, (str, int)) and not isinstance(value, bool) else ""
     if not rendered.isascii() or not rendered.isdigit() or int(rendered) <= 0:
-        raise InputValidationError("dashboard snapshot app_id must be a positive integer", field="app_id")
+        raise InputValidationError(f"actual value: {actual_value(app_id)}; " + ("dashboard snapshot app_id must be a positive integer"), field="app_id")
     return str(int(rendered))
 
 
 def _reference(value: Any) -> str:
     rendered = _bounded_text(value) if not isinstance(value, bool) else None
     if rendered is None:
-        raise InputValidationError("dashboard snapshot ref must be a bounded id or exact name", field="ref")
+        raise InputValidationError(f"actual value: {actual_value(rendered)}; " + ("dashboard snapshot ref must be a bounded id or exact name"), field="ref")
     return rendered
 
 
@@ -467,7 +468,7 @@ def _bounded_text(value: Any) -> str | None:
 def _workers(value: Any) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= MAX_CONCURRENCY:
         raise InputValidationError(
-            f"dashboard snapshot max_workers must be between 1 and {MAX_CONCURRENCY}",
+            f"actual value: {actual_value(value)}; " + (f"dashboard snapshot max_workers must be between 1 and {MAX_CONCURRENCY}"),
             field="max_workers",
         )
     return value

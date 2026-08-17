@@ -25,6 +25,7 @@ from .plan_adapter_support import (
     validate_exact_targets,
     validate_selected_fields,
 )
+from .actionable_error_values import actual_value
 
 
 BILIBILI_ACCOUNT_PERFORMANCE_FIELDS = frozenset({"name", "start", "end"})
@@ -63,7 +64,7 @@ def validate_bilibili_account_performance_plan(
     _validate_dates(request, set(context.dynamic_targets))
     if context.max_items < 1:
         raise input_error(
-            "bilibili_account_performance requires one item of Plan capacity",
+            f"actual value: {actual_value(context.max_items)}; " + ("bilibili_account_performance requires one item of Plan capacity"),
             "limits.max_items",
         )
     validate_selected_fields(

@@ -17,6 +17,7 @@ from .domains import ANALYSIS_QUERY_OPERATIONS
 from .errors import InputValidationError, UnsupportedOperationError
 from ._field_policy_analysis import validate_analysis_shape
 from .saved_analysis_support import decoded_config, supported_subject
+from .actionable_error_values import actual_value
 
 
 COMPACT_SPEC = "compact_spec"
@@ -84,7 +85,7 @@ def preflight_saved_definition(
         return
     if start is None or end is None:
         raise InputValidationError(
-            "saved Web artifact replay requires explicit start and end",
+            f"actual value: {actual_value((start, end))}; " + ("saved Web artifact replay requires explicit start and end"),
             field="start/end",
         )
     compile_dashboard_chart(
@@ -125,7 +126,7 @@ def compile_saved_artifact(
     if mode == WEB_ARTIFACT:
         if start is None or end is None:
             raise InputValidationError(
-                "saved Web artifact replay requires explicit start and end",
+                f"actual value: {actual_value((start, end))}; " + ("saved Web artifact replay requires explicit start and end"),
                 field="start/end",
                 next_action="Retry with an inclusive date window no longer than 90 days.",
             )
@@ -277,7 +278,7 @@ def _dashboard_report(
 def _paired_window(start: Any, end: Any) -> None:
     if (start is None) != (end is None):
         raise InputValidationError(
-            "saved Analysis start and end must be provided together",
+            f"actual value: {actual_value((start, end))}; " + ("saved Analysis start and end must be provided together"),
             field="start/end",
         )
     if start is not None:

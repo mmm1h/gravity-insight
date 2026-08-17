@@ -28,6 +28,7 @@ from .errors import (
     PaginationError,
     PolicyViolation,
 )
+from .actionable_error_values import actual_value
 
 
 MULTIDIM_QUERY_OPERATION = REPORT_MULTIDIM_QUERY
@@ -95,7 +96,7 @@ class MultidimService:
             raise InputValidationError("multidimensional inputs must be an object")
         if metadata_inputs is not None and not isinstance(metadata_inputs, Mapping):
             raise InputValidationError(
-                "multidimensional metadata_inputs must be an object",
+                f"actual value: {actual_value(metadata_inputs)}; " + ("multidimensional metadata_inputs must be an object"),
                 field="metadata_inputs",
             )
         _boolean(include_total, "include_total")
@@ -420,7 +421,7 @@ def _workers(value: Any) -> int:
         or not 1 <= value <= MAX_MULTIDIM_WORKERS
     ):
         raise InputValidationError(
-            f"max_workers must be between 1 and {MAX_MULTIDIM_WORKERS}",
+            f"actual value: {actual_value(value)}; " + (f"max_workers must be between 1 and {MAX_MULTIDIM_WORKERS}"),
             field="max_workers",
         )
     return value
@@ -428,7 +429,7 @@ def _workers(value: Any) -> int:
 
 def _boolean(value: Any, field: str) -> bool:
     if not isinstance(value, bool):
-        raise InputValidationError(f"{field} must be boolean", field=field)
+        raise InputValidationError(f"actual value: {actual_value(value)}; " + (f"{field} must be boolean"), field=field)
     return value
 
 

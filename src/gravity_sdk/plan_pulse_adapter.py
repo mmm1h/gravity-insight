@@ -13,6 +13,7 @@ from .plan_adapter_support import (
     validate_exact_targets,
     validate_selected_fields,
 )
+from .actionable_error_values import actual_value
 
 
 _FIELDS = frozenset(
@@ -39,7 +40,7 @@ def validate_business_pulse(
     hourly = request.get("include_hourly", False)
     if "/include_hourly" not in dynamic and not isinstance(hourly, bool):
         raise input_error(
-            "business_pulse include_hourly must be a boolean", "include_hourly"
+            f"actual value: {actual_value(request.get('include_hourly'))}; " + ("business_pulse include_hourly must be a boolean"), "include_hourly"
         )
     required_sources = 3 if "/include_hourly" in dynamic or hourly is True else 2
     if context.max_items < required_sources:
@@ -69,7 +70,7 @@ def _validate_apps(request: Mapping[str, Any], workspace: Any) -> None:
     apps = request.get("apps")
     if not isinstance(apps, list) or not 1 <= len(apps) <= 100:
         raise input_error(
-            "business_pulse apps must contain 1 through 100 values", "apps"
+            f"actual value: {actual_value(apps)}; " + ("business_pulse apps must contain 1 through 100 values"), "apps"
         )
     for value in apps:
         workspace.resolve_app(value)
@@ -84,11 +85,11 @@ def _validate_dates(request: Mapping[str, Any], dynamic: set[str]) -> None:
             parsed[field] = date.fromisoformat(request.get(field))
         except (TypeError, ValueError):
             raise input_error(
-                "business_pulse dates must use YYYY-MM-DD", field
+                f"actual value: {actual_value(request.get(field))}; " + ("business_pulse dates must use YYYY-MM-DD"), field
             ) from None
     if set(parsed) == {"start", "end"} and parsed["start"] > parsed["end"]:
         raise input_error(
-            "business_pulse start must not follow end", "start/end"
+            f"actual value: {actual_value((request.get('start'), request.get('end')))}; " + ("business_pulse start must not follow end"), "start/end"
         )
 
 

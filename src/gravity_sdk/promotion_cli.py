@@ -22,6 +22,7 @@ from .multidim import parse_multi_days
 from .pagination_cli import page_options
 from .workspace import load_workspace
 from .workspace_app import resolve_workspace_app
+from .actionable_error_values import actual_value
 
 
 def add_promotion_commands(
@@ -423,7 +424,7 @@ def prepare_promotion_performance_request(
         _output_file(args.output)
     if not isinstance(args.app, str) or not args.app.strip():
         raise InputValidationError(
-            "--app must be a non-empty workspace alias or positive id", field="app"
+            f"actual value: {actual_value(args.app)}; " + ("--app must be a non-empty workspace alias or positive id"), field="app"
         )
     # Close the product request before workspace loading or client onboarding.
     validate_promotion_performance_request(
@@ -454,7 +455,7 @@ def _required_values(values: Sequence[str] | None, field: str) -> tuple[str, ...
     selected = split_values(values)
     if not selected:
         raise InputValidationError(
-            f"--{field} must select at least one value", field=field
+            f"actual value: {actual_value(selected)}; " + (f"--{field} must select at least one value"), field=field
         )
     return tuple(selected)
 

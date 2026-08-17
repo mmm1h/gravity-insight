@@ -18,6 +18,7 @@ from typing import Any
 from .dashboard_artifact_contract import BODY_FIELDS, SUBJECT_KINDS, UI_FIELDS
 from .domains import ANALYSIS_QUERY_OPERATIONS, new_analysis_query_id
 from .errors import InputValidationError, UnsupportedOperationError
+from .actionable_error_values import actual_value
 
 
 MAX_CONFIG_BYTES = 1_048_576
@@ -441,7 +442,7 @@ def _date_window(start: str, end: str) -> None:
     days = (right - left).total_seconds() / 86_400
     if days < 0 or days > MAX_ANALYSIS_DAYS:
         raise InputValidationError(
-            "dashboard analysis dates must be ordered within 90 days",
+            f"actual value: {actual_value((start, end))}; " + ("dashboard analysis dates must be ordered within 90 days"),
             field="start/end",
         )
 
@@ -462,11 +463,11 @@ def _validation_dependencies(value: Mapping[str, Any]) -> tuple[str, ...]:
 
 def _parse_date(value: Any, field: str) -> datetime:
     if not isinstance(value, str) or not value.strip():
-        raise InputValidationError(f"{field} must be an ISO date or timestamp", field=field)
+        raise InputValidationError(f"actual value: {actual_value(value)}; " + (f"{field} must be an ISO date or timestamp"), field=field)
     try:
         parsed = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
     except ValueError as exc:
-        raise InputValidationError(f"{field} must be an ISO date or timestamp", field=field) from exc
+        raise InputValidationError(f"actual value: {actual_value(value)}; " + (f"{field} must be an ISO date or timestamp"), field=field) from exc
     return parsed.replace(tzinfo=parsed.tzinfo or timezone.utc).astimezone(timezone.utc)
 
 
@@ -476,13 +477,13 @@ def _date_item(start: str, end: str) -> dict[str, str]:
 
 def _app_id(value: Any) -> str:
     if isinstance(value, bool):
-        raise InputValidationError("app_id must be a positive integer", field="app_id")
+        raise InputValidationError(f"actual value: {actual_value(value)}; " + ("app_id must be a positive integer"), field="app_id")
     try:
         parsed = int(str(value).strip())
     except (TypeError, ValueError) as exc:
-        raise InputValidationError("app_id must be a positive integer", field="app_id") from exc
+        raise InputValidationError(f"actual value: {actual_value(value)}; " + ("app_id must be a positive integer"), field="app_id") from exc
     if parsed <= 0:
-        raise InputValidationError("app_id must be a positive integer", field="app_id")
+        raise InputValidationError(f"actual value: {actual_value(parsed)}; " + ("app_id must be a positive integer"), field="app_id")
     return str(parsed)
 
 
@@ -507,7 +508,7 @@ def _sequence(value: Any, field: str) -> list[Any]:
 
 def _text(value: Any, field: str, *, maximum: int) -> str:
     if not isinstance(value, (str, int)) or isinstance(value, bool):
-        raise InputValidationError(f"{field} must be text", field=field)
+        raise InputValidationError(f"actual value: {actual_value(value)}; " + (f"{field} must be text"), field=field)
     rendered = str(value).strip()
     if not rendered or len(rendered) > maximum:
         raise InputValidationError(f"{field} is missing or too long", field=field)

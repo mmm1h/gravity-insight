@@ -19,6 +19,7 @@ from .plan_adapter_support import (
     validate_exact_targets,
     validate_selected_fields,
 )
+from .actionable_error_values import actual_value
 
 
 REQUEST_FIELDS = frozenset(
@@ -58,7 +59,7 @@ def validate_metadata_plan(
     )
     query = request.get("query", "")
     if not isinstance(query, str) and not has_dynamic(context, "/query"):
-        raise input_error("metadata query must be a string", "query")
+        raise input_error(f"actual value: {actual_value(query)}; " + ("metadata query must be a string"), "query")
     kind = request.get("kind", "all")
     if kind not in KINDS:
         raise input_error("metadata kind is unsupported", "kind")
@@ -73,7 +74,7 @@ def validate_metadata_plan(
     if app_id is not None and (
         isinstance(app_id, bool) or not isinstance(app_id, (str, int))
     ):
-        raise input_error("metadata app_id must be a string or integer", "app_id")
+        raise input_error(f"actual value: {actual_value(app_id)}; " + ("metadata app_id must be a string or integer"), "app_id")
     limit = request.get("limit", min(20, context.max_items))
     bounded_optional(limit, 1, min(100, context.max_items), "limit")
     bounded_optional(request.get("offset", 0), 0, 2**31 - 1, "offset")

@@ -25,6 +25,7 @@ from .analysis_query_multi_app import (
 from .errors import InputValidationError
 from .plan import DEFAULT_MAX_ITEMS, PLAN_SCHEMA_VERSION
 from .result_source import GOVERNED_PRODUCT, result_source
+from .actionable_error_values import actual_value
 
 
 BATCH_SCHEMA_VERSION = "gravity.analysis-query-batch.v1"
@@ -138,7 +139,7 @@ def run_analysis_query_batch(
     """Select the SDK validation or execution path without changing its semantics."""
 
     if not isinstance(dry_run, bool):
-        raise _input_error("dry_run must be a boolean", "dry_run")
+        raise _input_error(f"actual value: {actual_value(dry_run)}; " + ("dry_run must be a boolean"), "dry_run")
     function = validate_analysis_query_batch if dry_run else execute_analysis_query_batch
     return function(
         sdk,
@@ -178,22 +179,22 @@ def _queries(
     payload: Mapping[str, Any],
 ) -> tuple[str, int, tuple[_BatchQuery, ...]]:
     if not isinstance(payload, Mapping):
-        raise _input_error("analysis query batch input must be an object", "input")
+        raise _input_error(f"actual value: {actual_value(payload)}; " + ("analysis query batch input must be an object"), "input")
     _reject_unknown(payload, _WRAPPER_FIELDS, "input")
     version = payload.get("schema_version")
     if version not in {BATCH_SCHEMA_VERSION, MULTI_APP_BATCH_SCHEMA_VERSION}:
         raise _input_error(
-            "schema_version must be gravity.analysis-query-batch.v1 or "
-            "gravity.analysis-query-batch.v2",
+            f"actual value: {actual_value(version)}; " + ("schema_version must be gravity.analysis-query-batch.v1 or "
+            "gravity.analysis-query-batch.v2"),
             "schema_version",
         )
     source = payload.get("queries")
     if not isinstance(source, Sequence) or isinstance(
         source, (str, bytes, bytearray)
     ):
-        raise _input_error("queries must be an array", "queries")
+        raise _input_error(f"actual value: {actual_value(source)}; " + ("queries must be an array"), "queries")
     if not source:
-        raise _input_error("queries must not be empty", "queries")
+        raise _input_error(f"actual value: {actual_value(source)}; " + ("queries must not be empty"), "queries")
     if len(source) > MAX_QUERIES:
         raise _input_error(f"queries supports at most {MAX_QUERIES} items", "queries")
     if version == MULTI_APP_BATCH_SCHEMA_VERSION:
@@ -206,7 +207,7 @@ def _queries(
 def _single_app_queries(source: Sequence[Any]) -> tuple[_BatchQuery, ...]:
     values = tuple(_query(item, index) for index, item in enumerate(source))
     if len({item.result_query_id for item in values}) != len(values):
-        raise _input_error("query ids must be unique", "queries.id")
+        raise _input_error(f"actual value: {actual_value([item.result_query_id for item in values])}; " + ("query ids must be unique"), "queries.id")
     return values
 
 
@@ -232,17 +233,17 @@ def _parse_multi_app_queries(source: Sequence[Any]) -> tuple[_BatchQuery, ...]:
 def _query(value: Any, index: int) -> _BatchQuery:
     field = f"queries[{index}]"
     if not isinstance(value, Mapping):
-        raise _input_error("batch queries must be objects", field)
+        raise _input_error(f"actual value: {actual_value(value)}; " + ("batch queries must be objects"), field)
     _reject_unknown(value, _QUERY_FIELDS, field)
     query_id, kind = _identity(value, field)
     app = value.get("app")
     if not _is_app(app):
         raise _input_error(
-            "app must be a workspace alias or positive id", f"{field}.app"
+            f"actual value: {actual_value(app)}; " + ("app must be a workspace alias or positive id"), f"{field}.app"
         )
     spec = value.get("spec")
     if not isinstance(spec, Mapping):
-        raise _input_error("spec must be an object", f"{field}.spec")
+        raise _input_error(f"actual value: {actual_value(spec)}; " + ("spec must be an object"), f"{field}.spec")
     limits = _limits(value.get("limits", {}), field)
     return _BatchQuery(
         node_id=query_id,
@@ -264,7 +265,7 @@ def _identity(value: Mapping[str, Any], field: str) -> tuple[str, str]:
     kind = value.get("kind")
     if not isinstance(kind, str) or kind.strip().casefold() not in ANALYSIS_SPEC_KINDS:
         raise _input_error(
-            "kind must be event, funnel, retention, property, or scatter",
+            f"actual value: {actual_value(kind)}; " + ("kind must be event, funnel, retention, property, or scatter"),
             f"{field}.kind",
         )
     return query_id, kind.strip().casefold()
@@ -289,7 +290,7 @@ def _preflight_specs(
         identity = (item.result_query_id, str(compiled.inputs["app_id"]))
         if reject_duplicate_apps and identity in resolved:
             raise _input_error(
-                "apps must resolve to unique Apps within each query", "queries.apps"
+                f"actual value: {actual_value(identity)}; " + ("apps must resolve to unique Apps within each query"), "queries.apps"
             )
         resolved.add(identity)
 
@@ -317,11 +318,11 @@ def _plan_node(item: _BatchQuery) -> dict[str, Any]:
 
 def _limits(value: Any, field: str) -> int:
     if not isinstance(value, Mapping):
-        raise _input_error("limits must be an object", f"{field}.limits")
+        raise _input_error(f"actual value: {actual_value(value)}; " + ("limits must be an object"), f"{field}.limits")
     _reject_unknown(value, _LIMIT_FIELDS, f"{field}.limits")
     maximum = value.get("max_items", DEFAULT_MAX_ITEMS)
     if type(maximum) is not int:
-        raise _input_error("max_items must be an integer", f"{field}.limits.max_items")
+        raise _input_error(f"actual value: {actual_value(maximum)}; " + ("max_items must be an integer"), f"{field}.limits.max_items")
     return maximum
 
 
@@ -331,15 +332,15 @@ def _output_fields(value: Any, field: str) -> tuple[str, ...]:
     if not isinstance(value, Sequence) or isinstance(
         value, (str, bytes, bytearray)
     ):
-        raise _input_error("output_fields must be an array", f"{field}.output_fields")
+        raise _input_error(f"actual value: {actual_value(value)}; " + ("output_fields must be an array"), f"{field}.output_fields")
     selected = tuple(item.strip() for item in value if isinstance(item, str))
     if len(selected) != len(value) or not selected:
         raise _input_error(
-            "output_fields must be a non-empty string array",
+            f"actual value: {actual_value(selected)}; " + ("output_fields must be a non-empty string array"),
             f"{field}.output_fields",
         )
     if len(set(selected)) != len(selected):
-        raise _input_error("output_fields must be unique", f"{field}.output_fields")
+        raise _input_error(f"actual value: {actual_value(selected)}; " + ("output_fields must be unique"), f"{field}.output_fields")
     return selected
 
 
@@ -380,7 +381,7 @@ def _optional_text(value: Any, field: str) -> str | None:
     if value is None:
         return None
     if not isinstance(value, str) or not value.strip():
-        raise _input_error(f"{field} must be a non-empty string", field)
+        raise _input_error(f"actual value: {actual_value(value)}; " + (f"{field} must be a non-empty string"), field)
     return value.strip()
 
 

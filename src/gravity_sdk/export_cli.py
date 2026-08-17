@@ -14,6 +14,7 @@ from .errors import (
     exit_code_for_error,
 )
 from .result_source import GOVERNED_PRODUCT, result_source
+from .actionable_error_values import actual_value
 
 
 def add_export_commands(
@@ -162,7 +163,7 @@ def _requested_columns(value: Any) -> tuple[str, ...]:
     )
     if not columns:
         raise InputValidationError(
-            "--columns must contain at least one contracted column",
+            f"actual value: {actual_value(columns)}; " + ("--columns must contain at least one contracted column"),
             field="columns",
         )
     return columns

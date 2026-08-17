@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from .errors import InputValidationError
+from .actionable_error_values import actual_value
 
 
 class PromotionSdkMixin:
@@ -38,7 +39,7 @@ class PromotionSdkMixin:
             or isinstance(app, str) and not app.strip()
         ):
             raise InputValidationError(
-                "app must reference one workspace App alias or positive id",
+                f"actual value: {actual_value(app)}; " + ("app must reference one workspace App alias or positive id"),
                 field="app",
             )
         validate_promotion_performance_request(

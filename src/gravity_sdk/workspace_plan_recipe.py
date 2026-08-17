@@ -15,6 +15,7 @@ from typing import Any, Callable
 from .errors import ErrorCategory, InputValidationError
 from .plan import validate_plan
 from .plan_binding import pointer_tokens, resolve_pointer, set_pointer, validate_json
+from .actionable_error_values import actual_value
 
 
 _NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
@@ -135,11 +136,11 @@ def parse_plan_recipe_parameters(values: list[str] | None) -> dict[str, Any]:
     parameters: dict[str, Any] = {}
     for assignment in values or []:
         if "=" not in assignment:
-            raise PlanRecipeError("--param must use NAME=VALUE", field="param")
+            raise PlanRecipeError(f"actual value: {actual_value(raw)}; " + ("--param must use NAME=VALUE"), field="param")
         name, raw = assignment.split("=", 1)
         if not _NAME_RE.fullmatch(name) or name in parameters:
             raise PlanRecipeError(
-                "--param names must be unique Plan recipe parameter names", field="param"
+                f"actual value: {actual_value(name)}; " + ("--param names must be unique Plan recipe parameter names"), field="param"
             )
         try:
             parameters[name] = json.loads(raw)
@@ -300,7 +301,7 @@ def _validate_parameter_value(parameter: PlanRecipeParameter, value: Any) -> Non
     }[value_type](value)
     if not valid:
         raise PlanRecipeError(
-            f"Plan recipe parameter {parameter.name} must be {value_type}",
+            f"actual value: {actual_value(value)}; " + (f"Plan recipe parameter {parameter.name} must be {value_type}"),
             field=f"parameters.{parameter.name}",
         )
     if parameter.value_format == "date":
@@ -309,7 +310,7 @@ def _validate_parameter_value(parameter: PlanRecipeParameter, value: Any) -> Non
                 raise ValueError("date is not canonical")
         except (TypeError, ValueError) as exc:
             raise PlanRecipeError(
-                f"Plan recipe parameter {parameter.name} must use YYYY-MM-DD",
+                f"actual value: {actual_value(value)}; " + (f"Plan recipe parameter {parameter.name} must use YYYY-MM-DD"),
                 field=f"parameters.{parameter.name}",
             ) from exc
     if parameter.value_format == "date-time":
@@ -319,7 +320,7 @@ def _validate_parameter_value(parameter: PlanRecipeParameter, value: Any) -> Non
                 raise ValueError("date-time lacks an offset")
         except (TypeError, ValueError) as exc:
             raise PlanRecipeError(
-                f"Plan recipe parameter {parameter.name} must be an ISO 8601 date-time with offset",
+                f"actual value: {actual_value(value)}; " + (f"Plan recipe parameter {parameter.name} must be an ISO 8601 date-time with offset"),
                 field=f"parameters.{parameter.name}",
             ) from exc
 

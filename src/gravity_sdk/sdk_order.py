@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from .errors import InputValidationError
+from .actionable_error_values import actual_value
 
 
 class OrderSdkMixin:
@@ -79,7 +80,7 @@ def _validate_app_reference(app: Any) -> None:
         or isinstance(app, str) and (not app.strip() or len(app) > 128)
     ):
         raise InputValidationError(
-            "app must reference one workspace App alias or positive id", field="app"
+            f"actual value: {actual_value(app)}; " + ("app must reference one workspace App alias or positive id"), field="app"
         )
 
 

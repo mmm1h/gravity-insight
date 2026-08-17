@@ -15,6 +15,7 @@ from .errors import (
 from .export_batch import batch_envelope
 from .result_audit import aggregate_result_audit
 from .result_source import GOVERNED_PRODUCT, result_source
+from .actionable_error_values import actual_value
 
 
 MAX_COMPOSITE_PAGES = 1_000
@@ -46,11 +47,11 @@ def validate_composite_bounds(
     ):
         if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= upper:
             raise InputValidationError(
-                f"{field} must be between 1 and {upper}", field=field
+                f"actual value: {actual_value(value)}; " + (f"{field} must be between 1 and {upper}"), field=field
             )
     if max_items < minimum_items:
         raise InputValidationError(
-            f"max_items must be at least {minimum_items} for this fixed composite",
+            f"actual value: {actual_value(max_items)}; " + (f"max_items must be at least {minimum_items} for this fixed composite"),
             field="max_items",
         )
     return max_pages, max_items

@@ -9,6 +9,7 @@ from .analysis_query_batch import run_analysis_query_batch
 from .analysis_spec_cli import add_analysis_query_arguments
 from .errors import InputValidationError
 from .result_output import output_file
+from .actionable_error_values import actual_value
 
 
 _SCALAR_QUERY_ARGUMENTS = (
@@ -136,7 +137,7 @@ def run_analysis_query_batch_command(
     ]
     if selected:
         raise InputValidationError(
-            "analysis query batch cannot use scalar query arguments",
+            f"actual value: {actual_value(selected)}; " + ("analysis query batch cannot use scalar query arguments"),
             field="batch",
             next_action=(
                 "Move batch options after `batch` and remove scalar-only query "

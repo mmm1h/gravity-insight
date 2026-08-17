@@ -11,6 +11,7 @@ from typing import Any
 
 from .composite_batch import validate_composite_bounds
 from .errors import InputValidationError
+from .actionable_error_values import actual_value
 
 
 SAFE_ROW_FIELDS = ("CreateTime", "Amount", "BackAmount", "Status")
@@ -64,7 +65,7 @@ def validate_order_read_request(
     day = canonical_date(date, label=product)
     if type(max_workers) is not int or not 1 <= max_workers <= MAX_WORKERS:
         raise InputValidationError(
-            f"{product} max_workers must be between 1 and {MAX_WORKERS}",
+            f"actual value: {actual_value(max_workers)}; " + (f"{product} max_workers must be between 1 and {MAX_WORKERS}"),
             field="max_workers",
         )
     pages, items = validate_composite_bounds(

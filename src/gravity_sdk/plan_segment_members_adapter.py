@@ -16,6 +16,7 @@ from .plan_adapter_support import (
     validate_selected_fields,
 )
 from .segment_members import SCHEMA_VERSION, validate_segment_members_request
+from .actionable_error_values import actual_value
 
 
 SEGMENT_MEMBERS_NAME = "segment_members"
@@ -44,12 +45,12 @@ def validate_segment_members_plan(
     app_id: str | int = "1"
     if not has_dynamic(context, "/app"):
         if "app" not in request:
-            raise input_error("segment members requires app", "app")
+            raise input_error(f"actual value: {actual_value(request.get('app'))}; " + ("segment members requires app"), "app")
         try:
             app_id = workspace.resolve_app(request["app"])
         except (KeyError, TypeError, ValueError):
             raise input_error(
-                "segment members app must select a configured workspace App", "app"
+                f"actual value: {actual_value(request.get('app'))}; " + ("segment members app must select a configured workspace App"), "app"
             ) from None
     try:
         validate_segment_members_request(
@@ -125,7 +126,7 @@ def _request_fields(value: Any) -> tuple[str, ...]:
         return ()
     if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
         return tuple(value)
-    raise input_error("segment members fields must be a list", "fields")
+    raise input_error(f"actual value: {actual_value(value)}; " + ("segment members fields must be a list"), "fields")
 
 
 __all__ = [

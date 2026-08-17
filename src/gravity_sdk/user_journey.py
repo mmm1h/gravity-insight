@@ -17,6 +17,7 @@ from .composite_batch import (
 )
 from .composite_catalog import stable_operation
 from .errors import InputValidationError, PaginationError
+from .actionable_error_values import actual_value
 
 
 SCHEMA_VERSION = "gravity-insight.user-journey.v1"
@@ -348,13 +349,13 @@ def _event_window(
         return {"date": _iso_date(date_value, "date")}
     if start is None or end is None:
         raise InputValidationError(
-            "user journey requires date or paired start/end", field="date"
+            f"actual value: {actual_value((date_value, start, end))}; " + ("user journey requires date or paired start/end"), field="date"
         )
     first = _iso_date(start, "start")
     last = _iso_date(end, "end")
     if first > last:
         raise InputValidationError(
-            "user journey start must not follow end", field="start/end"
+            f"actual value: {actual_value((start, end))}; " + ("user journey start must not follow end"), field="start/end"
         )
     return {"date_list": [first, last]}
 
@@ -362,25 +363,25 @@ def _event_window(
 def _iso_date(value: Any, field: str) -> str:
     if not isinstance(value, str):
         raise InputValidationError(
-            "user journey dates must use YYYY-MM-DD", field=field
+            f"actual value: {actual_value(value)}; " + ("user journey dates must use YYYY-MM-DD"), field=field
         )
     try:
         return date.fromisoformat(value).isoformat()
     except ValueError:
         raise InputValidationError(
-            "user journey dates must use YYYY-MM-DD", field=field
+            f"actual value: {actual_value(value)}; " + ("user journey dates must use YYYY-MM-DD"), field=field
         ) from None
 
 
 def _identifier(value: Any, field: str) -> str:
     if isinstance(value, bool) or not isinstance(value, (str, int)):
         raise InputValidationError(
-            f"user journey {field} must be a bounded identifier", field=field
+            f"actual value: {actual_value(value)}; " + (f"user journey {field} must be a bounded identifier"), field=field
         )
     rendered = str(value).strip()
     if not rendered or len(rendered) > 64:
         raise InputValidationError(
-            f"user journey {field} must be a bounded identifier", field=field
+            f"actual value: {actual_value(rendered)}; " + (f"user journey {field} must be a bounded identifier"), field=field
         )
     return rendered
 
@@ -388,7 +389,7 @@ def _identifier(value: Any, field: str) -> str:
 def _client_identifier(value: Any) -> str:
     if not isinstance(value, str) or not value.strip() or len(value.strip()) > 256:
         raise InputValidationError(
-            "user journey client_id must be a bounded identifier", field="client_id"
+            f"actual value: {actual_value(value)}; " + ("user journey client_id must be a bounded identifier"), field="client_id"
         )
     return value.strip()
 
@@ -404,7 +405,7 @@ def _bounded_integer(
     ):
         bound = f"{minimum}..{maximum}" if maximum is not None else f">={minimum}"
         raise InputValidationError(
-            f"user journey {field} must be {bound}", field=field
+            f"actual value: {actual_value(value)}; " + (f"user journey {field} must be {bound}"), field=field
         )
     return value
 
@@ -412,7 +413,7 @@ def _bounded_integer(
 def _strings(value: Any, field: str, *, maximum: int) -> tuple[str, ...]:
     if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
         raise InputValidationError(
-            f"user journey {field} must be a string array", field=field
+            f"actual value: {actual_value(value)}; " + (f"user journey {field} must be a string array"), field=field
         )
     selected = tuple(value)
     if len(selected) > maximum or any(

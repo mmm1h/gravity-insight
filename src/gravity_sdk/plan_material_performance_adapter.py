@@ -24,6 +24,7 @@ from .plan_adapter_support import (
     validate_exact_targets,
     validate_selected_fields,
 )
+from .actionable_error_values import actual_value
 
 
 MATERIAL_PERFORMANCE_NAME = "material_performance"
@@ -57,17 +58,17 @@ def validate_material_performance_plan(
     apps = request.get("apps")
     if not isinstance(apps, list) or not 1 <= len(apps) <= 100:
         raise input_error(
-            "material_performance apps must contain 1 through 100 values", "apps"
+            f"actual value: {actual_value(apps)}; " + ("material_performance apps must contain 1 through 100 values"), "apps"
         )
     try:
         resolved = [workspace.resolve_app(value) for value in apps]
         normalized = normalize_material_apps(resolved)
     except (KeyError, TypeError, ValueError):
         raise input_error(
-            "material_performance apps must select configured workspace Apps", "apps"
+            f"actual value: {actual_value(apps)}; " + ("material_performance apps must select configured workspace Apps"), "apps"
         ) from None
     if len(normalized) != len(apps):
-        raise input_error("material_performance apps must resolve uniquely", "apps")
+        raise input_error(f"actual value: {actual_value(normalized)}; " + ("material_performance apps must resolve uniquely"), "apps")
     try:
         platforms = normalize_material_platforms(
             request.get("platforms", list(DEFAULT_PLATFORMS))
@@ -124,9 +125,9 @@ def execute_material_performance_plan(
 def _validate_dates(request: Mapping[str, Any], dynamic: set[str]) -> None:
     start, end = request.get("start"), request.get("end")
     if "/start" not in dynamic and not isinstance(start, str):
-        raise input_error("material_performance start must be a literal date", "start")
+        raise input_error(f"actual value: {actual_value(request.get('start'))}; " + ("material_performance start must be a literal date"), "start")
     if "/end" not in dynamic and not isinstance(end, str):
-        raise input_error("material_performance end must be a literal date", "end")
+        raise input_error(f"actual value: {actual_value(request.get('end'))}; " + ("material_performance end must be a literal date"), "end")
     first = "2026-01-01" if "/start" in dynamic else start
     last = "2026-01-02" if "/end" in dynamic else end
     if not dynamic:

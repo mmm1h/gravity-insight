@@ -19,6 +19,7 @@ from .errors import (
     exit_code_for_error,
 )
 from .result_source import GOVERNED_PRODUCT, result_source
+from .actionable_error_values import actual_value
 
 
 SCHEMA_VERSION = "gravity-insight.segment-members.v1"
@@ -129,7 +130,7 @@ def _resolve_identity(
     rows = _rows(value, ANALYSIS_SEGMENT)
     if value.get("truncated") is True or value.get("next_page_input") not in (None, {}):
         raise InputValidationError(
-            "segment catalog is incomplete within the supplied limits",
+            f"actual value: {actual_value(value.get('truncated'))}; " + ("segment catalog is incomplete within the supplied limits"),
             field="limits",
             next_action="Increase max_pages/max_items, then retry the exact name.",
         )
@@ -148,7 +149,7 @@ def _resolve_identity(
     if len(matches) != 1:
         reason = "matches more than one exact name" if matches else "was not found"
         raise InputValidationError(
-            f"segment ref {reason}",
+            f"actual value: {actual_value(matches)}; " + (f"segment ref {reason}"),
             field="ref",
             next_action="Use the stable segment id from the complete segment catalog.",
         )
@@ -337,7 +338,7 @@ def _fields(value: Sequence[str] | None) -> tuple[str, ...]:
     if value in (None, (), []):
         return ()
     if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
-        raise InputValidationError("segment members fields must be a list", field="fields")
+        raise InputValidationError(f"actual value: {actual_value(value)}; " + ("segment members fields must be a list"), field="fields")
     selected = tuple(value)
     if len(selected) > 100 or len(set(selected)) != len(selected) or any(
         not isinstance(item, str) or not item or len(item) > 256 for item in selected

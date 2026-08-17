@@ -17,6 +17,7 @@ from .plan_adapter_support import (
     validate_selected_fields,
 )
 from .segment_snapshot import MIN_SNAPSHOT_ITEMS, SCHEMA_VERSION
+from .actionable_error_values import actual_value
 
 
 SEGMENT_SNAPSHOT_NAME = "segment_snapshot"
@@ -48,7 +49,7 @@ def validate_segment_snapshot_plan(
     validate_exact_targets(context, _DYNAMIC_TARGETS)
     if not has_dynamic(context, "/app"):
         if "app" not in request:
-            raise input_error("segment snapshot requires app", "app")
+            raise input_error(f"actual value: {actual_value(request.get('app'))}; " + ("segment snapshot requires app"), "app")
         _resolve_app(workspace, request["app"])
     _bounded_ref(request.get("ref"))
     _canonical_date(request.get("date"))
@@ -249,38 +250,38 @@ def _failure(detail: ErrorDetail) -> dict[str, Any]:
 def _resolve_app(workspace: Any, value: Any) -> None:
     if isinstance(value, bool) or not isinstance(value, (str, int)):
         raise input_error(
-            "segment snapshot app must select a configured workspace App", "app"
+            f"actual value: {actual_value(value)}; " + ("segment snapshot app must select a configured workspace App"), "app"
         )
     rendered = str(value).strip()
     if not rendered or len(rendered) > 256:
         raise input_error(
-            "segment snapshot app must select a configured workspace App", "app"
+            f"actual value: {actual_value(rendered)}; " + ("segment snapshot app must select a configured workspace App"), "app"
         )
     try:
         workspace.resolve_app(value)
     except (KeyError, TypeError, ValueError):
         raise input_error(
-            "segment snapshot app must select a configured workspace App", "app"
+            f"actual value: {actual_value(value)}; " + ("segment snapshot app must select a configured workspace App"), "app"
         ) from None
 
 
 def _bounded_ref(value: Any) -> None:
     if isinstance(value, bool) or not isinstance(value, (str, int)):
-        raise input_error("segment snapshot ref must be an exact id or name", "ref")
+        raise input_error(f"actual value: {actual_value(value)}; " + ("segment snapshot ref must be an exact id or name"), "ref")
     rendered = str(value).strip()
     if not rendered or len(rendered) > 256:
-        raise input_error("segment snapshot ref must be a bounded id or name", "ref")
+        raise input_error(f"actual value: {actual_value(rendered)}; " + ("segment snapshot ref must be a bounded id or name"), "ref")
 
 
 def _canonical_date(value: Any) -> None:
     if not isinstance(value, str):
-        raise input_error("segment snapshot date must be YYYY-MM-DD", "date")
+        raise input_error(f"actual value: {actual_value(value)}; " + ("segment snapshot date must be YYYY-MM-DD"), "date")
     try:
         parsed = date_type.fromisoformat(value)
     except ValueError:
-        raise input_error("segment snapshot date must be YYYY-MM-DD", "date") from None
+        raise input_error(f"actual value: {actual_value(value)}; " + ("segment snapshot date must be YYYY-MM-DD"), "date") from None
     if parsed.isoformat() != value:
-        raise input_error("segment snapshot date must be canonical YYYY-MM-DD", "date")
+        raise input_error(f"actual value: {actual_value(value)}; " + ("segment snapshot date must be canonical YYYY-MM-DD"), "date")
 
 
 __all__ = [

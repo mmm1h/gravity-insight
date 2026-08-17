@@ -17,6 +17,7 @@ from typing import Any, Mapping, Protocol, Sequence
 from .analysis_context import ANALYSIS_CONTEXT_SOURCES, AnalysisContextSource
 from .errors import InputValidationError
 from .runtime import call_batch
+from .actionable_error_values import actual_value
 
 
 VOCABULARY_SOURCES = tuple(ANALYSIS_CONTEXT_SOURCES[4:])
@@ -226,8 +227,8 @@ def require_vocabulary_snapshot(connection: sqlite3.Connection) -> None:
         or str(marker[0]).casefold() != "true"
     ):
         raise InputValidationError(
-            "metadata catalog has no synchronized Analysis vocabulary; run "
-            "`gravity metadata sync --all-apps`",
+            f"actual value: {actual_value(sorted(tables))}; " + ("metadata catalog has no synchronized Analysis vocabulary; run "
+            "`gravity metadata sync --all-apps`"),
             field="database",
             next_action=VOCABULARY_SYNC_ACTION,
         )

@@ -20,6 +20,7 @@ from .segment_spec import (
     compile_segment_spec,
     validate_segment_spec,
 )
+from .actionable_error_values import actual_value
 
 
 SEGMENT_EVALUATE_NAME = "segment_evaluate"
@@ -54,10 +55,10 @@ def validate_segment_evaluate_plan(
         raise input_error("segment evaluation composite name is invalid", "name")
     validate_exact_targets(context, frozenset({"/app"}))
     if "spec" not in request:
-        raise input_error("segment evaluation requires spec", "spec")
+        raise input_error(f"actual value: {actual_value(request.get('spec'))}; " + ("segment evaluation requires spec"), "spec")
     spec = mapping(request.get("spec"), "spec")
     if "app" not in request and not has_dynamic(context, "/app"):
-        raise input_error("segment evaluation requires app", "app")
+        raise input_error(f"actual value: {actual_value(request.get('app'))}; " + ("segment evaluation requires app"), "app")
     selected_app = 1 if has_dynamic(context, "/app") else request.get("app")
     compiled, _validation = validate_segment_spec(
         insight,

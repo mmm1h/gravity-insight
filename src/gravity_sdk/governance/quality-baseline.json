@@ -180,12 +180,30 @@
       "path": "src/gravity_sdk/client.py",
       "reason": "forward continue_without_total through read_all/read_limited so missing total_page stays fail-closed unless callers opt in",
       "to": 6718
+    },
+    {
+      "from": 5247,
+      "path": "src/gravity_sdk/catalog.py",
+      "reason": "add sanitized actual_value to two caller-recoverable search validation errors",
+      "to": 5271
+    },
+    {
+      "from": 4117,
+      "path": "src/gravity_sdk/cli.py",
+      "reason": "add sanitized actual_value to two caller-recoverable CLI validation errors",
+      "to": 4146
+    },
+    {
+      "from": 6718,
+      "path": "src/gravity_sdk/client.py",
+      "reason": "add sanitized actual_value to four caller-recoverable batch item validation errors",
+      "to": 6764
     }
   ],
   "legacy_files": {
     "src/gravity_sdk/catalog.py": {
       "ast_hard_limit": 5332,
-      "ast_nodes": 5247,
+      "ast_nodes": 5271,
       "migration_sloc": 664,
       "sloc_hard_limit": 722
     },
@@ -209,13 +227,13 @@
     },
     "src/gravity_sdk/cli.py": {
       "ast_hard_limit": 4167,
-      "ast_nodes": 4117,
+      "ast_nodes": 4146,
       "migration_sloc": 715,
       "sloc_hard_limit": 788
     },
     "src/gravity_sdk/client.py": {
       "ast_hard_limit": 6765,
-      "ast_nodes": 6718,
+      "ast_nodes": 6764,
       "migration_sloc": 1087,
       "sloc_hard_limit": 1161
     },

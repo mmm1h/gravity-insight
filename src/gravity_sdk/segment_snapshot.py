@@ -38,6 +38,7 @@ from .segment_snapshot_inputs import (
     positive_id as _positive_id,
     validate_segment_snapshot_request,
 )
+from .actionable_error_values import actual_value
 
 
 SCHEMA_VERSION = "gravity-insight.segment-snapshot.v1"
@@ -217,7 +218,7 @@ def _resolve_identity(
         return matches[0]
     if len(matches) > 1:
         raise InputValidationError(
-            "segment ref matches more than one exact name",
+            f"actual value: {actual_value(len(matches))}; " + ("segment ref matches more than one exact name"),
             field="ref",
             next_action="Retry with the stable segment id from the segment catalog.",
         )

@@ -15,6 +15,7 @@ from .bilibili_account_performance_result import (
     product_item_count,
     result_from_native,
 )
+from .actionable_error_values import actual_value
 
 
 OPERATION_ID = stable_operation(
@@ -102,7 +103,7 @@ def validate_bilibili_account_request(
     )
     if type(max_workers) is not int or not 1 <= max_workers <= 24:
         raise InputValidationError(
-            "Bilibili account performance max_workers must be between 1 and 24",
+            f"actual value: {actual_value(max_workers)}; " + ("Bilibili account performance max_workers must be between 1 and 24"),
             field="max_workers",
         )
     return window, max_workers, pages, items

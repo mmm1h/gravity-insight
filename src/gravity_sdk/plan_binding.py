@@ -8,6 +8,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from .plan import PlanNode, PlanValidationError
+from .actionable_error_values import actual_value
 
 
 _JSON_SCALAR = (type(None), bool, int, float, str)
@@ -80,7 +81,7 @@ def validate_pointer(value: Any, field: str, *, allow_root: bool) -> str:
     if not isinstance(value, str) or (not allow_root and not value):
         raise PlanValidationError("JSON Pointer is invalid", field=field)
     if value and not value.startswith("/"):
-        raise PlanValidationError("JSON Pointer must start with /", field=field)
+        raise PlanValidationError(f"actual value: {actual_value(value)}; " + ("JSON Pointer must start with /"), field=field)
     try:
         pointer_tokens(value)
     except ValueError as exc:

@@ -18,6 +18,7 @@ from .result_audit import STORED, WRITE_FAILED, receipt_reference
 from .result_output import write_rendered_result
 from .result_source import LOCAL_AUDIT, result_source
 from .response_drift import normalize_response_drift
+from .actionable_error_values import actual_value
 
 
 QUERY_SCHEMA_VERSION = "gravity.http-receipt-query.v1"
@@ -458,7 +459,7 @@ def _gap(kind: str, count: int = 1) -> dict[str, Any]:
 def _bounded(value: object, maximum: int, field: str) -> int:
     if type(value) is not int or not 1 <= value <= maximum:
         raise InputValidationError(
-            f"{field} must be between 1 and {maximum}", field=field
+            f"actual value: {actual_value(value)}; " + (f"{field} must be between 1 and {maximum}"), field=field
         )
     return value
 

@@ -19,6 +19,7 @@ from .multidim import parse_multi_days
 from .pagination_cli import page_options
 from .workspace import load_workspace
 from .workspace_app import resolve_workspace_app
+from .actionable_error_values import actual_value
 
 
 def add_multidim_commands(
@@ -140,7 +141,7 @@ def _enforce_output_policy(args: Any) -> None:
     if getattr(args, "output", None) or getattr(args, "format", "json") == "ndjson":
         return
     raise InputValidationError(
-        "--all-pages requires --output <path> or --format ndjson",
+        f"actual value: {actual_value(getattr(args, 'all_pages', None))}; " + ("--all-pages requires --output <path> or --format ndjson"),
         field="all_pages",
     )
 
@@ -155,7 +156,7 @@ def _product_query(args: Any, object_input: Callable[[Any], Mapping[str, Any]]) 
 
     if getattr(args, "app", None) is None:
         raise InputValidationError(
-            "multidim query requires explicit --app",
+            f"actual value: {actual_value(getattr(args, 'app', None))}; " + ("multidim query requires explicit --app"),
             field="app",
             next_action="Retry with `gravity multidim query --app <name|id> ...`.",
         )
@@ -184,7 +185,7 @@ def _product_query(args: Any, object_input: Callable[[Any], Mapping[str, Any]]) 
 def _product_switches(args: Any) -> None:
     for field in ("include_total", "all_pages"):
         if not isinstance(getattr(args, field, False), bool):
-            raise InputValidationError(f"{field} must be a boolean", field=field)
+            raise InputValidationError(f"actual value: {actual_value(getattr(args, field, False))}; " + (f"{field} must be a boolean"), field=field)
 
 
 def _product_bounds(args: Any, all_pages: bool) -> dict[str, int]:
@@ -199,7 +200,7 @@ def _product_bounds(args: Any, all_pages: bool) -> dict[str, int]:
     ):
         if type(value) is not int or not 1 <= value <= maximum:
             raise InputValidationError(
-                f"{field} must be between 1 and {maximum}", field=field
+                f"actual value: {actual_value(value)}; " + (f"{field} must be between 1 and {maximum}"), field=field
             )
     return {
         "max_pages": max_pages,
@@ -249,7 +250,7 @@ def _product_shortcuts(
 def _filter_shortcuts(args: Any, result: dict[str, Any]) -> None:
     filters = result.get("filters", [])
     if not isinstance(filters, list):
-        raise InputValidationError("multidim filters must be an array", field="filters")
+        raise InputValidationError(f"actual value: {actual_value(filters)}; " + ("multidim filters must be an array"), field="filters")
     shortcut_filter = _filter_shortcut(getattr(args, "filter", None))
     if shortcut_filter is not None:
         filters = [shortcut_filter]
@@ -332,7 +333,7 @@ def _metadata(args: Any, object_input: Callable[[Any], Mapping[str, Any]]) -> An
         )
         if not isinstance(per_operation, Mapping):
             raise InputValidationError(
-                f"metadata input for {operation_id} must be an object",
+                f"actual value: {actual_value(per_operation)}; " + (f"metadata input for {operation_id} must be an object"),
                 field="input",
             )
         requests.append(
@@ -368,15 +369,15 @@ def _filter_shortcut(values: Sequence[Sequence[str]] | None) -> dict[str, Any] |
         )
     field, operator, raw_values = (part.strip() for part in values[0])
     if not field:
-        raise InputValidationError("--filter FIELD must not be empty", field="filter.field")
+        raise InputValidationError(f"actual value: {actual_value(field)}; " + ("--filter FIELD must not be empty"), field="filter.field")
     if not operator:
         raise InputValidationError(
-            "--filter OPERATOR must not be empty", field="filter.operator"
+            f"actual value: {actual_value(operator)}; " + ("--filter OPERATOR must not be empty"), field="filter.operator"
         )
     selected = [part.strip() for part in raw_values.split(",")]
     if not selected or any(not part for part in selected):
         raise InputValidationError(
-            "--filter VALUE must contain non-empty comma-separated values",
+            f"actual value: {actual_value(selected)}; " + ("--filter VALUE must contain non-empty comma-separated values"),
             field="filter.values",
         )
     return {
@@ -393,7 +394,7 @@ def _shortcut_names(values: Sequence[str] | None, argument: str) -> list[str] | 
     if any(not part for part in selected):
         flag = argument.replace("_", "-")
         raise InputValidationError(
-            f"--{flag} must contain non-empty comma-separated names",
+            f"actual value: {actual_value(selected)}; " + (f"--{flag} must contain non-empty comma-separated names"),
             field=argument,
         )
     return selected
@@ -406,7 +407,7 @@ def _json_scalar(value: str) -> Any:
         return value
     if isinstance(parsed, (Mapping, list)):
         raise InputValidationError(
-            "--filter VALUE items must be JSON scalars", field="filter.values"
+            f"actual value: {actual_value(parsed)}; " + ("--filter VALUE items must be JSON scalars"), field="filter.values"
         )
     return parsed
 

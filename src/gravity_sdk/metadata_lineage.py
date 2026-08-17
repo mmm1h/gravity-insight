@@ -23,6 +23,7 @@ from .find_metadata import (
 )
 from .runtime import call_batch
 from .result_source import LOCAL_CATALOG, result_source
+from .actionable_error_values import actual_value
 
 
 SCHEMA_VERSION = "gravity.metadata-table-lineage.v1"
@@ -154,7 +155,7 @@ def search_table_lineage(
 
     if not isinstance(query, str):
         raise InputValidationError(
-            "table lineage query must be a string", field="query"
+            f"actual value: {actual_value(query)}; " + ("table lineage query must be a string"), field="query"
         )
     search_limit(limit)
     search_offset(offset)
@@ -162,8 +163,8 @@ def search_table_lineage(
     catalog = catalog.expanduser().resolve()
     if not catalog.is_file():
         raise InputValidationError(
-            "metadata catalog does not exist; run `gravity metadata sync --all-apps "
-            "--include-table-lineage`",
+            f"actual value: {actual_value(str(catalog))}; " + ("metadata catalog does not exist; run `gravity metadata sync --all-apps "
+            "--include-table-lineage`"),
             field="database",
             next_action=(
                 "Run `gravity metadata sync --all-apps --include-table-lineage`, "
@@ -305,8 +306,8 @@ def _require_lineage_snapshot(connection: sqlite3.Connection) -> None:
     ).fetchone()
     if not {"table_versions", "table_operation_logs"} <= tables or observed is None:
         raise InputValidationError(
-            "metadata catalog has no observed table lineage; run `gravity metadata "
-            "sync --all-apps --include-table-lineage`",
+            f"actual value: {actual_value(sorted(tables))}; " + ("metadata catalog has no observed table lineage; run `gravity metadata "
+            "sync --all-apps --include-table-lineage`"),
             field="database",
             next_action=(
                 "Run `gravity metadata sync --all-apps --include-table-lineage`, "

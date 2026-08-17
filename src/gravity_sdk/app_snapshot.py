@@ -17,6 +17,7 @@ from .composite_batch import (
 )
 from .composite_catalog import stable_operation
 from .errors import InputValidationError
+from .actionable_error_values import actual_value
 
 
 SCHEMA_VERSION = "gravity-insight.app-snapshot.v1"
@@ -178,17 +179,17 @@ def _company_id(detail_result: Mapping[str, Any]) -> int | None:
 
 def _positive_identifier(value: Any, *, field: str) -> int:
     if isinstance(value, bool):
-        raise InputValidationError(f"{field} must be a positive integer", field=field)
+        raise InputValidationError(f"actual value: {actual_value(value)}; " + (f"{field} must be a positive integer"), field=field)
     rendered = str(value).strip() if isinstance(value, (str, int)) else ""
     if not rendered.isascii() or not rendered.isdigit() or int(rendered) <= 0:
-        raise InputValidationError(f"{field} must be a positive integer", field=field)
+        raise InputValidationError(f"actual value: {actual_value(value)}; " + (f"{field} must be a positive integer"), field=field)
     return int(rendered)
 
 
 def _workers(value: int) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or not 1 <= value <= MAX_CONCURRENCY:
         raise InputValidationError(
-            f"app snapshot max_workers must be between 1 and {MAX_CONCURRENCY}",
+            f"actual value: {actual_value(value)}; " + (f"app snapshot max_workers must be between 1 and {MAX_CONCURRENCY}"),
             field="max_workers",
         )
     return value

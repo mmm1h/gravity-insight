@@ -72,7 +72,7 @@ def validate_report_composite(
     if context.dynamic_targets:
         raise input_error("company_usage has no binding targets", "bindings")
     if context.max_items < 1:
-        raise input_error("company_usage requires one source item", "limits.max_items")
+        raise input_error(f"actual value: {actual_value(context.max_items)}; " + ("company_usage requires one source item"), "limits.max_items")
     validate_selected_fields(context.output_fields, output_fields, "output_fields")
 
 

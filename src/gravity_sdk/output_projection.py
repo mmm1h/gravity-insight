@@ -7,6 +7,7 @@ from copy import deepcopy
 from typing import Any
 
 from .errors import InputValidationError
+from .actionable_error_values import actual_value
 
 
 MAX_OUTPUT_FIELDS = 128
@@ -35,7 +36,7 @@ def validate_output_fields(
         rendered = ", ".join(unknown[:5])
         suffix = "" if len(unknown) <= 5 else f" (+{len(unknown) - 5} more)"
         raise InputValidationError(
-            f"output_fields contains fields absent from the operation contract: {rendered}{suffix}",
+            f"actual value: {actual_value(unknown)}; " + (f"output_fields contains fields absent from the operation contract: {rendered}{suffix}"),
             field="output_fields",
             next_action="Inspect the operation schema and select only contracted response fields.",
         )
@@ -104,9 +105,9 @@ def allowed_output_fields(
 
 def _field_list(value: Sequence[str]) -> tuple[str, ...]:
     if isinstance(value, (str, bytes)) or not isinstance(value, Sequence):
-        raise InputValidationError("output_fields must be a list of field paths", field="output_fields")
+        raise InputValidationError(f"actual value: {actual_value(value)}; " + ("output_fields must be a list of field paths"), field="output_fields")
     if not value:
-        raise InputValidationError("output_fields must not be empty", field="output_fields")
+        raise InputValidationError(f"actual value: {actual_value(value)}; " + ("output_fields must not be empty"), field="output_fields")
     if len(value) > MAX_OUTPUT_FIELDS:
         raise InputValidationError(
             f"output_fields exceeds the {MAX_OUTPUT_FIELDS}-field safety bound",
@@ -115,7 +116,7 @@ def _field_list(value: Sequence[str]) -> tuple[str, ...]:
     normalized: list[str] = []
     for item in value:
         if not isinstance(item, str):
-            raise InputValidationError("output_fields must contain only strings", field="output_fields")
+            raise InputValidationError(f"actual value: {actual_value(item)}; " + ("output_fields must contain only strings"), field="output_fields")
         field = item.strip()
         parts = field.split(".")
         if (

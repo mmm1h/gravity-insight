@@ -34,6 +34,7 @@ from .operation_search import (
     search_page_limit as _search_page_limit,
     search_score as _search_score,
 )
+from .actionable_error_values import actual_value
 
 
 APP_LIST_OPERATION_ID = "app.list"
@@ -199,11 +200,11 @@ class OperationCatalog:
 
         if not isinstance(query, str) or not query.strip():
             raise InputValidationError(
-                "operation search query must be a non-empty string", field="query"
+                f"actual value: {actual_value(query)}; " + ("operation search query must be a non-empty string"), field="query"
             )
         if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 20:
             raise InputValidationError(
-                "operation search limit must be between 1 and 20", field="limit"
+                f"actual value: {actual_value(limit)}; " + ("operation search limit must be between 1 and 20"), field="limit"
             )
         normalized_query = _normalize_search_text(query)
         signature = {

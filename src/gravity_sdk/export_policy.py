@@ -17,6 +17,7 @@ from .errors import (
     PolicyViolation,
     UnknownOperationError,
 )
+from .actionable_error_values import actual_value
 
 
 _EXPORT_EFFECTS = frozenset(
@@ -173,7 +174,7 @@ class ExportPolicyMixin:
             route = self._effect_routes[operation_id]
         except KeyError as exc:
             raise UnknownOperationError(
-                f"unknown Gravity export operation: {operation_id}",
+                f"actual value: {actual_value(operation_id)}; " + (f"unknown Gravity export operation: {operation_id}"),
                 field="operation_id",
                 next_action=(
                     "Run `gravity export list-capabilities` "
@@ -391,7 +392,7 @@ def _validated_effect_values(
                 fixed_mismatch
             )
         raise InputValidationError(
-            message,
+            f"actual value: {actual_value(payload)}; " + (message),
             field=field,
             next_action=(
                 "Run `gravity export describe "

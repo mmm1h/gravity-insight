@@ -12,6 +12,7 @@ from .plan import AdapterContext
 from .plan_binding import set_pointer
 from .receipt_query import get_http_receipt, list_http_receipts
 from .result_audit import receipt_reference
+from .actionable_error_values import actual_value
 
 
 _FIELDS = frozenset({"action", "limit", "cursor", "operation_id", "reference"})
@@ -30,14 +31,14 @@ def validate_receipt_query(
     if context.output_fields:
         raise _input("receipt_query does not support output_fields", "output_fields")
     if not isinstance(selected, Mapping):
-        raise _input("receipt_query request must be an object", None)
+        raise _input(f"actual value: {actual_value(selected)}; " + ("receipt_query request must be an object"), None)
     unknown = set(selected) - _FIELDS
     if unknown:
         raise _input("receipt_query request contains unsupported fields", sorted(unknown)[0])
     action = selected.get("action")
     allowed = _LIST_FIELDS if action == "list" else _GET_FIELDS if action == "get" else None
     if allowed is None:
-        raise _input("receipt_query action must be list or get", "action")
+        raise _input(f"actual value: {actual_value(selected.get('action'))}; " + ("receipt_query action must be list or get"), "action")
     extra = set(selected) - allowed
     if extra:
         raise _input("receipt_query action contains unsupported fields", sorted(extra)[0])
@@ -53,15 +54,15 @@ def _validate_list(selected: Mapping[str, Any], context: AdapterContext) -> None
         raise _input("receipt_query limit exceeds the node item budget", "limit")
     for field in ("cursor", "operation_id"):
         if selected.get(field) is not None and not isinstance(selected[field], str):
-            raise _input(f"receipt_query {field} must be a string", field)
+            raise _input(f"actual value: {actual_value(selected[field])}; " + (f"receipt_query {field} must be a string"), field)
 
 
 def _validate_get(selected: Mapping[str, Any]) -> None:
     reference = selected.get("reference")
     if not isinstance(reference, Mapping) or set(reference) != _REFERENCE_FIELDS:
-        raise _input("receipt_query get requires an exact reference", "reference")
+        raise _input(f"actual value: {actual_value(reference)}; " + ("receipt_query get requires an exact reference"), "reference")
     if not all(isinstance(reference[field], str) for field in _REFERENCE_FIELDS):
-        raise _input("receipt_query reference fields must be strings", "reference")
+        raise _input(f"actual value: {actual_value(reference)}; " + ("receipt_query reference fields must be strings"), "reference")
     try:
         receipt_reference(reference["receipt_id"], reference["storage_status"])
     except ValueError as error:

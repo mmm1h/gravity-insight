@@ -13,6 +13,7 @@ from .agent_product_inventory import canonical_capability_cards
 from .agent_sources import describe_operation_cards
 from .agent_unavailable import registered_unavailable_gaps
 from .errors import InputValidationError
+from .actionable_error_values import actual_value
 
 
 SCHEMA_VERSION = "gravity.agent-catalog.v1"
@@ -166,7 +167,7 @@ def _category_response(
         raise InputValidationError("agent catalog category is not registered", field="name")
     if not 1 <= limit <= MAX_LIMIT:
         raise InputValidationError(
-            f"agent catalog limit must be between 1 and {MAX_LIMIT}", field="limit"
+            f"actual value: {actual_value(limit)}; " + (f"agent catalog limit must be between 1 and {MAX_LIMIT}"), field="limit"
         )
     if offset >= len(entries):
         raise InputValidationError("agent catalog offset has no entries", field="offset")
@@ -302,9 +303,9 @@ def _offset(value: str) -> int:
     try:
         parsed = int(value)
     except ValueError as exc:
-        raise InputValidationError("agent catalog offset must be a non-negative integer", field="offset") from exc
+        raise InputValidationError(f"actual value: {actual_value(value)}; " + ("agent catalog offset must be a non-negative integer"), field="offset") from exc
     if parsed < 0:
-        raise InputValidationError("agent catalog offset must be a non-negative integer", field="offset")
+        raise InputValidationError(f"actual value: {actual_value(parsed)}; " + ("agent catalog offset must be a non-negative integer"), field="offset")
     return parsed
 
 

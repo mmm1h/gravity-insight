@@ -16,6 +16,7 @@ from .material_performance import (
 from .workspace import load_workspace
 from .workspace_app import resolve_workspace_app
 from .title_package import OPERATION_IDS, title_packages
+from .actionable_error_values import actual_value
 
 
 def add_material_commands(
@@ -170,7 +171,7 @@ def _split_values(values: list[str], *, field: str) -> list[str]:
     result = [value for value in selected if value]
     if not result:
         raise InputValidationError(
-            f"--{field} must select at least one value", field=field
+            f"actual value: {actual_value(result)}; " + (f"--{field} must select at least one value"), field=field
         )
     return result
 

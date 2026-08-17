@@ -11,6 +11,7 @@ from .errors import (
     exit_code_for_status,
 )
 from .result_source import RAW_OPERATION, result_source
+from .actionable_error_values import actual_value
 
 
 BATCH_ITEM_FIELDS = frozenset(
@@ -117,12 +118,12 @@ def batch_schema_version(args: argparse.Namespace) -> str:
 
 def validate_batch_item(value: Any) -> Mapping[str, Any]:
     if not isinstance(value, Mapping):
-        raise batch_input_error("batch requests must be objects", "requests")
+        raise batch_input_error(f"actual value: {actual_value(value)}; " + ("batch requests must be objects"), "requests")
     _reject_unknown_item_fields(value)
     if "input" in value and "inputs" in value:
         raise batch_input_error(
-            "batch input and inputs aliases cannot be combined; allowed fields: "
-            + ", ".join(sorted(BATCH_ITEM_FIELDS)),
+            f"actual value: {actual_value(item)}; " + ("batch input and inputs aliases cannot be combined; allowed fields: "
+            + ", ".join(sorted(BATCH_ITEM_FIELDS))),
             "inputs",
         )
     return value
@@ -235,8 +236,8 @@ def _batch_payload(payload: Any) -> list[Mapping[str, Any]]:
         unknown = sorted(set(payload) - {"requests"})
         if unknown:
             raise batch_input_error(
-                "unknown batch wrapper fields: " + ", ".join(unknown)
-                + "; allowed fields: requests",
+                f"actual value: {actual_value(unknown[0])}; " + ("unknown batch wrapper fields: " + ", ".join(unknown)
+                + "; allowed fields: requests"),
                 unknown[0],
             )
         payload = payload.get("requests")
@@ -244,11 +245,11 @@ def _batch_payload(payload: Any) -> list[Mapping[str, Any]]:
         isinstance(item, Mapping) for item in payload
     ):
         raise batch_input_error(
-            "batch input must be an object containing a requests array", "requests"
+            f"actual value: {actual_value(payload)}; " + ("batch input must be an object containing a requests array"), "requests"
         )
     if not payload:
         raise batch_input_error(
-            "batch requests must contain at least one item", "requests"
+            f"actual value: {actual_value(payload)}; " + ("batch requests must contain at least one item"), "requests"
         )
     return [validate_batch_item(item) for item in payload]
 
@@ -257,8 +258,8 @@ def _reject_unknown_item_fields(item: Mapping[str, Any]) -> None:
     unknown = sorted(set(item) - BATCH_ITEM_FIELDS)
     if unknown:
         raise batch_input_error(
-            "unknown batch request fields: " + ", ".join(unknown)
-            + "; allowed fields: " + ", ".join(sorted(BATCH_ITEM_FIELDS)),
+            f"actual value: {actual_value(unknown[0])}; " + ("unknown batch request fields: " + ", ".join(unknown)
+            + "; allowed fields: " + ", ".join(sorted(BATCH_ITEM_FIELDS))),
             unknown[0],
         )
 

@@ -9,6 +9,7 @@ from .agent_title_package import TITLE_PACKAGE_NAME
 from .plan import AdapterContext
 from .plan_adapter_support import input_error, validate_exact_targets
 from .title_package import normalize_package_kind
+from .actionable_error_values import actual_value
 
 
 TITLE_PACKAGE_FIELDS = frozenset({"name", "app", "package_kind"})
@@ -32,18 +33,18 @@ def validate_title_package_plan(
             workspace.resolve_app(request.get("app"))
         except (KeyError, TypeError, ValueError):
             raise input_error(
-                "title_package app must select a configured workspace App", "app"
+                f"actual value: {actual_value(request.get('app'))}; " + ("title_package app must select a configured workspace App"), "app"
             ) from None
     if "/package_kind" not in dynamic:
         try:
             normalize_package_kind(request.get("package_kind"))
         except (TypeError, ValueError):
             raise input_error(
-                "title_package package_kind must be regular or standard",
+                f"actual value: {actual_value(request.get('package_kind'))}; " + ("title_package package_kind must be regular or standard"),
                 "package_kind",
             ) from None
     if context.max_items < 1:
-        raise input_error("title_package requires one source item", "limits.max_items")
+        raise input_error(f"actual value: {actual_value(context.max_items)}; " + ("title_package requires one source item"), "limits.max_items")
     unknown = set(context.output_fields) - TITLE_PACKAGE_OUTPUT_FIELDS
     if unknown:
         raise input_error(

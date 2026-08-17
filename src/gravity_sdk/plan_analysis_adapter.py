@@ -29,6 +29,7 @@ from .plan_adapter_support import (
 from . import plan_analysis_default_adapter as defaults_plan
 from . import plan_derived_metrics_adapter as derived_plan
 from . import plan_monetization_adapter as monetization_plan
+from .actionable_error_values import actual_value
 
 
 ANALYSIS_QUERY_NAME = "analysis_query"
@@ -96,10 +97,10 @@ def validate_analysis_query_plan(
         raise input_error("analysis query composite name is invalid", "name")
     validate_exact_targets(context, frozenset({"/app"}))
     if "spec" not in request:
-        raise input_error("analysis query composite requires spec", "spec")
+        raise input_error(f"actual value: {actual_value(request.get('spec'))}; " + ("analysis query composite requires spec"), "spec")
     spec = mapping(request.get("spec"), "spec")
     if "app" not in request and not has_dynamic(context, "/app"):
-        raise input_error("analysis query composite requires app", "app")
+        raise input_error(f"actual value: {actual_value(request.get('app'))}; " + ("analysis query composite requires app"), "app")
     selected_app = 1 if has_dynamic(context, "/app") else request.get("app")
     compiled, _validation = validate_query_spec(
         insight,
@@ -118,7 +119,7 @@ def validate_analysis_query_plan(
     compare_start, compare_end = request.get("compare_start"), request.get("compare_end")
     if (compare_start is None) != (compare_end is None):
         raise input_error(
-            "analysis query compare_start and compare_end must be provided together",
+            f"actual value: {actual_value((compare_start, compare_end))}; " + ("analysis query compare_start and compare_end must be provided together"),
             "compare_start/compare_end",
         )
     if compare_start is not None:

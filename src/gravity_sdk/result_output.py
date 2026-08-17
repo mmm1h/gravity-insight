@@ -22,6 +22,7 @@ from .support.process_lock import (
     FileLockTimeout,
     advisory_file_lock,
 )
+from .actionable_error_values import actual_value
 
 
 def output_file(value: str) -> str:
@@ -47,7 +48,7 @@ def _resolved_destination(output: str) -> Path:
     selected = output.strip()
     if not selected or selected == "-" or "\x00" in selected:
         raise InputValidationError(
-            "output must be a non-empty local file path", field="output"
+            f"actual value: {actual_value(selected)}; " + ("output must be a non-empty local file path"), field="output"
         )
     try:
         path = Path(selected).expanduser()
@@ -62,14 +63,14 @@ def _resolved_destination(output: str) -> Path:
         ) from exc
     if path.exists() and path.is_dir():
         raise InputValidationError(
-            "output must be a local file path, not a directory", field="output"
+            f"actual value: {actual_value(output)}; " + ("output must be a local file path, not a directory"), field="output"
         )
     ancestor = path.parent
     while not ancestor.exists() and ancestor != ancestor.parent:
         ancestor = ancestor.parent
     if ancestor.exists() and not ancestor.is_dir():
         raise InputValidationError(
-            "output parent must be a local directory", field="output"
+            f"actual value: {actual_value(output)}; " + ("output parent must be a local directory"), field="output"
         )
     return path
 

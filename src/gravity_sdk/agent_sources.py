@@ -21,6 +21,7 @@ from .find import (
 )
 from .sql.catalog import search_product_cards
 from .workspace import load_workspace
+from .actionable_error_values import actual_value
 
 
 _FIELD_KEYS = (
@@ -74,7 +75,7 @@ def discover_operation_cards(
         )
         if search.get("continuation_token"):
             raise InputValidationError(
-                "client must expose the complete offline operation inventory",
+                f"actual value: {actual_value(type(client).__name__)}; " + ("client must expose the complete offline operation inventory"),
                 field="client",
             )
         selected_inventory = search.get("operations", [])

@@ -25,6 +25,7 @@ from .saved_analysis_support import (
 )
 from .workspace import load_workspace
 from .workspace_app import resolve_workspace_app
+from .actionable_error_values import actual_value
 
 
 def add_saved_analysis_commands(
@@ -246,7 +247,7 @@ def _selected_source(
     definition = object_input(args.definition) if args.definition is not None else None
     if (reference is None) == (definition is None):
         raise InputValidationError(
-            "saved prepare/run requires exactly one --ref or --definition",
+            f"actual value: {actual_value((reference, definition))}; " + ("saved prepare/run requires exactly one --ref or --definition"),
             field="ref/definition",
         )
     if reference is not None:

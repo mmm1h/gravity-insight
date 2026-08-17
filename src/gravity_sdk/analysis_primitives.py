@@ -22,6 +22,7 @@ from ._field_policy_shared import (
 from .analysis_spec_schema import ANALYSIS_SPEC_KINDS
 from .analysis_spec_validation import bounded_string, choice
 from .errors import InputValidationError
+from .actionable_error_values import actual_value
 
 
 _DATA_TYPES = frozenset({"STRING", "INT", "FLOAT", "BOOL", "DATE", "DATETIME", "LIST"})
@@ -98,12 +99,12 @@ class AnalysisCohort:
                 self.version_id, bool
             ):
                 raise InputValidationError(
-                    "A fixed-version cohort requires a string or integer version id",
+                    f"actual value: {actual_value(self.version_id)}; " + ("A fixed-version cohort requires a string or integer version id"),
                     field="cohort.version_id",
                 )
         elif self.version_id not in {None, ""}:
             raise InputValidationError(
-                "A cohort version id requires segment_type FIXED_VERSION",
+                f"actual value: {actual_value(self.version_id)}; " + ("A cohort version id requires segment_type FIXED_VERSION"),
                 field="cohort.version_id",
             )
 
@@ -139,7 +140,7 @@ class AnalysisMetric:
             self.aggregation
         ):
             raise InputValidationError(
-                "Analysis metric aggregation must use a registered target method",
+                f"actual value: {actual_value(self.aggregation)}; " + ("Analysis metric aggregation must use a registered target method"),
                 field="metric.aggregation",
             )
         if self.data_type is not None:
@@ -150,7 +151,7 @@ class AnalysisMetric:
             not isinstance(self.label, str) or len(self.label) > 256
         ):
             raise InputValidationError(
-                "Analysis metric label must be at most 256 characters", field="metric.label"
+                f"actual value: {actual_value(self.label)}; " + ("Analysis metric label must be at most 256 characters"), field="metric.label"
             )
         if self.dimension_table is not None:
             bounded_string(self.dimension_table, "metric.dimension_table")
@@ -160,7 +161,7 @@ class AnalysisMetric:
             or not 0 < self.quantile <= 100
         ):
             raise InputValidationError(
-                "Analysis metric quantile must be greater than 0 through 100",
+                f"actual value: {actual_value(self.quantile)}; " + ("Analysis metric quantile must be greater than 0 through 100"),
                 field="metric.quantile",
             )
 
@@ -175,11 +176,11 @@ class AnalysisMetric:
     def for_property(self) -> dict[str, Any]:
         if self.data_type is None:
             raise InputValidationError(
-                "A property Analysis metric requires data_type", field="metric.data_type"
+                f"actual value: {actual_value(self.data_type)}; " + ("A property Analysis metric requires data_type"), field="metric.data_type"
             )
         if self.aggregation not in ANALYSIS_TARGET_METHODS or self.quantile is not None:
             raise InputValidationError(
-                "Remove quantile controls from a property Analysis metric",
+                f"actual value: {actual_value(self.aggregation)}; " + ("Remove quantile controls from a property Analysis metric"),
                 field="metric.aggregation",
             )
         result = {
@@ -211,13 +212,13 @@ class AnalysisStep:
         bounded_string(self.event, "step.event")
         if not isinstance(self.metric, AnalysisMetric):
             raise InputValidationError(
-                "Analysis step metric must be an AnalysisMetric", field="step.metric"
+                f"actual value: {actual_value(self.metric)}; " + ("Analysis step metric must be an AnalysisMetric"), field="step.metric"
             )
         if not isinstance(self.filters, tuple):
             object.__setattr__(self, "filters", tuple(self.filters))
         if any(not isinstance(item, AnalysisFilter) for item in self.filters):
             raise InputValidationError(
-                "Analysis step filters must be AnalysisFilter objects",
+                f"actual value: {actual_value(self.filters)}; " + ("Analysis step filters must be AnalysisFilter objects"),
                 field="step.filters",
             )
         choice(self.filter_logic, {"AND", "OR"}, "step.filter_logic")
@@ -225,7 +226,7 @@ class AnalysisStep:
             not isinstance(self.label, str) or len(self.label) > 256
         ):
             raise InputValidationError(
-                "Analysis step label must be at most 256 characters", field="step.label"
+                f"actual value: {actual_value(self.label)}; " + ("Analysis step label must be at most 256 characters"), field="step.label"
             )
 
     def to_spec(self) -> dict[str, Any]:
@@ -248,11 +249,11 @@ class AnalysisSpec(Mapping[str, Any]):
         selected = str(kind or "").strip().casefold()
         if selected not in ANALYSIS_SPEC_KINDS:
             raise InputValidationError(
-                "Analysis kind must be event, funnel, retention, property, or scatter",
+                f"actual value: {actual_value(selected)}; " + ("Analysis kind must be event, funnel, retention, property, or scatter"),
                 field="kind",
             )
         if not isinstance(spec, Mapping):
-            raise InputValidationError("Analysis spec must be an object", field="spec")
+            raise InputValidationError(f"actual value: {actual_value(spec)}; " + ("Analysis spec must be an object"), field="spec")
         self._kind = selected
         self._spec = copy.deepcopy(dict(spec))
 
@@ -349,14 +350,14 @@ class AnalysisSpec(Mapping[str, Any]):
     def with_dates(self, start: str, end: str) -> AnalysisSpec:
         if self.kind not in _DATED_KINDS:
             raise InputValidationError(
-                "Remove date overrides from property Analysis", field="start/end"
+                f"actual value: {actual_value(self.kind)}; " + ("Remove date overrides from property Analysis"), field="start/end"
             )
         return self._updated(lambda spec: spec.update(start=start, end=end))
 
     def replace_step_metric(self, metric: AnalysisMetric, *, step: int = 0) -> AnalysisSpec:
         if self.kind not in _DATED_KINDS:
             raise InputValidationError(
-                "Use replace_property_metric for property Analysis", field="steps"
+                f"actual value: {actual_value(self.kind)}; " + ("Use replace_property_metric for property Analysis"), field="steps"
             )
         return self._updated(
             lambda spec: _step_at(spec, step).__setitem__("metric", metric.for_step())
@@ -365,7 +366,7 @@ class AnalysisSpec(Mapping[str, Any]):
     def replace_property_metric(self, metric: AnalysisMetric) -> AnalysisSpec:
         if self.kind != "property":
             raise InputValidationError(
-                "A property metric requires property Analysis", field="property"
+                f"actual value: {actual_value(self.kind)}; " + ("A property metric requires property Analysis"), field="property"
             )
         return self._updated(
             lambda spec: spec.__setitem__("property", metric.for_property())
@@ -376,7 +377,7 @@ class AnalysisSpec(Mapping[str, Any]):
     ) -> AnalysisSpec:
         if self.kind not in _DATED_KINDS:
             raise InputValidationError(
-                "Property Analysis event-step filters must use add_property_filter",
+                f"actual value: {actual_value(self.kind)}; " + ("Property Analysis event-step filters must use add_property_filter"),
                 field="steps",
             )
 
@@ -389,7 +390,7 @@ class AnalysisSpec(Mapping[str, Any]):
     def add_global_filter(self, condition: AnalysisFilter) -> AnalysisSpec:
         if self.kind not in {"event", "funnel"}:
             raise InputValidationError(
-                "Global filters must use event or funnel Analysis",
+                f"actual value: {actual_value(self.kind)}; " + ("Global filters must use event or funnel Analysis"),
                 field="global_filters",
             )
         return self._updated(
@@ -399,7 +400,7 @@ class AnalysisSpec(Mapping[str, Any]):
     def add_property_filter(self, condition: AnalysisFilter) -> AnalysisSpec:
         if self.kind != "property":
             raise InputValidationError(
-                "A query-item property filter requires property Analysis",
+                f"actual value: {actual_value(self.kind)}; " + ("A query-item property filter requires property Analysis"),
                 field="conditions",
             )
         return self._updated(
@@ -409,7 +410,7 @@ class AnalysisSpec(Mapping[str, Any]):
     def add_property_condition(self, condition: AnalysisFilter) -> AnalysisSpec:
         if self.kind not in {"retention", "property"}:
             raise InputValidationError(
-                "A shared property condition requires retention or property Analysis",
+                f"actual value: {actual_value(self.kind)}; " + ("A shared property condition requires retention or property Analysis"),
                 field="property_conditions",
             )
         return self._updated(
@@ -437,7 +438,7 @@ def _dated_spec(
         not isinstance(item, AnalysisStep) for item in selected
     ):
         raise InputValidationError(
-            f"{kind} Analysis requires {minimum} through {maximum} typed steps",
+            f"actual value: {actual_value(selected)}; " + (f"{kind} Analysis requires {minimum} through {maximum} typed steps"),
             field="steps",
         )
     return {
@@ -452,7 +453,7 @@ def _identity(value: Mapping[str, Any]) -> dict[str, Any]:
     unknown = sorted(set(value) - {"app", "query_id"})
     if unknown:
         raise InputValidationError(
-            f"Remove unsupported typed Analysis identity field: {unknown[0]}",
+            f"actual value: {actual_value(unknown[0])}; " + (f"Remove unsupported typed Analysis identity field: {unknown[0]}"),
             field=unknown[0],
         )
     return {key: copy.deepcopy(item) for key, item in value.items() if item is not None}
@@ -461,7 +462,7 @@ def _identity(value: Mapping[str, Any]) -> dict[str, Any]:
 def _filter_specs(values: Sequence[AnalysisFilter]) -> list[dict[str, Any]]:
     if any(not isinstance(item, AnalysisFilter) for item in values):
         raise InputValidationError(
-            "Analysis filters must be AnalysisFilter objects", field="filters"
+            f"actual value: {actual_value(values)}; " + ("Analysis filters must be AnalysisFilter objects"), field="filters"
         )
     return [item.to_spec() for item in values]
 
@@ -470,11 +471,11 @@ def _step_at(spec: dict[str, Any], index: int) -> dict[str, Any]:
     steps = spec.get("steps")
     if type(index) is not int or not isinstance(steps, list) or not 0 <= index < len(steps):
         raise InputValidationError(
-            "Analysis step index must identify an existing step", field="steps"
+            f"actual value: {actual_value(index)}; " + ("Analysis step index must identify an existing step"), field="steps"
         )
     selected = steps[index]
     if not isinstance(selected, dict):
-        raise InputValidationError("Analysis step must be an object", field=f"steps[{index}]")
+        raise InputValidationError(f"actual value: {actual_value(selected)}; " + ("Analysis step must be an object"), field=f"steps[{index}]")
     return selected
 
 

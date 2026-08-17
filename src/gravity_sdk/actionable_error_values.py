@@ -6,9 +6,6 @@ import json
 from collections.abc import Iterable
 from typing import Any
 
-from .credential_sanitization import sanitize_credentials
-
-
 ALTERNATIVE_DISPLAY_LIMIT = 20
 _ACTUAL_VALUE_LIMIT = 160
 
@@ -16,12 +13,31 @@ _ACTUAL_VALUE_LIMIT = 160
 def actual_value(value: Any) -> str:
     """Render one credential-sanitized caller value within the error budget."""
 
-    rendered = json.dumps(
-        sanitize_credentials(value), ensure_ascii=False, sort_keys=True, separators=(",", ":")
-    )
+    from .credential_sanitization import sanitize_credentials
+
+    try:
+        rendered = json.dumps(
+            sanitize_credentials(value),
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            default=_unserializable,
+        )
+    except (TypeError, ValueError):
+        rendered = json.dumps(type(value).__name__)
     if len(rendered) <= _ACTUAL_VALUE_LIMIT:
         return rendered
     return rendered[: _ACTUAL_VALUE_LIMIT - 3] + "..."
+
+
+def _unserializable(value: Any) -> str:
+    iso = getattr(value, "isoformat", None)
+    if callable(iso):
+        try:
+            return str(iso())
+        except Exception:
+            pass
+    return type(value).__name__
 
 
 def allowed_values(

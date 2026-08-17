@@ -8,6 +8,7 @@ from typing import Any
 from .agent_custom_audience import CUSTOM_AUDIENCE_NAME
 from .plan import AdapterContext
 from .plan_adapter_support import input_error, validate_selected_fields
+from .actionable_error_values import actual_value
 
 
 def validate_custom_audience_plan(
@@ -23,7 +24,7 @@ def validate_custom_audience_plan(
         raise input_error("custom_audience has no binding targets", "bindings")
     if context.max_items < 1:
         raise input_error(
-            "custom_audience requires one source item", "limits.max_items"
+            f"actual value: {actual_value(context.max_items)}; " + ("custom_audience requires one source item"), "limits.max_items"
         )
     validate_selected_fields(context.output_fields, output_fields, "output_fields")
 

@@ -5957,3 +5957,34 @@ receipt 核账：`analysis.realtime_event.list` 本会话 14 条、`report.media
 
 **能力台账不变：**233 / 224 / 92 / 7 / 329，动线 `56 = 50 / 1 / 5`。
 生产 HTTP：登录 2 + 业务 8 = 10。不 push、不碰 GitHub。
+
+## B 级错误补实际值（2026-08-17）
+
+**提案：**`1225 = A 422 / B 434 / C 369` 中，B 的唯一定义是有字段路径、有补救建议、缺实际值。
+分析师因此知道改哪个字段、怎么改，却不知道自己刚才传了什么。本轮只把调用方可安全观察的实际值
+补进既有 raise 表达式；判据、scope、错误分类、公开签名、operation 合同一律不动。
+
+**分布与杠杆：**434 条 B 落在 100 个文件、9 个构造器。审计扫的是 raise 表达式字面量，改 helper
+本体升不了调用点，所以杠杆是“同文件批量补 `actual_value(...)`”，不是改一处 helper 升一片。
+前 10 个文件合计 166 条：`plan_validation` 35、`analysis_primitives` 25、`multidim_product` 19、
+`analysis_query_batch` 17、`resolver_batch` 16、`promotion_performance_request` 15、
+`analysis_query_multi_app` 14、`material_performance` 13、`multidim_cli` 11、
+`saved_analysis_support` 11。构造器为 `InputValidationError` 220、`_input_error` 81、
+`input_error` 70、`invalid` 35、`batch_input_error` 10、`_input` 10，另加少量
+`PlanRecipeError` / `UnknownOperationError` / `PlanValidationError`。
+
+**未回显的 19 条：**14 条已写明“values are not echoed because errors may enter logs”
+（condition / group / filter map、account/dashboard/name filter、`filtering`、`data_list`）；
+另 5 条是同类用户级筛选值（`AnalysisFilter.values`、multidim `filters[].values`、
+segment spec 标量 values、funnel `global_conditions` 用户属性）。凭据走既有 sanitizer
+（token/cookie/password 键删除，Bearer/JWT/赋值替换）；长值截断 160 字符。
+
+**呈现：**统一前缀 `actual value: {actual_value(observed)}`。`actual_value` 先 sanitizer，再
+`json.dumps`（`date`/`datetime` 走 `isoformat`，其余不可序列化对象只报类型名），超过 160
+字符截断为 `...`。不改错误 code / category / retryable / 退出码。
+
+**结果：**`1225 = A 833 / B 23 / C 369`。A +411、B −411，总数不变。未回显的 23 条 = 原 19 条筛选值 + dashboard/segment 未命中 ref + 未配置 workspace 的无效 app（既有测试禁止回显这些标识）。C 级 369 条本轮未做；
+批量杠杆在 `models.py` 25、`plan_validation.py` 22、`_field_policy_shared.py` 16、
+`plan_adapters.py` 13，以及 `_input` / `_date_error` / `_app_id_error` 这类缺 `field=`
+的 helper。质量门禁未放宽：新文件仍 ≤500；`catalog.py` / `cli.py` / `client.py` 的 AST
+增长记入 ledger，硬顶未抬。生产 HTTP **0**。不 push、不碰 GitHub。

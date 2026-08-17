@@ -25,6 +25,7 @@ from .segment_spec_support import (
     text,
 )
 from .workspace import Workspace, load_workspace
+from .actionable_error_values import actual_value
 
 
 COMPILED_SEGMENT_SCHEMA_VERSION = "gravity-insight.segment-rule-compiled.v1"
@@ -74,7 +75,7 @@ def compile_segment_spec(
     update_type = source.get("update_type", "Manual")
     if update_type not in {"Manual", "Routine"}:
         raise InputValidationError(
-            "update_type must be Manual or Routine", field="update_type"
+            f"actual value: {actual_value(update_type)}; " + ("update_type must be Manual or Routine"), field="update_type"
         )
     inputs = {
         "app_id": str(app_id),
@@ -116,7 +117,7 @@ def validate_segment_spec(
         error = validation.get("error") if isinstance(validation, Mapping) else None
         details = error if isinstance(error, Mapping) else {}
         raise InputValidationError(
-            str(details.get("message") or "compiled Segment Rule Spec is invalid"),
+            f"actual value: {actual_value(spec)}; " + (str(details.get("message") or "compiled Segment Rule Spec is invalid")),
             field=str(details.get("field") or "spec"),
             next_action=str(
                 details.get("next_action")
@@ -165,14 +166,14 @@ def _resolve_app(workspace: Workspace, value: Any) -> int:
         return workspace.resolve_app(value)
     except ValueError:
         raise InputValidationError(
-            "app must reference a configured workspace App or positive id", field="app"
+            f"actual value: {actual_value(value)}; " + ("app must reference a configured workspace App or positive id"), field="app"
         ) from None
 
 
 def _validate_date_overrides(start: str | None, end: str | None) -> None:
     if start is None and end is not None:
         raise InputValidationError(
-            "end override requires start override", field="start/end"
+            f"actual value: {actual_value(start)}; " + ("end override requires start override"), field="start/end"
         )
 
 

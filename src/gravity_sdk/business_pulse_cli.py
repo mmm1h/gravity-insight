@@ -13,6 +13,7 @@ from .result_output import output_file
 from .workspace import load_workspace
 from .workspace_app import resolve_workspace_app
 from .report_cli import add_report_commands
+from .actionable_error_values import actual_value
 
 
 def add_business_pulse_command(
@@ -89,7 +90,7 @@ def _split_apps(values: list[str]) -> list[str]:
     selected = [part.strip() for value in values for part in value.split(",")]
     result = [value for value in selected if value]
     if not result:
-        raise InputValidationError("--app must select at least one App", field="app")
+        raise InputValidationError(f"actual value: {actual_value(result)}; " + ("--app must select at least one App"), field="app")
     return result
 
 

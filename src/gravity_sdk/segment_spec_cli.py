@@ -24,6 +24,7 @@ from .segment_spec import (
 from .result_source import GOVERNED_PRODUCT, add_result_source
 from .workspace import load_workspace
 from .workspace_app import resolve_workspace_app
+from .actionable_error_values import actual_value
 
 
 def add_segment_commands(
@@ -160,12 +161,12 @@ def run_segment_command(
     kind = getattr(args, "kind", None)
     if kind is None:
         raise InputValidationError(
-            "analysis segment requires --kind or the evaluate subcommand",
+            f"actual value: {actual_value(kind)}; " + ("analysis segment requires --kind or the evaluate subcommand"),
             field="kind",
         )
     if args.input is None:
         raise InputValidationError(
-            "analysis segment --kind requires --input", field="input"
+            f"actual value: {actual_value(args.input)}; " + ("analysis segment --kind requires --input"), field="input"
         )
     operation_id = ANALYSIS_SEGMENT_OPERATIONS[kind]
     read_all = bool(getattr(args, "all_pages", False))
@@ -205,7 +206,7 @@ def run_segment_snapshot_command(
         )
     ):
         raise InputValidationError(
-            "segment snapshot cannot use legacy segment read arguments",
+            f"actual value: {actual_value({'kind': getattr(args, 'kind', None), 'input': getattr(args, 'input', None), 'set': getattr(args, 'input_sets', None), 'all_pages': getattr(args, 'all_pages', None)})}; " + ("segment snapshot cannot use legacy segment read arguments"),
             field="snapshot",
             next_action="Remove --kind, --input, --set, and --all-pages before snapshot.",
         )
@@ -285,7 +286,7 @@ def run_segment_evaluate_command(
         return segment_rule_spec_schema()
     if args.spec is None:
         raise InputValidationError(
-            "segment evaluate requires --spec", field="spec"
+            f"actual value: {actual_value(args.spec)}; " + ("segment evaluate requires --spec"), field="spec"
         )
     spec = parse_object(args.spec)
     client = build_client()
@@ -329,7 +330,7 @@ def _selected_fields(values: Sequence[str] | None) -> tuple[str, ...]:
         if item.strip()
     )
     if not selected:
-        raise InputValidationError("--fields must not be empty", field="fields")
+        raise InputValidationError(f"actual value: {actual_value(selected)}; " + ("--fields must not be empty"), field="fields")
     return tuple(dict.fromkeys(selected))
 
 

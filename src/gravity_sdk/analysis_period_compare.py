@@ -12,6 +12,7 @@ from typing import Any
 from .analysis_spec import compile_query_spec, validate_query_spec
 from .errors import InputValidationError
 from .result_source import GOVERNED_PRODUCT, result_source
+from .actionable_error_values import actual_value
 
 
 SCHEMA_VERSION = "gravity-insight.analysis-period-compare.v1"
@@ -338,14 +339,14 @@ def _same_spec(current: Mapping[str, Any], baseline: Mapping[str, Any]) -> None:
 
     if semantic(current) != semantic(baseline):
         raise InputValidationError(
-            "period compare requires exactly the same Analysis spec for both windows",
+            f"actual value: {actual_value(current)}; " + ("period compare requires exactly the same Analysis spec for both windows"),
             field="spec",
         )
 
 
 def _workers(value: int) -> None:
     if type(value) is not int or not 1 <= value <= 24:
-        raise InputValidationError("max_workers must be between 1 and 24", field="max_workers")
+        raise InputValidationError(f"actual value: {actual_value(value)}; " + ("max_workers must be between 1 and 24"), field="max_workers")
 
 
 def _number(value: Any) -> bool:
