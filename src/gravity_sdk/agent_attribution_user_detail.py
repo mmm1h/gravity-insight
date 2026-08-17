@@ -80,8 +80,10 @@ def attribution_user_detail_query(query: str) -> bool:
         and bool(words & {"user", "users"})
         and bool(words & {"detail", "details", "drill", "source"})
     )
-    chinese = "用户" in selected and "归因" in selected and any(
-        term in selected for term in ("明细", "来源", "下钻")
+    chinese = (
+        ("用户" in selected or "设备" in selected)
+        and any(term in selected for term in ("归因", "回传"))
+        and any(term in selected for term in ("明细", "来源", "下钻", "核对"))
     )
     return english or chinese
 

@@ -87,7 +87,10 @@ def dashboard_snapshot_intent(query: str) -> bool:
     )
     return (
         "dashboard" in selected and any(term in selected for term in english)
-    ) or ("看板" in selected and any(term in selected for term in chinese))
+    ) or (
+        ("看板" in selected or "页面集合" in selected)
+        and any(term in selected for term in chinese)
+    )
 
 
 def dashboard_analysis_query(query: str) -> bool:
@@ -116,9 +119,9 @@ def dashboard_analysis_intent(query: str) -> bool:
         and "chart" in selected
         and any(term in selected for term in english_action)
     ) or (
-        "看板" in selected
-        and "图表" in selected
-        and any(term in selected for term in chinese_action)
+        ("看板" in selected or "页面" in selected)
+        and ("图表" in selected or "图" in selected)
+        and any(term in selected for term in (*chinese_action, "忠实执行", "还原"))
     )
 
 

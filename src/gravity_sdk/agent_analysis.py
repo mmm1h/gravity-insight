@@ -149,12 +149,13 @@ def _natural_analysis_kind(query: str) -> str | None:
 
 def _natural_event(words: frozenset[str], compact: str) -> bool:
     english = (
-        bool(words & {"activity", "behavior", "event"})
+        bool(words & {"activity", "behavior", "event", "login"})
         and bool(words & {"count", "counts", "frequency", "trend", "trends", "volume"})
         and bool(words & {"daily", "day", "week", "time", "channel"})
     )
-    chinese = ("事件" in compact or "行为" in compact) and any(
-        term in compact for term in ("每天", "每小时", "次数", "频次", "发生量", "趋势")
+    chinese = ("事件" in compact or "行为" in compact or "登录" in compact) and any(
+        term in compact
+        for term in ("每天", "每日", "每小时", "次数", "频次", "发生量", "趋势")
     )
     return english or chinese
 
@@ -163,13 +164,22 @@ def _natural_funnel(words: frozenset[str], compact: str) -> bool:
     explicit = "funnel" in words and bool(
         words & {"conversion", "convert", "step", "steps"}
     )
-    staged_conversion = "conversion" in words and "from" in words and bool(
-        words & {"through", "to"}
+    staged_conversion = (
+        bool(words & {"conversion", "path", "pathway"})
+        and "from" in words
+        and bool(words & {"through", "to"})
+    ) or (
+        "path" in words and bool(words & {"step", "steps", "three"})
     )
-    chinese = "转化" in compact and (
+    chinese = (
+        "转化" in compact
+        or "路径" in compact
+        or "漏斗" in compact
+    ) and (
         "多步" in compact
         or "逐步" in compact
         or "步骤" in compact
+        or "三步" in compact
         or "依次" in compact
         or compact.count("到") >= 2
     )
@@ -184,7 +194,7 @@ def _natural_retention(words: frozenset[str], compact: str) -> bool:
         term in compact
         for term in (
             "第1天", "第2天", "第7天", "第一天", "第二天", "第七天",
-            "次日", "次周", "次月", "七日",
+            "次日", "次周", "次月", "七日", "隔一天", "隔一周", "隔一月",
         )
     ) and any(term in compact for term in ("回来", "回访", "复访", "留存"))
     return english or chinese
@@ -197,7 +207,7 @@ def _natural_property(words: frozenset[str], compact: str) -> bool:
     )
     chinese = (
         any(term in compact for term in ("用户", "会员", "访客", "人群"))
-        and any(term in compact for term in ("分布", "占比", "比例", "构成", "集中"))
+        and any(term in compact for term in ("分布", "占比", "比例", "构成", "集中", "占多少"))
         and any(term in compact for term in ("属性", "城市", "省份", "渠道", "地区", "机型", "性别", "年龄"))
     )
     return english or chinese
@@ -207,12 +217,16 @@ def _natural_scatter(words: frozenset[str], compact: str) -> bool:
     explicit = "scatter" in words or "散点" in compact
     english = bool(words & {"relationship", "correlation"}) and (
         "between" in words or "versus" in words
+    ) or (
+        bool(words & {"metric", "metrics", "indicator", "indicators"})
+        and bool(words & {"plot", "draw", "chart", "compare"})
+        and bool(words & {"two", "both", "pair"})
     )
     chinese = (
         "关系" in compact and any(term in compact for term in ("和", "与", "之间"))
     ) or (
-        any(term in compact for term in ("相关", "关联"))
-        and any(term in compact for term in ("是否", "与", "之间"))
+        any(term in compact for term in ("相关", "关联", "对照"))
+        and any(term in compact for term in ("是否", "与", "之间", "两个指标", "两个"))
     )
     return explicit or english or chinese
 
@@ -227,10 +241,15 @@ def _period_compare_intent(query: str) -> bool:
         and bool(words & {"analysis", "definition", "spec"})
     )
     chinese = (
-        any(term in selected for term in ("对比", "比较"))
-        and any(term in selected for term in ("本周", "上周", "本月", "上月", "时期"))
-        and any(term in selected for term in ("同一个", "同一份", "相同"))
-        and "分析" in selected
+        any(term in selected for term in ("对比", "比较", "比比", "再比"))
+        and any(
+            term in selected
+            for term in ("本周", "上周", "这礼拜", "上礼拜", "本月", "上月", "时期", "前后两段")
+        )
+        and any(
+            term in selected
+            for term in ("同一个", "同一份", "相同", "同一口径", "同口径")
+        )
     )
     return english or chinese or _same_definition_compare(selected)
 
@@ -329,8 +348,16 @@ def _description(selected_kind: str | None) -> str:
         if selected_kind is None
         else ""
     )
+    kind_terms = {
+        "event": "事件趋势、行为次数与发生量",
+        "funnel": "漏斗、转化路径与逐步转化",
+        "retention": "留存、回访与复访",
+        "property": "属性分布与用户构成",
+        "scatter": "散点关系与指标相关",
+    }
+    named = kind_terms.get(selected_kind or "", scope)
     return (
-        f"用现有 Analysis Spec v1 合同描述{scope}分析，再由登记的 analysis_query "
+        f"用现有 Analysis Spec v1 合同描述{named}分析，再由登记的 analysis_query "
         f"composite 编译和执行{comparison}；自然语言不会填充业务字段。"
     )
 

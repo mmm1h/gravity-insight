@@ -42,7 +42,7 @@ _CHINESE_RULES = ("规则", "条件")
 _CHINESE_RESULTS = (
     "人数", "多少人", "规模", "占比", "比例", "命中", "覆盖", "占全部",
 )
-_CHINESE_ACTIONS = ("评估", "预估", "估算", "测算", "圈中")
+_CHINESE_ACTIONS = ("评估", "预估", "估算", "测算", "圈中", "圈出来")
 _EXACT_SELECTORS = frozenset(
     {_SELECTOR, f"composite:{_COMPOSITE}", _COMPOSITE}
 )

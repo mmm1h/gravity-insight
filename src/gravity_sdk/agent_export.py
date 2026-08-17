@@ -361,9 +361,12 @@ def _material_export_workflow(query: str) -> bool:
     selected = query.strip().casefold()
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
     english = (
-        bool(words & {"material", "creative"})
+        (
+            bool(words & {"material", "creative"})
+            or ("素材" in selected)
+        )
         and bool(words & {"report"})
-        and bool(words & {"create", "generate"})
+        and bool(words & {"create", "generate", "poll"})
         and bool(words & {"download", "save"})
     )
     chinese = (
@@ -373,6 +376,35 @@ def _material_export_workflow(query: str) -> bool:
         and any(term in selected for term in ("下载", "保存到本地"))
     )
     return english or chinese
+
+
+def material_export_capability_cards(
+    query: str, *, domain: str | None = None, platform: str | None = None
+) -> list[dict[str, Any]]:
+    """Index the governed material-report export without a live export client."""
+
+    if platform is not None or domain not in {None, "analysis", "export", "material", "report"}:
+        return []
+    selected = affirmative_intent_text(query)
+    exact = selected.strip().casefold() == _MATERIAL_OPERATION
+    if not exact and not (
+        any(_contains_alias(selected, alias) for alias in _MATERIAL_ALIASES)
+        or _material_export_workflow(selected)
+        or _material_file_export(selected)
+    ):
+        return []
+    return [
+        {
+            "kind": "export",
+            "selector": _MATERIAL_OPERATION,
+            "operation_id": _MATERIAL_OPERATION,
+            "domain": "export",
+            "description": "创建、轮询并原子下载受治理的素材报表文件。",
+            "effect": _CREATE_EFFECT,
+            "executable": True,
+            "currently_callable": True,
+        }
+    ]
 
 
 def _material_file_export(query: str) -> bool:
@@ -426,5 +458,6 @@ __all__ = [
     "export_inventory_for_query",
     "is_authoritative_export_card",
     "load_export_agent_inventory",
+    "material_export_capability_cards",
     "query_requests_export",
 ]

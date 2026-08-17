@@ -63,7 +63,7 @@ def title_package_query(query: str) -> bool:
     english = "title" in words and bool(words & {"package", "packages"}) and bool(
         words & {"campaign", "cost", "count", "metric", "metrics", "performance", "show", "summary"}
     )
-    chinese = "标题包" in selected and any(
+    chinese = any(term in selected for term in ("标题包", "标提包")) and any(
         term in selected for term in ("指标", "表现", "汇总", "成本", "点击率")
     )
     return english or chinese

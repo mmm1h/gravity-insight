@@ -183,9 +183,18 @@ def capability_handoff_cards(
     from .agent_metadata_search import metadata_search_capability_cards
     from .agent_user_journey import user_journey_capability_cards
     from .agent_unavailable import unavailable_journey_gap
+    from .agent_app_catalog import app_catalog_capability_cards
+    from .agent_app_public_info import app_public_info_capability_cards
+    from .agent_monetization_aggregate import monetization_aggregate_capability_cards
 
     if unavailable_journey_gap(query) is not None:
         return [], True
+
+    aggregate = monetization_aggregate_capability_cards(
+        query, domain=domain, platform=platform
+    )
+    if aggregate:
+        return aggregate, False
 
     if monetization_guard_blocks_operation_fallback(query):
         if multiple_product_intents(query, inventory=composite_inventory):
@@ -219,6 +228,10 @@ def capability_handoff_cards(
     journeys = user_journey_capability_cards(
         query, domain=domain, platform=platform
     )
+    operation_products = [
+        *app_catalog_capability_cards(query, domain=domain, platform=platform),
+        *app_public_info_capability_cards(query, domain=domain, platform=platform),
+    ]
     products = [
         *analysis_query_spec_cards(query, domain=domain, platform=platform),
         *composite_capability_cards(
@@ -228,7 +241,14 @@ def capability_handoff_cards(
             inventory=composite_inventory,
         ),
     ]
-    return direct_effects or metadata_search or lineage or journeys or products, bool(
+    return (
+        direct_effects
+        or metadata_search
+        or lineage
+        or journeys
+        or operation_products
+        or products
+    ), bool(
         direct_effects
         or metadata_search
         or lineage

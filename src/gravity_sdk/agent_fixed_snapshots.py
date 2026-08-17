@@ -49,10 +49,10 @@ def _analysis_context(selected: str) -> bool:
         and bool(words & {"available", "building", "construct", "fetch", "get", "give", "need", "needed", "new", "read"})
         and bool(words & {"analysis", "analytics", "app"})
     )
-    chinese_groups = ("事件", "属性", "指标", "模板")
+    chinese_groups = ("事件", "属性", "指标", "模板", "行为", "字段", "骨架")
     chinese = (
         sum(term in selected for term in chinese_groups) >= 3
-        and "分析" in selected
+        and any(term in selected for term in ("分析", "查询", "搭"))
         and any(term in selected for term in ("可用", "搭", "构造", "一次", "给我"))
     )
     return english or chinese
@@ -69,7 +69,7 @@ def _app_snapshot(selected: str) -> bool:
     english = "app" in words and sum(
         bool(words & group) for group in english_groups
     ) >= 3
-    chinese_groups = ("容量", "角色", "菜单", "实时事件", "治理")
+    chinese_groups = ("容量", "角色", "菜单", "实时事件", "治理", "实时采集", "入口开放")
     chinese = (
         ("app" in words or "应用" in selected)
         and sum(term in selected for term in chinese_groups) >= 3
@@ -88,7 +88,7 @@ def _attribution_snapshot(selected: str) -> bool:
     english = "attribution" in words and sum(
         bool(words & group) for group in english_groups
     ) >= 2
-    chinese_groups = ("归因规则", "归因配置", "字段映射", "映射", "回溯", "窗口")
+    chinese_groups = ("归因规则", "归因配置", "字段映射", "映射", "回溯", "窗口", "回看")
     chinese = "归因" in selected and sum(
         term in selected for term in chinese_groups
     ) >= 2

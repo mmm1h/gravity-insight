@@ -6,6 +6,8 @@ from collections.abc import Mapping
 import re
 from typing import Any
 
+from .agent_intent_text import affirmative_intent_text
+
 
 SAVED_ANALYSIS_NAME = "saved_analysis"
 SAVED_ANALYSIS_SELECTOR = f"composite:{SAVED_ANALYSIS_NAME}"
@@ -145,7 +147,7 @@ SAVED_ANALYSIS_CAPABILITY: Mapping[str, Any] = {
 def saved_analysis_query(query: str) -> bool:
     """Recognize explicit replay/inspection intent and reject Web UI concepts."""
 
-    selected = " ".join(query.strip().casefold().split())
+    selected = affirmative_intent_text(query) or " ".join(query.strip().casefold().split())
     from .agent_order_directory import order_directory_adjacent_intent
 
     if selected in _EXACT_SELECTORS:
@@ -163,12 +165,12 @@ def saved_analysis_query(query: str) -> bool:
         )
     compact = "".join(selected.split())
     return (
-        any(marker in compact for marker in ("保存", "已存"))
+        any(marker in compact for marker in ("保存", "已存", "已保存"))
         and (
             any(subject in compact for subject in _CHINESE_SUBJECTS)
             or order_directory_adjacent_intent(selected)
         )
-        and any(action in compact for action in _CHINESE_ACTIONS)
+        and any(action in compact for action in (*_CHINESE_ACTIONS, "重跑", "精确引用"))
         and not any(term in compact for term in _CHINESE_BLOCKED)
     )
 

@@ -38,7 +38,7 @@ _ENGLISH_BLOCKED = frozenset(
         "not", "no", "avoid", "exclude", "never", "skip", "without",
     }
 )
-_CHINESE_ACTIONS = ("表现", "效果", "报表")
+_CHINESE_ACTIONS = ("表现", "效果", "报表", "横比")
 _CHINESE_BLOCKED = (
     "导出", "下载", "素材库", "相册", "标签", "审核", "收藏", "回收", "上传",
     "模板", "创建", "更新", "删除",
@@ -122,7 +122,7 @@ def material_performance_intent(query: str) -> bool:
     if selected.isascii():
         return False
     return (
-        "素材" in compact
+        ("素材" in compact or "图片视频" in compact)
         and any(term in compact for term in _CHINESE_ACTIONS)
     )
 

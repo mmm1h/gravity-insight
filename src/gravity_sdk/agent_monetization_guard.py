@@ -43,6 +43,9 @@ _CHINESE_SHAPES = (
     "变现列表",
     "变现表现",
     "广告变现明细",
+    "变现记录",
+    "逐笔变现",
+    "变现细账",
 )
 _EXACT_PRODUCT_INTENTS = frozenset(
     {
@@ -58,6 +61,9 @@ _EXACT_PRODUCT_INTENTS = frozenset(
         "变现列表",
         "广告变现明细",
         "无标识变现明细",
+        "变现记录",
+        "逐笔变现",
+        "变现细账",
     }
 )
 _ENGLISH_BLOCKED = frozenset(
@@ -193,6 +199,7 @@ def _blocked_product_query(selected: str) -> bool:
     # Keep recognizing the historical exclusion phrase without presenting it as
     # a projection boundary. Projection is governed by the registered contract.
     compact = compact.replace(_LEGACY_IDENTIFIER_FREE_PHRASE, "")
+    compact = compact.replace("字段完整", "")
     return bool(
         words & (_ENGLISH_BLOCKED | _ENGLISH_NEGATIONS)
         or _explicit_range(words)
@@ -202,7 +209,7 @@ def _blocked_product_query(selected: str) -> bool:
 
 def _open_dimension_query(selected: str) -> bool:
     words = frozenset(_ASCII_WORD.findall(selected.replace("-", " ")))
-    compact = _COMPACT_SEPARATORS.sub("", selected)
+    compact = _COMPACT_SEPARATORS.sub("", selected).replace("字段完整", "")
     return bool(
         words & _ENGLISH_OPEN_DIMENSIONS
         or any(term in compact for term in _CHINESE_OPEN_DIMENSIONS)

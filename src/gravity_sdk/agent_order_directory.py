@@ -63,6 +63,7 @@ _EXACT_INTENTS = frozenset(
         "查看订单明细",
         "普通订单列表",
         "父订单详情",
+        "订单清单",
     }
 )
 _ENGLISH_ORDER = frozenset({"order", "orders"})
@@ -328,7 +329,7 @@ def order_directory_intent(query: str) -> bool:
     return (
         selected in _EXACT_INTENTS
         or bool(words & _ENGLISH_ORDER and "directory" in words)
-        or "订单目录" in _compact(selected)
+        or any(term in _compact(selected) for term in ("订单目录", "订单清单", "订单总目录"))
     )
 
 
@@ -421,7 +422,7 @@ def _chinese_product_shape(compact: str) -> bool:
     return bool(
         _contains_any(
             compact,
-            ("订单目录", "订单明细", "订单详情", "订单列表", "订单日报"),
+            ("订单目录", "订单明细", "订单详情", "订单列表", "订单日报", "订单清单", "订单总目录"),
         )
         or _contains_any(compact, ("报表", "报告"))
         or _contains_any(compact, _CHINESE_BLOCKING_TERMS)

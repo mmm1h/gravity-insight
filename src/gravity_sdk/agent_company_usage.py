@@ -50,9 +50,9 @@ def company_usage_query(query: str) -> bool:
     english = "company" in words and bool(words & {"usage", "consumption"}) and bool(
         words & {"resource", "resources", "trend", "trends", "usage"}
     )
-    chinese = "公司" in selected and "用量" in selected and any(
-        term in selected for term in ("资源", "消耗", "趋势", "用量")
-    )
+    chinese = "公司" in selected and any(
+        term in selected for term in ("用量", "资源消耗", "资源用量")
+    ) and any(term in selected for term in ("资源", "消耗", "趋势", "用量", "随时间"))
     return english or chinese
 
 

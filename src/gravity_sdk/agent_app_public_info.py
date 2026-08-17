@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import copy
+import re
 from collections.abc import Mapping
 from typing import Any
+
+from .agent_intent_text import affirmative_intent_text
 
 
 APP_PUBLIC_INFO_SELECTOR = ".".join(("app", "app_info", "get"))
@@ -15,7 +18,8 @@ APP_PUBLIC_INFO_CAPABILITY: Mapping[str, Any] = {
     "domain": "app",
     "description": (
         "读取调用方提供的 App Store 或 Google Play 公开下载链接，返回已登记的公开 App 信息；"
-        "当前账号 OneLink 目录明确为空，本产品不把空 OneLink 样本伪装成绑定。"
+        "覆盖商店公开资料、OneLink 与公开信息绑定；当前账号 OneLink 目录明确为空，"
+        "本产品不把空 OneLink 样本伪装成绑定。"
     ),
     "effect": "read",
     "executable": True,
@@ -53,8 +57,38 @@ def app_public_info_capability_inventory() -> tuple[dict[str, Any], ...]:
     return (copy.deepcopy(dict(APP_PUBLIC_INFO_CAPABILITY)),)
 
 
+def app_public_info_query(query: str) -> bool:
+    """Recognize store-public / OneLink binding reads, not App governance."""
+
+    selected = affirmative_intent_text(query)
+    if selected in {APP_PUBLIC_INFO_SELECTOR, "app public info"}:
+        return True
+    words = frozenset(re.findall(r"[a-z0-9_]+", selected))
+    english = (
+        bool(words & {"onelink", "store"})
+        or bool(words & {"public"}) and bool(words & {"info", "information", "binding"})
+    ) and bool(words & {"app", "apps", "application"})
+    chinese = any(term in selected for term in ("onelink", "商店公开", "公开信息")) and (
+        "app" in words or "应用" in selected
+    )
+    return english or chinese
+
+
+def app_public_info_capability_cards(
+    query: str, *, domain: str | None = None, platform: str | None = None
+) -> list[dict[str, Any]]:
+    if platform is not None or domain not in {None, "app"}:
+        return []
+    exact = query.strip().casefold() == APP_PUBLIC_INFO_SELECTOR
+    if not exact and not app_public_info_query(query):
+        return []
+    return [copy.deepcopy(dict(APP_PUBLIC_INFO_CAPABILITY))]
+
+
 __all__ = [
     "APP_PUBLIC_INFO_CAPABILITY",
     "APP_PUBLIC_INFO_SELECTOR",
+    "app_public_info_capability_cards",
     "app_public_info_capability_inventory",
+    "app_public_info_query",
 ]

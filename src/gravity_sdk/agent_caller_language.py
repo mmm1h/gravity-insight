@@ -17,18 +17,23 @@ CALLER_LANGUAGE_SOURCES = (
 _ANALYSIS_JOURNEY_TITLES: dict[str, tuple[str, ...]] = {
     "analysis.query.spec:event": (
         "看某事件随时间、分组和条件的变化",
+        "事件趋势、行为次数与发生量",
     ),
     "analysis.query.spec:funnel": (
         "看多步行为的转化漏斗",
+        "转化路径与逐步转化",
     ),
     "analysis.query.spec:retention": (
         "看起始行为后的用户留存",
+        "回访与复访",
     ),
     "analysis.query.spec:property": (
         "看用户或事件属性的分布与聚合",
+        "用户分布与属性构成",
     ),
     "analysis.query.spec:scatter": (
         "看事件指标之间的散点关系",
+        "指标相关关系",
     ),
     "analysis.query.spec": (
         "用同一分析定义比较两个时期",
@@ -59,33 +64,40 @@ _ANALYSIS_JOURNEY_TITLES: dict[str, tuple[str, ...]] = {
     ),
     "composite:custom_audience": (
         "查看自定义人群覆盖与状态",
+        "自建人群覆盖与状态",
     ),
     "composite:material_performance": (
         "比较已支持平台的素材表现",
     ),
     "composite:order_directory": (
         "读取单日订单目录",
+        "普通订单清单",
     ),
     "composite:order_split_trace": (
         "按 TraceID 追踪单日订单拆单结果",
+        "按追踪号核对拆单明细",
     ),
     "composite:monetization_detail": (
         "读取单日完整已登记变现明细",
+        "单日变现记录与细账",
     ),
     "gap:WORKSPACE_SQL_PRODUCT_NOT_CONFIGURED": (
         "执行 workspace 登记的聚合 SQL 分析产品",
     ),
     "composite:dashboard_snapshot": (
         "查看看板详情、成员和筛选收藏",
+        "页面集合的成员筛选与收藏",
     ),
     "composite:dashboard_analysis": (
         "忠实重放看板图表及页面条件",
+        "按页面条件忠实执行图表",
     ),
     "composite:saved_analysis": (
         "按精确引用重放保存分析",
     ),
     "composite:analysis_template": (
         "按精确引用重放分析模板",
+        "按编号重跑可复用查询骨架",
     ),
     "composite:segment_snapshot": (
         "查看分群详情、版本和单日聚合结果",
@@ -110,6 +122,7 @@ _ANALYSIS_JOURNEY_TITLES: dict[str, tuple[str, ...]] = {
     ),
     "composite:title_package": (
         "读取巨量普通/标准标题包的标题数、计划数与成本表现",
+        "标题包指标与成本表现",
     ),
     "metadata:search": (
         "离线查找可用于分析的事件、属性、指标和模板名称",
@@ -155,6 +168,18 @@ _ANALYSIS_JOURNEY_TITLES: dict[str, tuple[str, ...]] = {
     ),
     "material.asset.fetch": (
         "按精确平台素材引用预览或下载图片/视频",
+        "按精确素材引用下载原图或视频",
+    ),
+    "app.list": (
+        "查找当前账号可读的 App 项目",
+    ),
+    "app.app_info.get": (
+        "查看 App 的 OneLink 与公开信息绑定",
+        "核对商店公开资料与 App 的关联",
+    ),
+    "report.get.query": (
+        "按平台、广告位和日期汇总变现结果",
+        "聚合变现收入，不是逐行明细",
     ),
 }
 

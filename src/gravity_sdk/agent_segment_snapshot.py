@@ -137,7 +137,7 @@ def _chinese_aggregate_intent(compact: str) -> bool:
     return (
         not any(term in compact for term in ("规则", "条件", "评估", "预估", "估算", "测算"))
         and any(term in compact for term in ("分群", "人群", "受众"))
-        and any(term in compact for term in ("人数", "规模", "占比", "比例", "历史", "单日"))
+        and any(term in compact for term in ("人数", "规模", "占比", "比例", "历史", "单日", "总量"))
     )
 
 
