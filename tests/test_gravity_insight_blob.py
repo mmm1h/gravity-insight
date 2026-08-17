@@ -469,7 +469,8 @@ class SafeBlobTransferTests(unittest.TestCase):
                 },
                 chunks=[remaining],
             )
-            transfer = SafeBlobTransfer(FakeTransport([response]), wall_clock=lambda: NOW)
+            transport = FakeTransport([response])
+            transfer = SafeBlobTransfer(transport, wall_clock=lambda: NOW)
             with self.assertRaises(BlobTransferError) as raised:
                 transfer.download(
                     source_for(full_data),
@@ -481,9 +482,30 @@ class SafeBlobTransferTests(unittest.TestCase):
                         etag='"version-1"',
                     ),
                 )
+            self.assertEqual(
+                f"bytes={len(partial)}-",
+                transport.download_calls[0][1]["Range"],
+            )
             self.assertEqual("BLOB_RESUME_VALIDATOR_CHANGED", raised.exception.code)
             self.assertEqual(partial, partial_path.read_bytes())
             self.assertFalse((root / "report.csv").exists())
+
+    def test_resume_request_omits_blank_if_range(self):
+        from gravity_sdk.blob_download import _download_request_headers
+
+        headers = _download_request_headers(
+            BlobResumeState(partial_path=Path("partial"), bytes_received=4, etag="")
+        )
+        self.assertEqual("bytes=4-", headers["Range"])
+        self.assertNotIn("If-Range", headers)
+        present = _download_request_headers(
+            BlobResumeState(
+                partial_path=Path("partial"),
+                bytes_received=4,
+                etag='"version-1"',
+            )
+        )
+        self.assertEqual('"version-1"', present["If-Range"])
 
     def test_interrupted_stream_returns_validator_bound_resume_state(self):
         data = b"id,name\n1,Alice\n"
@@ -538,6 +560,25 @@ class SafeBlobTransferTests(unittest.TestCase):
                 transfer.download(source_for(data), "report.csv", csv_policy(root))
             self.assertEqual("BLOB_OVERWRITE_DENIED", raised.exception.code)
             self.assertEqual(b"existing", destination.read_bytes())
+
+    def test_replace_overwrite_policy_replaces_existing_regular_file(self):
+        data = b"id,name\n1,Alice\n"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            destination = root / "report.csv"
+            destination.write_bytes(b"existing")
+            transfer = SafeBlobTransfer(
+                FakeTransport([response_for(data)]),
+                wall_clock=lambda: NOW,
+            )
+            receipt = transfer.download(
+                source_for(data),
+                "report.csv",
+                csv_policy(root, overwrite_policy="replace"),
+            )
+            self.assertEqual(data, destination.read_bytes())
+            self.assertEqual(hashlib.sha256(data).hexdigest(), receipt.committed_sha256)
+            self.assertFalse(list(root.glob(".blob-*")))
 
     def test_upload_is_implemented_but_disabled_by_default(self):
         with tempfile.TemporaryDirectory() as directory:

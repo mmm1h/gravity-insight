@@ -27,7 +27,9 @@ def _download_request_headers(
     request_headers = {"Accept-Encoding": "identity"}
     if resume is not None:
         request_headers["Range"] = f"bytes={resume.bytes_received}-"
-        request_headers["If-Range"] = resume.etag or resume.last_modified or ""
+        validator = resume.etag or resume.last_modified
+        if validator:
+            request_headers["If-Range"] = validator
     return request_headers
 
 

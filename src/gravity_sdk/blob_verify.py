@@ -89,7 +89,7 @@ def _commit_staging(staging: Path, destination: Path, policy: BlobPolicy) -> Non
     )
     if os.path.lexists(destination):
         value = os.lstat(destination)
-        if _is_reparse_stat(destination, value):
+        if _reparse_stat(destination, value):
             raise BlobTransferError(
                 "destination became a symlink or reparse point",
                 code="BLOB_PATH_REPARSE",
