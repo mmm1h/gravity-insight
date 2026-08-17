@@ -772,6 +772,7 @@ class GravityInsightClient(MutationClientMixin, CatalogInventoryMixin, ExportCli
         max_pages: int = 1_000,
         max_items: int = 100_000,
         max_workers: int = DEFAULT_CONCURRENCY,
+        continue_without_total: bool = False,
     ) -> dict[str, Any]:
         started = time.monotonic()
         try:
@@ -781,6 +782,7 @@ class GravityInsightClient(MutationClientMixin, CatalogInventoryMixin, ExportCli
                 max_pages=max_pages,
                 max_items=max_items,
                 max_workers=max_workers,
+                continue_without_total=continue_without_total,
             )
         except (UpstreamError, ParentRequiredError, PermissionUnavailableError) as exc:
             envelope = self._error_envelope(operation_id, exc)
@@ -800,6 +802,7 @@ class GravityInsightClient(MutationClientMixin, CatalogInventoryMixin, ExportCli
         max_pages: int = 5,
         max_items: int = 200,
         max_workers: int = DEFAULT_CONCURRENCY,
+        continue_without_total: bool = False,
     ) -> dict[str, Any]:
         """Read up to agent-safe bounds and return an explicit continuation."""
 
@@ -811,6 +814,7 @@ class GravityInsightClient(MutationClientMixin, CatalogInventoryMixin, ExportCli
                 max_pages=max_pages,
                 max_items=max_items,
                 max_workers=max_workers,
+                continue_without_total=continue_without_total,
             )
         except (UpstreamError, ParentRequiredError, PermissionUnavailableError) as exc:
             envelope = self._error_envelope(operation_id, exc)
@@ -835,6 +839,7 @@ class GravityInsightClient(MutationClientMixin, CatalogInventoryMixin, ExportCli
         max_pages: int,
         max_items: int,
         max_workers: int = DEFAULT_CONCURRENCY,
+        continue_without_total: bool = False,
     ) -> dict[str, Any]:
         self._operation_catalog.guard(operation_id)
         operation = self._executor._policy.authorize_operation(operation_id)
@@ -846,6 +851,7 @@ class GravityInsightClient(MutationClientMixin, CatalogInventoryMixin, ExportCli
             max_pages=max_pages,
             max_items=max_items,
             max_workers=max_workers,
+            continue_without_total=continue_without_total,
         )
 
     def _read_all_untracked(
@@ -856,6 +862,7 @@ class GravityInsightClient(MutationClientMixin, CatalogInventoryMixin, ExportCli
         max_pages: int = 1_000,
         max_items: int = 100_000,
         max_workers: int = DEFAULT_CONCURRENCY,
+        continue_without_total: bool = False,
     ) -> dict[str, Any]:
         self._operation_catalog.guard(operation_id)
         operation = self._executor._policy.authorize_operation(operation_id)
@@ -867,6 +874,7 @@ class GravityInsightClient(MutationClientMixin, CatalogInventoryMixin, ExportCli
             max_pages=max_pages,
             max_items=max_items,
             max_workers=max_workers,
+            continue_without_total=continue_without_total,
         )
 
     def batch(

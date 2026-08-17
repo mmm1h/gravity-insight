@@ -25,7 +25,7 @@ def pagination_audit(
     returned_items = page.get("item_count")
     total_items = page.get("total_items")
     has_more = _has_more(page)
-    criterion = "has_more=false and returned_items=total_items"
+    criterion = _completeness_criterion(page, has_more)
     if not page:
         returned_items = _data_item_count(result.get("data"))
         total_items = _reported_total(result.get("data"))
@@ -116,6 +116,14 @@ def _page_size_clamped(requested: Any, effective: Any) -> bool:
         and not isinstance(effective, bool)
         and requested != effective
     )
+
+
+def _completeness_criterion(page: Mapping[str, Any], has_more: bool | None) -> str:
+    if page.get("fetch_strategy") == "stopped_missing_total_page":
+        return "total_page absent; collection completeness unknown"
+    if has_more is None:
+        return "has_more unknown; collection completeness unknown"
+    return "has_more=false and returned_items=total_items"
 
 
 def _completeness_status(

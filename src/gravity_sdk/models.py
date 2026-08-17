@@ -21,7 +21,7 @@ from .errors import (
     is_success_status,
 )
 from .operation_effect_policy import validate_operation_effect
-from .pagination_inputs import validate_page_inputs
+from .pagination_inputs import pagination_schema, validate_page_inputs
 from .projection_validation import numeric_suffix_schema, validate_projection_bindings
 from .result_audit import add_result_audit, result_receipt_references
 from .result_source import RAW_OPERATION, result_source
@@ -1017,11 +1017,7 @@ class OperationSpec:
                     self.response_projection.opaque_json_item_keys
                 ),
             },
-            "pagination": {
-                "kind": self.pagination.kind,
-                "page_field": self.pagination.page_field,
-                "page_size_field": self.pagination.page_size_field,
-            },
+            "pagination": pagination_schema(self.pagination),
             "privacy": {"classification": self.privacy_policy.classification},
             "required_parent": [
                 {

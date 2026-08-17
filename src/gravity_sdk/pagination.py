@@ -13,13 +13,15 @@ from collections.abc import Callable, Mapping, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Any
 
-from .drift import aggregate_contract_status
 from .errors import InputValidationError, PaginationError
-from .fingerprints import shape_fingerprint
 from .http_runtime import MAX_CONCURRENCY
 from .models import OperationSpec, ReadResult
-from .result_audit import add_result_audit
-from .response_drift import merge_response_drifts
+from .pagination_merge import merge_pages, truncate_nonpaginated_result
+from .pagination_policy import (
+    STOPPED_MISSING_TOTAL_PAGE,
+    has_next_page,
+    unknown_total_strategy,
+)
 
 
 PageExecutor = Callable[[str, Mapping[str, Any]], ReadResult]
@@ -34,6 +36,7 @@ def read_all_pages(
     max_pages: int,
     max_items: int,
     max_workers: int,
+    continue_without_total: bool = False,
 ) -> dict[str, Any]:
     """Read every page within explicit bounds, parallelizing known page ranges."""
 
@@ -48,7 +51,7 @@ def read_all_pages(
     page_number, page_size, total_pages = _page_state(first, operation, supplied)
     pages = [first]
     items = list(first.items)
-    strategy = "serial_unknown_total"
+    strategy = unknown_total_strategy(continue_without_total=continue_without_total)
 
     if total_pages is not None and page_number is not None:
         remaining = max(0, total_pages - page_number)
@@ -66,38 +69,20 @@ def read_all_pages(
             max_items=max_items,
             max_workers=max_workers,
         )
-    else:
-        current = first
-        while _has_next_page(len(current.items), page_number, page_size, total_pages):
-            if len(pages) >= max_pages:
-                raise PaginationError("read_all exceeded its page safety bound")
-            next_page = (page_number or 0) + 1
-            current = _execute_page(
-                execute, operation_id, operation, supplied, next_page
-            )
-            observed = _observed_page(current, operation, next_page)
-            if observed <= (page_number or 0):
-                raise PaginationError("Gravity pagination did not advance")
-            page_number = observed
-            candidate_total = _integer(
-                current.page_info.get(operation.pagination.total_page_field),
-                total_pages,
-                default=total_pages,
-            )
-            if candidate_total is not None:
-                total_pages = candidate_total
-            pages.append(current)
-            items.extend(current.items)
-            if len(items) > max_items:
-                raise PaginationError("read_all exceeded its item safety bound")
+    elif continue_without_total:
+        page_number, total_pages = _fetch_unknown_total(
+            execute, operation_id, operation, supplied, first,
+            pages, items, page_number, page_size, total_pages,
+            max_pages=max_pages, max_items=max_items,
+        )
 
-    return _merge_pages(
+    return merge_pages(
         operation,
         pages,
         items,
         page_size=page_size,
         total_pages=total_pages,
-        has_more=False,
+        has_more=_completed_has_more(strategy, total_pages),
         strategy=strategy,
         max_workers=max_workers,
     )
@@ -112,6 +97,7 @@ def read_limited_pages(
     max_pages: int,
     max_items: int,
     max_workers: int,
+    continue_without_total: bool = False,
 ) -> dict[str, Any]:
     """Read an agent-safe prefix and return a resumable next-page input."""
 
@@ -136,6 +122,7 @@ def read_limited_pages(
         max_pages=max_pages,
         max_items=max_items,
         max_workers=max_workers,
+        continue_without_total=continue_without_total,
     )
 
 
@@ -162,7 +149,7 @@ def _limited_nonpaginated_result(
     first: ReadResult, *, max_pages: int, max_items: int
 ) -> dict[str, Any]:
     result = first.to_dict()
-    returned, original = _truncate_nonpaginated_result(result, max_items)
+    returned, original = truncate_nonpaginated_result(result, max_items)
     result["truncated"] = original > returned
     result["next_page_input"] = None
     result["total"] = {
@@ -184,12 +171,14 @@ def _limited_paginated_result(
     supplied: Mapping[str, Any], first: ReadResult, *,
     requested_page_size: int | None, safe_page_size: int | None,
     max_pages: int, max_items: int, max_workers: int,
+    continue_without_total: bool = False,
 ) -> dict[str, Any]:
 
     page_number, page_size, total_pages = _page_state(first, operation, supplied)
     pages = [first]
     items = list(first.items)
-    next_page_number, strategy = None, "serial_unknown_total"
+    next_page_number = None
+    strategy = unknown_total_strategy(continue_without_total=continue_without_total)
 
     if total_pages is not None and page_number is not None:
         last_allowed = min(total_pages, page_number + max_pages - 1)
@@ -200,33 +189,12 @@ def _limited_paginated_result(
         )
         if next_page_number is None and last_allowed < total_pages:
             next_page_number = last_allowed + 1
-    else:
-        current = first
-        while _has_next_page(len(current.items), page_number, page_size, total_pages):
-            next_page = (page_number or 0) + 1
-            if len(pages) >= max_pages or len(items) >= max_items:
-                next_page_number = next_page
-                break
-            candidate = _execute_page(
-                execute, operation_id, operation, supplied, next_page
-            )
-            observed = _observed_page(candidate, operation, next_page)
-            if observed <= (page_number or 0):
-                raise PaginationError("Gravity pagination did not advance")
-            if len(items) + len(candidate.items) > max_items:
-                next_page_number = next_page
-                break
-            page_number = observed
-            candidate_total = _integer(
-                candidate.page_info.get(operation.pagination.total_page_field),
-                total_pages,
-                default=total_pages,
-            )
-            if candidate_total is not None:
-                total_pages = candidate_total
-            pages.append(candidate)
-            items.extend(candidate.items)
-            current = candidate
+    elif continue_without_total:
+        next_page_number, total_pages = _fetch_unknown_limited(
+            execute, operation_id, operation, supplied, first,
+            pages, items, page_number, page_size, total_pages,
+            max_pages=max_pages, max_items=max_items,
+        )
 
     next_page_input = (
         {
@@ -236,13 +204,13 @@ def _limited_paginated_result(
         if next_page_number is not None
         else None
     )
-    result = _merge_pages(
+    result = merge_pages(
         operation,
         pages,
         items,
         page_size=page_size,
         total_pages=total_pages,
-        has_more=next_page_input is not None,
+        has_more=_limited_has_more(next_page_input, strategy, total_pages),
         strategy=strategy,
         max_workers=max_workers,
     )
@@ -336,6 +304,114 @@ def _fetch_known_pages_limited(
     return strategy, None
 
 
+def _fetch_unknown_total(
+    execute: PageExecutor,
+    operation_id: str,
+    operation: OperationSpec,
+    supplied: Mapping[str, Any],
+    first: ReadResult,
+    pages: list[ReadResult],
+    items: list[Any],
+    page_number: int | None,
+    page_size: int | None,
+    total_pages: int | None,
+    *,
+    max_pages: int,
+    max_items: int,
+) -> tuple[int | None, int | None]:
+    current = first
+    while has_next_page(
+        len(current.items), page_number, page_size, total_pages,
+        continue_without_total=True,
+    ):
+        if len(pages) >= max_pages:
+            raise PaginationError("read_all exceeded its page safety bound")
+        current, page_number, total_pages = _advance_unknown_page(
+            execute, operation_id, operation, supplied,
+            page_number, total_pages,
+        )
+        pages.append(current)
+        items.extend(current.items)
+        if len(items) > max_items:
+            raise PaginationError("read_all exceeded its item safety bound")
+    return page_number, total_pages
+
+
+def _fetch_unknown_limited(
+    execute: PageExecutor,
+    operation_id: str,
+    operation: OperationSpec,
+    supplied: Mapping[str, Any],
+    first: ReadResult,
+    pages: list[ReadResult],
+    items: list[Any],
+    page_number: int | None,
+    page_size: int | None,
+    total_pages: int | None,
+    *,
+    max_pages: int,
+    max_items: int,
+) -> tuple[int | None, int | None]:
+    current = first
+    next_page_number = None
+    while has_next_page(
+        len(current.items), page_number, page_size, total_pages,
+        continue_without_total=True,
+    ):
+        next_page = (page_number or 0) + 1
+        if len(pages) >= max_pages or len(items) >= max_items:
+            next_page_number = next_page
+            break
+        candidate, observed, candidate_total = _advance_unknown_page(
+            execute, operation_id, operation, supplied,
+            page_number, total_pages,
+        )
+        if len(items) + len(candidate.items) > max_items:
+            next_page_number = next_page
+            break
+        page_number, total_pages, current = observed, candidate_total, candidate
+        pages.append(candidate)
+        items.extend(candidate.items)
+    return next_page_number, total_pages
+
+
+def _advance_unknown_page(
+    execute: PageExecutor,
+    operation_id: str,
+    operation: OperationSpec,
+    supplied: Mapping[str, Any],
+    page_number: int | None,
+    total_pages: int | None,
+) -> tuple[ReadResult, int, int | None]:
+    next_page = (page_number or 0) + 1
+    current = _execute_page(execute, operation_id, operation, supplied, next_page)
+    observed = _observed_page(current, operation, next_page)
+    if observed <= (page_number or 0):
+        raise PaginationError("Gravity pagination did not advance")
+    candidate_total = _integer(
+        current.page_info.get(operation.pagination.total_page_field),
+        total_pages,
+        default=total_pages,
+    )
+    return current, observed, candidate_total
+
+
+def _completed_has_more(strategy: str, total_pages: int | None) -> bool | None:
+    if strategy == STOPPED_MISSING_TOTAL_PAGE and total_pages is None:
+        return None
+    return False
+
+
+def _limited_has_more(
+    next_page_input: Mapping[str, Any] | None,
+    strategy: str,
+    total_pages: int | None,
+) -> bool | None:
+    if next_page_input is not None:
+        return True
+    return _completed_has_more(strategy, total_pages)
+
+
 def _submit_window(
     pool: ThreadPoolExecutor,
     execute: PageExecutor,
@@ -417,56 +493,6 @@ def _require_expected_page(
         )
 
 
-def _merge_pages(
-    operation: OperationSpec,
-    pages: Sequence[ReadResult],
-    items: Sequence[Any],
-    *,
-    page_size: int | None,
-    total_pages: int | None,
-    has_more: bool,
-    strategy: str,
-    max_workers: int,
-) -> dict[str, Any]:
-    result = pages[0].to_dict()
-    item_field = operation.pagination.list_path.rsplit(".", 1)[-1] or "list"
-    if isinstance(result["data"], Mapping):
-        result["data"] = dict(result["data"])
-        result["data"][item_field] = list(items)
-    else:
-        result["data"] = list(items)
-    result["fetched_at"] = pages[-1].fetched_at
-    result["warnings"] = list(
-        dict.fromkeys(warning for page in pages for warning in page.warnings)
-    )
-    result["status"] = (
-        contract_status
-        if (contract_status := aggregate_contract_status({page.status for page in pages}))
-        else "empty"
-        if not items
-        else "success"
-    )
-    final_page = pages[-1].page or {}
-    first_page = pages[0].page or {}
-    result["page"] = {
-        "number": first_page.get("number", 1),
-        "size": page_size,
-        "item_count": len(items),
-        "total_pages": total_pages,
-        "total_items": final_page.get("total_items"),
-        "has_more": has_more,
-        "pages_fetched": len(pages),
-        "fetch_strategy": strategy,
-        "max_workers": max_workers,
-    }
-    result["schema_fingerprint"] = shape_fingerprint(result["data"])
-    return add_result_audit(
-        result,
-        [reference for page in pages for reference in page.http_receipts],
-        response_drift=merge_response_drifts([page.response_drift for page in pages]),
-    )
-
-
 def _validate_bounds(
     max_pages: int,
     max_items: int,
@@ -487,42 +513,6 @@ def _validate_bounds(
             raise error_type(message)
 
 
-def _truncate_nonpaginated_result(
-    result: dict[str, Any], max_items: int
-) -> tuple[int, int]:
-    data = result.get("data")
-    if isinstance(data, list):
-        original = len(data)
-        result["data"] = data[:max_items]
-        return len(result["data"]), original
-    if isinstance(data, Mapping):
-        for key in ("list", "items"):
-            rows = data.get(key)
-            if isinstance(rows, list):
-                original = len(rows)
-                result["data"] = {**dict(data), key: rows[:max_items]}
-                return min(original, max_items), original
-    count = _envelope_item_count(result)
-    return count, count
-
-
-def _envelope_item_count(envelope: Mapping[str, Any]) -> int:
-    page = envelope.get("page")
-    if isinstance(page, Mapping):
-        count = page.get("item_count")
-        if isinstance(count, int) and not isinstance(count, bool) and count >= 0:
-            return count
-    data = envelope.get("data")
-    if isinstance(data, list):
-        return len(data)
-    if isinstance(data, Mapping):
-        for key in ("list", "items"):
-            rows = data.get(key)
-            if isinstance(rows, list):
-                return len(rows)
-    return 0
-
-
 def _integer(primary: Any, fallback: Any, *, default: int | None) -> int | None:
     value = primary if primary is not None else fallback
     if isinstance(value, bool):
@@ -531,17 +521,6 @@ def _integer(primary: Any, fallback: Any, *, default: int | None) -> int | None:
         return int(value) if value is not None else default
     except (TypeError, ValueError):
         return default
-
-
-def _has_next_page(
-    item_count: int,
-    page_number: int | None,
-    page_size: int | None,
-    total_pages: int | None,
-) -> bool:
-    if page_number is not None and total_pages is not None:
-        return page_number < total_pages
-    return bool(page_size and item_count >= page_size)
 
 
 __all__ = ["read_all_pages", "read_limited_pages"]

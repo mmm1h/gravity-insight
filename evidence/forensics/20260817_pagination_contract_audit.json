@@ -3354,7 +3354,13 @@
       "review_status": "shape_verified",
       "risk": "selected_high_risk",
       "selected_for_production_validation": true,
-      "selection_reason": "false total_page contract caused duplicate continuation requests"
+      "selection_reason": "false total_page contract caused duplicate continuation requests",
+      "declared_kind_disposition": {
+        "status": "repaired",
+        "current_kind": "none",
+        "reason": "HEAD 30c682c changed pagination.kind to none after production proved page/page_size do not control results and page_info has only total. Audit-time declared_kind remains page_info.",
+        "repaired_in": "30c682c"
+      }
     },
     {
       "declared_kind": "page_info",
@@ -3619,10 +3625,6 @@
   ],
   "schema_version": "gravity-insight.pagination-contract-audit.v1",
   "summary": {
-    "declared_kinds": {
-      "none": 113,
-      "page_info": 119
-    },
     "none_review_statuses": {
       "collection_completeness_unknown": 34,
       "manual_empty_page_protocol": 1,
@@ -3650,6 +3652,15 @@
       "report.multidim.media_enum.list",
       "report.multidim.metric.list",
       "report.multidim.query"
-    ]
+    ],
+    "audit_baseline_declared_kinds": {
+      "none": 113,
+      "page_info": 119
+    },
+    "current_kinds_source": "computed by reconcile_pagination_audit from current contracts; never stored as a HEAD fact in this snapshot"
+  },
+  "relationship": {
+    "kind": "historical_verdict",
+    "note": "Records preserve the 2026-08-17 audit-time declared_kind. They are not a live HEAD mirror. Current pagination.kind is joined at check time by gravity_sdk.pagination_contract_audit."
   }
 }
