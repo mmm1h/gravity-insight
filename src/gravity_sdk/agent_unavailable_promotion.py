@@ -16,20 +16,30 @@ def unavailable_promotion_gap(query: str) -> dict[str, Any] | None:
         return unavailable_gap(
             query, code="NON_BYTEDANCE_HIERARCHY_PARENT_MISSING",
             journey="non_bytedance_campaign_group_creative",
-            reason="Non-Bytedance advertiser/account roots have not produced usable parent candidates for hierarchy reports.",
+            reason=(
+                "Tencent advertiser, ad-group filter and medium ad-group roots are now non-empty, "
+                "but campaign/ad-group/creative performance drafts still lack confirmed-read "
+                "semantics and cannot be probed or promoted."
+            ),
             next_action=(
-                "Use a tenant with Kuaishou or Tencent delivery data, verify one minimal advertiser root, "
-                "then follow only returned parent IDs through campaign, group, creative, and report reads."
+                "Review frontend control flow for Tencent campaign/ad-group/ad report POSTs, "
+                "add a confirmed_read record if they are reads, then probe one page with the "
+                "already-returned Tencent parent IDs; do not treat Kuaishou company IDs as delivery rows."
             ),
         )
     if _platform_specific_creatives(selected, words):
         return unavailable_gap(
             query, code="PLATFORM_SPECIFIC_CREATIVE_CONTRACT_MISSING",
             journey="platform_specific_creatives",
-            reason="Outside Bytedance, platform-specific creative fields lack non-empty response contracts.",
+            reason=(
+                "Tencent asset-material list now has a non-empty platform-specific contract, "
+                "but Tencent medium creative and other non-Bytedance creative drafts still "
+                "lack confirmed-read semantics or non-empty item schema."
+            ),
             next_action=(
-                "Use a tenant with one non-Bytedance creative, capture a single bounded non-empty item, "
-                "and register its platform-specific fields without substituting the common material catalog."
+                "Review frontend control flow for Tencent medium creative POST, add a "
+                "confirmed_read record if it is a read, then probe one page with a returned "
+                "Tencent advertiser_id; do not substitute the common material catalog."
             ),
         )
     return None

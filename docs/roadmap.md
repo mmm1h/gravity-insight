@@ -645,8 +645,8 @@ prober 现仅对 confirmation 文件中通过完整校验的精确 `POST + path`
 | --- | --- | --- | --- |
 | 1 | **D22 看板页面条件忠实重放** | 已对非空 `data.object.config.filter` fail closed；空条件不受影响 | **合并发生在服务端，前端分析已穷尽**（见下） |
 | 2 | **D35 / F40 归因结果**（已完成） | D35 与 F40 均已取得独立生产合同 | **两条均已闭环，不再排期**（见下） |
-| 3 | **D34 非 Bytedance 计划/组/创意下钻** | 跨平台产品多数只到顶层 | D32/D33 已证明当前账号的七个平台父链均无可下钻样本 |
-| 4 | **D32 平台专属素材/创意深查** | 最小取证已完成，未取得可升级的非空合同 | 当前账号无非空 advertiser 父候选；保持 draft，等待有数据租户 |
+| 3 | **D34 非 Bytedance 计划/组/创意下钻** | 跨平台产品多数只到顶层 | 当前租户腾讯广告主/广告组根已非空；卡在 campaign/ad/creative report draft 的 confirmed-read，不是没数据 |
+| 4 | **D32 平台专属素材/创意深查** | 腾讯 asset-material 已有非空合同 | 卡在 Tencent medium creative 及其他平台创意 draft 的 confirmed-read / 非空 schema |
 
 完整动线的逐条判定与最小证据要求见[分析动线台账](analysis-journeys.md)；本页只维护排期与约束。
 
@@ -814,11 +814,11 @@ D32 本轮先估 22 次、实际只发 5 次最小 stable 根读取；5 次均�
 其余六个平台在允许的根读取或最短单日 advertiser 窗口内均为空。没有权限失败、合同漂移、重试、
 翻页、扩窗或 App 切换，因而没有 draft 取得非空响应、父依赖和目标权限六项闭环，stable 数不变。
 
-**D32/D34 是数据阻塞，不是工程阻塞。** 七个平台的父链全断在 account 或 advertiser，
-且**无一是权限不足**——当前账号下就是没有非 Bytedance 的投放数据。这意味着再投入工程量
-也推不动，两条动线不应继续占用排期位。**不要重复探测**：已知为空的路径再探一次只是消耗
-上游请求。解锁条件是外部的——拿到有非 Bytedance 投放数据的租户，或由调用方提供该平台样本。
-在那之前，188 个推广/素材 draft 保持 draft 是正确状态，不是欠账。
+**2026-08-13 的“当前账号无非 Bytedance 投放数据”已被 2026-08-17 复测证伪。**
+短窗 + 只打 Bilibili/Huya 根层是假阴性。当前租户账户目录绑了 `tencent` 与 `kuaishou`；
+腾讯广告主宽窗与腾讯素材均为非空。D32/D34 现在卡在**计划/组/创意 draft 的 confirmed-read
+与非空 item schema**，不是租户没数据，也不是权限不足。不要再对已证空的 Bilibili advertiser
+或 Huya/Kuaishou 报表根做重复短窗探测。
 
 ## D22 合并语义：证明不了，且前端这条路已穷尽
 
@@ -5937,3 +5937,23 @@ receipt 核账：`analysis.realtime_event.list` 本会话 14 条、`report.media
 **判定：**两条都不是 D28 那种假阴性。在已记录的宽窗和空筛选下，当前账号无行。未试维度：
 实时事件的非空 `event_type`/`event_name`/`client_*` 筛选；媒体报表的具体 `ad_platform`
 枚举；比 D-31 更早的历史窗（合同未声明上限，本轮不再加长）。台账 56 = 50 / 1 / 5 不变。
+
+## D32 / D33-D34 非 Bytedance 投放前提复测（2026-08-17）
+
+**提案：**一次回答“当前租户非 Bytedance 到底有没有数据”，排除短窗假阴性和权限误读。
+不改错误分类、不改评测题集、不探测弱证据 POST draft。
+
+**判定：前提为真。** `promotion.latest_account_status.get` 一次返回
+`media=bytedance|tencent|kuaishou`。腾讯广告主宽窗 `2026-07-17..2026-08-16` 第一页非空
+（`total_number=127`）；腾讯素材同广告主第一页非空（`total_number=427`）。快手账户/广告主
+报表到 `2026-03-01..2026-08-16` 仍明确空。8 次业务 HTTP 全是 200 / 语义成功，0 次 `code=2000`。
+
+**推进：**`promotion.tencent.advertiser.list` 登记实测 `operator_id/operator_name`；
+`material.tencent.list` 登记实测 `file_url/thumbnail_url` 与人员字段。分页 kind 沿用实测
+`page_info`，不复制模板。不新增 operation / 产品卡 / 动线。
+
+**卡住处：**D34 的计划/组/创意 report 与 D32 的 Tencent medium creative 仍是弱证据 POST，
+无 `confirmed_read`，本轮主动未探测。冻结评测 J45/J46 继续期待原 gap code。
+
+**能力台账不变：**233 / 224 / 92 / 7 / 329，动线 `56 = 50 / 1 / 5`。
+生产 HTTP：登录 2 + 业务 8 = 10。不 push、不碰 GitHub。
