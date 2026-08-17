@@ -33,8 +33,6 @@
       "src/gravity_sdk/composite.py::CompositeService.metadata_snapshot": 18,
       "src/gravity_sdk/credentials.py::CredentialProvider._credential_from_login": 18,
       "src/gravity_sdk/credentials.py::CredentialProvider._get": 19,
-      "src/gravity_sdk/executor.py::_project_data_containers": 25,
-      "src/gravity_sdk/executor.py::_project_list_rows": 28,
       "src/gravity_sdk/governance/stable_privacy.py::operation_exposure_paths": 32,
       "src/gravity_sdk/http_runtime.py::_GravityRequester.request": 22,
       "src/gravity_sdk/prober/batch.py::finalize_batch_report": 55,
@@ -83,6 +81,7 @@
       "src/gravity_sdk/executor.py::ReadExecutor.execute": 84,
       "src/gravity_sdk/executor.py::_project_data_containers": 108,
       "src/gravity_sdk/executor.py::_project_list_rows": 94,
+      "src/gravity_sdk/models.py::OperationSpec.from_dict": 125,
       "src/gravity_sdk/models.py::OperationSpec.schema": 98,
       "src/gravity_sdk/prober/batch.py::finalize_batch_report": 191,
       "src/gravity_sdk/prober/batch.py::run_batch_probes": 214,
@@ -234,7 +233,7 @@
     },
     "src/gravity_sdk/executor.py": {
       "ast_hard_limit": 9149,
-      "ast_nodes": 8912,
+      "ast_nodes": 4753,
       "migration_sloc": 1330,
       "sloc_hard_limit": 1430
     },
