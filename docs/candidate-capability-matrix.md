@@ -24,14 +24,14 @@ Kanban 追加取证同样只走产品级两步治理。两条显式 `*.share` �
 | --- | --- | --- | --- | --- |
 | `analysis.default_val.list` | **`stable`（已晋升）** | 2026-08-16 按 catalog 探测：`catalog#1` HTTP 200 空，`catalog#2` HTTP 200 非空后立即停止。当前样本观察 `data.cocoscreator[]: string`，并与既有 shape-only 样本的 `data.api[]: string` 合并；body 仍为 caller-bound `app_id` + 固定 `$lib_version`，分页 `none`。 | 无开放 blocker；闭合键集合为 `api/cocoscreator` | 保持两键全量暴露；出现第三个 SDK-family key 时按 additive drift fail-closed，取得 shape evidence 后再显式升级合同。 |
 | `analysis.setting.query` | `draft`（mutation 负向证明；查询动线已由既有产品覆盖） | 对本 mutation 仍为 0 次请求；完整 Dashboard builder 证明该 POST 提交 `config/name/remark`，随后修改 dashboard layout 并提示修改成功。2026-08-15 对 375/375 hash-matched bundle 的 987 条唯一 route 穷尽复核，另确认 `analysis.dashboard.tree/detail` 与 `analysis.report_config.list/get` 四条既有 stable GET 是装载设置的真读；仅对 stable `report_config.list` 做 1 次最小第一页 probe，HTTP 200 非空，无重试或翻页。 | `mutation_route_not_read`、`unregistered_fields_fail_closed`；不再有独立产品缺口 | 本 draft 永不晋升为 read。调用方分别使用既有 `dashboard_snapshot` 与 `saved_analysis`；若提出超出二者的新设置问题，先取得自由文本 config 与人员字段的合同证据，登记后全部暴露；未登记时只按合同漂移 fail-closed，不等待隐私裁决。 |
-| `analysis.realtime_event.list` | `draft`（租户级明确空） | 2026-08-16 对 catalog 的 7/7 个可绑定 App 各发 1 次最小请求，均 HTTP 200 明确空；0 个失败或未试 App，无重试、翻页或扩窗。 | `empty_sample`、`pagination_unverified`、`response_item_schema_unverified` | 由另一个有实时事件数据的租户在同一最短当天窗口取得 1 个非空 item；当前租户不再重复枚举。 |
+| `analysis.realtime_event.list` | `draft`（当前账号在已试窗下明确空） | 2026-08-16 对 catalog 的 7/7 App 各发 1 次最小请求，均 HTTP 200 空，但未记录 `request_time`/`filters` 实际值且未扩窗。2026-08-17 用 `request_time=["2026-07-17 00:00:00","2026-08-16 23:59:59"]`、`filters={}`、`page=1`、`page_size=1` 再枚举 7/7，均 HTTP 200 / `code=0` / `data.list=[]`；随后把右端扩到当天 `2026-08-17 23:59:59` 再枚举 7/7，结果相同。未试非空筛选。 | `empty_sample`、`pagination_unverified`、`response_item_schema_unverified` | 由另一个有实时事件数据的租户取得 1 个非空 item；当前账号不必再以同一空筛选重复枚举已试窗。 |
 | `analysis.setting.query` | `draft`（mutation 负向证明；查询动线已由既有产品覆盖） | 对本 mutation 仍为 0 次请求；完整 Dashboard builder 证明该 POST 提交 `config/name/remark`，随后修改 dashboard layout 并提示修改成功。2026-08-15 对 375/375 hash-matched bundle 的 987 条唯一 route 穷尽复核，另确认 `analysis.dashboard.tree/detail` 与 `analysis.report_config.list/get` 四条既有 stable GET 是装载设置的真读；仅对 stable `report_config.list` 做 1 次最小第一页 probe，HTTP 200 非空，无重试或翻页。 | `mutation_route_not_read`、`unregistered_fields_fail_closed`；不再有独立产品缺口 | 本 draft 永不晋升为 read。调用方分别使用既有 `dashboard_snapshot` 与 `saved_analysis`；若提出超出二者的新设置问题，先取得自由文本 config 与人员字段的合同证据，登记后全部暴露；未登记时只按合同漂移 fail-closed，不等待隐私裁决。 |
 | `report.masterkey_report_group.list` | `draft`（账号级明确空） | 2026-08-16 最小第一页 HTTP 200 空。固定 path/body 无 App 输入，认证上下文只含账号/公司，因此 App 枚举不适用；既有 read confirmation 与分页证据保留。 | `empty_sample`、`successful_probe` | 由有 MasterKey 报表的账号取得 1 个非空 item；当前账号不重复请求。 |
 | `report.report.list` | **`stable v1`（已晋升）** | 先 dry-run，再由 `report.report.update` 创建唯一 marker-owned 测试报表；列表非空读回并登记 14 个观察字段。请求仍为账号级 `{page,page_size,filters}`，完整分页合同沿用 hash-matched bundle。 | 无开放 promotion blocker。 | 由 `report_directory` Core/CLI/SDK/Plan/Agent 消费；未知新增字段继续 additive drift fail-closed。 |
 | `report.report.detail` | **`stable v1`（已晋升）** | 使用同次列表内存父 ID 发 1 次 GET detail；14 个观察字段全部登记，`remark` 的 marker 与列表原样 round-trip。 | 无开放 promotion blocker。 | 只接受 `report.report.list` 返回的精确 ID；目录产品有界并发 fan-out。 |
 | `report.shared_to_me.list` | `draft`（账号级明确空） | 2026-08-16 最小第一页 HTTP 200 空。固定 path/body 无 App 输入，认证上下文只含账号/公司；既有 read confirmation 保留。 | `empty_sample`、`response_schema_unverified` | 由有共享项的账号取得 1 个非空 item。 |
 | `report.subscribe.list` | **`stable v1`（已晋升）** | 先创建 marker-owned v3 父报表，再创建 disabled、`send_way=[]`、无收件人的订阅；列表非空读回并登记 23 个观察字段。请求仍为账号级 `{page,page_size,filters}`；删除后列表确认空。 | 无开放 promotion blocker；`subscribe/test` 明确未调用。 | 由 `report_subscriptions` Core/CLI/SDK/Plan/Agent 消费；未知新增字段继续 additive drift fail-closed。 |
-| `report.media_report.list` | `draft`（租户级明确空） | 2026-08-16 用当天窗口、无平台筛选、`page_size=1` 对 catalog 的 7/7 App 各发 1 次；均 HTTP 200 空，0 个失败或未试 App。 | `empty_sample`、`response_schema_unverified` | 由另一个有媒体报表的租户复用同形状取得 1 个非空 item；当前租户不再重复枚举。 |
+| `report.media_report.list` | `draft`（当前账号在已试窗下明确空） | 2026-08-16 用当天窗口、无平台筛选、`page_size=1` 对 catalog 的 7/7 App 各发 1 次，均 HTTP 200 空。2026-08-17 用 `2026-07-17..2026-08-16`、字符串 `app_id`、无 `ad_platform`、`page_size=1` 再枚举 7/7，另省略 `app_id` 1 次，均 HTTP 200 / `code=0` / `data.list=[]`；再把右端扩到 `2026-08-17` 并省略 App 1 次，结果相同。未枚举具体平台值。 | `empty_sample`、`response_schema_unverified` | 由另一个有媒体报表的租户复用同形状取得 1 个非空 item；当前账号不必再以无平台筛选重复枚举已试窗。 |
 | `app.project.list` | `draft`（账号级明确空） | 2026-08-16 唯一一次最小第一页 POST 为 HTTP 200 空。固定 path/body 只有筛选与分页，无 App 输入，认证上下文只含账号/公司；App 枚举不适用。 | `empty_sample`、`response_schema_unverified` | 由具备可读项目的账号取得 1 个非空 item。 |
 | `app.project_auth.detail` | `draft` | 1 次稳定父请求、0 次目标请求；父资源返回空候选，子请求未发送；无目标样本，分页未验证；父绑定未解析。 | `parent_resource_required`、`probe_inconclusive`、`response_schema_unverified` | 由 `analysis.account_user.list` 提供 1 个可读候选，仅以内存传给 1 次目标请求；没有父候选时继续跳过。 |
 | `app.onelink.list` | `draft` | 共 5 次请求，其中父资源 2 次、目标 3 次；父绑定已解析且值仅在内存使用；目标 HTTP 200、空样本；`page_info`、第二页行为和安全页上限已验证。 | `empty_sample`、`response_schema_unverified` | 复用已证明的稳定父绑定取得 1 个非空目标样本，再审查 item schema；无需扩大父资源搜索范围。 |
@@ -92,8 +92,9 @@ marker 只放在能原样读回且不改变数据口径的文本字段：旧报�
 全部 HTTP 200；重试、翻页、扩窗、失败和未试 App 均为 0。完整逐请求账本见
 [roadmap 的复验章节](roadmap.md#六条明确空多-app-复验2026-08-16)。
 
-- **(a) 租户确实为空：2 条。** `report.media_report.list` 与
-  `analysis.realtime_event.list` 均枚举 7/7 App 后仍空。
+- **(a) 当时最短当天窗下为空：2 条。** `report.media_report.list` 与
+  `analysis.realtime_event.list` 在 2026-08-16 枚举 7/7 App 后仍空。2026-08-17 已按 D28
+  方法用 `2026-07-17..2026-08-16`（并补测含当天）重测，仍空；结论收窄为“当前账号在已记录窗与空筛选下无行”，不再写无参数的“租户确实为空”。
 - **(b) 旧结论是假阴性：1 条。** `analysis.default_val.list` 在 `catalog#1` 空、
   `catalog#2` 非空；旧探测在第一个空 App 停止，误把 App 局部事实写成租户结论。
 - **(c) App 维度不适用：3 条。** 报表目录（三个 list route）、订阅和 App 项目的请求
@@ -115,7 +116,7 @@ additive fail-closed。该 operation 晋升 stable 并闭环五面产品，不�
 | --- | --- | --- | --- |
 | 查找自有、共享和 MasterKey 报表并读取其定义 | **非空样本阻塞** | 三个列表 POST 的 hash-matched bundle 控制流均证明装载、分页和响应消费，逐 route read confirmation 已登记；本轮各 1 次最小请求均 HTTP 200、明确空。`report.report.detail` 是 GET，但仍无父候选。 | 由有报表数据的租户提供 1 个非空列表项，再以内存父值做最小 detail；不扩窗找数据。 |
 | 查看报表订阅清单 | **明确空 / item schema 阻塞** | `reportSubscribe` 的 read confirmation 已登记；prober 对精确确认路径放行。本轮唯一 1 次最小第一页请求 HTTP 200、`data.list=[]`，未额外翻页，未知订阅字段继续隐藏。 | 在有订阅项的租户复用同形状取得 1 个非空 item，再单独判断分页与投影。 |
-| 查找可用的媒体报表 | **明确空 / item schema 阻塞** | Bundle 已恢复 `AppSelect` 与有限平台选项绑定，空选择省略；列表装载、分页和响应消费证明 read，confirmation 已登记。本轮当天最小请求 HTTP 200、明确空。 | 在有媒体报表的租户复用同形状取得 1 个非空 item，不猜 App 或平台值。 |
+| 查找可用的媒体报表 | **明确空 / item schema 阻塞** | Bundle 已恢复 `AppSelect` 与有限平台选项绑定，空选择省略；列表装载、分页和响应消费证明 read，confirmation 已登记。2026-08-16 当天最小请求 HTTP 200、明确空。2026-08-17 用 `2026-07-17..2026-08-16` 对 7/7 App 加重测并另做省略 App / 含当天各 1 次，仍 HTTP 200 空。 | 在有媒体报表的租户复用同形状取得 1 个非空 item，不猜平台枚举值。 |
 | 查找当前账号可读的 App 项目 | **合同阻塞** | `app.project.list` 被读语义闸门拦截；旧空 receipt 虽证明分页壳，但 `method_verified=false`，不能排除请求合同或语义问题，也就不能定为数据阻塞。 | 分析 `appManageIndex-DCdX2wdf.js` 的列表装载与响应消费，登记静态读证据后做 1 次最小第一页 probe。 |
 | 查看 App 的 OneLink 与公开信息绑定 | **已闭环** | `app.onelink.list` 的既有稳定父链继续证明当前账号明确空；调用方提供的第 1 条 App Store URL 使 `app.app_info.get` 首次取得 HTTP 200 / `code=0` 成功非空合同，并登记全部成功字段和旧 `error` 字段。 | 维持 stable live probe；若 Google Play 成功形状出现新字段，按 additive drift 登记并暴露。 |
 | 按平台、广告位和日期汇总变现结果（D28） | **已闭环** | 2026-08-17 按 catalog 枚举 7 个可绑定 App；`catalog#1` 在 `2026-07-17..2026-08-16` 明确空，`catalog#2` 同窗 13 行非空后停止。item/total 观察 `stat_time/monetization_platform/ad_unit_id` 加请求指标动态列；分页为实测 `none`（`page_info` 只有 `total`，无 page/page_size）。 | 维持 stable live probe；未观察维度/指标继续 fail-closed，不猜 item 字段。 |
