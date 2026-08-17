@@ -54,6 +54,19 @@ _EXPORTS = {
     "normalized_host_plan_request": (
         ".host_effects", "normalized_host_plan_request"
     ),
+    "host_product_catalog": (".agent_host_catalog", "host_product_catalog"),
+    "host_product_selection_schema": (
+        ".agent_host_catalog", "host_product_selection_schema"
+    ),
+    "assess_host_product_selection": (
+        ".agent_host_selection", "assess_host_product_selection"
+    ),
+    "compile_host_product_selection": (
+        ".agent_host_selection", "compile_host_product_selection"
+    ),
+    "resolve_host_product_selection": (
+        ".agent_host_selection", "resolve_host_product_selection"
+    ),
     "PlanRecipe": (".workspace_plan_recipe", "PlanRecipe"),
     "PlanRecipeError": (".workspace_plan_recipe", "PlanRecipeError"),
     "expand_plan_recipe": (".workspace_plan_recipe", "expand_plan_recipe"),

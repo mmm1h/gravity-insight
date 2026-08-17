@@ -2,13 +2,51 @@
 
 from __future__ import annotations
 
+import copy
 import re
+from collections.abc import Mapping
+from typing import Any
 
 from .agent_intent_text import affirmative_intent_text
 from .catalog import APP_LIST_OPERATION_ID
 
 
 APP_CATALOG_SELECTOR = APP_LIST_OPERATION_ID
+APP_CATALOG_CAPABILITY: Mapping[str, Any] = {
+    "kind": "operation",
+    "selector": APP_CATALOG_SELECTOR,
+    "operation_id": APP_CATALOG_SELECTOR,
+    "domain": "app",
+    "description": (
+        "读取当前账号可访问的 App 项目目录，返回受合同治理的项目条目；"
+        "用于账号可读项目清单，不用于 App 治理快照、普通对象成员管理或任意未登记目录。"
+    ),
+    "effect": "read",
+    "executable": True,
+    "plan_executable": True,
+    "natural_language_auto_execute": False,
+    "input_schema": {},
+    "required_inputs": (),
+    "missing_inputs": [],
+    "match": {
+        "confidence": "strong",
+        "coverage": 1.0,
+        "matched_terms": [APP_CATALOG_SELECTOR],
+        "missing_terms": [],
+        "score": 100,
+        "exact_selector": True,
+    },
+    "next": {
+        "ready_without_input": True,
+        "argv": ["gravity", "run", APP_CATALOG_SELECTOR],
+    },
+}
+
+
+def app_catalog_capability_inventory() -> tuple[dict[str, Any], ...]:
+    """Return the canonical product card owned by the existing App router."""
+
+    return (copy.deepcopy(dict(APP_CATALOG_CAPABILITY)),)
 
 
 def app_catalog_query(query: str) -> bool:
@@ -45,4 +83,10 @@ def app_catalog_operation_query(query: str) -> str:
     return APP_CATALOG_SELECTOR if app_catalog_query(query) else query
 
 
-__all__ = ["APP_CATALOG_SELECTOR", "app_catalog_operation_query", "app_catalog_query"]
+__all__ = [
+    "APP_CATALOG_CAPABILITY",
+    "APP_CATALOG_SELECTOR",
+    "app_catalog_capability_inventory",
+    "app_catalog_operation_query",
+    "app_catalog_query",
+]

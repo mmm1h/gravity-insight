@@ -57,6 +57,8 @@ gravity agent
 gravity agent "retention" --limit 3
 gravity agent --input questions.json
 gravity agent "run saved analysis" --resolve-inputs '{"app":"main"}' --output catalog.json
+gravity agent-catalog host
+gravity agent "<query>" --routing host_catalog --host-selection selection.json
 ```
 
 完整能力面使用 `gravity agent-catalog categories` → `category <name>` →
@@ -65,6 +67,12 @@ gravity agent "run saved analysis" --resolve-inputs '{"app":"main"}' --output ca
 `capability_gap` 是登记但当前不可执行的缺口。`catalog_status=registered_unavailable` 的 gap 同时给出
 精确 `gap_code`、`reason` 和 `next_action`。不得因为相邻 raw operation 的 `executable=true` 就把缺失
 产品改判为可执行。目录和 describe 均完全离线，也不会执行能力。
+
+`agent-catalog host` 是同一 owner/card/gap 的紧凑投影，只含 90 张产品卡和 9 个精确 gap，不含 raw
+operation；每项固定给出目标、返回物、相邻边界、前置输入与 effect。宿主响应必须完整符合
+`gravity.host-product-selection.v1`，只能引用当前 `catalog_ref`。0 个引用由仓库生成固定路由 gap；
+多个引用固定为 `MULTIPLE_INTENTS`；未知字段、旧目录指纹、伪造产品或直接 operation/path 均整体拒绝。
+只有显式 `--routing host_catalog --host-selection` 使用该结果；未指定 `--routing` 的默认仍是 recognizer。
 
 `category` 的顺序是合同而不是模糊相关性：每个 category 内固定按
 `product → raw_operation → capability_gap` 排序，同类再按 selector 升序。于是第一页先展示 canonical

@@ -119,9 +119,10 @@
 
 ## 已关闭结构债务
 
-Agent catalog 产品/gap 共源债务已关闭：目录从现有 card owner 程序化覆盖 77/77 张 canonical 产品卡，
-投影 9/9 个登记 gap，并以双向 product/manifest/ledger parity 门禁区分 product、raw operation 与
-不可执行 gap；没有新增第二套 registry，原唯一 J35 状态冲突归零。
+Agent catalog 产品/gap 共源债务已关闭：渐进目录与宿主紧凑目录都从现有 card owner 程序化覆盖
+90/90 张 canonical 产品卡、投影 9/9 个登记 gap，并以双向 parity 门禁区分 product、raw operation 与
+不可执行 gap；宿主目录排除 raw operation，候选另经 `gravity.host-source.v1` 校验，没有新增第二套
+registry。原唯一 J35 状态冲突归零。
 
 2026-08-15 修改确认记录读取逻辑时，`_confirmation_keys` 已提升为公开 `confirmation_keys` 并更新跨模块
 调用点；精确 method/path、人工证据与已知命名空间三重闸门保持不变，原第 5 条债务关闭。

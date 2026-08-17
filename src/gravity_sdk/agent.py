@@ -40,6 +40,7 @@ from .agent_discovery_support import (
 )
 from .agent_lexical_retrieval import response_match_policy
 from .errors import InputValidationError
+from .agent_output import ndjson_metadata
 
 
 SCHEMA_VERSION = "gravity.agent.v1"
@@ -92,6 +93,8 @@ def add_agent_command(commands: Any, limit_parser: Any) -> None:
         help="Maximum fully described recipes and operations (default: 3, maximum: 5).",
     )
     command.add_argument("--continuation")
+    from .agent_host_selection import add_host_routing_arguments
+    add_host_routing_arguments(command)
     command.add_argument(
         "--input",
         "-i",
@@ -113,6 +116,9 @@ def add_agent_command(commands: Any, limit_parser: Any) -> None:
 def run_agent_command(args: Any, client: Any) -> dict[str, Any]:
     """Return the protocol or a bounded set of executable capability cards."""
 
+    from .agent_host_selection import host_routing_command
+    if (host_result := host_routing_command(args, client)) is not None:
+        return host_result
     from .agent_input_resolution import optional_agent_input_command
     selected = optional_agent_input_command(args, client)
     if selected is not None:
@@ -138,6 +144,8 @@ def discover_capabilities(
     continuation: str | None = None,
     sources: AgentSourceSnapshot | None = None,
     plan_node_namespace: str | None = None,
+    routing: str = "recognizer",
+    host_selection: Any | None = None,
 ) -> dict[str, Any]:
     """Return the same bounded, offline protocol used by ``gravity agent``.
 
@@ -150,6 +158,13 @@ def discover_capabilities(
             "agent limit must be between 1 and 5",
             field="limit",
         )
+    from .agent_host_selection import host_routing_discovery
+    host_result = host_routing_discovery(
+        query, client, routing=routing, host_selection=host_selection,
+        workspace=workspace, plan_node_namespace=plan_node_namespace,
+    )
+    if host_result is not None:
+        return host_result
     normalized_query = str(query or "").strip()
     request = _DiscoveryRequest(
         query=normalized_query,
@@ -502,31 +517,6 @@ def _decode_continuation(
     if not valid:
         raise InputValidationError(message, field="continuation")
     return payload
-
-
-def ndjson_metadata(value: Any) -> dict[str, Any]:
-    """Preserve the Agent protocol when candidates become NDJSON rows."""
-
-    if not isinstance(value, Mapping) or value.get("schema_version") != SCHEMA_VERSION:
-        return {}
-    return {
-        "payload_schema_version": SCHEMA_VERSION,
-        "ok": value.get("ok"),
-        "offline": value.get("offline"),
-        "network_called": value.get("network_called"),
-        "mode": value.get("mode"),
-        "count": value.get("count"),
-        "total": value.get("total"),
-        "query": value.get("query"),
-        "continuation_token": value.get("continuation_token"),
-        "next_action": value.get("next_action"),
-        "execution": value.get("execution"),
-        "scope": value.get("scope"),
-        "fallbacks": value.get("fallbacks"),
-        "catalog_warnings": value.get("catalog_warnings"),
-        "capability_gaps": value.get("capability_gaps"),
-        "match_policy": value.get("match_policy"),
-    }
 
 
 __all__ = [

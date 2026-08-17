@@ -57,7 +57,7 @@ preview 需要用户授权绑定规范化 Plan SHA-256；execute 另需用户确
 
 该入口不检测注入文本。它允许上游名称、备注和错误消息原样进入结果，但在 adapter 前拒绝由这些 data
 来源派生的 tool/operation/path、对象、目的地、permission 或 confirmation。raw CLI、普通
-`execute_plan` 和其他外部工具不在该宿主边界内；P0-1 的默认宿主接线不得绕过它。
+`execute_plan` 和其他外部工具不在该宿主边界内；P0-1 的显式宿主选路不得绕过它，默认发现仍是 recognizer。
 ## metric-anomaly-localization@1
 
 这是仓库唯一的版本化分析 playbook。它不增加 Plan node kind：四个网络步骤都编译为现有

@@ -59,7 +59,8 @@ ANALYSIS_TEMPLATE_CAPABILITY: Mapping[str, Any] = {
     ),
     "description": (
         "列举并按 scope 与精确引用解析分析模板；只对 compact Analysis Spec v1 "
-        "或已证明的 Dashboard Web artifact 执行，其他 config 逐字段隔离报告。"
+        "或已证明的 Dashboard Web artifact 执行，其他 config 逐字段隔离报告；"
+        "用于 template scope + template reference，不接受保存分析 ID/名称。"
     ),
     "required_inputs": ("scope", "app", "ref", "start", "end"),
     "input_schema": {

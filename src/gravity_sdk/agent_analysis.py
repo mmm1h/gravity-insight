@@ -324,7 +324,8 @@ def _multi_app_batch_template(kind: str, spec: Any) -> dict[str, Any]:
 def _description(selected_kind: str | None) -> str:
     scope = "事件、漏斗、留存、属性或散点" if selected_kind is None else selected_kind
     comparison = (
-        "；也可用同一分析定义比较两个时期"
+        "；也可用同一分析定义比较两个时期（使用同一 Analysis Spec），这不是对已有结果做派生算术，"
+        "也不要求保存分析引用"
         if selected_kind is None
         else ""
     )

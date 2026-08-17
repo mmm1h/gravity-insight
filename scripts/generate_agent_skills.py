@@ -88,12 +88,19 @@ def render_documents() -> dict[Path, str]:
     )
     contract = analysis_query_spec_schema()
     exits = protocol["exit_codes"]
+    operation_ids = {
+        str(item["operation_id"])
+        for item in _OfflineClient().operations(stability=None)
+    }
+    gaps = registered_unavailable_gaps()
     catalog = {
         "operation_count": json.loads(PROVENANCE.read_text(encoding="utf-8"))["operation_count"],
         "product_card_count": len(cards),
-        "gap_count": len(registered_unavailable_gaps()),
+        "gap_count": len(gaps),
     }
-    catalog["selector_count"] = sum(catalog.values())
+    catalog["selector_count"] = len(
+        operation_ids | set(cards) | {f"gap:{gap['code']}" for gap in gaps}
+    )
     return {
         OUTPUT / "index.md": _index(catalog),
         OUTPUT / "catalog-discovery.md": _catalog_discovery(catalog, exits),
@@ -133,8 +140,8 @@ def _catalog_discovery(catalog: dict[str, int], exits: dict[str, str]) -> str:
         "完整目录发现：category → selector → contract",
         [
             f"完整目录当前有 {catalog['selector_count']} 个 selector：{catalog['operation_count']} 个 operation、{catalog['product_card_count']} 张产品卡与 {catalog['gap_count']} 个精确 gap。先看分类，不要先猜命令：",
-            "```powershell\ngravity agent-catalog categories\ngravity agent-catalog category <category>\ngravity agent-catalog describe <selected-selector>\n```",
-            "第一层决定领域，第二层只选择 selector，第三层才读取完整输入合同、`required_inputs`、`next.argv` 与可执行状态。category 返回 `next_offset` 时，只有确实需要浏览该领域剩余能力才继续；已知 selector 直接 describe。三层均离线且不执行候选。",
+            "```powershell\ngravity agent-catalog categories\ngravity agent-catalog category <category>\ngravity agent-catalog describe <selected-selector>\ngravity agent-catalog host\n```",
+            "第一层决定领域，第二层只选择 selector，第三层才读取完整输入合同、`required_inputs`、`next.argv` 与可执行状态。`host` 只投影产品/gap 及严格选择 schema，不暴露 raw operation。category 返回 `next_offset` 时，只有确实需要浏览该领域剩余能力才继续；已知 selector 直接 describe。所有目录命令均离线且不执行候选。",
         ],
         catalog,
         exits,

@@ -101,7 +101,8 @@ SAVED_ANALYSIS_CAPABILITY: Mapping[str, Any] = {
     "description": (
         "按稳定 ID 或精确名称解析保存分析，严格复用已证明的 event、funnel、"
         "retention、property、scatter 编译器，并在显式日期窗内准备或运行；"
-        "不解释模板、布局、收藏或权限。"
+        "只用于保存分析 ID/名称，不用于 template scope + template reference，"
+        "也不用于无需保存引用的同 Spec 跨期比较；不解释布局、收藏或权限。"
     ),
     "required_inputs": ("app", "ref", "start", "end"),
     "input_schema": {

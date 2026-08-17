@@ -45,12 +45,20 @@ def add_agent_catalog_command(
         "describe", help="Describe one product, raw operation, or unavailable gap."
     )
     describe.add_argument("selector")
+    actions.add_parser(
+        "host",
+        help="Return the compact product/gap catalog and strict host-selection schema.",
+    )
 
 
 def run_agent_catalog_command(args: Any, client: Any) -> dict[str, Any]:
     """Handle one progressive discovery step using only local runtime metadata."""
 
     action = str(args.agent_catalog_command)
+    if action == "host":
+        from .agent_host_catalog import host_product_catalog
+
+        return host_product_catalog(client)
     inventory = _inventory(client)
     if action == "categories":
         return _envelope("list_categories", categories=_categories(inventory))

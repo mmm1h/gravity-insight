@@ -17,7 +17,12 @@ def registered_sql_product_gap(query: str) -> dict[str, Any] | None:
     return unavailable_gap(
         query, code="WORKSPACE_SQL_PRODUCT_NOT_CONFIGURED",
         journey="workspace_sql_product",
-        reason="No configured SQL product matches the requested human name in the selected workspace.",
+        reason=(
+            "The goal is to run a team-reviewed cross-table aggregate by its "
+            "registered workspace product name and caller date window, but no "
+            "configured SQL product matches that human name. This never accepts "
+            "ad-hoc SQL text or substitutes an Insight/Analysis product."
+        ),
         next_action=(
             "List the selected workspace products; if absent, add a governed [products.<name>] "
             "contract, then ask again using that exact human product name."

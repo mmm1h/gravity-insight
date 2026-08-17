@@ -753,6 +753,13 @@ Python callback。若需要测试一个自定义 adapter，应直接使用 `grav
 data，SDK contract 提供控制身份，用户 instruction/authorization 提供对象、目的地和两步 mutation
 授权。机器合同同时包含在 `gravity plan schema` 的 `host_effect_boundary`。
 
+产品选择先调用 `gravity_sdk.host_product_catalog(client)`，把其厂商无关目录和
+`response_schema` 交给宿主，再将完整响应传入
+`gravity_sdk.resolve_host_product_selection(query, response, client)`。仓库重建
+`gravity.host-source.v1` 的 `sdk_contract/instruction` 来源记录，拒绝目录外引用后才复用 canonical
+describe 与 Plan node 编译；选择本身不调用产品。`assess_host_product_selection` 提供不抛异常的审计，
+`compile_host_product_selection` 提供 fail-closed 合同入口。
+
 `metadata_search` 的 `table_lineage` 请求仅接受 `query/kind/limit/offset`；它是 account scope，
 因此禁止 `app_id`。节点结果保留 `scope/observed` 与有界的版本、操作 rows，不回显本地
 database 路径。`limit` 同时受节点 `max_items` 和 Plan 总 `max_items` 预算约束。

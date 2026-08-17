@@ -5408,3 +5408,82 @@ B/C 各 +0。文档 **4 passed**、Agent 指南生成器 `--check`、CLI help �
 adapter；没有新 registry、scheduler、worker pool 或 shared-spine 增长，故不新增活动结构债。
 未运行真实 holdout/final/all、未读 key、未改评测装置/题集/评分逻辑；全量测试输出中的 protected
 字样仍只来自隔离临时目录的 synthetic fixture。没有 GitHub、push、tag 或其他对外动作。
+
+## P0-1 目录优先宿主选路合同（2026-08-17，不切默认）
+
+**提案与边界：**ignored 工作稿位于 `tmp/codex/catalog-routing/proposal.md`。本轮只交付显式可切换的
+目录宿主合同，不切默认、不改 recognizer 判据、不改 development 题面/评分/层定义/阈值，也不读取、
+解密或运行 holdout/final。没有绑定模型厂商到仓库；一次性 development 适配器、选择锁和模型 receipt
+只在 `tmp/`。Gravity 生产 HTTP 为 **0 次**，没有重试、翻页、扩窗或换 App。
+
+**唯一目录来源与边界：**`gravity.host-product-catalog.v1` 从 `canonical_capability_cards()` 与
+`registered_unavailable_gaps()` 现场投影，固定为 **99 = 90 product + 9 gap**；不含 231 个 raw
+operation，也没有第二套 registry。完整渐进目录 selector 仍为
+`231 operation + 90 card + 9 gap - 1 个 app.list product/operation 同身份 = 329`。`app.list` 原有
+自然语言 owner 此前只下沉到 raw operation，本轮把同一 owner 补成第 90 张 canonical 产品卡；没有
+新增上游能力或 operation。机械 parity 同时比较全部身份、owner description、required inputs、effect、
+executable、gap reason/next action 与目录 fingerprint；删除、伪造或改写任一投影都会失败。
+
+每个紧凑 entry 只保留 `catalog_ref/identity_kind/domain`、调用方目标、owner 的“做什么/返回什么”、
+从 owner 限制语句投影的相邻边界、必需输入、effect 与 executable。跨期 Analysis owner 明确“同一
+Spec 双窗”，并排除已有结果派生算术和 saved reference；saved analysis 与 template 分别以
+`saved ID/name` 和 `template scope + ref` 划界；workspace SQL gap 明确只接受登记聚合产品，不接受
+ad-hoc SQL 或替代 Analysis 产品。选择后完整 card、参数 schema、Plan node 和执行合同仍由原
+`agent-catalog describe`/handoff/Plan 代码生成。
+
+**选择合同与隔离：**`gravity.host-product-selection.v1` 是 strict、厂商无关 JSON：绑定原 query 与
+当前 catalog SHA-256，每个候选只有 `catalog_ref` 和结构化 `goal_match/boundary_check`，顶层另有
+`decision` 与结构化 summary。未知字段、缺字段、空理由、重复/超过 5 个候选、旧 fingerprint、query
+漂移、伪造 ID 或 raw operation 都整体失败，不部分解析。0 候选由仓库生成固定
+`HOST_PRODUCT_SELECTION_EMPTY`，不采用模型自写 operation/gap；1 候选才 describe；多个候选按
+catalog_ref 排序后复用 `MULTIPLE_INTENTS`，不读理由文本、不猜 top-1。
+
+来源隔离不是字符串 allowlist：仓库从当前目录为每个 ref 重建 `gravity.host-source.v1` 的
+`sdk_contract/instruction` record，复用 `source_for_plan/expect_sdk_source/source_value` 校验完整
+`catalog_sha256 + identity + identity_kind`。宿主响应不能提交来源表，更不能提交 operation/path/Plan
+控制字段。单选写产品只返回原 card/preview 交接，测试把 transport 写入口设为失败并证明请求计数 0；
+真正 Plan 后续仍必须走 `execute_host_plan` 的 user object/destination 与两步 authorization 边界。
+
+**development 实测：**默认臂在最终代码上实际运行一次，严格保持 recognizer
+`260/336`、参数 `209/209`、离线终点 `53/74`、恢复 `5/5`、selection/terminal `pass^4`
+`260/336、53/74`、安全 `PASS/0`。一次干净宿主调用只见匿名 336 题与当时的 98 项紧凑目录，未使用
+tool/file/repository 事件；完整响应先逐题通过新合同，再由原 evaluator 得到 **327/336**、参数
+`255/255`、离线终点 `74/74`、恢复 `5/5`、安全 `PASS/0`。同一选择锁在补入 `app.list` 产品卡后的
+最终 99 项目录上重新绑定 fingerprint、逐题重验并离线重放，仍为 **327/336**；四 trial 是同一锁的
+确定性 replay，不能冒充四次独立模型稳定性。
+
+| 层 | recognizer 默认 | 宿主合同有效选择 / 最终锁重放 |
+| --- | ---: | ---: |
+| 首次产品选择 | `260/336` | **`327/336`**（`+67` / `+19.94pp`） |
+| 参数可填 | `209/209` | `255/255` |
+| 离线终点 | `53/74` | `74/74` |
+| 错误恢复 | `5/5` | `5/5` |
+| 安全 | `PASS/0` | `PASS/0` |
+
+原干净臂的 9 个 `wrong_product` 在有效新目录实测中全部变为正确：J06 七种问法都选
+`analysis.query.spec`，J19 间接目标选精确 workspace SQL gap，J23 间接目标选
+`composite:analysis_template`。新的 9 个机械失败是 7 个 J39 abstain 与 2 个候选集机制限制；前者暴露
+`app.list` owner 未成卡并促成上述第 90 张卡，后者 J32/J47 实际分别选对
+`metadata:table_lineage + CURRENT_TABLE_SCHEMA_PARENT_MISSING` 与
+`user_event export + material.asset.fetch`，但冻结 scorer 的 `candidate_selectors` 只登记产品 journey、
+不登记 gap journey，按既有逻辑仍为 `wrong_intent_candidates`。本轮按硬约束没有改 scorer/target
+registry。补卡后第二次、同 prompt 的宿主输出有一行把单候选声明为 `multiple_intents`；整个 336 行
+响应被 `HOST_SELECTION_DECISION_MISMATCH` 拒绝，未部分修正或评分。因此可以证明原 9 个产品边界问题
+已在一次有效实测中修复，也能证明 J39 目录身份缺口已在代码中补齐；**不能证明补卡后的新模型分数**。
+
+默认值 `recognizer` 同时锁在 parser、`discover_capabilities` 与回归中；实际不写 `--routing` 的 CLI 仍
+返回 `mode=discover_and_describe` 和 `analysis.query.spec:event`，显式
+`--routing host_catalog --host-selection` 才返回 `host_catalog_select_and_describe`。是否切默认仍只由
+custodian 的一次受保护 paired 运行决定：相对 recognizer 至少 +10pp 且安全零回归才可切；本轮没有
+查询受保护集，也没有以 development `327` 代替该证据。
+
+**计数与最终门禁：**operation/stable 保持 **231/222**；canonical 产品卡
+`89 + 1 app.list = 90`，但 `app.list` 与一个 operation 共身份，所以完整 selector 仍为
+`329 + 0 = 329`；动线保持 `56 = 48 / 1 / 7`。unittest **1146 tests OK**；pytest
+**1146 passed / 3092 subtests passed**，均从派发基线 1140 只增不减。compiler **231 operations /
+11 manifests**；quality PASS（operations/provenance 231/231、operation literals 57）；文档 **4
+passed**、Agent 指南生成器 `--check`、CLI help 与 `git diff --check` 全过。caller-recoverable 审计从
+`1223 = A420/B434/C369` 收紧为 **`1225 = A422/B434/C369`**，本线新增 **2/2 A**、B/C 各 +0。
+按 diff added lines 复算，`src/gravity_sdk` 实现新增 807 行，测试新增 157 行，比例约
+**0.195**，低于三分之一；`agent.py` 为 493 SLOC、`sdk.py` 保持 500，quality baseline 未改。
+没有 GitHub、push、tag 或其他对外动作。
