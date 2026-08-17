@@ -35,7 +35,7 @@ def dispatch(args: Any, object_input: Callable[[Any], Mapping[str, Any]]) -> Any
     _validate_output_mode(args)
     if args.limit is not None and args.max_items is not None:
         raise InputValidationError(
-            "--limit and --max-items cannot be combined", field="max_items"
+            "--limit and --max-items cannot be combined", field="max_items", next_action="Omit either --limit or --max-items, then retry."
         )
     all_pages = bool(args.all_pages)
     client = runtime.build_client()

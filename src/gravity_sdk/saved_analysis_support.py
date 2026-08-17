@@ -53,7 +53,7 @@ def normalize_definition(
     ):
         raise InputValidationError(
             "saved Analysis definition app_id does not match the selected workspace App",
-            field="definition.app_id",
+            field="definition.app_id", next_action="Set definition.app_id to the selected workspace App.",
         )
     normalized["app_id"] = expected_app_id
     return normalized, safe_metadata(normalized, app_id=expected_app_id)
@@ -75,7 +75,7 @@ def _definition_fields(value: Any) -> dict[str, Any]:
         raise InputValidationError(
             "saved Analysis definition contains unsupported fields: "
             + ", ".join(unknown),
-            field="definition",
+            field="definition", next_action="Remove unsupported definition fields and retry.",
         )
     if "subject" not in value or "config" not in value:
         raise InputValidationError(
@@ -437,7 +437,7 @@ def require_one_source(reference: Any, definition: Any) -> None:
     if (reference is None) == (definition is None):
         raise InputValidationError(
             "provide exactly one saved Analysis reference or definition",
-            field="reference/definition",
+            field="reference/definition", next_action="Supply exactly one of reference or definition.",
         )
 
 

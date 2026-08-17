@@ -246,12 +246,12 @@ def _resolve_template(
     if not matches:
         raise InputValidationError(
             "Analysis template reference was not found in the selected scope",
-            field="reference",
+            field="reference", next_action="Use a stored receipt or template reference and retry.",
         )
     if len(matches) != 1:
         raise InputValidationError(
             "Analysis template reference is ambiguous; use an explicit id",
-            field="reference",
+            field="reference", next_action="Use a stored receipt or template reference and retry.",
         )
     raw_rows = _raw_rows(envelope)
     selected_id = matches[0]["id"]
@@ -405,16 +405,16 @@ def _reference(value: Any) -> tuple[str, str]:
 
 def _reference_id(value: Any, field: str) -> str:
     if isinstance(value, bool) or not isinstance(value, (str, int)):
-        raise InputValidationError("template reference id is invalid", field=field)
+        raise InputValidationError("template reference id is invalid", field=field, next_action="Correct that field to a documented value and retry.")
     selected = str(value).strip()
     if not selected or len(selected) > 256:
-        raise InputValidationError("template reference id is invalid", field=field)
+        raise InputValidationError("template reference id is invalid", field=field, next_action="Correct that field to a documented value and retry.")
     return selected
 
 
 def _reference_text(value: Any, field: str) -> str:
     if not isinstance(value, str) or not value.strip() or len(value) > 256:
-        raise InputValidationError("template reference name is invalid", field=field)
+        raise InputValidationError("template reference name is invalid", field=field, next_action="Correct that field to a documented value and retry.")
     return value.strip()
 
 

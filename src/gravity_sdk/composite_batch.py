@@ -26,10 +26,16 @@ def normalize_identifier(value: str | int, *, field: str) -> str:
     """Return an opaque, non-empty Gravity identifier without guessing its type."""
 
     if isinstance(value, bool) or not isinstance(value, (str, int)):
-        raise _identifier_error(field)
+        raise _identifier_error(
+            field,
+            next_action=f"Resolve the workspace alias and retry with its `{field}`.",
+        )
     rendered = str(value).strip()
     if not rendered or len(rendered) > 256:
-        raise _identifier_error(field)
+        raise _identifier_error(
+            field,
+            next_action=f"Resolve the workspace alias and retry with its `{field}`.",
+        )
     return rendered
 
 
@@ -226,11 +232,11 @@ def _batch_result_item_count(result: Mapping[str, Any]) -> int:
     return 0
 
 
-def _identifier_error(field: str) -> InputValidationError:
+def _identifier_error(field: str, *, next_action: str) -> InputValidationError:
     return InputValidationError(
         f"{field} must be a non-empty Gravity identifier",
         field=field,
-        next_action=f"Resolve the workspace alias and retry with its `{field}`.",
+        next_action=next_action,
     )
 
 

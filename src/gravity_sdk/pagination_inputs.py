@@ -21,15 +21,24 @@ def validate_page_inputs(
         return
     page, size = values.get(page_field), values.get(page_size_field)
     if not isinstance(page, int) or isinstance(page, bool) or page < 1:
-        raise InputValidationError("page must be a positive integer")
+        raise InputValidationError(
+            "page must be a positive integer",
+            field=page_field,
+        )
     if not isinstance(size, int) or isinstance(size, bool) or size < 1:
-        raise InputValidationError("page_size must be a positive integer")
+        raise InputValidationError(
+            "page_size must be a positive integer",
+            field=page_size_field,
+        )
     if (
         pagination.kind == "page_info"
         and pagination.max_page_size
         and size > pagination.max_page_size
     ):
-        raise InputValidationError("requested page size exceeds the operation limit")
+        raise InputValidationError(
+            f"requested page size must stay at or below {pagination.max_page_size}",
+            field=page_size_field,
+        )
 
 
 def pagination_schema(pagination: Any) -> dict[str, Any]:

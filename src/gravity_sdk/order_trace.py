@@ -334,12 +334,12 @@ def _contract_failure(
 
 def _bounded_trace(value: Any) -> str:
     if not isinstance(value, str):
-        raise _input("trace_id", "be bounded")
+        raise _input("trace_id", "must be a non-empty string of at most 256 characters")
     if (
         not value or value != value.strip() or len(value) > 256
         or any(ord(character) < 32 for character in value)
     ):
-        raise _input("trace_id", "be bounded")
+        raise _input("trace_id", "must be a non-empty string of at most 256 characters")
     return value
 
 
@@ -382,7 +382,7 @@ def _contains_sensitive(value: Any, sensitive: tuple[str, ...]) -> bool:
 
 def _input(field: str, requirement: str) -> InputValidationError:
     return InputValidationError(
-        f"order split trace {field} must {requirement}", field=field
+        f"order split trace {field} {requirement}", field=field
     )
 
 

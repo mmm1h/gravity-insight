@@ -128,10 +128,13 @@ class Workspace:
         except KeyError as exc:
             if not self.plan_recipes:
                 raise PlanRecipeError(
-                    "no Plan recipes are configured; add [plan_recipes.<name>] to gravity.toml",
+                    "no Plan recipes are configured; add [plan_recipes.<name>] to gravity.toml then retry",
                     field="recipe",
                 ) from exc
-            raise PlanRecipeError(f"unknown Plan recipe: {name}", field="recipe") from exc
+            raise PlanRecipeError(
+                f"unknown Plan recipe: {name}; must use a name declared under [plan_recipes] in gravity.toml",
+                field="recipe",
+            ) from exc
 
 
 def user_cache_root(environ: Mapping[str, str] | None = None) -> Path:

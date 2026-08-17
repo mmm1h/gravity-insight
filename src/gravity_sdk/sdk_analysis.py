@@ -116,7 +116,7 @@ class AnalysisSdkMixin:
 
                 raise InputValidationError(
                     "period compare does not accept single-window output_fields",
-                    field="output_fields",
+                    field="output_fields", next_action="Keep only documented dotted output_fields and retry.",
                 )
             from .analysis_period_compare import compare_analysis_periods
 

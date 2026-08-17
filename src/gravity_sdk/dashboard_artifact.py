@@ -511,7 +511,7 @@ def _text(value: Any, field: str, *, maximum: int) -> str:
         raise InputValidationError(f"actual value: {actual_value(value)}; " + (f"{field} must be text"), field=field)
     rendered = str(value).strip()
     if not rendered or len(rendered) > maximum:
-        raise InputValidationError(f"{field} is missing or too long", field=field)
+        raise InputValidationError(f"{field} is missing or too long", field=field, next_action="Correct that field to a documented value and retry.")
     return rendered
 
 

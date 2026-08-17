@@ -58,7 +58,8 @@ def validate_analysis_query(
     app_id = inputs.get("app_id")
     if not isinstance(app_id, str) or not app_id or len(app_id) > 64:
         raise InputValidationError(
-            "analysis app_id must be a bounded identifier; request was not sent"
+            "analysis app_id must be a bounded identifier; request was not sent",
+            field="app_id",
         )
     validate_analysis_reference_membership(app_id, references, metadata_loader)
 
@@ -98,7 +99,8 @@ def validate_analysis_segment_rule(
     if not isinstance(app_id, str) or not app_id.isdecimal() or len(app_id) > 64:
         raise InputValidationError(
             "analysis segment-rule app_id must be a decimal identifier; "
-            "request was not sent"
+            "request was not sent",
+            field="app_id",
         )
     validate_analysis_reference_membership(app_id, references, metadata_loader)
 
@@ -109,7 +111,8 @@ def validate_analysis_shape(
     query_id = inputs.get("query_id")
     if not isinstance(query_id, str) or not ANALYSIS_QUERY_ID_RE.fullmatch(query_id):
         raise InputValidationError(
-            "analysis query_id must be an opaque identifier; request was not sent"
+            "analysis query_id must be an opaque identifier; request was not sent",
+            field="query_id",
         )
     references = new_analysis_references()
     validate_analysis_group_by(inputs.get("group_by_list", ()), references)
@@ -221,7 +224,8 @@ def _validate_retention_controls(
     offset = inputs.get("offset")
     if not isinstance(offset, int) or isinstance(offset, bool) or not 1 <= offset <= 365:
         raise InputValidationError(
-            "analysis retention offset is outside the controlled range; request was not sent"
+            "analysis retention offset must be an integer from 1 through 365; request was not sent",
+            field="offset",
         )
     week_first_day = inputs.get("week_first_day")
     if (
@@ -230,7 +234,8 @@ def _validate_retention_controls(
         or not 1 <= week_first_day <= 7
     ):
         raise InputValidationError(
-            "analysis week_first_day is outside the controlled range; request was not sent"
+            "analysis week_first_day must be an integer from 1 through 7; request was not sent",
+            field="week_first_day",
         )
 
 
@@ -238,7 +243,8 @@ def validate_analysis_date_list(value: Any, query_kind: str) -> None:
     maximum = 2 if query_kind == "event" else 1
     if not isinstance(value, (list, tuple)) or not 1 <= len(value) <= maximum:
         raise InputValidationError(
-            "analysis date_list is invalid; request was not sent"
+            "analysis date_list must contain 1 window, or 2 windows for event queries; request was not sent",
+            field="date_list",
         )
     for item in value:
         require_exact_mapping(item, {"start_date", "end_date"}, "analysis date range")
@@ -246,5 +252,6 @@ def validate_analysis_date_list(value: Any, query_kind: str) -> None:
         end = parse_analysis_datetime(item.get("end_date"))
         if start.tzinfo != end.tzinfo or start > end or (end - start).days > 90:
             raise InputValidationError(
-                "analysis date range exceeds the controlled 90-day span; request was not sent"
+                "analysis date range must stay within 90 days and start must not follow end; request was not sent",
+                field="date_list",
             )

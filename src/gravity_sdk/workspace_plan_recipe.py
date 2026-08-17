@@ -100,7 +100,8 @@ def expand_plan_recipe(
     unknown = sorted(set(supplied) - set(recipe.parameters))
     if unknown:
         raise PlanRecipeError(
-            f"unknown Plan recipe parameter: {unknown[0]}", field=f"parameters.{unknown[0]}"
+            f"unknown Plan recipe parameter: {unknown[0]}; remove it or declare it in gravity.toml",
+            field=f"parameters.{unknown[0]}",
         )
     missing = sorted(
         name
@@ -109,7 +110,7 @@ def expand_plan_recipe(
     )
     if missing:
         raise PlanRecipeError(
-            f"missing required Plan recipe parameter: {missing[0]}",
+            f"missing required Plan recipe parameter: {missing[0]}; supply it and retry",
             field=f"parameters.{missing[0]}",
         )
 
@@ -123,7 +124,7 @@ def expand_plan_recipe(
                 set_pointer(expanded, pointer, copy.deepcopy(value))
             except (IndexError, KeyError, TypeError, ValueError) as exc:
                 raise PlanRecipeError(
-                    f"Plan recipe parameter binding path does not exist: {pointer}",
+                    f"Plan recipe parameter binding path must exist: {pointer}; correct the JSON Pointer",
                     field=f"parameters.{name}.bindings",
                 ) from exc
     validate_plan(expanded)

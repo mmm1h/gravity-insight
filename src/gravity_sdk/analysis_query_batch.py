@@ -196,7 +196,7 @@ def _queries(
     if not source:
         raise _input_error(f"actual value: {actual_value(source)}; " + ("queries must not be empty"), "queries")
     if len(source) > MAX_QUERIES:
-        raise _input_error(f"queries supports at most {MAX_QUERIES} items", "queries")
+        raise _input_error(f"queries supports at most {MAX_QUERIES} items; must stay at or below that bound; split the request", "queries")
     if version == MULTI_APP_BATCH_SCHEMA_VERSION:
         values = _parse_multi_app_queries(source)
     else:
@@ -261,7 +261,7 @@ def _query(value: Any, index: int) -> _BatchQuery:
 def _identity(value: Mapping[str, Any], field: str) -> tuple[str, str]:
     query_id = value.get("id")
     if not isinstance(query_id, str) or not _QUERY_ID_RE.fullmatch(query_id):
-        raise _input_error("query id is invalid", f"{field}.id")
+        raise _input_error("query id is invalid; must be a bounded opaque identifier", f"{field}.id")
     kind = value.get("kind")
     if not isinstance(kind, str) or kind.strip().casefold() not in ANALYSIS_SPEC_KINDS:
         raise _input_error(
@@ -350,7 +350,7 @@ def _selected_workspace(sdk: Any, workspace: Any | None) -> Any:
     try:
         return sdk.workspace
     except AttributeError as exc:
-        raise _input_error("workspace is required", "workspace") from exc
+        raise _input_error("workspace is required; must bind GravityClient.workspace first", "workspace") from exc
 
 
 def _safe_result(
@@ -397,7 +397,7 @@ def _reject_unknown(
     unknown = sorted(set(value) - allowed)
     if unknown:
         raise _input_error(
-            f"{field} contains unsupported fields: {', '.join(unknown)}", field
+            f"{field} contains unsupported fields: {', '.join(unknown)}; must use only declared fields; remove extras", field
         )
 
 

@@ -92,7 +92,7 @@ def parse_multi_app_queries(source: Sequence[Any]) -> tuple[MultiAppComponent, .
         raise _input_error(f"actual value: {actual_value(identifiers)}; " + ("query ids must be unique"), "queries.id")
     if len(values) > MAX_COMPONENTS:
         raise _input_error(
-            f"multi-App expansion supports at most {MAX_COMPONENTS} components",
+            f"multi-App expansion supports at most {MAX_COMPONENTS} components; must stay at or below that bound; split the request",
             "queries.apps",
         )
     return tuple(values)
@@ -105,7 +105,7 @@ def _query(value: Any, index: int) -> tuple[str, tuple[MultiAppComponent, ...]]:
     _reject_unknown(value, _QUERY_FIELDS, field)
     query_id = value.get("id")
     if not isinstance(query_id, str) or not _QUERY_ID_RE.fullmatch(query_id):
-        raise _input_error("query id is invalid", f"{field}.id")
+        raise _input_error("query id is invalid; must be a bounded opaque identifier", f"{field}.id")
     kind = str(value.get("kind", "")).strip().casefold()
     if kind not in MULTI_APP_KINDS:
         raise _input_error(
@@ -222,7 +222,7 @@ def _reject_unknown(
     unknown = sorted(set(value) - allowed)
     if unknown:
         raise _input_error(
-            f"{field} contains unsupported fields: {', '.join(unknown)}", field
+            f"{field} contains unsupported fields: {', '.join(unknown)}; must use only declared fields; remove extras", field
         )
 
 

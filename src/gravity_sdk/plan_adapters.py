@@ -216,7 +216,7 @@ def _validate_run(
     description = insight.describe(operation_id)
     fields = description.get("input_schema", {})
     if not isinstance(fields, Mapping):
-        raise _input("operation input contract is invalid", "selector")
+        raise _input("operation input contract must be a mapping of field names", "selector")
     dynamic_request = _run_dynamic_request(request, context, fields, recipe)
     inputs = _alias_mapping(dynamic_request, "input", "inputs")
     parameters = _mapping(dynamic_request.get("parameters", {}), "parameters")
@@ -234,7 +234,7 @@ def _validate_run(
     )
     validation = insight.validate(operation_id, bound)
     if validation.get("ok") is not True:
-        raise _input("run request failed offline operation validation", "inputs")
+        raise _input("run request must pass offline operation validation; run `gravity insight operations describe` and correct inputs", "inputs")
     if context.output_fields:
         validate_output_fields(description, context.output_fields, request_inputs=bound)
 
@@ -264,7 +264,7 @@ def _run_dynamic_request(
             path = str(recipe.parameters[parameter]).split(".", 1)[0]
             set_pointer(selected, target, _field_sentinel(fields.get(path, {})))
             continue
-        raise _input("run binding target is outside the adapter contract", "bindings")
+        raise _input("run binding target must stay inside the adapter contract; remove the extra binding", "bindings")
     return selected
 
 
@@ -316,13 +316,13 @@ def _resolve_selector(
         try:
             recipe = workspace.recipe(selector[1:])
         except (KeyError, ValueError) as exc:
-            raise _input("run recipe is not configured", "selector") from exc
+            raise _input("run recipe must be configured in gravity.toml; inspect [plan_recipes]", "selector") from exc
         operation_id = str(recipe.operation)
     else:
         recipe = None
         operation_id = selector
     if operation_id not in stable_operations:
-        raise _input("run selector is not a stable operation or recipe", "selector")
+        raise _input("run selector must be a stable operation_id or @recipe; run `gravity insight operations search`", "selector")
     return operation_id, recipe
 
 
@@ -334,7 +334,7 @@ def _validate_run_options(
     context: AdapterContext,
 ) -> None:
     if recipe is None and parameters:
-        raise _input("parameters require a workspace recipe", "parameters")
+        raise _input("parameters requires a workspace recipe; use an @recipe selector", "parameters")
     if recipe is not None:
         _validate_recipe_parameters(recipe, parameters, context)
     if "app" in request and not _has_dynamic(context, "/app"):
@@ -351,7 +351,7 @@ def _validate_recipe_parameters(
 ) -> None:
     allowed_parameters = set(recipe.parameters) | set(recipe.required_parameters)
     if set(parameters) - allowed_parameters:
-        raise _input("run request contains an undeclared recipe parameter", "parameters")
+        raise _input("run request must use only declared recipe parameters; remove the extra keys", "parameters")
     missing = set(recipe.required_parameters) - set(parameters)
     dynamic_parameters = {
         target.split("/", 2)[2]
@@ -359,7 +359,7 @@ def _validate_recipe_parameters(
         if target.startswith("/parameters/") and target.count("/") == 2
     }
     if missing - dynamic_parameters:
-        raise _input("run request is missing a required recipe parameter", "parameters")
+        raise _input("run request must include every required recipe parameter", "parameters")
 
 
 def _validate_sql(
@@ -373,10 +373,10 @@ def _validate_sql(
     try:
         definition = workspace.product(product)
     except (KeyError, ValueError) as exc:
-        raise _input("SQL product is not configured", "product") from exc
+        raise _input("SQL product must be configured in gravity.toml; inspect [sql_products]", "product") from exc
     max_rows = definition.get("max_rows", 1_000)
     if type(max_rows) is not int or max_rows > context.max_items:
-        raise _input("SQL product max_rows exceeds this node max_items", "limits.max_items")
+        raise _input("SQL product max_rows must stay at or below this node max_items; raise limits.max_items", "limits.max_items")
     dynamic = set(context.dynamic_targets)
     start, end = request.get("start"), request.get("end")
     for field, value in (("start", start), ("end", end)):
@@ -396,7 +396,7 @@ def _validate_sql_apps(
     dynamic: set[str],
 ) -> None:
     if "app_id" in request and "app_ids" in request:
-        raise _input("SQL product app_id and app_ids cannot be combined", "app_ids")
+        raise _input("SQL product must use only one of app_id or app_ids; remove the other", "app_ids")
     if {"/app_id", "/app_ids"} & dynamic:
         return
     raw = request.get("app_ids", request.get("app_id"))
@@ -405,7 +405,7 @@ def _validate_sql_apps(
         return
     values = [raw] if type(raw) is int else list(raw) if _array(raw) else None
     if values is None:
-        raise _input("SQL product app ids are invalid", "app_ids")
+        raise _input("SQL product app ids must be positive integers or a workspace App list", "app_ids")
     normalize_app_ids(product, values, workspace)
 
 
@@ -440,7 +440,7 @@ def _validate_composite(
         return
     _request_object(request, _COMPOSITE_FIELDS, "composite")
     if name not in _COMPOSITES:
-        raise _input("composite name is not allowlisted", "name")
+        raise _input("composite name must be one of the allowlisted Plan composites", "name")
     if report_plan.is_report_composite(name):
         report_plan.validate_report_composite(
             request, context, workspace, _COMPOSITE_OUTPUT_FIELDS

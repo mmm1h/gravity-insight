@@ -232,7 +232,7 @@ class OperationCatalog:
         if offset > len(ordered):
             raise InputValidationError(
                 "operation search continuation is outside the result set",
-                field="continuation",
+                field="continuation", next_action="Drop continuation and run the search again.",
             )
         page_limit = _search_page_limit(
             ordered,
@@ -271,7 +271,7 @@ class OperationCatalog:
     def describe(self, operation_id: str) -> dict[str, Any]:
         operation = self._specs.get(operation_id)
         if operation is None:
-            raise UnknownOperationError(f"unknown Gravity operation: {operation_id}")
+            raise UnknownOperationError(f"unknown Gravity operation: {operation_id}; run `gravity insight operations search <query>` and retry with a listed operation_id", field="operation_id")
         operation_summary = self._operations[operation_id]
         schema = operation.schema()
         metadata = self._contract_metadata.get(operation_id, {})
@@ -616,21 +616,21 @@ def _decode_continuation(token: str, signature: Mapping[str, Any]) -> int:
         padding = "=" * (-len(token) % 4)
         payload = json.loads(base64.urlsafe_b64decode((token + padding).encode("ascii")).decode("utf-8"))
     except (ValueError, UnicodeError, json.JSONDecodeError) as exc:
-        raise InputValidationError("operation search continuation is invalid", field="continuation") from exc
+        raise InputValidationError("operation search continuation is invalid", field="continuation", next_action="Drop continuation and run the search again.") from exc
     if not isinstance(payload, Mapping) or payload.get("v") != 1:
         raise InputValidationError(
-            "operation search continuation is invalid", field="continuation"
+            "operation search continuation is invalid", field="continuation", next_action="Drop continuation and run the search again."
         )
     expected = {"v": 1, **dict(signature)}
     if any(payload.get(key) != value for key, value in expected.items()):
         raise InputValidationError(
             "operation search continuation does not match this query",
-            field="continuation",
+            field="continuation", next_action="Drop continuation and run the search again.",
         )
     offset = payload.get("offset")
     if isinstance(offset, bool) or not isinstance(offset, int) or offset < 0:
         raise InputValidationError(
-            "operation search continuation is invalid", field="continuation"
+            "operation search continuation is invalid", field="continuation", next_action="Drop continuation and run the search again."
         )
     return offset
 

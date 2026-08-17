@@ -205,7 +205,7 @@ def _discover(
         if client is None:
             raise InputValidationError(
                 "an Insight client is required for capability discovery",
-                field="client",
+                field="client", next_action="Construct GravityClient.from_env() or pass an Insight client.",
             )
         from .agent_monetization_guard import (
             MONETIZATION_DETAIL_RAW_SELECTOR,
@@ -244,12 +244,12 @@ def _discover(
     ):
         raise InputValidationError(
             "agent continuation does not match the current candidate catalog",
-            field="continuation",
+            field="continuation", next_action="Drop continuation and run the search again.",
         )
     if page.offset >= len(unified) and request.continuation:
         raise InputValidationError(
             "agent continuation no longer points to an available candidate",
-            field="continuation",
+            field="continuation", next_action="Drop continuation and run the search again.",
         )
     candidates = materialize_candidates(
         client, unified[page.offset : page.offset + request.limit]
@@ -516,7 +516,7 @@ def _decode_continuation(
         valid = False
         payload = {}
     if not valid:
-        raise InputValidationError(message, field="continuation")
+        raise InputValidationError(message, field="continuation", next_action="Drop continuation and run the search again.")
     return payload
 
 

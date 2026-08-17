@@ -59,7 +59,7 @@ def validate_user_journey_plan(
 
     request_object(request, USER_JOURNEY_REQUEST_FIELDS, USER_JOURNEY_NAME)
     if request.get("name") != USER_JOURNEY_NAME:
-        raise input_error("user journey composite name is invalid", "name")
+        raise input_error("user journey composite name is invalid; must match the documented composite name", "name")
     validate_exact_targets(context, _DYNAMIC_TARGETS)
     dynamic_app = has_dynamic(context, "/app")
     dynamic_client = has_dynamic(context, "/client_id")
@@ -120,7 +120,7 @@ def is_user_journey_result(result: Any) -> bool:
 
 def safe_user_journey_envelope(result: Any) -> dict[str, Any]:
     if not isinstance(result, Mapping):
-        raise input_error("user journey result is invalid", "result")
+        raise input_error("user journey result is invalid; must be an object envelope", "result")
     return {
         key: copy.deepcopy(value)
         for key, value in result.items()

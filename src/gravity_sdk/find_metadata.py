@@ -46,11 +46,11 @@ def search_metadata(
     """Search the synchronized catalog without creating a network client."""
 
     if kind not in _APP_KINDS | _VOCABULARY_KINDS:
-        raise InputValidationError("unknown metadata search kind", field="kind")
+        raise InputValidationError("unknown metadata search kind", field="kind", next_action="Use a documented metadata search kind and retry.")
     if app_id is not None and kind in _VOCABULARY_KINDS:
         raise InputValidationError(
             "workspace Analysis vocabulary cannot be filtered by app_id",
-            field="app_id",
+            field="app_id", next_action="Omit app_id or switch to an App-scoped source.",
         )
     if limit is not None:
         search_limit(limit)

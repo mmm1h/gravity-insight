@@ -189,12 +189,42 @@
       "path": "src/gravity_sdk/client.py",
       "reason": "add sanitized actual_value to four caller-recoverable batch item validation errors",
       "to": 6764
+    },
+    {
+      "from": 5271,
+      "path": "src/gravity_sdk/catalog.py",
+      "reason": "add field path and discovery command to unknown-operation errors",
+      "to": 5284
+    },
+    {
+      "from": 4146,
+      "path": "src/gravity_sdk/cli.py",
+      "reason": "add argv field path to argparse InputValidationError",
+      "to": 4148
+    },
+    {
+      "from": 3747,
+      "path": "src/gravity_sdk/http_runtime.py",
+      "reason": "add field path and must-markers to Gravity SQL validation errors",
+      "to": 3755
+    },
+    {
+      "from": 5976,
+      "path": "src/gravity_sdk/models.py",
+      "reason": "add field path and actionable remedy to OperationSpec input and path errors",
+      "to": 6049
+    },
+    {
+      "from": 4748,
+      "path": "src/gravity_sdk/registry.py",
+      "reason": "add field path and discovery command to unknown-operation errors",
+      "to": 4751
     }
   ],
   "legacy_files": {
     "src/gravity_sdk/catalog.py": {
       "ast_hard_limit": 5332,
-      "ast_nodes": 5271,
+      "ast_nodes": 5284,
       "migration_sloc": 664,
       "sloc_hard_limit": 722
     },
@@ -218,7 +248,7 @@
     },
     "src/gravity_sdk/cli.py": {
       "ast_hard_limit": 4167,
-      "ast_nodes": 4146,
+      "ast_nodes": 4148,
       "migration_sloc": 715,
       "sloc_hard_limit": 788
     },
@@ -236,13 +266,13 @@
     },
     "src/gravity_sdk/http_runtime.py": {
       "ast_hard_limit": 3815,
-      "ast_nodes": 3747,
+      "ast_nodes": 3755,
       "migration_sloc": 675,
       "sloc_hard_limit": 751
     },
     "src/gravity_sdk/models.py": {
       "ast_hard_limit": 8647,
-      "ast_nodes": 5976,
+      "ast_nodes": 6049,
       "migration_sloc": 1071,
       "sloc_hard_limit": 1158
     },
@@ -272,7 +302,7 @@
     },
     "src/gravity_sdk/registry.py": {
       "ast_hard_limit": 4798,
-      "ast_nodes": 4748,
+      "ast_nodes": 4751,
       "migration_sloc": 746,
       "sloc_hard_limit": 822
     },

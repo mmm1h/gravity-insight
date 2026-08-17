@@ -52,7 +52,7 @@ def validate_segment_evaluate_plan(
 
     request_object(request, SEGMENT_EVALUATE_REQUEST_FIELDS, "segment_evaluate")
     if request.get("name") != SEGMENT_EVALUATE_NAME:
-        raise input_error("segment evaluation composite name is invalid", "name")
+        raise input_error("segment evaluation composite name is invalid; must match the documented composite name", "name")
     validate_exact_targets(context, frozenset({"/app"}))
     if "spec" not in request:
         raise input_error(f"actual value: {actual_value(request.get('spec'))}; " + ("segment evaluation requires spec"), "spec")
@@ -111,7 +111,7 @@ def safe_segment_envelope(
     """Project the native aggregate envelope without request or exception text."""
 
     if not isinstance(result, Mapping):
-        raise input_error("segment evaluation result is invalid", "result")
+        raise input_error("segment evaluation result is invalid; must be an object envelope", "result")
     selected = {
         key: copy.deepcopy(value)
         for key, value in result.items()

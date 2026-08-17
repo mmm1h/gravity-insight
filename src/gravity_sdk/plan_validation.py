@@ -82,12 +82,13 @@ def validate_plan(plan: Mapping[str, Any]) -> ValidatedPlan:
     expanded, aggregate = worst_case(nodes)
     if expanded > MAX_EXPANDED_NODES:
         raise invalid(
-            f"plan can expand to more than {MAX_EXPANDED_NODES} executions", "nodes"
+            f"plan must stay at or below {MAX_EXPANDED_NODES} expanded executions; split the plan or lower foreach.max_items",
+            "nodes",
         )
     aggregate_limit = min(max_total_items, MAX_AGGREGATE_ITEMS)
     if aggregate > aggregate_limit:
         raise invalid(
-            f"plan aggregate max_items exceeds {aggregate_limit}",
+            f"plan aggregate max_items must stay at or below {aggregate_limit}; lower node limits.max_items or budget.max_total_items",
             "budget.max_total_items",
         )
     return ValidatedPlan(
@@ -105,7 +106,10 @@ def _node_array(value: Any) -> Sequence[Any]:
     if not value:
         raise invalid(f"actual value: {actual_value(value)}; " + ("plan requires at least one node"), "nodes")
     if len(value) > MAX_DECLARED_NODES:
-        raise invalid(f"plan declares more than {MAX_DECLARED_NODES} nodes", "nodes")
+        raise invalid(
+            f"plan must declare at most {MAX_DECLARED_NODES} nodes; split the document",
+            "nodes",
+        )
     return value
 
 
@@ -116,16 +120,22 @@ def validate_node(value: Any, index: int) -> PlanNode:
     reject_unknown(value, _NODE_FIELDS, field)
     node_id = value.get("id")
     if not isinstance(node_id, str) or not _NODE_ID_RE.fullmatch(node_id):
-        raise invalid("plan node id is invalid", f"{field}.id")
+        raise invalid(
+            f"actual value: {actual_value(node_id)}; plan node id must match {_NODE_ID_RE.pattern}",
+            f"{field}.id",
+        )
     kind = value.get("kind")
     if kind not in NODE_KINDS:
-        raise invalid("plan node kind is unsupported", f"{field}.kind")
+        raise invalid(
+            f"actual value: {actual_value(kind)}; plan node kind must be one of {', '.join(NODE_KINDS)}",
+            f"{field}.kind",
+        )
     request = value.get("request")
     if not isinstance(request, Mapping):
         raise invalid(f"actual value: {actual_value(request)}; " + ("plan node request must be an object"), f"{field}.request")
     if "workspace" in request:
         raise invalid(
-            "plan requests cannot override the bound workspace",
+            "plan requests must omit workspace; the bound workspace is used",
             f"{field}.request.workspace",
         )
     try:
@@ -167,14 +177,20 @@ def validate_call_bound(value: Any, field: str) -> None:
         raise invalid(f"actual value: {actual_value(value)}; " + ("call_bound must be an object"), field)
     reject_unknown(value, _CALL_BOUND_FIELDS, field)
     if value.get("schema_version") != "gravity.agent-call-bound.v1":
-        raise invalid("call_bound schema_version is invalid", f"{field}.schema_version")
+        raise invalid(
+            f"actual value: {actual_value(value.get('schema_version'))}; call_bound schema_version must be gravity.agent-call-bound.v1",
+            f"{field}.schema_version",
+        )
     if value.get("unit") != "cli_or_sdk_invocation":
-        raise invalid("call_bound unit is invalid", f"{field}.unit")
+        raise invalid(
+            f"actual value: {actual_value(value.get('unit'))}; call_bound unit must be cli_or_sdk_invocation",
+            f"{field}.unit",
+        )
     for name in ("known_inputs", "unknown_capability"):
         bounded_int(value.get(name), 1, 16, f"{field}.{name}")
     if value.get("unknown_capability_assumes") != "required_inputs_known":
         raise invalid(
-            "call_bound unknown_capability_assumes is invalid",
+            f"actual value: {actual_value(value.get('unknown_capability_assumes'))}; call_bound unknown_capability_assumes must be required_inputs_known",
             f"{field}.unknown_capability_assumes",
         )
     scenarios = value.get("scenarios")
@@ -200,7 +216,10 @@ def validate_call_bound_scenario(value: Any, field: str) -> str:
     reject_unknown(value, _CALL_BOUND_SCENARIO_FIELDS, field)
     scenario_id = value.get("id")
     if not isinstance(scenario_id, str) or not _CALL_BOUND_ID_RE.fullmatch(scenario_id):
-        raise invalid("call_bound scenario id is invalid", f"{field}.id")
+        raise invalid(
+            f"actual value: {actual_value(scenario_id)}; call_bound scenario id must match {_CALL_BOUND_ID_RE.pattern}",
+            f"{field}.id",
+        )
     minimum = bounded_int(value.get("minimum_calls"), 2, 16, f"{field}.minimum_calls")
     discovery = bounded_int(
         value.get("discovery_calls"), 0, 15, f"{field}.discovery_calls"
@@ -214,10 +233,14 @@ def validate_call_bound_scenario(value: Any, field: str) -> str:
         value.get("unknown_inputs"), f"{field}.unknown_inputs"
     )
     if value.get("selection") != "caller_exact":
-        raise invalid("call_bound selection is invalid", f"{field}.selection")
+        raise invalid(
+            f"actual value: {actual_value(value.get('selection'))}; call_bound selection must be caller_exact",
+            f"{field}.selection",
+        )
     if value.get("catalog_status") not in {"any", "available", "missing"}:
         raise invalid(
-            "call_bound catalog_status is invalid", f"{field}.catalog_status"
+            f"actual value: {actual_value(value.get('catalog_status'))}; call_bound catalog_status must be one of any, available, missing",
+            f"{field}.catalog_status",
         )
     sources = value.get("input_sources")
     if not _is_array(sources) or not sources or len(sources) > 16:
@@ -259,10 +282,16 @@ def validate_call_bound_source(
     reject_unknown(value, _CALL_BOUND_SOURCE_FIELDS, field)
     inputs = call_bound_string_array(value.get("inputs"), f"{field}.inputs")
     if value.get("kind") not in _CALL_BOUND_SOURCE_KINDS:
-        raise invalid("call_bound input source kind is invalid", f"{field}.kind")
+        raise invalid(
+            f"actual value: {actual_value(value.get('kind'))}; call_bound input source kind must be one of {', '.join(sorted(_CALL_BOUND_SOURCE_KINDS))}",
+            f"{field}.kind",
+        )
     selector = value.get("selector")
     if not isinstance(selector, str) or not selector.strip() or len(selector) > 256:
-        raise invalid("call_bound input source selector is invalid", f"{field}.selector")
+        raise invalid(
+            f"actual value: {actual_value(selector)}; call_bound input source selector must be a non-empty string of at most 256 characters",
+            f"{field}.selector",
+        )
     cli_argv = call_bound_string_array(
         value.get("cli_argv"), f"{field}.cli_argv", unique=False
     )
@@ -270,13 +299,16 @@ def validate_call_bound_source(
         raise invalid(f"actual value: {actual_value(cli_argv[0])}; " + ("call_bound cli_argv must invoke gravity"), f"{field}.cli_argv")
     sdk_method = value.get("sdk_method")
     if not isinstance(sdk_method, str) or not sdk_method.strip() or len(sdk_method) > 256:
-        raise invalid("call_bound sdk_method is invalid", f"{field}.sdk_method")
+        raise invalid(
+            f"actual value: {actual_value(sdk_method)}; call_bound sdk_method must be a non-empty string of at most 256 characters",
+            f"{field}.sdk_method",
+        )
     selectors = value.get("selectors")
     if selectors is not None:
         call_bound_string_array(selectors, f"{field}.selectors")
         if value.get("selector") != "gravity.batch.v1":
             raise invalid(
-                "call_bound selectors require the batch selector",
+                f"actual value: {actual_value(value.get('selector'))}; call_bound selectors must use selector gravity.batch.v1",
                 f"{field}.selectors",
             )
     call_bound_string_array(
@@ -293,12 +325,20 @@ def call_bound_string_array(
 ) -> tuple[str, ...]:
     selected = string_array(value, field)
     if (not empty and not selected) or len(selected) > 32:
-        raise invalid("call_bound string array has invalid length", field)
+        raise invalid(
+            f"actual value: {actual_value(value)}; call_bound string array must have 1 through 32 items"
+            if not empty
+            else f"actual value: {actual_value(value)}; call_bound string array must have at most 32 items",
+            field,
+        )
     if (
         any(not item.strip() or len(item) > 256 for item in selected)
         or unique and len(set(selected)) != len(selected)
     ):
-        raise invalid("call_bound string array contains invalid values", field)
+        raise invalid(
+            f"actual value: {actual_value(value)}; call_bound string array must contain unique non-empty strings of at most 256 characters",
+            field,
+        )
     return selected
 
 
@@ -389,7 +429,10 @@ def validate_graph(nodes: tuple[PlanNode, ...], by_id: Mapping[str, PlanNode]) -
 
     def visit(node_id: str) -> None:
         if node_id in visiting:
-            raise invalid("plan dependency graph contains a cycle", "nodes")
+            raise invalid(
+                "plan depends_on must be acyclic; remove the cycle before retrying",
+                "nodes",
+            )
         if node_id in visited:
             return
         visiting.add(node_id)
@@ -405,9 +448,15 @@ def validate_graph(nodes: tuple[PlanNode, ...], by_id: Mapping[str, PlanNode]) -
 def validate_dependencies(node: PlanNode, by_id: Mapping[str, PlanNode]) -> None:
     for dependency in node.depends_on:
         if dependency not in by_id:
-            raise invalid("plan dependency is unknown", f"nodes.{node.node_id}.depends_on")
+            raise invalid(
+                f"actual value: {actual_value(dependency)}; plan depends_on must name a declared node id",
+                f"nodes.{node.node_id}.depends_on",
+            )
         if dependency == node.node_id:
-            raise invalid("plan node cannot depend on itself", f"nodes.{node.node_id}.depends_on")
+            raise invalid(
+                f"actual value: {actual_value(dependency)}; plan node must not depend on itself",
+                f"nodes.{node.node_id}.depends_on",
+            )
     if len(set(node.depends_on)) != len(node.depends_on):
         raise invalid(f"actual value: {actual_value(node.depends_on)}; " + ("plan dependencies must be unique"), f"nodes.{node.node_id}.depends_on")
     sources = [binding.source_node for binding in node.bindings]
@@ -445,7 +494,10 @@ def bounded_int(value: Any, minimum: int, maximum: int, field: str) -> int:
 def reject_unknown(value: Mapping[str, Any], allowed: frozenset[str], field: str) -> None:
     unknown = sorted(set(value) - allowed)
     if unknown:
-        raise invalid(f"{field} contains an unknown field", f"{field}.{unknown[0]}")
+        raise invalid(
+            f"actual value: {actual_value(unknown[0])}; {field} must use only declared keys; remove {unknown[0]}",
+            f"{field}.{unknown[0]}",
+        )
 
 
 def _is_array(value: Any) -> bool:

@@ -20,7 +20,9 @@ class ActionableErrorAuditTests(unittest.TestCase):
         rows = inventory(ROOT / "src" / "gravity_sdk")
         counts = Counter(item["grade"] for item in rows)
         assert len(rows) == 1225
-        assert counts == {"A": 833, "B": 23, "C": 369}
+        assert counts["A"] == 850
+        assert counts["B"] == 375
+        assert counts.get("C", 0) == 0
         assert sum(counts.values()) == len(rows)
 
 
@@ -75,3 +77,50 @@ class ActionableErrorAuditTests(unittest.TestCase):
             run_analysis_query_batch(object(), {"schema_version": "bad"}, dry_run="yes")
         self.assertIn('actual value: "yes"', str(batch_error.exception))
         self.assertEqual(batch_error.exception.field, "dry_run")
+
+    def test_representative_sites_now_carry_path_and_remedy(self):
+        from types import SimpleNamespace
+
+        from gravity_sdk.attribution import attribution_snapshot
+        from gravity_sdk.bilibili_account_performance import (
+            normalize_bilibili_account_window,
+        )
+        from gravity_sdk.pagination_inputs import validate_page_inputs
+        from gravity_sdk.plan import PlanValidationError
+        from gravity_sdk.plan_validation import validate_plan
+
+        with self.assertRaises(PlanValidationError) as kind_error:
+            validate_plan(
+                {
+                    "schema_version": "gravity.plan.v1",
+                    "nodes": [{"id": "n1", "kind": "nope", "request": {}}],
+                }
+            )
+        self.assertEqual(kind_error.exception.field, "nodes[0].kind")
+        self.assertIn("actual value:", str(kind_error.exception))
+        self.assertIn("must be one of", str(kind_error.exception))
+
+        pagination = SimpleNamespace(
+            kind="page_info",
+            page_field="page",
+            page_size_field="page_size",
+            max_page_size=100,
+        )
+        with self.assertRaises(InputValidationError) as page_error:
+            validate_page_inputs(
+                {"page": object(), "page_size": object()},
+                pagination,
+                {"page": 0, "page_size": 20},
+            )
+        self.assertEqual(page_error.exception.field, "page")
+        self.assertIn("must be a positive integer", str(page_error.exception))
+
+        with self.assertRaises(InputValidationError) as date_error:
+            normalize_bilibili_account_window("2026-02-01", "2026-01-01")
+        self.assertEqual(date_error.exception.field, "start/end")
+        self.assertIn("must not follow end", str(date_error.exception))
+
+        with self.assertRaises(InputValidationError) as app_error:
+            attribution_snapshot(object(), app_id="abc")
+        self.assertEqual(app_error.exception.field, "app_id")
+        self.assertIn("must be a positive integer", str(app_error.exception))

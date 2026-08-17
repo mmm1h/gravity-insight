@@ -48,10 +48,10 @@ def validate_fixed_composite(
         validate_attribution_user_detail_plan(request, context, context.workspace)
         return
     if set(request) - {"name", "app"}:
-        raise input_error("composite request contains fields unavailable for this name", "request")
+        raise input_error("composite request must use only fields available for this name; remove extras", "request")
     if context.max_items < _REQUIRED_ITEMS[name]:
         raise input_error(
-            "composite fixed sources exceed this node max_items", "limits.max_items"
+            "composite fixed sources exceed this node max_items; must stay at or below this node max_items; raise limits.max_items", "limits.max_items"
         )
     if not has_dynamic(context, "/app"):
         context.workspace.resolve_app(request.get("app"))

@@ -30,7 +30,7 @@ def reject_order_dry_run(args: Any) -> None:
 
     if bool(getattr(args, "dry_run", False)):
         raise InputValidationError(
-            "--dry-run cannot be combined with a command", field="dry_run"
+            "--dry-run cannot be combined with a command", field="dry_run", next_action="Omit --dry-run or omit the conflicting command, then retry."
         )
 
 

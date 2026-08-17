@@ -76,9 +76,9 @@ def validate_order_read_request(
 
 def canonical_app(value: Any, *, label: str = "order read") -> str:
     if isinstance(value, bool) or not isinstance(value, (str, int)):
-        raise _input(label, "app_id", "be a positive integer")
+        raise _input(label, "app_id", "must be a positive integer")
     if type(value) is int and value.bit_length() > 512:
-        raise _input(label, "app_id", "be a positive integer")
+        raise _input(label, "app_id", "must be a positive integer")
     rendered = str(value).strip()
     if (
         not rendered
@@ -87,19 +87,19 @@ def canonical_app(value: Any, *, label: str = "order read") -> str:
         or not rendered.isdecimal()
         or int(rendered) <= 0
     ):
-        raise _input(label, "app_id", "be a positive integer")
+        raise _input(label, "app_id", "must be a positive integer")
     return str(int(rendered))
 
 
 def canonical_date(value: Any, *, label: str = "order read") -> str:
     if not isinstance(value, str) or _ISO_DATE.fullmatch(value) is None:
-        raise _input(label, "date", "use YYYY-MM-DD")
+        raise _input(label, "date", "must use YYYY-MM-DD")
     try:
         parsed = date_type.fromisoformat(value)
     except ValueError:
-        raise _input(label, "date", "use YYYY-MM-DD") from None
+        raise _input(label, "date", "must use YYYY-MM-DD") from None
     if parsed.isoformat() != value:
-        raise _input(label, "date", "use YYYY-MM-DD")
+        raise _input(label, "date", "must use YYYY-MM-DD")
     return value
 
 
@@ -363,7 +363,7 @@ def _complete_item_total(value: Any, count: int) -> bool:
 
 def _input(label: str, field: str, requirement: str) -> InputValidationError:
     return InputValidationError(
-        f"{label} {field} must {requirement}", field=field
+        f"{label} {field} {requirement}", field=field
     )
 
 

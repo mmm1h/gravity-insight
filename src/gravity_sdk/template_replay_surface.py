@@ -237,17 +237,17 @@ def validate_template_plan(
     request: Mapping[str, Any], context: AdapterContext, workspace: Any
 ) -> None:
     if set(request) - _REQUEST_FIELDS:
-        raise input_error("analysis_template request contains unknown fields", "request")
+        raise input_error("analysis_template request contains unknown fields; must use only declared fields; remove extras", "request")
     if request.get("name") != ANALYSIS_TEMPLATE_NAME:
-        raise input_error("analysis_template name is invalid", "name")
+        raise input_error("analysis_template name is invalid; must match the documented composite name", "name")
     validate_exact_targets(context, frozenset({"/app"}))
     if "/app" not in context.dynamic_targets:
         try:
             workspace.resolve_app(request.get("app"))
         except (KeyError, TypeError, ValueError):
-            raise input_error("analysis_template app is invalid", "app") from None
+            raise input_error("analysis_template app is invalid; must be a configured workspace App or positive id", "app") from None
     if request.get("scope") not in _SCOPES:
-        raise input_error("analysis_template scope is invalid", "scope")
+        raise input_error("analysis_template scope is invalid; must be one of the documented scopes", "scope")
     _validate_reference(request.get("ref"))
     if request.get("mode", "run") not in _MODES:
         raise input_error(f"actual value: {actual_value(request)}; " + ("analysis_template mode must be prepare or run"), "mode")
@@ -283,7 +283,7 @@ def execute_template_plan(
         and isinstance(operation_id, str)
         and saved_result_item_count(operation_id, result) > context.max_items
     ):
-        raise input_error("analysis_template result exceeds max_items", "limits.max_items")
+        raise input_error("analysis_template result exceeds max_items; must stay at or below this node max_items; raise limits.max_items", "limits.max_items")
     return safe
 
 
@@ -498,9 +498,9 @@ def _contract_failure() -> dict[str, Any]:
 
 def _validate_reference(value: Any) -> None:
     if isinstance(value, bool) or not isinstance(value, (str, int)):
-        raise input_error("analysis_template ref is invalid", "ref")
+        raise input_error("analysis_template ref is invalid; must be an exact template id or name", "ref")
     if not str(value).strip() or len(str(value)) > 256:
-        raise input_error("analysis_template ref is invalid", "ref")
+        raise input_error("analysis_template ref is invalid; must be an exact template id or name", "ref")
 
 
 def _validate_window(start: Any, end: Any) -> None:
@@ -509,7 +509,7 @@ def _validate_window(start: Any, end: Any) -> None:
     try:
         validate_dashboard_window(start, end)
     except InputValidationError as exc:
-        raise input_error(str(exc), "start/end") from None
+        raise input_error(("must correct: " + str(str(exc))), "start/end") from None
 
 
 def analysis_template_query(query: str) -> bool:

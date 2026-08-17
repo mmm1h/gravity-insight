@@ -165,7 +165,8 @@ def validate_monetization_operation_request(
         or len(fields) != len(set(fields))
     ):
         raise InputValidationError(
-            "monetization detail fields are invalid; request was not sent"
+            "monetization detail fields must be a non-empty unique string list; request was not sent",
+            field="fields",
         )
     parse_iso_calendar_date(inputs.get("date"), "date")
     page, size = inputs.get("page", 1), inputs.get("page_size", 20)
@@ -176,7 +177,8 @@ def validate_monetization_operation_request(
         or not 1 <= size <= 1_000
     ):
         raise InputValidationError(
-            "monetization detail pagination is outside its contract; request was not sent"
+            "monetization detail page must be >= 1 and page_size must be 1 through 1000; request was not sent",
+            field="page_size",
         )
 
 

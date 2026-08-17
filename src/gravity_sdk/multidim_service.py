@@ -93,7 +93,10 @@ class MultidimService:
         max_workers: int = 6,
     ) -> dict[str, Any]:
         if not isinstance(inputs, Mapping):
-            raise InputValidationError("multidimensional inputs must be an object")
+            raise InputValidationError(
+                "multidimensional inputs must be an object",
+                field="inputs",
+            )
         if metadata_inputs is not None and not isinstance(metadata_inputs, Mapping):
             raise InputValidationError(
                 f"actual value: {actual_value(metadata_inputs)}; " + ("multidimensional metadata_inputs must be an object"),
@@ -266,7 +269,9 @@ def _select_metrics(
     missing = [item for item in requested if item not in by_identifier]
     if missing:
         raise InputValidationError(
-            f"{label} contains values absent from live metadata (count={len(missing)})"
+            f"{label} must use values present in live metadata (count={len(missing)}); "
+            "run `gravity metadata properties \"\"` and retry with listed names",
+            field=label,
         )
     return [by_identifier[item] for item in requested]
 
@@ -280,7 +285,10 @@ def _selected_metric_rows(
     if metrics:
         standard_rows = sources.get(STANDARD_METRIC_OPERATION, ())
         if not standard_rows:
-            raise _metadata_unavailable()
+            raise _metadata_unavailable(
+                field="metrics_list",
+                next_action='Run `gravity metadata properties ""` then retry.',
+            )
         selected.extend(_select_metrics(standard_rows, metrics, "metrics_list"))
     if custom_metrics:
         custom_rows = [
@@ -289,7 +297,10 @@ def _selected_metric_rows(
             for row in sources.get(operation_id, ())
         ]
         if not custom_rows:
-            raise _metadata_unavailable()
+            raise _metadata_unavailable(
+                field="custom_metrics_list",
+                next_action='Run `gravity metadata properties ""` then retry.',
+            )
         selected.extend(
             _select_metrics(custom_rows, custom_metrics, "custom_metrics_list")
         )
@@ -316,19 +327,23 @@ def _validate_exclusions(
             excluded.update(exclusion_dims)
     if data_dims and incomplete:
         raise InputValidationError(
-            "live metric metadata is incomplete; data_dims were not sent upstream"
+            "live metric metadata must include exclusion_dims before data_dims can be sent; "
+            "run `gravity metadata properties \"\"` and retry",
+            field="data_dims",
         )
     if set(data_dims) & excluded:
         raise InputValidationError(
-            "selected data_dims conflict with live metric exclusion metadata"
+            "selected data_dims must not overlap live metric exclusion_dims; remove the excluded names",
+            field="data_dims",
         )
 
 
 def _no_metric_validation(data_dims: Sequence[str]) -> dict[str, Any]:
     if data_dims:
         raise InputValidationError(
-            "data_dims cannot be live-validated without selected metrics; "
-            "query was not executed"
+            "data_dims must be paired with selected metrics before live validation; "
+            "add metrics_list or custom_metrics_list, then retry",
+            field="data_dims",
         )
     return {
         "status": "not_required",
@@ -410,7 +425,10 @@ def _string_values(value: Any, label: str) -> list[str]:
     if not isinstance(value, (list, tuple)) or any(
         not isinstance(item, str) for item in value
     ):
-        raise InputValidationError(f"{label} must be a list of strings")
+        raise InputValidationError(
+            f"{label} must be a list of strings",
+            field=label,
+        )
     return list(value)
 
 
@@ -433,9 +451,11 @@ def _boolean(value: Any, field: str) -> bool:
     return value
 
 
-def _metadata_unavailable() -> InputValidationError:
+def _metadata_unavailable(*, field: str, next_action: str) -> InputValidationError:
     return InputValidationError(
-        "live metric metadata is unavailable; multidimensional query was not executed"
+        "live metric metadata is unavailable; run `gravity metadata properties \"\"` then retry; multidimensional query was not executed",
+        field=field,
+        next_action=next_action,
     )
 
 

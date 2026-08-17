@@ -62,13 +62,13 @@ def validate_metadata_plan(
         raise input_error(f"actual value: {actual_value(query)}; " + ("metadata query must be a string"), "query")
     kind = request.get("kind", "all")
     if kind not in KINDS:
-        raise input_error("metadata kind is unsupported", "kind")
+        raise input_error("metadata kind is unsupported; must be one of the documented kinds", "kind")
     app_id = request.get("app_id")
     if kind in VOCABULARY_KINDS | {"table_lineage"} and (
         app_id is not None or has_dynamic(context, "/app_id")
     ):
         raise input_error(
-            f"metadata kind {kind} is not App-scoped and does not accept app_id",
+            f"metadata kind {kind} is not App-scoped and does not accept app_id; must omit app_id",
             "app_id",
         )
     if app_id is not None and (

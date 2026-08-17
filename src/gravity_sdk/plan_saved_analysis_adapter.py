@@ -115,10 +115,10 @@ def validate_saved_analysis(
 
     if set(request) - _FIELDS:
         raise input_error(
-            "saved_analysis request contains unavailable fields", "request"
+            "saved_analysis request contains unavailable fields; must use only available fields; remove extras", "request"
         )
     if request.get("name") != SAVED_ANALYSIS_NAME:
-        raise input_error("saved_analysis name is invalid", "name")
+        raise input_error("saved_analysis name is invalid; must match the documented composite name", "name")
     validate_exact_targets(context, _TARGETS)
     if "/app" not in context.dynamic_targets:
         _validate_app(workspace, request.get("app"))
@@ -549,7 +549,7 @@ def _validate_window(start: Any, end: Any) -> None:
     try:
         validate_saved_window(start, end)
     except InputValidationError as exc:
-        raise input_error(str(exc), "start/end") from None
+        raise input_error(("must correct: " + str(str(exc))), "start/end") from None
 
 
 __all__ = [

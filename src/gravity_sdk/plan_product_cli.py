@@ -25,7 +25,10 @@ def dispatch(args: Any, object_input: Any) -> dict[str, Any]:
 
         workspace = load_workspace()
         if getattr(args, "input_sets", []):
-            raise PlanRecipeError("--set cannot be combined with --recipe", field="set")
+            raise PlanRecipeError(
+                "--set must not be combined with --recipe; omit one",
+                field="set",
+            )
         value = expand_plan_recipe(
             workspace.plan_recipe(args.recipe),
             parse_plan_recipe_parameters(getattr(args, "parameters", [])),

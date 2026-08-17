@@ -360,18 +360,24 @@ def _performance_input_error(
 
 def _positive_app_id(value: str | int) -> str:
     if isinstance(value, bool) or not isinstance(value, (str, int)):
-        raise _app_id_error()
+        raise _app_id_error(
+            field="app_id",
+            next_action="Retry with `--app-id <positive-integer>`.",
+        )
     rendered = str(value).strip()
     if not rendered.isascii() or not rendered.isdigit() or int(rendered) <= 0:
-        raise _app_id_error()
+        raise _app_id_error(
+            field="app_id",
+            next_action="Retry with `--app-id <positive-integer>`.",
+        )
     return str(int(rendered))
 
 
-def _app_id_error() -> InputValidationError:
+def _app_id_error(*, field: str, next_action: str) -> InputValidationError:
     return InputValidationError(
         "attribution snapshot app_id must be a positive integer",
-        field="app_id",
-        next_action="Retry with `--app-id <positive-integer>`.",
+        field=field,
+        next_action=next_action,
     )
 
 

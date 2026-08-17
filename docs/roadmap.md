@@ -6271,3 +6271,29 @@ Agent raw `gravity-insight.read.v1`。不新增产品卡。冻结评测 J45/J46 
 （D32、D33/D34 从完全缺失改为部分闭环）。合并时对账。
 
 生产 HTTP 计入登录与父读，远低于 35 次上限。不 push、不碰 GitHub。
+
+## C 级错误补 path 与 remedy（2026-08-17）
+
+本轮只改调用点信息面：给缺 path 的 raise 补 `field=`，给缺 remedy 的消息补可行动的
+`must` / `allowed` / `next_action` / `remove` / `run \`gravity`。未改
+`scripts/audit_actionable_errors.py` 的三个布尔、判据、scope，也未改 category /
+code / retry / 退出码。
+
+**改前 / 改后：** `1225 = A833 / B23 / C369` → **`1225 = A850 / B375 / C0`**。
+总数不变。C −369、A +17、B +352。17 条升 A 来自 `plan_validation.py` 等处补了
+真实调用值（`actual_value(...)`），不是类型名冒充。原 `#164` 的 23 条 B（筛选值、
+未命中 ref、未绑定 workspace 的 app）仍为 B，未回显。
+
+**重新统计构成（动手前）：** C 369 = 缺 path 110 + 有 path 无 remedy 259。
+杠杆：`invalid` 22、`input_error` 95、`_input` 27、`_input_error` 22、
+`_date_error` 6、`_app_id_error` 2，以及 `plan_validation.py` /
+`_field_policy_shared.py` / `models.py` 等集中文件。审计只看调用点 AST，
+改 helper 函数体不够，必须让调用表达式带上 `field=` 或 remedy 标记。
+
+**主动没做：** 不为刷 A 回显筛选值、未命中对象标识、未绑定 workspace 的 app；
+不为没有安全实际值的站点编造 `actual value: <type>`。动线总表 `56 = 50 / 3 / 3`
+未改，由合并时对账。
+
+门禁：unittest 1179、pytest 1179 + 3114 subtests、compiler 235 / 11 manifests、
+quality PASS operations=235 / provenance=235、usability development 首选
+`251/336`。生产 HTTP 0。`git diff -- scripts/audit_actionable_errors.py` 为空。

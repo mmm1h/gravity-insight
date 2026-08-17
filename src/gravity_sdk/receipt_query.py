@@ -365,14 +365,14 @@ def _validate_receipt_attempt(value: Mapping[str, Any]) -> None:
 def _query_reference(value: str | Mapping[str, Any]) -> tuple[str, str | None]:
     if isinstance(value, str):
         if not _valid_receipt_id(value):
-            raise InputValidationError("receipt_id is invalid", field="receipt_id")
+            raise InputValidationError("receipt_id is invalid", field="receipt_id", next_action="Use a stored receipt_id from a previous successful call.")
         return value, None
     if not isinstance(value, Mapping) or set(value) != {"receipt_id", "storage_status"}:
-        raise InputValidationError("receipt reference is invalid", field="reference")
+        raise InputValidationError("receipt reference is invalid", field="reference", next_action="Use a stored receipt or template reference and retry.")
     try:
         reference = receipt_reference(value["receipt_id"], str(value["storage_status"]))
     except ValueError as error:
-        raise InputValidationError(str(error), field="reference") from None
+        raise InputValidationError(str(error), field="reference", next_action="Use a stored receipt or template reference and retry.") from None
     return reference["receipt_id"], reference["storage_status"]
 
 
@@ -393,7 +393,7 @@ def _decode_cursor(value: str, operation_id: str | None) -> Mapping[str, Any]:
         decoded = json.loads(base64.urlsafe_b64decode(value + padding).decode("utf-8"))
         return _validated_cursor(decoded, operation_id)
     except (ValueError, TypeError, UnicodeError, json.JSONDecodeError):
-        raise InputValidationError("cursor is invalid", field="cursor") from None
+        raise InputValidationError("cursor is invalid", field="cursor", next_action="Use the cursor from the previous page or omit it.") from None
 
 
 def _validated_cursor(value: object, operation_id: str | None) -> Mapping[str, Any]:
@@ -468,7 +468,7 @@ def _operation_filter(value: object) -> str | None:
     if value is None:
         return None
     if not isinstance(value, str) or not value.strip() or len(value) > 128:
-        raise InputValidationError("operation_id filter is invalid", field="operation_id")
+        raise InputValidationError("operation_id filter is invalid", field="operation_id", next_action="Use a registered Gravity operation_id and retry.")
     return value.strip()
 
 

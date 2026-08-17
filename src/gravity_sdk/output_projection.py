@@ -59,7 +59,10 @@ def apply_output_fields(
     """
 
     if not isinstance(envelope, Mapping):
-        raise InputValidationError("operation output must be an object")
+        raise InputValidationError(
+            "operation output must be an object",
+            field="result",
+        )
     if output_fields is None:
         return deepcopy(dict(envelope))
     selected = validate_output_fields(
@@ -111,7 +114,7 @@ def _field_list(value: Sequence[str]) -> tuple[str, ...]:
     if len(value) > MAX_OUTPUT_FIELDS:
         raise InputValidationError(
             f"output_fields exceeds the {MAX_OUTPUT_FIELDS}-field safety bound",
-            field="output_fields",
+            field="output_fields", next_action="Keep only documented dotted output_fields and retry.",
         )
     normalized: list[str] = []
     for item in value:
@@ -124,7 +127,7 @@ def _field_list(value: Sequence[str]) -> tuple[str, ...]:
             or len(field) > 512
             or any(not part or part in {"__proto__", "prototype", "constructor"} for part in parts)
         ):
-            raise InputValidationError("output_fields contains an invalid field path", field="output_fields")
+            raise InputValidationError("output_fields contains an invalid field path", field="output_fields", next_action="Keep only documented dotted output_fields and retry.")
         if field not in normalized:
             normalized.append(field)
     return tuple(normalized)
@@ -132,11 +135,15 @@ def _field_list(value: Sequence[str]) -> tuple[str, ...]:
 
 def _projection(schema: Mapping[str, Any]) -> Mapping[str, Any]:
     if not isinstance(schema, Mapping):
-        raise InputValidationError("operation schema must be an object")
+        raise InputValidationError(
+            "operation schema must be an object",
+            field="schema",
+        )
     value = schema.get("response_projection")
     if not isinstance(value, Mapping):
         raise InputValidationError(
             "operation schema has no response projection",
+            field="schema",
             next_action="Use a stable operation with a compiled projection contract.",
         )
     return value

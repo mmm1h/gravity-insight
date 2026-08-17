@@ -111,7 +111,7 @@ def dispatch_multidim(
         raise InputValidationError(
             "global --dry-run cannot be combined with a Multidim command; "
             "place --dry-run after `multidim query`",
-            field="dry_run",
+            field="dry_run", next_action="Omit --dry-run or omit the conflicting command, then retry.",
         )
     _enforce_output_policy(args)
     command = args.multidim_command
@@ -222,7 +222,7 @@ def _product_shortcuts(
     time_dims = _split_values(getattr(args, "time_dim", None))
     if time_dims and len(time_dims) != 1:
         raise InputValidationError(
-            "--time-dim accepts exactly one value", field="time_dim"
+            "--time-dim accepts exactly one value", field="time_dim", next_action="Pass exactly one --time-dim grain."
         )
     if time_dims:
         result["time_dims"] = time_dims[0]
@@ -261,7 +261,7 @@ def _filter_shortcuts(args: Any, result: dict[str, Any]) -> None:
             raise InputValidationError(
                 "--filter cannot be combined with --media because multiple-filter "
                 "combination logic is unproven",
-                field="filter",
+                field="filter", next_action="Pass exactly one --filter and omit --media.",
             )
         filters = [
             item
@@ -365,7 +365,7 @@ def _filter_shortcut(values: Sequence[Sequence[str]] | None) -> dict[str, Any] |
         raise InputValidationError(
             "--filter currently accepts one condition because multiple-filter "
             "combination logic is unproven",
-            field="filter",
+            field="filter", next_action="Pass exactly one --filter and omit --media.",
         )
     field, operator, raw_values = (part.strip() for part in values[0])
     if not field:
