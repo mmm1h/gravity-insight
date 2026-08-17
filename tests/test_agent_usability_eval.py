@@ -80,6 +80,35 @@ class AgentUsabilityEvalTests(unittest.TestCase):
         )
         self.assertEqual([], missing)
 
+    def test_ledger_headline_matches_the_counted_table(self) -> None:
+        # The headline calls itself a programmatic recount, so it must agree with
+        # the table. It silently drifted once (claimed 50/1/5 while the rows said
+        # 50/3/3) because nothing compared the two.
+        import collections
+        import re
+
+        text = self.subject.JOURNEY_LEDGER_PATH.read_text(encoding="utf-8")
+        counts: collections.Counter[str] = collections.Counter()
+        for line in text.splitlines():
+            if not (line.startswith("| ") and line.count("|") >= 5):
+                continue
+            cells = [cell.strip() for cell in line.split("|")]
+            status = cells[2] if len(cells) > 2 else ""
+            if status in {"已闭环", "部分闭环", "完全缺失"}:
+                counts[status] += 1
+
+        headline = re.search(
+            r"当前程序化重算：\*\*(\d+) 条产品动线：已闭环 (\d+) / 部分闭环 (\d+) / 完全缺失 (\d+)\*\*",
+            text,
+        )
+        self.assertIsNotNone(headline, "ledger headline is missing or reworded")
+        total, closed, partial_count, missing_count = (int(g) for g in headline.groups())
+        self.assertEqual(
+            (counts["已闭环"], counts["部分闭环"], counts["完全缺失"]),
+            (closed, partial_count, missing_count),
+        )
+        self.assertEqual(sum(counts.values()), total)
+
     def test_ledger_status_change_switches_the_same_frozen_case_shape(self) -> None:
         manifest = self.subject._manifest()
         raw = next(
