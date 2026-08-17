@@ -38,17 +38,17 @@ def unavailable_analysis_gap(query: str) -> dict[str, Any] | None:
             query, code="ANALYSIS_EXPORT_FILE_CONTRACT_MISSING",
             journey="analysis_result_export",
             reason=(
-                "User-event, segment-result, segment-user-detail, user-detail, and "
-                "pay-event exports are callable. Origin-event has no non-empty "
-                "evaluated sample, and monetization-detail reached READY but its file "
-                "failed the shared archive-safety gate; "
-                "stream-event export is client-side and has no frontend server request."
+                "Seven Analysis export families are callable: user-event, "
+                "segment-result, segment-user-detail, user-detail, pay-event, "
+                "monetization-detail and origin-event. They take seven "
+                "non-interchangeable input contracts, so a single broad request "
+                "cannot be resolved to one of them; stream-event export is "
+                "client-side and has no frontend server request."
             ),
             next_action=(
-                "Run `gravity export list-capabilities` for the five callable Analysis "
-                "families. Re-probe origin-event only after its exact evaluate request "
-                "returns a positive estimate; re-probe monetization only after a file "
-                "passes the unchanged shared archive policy."
+                "Run `gravity export list-capabilities` to see the seven callable "
+                "Analysis families and their required inputs, then re-run the "
+                "discovery naming the family you want."
             ),
             argv=["gravity", "export", "list-capabilities"],
         )
