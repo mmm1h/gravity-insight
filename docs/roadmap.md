@@ -6271,3 +6271,11 @@ Agent raw `gravity-insight.read.v1`。不新增产品卡。冻结评测 J45/J46 
 （D32、D33/D34 从完全缺失改为部分闭环）。合并时对账。
 
 生产 HTTP 计入登录与父读，远低于 35 次上限。不 push、不碰 GitHub。
+
+## blob 传输子系统降复杂度（2026-08-17）
+
+**提案：**`SafeBlobTransfer.download`（190 SLOC / 复杂度 25）、`BlobPolicy.__post_init__`（83 / 35）、`SafeBlobTransfer.upload`（115 / 18）、`_preflight_headers`（104 / 23）都超过函数 80 / 复杂度 15。这四个是二进制传输的安全面（尺寸上限、压缩比、host allowlist、route-scoped policy），高复杂度最不该待在这里。本轮只改组织形式，不改公开签名、返回类型、异常类型或错误消息；不放松任何安全判定；不新增 growth_ledger；生产 HTTP 0。
+
+**拆法：**按阶段抽私有辅助，判定原文原样搬迁。`__post_init__` 按 normalize / 数值上限 / 类型绑定 / commit 切开，仍留在 `blob_policy.py`。`_preflight_headers` 按状态码、identity+MIME、resume/full Content-Range、声明尺寸切开，仍留在 `blob_headers.py`。download / upload 若继续堆在 `blob_transfer.py` 会把该文件从 196 再抬向 500；按 #170 先例抽出 `blob_download.py`（流写入、完整性、finalizer、发布）和 `blob_upload.py`（策略、本地核验、回执）。辅助函数只搬家，不改真值。
+
+**结果：**四个入口均低于 80 / 15：download 56 / 6，`__post_init__` 10 / 1，upload 36 / 1，`_preflight_headers` 24 / 1。新文件 `blob_download.py` 336 SLOC、`blob_upload.py` 160 SLOC，都低于 500。baseline 删除这 8 条债务（4 条 cyclomatic + 4 条 function_sloc），无新增、无放宽；`growth_ledger` 未追加；legacy_files 未动。总复杂度超额 677→636。能力台账 235 / 226 / 93 / 7 / 332 与动线 `56 = 50 / 3 / 3` 本轮不重算。生产 HTTP **0**。不 push、不碰 GitHub。
