@@ -5792,3 +5792,37 @@ operation/stable `232/223 → 233/224`（read `186→187`）。产品卡 `91→9
   （27 条 stable+executable 集合完整性未知）。合并后实测：审计记录 233 = 当前 operation 233，
   `missing_from_audit`/`missing_from_contracts` 均空，`unexpected_kind_drift` 空，
   `shape_unproven` 49，HEAD 当前 `118 page_info + 115 none`。
+## 权限感知：如实报告当前账号权限事实（2026-08-17）
+
+**提案与边界：**本轮只读取并暴露上游已给出的权限事实，不新建访问控制、字段过滤或敏感内容检测。
+不改 D28 台账状态，不投影 91 张产品卡，不接 Agent/Plan 共享热点。生产请求上限 40；不新建账号、
+不改角色。
+
+**上游分层（本账号实测）：**账号绑定一个角色（`dept_admin` / MerJoy运营部-负责人，非超管）；
+角色详情同时给出菜单项和 `data_permission` 模块；`permission_menu.list` 是租户菜单树，不是当前
+账号可见菜单。`confmetric_permission.list` 仍是 draft，且当前 role + `data_topic INNERS(6)` 成功
+空配置；前端把该空配置当作“不裁剪指标”，因此**空权限配置不能当成权限不足**。
+
+**权限型空 vs 真空：**当前账号在变现、推广/素材、分析三族上菜单和指标目录都非空，数据查询也
+出现过非空（变现明细、事件目录、推广指标）。因此本账号无法制造“权限型空”。可观察的区分信号
+是**角色菜单缺失**（设计师 7 项且无变现/分析/推广；分析师 36 项有变现细查无变现报表），不是
+主 route 的 `code=0` 空集。没有第二个低权限账号时，不能证明菜单缺失后数据查询一定空或一定 403。
+
+**D28：**“数据为空”**站不住**。排除权限的依据只有“permission route 成功空 + 主 route code=0”，
+而空 permission 在前端语义是不裁剪，不是拒绝。本账号角色菜单含「变现报表/变现细查」，变现指标
+目录 6 个非空，所以也不像菜单级拒绝。正确归类是**当前证据无法区分「仅此 App/窗口真空」与
+「数据域权限把结果收成空集」**。不改台账。
+
+**最窄切片：**新增 `gravity apps permission-profile` / `sdk.account_permission_profile()`，
+一次并发读取当前用户、其首个角色详情、权限菜单树和角色目录，并在 envelope 顶层给出
+`menu_names` / `data_permission_modules` / `empty_result_note`。不进 Agent 卡、不改动线计数。
+
+**本趟生产 HTTP：**主动发出 **13** 次（登录 1 + 菜单 1 + 角色列表 1 + 用户目录 1 + 当前角色详情 1
++ App 列表 1 + 变现指标目录失败 1 / 成功 1 + 事件目录 1 + 推广指标 1 + 素材指标 1
++ 设计师角色详情 1 + 分析师角色详情 1）。每满 5 次用 `gravity receipts list` 核账。
+共享 STATE_ROOT 里另有其他 worktree 的登录/`app.list`，不计入本趟预算。未发 D28 主结果、
+未发 draft permission route、未改角色。
+
+**门禁：**unittest **1153**、pytest **1153 passed / 3098 subtests**，高于基线 1151。
+compiler 232 / 11 manifests；quality PASS；错误审计仍 **1225 = A422/B434/C369**。
+产品卡/selector/动线计数不变。不 push、不碰 GitHub。

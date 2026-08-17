@@ -277,6 +277,22 @@ class AnalysisSdkMixin:
             max_items=max_items,
         )
 
+    def account_permission_profile(
+        self,
+        *,
+        max_workers: int = 3,
+        max_pages: int = 1_000,
+        max_items: int = 100_000,
+    ) -> dict[str, Any]:
+        from .account_permission_profile import account_permission_profile
+
+        return account_permission_profile(
+            self.insight,
+            max_workers=max_workers,
+            max_pages=max_pages,
+            max_items=max_items,
+        )
+
     def dashboard_snapshot(
         self,
         app: str | int | None,
