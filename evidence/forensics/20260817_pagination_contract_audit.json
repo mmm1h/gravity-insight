@@ -1136,21 +1136,6 @@
       "declared_pagination": "none",
       "evidence_level": "production",
       "evidence_sources": [
-        "evidence/probe/20260817T082308Z_report.get.query.yaml"
-      ],
-      "observed_shape": "B",
-      "operation_id": "report.get.query",
-      "review_reason": "the nonempty production response returned data.page_info.total only; the frontend slices the full data.list locally and does not send page or page_size",
-      "review_status": "no_page_info_in_observed_response",
-      "risk": "no_high_risk_signal_observed",
-      "selected_for_production_validation": false,
-      "selection_reason": null
-    },
-    {
-      "declared_kind": "none",
-      "declared_pagination": "none",
-      "evidence_level": "production",
-      "evidence_sources": [
         "evidence/probe/20260811T050921Z_app.capacity.get.yaml",
         "evidence/probe/20260811T071537Z_app.capacity.list.yaml"
       ],
@@ -1910,6 +1895,21 @@
       "operation_id": "material.tencent.list",
       "review_reason": "available evidence does not identify all page_info fields",
       "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260817T130955Z_material.tencent_medium_creative.list.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "material.tencent_medium_creative.list",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
       "risk": "no_high_risk_signal_observed",
       "selected_for_production_validation": false,
       "selection_reason": null
@@ -2914,6 +2914,21 @@
     },
     {
       "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260817T130121Z_promotion.tencent.tencent_adgroup_v2.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.tencent.tencent_adgroup_v2.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
       "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=2000, max_page_size=2000)",
       "evidence_level": "template_default",
       "evidence_sources": [
@@ -3215,6 +3230,21 @@
       "operation_id": "report.custom_metric.list",
       "review_reason": "exact production/wire fields identify the page_info shape",
       "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260817T082308Z_report.get.query.yaml"
+      ],
+      "observed_shape": "B",
+      "operation_id": "report.get.query",
+      "review_reason": "the nonempty production response returned data.page_info.total only; the frontend slices the full data.list locally and does not send page or page_size",
+      "review_status": "no_page_info_in_observed_response",
       "risk": "no_high_risk_signal_observed",
       "selected_for_production_validation": false,
       "selection_reason": null
@@ -3643,19 +3673,19 @@
     "none_review_statuses": {
       "collection_completeness_unknown": 34,
       "manual_empty_page_protocol": 1,
-      "no_page_info_in_observed_response": 32,
+      "no_page_info_in_observed_response": 33,
       "not_collection_semantics": 46,
       "wire_pagination_signal": 1
     },
     "none_silent_completeness_risks": 27,
-    "operations": 233,
+    "operations": 235,
     "page_info_evidence_levels": {
-      "production": 62,
+      "production": 63,
       "template_default": 49,
       "wire": 8
     },
     "page_info_shapes": {
-      "A": 59,
+      "A": 60,
       "B": 1,
       "unknown": 59
     },
@@ -3669,8 +3699,8 @@
       "report.multidim.query"
     ],
     "audit_baseline_declared_kinds": {
-      "none": 114,
-      "page_info": 119
+      "none": 115,
+      "page_info": 120
     },
     "current_kinds_source": "computed by reconcile_pagination_audit from current contracts; never stored as a HEAD fact in this snapshot"
   },

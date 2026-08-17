@@ -31,33 +31,30 @@ def manifest() -> dict[str, Any]:
 class RecordingTransport:
     is_test_transport = True
 
-    def __init__(self) -> None:
+    def __init__(self, payload: Mapping[str, Any] | None = None) -> None:
         self.calls: list[tuple[str, str, Mapping[str, Any]]] = []
+        self.payload = payload or {
+            "code": 0,
+            "data": {
+                "list": [
+                    {
+                        "adgroup_id": 7,
+                        "adgroup_name": "safe adgroup",
+                        "configured_status": "AD_STATUS_NORMAL",
+                        "begin_date": "2026-08-01",
+                        "end_date": "2026-08-31",
+                        "bid_amount": 100,
+                        "bid_mode": "BID_MODE_OCPC",
+                        "daily_budget": 500,
+                        "total_budget": 1000,
+                    }
+                ]
+            },
+        }
 
     def request(self, method: str, path: str, **kwargs: Any) -> TransportResponse:
         self.calls.append((method, path, kwargs))
-        return TransportResponse(
-            200,
-            {
-                "code": 0,
-                "data": {
-                    "list": [
-                        {
-                            "adgroup_id": 7,
-                            "adgroup_name": "safe adgroup",
-                            "configured_status": "AD_STATUS_NORMAL",
-                            "begin_date": "2026-08-01",
-                            "end_date": "2026-08-31",
-                            "bid_amount": 100,
-                            "bid_mode": "BID_MODE_OCPC",
-                            "daily_budget": 500,
-                            "total_budget": 1000,
-                        }
-                    ]
-                },
-            },
-            "2026-08-11T00:00:00Z",
-        )
+        return TransportResponse(200, dict(self.payload), "2026-08-11T00:00:00Z")
 
 
 class TencentMediumAdgroupOperationTests(unittest.TestCase):
@@ -107,6 +104,118 @@ class TencentMediumAdgroupOperationTests(unittest.TestCase):
                 with self.assertRaises(InputValidationError):
                     client.read(OPERATION_ID, inputs)
                 self.assertEqual([], transport.calls)
+
+
+class TencentAdgroupReportAndCreativeTests(unittest.TestCase):
+    def test_adgroup_report_sends_frontend_load_shape_and_exposes_observed_fields(self) -> None:
+        transport = RecordingTransport(
+            {
+                "code": 0,
+                "data": {
+                    "list": [
+                        {
+                            "adgroup_id": "7",
+                            "adgroup_name": "safe adgroup",
+                            "cost": "1.2",
+                            "project_list": [{"id": 1}],
+                        }
+                    ],
+                    "page_info": {
+                        "page": 1,
+                        "page_size": 1,
+                        "total_number": 1,
+                        "total_page": 1,
+                    },
+                    "total": [{"cost": "1.2"}],
+                    "update_at": "2026-08-17 00:00:00",
+                },
+            }
+        )
+        client = GravityInsightClient._from_manifest_for_tests(
+            _operations_manifest(
+                "promotion.tencent.tencent_adgroup_v2.list",
+            ),
+            transport=transport,
+        )
+
+        result = client.read(
+            "promotion.tencent.tencent_adgroup_v2.list",
+            {
+                "date_list": ["2026-08-17", "2026-08-17"],
+                "filters": [
+                    {"field": "put_status", "operator": 1, "values": [1]},
+                    {"field": "grant_type", "operator": 1, "values": [2]},
+                ],
+                "page": 1,
+                "page_size": 1,
+            },
+        )
+
+        self.assertEqual("success", result["status"])
+        self.assertEqual("POST", transport.calls[0][0])
+        self.assertEqual(
+            "/turbo_engine/api/v1/tencent/adgroup/list/v2/",
+            transport.calls[0][1],
+        )
+        body = dict(transport.calls[0][2]["body"])
+        self.assertEqual(["2026-08-17", "2026-08-17"], body["date_list"])
+        self.assertEqual("behavior", body["time_line"])
+        self.assertEqual("v3.0", body["version"])
+        self.assertNotIn("real_data", body)
+        row = result["data"]["list"][0]
+        self.assertEqual("safe adgroup", row["adgroup_name"])
+        self.assertIn("cost", row)
+        self.assertNotIn("project_list", row)
+
+    def test_medium_creative_requires_parent_and_keeps_components_opaque(self) -> None:
+        transport = RecordingTransport(
+            {
+                "code": 0,
+                "data": {
+                    "list": [
+                        {
+                            "dynamic_creative_id": 9,
+                            "dynamic_creative_name": "safe creative",
+                            "configured_status": "AD_STATUS_NORMAL",
+                            "creative_components": {"video_id": "v1"},
+                        }
+                    ]
+                },
+            }
+        )
+        client = GravityInsightClient._from_manifest_for_tests(
+            _operations_manifest(
+                "promotion.tencent.adgroup_filter.list",
+                "material.tencent_medium_creative.list",
+            ),
+            transport=transport,
+        )
+        result = client.read("material.tencent_medium_creative.list", {})
+        self.assertEqual("parent_required", result["status"])
+        self.assertEqual([], transport.calls)
+
+        result = client.read(
+            "material.tencent_medium_creative.list",
+            {"advertiser_id": "123456"},
+        )
+        self.assertEqual("success", result["status"])
+        self.assertEqual(
+            "/turbo_engine/api/v1/tencent/medium/creative/list/",
+            transport.calls[0][1],
+        )
+        row = result["data"]["list"][0]
+        self.assertEqual(9, row["dynamic_creative_id"])
+        self.assertEqual({"video_id": "v1"}, row["creative_components"])
+
+
+def _operations_manifest(*operation_ids: str) -> dict[str, Any]:
+    operations = []
+    for operation_id in operation_ids:
+        source = json.loads(
+            (CONTRACT_ROOT / f"{operation_id}.json").read_text(encoding="utf-8")
+        )
+        operations.append(source["operation"])
+    return {"manifest_version": 1, "operations": operations}
 
 
 if __name__ == "__main__":

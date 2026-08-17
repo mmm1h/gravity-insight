@@ -11,20 +11,25 @@ from .agent_intent_text import affirmative_intent_text
 
 def unavailable_promotion_gap(query: str) -> dict[str, Any] | None:
     selected = affirmative_intent_text(query)
+    if "." in selected and " " not in selected:
+        return None
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
     if _non_bytedance_hierarchy(selected, words):
         return unavailable_gap(
             query, code="NON_BYTEDANCE_HIERARCHY_PARENT_MISSING",
             journey="non_bytedance_campaign_group_creative",
             reason=(
-                "Tencent advertiser, ad-group filter and medium ad-group roots are now non-empty, "
-                "but campaign/ad-group/creative performance drafts still lack confirmed-read "
-                "semantics and cannot be probed or promoted."
+                "Tencent advertiser and ad-group report roots are now non-empty and "
+                "promotion.tencent.tencent_adgroup_v2.list is a stable read, but Tencent "
+                "creative performance (promotion.tencent.ad.list) still returns "
+                "permission_unavailable on the declared parent, and Kuaishou delivery rows "
+                "remain empty."
             ),
             next_action=(
-                "Review frontend control flow for Tencent campaign/ad-group/ad report POSTs, "
-                "add a confirmed_read record if they are reads, then probe one page with the "
-                "already-returned Tencent parent IDs; do not treat Kuaishou company IDs as delivery rows."
+                "Call promotion.tencent.tencent_adgroup_v2.list for Tencent ad-group "
+                "performance; do not treat Kuaishou company IDs as delivery rows, and do "
+                "not retry promotion.tencent.ad.list after its declared-parent "
+                "permission_unavailable."
             ),
         )
     if _platform_specific_creatives(selected, words):
@@ -32,14 +37,14 @@ def unavailable_promotion_gap(query: str) -> dict[str, Any] | None:
             query, code="PLATFORM_SPECIFIC_CREATIVE_CONTRACT_MISSING",
             journey="platform_specific_creatives",
             reason=(
-                "Tencent asset-material list now has a non-empty platform-specific contract, "
-                "but Tencent medium creative and other non-Bytedance creative drafts still "
-                "lack confirmed-read semantics or non-empty item schema."
+                "Tencent asset-material and medium-creative lists now have non-empty "
+                "platform-specific contracts, but other non-Bytedance creative drafts still "
+                "lack confirmed-read semantics or a non-empty item schema."
             ),
             next_action=(
-                "Review frontend control flow for Tencent medium creative POST, add a "
-                "confirmed_read record if it is a read, then probe one page with a returned "
-                "Tencent advertiser_id; do not substitute the common material catalog."
+                "Call material.tencent.list or material.tencent_medium_creative.list for "
+                "Tencent; do not substitute the common material catalog, and do not invent "
+                "Kuaishou or other unbound-platform creative contracts."
             ),
         )
     return None

@@ -85,12 +85,12 @@ operation 185、stable 176、callable covered route 172、`uncovered_read=343`�
 - Honor 的 Census read route 已基本闭合；Kuaishou、Tencent、Bilibili、Apple、Huawei、
   Oppo、Vivo、Xiaomi 等多数平台仍以账户/广告主等基础读取为主。
 - 除 Bytedance 外，平台专属素材能力仍不要写成已完整覆盖。2026-08-17 当前租户已取得腾讯
-  `material.tencent.list` 非空样本并登记 URL/人员字段；Tencent medium creative 及其他平台
-  创意 draft 仍缺 confirmed-read 或非空 item schema。不要把 common 素材目录误写成各平台已覆盖。
+  `material.tencent.list` 非空样本并登记 URL/人员字段；`material.tencent_medium_creative.list`
+  已取得非空 item schema 并晋升。其他平台创意 draft 仍缺 confirmed-read 或非空 item schema。不要把 common 素材目录误写成各平台已覆盖。
 - Apple、Huya、Qihu360、Sigmob、UC、Youdao、Bilibili 的 campaign/group/creative/report
   草稿仍接近可验证，但当前租户账户目录只绑了 `bytedance/tencent/kuaishou`。腾讯广告主与
-  广告组根已非空；快手账户/广告主报表在 `2026-03-01..2026-08-16` 明确空。计划/组/创意
-  report draft 因弱证据 POST 未探测，不是权限不足（无 `code=2000`）。
+  广告组根已非空；快手账户/广告主报表在 `2026-03-01..2026-08-16` 明确空。腾讯广告组报表
+  已晋升；腾讯创意报表对声明父对象返回 `code=2000`，不再换父重试。
 - auth/proxy 路由和写操作不属于普通读取缺口。前者保持 unsupported。写操作边界已经显式扩大，
   但只放行 12 条逐项登记的 mutation：7 条 Segment，以及 5 条 marker-governed 报表/订阅
   create/delete 脚手架。推广投放、素材、多维报表、权限、事件/事件属性删除及其他未登记

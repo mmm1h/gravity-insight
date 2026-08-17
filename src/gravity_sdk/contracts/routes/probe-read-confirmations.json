@@ -441,6 +441,56 @@
       "path": "/report/api/v3/adreport/attribution/",
       "reviewed_at": "2026-08-16",
       "reviewer": "codex/attribution"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched index-D9HAN43D.js (sha256 aa67659c360861d73309b2f9ca93ac15d95d6b39a092912a32cb72b9f1662d6b) the CreativeDrawer component binds POST /tencent/ad/list/ as load:n,data:r and calls n({body:{start_time,end_time,advertiser_id,adgroup_id,time_line,query_fields,api_version}}) on open, date change and metric change. The response is consumed as r.list for the paginated creative table and as r.list for client-side export. Opening, pausing and deleting selected creatives use the separate /tencent/ad/ads_update_configured_status/ and /tencent/batch_options/ routes, so this list call has no write continuation.",
+          "source": "src/gravity_sdk/census/data/bundle-snapshot.json"
+        },
+        {
+          "detail": "The extracted exact-route consumer binds data.list as a reactive table source. The request body is limited to advertiser_id, adgroup_id, start_time, end_time, time_line, query_fields and optional api_version.",
+          "source": "src/gravity_sdk/census/data/route-response-fields.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "promotion.tencent.ad.list",
+      "path": "/turbo_engine/api/v1/tencent/ad/list/",
+      "reviewed_at": "2026-08-17",
+      "reviewer": "codex/tencent-drill"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched index-D9HAN43D.js (sha256 aa67659c360861d73309b2f9ca93ac15d95d6b39a092912a32cb72b9f1662d6b) the TencentAdReport Ad component binds POST /tencent/adgroup/list/v2/ as load:y,data:x and Ge() sends date_list, filtering, filters, page, page_size, query_fields, order_by, time_line and version=v3.0. The first response list is assigned to the report table (ce.value=(r?.list||[]).map(...)) and r.update_at is stored; a second call with real_data=1 is only a follow-up refresh of the same list, not a mutation. Enable, pause, delete, budget, bid and datetime writes go through a separate /tencent/batch_options/ drawer, so listing has no write side effect.",
+          "source": "src/gravity_sdk/census/data/bundle-snapshot.json"
+        },
+        {
+          "detail": "The extracted exact-route consumer binds data.update_at. The request body is the report load shape (date_list, filtering, filters, order_by, page, page_size, query_fields, time_line, version) with optional real_data only on the follow-up refresh.",
+          "source": "src/gravity_sdk/census/data/route-response-fields.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "promotion.tencent.tencent_adgroup_v2.list",
+      "path": "/turbo_engine/api/v1/tencent/adgroup/list/v2/",
+      "reviewed_at": "2026-08-17",
+      "reviewer": "codex/tencent-drill"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
+          "detail": "In hash-matched Rules-ChMHnW7I.js (sha256 92f4ddab97f30f3b7af39c582f07c904354eb15486848fcc6bcc02fd60cf6119) the trusteeship rule drawer binds POST /tencent/medium/creative/list/ as load:rn,data:an and lr() calls rn({body:{page,page_size,advertiser_id,filtering}}) to populate the appointment picker. The response is consumed as (an.value?.list||[]).filter(...) on creative_set_approval_status; an.value is cleared when the target type changes. Creating the trusteeship rule uses the separate /task/ai_trusteeship/create/ mutation, so this list call only loads selectable creatives.",
+          "source": "src/gravity_sdk/census/data/bundle-snapshot.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "material.tencent_medium_creative.list",
+      "path": "/turbo_engine/api/v1/tencent/medium/creative/list/",
+      "reviewed_at": "2026-08-17",
+      "reviewer": "codex/tencent-drill"
     }
   ],
   "schema_version": "gravity-insight.probe-read-confirmations.v1"

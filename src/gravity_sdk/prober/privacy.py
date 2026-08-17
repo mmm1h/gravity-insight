@@ -95,6 +95,7 @@ SAFE_SUFFIXES = (
     "_id", "_name", "_count", "_cnt", "_date", "_time", "_status",
     "_type", "_number", "_total",
 )
+_OPAQUE_OBJECT_ITEM_FIELDS = frozenset({"creative_components"})
 
 BYTEDANCE_TEXT_TITLE_METRIC_FIELDS = frozenset(
     {
@@ -316,10 +317,13 @@ def _list_data_projection(
     result: dict[str, Any] = {"item_keys": safe}
     if hidden:
         result["known_omitted_item_keys"] = hidden
-    if nested:
+    opaque = [name for name in safe if name in _OPAQUE_OBJECT_ITEM_FIELDS]
+    if opaque:
+        result["opaque_json_item_keys"] = opaque
+    elif nested:
         result["nested_item_keys"] = nested
-    if nested_omitted:
-        result["known_omitted_nested_item_keys"] = nested_omitted
+        if nested_omitted:
+            result["known_omitted_nested_item_keys"] = nested_omitted
     return result
 
 

@@ -339,6 +339,10 @@ class GravityInsightGoldenTests(unittest.TestCase):
             # Saved Analysis CRUD completed the shared update-route wire and
             # one event create/read/update/replay/delete production loop.
             "analysis.report_config.update",
+            # 腾讯广告组报表经 hash-matched 控制流确认、非空 page_info 实测后晋升。
+            "promotion.tencent.tencent_adgroup_v2.list",
+            # 腾讯 medium creative 经 hash-matched 控制流确认、非空 item schema 后晋升。
+            "material.tencent_medium_creative.list",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]

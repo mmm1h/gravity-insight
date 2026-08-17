@@ -8001,6 +8001,271 @@
       ],
       "stability": "stable",
       "upstream_method": "GET"
+    },
+    {
+      "action": "list",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "腾讯广告 3.0 广告组报表。按日期窗和筛选读取广告组标识、状态、预算/出价与已观察指标；未登记新增字段继续 fail-closed。",
+      "domain": "promotion",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "date_list": {
+          "description": "Frontend TencentAdReport sends a two-item YYYY-MM-DD date_list on every list load; presence describes frontend calls and is not a server-required declaration.",
+          "item_type": "string",
+          "type": "array"
+        },
+        "filtering": {
+          "description": "Frontend-observed candidate from route-params.json (confidence=high, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "object"
+        },
+        "filters": {
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "item_type": "object",
+          "type": "array"
+        },
+        "order_by": {
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "array"
+        },
+        "page": {
+          "default": 1,
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "integer"
+        },
+        "page_size": {
+          "default": 10,
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "integer"
+        },
+        "query_fields": {
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "array"
+        },
+        "real_data": {
+          "description": "Frontend TencentAdReport sends real_data=1 only on the follow-up refresh after the first list returns rows; the first load omits it.",
+          "type": "integer"
+        },
+        "time_line": {
+          "default": "behavior",
+          "description": "Frontend TencentAdReport maps the date-range control to behavior/request/active; the default tab is behavior.",
+          "enum": [
+            "behavior",
+            "active",
+            "request"
+          ],
+          "type": "string"
+        },
+        "version": {
+          "default": "v3.0",
+          "description": "Frontend-observed candidate from route-params.json (confidence=medium, presence=observed_always); presence describes frontend calls and is not a server-required declaration.",
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "date_list": [
+            "$today",
+            "$today"
+          ],
+          "filtering": {},
+          "filters": [
+            {
+              "field": "put_status",
+              "operator": 1,
+              "values": [
+                1
+              ]
+            },
+            {
+              "field": "grant_type",
+              "operator": 1,
+              "values": [
+                2
+              ]
+            }
+          ],
+          "order_by": [],
+          "page": 1,
+          "page_size": 1,
+          "query_fields": [],
+          "time_line": "behavior",
+          "version": "v3.0"
+        }
+      },
+      "operation_id": "promotion.tencent.tencent_adgroup_v2.list",
+      "pagination": {
+        "default_page_size": 10,
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/turbo_engine/api/v1/tencent/adgroup/list/v2/",
+      "platform": "tencent",
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token",
+          "operator",
+          "operator_id",
+          "operator_name",
+          "creator",
+          "creator_id",
+          "user_name",
+          "dept",
+          "department",
+          "callback_url",
+          "click_url",
+          "postback_url",
+          "uid",
+          "user_id",
+          "device_id",
+          "phone",
+          "mobile",
+          "email",
+          "idfa",
+          "idfv",
+          "imei",
+          "oaid",
+          "android_id",
+          "order_id",
+          "ip",
+          "ip_address",
+          "openid",
+          "open_id",
+          "unionid",
+          "client_id",
+          "trace_id"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "date_list",
+          "filtering",
+          "filters",
+          "order_by",
+          "page",
+          "page_size",
+          "query_fields",
+          "real_data",
+          "time_line",
+          "version"
+        ],
+        "defaults": {
+          "filtering": {},
+          "filters": [],
+          "order_by": [],
+          "page": 1,
+          "page_size": 10,
+          "query_fields": [],
+          "time_line": "behavior",
+          "version": "v3.0"
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [],
+      "resource": "tencent_adgroup_v2",
+      "response_projection": {
+        "data_item_keys": {
+          "total": [
+            "cost"
+          ]
+        },
+        "data_keys": [
+          "list",
+          "page_info",
+          "total",
+          "update_at"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [
+          "ad_count",
+          "adgroup_auto_acquisition_budget",
+          "adgroup_auto_acquisition_enabled",
+          "adgroup_auto_acquisition_status",
+          "adgroup_id",
+          "adgroup_name",
+          "adgroup_system_status",
+          "advertiser_agent_id",
+          "advertiser_agent_name",
+          "advertiser_balance",
+          "advertiser_budget",
+          "advertiser_budget_mode",
+          "advertiser_id",
+          "advertiser_name",
+          "advertiser_remark",
+          "advertiser_system_status",
+          "app_id",
+          "app_name",
+          "auto_derived_creative_enabled",
+          "begin_date",
+          "bid_amount",
+          "bid_mode",
+          "bid_strategy",
+          "campaign_id",
+          "company",
+          "configured_status",
+          "conversion_id",
+          "cost",
+          "created_time",
+          "daily_budget",
+          "deep_bid_amount",
+          "deep_conversion_behavior_advanced_spec_goal",
+          "deep_conversion_behavior_bid",
+          "deep_conversion_behavior_spec_goal",
+          "deep_conversion_type",
+          "deep_conversion_worth_advanced_rate",
+          "deep_conversion_worth_advanced_spec_goal",
+          "deep_conversion_worth_spec_goal",
+          "deep_goal",
+          "delay",
+          "end_date",
+          "expand_enabled",
+          "expected_roi",
+          "exploration_strategy",
+          "last_modified_time",
+          "marketing_carrier_type",
+          "marketing_goal",
+          "operator_id",
+          "operator_name",
+          "optimization_goal",
+          "priority_site_set",
+          "promoted_object_id",
+          "promoted_object_type",
+          "site_set",
+          "status",
+          "targeting_id",
+          "time_series"
+        ],
+        "known_omitted_item_keys": [
+          "project_list"
+        ],
+        "required_data_keys": [
+          "list"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
     }
   ]
 }

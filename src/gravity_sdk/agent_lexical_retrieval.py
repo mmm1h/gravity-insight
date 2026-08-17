@@ -458,7 +458,7 @@ def _gap_documents(domain: str | None) -> list[LexicalDocument]:
             document_kind="gap",
             fields=(
                 *tuple(str(gap.get(key, "")) for key in (
-                    "journey", "code", "reason", "next_action"
+                    "journey", "code"
                 )),
                 *caller_language_fields(f"gap:{gap['code']}"),
             ),

@@ -30,11 +30,11 @@ class PaginationContractAuditTests(unittest.TestCase):
         self.assertEqual(len(current), len(records))
         self.assertEqual(operation_ids, {item["operation_id"] for item in records})
         self.assertEqual(
-            {"page_info": 119, "none": 114},
+            {"page_info": 120, "none": 115},
             audit["summary"]["audit_baseline_declared_kinds"],
         )
         self.assertNotIn("declared_kinds", audit["summary"])
-        self.assertEqual({"A": 59, "B": 1, "unknown": 59}, audit["summary"]["page_info_shapes"])
+        self.assertEqual({"A": 60, "B": 1, "unknown": 59}, audit["summary"]["page_info_shapes"])
         self.assertTrue(all(item["evidence_sources"] for item in records))
         by_id = {item["operation_id"]: item for item in records}
         self.assertEqual("B", by_id["report.multidim.query"]["observed_shape"])
@@ -79,7 +79,7 @@ class PaginationContractAuditTests(unittest.TestCase):
             item for item in reconciled["records"]
             if item["observed_shape"] == "A" and item["current_declared_kind"] == "page_info"
         ]
-        self.assertEqual(59, len(shape_a))
+        self.assertEqual(60, len(shape_a))
         self.assertTrue(all(item["current_total_page_field"] == "total_page" for item in shape_a))
 
     def test_undeclared_kind_change_is_unexpected_drift(self) -> None:

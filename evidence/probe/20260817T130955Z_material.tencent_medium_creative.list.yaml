@@ -1,0 +1,1897 @@
+{
+  "conclusion": "success",
+  "http": [
+    {
+      "http_status": 200,
+      "method": "POST",
+      "operation_id": "promotion.tencent.adgroup_filter.list",
+      "path": "/turbo_engine/api/v1/tencent/report/adgroup/filters/",
+      "protocol_status": {
+        "classification": "success",
+        "code": {
+          "present": true,
+          "value": 0
+        },
+        "extra_error": {
+          "present": false
+        },
+        "msg": {
+          "present": true,
+          "value": "成功"
+        }
+      },
+      "purpose": "parent",
+      "raw_schema_fingerprint": "ba36ebdfe53e35ddbef41c88956daa8d4f060c22b6d4ff0a85a7c8d6191c2ad2",
+      "request_fingerprint": "1a2493726042eb8c5ade38fa25fa13cd90255649bc32429d1401bdd500439223",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body.page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.body.page_size",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.code",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].adgroup_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].adgroup_name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].advertiser_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.page_info",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.page_info.page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.page_size",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.total_number",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.page_info.total_page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.extra",
+            "presence": "observed",
+            "types": [
+              "null"
+            ]
+          },
+          {
+            "path": "$.msg",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    },
+    {
+      "http_status": 200,
+      "method": "POST",
+      "operation_id": "material.tencent_medium_creative.list",
+      "path": "/turbo_engine/api/v1/tencent/medium/creative/list/",
+      "protocol_status": {
+        "classification": "success",
+        "code": {
+          "present": true,
+          "value": 0
+        },
+        "extra_error": {
+          "present": false
+        },
+        "msg": {
+          "present": true,
+          "value": "成功"
+        }
+      },
+      "purpose": "discovery",
+      "raw_schema_fingerprint": "f0f0dfe60b3263b61d961b1c2efd78e2c9fbe398cf1f0cda5d836384f10f59b9",
+      "request_fingerprint": "fea7bedacfb4278b7a37fe909f25eb9910dcbdbb2ce8636252965f8632536d39",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body.advertiser_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.body.filtering",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.body.filtering[]",
+            "presence": "observed",
+            "types": [
+              "unknown"
+            ]
+          },
+          {
+            "path": "$.body.page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.body.page_size",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.code",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].adgroup_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].click_tracking_url",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].configured_status",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].created_time",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.action_button",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.action_button[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.action_button[].component_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.action_button[].is_deleted",
+            "presence": "observed",
+            "types": [
+              "boolean"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.action_button[].value",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.action_button[].value.button_text",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.brand",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.brand[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.brand[].component_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.brand[].is_deleted",
+            "presence": "observed",
+            "types": [
+              "boolean"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.brand[].value",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.brand[].value.brand_image_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.brand[].value.brand_name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.description",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.description[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.description[].component_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.description[].is_deleted",
+            "presence": "observed",
+            "types": [
+              "boolean"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.description[].value",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.description[].value.content",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.jump_info",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.jump_info[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.jump_info[].component_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.jump_info[].is_deleted",
+            "presence": "observed",
+            "types": [
+              "boolean"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.jump_info[].value",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.jump_info[].value.page_spec",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.jump_info[].value.page_spec.wechat_mini_game_spec",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.jump_info[].value.page_spec.wechat_mini_game_spec.mini_game_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.jump_info[].value.page_spec.wechat_mini_game_spec.mini_game_tracking_parameter",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.jump_info[].value.page_type",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.main_jump_info",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.main_jump_info[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.main_jump_info[].component_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.main_jump_info[].is_deleted",
+            "presence": "observed",
+            "types": [
+              "boolean"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.main_jump_info[].value",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.main_jump_info[].value.page_spec",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.main_jump_info[].value.page_spec.wechat_mini_game_spec",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.main_jump_info[].value.page_spec.wechat_mini_game_spec.mini_game_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.main_jump_info[].value.page_spec.wechat_mini_game_spec.mini_game_tracking_parameter",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.main_jump_info[].value.page_type",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.show_data",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.show_data[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.show_data[].component_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.show_data[].is_deleted",
+            "presence": "observed",
+            "types": [
+              "boolean"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.show_data[].value",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.show_data[].value.conversion_data_type",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.show_data[].value.conversion_target_type",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.video",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.video[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.video[].component_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.video[].is_deleted",
+            "presence": "observed",
+            "types": [
+              "boolean"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.video[].value",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.video[].value.cover_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.video[].value.video_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_set_approval_status",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_template_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].delivery_mode",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].dynamic_creative_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].dynamic_creative_name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].dynamic_creative_type",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].enable_breakthrough_siteset",
+            "presence": "observed",
+            "types": [
+              "boolean"
+            ]
+          },
+          {
+            "path": "$.data.list[].impression_tracking_url",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].is_deleted",
+            "presence": "observed",
+            "types": [
+              "boolean"
+            ]
+          },
+          {
+            "path": "$.data.list[].last_modified_time",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].page_track_url",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.extra",
+            "presence": "observed",
+            "types": [
+              "null"
+            ]
+          },
+          {
+            "path": "$.msg",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    },
+    {
+      "http_status": 200,
+      "method": "POST",
+      "operation_id": "material.tencent_medium_creative.list",
+      "path": "/turbo_engine/api/v1/tencent/medium/creative/list/",
+      "protocol_status": {
+        "classification": "success",
+        "code": {
+          "present": true,
+          "value": 0
+        },
+        "extra_error": {
+          "present": false
+        },
+        "msg": {
+          "present": true,
+          "value": "成功"
+        }
+      },
+      "purpose": "confirmation",
+      "raw_schema_fingerprint": "f0f0dfe60b3263b61d961b1c2efd78e2c9fbe398cf1f0cda5d836384f10f59b9",
+      "request_fingerprint": "fea7bedacfb4278b7a37fe909f25eb9910dcbdbb2ce8636252965f8632536d39",
+      "request_shape": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.body.advertiser_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.body.filtering",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.body.filtering[]",
+            "presence": "observed",
+            "types": [
+              "unknown"
+            ]
+          },
+          {
+            "path": "$.body.page",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.body.page_size",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.query",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {
+            "path": "$",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.code",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].adgroup_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].click_tracking_url",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].configured_status",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].created_time",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.action_button",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.action_button[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.action_button[].component_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.action_button[].is_deleted",
+            "presence": "observed",
+            "types": [
+              "boolean"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.action_button[].value",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.action_button[].value.button_text",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.brand",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.brand[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.brand[].component_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.brand[].is_deleted",
+            "presence": "observed",
+            "types": [
+              "boolean"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.brand[].value",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.brand[].value.brand_image_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.brand[].value.brand_name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.description",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.description[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.description[].component_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.description[].is_deleted",
+            "presence": "observed",
+            "types": [
+              "boolean"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.description[].value",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.description[].value.content",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.jump_info",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.jump_info[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.jump_info[].component_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.jump_info[].is_deleted",
+            "presence": "observed",
+            "types": [
+              "boolean"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.jump_info[].value",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.jump_info[].value.page_spec",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.jump_info[].value.page_spec.wechat_mini_game_spec",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.jump_info[].value.page_spec.wechat_mini_game_spec.mini_game_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.jump_info[].value.page_spec.wechat_mini_game_spec.mini_game_tracking_parameter",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.jump_info[].value.page_type",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.main_jump_info",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.main_jump_info[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.main_jump_info[].component_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.main_jump_info[].is_deleted",
+            "presence": "observed",
+            "types": [
+              "boolean"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.main_jump_info[].value",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.main_jump_info[].value.page_spec",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.main_jump_info[].value.page_spec.wechat_mini_game_spec",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.main_jump_info[].value.page_spec.wechat_mini_game_spec.mini_game_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.main_jump_info[].value.page_spec.wechat_mini_game_spec.mini_game_tracking_parameter",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.main_jump_info[].value.page_type",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.show_data",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.show_data[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.show_data[].component_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.show_data[].is_deleted",
+            "presence": "observed",
+            "types": [
+              "boolean"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.show_data[].value",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.show_data[].value.conversion_data_type",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.show_data[].value.conversion_target_type",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.video",
+            "presence": "observed",
+            "types": [
+              "array"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.video[]",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.video[].component_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.video[].is_deleted",
+            "presence": "observed",
+            "types": [
+              "boolean"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.video[].value",
+            "presence": "observed",
+            "types": [
+              "object"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.video[].value.cover_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_components.video[].value.video_id",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_set_approval_status",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].creative_template_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].delivery_mode",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].dynamic_creative_id",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].dynamic_creative_name",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].dynamic_creative_type",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].enable_breakthrough_siteset",
+            "presence": "observed",
+            "types": [
+              "boolean"
+            ]
+          },
+          {
+            "path": "$.data.list[].impression_tracking_url",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.data.list[].is_deleted",
+            "presence": "observed",
+            "types": [
+              "boolean"
+            ]
+          },
+          {
+            "path": "$.data.list[].last_modified_time",
+            "presence": "observed",
+            "types": [
+              "integer"
+            ]
+          },
+          {
+            "path": "$.data.list[].page_track_url",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          },
+          {
+            "path": "$.extra",
+            "presence": "observed",
+            "types": [
+              "null"
+            ]
+          },
+          {
+            "path": "$.msg",
+            "presence": "observed",
+            "types": [
+              "string"
+            ]
+          }
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    }
+  ],
+  "operation_id": "material.tencent_medium_creative.list",
+  "pagination": {
+    "kind": "none",
+    "total_field_path": null,
+    "upstream_hard_max": null,
+    "verified": true
+  },
+  "privacy": {
+    "candidate_fields": [
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].adgroup_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.list[].click_tracking_url",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].configured_status",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].created_time",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].creative_components.action_button[].component_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].creative_components.action_button[].is_deleted",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "boolean"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.list[].creative_components.action_button[].value.button_text",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].creative_components.brand[].component_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].creative_components.brand[].is_deleted",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "boolean"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].creative_components.brand[].value.brand_image_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].creative_components.brand[].value.brand_name",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].creative_components.description[].component_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].creative_components.description[].is_deleted",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "boolean"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.list[].creative_components.description[].value.content",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].creative_components.jump_info[].component_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].creative_components.jump_info[].is_deleted",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "boolean"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].creative_components.jump_info[].value.page_spec.wechat_mini_game_spec.mini_game_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.list[].creative_components.jump_info[].value.page_spec.wechat_mini_game_spec.mini_game_tracking_parameter",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].creative_components.jump_info[].value.page_type",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].creative_components.main_jump_info[].component_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].creative_components.main_jump_info[].is_deleted",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "boolean"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].creative_components.main_jump_info[].value.page_spec.wechat_mini_game_spec.mini_game_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.list[].creative_components.main_jump_info[].value.page_spec.wechat_mini_game_spec.mini_game_tracking_parameter",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].creative_components.main_jump_info[].value.page_type",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].creative_components.show_data[].component_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].creative_components.show_data[].is_deleted",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "boolean"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].creative_components.show_data[].value.conversion_data_type",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].creative_components.show_data[].value.conversion_target_type",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].creative_components.video[].component_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].creative_components.video[].is_deleted",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "boolean"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].creative_components.video[].value.cover_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].creative_components.video[].value.video_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].creative_set_approval_status",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].creative_template_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.list[].delivery_mode",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].dynamic_creative_id",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].dynamic_creative_name",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].dynamic_creative_type",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.list[].enable_breakthrough_siteset",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "boolean"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.list[].impression_tracking_url",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].is_deleted",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "boolean"
+        ]
+      },
+      {
+        "classification_reason": "business_metadata_name_pattern",
+        "expose": true,
+        "path": "data.list[].last_modified_time",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "integer"
+        ]
+      },
+      {
+        "classification_reason": "route_specific_field_review",
+        "expose": true,
+        "path": "data.list[].page_track_url",
+        "presence": "observed",
+        "privacy_classification": "non_sensitive",
+        "types": [
+          "string"
+        ]
+      }
+    ],
+    "classified_non_sensitive": 43,
+    "classified_sensitive": 0,
+    "manual_review": 0,
+    "values_persisted": false
+  },
+  "probed_at": "2026-08-17T13:09:55Z",
+  "projected_schema_fingerprint": "4a5dd6292014e5423e14e7269d10585c77b13ced2a78b67b7ab1a08e01b7d8a1",
+  "raw_schema_fingerprint": "f0f0dfe60b3263b61d961b1c2efd78e2c9fbe398cf1f0cda5d836384f10f59b9",
+  "request_stats": {
+    "backoff_terminations": 0,
+    "failed": 0,
+    "total": 3
+  },
+  "required_parent": {
+    "candidate_count": 1,
+    "operation_id": "promotion.tencent.adgroup_filter.list",
+    "output_path": "data.list[].advertiser_id",
+    "probe_selection": "first",
+    "selection": "caller_select",
+    "status": "resolved"
+  },
+  "route": {
+    "family": "material.tencent_medium_creative.list",
+    "method": "POST",
+    "path": "/turbo_engine/api/v1/tencent/medium/creative/list/"
+  },
+  "schema_version": "gravity-insight.probe-evidence.v1",
+  "semantic_errors": {
+    "missing_parameter": {
+      "attempted": false,
+      "shape_observed": false
+    },
+    "parameter_adjustments": [],
+    "permission_shape_observed": false,
+    "rules": []
+  },
+  "successful": true
+}
