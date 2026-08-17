@@ -216,6 +216,18 @@ F41 状态不变。
 
 自建表与真实表的差别已实测：8-16 的成功 detail 只发生在当时那张 marker 表上，该表已删除；当前租户 `list` 为空，历史版本目录里的 `table_id` 能取出版本 ID 集合，却不能读回当前 schema。三条继续 draft，F41 读产品未实现。
 
+### 2026-08-18 复核
+
+先 hash-matched 重放 `DataSheet-CgxGx0E4.js` / `DataSheetDetail-CNEBq9Fe.js` / `dataSheet-data-D_dWJH0x.js`（三份 SHA-256 与 snapshot 一致），再按投放中 App 绑 list。不建表。11 次业务 HTTP。
+
+| Operation | Status | 本轮请求与父绑定 | 精确 blocker | 下一步最小证据 |
+| --- | --- | --- | --- | --- |
+| `metadata.data_table.list` | `draft` | 7 次。形状：`app_id_list=[29034827]` 整数 / 同值字符串 / 7 个 App 整数 / 省略 `name_like` / 省略 `app_id_list` / `name_like=dim_` / 只发 `page+page_size`。全部 HTTP 200 / `code=0` / `list=[]` / `page_info.total=0` | `empty_sample`、`response_schema_unverified` | 仍缺当前非空 list item；`page_info` 再次只有 `page/page_size/total`，**没有** `total_page`。bundle 已把 body 从中置信度升成确凿 |
+| `metadata.data_table.detail` | `draft` | 对 `operation_log` 本页第一条非 delete 的 32 位 `table_id`（动作 `edit`，非 08-17 那个 version.list id）发 1 次 POST；HTTP 200 / `code=1004` / `extra.error=table_id not exist` / `data={}` | `parent_resource_required`、`response_schema_unverified` | 日志/版本目录的历史 `table_id` 不是活表；必须来自当前非空 `data_table.list` 的 `id` |
+| `metadata.version_id_set.get` | `draft` | 0 次。list 仍空，且 detail 已证明日志 id 不存在，不再用同一类 id 打 GET | `parent_resource_required`、`request_binding_unverified` | 与成功 list/detail 对齐后再发 1 次 |
+
+完整账本：[F41 本轮结论](roadmap.d/f41-data-table.md)。
+
 ## 2026-08-13 追加判定：非 Bytedance 平台投放层级（D33）
 
 选 Bilibili 与 Huya 两个平台做逐层父链取证（二者在候选中父链证据最完整）。
@@ -506,7 +518,7 @@ F41 页面明确空；D28 在目标上限 8 次前停于 7 次。没有 write、
 | 动线 | 判定 | 实测证据 | 产品结论 / 下一步 |
 | --- | --- | --- | --- |
 | 查找当前账号可读的 App 项目 | **已闭环；旧候选不是目标端点** | 设置 → 应用管理自然发出 `GET /turbo_engine/api/v1/user/open_app/list/`，HTTP 200、首屏 7 行。观察 17 个 item 字段和 4 个 `page_info` 字段，键与类型均已由既有 stable `app.list` v4 全量登记；raw schema fingerprint 为 `a4a2bf907a0e45f47de2656f0354c766850c2c06460b1008477664b5d14d3491`。 | J39 改由 `app.list` 的 CLI/SDK/Plan/Agent 卡承载；不晋升、改写或冒充账号级明确空的 `app.project.list`。两 route 分别是 open-app GET 与 project POST，不是同一个端点。 |
-| 按表名或 App 查询数据表当前 schema、字段和版本（F41） | **证据不够支撑读产品；三条继续 draft** | 2026-08-16 marker 自建表只留下已删除对象的计数叙述，无字段级 schema。2026-08-17 最小读：`list` 第一页仍明确空；`version.list` 的真实 `table_id` 对 `detail` 为 `code=1004` 空 data；同一 ID 的 `version_id_set` 成功为整数数组（17 项）。 | 不能把已删自建表的 detail 计数登记成现表合同，也不能用 `version.list` 的历史 `table_id` 冒充 `data_table.list` 父绑定。下一步仍是取得一份**当前 list 非空 item**，再仅在内存中打 1 次成功 detail；写产品与解绑合同不在本动线。 |
+| 按表名或 App 查询数据表当前 schema、字段和版本（F41） | **证据不够支撑读产品；三条继续 draft** | 2026-08-18：bundle 坐实 list/detail 形状后，绑 `29034827` 及另外 6 种筛选均为 `list.total=0`；`operation_log` 近期 32 位 `table_id` 对 detail 为 `1004 / table_id not exist`。08-16/08-17 的已删 marker 与历史 version id 结论仍成立。 | 空 `app_id_list` 不是漏查投放 App。本账号在已穷尽的合理请求形状上没有活表。下一步仍是取得当前非空 list item 再打 1 次成功 detail。 |
 | 按平台、广告位和日期汇总变现结果（D28） | **三选一：请求参数/路由不对；仍未闭环** | 当前 `NewReportCenter` 用 `/turbo_engine/api/v3/confmetric/metric/list/` 和同命名空间 permission route，并以 `data_topic EQUALS monetization_report`、`is_media EQUALS false|true` 取配置。现有 stable operation 仍指向旧 `/report/api/v3/confmetric/metric/list/`。7 次旧 route 均 HTTP 200：1 次错误 `IN` 语义拒绝；一次空 filter 调用自动读 5 页、200/1124 行无目标 topic；1 次当前正确 filter 仍被旧 route 语义拒绝。 | 判据是**同一当前 bundle 的 route 与现有请求不一致，且正确 filter 在旧 route 仍失败**。这不能判定租户没数据，也不能判定权限未生效；permission、主结果、非空 item/total 和值域均未知。下一步应先单次验证当前 turbo config/permission，再用其真实物理字段自然触发主结果；不得继续在旧 route 换参数。 |
 
 三条目标尝试为 `App 1 / F41 1 / D28 7`；连同页面自然触发的 7 次辅助业务读取，实际生产业务
