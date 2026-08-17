@@ -1,0 +1,218 @@
+{
+  "$schema": "../schema/semantic-compose-definition-v1.schema.json",
+  "schema_version": "gravity.semantic-definition.v1",
+  "definition_id": "report.ap-cost-observation",
+  "version": 3,
+  "description": "Observe the production-proven adreport acquisition, cost, payer, and revenue metrics through the frontend request profile; new members support only the day and week grains established by live execution.",
+  "source": {
+    "product": "multidim",
+    "operation_id": "report.multidim.query",
+    "operation_contract_version": 4,
+    "fact_path": "/result/query/data/list",
+    "request_profile": "frontend_adreport_current"
+  },
+  "access_scope": {
+    "kind": "app_bound",
+    "physical_filter": "app_id"
+  },
+  "limits": {
+    "metrics": 1,
+    "dimensions": 1,
+    "filters": 1,
+    "joins": 1
+  },
+  "metrics": [
+    {
+      "definition_id": "report.metric.ap-cost",
+      "version": 1,
+      "physical_name": "ap_cost",
+      "metadata_operation": "report.multidim.metric.list",
+      "allowed_grains": [
+        "report.grain.day",
+        "report.grain.week",
+        "report.grain.total"
+      ]
+    },
+    {
+      "definition_id": "report.metric.adclick-standard-activate-count",
+      "version": 1,
+      "physical_name": "adclick_standard_activate_cnt",
+      "metadata_operation": "report.multidim.metric.list",
+      "allowed_grains": [
+        "report.grain.day",
+        "report.grain.week"
+      ]
+    },
+    {
+      "definition_id": "report.metric.adclick-standard-pay-amount",
+      "version": 1,
+      "physical_name": "adclick_standard_pay_amount",
+      "metadata_operation": "report.multidim.metric.list",
+      "allowed_grains": [
+        "report.grain.day",
+        "report.grain.week"
+      ]
+    },
+    {
+      "definition_id": "report.metric.adclick-total-roi",
+      "version": 1,
+      "physical_name": "adclick_total_roi",
+      "metadata_operation": "report.multidim.metric.list",
+      "allowed_grains": [
+        "report.grain.day",
+        "report.grain.week"
+      ]
+    },
+    {
+      "definition_id": "report.metric.ap-show",
+      "version": 1,
+      "physical_name": "ap_show",
+      "metadata_operation": "report.multidim.metric.list",
+      "allowed_grains": [
+        "report.grain.day",
+        "report.grain.week"
+      ]
+    },
+    {
+      "definition_id": "report.metric.ap-click",
+      "version": 1,
+      "physical_name": "ap_click",
+      "metadata_operation": "report.multidim.metric.list",
+      "allowed_grains": [
+        "report.grain.day",
+        "report.grain.week"
+      ]
+    },
+    {
+      "definition_id": "report.metric.ap-click-rate",
+      "version": 1,
+      "physical_name": "ap_click_rate",
+      "metadata_operation": "report.multidim.metric.list",
+      "allowed_grains": [
+        "report.grain.day",
+        "report.grain.week"
+      ]
+    },
+    {
+      "definition_id": "report.metric.ap-convert",
+      "version": 1,
+      "physical_name": "ap_convert",
+      "metadata_operation": "report.multidim.metric.list",
+      "allowed_grains": [
+        "report.grain.day",
+        "report.grain.week"
+      ]
+    },
+    {
+      "definition_id": "report.metric.ap-activate",
+      "version": 1,
+      "physical_name": "ap_activate",
+      "metadata_operation": "report.multidim.metric.list",
+      "allowed_grains": [
+        "report.grain.day",
+        "report.grain.week"
+      ]
+    },
+    {
+      "definition_id": "report.metric.adclick-standard-activate-cost",
+      "version": 1,
+      "physical_name": "adclick_standard_activate_cost",
+      "metadata_operation": "report.multidim.metric.list",
+      "allowed_grains": [
+        "report.grain.day",
+        "report.grain.week"
+      ]
+    },
+    {
+      "definition_id": "report.metric.adclick-standard-pay-users",
+      "version": 1,
+      "physical_name": "adclick_standard_pay_uv",
+      "metadata_operation": "report.multidim.metric.list",
+      "allowed_grains": [
+        "report.grain.day",
+        "report.grain.week"
+      ]
+    },
+    {
+      "definition_id": "report.metric.adclick-ad-revenue",
+      "version": 1,
+      "physical_name": "adclick_ad_amount",
+      "metadata_operation": "report.multidim.metric.list",
+      "allowed_grains": [
+        "report.grain.day",
+        "report.grain.week"
+      ]
+    },
+    {
+      "definition_id": "report.metric.total-revenue",
+      "version": 1,
+      "physical_name": "total_revenue",
+      "metadata_operation": "report.multidim.metric.list",
+      "allowed_grains": [
+        "report.grain.day",
+        "report.grain.week"
+      ]
+    }
+  ],
+  "dimensions": [
+    {
+      "definition_id": "report.dimension.click-company",
+      "version": 1,
+      "physical_name": "click_company",
+      "required_join": "report.join.adreport-click-company"
+    }
+  ],
+  "filters": [
+    {
+      "definition_id": "report.filter.click-company",
+      "version": 1,
+      "physical_name": "click_company",
+      "operators": [
+        "IN"
+      ],
+      "required_dimension": "report.dimension.click-company"
+    }
+  ],
+  "grains": [
+    {
+      "definition_id": "report.grain.day",
+      "version": 1,
+      "physical_name": "day"
+    },
+    {
+      "definition_id": "report.grain.week",
+      "version": 1,
+      "physical_name": "week"
+    },
+    {
+      "definition_id": "report.grain.total",
+      "version": 1,
+      "physical_name": "total"
+    },
+    {
+      "definition_id": "report.grain.hour",
+      "version": 1,
+      "physical_name": "hour"
+    }
+  ],
+  "joins": [
+    {
+      "definition_id": "report.join.adreport-click-company",
+      "version": 1,
+      "left_source": "report.adreport",
+      "right_member": "report.dimension.click-company",
+      "cardinality": "many_to_one",
+      "realization": "embedded_dimension"
+    }
+  ],
+  "allowed_claims": [
+    {
+      "claim_id": "observed-metric-value",
+      "statement": "State returned values for the selected registered metric only for the selected App, inclusive date window, grain, grouped dimensions, and explicit filters."
+    },
+    {
+      "claim_id": "within-result-comparison",
+      "statement": "Compare rows for the selected registered metric only within this result when their returned dimension and time keys are stated."
+    }
+  ]
+}

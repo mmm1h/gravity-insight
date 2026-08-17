@@ -22,7 +22,8 @@
 `55 = 46 / 2 / 7`；2026-08-17 保存分析真实聚合值补证后成为 `55 = 47 / 1 / 7`；
 受治理语义组合首片闭合已登记 `ap_cost` 的 total/day/week 与 `click_company` 拆分；同日 v2 又以
 前端 wire 和生产对照证明 dimension-bound `click_company IN` 可执行，并登记 3 个 day/week 指标，
-能力扩面但不新增产品动线，故仍为 `56 = 48 / 1 / 7`。
+能力扩面但不新增产品动线；v3 又增加 9 个 day/week 成员并排除已证空的注册数，故仍为
+`56 = 48 / 1 / 7`。
 operation 为 **231**，stable 为 **222 = 185 read + 37 mutation**。
 唯一部分闭环是 Analysis 导出：同日已闭合五个服务端子类（单用户事件加分群结果、分群用户明细、
 用户明细、付费事件），变现明细与原始事件导出仍是精确 gap；
@@ -5218,3 +5219,102 @@ operation 请求，改后是 1 个；改后 `pagination_audit` 为 `operation_re
 `1202 = A399/B434/C369`，本轮不新增 caller-recoverable error site。operation/stable/product card/
 selector 仍为 `231/222/89/329`，动线仍为 `56 = 48 / 1 / 7`；技术债复核不新增条目。未改 operation
 page-size 上限：现有代码和本轮 target 实测均不足以指认某一个上限错误。
+
+## 语义定义 v3 成员扩容（2026-08-17）
+
+**提案与预算修正：**续跑提案位于 ignored
+`tmp/codex/semantic-members/proposal.md`。本轮直接复用上一轮已经取得的 10 个候选 day/week/total
+结果，不重发任何粒度请求；并把预算模型改为每条 Multidim 命令固定计入一次 live
+`report.multidim.metric.list` 和一次 `report.multidim.query`。所有查询均使用默认单页，没有传
+`--max-items`、`--max-pages` 或 `--all-pages`。生产上限 40，实际 14；第 4、5、7 条命令后分别核对
+持久化 HTTP receipt。
+
+**维度/过滤器证据：**固定 App 29034827、窗口 `2026-06-01..2026-07-10`，只测试 v2 已证明必须
+绑定出现的 `data_dims=[click_company] + click_company IN [bytedance] + embedded join`。实测代表与
+外推严格分开：
+
+| 证据族 | 实测代表 | 实际结果 | 只允许的外推 |
+| --- | --- | --- | --- |
+| 平台通用漏斗 | `ap_show` | 40 个 bytedance 日行，首尾 `3236865/2194246` | `ap_click/ap_click_rate/ap_convert/ap_activate` |
+| 成本 | `adclick_standard_activate_cost` | 40 行，`12.42/9.35` | 无 |
+| 付费人数 | `adclick_standard_pay_uv` | 40 行，`304/144` | 无 |
+| 收入 | `total_revenue` | 40 行，`86667.69/17860.98` | `adclick_ad_amount` |
+
+平台族外推依据限于同一 `ap_` catalog 族、共同平台通用 tag、相同的 click-company 非排斥 metadata 和
+同一前端 request profile；收入外推只在两个收入指标之间成立，二者都不排斥 click-company 且共用
+profile。它们不是逐成员生产实测。`adclick_standard_register_cnt` 的 day/week 已经明确空，本轮没有
+为已知空路径再发维度请求。
+
+**v3 登记裁决：**新增不可变 `report.ap-cost-observation@3`，fingerprint
+`3f13b18e35cc2216e3d29b299adf82e71b11aeaf62c9722171fa0073d04bb694`；v1/v2 文件与 fingerprint 均不变。
+v3 共 13 个 metric：继承 `ap_cost/adclick_standard_activate_cnt/adclick_standard_pay_amount/
+adclick_total_roi`，新增 `ap_show/ap_click/ap_click_rate/ap_convert/ap_activate/
+adclick_standard_activate_cost/adclick_standard_pay_uv/adclick_ad_amount/total_revenue`。九个新成员只登记
+已经逐项实测非空的 day/week，逐项 `INPUT_INVALID` 的 total 不登记；只有继承的 `ap_cost` 保留 total。
+register count 因两个可用 grain 都空而不登记。定义继续只允许一个 click-company dimension/filter/join，
+没有导入 1124 个目录成员，也没有新增 operation、产品卡、selector 或动线。
+
+| v3 metric | 取舍理由 |
+| --- | --- |
+| `ap_cost` | 继承 v1/v2 的投放消耗锚点，也是唯一保留 total 的成员。 |
+| `adclick_standard_activate_cnt` | 继承 v2；标准点击归因激活主指标。 |
+| `adclick_standard_pay_amount` | 继承 v2；IAP 付费金额主指标。 |
+| `adclick_total_roi` | 继承 v2；收益效率主指标。 |
+| `ap_show` | 平台通用展示，曝光漏斗入口；维度/filter 代表实测。 |
+| `ap_click` | 平台通用点击；粒度实测，维度能力限于平台族外推。 |
+| `ap_click_rate` | catalog 的 canonical CTR，排除平台专属变体；维度能力限于平台族外推。 |
+| `ap_convert` | 关键行为模板对应的平台转化主指标；维度能力限于平台族外推。 |
+| `ap_activate` | 平台侧激活，与标准归因激活口径不同；维度能力限于平台族外推。 |
+| `adclick_standard_activate_cost` | 用户价值/成本问题直接需要；维度/filter 单独实测。 |
+| `adclick_standard_pay_uv` | 付费人数不同于金额与订单数；维度/filter 单独实测。 |
+| `adclick_ad_amount` | IAA/混变模板需要广告收入；维度能力只从同族 total revenue 外推。 |
+| `total_revenue` | 混变与盈亏问题需要广告收入加标准付费金额；维度/filter 单独实测。 |
+| `adclick_standard_register_cnt`（不登记） | day/week 均明确空、total 拒绝；没有可交付的非空 grain。 |
+
+**三个新增组合：**三者的 metric 在 v2 均不存在，离线编译都生成同一 v3 fingerprint 和
+frontend adreport profile，执行都返回 `gravity.semantic-compose-result.v1`、`validation=validated`、
+非空 scoped `observed-metric-value/within-result-comparison`：
+
+1. `ap_show / day / click_company IN bytedance`：40 行，首尾
+   `2026-06-01 = 3236865`、`2026-07-10 = 2194246`。
+2. `adclick_standard_activate_cost / week`：6 行，首尾
+   `2026-06-01 = 14.64`、`2026-07-06 = 11.86`。
+3. `total_revenue / day / click_company IN bytedance`：40 行，首尾
+   `2026-06-01 = 86673.69`、`2026-07-10 = 17860.98`。
+
+收入维度代表请求在稍早时刻返回首日 `86667.69`，随后 semantic 验收返回 `86673.69`；两者都只记录为
+当次观察，6.00 差异的原因不确定，不做跨查询比较声明。真实 v1/v2/v3 version/fingerprint 两两不同；
+v3 unknown member、禁止 join、new metric + total 三类输入继续以 A 档可执行 next action 在构造 client
+前失败。新增生产代码只有定义合同，不新增 caller-recoverable error site。
+
+**生产 HTTP 账本：**实际 **14/40**。认证使用缓存，故 authentication HTTP 为 0。每行两次请求依次
+为 metadata/query；全部 HTTP 200、attempt 1、retry=false、page 1，无重试、翻页、扩窗或换 App。
+共享 state root 同时存在其他运行中的 receipt，本表用命令时间边界、raw result audit 内嵌 query receipt、
+request shape 与每条 raw envelope 的 `request_count=2` 排除无关项。
+
+| 命令 | metadata receipt | query receipt |
+| --- | --- | --- |
+| ap-show 维度代表 | `8864099a…` | `86a6f919…` |
+| activate-cost 维度代表 | `77e9d5b8…` | `97f7bc8b…` |
+| pay-users 维度代表 | `786137b0…` | `3510088a…` |
+| total-revenue 维度代表 | `23633a60…` | `5e3fb84f…` |
+| semantic ap-show/day | `6a8a9c1b…` | `a90b096f…` |
+| semantic activate-cost/week | `ce6f8641…` | `6e0c4374…` |
+| semantic total-revenue/day | `5fdd5067…` | `032ca0ef…` |
+
+**分页合同缺陷（只报不修）：**上一轮 9 个无维度、单指标 day 查询在显式 bounded 读取下各发 page 1--5，
+每个 40 行块都逐行相等，都是 `2026-06-01..2026-07-10`，不是新数据。每个 projected `page_info` 都只含
+`total=40`，实际**没有** `total_page` 值；operation 却声明 `kind=page_info`、
+`total_page_field=total_page`、`max_page_size=100`。因此不能报告 `total_page` 为某个数字：它在实测响应中
+缺失，这正是声明与行为的可证伪差异。本线没有修改分页 operation、合同或执行层。
+
+**能力与结构：**operation/stable/product card/selector 保持 `231/222/89/329`，动线保持
+`56 = 48 / 1 / 7`。新增 v3 定义复用同一 catalog/compiler/Multidim/Plan/Agent 三件套，不增加 registry、
+router、worker 或活动结构债；技术债清单复核后不新增条目。
+
+**最终门禁：**unittest **1136 tests OK**；pytest **1136 passed / 3088 subtests passed**，相对
+`dev@fd84186` 的 1135 只增不减。compiler **231 operations / 11 manifests**；quality PASS
+（operations/provenance 231/231、operation literals 57）；错误审计保持
+**1202 = A399 / B434 / C369**，本线新增 caller-recoverable site/A 档为 **0/0**。文档 **4 passed**、
+Agent 指南生成器 `--check`、CLI help 和 `git diff --check` 均通过。新增定义合同 218 行、测试新增
+26 行，比例约 **0.119**，低于三分之一；quality baseline 未放宽。
