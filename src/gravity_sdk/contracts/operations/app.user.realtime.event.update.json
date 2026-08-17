@@ -1,0 +1,71 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "source_schema_version": 2,
+  "target_manifest": "other.json",
+  "manifest_order": 20793,
+  "operation": {
+    "operation_id": "app.user.realtime.event.update",
+    "domain": "app",
+    "resource": "user_realtime_event",
+    "action": "update",
+    "contract_version": 1,
+    "upstream_method": "POST",
+    "path_template": "/turbo_engine/api/v1/user/realtime_event/manage/",
+    "auth_profile": "gravity_authorization",
+    "stability": "stable",
+    "effect": "mutation",
+    "executable": true,
+    "description": "设置单个 App 的实时事件入库开关与时间窗；单次发送且不自动重试，执行后必须读回 app.realtime_event.list.conf。",
+    "input_fields": {
+      "app_id": {"type": "integer", "required": true, "description": "应用 ID；前端调用和稳定父列表均验证为整数。"},
+      "is_enabled": {"type": "integer", "required": true, "enum": [0, 1], "description": "1 开启入库，0 关闭。"},
+      "start_time": {"type": "datetime", "required": true, "description": "入库窗开始，Asia/Shanghai YYYY-MM-DD HH:MM:SS。"},
+      "end_time": {"type": "datetime", "required": true, "description": "入库窗结束，Asia/Shanghai YYYY-MM-DD HH:MM:SS。"},
+      "time_slot": {"type": "integer", "required": true, "enum": [2], "default": 2, "description": "前端固定 time_slot=2。"}
+    },
+    "request": {
+      "path_fields": [],
+      "query_fields": [],
+      "body_fields": ["app_id", "is_enabled", "start_time", "end_time", "time_slot"],
+      "defaults": {"time_slot": 2},
+      "fixed_query": {},
+      "fixed_body": {}
+    },
+    "response_projection": {
+      "data_shape": "object",
+      "data_keys": [],
+      "required_data_keys": [],
+      "item_keys": [],
+      "dynamic_item_fields": []
+    },
+    "pagination": {
+      "kind": "none",
+      "page_field": "",
+      "page_size_field": "",
+      "list_path": "",
+      "page_info_path": "",
+      "total_page_field": ""
+    },
+    "semantic_error_rules": ["code", "extra.error"],
+    "privacy_policy": {
+      "classification": "configuration",
+      "redact_fields": ["authorization", "access_token", "token", "cookie", "password", "secret", "refresh_token", "session_token"]
+    },
+    "required_parent": [
+      {
+        "input_field": "app_id",
+        "operation_id": "app.list",
+        "output_path": "data.list[].id",
+        "selection": "caller_select"
+      }
+    ],
+    "live_probe": {"enabled": false, "inputs": {}},
+    "examples": [],
+    "provenance": {
+      "source_files": ["operations/app.user.realtime.event.update.json"],
+      "family": null,
+      "platform": null,
+      "applied_overrides": []
+    }
+  }
+}

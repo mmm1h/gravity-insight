@@ -30,6 +30,7 @@ gravity analysis order directory  读取受控四字段的单日普通订单目�
 gravity analysis order trace  按显式 TraceID 读取单日拆单明细
 gravity apps snapshot         并发读取一个 App 的治理快照
 gravity apps permission-profile 读取当前账号的角色、菜单和数据权限模块
+gravity apps realtime-event schema|update  预览或设置单个 App 的实时事件入库开关
 gravity attribution snapshot  并发读取一个 App 的归因配置快照
 gravity attribution performance 读取一个 App 日期区间的四组归因表现
 gravity attribution user-detail 读取一个 App 下已登记测试设备的单用户归因明细

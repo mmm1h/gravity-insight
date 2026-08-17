@@ -2,9 +2,9 @@
 
 本矩阵记录 17 项候选能力在 2026-08-12 受控只读探测后的真实状态，并原位追加 2026-08-14 至
 2026-08-16 的后续取证结论，供开发决策使用。仓库当前基线为
-[233 个 operation、其中 224 个 stable operation](capability-coverage.md)：187 条 stable read 加
-37 条逐项治理的 mutation（7 条 Segment、5 条报表/订阅、18 条 Kanban、2 条自定义指标、
-4 条事件/属性模板和 1 条保存分析）；写 operation 不是本矩阵的 read candidate，
+[236 个 operation、其中 225 个 stable operation](capability-coverage.md)：187 条 stable read 加
+38 条逐项治理的 mutation（7 条 Segment、5 条报表/订阅、18 条 Kanban、2 条自定义指标、
+4 条事件/属性模板、1 条保存分析和 1 条实时事件入库开关）；写 operation 不是本矩阵的 read candidate，
 但本页追加其解锁读合同的生产证据。
 
 `analysis.default_val.list`、D35、F40、`report.report.list/detail`、`report.subscribe.list`、
@@ -24,7 +24,7 @@ Kanban 追加取证同样只走产品级两步治理。两条显式 `*.share` �
 | --- | --- | --- | --- | --- |
 | `analysis.default_val.list` | **`stable`（已晋升）** | 2026-08-16 按 catalog 探测：`catalog#1` HTTP 200 空，`catalog#2` HTTP 200 非空后立即停止。当前样本观察 `data.cocoscreator[]: string`，并与既有 shape-only 样本的 `data.api[]: string` 合并；body 仍为 caller-bound `app_id` + 固定 `$lib_version`，分页 `none`。 | 无开放 blocker；闭合键集合为 `api/cocoscreator` | 保持两键全量暴露；出现第三个 SDK-family key 时按 additive drift fail-closed，取得 shape evidence 后再显式升级合同。 |
 | `analysis.setting.query` | `draft`（mutation 负向证明；查询动线已由既有产品覆盖） | 对本 mutation 仍为 0 次请求；完整 Dashboard builder 证明该 POST 提交 `config/name/remark`，随后修改 dashboard layout 并提示修改成功。2026-08-15 对 375/375 hash-matched bundle 的 987 条唯一 route 穷尽复核，另确认 `analysis.dashboard.tree/detail` 与 `analysis.report_config.list/get` 四条既有 stable GET 是装载设置的真读；仅对 stable `report_config.list` 做 1 次最小第一页 probe，HTTP 200 非空，无重试或翻页。 | `mutation_route_not_read`、`unregistered_fields_fail_closed`；不再有独立产品缺口 | 本 draft 永不晋升为 read。调用方分别使用既有 `dashboard_snapshot` 与 `saved_analysis`；若提出超出二者的新设置问题，先取得自由文本 config 与人员字段的合同证据，登记后全部暴露；未登记时只按合同漂移 fail-closed，不等待隐私裁决。 |
-| `analysis.realtime_event.list` | `draft`（当前账号在前端形状与已开过的历史窗下仍空） | hash-matched `Debug-hpZqESZ9.js` 证明默认 `request_time` 为当天 `00:00:00..23:59:59`，空 `filters` 省略成 `{}`。2026-08-18 对投放中 App `29034827` 试当天窗、近 5 分钟、近 1 小时，均 HTTP 200 / `code=0` / `data.list=[]` / 无 `page_info`。同账号 `app.realtime_event.list`：`29034827` `is_enabled=0`（上次 `2026-06-25`）；其余 6 个 App 2 个无 `conf`、4 个关闭。对 `27612408@2026-07-31 14:18..16:18` 与 `26827043@2026-07-22 11:35..13:35` 再发列表仍空。未开写入库。未试非空 `event_type`/`event_name`。 | `empty_sample`、`pagination_unverified`、`response_item_schema_unverified` | 先在一个 App 上取得正在开启的入库窗，再发该窗的最小第一页；不要再对关闭开关的 App 用「此刻」或 30 天过去窗重复枚举。 |
+| `analysis.realtime_event.list` | `draft`（投放中 App 开启 2h 入库窗后，前端当天窗 10 次仍空） | hash-matched `Debug-hpZqESZ9.js` 证明默认 `request_time` 为当天 `00:00:00..23:59:59`，空 `filters` 省略成 `{}`。2026-08-18 后半趟只对 `29034827` 发 `is_enabled=1`、`now..now+2h`、`time_slot=2`；读回 `is_enabled=1`（窗被上游收成 −59s）。对该开启窗按当天窗 / `filters={}` / `page=1` / `page_size=1` 连发 10 次、间隔 60s，均 HTTP 200，drift 只有 additive `/data/list` array，无 item、无 `page_info`。已关回 `is_enabled=0`，`modify_time=2026-08-18 03:30:35`。未碰其余 6 个 App。未试非空 `event_type`/`event_name`。未把空 list 当 schema。 | `empty_sample`、`pagination_unverified`、`response_item_schema_unverified` | 开窗本身已走通。下一步不要重复关着开关扫 7 个 App；若再探，先换已证实有实时流量的事件名/更短窗，或接受该 App 在 2h 窗内确实不落这条 list。 |
 | `analysis.setting.query` | `draft`（mutation 负向证明；查询动线已由既有产品覆盖） | 对本 mutation 仍为 0 次请求；完整 Dashboard builder 证明该 POST 提交 `config/name/remark`，随后修改 dashboard layout 并提示修改成功。2026-08-15 对 375/375 hash-matched bundle 的 987 条唯一 route 穷尽复核，另确认 `analysis.dashboard.tree/detail` 与 `analysis.report_config.list/get` 四条既有 stable GET 是装载设置的真读；仅对 stable `report_config.list` 做 1 次最小第一页 probe，HTTP 200 非空，无重试或翻页。 | `mutation_route_not_read`、`unregistered_fields_fail_closed`；不再有独立产品缺口 | 本 draft 永不晋升为 read。调用方分别使用既有 `dashboard_snapshot` 与 `saved_analysis`；若提出超出二者的新设置问题，先取得自由文本 config 与人员字段的合同证据，登记后全部暴露；未登记时只按合同漂移 fail-closed，不等待隐私裁决。 |
 | `report.masterkey_report_group.list` | `draft`（账号级明确空） | 2026-08-16 最小第一页 HTTP 200 空。固定 path/body 无 App 输入，认证上下文只含账号/公司，因此 App 枚举不适用；既有 read confirmation 与分页证据保留。 | `empty_sample`、`successful_probe` | 由有 MasterKey 报表的账号取得 1 个非空 item；当前账号不重复请求。 |
 | `report.report.list` | **`stable v1`（已晋升）** | 先 dry-run，再由 `report.report.update` 创建唯一 marker-owned 测试报表；列表非空读回并登记 14 个观察字段。请求仍为账号级 `{page,page_size,filters}`，完整分页合同沿用 hash-matched bundle。2026-08-17 双账号完整响应对照：高低权限均为 `code=0 / list=[] / page_info.total_number=0`，无 extra/scope 回显，权限型空与真空不可区分。 | 无开放 promotion blocker。 | 由 `report_directory` Core/CLI/SDK/Plan/Agent 消费；未知新增字段继续 additive drift fail-closed。空结果须对照 `gravity apps permission-profile`，不得当成租户没数据。 |
@@ -100,8 +100,9 @@ marker 只放在能原样读回且不改变数据口径的文本字段：旧报�
 - **(a) 当时最短当天窗下为空：2 条。** `report.media_report.list` 与
   `analysis.realtime_event.list` 在 2026-08-16 枚举 7/7 App 后仍空。2026-08-17 已按 D28
   方法用 `2026-07-17..2026-08-16`（并补测含当天）重测，仍空。2026-08-18 对
-  `analysis.realtime_event.list` 再按前端当天窗（含此刻）和两次历史开启窗复测，仍空；
-  同账号 7/7 App 的入库开关当前均为关或无 `conf`。结论收窄为“在已记录形状与关闭/过期入库窗下无行”，不再写无参数的“租户确实为空”。
+  `analysis.realtime_event.list` 再按前端当天窗（含此刻）和两次历史开启窗复测，仍空。
+  同日后半趟只对投放中 App `29034827` 开启 `now..now+2h` 入库窗后再发 10 次前端当天窗，仍无 item；
+  已关回 `is_enabled=0`。结论收窄为“该 App 在已试形状与已开启的 2h 窗内无行”，不是“租户没有这条 route”。
 - **(b) 旧结论是假阴性：1 条。** `analysis.default_val.list` 在 `catalog#1` 空、
   `catalog#2` 非空；旧探测在第一个空 App 停止，误把 App 局部事实写成租户结论。
 - **(c) App 维度不适用：3 条。** 报表目录（三个 list route）、订阅和 App 项目的请求

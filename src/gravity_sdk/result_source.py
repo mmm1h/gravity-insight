@@ -31,6 +31,7 @@ _GOVERNED_CARD_KINDS = {
     "material_asset",
     "report_mutation",
     "saved_analysis_mutation",
+    "realtime_event_mutation",
     "segment_rule_spec",
     "segment_mutation",
 }

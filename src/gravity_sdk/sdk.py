@@ -30,6 +30,7 @@ from .sdk_segment_mutation import SegmentMutationSdkMixin
 from .sdk_kanban_mutation import KanbanMutationSdkMixin
 from .sdk_custom_metric import CustomMetricSdkMixin
 from .sdk_metadata_template import MetadataTemplateSdkMixin
+from .sdk_realtime_event import RealtimeEventSdkMixin
 from .template_replay_surface import TemplateSdkMixin
 
 
@@ -47,6 +48,7 @@ class GravitySDK(
     KanbanMutationSdkMixin,
     CustomMetricSdkMixin,
     MetadataTemplateSdkMixin,
+    RealtimeEventSdkMixin,
     SegmentMembersSdkMixin,
     ReportSdkMixin,
     MaterialSdkMixin,

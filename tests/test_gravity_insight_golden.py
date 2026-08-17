@@ -343,6 +343,8 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "promotion.tencent.tencent_adgroup_v2.list",
             # 腾讯 medium creative 经 hash-matched 控制流确认、非空 item schema 后晋升。
             "material.tencent_medium_creative.list",
+            # 实时事件入库开关从 reservation 晋升为受治理 mutation。
+            "app.user.realtime.event.update",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]

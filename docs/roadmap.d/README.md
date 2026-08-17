@@ -28,9 +28,20 @@
 ## 归档清单
 
 **新增文件后必须在这里加一行**，否则 `test_every_doc_is_reachable_from_the_docs_index`
-会判定你的文件是孤儿文档。每趟只加自己那一行，合并时保留所有行。
+会判定你的文件是孤儿文档。格式照抄下面任意一条：短横线开头，一个指向本目录
+真实文件的 Markdown 链接，破折号，一句话。只加你自己那一行；合并时保留所有行。
+
+（别在这段说明里写示例链接——链接检查会当真去解析它，指向不存在的文件就红。）
 
 - [非 Bytedance 投放前提](nonbytedance.md) — 抖音 App 归因平台只有 `bytedance`/`natural`，快手分身同窗明确空
+- [实时事件目录：前端形状 + 含此刻窗仍空](realtime-event-catalog.md) — 未拿到非空 item；空的是关闭入库开关 + 已试形状。
+- [媒体报表：枚举 ad_platform 仍空](media-report-ad-platform.md) — 2026-08-18：省略平台即查全集；投放中 App 上枚举平台后仍空。
+- [F41 数据表 schema：绑定投放中 App 后仍无活表](f41-data-table.md) — 2026-08-18：list 七种形状明确空，日志 table_id 对 detail 为 1004 / not exist。
+- [blob 下载路径 5 条疑似 bug](blob-bugs.md) — 核实 #175 留下的 5 条下载疑点
+- [为什么还没到 95%](gap-to-95.md) — 4 条租户不可达与 52/56 上限；条件不在 SDK 侧。
+- [导出宽问法：不建 dispatcher](export-wide-dispatcher.md) — 七个子类输入不可互换，宽问法 gap 是正确澄清，不建统一导出产品。
+- [实时事件入库窗：开过 2h 仍空](realtime-event-ingestion-window.md) — 2026-08-18：只对 29034827 开窗；10 次前端当天窗仍无 item；已关回 is_enabled=0。
+
 ## 归档记录
 
 - 日期：2026-08-18
@@ -87,3 +98,4 @@
 - [blob 下载路径 5 条疑似 bug](blob-bugs.md) — 核实 #175 留下的 5 条下载疑点
 - [为什么还没到 95%](gap-to-95.md) — 4 条租户不可达与 52/56 上限；条件不在 SDK 侧。
 - [导出宽问法：不建 dispatcher](export-wide-dispatcher.md) — 七个子类输入不可互换，宽问法 gap 是正确澄清，不建统一导出产品。
+- [实时事件入库窗：开过 2h 仍空](realtime-event-ingestion-window.md) — 2026-08-18：只对 29034827 开窗；10 次前端当天窗仍无 item；已关回 is_enabled=0。

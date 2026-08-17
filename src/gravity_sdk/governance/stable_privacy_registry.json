@@ -1473,6 +1473,7 @@
       "data.conf[].modify_time",
       "data.conf[].start_time"
     ],
+    "app.user.realtime.event.update": [],
     "app.role.detail": [
       "data.code",
       "data.create_time",

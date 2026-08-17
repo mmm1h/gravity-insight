@@ -26,6 +26,7 @@ from . import metadata_sync
 from . import metadata_vocabulary as vocabulary
 from .runtime import call_batch
 from .metadata_template_cli import add_metadata_template_commands
+from .realtime_event_cli import add_realtime_event_commands
 
 
 def add_metadata_commands(
@@ -39,6 +40,7 @@ def add_metadata_commands(
     apps_list = apps_commands.add_parser("list")
     input_adder(apps_list)
     all_pages_adder(apps_list)
+    add_realtime_event_commands(apps_commands, input_adder)
     metadata = commands.add_parser(
         "metadata", help="Synchronize and search governed local Gravity metadata."
     )
