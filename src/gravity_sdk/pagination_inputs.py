@@ -32,4 +32,25 @@ def validate_page_inputs(
         raise InputValidationError("requested page size exceeds the operation limit")
 
 
-__all__ = ["validate_page_inputs"]
+def pagination_schema(pagination: Any) -> dict[str, Any]:
+    """Caller-facing pagination fields, including wire names for page_info."""
+
+    if pagination.kind == "none":
+        return {
+            "kind": "none",
+            "page_field": pagination.page_field,
+            "page_size_field": pagination.page_size_field,
+        }
+    return {
+        "kind": pagination.kind,
+        "page_field": pagination.page_field,
+        "page_size_field": pagination.page_size_field,
+        "total_page_field": pagination.total_page_field,
+        "list_path": pagination.list_path,
+        "page_info_path": pagination.page_info_path,
+        "default_page_size": pagination.default_page_size,
+        "max_page_size": pagination.max_page_size,
+    }
+
+
+__all__ = ["pagination_schema", "validate_page_inputs"]

@@ -5504,7 +5504,10 @@ passed**、Agent 指南生成器 `--check`、CLI help 与 `git diff --check` 全
 其余即使合同写着 `total_page_field` 也保持 unknown。112 条 `none` 逐条复核为：30 条生产响应未见
 page_info、46 条 detail/aggregate/mutation 非集合语义、1 条已披露手动空页协议、1 条不可执行 candidate
 的 wire 分页信号、34 条集合完整性未知；其中 27 条是 stable+executable 的静默完整性风险，不能写成
-“已确认无分页”。修正 Multidim 后当前合同分布为 `118 page_info + 113 none`，operation 总数不变。
+“已确认无分页”。这些数字描述的是审计当时的合同声明，不是 HEAD。修正 Multidim（`30c682c`）并把
+`app.app_info.get` 计入后，HEAD 当前合同分布为 `118 page_info + 114 none`（232 条）；审计表通过
+`declared_kind_disposition` 显式记录 `report.multidim.query` 已从 `page_info` 修成 `none`，当前
+kind 由 `reconcile_pagination_audit` 实时读取，不再把快照计数当成 HEAD。
 
 **为什么只实测七条：**`report.multidim.query` 是必修复项；`report.multidim.metric.list`、
 `material.report.query`、`report.business.query` 会被正式产品分页层用于完整读取，误判会重复请求；三者
@@ -5648,3 +5651,34 @@ manifest semantic error 执行器，不新增 raise site。`src/gravity_sdk` add
 或活动结构债。公开 development target 只登记 J40 新产品身份；没有改题目、prompt、阈值、评分算法或
 holdout/final。全量测试中的 protected 文本只来自隔离临时目录 synthetic fixture；没有读取真实 key 或
 sealed 数据，也没有 GitHub、push、PR、tag 或 release 动作。
+
+## 分页审计分叉与无证据续页（2026-08-17）
+
+**提案：**审计快照不是 HEAD 镜像；`read_all` 在缺 `total_page` 时不得按满页启发式续页。本轮纯离线，
+不探测 49 条 template-default 的真实形状。
+
+**审计表形态：**快照标 `relationship.kind=historical_verdict`，`summary.declared_kinds` 改名为
+`audit_baseline_declared_kinds`。`report.multidim.query` 保留审计时 `declared_kind=page_info`，并加
+`declared_kind_disposition={status:repaired, current_kind:none}`。当前合同 kind 由
+`reconcile_pagination_audit` 实时读取；未声明分叉为 `unexpected`，测试必须红。不再用硬编码计数描述
+HEAD。选择“历史裁决 + 实时对账”而不是重写整张表，是为了保住 2026-08-17 的形状/证据裁决，同时让
+HEAD 合同变化机器可判定。
+
+**续页策略：**缺 `total_page` 时默认停在第一页，`has_more=None`、完整性 `unknown`、
+`fetch_strategy=stopped_missing_total_page`。满页启发式只在 `continue_without_total=True` 或
+`--continue-without-total` 时启用。理由：默认停页不会在无证据时再发请求，也不会让调用方把第一页当
+全集；opt-in 保留旧能力。已证实 A 形状仍走 `total_page` 已知页范围，不受影响。
+
+**次要观察：**playbook 钉 `ap-cost-observation@2` 不算漏迁——v4 按 `(id, version)` 精确取，v2 的
+跨执行比较声明仍属于该不可变版本；playbook 比较的是同一次调查里两个窗口，不是跨执行重放。
+`schema()["pagination"]` 对 `page_info` 补回 wire 字段；`kind=none` 仍只暴露 kind 与空字段名，避免
+通用客户端把 Multidim 的兼容 `page/page_size` 输入当成编排合同。
+
+**能力台账：**operation/stable/产品卡/gap/selector/动线不变：`232 / 223 / 91 / 8 / 329`，
+`56 = 49 / 1 / 6`。生产 HTTP 0。错误审计保持 **`1225 = A422/B434/C369`**。
+
+**最终门禁：**unittest **`1151 + 5 = 1156 tests OK`**；pytest **`1156 passed / 3098 subtests
+passed`**，主测试只增不减、subtests 与基线相同。compiler **232 operations / 11 manifests**；quality
+PASS（operations/provenance 232/232、operation literals 57）。`models.py` AST `8518→8504`、
+`OperationSpec.schema` SLOC `102→98` 已收紧；`client.py` AST `6690→6718` 记入 growth ledger，硬顶
+6765 未抬。文档、CLI help 与 `git diff --check` 全过。没有 GitHub、push、tag 或其他对外动作。

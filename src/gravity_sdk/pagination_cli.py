@@ -21,6 +21,14 @@ def add_pagination_arguments(parser: argparse.ArgumentParser) -> None:
         help="Follow the manifest pagination contract.",
     )
     parser.add_argument(
+        "--continue-without-total",
+        action="store_true",
+        help=(
+            "Opt in to full-page continuation when the response omits "
+            "total_page. Default stops after the first page."
+        ),
+    )
+    parser.add_argument(
         "--max-pages",
         type=positive_int,
         help=f"Maximum pages (stdout default: {DEFAULT_STDOUT_MAX_PAGES}).",
@@ -61,12 +69,20 @@ def page_options(
     args: Any, *, all_pages: bool, active: bool
 ) -> dict[str, int | None]:
     if not active:
-        return {"max_pages": None, "max_items": None, "max_workers": None}
+        return {
+            "max_pages": None,
+            "max_items": None,
+            "max_workers": None,
+            "continue_without_total": False,
+        }
     max_pages, max_items = page_limits(args, all_pages=all_pages)
     return {
         "max_pages": max_pages,
         "max_items": max_items,
         "max_workers": getattr(args, "concurrency", None),
+        "continue_without_total": bool(
+            getattr(args, "continue_without_total", False)
+        ),
     }
 
 

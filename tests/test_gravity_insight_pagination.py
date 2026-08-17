@@ -8,6 +8,8 @@ from unittest.mock import patch
 from gravity_sdk import GravityInsightClient
 from gravity_sdk import runtime
 from gravity_sdk.models import ReadResult
+from gravity_sdk.pagination_audit import pagination_audit
+from gravity_sdk.pagination_policy import has_next_page
 
 
 def _operation() -> dict:
@@ -95,6 +97,17 @@ class _NeverTransport:
         raise AssertionError("pagination unit tests replace _execute_result")
 
 
+def _legacy_full_page_heuristic(
+    item_count: int,
+    page_number: int | None,
+    page_size: int | None,
+    total_pages: int | None,
+) -> bool:
+    if page_number is not None and total_pages is not None:
+        return page_number < total_pages
+    return bool(page_size and item_count >= page_size)
+
+
 def _page(page: int, rows: list[dict], total_pages: int | None) -> ReadResult:
     page_info = {"page": page, "page_size": 1}
     if total_pages is not None:
@@ -170,12 +183,48 @@ class GravityInsightPaginationTests(unittest.TestCase):
 
         with patch.object(self.client, "_execute_result", side_effect=execute):
             result = self.client.read_all(
-                "example.concurrent.list", max_workers=4
+                "example.concurrent.list",
+                max_workers=4,
+                continue_without_total=True,
             )
 
         self.assertEqual([1, 2, 3], calls)
         self.assertEqual([1, 2], [row["id"] for row in result["data"]["list"]])
         self.assertEqual("serial_unknown_total", result["page"]["fetch_strategy"])
+
+    def test_full_page_without_total_does_not_continue_by_default(self) -> None:
+        calls: list[int] = []
+
+        def execute(_operation_id, inputs):
+            page = int(inputs.get("page", 1))
+            calls.append(page)
+            return _page(page, [{"id": page}], None)
+
+        with patch.object(self.client, "_execute_result", side_effect=execute):
+            result = self.client.read_all(
+                "example.concurrent.list", max_workers=4
+            )
+
+        self.assertEqual([1], calls)
+        self.assertEqual([1], [row["id"] for row in result["data"]["list"]])
+        self.assertEqual("stopped_missing_total_page", result["page"]["fetch_strategy"])
+        self.assertIsNone(result["page"]["has_more"])
+        self.assertIsNone(result["page"]["total_pages"])
+        with patch.object(self.client, "_execute_result", side_effect=execute):
+            limited = self.client.read_limited(
+                "example.concurrent.list", max_pages=2, max_items=2
+            )
+        self.assertEqual([1, 1], calls)
+        self.assertIsNone(limited["page"]["has_more"])
+        self.assertIsNone(limited["next_page_input"])
+        self.assertFalse(limited["truncated"])
+        # Pre-fix: missing total_page fell through to item_count >= page_size.
+        self.assertTrue(_legacy_full_page_heuristic(1, 1, 1, None))
+        self.assertFalse(has_next_page(1, 1, 1, None))
+        self.assertTrue(has_next_page(1, 1, 1, None, continue_without_total=True))
+        audit = pagination_audit(result, {}, all_pages=True)
+        self.assertEqual("unknown", audit["completeness"]["status"])
+        self.assertIn("total_page absent", audit["completeness"]["criterion"])
 
     def test_limited_known_range_is_parallel_ordered_and_resumable(self) -> None:
         lock = threading.Lock()
@@ -225,6 +274,7 @@ class GravityInsightPaginationTests(unittest.TestCase):
                 max_pages=2,
                 max_items=2,
                 max_workers=4,
+                continue_without_total=True,
             )
 
         self.assertEqual([1, 2], calls)
@@ -305,6 +355,43 @@ class GravityInsightPaginationTests(unittest.TestCase):
         self.assertEqual({"id": "detail-1"}, result["data"])
         self.assertEqual(1, result["total"]["items"])
         self.assertEqual(1, result["total"]["returned_items"])
+
+    def test_shape_a_known_total_still_pages_without_opt_in(self) -> None:
+        calls: list[int] = []
+
+        def execute(_operation_id, inputs):
+            page = int(inputs.get("page", 1))
+            calls.append(page)
+            return _page(page, [{"id": page}], 3)
+
+        with patch.object(self.client, "_execute_result", side_effect=execute):
+            result = self.client.read_all(
+                "example.concurrent.list", max_workers=1
+            )
+
+        self.assertEqual([1, 2, 3], calls)
+        self.assertEqual([1, 2, 3], [row["id"] for row in result["data"]["list"]])
+        self.assertEqual("serial_known_total", result["page"]["fetch_strategy"])
+        self.assertFalse(result["page"]["has_more"])
+
+    def test_page_info_schema_exposes_wire_fields(self) -> None:
+        schema = self.client.schema("example.concurrent.list")
+        self.assertEqual(
+            {
+                "kind": "page_info",
+                "page_field": "page",
+                "page_size_field": "page_size",
+                "total_page_field": "total_page",
+                "list_path": "data.list",
+                "page_info_path": "data.page_info",
+                "default_page_size": 1,
+                "max_page_size": 100,
+            },
+            schema["pagination"],
+        )
+        none_schema = self.client.schema("example.concurrent.detail")
+        self.assertEqual("none", none_schema["pagination"]["kind"])
+        self.assertEqual("page", none_schema["pagination"]["page_field"])
 
 
 if __name__ == "__main__":

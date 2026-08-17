@@ -1,8 +1,11 @@
 # 分页合同逐 operation 审计（2026-08-17）
 
 基线 `f798d396f01da2ed00405d54da85cceea636aaef` 的 231 条已逐项审计；本轮新增 1 条自带生产证据，当前共 232 条。
-当前声明：`page_info=119`、`none=113`。
-119 条 `page_info`：A=59、B=1、未知=59。
+本表是审计当时的历史裁决，不是 HEAD 镜像。审计时声明：`page_info=119`、`none=113`。
+119 条当时的 `page_info`：A=59、B=1、未知=59。
+`report.multidim.query` 已在 `30c682c` 修成 `kind=none`，表内 `declared_kind` 仍保留审计时的
+`page_info`，并由 `declared_kind_disposition.status=repaired` 对账。HEAD 当前声明由
+`reconcile_pagination_audit` 实时读取。
 形状只由生产响应或精确 wire 消费字段判定；合同自身不能给自己提升证据等级。
 
 | operation | 声明的分页形状 | 实测/审计形状 | 证据等级 | 证据出处 | none/风险复核 |

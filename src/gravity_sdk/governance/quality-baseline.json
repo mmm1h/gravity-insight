@@ -88,7 +88,7 @@
       "src/gravity_sdk/executor.py::_project_data_containers": 108,
       "src/gravity_sdk/executor.py::_project_list_rows": 94,
       "src/gravity_sdk/models.py::OperationSpec.from_dict": 125,
-      "src/gravity_sdk/models.py::OperationSpec.schema": 102,
+      "src/gravity_sdk/models.py::OperationSpec.schema": 98,
       "src/gravity_sdk/prober/batch.py::finalize_batch_report": 191,
       "src/gravity_sdk/prober/batch.py::run_batch_probes": 214,
       "src/gravity_sdk/prober/cli.py::run": 126,
@@ -174,6 +174,12 @@
       "path": "src/gravity_sdk/models.py",
       "reason": "extract duplicate-field validation so readable line breaks keep OperationSpec.from_dict below its existing function ratchet",
       "to": 8622
+    },
+    {
+      "from": 6690,
+      "path": "src/gravity_sdk/client.py",
+      "reason": "forward continue_without_total through read_all/read_limited so missing total_page stays fail-closed unless callers opt in",
+      "to": 6718
     }
   ],
   "legacy_files": {
@@ -209,7 +215,7 @@
     },
     "src/gravity_sdk/client.py": {
       "ast_hard_limit": 6765,
-      "ast_nodes": 6690,
+      "ast_nodes": 6718,
       "migration_sloc": 1087,
       "sloc_hard_limit": 1161
     },
@@ -227,7 +233,7 @@
     },
     "src/gravity_sdk/models.py": {
       "ast_hard_limit": 8647,
-      "ast_nodes": 8518,
+      "ast_nodes": 8504,
       "migration_sloc": 1071,
       "sloc_hard_limit": 1158
     },

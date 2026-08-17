@@ -122,6 +122,7 @@ def call_read(
     max_pages: int | None = None,
     max_items: int | None = None,
     max_workers: int | None = None,
+    continue_without_total: bool = False,
     forward_var_kwargs: bool = False,
 ) -> Any:
     effective_items = max_items if max_items is not None else limit
@@ -131,6 +132,7 @@ def call_read(
         max_pages=max_pages,
         max_items=effective_items,
         max_workers=max_workers,
+        continue_without_total=continue_without_total,
         forward_var_kwargs=forward_var_kwargs,
     )
     return method(operation_id, dict(inputs), **kwargs)
@@ -151,6 +153,7 @@ def _read_options(
     max_pages: int | None,
     max_items: int | None,
     max_workers: int | None,
+    continue_without_total: bool,
     forward_var_kwargs: bool,
 ) -> dict[str, Any]:
     parameters = inspect.signature(method).parameters
@@ -167,6 +170,10 @@ def _read_options(
         kwargs[name] = value
     if max_workers is not None and ("max_workers" in parameters or accepts_options):
         kwargs["max_workers"] = max_workers
+    if continue_without_total and (
+        "continue_without_total" in parameters or accepts_options
+    ):
+        kwargs["continue_without_total"] = True
     return kwargs
 
 
