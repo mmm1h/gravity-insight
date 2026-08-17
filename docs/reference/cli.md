@@ -29,6 +29,7 @@ gravity analysis saved ...    列出、读取、准备或严格重放保存分�
 gravity analysis order directory  读取受控四字段的单日普通订单目录
 gravity analysis order trace  按显式 TraceID 读取单日拆单明细
 gravity apps snapshot         并发读取一个 App 的治理快照
+gravity apps permission-profile 读取当前账号的角色、菜单和数据权限模块
 gravity attribution snapshot  并发读取一个 App 的归因配置快照
 gravity attribution performance 读取一个 App 日期区间的四组归因表现
 gravity attribution user-detail 读取一个 App 下已登记测试设备的单用户归因明细
@@ -364,6 +365,7 @@ gravity analysis defaults --app main
 gravity analysis dashboard snapshot --app main --ref <id-or-exact-name> --concurrency 5
 gravity analysis segment snapshot --app main --ref <id-or-exact-name> --date <YYYY-MM-DD> --concurrency 3
 gravity apps snapshot --app main --concurrency 6
+gravity apps permission-profile --concurrency 3
 gravity attribution snapshot --app main --concurrency 6
 gravity attribution performance --app main --start <YYYY-MM-DD> --end <YYYY-MM-DD> --concurrency 4
 gravity attribution user-detail --app main --device-id <testing-device-row-id>

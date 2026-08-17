@@ -45,6 +45,8 @@ Usage:
   gravity promotion advertiser-profile --start <date> --end <date>
   gravity export run <operation-id> --input <json|file|-> --output <file>
   gravity insight <command> [options]
+  gravity apps snapshot --app <alias|id>
+  gravity apps permission-profile
   gravity metadata sync --app-id <id>|--all-apps
   gravity metadata status [--app-id <id>]
   gravity metadata search|events|properties|vocabulary [query]
