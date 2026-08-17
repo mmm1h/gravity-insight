@@ -172,7 +172,7 @@ class ExportRouteContract:
         result["next_action"] = (
             "Run `gravity export run "
             f"{self.operation_id} --input <request.json> --columns <column-codes> "
-            "--idempotency-key <key> --output <file.xlsx>` after applying the "
+            "--idempotency-key <key> --output <file>` after applying the "
             "documented substitutions."
             if currently_callable and self.effect == "export_job_create"
             else "Run `gravity export list-capabilities` "
@@ -511,7 +511,7 @@ def _workflow(operation_id: str, effect: str) -> dict[str, Any]:
         "default_command": (
             "gravity export run "
             f"{operation_id} --input <request.json> --columns <column-codes> "
-            "--idempotency-key <key> --output <file.xlsx> --timeout 300"
+            "--idempotency-key <key> --output <file> --timeout 300"
         ),
         "default_mode": "create_poll_download",
         "order": ["start", "wait", "download"],
@@ -527,7 +527,7 @@ def _workflow(operation_id: str, effect: str) -> dict[str, Any]:
             ),
             (
                 "gravity export download <job-id> "
-                f"--operation-id {operation_id} --output <file.xlsx> --timeout 300"
+                f"--operation-id {operation_id} --output <file> --timeout 300"
             ),
         ],
         "recovery": (

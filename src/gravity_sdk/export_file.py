@@ -1,11 +1,16 @@
 """Verified file policies for governed exports."""
 from __future__ import annotations
 
+from contextlib import contextmanager
+import gzip
 from pathlib import Path
-from typing import Any, Mapping
+import re
+from typing import Any, Iterator, Mapping, TextIO
 
 from .blob import ArchivePolicy, BlobPolicy, MagicSignature
 from .export_models import ExportPrivacyContract, _export_error
+
+_HEX = re.compile(r"^[0-9a-fA-F]{2,}$")
 
 
 def export_file_policies(
@@ -48,16 +53,16 @@ def export_file_policies(
 
 def _verified_file_protocol(
     privacy: Mapping[str, Any],
-) -> tuple[str, str, str, list[Any], Mapping[str, Any], str]:
+) -> tuple[str, str, str, list[Any], Mapping[str, Any], bytes]:
     values = (
         privacy.get("format"),
         privacy.get("extension"),
         privacy.get("mime_type"),
         privacy.get("allowed_hosts"),
         privacy.get("allowed_path_prefixes"),
-        privacy.get("magic_prefix_utf8"),
+        _magic_bytes(privacy),
     )
-    file_format, extension, mime_type, hosts, prefixes, magic_prefix = values
+    file_format, extension, mime_type, hosts, prefixes, magic = values
     valid = (
         file_format in {"csv", "jsonl", "xlsx"}
         and isinstance(extension, str)
@@ -65,8 +70,8 @@ def _verified_file_protocol(
         and isinstance(hosts, list)
         and bool(hosts)
         and isinstance(prefixes, Mapping)
-        and isinstance(magic_prefix, str)
-        and bool(magic_prefix)
+        and isinstance(magic, bytes)
+        and bool(magic)
     )
     if not valid:
         raise _export_error(
@@ -77,18 +82,28 @@ def _verified_file_protocol(
     return values
 
 
+def _magic_bytes(privacy: Mapping[str, Any]) -> bytes | None:
+    hex_value = privacy.get("magic_prefix_hex")
+    if isinstance(hex_value, str) and _HEX.fullmatch(hex_value) and len(hex_value) % 2 == 0:
+        return bytes.fromhex(hex_value)
+    text = privacy.get("magic_prefix_utf8")
+    if isinstance(text, str) and text:
+        return text.encode("utf-8")
+    return None
+
+
 def _blob_policy(
     privacy: Mapping[str, Any],
-    protocol: tuple[str, str, str, list[Any], Mapping[str, Any], str],
+    protocol: tuple[str, str, str, list[Any], Mapping[str, Any], bytes],
     root: Path,
 ) -> BlobPolicy:
-    file_format, extension, mime_type, hosts, prefixes, magic_prefix = protocol
+    file_format, extension, mime_type, hosts, prefixes, magic = protocol
     maximum = int(privacy.get("max_size_bytes", 100 * 1024 * 1024))
     return BlobPolicy(
         allowed_extensions=frozenset({extension}),
         allowed_mime_types=frozenset({mime_type}),
         magic_signatures={
-            extension: (MagicSignature(0, magic_prefix.encode("utf-8")),)
+            extension: (MagicSignature(0, magic),)
         },
         mime_types_by_extension={extension: (mime_type,)},
         max_declared_size_bytes=maximum,
@@ -125,4 +140,17 @@ def _archive_policy(
     )
 
 
-__all__ = ["export_file_policies"]
+@contextmanager
+def open_export_csv(path: Path, encoding: str) -> Iterator[TextIO]:
+    """Open a verified CSV or gzip-wrapped CSV without decoding cell values."""
+
+    text_encoding = encoding + "-sig" if encoding.casefold() == "utf-8" else encoding
+    if path.name.casefold().endswith(".csv.gz"):
+        with gzip.open(path, "rt", encoding=text_encoding, newline="") as handle:
+            yield handle
+        return
+    with path.open("r", encoding=text_encoding, newline="") as handle:
+        yield handle
+
+
+__all__ = ["export_file_policies", "open_export_csv"]

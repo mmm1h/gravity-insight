@@ -592,6 +592,13 @@ class ExportOrchestratorTests(unittest.TestCase):
             self.assertEqual('{"id":1}\n{"id":2}\n', output.read_text(encoding="utf-8"))
             self.assertEqual(("id",), result.schema)
             self.assertEqual(2, result.rows_processed)
+            import gzip
+            gz, out = root / "s.csv.gz", root / "o.csv"
+            gz.write_bytes(gzip.compress(b"id\n1\n"))
+            gzip_result = ExportPrivacyFinalizer(
+                ExportPrivacyContract(("id",), ("id",), format="csv")
+            ).finalize(gz, out, BlobMetadata(1, "0"*64, "text/csv", ".csv.gz", None, None, False))
+            self.assertEqual((("id",), 1), (gzip_result.schema, gzip_result.rows_processed))
 
 
 if __name__ == "__main__":

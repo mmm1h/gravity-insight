@@ -67,6 +67,17 @@ _ANALYSIS_EXPORT_ALIASES = {
         "变现明细导出",
         "导出变现明细",
     ),
+    "export.analysis.origin_event.start": (
+        "origin event export",
+        "export origin event",
+        "export origin events",
+        "raw event export",
+        "export raw events",
+        "自然事件导出",
+        "原始事件导出",
+        "导出自然事件",
+        "导出原始事件",
+    ),
 }
 _EXPORT_DESCRIPTIONS = {
     _USER_EVENT_OPERATION: "创建、轮询并原子下载受治理的单用户事件文件。",
@@ -76,6 +87,9 @@ _EXPORT_DESCRIPTIONS = {
     "export.analysis.pay_event.start": "创建、轮询并原子下载受治理的付费事件文件。",
     "export.analysis.monetization_detail.start": (
         "创建、轮询并原子下载受治理的变现明细文件；超限时标注 truncated 并给出创建时钉住的总量。"
+    ),
+    "export.analysis.origin_event.start": (
+        "创建、轮询并原子下载受治理的原始事件 gzip CSV；提交前须有正数 evaluate。"
     ),
 }
 _MATERIAL_OPERATION = "export.material.report.start"
@@ -242,7 +256,7 @@ def _export_card(
             "input": "<request.json>",
             "columns": "<comma-separated-column-codes>",
             "idempotency_key": idempotency_template or "<unique-key>",
-            "output": "<writable-file.xlsx>",
+            "output": _output_placeholder(columns.get("format")),
             "timeout_seconds": 300,
         },
         "columns": columns,
@@ -265,7 +279,7 @@ def _export_card(
         "match": _export_match(operation_id, exact, route_match),
         "next": {
             "ready_without_input": False,
-            "argv": _run_argv(operation_id),
+            "argv": _run_argv(operation_id, columns.get("format")),
             "schema_argv": ["gravity", "export", "describe", operation_id],
             "call_count_after_discovery": 1,
         },
@@ -305,13 +319,19 @@ def _export_match(
     }
 
 
-def _run_argv(operation_id: str) -> list[str]:
+def _output_placeholder(file_format: Any) -> str:
+    if file_format == "csv":
+        return "<writable-file.csv>"
+    return "<writable-file.xlsx>"
+
+
+def _run_argv(operation_id: str, file_format: Any = None) -> list[str]:
     return [
         "gravity", "export", "run", operation_id,
         "--input", "<request.json>",
         "--columns", "<comma-separated-column-codes>",
         "--idempotency-key", "<unique-key>",
-        "--output", "<writable-file.xlsx>",
+        "--output", _output_placeholder(file_format),
         "--timeout", "300",
     ]
 

@@ -134,10 +134,10 @@ operation。Segment create 把可见 `GSDK-<12 hex>` 放进 `segment_remark`；�
 
 | 分类 | 数量 | route | 结论 |
 | --- | --- | --- | --- |
-| 完整合同、可调用 | 6 | `user_event.start`、`segment.result.start`、`segment_user_detail.start`、`user_detail.start`、`pay_event.start`、`monetization_detail.start` | 前五族已有非空 create→poll→download 文件合同。`monetization_detail` 现可调用：create 前钉住同 scope 列表 `total_items`，触达上游 100W 上限时标 `truncated` 并同时返回钉住总量与文件行数 |
-| 父工作流依赖 | 1 | `origin_event.evaluate` | 自身估算请求与聚合响应已验证，但配对 `origin_event.start` 的成功 create 和文件合同未成立；旧口径把它误算成用户级投影阻塞 |
+| 完整合同、可调用 | 7 | `user_event.start`、`segment.result.start`、`segment_user_detail.start`、`user_detail.start`、`pay_event.start`、`monetization_detail.start`、`origin_event.start` | 前五族已有非空 XLSX 文件合同。`monetization_detail` 现可调用并标注截断。`origin_event` 现可调用：evaluate 正数后 create→poll→download 得到 gzip CSV，五列表头与 1 行已实测 |
+| 父工作流依赖 | 0 | — | `origin_event.evaluate` 现可调用，且已与成功 create/文件合同配对 |
 | 投影已放开、文件类型未证实 | 1 | `segment.result.start` | 只有 1 行但未记录单元格存储/逻辑类型；XLSX 表头与单 worksheet 证据仍不满足完整文件 schema |
-| 请求/文件合同未验证 | 1 | `origin_event.start` | 固定 App/日期内唯一自然事件估算为 0，未取得成功 create 与文件 schema。**无新证据不重试** |
+| 请求/文件合同未验证 | 0 | — | `origin_event.start` 已取得成功 create 与 gzip CSV schema |
 | 前端无服务端路径 | 1 | `stream_event.start` | hash-matched loader 没有调用点，按钮走客户端表格序列化；记为 `not_applicable`，不是 SDK 缺口，不得 probe 未使用 route |
 
 SDK 已按投影总裁决移除 `user_level` 的本地禁出总闸门，但不会用该裁决替代请求或文件合同。

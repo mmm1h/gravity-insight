@@ -238,6 +238,9 @@ class ExportContractTests(unittest.TestCase):
         )
         self.assertEqual("complete", description["examples_status"])
         self.assertFalse(description["pagination_and_scale"]["page_size_limits_total_rows"])
+        origin = ExportContractRegistry.from_file(CONTRACT_PATH)
+        self.assertTrue(origin.describe("export.analysis.origin_event.start")["currently_callable"])
+        self.assertEqual(".csv.gz", origin.get("export.analysis.origin_event.start").privacy["extension"])
 
     def test_export_completion_statuses_are_mutually_distinct(self):
         receipt = SimpleNamespace(
@@ -256,7 +259,7 @@ class ExportContractTests(unittest.TestCase):
             ("expired", "EXPORT_UPSTREAM_EXPIRED")))}
         receipt.finalization.rows_processed = 1
         statuses.update((status(), ExportContractRegistry.from_file(CONTRACT_PATH).describe(
-            "export.analysis.origin_event.start")["completion_status"]))
+            "export.analysis.stream_event.start")["completion_status"]))
         self.assertEqual({"empty", "partial", "truncated", "expired", "complete", "gap"}, statuses)
         pinned = {
             "known_total_items": 1_212_315,

@@ -47,25 +47,106 @@
       "method": "POST",
       "path": "/report/api/v3/dataanalysis/export/origin_event_data/evaluate_data/",
       "contract_status": "verified",
-      "executable": false,
-      "block_reason": "The estimate request and aggregate response are verified, but the paired origin_event.start create and file contracts remain unverified",
+      "executable": true,
+      "block_reason": null,
       "request": {"location": "body", "allowed_fields": ["app_id", "task_name", "task_type", "time_range", "event_name_list", "cond_logic", "conditions"], "required_fields": ["app_id", "task_name", "task_type", "time_range", "event_name_list", "cond_logic", "conditions"], "fixed_fields": {"task_type": "origin_event_data"}},
       "response": {"estimated_rows_paths": ["data.total", "total"]},
       "privacy": {"classification": "user_level", "format": null, "allowed_columns": [], "required_columns": []},
-      "verification": {"method_source": "frontend_asset_and_online", "online": true, "notes": "POST with ISO calendar dates returned HTTP 200/code 0 and data.total; timestamp values returned code 1004"}
+      "verification": {"method_source": "frontend_asset_and_online", "online": true, "notes": "POST with ISO calendar dates returned HTTP 200/code 0 and data.total. On 2026-08-17 the third catalog App plus a 7-day window returned data.total=0 for one non-preset event and data.total=1 for the first visible $ preset event. analysis.event.list yesterday_count was 0 for all 129 events on that App and is not a substitute for evaluate_data."}
     },
     {
       "operation_id": "export.analysis.origin_event.start",
       "effect": "export_job_create",
       "method": "POST",
       "path": "/report/api/v3/dataanalysis/export/origin_event_data/submit_task/",
-      "contract_status": "unverified",
-      "executable": false,
-      "block_reason": "The exact seven-field frontend create binding is verified, but the earlier POST returned code 1004 without a task id; a successful create and the complete file schema remain unverified",
-      "request": {"location": "body", "allowed_fields": ["app_id", "task_name", "task_type", "time_range", "event_name_list", "cond_logic", "conditions"], "required_fields": ["app_id", "task_name", "task_type", "time_range", "event_name_list", "cond_logic", "conditions"], "fixed_fields": {"task_type": "origin_event_data"}},
-      "response": {"job_id_paths": ["data.task_id", "task_id"]},
-      "privacy": {"classification": "user_level", "format": null, "allowed_columns": [], "required_columns": []},
-      "verification": {"method_source": "frontend_asset_and_online_attempt", "online": false, "attempted_online": true, "notes": "Hash-matched Download-DlEV6nb1.js proves evaluate/create share app_id, task_name, fixed task_type=origin_event_data, time_range, event_name_list, cond_logic and conditions. The earlier POST returned HTTP 200/code 1004 with no task id; success and file shape remain unverified"}
+      "contract_status": "verified",
+      "executable": true,
+      "block_reason": null,
+      "request": {
+        "location": "body",
+        "allowed_fields": ["app_id", "task_name", "task_type", "time_range", "event_name_list", "cond_logic", "conditions"],
+        "required_fields": ["app_id", "task_name", "task_type", "time_range", "event_name_list", "cond_logic", "conditions"],
+        "fixed_fields": {"task_type": "origin_event_data"},
+        "input_schema": {
+          "type": "object",
+          "additional_properties": false,
+          "required": ["app_id", "task_name", "task_type", "time_range", "event_name_list", "cond_logic", "conditions"],
+          "optional": [],
+          "properties": {
+            "app_id": {"type": "integer", "minimum": 1, "default": null, "has_default": false, "description": "Copy the exact App id used by a positive origin_event.evaluate preflight."},
+            "task_name": {"type": "string", "min_length": 1, "max_length": 200, "default": null, "has_default": false, "description": "Caller-generated recovery label; do not include credentials or user-level values."},
+            "task_type": {"type": "string", "enum": ["origin_event_data"], "default": null, "has_default": false, "description": "Fixed frontend task type for raw event export."},
+            "time_range": {"type": "array", "item_type": "date", "min_items": 2, "max_items": 2, "default": null, "has_default": false, "description": "Inclusive YYYY-MM-DD pair already confirmed by origin_event.evaluate."},
+            "event_name_list": {"type": "array", "item_type": "string", "min_items": 1, "max_items": 2000, "default": null, "has_default": false, "description": "Copy the exact event names used by the successful evaluate request."},
+            "cond_logic": {"type": "string", "enum": ["AND", "OR"], "default": null, "has_default": false, "description": "Copy the condition logic from the successful evaluate request."},
+            "conditions": {"type": "array", "item_type": "object", "max_items": 100, "default": null, "has_default": false, "description": "Copy evaluate conditions exactly; an empty list is verified."}
+          }
+        },
+        "scale_controls": {
+          "page_size_limits_total_rows": false,
+          "observed_file_row_limit": null,
+          "controls": ["one exact app_id", "evaluate-confirmed event_name_list", "shortest evaluate-confirmed time_range"],
+          "recommended_first_run": "one App, one event, and one time_range already confirmed by export.analysis.origin_event.evaluate with data.total > 0 and <= 1000000",
+          "maximum_download_bytes": 104857600
+        },
+        "examples": [
+          {
+            "name": "verified_seven_day_origin_event",
+            "status": "verified_online",
+            "runnable_after_substitution": true,
+            "required_substitutions": {
+              "<app-id>": "Copy the App id from a successful origin_event.evaluate with a positive total.",
+              "<event-name>": "Copy the exact event name used by that evaluate request.",
+              "<start-date>": "Copy the evaluate time_range start date.",
+              "<end-date>": "Copy the evaluate time_range end date."
+            },
+            "input": {
+              "app_id": "<app-id>",
+              "task_name": "agent-origin-event-export",
+              "task_type": "origin_event_data",
+              "time_range": ["<start-date>", "<end-date>"],
+              "event_name_list": ["<event-name>"],
+              "cond_logic": "AND",
+              "conditions": []
+            },
+            "columns": ["客户ID(client_id)", "用户注册时间", "事件发生时间", "事件", "事件属性"],
+            "idempotency_key_template": "agent-origin-event-<yyyymmdd>-<unique-suffix>",
+            "preflight": {
+              "operation_id": "export.analysis.origin_event.evaluate",
+              "required_result": "the same App, event_name_list, time_range, cond_logic and conditions return data.total > 0 and <= 1000000"
+            }
+          }
+        ]
+      },
+      "response": {"job_id_paths": ["data.task_id", "task_id"], "task_type_values": ["origin_event_data"]},
+      "privacy": {
+        "classification": "user_level",
+        "format": "csv",
+        "extension": ".csv.gz",
+        "mime_type": "text/csv",
+        "allowed_columns": ["客户ID(client_id)", "用户注册时间", "事件发生时间", "事件", "事件属性"],
+        "required_columns": ["客户ID(client_id)", "用户注册时间", "事件发生时间", "事件", "事件属性"],
+        "allow_contracted_identifiers": true,
+        "file_schema": {
+          "container": "gzip",
+          "inner_format": "csv",
+          "empty_file": {"status": "not_verified_online", "row_count": null, "headers_preserved": null},
+          "columns": [
+            {"header": "客户ID(client_id)", "python_value_types": ["str"], "logical_type": "identifier"},
+            {"header": "用户注册时间", "python_value_types": ["str"], "logical_type": "datetime"},
+            {"header": "事件发生时间", "python_value_types": ["str"], "logical_type": "datetime"},
+            {"header": "事件", "python_value_types": ["str"], "logical_type": "text"},
+            {"header": "事件属性", "python_value_types": ["str"], "logical_type": "text"}
+          ]
+        },
+        "allowed_hosts": ["gravity-client-resource.oss-cn-hangzhou.aliyuncs.com"],
+        "allowed_redirect_hosts": [],
+        "allowed_path_prefixes": {"gravity-client-resource.oss-cn-hangzhou.aliyuncs.com": ["/266183/excels/"]},
+        "magic_prefix_hex": "1f8b",
+        "download_authorization_ttl_seconds": 300,
+        "max_size_bytes": 104857600
+      },
+      "verification": {"method_source": "frontend_asset_and_online", "online": true, "attempted_online": true, "notes": "Hash-matched Download-DlEV6nb1.js proves evaluate/create share the seven-field body. On 2026-08-17 one create of the evaluate-proven 7-day $ preset event returned a task id, READY on the first poll, and a 511-byte gzip CSV (magic 1f8b, Content-Type text/csv, URL suffix .csv.gz, uncompressed 803 bytes) with five headers and one data row. All five cells were non-empty strings. analysis.event.list yesterday_count was 0 for every event on that App and must not be used as the create gate."}
     },
     {
       "operation_id": "export.analysis.monetization_detail.start",
