@@ -4,14 +4,15 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 2,
-    "description": "经营报表配置域的指标目录；返回指标中英文名、类型和提示说明，排除维度及标签标识不输出。",
+    "contract_version": 3,
+    "description": "经营报表配置域的指标目录；支持前端同形状筛选并返回全部已观察指标配置字段。",
     "domain": "report",
     "effect": "read",
     "examples": [
       {
         "description": "Minimum input verified by the contract probe pipeline.",
         "inputs": {
+          "filters": [],
           "page": 1,
           "page_size": 1
         },
@@ -20,6 +21,12 @@
     ],
     "executable": true,
     "input_fields": {
+      "filters": {
+        "default": [],
+        "item_type": "object",
+        "max_items": 10,
+        "type": "array"
+      },
       "page": {
         "default": 1,
         "type": "integer"
@@ -32,6 +39,7 @@
     "live_probe": {
       "enabled": true,
       "inputs": {
+        "filters": [],
         "page": 1,
         "page_size": 1
       }
@@ -72,10 +80,12 @@
     },
     "request": {
       "body_fields": [
+        "filters",
         "page",
         "page_size"
       ],
       "defaults": {
+        "filters": [],
         "page": 1,
         "page_size": 2000
       },
@@ -95,15 +105,17 @@
       "item_keys": [
         "cname",
         "data_topic",
+        "exclusion_dims",
         "is_media",
         "metric_type",
         "name",
+        "tag_ids",
         "tip"
       ],
-      "known_omitted_item_keys": [
-        "exclusion_dims",
-        "tag_ids"
-      ],
+      "scalar_list_item_types": {
+        "exclusion_dims": "string",
+        "tag_ids": "integer"
+      },
       "required_data_keys": [
         "list"
       ]

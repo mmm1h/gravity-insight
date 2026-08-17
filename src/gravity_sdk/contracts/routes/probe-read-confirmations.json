@@ -160,6 +160,20 @@
       "decision": "confirmed_read",
       "evidence": [
         {
+          "detail": "In hash-matched NewReportCenter-Dxgo5EkI.js, ReportDetail sends only the authenticated user's role IDs and a data_topic filter, then consumes data_dims_limit, metric_permission_type and metric_list to remove unavailable columns and metrics from the local report configuration. Role or permission changes use separate account-center controls; this call has no mutation continuation or success feedback.",
+          "source": "src/gravity_sdk/census/data/bundle-snapshot.json"
+        }
+      ],
+      "method": "POST",
+      "operation_id": "report.confmetric_permission.list",
+      "path": "/turbo_engine/api/v3/confmetric/permission/list/",
+      "reviewed_at": "2026-08-17",
+      "reviewer": "codex/missing-journeys"
+    },
+    {
+      "decision": "confirmed_read",
+      "evidence": [
+        {
           "detail": "In hash-matched NewReportCenter-Dxgo5EkI.js, ReportDetail invokes this route after loading or refreshing a monetization report, unwraps data.list/data.total (or data.extra_data.accumulate_data), and renders the rows, warning and local sort state. Report and template saves use separate create/edit routes; this call has no confirmation, persistence continuation or mutation feedback.",
           "source": "src/gravity_sdk/census/data/bundle-snapshot.json"
         },

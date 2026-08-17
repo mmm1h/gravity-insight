@@ -3925,9 +3925,11 @@
       "data.list",
       "data.list[].cname",
       "data.list[].data_topic",
+      "data.list[].exclusion_dims",
       "data.list[].is_media",
       "data.list[].metric_type",
       "data.list[].name",
+      "data.list[].tag_ids",
       "data.list[].tip",
       "data.page_info"
     ],

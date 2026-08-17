@@ -1568,6 +1568,10 @@ class GravityInsightManifestTests(unittest.TestCase):
                     "tag_ids": "integer",
                     "exclusion_dims": "string",
                 },
+                "report.metric.list": {
+                    "tag_ids": "integer",
+                    "exclusion_dims": "string",
+                },
                 "report.multidim.custom_metric.list": {
                     "tag_ids": "integer",
                     "exclusion_dims": "string",
