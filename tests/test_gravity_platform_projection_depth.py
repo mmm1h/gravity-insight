@@ -34,9 +34,15 @@ class StaticTransport:
         return TransportResponse(200, self.payload, "2026-08-11T00:00:00Z")
 
 
-def _client(operation_id: str, payload: Mapping[str, Any]) -> GravityInsightClient:
+def _client(
+    operation_id: str,
+    payload: Mapping[str, Any],
+    *extra_operation_ids: str,
+) -> GravityInsightClient:
+    operations = [_contract(operation_id)]
+    operations.extend(_contract(extra_id) for extra_id in extra_operation_ids)
     return GravityInsightClient._from_manifest_for_tests(
-        {"manifest_version": 1, "operations": [_contract(operation_id)]},
+        {"manifest_version": 1, "operations": operations},
         transport=StaticTransport(payload),
     )
 
@@ -147,6 +153,115 @@ class PlatformProjectionDepthTests(unittest.TestCase):
                 "advertiser_id": 7,
                 "advertiser_name": "must stay hidden",
                 "product_name": "fixture",
+            },
+            result["data"]["list"][0],
+        )
+
+    def test_tencent_advertiser_projects_observed_operator_fields(self) -> None:
+        operation_id = "promotion.tencent.advertiser.list"
+        client = _client(
+            operation_id,
+            {
+                "code": 0,
+                "data": {
+                    "list": [
+                        {
+                            "advertiser_id": "7",
+                            "advertiser_name": "fixture",
+                            "cost": "1.5",
+                            "operator_id": 11,
+                            "operator_name": "operator",
+                            "unregistered_future": "hidden",
+                        }
+                    ],
+                    "page_info": {
+                        "page": 1,
+                        "page_size": 1,
+                        "total_number": 1,
+                        "total_page": 1,
+                    },
+                    "total": [{"cost": "1.5"}],
+                    "update_at": "2026-08-17 00:00:00",
+                },
+            },
+        )
+
+        result = client.read(
+            operation_id,
+            {"date_list": ["2026-07-17", "2026-08-16"], "page": 1, "page_size": 1},
+        )
+
+        self.assertEqual("success", result["status"])
+        self.assertIn("response_drift", result["result_audit"])
+        self.assertEqual(
+            {
+                "advertiser_id": "7",
+                "advertiser_name": "fixture",
+                "cost": "1.5",
+                "operator_id": 11,
+                "operator_name": "operator",
+            },
+            result["data"]["list"][0],
+        )
+
+    def test_tencent_material_projects_observed_platform_fields(self) -> None:
+        operation_id = "material.tencent.list"
+        client = _client(
+            operation_id,
+            {
+                "code": 0,
+                "data": {
+                    "list": [
+                        {
+                            "advertiser_name": "fixture",
+                            "cid": 3,
+                            "file_name": "a.mp4",
+                            "gravity_material_id": 9,
+                            "material_id": "m1",
+                            "file_url": "https://example.invalid/file",
+                            "thumbnail_url": "https://example.invalid/thumb",
+                            "create_user_id": 1,
+                            "create_user_name": "creator",
+                            "creative_user_id": 2,
+                            "creative_user_name": "creative",
+                            "designer_id": 3,
+                            "designer_name": "designer",
+                            "unregistered_future": "hidden",
+                        }
+                    ],
+                    "page_info": {
+                        "page": 1,
+                        "page_size": 1,
+                        "total_number": 1,
+                        "total_page": 1,
+                    },
+                },
+            },
+            "promotion.tencent.advertiser.list",
+        )
+
+        result = client.read(
+            operation_id,
+            {"advertiser_id": "7", "page": 1, "page_size": 1},
+        )
+
+        self.assertEqual("success", result["status"])
+        self.assertIn("response_drift", result["result_audit"])
+        self.assertEqual(
+            {
+                "advertiser_name": "fixture",
+                "cid": 3,
+                "create_user_id": 1,
+                "create_user_name": "creator",
+                "creative_user_id": 2,
+                "creative_user_name": "creative",
+                "designer_id": 3,
+                "designer_name": "designer",
+                "file_name": "a.mp4",
+                "file_url": "https://example.invalid/file",
+                "gravity_material_id": 9,
+                "material_id": "m1",
+                "thumbnail_url": "https://example.invalid/thumb",
             },
             result["data"]["list"][0],
         )

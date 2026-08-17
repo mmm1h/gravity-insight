@@ -259,6 +259,43 @@ F41 状态不变。
 manager/feed 等无完整分页证据的 draft 还卡在 `pagination_unverified`。下一步只允许在有数据租户上复用
 同一最小范围，从对应断点开始；当前账号下不得重试或扩大范围。
 
+## 2026-08-17 复测：非 Bytedance 投放前提（D32 / D33/D34 共用）
+
+**提案：**一次回答“当前租户非 Bytedance 到底有没有数据”，排除短窗假阴性与权限误读。
+不改错误分类、不改评测题集、不探测弱证据 POST draft。
+
+**决定性实验（8 次业务 HTTP + 2 次登录，全部 HTTP 200，无 `code=2000`）：**
+
+| # | operation | 窗/筛选 | 结果 |
+| ---: | --- | --- | --- |
+| 1 | `promotion.latest_account_status.get` | 无输入 | 非空 3 行：`media` 字面量 `bytedance`/`tencent`/`kuaishou`；腾讯 `good`，快手 `severe`；无 Bilibili/Huya |
+| 2 | `promotion.tencent.advertiser.list` | `date_list=["2026-07-17","2026-08-16"]`，`page=1,page_size=1`，`time_line=behavior` | `code=0` 非空；`page_info.total_number=127/total_page=127`；item 含 `advertiser_id`；additive drift `operator_id/operator_name` |
+| 3 | `promotion.tencent.adgroup_filter.list` | `page=1,page_size=1` | 非空；`total_number=260`；item 键 `adgroup_id/adgroup_name/advertiser_id` |
+| 4 | `promotion.kuaishou.account.list` | `page=1,page_size=1` | `code=0` 明确空；`expired_cnt` 存在；`total_number=0` |
+| 5 | `promotion.tencent.medium_adgroup.list` | 内存 `advertiser_id` + `api_version=v3.0` | 非空 1 行；分页实测 `none`（无 `page_info`） |
+| 6 | `material.tencent.list` | 同一 `advertiser_id`，`page=1,page_size=1` | 非空；`total_number=427`；additive drift 12 个字段；登记 8 个标量/URL/人员字段；4 个空数组人员容器未登记子 schema |
+| 7 | `promotion.kuaishou.advertiser.list` | `date_list=["2026-03-01","2026-08-16"]` | `code=0` 明确空；`total_number=0` |
+| 8 | `promotion.kuaishou.account_company.list` | `need_company=true` | 非空 2 个整数公司 ID，不是投放报表行 |
+
+**权限排除：**8 次业务请求均为 HTTP 200 / 语义成功；0 次 `code=2000`、0 次 `permission_unavailable`。
+空配置不当作没权限。快手空报表与腾讯非空同时存在，所以空不是账号级权限裁剪。
+
+**与 2026-08-13 的差别：**上次只打 Bilibili/Huya、最短单日、不换对象、不扩窗；实际请求体只在
+probe evidence 里留下字段形状（`date_list` 为 string/`$today`），没有保存日期值。本轮先用账户
+目录一次定性，再对绑定平台开到 D-31..D-1（快手因 `severe` 且 3 月报表时间再扩到 2026-03-01）。
+
+**推进与卡住处：**
+
+- D33 父候选已成立：腾讯 advertiser / adgroup_filter / medium_adgroup 均可选。
+- D34 卡在 `promotion.tencent.tencent_adgroup_v2.list`、`promotion.tencent.ad.list` 等
+  计划/组/创意 report draft：弱证据 POST，无 `confirmed_read`，本轮主动未探测。
+- D32：`material.tencent.list` 已登记实测 URL/人员字段并暴露；Tencent medium creative
+  仍是弱证据 POST，未探测。common 素材目录仍不能替代平台创意合同。
+- 不新增产品卡/动线：冻结评测 J45/J46 仍期待原 gap code。
+
+**能力台账不变：**operation 233、stable 224、产品卡 92、精确 gap 7、selector 329、
+动线 `56 = 50 / 1 / 5`。
+
 ## 2026-08-16 追加判定：Analysis 导出与平台素材二进制
 
 两组候选都获得新证据但 **0 条晋升**。Analysis 导出的 8 条 frontend request binding 已从

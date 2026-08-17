@@ -1753,6 +1753,25 @@ class GravityInsightManifestTests(unittest.TestCase):
         self.assertEqual("behavior", tencent["request"]["defaults"]["time_line"])
         self.assertEqual("v3.0", tencent["request"]["fixed_body"]["version"])
         self.assertNotIn("version", tencent["input_fields"])
+        self.assertTrue(
+            {"operator_id", "operator_name"}
+            <= set(tencent["response_projection"]["item_keys"])
+        )
+
+        material = self.by_id["material.tencent.list"]
+        self.assertTrue(
+            {
+                "file_url",
+                "thumbnail_url",
+                "create_user_id",
+                "create_user_name",
+                "creative_user_id",
+                "creative_user_name",
+                "designer_id",
+                "designer_name",
+            }
+            <= set(material["response_projection"]["item_keys"])
+        )
 
         apple = self.by_id["promotion.apple.advertiser.list"]
         self.assertEqual("utc", apple["request"]["defaults"]["time_zone"])

@@ -659,7 +659,7 @@
       "action": "list",
       "auth_profile": "gravity_authorization",
       "contract_version": 2,
-      "description": "腾讯平台素材列表。广告主名称和租户字段已登记返回；缓存状态、未证实文件元数据、MD5、标签与图片容器仍按现有合同省略。",
+      "description": "腾讯平台素材列表。广告主名称、租户字段、文件/缩略图 URL 与已观察人员字段已登记返回；缓存状态、未证实文件元数据、MD5、标签与图片容器仍按现有合同省略。",
       "domain": "material",
       "effect": "read",
       "input_fields": {
@@ -740,7 +740,15 @@
           "material_id",
           "gravity_material_id",
           "cid",
-          "advertiser_name"
+          "advertiser_name",
+          "file_url",
+          "thumbnail_url",
+          "create_user_id",
+          "create_user_name",
+          "creative_user_id",
+          "creative_user_name",
+          "designer_id",
+          "designer_name"
         ],
         "known_omitted_item_keys": [
           "create_time",
