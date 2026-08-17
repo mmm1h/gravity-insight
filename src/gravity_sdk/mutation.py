@@ -18,6 +18,7 @@ from .errors import (
     InputValidationError,
     ObjectAlreadyExistsError,
     ObjectReferencedError,
+    PermissionUnavailableError,
     QuotaExceededError,
     SemanticRejectedError,
     UpstreamError,
@@ -27,6 +28,7 @@ from .receipt import capture_http_receipt_references
 from .registry import PolicyEngine, Registry
 from .result_audit import add_result_audit, bind_error_receipts
 from .semantic_status import (
+    PERMISSION_CODES,
     SEMANTIC_EXPLICIT_EMPTY,
     enforce_semantic_rules as _enforce_semantic_rules,
 )
@@ -190,6 +192,20 @@ def _raise_semantic_rejection(payload: Mapping[str, Any]) -> None:
     if code in _SUCCESS_CODES and not extra_error:
         return
     message = _rejection_message(payload, extra_error)
+    if code in PERMISSION_CODES or "权限不足" in message:
+        raise PermissionUnavailableError(
+            "the authenticated Gravity account cannot perform this mutation",
+            field="permission",
+            next_action=(
+                "actual value: authenticated account lacks this mutation; "
+                "allowed next action: request that Gravity write capability "
+                "from the workspace owner, then retry the same write."
+            ),
+        )
+    _raise_named_rejection(message)
+
+
+def _raise_named_rejection(message: str) -> None:
     lowered = message.casefold()
     if any(token in lowered for token in ("已存在", "重复", "同名", "exist", "duplicate")):
         raise ObjectAlreadyExistsError(

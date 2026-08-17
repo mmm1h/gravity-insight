@@ -116,8 +116,9 @@ def _default_next_action(code: str, operation_id: str | None) -> str:
             "Run `gravity insight auth refresh`, then retry once."
         ),
         ErrorCode.PERMISSION_UNAVAILABLE.value: (
-            f"Run `gravity insight operations describe {operation}` "
-            "and request the listed Gravity permission before retrying."
+            f"actual value: authenticated account lacks {operation}; "
+            "allowed next action: request that Gravity capability from the "
+            "workspace owner, then retry with the same input."
         ),
         ErrorCode.RATE_LIMITED.value: "Wait retry_after_ms, then retry the same request once.",
         ErrorCode.UPSTREAM_UNAVAILABLE.value: (

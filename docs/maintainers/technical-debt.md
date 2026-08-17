@@ -138,6 +138,9 @@
 
 ## 已关闭结构债务
 
+2026-08-17 复核：本轮只改协议层权限分类与账号级 session 绑定，未新增可由当前源码证明的结构债，
+也未放宽 quality baseline。
+
 Agent catalog 产品/gap 共源债务已关闭：渐进目录与宿主紧凑目录都从现有 card owner 程序化覆盖
 91/91 张 canonical 产品卡、投影 8/8 个登记 gap，并以双向 parity 门禁区分 product、raw operation 与
 不可执行 gap；宿主目录排除 raw operation，候选另经 `gravity.host-source.v1` 校验，没有新增第二套

@@ -118,7 +118,7 @@ additive fail-closed。该 operation 晋升 stable 并闭环五面产品，不�
 | 查找可用的媒体报表 | **明确空 / item schema 阻塞** | Bundle 已恢复 `AppSelect` 与有限平台选项绑定，空选择省略；列表装载、分页和响应消费证明 read，confirmation 已登记。本轮当天最小请求 HTTP 200、明确空。 | 在有媒体报表的租户复用同形状取得 1 个非空 item，不猜 App 或平台值。 |
 | 查找当前账号可读的 App 项目 | **合同阻塞** | `app.project.list` 被读语义闸门拦截；旧空 receipt 虽证明分页壳，但 `method_verified=false`，不能排除请求合同或语义问题，也就不能定为数据阻塞。 | 分析 `appManageIndex-DCdX2wdf.js` 的列表装载与响应消费，登记静态读证据后做 1 次最小第一页 probe。 |
 | 查看 App 的 OneLink 与公开信息绑定 | **已闭环** | `app.onelink.list` 的既有稳定父链继续证明当前账号明确空；调用方提供的第 1 条 App Store URL 使 `app.app_info.get` 首次取得 HTTP 200 / `code=0` 成功非空合同，并登记全部成功字段和旧 `error` 字段。 | 维持 stable live probe；若 Google Play 成功形状出现新字段，按 additive drift 登记并暴露。 |
-| 按平台、广告位和日期汇总变现结果（D28） | **合法输入明确空 / item schema 阻塞** | current turbo metric route 返回 6 个 `monetization_report/is_media=false` 指标；当前 role permission route 成功空。主 route 依次证明 App 必填、filter operator 必须为字符串；首个合法 App与默认 7 日窗最终 `code=0/list=[]/page_info.total=0/total={}`。 | 当前租户不为找非空切换 App 或扩窗；由另一个有 D28 数据的合法 App/租户复用同形状取得 1 个非空 item/total。 |
+| 按平台、广告位和日期汇总变现结果（D28） | **合法输入明确空 / item schema 阻塞** | 2026-08-17 低权限账号对同一主 route 返回 `code=2000 / 您当前账号暂无权限操作`，高权限账号仍是 `code=0/list=[]/page_info.total=0/total={}`。因此高权限空是真空，不是权限型空；item/total schema 仍未观察。 | 当前租户不为找非空切换 App 或扩窗；由另一个有 D28 数据的合法 App/租户复用同形状取得 1 个非空 item/total。 |
 
 **闸门命中：** `report.masterkey_report_group.list`、`report.report.list`、
 `report.shared_to_me.list`、`report.subscribe.list`、`report.media_report.list`、
