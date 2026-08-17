@@ -72,3 +72,7 @@
 
 分组标准是**主题**（目标/约束、Agent 评测、投影隐私、写面、语义组合、权限与投放等），不是按日期切。
 合同 `probe-read-confirmations.json` 里的 `docs/roadmap.md#d35--f40-...` 是 citation 字符串，不是运行时硬依赖；对应正文在 `agent-usability-and-cost.md`。
+**新增文件后必须在这里加一行**，否则 `test_every_doc_is_reachable_from_the_docs_index` 会判定你的文件是孤儿文档。
+格式：列表项，链接指向真实存在的 `*.md` 文件名，后面跟一句话。只加你自己那一行。
+
+- [实时事件目录：前端形状 + 含此刻窗仍空](realtime-event-catalog.md) — 未拿到非空 item；空的是关闭入库开关 + 已试形状。
