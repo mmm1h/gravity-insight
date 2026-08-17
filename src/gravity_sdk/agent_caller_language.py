@@ -135,9 +135,6 @@ _ANALYSIS_JOURNEY_TITLES: dict[str, tuple[str, ...]] = {
     "gap:MEDIA_REPORT_ITEM_SCHEMA_MISSING": (
         "查找可用的媒体报表",
     ),
-    "gap:MONETIZATION_AGGREGATE_CONTRACT_MISSING": (
-        "按平台、广告位和日期汇总变现结果",
-    ),
     "composite:attribution_performance": (
         "查询归因表现聚合",
     ),

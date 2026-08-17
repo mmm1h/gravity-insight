@@ -48,6 +48,7 @@ REPORT_MULTIDIM_CUSTOM_METRIC = _operation("report", "multidim", "custom_metric"
 REPORT_MULTIDIM_SHARED_METRIC = _operation(
     "report", "multidim", "custom_metric", "shared", "list"
 )
+REPORT_MONETIZATION_QUERY = _operation("report", "get", "query")
 
 
 @dataclass(frozen=True)
@@ -81,6 +82,28 @@ _OTHER_EVENT_FILTERS = {
     "create_user_id": frozenset({"IN"}),
     "task_status": frozenset({"EQUALS"}),
     "client_id": frozenset({"IN"}),
+}
+_MONETIZATION_FILTERS = {
+    "app_id": frozenset({"EQUALS"}),
+    "project_id": frozenset({"EQUALS"}),
+    "click_company": frozenset({"IN"}),
+    "monetization_platform": frozenset({"IN"}),
+    "advertiser_id": frozenset({"IN"}),
+    "aid": frozenset({"IN"}),
+    "ad_unit_id": frozenset({"IN"}),
+    "client_channel": frozenset({"IN"}),
+    "operator_id": frozenset({"IN"}),
+    "turbo_promoted_object_id": frozenset({"IN"}),
+    "client_version": frozenset({"IN"}),
+    "gid": frozenset({"IN"}),
+    "os_family": frozenset({"IN"}),
+    "ad_type": frozenset({"IN"}),
+    "user_type": frozenset({"IN"}),
+    "bundle_id": frozenset({"IN"}),
+    "optimization_goal": frozenset({"IN"}),
+    "deep_optimization_goal": frozenset({"IN"}),
+    "deep_bid_type": frozenset({"IN"}),
+    "dept_id": frozenset({"IN"}),
 }
 
 
@@ -128,6 +151,9 @@ OPERATION_RULES: Mapping[str, OperationRule] = {
     REPORT_BUSINESS_QUERY: OperationRule("business_query"),
     REPORT_MULTIDIM_QUERY: OperationRule("multidim_query"),
     REPORT_MULTIDIM_TOTAL: OperationRule("multidim_query"),
+    REPORT_MONETIZATION_QUERY: OperationRule(
+        exact_filter_profile=_MONETIZATION_FILTERS,
+    ),
 }
 
 

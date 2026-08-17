@@ -1,7 +1,7 @@
 # 分页合同逐 operation 审计（2026-08-17）
 
-基线 `f798d396f01da2ed00405d54da85cceea636aaef` 的 231 条已逐项审计；本轮新增 1 条自带生产证据，当前共 232 条。
-本表是审计当时的历史裁决，不是 HEAD 镜像。审计时声明：`page_info=119`、`none=113`。
+基线 `f798d396f01da2ed00405d54da85cceea636aaef` 的 231 条已逐项审计；本轮新增 2 条自带生产证据，当前共 233 条。
+本表是审计当时的历史裁决，不是 HEAD 镜像。审计时声明：`page_info=119`、`none=114`。
 119 条当时的 `page_info`：A=59、B=1、未知=59。
 `report.multidim.query` 已在 `30c682c` 修成 `kind=none`，表内 `declared_kind` 仍保留审计时的
 `page_info`，并由 `declared_kind_disposition.status=repaired` 对账。HEAD 当前声明由
@@ -84,6 +84,7 @@
 | `analysis.user_property.list` | `page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=100, max_page_size=2000)` | `unknown` | 仅模板默认 | src/gravity_sdk/contracts/operations/analysis.user_property.list.json#/operation/pagination | `shape_unknown` / `no_high_risk_signal_observed` |
 | `analysis.user_property_value.list` | `none` | `not_page_info` | 仅模板默认 | src/gravity_sdk/contracts/operations/analysis.user_property_value.list.json#/operation/pagination | `collection_completeness_unknown` / `silent_completeness_risk` |
 | `app.app_info.get` | `none` | `not_page_info` | 生产实测 | evidence/probe/20260817T064052Z_app.app_info.get.yaml | `no_page_info_in_observed_response` / `no_high_risk_signal_observed` |
+| `report.get.query` | `none` | `B` | 生产实测 | evidence/probe/20260817T082308Z_report.get.query.yaml | `no_page_info_in_observed_response` / `no_high_risk_signal_observed` |
 | `app.capacity.get` | `none` | `not_page_info` | 生产实测 | evidence/probe/20260811T050921Z_app.capacity.get.yaml<br>evidence/probe/20260811T071537Z_app.capacity.list.yaml | `no_page_info_in_observed_response` / `no_high_risk_signal_observed` |
 | `app.capacity.list` | `page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)` | `A` | 生产实测 | evidence/probe/20260811T071537Z_app.capacity.list.yaml | `shape_verified` / `no_high_risk_signal_observed` |
 | `app.detail` | `none` | `not_page_info` | 仅模板默认 | src/gravity_sdk/contracts/operations/app.detail.json#/operation/pagination | `not_collection_semantics` / `no_high_risk_signal_observed` |

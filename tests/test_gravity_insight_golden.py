@@ -196,6 +196,8 @@ class GravityInsightGoldenTests(unittest.TestCase):
         probed_additions = {
             # 调用方公开商店 URL 首次取得成功非空 App 信息合同后晋升。
             "app.app_info.get",
+            # D28：catalog#2 非空 item/total 后晋升；分页为实测 none。
+            "report.get.query",
             # D35：完整前端 builder 加明确空/非空生产证据后晋升。
             "attribution.attribution.query",
             "material.asset_material_media_review_list.list",

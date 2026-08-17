@@ -756,6 +756,7 @@ class DiscoveryUxTests(unittest.TestCase):
             "J37": "composite:report_subscriptions",
             "J39": "app.list",
             "J40": "app.app_info.get",
+            "J41": "report.get.query",
             "J42": "composite:attribution_performance",
             "J43": "composite:attribution_user_detail",
             "J48": "material.asset.fetch",
@@ -764,7 +765,6 @@ class DiscoveryUxTests(unittest.TestCase):
             "J19": "WORKSPACE_SQL_PRODUCT_NOT_CONFIGURED",
             "J35": "REALTIME_EVENT_CATALOG_CONTRACT_MISSING",
             "J38": "MEDIA_REPORT_ITEM_SCHEMA_MISSING",
-            "J41": "MONETIZATION_AGGREGATE_CONTRACT_MISSING",
             "J44": "CURRENT_TABLE_SCHEMA_PARENT_MISSING",
             "J45": "NON_BYTEDANCE_HIERARCHY_PARENT_MISSING",
             "J46": "PLATFORM_SPECIFIC_CREATIVE_CONTRACT_MISSING",
@@ -1753,6 +1753,18 @@ class DiscoveryUxTests(unittest.TestCase):
         self.assertEqual("stable", described["stability"])
         self.assertTrue(described["currently_callable"])
         self.assertTrue(described["input_schema"]["url"]["required"])
+        with self.assertRaises(InputValidationError):
+            self.client.read(operation_id, {})
+
+    def test_monetization_aggregate_is_stable_and_requires_window_and_metrics(self) -> None:
+        operation_id = "report.get.query"
+        described = self.client.describe(operation_id)
+
+        self.assertEqual("stable", described["stability"])
+        self.assertTrue(described["currently_callable"])
+        self.assertTrue(described["input_schema"]["date_list"]["required"])
+        self.assertTrue(described["input_schema"]["metrics_list"]["required"])
+        self.assertEqual("none", described["pagination"]["kind"])
         with self.assertRaises(InputValidationError):
             self.client.read(operation_id, {})
 

@@ -1272,6 +1272,15 @@ class GravityInsightManifestTests(unittest.TestCase):
                     "tips": [],
                     "total": ["ad_platform", "date"],
                 },
+                "report.get.query": {
+                    "extra_data": [],
+                    "page_info": ["total"],
+                    "total": [
+                        "stat_time",
+                        "monetization_platform",
+                        "ad_unit_id",
+                    ],
+                },
                 "analysis.segment.detail": {
                     "update_date_range": ["start_date", "end_date"]
                 },
