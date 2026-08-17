@@ -80,3 +80,7 @@
 格式：一条 Markdown 链接，目标是同目录下的 `job-slug.md`，后面跟破折号和一句话。只加你自己那一行。
 
 - [媒体报表：枚举 ad_platform 仍空](media-report-ad-platform.md) — 2026-08-18：省略平台即查全集；投放中 App 上枚举平台后仍空。
+**新增文件后必须在这里加一行**，否则 `test_every_doc_is_reachable_from_the_docs_index` 会判定你的文件是孤儿文档。
+格式：列表项 + 标题 + 相对文件名 + 一句话。只加你自己那一行。
+
+- [F41 数据表 schema：绑定投放中 App 后仍无活表](f41-data-table.md) — 2026-08-18：list 七种形状明确空，日志 table_id 对 detail 为 1004 / not exist。
