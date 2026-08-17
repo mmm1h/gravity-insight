@@ -4,8 +4,13 @@ from __future__ import annotations
 from typing import Any
 
 from .errors import ErrorCategory, ErrorCode, ErrorDetail
+from .export_completion import (
+    completeness_audit,
+    result_completion_status,
+    snapshot_completion_status,
+)
 from .export_contracts import export_error_field
-from .export_models import ExportCompletionStatus, ExportState
+from .export_models import ExportState
 from .result_source import GOVERNED_PRODUCT, result_source
 
 
@@ -26,6 +31,7 @@ def export_snapshot_envelope(operation_id: str, snapshot: Any) -> dict[str, Any]
         "download_ready": snapshot.download_source is not None,
         "failure_code": snapshot.failure_code,
         "retryable": bool(snapshot.failure_retryable),
+        **_snapshot_completeness(snapshot),
     }
 
 
@@ -89,31 +95,8 @@ def export_result_envelope(operation_id: str, result: Any) -> dict[str, Any]:
         "history": [state.value for state in result.history],
         "resumable": result.resumable,
         "file": _file_receipt(result.receipt),
+        **_completeness_fields(result),
     }
-
-
-def snapshot_completion_status(snapshot: Any) -> str:
-    code = str(getattr(snapshot, "failure_code", "") or "")
-    if code == "EXPORT_UPSTREAM_EXPIRED":
-        return ExportCompletionStatus.EXPIRED.value
-    return ExportCompletionStatus.PARTIAL.value
-
-
-def result_completion_status(result: Any) -> str:
-    receipt = getattr(result, "receipt", None)
-    if result.error is None and receipt is not None:
-        rows = int(receipt.finalization.rows_processed)
-        return (
-            ExportCompletionStatus.EMPTY.value
-            if rows == 0
-            else ExportCompletionStatus.COMPLETE.value
-        )
-    code = str(getattr(result.error, "code", "") or "")
-    if code in {"EXPORT_UPSTREAM_EXPIRED", "BLOB_URL_EXPIRED"}:
-        return ExportCompletionStatus.EXPIRED.value
-    if code == "BLOB_SIZE_LIMIT":
-        return ExportCompletionStatus.TRUNCATED.value
-    return ExportCompletionStatus.PARTIAL.value
 
 
 def _export_result_error_detail(operation_id: str, result: Any) -> ErrorDetail:
@@ -197,6 +180,16 @@ def _file_receipt(receipt: Any) -> dict[str, Any] | None:
         "schema": list(receipt.finalization.schema),
         "rows": receipt.finalization.rows_processed,
     }
+
+
+def _completeness_fields(result: Any) -> dict[str, Any]:
+    audit = completeness_audit(result)
+    return {} if audit is None else {"completeness": audit}
+
+
+def _snapshot_completeness(snapshot: Any) -> dict[str, Any]:
+    value = getattr(snapshot, "completeness", None)
+    return {} if not isinstance(value, Mapping) else {"completeness": dict(value)}
 
 
 __all__ = [

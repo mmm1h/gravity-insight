@@ -5,7 +5,7 @@ import math
 from pathlib import Path
 import random
 import time
-from typing import Callable
+from typing import Any, Callable, Mapping
 
 from .blob import BlobMetadata, BlobPolicy, BlobReceipt, BlobTransferError, SafeBlobTransfer
 from .export_models import (
@@ -16,6 +16,7 @@ from .export_models import (
     _validate_creation_request,
 )
 from .export_privacy import ExportPrivacyFinalizer
+from .export_scope_total import classify_export_rows
 
 class ExportOrchestrator:
     def __init__(
@@ -94,6 +95,7 @@ class ExportOrchestrator:
         privacy_contract: ExportPrivacyContract,
         *,
         timeout_seconds: float | None = None,
+        completeness: Mapping[str, Any] | None = None,
     ) -> ExportResult:
         if not job_id.strip():
             raise _export_error(
@@ -118,6 +120,7 @@ class ExportOrchestrator:
                 details={"job_id": job_id},
             ) from exc
         tracker = _StateTracker(state)
+        snapshot = _with_completeness(snapshot, completeness)
         return self._drive(
             snapshot,
             tracker,
@@ -276,7 +279,15 @@ class ExportOrchestrator:
                 observer=observe,
             )
             tracker.move(ExportState.COMMITTED)
-            return _result(tracker, job_id=job_id, receipt=receipt)
+            return _result(
+                tracker,
+                job_id=job_id,
+                receipt=receipt,
+                completeness=classify_export_rows(
+                    int(receipt.finalization.rows_processed),
+                    getattr(snapshot, "completeness", None),
+                ),
+            )
         except BlobTransferError as exc:
             if tracker.state not in _TERMINAL_STATES:
                 tracker.move(ExportState.FAILED)
@@ -403,6 +414,23 @@ def _jittered_interval(
     return min(maximum, max(0.0, base * factor))
 
 
+def _with_completeness(
+    snapshot: ExportJobSnapshot,
+    completeness: Mapping[str, Any] | None,
+) -> ExportJobSnapshot:
+    if completeness is None:
+        return snapshot
+    return ExportJobSnapshot(
+        snapshot.job_id,
+        snapshot.state,
+        download_source=snapshot.download_source,
+        failure_code=snapshot.failure_code,
+        failure_message=snapshot.failure_message,
+        failure_retryable=snapshot.failure_retryable,
+        completeness=completeness,
+    )
+
+
 def _result(
     tracker: _StateTracker,
     *,
@@ -410,6 +438,7 @@ def _result(
     receipt: BlobReceipt | None = None,
     error: BlobTransferError | None = None,
     resumable: bool = False,
+    completeness: Mapping[str, Any] | None = None,
 ) -> ExportResult:
     return ExportResult(
         state=tracker.state,
@@ -417,5 +446,6 @@ def _result(
         history=tuple(tracker.history),
         receipt=receipt,
         error=error,
+        completeness=completeness,
         resumable=resumable,
     )

@@ -106,7 +106,11 @@ _EXACT_EXPERT_SELECTORS = frozenset(
 def monetization_guard_blocks_operation_fallback(query: str) -> bool:
     """Claim only explicit detail-shaped requests and near-raw selectors."""
 
+    from .agent_export import analysis_export_is_specific
+
     selected = _normalize(query)
+    if analysis_export_is_specific(query):
+        return False
     if _is_exact_expert_selector(selected):
         return False
     if selected in _EXACT_PRODUCT_INTENTS:

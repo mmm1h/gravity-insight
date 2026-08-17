@@ -6223,3 +6223,23 @@ development recognizer 首选仍 `251/336`，0 生产请求。不 push、不碰 
 `executor.py` AST ratchet `8912→4753`，硬顶 9149 未抬；函数债务删除上述两项，
 `ReadExecutor.execute` 84 未动。`growth_ledger` 未追加。能力台账 233 / 224 / 92 / 7 / 329
 与动线 `56 = 50 / 1 / 5` 本轮不重算。生产 HTTP **0**。不 push、不碰 GitHub。
+## 变现明细导出可调用并标注截断（2026-08-17）
+
+**提案：**`monetization_detail` 导出此前因静默百万行上限保持 `unverified/executable=false`。
+本轮不改台账闭环判据，只把能力做成：调用方可拿到文件，并机械知道结果是不是完整。
+
+**总量来源：**task list/progress/file 仍无 task-bound total。事后重读
+`analysis.monetization_detail.list` 的 `total_items` 已被当前日 110,966 / 111,792 证伪，
+不能当分母。可信分母是 **create 前同一 App、同一 `create_time` 单日、静态产品字段、page=1
+的列表 `page.total_items`**，标注 `create_time_preflight`。拿不到这个整数就 fail-closed，
+不编分母。小时条件仍返回全日量级，本轮不把它当 shard。
+
+**完成态：**沿用既有 `empty/partial/truncated/expired/complete/gap`。只有原子提交、
+`file_rows == pinned_total > 0` 且未触达上游 1,000,000 行上限才是 `complete`。
+钉住总量 > 1e6 且文件恰为 1,000,000 行时为 `truncated`，信封同时给出 `known_total_items`
+与 `file.rows`，调用方可算缺失量。低于上限但对不齐的文件不是 `complete`，也不发明缺失量。
+
+**合同：**`export.analysis.monetization_detail.start` 晋升 `verified/executable=true`，
+Agent 增加变现明细导出卡。本轮 **0** 次生产 HTTP；文件 shape 与 1,212,315 / 1,000,000
+对照沿用既有证据。台账该行状态由维护者按闭环判据另判，本轮不重算 `56 = x / y / z`。
+不 push、不碰 GitHub。

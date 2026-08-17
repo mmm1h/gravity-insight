@@ -154,21 +154,26 @@ class ExportContractTests(unittest.TestCase):
         )
         self.assertNotIn("export list`", raised.exception.next_action)
 
-    def test_monetization_export_records_shape_but_stays_blocked_on_truncation(self):
+    def test_monetization_export_is_callable_and_declares_create_time_truncation(self):
         contracts = ExportContractRegistry.from_file(CONTRACT_PATH)
         operation_id = "export.analysis.monetization_detail.start"
         description = contracts.describe(operation_id)
 
-        self.assertFalse(description["currently_callable"])
-        self.assertIn("1000000", description["block_reason"])
+        self.assertTrue(description["currently_callable"])
+        self.assertIsNone(description["block_reason"])
         self.assertEqual(
-            "upstream_silent_truncation",
+            "callable_with_create_time_truncation_audit",
             description["pagination_and_scale"]["status"],
         )
         self.assertEqual(
             ["事件发生时间", "客户ID"],
             description["columns"]["required_output_headers"],
         )
+        self.assertEqual(
+            ["AdEventTime", "ClientID"],
+            description["columns"]["allowed_codes"],
+        )
+        self.assertEqual("complete", description["examples_status"])
         self.assertEqual(
             192 * 1024 * 1024,
             contracts.get(operation_id).privacy["max_uncompressed_size_bytes"],
@@ -253,6 +258,35 @@ class ExportContractTests(unittest.TestCase):
         statuses.update((status(), ExportContractRegistry.from_file(CONTRACT_PATH).describe(
             "export.analysis.origin_event.start")["completion_status"]))
         self.assertEqual({"empty", "partial", "truncated", "expired", "complete", "gap"}, statuses)
+        pinned = {
+            "known_total_items": 1_212_315,
+            "known_total_source": "analysis.monetization_detail.list.page.total_items",
+            "known_total_freshness": "create_time_preflight",
+        }
+        receipt.finalization.rows_processed = 1_000_000
+        truncated = export_result_envelope(
+            "export.analysis.monetization_detail.start",
+            SimpleNamespace(
+                state=ExportState.COMMITTED, job_id="19", history=(),
+                receipt=receipt, error=None, resumable=False,
+                completeness={
+                    **pinned, "file_rows": 1_000_000, "missing_rows": 212_315,
+                    "truncated": True, "complete": False, "row_limit": 1_000_000,
+                },
+            ),
+        )
+        self.assertEqual("truncated", truncated["completion_status"])
+        self.assertEqual(1_000_000, truncated["file"]["rows"])
+        self.assertEqual(1_212_315, truncated["completeness"]["known_total_items"])
+        self.assertEqual(212_315, truncated["completeness"]["missing_rows"])
+        uncapped = export_result_envelope(
+            "export.analysis.monetization_detail.start",
+            SimpleNamespace(
+                state=ExportState.COMMITTED, job_id="19", history=(),
+                receipt=receipt, error=None, resumable=False,
+            ),
+        )
+        self.assertEqual("partial", uncapped["completion_status"])
         contract = ExportContractRegistry.from_file(CONTRACT_PATH).get("export.analysis.user_detail.start")
         validate_wire_projection(contract, SimpleNamespace(
             payload={"field_map": {"ClientID": "客户ID", "CreateTime": "注册时间"}},

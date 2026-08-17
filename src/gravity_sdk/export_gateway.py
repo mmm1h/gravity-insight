@@ -99,7 +99,11 @@ class GravityExportGateway:
                 code="EXPORT_PROTOCOL_ERROR",
                 stage="creating",
             )
-        return ExportJobSnapshot(str(job_id), ExportState.QUEUED)
+        return ExportJobSnapshot(
+            str(job_id),
+            ExportState.QUEUED,
+            completeness=request.completeness,
+        )
 
     def status(self, job_id: str, *, timeout_seconds: float) -> ExportJobSnapshot:
         authorization, payload, _ = self._call(

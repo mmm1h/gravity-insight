@@ -22,6 +22,7 @@ from .export_results import (
     export_result_envelope as _export_result_envelope,
     export_snapshot_envelope as _export_snapshot_envelope,
 )
+from .export_scope_total import pin_export_scope_total
 from .export_state import ExportOrchestrator
 from .registry import PolicyEngine, Registry
 from .paths import CONTRACT_ROOT
@@ -174,6 +175,7 @@ class ExportClientMixin:
         destination: str | Path,
         *,
         timeout_seconds: float = 300.0,
+        completeness: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
         contract = self._export_contract(operation_id)
         destination_path = Path(destination).resolve()
@@ -191,6 +193,7 @@ class ExportClientMixin:
             blob_policy,
             privacy,
             timeout_seconds=min(float(timeout_seconds), 300.0),
+            completeness=completeness,
         )
         return _export_result_envelope(operation_id, result)
 
@@ -319,6 +322,7 @@ class ExportClientMixin:
             payload=payload,
             requested_columns=tuple(str(value) for value in requested_columns),
             idempotency_key=idempotency_key,
+            completeness=pin_export_scope_total(self, operation_id, payload),
         )
         privacy = ExportPrivacyContract(
             allowed_columns=request_allowed,

@@ -35,7 +35,7 @@ class MonetizationGuardAgentTests(unittest.TestCase):
                 self.assertFalse(card["natural_language_auto_execute"])
     def test_unapproved_shapes_remain_local_value_free_gaps(self):
         queries = (
-            "not monetization details", "export monetization detail", "write monetization details",
+            "not monetization details", "write monetization details",
             "monetization details from 2026-08-01 to 2026-08-08", "无标识变现明细跨日",
             "monetization details summary", "dashboard snapshot monetization details",
             "变现明细聚合报表", f"{READ} north-secret", f"{READ.rsplit('.', 1)[0]} north-secret",
@@ -52,6 +52,10 @@ class MonetizationGuardAgentTests(unittest.TestCase):
         with patch("gravity_sdk.agent_batch_sources.search_metadata", return_value={"results": []}):
             batch = capabilities_many(queries, client=NoScan())
         self.assertTrue(all(item["status"] == "capability_gap" for item in batch["results"]))
+    def test_export_intent_is_not_claimed_as_the_read_product(self):
+        self.assertFalse(guarded("export monetization detail"))
+        self.assertFalse(guarded("变现明细导出"))
+
     def test_user_device_field_filter_and_group_intents_reach_raw_discovery(self):
         queries = (
             "monetization details ClientID north-secret",

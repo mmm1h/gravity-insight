@@ -147,9 +147,14 @@ class ExportCreationRequest:
     payload: Mapping[str, Any]
     requested_columns: tuple[str, ...]
     idempotency_key: str
+    completeness: Mapping[str, Any] | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "payload", MappingProxyType(dict(self.payload)))
+        if self.completeness is not None:
+            object.__setattr__(
+                self, "completeness", MappingProxyType(dict(self.completeness))
+            )
 
 
 @dataclass(frozen=True)
@@ -160,6 +165,7 @@ class ExportJobSnapshot:
     failure_code: str | None = None
     failure_message: str | None = None
     failure_retryable: bool = False
+    completeness: Mapping[str, Any] | None = None
 
 
 class AuthorizedExportGateway(Protocol):
@@ -208,6 +214,7 @@ class ExportResult:
     receipt: BlobReceipt | None = None
     error: BlobTransferError | None = None
     resumable: bool = False
+    completeness: Mapping[str, Any] | None = None
 def _validate_creation_request(
     request: ExportCreationRequest,
     contract: ExportPrivacyContract,
