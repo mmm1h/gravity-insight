@@ -7,6 +7,10 @@ from collections.abc import Mapping
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
+from .account_permission_profile import (
+    PERMISSION_EMPTY_NEXT_ACTION,
+    PERMISSION_EMPTY_NOTE,
+)
 from .errors import ContractChangedError, InputValidationError
 from .report_contracts import REPORT_DETAIL, REPORT_LIST, SUBSCRIBE_LIST
 from .result_source import GOVERNED_PRODUCT, result_source
@@ -32,11 +36,12 @@ def report_directory(
         with ThreadPoolExecutor(max_workers=min(workers, len(rows))) as pool:
             futures = [pool.submit(_report_detail, client, _identifier(row.get("id"))) for row in rows]
             details = [future.result() for future in futures]
+    empty = not rows
     return {
         "schema_version": DIRECTORY_SCHEMA_VERSION,
         "result_source": result_source(GOVERNED_PRODUCT),
         "ok": True,
-        "status": "empty" if not rows else "success",
+        "status": "empty" if empty else "success",
         "source_count": 1,
         "sources": ["owned"],
         "item_count": len(rows),
@@ -46,6 +51,14 @@ def report_directory(
         ],
         "truncated": False,
         "error": None,
+        **(
+            {
+                "empty_result_note": PERMISSION_EMPTY_NOTE,
+                "next_action": PERMISSION_EMPTY_NEXT_ACTION,
+            }
+            if empty
+            else {}
+        ),
     }
 
 
@@ -57,15 +70,24 @@ def report_subscriptions(
     pages, items, _workers = _bounds(max_pages, max_items, 1)
     listing = _read_list(client, SUBSCRIPTION_LIST, pages, items)
     rows = _rows(listing, SUBSCRIPTION_LIST)
+    empty = not rows
     return {
         "schema_version": SUBSCRIPTION_SCHEMA_VERSION,
         "result_source": result_source(GOVERNED_PRODUCT),
         "ok": True,
-        "status": "empty" if not rows else "success",
+        "status": "empty" if empty else "success",
         "item_count": len(rows),
         "items": copy.deepcopy([dict(row) for row in rows]),
         "truncated": False,
         "error": None,
+        **(
+            {
+                "empty_result_note": PERMISSION_EMPTY_NOTE,
+                "next_action": PERMISSION_EMPTY_NEXT_ACTION,
+            }
+            if empty
+            else {}
+        ),
     }
 
 

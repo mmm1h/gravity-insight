@@ -8,7 +8,7 @@
     "domain": "report", "resource": "subscribe", "action": "list", "contract_version": 1,
     "upstream_method": "POST", "path_template": "/turbo_engine/api/v3/subscribe/list/", "auth_profile": "gravity_authorization",
     "stability": "stable", "effect": "read", "executable": true,
-    "description": "读取当前账号的报表订阅清单；支持有界完整分页。",
+    "description": "读取当前账号的报表订阅清单；支持有界完整分页。空结果与权限裁剪空集不可区分；若不确定权限，先运行 gravity apps permission-profile。",
     "input_fields": {
       "filters": {"type": "array", "default": []},
       "page": {"type": "integer", "default": 1},

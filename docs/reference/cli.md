@@ -35,7 +35,7 @@ gravity attribution performance 读取一个 App 日期区间的四组归因表�
 gravity attribution user-detail 读取一个 App 下已登记测试设备的单用户归因明细
 gravity reports pulse         并发读取 App 经营概览与趋势
 gravity reports usage         完整读取公司级按日资源用量趋势
-gravity reports directory|subscriptions  完整读取报表目录/定义或订阅清单
+gravity reports directory|subscriptions  完整读取报表目录/定义或订阅清单；空结果与权限裁剪空集不可区分
 gravity reports create|delete|subscribe|unsubscribe  预览或显式执行 marker-governed 写
 gravity materials performance 读取稳定的跨平台素材表现
 gravity materials fetch       从已登记素材响应按精确引用下载文件

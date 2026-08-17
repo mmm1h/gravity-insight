@@ -27,10 +27,10 @@ Kanban 追加取证同样只走产品级两步治理。两条显式 `*.share` �
 | `analysis.realtime_event.list` | `draft`（当前账号在已试窗下明确空） | 2026-08-16 对 catalog 的 7/7 App 各发 1 次最小请求，均 HTTP 200 空，但未记录 `request_time`/`filters` 实际值且未扩窗。2026-08-17 用 `request_time=["2026-07-17 00:00:00","2026-08-16 23:59:59"]`、`filters={}`、`page=1`、`page_size=1` 再枚举 7/7，均 HTTP 200 / `code=0` / `data.list=[]`；随后把右端扩到当天 `2026-08-17 23:59:59` 再枚举 7/7，结果相同。未试非空筛选。 | `empty_sample`、`pagination_unverified`、`response_item_schema_unverified` | 由另一个有实时事件数据的租户取得 1 个非空 item；当前账号不必再以同一空筛选重复枚举已试窗。 |
 | `analysis.setting.query` | `draft`（mutation 负向证明；查询动线已由既有产品覆盖） | 对本 mutation 仍为 0 次请求；完整 Dashboard builder 证明该 POST 提交 `config/name/remark`，随后修改 dashboard layout 并提示修改成功。2026-08-15 对 375/375 hash-matched bundle 的 987 条唯一 route 穷尽复核，另确认 `analysis.dashboard.tree/detail` 与 `analysis.report_config.list/get` 四条既有 stable GET 是装载设置的真读；仅对 stable `report_config.list` 做 1 次最小第一页 probe，HTTP 200 非空，无重试或翻页。 | `mutation_route_not_read`、`unregistered_fields_fail_closed`；不再有独立产品缺口 | 本 draft 永不晋升为 read。调用方分别使用既有 `dashboard_snapshot` 与 `saved_analysis`；若提出超出二者的新设置问题，先取得自由文本 config 与人员字段的合同证据，登记后全部暴露；未登记时只按合同漂移 fail-closed，不等待隐私裁决。 |
 | `report.masterkey_report_group.list` | `draft`（账号级明确空） | 2026-08-16 最小第一页 HTTP 200 空。固定 path/body 无 App 输入，认证上下文只含账号/公司，因此 App 枚举不适用；既有 read confirmation 与分页证据保留。 | `empty_sample`、`successful_probe` | 由有 MasterKey 报表的账号取得 1 个非空 item；当前账号不重复请求。 |
-| `report.report.list` | **`stable v1`（已晋升）** | 先 dry-run，再由 `report.report.update` 创建唯一 marker-owned 测试报表；列表非空读回并登记 14 个观察字段。请求仍为账号级 `{page,page_size,filters}`，完整分页合同沿用 hash-matched bundle。 | 无开放 promotion blocker。 | 由 `report_directory` Core/CLI/SDK/Plan/Agent 消费；未知新增字段继续 additive drift fail-closed。 |
+| `report.report.list` | **`stable v1`（已晋升）** | 先 dry-run，再由 `report.report.update` 创建唯一 marker-owned 测试报表；列表非空读回并登记 14 个观察字段。请求仍为账号级 `{page,page_size,filters}`，完整分页合同沿用 hash-matched bundle。2026-08-17 双账号完整响应对照：高低权限均为 `code=0 / list=[] / page_info.total_number=0`，无 extra/scope 回显，权限型空与真空不可区分。 | 无开放 promotion blocker。 | 由 `report_directory` Core/CLI/SDK/Plan/Agent 消费；未知新增字段继续 additive drift fail-closed。空结果须对照 `gravity apps permission-profile`，不得当成租户没数据。 |
 | `report.report.detail` | **`stable v1`（已晋升）** | 使用同次列表内存父 ID 发 1 次 GET detail；14 个观察字段全部登记，`remark` 的 marker 与列表原样 round-trip。 | 无开放 promotion blocker。 | 只接受 `report.report.list` 返回的精确 ID；目录产品有界并发 fan-out。 |
 | `report.shared_to_me.list` | `draft`（账号级明确空） | 2026-08-16 最小第一页 HTTP 200 空。固定 path/body 无 App 输入，认证上下文只含账号/公司；既有 read confirmation 保留。 | `empty_sample`、`response_schema_unverified` | 由有共享项的账号取得 1 个非空 item。 |
-| `report.subscribe.list` | **`stable v1`（已晋升）** | 先创建 marker-owned v3 父报表，再创建 disabled、`send_way=[]`、无收件人的订阅；列表非空读回并登记 23 个观察字段。请求仍为账号级 `{page,page_size,filters}`；删除后列表确认空。 | 无开放 promotion blocker；`subscribe/test` 明确未调用。 | 由 `report_subscriptions` Core/CLI/SDK/Plan/Agent 消费；未知新增字段继续 additive drift fail-closed。 |
+| `report.subscribe.list` | **`stable v1`（已晋升）** | 先创建 marker-owned v3 父报表，再创建 disabled、`send_way=[]`、无收件人的订阅；列表非空读回并登记 23 个观察字段。请求仍为账号级 `{page,page_size,filters}`；删除后列表确认空。2026-08-17 双账号完整响应对照：高低权限均为 `code=0 / list=[] / page_info.total_number=0`，无 extra/scope 回显，权限型空与真空不可区分。 | 无开放 promotion blocker；`subscribe/test` 明确未调用。 | 由 `report_subscriptions` Core/CLI/SDK/Plan/Agent 消费；未知新增字段继续 additive drift fail-closed。空结果须对照 `gravity apps permission-profile`，不得当成租户没数据。 |
 | `report.media_report.list` | `draft`（当前账号在已试窗下明确空） | 2026-08-16 用当天窗口、无平台筛选、`page_size=1` 对 catalog 的 7/7 App 各发 1 次，均 HTTP 200 空。2026-08-17 用 `2026-07-17..2026-08-16`、字符串 `app_id`、无 `ad_platform`、`page_size=1` 再枚举 7/7，另省略 `app_id` 1 次，均 HTTP 200 / `code=0` / `data.list=[]`；再把右端扩到 `2026-08-17` 并省略 App 1 次，结果相同。未枚举具体平台值。 | `empty_sample`、`response_schema_unverified` | 由另一个有媒体报表的租户复用同形状取得 1 个非空 item；当前账号不必再以无平台筛选重复枚举已试窗。 |
 | `app.project.list` | `draft`（账号级明确空） | 2026-08-16 唯一一次最小第一页 POST 为 HTTP 200 空。固定 path/body 只有筛选与分页，无 App 输入，认证上下文只含账号/公司；App 枚举不适用。 | `empty_sample`、`response_schema_unverified` | 由具备可读项目的账号取得 1 个非空 item。 |
 | `app.project_auth.detail` | `draft` | 1 次稳定父请求、0 次目标请求；父资源返回空候选，子请求未发送；无目标样本，分页未验证；父绑定未解析。 | `parent_resource_required`、`probe_inconclusive`、`response_schema_unverified` | 由 `analysis.account_user.list` 提供 1 个可读候选，仅以内存传给 1 次目标请求；没有父候选时继续跳过。 |
@@ -156,11 +156,13 @@ additive fail-closed。该 operation 晋升 stable 并闭环五面产品，不�
 
 ## 2026-08-13 追加判定：变现明细（D27，字段边界已于 2026-08-15 推翻）
 
-`analysis.monetization_detail.list` 保持 stable 且未改 wire，本轮 0 次网络请求。已批准投影由产品层
+`analysis.monetization_detail.list` 保持 stable 且未改 wire。已批准投影由产品层
 固定 fields allowlist、`re_attribute_info` 嵌套 allowlist 和逐结果重建强制；未知字段默认隐藏，
 用户/设备字段不能经参数、Plan binding、Agent 卡、产品 raw 结果或错误收据打开。Core/CLI/SDK/Plan/Agent
 card 已闭环，原自然语言固定 gap 仅对批准形状解除。D28 聚合未实现，`app.monetization_app.list`
-仍是独立 draft，其账户绑定与非空响应 blocker 不因 D27 关闭。
+仍是独立 draft，其账户绑定与非空响应 blocker 不因 D27 关闭。2026-08-17 双账号完整响应对照：
+高低权限均为 `code=0 / list=[] / page_info.total_number=0 / extra 缺省`，权限型空与真空不可区分；
+空结果须对照 `gravity apps permission-profile`。
 
 ## 2026-08-13 追加判定：数据表 schema 三条路由
 

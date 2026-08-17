@@ -158,7 +158,7 @@ SQLite 中构建，全部成功才原子替换默认 catalog；失败保留旧�
 | Order split trace | `gravity analysis order trace --app <alias\|id> --date ... --trace-id ...` | `order_split_trace()` | 完整有界扫描单日父订单，按 TraceID 本地精确匹配唯一父行，再严格后置读取拆单明细；结果不含任何标识 |
 | Segment snapshot | `gravity analysis segment snapshot --app <alias|id> --ref <id-or-exact-name> --date <YYYY-MM-DD>` | `segment_snapshot()` | 精确解析一个分群后固定读取 detail、history、daily_result；不返回成员或规则定义 |
 | App snapshot | `gravity apps snapshot --app <alias|id>` | `app_snapshot()` | app detail、realtime event、capacity、permission menu、role、template，共 6 个来源 |
-| Account permission profile | `gravity apps permission-profile` | `account_permission_profile()` | 当前账号角色、权限菜单树和 `data_permission` 模块；不裁剪结果，也不把空查询判成权限失败 |
+| Account permission profile | `gravity apps permission-profile` | `account_permission_profile()` | 当前账号角色、权限菜单树和 `data_permission` 模块；不裁剪结果。分群/报表/订阅/变现明细空结果与权限裁剪空集不可区分时，用本产品对照菜单与数据权限模块 |
 | Attribution snapshot | `gravity attribution snapshot --app <alias|id>` | `attribution_snapshot()` | 当前 8 个 stable attribution 配置 operation |
 | Attribution performance | `gravity attribution performance --app <alias|id> --start ... --end ...` | `attribution_performance()` | 同一 stable v1 operation 的四个前端固定画像；一次 bounded batch，明确空与未知语义错误分离 |
 | User journey | `gravity analysis user journey --app ... --client-id ...` | `user_journey()` | 单用户 profile、event timeline、postback 三个受控来源；显式分页 |

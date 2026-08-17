@@ -38,6 +38,7 @@ from .segment_snapshot_inputs import (
     positive_id as _positive_id,
     validate_segment_snapshot_request,
 )
+from .account_permission_profile import PERMISSION_EMPTY_NEXT_ACTION
 from .actionable_error_values import actual_value
 
 
@@ -225,7 +226,11 @@ def _resolve_identity(
     raise InputValidationError(
         "segment ref does not match an exact segment id or name",
         field="ref",
-        next_action="Inspect the segment catalog and retry with an exact id or name.",
+        next_action=(
+            PERMISSION_EMPTY_NEXT_ACTION
+            if not identities
+            else "Inspect the segment catalog and retry with an exact id or name."
+        ),
     )
 
 

@@ -3523,7 +3523,7 @@
       "auth_profile": "gravity_authorization",
       "block_reason": null,
       "contract_version": "3",
-      "description": "单日变现明细；固定产品读取完整已登记字段，raw fields 仍由 live metadata 校验，用户与设备字段可用于结构化筛选。",
+      "description": "单日变现明细；固定产品读取完整已登记字段，raw fields 仍由 live metadata 校验，用户与设备字段可用于结构化筛选。空结果与权限裁剪空集不可区分；若不确定权限，先运行 gravity apps permission-profile。",
       "domain": "analysis",
       "executable": true,
       "input_fields": [
@@ -6742,7 +6742,7 @@
       "auth_profile": "gravity_authorization",
       "block_reason": null,
       "contract_version": "2",
-      "description": "用户分群定义列表；返回创建人与更新人字段、分群配置状态及聚合人数，未证实的 origin_query 仍省略。",
+      "description": "用户分群定义列表；返回创建人与更新人字段、分群配置状态及聚合人数，未证实的 origin_query 仍省略。空结果与权限裁剪空集不可区分；若不确定权限，先运行 gravity apps permission-profile。",
       "domain": "analysis",
       "executable": true,
       "input_fields": [

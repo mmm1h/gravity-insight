@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 from gravity_sdk import GravitySDK
 from gravity_sdk.account_permission_profile import (
+    PERMISSION_EMPTY_NOTE,
     ROLE_DETAIL_OPERATION_ID,
     SCHEMA_VERSION,
     account_permission_profile,
@@ -48,6 +49,7 @@ class AccountPermissionProfileTests(unittest.TestCase):
              result["assigned_role_names"], result["menu_names"]),
         )
         self.assertEqual("Report_Report", result["data_permission_modules"][0]["effect_module"])
+        self.assertEqual(PERMISSION_EMPTY_NOTE, result["empty_result_note"])
         self.assertEqual(ROLE_DETAIL_OPERATION_ID, client.calls[1][0]["operation_id"])
         missed = account_permission_profile(_Client("404"), max_items=8)
         self.assertEqual((False, 0, "parent_required"), (

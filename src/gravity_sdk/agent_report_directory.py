@@ -24,7 +24,11 @@ REPORT_DIRECTORY_CAPABILITY: Mapping[str, Any] = {
     "name": REPORT_DIRECTORY_NAME,
     "domain": "report",
     "aliases": ("report directory", "report definitions", "报表目录", "报表定义"),
-    "description": "读取账号自有报表目录，并按内存中的精确 ID 下钻完整定义。",
+    "description": (
+        "读取账号自有报表目录，并按内存中的精确 ID 下钻完整定义。"
+        "空结果与权限裁剪空集不可区分；若不确定权限，先运行 "
+        "`gravity apps permission-profile`。"
+    ),
     "required_inputs": (),
     "input_schema": {},
 }
@@ -33,7 +37,11 @@ REPORT_SUBSCRIPTIONS_CAPABILITY: Mapping[str, Any] = {
     "name": REPORT_SUBSCRIPTIONS_NAME,
     "domain": "report",
     "aliases": ("report subscriptions", "subscription list", "报表订阅", "订阅清单"),
-    "description": "读取账号级报表订阅清单。",
+    "description": (
+        "读取账号级报表订阅清单。"
+        "空结果与权限裁剪空集不可区分；若不确定权限，先运行 "
+        "`gravity apps permission-profile`。"
+    ),
     "required_inputs": (),
     "input_schema": {},
 }

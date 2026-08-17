@@ -143,6 +143,9 @@ class SegmentSnapshotTests(unittest.TestCase):
         ])
         with self.assertRaises(PaginationError):
             segment_snapshot(bounded, 17, 8, date="2026-08-12", max_items=4)
+        with self.assertRaises(InputValidationError) as empty_catalog:
+            segment_snapshot(_Client(_catalog()), 17, 8, date="2026-08-12")
+        self.assertIn("permission-profile", empty_catalog.exception.next_action)
 
 
 if __name__ == "__main__":
