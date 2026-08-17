@@ -850,5 +850,5 @@ class GravityInsightNonemptyTests(unittest.TestCase):
             ROOT / "src" / "gravity_sdk" / "contracts" / "drafts"
         )
 
-        # app-info 已取得 schema 并移出 empty-sample 集合；其成功读取仍未成立。
-        assert len(operation_ids) == 116
+        # 快手计划/创意本轮 confirmed-read 后从参数错误转入 empty-sample。
+        assert len(operation_ids) == 118
