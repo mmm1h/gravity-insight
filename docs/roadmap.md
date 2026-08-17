@@ -5988,3 +5988,61 @@ segment spec 标量 values、funnel `global_conditions` 用户属性）。凭据
 `plan_adapters.py` 13，以及 `_input` / `_date_error` / `_app_id_error` 这类缺 `field=`
 的 helper。质量门禁未放宽：新文件仍 ≤500；`catalog.py` / `cli.py` / `client.py` 的 AST
 增长记入 ledger，硬顶未抬。生产 HTTP **0**。不 push、不碰 GitHub。
+
+## 活宿主 selector 插件（2026-08-17，只证明 development）
+
+**目的：**给 custodian 一次不可重来的配对 holdout 准备一个能现场选题的活插件。
+不切默认、不改评测装置/题集/评分/层定义/阈值、不读 key、不看 sealed、不跑
+holdout/final/all。Gravity 生产 HTTP **0**。
+
+**插件：**`scripts/agent_usability_host_selector.py`。子进程从 stdin 读整份
+`gravity.agent-external-selector-request.v1`，当场选，stdout 写
+`gravity.agent-external-selector-response.v1`。不是答案回放。
+`plugin_sha256=49cff6f2e6337c52a119d6e3f3a1e5485b0ec62ff0b8f479563e5d59b464c665`，
+`metadata.selector=anthropic-compatible/claude-sonnet-4-6/host-selector.v1`。
+
+**调用方式：**本机已配置的 Anthropic-compatible gateway
+（`ANTHROPIC_BASE_URL` + `ANTHROPIC_AUTH_TOKEN`），Messages `2023-06-01`、
+`claude-sonnet-4-6`、temperature 0、max_tokens 24,000、强制单一
+`submit_catalog_selections` tool。每个 trial 一次批量 Messages，新子进程、
+无跨 trial 记忆、无本地答案缓存。选批量而不是逐题，是因为默认
+`--selector-timeout` 120 秒/trial，上次干净臂 336 题约 87 秒；逐题会让 240 题
+holdout 整趟超时。瞬时 429/5xx/传输失败最多 3 次、退避 2s/5s；缺凭据、
+耗尽重试、畸形输出、缺 id、目录外 selector 一律非零退出。不按题静默弃权——
+不可重来的 holdout 上，空选择会把分数虚低。
+
+**发给谁、发了什么：**题面和目录摘要发到该 compatible gateway 的
+`/v1/messages`，模型 `claude-sonnet-4-6`。载荷是匿名 `id` + `query`，加上
+catalog 的 selector/source/name/description/stability/executable（development
+为 329 个能力、10 个分类）。插件不落盘、不记日志。网关/厂商是否留存无法从
+本仓库观测；该 endpoint 是明文 HTTP，不是可独立认证的官方 TLS。
+
+**canonicalize 覆盖：**插件在 `json.load(sys.stdin)` 后用与 stub 相同的
+`json.dumps(..., ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")`
+重算 `request_sha256`。单测把 UTF-8 字节按 GBK `surrogateescape` 误解码后再
+canonicalize，复现原 `UnicodeEncodeError`；development 四 trial 的
+`request_sha256` 均被 harness 核过且相同，`stdin_encoding=utf-8`。
+
+**development 实测（4 trial，355.8s）：**
+
+| 层 | recognizer 基线 | 活宿主插件 |
+| --- | ---: | ---: |
+| 首次产品选择 | `251/336` | **`329/336`** |
+| 参数可填 | （本轮未重跑） | `261/275` |
+| 离线终点 | （本轮未重跑） | `56/60` |
+| 错误恢复 | `5/5` | `5/5` |
+| 安全 | PASS / 0 | PASS / 0 |
+| selection pass^4 | — | `329/336` |
+| 选择不稳定题 | — | `0` |
+
+失败机械分类：`wrong_gap 4`、`wrong_intent_candidates 2`、`wrong_product 1`。
+终点 4 个失败都是 `target_gap_missing`。参数 14 个 `input_template_missing`、
+8 个 `route_not_reached`。四 trial 选择集合完全相同；这是 temperature 0 的
+单次批量调用，不能写成四次独立模型稳定性。宿主调用 **4** 次（另有 1 次
+1 题通路探测，不计分）。Gravity HTTP 0，父进程 socket 0。
+
+这是 development 证据，不是 holdout，也不是切默认的许可。
+
+**计数：**不新增动线/operation/卡/gap。`56 = 50 / 1 / 5`、`233 / 224 / 92 / 7 / 329`
+均未改。错误审计保持 `1225 = A833 / B23 / C369`。生产 HTTP **0**。
+不 push、不碰 GitHub。
