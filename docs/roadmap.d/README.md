@@ -86,3 +86,4 @@
 - [F41 数据表 schema：绑定投放中 App 后仍无活表](f41-data-table.md) — 2026-08-18：list 七种形状明确空，日志 table_id 对 detail 为 1004 / not exist。
 - [blob 下载路径 5 条疑似 bug](blob-bugs.md) — 核实 #175 留下的 5 条下载疑点
 - [为什么还没到 95%](gap-to-95.md) — 4 条租户不可达与 52/56 上限；条件不在 SDK 侧。
+- [导出宽问法：不建 dispatcher](export-wide-dispatcher.md) — 七个子类输入不可互换，宽问法 gap 是正确澄清，不建统一导出产品。
