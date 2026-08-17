@@ -1,0 +1,84 @@
+{
+  "conclusion": "success",
+  "http": [
+    {
+      "http_status": 200,
+      "method": "GET",
+      "operation_id": "app.app_info.get",
+      "path": "/turbo_engine/api/v1/user/open_app/fetch_app_info/",
+      "purpose": "caller_supplied_public_store_url",
+      "raw_schema_fingerprint": "1e615451793566d51d3c2f73c7bcb8d9b23f0380111cdc41285551e9bd0b02f8",
+      "request_fingerprint": "ee2b4ade5e782b358ee08129c3cd31146ba3dfd9186c6b09e56f562496df03c6",
+      "request_shape": {
+        "paths": [
+          {"path": "$", "presence": "observed", "types": ["object"]},
+          {"path": "$.body", "presence": "observed", "types": ["object"]},
+          {"path": "$.query", "presence": "observed", "types": ["object"]},
+          {"path": "$.query.url", "presence": "observed", "types": ["string"]}
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      },
+      "response_schema_sketch": {
+        "paths": [
+          {"path": "$", "presence": "observed", "types": ["object"]},
+          {"path": "$.code", "presence": "observed", "types": ["integer"]},
+          {"path": "$.data", "presence": "observed", "types": ["object"]},
+          {"path": "$.data.app_id", "presence": "observed", "types": ["string"]},
+          {"path": "$.data.icon_url", "presence": "observed", "types": ["string"]},
+          {"path": "$.data.image_data", "presence": "observed", "types": ["string"]},
+          {"path": "$.data.name", "presence": "observed", "types": ["string"]},
+          {"path": "$.data.package_name", "presence": "observed", "types": ["string"]},
+          {"path": "$.data.platform", "presence": "observed", "types": ["string"]},
+          {"path": "$.data.version", "presence": "observed", "types": ["string"]},
+          {"path": "$.extra", "presence": "observed", "types": ["null"]},
+          {"path": "$.msg", "presence": "observed", "types": ["string"]}
+        ],
+        "schema_version": "gravity-insight.raw-schema-sketch.v1"
+      }
+    }
+  ],
+  "operation_id": "app.app_info.get",
+  "pagination": {
+    "kind": "none",
+    "total_field_path": null,
+    "upstream_hard_max": null,
+    "verified": true
+  },
+  "privacy": {
+    "candidate_fields": [
+      {"classification_reason": "upstream_authorized_public_app_metadata", "expose": true, "path": "data.app_id", "presence": "observed", "privacy_classification": "non_sensitive", "types": ["string"]},
+      {"classification_reason": "upstream_authorized_public_app_metadata", "expose": true, "path": "data.icon_url", "presence": "observed", "privacy_classification": "non_sensitive", "types": ["string"]},
+      {"classification_reason": "upstream_authorized_public_app_metadata", "expose": true, "path": "data.image_data", "presence": "observed", "privacy_classification": "non_sensitive", "types": ["string"]},
+      {"classification_reason": "upstream_authorized_public_app_metadata", "expose": true, "path": "data.name", "presence": "observed", "privacy_classification": "non_sensitive", "types": ["string"]},
+      {"classification_reason": "upstream_authorized_public_app_metadata", "expose": true, "path": "data.package_name", "presence": "observed", "privacy_classification": "non_sensitive", "types": ["string"]},
+      {"classification_reason": "upstream_authorized_public_app_metadata", "expose": true, "path": "data.platform", "presence": "observed", "privacy_classification": "non_sensitive", "types": ["string"]},
+      {"classification_reason": "upstream_authorized_public_app_metadata", "expose": true, "path": "data.version", "presence": "observed", "privacy_classification": "non_sensitive", "types": ["string"]}
+    ],
+    "classified_non_sensitive": 7,
+    "classified_sensitive": 0,
+    "manual_review": 0,
+    "values_persisted": false
+  },
+  "probed_at": "2026-08-17T06:40:52Z",
+  "projected_schema_fingerprint": null,
+  "raw_schema_fingerprint": "1e615451793566d51d3c2f73c7bcb8d9b23f0380111cdc41285551e9bd0b02f8",
+  "request_stats": {
+    "backoff_terminations": 0,
+    "failed": 0,
+    "total": 1
+  },
+  "required_parent": null,
+  "route": {
+    "family": "app.app_info.get",
+    "method": "GET",
+    "path": "/turbo_engine/api/v1/user/open_app/fetch_app_info/"
+  },
+  "schema_version": "gravity-insight.probe-evidence.v1",
+  "semantic_errors": {
+    "missing_parameter": {"attempted": false, "shape_observed": false},
+    "parameter_adjustments": [],
+    "permission_shape_observed": false,
+    "rules": ["code", "data.error", "extra.error"]
+  },
+  "successful": true
+}

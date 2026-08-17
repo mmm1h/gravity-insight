@@ -8,9 +8,9 @@ manifest 与 `gravity agent <query>` 为准；完整路由账本见
 
 | 范围 | 当前状态 |
 | --- | --- |
-| 编译 operation | 231（原 205 + Kanban 18 + 当前自定义指标 3 + 事件/属性模板 4 + 保存分析 1） |
-| stable operation | 222（185 read / 37 governed mutation） |
-| stable read operation 产品面交叉 | 94 已覆盖 / 82 不应产品化 / 8 原快照待产品化；默认值字典、D35、F40、报表目录与订阅已直接闭环 |
+| 编译 operation | 232（原 205 + Kanban 18 + 当前自定义指标 3 + 事件/属性模板 4 + 保存分析 1 + 公开 App 信息 1） |
+| stable operation | 223（186 read / 37 governed mutation） |
+| stable read operation 产品面交叉 | 95 已覆盖 / 82 不应产品化 / 8 原快照待产品化；公开 App 信息、默认值字典、D35、F40、报表目录与订阅已直接闭环 |
 | 推广 / 素材 stable 原子读取 | 64 / 24 |
 | Census 路由 | 冻结 Web-entry 静态快照内 987，快照内全部有明确归类；不是平台总路由 |
 | Census 中 callable covered route | 210 |
@@ -25,13 +25,14 @@ argv，也不能进入 stable manifest。
 [Census 完整性与分母审计](research/census-completeness-audit.md)。本页所有 Census 分解都只在该冻结
 集合内成立；未出现的能力不能据此判为平台不存在。
 
-stable 同样不等于已有分析产品：既有正向交叉只统计 176 条 stable read operation，
+stable 同样不等于已有分析产品：既有正向交叉是晋升前快照；本轮新增的 `app.app_info.get` 已由
+公开 URL 成功合同直接闭环，
 `gravity run <operation-id>`、legacy promotion snapshot 和 SDK inventory snapshot 均不算分析动线。
 实现前完整交叉为 `86 / 82 / 8`；8 条中只有 `report.company_amount.query` 同时具备成功非空与
 分页证据、清晰独立语义和已批准投影，因此已通过 `reports usage` / SDK / Plan / Agent 四面闭环。
 其余 7 条的边界与 blocker 以 [路线图](roadmap.md#stable-operation-正向交叉2026-08-14) 为准。
 2026-08-16 另将多 App 复验取得非空 shape 的 `analysis.default_val.list` 晋升并闭环默认值字典，
-所以当前交叉计数相对该历史快照增加 1 条“已覆盖”。
+所以当时交叉计数相对该历史快照增加 1 条“已覆盖”；本轮 `app.app_info.get` 再增加 1 条。
 
 ## 其余 155 条未覆盖读路由逐条复核（2026-08-16）
 

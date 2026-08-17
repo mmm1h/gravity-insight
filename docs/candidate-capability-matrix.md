@@ -2,12 +2,13 @@
 
 本矩阵记录 17 项候选能力在 2026-08-12 受控只读探测后的真实状态，并原位追加 2026-08-14 至
 2026-08-16 的后续取证结论，供开发决策使用。仓库当前基线为
-[231 个 operation、其中 222 个 stable operation](capability-coverage.md)：185 条 stable read 加
+[232 个 operation、其中 223 个 stable operation](capability-coverage.md)：186 条 stable read 加
 37 条逐项治理的 mutation（7 条 Segment、5 条报表/订阅、18 条 Kanban、2 条自定义指标、
 4 条事件/属性模板和 1 条保存分析）；写 operation 不是本矩阵的 read candidate，
 但本页追加其解锁读合同的生产证据。
 
-`analysis.default_val.list`、D35、F40、`report.report.list/detail` 与 `report.subscribe.list` 已晋升，其余候选
+`analysis.default_val.list`、D35、F40、`report.report.list/detail`、`report.subscribe.list` 与
+`app.app_info.get` 已晋升，其余候选
 保持原位；`analysis.setting.query`
 保留在 draft 台账但 `effect=mutation`，其他未晋升候选仍是 read draft，promotion gate 均未满足。
 表中的“下一步最小证据”表示继续判断所需的最小输入，不代表晋升计划或交付承诺。候选在线验证
@@ -35,7 +36,7 @@ Kanban 追加取证同样只走产品级两步治理。两条显式 `*.share` �
 | `app.project_auth.detail` | `draft` | 1 次稳定父请求、0 次目标请求；父资源返回空候选，子请求未发送；无目标样本，分页未验证；父绑定未解析。 | `parent_resource_required`、`probe_inconclusive`、`response_schema_unverified` | 由 `analysis.account_user.list` 提供 1 个可读候选，仅以内存传给 1 次目标请求；没有父候选时继续跳过。 |
 | `app.onelink.list` | `draft` | 共 5 次请求，其中父资源 2 次、目标 3 次；父绑定已解析且值仅在内存使用；目标 HTTP 200、空样本；`page_info`、第二页行为和安全页上限已验证。 | `empty_sample`、`response_schema_unverified` | 复用已证明的稳定父绑定取得 1 个非空目标样本，再审查 item schema；无需扩大父资源搜索范围。 |
 | `app.monetization_app.list` | `draft` | 本轮 0 次请求；沿用既有空样本；草案声明 `page_info`，本轮未复核；无父绑定。 | `empty_sample`、`response_schema_unverified` | 先证明账户与变现平台参数的可信来源，再以第一页最小请求取得 1 个非空样本；不得猜测账户或平台值。 |
-| `app.app_info.get` | `draft` | 本轮 0 次请求；沿用既有空样本；分页为 `none`，本轮未复核；无父绑定。 | `empty_sample`、`response_schema_unverified` | 从已存在的前端调用证据获得 1 个真实且可公开处理的 URL 绑定，再做 1 次最小读取并审查返回字段。 |
+| `app.app_info.get` | **`stable v1`（已晋升）** | 调用方第 1 条公开 App Store URL 的唯一 GET 为 HTTP 200 / `code=0/msg=成功`，无重试；成功非空字段为 `app_id/icon_url/image_data/name/package_name/platform/version`，分页实测 `none`。旧 error-shaped 样本的 `error` 同样登记。 | 无 promotion blocker；OneLink 目录的账号级空事实单独保留，未用作成功绑定。 | CLI/SDK/Plan/Agent 共用 raw operation；`data.error` 离散为 caller 可恢复的 semantic error，新增字段继续 fail-closed。 |
 | `app.user_auth.list` | `draft` | 3 次目标请求；HTTP 200、空样本；`page_info`、第二页行为和安全页上限已验证；无父绑定。 | `empty_sample`、`response_schema_unverified` | 在具备可读授权记录的环境取得 1 个非空样本，并重点审查权限、身份和个人信息字段，默认不暴露未知字段。 |
 | `attribution.attribution.query` | `stable v1`（D35 已闭环） | hash-matched `Measurement` bundle 完整证明 14 个恒发字段、`project_id/dims_metrics_list` 两条条件省略、八个恒发筛选数组和四个有限调用画像。生产 1 次 App catalog + 2 次单日目标 POST：首 App 明确空，第二 App 非空后停止；均 HTTP 200，无重试、翻页或扩窗。 | 无 promotion blocker；旧 evidence 未保存具体 error 正文，不能追认字段拒绝。新证据证明 `extra.error=无数据` 是 `code=0/msg=成功` 的明确空。 | 由 Core/CLI/SDK/Plan/Agent `attribution_performance` 消费；未知 semantic error 继续 fail-closed。 |
 
@@ -116,8 +117,8 @@ additive fail-closed。该 operation 晋升 stable 并闭环五面产品，不�
 | 查看报表订阅清单 | **明确空 / item schema 阻塞** | `reportSubscribe` 的 read confirmation 已登记；prober 对精确确认路径放行。本轮唯一 1 次最小第一页请求 HTTP 200、`data.list=[]`，未额外翻页，未知订阅字段继续隐藏。 | 在有订阅项的租户复用同形状取得 1 个非空 item，再单独判断分页与投影。 |
 | 查找可用的媒体报表 | **明确空 / item schema 阻塞** | Bundle 已恢复 `AppSelect` 与有限平台选项绑定，空选择省略；列表装载、分页和响应消费证明 read，confirmation 已登记。本轮当天最小请求 HTTP 200、明确空。 | 在有媒体报表的租户复用同形状取得 1 个非空 item，不猜 App 或平台值。 |
 | 查找当前账号可读的 App 项目 | **合同阻塞** | `app.project.list` 被读语义闸门拦截；旧空 receipt 虽证明分页壳，但 `method_verified=false`，不能排除请求合同或语义问题，也就不能定为数据阻塞。 | 分析 `appManageIndex-DCdX2wdf.js` 的列表装载与响应消费，登记静态读证据后做 1 次最小第一页 probe。 |
-| 查看 App 的 OneLink 与公开信息绑定 | **合同阻塞** | `app.onelink.list` 是 GET，稳定父绑定、分页和重复空目标已证明，当前账号没有可供下钻的 OneLink 项；但 `app.app_info.get` 虽也是 GET，历史 probe 使用的 URL 没有可信 caller 绑定，响应合同也未证实。组合动线仍卡合同。 | 从 appManage bundle 恢复 `fetch_app_info` 的 URL 来源与有效值约束，再用调用方提供的公开测试 URL 做 1 次最小 GET。 |
-| 按平台、广告位和日期汇总变现结果（D28） | **合同阻塞** | `app.monetization_app.list` 被读语义闸门拦截；`account/monetization_platform` 的来源和值域未绑定，旧空 receipt 不能证明请求有效，且非空 item schema 未成立。 | 分析 csj/tobid bundle 中 account 与平台的来源和列表消费；形成 read confirmation 后才做 1 次 `page=1/page_size=1` probe。 |
+| 查看 App 的 OneLink 与公开信息绑定 | **已闭环** | `app.onelink.list` 的既有稳定父链继续证明当前账号明确空；调用方提供的第 1 条 App Store URL 使 `app.app_info.get` 首次取得 HTTP 200 / `code=0` 成功非空合同，并登记全部成功字段和旧 `error` 字段。 | 维持 stable live probe；若 Google Play 成功形状出现新字段，按 additive drift 登记并暴露。 |
+| 按平台、广告位和日期汇总变现结果（D28） | **合法输入明确空 / item schema 阻塞** | current turbo metric route 返回 6 个 `monetization_report/is_media=false` 指标；当前 role permission route 成功空。主 route 依次证明 App 必填、filter operator 必须为字符串；首个合法 App与默认 7 日窗最终 `code=0/list=[]/page_info.total=0/total={}`。 | 当前租户不为找非空切换 App 或扩窗；由另一个有 D28 数据的合法 App/租户复用同形状取得 1 个非空 item/total。 |
 
 **闸门命中：** `report.masterkey_report_group.list`、`report.report.list`、
 `report.shared_to_me.list`、`report.subscribe.list`、`report.media_report.list`、

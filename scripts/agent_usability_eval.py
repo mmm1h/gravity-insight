@@ -86,6 +86,7 @@ ROUTES: dict[str, dict[str, str]] = {
         "kind": "composite", "composite": "analysis_default_dictionary",
     },
     "app_catalog": {"kind": "operation", "selector": "app.list"},
+    "app_public_info": {"kind": "operation", "selector": "app.app_info.get"},
     "report_directory": {"selector": "composite:report_directory"},
     "report_subscriptions": {"selector": "composite:report_subscriptions"},
     "attribution_performance": {

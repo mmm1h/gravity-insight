@@ -1,7 +1,7 @@
 # 分页合同逐 operation 审计（2026-08-17）
 
-基线 `f798d396f01da2ed00405d54da85cceea636aaef`；共 231 条。
-基线声明：`page_info=119`、`none=112`。
+基线 `f798d396f01da2ed00405d54da85cceea636aaef` 的 231 条已逐项审计；本轮新增 1 条自带生产证据，当前共 232 条。
+当前声明：`page_info=119`、`none=113`。
 119 条 `page_info`：A=59、B=1、未知=59。
 形状只由生产响应或精确 wire 消费字段判定；合同自身不能给自己提升证据等级。
 
@@ -80,6 +80,7 @@
 | `analysis.user_postback_log.list` | `none` | `not_page_info` | 仅模板默认 | src/gravity_sdk/contracts/operations/analysis.user_postback_log.list.json#/operation/pagination | `collection_completeness_unknown` / `silent_completeness_risk` |
 | `analysis.user_property.list` | `page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=100, max_page_size=2000)` | `unknown` | 仅模板默认 | src/gravity_sdk/contracts/operations/analysis.user_property.list.json#/operation/pagination | `shape_unknown` / `no_high_risk_signal_observed` |
 | `analysis.user_property_value.list` | `none` | `not_page_info` | 仅模板默认 | src/gravity_sdk/contracts/operations/analysis.user_property_value.list.json#/operation/pagination | `collection_completeness_unknown` / `silent_completeness_risk` |
+| `app.app_info.get` | `none` | `not_page_info` | 生产实测 | evidence/probe/20260817T064052Z_app.app_info.get.yaml | `no_page_info_in_observed_response` / `no_high_risk_signal_observed` |
 | `app.capacity.get` | `none` | `not_page_info` | 生产实测 | evidence/probe/20260811T050921Z_app.capacity.get.yaml<br>evidence/probe/20260811T071537Z_app.capacity.list.yaml | `no_page_info_in_observed_response` / `no_high_risk_signal_observed` |
 | `app.capacity.list` | `page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)` | `A` | 生产实测 | evidence/probe/20260811T071537Z_app.capacity.list.yaml | `shape_verified` / `no_high_risk_signal_observed` |
 | `app.detail` | `none` | `not_page_info` | 仅模板默认 | src/gravity_sdk/contracts/operations/app.detail.json#/operation/pagination | `not_collection_semantics` / `no_high_risk_signal_observed` |

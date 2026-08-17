@@ -139,7 +139,7 @@
 ## 已关闭结构债务
 
 Agent catalog 产品/gap 共源债务已关闭：渐进目录与宿主紧凑目录都从现有 card owner 程序化覆盖
-90/90 张 canonical 产品卡、投影 9/9 个登记 gap，并以双向 parity 门禁区分 product、raw operation 与
+91/91 张 canonical 产品卡、投影 8/8 个登记 gap，并以双向 parity 门禁区分 product、raw operation 与
 不可执行 gap；宿主目录排除 raw operation，候选另经 `gravity.host-source.v1` 校验，没有新增第二套
 registry。原唯一 J35 状态冲突归零。
 

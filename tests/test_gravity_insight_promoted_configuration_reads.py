@@ -132,6 +132,42 @@ class RecordingTransport:
 
 
 class PromotedConfigurationReadTests(unittest.TestCase):
+    def test_public_app_info_projects_success_and_rejects_error_shape(self) -> None:
+        class AppInfoTransport:
+            is_test_transport = True
+
+            def __init__(self, data: Mapping[str, Any]) -> None:
+                self.data, self.calls = dict(data), []
+
+            def request(self, method: str, path: str, **kwargs: Any) -> TransportResponse:
+                self.calls.append((method, path, kwargs))
+                return TransportResponse(200, {"code": 0, "data": self.data}, "now")
+
+        data = {
+            "app_id": "414478124", "icon_url": "https://example/icon.png",
+            "image_data": "", "name": "微信", "package_name": "com.tencent.xin",
+            "platform": "ios", "version": "8.0.75",
+        }
+        transport = AppInfoTransport(data)
+        client = GravityInsightClient._from_manifest_for_tests(
+            manifest("app.app_info.get"), transport=transport
+        )
+        result = client.read("app.app_info.get", {"url": "https://apps.apple.com/cn/app/id414478124"})
+        self.assertEqual(data, result["data"])
+        self.assertEqual("gravity-insight.read.v1", result["schema_version"])
+        self.assertEqual("raw_operation", result["result_source"]["tier"])
+        self.assertEqual(("GET", "/turbo_engine/api/v1/user/open_app/fetch_app_info/"), transport.calls[0][:2])
+        self.assertEqual(1, len(transport.calls))
+
+        failed = AppInfoTransport({"error": "fetch failed"})
+        client = GravityInsightClient._from_manifest_for_tests(
+            manifest("app.app_info.get"), transport=failed
+        )
+        error = client.read("app.app_info.get", {"url": "https://apps.apple.com/cn/app/id0"})
+        self.assertEqual("semantic_error", error["status"])
+        self.assertEqual("INPUT_INVALID", error["error"]["code"])
+        self.assertEqual(1, len(failed.calls))
+
     def test_verified_routes_pagination_and_projection(self) -> None:
         for operation_id, case in CASES.items():
             with self.subTest(operation_id=operation_id):

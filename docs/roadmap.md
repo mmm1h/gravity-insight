@@ -14,20 +14,21 @@
 
 ## 现状
 
-当前从仓库产品入口与 stable operation 正向交叉反推 56 条产品动线：**已闭环 48 / 部分闭环 1 / 完全缺失 7**；
-另有 2 条 legacy/SDK 便利面、1 条重复能力审计行和 1 条已有结果上的调用方派生便利面保留，
-但不计产品动线。表格 60 行减去 4 条“不计独立动线”得到 56 条。设置 → 应用管理把
+当前从仓库产品入口与 stable operation 正向交叉反推 56 条产品动线：**已闭环 49 / 部分闭环 1 / 完全缺失 6**；
+另有 2 条 legacy/SDK 便利面、1 条重复能力审计行、1 条已有结果上的调用方派生便利面和 1 条既有
+语义组合调查编排便利面保留，但不计产品动线。表格 61 行减去 5 条“不计独立动线”得到 56 条。设置 → 应用管理把
 `51 = 42 / 1 / 8` 推进到 `51 = 43 / 1 / 7`，归因聚合与自定义指标再各新增一条闭环，故为
 `53 = 45 / 1 / 7`；事件/属性模板治理增加 1 条闭环，保存分析资产生命周期增加 1 条部分闭环，故为
 `55 = 46 / 2 / 7`；2026-08-17 保存分析真实聚合值补证后成为 `55 = 47 / 1 / 7`；
 受治理语义组合首片闭合已登记 `ap_cost` 的 total/day/week 与 `click_company` 拆分；同日 v2 又以
 前端 wire 和生产对照证明 dimension-bound `click_company IN` 可执行，并登记 3 个 day/week 指标，
 能力扩面但不新增产品动线；v3 又增加 9 个 day/week 成员并排除已证空的注册数，故仍为
-`56 = 48 / 1 / 7`。
-operation 为 **231**，stable 为 **222 = 185 read + 37 mutation**。
+`56 = 48 / 1 / 7`；本轮公开商店 URL 成功合同再把 OneLink/公开信息组合动线从完全缺失转为闭环，
+故为 **`56 = 49 / 1 / 6`**。
+operation 为 **232**，stable 为 **223 = 186 read + 37 mutation**。
 唯一部分闭环是 Analysis 导出：同日已闭合五个服务端子类（单用户事件加分群结果、分群用户明细、
 用户明细、付费事件），变现明细与原始事件导出仍是精确 gap；
-7 条完全缺失里多数是请求、响应或非空证据阻塞；字段隐私不再是阻塞项。
+6 条完全缺失里多数是请求、响应或非空证据阻塞；字段隐私不再是阻塞项。
 逐条状态、四面入口、调用次数和证据阻塞以[分析动线台账](analysis-journeys.md)为准；旧
 `21/14/6` 快照的逐条底稿未进入版本控制，无法复算，已停止作为排期事实。
 
@@ -5553,3 +5554,97 @@ ratchet `9099→8912`、`models.py` `8622→8518`，并删除已消失的 `valid
 为 **0/0 A**。`src/gravity_sdk` 新增 377 行、tests 新增 123 行，比例 **0.326**，低于三分之一。
 没有运行真实 holdout/final/all、读取 key 或修改评测装置/题集/评分；全量测试里的 protected 字样仍只
 来自隔离临时目录的 synthetic fixture。没有 GitHub、push、tag 或其他对外动作。
+
+## D28 与公开 App 信息缺失动线（2026-08-17）
+
+**提案与边界：**ignored 提案与静态底稿位于 `tmp/codex/missing-journeys/`。本轮只推进 D28 变现聚合
+和 OneLink/公开信息两条读动线；其余五条完全缺失动线未发请求、未改合同或状态。没有上游写、App
+切换找数据、日期扩窗、自动翻页、holdout/final/key、评测装置改动或 GitHub 动作。
+
+### D28：真实 wire 与三选一
+
+同一 hash 的三个公开 bundle 重新核验：`NewReportCenter-Dxgo5EkI.js` 为 402,619 bytes / SHA-256
+`eb8e91aa591d92271e3b9f0e8b23f371ffa61b18affb63e167735dd37c731f2b`；`api-B9xDXL35.js` 明确把
+`X` 绑定 `/turbo_engine/api/v3`、`je` 绑定 `/report/api/v3`；`report-table-DX9hp3vy.js` 为变现分支
+提供静态维度清单。结论是：**配置 route 已迁 turbo，主结果 route 没迁。**
+
+| 项目 | 当前 hash-matched 形状 | 旧 SDK / 旧探测差异 |
+| --- | --- | --- |
+| 指标配置 | `POST /turbo_engine/api/v3/confmetric/metric/list/`，body 为 `page=1/page_size=5000` 与 `data_topic EQUALS(1)`、`is_media EQUALS(1)` 两个 filter | `report.multidim.metric.list` 仍固定旧 `/report/api/v3/...`；旧 route 的拒绝/宽目录不能证明 current config |
+| 指标值域 | `is_media=false` 实测 6 个：`reporting_ad_cnt/reporting_ad_ecpm/reporting_ad_ipu/reporting_ad_revenue/reporting_ad_uv/reporting_standard_activate_cnt` | 旧 draft 只猜 `reporting_ad_revenue`，没有 current route 证据 |
+| 维度值域 | 静态 `day/os_family/click_company/monetization_platform/user_type/ad_type/app_id/ad_unit_id/bundle_id/channel` | 旧 draft 没记录完整静态来源 |
+| 权限 | `POST /turbo_engine/api/v3/confmetric/permission/list/`，当前 role IDs + `data_topic INNERS(6)`；实测成功空，不裁剪字段 | 旧主请求未先核当前 permission；空 permission item 不等于 403 |
+| 主结果 | `POST /report/api/v3/monetization_report/custom_get/`，九字段 body，无 query；App 实际必填 | path 与旧 draft 相同，错误在物理值与 filter wire |
+| 主 filter | 字符串 `"EQUALS"/"IN"` | metric/permission 的整数 1/6 不能复用；整数主 filter 被明确拒绝 |
+| 分页 | bundle 对完整 `data.list` 做客户端 slice；本次空响应另观察到 `data.page_info.total` | D28 未晋升，未来 operation 的分页声明仍须用自己的非空实测，不复制模板 |
+
+主 route 的三次有界参数学习严格保留同一默认窗口和指标/维度：无 App 返回 `code=1004 / 请传入合法的AppID`；
+首个合法 App 加整数 operator 返回 `code=1004 / 过滤字段条件不合法`；只把 operator 改为 bundle 原文
+`"EQUALS"` 后返回 HTTP 200 / `code=0/msg=成功`，data 完整字段为
+`data_dims/extra_data/list/page_info/time_dims/tips/total`，其中 `list=[]`、`page_info.total=0`、
+`total={}`、`tips=""`。因此本次三选一是**数据为空**：权限 route 没有拒绝，且参数被协议成功接受；
+不是权限不足或形状仍错。这个判定只覆盖首个合法 App 与前端默认 `2026-08-10..2026-08-16`，不能写成
+7/7 App 的全租户事实。按“不换 App 找数据”停止，D28 保留 gap；非空 item/total shape 不猜、不登记。
+
+`report.metric.list` 在同 route 原位提升 v3：补前端同形 `filters` 输入并把既有
+`exclusion_dims/tag_ids` 从隐藏项改为全部暴露；operation 数不因此增加。新增 permission route 的精确
+POST read confirmation 只放行该 path，控制流证据是把返回权限用于本地删减 columns/metrics，权限写入走
+独立账号中心控制。
+
+### OneLink 与公开信息
+
+OneLink 的既有稳定父链继续证明当前账号明确空，本轮没有重发，也没有拿空 OneLink 样本补成功合同。
+调用方按顺序提供的第 1 条 URL `https://apps.apple.com/cn/app/id414478124` 在唯一一次 GET 即返回
+HTTP 200 / `code=0/msg=成功`；按停止条件没有请求第 2 条抖音或第 3 条 Google Play。成功 data 字段为
+`app_id/icon_url/image_data/name/package_name/platform/version`；旧 error-shaped 样本的 `error` 也保留
+登记。所有八个观察字段全部暴露，没有 `known_omitted`。`image_data` 的合法空字符串与 `icon_url` 的
+非空字符串都按原类型返回，不因大小或字段名隐藏。
+
+`app.app_info.get` 晋升 stable v1，分页为自己的实测 `none`；`data.error` 先于投影映射为离散
+`semantic_error/INPUT_INVALID`。raw operation 由 CLI `gravity run`、Python SDK `read`、Plan operation
+node 与 Agent operation card 共同消费，结果为 `gravity-insight.read.v1` + `gravity.result-source.v1`；
+已知 URL 1 次调用，未知 URL 先 Agent 发现再执行共 2 次。J40 原 gap 删除，中英文冻结首问均离线命中
+`app.app_info.get`。
+
+### 生产 HTTP 账本与停手
+
+实际 **16 / 40**，OneLink **1 / 3**；全部 HTTP 200、attempt 1、`retry=false`。没有服务端重试、业务
+分页、扩窗或换 App；页号只出现在账号/指标/App 目录的唯一 page 1。公开 bundle GET 不计生产业务 HTTP。
+每累计 5 条在私有 receipt store 核过 sequence 1--5、6--10、11--15，最后第 16 条单独按 receipt ID
+核验。
+
+| # | operation / route | receipt | 结果 |
+| ---: | --- | --- | --- |
+| 1 | `authentication` POST `/account_center/api/v1/user_login/v2/` | `7a620cf4…` | token 刷新一次 |
+| 2--5 | `analysis.account_user.list` GET `/account_center/api/v1/user/list/` | `0e2f9888… / 5a4ee034… / f742b13c… / 411b6287…` | 本地脚本先误读 resolver `/data` 而非 `/result/data`；均 page 1，事实不采用 |
+| 6--7 | `report.metric.list` POST current turbo metric route | `ad79272c… / 6e4f4405…` | 第 6 条同样只因本地路径误读丢失值域；第 7 条取得 6 个指标与 A 形 `page_info` |
+| 8--9 | `analysis.account_user.list` GET | `fff6a637… / 33f4a5f2…` | 第 8 条证明公司 63 行；第 9 条以 `Gravity_Id → row.id` 唯一匹配 1 个 role；无翻页 |
+| 10 | `report.confmetric_permission.list` POST current turbo permission route | `751ead4a…` | `code=0/list=[]/total_number=0` |
+| 11 | `report.get.query` POST 主 route | `e354288e…` | 无 App：`请传入合法的AppID` |
+| 12 | `app.list` GET | `33309ecc…` | 只取首个合法 App，page 1 |
+| 13 | `report.get.query` POST 主 route | `e2fe2163…` | App + 整数 operator：`过滤字段条件不合法` |
+| 14 | `app.list` GET | `736a5b25…` | 同一首 App；因上一进程未持久化父值而重复一次，page 1 |
+| 15 | `report.get.query` POST 主 route | `f5c5aa2f…` | 字符串 `EQUALS`：协议成功、明确空 |
+| 16 | `app.app_info.get` GET `fetch_app_info` | `82c27b18…` | 第 1 条公开 URL 成功非空；OneLink 后两条未发 |
+
+账号目录和 current metric 的重复请求是两处本地结果路径解析错误造成，本可避免；它们全部计入账本，
+不改写成重试。证据不足而主动未做三项：D28 不枚举其余 App、不扩日期、不从空 response 猜 item/total；
+OneLink 不请求第 2/3 URL；五条明确排除的完全缺失动线 0 请求。
+
+**能力台账：**OneLink/公开信息状态变化一条：`56 = 48 / 1 / 7` → **`56 = 49 / 1 / 6`**；D28
+保持完全缺失。`app.app_info.get` 从 draft 晋升为新增 stable operation，故 operation/stable
+`231/222 → 232/223`（read `185→186`，mutation 37 不变）。canonical 产品卡因 J40 的同 selector
+产品身份 `90→91`，精确 gap `9→8`；扣除 `app.list` 与 `app.app_info.get` 两组卡/raw 同身份后 selector
+为 `232 + 91 + 8 - 2 = 329`，没有重复执行入口。
+
+**最终门禁：**unittest **`1150 + 1 = 1151 tests OK`**；pytest **`1151 passed / 3098 subtests
+passed`**，均高于 `30c682c` 的 1150 / 3092。compiler **232 operations / 11 manifests**；quality PASS
+（operations/provenance 232/232、operation literals 57），quality baseline 未修改或放宽。文档 **4 passed**、
+Agent 指南生成器 `--check`、CLI help 与 `git diff --check` 全过。caller-recoverable 审计保持
+**`1225 = A422/B434/C369`**，本线新增 error site / A 档为 **0 / 0**；`data.error` 复用现有
+manifest semantic error 执行器，不新增 raise site。`src/gravity_sdk` added 162 行、tests added 54 行，
+比例 **0.333**，未超过三分之一。技术债清单已复核：本轮只扩数据化 operation 与一个窄 App 产品卡、
+删除已解除 gap recognizer，并复用 raw operation 四面，不新增 registry、worker pool、shared-spine router
+或活动结构债。公开 development target 只登记 J40 新产品身份；没有改题目、prompt、阈值、评分算法或
+holdout/final。全量测试中的 protected 文本只来自隔离临时目录 synthetic fixture；没有读取真实 key 或
+sealed 数据，也没有 GitHub、push、PR、tag 或 release 动作。

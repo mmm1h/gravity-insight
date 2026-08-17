@@ -1,5 +1,5 @@
 {
-  "operation_count": 231,
+  "operation_count": 232,
   "operations": {
     "account.department.list": {
       "applied_overrides": [],
@@ -583,6 +583,14 @@
       "platform": null,
       "source_files": [
         "operations/analysis.user_property_value.list.json"
+      ]
+    },
+    "app.app_info.get": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/app.app_info.get.json"
       ]
     },
     "app.capacity.get": {

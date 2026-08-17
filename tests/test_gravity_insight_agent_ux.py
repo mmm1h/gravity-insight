@@ -755,6 +755,7 @@ class DiscoveryUxTests(unittest.TestCase):
             "J36": "composite:report_directory",
             "J37": "composite:report_subscriptions",
             "J39": "app.list",
+            "J40": "app.app_info.get",
             "J42": "composite:attribution_performance",
             "J43": "composite:attribution_user_detail",
             "J48": "material.asset.fetch",
@@ -763,7 +764,6 @@ class DiscoveryUxTests(unittest.TestCase):
             "J19": "WORKSPACE_SQL_PRODUCT_NOT_CONFIGURED",
             "J35": "REALTIME_EVENT_CATALOG_CONTRACT_MISSING",
             "J38": "MEDIA_REPORT_ITEM_SCHEMA_MISSING",
-            "J40": "APP_ONELINK_PUBLIC_BINDING_SAMPLE_MISSING",
             "J41": "MONETIZATION_AGGREGATE_CONTRACT_MISSING",
             "J44": "CURRENT_TABLE_SCHEMA_PARENT_MISSING",
             "J45": "NON_BYTEDANCE_HIERARCHY_PARENT_MISSING",
@@ -1746,20 +1746,15 @@ class DiscoveryUxTests(unittest.TestCase):
         self.assertTrue(terminal["fallbacks"])
         self.assertIn("catalog_warnings", terminal)
 
-    def test_draft_action_is_written_for_sdk_users(self) -> None:
+    def test_public_app_info_is_stable_and_requires_caller_url(self) -> None:
         operation_id = "app.app_info.get"
         described = self.client.describe(operation_id)
-        action = described["next_action"]
 
-        self.assertFalse(described["user_can_unlock"])
-        self.assertIn("Contact the Gravity Insight SDK maintainers", action)
-        self.assertIn(operation_id, action)
-        for internal_term in ("targeted probe", "request binding", "promote contract"):
-            self.assertNotIn(internal_term, action)
-
-        with self.assertRaises(OperationNotImplementedError) as raised:
+        self.assertEqual("stable", described["stability"])
+        self.assertTrue(described["currently_callable"])
+        self.assertTrue(described["input_schema"]["url"]["required"])
+        with self.assertRaises(InputValidationError):
             self.client.read(operation_id, {})
-        self.assertEqual(action, raised.exception.next_action)
 
 
 if __name__ == "__main__":

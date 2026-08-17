@@ -3658,6 +3658,95 @@
       "upstream_method": "POST"
     },
     {
+      "action": "get",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
+      "description": "查看 App 的 OneLink 与公开信息绑定；查看这个 App 绑定的 OneLink 和应用商店公开信息。Show this app's OneLink binding and its public app-store information. The account OneLink directory is empty; this read resolves a caller-supplied public App Store or Google Play URL into Gravity's observed public App metadata fields.",
+      "domain": "app",
+      "effect": "read",
+      "executable": true,
+      "input_fields": {
+        "url": {
+          "description": "Caller-supplied public Google Play or App Store download URL.",
+          "max_length": 4096,
+          "required": true,
+          "type": "string"
+        }
+      },
+      "live_probe": {
+        "enabled": true,
+        "input": {
+          "url": "https://apps.apple.com/cn/app/id414478124"
+        }
+      },
+      "operation_id": "app.app_info.get",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v1/user/open_app/fetch_app_info/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [],
+        "defaults": {},
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": [
+          "url"
+        ]
+      },
+      "required_parent": [],
+      "resource": "app_info",
+      "response_projection": {
+        "data_keys": [
+          "app_id",
+          "error",
+          "icon_url",
+          "image_data",
+          "name",
+          "package_name",
+          "platform",
+          "version"
+        ],
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": [
+          "app_id",
+          "name",
+          "package_name",
+          "platform"
+        ]
+      },
+      "semantic_error_rules": [
+        "code",
+        {
+          "message": "Gravity could not resolve the public store URL",
+          "path": "data.error"
+        },
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "GET"
+    },
+    {
       "action": "list",
       "auth_profile": "gravity_authorization",
       "contract_version": 1,

@@ -1283,6 +1283,16 @@
     "analysis.user_property_value.list": [
       "data.list"
     ],
+    "app.app_info.get": [
+      "data.app_id",
+      "data.error",
+      "data.icon_url",
+      "data.image_data",
+      "data.name",
+      "data.package_name",
+      "data.platform",
+      "data.version"
+    ],
     "app.capacity.get": [
       "data.data",
       "data.data[].capacity",

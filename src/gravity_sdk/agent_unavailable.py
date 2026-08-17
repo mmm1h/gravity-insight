@@ -11,7 +11,6 @@ _REGISTERED_GAP_QUERIES = (
     "analysis export results",
     "media reports",
     "monetization aggregate",
-    "onelink public store binding",
     "non bytedance campaign group creative performance",
     "platform specific creative fields",
     "registered sql analysis product",
@@ -21,13 +20,11 @@ _REGISTERED_GAP_QUERIES = (
 def unavailable_journey_gap(query: str) -> dict[str, Any] | None:
     from .agent_sql_product_gap import registered_sql_product_gap
     from .agent_unavailable_analysis import unavailable_analysis_gap
-    from .agent_unavailable_app import unavailable_app_gap
     from .agent_unavailable_promotion import unavailable_promotion_gap
     from .agent_unavailable_report import unavailable_report_gap
 
     for recognize in (
         unavailable_analysis_gap,
-        unavailable_app_gap,
         unavailable_report_gap,
         unavailable_promotion_gap,
         registered_sql_product_gap,
