@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import copy
+import re
 from collections.abc import Mapping
 from typing import Any
+
+from .agent_intent_text import affirmative_intent_text
 
 
 MONETIZATION_AGGREGATE_SELECTOR = ".".join(("report", "get", "query"))
@@ -14,8 +17,10 @@ MONETIZATION_AGGREGATE_CAPABILITY: Mapping[str, Any] = {
     "operation_id": MONETIZATION_AGGREGATE_SELECTOR,
     "domain": "report",
     "description": (
-        "按变现平台、广告位和日期汇总已观察变现指标；App 由调用方以 EQUALS 过滤提供，"
-        "服务端一次返回完整 list 与 page_info.total，不接受 page/page_size。"
+        "按变现平台、广告位和日期汇总已观察变现指标与收入；"
+        "这是聚合变现 / monetization aggregate，不是单日逐行变现明细。"
+        "App 由调用方以 EQUALS 过滤提供，服务端一次返回完整 list 与 page_info.total，"
+        "不接受 page/page_size。"
     ),
     "effect": "read",
     "executable": True,
@@ -74,8 +79,48 @@ def monetization_aggregate_capability_inventory() -> tuple[dict[str, Any], ...]:
     return (copy.deepcopy(dict(MONETIZATION_AGGREGATE_CAPABILITY)),)
 
 
+def monetization_aggregate_query(query: str) -> bool:
+    """Recognize platform/slot/date monetization totals, not row-level detail."""
+
+    selected = affirmative_intent_text(query)
+    if selected in {MONETIZATION_AGGREGATE_SELECTOR, "monetization aggregate"}:
+        return True
+    words = frozenset(re.findall(r"[a-z0-9_]+", selected))
+    if words & {"detail", "details"} or any(
+        term in selected for term in ("明细", "逐行", "逐笔", "细账")
+    ):
+        return False
+    english = (
+        bool(words & {"monetization", "iap", "revenue"})
+        and bool(words & {"aggregate", "aggregated", "summary", "summarize", "total", "totals"})
+        and bool(words & {"platform", "platforms", "slot", "ad", "placement", "date", "dates"})
+    )
+    chinese = (
+        ("变现" in selected or "收入" in selected)
+        and any(term in selected for term in ("汇总", "聚合", "合计"))
+        and (
+            any(term in selected for term in ("平台", "广告位", "日期"))
+            or "聚合变现" in selected
+        )
+    )
+    return english or chinese
+
+
+def monetization_aggregate_capability_cards(
+    query: str, *, domain: str | None = None, platform: str | None = None
+) -> list[dict[str, Any]]:
+    if platform is not None or domain not in {None, "report", "analysis"}:
+        return []
+    exact = query.strip().casefold() == MONETIZATION_AGGREGATE_SELECTOR
+    if not exact and not monetization_aggregate_query(query):
+        return []
+    return [copy.deepcopy(dict(MONETIZATION_AGGREGATE_CAPABILITY))]
+
+
 __all__ = [
     "MONETIZATION_AGGREGATE_CAPABILITY",
     "MONETIZATION_AGGREGATE_SELECTOR",
+    "monetization_aggregate_capability_cards",
     "monetization_aggregate_capability_inventory",
+    "monetization_aggregate_query",
 ]

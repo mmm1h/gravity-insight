@@ -125,6 +125,51 @@ class AgentLexicalRetrievalTests(unittest.TestCase):
             if not caller_language_fields(document.selector)
         ])
 
+    def test_operation_products_are_indexed_and_negated_reframes_keep_the_positive(self) -> None:
+        from gravity_sdk.agent_intent_text import affirmative_intent_text
+
+        selectors = {
+            document.selector
+            for document in registered_documents(composite_inventory=self.inventory)
+        }
+        self.assertTrue(
+            {
+                "app.list",
+                "app.app_info.get",
+                "report.get.query",
+                "export.material.report.start",
+            }.issubset(selectors)
+        )
+        self.assertEqual(
+            "看公司层面的资源消耗随时间怎么变",
+            affirmative_intent_text(
+                "不是看某个 App 的业务量，我要看公司层面的资源消耗随时间怎么变。"
+            ),
+        )
+        self.assertEqual(
+            "",
+            affirmative_intent_text("不要运行看板图表。"),
+        )
+        shared = "帮我找出我自己的、别人共享给我的以及 masterkey 报表，并读取报表定义。"
+        self.assertEqual(shared, affirmative_intent_text(shared))
+        self.assertEqual("", affirmative_intent_text("别给我素材报表"))
+        self.assertEqual(
+            "横比各平台素材表现",
+            affirmative_intent_text("不是查计划或账户余额，我要横比各平台素材表现。"),
+        )
+        onelink = retrieve_registered_products(
+            "查看 App 的 OneLink 与公开信息绑定",
+            composite_inventory=self.inventory,
+        )
+        self.assertEqual("single_match", onelink.disposition)
+        self.assertEqual("app.app_info.get", onelink.matches[0].document.selector)
+        aggregate = retrieve_registered_products(
+            "按平台广告位汇总变现收入",
+            composite_inventory=self.inventory,
+        )
+        self.assertEqual("single_match", aggregate.disposition)
+        self.assertEqual("report.get.query", aggregate.matches[0].document.selector)
+
 
 if __name__ == "__main__":
     unittest.main()

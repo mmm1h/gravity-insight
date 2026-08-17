@@ -11,6 +11,11 @@ import re
 import unicodedata
 from typing import Any
 
+from .agent_app_catalog import APP_CATALOG_SELECTOR
+from .agent_app_public_info import APP_PUBLIC_INFO_SELECTOR
+from .agent_export import MATERIAL_EXPORT_OPERATION
+from .agent_monetization_aggregate import MONETIZATION_AGGREGATE_SELECTOR
+
 
 ALGORITHM = "idf_weighted_term_coverage.v1"
 MINIMUM_SCORE = 0.300
@@ -35,6 +40,10 @@ _DIRECT_SELECTORS = (
     "metadata:search",
     "metadata:table_lineage",
     "material.asset.fetch",
+    APP_CATALOG_SELECTOR,
+    APP_PUBLIC_INFO_SELECTOR,
+    MONETIZATION_AGGREGATE_SELECTOR,
+    MATERIAL_EXPORT_OPERATION,
 )
 
 
@@ -371,6 +380,10 @@ def _direct_documents(domain: str | None) -> list[LexicalDocument]:
     from .agent_metadata_search import metadata_search_capability_cards
     from .agent_table_lineage import table_lineage_capability_cards
     from .agent_user_journey import user_journey_capability_cards
+    from .agent_app_catalog import app_catalog_capability_cards
+    from .agent_app_public_info import app_public_info_capability_cards
+    from .agent_monetization_aggregate import monetization_aggregate_capability_cards
+    from .agent_export import material_export_capability_cards
 
     builders = (
         analysis_query_spec_cards,
@@ -378,6 +391,10 @@ def _direct_documents(domain: str | None) -> list[LexicalDocument]:
         metadata_search_capability_cards,
         table_lineage_capability_cards,
         material_asset_capability_cards,
+        app_catalog_capability_cards,
+        app_public_info_capability_cards,
+        monetization_aggregate_capability_cards,
+        material_export_capability_cards,
     )
     documents: list[LexicalDocument] = []
     for selector in _DIRECT_SELECTORS:

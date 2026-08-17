@@ -57,7 +57,9 @@ def report_directory_query(query: str) -> bool:
         words & {"catalog", "definition", "definitions", "directory", "list"}
     ) and not subscription
     return english or (
-        "报表" in selected and any(term in selected for term in ("定义", "目录", "清单", "列表"))
+        "报表" in selected and any(
+            term in selected for term in ("定义", "目录", "清单", "列表", "自有", "共享", "masterkey")
+        )
         and not subscription
     )
 

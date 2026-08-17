@@ -6,6 +6,8 @@ from collections.abc import Mapping
 import re
 from typing import Any
 
+from .agent_intent_text import affirmative_intent_text
+
 
 SAVED_ANALYSIS_NAME = "saved_analysis"
 SAVED_ANALYSIS_SELECTOR = f"composite:{SAVED_ANALYSIS_NAME}"
@@ -145,22 +147,29 @@ SAVED_ANALYSIS_CAPABILITY: Mapping[str, Any] = {
 def saved_analysis_query(query: str) -> bool:
     """Recognize explicit replay/inspection intent and reject Web UI concepts."""
 
-    selected = " ".join(query.strip().casefold().split())
-    from .agent_order_directory import order_directory_adjacent_intent
-
+    selected = affirmative_intent_text(query) or " ".join(query.strip().casefold().split())
     if selected in _EXACT_SELECTORS:
         return True
     if selected.isascii():
-        words = frozenset(_ASCII_WORD.findall(selected))
-        return (
-            "saved" in words
-            and bool(
-                words & _ENGLISH_SUBJECTS
-                or order_directory_adjacent_intent(selected)
-            )
-            and bool(words & _ENGLISH_ACTIONS)
-            and not bool(words & _ENGLISH_BLOCKED)
-        )
+        return _english_saved_analysis(selected)
+    return _chinese_saved_analysis(selected)
+
+
+def _english_saved_analysis(selected: str) -> bool:
+    from .agent_order_directory import order_directory_adjacent_intent
+
+    words = frozenset(_ASCII_WORD.findall(selected))
+    return (
+        "saved" in words
+        and bool(words & _ENGLISH_SUBJECTS or order_directory_adjacent_intent(selected))
+        and bool(words & _ENGLISH_ACTIONS)
+        and not bool(words & _ENGLISH_BLOCKED)
+    )
+
+
+def _chinese_saved_analysis(selected: str) -> bool:
+    from .agent_order_directory import order_directory_adjacent_intent
+
     compact = "".join(selected.split())
     return (
         any(marker in compact for marker in ("保存", "已存"))

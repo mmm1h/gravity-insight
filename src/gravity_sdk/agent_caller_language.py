@@ -7,6 +7,10 @@ of a source checkout while preserving explicit provenance for review.
 
 from __future__ import annotations
 
+from .agent_app_catalog import APP_CATALOG_SELECTOR
+from .agent_app_public_info import APP_PUBLIC_INFO_SELECTOR
+from .agent_monetization_aggregate import MONETIZATION_AGGREGATE_SELECTOR
+
 
 CALLER_LANGUAGE_SOURCES = (
     "docs/analysis-journeys.md",
@@ -17,18 +21,23 @@ CALLER_LANGUAGE_SOURCES = (
 _ANALYSIS_JOURNEY_TITLES: dict[str, tuple[str, ...]] = {
     "analysis.query.spec:event": (
         "看某事件随时间、分组和条件的变化",
+        "事件趋势、行为次数与发生量",
     ),
     "analysis.query.spec:funnel": (
         "看多步行为的转化漏斗",
+        "转化路径与逐步转化",
     ),
     "analysis.query.spec:retention": (
         "看起始行为后的用户留存",
+        "回访与复访",
     ),
     "analysis.query.spec:property": (
         "看用户或事件属性的分布与聚合",
+        "用户分布与属性构成",
     ),
     "analysis.query.spec:scatter": (
         "看事件指标之间的散点关系",
+        "指标相关关系",
     ),
     "analysis.query.spec": (
         "用同一分析定义比较两个时期",
@@ -155,6 +164,16 @@ _ANALYSIS_JOURNEY_TITLES: dict[str, tuple[str, ...]] = {
     ),
     "material.asset.fetch": (
         "按精确平台素材引用预览或下载图片/视频",
+    ),
+    APP_CATALOG_SELECTOR: (
+        "查找当前账号可读的 App 项目",
+    ),
+    APP_PUBLIC_INFO_SELECTOR: (
+        "查看 App 的 OneLink 与公开信息绑定",
+    ),
+    MONETIZATION_AGGREGATE_SELECTOR: (
+        "按平台、广告位和日期汇总变现结果",
+        "聚合变现收入，不是逐行明细",
     ),
 }
 

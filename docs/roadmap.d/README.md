@@ -41,6 +41,7 @@
 - [为什么还没到 95%](gap-to-95.md) — 4 条租户不可达与 52/56 上限；条件不在 SDK 侧。
 - [导出宽问法：不建 dispatcher](export-wide-dispatcher.md) — 七个子类输入不可互换，宽问法 gap 是正确澄清，不建统一导出产品。
 - [实时事件入库窗：开过 2h 仍空](realtime-event-ingestion-window.md) — 2026-08-18：只对 29034827 开窗；10 次前端当天窗仍无 item；已关回 is_enabled=0。
+- [识别器召回收尾：J36 回归与防过拟合](recognizer-recall.md) — 否定抽取不再截断「别人」；对着题集加的词已撤；development 选择层 267/336。
 
 ## 归档记录
 
@@ -83,19 +84,3 @@
 
 分组标准是**主题**（目标/约束、Agent 评测、投影隐私、写面、语义组合、权限与投放等），不是按日期切。
 合同 `probe-read-confirmations.json` 里的 `docs/roadmap.md#d35--f40-...` 是 citation 字符串，不是运行时硬依赖；对应正文在 `agent-usability-and-cost.md`。
-**新增文件后必须在这里加一行**，否则 `test_every_doc_is_reachable_from_the_docs_index` 会判定你的文件是孤儿文档。
-格式：列表项，链接指向真实存在的 `*.md` 文件名，后面跟一句话。只加你自己那一行。
-
-- [实时事件目录：前端形状 + 含此刻窗仍空](realtime-event-catalog.md) — 未拿到非空 item；空的是关闭入库开关 + 已试形状。
-**新增文件后必须在这里加一行**，否则 `test_every_doc_is_reachable_from_the_docs_index` 会判定你的文件是孤儿文档。
-格式：一条 Markdown 链接，目标是同目录下的 `job-slug.md`，后面跟破折号和一句话。只加你自己那一行。
-
-- [媒体报表：枚举 ad_platform 仍空](media-report-ad-platform.md) — 2026-08-18：省略平台即查全集；投放中 App 上枚举平台后仍空。
-**新增文件后必须在这里加一行**，否则 `test_every_doc_is_reachable_from_the_docs_index` 会判定你的文件是孤儿文档。
-格式：列表项 + 标题 + 相对文件名 + 一句话。只加你自己那一行。
-
-- [F41 数据表 schema：绑定投放中 App 后仍无活表](f41-data-table.md) — 2026-08-18：list 七种形状明确空，日志 table_id 对 detail 为 1004 / not exist。
-- [blob 下载路径 5 条疑似 bug](blob-bugs.md) — 核实 #175 留下的 5 条下载疑点
-- [为什么还没到 95%](gap-to-95.md) — 4 条租户不可达与 52/56 上限；条件不在 SDK 侧。
-- [导出宽问法：不建 dispatcher](export-wide-dispatcher.md) — 七个子类输入不可互换，宽问法 gap 是正确澄清，不建统一导出产品。
-- [实时事件入库窗：开过 2h 仍空](realtime-event-ingestion-window.md) — 2026-08-18：只对 29034827 开窗；10 次前端当天窗仍无 item；已关回 is_enabled=0。

@@ -19,7 +19,8 @@ APP_CATALOG_CAPABILITY: Mapping[str, Any] = {
     "domain": "app",
     "description": (
         "读取当前账号可访问的 App 项目目录，返回受合同治理的项目条目；"
-        "用于账号可读项目清单，不用于 App 治理快照、普通对象成员管理或任意未登记目录。"
+        "用于账号可读项目清单，不用于 App 治理快照、普通对象成员管理、"
+        "数据表当前 schema 或任意未登记目录。"
     ),
     "effect": "read",
     "executable": True,
@@ -77,6 +78,17 @@ def app_catalog_query(query: str) -> bool:
     return english or chinese
 
 
+def app_catalog_capability_cards(
+    query: str, *, domain: str | None = None, platform: str | None = None
+) -> list[dict[str, Any]]:
+    if platform is not None or domain not in {None, "app"}:
+        return []
+    exact = query.strip().casefold() == APP_CATALOG_SELECTOR
+    if not exact and not app_catalog_query(query):
+        return []
+    return [copy.deepcopy(dict(APP_CATALOG_CAPABILITY))]
+
+
 def app_catalog_operation_query(query: str) -> str:
     """Return the exact governed operation selector for an App-catalog intent."""
 
@@ -86,6 +98,7 @@ def app_catalog_operation_query(query: str) -> str:
 __all__ = [
     "APP_CATALOG_CAPABILITY",
     "APP_CATALOG_SELECTOR",
+    "app_catalog_capability_cards",
     "app_catalog_capability_inventory",
     "app_catalog_operation_query",
     "app_catalog_query",

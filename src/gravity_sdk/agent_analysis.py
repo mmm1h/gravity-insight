@@ -154,7 +154,8 @@ def _natural_event(words: frozenset[str], compact: str) -> bool:
         and bool(words & {"daily", "day", "week", "time", "channel"})
     )
     chinese = ("事件" in compact or "行为" in compact) and any(
-        term in compact for term in ("每天", "每小时", "次数", "频次", "发生量", "趋势")
+        term in compact
+        for term in ("每天", "每小时", "次数", "频次", "发生量", "趋势")
     )
     return english or chinese
 
@@ -166,7 +167,7 @@ def _natural_funnel(words: frozenset[str], compact: str) -> bool:
     staged_conversion = "conversion" in words and "from" in words and bool(
         words & {"through", "to"}
     )
-    chinese = "转化" in compact and (
+    chinese = ("转化" in compact or "漏斗" in compact) and (
         "多步" in compact
         or "逐步" in compact
         or "步骤" in compact
@@ -329,8 +330,16 @@ def _description(selected_kind: str | None) -> str:
         if selected_kind is None
         else ""
     )
+    kind_terms = {
+        "event": "事件趋势、行为次数与发生量",
+        "funnel": "漏斗、转化路径与逐步转化",
+        "retention": "留存、回访与复访",
+        "property": "属性分布与用户构成",
+        "scatter": "散点关系与指标相关",
+    }
+    named = kind_terms.get(selected_kind or "", scope)
     return (
-        f"用现有 Analysis Spec v1 合同描述{scope}分析，再由登记的 analysis_query "
+        f"用现有 Analysis Spec v1 合同描述{named}分析，再由登记的 analysis_query "
         f"composite 编译和执行{comparison}；自然语言不会填充业务字段。"
     )
 

@@ -68,7 +68,11 @@ def _current_table_schema(selected: str, words: frozenset[str]) -> bool:
         "current" in words and "schema" in words
         and bool(words & {"field", "fields", "table", "version"})
     )
-    chinese = "当前" in selected and "schema" in selected
+    chinese = (
+        "当前" in selected
+        and "schema" in selected
+        and "项目" not in selected
+    )
     return english or chinese
 
 
