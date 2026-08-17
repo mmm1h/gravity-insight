@@ -110,6 +110,25 @@
   confirmation，并用 10 次有界生产 HTTP 验证最高价值候选；没有用失败或空样本批量改 Census status。
   `promotion.promoted_object.list` 的 draft POST 与 Census UNKNOWN method 差异继续保留为显式证据差异。
 
+### 7. 稳定 operation 的分页形状仍有系统性证据债
+
+- **Owner area**：operation pagination contracts / Evidence。
+- **证据**：`f798d39` 的 231 条 operation 中，119 条 `page_info` 拥有完全相同的字段集合，证明该字段集
+  来自模板而非逐条验证。2026-08-17 逐 route 对齐生产 response sketch、精确 wire consumer 与合同后，
+  119 条只有 `59 A / 1 B / 59 unknown`；证据等级为 `62 production / 8 wire / 49 template-only`。
+  112 条 `none` 中另有 27 条 stable+executable 集合完整性在本轮三条补测后仍未知；
+  `analysis.user_event.list` 是已披露的手动空页协议，不等于上游无分页；一个不可执行 candidate 的 wire
+  还消费了 `page_info.total_number`。逐条表与判据见
+  `evidence/forensics/20260817_pagination_contract_audit.{json,md}`。
+- **当前缓解**：已把唯一实测 B 形状的 `report.multidim.query` 改成单响应，不再重复续页；自动完整读取
+  风险最高的 Multidim metadata、Material Performance、Business Pulse 三条已实测为 A。三条完整元数据
+  `none` 也补到生产观察无 page_info，但单次观察不能证明服务端永不截断。
+- **触发条件**：修改任一 unknown operation 的分页、让新的产品依赖其全集，或取得新的 production/wire
+  分页字段证据。
+- **退出条件**：逐条用同 method+path 的生产 response sketch 或直接 wire 字段把 59 条 `page_info`
+  unknown 归入真实形状并修正合同；对 27 条 stable+executable `none` 集合取得可证伪的完整性信号或把
+  产品声明降级为前缀/未知。不得用现有合同声明给自己提升证据等级，也不得全量生产探测。
+
 ## 明确不登记为债务
 
 以下模式经审计判定为**合理领域边界**，不因文件数量多而登记：66 个 `agent_*.py`、

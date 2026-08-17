@@ -257,8 +257,10 @@ input 必须逐项引用机器 schema 当前列出的 `{definition_id, version}`
 `@2` 在同一成员面增加 `click_company IN`，但必须同时选择 click dimension 和该 join；还登记
 activate count、pay amount、total ROI 三个仅允许 day/week 的指标。`ap_cost` 在 v2 仍允许
 day/week/total。`@3` 保留上述成员，并增加平台展示/点击/点击率/转化/激活、标准激活成本、标准付费人数、
-广告收入与总收入 9 个 day/week 指标；注册数没有非空 day/week 证据而不登记。hour 或新指标 + total
-等不兼容组合在编译时零网络拒绝。
+广告收入与总收入 9 个 day/week 指标；注册数没有非空 day/week 证据而不登记。`@4` 保持 v3 成员面，
+但把结果限定为 `result.query.fetched_at` 时点观察：同一结构化输入跨执行不保证数值相同，跨执行只能
+降级为两个带时间戳的观察及算术差，不得称为确定性重放、稳定、已结算或因果变化。hour 或新指标 +
+total 等不兼容组合在编译时零网络拒绝。
 
 `--dry-run` 返回 `gravity.semantic-compose-compiled.v1`；同输入 canonical JSON 逐字节相同。执行返回
 `gravity.semantic-compose-result.v1`，包含 `resolution_tier`、定义 ID/版本/指纹、实际成员、生成的

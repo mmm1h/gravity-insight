@@ -4091,6 +4091,7 @@
       "data.list[].stat_time",
       "data.list[].week",
       "data.page_info",
+      "data.page_info[].total",
       "data.time_dims",
       "data.tips",
       "data.total",

@@ -1430,6 +1430,7 @@ class GravityInsightManifestTests(unittest.TestCase):
                 },
                 "report.multidim.query": {
                     "extra_data": [],
+                    "page_info": ["total"],
                     "total": ["ap_cost", "stat_time"],
                 },
                 # gi-final-unlock：overview 只暴露在线验证过的聚合列表字段。
@@ -1756,6 +1757,8 @@ class GravityInsightManifestTests(unittest.TestCase):
         self.assertTrue(
             {"page", "page_size"} <= set(multidim["request"]["body_fields"])
         )
+        self.assertEqual("none", multidim["pagination"]["kind"])
+        self.assertEqual("", multidim["pagination"]["total_page_field"])
 
         calc_total = self.by_id["report.multidim.calc_total"]
         self.assertIn("data_list", calc_total["request"]["body_fields"])

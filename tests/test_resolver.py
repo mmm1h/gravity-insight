@@ -255,6 +255,31 @@ class ResolverTests(unittest.TestCase):
         assert audit["page_size_clamped"] is False
         assert audit["completeness"]["status"] == "partial"
 
+    def test_resolver_nonpaginated_total_uses_the_observed_single_response_criterion(self) -> None:
+        description = {
+            "operation_id": "report.multidim.query", "input_schema": {},
+            "required_parent": [], "health": {"contract_fingerprint": "b" * 64},
+        }
+
+        result = resolve_and_run(
+            "report.multidim.query",
+            client=_ResolverClient(description), workspace=_workspace(self.tmp_path),
+            supplied_input={"page": 1, "page_size": 100},
+            read=lambda *_args, **_kwargs: {
+                "ok": True, "status": "success", "page": None,
+                "request": {"inputs": {"page": 1, "page_size": 100}},
+                "data": {"list": [{"value": 1}], "page_info": {"total": 1}},
+            },
+        )
+
+        audit = result["pagination_audit"]
+        assert audit["effective_page_size"] is None
+        assert audit["completeness"] == {
+            "criterion": "single_response and returned_items=reported_total",
+            "status": "complete", "has_more": None,
+            "returned_items": 1, "total_items": 1,
+        }
+
     def test_exact_multidim_operations_remain_resolvable(self) -> None:
         for operation_id in ('report.multidim.query', 'report.multidim.calc_total'):
             with self.subTest(operation_id=operation_id):

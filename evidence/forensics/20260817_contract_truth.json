@@ -1,0 +1,185 @@
+{
+  "schema_version": "gravity-insight.contract-truth-evidence.v1",
+  "observed_at": "2026-08-17T05:31:41.276225Z",
+  "values_persisted": false,
+  "credentials_persisted": false,
+  "request_budget": {"limit": 30, "used": 29, "remaining": 1},
+  "discipline": {
+    "attempts_per_request": 1,
+    "retries": 0,
+    "pagination_requests": 1,
+    "date_windows_expanded": 0,
+    "apps_switched": 0,
+    "requests_after_stop": 0,
+    "receipt_state_root": "private default workspace state; path not persisted"
+  },
+  "pagination_observations": [
+    {
+      "operation_id": "report.multidim.query",
+      "evidence_level": "production",
+      "audit_baseline_declaration": {
+        "kind": "page_info",
+        "default_page_size": 100,
+        "list_path": "data.list",
+        "max_page_size": 100,
+        "page_field": "page",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "corrected_declaration": {"kind": "none"},
+      "observed_shape": "B",
+      "page_info_keys": ["total"],
+      "page_info_types": {"total": "integer"},
+      "observed_list_count": 40,
+      "controls": [
+        {
+          "requested_page": 1,
+          "requested_page_size": 100,
+          "row_sha256": "cc7741cbc85ee9f5a70f097646b747363915332badf6f53b35beab45a4d374a3",
+          "receipt_id": "c8302aaad7194cd4990935c2089d629d"
+        },
+        {
+          "requested_page": 2,
+          "requested_page_size": 100,
+          "row_sha256": "cc7741cbc85ee9f5a70f097646b747363915332badf6f53b35beab45a4d374a3",
+          "receipt_id": "867181f2dacc40e8a2d436a53c50072a"
+        },
+        {
+          "requested_page": 1,
+          "requested_page_size": 10,
+          "returned_items": 40,
+          "receipt_id": "461002854a2149f181805291eba86e82"
+        }
+      ],
+      "verdict": "single_response_with_reported_total; page and page_size did not control the observed result; do not issue continuation requests"
+    },
+    {
+      "operation_id": "report.multidim.metric.list",
+      "evidence_level": "production",
+      "observed_shape": "A",
+      "page_info_keys": ["page", "page_size", "total_number", "total_page"],
+      "receipt_id": "fbaa21f1eced43b1a2c6e5190e1eadc8"
+    },
+    {
+      "operation_id": "material.report.query",
+      "evidence_level": "production",
+      "observed_shape": "A",
+      "page_info_keys": ["page", "page_size", "total_number", "total_page"],
+      "receipt_id": "59b213c02c564c91a3655b4fa12e3a57"
+    },
+    {
+      "operation_id": "report.business.query",
+      "evidence_level": "production",
+      "observed_shape": "A",
+      "page_info_keys": ["page", "page_size", "total_number", "total_page"],
+      "receipt_id": "306802df4ea84ca7afd3c903ce0fba88"
+    },
+    {
+      "operation_id": "report.multidim.media_enum.list",
+      "evidence_level": "production",
+      "observed_shape": "no_page_info_observed",
+      "page_info_keys": [],
+      "response_shape": "object",
+      "receipt_id": "50397ee837284e17b5c64d74c5617d63"
+    },
+    {
+      "operation_id": "material.metric.list",
+      "evidence_level": "production",
+      "observed_shape": "no_page_info_observed",
+      "page_info_keys": [],
+      "response_shape": "array",
+      "top_level_item_count": 9,
+      "receipt_id": "b0dd27cbf5304e3c9f6a20980b1819ca"
+    },
+    {
+      "operation_id": "promotion.metric.list",
+      "evidence_level": "production",
+      "observed_shape": "no_page_info_observed",
+      "page_info_keys": [],
+      "response_shape": "array",
+      "top_level_item_count": 7,
+      "receipt_id": "895e3db0a7cb43e784d2f1f75882cad1"
+    }
+  ],
+  "result_replayability": {
+    "structured_input_sha256": "2b63b651301f68c3655f396cb7fd39519c74a8341551245597347483d8e4020f",
+    "prior_observation": {
+      "source": "user-provided established fact and docs/roadmap.md semantic v3 record",
+      "same_historical_first_day_values": [86667.69, 86673.69],
+      "difference": 6.0
+    },
+    "bounded_samples": {
+      "same_input_three_immediate_runs": {
+        "count": 3,
+        "row_count_each": 40,
+        "normalized_metric_sha256_each": "6eac510601ff648ff08cea54aa36a80937393bd565e22ec52408dee2339e8964",
+        "verdict": "stable only within the approximately two-second sample"
+      },
+      "historical_day": {
+        "date": "2026-06-01",
+        "two_run_metric_sha256": "0283220403e92366a1d12a5d82d759812269dacf03db4513c3c872b1532c48d2",
+        "delta_from_prior_86673_69": 185.0,
+        "verdict": "an older date was revised after the prior observation"
+      },
+      "recent_day": {
+        "date": "2026-08-16",
+        "two_run_metric_sha256": "acf334e1c54252548d89792d34b9402318fbe9653f811180052174a59d9f7b89",
+        "verdict": "stable only within this short sample"
+      },
+      "non_revenue_control": {
+        "metric": "ap_show",
+        "window": ["2026-06-01", "2026-07-10"],
+        "two_run_metric_sha256": "7c5d833b48cc31345d7d2f017d775db42a7d9b9717a15a20f1a86dfc5f6e89b4",
+        "verdict": "stable only within this short sample; one control cannot prove revenue-only volatility"
+      },
+      "three_income_metrics": {
+        "metrics": ["total_revenue", "adclick_ad_amount", "adclick_standard_pay_amount"],
+        "two_run_normalized_sha256": "dddea6f240c9cb9543862034dc12503f59c14b82e6f835bea920f5e1e0a072f6",
+        "total_equals_simple_sum_of_two_components": false
+      }
+    },
+    "cause": "unknown; bounded samples do not distinguish settlement, backfill, recomputation, or another upstream process",
+    "stable_after_days": null,
+    "contract_verdict": "canonical compilation remains byte-deterministic; result values are fetched-at-scoped observations and equality across executions is not guaranteed"
+  },
+  "receipt_checkpoints": [
+    {"after_sequence": 6, "reason": "the atomic metadata+query pair crossed five"},
+    {"after_sequence": 10, "reason": "same-input immediate repetitions"},
+    {"after_sequence": 15, "reason": "first window/control batch"},
+    {"after_sequence": 20, "reason": "repeated window/control batch"},
+    {"after_sequence": 26, "reason": "income-component and high-risk page_info batches"},
+    {"after_sequence": 29, "reason": "final high-risk none batch; production access stopped with one request unused"}
+  ],
+  "http_ledger": [
+    {"sequence": 1, "phase": "multidim_shape", "operation_id": "authentication", "http_status": 200, "attempt": 1, "retry": false, "page": null, "receipt_id": "181907add1e445a2b20f96c064661cb8"},
+    {"sequence": 2, "phase": "multidim_shape", "operation_id": "report.multidim.metric.list", "http_status": 200, "attempt": 1, "retry": false, "page": 1, "receipt_id": "f3d7e2bb1d904837907a2093874c59ee"},
+    {"sequence": 3, "phase": "multidim_shape", "operation_id": "report.multidim.query", "http_status": 200, "attempt": 1, "retry": false, "page": 1, "receipt_id": "c8302aaad7194cd4990935c2089d629d"},
+    {"sequence": 4, "phase": "multidim_shape", "operation_id": "report.multidim.query", "http_status": 200, "attempt": 1, "retry": false, "page": 2, "receipt_id": "867181f2dacc40e8a2d436a53c50072a"},
+    {"sequence": 5, "phase": "page_size_control", "operation_id": "report.multidim.metric.list", "http_status": 200, "attempt": 1, "retry": false, "page": 1, "receipt_id": "4419cc9229594900b24f3b59f7a8c033"},
+    {"sequence": 6, "phase": "page_size_control", "operation_id": "report.multidim.query", "http_status": 200, "attempt": 1, "retry": false, "page": 1, "receipt_id": "461002854a2149f181805291eba86e82"},
+    {"sequence": 7, "phase": "same_input_repeat", "operation_id": "report.multidim.metric.list", "http_status": 200, "attempt": 1, "retry": false, "page": 1, "receipt_id": "013de1e5c0954f1ea7847491d36ac9e3"},
+    {"sequence": 8, "phase": "same_input_repeat", "operation_id": "report.multidim.query", "http_status": 200, "attempt": 1, "retry": false, "page": 1, "receipt_id": "02798c30e8504a5dac3298f2ab343693"},
+    {"sequence": 9, "phase": "same_input_repeat", "operation_id": "report.multidim.query", "http_status": 200, "attempt": 1, "retry": false, "page": 1, "receipt_id": "7c6d09c71f2e42e6bd19853e22a3ff1a"},
+    {"sequence": 10, "phase": "same_input_repeat", "operation_id": "report.multidim.query", "http_status": 200, "attempt": 1, "retry": false, "page": 1, "receipt_id": "672fdca63c87424e84ebe45e45a7284d"},
+    {"sequence": 11, "phase": "window_controls_a", "operation_id": "report.multidim.metric.list", "http_status": 200, "attempt": 1, "retry": false, "page": 1, "receipt_id": "94e76dedf69c49c8a149d5beaca51955"},
+    {"sequence": 12, "phase": "window_controls_a", "operation_id": "report.multidim.query", "http_status": 200, "attempt": 1, "retry": false, "page": 1, "receipt_id": "44350c0f9976483bb66b6550fcbd50c4"},
+    {"sequence": 13, "phase": "window_controls_a", "operation_id": "report.multidim.query", "http_status": 200, "attempt": 1, "retry": false, "page": 1, "receipt_id": "9b7810456f6343a69df52edcd56f1143"},
+    {"sequence": 14, "phase": "window_controls_a", "operation_id": "report.multidim.query", "http_status": 200, "attempt": 1, "retry": false, "page": 1, "receipt_id": "6bdf3b246b904e378adc8a9dec59cfce"},
+    {"sequence": 15, "phase": "window_controls_a", "operation_id": "report.multidim.query", "http_status": 200, "attempt": 1, "retry": false, "page": 1, "receipt_id": "88e7142e9f6b4be287ada1a0654a1f5a"},
+    {"sequence": 16, "phase": "window_controls_b", "operation_id": "report.multidim.metric.list", "http_status": 200, "attempt": 1, "retry": false, "page": 1, "receipt_id": "7a6d9b3c496f48f3b7e244248a87e1ce"},
+    {"sequence": 17, "phase": "window_controls_b", "operation_id": "report.multidim.query", "http_status": 200, "attempt": 1, "retry": false, "page": 1, "receipt_id": "a9f8801e8492410798b708bc3da6de15"},
+    {"sequence": 18, "phase": "window_controls_b", "operation_id": "report.multidim.query", "http_status": 200, "attempt": 1, "retry": false, "page": 1, "receipt_id": "01fe2013100340c3b8ff482be6b82883"},
+    {"sequence": 19, "phase": "window_controls_b", "operation_id": "report.multidim.query", "http_status": 200, "attempt": 1, "retry": false, "page": 1, "receipt_id": "a835732229324aac83d155ad5b1b80c4"},
+    {"sequence": 20, "phase": "window_controls_b", "operation_id": "report.multidim.query", "http_status": 200, "attempt": 1, "retry": false, "page": 1, "receipt_id": "4097d8ca4aff4f008e5be0c0a0951209"},
+    {"sequence": 21, "phase": "income_components", "operation_id": "report.multidim.metric.list", "http_status": 200, "attempt": 1, "retry": false, "page": 1, "receipt_id": "a85dae1ec9af4b2ea93dd6a3550f6f87"},
+    {"sequence": 22, "phase": "income_components", "operation_id": "report.multidim.query", "http_status": 200, "attempt": 1, "retry": false, "page": 1, "receipt_id": "915a64f31a824fd2b4f6a35ecda2843c"},
+    {"sequence": 23, "phase": "income_components", "operation_id": "report.multidim.query", "http_status": 200, "attempt": 1, "retry": false, "page": 1, "receipt_id": "12efd34e20444828b214390fe0496c2a"},
+    {"sequence": 24, "phase": "high_risk_pagination", "operation_id": "report.multidim.metric.list", "http_status": 200, "attempt": 1, "retry": false, "page": 1, "receipt_id": "fbaa21f1eced43b1a2c6e5190e1eadc8"},
+    {"sequence": 25, "phase": "high_risk_pagination", "operation_id": "material.report.query", "http_status": 200, "attempt": 1, "retry": false, "page": 1, "receipt_id": "59b213c02c564c91a3655b4fa12e3a57"},
+    {"sequence": 26, "phase": "high_risk_pagination", "operation_id": "report.business.query", "http_status": 200, "attempt": 1, "retry": false, "page": 1, "receipt_id": "306802df4ea84ca7afd3c903ce0fba88"},
+    {"sequence": 27, "phase": "high_risk_none", "operation_id": "report.multidim.media_enum.list", "http_status": 200, "attempt": 1, "retry": false, "page": null, "receipt_id": "50397ee837284e17b5c64d74c5617d63"},
+    {"sequence": 28, "phase": "high_risk_none", "operation_id": "material.metric.list", "http_status": 200, "attempt": 1, "retry": false, "page": null, "receipt_id": "b0dd27cbf5304e3c9f6a20980b1819ca"},
+    {"sequence": 29, "phase": "high_risk_none", "operation_id": "promotion.metric.list", "http_status": 200, "attempt": 1, "retry": false, "page": null, "receipt_id": "895e3db0a7cb43e784d2f1f75882cad1"}
+  ]
+}

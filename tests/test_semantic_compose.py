@@ -23,6 +23,7 @@ WINDOW = {"start": "2026-06-01", "end": "2026-07-10"}
 DEFINITION = {"definition_id": "report.ap-cost-observation", "version": 1}
 DEFINITION_V2 = {"definition_id": "report.ap-cost-observation", "version": 2}
 DEFINITION_V3 = {"definition_id": "report.ap-cost-observation", "version": 3}
+DEFINITION_V4 = {"definition_id": "report.ap-cost-observation", "version": 4}
 METRIC = {"definition_id": "report.metric.ap-cost", "version": 1}
 ACTIVATE_METRIC = {
     "definition_id": "report.metric.adclick-standard-activate-count",
@@ -192,7 +193,7 @@ class SemanticComposeTests(unittest.TestCase):
     def test_real_definition_versions_coexist_and_v2_compiles_live_wire(self):
         schema = semantic_compose_input_schema()
         self.assertEqual(
-            [DEFINITION, DEFINITION_V2, DEFINITION_V3],
+            [DEFINITION, DEFINITION_V2, DEFINITION_V3, DEFINITION_V4],
             schema["x-registered-definitions"],
         )
         v1 = compile_semantic_compose(request(), app_id=APP_ID)
@@ -254,6 +255,19 @@ class SemanticComposeTests(unittest.TestCase):
         self.assertEqual(2, len(result["allowed_claims"]))
         self.assertEqual(12.5, result["result"]["query"]["data"]["list"][0]["ap_cost"])
         self.assertEqual("a" * 32, result["result_audit"]["http_receipts"][0]["receipt_id"])
+
+    def test_v4_separates_compiler_replay_from_cross_execution_results(self):
+        value = request("day", definition=DEFINITION_V4, metric=SHOW_METRIC)
+        compiled = compile_semantic_compose(value, app_id=APP_ID)
+        statements = [claim["statement"] for claim in compiled["allowed_claims"]]
+
+        self.assertEqual(
+            compiled_semantic_bytes(value, app_id=APP_ID),
+            compiled_semantic_bytes(copy.deepcopy(value), app_id=APP_ID),
+        )
+        self.assertIn("not guaranteed to return identical values", statements[0])
+        self.assertIn("only as separately timestamped observations", statements[1])
+        self.assertIn("not as replay-equivalent, stable, settled, or causal", statements[1])
 
     def test_schema_agent_and_plan_preflight_share_one_contract(self):
         schema = semantic_compose_input_schema()

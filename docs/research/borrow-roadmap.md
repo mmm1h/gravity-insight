@@ -69,7 +69,7 @@
 ### P0-3 受治理的语义组合层与可机读来源链
 
 - **来源**：dbt Semantic Layer、Looker/LookML 和 Snowflake Cortex Analyst 都把指标、维度、时间粒度、连接和访问策略放在受治理语义对象中；MetricFlow 的 saved query 保存结构化查询，而不是只保存一句原话。详见[语义层与 Text-to-SQL 调研“Tier B”建议](semantic-layer-and-text2sql.md)和[开源语义路由调研的语义层比较](oss-semantic-and-routing.md)。厂商同时强调“how it was computed”，见[厂商 landscape 的共性结论](vendor-agent-landscape.md)。
-- **我们现在是什么样**：窄切片已经扩到同 ID 的三个不可变版本。`@1` 保留最初一个指标与空 filter，`@2` 增加 dimension-bound `click_company IN` 和 3 个 day/week 指标，`@3` 以粒度与代表性维度实证登记共 13 个成员。结果继续带定义版本、实际成员、生成查询、验证和 `allowed_claims`。它仍不是跨产品通用层：只有一个 dimension/filter/join profile，v3 的 5 个成员维度兼容性明确是同族外推而非逐成员实测，verified query 仍以精确问句绑定语义上下文。
+- **我们现在是什么样**：窄切片已经扩到同 ID 的四个不可变版本。`@1` 保留最初一个指标与空 filter，`@2` 增加 dimension-bound `click_company IN` 和 3 个 day/week 指标，`@3` 以粒度与代表性维度实证登记共 13 个成员，`@4` 保持成员面并把结果收窄为 fetched-at 时点观察，同输入跨执行不保证数值相同。结果继续带定义版本、实际成员、生成查询、验证和 `allowed_claims`。它仍不是跨产品通用层：只有一个 dimension/filter/join profile，v3/v4 的 5 个成员维度兼容性明确是同族外推而非逐成员实测，verified query 仍以精确问句绑定语义上下文。
 - **借鉴什么**：沿现有窄 Tier B 编译器逐个增加有生产证据的版本化定义。输入只能引用已注册且版本化的指标、维度、过滤器、时间粒度和允许连接；编译前验证粒度、连接基数和访问范围，不能识别的成员或 join 在发网前失败。结果扩展现有来源链，记录 `resolution_tier`、定义 ID/版本、实际语义成员、生成查询（若有）、验证结果和允许声称的结论。继续复用 composite / plan adapter / agent card，不建设通用语义平台。
 - **为什么值得**：这是“现在做不到”。不做时，分析师提出“同一个已登记指标，换一个已登记维度、过滤条件或时间粒度”但没有现成产品时，会在能力映射处得到 gap，或转去 Web/手写 SQL；即使 SQL 跑通也无法从结果判断口径是否一致。做完后，已治理成员之间的新组合可以直接在仓库完成，并且结论可追到定义版本。
 - **代价**：XL。涉及语义合同、编译器、来源链、Plan/SDK/CLI、质量门和少量端到端测试，并依赖三项既定排期。不可逆影响是语义定义会成为结果解释的一部分，所以定义版本必须持久化，旧结果不能被新定义静默重解释。

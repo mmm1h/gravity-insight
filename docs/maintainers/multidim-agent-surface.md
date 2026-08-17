@@ -65,11 +65,12 @@ Agent 不展示 `data_topic/data_conf/page/page_size` 等底层控制项。底�
 
 ## 并发与请求数
 
-- CLI/SDK 直接调用默认 6 workers、上限 24；已知 `total_page` 时分页保序并发。
+- `report.multidim.query` 实测为单响应：`page_info` 只有 `total`，且改变 `page/page_size` 不控制结果；
+  direct/Plan 的 `read_all` 都只发一次 query，不续页。其他 metadata operation 仍按各自已证分页合同读取。
 - 标准、自定义和共享指标 metadata 最多三个来源，复用 cache，并受同一个 worker budget 约束。
 - Plan adapter 内部固定 1 worker；多个节点只由 Plan 全局池并发，避免节点数乘 metadata 线程数。
 - total 依赖 query rows，必须在对应 query 完成后串行执行。
-- dry-run 为零网络；执行 HTTP 数量为去重 metadata 请求 + query 页数 + 可选一次 total。
+- dry-run 为零网络；执行 HTTP 数量为去重 metadata 请求 + 1 次 query + 可选一次 total。
 
 已知完整输入仍是一次 CLI/SDK/Plan 调用；未知能力为一次 Agent 发现加一次 Plan 执行。这里的
 价值是消除 opaque input 和 Web 依赖，不虚报已有调用数下降。

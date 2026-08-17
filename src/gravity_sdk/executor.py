@@ -18,6 +18,7 @@ from .drift import ProjectionDrift, projection_drift_status
 from .errors import PolicyViolation, error_for_status
 from .models import OperationSpec, ReadResult
 from .multidim import projected_keys
+from .page_envelope import page_envelope
 from .receipt import capture_http_receipt_references, record_response_drift
 from .response_drift import ResponseDriftRecorder
 from .registry import PolicyEngine, Registry
@@ -168,7 +169,7 @@ class ReadExecutor:
             if isinstance(raw_page_info, Mapping)
             else {}
         )
-        page = _page_envelope(operation, values, page_info, len(items))
+        page = page_envelope(operation, values, page_info, len(items))
         safe_inputs = {
             key: "[REDACTED]" if spec.sensitive else value
             for key, value in values.items()
@@ -1364,36 +1365,6 @@ def _sensitive_key(
             "_user_name",
         )
     )
-
-
-def _page_envelope(
-    operation: OperationSpec,
-    values: Mapping[str, Any],
-    page_info: Mapping[str, Any],
-    item_count: int,
-) -> Mapping[str, Any] | None:
-    if operation.pagination.kind == "none":
-        return None
-    page_number = page_info.get(operation.pagination.page_field, values.get(operation.pagination.page_field, 1))
-    page_size = page_info.get(
-        operation.pagination.page_size_field,
-        values.get(operation.pagination.page_size_field, operation.pagination.default_page_size),
-    )
-    total_pages = page_info.get(operation.pagination.total_page_field)
-    total_items = page_info.get("total_number", page_info.get("total"))
-    has_more = bool(
-        isinstance(page_number, int)
-        and isinstance(total_pages, int)
-        and page_number < total_pages
-    )
-    return {
-        "number": page_number,
-        "size": page_size,
-        "item_count": item_count,
-        "total_pages": total_pages,
-        "total_items": total_items,
-        "has_more": has_more,
-    }
 
 
 def _is_empty(data: Any, items: tuple[Any, ...]) -> bool:

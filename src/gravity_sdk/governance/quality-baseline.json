@@ -40,7 +40,6 @@
       "src/gravity_sdk/models.py::InputField.from_value": 40,
       "src/gravity_sdk/models.py::InputField.validate": 31,
       "src/gravity_sdk/models.py::OperationSpec.from_dict": 48,
-      "src/gravity_sdk/models.py::OperationSpec.validate_inputs": 23,
       "src/gravity_sdk/models.py::load_operation_manifest": 16,
       "src/gravity_sdk/prober/batch.py::finalize_batch_report": 55,
       "src/gravity_sdk/prober/batch.py::run_batch_probes": 47,
@@ -216,7 +215,7 @@
     },
     "src/gravity_sdk/executor.py": {
       "ast_hard_limit": 9149,
-      "ast_nodes": 9099,
+      "ast_nodes": 8912,
       "migration_sloc": 1330,
       "sloc_hard_limit": 1430
     },
@@ -228,7 +227,7 @@
     },
     "src/gravity_sdk/models.py": {
       "ast_hard_limit": 8647,
-      "ast_nodes": 8622,
+      "ast_nodes": 8518,
       "migration_sloc": 1071,
       "sloc_hard_limit": 1158
     },

@@ -21,10 +21,19 @@ def pagination_audit(
     request_inputs = request.get("inputs") if isinstance(request, Mapping) else {}
     request_inputs = request_inputs if isinstance(request_inputs, Mapping) else {}
     requested_size = inputs.get("page_size")
-    effective_size = request_inputs.get("page_size")
+    effective_size = request_inputs.get("page_size") if page else None
     returned_items = page.get("item_count")
     total_items = page.get("total_items")
     has_more = _has_more(page)
+    criterion = "has_more=false and returned_items=total_items"
+    if not page:
+        returned_items = _data_item_count(result.get("data"))
+        total_items = _reported_total(result.get("data"))
+        criterion = (
+            "single_response and returned_items=reported_total"
+            if total_items is not None
+            else "single_response; upstream completeness total unavailable"
+        )
     return {
         "mode": "all_pages" if all_pages else "bounded" if bounded else "single_page",
         "operation_requests_made": _operation_request_count(result, page),
@@ -37,13 +46,44 @@ def pagination_audit(
         "effective_page_size": effective_size,
         "page_size_clamped": _page_size_clamped(requested_size, effective_size),
         "completeness": {
-            "criterion": "has_more=false and returned_items=total_items",
-            "status": _completeness_status(has_more, returned_items, total_items),
+            "criterion": criterion,
+            "status": (
+                _single_response_status(returned_items, total_items)
+                if not page
+                else _completeness_status(has_more, returned_items, total_items)
+            ),
             "has_more": has_more,
             "returned_items": returned_items,
             "total_items": total_items,
         },
     }
+
+
+def _data_item_count(data: Any) -> int:
+    if isinstance(data, list):
+        return len(data)
+    if isinstance(data, Mapping):
+        for key in ("list", "items"):
+            rows = data.get(key)
+            if isinstance(rows, list):
+                return len(rows)
+    return 0
+
+
+def _reported_total(data: Any) -> int | None:
+    if not isinstance(data, Mapping):
+        return None
+    page_info = data.get("page_info")
+    if not isinstance(page_info, Mapping):
+        return None
+    value = page_info.get("total", page_info.get("total_number"))
+    return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+
+def _single_response_status(returned_items: int, total_items: int | None) -> str:
+    if total_items is None:
+        return "unknown"
+    return "complete" if returned_items == total_items else "partial"
 
 
 def _operation_request_count(result: Mapping[str, Any], page: Mapping[str, Any]) -> int:

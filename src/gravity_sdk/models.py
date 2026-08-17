@@ -21,6 +21,7 @@ from .errors import (
     is_success_status,
 )
 from .operation_effect_policy import validate_operation_effect
+from .pagination_inputs import validate_page_inputs
 from .projection_validation import numeric_suffix_schema, validate_projection_bindings
 from .result_audit import add_result_audit, result_receipt_references
 from .result_source import RAW_OPERATION, result_source
@@ -914,15 +915,7 @@ class OperationSpec:
                 parent = required_parent.input_field
                 if parent not in values or values[parent] in (None, "", [], {}):
                     raise ParentRequiredError(f"operation requires parent input: {parent}")
-        if self.pagination.kind == "page_info":
-            page = values.get(self.pagination.page_field)
-            size = values.get(self.pagination.page_size_field)
-            if not isinstance(page, int) or isinstance(page, bool) or page < 1:
-                raise InputValidationError("page must be a positive integer")
-            if not isinstance(size, int) or isinstance(size, bool) or size < 1:
-                raise InputValidationError("page_size must be a positive integer")
-            if self.pagination.max_page_size and size > self.pagination.max_page_size:
-                raise InputValidationError("requested page size exceeds the operation limit")
+        validate_page_inputs(self.fields, self.pagination, values)
         thawed = _thaw_json(values)
         if not isinstance(thawed, dict):  # pragma: no cover - construction invariant
             raise InputValidationError("operation inputs could not be isolated")

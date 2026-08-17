@@ -5487,3 +5487,69 @@ passed**、Agent 指南生成器 `--check`、CLI help 与 `git diff --check` 全
 按 diff added lines 复算，`src/gravity_sdk` 实现新增 807 行，测试新增 157 行，比例约
 **0.195**，低于三分之一；`agent.py` 为 493 SLOC、`sdk.py` 保持 500，quality baseline 未改。
 没有 GitHub、push、tag 或其他对外动作。
+
+## 合同真实性：分页声明与结果可重放边界（2026-08-17）
+
+**提案与证据规则：**工作提案位于 ignored `tmp/codex/contract-truth/proposal.md`。本轮不全量探测；
+先按精确 method+path 将 231 条 operation 与持久化 production response sketch、前端直接消费的 wire
+字段及合同模板对齐。production 只在真实响应或本趟有界 observation 存在时成立，wire 只在调用点直接
+读取分页字段时成立；合同声明不能给自己提升证据等级。完整逐行快照位于
+`evidence/forensics/20260817_pagination_contract_audit.{json,md}`，本趟实测与 29 条 receipt 账本位于
+`evidence/forensics/20260817_contract_truth.json`。
+
+**231 条离线审计：**派发基线 `f798d39` 精确为 `119 page_info + 112 none`。119 条的最终形状为
+**A 59 / B 1 / unknown 59**；证据等级为 **production 62 / wire 8 / template-only 49**。A 只在
+`page/page_size/total_number/total_page` 四字段齐全时成立；B 只在精确观察到 total-only 时成立；
+其余即使合同写着 `total_page_field` 也保持 unknown。112 条 `none` 逐条复核为：30 条生产响应未见
+page_info、46 条 detail/aggregate/mutation 非集合语义、1 条已披露手动空页协议、1 条不可执行 candidate
+的 wire 分页信号、34 条集合完整性未知；其中 27 条是 stable+executable 的静默完整性风险，不能写成
+“已确认无分页”。修正 Multidim 后当前合同分布为 `118 page_info + 113 none`，operation 总数不变。
+
+**为什么只实测七条：**`report.multidim.query` 是必修复项；`report.multidim.metric.list`、
+`material.report.query`、`report.business.query` 会被正式产品分页层用于完整读取，误判会重复请求；三者
+均实测为 A。`report.multidim.media_enum.list`、`material.metric.list`、`promotion.metric.list` 无父对象且
+正式调用方把返回值当完整元数据目录，三者最小 probe 均未见 page_info。其余未测项中仍有 59 个
+page_info unknown 与 27 个 stable+executable none 集合风险；没有批量探测，因为 page-1 成功或未见
+page_info 不能证明服务端永不截断，且部分条目需要敏感父对象或无法构造可证伪 continuation。
+
+**Multidim 修复：**同一输入的 page 1/page 2 都返回 40 行且 SHA-256 相同，page_info 精确只有
+`{total:int}`；page_size=10 仍返回 40 行，证明 page/page_size 不控制观察结果。源合同改为
+`pagination.kind=none`，保留既有 wire 输入和 response `page_info.total`，删除虚假的 total_page/max
+声明；通用 `read_all/read_limited` 因而只发一次 query。新的 `pagination_audit` 判据为
+`single_response and returned_items=reported_total`，effective page size 与 has_more 均为 null；只有
+行数等于 reported total 时为 complete。标准 A 形状 operation 仍使用原
+`has_more=false and returned_items=total_items` 判据，二者不混用。
+
+**结果可重放边界：**原同输入 `total_revenue` 两次差 6.00 的事实成立，但成因仍为 **unknown**。
+本趟相同输入三次即时采样在约两秒内稳定；历史单日、T-1 单日与非收入 `ap_show` 各两次短采样也稳定，
+但较老的 2026-06-01 收入相对此前较晚观察又增加 185.00，证明变化不只发生在近期日期。三个收入指标
+的当前结果不满足 total 等于两个已选分量的简单关系，无法定位到一个分量；一个短时非收入对照也不足以
+证明收入类独有。故不猜回填/结算，不声明稳定窗。新增 `report.ap-cost-observation@4`（fingerprint
+`aae2b2916ec567dc5c74a626ab18d1c04af9efaf2101b6da890d876ab5ca7503`）保持 v3 成员面，
+具体收窄后的 allowed claims 为：
+
+1. `observed-metric-value` 只允许把值写成 scoped to `result.query.fetched_at` 的时点观察，并明确相同
+   结构化输入稍后执行不保证相同值；
+2. `within-result-comparison` 只允许同一次执行内比较；跨执行降级为两个分别带时间戳的观察与算术差，
+   不得称为 replay-equivalent、stable、settled 或 causal。
+
+canonical 编译 bytes 的确定性测试继续保留并扩到 v4；收窄的是结果层，不是编译层。
+
+**生产 HTTP 账本：**实际 **29 / 30**：authentication 1、`report.multidim.metric.list` 7、
+`report.multidim.query` 16、`material.report.query` 1、`report.business.query` 1、三个 none 元数据目录各 1。
+全部 HTTP 200、attempt 1、retry=false；只有为证明错误分页而显式请求一次 query page 2，没有 page 3+、
+扩窗、换 App 或重试。按累计 5 的边界在 sequence 6（原子 metadata+query 跨线）、10、15、20、26
+及最终 29 从私有 receipt query 复核；最后 1 次预算主动不用，sequence 29 后无生产请求。
+
+**能力台账：**未新增/删除 operation，故 operation/stable 保持 `231/222`；产品卡 90、selector 329、
+动线 `56 = 48 / 1 / 7` 均不变。v4 只是既有语义组合的结果声明版本，不增加上游可回答问题或产品卡。
+
+**最终门禁：**unittest **`1146 + 4 = 1150 tests OK`**；pytest **`1150 passed / 3092 subtests
+passed`**，主测试只增不减、subtests 与基线相同。compiler **231 operations / 11 manifests**；quality
+PASS（operations/provenance 231/231、operation literals 57）。共享热点没有放宽：`executor.py` AST
+ratchet `9099→8912`、`models.py` `8622→8518`，并删除已消失的 `validate_inputs` complexity debt；
+500/80/15/0 硬阈值不变。文档 **4 passed**、Agent 指南生成器 `--check`、stable privacy、CLI help 与
+`git diff --check` 全过。caller-recoverable 审计保持 **`1225 = A422/B434/C369`**，本线新增 error site
+为 **0/0 A**。`src/gravity_sdk` 新增 377 行、tests 新增 123 行，比例 **0.326**，低于三分之一。
+没有运行真实 holdout/final/all、读取 key 或修改评测装置/题集/评分；全量测试里的 protected 字样仍只
+来自隔离临时目录的 synthetic fixture。没有 GitHub、push、tag 或其他对外动作。

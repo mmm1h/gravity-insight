@@ -1108,7 +1108,7 @@
       "action": "list",
       "auth_profile": "gravity_authorization",
       "contract_version": 4,
-      "description": "执行已登记维度、指标和时间窗口的多维报表查询；支持受控关键日展开，并返回请求指标的数字后缀动态列。",
+      "description": "执行已登记维度、指标和时间窗口的多维报表查询；支持受控关键日展开，并返回请求指标的数字后缀动态列。生产观察证明上游单次返回完整结果及 page_info.total，page/page_size 不控制结果，不得据此续页。",
       "domain": "report",
       "effect": "read",
       "input_fields": {
@@ -1199,10 +1199,12 @@
         },
         "page": {
           "default": 1,
+          "description": "兼容既有 wire 的正整数；上游已实测不按该值续页。",
           "type": "integer"
         },
         "page_size": {
           "default": 100,
+          "description": "兼容既有 wire 的正整数；上游已实测不按该值截断或分页。",
           "type": "integer"
         },
         "relate_dims": {
@@ -1250,14 +1252,12 @@
       },
       "operation_id": "report.multidim.query",
       "pagination": {
-        "default_page_size": 100,
-        "kind": "page_info",
-        "list_path": "data.list",
-        "max_page_size": 100,
-        "page_field": "page",
-        "page_info_path": "data.page_info",
-        "page_size_field": "page_size",
-        "total_page_field": "total_page"
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
       },
       "path_template": "/report/api/v3/adreport/custom_get/",
       "privacy_policy": {
@@ -1317,6 +1317,9 @@
         },
         "data_item_keys": {
           "extra_data": [],
+          "page_info": [
+            "total"
+          ],
           "total": [
             "ap_cost",
             "stat_time"

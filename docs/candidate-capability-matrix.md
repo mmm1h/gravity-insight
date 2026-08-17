@@ -612,3 +612,20 @@ v1/v2/v3 definition version 和 fingerprint 两两不同；unknown member、禁�
 重复 page 1 的 40 个日行。每次 projected `page_info` 只有 `total=40`，没有合同声明的 `total_page`；
 operation 却登记 `page_info/total_page_field=total_page/max_page_size=100`。因此不能说 `total_page` 报了
 某个数，它实际缺失；分页层在预算耗尽前重复请求同一数据。
+
+## 2026-08-17 追加判定：分页真实性与语义定义 v4
+
+本轮以同一 App/窗口/结构化输入重新取得可复核证据：`report.multidim.query` 的 page 1 与 page 2
+各返回 40 行且行指纹相同，`page_info` 精确只有整数 `total`；把 page_size 从 100 改为 10 仍返回
+40 行。因此该 route 是单响应 + reported total，不是合同原先声称的 `total_page` 分页。operation
+已改成 `pagination.kind=none`；既有 page/page_size wire 字段保留但明确不控制结果，`read_all` 只发一次
+query。完整性只在单响应行数等于 `page_info.total` 时成立，不再虚构 `has_more`。
+
+新增不可变 `report.ap-cost-observation@4`（fingerprint
+`aae2b2916ec567dc5c74a626ab18d1c04af9efaf2101b6da890d876ab5ca7503`），成员、粒度、
+dimension/filter/join 与 v3 相同，只收窄
+结果声明：canonical 编译 bytes 仍确定；执行结果只代表 `result.query.fetched_at` 时点。同一结构化输入
+跨执行不保证相同数值；跨执行只能降级为分别带时间戳的观察与算术差，不得称为确定性重放、稳定、
+已结算或因果变化。原 6.00 差异的成因仍未知；有界复测还发现 2026-06-01 这个旧日期相对较晚的旧观察
+再次增加 185.00，故不能把波动限于近期日期，也没有证据给出 T+N 稳定窗。一个 `ap_show` 对照在短采样
+内稳定不足以证明只有收入指标变化，三收入指标又不满足简单二分量求和，因此不填写回填/结算猜测。

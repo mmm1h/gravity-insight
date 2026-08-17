@@ -1,0 +1,3640 @@
+{
+  "audit_date": "2026-08-17",
+  "baseline_commit": "f798d396f01da2ed00405d54da85cceea636aaef",
+  "method": {
+    "production": "exact persisted response sketch or bounded observation for the same method+path",
+    "shape_A": [
+      "data.page_info.page",
+      "data.page_info.page_size",
+      "data.page_info.total_number",
+      "data.page_info.total_page"
+    ],
+    "shape_B": [
+      "data.page_info.total"
+    ],
+    "template_default": "only the operation pagination declaration is available",
+    "unknown": "evidence does not prove either exact shape",
+    "wire": "exact frontend response consumer directly reads page_info"
+  },
+  "records": [
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/account.department.list.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "account.department.list",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=100, max_page_size=2000)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260809T145634Z_app.project_auth.detail.yaml",
+        "evidence/probe/20260812T044151Z_app.project_auth.detail.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "analysis.account_user.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.ai.conversation.list.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.ai.conversation.list",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.ai.message.list.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.ai.message.list",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.dashboard.condition_favourite.default_to_me.get.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.dashboard.condition_favourite.default_to_me.get",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.dashboard.condition_favourite.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "analysis.dashboard.condition_favourite.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.dashboard.detail.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.dashboard.detail",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T192526Z_analysis.dashboard.event_list_info.get.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.dashboard.event_list_info.get",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.dashboard.members.list.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.dashboard.members.list",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.dashboard.space_members.list.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.dashboard.space_members.list",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.dashboard.tree.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.dashboard.tree",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.dataanalysis.segment.update.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.dataanalysis.segment.update",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.dashboard.copy.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.datamanageconfig.kanban.dashboard.copy",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.dashboard.create.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.datamanageconfig.kanban.dashboard.create",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.dashboard.dc7858a7.update.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.datamanageconfig.kanban.dashboard.dc7858a7.update",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.dashboard.delete.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.datamanageconfig.kanban.dashboard.delete",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.dashboard.move.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.datamanageconfig.kanban.dashboard.move",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.dashboard.update.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.datamanageconfig.kanban.dashboard.update",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.folder.create.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.datamanageconfig.kanban.folder.create",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.folder.delete.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.datamanageconfig.kanban.folder.delete",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.folder.move.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.datamanageconfig.kanban.folder.move",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.folder.update.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.datamanageconfig.kanban.folder.update",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.note.update.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.datamanageconfig.kanban.note.update",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.space.create.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.datamanageconfig.kanban.space.create",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.space.delete.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.datamanageconfig.kanban.space.delete",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.space.move.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.datamanageconfig.kanban.space.move",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.datamanageconfig.kanban.space.update.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.datamanageconfig.kanban.space.update",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205504Z_analysis.default_val.list.yaml",
+        "evidence/probe/20260808T231057Z_analysis.default_val.list.yaml",
+        "evidence/probe/20260812T043718Z_analysis.default_val.list.yaml",
+        "evidence/probe/20260815T192233Z_analysis.default_val.list.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.default_val.list",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.engine.datamanageconfig.kanban.delete.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.engine.datamanageconfig.kanban.delete",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T192527Z_analysis.event.info.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.event.info",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=100, max_page_size=2000)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T192526Z_analysis.dashboard.event_list_info.get.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "analysis.event.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.event.query.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.event.query",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=100, max_page_size=2000)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.event_property.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "analysis.event_property.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.event_property_group.list.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.event_property_group.list",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.event_property_value.list.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.event_property_value.list",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.from.history.version.create.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.from.history.version.create",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.from.tmp.segment.create.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.from.tmp.segment.create",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.funnel.query.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.funnel.query",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.kanban.dashboard.folder.move.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.kanban.dashboard.folder.move",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.kanban.dashboard.order.update.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.kanban.dashboard.order.update",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=1000)",
+      "evidence_level": "wire",
+      "evidence_sources": [
+        "src/gravity_sdk/census/data/route-response-fields.json#POST /report/api/v3/dataanalysis/monetization_detail/list/"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "analysis.monetization_detail.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.order_detail.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "analysis.order_detail.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.order_split_detail.list.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.order_split_detail.list",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.property.query.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.property.query",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.report.hidden_property.list.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.report.hidden_property.list",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.report_config.get.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.report_config.get",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=1000, max_page_size=1000)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/forensics/20260817_contract_evidence.json#/report_config_page_size"
+      ],
+      "observed_shape": "A",
+      "operation_id": "analysis.report_config.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.report_config.update.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.report_config.update",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.retention.query.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.retention.query",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.scatter.query.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.scatter.query",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.segment.by.manual.update.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.segment.by.manual.update",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.segment.detail.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.segment.detail",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.segment.evaluate_percent.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.segment.evaluate_percent",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.segment.from.analysis.create.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.segment.from.analysis.create",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.segment.from.rule.create.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.segment.from.rule.create",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.segment.from.rule.update.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.segment.from.rule.update",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data', total_page_field='total_page', default_page_size=100, max_page_size=100)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.segment.history_version.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "analysis.segment.history_version.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=100, max_page_size=100)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.segment.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "analysis.segment.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=100, max_page_size=100)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.segment.uid_result.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "analysis.segment.uid_result.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.segment.user_detail.list.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.segment.user_detail.list",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=30)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.task.other_event.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "analysis.task.other_event.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=2000)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.task.pay_event.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "analysis.task.pay_event.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=15, max_page_size=60)",
+      "evidence_level": "wire",
+      "evidence_sources": [
+        "src/gravity_sdk/census/data/route-response-fields.json#POST /turbo_engine/api/v2/datamanageconfig/template_internal/list/"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "analysis.template.internal.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=15, max_page_size=60)",
+      "evidence_level": "wire",
+      "evidence_sources": [
+        "src/gravity_sdk/census/data/route-response-fields.json#POST /turbo_engine/api/v2/datamanageconfig/template/list/"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "analysis.template.own.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=15, max_page_size=60)",
+      "evidence_level": "wire",
+      "evidence_sources": [
+        "src/gravity_sdk/census/data/route-response-fields.json#POST /turbo_engine/api/v2/datamanageconfig/template/share/list/"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "analysis.template.share.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.template.subject.internal.list.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.template.subject.internal.list",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.template.subject.own.list.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.template.subject.own.list",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.template.subject.share.list.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.template.subject.share.list",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "wire",
+      "evidence_sources": [
+        "src/gravity_sdk/census/data/route-response-fields.json#POST /report/api/v3/dataanalysis/user/detail/list/"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "analysis.user_detail.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.user_event.list.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.user_event.list",
+      "review_reason": "upstream pagination is explicit but has no page_info; the product exposes manual continuation and does not claim completeness",
+      "review_status": "manual_empty_page_protocol",
+      "risk": "manual_continuation_disclosed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.user_postback_log.list.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.user_postback_log.list",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=100, max_page_size=2000)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.user_property.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "analysis.user_property.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/analysis.user_property_value.list.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.user_property_value.list",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260811T050921Z_app.capacity.get.yaml",
+        "evidence/probe/20260811T071537Z_app.capacity.list.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "app.capacity.get",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260811T071537Z_app.capacity.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "app.capacity.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/app.detail.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "app.detail",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=6000, max_page_size=6000)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T192526Z_analysis.dashboard.event_list_info.get.yaml",
+        "evidence/probe/20260809T145637Z_material.bytedance_asset_text_title_package.list.yaml",
+        "evidence/probe/20260811T060858Z_app.realtime_event.list.yaml",
+        "evidence/probe/20260812T044153Z_app.onelink.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "app.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260811T064047Z_app.permission_menu.list.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "app.permission_menu.list",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205502Z_app.realtime_event.list.yaml",
+        "evidence/probe/20260808T231108Z_app.realtime_event.list.yaml",
+        "evidence/probe/20260811T060923Z_app.realtime_event.list.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "app.realtime_event.list",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260811T073101Z_app.role.detail.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "app.role.detail",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260811T065818Z_app.role.list.yaml",
+        "evidence/probe/20260811T073101Z_app.role.detail.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "app.role.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=100, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260811T070628Z_app.template.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "app.template.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=1000, max_page_size=1000)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/app.testing_tool.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "app.testing_tool.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/attribution.attr_backtrack.list.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "attribution.attr_backtrack.list",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/attribution.attr_click_interval.get.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "attribution.attr_click_interval.get",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/attribution.attr_impress_click.list.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "attribution.attr_impress_click.list",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205542Z_attribution.attribution.query.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "attribution.attribution.query",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/attribution.attribution_detail.query.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "attribution.attribution_detail.query",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/attribution.post_backtrack.list.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "attribution.post_backtrack.list",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/attribution.postback_map.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "attribution.postback_map.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/attribution.postback_map_collect.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "attribution.postback_map_collect.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/attribution.postback_mode.list.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "attribution.postback_mode.list",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/attribution.reattribution.list.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "attribution.reattribution.list",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/candidate.account.user_operation_log.list.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "candidate.account.user_operation_log.list",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
+      "evidence_level": "wire",
+      "evidence_sources": [
+        "src/gravity_sdk/census/data/route-response-fields.json#POST /turbo_engine/api/v1/asset/material/kuaishou/list/"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "candidate.material.kuaishou.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/candidate.material.platform.list.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "candidate.material.platform.list",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "wire",
+      "evidence_sources": [
+        "src/gravity_sdk/census/data/route-response-fields.json#GET /turbo_engine/api/v1/user/promoted_object/click_url/list/"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "candidate.promotion_object.click_url.list",
+      "review_reason": "wire consumes pagination metadata while the operation declares none",
+      "review_status": "wire_pagination_signal",
+      "risk": "non_executable_signal",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/candidate.promotion_object.click_url_edit_log.list.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "candidate.promotion_object.click_url_edit_log.list",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/candidate.promotion_object.extra_info.list.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "candidate.promotion_object.extra_info.list",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205524Z_material.album.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "material.album.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260809T145635Z_material.album.list.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "material.album.tree",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205525Z_material.asset_directional_package_bytedance.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "material.asset_directional_package_bytedance.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205526Z_material.asset_material_media_review_list.list.yaml",
+        "evidence/probe/20260808T210017Z_material.asset_material_media_review_list.list.yaml",
+        "evidence/probe/20260808T210246Z_material.asset_material_media_review_list.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "material.asset_material_media_review_list.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
+      "evidence_level": "wire",
+      "evidence_sources": [
+        "src/gravity_sdk/census/data/route-response-fields.json#POST /turbo_engine/api/v1/asset/material/bytedance/list/"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "material.bytedance.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205531Z_material.material_get.query.yaml",
+        "evidence/probe/20260808T231140Z_material.material_get.query.yaml",
+        "evidence/probe/20260809T142907Z_material.material_get.query.yaml",
+        "evidence/probe/20260811T030309Z_material.bytedance.project_material.list.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "material.bytedance.project_material.list",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205528Z_material.bytedance_promotion_material.list.yaml",
+        "evidence/probe/20260808T231056Z_material.bytedance_promotion_material.list.yaml",
+        "evidence/probe/20260809T142905Z_material.bytedance_promotion_material.list.yaml",
+        "evidence/probe/20260811T041337Z_material.bytedance.promotion_material.list.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "material.bytedance.promotion_material.list",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205518Z_material.bytedance_asset_material.list.yaml",
+        "evidence/probe/20260808T231055Z_material.bytedance_asset_material.list.yaml",
+        "evidence/probe/20260809T142904Z_material.bytedance_asset_material.list.yaml"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "material.bytedance_asset_material.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205527Z_material.bytedance_asset_text_title.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "material.bytedance_asset_text_title.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205527Z_material.bytedance_asset_text_title_package.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "material.bytedance_asset_text_title_package.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205528Z_material.bytedance_std_asset_text_title.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "material.bytedance_std_asset_text_title.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205528Z_material.bytedance_std_asset_text_title_package.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "material.bytedance_std_asset_text_title_package.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/material.examine.config.get.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "material.examine.config.get",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=5000, max_page_size=5000)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/material.favorites.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "material.favorites.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260809T145635Z_material.batch_options.query.yaml"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "material.local.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260809T144340Z_material.material_examine_user.list.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "material.material_examine_user.list",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/forensics/20260817_contract_truth.json#/pagination_observations/material.metric.list"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "material.metric.list",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "selected_high_risk",
+      "selected_for_production_validation": true,
+      "selection_reason": "Material callers consume the returned array as a complete metric catalog"
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/material.recycle.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "material.recycle.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/forensics/20260817_contract_truth.json#/pagination_observations/material.report.query"
+      ],
+      "observed_shape": "A",
+      "operation_id": "material.report.query",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "selected_high_risk",
+      "selected_for_production_validation": true,
+      "selection_reason": "Material Performance follows this declaration for bounded pagination"
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/material.review.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "material.review.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=100, max_page_size=100)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/material.tag.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "material.tag.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=100, max_page_size=100)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/material.tag_category.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "material.tag_category.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205454Z_material.tag_category.tree.yaml",
+        "evidence/probe/20260808T210010Z_material.tag_category.tree.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "material.tag_category.tree",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
+      "evidence_level": "wire",
+      "evidence_sources": [
+        "src/gravity_sdk/census/data/route-response-fields.json#POST /turbo_engine/api/v1/asset/material/tencent/list/"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "material.tencent.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/metadata.event.property.template.079c8246.create.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "metadata.event.property.template.079c8246.create",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/metadata.event.property.template.create.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "metadata.event.property.template.create",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205455Z_metadata.event_property_template_event.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "metadata.event_property_template_event.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205456Z_metadata.event_property_template_event_list.list.yaml",
+        "evidence/probe/20260808T210013Z_metadata.event_property_template_event_list.list.yaml",
+        "evidence/probe/20260808T210243Z_metadata.event_property_template_event_list.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "metadata.event_property_template_event_list.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205451Z_metadata.metrics.get.yaml",
+        "evidence/probe/20260808T231135Z_metadata.metrics.get.yaml",
+        "evidence/probe/20260811T061835Z_metadata.metrics.get.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "metadata.metrics.get",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205456Z_metadata.operation_log.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "metadata.operation_log.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T192454Z_metadata.promotion_gravity_metric.list.yaml",
+        "evidence/probe/20260808T192617Z_metadata.promotion_gravity_metric.list.yaml",
+        "evidence/probe/20260808T193142Z_metadata.promotion_gravity_metric.list.yaml",
+        "evidence/probe/20260808T205323Z_metadata.promotion_gravity_metric.list.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "metadata.promotion_gravity_metric.list",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205457Z_metadata.property.list.yaml",
+        "evidence/probe/20260808T210014Z_metadata.property.list.yaml",
+        "evidence/probe/20260808T210245Z_metadata.property.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "metadata.property.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/metadata.property.template.event.delete.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "metadata.property.template.event.delete",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/metadata.property.template.property.delete.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "metadata.property.template.property.delete",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205457Z_metadata.version.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "metadata.version.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205533Z_promotion.ai_trusteeship.detail.yaml",
+        "evidence/probe/20260808T231135Z_promotion.ai_trusteeship.detail.yaml",
+        "evidence/probe/20260811T055602Z_promotion.ai_trusteeship.detail.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "promotion.ai_trusteeship.detail",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205543Z_promotion.ai_trusteeship.list.yaml",
+        "evidence/probe/20260811T055537Z_promotion.ai_trusteeship.detail.yaml",
+        "evidence/probe/20260811T061735Z_metadata.metrics.get.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.ai_trusteeship.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/promotion.alipay.advertiser.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "promotion.alipay.advertiser.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T231932Z_promotion.apple.ad_group.list.yaml",
+        "evidence/probe/20260808T231932Z_promotion.apple.apple_campaigns.list.yaml",
+        "evidence/probe/20260809T145638Z_promotion.apple.ad_group.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.apple.advertiser.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/promotion.baidu.advertiser.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "promotion.baidu.advertiser.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205548Z_promotion.bilibili.account.list.yaml",
+        "evidence/probe/20260808T231117Z_promotion.bilibili.account.list.yaml",
+        "evidence/probe/20260808T232518Z_promotion.bilibili.account.list.yaml",
+        "evidence/probe/20260808T233141Z_promotion.bilibili.account.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.bilibili.account.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T231926Z_material.bilibili_manager_creative.list.yaml",
+        "evidence/probe/20260808T231933Z_promotion.bilibili.bilibili_manager_unit.list.yaml",
+        "evidence/probe/20260808T231933Z_promotion.bilibili.campaign_option.list.yaml",
+        "evidence/probe/20260809T145636Z_material.bilibili_manager_creative.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.bilibili.advertiser.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/promotion.bing.advertiser.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "promotion.bing.advertiser.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260811T032255Z_promotion.bytedance.standard_project.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.bytedance.account.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T192010Z_promotion.bytedance.account_company.list.yaml",
+        "evidence/probe/20260808T205324Z_promotion.bytedance.account_company.list.yaml",
+        "evidence/probe/20260808T205534Z_promotion.bytedance.account_company.list.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "promotion.bytedance.account_company.list",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T231927Z_material.bytedance_asset_material.list.yaml",
+        "evidence/probe/20260808T231929Z_material.bytedance_promotion_material.list.yaml",
+        "evidence/probe/20260808T231931Z_material.material_get.query.yaml",
+        "evidence/probe/20260808T231934Z_promotion.bytedance.bytedance_manager_project.list.yaml",
+        "evidence/probe/20260808T231935Z_promotion.bytedance.std_project.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.bytedance.advertiser.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205551Z_promotion.bytedance.bytedance_advertiser.list.yaml",
+        "evidence/probe/20260808T231125Z_promotion.bytedance.bytedance_advertiser.list.yaml",
+        "evidence/probe/20260808T232914Z_promotion.bytedance.bytedance_advertiser.list.yaml",
+        "evidence/probe/20260811T043633Z_promotion.bytedance.advertiser_performance.list.yaml",
+        "evidence/probe/20260814T025002Z_promotion.bytedance.advertiser_performance.pagination.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.bytedance.advertiser_performance.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205535Z_promotion.bytedance.app.list.yaml",
+        "evidence/probe/20260808T210018Z_promotion.bytedance.app.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.bytedance.app.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205552Z_promotion.bytedance.custom_audience.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.bytedance.custom_audience.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205622Z_promotion.bytedance.bytedance_manager_project.list.yaml",
+        "evidence/probe/20260808T231112Z_promotion.bytedance.bytedance_manager_project.list.yaml",
+        "evidence/probe/20260809T142912Z_promotion.bytedance.bytedance_manager_project.list.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "promotion.bytedance.manager_project.list",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205551Z_promotion.bytedance.bytedance_manager_promotion.list.yaml",
+        "evidence/probe/20260808T231112Z_promotion.bytedance.bytedance_manager_promotion.list.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "promotion.bytedance.manager_promotion.list",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/promotion.bytedance.project.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "promotion.bytedance.project.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205554Z_promotion.bytedance.project_filter.list.yaml",
+        "evidence/probe/20260808T210021Z_promotion.bytedance.project_filter.list.yaml",
+        "evidence/probe/20260808T231931Z_material.material_get.query.yaml",
+        "evidence/probe/20260809T142904Z_material.bytedance_asset_material.list.yaml",
+        "evidence/probe/20260809T142905Z_material.bytedance_promotion_material.list.yaml",
+        "evidence/probe/20260809T142907Z_material.material_get.query.yaml",
+        "evidence/probe/20260809T142912Z_promotion.bytedance.bytedance_manager_project.list.yaml",
+        "evidence/probe/20260809T142912Z_promotion.bytedance.std_project.list.yaml",
+        "evidence/probe/20260809T145637Z_material.bytedance_asset_material.list.yaml",
+        "evidence/probe/20260811T030309Z_material.bytedance.project_material.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.bytedance.project_filter.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205556Z_promotion.bytedance.promotion_filter.list.yaml",
+        "evidence/probe/20260808T210024Z_promotion.bytedance.promotion_filter.list.yaml",
+        "evidence/probe/20260808T231929Z_material.bytedance_promotion_material.list.yaml",
+        "evidence/probe/20260809T142905Z_material.bytedance_promotion_material.list.yaml",
+        "evidence/probe/20260809T145638Z_material.bytedance_promotion_material.list.yaml",
+        "evidence/probe/20260811T041337Z_material.bytedance.promotion_material.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.bytedance.promotion_filter.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205557Z_promotion.bytedance.site.list.yaml",
+        "evidence/probe/20260808T210025Z_promotion.bytedance.site.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.bytedance.site.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205559Z_promotion.conditions_history.list.yaml",
+        "evidence/probe/20260808T210027Z_promotion.conditions_history.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.conditions_history.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205600Z_promotion.history.list.yaml",
+        "evidence/probe/20260808T210029Z_promotion.history.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.history.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=2000, max_page_size=2000)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T192046Z_promotion.honor.campaign_option.list.yaml",
+        "evidence/probe/20260808T205624Z_promotion.honor.campaign_option.list.yaml",
+        "evidence/probe/20260809T145639Z_promotion.honor.campaign_option.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.honor.account.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/promotion.honor.ad_group.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "promotion.honor.ad_group.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T231935Z_promotion.honor.ad_group_option.list.yaml",
+        "evidence/probe/20260809T145638Z_promotion.honor.ad_group_option.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.honor.advertiser.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/promotion.honor.campaign.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "promotion.honor.campaign.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T231935Z_promotion.huawei.adgroup_option.list.yaml",
+        "evidence/probe/20260808T231936Z_promotion.huawei.campaign_option.list.yaml",
+        "evidence/probe/20260809T145639Z_promotion.huawei.adgroup_option.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.huawei.advertiser.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T231936Z_promotion.huawei_store.adgroup_list.list.yaml",
+        "evidence/probe/20260808T231936Z_promotion.huawei_store.campaign.list.yaml",
+        "evidence/probe/20260809T145639Z_promotion.huawei_store.adgroup_list.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.huawei_store.advertiser.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=500, max_page_size=500)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/promotion.huya.account.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "promotion.huya.account.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/promotion.huya.advertiser.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "promotion.huya.advertiser.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T231937Z_promotion.iqiyi.group.list.yaml",
+        "evidence/probe/20260809T145640Z_promotion.iqiyi.group.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.iqiyi.advertiser.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=2000, max_page_size=2000)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T192046Z_promotion.kuaishou.campaign_option.list.yaml",
+        "evidence/probe/20260808T205626Z_promotion.kuaishou.campaign_option.list.yaml",
+        "evidence/probe/20260809T145640Z_promotion.kuaishou.campaign_option.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.kuaishou.account.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T192043Z_promotion.kuaishou.account_company.list.yaml",
+        "evidence/probe/20260808T205325Z_promotion.kuaishou.account_company.list.yaml",
+        "evidence/probe/20260808T205538Z_promotion.kuaishou.account_company.list.yaml",
+        "evidence/probe/20260811T054137Z_promotion.kuaishou.account_company.list.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "promotion.kuaishou.account_company.list",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/promotion.kuaishou.ad_unit.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "promotion.kuaishou.ad_unit.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T231929Z_material.component.list.yaml",
+        "evidence/probe/20260809T145638Z_material.component.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.kuaishou.advertiser.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205539Z_promotion.latest_account_status.get.yaml",
+        "evidence/probe/20260808T210011Z_promotion.latest_account_status.get.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "promotion.latest_account_status.get",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/forensics/20260817_contract_truth.json#/pagination_observations/promotion.metric.list"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "promotion.metric.list",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "selected_high_risk",
+      "selected_for_production_validation": true,
+      "selection_reason": "Promotion callers consume the returned array as a complete metric catalog"
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=5000)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260812T044153Z_app.onelink.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.object.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=500, max_page_size=500)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/promotion.oppo.account.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "promotion.oppo.account.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T231937Z_promotion.oppo.oppo_manager_group.list.yaml",
+        "evidence/probe/20260809T145640Z_promotion.oppo.oppo_manager_group.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.oppo.advertiser.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=500, max_page_size=500)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/promotion.qihu360.account.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "promotion.qihu360.account.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/promotion.qihu360.advertiser.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "promotion.qihu360.advertiser.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=100, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T192527Z_promotion.report_group.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.report_group.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=500, max_page_size=500)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/promotion.sigmob.account.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "promotion.sigmob.account.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/promotion.sigmob.advertiser.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "promotion.sigmob.advertiser.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/promotion.taptap.group.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "promotion.taptap.group.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T192042Z_promotion.tencent.account_company.list.yaml",
+        "evidence/probe/20260808T205325Z_promotion.tencent.account_company.list.yaml",
+        "evidence/probe/20260808T205541Z_promotion.tencent.account_company.list.yaml",
+        "evidence/probe/20260811T052826Z_promotion.tencent.account_company.list.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "promotion.tencent.account_company.list",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205612Z_promotion.tencent.adgroup_filter.list.yaml",
+        "evidence/probe/20260808T210049Z_promotion.tencent.adgroup_filter.list.yaml",
+        "evidence/probe/20260808T231939Z_promotion.tencent.ad.list.yaml",
+        "evidence/probe/20260809T142903Z_material.asset_directional_package_tencent.list.yaml",
+        "evidence/probe/20260809T142908Z_material.tencent_medium_creative.list.yaml",
+        "evidence/probe/20260809T142913Z_promotion.tencent.ad.list.yaml",
+        "evidence/probe/20260809T142915Z_promotion.tencent.tencent_medium_adgroup.list.yaml",
+        "evidence/probe/20260809T143213Z_material.asset_directional_package_tencent.list.yaml",
+        "evidence/probe/20260809T145635Z_material.asset_directional_package_tencent.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.tencent.adgroup_filter.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T231932Z_material.tencent_medium_creative.list.yaml",
+        "evidence/probe/20260808T231939Z_promotion.tencent.ad.list.yaml",
+        "evidence/probe/20260808T231940Z_promotion.tencent.tencent_medium_adgroup.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.tencent.advertiser.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205628Z_promotion.tencent.tencent_medium_adgroup.list.yaml",
+        "evidence/probe/20260808T231056Z_promotion.tencent.tencent_medium_adgroup.list.yaml",
+        "evidence/probe/20260809T142915Z_promotion.tencent.tencent_medium_adgroup.list.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "promotion.tencent.medium_adgroup.list",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=2000, max_page_size=2000)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/promotion.ubix.account.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "promotion.ubix.account.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/promotion.ubix.group.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "promotion.ubix.group.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T231940Z_promotion.uc.adgroup_option.list.yaml",
+        "evidence/probe/20260808T231940Z_promotion.uc.campaign_option.list.yaml",
+        "evidence/probe/20260809T145641Z_promotion.uc.adgroup_option.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.uc.advertiser.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=500, max_page_size=500)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/promotion.vivo.account.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "promotion.vivo.account.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T231940Z_promotion.vivo.vivo_adgroup.list.yaml",
+        "evidence/probe/20260808T231941Z_promotion.vivo.vivo_campaign.list.yaml",
+        "evidence/probe/20260809T145641Z_promotion.vivo.vivo_adgroup.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.vivo.advertiser.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/promotion.wechat_video.report.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "promotion.wechat_video.report.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=500, max_page_size=500)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/promotion.weibo.account.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "promotion.weibo.account.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T231941Z_promotion.weibo.adgroup_option.list.yaml",
+        "evidence/probe/20260808T231941Z_promotion.weibo.campaign_option.list.yaml",
+        "evidence/probe/20260809T145641Z_promotion.weibo.adgroup_option.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "promotion.weibo.advertiser.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/promotion.xiaohongshu.advertiser.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "promotion.xiaohongshu.advertiser.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=500, max_page_size=500)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/promotion.xiaohongshu.developer.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "promotion.xiaohongshu.developer.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=500, max_page_size=500)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/promotion.xiaomi.account.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "promotion.xiaomi.account.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/promotion.xiaomi.advertiser.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "promotion.xiaomi.advertiser.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=500, max_page_size=500)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/promotion.youdao.account.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "promotion.youdao.account.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=10, max_page_size=10)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/promotion.youdao.advertiser.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "promotion.youdao.advertiser.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/report.business.metric.list.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "report.business.metric.list",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.items', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/forensics/20260817_contract_truth.json#/pagination_observations/report.business.query"
+      ],
+      "observed_shape": "A",
+      "operation_id": "report.business.query",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "selected_high_risk",
+      "selected_for_production_validation": true,
+      "selection_reason": "Business Pulse follows this declaration for bounded pagination"
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205513Z_report.company_amount.query.yaml",
+        "evidence/probe/20260809T010624Z_report.company_amount.query.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "report.company_amount.query",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/report.confmetric.custom.metric.8ef6d12d.delete.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "report.confmetric.custom.metric.8ef6d12d.delete",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/report.confmetric.custom.metric.update.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "report.confmetric.custom.metric.update",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=5000, max_page_size=5000)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205458Z_report.custom_metric.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "report.custom_metric.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205515Z_report.hour_comparison.query.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "report.hour_comparison.query",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=2000, max_page_size=2000)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205459Z_report.metric.list.yaml",
+        "evidence/probe/20260808T210016Z_report.metric.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "report.metric.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/report.multidim.calc_total.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "report.multidim.calc_total",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/report.multidim.custom_metric.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "report.multidim.custom_metric.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T192527Z_report.multidim.custom_metric.shared.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "report.multidim.custom_metric.shared.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/forensics/20260817_contract_truth.json#/pagination_observations/report.multidim.media_enum.list"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "report.multidim.media_enum.list",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "selected_high_risk",
+      "selected_for_production_validation": true,
+      "selection_reason": "Multidim callers consume the returned object as a complete enum catalog"
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=2000, max_page_size=2000)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/forensics/20260817_contract_truth.json#/pagination_observations/report.multidim.metric.list"
+      ],
+      "observed_shape": "A",
+      "operation_id": "report.multidim.metric.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "selected_high_risk",
+      "selected_for_production_validation": true,
+      "selection_reason": "live metadata is automatically read_all before Multidim queries"
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/report.multidim.metric_tag.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "report.multidim.metric_tag.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/report.multidim.metric_tag_category.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "report.multidim.metric_tag_category.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=100, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/forensics/20260817_contract_truth.json#/pagination_observations/report.multidim.query",
+        "evidence/probe/20260813T043140Z_report.multidim.query.yaml"
+      ],
+      "observed_shape": "B",
+      "operation_id": "report.multidim.query",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "selected_high_risk",
+      "selected_for_production_validation": true,
+      "selection_reason": "false total_page contract caused duplicate continuation requests"
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/report.multidim.template.mine.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "report.multidim.template.mine.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/report.multidim.template.preset.get.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "report.multidim.template.preset.get",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/report.multidim.template.preset.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "report.multidim.template.preset.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=20)",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/report.multidim.template.shared.list.json#/operation/pagination"
+      ],
+      "observed_shape": "unknown",
+      "operation_id": "report.multidim.template.shared.list",
+      "review_reason": "available evidence does not identify all page_info fields",
+      "review_status": "shape_unknown",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/report.multidim.template.tree.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "report.multidim.template.tree",
+      "review_reason": "no production response shape or direct pagination wire evidence proves completeness",
+      "review_status": "collection_completeness_unknown",
+      "risk": "silent_completeness_risk",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205505Z_report.my_template.detail.yaml",
+        "evidence/probe/20260808T231116Z_report.my_template.detail.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "report.my_template.detail",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205516Z_report.overview.query.yaml",
+        "evidence/probe/20260809T010829Z_report.overview.query.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "report.overview.query",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205505Z_report.report.detail.yaml"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "report.report.detail",
+      "review_reason": "the persisted production response sketch contained no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205516Z_report.report.list.yaml",
+        "evidence/probe/20260809T011204Z_report.report.list.yaml",
+        "evidence/probe/20260812T043810Z_report.report.list.yaml",
+        "evidence/probe/20260814T025851Z_report.report.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "report.report.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/report.report.update.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "report.report.update",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/report.subscribe.create.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "report.subscribe.create",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/report.subscribe.delete.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "report.subscribe.delete",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=20, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260814T025820Z_report.subscribe.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "report.subscribe.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=100, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205500Z_report.tag.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "report.tag.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "page_info",
+      "declared_pagination": "page_info(page_field='page', page_size_field='page_size', list_path='data.list', page_info_path='data.page_info', total_page_field='total_page', default_page_size=100, max_page_size=100)",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "evidence/probe/20260808T205500Z_report.tag_category.list.yaml"
+      ],
+      "observed_shape": "A",
+      "operation_id": "report.tag_category.list",
+      "review_reason": "exact production/wire fields identify the page_info shape",
+      "review_status": "shape_verified",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/report.template.create.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "report.template.create",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
+      "evidence_level": "template_default",
+      "evidence_sources": [
+        "src/gravity_sdk/contracts/operations/report.template.update.json#/operation/pagination"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "report.template.update",
+      "review_reason": "detail, aggregate, or mutation semantics do not expose a generic collection page",
+      "review_status": "not_collection_semantics",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    }
+  ],
+  "schema_version": "gravity-insight.pagination-contract-audit.v1",
+  "summary": {
+    "declared_kinds": {
+      "none": 112,
+      "page_info": 119
+    },
+    "none_review_statuses": {
+      "collection_completeness_unknown": 34,
+      "manual_empty_page_protocol": 1,
+      "no_page_info_in_observed_response": 30,
+      "not_collection_semantics": 46,
+      "wire_pagination_signal": 1
+    },
+    "none_silent_completeness_risks": 27,
+    "operations": 231,
+    "page_info_evidence_levels": {
+      "production": 62,
+      "template_default": 49,
+      "wire": 8
+    },
+    "page_info_shapes": {
+      "A": 59,
+      "B": 1,
+      "unknown": 59
+    },
+    "production_validations": [
+      "material.metric.list",
+      "material.report.query",
+      "promotion.metric.list",
+      "report.business.query",
+      "report.multidim.media_enum.list",
+      "report.multidim.metric.list",
+      "report.multidim.query"
+    ]
+  }
+}

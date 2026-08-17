@@ -264,8 +264,8 @@ class GravityInsightCoreTests(unittest.TestCase):
         self.assertGreaterEqual(len(operations), 70)
         by_id = {item.operation_id: item for item in operations}
         report = by_id["report.multidim.query"]
-        self.assertEqual("page_info", report.pagination.kind)
-        self.assertEqual("data.list", report.pagination.list_path)
+        self.assertEqual("none", report.pagination.kind)
+        self.assertEqual("", report.pagination.list_path)
         self.assertEqual(("code", "extra.error"), tuple(rule.path for rule in report.semantic_error_rules))
         self.assertTrue(report.response_projection.required_data_keys)
         self.assertEqual(
@@ -1496,7 +1496,7 @@ class GravityInsightCoreTests(unittest.TestCase):
                         "ap_cost": 1,
                     }
                 ],
-                "page_info": {"page": 1, "page_size": 100, "total_page": 1},
+                "page_info": {"total": 1},
             },
         }
         base_inputs = {
@@ -1605,6 +1605,31 @@ class GravityInsightCoreTests(unittest.TestCase):
         )
         self.assertNotIn("multi_keys", transport.calls[1][2]["body"])
 
+    def test_multidim_read_all_treats_total_only_response_as_one_request(self):
+        manifest = repository_manifest(
+            "report.multidim.metric.list", "report.multidim.query"
+        )
+        metadata = {"code": 0, "data": {
+            "list": [{"name": "ap_cost", "exclusion_dims": []}],
+        }}
+        response = {"code": 0, "data": {
+            "list": [{"stat_time": "2026-08-07", "ap_cost": 1}],
+            "page_info": {"total": 1},
+        }}
+        inputs = {
+            "time_dims": "day", "date_list": ["2026-08-07", "2026-08-07"],
+            "metrics_list": ["ap_cost"], "page": 1, "page_size": 1,
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            client, transport = client_for(
+                Path(directory), [FakeResponse(metadata), FakeResponse(response)], operation_manifest=manifest,
+            )
+            result = client.read_all("report.multidim.query", inputs, max_pages=5, max_items=10)
+
+        self.assertEqual(2, len(transport.calls))
+        self.assertIsNone(result["page"])
+        self.assertEqual(1, len(result["data"]["list"]))
+
     def test_multidim_reviewed_implicit_metric_dependencies_are_omitted(self):
         multidim = repository_manifest(
             "report.multidim.metric.list",
@@ -1647,7 +1672,7 @@ class GravityInsightCoreTests(unittest.TestCase):
                     {"stat_time": "2026-07-01", **requested, **implicit}
                 ],
                 "total": {"stat_time": "-", **requested, **implicit},
-                "page_info": {"page": 1, "page_size": 1, "total_page": 1},
+                "page_info": {"total": 1},
             },
         }
         inputs = {
@@ -1793,7 +1818,7 @@ class GravityInsightCoreTests(unittest.TestCase):
             "code": 0,
             "data": {
                 "list": [row],
-                "page_info": {"page": 1, "page_size": 100, "total_page": 1},
+                "page_info": {"total": 1},
             },
         }
         total = {"code": 0, "data": {"list": [row]}}
@@ -2673,7 +2698,3 @@ class GravityInsightCoreTests(unittest.TestCase):
             path = env_file(Path(directory), token="file-token")
             provider = CredentialProvider(path, environ={"GRAVITY_AUTH_TOKEN": "env-token"}, persist=False)
             self.assertEqual("env-token", provider.get().token)
-
-
-if __name__ == "__main__":
-    unittest.main()
