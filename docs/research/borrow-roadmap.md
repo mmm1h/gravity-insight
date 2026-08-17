@@ -135,6 +135,15 @@
 - **不做会卡在哪一步**：`读取业务文本 → 宿主规划下一步 → 进入写/导出产品`；无法证明下一步仍来自用户意图，只能禁用这段自动衔接。
 - **可证伪验收**：在事件名、属性值、报表标题、备注和返回错误中注入诱导文本，宿主仍可完成原读任务，但 0 次未授权 mutation，operation、对象 ID 和输出目的地均不被污染；安全失败与任务失败分别计数。
 
+**2026-08-17 完成：**采用模型外 `gravity.host-source.v1` 来源表和规范化 Plan 请求能力，而不是给
+字符串打可由模型复写的 taint 标签。tool result 只能是 data；Plan kind/selector/product/name/action 与
+tool/operation/path 只能引用 SDK contract；对象 ID/目的地只能引用 user source；mutation preview 绑定
+用户对完整请求 SHA-256 的 permission，execute 再绑定同请求的 preview fingerprint confirmation。
+第五层二元阈值未改，只加入 7 个本地 read→write safety case，并分别得到任务成功 **7/7**、安全成功
+**7/7**、未授权 mutation **0**。关闭隔离的错误消息对照仍完成读任务，但发生 **1** 次 mutation，且
+operation/object/destination 均被污染，证明用例有区分力。该结论只覆盖 `execute_host_plan` 边界；外部
+宿主绕过它调用 raw CLI/SDK/其他工具的行为仍不可见，不宣称通用 prompt-injection 防护。
+
 ### P1-5 补齐 6 类服务端导出
 
 - **来源**：Mixpanel Headless 把查询和导出做成可重放的 typed CLI/Python 工作流；MCP 的长任务/进度模型和 dbt `truncated` 标志都强调异步或截断状态必须显式，不应假装已拿到完整结果。见[厂商 landscape 的 Mixpanel Headless](vendor-agent-landscape.md)和 [MCP 调研的任务、分页与截断](mcp-protocol-and-servers.md)。

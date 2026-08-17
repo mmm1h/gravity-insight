@@ -178,6 +178,8 @@ def execute_plan_for_sdk(
 def plan_schema() -> dict[str, Any]:
     """Return the compact, machine-readable v1 contract."""
 
+    from .host_effects import host_effect_schema
+
     return {
         "schema_version": SCHEMA_SCHEMA_VERSION,
         "ok": True,
@@ -234,6 +236,7 @@ def plan_schema() -> dict[str, Any]:
             "partial_result": "adapter-safe result preserved; node remains failed",
             "exit_precedence": "4 > 3 > 2 > 0",
         },
+        "host_effect_boundary": host_effect_schema(),
     }
 
 

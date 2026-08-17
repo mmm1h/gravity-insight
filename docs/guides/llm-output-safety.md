@@ -61,6 +61,25 @@ caller workspace。它们是结构化业务上下文，不是 SDK 系统指令�
 HTTP receipt 和运行 receipt 不保存输入值或结果行，只保存 operation、固定 method/path、状态、
 页码/attempt、计数、耗时和 shape/fingerprint。日志同样只记录这些值无关元数据。
 
+## 宿主效果隔离边界
+
+宿主模型生成的 Plan 不直接交给普通 `execute_plan`。调用方在模型外维护
+`gravity.host-source.v1` 来源表，并通过 `execute_host_plan(sdk, host_plan, sources)` 编译后执行。
+`host_effect_schema()` 返回完整机器合同。来源同时区分 producer 和 role：
+
+- `tool_result/data` 只能作为数据；正常名称、备注和错误消息均保持原样；
+- `sdk_contract/instruction` 只能提供 Plan kind、selector/product/name/action、tool 和 operation/path；
+- `user/instruction|authorization` 提供对象 ID、目的地、mutation permission 和 execute confirmation。
+
+mutation permission 绑定完整规范化 Plan 的 SHA-256。规范化只把 `preview|execute` phase 替换为固定占位，
+因此 preview 与同参数 execute 的指纹相同，任一其他参数变化都会失配。execute 还要求独立的
+`user/authorization` source 同时绑定 preview fingerprint 和该请求指纹。来源表由宿主在模型调用之外
+建立；模型只能引用已有 source ID，不能把工具结果重新声明成用户授权。
+
+这个边界不判断文本是否恶意，也不扫描关键字。它按来源和精确请求能力 fail closed，所以真实业务对象
+叫“忽略以上指令”仍可完整读取。直接 CLI/SDK 调用仍是显式受信调用方入口；若外部宿主绕过
+`execute_host_plan` 去调用原始命令、普通 `execute_plan` 或其他工具，本仓库无法观察或证明其行为。
+
 ## 调用方的最小实现
 
 1. **先解析，后使用。** 只接受 UTF-8 JSON/NDJSON；拒绝解析失败、尾随非 JSON 文本、未知
@@ -90,6 +109,6 @@ HTTP receipt 和运行 receipt 不保存输入值或结果行，只保存 operat
 SDK 不检测 prompt injection，不判断一句业务文本是不是恶意指令，不打安全分，也不隐藏、脱敏、
 改写或删除已登记业务值。它不能证明所有响应文本的最终写入主体；上游合同目前没有这项 provenance。
 
-SDK 也不能保证下游模型会遵守提示、不会被数据诱导、不会调用其他工具或不会外传内容。结构分离和
-严格 JSON 让调用方能可靠识别边界，却不能替代调用方的工具 allowlist、权限隔离、输出目的地控制和
-高风险动作确认。这些限制不是责任免责声明，而是调用方设计执行链时必须成立的系统条件。
+SDK 也不能保证下游模型会遵守提示、不会被数据诱导、不会调用其他工具或不会外传内容。结构分离、
+严格 JSON 和宿主效果编译器能控制进入本仓库 Plan 的效果，却不能控制绕过该入口的 shell、其他工具或
+外部发送。这些限制不是责任免责声明，而是调用方设计执行链时必须成立的系统条件。

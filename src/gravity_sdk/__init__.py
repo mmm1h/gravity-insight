@@ -45,6 +45,15 @@ _EXPORTS = {
     "execute_plan": (".plan", "execute_plan"),
     "plan_schema": (".plan", "plan_schema"),
     "validate_plan": (".plan", "validate_plan"),
+    "assess_host_action": (".host_effects", "assess_host_action"),
+    "assess_host_plan": (".host_effects", "assess_host_plan"),
+    "compile_host_plan": (".host_effects", "compile_host_plan"),
+    "execute_host_plan": (".host_plan_execution", "execute_host_plan"),
+    "host_source": (".host_effects", "host_source"),
+    "host_effect_schema": (".host_effects", "host_effect_schema"),
+    "normalized_host_plan_request": (
+        ".host_effects", "normalized_host_plan_request"
+    ),
     "PlanRecipe": (".workspace_plan_recipe", "PlanRecipe"),
     "PlanRecipeError": (".workspace_plan_recipe", "PlanRecipeError"),
     "expand_plan_recipe": (".workspace_plan_recipe", "expand_plan_recipe"),

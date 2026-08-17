@@ -46,6 +46,19 @@ gravity plan run --input plan.json --dry-run
 gravity plan run --input plan.json --concurrency 6
 ```
 
+## 宿主生成 Plan 的效果边界
+
+直接调用方提交的普通 `gravity.plan.v1` 仍走 `execute_plan`。把工具结果和宿主 LLM 放在同一上下文时，
+必须改走 Python `execute_host_plan(sdk, host_plan, sources)`；`gravity plan schema` 的
+`host_effect_boundary` 给出 `gravity.host-source.v1`、action 和 wrapper 合同。来源表由模型外宿主建立：
+tool result 只能是 data，Plan 控制身份只能来自 SDK contract，对象 ID/目的地只能来自用户。mutation
+preview 需要用户授权绑定规范化 Plan SHA-256；execute 另需用户确认绑定同一请求和 preview fingerprint。
+模型不能创建或改写来源表，只能引用已有 source ID。
+
+该入口不检测注入文本。它允许上游名称、备注和错误消息原样进入结果，但在 adapter 前拒绝由这些 data
+来源派生的 tool/operation/path、对象、目的地、permission 或 confirmation。raw CLI、普通
+`execute_plan` 和其他外部工具不在该宿主边界内；P0-1 的默认宿主接线不得绕过它。
+
 ## Effect 边界：Segment mutation 不进入 Plan v1
 
 Plan v1 节点是可预检、可调度的无副作用数据节点。Segment create/update/refresh/delete 是不可安全

@@ -235,3 +235,6 @@ blocker 不以结构绕过。四个已晋升族的文件行数均与各自受管
 语义过滤 v2 继续复用同一定义目录和 Multidim core，只给已证 filter 增加 dimension 关系校验与一个
 闭合前端 request profile；v1 不改写，成员 refs 在现有 schema inventory 内去重。没有第二套 registry、
 filter compiler、scheduler 或活动结构债条目，500/80/15/0 与 quality baseline 均未放宽。
+
+Read→write 效果隔离拆为 source/action 校验、Plan 编译和 SDK 执行三个窄模块；共享 `sdk.py`、
+`plan_adapters.py` 与评测阈值未增长，quality 500/80/15/0 全过，不新增活动结构债条目。

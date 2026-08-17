@@ -47,6 +47,8 @@
 
 当前 37 条 stable mutation 由 7 条 Segment、5 条报表/订阅、18 条 Kanban、2 条自定义指标、4 条事件/属性模板和 1 条保存分析底层 operation 组成；目录用 41 张 action-qualified mutation 产品卡表达 8 个 Segment、4 个报表/订阅、19 个 Kanban、3 个自定义指标、4 个模板和 3 个保存分析动作。统一协议是权威输入 `--dry-run`，人工审查后同参数只改 `--execute`；单发且不自动重放。create 写后读回 marker，update/delete/unsubscribe 重读 marker 或 upstream owner，否则 fail closed。Kanban 父删除预览报告迁移/删除数；只有 Kanban 和自定义指标进入显式 `preview|execute` Plan。订阅固定 disabled、空收件人且永不 test；Agent 不从自然语言填值或自动执行。两步命令见[受治理写入任务指南](agent-skills/governed-writes.md)，保存分析参数见[CLI 参考](reference/cli.md#saved-analysis-v3)。
 
+宿主模型生成的 Plan 必须走 `execute_host_plan(sdk, host_plan, sources)`：tool result 只登记为 data，控制 ID 来自 SDK contract，对象/目的地和两步授权来自当前用户；原始 `execute_plan` 只供已受信调用代码直接使用。
+
 ### Multidim
 
 Multidim 使用物理输入，不新增 Spec。它直接使用闭合的 `date_list/time_dims/metrics_list/custom_metrics_list/data_dims/relate_dims/filters/multi_keys` 物理输入；已知 App 和完整输入时直接一次 CLI/SDK 调用。物理指标或维度未知而其余业务输入已知时，第一调用用在线输入解析取得闭合 schema 与完整 live Multidim metadata，调用方精确选择物理名，第二调用由 FieldPolicy 再次 live 校验成员关系及维度排除。Agent 生成的 Plan request 总是带当前 `input_schema_version`；调用方不得删除或改写。在线解析不生成 App、日期、filter value 或业务口径，也不会把模板、布局、收藏、权限、经营 pulse 或 event/funnel Analysis 路由到这里。

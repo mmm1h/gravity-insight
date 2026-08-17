@@ -739,10 +739,15 @@ Plan v1 binding 只能把既有上游标量写入 `/app`，且来源必须列入
 `/spec/...` target，也不解析 spec 内的表达式、引用或模板；调用方必须在提交前生成完整 literal
 spec。
 
-公开 Plan schema 可由 `gravity plan schema` 获取。四种节点是 `run`、`sql_product`、
-`metadata_search` 和 `composite`；SDK 自动构造对应的内建 adapter，不接受裸 SQL、任意 HTTP 或
+公开 Plan schema 可由 `gravity plan schema` 获取。五种节点是 `run`、`sql_product`、
+`metadata_search`、`composite` 和 `receipt_query`；SDK 自动构造对应的内建 adapter，不接受裸 SQL、任意 HTTP 或
 Python callback。若需要测试一个自定义 adapter，应直接使用 `gravity_sdk.plan.execute_plan`
 的依赖注入接口，而不是把自定义执行器注册到 Agent facade。
+
+宿主 LLM 生成的 Plan 使用模块级 `gravity_sdk.execute_host_plan(sdk, host_plan, sources)`，不要直接
+调用 `sdk.execute_plan`。`sources` 由模型外调用方按 `gravity.host-source.v1` 建立；tool result 只能是
+data，SDK contract 提供控制身份，用户 instruction/authorization 提供对象、目的地和两步 mutation
+授权。机器合同同时包含在 `gravity plan schema` 的 `host_effect_boundary`。
 
 `metadata_search` 的 `table_lineage` 请求仅接受 `query/kind/limit/offset`；它是 account scope，
 因此禁止 `app_id`。节点结果保留 `scope/observed` 与有界的版本、操作 rows，不回显本地
