@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import math
 import re
 import string
@@ -20,40 +19,22 @@ from .errors import (
     ParentRequiredError,
     is_success_status,
 )
-from .operation_effect_policy import validate_operation_effect
+from .operation_manifest_parse import (
+    load_operations,
+    parse_input_field,
+    parse_operation_spec,
+    validate_input_field,
+)
 from .pagination_inputs import pagination_schema, validate_page_inputs
-from .projection_validation import numeric_suffix_schema, validate_projection_bindings
+from .projection_validation import numeric_suffix_schema
 from .result_audit import add_result_audit, result_receipt_references
 from .result_source import RAW_OPERATION, result_source
 
 
-_OPERATION_ID_RE = re.compile(r"^[a-z][a-z0-9_.-]{2,127}$")
 _FIELD_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_.-]*$")
 _RESPONSE_FIELD_NAME_RE = re.compile(r"^[A-Za-z_$][A-Za-z0-9_.$-]*$")
 _SAFE_PATH_RE = re.compile(r"^/[A-Za-z0-9_{}./-]+/$")
-_READ_METHODS = frozenset({"GET", "POST"})
-_STABILITY_VALUES = frozenset({
-    "stable", "experimental", "permission_unavailable", "blocked_privacy",
-    "blocked_write", "deprecated",
-})
-_NON_EXECUTABLE_STABILITIES = frozenset(
-    {"permission_unavailable", "blocked_privacy", "blocked_write", "deprecated"}
-)
 _MISSING = object()
-
-_DEFAULT_ARRAY_CONSTRAINTS: Mapping[str, tuple[str, int, int]] = {
-    "date_list": ("string", 2, 2),
-    "app_list": ("string", 1, 1_000),
-    "query_fields": ("string", 0, 500),
-    "metrics_list": ("string", 0, 500),
-    "custom_metrics_list": ("string", 0, 500),
-    "data_dims": ("string", 0, 100),
-    "relate_dims": ("string", 0, 100),
-    "exclusion_dims": ("string", 0, 500),
-    "filters": ("object", 0, 100),
-    "order_by": ("any", 0, 100),
-    "data_list": ("object", 0, 100_000),
-}
 
 
 def _mapping(value: Any, label: str) -> Mapping[str, Any]:
@@ -267,137 +248,19 @@ class InputField:
 
     @classmethod
     def from_value(cls, name: str, value: Any) -> "InputField":
-        if not _FIELD_NAME_RE.fullmatch(name):
-            raise ManifestError(f"invalid input field name: {name!r}")
-        if isinstance(value, str):
-            value = {"type": value}
-        elif value is None:
-            value = {}
-        config = _mapping(value, f"input_fields.{name}")
-        enum_value = config.get("enum", ())
-        if enum_value is None:
-            enum_value = ()
-        if not isinstance(enum_value, Sequence) or isinstance(enum_value, (str, bytes)):
-            raise ManifestError(f"input_fields.{name}.enum must be a list")
-        item_enum_value = config.get("item_enum", ())
-        if item_enum_value is None:
-            item_enum_value = ()
-        if not isinstance(item_enum_value, Sequence) or isinstance(
-            item_enum_value, (str, bytes)
-        ):
-            raise ManifestError(f"input_fields.{name}.item_enum must be a list")
-        normalized_type = str(config.get("type", "any")).strip().lower() or "any"
-        default_array = _DEFAULT_ARRAY_CONSTRAINTS.get(name) if normalized_type == "array" else None
-        item_type = config.get("item_type", default_array[0] if default_array else None)
-        min_items = config.get("min_items", default_array[1] if default_array else None)
-        max_items = config.get("max_items", default_array[2] if default_array else None)
-        max_length = config.get("max_length", 4_096 if normalized_type == "string" else None)
-        max_depth = config.get("max_depth", 5)
-        if item_type is not None:
-            item_type = str(item_type).strip().lower()
-            if item_type not in {"any", "string", "integer", "number", "boolean", "object"}:
-                raise ManifestError(f"input_fields.{name}.item_type is unsupported")
-        if item_enum_value and normalized_type != "array":
-            raise ManifestError(
-                f"input_fields.{name}.item_enum is only supported for arrays"
-            )
-        for bound_name, bound in (("min_items", min_items), ("max_items", max_items)):
-            if bound is not None and (
-                not isinstance(bound, int) or isinstance(bound, bool) or bound < 0
-            ):
-                raise ManifestError(f"input_fields.{name}.{bound_name} must be a non-negative integer")
-        if min_items is not None and max_items is not None and min_items > max_items:
-            raise ManifestError(f"input_fields.{name} has invalid array bounds")
-        if max_length is not None and (
-            not isinstance(max_length, int) or isinstance(max_length, bool) or max_length < 1
-        ):
-            raise ManifestError(f"input_fields.{name}.max_length must be a positive integer")
-        if (
-            not isinstance(max_depth, int)
-            or isinstance(max_depth, bool)
-            or not 1 <= max_depth <= 16
-        ):
-            raise ManifestError(
-                f"input_fields.{name}.max_depth must be an integer between 1 and 16"
-            )
-        if max_depth != 5 and normalized_type != "object":
-            raise ManifestError(
-                f"input_fields.{name}.max_depth is only supported for object inputs"
-            )
-        return cls(
-            name=name,
-            type=normalized_type,
-            required=bool(config.get("required", False)),
-            nullable=bool(config.get("nullable", False)),
-            enum=tuple(_freeze_json(item) for item in enum_value),
-            default=(
-                _MISSING
-                if config.get("default", _MISSING) is _MISSING
-                else _freeze_json(config["default"])
-            ),
-            description=str(config.get("description", "")),
-            sensitive=bool(config.get("sensitive", False)),
-            item_type=item_type,
-            item_enum=tuple(_freeze_json(item) for item in item_enum_value),
-            min_items=min_items,
-            max_items=max_items,
-            max_length=max_length,
-            max_depth=max_depth,
+        return parse_input_field(
+            cls, name, value, freeze_json=_freeze_json, missing=_MISSING
         )
 
     def validate(self, value: Any) -> Any:
-        if value is None:
-            if self.nullable:
-                return None
-            raise InputValidationError(f"input {self.name!r} must not be null")
-        expected = self.type
-        valid = {
-            "any": _is_bounded_json_value(value),
-            "string": isinstance(value, str),
-            "integer": isinstance(value, int) and not isinstance(value, bool),
-            "number": isinstance(value, (int, float))
-            and not isinstance(value, bool)
-            and (not isinstance(value, float) or math.isfinite(value)),
-            "boolean": isinstance(value, bool),
-            "array": isinstance(value, (list, tuple)),
-            "object": isinstance(value, Mapping),
-            "date": isinstance(value, str) and bool(re.fullmatch(r"\d{4}-\d{2}-\d{2}", value)),
-            "datetime": isinstance(value, str),
-        }.get(expected)
-        if valid is None:
-            raise InputValidationError(f"input {self.name!r} declares unsupported type {expected!r}")
-        if not valid:
-            raise InputValidationError(f"input {self.name!r} must be {expected}")
-        if expected == "object" and not _is_bounded_json_value(
-            value, max_depth=self.max_depth
-        ):
-            raise InputValidationError(f"input {self.name!r} exceeds the nested object limits")
-        if self.enum and value not in self.enum:
-            raise InputValidationError(f"input {self.name!r} is not an allowed value")
-        if expected == "string" and self.max_length is not None and len(value) > self.max_length:
-            raise InputValidationError(f"input {self.name!r} exceeds its length limit")
-        if expected == "array":
-            normalized = list(value)
-            if self.min_items is not None and len(normalized) < self.min_items:
-                raise InputValidationError(f"input {self.name!r} has too few items")
-            if self.max_items is not None and len(normalized) > self.max_items:
-                raise InputValidationError(f"input {self.name!r} has too many items")
-            if self.item_type and any(
-                not _matches_input_type(item, self.item_type) for item in normalized
-            ):
-                raise InputValidationError(
-                    f"input {self.name!r} must contain only {self.item_type} items"
-                )
-            if self.item_enum and any(item not in self.item_enum for item in normalized):
-                raise InputValidationError(
-                    f"input {self.name!r} contains an item outside its allowlist"
-                )
-            if self.name == "date_list" and self.item_type == "string":
-                _validate_date_range(normalized)
-            if self.name == "filters":
-                _validate_filters(normalized)
-            return normalized
-        return value
+        return validate_input_field(
+            self,
+            value,
+            is_bounded_json_value=_is_bounded_json_value,
+            matches_input_type=_matches_input_type,
+            validate_date_range=_validate_date_range,
+            validate_filters=_validate_filters,
+        )
 
     def schema(self) -> dict[str, Any]:
         result: dict[str, Any] = {
@@ -756,133 +619,9 @@ class OperationSpec:
 
     @classmethod
     def from_dict(cls, value: Mapping[str, Any]) -> "OperationSpec":
-        config = _mapping(value, "operation")
-        operation_id = _string(config.get("operation_id"), "operation_id")
-        if not _OPERATION_ID_RE.fullmatch(operation_id):
-            raise ManifestError(f"invalid operation_id: {operation_id!r}")
-        method = _string(config.get("upstream_method"), "upstream_method").upper()
-        if method not in _READ_METHODS:
-            raise ManifestError("upstream_method must be GET or read-semantic POST")
-        path = _string(config.get("path_template"), "path_template")
-        if not _SAFE_PATH_RE.fullmatch(path) or "//" in path or "/../" in path or "/./" in path:
-            raise ManifestError("path_template must be a normalized absolute API path ending in /")
+        from . import models as models_module
 
-        raw_fields = config.get("input_fields", {})
-        fields: list[InputField] = []
-        if isinstance(raw_fields, Mapping):
-            fields = [InputField.from_value(str(name), item) for name, item in raw_fields.items()]
-        elif isinstance(raw_fields, Sequence) and not isinstance(raw_fields, (str, bytes)):
-            for item in raw_fields:
-                if isinstance(item, str):
-                    fields.append(InputField.from_value(item, {}))
-                else:
-                    item_config = _mapping(item, "input_fields[]")
-                    name = _string(item_config.get("name"), "input_fields[].name")
-                    fields.append(InputField.from_value(name, item_config))
-        else:
-            raise ManifestError("input_fields must be an object or list")
-        names = _input_field_names(fields)
-
-        request = RequestSpec.from_dict(config.get("request", {}))
-        placeholders = tuple(field_name for _, field_name, _, _ in string.Formatter().parse(path) if field_name)
-        undeclared_placeholders = set(placeholders) - set(names)
-        if undeclared_placeholders:
-            raise ManifestError("path_template placeholders must be declared input fields")
-        if request.path_fields and tuple(request.path_fields) != placeholders:
-            raise ManifestError("request.path_fields must exactly match path_template placeholders")
-        request_names = (
-            set(request.path_fields)
-            | set(request.query_fields)
-            | set(request.body_fields)
-            | set(request.defaults)
-        )
-        undeclared_request = request_names - set(names)
-        if undeclared_request:
-            raise ManifestError("request references undeclared input fields")
-
-        response_projection = ResponseProjection.from_dict(config.get("response_projection", {}))
-        validate_projection_bindings(response_projection, names)
-
-        raw_rules = config.get("semantic_error_rules", ())
-        if raw_rules is None:
-            raw_rules = ()
-        if not isinstance(raw_rules, Sequence) or isinstance(raw_rules, (str, bytes)):
-            raise ManifestError("semantic_error_rules must be a list")
-        stability = _string(config.get("stability"), "stability").lower()
-        if stability not in _STABILITY_VALUES:
-            raise ManifestError(f"unsupported operation stability: {stability}")
-        executable = config.get("executable", True)
-        if not isinstance(executable, bool):
-            raise ManifestError("operation executable must be a boolean")
-        block_reason = str(config.get("block_reason", "")).strip() or None
-        if not executable and not block_reason:
-            raise ManifestError("non-executable operations must declare block_reason")
-        effect = str(config.get("effect", "read")).strip()
-        pagination = PaginationSpec.from_dict(config.get("pagination"))
-        if response_projection.empty_object_as_empty_page and (
-            pagination.kind != "page_info"
-            or not {"list", "page_info"}.issubset(response_projection.data_keys)
-        ):
-            raise ManifestError(
-                "empty-object page normalization requires an explicit paginated list contract"
-            )
-        if response_projection.empty_object_as_empty_result and (
-            response_projection.data_shape != "object"
-            or response_projection.required_data_keys
-        ):
-            raise ManifestError(
-                "empty-object result normalization requires an object response with no required keys"
-            )
-        if stability == "stable" and pagination.kind == "page_info":
-            if pagination.default_page_size is None or pagination.max_page_size is None:
-                raise ManifestError(
-                    "stable paginated operations must declare default_page_size and max_page_size"
-                )
-        required_parent = RequiredParent.from_value(config.get("required_parent"))
-        undeclared_parent_inputs = {
-            parent.input_field
-            for parent in required_parent
-            if parent.input_field and parent.input_field not in names
-        }
-        if undeclared_parent_inputs:
-            raise ManifestError("required_parent input fields must be declared operation inputs")
-        live_probe = LiveProbe.from_value(config.get("live_probe"))
-        validate_operation_effect(
-            stability=stability, effect=effect, executable=executable,
-            non_executable_stability=stability in _NON_EXECUTABLE_STABILITIES,
-            response_projection=response_projection, live_probe=live_probe,
-        )
-        if set(live_probe.inputs) - set(names):
-            raise ManifestError("live_probe inputs must reference declared operation inputs")
-        required_probe_inputs = {field.name for field in fields if field.required}
-        if live_probe.enabled and not required_probe_inputs <= (
-            set(live_probe.inputs) | set(request.defaults)
-        ):
-            raise ManifestError("live_probe is missing required minimum inputs")
-        return cls(
-            operation_id=operation_id,
-            domain=_string(config.get("domain"), "domain"),
-            resource=_string(config.get("resource"), "resource"),
-            action=_string(config.get("action"), "action"),
-            contract_version=str(config.get("contract_version", "1")),
-            upstream_method=method,
-            path_template=path,
-            auth_profile=_string(config.get("auth_profile"), "auth_profile"),
-            stability=stability,
-            input_fields=tuple(fields),
-            request=request,
-            response_projection=response_projection,
-            pagination=pagination,
-            semantic_error_rules=tuple(SemanticErrorRule.from_dict(item) for item in raw_rules),
-            privacy_policy=PrivacyPolicy.from_value(config.get("privacy_policy")),
-            required_parent=required_parent,
-            live_probe=live_probe,
-            platform=str(config["platform"]) if config.get("platform") else None,
-            description=str(config.get("description", "")),
-            effect=effect,
-            executable=executable,
-            block_reason=block_reason,
-        )
+        return parse_operation_spec(cls, value, models_module)
 
     @property
     def fields(self) -> Mapping[str, InputField]:
@@ -1132,33 +871,8 @@ def load_operation_manifest(
 ) -> tuple[OperationSpec, ...]:
     """Load a JSON operation manifest without accepting executable formats."""
 
-    raw: Any
-    if isinstance(source, Path):
-        try:
-            raw = json.loads(source.read_text(encoding="utf-8"))
-        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-            raise ManifestError("could not load the operation manifest") from exc
-    elif isinstance(source, str):
-        candidate = Path(source)
-        if candidate.is_file():
-            return load_operation_manifest(candidate)
-        try:
-            raw = json.loads(source)
-        except json.JSONDecodeError as exc:
-            raise ManifestError("manifest string must contain JSON or name an existing file") from exc
-    else:
-        raw = source
-
-    if isinstance(raw, Mapping) and "operations" in raw:
-        raw = raw["operations"]
-    elif isinstance(raw, Mapping) and "operation_id" in raw:
-        raw = [raw]
-    if not isinstance(raw, Sequence) or isinstance(raw, (str, bytes)):
-        raise ManifestError("manifest must be an operation list or an object containing operations")
-    operations = tuple(OperationSpec.from_dict(_mapping(item, "operations[]")) for item in raw)
-    if not operations:
-        raise ManifestError("manifest must contain at least one operation")
-    ids = [item.operation_id for item in operations]
-    if len(ids) != len(set(ids)):
-        raise ManifestError("manifest contains duplicate operation_id values")
-    return operations
+    return load_operations(
+        source,
+        operation_spec=OperationSpec,
+        load_operation_manifest=load_operation_manifest,
+    )
