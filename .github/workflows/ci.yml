@@ -30,6 +30,18 @@ jobs:
         run: python -m gravity_sdk.compiler check
       - name: Check quality ratchet
         run: python -m gravity_sdk.quality check
+      - name: Check development Agent usability eval
+        env:
+          PYTHONPATH: src
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path tmp | Out-Null
+          python scripts/agent_usability_eval.py run --split development --output-dir tmp/agent-usability-gate > tmp/agent-usability-gate.log 2>&1
+          if ($LASTEXITCODE -ne 0) {
+            Get-Content tmp/agent-usability-gate.log -Tail 40
+            exit $LASTEXITCODE
+          }
+          Write-Output "PASS agent-usability development eval"
       - name: Check all CLI namespaces offline
         shell: pwsh
         run: |

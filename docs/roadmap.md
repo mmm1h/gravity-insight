@@ -5988,3 +5988,23 @@ segment spec 标量 values、funnel `global_conditions` 用户属性）。凭据
 `plan_adapters.py` 13，以及 `_input` / `_date_error` / `_app_id_error` 这类缺 `field=`
 的 helper。质量门禁未放宽：新文件仍 ≤500；`catalog.py` / `cli.py` / `client.py` 的 AST
 增长记入 ledger，硬顶未抬。生产 HTTP **0**。不 push、不碰 GitHub。
+
+## Development 跑批入门禁与闭环倒扣（2026-08-17）
+
+`#156` 闭环 D28 后，`journey-targets.json` 的 J41 从 gap 目标翻到 product 目标，但
+`scripts/agent_usability_eval.py` 的 `ROUTES` 当时没有 `monetization_aggregate` matcher，
+`route_score` 直接 `KeyError`，development / holdout / final 三个 split 全部跑不了。当时
+unittest、pytest、quality、compiler、skills 全绿，因为评测装置跑批不在门禁集。matcher 已在
+`fcdc2fd` 手工补上，本轮只固化门禁，不改评测装置、题集、评分、层定义或阈值。
+
+**门禁：**`PYTHONPATH=src python scripts/agent_usability_eval.py run --split development`
+进入 CI 与提交前 Validation（0 次生产 HTTP、约 15 秒、不进查询账本、不需要 key）。失败使门禁
+失败；完整输出重定向到 `tmp/agent-usability-gate.log`，不污染门禁摘要。另加秒级一致性检查：
+遍历 `journey-targets.json` 每条 journey 的 `product.route_key`，断言它在 `ROUTES` 里存在。
+`gap.route_key` 和 `candidate_selectors` 不查 `ROUTES`。这样“闭环一条动线却忘了注册 matcher”
+会在秒级被抓住，而不必等 15 秒跑批，更不会在崩溃装置上白烧一次 holdout。
+
+**反馈回路：**当前 recognizer 首选是 `251/336`，比 `0043dba` 上的 `256/336` 低 5 分。原因是
+J41 有 5 道题的 `expected.gap_code` 被冻结成 `MONETIZATION_AGGREGATE_CONTRACT_MISSING`；D28
+真闭环后 Agent 正确返回产品，那 5 道就从“对”变成“错”。即：每闭环一条动线，锁死“这是 gap”
+的旧题就会倒扣分。冻结期望只能由独立 custodian 重新编写密封，本轮绝对不改那 5 道题。
