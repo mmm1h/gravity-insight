@@ -442,6 +442,10 @@ def _protocol(workspace_path: object | None = None) -> dict[str, Any]:
             },
         ],
         "selection_policy": [
+            "If the caller can emit gravity.host-product-selection.v1, read "
+            "`agent-catalog host` and pass `--routing host_catalog --host-selection`.",
+            "Omit --routing to keep the recognizer floor when the caller cannot "
+            "produce a host selection.",
             "Prefer a matching workspace recipe because it owns project semantics.",
             "Prefer a registered composite when it already covers the requested context.",
             "Otherwise select a callable stable Insight operation.",

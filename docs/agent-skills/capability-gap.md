@@ -4,7 +4,7 @@
 ```powershell
 gravity agent "<your-query>"
 ```
-只有 `status=success` 的 candidate 才可执行；`capability_gaps` 是明确的不可执行结果，不是 empty。
+调用方能产出选择时，先 `gravity agent-catalog host` 再把严格 `gravity.host-product-selection.v1` 交给 `gravity agent --routing host_catalog --host-selection`；默认 `gravity agent` 仍是够不着宿主时的地板。只有 `status=success` 的 candidate 才可执行；`capability_gaps` 是明确的不可执行结果，不是 empty。
 
 ## 预期 envelope 形状
 
