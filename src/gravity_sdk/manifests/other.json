@@ -3992,6 +3992,113 @@
       "action": "update",
       "auth_profile": "gravity_authorization",
       "contract_version": 1,
+      "description": "设置单个 App 的实时事件入库开关与时间窗；单次发送且不自动重试，执行后必须读回 app.realtime_event.list.conf。",
+      "domain": "app",
+      "effect": "mutation",
+      "executable": true,
+      "input_fields": {
+        "app_id": {
+          "description": "应用 ID；前端调用和稳定父列表均验证为整数。",
+          "required": true,
+          "type": "integer"
+        },
+        "end_time": {
+          "description": "入库窗结束，Asia/Shanghai YYYY-MM-DD HH:MM:SS。",
+          "required": true,
+          "type": "datetime"
+        },
+        "is_enabled": {
+          "description": "1 开启入库，0 关闭。",
+          "enum": [
+            0,
+            1
+          ],
+          "required": true,
+          "type": "integer"
+        },
+        "start_time": {
+          "description": "入库窗开始，Asia/Shanghai YYYY-MM-DD HH:MM:SS。",
+          "required": true,
+          "type": "datetime"
+        },
+        "time_slot": {
+          "default": 2,
+          "description": "前端固定 time_slot=2。",
+          "enum": [
+            2
+          ],
+          "required": true,
+          "type": "integer"
+        }
+      },
+      "live_probe": {
+        "enabled": false,
+        "input": {}
+      },
+      "operation_id": "app.user.realtime.event.update",
+      "pagination": {
+        "kind": "none",
+        "list_path": "",
+        "page_field": "",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v1/user/realtime_event/manage/",
+      "privacy_policy": {
+        "classification": "configuration",
+        "redact_keys": [
+          "authorization",
+          "access_token",
+          "token",
+          "cookie",
+          "password",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
+      "request": {
+        "body_fields": [
+          "app_id",
+          "is_enabled",
+          "start_time",
+          "end_time",
+          "time_slot"
+        ],
+        "defaults": {
+          "time_slot": 2
+        },
+        "fixed_body": {},
+        "fixed_query": {},
+        "path_fields": [],
+        "query_fields": []
+      },
+      "required_parent": [
+        {
+          "input_field": "app_id",
+          "operation_id": "app.list"
+        }
+      ],
+      "resource": "user_realtime_event",
+      "response_projection": {
+        "data_keys": [],
+        "data_shape": "object",
+        "dynamic_item_fields": [],
+        "item_keys": [],
+        "required_data_keys": []
+      },
+      "semantic_error_rules": [
+        "code",
+        "extra.error"
+      ],
+      "stability": "stable",
+      "upstream_method": "POST"
+    },
+    {
+      "action": "update",
+      "auth_profile": "gravity_authorization",
+      "contract_version": 1,
       "description": "向 marker-or-owner 已验证的事件/属性模板追加精确事件或属性成员，并强制读回成员集合。",
       "domain": "metadata",
       "effect": "mutation",

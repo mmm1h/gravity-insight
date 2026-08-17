@@ -1,5 +1,5 @@
 {
-  "operation_count": 235,
+  "operation_count": 236,
   "operations": {
     "account.department.list": {
       "applied_overrides": [],
@@ -671,6 +671,14 @@
       "platform": null,
       "source_files": [
         "operations/app.testing_tool.list.json"
+      ]
+    },
+    "app.user.realtime.event.update": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/app.user.realtime.event.update.json"
       ]
     },
     "attribution.attr_backtrack.list": {

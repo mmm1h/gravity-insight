@@ -27,6 +27,7 @@ from .agent_metadata_template import metadata_template_capability_inventory
 from .agent_saved_analysis_mutation import (
     saved_analysis_mutation_capability_inventory,
 )
+from .agent_realtime_event import realtime_event_mutation_capability_inventory
 
 
 def canonical_capability_cards(client: Any) -> tuple[dict[str, Any], ...]:
@@ -54,6 +55,7 @@ def canonical_capability_cards(client: Any) -> tuple[dict[str, Any], ...]:
         *custom_metric_capability_inventory(),
         *metadata_template_capability_inventory(),
         *saved_analysis_mutation_capability_inventory(),
+        *realtime_event_mutation_capability_inventory(),
         *user_journey_capability_inventory(),
         *material_asset_capability_inventory(),
         *metadata_search_capability_inventory(),

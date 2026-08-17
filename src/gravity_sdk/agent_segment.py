@@ -181,8 +181,9 @@ def is_authoritative_direct_card(card: Mapping[str, Any]) -> bool:
     from .agent_custom_metric import is_custom_metric_card
     from .agent_metadata_template import is_metadata_template_card
     from .agent_saved_analysis_mutation import is_saved_analysis_mutation_card
+    from .agent_realtime_event import is_realtime_event_mutation_card
 
-    return is_authoritative_export_card(card) or is_authoritative_material_asset_card(card) or is_kanban_mutation_card(card) or is_report_mutation_card(card) or is_custom_metric_card(card) or is_metadata_template_card(card) or is_saved_analysis_mutation_card(card) or (
+    return is_authoritative_export_card(card) or is_authoritative_material_asset_card(card) or is_kanban_mutation_card(card) or is_report_mutation_card(card) or is_custom_metric_card(card) or is_metadata_template_card(card) or is_saved_analysis_mutation_card(card) or is_realtime_event_mutation_card(card) or (
         card.get("kind") == "segment_rule_spec"
         and card.get("selector") == _SELECTOR
         and card.get("composite") == _COMPOSITE

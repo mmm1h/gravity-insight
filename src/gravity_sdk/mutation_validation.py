@@ -23,6 +23,7 @@ from .custom_metric_contracts import CUSTOM_METRIC_MUTATIONS
 from .custom_metric_wire import validate_custom_metric_wire
 from .metadata_template_contracts import TEMPLATE_MUTATIONS
 from .metadata_template_wire import validate_metadata_template_wire
+from .realtime_event_contracts import REALTIME_EVENT_MUTATIONS
 
 
 def validate_mutation_inputs(
@@ -38,6 +39,9 @@ def validate_mutation_inputs(
         return
     if operation_id in TEMPLATE_MUTATIONS:
         validate_metadata_template_wire(operation_id, values)
+        return
+    if operation_id in REALTIME_EVENT_MUTATIONS:
+        _realtime_event(values)
         return
 
     if operation_id == FROM_ANALYSIS_CREATE:
@@ -154,6 +158,12 @@ def _simple_identifiers(
             f"actual value: {actual_value(sorted(values))}; allowed fields: segment_id only",
             field="input",
         )
+
+
+def _realtime_event(values: Mapping[str, Any]) -> None:
+    from .realtime_event_mutation import _wire
+
+    _wire(values)
 
 
 def _compact_date(value: Any) -> int:

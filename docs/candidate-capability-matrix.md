@@ -2,9 +2,9 @@
 
 本矩阵记录 17 项候选能力在 2026-08-12 受控只读探测后的真实状态，并原位追加 2026-08-14 至
 2026-08-16 的后续取证结论，供开发决策使用。仓库当前基线为
-[233 个 operation、其中 224 个 stable operation](capability-coverage.md)：187 条 stable read 加
-37 条逐项治理的 mutation（7 条 Segment、5 条报表/订阅、18 条 Kanban、2 条自定义指标、
-4 条事件/属性模板和 1 条保存分析）；写 operation 不是本矩阵的 read candidate，
+[236 个 operation、其中 225 个 stable operation](capability-coverage.md)：187 条 stable read 加
+38 条逐项治理的 mutation（7 条 Segment、5 条报表/订阅、18 条 Kanban、2 条自定义指标、
+4 条事件/属性模板、1 条保存分析和 1 条实时事件入库开关）；写 operation 不是本矩阵的 read candidate，
 但本页追加其解锁读合同的生产证据。
 
 `analysis.default_val.list`、D35、F40、`report.report.list/detail`、`report.subscribe.list`、
