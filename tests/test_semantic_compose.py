@@ -22,11 +22,13 @@ APP_ID = 17
 WINDOW = {"start": "2026-06-01", "end": "2026-07-10"}
 DEFINITION = {"definition_id": "report.ap-cost-observation", "version": 1}
 DEFINITION_V2 = {"definition_id": "report.ap-cost-observation", "version": 2}
+DEFINITION_V3 = {"definition_id": "report.ap-cost-observation", "version": 3}
 METRIC = {"definition_id": "report.metric.ap-cost", "version": 1}
 ACTIVATE_METRIC = {
     "definition_id": "report.metric.adclick-standard-activate-count",
     "version": 1,
 }
+SHOW_METRIC = {"definition_id": "report.metric.ap-show", "version": 1}
 CLICK_DIMENSION = {
     "definition_id": "report.dimension.click-company",
     "version": 1,
@@ -182,10 +184,11 @@ class SemanticComposeTests(unittest.TestCase):
             versions[1]["definition"]["fingerprint"],
         )
 
-    def test_real_v1_v2_definitions_coexist_and_v2_compiles_live_wire(self):
+    def test_real_definition_versions_coexist_and_v2_compiles_live_wire(self):
         schema = semantic_compose_input_schema()
         self.assertEqual(
-            [DEFINITION, DEFINITION_V2], schema["x-registered-definitions"]
+            [DEFINITION, DEFINITION_V2, DEFINITION_V3],
+            schema["x-registered-definitions"],
         )
         v1 = compile_semantic_compose(request(), app_id=APP_ID)
         filtered = request(
@@ -207,6 +210,28 @@ class SemanticComposeTests(unittest.TestCase):
             request("total", definition=DEFINITION_V2, metric=ACTIVATE_METRIC),
             "grain",
         )
+
+    def test_real_v1_v2_v3_are_distinct_and_v3_preserves_preflight_failures(self):
+        compiled = [
+            compile_semantic_compose(
+                request("day", definition=definition, metric=(SHOW_METRIC if version == 3 else METRIC)),
+                app_id=APP_ID,
+            )
+            for version, definition in enumerate(
+                (DEFINITION, DEFINITION_V2, DEFINITION_V3), start=1
+            )
+        ]
+        self.assertEqual([1, 2, 3], [item["definition"]["version"] for item in compiled])
+        self.assertEqual(3, len({item["definition"]["fingerprint"] for item in compiled}))
+        invalid = request("day", definition=DEFINITION_V3, metric=SHOW_METRIC)
+        cases = (
+            ("metric", {**invalid, "metric": {"definition_id": "report.metric.unknown", "version": 1}}),
+            ("joins", {**invalid, "joins": [CLICK_JOIN]}),
+            ("grain", request("total", definition=DEFINITION_V3, metric=SHOW_METRIC)),
+        )
+        for field, value in cases:
+            with self.subTest(field=field):
+                self._assert_zero_network_failure(value, field)
 
     def test_result_carries_members_query_validation_and_allowed_claims(self):
         value = request("total", dimensions=[CLICK_DIMENSION], joins=[CLICK_JOIN])

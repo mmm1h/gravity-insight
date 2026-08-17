@@ -567,10 +567,11 @@ Agent 和 SDK 不解释模板、布局、收藏、权限、图表，也不生成
 ## Semantic Compose
 
 `semantic_compose_input_schema()` 离线返回 `gravity.semantic-compose-input.v1`，并显式列出
-`report.ap-cost-observation@1` 与 `@2`。`@1` 保持 `report.metric.ap-cost@1`、day/week/total、可选
+`report.ap-cost-observation@1`、`@2` 与 `@3`。`@1` 保持 `report.metric.ap-cost@1`、day/week/total、可选
 click dimension + 必需 join，且过滤器上限为 0。`@2` 增加 dimension-bound `click_company IN` 和
 activate count、pay amount、total ROI 三个 day/week 指标；filter 必须同时选择 click dimension 与 join，
-`ap_cost` 仍允许 day/week/total。`prepare_semantic_compose(inputs, *, app, workspace=None)` 输出
+`ap_cost` 仍允许 day/week/total。`@3` 再增加 9 个已登记 day/week 漏斗、成本、付费人数与收入指标；
+注册数与所有新指标的 total 保持未登记。`prepare_semantic_compose(inputs, *, app, workspace=None)` 输出
 `gravity.semantic-compose-compiled.v1`，并持久化定义 ID/版本/指纹、实际成员、生成查询、零网络验证和
 scoped `allowed_claims`。
 

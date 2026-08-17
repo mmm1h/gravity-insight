@@ -69,7 +69,7 @@
 ### P0-3 受治理的语义组合层与可机读来源链
 
 - **来源**：dbt Semantic Layer、Looker/LookML 和 Snowflake Cortex Analyst 都把指标、维度、时间粒度、连接和访问策略放在受治理语义对象中；MetricFlow 的 saved query 保存结构化查询，而不是只保存一句原话。详见[语义层与 Text-to-SQL 调研“Tier B”建议](semantic-layer-and-text2sql.md)和[开源语义路由调研的语义层比较](oss-semantic-and-routing.md)。厂商同时强调“how it was computed”，见[厂商 landscape 的共性结论](vendor-agent-landscape.md)。
-- **我们现在是什么样**：首个窄切片已经闭合；当前 48 条闭环动线中，`report.ap-cost-observation@1` 能把一个已登记指标与已登记粒度/维度确定性编译到既有 Multidim 产品，并把定义版本、实际成员、生成查询、验证和 `allowed_claims` 带回结果。它还不是跨产品通用层：当前过滤器登记为空，指标/维度面也只有生产证明过的 `ap_cost` 与 `click_company`。verified query 仍以精确问句绑定语义上下文。
+- **我们现在是什么样**：窄切片已经扩到同 ID 的三个不可变版本。`@1` 保留最初一个指标与空 filter，`@2` 增加 dimension-bound `click_company IN` 和 3 个 day/week 指标，`@3` 以粒度与代表性维度实证登记共 13 个成员。结果继续带定义版本、实际成员、生成查询、验证和 `allowed_claims`。它仍不是跨产品通用层：只有一个 dimension/filter/join profile，v3 的 5 个成员维度兼容性明确是同族外推而非逐成员实测，verified query 仍以精确问句绑定语义上下文。
 - **借鉴什么**：沿现有窄 Tier B 编译器逐个增加有生产证据的版本化定义。输入只能引用已注册且版本化的指标、维度、过滤器、时间粒度和允许连接；编译前验证粒度、连接基数和访问范围，不能识别的成员或 join 在发网前失败。结果扩展现有来源链，记录 `resolution_tier`、定义 ID/版本、实际语义成员、生成查询（若有）、验证结果和允许声称的结论。继续复用 composite / plan adapter / agent card，不建设通用语义平台。
 - **为什么值得**：这是“现在做不到”。不做时，分析师提出“同一个已登记指标，换一个已登记维度、过滤条件或时间粒度”但没有现成产品时，会在能力映射处得到 gap，或转去 Web/手写 SQL；即使 SQL 跑通也无法从结果判断口径是否一致。做完后，已治理成员之间的新组合可以直接在仓库完成，并且结论可追到定义版本。
 - **代价**：XL。涉及语义合同、编译器、来源链、Plan/SDK/CLI、质量门和少量端到端测试，并依赖三项既定排期。不可逆影响是语义定义会成为结果解释的一部分，所以定义版本必须持久化，旧结果不能被新定义静默重解释。
@@ -84,6 +84,11 @@
 同 ID 的 result identity 与 fingerprint 不同。两次 `click_company=bytedance` 过滤组合都得到
 `INPUT_INVALID`，故 v1 没有为了凑齐过滤能力而登记该 filter。该切片新增 1 条闭环动线和 1 张产品卡，
 不新增 operation；完整请求账本和数字见[路线图](../roadmap.md#受治理语义组合首个窄切片2026-08-17)。
+
+**2026-08-17 v3 扩容：**新增 9 个 day/week 成员并保留 v2 的 4 个；注册数因 day/week 均空而不登记，
+所有新成员的 total 因逐项 `INPUT_INVALID` 不登记。三个此前无法表达的 v3 组合真实返回 40/6/40 行，
+v1/v2/v3 identity 与 fingerprint 可区分，三类发网前失败继续成立。维度/过滤器证据按 4 个代表实测与
+5 个同族外推分层，不宣称后者已经逐项生产验证。
 
 ## P1：下一批
 

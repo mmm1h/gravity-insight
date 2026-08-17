@@ -584,3 +584,31 @@ hour 粒度分别以 0 次上游调用失败；执行错误的 filter 结果发�
 activate/day/filter 链返回 40 行（首尾 `18195/13100`）和非空 claims。生产 HTTP 21/25；其中
 metric catalog 的 page 2-5 是已计入预算的误续页，之后停止，无重试/扩窗。operation、产品卡、selector、
 动线计数均不变。
+
+## 2026-08-17 追加判定：语义定义 v3 成员扩容
+
+`report.ap-cost-observation@3` 保持 v1/v2 不变，以 fingerprint
+`3f13b18e35cc2216e3d29b299adf82e71b11aeaf62c9722171fa0073d04bb694` 登记 13 个成员：继承 v2 的
+4 个成员，并增加 `ap_show/ap_click/ap_click_rate/ap_convert/ap_activate`、
+`adclick_standard_activate_cost/adclick_standard_pay_uv/adclick_ad_amount/total_revenue`。新成员逐项已有
+day/week 非空实测，且逐项 total 均 `INPUT_INVALID`，故只登记 day/week；只有继承的 `ap_cost` 保留 total。
+`adclick_standard_register_cnt` 的 day/week 都明确空、total 又失败，未登记，也没有为已知空路径再发请求。
+
+维度/过滤器证据明确分层：`ap_show`、activate cost、pay users、total revenue 均以
+`data_dims=[click_company] + click_company IN [bytedance]` 实测成功，各 40 行；其余成员只在同 catalog
+族、相同非排斥 metadata 与同一前端 request profile 内外推。新增 9 个成员中 4 个为实测、其余 5 个
+为外推；平台通用外推边界为
+`ap_show → ap_click/ap_click_rate/ap_convert/ap_activate`，收入外推边界为
+`total_revenue → adclick_ad_amount`；不把外推写成逐成员生产实测。
+
+三条 v3 semantic 组合分别返回：`ap_show/day/bytedance` 40 行（首尾 `3236865/2194246`）、
+activate cost/week 6 行（`14.64/11.86`）、total revenue/day/bytedance 40 行
+（`86673.69/17860.98`），均携带 scoped `observed-metric-value` 与 `within-result-comparison`。真实
+v1/v2/v3 definition version 和 fingerprint 两两不同；unknown member、禁止 join、new metric + total
+三类 v3 输入仍在 0 次网络下拒绝。operation/stable、产品卡、selector、动线均保持
+`231/222/89/329` 与 `56 = 48 / 1 / 7`。
+
+另记录但不在本线修复分页合同：上一轮 9 个无维度 day 查询在显式 bounded 读取中，page 2--5 均逐行
+重复 page 1 的 40 个日行。每次 projected `page_info` 只有 `total=40`，没有合同声明的 `total_page`；
+operation 却登记 `page_info/total_page_field=total_page/max_page_size=100`。因此不能说 `total_page` 报了
+某个数，它实际缺失；分页层在预算耗尽前重复请求同一数据。
