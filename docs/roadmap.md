@@ -2326,6 +2326,31 @@ method/path/body keys 后直接发唯一 POST。此前四次 `calc_total` 调用
 动线计数不变：`48 = 32 已闭环 / 0 部分闭环 / 16 完全缺失 → 本轮 +0/-0 → 48 = 32/0/16`；
 operation 也保持 `185 → +0 → 185`（stable `176 → +0 → 176`）。
 
+## Issue 20 Windows receipt 存活探测（2026-08-17）
+
+**判定：缺陷成立，根因是 Windows 上 `os.kill(pid, 0)` 等价于投递 `CTRL_C_EVENT`，不是陈旧 editable 元数据。**
+`signal.CTRL_C_EVENT == 0`。CPython 在 win32 上对 `CTRL_C_EVENT`/`CTRL_BREAK_EVENT` 走
+`GenerateConsoleCtrlEvent`，因此 `_process_is_alive` 不是无信号探测。首次 receipt 写入就会
+全量扫账本 PID（`(count-1) % 64 == 0`），retention 与 query 两条路径都会打到它。
+
+**实现：**Windows 改为 `OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION)` + `GetExitCodeProcess`；
+句柄在 `try/finally` 中关闭。这两个 API 只查询进程对象，不向任何控制台进程组投递控制事件。
+非 Windows 仍用 `os.kill(pid, 0)`。探测失败时判活：`OpenProcess` 失败且 winerror 不是
+`87/1168`、或 `GetExitCodeProcess` 失败，都视为仍活着，避免把别人的 receipt 误删；账本可能暂时变大。
+PID 复用本轮不修：复用后的活进程会让陈旧 receipt 被当成活动运行，清理延后、query 显示
+`run_in_progress`。低成本加固是同时比对进程创建时间，本轮只记录判断。
+
+**陈旧 editable：**本机 `importlib.metadata` 同时存在 `gravity-sdk 0.1.0 → D:/git-pjt/gravity-sdk`
+与 `0.3.0 → D:/git-pjt/wt-metadata-onboarding`；未设 `PYTHONPATH=src` 时会加载前者的
+`os.kill` 实现。它会放大现场现象，但不是本缺陷成因：当前工作树源码在修复前同样调用
+`os.kill(pid, 0)`。本轮不改产品代码做版本卫兵。本地重装：
+`python -m pip uninstall gravity-sdk -y` 后在本工作树 `python -m pip install -e .`，
+并始终带 `PYTHONPATH=src`。
+
+本轮生产 HTTP **2 / 6**：`auth refresh` 1 次 `authentication` POST `/account_center/api/v1/user_login/v2/` HTTP 200 attempt 1 无 retry；随后 `gravity run report.company_amount.query` 单页 `{page:1,page_size:1}` 1 次 POST `/report/api/v1/admin_report/query_company_amount/` HTTP 200 attempt 1 无 retry。均有 receipt。未传 `--max-items` / `--max-pages`。
+
+operation / stable / 产品卡 / 动线本轮不变：`233 / 224 / 92`，`56 = 50 / 1 / 5`。
+
 ## 明确不做
 
 - 不复刻 Web UI 概念：布局、收藏、拖拽、成员权限管理。`app.project_auth.detail` 与
