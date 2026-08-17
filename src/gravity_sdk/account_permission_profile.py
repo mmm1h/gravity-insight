@@ -21,6 +21,18 @@ from .composite_catalog import stable_operation
 SCHEMA_VERSION = "gravity-insight.account-permission-profile.v1"
 DEFAULT_CONCURRENCY = 3
 MAX_CONCURRENCY = 24
+PERMISSION_EMPTY_NOTE = (
+    "An empty result on this product is indistinguishable from a permission-"
+    "trimmed empty. Upstream returned code=0 with list=[] and matching "
+    "page_info.total_number; no extra/scope/permission echo distinguishes the "
+    "two. Do not treat empty as tenant-has-no-data."
+)
+PERMISSION_EMPTY_NEXT_ACTION = (
+    "If this empty result may be incomplete, run "
+    "`gravity apps permission-profile` and compare menu_names plus "
+    "data_permission_modules with this query family before treating empty as "
+    "tenant-has-no-data."
+)
 _MENU_LIST = stable_operation("app", "permission_menu", action="list")
 _ROLE_LIST = stable_operation("app", "role", action="list")
 _ROLE_DETAIL = stable_operation("app", "role", action="detail")
@@ -135,11 +147,7 @@ def _envelope_extra(facts: Mapping[str, Any], source_count: int) -> dict[str, An
         "menu_count": facts["menu_count"],
         "menu_names": facts["menu_names"],
         "data_permission_modules": facts["data_permission_modules"],
-        "empty_result_note": (
-            "An empty data query is not a permission denial. Compare "
-            "menu_names and data_permission_modules with the query family "
-            "before treating empty as tenant-has-no-data."
-        ),
+        "empty_result_note": PERMISSION_EMPTY_NOTE,
     }
 
 
@@ -323,5 +331,7 @@ __all__ = [
     "ROLE_LIST_OPERATION_ID",
     "SCHEMA_VERSION",
     "USER_LIST_OPERATION_ID",
+    "PERMISSION_EMPTY_NOTE",
+    "PERMISSION_EMPTY_NEXT_ACTION",
     "account_permission_profile",
 ]

@@ -5,7 +5,7 @@
     "action": "list",
     "auth_profile": "gravity_authorization",
     "contract_version": 3,
-    "description": "单日变现明细；固定产品读取完整已登记字段，raw fields 仍由 live metadata 校验，用户与设备字段可用于结构化筛选。",
+    "description": "单日变现明细；固定产品读取完整已登记字段，raw fields 仍由 live metadata 校验，用户与设备字段可用于结构化筛选。空结果与权限裁剪空集不可区分；若不确定权限，先运行 gravity apps permission-profile。",
     "domain": "analysis",
     "effect": "read",
     "examples": [],

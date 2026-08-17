@@ -264,6 +264,8 @@ MONETIZATION_DETAIL_CAPABILITY: Mapping[str, Any] = {
         + "/".join(SAFE_ROW_FIELDS)
         + "；未登记字段按合同漂移 fail-closed，登记后按投影总裁决暴露；"
         "带字段、筛选或分组的请求交给 raw capability discovery。"
+        "空结果与权限裁剪空集不可区分；若不确定权限，先运行 "
+        "`gravity apps permission-profile`。"
     ),
     "required_inputs": MONETIZATION_DETAIL_REQUIRED_INPUTS,
     "input_schema": {

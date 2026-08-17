@@ -33,6 +33,7 @@ from .monetization_projection import (
     SAFE_RE_ATTRIBUTE_FIELDS,
     SAFE_ROW_FIELDS,
 )
+from .account_permission_profile import PERMISSION_EMPTY_NEXT_ACTION
 from .result_source import GOVERNED_PRODUCT, result_source
 
 
@@ -80,6 +81,7 @@ _ACTIONS = {
     "contract": "Stop automation until the Monetization Detail contract is re-verified.",
 }
 _SUCCESS_ACTION = "Consume the complete contracted monetization rows."
+_EMPTY_ACTION = PERMISSION_EMPTY_NEXT_ACTION
 
 
 def monetization_detail(
@@ -376,7 +378,7 @@ def _success_result(
         "page": receipt,
         "data": {"list": [row for row in safe_rows if row is not None]},
         "error": None,
-        "next_action": _SUCCESS_ACTION,
+        "next_action": _EMPTY_ACTION if not rows else _SUCCESS_ACTION,
     }
 
 

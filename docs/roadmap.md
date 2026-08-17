@@ -6102,3 +6102,30 @@ operations=233 / provenance=233。动线计数未重算。
 逐类：authentication 1（本轮新登录）+ app.list 2 + segment.list 8 + segment.detail 1 +
 report_config.list 8 + report_config.get 1 + template master list 1 = **22**。未翻页
 （`27192043` 保存分析 `total_number=153` 只取首页 100）。不 push、不碰 GitHub。
+## 权限型空与真空不可区分（2026-08-17）
+
+**提案：**#159 已测出 4 条对低权限账号返回 `code=0` 成功空集。本轮只查上游是否另有可区分信号，
+再在产品面如实声明；不新建访问控制、不过滤字段、不把空结果改判为权限错误。
+
+**合同 / 前端 / 回执：**4 条合同只登记 `list` + `page_info`（变现明细另有 `total`），语义规则只有
+`code` / `extra.error`。Census 前端消费：`segment.list` 只绑 `data.list`；`subscribe.list` 与
+`monetization_detail.list` 绑 `data.list` + `data.page_info.total_number`；`report.report.list`
+response binding 未解析。既有 probe 空响应只有 `code/data/extra=null/msg`，无 scope/permission 回显。
+
+**双账号实测：**切号先删 session。高权限 principal `277516`、低权限 `278569`。4 条各 1 次最小第一页，
+两边 raw payload 路径、shape、protocol 完全相同：HTTP 200 / `code=0` / `msg=成功` / `list=[]` /
+`page_info.total_number=0` / `total_page=0` / `extra` 缺省。没有 total 与 list 不一致，也没有
+权限标记。变现明细的 live metadata 附带读（`user_property.list` / `event_property.list`）两边都
+非空，不能用来区分这条主 route 的空。
+
+**产品面：**找不到信号就不假装能区分。`report_directory` / `report_subscriptions` 空结果加法声明
+`empty_result_note` 与 `next_action`；变现明细空结果改写既有 `next_action`（envelope 键集冻结）；
+分群目录空时 `segment_snapshot` 的 next action 指向 `gravity apps permission-profile`。Agent 卡与
+operation 描述同步声明。不改 `result_source`、不新建 status、不裁剪字段。
+
+**台账：**动线状态与汇总数字不重算；只在对应 4 行备注里写清不可区分。operation / stable / 产品卡 /
+selector / 动线保持基线 `233 / 224 / 92 / 7 / 329`，动线 `56 = 50 / 1 / 5` 由合并对账。
+生产 HTTP：登录 2 + `app.list` 2 + 目标 8 + 变现明细 metadata 附带读 6 = 18。
+unittest 1163 OK；pytest 1163 passed / 3104 subtests；compiler 233 / 11 manifests；
+quality PASS operations=233 / provenance=233；错误审计仍 `1225 = A833 / B23 / C369`；
+development recognizer 首选仍 `251/336`，0 生产请求。不 push、不碰 GitHub。

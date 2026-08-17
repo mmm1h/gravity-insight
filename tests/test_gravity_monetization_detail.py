@@ -101,6 +101,15 @@ class MonetizationDetailTests(unittest.TestCase):
         )
         self.assertEqual(("success", "7", [raw]),
                          (result["status"], result["app_id"], result["data"]["list"]))
+        self.assertEqual(
+            "Consume the complete contracted monetization rows.",
+            result["next_action"],
+        )
+        empty = monetization_detail(
+            Client(_read(None)), "007", DAY, max_workers=2, max_pages=5, max_items=10
+        )
+        self.assertEqual("empty", empty["status"])
+        self.assertIn("permission-profile", empty["next_action"])
         self.assertIsInstance(result["data"]["list"][0]["device_info"], dict)
         self.assertIsInstance(result["data"]["list"][0]["user$ad_ltv"], int)
         operation, inputs, options = client.calls[0]
