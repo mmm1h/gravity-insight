@@ -5318,3 +5318,93 @@ router、worker 或活动结构债；技术债清单复核后不新增条目。
 **1202 = A399 / B434 / C369**，本线新增 caller-recoverable site/A 档为 **0/0**。文档 **4 passed**、
 Agent 指南生成器 `--check`、CLI help 和 `git diff --check` 均通过。新增定义合同 218 行、测试新增
 26 行，比例约 **0.119**，低于三分之一；quality baseline 未放宽。
+## 指标异常定位 playbook v1（2026-08-17，提案）
+
+**提案与范围：**ignored 工作稿位于 `tmp/codex/analysis-playbook/proposal.md`。第一条固定为
+`metric-anomaly-localization@1`，只编排现有 `report.ap-cost-observation@2` 已登记且生产证明的
+`ap_cost`、`click_company`、dimension-bound `click_company IN` 与 total 粒度。调用方必须显式给出
+问题、App、等长且不重叠的 current/reference 窗口和精确渠道假设；不引入 operation、SQL、未登记
+语义成员、业务词推断、Skill/插件市场、通用工作流引擎或多 Agent 协调器。
+
+步骤 DAG 为 `compare_current || compare_reference → breakdown_current → hypothesis →
+validate_current || validate_reference → conclusion`，另有 `breakdown_reference` 只依赖两个 compare、
+但故意声明在 hypothesis 后面。所有查询步骤编译成现有 `gravity.plan.v1` 的 `semantic_compose`
+composite；breakdown、hypothesis 和 conclusion 均为本地确定性步骤。两个 compare 读取的就是各窗口
+返回的 `click_company` 行，breakdown 只陈述这些行及其和，不把未返回渠道当零，也不称完整 App total。
+后置 breakdown_reference 是失效语义的可证伪反例：替换 hypothesis 时，
+只失效 hypothesis、两个 validate 和 conclusion；声明顺序更晚但不在其下游的 breakdown_reference
+必须复用。
+
+检查点固定 definition fingerprint、每步 own-input fingerprint、状态和原 Plan item；恢复只把 DAG
+失效集合中的查询步骤编成子 Plan，未失效成功结果逐字复用。任一必需步骤为 partial/gap/error/skipped/
+无事实行时，输出必须是 `conclusion=null`、`allowed_claims=[]` 并列出缺失步骤。完整结论只允许陈述
+两个窗口的返回 `ap_cost`、返回渠道的观察变化和所选渠道切片与返回行之和变化的数值关系；不允许因果、预算
+充分性、未返回渠道为零或跨定义可加性。每步保留既有 `result_audit`，最终事实引用使用结果内精确
+JSON Pointer。实施、真实输出、请求账本、台账终判和门禁数字完成后续写在本节。
+
+**生产边界纠正与完整样例：**第一次把 compare 编成 v2 `total` 且无 dimension；两个根节点均收到
+HTTP 200 但业务 `INPUT_INVALID`，四个下游由 Plan 标成 `DEPENDENCY_FAILED`，playbook 正确输出
+`conclusion=null/allowed_claims=[]`。现有证据只证明 total **by click_company**，不证明无维度 total。
+最终合同因此让两个 compare 直接查询返回的 click-company 行，本地 breakdown 只计算这些返回行之和，
+不称完整 App total。固定 App 29034827，reference `2026-06-01..06-07`，current
+`2026-07-04..07-10`：两窗均只返回 bytedance，分别为 `2713799.09` 与 `2123932.39`；返回行之和
+变化 `-589866.70 / -21.74%`。bytedance 过滤验证与对应 breakdown 精确相等，故 verdict 为
+`selected_slice_moved_with_observed_decrease`，但 statement 明确这是观察关联、不是因果归因。三条
+scoped claims 只允许：(1) 两窗返回 click-company 行之和；(2) 两窗都返回的同 key 变化；(3) 所选
+单一渠道对返回行之和变化的数值关系；均禁止完整性、未返回值和因果外推。
+
+**续跑与故障注入：**把 hypothesis 从 bytedance 换为 tencent，只失效
+`hypothesis/validate_current/validate_reference/conclusion`；`compare_current/compare_reference/`
+`breakdown_current/breakdown_reference` 均为 `reused/success`，子 Plan 只有两个 validate。生产中两个
+tencent validate 都是合法 empty，故最终为 `evidence_incomplete`、`conclusion=null`、
+`allowed_claims=[]`，缺失步骤精确列为两个 validate；没有把 empty 当零。合成故障分别把
+`validate_current` 注入 `partial` 与 `capability_gap`，两次输出同样没有结论/claims，且未受影响的
+reference breakdown 仍成功。测试另以声明顺序更晚的 breakdown_reference 锁定 DAG 失效而非顺序截断。
+
+**生产 HTTP 逐请求账本：**实际 **22 / 30**。全部 HTTP 200、attempt 1、`retry=false`；除认证外均
+page 1，没有重试、翻页、扩窗或换 App。A 是发现无维度 total 不够用后停止的 fail-closed 首跑；B 是
+首次可用实现，随后仅因 claim wording 仍写 total 而被 definition fingerprint 作废；C 是最终完整样例；
+D/E 是同一 tencent 续跑在展示修正前后各一次。共享 runtime 对同层 live metadata 有合并/缓存，所以
+每个 semantic 查询仍各有 query HTTP，但 metadata HTTP 少于查询数。
+
+| # | 阶段 | operation | receipt | HTTP / attempt / retry / page | 观察 |
+| ---: | --- | --- | --- | --- | --- |
+| 1 | A | `authentication` | `5fde8431…` | 200 / 1 / false / - | 单次认证 |
+| 2 | A | `report.multidim.metric.list` | `10506e79…` | 200 / 1 / false / 1 | 两根节点共用 live metadata |
+| 3 | A | `report.multidim.query` | `064476ad…` | 200 / 1 / false / 1 | 无维度 total 根节点之一，`INPUT_INVALID` |
+| 4 | A | `report.multidim.query` | `24b4c6a6…` | 200 / 1 / false / 1 | 另一根节点，`INPUT_INVALID`；立即收窄合同 |
+| 5 | B | `report.multidim.metric.list` | `ef5ee959…` | 200 / 1 / false / 1 | grouped compare/validate metadata |
+| 6 | B | `report.multidim.query` | `8aca2983…` | 200 / 1 / false / 1 | reference compare 成功 |
+| 7 | B | `report.multidim.query` | `d3aa9724…` | 200 / 1 / false / 1 | current compare 成功 |
+| 8 | B | `report.multidim.query` | `5d00ccbc…` | 200 / 1 / false / 1 | current bytedance validate 成功 |
+| 9 | B | `report.multidim.query` | `da52820d…` | 200 / 1 / false / 1 | reference bytedance validate 成功 |
+| 10 | C | `report.multidim.metric.list` | `8864099a…` | 200 / 1 / false / 1 | compare layer metadata |
+| 11 | C | `report.multidim.query` | `d085934b…` | 200 / 1 / false / 1 | final current compare `2123932.39` |
+| 12 | C | `report.multidim.metric.list` | `ae815240…` | 200 / 1 / false / 1 | second concurrent metadata receipt |
+| 13 | C | `report.multidim.query` | `24e8f0c0…` | 200 / 1 / false / 1 | final reference compare `2713799.09` |
+| 14 | C | `report.multidim.query` | `e1d75cdd…` | 200 / 1 / false / 1 | final reference bytedance validate |
+| 15 | C | `report.multidim.query` | `7e46cd73…` | 200 / 1 / false / 1 | final current bytedance validate |
+| 16 | D | `report.multidim.metric.list` | `23633a60…` | 200 / 1 / false / 1 | tencent current/reference metadata |
+| 17 | D | `report.multidim.metric.list` | `7116aaea…` | 200 / 1 / false / 1 | second concurrent metadata receipt |
+| 18 | D | `report.multidim.query` | `110a74f4…` | 200 / 1 / false / 1 | tencent current success empty |
+| 19 | D | `report.multidim.query` | `7f3e4996…` | 200 / 1 / false / 1 | tencent reference success empty |
+| 20 | E | `report.multidim.metric.list` | `0d680886…` | 200 / 1 / false / 1 | 最终展示复核共用 metadata |
+| 21 | E | `report.multidim.query` | `40ba522e…` | 200 / 1 / false / 1 | 两个 tencent validate 之一，success empty |
+| 22 | E | `report.multidim.query` | `b926de92…` | 200 / 1 / false / 1 | 另一 validate，success empty；生产访问停止 |
+
+**台账终判：**新 envelope 依照台账规则增加一条可见审计行，但标为“既有语义组合调查编排”，不计
+独立产品动线。理由是它只重放已有 `ap_cost/click_company/filter` 事实，不增加上游可回答的问题、
+operation、语义成员或 Agent 选择目标；完整调查的暂停/修正/续跑是顺手性产品，不是新的数据能力。
+因此 `61 行 - 5 条不计 = 56 = 48 / 1 / 7`，operation/stable/card/selector 保持
+`231/222/89/329`。若未来 playbook 引入上一行语义组合答不了的新产品或新结论合同，应重新计动线。
+
+**最终门禁：**相对派发基线，unittest **1139 tests OK**；pytest **1139 passed / 3087 subtests
+passed**，测试数只增不减。compiler **231 operations / 11 manifests**；quality PASS
+（operations/provenance 231/231、operation literals 57），未修改或放宽 quality baseline。caller-
+recoverable 审计从 `1202 = A399/B434/C369` 变为 **`1222 = A419/B434/C369`**，新增 **20/20 A**、
+B/C 各 +0。文档 **4 passed**、Agent 指南生成器 `--check`、CLI help 和 `git diff --check` 全过。
+`src/` 实现/合同净增约 1661 行，测试净增 224 行，比例约 **0.135**，低于三分之一。技术债清单已
+复核：实现分为 definition/input/compiler/result/CLI 五个窄 owner，复用现有 Plan worker 与 semantic
+adapter；没有新 registry、scheduler、worker pool 或 shared-spine 增长，故不新增活动结构债。
+未运行真实 holdout/final/all、未读 key、未改评测装置/题集/评分逻辑；全量测试输出中的 protected
+字样仍只来自隔离临时目录的 synthetic fixture。没有 GitHub、push、tag 或其他对外动作。

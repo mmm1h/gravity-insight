@@ -116,6 +116,14 @@ v1/v2/v3 identity 与 fingerprint 可区分，三类发网前失败继续成立�
 - **不做会卡在哪一步**：`得到异常 → 提出假设 → 运行多个产品 → 汇总证据`；用户必须在仓库外维护步骤状态和结论来源。
 - **可证伪验收**：固定样例能输出问题、假设、每步事实路径和结论；替换一个中间假设后，仅其下游步骤失效并可续跑；故意让一步返回 partial/gap 时，playbook 不得伪造最终结论。
 
+**2026-08-17 首条交付：**`metric-anomaly-localization@1` 已以一个固定 definition、CLI/SDK 和现有
+Plan/`semantic_compose` 节点落地；checkpoint 按 DAG 只失效假设后继。生产样例的返回 click-company
+行之和为 `2713799.09 → 2123932.39`（`-21.74%`），每步携带 `result_audit` 与结果内 fact path；
+bytedance→tencent 后只重跑两个 validate，二者 empty 时结论/claims 为空。partial 与 capability-gap
+故障注入同样 fail closed。无维度 v2 total 的生产 `INPUT_INVALID` 证明该既有产品面不够，v1 因而只称
+“返回维度行之和”，不伪称完整 App total。它不解锁新问题，故作为既有语义组合的调查编排审计行，
+不增加产品动线、operation、产品卡或 selector；完整请求账本见[路线图](../roadmap.md#指标异常定位-playbook-v12026-08-17提案)。
+
 ### P1-3 动线级可行动错误
 
 - **来源**：Structured Feedback 的核心不是更长的报错，而是给出失败路径、观察值、允许替代项或明确发现动作；可用性调研建议把错误恢复和 fault injection 纳入分析旅程评分。见[可用性调研“错误恢复与故障注入”](agent-usability-methods.md)。

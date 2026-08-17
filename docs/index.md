@@ -25,6 +25,7 @@
 | 创建、更新、查询或安全删除自定义指标口径 | [Agent 工作流：受治理写入](agent-workflow.md#受治理写入统一两步确认) | [CLI 参考：自定义指标](reference/cli.md#自定义指标口径-crud) |
 | 声明调用方业务词和派生指标公式 | [调用方语义任务指南](agent-skills/caller-semantics.md) | [Workspace 参考：调用方语义上下文](reference/workspace.md#调用方语义上下文) |
 | 批量发现并执行交叉查询 | [Agent 工作流：显式 Plan](agent-workflow.md#3-交叉查询一个显式-plan) | [CLI Plan 参考](reference/cli.md#plan-v1) |
+| 运行或续跑固定的指标异常定位调查 | [Plan 参考：可恢复 playbook](reference/plan.md#metric-anomaly-localization1) | [CLI 参考：Analysis playbook](reference/cli.md#analysis-playbook) |
 | 在 Python 中集成 SDK | [Python SDK 参考](reference/sdk.md) | [架构与概念](architecture.md) |
 | 把 SDK/CLI 输出交给 LLM | [LLM 输出安全指南](guides/llm-output-safety.md) | [Agent 工作流](agent-workflow.md) |
 | 判断用 Insight 还是 SQL | [架构与概念](architecture.md#查询路由) | [Agent 工作流](agent-workflow.md#选择-insight-还是-sql) |

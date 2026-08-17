@@ -137,6 +137,8 @@ gravity plan run --input plan.json --concurrency 6
 
 Analysis 查询复用 `analysis_query`，默认值字典用 `analysis_default_dictionary`，完整已登记变现明细用 `monetization_detail`，Multidim 使用 `multidim`，普通订单目录/拆单追踪使用 `order_directory`/`order_split_trace`，素材/推广表现分别使用 `material_performance`/`promotion_performance`，保存分析用 `saved_analysis`，人群规则/快照用 `segment_evaluate`/`segment_snapshot`，看板控制面/图表用 `dashboard_snapshot`/`dashboard_analysis`。已知完整输入时一次 `plan run`；未知时 Agent 发现、调用方补齐再执行，自然语言不自动执行。同层查询由全局 pool 并发并保声明序；binding 仅可写登记目标，结果不回显 request/spec/binding 值。完整合同见 [Plan 参考](reference/plan.md)。
 
+固定 `metric-anomaly-localization@1` 用 `gravity analysis playbook run` 把四个现有 `semantic_compose` 节点编译进 Plan；换假设时带上旧 checkpoint，只重跑 DAG 后继。任何 partial/gap/empty 证据都必须得到空结论，完整边界见 [playbook 参考](reference/plan.md#metric-anomaly-localization1)。
+
 ## 4. 选择 Insight 还是 SQL
 
 按以下顺序：

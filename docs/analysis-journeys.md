@@ -10,8 +10,9 @@
 执行，内部 HTTP 数也没有减少。App/平台也未知时不适用该两次路径；默认离线 Agent 的原三次下界保留。
 `gravity.agent-call-bound.v1` 只在本次成功交付完整目录的卡与 Plan 节点上把对应 scenario 声明为 2。
 
-当前程序化重算：**56 条产品动线：已闭环 48 / 部分闭环 1 / 完全缺失 7**。可复算：下表 60 行，
-减去 2 条兼容/维护便利面、1 条“既有稳定读取面重复”和 1 条“已有结果上的调用方派生便利面”，
+当前程序化重算：**56 条产品动线：已闭环 48 / 部分闭环 1 / 完全缺失 7**。可复算：下表 61 行，
+减去 2 条兼容/维护便利面、1 条“既有稳定读取面重复”、1 条“已有结果上的调用方派生便利面”和
+1 条“既有语义组合的调查编排便利面”，
 得到 56 条；按状态直接分组为 `56 = 48 / 1 / 7`。设置 → 应用管理先把基线推进到
 `52 = 43 / 1 / 8`；设置 → 应用管理的真实列表 route 证明 J39 应由既有 stable `app.list` 承载，
 故 `43 + 1 = 44`、`8 - 1 = 7`，总数与部分闭环不变；随后新增“定义、更新并在真实多维查询中使用
@@ -55,6 +56,14 @@ metric catalog page 2-5，已全部计入并停止；计数仍为 231/222、89 c
 v3 fingerprint 为 `3f13b18e…bb694`；`ap_show/day/bytedance`、activate cost/week、total
 revenue/day/bytedance 分别返回 40、6、40 行。v1/v2/v3 可区分，v3 unknown member、禁止 join、
 new metric + total 继续零网络失败。本单元 14 HTTP 全部 200/page 1/no retry，无认证、翻页、扩窗或换 App。
+
+2026-08-17 `metric-anomaly-localization@1` 给同一语义组合动线增加版本化调查、checkpoint 与 DAG
+局部续跑，不增加上游可回答的问题或成员。固定生产样例只比较两个窗口中**返回的** click-company
+行及其和：`2713799.09 → 2123932.39`，变化 `-589866.70 / -21.74%`；唯一返回的 bytedance 行同幅
+变化。替换为 tencent 后只重跑两个 validate，两个 compare 与两个本地 breakdown 复用；两窗均
+success empty，故 `conclusion=null/allowed_claims=[]`。这条新增独立结果 envelope 按顶部规则保留一行
+审计，但它只编排下表既有“版本化语义成员组合”问题，不解锁新问题、不新增 operation/card/gap，故
+产品动线 `56 + 0 = 56 = 48 / 1 / 7`，产品卡/selector 保持 `89/329`。
 
 2026-08-16 受治理写目录覆盖只改变发现表达，不新增产品动线或 operation。canonical inventory 保留
 3 个既有默认 mutation selector，并为其余 28 个调用方动作增加 action-qualified 卡：
@@ -477,6 +486,7 @@ operation 继续保留专家入口，但明确不是产品等价物；`app.realt
 | 从分析结果或规则创建并管理可复用分群 | 已闭环 | 有 / 有 / 设计不适用 / 有 | 2（dry-run / 显式 execute） | 独立任务产出上游分群对象，不与“查看已有分群详情/成员”合并计数。`from_analysis`、`from_rule`、`by_manual`、`save` 已有生产创建/更新/刷新/删除与读回证据；历史版本和临时分群两个 create 变体未生产验证，不作为本行闭环证据。Plan v1 不承诺不可重放写、人工确认、preimage 或写后读回，Agent 只交接两步命令。 |
 | 用显式物理维度、指标和筛选读取多维报表 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（物理字段未知、在线解析） | 闭合 schema + live metadata 提供物理指标/维度候选；日期和 filter value 仍须由调用方精确提供。 |
 | 用版本化语义成员组合已登记指标、维度与时间粒度 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（成员未知、机器 schema） | `gravity.semantic-compose-result.v1` 记录 definition/version/fingerprint、实际成员、生成查询、验证和 `allowed_claims`。`@1` 保持 `ap_cost` day/week/total 且 filter 为空；`@2` 增加 dimension-bound `click_company IN` 与 3 个 day/week 指标；`@3` 保留旧成员并增加 9 个 day/week 指标，注册数因已证空排除。v3 维度兼容性为 4 个代表实测、5 个同族外推；未知成员、缺失 filter dimension、禁止 join、指标粒度冲突均在发网前失败。 |
+| 可恢复地执行已登记 ap_cost 异常定位调查 | 不计独立动线（既有语义组合调查编排） | 有 / 有 / 编译为既有 Plan / 设计不新增卡 | 首跑 1；续跑 1 | `metric-anomaly-localization@1` 只编排上一行现有语义成员；固定 CLI/SDK 输入编译为四个 `semantic_compose` 节点，不新增 operation、adapter 或 worker。checkpoint 用 own-input/result fingerprint 和 definition DAG 仅失效后继；成功 sibling 原 Plan item 复用。结论只称返回 click-company 行之和，且每个数字引用结果内 fact path；partial/gap/error/skipped/empty 一律 `conclusion=null/allowed_claims=[]`。独立 envelope 需要台账可见，但没有解锁上一行之外的问题，故不计新产品动线，也不新增 Agent 卡。 |
 | 定义、更新并在多维查询中使用可复用自定义指标 | 已闭环 | 有 / 有 / 有 / 有 | mutation 2（preview / execute）；查询 1 | 当前 turbo `edit` 是 create/update upsert，字符串 ID 省略为 create、带 ID 为 update；删除使用当前 turbo delete。生产闭环以 `ap_cost` 公式创建 marker 指标，更新名称/展示格式后由既有旧前缀 mine/shared metadata 目录验证，再发真实 Multidim 查询取得 40 个非空日行，最后删除并连续两次确认当前目录为空。四张产品卡分别表达 list/create/update/delete；自然语言不自动写，Plan 只接受显式 preview/execute。permission edit 会覆盖角色可见指标，未实现。 |
 | 创建并维护可复用的事件/属性元数据模板 | 已闭环 | 有 / 有 / 有 / 有 | mutation 2（preview / execute） | 生产创建 marker 模板并把源属性读回为独立成员 ID，随后按成员 preimage 移除并读回空集合，再软删 master 并确认 ID 消失；最终无残留。create/append 以 App 目录 ID 输入、按稳定名称映射成员读回，remove 明确使用模板成员 ID。既有模板变更须通过 `marker OR upstream owner`；四张 Agent 卡均不允许自然语言自动执行。分组 UI、无 owner 证据的属性批删和不可清理的 XLSX 导入不在产品内。 |
 | 按平台和物理指标读取推广表现 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（指标未知、在线解析） | 平台须已知；第二次执行重新按平台复验物理指标。 |

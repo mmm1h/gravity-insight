@@ -15,6 +15,7 @@ from .multidim_service import (
 )
 from .multidim_product import MULTIDIM_INPUT_SCHEMA_VERSION
 from .plan import AdapterContext
+from .result_audit import project_result_audit
 
 
 RESULT_SCHEMA_VERSION = "gravity-insight.composite.multidim.v1"
@@ -113,7 +114,7 @@ def sanitize_multidim_result(
         else "Consume query and total only from this bounded Multidim envelope."
     )
     if not fields:
-        return selected
+        return project_result_audit(selected, result)
     return {
         key: value
         for key, value in selected.items()
@@ -254,7 +255,7 @@ def _safe_component(
         selected["page"] = page
     if isinstance(value.get("truncated"), bool):
         selected["truncated"] = value["truncated"]
-    return selected
+    return project_result_audit(selected, value)
 
 
 def _safe_drift_diagnostics(

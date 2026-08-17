@@ -193,6 +193,9 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `semantic_compose_input_schema()` | 返回当前已登记定义与精确成员 ID/版本；零网络 |
 | `prepare_semantic_compose()` | 绑定 App 并确定性编译受治理组合；未知成员/join/粒度冲突零网络失败 |
 | `semantic_compose()` | 通过既有 Multidim 产品执行已编译组合并返回定义来源与 `allowed_claims` |
+| `metric_anomaly_playbook_schema()` | 离线返回唯一 playbook 的目标、必要输入、DAG、停止条件与 `allowed_claims` |
+| `prepare_metric_anomaly_playbook()` | 把完整或续跑调查编译为现有 Plan 并做零网络 adapter preflight |
+| `metric_anomaly_playbook()` | 运行或用 checkpoint 续跑；未失效 Plan item 复用，证据不全时不发布结论 |
 | `material_performance()` | 按显式 App、日期窗和平台读取稳定素材表现；平台保序、共享预算、局部失败隔离 |
 | `fetch_material_asset()` | 从刚读取的已登记素材响应按精确引用完整下载图片/视频；不接受 URL |
 | `promotion_performance()` | 按一个显式 App、日期窗、平台和物理指标读取 21 个同构平台；平台保序、局部失败隔离 |
