@@ -61,6 +61,35 @@ class DocumentationArchitectureTests(unittest.TestCase):
         }
         self.assertEqual({}, excess)
 
+    def test_index_catalog_counts_match_the_contracts(self) -> None:
+        # docs/index.md states an install-time catalog size by hand. It drifted to
+        # 233/93/330 while the contracts already held 236/95/335, because nothing
+        # compared the prose to the tree.
+        import collections
+        import json
+        import re
+
+        operations = [
+            json.loads(path.read_text(encoding="utf-8"))["operation"]
+            for path in (ROOT / "src/gravity_sdk/contracts/operations").glob("*.json")
+        ]
+        stability = collections.Counter(item.get("stability") for item in operations)
+        effects = collections.Counter(
+            item.get("effect") for item in operations if item.get("stability") == "stable"
+        )
+
+        text = (DOCS / "index.md").read_text(encoding="utf-8")
+
+        def stated(pattern: str) -> int:
+            found = re.search(pattern, text)
+            self.assertIsNotNone(found, f"docs/index.md no longer states {pattern}")
+            return int(found.group(1))
+
+        self.assertEqual(len(operations), stated(r"(\d+) 个 operation"))
+        self.assertEqual(stability["stable"], stated(r"(\d+) 个 stable operation"))
+        self.assertEqual(effects["read"], stated(r"(\d+) read"))
+        self.assertEqual(effects["mutation"], stated(r"(\d+) governed"))
+
     def test_no_unresolved_merge_conflict_markers(self) -> None:
         # A botched conflict resolution once shipped `<<<<<<<` markers into the
         # journey ledger on dev, main and origin: the duplicate rows were caught
