@@ -351,7 +351,9 @@ caller 可恢复错误点；新增错误点 0、新增 A 档 0。生产 HTTP 请
 | 21 | `catalog#7` | `report.media_report.list` | 200 | 空 |
 | 22 | `catalog#7` | `analysis.realtime_event.list` | 200 | 空 |
 
-**六条判定：**媒体报表与实时事件目录为 **(a)**：7/7 App 均空，当前租户确实没有这类数据。
+**六条判定：**媒体报表与实时事件目录为 **(a)**：7/7 App 在当时的最短当天窗下均空。该判定当时
+没有记录完整请求体，也没有扩窗；2026-08-17 已按 D28 方法用 `2026-07-17..2026-08-16`（并补测
+含当天）重测，仍空，结论收窄为“当前账号在已记录窗与空筛选下无行”。
 默认值字典为 **(b)**：第 1 个 App 空、第 2 个 App 非空，旧结论是在首个空 App 停止造成的假阴性。
 报表目录、订阅和 App 项目为 **(c)**：这些 route 的固定 path/body 没有 App 输入，认证 header
 只提供账号/公司上下文；重复绑定 App 不会改变请求，因此其空是账号级事实。
@@ -5882,3 +5884,39 @@ unittest / pytest **`1151 + 1 = 1152`**，subtests 仍为 **3098**。
 `PermissionUnavailableError`，不进入 caller 审计分母；该 raise 本身按
 field + actual value + next_action 为 **A 级**。quality baseline 未放宽。
 没有 GitHub、push、PR、tag 或 release。
+
+### 实时事件目录与媒体报表宽窗重判（2026-08-17）
+
+**提案与边界：**D28 已证明“短窗 + 只试第一个 App”会把假阴性写成租户真空。本轮只重判
+`analysis.realtime_event.list` 与 `report.media_report.list` 两条仍写着“当前租户事实”的
+动线：把窗开到与 D28 相同的 `2026-07-17..2026-08-16`（合同无更大上限声明），枚举全部 7 个
+可绑定 App，首次非空即停。不晋升、不改评测、不碰 GitHub。工作底稿在 ignored
+`tmp/false-empty-recheck/`。
+
+**上次取证能还原什么：**08-16 复验底稿 `tmp/codex/empty-recheck/` 不在仓库。HTTP receipt
+只存 method/path/status/shape fingerprint，不存请求值。因此 7 次实时事件请求的实际
+`request_time`/`filters` **翻不出来**；媒体报表文档写明当天窗、无平台、`page_size=1`，
+但具体 `start_date`/`end_date`/`app_id` 类型同样没有值级落盘。roadmap 写明该轮“日期型
+请求只使用 `2026-08-16` 当天窗口”且“不扩日期窗”。
+
+**本轮请求（业务 HTTP 28，认证 refresh 1，本地未出网 7）：**
+
+| 批次 | 次数 | 内容 |
+| ---: | ---: | --- |
+| refresh | 1 | 过期 token 换新；不计业务预算 |
+| catalog | 3 | `app.list` page=1 / page_size=6000，三次均 7 个可绑定 App |
+| realtime D-31..D-1 | 7 | `request_time=["2026-07-17 00:00:00","2026-08-16 23:59:59"]`，`filters={}`，`page=1`，`page_size=1` |
+| media 本地失败 | 0 出网 / 7 本地 | 整数 `app_id` 被 draft 合同拒为 `must be string` |
+| media 类型诊断 | 2 | 字符串 `app_id=1` 与省略 `app_id` 各 1 次，确认能出网 |
+| media D-31..D-1 | 8 | 字符串 `app_id` 绑 7/7 App + 省略 App 1 次；`2026-07-17..2026-08-16`，无 `ad_platform`，`page_size=1` |
+| realtime 含当天 | 7 | 右端扩到 `2026-08-17 23:59:59`，再枚举 7/7 |
+| media 含当天 | 1 | `2026-07-17..2026-08-17`，省略 App |
+
+全部目标请求 HTTP 200 / `code=0` / 明确空。实时事件响应只有 `data.list=[]`，无 `page_info`。
+媒体报表有 `page_info` 壳和 `total.cost`，`list=[]`。失败、重试、翻页、429/5xx 均为 0。
+receipt 核账：`analysis.realtime_event.list` 本会话 14 条、`report.media_report.list` 11 条、
+`app.list` 3 条，与上表业务次数一致。
+
+**判定：**两条都不是 D28 那种假阴性。在已记录的宽窗和空筛选下，当前账号无行。未试维度：
+实时事件的非空 `event_type`/`event_name`/`client_*` 筛选；媒体报表的具体 `ad_platform`
+枚举；比 D-31 更早的历史窗（合同未声明上限，本轮不再加长）。台账 56 = 50 / 1 / 5 不变。
