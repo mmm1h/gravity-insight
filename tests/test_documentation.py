@@ -61,6 +61,28 @@ class DocumentationArchitectureTests(unittest.TestCase):
         }
         self.assertEqual({}, excess)
 
+    def test_no_unresolved_merge_conflict_markers(self) -> None:
+        # A botched conflict resolution once shipped `<<<<<<<` markers into the
+        # journey ledger on dev, main and origin: the duplicate rows were caught
+        # by the ledger parser, the leftover markers were caught by nothing.
+        sources = [
+            ROOT / "README.md",
+            ROOT / "MIGRATION.md",
+            *DOCS.rglob("*.md"),
+            *(ROOT / "src").rglob("*.py"),
+            *(ROOT / "src").rglob("*.json"),
+            *(ROOT / "tests").rglob("*.py"),
+            *(ROOT / "scripts").rglob("*.py"),
+        ]
+        offenders: list[str] = []
+        for source in sources:
+            for number, line in enumerate(
+                source.read_text(encoding="utf-8").splitlines(), start=1
+            ):
+                if line.startswith(("<<<<<<< ", ">>>>>>> ")) or line == "=======":
+                    offenders.append(f"{source.relative_to(ROOT)}:{number}")
+        self.assertEqual([], offenders)
+
     def test_business_contracts_are_not_in_the_documentation_tree(self) -> None:
         legacy = DOCS / "data-contracts"
         self.assertEqual([], [path for path in legacy.rglob("*") if path.is_file()])
