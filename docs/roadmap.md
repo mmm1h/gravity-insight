@@ -6065,3 +6065,40 @@ canonicalize，复现原 `UnicodeEncodeError`；development 四 trial 的
 **计数：**不新增动线/operation/卡/gap。`56 = 50 / 1 / 5`、`233 / 224 / 92 / 7 / 329`
 均未改。错误审计保持 `1225 = A833 / B23 / C369`。生产 HTTP **0**。
 不 push、不碰 GitHub。
+## P0-2 收口：分群 / 保存分析 / 元数据模板 master 的上游 owner（2026-08-17）
+
+**范围：**只复核并锁住 3 族：分群、保存分析、元数据模板 master。看板 space/dashboard 留下一趟；
+其余 7 族（2 不成立 + 5 无样本）不碰。不新建、不改、不删真实业务对象；不改 `code=2000`
+权限映射、评测装置或质量判据。
+
+**只读复核：**共享闸门仍在 `mutation_ownership.py`：`GSDK marker OR create_user_id == current
+principal`。本轮自己发请求确认三族 owner 字段都是 **int `create_user_id`**，名字字段
+`create_user_name`，与登录 `gravity_id` 按字符串相等比对。7 个 App 首页 + 1 次 master 列表：
+
+| 族 | 首页样本 | 缺 `create_user_id` | 无 marker 且 owner=principal | 无 marker 且 foreign |
+| --- | ---: | ---: | ---: | ---: |
+| 分群 list/detail | 32 | 0 | 0 | 32 |
+| 保存分析 list/get | 313（另有 1 个 App `total_number=153` 未翻页） | 0 | 42（App `29034827`） | 271 |
+| 元数据模板 master | 5 / `total_number=5` | 0 | 0 | 5 |
+
+无 marker 的分群 detail 与保存分析 get 均回显同一 `create_user_id`，响应里没有 `creator`。
+本轮首页未见“对象根本没有 owner 字段”；缺字段路径仍 fail-closed，测试已锁。分群首页没有
+当前账号自有无 marker 样本，不为此写真实对象。
+
+**代码层：**归属判定不改层——继续走共享 `require_mutation_authority`，三族 mutation 在写前
+调用。本轮只修正仍写“必须有 SDK marker”的分群 delete preview/CLI/文档，并把拒绝
+`next_action` 收成同时含对象 ID、owner ID/name/字段、当前 principal 与下一步。marker 路径
+未删。错误码仍是 `OWNERSHIP_REQUIRED`，不改 `OWNERSHIP_MARKER_REQUIRED` 类或 `code=2000`。
+
+**测试：**无 marker + owner 匹配放行、无 marker + foreign 拒绝、marker 仍可放行（即使 owner
+是别人）、缺 owner 字段拒绝。unittest **1164**（基线 1163 +1）、pytest **1164 passed /
+3104 subtests**。错误审计保持 **`1225 = A833/B23/C369`**（基线用户给的 `A422` 已在上一合并
+升到 A833；本轮 0 个新 caller-recoverable site）。compiler 233 / 11 manifests；quality PASS
+operations=233 / provenance=233。动线计数未重算。
+
+**生产 HTTP：22 / 25。** 全部 HTTP 200、attempt 1、`retry=false`；写真实对象 **0**。
+第 10 次后核账一次，结束后再核一次。计数器两趟分别为 5 与 17；receipt 过滤本轮相关
+操作为 23，多出的 1 次是第二趟 `from_env` 复用已有 session 前的旧 authentication 行。
+逐类：authentication 1（本轮新登录）+ app.list 2 + segment.list 8 + segment.detail 1 +
+report_config.list 8 + report_config.get 1 + template master list 1 = **22**。未翻页
+（`27192043` 保存分析 `total_number=153` 只取首页 100）。不 push、不碰 GitHub。

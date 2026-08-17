@@ -57,7 +57,7 @@
 ### P0-2 用上游账号 owner 替代 SDK marker 作为归属事实
 
 - **来源**：Snowflake、Cube 和 Looker 的共同做法是复用上游身份、角色、行列策略和审计，而不是在 agent 层另造权限事实；远程或多人场景还要区分调用者、被代表用户和上游凭据。见[安全治理调研 E03、I11—I13](agent-security-governance.md)。
-- **我们现在是什么样**：30 个受治理写 operation 覆盖分群、报表、报表订阅、看板 space/folder/dashboard/note。更新和删除以 SDK 写入的 `GSDK-...` marker 证明“这是本 SDK 创建的对象”；marker 缺失即 `OWNERSHIP_MARKER_REQUIRED`。这能防止误删未知对象，但 marker 不是账号 owner，也不能证明当前调用者有权操作对象。因此分析师无法用仓库治理账号内由自己或既有流程创建的对象。
+- **我们现在是什么样**：受治理写已有共享 `mutation_ownership.py`：`GSDK marker OR proven owner == current principal`。2026-08-17 只读复核确认分群、保存分析、元数据模板 master 三族的稳定 owner 字段都是 int `create_user_id`（name 为 `create_user_name`），与 principal 按字符串相等比对；本轮首页样本 0 条缺该字段。看板 space/dashboard 留待下一趟；folder/note 仍无已证实直接 owner。marker 继续有效，不再是这三族的唯一放行依据。拒绝码为 `OWNERSHIP_REQUIRED`，同时报告对象 ID、owner ID/name/字段、当前 principal 和下一步。
 - **借鉴什么**：逐对象族研究并投影上游 owner/creator/tenant/role 事实，读回时将其纳入版本化归属判据和审计收据；marker 降级为来源/兼容证据，不再充当唯一权限事实。更新和删除仍保持 describe/dry-run/显式确认，foreign、shared、owner 不可判定时一律拒绝。先从具有稳定 owner 字段和安全测试对象的对象族开始，不能用名称、备注或列表可见性猜 owner。
 - **为什么值得**：这是“现在做不到”。不做时，分析师能读取一个账号内已有分群或报表，却会在“修改/清理这个我拥有的对象”处被 marker 拦住，只能回 Web。做完后，仓库可以治理账号中当前用户确实拥有的既有对象，同时继续拒绝他人或归属不明对象。
 - **代价**：L—XL。需要逐对象族补充安全合同证据、身份绑定、Plan/SDK/CLI 归属展示、审计和破坏性路径测试。不可逆影响是扩大可更新/删除对象集合，风险高；必须按对象族独立放行，不能一次全开。若上游没有稳定 owner 事实，该对象族保持 marker-only，而不是猜测。

@@ -103,7 +103,7 @@ def add_segment_mutation_commands(commands: Any) -> None:
     _mode(refresh)
 
     delete = commands.add_parser(
-        "delete", help="Preview or delete only a readback-verified SDK-owned segment."
+        "delete", help="Preview or delete a marker-or-owner verified segment."
     )
     delete.add_argument("--segment-id", required=True)
     _mode(delete)

@@ -484,6 +484,15 @@ marker space 仍以 `sdk_source_marker` 删除。当前目录没有 foreign Segm
 creator 也是当前 principal，故真实 foreign 拒绝没有生产样本，不能作为已验证 capability evidence；
 测试锁定 foreign/missing-owner 零 write fail-closed。folder/note 的非 marker 限制继续是上游证据 blocker，
 不能跨对象族推断 owner 字段。
+
+## 2026-08-17 追加判定：P0-2 三族 owner 字段只读复核
+
+本轮不晋升 operation。只读复核分群、保存分析、元数据模板 master：三族稳定 owner 都是 int
+`create_user_id`（name=`create_user_name`），与 `gravity_id` 字符串相等。7 个 App 首页 + master
+全集：分群 32、保存分析 313、master 5，缺 owner 字段 0。保存分析 App `29034827` 有 42 条当前
+principal 自有且无 marker；分群与 master 首页没有当前账号自有无 marker 样本，未为此写对象。
+闸门仍是共享 `marker OR owner`；本轮锁住无 marker 放行、marker 仍有效、foreign/缺字段拒绝。
+看板 space/dashboard 不在本轮。
 ## 2026-08-16 追加判定：设置入口与 D28 当前配置 route
 
 本轮以引力自然页面动作识别真实入口，再用现有只读 SDK 对 D28 做有界反证。App 页面取得非空；

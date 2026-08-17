@@ -390,7 +390,7 @@ def delete_segment(
             selected_id,
             action="DEL",
             target={"segment_id": selected_id},
-            impact="Permanently delete this segment only after detail readback proves a Gravity SDK marker is present.",
+            impact="Permanently delete this segment only after detail readback proves a GSDK marker or create_user_id equal to the authenticated gravity_id.",
         )
     with _WRITE_LOCK:
         preimage = _segment_detail(client, selected_id)

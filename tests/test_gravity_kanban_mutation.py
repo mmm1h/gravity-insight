@@ -143,7 +143,7 @@ class GravityKanbanMutationTests(unittest.TestCase):
         self.assertEqual("OWNERSHIP_REQUIRED", captured.exception.code)
         with self.assertRaises(InputValidationError) as folder_error:
             rename_folder(owned, app_id=1, space_id=10, folder_id=20, name="No")
-        self.assertIn("no proven direct owner", folder_error.exception.next_action)
+        self.assertIn("without a proven owner", folder_error.exception.next_action)
 
     def test_sdk_cli_plan_and_agent_expose_the_same_confirmation_boundary(self) -> None:
         client = _PreviewClient()
