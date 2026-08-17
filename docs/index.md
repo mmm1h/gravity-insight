@@ -38,6 +38,7 @@
 | 复核外部调研证据（可用性 / 安全 / 协议 / 语义层 / 厂商） | [外部调研索引](#外部调研) | [Agent 可用性方法](research/agent-usability-methods.md)、[安全治理](research/agent-security-governance.md) |
 | 了解本租户引力原生 AI 的真实行为 | [本租户能力摸底](#本租户能力摸底) | [路线图](roadmap.md#引力原生-ai-事件分析对话摸底2026-08-16) |
 | 了解当前排期、并行约束与不做的事 | [路线图](roadmap.md) | [分析动线台账](analysis-journeys.md) |
+| 查阅某一趟开发的完整结论与证据 | [每趟结论归档](roadmap.d/README.md) | [路线图](roadmap.md) |
 | 查看每条分析动线的完成度、四面入口与证据阻塞 | [分析动线台账](analysis-journeys.md) | [能力覆盖与缺口](capability-coverage.md) |
 | 查看架构热点与清理条件 | [技术债清单](maintainers/technical-debt.md) | [维护者入口](maintainers/index.md) |
 | 查看当前平台覆盖和不能直接上线的缺口 | [能力覆盖与缺口](capability-coverage.md) | [路由盘点](maintainers/census.md) |
