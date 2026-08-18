@@ -9,6 +9,7 @@ from types import MappingProxyType
 from typing import Any, Iterable, Mapping
 
 from .errors import InputValidationError, ManifestError, UnknownOperationError
+from .export_describe_actions import describe_next_action, describe_workflow
 from .export_models import _export_error
 from .export_policy import EffectRoute
 
@@ -166,17 +167,11 @@ class ExportRouteContract:
             ),
             "examples": _plain(examples),
             "examples_status": "complete" if examples else "not_provided",
-            "workflow": _workflow(self.operation_id, self.effect),
+            "workflow": describe_workflow(self.operation_id, self.effect),
             "verification": _plain(self.verification),
         }
-        result["next_action"] = (
-            "Run `gravity export run "
-            f"{self.operation_id} --input <request.json> --columns <column-codes> "
-            "--idempotency-key <key> --output <file>` after applying the "
-            "documented substitutions."
-            if currently_callable and self.effect == "export_job_create"
-            else "Run `gravity export list-capabilities` "
-            "and select an operation with currently_callable=true."
+        result["next_action"] = describe_next_action(
+            self.operation_id, self.effect, currently_callable
         )
         return result
 
@@ -499,44 +494,3 @@ def export_error_field(code: str) -> str | None:
         "EXPORT_IDEMPOTENCY_KEY_INVALID": "idempotency_key",
         "EXPORT_TIMEOUT_INVALID": "timeout",
     }.get(code)
-
-
-def _workflow(operation_id: str, effect: str) -> dict[str, Any]:
-    if effect != "export_job_create":
-        return {
-            "commands": [],
-            "note": "This route is a supporting export effect, not a job creator.",
-        }
-    return {
-        "default_command": (
-            "gravity export run "
-            f"{operation_id} --input <request.json> --columns <column-codes> "
-            "--idempotency-key <key> --output <file> --timeout 300"
-        ),
-        "default_mode": "create_poll_download",
-        "order": ["start", "wait", "download"],
-        "commands": [
-            (
-                "gravity export start "
-                f"{operation_id} --input <request.json> --columns <column-codes> "
-                "--idempotency-key <key>"
-            ),
-            (
-                "gravity export wait <job-id> "
-                f"--operation-id {operation_id} --interval 2 --timeout 300"
-            ),
-            (
-                "gravity export download <job-id> "
-                f"--operation-id {operation_id} --output <file> --timeout 300"
-            ),
-        ],
-        "recovery": (
-            "The staged commands are recovery controls. If creation outcome is "
-            "uncertain, run `gravity "
-            "export list --page 1 --page-size 100` before creating another job. "
-            "A wait timeout does not cancel the job."
-        ),
-        "staged_commands_are_recovery": True,
-        "create_auto_retry": False,
-        "timeout_auto_cancel": False,
-    }

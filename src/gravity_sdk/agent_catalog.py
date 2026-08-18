@@ -200,6 +200,7 @@ def _describe_response(
         "describe_capability",
         selector=selector,
         capability=capability,
+        surface=_describe_surface(selected),
         next_action=(
             str(capability["next_action"])
             if selected["source"] == "gap"
@@ -208,10 +209,64 @@ def _describe_response(
     )
 
 
+def _describe_surface(item: Mapping[str, Any]) -> dict[str, Any]:
+    has_contract = bool(
+        item.get("operation_contract") or item.get("identity_kind") == "raw_operation"
+    )
+    return {
+        "name": "agent-catalog",
+        "projects": (
+            "unavailable gap card"
+            if item["source"] == "gap"
+            else "product card plus compact operation contract"
+            if has_contract and item["identity_kind"] == "product"
+            else "compact operation contract"
+        ),
+        "omits": [
+            "wire", "examples", "privacy", "health", "provenance",
+            "response_projection", "block_reason", "currently_callable",
+        ],
+        "complete_contract": (
+            ["gravity", "operations", "describe", item["selector"]]
+            if has_contract
+            else None
+        ),
+    }
+
+
 def _capability_for_item(item: Mapping[str, Any], client: Any) -> dict[str, Any]:
     if item["source"] == "operation":
         return describe_operation_cards(client, [item["operation"]])[0]
-    return copy.deepcopy(item["card"])
+    card = copy.deepcopy(item["card"])
+    operation = item.get("operation")
+    if isinstance(operation, Mapping) and operation.get("operation_id"):
+        card.update(_contract_overlay(client, operation, card.get("input_schema")))
+    return card
+
+
+def _contract_overlay(
+    client: Any, operation: Mapping[str, Any], extra: Any
+) -> dict[str, Any]:
+    contract = describe_operation_cards(client, [operation])[0]
+    fields = dict(contract.get("input_schema") or {})
+    if isinstance(extra, Mapping):
+        for name, spec in extra.items():
+            current = fields.get(str(name))
+            fields[str(name)] = {**(current if isinstance(current, Mapping) else {}), **dict(spec)}
+    return {
+        "input_schema": fields,
+        "required_inputs": list(
+            contract.get("required_inputs") or ()
+        ),
+        "required_parent_operations": list(
+            contract.get("required_parent_operations") or ()
+        ),
+        "pagination": dict(contract.get("pagination") or {"supported": False}),
+        "stability": contract.get("stability"),
+        "platform": contract.get("platform"),
+        "effect": contract.get("effect", "read"),
+        "executable": bool(contract.get("executable", True)),
+    }
 
 
 def _summary(item: Mapping[str, Any]) -> dict[str, Any]:
@@ -256,6 +311,7 @@ def _product_entry(
         "catalog_status": "executable_product" if executable else "unavailable_product",
         "product_equivalent": True,
         "operation_contract": operation is not None,
+        "operation": dict(operation) if operation is not None else None,
         "card": copy.deepcopy(dict(card)),
     }
 

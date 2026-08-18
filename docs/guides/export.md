@@ -67,7 +67,12 @@ gravity agent "material report export"
 inventory。
 
 Agent 只暴露 `currently_callable=true` 且 `effect=export_job_create` 的卡。当前会得到上述八个
-creator；task status/cancel 等支持路由不是创建候选。`origin_event` 先用 `evaluate_data` 确认 `data.total > 0`，再提交 create；`analysis.event.list.yesterday_count` 不能当门，该字段在 7/7 App 上均为 0，而投放中 App 的 `attribution.attribution.query` 同日有正 `AppRealRegisterCnt`。`describe` / 读取 `warnings` 会指向 `attribution.attribution.query` 或 `evaluate_data`。
+creator；task status/cancel 等支持路由不是创建候选。`origin_event` 先用
+`gravity export evaluate export.analysis.origin_event.evaluate` 确认 `estimated_rows > 0`，
+再提交 create；不要走 `gravity run`，该 selector 不在 Insight read 注册表。
+`analysis.event.list.yesterday_count` 不能当门，该字段在 7/7 App 上均为 0，而投放中 App 的
+`attribution.attribution.query` 同日有正 `AppRealRegisterCnt`。`describe` / 读取 `warnings`
+会指向 `attribution.attribution.query` 或 `evaluate_data`。
 `monetization_detail` 的 READY XLSX 已通过保留全部安全规则的 route-scoped 192 MiB 展开上限。
 task list/progress/file 仍无任务绑定 total；SDK 在 create 前用同一 App/日列表第一页钉住
 `page.total_items`，标注 `create_time_preflight`。钉住总量大于 100 万且文件恰为 1,000,000 行时

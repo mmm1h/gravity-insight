@@ -173,6 +173,26 @@ class GravityInsightPaginationTests(unittest.TestCase):
         self.assertEqual("parallel_known_total", result["page"]["fetch_strategy"])
         self.assertEqual(4, result["page"]["pages_fetched"])
 
+    def test_all_pages_audit_counts_worker_http_requests(self) -> None:
+        from gravity_sdk.receipt import count_http_requests, record_http_request
+
+        def execute(_operation_id, inputs):
+            record_http_request()
+            page = int(inputs.get("page", 1))
+            return _page(page, [{"id": page}], 4)
+
+        with count_http_requests() as counter:
+            with patch.object(self.client, "_execute_result", side_effect=execute):
+                result = self.client.read_all(
+                    "example.concurrent.list", max_workers=3
+                )
+            audit = pagination_audit(
+                result, {}, all_pages=True, http_requests_made=counter.count
+            )
+        self.assertEqual(4, result["page"]["pages_fetched"])
+        self.assertEqual(4, audit["operation_requests_made"])
+        self.assertEqual(4, audit["http_requests_made"])
+
     def test_unknown_total_stays_serial_until_a_short_page(self) -> None:
         calls: list[int] = []
 

@@ -75,6 +75,23 @@ def record_http_request() -> None:
         counter.count += 1
 
 
+def bind_request_counter():
+    """Rebind the current request counter onto a worker thread."""
+
+    counter = _ACTIVE_REQUEST_COUNTER.get()
+
+    def run(fn, *args, **kwargs):
+        if counter is None:
+            return fn(*args, **kwargs)
+        token = _ACTIVE_REQUEST_COUNTER.set(counter)
+        try:
+            return fn(*args, **kwargs)
+        finally:
+            _ACTIVE_REQUEST_COUNTER.reset(token)
+
+    return run
+
+
 @contextmanager
 def capture_http_receipt_references() -> Iterator[_ReceiptReferences]:
     """Collect receipt outcomes for one same-context result assembly."""

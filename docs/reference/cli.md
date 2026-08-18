@@ -68,7 +68,10 @@ gravity agent "<query>" --routing host_catalog --host-selection selection.json
 产品卡；`raw_operation` 只是 manifest operation，固定 `product_equivalent=false`；
 `capability_gap` 是登记但当前不可执行的缺口。`catalog_status=registered_unavailable` 的 gap 同时给出
 精确 `gap_code`、`reason` 和 `next_action`。不得因为相邻 raw operation 的 `executable=true` 就把缺失
-产品改判为可执行。目录和 describe 均完全离线，也不会执行能力。
+产品改判为可执行。目录和 describe 均完全离线，也不会执行能力。`agent-catalog describe` 投影产品卡
+加压缩 operation 合同（含完整 `input_schema`），不投影 wire/examples/privacy/health；完整合同看
+`gravity operations describe`。`operations describe` 投影完整 operation 合同，压缩 Agent 卡看
+`gravity agent-catalog describe`。
 
 `agent-catalog host` 是同一 owner/card/gap 的紧凑投影，只含 93 张产品卡和 7 个精确 gap，不含 raw
 operation；每项固定给出目标、返回物、相邻边界、前置输入与 effect。宿主响应必须完整符合
@@ -412,9 +415,11 @@ Agent 只为 `currently_callable=true` 的 `export_job_create` 返回 executable
 卡片明确 `natural_language_auto_execute=false`、`plan_executable=false` 和 `plan_node=null`；导出
 不进入 Plan v1。
 
-`start/status/wait/download/cancel/list` 是人工和恢复命令。run 或 wait 超时不会自动取消；已有
-`job_id` 时用 status/wait 后在 READY 时 download 到同一显式路径。创建结果不确定且没有可靠
-ID 时先 `gravity export list --page 1 --page-size 100`，不要直接重跑。详见
+`export evaluate <evaluate-operation-id>` 估算行数，不创建任务；`export task-types` 列出
+已验证任务类型。这两条都不是 `gravity run` 可达的 Insight read。`start/status/wait/download/cancel/list`
+是人工和恢复命令。run 或 wait 超时不会自动取消；已有 `job_id` 时用 status/wait 后在 READY
+时 download 到同一显式路径。创建结果不确定且没有可靠 ID 时先
+`gravity export list --page 1 --page-size 100`，不要直接重跑。详见
 [导出指南](../guides/export.md)。
 
 ### First Analysis Bootstrap

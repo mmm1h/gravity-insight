@@ -255,6 +255,97 @@ class ResolverTests(unittest.TestCase):
         assert audit["page_size_clamped"] is False
         assert audit["completeness"]["status"] == "partial"
 
+    def test_resolver_all_pages_counts_every_http_request(self) -> None:
+        description = {
+            "operation_id": "app.list", "input_schema": {}, "required_parent": [],
+            "health": {"contract_fingerprint": "c" * 64},
+        }
+        calls: list[int] = []
+
+        def read(*_args, **kwargs):
+            pages = 17
+            for page in range(1, pages + 1):
+                record_http_request()
+                calls.append(page)
+            return {
+                "ok": True, "status": "success",
+                "request": {"inputs": {"page_size": 7}},
+                "page": {
+                    "number": 1, "total_pages": pages, "item_count": 117,
+                    "total_items": 117, "pages_fetched": pages, "has_more": False,
+                },
+                "data": {"list": [{}] * 117, "page_info": {"total_number": 117}},
+            }
+
+        result = resolve_and_run(
+            "app.list", client=_ResolverClient(description),
+            workspace=_workspace(self.tmp_path),
+            supplied_input={"page_size": 7}, read=read, read_all=True,
+            max_pages=50, max_items=2000,
+        )
+        audit = result["pagination_audit"]
+        assert calls == list(range(1, 18))
+        assert audit["operation_requests_made"] == 17
+        assert audit["http_requests_made"] == 17
+        assert audit["effective_page_size"] == 7
+        assert audit["completeness"]["status"] == "complete"
+
+    def test_resolver_flags_additive_dimension_sum_mismatch(self) -> None:
+        description = {
+            "operation_id": "report.get.query", "input_schema": {},
+            "required_parent": [], "health": {"contract_fingerprint": "d" * 64},
+        }
+        result = resolve_and_run(
+            "report.get.query",
+            client=_ResolverClient(description),
+            workspace=_workspace(self.tmp_path),
+            supplied_input={"metrics_list": ["reporting_ad_cnt"]},
+            read=lambda *_args, **_kwargs: {
+                "ok": True, "status": "success",
+                "data": {
+                    "list": [
+                        {"stat_time": "2026-08-14", "reporting_ad_cnt": 1},
+                        {"stat_time": "2026-08-15", "reporting_ad_cnt": 1},
+                    ],
+                    "total": {"reporting_ad_cnt": 5},
+                },
+            },
+        )
+        mismatch = next(
+            item for item in result["diagnostics"]
+            if item["code"] == "dimension_sum_mismatch"
+        )
+        assert mismatch["metric"] == "reporting_ad_cnt"
+        assert mismatch["list_sum"] == 2
+        assert mismatch["total"] == 5
+        assert mismatch["delta"] == 3
+
+    def test_resolver_does_not_flag_non_additive_uv_sums(self) -> None:
+        description = {
+            "operation_id": "report.get.query", "input_schema": {},
+            "required_parent": [], "health": {"contract_fingerprint": "e" * 64},
+        }
+        result = resolve_and_run(
+            "report.get.query",
+            client=_ResolverClient(description),
+            workspace=_workspace(self.tmp_path),
+            supplied_input={"metrics_list": ["reporting_ad_uv"]},
+            read=lambda *_args, **_kwargs: {
+                "ok": True, "status": "success",
+                "data": {
+                    "list": [
+                        {"stat_time": "2026-08-14", "reporting_ad_uv": 2},
+                        {"stat_time": "2026-08-15", "reporting_ad_uv": 2},
+                    ],
+                    "total": {"reporting_ad_uv": 3},
+                },
+            },
+        )
+        assert not any(
+            item.get("code") == "dimension_sum_mismatch"
+            for item in result["diagnostics"]
+        )
+
     def test_resolver_nonpaginated_total_uses_the_observed_single_response_criterion(self) -> None:
         description = {
             "operation_id": "report.multidim.query", "input_schema": {},

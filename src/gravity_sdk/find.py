@@ -380,7 +380,21 @@ def run_operation_command(args: Any, client: Any, filter_operations: Any) -> Any
             limit=args.limit,
             continuation=args.continuation,
         )
-    return client.describe(args.operation_id) if command == "describe" else client.schema(args.operation_id)
+    if command != "describe":
+        return client.schema(args.operation_id)
+    described = client.describe(args.operation_id)
+    if not isinstance(described, dict):
+        return described
+    return {
+        **described,
+        "surface": {
+            "name": "operations",
+            "projects": "complete operation contract",
+            "compact_agent_card": [
+                "gravity", "agent-catalog", "describe", args.operation_id,
+            ],
+        },
+    }
 
 
 def filter_operations(args: Any, value: Any) -> Any:

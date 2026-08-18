@@ -675,6 +675,56 @@ class GatewayAndCliTests(unittest.TestCase):
         self.assertTrue(job["request_summary"]["parameter_values_redacted"])
         self.assertIn("filters", job["request_summary"]["field_names"])
 
+    def test_origin_event_evaluate_is_callable_via_export_evaluate(self):
+        from types import SimpleNamespace
+
+        contracts = ExportContractRegistry.from_file(CONTRACT_PATH)
+        evaluate = next(
+            contract
+            for contract in contracts.all()
+            if contract.effect == "export_status"
+            and str(contract.operation_id).endswith(".evaluate")
+        )
+        description = contracts.describe(evaluate.operation_id)
+        self.assertTrue(description["currently_callable"])
+        self.assertIn("gravity export evaluate ", description["next_action"])
+        self.assertEqual(["evaluate"], description["workflow"]["order"])
+        captured: list[tuple[str, object]] = []
+
+        class Runtime:
+            def _request_insight(self, method, path, **kwargs):
+                captured.append((method, path, kwargs.get("json_body")))
+                return SimpleNamespace(
+                    status_code=200, payload={"code": 0, "data": {"total": 1}}
+                )
+
+        from gravity_sdk.export_client import ExportClientMixin
+        from gravity_sdk.registry import PolicyEngine
+
+        class Client(ExportClientMixin):
+            def __init__(self):
+                self._export_contracts = contracts
+                self._export_policy = PolicyEngine(
+                    read_registry(), effect_routes=contracts.effect_routes()
+                )
+                self._export_runtime = Runtime()
+
+        payload = {
+            name: 29034827 if name == "app_id" else evaluate.request["fixed_fields"].get(name, [])
+            if name in {"conditions", "event_name_list"}
+            else evaluate.request["fixed_fields"].get(name, "AND" if name == "cond_logic" else "x")
+            for name in evaluate.request["required_fields"]
+        }
+        payload["event_name_list"] = ["$preset"]
+        payload["time_range"] = ["2026-08-11", "2026-08-17"]
+        payload["conditions"] = []
+        payload.update(evaluate.request.get("fixed_fields") or {})
+        result = Client().export_evaluate(evaluate.operation_id, payload)
+        self.assertEqual(1, result["estimated_rows"])
+        self.assertEqual("gravity-insight.export-evaluate.v1", result["schema_version"])
+        self.assertEqual("POST", captured[0][0])
+        self.assertIn("evaluate_data", captured[0][1])
+
     def test_cli_declares_all_nine_export_commands(self):
         parser = build_parser()
         cases = {
@@ -732,7 +782,20 @@ class GatewayAndCliTests(unittest.TestCase):
                 "export.material.report.start",
             ],
             "list": ["export", "list"],
+            "evaluate": [
+                "export",
+                "evaluate",
+                next(
+                    contract.operation_id
+                    for contract in ExportContractRegistry.from_file(CONTRACT_PATH).all()
+                    if str(contract.operation_id).endswith(".evaluate")
+                ),
+                "--input",
+                "request.json",
+            ],
+            "task-types": ["export", "task-types"],
         }
+        self.assertEqual(11, len(cases))
         for name, argv in cases.items():
             with self.subTest(name=name):
                 parsed = parser.parse_args(argv)

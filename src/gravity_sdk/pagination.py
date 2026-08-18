@@ -420,8 +420,12 @@ def _submit_window(
     supplied: Mapping[str, Any],
     page_numbers: Sequence[int],
 ) -> list[Future[ReadResult]]:
+    from .receipt import bind_request_counter
+
+    bind = bind_request_counter()
     return [
         pool.submit(
+            bind,
             _execute_page,
             execute,
             operation_id,

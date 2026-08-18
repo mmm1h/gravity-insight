@@ -11,7 +11,12 @@ from .export_contracts import (
     ExportContractRegistry,
     validate_export_payload, validate_wire_projection,
 )
-from .export_gateway import ExportTaskCenter, GravityExportGateway
+from .export_gateway import (
+    ExportTaskCenter,
+    GravityExportGateway,
+    _first_path,
+    call_export_effect,
+)
 from .export_file import export_file_policies
 from .export_models import (
     ExportCreationRequest, ExportPollingPolicy, ExportPrivacyContract,
@@ -26,6 +31,7 @@ from .export_scope_total import pin_export_scope_total
 from .export_state import ExportOrchestrator
 from .registry import PolicyEngine, Registry
 from .paths import CONTRACT_ROOT
+from .result_source import GOVERNED_PRODUCT, result_source
 from .actionable_error_values import actual_value
 
 
@@ -73,6 +79,65 @@ class ExportClientMixin:
     def export_describe(self, operation_id: str) -> dict[str, Any]:
         contracts, _, _ = self._export_components()
         return contracts.describe(operation_id)
+
+    def export_evaluate(
+        self,
+        operation_id: str,
+        payload: Mapping[str, Any],
+        *,
+        timeout_seconds: float = 120.0,
+    ) -> dict[str, Any]:
+        contracts, policy, export_runtime = self._export_components()
+        contract = contracts.get(operation_id)
+        if not str(operation_id).endswith(".evaluate"):
+            raise InputValidationError(
+                f"actual value: {actual_value(operation_id)}; "
+                "export evaluate requires an *.evaluate operation_id",
+                field="operation_id",
+                next_action=(
+                    "Run `gravity export list-capabilities` and pick an "
+                    "evaluate route."
+                ),
+            )
+        validate_export_payload(contract, payload)
+        policy.authorize_effect_operation(operation_id)
+        _, body, _ = call_export_effect(
+            policy, export_runtime, contract, payload, timeout_seconds=timeout_seconds
+        )
+        estimated = _first_path(body, contract.response.get("estimated_rows_paths") or ())
+        if not isinstance(estimated, int) or isinstance(estimated, bool):
+            estimated = None
+        return {
+            "schema_version": "gravity-insight.export-evaluate.v1",
+            "result_source": result_source(GOVERNED_PRODUCT),
+            "ok": True,
+            "status": "success",
+            "operation_id": operation_id,
+            "estimated_rows": estimated,
+            "next_action": (
+                "If estimated_rows is greater than 0 and within the create "
+                "route scale limit, run `gravity export run` on the matching "
+                ".start operation with the same body."
+            ),
+        }
+
+    def export_task_types(self, *, timeout_seconds: float = 120.0) -> dict[str, Any]:
+        contracts, policy, export_runtime = self._export_components()
+        operation_id = "export.task_type.list"
+        contract = contracts.get(operation_id)
+        policy.authorize_effect_operation(operation_id)
+        _, body, _ = call_export_effect(
+            policy, export_runtime, contract, {}, timeout_seconds=timeout_seconds
+        )
+        rows = _first_path(body, contract.response.get("list_paths") or ())
+        return {
+            "schema_version": "gravity-insight.export-task-types.v1",
+            "result_source": result_source(GOVERNED_PRODUCT),
+            "ok": True,
+            "status": "success",
+            "operation_id": operation_id,
+            "task_types": rows if isinstance(rows, list) else [],
+        }
 
     def export_start(
         self,

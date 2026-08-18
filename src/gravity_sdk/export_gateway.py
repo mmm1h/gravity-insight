@@ -223,46 +223,65 @@ class GravityExportGateway:
         timeout_seconds: float,
         attempts: int,
     ) -> tuple[_AuthorizedEffectRequest, Mapping[str, Any], Mapping[str, str]]:
-        authorization = self.policy._prepare_effect_request(
-            contract.operation_id,
-            contract.effect,
+        return call_export_effect(
+            self.policy,
+            self.runtime,
+            contract,
             payload,
-        )
-        response = self.runtime._request_insight(
-            contract.method,
-            contract.path,
-            policy_authorization=authorization,
-            params=dict(authorization.query),
-            json_body=dict(authorization.body) or None,
-            semantic_auth_codes=_AUTH_CODES,
-            timeout=timeout_seconds,
+            timeout_seconds=timeout_seconds,
             attempts=attempts,
         )
-        status = int(getattr(response, "status_code", 0))
-        raw_payload = getattr(response, "payload", None)
-        if status == 403:
-            raise PermissionUnavailableError(
-                "the authenticated Gravity account cannot use this export operation"
-            )
-        if status == 401:
-            raise AuthenticationError("Gravity authorization is invalid or expired")
-        if status < 200 or status >= 300:
-            raise TransportError(f"Gravity export request failed with HTTP {status}")
-        if not isinstance(raw_payload, Mapping):
-            raise _export_error(
-                "Gravity export returned an unexpected JSON envelope",
-                code="EXPORT_PROTOCOL_ERROR",
-                stage=contract.effect,
-            )
-        code = raw_payload.get("code")
-        if code not in _SUCCESS_CODES:
-            raise _export_error(
-                "Gravity export returned a non-success semantic code",
-                code="EXPORT_UPSTREAM_FAILED",
-                stage=contract.effect,
-                details={"semantic_code": str(code)[:64]},
-            )
-        return authorization, raw_payload, getattr(response, "headers", {})
+
+
+def call_export_effect(
+    policy: PolicyEngine,
+    runtime: Any,
+    contract: ExportRouteContract,
+    payload: Mapping[str, Any],
+    *,
+    timeout_seconds: float,
+    attempts: int = 1,
+) -> tuple[_AuthorizedEffectRequest, Mapping[str, Any], Mapping[str, str]]:
+    authorization = policy._prepare_effect_request(
+        contract.operation_id,
+        contract.effect,
+        payload,
+    )
+    response = runtime._request_insight(
+        contract.method,
+        contract.path,
+        policy_authorization=authorization,
+        params=dict(authorization.query),
+        json_body=dict(authorization.body) or None,
+        semantic_auth_codes=_AUTH_CODES,
+        timeout=timeout_seconds,
+        attempts=attempts,
+    )
+    status = int(getattr(response, "status_code", 0))
+    raw_payload = getattr(response, "payload", None)
+    if status == 403:
+        raise PermissionUnavailableError(
+            "the authenticated Gravity account cannot use this export operation"
+        )
+    if status == 401:
+        raise AuthenticationError("Gravity authorization is invalid or expired")
+    if status < 200 or status >= 300:
+        raise TransportError(f"Gravity export request failed with HTTP {status}")
+    if not isinstance(raw_payload, Mapping):
+        raise _export_error(
+            "Gravity export returned an unexpected JSON envelope",
+            code="EXPORT_PROTOCOL_ERROR",
+            stage=contract.effect,
+        )
+    code = raw_payload.get("code")
+    if code not in _SUCCESS_CODES:
+        raise _export_error(
+            "Gravity export returned a non-success semantic code",
+            code="EXPORT_UPSTREAM_FAILED",
+            stage=contract.effect,
+            details={"semantic_code": str(code)[:64]},
+        )
+    return authorization, raw_payload, getattr(response, "headers", {})
 
 
 class ExportTaskCenter:

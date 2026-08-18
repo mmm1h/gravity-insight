@@ -277,6 +277,9 @@ class _Resolver:
             )
         self.pipeline["exec"] = {"status": status}
         self._diagnose_result(result, status)
+        from .dimension_sum_audit import dimension_sum_diagnostics
+
+        self.diagnostics.extend(dimension_sum_diagnostics(result, self.inputs))
         return self._finish(
             semantic_envelope_ok(result),
             status,
