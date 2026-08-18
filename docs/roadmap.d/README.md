@@ -57,6 +57,7 @@
 - [四处宣传与实际不一致](advertised-vs-real.md) — 两套 describe 对齐；export evaluate/task-types 入口；分页 HTTP 计数；分维和不等于 total 的机读信号。
 - [上线前信任核查](trust-sweep.md) — 超限导出钉错分母；标题 last_3_day_* 恒 0。
 - [应答声明路由臂](routing-provenance.md) — 两条臂都写 `routing_mode`；识别器信封另给常设升级路径；不切默认。
+- [超限导出 truncated 生产确认](truncated-confirm.md) — 2026-08-18：同 App 同日两列变现导出信封为 truncated，钉住总量千万量级，文件 100 万行。
 
 ## 归档记录
 
