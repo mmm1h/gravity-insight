@@ -20,5 +20,27 @@ class RealtimeEventSdkMixin:
 
         return run_realtime_event_mutation(self.insight, inputs, execute=execute)
 
+    def realtime_event_catalog(
+        self,
+        app: str | int | None = None,
+        *,
+        start: str,
+        end: str,
+        event_type: str = "profile",
+        workspace: Any | None = None,
+    ) -> dict[str, Any]:
+        """Read one first page of the realtime-event catalog for a workspace App."""
+
+        from .realtime_event_catalog import realtime_event_catalog
+
+        selected = self._select_workspace(workspace)
+        return realtime_event_catalog(
+            self.insight,
+            self._resolve_app(selected, app),
+            start=start,
+            end=end,
+            event_type=event_type,
+        )
+
 
 __all__ = ["RealtimeEventSdkMixin"]

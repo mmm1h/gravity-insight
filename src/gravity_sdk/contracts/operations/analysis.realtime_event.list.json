@@ -1,0 +1,167 @@
+{
+  "$schema": "../schema/operation-v2.schema.json",
+  "manifest_order": 24,
+  "operation": {
+    "action": "list",
+    "auth_profile": "gravity_authorization",
+    "contract_version": 1,
+    "description": "Read one App realtime-event catalog for an explicit Asia/Shanghai request_time window. Observed server responses have data.list only and no page_info; the first observed non-empty page returned 1000 items after filters.event_type=profile. Item schema is the 12 observed top-level keys; raw_properties remains an opaque object.",
+    "domain": "analysis",
+    "effect": "read",
+    "examples": [
+      {
+        "description": "Frontend same-day window with the first non-empty filter shape.",
+        "inputs": {
+          "app_id": 1,
+          "filters": {
+            "event_type": "profile"
+          },
+          "page": 1,
+          "page_size": 50,
+          "request_time": [
+            "2026-08-18 00:00:00",
+            "2026-08-18 23:59:59"
+          ]
+        },
+        "name": "same_day_profile"
+      }
+    ],
+    "executable": true,
+    "input_fields": {
+      "app_id": {
+        "description": "App identifier selected by the caller. This route declares integer.",
+        "required": true,
+        "type": "integer"
+      },
+      "filters": {
+        "description": "Filter object built from event_type, event_name, request_id, client_id, client_lib, client_lib_version, and properties; empty controls serialize to an empty object. The first non-empty sample used event_type=profile.",
+        "required": true,
+        "type": "object"
+      },
+      "page": {
+        "default": 1,
+        "description": "Observed frontend page selector. The server returned 1000 items with no page_info, so page is accepted but server paging remains unclaimed.",
+        "required": true,
+        "type": "integer"
+      },
+      "page_size": {
+        "default": 50,
+        "description": "Observed frontend page size. The non-empty sample sent 50 and received 1000 items with no page_info.",
+        "required": true,
+        "type": "integer"
+      },
+      "request_time": {
+        "description": "Two Asia/Shanghai local datetime strings delimiting the explicit catalog window.",
+        "item_type": "string",
+        "required": true,
+        "type": "array"
+      }
+    },
+    "live_probe": {
+      "enabled": true,
+      "inputs": {
+        "app_id": "$first_app_id",
+        "filters": {
+          "event_type": "profile"
+        },
+        "page": 1,
+        "page_size": 50,
+        "request_time": [
+          "2026-08-18 00:00:00",
+          "2026-08-18 23:59:59"
+        ]
+      }
+    },
+    "operation_id": "analysis.realtime_event.list",
+    "pagination": {
+      "kind": "none",
+      "list_path": "",
+      "page_field": "",
+      "page_info_path": "",
+      "page_size_field": "",
+      "total_page_field": ""
+    },
+    "path_template": "/turbo_engine/api/v2/event/realtime_event/list/",
+    "platform": null,
+    "privacy_policy": {
+      "classification": "internal_business",
+      "redact_fields": [
+        "authorization",
+        "access_token",
+        "token",
+        "cookie",
+        "password",
+        "secret",
+        "refresh_token",
+        "session_token"
+      ]
+    },
+    "provenance": {
+      "applied_overrides": [],
+      "family": null,
+      "platform": null,
+      "source_files": [
+        "operations/analysis.realtime_event.list.json"
+      ]
+    },
+    "request": {
+      "body_fields": [
+        "app_id",
+        "filters",
+        "page",
+        "page_size",
+        "request_time"
+      ],
+      "defaults": {
+        "page": 1,
+        "page_size": 50
+      },
+      "fixed_body": {},
+      "fixed_query": {},
+      "path_fields": [],
+      "query_fields": []
+    },
+    "required_parent": [
+      {
+        "input_field": "app_id",
+        "operation_id": "app.list",
+        "output_path": "data.list[].id",
+        "selection": "caller_select"
+      }
+    ],
+    "resource": "realtime_event",
+    "response_projection": {
+      "data_keys": [
+        "list"
+      ],
+      "dynamic_item_fields": [],
+      "item_keys": [
+        "client_id",
+        "client_time",
+        "event_name",
+        "event_type",
+        "request_id",
+        "request_time"
+      ],
+      "known_omitted_item_keys": [
+        "client_lib",
+        "client_lib_version",
+        "raw_properties",
+        "request_ip",
+        "request_ua",
+        "time_free"
+      ],
+      "required_data_keys": [
+        "list"
+      ]
+    },
+    "semantic_error_rules": [
+      "code",
+      "extra.error"
+    ],
+    "stability": "stable",
+    "upstream_method": "POST"
+  },
+  "source_schema_version": 2,
+  "target_manifest": "analysis.json"
+}

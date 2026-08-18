@@ -352,6 +352,7 @@ class GravityInsightGoldenTests(unittest.TestCase):
             "material.tencent_medium_creative.list",
             # 实时事件入库开关从 reservation 晋升为受治理 mutation。
             "app.user.realtime.event.update",
+            "analysis.realtime_event.list",
         }
         expected_ids = {
             item["operation_id"] for item in expected["operations"]

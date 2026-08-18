@@ -9,6 +9,7 @@ from .analysis_context import analysis_context
 from .analysis_default_dictionary import analysis_default_dictionary
 from .account_permission_profile import account_permission_profile
 from .app_snapshot import app_snapshot
+from .realtime_event_catalog import realtime_event_catalog
 from .cli_limits import positive_int
 from .order_cli import add_order_commands
 from .monetization_detail_cli import add_monetization_detail_command
@@ -43,6 +44,15 @@ def add_deepening_commands(
     )
     defaults.add_argument("--app", required=True)
     defaults.set_defaults(_gravity_handler=_dispatch_analysis_defaults)
+    catalog = analysis_commands.add_parser(
+        "realtime-events",
+        help="Read one first page of the realtime-event catalog.",
+    )
+    catalog.add_argument("--app", required=True)
+    catalog.add_argument("--start", required=True)
+    catalog.add_argument("--end", required=True)
+    catalog.add_argument("--event-type", default="profile")
+    catalog.set_defaults(_gravity_handler=_dispatch_realtime_event_catalog)
     add_order_commands(analysis_commands, concurrency_parser, positive_int)
     add_monetization_detail_command(
         analysis_commands, concurrency_parser, positive_int
@@ -67,6 +77,17 @@ def _dispatch_analysis_defaults(args: Any, _object_input: Any) -> dict[str, Any]
     workspace = load_workspace()
     return analysis_default_dictionary(
         runtime.build_client(), resolve_workspace_app(workspace, args.app)
+    )
+
+
+def _dispatch_realtime_event_catalog(args: Any, _object_input: Any) -> dict[str, Any]:
+    workspace = load_workspace()
+    return realtime_event_catalog(
+        runtime.build_client(),
+        resolve_workspace_app(workspace, args.app),
+        start=args.start,
+        end=args.end,
+        event_type=args.event_type,
     )
 
 

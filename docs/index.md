@@ -71,8 +71,8 @@
   订阅固定 disabled、无收件人，不调用 test route，也不进入 Plan v1。
 - 发现只返回候选以及 Plan node 或受控编译交接，不会从自然语言自动执行。
 
-当前安装时目录为 335 个 selector：236 个 operation、95 张产品卡与 7 个精确 gap，扣除
-`app.list`、`app.app_info.get`、`report.get.query` 三组产品卡/raw operation 的同身份重复；227 个 stable operation 由 189 read + 38 governed
+当前安装时目录为 336 个 selector：237 个 operation、96 张产品卡与 6 个精确 gap，扣除
+`app.list`、`app.app_info.get`、`report.get.query` 三组产品卡/raw operation 的同身份重复；228 个 stable operation 由 190 read + 38 governed
 mutation 组成。17 个候选中 `analysis.default_val.list`、`app.app_info.get`、D28、D35、F40、报表目录与
 订阅清单已晋升；不要把其余 `draft` 能力写入生产 Plan。
 逐项 blocker 以[候选能力证据矩阵](candidate-capability-matrix.md)为准。

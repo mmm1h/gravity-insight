@@ -175,6 +175,13 @@
     ],
     "report.media_report.list": [
       "cost"
+    ],
+    "analysis.realtime_event.list": [
+      "client_lib",
+      "client_lib_version",
+      "request_ip",
+      "request_ua",
+      "time_free"
     ]
   },
   "reviewed_contract_fields": {
@@ -194,6 +201,9 @@
       "sort_order"
     ],
     "material.bytedance.promotion_material.list": [],
-    "promotion.bytedance.advertiser_performance.list": []
+    "promotion.bytedance.advertiser_performance.list": [],
+    "analysis.realtime_event.list": [
+      "raw_properties"
+    ]
   }
 }

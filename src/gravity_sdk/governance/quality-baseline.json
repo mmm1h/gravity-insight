@@ -288,7 +288,7 @@
     },
     "src/gravity_sdk/prober/batch.py": {
       "ast_hard_limit": 3802,
-      "ast_nodes": 3751,
+      "ast_nodes": 3750,
       "migration_sloc": 585,
       "sloc_hard_limit": 626
     },

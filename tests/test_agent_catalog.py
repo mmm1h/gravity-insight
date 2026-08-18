@@ -65,7 +65,7 @@ class AgentCatalogTests(unittest.TestCase):
             item["gap_code"]: item for item in inventory
             if item["identity_kind"] == "capability_gap"
         }
-        self.assertEqual(95, len(products))
+        self.assertEqual(96, len(products))
         self.assertEqual({card["selector"] for card in products}, set(product_items))
         self.assertEqual({gap["code"] for gap in gaps}, set(gap_items))
         self.assertTrue(all(not item["executable"] for item in gap_items.values()))
@@ -88,7 +88,7 @@ class AgentCatalogTests(unittest.TestCase):
         self.assertLessEqual(ledger_gaps, set(gap_items))
 
         raw = next(item for item in inventory if item["selector"] == "app.realtime_event.list")
-        missing = gap_items["REALTIME_EVENT_CATALOG_CONTRACT_MISSING"]
+        missing = gap_items["MEDIA_REPORT_ITEM_SCHEMA_MISSING"]
         self.assertEqual("raw_operation", raw["identity_kind"])
         self.assertFalse(raw["product_equivalent"])
         self.assertEqual("registered_unavailable", missing["catalog_status"])
@@ -211,13 +211,13 @@ class AgentCatalogTests(unittest.TestCase):
         result = run_agent_catalog_command(
             _args(
                 "describe",
-                selector="gap:REALTIME_EVENT_CATALOG_CONTRACT_MISSING",
+                selector="gap:MEDIA_REPORT_ITEM_SCHEMA_MISSING",
             ),
             self.client,
         )
         self.assertFalse(result["capability"]["executable"])
         self.assertEqual("unavailable", result["capability"]["availability"])
-        self.assertIn("non-empty catalog", result["next_action"])
+        self.assertIn("media report", result["next_action"])
 
     def test_same_selector_describe_surfaces_keep_the_full_input_contract(self) -> None:
         from gravity_sdk.find import run_operation_command

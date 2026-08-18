@@ -197,7 +197,7 @@ class GravityInsightWriteRegistryTests(unittest.TestCase):
         # F40 测试设备目录与单用户归因明细闭环后升至 176。
         # 本测试的保证不是「这个数不变」，而是「它远小于 accounted，且
         # blocked_write 绝不被计入可调用」——即下面两条 376 断言。
-        self.assertEqual(223, rebuilt["summary"]["callable_covered"])
+        self.assertEqual(224, rebuilt["summary"]["callable_covered"])
         self.assertEqual(376, rebuilt["accounting_summary"]["accounted_blocked_write"])
         self.assertEqual(376, rebuilt["callability_summary"]["contract_only"])
 
