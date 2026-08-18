@@ -42,7 +42,8 @@ gravity agent "<your-query>"
       "--concurrency": "<str>",
       "--input": "<str>",
       "--set": "<str>",
-      "--start/--end": "<str>"
+      "--start/--end": "<str>",
+      "GRAVITY_TIMEZONE": "<str>"
     },
     "large_result_argv_suffix": [
       "<str>"

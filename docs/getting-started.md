@@ -60,6 +60,7 @@ gravity census --smoke
 gravity analysis bootstrap `
   --app <selected-app-id> `
   --start 2026-08-01 --end 2026-08-07 `
+# 或：--start yesterday --end yesterday；结果含 resolved_date_window
   --target <physical-event> --plan-output first-analysis-plan.json
 # 审阅 Plan 中的 App、日期、事件与 metadata 指纹
 gravity plan run --input first-analysis-plan.json

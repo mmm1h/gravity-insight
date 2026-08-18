@@ -136,7 +136,15 @@ gravity run material.bytedance_asset_text_title.list --set page_size=100 `
 --output <path>          写入本地文件
 --format json|ndjson     输出编码
 --fields <a,b>           本地裁剪为合同允许字段；可重复
+--start/--end/--date     ISO 日期，或封闭相对短语（昨天/today、最近 N 天/last N days、本周/this week 等）
 ```
+
+时区顺序：`GRAVITY_TIMEZONE` → 已配置 workspace `defaults.timezone` → `Asia/Shanghai`。不用本机时区。
+
+相对短语在进下游校验前解析成闭区间 `YYYY-MM-DD`。成功结果带
+`resolved_date_window`，形如 `昨天 → 2026-08-17..2026-08-17 (Asia/Shanghai)`。
+「最近一段时间」这类无唯一答案的短语按 `INPUT_INVALID` 拒绝，`field` 指向
+`start/end` 或 `date`，`next_action` 要求给具体日期。ISO 日期行为不变。
 
 `--fields` 也适用于 `run` 和 `batch run`；批量 item 与 Plan 节点也可单独使用
 `output_fields`（item 值优先于批量默认值）。默认不指定时输出完全不变；未知字段会在联网前返回 caller/2。动态字段只能

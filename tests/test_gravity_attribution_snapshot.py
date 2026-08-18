@@ -267,7 +267,9 @@ class AttributionSnapshotTests(unittest.TestCase):
         self.assertEqual((1, 1), (result["count"], result["total"]))
         card = result["candidates"][0]
         self.assertEqual("attribution_performance", card["composite"])
-        self.assertEqual(["app", "start", "end"], card["missing_inputs"])
+        self.assertEqual(["app"], card["missing_inputs"])
+        self.assertIn("resolved_date_window", card)
+        self.assertEqual(card["start"], card["plan_node"]["request"]["start"])
         self.assertEqual(
             "gravity.agent-call-bound.v1", card["call_bound"]["schema_version"]
         )
