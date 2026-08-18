@@ -47,6 +47,7 @@
 - [公开面未测分支：replace 同类扫描](untested-branches.md) — 策略/模式开关对账后无新运行时 bug；`replace` 对目录拒绝已锁定。
 - [选择层残余 20 题成因](selection-residual.md) — 20 条非 no_candidate 无可安全修项；离线臂停刷，宿主臂做主路径。
 - [消费方摩擦：recipe 重钉与目录浏览](consumer-affordances.md) — `accept-contract` 受治理重钉指纹；`no_candidate` 指向 `agent-catalog categories`。
+- [生产数字对账：七类一致性](prod-truth.md) — 投放中 App 上七类对账；分页/可加指标/跨 route 成立，Agent 不填参、相对日期不解析、变现超限导出当时丢钉。
 
 ## 归档记录
 

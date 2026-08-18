@@ -44,10 +44,11 @@ class ExportOrchestrator:
         privacy_contract: ExportPrivacyContract,
         *,
         timeout_seconds: float | None = None,
+        request_privacy: ExportPrivacyContract | None = None,
     ) -> ExportResult:
         tracker = _StateTracker(ExportState.CREATING)
         try:
-            _validate_creation_request(request, privacy_contract)
+            _validate_creation_request(request, request_privacy or privacy_contract)
         except BlobTransferError as exc:
             tracker.move(ExportState.FAILED)
             return _result(tracker, job_id=None, error=exc)
@@ -170,44 +171,10 @@ class ExportOrchestrator:
         privacy_contract: ExportPrivacyContract,
     ) -> ExportResult:
         job_id = snapshot.job_id
-        interval = self._polling.initial_interval_seconds
-        while tracker.state in _POLLABLE_STATES:
-            remaining = deadline - self._clock()
-            if remaining <= 0:
-                return self._timed_out(tracker, job_id)
-            jittered = _jittered_interval(
-                interval,
-                self._polling.max_interval_seconds,
-                self._polling.jitter_ratio,
-                self._random(),
-            )
-            self._sleeper(min(jittered, remaining))
-            if self._clock() >= deadline:
-                return self._timed_out(tracker, job_id)
-            try:
-                snapshot = self._gateway.status(
-                    job_id,
-                    timeout_seconds=max(deadline - self._clock(), 0.001),
-                )
-                state = _validate_snapshot(snapshot, expected_job_id=job_id)
-            except BlobTransferError as exc:
-                tracker.move(ExportState.FAILED)
-                return _result(tracker, job_id=job_id, error=exc)
-            except Exception:
-                interval = min(
-                    interval * self._polling.multiplier,
-                    self._polling.max_interval_seconds,
-                )
-                continue
-            try:
-                tracker.move(state)
-            except BlobTransferError as exc:
-                tracker.move(ExportState.FAILED)
-                return _result(tracker, job_id=job_id, error=exc)
-            interval = min(
-                interval * self._polling.multiplier,
-                self._polling.max_interval_seconds,
-            )
+        polled = self._poll_until_terminal(snapshot, tracker, deadline)
+        if isinstance(polled, ExportResult):
+            return polled
+        snapshot = polled
 
         if tracker.state == ExportState.FAILED:
             error = _export_error(
@@ -239,6 +206,56 @@ class ExportOrchestrator:
             blob_policy,
             privacy_contract,
         )
+
+    def _poll_until_terminal(
+        self,
+        snapshot: ExportJobSnapshot,
+        tracker: _StateTracker,
+        deadline: float,
+    ) -> ExportJobSnapshot | ExportResult:
+        job_id = snapshot.job_id
+        interval = self._polling.initial_interval_seconds
+        while tracker.state in _POLLABLE_STATES:
+            remaining = deadline - self._clock()
+            if remaining <= 0:
+                return self._timed_out(tracker, job_id)
+            jittered = _jittered_interval(
+                interval,
+                self._polling.max_interval_seconds,
+                self._polling.jitter_ratio,
+                self._random(),
+            )
+            self._sleeper(min(jittered, remaining))
+            if self._clock() >= deadline:
+                return self._timed_out(tracker, job_id)
+            try:
+                snapshot = _with_completeness(
+                    self._gateway.status(
+                        job_id,
+                        timeout_seconds=max(deadline - self._clock(), 0.001),
+                    ),
+                    getattr(snapshot, "completeness", None),
+                )
+                state = _validate_snapshot(snapshot, expected_job_id=job_id)
+            except BlobTransferError as exc:
+                tracker.move(ExportState.FAILED)
+                return _result(tracker, job_id=job_id, error=exc)
+            except Exception:
+                interval = min(
+                    interval * self._polling.multiplier,
+                    self._polling.max_interval_seconds,
+                )
+                continue
+            try:
+                tracker.move(state)
+            except BlobTransferError as exc:
+                tracker.move(ExportState.FAILED)
+                return _result(tracker, job_id=job_id, error=exc)
+            interval = min(
+                interval * self._polling.multiplier,
+                self._polling.max_interval_seconds,
+            )
+        return snapshot
 
     def _download(
         self,

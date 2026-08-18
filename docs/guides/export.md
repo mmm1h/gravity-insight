@@ -19,9 +19,12 @@ gravity export run export.material.report.start `
 ```
 
 `--output` 是最终 XLSX 的显式目的路径；命令的 JSON envelope 仍写 stdout，绝不会把 JSON
-写进该文件。对素材报表，`--columns` 必须与 input 的 `export_col_list` 使用相同代码和顺序；不要从
-自然语言推断业务输入、列或日期。先用离线 `gravity export describe export.material.report.start`
-取得完整 schema、verified example、列映射和规模限制。
+写进该文件。`--columns` 填 `describe.columns.allowed_codes`（请求代码，如
+`ClientID,CreateTime` / `AdEventTime,ClientID`），不要填文件表头
+（`客户ID,注册时间`）。对素材报表，`--columns` 还必须与 input 的 `export_col_list`
+使用相同代码和顺序。不要从自然语言推断业务输入、列或日期。先用离线
+`gravity export describe <operation-id>` 取得完整 schema、verified example、
+列映射和规模限制。`export run` 用请求代码做创建前校验，用文件表头做下载后校验。
 
 单用户事件导出先用相同 App、ClientID 和单日执行一次第一页 `analysis.user_event.list`；只有
 `event_timeline` 含非空列表时，才精确复制其授权 body 并追加 `task_name`：

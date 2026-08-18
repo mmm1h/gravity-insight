@@ -254,6 +254,41 @@ class ExportOrchestratorTests(unittest.TestCase):
             self.assertEqual([20], gateway.create_timeouts)
             self.assertEqual([19, 17], gateway.status_timeouts)
 
+    def test_poll_keeps_create_time_preflight_total(self):
+        raw = b"id,name,email\n1,Alice,alice@example.test\n"
+        pinned = {
+            "known_total_items": 1_212_315,
+            "known_total_freshness": "create_time_preflight",
+        }
+        ready = ExportJobSnapshot(
+            "job-1",
+            ExportState.READY,
+            download_source=source_for(raw),
+        )
+        gateway = FakeGateway(
+            ExportJobSnapshot("job-1", ExportState.QUEUED, completeness=pinned),
+            [ready],
+        )
+        transport = FakeBlobTransport([FakeResponse(raw)])
+        clock = FakeClock()
+        with tempfile.TemporaryDirectory() as directory:
+            result = orchestrator_for(gateway, transport, clock).start(
+                ExportCreationRequest(
+                    payload={"fixture": True},
+                    requested_columns=("id", "name", "email"),
+                    idempotency_key="fixture-export-key-0001",
+                    completeness=pinned,
+                ),
+                "report.csv",
+                blob_policy(Path(directory)),
+                privacy_contract(),
+            )
+        self.assertEqual(ExportState.COMMITTED, result.state)
+        self.assertIsNotNone(result.completeness)
+        self.assertEqual(1_212_315, result.completeness["known_total_items"])
+        self.assertEqual("create_time_preflight", result.completeness["known_total_freshness"])
+        self.assertEqual(1, result.completeness["file_rows"])
+
     def test_actual_unknown_column_rejects_commit(self):
         raw = b"id,name,unexpected\n1,Alice,value\n"
         result, root = self._run_ready_failure(raw, privacy_contract())

@@ -242,6 +242,7 @@ class ExportClientMixin:
             blob_policy,
             file_privacy,
             timeout_seconds=min(float(timeout_seconds), 300.0),
+            request_privacy=logical_privacy,
         )
         return _export_result_envelope(operation_id, result)
 
