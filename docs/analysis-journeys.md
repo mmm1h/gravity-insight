@@ -152,7 +152,7 @@ write 和 32 次 read；最终旧报表、订阅与 v3 父报表三份完整列�
 `from_tmp_segment/create` 只有 wire/dry-run/测试，未计入闭环证据。生产共 10 次单次、不重放的写尝试，
 两个实际创建的 SDK 测试分群均已读回并删除，最终列表验证残留 0。
 
-2026-08-16 的 Agent 渐进发现与生成任务指南是既有调用方入口的可读性改进，不新增 operation、结果 envelope 或产品动线：`48 + 0 = 48`、`33 / 0 / 15 + 0 / 0 / 0 = 33 / 0 / 15`，operation 仍为 `185 + 0 = 185`、stable 仍为 `176 + 0 = 176`。它的独立三层只读入口从既有 composite card 和 compiled manifest 派生；真实查询仍经既有 Agent card/Plan/CLI 合同。生产 HTTP 0 次。
+2026-08-16 的 Agent 渐进发现与生成任务指南是既有调用方入口的可读性改进，不新增 operation、结果 envelope 或产品动线：`48 + 0 = 48`、`33 / 0 / 15 + 0 / 0 / 0 = 33 / 0 / 15`，operation 仍为 `185 + 0 = 185`、stable 仍为 `176 + 0 = 176`。它的独立三层只读入口从既有 composite card 和 compiled manifest 派生；真实查询仍经既有 Agent card/Plan/CLI 合同。生产 HTTP 0 次。2026-08-18 #204 只给两条臂补机读 `routing_mode` 与识别器升级路径，不新增动线、不改状态列、不改冻结 case 目标身份。
 
 2026-08-16 对 155 条非推广/素材 draft 未覆盖读路由完成逐条语义复核：离线初判为
 `18 等价覆盖 / 89 UI 辅助 / 4 mutation / 18 可自取证 / 21 证据阻塞 / 5 无法判定`；10 次有界生产

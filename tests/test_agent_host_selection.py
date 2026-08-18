@@ -124,6 +124,10 @@ class HostProductSelectionTests(unittest.TestCase):
             query, self.response("analysis.query.spec"), self.client
         )
         self.assertEqual("analysis.query.spec", result["candidates"][0]["selector"])
+        self.assertEqual("host_catalog", result["routing_mode"])
+        self.assertEqual("host_catalog", result["routing"]["mode"])
+        self.assertFalse(result["routing"]["floor"])
+        self.assertNotIn("upgrade", result["routing"])
         self.assertEqual("host_catalog", result["candidates"][0]["match"]["confidence"])
         self.assertEqual(
             "gravity.host-source.v1 sdk_contract/instruction",
@@ -150,8 +154,32 @@ class HostProductSelectionTests(unittest.TestCase):
         self.assertIsNone(args.host_selection)
         result = run_agent_command(args, self.client)
         self.assertEqual("discover_and_describe", result["mode"])
-        self.assertNotIn("routing_mode", result)
+        self.assertEqual(DEFAULT_ROUTING_MODE, result["routing_mode"])
+        self.assertEqual(DEFAULT_ROUTING_MODE, result["routing"]["mode"])
+        self.assertTrue(result["routing"]["floor"])
+        self.assertIn("host_catalog", result["routing"]["upgrade"]["next"]["then_argv"])
+        self.assertIn(
+            "Prefer a recipe",
+            result["next_action"],
+        )
+        self.assertNotIn("routing", result["next_action"])
         self.assertEqual("analysis.query.spec:event", result["candidates"][0]["selector"])
+
+    def test_agent_input_rejects_single_query_object_with_legal_shape(self) -> None:
+        from gravity_sdk.agent_batch import validate_questions
+
+        with self.assertRaises(InputValidationError) as caught:
+            validate_questions({"query": "event trend"})
+        self.assertEqual("input", caught.exception.field)
+        self.assertIn('{"questions"', str(caught.exception))
+        self.assertIn("query", str(caught.exception))
+        with self.assertRaises(InputValidationError) as unknown:
+            validate_questions({"questions": [{"id": "q1", "text": "event trend"}]})
+        self.assertEqual("input.questions[0]", unknown.exception.field)
+        self.assertIn("id", str(unknown.exception))
+        self.assertIn("query", str(unknown.exception))
+        rows = validate_questions({"questions": [{"id": "q1", "query": "event trend"}]})
+        self.assertEqual(("q1", "event trend"), (rows[0].question_id, rows[0].query))
 
 
 if __name__ == "__main__":

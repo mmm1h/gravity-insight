@@ -126,6 +126,7 @@ def _index(catalog: dict[str, int]) -> str:
 | 目标 | 指南 |
 | --- | --- |
 | 分三层浏览全部本地能力 | [完整目录发现](catalog-discovery.md) |
+| 调用方自己选产品时走宿主臂 | [完整目录发现](catalog-discovery.md) |
 | 十分钟内从本地能力走到第一次真实分析 | [十分钟路径](ten-minute-path.md) |
 | 看一个事件的趋势 | [事件趋势](event-trend.md) |
 | 用同一分析定义比较两个时期 | [时期对比](period-comparison.md) |
@@ -197,7 +198,7 @@ def _ten_minute_path(card: dict[str, Any], contract: dict[str, Any], exits: dict
     return _guide(
         "十分钟路径：从仓库到第一次真实分析",
         [
-            "先由调用方明确选择 App、日期窗和一个精确物理事件名；bootstrap 不会从可读 App 或事件中静默挑默认值。然后只做两次顶层调用：",
+            "先由调用方明确选择 App、日期窗和一个精确物理事件名；bootstrap 不会从可读 App 或事件中静默挑默认值。默认 `gravity agent \"问题\"` 走离线识别器地板；调用方能产出 `gravity.host-product-selection.v1` 时先 `gravity agent-catalog host`，再 `gravity agent --routing host_catalog --host-selection`。然后只做两次顶层调用：",
             "```powershell\ngravity analysis bootstrap `\n  --app <selected-app-id> `\n  --start <caller-start-date> --end <caller-end-date> `\n  --target <physical-event> --plan-output first-analysis-plan.json\n# 审阅 Plan 中的 App、日期、事件与 metadata 指纹\ngravity plan run --input first-analysis-plan.json\n```",
             "第一次调用复用 `app.list`、单 App metadata sync、离线精确事件查找和 Plan dry-run；它只写 Plan，不执行分析。冷目录把四类 metadata 各限制为第一页，CLI transport 不重试：含首次登录最多 6 HTTP。第二次从固定 catalog 快照做 FieldPolicy 校验，只发 1 次事件查询；总计最多 7 HTTP。",
             "如果 App、日期或事件未提供，返回的 caller error 只有一个 `next_action`，不会代选。若任一 metadata 类超过第一页，bootstrap 也不会自动扩量；它返回运行普通有界 sync 的唯一下一动作，调用方审阅更大预算后再决定。",

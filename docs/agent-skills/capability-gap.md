@@ -81,6 +81,23 @@ gravity agent "<your-query>"
   "offline": "<bool>",
   "ok": "<bool>",
   "query": "<str>",
+  "routing": {
+    "floor": "<bool>",
+    "mode": "<str>",
+    "upgrade": {
+      "next": {
+        "argv": [
+          "<str>"
+        ],
+        "then_argv": [
+          "<str>"
+        ]
+      },
+      "next_action": "<str>",
+      "when": "<str>"
+    }
+  },
+  "routing_mode": "<str>",
   "schema_version": "<str>",
   "scope": "<str>",
   "status": "<str>",

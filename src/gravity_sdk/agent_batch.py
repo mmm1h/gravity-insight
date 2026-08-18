@@ -4,13 +4,19 @@ from __future__ import annotations
 
 import copy
 from collections.abc import Iterator, Mapping, Sequence
-from dataclasses import dataclass
 import hashlib
 import re
 import threading
 from typing import Any
 
-from .agent import DEFAULT_LIMIT, discover_capabilities
+from .agent import discover_capabilities
+from .agent_batch_questions import (
+    CapabilityQuestion,
+    MAX_QUESTIONS,
+    optional_text,
+    validate_question,
+    validate_questions,
+)
 from .agent_batch_sources import AgentSourceSnapshot, snapshot_agent_sources
 from .agent_handoff import resolve_workspace_path, workspace_prefix
 from .errors import ErrorCategory, ErrorDetail, exit_code_for_error
@@ -19,19 +25,8 @@ from .errors import ErrorCategory, ErrorDetail, exit_code_for_error
 SCHEMA_VERSION = "gravity.agent-batch.v1"
 NDJSON_RECORD_SCHEMA_VERSION = "gravity.agent-question.v1"
 NDJSON_SUMMARY_SCHEMA_VERSION = "gravity.agent-batch-summary.v1"
-MAX_QUESTIONS = 32
-_QUESTION_FIELDS = frozenset({"id", "query", "domain", "platform", "limit"})
 _ANALYSIS_BATCH_SCHEMA_VERSION = "gravity.analysis-query-batch.v1"
 _SAFE_QUERY_ID = re.compile(r"^[A-Za-z][A-Za-z0-9_.-]{0,63}$")
-
-
-@dataclass(frozen=True)
-class CapabilityQuestion:
-    question_id: str
-    query: str
-    domain: str | None
-    platform: str | None
-    limit: int
 
 
 class _SnapshotClient:
@@ -156,59 +151,6 @@ def iter_ndjson_records(value: Mapping[str, Any]) -> Iterator[dict[str, Any]]:
             **summary,
         }
     }
-
-
-def validate_questions(
-    questions: Mapping[str, Any] | Sequence[str | Mapping[str, Any]],
-) -> tuple[CapabilityQuestion, ...]:
-    value: Any = questions
-    if isinstance(value, Mapping):
-        unknown = sorted(set(value) - {"questions"})
-        if unknown:
-            raise ValueError("capabilities_many wrapper contains an unknown field")
-        value = value.get("questions")
-    if not isinstance(value, Sequence) or isinstance(value, (str, bytes, bytearray)):
-        raise ValueError("capabilities_many requires a questions array")
-    if not value:
-        raise ValueError("capabilities_many questions must not be empty")
-    if len(value) > MAX_QUESTIONS:
-        raise ValueError(f"capabilities_many supports at most {MAX_QUESTIONS} questions")
-    normalized = tuple(validate_question(item, index) for index, item in enumerate(value))
-    identifiers = [item.question_id for item in normalized]
-    if len(set(identifiers)) != len(identifiers):
-        raise ValueError("capabilities_many question ids must be unique")
-    return normalized
-
-
-def validate_question(value: Any, index: int) -> CapabilityQuestion:
-    if isinstance(value, str):
-        selected: Mapping[str, Any] = {"query": value}
-    elif isinstance(value, Mapping):
-        selected = value
-    else:
-        raise ValueError("capabilities_many questions must be strings or objects")
-    if set(selected) - _QUESTION_FIELDS:
-        raise ValueError("capabilities_many question contains an unknown field")
-    query = selected.get("query")
-    if not isinstance(query, str) or not query.strip():
-        raise ValueError("capabilities_many query must be a non-empty string")
-    question_id = selected.get("id", f"question-{index + 1}")
-    if not isinstance(question_id, str) or not question_id.strip():
-        raise ValueError("capabilities_many id must be a non-empty string")
-    domain = optional_text(selected.get("domain"), "domain")
-    platform = optional_text(selected.get("platform"), "platform")
-    limit = selected.get("limit", DEFAULT_LIMIT)
-    if type(limit) is not int or not 1 <= limit <= 5:
-        raise ValueError("capabilities_many limit must be between 1 and 5")
-    return CapabilityQuestion(question_id, query.strip(), domain, platform, limit)
-
-
-def optional_text(value: Any, field: str) -> str | None:
-    if value is None:
-        return None
-    if not isinstance(value, str) or not value.strip():
-        raise ValueError(f"capabilities_many {field} must be a non-empty string")
-    return value
 
 
 def snapshot_failure(
