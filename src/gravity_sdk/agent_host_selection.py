@@ -12,6 +12,7 @@ from .agent_host_catalog import (
     host_catalog_sources,
     host_product_catalog,
 )
+from .agent_discovery_support import catalog_browse_next
 from .errors import InputValidationError
 from .host_effect_sources import (
     SOURCE_SCHEMA_VERSION,
@@ -366,9 +367,11 @@ def _empty_selection_gap(query: str) -> dict[str, Any]:
         "query": safe_discovery_query(query),
         "reason": "the host selected no identity from the current canonical product catalog",
         "next_action": (
-            "Refine the business goal or inspect gravity agent-catalog host; do not "
+            "Browse `gravity agent-catalog categories` to confirm no registered "
+            "product matches, or inspect `gravity agent-catalog host`; do not "
             "invent an operation, path, product, or Plan control identity."
         ),
+        "next": catalog_browse_next(),
         "weak_matches": [],
         "network_called": False,
     }
@@ -405,8 +408,13 @@ def _selection_envelope(
         "next_action": (
             "Fill the selected repository-owned card inputs and validate its Plan."
             if candidates
-            else "Follow the canonical gap; do not guess a control identity."
+            else (
+                "Follow the canonical gap; browse `gravity agent-catalog "
+                "categories` only to confirm the capability is absent, and do "
+                "not guess a control identity."
+            )
         ),
+        **({} if candidates else {"next": catalog_browse_next()}),
     }
 
 

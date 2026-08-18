@@ -52,7 +52,7 @@ Usage:
   gravity metadata search|events|properties|vocabulary [query]
   gravity metadata tables [query]
   gravity find <query>
-  gravity recipe validate|check <name>
+  gravity recipe validate|check|accept-contract <name>
   gravity run @<recipe> [options]
   gravity run <operation-id> [options]
   gravity receipts list|get|export

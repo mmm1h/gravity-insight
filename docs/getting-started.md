@@ -108,7 +108,7 @@ gravity run @<recipe-name> --start 2026-08-01 --end 2026-08-07
 gravity run <operation-id> --app <workspace-alias> --input <json>
 ```
 
-只有 `run` 报告 recipe stale 时再执行 `gravity recipe check <recipe-name>`。
+只有 `run` 报告 recipe stale 时再执行 `gravity recipe check <recipe-name>`；纯增量合同用 `gravity recipe accept-contract <recipe-name>` 重钉指纹。
 
 workspace 可由顶层 `--workspace`、显式 API 调用、`GRAVITY_WORKSPACE` 或 cwd 向上查找选中。SDK 只读该文件；执行回执写入用户缓存，不写项目目录。配置格式见 [Workspace 参考](reference/workspace.md)。
 

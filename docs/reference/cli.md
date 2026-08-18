@@ -101,7 +101,7 @@ catalog 使用 `{"catalog_policy":"refresh"}`；任一来源失败时不发布 s
 | `validate` | 离线校验输入，可选渲染脱敏 wire |
 | `read` | 执行一个 operation，支持受控分页和文件输出 |
 | `run` | 执行 `@recipe` 或 operation 的 Resolver 管线，并产出脱敏 Receipt |
-| `recipe validate/check` | 离线检查 recipe 格式或 operation 漂移 |
+| `recipe validate/check/accept-contract` | 离线检查 recipe 格式或 operation 漂移；审阅合同 diff 后重钉指纹 |
 | `discover-nonempty` | 在严格 HTTP 预算内发现非空组合；输出和缓存只保留输入字段名、脱敏语义错误码及字段提示，不保留值或响应消息 |
 | `batch` | 批量执行独立的受控读取 |
 | `parents resolve` | 解析 operation 需要的父资源 |
@@ -1113,7 +1113,7 @@ gravity find <query> [--backend operations] [--backend metadata]
 
 `vocabulary` 搜索物理/自定义指标、指标标签与分类、媒体枚举和 mine/shared/preset 模板。它们都是 workspace scope，不接受 `--app-id`。`gravity agent <query>` 对强匹配返回同 kind 的 `metadata_search` Plan node；指标卡的 `request_fragment` 可复制进显式 Analysis spec，但不会自动执行。模板只提供安全目录身份，标记 `catalog_only`，不包含配置且不可回放。
 
-`find` 当前注册 `operations`、`recipes`、`metadata` 三个 backend。`recipe validate` 只验证 workspace 声明；`recipe check` 还检查 operation 存在性/废弃状态、输入和输出字段及合同指纹，仍不访问网络。
+`find` 当前注册 `operations`、`recipes`、`metadata` 三个 backend。`recipe validate` 只验证 workspace 声明；`recipe check` 还检查 operation 存在性/废弃状态、输入和输出字段及合同指纹，仍不访问网络。`recipe accept-contract` 先展示合同 diff：纯增量可直接重钉调用方 `gravity.toml` 的指纹；删除或类型变更默认拒绝，须同时给 `--allow-breaking --reason`，理由写入 envelope。不改 SDK 合同。
 
 Resolver 常用形式：
 
@@ -1126,7 +1126,7 @@ recipe 参数用 `--param name=value`，`start/end` 有同名快捷参数。`--a
 
 workspace 的发现顺序、最小配置和 recipe 字段见 [Workspace 参考](workspace.md)。
 
-`operations`、`validate`、`find`、`recipe validate/check`、`metadata status/search/events/properties/vocabulary/tables` 以及单 App sync 的 `--dry-run` 都不需要网络客户端，因此不会触发首次凭据向导。新增离线命令必须在自己的 parser 上声明相同属性。
+`operations`、`validate`、`find`、`recipe validate/check/accept-contract`、`metadata status/search/events/properties/vocabulary/tables` 以及单 App sync 的 `--dry-run` 都不需要网络客户端，因此不会触发首次凭据向导。新增离线命令必须在自己的 parser 上声明相同属性。
 
 ## SQL
 

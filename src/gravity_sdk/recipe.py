@@ -22,6 +22,25 @@ def add_recipe_commands(commands: Any) -> None:
     for name in ("validate", "check"):
         command = subcommands.add_parser(name)
         command.add_argument("name")
+    accept = subcommands.add_parser(
+        "accept-contract",
+        help="Rewrite a recipe fingerprint after reviewing the contract diff.",
+    )
+    accept.add_argument("name")
+    accept.add_argument(
+        "--allow-breaking",
+        action="store_true",
+        help="Required when the contract deletes fields or changes types.",
+    )
+    accept.add_argument(
+        "--reason",
+        help="Audit reason recorded in the envelope for a breaking accept.",
+    )
+    accept.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show the contract diff without writing gravity.toml.",
+    )
 
 
 def validate_recipe(workspace: Workspace, name: str) -> dict[str, Any]:
@@ -103,7 +122,7 @@ def _availability_reasons(description: Mapping[str, Any]) -> list[dict[str, Any]
 def _input_reasons(recipe: Recipe, input_schema: Any) -> list[dict[str, Any]]:
     if not isinstance(input_schema, Mapping):
         input_schema = {}
-    declared = _declared_input_fields(recipe)
+    declared = declared_input_fields(recipe)
     removed = sorted(declared - set(input_schema))
     required = {
         str(field)
@@ -122,7 +141,7 @@ def _input_reasons(recipe: Recipe, input_schema: Any) -> list[dict[str, Any]]:
 
 
 def _output_reasons(recipe: Recipe, projection: Any) -> list[dict[str, Any]]:
-    removed = sorted(set(recipe.output_fields) - _projection_fields(projection))
+    removed = sorted(set(recipe.output_fields) - projection_fields(projection))
     return (
         [{"code": "output_fields_changed", "missing_fields": removed}]
         if removed
@@ -145,7 +164,20 @@ def run_recipe_command(
     selected = load_workspace() if workspace is None else workspace
     if args.recipe_command == "validate":
         return validate_recipe(selected, args.name)
-    return check_recipe(selected.recipe(args.name), client_factory(args))
+    recipe = selected.recipe(args.name)
+    if args.recipe_command == "check":
+        return check_recipe(recipe, client_factory(args))
+    from .recipe_repin import apply_recipe_repin, assess_recipe_repin
+
+    assessment = assess_recipe_repin(recipe, client_factory(args))
+    return apply_recipe_repin(
+        selected,
+        recipe,
+        assessment,
+        allow_breaking=bool(getattr(args, "allow_breaking", False)),
+        reason=getattr(args, "reason", None),
+        dry_run=bool(getattr(args, "dry_run", False)),
+    )
 
 
 def _dispatch_recipe(args: argparse.Namespace, _object_input: Callable[[Any], Any]) -> Any:
@@ -168,7 +200,7 @@ def _binding_shape(recipe: Recipe) -> dict[str, Any]:
     }
 
 
-def _declared_input_fields(recipe: Recipe) -> set[str]:
+def declared_input_fields(recipe: Recipe) -> set[str]:
     fields = set(recipe.input)
     fields.update(path.split(".", 1)[0] for path in recipe.parameters.values())
     for path in (recipe.bindings.app_input, recipe.bindings.report_input):
@@ -177,7 +209,7 @@ def _declared_input_fields(recipe: Recipe) -> set[str]:
     return fields
 
 
-def _projection_fields(value: Any) -> set[str]:
+def projection_fields(value: Any) -> set[str]:
     if not isinstance(value, Mapping):
         return set()
     fields: set[str] = set()
@@ -191,6 +223,8 @@ def _projection_fields(value: Any) -> set[str]:
 __all__ = [
     "add_recipe_commands",
     "check_recipe",
+    "declared_input_fields",
+    "projection_fields",
     "run_recipe_command",
     "validate_recipe",
 ]

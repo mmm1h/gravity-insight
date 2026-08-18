@@ -138,6 +138,10 @@ def agent_fallbacks(
     prefix = workspace_prefix(workspace_path)
     return [
         {
+            "when": "no candidate matched; browse the offline catalog first",
+            "argv": [*prefix, "agent-catalog", "categories"],
+        },
+        {
             "when": "workspace recipe or local metadata may already encode the goal",
             "argv": [*prefix, "find", selected_query],
         },

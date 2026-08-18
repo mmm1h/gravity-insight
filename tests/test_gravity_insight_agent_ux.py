@@ -1190,9 +1190,10 @@ class DiscoveryUxTests(unittest.TestCase):
         self.assertEqual("sql:daily-event-summary", product["selector"])
         self.assertEqual("strong", product["match"]["confidence"])
         self.assertNotIn("sql", product)
-        self.assertEqual(
-            "daily event summary", result["fallbacks"][0]["argv"][-1]
+        find_fallback = next(
+            item for item in result["fallbacks"] if "find" in item["argv"]
         )
+        self.assertEqual("daily event summary", find_fallback["argv"][-1])
 
         with (
             patch("gravity_sdk.agent_sources.load_workspace", return_value=workspace),
@@ -1360,7 +1361,11 @@ class DiscoveryUxTests(unittest.TestCase):
         self.assertEqual(
             "partial", gap["weak_matches"][0]["match"]["confidence"]
         )
-        self.assertNotIn("next", gap)
+        self.assertEqual("NO_CANDIDATE", gap["code"])
+        self.assertEqual(
+            ["gravity", "agent-catalog", "categories"], gap["next"]["argv"]
+        )
+        self.assertIn("agent-catalog categories", gap["next_action"])
 
     def test_agent_reports_exact_draft_blockers_without_execution_argv(self) -> None:
         operation_id = "promotion.alipay.campaign.list"

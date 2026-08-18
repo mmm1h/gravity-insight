@@ -122,7 +122,7 @@ gravity run @retention-weekly --start 2026-08-01 --end 2026-08-07
 stale recipe 会在同一个 envelope 返回下一步；此时才运行：
 
 ```powershell
-gravity recipe check retention-weekly
+gravity recipe check retention-weekly; gravity recipe accept-contract retention-weekly
 ```
 
 ## 3. 交叉查询：一个显式 Plan

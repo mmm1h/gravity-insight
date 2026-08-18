@@ -58,10 +58,13 @@ Recipe 是项目侧的命名查询，不是 SDK 内置业务知识。每条 reci
 ```powershell
 gravity recipe validate <name>
 gravity recipe check <name>
+gravity recipe accept-contract <name> --dry-run
+gravity recipe accept-contract <name>
+gravity recipe accept-contract <name> --allow-breaking --reason "<audit-text>"
 gravity run @<name> --param <key>=<value>
 ```
 
-`check` 出现 `stale` 时应在项目侧更新 recipe；不要修改 SDK 来适配某个业务查询。
+`check` 出现 `stale` 时应先审阅合同 diff，再用 `accept-contract` 重钉调用方 `gravity.toml` 的指纹；不要修改 SDK 来适配某个业务查询。删除或类型变更默认拒绝。
 
 ## 参数化 Plan
 

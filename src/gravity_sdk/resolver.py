@@ -195,7 +195,8 @@ class _Resolver:
             10,
             "The recipe no longer matches its operation contract.",
             next_action=(
-                f"Run `gravity recipe check {self.recipe.name}` and update the workspace recipe."
+                f"Run `gravity recipe check {self.recipe.name}` then "
+                f"`gravity recipe accept-contract {self.recipe.name}` after reviewing the contract diff."
             ),
         ))
         return self._finish(False, "stale")
