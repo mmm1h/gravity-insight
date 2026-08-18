@@ -439,8 +439,11 @@ def _named_range(text: str, today: date) -> tuple[date, date, str] | None:
     if kind is None:
         return None
     if kind == "this_week":
+        # Clamp to today the way `this_month` does. The un-clamped Monday..Sunday
+        # window ran up to six days into the future, so "本周注册多少" answered
+        # with a window whose tail had not happened yet.
         start = today - timedelta(days=today.weekday() - WEEK_START)
-        return start, start + timedelta(days=6), kind
+        return start, today, kind
     if kind == "last_week":
         end = today - timedelta(days=today.weekday() - WEEK_START + 1)
         return end - timedelta(days=6), end, kind
