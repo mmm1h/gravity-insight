@@ -2,23 +2,157 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+import re
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 
 CATALOG_BROWSE_ARGV = ["gravity", "agent-catalog", "categories"]
+HOST_CATALOG_ARGV = ["gravity", "agent-catalog", "host"]
 NO_CANDIDATE_NEXT_ACTION = (
     "Browse `gravity agent-catalog categories` then `category` and `describe` "
     "to confirm the capability is absent; do not execute weak partial matches "
     "or invent a selector."
 )
+UNRANKED_OPERATIONS = "UNRANKED_OPERATIONS"
+UNRANKED_OPERATIONS_NEXT_ACTION = (
+    "The recognizer did not select one product; it only ranked distinct raw "
+    "operations. Browse `gravity agent-catalog host`, return one "
+    "gravity.host-product-selection.v1, then call gravity agent --routing "
+    "host_catalog --host-selection; do not execute a ranked raw operation."
+)
+_MIN_UNRANKED_OPERATIONS = 3
 
 
 def catalog_browse_next() -> dict[str, Any]:
     return {"argv": list(CATALOG_BROWSE_ARGV)}
 
 
-def discovery_next_fields(has_candidates: bool) -> dict[str, Any]:
+def host_catalog_next() -> dict[str, Any]:
+    return {"argv": list(HOST_CATALOG_ARGV)}
+
+
+def unranked_operation_ids(
+    unified: Sequence[tuple[str, Mapping[str, Any]]],
+) -> tuple[str, ...]:
+    """Return distinct raw-operation ids when the page never selected a product.
+
+    Exact-selector lookups and any catalog card (recipe, compiler, composite)
+    stay executable. Only a page of distinct raw operations is a guess.
+    """
+
+    identities: list[str] = []
+    for source, item in unified:
+        if source != "operation":
+            return ()
+        match = item.get("agent_match")
+        if isinstance(match, Mapping) and match.get("exact_selector"):
+            return ()
+        identity = str(item.get("operation_id") or item.get("selector") or "")
+        if not identity or identity in identities:
+            return ()
+        identities.append(identity)
+    if len(identities) < _MIN_UNRANKED_OPERATIONS:
+        return ()
+    return tuple(identities)
+
+
+def unranked_operations_gap(
+    query: str, operation_ids: Sequence[str]
+) -> dict[str, Any]:
+    """Hand the host the catalog projection instead of guessing a top-1 product."""
+
+    from .agent_discovery_policy import safe_discovery_query
+
+    return {
+        "kind": "capability_gap",
+        "code": UNRANKED_OPERATIONS,
+        "query": safe_discovery_query(query),
+        "reason": (
+            "offline discovery returned only distinct raw operations and no "
+            "authoritative product card; the recognizer does not rank them"
+        ),
+        "next_action": UNRANKED_OPERATIONS_NEXT_ACTION,
+        "next": host_catalog_next(),
+        "ranked_operation_ids": list(operation_ids),
+        "weak_matches": [],
+        "network_called": False,
+    }
+
+
+def drop_auxiliary_catalog_tail(
+    unified: Sequence[tuple[str, Mapping[str, Any]]],
+) -> list[tuple[str, Mapping[str, Any]]]:
+    """Drop catalog cards that only trail a raw-operation ranking page."""
+
+    if not unified or unified[0][0] != "operation":
+        return list(unified)
+    selected: list[tuple[str, Mapping[str, Any]]] = []
+    for source, item in unified:
+        if source == "catalog" and item.get("kind") not in {
+            "recipe",
+            "analysis_query_spec",
+        }:
+            continue
+        selected.append((source, item))
+    return selected
+
+
+def is_short_catalog_lookup(query: str) -> bool:
+    """ASCII keyword lookups stay ranked; a sentence is not a catalog lookup."""
+
+    selected = query.strip().casefold()
+    if any("\u3400" <= character <= "\u9fff" for character in selected):
+        return False
+    words = re.findall(r"[a-z0-9_.]+", selected)
+    return 0 < len(words) <= 3
+
+
+def apply_unranked_operation_handoff(
+    query: str,
+    unified: Sequence[tuple[str, Mapping[str, Any]]],
+    existing_gaps: Sequence[Mapping[str, Any]],
+) -> tuple[list[tuple[str, Mapping[str, Any]]], tuple[Mapping[str, Any], ...]]:
+    """Replace an unranked raw-operation page with a host-catalog handoff."""
+
+    if is_short_catalog_lookup(query):
+        return list(unified), tuple(existing_gaps)
+    ranked = unranked_operation_ids(drop_auxiliary_catalog_tail(unified))
+    if not ranked:
+        return list(unified), tuple(existing_gaps)
+    return [], (unranked_operations_gap(query, ranked),)
+
+
+def finish_discovery_candidates(query: str, lexical: Any) -> tuple[list[Any], tuple[Any, ...]]:
+    """Apply lexical output then the unranked-operation host handoff."""
+
+    return apply_unranked_operation_handoff(query, lexical.candidates, lexical.gaps)
+
+
+def assert_discovery_page(
+    page: Any, request: Any, unified: Sequence[Any], fingerprint: str
+) -> None:
+    from .errors import InputValidationError
+
+    if (
+        page.expected_candidates_fingerprint is not None
+        and page.expected_candidates_fingerprint != fingerprint
+    ):
+        raise InputValidationError(
+            "agent continuation does not match the current candidate catalog",
+            field="continuation", next_action="Drop continuation and run the search again.",
+        )
+    if page.offset >= len(unified) and request.continuation:
+        raise InputValidationError(
+            "agent continuation no longer points to an available candidate",
+            field="continuation", next_action="Drop continuation and run the search again.",
+        )
+
+
+def discovery_next_fields(
+    has_candidates: bool,
+    gaps: Sequence[Mapping[str, Any]] | None = None,
+) -> dict[str, Any]:
     if has_candidates:
         return {
             "next_action": (
@@ -26,6 +160,12 @@ def discovery_next_fields(has_candidates: bool) -> dict[str, Any]:
                 "matching SQL product only when Insight cannot express the goal, and "
                 "invoke the selected next.argv."
             )
+        }
+    first = gaps[0] if gaps else None
+    if isinstance(first, Mapping) and first.get("code") == UNRANKED_OPERATIONS:
+        return {
+            "next_action": UNRANKED_OPERATIONS_NEXT_ACTION,
+            "next": host_catalog_next(),
         }
     return {
         "next_action": NO_CANDIDATE_NEXT_ACTION,
@@ -83,10 +223,21 @@ def materialize_candidates(
 
 __all__ = [
     "CATALOG_BROWSE_ARGV",
+    "HOST_CATALOG_ARGV",
     "NO_CANDIDATE_NEXT_ACTION",
+    "UNRANKED_OPERATIONS",
+    "UNRANKED_OPERATIONS_NEXT_ACTION",
+    "apply_unranked_operation_handoff",
+    "assert_discovery_page",
+    "finish_discovery_candidates",
+    "drop_auxiliary_catalog_tail",
     "capability_gaps_for_page",
     "catalog_browse_next",
     "discovery_next_fields",
+    "host_catalog_next",
+    "is_short_catalog_lookup",
     "materialize_candidates",
     "select_authoritative_cards",
+    "unranked_operation_ids",
+    "unranked_operations_gap",
 ]

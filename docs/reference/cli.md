@@ -74,7 +74,7 @@ gravity agent "<query>" --routing host_catalog --host-selection selection.json
 operation；每项固定给出目标、返回物、相邻边界、前置输入与 effect。宿主响应必须完整符合
 `gravity.host-product-selection.v1`，只能引用当前 `catalog_ref`。0 个引用由仓库生成固定路由 gap；
 多个引用固定为 `MULTIPLE_INTENTS`；未知字段、旧目录指纹、伪造产品或直接 operation/path 均整体拒绝。
-调用方能产出选择时推荐显式 `--routing host_catalog --host-selection`；未指定 `--routing` 的默认仍是 recognizer，那是够不着宿主时的地板，不是劣等品。
+调用方能产出选择时推荐显式 `--routing host_catalog --host-selection`；未指定 `--routing` 的默认仍是 recognizer，那是够不着宿主时的地板，不是劣等品。识别器若没选中产品、只排出至少 3 条互不相同的 raw operation（短英文目录查找除外；挂在后面的非权威 catalog 卡不算选定），会返回 `UNRANKED_OPERATIONS`（不是错误），`next.argv` 指向 `gravity agent-catalog host`，由宿主走已有 `host_catalog` 路径完成选择。
 
 `category` 的顺序是合同而不是模糊相关性：每个 category 内固定按
 `product → raw_operation → capability_gap` 排序，同类再按 selector 升序。于是第一页先展示 canonical
