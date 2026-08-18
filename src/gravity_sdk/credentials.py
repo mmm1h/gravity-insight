@@ -36,13 +36,13 @@ from .errors import (
     RateLimitedError,
     TransportError,
 )
-from .paths import STATE_ROOT
+from .paths import PROJECT_ROOT, STATE_ROOT
 from .receipt import perform_http_request, request_receipt_context
 
 
 GRAVITY_HOST = "https://api-insight.gravity-engine.com"
 LOGIN_PATH = "/account_center/api/v1/user_login/v2/"
-DEFAULT_ENV_PATH = Path(__file__).resolve().parents[3] / ".env.gravity.local"
+DEFAULT_ENV_PATH = PROJECT_ROOT / ".env.gravity.local"
 SHANGHAI = ZoneInfo("Asia/Shanghai")
 
 
@@ -228,13 +228,15 @@ class CredentialProvider:
         timeout: float = 30.0,
         free_login_day: int = 7,
         persist: bool = True,
+        isolated: bool = False,
     ) -> None:
         if free_login_day not in range(1, 8):
             raise ValueError("free_login_day must be between 1 and 7")
         if timeout <= 0:
             raise ValueError("credential timeout must be positive")
         self.env_path = Path(env_path)
-        self._environ = environ
+        self._isolated = bool(isolated)
+        self._environ = {} if self._isolated and environ is None else environ
         self._session = session
         self._login = login
         self._login_request = login_request

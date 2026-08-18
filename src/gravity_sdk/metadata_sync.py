@@ -32,13 +32,14 @@ from .metadata_lineage import (
 from . import metadata_vocabulary as vocabulary
 from .runtime import call_batch
 from .actionable_error_values import actual_value
+from .process_limits import MAX_CONCURRENCY
+from .runtime_scope import metadata_catalog_path
 
 
 SCHEMA_VERSION = "gravity-insight.metadata-sync.v1"
 DATABASE_SCHEMA_VERSION = 1
 APP_OPERATION_ID = DOMAIN_OPERATIONS["apps.list"][0]
 DEFAULT_CONCURRENCY = 8
-MAX_CONCURRENCY = 24
 # batch() divides its 100,000-row aggregate allowance among requests. Keeping
 # every mixed operation/app batch at eight requests leaves 12,500 rows for each
 # catalog slice while allowing small workspaces to use more than one worker.
@@ -60,13 +61,10 @@ class MetadataSyncClient(Protocol):
     ) -> Sequence[Mapping[str, Any]]: ...
 
 
-def default_catalog_path() -> Path:
+def default_catalog_path(*, isolation_key: str = "") -> Path:
     """Return the private per-user catalog path without requiring an env var."""
 
-    cache_root = os.environ.get("LOCALAPPDATA") or os.environ.get("XDG_CACHE_HOME")
-    if cache_root:
-        return Path(cache_root) / "GravityInsight" / "metadata" / "catalog.sqlite3"
-    return Path.home() / ".cache" / "gravity-insight" / "metadata" / "catalog.sqlite3"
+    return metadata_catalog_path(isolation_key)
 
 
 def sync_all_apps(

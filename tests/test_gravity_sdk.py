@@ -406,7 +406,7 @@ class GravitySDKTests(unittest.TestCase):
         sql = object()
         with (
             patch(
-                "gravity_sdk.http_runtime.get_shared_runtime",
+                "gravity_sdk.shared_runtime.get_shared_runtime",
                 return_value=runtime,
             ) as get_runtime,
             patch(
@@ -429,6 +429,7 @@ class GravitySDKTests(unittest.TestCase):
         insight_factory.assert_called_once_with(
             allow_experimental=False,
             runtime=runtime,
+            env_path=None,
         )
 
 

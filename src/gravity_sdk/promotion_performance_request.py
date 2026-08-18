@@ -19,11 +19,11 @@ from .promotion_performance_result import (
     SUPPORTED_PLATFORMS,
 )
 from .actionable_error_values import actual_value
+from .process_limits import MAX_CONCURRENCY
 
 
 INPUT_SCHEMA_VERSION = "gravity-insight.promotion-performance-input.v1"
 DEFAULT_CONCURRENCY = 6
-MAX_CONCURRENCY = 24
 MAX_METRICS = 500
 _ISO_DATE = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
 _METRIC_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_.-]{0,127}$")

@@ -34,12 +34,12 @@ from .material_performance_result import (
 )
 from .result_audit import project_result_audit
 from .actionable_error_values import actual_value
+from .process_limits import MAX_CONCURRENCY
 
 
 SCHEMA_VERSION = "gravity-insight.material-performance.v1"
 DEFAULT_PLATFORMS = ("bytedance", "tencent", "kuaishou", "bilibili")
 DEFAULT_CONCURRENCY = 6
-MAX_CONCURRENCY = 24
 MAX_APPS = 100
 _ISO_DATE = re.compile(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")
 

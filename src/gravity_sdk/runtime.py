@@ -222,7 +222,9 @@ def call_batch(
 def credential_status() -> dict[str, Any]:
     """Report credential metadata without returning credential values."""
 
-    env_path = REPO_ROOT / ".env.gravity.local"
+    from .runtime_scope import resolve_env_path
+
+    env_path, _isolated = resolve_env_path()
     sdk = _sdk_module()
     config_class = getattr(sdk, "CredentialConfig", None)
     if config_class is None:
@@ -296,7 +298,10 @@ def refresh_credentials() -> dict[str, Any]:
     provider_class = getattr(sdk, "CredentialProvider", None)
     if provider_class is None:
         raise RuntimeError("Gravity SDK does not export CredentialProvider")
-    provider = provider_class(REPO_ROOT / ".env.gravity.local", environ={})
+    from .runtime_scope import resolve_env_path
+
+    env_path, isolated = resolve_env_path()
+    provider = provider_class(env_path, environ={}, isolated=isolated)
     provider.refresh()
     return {
         "status": "success",

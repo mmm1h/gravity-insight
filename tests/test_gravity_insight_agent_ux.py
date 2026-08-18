@@ -186,9 +186,10 @@ class CredentialUxTests(unittest.TestCase):
             }
 
             class Provider:
-                def __init__(self, path, *, environ):
+                def __init__(self, path, *, environ, isolated=False):
                     self.path = path
                     self.environ = environ
+                    self.isolated = isolated
 
                 def refresh(self):
                     return SimpleNamespace(token="internal")

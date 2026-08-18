@@ -2,8 +2,13 @@
 
 The runtime deliberately exposes profiles rather than hosts or origins.  Insight
 requests are still authorized by their manifest policy before reaching this
-module; SQL has one exact POST route.  Both profiles consequently share the same
-session, credential provider, connection pool, and per-host rate-limit bucket.
+module; SQL has one exact POST route.
+
+``get_shared_runtime()`` (in ``shared_runtime``) is shared **per resolved
+credential file** inside one process: that file's session, credential
+provider, and connection pool. The 10 rps host limiter and 24 in-flight
+slots stay process-wide so two accounts in one process cannot multiply
+upstream traffic. Different credential files no longer reuse one runtime.
 """
 
 from __future__ import annotations
@@ -22,14 +27,12 @@ from urllib.parse import urlsplit
 
 from .content_encoding import ACCEPT_ENCODING
 from .credentials import (
-    DEFAULT_ENV_PATH,
     GRAVITY_HOST,
     CredentialProvider,
     validated_login_payload,
 )
 from .errors import (
     AuthenticationError,
-    CredentialError,
     PermissionUnavailableError,
     PolicyViolation,
     SqlValidationError,
@@ -42,6 +45,8 @@ from .http_retry import (
     unit_random as _unit_random,
 )
 from .paths import STATE_ROOT
+from .process_limits import MAX_CONCURRENCY
+from .runtime_scope import resolve_env_path
 from .receipt import (
     authorized_request_receipt_context,
     perform_http_request,
@@ -58,7 +63,6 @@ from .runtime_principal import (
 DEFAULT_REQUESTS_PER_SECOND = 10.0
 MAX_REQUESTS_PER_SECOND = 100.0
 DEFAULT_CONCURRENCY = 6
-MAX_CONCURRENCY = 24
 MAX_SQL_CONCURRENCY = 2
 # One spare connection allows a login on the 401 recovery path while twenty-four
 # business requests are in flight.
@@ -417,7 +421,7 @@ class GravityHttpRuntime:
     def __init__(
         self,
         *,
-        env_path: Path = DEFAULT_ENV_PATH,
+        env_path: Path | None = None,
         session: Any | None = None,
         credentials: CredentialProvider | Any | None = None,
         limiter: HostRateLimiter | None = None,
@@ -434,7 +438,13 @@ class GravityHttpRuntime:
         persist_credentials: bool = True,
         environ: MutableMapping[str, str] | None = None,
         receipt_root: Path = STATE_ROOT,
+        isolated: bool = False,
     ) -> None:
+        selected_env, resolved_isolated = resolve_env_path(env_path)
+        if isolated:
+            resolved_isolated = True
+        env_path = selected_env
+        isolated = resolved_isolated
         self.__session = session or _build_session()
         self.__limiter = limiter or HostRateLimiter(
             clock=rate_clock,
@@ -461,6 +471,7 @@ class GravityHttpRuntime:
                 session=self.__session,
                 login_request=self.__requester.login,
                 persist=persist_credentials,
+                isolated=isolated,
             )
         else:
             self.__credentials = credentials
@@ -612,47 +623,6 @@ class GravityHttpRuntime:
                 self.__sql_slots.release()
 
 
-_SHARED_LOCK = threading.Lock()
-_SHARED_RUNTIME: GravityHttpRuntime | None = None
-_SHARED_ENV_PATH: Path | None = None
-_PROCESS_LIMITER = HostRateLimiter()
-
-
-def get_shared_runtime(
-    *,
-    env_path: Path = DEFAULT_ENV_PATH,
-    requests_per_second: float | None = None,
-    timeout: float = 120.0,
-    attempts: int = 3,
-) -> GravityHttpRuntime:
-    """Return the process-wide runtime used by both Insight and SQL clients."""
-
-    global _SHARED_RUNTIME, _SHARED_ENV_PATH
-    resolved_path = Path(env_path).resolve()
-    rate = (
-        _rate_from_environment()
-        if requests_per_second is None
-        else _validated_rate(requests_per_second)
-    )
-    with _SHARED_LOCK:
-        if _SHARED_RUNTIME is None:
-            _SHARED_RUNTIME = GravityHttpRuntime(
-                env_path=resolved_path,
-                limiter=_PROCESS_LIMITER,
-                requests_per_second=rate,
-                timeout=timeout,
-                attempts=attempts,
-            )
-            _SHARED_ENV_PATH = resolved_path
-        elif _SHARED_ENV_PATH != resolved_path:
-            raise CredentialError(
-                "the process-wide Gravity runtime already uses another credential file"
-            )
-        else:
-            _PROCESS_LIMITER.configure(GRAVITY_HOST, rate)
-        return _SHARED_RUNTIME
-
-
 def _build_session() -> Any:
     try:
         import requests
@@ -759,6 +729,6 @@ def _rate_from_environment() -> float:
 
 
 __all__ = [
+    "MAX_CONCURRENCY",
     "SQL_PROFILE",
-    "get_shared_runtime",
 ]

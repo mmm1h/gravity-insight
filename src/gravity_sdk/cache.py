@@ -71,6 +71,7 @@ class MetadataCache:
         *,
         ttl_seconds: float = DEFAULT_METADATA_TTL_SECONDS,
         clock: Callable[[], float] = time.monotonic,
+        isolation_key: str = "",
     ) -> None:
         if ttl_seconds <= 0:
             raise ValueError("metadata cache TTL must be positive")
@@ -78,6 +79,7 @@ class MetadataCache:
         self._operation_ids = operation_ids
         self._ttl_seconds = float(ttl_seconds)
         self._clock = clock
+        self._isolation_key = str(isolation_key)
         self._condition = threading.Condition(threading.RLock())
         self._entries: dict[tuple[str, str], _Entry] = {}
         self._inflight: set[tuple[str, str]] = set()
@@ -104,6 +106,8 @@ class MetadataCache:
         operation_id: str,
         inputs: Mapping[str, Any] | None,
         loader: Callable[[], Any],
+        *,
+        isolation_key: str | None = None,
     ) -> Any:
         if not self.is_cacheable(operation_id):
             return loader()
@@ -113,7 +117,8 @@ class MetadataCache:
                 self._bypassed += 1
         if bypass:
             return loader()
-        key = _cache_key(operation_id, inputs or {})
+        scope = self._isolation_key if isolation_key is None else str(isolation_key)
+        key = _cache_key(operation_id, inputs or {}, scope)
         if key is None:
             return loader()
 
@@ -166,7 +171,7 @@ class MetadataCache:
 
 
 def _cache_key(
-    operation_id: str, inputs: Mapping[str, Any]
+    operation_id: str, inputs: Mapping[str, Any], isolation_key: str = ""
 ) -> tuple[str, str] | None:
     try:
         normalized = _normalize(inputs)
@@ -179,7 +184,8 @@ def _cache_key(
         )
     except (TypeError, ValueError, OverflowError):
         return None
-    return operation_id, encoded
+    scoped_id = f"{isolation_key}:{operation_id}" if isolation_key else operation_id
+    return scoped_id, encoded
 
 
 def _normalize(value: Any) -> Any:

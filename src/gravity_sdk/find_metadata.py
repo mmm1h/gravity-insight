@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
 import sqlite3
 from contextlib import closing
 from pathlib import Path
@@ -18,6 +17,7 @@ from .metadata_vocabulary import (
 )
 from .result_source import LOCAL_CATALOG, result_source
 from .actionable_error_values import actual_value
+from .runtime_scope import metadata_catalog_path
 
 
 SCHEMA_VERSION = "gravity.metadata-search.v1"
@@ -292,11 +292,8 @@ def _optional_text(value: Any) -> str | None:
     return str(value) if isinstance(value, (str, int)) and not isinstance(value, bool) else None
 
 
-def _default_catalog_path() -> Path:
-    cache_root = os.environ.get("LOCALAPPDATA") or os.environ.get("XDG_CACHE_HOME")
-    if cache_root:
-        return Path(cache_root) / "GravityInsight" / "metadata" / "catalog.sqlite3"
-    return Path.home() / ".cache" / "gravity-insight" / "metadata" / "catalog.sqlite3"
+def _default_catalog_path(*, isolation_key: str = "") -> Path:
+    return metadata_catalog_path(isolation_key)
 
 
 __all__ = ["search_metadata"]

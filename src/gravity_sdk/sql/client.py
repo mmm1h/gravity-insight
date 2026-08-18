@@ -18,12 +18,8 @@ try:
         SqlValidationError,
         TransportError,
     )
-    from gravity_sdk.http_runtime import (
-        MAX_SQL_CONCURRENCY,
-        SQL_PROFILE,
-        get_shared_runtime,
-    )
-    from gravity_sdk.paths import PROJECT_ROOT
+    from gravity_sdk.http_runtime import MAX_SQL_CONCURRENCY, SQL_PROFILE
+    from gravity_sdk.shared_runtime import get_shared_runtime
 except ModuleNotFoundError:  # pragma: no cover - source-tree execution without installation.
     from gravity_sdk.actionable_error_values import actual_value
     from gravity_sdk.errors import (
@@ -34,12 +30,8 @@ except ModuleNotFoundError:  # pragma: no cover - source-tree execution without 
         SqlValidationError,
         TransportError,
     )
-    from gravity_sdk.http_runtime import (
-        MAX_SQL_CONCURRENCY,
-        SQL_PROFILE,
-        get_shared_runtime,
-    )
-    from gravity_sdk.paths import PROJECT_ROOT
+    from gravity_sdk.http_runtime import MAX_SQL_CONCURRENCY, SQL_PROFILE
+    from gravity_sdk.shared_runtime import get_shared_runtime
 
 
 DEFAULT_ENDPOINT = "https://api-insight.gravity-engine.com/custom_sql/api/sql/execute"
@@ -97,8 +89,8 @@ class GravityClient:
         self._runtime = runtime if runtime is not None else get_shared_runtime()
 
     @classmethod
-    def from_env(cls) -> "GravityClient":
-        return cls(get_shared_runtime(env_path=PROJECT_ROOT / ".env.gravity.local"))
+    def from_env(cls, env_path: Any | None = None) -> "GravityClient":
+        return cls(get_shared_runtime(env_path=env_path))
 
     def execute_sql(self, sql: str) -> list[dict[str, Any]]:
         normalized = _validate_sql(sql)
