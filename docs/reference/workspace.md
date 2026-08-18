@@ -33,6 +33,9 @@ time_window = "latest-safe-day"
 ```
 
 把文件放在调用项目根目录。`main` 是项目自定义别名，`1001` 替换为真实 App ID。
+相对日期时区顺序：`GRAVITY_TIMEZONE` → 已配置 workspace `defaults.timezone`
+→ `Asia/Shanghai`。未配置 workspace 的占位 `UTC` 不参与。不用本机时区。
+解析结果写在 `resolved_date_window`（合同 `relative-date-window-v1`）。
 完整 schema 位于包内 `contracts/schema/workspace-v1.schema.json`；仓库中的
 `examples/workspace/gravity.toml` 展示 SQL product 和 recipe 的完整形状。
 

@@ -58,6 +58,9 @@ def add_input(parser: argparse.ArgumentParser, *, required: bool = False) -> Non
 
 
 def normalize_input_arguments(args: argparse.Namespace) -> None:
+    from .relative_dates import apply_relative_dates
+
+    apply_relative_dates(args)
     assignments = getattr(args, "input_sets", None)
     if not hasattr(args, "input") or not assignments:
         return

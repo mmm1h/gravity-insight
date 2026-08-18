@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gravity-sdk.local/contracts/schema/relative-date-window-v1.schema.json",
+  "title": "Gravity resolved relative date window",
+  "description": "Inclusive calendar window after relative-phrase resolution. Timezone is always explicit; the host zone is never used.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "expression",
+    "kind",
+    "start",
+    "end",
+    "timezone",
+    "timezone_source",
+    "inclusive",
+    "display"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "gravity.relative-date-window.v1"
+    },
+    "expression": {
+      "type": "string",
+      "minLength": 1
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "iso",
+        "named_day",
+        "last_n_days",
+        "past_n_days",
+        "this_week",
+        "last_week",
+        "this_month",
+        "last_month",
+        "paired"
+      ]
+    },
+    "start": {
+      "type": "string",
+      "description": "Inclusive YYYY-MM-DD start in the declared timezone."
+    },
+    "end": {
+      "type": "string",
+      "description": "Inclusive YYYY-MM-DD end in the declared timezone."
+    },
+    "timezone": {
+      "type": "string",
+      "minLength": 1,
+      "description": "IANA timezone that defined the calendar day."
+    },
+    "timezone_source": {
+      "type": "string",
+      "enum": [
+        "explicit",
+        "workspace.defaults.timezone",
+        "sdk_default"
+      ]
+    },
+    "inclusive": {
+      "const": "true"
+    },
+    "display": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Caller-visible echo such as '昨天 → 2026-08-17..2026-08-17 (Asia/Shanghai)'."
+    }
+  }
+}

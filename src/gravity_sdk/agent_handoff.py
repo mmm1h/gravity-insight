@@ -120,7 +120,8 @@ def agent_execution_contract(workspace_path: object | None = None) -> dict[str, 
             "--input": "inline JSON, JSON file, or '-' for stdin",
             "--set": "repeatable path=value override",
             "--app": "workspace alias or positive App id",
-            "--start/--end": "paired date shortcuts",
+            "--start/--end": "ISO dates or closed relative phrases; echoed as resolved_date_window",
+            "GRAVITY_TIMEZONE": "optional IANA zone; else workspace or Asia/Shanghai",
             "--concurrency": "known-total page workers (default 6, maximum 24)",
         },
         "bounded_stdout": {"max_pages": 5, "max_items": 200},
@@ -542,6 +543,19 @@ def attach_plan_node(
     selected = _attach_plan_node_without_call_bound(
         card, query, namespace=namespace
     )
+    from .relative_date_agent import fill_agent_relative_dates
+
+    selected = fill_agent_relative_dates(selected, query)
+    if selected.get("resolved_date_window") is not None:
+        node = selected.get("plan_node")
+        if isinstance(node, Mapping):
+            request = node.get("request")
+            if isinstance(request, Mapping):
+                updated = dict(request)
+                for field in ("start", "end", "date"):
+                    if selected.get(field) is not None:
+                        updated[field] = selected[field]
+                selected["plan_node"] = {**dict(node), "request": updated}
     call_bound = call_bound_for_card(selected)
     selected["call_bound"] = call_bound
     selected["result_source"] = card_result_source(selected)

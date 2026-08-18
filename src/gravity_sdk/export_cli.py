@@ -138,10 +138,14 @@ def dispatch_command(
 ) -> Any:
     local_handler = getattr(args, "local_command_handler", None)
     if callable(local_handler):
-        return local_handler(args)
-    if args.command == "export":
-        return run_export_command(args, client_factory(args), object_input)
-    return fallback(args)
+        result = local_handler(args)
+    elif args.command == "export":
+        result = run_export_command(args, client_factory(args), object_input)
+    else:
+        result = fallback(args)
+    from .relative_dates import attach_resolved_window
+
+    return attach_resolved_window(result, getattr(args, "resolved_date_window", None))
 
 
 def output_argument(args: argparse.Namespace) -> str | None:

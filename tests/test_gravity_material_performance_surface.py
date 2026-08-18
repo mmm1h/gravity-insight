@@ -273,9 +273,10 @@ class MaterialPerformanceSurfaceTests(unittest.TestCase):
                 self.assertNotIn("name", card["input_template"])
         discovered = discover_capabilities("Compare creative material performance across all supported ad platforms for yesterday.", client=None)
         self.assertEqual((1, 1), (discovered["count"], discovered["total"]))
-        self.assertEqual(
-            "material_performance", discovered["candidates"][0]["composite"]
-        )
+        card = discovered["candidates"][0]
+        self.assertEqual("material_performance", card["composite"])
+        self.assertEqual(["apps"], card["missing_inputs"])
+        self.assertIn("resolved_date_window", card)
         inventory = composite_capability_inventory()
         material = next(item for item in inventory if item["name"] == "material_performance")
         material["input_schema"]["platforms"]["enum"].append("evil")

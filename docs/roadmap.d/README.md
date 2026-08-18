@@ -53,6 +53,7 @@
 - [识别器不自信时交出选择权](recognizer-handoff.md) — 只排出互不相同 raw operation 时返回 `UNRANKED_OPERATIONS`，交给 `agent-catalog host`。
 - [已登记 gap 不再吞掉同问的其余意图](gap-multi-intent.md) — 多意图先于整句 gap；development 选择层仍 277/336，单意图 gap 终态变化 0。
 - [误导字段：yesterday_count 死字段与 app_id 类型](misleading-traps.md) — 7/7 App 的 yesterday_count 全 0；app_id 55 string / 28 integer，按合同类型归一化。
+- [相对日期解析](relative-dates.md) — 中英封闭相对短语解析成显式时区日期窗并回显；模糊短语拒绝。
 
 ## 归档记录
 
