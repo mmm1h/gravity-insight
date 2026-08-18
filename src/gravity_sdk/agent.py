@@ -35,6 +35,7 @@ from .agent_batch_sources import AgentSourceSnapshot
 from .agent_client import DeferredAgentClient
 from .agent_discovery_support import (
     capability_gaps_for_page,
+    discovery_next_fields,
     materialize_candidates,
     select_authoritative_cards,
 )
@@ -322,13 +323,7 @@ def _discovery_response(
         "match_policy": response_match_policy(lexical_receipt),
         "execution": agent_execution_contract(workspace_path),
         "fallbacks": agent_fallbacks(safe_discovery_query(request.query), workspace_path),
-        "next_action": (
-            "Prefer a recipe, registered composite, then stable Insight; use a "
-            "matching SQL product only when Insight cannot express the goal, and "
-            "invoke the selected next.argv."
-            if candidates
-            else "Report capability_gaps; do not execute weak partial matches."
-        ),
+        **discovery_next_fields(bool(candidates)),
         **({"semantic_context": semantic_context} if semantic_context is not None else {}),
     }
 

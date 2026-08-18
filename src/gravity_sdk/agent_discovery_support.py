@@ -6,6 +6,33 @@ from collections.abc import Mapping
 from typing import Any
 
 
+CATALOG_BROWSE_ARGV = ["gravity", "agent-catalog", "categories"]
+NO_CANDIDATE_NEXT_ACTION = (
+    "Browse `gravity agent-catalog categories` then `category` and `describe` "
+    "to confirm the capability is absent; do not execute weak partial matches "
+    "or invent a selector."
+)
+
+
+def catalog_browse_next() -> dict[str, Any]:
+    return {"argv": list(CATALOG_BROWSE_ARGV)}
+
+
+def discovery_next_fields(has_candidates: bool) -> dict[str, Any]:
+    if has_candidates:
+        return {
+            "next_action": (
+                "Prefer a recipe, registered composite, then stable Insight; use a "
+                "matching SQL product only when Insight cannot express the goal, and "
+                "invoke the selected next.argv."
+            )
+        }
+    return {
+        "next_action": NO_CANDIDATE_NEXT_ACTION,
+        "next": catalog_browse_next(),
+    }
+
+
 def select_authoritative_cards(
     cards: list[dict[str, Any]],
 ) -> list[Mapping[str, Any]]:
@@ -55,7 +82,11 @@ def materialize_candidates(
 
 
 __all__ = [
+    "CATALOG_BROWSE_ARGV",
+    "NO_CANDIDATE_NEXT_ACTION",
     "capability_gaps_for_page",
+    "catalog_browse_next",
+    "discovery_next_fields",
     "materialize_candidates",
     "select_authoritative_cards",
 ]

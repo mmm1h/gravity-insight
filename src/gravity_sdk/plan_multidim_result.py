@@ -344,7 +344,13 @@ def _safe_page(value: Any) -> dict[str, Any] | None:
     if isinstance(value.get("has_more"), bool):
         selected["has_more"] = value["has_more"]
     strategy = value.get("fetch_strategy")
-    if isinstance(strategy, str) and strategy in {"single", "serial", "parallel"}:
+    if isinstance(strategy, str) and strategy in {
+        "single_page",
+        "serial_known_total",
+        "parallel_known_total",
+        "serial_unknown_total",
+        "stopped_missing_total_page",
+    }:
         selected["fetch_strategy"] = strategy
     return selected
 

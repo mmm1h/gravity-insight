@@ -80,6 +80,10 @@ class HostProductSelectionTests(unittest.TestCase):
         empty = resolve_host_product_selection(query, self.response(), self.client)
         self.assertEqual(EMPTY_SELECTION_GAP, empty["capability_gaps"][0]["code"])
         self.assertNotIn("operation_id", empty["capability_gaps"][0])
+        self.assertEqual(
+            ["gravity", "agent-catalog", "categories"],
+            empty["capability_gaps"][0]["next"]["argv"],
+        )
 
         multiple = resolve_host_product_selection(
             query,

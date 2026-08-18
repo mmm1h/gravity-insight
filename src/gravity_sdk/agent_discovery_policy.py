@@ -99,6 +99,10 @@ def operation_fallback_gap(query: str) -> list[dict[str, Any]]:
         "kind": "capability_gap",
         "query": safe_discovery_query(query),
         "reason": reason,
+        "next_action": (
+            "Treat this as a confirmed product-boundary gap; do not browse "
+            "for a substitute raw operation or invent a selector."
+        ),
         "weak_matches": [],
     }]
 

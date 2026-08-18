@@ -13,7 +13,14 @@ gravity agent "<your-query>"
   "candidates": [],
   "capability_gaps": [
     {
+      "code": "<str>",
       "kind": "<str>",
+      "next": {
+        "argv": [
+          "<str>"
+        ]
+      },
+      "next_action": "<str>",
       "query": "<str>",
       "reason": "<str>",
       "weak_matches": []
@@ -64,6 +71,11 @@ gravity agent "<your-query>"
   },
   "mode": "<str>",
   "network_called": "<bool>",
+  "next": {
+    "argv": [
+      "<str>"
+    ]
+  },
   "next_action": "<str>",
   "offline": "<bool>",
   "ok": "<bool>",

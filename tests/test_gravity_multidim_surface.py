@@ -376,6 +376,27 @@ class MultidimSurfaceTests(unittest.TestCase):
         )
         self.assertNotIn("token=secret", repr(plan_safe))
 
+    def test_plan_page_keeps_observed_fetch_strategy(self):
+        native = {
+            "schema_version": "gravity-insight.composite.multidim.v1",
+            "ok": True, "status": "success", "exit_code": 0, "app_id": "17",
+            "network_called": True, "query_executed": True,
+            "input_schema_version": "gravity-insight.multidim-input.v1",
+            "validation": VALIDATION,
+            "query": {
+                "operation_id": "report.multidim.query", "ok": True,
+                "status": "success", "data": {"list": [{"id": 1}]},
+                "page": {
+                    "number": 1, "size": 1, "item_count": 1,
+                    "pages_fetched": 1, "fetch_strategy": "single_page",
+                    "max_workers": 1, "has_more": False,
+                },
+            },
+            "total": None,
+        }
+        safe = sanitize_multidim_result(native, "17")
+        self.assertEqual("single_page", safe["query"]["page"]["fetch_strategy"])
+
     def test_plan_projector_rejects_top_success_with_failed_component(self):
         native = {
             "schema_version": "gravity-insight.composite.multidim.v1",

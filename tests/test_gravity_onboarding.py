@@ -177,7 +177,7 @@ class GravityOnboardingTests(unittest.TestCase):
         rendered = output.getvalue()
         self.assertIn("gravity find <query>", rendered)
         self.assertIn("gravity agent [query]", rendered)
-        self.assertIn("gravity recipe validate|check <name>", rendered)
+        self.assertIn("gravity recipe validate|check|accept-contract <name>", rendered)
         self.assertIn("gravity run @<recipe>", rendered)
 
     def test_failed_login_rolls_back_account_fields(self) -> None:

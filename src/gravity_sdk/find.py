@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Protocol, Sequence
 
+from .agent_discovery_support import NO_CANDIDATE_NEXT_ACTION, catalog_browse_next
 from .agent_vocabulary import (
     is_vocabulary_discovery_query,
     is_workspace_vocabulary,
@@ -216,8 +217,11 @@ def capability_gaps(
     ]
     return [{
         "kind": "capability_gap",
+        "code": "NO_CANDIDATE",
         "query": query,
         "reason": "no strongly matching executable or draft capability is registered",
+        "next_action": NO_CANDIDATE_NEXT_ACTION,
+        "next": catalog_browse_next(),
         "weak_matches": weak,
     }]
 
