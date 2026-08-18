@@ -19,6 +19,7 @@ from . import agent_report_directory as report_agent
 from .agent_analysis_default_dictionary import (
     ANALYSIS_DEFAULT_DICTIONARY_NAME,
 )
+from .agent_realtime_event_catalog import REALTIME_EVENT_CATALOG_NAME
 from .agent_custom_audience import CUSTOM_AUDIENCE_NAME
 from .agent_bilibili_account_performance import (
     BILIBILI_ACCOUNT_PERFORMANCE_NAME,
@@ -392,6 +393,7 @@ def authoritative_capability_cards(
             "segment_snapshot",
             "segment_members",
             ANALYSIS_DEFAULT_DICTIONARY_NAME,
+            REALTIME_EVENT_CATALOG_NAME,
             ADVERTISER_PROFILE_NAME,
             DERIVED_METRICS_NAME, "metadata_sync",
         }

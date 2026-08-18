@@ -8,6 +8,7 @@ from typing import Any
 from . import agent_report_directory as report_agent
 from .agent_advertiser_profile import ADVERTISER_PROFILE_CAPABILITY
 from .agent_analysis_default_dictionary import ANALYSIS_DEFAULT_DICTIONARY_CAPABILITY
+from .agent_realtime_event_catalog import REALTIME_EVENT_CATALOG_CAPABILITY
 from .agent_attribution_performance import ATTRIBUTION_PERFORMANCE_CAPABILITY
 from .agent_attribution_user_detail import ATTRIBUTION_USER_DETAIL_CAPABILITY
 from .agent_bilibili_account_performance import BILIBILI_ACCOUNT_PERFORMANCE_CAPABILITY
@@ -54,6 +55,7 @@ COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
     SEGMENT_SNAPSHOT_CAPABILITY,
     SEGMENT_MEMBERS_CAPABILITY,
     ANALYSIS_DEFAULT_DICTIONARY_CAPABILITY,
+    REALTIME_EVENT_CATALOG_CAPABILITY,
     SAVED_ANALYSIS_CAPABILITY,
     ANALYSIS_TEMPLATE_CAPABILITY,
     DERIVED_METRICS_CAPABILITY,

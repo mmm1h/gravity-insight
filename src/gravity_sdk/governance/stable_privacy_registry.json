@@ -578,6 +578,15 @@
       "data.list[].value",
       "data.target"
     ],
+    "analysis.realtime_event.list": [
+      "data.list",
+      "data.list[].client_id",
+      "data.list[].client_time",
+      "data.list[].event_name",
+      "data.list[].event_type",
+      "data.list[].request_id",
+      "data.list[].request_time"
+    ],
     "analysis.report.hidden_property.list": [
       "data.list",
       "data.list[].action_type",
@@ -1473,7 +1482,6 @@
       "data.conf[].modify_time",
       "data.conf[].start_time"
     ],
-    "app.user.realtime.event.update": [],
     "app.role.detail": [
       "data.code",
       "data.create_time",
@@ -1543,6 +1551,7 @@
       "data.list[].testing_status",
       "data.page_info"
     ],
+    "app.user.realtime.event.update": [],
     "attribution.attr_backtrack.list": [
       "data.list",
       "data.list[].app_id",

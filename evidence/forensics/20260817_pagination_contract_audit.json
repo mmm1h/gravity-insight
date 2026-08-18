@@ -744,6 +744,21 @@
     {
       "declared_kind": "none",
       "declared_pagination": "none",
+      "evidence_level": "production",
+      "evidence_sources": [
+        "docs/roadmap.d/realtime-event-profile-shape.md"
+      ],
+      "observed_shape": "not_page_info",
+      "operation_id": "analysis.realtime_event.list",
+      "review_reason": "non-empty production response contained data.list of 1000 items and no page_info path",
+      "review_status": "no_page_info_in_observed_response",
+      "risk": "no_high_risk_signal_observed",
+      "selected_for_production_validation": false,
+      "selection_reason": null
+    },
+    {
+      "declared_kind": "none",
+      "declared_pagination": "none",
       "evidence_level": "template_default",
       "evidence_sources": [
         "src/gravity_sdk/contracts/operations/analysis.retention.query.json#/operation/pagination"
@@ -3714,7 +3729,7 @@
       "report.multidim.query"
     ],
     "audit_baseline_declared_kinds": {
-      "none": 116,
+      "none": 117,
       "page_info": 120
     },
     "current_kinds_source": "computed by reconcile_pagination_audit from current contracts; never stored as a HEAD fact in this snapshot"

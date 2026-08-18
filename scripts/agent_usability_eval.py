@@ -85,6 +85,9 @@ ROUTES: dict[str, dict[str, str]] = {
     "analysis_default_dictionary": {
         "kind": "composite", "composite": "analysis_default_dictionary",
     },
+    "realtime_event_catalog": {
+        "kind": "composite", "composite": "realtime_event_catalog",
+    },
     "app_catalog": {"kind": "operation", "selector": "app.list"},
     "app_public_info": {"kind": "operation", "selector": "app.app_info.get"},
     "monetization_aggregate": {"kind": "operation", "selector": "report.get.query"},

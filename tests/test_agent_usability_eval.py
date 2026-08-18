@@ -526,9 +526,9 @@ class AgentUsabilityEvalTests(unittest.TestCase):
         client = GravityInsightClient.from_env(transport=self.subject.BlockedTransport())
         _, inventory = _catalog(client)
         result = _selection_result(
-            {"prompt": "real time event catalog"},
+            {"prompt": "media reports"},
             {
-                "selectors": ["gap:REALTIME_EVENT_CATALOG_CONTRACT_MISSING"],
+                "selectors": ["gap:MEDIA_REPORT_ITEM_SCHEMA_MISSING"],
                 "reason": "registered unavailable product",
             },
             inventory,
@@ -539,7 +539,7 @@ class AgentUsabilityEvalTests(unittest.TestCase):
         )
         self.assertEqual([], result["candidates"])
         self.assertEqual(
-            "REALTIME_EVENT_CATALOG_CONTRACT_MISSING",
+            "MEDIA_REPORT_ITEM_SCHEMA_MISSING",
             result["capability_gaps"][0]["code"],
         )
 
@@ -553,9 +553,9 @@ class AgentUsabilityEvalTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "production HTTP is disabled"):
             blocker.request({"operation_id": "synthetic.execution"})
         result = _selection_result(
-            {"prompt": "real time event catalog"},
+            {"prompt": "media reports"},
             {
-                "selectors": ["gap:REALTIME_EVENT_CATALOG_CONTRACT_MISSING"],
+                "selectors": ["gap:MEDIA_REPORT_ITEM_SCHEMA_MISSING"],
                 "reason": "registered unavailable product",
             },
             inventory,
@@ -565,8 +565,8 @@ class AgentUsabilityEvalTests(unittest.TestCase):
             production_http_requests=lambda: blocker.attempts,
         )
         case = {"expected": {
-            "route_key": "realtime_event_catalog_gap",
-            "gap_code": "REALTIME_EVENT_CATALOG_CONTRACT_MISSING",
+            "route_key": "media_report_gap",
+            "gap_code": "MEDIA_REPORT_ITEM_SCHEMA_MISSING",
         }}
         self.assertEqual(1, blocker.attempts)
         self.assertEqual(1, result["execution_http_requests"])

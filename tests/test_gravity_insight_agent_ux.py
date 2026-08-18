@@ -864,6 +864,7 @@ class DiscoveryUxTests(unittest.TestCase):
             "J31": "metadata:search", "J32": "metadata:table_lineage",
             "J33": "export.material.report.start",
             "J34": "composite:analysis_default_dictionary",
+            "J35": "composite:realtime_event_catalog",
             "J36": "composite:report_directory",
             "J37": "composite:report_subscriptions",
             "J39": "app.list",
@@ -875,7 +876,6 @@ class DiscoveryUxTests(unittest.TestCase):
         }
         gaps = {
             "J19": "WORKSPACE_SQL_PRODUCT_NOT_CONFIGURED",
-            "J35": "REALTIME_EVENT_CATALOG_CONTRACT_MISSING",
             "J38": "MEDIA_REPORT_ITEM_SCHEMA_MISSING",
             "J44": "CURRENT_TABLE_SCHEMA_PARENT_MISSING",
             "J45": "NON_BYTEDANCE_HIERARCHY_PARENT_MISSING",

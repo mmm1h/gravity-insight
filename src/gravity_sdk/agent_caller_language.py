@@ -132,7 +132,7 @@ _ANALYSIS_JOURNEY_TITLES: dict[str, tuple[str, ...]] = {
     "composite:analysis_default_dictionary": (
         "查询分析默认值字典",
     ),
-    "gap:REALTIME_EVENT_CATALOG_CONTRACT_MISSING": (
+    "composite:realtime_event_catalog": (
         "查询实时事件目录",
     ),
     "composite:report_directory": (
@@ -191,6 +191,7 @@ _AGENT_WORKFLOW_TASKS: dict[str, tuple[str, ...]] = {
     "analysis.segment.rule.spec": ("人群规则只接受显式紧凑 spec",),
     "composite:segment_members": ("分群成员与逐人属性",),
     "composite:analysis_default_dictionary": ("Analysis 默认值字典",),
+    "composite:realtime_event_catalog": ("实时事件目录",),
     "composite:saved_analysis": (
         "保存分析已知稳定 ID/精确名称和日期窗",
     ),

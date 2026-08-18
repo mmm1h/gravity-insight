@@ -19,6 +19,7 @@ gravity sql <command>         受控 SQL 产品
 gravity census <command>      前端路由盘点
 gravity analysis context      并发读取一个 App 的分析上下文
 gravity analysis defaults     读取一个 App 的 Analysis 默认值字典
+gravity analysis realtime-events  读取一个 App 在显式时间窗内的实时事件目录第一页
 gravity analysis dashboard snapshot  读取一个看板的控制面快照
 gravity analysis dashboard prepare|run  编译或执行一个看板的受支持图表
 gravity analysis dashboard kanban schema|mutate  查看或执行 Kanban 受治理写合同
@@ -374,6 +375,7 @@ workspace 已绑定的 App alias，并按 alias 排序。外层并发保序且�
 ```powershell
 gravity analysis context --app main --concurrency 6
 gravity analysis defaults --app main
+gravity analysis realtime-events --app main --start "2026-08-18 00:00:00" --end "2026-08-18 23:59:59"
 gravity analysis dashboard snapshot --app main --ref <id-or-exact-name> --concurrency 5
 gravity analysis segment snapshot --app main --ref <id-or-exact-name> --date <YYYY-MM-DD> --concurrency 3
 gravity apps snapshot --app main --concurrency 6
@@ -392,6 +394,8 @@ context 固定 13 个词汇/模板来源，App snapshot 固定 6 个治理来源
 `analysis defaults` 一次读取调用方精确选择 App 的已登记 SDK 默认值字典，结果 schema 为
 `gravity-insight.analysis-default-dictionary.v1`。当前完整键集合为 `api` 与 `cocoscreator`，
 值均为 string array；两键全部暴露，新增键不会静默透传而是返回合同漂移。
+
+`analysis realtime-events` 读取调用方精确选择 App 与显式 `start`/`end` 窗的实时事件目录第一页，默认 `filters.event_type=profile`。结果 schema 为 `gravity-insight.realtime-event-catalog.v1`。实测无 `page_info`，服务端一次可回 1000 条；产品暴露 6 个顶层 item 键，`raw_properties` 等省略。
 
 ### Governed export
 

@@ -12,6 +12,7 @@ _STRICT_COMPOSITES = frozenset(
         "business_pulse",
         "analysis_context",
         "analysis_default_dictionary",
+        "realtime_event_catalog",
         "attribution_snapshot",
         "attribution_performance",
         "attribution_user_detail",
@@ -120,7 +121,8 @@ def _strict_composite_query(name: str, query: str) -> bool:
     if name in {"dashboard_snapshot", "dashboard_analysis"}:
         return _dashboard_query(name, query)
     if name in {
-        "segment_snapshot", "segment_members", "analysis_default_dictionary"
+        "segment_snapshot", "segment_members", "analysis_default_dictionary",
+        "realtime_event_catalog",
     }:
         return _analysis_product_query(name, query)
     if name == "saved_analysis":
@@ -180,6 +182,10 @@ def _analysis_product_query(name: str, query: str) -> bool:
         from .agent_analysis_default_dictionary import analysis_default_dictionary_query
 
         return analysis_default_dictionary_query(query)
+    if name == "realtime_event_catalog":
+        from .agent_realtime_event_catalog import realtime_event_catalog_query
+
+        return realtime_event_catalog_query(query)
     if name == "segment_members":
         from .agent_segment_members import segment_members_query
 

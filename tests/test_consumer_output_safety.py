@@ -77,7 +77,7 @@ class ConsumerOutputSafetyTests(unittest.TestCase):
         )
         result = json.loads(completed.stdout)
         self.assertFalse(result["method"]["network_called"])
-        self.assertEqual(result["counts"]["stable_operations"], 227)
+        self.assertEqual(result["counts"]["stable_operations"], 228)
         self.assertEqual(result["counts"]["product_rows"], 61)
         self.assertIn("data", result["boundary_patterns"]["untrusted_content_roots"])
 

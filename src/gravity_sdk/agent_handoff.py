@@ -263,6 +263,7 @@ def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
         return dashboard_analysis_plan_request(card)
     if composite in {
         "segment_snapshot", "segment_members", "analysis_default_dictionary",
+        "realtime_event_catalog",
         "attribution_performance", "attribution_user_detail",
     }:
         return _analysis_product_plan_request(str(composite), card)
@@ -332,6 +333,12 @@ def _analysis_product_plan_request(
         )
 
         return analysis_default_dictionary_plan_request(card)
+    if composite == "realtime_event_catalog":
+        from .agent_realtime_event_catalog import (
+            realtime_event_catalog_plan_request,
+        )
+
+        return realtime_event_catalog_plan_request(card)
     if composite == "segment_members":
         from .agent_segment_members import segment_members_plan_request
 

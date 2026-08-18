@@ -29,6 +29,7 @@ from .plan_adapter_support import (
 from . import plan_analysis_default_adapter as defaults_plan
 from . import plan_derived_metrics_adapter as derived_plan
 from . import plan_monetization_adapter as monetization_plan
+from . import plan_realtime_event_catalog_adapter as realtime_catalog_plan
 from .actionable_error_values import actual_value
 
 
@@ -38,6 +39,7 @@ COMPOSITE_NAMES = frozenset(
         ANALYSIS_QUERY_NAME,
         monetization_plan.MONETIZATION_DETAIL_NAME,
         defaults_plan.ANALYSIS_DEFAULT_DICTIONARY_NAME,
+        realtime_catalog_plan.REALTIME_EVENT_CATALOG_NAME,
         derived_plan.DERIVED_METRICS_NAME,
     }
 )
@@ -165,6 +167,11 @@ def validate_analysis_plan(
             request, context, workspace
         )
         return
+    if request.get("name") == realtime_catalog_plan.REALTIME_EVENT_CATALOG_NAME:
+        realtime_catalog_plan.validate_realtime_event_catalog_plan(
+            request, context, workspace
+        )
+        return
     if request.get("name") == derived_plan.DERIVED_METRICS_NAME:
         derived_plan.validate_derived_metrics_plan(request, context)
         return
@@ -183,6 +190,10 @@ def execute_analysis_plan(
         return defaults_plan.execute_analysis_default_dictionary_plan(
             sdk, request, context
         )
+    if request.get("name") == realtime_catalog_plan.REALTIME_EVENT_CATALOG_NAME:
+        return realtime_catalog_plan.execute_realtime_event_catalog_plan(
+            sdk, request, context
+        )
     if request.get("name") == derived_plan.DERIVED_METRICS_NAME:
         return derived_plan.execute_derived_metrics_plan(sdk, request, context)
     if request.get("name") == monetization_plan.MONETIZATION_DETAIL_NAME:
@@ -195,6 +206,7 @@ def execute_analysis_plan(
 def is_analysis_result(value: Any) -> bool:
     return (
         defaults_plan.is_analysis_default_dictionary_result(value)
+        or realtime_catalog_plan.is_realtime_event_catalog_result(value)
         or derived_plan.is_derived_metrics_result(value)
         or is_analysis_query_result(value)
         or monetization_plan.is_monetization_detail_result(value)
@@ -206,6 +218,10 @@ def project_analysis_result(
 ) -> dict[str, Any]:
     if defaults_plan.is_analysis_default_dictionary_result(value):
         return defaults_plan.project_analysis_default_dictionary_result(
+            value, fields, context
+        )
+    if realtime_catalog_plan.is_realtime_event_catalog_result(value):
+        return realtime_catalog_plan.project_realtime_event_catalog_result(
             value, fields, context
         )
     if derived_plan.is_derived_metrics_result(value):

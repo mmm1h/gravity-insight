@@ -12,16 +12,6 @@ from .agent_intent_text import affirmative_intent_text
 def unavailable_analysis_gap(query: str) -> dict[str, Any] | None:
     selected = affirmative_intent_text(query)
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
-    if _realtime_event_catalog(selected, words):
-        return unavailable_gap(
-            query, code="REALTIME_EVENT_CATALOG_CONTRACT_MISSING",
-            journey="realtime_event_catalog",
-            reason="The real-time event request is known, but item schema and server pagination are unproven.",
-            next_action=(
-                "Use a tenant with a non-empty catalog for one bounded first-page shape probe; "
-                "record item paths, types, and pagination without response values."
-            ),
-        )
     if _current_table_schema(selected, words):
         return unavailable_gap(
             query, code="CURRENT_TABLE_SCHEMA_PARENT_MISSING",
@@ -53,18 +43,6 @@ def unavailable_analysis_gap(query: str) -> dict[str, Any] | None:
             argv=["gravity", "export", "list-capabilities"],
         )
     return None
-
-
-def _realtime_event_catalog(selected: str, words: frozenset[str]) -> bool:
-    english = (
-        "event" in words and "catalog" in words
-        and "real" in words and "time" in words
-    )
-    return english or "实时事件目录" in selected or (
-        "实时" in selected
-        and any(term in selected for term in ("上报", "目录"))
-        and any(term in selected for term in ("目录", "项", "治理"))
-    )
 
 
 def _current_table_schema(selected: str, words: frozenset[str]) -> bool:
