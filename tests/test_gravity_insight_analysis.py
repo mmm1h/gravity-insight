@@ -450,6 +450,105 @@ class GravityInsightAnalysisTests(unittest.TestCase):
             )
         )
 
+    def test_event_query_keeps_display_group_labels_and_drops_non_labels(self) -> None:
+        def handler(_method: str, path: str, kwargs: Mapping[str, Any]):
+            if path.endswith("event_list/"):
+                return event_metadata()
+            if "property_list" in path:
+                return page([{"name": "$os", "visible": True}])
+            groups = kwargs.get("body", {}).get("group_by_list") or []
+            if any(item.get("field") == "$os" for item in groups):
+                return {
+                    "code": 0,
+                    "data": {
+                        "list": [
+                            [
+                                {
+                                    "list": [{"用户.设备类型": "iOS", "uid": "x"}],
+                                    "event_index": 0,
+                                }
+                            ]
+                        ]
+                    },
+                }
+            return clean_event_result()
+
+        client, _transport = client_for(
+            "analysis.event.query",
+            "analysis.event_property.list",
+            "analysis.user_property.list",
+            handler=handler,
+        )
+        grouped = client.read(
+            "analysis.event.query",
+            event_inputs(
+                group_by_list=[
+                    {"type": "default_event", "field": "create_time", "group_by": "day"},
+                    {"type": "user", "field": "$os", "group_by": "$os"},
+                ]
+            ),
+        )
+
+        self.assertEqual(
+            "iOS", grouped["data"]["list"][0][0]["list"][0].get("用户.设备类型")
+        )
+        self.assertNotIn("uid", json.dumps(grouped["data"]))
+        self.assertEqual(
+            [{"purchase": 3}],
+            client.read("analysis.event.query", event_inputs())["data"]["list"][0][0][
+                "list"
+            ],
+        )
+
+    def test_scatter_query_keeps_composed_group_labels_and_drops_non_labels(
+        self,
+    ) -> None:
+        def handler(_method: str, path: str, kwargs: Mapping[str, Any]):
+            if path.endswith("event_list/"):
+                return event_metadata()
+            if "property_list" in path:
+                return page([{"name": "$os", "visible": True}])
+            return {
+                "code": 0,
+                "data": {
+                    "aggregate_date": [
+                        [{"user$os": "android", "uid": "x", "proc_zone": "0-10"}]
+                    ]
+                },
+            }
+
+        client, _transport = client_for(
+            "analysis.scatter.query",
+            "analysis.event.list",
+            "analysis.event_property.list",
+            "analysis.user_property.list",
+            handler=handler,
+        )
+        result = client.read(
+            "analysis.scatter.query",
+            {
+                "query_id": QUERY_ID,
+                "app_id": "101",
+                "query_item_list": [
+                    {
+                        **event_inputs()["query_item_list"][0],
+                        "calc_zone": {"zone_type": "custom", "range_list": [0, 10, 100]},
+                        "prop_to_calc": "$os",
+                        "prop_to_calc_sub": "SumCount",
+                    }
+                ],
+                "group_by_list": [
+                    {"type": "user", "field": "$os", "group_by": "$os"},
+                ],
+                "date_list": [{"start_date": "2026-08-07", "end_date": "2026-08-07"}],
+            },
+        )
+
+        self.assertEqual(
+            "android", result["data"]["aggregate_date"][0][0].get("user$os")
+        )
+        self.assertNotIn("uid", json.dumps(result["data"]))
+
     def test_event_query_accepts_object_dates_and_projects_exact_aggregate_shape(
         self,
     ) -> None:

@@ -66,6 +66,7 @@
 - [分析查询 metadata 预取成本](metadata-cost.md) — 进程内 10 分钟 cache 已存在且会命中；#206 的「各 30」是默认 page_size=100 的分页，不是缺缓存。
 - [消费方入口分流](docs-entry.md) — 2026-08-19：AGENTS/README 把「用」和「改」分开；上手包补今日能力；入口数字对齐合同。
 - [首次使用摩擦：错误入口与 --help](coldstart-friction.md) — 2026-08-19：三个真实任务能完成；缺 `--spec` / 错 category 现指向合法下一步；分维组标签仍被投影省略。
+- [分维组标签：投影不再丢掉调用方必需的标识](group-labels.md) — 2026-08-19：事件行留下 `用户.设备类型`，scatter 格子留下 `user$os`；`union_groups`/`y`/`uid`/`group_cols` 仍挡住。
 
 ## 归档记录
 
