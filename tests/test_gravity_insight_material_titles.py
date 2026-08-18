@@ -125,6 +125,20 @@ class MaterialTitleOperationTests(unittest.TestCase):
                 self.assertEqual("hidden operator", row["create_user_name"])
                 self.assertEqual(77, row["update_user_id"])
 
+    def test_last_3_day_metrics_are_marked_unreliable(self) -> None:
+        for operation_id in OPERATION_IDS:
+            with self.subTest(operation_id=operation_id):
+                client = GravityInsightClient._from_manifest_for_tests(
+                    manifest(operation_id), transport=RecordingTransport()
+                )
+                notes = client.describe(operation_id)["response_projection"][
+                    "unreliable_item_keys"
+                ]
+                self.assertIn("last_3_day_click_rate", notes)
+                self.assertIn("last_3_day_cost", notes)
+                self.assertIn("material.report.query", notes["last_3_day_click_rate"]["use_instead"])
+                self.assertIn("material.report.query", notes["last_3_day_cost"]["use_instead"])
+
     def test_invalid_controls_fail_before_network(self) -> None:
         invalid_inputs = (
             {"page_size": 101},

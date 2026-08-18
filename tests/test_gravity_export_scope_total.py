@@ -5,7 +5,6 @@ import unittest
 
 from gravity_sdk.blob import BlobTransferError
 from gravity_sdk.export_scope_total import classify_export_rows, pin_export_scope_total
-from gravity_sdk.monetization_projection import SAFE_ROW_FIELDS
 
 
 class _ListClient:
@@ -47,15 +46,33 @@ class ExportScopeTotalTests(unittest.TestCase):
             ("analysis.monetization_detail.list", {
                 "app_id": "101",
                 "date": "2026-08-16",
-                "fields": list(SAFE_ROW_FIELDS),
+                "fields": ["AdEventTime", "ClientID"],
                 "page": 1,
-                "page_size": 100,
+                "page_size": 1,
             }),
             client.calls[0],
         )
         self.assertEqual(1_212_315, snapshot["known_total_items"])
         self.assertEqual("create_time_preflight", snapshot["known_total_freshness"])
         self.assertEqual("2026-08-17T04:00:00+00:00", snapshot["known_total_observed_at"])
+
+    def test_pin_rejects_empty_field_map(self):
+        client = _ListClient({"ok": True, "page": {"total_items": 9}})
+        payload = {
+            "app_id": 101,
+            "field_map": {},
+            "global_conditions": [{
+                "field": "create_time",
+                "operator": "RANGE_IN",
+                "type": "event",
+                "value": ["2026-08-16 00:00:00", "2026-08-16 23:59:59"],
+            }],
+        }
+        with self.assertRaises(BlobTransferError):
+            pin_export_scope_total(
+                client, "export.analysis.monetization_detail.start", payload
+            )
+        self.assertEqual([], client.calls)
 
     def test_other_export_routes_do_not_invent_a_denominator(self):
         client = _ListClient({"ok": True, "page": {"total_items": 9}})

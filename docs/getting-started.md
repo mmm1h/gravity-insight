@@ -100,9 +100,9 @@ gravity insight operations describe analysis.event.list
 gravity run analysis.event.list --input '{"app_id":"101"}' --set page_size=100
 ```
 
-`analysis.event.list` 的 `yesterday_count` 不能当“这个事件有没有数据”的门；`describe` 的
-`unreliable_item_keys` 和读取结果的 `warnings` 会指向
-`attribution.attribution.query` 或 `analysis.origin_event.evaluate_data`。
+`analysis.event.list` 的 `yesterday_count` 不能当“这个事件有没有数据”的门；标题库
+`last_3_day_click_rate` / `last_3_day_cost` 同样不可信。`describe` 的
+`unreliable_item_keys` 和读取结果的 `warnings` 会给出替代路径。
 `app_id` 按该 operation 合同声明的类型传入；SDK 只把正整数与其数字字符串归一化到声明类型。
 跨 route 的声明类型见 [App ID wire types](reference/sdk.md#app-id-wire-types)。
 

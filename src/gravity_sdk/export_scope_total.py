@@ -8,7 +8,6 @@ from typing import Any, Mapping
 from .agent_monetization_guard import MONETIZATION_DETAIL_RAW_SELECTOR
 from .export_completion import MONETIZATION_EXPORT_OPERATION, UPSTREAM_FILE_ROW_LIMIT
 from .export_models import _export_error
-from .monetization_projection import SAFE_ROW_FIELDS
 
 
 _RANGE_FIELD = "create_time"
@@ -82,10 +81,27 @@ def _list_inputs(payload: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "app_id": str(app_id),
         "date": day,
-        "fields": list(SAFE_ROW_FIELDS),
+        "fields": _export_list_fields(payload.get("field_map")),
         "page": 1,
-        "page_size": 100,
+        "page_size": 1,
     }
+
+
+def _export_list_fields(field_map: Any) -> list[str]:
+    if not isinstance(field_map, Mapping) or not field_map:
+        raise _export_error(
+            "monetization export field_map is required to pin the same-scope total",
+            code="EXPORT_JOB_INVALID",
+            stage="creating",
+        )
+    fields = [str(name) for name in field_map if str(name)]
+    if len(fields) != len(field_map):
+        raise _export_error(
+            "monetization export field_map keys must be non-empty field names",
+            code="EXPORT_JOB_INVALID",
+            stage="creating",
+        )
+    return fields
 
 
 def _single_day(conditions: Any) -> str | None:

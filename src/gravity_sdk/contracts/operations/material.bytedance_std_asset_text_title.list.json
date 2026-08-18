@@ -136,6 +136,16 @@
         "create_user_name",
         "update_user_id"
       ],
+      "unreliable_item_keys": {
+        "last_3_day_click_rate": {
+          "reason": "All 44 live-App titles returned 0 while history_click_rate/history_cost and material.report.query ctr were positive.",
+          "use_instead": "material.report.query ctr, or this route's history_click_rate"
+        },
+        "last_3_day_cost": {
+          "reason": "All sampled titles returned 0 while history_cost on the same rows and material.report.query stat_cost were positive.",
+          "use_instead": "material.report.query stat_cost, or this route's history_cost"
+        }
+      },
       "required_data_keys": [
         "list"
       ]

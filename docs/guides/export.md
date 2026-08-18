@@ -74,8 +74,8 @@ creator；task status/cancel 等支持路由不是创建候选。`origin_event` 
 `attribution.attribution.query` 同日有正 `AppRealRegisterCnt`。`describe` / 读取 `warnings`
 会指向 `attribution.attribution.query` 或 `evaluate_data`。
 `monetization_detail` 的 READY XLSX 已通过保留全部安全规则的 route-scoped 192 MiB 展开上限。
-task list/progress/file 仍无任务绑定 total；SDK 在 create 前用同一 App/日列表第一页钉住
-`page.total_items`，标注 `create_time_preflight`。钉住总量大于 100 万且文件恰为 1,000,000 行时
+task list/progress/file 仍无任务绑定 total；SDK 在 create 前用同一 App/日、**同一 `field_map` 列集**的列表第一页钉住
+`page.total_items`，标注 `create_time_preflight`。该 route 的 `total_items` 随 `fields` 变化：26 列产品字段与导出两列不是同一个分母。钉住总量大于 100 万且文件恰为 1,000,000 行时
 结果是 `truncated`，并同时给出已知总量与文件行数；异步重读列表不得当分母。
 四个已晋升 Analysis 族已分别完成文件行数与受管总数对账（1/1、1/1、255/255、217/217）。
 `stream_event` 的前端按钮只做客户端
