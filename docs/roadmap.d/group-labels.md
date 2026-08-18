@@ -45,9 +45,15 @@
 
 测试：
 
-- 红：`test_event_query_keeps_display_group_labels_and_drops_non_labels` 期望 `iOS`，实际 `None`。
-- 绿：同一测试留下 `用户.设备类型`；`uid` 仍不在结果里；不分维形状不变。
-- scatter `user$os` 靠生产复打锁住，不另堆单测。
+两处开口各配一条会红的测试（合并前补齐：scatter 那条一度被删，只剩生产证据，
+但生产不会在回归里跑，开口会静默退化）：
+
+| 测试 | 红 | 绿 |
+| --- | --- | --- |
+| `test_event_query_keeps_display_group_labels_and_drops_non_labels` | `AssertionError: 'iOS' != None` | 行上留下 `用户.设备类型`；`uid` 仍不在结果里；不分维形状不变 |
+| `test_scatter_query_keeps_composed_group_labels_and_drops_non_labels` | `AssertionError: 'android' != None` | 格子留下 `user$os`；`uid` 仍不在结果里 |
+
+红是把 `analysis_projection_contract.py` 单独退回 `dev` 版本、其余不动跑出来的。
 
 ## 推测 / 确凿
 
