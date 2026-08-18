@@ -141,7 +141,7 @@ class ReadExecutor:
                 authorization=authorization,
             )
         payload = response.payload
-        semantic_status = _enforce_semantic_rules(operation, payload, http_receipts)
+        semantic_status = _enforce_semantic_rules(operation, payload, http_receipts, values)
         projected, drift_warnings, projection_drift, response_drift = _project_response(
             operation, payload, values, semantic_status,
             getattr(response, "status_code", 200), http_receipts,

@@ -334,6 +334,7 @@ create 用确定性 marker 做读前幂等检查，并在单次写后通过完�
 `analysis_query(kind, spec, *, app=None, start=None, end=None, workspace=None,
 output_fields=None)` 支持 `event`、`funnel`、`retention`、`property`、`scatter` 五种 kind。
 `app` 接受绑定 workspace 中的别名或正整数；成对提供的 `start/end` 覆盖 spec 日期。
+漏斗 `kind=funnel` 只返回各步人数，不返回转化率；人数是有序子集。自算率须先选定上一步或第一步做分母，SDK 不代算。
 
 编译结果使用 `gravity-insight.analysis-query-compiled.v1`，包含现有稳定 `operation_id`、
 `compiled_input`、`validation` 和无敏感筛选值时可直接加入 Plan 的 `plan_node`；`offline=true` 且

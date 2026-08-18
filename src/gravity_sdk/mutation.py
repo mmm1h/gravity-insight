@@ -104,7 +104,10 @@ class MutationExecutor:
             )
         try:
             semantic_status = _enforce_semantic_rules(
-                operation, response.payload, http_receipts
+                operation,
+                response.payload,
+                http_receipts,
+                {**authorization.query, **authorization.body},
             )
         except SemanticRejectedError:
             try:

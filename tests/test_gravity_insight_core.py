@@ -2073,6 +2073,10 @@ class GravityInsightCoreTests(unittest.TestCase):
             self.assertEqual("INPUT_INVALID", semantic["error"]["code"])
             self.assertEqual("caller", semantic["error"]["category"])
             self.assertFalse(semantic["error"]["retryable"])
+            self.assertEqual("input", semantic["error"]["field"])
+            self.assertIn("Gravity rejected the read operation", semantic["error"]["message"])
+            self.assertIn("sent_keys", semantic["error"]["next_action"])
+            self.assertIn("does not echo unreviewed", semantic["error"]["next_action"])
             self.assertNotIn("private upstream detail", json.dumps(semantic))
             denied = client_for(
                 Path(directory),

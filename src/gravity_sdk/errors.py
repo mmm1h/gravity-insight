@@ -389,6 +389,20 @@ class SemanticRejectedError(UpstreamError):
     code = ErrorCode.INPUT_INVALID
     category = ErrorCategory.CALLER
 
+    def __init__(
+        self,
+        message: str,
+        *,
+        field: str | None = None,
+        next_action: str | None = None,
+        http_receipts: Any = (),
+    ) -> None:
+        super().__init__(message, field=field, next_action=next_action)
+        if http_receipts:
+            from .result_audit import bind_error_receipts
+
+            bind_error_receipts(self, http_receipts)
+
 
 class ObjectAlreadyExistsError(InputValidationError):
     code = "OBJECT_ALREADY_EXISTS"
