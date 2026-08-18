@@ -6,7 +6,7 @@
 
 | 任务 | 先读 | 需要时再读 |
 | --- | --- | --- |
-| 安装、登录、跑第一个查询 | [快速上手](getting-started.md) | [CLI 参考](reference/cli.md) |
+| 安装、登录、把 Agent 接上 Gravity | [团队上手包](team-onboarding.md) | [快速上手](getting-started.md) |
 | 让 Agent 浏览完整目录并查询 Gravity | [Agent 工作流](agent-workflow.md) | [Agent 任务指南](agent-skills/index.md) |
 | 十分钟内取得首次真实 Agent 分析结果 | [十分钟路径](agent-skills/ten-minute-path.md) | [快速上手](getting-started.md) |
 | 构造事件、漏斗、留存、属性或分布查询 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Analysis Spec](reference/cli.md#analysis-query-spec-v1) |
@@ -80,7 +80,7 @@ mutation 组成。17 个候选中 `analysis.default_val.list`、`app.app_info.ge
 ## 文档层级
 
 - 第 0 层：[README](../README.md)——项目定位和入口。
-- 第 1 层：本页、[快速上手](getting-started.md)、[Agent 工作流](agent-workflow.md)。
+- 第 1 层：本页、[快速上手](getting-started.md)、[团队上手包](team-onboarding.md)、[Agent 工作流](agent-workflow.md)。
 - 第 2 层：[架构与概念](architecture.md)、[CLI 参考](reference/cli.md)、专项指南。
 - 第 3 层：[维护者文档](maintainers/index.md)、包内 manifest、contract 与源码。
 - 旁支：[外部调研](#外部调研)——同类产品与方法学的取证记录，不是本 SDK 的行为合同。

@@ -152,7 +152,7 @@ receipt 可见的 HTTP 次数/重试、各 operation 页数、对象数与失败
 
 ## 下一步
 
-- 执行真实分析任务：[Agent 工作流](agent-workflow.md)
+- 把 Agent 接给分析师并判断数字是否可信：[团队上手包](team-onboarding.md)
 - 从完整目录走到第一次真实结果：[十分钟路径](agent-skills/ten-minute-path.md)
 - App ID 跨 route 的 string/integer 声明：[App ID wire types](reference/sdk.md#app-id-wire-types)
 - 在服务或 notebook 中使用：[Python SDK 参考](reference/sdk.md)
