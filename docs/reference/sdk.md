@@ -797,6 +797,9 @@ result = client.read("analysis.event.list", {"app_id": "101"})
 `reason` 和 `use_instead`；成功读取时 `warnings` 也会复述同一条。要判断有没有量，走
 `attribution.attribution.query`（`metrics_list=["AppRealRegisterCnt"]`）或
 `analysis.origin_event.evaluate_data`。
+标题库 `last_3_day_click_rate` / `last_3_day_cost` 在投放中 App 上实测恒 0，而
+`history_click_rate` / `history_cost` 与 `material.report.query` 的 `ctr` / `stat_cost`
+有正值；`describe()` 的 `unreliable_item_keys` 指向后两者。
 
 ## App ID wire types {#app-id-wire-types}
 

@@ -215,7 +215,7 @@ def _result_warnings(operation: OperationSpec, drift_warnings: Sequence[str]) ->
         warnings.append("operation contract is experimental")
     for name, note in operation.response_projection.unreliable_item_keys.items():
         warnings.append(
-            f"do not use {name} to decide whether an event has data; "
+            f"do not use {name} as a decision metric; "
             f"{note['reason']}; use {note['use_instead']}"
         )
     return tuple(warnings)
