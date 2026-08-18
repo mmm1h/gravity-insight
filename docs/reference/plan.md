@@ -336,7 +336,10 @@ operation 的 data-relative FieldPolicy 校验。
 
 Plan binding 只作用于 request 边界：`/app` 可从上游复制一个标量，并且 `from` 必须列入
 `depends_on`；v1 不支持写入 `/spec/...`，也不解释 spec 内部引用或表达式。需要变化的事件、
-指标、过滤条件必须在提交 Plan 前生成完整 literal spec。
+指标、过滤条件必须在提交 Plan 前生成完整 literal spec。`gravity plan schema` 的
+`composites.analysis_query` 写出同一合同：`binding_targets=["/app"]`，`spec_binding=false`，
+以及含 `compare_start`/`compare_end` 的 `request_fields`。绑到 `/spec/...` 时预检失败并列出
+允许 target，零网络。
 
 多个无依赖 literal spec 可以直接包装成 `gravity.analysis-query-batch.v1` 并运行
 `gravity analysis query batch --input queries.json`；它机械生成同层 `analysis_query` 节点，

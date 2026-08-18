@@ -49,6 +49,7 @@ ANALYSIS_QUERY_REQUEST_FIELDS = frozenset(
         "compare_end", "metadata_snapshot",
     }
 )
+ANALYSIS_QUERY_BINDING_TARGETS = frozenset({"/app"})
 _ANALYSIS_OPERATIONS = frozenset(ANALYSIS_QUERY_OPERATIONS.values())
 _SAFE_ENVELOPE_FIELDS = frozenset(
     {
@@ -97,7 +98,7 @@ def validate_analysis_query_plan(
     request_object(request, ANALYSIS_QUERY_REQUEST_FIELDS, "analysis_query")
     if request.get("name") != ANALYSIS_QUERY_NAME:
         raise input_error("analysis query composite name is invalid; must match the documented composite name", "name")
-    validate_exact_targets(context, frozenset({"/app"}))
+    validate_exact_targets(context, ANALYSIS_QUERY_BINDING_TARGETS)
     if "spec" not in request:
         raise input_error(f"actual value: {actual_value(request.get('spec'))}; " + ("analysis query composite requires spec"), "spec")
     spec = mapping(request.get("spec"), "spec")
@@ -350,6 +351,7 @@ def project_analysis_query_result(
 
 
 __all__ = [
+    "ANALYSIS_QUERY_BINDING_TARGETS",
     "ANALYSIS_QUERY_NAME",
     "ANALYSIS_QUERY_REQUEST_FIELDS",
     "COMPOSITE_NAMES",

@@ -16,6 +16,7 @@ from gravity_sdk.plan import (
     PlanAdapters,
     PlanValidationError,
     execute_plan,
+    plan_schema,
     validate_plan,
 )
 from gravity_sdk.plan_adapters import build_plan_adapters
@@ -462,6 +463,74 @@ class PlanExecutionTests(unittest.TestCase):
             self.assertEqual((False, 3, None),
                              (drift["ok"], drift["exit_code"], drift["results"][0]["result"]))
             self.assertNotIn(private, repr(drift))
+
+    def test_plan_schema_declares_analysis_query_binding_contract(self):
+        analysis = plan_schema()["composites"]["analysis_query"]
+        self.assertEqual(["/app"], analysis["binding_targets"])
+        self.assertIs(False, analysis["spec_binding"])
+        self.assertIn("compare_start", analysis["request_fields"])
+        self.assertIn("compare_end", analysis["request_fields"])
+
+    def test_analysis_query_rejected_binding_lists_allowed_targets(self):
+        workspace = load_workspace(Path(__file__).resolve().parents[1] / "examples/workspace")
+
+        class Insight:
+            def operations(self, **_options):
+                return []
+
+            def validate(self, _operation_id, _inputs):
+                return {"ok": True}
+
+            def schema(self, _operation_id):
+                return {"response_projection": {"data_keys": ["list"]}}
+
+        class SDK:
+            insight = Insight()
+
+        request = {
+            "name": "analysis_query",
+            "kind": "event",
+            "app": "demo",
+            "spec": {
+                "start": "2026-08-01",
+                "end": "2026-08-02",
+                "steps": [{
+                    "event": "open",
+                    "metric": {
+                        "field": "PresetAllCount",
+                        "aggregation": "PresetAllCount",
+                    },
+                }],
+            },
+        }
+        nested = _node(
+            "q",
+            request,
+            kind="composite",
+            depends_on=["source"],
+            bindings=[{
+                "from": "source",
+                "source": "/result/name",
+                "target": "/spec/steps/0/event",
+            }],
+        )
+        with self.assertRaises(PlanValidationError) as raised:
+            execute_plan(
+                _plan(
+                    _node(
+                        "source",
+                        {"query": "open", "kind": "event", "limit": 1},
+                        kind="metadata_search",
+                    ),
+                    nested,
+                ),
+                adapters=build_plan_adapters(SDK(), workspace=workspace),
+                workspace=workspace,
+            )
+        message = str(raised.exception)
+        self.assertIn("/spec/steps/0/event", message)
+        self.assertIn('"/app"', message)
+        self.assertEqual("nodes[1].request.bindings", raised.exception.field)
 
 
 class AgentBatchTests(unittest.TestCase):
