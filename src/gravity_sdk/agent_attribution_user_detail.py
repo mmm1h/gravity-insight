@@ -77,11 +77,13 @@ def attribution_user_detail_query(query: str) -> bool:
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
     english = (
         "attribution" in words
-        and bool(words & {"user", "users"})
+        and bool(words & {"user", "users", "device"})
         and bool(words & {"detail", "details", "drill", "source"})
     )
-    chinese = "用户" in selected and "归因" in selected and any(
-        term in selected for term in ("明细", "来源", "下钻")
+    chinese = (
+        ("用户" in selected or "设备" in selected)
+        and "归因" in selected
+        and any(term in selected for term in ("明细", "来源", "下钻", "回传"))
     )
     return english or chinese
 

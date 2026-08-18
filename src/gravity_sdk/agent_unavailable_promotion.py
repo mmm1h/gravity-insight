@@ -64,8 +64,9 @@ def _non_bytedance_hierarchy(selected: str, words: frozenset[str]) -> bool:
         and (
             sum(term in selected for term in ("计划", "广告组", "组", "创意", "层级")) >= 2
             or "层级" in selected and "下钻" in selected
+            or ("计划" in selected and "组" in selected and "创意" in selected)
         )
-        and any(term in selected for term in ("表现", "下钻"))
+        and any(term in selected for term in ("表现", "下钻", "查看"))
     )
     return english or chinese
 
@@ -77,7 +78,8 @@ def _platform_specific_creatives(selected: str, words: frozenset[str]) -> bool:
         and bool(words & {"asset", "assets", "field", "fields"})
     )
     chinese = (
-        "平台" in selected and "专属" in selected
+        "平台" in selected
+        and any(term in selected for term in ("专属", "独有"))
         and any(term in selected for term in ("素材", "创意"))
         and any(term in selected for term in ("字段", "深查", "详情", "创意"))
     )

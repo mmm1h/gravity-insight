@@ -9,7 +9,11 @@ from typing import Any
 
 MULTIPLE_INTENTS = "MULTIPLE_INTENTS"
 
-_COORDINATOR = re.compile(r"\s+and\s+|以及|同时", re.IGNORECASE)
+_COORDINATOR = re.compile(
+    r"\s+and\s+|以及|同时|连同|和其他|"
+    r"既(?:要|看)|也(?:要|看|比较)",
+    re.IGNORECASE,
+)
 _WRAPPER_SELECTORS = frozenset({
     "composite:saved_analysis", "composite:segment_snapshot", "composite:segment_members"
 })
@@ -165,6 +169,7 @@ def _positive_query_selectors(query: str) -> tuple[str, ...]:
     from .agent_order_trace import order_split_trace_intent
     from .agent_promotion_performance import promotion_performance_intent
     from .agent_attribution_performance import attribution_performance_intent
+    from .agent_advertiser_profile import advertiser_profile_query
     from .agent_segment import segment_evaluate_intent, segment_mutation_intent
     from .agent_segment_snapshot import segment_snapshot_intent
     from .agent_segment_members import segment_members_intent
@@ -189,6 +194,7 @@ def _positive_query_selectors(query: str) -> tuple[str, ...]:
             "composite:bilibili_account_performance",
             bilibili_account_performance_intent(query),
         ),
+        ("composite:advertiser_profile", advertiser_profile_query(query)),
         ("composite:multidim", multidim_intent(query)),
         ("composite:business_pulse", business_pulse_intent(query)),
         ("composite:company_usage", company_usage_intent(query)),

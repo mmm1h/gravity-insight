@@ -157,6 +157,10 @@ class AgentLexicalRetrievalTests(unittest.TestCase):
             "横比各平台素材表现",
             affirmative_intent_text("不是查计划或账户余额，我要横比各平台素材表现。"),
         )
+        contrast = "这个行为每天发生量是不是在上升？"
+        self.assertEqual(contrast, affirmative_intent_text(contrast))
+        exclusive = "要看各平台独有字段而不是通用目录。"
+        self.assertEqual(exclusive, affirmative_intent_text(exclusive))
         onelink = retrieve_registered_products(
             "查看 App 的 OneLink 与公开信息绑定",
             composite_inventory=self.inventory,

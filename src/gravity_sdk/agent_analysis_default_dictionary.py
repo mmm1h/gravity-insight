@@ -54,6 +54,9 @@ def analysis_default_dictionary_query(query: str) -> bool:
     )
     return english or "默认值字典" in selected or (
         "分析" in selected and "默认值" in selected
+    ) or (
+        "分析" in selected and "字典" in selected
+        and any(term in selected for term in ("默认", "缺省"))
     )
 
 

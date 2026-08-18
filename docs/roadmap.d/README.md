@@ -42,6 +42,7 @@
 - [导出宽问法：不建 dispatcher](export-wide-dispatcher.md) — 七个子类输入不可互换，宽问法 gap 是正确澄清，不建统一导出产品。
 - [实时事件入库窗：开过 2h 仍空](realtime-event-ingestion-window.md) — 2026-08-18：只对 29034827 开窗；10 次前端当天窗仍无 item；已关回 is_enabled=0。
 - [识别器召回收尾：J36 回归与防过拟合](recognizer-recall.md) — 否定抽取不再截断「别人」；对着题集加的词已撤；development 选择层 267/336。
+- [识别器第二轮：否定边界与多意图收集器](recognizer-round2.md) — 「是不是/而不是」不再截断；广告主进入多意图收集器；development 选择层 277/336。
 
 ## 归档记录
 
