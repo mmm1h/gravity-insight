@@ -143,8 +143,8 @@ python -m gravity_sdk agent "看一下事件趋势" --routing host_catalog --hos
 - 信封里带照抄就能跑的升级路径：
 
 ```text
-routing.upgrade.next.argv      = gravity agent-catalog host
-routing.upgrade.then_argv      = gravity agent "看一下事件趋势" --routing host_catalog --host-selection <gravity.host-product-selection.v1>
+routing.upgrade.next.argv       = gravity agent-catalog host
+routing.upgrade.next.then_argv  = gravity agent "看一下事件趋势" --routing host_catalog --host-selection <gravity.host-product-selection.v1>
 ```
 
 识别器**不会填 App / 日期 / 事件**。卡上的 `missing_inputs` 和 `next.argv` 占位符要你自己补。自然语言不自动执行。
@@ -175,7 +175,7 @@ python -m gravity_sdk plan run --input first-analysis-plan.json
 
 ## 2. 能问什么 / 问不到什么
 
-动线分母 56，已闭环 50 / 部分闭环 3 / 完全缺失 3（表头数字由台账维护，本页不重算）。下面按分析师问法归类，不是 77 KB 表的拷贝。出处：[分析动线台账](analysis-journeys.md)、[为什么还没到 95%](roadmap.d/gap-to-95.md)。
+动线分母 56，已闭环 51 / 部分闭环 3 / 完全缺失 2（台账程序化重算；表头 `56 = x / y / z` 由合并对账，本页不改台账）。下面按分析师问法归类，不是 77 KB 表的拷贝。出处：[分析动线台账](analysis-journeys.md) 开篇重算句、[实时事件目录晋升](roadmap.d/realtime-event-profile-shape.md)。
 
 ### 已经能走完的
 
@@ -194,6 +194,7 @@ python -m gravity_sdk plan run --input first-analysis-plan.json
 | 看板重放、保存分析 / 模板重放 | dashboard / saved analysis / template | 1 / 引用未知 2 |
 | 创建或删除分群、报表、订阅、Kanban | 先 `--dry-run` 再同参数 `--execute` | 2 |
 | 当前账号可读的 App 列表 | `app.list`（`GET .../open_app/list/`） | 1 |
+| 某 App 当天窗的实时事件目录 | `gravity analysis realtime-events`（默认 `filters.event_type=profile`） | 1 / 缺 start/end 时 2–3 |
 
 调用方自己绑公式、对已有结果做比率/占比，走 `gravity derive`，不另算一条动线。
 
@@ -208,9 +209,15 @@ python -m gravity_sdk plan run --input first-analysis-plan.json
 | 数据表当前 schema / 字段 / 版本（F41） | 投放中 App 上 7 种 list 形状都 `total=0`；日志里的 `table_id` 对 detail 是 `1004 / not exist` | 有人在 Web 建一张仍存在的维度表 |
 | 通用媒体报表 | 投放中 App 上 11 次最小第一页全空 | 有人在 Web 导入一份通用媒体消耗 |
 
-另有一条**专门在推、三次开窗仍空**：实时事件目录。对 `29034827` 开过入库开关后，凌晨 / 午间 / 开窗后等 50 分钟，当天窗、近 1h 窗、两种非空 filters，均 HTTP 200 且 `data.list` 无 item。Agent 首问返回 `REALTIME_EVENT_CATALOG_CONTRACT_MISSING`。空的是「已试形状 + 关闭开关」，不是「租户没这个能力」。本上手包不碰实时事件路由。
+实时事件目录**已闭环**，不要再当缺口。开窗后当天窗 + `filters.event_type=profile` 第一次即非空（`data.list` 长度 1000，无 `page_info`）；分页合同 `kind=none`。读入口：
 
-导出（事件 / 分群 / 用户 / 付费 / 变现）是**部分闭环**：七个具体子路径可调，宽问法仍是精确 gap。不要发明统一导出产品。
+```powershell
+python -m gravity_sdk analysis realtime-events --app 29034827 --start "2026-08-18 00:00:00" --end "2026-08-18 23:59:59"
+```
+
+默认 `--event-type profile`。空 filters / `event_type=track` 在开窗后仍可能空，那是数据形状，不是合同缺失。入库开关是另一条写面（`apps realtime-event`），读目录前不必自己开窗。Agent 首问命中 `composite:realtime_event_catalog`，不再返回 `REALTIME_EVENT_CATALOG_CONTRACT_MISSING`。
+
+导出（事件 / 分群 / 用户 / 付费 / 变现 / 原始事件）是**部分闭环**：八个具体 create 子路径可调，宽问法仍是精确 gap。不要发明统一导出产品。估算行数、不创建任务：`python -m gravity_sdk export evaluate export.analysis.origin_event.evaluate --input <request.json>`。列已验证任务类型：`python -m gravity_sdk export task-types`。这两条**不是** `gravity run` 可达的 Insight read。`evaluate_data` 一次为 0 不能写成「估算恒为 0」——换事件、换窗口会出正 `total`。
 
 空 `data.list` 且 HTTP 200：先看是不是没用投放中的 `29034827`、时间窗不对、或漏了必填筛选。6 个未投放分身本来就该空。
 
@@ -242,6 +249,7 @@ python -m gravity_sdk plan run --input first-analysis-plan.json
 | --- | --- | --- |
 | `analysis.event.list.yesterday_count` | 7/7 App、648 个事件全是 0；同日 `29034827` 与 Android 分身的归因注册却有正行 | `attribution.attribution.query`（`metrics_list=["AppRealRegisterCnt"]`）或 `analysis.origin_event.evaluate_data` |
 | 标题库 `last_3_day_click_rate` / `last_3_day_cost` | 投放中 App 44/44、不绑 App 50/50 全 0；同页 `history_*` 和 `material.report.query` 的 `ctr` / `stat_cost` 有正值 | `history_click_rate` / `history_cost`，或 `material.report.query` |
+| 素材 `gravity_material_id` | 报表与巨量素材库行恒为 0；同页 `material_id` 是唯一 19 位字符串，报表仍有正 `stat_cost`/`ctr` | `material_id`（报表合同已登记；库 list 同名） |
 
 `describe` 的 `response_projection.unreliable_item_keys` 和读取结果的 `warnings` 会写 `reason` + `use_instead`。不要删上游值，也不要用 0 当「没数据」。
 
@@ -254,6 +262,7 @@ python -m gravity_sdk plan run --input first-analysis-plan.json
 - **变现按 `day + monetization_platform` 会漏掉空平台值那一行。** 行之和小于 `total`。改成不拆平台，或 `time_dims=total`（会看到空平台行）。SDK 对登记可加指标会写 `diagnostics[].code=dimension_sum_mismatch`，带 `list_sum` / `total` / `delta`。看见它不要把较小的 list 和当真相。
 - **事件 `time_grain=total` 在本租户编成 `group_by=total` 后上游返回空 `{}`。** 这不是日期错；省略 `time_grain` 会编译失败。按日拆。
 - **`evaluate_data` 一次为 0 不能写成「估算恒为 0」。** 换事件、换窗口会出正 `total`。穷尽合理形状之前，先怀疑请求。
+- **投放消耗不要默认绑 `29034827`。** 该抖音分身能滤出广告主但消耗全 0；真正消耗记在 iOS 分身 `24502679`。打 `promotion.*` 报表前先确认消耗记在哪个分身。
 
 ### 一条通用规矩
 
@@ -293,11 +302,28 @@ python -m gravity_sdk plan run --input first-analysis-plan.json
 
 | 你看到 | 意思 | 下一步 |
 | --- | --- | --- |
-| `status=capability_gap` 且 `capability_gaps[].code` 是登记缺口（如 `REALTIME_EVENT_CATALOG_CONTRACT_MISSING`、`MEDIA_REPORT_ITEM_SCHEMA_MISSING`、`CURRENT_TABLE_SCHEMA_PARENT_MISSING`） | 能力明确没有或本租户不可达 | 报告 `code` / `reason` / `next_action`。只在 `next.argv` 存在时执行它。不要找替代 raw operation |
+| `status=capability_gap` 且 `capability_gaps[].code` 是登记缺口（如 `MEDIA_REPORT_ITEM_SCHEMA_MISSING`、`CURRENT_TABLE_SCHEMA_PARENT_MISSING`、`ANALYSIS_EXPORT_FILE_CONTRACT_MISSING`） | 能力明确没有或本租户不可达 | 报告 `code` / `reason` / `next_action`。只在 `next.argv` 存在时执行它。不要找替代 raw operation。实时事件目录已不是这个缺口 |
 | `code=NO_CANDIDATE` | 识别器没匹配到已登记产品 | `python -m gravity_sdk agent-catalog categories`，再 `category` / `describe`，确认能力不存在。禁止执行 weak match，禁止发明 selector |
 | `UNRANKED_OPERATIONS` | 识别器没选中产品，只排出至少 3 条互不相同的 raw operation（不是错误） | `python -m gravity_sdk agent-catalog host`，交一份 `gravity.host-product-selection.v1`，再 `--routing host_catalog --host-selection`。不要执行那页 raw operation |
 
 只有 `status=success` 的 candidate 可执行。`capability_gaps` 不是 empty。exit：0 成功（含合法空结果）；2 调用方输入或认证；3 上游 / 权限 / 限流；4 本地合同 / 隐私 / I/O。
+
+### 上游拒绝：看 `field=`，不要猜
+
+命中已审查的精确句时，错误带 `field=`、`next_action` / `remedy`（例如留存空 `group_by_list` → 补 `create_time/day`；`type=user_property` → 改 `type=user`）。未命中时是固定句 `Gravity rejected the read operation`，附本仓已掌握的 `operation`、`field`、`sent_keys`。两种路径都不回传未审查的上游 `extra.error`。先按 `field=` 改发出去的形状再重试。
+
+### 进程内 metadata 缓存
+
+同进程第 2 次同类分析查询只发 1 次业务 HTTP（元数据命中 10 分钟 TTL）。CLI 每次新进程都是冷启动，cache 带不走。调用方可观察、可关：
+
+```python
+# 同一 GravitySDK 实例、已经做过一次 analysis query 之后：
+gravity.metadata_cache_stats()   # ttl_seconds / entries / hits / misses / bypassed
+gravity.clear_metadata_cache()
+gravity.bypass_metadata_cache(True)
+```
+
+模块函数 `metadata_cache_stats(client)` 等吃 `GravityInsightClient`。stats 不含 snapshot 值。成功 mutation 仍清 cache。
 
 ### 写操作
 
@@ -318,7 +344,7 @@ python -m gravity_sdk plan run --input first-analysis-plan.json
      python -m gravity_sdk agent "<问题>" --routing host_catalog --host-selection selection.json
    不能：
      python -m gravity_sdk agent "<问题>"
-     看 routing.upgrade.then_argv
+     看 routing.upgrade.next.then_argv
 7. 只执行 status=success 且 executable=true 的 next.argv；补齐 missing_inputs
 8. 看 resolved_date_window、warnings、unreliable_item_keys、diagnostics
 9. 重要数字用第二条 route 对；看见 dimension_sum_mismatch 不要把 list 和当总计

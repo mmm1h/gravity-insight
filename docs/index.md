@@ -7,7 +7,7 @@
 | 任务 | 先读 | 需要时再读 |
 | --- | --- | --- |
 | 安装、登录、把 Agent 接上 Gravity | [团队上手包](team-onboarding.md) | [快速上手](getting-started.md) |
-| 让 Agent 浏览完整目录并查询 Gravity | [Agent 工作流](agent-workflow.md) | [Agent 任务指南](agent-skills/index.md) |
+| 让 Agent 浏览完整目录并查询 Gravity | [团队上手包](team-onboarding.md) | [Agent 工作流](agent-workflow.md)、[任务指南](agent-skills/index.md) |
 | 十分钟内取得首次真实 Agent 分析结果 | [十分钟路径](agent-skills/ten-minute-path.md) | [快速上手](getting-started.md) |
 | 构造事件、漏斗、留存、属性或分布查询 | [Agent 工作流](agent-workflow.md) | [CLI 参考：Analysis Spec](reference/cli.md#analysis-query-spec-v1) |
 | 对已有结果计算调用方绑定的比率、占比、变化或集合对账 | [Agent 工作流](agent-workflow.md#1-业务语义先在调用项目解析) | [CLI 参考：Derived Metrics](reference/cli.md#derived-metrics) |
@@ -54,7 +54,7 @@
 
 ## Agent 最短路径
 
-- 第一次盘点仓库能力：离线执行 `agent-catalog categories → category → describe`；调用方能产出选择时再读 `agent-catalog host` 并提交 `gravity.host-product-selection.v1`。raw operation 只作专家入口，精确 gap 不可执行。
+- 第一次接触：读[团队上手包](team-onboarding.md)；离线 `agent-catalog categories → category → describe`，能产出选择时再 `host` + `gravity.host-product-selection.v1`。raw 是专家入口，精确 gap 不可执行。
 - 已知 selector 或已有 Plan：一次 `gravity run` / `gravity plan run`。
 - 未知问题：调用方能产出选择时用 `--routing host_catalog --host-selection`；否则一次默认 `gravity agent --input`，再一次 `gravity plan run`。recognizer 是默认地板。
 - 多个独立 Analysis spec，或同一事件/漏斗/留存/属性 spec 的显式多 App 数组：一次 `gravity analysis query batch`；单用户明细链用一次 `gravity analysis user journey`，不手工串行三条 operation。
