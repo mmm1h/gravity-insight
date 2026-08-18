@@ -361,6 +361,50 @@ class ExportContractTests(unittest.TestCase):
                 idempotency_key="fixture-export-key-0001",
             )
 
+    def test_export_run_accepts_describe_request_column_codes(self):
+        contracts = ExportContractRegistry.from_file(CONTRACT_PATH)
+        client = object.__new__(GravityInsightClient)
+        client._export_contracts = contracts
+        client._export_policy = PolicyEngine(
+            read_registry(),
+            effect_routes=contracts.effect_routes(),
+        )
+        client._export_runtime = SimpleNamespace()
+        payload = {
+            "app_id": 1,
+            "field_map": {"ClientID": "客户ID", "CreateTime": "注册时间"},
+            "task_name": "fixture-user-detail",
+            "global_conditions": [
+                {
+                    "field": "create_date_list",
+                    "operator": "RANGE_IN",
+                    "type": "default_user",
+                    "value": ["2026-08-16 00:00:00", "2026-08-16 23:59:59"],
+                }
+            ],
+            "postback_conditions": [],
+            "user_cond_logic": "AND",
+            "postback_cond_logic": "AND",
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            destination = Path(tmp) / "user-detail.xlsx"
+            with patch.object(client, "_export_gateway") as gateway:
+                gateway.return_value.create.side_effect = AssertionError(
+                    "create must not run until column codes are accepted"
+                )
+                result = client.export_run(
+                    "export.analysis.user_detail.start",
+                    payload,
+                    destination,
+                    requested_columns=("ClientID", "CreateTime"),
+                    idempotency_key="fixture-export-key-0001",
+                )
+        self.assertNotEqual(
+            "requested export columns violate the privacy contract",
+            (result.get("error") or {}).get("message"),
+        )
+        self.assertTrue(gateway.return_value.create.called)
+
 
 class EffectReceiptTests(unittest.TestCase):
     def setUp(self):
