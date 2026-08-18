@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Callable, Mapping, Sequence
 
+from .actionable_error_values import actual_value
 from .errors import InputValidationError
 from .models import OperationSpec
 
@@ -136,8 +137,14 @@ def new_analysis_references() -> AnalysisReferences:
 
 def require_exact_mapping(value: Any, allowed: set[str], label: str) -> None:
     if not isinstance(value, Mapping) or set(value) - allowed:
+        observed = (
+            sorted(set(value) - allowed)
+            if isinstance(value, Mapping)
+            else type(value).__name__
+        )
         raise InputValidationError(
-            f"{label} must use only registered keys; request was not sent",
+            f"actual value: {actual_value(observed)}; {label} must use only "
+            "registered keys; request was not sent",
             field=label,
         )
 
@@ -147,7 +154,8 @@ def validate_optional_label(value: Any, label: str) -> None:
         not isinstance(value, str) or len(value) > 256 or "\x00" in value
     ):
         raise InputValidationError(
-            f"{label} must be a string of at most 256 characters; request was not sent",
+            f"actual value: {actual_value(value)}; {label} must be a string of at most "
+            "256 characters; request was not sent",
             field=label,
         )
 
@@ -165,6 +173,7 @@ def validate_scalar_list(value: Any, label: str) -> None:
         or any(not analysis_scalar(item) for item in value)
     ):
         raise InputValidationError(
+            f"actual value: {actual_value(type(value).__name__) if not isinstance(value, (list, tuple)) else len(value)}; "
             f"{label} must be a scalar list; request was not sent",
             field=label,
         )
@@ -173,14 +182,16 @@ def validate_scalar_list(value: Any, label: str) -> None:
 def parse_iso_calendar_date(value: Any, label: str) -> datetime:
     if not isinstance(value, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
         raise InputValidationError(
-            f"analysis {label} must use YYYY-MM-DD; request was not sent",
+            f"actual value: {actual_value(value)}; analysis {label} must use "
+            "YYYY-MM-DD; request was not sent",
             field=label,
         )
     try:
         return datetime.strptime(value, "%Y-%m-%d")
     except ValueError as exc:
         raise InputValidationError(
-            f"analysis {label} must use YYYY-MM-DD; request was not sent",
+            f"actual value: {actual_value(value)}; analysis {label} must use "
+            "YYYY-MM-DD; request was not sent",
             field=label,
         ) from exc
 
@@ -188,14 +199,16 @@ def parse_iso_calendar_date(value: Any, label: str) -> datetime:
 def parse_analysis_datetime(value: Any) -> datetime:
     if not isinstance(value, str) or not value or len(value) > 32:
         raise InputValidationError(
-            "analysis date value must be an ISO-8601 datetime of at most 32 characters; request was not sent",
+            f"actual value: {actual_value(value)}; analysis date value must be an "
+            "ISO-8601 datetime of at most 32 characters; request was not sent",
             field="date",
         )
     try:
         return datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError as exc:
         raise InputValidationError(
-            "analysis date value must be an ISO-8601 datetime; request was not sent",
+            f"actual value: {actual_value(value)}; analysis date value must be an "
+            "ISO-8601 datetime; request was not sent",
             field="date",
         ) from exc
 
@@ -206,7 +219,8 @@ def dynamic_values(
     field = operation.fields.get(field_name)
     if field is None:
         raise InputValidationError(
-            f"{field_name} must name a declared operation input",
+            f"actual value: {actual_value(field_name)}; {field_name} must name a "
+            "declared operation input",
             field=field_name,
         )
     if field.enum:
@@ -215,7 +229,8 @@ def dynamic_values(
         if isinstance(value, (list, tuple)) and all(isinstance(item, str) for item in value):
             return tuple(value)
         raise InputValidationError(
-            f"{field_name} must be one of the declared enum strings",
+            f"actual value: {actual_value(value)}; {field_name} must be one of the "
+            "declared enum strings",
             field=field_name,
         )
     if value in (None, "", [], ()):
@@ -227,7 +242,8 @@ def dynamic_values(
     ):
         return tuple(value)
     raise InputValidationError(
-        f"{field_name} must contain only non-empty string field names",
+        f"actual value: {actual_value(value)}; {field_name} must contain only "
+        "non-empty string field names",
         field=field_name,
     )
 
@@ -250,7 +266,8 @@ def promotion_metadata_inputs(
 ) -> dict[str, Any]:
     if not operation.platform:
         raise InputValidationError(
-            "promotion field metadata must come from a platform-scoped operation; request was not sent",
+            f"actual value: {actual_value(operation.platform)}; promotion field "
+            "metadata must come from a platform-scoped operation; request was not sent",
             field="platform",
         )
     metadata_inputs: dict[str, Any] = {
@@ -263,7 +280,8 @@ def promotion_metadata_inputs(
         time_line = inputs.get("time_line", "behavior")
         if time_line not in {"behavior", "active"}:
             raise InputValidationError(
-                "Tencent time_line must be one of behavior, active; request was not sent",
+                f"actual value: {actual_value(time_line)}; Tencent time_line must be "
+                "one of behavior, active; request was not sent",
                 field="time_line",
             )
         metadata_inputs["metric_type"] = time_line
@@ -401,7 +419,8 @@ def is_sensitive_analysis_field(value: str) -> bool:
 def reject_sensitive_analysis_field(value: str) -> None:
     if is_sensitive_analysis_field(value):
         raise InputValidationError(
-            "analysis credential/session fields are blocked and must be removed; request was not sent",
+            f"actual value: {actual_value(value)}; analysis credential/session fields "
+            "are blocked and must be removed; request was not sent",
             field="field",
         )
 
@@ -420,8 +439,9 @@ def reject_sensitive_metadata_fields(
                 value = row.get(key)
                 if isinstance(value, str) and is_sensitive_analysis_field(value):
                     raise InputValidationError(
-                        "analysis metadata marks a field as user-identifying; "
-                        "remove that field and retry; business request was not sent",
+                        f"actual value: {actual_value(field_name)}; analysis metadata "
+                        "marks a field as user-identifying; remove that field and retry; "
+                        "business request was not sent",
                         field=field_name,
                     )
 
@@ -442,10 +462,13 @@ def require_dimension_tables(
         and row.get("dim_using_table_name")
     }
     if not requested <= available:
+        missing = sorted(
+            f"{name}/{table}" for name, table in requested - available
+        )
         raise InputValidationError(
-            f"analysis {label} dimension table must exist in live metadata; "
-            "run `gravity metadata properties \"\"` and retry with a listed table; "
-            "request was not sent",
+            f"actual value: {actual_value(missing)}; analysis {label} dimension table "
+            "must exist in live metadata; run `gravity metadata properties \"\"` and "
+            "retry with a listed table; request was not sent",
             field=label,
         )
 
@@ -454,8 +477,10 @@ def reject_unhandled(
     requested_by_field: Mapping[str, Sequence[str]], allowed_fields: set[str]
 ) -> None:
     if set(requested_by_field) - allowed_fields:
+        unknown = sorted(set(requested_by_field) - allowed_fields)
         raise InputValidationError(
-            "dynamic response fields must use a registered metadata validator; "
-            "remove unregistered output_fields and retry; request was not sent",
+            f"actual value: {actual_value(unknown)}; dynamic response fields must use "
+            "a registered metadata validator; remove unregistered output_fields and "
+            "retry; request was not sent",
             field="output_fields",
         )

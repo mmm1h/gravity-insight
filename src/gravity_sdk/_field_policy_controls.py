@@ -166,6 +166,7 @@ def _filter_values(item: Mapping[str, Any], field_name: str) -> Sequence[Any]:
     values = item.get("values", item.get("value", ()))
     if not isinstance(values, (list, tuple)) or not values:
         raise InputValidationError(
+            f"actual value: {actual_value(type(values).__name__) if not isinstance(values, (list, tuple)) else len(values)}; "
             "filter values must be a non-empty array; values are not echoed because "
             "errors may enter logs",
             field=f"filters[{field_name}].values",
@@ -189,6 +190,7 @@ def _validate_account_filter_values(
             for value in values
         ):
             raise InputValidationError(
+                f"actual value: {actual_value([type(value).__name__ for value in values])}; "
                 "account member identifier filter values must be non-empty strings or "
                 "integers of at most 64 characters; values are not echoed because errors may enter logs",
                 field=f"filters[{field_name}].values",
@@ -196,10 +198,15 @@ def _validate_account_filter_values(
         return
     if any(not isinstance(value, str) or len(value) > 256 for value in values):
         raise InputValidationError(
+            f"actual value: {actual_value([type(value).__name__ for value in values])}; "
             "account member text filter values must be strings of at most 256 "
             "characters; values are not echoed because errors may enter logs",
             field=f"filters[{field_name}].values",
         )
+
+
+def _filter_value_types(values: Sequence[Any]) -> str:
+    return actual_value([type(value).__name__ for value in values])
 
 
 def _validate_named_filter_values(
@@ -215,26 +222,30 @@ def _validate_named_filter_values(
                 f"actual value: {actual_value(values)}; allowed values: \"kanban\", \"report\"",
                 field="filters[template_type].values",
             )
-    elif field_name == "name":
-        if any(not isinstance(value, str) or len(value) > 256 for value in values):
-            raise InputValidationError(
-                "analysis name filter values must be strings of at most 256 characters; "
-                "values are not echoed because errors may enter logs",
-                field="filters[name].values",
-            )
-    elif field_name == "dashboard_id":
-        if any(not isinstance(value, str) or not value for value in values):
-            raise InputValidationError(
-                "dashboard filter identifiers must be non-empty strings; values are "
-                "not echoed because errors may enter logs",
-                field="filters[dashboard_id].values",
-            )
-    elif field_name in {"default_to_one", "default_to_all"} and any(
+        return
+    if field_name == "name" and any(
+        not isinstance(value, str) or len(value) > 256 for value in values
+    ):
+        raise InputValidationError(
+            f"actual value: {_filter_value_types(values)}; analysis name filter values "
+            "must be strings of at most 256 characters; values are not echoed because "
+            "errors may enter logs",
+            field="filters[name].values",
+        )
+    if field_name == "dashboard_id" and any(
+        not isinstance(value, str) or not value for value in values
+    ):
+        raise InputValidationError(
+            f"actual value: {_filter_value_types(values)}; dashboard filter identifiers "
+            "must be non-empty strings; values are not echoed because errors may enter logs",
+            field="filters[dashboard_id].values",
+        )
+    if field_name in {"default_to_one", "default_to_all"} and any(
         value != "1" for value in values
     ):
         raise InputValidationError(
-            "dashboard default filter values must all equal \"1\"; values are not "
-            "echoed because errors may enter logs",
+            f"actual value: {_filter_value_types(values)}; dashboard default filter "
+            "values must all equal \"1\"; values are not echoed because errors may enter logs",
             field=f"filters[{field_name}].values",
         )
 
@@ -255,6 +266,7 @@ def _validate_filtering(
         for item in value.values()
     ):
         raise InputValidationError(
+            f"actual value: {actual_value([type(item).__name__ for item in value.values()])}; "
             "filtering values must be scalar and non-null; values are not echoed because "
             "errors may enter logs",
             field="filtering",
@@ -284,6 +296,7 @@ def _validate_data_list(
             )
         if any(isinstance(item, (Mapping, list, tuple)) for item in row.values()):
             raise InputValidationError(
+                f"actual value: {actual_value([type(item).__name__ for item in row.values()])}; "
                 "data_list values must be scalars; values are not echoed because errors "
                 "may enter logs",
                 field="data_list[]",

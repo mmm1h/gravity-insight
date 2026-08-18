@@ -71,7 +71,10 @@ def dispatch_monetization_detail(
 
     if bool(getattr(args, "dry_run", False)):
         raise InputValidationError(
-            "--dry-run cannot be combined with a command", field="dry_run", next_action="Omit --dry-run or omit the conflicting command, then retry."
+            f"actual value: {actual_value(getattr(args, 'dry_run', False))}; --dry-run "
+            "cannot be combined with a command",
+            field="dry_run",
+            next_action="Omit --dry-run or omit the conflicting command, then retry.",
         )
     app_id, date = prepare_monetization_detail_request(args)
     from .monetization_detail import monetization_detail

@@ -156,6 +156,7 @@ def validate_analysis_conditions(
 ) -> None:
     if not isinstance(value, (list, tuple)) or len(value) > 100:
         raise InputValidationError(
+            f"actual value: {actual_value(type(value).__name__) if not isinstance(value, (list, tuple)) else len(value)}; "
             f"{label} must be an array with at most 100 items; condition values are "
             "not echoed because errors may enter logs",
             field=label,
@@ -282,6 +283,7 @@ def _add_condition_dimension(
 def validate_analysis_group_by(value: Any, references: AnalysisReferences) -> None:
     if not isinstance(value, (list, tuple)) or len(value) > 20:
         raise InputValidationError(
+            f"actual value: {actual_value(type(value).__name__) if not isinstance(value, (list, tuple)) else len(value)}; "
             "analysis group_by_list must be an array with at most 20 items; group "
             "values are not echoed because errors may enter logs",
             field="group_by_list",
@@ -446,6 +448,7 @@ def _add_group_dimension(
 def validate_analysis_user_reattribute_filtering(value: Any, label: str) -> None:
     if not isinstance(value, Mapping) or len(value) > len(ANALYSIS_USER_REATTRIBUTE_FIELDS):
         raise InputValidationError(
+            f"actual value: {actual_value(type(value).__name__) if not isinstance(value, Mapping) else len(value)}; "
             f"{label} must be an object with at most "
             f"{len(ANALYSIS_USER_REATTRIBUTE_FIELDS)} fields; filter values are not "
             "echoed because errors may enter logs",
@@ -463,8 +466,9 @@ def validate_analysis_user_reattribute_filtering(value: Any, label: str) -> None
             validate_scalar_list(item, label)
         elif not analysis_scalar(item):
             raise InputValidationError(
-                f"{label} values must be scalar or scalar arrays; filter values are "
-                "not echoed because errors may enter logs",
+                f"actual value: {actual_value(type(item).__name__)}; {label} values "
+                "must be scalar or scalar arrays; filter values are not echoed because "
+                "errors may enter logs",
                 field=label,
             )
 
@@ -472,6 +476,7 @@ def validate_analysis_user_reattribute_filtering(value: Any, label: str) -> None
 def validate_analysis_filter_map(value: Any, references: set[str], label: str) -> None:
     if not isinstance(value, Mapping) or len(value) > 100:
         raise InputValidationError(
+            f"actual value: {actual_value(type(value).__name__) if not isinstance(value, Mapping) else len(value)}; "
             f"{label} must be an object with at most 100 fields; filter values are not "
             "echoed because errors may enter logs",
             field=label,
@@ -490,8 +495,9 @@ def validate_analysis_filter_map(value: Any, references: set[str], label: str) -
             validate_scalar_list(item, label)
         elif not analysis_scalar(item):
             raise InputValidationError(
-                f"{label} values must be scalar or scalar arrays; filter values are "
-                "not echoed because errors may enter logs",
+                f"actual value: {actual_value(type(item).__name__)}; {label} values "
+                "must be scalar or scalar arrays; filter values are not echoed because "
+                "errors may enter logs",
                 field=label,
             )
 

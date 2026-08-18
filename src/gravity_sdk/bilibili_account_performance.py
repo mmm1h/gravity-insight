@@ -113,15 +113,27 @@ def normalize_bilibili_account_window(start: Any, end: Any) -> tuple[str, str]:
     """Return one canonical inclusive request date range."""
 
     if not all(isinstance(value, str) and _ISO_DATE.fullmatch(value) for value in (start, end)):
-        raise _date_error("dates must use YYYY-MM-DD", field="start/end")
+        raise _date_error(
+            f"actual value: {actual_value({'start': start, 'end': end})}; dates must use YYYY-MM-DD",
+            field="start/end",
+        )
     try:
         first, last = date.fromisoformat(start), date.fromisoformat(end)
     except ValueError:
-        raise _date_error("dates must use YYYY-MM-DD", field="start/end") from None
+        raise _date_error(
+            f"actual value: {actual_value({'start': start, 'end': end})}; dates must use YYYY-MM-DD",
+            field="start/end",
+        ) from None
     if first > last:
-        raise _date_error("start must not follow end", field="start/end")
+        raise _date_error(
+            f"actual value: {actual_value({'start': start, 'end': end})}; start must not follow end",
+            field="start/end",
+        )
     if (first.isoformat(), last.isoformat()) != (start, end):
-        raise _date_error("dates must use YYYY-MM-DD", field="start/end")
+        raise _date_error(
+            f"actual value: {actual_value({'start': start, 'end': end})}; dates must use YYYY-MM-DD",
+            field="start/end",
+        )
     return start, end
 
 

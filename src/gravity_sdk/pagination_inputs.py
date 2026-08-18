@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+from .actionable_error_values import actual_value
 from .errors import InputValidationError
 
 
@@ -22,12 +23,12 @@ def validate_page_inputs(
     page, size = values.get(page_field), values.get(page_size_field)
     if not isinstance(page, int) or isinstance(page, bool) or page < 1:
         raise InputValidationError(
-            "page must be a positive integer",
+            f"actual value: {actual_value(page)}; page must be a positive integer",
             field=page_field,
         )
     if not isinstance(size, int) or isinstance(size, bool) or size < 1:
         raise InputValidationError(
-            "page_size must be a positive integer",
+            f"actual value: {actual_value(size)}; page_size must be a positive integer",
             field=page_size_field,
         )
     if (
@@ -36,7 +37,8 @@ def validate_page_inputs(
         and size > pagination.max_page_size
     ):
         raise InputValidationError(
-            f"requested page size must stay at or below {pagination.max_page_size}",
+            f"actual value: {actual_value(size)}; requested page size must stay at or "
+            f"below {pagination.max_page_size}",
             field=page_size_field,
         )
 

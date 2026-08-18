@@ -57,7 +57,9 @@ class AnalysisFilter:
                 self.values, (str, bytes, bytearray)
             ):
                 raise InputValidationError(
-                    "Analysis filter values must be a scalar sequence", field="values"
+                    f"actual value: {actual_value(type(self.values).__name__)}; "
+                    "Analysis filter values must be a scalar sequence",
+                    field="values",
                 )
             object.__setattr__(self, "values", tuple(self.values))
         validate_analysis_conditions(
