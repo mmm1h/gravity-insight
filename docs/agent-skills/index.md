@@ -9,6 +9,9 @@
 | 调用方自己选产品时走宿主臂 | [完整目录发现](catalog-discovery.md) |
 | 十分钟内从本地能力走到第一次真实分析 | [十分钟路径](ten-minute-path.md) |
 | 看一个事件的趋势 | [事件趋势](event-trend.md) |
+| 看多步行为的转化漏斗 | [转化漏斗](funnel.md) |
+| 看起始行为后的用户留存 | [用户留存](retention.md) |
+| 把某一天的用户明细导出成文件 | [用户明细导出](user-detail-export.md) |
 | 用同一分析定义比较两个时期 | [时期对比](period-comparison.md) |
 | 预览并确认执行分群、报表、订阅或 Kanban 写入 | [受治理写入](governed-writes.md) |
 | 声明调用方语义和派生指标 | [调用方语义与派生指标](caller-semantics.md) |
