@@ -130,3 +130,9 @@ receipt 12 条（本趟，UTC `04:20:59`–`04:26:00`，上海 12:20:59–12:26:
 | `J35.dev.en.normal-1` | 同上 | 同上 |
 | `J35.dev.zh.boundary` | 同上 | 同上；仍须与历史事件元数据搜索分开 |
 | `J35.dev.en.missing` | 同上 | 不再要「取证 next_action」；应走产品缺参/空结果合同 |
+
+## 追加：#199 开窗后等 50 分钟（2026-08-18 12:41）
+
+权威记录见 [realtime-event-wait-duration.md](realtime-event-wait-duration.md)。本段只钉一条：同一 App `29034827` 上再开 2h 窗（读回 `12:40:37..14:40:37`，`modify_time=2026-08-18 12:41:37`），固定前端当天窗 `filters={}` `page_size=50`，在开窗后 2 / 5 / 10 / 15 / 20 / 30 / 40 / 50 分钟各读一次，8/8 HTTP 200、空 `data.list`、无 `page_info`。随后窗仍开着补 `filters.event_name=microgame_window_click` 与 `filters.event_type=track`，仍空。已关回 `is_enabled=0`，`modify_time=2026-08-18 13:33:34`。
+
+**开窗后持续 50 分钟、8 个时间点 + 2 种非空 filters 仍空，入库延迟假说不成立。** 状态列保持完全缺失；表头 `56 = 50 / 3 / 3` 不要动。
