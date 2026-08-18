@@ -97,6 +97,13 @@ class GravitySDKTests(unittest.TestCase):
         self.assertEqual("read_limited", sdk.read_limited("app.list")["kind"])
         self.assertIs(sdk.insight, sdk.insight)
         self.assertEqual({"insight": 1, "sql": 0}, built)
+        from gravity_sdk.cache import MetadataCache
+
+        insight = sdk.insight
+        insight._metadata_cache = MetadataCache(["analysis.event.list"])
+        self.assertEqual(600.0, sdk.metadata_cache_stats()["ttl_seconds"])
+        self.assertEqual(0, sdk.clear_metadata_cache()["entries"])
+        self.assertEqual(0, sdk.bypass_metadata_cache(True)["bypassed"])
 
         self.assertEqual([{"sql": "SELECT 1"}], sdk.sql.execute_sql("SELECT 1"))
         self.assertIs(sdk.sql, sdk.sql)
