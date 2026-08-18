@@ -223,16 +223,22 @@ def _describe_response(
             ),
         )
     capability = _capability_for_item(selected, client)
+    if selected["source"] == "gap":
+        from .agent_discovery_support import discovery_next_fields
+
+        navigation = discovery_next_fields(False, [capability])
+    else:
+        navigation = {
+            "next_action": (
+                "Use the existing card contract; this command never executes it."
+            )
+        }
     return _envelope(
         "describe_capability",
         selector=selector,
         capability=capability,
         surface=_describe_surface(selected),
-        next_action=(
-            str(capability["next_action"])
-            if selected["source"] == "gap"
-            else "Use the existing card contract; this command never executes it."
-        ),
+        **navigation,
     )
 
 
