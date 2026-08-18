@@ -165,6 +165,53 @@ class HostProductSelectionTests(unittest.TestCase):
         self.assertNotIn("routing", result["next_action"])
         self.assertEqual("analysis.query.spec:event", result["candidates"][0]["selector"])
 
+    def test_recognizer_upgrade_carries_selection_schema_and_copyable_example(self) -> None:
+        result = run_agent_command(
+            build_parser().parse_args(["agent", "event analysis"]),
+            self.client,
+        )
+        upgrade = result["routing"]["upgrade"]
+        required = {
+            "schema_version", "catalog_sha256", "query", "decision",
+            "reason", "candidates",
+        }
+        self.assertEqual(SELECTION_SCHEMA_VERSION, upgrade["selection_schema_version"])
+        self.assertEqual(required, set(upgrade["selection_schema"]["required"]))
+        example = upgrade["selection_example"]
+        self.assertEqual(required, set(example))
+        self.assertEqual("event analysis", example["query"])
+        self.assertEqual(SELECTION_SCHEMA_VERSION, example["schema_version"])
+        self.assertEqual(["gravity", "agent-catalog", "host"], upgrade["next"]["argv"])
+        self.assertEqual(
+            [
+                "gravity", "agent", "event analysis", "--routing", "host_catalog",
+                "--host-selection", "<gravity.host-product-selection.v1>",
+            ],
+            upgrade["next"]["then_argv"],
+        )
+        self.assertIn("catalog_sha256", upgrade["next_action"])
+
+    def test_host_catalog_exposes_copyable_selection_template(self) -> None:
+        template = self.catalog["selection_template"]
+        required = set(self.catalog["response_schema"]["required"])
+        self.assertEqual(required, set(template))
+        self.assertEqual(SELECTION_SCHEMA_VERSION, template["schema_version"])
+        self.assertEqual(self.catalog["catalog_sha256"], template["catalog_sha256"])
+        self.assertEqual(
+            [item["catalog_ref"] for item in self.catalog["entries"]],
+            self.catalog["catalog_refs"],
+        )
+
+    def test_malformed_selection_names_the_broken_field(self) -> None:
+        query = self.response()["query"]
+        malformed = self.response("analysis.query.spec")
+        malformed["candidates"][0]["reason"].pop("boundary_check")
+        with self.assertRaises(InputValidationError) as caught:
+            compile_host_product_selection(query, malformed, self.client)
+        self.assertEqual("host_selection.candidates[0].reason", caught.exception.field)
+        self.assertIn("host_selection.candidates[0].reason", caught.exception.next_action)
+        self.assertIn("HOST_SELECTION_REASON_INVALID", str(caught.exception))
+
     def test_agent_input_rejects_single_query_object_with_legal_shape(self) -> None:
         from gravity_sdk.agent_batch import validate_questions
 

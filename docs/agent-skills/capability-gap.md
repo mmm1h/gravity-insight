@@ -94,6 +94,102 @@ gravity agent "<your-query>"
         ]
       },
       "next_action": "<str>",
+      "selection_example": {
+        "candidates": [
+          {
+            "catalog_ref": "<str>",
+            "reason": {
+              "boundary_check": "<str>",
+              "goal_match": "<str>"
+            }
+          }
+        ],
+        "catalog_sha256": "<str>",
+        "decision": "<str>",
+        "query": "<str>",
+        "reason": {
+          "needs_clarification": "<bool>",
+          "summary": "<str>"
+        },
+        "schema_version": "<str>"
+      },
+      "selection_schema": {
+        "$schema": "<str>",
+        "additionalProperties": "<bool>",
+        "properties": {
+          "candidates": {
+            "items": {
+              "additionalProperties": "<bool>",
+              "properties": {
+                "catalog_ref": {
+                  "minLength": "<int>",
+                  "type": "<str>"
+                },
+                "reason": {
+                  "additionalProperties": "<bool>",
+                  "properties": {
+                    "boundary_check": {
+                      "minLength": "<int>",
+                      "type": "<str>"
+                    },
+                    "goal_match": {
+                      "minLength": "<int>",
+                      "type": "<str>"
+                    }
+                  },
+                  "required": [
+                    "<str>"
+                  ],
+                  "type": "<str>"
+                }
+              },
+              "required": [
+                "<str>"
+              ],
+              "type": "<str>"
+            },
+            "maxItems": "<int>",
+            "type": "<str>"
+          },
+          "catalog_sha256": {
+            "pattern": "<str>",
+            "type": "<str>"
+          },
+          "decision": {
+            "enum": [
+              "<str>"
+            ]
+          },
+          "query": {
+            "minLength": "<int>",
+            "type": "<str>"
+          },
+          "reason": {
+            "additionalProperties": "<bool>",
+            "properties": {
+              "needs_clarification": {
+                "type": "<str>"
+              },
+              "summary": {
+                "minLength": "<int>",
+                "type": "<str>"
+              }
+            },
+            "required": [
+              "<str>"
+            ],
+            "type": "<str>"
+          },
+          "schema_version": {
+            "const": "<str>"
+          }
+        },
+        "required": [
+          "<str>"
+        ],
+        "type": "<str>"
+      },
+      "selection_schema_version": "<str>",
       "when": "<str>"
     }
   },

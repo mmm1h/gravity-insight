@@ -50,6 +50,7 @@ def recognizer_routing_declaration(query: str) -> dict[str, Any]:
     """Declare the offline floor and how a capable caller upgrades."""
 
     from .agent_discovery_policy import safe_discovery_query
+    from .agent_host_catalog import host_selection_upgrade_contract
     from .agent_host_selection import DEFAULT_ROUTING_MODE
 
     selected = safe_discovery_query(query)
@@ -57,15 +58,7 @@ def recognizer_routing_declaration(query: str) -> dict[str, Any]:
         "mode": DEFAULT_ROUTING_MODE,
         "floor": True,
         "upgrade": {
-            "when": (
-                "the caller can emit gravity.host-product-selection.v1 after "
-                "reading the host catalog"
-            ),
-            "next_action": (
-                "This answer is the offline recognizer floor. Read "
-                "`gravity agent-catalog host` and resubmit the same query with "
-                "`--routing host_catalog --host-selection`."
-            ),
+            **host_selection_upgrade_contract(selected),
             "next": {
                 "argv": list(HOST_CATALOG_ARGV),
                 "then_argv": host_arm_upgrade_argv(selected),
