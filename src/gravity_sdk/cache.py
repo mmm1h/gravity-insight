@@ -83,6 +83,8 @@ class MetadataCache:
         self._inflight: set[tuple[str, str]] = set()
         self._hits = 0
         self._misses = 0
+        self._bypassed = 0
+        self._bypass = False
 
     @property
     def ttl_seconds(self) -> float:
@@ -91,6 +93,12 @@ class MetadataCache:
     def is_cacheable(self, operation_id: str) -> bool:
         return operation_id in self._operation_ids
 
+    def set_bypass(self, enabled: bool) -> None:
+        """Skip storage for later loads; existing snapshots stay until `clear()`."""
+
+        with self._condition:
+            self._bypass = bool(enabled)
+
     def get_or_load(
         self,
         operation_id: str,
@@ -98,6 +106,12 @@ class MetadataCache:
         loader: Callable[[], Any],
     ) -> Any:
         if not self.is_cacheable(operation_id):
+            return loader()
+        with self._condition:
+            bypass = self._bypass
+            if bypass:
+                self._bypassed += 1
+        if bypass:
             return loader()
         key = _cache_key(operation_id, inputs or {})
         if key is None:
@@ -147,6 +161,7 @@ class MetadataCache:
                 "entries": len(self._entries),
                 "hits": self._hits,
                 "misses": self._misses,
+                "bypassed": self._bypassed,
             }
 
 
@@ -178,3 +193,38 @@ def _normalize(value: Any) -> Any:
     if value is None or isinstance(value, (str, int, float, bool)):
         return value
     raise TypeError("metadata cache inputs must be JSON-compatible")
+
+
+def _client_cache(client: Any) -> MetadataCache | None:
+    target = getattr(client, "insight", None) or getattr(client, "_client", None) or client
+    cache = getattr(target, "_metadata_cache", None)
+    return cache if isinstance(cache, MetadataCache) else None
+
+
+def metadata_cache_stats(client: Any) -> dict[str, int | float]:
+    """Return process-local hit/miss/bypass counters; never includes snapshot values."""
+
+    cache = _client_cache(client)
+    if cache is None:
+        raise TypeError("client does not expose a process-local metadata cache")
+    return cache.stats()
+
+
+def clear_metadata_cache(client: Any) -> dict[str, int | float]:
+    """Drop stored snapshots so the next metadata load hits upstream."""
+
+    cache = _client_cache(client)
+    if cache is None:
+        raise TypeError("client does not expose a process-local metadata cache")
+    cache.clear()
+    return cache.stats()
+
+
+def bypass_metadata_cache(client: Any, enabled: bool = True) -> dict[str, int | float]:
+    """Skip later snapshot reuse without changing FieldPolicy or contracts."""
+
+    cache = _client_cache(client)
+    if cache is None:
+        raise TypeError("client does not expose a process-local metadata cache")
+    cache.set_bypass(enabled)
+    return cache.stats()

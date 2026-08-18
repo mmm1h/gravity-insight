@@ -822,6 +822,7 @@ result = client.read("analysis.event.list", {"app_id": "101"})
 | `read_limited()` | 读取 Agent 安全前缀，返回 `next_page_input`；分页策略同 `read_all()` |
 | `batch()` | 并发执行独立读取，保持输入顺序并隔离失败 |
 | `probe()` / `probe_all()` | 维护者的最小线上验证，不是普通查询前置步骤 |
+| `metadata_cache_stats()` / `clear_metadata_cache()` / `bypass_metadata_cache()` | 查看、清空或绕过进程内 metadata 快照；只在 `GravitySDK` 与 `gravity_sdk` 模块函数上公开 |
 
 批量读取应一次提交，不要在外层再建线程池：
 
@@ -846,6 +847,16 @@ results = client.batch(
 `from_env()` 默认加载包内编译 manifest，并让 Insight 与 SQL 复用同一个按
 `timeout/attempts` 配置的进程级 HTTP runtime；先访问哪一侧不会改变配置。
 测试必须注入显式 fake transport；普通单元测试不得连接生产 Gravity。
+
+进程内 metadata cache 只存 `is_metadata_operation()` 允许的 snapshot，TTL 10 分钟，
+key 是 `(operation_id, 规范化 inputs)`。FieldPolicy 仍按本次请求做校验，缓存的是
+元数据快照，不是校验结论。成功 mutation 会清空该 cache。CLI 每次新进程，所以
+命令行连发不会命中；同一 `GravityInsightClient` / `GravitySDK` 实例连发会命中。
+`page` 不同就是不同 key：`page_size=1` 的第一页不能代替 `page_size=2000` 的全量。
+调用方要最新元数据时：`clear_metadata_cache(client)` 丢掉快照，或
+`bypass_metadata_cache(client, True)` 让后续加载直打上游。
+`metadata_cache_stats(client)` 返回 `ttl_seconds/entries/hits/misses/bypassed`，
+不含 snapshot 值。`GravitySDK` 上有同名方法。
 
 `read_all()` 和 `read_limited()` 的 `max_workers` 默认 6、上限 24，结果始终按页码顺序合并。
 只有首页明确给出 `total_page` 才会并发；未知长度由每页响应决定是否继续，因此保持串行。

@@ -15,7 +15,10 @@ __version__ = "0.3.0"
 _EXPORTS = {
     "DEFAULT_METADATA_TTL_SECONDS": (".cache", "DEFAULT_METADATA_TTL_SECONDS"),
     "MetadataCache": (".cache", "MetadataCache"),
+    "bypass_metadata_cache": (".cache", "bypass_metadata_cache"),
+    "clear_metadata_cache": (".cache", "clear_metadata_cache"),
     "is_metadata_operation": (".cache", "is_metadata_operation"),
+    "metadata_cache_stats": (".cache", "metadata_cache_stats"),
     "OperationCatalog": (".catalog", "OperationCatalog"),
     "OperationProbe": (".catalog", "OperationProbe"),
     "GravityInsightClient": (".client", "GravityInsightClient"),

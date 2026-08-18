@@ -70,6 +70,21 @@ class MetadataSdkMixin:
             max_age_hours=max_age_hours,
         )
 
+    def metadata_cache_stats(self) -> dict[str, int | float]:
+        from .cache import metadata_cache_stats
+
+        return metadata_cache_stats(self.insight)
+
+    def clear_metadata_cache(self) -> dict[str, int | float]:
+        from .cache import clear_metadata_cache
+
+        return clear_metadata_cache(self.insight)
+
+    def bypass_metadata_cache(self, enabled: bool = True) -> dict[str, int | float]:
+        from .cache import bypass_metadata_cache
+
+        return bypass_metadata_cache(self.insight, enabled)
+
     def resolve_capabilities(
         self,
         query: str,

@@ -59,6 +59,7 @@
 - [应答声明路由臂](routing-provenance.md) — 两条臂都写 `routing_mode`；识别器信封另给常设升级路径；不切默认。
 - [超限导出 truncated 生产确认](truncated-confirm.md) — 2026-08-18：同 App 同日两列变现导出信封为 truncated，钉住总量千万量级，文件 100 万行。
 - [留存/漏斗/分群生产对账](reconcile-round2.md) — 投放中 App 上人数与率对得上；compact 用户分维曾编错 type，漏斗组键曾被投影丢掉。
+- [分析查询 metadata 预取成本](metadata-cost.md) — 进程内 10 分钟 cache 已存在且会命中；#206 的「各 30」是默认 page_size=100 的分页，不是缺缓存。
 
 ## 归档记录
 

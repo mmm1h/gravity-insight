@@ -1390,6 +1390,7 @@ class GravityInsightCoreTests(unittest.TestCase):
         )
         self.assertEqual("metric", cached["data"]["list"][0]["name"])
         self.assertEqual(600.0, cache.stats()["ttl_seconds"])
+        self.assertEqual(0, cache.stats()["bypassed"])
 
         current[0] = 601.0
         cache.get_or_load("report.multidim.metric.list", {"page": 1}, load)
@@ -1397,6 +1398,16 @@ class GravityInsightCoreTests(unittest.TestCase):
         cache.get_or_load("report.multidim.query", {}, load)
         cache.get_or_load("report.multidim.query", {}, load)
         self.assertEqual(4, len(calls))
+
+        cache.set_bypass(True)
+        cache.get_or_load("report.multidim.metric.list", {"page": 1}, load)
+        self.assertEqual(5, len(calls))
+        self.assertEqual(1, cache.stats()["bypassed"])
+        cache.set_bypass(False)
+        cache.clear()
+        cache.get_or_load("report.multidim.metric.list", {"page": 1}, load)
+        self.assertEqual(6, len(calls))
+        self.assertEqual(1, cache.stats()["bypassed"])
 
     def test_client_caches_only_metadata_and_catalog_records_no_values(self):
         metadata_contract = manifest()

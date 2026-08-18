@@ -477,6 +477,30 @@ class GravityInsightAnalysisTests(unittest.TestCase):
             set(result["data"]),
         )
         self.assertEqual([], result["warnings"])
+        from gravity_sdk.cache import (
+            bypass_metadata_cache,
+            clear_metadata_cache,
+            metadata_cache_stats,
+        )
+
+        replay = client.read("analysis.event.query", event_inputs())
+        self.assertEqual("success", replay["status"])
+        self.assertEqual(4, len(transport.calls))
+        self.assertEqual(
+            {"ttl_seconds": 600.0, "entries": 2, "hits": 2, "misses": 2, "bypassed": 0},
+            metadata_cache_stats(client),
+        )
+        bypass_metadata_cache(client, True)
+        fresh = client.read("analysis.event.query", event_inputs())
+        self.assertEqual("success", fresh["status"])
+        self.assertEqual(7, len(transport.calls))
+        self.assertEqual(2, metadata_cache_stats(client)["bypassed"])
+        bypass_metadata_cache(client, False)
+        clear_metadata_cache(client)
+        after_clear = client.read("analysis.event.query", event_inputs())
+        self.assertEqual("success", after_clear["status"])
+        self.assertEqual(10, len(transport.calls))
+        self.assertEqual(2, metadata_cache_stats(client)["bypassed"])
 
     def test_event_query_accepts_preset_user_count_with_user_filter(self) -> None:
         def handler(_method: str, path: str, _kwargs: Mapping[str, Any]):
