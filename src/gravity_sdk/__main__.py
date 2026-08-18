@@ -19,6 +19,7 @@ Usage:
   gravity analysis saved list|get|prepare|run
   gravity analysis saved create|update|delete --dry-run|--execute
   gravity analysis template list|prepare|run
+  gravity analysis query --kind <kind> --spec <json> --app <id>
   gravity analysis query batch --input <queries.json> [--dry-run]
   gravity analysis bootstrap --app <id> --start <date> --end <date> --target <event> --plan-output <plan.json>
   gravity analysis dashboard prepare|run --app <alias|id> --ref <id|name> --start <date> --end <date>
@@ -43,7 +44,8 @@ Usage:
   gravity promotion custom-audiences
   gravity promotion bilibili-account-performance --start <date> --end <date>
   gravity promotion advertiser-profile --start <date> --end <date>
-  gravity export run <operation-id> --input <json|file|-> --output <file>
+  gravity export describe <operation-id>
+  gravity export run <operation-id> --input <json|file|-> --columns <codes> --idempotency-key <key> --output <file>
   gravity insight <command> [options]
   gravity apps snapshot --app <alias|id>
   gravity apps permission-profile
@@ -91,7 +93,8 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 
 def _main(argv: Sequence[str] | None = None) -> int:
-    from .errors import ErrorCategory, exit_code_for_category
+    from .errors import ErrorCategory, GravityInsightError, exit_code_for_category
+    from .cli_stdio import emit_entry_error
 
     try:
         args = _extract_workspace(list(sys.argv[1:] if argv is None else argv))
@@ -134,10 +137,13 @@ def _main(argv: Sequence[str] | None = None) -> int:
     if any(value in {"-h", "--help", "--dry-run"} for value in command_args):
         requires_credentials = False
 
-    if not ensure_first_run_credentials(
-        requires_credentials=requires_credentials
-    ):
-        return exit_code_for_category(ErrorCategory.LOCAL)
+    try:
+        if not ensure_first_run_credentials(
+            requires_credentials=requires_credentials
+        ):
+            return exit_code_for_category(ErrorCategory.LOCAL)
+    except GravityInsightError as exc:
+        return emit_entry_error(exc)
     return command(command_args)
 
 

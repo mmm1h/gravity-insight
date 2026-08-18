@@ -110,7 +110,8 @@ def _default_next_action(code: str, operation_id: str | None) -> str:
         ErrorCode.PARENT_REQUIRED.value: describe,
         ErrorCode.AUTH_MISSING.value: (
             "Run `gravity` in an interactive terminal to configure the Gravity "
-            "username and password."
+            "username and password, or place them in the ignored "
+            "`.env.gravity.local` and run `gravity insight auth refresh`."
         ),
         ErrorCode.AUTH_REJECTED.value: (
             "Run `gravity insight auth refresh`, then retry once."

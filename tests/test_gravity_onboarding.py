@@ -73,13 +73,16 @@ class GravityOnboardingTests(unittest.TestCase):
             self.assertEqual("17", cached.current_principal_id())
 
     def test_noninteractive_run_does_not_prompt_or_write(self) -> None:
+        from gravity_sdk.errors import InputValidationError
+
         with tempfile.TemporaryDirectory() as directory:
             env_path = Path(directory) / ".env.gravity.local"
-            self.assertTrue(
+            with self.assertRaises(InputValidationError) as caught:
                 ensure_first_run_credentials(
                     env_path=env_path, stdin=_Pipe(), requires_credentials=True
                 )
-            )
+            self.assertEqual("auth", caught.exception.field)
+            self.assertIn("auth refresh", str(caught.exception.next_action))
             self.assertFalse(env_path.exists())
 
     def test_existing_legacy_token_is_migrated_without_prompting(self) -> None:

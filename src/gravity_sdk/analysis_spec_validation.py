@@ -23,8 +23,16 @@ def reject_keys(
 
 def mapping(value: Any, field: str) -> Mapping[str, Any]:
     if not isinstance(value, Mapping):
+        next_action = (
+            "Add a metric object with `field` and `aggregation`; inspect the "
+            "contract with `gravity analysis query --kind <kind> --spec-schema`."
+            if field.endswith(".metric")
+            else "Correct the Analysis spec and retry the same command."
+        )
         raise InputValidationError(
-            f"actual value: {actual_value(value)}; allowed type: object", field=field
+            f"actual value: {actual_value(value)}; allowed type: object",
+            field=field,
+            next_action=next_action,
         )
     return value
 

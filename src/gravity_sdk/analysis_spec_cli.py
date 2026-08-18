@@ -24,7 +24,9 @@ def add_analysis_query_arguments(
     concurrency_type: Callable[[str], int],
 ) -> None:
     parser.add_argument(
-        "--kind", choices=sorted(ANALYSIS_QUERY_OPERATIONS)
+        "--kind",
+        choices=sorted(ANALYSIS_QUERY_OPERATIONS),
+        help="event, funnel, property, retention, or scatter; required except for batch",
     )
     parser.add_argument(
         "--experimental",
@@ -37,7 +39,10 @@ def add_analysis_query_arguments(
         "--spec",
         help="compact Analysis spec as inline JSON, file path, or '-' for stdin",
     )
-    parser.add_argument("--app", help="workspace App alias or positive id for --spec")
+    parser.add_argument(
+        "--app",
+        help="workspace App alias or positive id; required with --spec",
+    )
     parser.add_argument(
         "--apps",
         action="append",
@@ -77,7 +82,7 @@ def add_analysis_query_arguments(
     parser.add_argument(
         "--spec-schema",
         action="store_true",
-        help="print the compact Analysis Spec v1 contract without a client",
+        help="print the compact Analysis Spec v1 contract; requires --kind and is offline",
     )
     parser.add_argument(
         "--output", type=output_file,
@@ -104,15 +109,9 @@ def run_analysis_query_command(
         )
     if getattr(args, "apps", None) and args.spec is None:
         raise InputValidationError(f"actual value: {actual_value(getattr(args, 'apps', None))}; " + ("--apps requires --spec"), field="apps")
-    if bool(getattr(args, "spec_schema", False)):
-        if args.spec is not None or args.input is not None:
-            raise InputValidationError(
-                "--spec-schema cannot be combined with --spec or --input",
-                field="spec_schema", next_action="Omit either --spec-schema or --spec/--input, then retry.",
-            )
-        result = analysis_query_spec_schema()
-        result["requested_kind"] = args.kind
-        return result
+    schema = _spec_schema_result(args)
+    if schema is not None:
+        return schema
     if args.spec is None and bool(getattr(args, "query_spec_dry_run", False)):
         raise InputValidationError(
             f"actual value: {actual_value(args.spec)}; " + ("--dry-run requires --spec; raw --input cannot be executed in dry-run mode"),
@@ -130,11 +129,9 @@ def run_analysis_query_command(
             )
         client = build_client(allow_experimental=True)
     if args.spec is None:
-        inputs, _ = merge_shortcuts(
-            client, operation_id, args, parse_object(args.input)
+        return _run_raw_query(
+            args, client, operation_id, parse_object, merge_shortcuts, call_read
         )
-        inputs.setdefault("query_id", new_analysis_query_id())
-        return call_read(client, operation_id, inputs)
     if args.input is not None:
         raise InputValidationError(
             "--spec cannot be combined with raw --input", field="spec", next_action="Omit either --spec or raw --input, then retry."
@@ -156,6 +153,45 @@ def run_analysis_query_command(
         compare_end,
         call_read,
     )
+
+
+def _spec_schema_result(args: Any) -> dict[str, Any] | None:
+    if not bool(getattr(args, "spec_schema", False)):
+        return None
+    if args.spec is not None or args.input is not None:
+        raise InputValidationError(
+            "--spec-schema cannot be combined with --spec or --input",
+            field="spec_schema", next_action="Omit either --spec-schema or --spec/--input, then retry.",
+        )
+    result = analysis_query_spec_schema()
+    result["requested_kind"] = args.kind
+    return result
+
+
+def _run_raw_query(
+    args: Any,
+    client: Any,
+    operation_id: str,
+    parse_object: Callable[[str], Mapping[str, Any]],
+    merge_shortcuts: Callable[..., tuple[dict[str, Any], list[str]]],
+    call_read: Callable[..., dict[str, Any]],
+) -> dict[str, Any]:
+    if args.input is None:
+        raise InputValidationError(
+            f"actual value: {actual_value(args.spec)}; "
+            "analysis query requires --spec, or expert raw --input",
+            field="spec",
+            next_action=(
+                "Run `gravity analysis query --kind <kind> --spec-schema`, "
+                "fill required fields, then retry with `--spec <json-or-file> "
+                "--app <alias-or-id>`."
+            ),
+        )
+    inputs, _ = merge_shortcuts(
+        client, operation_id, args, parse_object(args.input)
+    )
+    inputs.setdefault("query_id", new_analysis_query_id())
+    return call_read(client, operation_id, inputs)
 
 
 def _run_compact_query(
@@ -288,7 +324,15 @@ def _reject_unrelated_shortcuts(args: Any) -> None:
     selected = sorted(name for name, value in unsupported.items() if value is not None)
     if selected:
         raise InputValidationError(
+            f"actual value: {actual_value(selected)}; "
             "--spec does not accept unrelated raw-query shortcuts: "
-            + ", ".join(selected),
-            field="spec", next_action="Omit either --spec or raw --input, then retry.",
+            + ", ".join(selected)
+            + "; put grouping in spec.group_by and metrics in spec.steps[].metric",
+            field="spec",
+            next_action=(
+                "Omit --"
+                + ", --".join(name.replace("_", "-") for name in selected)
+                + " and put those fields in `--spec`; inspect the contract with "
+                "`gravity analysis query --kind <kind> --spec-schema`."
+            ),
         )

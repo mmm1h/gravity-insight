@@ -170,11 +170,29 @@ def _add_search_commands(metadata_commands: Any) -> None:
     ):
         query = metadata_commands.add_parser(name, help=help_text)
         query.set_defaults(network_required=False)
-        query.add_argument("query", nargs="?", default="")
-        query.add_argument("--app-id")
+        query.add_argument(
+            "query",
+            nargs="?",
+            default="",
+            help="Optional search term; omit to list the first page.",
+        )
+        query.add_argument(
+            "--app-id",
+            help="Restrict results to one synchronized App id.",
+        )
         query.add_argument("--database", type=Path, default=None)
-        query.add_argument("--limit", type=metadata_limit, default=20)
-        query.add_argument("--offset", type=nonnegative_int, default=0)
+        query.add_argument(
+            "--limit",
+            type=metadata_limit,
+            default=20,
+            help="Maximum rows to return (default: 20).",
+        )
+        query.add_argument(
+            "--offset",
+            type=nonnegative_int,
+            default=0,
+            help="Skip this many matching rows.",
+        )
 
 
 def _run_sync(args: Any, client_builder: Any) -> dict[str, Any]:

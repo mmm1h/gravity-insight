@@ -347,11 +347,21 @@ def ensure_first_run_credentials(
     config = CredentialConfig.from_env(selected_path, environ={})
     if config.username and config.password:
         return True
+    if config.token:
+        return True
 
     input_stream = stdin or sys.stdin
     output_stream = stderr or sys.stderr
     if not input_stream.isatty():
-        return True
+        raise InputValidationError(
+            "actual value: non-interactive stdin; Gravity username/password are not configured",
+            field="auth",
+            next_action=(
+                "Run `gravity` in an interactive terminal to save username and "
+                "password, or place them in the ignored `.env.gravity.local` "
+                "and run `gravity insight auth refresh`."
+            ),
+        )
 
     output_stream.write("Gravity 首次使用设置\n")
     output_stream.write("请输入 Gravity 用户名：")

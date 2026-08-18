@@ -44,7 +44,13 @@ def add_analysis_query_commands(
 ) -> Any:
     """Register the compatible scalar query and its compact batch child."""
 
-    parser = analysis_commands.add_parser("query")
+    parser = analysis_commands.add_parser(
+        "query",
+        help=(
+            "Run one compact Analysis Spec v1 query; print the contract with "
+            "--kind <kind> --spec-schema."
+        ),
+    )
     add_analysis_query_arguments(parser, add_input, add_shortcuts, concurrency_type)
     add_analysis_query_batch_subcommand(parser, add_input, concurrency_type)
     from .analysis_bootstrap_cli import add_analysis_bootstrap_command

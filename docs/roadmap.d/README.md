@@ -64,6 +64,7 @@
 - [投放/素材/报表看板生产对账](reconcile-round3.md) — iOS 分身消耗分页与可加性成立；`gravity_material_id` 恒 0；投放 `total` 数组曾让分维审计失效。
 - [上游拒绝可自纠](upstream-selfcorrect.md) — 受审查 extra.error 映射 + 漏斗不返回率的合同声明。
 - [分析查询 metadata 预取成本](metadata-cost.md) — 进程内 10 分钟 cache 已存在且会命中；#206 的「各 30」是默认 page_size=100 的分页，不是缺缓存。
+- [首次使用摩擦：错误入口与 --help](coldstart-friction.md) — 2026-08-19：三个真实任务能完成；缺 `--spec` / 错 category 现指向合法下一步；分维组标签仍被投影省略。
 
 ## 归档记录
 
