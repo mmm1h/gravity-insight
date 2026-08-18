@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
-from .errors import PermissionUnavailableError, SemanticRejectedError
+from .errors import PermissionUnavailableError
 from .models import OperationSpec, SemanticErrorRule
 from .result_audit import bind_error_receipts
+from .semantic_rejection import raise_read_rejection
 
 
 SEMANTIC_SUCCESS = "success"
@@ -49,7 +50,10 @@ def classify_semantic_status(payload: Any) -> str:
 
 
 def enforce_semantic_rules(
-    operation: OperationSpec, payload: Mapping[str, Any], http_receipts: Any = ()
+    operation: OperationSpec,
+    payload: Mapping[str, Any],
+    http_receipts: Any = (),
+    request_inputs: Mapping[str, Any] | None = None,
 ) -> str:
     semantic_status = classify_semantic_status(payload)
     rules = operation.semantic_error_rules or (
@@ -58,11 +62,23 @@ def enforce_semantic_rules(
     )
     for rule in rules:
         if _rule_matches(semantic_status, payload, rule):
-            _raise_rule(semantic_status, operation.operation_id, payload, rule, http_receipts)
+            _raise_rule(
+                semantic_status,
+                operation.operation_id,
+                payload,
+                rule,
+                http_receipts,
+                request_inputs,
+            )
     if semantic_status == SEMANTIC_PERMISSION:
         _raise_permission(operation.operation_id, payload, http_receipts)
     if semantic_status == SEMANTIC_REJECTED:
-        _raise_semantic("Gravity returned an unregistered semantic status", http_receipts)
+        raise_read_rejection(
+            payload,
+            operation_id=operation.operation_id,
+            request_inputs=request_inputs,
+            http_receipts=http_receipts,
+        )
     return semantic_status
 
 
@@ -152,10 +168,16 @@ def _raise_rule(
     payload: Mapping[str, Any],
     rule: SemanticErrorRule,
     http_receipts: Any,
+    request_inputs: Mapping[str, Any] | None = None,
 ) -> None:
     if semantic_status == SEMANTIC_PERMISSION:
         _raise_permission(operation_id, payload, http_receipts)
-    _raise_semantic(rule.message, http_receipts)
+    raise_read_rejection(
+        payload,
+        operation_id=operation_id,
+        request_inputs=request_inputs,
+        http_receipts=http_receipts,
+    )
 
 
 def _permission_denied(payload: Mapping[str, Any]) -> bool:
@@ -187,12 +209,6 @@ def _raise_permission(
             "workspace owner, then retry with the same input."
         ),
     )
-    bind_error_receipts(error, http_receipts)
-    raise error
-
-
-def _raise_semantic(message: str, http_receipts: Any) -> None:
-    error = SemanticRejectedError(message)
     bind_error_receipts(error, http_receipts)
     raise error
 

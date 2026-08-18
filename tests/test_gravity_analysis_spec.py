@@ -70,6 +70,11 @@ class AnalysisQuerySpecTests(unittest.TestCase):
         self.assertTrue(
             schema["kind_schemas"]["event"]["properties"]["query_id"]["pattern"]
         )
+        funnel_notes = schema["kind_schemas"]["funnel"]["notes"]
+        self.assertFalse(funnel_notes["returns_conversion_rate"])
+        self.assertIn("step_n / step_1", funnel_notes["rate_denominators"]["first_step"])
+        self.assertIn("step_n / step_{n-1}", funnel_notes["rate_denominators"]["previous_step"])
+        self.assertEqual(4, funnel_notes["window_funnel_mode"])
         with self.assertRaises(InputValidationError):
             compile_query_spec(
                 "scatter",

@@ -223,6 +223,12 @@
       "path": "src/gravity_sdk/models.py",
       "reason": "parse unreliable_item_keys contract notes so callers can see yesterday_count is not event volume",
       "to": 6302
+    },
+    {
+      "from": 4795,
+      "path": "src/gravity_sdk/executor.py",
+      "reason": "pass validated request inputs into semantic rejection so callers get field= and next_action without echoing extra.error",
+      "to": 4797
     }
   ],
   "legacy_files": {
@@ -264,7 +270,7 @@
     },
     "src/gravity_sdk/executor.py": {
       "ast_hard_limit": 9149,
-      "ast_nodes": 4795,
+      "ast_nodes": 4797,
       "migration_sloc": 1330,
       "sloc_hard_limit": 1430
     },

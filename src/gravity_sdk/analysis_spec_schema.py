@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Mapping
 
 from ._field_policy_shared import (
     ANALYSIS_CONTROL_ID_RE,
@@ -67,6 +67,22 @@ def _kind_schemas() -> dict[str, Any]:
                     "global_logic": _enum("AND", "OR"),
                     "window": {"$ref": "#/definitions/funnel_window"},
                     "calculate_each_day": {"type": "boolean", "default": False},
+                },
+                notes={
+                    "returns_conversion_rate": False,
+                    "count_meaning": (
+                        "each step count is the ordered subset that completed "
+                        "this step and every earlier step"
+                    ),
+                    "rate_denominators": {
+                        "previous_step": "step_n / step_{n-1}",
+                        "first_step": "step_n / step_1",
+                    },
+                    "denominator_required": (
+                        "three or more steps make the two denominators differ; "
+                        "the SDK does not choose one or insert a rate"
+                    ),
+                    "window_funnel_mode": 4,
                 },
             ),
             "retention": _dated_spec(
@@ -380,8 +396,13 @@ def _base_spec(*, required: tuple[str, ...], properties: dict[str, Any]) -> dict
     }
 
 
-def _dated_spec(*, required: tuple[str, ...], properties: dict[str, Any]) -> dict[str, Any]:
-    return _base_spec(
+def _dated_spec(
+    *,
+    required: tuple[str, ...],
+    properties: dict[str, Any],
+    notes: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    spec = _base_spec(
         required=required,
         properties={
             "start": {"type": "string", "format": "date"},
@@ -390,6 +411,9 @@ def _dated_spec(*, required: tuple[str, ...], properties: dict[str, Any]) -> dic
             **properties,
         },
     )
+    if notes:
+        spec["notes"] = dict(notes)
+    return spec
 
 
 def _shared_filter_properties() -> dict[str, Any]:

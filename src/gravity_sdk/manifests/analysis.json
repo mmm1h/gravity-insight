@@ -1289,7 +1289,7 @@
       "action": "query",
       "auth_profile": "gravity_authorization",
       "contract_version": 1,
-      "description": "漏斗分析结构化聚合；步骤、窗口和条件契约已确认，动态响应按受控聚合投影输出。",
+      "description": "漏斗分析结构化聚合；步骤、窗口和条件契约已确认，动态响应按受控聚合投影输出。上游 window_funnel_mode=4 只返回各步人数，不返回转化率；SDK 不代算。人数是该步及之前每步都完成的有序子集。调用方自算时须先选定分母：相对上一步=本步人数/上一步人数，相对第一步=本步人数/第一步人数。三步及以上两种口径不同。",
       "domain": "analysis",
       "effect": "read",
       "input_fields": {

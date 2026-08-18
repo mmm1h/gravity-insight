@@ -332,7 +332,7 @@ def _description(selected_kind: str | None) -> str:
     )
     kind_terms = {
         "event": "事件趋势、行为次数与发生量",
-        "funnel": "漏斗、转化路径与逐步转化",
+        "funnel": "漏斗、转化路径与逐步人数（不返回转化率；自算须先选定上一步或第一步做分母）",
         "retention": "留存、回访与复访",
         "property": "属性分布与用户构成",
         "scatter": "散点关系与指标相关",

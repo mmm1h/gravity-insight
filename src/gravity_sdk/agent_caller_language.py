@@ -25,7 +25,7 @@ _ANALYSIS_JOURNEY_TITLES: dict[str, tuple[str, ...]] = {
     ),
     "analysis.query.spec:funnel": (
         "看多步行为的转化漏斗",
-        "转化路径与逐步转化",
+        "转化路径与逐步人数（不返回转化率）",
     ),
     "analysis.query.spec:retention": (
         "看起始行为后的用户留存",

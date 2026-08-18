@@ -237,6 +237,8 @@ partial，但原 source 顶层字段仍按纯加法合同不变。
 
 ## Analysis Query composite
 
+漏斗 composite 与 CLI/SDK 同一合同：只返回各步人数，不返回转化率；自算须先选定上一步或第一步做分母。
+
 五种稳定 Analysis 查询都可直接放进现有 `composite` 节点：`event`、`funnel`、
 `retention`、`property`、`scatter`。request 合同固定为
 `name/kind/app/spec`，可选 `start/end`；`start/end` 必须成对出现并覆盖 spec 日期。
