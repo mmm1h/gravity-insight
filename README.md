@@ -76,7 +76,7 @@ result = gravity.read("app.list", {"page": 1, "page_size": 20})
 
 从 [文档导航](docs/index.md) 开始。它按任务给出最短阅读路径：
 
-- 第一次安装和查询：[快速上手](docs/getting-started.md)
+- 第一次安装并把 Agent 接上：[团队上手包](docs/team-onboarding.md)
 - Agent 执行查询：[Agent 工作流](docs/agent-workflow.md)
 - Python 集成：[SDK 参考](docs/reference/sdk.md)
 - 理解系统边界：[架构与概念](docs/architecture.md)
