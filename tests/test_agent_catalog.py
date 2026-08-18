@@ -235,6 +235,34 @@ class AgentCatalogTests(unittest.TestCase):
         self.assertEqual("unavailable", result["capability"]["availability"])
         self.assertIn("media report", result["next_action"])
 
+    def test_named_gap_describe_envelope_keeps_the_gap_argv(self) -> None:
+        result = run_agent_catalog_command(
+            _args(
+                "describe",
+                selector="gap:ANALYSIS_EXPORT_FILE_CONTRACT_MISSING",
+            ),
+            self.client,
+        )
+        gap = result["capability"]
+        self.assertEqual(
+            ["gravity", "export", "list-capabilities"],
+            gap["next"]["argv"],
+        )
+        self.assertEqual(gap["next"]["argv"], result["next"]["argv"])
+        self.assertEqual(gap["next_action"], result["next_action"])
+
+    def test_product_describe_envelope_does_not_advertise_plan_run(self) -> None:
+        result = run_agent_catalog_command(
+            _args("describe", selector="analysis.query.spec:event"),
+            self.client,
+        )
+        self.assertEqual(
+            ["gravity", "plan", "run", "--input", "<plan.json>"],
+            result["capability"]["next"]["argv"],
+        )
+        self.assertNotIn("next", result)
+        self.assertIn("never executes", result["next_action"])
+
     def test_same_selector_describe_surfaces_keep_the_full_input_contract(self) -> None:
         from gravity_sdk.find import run_operation_command
 

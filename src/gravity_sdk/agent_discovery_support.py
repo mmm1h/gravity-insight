@@ -191,6 +191,20 @@ def assert_discovery_page(
         )
 
 
+def _navigation_from_gap(gap: Mapping[str, Any]) -> dict[str, Any]:
+    """Copy a gap's own next fields; do not invent a more general command."""
+
+    fields: dict[str, Any] = {}
+    action = gap.get("next_action")
+    if isinstance(action, str) and action.strip():
+        fields["next_action"] = action
+    nxt = gap.get("next")
+    argv = nxt.get("argv") if isinstance(nxt, Mapping) else None
+    if isinstance(argv, Sequence) and not isinstance(argv, (str, bytes)) and argv:
+        fields["next"] = {"argv": list(argv)}
+    return fields
+
+
 def discovery_next_fields(
     has_candidates: bool,
     gaps: Sequence[Mapping[str, Any]] | None = None,
@@ -204,15 +218,11 @@ def discovery_next_fields(
             )
         }
     first = gaps[0] if gaps else None
-    if isinstance(first, Mapping) and first.get("code") == UNRANKED_OPERATIONS:
-        return {
-            "next_action": UNRANKED_OPERATIONS_NEXT_ACTION,
-            "next": host_catalog_next(),
-        }
-    return {
-        "next_action": NO_CANDIDATE_NEXT_ACTION,
-        "next": catalog_browse_next(),
-    }
+    fields = _navigation_from_gap(first) if isinstance(first, Mapping) else {}
+    if "next_action" not in fields:
+        fields["next_action"] = NO_CANDIDATE_NEXT_ACTION
+        fields.setdefault("next", catalog_browse_next())
+    return fields
 
 
 def select_authoritative_cards(
