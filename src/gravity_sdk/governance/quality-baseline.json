@@ -114,11 +114,6 @@
         "report.multidim.template.preset.list": 1
       },
       "src/gravity_sdk/executor.py": {
-        "analysis.event.query": 2,
-        "analysis.funnel.query": 2,
-        "analysis.property.query": 3,
-        "analysis.retention.query": 2,
-        "analysis.scatter.query": 2,
         "analysis.user_event.list": 1
       },
       "src/gravity_sdk/prober/batch.py": {
@@ -276,7 +271,7 @@
     },
     "src/gravity_sdk/executor.py": {
       "ast_hard_limit": 9149,
-      "ast_nodes": 4797,
+      "ast_nodes": 4686,
       "migration_sloc": 1330,
       "sloc_hard_limit": 1430
     },
