@@ -109,6 +109,20 @@ class AgentUsabilityEvalTests(unittest.TestCase):
         )
         self.assertEqual(sum(counts.values()), total)
 
+        # The ledger states its totals twice: the programmatic recount above, and a
+        # narrative "…故为 `56 = a / b / c`" chain that records each transition. The
+        # chain legitimately keeps older counts as history, so only its LAST entry
+        # has to agree with the recount. It silently drifted once: the realtime-event
+        # journey closed, the recount became 51 / 3 / 2, and the narrative was left
+        # asserting 50 / 3 / 3 with nothing comparing the two.
+        narrative = re.findall(r"故为 \*{0,2}`56 = (\d+) / (\d+) / (\d+)`", text)
+        self.assertTrue(narrative, "ledger narrative count chain is missing or reworded")
+        self.assertEqual(
+            (closed, partial_count, missing_count),
+            tuple(int(group) for group in narrative[-1]),
+            "the last narrative count must match the programmatic recount",
+        )
+
     def test_ledger_status_change_switches_the_same_frozen_case_shape(self) -> None:
         manifest = self.subject._manifest()
         raw = next(

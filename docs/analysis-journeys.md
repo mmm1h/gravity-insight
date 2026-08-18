@@ -28,8 +28,9 @@ claims，仍不新增产品或结果合同，故先为 `56 = 48 / 1 / 7`；`app.
 商店 URL 首次取得成功非空合同，OneLink/公开信息组合动线从完全缺失转已闭环，故为
 `56 = 49 / 1 / 6`；本轮 D28 在 catalog#2、`2026-07-17..2026-08-16` 取得非空 item/total 后晋升
 `report.get.query`，故为 `56 = 50 / 1 / 5`；本轮腾讯层级与素材取得前端读语义确认后晋升
-`promotion.tencent.tencent_adgroup_v2.list` 与 `material.tencent_medium_creative.list`，D33/D34 与 D32 由完全缺失转部分闭环，故为 **`56 = 50 / 3 / 3`**。
-operation/stable 为 235 / 226（189 read + 37 governed mutation）；canonical 产品卡先由 45 增为 73，
+`promotion.tencent.tencent_adgroup_v2.list` 与 `material.tencent_medium_creative.list`，D33/D34 与 D32 由完全缺失转部分闭环，故为 `56 = 50 / 3 / 3`；2026-08-18 实时事件入库窗第四轮改用前端合法值
+`event_type=profile`，首次取得非空 1000 条并晋升 `analysis.realtime_event.list`，J35 由完全缺失转已闭环，故为 **`56 = 51 / 3 / 2`**。
+operation/stable 为 237 / 228（190 read + 38 governed mutation）；canonical 产品卡先由 45 增为 73，
 再加 4 张自定义指标卡、4 张模板动作卡和 3 张保存分析动作卡得到 84；四个独立
 Analysis export creator 再增 4 张卡得到 88，语义组合、`app.list` 与 `app.app_info.get` 各增加 1 张卡得到 91，
 D28 再增 1 张得到 92，变现明细导出 creator 再增 1 张得到 93。精确 gap 由 8 减为 7；`app.list`、`app.app_info.get` 与 `report.get.query`
