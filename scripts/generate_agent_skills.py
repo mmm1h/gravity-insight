@@ -141,7 +141,7 @@ def _catalog_discovery(catalog: dict[str, int], exits: dict[str, str]) -> str:
         [
             f"完整目录当前有 {catalog['selector_count']} 个 selector：{catalog['operation_count']} 个 operation、{catalog['product_card_count']} 张产品卡与 {catalog['gap_count']} 个精确 gap。先看分类，不要先猜命令：",
             "```powershell\ngravity agent-catalog categories\ngravity agent-catalog category <category>\ngravity agent-catalog describe <selected-selector>\ngravity agent-catalog host\n```",
-            "第一层决定领域，第二层只选择 selector，第三层才读取完整输入合同、`required_inputs`、`next.argv` 与可执行状态。`host` 只投影产品/gap 及严格选择 schema，不暴露 raw operation。调用方能产出选择时推荐宿主臂：读取 `host` 投影后只返回 `gravity.host-product-selection.v1`，再显式 `gravity agent --routing host_catalog --host-selection <json>`；仓库消费该选择、不调模型。省略 `--routing` 时默认 recognizer 是够不着宿主时的地板，不是劣等品。category 返回 `next_offset` 时，只有确实需要浏览该领域剩余能力才继续；已知 selector 直接 describe。所有目录命令均离线且不执行候选。",
+            "第一层决定领域，第二层只选择 selector，第三层才读取完整输入合同、`required_inputs`、`next.argv` 与可执行状态。本面投影产品卡加压缩 operation 合同，不投影 wire/examples/privacy/health。完整合同看 `gravity operations describe <selector>`。`host` 只投影产品/gap 及严格选择 schema，不暴露 raw operation。调用方能产出选择时推荐宿主臂：读取 `host` 投影后只返回 `gravity.host-product-selection.v1`，再显式 `gravity agent --routing host_catalog --host-selection <json>`；仓库消费该选择、不调模型。省略 `--routing` 时默认 recognizer 是够不着宿主时的地板，不是劣等品。category 返回 `next_offset` 时，只有确实需要浏览该领域剩余能力才继续；已知 selector 直接 describe。所有目录命令均离线且不执行候选。",
         ],
         catalog,
         exits,

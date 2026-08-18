@@ -47,9 +47,16 @@ def dispatch(args: Any, object_input: Callable[[Any], Mapping[str, Any]]) -> Any
     bounded = _bounded(args, all_pages)
     result = _read_result(args, client, inputs, all_pages, bounded)
     if isinstance(result, Mapping):
-        result = {**result, "pagination_audit": pagination_audit(
-            result, inputs, all_pages=all_pages, bounded=bounded
-        )}
+        from .dimension_sum_audit import dimension_sum_diagnostics
+
+        extras = dimension_sum_diagnostics(result, inputs)
+        result = {
+            **result,
+            "pagination_audit": pagination_audit(
+                result, inputs, all_pages=all_pages, bounded=bounded
+            ),
+            **({"diagnostics": extras} if extras else {}),
+        }
     return project_output(
         schema, args.operation_id, result, fields, request_inputs=inputs
     )

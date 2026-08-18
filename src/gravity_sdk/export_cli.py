@@ -41,6 +41,20 @@ def add_export_commands(
     )
     describe.add_argument("operation_id")
     describe.set_defaults(network_required=False)
+    evaluate = subcommands.add_parser(
+        "evaluate",
+        help="Estimate rows for one evaluate export route without creating a job.",
+    )
+    evaluate.add_argument("operation_id")
+    add_input(evaluate, required=True)
+    evaluate.add_argument("--timeout", type=float, default=120.0)
+    evaluate.set_defaults(network_required=True)
+    types = subcommands.add_parser(
+        "task-types",
+        help="List verified export task types from the supporting catalog route.",
+    )
+    types.add_argument("--timeout", type=float, default=120.0)
+    types.set_defaults(network_required=True)
     start = subcommands.add_parser(
         "start",
         help="Create one job using the exact schema returned by `export describe`.",
@@ -87,6 +101,14 @@ def run_export_command(
         return client.export_capabilities()
     if args.export_command == "describe":
         return client.export_describe(args.operation_id)
+    if args.export_command == "evaluate":
+        return client.export_evaluate(
+            args.operation_id,
+            object_input(args.input),
+            timeout_seconds=args.timeout,
+        )
+    if args.export_command == "task-types":
+        return client.export_task_types(timeout_seconds=args.timeout)
     if args.export_command == "start":
         columns = _requested_columns(args.columns)
         return client.export_start(

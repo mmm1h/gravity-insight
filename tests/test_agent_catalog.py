@@ -219,6 +219,31 @@ class AgentCatalogTests(unittest.TestCase):
         self.assertEqual("unavailable", result["capability"]["availability"])
         self.assertIn("non-empty catalog", result["next_action"])
 
+    def test_same_selector_describe_surfaces_keep_the_full_input_contract(self) -> None:
+        from gravity_sdk.find import run_operation_command
+
+        for selector in ("report.get.query", "app.list", "app.app_info.get"):
+            with self.subTest(selector=selector):
+                agent = run_agent_catalog_command(
+                    _args("describe", selector=selector), self.client
+                )
+                ops = run_operation_command(
+                    SimpleNamespace(
+                        operation_command="describe", operation_id=selector
+                    ),
+                    self.client,
+                    lambda *_args: None,
+                )
+                self.assertEqual(
+                    set(ops["input_schema"]), set(agent["capability"]["input_schema"])
+                )
+                self.assertEqual("operations", ops["surface"]["name"])
+                self.assertEqual("agent-catalog", agent["surface"]["name"])
+                self.assertEqual(
+                    ["gravity", "operations", "describe", selector],
+                    agent["surface"]["complete_contract"],
+                )
+
     def test_products_precede_raw_operations_and_metadata_cards_are_actionable(self) -> None:
         inventory = _inventory(self.client)
         ranks = {"product": 0, "raw_operation": 1, "capability_gap": 2}
