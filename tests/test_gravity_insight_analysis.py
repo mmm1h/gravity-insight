@@ -450,6 +450,20 @@ class GravityInsightAnalysisTests(unittest.TestCase):
             )
         )
 
+    def test_event_query_keeps_display_group_labels_and_drops_non_labels(self) -> None:
+        def handler(_method, path, kwargs):
+            if path.endswith("event_list/"): return event_metadata()
+            if "property_list" in path: return page([{"name": "$os", "visible": True}])
+            if any(item.get("field") == "$os" for item in kwargs.get("body", {}).get("group_by_list") or []):
+                return {"code": 0, "data": {"list": [[{"list": [{"用户.设备类型": "iOS", "uid": "x"}], "event_index": 0}]]}}
+            return clean_event_result()
+        client, _ = client_for("analysis.event.query", "analysis.event_property.list", "analysis.user_property.list", handler=handler)
+        groups = [{"type": "default_event", "field": "create_time", "group_by": "day"}, {"type": "user", "field": "$os", "group_by": "$os"}]
+        grouped = client.read("analysis.event.query", event_inputs(group_by_list=groups))
+        self.assertEqual("iOS", grouped["data"]["list"][0][0]["list"][0].get("用户.设备类型"))
+        self.assertNotIn("uid", json.dumps(grouped["data"]))
+        self.assertEqual([{"purchase": 3}], client.read("analysis.event.query", event_inputs())["data"]["list"][0][0]["list"])
+
     def test_event_query_accepts_object_dates_and_projects_exact_aggregate_shape(
         self,
     ) -> None:
