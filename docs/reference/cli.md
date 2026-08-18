@@ -1025,8 +1025,9 @@ gravity plan run --input plan.json --dry-run
 gravity plan run --input plan.json --concurrency 6
 ```
 
-`schema` 输出 `gravity.plan-schema.v1`，包括节点类型、字段、预算和失败合同。`run` 的输入必须
-是 `gravity.plan.v1` 对象。最小可复制示例：
+`schema` 输出 `gravity.plan-schema.v1`，包括节点类型、字段、预算、失败合同，以及
+`composites.analysis_query` 的 `binding_targets` / `spec_binding` / `request_fields`。
+`run` 的输入必须是 `gravity.plan.v1` 对象。最小可复制示例：
 
 ```json
 {

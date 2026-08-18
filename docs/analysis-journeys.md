@@ -466,12 +466,12 @@ operation 继续保留专家入口，但明确不是产品等价物；`app.realt
 
 | 动线 | 状态 | 四面可达（CLI / SDK / Plan / Agent 中英首问） | 调用次数（已知 / 未知） | 阻塞 |
 | --- | --- | --- | --- | --- |
-| 看某事件随时间、分组和条件的变化 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | 2026-08-18：同进程第二次起只发 1 次 query HTTP；冷启动 FieldPolicy 预取 `event.list`+`event_property.list`（`page_size=2000` 时各 1 页）。评测冻结 case 未改。2026-08-19 #215：`$os` 分维行现带 `用户.设备类型`；`union_groups`/`y` 仍省略。 |
+| 看某事件随时间、分组和条件的变化 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | 2026-08-18：同进程第二次起只发 1 次 query HTTP；冷启动 FieldPolicy 预取 `event.list`+`event_property.list`（`page_size=2000` 时各 1 页）。评测冻结 case 未改。2026-08-19 #215：`$os` 分维行现带 `用户.设备类型`；`union_groups`/`y` 仍省略。2026-08-19 #225：投放中 App `29034827` 上一条 4 节点 Plan（metadata 确认 `$UserFirstRegister` → 近 7 天趋势 → `$os` 分维）生产 4/4 success；`plan schema` 现写出 `composites.analysis_query.binding_targets=["/app"]`，绑 `/spec/...` 预检列出允许 target。不改状态、不改冻结 case。 |
 | 看多步行为的转化漏斗 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | 2026-08-18 生产对账：单调、第一步=注册分母、分日可加成立；响应不返回率。合同/describe/`spec-schema` 现已声明：只返回人数、不代算率、两种分母口径。compact 用户分维曾编成 `user_property` 被拒，现映射为可自纠错误。评测冻结 case 未改。2026-08-19 #217 冷启动复跑：`$UserFirstRegister→$AdClick` 近 7 天单调且分日可加；中文长问默认识别器落到不可执行 `analysis.task.handoff`，短问/宿主臂命中产品卡。不改状态。 |
 | 看起始行为后的用户留存 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | 2026-08-18 生产对账：day0=分母、人数≤分母、`$os` 分维求和成立。省略 `time_grain` 或空 `group_by_list` 被上游拒时，错误现带 `field=group_by_list` 与 create_time/day 修正动作。评测冻结 case 未改。2026-08-19 #217 冷启动复跑：同事件回访 D0=分母；跨事件 `$AdClick` 得 D0/D1；`$AppLogin` 两种 offset 合法空信封。不改状态。 |
 | 看用户或事件属性的分布与聚合 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | - |
 | 看事件指标之间的散点关系 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | - |
-| 用同一分析定义比较两个时期 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | - |
+| 用同一分析定义比较两个时期 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | 2026-08-19 #225：同一 Plan 的 `compare_by_os` 节点带 `compare_start`/`compare_end` 生产 success，信封含 `windows` 与 `delta`（按日绝对变化）。CLI `--compare-* --dry-run` 仍拒绝（`field=dry_run`）。`plan schema` 的 `request_fields` 含这对字段。不改状态、不改冻结 case。 |
 | 在已有结果上执行调用方绑定的派生算术与声明集合对账 | 不计独立动线（调用方派生便利面） | 有 / 有 / 有 / 有（未声明公式返回目标 gap） | 1 / 2（公式未知；workspace 声明后） | `gravity.derived-metrics.v1` 只变换调用方提供的已有结果，不独立取得上游数据；业务公式、总体、单位和声明集合权威性由调用方负责。 |
 | 评估一组人群规则命中的人数与占比 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | - |
 | 一次取得构造分析所需的事件、属性、指标和模板上下文 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（实测） | - |

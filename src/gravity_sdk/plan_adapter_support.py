@@ -8,7 +8,7 @@ from typing import Any
 
 from .errors import InputValidationError
 from .plan import AdapterContext
-from .actionable_error_values import actual_value
+from .actionable_error_values import actual_value, allowed_values
 
 
 ENVELOPE_FIELDS = frozenset(
@@ -181,8 +181,14 @@ def validate_selected_fields(
 
 
 def validate_exact_targets(context: AdapterContext, allowed: frozenset[str]) -> None:
-    if set(context.dynamic_targets) - allowed:
-        raise input_error("binding target must stay inside the adapter contract; remove the extra binding", "bindings")
+    extra = set(context.dynamic_targets) - allowed
+    if extra:
+        raise input_error(
+            f"actual value: {actual_value(sorted(extra))}; allowed value: "
+            f"{allowed_values(allowed) if allowed else 'no binding targets'}; "
+            "remove the extra binding",
+            "bindings",
+        )
 
 
 def has_dynamic(context: AdapterContext, target: str) -> bool:

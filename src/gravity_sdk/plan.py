@@ -179,6 +179,11 @@ def plan_schema() -> dict[str, Any]:
     """Return the compact, machine-readable v1 contract."""
 
     from .host_effects import host_effect_schema
+    from .plan_analysis_adapter import (
+        ANALYSIS_QUERY_BINDING_TARGETS,
+        ANALYSIS_QUERY_NAME,
+        ANALYSIS_QUERY_REQUEST_FIELDS,
+    )
 
     return {
         "schema_version": SCHEMA_SCHEMA_VERSION,
@@ -226,6 +231,13 @@ def plan_schema() -> dict[str, Any]:
                 "binding/foreach target pointers are exposed to adapter preflight; "
                 "their values are never exposed"
             ),
+        },
+        "composites": {
+            ANALYSIS_QUERY_NAME: {
+                "binding_targets": sorted(ANALYSIS_QUERY_BINDING_TARGETS),
+                "spec_binding": False,
+                "request_fields": sorted(ANALYSIS_QUERY_REQUEST_FIELDS),
+            }
         },
         "failure": {
             "dependency": "a failed node skips every dependent node",
