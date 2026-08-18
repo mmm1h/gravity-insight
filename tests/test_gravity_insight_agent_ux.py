@@ -451,6 +451,107 @@ class DiscoveryUxTests(unittest.TestCase):
                 self.assertIn("gravity agent --input <selector>", gap["next_action"])
                 self.assertFalse(any(card.get("kind") == "operation" for card in result["candidates"]))
 
+    def test_registered_gap_does_not_swallow_a_sibling_answerable_intent(self) -> None:
+        single_product = discover_capabilities(
+            "查询已同步数据表的版本和变更记录。", client=self.client
+        )
+        self.assertEqual("success", single_product["status"])
+        self.assertEqual(
+            "metadata:table_lineage", single_product["candidates"][0]["selector"]
+        )
+
+        single_gap_query = "按表名或 App 查询数据表当前 schema、字段和版本。"
+        single_gap = discover_capabilities(single_gap_query, client=self.client)
+        self.assertEqual(
+            ("capability_gap", "CURRENT_TABLE_SCHEMA_PARENT_MISSING"),
+            (single_gap["status"], single_gap["capability_gaps"][0]["code"]),
+        )
+        self.assertEqual([], single_gap["candidates"])
+        self.assertTrue(single_gap["capability_gaps"][0]["next_action"])
+        self.assertEqual(
+            ["gravity", "metadata", "sync", "--all-apps", "--include-table-lineage"],
+            single_gap["capability_gaps"][0]["next"]["argv"],
+        )
+
+        both_products = discover_capabilities(
+            "既要巨量广告主账户余额状态也要跨平台推广表现", client=self.client
+        )
+        both_gap = both_products["capability_gaps"][0]
+        self.assertEqual(
+            ("capability_gap", "MULTIPLE_INTENTS"),
+            (both_products["status"], both_gap["code"]),
+        )
+        self.assertEqual(
+            ["composite:advertiser_profile", "composite:promotion_performance"],
+            both_gap["candidate_selectors"],
+        )
+
+        mixed = discover_capabilities(
+            "我要已同步的表变更历史，也要这个表此刻的完整字段与当前版本。",
+            client=self.client,
+        )
+        codes = [gap["code"] for gap in mixed["capability_gaps"]]
+        self.assertEqual("capability_gap", mixed["status"])
+        self.assertEqual([], mixed["candidates"])
+        self.assertEqual("MULTIPLE_INTENTS", codes[0])
+        self.assertIn("CURRENT_TABLE_SCHEMA_PARENT_MISSING", codes)
+        self.assertEqual(
+            ["metadata:table_lineage", "gap:CURRENT_TABLE_SCHEMA_PARENT_MISSING"],
+            mixed["capability_gaps"][0]["candidate_selectors"],
+        )
+        schema_gap = next(
+            gap
+            for gap in mixed["capability_gaps"]
+            if gap["code"] == "CURRENT_TABLE_SCHEMA_PARENT_MISSING"
+        )
+        self.assertEqual(
+            single_gap["capability_gaps"][0]["reason"], schema_gap["reason"]
+        )
+        self.assertEqual(
+            single_gap["capability_gaps"][0]["next_action"], schema_gap["next_action"]
+        )
+        self.assertEqual(
+            single_gap["capability_gaps"][0]["next"]["argv"], schema_gap["next"]["argv"]
+        )
+
+        export_and_asset = discover_capabilities(
+            "既要把用户事件结果导出成文件，也要按素材引用下载原始视频。",
+            client=self.client,
+        )
+        export_codes = [gap["code"] for gap in export_and_asset["capability_gaps"]]
+        self.assertEqual("capability_gap", export_and_asset["status"])
+        self.assertEqual("MULTIPLE_INTENTS", export_codes[0])
+        self.assertIn("ANALYSIS_EXPORT_FILE_CONTRACT_MISSING", export_codes)
+        self.assertEqual(
+            ["gap:ANALYSIS_EXPORT_FILE_CONTRACT_MISSING", "material.asset.fetch"],
+            export_and_asset["capability_gaps"][0]["candidate_selectors"],
+        )
+        export_gap = next(
+            gap
+            for gap in export_and_asset["capability_gaps"]
+            if gap["code"] == "ANALYSIS_EXPORT_FILE_CONTRACT_MISSING"
+        )
+        lone_export = discover_capabilities(
+            "导出事件、分群、用户、付费或变现分析结果。", client=self.client
+        )
+        self.assertEqual(
+            lone_export["capability_gaps"][0]["code"], export_gap["code"]
+        )
+        self.assertEqual(
+            lone_export["capability_gaps"][0]["next_action"], export_gap["next_action"]
+        )
+
+        listed_gap = discover_capabilities(
+            "Drill down into campaign, ad-group, and creative performance "
+            "on Kuaishou and Tencent.",
+            client=self.client,
+        )
+        self.assertEqual(
+            ("capability_gap", "NON_BYTEDANCE_HIERARCHY_PARENT_MISSING"),
+            (listed_gap["status"], listed_gap["capability_gaps"][0]["code"]),
+        )
+        self.assertNotEqual("MULTIPLE_INTENTS", listed_gap["capability_gaps"][0]["code"])
+
     def test_semantic_paraphrases_and_negative_contrasts_reach_the_owner(self) -> None:
         cases = {
             "按来源统计某个行为每小时的发生量。": "event",

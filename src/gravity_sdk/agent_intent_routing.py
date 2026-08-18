@@ -14,6 +14,9 @@ _COORDINATOR = re.compile(
     r"既(?:要|看)|也(?:要|看|比较)",
     re.IGNORECASE,
 )
+_CLAUSE_HANDOFFS = re.compile(
+    r"以及|同时|连同|和其他|既(?:要|看)|也(?:要|看|比较)"
+)
 _WRAPPER_SELECTORS = frozenset({
     "composite:saved_analysis", "composite:segment_snapshot", "composite:segment_members"
 })
@@ -79,9 +82,12 @@ def multiple_product_intents(
     clauses = tuple(part.strip() for part in _COORDINATOR.split(query) if part.strip())
     selectors: list[str] = []
     matched_clauses = 0
+    local_handoffs = explicit_clause_coordination(query)
     if len(clauses) >= 2:
         for clause in clauses:
-            clause_selectors = _clause_selectors(clause, inventory)
+            clause_selectors = _clause_selectors(
+                clause, inventory, include_local_handoffs=local_handoffs
+            )
             if clause_selectors:
                 matched_clauses += 1
             for selector in clause_selectors:
@@ -99,13 +105,19 @@ def multiple_product_intents(
 
 
 def _clause_selectors(
-    clause: str, inventory: Sequence[Mapping[str, Any]] | None
+    clause: str,
+    inventory: Sequence[Mapping[str, Any]] | None,
+    *,
+    include_local_handoffs: bool = False,
 ) -> tuple[str, ...]:
     from .agent_capabilities import (
         analysis_query_spec_cards,
         composite_capability_cards,
     )
 
+    if include_local_handoffs:
+        if local := _local_clause_selectors(clause):
+            return local
     direct = analysis_query_spec_cards(clause, domain=None, platform=None)
     composites = composite_capability_cards(
         clause, domain=None, platform=None, inventory=inventory
@@ -123,6 +135,26 @@ def _clause_selectors(
             "segment_mutation",
             "composite",
         }
+    )
+
+
+def _local_clause_selectors(clause: str) -> tuple[str, ...]:
+    """Classify one coordinated clause without consulting the whole query."""
+
+    from .agent_material_asset import material_asset_capability_cards
+    from .agent_table_lineage import table_lineage_capability_cards
+    from .agent_unavailable import unavailable_journey_gap
+
+    if gap := unavailable_journey_gap(clause):
+        return (f"gap:{gap['code']}",)
+    return tuple(
+        str(card["selector"])
+        for cards in (
+            table_lineage_capability_cards(clause, domain=None, platform=None),
+            material_asset_capability_cards(clause, domain=None, platform=None),
+        )
+        for card in cards
+        if card.get("selector")
     )
 
 
@@ -215,13 +247,29 @@ def _analysis_context_intent(query: str) -> bool:
     ))
 
 
+def explicit_clause_coordination(query: str) -> bool:
+    """True only for explicit Chinese coordinators, not English list-and."""
+
+    return _CLAUSE_HANDOFFS.search(query) is not None
+
+
 def multiple_intent_gap(query: str) -> list[dict[str, object]]:
     """Return a machine-decidable gap for an explicit multi-product request."""
 
     intents = multiple_product_intents(query)
     if not intents:
         return []
-    return [product_selection_gap(query, intents)]
+    from .agent_unavailable import unavailable_journey_gap
+
+    selected: list[dict[str, object]] = [product_selection_gap(query, intents)]
+    seen: set[str] = set()
+    for clause in (part.strip() for part in _COORDINATOR.split(query) if part.strip()):
+        gap = unavailable_journey_gap(clause)
+        if gap is None or str(gap["code"]) in seen:
+            continue
+        seen.add(str(gap["code"]))
+        selected.append(gap)
+    return selected
 
 
 def product_selection_gap(
@@ -273,6 +321,7 @@ __all__ = [
     "MULTIPLE_INTENTS",
     "adjacent_product_conflict",
     "multiple_product_intents",
+    "explicit_clause_coordination",
     "multiple_intent_gap",
     "product_selection_gap",
     "unique_authoritative_cards",
