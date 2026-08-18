@@ -52,6 +52,7 @@
 - [生产数字对账：七类一致性](prod-truth.md) — 投放中 App 上七类对账；分页/可加指标/跨 route 成立，Agent 不填参、相对日期不解析、变现超限导出当时丢钉。
 - [识别器不自信时交出选择权](recognizer-handoff.md) — 只排出互不相同 raw operation 时返回 `UNRANKED_OPERATIONS`，交给 `agent-catalog host`。
 - [已登记 gap 不再吞掉同问的其余意图](gap-multi-intent.md) — 多意图先于整句 gap；development 选择层仍 277/336，单意图 gap 终态变化 0。
+- [误导字段：yesterday_count 死字段与 app_id 类型](misleading-traps.md) — 7/7 App 的 yesterday_count 全 0；app_id 55 string / 28 integer，按合同类型归一化。
 
 ## 归档记录
 

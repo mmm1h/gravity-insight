@@ -15,6 +15,7 @@ import string
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from .actionable_error_values import actual_value
 from .errors import InputValidationError, ManifestError
 from .operation_effect_policy import validate_operation_effect
 from .projection_validation import validate_projection_bindings
@@ -113,6 +114,7 @@ def validate_input_field(
             field=field.name,
         )
     expected = field.type
+    value = _coerce_declared_identifier(field, value)
     valid = _input_type_valid(expected, value, is_bounded_json_value)
     if valid is None:
         raise InputValidationError(
@@ -292,6 +294,38 @@ def _validate_max_depth(name: str, normalized_type: str, max_depth: Any) -> None
         raise ManifestError(
             f"input_fields.{name}.max_depth is only supported for object inputs"
         )
+
+
+def _coerce_declared_identifier(field: Any, value: Any) -> Any:
+    """Normalize identifier wire forms only when the contract already declared a type."""
+
+    if field.name != "app_id":
+        return value
+    if field.type == "string":
+        if isinstance(value, bool) or not isinstance(value, int):
+            return value
+        if value <= 0:
+            raise InputValidationError(
+                f"actual value: {actual_value(value)}; "
+                f"input {field.name!r} must be a positive integer identifier",
+                field=field.name,
+            )
+        return str(value)
+    if field.type != "integer":
+        return value
+    if isinstance(value, bool) or not isinstance(value, str):
+        return value
+    rendered = value.strip()
+    if not rendered.isascii() or not rendered.isdigit():
+        return value
+    coerced = int(rendered)
+    if coerced <= 0:
+        raise InputValidationError(
+            f"actual value: {actual_value(value)}; "
+            f"input {field.name!r} must be a positive integer identifier",
+            field=field.name,
+        )
+    return coerced
 
 
 def _input_type_valid(expected: str, value: Any, is_bounded_json_value: Any) -> bool | None:

@@ -32,7 +32,7 @@
     "executable": true,
     "input_fields": {
       "app_id": {
-        "description": "调用方从 App 目录选择的正整数 App 标识。",
+        "description": "调用方从 App 目录选择的正整数 App 标识。本 route 合同声明 integer；跨 route 的 app_id 声明类型见 docs/reference/sdk.md#app-id-wire-types。SDK 只按本合同声明的类型归一化数字字符串或整数。",
         "required": true,
         "type": "integer"
       },

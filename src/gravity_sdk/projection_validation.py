@@ -8,13 +8,19 @@ from .errors import ManifestError
 
 
 def numeric_suffix_schema(projection: Any) -> dict[str, Any]:
-    return {
+    result = {
         "numeric_suffix_item_fields": list(projection.numeric_suffix_item_fields),
         "data_numeric_suffix_item_fields": {
             name: list(fields)
             for name, fields in projection.data_numeric_suffix_item_fields.items()
         },
     }
+    notes = {
+        name: dict(note) for name, note in projection.unreliable_item_keys.items()
+    }
+    if notes:
+        result["unreliable_item_keys"] = notes
+    return result
 
 
 def validate_projection_bindings(projection: Any, names: Sequence[str]) -> None:
@@ -106,6 +112,10 @@ def _validate_data_bindings(projection: Any, declared_inputs: set[str]) -> None:
 def _validate_omission_bindings(projection: Any) -> None:
     if set(projection.known_omitted_item_keys) & set(projection.item_keys):
         raise ManifestError("known omitted item keys cannot also be projected")
+    if set(projection.unreliable_item_keys) - set(projection.item_keys):
+        raise ManifestError(
+            "response_projection.unreliable_item_keys must reference declared item_keys"
+        )
     if set(projection.opaque_json_item_keys) - set(projection.item_keys):
         raise ManifestError(
             "response_projection.opaque_json_item_keys must reference declared item_keys"

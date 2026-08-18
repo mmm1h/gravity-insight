@@ -221,7 +221,7 @@ class MaterialTitleOperationTests(unittest.TestCase):
 
     def test_title_packages_reject_missing_or_invalid_app_before_network(self) -> None:
         for operation_id in PACKAGE_OPERATION_IDS:
-            for inputs in ({}, {"app_id": "101"}, {"app_id": 101, "page_size": 101}):
+            for inputs in ({}, {"app_id": "abc"}, {"app_id": 101, "page_size": 101}):
                 with self.subTest(operation_id=operation_id, inputs=inputs):
                     transport = RecordingTransport()
                     client = GravityInsightClient._from_manifest_for_tests(

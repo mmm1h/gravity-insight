@@ -792,6 +792,21 @@ validation = client.validate("analysis.event.list", {"app_id": "101"})
 result = client.read("analysis.event.list", {"app_id": "101"})
 ```
 
+`analysis.event.list` 的 `yesterday_count` 不能用来判断某个事件有没有数据。`describe()` /
+`schema()` 会在 `response_projection.unreliable_item_keys.yesterday_count` 给出
+`reason` 和 `use_instead`；成功读取时 `warnings` 也会复述同一条。要判断有没有量，走
+`attribution.attribution.query`（`metrics_list=["AppRealRegisterCnt"]`）或
+`analysis.origin_event.evaluate_data`。
+
+## App ID wire types {#app-id-wire-types}
+
+`app_id` 是标识，不是取值。236 个 operation 里：55 条声明 `string`，28 条声明 `integer`，
+0 条同时接受两种类型；其余 153 条没有 `app_id`。`app_ids` 只有 1 条，声明为无 `item_type`
+的 array。SDK 只在合同已声明 `string` 或 `integer` 时，把正整数与其十进制数字字符串归一化
+到声明类型；`"abc"`、负数、前导空格以外的非数字仍 fail-closed，错误继续带 `field=app_id`
+和 remedy。归一化后的值出现在 `validate()` 的 `normalized_input`。同类标识若合同类型不同
+（例如部分 `advertiser_id` / `dashboard_id` / `project_id`），不要自行互换。
+
 主要方法：
 
 | 方法 | 用途 |

@@ -291,6 +291,7 @@ class GravityInsightManifestTests(unittest.TestCase):
                         "empty_object_as_empty_page",
                         "empty_object_as_empty_result",
                         "opaque_json_item_keys",
+                        "unreliable_item_keys",
                     }
                 )
                 self.assertIsInstance(projection["data_keys"], list)

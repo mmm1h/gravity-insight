@@ -2026,7 +2026,7 @@
       "auth_profile": "gravity_authorization",
       "block_reason": null,
       "contract_version": "2",
-      "description": "分析页事件目录；只输出事件定义元数据，不输出事件记录。",
+      "description": "分析页事件目录；只输出事件定义元数据，不输出事件记录。不要用 item.yesterday_count 判断某个事件有没有数据；要判断请走 attribution.attribution.query（metrics_list=[AppRealRegisterCnt]）或 analysis.origin_event.evaluate_data。",
       "domain": "analysis",
       "executable": true,
       "input_fields": [
@@ -2035,7 +2035,7 @@
             "present": false,
             "value": null
           },
-          "description": "",
+          "description": "App 目录 id。本 route 合同声明 string；跨 route 的 app_id 声明类型见 docs/reference/sdk.md#app-id-wire-types。SDK 只按本合同声明的类型归一化数字字符串或整数。",
           "enum": [],
           "item_enum": [],
           "item_type": null,
@@ -2210,7 +2210,13 @@
         "required_data_keys": [
           "list"
         ],
-        "scalar_list_item_types": {}
+        "scalar_list_item_types": {},
+        "unreliable_item_keys": {
+          "yesterday_count": {
+            "reason": "Tenant-wide observed 0 on every listed event while attribution.attribution.query on the same day returned positive AppRealRegisterCnt; do not treat this field as event volume.",
+            "use_instead": "attribution.attribution.query with metrics_list=[AppRealRegisterCnt], or analysis.origin_event.evaluate_data"
+          }
+        }
       },
       "semantic_error_rules": [
         {

@@ -103,7 +103,7 @@ class RealtimeEventOperationTests(unittest.TestCase):
         self.assertEqual([], transport.calls)
 
         invalid_inputs = (
-            {"app_id": "101"},
+            {"app_id": "abc"},
             {"app_id": True},
             {"app_id": 101, "unknown": 1},
         )
