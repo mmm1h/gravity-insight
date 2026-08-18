@@ -136,6 +136,13 @@ def normalize_operation(operation: models.OperationSpec) -> dict[str, Any]:
             "empty_object_as_empty_page": projection.empty_object_as_empty_page,
             "empty_object_as_empty_result": projection.empty_object_as_empty_result,
             "opaque_json_item_keys": plain(projection.opaque_json_item_keys),
+            **(
+                {
+                    "unreliable_item_keys": plain(projection.unreliable_item_keys)
+                }
+                if projection.unreliable_item_keys
+                else {}
+            ),
         },
         "pagination": {
             "kind": operation.pagination.kind,

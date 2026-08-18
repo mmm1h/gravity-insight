@@ -52,7 +52,7 @@
       "request": {"location": "body", "allowed_fields": ["app_id", "task_name", "task_type", "time_range", "event_name_list", "cond_logic", "conditions"], "required_fields": ["app_id", "task_name", "task_type", "time_range", "event_name_list", "cond_logic", "conditions"], "fixed_fields": {"task_type": "origin_event_data"}},
       "response": {"estimated_rows_paths": ["data.total", "total"]},
       "privacy": {"classification": "user_level", "format": null, "allowed_columns": [], "required_columns": []},
-      "verification": {"method_source": "frontend_asset_and_online", "online": true, "notes": "POST with ISO calendar dates returned HTTP 200/code 0 and data.total. On 2026-08-17 the third catalog App plus a 7-day window returned data.total=0 for one non-preset event and data.total=1 for the first visible $ preset event. analysis.event.list yesterday_count was 0 for all 129 events on that App and is not a substitute for evaluate_data."}
+      "verification": {"method_source": "frontend_asset_and_online", "online": true, "notes": "POST with ISO calendar dates returned HTTP 200/code 0 and data.total. On 2026-08-17 the third catalog App plus a 7-day window returned data.total=0 for one non-preset event and data.total=1 for the first visible $ preset event. analysis.event.list yesterday_count was 0 for all 129 events on that App and is not a substitute for evaluate_data. On 2026-08-18 all 7 catalog Apps returned yesterday_count=0 while attribution.attribution.query on the live Douyin App and the Android twin returned positive AppRealRegisterCnt for 2026-08-17."}
     },
     {
       "operation_id": "export.analysis.origin_event.start",
@@ -146,7 +146,7 @@
         "download_authorization_ttl_seconds": 300,
         "max_size_bytes": 104857600
       },
-      "verification": {"method_source": "frontend_asset_and_online", "online": true, "attempted_online": true, "notes": "Hash-matched Download-DlEV6nb1.js proves evaluate/create share the seven-field body. On 2026-08-17 one create of the evaluate-proven 7-day $ preset event returned a task id, READY on the first poll, and a 511-byte gzip CSV (magic 1f8b, Content-Type text/csv, URL suffix .csv.gz, uncompressed 803 bytes) with five headers and one data row. All five cells were non-empty strings. analysis.event.list yesterday_count was 0 for every event on that App and must not be used as the create gate."}
+      "verification": {"method_source": "frontend_asset_and_online", "online": true, "attempted_online": true, "notes": "Hash-matched Download-DlEV6nb1.js proves evaluate/create share the seven-field body. On 2026-08-17 one create of the evaluate-proven 7-day $ preset event returned a task id, READY on the first poll, and a 511-byte gzip CSV (magic 1f8b, Content-Type text/csv, URL suffix .csv.gz, uncompressed 803 bytes) with five headers and one data row. All five cells were non-empty strings. analysis.event.list yesterday_count was 0 for every event on that App and must not be used as the create gate. On 2026-08-18 this was tenant-wide: 7/7 Apps had yesterday_count=0 while attribution on the live Douyin App and the Android twin returned positive AppRealRegisterCnt."}
     },
     {
       "operation_id": "export.analysis.monetization_detail.start",

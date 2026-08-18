@@ -120,6 +120,18 @@
         "data_dynamic_item_fields": {"$ref": "#/$defs/stringArrayMap"},
         "data_numeric_suffix_item_fields": {"$ref": "#/$defs/stringArrayMap"},
         "known_omitted_item_keys": {"$ref": "#/$defs/stringArray"},
+        "unreliable_item_keys": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["reason", "use_instead"],
+            "properties": {
+              "reason": {"type": "string", "minLength": 1, "maxLength": 240},
+              "use_instead": {"type": "string", "minLength": 1, "maxLength": 240}
+            }
+          }
+        },
         "recursive_data_item_keys": {"$ref": "#/$defs/stringArrayMap"},
         "known_omitted_data_keys": {"$ref": "#/$defs/stringArray"},
         "known_omitted_data_item_keys": {"$ref": "#/$defs/stringArrayMap"},

@@ -222,6 +222,37 @@ def _validate_filters(values: Sequence[Any]) -> None:
             )
 
 
+def _unreliable_item_key_mapping(value: Any) -> Mapping[str, Mapping[str, str]]:
+    if value is None:
+        return MappingProxyType({})
+    config = _mapping(value, "response_projection.unreliable_item_keys")
+    result: dict[str, Mapping[str, str]] = {}
+    for name, item in config.items():
+        field_name = _string(name, "response_projection.unreliable_item_keys key")
+        if not _FIELD_NAME_RE.fullmatch(field_name):
+            raise ManifestError(f"invalid unreliable item key: {field_name!r}")
+        entry = _mapping(item, f"response_projection.unreliable_item_keys.{field_name}")
+        reason = _string(
+            entry.get("reason"),
+            f"response_projection.unreliable_item_keys.{field_name}.reason",
+        )
+        use_instead = _string(
+            entry.get("use_instead"),
+            f"response_projection.unreliable_item_keys.{field_name}.use_instead",
+        )
+        extra = set(entry) - {"reason", "use_instead"}
+        if extra:
+            first = sorted(extra)[0]
+            raise ManifestError(
+                "response_projection.unreliable_item_keys."
+                f"{field_name} has unsupported field {first!r}"
+            )
+        result[field_name] = MappingProxyType(
+            {"reason": reason, "use_instead": use_instead}
+        )
+    return MappingProxyType(result)
+
+
 def _nested_key_mapping(value: Any, label: str) -> Mapping[str, tuple[str, ...]]:
     if value is None:
         return MappingProxyType({})
@@ -382,6 +413,7 @@ class ResponseProjection:
     empty_object_as_empty_page: bool = False
     empty_object_as_empty_result: bool = False
     opaque_json_item_keys: tuple[str, ...] = ()
+    unreliable_item_keys: Mapping[str, Mapping[str, str]] = field(default_factory=dict)
 
     @classmethod
     def from_dict(cls, value: Any) -> "ResponseProjection":
@@ -459,6 +491,7 @@ class ResponseProjection:
                 config.get("opaque_json_item_keys"),
                 "response_projection.opaque_json_item_keys",
             ),
+            _unreliable_item_key_mapping(config.get("unreliable_item_keys")),
         )
 
 

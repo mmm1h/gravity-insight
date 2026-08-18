@@ -70,7 +70,7 @@
       "src/gravity_sdk/census/parser.py::build_routes": 93,
       "src/gravity_sdk/census/response.py::apply_response_fields_to_drafts": 86,
       "src/gravity_sdk/cli.py::build_parser": 146,
-      "src/gravity_sdk/executor.py::ReadExecutor.execute": 84,
+      "src/gravity_sdk/executor.py::ReadExecutor.execute": 82,
       "src/gravity_sdk/models.py::OperationSpec.schema": 98,
       "src/gravity_sdk/prober/batch.py::finalize_batch_report": 191,
       "src/gravity_sdk/prober/batch.py::run_batch_probes": 214,
@@ -211,6 +211,18 @@
       "path": "src/gravity_sdk/registry.py",
       "reason": "add field path and discovery command to unknown-operation errors",
       "to": 4751
+    },
+    {
+      "from": 4753,
+      "path": "src/gravity_sdk/executor.py",
+      "reason": "emit contracted unreliable-item warnings on read envelopes",
+      "to": 4832
+    },
+    {
+      "from": 6049,
+      "path": "src/gravity_sdk/models.py",
+      "reason": "parse unreliable_item_keys contract notes so callers can see yesterday_count is not event volume",
+      "to": 6302
     }
   ],
   "legacy_files": {
@@ -252,7 +264,7 @@
     },
     "src/gravity_sdk/executor.py": {
       "ast_hard_limit": 9149,
-      "ast_nodes": 4753,
+      "ast_nodes": 4832,
       "migration_sloc": 1330,
       "sloc_hard_limit": 1430
     },
@@ -264,7 +276,7 @@
     },
     "src/gravity_sdk/models.py": {
       "ast_hard_limit": 8647,
-      "ast_nodes": 6049,
+      "ast_nodes": 6302,
       "migration_sloc": 1071,
       "sloc_hard_limit": 1158
     },

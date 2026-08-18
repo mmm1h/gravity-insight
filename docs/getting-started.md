@@ -99,6 +99,12 @@ gravity insight operations describe analysis.event.list
 gravity run analysis.event.list --input '{"app_id":"101"}' --set page_size=100
 ```
 
+`analysis.event.list` 的 `yesterday_count` 不能当“这个事件有没有数据”的门；`describe` 的
+`unreliable_item_keys` 和读取结果的 `warnings` 会指向
+`attribution.attribution.query` 或 `analysis.origin_event.evaluate_data`。
+`app_id` 按该 operation 合同声明的类型传入；SDK 只把正整数与其数字字符串归一化到声明类型。
+跨 route 的声明类型见 [App ID wire types](reference/sdk.md#app-id-wire-types)。
+
 `run` 已在一个进程完成输入校验、父资源处理、读取和诊断；不需要先机械调用 `validate`。
 
 项目提供 `gravity.toml` 时，也可以让 Resolver 在一个进程里完成绑定、校验、父资源检查、执行和诊断：
@@ -147,6 +153,7 @@ receipt 可见的 HTTP 次数/重试、各 operation 页数、对象数与失败
 
 - 执行真实分析任务：[Agent 工作流](agent-workflow.md)
 - 从完整目录走到第一次真实结果：[十分钟路径](agent-skills/ten-minute-path.md)
+- App ID 跨 route 的 string/integer 声明：[App ID wire types](reference/sdk.md#app-id-wire-types)
 - 在服务或 notebook 中使用：[Python SDK 参考](reference/sdk.md)
 - 理解 Insight、SQL 和合同层：[架构与概念](architecture.md)
 - 查完整命令分组：[CLI 参考](reference/cli.md)

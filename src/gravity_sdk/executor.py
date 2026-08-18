@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from typing import Any, Callable, Mapping
+from typing import Any, Callable, Mapping, Sequence
 
 from .analysis_projection_contract import (
     ANALYSIS_DATE_RESPONSE_KEY_RE,
@@ -184,9 +184,7 @@ class ReadExecutor:
             operation.privacy_policy.redact_fields,
             allow_contracted_identifiers=False,
         )
-        warnings: list[str] = list(drift_warnings)
-        if operation.stability == "experimental":
-            warnings.append("operation contract is experimental")
+        warnings = _result_warnings(operation, drift_warnings)
         is_empty = _is_empty(projected, items)
         status = _read_status(getattr(response, "status_code", 200), semantic_status, projection_drift, is_empty)
         return ReadResult(
@@ -209,6 +207,18 @@ class ReadExecutor:
             http_receipts=tuple(http_receipts),
             response_drift=response_drift,
         )
+
+
+def _result_warnings(operation: OperationSpec, drift_warnings: Sequence[str]) -> tuple[str, ...]:
+    warnings: list[str] = list(drift_warnings)
+    if operation.stability == "experimental":
+        warnings.append("operation contract is experimental")
+    for name, note in operation.response_projection.unreliable_item_keys.items():
+        warnings.append(
+            f"do not use {name} to decide whether an event has data; "
+            f"{note['reason']}; use {note['use_instead']}"
+        )
+    return tuple(warnings)
 
 
 def _read_status(

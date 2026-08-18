@@ -54,7 +54,11 @@ def repository_manifest(*operation_ids: str) -> dict[str, Any]:
         if operation is None:
             raise AssertionError(f"missing repository operation: {operation_id}")
         selected[operation_id] = operation
-        pending.extend(operation.get("required_parent", ()))
+        for parent in operation.get("required_parent", ()):
+            if isinstance(parent, str):
+                pending.append(parent)
+            elif isinstance(parent, Mapping) and parent.get("operation_id"):
+                pending.append(str(parent["operation_id"]))
     return {"manifest_version": 1, "operations": list(selected.values())}
 
 
@@ -242,6 +246,91 @@ class GravityInsightAnalysisTests(unittest.TestCase):
             '[{"field":"visible","operator":1,"values":[true]}]',
             query["filters"],
         )
+
+    def test_event_list_marks_yesterday_count_unreliable_and_normalizes_app_id(
+        self,
+    ) -> None:
+        client, transport = client_for(
+            "analysis.event.list",
+            handler=lambda *_args: event_metadata(),
+        )
+        described = client.describe("analysis.event.list")
+        note = described["response_projection"]["unreliable_item_keys"]["yesterday_count"]
+        self.assertIn("do not treat this field as event volume", note["reason"])
+        self.assertIn("attribution.attribution.query", note["use_instead"])
+
+        as_int = client.validate("analysis.event.list", {"app_id": 101})
+        self.assertTrue(as_int["ok"])
+        self.assertEqual("101", as_int["normalized_input"]["app_id"])
+        rejected = client.validate("analysis.event.list", {"app_id": -1})
+        self.assertFalse(rejected["ok"])
+        self.assertEqual("app_id", rejected["error"]["field"])
+        self.assertIn("must be a positive integer identifier", rejected["error"]["message"])
+        self.assertTrue(rejected["error"]["next_action"])
+        still_string = client.validate("analysis.event.list", {"app_id": "abc"})
+        self.assertTrue(still_string["ok"])
+        self.assertEqual("abc", still_string["normalized_input"]["app_id"])
+
+        result = client.read("analysis.event.list", {"app_id": 101})
+        self.assertEqual("success", result["status"])
+        self.assertTrue(
+            any("do not use yesterday_count" in item for item in result["warnings"])
+        )
+        self.assertEqual("101", transport.calls[0][2]["query"]["app_id"])
+
+    def test_attribution_query_normalizes_app_id_string_to_integer(self) -> None:
+        payload = {
+            "code": 0,
+            "data": {
+                "columns": ["date", "AppRealRegisterCnt"],
+                "items": [{"date": "2026-08-17", "AppRealRegisterCnt": 1}],
+                "static": [],
+                "tips": [],
+                "total": {},
+            },
+        }
+        client, transport = client_for(
+            "attribution.attribution.query",
+            handler=lambda *_args: payload,
+        )
+        accepted = client.validate(
+            "attribution.attribution.query",
+            {
+                "app_id": "101",
+                "date_list": ["2026-08-17", "2026-08-17"],
+                "dims_list": ["date"],
+                "metrics_list": ["AppRealRegisterCnt"],
+                "statistics_caliber": "user_activated_time",
+            },
+        )
+        self.assertTrue(accepted["ok"])
+        self.assertEqual(101, accepted["normalized_input"]["app_id"])
+        rejected = client.validate(
+            "attribution.attribution.query",
+            {
+                "app_id": "abc",
+                "date_list": ["2026-08-17", "2026-08-17"],
+                "dims_list": ["date"],
+                "metrics_list": ["AppRealRegisterCnt"],
+                "statistics_caliber": "user_activated_time",
+            },
+        )
+        self.assertFalse(rejected["ok"])
+        self.assertEqual("app_id", rejected["error"]["field"])
+        self.assertIn("must be integer", rejected["error"]["message"])
+        self.assertTrue(rejected["error"]["next_action"])
+        result = client.read(
+            "attribution.attribution.query",
+            {
+                "app_id": "101",
+                "date_list": ["2026-08-17", "2026-08-17"],
+                "dims_list": ["date"],
+                "metrics_list": ["AppRealRegisterCnt"],
+                "statistics_caliber": "user_activated_time",
+            },
+        )
+        self.assertEqual("success", result["status"])
+        self.assertEqual(101, transport.calls[0][2]["body"]["app_id"])
 
     def test_global_property_metadata_projects_dimension_table_contract(self) -> None:
         nested_dimension = {
