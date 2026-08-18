@@ -88,6 +88,8 @@ python -m gravity_sdk agent-catalog host
 
 优先选 `identity_kind=product`。raw operation 是专家入口。`capability_gap` 不可执行。
 
+任务指南表目前只有事件趋势短页，没有漏斗 / 留存 / 导出短页。这三种走 `analysis query --kind funnel|retention --spec-schema` 或 `export describe`，不要因为指南表没有对应行就去读 `src/`。
+
 无 query 时拿机器协议：
 
 ```powershell
@@ -183,6 +185,7 @@ python -m gravity_sdk plan run --input first-analysis-plan.json
 | --- | --- | --- |
 | 某事件随时间 / 分组 / 条件怎么变 | Analysis 事件 | 1 / 未知 2 |
 | 多步转化漏斗、注册后留存、属性分布、散点 | Analysis funnel / retention / property / scatter | 1 / 2 |
+| 某一天的用户明细落成文件 | `export.analysis.user_detail.start`（先 list 预检） | 2（预检 + `export run`） |
 | 同一分析定义比较两个时期 | 同一 Spec + `--compare-start/--compare-end` | 1 |
 | 人群规则命中人数、已有分群详情 / 成员 | segment evaluate / snapshot / members | 1 / 2 |
 | 归因表现聚合、单用户归因明细 | attribution performance / user detail | 1 / 未知 App 3 |
@@ -221,6 +224,40 @@ python -m gravity_sdk analysis realtime-events --app 29034827 --start "2026-08-1
 
 空 `data.list` 且 HTTP 200：先看是不是没用投放中的 `29034827`、时间窗不对、或漏了必填筛选。6 个未投放分身本来就该空。
 
+### 漏斗 / 留存 / 用户明细：怎么问、怎么信
+
+2026-08-19 在 `29034827` 上用 `--help` / catalog / 文档跑通。关系成立，下面不抄用户级原文。证据：[第二轮冷启动](roadmap.d/coldstart-2.md)。
+
+**怎么进门**
+
+| 你想问 | 默认识别器稳命中的说法 | 不要先走的说法 | 执行 |
+| --- | --- | --- | --- |
+| 多步转化、每步人数 | 「转化漏斗」/「看多步行为的转化漏斗」 | 「注册到后续行为的漏斗，近 7 天每步人数」会落到不可执行的 `analysis.task.handoff`（`kind_candidates` 里虽有 `funnel`） | `analysis query --kind funnel --spec-schema`，再 `--spec` + `--app` |
+| 起始事件后的次日 / 第 N 日 | 「某起始事件后的次日和 7 日留存」 | 不要一上来走 raw `analysis.retention.query` | `analysis query --kind retention --spec-schema` |
+| 某一天用户名单落盘 | 「把某一天的用户明细导出成文件并下载」 | 宽问「导出」是精确 gap | 先 `run analysis.user_detail.list` 非空，再 `export run export.analysis.user_detail.start` |
+
+长问没命中产品卡时：`agent-catalog host`，交一份 `gravity.host-product-selection.v1`，再 `--routing host_catalog`。`host` **没有** `--output`，Windows 下用 Python 抓 stdout。
+
+`describe` 的 `next.argv` 是 `plan run`。compact 合同在同卡的 `schema_argv`（`--spec-schema`），不要按 `plan run` 自己编 wire。
+
+**漏斗 spec 最少要有**：`start`/`end`（ISO；相对短语只能放 `--start/--end`）、至少 2 步、每步 `event` + `metric.field/aggregation`、`window`（`unit` 为 `today|minute|hour|day`）。人数是「这一步及之前每步都完成」的有序子集。响应**没有**转化率。
+
+**留存 spec 最少要有**：恰好 2 步、`offset`（1–365）、`period_calc_method`（`SUM`/`WEIGHTED_AVG`）、`custom_before_method`（同上）、`total_calc_type`（`DAY`/`WEEK`/`MONTH`）、`week_first_day`（1–7）。日常日留存用 `SUM` / `SUM` / `DAY` / `1`。省略 `time_grain` 现在会默认写入 `create_time/day`。
+
+物理事件名用 `metadata search <词> --app-id <id>` 对上目录再写进 spec。本租户注册分母用 `$UserFirstRegister`，不要猜 `register`。PowerShell here-string 会把 `$UserFirstRegister` 吃成空；事件名写进 UTF-8 JSON 文件再 `--spec <file>`。
+
+**怎么判断数可信**
+
+1. 先读 `resolved_date_window`。`last 7 days` 含今天，最后一日未闭合。
+2. 漏斗：单调；分日各步之和 = 整窗同名步。第一步应对上同期注册 UV（事件 query 或同事件留存 `init_num`）。
+3. 留存：任意日人数 ≤ `init_num`。**同事件**回访才有 D0 = 分母、D1+ = 0（注册事件不会在后续日再发）——这只能证明产品通了，不能当次日留存读。**跨事件**回访 D0 可以远小于分母，`percent_values[0]` 也不是 100%。
+4. 空信封（`status=empty` 且 `total/x/y` 全空）先换回访事件、换 `offset`、看窗是否含未闭合日，再写「没数据」。本趟 `$AppLogin` 作回访、offset 1 和 7 都空；同一窗改 `$AdClick` 立刻有 D0/D1。
+5. 起始窗含今天时，第 N 日槽为 0 可能只是还没到期，不是留存崩了。
+6. **漏斗第二步 ≠ 留存 D0。** 漏斗是起始后窗口内做过后续事件的有序子集；留存 D0 是起始日当天做过回访。两边都为正仍可以对不上，不是对账失败。
+7. 未闭合日上，漏斗 / 同事件留存与事件 UV 差 1 人，先当当日边界，不要写成合同事故。
+8. 用户明细：先 `analysis.user_detail.list` 同一 App、同一天、同一 `create_date_list`。`page_info.total_number` 应对上当天漏斗第一步 / 事件 UV。`--columns` 填 `ClientID,CreateTime`，不要填「客户ID,注册时间」。成功标准：`completion_status=complete` 且 `file.rows = list.total_items`。list 信封 `truncated=true` 只表示没拉完全部分页。
+9. `page_size=1` 的用户明细预检仍可能打出十余次 HTTP（本趟收据 `request_count=12`）。这是预检成本，不是 12 页用户。
+
 ---
 
 ## 3. 怎么判断拿到的数可不可信
@@ -235,7 +272,7 @@ python -m gravity_sdk analysis realtime-events --app 29034827 --start "2026-08-1
 | 可加指标分维求和 = 总计 | 归因 `AppRealRegisterCnt` 按 date / platform / 两者；变现次数与收入在「按日、不拆平台」或「total + 平台（含空平台行）」 | 同上；[宣传与实际](roadmap.d/advertised-vs-real.md) |
 | 时间窗可加 | 大窗总计 = 子窗之和（同一指标、同一口径） | prod-truth |
 | 跨 route 同一事实能对上，口径差说得清 | 留存第 0 日人数 = 事件 `$UserFirstRegister` UV；归因 `AppRealRegisterCnt` 按激活日，允许差 2 且差可解释 | [留存/漏斗/分群](roadmap.d/reconcile-round2.md) |
-| 留存 | 第 0 日 = 分母；任意日人数 ≤ 分母；`$os` 各组 `init_num` 之和 = 总分母 | 同上 |
+| 留存 | 任意日人数 ≤ 分母；`$os` 各组 `init_num` 之和 = 总分母。**仅同事件**回访才有第 0 日 = 分母 | 同上；[第二轮冷启动](roadmap.d/coldstart-2.md) |
 | 漏斗 | 单调递减；第一步 = 同期注册分母；分日各步之和 = 整窗 | 同上 |
 | 分群 | 已算完分群的 list / detail / history / daily_result / members 人数一致；明细导出行数 = 人数 | 同上 |
 | 导出 | 小切片（用户明细）`completion_status=complete` 且 `file.rows = list.total_items`；超限变现诚实报 `truncated`，给 `missing_rows` | [truncated 确认](roadmap.d/truncated-confirm.md) |
@@ -258,11 +295,17 @@ python -m gravity_sdk analysis realtime-events --app 29034827 --start "2026-08-1
 ### 容易自己算错
 
 - **漏斗不返回转化率。** 响应里没有率字段。用人数自己除，且必须先定分母：3 步时「步 2→3」和「步 1→3」不是同一个比。
+- **漏斗第二步不是留存 D0。** 窗口内「注册后再做 B」和「注册当天做 B」不是同一个集合。
+- **同事件留存的 D1+=0 不是次日留存。** 要次日 / 7 日，回访步必须是另一个会再发的事件。
+- **留存 `status=empty` 先换形状。** 本趟 `$AppLogin` 空、`$AdClick` 非空。一种回访事件空不能写成产品坏了。
 - **去重指标跨维求和本来就不等于总计。** UV、设备数、活跃用户不是划分。不要对它们做「各组相加 = 合计」验收。
 - **变现按 `day + monetization_platform` 会漏掉空平台值那一行。** 行之和小于 `total`。改成不拆平台，或 `time_dims=total`（会看到空平台行）。SDK 对登记可加指标会写 `diagnostics[].code=dimension_sum_mismatch`，带 `list_sum` / `total` / `delta`。看见它不要把较小的 list 和当真相。
 - **事件 `time_grain=total` 在本租户编成 `group_by=total` 后上游返回空 `{}`。** 这不是日期错；省略 `time_grain` 会编译失败。按日拆。
 - **`evaluate_data` 一次为 0 不能写成「估算恒为 0」。** 换事件、换窗口会出正 `total`。穷尽合理形状之前，先怀疑请求。
 - **投放消耗不要默认绑 `29034827`。** 该抖音分身能滤出广告主但消耗全 0；真正消耗记在 iOS 分身 `24502679`。打 `promotion.*` 报表前先确认消耗记在哪个分身。
+- **导出 `--columns` 是请求代码。** `ClientID,CreateTime` 对，`客户ID,注册时间` 会本地失败且不创建任务。
+- **相对日期不要写进 spec JSON。** `--start/--end` 接受 `last 7 days`；`spec.start` 只接受 ISO。
+- **PowerShell here-string 会吃掉 `$EventName`。** 事件名放 JSON 文件。捕获 catalog JSON 也不要用 `>`。
 
 ### 一条通用规矩
 
@@ -297,6 +340,10 @@ python -m gravity_sdk analysis realtime-events --app 29034827 --start "2026-08-1
 | 单对象 `{"query":"..."}` | 非法，`field=input` |
 
 `--input` 以 `{` / `[` 开头是内联 JSON，`-` 是 stdin，其他是文件。
+
+本工作树若没有忽略的 `.env.gravity.local`，而进程里还有过期 `GRAVITY_AUTH_TOKEN`，`auth status` 会是 `missing`。不要在非交互环境跑无 TTY 的 `gravity`。放好本地 env 后跑 `insight auth refresh`。
+
+漏斗 / 留存缺 `window`、`offset` 或那四个枚举字段时，错误带正确的 `field=`，但 `next_action` 仍指向 `operations describe`。下一步其实是 `analysis query --kind <kind> --spec-schema`。
 
 ### 三种发现终态
 
@@ -346,8 +393,11 @@ gravity.bypass_metadata_cache(True)
      python -m gravity_sdk agent "<问题>"
      看 routing.upgrade.next.then_argv
 7. 只执行 status=success 且 executable=true 的 next.argv；补齐 missing_inputs
+   — 漏斗/留存走 schema_argv 的 --spec-schema，不要执行不可执行的 analysis.task.handoff
 8. 看 resolved_date_window、warnings、unreliable_item_keys、diagnostics
 9. 重要数字用第二条 route 对；看见 dimension_sum_mismatch 不要把 list 和当总计
+   — 漏斗第一步对事件 UV / 同事件留存 init；导出行数对 list.total_items
+   — 漏斗第二步不要对留存 D0；一种回访事件 empty 先换事件
 10. capability_gap / NO_CANDIDATE / UNRANKED_OPERATIONS 按上一节处理
 ```
 
