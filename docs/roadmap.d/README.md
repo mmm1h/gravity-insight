@@ -57,6 +57,7 @@
 - [四处宣传与实际不一致](advertised-vs-real.md) — 两套 describe 对齐；export evaluate/task-types 入口；分页 HTTP 计数；分维和不等于 total 的机读信号。
 - [上线前信任核查](trust-sweep.md) — 超限导出钉错分母；标题 last_3_day_* 恒 0。
 - [应答声明路由臂](routing-provenance.md) — 两条臂都写 `routing_mode`；识别器信封另给常设升级路径；不切默认。
+- [留存/漏斗/分群生产对账](reconcile-round2.md) — 投放中 App 上人数与率对得上；compact 用户分维曾编错 type，漏斗组键曾被投影丢掉。
 
 ## 归档记录
 

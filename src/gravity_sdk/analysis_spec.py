@@ -100,7 +100,7 @@ _KIND_FIELDS = {
 }
 _GROUP_SOURCES = {
     "event": "event",
-    "user": "user_property",
+    "user": "user",
     "segment": "user_segment",
 }
 
@@ -267,6 +267,19 @@ def _compile_dated_query(
         )
     elif kind == "retention":
         inputs.update(retention_controls(spec))
+        if spec.get("time_grain") is None and not any(
+            isinstance(item, Mapping)
+            and item.get("field") == "create_time"
+            for item in inputs.get("group_by_list", ())
+        ):
+            inputs["group_by_list"] = [
+                {
+                    "type": "default_event",
+                    "field": "create_time",
+                    "group_by": "day",
+                },
+                *inputs.get("group_by_list", ()),
+            ]
     elif kind == "scatter":
         apply_scatter_zone(inputs["query_item_list"][0], spec.get("zone"))
         inputs["extra_data"] = {"client_server_time": "CLIENT"}
