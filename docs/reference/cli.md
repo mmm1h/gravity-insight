@@ -74,7 +74,7 @@ gravity agent "<query>" --routing host_catalog --host-selection selection.json
 `gravity operations describe`。`operations describe` 投影完整 operation 合同，压缩 Agent 卡看
 `gravity agent-catalog describe`。
 
-`agent-catalog host` 是同一 owner/card/gap 的紧凑投影，只含 93 张产品卡和 7 个精确 gap，不含 raw
+`agent-catalog host` 是同一 owner/card/gap 的紧凑投影，只含 96 张产品卡和 6 个精确 gap，不含 raw
 operation；每项固定给出目标、返回物、相邻边界、前置输入与 effect。宿主响应必须完整符合
 `gravity.host-product-selection.v1`，只能引用当前 `catalog_ref`。0 个引用由仓库生成固定路由 gap；
 多个引用固定为 `MULTIPLE_INTENTS`；未知字段、旧目录指纹、伪造产品或直接 operation/path 均整体拒绝。

@@ -1,5 +1,10 @@
 # AGENTS.md
 
+**先选路，再往下读。**
+
+- **要用这个 SDK 取数分析** → [团队上手包](docs/team-onboarding.md)。最短命令：`$env:PYTHONPATH='src'; python -m gravity_sdk agent-catalog categories`。不要通读本文。
+- **要修改这个仓库** → 继续读下面的开发约束。
+
 ## Product goal
 
 Every data-analysis task must be completable without opening Gravity Web, using
@@ -74,8 +79,12 @@ Do not let the list become an archive.
 
 ## Documentation
 
-- Start at `docs/index.md`; do not read the documentation tree front to back.
-- Querying agents follow `docs/agent-workflow.md`.
+- Querying / analysis agents start at `docs/team-onboarding.md`; do not read this
+  file as a usage guide.
+- Start at `docs/index.md` for the task table; do not read the documentation
+  tree front to back.
+- Querying agents follow `docs/agent-workflow.md` only when executing a specific
+  product.
 - SDK changes start at `docs/maintainers/index.md` and then read only the
   task-specific maintainer page.
 - Business modules, campaign semantics, and tracking bindings belong in the

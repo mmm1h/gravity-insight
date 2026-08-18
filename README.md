@@ -3,6 +3,9 @@
 面向数据分析团队的 Gravity Python SDK 与 Agent 优先 CLI。两种入口共享 operation 合同、
 认证、运行时、分页、并发、字段投影和结构化错误；CLI 负责开箱即用，SDK 负责长期集成。
 
+## 你是 Agent？从这里开始
+取数分析走 [团队上手包](docs/team-onboarding.md)：`$env:PYTHONPATH='src'; python -m gravity_sdk agent-catalog categories`。改本仓库走根目录 [AGENTS.md](AGENTS.md)。
+
 它提供三条边界清晰的主要读取入口：
 
 - `gravity insight`：结构化 Insight 查询与导出，日常分析首选；
@@ -13,8 +16,8 @@ SDK 还提供本地元数据检索、跨目录发现与 workspace recipe：`grav
 metadata sync/search`、`gravity find` 和 `gravity run` 让 Agent 无需临时 Python/JSON
 脚本即可完成常见查询链路。
 
-当前机器目录覆盖 **233 个 operation** 与 **92 张 Agent 产品卡**；224 个 stable operation
-由 187 个 read 和 37 个 governed mutation 组成。写面只开放逐项登记的分群、marker-governed
+当前机器目录覆盖 **237 个 operation** 与 **96 张 Agent 产品卡**；228 个 stable operation
+由 190 个 read 和 38 个 governed mutation 组成。写面只开放逐项登记的分群、marker-governed
 报表/订阅、Kanban 工作区和自定义指标；所有写入均先 `--dry-run`，再由调用方显式确认同参数 `--execute`。
 create 预览零网络；需要层级影响数的 Kanban 预览只读 tree/detail。自然语言永不自动执行写入；
 Kanban 和自定义指标可由显式 `preview|execute` Plan node 调用，其他写产品仍不进入 Plan。
@@ -26,8 +29,8 @@ Agent 第一次盘点能力时先用 `gravity agent-catalog categories → categ
 发现结果包含可复制 argv 和 `plan_node`，但自然语言不会自动执行。多个独立读取共享一个有界 worker
 pool，不逐条起进程。
 
-首次接触仓库时，按[十分钟 Agent 上手路径](docs/agent-skills/ten-minute-path.md)完成能力发现、App/物理
-事件选择、零网络编译和一次显式真实分析；它不需要打开 Gravity Web，也不会猜业务输入。
+首次接触仓库时，先读[团队上手包](docs/team-onboarding.md)；第一次真实事件分析再走
+[十分钟路径](docs/agent-skills/ten-minute-path.md)。两者都不需要打开 Gravity Web，也不会猜业务输入。
 
 当前 `0.3` 是调用方 surface 的破坏性收口：Multidim 专用入口只有
 `gravity multidim query --app <alias|id> ...`，结果行位于 `query.data.list`；Plan request 必须带

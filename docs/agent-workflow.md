@@ -6,7 +6,7 @@
 
 ### 完整目录
 
-第一次接触仓库、或需要确认“现在到底能做什么”时，`agent-catalog categories → category <category> → describe <selector>` 是首要入口，不是附属的 operation 调试命令。三层完全离线，依次回答领域、selector 和完整执行合同，当前覆盖 233 个 operation、93 张产品卡和 7 个精确 gap；`app.list`、`app.app_info.get` 与 `report.get.query` 三组产品卡/raw operation 同身份去重后共 330 个 selector。category 内机械按 `product → raw_operation → capability_gap`、同类 selector 升序排列，因此产品卡不会被 raw operation 挤出首屏；优先选择 `identity_kind=product`。raw operation 只是专家入口，gap 不可执行。调用方能产出选择时推荐宿主臂：先读 `agent-catalog host` 的紧凑产品/gap 投影，只返回严格 `gravity.host-product-selection.v1`，再显式 `agent --routing host_catalog --host-selection <json>` 交给仓库 describe。省略 `--routing` 时默认仍走 recognizer，那是够不着宿主时的地板，不是劣等品。第二层返回 `next_offset` 不代表必须翻页；已知 selector 直接 describe。逐层示例见[完整目录任务指南](agent-skills/catalog-discovery.md)。
+第一次接触仓库、或需要确认“现在到底能做什么”时，先读[团队上手包](team-onboarding.md)，再用 `agent-catalog categories → category <category> → describe <selector>`。三层完全离线，依次回答领域、selector 和完整执行合同，当前覆盖 237 个 operation、96 张产品卡和 6 个精确 gap；`app.list`、`app.app_info.get` 与 `report.get.query` 三组产品卡/raw operation 同身份去重后共 336 个 selector。category 内机械按 `product → raw_operation → capability_gap`、同类 selector 升序排列，因此产品卡不会被 raw operation 挤出首屏；优先选择 `identity_kind=product`。raw operation 只是专家入口，gap 不可执行。调用方能产出选择时推荐宿主臂：先读 `agent-catalog host` 的紧凑产品/gap 投影，只返回严格 `gravity.host-product-selection.v1`，再显式 `agent --routing host_catalog --host-selection <json>` 交给仓库 describe。省略 `--routing` 时默认仍走 recognizer，那是够不着宿主时的地板，不是劣等品。第二层返回 `next_offset` 不代表必须翻页；已知 selector 直接 describe。逐层示例见[完整目录任务指南](agent-skills/catalog-discovery.md)。
 
 | 已知信息 | 直接执行 | 正常命令数 |
 | --- | --- | --- |
@@ -17,7 +17,7 @@
 | 自定义人群覆盖与状态 | 已知输入：`promotion custom-audiences`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
 | 订单目录/拆单追踪/变现明细 | 已知 App/单日[/TraceID]：`analysis order directory` / `analysis order trace` / `analysis monetization detail`；未知：对应 Agent 卡 → `plan run` | 1 / 2 |
 | 人群规则/分群快照/成员明细 | 已知 spec 或精确引用：`analysis segment evaluate` / `analysis segment snapshot` / `analysis segment members`；未知能力且输入已知时发现后执行 | 1 / 2 |
-| Analysis 默认值字典 | 已知 App：`analysis defaults --app ...`；未知能力但 App 已知：对应 Agent 卡 → `plan run` | 1 / 2 |
+| Analysis 默认值 / 实时事件目录 | 已知 App：`analysis defaults`；已知 App+窗：`analysis realtime-events`（默认 `event_type=profile`，分页 `none`）；未知：对应卡 → `plan run` | 1 / 2 |
 | 创建、更新、刷新或删除分群 | Agent 只交接明确的 `analysis segment ... --dry-run`；人确认后把同一命令改为 `--execute` | 2（预览 / 执行） |
 | 创建/删除报表或创建/删除订阅 | Agent 只交接明确的 `reports create/delete/subscribe/unsubscribe ... --dry-run`；人确认后把同一命令改为 `--execute` | 2（预览 / 执行） |
 | 创建、更新或删除自定义指标 | `reports custom-metrics create|update|delete ... --dry-run`；审查公式、marker 和目标 ID 后同参数 `--execute`，或使用显式 `custom_metric_mutation` Plan preview/execute node | 2（预览 / 执行） |
@@ -212,7 +212,7 @@ gravity find "retention"
 
 ## 9. 导出
 
-`--output` 是最终文件而非 JSON envelope；超时不取消，拿 `job_id` 走 status/wait/download，无可靠 ID 先 `export list`。分阶段命令只用于恢复；导出不进入 Plan v1。详见[导出指南](guides/export.md)。
+`--output` 是最终文件而非 JSON envelope；超时不取消，拿 `job_id` 走 status/wait/download，无可靠 ID 先 `export list`。估算不创建走 `export evaluate`；列任务类型走 `export task-types`。分阶段命令只用于恢复；导出不进入 Plan v1。详见[导出指南](guides/export.md)。
 
 ## 10. 交付
 
