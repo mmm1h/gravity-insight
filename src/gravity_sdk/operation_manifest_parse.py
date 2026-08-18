@@ -17,6 +17,7 @@ from typing import Any, Mapping, Sequence
 
 from .actionable_error_values import actual_value
 from .errors import InputValidationError, ManifestError
+from .analysis_projection_contract import validate_group_identity_invariant
 from .operation_effect_policy import validate_operation_effect
 from .projection_validation import validate_projection_bindings
 
@@ -156,6 +157,12 @@ def parse_operation_spec(cls: Any, value: Mapping[str, Any], models: Any) -> Any
     validate_projection_bindings(response_projection, names)
     raw_rules = _parse_semantic_error_rules(config)
     stability, executable, block_reason, effect = _parse_operation_flags(config)
+    validate_group_identity_invariant(
+        fields,
+        response_projection,
+        executable=executable,
+        effect=effect,
+    )
     pagination = models.PaginationSpec.from_dict(config.get("pagination"))
     _validate_projection_normalization(response_projection, pagination)
     _validate_stable_pagination(stability, pagination)

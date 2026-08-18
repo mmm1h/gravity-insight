@@ -12,7 +12,10 @@ from .analysis_projection_contract import (
     ANALYSIS_INDEX_RESPONSE_KEY_RE,
     ANALYSIS_SAFE_RESPONSE_SCALARS,
     allowed_analysis_response_key as _allowed_analysis_response_key,
+    analysis_group_shape,
     funnel_mode_shape_changed,
+    nested_analysis_response_keys,
+    operation_uses_dynamic_aggregate,
 )
 from .drift import ProjectionDrift, projection_drift_status
 from .errors import PolicyViolation, error_for_status
@@ -42,65 +45,8 @@ _RESPONSE_CREDENTIALS = frozenset(
 )
 _RESPONSE_CREDENTIAL_SUFFIXES = tuple(f"_{key}" for key in _RESPONSE_CREDENTIALS)
 _ANALYSIS_USER_EVENT_OPERATION = "analysis.user_event.list"
-_ANALYSIS_AGGREGATE_OPERATIONS = frozenset(
-    {
-        "analysis.event.query",
-        "analysis.funnel.query",
-        "analysis.retention.query",
-        "analysis.scatter.query",
-        "analysis.property.query",
-    }
-)
-_ANALYSIS_NESTED_RESPONSE_KEYS = {
-    "analysis.event.query": frozenset(
-        {
-            "cname", "count",
-            "data_type", "date_list",
-            "end_date", "event_index",
-            "field", "list",
-            "name", "start_date",
-            "target",
-            "total",
-            "value",
-            "values",
-            "阶段总和",
-        }
-    ),
-    "analysis.funnel.query": frozenset(
-        {"cnt", "count", "group", "rate", "ratio", "total", "value", "values"}
-    ),
-    "analysis.retention.query": frozenset(
-        {
-            "_final_one_result_sum", "_valid_day_count", "cumulative_average",
-            "cumulative_total", "cumulative_uniques", "final_one_result",
-            "final_one_result_day_count_sum", "first_event_user_total", "group_cols",
-            "init_custom_before_components", "init_custom_before_num", "init_num",
-            "is_total", "original_final_one_result", "percent_values",
-            "percent_values_loss", "per_user", "period_calc_method",
-            "period_event_total", "period_event_total_average", "period_user_total",
-            "period_user_total_average", "time_diff", "to_use_final_one_result",
-            "totals", "uniques", "values",
-            "values_another_event", "values_loss",
-        }
-    ),
-    "analysis.scatter.query": frozenset(
-        {
-            "aggregate_date",
-            "count",
-            "group",
-            "total",
-            "val",
-            "val_list",
-            "val_list_to_aggregate_date_group",
-            "value",
-            "values",
-            "zone_tags",
-        }
-    ),
-    "analysis.property.query": frozenset(
-        {"cname", "data_type", "field", "method", "name", "target", "value"}
-    ),
-}
+
+
 class ReadExecutor:
     def __init__(self, registry: Registry, policy: PolicyEngine, transport: Transport) -> None:
         self._registry = registry
@@ -263,7 +209,7 @@ def _project(
     if operation.operation_id == _ANALYSIS_USER_EVENT_OPERATION:
         result = project_analysis_user_event(operation, data, values, recorder)
         return *result, recorder.to_contract()
-    if operation.operation_id in _ANALYSIS_AGGREGATE_OPERATIONS:
+    if operation_uses_dynamic_aggregate(operation):
         result = _project_analysis_aggregate(operation, data, values, recorder)
         return *result, recorder.to_contract()
     if operation.response_projection.empty_object_as_empty_result and data == {}:
@@ -377,7 +323,7 @@ def _project_analysis_aggregate(
         operation.privacy_policy.classification == "user_level"
     )
     response_keys = _analysis_response_keys(
-        operation.operation_id,
+        operation.response_projection,
         values,
         blocked,
         allow_contracted_identifiers=allow_contracted_identifiers,
@@ -394,7 +340,7 @@ def _project_analysis_aggregate(
         if key not in data:
             continue
         if (
-            operation.operation_id == "analysis.property.query"
+            analysis_group_shape(operation.response_projection) == "property"
             and key == "target"
             and data[key] == ""
         ):
@@ -570,7 +516,7 @@ def _analysis_numeric_path_allowed(
 
 
 def _analysis_response_keys(
-    operation_id: str,
+    projection: Any,
     values: Mapping[str, Any],
     blocked: set[str],
     *,
@@ -578,7 +524,7 @@ def _analysis_response_keys(
 ) -> set[str]:
     """Return only request-derived labels that may name aggregate result slots."""
 
-    result = set(_ANALYSIS_NESTED_RESPONSE_KEYS.get(operation_id, ()))
+    result = set(nested_analysis_response_keys(projection))
 
     def add(value: Any) -> None:
         if (

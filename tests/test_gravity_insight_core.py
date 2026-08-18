@@ -868,8 +868,19 @@ class GravityInsightCoreTests(unittest.TestCase):
         controlled = manifest()
         document = controlled["operations"][0]
         document["operation_id"] = "analysis.event.query"
+        document["input_fields"]["group_by_list"] = {
+            "type": "array",
+            "item_type": "object",
+            "default": [],
+            "max_items": 20,
+        }
+        document["request"]["body_fields"] = [
+            *document["request"]["body_fields"],
+            "group_by_list",
+        ]
+        document["request"]["defaults"]["group_by_list"] = []
         document["response_projection"] = {
-            "data_keys": ["list"],
+            "data_keys": ["list", "target_list"],
             "required_data_keys": ["list"],
             "item_keys": [],
             "dynamic_item_fields": [],

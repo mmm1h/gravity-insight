@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Mapping
+from typing import TYPE_CHECKING, Any, Mapping, Sequence
 
-from .models import OperationSpec
+from .errors import ManifestError
+
+if TYPE_CHECKING:
+    from .models import OperationSpec
 
 
 ANALYSIS_SAFE_RESPONSE_SCALARS = frozenset(
@@ -53,6 +56,139 @@ ANALYSIS_COMPOSED_GROUP_KEY_RE = re.compile(
 )
 _EVENT_QUERY_GROUP_ROW_PATH = ("list", "[]", "[]", "list", "[]")
 _SCATTER_GROUP_ROW_PATH = ("aggregate_date", "[]", "[]")
+# Fingerprints are unique in the current catalog. A new groupable analysis
+# route must match one of these data_key sets or the load-time invariant
+# rejects it, so route 238 cannot silently reuse list-row allowlisting.
+_ANALYSIS_GROUP_SHAPES: tuple[tuple[str, frozenset[str]], ...] = (
+    ("event", frozenset({"list", "target_list"})),
+    ("funnel", frozenset({"aggregate_date", "window_funnel_mode"})),
+    ("scatter", frozenset({"aggregate_date", "zone_tags"})),
+    ("retention", frozenset({"total", "date_to_week"})),
+    ("property", frozenset({"list", "target"})),
+)
+# Sample labels prove the shape's opening exists. Shapes that keep the
+# request field name itself (property) or a nested registered key
+# (retention group_cols) have no extra dynamic-key opening.
+ANALYSIS_GROUP_SHAPE_OPENINGS: Mapping[str, tuple[tuple[str, ...], str]] = {
+    "event": (_EVENT_QUERY_GROUP_ROW_PATH, "用户.设备类型"),
+    "funnel": (("aggregate_date", "group"), "android"),
+    "scatter": (_SCATTER_GROUP_ROW_PATH, "user$os"),
+}
+ANALYSIS_NESTED_RESPONSE_KEYS_BY_SHAPE: Mapping[str, frozenset[str]] = {
+    "event": frozenset(
+        {
+            "cname",
+            "count",
+            "data_type",
+            "date_list",
+            "end_date",
+            "event_index",
+            "field",
+            "list",
+            "name",
+            "start_date",
+            "target",
+            "total",
+            "value",
+            "values",
+            "阶段总和",
+        }
+    ),
+    "funnel": frozenset(
+        {"cnt", "count", "group", "rate", "ratio", "total", "value", "values"}
+    ),
+    "retention": frozenset(
+        {
+            "_final_one_result_sum",
+            "_valid_day_count",
+            "cumulative_average",
+            "cumulative_total",
+            "cumulative_uniques",
+            "final_one_result",
+            "final_one_result_day_count_sum",
+            "first_event_user_total",
+            "group_cols",
+            "init_custom_before_components",
+            "init_custom_before_num",
+            "init_num",
+            "is_total",
+            "original_final_one_result",
+            "percent_values",
+            "percent_values_loss",
+            "per_user",
+            "period_calc_method",
+            "period_event_total",
+            "period_event_total_average",
+            "period_user_total",
+            "period_user_total_average",
+            "time_diff",
+            "to_use_final_one_result",
+            "totals",
+            "uniques",
+            "values",
+            "values_another_event",
+            "values_loss",
+        }
+    ),
+    "scatter": frozenset(
+        {
+            "aggregate_date",
+            "count",
+            "group",
+            "total",
+            "val",
+            "val_list",
+            "val_list_to_aggregate_date_group",
+            "value",
+            "values",
+            "zone_tags",
+        }
+    ),
+    "property": frozenset(
+        {"cname", "data_type", "field", "method", "name", "target", "value"}
+    ),
+}
+_DIMENSION_AXES = frozenset({"dims_list", "data_dims"})
+_STRING_AXIS_ITEM_TYPES = frozenset({None, "string", "any"})
+
+
+def analysis_group_shape(projection: Any) -> str | None:
+    """Return the unique aggregate shape named by ``data_keys``, if any."""
+
+    keys = frozenset(getattr(projection, "data_keys", ()))
+    matches = [name for name, required in _ANALYSIS_GROUP_SHAPES if required <= keys]
+    if len(matches) != 1:
+        return None
+    return matches[0]
+
+
+def nested_analysis_response_keys(projection: Any) -> frozenset[str]:
+    shape = analysis_group_shape(projection)
+    if shape is None:
+        return frozenset()
+    return ANALYSIS_NESTED_RESPONSE_KEYS_BY_SHAPE[shape]
+
+
+def accepts_property_grouping(fields: Sequence[Any]) -> bool:
+    """True when the caller can request a non-time property partition."""
+
+    for field in fields:
+        if field.name != "group_by_list":
+            continue
+        if field.type != "array" or field.item_type != "object":
+            return False
+        return field.max_items is None or field.max_items > 0
+    return False
+
+
+def is_groupable_analysis_query(fields: Sequence[Any], projection: Any) -> bool:
+    return accepts_property_grouping(fields) and analysis_group_shape(projection) is not None
+
+
+def operation_uses_dynamic_aggregate(operation: "OperationSpec") -> bool:
+    return is_groupable_analysis_query(
+        operation.input_fields, operation.response_projection
+    )
 
 
 def allowed_analysis_response_key(name: str, response_keys: set[str], path: tuple[str, ...] = ()) -> bool:
@@ -72,18 +208,107 @@ def _allowed_dynamic_group_label_key(name: str, path: tuple[str, ...]) -> bool:
 
 
 def funnel_mode_shape_changed(
-    operation: OperationSpec,
+    operation: "OperationSpec",
     data: Mapping[str, Any],
     values: Mapping[str, Any],
 ) -> bool:
     """Require the aggregate root selected by the requested funnel mode."""
 
-    if operation.domain != "analysis" or operation.resource != "funnel":
+    if analysis_group_shape(operation.response_projection) != "funnel":
         return False
     required_projection = (
         "aggregate_by_date" if values.get("to_calc_each_day") is True else "aggregate_date"
     )
     return not isinstance(data.get(required_projection), Mapping)
+
+
+def validate_group_identity_invariant(
+    fields: Sequence[Any],
+    projection: Any,
+    *,
+    executable: bool = True,
+    effect: str = "read",
+) -> None:
+    """Reject contracts that can request a group or identity they cannot keep.
+
+    This is not "project every key". Chart helpers, ``uid``, and ``group_cols``
+    stay fail-closed. The check only requires a known opening for the group
+    or identity the caller actually asked for.
+    """
+
+    _validate_groupable_analysis_shape(fields, projection)
+    if executable and effect == "read":
+        _validate_dimension_axis_bindings(fields, projection)
+    _validate_gravity_identity_aliases(projection)
+
+
+def _validate_groupable_analysis_shape(fields: Sequence[Any], projection: Any) -> None:
+    if not accepts_property_grouping(fields):
+        return
+    shape = analysis_group_shape(projection)
+    if shape is None:
+        raise ManifestError(
+            "groupable analysis query must declare a known aggregate "
+            "response shape so requested group labels survive projection"
+        )
+    opening = ANALYSIS_GROUP_SHAPE_OPENINGS.get(shape)
+    if opening is None:
+        return
+    path, sample = opening
+    if not allowed_analysis_response_key(sample, set(), path):
+        raise ManifestError(
+            "groupable analysis shape is registered but has no group-label opening"
+        )
+
+
+def _validate_dimension_axis_bindings(fields: Sequence[Any], projection: Any) -> None:
+    bound_axes = _dynamically_bound_inputs(projection)
+    declared = _projected_item_names(projection)
+    for field in fields:
+        if not _is_dimension_axis(field):
+            continue
+        if field.name in bound_axes:
+            continue
+        enum = {str(item) for item in field.item_enum or ()}
+        if enum and enum <= declared:
+            continue
+        raise ManifestError(
+            "requested dimension axis must stay visible: bind it as a "
+            "dynamic item field or project every closed-enum dimension key"
+        )
+
+
+def _is_dimension_axis(field: Any) -> bool:
+    if field.name not in _DIMENSION_AXES or field.type != "array":
+        return False
+    if field.max_items == 0:
+        return False
+    return field.item_type in _STRING_AXIS_ITEM_TYPES
+
+
+def _dynamically_bound_inputs(projection: Any) -> set[str]:
+    names = set(projection.dynamic_item_fields)
+    for bound in projection.data_dynamic_item_fields.values():
+        names.update(bound)
+    return names
+
+
+def _projected_item_names(projection: Any) -> set[str]:
+    names = set(projection.item_keys)
+    for keys in projection.data_item_keys.values():
+        names.update(keys)
+    return names
+
+
+def _validate_gravity_identity_aliases(projection: Any) -> None:
+    names = _projected_item_names(projection)
+    if any(
+        name.startswith("gravity_") and name[8:] and name[8:] not in names
+        for name in names
+    ):
+        raise ManifestError(
+            "gravity_* identity alias requires the real identifier to stay projected"
+        )
 
 
 __all__ = [
@@ -92,7 +317,15 @@ __all__ = [
     "ANALYSIS_GROUP_DISPLAY_KEY_RE",
     "ANALYSIS_GROUP_LABEL_KEY_RE",
     "ANALYSIS_INDEX_RESPONSE_KEY_RE",
+    "ANALYSIS_GROUP_SHAPE_OPENINGS",
+    "ANALYSIS_NESTED_RESPONSE_KEYS_BY_SHAPE",
     "ANALYSIS_SAFE_RESPONSE_SCALARS",
+    "accepts_property_grouping",
     "allowed_analysis_response_key",
+    "analysis_group_shape",
     "funnel_mode_shape_changed",
+    "is_groupable_analysis_query",
+    "nested_analysis_response_keys",
+    "operation_uses_dynamic_aggregate",
+    "validate_group_identity_invariant",
 ]
