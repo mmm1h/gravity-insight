@@ -109,7 +109,8 @@ def _material_asset_intent(selected: str, words: frozenset[str]) -> bool:
     )
     chinese = (
         any(term in selected for term in (
-            "平台素材", "平台创意", "素材id", "素材 id", "创意引用", "精确素材"
+            "平台素材", "平台创意", "素材id", "素材 id", "创意引用",
+            "素材引用", "精确素材",
         ))
         and any(term in selected for term in ("预览", "下载", "文件", "二进制"))
         and any(term in selected for term in ("图片", "视频", "媒体", "文件", "二进制"))
