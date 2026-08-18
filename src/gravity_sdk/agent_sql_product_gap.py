@@ -43,7 +43,8 @@ def _english_registered_sql(words: frozenset[str]) -> bool:
 
 def _chinese_registered_sql(selected: str, words: frozenset[str]) -> bool:
     return (
-        "workspace" in words and "登记" in selected and "分析" in selected
+        "workspace" in words and "登记" in selected
+        and any(term in selected for term in ("分析", "聚合", "产品"))
         and any(term in selected for term in ("运行", "执行"))
     ) or (
         "登记" in selected and "sql" in words

@@ -437,6 +437,10 @@ class DiscoveryUxTests(unittest.TestCase):
             ("material performance promotion performance", ("composite:material_performance", "composite:promotion_performance")),
             ("多维报表和经营脉搏", ("composite:multidim", "composite:business_pulse")),
             ("run saved analysis and run dashboard charts", ("composite:saved_analysis", "composite:dashboard_analysis")),
+            (
+                "既要巨量广告主账户余额状态也要跨平台推广表现",
+                ("composite:advertiser_profile", "composite:promotion_performance"),
+            ),
         )
         for query, selectors in cases:
             with self.subTest(query=query):
@@ -454,16 +458,22 @@ class DiscoveryUxTests(unittest.TestCase):
             "新客次周复访比例是多少？": "retention",
             "会员按省份的构成比例。": "property",
             "活跃度是否与客单价相关？": "scatter",
+            "这个行为每天发生量是不是在上升？": "event",
             "不要成员名单，只看分群人数和历史。": "segment_snapshot",
             "Not the segment size; show the audience member list.": "segment_members",
             "Compare creative results across ad platforms.": "material_performance",
             "Compare campaign performance across ad platforms.": "promotion_performance",
+            "读取公司配额消耗趋势": "company_usage",
         }
         for query, expected in cases.items():
             with self.subTest(query=query):
                 result = discover_capabilities(query, client=self.client)
                 card = result["candidates"][0]
                 self.assertEqual(expected, card.get("analysis_kind") or card.get("composite"))
+        public = discover_capabilities(
+            "查看 App 的公开信息绑定", client=self.client
+        )
+        self.assertEqual("app.app_info.get", public["candidates"][0]["selector"])
 
         negative = discover_capabilities("不要运行看板图表。", client=self.client)
         self.assertEqual(("capability_gap", []), (negative["status"], negative["candidates"]))

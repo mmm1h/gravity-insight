@@ -60,7 +60,11 @@ def _realtime_event_catalog(selected: str, words: frozenset[str]) -> bool:
         "event" in words and "catalog" in words
         and "real" in words and "time" in words
     )
-    return english or "实时事件目录" in selected
+    return english or "实时事件目录" in selected or (
+        "实时" in selected
+        and any(term in selected for term in ("上报", "目录"))
+        and any(term in selected for term in ("目录", "项", "治理"))
+    )
 
 
 def _current_table_schema(selected: str, words: frozenset[str]) -> bool:
@@ -70,7 +74,8 @@ def _current_table_schema(selected: str, words: frozenset[str]) -> bool:
     )
     chinese = (
         "当前" in selected
-        and "schema" in selected
+        and any(term in selected for term in ("schema", "字段", "版本"))
+        and any(term in selected for term in ("表", "table"))
         and "项目" not in selected
     )
     return english or chinese
