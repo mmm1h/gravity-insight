@@ -143,16 +143,19 @@ def compile_host_product_selection(
 
     report = assess_host_product_selection(query, response, client)
     if not report["allowed"]:
+        first = report["violations"][0]
+        field = str(first["field"])
         codes = ", ".join(item["code"] for item in report["violations"][:8])
         raise InputValidationError(
             "actual value: malformed, stale, or non-catalog host product selection "
             f"({codes}); allowed value: one complete gravity.host-product-selection.v1 "
             "object whose catalog_ref values come from the current SDK catalog",
-            field="host_selection",
+            field=field,
             next_action=(
-                "Fetch gravity agent-catalog host again, ask the host to return the "
-                "published strict JSON shape, and submit the complete response without "
-                "adding operation, path, tool, or Plan control fields."
+                f"Fix field={field} ({first['code']}). Fetch gravity "
+                "agent-catalog host again, copy selection_template, and submit "
+                "the complete response without adding operation, path, tool, or "
+                "Plan control fields."
             ),
             code="HOST_SELECTION_REJECTED",
         )

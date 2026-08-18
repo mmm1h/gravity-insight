@@ -54,10 +54,61 @@ def host_product_catalog(client: Any) -> dict[str, Any]:
             ),
         },
         "response_schema": host_product_selection_schema(),
+        "selection_template": host_product_selection_template(fingerprint),
+        "catalog_refs": [str(item["catalog_ref"]) for item in entries],
         "entries": [dict(item) for item in entries],
     }
     validate_host_catalog_projection(catalog, product_cards=cards, gaps=gaps)
     return catalog
+
+
+def host_product_selection_template(
+    catalog_sha256: str = "<catalog_sha256 from agent-catalog host>",
+    query: str = "<query>",
+) -> dict[str, Any]:
+    """Return one copyable gravity.host-product-selection.v1 skeleton."""
+
+    return {
+        "schema_version": SELECTION_SCHEMA_VERSION,
+        "catalog_sha256": catalog_sha256,
+        "query": query,
+        "decision": "selected",
+        "reason": {
+            "summary": "<why this catalog_ref matches the query>",
+            "needs_clarification": False,
+        },
+        "candidates": [
+            {
+                "catalog_ref": "<one catalog_ref from catalog_refs>",
+                "reason": {
+                    "goal_match": "<why this product matches>",
+                    "boundary_check": "<why neighboring products were excluded>",
+                },
+            }
+        ],
+    }
+
+
+def host_selection_upgrade_contract(query: str) -> dict[str, Any]:
+    """Declare the host-arm contract a source-free caller can copy from the envelope."""
+
+    selected = query or "<query>"
+    return {
+        "when": (
+            "the caller can emit gravity.host-product-selection.v1 after "
+            "reading the host catalog"
+        ),
+        "next_action": (
+            "This answer is the offline recognizer floor. Read "
+            "`gravity agent-catalog host`, copy `selection_template`, set "
+            "`query` to this same query and `catalog_sha256` to the catalog "
+            "fingerprint, pick one `catalog_ref` from `catalog_refs`, then "
+            "resubmit with `--routing host_catalog --host-selection`."
+        ),
+        "selection_schema_version": SELECTION_SCHEMA_VERSION,
+        "selection_schema": host_product_selection_schema(),
+        "selection_example": host_product_selection_template(query=selected),
+    }
 
 
 def host_product_selection_schema() -> dict[str, Any]:
@@ -247,5 +298,7 @@ __all__ = [
     "host_catalog_sources",
     "host_product_catalog",
     "host_product_selection_schema",
+    "host_product_selection_template",
+    "host_selection_upgrade_contract",
     "validate_host_catalog_projection",
 ]
