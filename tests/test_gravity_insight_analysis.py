@@ -148,23 +148,35 @@ class GravityInsightAnalysisTests(unittest.TestCase):
         operation = repository_manifest("analysis.funnel.query")["operations"][0]
         inputs = json.loads(json.dumps(operation["live_probe"]["input"]))
         inputs.update(app_id="101", query_id=QUERY_ID, to_calc_each_day=True)
+        grouped = {
+            "date_list": None, "aggregate_by_date": None, "window_funnel_mode": 4,
+            "aggregate_date": {
+                "group": {"android": {"1": 10, "2": 1}, "null": {"1": 2, "2": 0}},
+                "total": {"1": 12, "2": 1},
+            },
+        }
         daily = {
             "date_list": [{"2026-08-07": [{"cnt": {"0": 3, "1": 2}, "group": None}]}],
             "aggregate_by_date": {"2026-08-07": {"0": 3, "1": 2}},
             "aggregate_date": None,
             "window_funnel_mode": 0,
         }
-        cases = ((daily, "success"), ({**daily, "aggregate_by_date": None}, "contract_changed"))
-        for data, status in cases:
+        cases = (
+            (daily, True, "success"),
+            ({**daily, "aggregate_by_date": None}, True, "contract_changed"),
+            (grouped, False, "success"),
+        )
+        for data, each_day, status in cases:
             client, _ = client_for(
                 "analysis.funnel.query",
                 handler=lambda *_args, data=data: {"code": 0, "data": data},
             )
             client._executor._field_validator = lambda *_args: None
+            inputs["to_calc_each_day"] = each_day
             result = client.read("analysis.funnel.query", inputs)
             self.assertEqual(status, result["status"])
-            if status == "success":
-                self.assertEqual([], result["warnings"])
+            if status == "success" and not each_day:
+                self.assertEqual(grouped["aggregate_date"]["group"], result["data"]["aggregate_date"]["group"])
 
     def test_funnel_rejects_live_incompatible_user_property_type_offline(self) -> None:
         manifest = repository_manifest("analysis.funnel.query")

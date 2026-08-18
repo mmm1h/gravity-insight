@@ -264,7 +264,7 @@
     },
     "src/gravity_sdk/executor.py": {
       "ast_hard_limit": 9149,
-      "ast_nodes": 4832,
+      "ast_nodes": 4795,
       "migration_sloc": 1330,
       "sloc_hard_limit": 1430
     },

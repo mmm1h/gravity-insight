@@ -466,8 +466,8 @@ operation 继续保留专家入口，但明确不是产品等价物；`app.realt
 | 动线 | 状态 | 四面可达（CLI / SDK / Plan / Agent 中英首问） | 调用次数（已知 / 未知） | 阻塞 |
 | --- | --- | --- | --- | --- |
 | 看某事件随时间、分组和条件的变化 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | - |
-| 看多步行为的转化漏斗 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | - |
-| 看起始行为后的用户留存 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | - |
+| 看多步行为的转化漏斗 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | 2026-08-18 生产对账：单调、第一步=注册分母、分日可加成立；响应不返回率。compact 用户分维曾编成 `user_property` 被拒，漏斗组键曾被投影丢掉，均已修。评测冻结 case 未改。 |
+| 看起始行为后的用户留存 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | 2026-08-18 生产对账：day0=分母、人数≤分母、`$os` 分维求和成立。省略 `time_grain` 曾被上游拒，现默认写入 `create_time/day`。评测冻结 case 未改。 |
 | 看用户或事件属性的分布与聚合 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | - |
 | 看事件指标之间的散点关系 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | - |
 | 用同一分析定义比较两个时期 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（中英首问） | - |
@@ -491,7 +491,7 @@ operation 继续保留专家入口，但明确不是产品等价物；`app.realt
 | 按精确引用重放保存分析 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（引用未知、在线解析） | - |
 | 创建、更新、重放并删除可复用保存分析 | 已闭环 | 有 / 有 / 设计不适用 / 有 | mutation 2（dry-run / 显式 execute）；重放 1 | `report_config/update` 以无 `id` 创建、带 `id` 更新、带 `id + is_deleted=true` 删除；事件分析已生产完成 create/list/get/update/readback/replay/delete/消失确认且最终 marker 为 0。2026-08-17 又以精确 GET 的原样保存对象重放 `analysis.event.query`，HTTP 200，`2026-06-01..07` 聚合值 `235176.0` 已随 governed response 落入 `evidence/forensics/20260817_saved_analysis_replay.json`；receipt 保持值无关。离线编译零网络，返回完整 live metadata 依赖；真正执行在 query 前联网复验。update/delete 以 GSDK marker 或 list/get `create_user_id == gravity_id` 放行；本轮只读复核 7 个 App 首页 313 条均有稳定 int `create_user_id`，0 条缺字段，App `29034827` 首页有 42 条当前 principal 自有且无 marker。五类已证明 strict replay 的 subject 可写；`analysis_cash/order/user` 因本租户无样本且内部 config 异构而保持未开放。三张 mutation 卡只交接同参数 dry-run/execute，自然语言不自动写；share 不在产品内。 |
 | 按精确引用重放分析模板 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（引用未知、在线解析） | 未经证明的 artifact 继续隔离，不因目录可选而放宽回放合同。 |
-| 查看分群详情、版本和单日聚合结果 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（引用未知、在线解析） | 分群目录 `analysis.segment.list` 空结果与权限裁剪空集不可区分；不确定权限时运行 `gravity apps permission-profile`。 |
+| 查看分群详情、版本和单日聚合结果 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（引用未知、在线解析） | 分群目录 `analysis.segment.list` 空结果与权限裁剪空集不可区分；不确定权限时运行 `gravity apps permission-profile`。2026-08-18：已算完分群的 list/detail/history/daily_result/members 人数一致；明细导出行数=人数。未改状态。评测冻结 case 未改。 |
 | 查看精确分群成员及逐人属性 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（自然语言实测、卡面） | `gravity-insight.segment-members.v1` 全量交付上游授权字段；目标非空实证登记 147 个顶层字段，未登记字段仍 fail-closed。route 忽略 `page/page_size` 并一次返回完整结果；触及 `max_items` 显式 `partial`。`fields` 是固定 profile + live `analysis.user_property.list` 动态属性的本地选列输入；未知引用仍按 call-bound 显式声明 3 次，不扩大无 revision/ETag 的在线两次解析模式。 |
 | 从分析结果或规则创建并管理可复用分群 | 已闭环 | 有 / 有 / 设计不适用 / 有 | 2（dry-run / 显式 execute） | 独立任务产出上游分群对象，不与“查看已有分群详情/成员”合并计数。`from_analysis`、`from_rule`、`by_manual`、`save` 已有生产创建/更新/刷新/删除与读回证据；历史版本和临时分群两个 create 变体未生产验证，不作为本行闭环证据。update/delete 以 GSDK marker 或 list/detail `create_user_id == gravity_id` 放行；本轮只读复核 7 个 App 首页 32 条分群均有稳定 int `create_user_id`，0 条缺字段，首页未见当前 principal 自有无 marker 样本。Plan v1 不承诺不可重放写、人工确认、preimage 或写后读回，Agent 只交接两步命令。 |
 | 用显式物理维度、指标和筛选读取多维报表 | 已闭环 | 有 / 有 / 有 / 有 | 1 / 2（物理字段未知、在线解析） | 闭合 schema + live metadata 提供物理指标/维度候选；日期和 filter value 仍须由调用方精确提供。query 实测为单响应 + `page_info.total`，改变 page/page_size 不控制结果；完整读取只发一次 query。 |

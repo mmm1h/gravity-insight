@@ -11,6 +11,7 @@ from .analysis_projection_contract import (
     ANALYSIS_DATE_RESPONSE_KEY_RE,
     ANALYSIS_INDEX_RESPONSE_KEY_RE,
     ANALYSIS_SAFE_RESPONSE_SCALARS,
+    allowed_analysis_response_key as _allowed_analysis_response_key,
     funnel_mode_shape_changed,
 )
 from .drift import ProjectionDrift, projection_drift_status
@@ -510,7 +511,7 @@ def _project_analysis_mapping(
                 name, blocked,
                 allow_contracted_identifiers=allow_identifiers,
             )
-            or not _allowed_analysis_response_key(name, response_keys)
+            or not _allowed_analysis_response_key(name, response_keys, path)
         ):
             audit_path = ("data", *("*" if part == "[]" else part for part in path))
             recorder.add_unknown_fields(audit_path, value, {name})
@@ -635,14 +636,6 @@ def _analysis_response_keys(
             add(group.get("field"))
             add(group.get("group_by"))
     return result
-
-
-def _allowed_analysis_response_key(name: str, response_keys: set[str]) -> bool:
-    return bool(
-        name in response_keys
-        or ANALYSIS_DATE_RESPONSE_KEY_RE.fullmatch(name)
-        or ANALYSIS_INDEX_RESPONSE_KEY_RE.fullmatch(name)
-    )
 
 
 def _allowed_analysis_response_scalar(value: str, response_keys: set[str]) -> bool:

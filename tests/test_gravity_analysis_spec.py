@@ -144,6 +144,17 @@ class AnalysisQuerySpecTests(unittest.TestCase):
         self.assertIs(True, event["return_hierarchy_list"])
         self.assertEqual({"type": "today", "val": 1}, funnel["stat_time_window"])
         self.assertEqual(before_after, retention["query_item_before_after"])
+        self.assertEqual("day", retention["group_by_list"][0]["group_by"])
+        self.assertEqual(
+            "user",
+            compile_query_spec(
+                "retention",
+                {**dated, "steps": [step("open"), step("pay")], "offset": 7,
+                 "period_calc_method": "SUM", "custom_before_method": "SUM",
+                 "total_calc_type": "DAY", "week_first_day": 1,
+                 "group_by": [{"field": "$os", "source": "user"}]},
+            ).inputs["group_by_list"][1]["type"],
+        )
         self.assertEqual({"zone_type": "dispersed", "range_list": []},
                          scatter["query_item_list"][0]["calc_zone"])
         self.assertNotIn("return_hierarchy_list", compile_query_spec(
