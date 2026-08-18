@@ -185,7 +185,7 @@ def _capability_gap(protocol: dict[str, Any], gap: dict[str, Any], exits: dict[s
         "拿到 capability_gap 后怎么办",
         [
             "```powershell\n" + _argv(command) + "\n```",
-            "调用方能产出选择时，先 `gravity agent-catalog host` 再把严格 `gravity.host-product-selection.v1` 交给 `gravity agent --routing host_catalog --host-selection`；默认 `gravity agent` 仍是够不着宿主时的地板。只有 `status=success` 的 candidate 才可执行；`capability_gaps` 是明确的不可执行结果，不是 empty。",
+            "调用方能产出选择时，先 `gravity agent-catalog host` 再把严格 `gravity.host-product-selection.v1` 交给 `gravity agent --routing host_catalog --host-selection`；默认 `gravity agent` 仍是够不着宿主时的地板。识别器只排出互不相同 raw operation 时返回 `UNRANKED_OPERATIONS`，`next.argv` 是 `gravity agent-catalog host`，不是可执行产品。只有 `status=success` 的 candidate 才可执行；`capability_gaps` 是明确的不可执行结果，不是 empty。",
         ],
         gap,
         exits,

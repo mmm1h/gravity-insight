@@ -47,6 +47,7 @@
 - [公开面未测分支：replace 同类扫描](untested-branches.md) — 策略/模式开关对账后无新运行时 bug；`replace` 对目录拒绝已锁定。
 - [选择层残余 20 题成因](selection-residual.md) — 20 条非 no_candidate 无可安全修项；离线臂停刷，宿主臂做主路径。
 - [消费方摩擦：recipe 重钉与目录浏览](consumer-affordances.md) — `accept-contract` 受治理重钉指纹；`no_candidate` 指向 `agent-catalog categories`。
+- [识别器不自信时交出选择权](recognizer-handoff.md) — 只排出互不相同 raw operation 时返回 `UNRANKED_OPERATIONS`，交给 `agent-catalog host`。
 
 ## 归档记录
 

@@ -34,6 +34,8 @@ from .agent_sources import (
 from .agent_batch_sources import AgentSourceSnapshot
 from .agent_client import DeferredAgentClient
 from .agent_discovery_support import (
+    assert_discovery_page,
+    finish_discovery_candidates,
     capability_gaps_for_page,
     discovery_next_fields,
     materialize_candidates,
@@ -237,25 +239,13 @@ def _discover(
         workspace=workspace, sources=sources,
         domain=request.domain, platform=request.platform,
     )
-    unified = list(lexical.candidates)
+    unified, lexical_gaps = finish_discovery_candidates(request.query, lexical)
     fingerprint = candidates_fingerprint(unified)
-    if (
-        page.expected_candidates_fingerprint is not None
-        and page.expected_candidates_fingerprint != fingerprint
-    ):
-        raise InputValidationError(
-            "agent continuation does not match the current candidate catalog",
-            field="continuation", next_action="Drop continuation and run the search again.",
-        )
-    if page.offset >= len(unified) and request.continuation:
-        raise InputValidationError(
-            "agent continuation no longer points to an available candidate",
-            field="continuation", next_action="Drop continuation and run the search again.",
-        )
+    assert_discovery_page(page, request, unified, fingerprint)
     candidates = materialize_candidates(
         client, unified[page.offset : page.offset + request.limit]
     )
-    gaps = [] if unified else list(lexical.gaps) or page.semantic_gaps or capability_gaps_for_page(
+    gaps = [] if unified else list(lexical_gaps) or page.semantic_gaps or capability_gaps_for_page(
         request, client, weak_operations, page.operation_fallback_excluded)
     return _discovery_response(
         request,
@@ -323,7 +313,7 @@ def _discovery_response(
         "match_policy": response_match_policy(lexical_receipt),
         "execution": agent_execution_contract(workspace_path),
         "fallbacks": agent_fallbacks(safe_discovery_query(request.query), workspace_path),
-        **discovery_next_fields(bool(candidates)),
+        **discovery_next_fields(bool(candidates), gaps),
         **({"semantic_context": semantic_context} if semantic_context is not None else {}),
     }
 
