@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from typing import Any, Mapping, Sequence
 
 try:
+    from gravity_sdk.actionable_error_values import actual_value
     from gravity_sdk.errors import (
         AuthenticationError,
         CredentialError,
@@ -24,6 +25,7 @@ try:
     )
     from gravity_sdk.paths import PROJECT_ROOT
 except ModuleNotFoundError:  # pragma: no cover - source-tree execution without installation.
+    from gravity_sdk.actionable_error_values import actual_value
     from gravity_sdk.errors import (
         AuthenticationError,
         CredentialError,
@@ -145,14 +147,16 @@ class GravityClient:
 
         if isinstance(max_workers, bool) or not 1 <= max_workers <= MAX_SQL_CONCURRENCY:
             raise SqlValidationError(
-                f"SQL batch max_workers must be between 1 and {MAX_SQL_CONCURRENCY}",
+                f"actual value: {actual_value(max_workers)}; SQL batch max_workers "
+                f"must be between 1 and {MAX_SQL_CONCURRENCY}",
                 field="max_workers",
             )
         if not isinstance(requests, SequenceABC) or isinstance(
             requests, (str, bytes, bytearray)
         ):
             raise SqlValidationError(
-                "SQL batch requests must be a sequence",
+                f"actual value: {actual_value(type(requests).__name__)}; SQL batch "
+                "requests must be a sequence",
                 field="requests",
             )
         pending = list(requests)
@@ -211,7 +215,7 @@ def build_sql_client() -> GravityClient:
 def _validate_sql(sql: Any) -> str:
     if not isinstance(sql, str) or not sql.strip():
         raise SqlValidationError(
-            "Gravity SQL must be a non-empty string",
+            f"actual value: {actual_value(sql)}; Gravity SQL must be a non-empty string",
             field="sql",
         )
     return sql
@@ -222,7 +226,8 @@ def _batch_request(value: str | SqlBatchRequest | Mapping[str, Any]) -> SqlBatch
         _validate_sql(value.sql)
         if value.request_id is not None and not isinstance(value.request_id, str):
             raise SqlValidationError(
-                "SQL batch request_id must be a string",
+                f"actual value: {actual_value(value.request_id)}; SQL batch request_id "
+                "must be a string",
                 field="request_id",
             )
         return value
@@ -230,19 +235,22 @@ def _batch_request(value: str | SqlBatchRequest | Mapping[str, Any]) -> SqlBatch
         return SqlBatchRequest(_validate_sql(value))
     if not isinstance(value, Mapping):
         raise SqlValidationError(
-            "SQL batch items must be strings or objects",
+            f"actual value: {actual_value(type(value).__name__)}; SQL batch items must "
+            "be strings or objects",
             field="requests",
         )
     unknown = set(value) - {"sql", "request_id"}
     if unknown:
         raise SqlValidationError(
-            "SQL batch item must use only sql and request_id; remove the extra fields",
+            f"actual value: {actual_value(sorted(unknown))}; SQL batch item must use "
+            "only sql and request_id; remove the extra fields",
             field="requests",
         )
     request_id = value.get("request_id")
     if request_id is not None and not isinstance(request_id, str):
         raise SqlValidationError(
-            "SQL batch request_id must be a string",
+            f"actual value: {actual_value(request_id)}; SQL batch request_id must be a "
+            "string",
             field="request_id",
         )
     return SqlBatchRequest(_validate_sql(value.get("sql")), request_id)

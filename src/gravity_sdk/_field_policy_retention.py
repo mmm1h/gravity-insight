@@ -15,6 +15,7 @@ from ._field_policy_shared import (
     require_exact_mapping,
     validate_optional_label,
 )
+from .actionable_error_values import actual_value
 from .errors import InputValidationError
 
 
@@ -56,7 +57,8 @@ def validate_retention_before_after(
 def _validate_before_after_controls(value: Any) -> None:
     if value.get("formula", "+") not in {"+", "-", "*", "/"}:
         raise InputValidationError(
-            "retention before/after formula must be one of +, -, *, /; request was not sent",
+            f"actual value: {actual_value(value.get('formula'))}; retention "
+            "before/after formula must be one of +, -, *, /; request was not sent",
             field="formula",
         )
     precision_values = {
@@ -69,18 +71,22 @@ def _validate_before_after_controls(value: Any) -> None:
     for field_name in ("decimal_point", "before_decimal_point"):
         if value.get(field_name, "two_point") not in precision_values:
             raise InputValidationError(
-                "retention before/after precision must be one of two_point, three_point, four_point, percentage, integer; request was not sent",
+                f"actual value: {actual_value(value.get(field_name))}; retention "
+                "before/after precision must be one of two_point, three_point, "
+                "four_point, percentage, integer; request was not sent",
                 field=field_name,
             )
     if not isinstance(value.get("a_to_b", False), bool):
         raise InputValidationError(
-            "retention before/after a_to_b must be a boolean; request was not sent",
+            f"actual value: {actual_value(value.get('a_to_b'))}; retention before/after "
+            "a_to_b must be a boolean; request was not sent",
             field="a_to_b",
         )
     name = value.get("name", "")
     if not isinstance(name, str) or not 1 <= len(name) <= 20 or "\x00" in name:
         raise InputValidationError(
-            "retention before/after name must be a 1-20 character string; request was not sent",
+            f"actual value: {actual_value(name)}; retention before/after name must be a "
+            "1-20 character string; request was not sent",
             field="name",
         )
 
@@ -106,7 +112,9 @@ def validate_retention_boundary_item(
     event_name = value.get("event_name")
     if not isinstance(event_name, str) or not event_name or len(event_name) > 256:
         raise InputValidationError(
-            "retention before/after event_name must be a non-empty string of at most 256 characters; request was not sent",
+            f"actual value: {actual_value(event_name)}; retention before/after "
+            "event_name must be a non-empty string of at most 256 characters; request "
+            "was not sent",
             field="event_name",
         )
     references.events.add(event_name)
@@ -115,7 +123,8 @@ def validate_retention_boundary_item(
         validate_optional_label(value.get("customBeforeName"), "customBeforeName")
     if value.get("cond_logic", "AND") not in {"AND", "OR"}:
         raise InputValidationError(
-            "retention before/after cond_logic must be one of AND, OR; request was not sent",
+            f"actual value: {actual_value(value.get('cond_logic'))}; retention "
+            "before/after cond_logic must be one of AND, OR; request was not sent",
             field="cond_logic",
         )
     validate_analysis_target(
@@ -140,7 +149,9 @@ def _add_retention_properties(value: Any, references: AnalysisReferences) -> Non
             or "\x00" in field_value
         ):
             raise InputValidationError(
-                "retention before/after property must be a non-empty string of at most 256 characters; request was not sent",
+                f"actual value: {actual_value(field_value)}; retention before/after "
+                "property must be a non-empty string of at most 256 characters; request "
+                "was not sent",
                 field=field_name,
             )
         if field_value not in ANALYSIS_TARGET_METHODS:
@@ -160,7 +171,9 @@ def validate_retention_custom_item(
     items = value.get("list")
     if not isinstance(items, (list, tuple)) or not 1 <= len(items) <= 50:
         raise InputValidationError(
-            "retention custom list must contain 1 through 50 event items; request was not sent",
+            f"actual value: {actual_value(type(items).__name__) if not isinstance(items, (list, tuple)) else len(items)}; "
+            "retention custom list must contain 1 through 50 event items; request was "
+            "not sent",
             field="list",
         )
     for item in items:
@@ -170,13 +183,15 @@ def validate_retention_custom_item(
     )
     if value.get("cond_logic", "AND") not in {"AND", "OR"}:
         raise InputValidationError(
-            "retention custom cond_logic must be one of AND, OR; request was not sent",
+            f"actual value: {actual_value(value.get('cond_logic'))}; retention custom "
+            "cond_logic must be one of AND, OR; request was not sent",
             field="cond_logic",
         )
     formula = value.get("formula")
     if not isinstance(formula, str) or not formula or not ANALYSIS_FORMULA_RE.fullmatch(formula):
         raise InputValidationError(
-            "retention custom formula must match the bounded arithmetic pattern; request was not sent",
+            f"actual value: {actual_value(formula)}; retention custom formula must "
+            "match the bounded arithmetic pattern; request was not sent",
             field="formula",
         )
     if before:

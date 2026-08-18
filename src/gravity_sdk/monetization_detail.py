@@ -26,6 +26,7 @@ from ._order_read import (
 )
 from ._field_policy_shared import parse_iso_calendar_date
 from .composite_catalog import stable_operation
+from .actionable_error_values import actual_value
 from .errors import ErrorCode, ErrorDetail, InputValidationError, exit_code_for_error
 from .models import OperationSpec
 from .monetization_projection import (
@@ -165,7 +166,9 @@ def validate_monetization_operation_request(
         or len(fields) != len(set(fields))
     ):
         raise InputValidationError(
-            "monetization detail fields must be a non-empty unique string list; request was not sent",
+            f"actual value: {actual_value(type(fields).__name__) if not isinstance(fields, (list, tuple)) else fields}; "
+            "monetization detail fields must be a non-empty unique string list; request "
+            "was not sent",
             field="fields",
         )
     parse_iso_calendar_date(inputs.get("date"), "date")
@@ -177,7 +180,9 @@ def validate_monetization_operation_request(
         or not 1 <= size <= 1_000
     ):
         raise InputValidationError(
-            "monetization detail page must be >= 1 and page_size must be 1 through 1000; request was not sent",
+            f"actual value: {actual_value({'page': page, 'page_size': size})}; "
+            "monetization detail page must be >= 1 and page_size must be 1 through 1000; "
+            "request was not sent",
             field="page_size",
         )
 

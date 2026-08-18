@@ -110,7 +110,7 @@ def validate_input_field(
         if field.nullable:
             return None
         raise InputValidationError(
-            f"input {field.name!r} must not be null",
+            f"actual value: {actual_value(value)}; input {field.name!r} must not be null",
             field=field.name,
         )
     expected = field.type
@@ -118,18 +118,21 @@ def validate_input_field(
     valid = _input_type_valid(expected, value, is_bounded_json_value)
     if valid is None:
         raise InputValidationError(
-            f"input {field.name!r} must use a supported type, not {expected!r}",
+            f"actual value: {actual_value(expected)}; input {field.name!r} must use a "
+            f"supported type, not {expected!r}",
             field=field.name,
         )
     if not valid:
         raise InputValidationError(
-            f"input {field.name!r} must be {expected}",
+            f"actual value: {actual_value(type(value).__name__)}; input {field.name!r} "
+            f"must be {expected}",
             field=field.name,
         )
     _validate_object_and_enum(field, value, expected, is_bounded_json_value)
     if expected == "string" and field.max_length is not None and len(value) > field.max_length:
         raise InputValidationError(
-            f"input {field.name!r} must stay at or below its length limit of {field.max_length}",
+            f"actual value: {actual_value(len(value))}; input {field.name!r} must stay "
+            f"at or below its length limit of {field.max_length}",
             field=field.name,
         )
     if expected == "array":
@@ -351,12 +354,14 @@ def _validate_object_and_enum(
         value, max_depth=field.max_depth
     ):
         raise InputValidationError(
-            f"input {field.name!r} must stay inside the nested object limits",
+            f"actual value: {actual_value(type(value).__name__)}; input {field.name!r} "
+            "must stay inside the nested object limits",
             field=field.name,
         )
     if field.enum and value not in field.enum:
         raise InputValidationError(
-            f"input {field.name!r} is not an allowed value",
+            f"actual value: {actual_value(value)}; input {field.name!r} is not an "
+            "allowed value",
             field=field.name,
         )
 
@@ -372,24 +377,28 @@ def _validate_array_value(
     normalized = list(value)
     if field.min_items is not None and len(normalized) < field.min_items:
         raise InputValidationError(
-            f"input {field.name!r} must contain at least {field.min_items} items",
+            f"actual value: {actual_value(len(normalized))}; input {field.name!r} must "
+            f"contain at least {field.min_items} items",
             field=field.name,
         )
     if field.max_items is not None and len(normalized) > field.max_items:
         raise InputValidationError(
-            f"input {field.name!r} must contain at most {field.max_items} items",
+            f"actual value: {actual_value(len(normalized))}; input {field.name!r} must "
+            f"contain at most {field.max_items} items",
             field=field.name,
         )
     if field.item_type and any(
         not matches_input_type(item, field.item_type) for item in normalized
     ):
         raise InputValidationError(
+            f"actual value: {actual_value([type(item).__name__ for item in normalized])}; "
             f"input {field.name!r} must contain only {field.item_type} items",
             field=field.name,
         )
     if field.item_enum and any(item not in field.item_enum for item in normalized):
         raise InputValidationError(
-            f"input {field.name!r} contains an item outside its allowlist; must use an allowlisted value",
+            f"actual value: {actual_value(normalized)}; input {field.name!r} contains "
+            "an item outside its allowlist; must use an allowlisted value",
             field=field.name,
         )
     if field.name == "date_list" and field.item_type == "string":

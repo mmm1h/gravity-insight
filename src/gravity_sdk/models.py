@@ -12,6 +12,7 @@ from types import MappingProxyType
 from typing import Any, Mapping, Sequence
 from urllib.parse import quote
 
+from .actionable_error_values import actual_value
 from .errors import (
     ErrorDetail,
     InputValidationError,
@@ -170,56 +171,74 @@ def _validate_date_range(values: Sequence[Any]) -> None:
         start, end = (date.fromisoformat(str(item)) for item in values)
     except (TypeError, ValueError) as exc:
         raise InputValidationError(
-            "date_list must contain valid ISO calendar dates",
+            f"actual value: {actual_value(list(values))}; date_list must contain valid "
+            "ISO calendar dates",
             field="date_list",
         ) from exc
     if start > end:
         raise InputValidationError(
-            "date_list start must not be after end",
+            f"actual value: {actual_value(list(values))}; date_list start must not be "
+            "after end",
             field="date_list",
         )
 
 
+def _filter_input_error(message: str, field: str) -> InputValidationError:
+    return InputValidationError(message, field=field)
+
+
+def _sequence_shape(value: Any) -> Any:
+    return len(value) if isinstance(value, (list, tuple)) else type(value).__name__
+
+
 def _validate_filters(values: Sequence[Any]) -> None:
-    allowed_keys = {"field", "operator", "values", "value"}
     for item in values:
-        if not isinstance(item, Mapping):
-            raise InputValidationError(
-                "filters must contain only objects",
-                field="filters",
-            )
-        if set(item) - allowed_keys or "field" not in item or "operator" not in item:
-            raise InputValidationError(
-                "filter objects must use only field, operator, and values; request was not sent",
-                field="filters",
-            )
-        field_name = item.get("field")
-        if not isinstance(field_name, str) or not _FIELD_NAME_RE.fullmatch(field_name):
-            raise InputValidationError(
-                "filter field must be a declared-style field name",
-                field="filters[].field",
-            )
-        operator = item.get("operator")
-        if isinstance(operator, bool) or not isinstance(operator, (str, int)):
-            raise InputValidationError(
-                "filter operator must be a string or integer enum",
-                field="filters[].operator",
-            )
-        raw_values = item.get("values", item.get("value", []))
-        if not isinstance(raw_values, (list, tuple)) or len(raw_values) > 100:
-            raise InputValidationError(
-                "filter values must be a bounded array",
-                field="filters[].values",
-            )
-        if any(
-            isinstance(value, (Mapping, list, tuple))
-            or not _is_bounded_json_value(value)
-            for value in raw_values
-        ):
-            raise InputValidationError(
-                "filter values must contain only scalar JSON values",
-                field="filters[].values",
-            )
+        _validate_filter_item(item)
+
+
+def _validate_filter_item(item: Any) -> None:
+    allowed_keys = {"field", "operator", "values", "value"}
+    if not isinstance(item, Mapping):
+        raise _filter_input_error(
+            f"actual value: {actual_value(type(item).__name__)}; filters must contain only objects",
+            "filters",
+        )
+    if set(item) - allowed_keys or "field" not in item or "operator" not in item:
+        raise _filter_input_error(
+            f"actual value: {actual_value(sorted(item))}; filter objects must use only "
+            "field, operator, and values; request was not sent",
+            "filters",
+        )
+    field_name = item.get("field")
+    if not isinstance(field_name, str) or not _FIELD_NAME_RE.fullmatch(field_name):
+        raise _filter_input_error(
+            f"actual value: {actual_value(field_name)}; filter field must be a "
+            "declared-style field name",
+            "filters[].field",
+        )
+    operator = item.get("operator")
+    if isinstance(operator, bool) or not isinstance(operator, (str, int)):
+        raise _filter_input_error(
+            f"actual value: {actual_value(operator)}; filter operator must be a string "
+            "or integer enum",
+            "filters[].operator",
+        )
+    raw_values = item.get("values", item.get("value", []))
+    if not isinstance(raw_values, (list, tuple)) or len(raw_values) > 100:
+        raise _filter_input_error(
+            f"actual value: {actual_value(_sequence_shape(raw_values))}; filter values "
+            "must be a bounded array",
+            "filters[].values",
+        )
+    if any(
+        isinstance(value, (Mapping, list, tuple)) or not _is_bounded_json_value(value)
+        for value in raw_values
+    ):
+        raise _filter_input_error(
+            f"actual value: {actual_value([type(value).__name__ for value in raw_values])}; "
+            "filter values must contain only scalar JSON values",
+            "filters[].values",
+        )
 
 
 def _unreliable_item_key_mapping(value: Any) -> Mapping[str, Mapping[str, str]]:
@@ -693,14 +712,16 @@ class OperationSpec:
             supplied = {}
         if not isinstance(supplied, Mapping):
             raise InputValidationError(
-                "operation inputs must be an object",
+                f"actual value: {actual_value(type(supplied).__name__)}; operation "
+                "inputs must be an object",
                 field="inputs",
             )
         unknown = set(supplied) - set(self.fields)
         if unknown:
             first = sorted(unknown)[0]
             raise InputValidationError(
-                "unknown operation input fields: " + ", ".join(sorted(unknown))
+                f"actual value: {actual_value(sorted(unknown))}; unknown operation "
+                "input fields: " + ", ".join(sorted(unknown))
                 + f"; remove {first} or run `gravity insight operations describe {self.operation_id}`",
                 field=first,
             )
@@ -712,7 +733,8 @@ class OperationSpec:
             if spec.name not in values:
                 if spec.required:
                     raise InputValidationError(
-                        f"missing required input: {spec.name}; must supply `{spec.name}` from the operation contract",
+                        f"actual value: {actual_value(None)}; missing required input: "
+                        f"{spec.name}; must supply `{spec.name}` from the operation contract",
                         field=spec.name,
                     )
                 continue
@@ -722,14 +744,16 @@ class OperationSpec:
                 parent = required_parent.input_field
                 if parent not in values or values[parent] in (None, "", [], {}):
                     raise ParentRequiredError(
-                        f"operation requires parent input: {parent}",
+                        f"actual value: {actual_value(values.get(parent))}; operation "
+                        f"requires parent input: {parent}",
                         field=parent,
                     )
         validate_page_inputs(self.fields, self.pagination, values)
         thawed = _thaw_json(values)
         if not isinstance(thawed, dict):  # pragma: no cover - construction invariant
             raise InputValidationError(
-                "operation inputs must remain a JSON object after isolation",
+                f"actual value: {actual_value(type(thawed).__name__)}; operation inputs "
+                "must remain a JSON object after isolation",
                 field="inputs",
             )
         return thawed
@@ -739,14 +763,16 @@ class OperationSpec:
         for name in self.path_fields:
             if name not in values:
                 raise InputValidationError(
-                    f"missing path input: {name}; must supply `{name}` before rendering the path",
+                    f"actual value: {actual_value(None)}; missing path input: {name}; "
+                    f"must supply `{name}` before rendering the path",
                     field=name,
                 )
             replacements[name] = quote(str(values[name]), safe="")
         path = self.path_template.format(**replacements)
         if not _SAFE_PATH_RE.fullmatch(path) or "//" in path or "/../" in path or "/./" in path:
             raise InputValidationError(
-                "rendered operation path must stay inside the declared template; remove `.` or `..` segments",
+                f"actual value: {actual_value(path)}; rendered operation path must stay "
+                "inside the declared template; remove `.` or `..` segments",
                 field="path",
             )
         return path

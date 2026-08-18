@@ -46,6 +46,7 @@ from ._field_policy_shared import (
     parse_analysis_datetime,
     require_exact_mapping,
 )
+from .actionable_error_values import actual_value
 from .errors import InputValidationError
 
 
@@ -58,7 +59,8 @@ def validate_analysis_query(
     app_id = inputs.get("app_id")
     if not isinstance(app_id, str) or not app_id or len(app_id) > 64:
         raise InputValidationError(
-            "analysis app_id must be a bounded identifier; request was not sent",
+            f"actual value: {actual_value(app_id)}; analysis app_id must be a bounded "
+            "identifier; request was not sent",
             field="app_id",
         )
     validate_analysis_reference_membership(app_id, references, metadata_loader)
@@ -98,8 +100,8 @@ def validate_analysis_segment_rule(
     app_id = inputs.get("app_id")
     if not isinstance(app_id, str) or not app_id.isdecimal() or len(app_id) > 64:
         raise InputValidationError(
-            "analysis segment-rule app_id must be a decimal identifier; "
-            "request was not sent",
+            f"actual value: {actual_value(app_id)}; analysis segment-rule app_id must "
+            "be a decimal identifier; request was not sent",
             field="app_id",
         )
     validate_analysis_reference_membership(app_id, references, metadata_loader)
@@ -111,7 +113,8 @@ def validate_analysis_shape(
     query_id = inputs.get("query_id")
     if not isinstance(query_id, str) or not ANALYSIS_QUERY_ID_RE.fullmatch(query_id):
         raise InputValidationError(
-            "analysis query_id must be an opaque identifier; request was not sent",
+            f"actual value: {actual_value(query_id)}; analysis query_id must be an "
+            "opaque identifier; request was not sent",
             field="query_id",
         )
     references = new_analysis_references()
@@ -137,9 +140,16 @@ def _reject_funnel_user_property_conditions(value: Any) -> None:
         and item.get("segment_type") in {None, ""}
         for item in value
     ):
+        observed = [
+            item.get("type")
+            for item in value
+            if item.get("type") == "user_property"
+            and item.get("segment_type") in {None, ""}
+        ]
         raise InputValidationError(
-            "analysis funnel global_conditions must use type 'user' for user "
-            "properties; request was not sent",
+            f"actual value: {actual_value(observed)}; analysis funnel "
+            "global_conditions must use type 'user' for user properties; request was "
+            "not sent",
             field="global_conditions",
             next_action=(
                 "Change each funnel user-property condition type to `user`, then "
@@ -224,7 +234,8 @@ def _validate_retention_controls(
     offset = inputs.get("offset")
     if not isinstance(offset, int) or isinstance(offset, bool) or not 1 <= offset <= 365:
         raise InputValidationError(
-            "analysis retention offset must be an integer from 1 through 365; request was not sent",
+            f"actual value: {actual_value(offset)}; analysis retention offset must be "
+            "an integer from 1 through 365; request was not sent",
             field="offset",
         )
     week_first_day = inputs.get("week_first_day")
@@ -234,7 +245,8 @@ def _validate_retention_controls(
         or not 1 <= week_first_day <= 7
     ):
         raise InputValidationError(
-            "analysis week_first_day must be an integer from 1 through 7; request was not sent",
+            f"actual value: {actual_value(week_first_day)}; analysis week_first_day "
+            "must be an integer from 1 through 7; request was not sent",
             field="week_first_day",
         )
 
@@ -243,7 +255,9 @@ def validate_analysis_date_list(value: Any, query_kind: str) -> None:
     maximum = 2 if query_kind == "event" else 1
     if not isinstance(value, (list, tuple)) or not 1 <= len(value) <= maximum:
         raise InputValidationError(
-            "analysis date_list must contain 1 window, or 2 windows for event queries; request was not sent",
+            f"actual value: {actual_value(type(value).__name__) if not isinstance(value, (list, tuple)) else len(value)}; "
+            "analysis date_list must contain 1 window, or 2 windows for event queries; "
+            "request was not sent",
             field="date_list",
         )
     for item in value:
@@ -252,6 +266,8 @@ def validate_analysis_date_list(value: Any, query_kind: str) -> None:
         end = parse_analysis_datetime(item.get("end_date"))
         if start.tzinfo != end.tzinfo or start > end or (end - start).days > 90:
             raise InputValidationError(
-                "analysis date range must stay within 90 days and start must not follow end; request was not sent",
+                f"actual value: {actual_value({'start_date': item.get('start_date'), 'end_date': item.get('end_date')})}; "
+                "analysis date range must stay within 90 days and start must not follow "
+                "end; request was not sent",
                 field="date_list",
             )

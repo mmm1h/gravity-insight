@@ -7,6 +7,7 @@ from typing import Any, Mapping
 from ._field_policy_metadata import load_view, wire_property_names
 from ._field_policy_operations import ANALYSIS_USER_PROPERTY
 from ._field_policy_shared import MetadataLoader
+from .actionable_error_values import actual_value
 from .errors import InputValidationError
 from .models import OperationSpec
 
@@ -21,6 +22,9 @@ def validate_segment_member_fields(
 
     fields = inputs.get("fields", ())
     static = set(operation.response_projection.item_keys)
+    if not isinstance(fields, (list, tuple)):
+        _validate(fields, static)
+        return
     if fields in (None, (), []) or _all_registered(fields, static):
         _validate(fields, static)
         return
@@ -44,10 +48,15 @@ def _validate(value: Any, allowed: set[str]) -> None:
     if not isinstance(value, (list, tuple)) or any(
         not isinstance(item, str) or item not in allowed for item in value
     ):
+        observed = (
+            type(value).__name__
+            if not isinstance(value, (list, tuple))
+            else [item for item in value if not isinstance(item, str) or item not in allowed]
+        )
         raise InputValidationError(
-            "segment member fields must exist in live user-property metadata; "
-            "run `gravity metadata properties \"\"` and retry with a listed field; "
-            "request was not sent",
+            f"actual value: {actual_value(observed)}; segment member fields must exist "
+            "in live user-property metadata; run `gravity metadata properties \"\"` and "
+            "retry with a listed field; request was not sent",
             field="fields",
         )
 

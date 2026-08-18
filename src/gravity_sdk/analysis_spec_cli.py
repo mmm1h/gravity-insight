@@ -124,6 +124,7 @@ def run_analysis_query_command(
     if stability != "stable":
         if not bool(getattr(args, "experimental", False)):
             raise InputValidationError(
+                f"actual value: {actual_value(getattr(args, 'experimental', False))}; "
                 "experimental analysis reads require explicit --experimental",
                 field="experimental", next_action="Add --experimental and retry the same request.",
             )
@@ -134,7 +135,10 @@ def run_analysis_query_command(
         )
     if args.input is not None:
         raise InputValidationError(
-            "--spec cannot be combined with raw --input", field="spec", next_action="Omit either --spec or raw --input, then retry."
+            f"actual value: {actual_value({'spec': args.spec, 'input': args.input})}; "
+            "--spec cannot be combined with raw --input",
+            field="spec",
+            next_action="Omit either --spec or raw --input, then retry.",
         )
     _reject_unrelated_shortcuts(args)
     spec = parse_object(args.spec)
@@ -160,8 +164,10 @@ def _spec_schema_result(args: Any) -> dict[str, Any] | None:
         return None
     if args.spec is not None or args.input is not None:
         raise InputValidationError(
+            f"actual value: {actual_value({'spec': args.spec, 'input': args.input})}; "
             "--spec-schema cannot be combined with --spec or --input",
-            field="spec_schema", next_action="Omit either --spec-schema or --spec/--input, then retry.",
+            field="spec_schema",
+            next_action="Omit either --spec-schema or --spec/--input, then retry.",
         )
     result = analysis_query_spec_schema()
     result["requested_kind"] = args.kind
@@ -236,10 +242,18 @@ def _run_multi_app_query(
     from .sdk import GravitySDK
 
     if options.get("app") is not None:
-        raise InputValidationError("--apps cannot be combined with --app", field="apps", next_action="Omit either --apps or --app, then retry.")
+        raise InputValidationError(
+            f"actual value: {actual_value(options.get('app'))}; --apps cannot be "
+            "combined with --app",
+            field="apps",
+            next_action="Omit either --apps or --app, then retry.",
+        )
     if compare_start is not None or compare_end is not None:
         raise InputValidationError(
-            "--apps does not support period compare", field="compare_start/compare_end", next_action="Omit period-compare dates or omit --apps, then retry."
+            f"actual value: {actual_value({'compare_start': compare_start, 'compare_end': compare_end})}; "
+            "--apps does not support period compare",
+            field="compare_start/compare_end",
+            next_action="Omit period-compare dates or omit --apps, then retry.",
         )
     apps = [
         selected
@@ -286,7 +300,10 @@ def _compare_dates(args: Any) -> tuple[str | None, str | None]:
 def _reject_compare_dry_run(compare_start: str | None) -> None:
     if compare_start is not None:
         raise InputValidationError(
-            "period compare does not support --dry-run", field="dry_run", next_action="Omit --dry-run or omit the conflicting command, then retry."
+            f"actual value: {actual_value(compare_start)}; period compare does not "
+            "support --dry-run",
+            field="dry_run",
+            next_action="Omit --dry-run or omit the conflicting command, then retry.",
         )
 
 

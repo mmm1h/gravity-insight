@@ -212,10 +212,11 @@ class AttributionSnapshotTests(unittest.TestCase):
                 with self.assertRaises(InputValidationError) as raised:
                     attribution_snapshot(client, invalid)
                 self.assertEqual([], client.calls)
-                self.assertEqual(
+                self.assertIn(
                     "attribution snapshot app_id must be a positive integer",
                     str(raised.exception),
                 )
+                self.assertIn("actual value:", str(raised.exception))
 
     def test_performance_uses_the_four_frontend_profiles_in_one_batch(self) -> None:
         def with_data(items):

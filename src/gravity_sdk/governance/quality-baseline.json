@@ -229,6 +229,12 @@
       "path": "src/gravity_sdk/executor.py",
       "reason": "pass validated request inputs into semantic rejection so callers get field= and next_action without echoing extra.error",
       "to": 4797
+    },
+    {
+      "from": 6302,
+      "path": "src/gravity_sdk/models.py",
+      "reason": "add sanitized actual_value to OperationSpec input, date_list, and filter validation errors",
+      "to": 6522
     }
   ],
   "legacy_files": {
@@ -282,7 +288,7 @@
     },
     "src/gravity_sdk/models.py": {
       "ast_hard_limit": 8647,
-      "ast_nodes": 6302,
+      "ast_nodes": 6522,
       "migration_sloc": 1071,
       "sloc_hard_limit": 1158
     },

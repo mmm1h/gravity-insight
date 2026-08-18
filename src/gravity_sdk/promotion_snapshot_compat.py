@@ -11,6 +11,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from .composite_result import combined_status
+from .actionable_error_values import actual_value
 from .errors import InputValidationError
 from .result_source import RAW_OPERATION, result_source
 
@@ -72,17 +73,21 @@ def _selection(
     selected = list(dict.fromkeys(_ids(platforms)))
     if not selected:
         raise InputValidationError(
-            "promotion snapshot requires at least one platform",
+            f"actual value: {actual_value(selected)}; promotion snapshot requires at "
+            "least one platform",
             field="platforms",
         )
     if not isinstance(resource, str) or not resource:
         raise InputValidationError(
-            "promotion snapshot resource must be a non-empty string",
+            f"actual value: {actual_value(resource)}; promotion snapshot resource must "
+            "be a non-empty string",
             field="resource",
         )
-    if set(dict(inputs_by_platform or {})) - set(selected):
+    extra = sorted(set(dict(inputs_by_platform or {})) - set(selected))
+    if extra:
         raise InputValidationError(
-            "promotion inputs must name a selected platform; remove the extra keys",
+            f"actual value: {actual_value(extra)}; promotion inputs must name a "
+            "selected platform; remove the extra keys",
             field="inputs_by_platform",
         )
     return selected
@@ -197,6 +202,7 @@ def _ids(values: Sequence[str]) -> list[str]:
         not isinstance(item, str) or not item for item in values
     ):
         raise InputValidationError(
+            f"actual value: {actual_value(type(values).__name__ if isinstance(values, (str, bytes)) else [type(item).__name__ for item in values])}; "
             "operation/platform identifiers must be non-empty strings",
             field="platforms",
         )

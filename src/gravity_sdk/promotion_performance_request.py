@@ -197,7 +197,8 @@ def normalize_promotion_platforms(values: Sequence[str]) -> tuple[str, ...]:
     for value in values:
         if not isinstance(value, str) or value not in SUPPORTED_PLATFORMS:
             raise _input_error(
-                "promotion performance platform is outside the supported set; must be one of the supported platforms",
+                f"actual value: {actual_value(value)}; promotion performance platform "
+                "is outside the supported set; must be one of the supported platforms",
                 "platforms",
             )
         if value in selected:
