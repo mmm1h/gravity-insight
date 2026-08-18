@@ -44,6 +44,7 @@
 - [识别器召回收尾：J36 回归与防过拟合](recognizer-recall.md) — 否定抽取不再截断「别人」；对着题集加的词已撤；development 选择层 267/336。
 - [两臂配对留出集：宿主臂有条件更优](routing-arms-paired-holdout.md) — 同 revision 留出集 195/240 → 235/240；不切默认，recognizer 仍是够不着宿主时的地板。
 - [识别器第二轮：否定边界与多意图收集器](recognizer-round2.md) — 「是不是/而不是」不再截断；广告主进入多意图收集器；development 选择层 277/336。
+- [公开面未测分支：replace 同类扫描](untested-branches.md) — 策略/模式开关对账后无新运行时 bug；`replace` 对目录拒绝已锁定。
 
 ## 归档记录
 

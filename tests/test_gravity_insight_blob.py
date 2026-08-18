@@ -580,6 +580,18 @@ class SafeBlobTransferTests(unittest.TestCase):
             self.assertEqual(hashlib.sha256(data).hexdigest(), receipt.committed_sha256)
             self.assertFalse(list(root.glob(".blob-*")))
 
+    def test_replace_overwrite_policy_rejects_existing_directory(self):
+        data = b"id,name\n1,Alice\n"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            dest = root / "report.csv"
+            dest.mkdir()
+            transfer = SafeBlobTransfer(FakeTransport([response_for(data)]), wall_clock=lambda: NOW)
+            with self.assertRaises(BlobTransferError) as raised:
+                transfer.download(source_for(data), "report.csv", csv_policy(root, overwrite_policy="replace"))
+            self.assertEqual("BLOB_PATH_UNSAFE", raised.exception.code)
+            self.assertTrue(dest.is_dir())
+
     def test_upload_is_implemented_but_disabled_by_default(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
