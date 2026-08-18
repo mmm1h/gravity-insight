@@ -250,7 +250,8 @@ def credential_status() -> dict[str, Any]:
         state = "missing"
         next_action = (
             "Run `gravity` in an interactive terminal to configure the Gravity "
-            "username and password."
+            "username and password, or place them in the ignored "
+            "`.env.gravity.local` and run `gravity insight auth refresh`."
         )
     return {
         "status": state,

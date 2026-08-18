@@ -95,15 +95,21 @@ def add_promotion_commands(
 def add_query_shortcuts(parser: Any) -> None:
     """Register the preserved schema-aware promotion shortcut flags."""
 
-    parser.add_argument("--app-id")
-    parser.add_argument("--media")
-    parser.add_argument("--start")
-    parser.add_argument("--end")
-    parser.add_argument("--time-dim", action="append")
-    parser.add_argument("--dimensions", action="append")
-    parser.add_argument("--metrics", action="append")
-    parser.add_argument("--multi-days", action="append")
-    parser.add_argument("--parent-id")
+    parser.add_argument("--app-id", help="Raw operation App id.")
+    parser.add_argument("--media", help="Raw operation media shortcut.")
+    parser.add_argument(
+        "--start",
+        help="Inclusive ISO date or closed relative phrase.",
+    )
+    parser.add_argument(
+        "--end",
+        help="Inclusive ISO date or closed relative phrase.",
+    )
+    parser.add_argument("--time-dim", action="append", help="Raw operation time dimension.")
+    parser.add_argument("--dimensions", action="append", help="Raw operation dimensions.")
+    parser.add_argument("--metrics", action="append", help="Raw operation metrics.")
+    parser.add_argument("--multi-days", action="append", help="Raw operation multi-day shortcut.")
+    parser.add_argument("--parent-id", help="Raw operation parent id.")
 
 
 def dispatch_promotion_command(

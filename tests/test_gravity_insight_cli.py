@@ -508,6 +508,13 @@ class GravityInsightCliTests(unittest.TestCase):
             client.read_calls[0][1]["query_id"], r"^\d{13}[A-Za-z0-9]{19}$"
         )
 
+    def test_analysis_query_without_spec_points_at_spec_schema(self):
+        code, _, error, client = self.invoke(["analysis", "query", "--kind", "event"])
+        self.assertEqual(2, code)
+        self.assertEqual("spec", error["error"]["field"])
+        self.assertIn("--spec-schema", error["error"]["next_action"])
+        self.assertEqual([], client.read_calls)
+
     def test_raw_analysis_query_dry_run_is_rejected_without_reading(self):
         code, _, error, client = self.invoke(
             [

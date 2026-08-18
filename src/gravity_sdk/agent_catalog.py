@@ -39,13 +39,29 @@ def add_agent_catalog_command(
     actions = command.add_subparsers(dest="agent_catalog_command", required=True)
     actions.add_parser("categories", help="List derived product, operation, and gap domains.")
     category = actions.add_parser("category", help="List short selectors in one domain.")
-    category.add_argument("name")
-    category.add_argument("--limit", type=limit_parser, default=DEFAULT_LIMIT)
-    category.add_argument("--offset", type=_offset, default=0)
+    category.add_argument(
+        "name",
+        help="Domain from `gravity agent-catalog categories` (for example analysis).",
+    )
+    category.add_argument(
+        "--limit",
+        type=limit_parser,
+        default=DEFAULT_LIMIT,
+        help=f"Page size (1..{MAX_LIMIT}; default {DEFAULT_LIMIT}).",
+    )
+    category.add_argument(
+        "--offset",
+        type=_offset,
+        default=0,
+        help="Skip this many selectors; use next_offset from the previous page.",
+    )
     describe = actions.add_parser(
         "describe", help="Describe one product, raw operation, or unavailable gap."
     )
-    describe.add_argument("selector")
+    describe.add_argument(
+        "selector",
+        help="Exact selector from `gravity agent-catalog category <domain>`.",
+    )
     actions.add_parser(
         "host",
         help="Return the compact product/gap catalog and strict host-selection schema.",
@@ -164,7 +180,11 @@ def _category_response(
 ) -> dict[str, Any]:
     entries = [item for item in inventory if item["domain"] == name]
     if not entries:
-        raise InputValidationError("agent catalog category is not registered", field="name", next_action="Use the documented composite or catalog name and retry.")
+        raise InputValidationError(
+            f"actual value: {actual_value(name)}; agent catalog category is not registered",
+            field="name",
+            next_action="Run `gravity agent-catalog categories` and retry with a listed domain name.",
+        )
     if not 1 <= limit <= MAX_LIMIT:
         raise InputValidationError(
             f"actual value: {actual_value(limit)}; " + (f"agent catalog limit must be between 1 and {MAX_LIMIT}"), field="limit"
@@ -194,7 +214,14 @@ def _describe_response(
 ) -> dict[str, Any]:
     selected = next((item for item in inventory if item["selector"] == selector), None)
     if selected is None:
-        raise InputValidationError("agent catalog selector is not registered", field="selector", next_action="Run `gravity insight operations search` and retry with a listed selector.")
+        raise InputValidationError(
+            f"actual value: {actual_value(selector)}; agent catalog selector is not registered",
+            field="selector",
+            next_action=(
+                "Run `gravity agent-catalog categories`, then "
+                "`gravity agent-catalog category <domain>`, and retry with a listed selector."
+            ),
+        )
     capability = _capability_for_item(selected, client)
     return _envelope(
         "describe_capability",

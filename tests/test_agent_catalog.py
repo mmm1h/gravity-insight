@@ -47,6 +47,22 @@ class AgentCatalogTests(unittest.TestCase):
         self.assertEqual("composite:analysis_context", described["capability"]["selector"])
         self.assertEqual("read", described["capability"]["effect"])
 
+    def test_unknown_category_and_selector_point_at_catalog_browse(self) -> None:
+        from gravity_sdk.errors import InputValidationError
+
+        with self.assertRaises(InputValidationError) as category_error:
+            run_agent_catalog_command(
+                _args("category", name="nope", limit=20, offset=0), self.client
+            )
+        self.assertEqual("name", category_error.exception.field)
+        self.assertIn("agent-catalog categories", category_error.exception.next_action)
+        with self.assertRaises(InputValidationError) as selector_error:
+            run_agent_catalog_command(
+                _args("describe", selector="not.a.selector"), self.client
+            )
+        self.assertEqual("selector", selector_error.exception.field)
+        self.assertIn("agent-catalog category", selector_error.exception.next_action)
+
     def test_existing_agent_protocol_is_unchanged(self) -> None:
         result = discover_capabilities("event analysis", client=self.client)
         self.assertEqual(AGENT_SCHEMA_VERSION, result["schema_version"])

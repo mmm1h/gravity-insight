@@ -460,6 +460,11 @@ def _date_range(start: Any, end: Any) -> dict[str, str]:
             f"actual value: {actual_value({'start': start, 'end': end})}; allowed "
             "format: ISO dates for both fields",
             field="start/end",
+            next_action=(
+                "Set spec.start and spec.end to inclusive YYYY-MM-DD, or pass "
+                "paired `--start/--end` (ISO or a closed relative phrase such as "
+                "`last 7 days`)."
+            ),
         )
     try:
         start_date, end_date = date.fromisoformat(start), date.fromisoformat(end)
@@ -468,6 +473,11 @@ def _date_range(start: Any, end: Any) -> dict[str, str]:
             f"actual value: {actual_value({'start': start, 'end': end})}; allowed "
             "format: ISO dates for both fields",
             field="start/end",
+            next_action=(
+                "Set spec.start and spec.end to inclusive YYYY-MM-DD, or pass "
+                "paired `--start/--end` (ISO or a closed relative phrase such as "
+                "`last 7 days`)."
+            ),
         ) from exc
     if start_date > end_date or (end_date - start_date).days > 90:
         raise InputValidationError(
@@ -488,7 +498,7 @@ def _resolve_app(workspace: Workspace, value: Any) -> int:
     except ValueError:
         raise InputValidationError(
             f"actual value: {actual_value(value)}; allowed alternatives: a configured "
-            "workspace App name or positive id; run `gravity apps list` to discover Apps",
+            "workspace App name or positive id; run `gravity run app.list` to discover Apps",
             field="app",
         ) from None
 
