@@ -397,6 +397,10 @@ def _selection_envelope(
         "network_called": False,
         "mode": "host_catalog_select_and_describe",
         "routing_mode": HOST_ROUTING_MODE,
+        "routing": {
+            "mode": HOST_ROUTING_MODE,
+            "floor": False,
+        },
         "query": safe_discovery_query(query),
         "count": len(candidates),
         "total": len(candidates),

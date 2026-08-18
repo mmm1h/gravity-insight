@@ -103,8 +103,9 @@ def add_agent_command(commands: Any, limit_parser: Any) -> None:
         "--input",
         "-i",
         help=(
-            "A capabilities-many JSON object/file/stdin document; cannot be combined "
-            "with the positional query."
+            "A capabilities-many JSON object/file/stdin document whose legal shape "
+            "is {\"questions\":[{\"id\":\"q1\",\"query\":\"...\"}]} or a questions "
+            "array; cannot be combined with the positional query."
         ),
     )
     from .agent_input_resolution import add_resolution_argument
@@ -274,6 +275,8 @@ def _discovery_response(
     semantic_context: dict[str, Any] | None,
     lexical_receipt: Mapping[str, Any],
 ) -> dict[str, Any]:
+    from .agent_discovery_support import recognizer_routing_declaration
+
     candidates = [
         attach_plan_node(
             apply_workspace_prefix(item, workspace_path),
@@ -301,6 +304,8 @@ def _discovery_response(
         "offline": True,
         "network_called": False,
         "mode": "discover_and_describe",
+        "routing_mode": "recognizer",
+        "routing": recognizer_routing_declaration(request.query),
         "scope": AGENT_SCOPE,
         "query": safe_discovery_query(request.query),
         "limit": request.limit,
@@ -399,6 +404,8 @@ def _discovery_page(
 
 
 def _protocol(workspace_path: object | None = None) -> dict[str, Any]:
+    from .agent_discovery_support import recognizer_routing_declaration
+
     return {
         "schema_version": SCHEMA_VERSION,
         "ok": True,
@@ -406,6 +413,8 @@ def _protocol(workspace_path: object | None = None) -> dict[str, Any]:
         "offline": True,
         "network_called": False,
         "mode": "protocol",
+        "routing_mode": "recognizer",
+        "routing": recognizer_routing_declaration(""),
         "scope": AGENT_SCOPE,
         "goal": "Known inputs take one call; candidate.call_bound declares unknown-input lower bounds.",
         "workflow": [

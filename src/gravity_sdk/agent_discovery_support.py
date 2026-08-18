@@ -32,6 +32,48 @@ def host_catalog_next() -> dict[str, Any]:
     return {"argv": list(HOST_CATALOG_ARGV)}
 
 
+def host_arm_upgrade_argv(query: str) -> list[str]:
+    """Copyable argv that re-runs the same query on the host arm."""
+
+    return [
+        "gravity",
+        "agent",
+        query,
+        "--routing",
+        "host_catalog",
+        "--host-selection",
+        "<gravity.host-product-selection.v1>",
+    ]
+
+
+def recognizer_routing_declaration(query: str) -> dict[str, Any]:
+    """Declare the offline floor and how a capable caller upgrades."""
+
+    from .agent_discovery_policy import safe_discovery_query
+    from .agent_host_selection import DEFAULT_ROUTING_MODE
+
+    selected = safe_discovery_query(query)
+    return {
+        "mode": DEFAULT_ROUTING_MODE,
+        "floor": True,
+        "upgrade": {
+            "when": (
+                "the caller can emit gravity.host-product-selection.v1 after "
+                "reading the host catalog"
+            ),
+            "next_action": (
+                "This answer is the offline recognizer floor. Read "
+                "`gravity agent-catalog host` and resubmit the same query with "
+                "`--routing host_catalog --host-selection`."
+            ),
+            "next": {
+                "argv": list(HOST_CATALOG_ARGV),
+                "then_argv": host_arm_upgrade_argv(selected),
+            },
+        },
+    }
+
+
 def unranked_operation_ids(
     unified: Sequence[tuple[str, Mapping[str, Any]]],
 ) -> tuple[str, ...]:
@@ -234,7 +276,9 @@ __all__ = [
     "capability_gaps_for_page",
     "catalog_browse_next",
     "discovery_next_fields",
+    "host_arm_upgrade_argv",
     "host_catalog_next",
+    "recognizer_routing_declaration",
     "is_short_catalog_lookup",
     "materialize_candidates",
     "select_authoritative_cards",

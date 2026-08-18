@@ -19,6 +19,8 @@ def ndjson_metadata(value: Any) -> dict[str, Any]:
         "offline": value.get("offline"),
         "network_called": value.get("network_called"),
         "mode": value.get("mode"),
+        "routing_mode": value.get("routing_mode"),
+        "routing": value.get("routing"),
         "count": value.get("count"),
         "total": value.get("total"),
         "query": value.get("query"),

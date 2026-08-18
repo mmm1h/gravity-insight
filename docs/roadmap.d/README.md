@@ -55,6 +55,7 @@
 - [误导字段：yesterday_count 死字段与 app_id 类型](misleading-traps.md) — 7/7 App 的 yesterday_count 全 0；app_id 55 string / 28 integer，按合同类型归一化。
 - [相对日期解析](relative-dates.md) — 中英封闭相对短语解析成显式时区日期窗并回显；模糊短语拒绝。
 - [四处宣传与实际不一致](advertised-vs-real.md) — 两套 describe 对齐；export evaluate/task-types 入口；分页 HTTP 计数；分维和不等于 total 的机读信号。
+- [应答声明路由臂](routing-provenance.md) — 两条臂都写 `routing_mode`；识别器信封另给常设升级路径；不切默认。
 
 ## 归档记录
 

@@ -6,6 +6,7 @@
 | 目标 | 指南 |
 | --- | --- |
 | 分三层浏览全部本地能力 | [完整目录发现](catalog-discovery.md) |
+| 调用方自己选产品时走宿主臂 | [完整目录发现](catalog-discovery.md) |
 | 十分钟内从本地能力走到第一次真实分析 | [十分钟路径](ten-minute-path.md) |
 | 看一个事件的趋势 | [事件趋势](event-trend.md) |
 | 用同一分析定义比较两个时期 | [时期对比](period-comparison.md) |

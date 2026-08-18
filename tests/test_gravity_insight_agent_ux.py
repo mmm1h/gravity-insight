@@ -1186,6 +1186,9 @@ class DiscoveryUxTests(unittest.TestCase):
             self.client,
         )
         self.assertEqual("discover_and_describe", discovered["mode"])
+        self.assertEqual("recognizer", discovered["routing_mode"])
+        self.assertTrue(discovered["routing"]["floor"])
+        self.assertIn("host_catalog", discovered["routing"]["upgrade"]["next"]["then_argv"])
         self.assertLessEqual(discovered["count"], 2)
         self.assertTrue(discovered["candidates"])
         candidate = discovered["candidates"][0]
@@ -1850,6 +1853,7 @@ class DiscoveryUxTests(unittest.TestCase):
         self.assertTrue(terminal["offline"])
         self.assertFalse(terminal["network_called"])
         self.assertEqual("discover_and_describe", terminal["mode"])
+        self.assertEqual("recognizer", terminal["routing_mode"])
         self.assertEqual(terminal["rows_written"], terminal["count"])
         self.assertIn("continuation_token", terminal)
         self.assertIsNotNone(terminal["continuation_token"])
