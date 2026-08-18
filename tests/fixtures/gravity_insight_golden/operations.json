@@ -12679,107 +12679,85 @@
       "upstream_method": "GET"
     },
     {
+      "operation_id": "material.bytedance.list",
+      "domain": "material",
+      "resource": "bytedance",
       "action": "list",
-      "auth_profile": "gravity_authorization",
+      "platform": null,
+      "description": "巨量平台素材列表。广告主名称和租户字段已登记返回；缓存状态、未证实文件元数据、MD5、标签与图片容器仍按现有合同省略。",
+      "stability": "stable",
+      "executable": true,
       "block_reason": null,
       "contract_version": "2",
-      "description": "巨量平台素材列表。广告主名称和租户字段已登记返回；缓存状态、未证实文件元数据、MD5、标签与图片容器仍按现有合同省略。",
-      "domain": "material",
-      "executable": true,
+      "upstream_method": "POST",
+      "path_template": "/turbo_engine/api/v1/asset/material/bytedance/list/",
+      "auth_profile": "gravity_authorization",
       "input_fields": [
         {
+          "name": "advertiser_id",
+          "type": "string",
+          "required": true,
+          "nullable": false,
+          "enum": [],
           "default": {
             "present": false,
             "value": null
           },
           "description": "",
-          "enum": [],
-          "item_enum": [],
+          "sensitive": false,
           "item_type": null,
-          "max_depth": 5,
+          "item_enum": [],
+          "min_items": null,
           "max_items": null,
           "max_length": 4096,
-          "min_items": null,
-          "name": "advertiser_id",
-          "nullable": false,
-          "required": true,
-          "sensitive": false,
-          "type": "string"
+          "max_depth": 5
         },
         {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "nullable": false,
+          "enum": [],
           "default": {
             "present": true,
             "value": 1
           },
           "description": "",
-          "enum": [],
-          "item_enum": [],
+          "sensitive": false,
           "item_type": null,
-          "max_depth": 5,
+          "item_enum": [],
+          "min_items": null,
           "max_items": null,
           "max_length": null,
-          "min_items": null,
-          "name": "page",
-          "nullable": false,
-          "required": false,
-          "sensitive": false,
-          "type": "integer"
+          "max_depth": 5
         },
         {
+          "name": "page_size",
+          "type": "integer",
+          "required": false,
+          "nullable": false,
+          "enum": [],
           "default": {
             "present": true,
             "value": 20
           },
           "description": "",
-          "enum": [],
-          "item_enum": [],
+          "sensitive": false,
           "item_type": null,
-          "max_depth": 5,
+          "item_enum": [],
+          "min_items": null,
           "max_items": null,
           "max_length": null,
-          "min_items": null,
-          "name": "page_size",
-          "nullable": false,
-          "required": false,
-          "sensitive": false,
-          "type": "integer"
+          "max_depth": 5
         }
       ],
-      "live_probe": {
-        "enabled": true,
-        "inputs": {
-          "advertiser_id": "$first_bytedance_advertiser_id",
-          "page": 1,
-          "page_size": 1
-        }
-      },
-      "operation_id": "material.bytedance.list",
-      "pagination": {
-        "default_page_size": 20,
-        "items_field": "list",
-        "kind": "page_info",
-        "list_path": "data.list",
-        "max_page_size": 20,
-        "page_field": "page",
-        "page_info_field": "page_info",
-        "page_info_path": "data.page_info",
-        "page_size_field": "page_size",
-        "total_page_field": "total_page"
-      },
-      "path_template": "/turbo_engine/api/v1/asset/material/bytedance/list/",
-      "platform": null,
-      "privacy_policy": {
-        "classification": "material",
-        "redact_fields": [
-          "authorization",
-          "password",
-          "token",
-          "gravity_email",
-          "access_token",
-          "cookie"
-        ]
-      },
       "request": {
+        "location": "mixed",
+        "path_fields": [],
+        "query_fields": [
+          "page",
+          "page_size"
+        ],
         "body_fields": [
           "advertiser_id"
         ],
@@ -12787,38 +12765,21 @@
           "page": 1,
           "page_size": 20
         },
+        "fixed_query": {},
         "fixed_body": {
           "check_local_exist": 1,
           "filters": []
-        },
-        "fixed_query": {},
-        "location": "mixed",
-        "path_fields": [],
-        "query_fields": [
-          "page",
-          "page_size"
-        ]
-      },
-      "required_parent": [
-        {
-          "input_field": null,
-          "operation_id": "promotion.bytedance.advertiser.list"
         }
-      ],
-      "resource": "bytedance",
+      },
       "response_projection": {
-        "data_dynamic_item_fields": {},
-        "data_item_keys": {},
+        "data_shape": "object",
         "data_keys": [
           "list",
           "page_info"
         ],
-        "data_path_item_keys": {},
-        "data_scalar_list_types": {},
-        "data_shape": "object",
-        "dynamic_item_fields": [],
-        "empty_object_as_empty_page": false,
-        "empty_object_as_empty_result": false,
+        "required_data_keys": [
+          "list"
+        ],
         "item_keys": [
           "file_name",
           "material_id",
@@ -12826,8 +12787,14 @@
           "cid",
           "advertiser_name"
         ],
-        "known_omitted_data_item_keys": {},
-        "known_omitted_data_keys": [],
+        "dynamic_item_fields": [],
+        "nested_item_keys": {},
+        "known_omitted_nested_item_keys": {},
+        "data_item_keys": {},
+        "scalar_list_item_types": {},
+        "data_scalar_list_types": {},
+        "data_path_item_keys": {},
+        "data_dynamic_item_fields": {},
         "known_omitted_item_keys": [
           "create_time",
           "modify_time",
@@ -12861,34 +12828,73 @@
           "image_set",
           "material_label_list"
         ],
-        "known_omitted_nested_item_keys": {},
-        "nested_item_keys": {},
-        "numeric_paths": [],
-        "opaque_json_item_keys": [],
         "recursive_data_item_keys": {},
-        "required_data_keys": [
-          "list"
-        ],
-        "scalar_list_item_types": {}
+        "known_omitted_data_keys": [],
+        "known_omitted_data_item_keys": {},
+        "numeric_paths": [],
+        "empty_object_as_empty_page": false,
+        "empty_object_as_empty_result": false,
+        "opaque_json_item_keys": [],
+        "unreliable_item_keys": {
+          "gravity_material_id": {
+            "reason": "Live bytedance library rows return gravity_material_id=0 while material_id is a unique 19-char identifier on the same row.",
+            "use_instead": "material.bytedance.list material_id"
+          }
+        }
+      },
+      "pagination": {
+        "kind": "page_info",
+        "page_field": "page",
+        "page_size_field": "page_size",
+        "items_field": "list",
+        "page_info_field": "page_info",
+        "total_page_field": "total_page",
+        "list_path": "data.list",
+        "page_info_path": "data.page_info",
+        "default_page_size": 20,
+        "max_page_size": 20
       },
       "semantic_error_rules": [
         {
-          "message": "Gravity rejected the read operation",
-          "operator": "truthy",
           "path": "code",
+          "operator": "truthy",
           "value": null,
-          "values": []
+          "values": [],
+          "message": "Gravity rejected the read operation"
         },
         {
-          "message": "Gravity rejected the read operation",
-          "operator": "truthy",
           "path": "extra.error",
+          "operator": "truthy",
           "value": null,
-          "values": []
+          "values": [],
+          "message": "Gravity rejected the read operation"
         }
       ],
-      "stability": "stable",
-      "upstream_method": "POST"
+      "privacy_policy": {
+        "classification": "material",
+        "redact_fields": [
+          "authorization",
+          "password",
+          "token",
+          "gravity_email",
+          "access_token",
+          "cookie"
+        ]
+      },
+      "required_parent": [
+        {
+          "operation_id": "promotion.bytedance.advertiser.list",
+          "input_field": null
+        }
+      ],
+      "live_probe": {
+        "enabled": true,
+        "inputs": {
+          "advertiser_id": "$first_bytedance_advertiser_id",
+          "page": 1,
+          "page_size": 1
+        }
+      }
     },
     {
       "action": "get",
@@ -13841,113 +13847,233 @@
       "upstream_method": "POST"
     },
     {
+      "operation_id": "material.report.query",
+      "domain": "material",
+      "resource": "report",
       "action": "query",
-      "auth_profile": "gravity_authorization",
+      "platform": null,
+      "description": "平台素材安全聚合报表。当前 Business chunk 明确巨量/腾讯/磁力/B站指标映射；受控 codec 固定 material/total 聚合、平台与 App filters，并将 stat_list 收紧为空以禁止 designer_id 人员分组。2026-08-08 四个平台最小探针均 code=0 且响应合同一致。",
+      "stability": "stable",
+      "executable": true,
       "block_reason": null,
       "contract_version": "2",
-      "description": "平台素材安全聚合报表。当前 Business chunk 明确巨量/腾讯/磁力/B站指标映射；受控 codec 固定 material/total 聚合、平台与 App filters，并将 stat_list 收紧为空以禁止 designer_id 人员分组。2026-08-08 四个平台最小探针均 code=0 且响应合同一致。",
-      "domain": "material",
-      "executable": true,
+      "upstream_method": "POST",
+      "path_template": "/report/api/v3/datareport/material_get/",
+      "auth_profile": "gravity_authorization",
       "input_fields": [
         {
+          "name": "app_list",
+          "type": "array",
+          "required": true,
+          "nullable": false,
+          "enum": [],
           "default": {
             "present": false,
             "value": null
           },
           "description": "",
-          "enum": [],
-          "item_enum": [],
+          "sensitive": false,
           "item_type": "string",
-          "max_depth": 5,
+          "item_enum": [],
+          "min_items": 1,
           "max_items": 100,
           "max_length": null,
-          "min_items": 1,
-          "name": "app_list",
-          "nullable": false,
-          "required": true,
-          "sensitive": false,
-          "type": "array"
+          "max_depth": 5
         },
         {
+          "name": "date_list",
+          "type": "array",
+          "required": true,
+          "nullable": false,
+          "enum": [],
           "default": {
             "present": false,
             "value": null
           },
           "description": "",
-          "enum": [],
-          "item_enum": [],
+          "sensitive": false,
           "item_type": "string",
-          "max_depth": 5,
+          "item_enum": [],
+          "min_items": 2,
           "max_items": 2,
           "max_length": null,
-          "min_items": 2,
-          "name": "date_list",
-          "nullable": false,
-          "required": true,
-          "sensitive": false,
-          "type": "array"
+          "max_depth": 5
         },
         {
+          "name": "page",
+          "type": "integer",
+          "required": false,
+          "nullable": false,
+          "enum": [],
           "default": {
             "present": true,
             "value": 1
           },
           "description": "",
-          "enum": [],
-          "item_enum": [],
+          "sensitive": false,
           "item_type": null,
-          "max_depth": 5,
+          "item_enum": [],
+          "min_items": null,
           "max_items": null,
           "max_length": null,
-          "min_items": null,
-          "name": "page",
-          "nullable": false,
-          "required": false,
-          "sensitive": false,
-          "type": "integer"
+          "max_depth": 5
         },
         {
+          "name": "page_size",
+          "type": "integer",
+          "required": false,
+          "nullable": false,
+          "enum": [],
           "default": {
             "present": true,
             "value": 10
           },
           "description": "",
-          "enum": [],
-          "item_enum": [],
+          "sensitive": false,
           "item_type": null,
-          "max_depth": 5,
+          "item_enum": [],
+          "min_items": null,
           "max_items": null,
           "max_length": null,
-          "min_items": null,
-          "name": "page_size",
-          "nullable": false,
-          "required": false,
-          "sensitive": false,
-          "type": "integer"
+          "max_depth": 5
         },
         {
-          "default": {
-            "present": false,
-            "value": null
-          },
-          "description": "",
+          "name": "platform",
+          "type": "string",
+          "required": true,
+          "nullable": false,
           "enum": [
             "bytedance",
             "tencent",
             "kuaishou",
             "bilibili"
           ],
-          "item_enum": [],
+          "default": {
+            "present": false,
+            "value": null
+          },
+          "description": "",
+          "sensitive": false,
           "item_type": null,
-          "max_depth": 5,
+          "item_enum": [],
+          "min_items": null,
           "max_items": null,
           "max_length": 4096,
-          "min_items": null,
-          "name": "platform",
-          "nullable": false,
-          "required": true,
-          "sensitive": false,
-          "type": "string"
+          "max_depth": 5
+        }
+      ],
+      "request": {
+        "location": "mixed",
+        "path_fields": [],
+        "query_fields": [],
+        "body_fields": [
+          "platform",
+          "page",
+          "page_size",
+          "date_list",
+          "app_list"
+        ],
+        "defaults": {
+          "page": 1,
+          "page_size": 10
+        },
+        "fixed_query": {},
+        "fixed_body": {}
+      },
+      "response_projection": {
+        "data_shape": "object",
+        "data_keys": [
+          "list",
+          "page_info"
+        ],
+        "required_data_keys": [
+          "list"
+        ],
+        "item_keys": [
+          "file_name",
+          "gravity_material_id",
+          "material_id",
+          "stat_cost",
+          "ctr",
+          "convert_rate",
+          "cost",
+          "conversions_rate",
+          "charge",
+          "action_ratio",
+          "conversion_ratio",
+          "click_rate",
+          "AppRealRegisterCnt",
+          "AppGamePayUserCntStandardAtv"
+        ],
+        "dynamic_item_fields": [],
+        "nested_item_keys": {},
+        "known_omitted_nested_item_keys": {},
+        "data_item_keys": {},
+        "scalar_list_item_types": {},
+        "data_scalar_list_types": {},
+        "data_path_item_keys": {},
+        "data_dynamic_item_fields": {},
+        "known_omitted_item_keys": [],
+        "recursive_data_item_keys": {},
+        "known_omitted_data_keys": [
+          "total",
+          "update_at"
+        ],
+        "known_omitted_data_item_keys": {},
+        "numeric_paths": [],
+        "empty_object_as_empty_page": false,
+        "empty_object_as_empty_result": false,
+        "opaque_json_item_keys": [],
+        "unreliable_item_keys": {
+          "gravity_material_id": {
+            "reason": "Live bytedance material.report.query rows return gravity_material_id=0 while file_name is unique and material.bytedance.list material_id is a 19-char identifier.",
+            "use_instead": "material.report.query material_id, or material.bytedance.list material_id"
+          }
+        }
+      },
+      "pagination": {
+        "kind": "page_info",
+        "page_field": "page",
+        "page_size_field": "page_size",
+        "items_field": "list",
+        "page_info_field": "page_info",
+        "total_page_field": "total_page",
+        "list_path": "data.list",
+        "page_info_path": "data.page_info",
+        "default_page_size": 10,
+        "max_page_size": 10
+      },
+      "semantic_error_rules": [
+        {
+          "path": "code",
+          "operator": "truthy",
+          "value": null,
+          "values": [],
+          "message": "Gravity rejected the read operation"
+        },
+        {
+          "path": "extra.error",
+          "operator": "truthy",
+          "value": null,
+          "values": [],
+          "message": "Gravity rejected the read operation"
+        }
+      ],
+      "privacy_policy": {
+        "classification": "material",
+        "redact_fields": [
+          "authorization",
+          "password",
+          "token",
+          "gravity_email",
+          "access_token",
+          "cookie"
+        ]
+      },
+      "required_parent": [
+        {
+          "operation_id": "app.list",
+          "input_field": null
         }
       ],
       "live_probe": {
@@ -13964,120 +14090,7 @@
           "page_size": 1,
           "platform": "bytedance"
         }
-      },
-      "operation_id": "material.report.query",
-      "pagination": {
-        "default_page_size": 10,
-        "items_field": "list",
-        "kind": "page_info",
-        "list_path": "data.list",
-        "max_page_size": 10,
-        "page_field": "page",
-        "page_info_field": "page_info",
-        "page_info_path": "data.page_info",
-        "page_size_field": "page_size",
-        "total_page_field": "total_page"
-      },
-      "path_template": "/report/api/v3/datareport/material_get/",
-      "platform": null,
-      "privacy_policy": {
-        "classification": "material",
-        "redact_fields": [
-          "authorization",
-          "password",
-          "token",
-          "gravity_email",
-          "access_token",
-          "cookie"
-        ]
-      },
-      "request": {
-        "body_fields": [
-          "platform",
-          "page",
-          "page_size",
-          "date_list",
-          "app_list"
-        ],
-        "defaults": {
-          "page": 1,
-          "page_size": 10
-        },
-        "fixed_body": {},
-        "fixed_query": {},
-        "location": "mixed",
-        "path_fields": [],
-        "query_fields": []
-      },
-      "required_parent": [
-        {
-          "input_field": null,
-          "operation_id": "app.list"
-        }
-      ],
-      "resource": "report",
-      "response_projection": {
-        "data_dynamic_item_fields": {},
-        "data_item_keys": {},
-        "data_keys": [
-          "list",
-          "page_info"
-        ],
-        "data_path_item_keys": {},
-        "data_scalar_list_types": {},
-        "data_shape": "object",
-        "dynamic_item_fields": [],
-        "empty_object_as_empty_page": false,
-        "empty_object_as_empty_result": false,
-        "item_keys": [
-          "file_name",
-          "gravity_material_id",
-          "stat_cost",
-          "ctr",
-          "convert_rate",
-          "cost",
-          "conversions_rate",
-          "charge",
-          "action_ratio",
-          "conversion_ratio",
-          "click_rate",
-          "AppRealRegisterCnt",
-          "AppGamePayUserCntStandardAtv"
-        ],
-        "known_omitted_data_item_keys": {},
-        "known_omitted_data_keys": [
-          "total",
-          "update_at"
-        ],
-        "known_omitted_item_keys": [],
-        "known_omitted_nested_item_keys": {},
-        "nested_item_keys": {},
-        "numeric_paths": [],
-        "opaque_json_item_keys": [],
-        "recursive_data_item_keys": {},
-        "required_data_keys": [
-          "list"
-        ],
-        "scalar_list_item_types": {}
-      },
-      "semantic_error_rules": [
-        {
-          "message": "Gravity rejected the read operation",
-          "operator": "truthy",
-          "path": "code",
-          "value": null,
-          "values": []
-        },
-        {
-          "message": "Gravity rejected the read operation",
-          "operator": "truthy",
-          "path": "extra.error",
-          "value": null,
-          "values": []
-        }
-      ],
-      "stability": "stable",
-      "upstream_method": "POST"
+      }
     },
     {
       "action": "list",

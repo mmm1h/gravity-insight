@@ -404,6 +404,37 @@ class PlatformProjectionDepthTests(unittest.TestCase):
             result["data"]["list"][0]["properties"]["common"][0],
         )
 
+    def test_bytedance_material_gravity_id_is_marked_unreliable(self) -> None:
+        report = _client(
+            "material.report.query", {"code": 0, "data": {"list": []}}, "app.list"
+        )
+        library = _client(
+            "material.bytedance.list",
+            {"code": 0, "data": {"list": []}},
+            "promotion.bytedance.advertiser.list",
+        )
+        for client, operation_id in (
+            (report, "material.report.query"),
+            (library, "material.bytedance.list"),
+        ):
+            note = client.describe(operation_id)["response_projection"][
+                "unreliable_item_keys"
+            ]["gravity_material_id"]
+            self.assertIn("material_id", note["use_instead"])
+        result = report.read(
+            "material.report.query",
+            {
+                "app_list": ["24502679"],
+                "date_list": ["2026-08-15", "2026-08-17"],
+                "platform": "bytedance",
+                "page": 1,
+                "page_size": 1,
+            },
+        )
+        self.assertTrue(
+            any("do not use gravity_material_id" in item for item in result["warnings"])
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

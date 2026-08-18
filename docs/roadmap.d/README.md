@@ -60,6 +60,7 @@
 - [超限导出 truncated 生产确认](truncated-confirm.md) — 2026-08-18：同 App 同日两列变现导出信封为 truncated，钉住总量千万量级，文件 100 万行。
 - [留存/漏斗/分群生产对账](reconcile-round2.md) — 投放中 App 上人数与率对得上；compact 用户分维曾编错 type，漏斗组键曾被投影丢掉。
 - [团队上手包](team-onboarding.md) — 2026-08-18：上手包落在 `docs/team-onboarding.md`；本文件是本趟证据。
+- [投放/素材/报表看板生产对账](reconcile-round3.md) — iOS 分身消耗分页与可加性成立；`gravity_material_id` 恒 0；投放 `total` 数组曾让分维审计失效。
 
 ## 归档记录
 
