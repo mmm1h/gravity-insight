@@ -2090,6 +2090,7 @@
       "data.list[].ctr",
       "data.list[].file_name",
       "data.list[].gravity_material_id",
+      "data.list[].material_id",
       "data.list[].stat_cost",
       "data.page_info"
     ],

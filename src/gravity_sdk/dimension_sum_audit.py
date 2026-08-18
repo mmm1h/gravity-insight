@@ -11,7 +11,20 @@ _ADDITIVE = frozenset({
     "AppRealRegisterCnt",
     "reporting_ad_cnt",
     "reporting_ad_revenue",
+    "stat_cost",
 })
+
+
+def _total_mapping(total: Any) -> Mapping[str, Any] | None:
+    if isinstance(total, Mapping):
+        return total
+    if (
+        isinstance(total, list)
+        and len(total) == 1
+        and isinstance(total[0], Mapping)
+    ):
+        return total[0]
+    return None
 
 
 def dimension_sum_diagnostics(
@@ -21,10 +34,12 @@ def dimension_sum_diagnostics(
     if not isinstance(data, Mapping):
         return []
     rows = data.get("list")
-    total = data.get("total")
-    if not isinstance(rows, list) or not isinstance(total, Mapping):
+    total = _total_mapping(data.get("total"))
+    if not isinstance(rows, list) or total is None:
         return []
     requested = (inputs or {}).get("metrics_list")
+    if not isinstance(requested, list):
+        requested = (inputs or {}).get("query_fields")
     names = [
         str(name)
         for name in (requested if isinstance(requested, list) else total)

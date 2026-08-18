@@ -120,6 +120,7 @@
       "item_keys": [
         "file_name",
         "gravity_material_id",
+        "material_id",
         "stat_cost",
         "ctr",
         "convert_rate",
@@ -132,6 +133,12 @@
         "AppRealRegisterCnt",
         "AppGamePayUserCntStandardAtv"
       ],
+      "unreliable_item_keys": {
+        "gravity_material_id": {
+          "reason": "Live bytedance material.report.query rows return gravity_material_id=0 while file_name is unique and material.bytedance.list material_id is a 19-char identifier.",
+          "use_instead": "material.report.query material_id, or material.bytedance.list material_id"
+        }
+      },
       "known_omitted_data_keys": [
         "total",
         "update_at"

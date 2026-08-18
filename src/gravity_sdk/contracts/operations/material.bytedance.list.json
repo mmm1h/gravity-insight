@@ -102,6 +102,12 @@
         "cid",
         "advertiser_name"
       ],
+      "unreliable_item_keys": {
+        "gravity_material_id": {
+          "reason": "Live bytedance library rows return gravity_material_id=0 while material_id is a unique 19-char identifier on the same row.",
+          "use_instead": "material.bytedance.list material_id"
+        }
+      },
       "known_omitted_item_keys": [
         "create_time",
         "modify_time",

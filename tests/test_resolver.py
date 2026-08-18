@@ -320,6 +320,38 @@ class ResolverTests(unittest.TestCase):
         assert mismatch["total"] == 5
         assert mismatch["delta"] == 3
 
+    def test_resolver_flags_stat_cost_when_upstream_total_is_a_one_row_array(self) -> None:
+        description = {
+            "operation_id": "promotion.bytedance.advertiser.list",
+            "input_schema": {},
+            "required_parent": [],
+            "health": {"contract_fingerprint": "f" * 64},
+        }
+        result = resolve_and_run(
+            "promotion.bytedance.advertiser.list",
+            client=_ResolverClient(description),
+            workspace=_workspace(self.tmp_path),
+            supplied_input={"query_fields": ["stat_cost"]},
+            read=lambda *_args, **_kwargs: {
+                "ok": True, "status": "success",
+                "data": {
+                    "list": [
+                        {"advertiser_id": "1", "stat_cost": "10.00"},
+                        {"advertiser_id": "2", "stat_cost": "5.50"},
+                    ],
+                    "total": [{"stat_cost": "20.00"}],
+                },
+            },
+        )
+        mismatch = next(
+            item for item in result["diagnostics"]
+            if item["code"] == "dimension_sum_mismatch"
+        )
+        assert mismatch["metric"] == "stat_cost"
+        assert mismatch["list_sum"] == 15.5
+        assert mismatch["total"] == 20
+        assert mismatch["delta"] == 4.5
+
     def test_resolver_does_not_flag_non_additive_uv_sums(self) -> None:
         description = {
             "operation_id": "report.get.query", "input_schema": {},
