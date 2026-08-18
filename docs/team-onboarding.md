@@ -88,7 +88,7 @@ python -m gravity_sdk agent-catalog host
 
 优先选 `identity_kind=product`。raw operation 是专家入口。`capability_gap` 不可执行。
 
-任务指南表目前只有事件趋势短页，没有漏斗 / 留存 / 导出短页。这三种走 `analysis query --kind funnel|retention --spec-schema` 或 `export describe`，不要因为指南表没有对应行就去读 `src/`。
+任务指南表现在有漏斗（`agent-skills/funnel.md`）、留存（`agent-skills/retention.md`）和用户明细导出（`agent-skills/user-detail-export.md`）短页。指南是任务级速查，合同以 `analysis query --kind funnel|retention --spec-schema` 和 `export describe` 为准；指南表没有对应行时也不要去读 `src/`。
 
 无 query 时拿机器协议：
 

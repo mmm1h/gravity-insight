@@ -332,5 +332,71 @@ class AgentGuideGenerationTests(unittest.TestCase):
                 self.assertEqual(content, path.read_text(encoding="utf-8"))
 
 
+class AgentTaskGuideCoverageTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.root = Path(__file__).resolve().parents[1]
+        cls.guides = cls.root / "docs" / "agent-skills"
+        cls.client = GravityInsightClient.from_env()
+
+    def test_funnel_guide_names_hit_phrases_and_denies_conversion_rate(self) -> None:
+        text = (self.guides / "funnel.md").read_text(encoding="utf-8")
+        index = (self.guides / "index.md").read_text(encoding="utf-8")
+        self.assertIn("| 看多步行为的转化漏斗 |", index)
+        self.assertIn("](funnel.md)", index)
+        self.assertIn("转化漏斗", text)
+        self.assertIn("看多步行为的转化漏斗", text)
+        self.assertIn("analysis.task.handoff", text)
+        self.assertIn("不返回转化率", text)
+        self.assertIn("previous_step", text)
+        self.assertIn("first_step", text)
+        result = discover_capabilities("转化漏斗", client=self.client, limit=1)
+        self.assertEqual("analysis.query.spec:funnel", result["candidates"][0]["selector"])
+        self.assertTrue(result["candidates"][0]["executable"])
+        long_ask = discover_capabilities(
+            "注册到后续行为的漏斗，近 7 天每步人数", client=self.client, limit=1
+        )
+        self.assertEqual("analysis.task.handoff", long_ask["candidates"][0]["selector"])
+        self.assertFalse(long_ask["candidates"][0]["executable"])
+
+    def test_retention_guide_names_hit_phrase_and_treats_empty_as_legal(self) -> None:
+        text = (self.guides / "retention.md").read_text(encoding="utf-8")
+        index = (self.guides / "index.md").read_text(encoding="utf-8")
+        self.assertIn("| 看起始行为后的用户留存 |", index)
+        self.assertIn("](retention.md)", index)
+        self.assertIn("某起始事件后的次日和 7 日留存", text)
+        self.assertIn("analysis.query.spec:retention", text)
+        self.assertIn("空信封", text)
+        self.assertIn("offset", text)
+        result = discover_capabilities(
+            "某起始事件后的次日和 7 日留存", client=self.client, limit=2
+        )
+        self.assertEqual(
+            "analysis.query.spec:retention", result["candidates"][0]["selector"]
+        )
+        self.assertTrue(result["candidates"][0]["executable"])
+
+    def test_export_guide_requires_request_column_codes_and_completion_status(self) -> None:
+        text = (self.guides / "user-detail-export.md").read_text(encoding="utf-8")
+        index = (self.guides / "index.md").read_text(encoding="utf-8")
+        self.assertIn("| 把某一天的用户明细导出成文件 |", index)
+        self.assertIn("](user-detail-export.md)", index)
+        self.assertIn("把某一天的用户明细导出成文件并下载", text)
+        self.assertIn("export.analysis.user_detail.start", text)
+        self.assertIn("ClientID,CreateTime", text)
+        self.assertIn("客户ID,注册时间", text)
+        self.assertIn("completion_status", text)
+        self.assertIn("`complete`", text)
+        self.assertIn("`truncated`", text)
+        self.assertIn("`partial`", text)
+        result = discover_capabilities(
+            "把某一天的用户明细导出成文件并下载", client=self.client, limit=1
+        )
+        self.assertEqual(
+            "export.analysis.user_detail.start", result["candidates"][0]["selector"]
+        )
+        self.assertTrue(result["candidates"][0]["executable"])
+
+
 if __name__ == "__main__":
     unittest.main()

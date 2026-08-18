@@ -70,9 +70,18 @@ def render_documents() -> dict[Path, str]:
     report_mutations = _mutation_cards(cards, "report_mutation")
     kanban_mutations = _mutation_cards(cards, "kanban_mutation")
     event_card = cards["analysis.query.spec:event"]
+    funnel_card = cards["analysis.query.spec:funnel"]
+    retention_card = cards["analysis.query.spec:retention"]
+    export_card = cards["export.analysis.user_detail.start"]
     compare_card = analysis_query_spec_cards("analysis period compare", domain=None, platform=None)[0]
     event_preview = prepare_query_spec(
         _OfflineClient(), "event", _event_spec(), app="1"
+    )
+    funnel_preview = prepare_query_spec(
+        _OfflineClient(), "funnel", _funnel_spec(), app="1"
+    )
+    retention_preview = prepare_query_spec(
+        _OfflineClient(), "retention", _retention_spec(), app="1"
     )
     comparison_gap = compare_analysis_periods(
         object(), "property", {}, baseline_start="2026-01-01", baseline_end="2026-01-02"
@@ -105,6 +114,9 @@ def render_documents() -> dict[Path, str]:
         OUTPUT / "index.md": _index(catalog),
         OUTPUT / "catalog-discovery.md": _catalog_discovery(catalog, exits),
         OUTPUT / "event-trend.md": _event_trend(event_card, contract, event_preview, exits),
+        OUTPUT / "funnel.md": _funnel(funnel_card, contract, funnel_preview, exits),
+        OUTPUT / "retention.md": _retention(retention_card, contract, retention_preview, exits),
+        OUTPUT / "user-detail-export.md": _user_detail_export(export_card, exits),
         OUTPUT / "period-comparison.md": _comparison(compare_card, contract, comparison_gap, exits),
         OUTPUT / "capability-gap.md": _capability_gap(protocol, discovery_gap, exits),
         OUTPUT / "ten-minute-path.md": _ten_minute_path(event_card, contract, exits),
@@ -129,6 +141,9 @@ def _index(catalog: dict[str, int]) -> str:
 | 调用方自己选产品时走宿主臂 | [完整目录发现](catalog-discovery.md) |
 | 十分钟内从本地能力走到第一次真实分析 | [十分钟路径](ten-minute-path.md) |
 | 看一个事件的趋势 | [事件趋势](event-trend.md) |
+| 看多步行为的转化漏斗 | [转化漏斗](funnel.md) |
+| 看起始行为后的用户留存 | [用户留存](retention.md) |
+| 把某一天的用户明细导出成文件 | [用户明细导出](user-detail-export.md) |
 | 用同一分析定义比较两个时期 | [时期对比](period-comparison.md) |
 | 预览并确认执行分群、报表、订阅或 Kanban 写入 | [受治理写入](governed-writes.md) |
 | 声明调用方语义和派生指标 | [调用方语义与派生指标](caller-semantics.md) |
@@ -161,6 +176,94 @@ def _event_trend(card: dict[str, Any], contract: dict[str, Any], preview: dict[s
         preview,
         exits,
         "`validation.live_metadata_dependencies` 非空时，先按该字段列出的登记 operation 校验物理事件/字段；不要由自然语言补值。",
+    )
+
+
+def _funnel(card: dict[str, Any], contract: dict[str, Any], preview: dict[str, Any], exits: dict[str, str]) -> str:
+    notes = contract["kind_schemas"]["funnel"]["notes"]
+    units = "|".join(
+        str(item["properties"]["unit"]["const"])
+        for item in contract["definitions"]["funnel_window"]["oneOf"]
+    )
+    denoms = notes["rate_denominators"]
+    return _guide(
+        "看多步行为的转化漏斗",
+        [
+            "问法用「转化漏斗」或「看多步行为的转化漏斗」或 `funnel conversion steps`，命中 `"
+            + card["selector"]
+            + "`。「注册到后续行为的漏斗，近 7 天每步人数」会落到不可执行的 `analysis.task.handoff`；那时改短问或走宿主臂，不要执行 handoff。",
+            "```powershell\n" + _argv(card["next"]["schema_argv"]) + "\n```",
+            "将返回的 `"
+            + card["spec_schema_version"]
+            + "` schema 中至少两步事件、指标、ISO 日期和必填 `window`（`unit` 为 `"
+            + units
+            + "`）填入 Spec 后执行：",
+            "```powershell\n" + contract["handoff"]["command"] + "\n```",
+            "响应不返回转化率，只返回人数。人数是这一步及之前每步都完成的有序子集。自算须先定分母：`previous_step`（`"
+            + str(denoms["previous_step"])
+            + "`）或 `first_step`（`"
+            + str(denoms["first_step"])
+            + "`）；三步以上两种口径不同，SDK 不代选。",
+        ],
+        preview,
+        exits,
+        "先读 `resolved_date_window`。可信：单调；分日各步之和 = 整窗同名步。单日用户明细 `total_items` = 当天漏斗第一步 = 当天事件 UV。漏斗第二步不是留存 D0。",
+    )
+
+
+def _retention(card: dict[str, Any], contract: dict[str, Any], preview: dict[str, Any], exits: dict[str, str]) -> str:
+    required = "`, `".join(str(name) for name in contract["kind_schemas"]["retention"]["required"])
+    return _guide(
+        "看起始行为后的用户留存",
+        [
+            "问法用「某起始事件后的次日和 7 日留存」，命中 `"
+            + card["selector"]
+            + "`。不要一上来走 raw `analysis.retention.query`。",
+            "```powershell\n" + _argv(card["next"]["schema_argv"]) + "\n```",
+            "将返回的 `"
+            + card["spec_schema_version"]
+            + "` schema 中必填 `"
+            + required
+            + "` 填入后执行：",
+            "```powershell\n" + contract["handoff"]["command"] + "\n```",
+            "日常日留存用 `offset` 加 `period_calc_method=SUM`、`custom_before_method=SUM`、`total_calc_type=DAY`、`week_first_day=1`。省略 `time_grain` 现在会默认写入 `create_time/day`。",
+        ],
+        preview,
+        exits,
+        "`status=empty` 且 `total/x/y` 全空是合法空信封，先换回访事件再写「没能力」。同事件回访 D0=分母、D1+=0 只能证明产品通了，不能当次日留存读。跨事件 `init_num` 应对上同期起始事件 UV；漏斗步 1 整窗应对上同事件留存 `init_num`。",
+    )
+
+
+def _user_detail_export(card: dict[str, Any], exits: dict[str, str]) -> str:
+    codes = ",".join(str(code) for code in card["columns"]["allowed_codes"])
+    headers = ",".join(
+        str(item["header"]) for item in card["columns"]["file_schema"]["columns"]
+    )
+    argv = [
+        codes if value == "<comma-separated-column-codes>" else value
+        for value in card["next"]["argv"]
+    ]
+    return _guide(
+        "把某一天的用户明细导出成文件",
+        [
+            "问法用「把某一天的用户明细导出成文件并下载」或「用户明细导出」，命中 `"
+            + card["selector"]
+            + "`。宽问「导出」不是这一张卡。",
+            "```powershell\n" + _argv(card["next"]["schema_argv"]) + "\n```",
+            "先 `gravity run analysis.user_detail.list` 同一 App、同一天非空，再执行：",
+            "```powershell\n" + _argv(argv) + "\n```",
+            "`--columns` 填请求代码 `" + codes + "`，不要填文件表头 `" + headers + "`。",
+        ],
+        {
+            "schema_version": "gravity-insight.export.v1",
+            "ok": True,
+            "status": "success",
+            "operation_id": card["selector"],
+            "completion_status": "complete",
+            "file": {"rows": 1},
+        },
+        exits,
+        "看 `completion_status`：`complete` 是原子提交且 `file.rows` 等于预检 `total_items`；`truncated` 是触顶截断并给出已知总量；`partial` 不是完整导出。父读取信封 `truncated=true` 只表示没拉完全部分页。单日 `file.rows` = `list.total_items` = 当天漏斗第一步。",
     )
 
 
@@ -346,6 +449,33 @@ def _event_spec() -> dict[str, Any]:
     return {
         "start": "2026-01-01", "end": "2026-01-02",
         "steps": [{"event": "example_event", "metric": {"field": "event_count", "aggregation": "Count"}}],
+    }
+
+
+def _two_event_steps() -> list[dict[str, Any]]:
+    return [
+        {"event": "example_event", "metric": {"field": "event_count", "aggregation": "Count"}},
+        {"event": "example_event_2", "metric": {"field": "event_count", "aggregation": "Count"}},
+    ]
+
+
+def _funnel_spec() -> dict[str, Any]:
+    return {
+        "start": "2026-01-01", "end": "2026-01-02",
+        "steps": _two_event_steps(),
+        "window": {"unit": "day", "value": 7},
+    }
+
+
+def _retention_spec() -> dict[str, Any]:
+    return {
+        "start": "2026-01-01", "end": "2026-01-02",
+        "steps": _two_event_steps(),
+        "offset": 7,
+        "period_calc_method": "SUM",
+        "custom_before_method": "SUM",
+        "total_calc_type": "DAY",
+        "week_first_day": 1,
     }
 
 
