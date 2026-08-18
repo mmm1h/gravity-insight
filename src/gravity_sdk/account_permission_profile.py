@@ -16,11 +16,11 @@ from .composite_batch import (
     validate_composite_bounds,
 )
 from .composite_catalog import stable_operation
+from .process_limits import MAX_CONCURRENCY
 
 
 SCHEMA_VERSION = "gravity-insight.account-permission-profile.v1"
 DEFAULT_CONCURRENCY = 3
-MAX_CONCURRENCY = 24
 PERMISSION_EMPTY_NOTE = (
     "An empty result on this product is indistinguishable from a permission-"
     "trimmed empty. Upstream returned code=0 with list=[] and matching "

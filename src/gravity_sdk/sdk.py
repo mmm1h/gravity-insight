@@ -87,6 +87,7 @@ class GravitySDK(
         timeout: float = 120.0,
         attempts: int = 3,
         workspace: Any | None = None,
+        env_path: Any | None = None,
     ) -> "GravitySDK":
         """Create a lazy facade configured from the normal SDK environment."""
 
@@ -98,13 +99,10 @@ class GravitySDK(
             if shared_runtime is None:
                 with runtime_lock:
                     if shared_runtime is None:
-                        from .http_runtime import get_shared_runtime
-                        from .paths import PROJECT_ROOT
+                        from .shared_runtime import get_shared_runtime
 
                         shared_runtime = get_shared_runtime(
-                            env_path=PROJECT_ROOT / ".env.gravity.local",
-                            timeout=timeout,
-                            attempts=attempts,
+                            env_path=env_path, timeout=timeout, attempts=attempts
                         )
             return shared_runtime
 
@@ -114,6 +112,7 @@ class GravitySDK(
             return GravityInsightClient.from_env(
                 allow_experimental=allow_experimental,
                 runtime=runtime(),
+                env_path=env_path,
             )
 
         def build_sql() -> Any:
@@ -545,6 +544,7 @@ def connect(
     timeout: float = 120.0,
     attempts: int = 3,
     workspace: Any | None = None,
+    env_path: Any | None = None,
 ) -> GravitySDK:
     """Return the recommended lazy SDK entry point."""
 
@@ -553,6 +553,7 @@ def connect(
         timeout=timeout,
         attempts=attempts,
         workspace=workspace,
+        env_path=env_path,
     )
 
 

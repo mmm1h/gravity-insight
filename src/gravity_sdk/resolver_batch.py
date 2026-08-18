@@ -19,6 +19,7 @@ from .errors import (
 from .resolver import resolve_and_run
 from .result_source import aggregate_result_sources, selector_result_source
 from .actionable_error_values import actual_value
+from .process_limits import MAX_CONCURRENCY
 
 
 SCHEMA_VERSION = "gravity-insight.resolver-batch.v1"
@@ -40,7 +41,6 @@ ITEM_FIELDS = frozenset(
 )
 DEFAULT_MAX_PAGES = 5
 DEFAULT_MAX_ITEMS = 200
-MAX_CONCURRENCY = 24
 MAX_EXPANDED_ITEMS = 256
 MAX_AGGREGATE_ITEMS = 100_000
 

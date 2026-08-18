@@ -8,10 +8,10 @@ from typing import Any
 from .composite_batch import validate_composite_bounds
 from .errors import InputValidationError
 from .actionable_error_values import actual_value
+from .process_limits import MAX_CONCURRENCY
 
 
 DEFAULT_CONCURRENCY = 3
-MAX_CONCURRENCY = 24
 MIN_SNAPSHOT_ITEMS = 4
 
 

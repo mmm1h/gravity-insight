@@ -30,11 +30,11 @@ from .errors import (
     PaginationError,
 )
 from .actionable_error_values import actual_value
+from .process_limits import MAX_CONCURRENCY
 
 
 SCHEMA_VERSION = "gravity-insight.dashboard-snapshot.v1"
 DEFAULT_CONCURRENCY = 5
-MAX_CONCURRENCY = 24
 MAX_TREE_DEPTH = 16
 MIN_SNAPSHOT_ITEMS = 7  # five sources plus one root and one dashboard node
 _SUCCESS_STATUSES = frozenset({"success", "empty", "contract_changed_additive"})

@@ -18,6 +18,7 @@ from .composite_batch import (
 from .composite_catalog import stable_operation
 from .errors import InputValidationError, PaginationError
 from .actionable_error_values import actual_value
+from .process_limits import MAX_CONCURRENCY
 
 
 SCHEMA_VERSION = "gravity-insight.user-journey.v1"
@@ -35,7 +36,6 @@ USER_JOURNEY_OPERATIONS = (
     ("events", USER_EVENTS_OPERATION),
     ("postbacks", USER_POSTBACKS_OPERATION),
 )
-MAX_CONCURRENCY = 24
 _SENSITIVE_KEYS = frozenset(
     {
         "request",

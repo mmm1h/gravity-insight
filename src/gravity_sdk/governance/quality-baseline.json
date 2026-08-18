@@ -24,7 +24,6 @@
       "src/gravity_sdk/census/response.py::apply_response_fields_to_drafts": 19,
       "src/gravity_sdk/cli.py::_analysis": 19,
       "src/gravity_sdk/cli.py::run": 21,
-      "src/gravity_sdk/client.py::GravityInsightClient._first_probe_order_field": 18,
       "src/gravity_sdk/client.py::GravityInsightClient.probe_all": 18,
       "src/gravity_sdk/composite.py::CompositeService.metadata_snapshot": 18,
       "src/gravity_sdk/credentials.py::CredentialProvider._credential_from_login": 18,
@@ -99,18 +98,6 @@
         "analysis.user_property.list": 1,
         "app.list": 1,
         "report.multidim.query": 1,
-        "report.multidim.template.preset.list": 1
-      },
-      "src/gravity_sdk/client.py": {
-        "analysis.dashboard.tree": 1,
-        "analysis.event.info": 1,
-        "analysis.event.list": 1,
-        "analysis.order_detail.list": 1,
-        "analysis.report_config.list": 1,
-        "analysis.segment.list": 1,
-        "analysis.user_detail.list": 1,
-        "analysis.user_property.list": 1,
-        "app.list": 1,
         "report.multidim.template.preset.list": 1
       },
       "src/gravity_sdk/executor.py": {
@@ -264,7 +251,7 @@
     },
     "src/gravity_sdk/client.py": {
       "ast_hard_limit": 6765,
-      "ast_nodes": 6764,
+      "ast_nodes": 4226,
       "migration_sloc": 1087,
       "sloc_hard_limit": 1161
     },
@@ -276,7 +263,7 @@
     },
     "src/gravity_sdk/http_runtime.py": {
       "ast_hard_limit": 3815,
-      "ast_nodes": 3755,
+      "ast_nodes": 3643,
       "migration_sloc": 675,
       "sloc_hard_limit": 751
     },

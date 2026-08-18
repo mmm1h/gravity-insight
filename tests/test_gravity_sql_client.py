@@ -273,9 +273,7 @@ class GravitySqlClientTests(unittest.TestCase):
             second = sql_client.build_sql_client()
 
         self.assertIs(first, second)
-        factory.assert_called_once_with(
-            env_path=sql_client.PROJECT_ROOT / ".env.gravity.local"
-        )
+        factory.assert_called_once_with(env_path=None)
 
 
 if __name__ == "__main__":

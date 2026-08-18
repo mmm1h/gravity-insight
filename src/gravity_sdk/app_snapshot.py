@@ -18,11 +18,11 @@ from .composite_batch import (
 from .composite_catalog import stable_operation
 from .errors import InputValidationError
 from .actionable_error_values import actual_value
+from .process_limits import MAX_CONCURRENCY
 
 
 SCHEMA_VERSION = "gravity-insight.app-snapshot.v1"
 DEFAULT_CONCURRENCY = 6
-MAX_CONCURRENCY = 24
 
 
 @dataclass(frozen=True)

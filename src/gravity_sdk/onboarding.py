@@ -15,7 +15,6 @@ from .credentials import (
     migrate_legacy_session,
     save_account_credentials,
 )
-from .paths import PROJECT_ROOT
 from .errors import InputValidationError
 
 
@@ -342,7 +341,9 @@ def ensure_first_run_credentials(
 
     if not should_onboard(requires_credentials=requires_credentials):
         return True
-    selected_path = Path(env_path or (PROJECT_ROOT / ".env.gravity.local"))
+    from .runtime_scope import resolve_env_path
+
+    selected_path, _isolated = resolve_env_path(env_path)
     migrate_legacy_session(selected_path)
     config = CredentialConfig.from_env(selected_path, environ={})
     if config.username and config.password:

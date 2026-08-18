@@ -37,11 +37,11 @@ from .errors import (
 )
 from .result_source import GOVERNED_PRODUCT, result_source
 from .plan_execution import result_item_count
+from .process_limits import MAX_CONCURRENCY
 
 
 SCHEMA_VERSION = "gravity-insight.dashboard-analysis.v1"
 DEFAULT_CONCURRENCY = 6
-MAX_CONCURRENCY = 24
 DEFAULT_MAX_CHARTS = 32
 HARD_MAX_CHARTS = 64
 MIN_ANALYSIS_ITEMS = 3
