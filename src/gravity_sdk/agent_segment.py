@@ -175,6 +175,7 @@ def segment_mutation_intent(query: str) -> bool:
 def is_authoritative_direct_card(card: Mapping[str, Any]) -> bool:
     """Identify direct cards that must suppress low-level operation fallback."""
 
+    from .agent_app_public_info import is_authoritative_app_public_info_card
     from .agent_material_asset import is_authoritative_material_asset_card
     from .agent_kanban_mutation import is_kanban_mutation_card
     from .agent_report_mutation import is_report_mutation_card
@@ -186,6 +187,7 @@ def is_authoritative_direct_card(card: Mapping[str, Any]) -> bool:
     return any(
         (
             is_authoritative_export_card(card),
+            is_authoritative_app_public_info_card(card),
             is_authoritative_material_asset_card(card),
             is_kanban_mutation_card(card),
             is_report_mutation_card(card),
