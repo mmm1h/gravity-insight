@@ -234,6 +234,42 @@ def export_capability_inventory(client: Any) -> tuple[dict[str, Any], ...]:
     return tuple(card for card in cards if card is not None)
 
 
+def analysis_export_family_choices() -> list[dict[str, Any]]:
+    """Project exact Analysis families for a non-executable selection handoff."""
+
+    from .export_contracts import ExportContractRegistry
+    from .paths import CONTRACT_ROOT
+
+    contracts = ExportContractRegistry.from_file(
+        CONTRACT_ROOT / "exports" / "routes-v1.json"
+    )
+    choices: list[dict[str, Any]] = []
+    for selector in _ANALYSIS_EXPORT_ALIASES:
+        description = contracts.describe(selector)
+        if not _callable_creator(description):
+            raise RuntimeError(
+                f"Analysis export selection references a non-callable family: {selector}"
+            )
+        required = _required_request_fields(
+            _plain_mapping(description.get("input_schema"))
+        )
+        choices.append({
+            "selector": selector,
+            "currently_callable": True,
+            "request_required_fields": required,
+            "next_action": (
+                "Run next.argv to select this exact family, then inspect "
+                "next.schema_argv and supply only that contract's inputs."
+            ),
+            "next": {
+                "ready_without_input": True,
+                "argv": ["gravity", "agent", selector],
+                "schema_argv": ["gravity", "export", "describe", selector],
+            },
+        })
+    return choices
+
+
 def is_authoritative_export_card(card: Mapping[str, Any]) -> bool:
     return (
         card.get("kind") == "export"
@@ -491,6 +527,7 @@ def analysis_export_is_specific(query: str) -> bool:
 
 __all__ = [
     "MATERIAL_EXPORT_OPERATION",
+    "analysis_export_family_choices",
     "analysis_export_is_specific",
     "export_capability_cards",
     "export_capability_inventory",
