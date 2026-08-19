@@ -231,7 +231,7 @@ def _definition(
 ) -> tuple[str, str]:
     supported_subject(subject)
     decoded = decoded_config(config)
-    preflight_saved_definition(
+    prepared = preflight_saved_definition(
         {"subject": subject, "config": decoded},
         app=app_id,
         workspace=workspace,
@@ -239,7 +239,7 @@ def _definition(
         end=end,
     )
     return str(subject), json.dumps(
-        decoded, ensure_ascii=False, allow_nan=False, sort_keys=True, separators=(",", ":")
+        prepared, ensure_ascii=False, allow_nan=False, sort_keys=True, separators=(",", ":")
     )
 
 

@@ -1,0 +1,155 @@
+{
+  "schema_version": "gravity.forensics.saved-config-generation.v1",
+  "observed_at": "2026-08-19",
+  "scope": {
+    "task": 234,
+    "app_id": "29034827",
+    "subjects": [
+      "analysis_event",
+      "analysis_funnel",
+      "analysis_retention",
+      "analysis_scatter",
+      "analysis_user_property"
+    ]
+  },
+  "privacy": {
+    "credentials_persisted": false,
+    "raw_response_values_persisted": false,
+    "configuration_values_persisted": false,
+    "protocol_scalar_classifications_persisted": true
+  },
+  "request_budget": {
+    "write_limit": 40,
+    "write_requests_sent": 11,
+    "within_limit": true
+  },
+  "offline": {
+    "generator": "compile_query_spec -> BODY_FIELDS/UI_FIELDS -> compile_dashboard_chart",
+    "round_trip_comparison": "query_id removed; registered empty defaults normalized",
+    "five_subjects_generated": true,
+    "five_subjects_semantically_equivalent": true,
+    "caller_web_artifact_preserved": true
+  },
+  "subjects": {
+    "analysis_event": {
+      "generation": "success",
+      "round_trip": "semantic_equivalent",
+      "upstream_accepted": true,
+      "marker": "GSDK-7cd5059506e8",
+      "generated_config_shape": {
+        "path_count": 32,
+        "fingerprint": "eb65159042f8ab08460b470e91f381d81633a95818e7543b4558698e0e235b8b"
+      },
+      "initial_rejection": {
+        "http_status": 200,
+        "receipt_id": "f32d1b6bc66c40d98362687dfc3221b6",
+        "classification": "INPUT_INVALID",
+        "field": "mutation",
+        "upstream_message_class": "generic_operation_failed",
+        "generated_path_count": 26,
+        "smallest_observed_path_count": 146,
+        "evidence_driven_body_fields_added_together": [
+          "app_id",
+          "custom_query_item_list",
+          "date_list"
+        ]
+      },
+      "lifecycle": [
+        {"step": "create", "status": "created", "http_status": 200, "receipt_id": "19cc1439d79e483fa8b4d1a49025bda0"},
+        {"step": "list_readback", "status": "success", "http_status": 200, "receipt_id": "dd9cf97e4d4245f78ad57025300c449b", "marker_matches": 1},
+        {"step": "get_readback", "status": "success", "http_status": 200, "receipt_id": "e01cbc3b6f6e422c8c6dbf43cafa0c82", "config_matches": true},
+        {"step": "delete", "status": "deleted", "http_status": 200, "receipt_id": "419daca2d6764faeb663cc6d31cdfce7"},
+        {"step": "disappearance", "status": "success", "http_status": 200, "receipt_id": "7e6c0e801e2a441d85d563cdfbc319e3", "marker_matches": 0}
+      ]
+    },
+    "analysis_funnel": {
+      "generation": "success",
+      "round_trip": "semantic_equivalent",
+      "upstream_accepted": true,
+      "marker": "GSDK-95534fcb59bc",
+      "generated_config_shape": {"path_count": 30, "fingerprint": "21771c4a39aec64d5fc7a5e77eeaba5416c0028055277850579b660d5d9b5f26"},
+      "lifecycle": [
+        {"step": "create", "status": "created", "http_status": 200, "receipt_id": "97ed3fb29a3b49988378a3851ca8cb10"},
+        {"step": "list_readback", "status": "success", "http_status": 200, "receipt_id": "634eef67d7994620ba0109c6e06eed4e", "marker_matches": 1},
+        {"step": "get_readback", "status": "success", "http_status": 200, "receipt_id": "5b00156673ae4da5a2a16267a3c1960d", "config_matches": true},
+        {"step": "delete", "status": "deleted", "http_status": 200, "receipt_id": "7c43924a2dd947de86433591936875e6"},
+        {"step": "disappearance", "status": "success", "http_status": 200, "receipt_id": "bc41282325304265932cc3b5780698f2", "marker_matches": 0}
+      ]
+    },
+    "analysis_retention": {
+      "generation": "success",
+      "round_trip": "semantic_equivalent",
+      "upstream_accepted": true,
+      "marker": "GSDK-7d43381fb244",
+      "generated_config_shape": {"path_count": 56, "fingerprint": "4bd334e3e802e5a3f4e05f7f895daec99e8f55a51cb3ff57416ecdd3f675788a"},
+      "lifecycle": [
+        {"step": "create", "status": "created", "http_status": 200, "receipt_id": "ba7f895149ff4a70b077cd93b63f7201"},
+        {"step": "list_readback", "status": "success", "http_status": 200, "receipt_id": "06e2beb5a74149599d293428c4dd69ad", "marker_matches": 1},
+        {"step": "get_readback", "status": "success", "http_status": 200, "receipt_id": "d9a2e3bd3e9c45b6aa65ed7ca9a843cd", "config_matches": true},
+        {"step": "delete", "status": "deleted", "http_status": 200, "receipt_id": "98b413c91df04413acb656d7be248040"},
+        {"step": "disappearance", "status": "success", "http_status": 200, "receipt_id": "286abce4106643daba794079dd7a0037", "marker_matches": 0}
+      ]
+    },
+    "analysis_scatter": {
+      "generation": "success",
+      "round_trip": "semantic_equivalent",
+      "upstream_accepted": true,
+      "marker": "GSDK-6c76086cc965",
+      "generated_config_shape": {"path_count": 27, "fingerprint": "9e0e653d50ded307e8bbabf679824c32794b501dabcb2daba632aecdbbcdef07"},
+      "lifecycle": [
+        {"step": "create", "status": "created", "http_status": 200, "receipt_id": "83fabc5baa3c4a728a92caec45312856"},
+        {"step": "list_readback", "status": "success", "http_status": 200, "receipt_id": "08c6d61b19524f0e8aec6c8456346f60", "marker_matches": 1},
+        {"step": "get_readback", "status": "success", "http_status": 200, "receipt_id": "b58ecb8f8b4d48e882101dca13a6fe9c", "config_matches": true},
+        {"step": "delete", "status": "deleted", "http_status": 200, "receipt_id": "19ed85907702452db442825c0ee49fa7"},
+        {"step": "disappearance", "status": "success", "http_status": 200, "receipt_id": "fa557e9e41c942c78d3c18003d87b91f", "marker_matches": 0}
+      ]
+    },
+    "analysis_user_property": {
+      "generation": "success",
+      "round_trip": "semantic_equivalent",
+      "upstream_accepted": true,
+      "marker": "GSDK-d60fa62cacd6",
+      "generated_config_shape": {"path_count": 12, "fingerprint": "e7cc3987452829b22fbb9fb5b9f13eff39dc22c52e50b83e96f617aa3dc58016"},
+      "lifecycle": [
+        {"step": "create", "status": "created", "http_status": 200, "receipt_id": "c80b403023994a8fac0d403d8ef6f5f2"},
+        {"step": "list_readback", "status": "success", "http_status": 200, "receipt_id": "64d4c2465cb64b7390ff203c9b966321", "marker_matches": 1},
+        {"step": "get_readback", "status": "success", "http_status": 200, "receipt_id": "4fece4dc81914d08b9e1b08152f1617c", "config_matches": true},
+        {"step": "delete", "status": "deleted", "http_status": 200, "receipt_id": "66b35eb4102b487b86ae1d34080a635c"},
+        {"step": "disappearance", "status": "success", "http_status": 200, "receipt_id": "4b239c1ea3e445d2895f9813c1a5d852", "marker_matches": 0}
+      ]
+    }
+  },
+  "retention_custom_before_issue_21": {
+    "offline_depth_7_accepted": true,
+    "component_condition_present": true,
+    "live_metadata_corrections_before_upstream": 2,
+    "final_request_shape_fingerprint": "827a5195a8210eb303a131e6c419d1ec2e86b04afe5afbf66dc1a31406fc73af",
+    "status": "semantic_error",
+    "upstream_accepted_as_success_or_empty": false,
+    "error": {
+      "code": "INPUT_INVALID",
+      "category": "caller",
+      "field": "group_by_list"
+    },
+    "protocol_status": {
+      "http_status": 200,
+      "code": 2015,
+      "msg": "string_nonempty_with_replacement_characters_after_transport_decode",
+      "extra_error_present": false,
+      "extra_error_type": "null"
+    },
+    "identical_valid_shape_receipts": [
+      "aad8b15a72124edb9542c6adfe6bc093",
+      "c764548d4ec349b486cd656e89819b85",
+      "495e824e37fc4cc4923912197254d89f"
+    ],
+    "repeated_for_evidence_reason": "first result projection omitted the safe error summary; second omitted raw protocol scalar classification; the third identical governed read captured protocol status only"
+  },
+  "cleanup": {
+    "baseline_all_gsdk_marker_count": 0,
+    "requested_marker_count": 6,
+    "final_exact_marker_count": 0,
+    "final_all_gsdk_marker_count": 0,
+    "cleanup_errors": []
+  }
+}
