@@ -113,6 +113,18 @@ def apply_lexical_fallback(
     """Apply retrieval only after the complete existing route chain abstains."""
 
     from .agent_intent_text import affirmative_intent_text
+    from .agent_intent_routing import multiple_product_intents
+    from .agent_sql_product_gap import registered_sql_product_intent
+
+    if (
+        platform is None
+        and domain in {None, "sql"}
+        and registered_sql_product_intent(query)
+        and not multiple_product_intents(query)
+    ):
+        from .agent_sql_product_discovery import apply_workspace_sql_owner
+
+        return apply_workspace_sql_owner(query, workspace=workspace, sources=sources)
 
     if (
         existing_candidates

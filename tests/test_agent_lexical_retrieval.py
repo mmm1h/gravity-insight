@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import unittest
+from dataclasses import replace
+from pathlib import Path
 
 from gravity_sdk import GravityInsightClient
 from gravity_sdk.agent import discover_capabilities
+from gravity_sdk.agent_batch import capabilities_many
 from gravity_sdk.agent_capabilities import composite_capability_inventory
 from gravity_sdk.agent_caller_language import (
     CALLER_LANGUAGE_SOURCES,
@@ -20,6 +23,11 @@ from gravity_sdk.agent_lexical_retrieval import (
     registered_documents,
     retrieve_registered_products,
 )
+from gravity_sdk.agent_sql_product_discovery import WORKSPACE_SQL_NAME_ALGORITHM
+from gravity_sdk.workspace import load_workspace
+
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 class AgentLexicalRetrievalTests(unittest.TestCase):
@@ -167,6 +175,60 @@ class AgentLexicalRetrievalTests(unittest.TestCase):
             "composite:custom_audience",
             decisions[0]["matches"][0]["selector"],
         )
+
+    def test_indirect_workspace_sql_owner_uses_only_exact_registered_products(self) -> None:
+        prompt = "有个团队已审过的跨表汇总口径，想按登记名称和时间窗把结果跑出来。"
+        workspace = load_workspace(ROOT / "examples/workspace/gravity.toml")
+        missing = discover_capabilities(
+            prompt, client=self.client, workspace=replace(workspace, products={})
+        )
+        self.assertEqual([], missing["candidates"])
+        self.assertEqual(
+            "WORKSPACE_SQL_PRODUCT_NOT_CONFIGURED",
+            missing["capability_gaps"][0]["code"],
+        )
+        self.assertEqual(
+            WORKSPACE_SQL_NAME_ALGORITHM,
+            missing["match_policy"]["zero_candidate_lexical_fallback"]["algorithm"],
+        )
+
+        named = capabilities_many(
+            [{"id": "sql", "query": (
+                "团队已审过的 daily event summary 跨表汇总口径，按登记名称和时间窗跑出结果。"
+            )}],
+            client=self.client,
+            workspace=workspace,
+        )["results"][0]["result"]
+        self.assertEqual(["sql:daily-event-summary"], [
+            card["selector"] for card in named["candidates"]
+        ])
+        self.assertTrue(named["candidates"][0]["match"]["exact_registered_name"])
+        self.assertNotIn("sql", named["candidates"][0])
+        self.assertEqual("gravity", named["candidates"][0]["next"]["argv"][0])
+
+        unnamed = discover_capabilities(prompt, client=self.client, workspace=workspace)
+        self.assertEqual([], unnamed["candidates"])
+        self.assertEqual(
+            "WORKSPACE_SQL_PRODUCT_NOT_CONFIGURED",
+            unnamed["capability_gaps"][0]["code"],
+        )
+
+    def test_indirect_workspace_sql_owner_preserves_adjacent_boundaries(self) -> None:
+        from gravity_sdk import agent_sql_product_gap as sql_gap
+
+        self.assertFalse(sql_gap.registered_sql_product_intent(
+            "按时间窗汇总多个 App 的业务趋势和小时脉搏。"
+        ))
+        self.assertFalse(sql_gap.registered_sql_product_intent(
+            "临时写个查询语句做跨表汇总，不需要登记产品。"
+        ))
+        self.assertEqual((), sql_gap.registered_sql_product_names(
+            "不要运行 daily-event-summary。", ({"name": "daily-event-summary"},)
+        ))
+        aggregate = discover_capabilities(
+            "按平台、广告位和日期汇总变现结果", client=self.client
+        )
+        self.assertEqual("report.get.query", aggregate["candidates"][0]["selector"])
 
     def test_authoritative_caller_language_is_indexed(self) -> None:
         decision = retrieve_registered_products(
