@@ -20,6 +20,7 @@
 - 未登记字段、破坏性响应漂移、身份/权限不确定和不完整分页 fail closed。
 - 写入固定 preview/dry-run、人工确认、显式 execute、写后读回；自然语言不自动写。
 - 破坏性调用方 surface 升级不保留兼容别名，但同一发布必须迁移 canonical consumer。
+- 宽泛 Analysis 导出只返回不可执行的七族选择交接；每族暴露自己的 selector 和必填输入，不建立统一 dispatcher 或合并异构合同。
 
 ## 明确不做
 

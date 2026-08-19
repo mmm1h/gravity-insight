@@ -105,6 +105,20 @@ class DiscoveryEnvelopeNextTests(unittest.TestCase):
         gap = result["capability_gaps"][0]
 
         self.assertEqual("ANALYSIS_EXPORT_FILE_CONTRACT_MISSING", gap["code"])
+        self.assertEqual("ANALYSIS_EXPORT_FAMILY_SELECTION_REQUIRED", gap["reason_code"])
+        choices = gap["family_choices"]
+        self.assertTrue(gap["selection_required"])
+        self.assertEqual(7, len(choices))
+        self.assertEqual(gap["candidate_selectors"], [item["selector"] for item in choices])
+        for item in choices:
+            selector = item["selector"]
+            required = self.client.export_describe(selector)["input_schema"]["required"]
+            self.assertEqual(required, item["request_required_fields"])
+            self.assertEqual(["gravity", "agent", selector], item["next"]["argv"])
+            self.assertEqual(
+                ["gravity", "export", "describe", selector],
+                item["next"]["schema_argv"],
+            )
         self.assertEqual(gap["next"]["argv"], result["next"]["argv"])
         self.assertEqual(
             ["gravity", "export", "list-capabilities"], result["next"]["argv"]

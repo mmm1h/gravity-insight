@@ -24,24 +24,32 @@ def unavailable_analysis_gap(query: str) -> dict[str, Any] | None:
             argv=["gravity", "metadata", "sync", "--all-apps", "--include-table-lineage"],
         )
     if _analysis_export(selected, words):
-        return unavailable_gap(
+        from .agent_export import analysis_export_family_choices
+
+        choices = analysis_export_family_choices()
+        gap = unavailable_gap(
             query, code="ANALYSIS_EXPORT_FILE_CONTRACT_MISSING",
             journey="analysis_result_export",
             reason=(
-                "Seven Analysis export families are callable: user-event, "
-                "segment-result, segment-user-detail, user-detail, pay-event, "
-                "monetization-detail and origin-event. They take seven "
-                "non-interchangeable input contracts, so a single broad request "
-                "cannot be resolved to one of them; stream-event export is "
-                "client-side and has no frontend server request."
+                "Seven governed Analysis export families are currently callable. "
+                "This broad request needs exactly one family selection because "
+                "their input contracts are not interchangeable; stream-event "
+                "export is client-side and has no frontend server request."
             ),
             next_action=(
-                "Run `gravity export list-capabilities` to see the seven callable "
-                "Analysis families and their required inputs, then re-run the "
-                "discovery naming the family you want."
+                "Choose exactly one family_choices item and run its next.argv; "
+                "inspect its next.schema_argv before supplying that family's "
+                "documented inputs."
             ),
             argv=["gravity", "export", "list-capabilities"],
         )
+        gap.update({
+            "reason_code": "ANALYSIS_EXPORT_FAMILY_SELECTION_REQUIRED",
+            "selection_required": True,
+            "candidate_selectors": [choice["selector"] for choice in choices],
+            "family_choices": choices,
+        })
+        return gap
     return None
 
 
@@ -74,7 +82,7 @@ def _analysis_export(selected: str, words: frozenset[str]) -> bool:
         and ("analysis" in words or len(words & analysis_families) >= 2)
     )
     chinese = "导出" in selected and "结果" in selected and (
-        "analysis" in words
+        "analysis" in words or "分析" in selected
         or any(term in selected for term in ("事件", "分群", "用户", "付费", "变现"))
     )
     return english or chinese
