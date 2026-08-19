@@ -1,4 +1,4 @@
-"""Small, process-local cache for non-business Gravity metadata reads."""
+"""Process-local cache for non-business Gravity metadata, with optional disk."""
 
 from __future__ import annotations
 
@@ -9,10 +9,12 @@ import time
 from dataclasses import dataclass
 from typing import Any, Callable, Iterable, Mapping
 
+from .cache_disk import clear_snapshots, persist_dir, read_snapshot, write_snapshot
 from .models import OperationSpec
 
 
 DEFAULT_METADATA_TTL_SECONDS = 600.0
+_MISS = object()
 
 
 def is_metadata_operation(operation: OperationSpec | Mapping[str, Any]) -> bool:
@@ -72,6 +74,9 @@ class MetadataCache:
         ttl_seconds: float = DEFAULT_METADATA_TTL_SECONDS,
         clock: Callable[[], float] = time.monotonic,
         isolation_key: str = "",
+        persist: bool = False,
+        persist_scope: str = "",
+        wall_clock: Callable[[], float] = time.time,
     ) -> None:
         if ttl_seconds <= 0:
             raise ValueError("metadata cache TTL must be positive")
@@ -80,6 +85,10 @@ class MetadataCache:
         self._ttl_seconds = float(ttl_seconds)
         self._clock = clock
         self._isolation_key = str(isolation_key)
+        self._persist = bool(persist)
+        self._persist_scope = str(persist_scope)
+        self._persist_dir = persist_dir(self._persist_scope)
+        self._wall_clock = wall_clock
         self._condition = threading.Condition(threading.RLock())
         self._entries: dict[tuple[str, str], _Entry] = {}
         self._inflight: set[tuple[str, str]] = set()
@@ -111,49 +120,26 @@ class MetadataCache:
     ) -> Any:
         if not self.is_cacheable(operation_id):
             return loader()
-        with self._condition:
-            bypass = self._bypass
-            if bypass:
-                self._bypassed += 1
-        if bypass:
+        if self._note_bypass():
             return loader()
         scope = self._isolation_key if isolation_key is None else str(isolation_key)
         key = _cache_key(operation_id, inputs or {}, scope)
         if key is None:
             return loader()
-
-        with self._condition:
-            while True:
-                now = self._clock()
-                entry = self._entries.get(key)
-                if entry is not None and entry.expires_at > now:
-                    self._hits += 1
-                    return copy.deepcopy(entry.value)
-                if entry is not None:
-                    self._entries.pop(key, None)
-                if key not in self._inflight:
-                    self._inflight.add(key)
-                    self._misses += 1
-                    break
-                self._condition.wait()
-
+        remembered = self._await_or_claim(key)
+        if remembered is not _MISS:
+            return remembered
         try:
-            value = loader()
-            stored = copy.deepcopy(value)
+            stored = copy.deepcopy(loader())
         except BaseException:
-            with self._condition:
-                self._inflight.discard(key)
-                self._condition.notify_all()
+            self._finish(key, None)
             raise
-        with self._condition:
-            self._entries[key] = _Entry(self._clock() + self._ttl_seconds, stored)
-            self._inflight.discard(key)
-            self._condition.notify_all()
-        return copy.deepcopy(stored)
+        return self._finish(key, stored)
 
     def clear(self) -> None:
         with self._condition:
             self._entries.clear()
+            clear_snapshots(self._persist, self._persist_dir)
 
     def stats(self) -> dict[str, int | float]:
         with self._condition:
@@ -168,6 +154,68 @@ class MetadataCache:
                 "misses": self._misses,
                 "bypassed": self._bypassed,
             }
+
+    def _note_bypass(self) -> bool:
+        with self._condition:
+            if self._bypass:
+                self._bypassed += 1
+                return True
+        return False
+
+    def _await_or_claim(self, key: tuple[str, str]) -> Any:
+        with self._condition:
+            while True:
+                now = self._clock()
+                entry = self._entries.get(key)
+                if entry is not None and entry.expires_at > now:
+                    self._hits += 1
+                    return copy.deepcopy(entry.value)
+                if entry is not None:
+                    self._entries.pop(key, None)
+                disk = read_snapshot(
+                    self._persist, self._persist_dir, key, self._ttl_seconds, self._wall_clock()
+                )
+                if disk is not None:
+                    remaining, value = disk
+                    self._entries[key] = _Entry(self._clock() + remaining, value)
+                    self._hits += 1
+                    return copy.deepcopy(value)
+                if key not in self._inflight:
+                    self._inflight.add(key)
+                    self._misses += 1
+                    return _MISS
+                self._condition.wait()
+
+    def _finish(self, key: tuple[str, str], stored: Any | None) -> Any:
+        with self._condition:
+            if stored is not None:
+                self._entries[key] = _Entry(self._clock() + self._ttl_seconds, stored)
+                write_snapshot(
+                    self._persist,
+                    self._persist_dir,
+                    key,
+                    stored,
+                    self._ttl_seconds,
+                    self._wall_clock(),
+                )
+            self._inflight.discard(key)
+            self._condition.notify_all()
+        return copy.deepcopy(stored) if stored is not None else None
+
+
+def persisted_metadata_cache(registry: Any, isolation_key: str, isolated: bool) -> MetadataCache:
+    """Persist FieldPolicy snapshots; default env stays on the unscoped path."""
+
+    return MetadataCache(
+        (
+            operation.operation_id
+            for operation in registry.all()
+            if is_metadata_operation(operation)
+        ),
+        isolation_key=isolation_key,
+        persist=True,
+        persist_scope=isolation_key if isolated else "",
+    )
 
 
 def _cache_key(

@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
-from .cache import MetadataCache, is_metadata_operation
+from .cache import MetadataCache, is_metadata_operation, persisted_metadata_cache
 from .batch_limits import MAX_READ_ITEMS, MAX_READ_PAGES, validate_batch_limits
 from .catalog import OperationCatalog
 from .catalog_inventory import CatalogInventoryMixin
@@ -152,6 +152,7 @@ class GravityInsightClient(
             ReadExecutor(registry, policy, request_transport),
             allow_experimental=allow_experimental,
             isolation_key=isolation_key,
+            metadata_cache=persisted_metadata_cache(registry, isolation_key, isolated),
             operation_catalog=OperationCatalog(
                 registry.all(),
                 state_path=catalog_path,
