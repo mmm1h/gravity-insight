@@ -16,6 +16,8 @@ class SavedAnalysisSdkMixin:
         max_workers: int = 6,
         workspace: Any | None = None,
     ) -> dict[str, Any]:
+        """List identities without reading configs; replay remains unchecked."""
+
         from .saved_analysis import list_saved_analyses
         from .saved_analysis_support import bounds, workers
 

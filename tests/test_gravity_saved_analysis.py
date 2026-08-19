@@ -165,7 +165,7 @@ class SavedAnalysisTests(unittest.TestCase):
 
         self.assertEqual("success", result["status"])
         self.assertEqual("event", result["items"][0]["kind"])
-        self.assertTrue(result["items"][0]["replay_supported"])
+        self.assertIsNone(result["items"][0]["replay_supported"])
         self.assertEqual("unchecked", result["items"][0]["replay_status"])
         self.assertNotIn("config", result["items"][0])
         self.assertEqual(
@@ -219,6 +219,7 @@ class SavedAnalysisTests(unittest.TestCase):
         )
         self.assertTrue(preview["network_called"])
         self.assertEqual("8", preview["saved_analysis"]["id"])
+        self.assertEqual(("supported", True), (preview["replay_status"], preview["saved_analysis"]["replay_supported"]))
 
         duplicate = {**client.rows[0], "id": "9"}
         with self.assertRaises(InputValidationError):
@@ -250,6 +251,9 @@ class SavedAnalysisTests(unittest.TestCase):
         )
 
         self.assertTrue(result["query_executed"])
+        self.assertEqual(("supported", True), (
+            result["replay_status"], result["saved_analysis"]["replay_supported"]
+        ))
         self.assertNotIn("request", result["result"])
         self.assertEqual(
             {"value": 7, "values": [1, 2]},
@@ -325,6 +329,7 @@ class SavedAnalysisTests(unittest.TestCase):
             end="2026-08-07",
         )
         self.assertEqual("web_artifact", prepared["artifact_mode"])
+        self.assertEqual("supported", prepared["replay_status"])
         self.assertIsNone(prepared["compiled_input"])
         self.assertTrue(prepared["input_values_redacted"])
         self.assertEqual("2026-08-01", prepared["date_range"]["start"])

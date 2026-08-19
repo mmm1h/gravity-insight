@@ -40,6 +40,18 @@ RESULT_STATUSES = SUCCESS_STATUSES | frozenset(
     }
 )
 KNOWN_ERROR_CODES = frozenset(item.value for item in ErrorCode)
+REPLAY_STATUSES = frozenset(
+    {"unchecked", "supported", "unsupported", "requires_window"}
+)
+
+
+def replay_capability(status: str) -> dict[str, Any]:
+    """Keep the nullable capability flag consistent with its evidence status."""
+
+    if status not in REPLAY_STATUSES:
+        raise ContractChangedError("saved Analysis replay status is invalid")
+    supported = None if status == "unchecked" else status == "supported"
+    return {"replay_supported": supported, "replay_status": status}
 
 
 def normalize_definition(
@@ -159,8 +171,7 @@ def catalog_rows(envelope: Mapping[str, Any], app_id: str) -> list[dict[str, Any
                 "subject": subject,
                 "kind": SUBJECT_KINDS.get(subject),
                 "subject_supported": subject in SUBJECT_KINDS,
-                "replay_supported": subject in SUBJECT_KINDS,
-                "replay_status": "unchecked",
+                **replay_capability("unchecked"),
             }
         )
         if modified is not None:
@@ -277,7 +288,7 @@ def safe_metadata(value: Mapping[str, Any], *, app_id: str) -> dict[str, Any]:
             "app_id": app_id,
             "kind": SUBJECT_KINDS.get(subject) if isinstance(subject, str) else None,
             "subject_supported": subject in SUBJECT_KINDS,
-            "replay_supported": None,
+            **replay_capability("unchecked"),
         }
     )
     return result
@@ -451,6 +462,7 @@ __all__ = [
     "catalog_rows",
     "decoded_config",
     "normalize_definition",
+    "replay_capability",
     "require_one_source",
     "require_success",
     "safe_metadata",

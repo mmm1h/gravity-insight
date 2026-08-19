@@ -121,9 +121,11 @@ class SavedAnalysisSurfaceTests(unittest.TestCase):
             "schema_version": REPLAY_SCHEMA_VERSION, "ok": True, "status": "success",
             "exit_code": 0, "source": "catalog", "network_called": True,
             "definition_network_called": True, "query_executed": True,
+            "replay_status": "supported",
             "saved_analysis": {"id": "8", "name": "Daily", "subject": "analysis_event",
                                "app_id": "17", "kind": "event",
                                "subject_supported": True, "replay_supported": True,
+                               "replay_status": "supported",
                                "config": "private"},
             "artifact_mode": "web_artifact", "kind": "event",
             "operation_id": "analysis.event.query",
@@ -145,6 +147,7 @@ class SavedAnalysisSurfaceTests(unittest.TestCase):
         self.assertEqual(("gravity-insight.read.v1", 3),
                          (projected["result"]["schema_version"],
                           projected["result"]["data"]["list"][0]["count"]))
+        self.assertEqual("supported", projected["replay_status"])
         self.assertNotIn("private", str(projected).casefold())
         self.assertNotIn("calculatebody", str(projected).casefold())
 
@@ -176,7 +179,7 @@ class SavedAnalysisSurfaceTests(unittest.TestCase):
 
     def test_saved_catalog_ndjson_writes_every_item(self):
         catalog = {
-            "schema_version": "gravity-insight.saved-analysis-catalog.v1",
+            "schema_version": "gravity-insight.saved-analysis-catalog.v2",
             "status": "success", "count": 201,
             "items": [{"id": str(index)} for index in range(201)],
         }

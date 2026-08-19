@@ -830,7 +830,7 @@ gravity analysis segment evaluate --app main --spec segment.json --fields part,p
 `segment_evaluate` composite Plan 节点；自然语言不生成规则或自动执行。泛分群、成员、历史、
 详情和导出不会误配此卡。
 
-### Saved Analysis v3
+### Saved Analysis v4
 
 保存分析入口把稳定的保存目录、详情读取和现有 Analysis Spec 编译器连成一条受控路径。已知
 引用时不要手工执行 `operations search/describe`，直接运行：
@@ -875,6 +875,11 @@ gravity analysis saved delete --app main --id <saved-analysis-id> --execute
 `YYYY-MM-DD`。旧 compact reference 可省略 window，并保留原定义的日期语义；只提供一端始终在
 建客户端前失败。`list/get` 不要求日期窗，`get` 会明确报告该引用是否需要 window。
 
+`list` 返回 `gravity-insight.saved-analysis-catalog.v2`。目录没有 `config`，所以每项固定为
+`replay_supported=null`、`replay_status=unchecked`；`subject_supported=true` 只说明存在对应
+compiler，不证明该条 Web config 已登记。按精确引用执行 `get` 或成功 `prepare/run` 后，才会返回
+互相一致的 `replay_supported=true|false` 与 `replay_status=supported|unsupported|requires_window`。
+
 Strict Replay 不是通用 Web 配置翻译器。reference 模式只接受静态证据已证明的 Web artifact，
 并直接复用现有 `event/funnel/retention/property/scatter` 五类编译器；未知字段、无法证明的
 opaque config 或其他 kind 均结构化失败，不降级为裸请求。显式 `--definition` 的 compact spec
@@ -899,7 +904,8 @@ Agent 查询 `run saved analysis <ref>`、`运行保存分析 <引用>`，包括
 权威候选是 `composite:saved_analysis`。卡片明确缺失 `app/ref/start/end`，Plan request 为四项
 提供可机械填写的槽位，可选 `mode=prepare|run`；发现本身完全离线，也不会从自然语言提取引用
 或自动执行。已有引用和窗口但不知道能力时是离线 Agent + Plan 两次；App/窗口已知而引用未知时，
-在线输入解析把能力卡和完整 safe catalog 放进第一调用，调用方按稳定 ID 选择后第二次执行。
+在线输入解析把能力卡和完整 safe catalog 放进第一调用，调用方按稳定 ID 选择后第二次执行；
+第一调用中的 `unchecked` 目录项只证明可选择，不是 replay 许可。
 
 ### Business pulse
 

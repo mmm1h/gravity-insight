@@ -40,7 +40,9 @@ def add_saved_analysis_commands(
         "saved", help="List, prepare, or strictly replay saved Analysis definitions."
     )
     commands = saved.add_subparsers(dest="saved_command", required=True)
-    listing = commands.add_parser("list", help="List safe saved-Analysis identities.")
+    listing = commands.add_parser(
+        "list", help="List identities with replay eligibility left unchecked."
+    )
     _add_common(
         listing, positive_int, include_reference=False, requires_reference=False,
         window=False,

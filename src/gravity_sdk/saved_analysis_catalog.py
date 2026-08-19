@@ -25,7 +25,7 @@ from .workspace import Workspace
 from .workspace_app import resolve_workspace_app
 
 
-CATALOG_SCHEMA_VERSION = "gravity-insight.saved-analysis-catalog.v1"
+CATALOG_SCHEMA_VERSION = "gravity-insight.saved-analysis-catalog.v2"
 LIST_OPERATION_ID = stable_operation(
     "analysis", "report_config", action="list"
 ).operation_id

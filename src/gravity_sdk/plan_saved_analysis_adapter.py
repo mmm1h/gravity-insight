@@ -238,6 +238,7 @@ def _valid_identity(
         and SUBJECT_KINDS.get(metadata.get("subject")) == safe["kind"]
         and metadata.get("subject_supported") is True
         and metadata.get("replay_supported") is True
+        and safe.get("replay_status") == "supported"
         and {"id", "name", "subject", "app_id"}.issubset(metadata)
     )
 

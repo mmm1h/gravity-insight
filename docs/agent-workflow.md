@@ -36,6 +36,7 @@ gravity agent-catalog describe <selector>
 - `schema_argv` 给出紧凑输入合同；`next.argv` 给出执行交接。
 - 多意图必须拆分或显式选择；weak match 和未排序 raw 候选不得直接执行。
 - 宿主 selection 必须绑定当前 catalog fingerprint，防止跨版本重放。
+- 保存分析 live catalog 的 `replay_status=unchecked` 只允许选择稳定 ID；精确 get/prepare 检查后才允许执行。
 
 ## 3. 构造执行请求
 
