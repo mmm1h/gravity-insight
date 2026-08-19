@@ -589,6 +589,50 @@ class DiscoveryUxTests(unittest.TestCase):
             actual = card["selector"], set(card["input_schema"]), set(card["required_inputs"]), set(card["input_template"])
             self.assertEqual(("app.app_info.get", {"url"}, {"url"}, {"url"}), actual)
             self.assertEqual({"selector": "app.app_info.get"}, card["plan_node"]["request"])
+        for query in ("按平台、广告位和日期汇总变现结果。", "Summarize daily revenue by monetization platform and ad placement."):
+            result = discover_capabilities(query, client=self.client)
+            self.assertEqual((1, 1), (result["count"], result["total"]))
+            card, template = result["candidates"][0], result["candidates"][0]["input_template"]
+            self.assertEqual(("report.get.query", {"selector": "report.get.query"}), (card["selector"], card["plan_node"]["request"]))
+            self.assertEqual((["reporting_ad_revenue"], "day", ["monetization_platform", "ad_unit_id"]), (template["metrics_list"], template["time_dims"], template["data_dims"]))
+            self.assertEqual({"field": "app_id", "operator": "EQUALS", "values": ["<catalog-app-id>"]}, template["filters"][0])
+            self.assertNotIn("inputs", template)
+            schema = card["input_schema"]
+            self.assertLessEqual(set(template), set(schema))
+            self.assertIn("reporting_ad_revenue", schema["metrics_list"]["item_enum"])
+            self.assertIn("monetization_platform", schema["data_dims"]["item_enum"])
+            self.assertEqual(
+                ("total", ["hour", "day", "week", "month", "total"]),
+                (schema["time_dims"]["default"], schema["time_dims"]["enum"]),
+            )
+            self.assertEqual(
+                ([], [], "monetization_report", ["date_list", "metrics_list"]),
+                (
+                    schema["custom_metrics_list"]["default"],
+                    schema["data_dims"]["default"],
+                    schema["data_topic"]["default"],
+                    card["required_inputs"],
+                ),
+            )
+            template["date_list"], template["filters"][0]["values"] = ["2026-08-01", "2026-08-02"], ["1"]
+            self.client._registry.get(card["selector"]).validate_inputs(template)
+        self.assertEqual(
+            ["app.app_info.get", "report.get.query"],
+            [discover_capabilities(query, client=None)["candidates"][0]["selector"] for query in ("查看 App 的公开信息绑定", "按平台、广告位和日期汇总变现结果。")],
+        )
+
+        builds = 0
+
+        def build_client():
+            nonlocal builds
+            builds += 1
+            return self.client
+        deferred = DeferredAgentClient(build_client)
+        lazy = discover_capabilities("按平台、广告位和日期汇总变现结果。", client=deferred)["candidates"][0]
+        self.assertEqual((0, {"date_list", "metrics_list", "filters"}), (builds, set(lazy["input_schema"])))
+        deferred.describe("report.get.query")
+        hydrated = discover_capabilities("按平台、广告位和日期汇总变现结果。", client=deferred)["candidates"][0]
+        self.assertEqual((1, 9, True), (builds, len(hydrated["input_schema"]), set(template) <= set(hydrated["input_schema"])))
 
         negative = discover_capabilities("不要运行看板图表。", client=self.client)
         self.assertEqual(("capability_gap", []), (negative["status"], negative["candidates"]))

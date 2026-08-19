@@ -177,6 +177,7 @@ def is_authoritative_direct_card(card: Mapping[str, Any]) -> bool:
 
     from .agent_app_public_info import is_authoritative_app_public_info_card
     from .agent_material_asset import is_authoritative_material_asset_card
+    from .agent_monetization_aggregate import is_authoritative_monetization_aggregate_card
     from .agent_kanban_mutation import is_kanban_mutation_card
     from .agent_report_mutation import is_report_mutation_card
     from .agent_custom_metric import is_custom_metric_card
@@ -189,6 +190,7 @@ def is_authoritative_direct_card(card: Mapping[str, Any]) -> bool:
             is_authoritative_export_card(card),
             is_authoritative_app_public_info_card(card),
             is_authoritative_material_asset_card(card),
+            is_authoritative_monetization_aggregate_card(card),
             is_kanban_mutation_card(card),
             is_report_mutation_card(card),
             is_custom_metric_card(card),

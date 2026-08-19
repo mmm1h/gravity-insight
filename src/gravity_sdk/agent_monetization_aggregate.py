@@ -11,6 +11,37 @@ from .agent_intent_text import affirmative_intent_text
 
 
 MONETIZATION_AGGREGATE_SELECTOR = ".".join(("report", "get", "query"))
+MONETIZATION_AGGREGATE_INPUT_TEMPLATE: Mapping[str, Any] = {
+    "custom_metrics_list": [],
+    "data_conf": {
+        "accumulate": False,
+        "asa_time_zone": "UTC",
+        "decimal_point": 2,
+        "minigame_pay_shared_ratio": 100,
+        "minigame_pay_shared_ratio_ios": 100,
+        "return_all_metrics": True,
+    },
+    "data_dims": ["monetization_platform", "ad_unit_id"],
+    "data_topic": "monetization_report",
+    "date_list": ["<start:YYYY-MM-DD>", "<end:YYYY-MM-DD>"],
+    "filters": [
+        {
+            "field": "app_id",
+            "operator": "EQUALS",
+            "values": ["<catalog-app-id>"],
+        }
+    ],
+    "metrics_list": ["reporting_ad_revenue"],
+    "time_dims": "day",
+}
+
+
+def monetization_aggregate_input_template() -> dict[str, Any]:
+    """Return a fresh raw-operation input backed by the proven example."""
+
+    return copy.deepcopy(dict(MONETIZATION_AGGREGATE_INPUT_TEMPLATE))
+
+
 MONETIZATION_AGGREGATE_CAPABILITY: Mapping[str, Any] = {
     "kind": "operation",
     "selector": MONETIZATION_AGGREGATE_SELECTOR,
@@ -55,6 +86,7 @@ MONETIZATION_AGGREGATE_CAPABILITY: Mapping[str, Any] = {
     },
     "required_inputs": ("date_list", "metrics_list"),
     "missing_inputs": ["date_list", "metrics_list"],
+    "input_template": monetization_aggregate_input_template(),
     "match": {
         "confidence": "strong",
         "coverage": 1.0,
@@ -81,6 +113,15 @@ def monetization_aggregate_capability_inventory() -> tuple[dict[str, Any], ...]:
     """Return the single canonical card backed by the stable operation."""
 
     return (copy.deepcopy(dict(MONETIZATION_AGGREGATE_CAPABILITY)),)
+
+
+def is_authoritative_monetization_aggregate_card(card: Mapping[str, Any]) -> bool:
+    """Keep the product owner ahead of a generic card for the same operation."""
+
+    return (
+        card.get("kind") == "operation"
+        and card.get("selector") == MONETIZATION_AGGREGATE_SELECTOR
+    )
 
 
 def monetization_aggregate_query(query: str) -> bool:
@@ -123,8 +164,11 @@ def monetization_aggregate_capability_cards(
 
 __all__ = [
     "MONETIZATION_AGGREGATE_CAPABILITY",
+    "MONETIZATION_AGGREGATE_INPUT_TEMPLATE",
     "MONETIZATION_AGGREGATE_SELECTOR",
+    "is_authoritative_monetization_aggregate_card",
     "monetization_aggregate_capability_cards",
     "monetization_aggregate_capability_inventory",
+    "monetization_aggregate_input_template",
     "monetization_aggregate_query",
 ]

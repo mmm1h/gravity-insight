@@ -20,5 +20,11 @@ class DeferredAgentClient:
             self._client = client
         return getattr(client, name)
 
+    def loaded_attribute(self, name: str) -> Any | None:
+        """Return an attribute only when the deferred client already exists."""
+
+        client = self._client
+        return getattr(client, name, None) if client is not None else None
+
 
 __all__ = ["DeferredAgentClient"]

@@ -19,6 +19,7 @@
 - `app.app_info.get` 的 Agent owner card 按 CLI/SDK 输入对象暴露 `url` 模板；Plan `run` node 仍由 `request.inputs` 承载该对象。
 - recognizer 的零候选词法恢复保留原评分；只在原评分弃权且索引内证据足量、唯一并明显领先近邻时选择 owner，索引外填充词不单独构成召回依据。
 - recognizer 只对显式协调结构拆分多意图；中文成对 `既…也/又…`、保留右侧名词的 `和其他` 及 `和…一起/一并` 可由各子句独立 owner 组成精确 selector 集，已登记 unavailable gap 仍作为同次交接附件返回。
+- `report.get.query` 的 Agent owner card 暴露合同派生的顶层 raw 输入模板与完整 compact input schema，并优先于同 selector 的 generic operation card。
 - 业务语义、活动绑定和派生公式属于调用项目，不进入 SDK。
 - 读取共享全局有界并发预算；不叠加 adapter 私有线程池或增加请求总量。
 - 未登记字段、破坏性响应漂移、身份/权限不确定和不完整分页 fail closed。

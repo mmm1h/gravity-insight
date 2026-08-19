@@ -9,6 +9,7 @@ from typing import Any
 
 from .agent_capabilities import composite_capability_inventory
 from .agent_catalog_parity import validate_catalog_parity
+from .agent_operation_contract import operation_contract_overlay
 from .agent_product_inventory import canonical_capability_cards
 from .agent_sources import describe_operation_cards
 from .agent_unavailable import registered_unavailable_gaps
@@ -273,33 +274,10 @@ def _capability_for_item(item: Mapping[str, Any], client: Any) -> dict[str, Any]
     card = copy.deepcopy(item["card"])
     operation = item.get("operation")
     if isinstance(operation, Mapping) and operation.get("operation_id"):
-        card.update(_contract_overlay(client, operation, card.get("input_schema")))
+        card.update(
+            operation_contract_overlay(client, operation, card.get("input_schema"))
+        )
     return card
-
-
-def _contract_overlay(
-    client: Any, operation: Mapping[str, Any], extra: Any
-) -> dict[str, Any]:
-    contract = describe_operation_cards(client, [operation])[0]
-    fields = dict(contract.get("input_schema") or {})
-    if isinstance(extra, Mapping):
-        for name, spec in extra.items():
-            current = fields.get(str(name))
-            fields[str(name)] = {**(current if isinstance(current, Mapping) else {}), **dict(spec)}
-    return {
-        "input_schema": fields,
-        "required_inputs": list(
-            contract.get("required_inputs") or ()
-        ),
-        "required_parent_operations": list(
-            contract.get("required_parent_operations") or ()
-        ),
-        "pagination": dict(contract.get("pagination") or {"supported": False}),
-        "stability": contract.get("stability"),
-        "platform": contract.get("platform"),
-        "effect": contract.get("effect", "read"),
-        "executable": bool(contract.get("executable", True)),
-    }
 
 
 def _summary(item: Mapping[str, Any]) -> dict[str, Any]:
