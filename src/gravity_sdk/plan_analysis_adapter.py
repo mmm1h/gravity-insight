@@ -7,6 +7,7 @@ from collections.abc import Mapping
 from dataclasses import replace
 from typing import Any
 
+from .analysis_interpretation import attach_analysis_interpretation
 from .analysis_spec import (
     ANALYSIS_QUERY_OPERATIONS,
     compile_query_spec,
@@ -71,6 +72,7 @@ _SAFE_ENVELOPE_FIELDS = frozenset(
         "windows",
         "delta",
         "next_action",
+        "interpretation",
     }
 )
 _SAFE_ERROR_FIELDS = frozenset(
@@ -80,11 +82,13 @@ _SAFE_ERROR_FIELDS = frozenset(
         "field",
         "retryable",
         "retry_after_ms",
+        "message",
+        "next_action",
     }
 )
-_BREAKING_STATUSES = frozenset(
-    {"contract_changed", "upstream_changed", "error", "failed", "unavailable"}
-)
+_DRIFT_STATUSES = frozenset({"contract_changed", "upstream_changed"})
+_RUNTIME_FAILURE_STATUSES = frozenset({"error", "failed", "unavailable"})
+_BREAKING_STATUSES = _DRIFT_STATUSES | _RUNTIME_FAILURE_STATUSES
 
 
 def validate_analysis_query_plan(
@@ -268,7 +272,9 @@ def execute_analysis_query_plan(
                 request.get("kind"), request.get("spec"), **options
             )
     return safe_analysis_envelope(
-        result,
+        attach_analysis_interpretation(
+            result, request.get("kind"), request.get("spec")
+        ),
         expected_operation=expected_operation,
     )
 
@@ -300,30 +306,49 @@ def safe_analysis_envelope(
         selected["operation_id"] = expected_operation
         selected["error"] = _safe_drift_error(selected, "contract_changed")
         return selected
-    if status in _BREAKING_STATUSES:
+    if status in _DRIFT_STATUSES:
         selected["ok"] = False
         selected["status"] = status
         selected["data"] = {}
         selected["error"] = _safe_drift_error(result, status)
         return selected
+    if status in _RUNTIME_FAILURE_STATUSES:
+        selected["ok"] = False
+        selected["status"] = status
+        selected["data"] = {}
+        selected["error"] = _safe_runtime_error(result)
+        return selected
     error = result.get("error")
     if isinstance(error, Mapping):
-        selected["error"] = {
-            key: copy.deepcopy(value)
-            for key, value in error.items()
-            if key in _SAFE_ERROR_FIELDS
-        }
+        selected["error"] = _copy_safe_error(error)
+    return selected
+
+
+def _copy_safe_error(error: Mapping[str, Any]) -> dict[str, Any]:
+    return {
+        key: copy.deepcopy(value)
+        for key, value in error.items()
+        if key in _SAFE_ERROR_FIELDS
+    }
+
+
+def _safe_runtime_error(result: Mapping[str, Any]) -> dict[str, Any]:
+    error = result.get("error")
+    selected = _copy_safe_error(error) if isinstance(error, Mapping) else {}
+    selected.setdefault("category", "upstream")
+    selected.setdefault("code", "PLAN_ADAPTER_FAILED")
+    selected.setdefault("message", "Plan adapter reported a failure.")
+    selected.setdefault(
+        "next_action",
+        "Inspect the failed node error, then retry after Gravity is available.",
+    )
     return selected
 
 
 def _safe_drift_error(result: Mapping[str, Any], status: str) -> dict[str, Any]:
     error = result.get("error")
     if isinstance(error, Mapping):
-        selected = {
-            key: copy.deepcopy(value)
-            for key, value in error.items()
-            if key in _SAFE_ERROR_FIELDS
-        }
+        selected = _copy_safe_error(error)
         if selected:
             selected["message"] = "The Analysis response no longer matches its governed contract."
             selected["next_action"] = (

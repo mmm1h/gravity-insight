@@ -8,13 +8,19 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Any
 
 from .errors import (ErrorCategory, ErrorDetail, GravityInsightError,
-                     InputValidationError, exit_code_for_error)
+                     InputValidationError)
 from .plan import (
     MAX_EXPANDED_NODES, MAX_WORKERS, NODE_KINDS, RESULT_SCHEMA_VERSION,
     AdapterContext, PlanAdapter, PlanAdapters, PlanNode, ValidatedPlan,
 )
 from .plan_binding import prepare_executions, validate_json
 from .plan_budget import PlanConcurrencyBudget
+from .plan_error import (
+    category_action,
+    detail_exit_code,
+    safe_detail,
+    safe_native_error,
+)
 from .result_source import aggregate_result_sources, plan_result_source
 from .plan_validation import bounded_int, validate_plan
 
@@ -319,37 +325,6 @@ def preserved_partial_result(
     return selected
 
 
-def safe_native_error(result: Mapping[str, Any]) -> ErrorDetail:
-    candidates: list[Any] = [result.get("error")]
-    nested = result.get("result")
-    if isinstance(nested, Mapping):
-        candidates.append(nested.get("error"))
-    candidate = next((item for item in candidates if isinstance(item, Mapping)), None)
-    if candidate is None:
-        return safe_detail("PLAN_ADAPTER_FAILED", ErrorCategory.LOCAL.value)
-    category = normalized_category(candidate.get("category"))
-    code = candidate.get("code")
-    return ErrorDetail.create(
-        str(code) if isinstance(code, str) and code else "PLAN_ADAPTER_FAILED",
-        "Plan adapter reported a failure.",
-        category=category,
-        field=candidate.get("field") if isinstance(candidate.get("field"), str) else None,
-        retryable=candidate.get("retryable") if isinstance(candidate.get("retryable"), bool) else None,
-        retry_after_ms=candidate.get("retry_after_ms") if type(candidate.get("retry_after_ms")) is int else None,
-        next_action=category_action(category, str(code or "")),
-    )
-
-
-def normalized_category(value: Any) -> str:
-    if value in {item.value for item in ErrorCategory}:
-        return str(value)
-    if value in {"input", "authentication"}:
-        return ErrorCategory.CALLER.value
-    if value == "runtime":
-        return ErrorCategory.UPSTREAM.value
-    return ErrorCategory.LOCAL.value
-
-
 def exception_item(
     node: PlanNode,
     execution_id: str,
@@ -369,15 +344,6 @@ def exception_item(
     return result_item(
         node, execution_id, foreach_index, False, "error", detail_exit_code(detail),
         None, detail.to_dict(), [],
-    )
-
-
-def safe_detail(code: str, category: str) -> ErrorDetail:
-    return ErrorDetail.create(
-        code,
-        "Plan adapter failed locally." if category == "local" else "Plan adapter failed.",
-        category=category,
-        next_action=category_action(category, code),
     )
 
 
@@ -510,22 +476,6 @@ def dry_run_result(plan: ValidatedPlan, workers: int) -> dict[str, Any]:
         "exit_code": 0,
         "results": [],
     }
-
-
-def detail_exit_code(detail: ErrorDetail) -> int:
-    return exit_code_for_error(detail)
-
-
-def category_action(category: str, code: str) -> str:
-    if code.startswith("AUTH_") or "AUTH" in code:
-        return "Run `gravity auth status`; refresh or configure credentials, then retry."
-    if code == "CONTRACT_CHANGED":
-        return "Stop automation until the governed contract is re-verified."
-    if category == ErrorCategory.CALLER.value:
-        return "Correct this node request, then retry."
-    if category == ErrorCategory.UPSTREAM.value:
-        return "Retry the failed node after checking Gravity availability and permissions."
-    return "Inspect the controlled adapter and its governed contract before retrying."
 
 
 def result_item_count(value: Any) -> int:

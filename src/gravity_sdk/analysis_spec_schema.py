@@ -20,6 +20,22 @@ SPEC_SCHEMA_VERSION = "gravity-insight.analysis-query-spec.v1"
 ANALYSIS_SPEC_KINDS = frozenset(
     {"event", "funnel", "retention", "property", "scatter"}
 )
+FUNNEL_RESULT_NOTES = {
+    "returns_conversion_rate": False,
+    "count_meaning": (
+        "each step count is the ordered subset that completed "
+        "this step and every earlier step"
+    ),
+    "rate_denominators": {
+        "previous_step": "step_n / step_{n-1}",
+        "first_step": "step_n / step_1",
+    },
+    "denominator_required": (
+        "three or more steps make the two denominators differ; "
+        "the SDK does not choose one or insert a rate"
+    ),
+    "window_funnel_mode": 4,
+}
 
 
 def analysis_query_spec_schema() -> dict[str, Any]:
@@ -68,22 +84,7 @@ def _kind_schemas() -> dict[str, Any]:
                     "window": {"$ref": "#/definitions/funnel_window"},
                     "calculate_each_day": {"type": "boolean", "default": False},
                 },
-                notes={
-                    "returns_conversion_rate": False,
-                    "count_meaning": (
-                        "each step count is the ordered subset that completed "
-                        "this step and every earlier step"
-                    ),
-                    "rate_denominators": {
-                        "previous_step": "step_n / step_{n-1}",
-                        "first_step": "step_n / step_1",
-                    },
-                    "denominator_required": (
-                        "three or more steps make the two denominators differ; "
-                        "the SDK does not choose one or insert a rate"
-                    ),
-                    "window_funnel_mode": 4,
-                },
+                notes=FUNNEL_RESULT_NOTES,
             ),
             "retention": _dated_spec(
                 required=(
@@ -488,4 +489,9 @@ def _enum(*values: str) -> dict[str, Any]:
     return {"type": "string", "enum": list(values)}
 
 
-__all__ = ["ANALYSIS_SPEC_KINDS", "SPEC_SCHEMA_VERSION", "analysis_query_spec_schema"]
+__all__ = [
+    "ANALYSIS_SPEC_KINDS",
+    "FUNNEL_RESULT_NOTES",
+    "SPEC_SCHEMA_VERSION",
+    "analysis_query_spec_schema",
+]

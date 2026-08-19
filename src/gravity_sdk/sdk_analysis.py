@@ -110,6 +110,8 @@ class AnalysisSdkMixin:
                 f"actual value: {actual_value((compare_start, compare_end))}; " + ("compare_start and compare_end must be provided together"),
                 field="compare_start/compare_end",
             )
+        from .analysis_interpretation import attach_analysis_interpretation
+
         if compare_start is not None:
             if output_fields:
                 from .errors import InputValidationError
@@ -120,17 +122,21 @@ class AnalysisSdkMixin:
                 )
             from .analysis_period_compare import compare_analysis_periods
 
-            return compare_analysis_periods(
-                self.insight,
+            return attach_analysis_interpretation(
+                compare_analysis_periods(
+                    self.insight,
+                    kind,
+                    spec,
+                    workspace=self._select_workspace(workspace),
+                    app=app,
+                    current_start=start,
+                    current_end=end,
+                    baseline_start=compare_start,
+                    baseline_end=compare_end,
+                    max_workers=max_workers,
+                ),
                 kind,
                 spec,
-                workspace=self._select_workspace(workspace),
-                app=app,
-                current_start=start,
-                current_end=end,
-                baseline_start=compare_start,
-                baseline_end=compare_end,
-                max_workers=max_workers,
             )
         from .analysis_spec import validate_query_spec
 
@@ -145,12 +151,16 @@ class AnalysisSdkMixin:
         )
         from .result_source import GOVERNED_PRODUCT, add_result_source
 
-        return add_result_source(
-            self.read(
-                compiled.operation_id, compiled.inputs, output_fields=output_fields
+        return attach_analysis_interpretation(
+            add_result_source(
+                self.read(
+                    compiled.operation_id, compiled.inputs, output_fields=output_fields
+                ),
+                GOVERNED_PRODUCT,
+                replace=True,
             ),
-            GOVERNED_PRODUCT,
-            replace=True,
+            compiled.kind,
+            spec,
         )
 
     def prepare_segment_evaluation(
