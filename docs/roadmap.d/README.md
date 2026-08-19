@@ -84,6 +84,7 @@
 - [看板挂载保存分析闭环](kanban-link.md) — 2026-08-19：挂载走 dashboard/edit 整表合并；link/readback/unlink/delete 生产闭环，marker 清零。
 - [Plan 适配器安全实际值](plan-errors.md) — 2026-08-19：Plan B 102→74；全仓 `A1046 / B222 / C0`，未降低质量阈值。
 - [保存分析 config 生成与五类生产闭环](saved-config-gen.md) — 2026-08-19：五类 compact spec 合成 Web config 并完成生产 CRUD；#21 custom-before 仍获 code=2015。
+- [合同词表机械扩展验证](lexicon.md) — 2026-08-19：96 张现有产品卡的额外合同语料未减少 41 个 `no_candidate`，候选实现已撤回。
 
 ## 归档记录
 
