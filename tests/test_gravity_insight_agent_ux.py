@@ -577,6 +577,7 @@ class DiscoveryUxTests(unittest.TestCase):
             "Compare creative results across ad platforms.": "material_performance",
             "Compare campaign performance across ad platforms.": "promotion_performance",
             "读取公司配额消耗趋势": "company_usage",
+            "查某 App 某天的归音表现汇总，不是看配置。": "attribution_performance",
         }
         for query, expected in cases.items():
             with self.subTest(query=query):

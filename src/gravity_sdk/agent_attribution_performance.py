@@ -32,6 +32,9 @@ _BLOCKED = (
     "配置", "映射", "回溯", "规则", "设置", "窗口", "单用户", "用户明细",
     "设备", "导出", "写入", "更新",
 )
+_ATTRIBUTION_OWNER_TYPO = re.compile(
+    r"归音(?=\s*(?:表现|汇总|聚合))"
+)
 
 
 ATTRIBUTION_PERFORMANCE_CAPABILITY: Mapping[str, Any] = {
@@ -75,7 +78,7 @@ ATTRIBUTION_PERFORMANCE_CAPABILITY: Mapping[str, Any] = {
 def attribution_performance_query(query: str) -> bool:
     """Recognize aggregate attribution reads while rejecting config/detail intents."""
 
-    selected = affirmative_intent_text(query)
+    selected = _normalize_attribution_owner(affirmative_intent_text(query))
     if selected in _EXACT:
         return True
     return attribution_performance_intent(query) and not any(
@@ -86,7 +89,7 @@ def attribution_performance_query(query: str) -> bool:
 def attribution_performance_intent(query: str) -> bool:
     """Return positive attribution-performance evidence for conflict routing."""
 
-    selected = affirmative_intent_text(query)
+    selected = _normalize_attribution_owner(affirmative_intent_text(query))
     if selected in _EXACT:
         return True
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
@@ -97,6 +100,12 @@ def attribution_performance_intent(query: str) -> bool:
         term in selected for term in ("汇总", "表现", "聚合", "新增", "激活", "付费")
     )
     return english or chinese
+
+
+def _normalize_attribution_owner(selected: str) -> str:
+    """Normalize the observed typo only inside attribution-performance phrases."""
+
+    return _ATTRIBUTION_OWNER_TYPO.sub("归因", selected)
 
 
 def attribution_performance_input_template() -> dict[str, Any]:
