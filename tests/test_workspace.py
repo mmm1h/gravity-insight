@@ -55,7 +55,7 @@ class WorkspaceTests(unittest.TestCase):
     def setUp(self):
         self._temporary_directory = tempfile.TemporaryDirectory()
         self.addCleanup(self._temporary_directory.cleanup)
-        self.tmp_path = Path(self._temporary_directory.name)
+        self.tmp_path = Path(self._temporary_directory.name).resolve()
 
     def test_no_workspace_falls_back_to_cache_without_creating_it(self):
         start = self.tmp_path / "project" / "nested"

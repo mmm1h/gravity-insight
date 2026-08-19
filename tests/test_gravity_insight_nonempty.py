@@ -178,7 +178,7 @@ class GravityInsightNonemptyTests(unittest.TestCase):
     def setUp(self):
         self._temporary_directory = tempfile.TemporaryDirectory()
         self.addCleanup(self._temporary_directory.cleanup)
-        self.tmp_path = Path(self._temporary_directory.name)
+        self.tmp_path = Path(self._temporary_directory.name).resolve()
 
     def setattr(self, target, name, value):
         patcher = mock.patch(target, new=name) if isinstance(target, str) else mock.patch.object(target, name, new=value)
