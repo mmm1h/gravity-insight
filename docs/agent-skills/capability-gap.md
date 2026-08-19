@@ -10,9 +10,31 @@ gravity agent "<your-query>"
 
 ```json
 {
+  "answerable": [
+    {
+      "catalog_ref": "<str>",
+      "next": {
+        "argv": [
+          "<str>"
+        ]
+      },
+      "query": "<str>"
+    }
+  ],
   "candidates": [],
   "capability_gaps": [
     {
+      "answerable": [
+        {
+          "catalog_ref": "<str>",
+          "next": {
+            "argv": [
+              "<str>"
+            ]
+          },
+          "query": "<str>"
+        }
+      ],
       "code": "<str>",
       "kind": "<str>",
       "next": {
