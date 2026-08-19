@@ -55,11 +55,16 @@ def validate_bilibili_account_performance_plan(
 ) -> None:
     if set(request) != BILIBILI_ACCOUNT_PERFORMANCE_FIELDS:
         raise input_error(
-            "bilibili_account_performance request fields are incomplete or unavailable; must include the required product fields",
+            f"actual value: {actual_value(sorted(request))}; bilibili_account_performance "
+            "request fields are incomplete or unavailable; must include the required product fields",
             "request",
         )
     if request.get("name") != BILIBILI_ACCOUNT_PERFORMANCE_NAME:
-        raise input_error("bilibili_account_performance name is invalid; must match the documented composite name", "name")
+        raise input_error(
+            f"actual value: {actual_value(request.get('name'))}; "
+            "bilibili_account_performance name is invalid; must match the documented composite name",
+            "name",
+        )
     validate_exact_targets(context, _TARGETS)
     _validate_dates(request, set(context.dynamic_targets))
     if context.max_items < 1:
@@ -102,7 +107,9 @@ def execute_bilibili_account_performance_plan(
     )
     if product_item_count(safe) > context.max_items:
         raise input_error(
-            "bilibili_account_performance exceeded its Plan item budget; must stay at or below this node max_items; raise limits.max_items",
+            f"actual value: {actual_value((product_item_count(safe), context.max_items))}; "
+            "bilibili_account_performance exceeded its Plan item budget; must stay at or below "
+            "this node max_items; raise limits.max_items",
             "limits.max_items",
         )
     data = safe.get("data")

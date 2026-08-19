@@ -28,7 +28,9 @@ def validate_advertiser_profile_plan(
 ) -> None:
     if set(request) - ADVERTISER_PROFILE_FIELDS:
         raise input_error(
-            "advertiser_profile request contains an unknown field; must use only declared fields; remove extras", "request"
+            f"actual value: {actual_value(sorted(set(request) - ADVERTISER_PROFILE_FIELDS))}; "
+            "advertiser_profile request contains an unknown field; must use only declared fields; remove extras",
+            "request",
         )
     validate_exact_targets(context, _TARGETS)
     dynamic = set(context.dynamic_targets)

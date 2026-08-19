@@ -29,19 +29,31 @@ def validate_receipt_query(
 ) -> None:
     selected = _dynamic_request(request, context)
     if context.output_fields:
-        raise _input("receipt_query does not support output_fields; must omit output_fields", "output_fields")
+        raise _input(
+            f"actual value: {actual_value(context.output_fields)}; receipt_query does not "
+            "support output_fields; must omit output_fields",
+            "output_fields",
+        )
     if not isinstance(selected, Mapping):
         raise _input(f"actual value: {actual_value(selected)}; " + ("receipt_query request must be an object"), None)
     unknown = set(selected) - _FIELDS
     if unknown:
-        raise _input("receipt_query request contains unsupported fields; must use only declared fields; remove extras", sorted(unknown)[0])
+        raise _input(
+            f"actual value: {actual_value(sorted(unknown))}; receipt_query request contains "
+            "unsupported fields; must use only declared fields; remove extras",
+            sorted(unknown)[0],
+        )
     action = selected.get("action")
     allowed = _LIST_FIELDS if action == "list" else _GET_FIELDS if action == "get" else None
     if allowed is None:
         raise _input(f"actual value: {actual_value(selected.get('action'))}; " + ("receipt_query action must be list or get"), "action")
     extra = set(selected) - allowed
     if extra:
-        raise _input("receipt_query action contains unsupported fields; must use only declared fields; remove extras", sorted(extra)[0])
+        raise _input(
+            f"actual value: {actual_value(sorted(extra))}; receipt_query action contains "
+            "unsupported fields; must use only declared fields; remove extras",
+            sorted(extra)[0],
+        )
     if action == "list":
         _validate_list(selected, context)
         return
@@ -51,7 +63,11 @@ def validate_receipt_query(
 def _validate_list(selected: Mapping[str, Any], context: AdapterContext) -> None:
     limit = selected.get("limit", min(100, context.max_items))
     if type(limit) is not int or not 1 <= limit <= min(1_000, context.max_items):
-        raise _input("receipt_query limit exceeds the node item budget; must stay at or below this node max_items", "limit")
+        raise _input(
+            f"actual value: {actual_value((limit, context.max_items))}; receipt_query limit "
+            "exceeds the node item budget; must stay at or below this node max_items",
+            "limit",
+        )
     for field in ("cursor", "operation_id"):
         if selected.get(field) is not None and not isinstance(selected[field], str):
             raise _input(f"actual value: {actual_value(selected[field])}; " + (f"receipt_query {field} must be a string"), field)
@@ -93,7 +109,11 @@ def _dynamic_request(
     selected = copy.deepcopy(dict(request))
     for target in context.dynamic_targets:
         if target not in _TARGETS:
-            raise _input("receipt_query binding target is unsupported; must stay inside the adapter contract; remove extras", "bindings")
+            raise _input(
+                f"actual value: {actual_value(target)}; receipt_query binding target is "
+                "unsupported; must stay inside the adapter contract; remove extras",
+                "bindings",
+            )
         sentinel = (
             "0" * 32
             if target.endswith("receipt_id")

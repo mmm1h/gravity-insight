@@ -20,8 +20,8 @@ class ActionableErrorAuditTests(unittest.TestCase):
         rows = inventory(ROOT / "src" / "gravity_sdk")
         counts = Counter(item["grade"] for item in rows)
         assert len(rows) == 1268
-        assert counts["A"] == 1046
-        assert counts["B"] == 222
+        assert counts["A"] == 1106
+        assert counts["B"] == 162
         assert counts.get("C", 0) == 0
         assert sum(counts.values()) == len(rows)
 
