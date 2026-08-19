@@ -103,12 +103,14 @@ SAVED_ANALYSIS_CAPABILITY: Mapping[str, Any] = {
     "description": (
         "按稳定 ID 或精确名称解析保存分析，严格复用已证明的 event、funnel、"
         "retention、property、scatter 编译器，并在显式日期窗内准备或运行；"
+        "目录候选只用于选择，replay 资格必须由精确 get/prepare 检查；"
         "只用于保存分析 ID/名称，不用于 template scope + template reference，"
         "也不用于无需保存引用的同 Spec 跨期比较；不解释布局、收藏或权限。"
     ),
     "boundaries": (
         "只用于保存分析 ID/名称，不用于 template scope + template reference，也不用于无需保存引用的同 Spec 跨期比较。",
         "不解释布局、收藏或权限。",
+        "目录中的 replay_status=unchecked 不是执行许可；先精确检查 config。",
     ),
     "required_inputs": ("app", "ref", "start", "end"),
     "input_schema": {

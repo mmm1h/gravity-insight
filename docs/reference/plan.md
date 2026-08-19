@@ -775,7 +775,9 @@ favourite 或权限。多个互不依赖的保存分析应作为同层节点交�
 
 Agent 卡的 request 保留 `app/ref/start/end` 可机械填写槽位且不会自动执行。已有引用和日期窗但
 未知能力时是一次发现加一次 Plan；引用未知时必须先列目录并由调用方选择，因此若还需能力发现
-至少三次。compact definition 旧模式是显式 SDK/CLI 兼容入口，不是 Agent Plan 自动翻译面。
+至少三次。目录候选固定是 `replay_supported=null/replay_status=unchecked`，只用于稳定 ID 选择；
+Plan adapter 只接受 exact prepare/run 返回的 `true/supported` 一致状态，缺失或矛盾时按 contract
+changed 失败。compact definition 旧模式是显式 SDK/CLI 兼容入口，不是 Agent Plan 自动翻译面。
 
 ## Segment Snapshot composite
 

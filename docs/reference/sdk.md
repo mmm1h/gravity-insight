@@ -183,7 +183,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `segment_create_from_rule()` / `segment_create_from_history()` / `segment_create_from_tmp()` | 默认预览，显式确认后从规则、历史版本或临时分群创建带标记分群 |
 | `segment_update()` / `segment_update_rule()` / `segment_refresh()` | 默认预览；执行前读 exact preimage，单次更新且不自动重放 |
 | `segment_delete()` | 默认预览；执行时只删除 detail 读回仍带 SDK 标记的分群 |
-| `saved_analyses()` | 列出一个 App 的安全保存分析身份，不读取 opaque config |
+| `saved_analyses()` | 列出一个 App 的安全保存分析身份，不读取 opaque config；replay 资格固定为 unchecked/null |
 | `get_saved_analysis()` | 按 ID 或精确名称检查 Strict Replay 资格及 window 要求，不返回 config |
 | `prepare_saved_analysis()` | 在显式日期窗内读取 reference Web artifact 并严格编译，不执行最终查询；compact definition 旧模式兼容 |
 | `run_saved_analysis()` | 一次解析并严格复用五类编译器后执行；不猜 Web 配置字段 |
@@ -472,7 +472,11 @@ workspace=None)` 先在已绑定 workspace App 中按稳定 ID 或精确名称�
 `composite:segment_snapshot` 节点，调用方补齐后执行一次 Plan；规则评估仍由
 `segment_evaluate()` 独立处理。
 
-保存分析四个方法都接受 workspace App alias 或正整数。列表只返回受合同允许的身份字段；
+保存分析四个方法都接受 workspace App alias 或正整数。列表返回
+`gravity-insight.saved-analysis-catalog.v2`，只含受合同允许的身份字段；由于没有读取 config，
+`replay_status=unchecked` 且 `replay_supported=null`。调用方必须用精确
+`get_saved_analysis()` 或成功 `prepare_saved_analysis()` 得到确定的 true/false 资格，不能从
+`subject_supported` 推断单条 artifact 可重放。
 公共签名分别为 `saved_analyses(app, *, max_pages=1000, max_items=100000, max_workers=6,
 workspace=None)`，以及 `get_saved_analysis` / `prepare_saved_analysis` / `run_saved_analysis`
 的 `(app, reference, *, start=None, end=None, max_pages=1000, max_items=100000,
@@ -484,7 +488,9 @@ ISO date/timestamp（两端下发且 `end-start` 不超过 90 天），严格复
 编译器；不维护第二套 Web 翻译器，也不解释 template/layout/favourite/权限。按 reference prepare 会读取在线
 目录和详情；Web artifact 缺少 window 时结构化失败，compact reference/公开
 `compile_saved_analysis_definition()` 路径保持旧兼容，
-直接提供本地 definition 才是零网络编译。
+直接提供本地 definition 才是零网络编译。成功 prepare/run 明确返回
+`replay_supported=true` 与 `replay_status=supported`；exact get 对未登记 config 返回
+`false/unsupported`，并保持 config 不外泄。
 
 受治理写方法为 `create_saved_analysis(*, app, name, subject, config, remark="",
 idempotency_key=None, start=None, end=None, execute=False, workspace=None)`、

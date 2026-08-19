@@ -8,7 +8,11 @@ from typing import Any
 from .domains import ANALYSIS_QUERY_OPERATIONS
 from .errors import ContractChangedError, ErrorCategory, exit_code_for_category
 from .runtime import call_read
-from .saved_analysis_support import SUCCESS_STATUSES, safe_query_envelope
+from .saved_analysis_support import (
+    SUCCESS_STATUSES,
+    replay_capability,
+    safe_query_envelope,
+)
 from .result_source import GOVERNED_PRODUCT, result_source
 
 
@@ -80,6 +84,7 @@ def replay_envelope(
         and status in SUCCESS_STATUSES
         and result.get("error") in (None, {})
     )
+    capability = replay_capability("supported")
     return {
         "schema_version": schema_version,
         "result_source": result_source(GOVERNED_PRODUCT),
@@ -90,7 +95,8 @@ def replay_envelope(
         "network_called": True,
         "definition_network_called": definition_network_called,
         "query_executed": True,
-        "saved_analysis": {**metadata, "replay_supported": True},
+        "saved_analysis": {**metadata, **capability},
+        "replay_status": capability["replay_status"],
         "artifact_mode": compiled.artifact_mode,
         "kind": compiled.kind,
         "operation_id": compiled.operation_id,

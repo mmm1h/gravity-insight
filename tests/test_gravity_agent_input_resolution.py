@@ -150,6 +150,8 @@ class AgentInputResolutionTests(unittest.TestCase):
                 )
                 self.assertTrue(catalog["complete"])
                 self.assertEqual(fields, catalog["catalogs"][0]["two_call_selection_fields"])
+                if composite == "saved_analysis":
+                    self.assertIsNone(catalog["catalogs"][0]["items"][0]["replay_supported"])
 
     def test_explicit_refresh_closes_a_missing_local_catalog_in_first_call(self) -> None:
         missing = {"candidates": [{"kind": "analysis_task", "catalog_missing": True}]}

@@ -45,6 +45,7 @@ from .saved_analysis_support import (
     SUBJECT_KINDS,
     bounds,
     normalize_definition,
+    replay_capability,
     require_one_source,
     safe_metadata,
     selected_workspace as _select_workspace,
@@ -139,7 +140,7 @@ def _inspection_envelope(
     replay_status = str(inspection["replay_status"])
     metadata = {
         **metadata,
-        "replay_supported": replay_status == "supported",
+        **replay_capability(replay_status),
     }
     next_action = (
         "Prepare or execute this saved Analysis by the same explicit reference."
@@ -401,6 +402,7 @@ def _prepare_definition(
             ),
         }
     metadata = safe_metadata(definition, app_id=app)
+    capability = replay_capability("supported")
     return {
         "schema_version": PREVIEW_SCHEMA_VERSION,
         "result_source": result_source(GOVERNED_PRODUCT),
@@ -411,7 +413,8 @@ def _prepare_definition(
         "network_called": network_called,
         "definition_network_called": network_called,
         "query_executed": False,
-        "saved_analysis": {**metadata, "replay_supported": True},
+        "saved_analysis": {**metadata, **capability},
+        "replay_status": capability["replay_status"],
         "artifact_mode": preview["artifact_mode"],
         "kind": preview["kind"],
         "operation_id": preview["operation_id"],
