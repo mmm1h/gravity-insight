@@ -8,6 +8,7 @@ from typing import Any
 
 from .plan import AdapterContext
 from .plan_adapter_support import has_dynamic, input_error
+from .actionable_error_values import actual_value
 from . import plan_metadata_sync_adapter as metadata_sync_plan
 
 
@@ -48,10 +49,10 @@ def validate_fixed_composite(
         validate_attribution_user_detail_plan(request, context, context.workspace)
         return
     if set(request) - {"name", "app"}:
-        raise input_error("composite request must use only fields available for this name; remove extras", "request")
+        raise input_error(f"actual value: {actual_value(sorted(set(request) - {'name', 'app'}))}; composite request must use only fields available for this name; remove extras", "request")
     if context.max_items < _REQUIRED_ITEMS[name]:
         raise input_error(
-            "composite fixed sources exceed this node max_items; must stay at or below this node max_items; raise limits.max_items", "limits.max_items"
+            f"actual value: {actual_value((_REQUIRED_ITEMS[name], context.max_items))}; composite fixed sources exceed this node max_items; must stay at or below this node max_items; raise limits.max_items", "limits.max_items"
         )
     if not has_dynamic(context, "/app"):
         context.workspace.resolve_app(request.get("app"))

@@ -12,6 +12,7 @@ from .plan_adapter_support import (
     validate_exact_targets,
     validate_selected_fields,
 )
+from .actionable_error_values import actual_value
 
 
 MONETIZATION_DETAIL_NAME = "monetization_detail"
@@ -47,11 +48,11 @@ def validate_monetization_detail_plan(
 
     if set(request) != REQUEST_FIELDS:
         raise input_error(
-            "monetization_detail request fields are incomplete or unavailable; must include the required product fields",
+            f"actual value: {actual_value(sorted(request))}; monetization_detail request fields are incomplete or unavailable; must include the required product fields",
             "request",
         )
     if request.get("name") != MONETIZATION_DETAIL_NAME:
-        raise input_error("monetization_detail name is invalid; must match the documented composite name", "name")
+        raise input_error(f"actual value: {actual_value(request.get('name'))}; monetization_detail name is invalid; must match the documented composite name", "name")
     validate_exact_targets(context, _TARGETS)
     _validate_bound_request(request, set(context.dynamic_targets), workspace, context)
     validate_selected_fields(context.output_fields, OUTPUT_FIELDS, "output_fields")
@@ -81,7 +82,7 @@ def execute_monetization_detail_plan(
         )
     except (KeyError, TypeError, ValueError):
         raise input_error(
-            "monetization_detail bound request is invalid; must pass product validation", "request"
+            f"actual value: {actual_value(sorted(request))}; monetization_detail bound request is invalid; must pass product validation", "request"
         ) from None
     result = sdk.monetization_detail(
         request["app"],
@@ -101,7 +102,7 @@ def execute_monetization_detail_plan(
     )
     if monetization_detail_item_count(safe) > context.max_items:
         raise input_error(
-            "monetization_detail exceeded its Plan item budget; must stay at or below this node max_items; raise limits.max_items", "limits.max_items"
+            f"actual value: {actual_value((monetization_detail_item_count(safe), context.max_items))}; monetization_detail exceeded its Plan item budget; must stay at or below this node max_items; raise limits.max_items", "limits.max_items"
         )
     if isinstance(safe.get("data"), Mapping):
         safe["data"] = _VerifiedData(safe["data"])
@@ -153,7 +154,7 @@ def _validate_bound_request(
         )
     except (KeyError, TypeError, ValueError):
         raise input_error(
-            "monetization_detail request is invalid; must pass product validation", "request"
+            f"actual value: {actual_value(sorted(request))}; monetization_detail request is invalid; must pass product validation", "request"
         ) from None
 
 
