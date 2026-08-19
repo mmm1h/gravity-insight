@@ -1684,6 +1684,32 @@ class GravityInsightCliTests(unittest.TestCase):
             client.read_calls[0],
         )
 
+    def test_doctor_fails_before_live_client_when_install_is_inconsistent(self):
+        diagnostic = {
+            "status": "fail",
+            "reason_code": "INSTALL_METADATA_VERSION_MISMATCH",
+            "message": "metadata and source versions differ",
+            "next_action": "Run reinstall_commands in order.",
+            "reinstall_commands": ["python -m pip install -e ."],
+        }
+        stderr = io.StringIO()
+        with (
+            patch(
+                "gravity_sdk.doctor_cli.inspect_install_consistency",
+                return_value=diagnostic,
+            ),
+            patch("gravity_sdk.cli.runtime.build_client") as client_factory,
+            contextlib.redirect_stderr(stderr),
+        ):
+            self.assertEqual(4, cli.main(["doctor", "--live"]))
+        result = json.loads(stderr.getvalue())
+        self.assertEqual(
+            "INSTALL_METADATA_VERSION_MISMATCH", result["reason_code"]
+        )
+        self.assertFalse(result["network_called"])
+        self.assertEqual(diagnostic, result["installation"])
+        client_factory.assert_not_called()
+
     def test_json_boundary_preserves_business_fields_and_scrubs_credentials(self):
         jwt = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmaXh0dXJlIn0.signature"
         output = io.StringIO()
