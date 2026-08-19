@@ -72,6 +72,21 @@ class AgentLexicalRetrievalTests(unittest.TestCase):
             {match.document.selector for match in multiple.matches},
         )
 
+    def test_verbose_paraphrase_rescue_requires_clear_indexed_evidence(self) -> None:
+        selected = retrieve_registered_products(
+            "帮忙还原某位用户一天内的画像、时间线和回传，账号与日期稍后提供。",
+            composite_inventory=self.inventory,
+        )
+        self.assertEqual("composite:user_journey", selected.matches[0].document.selector)
+        self.assertEqual("selected", selected.receipt()["indexed_rescue"]["reason"])
+
+        adjacent = retrieve_registered_products(
+            "那个页面里保存的筛选和收藏内容，其他细节随后再确认。",
+            composite_inventory=self.inventory,
+        )
+        self.assertEqual("below_threshold", adjacent.disposition)
+        self.assertNotEqual("selected", adjacent.receipt()["indexed_rescue"]["reason"])
+
     def test_high_confidence_product_card_is_not_handed_off(self) -> None:
         result = discover_capabilities(
             "custom audience status", client=self.client, limit=5

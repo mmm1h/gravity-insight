@@ -16,6 +16,7 @@
 - Insight-first；SQL 只执行 workspace 已登记产品。
 - 调用方能选择目录时使用 host catalog；没有 selection 时 recognizer 保持离线地板。
 - `app.app_info.get` 的 Agent owner card 按 CLI/SDK 输入对象暴露 `url` 模板；Plan `run` node 仍由 `request.inputs` 承载该对象。
+- recognizer 的零候选词法恢复保留原评分；只在原评分弃权且索引内证据足量、唯一并明显领先近邻时选择 owner，索引外填充词不单独构成召回依据。
 - 业务语义、活动绑定和派生公式属于调用项目，不进入 SDK。
 - 读取共享全局有界并发预算；不叠加 adapter 私有线程池或增加请求总量。
 - 未登记字段、破坏性响应漂移、身份/权限不确定和不完整分页 fail closed。

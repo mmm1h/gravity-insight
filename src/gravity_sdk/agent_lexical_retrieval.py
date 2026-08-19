@@ -14,10 +14,11 @@ from typing import Any
 from .agent_app_catalog import APP_CATALOG_SELECTOR
 from .agent_app_public_info import APP_PUBLIC_INFO_SELECTOR
 from .agent_export import MATERIAL_EXPORT_OPERATION
+from .agent_lexical_rescue import indexed_evidence_rescue, query_top_score
 from .agent_monetization_aggregate import MONETIZATION_AGGREGATE_SELECTOR
 
 
-ALGORITHM = "idf_weighted_term_coverage.v1"
+ALGORITHM = "idf_weighted_term_coverage.v2"
 MINIMUM_SCORE = 0.300
 MINIMUM_MATCHED_TERMS = 2
 
@@ -69,6 +70,7 @@ class LexicalDecision:
     disposition: str
     threshold: float
     top_score: float
+    indexed_rescue: Mapping[str, Any] | None = None
 
     def receipt(self) -> dict[str, Any]:
         return {
@@ -77,6 +79,7 @@ class LexicalDecision:
             "minimum_score": self.threshold,
             "minimum_matched_terms": MINIMUM_MATCHED_TERMS,
             "top_score": self.top_score,
+            **({"indexed_rescue": dict(self.indexed_rescue)} if self.indexed_rescue else {}),
             "matches": [
                 {
                     "selector": item.document.selector,
@@ -166,16 +169,24 @@ def retrieve_registered_products(
     scored = _matches_at_threshold(
         documents, query_terms, document_terms, idf, denominator, threshold
     )
+    rescue = None
+    if not scored:
+        rescue = indexed_evidence_rescue(documents, query_terms, document_terms, idf)
+        if rescue.match is not None:
+            scored = [LexicalMatch(*rescue.match)]
     scored.sort(key=lambda item: (-item.score, item.document.selector, item.document.identity))
     disposition = (
         "below_threshold" if not scored
         else "single_match" if len(scored) == 1
         else "multiple_matches"
     )
-    top_score = scored[0].score if scored else _top_score(
+    top_score = scored[0].score if scored else query_top_score(
         query_terms, documents, document_terms, idf, denominator
     )
-    return LexicalDecision(tuple(scored), disposition, threshold, top_score)
+    return LexicalDecision(
+        tuple(scored), disposition, threshold, top_score,
+        rescue.receipt() if rescue is not None else None,
+    )
 
 
 def _workspace_decision(
@@ -535,23 +546,6 @@ def _terms(value: str) -> frozenset[str]:
 
 def _unseen_idf(document_count: int) -> float:
     return math.log(document_count + 1) + 1.0
-
-
-def _top_score(
-    query_terms: frozenset[str],
-    documents: Sequence[LexicalDocument],
-    document_terms: Mapping[str, frozenset[str]],
-    idf: Mapping[str, float],
-    denominator: float,
-) -> float:
-    if not denominator:
-        return 0.0
-    scores = [
-        sum(idf[term] for term in query_terms if term in document_terms[item.identity])
-        / denominator
-        for item in documents
-    ]
-    return round(max(scores, default=0.0), 6)
 
 
 __all__ = [
