@@ -40,6 +40,19 @@ REVIEWED_READ_REJECTION_PREFIXES: tuple[tuple[str, str, str], ...] = (
         "the same group_by_list",
     ),
 )
+# Upstream sends the sentence above even when create_time/day IS present, once
+# query_item_before_after carries a before_custom. Telling that caller to add the
+# group loops them through work they already did, so the remedy has to split on
+# what was actually sent. See issue #21; the correct wire shape for a custom
+# before cohort is not established offline and needs one production request.
+_CUSTOM_BEFORE_UNRESOLVED = (
+    "actual value: group_by_list already contains create_time/day and the request "
+    "still carries query_item_before_after.before_custom; allowed next action: do "
+    "NOT re-add the group and do not retry the same request unchanged -- this "
+    "combination is a known unresolved upstream contract gap (issue #21). Drop "
+    "before_custom to confirm the plain retention path still succeeds, and report "
+    "the pair to the SDK maintainer rather than guessing another group_by_list"
+)
 
 _FALLBACK_MESSAGE = "Gravity rejected the read operation"
 _RETENTION_QUERY = ANALYSIS_QUERY_OPERATIONS["retention"]
@@ -65,6 +78,8 @@ def classify_read_rejection(
     reviewed = _reviewed_remedy(extra_error)
     if reviewed is not None:
         field, next_action = reviewed
+        if field == "group_by_list" and _custom_before_already_grouped(request_inputs):
+            next_action = _CUSTOM_BEFORE_UNRESOLVED
         return (
             field,
             f"Gravity rejected the read operation; classified extra.error={field}",
@@ -106,6 +121,28 @@ def _reviewed_remedy(extra_error: str) -> tuple[str, str] | None:
         if extra_error.startswith(prefix):
             return field, next_action
     return None
+
+
+def _custom_before_already_grouped(
+    request_inputs: Mapping[str, Any] | None
+) -> bool:
+    """True when the caller already sent the group upstream claims is missing."""
+
+    if not request_inputs:
+        return False
+    before_after = request_inputs.get("query_item_before_after")
+    if not isinstance(before_after, Mapping):
+        return False
+    custom = before_after.get("before_custom")
+    if not isinstance(custom, Mapping) or not custom:
+        return False
+    groups = request_inputs.get("group_by_list")
+    if not isinstance(groups, (list, tuple)):
+        return False
+    return any(
+        isinstance(item, Mapping) and item.get("field") == "create_time"
+        for item in groups
+    )
 
 
 def _extra_error_text(payload: Mapping[str, Any]) -> str:

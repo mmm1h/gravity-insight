@@ -59,6 +59,7 @@
       },
       "query_item_before_after": {
         "default": {},
+        "max_depth": 7,
         "type": "object"
       },
       "query_item_list": {
