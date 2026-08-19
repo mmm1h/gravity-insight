@@ -98,6 +98,8 @@ class AnalysisDefaultDictionaryTests(unittest.TestCase):
 
         card = discover_capabilities("查询分析默认值字典", client=object(), limit=1)["candidates"][0]
         self.assertEqual("composite:analysis_default_dictionary", card["selector"])
+        typo_card = discover_capabilities("分析默人值字典", client=object(), limit=1)["candidates"][0]
+        self.assertEqual(card["selector"], typo_card["selector"])
         self.assertEqual("gravity.agent-call-bound.v1", card["call_bound"]["schema_version"])
         self.assertEqual(request, card["plan_node"]["request"] | {"app": "main"})
 
