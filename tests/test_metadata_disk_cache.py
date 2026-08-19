@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import dataclasses
+import json
+import pickle
 import tempfile
 import unittest
 from pathlib import Path
 
-from gravity_sdk import credentials as credentials_module
+from gravity_sdk import cache_disk, credentials as credentials_module
 from gravity_sdk.cache import MetadataCache
 from gravity_sdk.client import GravityInsightClient
 from gravity_sdk.credentials import DEFAULT_ENV_PATH, CredentialProvider
@@ -17,6 +20,23 @@ from gravity_sdk.runtime_scope import (
     field_policy_cache_dir,
     operation_catalog_state_path,
 )
+
+
+_EXECUTED: list[str] = []
+
+
+def _detonate(token: str) -> str:
+    """Module-level so pickle stores it by name and really calls it back."""
+
+    _EXECUTED.append(token)
+    return token
+
+
+class _Detonator:
+    """Unpickling this runs _detonate; JSON loading cannot run anything."""
+
+    def __reduce__(self):
+        return (_detonate, ("unpickled",))
 
 
 def _write_account(directory: Path, name: str, username: str) -> Path:
@@ -179,3 +199,43 @@ class CredentialDefaultPathTests(unittest.TestCase):
         self.assertEqual(checkout, DEFAULT_ENV_PATH)
         self.assertEqual(checkout, provider.env_path)
         self.assertNotEqual(leaked, DEFAULT_ENV_PATH)
+
+
+class DiskSnapshotFormatTests(unittest.TestCase):
+    """The cache file is attacker-reachable; the process is not."""
+
+    def test_snapshot_is_json_and_a_pickle_payload_is_never_executed(self) -> None:
+        cache = MetadataCache(
+            ["analysis.event.list"], persist=True, persist_scope="format"
+        )
+        cache.get_or_load("analysis.event.list", {"page": 1}, lambda: _result("first"))
+        directory = field_policy_cache_dir("format")
+        written = sorted(directory.glob("*"))
+        self.assertEqual(1, len(written), written)
+        self.assertEqual(".json", written[0].suffix)
+        decoded = json.loads(written[0].read_text(encoding="utf-8"))
+        self.assertEqual("gravity.field-policy-cache.v1", decoded["schema"])
+
+        # A pickle that would run code on load must be inert here.
+        marker: list[str] = []
+        _EXECUTED.clear()
+        written[0].write_bytes(pickle.dumps(_Detonator()))
+        replay = MetadataCache(
+            ["analysis.event.list"], persist=True, persist_scope="format"
+        ).get_or_load(
+            "analysis.event.list", {"page": 1}, lambda: _result("reloaded")
+        )
+        self.assertEqual([], _EXECUTED, "cache file must never be unpickled")
+        self.assertEqual("reloaded", replay.items[0]["name"])
+        self.assertEqual([], marker)
+
+    def test_read_result_survives_the_json_round_trip_with_field_types(self) -> None:
+        original = _result("round-trip")
+        restored = cache_disk._decode(cache_disk._encode(original))
+        self.assertEqual(original, restored)
+        for item in dataclasses.fields(ReadResult):
+            self.assertEqual(
+                type(getattr(original, item.name)),
+                type(getattr(restored, item.name)),
+                f"{item.name} changed type across the round trip",
+            )
