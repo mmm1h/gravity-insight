@@ -50,8 +50,8 @@ pending/failure，且抓取期间入口 HTML 稳定；它不表示平台、租�
 - “未出现”只能解释为“该范围内未观察到”，范围外未知。
 
 覆盖率可用于同一 snapshot 内的合同对账和漂移比较，不能用于声称“平台只有这些路由”或
-“某能力不存在”。完整审计与推荐措辞见
-[Census 完整性与分母审计](../research/census-completeness-audit.md)。
+“某能力不存在”。完整审计与推荐措辞见归档的
+[Census 完整性与分母审计](../archive/research/census-completeness-audit.md)。
 
 - 已登记 stable：仍需关注响应字段和上游 hash 漂移；
 - draft：只有静态证据，不代表差一次 probe 就能开放；

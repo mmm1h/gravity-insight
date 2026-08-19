@@ -1,342 +1,83 @@
 # 架构与概念
 
-## 产品定位
+Gravity SDK 是合同执行核，不是 Web 自动化层。它把固定上游路径、请求绑定、响应投影、分页、隐私、错误和证据编译成可由 CLI、SDK、Plan 与 Agent 共用的产品面。
 
-Gravity SDK 是数据分析团队共用的 **Python SDK + Agent 优先 CLI**。两种入口共享同一套
-operation 合同、认证、运行时、分页、并发、投影和错误语义：CLI 适合 Agent、终端和流水线，
-Python API 适合长期服务和组合逻辑。
+## 产品边界
 
-它不是通用 HTTP 客户端，也不是业务知识库。调用项目负责“活动、SKU、业务模块、时间窗”
-等业务语义；本项目负责把 Gravity 的物理能力变成稳定、可发现、可校验的原子操作。
+- SDK 拥有物理数据合同、执行纪律和机器可判定结果。
+- 调用项目拥有业务词、活动/SKU、App alias、时间窗和派生公式。
+- Gravity Web 只用于受控取证，不是运行时依赖。
+- Stable 产品可执行；draft 和 gap 只描述缺失证据，不提供旁路。
 
-```mermaid
-flowchart LR
-    caller["分析师 / Agent / 调用项目"]
-    cli["CLI 入口\nagent | run | plan | analysis | apps | attribution"]
-    sdk["Python 入口\nGravitySDK / connect"]
-    catalog["一次离线目录快照\nWorkspace | operation | SQL product | metadata"]
-    plan["Plan v1\n离线预检 → DAG ready queue → 全局 worker pool"]
-    run["run adapter\noperation / @recipe"]
-    sqlproduct["sql_product adapter\n已登记 workspace product"]
-    metadata["metadata_search adapter\n本地 SQLite catalog"]
-    composite["composite adapter\n登记组合能力"]
-    result["保序结果\n局部失败隔离 | ErrorDetail | 统一退出码"]
-    runtime["共享 HTTP Runtime\n认证 single-flight | 限流 | 重试 | 并发槽"]
-    gravity["固定 Gravity host / path / method"]
+## 三条调用路径
 
-    caller --> cli
-    caller --> sdk
-    cli --> catalog
-    sdk --> catalog
-    catalog --> plan
-    cli -->|"已知 selector 的单查询"| run
-    sdk -->|"read / run / composite"| run
-    plan --> run
-    plan --> sqlproduct
-    plan --> metadata
-    plan --> composite
-    run --> runtime
-    sqlproduct --> runtime
-    composite --> runtime
-    metadata --> result
-    runtime --> gravity
-    run --> result
-    sqlproduct --> result
-    composite --> result
-```
+### 精确执行
 
-这张图描述的是同一产品的两个入口，不是两套实现。CLI 负责文件/stdin、机器输出和退出码；
-SDK 负责进程内复用。二者最终使用同一 operation 合同、Workspace、Plan 预检、adapter、分页和
-错误合同。Plan 也不是任意工作流框架：它只编排四种登记节点，不支持裸 SQL、任意 HTTP、
-Python、表达式、join/reduce、条件循环、暂停恢复或分布式队列。
+调用方已知产品、recipe 或 operation，直接由 CLI/SDK 进入 resolver，完成 workspace 绑定、输入校验、合同执行和结果封装。
 
-## 运行时边界
+### 渐进发现
 
-| 层 | 负责 | 不负责 |
-| --- | --- | --- |
-| 调用项目 | 业务实体、指标口径、App/报表绑定、recipe 和 SQL 产品实例 | 猜测上游 URL 或绕过 SDK 策略 |
-| CLI / Python facade | 参数解析、可发现 API、稳定 envelope | 复制一套独立执行逻辑 |
-| Plan v1 | 离线校验依赖和预算、同层并发、受控绑定/扇出、失败隔离和声明顺序输出 | 自然语言自动执行、任意代码和通用工作流语法 |
-| Catalog / Workspace / Resolver | 搜索、描述、绑定、离线校验、父资源诊断、Receipt | 从模糊业务词自动建立事实绑定 |
-| Insight 内核 | operation 授权、请求构建、响应投影、分页和结构化错误 | 任意 host、path、method 或未知字段 |
-| HTTP Runtime | 登录刷新、共享会话、重试、冷却、进程/host 并发 | operation 或业务语义 |
-| Maintainer 工具 | contract 编译、Census、Probe、Evidence 和质量检查 | 普通查询的必经在线链路 |
+`agent-catalog categories → category → describe` 离线提供领域、selector、required inputs、schema 和下一步。调用方能选择时提交 host selection；否则 recognizer 只提供保守候选或结构化弃权。
 
-### 三条真实调用路径
+### 显式 Plan
+
+Plan 把多个已登记产品组织为 versioned DAG。每个节点先验证 kind、request、binding target、effect 和依赖，再在一个全局有界 worker pool 中执行就绪节点。Checkpoint 允许局部恢复，不允许绕过合同重放。
+
+## 合同流水线
 
 ```text
-gravity run / GravityInsightClient.read
-  → OperationCatalog / Registry
-  → PolicyEngine（一次性请求授权）
-  → ReadExecutor（codec、投影、envelope）
-  → Transport
-  → GravityHttpRuntime
-
-gravity plan run / GravitySDK.execute_plan
-  → 全 Plan 离线预检（失败时零网络请求）
-  → DAG ready queue（同层独立节点并发）
-  → run | sql_product | metadata_search | composite adapter
-  → 按声明顺序聚合结果
-
-源 operation JSON
-  → ContractCompiler
-  → manifests/*.json
-  → GravityInsightClient.from_env() 加载
+source contract
+  → deterministic compiler
+  → manifest + provenance
+  → resolver / adapter
+  → executor + pagination
+  → projection + privacy + semantic status
+  → versioned result envelope + receipt
 ```
 
-`operation_id` 是 Insight 的公共接口。固定 host、path、method、输入、响应投影、分页、
-稳定性、隐私和最小 probe 都来自合同；上游版本变化优先由合同或 codec 吸收。
+Source contract 声明固定 host/path/method、输入 schema、分页、响应投影、effect、stability 和证据。Compiler 只做确定性编译；manifest 与 provenance 漂移会使门禁失败。
 
-Python 推荐入口是惰性的 `GravitySDK/connect`。它缓存 Insight 与 SQL 专用 client，直接提供
-`read/read_all/read_many`、组合快照和受控的 `describe_sql_products/query_sql_products`；
-Plan 入口只使用登记 adapter，不自动猜查询通道。裸 SQL 只通过显式的 `sdk.sql` /
-`GravityClient` 使用，不能进入 Agent Plan。
-`GravityInsightClient` 和 `GravityClient` 仍是公开 API，Metadata 与 Census 仍有独立入口。
-详细接口见 [SDK 参考](reference/sdk.md)。
+## Workspace 与 Resolver
 
-## 发现、Workspace 与 Resolver
+Workspace 保存项目意图：App alias、登记 SQL 产品、recipe、参数化 Plan 和调用方语义。它不保存凭据、上游原始响应或任意 SQL。
 
-### 发现优先于读文件
+Resolver 负责把 alias 和模板参数绑定到精确产品。已知输入一次完成；未知能力先发现再执行。父资源、metadata 或 contract fingerprint 变化时重新解析或失败关闭，不沿用猜测值。
 
-Agent 默认用一次离线 `gravity agent <query>` 完成 bounded search + describe，优先返回匹配的
-workspace recipe，并用 stable operation 补足最多 5 张 capability card；每张卡都带必填输入或
-参数、下一条 argv 和可直接放进 Plan 的 `plan_node`。多个问题使用一次
-`gravity agent --input questions.json`，Workspace、operation inventory、SQL product 和 metadata
-catalog 只扫描一次，单项发现失败不会清空其他问题。随后执行一次 `gravity run` 或
-`gravity plan run`。需要浏览完整 catalog 时再用
-`operations search/describe`。完整搜索也会展示 draft/blocked 条目来暴露覆盖缺口；它们不是
-可执行能力。不要读取 manifest 猜字段或把 Census 候选当成合同。
+## 产品与原子 operation
 
-### Workspace 只保存项目意图
+原子 operation 提供最小 wire 合同；产品可以组合多个 operation、并发读取、局部派生和固定诊断。产品卡描述调用方问题、输入、边界和交接，不复制底层执行实现。
 
-`gravity.toml` 可声明 App 别名、默认值、datasource、SQL product 和 recipe。它由调用项目维护，
-SDK 只读加载；实例不会进入 wheel。加载顺序和 schema 见
-[Workspace 参考](reference/workspace.md)。
+新增能力优先复用现有 composite / Plan adapter / Agent card 三面。共享入口接近质量棘轮时增加窄领域 router，不建立通用插件系统。
 
-### Resolver 减少 Agent 往返
+## 并发与请求预算
 
-`gravity run` 把 bind、build、validate、parents、exec、diagnose 合并为一次调用。已知 recipe
-时直接 `gravity run @name`；不需要先机械执行 `recipe check` 和 `validate`。只有返回 stale
-或 diagnostics 要求动作时，再调用对应诊断命令。
+- 全局 pool 约束峰值 in-flight；各 adapter 不再乘并发。
+- 独立读取可并行，父子依赖、写入和生成产物串行。
+- 提高并发不能提高请求总量；分页、重试和 fan-out 都受显式预算约束。
+- 同进程与磁盘 metadata cache 可降低冷启动成本，但 mutation 后失效，身份维度不可共享。
 
-Resolver 的完成路径生成 `gravity.receipt.v1`，写到当前 workspace 的
-`state_root/receipts/`，并在 envelope 中返回持久化状态。Receipt 只有 operation、输入/输出
-形状指纹、合同指纹、状态、耗时和 HTTP 请求数，不含查询值、结果行或凭据。
+## 结果信封
 
-### 已知一次，未知两次
+所有产品返回 versioned envelope，至少能表达：
 
-- 已知 selector 或已经保存 Plan：直接 `gravity run` / `gravity plan run`，一次调用。
-- 未知能力：一次 `gravity agent --input` 批量发现，一次 `gravity plan run`，共两次调用。
-- 自然语言发现只生成候选和 `plan_node`，永不自动联网执行；调用方必须显式选择和执行。
+- success、empty、partial、error 或 capability gap；
+- 解析后的日期窗和结果来源；
+- 分页、截断、组件状态与 receipt；
+- warning、diagnostic、drift audit、interpretation 和 allowed claims。
 
-默认 Agent 仍是离线的。若能力和引用/物理指标同时未知，但 App/平台依赖已知，调用方可显式使用
-`gravity agent <query> --resolve-inputs <known-inputs> --output <catalog.json>`。这次在线调用把 bounded
-能力发现和完整治理目录读取放在同一顶层调用中，不把选择放进执行；调用方按稳定 ID/物理名称精确
-选择后，第二调用走原 composite/Plan 并重新读取引用目录或 live metadata。SDK 同形入口是
-`resolve_capabilities()`。响应声明内部 HTTP 没有减少，只有完整目录会动态降低卡和 Plan 节点的
-`gravity.agent-call-bound.v1` scenario。App/平台也未知时依赖下界不变。
+HTTP 200 只表示传输完成。Semantic status 层负责把上游业务拒绝、合法空和成功数据分开；未审查的上游错误正文不传播给调用方。
 
-冷 metadata/table-lineage catalog 可由同一入口显式指定 `catalog_policy=refresh`。refresh 在 staging
-SQLite 中构建，全部成功才原子替换默认 catalog；失败保留旧快照并终止解析。后续离线结果带
-`synced_at`，是 observed snapshot 而非当前态断言。默认离线发现、直接 sync/list 和执行入口都保留。
+## 写入效果
 
-### 登记组合能力
+Mutation contract 必须逐项登记 effect、owner/marker、preview、单次执行和 readback。预览与执行共享权威输入；执行不自动重试。对象、关联或布局未按预期回读时返回不确定状态，让调用方重新读取。
 
-组合能力解决“同一分析上下文要调用十几条 operation”的重复劳动，同时保留底层原子合同：
+## 数据与隐私
 
-| 组合 | CLI | SDK | 当前固定内容 |
-| --- | --- | --- | --- |
-| Analysis context | `gravity analysis context --app <alias|id>` | `analysis_context()` | event、event property/group、user property、metric、media enum 与 mine/shared/preset template，共 13 个来源 |
-| Derived metrics | `gravity derive --input <request.json>` | `derive_metrics(source, spec)` | 对已有 envelope 执行 caller-bound ratio/share/change/reconcile；纯本地，不维护业务公式 |
-| Dashboard snapshot | `gravity analysis dashboard snapshot --app <alias|id> --ref <id-or-exact-name>` | `dashboard_snapshot()` | 精确解析一个看板后读取 detail、dashboard members、space members、condition favourites 与 default favourite，共 5 个控制面来源；不执行图表 |
-| Dashboard analysis | `gravity analysis dashboard prepare\|run --app ... --ref ... --start ... --end ...` | `prepare_dashboard_analysis()` / `run_dashboard_analysis()` | 静态 Web artifact 编译边界内的 event/funnel/retention/property/scatter chart；按声明序、单图失败隔离 |
-| Saved analysis | `gravity analysis saved prepare\|run\|create\|update\|delete ...` | `prepare_saved_analysis()` / `run_saved_analysis()` / 三个同名 CRUD 方法 | 精确解析或受治理维护一个保存分析；reference Web artifact 与写入定义严格复用五类编译器，写动作必须两步确认且不含 share |
-| Multidim | `gravity multidim query --app <alias\|id> --input <json>` | `multidim_query()` | 闭合物理输入、实时指标校验、有界分页与可选 total；不引入 Spec DSL 或 Web 模板语义 |
-| Material performance | `gravity materials performance --app <alias\|id> --start ... --end ...` | `material_performance()` | 仅组合 stable `material.report.query`，按平台保序聚合原生指标；不做跨平台归一或排名 |
-| Promotion performance | `gravity promotion performance --app <alias\|id> --start ... --end ... --platform ... --metric ...` | `promotion_performance()` | 组合 21 个同构平台的 stable primary operation 与实时物理指标校验；不统一口径或生成策略 |
-| Order directory | `gravity analysis order directory --app <alias\|id> --date ...` | `order_directory()` | 完整有界读取单日普通订单目录；每行严格只含 Amount/BackAmount/Status/CreateTime，不返回任何标识或解释业务状态 |
-| Order split trace | `gravity analysis order trace --app <alias\|id> --date ... --trace-id ...` | `order_split_trace()` | 完整有界扫描单日父订单，按 TraceID 本地精确匹配唯一父行，再严格后置读取拆单明细；结果不含任何标识 |
-| Segment snapshot | `gravity analysis segment snapshot --app <alias|id> --ref <id-or-exact-name> --date <YYYY-MM-DD>` | `segment_snapshot()` | 精确解析一个分群后固定读取 detail、history、daily_result；不返回成员或规则定义 |
-| App snapshot | `gravity apps snapshot --app <alias|id>` | `app_snapshot()` | app detail、realtime event、capacity、permission menu、role、template，共 6 个来源 |
-| Account permission profile | `gravity apps permission-profile` | `account_permission_profile()` | 当前账号角色、权限菜单树和 `data_permission` 模块；不裁剪结果。分群/报表/订阅/变现明细空结果与权限裁剪空集不可区分时，用本产品对照菜单与数据权限模块 |
-| Attribution snapshot | `gravity attribution snapshot --app <alias|id>` | `attribution_snapshot()` | 当前 8 个 stable attribution 配置 operation |
-| Attribution performance | `gravity attribution performance --app <alias|id> --start ... --end ...` | `attribution_performance()` | 同一 stable v1 operation 的四个前端固定画像；一次 bounded batch，明确空与未知语义错误分离 |
-| User journey | `gravity analysis user journey --app ... --client-id ...` | `user_journey()` | 单用户 profile、event timeline、postback 三个受控来源；显式分页 |
+- 请求日志、receipt 和 evidence 只保存结构、计数、指纹与值无关结论。
+- 用户级输出只写调用方指定文件，不进入仓库、日志或模型上下文。
+- 未登记响应字段默认省略并记录 drift；敏感身份、条件值和凭据从错误中清洗。
+- 重要结果在交付前按声明的可加性、第二 route 或 list/export 行数对账。
 
-组合结果按固定来源顺序返回，每个来源带 scope 和 operation identity；局部失败隔离。Dashboard
-snapshot 还会裁掉 detail 中无法证明语义的 opaque config；这些组合不会把 draft operation
-伪装成 stable、自动枚举全部 role detail，或把控制面定义当作图表查询执行。
+## 维护入口
 
-Dashboard analysis 是显式执行产品，不是 Web 页面模拟器。它读取同一稳定目录/详情，把公开静态
-Web artifact 已证明的五类图表配置编译为受治理 operation input；不解释 layout，不应用
-favourite，也不模拟页面级 global filter。已知 App/ref/window 是一次调用；未知时 Agent 给出
-`dashboard_analysis` Plan 节点，调用方补齐再执行，总共两次。自然语言始终停在发现边界。
-
-Saved analysis 的 reference 模式也只消费已登记目录/详情：按稳定 ID 或精确名称解析后，把已证明
-的 Web artifact 交给既有 `event/funnel/retention/property/scatter` 编译器，不维护第二套翻译器。
-CRUD 共用一条 `report_config/update` 物理 operation，并按 `id/is_deleted` 组合区分动作；产品卡按
-create/update/delete 分开，便于 Agent 正确选择和填参。update/delete 的 owner gate、单发 mutation、
-完整 list/detail 写后读回均复用现有治理原语；Plan 不承诺这类人工确认写入。
-Web artifact 的 `prepare/run` 必须显式给出成对日期窗（`end-start` 不超过 90 天）；compact
-reference/definition 仍兼容其原有日期语义。它不复刻 template、layout、favourite、权限或页面状态，Agent 卡也只提供待填写的
-`app/ref/start/end`，绝不从自然语言选择引用或执行查询。
-
-Segment snapshot 同样只组合 stable 只读 operation：先按 ID 或精确名称解析一个分群，再并发读取
-详情、历史版本与指定日期的单日计算结果。它不读取成员、用户标识或规则定义；名称歧义时失败，
-不会选择相似名称或自动执行自然语言请求。
-
-Multidim 不从 Web artifact 编译，也不把物理字段重新命名成另一套 Spec。App 在 input 外显式
-绑定；指标、维度、日期和 filters 都由调用方提供，并在闭合 schema 与实时 metadata 边界内
-fail closed。完整输入直接一次调用；未知入口是一次 Agent 发现加一次 Plan。N 个独立查询是
-一个 Plan 的 N 个同层节点，不新增 batch wrapper。执行请求数为去重 metadata `M` 加 query 页数
-`P`，显式请求 total 时再加一次；模板、布局、收藏、拖拽、权限和业务指标含义均不属于该产品。
-专用 CLI 和 Plan 不再根据 `--app-id` 或缺失 schema version 回退 raw 模式；产品行固定在
-`query.data.list`。精确 `report.multidim.*` operation 仍可由专家通过 `gravity run` 使用，继续遵守
-独立 operation 合同。
-
-Material Performance 每个平台提交一个 stable batch item，多个 App 仅形成同一个 `app_list`。
-HTTP 数为 `Σ P_platform`。direct worker 默认 6、最大 24，实际平台池最多 4；平台内分页固定
-单 worker。共享 item 预算按平台等额 floor 分配且余量不可借用，结果重新计数并对收据 fail closed。
-
-Promotion Performance 只接收一个显式 App、日期窗、21 平台子集和物理指标数组；每个平台一个
-独立 batch item，输出保持平台声明序与原生字段。`bing/xiaohongshu/taptap/wechat_video` 继续使用
-兼容 raw 入口，不被伪装成同构报表；Agent 不选择 App、平台、指标，也不输出排名或投放建议。
-执行请求数不超过 `P` 次平台元数据请求加各平台查询页数 `Σ pages`；固定字段或缓存命中时更少。
-direct 平台池默认 6、上限 24；平台内分页固定 1，Plan adapter 也固定 1，把跨节点并发留给
-Plan 全局池。
-
-Order Directory 只接收一个显式 App 和单日。它用固定 `page_size=100` 完整读取
-`analysis.order_detail.list`，请求字段和结果行都严格限定为
-`Amount/BackAmount/Status/CreateTime`，不接受任意字段、筛选、排序或跨日窗口，也不解释退款、
-净收入或订单成功。有效请求为 `P` 个目录分页；direct 分页 worker 默认 6、上限 24，Plan
-adapter 固定 1。已知输入一次调用，未知入口由 Agent 返回 value-free `order_directory` 节点，
-调用方补齐 `app/date` 后再执行，共两次。
-
-Order Split Trace 只接收一个显式 App、单日和敏感 TraceID。它以已登记静态字段完整读取有界
-父目录，在本地做大小写敏感的精确匹配；零条或多条都不会调用 child。唯一父行的敏感四字段只在
-内存中传给严格后置的 `analysis.order_split_detail.list`，最终只保留
-`Amount/BackAmount/Status/CreateTime`。有效请求为 `P` 个父分页加 1 个 child；direct 父分页
-worker 默认 6、上限 24，Plan adapter 固定 1，`max_items` 由父扫描行与 child 行共享。
-
-### 候选能力不等于已交付能力
-
-当前基线是 226 个 operation、217 个 stable。17 个 Analysis、Report、App 和 Attribution
-候选均已得到明确取证结论；D35 与 F40 已晋升 stable，其余未晋升项保持 `draft`。逐项证据、
-blocker 和下一步最小证据见[候选能力证据矩阵](candidate-capability-matrix.md)。
-`attribution.attribution.query` 与 `attribution.attribution_detail.query` 均已有正式受治理产品面；
-其他候选仍不可作为正式 CLI/SDK 查询能力宣传或执行。
-
-## 查询路由
-
-```mermaid
-flowchart LR
-    q["已解析业务问题"] --> known{"已知 recipe?"}
-    known -->|是| run["gravity run @recipe"]
-    known -->|否| op{"stable Insight 能等价表达?"}
-    op -->|是| insight["Insight operation / batch"]
-    op -->|否| product{"已有受控 SQL product?"}
-    product -->|是| sql["gravity sql query product"]
-    product -->|否| gap["报告能力缺口"]
-```
-
-Insight 即使需要几项并发读取，只要语义等价，仍优先于一条重 SQL。SQL 只用于跨表连接、
-窗口函数、特殊计算或已审核 Evidence 口径；不能表达时应报告缺口，不生成裸 HTTP 请求。
-
-### SQL 的当前边界
-
-SQL 有两层，不能混为一谈：
-
-- `gravity sql query <product>` 是团队产品入口：读取 workspace product，绑定 App/时间窗，
-  限制聚合隐私、投影和行数，并在可用时附加 Evidence reference/warning。
-- `sdk.sql.execute_sql()` / `GravityClient.execute_sql()` 是显式低层 SDK 原语：固定 custom-SQL
-  host、path、method，复用认证并限制并发；当前只校验 SQL 非空，**不检查 workspace 产品
-  登记或 Evidence**。统一 `GravitySDK` 门面只直接提供产品发现与产品查询，不委托裸 SQL。
-
-因此 Agent 默认只能使用第一层的已登记产品。先用 `gravity sql products` 一次发现产品与
-batch 输入合同，已知产品时直接执行 `query`。Evidence 新鲜度不是查询授权门禁；缺失或过期
-时结果带 warning，而不是迫使 Agent 串行运行 `status → evidence-preflight → verify`。这些是
-诊断和授权维护命令。底层 `GravityClient` 适合受控集成代码，不应直接暴露为 Agent 的任意
-SQL 工具。
-
-## 并发模型
-
-并发用于彼此独立的工作；有数据依赖时保持串行。
-
-| 场景 | 当前实现 | 调用建议 |
-| --- | --- | --- |
-| 多个独立 Insight operation | `batch` 默认 6 workers，显式上限 24，保持输入顺序并隔离单项失败 | 一次 `batch read`，不要逐条起进程 |
-| 多个 compact Analysis spec | `analysis query batch` 先全量离线编译，再复用 Plan 同层并发 | 一次 batch，不在外层再建线程池 |
-| Analysis/App/Attribution 组合 | 外层默认 6、上限 24；各来源独立执行，结果固定顺序 | 使用登记组合，不手写多命令循环 |
-| Dashboard snapshot | CLI/SDK 外层默认 5、上限 24；Plan adapter 内部固定 1 worker | 让 Plan 全局 pool 管理跨节点并发，避免“节点 × 5 来源”放大 |
-| Dashboard analysis | CLI/SDK run 默认 6、上限 24；Plan adapter 从全局预算租借；默认 32、显式硬上限 64 charts | `tree→detail→compile` 串行，之后只并发独立图表执行并按看板声明顺序聚合 |
-| Saved analysis | 单个 reference 只执行一个已编译查询；Plan adapter 内固定分页 worker 1 | 多个互不依赖的保存分析放入同一 Plan，由全局 pool 并发，避免外层线程池 |
-| Multidim | CLI/SDK 默认 6、上限 24；metadata 与已知页数共享同一预算；Plan adapter 内固定 1 | 多个独立查询作为同层 Plan 节点，避免“节点 × metadata × 页数”并发放大 |
-| Material performance | CLI/SDK 默认 6、上限 24，实际平台池最多 4；每个平台分页 worker 固定 1；Plan adapter 内固定 1 | 平台 fan-out 与分页不相乘；多个独立请求交给 Plan 全局 pool |
-| Promotion performance | CLI/SDK 平台池默认 6、上限 24；每个平台分页 worker 固定 1；Plan adapter 从全局预算租借 | 21 平台 fan-out 与分页不相乘；不同 App 或物理指标集合用同层 Plan 节点 |
-| Order directory | direct 分页默认 6、上限 24；Plan adapter 内固定 1 | 多个独立 App/日期使用同层 Plan 节点，不新增 batch wrapper |
-| Order split trace | direct 父分页默认 6、上限 24；child 严格后置；Plan adapter 内固定 1 | 不并发猜 child；多个独立 TraceID 使用同层 Plan 节点 |
-| Segment snapshot | CLI/SDK 外层默认 3、上限 24；Plan adapter 内部固定 1 worker | 三源固定保序，Plan 全局 pool 管理跨节点并发 |
-| Analysis context | CLI/SDK 默认 6、上限 24；Plan adapter 从全局预算租借 | 13 个固定来源独立读取，按声明顺序聚合并保留逐来源失败 |
-| Plan DAG | 一个全局 worker pool，默认 6、上限 24；同层并发、依赖层串行；adapter 内分页 worker 固定 1 | 把交叉查询放进一个 Plan，避免并发乘法放大 |
-| Plan foreach | 每节点最多一个，默认最多 32 项、硬上限 64；不支持嵌套和笛卡尔积 | 只用于一个上游数组到一个目标字段的有限扇出 |
-| 单个 Insight 的分页 | 首页给出明确 `total_page` 时，`read_all/read_limited` 按小窗口并发并保持页序；未知总页数时串行。最多 1,000 页 / 100,000 items | 使用内建分页，不自行并发猜页 |
-| Metadata 全量同步 | 命令支持 `--concurrency 1..24` | 使用内建同步，不写临时循环 |
-| SQL 独立请求 / 分页导出 | 进程级并发上限 2；SQL export 最大并发也是 2 | 使用 `execute_batch` 或正式产品/导出函数 |
-| 在线 probe | 复用 Insight batch 上限 | 只在维护流程中运行 |
-
-分页窗口 `max_workers` 默认 6、上限 24；batch 内的 `read_all` 固定为 1 个分页 worker，
-避免“批任务 × 分页”嵌套放大。HTTP Runtime 还在 worker 之下共享进程级业务槽、每 host
-令牌桶、429 冷却与认证 single-flight。因此把 worker 调到 24 不等于会同时发出 24 个请求，
-也不应在外层再套线程池绕过它。并发不是越大越快；默认值是日常吞吐入口，上限是安全边界。
-
-Plan 的预算租借只用于已登记且内部工作彼此独立的 adapter。execution 自身持有的一槽计入租借结果，
-额外槽只尝试获取当前空闲容量而不等待；嵌套租借复用当前持有量，context manager 在正常、失败和异常
-路径归还额外槽。因而同层节点与节点内 fan-out 共享同一个总上限，而不是形成“节点数 × adapter
-workers”。借不到额外槽时自动退化为串行，不改变请求集合、分页页数或部分失败 envelope。
-
-Plan 还限制声明节点最多 64、运行时展开最多 256、总 `max_items` 预算最多 100,000。标量
-binding 只复制 RFC 6901 JSON Pointer 指向的值，`from` 必须位于 `depends_on`；路径不存在时
-返回 `BINDING_FAILED`，不回显绑定值。独立分支失败后其他分支继续，下游标记
-`skipped/DEPENDENCY_FAILED`。输出始终按 Plan 声明顺序，foreach 实例按源数组顺序；退出码按
-`local 4 > upstream 3 > caller 2 > success 0` 聚合。
-
-## 门禁分层
-
-门禁只应保护真实风险，不应变成每次开发或查询的仪式。
-
-### 运行时硬底线
-
-- 固定 host、path、method 和 effect；默认拒绝写操作与未知 wire 字段，仅 exact stable/executable
-  `effect=mutation` 合同可经独立一次性授权路径执行；
-- 凭据、Cookie、token 不进入日志、fixture、stdout 或 Git；生产响应值不进入 evidence、文档、测试或提交，运行时已登记字段按上游授权返回调用方；
-- 响应字段显式登记并投影；未登记字段因合同漂移 fail-closed，登记后的用户级、设备级和标识符字段
-  按上游授权原样暴露，不作为第二层隐私门禁；
-- 分页、结果规模、重试、并发和导出落盘有上限；
-- 单元测试不访问生产 Gravity，生产 probe 遵循授权流程。
-
-这些约束不能为了省命令而绕过。
-
-### 发布/兼容检查
-
-合同确定性编译、provenance、fixture、兼容测试、文档链接和完整测试属于提交前检查。
-开发内循环只运行与改动相关的编译检查和目标测试；不要求每改一行就跑全套测试、Census、
-live probe 或 Evidence 刷新。文档改动、CLI 文案和纯重构也不应被迫制造新合同或 probe。
-
-新增能力如何选择最小扩展面、何时升级门禁，见
-[扩展地图](maintainers/extending.md) 和 [新增受控能力](maintainers/operations.md)。
-
-## 数据与隐私边界
-
-- Metadata catalog 保存 App、事件和属性的物理事实，不推断模块、活动、SKU 或指标口径。
-- 上游授权是读取边界；已登记的用户、设备、人员和组织字段不再由 SDK 二次隐藏。未登记字段仍按
-  合同漂移 fail closed，凭据键仍递归去除。
-- 普通 read 不发布 Evidence、不上传或分享文件，也不修改上游资源。
-- 导出是独立 effect，经过导出合同和本地落盘策略。
-- Segment mutation 是当前唯一业务写 effect：默认零网络预览、显式确认、单次发送、创建标记/读回、
-  删除前 detail 标记闸门；不进入普通 read executor 或 Plan v1。
-- Order Directory 的结果行只允许 `Amount/BackAmount/Status/CreateTime`；额外订单、用户、拆单或
-  归因标识会使整个结果 fail closed，Agent 卡、continuation 和错误也不回显自然语言输入值。
-- Order Split Trace 的 TraceID、ClientID、拆单 ID 与 PayEventTime 只参与内存内精确派生；产品
-  结果、错误、Agent 卡和 continuation 均不得回显这些标识或原始 request。
-- 能力数量、平台覆盖和字段列表随合同变化；以 `operations list/search/describe` 的当前输出
-  为准，文档不维护易过期的静态数字。
+修改合同或产品先走[扩展地图](maintainers/extending.md)；公开接口见 [CLI](reference/cli.md)、[SDK](reference/sdk.md) 和 [Plan](reference/plan.md) 参考；历史设计不作为当前真相。
