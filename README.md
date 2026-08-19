@@ -1,100 +1,46 @@
 # Gravity SDK
 
-面向数据分析团队的 Gravity Python SDK 与 Agent 优先 CLI。两种入口共享 operation 合同、
-认证、运行时、分页、并发、字段投影和结构化错误；CLI 负责开箱即用，SDK 负责长期集成。
+面向数据分析团队的 Agent-first Python SDK 与 CLI。仓库把 Gravity 的发现、读取、导出和受治理写入收敛为版本化合同，让分析任务无需打开 Gravity Web 也能完成。
 
-## 你是 Agent？从这里开始
-取数分析走 [团队上手包](docs/team-onboarding.md)：`$env:PYTHONPATH='src'; python -m gravity_sdk agent-catalog categories`。改本仓库走根目录 [AGENTS.md](AGENTS.md)。
+## 从这里开始
 
-它提供三条边界清晰的主要读取入口：
+- **使用 SDK 取数或分析**：读 [团队上手包](docs/team-onboarding.md)，然后运行：
 
-- `gravity insight`：结构化 Insight 查询与导出，日常分析首选；
-- `gravity sql`：Insight 无法等价表达时使用的受控 SQL 产品；
-- `gravity census`：前端路由盘点、合同发现与上游漂移检查。
+  ```powershell
+  $env:PYTHONPATH='src'
+  python -m gravity_sdk agent-catalog categories
+  ```
 
-SDK 还提供本地元数据检索、跨目录发现与 workspace recipe：`gravity
-metadata sync/search`、`gravity find` 和 `gravity run` 让 Agent 无需临时 Python/JSON
-脚本即可完成常见查询链路。
+- **修改本仓库**：先读 [AGENTS.md](AGENTS.md)，再从 [维护者入口](docs/maintainers/index.md) 选择当前任务。
 
-当前机器目录覆盖 **237 个 operation** 与 **96 张 Agent 产品卡**；228 个 stable operation
-由 190 个 read 和 38 个 governed mutation 组成。写面只开放逐项登记的分群、marker-governed
-报表/订阅、Kanban 工作区和自定义指标；所有写入均先 `--dry-run`，再由调用方显式确认同参数 `--execute`。
-create 预览零网络；需要层级影响数的 Kanban 预览只读 tree/detail。自然语言永不自动执行写入；
-Kanban 和自定义指标可由显式 `preview|execute` Plan node 调用，其他写产品仍不进入 Plan。
+## 产品入口
 
-Agent 第一次盘点能力时先用 `gravity agent-catalog categories → category → describe` 三层离线目录。
-调用方能产出选择时推荐宿主臂：`agent-catalog host` 取紧凑产品/gap 合同，只返回 `gravity.host-product-selection.v1`，再 `agent --routing host_catalog --host-selection`；省略 `--routing` 时默认 recognizer 是够不着宿主时的地板。它们都不执行产品。未知问题仍最多两步：
-`gravity agent --input <questions.json> → gravity plan run --input <plan.json>`，一次目录快照批量发现、
-一次显式执行；已知 recipe、operation 或 Plan 时直接 `gravity run` / `gravity plan run`，只需一次调用。
-发现结果包含可复制 argv 和 `plan_node`，但自然语言不会自动执行。多个独立读取共享一个有界 worker
-pool，不逐条起进程。
+- `gravity insight`：受合同治理的 Insight 查询与导出，日常分析首选。
+- `gravity sql`：仅执行 workspace 已登记的 SQL 产品，不接受任意 SQL。
+- `gravity census`：盘点前端路由、发现候选合同并检查上游漂移。
+- `gravity agent-catalog` / `gravity agent` / `gravity plan`：供 Agent 渐进发现、补参和显式执行。
 
-首次接触仓库时，先读[团队上手包](docs/team-onboarding.md)；第一次真实事件分析再走
-[十分钟路径](docs/agent-skills/ten-minute-path.md)。两者都不需要打开 Gravity Web，也不会猜业务输入。
+自然语言不会自动执行写入。所有 mutation 先预览，再由调用方用同一输入显式确认执行。
 
-当前 `0.3` 是调用方 surface 的破坏性收口：Multidim 专用入口只有
-`gravity multidim query --app <alias|id> ...`，结果行位于 `query.data.list`；Plan request 必须带
-`input_schema_version="gravity-insight.multidim-input.v1"`。旧 `multidim query --app-id`、省略 App
-的 raw 分流和 `multidim calc-total` 不再提供。专家仍可通过
-`gravity run report.multidim.query` / `gravity run report.multidim.calc_total` 精确执行受治理的
-operation；这不绕过 operation 版本、字段投影或 fail-closed 合同。
-
-## 快速开始
+## 安装
 
 ```powershell
 python -m pip install -e .
-gravity
+gravity --help
 gravity agent-catalog categories
-gravity agent-catalog category analysis --limit 20
-gravity agent-catalog describe analysis.query.spec:event
-gravity agent-catalog host
-gravity agent "event analysis"
-gravity agent --input questions.json
-gravity plan schema
-gravity multidim query --input-schema
-gravity analysis query batch --input queries.json --concurrency 6
-gravity analysis user journey --app main --client-id <id> --date 2026-08-12
-gravity metadata sync --app-id <id> --max-pages 2 --dry-run
-gravity metadata status --app-id <id>
-gravity reports --help
 ```
-
-首次在交互式终端运行 `gravity` 会询问 Gravity 用户名和密码，验证登录并在用户私有目录维护会话。`--help`、operation 搜索、`find`、recipe 检查和本地 metadata 查询不会触发登录。使用者不需要配置或维护 token。
-
-查询遵循 **Insight-first**：只要 stable Insight operation 能等价表达目标，就优先使用 Insight；只有复杂跨表、特殊计算或 Evidence 产品无法由 Insight 表达时才使用 SQL。
 
 Python 最小入口：
 
 ```python
 from gravity_sdk import connect
 
-gravity = connect()  # Insight / SQL client 在第一次使用时才创建并缓存
+gravity = connect()
 result = gravity.read("app.list", {"page": 1, "page_size": 20})
 ```
 
-`GravitySDK/connect` 只统一构造和常用委托，不自动猜 Insight/SQL；专用的
-`GravityInsightClient` 与 `GravityClient` 仍是公开 API。
+## 文档
 
-## 文档入口
-
-从 [文档导航](docs/index.md) 开始。它按任务给出最短阅读路径：
-
-- 第一次安装并把 Agent 接上：[团队上手包](docs/team-onboarding.md)
-- Agent 执行查询：[Agent 工作流](docs/agent-workflow.md)
-- Python 集成：[SDK 参考](docs/reference/sdk.md)
-- 理解系统边界：[架构与概念](docs/architecture.md)
-- 开发和维护 SDK：[维护者入口](docs/maintainers/index.md)；先用[扩展地图](docs/maintainers/extending.md)选择最小改动面
+[文档导航](docs/index.md)按任务给出最短阅读路径。接口签名以 [CLI](docs/reference/cli.md)、[SDK](docs/reference/sdk.md) 和 [Plan](docs/reference/plan.md) 参考为准；当前能力以本机 `agent-catalog` 与合同编译结果为准。
 
 历史拆仓来源见 [MIGRATION.md](MIGRATION.md)。
-
-## 验证
-
-```powershell
-python -m unittest discover -s tests
-python -m pytest -q
-python -m gravity_sdk.compiler check
-python -m gravity_sdk.quality check
-$env:PYTHONPATH='src'; python scripts/agent_usability_eval.py run --split development --output-dir tmp/agent-usability-gate > tmp/agent-usability-gate.log 2>&1; if ($LASTEXITCODE) { exit $LASTEXITCODE }
-python -m gravity_sdk --help
-git diff --check
-```

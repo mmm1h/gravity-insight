@@ -41,13 +41,13 @@ belong here.
 - **A breaking surface change must not cost capability.** Direct breaking
   upgrades are allowed, but first prove no read capability is lost; record the
   finding in `docs/roadmap.md`.
-- **Each round starts with a written proposal, and its conclusions land in
-  version control.** Record them in the existing authoritative documents:
-  `docs/roadmap.md` for schedule and decisions, `technical-debt.md` for
-  structural debt, `candidate-capability-matrix.md` for capability evidence.
-  Do not create one-off proposal files or a `docs/proposals/` tree. A survey
-  that is useful today is stale two rounds later, and the documentation tree
-  would pay for it forever. Keep the working draft in `tmp/`; land the verdict.
+- **Each round starts with a written proposal, and only its current verdict
+  lands in long-lived documentation.** Keep the working draft and request
+  ledger in `tmp/`; update `docs/roadmap.md` for schedule and decisions,
+  `docs/maintainers/technical-debt.md` for structural debt,
+  `docs/candidate-capability-matrix.md` for capability evidence, or
+  `docs/analysis-journeys.md` for journey state. Do not create one-off proposal
+  files, a `docs/proposals/` tree, or new per-round archive logs.
 
 ## Parallel development
 
@@ -87,6 +87,8 @@ Do not let the list become an archive.
   product.
 - SDK changes start at `docs/maintainers/index.md` and then read only the
   task-specific maintainer page.
+- `docs/archive/` preserves non-normative history and evidence. Never use it as
+  the source of current interfaces, schedule, capability state, or debt.
 - Business modules, campaign semantics, and tracking bindings belong in the
   calling product knowledge base, not in this repository.
 

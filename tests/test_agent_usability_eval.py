@@ -80,48 +80,38 @@ class AgentUsabilityEvalTests(unittest.TestCase):
         )
         self.assertEqual([], missing)
 
-    def test_ledger_headline_matches_the_counted_table(self) -> None:
-        # The headline calls itself a programmatic recount, so it must agree with
-        # the table. It silently drifted once (claimed 50/1/5 while the rows said
-        # 50/3/3) because nothing compared the two.
+    def test_ledger_status_summary_is_derived_only_from_the_table(self) -> None:
+        # The evaluator owns the summary. Keeping a second prose total in the
+        # ledger caused repeated drift as journey rows changed status.
         import collections
         import re
 
         text = self.subject.JOURNEY_LEDGER_PATH.read_text(encoding="utf-8")
+        targets = json.loads(
+            self.subject.JOURNEY_TARGETS_PATH.read_text(encoding="utf-8")
+        )["journeys"]
+        counted_titles = {target["ledger_title"] for target in targets.values()}
         counts: collections.Counter[str] = collections.Counter()
         for line in text.splitlines():
             if not (line.startswith("| ") and line.count("|") >= 5):
                 continue
             cells = [cell.strip() for cell in line.split("|")]
+            title = cells[1] if len(cells) > 1 else ""
             status = cells[2] if len(cells) > 2 else ""
-            if status in {"已闭环", "部分闭环", "完全缺失"}:
+            if title in counted_titles and status in {"已闭环", "部分闭环", "完全缺失"}:
                 counts[status] += 1
 
-        headline = re.search(
-            r"当前程序化重算：\*\*(\d+) 条产品动线：已闭环 (\d+) / 部分闭环 (\d+) / 完全缺失 (\d+)\*\*",
-            text,
+        manifest = self.subject._manifest()
+        _cases, snapshot = self.subject.derive_cases(
+            self.subject._development_cases(manifest)
         )
-        self.assertIsNotNone(headline, "ledger headline is missing or reworded")
-        total, closed, partial_count, missing_count = (int(g) for g in headline.groups())
         self.assertEqual(
-            (counts["已闭环"], counts["部分闭环"], counts["完全缺失"]),
-            (closed, partial_count, missing_count),
+            {status: counts[status] for status in sorted(counts)},
+            snapshot["status_counts"],
         )
-        self.assertEqual(sum(counts.values()), total)
-
-        # The ledger states its totals twice: the programmatic recount above, and a
-        # narrative "…故为 `56 = a / b / c`" chain that records each transition. The
-        # chain legitimately keeps older counts as history, so only its LAST entry
-        # has to agree with the recount. It silently drifted once: the realtime-event
-        # journey closed, the recount became 51 / 3 / 2, and the narrative was left
-        # asserting 50 / 3 / 3 with nothing comparing the two.
-        narrative = re.findall(r"故为 \*{0,2}`56 = (\d+) / (\d+) / (\d+)`", text)
-        self.assertTrue(narrative, "ledger narrative count chain is missing or reworded")
-        self.assertEqual(
-            (closed, partial_count, missing_count),
-            tuple(int(group) for group in narrative[-1]),
-            "the last narrative count must match the programmatic recount",
-        )
+        self.assertEqual(len(counted_titles), sum(counts.values()))
+        self.assertNotRegex(text, r"当前程序化重算：")
+        self.assertIsNone(re.search(r"故为 \*{0,2}`\d+ = \d+ / \d+ / \d+`", text))
 
     def test_ledger_status_change_switches_the_same_frozen_case_shape(self) -> None:
         manifest = self.subject._manifest()

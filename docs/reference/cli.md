@@ -653,7 +653,8 @@ Plan adapter 固定 1。省略 `--output` 时输出安全 stdout 前缀；指定
 固定产品入口只接收 App、日期和分页预算；需要动态 fields/conditions/group/sort 时使用
 `analysis.monetization_detail.list`，字段和条件继续由 live metadata 校验。有效请求实测为 `P` 个
 明细 POST、0 metadata；最小空日为 1 HTTP。未登记字段仍返回
-`contract_changed_additive`，详见[投影总裁决](../roadmap.md#投影边界总裁决全面放开2026-08-15)。
+`contract_changed_additive`，详见
+[历史投影裁决](../archive/decisions/2026-08/projection-and-privacy.md#投影边界总裁决全面放开2026-08-15)。
 
 ### Order Split Trace v1
 

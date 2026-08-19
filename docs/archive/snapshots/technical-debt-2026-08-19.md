@@ -1,0 +1,276 @@
+> 归档材料：保留历史决策与取证，不代表当前接口或状态；当前入口见 docs/index.md。
+
+# 技术债清单
+
+本页只记录会提高后续开发成本、且可由当前源码或质量门禁证明的结构性债务。机器阈值与当前
+数值以 `src/gravity_sdk/governance/quality-baseline.json` 为准；这里不复制整份 baseline。
+
+内部审计发现不创建 GitHub Issue。Issue 仅接收其他项目真实使用时提交的反馈；本页、当前开发
+提交和回归测试负责内部债务的收口。
+
+## 维护规则
+
+- 记录 owner area、证据、触发条件和退出条件；没有证据的“以后可能”不登记。
+- 修改热点附近功能时优先下沉到领域模块；不抬 legacy SLOC/AST 硬顶。确需在旧大文件增加少量
+  AST 节点时，必须在固定生命周期预算内记录精确 path/from/to/reason，不能用物理压行换余量。
+- 重构必须保持公共 operation/envelope/CLI 兼容；不借一次纵切重写无关模块。
+- 每轮完成后删除已关闭条目，或把其结果压成一行历史记录，避免清单本身变成档案库。
+
+## 当前条目
+
+登记于 2026-08-13，依据 `dev@8fd278e` 的源码与质量门禁审计。
+
+### 1. Material/Promotion 重复实现多平台结果重建
+
+**状态（2026-08-15）**：退出码触发项已按退出条件收窄，其他重复仍保留。
+
+- **Owner area**：Material Performance / Promotion Performance result contracts。
+- **证据**：`material_performance_result.py`(408 SLOC) 与 `promotion_performance_result.py`(434 SLOC)
+  各自实现同名同构的 `safe_component`、`_safe_success`、`_safe_rows`、`_safe_page`、page receipt 校验、
+  `product_envelope`、`_primary_error`。Promotion 上线后又经 `464b1d4`、`099ad46`、`81d0d02` 修补
+  结果边界、request binding 与 Plan rows/output paths——相同不变量存在两份，修补时必须人工检查另一份。
+  本轮新增字段触及 500 SLOC 闸门后，已把纯字段登记下沉到 36 SLOC 的
+  `promotion_projection.py`；本轮修改 component aggregate exit code 时又把两边相同的 category→exit
+  数字映射下沉到 `errors.exit_code_for_category`。`_safe_success` 复杂度仍为 14，
+  其余 row/page/result 重建仍是可证明的重复，故本条不关闭。
+- **触发条件**：任一产品再次修改 page receipt、标量行复制、component aggregate status/exit code/
+  primary error；或出现第三个采用同一完整分页 batch envelope 的多平台产品。
+- **退出条件**：仅在触发发生时，把当次由两边现有测试证明完全相同的**一个**窄原语下沉复用；
+  operation identity、字段 allowlist、App/window/metrics binding、failure wording 继续留在各自 owner。
+  **不做整文件统一，不造结果 DSL。**
+
+### 2. legacy promotion snapshot 绕过正式产品的全部绑定
+
+- **Owner area**：Promotion 兼容面（CLI/SDK legacy permissive snapshot）。
+- **证据**：2026-08-14 缺面裁决查明，该面绕过 `promotion performance` 的五项约束：
+  workspace App 绑定、统一日期窗、已证明平台集合、指标 allowlist、平台 metadata 指标校验，
+  且不校验返回结果是否仍绑定请求的 App/日期/指标。它接受任意非空 promotion resource 与
+  逐平台原始 input，按 inventory 选择**首个** stable operation；CLI `all` 模式会按各 operation
+  schema **静默忽略**不适用的 shortcut。本轮已确认它不进 Agent/Plan 主路径
+  （`gravity agent "raw promotion snapshot"` 返回 capability_gap），但 CLI/SDK 入口仍在。
+- **为什么保留**：没有消费者遥测能证明无人直接使用，删除即可能造成外部破坏。
+  这是**有意的保留，不是遗忘**。
+- **触发条件**：该面出现新的调用方报告；或 Promotion 产品再次修改平台集合、指标 allowlist
+  或结果绑定校验——届时两处语义会进一步分叉；或取得可证明无消费者的证据。
+- **退出条件**：优先**收紧到与正式产品同一组绑定**（App/日期/指标/结果校验），
+  使两条路径语义一致；确证无消费者时直接删除。**不要为它补 Agent 卡或 Plan 面**——
+  那是在把未校验路径推给自动化调用方。静默忽略 shortcut 的行为无论保留与否都应改为显式报错。
+
+### 3. 在线输入解析的两次闭环依赖「上游稳定 ID 不复用」，而这证明不了
+
+- **Owner area**：Agent 输入解析（`agent_input_resolution.py`、`agent_input_catalogs.py`）。
+- **证据**：2026-08-15 的裁决把 9 条动线从 `1 / 3` 降到 `1 / 2`，做法是第一次调用同时交付
+  能力与完整目录、第二次重新在线解析后执行。该方案的正确性依赖两点：调用方按**稳定 ID** 选择，
+  以及第二次执行时重新解析。但**上游没有 revision/ETag**，无法证明它永不复用已删除对象的 ID。
+  实现方自己给出了这条反驳，并明确：一旦发现 ID 复用，必须撤销这 9 条的两次闭环判定。
+- **触发条件**：观察到任一目录对象的 ID 被复用；或上游开始提供 revision/ETag/版本号。
+- **退出条件**：上游提供可校验的版本标识后，把它纳入第二次解析的前置校验，ID 复用即 fail-closed；
+  在那之前**不扩大**该模式的适用面——不要把在线输入解析套用到新的动线上来降低调用次数。
+
+### 4. `REPORT_PRODUCTS` 的名字已经和它的内容对不上
+
+- **Owner area**：`agent_report_routing.py`。
+- **证据**：该 frozenset 现含 `advertiser_profile`、`custom_audience` 两个 promotion 产品，
+  常量名与模块 docstring 里的 "report" 已不成立（docstring 已改为 "bounded no-spec products"，
+  常量名没跟着改）。它实际的语义是「无 spec、边界固定的窄产品路由」，与 report 域无关。
+- **触发条件**：再加入第三个非 report 域产品，或有人据名字误以为该集合限定 report 域。
+- **退出条件**：触发时连同调用点一次改名到位（如 `NO_SPEC_PRODUCTS`）；单独为改名开一次提交不值得。
+
+### 6. Census 把 214 条 POST 仅凭路径词元判为「未覆盖读」
+
+**状态（2026-08-16）**：在线安全缺口已关闭；非推广/素材 155 条已逐条分类，剩余分类证据债务收窄到
+188 条既有数据阻塞 draft 与 5 条仍无法判定 route。
+
+- **Owner area**：Census 路由语义分类 / 探测安全。
+- **证据**：2026-08-14 取证证明 `analysis.setting.query`（`POST /kanban/report/setting/`）
+  **是 mutation 不是查询**——完整前端控制流显示它提交 `config/name/remark`、随后更新看板布局
+  并提示修改成功。但 census 此前把它判为 `status=uncovered_read`，唯一语义证据是
+  `read_action_path_token`（路径里有 read 味的词），`semantic_confidence=medium`。
+  该 draft 已有 **3 次真实 probe 记录**（`2026-08-08`），即探测确实打到了写路由上；
+  只因语义报错才没造成写入，**这是运气不是设计**。
+  实测同类分布：343 条 `uncovered_read` 中 **261 条（76%）唯一证据就是 `read_action_path_token`**，
+  其中 **214 条是 POST**；仅 60 条有 `safe_http_method`（GET，HTTP 语义本身安全），22 条为 registry 声明。
+  样本里 `/account_center/api/v1/get_verify_code/v2/` 同样可疑——发送验证码是副作用动作。
+- **触发条件**：任何人对 `uncovered_read` 池中的 POST 路由发起 probe；或把这类候选纳入排期。
+- **退出条件**：**先加探测闸门**——仅有 `read_action_path_token` 的 POST 路由默认禁止 probe，
+  需要逐条人工确认读语义后才放行；再逐步用控制流证据替换弱信号分类。
+  **不要反过来把它们批量标成 mutation**——那会误伤真正的读路由；
+  正确方向是把"未经证实"与"已证实为读"分开，而不是二选一。
+- **注意**：`docs/maintainers/probing.md` 现有纪律针对请求量与隐私，**不覆盖"目标是否真的是读"**。
+  这条债务补的是那个缺口。
+- **已完成**：`prober/read_semantics.py` 在凭据刷新和 transport 构造前预检显式 probe/batch，且
+  `probe_draft` 在任何 discovery 请求前再次执行同一策略；本地策略错误为 exit 4。精确人工确认清单
+  强制记录 reviewer、日期与静态证据。12 条静态抽样为 2 写 / 10 真读 / 0 不确定；这不证明多数
+  路由误判，但证明风险跨“发送验证码”和“修改报表设置”两个域，不是单一异常。2026-08-15 又逐条
+  补入 dashboard tree/detail 与 report-config list/get 四条 GET 的控制流确认；这四条是已审查真读，
+  `analysis.setting.query` 仍是 mutation，未据此批量修改剩余弱信号分类或扩张 census 提取器。
+- **剩余退出条件**：后续只在逐条静态取证时把弱信号替换为已审查证据；不扩张 census 提取器，
+  不批量改 mutation。待弱证据 POST 不再需要依靠单独 probe 闸门时删除本条。
+- **2026-08-16 进展**：对 343 条 `uncovered_read` 排除 188 条 promotion/material draft 后的 155 条
+  完成互斥逐条复核，最终为 `18 等价覆盖 / 89 UI 辅助 / 4 mutation / 0 当前可取证 / 39 数据或证据阻塞 /
+  5 无法判定`。本轮把 10 条 AppRank/data-table POST 的 hash-matched 控制流登记为精确 read
+  confirmation，并用 10 次有界生产 HTTP 验证最高价值候选；没有用失败或空样本批量改 Census status。
+  `promotion.promoted_object.list` 的 draft POST 与 Census UNKNOWN method 差异继续保留为显式证据差异。
+
+### 7. 稳定 operation 的分页形状仍有系统性证据债
+
+- **Owner area**：operation pagination contracts / Evidence。
+- **证据**：`f798d39` 的 231 条 operation 中，119 条 `page_info` 拥有完全相同的字段集合，证明该字段集
+  来自模板而非逐条验证。2026-08-17 逐 route 对齐生产 response sketch、精确 wire consumer 与合同后，
+  审计当时的 119 条只有 `59 A / 1 B / 59 unknown`；证据等级为 `62 production / 8 wire / 49 template-only`。
+  这些是审计基线声明，不是 HEAD。HEAD 当前为 `118 page_info + 115 none`（233 条）；`report.multidim.query`
+  已修成 `none` 并在审计表标 `repaired`。当时的 `none` 条目中另有 27 条 stable+executable 集合完整性
+  在本轮三条补测后仍未知；`analysis.user_event.list` 是已披露的手动空页协议，不等于上游无分页；一个
+  不可执行 candidate 的 wire 还消费了 `page_info.total_number`。逐条表与判据见
+  `evidence/forensics/20260817_pagination_contract_audit.{json,md}`；当前 kind 由
+  `gravity_sdk.pagination_contract_audit.reconcile_pagination_audit` 对账。
+- **当前缓解**：已把实测 B 形状的 `report.multidim.query` 改成单响应，不再重复续页；D28
+  `report.get.query` 也是实测 B（只有 `page_info.total`）并声明 `none`。缺 `total_page`
+  时 `read_all` 默认停在第一页并把完整性标 `unknown`，满页启发式必须 `continue_without_total`。自动完整
+  读取风险最高的 Multidim metadata、Material Performance、Business Pulse 三条已实测为 A。三条完整元数据
+  `none` 也补到生产观察无 page_info，但单次观察不能证明服务端永不截断。49 条仍声明 `page_info` 但只有
+  `template_default` 证据的条目在对账结果里机器可读为 `shape_unproven`。
+- **触发条件**：修改任一 unknown operation 的分页、让新的产品依赖其全集，或取得新的 production/wire
+  分页字段证据。
+- **退出条件**：逐条用同 method+path 的生产 response sketch 或直接 wire 字段把 59 条 `page_info`
+  unknown 归入真实形状并修正合同；对 27 条 stable+executable `none` 集合取得可证伪的完整性信号或把
+  产品声明降级为前缀/未知。不得用现有合同声明给自己提升证据等级，也不得全量生产探测。
+
+## 明确不登记为债务
+
+以下模式经审计判定为**合理领域边界**，不因文件数量多而登记：66 个 `agent_*.py`、
+11 个 `_field_policy_*.py`、30 个 `*_cli.py`。不建议合并它们，不建议把 `*_cli.py` 换成动态命令
+注册，不建议增加字段 DSL，不建议统一所有 composite result/error/pagination 模型，
+不建议放宽或更新 baseline 来容纳增长。
+
+## 已关闭结构债务
+
+2026-08-17：blob 传输四个超限函数（`SafeBlobTransfer.download` / `upload`、`BlobPolicy.__post_init__`、`_preflight_headers`）已拆到 80/15 以下并收紧 baseline；判定真值未改，未新增 `growth_ledger`。
+
+2026-08-17 复核：本轮只改协议层权限分类与账号级 session 绑定，未新增可由当前源码证明的结构债，
+也未放宽 quality baseline。
+
+Agent catalog 产品/gap 共源债务已关闭：渐进目录与宿主紧凑目录都从现有 card owner 程序化覆盖
+92/92 张 canonical 产品卡、投影 7/7 个登记 gap，并以双向 parity 门禁区分 product、raw operation 与
+不可执行 gap；宿主目录排除 raw operation，候选另经 `gravity.host-source.v1` 校验，没有新增第二套
+registry。原唯一 J35 状态冲突归零。
+
+2026-08-15 修改确认记录读取逻辑时，`_confirmation_keys` 已提升为公开 `confirmation_keys` 并更新跨模块
+调用点；精确 method/path、人工证据与已知命名空间三重闸门保持不变，原第 5 条债务关闭。
+
+Agent 相邻产品冲突已收口到 `agent_intent_routing.py`：按独立 owner 正向证据强度与 selector 精确度
+裁决，多个产品返回 `MULTIPLE_INTENTS`，历史紧邻冲突集中兼容；五个既有 owner 不再持有他产品负向词，
+raw exact selector、敏感查询和既有 pairwise 行为保持。
+
+Agent 自然语言重验已关闭原“产品卡与 raw operation 混排”债务：kind-specific Spec 卡保持唯一权威，
+新增 class-level `metadata:search` typed handoff，exact raw selector、recipe/SQL product 优先级和显式
+`MULTIPLE_INTENTS` 回归均保持；47 条冻结动线中英首问无 raw fallback 混入。
+
+Plan 固定来源 composite 已下沉到窄 family router；并发增强复用同一全局预算租借，中央
+`plan_adapters.py` 低于原 491 SLOC 基线且没有新增 registry、插件或产品三重知识。
+
+本轮已把 CLI 路由、Plan adapter、Multidim service 和 Agent 卡分别下沉到领域模块；通用入口只保留
+薄路由，direct/Plan 共用 worker 预算，旧 raw 合同继续兼容。后续若这些模块再次触发机器 ratchet，
+再以当时的源码证据登记新条目，不保留已经关闭的历史任务。
+
+Business Pulse 的 generic Agent 交接缺口已由领域 recognizer、完整 Plan request 和 authoritative
+路由收口；执行 core、CLI、SDK 与 Plan adapter 继续复用原实现。`apps/platforms` 的无效数组绑定
+入口也已关闭，不保留第二套运行时或未证明的结果层债务。
+
+Promotion Performance 已把 parser/dispatch/shortcut、产品 core、结果重建、SDK、Plan 和 Agent
+分别下沉到领域模块；旧 promotion CLI 与 `CompositeService.promotion_snapshot` 只保留兼容薄委托。
+通用热点与 quality baseline 未增长，原退出条件已完成，不保留已关闭的活动条目。
+
+Order Split Trace 把“完整父目录精确匹配后再读取 child”的敏感派生留在登记领域 composite，
+不把数组 binding、join/reduce 或通用 parent-child DSL 引入 Plan；这一限制是安全产品边界，不登记
+为通用引擎债务。Agent 的中英 recognizer、占位 Plan 节点、相邻产品阻断与 raw exact 兼容均在
+领域模块内闭合，通用 discovery 入口只保留薄路由。
+
+Order Directory 已以单日四字段 profile、完整分页和 request-bound 结果闭合 Core/CLI/SDK/Plan/Agent；
+与 Order Split Trace 共用读取收据和静态字段策略，raw exact selector 继续兼容，通用热点未增长。
+
+Monetization Detail 已以批准字段 allowlist、嵌套重建和保留型 Guard 闭合五面入口；Plan 复用窄
+Analysis family router，`plan_adapters.py` 净增长 0，D28 聚合未被误纳入本产品。
+
+Quality profile 已删除与 runtime root 同路径的冗余 CLI 扫描；每个函数 identity 仅产出一次，Markdown
+函数/复杂度超额与未修改的 baseline 一致，500/80/15/0 阈值和失败策略保持不变。
+
+Quality ratchet v2 已把 15 个旧大文件从当前物理 SLOC 等值锁改为格式无关 AST 节点 ratchet，并冻结
+迁移 SLOC/AST 双硬顶与 append-only 增长理由；500/80/15/0 不变，分号合并不再产生指标收益。
+
+Consumer-output 安全审计未新增结构债：上游业务内容继续留在结果容器，receipt/log 保持值无关；
+workspace recipe 与 SDK contract 的同名 description 已用 additive origin 元数据区分，公共 JSON writer
+统一拒绝非有限数字，不引入内容检测、评分或新的字段 DSL。
+
+多 App Analysis 扇出仅在领域 batch/surface 中把显式 `apps` 展开为现有同层 Plan 节点；没有新增
+线程池、worker 默认值、adapter registry、跨 App 结果抽象或共享 spine 分支。机器 quality ratchet
+保持，`plan_adapters.py` 未修改；本轮复核未产生新的结构债条目。
+
+Analysis Spec schema 的结构键投影与 funnel 按日模式校验已在领域 schema/执行器和源合同内闭合；
+共享 CLI spine 未修改，真正畸形的模式投影继续 fail closed，本轮复核未产生新的结构债条目。
+
+三分评测装置把 protected 查询反馈、final 一次语义与安全遵守门禁收进独立 evaluator/support 模块，
+没有增长产品共享 spine 或 quality baseline。外部 LLM shell/tool trace 不在本仓装置可见范围，属于已披露的
+测量覆盖边界，不是当前源码中会提高后续开发成本的结构债；本轮复核不新增条目。
+
+派生指标与集合对账经独立 core、CLI/Agent owner 模块及既有 Analysis family router 接入；
+`plan_adapters.py` 净增长 0，没有新增通用表达式引擎、adapter registry、数据框依赖或业务字典，
+本轮复核未产生新的结构债条目。
+
+Segment mutation 首轮把一次性授权、wire codec、领域 CRUD、CLI/SDK 与 Agent 交接拆入窄模块，
+`registry.py` ratchet 继续收紧且 Plan spine 未增长；本轮复核未产生新的活动结构债条目。
+
+F40 单用户归因明细把严格结果重建与测试设备父目录解析下沉到领域模块；共享 client、Agent/Plan
+路由均保持既有质量 ratchet，空 item 容器按未来非空 fail-closed 而未引入通用动态 schema，
+本轮复核未产生新的活动结构债条目。
+
+Kanban mutation 复用既有 one-shot authorization、marker、preimage/readback 与 mutation executor；
+父删除影响计算、负数系统 folder、内容和生命周期逻辑均下沉到 Kanban 领域模块。CLI 由 dashboard
+领域路由接入，Agent direct mutation 由窄 router 聚合，Plan spine 通过压缩既有同类 imports/分派保持
+500 SLOC/15 complexity 闸门；没有新增 mutation registry、重试机制或活动结构债条目。
+
+三域 owner gate 已把 499 行 `report_mutation.py` 按 report/template 与 subscription 自然边界拆为
+330/175 SLOC，331 SLOC support 承担既有目录/readback；共享 principal 与 marker-or-owner 判据下沉为窄
+lifecycle/ownership 原语，one-shot executor 未改。Kanban dashboard delete 随同一触发下沉后原模块为
+414 SLOC；quality ratchet 只收紧，没有新增活动结构债条目。
+
+自定义指标 CRUD 复用同一 marker-or-owner gate、one-shot executor 和已有 card/composite/Plan 三件套；
+confmetric family core、wire、CLI、SDK 与 Agent 卡均下沉到领域模块，Plan 只把既有 Kanban 单点分派收进
+窄 mutation family router。共享 spine 未触发 SLOC/复杂度阈值，本轮复核不新增活动结构债条目。
+
+事件/属性模板 CRUD 将 master、成员身份映射、CLI/SDK/Plan/Agent 分拆到窄领域模块，核心保持在质量
+硬顶内。生产发现 mutation 写后 metadata readback 会命中 10 分钟旧缓存；共享 mutation client 已在
+成功写后统一失效 metadata cache，并由单测和真实 remove/delete 读回锁定。该问题已关闭，不保留为
+活动债务；one-shot authorization、read cache TTL、owner gate 与质量 baseline 均未放宽。
+
+保存分析 CRUD 复用同一 one-shot mutation、marker-or-owner、完整目录和写后读回原语；保存分析 SDK
+facade 从接近硬顶的 analysis facade 下沉到窄 mixin，共享 spine 与 quality/AST baseline 均未放宽。
+list/get 不属于 metadata cache operation，delete guard 仍使用完整新列表；本轮不新增活动结构债条目。
+
+四个 Analysis 导出族只扩充 route contract 和 Agent export owner，继续复用唯一 task gateway、
+退避轮询、SafeBlobTransfer、XLSX finalizer、HTTP receipt 和原子提交；未产生按族复制的下载栈或新 registry。
+六态也是既有 Export result envelope 的窄增量。后续变现补证仅为该 route 登记实测可容纳文件的 192 MiB
+展开上限，共享 entry/ratio/encryption/symlink/traversal/nesting/metadata 守卫均保留；通用归档错误统一携带
+规则、实测值和 next action，没有按导出族分叉检查器。变现上游的 1,000,000 行截断现在有前端明确声明和
+生产文件交叉证据，但 task list/progress/file 均没有与任务 snapshot 绑定的 total/truncated；该合同证据
+blocker 不以结构绕过。四个已晋升族的文件行数均与各自受管总数一致，本轮复核不新增活动结构债。
+
+保存分析离线边界复核把 metadata dependency 枚举下沉到窄 FieldPolicy helper，并用独立 offline loader
+收紧 `client.py` AST ratchet；Dashboard、Saved Analysis、Template 与 Plan 只传播同一合同，不建立第二套
+校验器或网络上下文。真实值仍只在 governed evidence，HTTP receipt 合同未改；本轮不新增活动结构债条目。
+
+受治理语义组合首个切片把定义目录、编译/执行、CLI、Plan adapter 与 Agent card 分拆到窄领域模块；
+既有 Multidim core 和全局 Plan worker 继续复用。共享 spine 通过现有 report family router 接线，
+`agent_capabilities.py` 的静态 composite inventory 同时下沉为 value-free 数据模块；500/80/15/0 门禁未
+放宽，没有新增 registry、SQL 执行器或活动结构债条目。
+
+语义过滤 v2 继续复用同一定义目录和 Multidim core，只给已证 filter 增加 dimension 关系校验与一个
+闭合前端 request profile；v1 不改写，成员 refs 在现有 schema inventory 内去重。没有第二套 registry、
+filter compiler、scheduler 或活动结构债条目，500/80/15/0 与 quality baseline 均未放宽。
+
+Read→write 效果隔离拆为 source/action 校验、Plan 编译和 SDK 执行三个窄模块；共享 `sdk.py`、
+`plan_adapters.py` 与评测阈值未增长，quality 500/80/15/0 全过，不新增活动结构债条目。
+
+投影引擎把 `_project_data_containers` / `_project_list_rows` 下沉到
+`response_projection.py` 与 `list_row_projection.py`，函数债务删除、`executor.py` AST
+ratchet 收紧到 4753，硬顶 9149 未抬；本轮不新增活动结构债条目。

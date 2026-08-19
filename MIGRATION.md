@@ -23,3 +23,11 @@ They were retired during the split because they coupled SDK transport to one
 repository's topic paths and frozen report assets. Business SQL remains owned
 by its calling product repository; this SDK owns authentication, policy,
 transport, contracts, probing, census, and Evidence publication.
+
+## Documentation provenance
+
+The 2026-08 documentation consolidation moved superseded decisions, product
+designs, external research, and authority-page snapshots under
+[`docs/archive`](docs/archive/index.md). Those files preserve provenance but are
+non-normative. Current task routing starts at [`docs/index.md`](docs/index.md);
+runtime contracts, manifests, and CLI output remain authoritative for behavior.
