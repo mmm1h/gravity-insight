@@ -64,10 +64,16 @@ def validate_promotion_performance_plan(
 
     if set(request) - PROMOTION_PERFORMANCE_FIELDS:
         raise input_error(
-            "promotion_performance request contains unavailable fields; must use only available fields; remove extras", "request"
+            f"actual value: {actual_value(sorted(set(request) - PROMOTION_PERFORMANCE_FIELDS))}; "
+            "promotion_performance request contains unavailable fields; must use only available fields; remove extras",
+            "request",
         )
     if request.get("name") != PROMOTION_PERFORMANCE_NAME:
-        raise input_error("promotion_performance name is invalid; must match the documented composite name", "name")
+        raise input_error(
+            f"actual value: {actual_value(request.get('name'))}; promotion_performance name "
+            "is invalid; must match the documented composite name",
+            "name",
+        )
     validate_exact_targets(context, _TARGETS)
     platforms = _literal_platforms(request.get("platforms"))
     _literal_metrics(request.get("metrics"))
@@ -75,7 +81,9 @@ def validate_promotion_performance_plan(
     _validate_dates(request, set(context.dynamic_targets))
     if context.max_items < len(platforms):
         raise input_error(
-            "promotion_performance platforms exceed this node max_items; must stay at or below this node max_items; raise limits.max_items",
+            f"actual value: {actual_value((len(platforms), context.max_items))}; "
+            "promotion_performance platforms exceed this node max_items; must stay at or below "
+            "this node max_items; raise limits.max_items",
             "limits.max_items",
         )
     validate_selected_fields(
@@ -127,7 +135,9 @@ def execute_promotion_performance_plan(
     )
     if promotion_performance_item_count(safe) > context.max_items:
         raise input_error(
-            "promotion_performance exceeded its Plan item budget; must stay at or below this node max_items; raise limits.max_items",
+            f"actual value: {actual_value((promotion_performance_item_count(safe), context.max_items))}; "
+            "promotion_performance exceeded its Plan item budget; must stay at or below this node "
+            "max_items; raise limits.max_items",
             "limits.max_items",
         )
     if isinstance(safe.get("results"), list):
@@ -326,8 +336,11 @@ def _literal_platforms(value: Any) -> tuple[str, ...]:
         )
     try:
         return normalize_promotion_platforms(value)
-    except InputValidationError as exc:
-        raise input_error(("must correct: " + str(str(exc))), "platforms") from None
+    except InputValidationError:
+        raise input_error(
+            f"actual value: {actual_value(value)}; must correct platforms to the supported enum values",
+            "platforms",
+        ) from None
 
 
 def _literal_metrics(value: Any) -> tuple[str, ...]:
@@ -337,8 +350,15 @@ def _literal_metrics(value: Any) -> tuple[str, ...]:
         )
     try:
         return normalize_promotion_metrics(value)
-    except InputValidationError as exc:
-        raise input_error(("must correct: " + str(str(exc))), "metrics") from None
+    except InputValidationError:
+        shape = {
+            "count": len(value),
+            "item_types": sorted({type(item).__name__ for item in value}),
+        }
+        raise input_error(
+            f"actual value: {actual_value(shape)}; must correct metrics to the documented physical name shape",
+            "metrics",
+        ) from None
 
 
 def _validate_app(

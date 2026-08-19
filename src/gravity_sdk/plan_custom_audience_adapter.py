@@ -18,10 +18,10 @@ def validate_custom_audience_plan(
 ) -> None:
     if set(request) != {"name"}:
         raise input_error(
-            "custom_audience request accepts only its name; must contain only its name; remove extras", "request"
+            f"actual value: {actual_value(sorted(request))}; custom_audience request accepts only its name; must contain only its name; remove extras", "request"
         )
     if context.dynamic_targets:
-        raise input_error("custom_audience has no binding targets; must omit bindings", "bindings")
+        raise input_error(f"actual value: {actual_value(context.dynamic_targets)}; custom_audience has no binding targets; must omit bindings", "bindings")
     if context.max_items < 1:
         raise input_error(
             f"actual value: {actual_value(context.max_items)}; " + ("custom_audience requires one source item"), "limits.max_items"

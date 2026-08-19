@@ -69,7 +69,8 @@ def validate_dashboard_snapshot_plan(
     )
     if request.get("name") != DASHBOARD_SNAPSHOT_NAME:
         raise input_error(
-            "dashboard snapshot composite name is invalid; must match the documented composite name",
+            f"actual value: {actual_value(request.get('name'))}; dashboard snapshot "
+            "composite name is invalid; must match the documented composite name",
             "name",
         )
 
@@ -85,7 +86,9 @@ def validate_dashboard_snapshot_plan(
 
     if context.max_items < DASHBOARD_SNAPSHOT_MIN_ITEMS:
         raise input_error(
-            "dashboard snapshot fixed sources exceed this node max_items; must stay at or below this node max_items; raise limits.max_items",
+            f"actual value: {actual_value((context.max_items, DASHBOARD_SNAPSHOT_MIN_ITEMS))}; "
+            "dashboard snapshot fixed sources exceed this node max_items; must stay at or below "
+            "this node max_items; raise limits.max_items",
             "limits.max_items",
         )
     validate_selected_fields(

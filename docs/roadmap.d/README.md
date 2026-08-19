@@ -82,6 +82,7 @@
 - [弃权时给出有界可答问法](answerable-suggestions.md) — 2026-08-19：`NO_CANDIDATE` 信封带 8 条从已登记产品卡机械导出的可答问法；`next.argv` 仍是 `agent-catalog categories`；development 两层分数不变，因为 scorer 不读该字段。
 - [FieldPolicy 预取接到分账号磁盘](prefetch-cost.md) — 2026-08-19：字段目录按 #223 指纹落盘；十人冷启动 metadata HTTP 20→2；默认路径不加指纹。
 - [看板挂载保存分析闭环](kanban-link.md) — 2026-08-19：挂载走 dashboard/edit 整表合并；link/readback/unlink/delete 生产闭环，marker 清零。
+- [Plan 适配器安全实际值](plan-errors.md) — 2026-08-19：Plan B 102→74；全仓 `A1046 / B222 / C0`，未降低质量阈值。
 
 ## 归档记录
 

@@ -30,7 +30,9 @@ def validate_business_pulse(
 ) -> None:
     if set(request) - _FIELDS:
         raise input_error(
-            "business_pulse request contains unavailable fields; must use only available fields; remove extras", "request"
+            f"actual value: {actual_value(sorted(set(request) - _FIELDS))}; business_pulse "
+            "request contains unavailable fields; must use only available fields; remove extras",
+            "request",
         )
     validate_exact_targets(context, _TARGETS)
     dynamic = set(context.dynamic_targets)
@@ -45,7 +47,10 @@ def validate_business_pulse(
     required_sources = 3 if "/include_hourly" in dynamic or hourly is True else 2
     if context.max_items < required_sources:
         raise input_error(
-            "business_pulse sources exceed this node max_items; must stay at or below this node max_items; raise limits.max_items", "limits.max_items"
+            f"actual value: {actual_value((required_sources, context.max_items))}; "
+            "business_pulse sources exceed this node max_items; must stay at or below this node "
+            "max_items; raise limits.max_items",
+            "limits.max_items",
         )
     validate_selected_fields(context.output_fields, output_fields, "output_fields")
 
@@ -100,7 +105,11 @@ def _validate_platforms(request: Mapping[str, Any]) -> None:
         or not platforms
         or any(value not in DEFAULT_PLATFORMS for value in platforms)
     ):
-        raise input_error("business_pulse platforms are invalid; must be one of the supported platforms", "platforms")
+        raise input_error(
+            f"actual value: {actual_value(platforms)}; business_pulse platforms are invalid; "
+            "must be one of the supported platforms",
+            "platforms",
+        )
 
 
 __all__ = ["execute_business_pulse", "validate_business_pulse"]

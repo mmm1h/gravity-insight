@@ -101,7 +101,11 @@ def validate_analysis_query_plan(
 
     request_object(request, ANALYSIS_QUERY_REQUEST_FIELDS, "analysis_query")
     if request.get("name") != ANALYSIS_QUERY_NAME:
-        raise input_error("analysis query composite name is invalid; must match the documented composite name", "name")
+        raise input_error(
+            f"actual value: {actual_value(request.get('name'))}; "
+            "analysis query composite name is invalid; must match the documented composite name",
+            "name",
+        )
     validate_exact_targets(context, ANALYSIS_QUERY_BINDING_TARGETS)
     if "spec" not in request:
         raise input_error(f"actual value: {actual_value(request.get('spec'))}; " + ("analysis query composite requires spec"), "spec")
@@ -132,12 +136,14 @@ def validate_analysis_query_plan(
     if compare_start is not None:
         if context.output_fields:
             raise input_error(
-                "analysis period compare does not accept single-window output_fields; must omit single-window output_fields",
+                f"actual value: {actual_value(context.output_fields)}; analysis period compare "
+                "does not accept single-window output_fields; must omit single-window output_fields",
                 "output_fields",
             )
         if compiled.kind == "property":
             raise input_error(
-                "property Analysis has no governed date-window input; must omit compare_start/compare_end",
+                f"actual value: {actual_value(['compare_start', 'compare_end'])}; property "
+                "Analysis has no governed date-window input; must omit compare_start/compare_end",
                 "compare_start/compare_end",
             )
         compile_query_spec(
@@ -292,7 +298,11 @@ def safe_analysis_envelope(
     """Retain governed result data while never returning compiled/request input."""
 
     if not isinstance(result, Mapping):
-        raise input_error("analysis query result is invalid; must be an object envelope", "result")
+        raise input_error(
+            f"actual value: {actual_value(type(result).__name__)}; "
+            "analysis query result is invalid; must be an object envelope",
+            "result",
+        )
     selected = {
         key: copy.deepcopy(value)
         for key, value in result.items()

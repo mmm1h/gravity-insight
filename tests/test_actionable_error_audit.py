@@ -20,8 +20,8 @@ class ActionableErrorAuditTests(unittest.TestCase):
         rows = inventory(ROOT / "src" / "gravity_sdk")
         counts = Counter(item["grade"] for item in rows)
         assert len(rows) == 1275
-        assert counts["A"] == 1025
-        assert counts["B"] == 250
+        assert counts["A"] == 1113
+        assert counts["B"] == 162
         assert counts.get("C", 0) == 0
         assert sum(counts.values()) == len(rows)
 
@@ -77,6 +77,24 @@ class ActionableErrorAuditTests(unittest.TestCase):
             run_analysis_query_batch(object(), {"schema_version": "bad"}, dry_run="yes")
         self.assertIn('actual value: "yes"', str(batch_error.exception))
         self.assertEqual(batch_error.exception.field, "dry_run")
+
+    def test_plan_adapter_errors_describe_safe_actual_shape(self):
+        from gravity_sdk.plan import AdapterContext
+        from gravity_sdk.plan_custom_audience_adapter import validate_custom_audience_plan
+
+        context = AdapterContext(
+            node_id="audiences", execution_id="audiences", kind="composite",
+            workspace=object(), output_fields=(), dynamic_targets=(),
+            max_pages=1, max_items=1,
+        )
+        with self.assertRaises(InputValidationError) as caught:
+            validate_custom_audience_plan(
+                {"name": "custom_audience", "unexpected": "business-value"},
+                context,
+                frozenset(),
+            )
+        self.assertIn('actual value: ["name","unexpected"]', str(caught.exception))
+        self.assertNotIn("business-value", str(caught.exception))
 
     def test_representative_sites_now_carry_path_and_remedy(self):
         from types import SimpleNamespace

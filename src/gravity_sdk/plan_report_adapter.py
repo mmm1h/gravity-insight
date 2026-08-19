@@ -68,9 +68,9 @@ def validate_report_composite(
         validate_selected_fields(context.output_fields, output_fields, "output_fields")
         return
     if set(request) != {"name"}:
-        raise input_error("company_usage request accepts only its name; must contain only its name; remove extras", "request")
+        raise input_error(f"actual value: {actual_value(sorted(request))}; company_usage request accepts only its name; must contain only its name; remove extras", "request")
     if context.dynamic_targets:
-        raise input_error("company_usage has no binding targets; must contain only its name; remove extras", "bindings")
+        raise input_error(f"actual value: {actual_value(context.dynamic_targets)}; company_usage has no binding targets; must contain only its name; remove extras", "bindings")
     if context.max_items < 1:
         raise input_error(f"actual value: {actual_value(context.max_items)}; " + ("company_usage requires one source item"), "limits.max_items")
     validate_selected_fields(context.output_fields, output_fields, "output_fields")

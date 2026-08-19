@@ -82,13 +82,16 @@ def validate_plan(plan: Mapping[str, Any]) -> ValidatedPlan:
     expanded, aggregate = worst_case(nodes)
     if expanded > MAX_EXPANDED_NODES:
         raise invalid(
-            f"plan must stay at or below {MAX_EXPANDED_NODES} expanded executions; split the plan or lower foreach.max_items",
+            f"actual value: {actual_value((expanded, MAX_EXPANDED_NODES))}; plan must stay at "
+            f"or below {MAX_EXPANDED_NODES} expanded executions; split the plan or lower foreach.max_items",
             "nodes",
         )
     aggregate_limit = min(max_total_items, MAX_AGGREGATE_ITEMS)
     if aggregate > aggregate_limit:
         raise invalid(
-            f"plan aggregate max_items must stay at or below {aggregate_limit}; lower node limits.max_items or budget.max_total_items",
+            f"actual value: {actual_value((aggregate, aggregate_limit))}; plan aggregate "
+            f"max_items must stay at or below {aggregate_limit}; lower node limits.max_items "
+            "or budget.max_total_items",
             "budget.max_total_items",
         )
     return ValidatedPlan(
@@ -107,7 +110,8 @@ def _node_array(value: Any) -> Sequence[Any]:
         raise invalid(f"actual value: {actual_value(value)}; " + ("plan requires at least one node"), "nodes")
     if len(value) > MAX_DECLARED_NODES:
         raise invalid(
-            f"plan must declare at most {MAX_DECLARED_NODES} nodes; split the document",
+            f"actual value: {actual_value((len(value), MAX_DECLARED_NODES))}; plan must declare "
+            f"at most {MAX_DECLARED_NODES} nodes; split the document",
             "nodes",
         )
     return value
@@ -135,7 +139,8 @@ def validate_node(value: Any, index: int) -> PlanNode:
         raise invalid(f"actual value: {actual_value(request)}; " + ("plan node request must be an object"), f"{field}.request")
     if "workspace" in request:
         raise invalid(
-            "plan requests must omit workspace; the bound workspace is used",
+            f"actual value: {actual_value(['workspace'])}; plan requests must omit workspace; "
+            "the bound workspace is used",
             f"{field}.request.workspace",
         )
     try:
@@ -430,7 +435,8 @@ def validate_graph(nodes: tuple[PlanNode, ...], by_id: Mapping[str, PlanNode]) -
     def visit(node_id: str) -> None:
         if node_id in visiting:
             raise invalid(
-                "plan depends_on must be acyclic; remove the cycle before retrying",
+                f"actual value: {actual_value({'cycle_size': len(visiting)})}; plan depends_on "
+                "must be acyclic; remove the cycle before retrying",
                 "nodes",
             )
         if node_id in visited:

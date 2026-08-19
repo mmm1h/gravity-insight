@@ -50,10 +50,16 @@ def validate_material_performance_plan(
 
     if set(request) - MATERIAL_PERFORMANCE_FIELDS:
         raise input_error(
-            "material_performance request contains unavailable fields; must use only available fields; remove extras", "request"
+            f"actual value: {actual_value(sorted(set(request) - MATERIAL_PERFORMANCE_FIELDS))}; "
+            "material_performance request contains unavailable fields; must use only available fields; remove extras",
+            "request",
         )
     if request.get("name") != MATERIAL_PERFORMANCE_NAME:
-        raise input_error("material_performance name is invalid; must match the documented composite name", "name")
+        raise input_error(
+            f"actual value: {actual_value(request.get('name'))}; material_performance name "
+            "is invalid; must match the documented composite name",
+            "name",
+        )
     validate_exact_targets(context, _TARGETS)
     apps = request.get("apps")
     if not isinstance(apps, list) or not 1 <= len(apps) <= 100:
@@ -74,10 +80,16 @@ def validate_material_performance_plan(
             request.get("platforms", list(DEFAULT_PLATFORMS))
         )
     except InputValidationError as exc:
-        raise input_error(("must correct: " + str(str(exc))), "platforms") from None
+        raise input_error(
+            f"actual value: {actual_value(request.get('platforms', list(DEFAULT_PLATFORMS)))}; "
+            "must correct platforms to the supported enum values",
+            "platforms",
+        ) from None
     if context.max_items < len(platforms):
         raise input_error(
-            "material_performance platforms exceed this node max_items; must stay at or below this node max_items; raise limits.max_items",
+            f"actual value: {actual_value((len(platforms), context.max_items))}; "
+            "material_performance platforms exceed this node max_items; must stay at or below "
+            "this node max_items; raise limits.max_items",
             "limits.max_items",
         )
     _validate_dates(request, set(context.dynamic_targets))
@@ -117,7 +129,10 @@ def execute_material_performance_plan(
     )
     if material_performance_item_count(safe) > context.max_items:
         raise input_error(
-            "material_performance exceeded its Plan item budget; must stay at or below this node max_items; raise limits.max_items", "limits.max_items"
+            f"actual value: {actual_value((material_performance_item_count(safe), context.max_items))}; "
+            "material_performance exceeded its Plan item budget; must stay at or below this node "
+            "max_items; raise limits.max_items",
+            "limits.max_items",
         )
     return safe
 
