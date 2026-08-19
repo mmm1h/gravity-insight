@@ -9,6 +9,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
+from .analysis_interpretation import attach_analysis_interpretation
 from .analysis_spec import compile_query_spec, validate_query_spec
 from .errors import InputValidationError
 from .result_source import GOVERNED_PRODUCT, result_source
@@ -95,7 +96,11 @@ def compare_analysis_periods(
             current.operation_id,
         ),
     }
-    return _envelope(selected_kind, baseline.inputs, windows)
+    return attach_analysis_interpretation(
+        _envelope(selected_kind, baseline.inputs, windows),
+        selected_kind,
+        spec,
+    )
 
 
 def _request(request_id: str, compiled: Any) -> dict[str, Any]:

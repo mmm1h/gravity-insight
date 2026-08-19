@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from typing import Any
 
+from .analysis_interpretation import attach_analysis_interpretation
 from .analysis_spec import (
     analysis_query_spec_schema,
     prepare_query_spec,
@@ -223,10 +224,14 @@ def _run_compact_query(
     compiled, _validation = validate_query_spec(
         client, args.kind, spec, **options
     )
-    return add_result_source(
-        call_read(client, compiled.operation_id, compiled.inputs),
-        GOVERNED_PRODUCT,
-        replace=True,
+    return attach_analysis_interpretation(
+        add_result_source(
+            call_read(client, compiled.operation_id, compiled.inputs),
+            GOVERNED_PRODUCT,
+            replace=True,
+        ),
+        compiled.kind,
+        spec,
     )
 
 
@@ -317,17 +322,21 @@ def _run_period_compare(
 ) -> dict[str, Any]:
     from .analysis_period_compare import compare_analysis_periods
 
-    return compare_analysis_periods(
-        client,
+    return attach_analysis_interpretation(
+        compare_analysis_periods(
+            client,
+            args.kind,
+            spec,
+            workspace=options["workspace"],
+            app=options["app"],
+            current_start=options["start"],
+            current_end=options["end"],
+            baseline_start=compare_start,
+            baseline_end=compare_end,
+            max_workers=getattr(args, "compare_concurrency", None) or 2,
+        ),
         args.kind,
         spec,
-        workspace=options["workspace"],
-        app=options["app"],
-        current_start=options["start"],
-        current_end=options["end"],
-        baseline_start=compare_start,
-        baseline_end=compare_end,
-        max_workers=getattr(args, "compare_concurrency", None) or 2,
     )
 def _reject_unrelated_shortcuts(args: Any) -> None:
     unsupported = {
