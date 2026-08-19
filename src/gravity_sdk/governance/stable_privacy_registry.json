@@ -95,6 +95,7 @@
       "data.create_user_name",
       "data.even_report",
       "data.even_report[].config",
+      "data.even_report[].id",
       "data.even_report[].name",
       "data.even_report[].remark",
       "data.even_report[].report_id",

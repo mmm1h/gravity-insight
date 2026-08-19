@@ -330,7 +330,7 @@ def _governed_writes(
     return _guide(
         "受治理写入：dry-run → 人工确认 → execute",
         [
-            "先从完整目录读取 action-qualified mutation 产品卡；analysis 的 27 张写卡都在产品区，`--limit 50` 可一次列出：",
+            "先从完整目录读取 action-qualified mutation 产品卡；analysis 的 28 张写卡都在产品区，`--limit 50` 可一次列出：",
             "```powershell\ngravity agent-catalog categories\ngravity agent-catalog category analysis --limit 50\ngravity agent-catalog category report --limit 50\ngravity agent-catalog describe <selected-mutation-selector>\n```",
             _mutation_table(all_cards),
             "例如，删除分群卡给出的最小两步交接为：",
@@ -339,7 +339,7 @@ def _governed_writes(
             "```powershell\n" + _argv(report_card["next"]["argv"]) + "\n# 审查 preview 后，原参数只把 --dry-run 改为 --execute\n" + _argv(report_card["next"]["then_argv"]) + "\n```",
             "重命名看板卡给出的最小两步交接为：",
             "```powershell\n" + _argv(kanban_card["next"]["argv"]) + "\n# 审查 preview 后，原参数只把 --dry-run 改为 --execute\n" + _argv(kanban_card["next"]["then_argv"]) + "\n```",
-            "31 张 action 卡覆盖 `analysis segment create-from-analysis/create-from-rule/create-from-history/create-from-tmp/update/update-rule/refresh/delete`、`reports create/delete/subscribe/unsubscribe` 与全部 19 个 `analysis dashboard kanban mutate --action`。每张卡都显式二选一 `--dry-run` / `--execute`；Kanban 另提供显式 `preview|execute` Plan node，但自然语言和预览都不是写授权。",
+            "32 张 action 卡覆盖 `analysis segment create-from-analysis/create-from-rule/create-from-history/create-from-tmp/update/update-rule/refresh/delete`、`reports create/delete/subscribe/unsubscribe` 与全部 20 个 `analysis dashboard kanban mutate --action`。每张卡都显式二选一 `--dry-run` / `--execute`；Kanban 另提供显式 `preview|execute` Plan node，但自然语言和预览都不是写授权。",
         ],
         {
             "mutation_card_count": len(all_cards),

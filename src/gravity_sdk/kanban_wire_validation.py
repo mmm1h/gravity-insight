@@ -31,9 +31,7 @@ def validate_kanban_wire(operation_id: str, values: Mapping[str, Any]) -> None:
         }:
             minimum = 0 if field in {"folder_id", "to_folder_id"} else 1
             _integer(value, field, minimum)
-    for field in ("dashboard_ids", "ids"):
-        if field in values:
-            _integer_array(values[field], field)
+    _identity_arrays(operation_id, values)
     if operation_id in {SPACE_CREATE, DASHBOARD_CREATE, DASHBOARD_COPY}:
         _owned_name(values.get("name"))
     if operation_id == DASHBOARD_MOVE:
@@ -59,6 +57,14 @@ def _integer(value: Any, field: str, minimum: int) -> None:
             field=field,
             next_action="Use exact integer coordinates from the latest Kanban tree/detail and run dry-run again.",
         )
+
+
+def _identity_arrays(operation_id: str, values: Mapping[str, Any]) -> None:
+    if "dashboard_ids" in values:
+        _integer_array(values["dashboard_ids"], "dashboard_ids")
+    if "ids" not in values:
+        return
+    _integer_array(values["ids"], "ids")
 
 
 def _integer_array(value: Any, field: str) -> None:

@@ -20,6 +20,8 @@ class KanbanMutationSdkMixin:
         *,
         execute: bool = False,
     ) -> dict[str, Any]:
+        """Preview or execute one exact Kanban action, including report link/unlink."""
+
         from .kanban_mutation import run_kanban_mutation
 
         return run_kanban_mutation(self.insight, action, inputs, execute=execute)

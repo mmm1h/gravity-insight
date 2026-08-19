@@ -80,6 +80,17 @@ def nonnegative_id(value: Any, field: str) -> int:
     return value
 
 
+def normalize_report_id(value: Any) -> str | None:
+    if isinstance(value, bool):
+        return None
+    if type(value) is int:
+        return str(value) if value > 0 else None
+    if isinstance(value, str):
+        selected = value.strip()
+        return selected if 1 <= len(selected) <= 128 else None
+    return None
+
+
 def caller_text(value: Any, field: str, maximum: int) -> str:
     if not isinstance(value, str) or not value.strip() or len(value) > maximum:
         raise InputValidationError(
@@ -515,6 +526,7 @@ __all__ = [
     "marker_from_text",
     "mutation_preview",
     "nonnegative_id",
+    "normalize_report_id",
     "positive_id",
     "preserve_marker",
     "read_detail",

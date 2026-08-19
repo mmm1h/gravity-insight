@@ -1173,6 +1173,7 @@ class GravityInsightManifestTests(unittest.TestCase):
                 },
                 "analysis.dashboard.detail": {
                     "even_report": [
+                        "id",
                         "report_id",
                         "name",
                         "subject",

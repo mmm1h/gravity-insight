@@ -126,8 +126,8 @@
     {
       "action": "detail",
       "auth_profile": "gravity_authorization",
-      "contract_version": 2,
-      "description": "看板详情；上游路径保留 detial 拼写，ui_config 与 even_report.config 均为前端直接 JSON.parse 的 JSON 字符串；共享成员只返回内部标识与权限。",
+      "contract_version": 3,
+      "description": "看板详情；上游路径保留 detial 拼写，even_report.id 是 unlink 所需内部关联 ID，report_id 是保存分析 ID；ui_config 与 even_report.config 均为前端直接 JSON.parse 的 JSON 字符串。",
       "domain": "analysis",
       "effect": "read",
       "input_fields": {
@@ -197,6 +197,7 @@
       "response_projection": {
         "data_item_keys": {
           "even_report": [
+            "id",
             "report_id",
             "name",
             "subject",
@@ -2394,8 +2395,8 @@
     {
       "action": "delete",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "从 SDK 标记看板移除精确图表关联，不删除或修改底层保存报表。",
+      "contract_version": 2,
+      "description": "从 SDK 标记看板移除精确图表关联；ids 使用看板详情 even_report[].id 的内部正整数关联 ID，不删除或修改底层保存报表。",
       "domain": "analysis",
       "effect": "mutation",
       "executable": true,
