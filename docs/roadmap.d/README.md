@@ -81,6 +81,7 @@
 - [结果信封写出率与可加性声明](envelope-truth.md) — 2026-08-19：analysis 结果带 `interpretation`；Plan 运行时失败保留 `message`/`next_action`。
 - [弃权时给出有界可答问法](answerable-suggestions.md) — 2026-08-19：`NO_CANDIDATE` 信封带 8 条从已登记产品卡机械导出的可答问法；`next.argv` 仍是 `agent-catalog categories`；development 两层分数不变，因为 scorer 不读该字段。
 - [FieldPolicy 预取接到分账号磁盘](prefetch-cost.md) — 2026-08-19：字段目录按 #223 指纹落盘；十人冷启动 metadata HTTP 20→2；默认路径不加指纹。
+- [合同词表机械扩展验证](lexicon.md) — 2026-08-19：96 张现有产品卡的额外合同语料未减少 41 个 `no_candidate`，候选实现已撤回。
 
 ## 归档记录
 
