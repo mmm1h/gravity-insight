@@ -21,6 +21,9 @@ _EXACT = frozenset(
         "默认值字典",
     }
 )
+_ANALYSIS_DEFAULT_OWNER_TYPO = re.compile(
+    r"默人值(?=\s*(?:的\s*)?字典)"
+)
 
 
 ANALYSIS_DEFAULT_DICTIONARY_CAPABILITY: Mapping[str, Any] = {
@@ -46,7 +49,7 @@ ANALYSIS_DEFAULT_DICTIONARY_CAPABILITY: Mapping[str, Any] = {
 
 
 def analysis_default_dictionary_query(query: str) -> bool:
-    selected = affirmative_intent_text(query)
+    selected = _normalize_analysis_default_owner(affirmative_intent_text(query))
     if selected in _EXACT:
         return True
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
@@ -61,6 +64,12 @@ def analysis_default_dictionary_query(query: str) -> bool:
         "分析" in selected and "字典" in selected
         and any(term in selected for term in ("默认", "缺省"))
     )
+
+
+def _normalize_analysis_default_owner(selected: str) -> str:
+    """Normalize one observed typo only inside the default-dictionary phrase."""
+
+    return _ANALYSIS_DEFAULT_OWNER_TYPO.sub("默认值", selected)
 
 
 def analysis_default_dictionary_intent(query: str) -> bool:
