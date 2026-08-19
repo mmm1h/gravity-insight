@@ -11,6 +11,17 @@ from .agent_intent_text import affirmative_intent_text
 
 
 APP_PUBLIC_INFO_SELECTOR = ".".join(("app", "app_info", "get"))
+APP_PUBLIC_INFO_INPUT_TEMPLATE: Mapping[str, str] = {
+    "url": "<app-store-or-google-play-url>",
+}
+
+
+def app_public_info_input_template() -> dict[str, str]:
+    """Return a fresh raw-operation input object for caller completion."""
+
+    return dict(APP_PUBLIC_INFO_INPUT_TEMPLATE)
+
+
 APP_PUBLIC_INFO_CAPABILITY: Mapping[str, Any] = {
     "kind": "operation",
     "selector": APP_PUBLIC_INFO_SELECTOR,
@@ -39,6 +50,7 @@ APP_PUBLIC_INFO_CAPABILITY: Mapping[str, Any] = {
     },
     "required_inputs": ("url",),
     "missing_inputs": ["url"],
+    "input_template": app_public_info_input_template(),
     "match": {
         "confidence": "strong",
         "coverage": 1.0,
@@ -59,6 +71,15 @@ def app_public_info_capability_inventory() -> tuple[dict[str, Any], ...]:
     """Return the single canonical card backed by the stable operation."""
 
     return (copy.deepcopy(dict(APP_PUBLIC_INFO_CAPABILITY)),)
+
+
+def is_authoritative_app_public_info_card(card: Mapping[str, Any]) -> bool:
+    """Identify the owner card so generic operation search cannot replace it."""
+
+    return (
+        card.get("kind") == "operation"
+        and card.get("selector") == APP_PUBLIC_INFO_SELECTOR
+    )
 
 
 def app_public_info_query(query: str) -> bool:
@@ -91,8 +112,11 @@ def app_public_info_capability_cards(
 
 __all__ = [
     "APP_PUBLIC_INFO_CAPABILITY",
+    "APP_PUBLIC_INFO_INPUT_TEMPLATE",
     "APP_PUBLIC_INFO_SELECTOR",
     "app_public_info_capability_cards",
     "app_public_info_capability_inventory",
+    "app_public_info_input_template",
     "app_public_info_query",
+    "is_authoritative_app_public_info_card",
 ]

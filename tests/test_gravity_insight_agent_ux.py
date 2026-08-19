@@ -572,10 +572,12 @@ class DiscoveryUxTests(unittest.TestCase):
                 result = discover_capabilities(query, client=self.client)
                 card = result["candidates"][0]
                 self.assertEqual(expected, card.get("analysis_kind") or card.get("composite"))
-        public = discover_capabilities(
-            "查看 App 的公开信息绑定", client=self.client
-        )
-        self.assertEqual("app.app_info.get", public["candidates"][0]["selector"])
+        for query in ("查看 App 的公开信息绑定", "查看 App 的 OneLink 和公开信息怎么绑定。"):
+            public = discover_capabilities(query, client=self.client)
+            card = public["candidates"][0]
+            actual = card["selector"], set(card["input_schema"]), set(card["required_inputs"]), set(card["input_template"])
+            self.assertEqual(("app.app_info.get", {"url"}, {"url"}, {"url"}), actual)
+            self.assertEqual({"selector": "app.app_info.get"}, card["plan_node"]["request"])
 
         negative = discover_capabilities("不要运行看板图表。", client=self.client)
         self.assertEqual(("capability_gap", []), (negative["status"], negative["candidates"]))
