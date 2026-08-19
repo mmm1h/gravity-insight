@@ -9,14 +9,18 @@ from typing import Any
 
 MULTIPLE_INTENTS = "MULTIPLE_INTENTS"
 
-_COORDINATOR = re.compile(
-    r"\s+and\s+|以及|同时|连同|和其他|"
+_BASE_COORDINATOR = re.compile(
+    r"\s+and\s+|以及|同时|连同|和(?=其他)|"
     r"既(?:要|看)|也(?:要|看|比较)",
     re.IGNORECASE,
 )
 _CLAUSE_HANDOFFS = re.compile(
-    r"以及|同时|连同|和其他|既(?:要|看)|也(?:要|看|比较)"
+    r"以及|同时|连同|和(?=其他)|既(?:要|看)|也(?:要|看|比较)"
 )
+_PAIRED_COORDINATION = re.compile(r"既.+?(?:也|又)")
+_PAIRED_MARKERS = re.compile(r"既(?:要|看)?|(?:也|又)(?:要|看|比较)?")
+_TOGETHER_COORDINATION = re.compile(r"和[^。！？!?]+(?:一起|一并)")
+_TOGETHER_HANDOFF = re.compile(r"和(?=[^。！？!?]+(?:一起|一并))")
 _WRAPPER_SELECTORS = frozenset({
     "composite:saved_analysis", "composite:segment_snapshot", "composite:segment_members"
 })
@@ -79,7 +83,7 @@ def multiple_product_intents(
     """Detect competing cards directly, then recognize coordinated clauses."""
 
     direct = _strict_query_selectors(query, inventory)
-    clauses = tuple(part.strip() for part in _COORDINATOR.split(query) if part.strip())
+    clauses = _coordinated_clauses(query)
     selectors: list[str] = []
     matched_clauses = 0
     local_handoffs = explicit_clause_coordination(query)
@@ -96,7 +100,7 @@ def multiple_product_intents(
     coordinated = tuple(selectors) if matched_clauses >= 2 and len(selectors) >= 2 else ()
     if coordinated:
         return coordinated
-    if set(direct) & _WRAPPER_SELECTORS:
+    if set(direct) & _WRAPPER_SELECTORS and not local_handoffs:
         return ()
     if len(direct) >= 2:
         return direct
@@ -126,7 +130,7 @@ def _clause_selectors(
         card for card in composites if card.get("match", {}).get("exact_selector")
     ]
     cards = [*direct, *strict] or composites
-    return tuple(
+    selectors = tuple(
         str(card["selector"])
         for card in cards
         if card.get("kind") in {
@@ -136,12 +140,16 @@ def _clause_selectors(
             "composite",
         }
     )
+    if selectors or not include_local_handoffs:
+        return selectors
+    return _positive_query_selectors(clause)
 
 
 def _local_clause_selectors(clause: str) -> tuple[str, ...]:
     """Classify one coordinated clause without consulting the whole query."""
 
     from .agent_material_asset import material_asset_capability_cards
+    from .agent_export import material_export_capability_cards
     from .agent_table_lineage import table_lineage_capability_cards
     from .agent_unavailable import unavailable_journey_gap
 
@@ -151,6 +159,7 @@ def _local_clause_selectors(clause: str) -> tuple[str, ...]:
         str(card["selector"])
         for cards in (
             table_lineage_capability_cards(clause, domain=None, platform=None),
+            material_export_capability_cards(clause),
             material_asset_capability_cards(clause, domain=None, platform=None),
         )
         for card in cards
@@ -255,7 +264,29 @@ def _analysis_context_intent(query: str) -> bool:
 def explicit_clause_coordination(query: str) -> bool:
     """True only for explicit Chinese coordinators, not English list-and."""
 
-    return _CLAUSE_HANDOFFS.search(query) is not None
+    return bool(
+        _CLAUSE_HANDOFFS.search(query)
+        or _PAIRED_COORDINATION.search(query)
+        or _TOGETHER_COORDINATION.search(query)
+    )
+
+
+def _coordinated_clauses(query: str) -> tuple[str, ...]:
+    """Split only explicit coordination forms while preserving clause nouns."""
+
+    splitters = [_BASE_COORDINATOR]
+    if _PAIRED_COORDINATION.search(query):
+        splitters.append(_PAIRED_MARKERS)
+    if _TOGETHER_COORDINATION.search(query):
+        splitters.append(_TOGETHER_HANDOFF)
+    clauses = (query,)
+    for splitter in splitters:
+        clauses = tuple(
+            piece
+            for clause in clauses
+            for piece in splitter.split(clause)
+        )
+    return tuple(clause.strip() for clause in clauses if clause.strip())
 
 
 def multiple_intent_gap(query: str) -> list[dict[str, object]]:
@@ -268,7 +299,7 @@ def multiple_intent_gap(query: str) -> list[dict[str, object]]:
 
     selected: list[dict[str, object]] = [product_selection_gap(query, intents)]
     seen: set[str] = set()
-    for clause in (part.strip() for part in _COORDINATOR.split(query) if part.strip()):
+    for clause in _coordinated_clauses(query):
         gap = unavailable_journey_gap(clause)
         if gap is None or str(gap["code"]) in seen:
             continue

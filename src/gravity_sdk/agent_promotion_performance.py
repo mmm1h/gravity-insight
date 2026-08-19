@@ -85,7 +85,7 @@ _HETEROGENEOUS_ENGLISH = (
     "xiaohongshu",
 )
 _CHINESE_SUBJECTS = ("推广", "投放")
-_CHINESE_ACTIONS = ("表现", "效果", "报表", "报告")
+_CHINESE_ACTIONS = ("表现", "效果", "报表", "报告", "汇总")
 _CHINESE_METRICS = ("消耗", "花费", "点击", "转化", "曝光")
 _CHINESE_READ_ONLY_VERBS = ("查询",)
 _CHINESE_NEGATIONS = (

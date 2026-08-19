@@ -444,7 +444,7 @@ def _material_export_workflow(query: str) -> bool:
     )
     chinese = (
         "素材" in selected
-        and "报表" in selected
+        and ("报表" in selected or "分析" in selected and "文件" in selected)
         and any(term in selected for term in ("生成", "创建"))
         and any(term in selected for term in ("下载", "保存到本地"))
     )

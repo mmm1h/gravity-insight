@@ -442,6 +442,10 @@ class DiscoveryUxTests(unittest.TestCase):
                 "既要巨量广告主账户余额状态也要跨平台推广表现",
                 ("composite:advertiser_profile", "composite:promotion_performance"),
             ),
+            ("把这个分群当天的规模趋势和里面每个人的属性名单一起给我。", ("composite:segment_snapshot", "composite:segment_members")),
+            ("同一份复盘里既看各平台推广层级的物理指标，也比较图片视频素材效果。", ("composite:promotion_performance", "composite:material_performance")),
+            ("把 B 站账户产品表现和其他平台的通用推广汇总放在同一个结果里。", ("composite:bilibili_account_performance", "composite:promotion_performance")),
+            ("既生成素材分析文件下载，又在屏幕结果里比较各平台素材指标。", ("export.material.report.start", "composite:material_performance")),
         )
         for query, selectors in cases:
             with self.subTest(query=query):

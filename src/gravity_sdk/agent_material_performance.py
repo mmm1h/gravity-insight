@@ -127,7 +127,11 @@ def material_performance_intent(query: str) -> bool:
         return False
     return (
         "素材" in compact
-        and any(term in compact for term in _CHINESE_ACTIONS)
+        and (
+            any(term in compact for term in _CHINESE_ACTIONS)
+            or "指标" in compact
+            and any(term in compact for term in ("比较", "对比", "各平台", "跨平台"))
+        )
     )
 
 
