@@ -111,9 +111,14 @@ catalog 使用 `{"catalog_policy":"refresh"}`；任一来源失败时不发布 s
 | `parents resolve` | 解析 operation 需要的父资源 |
 | `auth status/refresh` | 查看或刷新认证状态 |
 | `export ...` | 一键创建/轮询/下载治理导出，或分阶段恢复 |
-| `doctor` | 离线检查；`--live` 执行最小在线探针 |
+| `doctor` | 离线检查安装来源与本地合同；`--live` 通过后执行最小在线探针 |
 
 领域命令如 `analysis`、`multidim`、`promotion`、`materials` 是受控 operation 的易用门面；不确定时从 `operations search` 开始。
+
+`gravity doctor` 先在本地对齐当前源码 `pyproject.toml`、`gravity-sdk` distribution metadata、
+editable 根目录、实际 `gravity_sdk` import 路径和版本。重复 metadata、版本或根目录不一致会在任何
+客户端构造和 `--live` 探针前以 `INSTALL_*` reason code、local exit `4` 和有序
+`reinstall_commands` 失败；检查本身不访问网络。
 
 `operations search` 会把可调用 stable 结果排在前面，也会展示部分 draft/blocked catalog
 条目来说明覆盖缺口。执行前检查 `executable`、`stability` 和 `block_reason`，再以 `describe`

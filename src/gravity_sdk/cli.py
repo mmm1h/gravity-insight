@@ -105,6 +105,7 @@ from gravity_sdk.read_cli import add_read_command
 from gravity_sdk.cli_root_commands import add_root_commands, dispatch_root_command
 from gravity_sdk.plan_cli import add_plan_commands
 from gravity_sdk.plan_product_cli import dispatch as dispatch_plan
+from gravity_sdk.doctor_cli import run_doctor
 
 
 _LARGE_VALUE_BYTES = 8_192
@@ -442,58 +443,6 @@ def _attribution(args: argparse.Namespace) -> Any:
     return runtime.call_batch(client, requests)
 
 
-def _doctor(args: argparse.Namespace) -> Any:
-    local = runtime.validate_manifest_json()
-    client = _client(args)
-    operations = client.operations()
-    operation_ids = runtime.operation_ids(operations)
-    result: dict[str, Any] = {
-        "status": "pass",
-        "live": False,
-        **local,
-        "registered_operations": len(operation_ids),
-        "auth": runtime.credential_status(),
-    }
-    if args.live:
-        if callable(getattr(client, "probe_all", None)):
-            probes = client.probe_all(max_workers=args.concurrency)
-            coverage = probes.get("coverage", {}) if isinstance(probes, Mapping) else {}
-            probe_status = (
-                str(probes.get("status", "error"))
-                if isinstance(probes, Mapping)
-                else "error"
-            )
-            result.update(
-                {
-                    "status": "pass"
-                    if probe_status in {"success", "empty"}
-                    else "partial",
-                    "live": True,
-                    "probe_status": probe_status,
-                    "probes_run": probes.get("probed", 0)
-                    if isinstance(probes, Mapping)
-                    else 0,
-                    "coverage": coverage,
-                }
-            )
-            return result
-        operation_id = runtime.resolve_operation_id(
-            client, DOMAIN_OPERATIONS["apps.list"]
-        )
-        schema = runtime.to_jsonable(client.schema(operation_id))
-        live_probe = schema.get("live_probe", {}) if isinstance(schema, Mapping) else {}
-        if not isinstance(live_probe, Mapping):
-            raise ValueError(f"{operation_id} has an invalid live probe contract")
-        probe_inputs = live_probe.get("inputs", live_probe.get("input", {}))
-        if not isinstance(probe_inputs, Mapping):
-            raise ValueError(f"{operation_id} live probe inputs must be an object")
-        runtime.call_read(client, operation_id, dict(probe_inputs), read_all=False)
-        result.update(
-            {"live": True, "probe_operation_id": operation_id, "probe_succeeded": True}
-        )
-    return result
-
-
 def _auth_or_parents(args: argparse.Namespace) -> Any:
     if args.command == "parents":
         return run_parent_command(args, _client)
@@ -552,7 +501,7 @@ def run(args: argparse.Namespace) -> Any:
     if args.command in {"auth", "parents"}:
         return _auth_or_parents(args)
     if args.command == "doctor":
-        return _doctor(args)
+        return run_doctor(args)
     if args.command in {"apps", "metadata", "find"}:
         return _apps_or_metadata(args)
     if args.command == "analysis":

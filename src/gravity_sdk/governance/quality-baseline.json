@@ -252,7 +252,7 @@
     },
     "src/gravity_sdk/cli.py": {
       "ast_hard_limit": 4167,
-      "ast_nodes": 4148,
+      "ast_nodes": 3822,
       "migration_sloc": 715,
       "sloc_hard_limit": 788
     },
