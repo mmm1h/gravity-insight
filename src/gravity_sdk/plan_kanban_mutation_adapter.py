@@ -21,6 +21,7 @@ _OUTPUT_FIELDS = frozenset(
         "read_attempts", "target", "preimage", "impact", "cascade",
         "preconditions", "request", "normalized_input", "preview_fingerprint",
         "mutation", "next_action", "error",
+        "idempotent_reuse",
     }
 )
 

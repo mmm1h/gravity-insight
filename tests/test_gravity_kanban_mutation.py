@@ -1,13 +1,18 @@
 from __future__ import annotations
 
+import copy
 import json
 import unittest
 from pathlib import Path
 
-from gravity_sdk.agent_kanban_mutation import kanban_mutation_cards
+from gravity_sdk.agent_kanban_mutation import (
+    kanban_mutation_capability_inventory,
+    kanban_mutation_cards,
+)
 from gravity_sdk.cli import build_parser
-from gravity_sdk.errors import InputValidationError
+from gravity_sdk.errors import InputValidationError, MutationReadbackError
 from gravity_sdk.kanban_folder_mutation import delete_folder, rename_folder
+from gravity_sdk.kanban_mutation_contracts import DASHBOARD_UPDATE, REPORT_UNLINK
 from gravity_sdk.kanban_space_mutation import delete_space, rename_space
 from gravity_sdk.plan import AdapterContext
 from gravity_sdk.plan_kanban_mutation_adapter import validate_kanban_plan
@@ -101,6 +106,78 @@ class _OwnerPreviewClient(_PreviewClient):
             }],
         }
 
+
+class _LinkClient:
+    def __init__(
+        self,
+        *,
+        attached: list[dict] | None = None,
+        available: list[dict] | None = None,
+        apply_write: bool = True,
+        add_report_layout: bool = False,
+    ) -> None:
+        self.detail = {
+            "id": 30,
+            "name": f"SDK Dashboard | {MARKER}",
+            "space_id": 10,
+            "ui_config": '[{"i":"layout-1","x":0,"y":0,"w":2,"h":5}]',
+            "even_report": copy.deepcopy(attached or []),
+        }
+        self.available = copy.deepcopy(available or [])
+        for row in self.available:
+            row.setdefault("subject", "analysis_event")
+        self.apply_write = apply_write
+        self.add_report_layout = add_report_layout
+        self.previews: list[dict] = []
+        self.writes: list[dict] = []
+
+    def read(self, operation_id, inputs):
+        return {"ok": True, "status": "success", "data": copy.deepcopy(self.detail)}
+
+    def read_all(self, operation_id, inputs, **options):
+        return {
+            "ok": True,
+            "status": "empty" if not self.available else "success",
+            "data": {"list": copy.deepcopy(self.available)},
+            "error": None,
+        }
+
+    def _preview_mutation(self, operation_id, inputs):
+        self.previews.append(copy.deepcopy(inputs))
+        return {
+            "ok": True,
+            "operation_id": operation_id,
+            "request": {"inputs": copy.deepcopy(inputs)},
+            "network_called": False,
+        }
+
+    def _execute_mutation(self, operation_id, inputs):
+        self.writes.append(copy.deepcopy(inputs))
+        if self.apply_write:
+            if operation_id == DASHBOARD_UPDATE:
+                self.detail["even_report"] = copy.deepcopy(inputs["report_list"])
+                for index, report in enumerate(self.detail["even_report"]):
+                    report.setdefault("id", 100 + index)
+                self.detail["ui_config"] = inputs["ui_config"]
+                if self.add_report_layout:
+                    layout = json.loads(self.detail["ui_config"])
+                    layout.append({"i": inputs["report_list"][-1]["report_id"], "x": 2, "y": 0})
+                    self.detail["ui_config"] = json.dumps(layout)
+            elif operation_id == REPORT_UNLINK:
+                selected = set(inputs["ids"])
+                self.detail["even_report"] = [
+                    item
+                    for item in self.detail["even_report"]
+                    if item["id"] not in selected
+                ]
+        return {
+            "ok": True,
+            "status": "success",
+            "operation_id": operation_id,
+            "attempts": 1,
+        }
+
+
 class GravityKanbanMutationTests(unittest.TestCase):
     def test_parent_delete_preview_reports_relocation_before_write(self) -> None:
         client = _PreviewClient()
@@ -167,6 +244,185 @@ class GravityKanbanMutationTests(unittest.TestCase):
         self.assertFalse(card["natural_language_auto_execute"])
         self.assertEqual("preview", card["next"]["plan_node"]["request"]["mode"])
         self.assertEqual("execute", card["next"]["then_plan_node"]["request"]["mode"])
+
+    def test_link_execute_merges_existing_reports_and_preserves_layout(self) -> None:
+        existing = {
+            "report_id": 4,
+            "name": "Existing",
+            "subject": "analysis_event",
+            "config": "{}",
+            "remark": "keep",
+        }
+        client = _LinkClient(
+            attached=[existing],
+            available=[
+                {"id": 4, "app_id": 1, "name": "Existing"},
+                {"id": 5, "app_id": 1, "name": "New"},
+            ],
+        )
+        layout = client.detail["ui_config"]
+
+        result = GravitySDK(insight=client).kanban_mutation(
+            "dashboard.report.link",
+            {"app_id": 1, "space_id": 10, "dashboard_id": 30, "report_ids": [5]},
+            execute=True,
+        )
+
+        self.assertEqual("updated", result["status"])
+        self.assertEqual(1, len(client.writes))
+        self.assertEqual(DASHBOARD_UPDATE, result["operation_id"])
+        self.assertEqual([existing, {"report_id": "5", "name": "New"}], client.writes[0]["report_list"])
+        written_layout = json.loads(client.writes[0]["ui_config"])
+        self.assertEqual(json.loads(layout), written_layout[:1])
+        self.assertEqual(
+            {
+                "i": "5", "x": 0, "y": 5, "w": 2, "h": 5,
+                "name": "New", "subject": "analysis_event", "isSmall": False,
+            },
+            written_layout[1],
+        )
+
+    def test_link_is_idempotent_when_every_report_is_already_attached(self) -> None:
+        client = _LinkClient(
+            attached=[{"report_id": 4, "name": "Existing"}],
+            available=[{"id": 4, "app_id": 1, "name": "Existing"}],
+        )
+
+        result = GravitySDK(insight=client).kanban_mutation(
+            "dashboard.report.link",
+            {"app_id": 1, "space_id": 10, "dashboard_id": 30, "report_ids": [4]},
+            execute=True,
+        )
+
+        self.assertEqual("already_attached", result["status"])
+        self.assertFalse(result["write_sent"])
+        self.assertEqual([], client.writes)
+
+    def test_link_rejects_union_above_twenty_before_preview_or_write(self) -> None:
+        attached = [{"report_id": item, "name": f"Report {item}"} for item in range(1, 21)]
+        available = [{"id": item, "app_id": 1, "name": f"Report {item}"} for item in range(1, 22)]
+        client = _LinkClient(attached=attached, available=available)
+
+        with self.assertRaises(InputValidationError) as captured:
+            GravitySDK(insight=client).kanban_mutation(
+                "dashboard.report.link",
+                {"app_id": 1, "space_id": 10, "dashboard_id": 30, "report_ids": [21]},
+            )
+
+        self.assertEqual("report_ids", captured.exception.field)
+        self.assertEqual([], client.previews)
+        self.assertEqual([], client.writes)
+
+    def test_link_rejects_missing_or_inaccessible_report_before_preview_or_write(self) -> None:
+        client = _LinkClient(available=[{"id": 4, "app_id": 1, "name": "Visible"}])
+
+        with self.assertRaises(InputValidationError) as captured:
+            GravitySDK(insight=client).kanban_mutation(
+                "dashboard.report.link",
+                {"app_id": 1, "space_id": 10, "dashboard_id": 30, "report_ids": [5]},
+            )
+
+        self.assertEqual("report_ids", captured.exception.field)
+        self.assertEqual([], client.previews)
+        self.assertEqual([], client.writes)
+
+    def test_link_raises_when_write_acknowledgement_does_not_round_trip(self) -> None:
+        client = _LinkClient(
+            available=[{"id": 5, "app_id": 1, "name": "New"}],
+            apply_write=False,
+        )
+
+        with self.assertRaises(MutationReadbackError):
+            GravitySDK(insight=client).kanban_mutation(
+                "dashboard.report.link",
+                {"app_id": 1, "space_id": 10, "dashboard_id": 30, "report_ids": [5]},
+                execute=True,
+            )
+
+        self.assertEqual(1, len(client.writes))
+
+    def test_link_readback_allows_new_layout_item_without_losing_existing_layout(self) -> None:
+        client = _LinkClient(
+            available=[{"id": "report-new", "app_id": 1, "name": "New"}],
+            add_report_layout=True,
+        )
+
+        result = GravitySDK(insight=client).kanban_mutation(
+            "dashboard.report.link",
+            {
+                "app_id": 1,
+                "space_id": 10,
+                "dashboard_id": 30,
+                "report_ids": ["report-new"],
+            },
+            execute=True,
+        )
+
+        self.assertEqual("updated", result["status"])
+        self.assertEqual("layout-1", json.loads(client.detail["ui_config"])[0]["i"])
+
+    def test_link_action_is_exposed_by_sdk_cli_plan_and_agent(self) -> None:
+        action = "dashboard.report.link"
+        inputs = {"app_id": 1, "space_id": 10, "dashboard_id": 30, "report_ids": [5]}
+        client = _LinkClient(available=[{"id": 5, "app_id": 1, "name": "New"}])
+        sdk = GravitySDK(insight=client)
+        request = {
+            "name": "kanban_mutation",
+            "mode": "preview",
+            "inputs": {"action": action, "inputs": inputs},
+        }
+        context = AdapterContext("kanban", "test", "composite", None, (), (), 5, 20)
+
+        preview = sdk.kanban_mutation(action, inputs)
+        validate_kanban_plan(request, context)
+        parsed = build_parser().parse_args([
+            "analysis", "dashboard", "kanban", "mutate", "--action", action,
+            "--input", "link.json", "--dry-run",
+        ])
+        card = next(
+            item
+            for item in kanban_mutation_capability_inventory()
+            if item["mutation_action"] == action
+        )
+
+        self.assertTrue(preview["dry_run"])
+        self.assertTrue(parsed.kanban_dry_run)
+        self.assertEqual([DASHBOARD_UPDATE], card["operation_ids"])
+        self.assertEqual("preview", card["next"]["plan_node"]["request"]["mode"])
+        self.assertEqual("execute", card["next"]["then_plan_node"]["request"]["mode"])
+
+    def test_opaque_saved_analysis_id_round_trips_through_link_and_unlink(self) -> None:
+        report_id = "report-8f4d2c"
+        client = _LinkClient(
+            available=[{"id": report_id, "app_id": 1, "name": "Owned"}]
+        )
+        sdk = GravitySDK(insight=client)
+        inputs = {
+            "app_id": 1,
+            "space_id": 10,
+            "dashboard_id": 30,
+            "report_ids": [report_id],
+        }
+
+        linked = sdk.kanban_mutation("dashboard.report.link", inputs, execute=True)
+        unlinked = sdk.kanban_mutation("dashboard.report.unlink", inputs, execute=True)
+        contract = json.loads(
+            (CONTRACTS / "operations" / "analysis.engine.datamanageconfig.kanban.delete.json").read_text(
+                encoding="utf-8"
+            )
+        )["operation"]
+        detail_contract = json.loads(
+            (CONTRACTS / "operations" / "analysis.dashboard.detail.json").read_text(
+                encoding="utf-8"
+            )
+        )["operation"]
+
+        self.assertEqual("updated", linked["status"])
+        self.assertEqual("updated", unlinked["status"])
+        self.assertEqual(report_id, client.writes[0]["report_list"][0]["report_id"])
+        self.assertEqual([100], client.writes[1]["ids"])
+        self.assertEqual("integer", contract["input_fields"]["ids"]["item_type"])
+        self.assertIn("id", detail_contract["response_projection"]["data_item_keys"]["even_report"])
 
 
 if __name__ == "__main__":

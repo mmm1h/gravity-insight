@@ -63,7 +63,7 @@ class HostProductSelectionTests(unittest.TestCase):
         cards = canonical_capability_cards(self.client)
         gaps = registered_unavailable_gaps()
         refs = {item["catalog_ref"] for item in self.catalog["entries"]}
-        self.assertEqual(102, len(refs))
+        self.assertEqual(103, len(refs))
         self.assertEqual(
             {card["selector"] for card in cards} | {f"gap:{gap['code']}" for gap in gaps},
             refs,

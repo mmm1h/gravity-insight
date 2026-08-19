@@ -81,7 +81,7 @@ class AgentCatalogTests(unittest.TestCase):
             item["gap_code"]: item for item in inventory
             if item["identity_kind"] == "capability_gap"
         }
-        self.assertEqual(96, len(products))
+        self.assertEqual(97, len(products))
         self.assertEqual({card["selector"] for card in products}, set(product_items))
         self.assertEqual({gap["code"] for gap in gaps}, set(gap_items))
         self.assertTrue(all(not item["executable"] for item in gap_items.values()))
@@ -166,7 +166,7 @@ class AgentCatalogTests(unittest.TestCase):
             by_kind["saved_analysis_mutation"],
         )
         self.assertEqual({"update"}, by_kind["realtime_event_mutation"])
-        self.assertEqual(42, len(cards))
+        self.assertEqual(43, len(cards))
 
         stable_mutations = {
             item["operation_id"]
@@ -185,6 +185,7 @@ class AgentCatalogTests(unittest.TestCase):
             {
                 "analysis.dataanalysis.segment.update",
                 "analysis.datamanageconfig.kanban.dashboard.delete",
+                "analysis.datamanageconfig.kanban.dashboard.update",
                 "report.report.update",
                 "report.confmetric.custom.metric.update",
                 "metadata.event.property.template.079c8246.create",

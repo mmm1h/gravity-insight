@@ -4,8 +4,8 @@
   "operation": {
     "action": "delete",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
-    "description": "从 SDK 标记看板移除精确图表关联，不删除或修改底层保存报表。",
+    "contract_version": 2,
+    "description": "从 SDK 标记看板移除精确图表关联；ids 使用看板详情 even_report[].id 的内部正整数关联 ID，不删除或修改底层保存报表。",
     "domain": "analysis",
     "effect": "mutation",
     "examples": [],

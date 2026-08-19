@@ -11,7 +11,7 @@ from .kanban_mutation import kanban_mutation_schema, run_kanban_mutation
 
 def add_kanban_commands(commands: Any, add_input: Callable[..., Any]) -> None:
     kanban = commands.add_parser(
-        "kanban", help="Preview or execute marker-governed Kanban workspace writes."
+        "kanban", help="Preview or execute marker-governed Kanban workspace and report-association writes."
     )
     actions = kanban.add_subparsers(dest="kanban_command", required=True)
     schema = actions.add_parser("schema", help="Print the offline Kanban mutation contract.")

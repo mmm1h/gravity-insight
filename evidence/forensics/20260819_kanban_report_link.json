@@ -1,0 +1,71 @@
+{
+  "schema_version": "gravity.kanban-report-link-evidence.v1",
+  "observed_at": "2026-08-19",
+  "raw_business_values_persisted": false,
+  "credentials_persisted": false,
+  "endpoint_decision": {
+    "choice": "A",
+    "method": "POST",
+    "path": "/turbo_engine/api/v2/datamanageconfig/kanban/dashboard/edit/",
+    "wire_mode": "whole-list replacement",
+    "body_fields": ["app_id", "id", "report_list", "space_id", "ui_config"]
+  },
+  "static_evidence": {
+    "bundle": "Dashboard-DrzT0Orh.js",
+    "bundle_sha256": "6fc5339f29035a8aa08755e1ebfc482dd227c1c4511ff35c340dcc621ac48016",
+    "observations": [
+      "Selecting a saved analysis adds a local report_list entry with report_id and name and a corresponding ui_config layout item.",
+      "Saving sends the complete report_list and ui_config through dashboard/edit.",
+      "report/setting edits an already attached association and then saves dashboard/edit.",
+      "report/delete removes an existing association by even_report.id; no independent link call appears in the frozen control flow."
+    ],
+    "route_census": {
+      "dashboard_edit_occurrences": 4,
+      "report_delete_occurrences": 1,
+      "report_setting_occurrences": 1,
+      "independent_report_link_occurrences": 0
+    }
+  },
+  "production_evidence": {
+    "saved_analysis_catalog": {
+      "complete": true,
+      "row_count": 95,
+      "current_principal_owned_count": 42,
+      "selected_report_owned_by_current_principal": true,
+      "selected_report_id_shape": "opaque string"
+    },
+    "lifecycle": {
+      "created_dashboard_marker_count": 1,
+      "link_acknowledged": true,
+      "link_detail_report_count": 1,
+      "unlink_acknowledged": true,
+      "unlink_detail_report_count": 0,
+      "dashboard_deleted": true,
+      "folder_deleted": true,
+      "final_dashboard_marker_count": 0,
+      "final_folder_marker_count": 0
+    },
+    "unlink_identity_correction": {
+      "caller_identity": "even_report.report_id",
+      "wire_identity": "even_report.id",
+      "wire_identity_type": "positive integer",
+      "corrected_mapping_verified": true
+    },
+    "write_budget": {
+      "sent": 24,
+      "limit": 25,
+      "automatic_retries": 0
+    }
+  },
+  "local_boundary_contracts": {
+    "already_attached": "execute returns already_attached with write_sent=false",
+    "capacity": "reject when existing plus new report_list entries exceed 20, before preview or write",
+    "missing_or_inaccessible": "reject unless every new report ID is present in the complete accessible saved-analysis catalog",
+    "whole_list_safety": "read detail first, preserve all existing report and layout items, then merge new entries",
+    "readback": "require the exact merged report set and preservation of every prior layout item"
+  },
+  "inference_not_claimed_as_production_probe": [
+    "The 20-item, inaccessible-ID, idempotency, and failed-readback branches are contract tests; they were not forced against production.",
+    "The route census can miss dynamically assembled calls, but the frozen add-and-save control flow plus successful production dashboard/edit round-trip establishes choice A for this product action."
+  ]
+}

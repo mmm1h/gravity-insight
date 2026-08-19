@@ -8,7 +8,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from .actionable_error_values import actual_value
-from .errors import InputValidationError, MutationReadbackError
+from .errors import ContractChangedError, InputValidationError, MutationReadbackError
 from .kanban_mutation_contracts import (
     DASHBOARD_ORDER,
     DASHBOARD_UPDATE,
@@ -24,6 +24,7 @@ from .kanban_mutation_support import (
     marked_name,
     marker_from_text,
     mutation_preview,
+    normalize_report_id,
     positive_id,
     read_detail,
     read_tree,
@@ -189,7 +190,7 @@ def unlink_reports(
     app_id: int,
     space_id: int,
     dashboard_id: int,
-    report_ids: Sequence[int],
+    report_ids: Sequence[str | int],
     execute: bool = False,
 ) -> dict[str, Any]:
     app = positive_id(app_id, "app_id")
@@ -207,20 +208,26 @@ def _unlink_reports(
     app: int,
     space: int,
     dashboard: int,
-    report_ids: list[int],
+    report_ids: list[str],
     *,
     send: bool,
 ) -> dict[str, Any]:
     detail = read_detail(client, app, space, dashboard)
     ownership = require_dashboard_authority(client, detail, dashboard)
-    existing = {int(item["report_id"]) for item in report_list(detail) if str(item.get("report_id", "")).isdecimal()}
+    associations = _report_associations(report_list(detail))
+    existing = set(associations)
     if not set(report_ids) <= existing:
         raise InputValidationError(
             f"actual value: {actual_value(report_ids)}; allowed values: exact report IDs currently attached to this dashboard",
             field="report_ids",
             next_action="Read dashboard detail, select only attached report IDs, and run dry-run again.",
         )
-    inputs = {"app_id": app, "dashboard_id": dashboard, "ids": report_ids, "space_id": space}
+    inputs = {
+        "app_id": app,
+        "dashboard_id": dashboard,
+        "ids": [associations[item] for item in report_ids],
+        "space_id": space,
+    }
     preview = mutation_preview(
         client._preview_mutation(REPORT_UNLINK, inputs),
         target={
@@ -236,7 +243,7 @@ def _unlink_reports(
         return preview
     mutation = client._execute_mutation(REPORT_UNLINK, inputs)
     after = read_detail(client, app, space, dashboard)
-    remaining = {int(item["report_id"]) for item in report_list(after) if str(item.get("report_id", "")).isdecimal()}
+    remaining = _attached_report_ids(report_list(after))
     if set(report_ids) & remaining:
         raise MutationReadbackError(
             "dashboard report association still exists after unlink acknowledgement",
@@ -324,21 +331,57 @@ def _notes(value: Any, dashboard_id: int) -> list[dict[str, Any]]:
     return result
 
 
-def _id_list(value: Any, field: str) -> list[int]:
+def _id_list(value: Any, field: str) -> list[str]:
     if not isinstance(value, Sequence) or isinstance(value, (str, bytes)) or not 1 <= len(value) <= 100:
         raise InputValidationError(
-            f"actual value: {actual_value(value)}; allowed value: 1 through 100 positive integer IDs",
+            f"actual value: {actual_value(value)}; allowed value: 1 through 100 positive integer or bounded opaque string IDs",
             field=field,
             next_action=f"Provide a non-empty bounded {field} list from the latest dashboard detail and run dry-run again.",
         )
-    selected = [positive_id(item, field) for item in value]
+    selected = [normalize_report_id(item) for item in value]
+    if any(item is None for item in selected):
+        raise InputValidationError(
+            f"actual value: {actual_value(value)}; allowed value: positive integers or non-empty opaque strings of at most 128 characters",
+            field=field,
+            next_action="Use exact report IDs from the latest dashboard or saved-analysis readback and run dry-run again.",
+        )
     if len(selected) != len(set(selected)):
         raise InputValidationError(
             f"actual value: {actual_value(selected)}; allowed value: unique IDs",
             field=field,
             next_action="Remove duplicate IDs and run dry-run again.",
         )
-    return selected
+    return [item for item in selected if item is not None]
+
+
+def _attached_report_ids(reports: Sequence[Mapping[str, Any]]) -> set[str]:
+    return set(_report_associations(reports))
+
+
+def _report_associations(
+    reports: Sequence[Mapping[str, Any]],
+) -> dict[str, int]:
+    result: dict[str, int] = {}
+    association_ids: set[int] = set()
+    for item in reports:
+        report_id = normalize_report_id(item.get("report_id"))
+        raw_association = item.get("id")
+        association_id = (
+            int(raw_association)
+            if isinstance(raw_association, str) and raw_association.isdecimal()
+            else raw_association
+        )
+        invalid = report_id is None or report_id in result
+        invalid = invalid or type(association_id) is not int or association_id < 1
+        invalid = invalid or association_id in association_ids
+        if invalid:
+            raise ContractChangedError(
+                "dashboard report association identities changed shape or contain duplicates",
+                next_action="Stop dashboard report writes until detail exposes unique report_id and association id values again.",
+            )
+        result[report_id] = association_id
+        association_ids.add(association_id)
+    return result
 
 
 def _order_detail(value: Any) -> list[dict[str, Any]]:

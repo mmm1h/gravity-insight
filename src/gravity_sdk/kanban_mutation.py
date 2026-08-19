@@ -8,7 +8,12 @@ from typing import Any
 
 from .actionable_error_values import actual_value
 from .errors import InputValidationError
-from .kanban_content_mutation import delete_note, replace_notes, save_order, unlink_reports
+from .kanban_content_mutation import (
+    delete_note,
+    replace_notes,
+    save_order,
+    unlink_reports,
+)
 from .kanban_dashboard_mutation import (
     copy_dashboard,
     create_dashboard,
@@ -19,6 +24,7 @@ from .kanban_dashboard_mutation import (
     rename_dashboard,
 )
 from .kanban_folder_mutation import create_folder, delete_folder, move_folder, rename_folder
+from .kanban_report_link_mutation import link_reports
 from .kanban_space_mutation import create_space, delete_space, rename_space, transfer_space
 
 
@@ -41,6 +47,7 @@ _ACTIONS: dict[str, tuple[Handler, frozenset[str], frozenset[str]]] = {
     "dashboard.move-folder": (move_dashboard_to_folder, frozenset({"app_id", "space_id", "dashboard_id", "folder_id"}), frozenset()),
     "dashboard.copy": (copy_dashboard, frozenset({"app_id", "dashboard_id", "from_space_id", "to_space_id", "to_folder_id", "name"}), frozenset({"idempotency_key"})),
     "dashboard.notes.replace": (replace_notes, frozenset({"app_id", "space_id", "dashboard_id", "notes"}), frozenset()),
+    "dashboard.report.link": (link_reports, frozenset({"app_id", "space_id", "dashboard_id", "report_ids"}), frozenset()),
     "dashboard.report.unlink": (unlink_reports, frozenset({"app_id", "space_id", "dashboard_id", "report_ids"}), frozenset()),
     "dashboard.order.save": (save_order, frozenset({"app_id", "order_detail"}), frozenset()),
     "note.delete": (delete_note, frozenset({"app_id", "space_id", "dashboard_id", "note_id"}), frozenset()),

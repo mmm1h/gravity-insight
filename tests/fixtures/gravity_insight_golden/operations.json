@@ -896,8 +896,8 @@
       "action": "detail",
       "auth_profile": "gravity_authorization",
       "block_reason": null,
-      "contract_version": "2",
-      "description": "看板详情；上游路径保留 detial 拼写，ui_config 与 even_report.config 均为前端直接 JSON.parse 的 JSON 字符串；共享成员只返回内部标识与权限。",
+      "contract_version": "3",
+      "description": "看板详情；上游路径保留 detial 拼写，even_report.id 是 unlink 所需内部关联 ID，report_id 是保存分析 ID；ui_config 与 even_report.config 均为前端直接 JSON.parse 的 JSON 字符串。",
       "domain": "analysis",
       "executable": true,
       "input_fields": [
@@ -1020,6 +1020,7 @@
         "data_dynamic_item_fields": {},
         "data_item_keys": {
           "even_report": [
+            "id",
             "report_id",
             "name",
             "subject",

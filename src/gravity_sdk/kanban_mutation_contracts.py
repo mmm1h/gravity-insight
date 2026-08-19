@@ -29,6 +29,7 @@ DASHBOARD_FOLDER_MOVE = _operation("kanban_dashboard_folder", "move")
 DASHBOARD_ORDER = _operation("kanban_dashboard_order", "update")
 NOTE_DELETE = _operation("kanban_note", "update")
 REPORT_UNLINK = _operation("kanban_report_association", "delete")
+REPORT_LIST = _operation("report_config", "list")
 
 TREE = _operation("dashboard_tree", "tree")
 DETAIL = _operation("dashboard", "detail")
@@ -75,6 +76,7 @@ __all__ = [
     "KANBAN_MUTATION_OPERATIONS",
     "NOTE_DELETE",
     "REPORT_UNLINK",
+    "REPORT_LIST",
     "SPACE_CREATE",
     "SPACE_DELETE",
     "SPACE_MEMBERS",
