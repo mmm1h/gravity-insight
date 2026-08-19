@@ -86,6 +86,15 @@ gravity agent "<your-query>"
     "zero_candidate_lexical_fallback": {
       "algorithm": "<str>",
       "disposition": "<str>",
+      "indexed_rescue": {
+        "matched_terms": "<int>",
+        "minimum_margin": "<float>",
+        "minimum_matched_terms": "<int>",
+        "minimum_score": "<float>",
+        "reason": "<str>",
+        "runner_up_score": "<float>",
+        "top_score": "<float>"
+      },
       "matches": [],
       "minimum_matched_terms": "<int>",
       "minimum_score": "<float>",
