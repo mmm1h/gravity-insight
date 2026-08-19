@@ -72,6 +72,7 @@
 - [全盘架构体检](arch-review.md) — 2026-08-19：模块图与耦合热点；「上游给了、某层 allowlist 丢掉」正文列出六例且无跨层不变量；十人并发先断在默认凭据单例和未含账号的本地缓存。
 - [信封顶层 next 必须跟 gap 自己走](next-pointers.md) — 2026-08-19：18 处具名 gap 的信封曾被盖成「去确认不存在」，现按 gap 自己的下一步走；无 argv 的不编造。
 - [宿主臂默认值决策包](host-arm-default.md) — 2026-08-19：不切默认；信封补齐选择合同后两步可跟；development 识别器 277/336，宿主合同上限 334/336。
+- [默认路由调用方全量审计](routing-callers.md) — 2026-08-19：只翻常量会破坏 SDK/批量/评测；当前 holdout 不经过待切运行时，先不花机会。
 - [B 级错误补实际值](error-grade-b.md) — 2026-08-19：121 条 B 升 A；库存 `1268 = A1017 / B251 / C0`。
 - [任务指南补漏斗 / 留存 / 导出](skill-guides.md) — 2026-08-19：生成器补三条短指南；短问命中产品卡，长问漏斗仍落到不可执行 handoff。
 - [Plan 面：agent 能不能自己搭一条多步分析并跑完](plan-surface.md) — 2026-08-19：4 节点 Plan 在投放中 App 上 4/4 success；`plan schema` 写出 analysis_query 绑定合同；中间结果仍绑不进 `/spec`；`fetch_strategy` 死名已在 #212 修过。
