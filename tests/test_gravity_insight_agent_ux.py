@@ -477,6 +477,13 @@ class DiscoveryUxTests(unittest.TestCase):
             ["gravity", "metadata", "sync", "--all-apps", "--include-table-lineage"],
             single_gap["capability_gaps"][0]["next"]["argv"],
         )
+        current_schema_queries = (
+            "要当前 schema，不是已同步的历史沿革。",
+            "治理方要按表名确认此刻字段和版本；没有可信父表时，说明需要先取得什么父项。",
+        )
+        for query in current_schema_queries:
+            gap = discover_capabilities(query, client=self.client)["capability_gaps"][0]
+            self.assertEqual("CURRENT_TABLE_SCHEMA_PARENT_MISSING", gap["code"])
 
         both_products = discover_capabilities(
             "既要巨量广告主账户余额状态也要跨平台推广表现", client=self.client

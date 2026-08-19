@@ -9,6 +9,19 @@ from .agent_gap import unavailable_gap
 from .agent_intent_text import affirmative_intent_text
 
 
+_CURRENT_SCHEMA_ENGLISH = re.compile(
+    r"\b(?:current|latest|present)\s+(?:(?:data\s+)?table\s+)?schema\b"
+)
+_CURRENT_SCHEMA_CHINESE = re.compile(
+    r"(?:当前|此刻|现在|现时)(?:的|实时)?\s*(?:数据)?表?\s*schema\b"
+)
+_ENGLISH_CURRENT_STATE = frozenset({"current", "latest", "present"})
+_ENGLISH_FIELD_TERMS = frozenset({"field", "fields"})
+_ENGLISH_TABLE_CONTEXT = frozenset({"table", "parent"})
+_CHINESE_CURRENT_STATE = ("当前", "此刻", "现在", "现时")
+_CHINESE_TABLE_CONTEXT = re.compile(r"(?<!报)表|table\b")
+
+
 def unavailable_analysis_gap(query: str) -> dict[str, Any] | None:
     selected = affirmative_intent_text(query)
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
@@ -54,17 +67,39 @@ def unavailable_analysis_gap(query: str) -> dict[str, Any] | None:
 
 
 def _current_table_schema(selected: str, words: frozenset[str]) -> bool:
-    english = (
-        "current" in words and "schema" in words
-        and bool(words & {"field", "fields", "table", "version"})
+    return (
+        _explicit_current_schema(selected)
+        or _english_current_fields_and_version(words)
+        or _chinese_current_fields_and_version(selected)
     )
-    chinese = (
-        "当前" in selected
-        and any(term in selected for term in ("schema", "字段", "版本"))
-        and any(term in selected for term in ("表", "table"))
+
+
+def _explicit_current_schema(selected: str) -> bool:
+    """Treat schema as table-scoped only when current-state words are adjacent."""
+
+    return bool(
+        _CURRENT_SCHEMA_ENGLISH.search(selected)
+        or _CURRENT_SCHEMA_CHINESE.search(selected)
+    )
+
+
+def _english_current_fields_and_version(words: frozenset[str]) -> bool:
+    return (
+        bool(words & _ENGLISH_CURRENT_STATE)
+        and bool(words & _ENGLISH_FIELD_TERMS)
+        and "version" in words
+        and bool(words & _ENGLISH_TABLE_CONTEXT)
+    )
+
+
+def _chinese_current_fields_and_version(selected: str) -> bool:
+    return (
+        any(term in selected for term in _CHINESE_CURRENT_STATE)
+        and "字段" in selected
+        and "版本" in selected
+        and _CHINESE_TABLE_CONTEXT.search(selected) is not None
         and "项目" not in selected
     )
-    return english or chinese
 
 
 def _analysis_export(selected: str, words: frozenset[str]) -> bool:
