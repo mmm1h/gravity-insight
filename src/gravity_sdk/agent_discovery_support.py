@@ -9,9 +9,11 @@ from typing import Any
 
 CATALOG_BROWSE_ARGV = ["gravity", "agent-catalog", "categories"]
 HOST_CATALOG_ARGV = ["gravity", "agent-catalog", "host"]
+ANSWERABLE_LIMIT = 8
 NO_CANDIDATE_NEXT_ACTION = (
-    "Browse `gravity agent-catalog categories` then `category` and `describe` "
-    "to confirm the capability is absent; do not execute weak partial matches "
+    "Use an `answerable` catalog_ref if one matches the goal; otherwise browse "
+    "`gravity agent-catalog categories` then `category` and `describe` to "
+    "confirm the capability is absent; do not execute weak partial matches "
     "or invent a selector."
 )
 UNRANKED_OPERATIONS = "UNRANKED_OPERATIONS"
@@ -26,6 +28,40 @@ _MIN_UNRANKED_OPERATIONS = 3
 
 def catalog_browse_next() -> dict[str, Any]:
     return {"argv": list(CATALOG_BROWSE_ARGV)}
+
+
+def answerable_examples(client: Any) -> list[dict[str, Any]]:
+    """One executable registered ask per domain, from existing caller language."""
+
+    from .agent_caller_language import caller_language_fields
+    from .agent_product_inventory import canonical_capability_cards
+
+    selected: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for card in sorted(
+        canonical_capability_cards(client),
+        key=lambda item: (str(item.get("domain") or ""), str(item.get("selector") or "")),
+    ):
+        selector = str(card.get("selector") or "")
+        domain = str(card.get("domain") or "")
+        phrases = caller_language_fields(selector)
+        if (
+            domain in seen
+            or not phrases
+            or not card.get("executable")
+            or card.get("effect") == "mutation"
+            or selector.startswith("gap:")
+        ):
+            continue
+        seen.add(domain)
+        selected.append({
+            "catalog_ref": selector,
+            "query": phrases[0],
+            "next": {"argv": ["gravity", "agent-catalog", "describe", selector]},
+        })
+        if len(selected) >= ANSWERABLE_LIMIT:
+            break
+    return selected
 
 
 def host_catalog_next() -> dict[str, Any]:
@@ -195,6 +231,11 @@ def _navigation_from_gap(gap: Mapping[str, Any]) -> dict[str, Any]:
     argv = nxt.get("argv") if isinstance(nxt, Mapping) else None
     if isinstance(argv, Sequence) and not isinstance(argv, (str, bytes)) and argv:
         fields["next"] = {"argv": list(argv)}
+    items = gap.get("answerable")
+    if isinstance(items, Sequence) and not isinstance(items, (str, bytes)):
+        copied = [dict(item) for item in items if isinstance(item, Mapping)]
+        if copied:
+            fields["answerable"] = copied
     return fields
 
 
@@ -267,11 +308,13 @@ def materialize_candidates(
 
 
 __all__ = [
+    "ANSWERABLE_LIMIT",
     "CATALOG_BROWSE_ARGV",
     "HOST_CATALOG_ARGV",
     "NO_CANDIDATE_NEXT_ACTION",
     "UNRANKED_OPERATIONS",
     "UNRANKED_OPERATIONS_NEXT_ACTION",
+    "answerable_examples",
     "apply_unranked_operation_handoff",
     "assert_discovery_page",
     "finish_discovery_candidates",
