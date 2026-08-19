@@ -592,6 +592,10 @@ class DiscoveryUxTests(unittest.TestCase):
 
         negative = discover_capabilities("不要运行看板图表。", client=self.client)
         self.assertEqual(("capability_gap", []), (negative["status"], negative["candidates"]))
+        typo_gap = discover_capabilities("找煤体报表，别混入素材表现。", client=self.client)
+        self.assertEqual(
+            "MEDIA_REPORT_ITEM_SCHEMA_MISSING", typo_gap["capability_gaps"][0]["code"]
+        )
 
     def test_business_pulse_is_strict_authoritative_and_mechanically_fillable(self) -> None:
         cases = {

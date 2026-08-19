@@ -9,8 +9,13 @@ from .agent_gap import unavailable_gap
 from .agent_intent_text import affirmative_intent_text
 
 
+_MEDIA_REPORT_OWNER_TYPO = re.compile(
+    r"煤体(?=\s*(?:(?:类|投放)(?:的)?\s*)?报表)"
+)
+
+
 def unavailable_report_gap(query: str) -> dict[str, Any] | None:
-    selected = affirmative_intent_text(query)
+    selected = _normalize_media_report_owner(affirmative_intent_text(query))
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
     if _media_reports(selected, words):
         return unavailable_gap(
@@ -23,6 +28,12 @@ def unavailable_report_gap(query: str) -> dict[str, Any] | None:
             ),
         )
     return None
+
+
+def _normalize_media_report_owner(selected: str) -> str:
+    """Normalize the observed typo only inside a media-report owner phrase."""
+
+    return _MEDIA_REPORT_OWNER_TYPO.sub("媒体", selected)
 
 
 def _media_reports(selected: str, words: frozenset[str]) -> bool:
