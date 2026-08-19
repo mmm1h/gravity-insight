@@ -217,6 +217,12 @@
       "path": "src/gravity_sdk/models.py",
       "reason": "add sanitized actual_value to OperationSpec input, date_list, and filter validation errors",
       "to": 6522
+    },
+    {
+      "from": 4226,
+      "path": "src/gravity_sdk/client.py",
+      "reason": "from_env now constructs a persisted FieldPolicy metadata cache so CLI cold starts reuse the same 10-minute field catalog without a second cache",
+      "to": 4237
     }
   ],
   "legacy_files": {
@@ -252,7 +258,7 @@
     },
     "src/gravity_sdk/client.py": {
       "ast_hard_limit": 6765,
-      "ast_nodes": 4226,
+      "ast_nodes": 4237,
       "migration_sloc": 1087,
       "sloc_hard_limit": 1161
     },

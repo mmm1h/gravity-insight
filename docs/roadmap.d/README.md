@@ -80,6 +80,7 @@
 - [产品卡边界改成 owner 字段](card-boundaries.md) — 2026-08-19：host `boundaries` 不再从中文散文正则切句（旧投影 121 条里 11 条误报、24 张卡漏报）；96 张卡全部显式声明，缺字段/投影漂移加载即红；development 两层分数不变，因为它们都不读该字段。
 - [结果信封写出率与可加性声明](envelope-truth.md) — 2026-08-19：analysis 结果带 `interpretation`；Plan 运行时失败保留 `message`/`next_action`。
 - [弃权时给出有界可答问法](answerable-suggestions.md) — 2026-08-19：`NO_CANDIDATE` 信封带 8 条从已登记产品卡机械导出的可答问法；`next.argv` 仍是 `agent-catalog categories`；development 两层分数不变，因为 scorer 不读该字段。
+- [FieldPolicy 预取接到分账号磁盘](prefetch-cost.md) — 2026-08-19：字段目录按 #223 指纹落盘；十人冷启动 metadata HTTP 20→2；默认路径不加指纹。
 
 ## 归档记录
 

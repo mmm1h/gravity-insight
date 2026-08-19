@@ -75,9 +75,23 @@ def metadata_catalog_path(isolation_key: str = "") -> Path:
     return root / "metadata" / "catalog.sqlite3"
 
 
+def field_policy_cache_dir(isolation_key: str = "") -> Path:
+    """Return the FieldPolicy snapshot directory for one env scope.
+
+    The default (empty) key stays at the historic unscoped cache root. An
+    explicit env fingerprint is a directory name, never a credential.
+    """
+
+    root = gravity_insight_cache_root()
+    if isolation_key:
+        return root / isolation_key / "field-policy"
+    return root / "field-policy"
+
+
 __all__ = [
     "ENV_FILE_VAR",
     "env_isolation_key",
+    "field_policy_cache_dir",
     "gravity_insight_cache_root",
     "metadata_catalog_path",
     "operation_catalog_state_path",
