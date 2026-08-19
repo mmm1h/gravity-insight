@@ -101,6 +101,10 @@ def _journey_card(match: Mapping[str, Any]) -> dict[str, Any]:
         "composite": "user_journey",
         "domain": "analysis",
         "description": "并发读取单用户画像、事件时间线与回传状态。",
+        "boundaries": (
+            "只读单用户画像、事件时间线与回传状态。",
+            "不读取分群成员或归因用户明细。",
+        ),
         "effect": "read",
         "executable": True,
         "plan_executable": True,

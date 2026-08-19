@@ -45,6 +45,9 @@ ADVERTISER_PROFILE_CAPABILITY: Mapping[str, Any] = {
         "按显式日期读取巨量广告主消耗、余额、预算模式和状态；"
         "这是账户目录，不属于跨平台推广表现。"
     ),
+    "boundaries": (
+        "这是账户目录，不属于跨平台推广表现。",
+    ),
     "required_inputs": ADVERTISER_PROFILE_REQUIRED_INPUTS,
     "input_schema": {
         "start": {

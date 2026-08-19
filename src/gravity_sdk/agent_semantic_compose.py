@@ -44,6 +44,10 @@ SEMANTIC_COMPOSE_CAPABILITY: Mapping[str, Any] = {
         "确定性编译到现有 Multidim 产品；返回定义版本、实际成员、生成查询、"
         "验证结果和 allowed_claims，不接受 SQL 文本。"
     ),
+    "boundaries": (
+        "只引用已登记且版本化的指标、维度、过滤器、时间粒度和允许连接，确定性编译到现有 Multidim 产品。",
+        "返回定义版本、实际成员、生成查询、验证结果和 allowed_claims，不接受 SQL 文本。",
+    ),
     "required_inputs": ("app", "inputs"),
     "input_schema": {
         "app": {

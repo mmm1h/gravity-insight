@@ -73,6 +73,10 @@ def _card(query: str) -> dict[str, Any]:
             "离线搜索已同步的 App、事件、属性、指标和模板名称；目录缺失时先做"
             "完整原子同步，不从自然语言选择业务字段。"
         ),
+        "boundaries": (
+            "目录缺失时先做完整原子同步，不从自然语言选择业务字段。",
+            "不执行分析查询。",
+        ),
         "scope": "app_and_workspace",
         "effect": "local_read",
         "executable": True,

@@ -33,6 +33,10 @@ SEGMENT_MEMBERS_CAPABILITY: Mapping[str, Any] = {
         "按精确 ID 或精确名称返回分群成员及逐人属性；固定字段直接选择，"
         "动态字段先从 live user-property metadata 发现，历史成员使用 segment_version_id。"
     ),
+    "boundaries": (
+        "不读取分群详情、历史版本或单日计算结果。",
+        "不评估规则命中人数。",
+    ),
     "required_inputs": ("app", "ref"),
     "input_schema": {
         "app": {"type": "string|integer", "required": True, "nullable": False},

@@ -67,6 +67,11 @@ def _card(query: str) -> dict[str, Any]:
             "先零网络 dry-run，再由调用方确认同参数 execute；"
             "执行后读回 app.realtime_event.list.conf；自然语言永不自动写。"
         ),
+        "boundaries": (
+            "自然语言永不自动写。",
+            "不读取实时事件目录。",
+            "Selection is read-only; preview and execute still require the governed user authorization flow.",
+        ),
         "effect": "mutation",
         "mutation_action": "update",
         "operation_id": REALTIME_EVENT_UPDATE,

@@ -163,6 +163,11 @@ def _card(query: str, action: str, *, selector: str = SELECTOR) -> dict[str, Any
             "只交接精确 SDK/CLI/Plan 输入，先 dry-run，再人工确认同参数 execute；"
             "自然语言永不自动写入。"
         ),
+        "boundaries": (
+            "只交接精确 SDK/CLI/Plan 输入，先 dry-run，再人工确认同参数 execute。",
+            "自然语言永不自动写入。",
+            "Selection is read-only; preview and execute still require the governed user authorization flow.",
+        ),
         "effect": "mutation",
         "mutation_action": action,
         "operation_ids": list(_ACTION_OPERATIONS[action]),

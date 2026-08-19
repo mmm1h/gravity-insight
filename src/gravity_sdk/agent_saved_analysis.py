@@ -106,6 +106,10 @@ SAVED_ANALYSIS_CAPABILITY: Mapping[str, Any] = {
         "只用于保存分析 ID/名称，不用于 template scope + template reference，"
         "也不用于无需保存引用的同 Spec 跨期比较；不解释布局、收藏或权限。"
     ),
+    "boundaries": (
+        "只用于保存分析 ID/名称，不用于 template scope + template reference，也不用于无需保存引用的同 Spec 跨期比较。",
+        "不解释布局、收藏或权限。",
+    ),
     "required_inputs": ("app", "ref", "start", "end"),
     "input_schema": {
         "app": {

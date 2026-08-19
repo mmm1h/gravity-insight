@@ -85,7 +85,7 @@ class SemanticContextTests(unittest.TestCase):
         ).encode("utf-8")
         self.assertEqual(
             hashlib.sha256(payload).hexdigest(),
-            "f5dfe4e326c6da88db7a44a3e4767c91b8a7bbaa314fbfda85b0b3e8b9f462c4",
+            "2e966620bbc04ff7f21048cddbcf5bc4b1c9d02b9b0a4fa25877f43f9b77cbc6",
         )
 
     def test_term_is_reachable_but_does_not_exist_without_context(self) -> None:

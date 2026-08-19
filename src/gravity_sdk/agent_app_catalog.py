@@ -22,6 +22,9 @@ APP_CATALOG_CAPABILITY: Mapping[str, Any] = {
         "用于账号可读项目清单，不用于 App 治理快照、普通对象成员管理、"
         "数据表当前 schema 或任意未登记目录。"
     ),
+    "boundaries": (
+        "用于账号可读项目清单，不用于 App 治理快照、普通对象成员管理、数据表当前 schema 或任意未登记目录。",
+    ),
     "effect": "read",
     "executable": True,
     "plan_executable": True,

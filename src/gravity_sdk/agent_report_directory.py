@@ -29,6 +29,10 @@ REPORT_DIRECTORY_CAPABILITY: Mapping[str, Any] = {
         "空结果与权限裁剪空集不可区分；若不确定权限，先运行 "
         "`gravity apps permission-profile`。"
     ),
+    "boundaries": (
+        "只读报表定义，不创建或删除报表。",
+        "不列出报表订阅。",
+    ),
     "required_inputs": (),
     "input_schema": {},
 }
@@ -41,6 +45,10 @@ REPORT_SUBSCRIPTIONS_CAPABILITY: Mapping[str, Any] = {
         "读取账号级报表订阅清单。"
         "空结果与权限裁剪空集不可区分；若不确定权限，先运行 "
         "`gravity apps permission-profile`。"
+    ),
+    "boundaries": (
+        "只读订阅清单，不创建或删除订阅。",
+        "不读取报表定义。",
     ),
     "required_inputs": (),
     "input_schema": {},

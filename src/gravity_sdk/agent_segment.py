@@ -304,6 +304,11 @@ def _segment_mutation_card(
             "只返回显式命令交接，先零网络 dry-run，再由调用方确认执行；"
             "自然语言永不自动发送写请求。"
         ),
+        "boundaries": (
+            "只返回显式命令交接，先零网络 dry-run，再由调用方确认执行。",
+            "自然语言永不自动发送写请求。",
+            "Selection is read-only; preview and execute still require the governed user authorization flow.",
+        ),
         "effect": "mutation",
         "mutation_action": action,
         "operation_ids": list(_MUTATION_OPERATIONS[action]),
@@ -359,6 +364,10 @@ def _segment_rule_card(query: str) -> dict[str, Any]:
         "description": (
             "使用紧凑 Segment Rule Spec 评估规则命中人数与占比；"
             "自然语言只发现能力，不生成规则字段或值。"
+        ),
+        "boundaries": (
+            "自然语言只发现能力，不生成规则字段或值。",
+            "不读取分群成员或保存分群。",
         ),
         "effect": "read",
         "executable": True,

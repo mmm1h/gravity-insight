@@ -66,6 +66,10 @@ MATERIAL_PERFORMANCE_CAPABILITY: Mapping[str, Any] = {
         "按显式 App、日期和平台并发读取稳定素材表现行；保留各平台物理指标，"
         "不做跨平台归一、排名或业务结论。"
     ),
+    "boundaries": (
+        "保留各平台物理指标，不做跨平台归一、排名或业务结论。",
+        "不下载素材文件。",
+    ),
     "required_inputs": ("apps", "start", "end"),
     "input_schema": {
         "apps": {

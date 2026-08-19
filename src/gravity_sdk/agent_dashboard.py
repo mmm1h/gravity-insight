@@ -39,6 +39,10 @@ DASHBOARD_ANALYSIS_CAPABILITY: Mapping[str, Any] = {
         "按精确 ID 或名称解析看板，把受支持的 Web 图表配置编译为稳定 "
         "Analysis 查询，并发执行且按看板声明顺序返回；不模拟页面布局或收藏筛选。"
     ),
+    "boundaries": (
+        "不模拟页面布局或收藏筛选。",
+        "不用于只要看板成员或筛选收藏的控制面快照。",
+    ),
     "required_inputs": ("app", "ref", "start", "end"),
     "input_schema": {
         "app": {"type": "string|integer", "required": True, "nullable": False},

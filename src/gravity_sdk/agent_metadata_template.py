@@ -102,6 +102,10 @@ def _card(query: str, action: str) -> dict[str, Any]:
             f"元数据模板受治理动作 `{action}`：{summaries[action]}；"
             "先 dry-run，人工审查后以同参数 execute；自然语言永不自动写入。"
         ),
+        "boundaries": (
+            "自然语言永不自动写入。",
+            "Selection is read-only; preview and execute still require the governed user authorization flow.",
+        ),
         "effect": "mutation", "mutation_action": action,
         "operation_ids": list(_ACTION_OPERATIONS[action]),
         "executable": True, "plan_executable": True,

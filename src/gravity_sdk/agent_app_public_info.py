@@ -21,6 +21,10 @@ APP_PUBLIC_INFO_CAPABILITY: Mapping[str, Any] = {
         "覆盖 OneLink 与公开信息绑定；当前账号 OneLink 目录明确为空，"
         "本产品不把空 OneLink 样本伪装成绑定。"
     ),
+    "boundaries": (
+        "当前账号 OneLink 目录明确为空，本产品不把空 OneLink 样本伪装成绑定。",
+        "不读取账号可读 App 项目清单。",
+    ),
     "effect": "read",
     "executable": True,
     "plan_executable": True,

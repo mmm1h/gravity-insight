@@ -271,6 +271,10 @@ MONETIZATION_DETAIL_CAPABILITY: Mapping[str, Any] = {
         "空结果与权限裁剪空集不可区分；若不确定权限，先运行 "
         "`gravity apps permission-profile`。"
     ),
+    "boundaries": (
+        "带字段、筛选或分组的请求交给 raw capability discovery。",
+        "这是单日逐行变现明细，不是按平台广告位聚合的变现报表。",
+    ),
     "required_inputs": MONETIZATION_DETAIL_REQUIRED_INPUTS,
     "input_schema": {
         "app": {

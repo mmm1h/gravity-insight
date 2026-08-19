@@ -131,6 +131,10 @@ PROMOTION_PERFORMANCE_CAPABILITY: Mapping[str, Any] = {
         "按显式 App、日期、平台和物理指标读取 21 个同构平台的推广表现；"
         "保留平台原生字段，不做跨平台归一、排名、策略或业务结论。"
     ),
+    "boundaries": (
+        "保留平台原生字段，不做跨平台归一、排名、策略或业务结论。",
+        "这不是广告主账户目录。",
+    ),
     "required_inputs": PROMOTION_PERFORMANCE_REQUIRED_INPUTS,
     "input_schema": {
         "app": {

@@ -66,6 +66,10 @@ def canonical_capability_cards(client: Any) -> tuple[dict[str, Any], ...]:
     selectors = [str(card.get("selector", "")) for card in cards]
     if any(not selector for selector in selectors) or len(set(selectors)) != len(cards):
         raise RuntimeError("canonical Agent product-card selectors must be unique")
+    from .agent_host_catalog import owner_boundaries
+
+    for card in cards:
+        owner_boundaries(card)
     return tuple(copy.deepcopy(card) for card in cards)
 
 

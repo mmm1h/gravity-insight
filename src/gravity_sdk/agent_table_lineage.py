@@ -34,6 +34,9 @@ _CAPABILITY = {
         "表变更",
         "数据表变更",
     ),
+    "boundaries": (
+        "只返回上游实际观察到的 table_id、version、action 和时间，不推断表名、App 归属或当前版本。",
+    ),
 }
 
 
@@ -84,6 +87,7 @@ def table_lineage_capability_cards(
         "metadata_kind": definition["metadata_kind"],
         "domain": definition["domain"],
         "description": definition["description"],
+        "boundaries": tuple(str(item) for item in definition["boundaries"]),
         "scope": "account",
         "effect": "local_read",
         "executable": True,

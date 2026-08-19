@@ -114,6 +114,11 @@ def _card(query: str, action: str, *, selector: str = SELECTOR) -> dict[str, Any
             "subject 只接受 event/funnel/retention/scatter/user-property 五类；"
             "自然语言永不自动发送写请求，且不提供分享能力。"
         ),
+        "boundaries": (
+            "subject 只接受 event/funnel/retention/scatter/user-property 五类。",
+            "自然语言永不自动发送写请求，且不提供分享能力。",
+            "Selection is read-only; preview and execute still require the governed user authorization flow.",
+        ),
         "effect": "mutation",
         "mutation_action": action,
         "operation_ids": [UPDATE_OPERATION_ID],

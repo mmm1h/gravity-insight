@@ -31,6 +31,9 @@ ANALYSIS_DEFAULT_DICTIONARY_CAPABILITY: Mapping[str, Any] = {
         "读取一个 App 的 Analysis SDK 默认值字典；只交付已登记的 api 与 "
         "cocoscreator 字符串数组，新增字典键失败关闭。"
     ),
+    "boundaries": (
+        "只交付已登记的 api 与 cocoscreator 字符串数组，新增字典键失败关闭。",
+    ),
     "required_inputs": ("app",),
     "input_schema": {
         "app": {

@@ -121,6 +121,11 @@ def _card(query: str, action: str, *, selector: str = SELECTOR) -> dict[str, Any
             "只交接显式 CLI，先零网络 dry-run，再由调用方确认执行；"
             "自然语言永不自动发送写请求。"
         ),
+        "boundaries": (
+            "只交接显式 CLI，先零网络 dry-run，再由调用方确认执行。",
+            "自然语言永不自动发送写请求。",
+            "Selection is read-only; preview and execute still require the governed user authorization flow.",
+        ),
         "effect": "mutation",
         "mutation_action": action,
         "operation_ids": list(_ACTION_OPERATIONS[action]),

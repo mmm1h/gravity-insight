@@ -36,6 +36,10 @@ TITLE_PACKAGE_CAPABILITY: Mapping[str, Any] = {
         "按显式 App 和普通/标准类型读取巨量标题包名称、标题数、计划数、"
         "历史与近三日成本和点击率；标题正文、人员字段等已观察字段登记后按投影总裁决完整暴露。"
     ),
+    "boundaries": (
+        "只读标题包汇总指标，不返回标题正文或人员字段。",
+        "不用于跨平台素材表现或素材文件下载。",
+    ),
     "required_inputs": ("app", "package_kind"),
     "input_schema": {
         "app": {

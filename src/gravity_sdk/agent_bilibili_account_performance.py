@@ -55,6 +55,10 @@ BILIBILI_ACCOUNT_PERFORMANCE_CAPABILITY: Mapping[str, Any] = {
         "按显式日期范围完整读取 B 站账户/产品的曝光、点击、CTR、CPC、CPM "
         "和资金消耗；不接收 App 或指标选择，已观察字段登记后全部暴露。"
     ),
+    "boundaries": (
+        "不接收 App 或指标选择，已观察字段登记后全部暴露。",
+        "不用于跨平台推广表现。",
+    ),
     "required_inputs": BILIBILI_ACCOUNT_PERFORMANCE_REQUIRED_INPUTS,
     "input_schema": {
         "start": {
