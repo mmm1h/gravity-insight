@@ -26,7 +26,7 @@ from .actionable_error_values import actual_value
 
 _FIELD_KEYS = (
     "type",
-    "item_type",
+    "item_type", "item_enum",
     "required",
     "nullable",
     "default",

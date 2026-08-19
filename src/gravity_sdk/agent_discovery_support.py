@@ -294,6 +294,7 @@ def capability_gaps_for_page(
 def materialize_candidates(
     client: Any, selected: list[tuple[str, Mapping[str, Any]]]
 ) -> list[dict[str, Any]]:
+    from .agent_operation_contract import materialize_operation_owner_card
     from .agent_sources import describe_operation_cards
 
     described = iter(
@@ -302,7 +303,9 @@ def materialize_candidates(
         )
     )
     return [
-        next(described) if source == "operation" else dict(item)
+        next(described)
+        if source == "operation"
+        else materialize_operation_owner_card(client, item)
         for source, item in selected
     ]
 

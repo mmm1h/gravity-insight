@@ -597,6 +597,25 @@ class DiscoveryUxTests(unittest.TestCase):
             self.assertEqual((["reporting_ad_revenue"], "day", ["monetization_platform", "ad_unit_id"]), (template["metrics_list"], template["time_dims"], template["data_dims"]))
             self.assertEqual({"field": "app_id", "operator": "EQUALS", "values": ["<catalog-app-id>"]}, template["filters"][0])
             self.assertNotIn("inputs", template)
+            schema = card["input_schema"]
+            self.assertLessEqual(set(template), set(schema))
+            self.assertIn("reporting_ad_revenue", schema["metrics_list"]["item_enum"])
+            self.assertIn("monetization_platform", schema["data_dims"]["item_enum"])
+            self.assertEqual(
+                ("total", ["hour", "day", "week", "month", "total"]),
+                (schema["time_dims"]["default"], schema["time_dims"]["enum"]),
+            )
+            self.assertEqual(
+                ([], [], "monetization_report", ["date_list", "metrics_list"]),
+                (
+                    schema["custom_metrics_list"]["default"],
+                    schema["data_dims"]["default"],
+                    schema["data_topic"]["default"],
+                    card["required_inputs"],
+                ),
+            )
+            template["date_list"], template["filters"][0]["values"] = ["2026-08-01", "2026-08-02"], ["1"]
+            self.client._registry.get(card["selector"]).validate_inputs(template)
 
         negative = discover_capabilities("不要运行看板图表。", client=self.client)
         self.assertEqual(("capability_gap", []), (negative["status"], negative["candidates"]))
