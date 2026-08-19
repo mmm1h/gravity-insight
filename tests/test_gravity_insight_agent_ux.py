@@ -589,6 +589,14 @@ class DiscoveryUxTests(unittest.TestCase):
             actual = card["selector"], set(card["input_schema"]), set(card["required_inputs"]), set(card["input_template"])
             self.assertEqual(("app.app_info.get", {"url"}, {"url"}, {"url"}), actual)
             self.assertEqual({"selector": "app.app_info.get"}, card["plan_node"]["request"])
+        for query in ("按平台、广告位和日期汇总变现结果。", "Summarize daily revenue by monetization platform and ad placement."):
+            result = discover_capabilities(query, client=self.client)
+            self.assertEqual((1, 1), (result["count"], result["total"]))
+            card, template = result["candidates"][0], result["candidates"][0]["input_template"]
+            self.assertEqual(("report.get.query", {"selector": "report.get.query"}), (card["selector"], card["plan_node"]["request"]))
+            self.assertEqual((["reporting_ad_revenue"], "day", ["monetization_platform", "ad_unit_id"]), (template["metrics_list"], template["time_dims"], template["data_dims"]))
+            self.assertEqual({"field": "app_id", "operator": "EQUALS", "values": ["<catalog-app-id>"]}, template["filters"][0])
+            self.assertNotIn("inputs", template)
 
         negative = discover_capabilities("不要运行看板图表。", client=self.client)
         self.assertEqual(("capability_gap", []), (negative["status"], negative["candidates"]))
