@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import json
 import unittest
 from pathlib import Path
 from typing import Any
@@ -44,6 +45,7 @@ def _config(*, grain: str = "day") -> dict[str, Any]:
         "start": "2026-08-01",
         "end": "2026-08-02",
         "time_grain": grain,
+        "calculate_layer_y": True,
         "steps": [
             {
                 "event": "purchase",
@@ -136,6 +138,54 @@ class _Client:
 
 
 class SavedAnalysisMutationTests(unittest.TestCase):
+    def test_compact_create_submits_generated_web_config(self) -> None:
+        client = _Client()
+        create_saved_analysis(
+            client,
+            app_id=101,
+            name="generated",
+            subject="analysis_event",
+            config=_config(),
+            workspace=_workspace(),
+        )
+        wire_config = json.loads(client.calls[0][1]["config"])
+        self.assertIn("calculateBody", wire_config)
+        self.assertNotIn("steps", wire_config)
+
+    def test_web_artifact_create_preserves_caller_config(self) -> None:
+        client = _Client()
+        config = {
+            "calculateBody": {
+                "query_item_list": [{
+                    "cond_logic": "AND",
+                    "conditions": [],
+                    "custom_name": "open",
+                    "event_index": 0,
+                    "event_label": "open",
+                    "event_name": "open",
+                    "target": {
+                        "field": "PresetAllCount",
+                        "name": "PresetAllCount",
+                    },
+                }],
+                "group_by_list": [],
+                "extra_data": {"client_server_time": "CLIENT"},
+            },
+            "tableShowType": "table",
+            "aggregate_config": {},
+        }
+        create_saved_analysis(
+            client,
+            app_id=101,
+            name="web",
+            subject="analysis_event",
+            config=config,
+            workspace=_workspace(),
+            start="2026-08-01",
+            end="2026-08-02",
+        )
+        self.assertEqual(config, json.loads(client.calls[0][1]["config"]))
+
     def test_complete_create_update_delete_lifecycle_and_wire_actions(self) -> None:
         client = _Client()
         common = {

@@ -83,6 +83,7 @@
 - [FieldPolicy 预取接到分账号磁盘](prefetch-cost.md) — 2026-08-19：字段目录按 #223 指纹落盘；十人冷启动 metadata HTTP 20→2；默认路径不加指纹。
 - [看板挂载保存分析闭环](kanban-link.md) — 2026-08-19：挂载走 dashboard/edit 整表合并；link/readback/unlink/delete 生产闭环，marker 清零。
 - [Plan 适配器安全实际值](plan-errors.md) — 2026-08-19：Plan B 102→74；全仓 `A1046 / B222 / C0`，未降低质量阈值。
+- [保存分析 config 生成与五类生产闭环](saved-config-gen.md) — 2026-08-19：五类 compact spec 合成 Web config 并完成生产 CRUD；#21 custom-before 仍获 code=2015。
 
 ## 归档记录
 

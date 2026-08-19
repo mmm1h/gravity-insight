@@ -17,6 +17,7 @@ from .domains import ANALYSIS_QUERY_OPERATIONS
 from .errors import InputValidationError, UnsupportedOperationError
 from ._field_policy_analysis import validate_analysis_shape
 from .saved_analysis_support import decoded_config, supported_subject
+from .saved_analysis_config import generate_saved_analysis_config
 from .actionable_error_values import actual_value
 
 
@@ -72,17 +73,21 @@ def validate_saved_window(start: Any, end: Any) -> None:
 def preflight_saved_definition(
     definition: Mapping[str, Any], *, app: str, workspace: Any,
     start: str | None = None, end: str | None = None,
-) -> None:
-    """Compile caller-owned structure without constructing an Insight client."""
+) -> dict[str, Any]:
+    """Return a Web config after compiling caller-owned structure offline."""
 
     _paired_window(start, end)
     kind = supported_subject(definition.get("subject"))
     config = decoded_config(definition.get("config"))
     if "calculateBody" not in config:
-        compile_query_spec(
-            kind, config, workspace=workspace, app=app, start=start, end=end
+        return generate_saved_analysis_config(
+            kind,
+            config,
+            workspace=workspace,
+            app=app,
+            start=start,
+            end=end,
         )
-        return
     if start is None or end is None:
         raise InputValidationError(
             f"actual value: {actual_value((start, end))}; " + ("saved Web artifact replay requires explicit start and end"),
@@ -92,6 +97,7 @@ def preflight_saved_definition(
         _OfflineValidator(), _dashboard_report(definition, config),
         app_id=app, start=start, end=end
     )
+    return dict(config)
 
 
 class _OfflineValidator:
