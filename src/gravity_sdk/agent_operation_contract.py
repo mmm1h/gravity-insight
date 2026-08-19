@@ -42,6 +42,9 @@ def materialize_operation_owner_card(
     """Hydrate selected operation owners without changing candidate precedence."""
 
     selected = dict(card)
+    contract_describer = getattr(client, "describe", None)
+    if not callable(contract_describer):
+        return selected
     if (
         selected.get("kind") == "operation"
         and selected.get("operation_id") == selected.get("selector")

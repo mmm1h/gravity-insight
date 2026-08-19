@@ -616,6 +616,10 @@ class DiscoveryUxTests(unittest.TestCase):
             )
             template["date_list"], template["filters"][0]["values"] = ["2026-08-01", "2026-08-02"], ["1"]
             self.client._registry.get(card["selector"]).validate_inputs(template)
+        self.assertEqual(
+            ["app.app_info.get", "report.get.query"],
+            [discover_capabilities(query, client=None)["candidates"][0]["selector"] for query in ("查看 App 的公开信息绑定", "按平台、广告位和日期汇总变现结果。")],
+        )
 
         negative = discover_capabilities("不要运行看板图表。", client=self.client)
         self.assertEqual(("capability_gap", []), (negative["status"], negative["candidates"]))
