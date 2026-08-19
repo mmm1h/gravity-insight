@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+from .agent_client import DeferredAgentClient
 from .agent_sources import describe_operation_cards
 
 
@@ -42,17 +43,28 @@ def materialize_operation_owner_card(
     """Hydrate selected operation owners without changing candidate precedence."""
 
     selected = dict(card)
-    contract_describer = getattr(client, "describe", None)
-    if not callable(contract_describer):
-        return selected
-    if (
+    template = selected.get("input_template")
+    fields = selected.get("input_schema")
+    needs_overlay = (
         selected.get("kind") == "operation"
         and selected.get("operation_id") == selected.get("selector")
-    ):
+        and isinstance(template, Mapping)
+        and (
+            not isinstance(fields, Mapping)
+            or not set(template).issubset(fields)
+        )
+    )
+    if not needs_overlay:
+        return selected
+
+    contract_describer = (
+        client.loaded_attribute("describe")
+        if isinstance(client, DeferredAgentClient)
+        else getattr(client, "describe", None)
+    )
+    if callable(contract_describer):
         selected.update(
-            operation_contract_overlay(
-                client, selected, selected.get("input_schema")
-            )
+            operation_contract_overlay(client, selected, fields)
         )
     return selected
 

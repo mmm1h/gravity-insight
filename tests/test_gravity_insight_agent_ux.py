@@ -621,6 +621,19 @@ class DiscoveryUxTests(unittest.TestCase):
             [discover_capabilities(query, client=None)["candidates"][0]["selector"] for query in ("查看 App 的公开信息绑定", "按平台、广告位和日期汇总变现结果。")],
         )
 
+        builds = 0
+
+        def build_client():
+            nonlocal builds
+            builds += 1
+            return self.client
+        deferred = DeferredAgentClient(build_client)
+        lazy = discover_capabilities("按平台、广告位和日期汇总变现结果。", client=deferred)["candidates"][0]
+        self.assertEqual((0, {"date_list", "metrics_list", "filters"}), (builds, set(lazy["input_schema"])))
+        deferred.describe("report.get.query")
+        hydrated = discover_capabilities("按平台、广告位和日期汇总变现结果。", client=deferred)["candidates"][0]
+        self.assertEqual((1, 9, True), (builds, len(hydrated["input_schema"]), set(template) <= set(hydrated["input_schema"])))
+
         negative = discover_capabilities("不要运行看板图表。", client=self.client)
         self.assertEqual(("capability_gap", []), (negative["status"], negative["candidates"]))
         typo_gap = discover_capabilities("找煤体报表，别混入素材表现。", client=self.client)
