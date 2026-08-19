@@ -109,6 +109,10 @@ BUSINESS_PULSE_CAPABILITY: Mapping[str, Any] = {
         "并发汇总多个 App 在指定时间窗内的固定经营概览、趋势和可复核来源；"
         "调用方显式填写 App、日期、平台和小时开关。"
     ),
+    "boundaries": (
+        "只汇总固定经营概览，不执行分析查询或推广表现。",
+        "调用方必须显式填写 App、日期、平台和小时开关。",
+    ),
     "required_inputs": BUSINESS_PULSE_REQUIRED_INPUTS,
     "input_schema": {
         "apps": {

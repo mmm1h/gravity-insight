@@ -207,6 +207,11 @@ ORDER_SPLIT_TRACE_CAPABILITY: Mapping[str, Any] = {
         "按显式 App、单日和敏感 TraceID 完整扫描父订单并精确匹配一次拆单明细；"
         "不返回父子标识，不解释退款、净收入、归因或订单状态。"
     ),
+    "boundaries": (
+        "不返回父子标识，不解释退款、净收入、归因或订单状态。",
+        "不列出单日普通订单目录。",
+        "不从自然语言复制追踪标识。",
+    ),
     "required_inputs": ORDER_SPLIT_TRACE_REQUIRED_INPUTS,
     "input_schema": {
         "app": {

@@ -44,6 +44,10 @@ ATTRIBUTION_USER_DETAIL_CAPABILITY: Mapping[str, Any] = {
         "按显式 App 与测试设备目录内部行 ID 读取单用户归因详情；返回已登记的 "
         "device_white 以及 attribution/postback/pay 容器，后续出现未登记 item 字段时失败关闭。"
     ),
+    "boundaries": (
+        "只读单用户归因详情，不返回四组归因表现面板。",
+        "device_id 必须来自测试设备目录内部行，不是原始设备标识。",
+    ),
     "required_inputs": ATTRIBUTION_USER_DETAIL_REQUIRED_INPUTS,
     "input_schema": {
         "app": {

@@ -46,6 +46,10 @@ def _sync_card(query: str) -> dict[str, Any]:
             "只为一个显式 App 同步事件、事件属性、用户属性和事件属性分组；"
             "按页上限给出同步前逻辑请求界，执行后报告实际页数、对象数和失败来源。"
         ),
+        "boundaries": (
+            "只为一个显式 App 同步事件、事件属性、用户属性和事件属性分组。",
+            "不同步账号级数据表血缘。",
+        ),
         "scope": "single_app",
         "effect": "local_catalog_write",
         "executable": True,
@@ -104,6 +108,10 @@ def _status_card(query: str) -> dict[str, Any]:
         "description": (
             "离线报告本地 metadata catalog 是否存在/兼容、哪些 App 同步过、"
             "同步时间、对象与失败数，以及相对 freshness 阈值是否过期。"
+        ),
+        "boundaries": (
+            "只报告本地 catalog 状态，不同步任何 App。",
+            "不搜索事件或属性名称。",
         ),
         "scope": "local_catalog",
         "effect": "local_read",

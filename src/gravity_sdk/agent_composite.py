@@ -78,6 +78,7 @@ def composite_card(
         "effect": "read", "executable": True, "plan_executable": True,
         "natural_language_auto_execute": False, "input_schema": input_schema,
         "required_inputs": required, "match": match,
+        "boundaries": tuple(str(item) for item in definition.get("boundaries", ())),
         "next": {"ready_without_input": not required,
                   "argv": ["gravity", "plan", "run", "--input", "<plan.json>"]},
         **(

@@ -22,6 +22,10 @@ MONETIZATION_AGGREGATE_CAPABILITY: Mapping[str, Any] = {
         "App 由调用方以 EQUALS 过滤提供，服务端一次返回完整 list 与 page_info.total，"
         "不接受 page/page_size。"
     ),
+    "boundaries": (
+        "这是聚合变现 / monetization aggregate，不是单日逐行变现明细。",
+        "App 由调用方以 EQUALS 过滤提供，服务端一次返回完整 list 与 page_info.total，不接受 page/page_size。",
+    ),
     "effect": "read",
     "executable": True,
     "plan_executable": True,

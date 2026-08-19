@@ -47,6 +47,10 @@ ATTRIBUTION_PERFORMANCE_CAPABILITY: Mapping[str, Any] = {
         "按显式 App 和日期读取前端四组归因表现面板，覆盖归因新增、激活、"
         "注册、付费、曝光和点击；不返回单用户明细。"
     ),
+    "boundaries": (
+        "不返回单用户明细。",
+        "不读取归因映射或采集配置快照。",
+    ),
     "required_inputs": ATTRIBUTION_PERFORMANCE_REQUIRED_INPUTS,
     "input_schema": {
         "app": {

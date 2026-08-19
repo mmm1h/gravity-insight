@@ -45,6 +45,10 @@ COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
         "description": (
             "并发读取事件、事件属性、用户属性、指标和报表模板的固定分析上下文。"
         ),
+        "boundaries": (
+            "不执行分析查询。",
+            "不用于 App 治理快照或单用户旅程。",
+        ),
         "required_inputs": ("app",),
         "input_schema": {
             "app": {"type": "string", "required": True, "nullable": False},
@@ -57,7 +61,13 @@ COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
     ANALYSIS_DEFAULT_DICTIONARY_CAPABILITY,
     REALTIME_EVENT_CATALOG_CAPABILITY,
     SAVED_ANALYSIS_CAPABILITY,
-    ANALYSIS_TEMPLATE_CAPABILITY,
+    {
+        **ANALYSIS_TEMPLATE_CAPABILITY,
+        "boundaries": (
+            "只对 compact Analysis Spec v1 或已证明的 Dashboard Web artifact 执行，其他 config 逐字段隔离报告。",
+            "用于 template scope + template reference，不接受保存分析 ID/名称。",
+        ),
+    },
     DERIVED_METRICS_CAPABILITY,
     {
         "name": "dashboard_snapshot",
@@ -99,6 +109,9 @@ COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
             "按精确 ID 或精确名称解析一个 Analysis 看板，并发读取详情、成员、"
             "空间成员、筛选收藏和默认收藏；只返回控制面快照，不执行图表。"
         ),
+        "boundaries": (
+            "只返回控制面快照，不执行图表。",
+        ),
         "required_inputs": ("app", "ref"),
         "input_schema": {
             "app": {
@@ -127,6 +140,10 @@ COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
         "description": (
             "并发读取 App 详情、实时事件、容量、权限菜单、角色和模板的治理快照。"
         ),
+        "boundaries": (
+            "不用于账号可读 App 项目清单。",
+            "不执行分析查询。",
+        ),
         "required_inputs": ("app",),
         "input_schema": {
             "app": {"type": "string", "required": True, "nullable": False},
@@ -142,6 +159,9 @@ COMPOSITE_CAPABILITIES: tuple[Mapping[str, Any], ...] = (
             "归因配置",
         ),
         "description": "并发读取已登记归因映射、回溯与采集配置的固定快照。",
+        "boundaries": (
+            "只读已登记归因配置，不返回归因表现或单用户明细。",
+        ),
         "required_inputs": ("app",),
         "input_schema": {
             "app": {"type": "string", "required": True, "nullable": False},

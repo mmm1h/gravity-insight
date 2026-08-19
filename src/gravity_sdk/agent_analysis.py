@@ -277,6 +277,7 @@ def _analysis_card(query: str, selected_kind: str | None) -> dict[str, Any]:
         "analysis_kind": selected_kind,
         "domain": "analysis",
         "description": _description(selected_kind),
+        "boundaries": _boundaries(selected_kind),
         "effect": "read",
         "executable": True,
         "compiler_callable": True,
@@ -320,6 +321,20 @@ def _multi_app_batch_template(kind: str, spec: Any) -> dict[str, Any]:
         "all_apps_selector": False,
         "cross_app_aggregation": False,
     }
+
+
+_KIND_BOUNDARIES = {
+    None: "也可用同一分析定义比较两个时期（使用同一 Analysis Spec），这不是对已有结果做派生算术，也不要求保存分析引用。",
+    "funnel": "只返回逐步人数，不返回转化率；自算须先选定上一步或第一步做分母。",
+    "event": "这是事件趋势，不是漏斗、留存、属性或散点。",
+    "property": "这是属性分布，不是事件趋势、漏斗、留存或散点。",
+    "retention": "这是留存回访，不是事件趋势、漏斗、属性或散点。",
+    "scatter": "这是散点关系，不是事件趋势、漏斗、留存或属性。",
+}
+
+
+def _boundaries(selected_kind: str | None) -> tuple[str, ...]:
+    return (_KIND_BOUNDARIES[selected_kind], "自然语言不会填充业务字段。")
 
 
 def _description(selected_kind: str | None) -> str:

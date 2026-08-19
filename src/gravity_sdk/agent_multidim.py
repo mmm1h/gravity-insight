@@ -84,6 +84,10 @@ MULTIDIM_CAPABILITY: Mapping[str, Any] = {
         "使用公开的闭合 Multidim 物理输入合同执行多维报表查询，可显式请求合计或全量分页；"
         "调用方填写 App、指标、维度、日期和筛选，Agent 不推断任何业务值。"
     ),
+    "boundaries": (
+        "调用方填写 App、指标、维度、日期和筛选，Agent 不推断任何业务值。",
+        "不接受 SQL 文本，也不引用语义组合成员名。",
+    ),
     "required_inputs": ("app", "inputs"),
     "input_schema": _agent_input_schema(),
 }

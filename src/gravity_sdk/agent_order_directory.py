@@ -290,6 +290,10 @@ ORDER_DIRECTORY_CAPABILITY: Mapping[str, Any] = {
         "Amount/BackAmount/Status/CreateTime，未登记字段按合同漂移 fail-closed，"
         "登记后按投影总裁决暴露；不解释退款、净收入或支付成功。"
     ),
+    "boundaries": (
+        "不解释退款、净收入或支付成功。",
+        "不用于拆单明细追踪。",
+    ),
     "required_inputs": ORDER_DIRECTORY_REQUIRED_INPUTS,
     "input_schema": {
         "app": {

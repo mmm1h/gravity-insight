@@ -32,6 +32,10 @@ REALTIME_EVENT_CATALOG_CAPABILITY: Mapping[str, Any] = {
         "读取一个 App 在显式时间窗内的实时事件目录第一页；"
         "默认 filters.event_type=profile。响应无 page_info。"
     ),
+    "boundaries": (
+        "只返回第一页；响应无 page_info。",
+        "默认 filters.event_type=profile，不是全量事件查询。",
+    ),
     "required_inputs": ("app", "start", "end"),
     "input_schema": {
         "app": {"type": "string|integer", "required": True, "nullable": False},

@@ -112,7 +112,14 @@ def operation_query_match(query: str, item: Mapping[str, Any]) -> dict[str, Any]
 def composite_capability_inventory() -> tuple[Mapping[str, Any], ...]:
     """Return the immutable, value-free built-in composite inventory."""
 
-    return tuple(copy.deepcopy(item) for item in _COMPOSITE_CAPABILITIES)
+    inventory = tuple(copy.deepcopy(item) for item in _COMPOSITE_CAPABILITIES)
+    for item in inventory:
+        declared = item.get("boundaries")
+        if not isinstance(declared, (tuple, list)) or not declared:
+            raise RuntimeError(
+                f"composite {item.get('name')!r} must declare non-empty boundaries"
+            )
+    return inventory
 
 
 def analysis_query_spec_cards(

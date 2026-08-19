@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import re
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -17,9 +16,11 @@ from .host_effect_sources import SOURCE_SCHEMA_VERSION, host_source
 CATALOG_SCHEMA_VERSION = "gravity.host-product-catalog.v1"
 SELECTION_SCHEMA_VERSION = "gravity.host-product-selection.v1"
 MAX_CANDIDATES = 5
-
-_BOUNDARY_MARKERS = (
-    "不", "只", "不能", "不得", "不会", "无需", "never", "only", "without",
+MUTATION_SELECTION_BOUNDARY = (
+    "Selection is read-only; preview and execute still require the governed user authorization flow."
+)
+GAP_SELECTION_BOUNDARY = (
+    "Unavailable and never executable; do not substitute a neighboring product."
 )
 
 
@@ -217,7 +218,7 @@ def _product_entry(card: Mapping[str, Any]) -> dict[str, Any]:
         "domain": str(card.get("domain", "uncategorized")),
         "goals": list(caller_language_fields(selector) or (description,)),
         "does_and_returns": description,
-        "boundaries": _boundaries(description, card),
+        "boundaries": owner_boundaries(card),
         "prerequisites": list(map(str, card.get("required_inputs", ()))),
         "effect": str(card.get("effect", "read")),
         "executable": bool(card.get("executable", False)),
@@ -234,7 +235,7 @@ def _gap_entry(gap: Mapping[str, Any]) -> dict[str, Any]:
         "domain": "capability_gap",
         "goals": list(caller_language_fields(selector) or (str(gap["query"]),)),
         "does_and_returns": reason,
-        "boundaries": ["Unavailable and never executable; do not substitute a neighboring product."],
+        "boundaries": [GAP_SELECTION_BOUNDARY],
         "prerequisites": [str(gap["next_action"])],
         "effect": "none",
         "executable": False,
@@ -242,19 +243,26 @@ def _gap_entry(gap: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def _boundaries(description: str, card: Mapping[str, Any]) -> list[str]:
-    clauses = [
-        clause.strip()
-        for clause in re.split(r"[；;。]", description)
-        if clause.strip() and any(marker in clause.casefold() for marker in _BOUNDARY_MARKERS)
-    ]
-    if card.get("effect") == "mutation":
-        clauses.append(
-            "Selection is read-only; preview and execute still require the governed user authorization flow."
+def owner_boundaries(card: Mapping[str, Any]) -> list[str]:
+    """Return the owner-declared host boundaries; missing declarations fail closed."""
+
+    declared = card.get("boundaries")
+    if not isinstance(declared, Sequence) or isinstance(declared, (str, bytes)):
+        raise RuntimeError(
+            f"canonical product card {card.get('selector')!r} must declare non-empty boundaries"
         )
+    clauses = [str(item).strip() for item in declared]
     if not clauses:
-        clauses.append(
-            "Use only for this exact returned object or action; keep neighboring products separate."
+        raise RuntimeError(
+            f"canonical product card {card.get('selector')!r} must declare non-empty boundaries"
+        )
+    if any(not item for item in clauses):
+        raise RuntimeError(
+            f"canonical product card {card.get('selector')!r} boundaries must be non-empty strings"
+        )
+    if card.get("effect") == "mutation" and MUTATION_SELECTION_BOUNDARY not in clauses:
+        raise RuntimeError(
+            f"canonical product card {card.get('selector')!r} must keep the mutation authorization boundary"
         )
     return list(dict.fromkeys(clauses))
 
@@ -262,11 +270,13 @@ def _boundaries(description: str, card: Mapping[str, Any]) -> list[str]:
 def _validate_product_projection(entry: Mapping[str, Any], card: Mapping[str, Any]) -> None:
     expected = (
         "product", str(card.get("description", "")).strip(),
+        owner_boundaries(card),
         list(map(str, card.get("required_inputs", ()))),
         str(card.get("effect", "read")), bool(card.get("executable", False)),
     )
     actual = (
         entry.get("identity_kind"), entry.get("does_and_returns"),
+        entry.get("boundaries"),
         entry.get("prerequisites"), entry.get("effect"), entry.get("executable"),
     )
     if actual != expected or entry.get("description_origin") != "canonical_product_card":
@@ -274,9 +284,13 @@ def _validate_product_projection(entry: Mapping[str, Any], card: Mapping[str, An
 
 
 def _validate_gap_projection(entry: Mapping[str, Any], gap: Mapping[str, Any]) -> None:
-    expected = ("capability_gap", gap["reason"], [gap["next_action"]], False)
+    expected = (
+        "capability_gap", gap["reason"], [GAP_SELECTION_BOUNDARY],
+        [gap["next_action"]], False,
+    )
     actual = (
         entry.get("identity_kind"), entry.get("does_and_returns"),
+        entry.get("boundaries"),
         entry.get("prerequisites"), entry.get("executable"),
     )
     if actual != expected or entry.get("description_origin") != "registered_gap":
@@ -293,12 +307,15 @@ def _fingerprint(entries: Sequence[Mapping[str, Any]]) -> str:
 
 __all__ = [
     "CATALOG_SCHEMA_VERSION",
+    "GAP_SELECTION_BOUNDARY",
     "MAX_CANDIDATES",
+    "MUTATION_SELECTION_BOUNDARY",
     "SELECTION_SCHEMA_VERSION",
     "host_catalog_sources",
     "host_product_catalog",
     "host_product_selection_schema",
     "host_product_selection_template",
     "host_selection_upgrade_contract",
+    "owner_boundaries",
     "validate_host_catalog_projection",
 ]

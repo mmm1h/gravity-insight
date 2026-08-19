@@ -76,6 +76,7 @@
 - [任务指南补漏斗 / 留存 / 导出](skill-guides.md) — 2026-08-19：生成器补三条短指南；短问命中产品卡，长问漏斗仍落到不可执行 handoff。
 - [Plan 面：agent 能不能自己搭一条多步分析并跑完](plan-surface.md) — 2026-08-19：4 节点 Plan 在投放中 App 上 4/4 success；`plan schema` 写出 analysis_query 绑定合同；中间结果仍绑不进 `/spec`；`fetch_strategy` 死名已在 #212 修过。
 - [跨层不变量：请求的组/身份必须在响应里看得见](response-invariant.md) — 2026-08-19：按响应形状（不按 operation_id 名单）立组/身份不变量，挂在合同加载上，新同形 route 自动管；237 条可执行合同 0 违反。
+- [产品卡边界改成 owner 字段](card-boundaries.md) — 2026-08-19：host `boundaries` 不再从中文散文正则切句；96 张卡全部显式声明，缺字段/投影漂移加载即红。
 
 ## 归档记录
 

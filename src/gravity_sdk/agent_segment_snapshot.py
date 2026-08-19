@@ -56,6 +56,9 @@ SEGMENT_SNAPSHOT_CAPABILITY: Mapping[str, Any] = {
         "分群目录空结果与权限裁剪空集不可区分；若不确定权限，先运行 "
         "`gravity apps permission-profile`。"
     ),
+    "boundaries": (
+        "不读取成员或规则定义。",
+    ),
     "required_inputs": ("app", "ref", "date"),
     "input_schema": {
         "app": {"type": "string|integer", "required": True, "nullable": False},

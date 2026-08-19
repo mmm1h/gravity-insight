@@ -121,8 +121,30 @@ def _base(query: str, action: str, selector: str) -> dict[str, Any]:
         "update": "更新 marker-or-owner 已验证的自定义指标，并逐字段读回定义。",
         "delete": "删除前重新读回 marker-or-owner，删除后证明指标 ID 已不存在。",
     }
+    mutation_auth = (
+        "Selection is read-only; preview and execute still require the governed user authorization flow.",
+    )
+    boundaries = {
+        "list": (
+            "只列目录，不创建、更新或删除自定义指标。",
+            "不执行 Multidim 查询。",
+        ),
+        "create": (
+            "自然语言永不自动写入。",
+            *mutation_auth,
+        ),
+        "update": (
+            "自然语言永不自动写入。",
+            *mutation_auth,
+        ),
+        "delete": (
+            "删除前重新读回 marker-or-owner，删除后证明指标 ID 已不存在。",
+            *mutation_auth,
+        ),
+    }
     return {
         "selector": selector, "domain": "report", "description": descriptions[action],
+        "boundaries": boundaries[action],
         "executable": True, "plan_executable": True,
         "natural_language_auto_execute": False, "offline": False,
         "network_called": False,

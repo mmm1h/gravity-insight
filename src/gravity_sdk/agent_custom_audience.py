@@ -33,6 +33,10 @@ CUSTOM_AUDIENCE_CAPABILITY: Mapping[str, Any] = {
         "可投人群覆盖与状态",
     ),
     "description": "完整读取可投自定义人群的覆盖数、上传数、来源和状态。",
+    "boundaries": (
+        "只读覆盖与状态，不创建、更新或删除人群。",
+        "不用于分群成员或规则评估。",
+    ),
     "required_inputs": (),
     "input_schema": {},
 }

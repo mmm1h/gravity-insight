@@ -30,6 +30,10 @@ def material_asset_capability_cards(
                 "从刚读取的已登记素材 operation 响应按精确引用取出文件或缩略图 URL，"
                 "跟随重定向并原子下载；调用方不能提交 URL。"
             ),
+            "boundaries": (
+                "调用方不能提交 URL。",
+                "不读取素材表现报表。",
+            ),
             "effect": "material_file_download",
             "executable": True,
             "currently_callable": True,

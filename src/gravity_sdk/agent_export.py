@@ -92,6 +92,41 @@ _EXPORT_DESCRIPTIONS = {
         "创建、轮询并原子下载受治理的原始事件 gzip CSV；提交前须有正数 evaluate。"
     ),
 }
+_EXPORT_FAMILY_BOUNDARY = "宽问法不能解析成这一条；七个子类输入不可互换。"
+_EXPORT_BOUNDARIES = {
+    _USER_EVENT_OPERATION: (
+        "只导出单用户事件，不导出分群、用户明细、付费或变现文件。",
+        _EXPORT_FAMILY_BOUNDARY,
+    ),
+    "export.analysis.segment.result.start": (
+        "只导出分群结果，不导出分群用户明细或单用户事件。",
+        _EXPORT_FAMILY_BOUNDARY,
+    ),
+    "export.analysis.segment_user_detail.start": (
+        "只导出分群用户明细，不导出分群结果或用户明细。",
+        _EXPORT_FAMILY_BOUNDARY,
+    ),
+    "export.analysis.user_detail.start": (
+        "只导出用户明细，不导出单用户事件或分群用户明细。",
+        _EXPORT_FAMILY_BOUNDARY,
+    ),
+    "export.analysis.pay_event.start": (
+        "只导出付费事件，不导出变现明细或普通用户事件。",
+        _EXPORT_FAMILY_BOUNDARY,
+    ),
+    "export.analysis.monetization_detail.start": (
+        "只导出变现明细文件，不是按平台广告位聚合的变现报表。",
+        "超限时标注 truncated，不假装完整。",
+    ),
+    "export.analysis.origin_event.start": (
+        "只导出原始事件 gzip CSV；提交前须有正数 evaluate。",
+        _EXPORT_FAMILY_BOUNDARY,
+    ),
+    "export.material.report.start": (
+        "只导出素材报表文件，不下载单个素材 URL。",
+        "不用于分析导出七个子类。",
+    ),
+}
 MATERIAL_EXPORT_OPERATION = ".".join(("export", "material", "report", "start"))
 _MATERIAL_OPERATION = MATERIAL_EXPORT_OPERATION
 _SPACE = re.compile(r"[^a-z0-9_.]+", re.IGNORECASE)
@@ -243,6 +278,7 @@ def _export_card(
         "description": _EXPORT_DESCRIPTIONS.get(
             operation_id, "创建、轮询并原子下载受治理的素材报表文件。"
         ),
+        "boundaries": _EXPORT_BOUNDARIES[operation_id],
         "effect": _CREATE_EFFECT,
         "executable": True,
         "currently_callable": True,
@@ -401,6 +437,7 @@ def material_export_capability_cards(
             "operation_id": _MATERIAL_OPERATION,
             "domain": "export",
             "description": "创建、轮询并原子下载受治理的素材报表文件。",
+            "boundaries": _EXPORT_BOUNDARIES[_MATERIAL_OPERATION],
             "effect": _CREATE_EFFECT,
             "executable": True,
             "currently_callable": True,

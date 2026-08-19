@@ -33,6 +33,9 @@ COMPANY_USAGE_CAPABILITY: Mapping[str, Any] = {
     "description": (
         "读取公司级按日广告、点击、成本、事件、画像、存储、追踪和素材传输用量。"
     ),
+    "boundaries": (
+        "只读公司级资源用量，不返回推广表现或经营脉搏。",
+    ),
     "required_inputs": (),
     "input_schema": {},
 }
