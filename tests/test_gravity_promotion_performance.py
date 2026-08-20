@@ -99,6 +99,43 @@ class _CompatBatchClient(_BatchClient):
         return {}
 
 
+class _InventoryBatchClient(_CompatBatchClient):
+    def __init__(self, operations):
+        super().__init__()
+        self.inventory = list(operations)
+
+    def operations(self, **filters):
+        return [
+            item
+            for item in self.inventory
+            if all(item.get(key) == value for key, value in filters.items())
+        ]
+
+    def batch(self, requests, **options):
+        self.calls.append((copy.deepcopy(requests), dict(options)))
+        return [
+            {
+                "operation_id": request["operation_id"],
+                "request_id": request["request_id"],
+                "ok": True,
+                "status": "success",
+                "data": {"list": [{"row": request["request_id"]}]},
+            }
+            for request in reversed(requests)
+        ]
+
+
+def _inventory_operation(platform, resource, operation_id):
+    return {
+        "operation_id": operation_id,
+        "domain": "promotion",
+        "platform": platform,
+        "resource": resource,
+        "action": "list",
+        "stability": "stable",
+    }
+
+
 class PromotionPerformanceTests(unittest.TestCase):
     def test_fans_out_real_operations_with_fair_bounds_and_order(self):
         client = _BatchClient()
@@ -411,11 +448,73 @@ class PromotionPerformanceTests(unittest.TestCase):
         self.assertEqual(expected, actual)
         self.assertEqual(formal_client.calls, legacy_client.calls)
 
+    def test_legacy_snapshot_reads_non_primary_resource_with_compatibility_marker(self):
+        operation_id = "promotion.bytedance.project.list"
+        client = _InventoryBatchClient([
+            _inventory_operation("bytedance", "project", operation_id)
+        ])
+        result = CompositeService(client).promotion_snapshot(
+            ("bytedance",),
+            resource="project",
+            common_inputs={"project_ref": "fixture-parent"},
+        )
+        requests, options = client.calls[0]
+        self.assertEqual(operation_id, requests[0]["operation_id"])
+        self.assertEqual({"project_ref": "fixture-parent"}, requests[0]["inputs"])
+        self.assertEqual({"max_workers": 6}, options)
+        self.assertEqual(
+            [{"row": "bytedance"}], result["results"][0]["data"]["list"]
+        )
+        self.assertEqual(
+            {"mode": "inventory", "formal_binding_validation": "not_performed"},
+            result["compatibility"],
+        )
+
+    def test_legacy_snapshot_reads_four_heterogeneous_primary_platforms(self):
+        capabilities = {
+            "bing": ("advertiser", "promotion.bing.advertiser.list"),
+            "xiaohongshu": ("advertiser", "promotion.xiaohongshu.advertiser.list"),
+            "taptap": ("group", "promotion.taptap.group.list"),
+            "wechat_video": ("report", "promotion.wechat_video.report.list"),
+        }
+        client = _InventoryBatchClient([
+            _inventory_operation(platform, resource, operation_id)
+            for platform, (resource, operation_id) in capabilities.items()
+        ])
+        result = CompositeService(client).promotion_snapshot(tuple(capabilities))
+        requests, _ = client.calls[0]
+        self.assertEqual(
+            [value[1] for value in capabilities.values()],
+            [request["operation_id"] for request in requests],
+        )
+        self.assertEqual(list(capabilities), [item["platform"] for item in result["results"]])
+        self.assertTrue(all(item["data"]["list"] for item in result["results"]))
+        self.assertEqual("not_performed", result["compatibility"]["formal_binding_validation"])
+
+    def test_legacy_snapshot_rejects_ambiguous_inventory_without_executing(self):
+        client = _InventoryBatchClient([
+            _inventory_operation("bytedance", "project", operation_id)
+            for operation_id in (
+                "promotion.bytedance.project.list",
+                "promotion.bytedance.project.query",
+            )
+        ])
+        with self.assertRaises(InputValidationError) as raised:
+            CompositeService(client).promotion_snapshot(
+                ("bytedance",), resource="project"
+            )
+        self.assertEqual("resource", raised.exception.field)
+        self.assertIn("actual value:", str(raised.exception))
+        self.assertIn("promotion.bytedance.project.list", str(raised.exception))
+        self.assertIn("promotion.bytedance.project.query", str(raised.exception))
+        self.assertTrue(raised.exception.next_action)
+        self.assertEqual([], client.calls)
+
     def test_legacy_snapshot_uses_formal_input_error_classification(self):
         cases = (
             ({"app_id": "0"}, {}, {}),
             ({"start": "bad"}, {}, {}),
-            ({"platforms": ("bing",)}, {"platforms": ("bing",)}, {}),
+            ({"platforms": ("unknown",)}, {"platforms": ("unknown",)}, {}),
             ({"metrics": ("app_id",)}, {}, {"query_fields": ["app_id"]}),
         )
         base = dict(

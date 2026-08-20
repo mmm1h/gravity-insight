@@ -139,19 +139,7 @@ def dispatch_promotion_command(
             ]
         }
     if args.promotion_command == "snapshot":
-        from .promotion_performance import SUPPORTED_PLATFORMS
-        from .promotion_snapshot_compat import promotion_snapshot_compat
-
-        selected = SUPPORTED_PLATFORMS if args.platform == "all" else (args.platform,)
-        inputs = _snapshot_inputs(args, object_input(args.input))
-        return promotion_snapshot_compat(
-            runtime.build_client(),
-            selected,
-            resource=args.level or "primary",
-            common_inputs=inputs,
-            read_all=True,
-            max_workers=args.concurrency,
-        )
+        return _snapshot(args, object_input)
     client = runtime.build_client()
     operation_id = runtime.resolve_operation_id(
         client, promotion_operation(args.platform, args.level)
@@ -175,10 +163,34 @@ def dispatch_promotion_command(
     )
 
 
-def _snapshot_inputs(args: Any, supplied: Mapping[str, Any]) -> dict[str, Any]:
+def _snapshot(args: Any, object_input: Callable[[Any], dict[str, Any]]) -> Any:
+    from .promotion_performance import SUPPORTED_PLATFORMS
+    from .promotion_snapshot_compat import promotion_snapshot_compat
+
+    selected = SUPPORTED_PLATFORMS if args.platform == "all" else (args.platform,)
+    resource = args.level or "primary"
+    if args.platform == "all" and resource != "primary":
+        _reject_snapshot_shortcut("resource", resource)
+    governed = resource == "primary" and all(
+        platform in SUPPORTED_PLATFORMS for platform in selected
+    )
+    inputs = _snapshot_inputs(args, object_input(args.input), governed=governed)
+    return promotion_snapshot_compat(
+        runtime.build_client(),
+        selected,
+        resource=resource,
+        common_inputs=inputs,
+        read_all=True,
+        max_workers=args.concurrency,
+    )
+
+
+def _snapshot_inputs(
+    args: Any, supplied: Mapping[str, Any], *, governed: bool
+) -> dict[str, Any]:
     allowed = {"app_id", "date_list", "filters", "page", "page_size", "query_fields"}
     unknown = sorted(set(supplied) - allowed)
-    if unknown:
+    if unknown and governed:
         _reject_snapshot_shortcut("input", unknown)
     result = dict(supplied)
     shortcuts = {

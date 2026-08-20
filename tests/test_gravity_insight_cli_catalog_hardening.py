@@ -406,7 +406,7 @@ class GravityInsightCliCatalogHardeningTests(unittest.TestCase):
         )
         self.assertTrue(client.batch_requests[0]["read_all"])
 
-    def test_composite_primary_snapshot_rejects_unproved_platform_before_inventory(self):
+    def test_composite_primary_snapshot_rejects_unknown_platform_before_inventory(self):
         capabilities = {
             "ubix": ("group", "promotion.ubix.group.list"),
             "taptap": ("group", "promotion.taptap.group.list"),
@@ -455,7 +455,7 @@ class GravityInsightCliCatalogHardeningTests(unittest.TestCase):
         client = Client()
         with self.assertRaises(InputValidationError) as raised:
             CompositeService(client).promotion_snapshot(
-                ["taptap"],
+                ["unknown"],
                 common_inputs={
                     "app_id": 17,
                     "date_list": ["2026-08-01", "2026-08-07"],

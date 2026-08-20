@@ -639,11 +639,14 @@ live 指标目录但不选择字段。调用方精确选择后第二次调用 `p
 每个平台一个 batch item且内部分页 worker 固定 1；direct 平台池范围 1..24。共享 item 预算按
 平台等额 floor 分配，结果按调用方平台序返回并隔离 sibling 失败。返回
 `gravity-insight.promotion-performance.v1` 的安全投影，不归一字段、不跨平台汇总或排名，也不生成
-策略。`CompositeService.promotion_snapshot()` 保留原签名，但不再是 raw inventory 产品：
-`resource` 必须为 `primary`，`common_inputs` / `inputs_by_platform` 必须共同绑定唯一 `app_id`、
-两元素 `date_list` 和统一 `query_fields`，平台限于同一 21 项集合；它复用上述 workspace App、请求、
-FieldPolicy 与结果验证并返回同一个 envelope。异构平台可由专家通过精确 operation 读取，不由 snapshot
-猜选 operation。
+策略。`CompositeService.promotion_snapshot()` 保留原签名并按输入能力分流。`resource=primary` 且平台
+全部属于同一 21 项正式集合时，`common_inputs` / `inputs_by_platform` 必须共同绑定唯一 `app_id`、两元素
+`date_list` 和统一 `query_fields`；该分支复用上述 workspace App、请求、FieldPolicy 与结果验证并返回
+同一个 envelope。非 primary 层级或 `bing/xiaohongshu/taptap/wechat_video` 走 stable inventory 兼容
+分支：只执行唯一的 platform/resource read 匹配，多候选显式失败并列出候选，不猜排序首项；返回的
+`gravity-insight.composite.promotion.v1` 以
+`compatibility.formal_binding_validation=not_performed` 机器标记未经正式绑定验证。Agent/Plan 不暴露该
+兼容分支。
 
 ## Plan v1
 

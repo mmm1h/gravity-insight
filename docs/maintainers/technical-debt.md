@@ -27,6 +27,26 @@
   operation identity、字段 allowlist、App/window/metrics binding、failure wording 继续留在各自 owner。
   **不做整文件统一，不造结果 DSL。**
 
+### 2. legacy promotion snapshot 的兼容分支仍缺正式绑定
+
+**状态（2026-08-20）**：正式范围已经收口；非 primary 层级与四个异构平台的兼容读取仍保留本条。
+
+- **Owner area**：Promotion 兼容面（CLI/SDK legacy snapshot）。
+- **证据**：`promotion_snapshot_compat.py` 已按输入分流：`primary` 加正式 21 平台复用
+  `promotion performance` 的 workspace App、统一日期窗、平台/指标与结果绑定；其他已登记层级及
+  `bing/xiaohongshu/taptap/wechat_video` 仍从 stable inventory 精确匹配后透传逐 operation raw input，
+  返回 `gravity-insight.composite.promotion.v1`。兼容 envelope 以
+  `compatibility.formal_binding_validation=not_performed` 机器标记较低保证；零匹配仍为 unavailable，
+  多匹配显式列出候选并在执行前失败，不再选择排序首项。CLI 不适用 shortcut 仍显式失败。
+  `query_fields` 到达 operation 后仍经过公共 `FieldPolicy`，剩余差距不是绕过该公共校验，而是没有
+  正式产品统一的 App/日期/指标必填约束和返回结果绑定。
+- **为什么保留**：基线确实能通过这些 inventory 路径读取；没有消费者遥测能证明无人使用，删除会
+  造成能力退化。Agent/Plan 仍只暴露正式产品，不宣传兼容分支为自动化主路径。
+- **触发条件**：兼容平台/层级新增第二个同资源 stable read；或对应输入/结果绑定取得正式产品证据；
+  或取得可证明无消费者的证据。
+- **退出条件**：为所有仍保留的兼容平台/层级建立不损失读取能力的正式请求与结果绑定后移入正式
+  路径；或确证无消费者后删除兼容分支。不能用 raw `promotion query` 代替 snapshot 的聚合职责来关债。
+
 ### 3. 在线输入解析的两次闭环依赖「上游稳定 ID 不复用」，而这证明不了
 
 - **Owner area**：Agent 输入解析（`agent_input_resolution.py`、`agent_input_catalogs.py`）。
@@ -110,5 +130,3 @@
 ## 已关闭
 
 2026-08-19 以前关闭项已压缩到 [清理前快照](../archive/snapshots/technical-debt-2026-08-19.md)，不在当前清单重复展开。
-
-2026-08-20：legacy promotion snapshot 保留 CLI/SDK 签名，但删除 inventory/首项选择/独立结果策略，改为复用正式 Promotion Performance 的 workspace App、请求、metadata 与结果绑定；`all` shortcut 改为显式失败。
