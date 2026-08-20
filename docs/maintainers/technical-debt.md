@@ -99,6 +99,10 @@
   5 无法判定`。本轮把 10 条 AppRank/data-table POST 的 hash-matched 控制流登记为精确 read
   confirmation，并用 10 次有界生产 HTTP 验证最高价值候选；没有用失败或空样本批量改 Census status。
   `promotion.promoted_object.list` 的 draft POST 与 Census UNKNOWN method 差异继续保留为显式证据差异。
+- **2026-08-20 进展**：Prober 已把隐式允许/拒绝固化为六个互斥机器状态；所有未由精确 stable 合同或
+  含 reviewer、ISO 日期、静态证据的逐路由清单确认的 POST 均为 `unsafe_unknown`。该状态在 credential
+  status/refresh、session 与 runtime/transport 构造前以稳定机器错误失败；单条、batch、parameter 与
+  scoped reprobe 的直接入口复用同一离线前置检查。既有 Census `status` 和逐条语义结论未批量改写。
 
 ### 7. 稳定 operation 的分页形状仍有系统性证据债
 

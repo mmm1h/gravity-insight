@@ -12,6 +12,8 @@ import pytest
 
 
 from gravity_sdk.errors import PolicyViolation, exit_code_for_error
+from gravity_sdk.prober import batch as prober_batch
+from gravity_sdk.prober import cli as prober_cli
 from gravity_sdk.prober import online, probe_support, transport as prober_transport
 from gravity_sdk.prober.batch import finalize_batch_report
 from gravity_sdk.prober.model import (
@@ -32,7 +34,11 @@ from gravity_sdk.prober.probe_support import (
     evidence_path,
     relative,
 )
-from gravity_sdk.prober.read_semantics import assert_probe_read_semantics
+from gravity_sdk.prober.read_semantics import (
+    PROBE_SEMANTIC_STATUSES,
+    assert_probe_read_semantics,
+    probe_semantic_status,
+)
 
 
 
@@ -618,41 +624,81 @@ class GravityInsightProberTests(unittest.TestCase):
         }
         _write_json(confirmations, document)
 
-        with pytest.raises(PolicyViolation, match="inferred only from a path token") as error:
+        with pytest.raises(PolicyViolation, match="have not been verified") as error:
             assert_probe_read_semantics(source, confirmations_path=confirmations)
-        assert (error.value.code.value, error.value.category.value) == (
-            "UNSUPPORTED", "local"
+        detail = error.value.to_error_detail().to_dict()
+        assert (detail["code"], detail["category"], detail["field"]) == (
+            "PROBE_UNSAFE_UNKNOWN", "local", "operation.route_semantics"
         )
+        assert "actual value:" in detail["message"] and detail["next_action"]
         assert exit_code_for_error(error.value) == 4
         _write_json(tmp_path / "candidate.query.json", source)
-        monkeypatch.setattr(
-            online, "_session_or_default",
-            lambda _session: pytest.fail("probe session must not be constructed"),
-        )
-        with pytest.raises(PolicyViolation, match="inferred only from a path token"):
-            online.run_online_probes(["candidate.query"], draft_root=tmp_path)
+        touched = []
 
-        document["confirmations"] = [{
+        def forbidden(name):
+            touched.append(name)
+            pytest.fail(f"{name} must not be constructed")
+
+        monkeypatch.setattr(online, "_session_or_default", lambda _session: forbidden("session"))
+        monkeypatch.setattr(online, "build_runtime", lambda _recording: forbidden("runtime"))
+        with pytest.raises(PolicyViolation, match="have not been verified"):
+            online.run_online_probes(["candidate.query"], draft_root=tmp_path)
+        assert touched == []
+        monkeypatch.setattr(prober_batch, "classify_drafts", lambda _root: [{"operation_id": "candidate.query"}])
+        monkeypatch.setattr(prober_batch, "build_runtime", lambda _recording: forbidden("batch runtime"))
+        with pytest.raises(PolicyViolation, match="have not been verified"):
+            prober_batch.run_batch_probes(draft_root=tmp_path, report_root=tmp_path / "batch", session=object())
+        assert touched == []
+        monkeypatch.setattr(prober_cli.runtime, "credential_status", lambda: forbidden("credentials"))
+        with pytest.raises(PolicyViolation, match="Probe blocked"):
+            prober_cli._probe_auth(["analysis.setting.query"], False)
+        assert touched == []
+
+        confirmed = {
             "method": "POST", "path": "/candidate/query/",
             "decision": "confirmed_read", "reviewer": "maintainer@example.test",
             "reviewed_at": "2026-08-14", "evidence": [{
                 "source": "raw/example.js#control-flow",
                 "detail": "The call only renders returned rows.",
             }],
-        }]
+        }
+        for field, invalid in (("reviewer", ""), ("reviewed_at", "not-a-date"), ("evidence", [])):
+            document["confirmations"] = [{**confirmed, field: invalid}]
+            _write_json(confirmations, document)
+            with pytest.raises(PolicyViolation, match="incomplete record"):
+                assert_probe_read_semantics(source, confirmations_path=confirmations)
+        document["confirmations"] = [confirmed]
         _write_json(confirmations, document)
         assert_probe_read_semantics(source, confirmations_path=confirmations)
 
-        for method, evidence in (
-            ("GET", ["read_action_path_token"]),
-            ("GET", ["safe_http_method"]),
-            ("POST", ["route_registry:read_contract_not_verified"]),
-        ):
-            source["operation"]["upstream_method"] = method
+        source["operation"]["upstream_method"] = "GET"
+        for evidence in (["read_action_path_token"], ["safe_http_method"]):
             route["semantic_evidence"] = evidence
             assert_probe_read_semantics(
                 source, confirmations_path=tmp_path / "intentionally-missing.json"
             )
+        source["operation"]["upstream_method"] = "POST"
+        source["operation"]["path_template"] = "/candidate/unverified/"
+        route["semantic_evidence"] = ["route_registry:read_contract_not_verified"]
+        with pytest.raises(PolicyViolation, match="have not been verified"):
+            assert_probe_read_semantics(source, confirmations_path=confirmations)
+
+    def test_probe_semantic_status_model_has_no_ambiguous_unknown(self) -> None:
+        source = build_draft(_route("/candidate/query/"), set())
+        route = source["draft"]["route_evidence"]
+        statuses = [probe_semantic_status(source)]
+        source["operation"]["upstream_method"] = "UNKNOWN"
+        statuses.append(probe_semantic_status(source))
+        source["draft"]["probe_evidence"] = [{"conclusion": "blocked_by_data"}]
+        statuses.append(probe_semantic_status(source))
+        source["draft"]["probe_evidence"] = []
+        route.update({"status": "unclassified", "semantic_evidence": ["insufficient_semantic_evidence"]})
+        statuses.append(probe_semantic_status(source))
+        source["operation"]["effect"] = "export"
+        statuses.append(probe_semantic_status(source))
+        mutation = json.loads(Path("src/gravity_sdk/contracts/operations/analysis.segment.by.manual.update.json").read_text(encoding="utf-8"))
+        statuses.append(probe_semantic_status(mutation))
+        assert set(statuses) == set(PROBE_SEMANTIC_STATUSES)
 
     def test_probe_evidence_uses_privacy_guard_compatible_yaml(self) -> None:
         tmp_path = self.tmp_path

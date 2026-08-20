@@ -17,6 +17,7 @@ from .core import (
 )
 from .draft_probe import probe_draft
 from .promotion import evaluate_gate, promote_drafts
+from .read_semantics import assert_available_probe_items
 from .transport import RecordingSession, RequestDiscipline, build_runtime, sdk_parts
 
 
@@ -94,9 +95,9 @@ def write_semantics_reason(source: Mapping[str, Any]) -> str | None:
         return "ambiguous_operation_name:adcreate"
     if "verify_code" in operation_id:
         return "ambiguous_operation_name:verify_code"
-    operation_tokens = set(operation_id.replace(".", "_").split("_"))
     ambiguous_tokens = sorted(
-        operation_tokens & {"create", "set", "manage", "submit"}
+        set(operation_id.replace(".", "_").split("_"))
+        & {"create", "set", "manage", "submit"}
     )
     if ambiguous_tokens:
         return "ambiguous_operation_token:" + ",".join(ambiguous_tokens)
@@ -105,7 +106,7 @@ def write_semantics_reason(source: Mapping[str, Any]) -> str | None:
 
 def privacy_name_risk(source: Mapping[str, Any]) -> str | None:
     operation_id = str(source["operation"]["operation_id"]).casefold()
-    return next((item for item in _PRIVACY_NAME_MARKERS if item in operation_id), None)
+    return next(filter(operation_id.__contains__, _PRIVACY_NAME_MARKERS), None)
 
 
 def classify_drafts(draft_root: Path = DRAFT_ROOT) -> list[dict[str, Any]]:
@@ -191,9 +192,8 @@ def _failure_reason(row: Mapping[str, Any], result: Mapping[str, Any]) -> str:
 
 def _stable_count(operation_root: Path) -> int:
     return sum(
-        1
+        read_json(path).get("operation", {}).get("stability") == "stable"
         for path in operation_root.glob("*.json")
-        if read_json(path).get("operation", {}).get("stability") == "stable"
     )
 
 
@@ -208,6 +208,7 @@ def run_batch_probes(
     rows = classify_drafts(draft_root)
     if not rows:
         raise ValueError("no draft contracts are available for the batch")
+    assert_available_probe_items(rows, draft_root=draft_root)
     tier_counts = Counter(int(row["tier"]) for row in rows)
     write_json(
         report_root / "layering.json",
@@ -220,8 +221,7 @@ def run_batch_probes(
     )
 
     discipline = RequestDiscipline(
-        interval_seconds=interval_seconds,
-        request_limit=request_limit,
+        interval_seconds=interval_seconds, request_limit=request_limit,
         hard_limit=900,
     )
     recording = RecordingSession(_session_or_default(session), discipline)

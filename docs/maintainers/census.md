@@ -67,6 +67,11 @@ pending/failure，且抓取期间入口 HTML 稳定；它不表示平台、租�
 最后一类若同时为 POST，必须先按[探测安全](probing.md)逐条人工确认，不能把
 `status=uncovered_read` 当作 probe 许可，也不能反向批量标成 mutation。
 
+Census 的既有逐条 `status` 是发现/覆盖结论，不是在线授权。Prober 在消费时另行派生六态模型；
+未经证实的 POST 一律成为 `unsafe_unknown`，未知方法但静态证据指向读的条目成为
+`static_read_candidate`，两者都不能自动 probe。该派生层不批量改写 Census 结论，也不把证据债
+伪装成 `verified_mutation`。
+
 2026-08-14 对 214 条弱证据 POST 做了 12 条静态抽样：两个风险哨兵加按路径 SHA-256 固定选择的
 10 条非定向样本。结果为 **2 条写、10 条真读、0 条判不了**；两个写路由分别是发送验证码与修改
 报表设置，非定向 10 条均为读。样本不支持“多数都是写”，但证明误判不止一个且跨域存在；因此本轮
