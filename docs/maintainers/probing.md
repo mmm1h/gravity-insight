@@ -16,6 +16,9 @@
   放行。它随后必须走产品自有 dry-run/execute 与一次性 mutation authorization，不能走普通 read
   authorization。未登记 POST、draft/reservation、相邻路径及任何字段/method/effect 篡改继续在网络前
   失败关闭。
+- 通用 stable drift probe 仍在 `stable_client.probe()` 前调用 `assert_read_only_source`；因此六态
+  preflight 对 exact registered mutation 的身份放行不会派发 mutation 请求。该拒绝位于 stable probe
+  内部，不应表述成 session/runtime 构造前的闸门；mutation 仍只走产品自有授权路径。
 - 人工确认只按精确的 `method + path` 放行，记录在
   `src/gravity_sdk/contracts/routes/probe-read-confirmations.json`。每条必须包含 `reviewer`、
   ISO 日期 `reviewed_at`、`decision=confirmed_read`，以及至少一条带 `source/detail` 的静态控制流证据；

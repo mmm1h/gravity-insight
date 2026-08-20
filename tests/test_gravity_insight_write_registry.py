@@ -83,7 +83,7 @@ class GravityInsightWriteRegistryTests(unittest.TestCase):
                 "app.user.realtime.event.update",
             }
         }
-        self.assertEqual(355, len(source_routes))
+        self.assertEqual(330, len(source_routes))
         self.assertTrue(source_routes <= reserved_routes | stable_write_routes)
         self.assertEqual(37, len(stable_write_routes))
         self.assertEqual(377, len(self.reservations))

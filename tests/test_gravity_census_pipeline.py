@@ -143,6 +143,7 @@ class GravityCensusCoverageTests(unittest.TestCase):
                 {"method": "POST", "path": "/api/v1/item/save/", "method_certainty": "medium"},
                 {"method": "POST", "path": "/api/v1/item/shared_to_me/list/", "method_certainty": "medium"},
                 {"method": "POST", "path": "/api/v1/job/kill_query/", "method_certainty": "medium"},
+                {"method": "UNKNOWN", "path": "/api/v1/lookup/list/", "method_certainty": "low"},
                 {"method": "POST", "path": "/api/v1/opaque/", "method_certainty": "low"},
                 {"method": "GET", "path": "/api/v1/legacy/", "method_certainty": "high"},
             ],
@@ -167,16 +168,30 @@ class GravityCensusCoverageTests(unittest.TestCase):
                 "manifest_file": "fixture.json",
             },
         ]
-        result = build_coverage(routes, operations)
+        confirmed = {("POST", "/api/v1/item/shared_to_me/list/")}
+        result = build_coverage(
+            routes, operations, confirmed_read_routes=confirmed
+        )
         by_path = {item["path"]: item for item in result["routes"]}
         self.assertEqual(by_path["/api/v1/apps/"]["status"], "covered")
         self.assertEqual(
             by_path["/api/v1/apps/"]["manifest_match_kind"], "normalization_equivalent_stable"
         )
-        self.assertEqual(by_path["/api/v1/search/list/"]["status"], "uncovered_read")
+        self.assertEqual(by_path["/api/v1/search/list/"]["status"], "unsafe_unknown")
+        self.assertEqual(
+            by_path["/api/v1/search/list/"]["route_accounting"],
+            "accounted_unsafe_unknown",
+        )
         self.assertEqual(by_path["/api/v1/item/save/"]["status"], "uncovered_write")
         self.assertEqual(by_path["/api/v1/item/shared_to_me/list/"]["status"], "uncovered_read")
+        self.assertIn(
+            "probe_read_confirmation",
+            by_path["/api/v1/item/shared_to_me/list/"]["semantic_evidence"],
+        )
         self.assertEqual(by_path["/api/v1/job/kill_query/"]["status"], "uncovered_write")
+        self.assertEqual(
+            by_path["/api/v1/lookup/list/"]["status"], "static_read_candidate"
+        )
         self.assertEqual(by_path["/api/v1/opaque/"]["status"], "unclassified")
         self.assertEqual(by_path["/api/v1/legacy/"]["manifest_match_kind"], "exact_nonstable")
         self.assertNotEqual(by_path["/api/v1/legacy/"]["status"], "covered")
@@ -217,7 +232,11 @@ class GravityCensusCoverageTests(unittest.TestCase):
                 {"method": "POST", "path": "/turbo_engine/api/v1/kuaishou/report/campaign/list/"},
             ],
         }
-        result = build_coverage(routes, [])
+        confirmed = {
+            ("POST", "/turbo_engine/api/v1/tencent/report/campaign/list/"),
+            ("POST", "/turbo_engine/api/v1/kuaishou/report/campaign/list/"),
+        }
+        result = build_coverage(routes, [], confirmed_read_routes=confirmed)
         self.assertEqual(result["family_summary"]["uncovered_read_routes_with_family"], 2)
         self.assertEqual(result["family_summary"]["families"], 1)
         self.assertTrue(all(item["contract_family"] for item in result["routes"]))

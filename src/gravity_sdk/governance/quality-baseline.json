@@ -5,7 +5,7 @@
       "src/gravity_sdk/catalog.py::OperationCatalog.coverage": 19,
       "src/gravity_sdk/catalog.py::OperationCatalog.describe": 19,
       "src/gravity_sdk/census/cli.py::run": 26,
-      "src/gravity_sdk/census/coverage.py::build_coverage": 60,
+      "src/gravity_sdk/census/coverage.py::build_coverage": 55,
       "src/gravity_sdk/census/coverage.py::identify_contract_families": 18,
       "src/gravity_sdk/census/coverage.py::reconcile_stable_operations": 17,
       "src/gravity_sdk/census/coverage.py::render_report": 19,
@@ -57,7 +57,7 @@
     "function_sloc": {
       "src/gravity_sdk/catalog.py::OperationCatalog.describe": 109,
       "src/gravity_sdk/census/cli.py::run": 83,
-      "src/gravity_sdk/census/coverage.py::build_coverage": 265,
+      "src/gravity_sdk/census/coverage.py::build_coverage": 241,
       "src/gravity_sdk/census/coverage.py::render_report": 164,
       "src/gravity_sdk/census/fetcher.py::StaticFetcher.fetch": 218,
       "src/gravity_sdk/census/impact.py::locate_route_impacts": 171,
@@ -233,7 +233,7 @@
     },
     "src/gravity_sdk/census/coverage.py": {
       "ast_hard_limit": 5950,
-      "ast_nodes": 5900,
+      "ast_nodes": 5585,
       "migration_sloc": 890,
       "sloc_hard_limit": 928
     },
