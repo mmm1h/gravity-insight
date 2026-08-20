@@ -15,6 +15,7 @@ from .multidim_service import (
     MultidimService,
 )
 from .result_source import RAW_OPERATION, result_source
+from .composite_result import aggregate_collection_result
 
 
 class _PublicClient(Protocol):
@@ -48,6 +49,19 @@ class _PublicClient(Protocol):
         max_workers: int = 6,
         fail_fast: bool = False,
     ) -> list[dict[str, Any]]: ...
+
+
+def _required_input_fields(schema: Mapping[str, Any]) -> list[str]:
+    input_fields = schema.get("input_fields", {})
+    if not isinstance(input_fields, Mapping):
+        return []
+    return sorted(
+        str(name)
+        for name, field in input_fields.items()
+        if isinstance(field, Mapping)
+        and field.get("required") is True
+        and "default" not in field
+    )
 
 
 class CompositeService:
@@ -90,18 +104,7 @@ class CompositeService:
             if not is_metadata_operation(schema):
                 raise PolicyViolation("CompositeService metadata reads are restricted to metadata operations")
             operation_inputs = dict(inputs_map.get(operation_id, {}))
-            input_fields = schema.get("input_fields", {})
-            required_fields = (
-                sorted(
-                    str(name)
-                    for name, field in input_fields.items()
-                    if isinstance(field, Mapping)
-                    and field.get("required") is True
-                    and "default" not in field
-                )
-                if isinstance(input_fields, Mapping)
-                else []
-            )
+            required_fields = _required_input_fields(schema)
             missing_fields = [name for name in required_fields if name not in operation_inputs]
             if missing_fields:
                 if explicit_selection:
@@ -126,10 +129,14 @@ class CompositeService:
                 }
             )
         results = self._client.batch(requests, max_workers=max_workers) if requests else []
+        status, completeness = aggregate_collection_result(
+            results, _batch_status(results)
+        )
         return {
             "schema_version": "gravity-insight.composite.metadata.v1",
             "result_source": result_source(RAW_OPERATION),
-            "status": _batch_status(results),
+            "status": status,
+            "completeness": completeness,
             "coverage": {
                 **_batch_coverage(len(requests), results),
                 "discovered": len(selected),

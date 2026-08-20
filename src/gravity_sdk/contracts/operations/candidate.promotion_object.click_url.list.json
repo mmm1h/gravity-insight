@@ -19,6 +19,8 @@
     "operation_id": "candidate.promotion_object.click_url.list",
     "pagination": {
       "kind": "none",
+      "completeness": "unknown",
+      "pagination_evidence": "wire",
       "list_path": "",
       "page_field": "",
       "page_info_path": "",

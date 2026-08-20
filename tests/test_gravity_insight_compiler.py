@@ -50,6 +50,24 @@ class GravityInsightCompilerTests(unittest.TestCase):
         self.assertLessEqual(direct_source_ids, compiled_ids)
         self.assertEqual(11, len(result.manifests))
 
+    def test_pagination_dimensions_compile_with_source_provenance(self) -> None:
+        result = ContractCompiler(CONTRACT_ROOT, MANIFEST_ROOT).lint()
+        operations = {
+            operation["operation_id"]: operation
+            for payload in result.manifests.values()
+            for operation in json.loads(payload)["operations"]
+        }
+        pagination = operations["analysis.account_user.list"]["pagination"]
+        self.assertEqual(
+            ("complete", "production"),
+            (pagination["completeness"], pagination["pagination_evidence"]),
+        )
+        provenance = json.loads(result.provenance)["operations"]
+        self.assertEqual(
+            ["operations/analysis.account_user.list.json"],
+            provenance["analysis.account_user.list"]["source_files"],
+        )
+
     def test_runtime_products_keep_semantics_and_strip_documentation_fields(self) -> None:
         result = ContractCompiler(CONTRACT_ROOT, MANIFEST_ROOT).lint()
         operations = []
@@ -175,6 +193,16 @@ class GravityInsightCompilerTests(unittest.TestCase):
         request["defaults"].pop("page")
         path.write_text(json.dumps(source), encoding="utf-8")
         with self.assertRaisesRegex(ContractError, "pagination fields"):
+            compiler.lint()
+
+    def test_template_evidence_cannot_claim_complete(self) -> None:
+        temporary, compiler = self.compiler_copy()
+        self.addCleanup(temporary.cleanup)
+        path = compiler.contract_root / "operations" / "analysis.account_user.list.json"
+        source = json.loads(path.read_text(encoding="utf-8"))
+        source["operation"]["pagination"]["pagination_evidence"] = "template"
+        path.write_text(json.dumps(source), encoding="utf-8")
+        with self.assertRaises(ContractError):
             compiler.lint()
 
     def test_semantic_lint_rejects_duplicate_operation_id(self) -> None:

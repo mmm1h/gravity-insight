@@ -29,11 +29,13 @@
       },
       "operation_id": "analysis.report.hidden_property.list",
       "pagination": {
+        "completeness": "unknown",
         "kind": "none",
         "list_path": "",
         "page_field": "",
         "page_info_path": "",
         "page_size_field": "",
+        "pagination_evidence": "template",
         "total_page_field": ""
       },
       "path_template": "/turbo_engine/api/v2/event/in_report/hide_or_delete_prop/",
@@ -125,6 +127,7 @@
       },
       "operation_id": "analysis.task.pay_event.list",
       "pagination": {
+        "completeness": "unknown",
         "default_page_size": 20,
         "kind": "page_info",
         "list_path": "data.list",
@@ -132,6 +135,7 @@
         "page_field": "page",
         "page_info_path": "data.page_info",
         "page_size_field": "page_size",
+        "pagination_evidence": "template",
         "total_page_field": "total_page"
       },
       "path_template": "/turbo_engine/api/v1/task/user/pay_event/list/",
@@ -236,6 +240,7 @@
       },
       "operation_id": "analysis.task.other_event.list",
       "pagination": {
+        "completeness": "unknown",
         "default_page_size": 10,
         "kind": "page_info",
         "list_path": "data.list",
@@ -243,6 +248,7 @@
         "page_field": "page",
         "page_info_path": "data.page_info",
         "page_size_field": "page_size",
+        "pagination_evidence": "template",
         "total_page_field": "total_page"
       },
       "path_template": "/turbo_engine/api/v1/task/user/other_event/list/",
@@ -322,11 +328,13 @@
       },
       "operation_id": "analysis.ai.conversation.list",
       "pagination": {
+        "completeness": "unknown",
         "kind": "none",
         "list_path": "",
         "page_field": "",
         "page_info_path": "",
         "page_size_field": "",
+        "pagination_evidence": "template",
         "total_page_field": ""
       },
       "path_template": "/report/api/v3/dataanalysis/ai/conversation/list/",
@@ -379,11 +387,13 @@
       },
       "operation_id": "analysis.ai.message.list",
       "pagination": {
+        "completeness": "unknown",
         "kind": "none",
         "list_path": "",
         "page_field": "",
         "page_info_path": "",
         "page_size_field": "",
+        "pagination_evidence": "template",
         "total_page_field": ""
       },
       "path_template": "/report/api/v3/dataanalysis/ai/message/list/",

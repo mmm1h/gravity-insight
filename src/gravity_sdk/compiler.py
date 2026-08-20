@@ -86,6 +86,7 @@ class JsonSchemaValidator:
             "allOf",
             "anyOf",
             "oneOf",
+            "not",
         }
     )
 
@@ -123,6 +124,8 @@ class JsonSchemaValidator:
         for key in ("allOf", "anyOf", "oneOf"):
             for index, child in enumerate(schema.get(key, ())):
                 self._check_keywords(child, f"{path}/{key}/{index}")
+        if isinstance(schema.get("not"), Mapping):
+            self._check_keywords(schema["not"], f"{path}/not")
 
     def _resolve(self, reference: str) -> Mapping[str, Any]:
         if not reference.startswith("#/"):
@@ -153,6 +156,8 @@ class JsonSchemaValidator:
             matches = sum(self._matches(value, child, path) for child in schema["oneOf"])
             if matches != 1:
                 raise ContractError(f"{self.label}: {path} must match exactly one allowed shape")
+        if "not" in schema and self._matches(value, schema["not"], path):
+            raise ContractError(f"{self.label}: {path} matches a forbidden shape")
         if "const" in schema and value != schema["const"]:
             raise ContractError(f"{self.label}: {path} must equal {schema['const']!r}")
         if "enum" in schema and value not in schema["enum"]:
@@ -314,6 +319,7 @@ class ContractCompiler:
                 raise ContractError(f"{source_path}: source root must be an object")
             self.operation_schema.validate(source)
             operation = copy.deepcopy(source["operation"])
+            self._require_pagination_dimensions(operation, source_path)
             expected = self._direct_provenance(source_path, operation)
             if operation.get("provenance") != expected:
                 raise ContractError(f"{source_path}: provenance does not match its source path")
@@ -373,6 +379,7 @@ class ContractCompiler:
                 "applied_overrides": applied,
             }
             operation["provenance"] = provenance
+            self._require_pagination_dimensions(operation, source_path)
             self.operation_schema.validate(
                 {
                     "$schema": OPERATION_SCHEMA_REF,
@@ -392,6 +399,19 @@ class ContractCompiler:
                 )
             )
         return results
+
+    @staticmethod
+    def _require_pagination_dimensions(
+        operation: Mapping[str, Any], source_path: Path
+    ) -> None:
+        pagination = operation.get("pagination")
+        if not isinstance(pagination, Mapping) or not {
+            "completeness", "pagination_evidence"
+        } <= set(pagination):
+            raise ContractError(
+                f"{source_path}: compiled operation pagination must explicitly declare "
+                "completeness and pagination_evidence"
+            )
 
     def _compile_operation(
         self,

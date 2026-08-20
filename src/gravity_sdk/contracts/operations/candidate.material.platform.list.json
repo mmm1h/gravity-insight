@@ -19,6 +19,8 @@
     "operation_id": "candidate.material.platform.list",
     "pagination": {
       "kind": "none",
+      "completeness": "unknown",
+      "pagination_evidence": "template",
       "list_path": "",
       "page_field": "",
       "page_info_path": "",

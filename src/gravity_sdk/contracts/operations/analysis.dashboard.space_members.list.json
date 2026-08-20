@@ -31,6 +31,8 @@
     "operation_id": "analysis.dashboard.space_members.list",
     "pagination": {
       "kind": "none",
+      "completeness": "unknown",
+      "pagination_evidence": "template",
       "list_path": "",
       "page_field": "",
       "page_info_path": "",

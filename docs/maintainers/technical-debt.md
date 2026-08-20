@@ -106,13 +106,17 @@
 - **证据**：`f798d39` 的 231 条 operation 中，119 条 `page_info` 拥有完全相同的字段集合，证明该字段集
   来自模板而非逐条验证。2026-08-17 逐 route 对齐生产 response sketch、精确 wire consumer 与合同后，
   审计当时的 119 条只有 `59 A / 1 B / 59 unknown`；证据等级为 `62 production / 8 wire / 49 template-only`。
-  这些是审计基线声明，不是 HEAD。HEAD 当前为 `118 page_info + 115 none`（233 条）；`report.multidim.query`
-  已修成 `none` 并在审计表标 `repaired`。当时的 `none` 条目中另有 27 条 stable+executable 集合完整性
-  在本轮三条补测后仍未知；`analysis.user_event.list` 是已披露的手动空页协议，不等于上游无分页；一个
-  不可执行 candidate 的 wire 还消费了 `page_info.total_number`。逐条表与判据见
+  2026-08-20 对当前 237 条编译 operation 静态重测：`60 complete / 177 unknown`，证据为
+  `97 production / 9 wire / 131 template`，kind 为 `119 page_info / 118 none`。其中 228 条 stable 为
+  `60 complete / 168 unknown`，证据为 `97 production / 7 wire / 124 template`；119 条 `page_info`
+  子集形状为 `60 A / 59 unknown`（B 已移出 `page_info`），完整性为
+  `60 complete / 59 unknown`，证据仍为 `62 production / 8 wire / 49 template`。逐条表与判据见
   `evidence/forensics/20260817_pagination_contract_audit.{json,md}`；当前 kind 由
   `gravity_sdk.pagination_contract_audit.reconcile_pagination_audit` 对账。
-- **当前缓解**：已把实测 B 形状的 `report.multidim.query` 改成单响应，不再重复续页；D28
+- **当前缓解**：operation schema 和 manifest 已把 `completeness` 与 `pagination_evidence` 分开；无证据
+  默认 `unknown`，`template` 不能声明 `complete`。原子读取结果、pagination audit、Plan 与 composite
+  均传播机器可读完整性；明确要求 `all_pages` 的 Plan 在未知或前缀结果上返回 capability gap，Agent card
+  不再允许全集计数声明。已把实测 B 形状的 `report.multidim.query` 改成单响应，不再重复续页；D28
   `report.get.query` 也是实测 B（只有 `page_info.total`）并声明 `none`。缺 `total_page`
   时 `read_all` 默认停在第一页并把完整性标 `unknown`，满页启发式必须 `continue_without_total`。自动完整
   读取风险最高的 Multidim metadata、Material Performance、Business Pulse 三条已实测为 A。三条完整元数据
@@ -120,9 +124,9 @@
   `template_default` 证据的条目在对账结果里机器可读为 `shape_unproven`。
 - **触发条件**：修改任一 unknown operation 的分页、让新的产品依赖其全集，或取得新的 production/wire
   分页字段证据。
-- **退出条件**：逐条用同 method+path 的生产 response sketch 或直接 wire 字段把 59 条 `page_info`
-  unknown 归入真实形状并修正合同；对 27 条 stable+executable `none` 集合取得可证伪的完整性信号或把
-  产品声明降级为前缀/未知。不得用现有合同声明给自己提升证据等级，也不得全量生产探测。
+- **退出条件**：逐条用同 method+path 的 production response sketch 或直接 wire 字段把 59 条
+  `page_info` unknown 归入真实形状并修正合同；对其余 stable `unknown` 集合取得可证伪的完整性信号。
+  不得用现有合同声明、短页或满页启发式给自己提升证据等级，也不得全量生产探测。
 
 ## 已关闭
 

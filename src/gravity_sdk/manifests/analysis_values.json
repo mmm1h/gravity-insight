@@ -29,11 +29,13 @@
       },
       "operation_id": "analysis.user_property_value.list",
       "pagination": {
+        "completeness": "unknown",
         "kind": "none",
         "list_path": "",
         "page_field": "",
         "page_info_path": "",
         "page_size_field": "",
+        "pagination_evidence": "template",
         "total_page_field": ""
       },
       "path_template": "/turbo_engine/api/v2/event/report_data_val_enum/user/list/",
@@ -124,11 +126,13 @@
       },
       "operation_id": "analysis.event_property_value.list",
       "pagination": {
+        "completeness": "unknown",
         "kind": "none",
         "list_path": "",
         "page_field": "",
         "page_info_path": "",
         "page_size_field": "",
+        "pagination_evidence": "template",
         "total_page_field": ""
       },
       "path_template": "/turbo_engine/api/v2/event/report_data_val_enum/event/list/",

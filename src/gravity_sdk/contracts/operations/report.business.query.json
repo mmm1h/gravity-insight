@@ -109,6 +109,8 @@
     "pagination": {
       "default_page_size": 20,
       "kind": "page_info",
+      "completeness": "complete",
+      "pagination_evidence": "production",
       "list_path": "data.items",
       "max_page_size": 20,
       "page_field": "page",

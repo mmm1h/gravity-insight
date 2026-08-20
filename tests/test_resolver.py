@@ -237,6 +237,7 @@ class ResolverTests(unittest.TestCase):
             record_http_request()
             return {
                 "ok": True, "status": "success",
+                "completeness": "prefix",
                 "request": {"inputs": {"page_size": 2000}},
                 "page": {"number": 1, "total_pages": 2, "item_count": 2000,
                          "total_items": 4000},
@@ -253,7 +254,7 @@ class ResolverTests(unittest.TestCase):
             "single_page", 1, 1
         )
         assert audit["page_size_clamped"] is False
-        assert audit["completeness"]["status"] == "partial"
+        assert audit["completeness"]["status"] == "prefix"
 
     def test_resolver_all_pages_counts_every_http_request(self) -> None:
         description = {
@@ -269,6 +270,7 @@ class ResolverTests(unittest.TestCase):
                 calls.append(page)
             return {
                 "ok": True, "status": "success",
+                "completeness": "complete",
                 "request": {"inputs": {"page_size": 7}},
                 "page": {
                     "number": 1, "total_pages": pages, "item_count": 117,
@@ -378,7 +380,7 @@ class ResolverTests(unittest.TestCase):
             for item in result["diagnostics"]
         )
 
-    def test_resolver_nonpaginated_total_uses_the_observed_single_response_criterion(self) -> None:
+    def test_resolver_nonpaginated_total_does_not_promote_unknown_contract(self) -> None:
         description = {
             "operation_id": "report.multidim.query", "input_schema": {},
             "required_parent": [], "health": {"contract_fingerprint": "b" * 64},
@@ -398,8 +400,8 @@ class ResolverTests(unittest.TestCase):
         audit = result["pagination_audit"]
         assert audit["effective_page_size"] is None
         assert audit["completeness"] == {
-            "criterion": "single_response and returned_items=reported_total",
-            "status": "complete", "has_more": None,
+            "criterion": "single_response count equality does not prove collection completeness",
+            "status": "unknown", "has_more": None,
             "returned_items": 1, "total_items": 1,
         }
 

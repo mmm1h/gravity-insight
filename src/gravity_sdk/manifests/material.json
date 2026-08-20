@@ -49,6 +49,7 @@
       },
       "operation_id": "material.bytedance_asset_text_title.list",
       "pagination": {
+        "completeness": "complete",
         "default_page_size": 20,
         "kind": "page_info",
         "list_path": "data.list",
@@ -56,6 +57,7 @@
         "page_field": "page",
         "page_info_path": "data.page_info",
         "page_size_field": "page_size",
+        "pagination_evidence": "production",
         "total_page_field": "total_page"
       },
       "path_template": "/turbo_engine/api/v1/bytedance/asset/text/title/list/",
@@ -187,6 +189,7 @@
       },
       "operation_id": "material.bytedance_std_asset_text_title.list",
       "pagination": {
+        "completeness": "complete",
         "default_page_size": 20,
         "kind": "page_info",
         "list_path": "data.list",
@@ -194,6 +197,7 @@
         "page_field": "page",
         "page_info_path": "data.page_info",
         "page_size_field": "page_size",
+        "pagination_evidence": "production",
         "total_page_field": "total_page"
       },
       "path_template": "/turbo_engine/api/v1/bytedance/std/asset/text/title/list/",
@@ -306,6 +310,7 @@
       },
       "operation_id": "material.asset_directional_package_bytedance.list",
       "pagination": {
+        "completeness": "complete",
         "default_page_size": 20,
         "kind": "page_info",
         "list_path": "data.list",
@@ -313,6 +318,7 @@
         "page_field": "page",
         "page_info_path": "data.page_info",
         "page_size_field": "page_size",
+        "pagination_evidence": "production",
         "total_page_field": "total_page"
       },
       "path_template": "/turbo_engine/api/v1/asset/directional_package/bytedance/list/",
@@ -437,6 +443,7 @@
       },
       "operation_id": "material.bytedance_asset_text_title_package.list",
       "pagination": {
+        "completeness": "complete",
         "default_page_size": 20,
         "kind": "page_info",
         "list_path": "data.list",
@@ -444,6 +451,7 @@
         "page_field": "page",
         "page_info_path": "data.page_info",
         "page_size_field": "page_size",
+        "pagination_evidence": "production",
         "total_page_field": "total_page"
       },
       "path_template": "/turbo_engine/api/v1/bytedance/asset/text/title_package/list/",
@@ -578,6 +586,7 @@
       },
       "operation_id": "material.bytedance_std_asset_text_title_package.list",
       "pagination": {
+        "completeness": "complete",
         "default_page_size": 20,
         "kind": "page_info",
         "list_path": "data.list",
@@ -585,6 +594,7 @@
         "page_field": "page",
         "page_info_path": "data.page_info",
         "page_size_field": "page_size",
+        "pagination_evidence": "production",
         "total_page_field": "total_page"
       },
       "path_template": "/turbo_engine/api/v1/bytedance/std/asset/text/title_package/list/",
@@ -683,11 +693,13 @@
       },
       "operation_id": "material.material_examine_user.list",
       "pagination": {
+        "completeness": "unknown",
         "kind": "none",
         "list_path": "",
         "page_field": "",
         "page_info_path": "",
         "page_size_field": "",
+        "pagination_evidence": "production",
         "total_page_field": ""
       },
       "path_template": "/turbo_engine/api/v1/asset/material_examine/user_list/",
@@ -791,6 +803,7 @@
       },
       "operation_id": "material.album.list",
       "pagination": {
+        "completeness": "complete",
         "default_page_size": 20,
         "kind": "page_info",
         "list_path": "data.list",
@@ -798,6 +811,7 @@
         "page_field": "page",
         "page_info_path": "data.page_info",
         "page_size_field": "page_size",
+        "pagination_evidence": "production",
         "total_page_field": "total_page"
       },
       "path_template": "/turbo_engine/api/v1/asset/material/album/list/",
@@ -941,6 +955,7 @@
       },
       "operation_id": "material.bytedance_asset_material.list",
       "pagination": {
+        "completeness": "unknown",
         "default_page_size": 20,
         "kind": "page_info",
         "list_path": "data.list",
@@ -948,6 +963,7 @@
         "page_field": "page",
         "page_info_path": "data.page_info",
         "page_size_field": "page_size",
+        "pagination_evidence": "production",
         "total_page_field": "total_page"
       },
       "path_template": "/turbo_engine/api/v1/bytedance/asset/material/list/",
@@ -1048,11 +1064,13 @@
       },
       "operation_id": "material.bytedance.project_material.list",
       "pagination": {
+        "completeness": "unknown",
         "kind": "none",
         "list_path": "",
         "page_field": "",
         "page_info_path": "",
         "page_size_field": "",
+        "pagination_evidence": "production",
         "total_page_field": ""
       },
       "path_template": "/turbo_engine/api/v1/bytedance/project/material_get/",
@@ -1161,11 +1179,13 @@
       },
       "operation_id": "material.bytedance.promotion_material.list",
       "pagination": {
+        "completeness": "unknown",
         "kind": "none",
         "list_path": "",
         "page_field": "",
         "page_info_path": "",
         "page_size_field": "",
+        "pagination_evidence": "production",
         "total_page_field": ""
       },
       "path_template": "/turbo_engine/api/v1/bytedance/promotion/material/list/",
@@ -1309,11 +1329,13 @@
       },
       "operation_id": "material.tencent_medium_creative.list",
       "pagination": {
+        "completeness": "unknown",
         "kind": "none",
         "list_path": "",
         "page_field": "",
         "page_info_path": "",
         "page_size_field": "",
+        "pagination_evidence": "production",
         "total_page_field": ""
       },
       "path_template": "/turbo_engine/api/v1/tencent/medium/creative/list/",

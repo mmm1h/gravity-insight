@@ -35,6 +35,8 @@
     "pagination": {
       "default_page_size": 20,
       "kind": "page_info",
+      "completeness": "unknown",
+      "pagination_evidence": "template",
       "list_path": "data.list",
       "max_page_size": 20,
       "page_field": "page",

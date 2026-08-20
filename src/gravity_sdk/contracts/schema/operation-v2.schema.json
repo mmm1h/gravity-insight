@@ -154,6 +154,11 @@
       ],
       "properties": {
         "kind": {"type": "string", "enum": ["none", "page_info", "unverified"]},
+        "completeness": {"type": "string", "enum": ["complete", "prefix", "unknown"]},
+        "pagination_evidence": {
+          "type": "string",
+          "enum": ["production", "wire", "template", "none"]
+        },
         "page_field": {"type": "string"},
         "page_size_field": {"type": "string"},
         "items_field": {"type": "string"},
@@ -163,7 +168,25 @@
         "page_info_path": {"type": "string"},
         "default_page_size": {"type": ["integer", "null"], "minimum": 1},
         "max_page_size": {"type": ["integer", "null"], "minimum": 1}
-      }
+      },
+      "oneOf": [
+        {
+          "required": ["completeness"],
+          "properties": {
+            "completeness": {"enum": ["prefix", "unknown"]}
+          }
+        },
+        {
+          "required": ["completeness", "pagination_evidence"],
+          "properties": {
+            "completeness": {"const": "complete"},
+            "pagination_evidence": {"enum": ["production", "wire"]}
+          }
+        },
+        {
+          "not": {"required": ["completeness"]}
+        }
+      ]
     },
     "semanticErrorRule": {
       "anyOf": [

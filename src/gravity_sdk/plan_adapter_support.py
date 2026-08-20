@@ -19,6 +19,7 @@ ENVELOPE_FIELDS = frozenset(
         "succeeded_count", "failed_count", "question_count", "source_count",
         "operation_count", "paginated_operation_count", "app_id", "coverage", "scopes",
         "scope", "observed",
+        "completeness", "pagination_evidence",
         "result_audit",
     }
 )
