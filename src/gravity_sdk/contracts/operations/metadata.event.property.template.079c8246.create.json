@@ -34,7 +34,7 @@
       "fixed_body": {}
     },
     "response_projection": {"data_keys": [], "required_data_keys": [], "item_keys": [], "dynamic_item_fields": []},
-    "pagination": {"kind": "none", "page_field": "", "page_size_field": "", "list_path": "", "page_info_path": "", "total_page_field": ""},
+    "pagination": {"kind": "none", "completeness": "unknown", "pagination_evidence": "template", "page_field": "", "page_size_field": "", "list_path": "", "page_info_path": "", "total_page_field": ""},
     "semantic_error_rules": ["code", "extra.error"],
     "privacy_policy": {"classification": "configuration", "redact_fields": ["authorization", "access_token", "token", "cookie", "password", "secret", "refresh_token", "session_token"]},
     "required_parent": [],

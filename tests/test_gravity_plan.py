@@ -301,6 +301,35 @@ class PlanExecutionTests(unittest.TestCase):
         self.assertEqual(("account", "7"), (lineage_result["scope"], lineage_result["results"][0]["table_id"]))
         self.assertNotIn("database", lineage_result)
 
+    def test_all_pages_unknown_completeness_is_preserved_capability_gap(self):
+        workspace = load_workspace(Path(__file__).resolve().parents[1] / "examples/workspace")
+
+        class Insight:
+            def operations(self, **_options):
+                return [{"operation_id": "app.list", "stability": "stable"}]
+            def describe(self, operation_id):
+                return {"operation_id": operation_id, "input_schema": {}}
+            def validate(self, _operation_id, _inputs):
+                return {"ok": True}
+
+        class SDK:
+            insight = Insight()
+            def run(self, *_args, **_options):
+                return {"ok": True, "result": {
+                    "ok": True, "status": "success", "operation_id": "app.list",
+                    "completeness": "unknown", "data": {"list": [{}]},
+                }}
+
+        result = execute_plan(
+            _plan(_node("all", {"selector": "app.list", "all_pages": True})),
+            adapters=build_plan_adapters(SDK(), workspace=workspace),
+            workspace=workspace,
+        )
+        self.assertEqual(("partial", "unknown"), (result["status"], result["completeness"]))
+        preserved = result["results"][0]["result"]
+        self.assertEqual(("capability_gap", "COMPLETENESS_UNPROVEN"),
+                         (preserved["status"], preserved["error"]["code"]))
+
     def test_metadata_sync_and_status_plan_handoffs_use_bounded_adapters(self):
         workspace = load_workspace(Path(__file__).resolve().parents[1] / "examples/workspace")
 
@@ -575,6 +604,8 @@ class AgentBatchTests(unittest.TestCase):
         self.assertEqual([item["question_id"] for item in result["results"]], ["question-1", "second"])
         cards = [item["result"]["candidates"][0] for item in result["results"]]
         self.assertTrue(all(card["plan_node"]["kind"] == "run" for card in cards))
+        self.assertTrue(all("complete_collection_count" not in card["allowed_claims"] for card in cards))
+        self.assertTrue(all("complete_collection_count" in card["forbidden_claims"] for card in cards))
 
     @patch("gravity_sdk.agent_batch.capabilities_many")
     def test_agent_input_routes_to_batch_without_positional_query(self, batch):

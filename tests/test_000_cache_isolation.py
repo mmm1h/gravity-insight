@@ -14,13 +14,27 @@ class CacheIsolationTests(unittest.TestCase):
         from gravity_sdk.workspace import user_cache_root
         from gravity_sdk import GravityInsightClient
 
+        catalog = _default_catalog_path()
+
         self.assertEqual(_cache_root, user_cache_root())
+        self.assertEqual(catalog, default_catalog_path())
+        self.assertEqual(_cache_root / "GravityInsight", catalog.parents[2])
         self.assertEqual(
-            _cache_root / "GravityInsight" / "metadata" / "catalog.sqlite3",
-            _default_catalog_path(),
-        )
-        self.assertEqual(_default_catalog_path(), default_catalog_path())
-        self.assertEqual(
-            _cache_root / "GravityInsight" / "operation-catalog.json",
+            catalog.parents[1] / "operation-catalog.json",
             GravityInsightClient.from_env()._operation_catalog._state_path,
         )
+
+    def test_the_default_catalog_sits_under_a_principal_scope_segment(self) -> None:
+        """The segment skipped by `parents[2]` above is the isolation itself.
+
+        Without this the test would still pass if the scope directory vanished
+        and the catalog fell back to a shared path -- the exact regression the
+        principal-scoped layout exists to prevent.
+        """
+
+        from gravity_sdk.find_metadata import _default_catalog_path
+
+        scope = _default_catalog_path().parents[1].name
+
+        self.assertNotEqual("", scope)
+        self.assertRegex(scope, r"^[0-9a-f]{8,}$")

@@ -1,18 +1,43 @@
-"""Process-local Gravity HTTP runtime keyed by credential file."""
+"""Process-local Gravity HTTP runtime keyed by principal scope."""
 
 from __future__ import annotations
 
 import threading
 from pathlib import Path
+from typing import Any
 
 from .credentials import GRAVITY_HOST
+from .errors import CredentialError
 from .http_runtime import GravityHttpRuntime, HostRateLimiter, _rate_from_environment, _validated_rate
-from .runtime_scope import resolve_env_path
+from .paths import STATE_ROOT
+from .runtime_scope import (
+    RuntimeScopeKey,
+    principal_state_root,
+    resolve_env_path,
+    runtime_scope_key,
+)
 
 
 _SHARED_LOCK = threading.Lock()
-_SHARED_RUNTIMES: dict[Path, GravityHttpRuntime] = {}
+_SHARED_RUNTIMES: dict[RuntimeScopeKey, GravityHttpRuntime] = {}
 _PROCESS_LIMITER = HostRateLimiter()
+
+
+class _RetiredCredentialProvider:
+    def get(self, **_kwargs: Any) -> Any:
+        raise CredentialError(
+            "Gravity runtime credential generation actual value: stale",
+            field="env_path",
+            next_action="Call gravity_sdk.connect() again and retry the operation.",
+        )
+
+
+def _retire(runtime: GravityHttpRuntime) -> None:
+    setattr(
+        runtime,
+        "_GravityHttpRuntime__credentials",
+        _RetiredCredentialProvider(),
+    )
 
 
 def get_shared_runtime(
@@ -22,10 +47,11 @@ def get_shared_runtime(
     timeout: float = 120.0,
     attempts: int = 3,
     isolated: bool | None = None,
+    receipt_root: Path | None = None,
 ) -> GravityHttpRuntime:
-    """Return the runtime for one credential file inside this process.
+    """Return the runtime for one principal generation inside this process.
 
-    Shared per resolved env file: session, credentials, connection pool.
+    Shared per principal generation: session, credentials, connection pool.
     Shared process-wide: 10 rps host limiter and 24 in-flight slots.
     """
 
@@ -33,14 +59,27 @@ def get_shared_runtime(
     if isolated is not None:
         resolved_isolated = bool(isolated)
     resolved_path = Path(selected).resolve()
+    base_receipt_root = Path(receipt_root or STATE_ROOT).resolve()
+    scope = runtime_scope_key(
+        resolved_path,
+        isolated=resolved_isolated,
+        workspace_root=base_receipt_root,
+    )
     rate = (
         _rate_from_environment()
         if requests_per_second is None
         else _validated_rate(requests_per_second)
     )
     with _SHARED_LOCK:
-        existing = _SHARED_RUNTIMES.get(resolved_path)
+        existing = _SHARED_RUNTIMES.get(scope)
         if existing is None:
+            stale = [
+                key
+                for key in _SHARED_RUNTIMES
+                if key.location_fingerprint == scope.location_fingerprint
+            ]
+            for key in stale:
+                _retire(_SHARED_RUNTIMES.pop(key))
             existing = GravityHttpRuntime(
                 env_path=resolved_path,
                 limiter=_PROCESS_LIMITER,
@@ -48,8 +87,9 @@ def get_shared_runtime(
                 timeout=timeout,
                 attempts=attempts,
                 isolated=resolved_isolated,
+                receipt_root=principal_state_root(base_receipt_root, scope),
             )
-            _SHARED_RUNTIMES[resolved_path] = existing
+            _SHARED_RUNTIMES[scope] = existing
         else:
             _PROCESS_LIMITER.configure(GRAVITY_HOST, rate)
         return existing
@@ -57,6 +97,8 @@ def get_shared_runtime(
 
 def reset_shared_runtimes() -> None:
     with _SHARED_LOCK:
+        for runtime in _SHARED_RUNTIMES.values():
+            _retire(runtime)
         _SHARED_RUNTIMES.clear()
 
 

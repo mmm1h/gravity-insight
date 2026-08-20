@@ -639,7 +639,14 @@ live 指标目录但不选择字段。调用方精确选择后第二次调用 `p
 每个平台一个 batch item且内部分页 worker 固定 1；direct 平台池范围 1..24。共享 item 预算按
 平台等额 floor 分配，结果按调用方平台序返回并隔离 sibling 失败。返回
 `gravity-insight.promotion-performance.v1` 的安全投影，不归一字段、不跨平台汇总或排名，也不生成
-策略。四个异构平台 `bing/xiaohongshu/taptap/wechat_video` 继续由兼容 raw 方法读取。
+策略。`CompositeService.promotion_snapshot()` 保留原签名并按输入能力分流。`resource=primary` 且平台
+全部属于同一 21 项正式集合时，`common_inputs` / `inputs_by_platform` 必须共同绑定唯一 `app_id`、两元素
+`date_list` 和统一 `query_fields`；该分支复用上述 workspace App、请求、FieldPolicy 与结果验证并返回
+同一个 envelope。非 primary 层级或 `bing/xiaohongshu/taptap/wechat_video` 走 stable inventory 兼容
+分支：只执行唯一的 platform/resource read 匹配，多候选显式失败并列出候选，不猜排序首项；返回的
+`gravity-insight.composite.promotion.v1` 以
+`compatibility.formal_binding_validation=not_performed` 机器标记未经正式绑定验证。Agent/Plan 不暴露该
+兼容分支。
 
 ## Plan v1
 
@@ -852,11 +859,14 @@ results = client.batch(
 ```
 
 `from_env()` 默认加载包内编译 manifest，并让 Insight 与 SQL 复用同一个按
-`timeout/attempts` 配置的进程级 HTTP runtime；先访问哪一侧不会改变配置。
+`timeout/attempts` 配置、绑定当前 principal 与 credential generation 的 HTTP runtime；
+先访问哪一侧不会改变配置。账号或 credential generation 在同一 env 路径变化后，下一次
+`connect()` 构造新 Runtime，旧 Runtime 不再可用；host limiter 与进程级并发槽仍全局共享。
 测试必须注入显式 fake transport；普通单元测试不得连接生产 Gravity。
 
 进程内 metadata cache 只存 `is_metadata_operation()` 允许的 snapshot，TTL 10 分钟，
-key 是 `(operation_id, 规范化 inputs)`。FieldPolicy 仍按本次请求做校验，缓存的是
+key 还绑定当前 principal scope；默认 env 与显式 env 的磁盘 snapshot 都落到私有 scope
+目录。FieldPolicy 仍按本次请求做校验，缓存的是
 元数据快照，不是校验结论。成功 mutation 会清空该 cache。CLI 每次新进程，所以
 命令行连发不会命中；同一 `GravityInsightClient` / `GravitySDK` 实例连发会命中。
 `page` 不同就是不同 key：`page_size=1` 的第一页不能代替 `page_size=2000` 的全量。

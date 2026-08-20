@@ -8,7 +8,7 @@
     "input_fields": {"segment_id": {"type": "string", "required": true, "max_length": 64}},
     "request": {"path_fields": [], "query_fields": [], "body_fields": ["segment_id"], "defaults": {}, "fixed_query": {}, "fixed_body": {}},
     "response_projection": {"data_shape": "object", "data_keys": [], "required_data_keys": [], "item_keys": [], "dynamic_item_fields": []},
-    "pagination": {"kind": "none", "page_field": "", "page_size_field": "", "list_path": "", "page_info_path": "", "total_page_field": ""},
+    "pagination": {"kind": "none", "completeness": "unknown", "pagination_evidence": "template", "page_field": "", "page_size_field": "", "list_path": "", "page_info_path": "", "total_page_field": ""},
     "semantic_error_rules": ["code", "extra.error"],
     "privacy_policy": {"classification": "configuration", "redact_fields": ["authorization", "access_token", "token", "cookie", "password", "secret"]},
     "required_parent": [], "live_probe": {"enabled": false, "inputs": {}}, "examples": [],

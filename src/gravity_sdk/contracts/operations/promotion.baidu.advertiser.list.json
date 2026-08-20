@@ -58,6 +58,8 @@
     "pagination": {
       "default_page_size": 10,
       "kind": "page_info",
+      "completeness": "unknown",
+      "pagination_evidence": "template",
       "list_path": "data.list",
       "max_page_size": 10,
       "page_field": "page",

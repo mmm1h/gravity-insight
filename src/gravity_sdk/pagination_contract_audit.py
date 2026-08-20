@@ -87,6 +87,10 @@ def reconcile_pagination_audit(
             for item in records
             if item["current_declared_kind"] is not None
         ).items())),
+        "current_completeness": _dimension_counts(records, "completeness"),
+        "current_pagination_evidence": _dimension_counts(
+            records, "pagination_evidence"
+        ),
         "page_info_shapes": dict(snapshot.get("summary", {}).get("page_info_shapes") or {}),
         "unproven_page_info": sorted(
             item["operation_id"]
@@ -138,6 +142,10 @@ def _reconcile_record(
         "current_total_page_field": (
             None if pagination is None else pagination.get("total_page_field")
         ),
+        "completeness": None if pagination is None else pagination.get("completeness"),
+        "pagination_evidence": (
+            None if pagination is None else pagination.get("pagination_evidence")
+        ),
         "disposition_status": status,
         "kind_alignment": _alignment(declared, current_kind, status, expected),
         "shape_unproven": pagination_shape_unproven(record, current_kind),
@@ -150,6 +158,12 @@ def _disposition_status(record: Mapping[str, Any]) -> str | None:
         return None
     status = disposition.get("status")
     return status if status in _DISPOSITION_STATUSES else None
+
+
+def _dimension_counts(records: Sequence[Mapping[str, Any]], field: str) -> dict[str, int]:
+    return dict(sorted(Counter(
+        str(item[field]) for item in records if item.get(field) is not None
+    ).items()))
 
 
 def _alignment(

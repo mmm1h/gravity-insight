@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from typing import Any, Callable, Mapping, Sequence
+from typing import Any, Callable, Mapping
 
 from .analysis_projection_contract import (
     ANALYSIS_DATE_RESPONSE_KEY_RE,
@@ -22,6 +22,7 @@ from .errors import PolicyViolation, error_for_status
 from .list_row_projection import _project_list_rows
 from .models import OperationSpec, ReadResult
 from .page_envelope import page_envelope
+from .read_result_support import pagination_result_dimensions, result_warnings
 from .receipt import capture_http_receipt_references, record_response_drift
 from .registry import PolicyEngine, Registry
 from .response_drift import ResponseDriftRecorder
@@ -131,9 +132,7 @@ class ReadExecutor:
             operation.privacy_policy.redact_fields,
             allow_contracted_identifiers=False,
         )
-        warnings = _result_warnings(operation, drift_warnings)
-        is_empty = _is_empty(projected, items)
-        status = _read_status(getattr(response, "status_code", 200), semantic_status, projection_drift, is_empty)
+        status = _read_status(getattr(response, "status_code", 200), semantic_status, projection_drift, _is_empty(projected, items))
         return ReadResult(
             schema_version="gravity-insight.read.v1",
             status=status,
@@ -149,23 +148,12 @@ class ReadExecutor:
             page=page,
             data=projected,
             operation_id=operation.operation_id,
-            warnings=tuple(warnings), error=error_for_status(status, operation_id=operation.operation_id),
+            warnings=result_warnings(operation, drift_warnings), error=error_for_status(status, operation_id=operation.operation_id),
             items=items, page_info=page_info,
             http_receipts=tuple(http_receipts),
             response_drift=response_drift,
+            **pagination_result_dimensions(operation, page, all_pages=False),
         )
-
-
-def _result_warnings(operation: OperationSpec, drift_warnings: Sequence[str]) -> tuple[str, ...]:
-    warnings: list[str] = list(drift_warnings)
-    if operation.stability == "experimental":
-        warnings.append("operation contract is experimental")
-    for name, note in operation.response_projection.unreliable_item_keys.items():
-        warnings.append(
-            f"do not use {name} as a decision metric; "
-            f"{note['reason']}; use {note['use_instead']}"
-        )
-    return tuple(warnings)
 
 
 def _read_status(

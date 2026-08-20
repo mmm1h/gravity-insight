@@ -25,6 +25,7 @@ _SNAPSHOT_FIELDS = frozenset(
 )
 _FINGERPRINT = re.compile(r"^[0-9a-f]{64}$")
 _SUPPORTED_OPERATIONS = frozenset(ANALYSIS_METADATA_OPERATIONS)
+_DEFAULT_DATABASE_REF = "gravity-private:metadata-catalog"
 
 
 def create_metadata_snapshot(
@@ -59,7 +60,7 @@ def create_metadata_snapshot(
         "app_id": selected_app,
         "synced_at": synced_at,
         "fingerprint": fingerprint,
-        "database": str(selected_database),
+        "database": str(selected_database) if database is not None else _DEFAULT_DATABASE_REF,
     }
 
 
@@ -116,12 +117,17 @@ def validate_metadata_snapshot(
             "metadata_snapshot.database",
             "Run `gravity analysis bootstrap --help`, then regenerate the Plan.",
         )
+    normalized_database = (
+        _DEFAULT_DATABASE_REF
+        if database == _DEFAULT_DATABASE_REF
+        else str(Path(database).expanduser().resolve())
+    )
     return {
         "schema_version": SNAPSHOT_SCHEMA_VERSION,
         "app_id": selected_app,
         "synced_at": synced_at.strip(),
         "fingerprint": fingerprint,
-        "database": str(Path(database).expanduser().resolve()),
+        "database": normalized_database,
     }
 
 
@@ -140,7 +146,7 @@ def metadata_snapshot_loader(value: Any):
                 f"metadata_snapshot.{field}",
                 _bootstrap_action(snapshot["app_id"]),
             )
-    rows = _catalog_rows(Path(snapshot["database"]), snapshot["app_id"])
+    rows = _catalog_rows(_database(snapshot["database"]), snapshot["app_id"])
 
     def load(operation_id: str, inputs: Mapping[str, Any]) -> Mapping[str, Any]:
         if operation_id not in _SUPPORTED_OPERATIONS:
@@ -258,7 +264,9 @@ def _catalog_fingerprint(database: Path, app_id: str, synced_at: str) -> str:
 
 def _database(value: str | Path | None) -> Path:
     return (
-        Path(value) if value is not None else default_catalog_path()
+        Path(value)
+        if value is not None and str(value) != _DEFAULT_DATABASE_REF
+        else default_catalog_path()
     ).expanduser().resolve()
 
 

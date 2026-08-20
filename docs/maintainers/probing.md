@@ -4,10 +4,13 @@
 
 ## 在线 probe
 
-- 在线入口先在本地证明目标具有读语义，再检查凭据或构造 transport。`POST` 路由如果唯一读证据是
-  census 的 `read_action_path_token`，默认以 `UNSUPPORTED/local`（CLI exit 4）失败关闭：路径词元
-  只说明名字像读，不能排除写操作。GET、`safe_http_method` 和
-  `route_registry:read_contract_not_verified` 不受这条弱证据闸门影响。
+- 在线入口先在本地派生且校验 probe 语义状态，再检查凭据、创建 session 或构造 transport。状态只允许
+  `verified_read`、`verified_mutation`、`static_read_candidate`、`unsafe_unknown`、`blocked_by_data`、
+  `unsupported`；不再把模糊 `unknown` 留给调用方解释。`static_read_candidate` 只是静态候选，不是 probe
+  许可。任何未经精确稳定合同或人工清单证实的 `POST` 都是 `unsafe_unknown`，包括仅有
+  `read_action_path_token` 或 `route_registry:read_contract_not_verified` 的路由，并以稳定的
+  `PROBE_UNSAFE_UNKNOWN/local`、`field=operation.route_semantics`（CLI exit 4）在凭据和网络前失败关闭。
+  GET/HEAD/OPTIONS 的安全 HTTP 方法证据仍归 `verified_read`。
 - 已登记 mutation 不是 `confirmed_read` 的例外：只有 source operation 与仓库 operation 合同全对象
   相等，且为 `stable + executable + effect=mutation + POST` 时，读语义 preflight 才按 mutation 身份
   放行。它随后必须走产品自有 dry-run/execute 与一次性 mutation authorization，不能走普通 read
@@ -15,7 +18,7 @@
   失败关闭。
 - 人工确认只按精确的 `method + path` 放行，记录在
   `src/gravity_sdk/contracts/routes/probe-read-confirmations.json`。每条必须包含 `reviewer`、
-  `reviewed_at`、`decision=confirmed_read`，以及至少一条带 `source/detail` 的静态控制流证据；
+  ISO 日期 `reviewed_at`、`decision=confirmed_read`，以及至少一条带 `source/detail` 的静态控制流证据；
   缺字段、重复记录、路径变化或确认文件损坏都失败关闭。确认前只读前端控制流、UI 文案和同作用域
   调用链，不得用在线请求判断是否为写。Draft prober 只对该文件完整校验通过的精确 POST 路径跨过
   通用 Registry 的写词元守卫；这不修改 stable Registry，也不放行未确认路径或相邻 mutation。

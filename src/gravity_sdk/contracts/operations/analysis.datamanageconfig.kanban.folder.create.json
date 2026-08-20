@@ -32,6 +32,8 @@
     "operation_id": "analysis.datamanageconfig.kanban.folder.create",
     "pagination": {
       "kind": "none",
+      "completeness": "unknown",
+      "pagination_evidence": "template",
       "list_path": "",
       "page_field": "",
       "page_info_path": "",

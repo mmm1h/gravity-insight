@@ -152,7 +152,7 @@ class FieldPolicyDiskCacheTests(unittest.TestCase):
         self.assertNotIn("pw-user-a", path_a)
         self.assertNotIn("user-b", path_b)
 
-    def test_default_persist_path_stays_unscoped(self) -> None:
+    def test_default_persist_path_is_principal_scoped(self) -> None:
         class _Transport:
             is_test_transport = True
 
@@ -168,7 +168,7 @@ class FieldPolicyDiskCacheTests(unittest.TestCase):
             isolated_dir = isolated._metadata_cache._persist_dir
             isolated_scope = isolated._metadata_cache._persist_scope
         self.assertTrue(default_client._metadata_cache._persist)
-        self.assertEqual("", default_client._metadata_cache._persist_scope)
+        self.assertNotEqual("", default_client._metadata_cache._persist_scope)
         self.assertEqual(field_policy_cache_dir(""), default_dir)
         self.assertEqual(
             operation_catalog_state_path("").parent / "field-policy",

@@ -5,7 +5,7 @@ import re
 import unittest
 from pathlib import Path
 
-from gravity_sdk.models import load_operation_manifest
+from gravity_sdk.models import PaginationSpec, load_operation_manifest
 from gravity_sdk.registry import Registry
 from gravity_sdk.runtime import validate_manifest_json
 
@@ -55,6 +55,8 @@ REQUEST_FIELDS = {
 }
 PAGINATION_FIELDS = {
     "kind",
+    "completeness",
+    "pagination_evidence",
     "page_field",
     "page_size_field",
     "list_path",
@@ -186,6 +188,13 @@ def operations(documents: dict[str, dict[str, object]]) -> list[dict[str, object
 
 
 class GravityInsightManifestTests(unittest.TestCase):
+    def test_runtime_pagination_dimensions_default_fail_closed(self) -> None:
+        pagination = PaginationSpec.from_dict({"kind": "none"})
+        self.assertEqual(
+            ("unknown", "none"),
+            (pagination.completeness, pagination.pagination_evidence),
+        )
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.documents = load_documents()
@@ -422,12 +431,22 @@ class GravityInsightManifestTests(unittest.TestCase):
 
                 pagination = item["pagination"]
                 self.assertIn(pagination["kind"], {"none", "page_info"})
+                self.assertIn(pagination["completeness"], {"complete", "prefix", "unknown"})
+                self.assertIn(
+                    pagination["pagination_evidence"],
+                    {"production", "wire", "template", "none"},
+                )
+                if pagination["completeness"] == "complete":
+                    self.assertIn(
+                        pagination["pagination_evidence"], {"production", "wire"}
+                    )
                 if pagination["kind"] == "none":
                     self.assertEqual(PAGINATION_FIELDS, set(pagination))
                     self.assertTrue(
                         all(
                             pagination[key] == ""
-                            for key in PAGINATION_FIELDS - {"kind"}
+                            for key in PAGINATION_FIELDS
+                            - {"kind", "completeness", "pagination_evidence"}
                         )
                     )
                 else:

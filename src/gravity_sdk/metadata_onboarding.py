@@ -31,6 +31,7 @@ from .metadata_sync import (
 from .result_audit import aggregate_result_audit, result_receipt_references
 from .result_source import LOCAL_CATALOG, result_source
 from .runtime import call_batch
+from .runtime_scope import public_scoped_path
 
 
 DEFAULT_MAX_PAGES = 2
@@ -84,7 +85,9 @@ def estimate_app_sync(
         "ok": True,
         "status": "estimate",
         "scope": "single_app",
-        "database": str(_destination(database)),
+        "database": public_scoped_path(
+            _destination(database), explicit=database is not None
+        ),
         "app_id": budget["app_id"],
         "dry_run": True,
         "network_called": False,
@@ -131,7 +134,7 @@ def sync_app(
         temporary.unlink(missing_ok=True)
         raise
 
-    return _sync_result(
+    result = _sync_result(
         destination=destination,
         app_id=selected_app,
         synced_at=synced_at,
@@ -141,6 +144,9 @@ def sync_app(
         logical_requests=logical_requests,
         page_results=page_results,
     )
+    if database is None:
+        result["database"] = public_scoped_path(destination, explicit=False)
+    return result
 
 
 def _replace_app_catalog(

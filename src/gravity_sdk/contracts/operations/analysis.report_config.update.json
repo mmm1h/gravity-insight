@@ -53,6 +53,8 @@
     },
     "pagination": {
       "kind": "none",
+      "completeness": "unknown",
+      "pagination_evidence": "template",
       "page_field": "",
       "page_size_field": "",
       "list_path": "",

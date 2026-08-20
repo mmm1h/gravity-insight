@@ -22,10 +22,14 @@ belong here.
 
 ## Development principles
 
-- **Implementation volume stays well above test volume.** Each change adds at
-  most one third as many test lines as source lines. Cover contract boundaries,
-  fail-closed paths, and one happy path; do not enumerate branches or write
-  large fixture snapshots.
+- **Tests buy risk coverage, not line count.** There is no fixed test-to-source
+  ratio; a cap penalises exactly the units whose value *is* the test, such as
+  identity isolation or pagination completeness. Cover the risks a change
+  touches: stable contract boundaries, fail-closed paths, semantic rejection
+  remedies, mutation preview/readback, pagination completeness, the public API
+  snapshot, and multi-account isolation. The original prohibition still stands:
+  do not enumerate branches, do not write large fixture snapshots, and do not
+  add an assertion that restates the one above it.
 - **Prefer concurrency wherever reads are independent.** Reuse the existing
   bounded worker pool and budget. Never raise a per-adapter worker count on top
   of the global pool; that multiplies concurrency. Keep total upstream request

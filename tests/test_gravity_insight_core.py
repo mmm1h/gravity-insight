@@ -472,6 +472,8 @@ class GravityInsightCoreTests(unittest.TestCase):
                 "fetched_at",
                 "schema_fingerprint",
                 "operation_id",
+                "completeness",
+                "pagination_evidence",
                 "contract_version",
                 "request",
                 "page",
@@ -1885,7 +1887,7 @@ class GravityInsightCoreTests(unittest.TestCase):
             with self.assertRaisesRegex(PaginationError, "item safety bound"):
                 client.read_all("example.items.list", {}, max_items=2)
 
-    def test_composite_service_validates_live_metadata_and_returns_partial_snapshots(self):
+    def test_composite_service_validates_live_metadata_and_snapshot_result_binding(self):
         class PublicClient:
             def __init__(self, *, metadata_available=True):
                 self.calls = []
@@ -2020,12 +2022,18 @@ class GravityInsightCoreTests(unittest.TestCase):
         self.assertFalse(any(call[1] == "report.multidim.query" for call in unavailable.calls))
 
         snapshot = service.promotion_snapshot(
-            ["bytedance", "kuaishou"], common_inputs={"page": 1}
+            ["bytedance"],
+            common_inputs={
+                "app_id": 17,
+                "date_list": ["2026-08-01", "2026-08-07"],
+                "query_fields": ["stat_cost"],
+            },
         )
-        self.assertEqual("partial", snapshot["status"])
-        self.assertEqual(2, snapshot["coverage"]["requested"])
-        self.assertEqual("success", snapshot["results"][0]["status"])
-        self.assertEqual("unavailable", snapshot["results"][1]["status"])
+        self.assertEqual("contract_changed", snapshot["status"])
+        request = next(call for call in public.calls if call[0] == "batch")[1][0]
+        self.assertEqual("promotion.bytedance.advertiser.list", request["operation_id"])
+        self.assertEqual(["stat_cost"], request["inputs"]["query_fields"])
+        self.assertEqual(["2026-08-01", "2026-08-07"], request["inputs"]["date_list"])
 
     def test_transport_retries_transient_status_and_semantic_error_is_sanitized(self):
         success = {"code": 0, "data": {"list": [], "page_info": {"page": 1, "total_page": 1}}}

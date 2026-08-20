@@ -85,11 +85,13 @@
       },
       "operation_id": "analysis.segment.evaluate_percent",
       "pagination": {
+        "completeness": "unknown",
         "kind": "none",
         "list_path": "",
         "page_field": "",
         "page_info_path": "",
         "page_size_field": "",
+        "pagination_evidence": "template",
         "total_page_field": ""
       },
       "path_template": "/report/api/v3/dataanalysis/segment/from_rule/evaluate_percent/",

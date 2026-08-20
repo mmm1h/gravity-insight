@@ -91,39 +91,19 @@ class GravitySDK(
     ) -> "GravitySDK":
         """Create a lazy facade configured from the normal SDK environment."""
 
-        shared_runtime: Any | None = None
-        runtime_lock = threading.Lock()
+        from .sdk_environment import environment_components
 
-        def runtime() -> Any:
-            nonlocal shared_runtime
-            if shared_runtime is None:
-                with runtime_lock:
-                    if shared_runtime is None:
-                        from .shared_runtime import get_shared_runtime
-
-                        shared_runtime = get_shared_runtime(
-                            env_path=env_path, timeout=timeout, attempts=attempts
-                        )
-            return shared_runtime
-
-        def build_insight() -> Any:
-            from .client import GravityInsightClient
-
-            return GravityInsightClient.from_env(
-                allow_experimental=allow_experimental,
-                runtime=runtime(),
-                env_path=env_path,
-            )
-
-        def build_sql() -> Any:
-            from .sql.client import GravityClient
-
-            return GravityClient(runtime())
-
+        build_insight, build_sql, selected_workspace = environment_components(
+            allow_experimental=allow_experimental,
+            timeout=timeout,
+            attempts=attempts,
+            workspace=_load_workspace(workspace),
+            env_path=env_path,
+        )
         return cls(
             insight_factory=build_insight,
             sql_factory=build_sql,
-            workspace=workspace,
+            workspace=selected_workspace,
         )
 
     @property
@@ -457,7 +437,7 @@ class GravitySDK(
             )
             from .plan import PlanAdapter
 
-            selected = self._workspace if workspace is None else workspace
+            selected = self._select_workspace(workspace)
             adapters = PlanAdapters(
                 metadata_search=(
                     build_metadata_plan_adapter(metadata_database)

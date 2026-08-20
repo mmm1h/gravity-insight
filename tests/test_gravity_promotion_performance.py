@@ -85,6 +85,57 @@ class _BatchClient:
         ]
 
 
+class _CompatBatchClient(_BatchClient):
+    def operations(self, **_filters):
+        return []
+
+    def schema(self, *_args, **_kwargs):
+        return {}
+
+    def read(self, *_args, **_kwargs):
+        return {}
+
+    def read_all(self, *_args, **_kwargs):
+        return {}
+
+
+class _InventoryBatchClient(_CompatBatchClient):
+    def __init__(self, operations):
+        super().__init__()
+        self.inventory = list(operations)
+
+    def operations(self, **filters):
+        return [
+            item
+            for item in self.inventory
+            if all(item.get(key) == value for key, value in filters.items())
+        ]
+
+    def batch(self, requests, **options):
+        self.calls.append((copy.deepcopy(requests), dict(options)))
+        return [
+            {
+                "operation_id": request["operation_id"],
+                "request_id": request["request_id"],
+                "ok": True,
+                "status": "success",
+                "data": {"list": [{"row": request["request_id"]}]},
+            }
+            for request in reversed(requests)
+        ]
+
+
+def _inventory_operation(platform, resource, operation_id):
+    return {
+        "operation_id": operation_id,
+        "domain": "promotion",
+        "platform": platform,
+        "resource": resource,
+        "action": "list",
+        "stability": "stable",
+    }
+
+
 class PromotionPerformanceTests(unittest.TestCase):
     def test_fans_out_real_operations_with_fair_bounds_and_order(self):
         client = _BatchClient()
@@ -376,53 +427,128 @@ class PromotionPerformanceTests(unittest.TestCase):
         self.assertNotIn("SECRET_TOKEN_LEAK", repr(raised.exception))
         self.assertEqual("LOCAL_IO_ERROR", raised.exception.to_error_detail().code)
 
-    def test_input_schema_is_closed_and_legacy_snapshot_stays_compatible(self):
+    def test_input_schema_is_closed_and_legacy_snapshot_matches_formal_product(self):
         schema = promotion_performance_input_schema()
         self.assertFalse(schema["additionalProperties"])
         self.assertEqual(21, schema["properties"]["platforms"]["maxItems"])
 
+        formal_client, legacy_client = _BatchClient(), _CompatBatchClient()
+        expected = promotion_performance(
+            formal_client, 17, "2026-08-01", "2026-08-07",
+            platforms=("tencent", "bytedance"), metrics=("stat_cost",),
+        )
+        actual = CompositeService(legacy_client).promotion_snapshot(
+            ("tencent", "bytedance"),
+            common_inputs={
+                "app_id": 17,
+                "date_list": ["2026-08-01", "2026-08-07"],
+                "query_fields": ["stat_cost"],
+            },
+        )
+        self.assertEqual(expected, actual)
+        self.assertEqual(formal_client.calls, legacy_client.calls)
+
+    def test_legacy_snapshot_reads_non_primary_resource_with_compatibility_marker(self):
+        operation_id = "promotion.bytedance.project.list"
+        client = _InventoryBatchClient([
+            _inventory_operation("bytedance", "project", operation_id)
+        ])
+        result = CompositeService(client).promotion_snapshot(
+            ("bytedance",),
+            resource="project",
+            common_inputs={"project_ref": "fixture-parent"},
+        )
+        requests, options = client.calls[0]
+        self.assertEqual(operation_id, requests[0]["operation_id"])
+        self.assertEqual({"project_ref": "fixture-parent"}, requests[0]["inputs"])
+        self.assertEqual({"max_workers": 6}, options)
+        self.assertEqual(
+            [{"row": "bytedance"}], result["results"][0]["data"]["list"]
+        )
+        self.assertEqual(
+            {"mode": "inventory", "formal_binding_validation": "not_performed"},
+            result["compatibility"],
+        )
+
+    def test_legacy_snapshot_reads_four_heterogeneous_primary_platforms(self):
         capabilities = {
+            "bing": ("advertiser", "promotion.bing.advertiser.list"),
+            "xiaohongshu": ("advertiser", "promotion.xiaohongshu.advertiser.list"),
             "taptap": ("group", "promotion.taptap.group.list"),
             "wechat_video": ("report", "promotion.wechat_video.report.list"),
         }
-
-        class Client:
-            def operations(self, **filters):
-                resource, operation_id = capabilities[filters["platform"]]
-                return [{
-                    "operation_id": operation_id,
-                    "domain": "promotion",
-                    "platform": filters["platform"],
-                    "resource": resource,
-                    "action": "list",
-                    "stability": "stable",
-                }]
-
-            def batch(self, requests, **_options):
-                self.requests = list(requests)
-                return [{
-                    "operation_id": item["operation_id"],
-                    "request_id": item["request_id"],
-                    "ok": True,
-                    "status": "success",
-                } for item in requests]
-
-            def schema(self, *_args, **_kwargs):
-                return {}
-
-            def read(self, *_args, **_kwargs):
-                return {}
-
-            def read_all(self, *_args, **_kwargs):
-                return {}
-
-        client = Client()
-        result = CompositeService(client).promotion_snapshot(list(capabilities))
-        self.assertEqual("gravity-insight.composite.promotion.v1", result["schema_version"])
-        self.assertEqual("success", result["status"])
+        client = _InventoryBatchClient([
+            _inventory_operation(platform, resource, operation_id)
+            for platform, (resource, operation_id) in capabilities.items()
+        ])
+        result = CompositeService(client).promotion_snapshot(tuple(capabilities))
+        requests, _ = client.calls[0]
         self.assertEqual(
-            list(capabilities), [item["platform"] for item in result["results"]]
+            [value[1] for value in capabilities.values()],
+            [request["operation_id"] for request in requests],
         )
+        self.assertEqual(list(capabilities), [item["platform"] for item in result["results"]])
+        self.assertTrue(all(item["data"]["list"] for item in result["results"]))
+        self.assertEqual("not_performed", result["compatibility"]["formal_binding_validation"])
+
+    def test_legacy_snapshot_rejects_ambiguous_inventory_without_executing(self):
+        client = _InventoryBatchClient([
+            _inventory_operation("bytedance", "project", operation_id)
+            for operation_id in (
+                "promotion.bytedance.project.list",
+                "promotion.bytedance.project.query",
+            )
+        ])
+        with self.assertRaises(InputValidationError) as raised:
+            CompositeService(client).promotion_snapshot(
+                ("bytedance",), resource="project"
+            )
+        self.assertEqual("resource", raised.exception.field)
+        self.assertIn("actual value:", str(raised.exception))
+        self.assertIn("promotion.bytedance.project.list", str(raised.exception))
+        self.assertIn("promotion.bytedance.project.query", str(raised.exception))
+        self.assertTrue(raised.exception.next_action)
+        self.assertEqual([], client.calls)
+
+    def test_legacy_snapshot_uses_formal_input_error_classification(self):
+        cases = (
+            ({"app_id": "0"}, {}, {}),
+            ({"start": "bad"}, {}, {}),
+            ({"platforms": ("unknown",)}, {"platforms": ("unknown",)}, {}),
+            ({"metrics": ("app_id",)}, {}, {"query_fields": ["app_id"]}),
+        )
+        base = dict(
+            app_id=17, start="2026-08-01", end="2026-08-07",
+            platforms=("tencent",), metrics=("stat_cost",),
+        )
+        for formal_overrides, legacy_overrides, input_overrides in cases:
+            formal = {**base, **formal_overrides}
+            inputs = {
+                "app_id": formal["app_id"],
+                "date_list": [formal["start"], formal["end"]],
+                "query_fields": list(formal["metrics"]),
+                **input_overrides,
+            }
+            with self.subTest(overrides=formal_overrides):
+                with self.assertRaises(InputValidationError) as formal_error:
+                    promotion_performance(_BatchClient(), **formal)
+                with self.assertRaises(InputValidationError) as legacy_error:
+                    CompositeService(_CompatBatchClient()).promotion_snapshot(
+                        legacy_overrides.get("platforms", formal["platforms"]),
+                        common_inputs=inputs,
+                    )
+                self.assertEqual(
+                    (
+                        formal_error.exception.code,
+                        formal_error.exception.field,
+                        formal_error.exception.next_action,
+                    ),
+                    (
+                        legacy_error.exception.code,
+                        legacy_error.exception.field,
+                        legacy_error.exception.next_action,
+                    ),
+                )
 
 
 if __name__ == "__main__":

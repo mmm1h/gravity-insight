@@ -27,22 +27,25 @@
   operation identity、字段 allowlist、App/window/metrics binding、failure wording 继续留在各自 owner。
   **不做整文件统一，不造结果 DSL。**
 
-### 2. legacy promotion snapshot 绕过正式产品的全部绑定
+### 2. legacy promotion snapshot 的兼容分支仍缺正式绑定
 
-- **Owner area**：Promotion 兼容面（CLI/SDK legacy permissive snapshot）。
-- **证据**：2026-08-14 缺面裁决查明，该面绕过 `promotion performance` 的五项约束：
-  workspace App 绑定、统一日期窗、已证明平台集合、指标 allowlist、平台 metadata 指标校验，
-  且不校验返回结果是否仍绑定请求的 App/日期/指标。它接受任意非空 promotion resource 与
-  逐平台原始 input，按 inventory 选择**首个** stable operation；CLI `all` 模式会按各 operation
-  schema **静默忽略**不适用的 shortcut。本轮已确认它不进 Agent/Plan 主路径
-  （`gravity agent "raw promotion snapshot"` 返回 capability_gap），但 CLI/SDK 入口仍在。
-- **为什么保留**：没有消费者遥测能证明无人直接使用，删除即可能造成外部破坏。
-  这是**有意的保留，不是遗忘**。
-- **触发条件**：该面出现新的调用方报告；或 Promotion 产品再次修改平台集合、指标 allowlist
-  或结果绑定校验——届时两处语义会进一步分叉；或取得可证明无消费者的证据。
-- **退出条件**：优先**收紧到与正式产品同一组绑定**（App/日期/指标/结果校验），
-  使两条路径语义一致；确证无消费者时直接删除。**不要为它补 Agent 卡或 Plan 面**——
-  那是在把未校验路径推给自动化调用方。静默忽略 shortcut 的行为无论保留与否都应改为显式报错。
+**状态（2026-08-20）**：正式范围已经收口；非 primary 层级与四个异构平台的兼容读取仍保留本条。
+
+- **Owner area**：Promotion 兼容面（CLI/SDK legacy snapshot）。
+- **证据**：`promotion_snapshot_compat.py` 已按输入分流：`primary` 加正式 21 平台复用
+  `promotion performance` 的 workspace App、统一日期窗、平台/指标与结果绑定；其他已登记层级及
+  `bing/xiaohongshu/taptap/wechat_video` 仍从 stable inventory 精确匹配后透传逐 operation raw input，
+  返回 `gravity-insight.composite.promotion.v1`。兼容 envelope 以
+  `compatibility.formal_binding_validation=not_performed` 机器标记较低保证；零匹配仍为 unavailable，
+  多匹配显式列出候选并在执行前失败，不再选择排序首项。CLI 不适用 shortcut 仍显式失败。
+  `query_fields` 到达 operation 后仍经过公共 `FieldPolicy`，剩余差距不是绕过该公共校验，而是没有
+  正式产品统一的 App/日期/指标必填约束和返回结果绑定。
+- **为什么保留**：基线确实能通过这些 inventory 路径读取；没有消费者遥测能证明无人使用，删除会
+  造成能力退化。Agent/Plan 仍只暴露正式产品，不宣传兼容分支为自动化主路径。
+- **触发条件**：兼容平台/层级新增第二个同资源 stable read；或对应输入/结果绑定取得正式产品证据；
+  或取得可证明无消费者的证据。
+- **退出条件**：为所有仍保留的兼容平台/层级建立不损失读取能力的正式请求与结果绑定后移入正式
+  路径；或确证无消费者后删除兼容分支。不能用 raw `promotion query` 代替 snapshot 的聚合职责来关债。
 
 ### 3. 在线输入解析的两次闭环依赖「上游稳定 ID 不复用」，而这证明不了
 
@@ -99,6 +102,10 @@
   5 无法判定`。本轮把 10 条 AppRank/data-table POST 的 hash-matched 控制流登记为精确 read
   confirmation，并用 10 次有界生产 HTTP 验证最高价值候选；没有用失败或空样本批量改 Census status。
   `promotion.promoted_object.list` 的 draft POST 与 Census UNKNOWN method 差异继续保留为显式证据差异。
+- **2026-08-20 进展**：Prober 已把隐式允许/拒绝固化为六个互斥机器状态；所有未由精确 stable 合同或
+  含 reviewer、ISO 日期、静态证据的逐路由清单确认的 POST 均为 `unsafe_unknown`。该状态在 credential
+  status/refresh、session 与 runtime/transport 构造前以稳定机器错误失败；单条、batch、parameter 与
+  scoped reprobe 的直接入口复用同一离线前置检查。既有 Census `status` 和逐条语义结论未批量改写。
 
 ### 7. 稳定 operation 的分页形状仍有系统性证据债
 
@@ -106,13 +113,17 @@
 - **证据**：`f798d39` 的 231 条 operation 中，119 条 `page_info` 拥有完全相同的字段集合，证明该字段集
   来自模板而非逐条验证。2026-08-17 逐 route 对齐生产 response sketch、精确 wire consumer 与合同后，
   审计当时的 119 条只有 `59 A / 1 B / 59 unknown`；证据等级为 `62 production / 8 wire / 49 template-only`。
-  这些是审计基线声明，不是 HEAD。HEAD 当前为 `118 page_info + 115 none`（233 条）；`report.multidim.query`
-  已修成 `none` 并在审计表标 `repaired`。当时的 `none` 条目中另有 27 条 stable+executable 集合完整性
-  在本轮三条补测后仍未知；`analysis.user_event.list` 是已披露的手动空页协议，不等于上游无分页；一个
-  不可执行 candidate 的 wire 还消费了 `page_info.total_number`。逐条表与判据见
+  2026-08-20 对当前 237 条编译 operation 静态重测：`60 complete / 177 unknown`，证据为
+  `97 production / 9 wire / 131 template`，kind 为 `119 page_info / 118 none`。其中 228 条 stable 为
+  `60 complete / 168 unknown`，证据为 `97 production / 7 wire / 124 template`；119 条 `page_info`
+  子集形状为 `60 A / 59 unknown`（B 已移出 `page_info`），完整性为
+  `60 complete / 59 unknown`，证据仍为 `62 production / 8 wire / 49 template`。逐条表与判据见
   `evidence/forensics/20260817_pagination_contract_audit.{json,md}`；当前 kind 由
   `gravity_sdk.pagination_contract_audit.reconcile_pagination_audit` 对账。
-- **当前缓解**：已把实测 B 形状的 `report.multidim.query` 改成单响应，不再重复续页；D28
+- **当前缓解**：operation schema 和 manifest 已把 `completeness` 与 `pagination_evidence` 分开；无证据
+  默认 `unknown`，`template` 不能声明 `complete`。原子读取结果、pagination audit、Plan 与 composite
+  均传播机器可读完整性；明确要求 `all_pages` 的 Plan 在未知或前缀结果上返回 capability gap，Agent card
+  不再允许全集计数声明。已把实测 B 形状的 `report.multidim.query` 改成单响应，不再重复续页；D28
   `report.get.query` 也是实测 B（只有 `page_info.total`）并声明 `none`。缺 `total_page`
   时 `read_all` 默认停在第一页并把完整性标 `unknown`，满页启发式必须 `continue_without_total`。自动完整
   读取风险最高的 Multidim metadata、Material Performance、Business Pulse 三条已实测为 A。三条完整元数据
@@ -120,9 +131,9 @@
   `template_default` 证据的条目在对账结果里机器可读为 `shape_unproven`。
 - **触发条件**：修改任一 unknown operation 的分页、让新的产品依赖其全集，或取得新的 production/wire
   分页字段证据。
-- **退出条件**：逐条用同 method+path 的生产 response sketch 或直接 wire 字段把 59 条 `page_info`
-  unknown 归入真实形状并修正合同；对 27 条 stable+executable `none` 集合取得可证伪的完整性信号或把
-  产品声明降级为前缀/未知。不得用现有合同声明给自己提升证据等级，也不得全量生产探测。
+- **退出条件**：逐条用同 method+path 的 production response sketch 或直接 wire 字段把 59 条
+  `page_info` unknown 归入真实形状并修正合同；对其余 stable `unknown` 集合取得可证伪的完整性信号。
+  不得用现有合同声明、短页或满页启发式给自己提升证据等级，也不得全量生产探测。
 
 ## 已关闭
 

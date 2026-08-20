@@ -8,6 +8,8 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from .agent_pagination import compact_pagination
+
 from .agent_capabilities import (
     agent_query_match,
     operation_query_match,
@@ -421,6 +423,8 @@ def _digest(value: Any) -> str:
 def _operation_card(
     search_item: Mapping[str, Any], description: Mapping[str, Any]
 ) -> dict[str, Any]:
+    from .pagination_completeness import collection_claims
+
     operation_id = str(search_item["operation_id"])
     input_schema = description.get("input_schema", {})
     if not isinstance(input_schema, Mapping):
@@ -447,6 +451,10 @@ def _operation_card(
     argv = ["gravity", "run", operation_id]
     if required:
         argv.extend(["--input", "<json-object-or-file>"])
+    pagination = compact_pagination(description.get("pagination"))
+    allowed_claims, forbidden_claims = collection_claims(
+        str(pagination["completeness"])
+    )
     return {
         "kind": "operation",
         "selector": operation_id,
@@ -465,7 +473,9 @@ def _operation_card(
         "input_schema": fields,
         "required_inputs": required,
         "required_parent_operations": parent_operations,
-        "pagination": _compact_pagination(description.get("pagination")),
+        "pagination": pagination,
+        "allowed_claims": allowed_claims,
+        "forbidden_claims": forbidden_claims,
         "match": dict(search_item.get("agent_match", {})),
         "next": {"ready_without_input": not required, "argv": argv},
     }
@@ -517,19 +527,6 @@ def _compact_field(value: Any) -> dict[str, Any]:
     if not isinstance(value, Mapping):
         return {}
     return {key: value[key] for key in _FIELD_KEYS if key in value}
-
-
-def _compact_pagination(value: Any) -> dict[str, Any]:
-    if not isinstance(value, Mapping):
-        return {"supported": False}
-    kind = str(value.get("kind", "none"))
-    return {
-        "supported": kind != "none",
-        "kind": kind,
-        "page_field": value.get("page_field"),
-        "page_size_field": value.get("page_size_field"),
-        "max_page_size": value.get("max_page_size"),
-    }
 
 
 __all__ = [

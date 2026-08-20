@@ -17,8 +17,6 @@ from .catalog import OperationCatalog
 from .catalog_inventory import CatalogInventoryMixin
 from .credentials import CredentialProvider
 from .errors import (
-    ErrorCode,
-    ErrorDetail,
     GravityInsightError,
     PaginationError,
     ParentRequiredError,
@@ -49,6 +47,7 @@ from .result_source import RAW_OPERATION, result_source
 from .runtime_scope import env_isolation_key, operation_catalog_state_path, resolve_env_path
 from .transport import Transport
 from .actionable_error_values import actual_value
+from .validation_result import validation_error as _validation_error
 
 
 _LOGGER = logging.getLogger("gravity_sdk")
@@ -141,7 +140,7 @@ class GravityInsightClient(
                 attempts=attempts,
                 runtime=runtime,
             )
-        catalog_path = operation_catalog_state_path(isolation_key if isolated else "")
+        catalog_path = operation_catalog_state_path(isolation_key if isolated else None)
         export_contracts, export_policy = load_export_components(
             root,
             registry,
@@ -428,6 +427,8 @@ class GravityInsightClient(
             },
             "fetched_at": fetched_at,
             "schema_fingerprint": None,
+            "completeness": "unknown",
+            "pagination_evidence": "none",
             "request": {},
             "page": {},
             "data": {},
@@ -655,26 +656,6 @@ class GravityInsightClient(
         workers = min(max_workers, len(normalized))
         with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="gravity-read") as pool:
             return [item.to_dict() for item in pool.map(run, normalized)]
-
-
-def _validation_error(operation_id: str, error: GravityInsightError) -> dict[str, Any]:
-    detail: ErrorDetail
-    if isinstance(error, PolicyViolation) and "catalog-only" in str(error):
-        detail = ErrorDetail.create(
-            ErrorCode.NOT_IMPLEMENTED, error, operation_id=operation_id
-        )
-    else:
-        detail = error_detail_from_exception(error, operation_id=operation_id)
-    return {
-        "schema_version": "gravity-insight.validation.v1",
-        "ok": False,
-        "status": "invalid",
-        "operation_id": operation_id,
-        "network_called": False,
-        "normalized_input": None,
-        "live_metadata_dependencies": [],
-        "error": detail.to_dict(),
-    }
 
 
 def _load_contract_metadata(

@@ -38,6 +38,7 @@ from .errors import (
 )
 from .paths import PROJECT_ROOT, STATE_ROOT
 from .receipt import perform_http_request, request_receipt_context
+from .runtime_scope import principal_receipt_root
 
 
 GRAVITY_HOST = "https://api-insight.gravity-engine.com"
@@ -440,7 +441,7 @@ class CredentialProvider:
                         path=LOGIN_PATH,
                         body=body,
                     ),
-                    receipt_root=STATE_ROOT,
+                    receipt_root=principal_receipt_root(STATE_ROOT, self.env_path, environ=self._environ, isolated=self._isolated),
                 )
             except Exception as exc:
                 raise TransportError("Gravity login request failed") from exc

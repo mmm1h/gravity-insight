@@ -34,6 +34,8 @@
     "operation_id": "promotion.kuaishou.account_company.list",
     "pagination": {
       "kind": "none",
+      "completeness": "unknown",
+      "pagination_evidence": "production",
       "list_path": "",
       "page_field": "",
       "page_info_path": "",

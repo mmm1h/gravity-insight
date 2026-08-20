@@ -23,6 +23,7 @@ from .plan_error import (
 )
 from .result_source import aggregate_result_sources, plan_result_source
 from .plan_validation import bounded_int, validate_plan
+from .pagination_completeness import aggregate_completeness
 
 
 def execute_plan(
@@ -396,6 +397,7 @@ def result_item(
         "foreach_index": foreach_index,
         "ok": ok,
         "status": status,
+        "completeness": aggregate_completeness(result),
         "exit_code": exit_code,
         "result": result,
         "error": dict(error) if error is not None else None,
@@ -412,6 +414,7 @@ def node_view(node: PlanNode, items: list[dict[str, Any]]) -> Mapping[str, Any]:
         "node_id": node.node_id,
         "ok": failed == 0,
         "status": "success" if not failed else "partial" if succeeded else "error",
+        "completeness": aggregate_completeness(items),
         "results": items,
     }
 
@@ -446,6 +449,7 @@ def result_envelope(
         "schema_version": RESULT_SCHEMA_VERSION, "result_source": aggregate_result_sources(results),
         "ok": ok,
         "status": "success" if ok else "partial" if succeeded or partial else "error",
+        "completeness": aggregate_completeness(results),
         "dry_run": False,
         "declared_count": len(plan.nodes),
         "expanded_count": sum(item["status"] not in {"skipped", "empty"} for item in results),
@@ -468,6 +472,7 @@ def dry_run_result(plan: ValidatedPlan, workers: int) -> dict[str, Any]:
         ]),
         "ok": True,
         "status": "validated",
+        "completeness": "unknown",
         "dry_run": True,
         "declared_count": len(plan.nodes),
         "max_expanded_count": plan.max_expanded_nodes,

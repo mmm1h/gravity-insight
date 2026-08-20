@@ -8,6 +8,7 @@
 | 任务 | 文档 |
 | --- | --- |
 | 领取、推进或关闭 GitHub Issue | [Issue 状态管理](issues.md) |
+| 完成发布治理中的人工决策或占位符 | [负责人操作清单](owner-actions.md) |
 | 查看或清理结构性技术债 | [技术债清单](technical-debt.md) |
 | 定位已交付 composite / CLI / SDK / Plan owner | [产品面总览](product-surfaces.md) |
 | 维护变现明细产品与 discovery guard | [Monetization Detail Guard](monetization-discovery-guard.md) |

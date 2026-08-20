@@ -27,6 +27,8 @@
     "operation_id": "analysis.datamanageconfig.kanban.space.delete",
     "pagination": {
       "kind": "none",
+      "completeness": "unknown",
+      "pagination_evidence": "template",
       "list_path": "",
       "page_field": "",
       "page_info_path": "",

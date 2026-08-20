@@ -60,6 +60,8 @@
     "pagination": {
       "default_page_size": 15,
       "kind": "page_info",
+      "completeness": "unknown",
+      "pagination_evidence": "wire",
       "list_path": "data.list",
       "max_page_size": 60,
       "page_field": "page",
