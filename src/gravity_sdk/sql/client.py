@@ -11,7 +11,6 @@ from typing import Any, Mapping, Sequence
 try:
     from gravity_sdk.actionable_error_values import actual_value
     from gravity_sdk.errors import (
-        AuthenticationError,
         CredentialError,
         GravityInsightError,
         SqlResponseError,
@@ -20,10 +19,14 @@ try:
     )
     from gravity_sdk.http_runtime import MAX_SQL_CONCURRENCY, SQL_PROFILE
     from gravity_sdk.shared_runtime import get_shared_runtime
+    from gravity_sdk.sql.failures import (
+        annotate_sql_failure,
+        classify_sql_failure,
+        sql_protocol_status,
+    )
 except ModuleNotFoundError:  # pragma: no cover - source-tree execution without installation.
     from gravity_sdk.actionable_error_values import actual_value
     from gravity_sdk.errors import (
-        AuthenticationError,
         CredentialError,
         GravityInsightError,
         SqlResponseError,
@@ -32,6 +35,11 @@ except ModuleNotFoundError:  # pragma: no cover - source-tree execution without 
     )
     from gravity_sdk.http_runtime import MAX_SQL_CONCURRENCY, SQL_PROFILE
     from gravity_sdk.shared_runtime import get_shared_runtime
+    from gravity_sdk.sql.failures import (
+        annotate_sql_failure,
+        classify_sql_failure,
+        sql_protocol_status,
+    )
 
 
 DEFAULT_ENDPOINT = "https://api-insight.gravity-engine.com/custom_sql/api/sql/execute"
@@ -108,25 +116,61 @@ class GravityClient:
             except GravityInsightError:
                 raise
             except Exception:  # Keep dependency/session details out of errors and tracebacks.
-                raise TransportError("Gravity SQL request failed") from None
+                raise annotate_sql_failure(
+                    TransportError("Gravity SQL request failed"), kind="transport"
+                ) from None
         finally:
             _SQL_BUSINESS_SLOTS.release()
 
         status_code = getattr(response, "status_code", 200)
         if isinstance(status_code, bool) or not isinstance(status_code, int):
-            raise TransportError("Gravity SQL returned an invalid HTTP status")
+            raise annotate_sql_failure(
+                TransportError("Gravity SQL returned an invalid HTTP status"),
+                kind="invalid_http_status",
+            )
         if 300 <= status_code < 400:
-            raise TransportError("Gravity SQL returned a blocked redirect")
-        if status_code >= 400:
-            raise TransportError(f"Gravity SQL request failed with HTTP {status_code}")
-
+            raise annotate_sql_failure(
+                TransportError("Gravity SQL returned a blocked redirect"),
+                kind="blocked_redirect",
+            )
         payload = getattr(response, "payload", None)
+        if status_code >= 400:
+            raise annotate_sql_failure(
+                TransportError(f"Gravity SQL request failed with HTTP {status_code}"),
+                kind="http_status",
+                http_status=status_code,
+                protocol_status=sql_protocol_status(
+                    payload,
+                    http_status=status_code,
+                    status=_find_status(payload),
+                    classification="http_error",
+                ),
+            )
+
         status = _find_status(payload)
         if status and status.lower() != "success":
-            raise SqlResponseError("Gravity SQL returned a non-success status")
+            raise annotate_sql_failure(
+                SqlResponseError("Gravity SQL returned a non-success status"),
+                kind="engine_rejected",
+                protocol_status=sql_protocol_status(
+                    payload,
+                    http_status=status_code,
+                    status=status,
+                    classification="engine_rejected",
+                ),
+            )
         rows = _extract_rows(payload)
         if rows is None:
-            raise SqlResponseError("Gravity SQL response did not contain tabular rows")
+            raise annotate_sql_failure(
+                SqlResponseError("Gravity SQL response did not contain tabular rows"),
+                kind="non_tabular",
+                protocol_status=sql_protocol_status(
+                    payload,
+                    http_status=status_code,
+                    status=status,
+                    classification="invalid_response_shape",
+                ),
+            )
         return rows
 
     def execute_batch(
@@ -258,15 +302,7 @@ def _batch_request_id(value: Any) -> str | None:
 
 
 def _safe_batch_error(error: GravityInsightError) -> str:
-    if isinstance(error, AuthenticationError):
-        return "Gravity SQL authentication failed"
-    if isinstance(error, CredentialError):
-        return "Gravity SQL credentials are unavailable"
-    if isinstance(error, SqlValidationError):
-        return "Gravity SQL request was rejected by local validation"
-    if isinstance(error, SqlResponseError):
-        return "Gravity SQL returned an invalid response"
-    return "Gravity SQL request failed"
+    return classify_sql_failure(error).message
 
 
 def _find_status(payload: Any) -> str | None:

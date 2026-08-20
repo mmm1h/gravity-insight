@@ -10,6 +10,10 @@ from unittest import mock
 
 from gravity_sdk.sql import client as sql_client
 from gravity_sdk.sql.client import GravityClient, SqlBatchRequest
+from gravity_sdk.sql.failures import (
+    classify_sql_failure,
+    diagnostic_fields,
+)
 try:
     from gravity_sdk.errors import (
         SqlResponseError,
@@ -181,6 +185,145 @@ class GravitySqlClientTests(unittest.TestCase):
         self.assertNotIn("private_value", str(unexpected.exception))
         self.assertNotIn("secret_response", str(unexpected.exception))
 
+    def test_six_client_failures_have_stable_shared_diagnostics(self):
+        unsafe = "SELECT private_value FROM secret_table WHERE app_id=76543210"
+        cases = (
+            (
+                "transport",
+                RuntimeError(unsafe),
+                None,
+                TransportError,
+                ("execute", "transport_failure", "SQL_TRANSPORT_FAILED", True, "no"),
+            ),
+            (
+                "invalid-status",
+                None,
+                SimpleNamespace(status_code="invalid", payload={"msg": unsafe}),
+                TransportError,
+                ("shape", "http_status_shape", "SQL_HTTP_STATUS_INVALID", False, "unknown"),
+            ),
+            (
+                "redirect",
+                None,
+                SimpleNamespace(status_code=302, payload={"msg": unsafe}),
+                TransportError,
+                ("execute", "redirect_blocked", "SQL_REDIRECT_BLOCKED", False, "no"),
+            ),
+            (
+                "http",
+                None,
+                SimpleNamespace(
+                    status_code=503,
+                    payload={"code": "SERVICE_BUSY", "msg": unsafe},
+                ),
+                TransportError,
+                ("execute", "http_server_error", "SQL_HTTP_SERVER_ERROR", True, "unknown"),
+            ),
+            (
+                "engine",
+                None,
+                SimpleNamespace(
+                    status_code=200,
+                    payload={
+                        "data": {
+                            "status": "REJECTED",
+                            "code": "JOIN_REJECTED_FIXTURE",
+                            "msg": unsafe,
+                            "extra": {"error": [unsafe]},
+                        },
+                    },
+                ),
+                SqlResponseError,
+                ("plan", "engine_rejected", "SQL_ENGINE_REJECTED", False, "yes"),
+            ),
+            (
+                "shape",
+                None,
+                SimpleNamespace(
+                    status_code=200,
+                    payload={"status": "SUCCESS", "code": "OK", "msg": unsafe},
+                ),
+                SqlResponseError,
+                ("shape", "tabular_shape_drift", "SQL_RESPONSE_SHAPE_INVALID", False, "yes"),
+            ),
+        )
+        for name, side_effect, response, error_type, expected in cases:
+            runtime = mock.Mock()
+            runtime.request.side_effect = side_effect
+            if side_effect is None:
+                runtime.request.return_value = response
+            with self.subTest(name=name), self.assertRaises(error_type) as caught:
+                GravityClient(runtime).execute_sql("SELECT fixture")
+            failure = classify_sql_failure(caught.exception, request_count=1)
+            self.assertEqual(
+                expected,
+                (
+                    failure.stage,
+                    failure.upstream_category,
+                    failure.code,
+                    failure.retryable,
+                    failure.reached_sql_engine,
+                ),
+            )
+            rendered = str(
+                diagnostic_fields(
+                    failure,
+                    elapsed_seconds=0.01,
+                    request_count=1,
+                    request_count_bound=1,
+                )
+            )
+            self.assertNotIn(unsafe, rendered)
+            if name == "engine":
+                protocol = failure.protocol_status
+                self.assertIsNotNone(protocol)
+                self.assertEqual("JOIN_REJECTED_FIXTURE", protocol["code"]["value"])
+                self.assertEqual("array", protocol["extra_error"]["value_type"])
+
+    def test_local_sql_validation_has_zero_upstream_requests(self):
+        runtime = mock.Mock()
+        with self.assertRaises(SqlValidationError) as caught:
+            GravityClient(runtime).execute_sql("")
+
+        runtime.request.assert_not_called()
+        failure = classify_sql_failure(caught.exception)
+        diagnostic = diagnostic_fields(
+            failure,
+            elapsed_seconds=0,
+            request_count=1,
+            request_count_bound=1,
+        )
+        self.assertEqual("bind", diagnostic["stage"])
+        self.assertFalse(diagnostic["retryable"])
+        self.assertEqual(0, diagnostic["execution_evidence"]["request_count"])
+        capped = diagnostic_fields(
+            failure,
+            elapsed_seconds=10**9,
+            request_count=1,
+            request_count_bound=1,
+        )["execution_evidence"]
+        self.assertEqual(capped["elapsed_ms_bound"], capped["elapsed_ms"])
+        self.assertTrue(capped["elapsed_ms_capped"])
+
+    def test_http_status_retryability_uses_status_class_not_upstream_text(self):
+        for status, code, retryable in (
+            (400, "SQL_HTTP_REQUEST_REJECTED", False),
+            (408, "SQL_HTTP_TIMEOUT", True),
+            (429, "SQL_HTTP_RATE_LIMITED", True),
+            (500, "SQL_HTTP_SERVER_ERROR", True),
+        ):
+            runtime = mock.Mock()
+            runtime.request.return_value = SimpleNamespace(
+                status_code=status,
+                payload={"code": "HTTP_FIXTURE", "msg": "PRIVATE_EVENT_SENTINEL"},
+            )
+            with self.subTest(status=status), self.assertRaises(TransportError) as caught:
+                GravityClient(runtime).execute_sql("SELECT fixture")
+            failure = classify_sql_failure(caught.exception, request_count=1)
+            self.assertEqual((code, retryable), (failure.code, failure.retryable))
+            rendered = str(failure.protocol_status)
+            self.assertNotIn("PRIVATE_EVENT_SENTINEL", rendered)
+
     def test_batch_preserves_order_and_isolates_one_failure(self):
         client = GravityClient(_FakeRuntime())
         results = client.execute_batch(
@@ -234,6 +377,32 @@ class GravitySqlClientTests(unittest.TestCase):
         )
         self.assertTrue(all(item["ok"] for item in results))
         self.assertEqual(2, max_active)
+
+    def test_batch_dispatch_cannot_early_stop_already_submitted_work(self):
+        class RejectingRuntime(_FakeRuntime):
+            def request(self, *args, **kwargs):
+                response = super().request(*args, **kwargs)
+                sql = kwargs["json_body"]["sql"]
+                if sql == "REJECT JOIN":
+                    return SimpleNamespace(
+                        status_code=200,
+                        payload={"status": "REJECTED", "code": "JOIN_REJECTED_FIXTURE"},
+                    )
+                return response
+
+        engine_runtime = RejectingRuntime()
+        engine_results = GravityClient(engine_runtime).execute_batch(
+            ["SELECT 1", "REJECT JOIN", "SELECT 2", "SELECT 3"], max_workers=2
+        )
+        self.assertEqual(4, len(engine_runtime.calls))
+        self.assertEqual([True, False, True, True], [item["ok"] for item in engine_results])
+
+        local_runtime = _FakeRuntime()
+        local_results = GravityClient(local_runtime).execute_batch(
+            ["SELECT 1", "", "SELECT 2", "SELECT 3"], max_workers=2
+        )
+        self.assertEqual(3, len(local_runtime.calls))
+        self.assertEqual([True, False, True, True], [item["ok"] for item in local_results])
 
     def test_process_sql_limit_covers_direct_calls_across_client_instances(self):
         lock = threading.Lock()

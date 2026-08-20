@@ -1,0 +1,53 @@
+schema_version = 1
+
+[apps]
+join_fixture = 76543210
+
+[defaults]
+app = "join_fixture"
+timezone = "Asia/Shanghai"
+time_window = "latest-safe-day"
+
+[datasources.join_fixture]
+id = "join_fixture_warehouse"
+verification_status = "pending_review"
+timezone = "Asia/Shanghai"
+privacy = "aggregate output only"
+
+[products.user-event-aggregate]
+kind = "custom-sql"
+datasource = "join_fixture"
+apps = ["join_fixture"]
+privacy = "aggregate"
+output_fields = ["joined_count"]
+max_rows = 10
+measurement = "aggregate user-event join count"
+forbidden_claims = [
+  "user-level identity or behavior",
+  "join support without upstream contract evidence",
+]
+sql = """
+WITH users AS (
+  SELECT app_id, user_id
+  FROM `default`.`user`
+  WHERE app_id IN ({app_ids})
+    AND create_time >= CAST('{start}' AS DATETIME)
+    AND create_time < CAST('{end}' AS DATETIME)
+    AND acquisition_channel = 'PRIVATE_CHANNEL_SENTINEL'
+), events AS (
+  SELECT app_id, user_id
+  FROM `default`.`event`
+  WHERE app_id IN ({app_ids})
+    AND create_time >= CAST('{start}' AS DATETIME)
+    AND create_time < CAST('{end}' AS DATETIME)
+    AND event = 'PRIVATE_EVENT_SENTINEL'
+)
+SELECT COUNT(*) AS joined_count
+FROM users
+INNER JOIN events
+  ON users.app_id = events.app_id AND users.user_id = events.user_id
+LIMIT {limit}
+"""
+
+[products.user-event-aggregate.output_semantics]
+joined_count = "aggregate joined row count"

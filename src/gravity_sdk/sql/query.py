@@ -4,11 +4,10 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
+import time
 from typing import Any
 
 from gravity_sdk.errors import (
-    AuthenticationError,
-    CredentialError,
     ErrorCategory,
     exit_code_for_category,
 )
@@ -21,6 +20,12 @@ from gravity_sdk.sql.products import (
     normalize_app_ids,
     normalize_window,
     run_product,
+)
+from gravity_sdk.sql.failures import (
+    SqlFailure,
+    classify_sql_failure,
+    diagnostic_fields,
+    execution_evidence,
 )
 from gravity_sdk.workspace import Workspace, load_workspace
 
@@ -54,11 +59,12 @@ def run_product_queries(
 ) -> dict[str, Any]:
     """Execute registered products concurrently, preserving input order."""
 
+    started = time.monotonic()
     _validate_concurrency(max_workers)
     selected_workspace = load_workspace() if workspace is None else workspace
     pending = _request_sequence(requests)
     results = _execute(client, pending, max_workers, selected_workspace)
-    return _envelope(results)
+    return _envelope(results, elapsed_seconds=time.monotonic() - started)
 
 
 def _request_sequence(requests: object) -> list[object]:
@@ -87,7 +93,9 @@ def _execute(
         return list(pool.map(lambda item: _run_one(client, item, workspace), pending))
 
 
-def _envelope(results: list[dict[str, Any]]) -> dict[str, Any]:
+def _envelope(
+    results: list[dict[str, Any]], *, elapsed_seconds: float = 0
+) -> dict[str, Any]:
     succeeded = sum(item["ok"] is True for item in results)
     failed = len(results) - succeeded
     categories = {
@@ -95,6 +103,7 @@ def _envelope(results: list[dict[str, Any]]) -> dict[str, Any]:
         for item in results
         if item["ok"] is False
     }
+    request_count = sum(_request_count(item) for item in results)
     return {
         "schema_version": QUERY_SCHEMA_VERSION,
         "result_source": result_source(CALLER_DEFINED),
@@ -104,8 +113,20 @@ def _envelope(results: list[dict[str, Any]]) -> dict[str, Any]:
         "succeeded_count": succeeded,
         "failed_count": failed,
         "exit_code": _exit_code(categories),
+        "execution_evidence": execution_evidence(
+            elapsed_seconds=elapsed_seconds,
+            request_count=request_count,
+            request_count_bound=len(results),
+        ),
         "results": results,
     }
+
+
+def _request_count(result: Mapping[str, Any]) -> int:
+    owner = result if result.get("ok") is True else result.get("error")
+    evidence = owner.get("execution_evidence") if isinstance(owner, Mapping) else None
+    count = evidence.get("request_count") if isinstance(evidence, Mapping) else 0
+    return count if type(count) is int and count >= 0 else 0
 
 
 def _exit_code(categories: set[str]) -> int:
@@ -164,53 +185,85 @@ def _execute_one_captured(
     workspace: Workspace | None,
 ) -> dict[str, Any]:
     product = normalized["product"]
+    counted = _CountedSqlClient(client)
+    started = time.monotonic()
     try:
         result = run_product(
-            client,
+            counted,
             product,
             normalized["start_at"],
             normalized["end_at"],
             normalized["app_ids"],
             workspace=workspace,
         )
-    except AuthenticationError:
-        return _error(
-            request_id,
-            product,
-            "authentication",
-            "Gravity SQL authentication failed",
-            code="SQL_PRODUCT_AUTH_FAILED",
-        )
-    except CredentialError:
-        return _error(
-            request_id,
-            product,
-            "authentication",
-            "Gravity SQL credentials are unavailable",
-            code="SQL_PRODUCT_CREDENTIALS_UNAVAILABLE",
-        )
     except EvidenceFormatError:
+        failure = SqlFailure(
+            "product_contract", "shape", "aggregate_shape_drift",
+            "SQL_PRODUCT_CONTRACT_VIOLATION",
+            "SQL product result violated its aggregate contract", False,
+            "yes" if counted.request_count else "no",
+            "Inspect the governed product output contract; do not retry unchanged.",
+        )
         return _error(
             request_id,
             product,
             "contract",
-            "SQL product result violated its aggregate contract",
-            code="SQL_PRODUCT_CONTRACT_VIOLATION",
+            failure.message,
+            code=failure.code,
+            diagnostic=diagnostic_fields(
+                failure,
+                elapsed_seconds=time.monotonic() - started,
+                request_count=counted.request_count,
+                request_count_bound=1,
+            ),
         )
-    except Exception:
+    except Exception as exc:
+        failure = classify_sql_failure(exc, request_count=counted.request_count)
         return _error(
             request_id,
             product,
-            "runtime",
-            "Gravity SQL product query failed",
-            code="SQL_PRODUCT_RUNTIME_FAILED",
+            _failure_category(failure),
+            failure.message,
+            code=failure.code,
+            diagnostic=diagnostic_fields(
+                failure,
+                elapsed_seconds=time.monotonic() - started,
+                request_count=counted.request_count,
+                request_count_bound=1,
+            ),
+            next_action=failure.next_action,
         )
     return {
         "request_id": request_id,
         "ok": True,
         **result,
         "result_source": result_source(CALLER_DEFINED),
+        "execution_evidence": execution_evidence(
+            elapsed_seconds=time.monotonic() - started,
+            request_count=counted.request_count,
+            request_count_bound=1,
+        ),
     }
+
+
+class _CountedSqlClient:
+    def __init__(self, client: Any) -> None:
+        self.client = client
+        self.request_count = 0
+
+    def execute_sql(self, sql: str) -> list[dict[str, Any]]:
+        self.request_count += 1
+        return self.client.execute_sql(sql)
+
+
+def _failure_category(failure: SqlFailure) -> str:
+    if failure.kind in {"authentication", "credentials"}:
+        return "authentication"
+    if failure.kind == "local_validation":
+        return "input"
+    if failure.stage == "compile":
+        return "contract"
+    return "runtime"
 
 
 def _normalize(
@@ -323,8 +376,20 @@ def _error(
     *,
     code: str,
     field: str | None = None,
+    diagnostic: Mapping[str, Any] | None = None,
+    next_action: str | None = None,
 ) -> dict[str, Any]:
     exit_code = sql_error_exit_code(category)
+    default_stage = "shape" if category == "contract" else "execute" if category == "runtime" else "bind"
+    default_diagnostic = {
+        "stage": default_stage,
+        "retryable": False,
+        "reached_sql_engine": "no",
+        "upstream_error": {"category": "not_reached", "code": code},
+        "execution_evidence": execution_evidence(
+            elapsed_seconds=0, request_count=0, request_count_bound=1
+        ),
+    }
     return {
         "request_id": request_id,
         "product": product,
@@ -337,7 +402,7 @@ def _error(
             "code": code,
             "field": field,
             "message": message,
-            "next_action": (
+            "next_action": next_action or (
                 "Run `gravity auth status`; refresh or configure credentials, then retry."
                 if category == "authentication"
                 else
@@ -345,8 +410,9 @@ def _error(
                 if category == "input"
                 else "Inspect the governed product contract and retry."
                 if category in {"contract", "local_io"}
-                else "Retry after checking Gravity authentication and availability."
+                else "Retry the same query once; if it fails again, run `gravity doctor --live`."
             ),
+            **(dict(diagnostic) if diagnostic is not None else default_diagnostic),
         },
     }
 

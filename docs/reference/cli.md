@@ -1195,6 +1195,15 @@ SQL CLI 不是任意查询入口。它只实现 `custom-sql` 这一种受治理�
 也不提供会丢失这些合同信息的 CSV/表格输出。
 Evidence 可用时附 reference；缺失或过期时附 warning，不阻断已登记产品查询。`status`、
 `evidence-preflight` 和 `verify` 是诊断/授权维护命令，不是每次查询前要串行执行的门禁。
+查询失败在 `error` 中返回 `stage=bind|compile|plan|execute|shape`、稳定 code、`retryable`、
+`reached_sql_engine=yes|no|unknown`、`upstream_error` 和有界 `execution_evidence`。其中
+`protocol_status` 只保留 `status/code/msg/extra.error` 的存在性与可分类标量：安全的数字/枚举
+`code` 和固定协议状态词保留分类值，其他未审查字符串只返回类型、truthiness 和 SHA-256，不返回
+原文，数组/对象不返回内部内容。引擎 non-success 属于
+`plan/engine_rejected`，原样重试为 false；tabular rows 缺失属于 `shape`。下一步按 stage 指向
+模板绑定、语法/类型与 join 合同、资源/超时收窄或响应形状复核，不再把引擎拒绝归因于认证。
+批量 query 保留独立项隔离和有界并发：已经提交给 worker pool 的项不会因另一项确定性失败而取消；
+`execution_evidence.request_count` 如实记录本批实际逻辑 SQL 请求数，不把该行为表述成早停。
 Python 的底层 `GravityClient.execute_sql()` 只固定路由并限制并发，不执行 workspace/Evidence
 产品治理；Agent 不应使用它绕过 CLI 产品。详见 [SDK 参考](sdk.md)。
 

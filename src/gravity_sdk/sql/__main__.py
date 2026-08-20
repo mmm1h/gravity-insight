@@ -25,6 +25,7 @@ from gravity_sdk.sql.cli_input import query_requests
 from gravity_sdk.sql.credentials import CredentialSyncError
 from gravity_sdk.sql.dry_run import dry_run_override
 from gravity_sdk.sql.export import build_paged_sql
+from gravity_sdk.sql.failures import execution_evidence
 from gravity_sdk.sql.products import (
     EVIDENCE_PATH,
     EvidenceFormatError,
@@ -243,6 +244,7 @@ def _emit_query_error(
     field: str | None = None,
 ) -> int:
     exit_code = sql_error_exit_code(category)
+    stage = "shape" if category == "contract" else "execute" if category == "runtime" else "bind"
     print(
         json_output.dumps(
             {
@@ -256,6 +258,16 @@ def _emit_query_error(
                     "code": code,
                     "field": field,
                     "message": message,
+                    "stage": stage,
+                    "retryable": category == "runtime",
+                    "reached_sql_engine": "unknown" if category == "runtime" else "no",
+                    "upstream_error": {
+                        "category": "unexpected_failure" if category == "runtime" else "not_reached",
+                        "code": code,
+                    },
+                    "execution_evidence": execution_evidence(
+                        elapsed_seconds=0, request_count=0, request_count_bound=1
+                    ),
                     "next_action": (
                         "Run `gravity auth status`; refresh or configure credentials, then retry."
                         if category == "authentication"
@@ -264,7 +276,7 @@ def _emit_query_error(
                         if category == "input"
                         else "Inspect the governed SQL product contract and local state."
                         if category in {"contract", "local_io"}
-                        else "Retry after checking Gravity authentication and availability."
+                        else "Retry the same query once; if it fails again, run `gravity doctor --live`."
                     ),
                 },
             },
@@ -483,7 +495,7 @@ def _run_query_command(
         return _emit_query_error(
             "Gravity SQL query failed",
             category="runtime",
-            code="SQL_PRODUCT_RUNTIME_FAILED",
+            code="SQL_UNEXPECTED_FAILURE",
         )
 
 

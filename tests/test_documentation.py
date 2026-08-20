@@ -113,13 +113,12 @@ class DocumentationArchitectureTests(unittest.TestCase):
         ]
         self.assertEqual([], offenders)
 
-    def test_candidate_matrix_has_18_unique_operations(self) -> None:
+    def test_candidate_matrix_has_19_unique_operations(self) -> None:
         """Adding a row is a deliberate act, so the count is pinned.
 
-        Went 17 -> 18 for `material.asset.fetch` when issue #19's verdict
-        landed: the operation is already stable, but whether it resolves a
-        historical platform material id is unproven, and that gap needs a
-        row with a blocker and a next-evidence step like every other entry.
+        Went 18 -> 19 for issue #28's `sql.user-event.aggregate-join` verdict:
+        the local failure classification is now precise, while upstream join
+        support still needs one sanitized protocol sample or an owner contract.
         """
 
         rows = [
@@ -130,8 +129,8 @@ class DocumentationArchitectureTests(unittest.TestCase):
             if line.startswith("| `")
         ]
         operations = [row.split("|", 2)[1].strip().strip("`") for row in rows]
-        self.assertEqual(18, len(operations))
-        self.assertEqual(18, len(set(operations)))
+        self.assertEqual(19, len(operations))
+        self.assertEqual(19, len(set(operations)))
 
     def test_retired_document_paths_are_absent(self) -> None:
         retired = [

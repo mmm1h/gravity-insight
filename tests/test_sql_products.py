@@ -41,6 +41,7 @@ from gravity_sdk.sql.products import (
 
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLE_WORKSPACE = ROOT / "examples" / "workspace" / "gravity.toml"
+JOIN_FAILURE_WORKSPACE = ROOT / "tests" / "fixtures" / "sql-user-event-join-failure.toml"
 
 
 class _AggregateClient:
@@ -614,6 +615,77 @@ class GravityProductTests(unittest.TestCase):
         self.assertIsNone(payload["evidence_reference"])
         self.assertIn("without an Evidence reference", payload["evidence_warning"])
 
+    def test_query_cli_classifies_user_event_aggregate_join_failure(self):
+        class JoinRejectingRuntime:
+            def __init__(self):
+                self.sql: list[str] = []
+
+            def request(self, _profile, _method, _path, *, json_body, **_kwargs):
+                sql = json_body["sql"]
+                self.sql.append(sql)
+                return mock.Mock(
+                    status_code=200,
+                    payload={
+                        "status": "REJECTED",
+                        "code": "JOIN_REJECTED_FIXTURE",
+                        "msg": f"unreviewed planner detail: {sql}",
+                        "extra": {"error": {"app_id": 76543210, "sql": sql}},
+                    },
+                )
+
+        runtime = JoinRejectingRuntime()
+        output = io.StringIO()
+        with mock.patch.dict(
+            os.environ, {"GRAVITY_WORKSPACE": str(JOIN_FAILURE_WORKSPACE)}
+        ), mock.patch.object(
+            gravity_cli.sys,
+            "argv",
+            [
+                "gravity_sdk.sql",
+                "query",
+                "user-event-aggregate",
+                "--start",
+                "2026-07-22T00:00:00",
+                "--end",
+                "2026-07-23T00:00:00",
+            ],
+        ), mock.patch(
+            "gravity_sdk.sql.__main__.resolve_current_evidence",
+            side_effect=EvidenceFormatError("missing"),
+        ), mock.patch(
+            "gravity_sdk.sql.__main__._client",
+            return_value=GravityClient(runtime),
+        ), redirect_stdout(output), redirect_stderr(io.StringIO()):
+            self.assertEqual(3, gravity_cli.main())
+
+        rendered = output.getvalue()
+        payload = json.loads(rendered)
+        error = payload["error"]
+        self.assertEqual("gravity-sql.query.v1", payload["schema_version"])
+        self.assertEqual("SQL_ENGINE_REJECTED", error["code"])
+        self.assertEqual("plan", error["stage"])
+        self.assertEqual("engine_rejected", error["upstream_error"]["category"])
+        self.assertFalse(error["retryable"])
+        self.assertEqual("yes", error["reached_sql_engine"])
+        self.assertEqual(1, error["execution_evidence"]["request_count"])
+        protocol = error["upstream_error"]["protocol_status"]
+        self.assertEqual("JOIN_REJECTED_FIXTURE", protocol["code"]["value"])
+        self.assertFalse(protocol["msg"]["value_persisted"])
+        self.assertEqual("object", protocol["extra_error"]["value_type"])
+        self.assertEqual(1, len(runtime.sql))
+        self.assertIn("`default`.`user`", runtime.sql[0])
+        self.assertIn("`default`.`event`", runtime.sql[0])
+        for secret in (
+            runtime.sql[0],
+            "`default`.`user`",
+            "`default`.`event`",
+            "PRIVATE_CHANNEL_SENTINEL",
+            "PRIVATE_EVENT_SENTINEL",
+            "76543210",
+            "unreviewed planner detail",
+        ):
+            self.assertNotIn(secret, rendered)
+
     def test_product_batch_defaults_to_concurrent_ordered_isolated_execution(self):
         lock = threading.Lock()
         active = 0
@@ -662,6 +734,11 @@ class GravityProductTests(unittest.TestCase):
         self.assertEqual("partial", result["status"])
         self.assertEqual(4, result["succeeded_count"])
         self.assertEqual(1, result["failed_count"])
+        self.assertEqual(4, result["execution_evidence"]["request_count"])
+        self.assertEqual(
+            0,
+            result["results"][2]["error"]["execution_evidence"]["request_count"],
+        )
         self.assertEqual(2, max_active)
         self.assertEqual(
             ["0", "1", "invalid", "2", "3"],
