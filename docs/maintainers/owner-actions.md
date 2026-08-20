@@ -48,17 +48,21 @@ candidate job (wheel smoke, Ruff, dependency audit, secret scan) was written
 against `ubuntu-latest`. The checks were run locally instead, so the facts are
 known even though nothing enforces them yet.
 
-Reported by the executing agent on 2026-08-20; **not yet independently
-re-measured**, so treat the numbers as leads rather than settled counts.
+Reported by the executing agent on 2026-08-20. The `pip-audit` finding below
+was independently re-measured; the remaining counts are leads rather than
+settled counts.
 
 | Check | Result | Follow-up |
 |---|---|---|
 | wheel + sdist build | 1 wheel, 1 sdist; all 4 sampled package-data files present | none — packaging is not currently dropping contract/manifest/census data |
 | Ruff, default rules | 1276 findings | not triaged; out of scope this round |
 | Ruff, `F` (pyflakes) only | 69 findings | worth a pass — `F` catches unused imports and undefined names, not style |
-| pip-audit | `requests==2.32.5` → `PYSEC-2026-2275`, fixed in `2.33.0` | **verify, then decide**: bump the pin, or relax to a range and pin in dev constraints |
+| pip-audit | `PYSEC-2026-2275` is real; `requests==2.32.5` was affected and `2.33.0` fixes it | upgraded both exact pins to `2.33.0`; this SDK does not call the sole affected API, `extract_zipped_paths()`; range-based library pinning remains an owner decision |
 
-The dependency finding is the one with a real deadline. `requirements.txt` pins
-`requests` exactly, so the fix is a deliberate bump rather than a resolver
-decision. Confirm the advisory applies to how this SDK uses `requests` before
-changing the pin, and run the suite after.
+The dependency advisory applies to all Requests releases before `2.33.0`, but
+only applications that directly call `requests.utils.extract_zipped_paths()`
+are exposed. This SDK has no such call, so the completed bump is routine
+dependency maintenance rather than an emergency runtime mitigation. The
+runtime pins remain exact and synchronized; changing the library pin policy to
+a compatible range would alter downstream installation behavior and needs a
+separate owner decision.
