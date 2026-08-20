@@ -138,8 +138,8 @@ def _strict_composite_query(name: str, query: str) -> bool:
         from .agent_multidim import multidim_query
 
         return multidim_query(query)
-    from .agent_report_routing import REPORT_PRODUCTS, report_product_query
-    if name in REPORT_PRODUCTS:
+    from .agent_report_routing import NO_SPEC_PRODUCTS, report_product_query
+    if name in NO_SPEC_PRODUCTS:
         return report_product_query(name, query)
     if name == "material_performance":
         from .agent_material_performance import material_performance_query

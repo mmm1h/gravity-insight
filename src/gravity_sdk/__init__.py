@@ -39,6 +39,7 @@ _EXPORTS = {
     "ExportRuntimeError": (".export_runtime", "ExportRuntimeError"),
     "ExportState": (".export_runtime", "ExportState"),
     "GravityClient": (".sql", "GravityClient"),
+    "GravityInsightError": (".error_models", "GravityInsightError"),
     "SqlBatchRequest": (".sql", "SqlBatchRequest"),
     "SqlBatchResult": (".sql", "SqlBatchResult"),
     "build_sql_client": (".sql", "build_sql_client"),
@@ -142,11 +143,9 @@ _EXPORTS = {
     "resolve_saved_analysis": (".saved_analysis", "resolve_saved_analysis"),
 }
 
-for _error_name in (
+for _sdk_error_name in (
     "AuthenticationError",
     "CredentialError",
-    "GravityInsightError",
-    "GravityExportError",
     "InputValidationError",
     "ManifestError",
     "PaginationError",
@@ -154,14 +153,19 @@ for _error_name in (
     "PermissionUnavailableError",
     "PolicyViolation",
     "SemanticRejectedError",
-    "SqlResponseError",
-    "SqlValidationError",
     "TransportError",
     "UnknownOperationError",
     "UpstreamContradictedRequestError",
     "UpstreamError",
 ):
-    _EXPORTS[_error_name] = (".errors", _error_name)
+    _EXPORTS[_sdk_error_name] = (".error_types", _sdk_error_name)
+
+for _sql_error_name in (
+    "GravityExportError",
+    "SqlResponseError",
+    "SqlValidationError",
+):
+    _EXPORTS[_sql_error_name] = (".error_sql", _sql_error_name)
 
 
 def __getattr__(name: str) -> Any:
