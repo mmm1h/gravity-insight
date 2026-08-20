@@ -357,6 +357,9 @@ gravity promotion performance --app main --start 2026-08-01 --end 2026-08-07 `
 输出保留原生物理字段和平台声明序，不做跨平台归一、总计、排名或策略。
 完整结果可用 `--output <path>` 写入 JSON；该产品不提供 NDJSON，以免拆散平台 component、分页
 收据和 partial 失败信息。
+operation 合同声明为 opaque JSON 的行字段只在产品深度、元素数和序列化大小边界内保留；普通
+字段仍必须是有界 scalar。类型变化、超界结构和未登记字段继续返回 `contract_changed`，组件的
+`drift_diagnostics` 只给固定检查类别与字段路径，不回显行值或业务标识。
 同一个指标数组会发给每个所选平台；多个平台只有在各自实时元数据都证明该同名物理指标时才应
 放进同一请求。平台原生指标名不同则使用同层 Plan 节点并发，SDK 不猜字段映射。
 平台已知而指标未知时，可先用

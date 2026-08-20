@@ -1,6 +1,12 @@
 """Registered native row fields for Promotion Performance."""
 
 from types import MappingProxyType
+from typing import Any, Sequence
+
+from .domains import PROMOTION_PRIMARY_OPERATIONS
+from .errors import ManifestError
+from .models import load_operation_manifest
+from .paths import MANIFEST_ROOT
 
 
 COMMON_ROW_FIELDS = frozenset(
@@ -41,3 +47,44 @@ def promotion_row_fields(platforms: tuple[str, ...]) -> MappingProxyType[str, fr
             for platform in platforms
         }
     )
+
+
+def promotion_opaque_json_fields(
+    platforms: tuple[str, ...], operations: Sequence[Any] | None = None
+) -> MappingProxyType[str, frozenset[str]]:
+    """Derive opaque row boundaries from the compiled promotion manifest."""
+
+    loaded = (
+        tuple(load_operation_manifest(MANIFEST_ROOT / "promotion.json"))
+        if operations is None
+        else tuple(operations)
+    )
+    by_id = {
+        operation.operation_id: operation
+        for operation in loaded
+        if getattr(operation, "operation_id", None)
+    }
+    selected: dict[str, frozenset[str]] = {}
+    for platform in platforms:
+        operation_id = PROMOTION_PRIMARY_OPERATIONS.get(platform)
+        operation = by_id.get(operation_id)
+        if operation is None:
+            raise ManifestError(
+                "compiled promotion manifest is missing a primary operation"
+            )
+        projection = operation.response_projection
+        opaque = frozenset(projection.opaque_json_item_keys)
+        if opaque - set(projection.item_keys):
+            raise ManifestError(
+                "compiled promotion opaque JSON fields are not registered item keys"
+            )
+        selected[platform] = opaque
+    return MappingProxyType(selected)
+
+
+__all__ = [
+    "COMMON_ROW_FIELDS",
+    "PLATFORM_ROW_FIELDS",
+    "promotion_opaque_json_fields",
+    "promotion_row_fields",
+]

@@ -6,6 +6,7 @@ from pathlib import Path
 import unittest
 
 from gravity_sdk.composite import CompositeService
+from gravity_sdk.composite_result import bounded_structural_drift_diagnostics
 from gravity_sdk.domains import PROMOTION_PRIMARY_OPERATIONS
 from gravity_sdk.errors import (
     GravityInsightError, InputValidationError, LocalIOError, PaginationError)
@@ -16,8 +17,14 @@ from gravity_sdk.promotion_performance import (
     promotion_performance_input_schema,
 )
 from gravity_sdk.promotion_performance_result import (
+    PROMOTION_OPAQUE_JSON_FIELDS,
     PROMOTION_ROW_FIELDS,
     safe_component,
+)
+from gravity_sdk.promotion_performance_rows import (
+    MAX_JSON_STRING_LENGTH,
+    MAX_OPAQUE_JSON_DEPTH,
+    MAX_OPAQUE_JSON_ELEMENTS,
 )
 
 
@@ -61,6 +68,45 @@ def _success(platform, rows=None, *, status="success", page=None):
         ),
         "error": None,
     }
+
+
+def _bytedance_26_success(row_count=246):
+    rows = [
+        {
+            "app_id": "17",
+            "date": "2026-08-01",
+            "advertiser_id": f"advertiser-{index}",
+            "stat_cost": index + 0.5,
+            "delay": 0,
+            "operator_id": "operator-id-value",
+            "operator_name": "operator-name-value",
+            "project_list": [
+                {"project_id": f"project-{index}", "labels": ["active"]}
+            ],
+        }
+        for index in range(row_count)
+    ]
+    pages = max(1, (row_count + 9) // 10)
+    result = _success(
+        "bytedance",
+        rows,
+        page={
+            "number": 1,
+            "size": 10,
+            "item_count": row_count,
+            "total_pages": pages,
+            "total_items": row_count,
+            "has_more": False,
+            "pages_fetched": pages,
+            "max_workers": 1,
+        },
+    )
+    result["data"].update(
+        completeness="complete",
+        pagination_evidence="production",
+        schema_fingerprint="0" * 64,
+    )
+    return result
 
 
 class _BatchClient:
@@ -212,6 +258,14 @@ class PromotionPerformanceTests(unittest.TestCase):
                     set(PROMOTION_ROW_FIELDS[platform]),
                 )
                 self.assertEqual(
+                    set(
+                        operation["response_projection"].get(
+                            "opaque_json_item_keys", []
+                        )
+                    ),
+                    set(PROMOTION_OPAQUE_JSON_FIELDS[platform]),
+                )
+                self.assertEqual(
                     ["query_fields"],
                     operation["response_projection"]["dynamic_item_fields"],
                 )
@@ -330,6 +384,187 @@ class PromotionPerformanceTests(unittest.TestCase):
         missing = copy.deepcopy(unknown_code)
         missing["error"]["code"] = "BATCH_RESULT_MISSING"
         self.assertEqual("error", _safe(missing)["status"])
+
+    def test_bytedance_26_success_crosses_component_and_top_level_product(self):
+        component = _bytedance_26_success()
+        safe = safe_component(
+            component,
+            "bytedance",
+            metrics=("stat_cost",),
+            expected_app_id="17",
+            expected_window=("2026-08-01", "2026-08-07"),
+            max_pages=100,
+        )
+        self.assertEqual(("success", 246), (safe["status"], safe["returned_items"]))
+        self.assertEqual(
+            component["data"]["data"]["list"][0]["project_list"],
+            safe["data"]["list"][0]["project_list"],
+        )
+        self.assertIsNot(
+            component["data"]["data"]["list"][0]["project_list"],
+            safe["data"]["list"][0]["project_list"],
+        )
+
+        class CurrentComponentClient:
+            def batch(self, _requests, **_options):
+                return [copy.deepcopy(component)]
+
+        product = promotion_performance(
+            CurrentComponentClient(),
+            17,
+            "2026-08-01",
+            "2026-08-07",
+            platforms=("bytedance",),
+            metrics=("stat_cost",),
+            max_pages=100,
+            max_items=1_000,
+        )
+        self.assertEqual((True, "success", 246), (
+            product["ok"], product["status"], product["returned_items"]
+        ))
+        self.assertEqual(
+            component["data"]["data"]["list"][0]["project_list"],
+            product["results"][0]["data"]["list"][0]["project_list"],
+        )
+
+    def test_opaque_json_is_bounded_and_ordinary_row_drift_stays_closed(self):
+        cases = []
+        too_deep = 0
+        for _ in range(MAX_OPAQUE_JSON_DEPTH + 2):
+            too_deep = [too_deep]
+        cases.append((too_deep, "row_field_opaque_json_bounds"))
+        cases.append((
+            [0] * MAX_OPAQUE_JSON_ELEMENTS,
+            "row_field_opaque_json_bounds",
+        ))
+        cases.append((
+            ["x" * MAX_JSON_STRING_LENGTH] * 5,
+            "row_field_opaque_json_bounds",
+        ))
+        cases.append(({1: "invalid-key"}, "row_field_opaque_json_rule"))
+        for project_list, expected_check in cases:
+            with self.subTest(expected_check=expected_check):
+                component = _bytedance_26_success(1)
+                component["data"]["data"]["list"][0]["project_list"] = project_list
+                safe = safe_component(
+                    component,
+                    "bytedance",
+                    metrics=("stat_cost",),
+                    expected_app_id="17",
+                    expected_window=("2026-08-01", "2026-08-07"),
+                    max_pages=100,
+                )
+                self.assertEqual("contract_changed", safe["status"])
+                self.assertEqual(
+                    expected_check,
+                    safe["drift_diagnostics"]["failures"][0]["check"],
+                )
+
+        destructive = _bytedance_26_success(1)
+        del destructive["data"]["data"]["list"]
+        changed_type = _bytedance_26_success(1)
+        changed_type["data"]["data"]["list"][0]["operator_name"] = {
+            "nested": "private-operator-value"
+        }
+        unregistered = _bytedance_26_success(1)
+        unregistered["data"]["data"]["list"][0][
+            "private-business-value-as-field"
+        ] = "private-business-value"
+        for component, expected_check in (
+            (destructive, "read_data_required"),
+            (changed_type, "row_field_scalar_rule"),
+            (unregistered, "row_field_registration"),
+        ):
+            safe = safe_component(
+                component,
+                "bytedance",
+                metrics=("stat_cost",),
+                expected_app_id="17",
+                expected_window=("2026-08-01", "2026-08-07"),
+                max_pages=100,
+            )
+            self.assertEqual("contract_changed", safe["status"])
+            self.assertEqual(
+                expected_check,
+                safe["drift_diagnostics"]["failures"][0]["check"],
+            )
+            rendered = repr(safe["drift_diagnostics"])
+            self.assertNotIn("private-operator-value", rendered)
+            self.assertNotIn("private-business-value", rendered)
+
+    def test_diagnostics_are_bounded_value_free_and_binding_stays_closed(self):
+        component = _bytedance_26_success(1)
+        component["data"]["data"]["list"][0]["operator_name"] = {
+            "private-nested-key": "private-operator-name"
+        }
+        safe = safe_component(
+            component,
+            "bytedance",
+            metrics=("stat_cost",),
+            expected_app_id="17",
+            expected_window=("2026-08-01", "2026-08-07"),
+            max_pages=100,
+        )
+        diagnostics = safe["drift_diagnostics"]
+        self.assertEqual(
+            {
+                "check": "row_field_scalar_rule",
+                "path": "$.data.data.list[0].operator_name",
+            },
+            diagnostics["failures"][0],
+        )
+        self.assertNotIn("private-nested-key", repr(diagnostics))
+        self.assertNotIn("private-operator-name", repr(diagnostics))
+
+        class ChangedComponentClient:
+            def batch(self, _requests, **_options):
+                return [copy.deepcopy(component)]
+
+        product = promotion_performance(
+            ChangedComponentClient(),
+            17,
+            "2026-08-01",
+            "2026-08-07",
+            platforms=("bytedance",),
+            metrics=("stat_cost",),
+            max_pages=100,
+            max_items=10,
+        )
+        self.assertEqual("contract_changed", product["status"])
+        self.assertEqual(
+            diagnostics, product["results"][0]["drift_diagnostics"]
+        )
+        self.assertNotIn("private-operator-name", repr(product))
+
+        many = bounded_structural_drift_diagnostics(
+            PROMOTION_PLATFORM_OPERATIONS["bytedance"],
+            [(f"check_{index}", f"$.data.list[{index}]") for index in range(12)],
+        )
+        self.assertEqual(8, len(many["failures"]))
+        self.assertTrue(all(
+            len(item["check"]) <= 160 and len(item["path"]) <= 160
+            for item in many["failures"]
+        ))
+
+        for field, private_value in (
+            ("app_id", "999"),
+            ("date", "2026-09-09"),
+        ):
+            bound = _bytedance_26_success(1)
+            bound["data"]["data"]["list"][0][field] = private_value
+            rejected = safe_component(
+                bound,
+                "bytedance",
+                metrics=("stat_cost",),
+                expected_app_id="17",
+                expected_window=("2026-08-01", "2026-08-07"),
+                max_pages=100,
+            )
+            self.assertEqual("contract_changed", rejected["status"])
+            failure = rejected["drift_diagnostics"]["failures"][0]
+            self.assertEqual("request_binding", failure["check"])
+            self.assertTrue(failure["path"].endswith(field))
+            self.assertNotIn(private_value, repr(rejected["drift_diagnostics"]))
 
     def test_partial_error_is_sanitized_and_preserves_primary_exit(self):
         class PartialClient:

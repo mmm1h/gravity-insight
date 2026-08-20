@@ -22,9 +22,11 @@
   可大于观察值；Promotion 固定 `size=10`，且非空 totals 必须等于观察值。`safe_component`/
   `_safe_success` 还分别持有单 operation 对多 operation、Promotion App/window/metrics binding、允许的
   data 字段和返回组件字段；`product_envelope` 的领域字段也不同。它们不再作为“完全等价重复”处理。
-- **剩余证据债**：`_safe_rows` 的循环骨架相似，但 Material 使用固定字段集并规范化 key，Promotion
-  合并平台字段与请求 metrics 且显式拒绝非字符串 key；现有测试不能证明参数化提取对全部 Mapping
-  边界逐字段等价。`_primary_error` 的选择/复制骨架相似，但缺失 error 时必须调用各自
+- **剩余证据债**：Material 的 `_safe_rows` 只接受固定字段集与 scalar 并规范化 key；Promotion 的
+  `promotion_performance_rows.safe_promotion_rows` 合并平台字段与请求 metrics、显式拒绝非字符串 key，
+  还从编译合同派生 opaque JSON 字段，施加独立深度/元素/序列化大小边界并返回值无关的失败路径。
+  两边当前行为已进一步分叉，现有测试不能证明参数化提取对全部 Mapping 边界逐字段等价。
+  `_primary_error` 的选择/复制骨架相似，但缺失 error 时必须调用各自
   `contract_component`，operation identity 与错误文案不同；现有测试也不足以证明进一步拆分不会改变
   malformed 输入行为。因此两者暂留各自 owner，本条不关闭。
 - **触发条件**：任一产品再次修改标量 row copy 或 primary error selection；或出现第三个采用相同

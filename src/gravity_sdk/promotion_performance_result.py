@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import copy
 from collections.abc import Mapping, Sequence
-import math
 from types import MappingProxyType
 from typing import Any
 
@@ -19,6 +18,7 @@ from .component_aggregate import (
     aggregate_status,
     component_exit_code,
 )
+from .composite_result import bounded_structural_drift_diagnostics
 from .domains import PROMOTION_PRIMARY_OPERATIONS
 from .errors import ErrorCategory, ErrorCode, ErrorDetail, exit_code_for_error
 from .promotion_performance_error import (
@@ -26,8 +26,12 @@ from .promotion_performance_error import (
     failure_matches as _failure_matches,
     safe_performance_error as _safe_error,
 )
-from .promotion_performance_binding import rows_match_performance_request
-from .promotion_projection import promotion_row_fields
+from .promotion_performance_binding import performance_request_mismatch_path
+from .promotion_performance_rows import safe_promotion_rows
+from .promotion_projection import (
+    promotion_opaque_json_fields,
+    promotion_row_fields,
+)
 from .result_audit import aggregate_result_audit
 from .result_source import GOVERNED_PRODUCT, result_source
 
@@ -82,6 +86,7 @@ PROMOTION_PLATFORM_RESOURCES = MappingProxyType(
 )
 
 PROMOTION_ROW_FIELDS = promotion_row_fields(SUPPORTED_PLATFORMS)
+PROMOTION_OPAQUE_JSON_FIELDS = promotion_opaque_json_fields(SUPPORTED_PLATFORMS)
 # Identity, time, hierarchy and status fields are useful native output columns,
 # but they are not physical performance metrics.  Requiring metric inputs to
 # stay outside this set prevents static projection fields from bypassing the
@@ -137,15 +142,17 @@ def safe_component(
 
     operation_id = PROMOTION_PLATFORM_OPERATIONS.get(platform)
     if operation_id is None or not isinstance(value, Mapping):
-        return contract_component(platform)
+        return _contract_failure(platform, "component_shape", "$")
     if (
         value.get("operation_id") != operation_id
         or value.get("request_id") != platform
     ):
-        return contract_component(platform)
+        return _contract_failure(
+            platform, "component_identity", "$.operation_id_or_request_id"
+        )
     status = value.get("status")
     if not isinstance(status, str):
-        return contract_component(platform)
+        return _contract_failure(platform, "component_status_type", "$.status")
     if value.get("ok") is True and status in _SUCCESS_STATUSES:
         return _safe_success(
             value,
@@ -159,9 +166,11 @@ def safe_component(
     if value.get("ok") is False and status in _FAILURE_STATUSES:
         error = _safe_error(value.get("error"), platform)
         if error is None or not _failure_matches(status, error["code"]):
-            return contract_component(platform)
+            return _contract_failure(platform, "component_error", "$.error")
         if error["code"] == ErrorCode.CONTRACT_CHANGED.value:
-            return contract_component(platform)
+            return _contract_failure(
+                platform, "component_contract_status", "$.status"
+            )
         return {
             **_component_identity(platform),
             "ok": False,
@@ -173,7 +182,7 @@ def safe_component(
             "returned_items": 0,
             "error": error,
         }
-    return contract_component(platform)
+    return _contract_failure(platform, "component_status", "$.status")
 
 
 def _safe_success(
@@ -188,37 +197,31 @@ def _safe_success(
 ) -> dict[str, Any]:
     operation_id = PROMOTION_PLATFORM_OPERATIONS[platform]
     if value.get("error") not in (None, {}):
-        return contract_component(platform)
+        return _contract_failure(platform, "success_error", "$.error")
     envelope = value.get("data")
     if not isinstance(envelope, Mapping):
-        return contract_component(platform)
+        return _contract_failure(platform, "read_envelope_type", "$.data")
     if (
         envelope.get("schema_version") != "gravity-insight.read.v1"
         or envelope.get("operation_id") != operation_id
         or envelope.get("status") != status
         or envelope.get("error") not in (None, {})
     ):
-        return contract_component(platform)
-    data = envelope.get("data")
-    if (
-        not isinstance(data, Mapping)
-        or "list" not in data
-        or set(data) - {"list", "page_info", "total", "update_at"}
-    ):
-        return contract_component(platform)
-    allowed_fields = PROMOTION_ROW_FIELDS[platform] | frozenset(metrics)
-    rows = _safe_rows(data.get("list"), allowed_fields=allowed_fields)
-    if (
-        rows is None
-        or not rows_match_performance_request(
-            rows, expected_app_id, expected_window
-        )
-        or (status == "empty") != (not rows)
-    ):
-        return contract_component(platform)
+        return _contract_failure(platform, "read_envelope_identity", "$.data")
+    rows, failure = _success_rows(
+        envelope,
+        platform=platform,
+        status=status,
+        metrics=metrics,
+        expected_app_id=expected_app_id,
+        expected_window=expected_window,
+    )
+    if failure is not None or rows is None:
+        check, path = failure or ("row_projection", "$.data.data.list")
+        return _contract_failure(platform, check, path)
     page = _safe_page(envelope.get("page"), len(rows), max_pages=max_pages)
     if page is None:
-        return contract_component(platform)
+        return _contract_failure(platform, "page_receipt", "$.data.page")
     return {
         **_component_identity(platform),
         "ok": True,
@@ -232,6 +235,40 @@ def _safe_success(
     }
 
 
+def _success_rows(
+    envelope: Mapping[str, Any],
+    *,
+    platform: str,
+    status: str,
+    metrics: Sequence[str],
+    expected_app_id: str,
+    expected_window: tuple[str, str],
+) -> tuple[list[dict[str, Any]] | None, tuple[str, str] | None]:
+    data = envelope.get("data")
+    if not isinstance(data, Mapping):
+        return None, ("read_data_type", "$.data.data")
+    if "list" not in data:
+        return None, ("read_data_required", "$.data.data.list")
+    if set(data) - {"list", "page_info", "total", "update_at"}:
+        return None, ("read_data_registration", "$.data.data.<unregistered>")
+    allowed_fields = PROMOTION_ROW_FIELDS[platform] | frozenset(metrics)
+    rows, row_failure = safe_promotion_rows(
+        data.get("list"),
+        allowed_fields=allowed_fields,
+        opaque_fields=PROMOTION_OPAQUE_JSON_FIELDS[platform],
+    )
+    if row_failure is not None or rows is None:
+        return None, row_failure or ("row_projection", "$.data.data.list")
+    mismatch_path = performance_request_mismatch_path(
+        rows, expected_app_id, expected_window
+    )
+    if mismatch_path is not None:
+        return None, ("request_binding", mismatch_path)
+    if (status == "empty") != (not rows):
+        return None, ("status_row_consistency", "$.status")
+    return rows, None
+
+
 def _component_identity(platform: str) -> dict[str, str]:
     operation_id = PROMOTION_PLATFORM_OPERATIONS.get(platform)
     resource = PROMOTION_PLATFORM_RESOURCES.get(platform)
@@ -240,24 +277,6 @@ def _component_identity(platform: str) -> dict[str, str]:
         "resource": resource or "unknown",
         "operation_id": operation_id or "unknown",
     }
-
-
-def _safe_rows(
-    value: Any, *, allowed_fields: frozenset[str]
-) -> list[dict[str, Any]] | None:
-    if not isinstance(value, list):
-        return None
-    rows: list[dict[str, Any]] = []
-    for item in value:
-        if not isinstance(item, Mapping) or set(item) - allowed_fields:
-            return None
-        row: dict[str, Any] = {}
-        for key, field_value in item.items():
-            if not isinstance(key, str) or not _json_scalar(field_value):
-                return None
-            row[key] = copy.deepcopy(field_value)
-        rows.append(row)
-    return rows
 
 
 def _safe_page(value: Any, rows: int, *, max_pages: int) -> dict[str, Any] | None:
@@ -348,7 +367,9 @@ def _optional_exact_total(value: Any, expected: int) -> bool:
     return value is None or (type(value) is int and value == expected)
 
 
-def contract_component(platform: str) -> dict[str, Any]:
+def contract_component(
+    platform: str, *, failure: tuple[str, str] | None = None
+) -> dict[str, Any]:
     operation_id = PROMOTION_PLATFORM_OPERATIONS.get(platform)
     detail = ErrorDetail.create(
         ErrorCode.CONTRACT_CHANGED,
@@ -359,7 +380,7 @@ def contract_component(platform: str) -> dict[str, Any]:
             "platform result contract is re-verified."
         ),
     )
-    return {
+    result = {
         **_component_identity(platform),
         "ok": False,
         "status": "contract_changed",
@@ -370,6 +391,15 @@ def contract_component(platform: str) -> dict[str, Any]:
         "returned_items": 0,
         "error": detail.to_dict(),
     }
+    if failure is not None:
+        result["drift_diagnostics"] = bounded_structural_drift_diagnostics(
+            operation_id or "unknown", [failure]
+        )
+    return result
+
+
+def _contract_failure(platform: str, check: str, path: str) -> dict[str, Any]:
+    return contract_component(platform, failure=(check, path))
 
 
 def contract_result() -> dict[str, Any]:
@@ -454,17 +484,8 @@ def _primary_error(failures: list[dict[str, Any]]) -> dict[str, Any] | None:
     return copy.deepcopy(dict(error))
 
 
-def _json_scalar(value: Any) -> bool:
-    if value is None or isinstance(value, bool):
-        return True
-    if isinstance(value, str):
-        return len(value) <= 8_192
-    if type(value) is int:
-        return value.bit_length() <= 256
-    return isinstance(value, float) and math.isfinite(value)
-
-
 __all__ = [
+    "PROMOTION_OPAQUE_JSON_FIELDS",
     "PROMOTION_PLATFORM_OPERATIONS",
     "PROMOTION_PLATFORM_RESOURCES",
     "PROMOTION_NON_METRIC_FIELDS",
