@@ -357,7 +357,14 @@ gravity promotion performance --app main --start 2026-08-01 --end 2026-08-07 `
 平台已知而指标未知时，可先用
 `gravity agent "promotion performance" --resolve-inputs '{"platforms":["bytedance"]}' --output metrics.json`；
 调用方精确选择后第二次执行上面的产品命令，执行端仍由 FieldPolicy live 复验。平台也未知时不适用。
-`bing/xiaohongshu/taptap/wechat_video` 不满足共同合同，继续使用兼容的 `promotion query/snapshot`。
+旧 `promotion snapshot` 子命令仍保留并按输入分流。`primary` 加上述 21 个正式平台（包括
+`--platform all`）必须用 `--app-id`、`--start/--end`、`--metrics` 提供统一绑定，返回同一个
+`gravity-insight.promotion-performance.v1` envelope。非 primary 层级以及
+`bing/xiaohongshu/taptap/wechat_video` 保留 stable inventory 兼容读取，只有匹配唯一 operation 才执行，
+多候选时列出候选并失败；其 `gravity-insight.composite.promotion.v1` envelope 以
+`compatibility.formal_binding_validation=not_performed` 明示未经正式绑定验证。`--platform all` 遇到
+非 primary `--level`、`--media`、维度、父级或未知 input 字段仍显式失败，不按 operation schema 静默
+忽略。Agent/Plan 只暴露正式产品；精确 raw 调试仍使用 `promotion query`。
 
 批量 wrapper 可由机器自描述，不需要猜 JSON 字段：
 
