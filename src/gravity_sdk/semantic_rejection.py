@@ -12,7 +12,7 @@ from typing import Any, Mapping
 
 from .actionable_error_values import actual_value
 from .domains import ANALYSIS_QUERY_OPERATIONS
-from .errors import SemanticRejectedError
+from .errors import SemanticRejectedError, UpstreamContradictedRequestError
 
 
 # Exact extra.error strings reproduced on App 29034827 (2026-08-18).
@@ -53,6 +53,17 @@ _CUSTOM_BEFORE_UNRESOLVED = (
     "before_custom to confirm the plain retention path still succeeds, and report "
     "the pair to the SDK maintainer rather than guessing another group_by_list"
 )
+# Same contradiction without a custom before: the compiler generated the group,
+# so the caller has nothing to correct.  Observed intermittently -- the identical
+# request succeeded on other runs -- so the honest remedy is to retry unchanged.
+# See issue #23.
+_CONTRADICTED_GROUP_CLAIM = (
+    "actual value: group_by_list already contains create_time/day, which the "
+    "compiler generates; allowed next action: do NOT add another group -- upstream "
+    "contradicted a grouping you sent correctly, and the identical request has "
+    "succeeded on other runs (issue #23). Retry the unchanged request; if it keeps "
+    "failing on one specific day, report that day to the SDK maintainer"
+)
 
 _FALLBACK_MESSAGE = "Gravity rejected the read operation"
 _RETENTION_QUERY = ANALYSIS_QUERY_OPERATIONS["retention"]
@@ -78,8 +89,12 @@ def classify_read_rejection(
     reviewed = _reviewed_remedy(extra_error)
     if reviewed is not None:
         field, next_action = reviewed
-        if field == "group_by_list" and _custom_before_already_grouped(request_inputs):
-            next_action = _CUSTOM_BEFORE_UNRESOLVED
+        if field == "group_by_list" and _create_time_already_grouped(request_inputs):
+            next_action = (
+                _CUSTOM_BEFORE_UNRESOLVED
+                if _carries_custom_before(request_inputs)
+                else _CONTRADICTED_GROUP_CLAIM
+            )
         return (
             field,
             f"Gravity rejected the read operation; classified extra.error={field}",
@@ -103,6 +118,13 @@ def raise_read_rejection(
     field, message, next_action = classify_read_rejection(
         payload, operation_id=operation_id, request_inputs=request_inputs
     )
+    if next_action in {_CONTRADICTED_GROUP_CLAIM, _CUSTOM_BEFORE_UNRESOLVED}:
+        raise UpstreamContradictedRequestError(
+            f"actual value: {actual_value(field)}; {message}",
+            field=field,
+            next_action=next_action,
+            http_receipts=http_receipts,
+        )
     raise SemanticRejectedError(
         f"actual value: {actual_value(field)}; {message}",
         field=field,
@@ -123,18 +145,12 @@ def _reviewed_remedy(extra_error: str) -> tuple[str, str] | None:
     return None
 
 
-def _custom_before_already_grouped(
+def _create_time_already_grouped(
     request_inputs: Mapping[str, Any] | None
 ) -> bool:
     """True when the caller already sent the group upstream claims is missing."""
 
     if not request_inputs:
-        return False
-    before_after = request_inputs.get("query_item_before_after")
-    if not isinstance(before_after, Mapping):
-        return False
-    custom = before_after.get("before_custom")
-    if not isinstance(custom, Mapping) or not custom:
         return False
     groups = request_inputs.get("group_by_list")
     if not isinstance(groups, (list, tuple)):
@@ -143,6 +159,18 @@ def _custom_before_already_grouped(
         isinstance(item, Mapping) and item.get("field") == "create_time"
         for item in groups
     )
+
+
+def _carries_custom_before(request_inputs: Mapping[str, Any] | None) -> bool:
+    """True when the request also carries the issue #21 custom-before cohort."""
+
+    if not request_inputs:
+        return False
+    before_after = request_inputs.get("query_item_before_after")
+    if not isinstance(before_after, Mapping):
+        return False
+    custom = before_after.get("before_custom")
+    return isinstance(custom, Mapping) and bool(custom)
 
 
 def _extra_error_text(payload: Mapping[str, Any]) -> str:
@@ -168,8 +196,8 @@ def _inferred_field(
             for item in groups
         ):
             return "group_by_list"
-    if operation_id in ANALYSIS_QUERY_OPERATIONS.values():
-        return "group_by_list"
+    # Naming group_by_list for every unclassified analysis rejection sent callers
+    # to inspect a grouping the compiler generated for them.  See issue #23.
     return "input"
 
 

@@ -158,6 +158,7 @@ for _error_name in (
     "SqlValidationError",
     "TransportError",
     "UnknownOperationError",
+    "UpstreamContradictedRequestError",
     "UpstreamError",
 ):
     _EXPORTS[_error_name] = (".errors", _error_name)

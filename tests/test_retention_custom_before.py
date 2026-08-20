@@ -134,10 +134,18 @@ class CustomBeforeRejectionRemedyTests(unittest.TestCase):
 
         self.assertIn("add create_time/day", next_action)
 
-    def test_plain_retention_without_custom_before_is_untouched(self) -> None:
+    def test_plain_retention_that_already_grouped_is_not_told_to_regroup(self) -> None:
+        """Issue #23 widened this: the contradiction is not custom-before specific.
+
+        This case previously asserted the original "add create_time/day" remedy.
+        That was wrong for the same reason #21 was -- the caller already sent the
+        group -- it just took a second report to see it without a custom before.
+        """
+
         _, _, next_action = self._classify({"group_by_list": list(self._GROUPS)})
 
-        self.assertIn("add create_time/day", next_action)
+        self.assertNotIn("add create_time/day", next_action)
+        self.assertIn("issue #23", next_action)
 
 
 if __name__ == "__main__":

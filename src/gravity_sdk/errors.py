@@ -405,6 +405,19 @@ class SemanticRejectedError(UpstreamError):
             bind_error_receipts(self, http_receipts)
 
 
+class UpstreamContradictedRequestError(SemanticRejectedError):
+    """Upstream blamed an input the caller demonstrably sent correctly.
+
+    Such a rejection is not deterministic and not the caller's to fix, so it
+    stays catchable as a semantic rejection but classifies as retryable
+    upstream.  See issue #23.
+    """
+
+    code = ErrorCode.UPSTREAM_UNAVAILABLE
+    category = ErrorCategory.UPSTREAM
+    retryable = True
+
+
 class ObjectAlreadyExistsError(InputValidationError):
     code = "OBJECT_ALREADY_EXISTS"
     category = ErrorCategory.CALLER

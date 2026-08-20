@@ -80,3 +80,59 @@ class SemanticRejectionTests(unittest.TestCase):
         self.assertIn("actual value:", error.next_action)
         self.assertNotIn("hidden", str(error))
         self.assertNotIn("hidden", error.next_action or "")
+
+
+class ContradictedGroupClaimTests(unittest.TestCase):
+    """Issue #23: upstream blamed a grouping the compiler generated correctly."""
+
+    _MISSING = {"extra": {"error": "入参错误：group_by_list缺失create_time"}}
+    _GENERATED = [{"type": "default_event", "field": "create_time", "group_by": "day"}]
+
+    def test_remedy_does_not_ask_for_the_group_already_sent(self) -> None:
+        _, _, next_action = classify_read_rejection(
+            self._MISSING,
+            operation_id=ANALYSIS_QUERY_OPERATIONS["event"],
+            request_inputs={"group_by_list": list(self._GENERATED)},
+        )
+
+        self.assertNotIn("add create_time/day", next_action)
+        self.assertIn("already", next_action)
+        self.assertIn("issue #23", next_action)
+
+    def test_contradicted_claim_is_upstream_and_retryable(self) -> None:
+        """Acceptance 2: a self-contradicting rejection is not a caller error."""
+
+        with self.assertRaises(SemanticRejectedError) as caught:
+            raise_read_rejection(
+                self._MISSING,
+                operation_id=ANALYSIS_QUERY_OPERATIONS["event"],
+                request_inputs={"group_by_list": list(self._GENERATED)},
+            )
+        error = caught.exception
+        self.assertEqual("upstream", error.category)
+        self.assertTrue(error.retryable)
+
+    def test_a_genuinely_missing_group_stays_a_caller_error(self) -> None:
+        """Acceptance 4: the real caller mistake must keep its old classification."""
+
+        with self.assertRaises(SemanticRejectedError) as caught:
+            raise_read_rejection(
+                self._MISSING,
+                operation_id=ANALYSIS_QUERY_OPERATIONS["retention"],
+                request_inputs={"group_by_list": [{"type": "user", "field": "$os"}]},
+            )
+        error = caught.exception
+        self.assertEqual("caller", error.category)
+        self.assertFalse(error.retryable)
+        self.assertIn("add create_time/day", error.next_action)
+
+    def test_unclassified_rejection_stops_guessing_group_by_list(self) -> None:
+        """Nothing in an event request points at a group; do not invent one."""
+
+        field, _, _ = classify_read_rejection(
+            {"extra": {"error": "private upstream detail"}},
+            operation_id=ANALYSIS_QUERY_OPERATIONS["event"],
+            request_inputs={"app_id": "1", "group_by_list": list(self._GENERATED)},
+        )
+
+        self.assertNotEqual("group_by_list", field)
