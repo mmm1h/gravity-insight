@@ -27,6 +27,7 @@ def _route(
     certainty: str = "high",
     module: str = "推广平台",
     platform: str | None = "xiaomi",
+    status: str = "uncovered_read",
 ) -> dict[str, object]:
     return {
         "business_module": module,
@@ -40,7 +41,7 @@ def _route(
         "path": path,
         "promotion_platform": platform,
         "semantic_evidence": ["read_action_path_token"],
-        "status": "uncovered_read",
+        "status": status,
         "ui_texts": ["列表"],
     }
 
@@ -69,6 +70,12 @@ class GravityInsightBulkDraftTests(unittest.TestCase):
                 certainty="medium",
                 module="其它",
                 platform=None,
+            ),
+            _route(
+                "/turbo_engine/api/v1/unsafe/query/",
+                module="其它",
+                platform=None,
+                status="unsafe_unknown",
             ),
         ]
         coverage_path = self.tmp_path / "coverage.json"
@@ -103,6 +110,7 @@ class GravityInsightBulkDraftTests(unittest.TestCase):
             "drafts"
         ]
         assert len({row["operation_id"] for row in draft_rows}) == 3
+        assert all(row["path"] != "/turbo_engine/api/v1/unsafe/query/" for row in draft_rows)
         campaign_ids = {
             row["operation_id"] for row in draft_rows if "/campaign/list/" in row["path"]
         }
