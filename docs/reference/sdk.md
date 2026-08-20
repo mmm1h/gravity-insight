@@ -898,6 +898,9 @@ batch = sql.execute_batch(
 只检查 SQL 是非空字符串。它不读取 workspace product，不校验 Evidence，也不替调用方执行
 聚合隐私或输出投影。团队产品和 Agent 应使用 `gravity sql query <product>`；直接 SDK 调用方
 必须自己拥有并审核 SQL 模板，不能把 `execute_sql()` 暴露为任意 SQL 工具。
+`execute_batch()` 会并发提交全部独立项并保持输入顺序；某项本地校验失败或引擎拒绝不会取消已经
+提交的其他项。该接口不伪装成可早停的依赖计划；需要统一失败诊断与有界请求计数时使用受治理的
+`gravity sql query` 产品信封。
 
 ## 错误与输出
 
