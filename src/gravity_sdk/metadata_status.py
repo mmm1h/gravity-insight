@@ -14,6 +14,7 @@ from .errors import ErrorCategory, InputValidationError, exit_code_for_category
 from .find_metadata import _catalog_values, _validate_schema
 from .metadata_onboarding import _app_id, _destination
 from .result_source import LOCAL_CATALOG, result_source
+from .runtime_scope import public_scoped_path
 
 
 SCHEMA_VERSION = "gravity.metadata-status.v1"
@@ -40,7 +41,7 @@ def metadata_status(
         "ok": True,
         "offline": True,
         "network_called": False,
-        "database": str(destination),
+        "database": public_scoped_path(destination, explicit=database is not None),
         "checked_at": _timestamp(checked_at),
         "max_age_hours": hours,
         "app_id": selected_app,

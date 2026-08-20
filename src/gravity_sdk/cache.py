@@ -204,7 +204,7 @@ class MetadataCache:
 
 
 def persisted_metadata_cache(registry: Any, isolation_key: str, isolated: bool) -> MetadataCache:
-    """Persist FieldPolicy snapshots; default env stays on the unscoped path."""
+    """Persist FieldPolicy snapshots under the principal generation scope."""
 
     return MetadataCache(
         (
@@ -214,7 +214,7 @@ def persisted_metadata_cache(registry: Any, isolation_key: str, isolated: bool) 
         ),
         isolation_key=isolation_key,
         persist=True,
-        persist_scope=isolation_key if isolated else "",
+        persist_scope=isolation_key,
     )
 
 

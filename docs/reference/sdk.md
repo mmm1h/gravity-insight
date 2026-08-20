@@ -859,11 +859,14 @@ results = client.batch(
 ```
 
 `from_env()` 默认加载包内编译 manifest，并让 Insight 与 SQL 复用同一个按
-`timeout/attempts` 配置的进程级 HTTP runtime；先访问哪一侧不会改变配置。
+`timeout/attempts` 配置、绑定当前 principal 与 credential generation 的 HTTP runtime；
+先访问哪一侧不会改变配置。账号或 credential generation 在同一 env 路径变化后，下一次
+`connect()` 构造新 Runtime，旧 Runtime 不再可用；host limiter 与进程级并发槽仍全局共享。
 测试必须注入显式 fake transport；普通单元测试不得连接生产 Gravity。
 
 进程内 metadata cache 只存 `is_metadata_operation()` 允许的 snapshot，TTL 10 分钟，
-key 是 `(operation_id, 规范化 inputs)`。FieldPolicy 仍按本次请求做校验，缓存的是
+key 还绑定当前 principal scope；默认 env 与显式 env 的磁盘 snapshot 都落到私有 scope
+目录。FieldPolicy 仍按本次请求做校验，缓存的是
 元数据快照，不是校验结论。成功 mutation 会清空该 cache。CLI 每次新进程，所以
 命令行连发不会命中；同一 `GravityInsightClient` / `GravitySDK` 实例连发会命中。
 `page` 不同就是不同 key：`page_size=1` 的第一页不能代替 `page_size=2000` 的全量。

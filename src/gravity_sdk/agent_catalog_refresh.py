@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from .metadata_sync import default_catalog_path, sync_all_apps
+from .runtime_scope import public_scoped_path
 from .support.documents import replace_atomic_durable
 
 
@@ -39,7 +40,12 @@ def refresh_complete_catalog(
         if result.get("ok") is True and result.get("status") == "success":
             replace_atomic_durable(staging, destination)
             staging = None
-        return {**result, "database": str(destination)}
+        return {
+            **result,
+            "database": public_scoped_path(
+                destination, explicit=database is not None
+            ),
+        }
     finally:
         if staging is not None:
             staging.unlink(missing_ok=True)

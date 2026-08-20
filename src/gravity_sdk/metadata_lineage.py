@@ -24,6 +24,7 @@ from .find_metadata import (
 from .runtime import call_batch
 from .result_source import LOCAL_CATALOG, result_source
 from .actionable_error_values import actual_value
+from .runtime_scope import public_scoped_path
 
 
 SCHEMA_VERSION = "gravity.metadata-table-lineage.v1"
@@ -161,9 +162,10 @@ def search_table_lineage(
     search_offset(offset)
     catalog = Path(database) if database is not None else _default_catalog_path()
     catalog = catalog.expanduser().resolve()
+    public_catalog = public_scoped_path(catalog, explicit=database is not None)
     if not catalog.is_file():
         raise InputValidationError(
-            f"actual value: {actual_value(str(catalog))}; " + ("metadata catalog does not exist; run `gravity metadata sync --all-apps "
+            f"actual value: {actual_value(public_catalog)}; " + ("metadata catalog does not exist; run `gravity metadata sync --all-apps "
             "--include-table-lineage`"),
             field="database",
             next_action=(
@@ -190,7 +192,7 @@ def search_table_lineage(
         "scope": "account",
         "observed": True,
         "query": query,
-        "database": str(catalog),
+        "database": public_catalog,
         "catalog": catalog_status,
         "count": len(page),
         "total": len(results),

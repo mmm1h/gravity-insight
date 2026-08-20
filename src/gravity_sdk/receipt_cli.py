@@ -45,10 +45,16 @@ def dispatch(
     _object_input: Callable[[str | None], Mapping[str, Any]],
 ) -> dict[str, Any]:
     from .paths import STATE_ROOT
+    from .runtime_scope import principal_state_root, runtime_scope_key
+
+    state_root = principal_state_root(
+        STATE_ROOT,
+        runtime_scope_key(workspace_root=STATE_ROOT),
+    )
 
     if args.receipt_command == "list":
         return list_http_receipts(
-            STATE_ROOT,
+            state_root,
             limit=args.limit,
             cursor=args.cursor,
             operation_id=args.operation_id,
@@ -60,9 +66,9 @@ def dispatch(
                 "receipt_id": args.receipt_id,
                 "storage_status": args.storage_status,
             }
-        return get_http_receipt(STATE_ROOT, reference)
+        return get_http_receipt(state_root, reference)
     return export_http_receipts(
-        STATE_ROOT,
+        state_root,
         args.receipt_destination,
         max_items=args.max_items,
         operation_id=args.operation_id,

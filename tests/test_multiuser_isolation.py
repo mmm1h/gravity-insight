@@ -3,23 +3,33 @@
 from __future__ import annotations
 
 import os
+import json
 import tempfile
 import unittest
+from argparse import Namespace
 from pathlib import Path
 from unittest import mock
 
+from gravity_sdk import connect
 from gravity_sdk.cache import MetadataCache
 from gravity_sdk.client import GravityInsightClient
+from gravity_sdk.credential_storage import session_path
 from gravity_sdk.credentials import CredentialProvider
-from gravity_sdk.find_metadata import _default_catalog_path
+from gravity_sdk.errors import CredentialError, InputValidationError
+from gravity_sdk.find_metadata import _default_catalog_path, search_metadata
 from gravity_sdk.shared_runtime import get_shared_runtime
 from gravity_sdk import shared_runtime as runtime_module
 from gravity_sdk.metadata_sync import default_catalog_path
+from gravity_sdk.metadata_status import metadata_status
+from gravity_sdk.receipt_cli import dispatch as receipt_dispatch
+from gravity_sdk.receipt import record_completed_http_response, request_receipt_context
 from gravity_sdk.runtime_scope import (
     env_isolation_key,
+    field_policy_cache_dir,
     metadata_catalog_path,
     operation_catalog_state_path,
     resolve_env_path,
+    runtime_scope_key,
 )
 from gravity_sdk.paths import PROJECT_ROOT
 
@@ -37,6 +47,13 @@ def _write_account(directory: Path, name: str, username: str) -> Path:
     return path
 
 
+def _write_session(path: Path, label: str) -> None:
+    session_path(path).write_text(
+        f"GRAVITY_AUTH_TOKEN=fixture-token-{label}\nGRAVITY_SESSION_USERNAME=fixture-{label}\n",
+        encoding="utf-8",
+    )
+
+
 class SharedRuntimeIsolationTests(unittest.TestCase):
     def setUp(self) -> None:
         _reset_shared_runtimes()
@@ -44,21 +61,88 @@ class SharedRuntimeIsolationTests(unittest.TestCase):
     def tearDown(self) -> None:
         _reset_shared_runtimes()
 
-    def test_two_env_files_get_distinct_shared_runtimes(self) -> None:
+    def test_same_path_account_change_replaces_all_identity_state(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
             directory = Path(raw)
-            first = _write_account(directory, "a.env.gravity.local", "user-a")
-            second = _write_account(directory, "b.env.gravity.local", "user-b")
-            runtime_a = get_shared_runtime(env_path=first, timeout=5.0, attempts=1)
-            runtime_b = get_shared_runtime(env_path=second, timeout=5.0, attempts=1)
-            again = get_shared_runtime(env_path=first, timeout=5.0, attempts=1)
+            path = _write_account(directory, "account.env.gravity.local", "fixture-a")
+            _write_session(path, "a")
+            sdk_a = connect(env_path=path)
+            runtime_a, client_a = sdk_a.sql._runtime, sdk_a.insight
+            runtime_a.__dict__["_GravityHttpRuntime__credentials"].get()
+            operation_id = next(iter(client_a._metadata_cache._operation_ids))
+            client_a._metadata_cache.get_or_load(operation_id, {}, lambda: {"fixture": "a"})
+            _write_account(directory, path.name, "fixture-b")
+            _write_session(path, "b")
+            sdk_b = connect(env_path=path)
+            runtime_b, client_b = sdk_b.sql._runtime, sdk_b.insight
+            runtime_b.__dict__["_GravityHttpRuntime__credentials"].get()
+            cached_b = client_b._metadata_cache.get_or_load(operation_id, {}, lambda: {"fixture": "b"})
         self.assertIsNot(runtime_a, runtime_b)
-        self.assertIs(runtime_a, again)
+        for name in ("session", "credentials"):
+            self.assertIsNot(runtime_a.__dict__[f"_GravityHttpRuntime__{name}"], runtime_b.__dict__[f"_GravityHttpRuntime__{name}"])
+        for name in ("_metadata_cache", "_operation_catalog", "_field_policy"):
+            self.assertIsNot(getattr(client_a, name), getattr(client_b, name))
+        self.assertNotEqual(client_a._operation_catalog._state_path, client_b._operation_catalog._state_path)
+        self.assertNotEqual(client_a._metadata_cache._persist_dir, client_b._metadata_cache._persist_dir)
+        self.assertNotEqual(sdk_a.workspace.state_root, sdk_b.workspace.state_root)
+        self.assertEqual({"fixture": "b"}, cached_b)
+        with self.assertRaises(CredentialError):
+            runtime_a.__dict__["_GravityHttpRuntime__credentials"].get()
+
+    def test_principal_runtimes_keep_process_governance_singletons(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            directory = Path(raw)
+            first = get_shared_runtime(env_path=_write_account(directory, "a.env", "fixture-a"))
+            second = get_shared_runtime(env_path=_write_account(directory, "b.env", "fixture-b"))
+        for name in ("limiter", "business_slots", "sql_slots"):
+            self.assertIs(first.__dict__[f"_GravityHttpRuntime__{name}"], second.__dict__[f"_GravityHttpRuntime__{name}"])
 
     def test_default_env_path_stays_the_checkout_local_file(self) -> None:
         selected, isolated = resolve_env_path(None)
         self.assertEqual(PROJECT_ROOT / ".env.gravity.local", selected)
         self.assertFalse(isolated)
+
+    def test_default_env_account_change_scopes_runtime_and_disk_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as raw, mock.patch(
+            "gravity_sdk.runtime_scope.PROJECT_ROOT", Path(raw)
+        ):
+            path = _write_account(Path(raw), ".env.gravity.local", "fixture-a")
+            first = get_shared_runtime()
+            first_paths = (operation_catalog_state_path(), metadata_catalog_path(), field_policy_cache_dir())
+            _write_account(Path(raw), path.name, "fixture-b")
+            second = get_shared_runtime()
+            second_paths = (operation_catalog_state_path(), metadata_catalog_path(), field_policy_cache_dir())
+        self.assertIsNot(first, second)
+        self.assertTrue(all(first_path != second_path for first_path, second_path in zip(first_paths, second_paths)))
+
+    def test_credential_generation_change_replaces_runtime(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            path = _write_account(Path(raw), "account.env", "fixture-account")
+            path.write_text(path.read_text(encoding="utf-8") + "GRAVITY_AUTH_UPDATED_AT=fixture-generation-a\n", encoding="utf-8")
+            first_scope, first = runtime_scope_key(path), get_shared_runtime(env_path=path)
+            path.write_text(path.read_text(encoding="utf-8").replace("generation-a", "generation-b"), encoding="utf-8")
+            second_scope, second = runtime_scope_key(path), get_shared_runtime(env_path=path)
+        self.assertNotEqual(first_scope.credential_generation, second_scope.credential_generation)
+        self.assertIsNot(first, second)
+
+    def test_scope_material_and_fingerprint_stay_out_of_public_output(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            root = Path(raw)
+            path = _write_account(root, "account.env", "fixture-private")
+            session_path(path).write_text(
+                "GRAVITY_AUTH_TOKEN=fixture-token\nGRAVITY_AUTH_UPDATED_AT=fixture-generation\nGRAVITY_PRINCIPAL_ID=fixture-principal\nGRAVITY_SESSION_USERNAME=fixture-private\n",
+                encoding="utf-8",
+            )
+            scope = runtime_scope_key(path, workspace_root=root)
+            receipt_root = root / "principals" / scope.fingerprint
+            record_completed_http_response(type("Response", (), {"status_code": 200})(), request_receipt_context(operation_id="app.list", method="GET", path="/fixture/read"), receipt_root)
+            with mock.patch.dict(os.environ, {"GRAVITY_ENV_FILE": str(path)}), mock.patch("gravity_sdk.paths.STATE_ROOT", root):
+                public = [metadata_status(), receipt_dispatch(Namespace(receipt_command="list", limit=1, cursor=None, operation_id=None), lambda _: {})]
+                with self.assertRaises(InputValidationError) as raised:
+                    search_metadata()
+            rendered = json.dumps(public) + repr(scope) + str(raised.exception)
+        for private in (str(path), "fixture-private", "pw-fixture-private", "fixture-token", "fixture-generation", "fixture-principal", scope.fingerprint):
+            self.assertNotIn(private, rendered)
 
     def test_gravity_env_file_selects_an_explicit_account_file(self) -> None:
         with tempfile.TemporaryDirectory() as raw:
