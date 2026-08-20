@@ -4,6 +4,13 @@
 
 闭环要求：已知输入一次、未知输入最多两次；CLI、SDK、Plan、Agent 四面可达；结果能区分成功、空、部分失败和能力缺口；未知请求字段与破坏性响应漂移 fail closed。汇总由评测脚本从下表派生，不在正文手算。
 
+事件分析批量的当前判据（2026-08-20，#24）：31 组件 fake transport 证明 batch
+与标量除各次执行独立生成的 `query_id` 外，上游 body 逐字段相同；固定同一
+`query_id` 后 diff 为 0。batch 恰发 31 次、全局峰值受 `--concurrency 4` 限制，
+无 adapter 内层 worker。未登记 `extra.error` 继续 fail-closed，但不再归为 caller
+`INPUT_INVALID`，而是 retryable upstream，并提示先降到并发 1 或使用等量标量请求。
+报告未提供上游原文，因此 reviewed 表没有猜测登记任何限流文本。
+
 ## 当前动线
 
 | 动线 | 状态 | 四面可达（CLI / SDK / Plan / Agent 中英首问） | 调用次数（已知 / 未知） | 阻塞 |
