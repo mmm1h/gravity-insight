@@ -141,7 +141,7 @@ class GravityInsightClient(
                 attempts=attempts,
                 runtime=runtime,
             )
-        catalog_path = operation_catalog_state_path(isolation_key if isolated else "")
+        catalog_path = operation_catalog_state_path(isolation_key if isolated else None)
         export_contracts, export_policy = load_export_components(
             root,
             registry,

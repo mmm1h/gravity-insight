@@ -22,6 +22,7 @@
 - `report.get.query` 的 Agent owner card 暴露合同派生的顶层 raw 输入模板与完整 compact input schema，并优先于同 selector 的 generic operation card。
 - 业务语义、活动绑定和派生公式属于调用项目，不进入 SDK。
 - 读取共享全局有界并发预算；不叠加 adapter 私有线程池或增加请求总量。
+- Session、CredentialProvider、metadata/operation catalog、FieldPolicy metadata snapshot 与 receipt state 按 resolved env、账号、principal、credential generation 和 workspace 的不可逆摘要隔离，默认 env 不例外；host limiter 与进程级并发槽继续全局共享，scope 摘要不进入公开输出。
 - 未登记字段、破坏性响应漂移、身份/权限不确定和不完整分页 fail closed。
 - 写入固定 preview/dry-run、人工确认、显式 execute、写后读回；自然语言不自动写。
 - 破坏性调用方 surface 升级不保留兼容别名，但同一发布必须迁移 canonical consumer。

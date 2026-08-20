@@ -1210,7 +1210,7 @@ GRAVITY_PASSWORD=...
 
 token 由 SDK 私有缓存维护。不要把 token、Cookie 或密码作为命令行参数，也不要把本地凭据文件提交到 Git。
 
-Resolver Receipt 写在 workspace 对应的私有缓存 `state_root/receipts/`。`input_shape_fingerprint` 只哈希字段、容器结构和标量类型；相同结构换筛选值仍得到同一指纹。每个真实 HTTP response 另在 `state_root/receipts/http/` 同步写入 `gravity.http-receipt.v1`；它只记录 method、合同 path、operation、status、完成时刻、页码、attempt/retry 和请求 shape fingerprint，不记录请求值、响应体或凭据。该逐请求账本先于本地投影、分页聚合与 composite/Plan envelope 组装完成。
+Resolver Receipt 写在 workspace 对应的 principal 私有缓存 `state_root/principals/<private-scope>/receipts/`。`<private-scope>` 只存在于磁盘布局，不进入 CLI、公开 envelope、错误或 receipt 内容。`input_shape_fingerprint` 只哈希字段、容器结构和标量类型；相同结构换筛选值仍得到同一指纹。每个真实 HTTP response 另在同一私有 scope 的 `receipts/http/` 同步写入 `gravity.http-receipt.v1`；它只记录 method、合同 path、operation、status、完成时刻、页码、attempt/retry 和请求 shape fingerprint，不记录请求值、响应体或凭据。该逐请求账本先于本地投影、分页聚合与 composite/Plan envelope 组装完成。
 
 逐 HTTP receipt 默认按数量与时间两者的更严格边界保留：最近 10,000 个且不老于 7 天，活动运行的全部 receipt 例外。可用正整数环境变量 `GRAVITY_HTTP_RECEIPT_MAX_FILES`、`GRAVITY_HTTP_RECEIPT_MAX_AGE_DAYS` 覆盖；非法值回退默认值。清理在当前 receipt 同步落盘后 best-effort 执行，失败只写 warning。使用 `gravity receipts list|get|export` 查询稳定只读合同，不要以目录 glob 当作 API。新增未登记响应字段会继续从 `data` 投影省略，但在结果 `result_audit.response_drift` 与对应 receipt 中记录 `gravity.response-drift.v1` 的 JSON Pointer 和观察类型；字段消失或类型变化仍 fail-closed。
 

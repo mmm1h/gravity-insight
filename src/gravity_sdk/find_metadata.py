@@ -17,7 +17,7 @@ from .metadata_vocabulary import (
 )
 from .result_source import LOCAL_CATALOG, result_source
 from .actionable_error_values import actual_value
-from .runtime_scope import metadata_catalog_path
+from .runtime_scope import metadata_catalog_path, public_scoped_path
 
 
 SCHEMA_VERSION = "gravity.metadata-search.v1"
@@ -57,9 +57,10 @@ def search_metadata(
     search_offset(offset)
     catalog = Path(database) if database is not None else _default_catalog_path()
     catalog = catalog.expanduser().resolve()
+    public_catalog = public_scoped_path(catalog, explicit=database is not None)
     if not catalog.is_file():
         raise InputValidationError(
-            f"actual value: {actual_value(str(catalog))}; " + ("metadata catalog does not exist; run `gravity metadata sync --all-apps`"),
+            f"actual value: {actual_value(public_catalog)}; " + ("metadata catalog does not exist; run `gravity metadata sync --all-apps`"),
             field="database",
         )
     with closing(sqlite3.connect(f"{catalog.as_uri()}?mode=ro", uri=True)) as connection:
@@ -94,7 +95,7 @@ def search_metadata(
         "offline": True,
         "query": query,
         "kind": kind,
-        "database": str(catalog),
+        "database": public_catalog,
         "catalog": catalog_status,
         "count": len(page),
         "total": len(ordered),

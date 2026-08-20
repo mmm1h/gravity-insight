@@ -33,7 +33,7 @@ from . import metadata_vocabulary as vocabulary
 from .runtime import call_batch
 from .actionable_error_values import actual_value
 from .process_limits import MAX_CONCURRENCY
-from .runtime_scope import metadata_catalog_path
+from .runtime_scope import metadata_catalog_path, public_scoped_path
 
 
 SCHEMA_VERSION = "gravity-insight.metadata-sync.v1"
@@ -132,7 +132,7 @@ def sync_all_apps(
         "ok": not failures,
         "status": "partial" if failures else "success",
         "scope": "all_apps",
-        "database": str(destination),
+        "database": public_scoped_path(destination, explicit=database is not None),
         "synced_at": synced_at,
         "app_count": len(apps),
         "operation_count": len(apps) * len(ANALYSIS_METADATA_OPERATIONS),
