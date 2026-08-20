@@ -221,7 +221,9 @@ class AnalysisQuerySpecTests(unittest.TestCase):
                     "conditions": [{
                         "operator": "EQUALS",
                         "field": "account",
-                        "type": "user_property",
+                        # type=user_property is rejected offline for event (#22);
+                        # this case is about redaction, so use the supported type.
+                        "type": "user",
                         "value": [private],
                     }],
                 }],

@@ -128,31 +128,46 @@ def validate_analysis_shape(
     validate_analysis_conditions(
         inputs.get("global_conditions", ()), references, "global_conditions"
     )
-    if query_kind == "funnel":
-        _reject_funnel_user_property_conditions(inputs.get("global_conditions", ()))
+    if query_kind in _USER_PROPERTY_CONDITION_KINDS:
+        _reject_user_property_conditions(
+            inputs.get("global_conditions", ()), "global_conditions", query_kind
+        )
+    if query_kind == "event":
+        # Issue #22 reproduced the same upstream rejection from a step condition.
+        for index, item in enumerate(inputs.get("query_item_list", ())):
+            _reject_user_property_conditions(
+                item.get("conditions", ()),
+                f"query_item_list[{index}].conditions",
+                query_kind,
+            )
     _validate_query_kind_controls(query_kind, inputs, references)
     return references
 
 
-def _reject_funnel_user_property_conditions(value: Any) -> None:
-    if any(
-        item.get("type") == "user_property"
-        and item.get("segment_type") in {None, ""}
+# Upstream blames group_by_list for this, sending callers to inspect a group they
+# never got wrong.  Proven on funnel (issue #1) and event (issue #22); the other
+# kinds have no reproduction, so they stay unrestricted.
+_USER_PROPERTY_CONDITION_KINDS = frozenset({"funnel", "event"})
+
+
+def _reject_user_property_conditions(value: Any, field: str, kind: str) -> None:
+    """Reject offline what upstream only rejects after a network round trip."""
+
+    observed = [
+        item.get("type")
         for item in value
-    ):
-        observed = [
-            item.get("type")
-            for item in value
-            if item.get("type") == "user_property"
-            and item.get("segment_type") in {None, ""}
-        ]
+        if isinstance(item, Mapping)
+        and item.get("type") == "user_property"
+        and item.get("segment_type") in {None, ""}
+    ]
+    if observed:
         raise InputValidationError(
-            f"actual value: {actual_value(observed)}; analysis funnel "
-            "global_conditions must use type 'user' for user properties; request was "
+            f"actual value: {actual_value(observed)}; analysis {kind} "
+            f"{field} must use type 'user' for user properties; request was "
             "not sent",
-            field="global_conditions",
+            field=field,
             next_action=(
-                "Change each funnel user-property condition type to `user`, then "
+                f"Change each {kind} user-property condition type to `user`, then "
                 "retry the same request."
             ),
         )

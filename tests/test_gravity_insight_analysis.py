@@ -215,6 +215,76 @@ class GravityInsightAnalysisTests(unittest.TestCase):
         self.assertEqual("needs_live_metadata", accepted["status"])
         self.assertEqual([], transport.calls)
 
+    def _event_inputs_with_condition(self, placement: str) -> dict[str, Any]:
+        manifest = repository_manifest("analysis.event.query")
+        inputs = json.loads(json.dumps(manifest["operations"][0]["live_probe"]["input"]))
+        inputs.update(
+            app_id="101",
+            query_id=QUERY_ID,
+            date_list=[{"start_date": "2026-08-07", "end_date": "2026-08-07"}],
+        )
+        for step in inputs["query_item_list"]:
+            step["event_name"] = "purchase"
+        condition = {
+            "operator": "IN",
+            "field": "$ea_click_company",
+            "type": "user_property",
+            "value": ["bytedance"],
+        }
+        if placement == "global":
+            inputs["global_conditions"] = [condition]
+        else:
+            inputs["query_item_list"][0]["conditions"] = [condition]
+        return inputs
+
+    def test_event_rejects_live_incompatible_user_property_type_offline(self) -> None:
+        """Issue #22: event rejected this online, after an avoidable request."""
+
+        for placement, field in (
+            ("global", "global_conditions"),
+            ("step", "query_item_list[0].conditions"),
+        ):
+            with self.subTest(placement=placement):
+                inputs = self._event_inputs_with_condition(placement)
+                client, transport = client_for(
+                    "analysis.event.query",
+                    handler=lambda *_args: (_ for _ in ()).throw(
+                        AssertionError("network")
+                    ),
+                )
+
+                invalid = client.validate("analysis.event.query", inputs)
+                self.assertFalse(invalid["ok"])
+                self.assertEqual("INPUT_INVALID", invalid["error"]["code"])
+                # Upstream blamed group_by_list; the caller never sent a bad group.
+                self.assertEqual(field, invalid["error"]["field"])
+                self.assertIn("type to `user`", invalid["error"]["next_action"])
+                with self.assertRaises(InputValidationError):
+                    client.read("analysis.event.query", inputs)
+                self.assertEqual([], transport.calls)
+
+    def test_event_still_accepts_the_supported_user_condition_type(self) -> None:
+        """Issue #22 acceptance 4: the working type must stay working."""
+
+        for placement in ("global", "step"):
+            with self.subTest(placement=placement):
+                inputs = self._event_inputs_with_condition(placement)
+                if placement == "global":
+                    inputs["global_conditions"][0]["type"] = "user"
+                else:
+                    inputs["query_item_list"][0]["conditions"][0]["type"] = "user"
+                client, transport = client_for(
+                    "analysis.event.query",
+                    handler=lambda *_args: (_ for _ in ()).throw(
+                        AssertionError("network")
+                    ),
+                )
+
+                accepted = client.validate("analysis.event.query", inputs)
+                self.assertTrue(accepted["ok"])
+                self.assertEqual("needs_live_metadata", accepted["status"])
+                self.assertEqual([], transport.calls)
+
     def test_analysis_promoted_object_profile_is_fixed_and_supports_full_page(
         self,
     ) -> None:
