@@ -116,7 +116,7 @@ def dispatch_promotion_command(
     args: Any,
     object_input: Callable[[Any], dict[str, Any]],
 ) -> Any:
-    """Dispatch one promotion command without changing legacy behavior."""
+    """Dispatch governed products and the preserved exact raw query."""
 
     if args.promotion_command == "performance":
         return _performance(args)
@@ -138,31 +138,21 @@ def dispatch_promotion_command(
                 for platform, levels in PROMOTION_PLATFORMS.items()
             ]
         }
-    client = runtime.build_client()
-    if args.promotion_command == "snapshot" and args.platform == "all":
-        if args.level is not None:
-            raise ValueError("--level cannot be combined with --platform all")
-        supplied = object_input(args.input)
-        requests: list[dict[str, Any]] = []
-        ignored: dict[str, list[str]] = {}
-        for platform, operation_id in PROMOTION_PRIMARY_OPERATIONS.items():
-            inputs, skipped = merge_query_shortcuts(
-                client, operation_id, args, supplied, strict=False
-            )
-            requests.append(
-                {"operation_id": operation_id, "inputs": inputs, "read_all": True}
-            )
-            if skipped:
-                ignored[platform] = skipped
-        results = runtime.call_batch(
-            client, requests, concurrency=args.concurrency
+    if args.promotion_command == "snapshot":
+        from .promotion_performance import SUPPORTED_PLATFORMS
+        from .promotion_snapshot_compat import promotion_snapshot_compat
+
+        selected = SUPPORTED_PLATFORMS if args.platform == "all" else (args.platform,)
+        inputs = _snapshot_inputs(args, object_input(args.input))
+        return promotion_snapshot_compat(
+            runtime.build_client(),
+            selected,
+            resource=args.level or "primary",
+            common_inputs=inputs,
+            read_all=True,
+            max_workers=args.concurrency,
         )
-        return {
-            "platform_count": len(requests),
-            "concurrency": args.concurrency,
-            "ignored_shortcuts": ignored,
-            "results": results,
-        }
+    client = runtime.build_client()
     operation_id = runtime.resolve_operation_id(
         client, promotion_operation(args.platform, args.level)
     )
@@ -181,6 +171,44 @@ def dispatch_promotion_command(
             args,
             all_pages=True,
             active=bool(getattr(args, "all_pages", False)),
+        ),
+    )
+
+
+def _snapshot_inputs(args: Any, supplied: Mapping[str, Any]) -> dict[str, Any]:
+    allowed = {"app_id", "date_list", "filters", "page", "page_size", "query_fields"}
+    unknown = sorted(set(supplied) - allowed)
+    if unknown:
+        _reject_snapshot_shortcut("input", unknown)
+    result = dict(supplied)
+    shortcuts = {
+        "media": getattr(args, "media", None),
+        "time_dim": getattr(args, "time_dim", None),
+        "dimensions": split_values(getattr(args, "dimensions", None)),
+        "multi_days": split_values(getattr(args, "multi_days", None)),
+        "parent_id": getattr(args, "parent_id", None),
+    }
+    for field, value in shortcuts.items():
+        if value is not None:
+            _reject_snapshot_shortcut(field, value)
+    if args.app_id is not None:
+        result["app_id"] = args.app_id
+    if args.start is not None or args.end is not None:
+        result["date_list"] = [args.start, args.end]
+    metrics = split_values(args.metrics)
+    if metrics is not None:
+        result["query_fields"] = metrics
+    return result
+
+
+def _reject_snapshot_shortcut(field: str, value: Any) -> None:
+    raise InputValidationError(
+        f"actual value: {actual_value(value)}; promotion snapshot does not accept "
+        f"the {field} shortcut in governed mode",
+        field=field,
+        next_action=(
+            "Use --app-id, --start, --end, and --metrics for one governed request, "
+            "or use `gravity promotion query` for an exact raw operation."
         ),
     )
 

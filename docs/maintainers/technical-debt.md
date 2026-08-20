@@ -27,23 +27,6 @@
   operation identity、字段 allowlist、App/window/metrics binding、failure wording 继续留在各自 owner。
   **不做整文件统一，不造结果 DSL。**
 
-### 2. legacy promotion snapshot 绕过正式产品的全部绑定
-
-- **Owner area**：Promotion 兼容面（CLI/SDK legacy permissive snapshot）。
-- **证据**：2026-08-14 缺面裁决查明，该面绕过 `promotion performance` 的五项约束：
-  workspace App 绑定、统一日期窗、已证明平台集合、指标 allowlist、平台 metadata 指标校验，
-  且不校验返回结果是否仍绑定请求的 App/日期/指标。它接受任意非空 promotion resource 与
-  逐平台原始 input，按 inventory 选择**首个** stable operation；CLI `all` 模式会按各 operation
-  schema **静默忽略**不适用的 shortcut。本轮已确认它不进 Agent/Plan 主路径
-  （`gravity agent "raw promotion snapshot"` 返回 capability_gap），但 CLI/SDK 入口仍在。
-- **为什么保留**：没有消费者遥测能证明无人直接使用，删除即可能造成外部破坏。
-  这是**有意的保留，不是遗忘**。
-- **触发条件**：该面出现新的调用方报告；或 Promotion 产品再次修改平台集合、指标 allowlist
-  或结果绑定校验——届时两处语义会进一步分叉；或取得可证明无消费者的证据。
-- **退出条件**：优先**收紧到与正式产品同一组绑定**（App/日期/指标/结果校验），
-  使两条路径语义一致；确证无消费者时直接删除。**不要为它补 Agent 卡或 Plan 面**——
-  那是在把未校验路径推给自动化调用方。静默忽略 shortcut 的行为无论保留与否都应改为显式报错。
-
 ### 3. 在线输入解析的两次闭环依赖「上游稳定 ID 不复用」，而这证明不了
 
 - **Owner area**：Agent 输入解析（`agent_input_resolution.py`、`agent_input_catalogs.py`）。
@@ -127,3 +110,5 @@
 ## 已关闭
 
 2026-08-19 以前关闭项已压缩到 [清理前快照](../archive/snapshots/technical-debt-2026-08-19.md)，不在当前清单重复展开。
+
+2026-08-20：legacy promotion snapshot 保留 CLI/SDK 签名，但删除 inventory/首项选择/独立结果策略，改为复用正式 Promotion Performance 的 workspace App、请求、metadata 与结果绑定；`all` shortcut 改为显式失败。

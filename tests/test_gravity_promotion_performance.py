@@ -85,6 +85,20 @@ class _BatchClient:
         ]
 
 
+class _CompatBatchClient(_BatchClient):
+    def operations(self, **_filters):
+        return []
+
+    def schema(self, *_args, **_kwargs):
+        return {}
+
+    def read(self, *_args, **_kwargs):
+        return {}
+
+    def read_all(self, *_args, **_kwargs):
+        return {}
+
+
 class PromotionPerformanceTests(unittest.TestCase):
     def test_fans_out_real_operations_with_fair_bounds_and_order(self):
         client = _BatchClient()
@@ -376,53 +390,66 @@ class PromotionPerformanceTests(unittest.TestCase):
         self.assertNotIn("SECRET_TOKEN_LEAK", repr(raised.exception))
         self.assertEqual("LOCAL_IO_ERROR", raised.exception.to_error_detail().code)
 
-    def test_input_schema_is_closed_and_legacy_snapshot_stays_compatible(self):
+    def test_input_schema_is_closed_and_legacy_snapshot_matches_formal_product(self):
         schema = promotion_performance_input_schema()
         self.assertFalse(schema["additionalProperties"])
         self.assertEqual(21, schema["properties"]["platforms"]["maxItems"])
 
-        capabilities = {
-            "taptap": ("group", "promotion.taptap.group.list"),
-            "wechat_video": ("report", "promotion.wechat_video.report.list"),
-        }
-
-        class Client:
-            def operations(self, **filters):
-                resource, operation_id = capabilities[filters["platform"]]
-                return [{
-                    "operation_id": operation_id,
-                    "domain": "promotion",
-                    "platform": filters["platform"],
-                    "resource": resource,
-                    "action": "list",
-                    "stability": "stable",
-                }]
-
-            def batch(self, requests, **_options):
-                self.requests = list(requests)
-                return [{
-                    "operation_id": item["operation_id"],
-                    "request_id": item["request_id"],
-                    "ok": True,
-                    "status": "success",
-                } for item in requests]
-
-            def schema(self, *_args, **_kwargs):
-                return {}
-
-            def read(self, *_args, **_kwargs):
-                return {}
-
-            def read_all(self, *_args, **_kwargs):
-                return {}
-
-        client = Client()
-        result = CompositeService(client).promotion_snapshot(list(capabilities))
-        self.assertEqual("gravity-insight.composite.promotion.v1", result["schema_version"])
-        self.assertEqual("success", result["status"])
-        self.assertEqual(
-            list(capabilities), [item["platform"] for item in result["results"]]
+        formal_client, legacy_client = _BatchClient(), _CompatBatchClient()
+        expected = promotion_performance(
+            formal_client, 17, "2026-08-01", "2026-08-07",
+            platforms=("tencent", "bytedance"), metrics=("stat_cost",),
         )
+        actual = CompositeService(legacy_client).promotion_snapshot(
+            ("tencent", "bytedance"),
+            common_inputs={
+                "app_id": 17,
+                "date_list": ["2026-08-01", "2026-08-07"],
+                "query_fields": ["stat_cost"],
+            },
+        )
+        self.assertEqual(expected, actual)
+        self.assertEqual(formal_client.calls, legacy_client.calls)
+
+    def test_legacy_snapshot_uses_formal_input_error_classification(self):
+        cases = (
+            ({"app_id": "0"}, {}, {}),
+            ({"start": "bad"}, {}, {}),
+            ({"platforms": ("bing",)}, {"platforms": ("bing",)}, {}),
+            ({"metrics": ("app_id",)}, {}, {"query_fields": ["app_id"]}),
+        )
+        base = dict(
+            app_id=17, start="2026-08-01", end="2026-08-07",
+            platforms=("tencent",), metrics=("stat_cost",),
+        )
+        for formal_overrides, legacy_overrides, input_overrides in cases:
+            formal = {**base, **formal_overrides}
+            inputs = {
+                "app_id": formal["app_id"],
+                "date_list": [formal["start"], formal["end"]],
+                "query_fields": list(formal["metrics"]),
+                **input_overrides,
+            }
+            with self.subTest(overrides=formal_overrides):
+                with self.assertRaises(InputValidationError) as formal_error:
+                    promotion_performance(_BatchClient(), **formal)
+                with self.assertRaises(InputValidationError) as legacy_error:
+                    CompositeService(_CompatBatchClient()).promotion_snapshot(
+                        legacy_overrides.get("platforms", formal["platforms"]),
+                        common_inputs=inputs,
+                    )
+                self.assertEqual(
+                    (
+                        formal_error.exception.code,
+                        formal_error.exception.field,
+                        formal_error.exception.next_action,
+                    ),
+                    (
+                        legacy_error.exception.code,
+                        legacy_error.exception.field,
+                        legacy_error.exception.next_action,
+                    ),
+                )
 
 
 if __name__ == "__main__":

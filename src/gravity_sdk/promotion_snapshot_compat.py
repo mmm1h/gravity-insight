@@ -1,26 +1,19 @@
-"""Legacy 25-platform promotion snapshot implementation.
-
-This module preserves the original composite result and permissive input
-behavior.  It is intentionally separate from the closed Promotion Performance
-product so the two contracts cannot grow into one ambiguous API.
-"""
+"""Legacy Promotion snapshot surface bound to Promotion Performance v1."""
 
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from typing import Any
 
-from .composite_result import combined_status
 from .actionable_error_values import actual_value
 from .errors import InputValidationError
-from .result_source import RAW_OPERATION, result_source
+from .workspace import load_workspace
+from .workspace_app import resolve_workspace_app
 
 
-_PRIMARY_RESOURCES = {
-    "ubix": "group",
-    "taptap": "group",
-    "wechat_video": "report",
-}
+_BOUND_INPUT_FIELDS = frozenset(
+    {"app_id", "date_list", "filters", "page", "page_size", "query_fields"}
+)
 
 
 def promotion_snapshot_compat(
@@ -33,206 +26,195 @@ def promotion_snapshot_compat(
     read_all: bool = False,
     max_workers: int = 6,
 ) -> dict[str, Any]:
-    """Preserve the pre-v1 CompositeService contract verbatim."""
+    """Execute the old signature through the governed Promotion product."""
 
-    selected = _selection(platforms, resource, inputs_by_platform)
+    request = _bound_request(
+        platforms,
+        resource=resource,
+        common_inputs=common_inputs,
+        inputs_by_platform=inputs_by_platform,
+        read_all=read_all,
+        max_workers=max_workers,
+    )
+    from .promotion_performance import promotion_performance
+
+    app_id, window, selected, metrics, workers, pages, items = request
+    return promotion_performance(
+        client,
+        app_id,
+        window[0],
+        window[1],
+        platforms=selected,
+        metrics=metrics,
+        max_workers=workers,
+        max_pages=pages,
+        max_items=items,
+    )
+
+
+def _bound_request(
+    platforms: Sequence[str],
+    *,
+    resource: str,
+    common_inputs: Mapping[str, Any] | None,
+    inputs_by_platform: Mapping[str, Mapping[str, Any]] | None,
+    read_all: bool,
+    max_workers: int,
+) -> tuple[str, tuple[str, str], tuple[str, ...], tuple[str, ...], int, int, int]:
+    from .promotion_performance_request import (
+        normalize_promotion_platforms,
+        validate_promotion_performance_request,
+    )
+
+    if resource != "primary":
+        raise InputValidationError(
+            f"actual value: {actual_value(resource)}; legacy promotion snapshots "
+            "now require the governed primary resource",
+            field="resource",
+            next_action=(
+                "Use resource='primary' with the governed Promotion request, then retry."
+            ),
+        )
+    if not isinstance(read_all, bool):
+        _reject("read_all", read_all, "promotion snapshot read_all must be a boolean")
+    if common_inputs is not None and not isinstance(common_inputs, Mapping):
+        _reject(
+            "common_inputs",
+            common_inputs,
+            "promotion snapshot common_inputs must be an object",
+        )
+    if inputs_by_platform is not None and not isinstance(inputs_by_platform, Mapping):
+        _reject(
+            "inputs_by_platform",
+            inputs_by_platform,
+            "promotion snapshot inputs_by_platform must be an object",
+        )
+
     shared = dict(common_inputs or {})
     platform_inputs = dict(inputs_by_platform or {})
-    requests, unavailable, resources = _requests(
-        client,
-        selected,
-        resource=resource,
-        shared=shared,
-        platform_inputs=platform_inputs,
-        read_all=read_all,
-    )
-    completed = (
-        client.batch(requests, max_workers=max_workers) if requests else []
-    )
-    results = _ordered_results(
-        selected,
-        completed=completed,
-        unavailable=unavailable,
-        resources=resources,
-    )
-    return {
-        "schema_version": "gravity-insight.composite.promotion.v1",
-        "result_source": result_source(RAW_OPERATION),
-        "status": _batch_status(results),
-        "resource": resource,
-        "coverage": _batch_coverage(len(selected), results),
-        "results": results,
-    }
-
-
-def _selection(
-    platforms: Sequence[str],
-    resource: str,
-    inputs_by_platform: Mapping[str, Mapping[str, Any]] | None,
-) -> list[str]:
-    selected = list(dict.fromkeys(_ids(platforms)))
-    if not selected:
-        raise InputValidationError(
-            f"actual value: {actual_value(selected)}; promotion snapshot requires at "
-            "least one platform",
-            field="platforms",
-        )
-    if not isinstance(resource, str) or not resource:
-        raise InputValidationError(
-            f"actual value: {actual_value(resource)}; promotion snapshot resource must "
-            "be a non-empty string",
-            field="resource",
-        )
-    extra = sorted(set(dict(inputs_by_platform or {})) - set(selected))
+    bindings: list[
+        tuple[str, tuple[str, str], tuple[str, ...], tuple[str, ...], int, int, int]
+    ] = []
+    selected = normalize_promotion_platforms(platforms)
+    extra = sorted(set(platform_inputs) - set(selected))
     if extra:
-        raise InputValidationError(
-            f"actual value: {actual_value(extra)}; promotion inputs must name a "
-            "selected platform; remove the extra keys",
-            field="inputs_by_platform",
+        _reject(
+            "inputs_by_platform",
+            extra,
+            "promotion snapshot inputs must name a selected supported platform",
         )
-    return selected
-
-
-def _requests(
-    client: Any,
-    selected: list[str],
-    *,
-    resource: str,
-    shared: dict[str, Any],
-    platform_inputs: dict[str, Mapping[str, Any]],
-    read_all: bool,
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, str]]:
-    requests: list[dict[str, Any]] = []
-    unavailable: list[dict[str, Any]] = []
-    resources: dict[str, str] = {}
     for platform in selected:
-        selected_resource = (
-            _PRIMARY_RESOURCES.get(platform, "advertiser")
-            if resource == "primary"
-            else resource
+        raw = _platform_request_inputs(shared, platform_inputs, platform)
+        app_ref, start, end, metrics = _extract_binding(raw)
+        preflight = validate_promotion_performance_request(
+            app_ref,
+            start,
+            end,
+            platforms=selected,
+            metrics=metrics,
+            max_workers=max_workers,
         )
-        resources[platform] = selected_resource
-        matches = _matches(client, platform, selected_resource)
-        if not matches:
-            unavailable.append(_unavailable(platform, selected_resource))
-            continue
-        operation_id = str(
-            sorted(matches, key=lambda item: str(item["operation_id"]))[0][
-                "operation_id"
-            ]
+        bindings.append(preflight)
+    if any(binding != bindings[0] for binding in bindings[1:]):
+        _reject(
+            "inputs_by_platform",
+            sorted(platform_inputs),
+            "every platform must bind the same App, date window, and metrics",
         )
-        inputs = dict(shared)
-        inputs.update(platform_inputs.get(platform, {}))
-        requests.append(
-            {
-                "request_id": platform,
-                "operation_id": operation_id,
-                "inputs": inputs,
-                "read_all": read_all,
-            }
-        )
-    return requests, unavailable, resources
-
-
-def _matches(client: Any, platform: str, resource: str) -> list[Mapping[str, Any]]:
-    return [
-        item
-        for item in client.operations(
-            domain="promotion", platform=platform, stability="stable"
-        )
-        if item.get("resource") == resource
-        and item.get("action") in {"list", "query"}
-    ]
-
-
-def _unavailable(platform: str, resource: str) -> dict[str, Any]:
-    return {
-        "operation_id": None,
-        "platform": platform,
-        "resource": resource,
-        "ok": False,
-        "status": "unavailable",
-        "data": None,
-        "error": (
-            "no stable read operation is registered for this platform/resource"
-        ),
-    }
-
-
-def _ordered_results(
-    selected: list[str],
-    *,
-    completed: Sequence[Mapping[str, Any]],
-    unavailable: Sequence[Mapping[str, Any]],
-    resources: Mapping[str, str],
-) -> list[dict[str, Any]]:
-    by_platform = {
-        str(item.get("request_id")): {
-            **item,
-            "platform": str(item.get("request_id")),
-            "resource": resources.get(str(item.get("request_id"))),
-        }
-        for item in completed
-    }
-    unavailable_by_platform = {
-        str(item["platform"]): dict(item) for item in unavailable
-    }
-    return [
-        by_platform.get(platform)
-        or unavailable_by_platform.get(platform)
-        or _missing(platform, resources[platform])
-        for platform in selected
-    ]
-
-
-def _missing(platform: str, resource: str) -> dict[str, Any]:
-    return {
-        "operation_id": None,
-        "platform": platform,
-        "resource": resource,
-        "ok": False,
-        "status": "error",
-        "data": None,
-        "error": "the batch did not return a result for this platform",
-    }
-
-
-def _ids(values: Sequence[str]) -> list[str]:
-    if isinstance(values, (str, bytes)) or any(
-        not isinstance(item, str) or not item for item in values
-    ):
-        raise InputValidationError(
-            f"actual value: {actual_value(type(values).__name__ if isinstance(values, (str, bytes)) else [type(item).__name__ for item in values])}; "
-            "operation/platform identifiers must be non-empty strings",
-            field="platforms",
-        )
-    return list(values)
-
-
-def _batch_status(results: Sequence[Mapping[str, Any]]) -> str:
-    if not results:
-        return "empty"
-    statuses = [str(item.get("status", "error")) for item in results]
-    successes = sum(bool(item.get("ok")) for item in results)
-    if successes == len(results):
-        return combined_status(statuses)
-    return "partial" if successes else "unavailable"
-
-
-def _batch_coverage(
-    requested: int, results: Sequence[Mapping[str, Any]]
-) -> dict[str, int]:
-    successful = sum(bool(item.get("ok")) for item in results)
-    unavailable = sum(
-        str(item.get("status")) == "unavailable" for item in results
+    app_id = resolve_workspace_app(load_workspace(), bindings[0][0])
+    return validate_promotion_performance_request(
+        app_id,
+        bindings[0][1][0],
+        bindings[0][1][1],
+        platforms=bindings[0][2],
+        metrics=bindings[0][3],
+        max_workers=bindings[0][4],
+        max_pages=bindings[0][5],
+        max_items=bindings[0][6],
     )
-    return {
-        "requested": requested,
-        "completed": len(results),
-        "successful": successful,
-        "failed": len(results) - successful,
-        "unavailable": unavailable,
-    }
+
+
+def _platform_request_inputs(
+    shared: Mapping[str, Any], platform_inputs: Mapping[str, Any], platform: str
+) -> dict[str, Any]:
+    specific = platform_inputs.get(platform, {})
+    if not isinstance(specific, Mapping):
+        _reject(
+            f"inputs_by_platform.{platform}",
+            specific,
+            "promotion snapshot platform inputs must be an object",
+        )
+    result = dict(shared)
+    result.update(specific)
+    unknown = sorted(set(result) - _BOUND_INPUT_FIELDS)
+    if unknown:
+        _reject(
+            "common_inputs",
+            unknown,
+            "promotion snapshot accepts only governed App, date, metric, and page inputs",
+        )
+    if result.get("page", 1) != 1:
+        _reject("page", result.get("page"), "promotion snapshot page must start at 1")
+    if result.get("page_size", 10) != 10:
+        _reject(
+            "page_size", result.get("page_size"), "promotion snapshot page_size must be 10"
+        )
+    return result
+
+
+def _extract_binding(value: Mapping[str, Any]) -> tuple[Any, Any, Any, Any]:
+    if "app_id" in value and "filters" in value:
+        raise InputValidationError(
+            f"actual value: {actual_value(value['filters'])}; promotion snapshot "
+            "requires one unambiguous App binding",
+            field="filters",
+            next_action="Keep app_id or one App equality filter, remove the other, and retry.",
+        )
+    app_id = (
+        value["app_id"] if "app_id" in value else _filtered_app(value.get("filters"))
+    )
+    start, end = _date_pair(value.get("date_list"))
+    return app_id, start, end, value.get("query_fields")
+
+
+def _filtered_app(value: Any) -> Any:
+    if value is None:
+        return None
+    if (
+        not isinstance(value, list)
+        or len(value) != 1
+        or not isinstance(value[0], Mapping)
+        or set(value[0]) != {"field", "operator", "values"}
+        or value[0].get("field") != "app_id"
+        or value[0].get("operator") != 1
+        or not isinstance(value[0].get("values"), list)
+        or len(value[0]["values"]) != 1
+    ):
+        _reject(
+            "filters",
+            value,
+            "promotion snapshot filters must contain exactly one App equality binding",
+        )
+    return value[0]["values"][0]
+
+
+def _date_pair(value: Any) -> tuple[Any, Any]:
+    if isinstance(value, Sequence) and not isinstance(
+        value, (str, bytes, bytearray, memoryview)
+    ) and len(value) == 2:
+        return value[0], value[1]
+    return value, None
+
+
+def _reject(field: str, value: Any, reason: str) -> None:
+    raise InputValidationError(
+        f"actual value: {actual_value(value)}; {reason}",
+        field=field,
+        next_action=(
+            "Use one governed App, one inclusive date pair, supported platforms, "
+            "and one shared physical metric list, then retry."
+        ),
+    )
 
 
 __all__ = ["promotion_snapshot_compat"]

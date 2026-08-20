@@ -406,7 +406,7 @@ class GravityInsightCliCatalogHardeningTests(unittest.TestCase):
         )
         self.assertTrue(client.batch_requests[0]["read_all"])
 
-    def test_composite_primary_snapshot_covers_special_platform_resources(self):
+    def test_composite_primary_snapshot_rejects_unproved_platform_before_inventory(self):
         capabilities = {
             "ubix": ("group", "promotion.ubix.group.list"),
             "taptap": ("group", "promotion.taptap.group.list"),
@@ -453,15 +453,17 @@ class GravityInsightCliCatalogHardeningTests(unittest.TestCase):
                 return {}
 
         client = Client()
-        result = CompositeService(client).promotion_snapshot(list(capabilities))
-        self.assertEqual(
-            {operation_id for _, operation_id in capabilities.values()},
-            {item["operation_id"] for item in client.batch_requests},
-        )
-        self.assertEqual(
-            {platform: resource for platform, (resource, _) in capabilities.items()},
-            {item["platform"]: item["resource"] for item in result["results"]},
-        )
+        with self.assertRaises(InputValidationError) as raised:
+            CompositeService(client).promotion_snapshot(
+                ["taptap"],
+                common_inputs={
+                    "app_id": 17,
+                    "date_list": ["2026-08-01", "2026-08-07"],
+                    "query_fields": ["stat_cost"],
+                },
+            )
+        self.assertEqual("platforms", raised.exception.field)
+        self.assertEqual([], client.batch_requests)
 
 
 if __name__ == "__main__":

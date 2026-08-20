@@ -1436,39 +1436,29 @@ class GravityInsightCliTests(unittest.TestCase):
         self.assertTrue(empty["ok"])
         self.assertEqual("empty", empty["status"])
 
-    def test_promotion_snapshot_all_batches_exactly_one_primary_operation_per_platform(
+    def test_promotion_snapshot_all_delegates_one_governed_request(
         self,
     ):
-        code, result, _, client = self.invoke(
-            [
-                "promotion",
-                "snapshot",
-                "--platform",
-                "all",
-                "--start",
-                "2026-08-01",
-                "--end",
-                "2026-08-02",
-                "--metrics",
-                "cost,click",
-                "--concurrency",
-                "6",
-            ]
-        )
-        self.assertEqual(0, code)
-        self.assertEqual(25, result["platform_count"])
-        requests, concurrency = client.batch_calls[0]
-        self.assertEqual(6, concurrency)
-        self.assertEqual(
-            set(PROMOTION_PRIMARY_OPERATIONS.values()),
-            {item["operation_id"] for item in requests},
-        )
-        self.assertTrue(all(item["read_all"] for item in requests))
-        self.assertTrue(
-            all(
-                item["inputs"]["query_fields"] == ["cost", "click"] for item in requests
+        expected = {"schema_version": "governed", "status": "success"}
+        with patch(
+            "gravity_sdk.promotion_performance.promotion_performance",
+            return_value=expected,
+        ) as core:
+            code, result, _, client = self.invoke(
+                [
+                    "promotion", "snapshot", "--platform", "all",
+                    "--app-id", "17", "--start", "2026-08-01",
+                    "--end", "2026-08-02", "--metrics", "cost,click",
+                    "--concurrency", "6",
+                ]
             )
-        )
+        self.assertEqual(0, code)
+        self.assertEqual(expected, result)
+        args, kwargs = core.call_args
+        self.assertIs(client, args[0])
+        self.assertEqual(("17", "2026-08-01", "2026-08-02"), args[1:])
+        self.assertEqual(21, len(kwargs["platforms"]))
+        self.assertEqual(("cost", "click"), kwargs["metrics"])
 
     def test_special_platform_defaults_use_explicit_primary_resources(self):
         expected = {
@@ -1483,39 +1473,41 @@ class GravityInsightCliTests(unittest.TestCase):
 
     def test_snapshot_all_rejects_a_single_platform_level(self):
         code, result, error, client = self.invoke(
-            ["promotion", "snapshot", "--platform", "all", "--level", "advertiser"]
+            [
+                "promotion", "snapshot", "--platform", "all", "--level", "advertiser",
+                "--app-id", "17", "--start", "2026-08-01", "--end", "2026-08-02",
+                "--metrics", "cost",
+            ]
         )
         self.assertEqual(2, code)
         self.assertIsNone(result)
-        self.assertIn("cannot be combined", error["error"]["message"])
+        self.assertEqual("resource", error["error"]["field"])
+        self.assertIn("actual value:", error["error"]["message"])
+        self.assertTrue(error["error"]["next_action"])
         self.assertEqual([], client.batch_calls)
 
-    def test_promotion_snapshot_all_filters_supplied_fields_per_operation_schema(self):
+    def test_promotion_snapshot_all_rejects_inapplicable_input_and_shortcut(self):
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "snapshot.json"
             path.write_text(
-                json.dumps(
-                    {
-                        "query_fields": ["cost"],
-                        "date_list": ["a", "b"],
-                        "unknown": "drop",
-                    }
-                ),
+                json.dumps({"unknown": "reject"}),
                 encoding="utf-8",
             )
-            code, result, _, client = self.invoke(
+            code, result, error, client = self.invoke(
                 ["promotion", "snapshot", "--platform", "all", "--input", str(path)]
             )
-        self.assertEqual(0, code)
-        self.assertTrue(
-            all("unknown" not in item["inputs"] for item in client.batch_calls[0][0])
+        self.assertEqual((2, None, []), (code, result, client.batch_calls))
+        self.assertEqual("input", error["error"]["field"])
+        self.assertIn("actual value:", error["error"]["message"])
+        self.assertTrue(error["error"]["next_action"])
+
+        code, _, error, client = self.invoke(
+            ["promotion", "snapshot", "--platform", "all", "--media", "paid"]
         )
-        self.assertTrue(
-            all(
-                "input:unknown" in values
-                for values in result["ignored_shortcuts"].values()
-            )
-        )
+        self.assertEqual((2, []), (code, client.batch_calls))
+        self.assertEqual("media", error["error"]["field"])
+        self.assertIn('actual value: "paid"', error["error"]["message"])
+        self.assertTrue(error["error"]["next_action"])
 
     def test_actual_domain_mappings_cover_apps_objects_materials_and_attribution(self):
         commands = (
