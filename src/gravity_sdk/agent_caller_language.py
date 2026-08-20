@@ -162,6 +162,9 @@ _ANALYSIS_JOURNEY_TITLES: dict[str, tuple[str, ...]] = {
     "gap:ANALYSIS_EXPORT_FILE_CONTRACT_MISSING": (
         "导出事件、分群、用户、付费或变现分析结果",
     ),
+    "gap:MULTIDIM_COHORT_HORIZON_CONTRACT_MISSING": (
+        "查询超出当前合同窗口的 Multidim 获客队列累计收入、付费留存或激活 ARPU",
+    ),
     "material.asset.fetch": (
         "按精确平台素材引用预览或下载图片/视频",
     ),

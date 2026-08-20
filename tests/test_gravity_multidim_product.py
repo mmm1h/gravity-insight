@@ -1,9 +1,24 @@
 from __future__ import annotations
 
+import copy
+import json
 import threading
 import unittest
+from pathlib import Path
 
-from gravity_sdk.errors import ContractChangedError, InputValidationError, PaginationError
+from gravity_sdk.errors import (
+    ContractChangedError,
+    InputValidationError,
+    ManifestError,
+    PaginationError,
+)
+from gravity_sdk.models import load_operation_manifest
+from gravity_sdk.multidim import _validate_multi_keys, parse_multi_days
+from gravity_sdk.multidim_contract import (
+    MULTIDIM_COHORT_HORIZON_GAP_CODE,
+    MultidimCohortHorizonGapError,
+    multidim_multi_key_contract,
+)
 from gravity_sdk.multidim_product import (
     FRONTEND_ADREPORT_DATA_CONF,
     MULTIDIM_INPUT_SCHEMA_VERSION,
@@ -16,6 +31,10 @@ from gravity_sdk.multidim_product import (
 )
 
 
+ROOT = Path(__file__).resolve().parents[1]
+REPORT_MANIFEST = ROOT / "src" / "gravity_sdk" / "manifests" / "report.json"
+
+
 def _inputs() -> dict[str, object]:
     return {
         "date_list": ["2026-08-01", "2026-08-07"],
@@ -25,6 +44,22 @@ def _inputs() -> dict[str, object]:
         "data_dims": [],
         "filters": [{"field": "click_company", "operator": "IN", "values": ["CN"]}],
     }
+
+
+def _different_multi_key_contract():
+    document = json.loads(REPORT_MANIFEST.read_text(encoding="utf-8"))
+    selected = [
+        copy.deepcopy(operation)
+        for operation in document["operations"]
+        if operation["operation_id"]
+        in {"report.multidim.query", "report.multidim.calc_total"}
+    ]
+    for operation in selected:
+        operation["input_fields"]["multi_keys"].update(
+            item_enum=[4, 5, 6], min_items=1, max_items=3
+        )
+    operations = load_operation_manifest({"operations": selected})
+    return multidim_multi_key_contract(operations)
 
 
 class _Client:
@@ -56,6 +91,101 @@ class _Client:
 
 
 class GravityMultidimProductTests(unittest.TestCase):
+    def test_coherent_post_contract_horizon_is_gap_but_malformed_is_input_invalid(
+        self,
+    ) -> None:
+        client = _Client()
+        with self.assertRaises(MultidimCohortHorizonGapError) as gap_error:
+            run_multidim_query(
+                client,
+                {**_inputs(), "multi_keys": [30, 60]},
+                app_id=7,
+            )
+        gap = gap_error.exception.to_error_detail()
+        self.assertEqual(
+            (
+                MULTIDIM_COHORT_HORIZON_GAP_CODE,
+                "local",
+                "multi_keys",
+                False,
+            ),
+            (gap.code, gap.category, gap.field, gap.retryable),
+        )
+        self.assertIn("post-D30", gap.next_action)
+        self.assertIn("do not substitute generic event retention", gap.next_action)
+        self.assertEqual([], client.calls)
+
+        for value in ([5, 2], [2, 2], [1], [1, 60]):
+            with self.subTest(value=value), self.assertRaises(
+                InputValidationError
+            ) as malformed_error:
+                run_multidim_query(
+                    client,
+                    {**_inputs(), "multi_keys": value},
+                    app_id=7,
+                )
+            detail = malformed_error.exception.to_error_detail()
+            self.assertEqual(
+                ("INPUT_INVALID", "multi_keys"),
+                (detail.code, detail.field),
+            )
+            self.assertIn("unique ascending integers", detail.next_action)
+        self.assertEqual([], client.calls)
+
+    def test_multi_key_validation_and_text_follow_an_injected_compiled_contract(
+        self,
+    ) -> None:
+        contract = _different_multi_key_contract()
+
+        self.assertEqual((4, 5, 6), contract.values)
+        self.assertEqual([4, 6], parse_multi_days(["4", "6"], contract))
+        _validate_multi_keys([4, 5], contract)
+        schema = multidim_input_schema(contract)
+        self.assertEqual(
+            [4, 5, 6], schema["properties"]["multi_keys"]["items"]["enum"]
+        )
+        self.assertEqual(
+            (1, 3),
+            (
+                schema["properties"]["multi_keys"]["minItems"],
+                schema["properties"]["multi_keys"]["maxItems"],
+            ),
+        )
+        self.assertEqual(
+            [4, 5, 6], schema["x-cli-shortcuts"]["multi-days"]["item_enum"]
+        )
+
+        with self.assertRaises(InputValidationError) as malformed_error:
+            parse_multi_days(["3"], contract)
+        malformed = malformed_error.exception.to_error_detail()
+        self.assertEqual(("INPUT_INVALID", "multi_days"), (malformed.code, malformed.field))
+        self.assertIn("4 to 6", str(malformed_error.exception))
+        self.assertIn("4 to 6", malformed.next_action)
+
+        with self.assertRaises(MultidimCohortHorizonGapError) as gap_error:
+            parse_multi_days(["6", "9"], contract)
+        gap = gap_error.exception.to_error_detail()
+        self.assertEqual(
+            (MULTIDIM_COHORT_HORIZON_GAP_CODE, "multi_days"),
+            (gap.code, gap.field),
+        )
+        self.assertIn("D4 through D6", str(gap_error.exception))
+        self.assertIn("post-D6", gap.next_action)
+
+    def test_multi_key_contract_fails_closed_when_operations_disagree(self) -> None:
+        document = json.loads(REPORT_MANIFEST.read_text(encoding="utf-8"))
+        selected = [
+            copy.deepcopy(operation)
+            for operation in document["operations"]
+            if operation["operation_id"]
+            in {"report.multidim.query", "report.multidim.calc_total"}
+        ]
+        selected[0]["input_fields"]["multi_keys"]["item_enum"] = [4, 5, 6]
+        operations = load_operation_manifest({"operations": selected})
+
+        with self.assertRaisesRegex(ManifestError, "contracts disagree"):
+            multidim_multi_key_contract(operations)
+
     def test_schema_and_normalizer_are_closed_and_bounded(self) -> None:
         schema = multidim_input_schema()
         self.assertEqual(MULTIDIM_INPUT_SCHEMA_VERSION, schema["schema_version"])

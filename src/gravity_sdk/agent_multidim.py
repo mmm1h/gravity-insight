@@ -9,6 +9,10 @@ from typing import Any
 
 from .multidim_product import MULTIDIM_INPUT_SCHEMA_VERSION, multidim_input_schema
 from .agent_intent_text import affirmative_intent_text
+from .multidim_contract import (
+    MULTIDIM_COHORT_HORIZON_GAP_CODE,
+    multidim_multi_key_contract,
+)
 
 
 MULTIDIM_NAME = "multidim"
@@ -45,6 +49,12 @@ _CHINESE_ACTIONS = ("查询", "报表", "分析", "统计", "合计", "读取")
 _CHINESE_BLOCKED = (
     "模板", "布局", "收藏", "权限", "成员", "创建", "更新", "删除",
 )
+_HORIZON_DAY = re.compile(
+    r"(?<![a-z0-9_])d\s*([0-9]{1,4})(?![a-z0-9_])|"
+    r"(?<![a-z0-9_])([0-9]{1,4})\s*(?:days?|天)(?![a-z0-9_])",
+    re.IGNORECASE,
+)
+_MULTI_KEY_CONTRACT = multidim_multi_key_contract()
 
 
 def _agent_input_schema() -> dict[str, Any]:
@@ -87,6 +97,11 @@ MULTIDIM_CAPABILITY: Mapping[str, Any] = {
     "boundaries": (
         "调用方填写 App、指标、维度、日期和筛选，Agent 不推断任何业务值。",
         "不接受 SQL 文本，也不引用语义组合成员名。",
+        (
+            "Cohort observation days must use the compiled Multidim "
+            f"multi_keys item enum ({_MULTI_KEY_CONTRACT.allowed_text}); "
+            f"post-D{_MULTI_KEY_CONTRACT.maximum} requests are a registered gap."
+        ),
     ),
     "required_inputs": ("app", "inputs"),
     "input_schema": _agent_input_schema(),
@@ -119,6 +134,30 @@ def multidim_intent(query: str) -> bool:
         any(term in compact for term in _CHINESE_SUBJECTS)
         and any(term in compact for term in _CHINESE_ACTIONS)
         and not any(term in compact for term in _CHINESE_BLOCKED)
+    )
+
+
+def unavailable_multidim_gap(query: str) -> dict[str, Any] | None:
+    """Recognize explicit post-contract Multidim cohort horizon requests."""
+
+    selected = affirmative_intent_text(query)
+    if not multidim_intent(selected):
+        return None
+    requested = [
+        int(match.group(1) or match.group(2))
+        for match in _HORIZON_DAY.finditer(selected)
+    ]
+    contract = multidim_multi_key_contract()
+    if not requested or max(requested) <= contract.maximum:
+        return None
+    from .agent_gap import unavailable_gap
+
+    return unavailable_gap(
+        query,
+        code=MULTIDIM_COHORT_HORIZON_GAP_CODE,
+        journey="multidim_cohort_horizon",
+        reason=contract.reason,
+        next_action=contract.next_action,
     )
 
 
@@ -178,4 +217,5 @@ __all__ = [
     "multidim_intent",
     "multidim_plan_request",
     "multidim_query",
+    "unavailable_multidim_gap",
 ]

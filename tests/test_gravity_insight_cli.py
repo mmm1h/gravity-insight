@@ -1162,6 +1162,10 @@ class GravityInsightCliTests(unittest.TestCase):
         self.assertIn("exactly one", error["error"]["message"])
 
     def test_multidim_query_accepts_controlled_multi_days(self):
+        from gravity_sdk.multidim_contract import (
+            MULTIDIM_COHORT_HORIZON_GAP_CODE,
+        )
+
         envelope = {
             "schema_version": "gravity-insight.composite.multidim.v1",
             "ok": True,
@@ -1199,7 +1203,42 @@ class GravityInsightCliTests(unittest.TestCase):
         )
         self.assertEqual(2, code)
         self.assertIsNone(result)
+        self.assertEqual(
+            ("INPUT_INVALID", "multi_days"),
+            (error["error"]["code"], error["error"]["field"]),
+        )
         self.assertIn("unique ascending", error["error"]["message"])
+        self.assertIn("unique ascending", error["error"]["next_action"])
+
+        code, result, error, client = self.invoke(
+            ["multidim", "query", "--app", "7", "--multi-days", "30,60"]
+        )
+        self.assertEqual(4, code)
+        self.assertIsNone(result)
+        self.assertEqual(
+            (MULTIDIM_COHORT_HORIZON_GAP_CODE, "multi_days"),
+            (error["error"]["code"], error["error"]["field"]),
+        )
+        self.assertIn("post-D30", error["error"]["next_action"])
+        self.assertIn(
+            "do not substitute generic event retention",
+            error["error"]["next_action"],
+        )
+        self.assertEqual([], client.read_calls)
+
+        for value in ("abc", "1", "2,2", "60,30", "1,60"):
+            with self.subTest(value=value):
+                code, result, error, client = self.invoke(
+                    ["multidim", "query", "--app", "7", "--multi-days", value]
+                )
+                self.assertEqual(2, code)
+                self.assertIsNone(result)
+                self.assertEqual(
+                    ("INPUT_INVALID", "multi_days"),
+                    (error["error"]["code"], error["error"]["field"]),
+                )
+                self.assertIn("unique ascending", error["error"]["next_action"])
+                self.assertEqual([], client.read_calls)
 
     def test_multidim_query_include_total_uses_composite_with_page_bounds(self):
         class CompositeClient(FakeClient):

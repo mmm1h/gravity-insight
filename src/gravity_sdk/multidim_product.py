@@ -11,6 +11,13 @@ from typing import Any, Mapping
 from .actionable_error_values import actual_value
 from .composite_batch import validate_composite_bounds
 from .errors import InputValidationError
+from .multidim_contract import (
+    MultidimMultiKeyContract,
+    classify_multi_keys,
+    malformed_multi_keys_message,
+    multidim_horizon_gap_error,
+    multidim_multi_key_contract,
+)
 from .multidim_service import (
     MAX_MULTIDIM_WORKERS,
     MULTIDIM_QUERY_OPERATION,
@@ -89,8 +96,12 @@ FRONTEND_ADREPORT_DATA_CONF = {
 }
 
 
-def multidim_input_schema() -> dict[str, Any]:
+def multidim_input_schema(
+    contract: MultidimMultiKeyContract | None = None,
+) -> dict[str, Any]:
     """Return a fresh machine schema for the closed product input."""
+
+    selected_contract = contract or multidim_multi_key_contract()
 
     def name_array(field: str, *, default: bool = False) -> dict[str, Any]:
         result = {
@@ -106,7 +117,7 @@ def multidim_input_schema() -> dict[str, Any]:
         "type": "object",
         "additionalProperties": False,
         "required": ["date_list", "time_dims", "metrics_list"],
-        "x-cli-shortcuts": _cli_shortcut_schema(),
+        "x-cli-shortcuts": _cli_shortcut_schema(selected_contract),
         "properties": {
             "date_list": {
                 "type": "array",
@@ -152,10 +163,15 @@ def multidim_input_schema() -> dict[str, Any]:
             },
             "multi_keys": {
                 "type": "array",
-                "minItems": 1,
-                "maxItems": 29,
+                "minItems": selected_contract.min_items,
+                "maxItems": selected_contract.max_items,
                 "uniqueItems": True,
-                "items": {"type": "integer", "minimum": 2, "maximum": 30},
+                "items": {
+                    "type": "integer",
+                    "enum": list(selected_contract.values),
+                    "minimum": selected_contract.minimum,
+                    "maximum": selected_contract.maximum,
+                },
             },
             "data_conf": {"const": copy.deepcopy(FRONTEND_ADREPORT_DATA_CONF)},
         },
@@ -163,7 +179,9 @@ def multidim_input_schema() -> dict[str, Any]:
     return copy.deepcopy(schema)
 
 
-def _cli_shortcut_schema() -> dict[str, Any]:
+def _cli_shortcut_schema(
+    contract: MultidimMultiKeyContract,
+) -> dict[str, Any]:
     return {
         "precedence": ["shortcut", "--set", "--input", "contract_default"],
         "filter": {
@@ -182,6 +200,11 @@ def _cli_shortcut_schema() -> dict[str, Any]:
         "relate-dim": {
             "argv": ["NAME[,NAME...]"],
             "maps_to": "relate_dims",
+        },
+        "multi-days": {
+            "argv": ["DAY[,DAY...]"],
+            "maps_to": "multi_keys",
+            "item_enum": list(contract.values),
         },
     }
 
@@ -448,23 +471,21 @@ def _is_bounded_scalar(value: Any) -> bool:
     return isinstance(value, str) and len(value) <= _MAX_SCALAR_TEXT
 
 
-def _multi_keys(value: Any) -> list[int]:
-    if (
-        not isinstance(value, (list, tuple))
-        or not value
-        or len(value) > 29
-        or any(
-            not isinstance(item, int)
-            or isinstance(item, bool)
-            or not 2 <= item <= 30
-            for item in value
+def _multi_keys(
+    value: Any, contract: MultidimMultiKeyContract | None = None
+) -> list[int]:
+    selected_contract = contract or multidim_multi_key_contract()
+    failure = classify_multi_keys(value, selected_contract)
+    if failure == "horizon_gap":
+        raise multidim_horizon_gap_error(
+            field="multi_keys", contract=selected_contract
         )
-        or len(set(value)) != len(value)
-        or list(value) != sorted(value)
-    ):
-        raise _input_error(
-            f"actual value: {actual_value(value)}; " + ("multi_keys must be unique ascending integers from 2 to 30"),
-            "multi_keys",
+    if failure is not None:
+        raise InputValidationError(
+            f"actual value: {actual_value(value)}; "
+            + malformed_multi_keys_message("multi_keys", selected_contract),
+            field="multi_keys",
+            next_action=f"Use {selected_contract.validation_text} and retry.",
         )
     return list(value)
 

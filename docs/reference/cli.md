@@ -74,7 +74,7 @@ gravity agent "<query>" --routing host_catalog --host-selection selection.json
 `gravity operations describe`。`operations describe` 投影完整 operation 合同，压缩 Agent 卡看
 `gravity agent-catalog describe`。
 
-`agent-catalog host` 是同一 owner/card/gap 的紧凑投影，只含 96 张产品卡和 6 个精确 gap，不含 raw
+`agent-catalog host` 是同一 owner/card/gap 的紧凑投影，只含 96 张产品卡和 7 个精确 gap，不含 raw
 operation；每项固定给出目标、返回物、相邻边界、前置输入与 effect。宿主响应必须完整符合
 `gravity.host-product-selection.v1`，只能引用当前 `catalog_ref`。0 个引用由仓库生成固定路由 gap；
 多个引用固定为 `MULTIPLE_INTENTS`；未知字段、旧目录指纹、伪造产品或直接 operation/path 均整体拒绝。
@@ -239,6 +239,11 @@ input 只含 `date_list/time_dims/metrics_list/custom_metrics_list/data_dims/rel
 `--filter FIELD OPERATOR VALUE[,VALUE...]` 覆盖 `filters`。快捷参数优先于 `--set`，`--set`
 优先于 `--input`；未出现的快捷参数不修改对应物理字段。filter value 按 JSON scalar 解析，
 不能用快捷参数表达的字面值继续使用 `--input`/`--set`。
+
+`--multi-days` 的当前队列观察窗由已编译 `report.multidim.query` 与
+`report.multidim.calc_total` 的 `input_fields.multi_keys.item_enum` 共同决定；命令 help、
+`--input-schema` 和 Agent 卡都投影同一枚举。结构畸形仍返回 `INPUT_INVALID`；结构合法但超出枚举
+上界的请求返回 `MULTIDIM_COHORT_HORIZON_CONTRACT_MISSING`，且不会降级到通用 Analysis 留存。
 
 真实 artifact 未提供多 filter 组合语义证据，因此当前 `--filter` 最多出现一次，且不能和
 `--media` 同用；重复条件在联网前拒绝。该边界也由 `--input-schema` 的

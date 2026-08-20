@@ -16,6 +16,7 @@ from .domains import (
 )
 from .errors import InputValidationError
 from .multidim import parse_multi_days
+from .multidim_contract import multidim_multi_key_contract
 from .pagination_cli import page_options
 from .workspace import load_workspace
 from .workspace_app import resolve_workspace_app
@@ -300,7 +301,11 @@ def _add_product_shortcuts(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--time-dim", action="append")
     parser.add_argument("--dimensions", action="append")
     parser.add_argument("--metrics", action="append")
-    parser.add_argument("--multi-days", action="append")
+    parser.add_argument(
+        "--multi-days",
+        action="append",
+        help=multidim_multi_key_contract().cli_help,
+    )
     parser.add_argument(
         "--filter",
         action="append",

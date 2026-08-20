@@ -6,7 +6,14 @@ from typing import Any, Mapping, MutableSet, Sequence
 
 from . import runtime
 from .composite import CompositeService
-from .errors import PolicyViolation
+from .errors import InputValidationError, PolicyViolation
+from .multidim_contract import (
+    MultidimMultiKeyContract,
+    classify_multi_keys,
+    malformed_multi_keys_message,
+    multidim_horizon_gap_error,
+    multidim_multi_key_contract,
+)
 from .multidim_service import (
     MULTIDIM_QUERY_OPERATION as QUERY_OPERATION,
     MULTIDIM_TOTAL_OPERATION as TOTAL_OPERATION,
@@ -130,19 +137,36 @@ def build_request_body(operation_id: str, values: Mapping[str, Any]) -> dict[str
     return body
 
 
-def parse_multi_days(values: Sequence[str] | None) -> list[int] | None:
+def parse_multi_days(
+    values: Sequence[str] | None,
+    contract: MultidimMultiKeyContract | None = None,
+) -> list[int] | None:
     if not values:
         return None
+    selected_contract = contract or multidim_multi_key_contract()
     try:
         days = [int(item) for item in values]
-    except ValueError as exc:
-        raise ValueError("--multi-days accepts integers from 2 to 30") from exc
-    try:
-        _validate_multi_keys(days)
-    except PolicyViolation as exc:
-        raise ValueError(
-            "--multi-days must be unique ascending integers from 2 to 30"
+    except (TypeError, ValueError) as exc:
+        raise InputValidationError(
+            malformed_multi_keys_message("--multi-days", selected_contract),
+            field="multi_days",
+            next_action=(
+                f"Use {selected_contract.validation_text} and retry."
+            ),
         ) from exc
+    failure = classify_multi_keys(days, selected_contract)
+    if failure == "horizon_gap":
+        raise multidim_horizon_gap_error(
+            field="multi_days", contract=selected_contract
+        )
+    if failure is not None:
+        raise InputValidationError(
+            malformed_multi_keys_message("--multi-days", selected_contract),
+            field="multi_days",
+            next_action=(
+                f"Use {selected_contract.validation_text} and retry."
+            ),
+        )
     return days
 
 
@@ -155,19 +179,18 @@ def _matches_numeric_suffix(name: str, bases: set[str]) -> bool:
     return False
 
 
-def _validate_multi_keys(value: Any) -> None:
-    if (
-        not isinstance(value, (list, tuple))
-        or not value
-        or len(set(value)) != len(value)
-        or list(value) != sorted(value)
-        or any(
-            not isinstance(item, int)
-            or isinstance(item, bool)
-            or not 2 <= item <= 30
-            for item in value
+def _validate_multi_keys(
+    value: Any, contract: MultidimMultiKeyContract | None = None
+) -> None:
+    selected_contract = contract or multidim_multi_key_contract()
+    failure = classify_multi_keys(value, selected_contract)
+    if failure == "horizon_gap":
+        raise multidim_horizon_gap_error(
+            field="multi_keys", contract=selected_contract
         )
-    ):
+    if failure is not None:
         raise PolicyViolation(
-            "multidimensional multi_keys must be unique ascending days from 2 to 30"
+            malformed_multi_keys_message(
+                "multidimensional multi_keys", selected_contract
+            )
         )
