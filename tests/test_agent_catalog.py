@@ -12,6 +12,11 @@ from gravity_sdk.agent_catalog import SCHEMA_VERSION, _inventory, run_agent_cata
 from gravity_sdk.agent_catalog_parity import validate_catalog_parity
 from gravity_sdk.agent_product_inventory import canonical_capability_cards
 from gravity_sdk.agent_unavailable import registered_unavailable_gaps
+from gravity_sdk.agent_unavailable import unavailable_journey_gap
+from gravity_sdk.multidim_contract import (
+    MULTIDIM_COHORT_HORIZON_GAP_CODE,
+    multidim_multi_key_contract,
+)
 
 
 def _args(action: str, **values: object) -> SimpleNamespace:
@@ -67,6 +72,32 @@ class AgentCatalogTests(unittest.TestCase):
         result = discover_capabilities("event analysis", client=self.client)
         self.assertEqual(AGENT_SCHEMA_VERSION, result["schema_version"])
         self.assertEqual("discover_and_describe", result["mode"])
+
+    def test_registered_gap_inventory_has_seven_unique_machine_codes(self) -> None:
+        """Went 6 -> 7 for issue #25's post-contract Multidim cohort horizon.
+
+        The added gap keeps upstream-unavailable cohort semantics out of caller
+        input blame and explicitly forbids generic event-retention substitution.
+        """
+
+        gaps = registered_unavailable_gaps()
+        self.assertEqual(7, len(gaps))
+        self.assertEqual(7, len({gap["code"] for gap in gaps}))
+
+    def test_post_contract_multidim_discovery_returns_the_registered_gap(self) -> None:
+        contract = multidim_multi_key_contract()
+        gap = unavailable_journey_gap(
+            f"query multidim acquisition cohort horizon D{contract.maximum + 30}"
+        )
+
+        self.assertIsNotNone(gap)
+        self.assertEqual(MULTIDIM_COHORT_HORIZON_GAP_CODE, gap["code"])
+        self.assertEqual("multidim_cohort_horizon", gap["journey"])
+        self.assertEqual(contract.reason, gap["reason"])
+        self.assertEqual(contract.next_action, gap["next_action"])
+        self.assertFalse(gap["network_called"])
+        self.assertNotIn("use generic event retention", gap["next_action"])
+        self.assertIn("do not substitute generic event retention", gap["next_action"])
 
     def test_catalog_has_complete_cards_gaps_and_contract_status_parity(self) -> None:
         inventory = _inventory(self.client)

@@ -12,6 +12,7 @@ _REGISTERED_GAP_QUERIES = (
     "non bytedance campaign group creative performance",
     "platform specific creative fields",
     "registered sql analysis product",
+    "query multidim cohort horizon D60",
 )
 
 
@@ -20,12 +21,14 @@ def unavailable_journey_gap(query: str) -> dict[str, Any] | None:
     from .agent_unavailable_analysis import unavailable_analysis_gap
     from .agent_unavailable_promotion import unavailable_promotion_gap
     from .agent_unavailable_report import unavailable_report_gap
+    from .agent_multidim import unavailable_multidim_gap
 
     for recognize in (
         unavailable_analysis_gap,
         unavailable_report_gap,
         unavailable_promotion_gap,
         registered_sql_product_gap,
+        unavailable_multidim_gap,
     ):
         gap = recognize(query)
         if gap is not None:

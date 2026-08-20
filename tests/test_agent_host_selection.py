@@ -60,10 +60,12 @@ class HostProductSelectionTests(unittest.TestCase):
         }
 
     def test_host_catalog_is_exact_card_gap_projection_without_raw_operations(self) -> None:
+        """Went 103 -> 104 because issue #25 registers the seventh gap."""
+
         cards = canonical_capability_cards(self.client)
         gaps = registered_unavailable_gaps()
         refs = {item["catalog_ref"] for item in self.catalog["entries"]}
-        self.assertEqual(103, len(refs))
+        self.assertEqual(104, len(refs))
         self.assertEqual(
             {card["selector"] for card in cards} | {f"gap:{gap['code']}" for gap in gaps},
             refs,

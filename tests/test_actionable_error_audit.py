@@ -17,11 +17,17 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class ActionableErrorAuditTests(unittest.TestCase):
     def test_actionable_error_inventory_is_complete_and_reproducible(self):
+        """Went 1275 -> 1277 for issue #25's two CLI parse failures.
+
+        Both sites now preserve malformed Multidim horizons as caller errors
+        with a contract-derived field and remedy instead of a bare ValueError.
+        """
+
         rows = inventory(ROOT / "src" / "gravity_sdk")
         counts = Counter(item["grade"] for item in rows)
-        assert len(rows) == 1275
+        assert len(rows) == 1277
         assert counts["A"] == 1113
-        assert counts["B"] == 162
+        assert counts["B"] == 164
         assert counts.get("C", 0) == 0
         assert sum(counts.values()) == len(rows)
 

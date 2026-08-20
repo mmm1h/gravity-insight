@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import copy
+import contextlib
+import io
 import json
 import tempfile
 import unittest
@@ -17,6 +19,8 @@ from gravity_sdk.plan_multidim_adapter import (
     validate_multidim_plan,
 )
 from gravity_sdk.plan_multidim_result import sanitize_multidim_result
+from gravity_sdk.agent_multidim import MULTIDIM_CAPABILITY
+from gravity_sdk.multidim_contract import multidim_multi_key_contract
 
 
 PRODUCT_INPUT = {
@@ -46,6 +50,36 @@ class _Workspace:
 
 
 class MultidimSurfaceTests(unittest.TestCase):
+    def test_cli_help_schema_and_agent_card_expose_compiled_horizon(self):
+        from gravity_sdk import cli
+
+        contract = multidim_multi_key_contract()
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output), self.assertRaises(SystemExit) as raised:
+            cli.build_parser().parse_args(["multidim", "query", "--help"])
+        self.assertEqual(0, raised.exception.code)
+        self.assertIn("--multi-days", output.getvalue())
+        self.assertIn(contract.allowed_text, output.getvalue())
+        self.assertIn("input_fields.multi_keys.item_enum", output.getvalue())
+
+        schema = GravitySDK.multidim_input_schema()
+        expected = list(contract.values)
+        self.assertEqual(
+            expected, schema["properties"]["multi_keys"]["items"]["enum"]
+        )
+        self.assertEqual(
+            expected, schema["x-cli-shortcuts"]["multi-days"]["item_enum"]
+        )
+        agent_schema = MULTIDIM_CAPABILITY["input_schema"]["inputs"]["machine_schema"]
+        self.assertEqual(
+            expected,
+            agent_schema["properties"]["multi_keys"]["items"]["enum"],
+        )
+        self.assertIn(
+            f"post-D{contract.maximum} requests are a registered gap",
+            MULTIDIM_CAPABILITY["boundaries"][-1],
+        )
+
     def test_sdk_preflight_stays_lazy_and_validates_bounds_before_factory(self):
         built = []
         sdk = GravitySDK(
