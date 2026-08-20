@@ -76,10 +76,24 @@ class SemanticRejectionTests(unittest.TestCase):
             )
         error = caught.exception
         self.assertEqual("group_by_list", error.field)
+        self.assertEqual("upstream", error.category)
+        self.assertTrue(error.retryable)
         self.assertIn("actual value:", str(error))
         self.assertIn("actual value:", error.next_action)
+        self.assertIn("--concurrency 1", error.next_action)
+        self.assertIn("same-shape scalar request succeeded", error.next_action)
         self.assertNotIn("hidden", str(error))
         self.assertNotIn("hidden", error.next_action or "")
+
+    def test_non_analysis_unreviewed_rejection_keeps_existing_classification(self) -> None:
+        with self.assertRaises(SemanticRejectedError) as caught:
+            raise_read_rejection(
+                {"extra": {"error": "hidden"}},
+                operation_id="example.items.list",
+                request_inputs={"page": 1},
+            )
+        self.assertEqual("caller", caught.exception.category)
+        self.assertFalse(caught.exception.retryable)
 
 
 class ContradictedGroupClaimTests(unittest.TestCase):

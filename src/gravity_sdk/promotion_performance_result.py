@@ -14,6 +14,11 @@ import math
 from types import MappingProxyType
 from typing import Any
 
+from .component_aggregate import (
+    aggregate_exit_code,
+    aggregate_status,
+    component_exit_code,
+)
 from .domains import PROMOTION_PRIMARY_OPERATIONS
 from .errors import ErrorCategory, ErrorCode, ErrorDetail, exit_code_for_error
 from .promotion_performance_error import (
@@ -402,21 +407,8 @@ def product_envelope(
 
     failures = [item for item in results if item.get("ok") is not True]
     success_count = len(results) - len(failures)
-    exit_code = max((_component_exit_code(item) for item in failures), default=0)
-    contract_changed = any(
-        item.get("status") == "contract_changed" for item in failures
-    )
-    status = (
-        "contract_changed"
-        if contract_changed
-        else "partial"
-        if failures and success_count
-        else "error"
-        if failures
-        else "empty"
-        if all(item.get("status") == "empty" for item in results)
-        else "success"
-    )
+    exit_code = aggregate_exit_code(failures)
+    status = aggregate_status(results, failures)
     return aggregate_result_audit({
         "schema_version": SCHEMA_VERSION,
         "result_source": result_source(GOVERNED_PRODUCT),
@@ -452,15 +444,10 @@ def product_envelope(
     }, results)
 
 
-def _component_exit_code(value: Mapping[str, Any]) -> int:
-    error = value.get("error")
-    return _error_exit_code(error if isinstance(error, Mapping) else {})
-
-
 def _primary_error(failures: list[dict[str, Any]]) -> dict[str, Any] | None:
     if not failures:
         return None
-    selected = max(failures, key=_component_exit_code)
+    selected = max(failures, key=component_exit_code)
     error = selected.get("error")
     if not isinstance(error, Mapping):
         return contract_component(str(selected.get("platform", "unknown")))["error"]

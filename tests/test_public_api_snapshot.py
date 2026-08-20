@@ -28,14 +28,18 @@ def _lazy_exports() -> dict[str, list[str]]:
         key.value: [value.elts[0].value, value.elts[1].value]
         for key, value in zip(assignment.keys, assignment.values)
     }
-    errors = next(
-        node.iter
-        for node in module.body
-        if isinstance(node, ast.For)
-        and isinstance(node.target, ast.Name)
-        and node.target.id == "_error_name"
-    )
-    exports.update({error.value: [".errors", error.value] for error in errors.elts})
+    for target, owner in (
+        ("_sdk_error_name", ".error_types"),
+        ("_sql_error_name", ".error_sql"),
+    ):
+        errors = next(
+            node.iter
+            for node in module.body
+            if isinstance(node, ast.For)
+            and isinstance(node.target, ast.Name)
+            and node.target.id == target
+        )
+        exports.update({error.value: [owner, error.value] for error in errors.elts})
     return dict(sorted(exports.items()))
 
 

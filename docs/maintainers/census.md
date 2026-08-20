@@ -53,10 +53,12 @@ pending/failure，且抓取期间入口 HTML 稳定；它不表示平台、租�
 “某能力不存在”。完整审计与推荐措辞见归档的
 [Census 完整性与分母审计](../archive/research/census-completeness-audit.md)。
 
-- 已登记 stable：仍需关注响应字段和上游 hash 漂移；
-- draft：只有静态证据，不代表差一次 probe 就能开放；
+- `covered`：已登记 stable，仍需关注响应字段和上游 hash 漂移；
+- `uncovered_read`：安全 HTTP 方法，或 exact POST 已有带 reviewer/日期/控制流的 read confirmation；
+- `static_read_candidate`：未知方法但静态信号指向读，只能继续静态取证；
+- `unsafe_unknown`：POST 只有未验证读信号，既不是 read 也不是 mutation 结论；
 - blocked-write / blocked-privacy：明确保留，不应追求 callable；
-- unknown：进入人工分类，不直接生成通用 operation。
+- 其他 unknown：进入人工分类，不直接生成通用 operation。
 
 `semantic_evidence` 还表示证据强度，而不是可探测性授权：
 
@@ -64,19 +66,20 @@ pending/failure，且抓取期间入口 HTML 稳定；它不表示平台、租�
 - `route_registry:read_contract_not_verified`：维护者登记的读合同声明；
 - `read_action_path_token`：仅由 `/list`、`/get`、`/query` 等路径词元推断的弱证据。
 
-最后一类若同时为 POST，必须先按[探测安全](probing.md)逐条人工确认，不能把
-`status=uncovered_read` 当作 probe 许可，也不能反向批量标成 mutation。
+最后一类若同时为 POST，Census 直接给出 `unsafe_unknown`；只有
+`probe-read-confirmations.json` 中 exact `method + path` 的完整静态确认才进入 `uncovered_read`。
+Draft selector 只消费 `uncovered_read`，因此不会再把弱 POST 变成 read draft。Prober 仍独立校验同一
+确认文件和 exact stable 合同，Census status 不是在线授权，也不能反向批量标成 mutation。
 
-Census 的既有逐条 `status` 是发现/覆盖结论，不是在线授权。Prober 在消费时另行派生六态模型；
-未经证实的 POST 一律成为 `unsafe_unknown`，未知方法但静态证据指向读的条目成为
-`static_read_candidate`，两者都不能自动 probe。该派生层不批量改写 Census 结论，也不把证据债
-伪装成 `verified_mutation`。
+2026-08-20 在 `dev@b7c15ed` 对冻结 987-route snapshot 与当前 237-operation manifests 重算：改规则前
+`uncovered_read=329`，其中 POST 211；严格的“唯一证据为 `read_action_path_token`”POST 是 **203**，
+历史 214 已不再是 HEAD 数字。规则化重算后，21 条 exact confirmed POST 与 57 条安全方法保留为
+`uncovered_read=78`；190 条未确认 POST 为 `unsafe_unknown`，61 条未知方法读信号为
+`static_read_candidate`。总路由和 accounted 均保持 987，没有逐条手改或静态升级证据。
 
-2026-08-14 对 214 条弱证据 POST 做了 12 条静态抽样：两个风险哨兵加按路径 SHA-256 固定选择的
-10 条非定向样本。结果为 **2 条写、10 条真读、0 条判不了**；两个写路由分别是发送验证码与修改
-报表设置，非定向 10 条均为读。样本不支持“多数都是写”，但证明误判不止一个且跨域存在；因此本轮
-只增加证据强度闸门，不改提取器、不批量重分类。逐项工作记录位于忽略目录
-`tmp/codex/probe-read-gate/sampling.md`，不作为长期分类台账。
+2026-08-14 的历史 12 条静态抽样仍为 2 写 / 10 真读 / 0 不确定；它只证明路径词元不能裁决 POST，
+不证明多数条目是写。逐项工作记录仍位于忽略目录 `tmp/codex/probe-read-gate/sampling.md`，不作为当前
+分类台账。
 
 ## 更新仓库数据
 

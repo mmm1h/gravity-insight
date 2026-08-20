@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-REPORT_PRODUCTS = frozenset({
+NO_SPEC_PRODUCTS = frozenset({
     "advertiser_profile",
     "business_pulse",
     "company_usage",
@@ -13,6 +13,9 @@ REPORT_PRODUCTS = frozenset({
     "report_directory",
     "report_subscriptions",
 })
+
+# Compatibility alias for callers that imported the original domain-mismatched name.
+REPORT_PRODUCTS = NO_SPEC_PRODUCTS
 
 
 def report_product_query(name: str, query: str) -> bool:
@@ -72,6 +75,7 @@ def report_product_plan_request(
 
 
 __all__ = [
+    "NO_SPEC_PRODUCTS",
     "REPORT_PRODUCTS",
     "report_product_plan_request",
     "report_product_query",

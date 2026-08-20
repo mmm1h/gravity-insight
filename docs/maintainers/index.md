@@ -16,6 +16,7 @@
 | 新增、升级或废弃 operation | [新增受控能力](operations.md) |
 | 在线探测或确认页面行为 | [探测安全](probing.md) |
 | 发现上游路由或评估漂移 | [路由盘点](census.md) |
+| 规划分页 production/wire 证据 | [分页证据采集计划](pagination-evidence-plan.md) |
 | 刷新和发布 Evidence | [Evidence 运行手册](evidence.md) |
 | 复核已交付设计或外部证据 | [历史归档](../archive/index.md) |
 

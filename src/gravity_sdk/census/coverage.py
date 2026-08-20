@@ -7,8 +7,15 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Iterable
 
+from gravity_sdk.prober.read_semantics import confirmation_keys
+
 from .io import read_json, write_json
 from .normalize import comparison_path, normalize_path
+from .semantics import (
+    classify_route_accounting,
+    classify_route_semantics,
+    classify_semantics,
+)
 
 
 MODULES = ("分析", "推广平台", "资产", "素材", "报表", "App 与账号", "归因", "元数据", "其它")
@@ -147,94 +154,6 @@ def load_route_classifications(registry_path: Path) -> list[dict[str, Any]]:
 
 def _contains_any(value: str, tokens: Iterable[str]) -> bool:
     return any(token in value for token in tokens)
-
-
-def _contains_action(value: str, actions: Iterable[str]) -> bool:
-    return any(
-        re.search(rf"(?:^|[/_]){re.escape(action)}(?:[/_]|$)", value) is not None
-        for action in actions
-    )
-
-
-def classify_semantics(method: str, path: str) -> tuple[str, str, list[str]]:
-    lower = path.lower()
-    if _contains_any(lower, ("/auth", "login", "logout", "oauth", "sso/", "token/", "captcha", "/proxy/", "/gateway/", "callback", "/post/api/", "/query_api/")):
-        return "uncovered_auth_or_proxy", "high", ["auth_or_proxy_path_token"]
-    if _contains_action(lower, ("delete", "remove", "clear")):
-        return "uncovered_write", "high", ["destructive_action_path_token"]
-    if _contains_any(lower, ("export", "download", "/excel", "/csv", "/xlsx", "file_download")):
-        return "uncovered_export", "high", ["export_path_token"]
-    if method in {"PUT", "PATCH", "DELETE"}:
-        return "uncovered_write", "high", ["mutating_http_method"]
-    write_actions = (
-        "create",
-        "add",
-        "update",
-        "edit",
-        "delete",
-        "remove",
-        "save",
-        "upload",
-        "import",
-        "copy",
-        "move",
-        "bind",
-        "unbind",
-        "enable",
-        "disable",
-        "submit",
-        "approve",
-        "execute",
-        "cancel",
-        "start",
-        "stop",
-        "sync",
-        "reset",
-        "push",
-        "share",
-        "collect",
-        "clear",
-        "kill",
-        "terminate",
-    )
-    if _contains_action(lower, write_actions):
-        return "uncovered_write", "medium", ["write_action_path_token"]
-    read_tokens = (
-        "/list",
-        "/get",
-        "/detail",
-        "/query",
-        "/search",
-        "/tree",
-        "/info",
-        "/status",
-        "/count",
-        "/stat",
-        "/trend",
-        "/preview",
-        "/check",
-        "/validate",
-        "/evaluate",
-        "/calc",
-        "/enums",
-        "/options",
-        "/report/",
-        "/filters",
-        "/components",
-        "/favorites",
-        "/campaigns",
-        "/ad_groups",
-        "/batch_options",
-        "_detail/",
-        "_list/",
-        "_get/",
-        "_info/",
-    )
-    if method in {"GET", "HEAD", "OPTIONS"}:
-        return "uncovered_read", "high", ["safe_http_method"]
-    if _contains_any(lower, read_tokens):
-        return "uncovered_read", "medium", ["read_action_path_token"]
-    return "unclassified", "low", ["insufficient_semantic_evidence"]
 
 
 def classify_module(path: str) -> str:
@@ -475,9 +394,11 @@ def build_coverage(
     baseline_routes_document: dict[str, Any] | None = None,
     reservations: list[dict[str, Any]] | None = None,
     route_classifications: list[dict[str, Any]] | None = None,
+    confirmed_read_routes: set[tuple[str, str]] | None = None,
 ) -> dict[str, Any]:
     reservations = reservations or []
     route_classifications = route_classifications or []
+    confirmed_read_routes = confirmed_read_routes or set()
     stable_exact: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     stable_normalized: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
     any_exact: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
@@ -514,20 +435,9 @@ def build_coverage(
             semantic_evidence = ["stable_manifest_exact" if exact else "stable_manifest_normalized"]
             match_kind = "exact_stable" if exact else "normalization_equivalent_stable"
         else:
-            if classification:
-                classification_name = str(classification["classification"])
-                status = {
-                    "read": "uncovered_read",
-                    "write": "uncovered_write",
-                    "export": "uncovered_export",
-                    "auth": "uncovered_auth_or_proxy",
-                    "proxy": "uncovered_auth_or_proxy",
-                    "non_api": "unsupported_non_api",
-                }[classification_name]
-                semantic_confidence = "registered"
-                semantic_evidence = [f"route_registry:{classification['reason_code']}"]
-            else:
-                status, semantic_confidence, semantic_evidence = classify_semantics(method, path)
+            status, semantic_confidence, semantic_evidence = classify_route_semantics(
+                method, path, classification, confirmed_read_routes
+            )
             if reserved:
                 match_kind = "exact_reservation"
             elif nonstable:
@@ -537,34 +447,13 @@ def build_coverage(
                 match_kind = "path_only_method_unresolved"
             else:
                 match_kind = "none"
-        if exact or normalized:
-            route_accounting = "covered_executable"
-            callability = "executable"
-        elif reserved:
-            route_accounting = "accounted_blocked_write"
-            callability = "contract_only"
-        elif nonstable:
-            stability = str(nonstable[0]["stability"])
-            route_accounting = {
-                "blocked_write": "accounted_blocked_write",
-                "blocked_privacy": "accounted_blocked_privacy",
-                "permission_unavailable": "accounted_permission_unavailable",
-                "deprecated": "accounted_deprecated",
-                "experimental": "accounted_experimental",
-            }.get(stability, "accounted_nonstable")
-            callability = "catalog_only"
-        elif classification:
-            route_accounting = "accounted_unsupported"
-            callability = "unsupported"
-        elif status == "uncovered_read":
-            route_accounting = "accounted_read_candidate"
-            callability = "candidate"
-        elif status == "uncovered_export":
-            route_accounting = "accounted_export_candidate"
-            callability = "candidate"
-        else:
-            route_accounting = "unaccounted"
-            callability = "unclassified"
+        route_accounting, callability = classify_route_accounting(
+            covered=bool(exact or normalized),
+            reserved=bool(reserved),
+            nonstable_stability=str(nonstable[0]["stability"]) if nonstable else None,
+            registered=bool(classification),
+            status=status,
+        )
         module = classify_module(path)
         platform, level = promotion_dimensions(path) if module == "推广平台" else (None, None)
         cost_tier, cost_reason, cost_confidence = estimate_read_cost(
@@ -651,6 +540,8 @@ def build_coverage(
                     "uncovered_write",
                     "uncovered_export",
                     "uncovered_auth_or_proxy",
+                    "static_read_candidate",
+                    "unsafe_unknown",
                     "unclassified",
                 )
             }
@@ -692,7 +583,9 @@ def build_coverage(
                 "auth/proxy path token",
                 "export/download path token",
                 "PUT/PATCH/DELETE or explicit write action token",
-                "GET/HEAD/OPTIONS or explicit read action token",
+                "GET/HEAD/OPTIONS, or exact reviewed POST read confirmation",
+                "unknown method plus a read signal -> static read candidate",
+                "unconfirmed POST plus a read signal -> unsafe unknown",
                 "otherwise unclassified",
             ],
             "warning": "Accounting and callability are independent. Reservations and unsupported decisions never increase callable coverage.",
@@ -709,6 +602,8 @@ def build_coverage(
             "uncovered_write": status_counts["uncovered_write"],
             "uncovered_export": status_counts["uncovered_export"],
             "uncovered_auth_or_proxy": status_counts["uncovered_auth_or_proxy"],
+            "static_read_candidate": status_counts["static_read_candidate"],
+            "unsafe_unknown": status_counts["unsafe_unknown"],
             "unclassified": status_counts["unclassified"],
             "unsupported_non_api": status_counts["unsupported_non_api"],
             "accounted": accounted,
@@ -752,8 +647,8 @@ def render_report(document: dict[str, Any]) -> str:
         f"- Routes classified: **{summary['total_routes']}**",
         f"- Public-entry static graph boundary: {document['scope_boundary']['proven']}.",
         f"- Not proven: {document['scope_boundary']['not_proven']}.",
-        "- `covered` requires a stable manifest method+path match. Read/write/export/auth labels are heuristic and carry per-route confidence.",
-        "- POST is not automatically classified as write; action tokens and nearby route semantics decide it.",
+        "- `covered` requires a stable manifest method+path match. Read/write/export/auth labels carry per-route evidence.",
+        "- Unconfirmed POST read signals are `unsafe_unknown`; exact reviewed confirmations may be `uncovered_read`.",
         "",
         "## Coverage summary",
         "",
@@ -764,8 +659,8 @@ def render_report(document: dict[str, Any]) -> str:
         "covered",
         "uncovered_read",
         "uncovered_write",
-        "uncovered_export",
-        "uncovered_auth_or_proxy",
+        "uncovered_export", "uncovered_auth_or_proxy",
+        "static_read_candidate", "unsafe_unknown",
         "unsupported_non_api",
         "unclassified",
     ):
@@ -915,12 +810,17 @@ def coverage_files(
     contract_root = manifest_dir.parent / "contracts"
     selected_reservation_dir = reservation_dir or contract_root / "reservations"
     selected_registry_path = route_registry_path or contract_root / "routes" / "registry.json"
+    confirmations_path = contract_root / "routes" / "probe-read-confirmations.json"
+    confirmed_read_routes = (
+        confirmation_keys(confirmations_path) if confirmations_path.is_file() else set()
+    )
     document = build_coverage(
         read_json(routes_path),
         load_manifest_operations(manifest_dir),
         read_json(baseline_routes_path) if baseline_routes_path else None,
         load_write_reservations(selected_reservation_dir),
         load_route_classifications(selected_registry_path),
+        confirmed_read_routes,
     )
     write_json(output_path, document)
     report_path.parent.mkdir(parents=True, exist_ok=True)

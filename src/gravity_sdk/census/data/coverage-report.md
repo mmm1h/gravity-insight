@@ -8,52 +8,57 @@
 - Routes classified: **987**
 - Public-entry static graph boundary: all JS reachable from the current public entry static graph was resolved while the entry HTML stayed stable.
 - Not proven: modules delivered only after login, tenant permissions, server feature flags, or a different entry document.
-- `covered` requires a stable manifest method+path match. Read/write/export/auth labels are heuristic and carry per-route confidence.
-- POST is not automatically classified as write; action tokens and nearby route semantics decide it.
+- `covered` requires a stable manifest method+path match. Read/write/export/auth labels carry per-route evidence.
+- Unconfirmed POST read signals are `unsafe_unknown`; exact reviewed confirmations may be `uncovered_read`.
 
 ## Coverage summary
 
 | status | routes |
 | --- | ---: |
-| `covered` | 181 |
-| `uncovered_read` | 341 |
-| `uncovered_write` | 407 |
+| `covered` | 224 |
+| `uncovered_read` | 78 |
+| `uncovered_write` | 376 |
 | `uncovered_export` | 22 |
 | `uncovered_auth_or_proxy` | 30 |
+| `static_read_candidate` | 61 |
+| `unsafe_unknown` | 190 |
 | `unsupported_non_api` | 6 |
 | `unclassified` | 0 |
 
 ## Route accounting vs callability
 
 - Accounted routes: **987**
-- Callable covered routes: **181**
+- Callable covered routes: **224**
 - Unaccounted routes: **0**
 
 | accounting state | routes |
 | --- | ---: |
-| `accounted_blocked_write` | 407 |
+| `accounted_blocked_write` | 376 |
 | `accounted_deprecated` | 1 |
 | `accounted_experimental` | 6 |
 | `accounted_export_candidate` | 22 |
 | `accounted_permission_unavailable` | 1 |
-| `accounted_read_candidate` | 311 |
-| `accounted_unsupported` | 58 |
-| `covered_executable` | 181 |
+| `accounted_read_candidate` | 74 |
+| `accounted_static_read_candidate` | 61 |
+| `accounted_unsafe_unknown` | 186 |
+| `accounted_unsupported` | 36 |
+| `covered_executable` | 224 |
 
 | callability | routes |
 | --- | ---: |
-| `candidate` | 333 |
+| `blocked` | 186 |
+| `candidate` | 157 |
 | `catalog_only` | 8 |
-| `contract_only` | 407 |
-| `executable` | 181 |
-| `unsupported` | 58 |
+| `contract_only` | 376 |
+| `executable` | 224 |
+| `unsupported` | 36 |
 
 ## Stable manifest reconciliation
 
 | category | stable operations |
 | --- | ---: |
 | Previously covered | 0 |
-| (a) Found in previously unfetched chunks | 181 |
+| (a) Found in previously unfetched chunks | 224 |
 | (b) Normalization false gap fixed | 0 |
 | (c) Manifest route absent from frontend | 4 |
 
@@ -70,373 +75,128 @@
 
 | module | covered | uncovered read | all uncovered | total |
 | --- | ---: | ---: | ---: | ---: |
-| 分析 | 27 | 7 | 41 | 68 |
-| 推广平台 | 58 | 145 | 268 | 326 |
-| 资产 | 6 | 17 | 72 | 78 |
-| 素材 | 19 | 42 | 93 | 112 |
-| 报表 | 19 | 24 | 40 | 59 |
-| App 与账号 | 16 | 29 | 114 | 130 |
-| 归因 | 6 | 4 | 18 | 24 |
-| 元数据 | 12 | 20 | 39 | 51 |
-| 其它 | 18 | 53 | 121 | 139 |
+| 分析 | 45 | 0 | 23 | 68 |
+| 推广平台 | 59 | 18 | 267 | 326 |
+| 资产 | 6 | 4 | 72 | 78 |
+| 素材 | 20 | 8 | 92 | 112 |
+| 报表 | 29 | 5 | 30 | 59 |
+| App 与账号 | 19 | 22 | 111 | 130 |
+| 归因 | 7 | 1 | 17 | 24 |
+| 元数据 | 16 | 6 | 35 | 51 |
+| 其它 | 23 | 14 | 116 | 139 |
 
 ## Promotion platform x level uncovered reads
 
 | platform | 账户 | 项目 | 计划 | 广告组 | 广告/创意 | 素材 | 报表 | 其它 | total |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| alipay | 2 | 0 | 2 | 1 | 0 | 0 | 0 | 2 | 7 |
-| apple | 1 | 0 | 2 | 2 | 0 | 0 | 1 | 2 | 8 |
-| baidu | 7 | 0 | 0 | 0 | 0 | 0 | 0 | 2 | 9 |
-| bilibili | 1 | 0 | 2 | 2 | 0 | 0 | 0 | 0 | 5 |
+| alipay | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| apple | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 |
+| baidu | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 |
+| bilibili | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | bing | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| bytedance | 0 | 2 | 0 | 0 | 0 | 1 | 0 | 15 | 18 |
-| honor | 0 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 2 |
-| huawei | 1 | 0 | 2 | 2 | 0 | 0 | 0 | 0 | 5 |
-| huawei_store | 1 | 0 | 1 | 2 | 0 | 0 | 1 | 0 | 5 |
-| huya | 0 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 2 |
-| iqiyi | 1 | 0 | 1 | 2 | 0 | 0 | 0 | 1 | 5 |
-| kuaishou | 1 | 0 | 2 | 1 | 0 | 0 | 0 | 6 | 10 |
-| oppo | 0 | 0 | 0 | 2 | 0 | 0 | 1 | 3 | 6 |
-| qihu360 | 0 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 2 |
-| sigmob | 0 | 0 | 1 | 0 | 0 | 0 | 1 | 1 | 3 |
+| bytedance | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 5 | 5 |
+| honor | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| huawei | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| huawei_store | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| huya | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| iqiyi | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| kuaishou | 1 | 0 | 1 | 0 | 0 | 0 | 0 | 1 | 3 |
+| oppo | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 |
+| qihu360 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| sigmob | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | taptap | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| tencent | 5 | 0 | 0 | 2 | 1 | 0 | 0 | 5 | 13 |
+| tencent | 1 | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 2 |
 | ubix | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| uc | 2 | 0 | 4 | 4 | 0 | 0 | 0 | 0 | 10 |
-| vivo | 0 | 0 | 2 | 2 | 0 | 0 | 0 | 0 | 4 |
+| uc | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| vivo | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | wechat_video | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
-| weibo | 0 | 0 | 2 | 2 | 0 | 0 | 0 | 0 | 4 |
-| xiaohongshu | 1 | 0 | 2 | 1 | 0 | 0 | 1 | 0 | 5 |
-| xiaomi | 1 | 0 | 2 | 1 | 0 | 0 | 0 | 1 | 5 |
-| youdao | 0 | 0 | 1 | 1 | 0 | 0 | 0 | 0 | 2 |
-| 通用/未知 | 5 | 0 | 0 | 0 | 0 | 0 | 1 | 9 | 15 |
+| weibo | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| xiaohongshu | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| xiaomi | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| youdao | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 通用/未知 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 4 | 5 |
 
 ## Contract families
 
-- Families: **45**
-- Uncovered reads assigned to a family: **80 / 341 (23.5%)**
+- Families: **1**
+- Uncovered reads assigned to a family: **2 / 78 (2.6%)**
 
 | family | kind | members | signature |
 | --- | --- | ---: | --- |
 | `promotion.family.001` | `same_level_cross_platform` | 2 | `GET \| /turbo_engine/api/v1/{platform}/procedural_batch/get/` |
-| `promotion.family.002` | `same_level_cross_platform` | 5 | `POST \| /turbo_engine/api/v1/{platform}/account/list/` |
-| `promotion.family.003` | `same_level_cross_platform` | 2 | `POST \| /turbo_engine/api/v1/{platform}/advertiser/list/` |
-| `promotion.family.004` | `same_level_cross_platform` | 2 | `POST \| /turbo_engine/api/v1/{platform}/agent/list/` |
-| `promotion.family.005` | `same_level_cross_platform` | 3 | `POST \| /turbo_engine/api/v1/{platform}/batch_options/` |
-| `promotion.family.006` | `same_level_cross_platform` | 2 | `POST \| /turbo_engine/api/v1/{platform}/brand/list/` |
-| `promotion.family.007` | `same_level_cross_platform` | 3 | `POST \| /turbo_engine/api/v1/{platform}/campaign/list/` |
-| `promotion.family.008` | `same_level_cross_platform` | 3 | `POST \| /turbo_engine/api/v1/{platform}/manager/adgroup/list/` |
-| `promotion.family.009` | `same_level_cross_platform` | 6 | `POST \| /turbo_engine/api/v1/{platform}/manager/campaign/list/` |
-| `promotion.family.010` | `same_level_cross_platform` | 2 | `POST \| /turbo_engine/api/v1/{platform}/manager/group/list/` |
-| `promotion.family.011` | `same_level_cross_platform` | 2 | `POST \| /turbo_engine/api/v1/{platform}/manager/plan/list/` |
-| `promotion.family.012` | `same_level_cross_platform` | 4 | `POST \| /turbo_engine/api/v1/{platform}/report/adgroup/` |
-| `promotion.family.013` | `same_level_cross_platform` | 2 | `POST \| /turbo_engine/api/v1/{platform}/report/adgroup/list/` |
-| `promotion.family.014` | `same_level_cross_platform` | 3 | `POST \| /turbo_engine/api/v1/{platform}/report/campaign/` |
-| `promotion.family.015` | `same_level_cross_platform` | 8 | `POST \| /turbo_engine/api/v1/{platform}/report/campaign/list/` |
-| `promotion.family.016` | `same_level_cross_platform` | 5 | `POST \| /turbo_engine/api/v1/{platform}/report/group/list/` |
-| `promotion.family.017` | `same_platform_cross_level` | 2 | `POST \| alipay \| /turbo_engine/api/v2/alipay/{level}/list/` |
-| `promotion.family.018` | `same_platform_cross_level` | 2 | `POST \| apple \| /turbo_engine/api/v1/apple/{level}/v2/{level}/` |
-| `promotion.family.019` | `same_platform_cross_level` | 3 | `POST \| baidu \| /turbo_engine/api/v1/baidu/{level}/feed/{level}/{level}/` |
-| `promotion.family.020` | `same_platform_cross_level` | 2 | `POST \| baidu \| /turbo_engine/api/v1/baidu/{level}/{level}/{level}/` |
-| `promotion.family.021` | `same_platform_cross_level` | 2 | `POST \| bilibili \| /turbo_engine/api/v1/bilibili/manager/{level}/list/` |
-| `promotion.family.022` | `same_platform_cross_level` | 2 | `POST \| bilibili \| /turbo_engine/api/v1/bilibili/{level}/{level}/` |
-| `promotion.family.023` | `same_platform_cross_level` | 2 | `POST \| honor \| /turbo_engine/api/v1/honor/manager/{level}/list/` |
-| `promotion.family.024` | `same_platform_cross_level` | 2 | `POST \| huawei \| /turbo_engine/api/v1/huawei/manager/{level}/list/` |
-| `promotion.family.025` | `same_platform_cross_level` | 2 | `POST \| huawei \| /turbo_engine/api/v1/huawei/{level}/{level}/` |
-| `promotion.family.026` | `same_platform_cross_level` | 2 | `POST \| huawei_store \| /turbo_engine/api/v1/huawei/store/{level}/list/` |
-| `promotion.family.027` | `same_platform_cross_level` | 2 | `POST \| huya \| /turbo_engine/api/v1/huya/{level}/{level}/list/` |
-| `promotion.family.028` | `same_platform_cross_level` | 2 | `POST \| iqiyi \| /turbo_engine/api/v1/iqiyi/manager/{level}/list/` |
-| `promotion.family.029` | `same_platform_cross_level` | 2 | `POST \| iqiyi \| /turbo_engine/api/v1/iqiyi/{level}/{level}/` |
-| `promotion.family.030` | `same_platform_cross_level` | 2 | `POST \| kuaishou \| /turbo_engine/api/v1/kuaishou/manager/{level}/list/` |
-| `promotion.family.031` | `same_platform_cross_level` | 2 | `POST \| oppo \| /turbo_engine/api/v1/oppo/manager/{level}/list/` |
-| `promotion.family.032` | `same_platform_cross_level` | 2 | `POST \| oppo \| /turbo_engine/api/v1/oppo/{level}/{level}/list/` |
-| `promotion.family.033` | `same_platform_cross_level` | 2 | `POST \| qihu360 \| /turbo_engine/api/v1/qihu360/{level}/{level}/list/` |
-| `promotion.family.034` | `same_platform_cross_level` | 2 | `POST \| uc \| /turbo_engine/api/v1/uc/feed/{level}/list/` |
-| `promotion.family.035` | `same_platform_cross_level` | 2 | `POST \| uc \| /turbo_engine/api/v1/uc/manager/{level}/list/` |
-| `promotion.family.036` | `same_platform_cross_level` | 3 | `POST \| uc \| /turbo_engine/api/v1/uc/{level}/feed/{level}/list/` |
-| `promotion.family.037` | `same_platform_cross_level` | 2 | `POST \| uc \| /turbo_engine/api/v1/uc/{level}/{level}/list/` |
-| `promotion.family.038` | `same_platform_cross_level` | 2 | `POST \| vivo \| /turbo_engine/api/v1/vivo/{level}/list/` |
-| `promotion.family.039` | `same_platform_cross_level` | 2 | `POST \| vivo \| /turbo_engine/api/v1/vivo/{level}/{level}/` |
-| `promotion.family.040` | `same_platform_cross_level` | 2 | `POST \| weibo \| /turbo_engine/api/v1/weibo/manager/{level}/list/` |
-| `promotion.family.041` | `same_platform_cross_level` | 2 | `POST \| weibo \| /turbo_engine/api/v1/weibo/{level}/{level}/list/` |
-| `promotion.family.042` | `same_platform_cross_level` | 4 | `POST \| xiaohongshu \| /turbo_engine/api/v1/xiaohongshu/{level}/{level}/list/` |
-| `promotion.family.043` | `same_platform_cross_level` | 2 | `POST \| xiaomi \| /turbo_engine/api/v1/xiaomi/report_v4/{level}/list/` |
-| `promotion.family.044` | `same_platform_cross_level` | 2 | `POST \| xiaomi \| /turbo_engine/api/v1/xiaomi/{level}/{level}/list/` |
-| `promotion.family.045` | `same_platform_cross_level` | 2 | `POST \| youdao \| /turbo_engine/api/v1/youdao/{level}/{level}/list/` |
 
 ## Estimated implementation cost
 
 | tier | uncovered reads | rule |
 | --- | ---: | --- |
-| 低 | 144 | Flat list/detail with no evident parent dependency |
-| 中 | 73 | Parent-resource dependency or structured selector |
-| 高 | 124 | Complex query/report body, proxy envelope, or dynamic path |
+| 低 | 58 | Flat list/detail with no evident parent dependency |
+| 中 | 13 | Parent-resource dependency or structured selector |
+| 高 | 7 | Complex query/report body, proxy envelope, or dynamic path |
 
 Cost is a scheduling heuristic, not an observed implementation duration.
 
 ## Complete uncovered read route list
 
-### 分析 (7)
+### 分析 (0)
+
+None.
+
+### 推广平台 (18)
 
 | confidence | method | path | family | cost |
 | --- | --- | --- | --- | --- |
-| `medium` | `UNKNOWN` | `/openapi/api/v1/event/event_info/` | `singleton` | `低` |
-| `medium` | `UNKNOWN` | `/openapi/api/v1/event/event_list/` | `singleton` | `低` |
-| `medium` | `UNKNOWN` | `/openapi/api/v1/event/event_property_list/` | `singleton` | `低` |
-| `medium` | `UNKNOWN` | `/openapi/api/v1/event/user_property_list/` | `singleton` | `低` |
-| `medium` | `POST` | `/report/api/v3/dataanalysis/ai/conversation/list/` | `singleton` | `高` |
-| `medium` | `POST` | `/report/api/v3/dataanalysis/ai/message/list/` | `singleton` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v2/datamanageconfig/kanban/report/setting/` | `singleton` | `高` |
-
-### 推广平台 (145)
-
-| confidence | method | path | family | cost |
-| --- | --- | --- | --- | --- |
-| `medium` | `UNKNOWN` | `/event_center/api/v1/base/wx/get_scheme/sigmob/` | `singleton` | `低` |
-| `medium` | `UNKNOWN` | `/open_api/2/dpa/clue_product/list/` | `singleton` | `高` |
-| `registered` | `UNKNOWN` | `/open_api/2/dpa/product/availables/` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/open_api/launch/cpc/meta_data/launch/bili/applet/query_all_by_acc` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/open_api/v3.0/promotion/list/` | `singleton` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/alipay/advertiser/list/` | `promotion.family.003` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/apple/account/list/` | `promotion.family.002` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/apple/ad_groups/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/apple/app/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/apple/campaigns/` | `singleton` | `中` |
 | `high` | `GET` | `/turbo_engine/api/v1/apple/keys/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/apple/report/v2/adgroup/` | `promotion.family.018` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/apple/report/v2/campaign/` | `promotion.family.018` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/apple/report/v2/keyword/` | `singleton` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/baidu/advertiser/feed/account/report/` | `promotion.family.019` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/baidu/advertiser/feed/plan/report/` | `promotion.family.019` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/baidu/advertiser/feed/unit/report/` | `promotion.family.019` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/baidu/advertiser/keyword/report/` | `singleton` | `高` |
 | `high` | `GET` | `/turbo_engine/api/v1/baidu/advertiser/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/baidu/advertiser/plan/report/` | `promotion.family.020` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/baidu/advertiser/unit/report/` | `promotion.family.020` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/baidu/feed/plan/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/baidu/plan/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bilibili/advertiser/list/` | `promotion.family.003` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bilibili/campaign/report/` | `promotion.family.022` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bilibili/manager/campaign/list/` | `promotion.family.009` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bilibili/manager/unit/list/` | `promotion.family.021` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bilibili/unit/report/` | `promotion.family.022` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bytedance/agent/list/` | `promotion.family.004` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/bytedance/app/extend_package/list/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/bytedance/app/toutiao_list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bytedance/aweme_auth_list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bytedance/batch_options/` | `promotion.family.005` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/bytedance/clue/wechat_game/list/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/bytedance/event_manager/optimized_goal/get/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bytedance/event_manager_assets/list/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bytedance/manager/std_project/list/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bytedance/monitor_activity_link/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bytedance/native_anchor/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bytedance/native_anchor_template/v2/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bytedance/project/list/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bytedance/promotion/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bytedance/reject_promotion/list/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/bytedance/site/preview/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bytedance/site_template/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bytedance/stardelivery/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/honor/manager/ad_group/list/` | `promotion.family.023` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/honor/manager/campaign/list/` | `promotion.family.009` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/huawei/account/list/` | `promotion.family.002` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/huawei/manager/adgroup/list/` | `promotion.family.008` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/huawei/manager/campaign/list/` | `promotion.family.009` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/huawei/report/adgroup/` | `promotion.family.012` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/huawei/report/campaign/` | `promotion.family.014` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/huawei/store/account/list/` | `promotion.family.002` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/huawei/store/adgroup_list/list/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/huawei/store/campaign/list/` | `promotion.family.007` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/huawei/store/report/adgroup/` | `promotion.family.012` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/huawei/store/report/campaigin/` | `singleton` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/huya/report/campaign/list/` | `promotion.family.015` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/huya/report/group/list/` | `promotion.family.016` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/iqiyi/account/list/` | `promotion.family.002` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/iqiyi/manager/group/list/` | `promotion.family.010` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/iqiyi/manager/plan/list/` | `promotion.family.011` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/iqiyi/report/adgroup/` | `promotion.family.012` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/iqiyi/report/campaign/` | `promotion.family.014` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/kuaishou/agent/list/` | `promotion.family.004` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/kuaishou/batch_options/` | `promotion.family.005` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/kuaishou/campaign/list/` | `promotion.family.007` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/kuaishou/event_manager/track_url/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/kuaishou/manager/ad_unit/list/` | `promotion.family.030` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/kuaishou/manager/campaign/list/` | `promotion.family.009` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/kuaishou/native_auth/list/` | `singleton` | `低` |
+| `reviewed` | `POST` | `/turbo_engine/api/v1/kuaishou/campaign/list/` | `singleton` | `中` |
 | `high` | `GET` | `/turbo_engine/api/v1/kuaishou/procedural_batch/get/` | `promotion.family.001` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/kuaishou/subpackage/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/masterkey/advertiser/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/masterkey/report/advertiser/list/` | `singleton` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/oppo/brand/list/` | `promotion.family.006` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/oppo/manager/group/list/` | `promotion.family.010` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/oppo/manager/plan/list/` | `promotion.family.011` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/oppo/procedural_batch/get/` | `promotion.family.001` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/oppo/report/group/list/` | `promotion.family.016` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/oppo/report/plan/list/` | `promotion.family.032` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/qihu360/report/campaign/list/` | `promotion.family.015` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/qihu360/report/group/list/` | `promotion.family.016` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/sigmob/report/campaign/list/` | `promotion.family.015` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/sigmob/report/promotion/list/` | `singleton` | `高` |
 | `high` | `GET` | `/turbo_engine/api/v1/task/adcreate/arrest/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/task/adcreate/arrest/v2/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/task/adcreate/detail/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/task/adcreate/detail/v2/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/task/adcreate/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/task/adcreate/list/v2/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/task/advertiser_validate/detail/list/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/task/advertiser_validate/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/tencent/ad/list/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/tencent/adgroup/list/v2/` | `singleton` | `中` |
+| `reviewed` | `POST` | `/turbo_engine/api/v1/tencent/ad/list/` | `singleton` | `中` |
 | `high` | `GET` | `/turbo_engine/api/v1/tencent/advertiser/group/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/tencent/batch_options/` | `promotion.family.005` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/tencent/bidword/package/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/tencent/brand/detail/list/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/tencent/brand/list/` | `promotion.family.006` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/tencent/manage/account/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/tencent/manage/account_channel/check/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/tencent/manage/account_channel/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/tencent/medium/adgroup/query/` | `singleton` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/tencent/user_organization_authentication/get` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/tencent/wechat_channels_accounts/get/set/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/uc/account/list/` | `promotion.family.002` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/uc/feed/adgroup/list/` | `promotion.family.034` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/uc/feed/campaign/list/` | `promotion.family.034` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/uc/manager/adgroup/list/` | `promotion.family.008` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/uc/manager/campaign/list/` | `promotion.family.009` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/uc/report/adgroup/list/` | `promotion.family.013` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/uc/report/campaign/list/` | `promotion.family.015` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/uc/report/feed/adgroup/list/` | `promotion.family.036` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/uc/report/feed/advertiser/list/` | `promotion.family.036` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/uc/report/feed/campaign/list/` | `promotion.family.036` | `高` |
 | `high` | `GET` | `/turbo_engine/api/v1/user/common/media_advertiser/company/list/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/user/kuaishou/developer/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/user/open_app/xiaomi_capital/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/vivo/adgroup/list/` | `promotion.family.038` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/vivo/campaign/list/` | `promotion.family.007` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/vivo/report/adgroup/` | `promotion.family.012` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/vivo/report/campaign/` | `promotion.family.014` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/weibo/manager/adgroup/list/` | `promotion.family.008` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/weibo/manager/campaign/list/` | `promotion.family.009` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/weibo/report/adgroup/list/` | `promotion.family.013` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/weibo/report/campaign/list/` | `promotion.family.015` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/xiaohongshu/report/advertiser/list/` | `promotion.family.042` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/xiaohongshu/report/campaign/list/` | `promotion.family.015` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/xiaohongshu/report/creativity/list/` | `promotion.family.042` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/xiaohongshu/report/unit/list/` | `promotion.family.042` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/xiaohongshu/ube_report/campaign/list/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/xiaomi/report/campaign/list/` | `promotion.family.015` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/xiaomi/report/group/list/` | `promotion.family.016` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/xiaomi/report_v4/advertiser/list/` | `promotion.family.043` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/xiaomi/report_v4/campaign/list/` | `promotion.family.043` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/youdao/report/campaign/list/` | `promotion.family.015` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/youdao/report/group/list/` | `promotion.family.016` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v2/alipay/agent/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v2/alipay/agent_sub_account/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v2/alipay/batch_options/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v2/alipay/campaign/list/` | `promotion.family.017` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v2/alipay/group/list/` | `promotion.family.017` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v2/alipay/manager/campaign/list/` | `singleton` | `中` |
 
-### 资产 (17)
+### 资产 (4)
 
 | confidence | method | path | family | cost |
 | --- | --- | --- | --- | --- |
-| `medium` | `UNKNOWN` | `/open_api/v3.0/audience_package/get/` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/openapi/api/v1/user/promoted_object/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/asset/directional_package/kuaishou/list/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/asset/directional_package/tencent/list/` | `singleton` | `中` |
 | `high` | `GET` | `/turbo_engine/api/v1/base/promoted_object_link/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bilibili/asset/text/title/list/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bytedance/asset/text/keyword_package/list/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/kuaishou/asset/title/list/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/kuaishou/audience_package/components/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/kuaishou/audience_package/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/oppo/asset/text/title/list/` | `singleton` | `中` |
-| `registered` | `POST` | `/turbo_engine/api/v1/tencent/asset/monitor/distinct/` | `singleton` | `中` |
 | `high` | `GET` | `/turbo_engine/api/v1/tencent/asset/monitor/list/` | `singleton` | `中` |
-| `registered` | `POST` | `/turbo_engine/api/v1/tencent/asset/monitor/used/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/tencent/asset/text/title/list/` | `singleton` | `中` |
+| `reviewed` | `POST` | `/turbo_engine/api/v1/tencent/asset/text/title/list/` | `singleton` | `中` |
 | `high` | `GET` | `/turbo_engine/api/v1/user/promoted_object/extra_info/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/user/promoted_object/extra_info/manage/` | `singleton` | `低` |
 
-### 素材 (42)
+### 素材 (8)
 
 | confidence | method | path | family | cost |
 | --- | --- | --- | --- | --- |
-| `medium` | `POST` | `/account_center/api/v1/material_creative_person/list/` | `singleton` | `低` |
 | `high` | `GET` | `/open_api/2/assets/creative_component/get/` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/open_api/2/file/image/get/` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/open_api/2/file/video/aweme/get/` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/open_api/2/file/video/get/` | `singleton` | `高` |
 | `high` | `GET` | `/open_api/2/tools/video_cover/suggest/` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/openapi/api/v1/asset/material/manage/local/check/` | `singleton` | `中` |
-| `registered` | `UNKNOWN` | `/openapi/api/v1/material/id_map/` | `singleton` | `中` |
-| `medium` | `UNKNOWN` | `/openapi/api/v1/report/material_get/` | `singleton` | `高` |
-| `medium` | `POST` | `/report/api/v3/datareport/material_get/adcreative_report/` | `singleton` | `高` |
-| `medium` | `POST` | `/report/api/v3/datareport/material_get/adgroup_report/` | `singleton` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/asset/material/batch_options/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/asset/material/favorites/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/asset/material/kuaishou/list/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/asset/material/manage/local/check/` | `singleton` | `中` |
 | `high` | `GET` | `/turbo_engine/api/v1/asset/material/manage/local/detail/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/asset/material/platform/list/` | `singleton` | `中` |
 | `high` | `GET` | `/turbo_engine/api/v1/asset/material/tools/get_file_params/` | `singleton` | `中` |
 | `high` | `GET` | `/turbo_engine/api/v1/asset/material_examine/history/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/asset/material_examine/my_audit_list/` | `singleton` | `中` |
 | `high` | `GET` | `/turbo_engine/api/v1/asset/media_material_label/list/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bilibili/creative/report/` | `singleton` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bilibili/manager/creative/list/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bytedance/aweme/video/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bytedance/cewebrity_video/list/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/bytedance/creative_component/list/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bytedance/image_text_asset/list/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/bytedance/stardelivery/video/list/` | `singleton` | `低` |
-| `registered` | `POST` | `/turbo_engine/api/v1/bytedance/std/project/material_report/` | `singleton` | `中` |
-| `registered` | `POST` | `/turbo_engine/api/v1/bytedance/video/async/num/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/huya/report/creative/list/` | `singleton` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/kuaishou/creative/list/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/kuaishou/manager/creative/list/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/masterkey/report/creative/list/` | `singleton` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/oppo/report/creative/list/` | `singleton` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/qihu360/report/creative/list/` | `singleton` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/tencent/medium/creative/list/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/xiaomi/report/creative/list/` | `singleton` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/xiaomi/report_v4/creative/list/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/youdao/report/creative/list/` | `singleton` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v2/alipay/creative/list/` | `singleton` | `中` |
-| `medium` | `UNKNOWN` | `/v3.0/docs/api/dynamic_creatives/get` | `singleton` | `中` |
+| `reviewed` | `POST` | `/turbo_engine/api/v1/kuaishou/creative/list/` | `singleton` | `中` |
 
-### 报表 (24)
+### 报表 (5)
 
 | confidence | method | path | family | cost |
 | --- | --- | --- | --- | --- |
-| `medium` | `UNKNOWN` | `/openapi/api/v1/report/adreport/custom_get/` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/openapi/api/v1/report/events/list/` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/openapi/api/v1/report/metrics/list/` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/openapi/api/v1/report/monetization_detail/list/` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/openapi/api/v1/report/order/list/` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/openapi/api/v1/report/user/list/` | `singleton` | `高` |
-| `medium` | `POST` | `/report/api/v1/admin_report/date/report/` | `singleton` | `高` |
-| `medium` | `POST` | `/report/api/v1/admin_report/user/report/` | `singleton` | `高` |
-| `medium` | `POST` | `/report/api/v1/admin_report/view/report/` | `singleton` | `高` |
-| `medium` | `POST` | `/report/api/v1/filter_conf/get/` | `singleton` | `高` |
-| `medium` | `POST` | `/report/api/v2/custom_get/calc_total/` | `singleton` | `高` |
 | `high` | `GET` | `/report/api/v2/subscribe/test_message/` | `singleton` | `高` |
-| `medium` | `POST` | `/report/api/v3/confmetric/permission/list/` | `singleton` | `高` |
-| `medium` | `POST` | `/report/api/v3/coze/workflow/data_analysis/` | `singleton` | `高` |
-| `medium` | `POST` | `/report/api/v3/monetization_report/custom_get/` | `singleton` | `高` |
-| `medium` | `POST` | `/report/api/v3/monetization_report/custom_get/calc_total/` | `singleton` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/masterkey/report/group/list/` | `singleton` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v1/{e}/report/group/list/` | `singleton` | `高` |
-| `high` | `GET` | `/turbo_engine/api/v2/datamanageconfig/report/detail/` | `singleton` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v2/datamanageconfig/report/list/` | `singleton` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v3/confmetric/custom_metric/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v3/confmetric/custom_metric/shared_to_me/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v3/confmetric/permission/list/` | `singleton` | `低` |
-| `high` | `GET` | `/turbo_engine/api/v3/conftemplate/my_template/detail/` | `singleton` | `低` |
+| `reviewed` | `POST` | `/report/api/v3/monetization_report/custom_get/calc_total/` | `singleton` | `高` |
+| `reviewed` | `POST` | `/turbo_engine/api/v1/masterkey/report/group/list/` | `singleton` | `高` |
+| `reviewed` | `POST` | `/turbo_engine/api/v3/confmetric/custom_metric/shared_to_me/list/` | `singleton` | `低` |
+| `reviewed` | `POST` | `/turbo_engine/api/v3/confmetric/permission/list/` | `singleton` | `低` |
 
-### App 与账号 (29)
+### App 与账号 (22)
 
 | confidence | method | path | family | cost |
 | --- | --- | --- | --- | --- |
@@ -445,119 +205,56 @@ Cost is a scheduling heuristic, not an observed implementation duration.
 | `high` | `GET` | `/account_center/api/v1/company/app/info_list/` | `singleton` | `低` |
 | `high` | `GET` | `/account_center/api/v1/company/company_capacity/alarm/get/` | `singleton` | `低` |
 | `high` | `GET` | `/account_center/api/v1/dept/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/account_center/api/v1/get_verify_code/v2/` | `singleton` | `低` |
 | `high` | `GET` | `/account_center/api/v1/message/detail/` | `singleton` | `低` |
 | `high` | `GET` | `/account_center/api/v1/message/list/` | `singleton` | `低` |
 | `high` | `GET` | `/account_center/api/v1/third_party/binding_url/` | `singleton` | `低` |
 | `high` | `GET` | `/account_center/api/v1/user_privacy_policy/` | `singleton` | `低` |
-| `medium` | `POST` | `/apprank/api/v1/app/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/apprank/api/v1/app/public_list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/monetization/app/list/` | `singleton` | `低` |
+| `reviewed` | `POST` | `/apprank/api/v1/app/list/` | `singleton` | `低` |
+| `reviewed` | `POST` | `/apprank/api/v1/app/public_list/` | `singleton` | `低` |
+| `reviewed` | `POST` | `/turbo_engine/api/v1/monetization/app/list/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/user/app_click_hijacking/list/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/user/common/user_opera_log/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/user/device_white/testing_tool/click_info/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/user/device_white/testing_tool/device_info/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/user/device_white/testing_tool/is_template_list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/user/device_white/testing_tool/list/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/user/identity_white/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/user/open_app/click_channel/list/` | `singleton` | `低` |
-| `high` | `GET` | `/turbo_engine/api/v1/user/open_app/fetch_app_info/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/user/open_app/sensitive_info/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/user/open_app_event_name/batch_open_close/log/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/user/project/list/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v1/user/project/user_auth/list/` | `singleton` | `中` |
+| `reviewed` | `POST` | `/turbo_engine/api/v1/user/project/list/` | `singleton` | `中` |
 | `high` | `GET` | `/turbo_engine/api/v1/user/project_auth/detail/` | `singleton` | `中` |
 | `high` | `GET` | `/turbo_engine/api/v1/user/promoted/onelink/list/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/user/wechat_ecpm/list/` | `singleton` | `低` |
 
-### 归因 (4)
+### 归因 (1)
 
 | confidence | method | path | family | cost |
 | --- | --- | --- | --- | --- |
-| `medium` | `POST` | `/turbo_engine/api/v1/user/device_white/testing_tool/attribution_detail/` | `singleton` | `低` |
-| `registered` | `POST` | `/turbo_engine/api/v1/user/device_white/testing_tool/attribution_history/` | `singleton` | `低` |
-| `registered` | `POST` | `/turbo_engine/api/v1/user/device_white/testing_tool/attribution_query/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/user/promoted_object/click_url/list/` | `singleton` | `低` |
 
-### 元数据 (20)
+### 元数据 (6)
 
 | confidence | method | path | family | cost |
 | --- | --- | --- | --- | --- |
-| `registered` | `UNKNOWN` | `/open_api/launch/cpc/meta_data/account/brand_info` | `singleton` | `高` |
-| `registered` | `UNKNOWN` | `/open_api/launch/cpc/meta_data/corp/mid` | `singleton` | `高` |
-| `registered` | `UNKNOWN` | `/open_api/launch/cpc/meta_data/launch/wechat/mini_game` | `singleton` | `高` |
-| `registered` | `UNKNOWN` | `/open_api/launch/cpc/meta_data/resource/app/drop_box` | `singleton` | `高` |
-| `registered` | `UNKNOWN` | `/open_api/launch/cpc/meta_data/resource/biligame_list` | `singleton` | `高` |
-| `registered` | `UNKNOWN` | `/open_api/launch/cpc/meta_data/resource/business_category` | `singleton` | `高` |
-| `registered` | `UNKNOWN` | `/open_api/launch/cpc/meta_data/v2/comment_conversion_component/mgk_page` | `singleton` | `高` |
-| `registered` | `UNKNOWN` | `/open_api/launch/cpc/meta_data/v2/story/component/button` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/open_api/launch/cpc/meta_data/v2/story/component/list` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/open_api/launch/cpc/meta_data/v3/archive/get_archive` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/open_api/launch/cpc/meta_data/v3/archive/get_bili_mid` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/open_api/launch/cpc/meta_data/v3/unit/get_cpa_target` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/open_api/launch/cpc/meta_data/v3/unit/get_target` | `singleton` | `高` |
-| `medium` | `POST` | `/turbo_engine/api/v2/datamanageconfig/check_metrics/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v2/datamanageconfig/gravity_metric/list/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v2/datamanageconfig/report_metrics/role_get/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v2/event/property_template/use_template/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v2/event_dim/data_table/detail/` | `singleton` | `中` |
-| `medium` | `POST` | `/turbo_engine/api/v2/event_dim/data_table/list/` | `singleton` | `低` |
+| `reviewed` | `POST` | `/turbo_engine/api/v2/event_dim/data_table/detail/` | `singleton` | `中` |
+| `reviewed` | `POST` | `/turbo_engine/api/v2/event_dim/data_table/list/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v2/event_dim/data_table/version_id_set/` | `singleton` | `低` |
 
-### 其它 (53)
+### 其它 (14)
 
 | confidence | method | path | family | cost |
 | --- | --- | --- | --- | --- |
-| `medium` | `POST` | `/apprank/api/v1/publisher/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/apprank/api/v1/publisher/public_list/` | `singleton` | `低` |
-| `medium` | `POST` | `/apprank/api/v1/rank/app_trend/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/apprank/api/v1/rank/app_trend/public_list/` | `singleton` | `低` |
-| `registered` | `POST` | `/apprank/api/v1/rank/competition_trends/` | `singleton` | `低` |
-| `medium` | `POST` | `/apprank/api/v1/rank/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/apprank/api/v1/rank/public_list/` | `singleton` | `低` |
-| `medium` | `UNKNOWN` | `/open_api/2/dpa/detail/get/` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/open_api/2/event_manager/event_configs/get/` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/open_api/2/event_manager/track_url/get/` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/open_api/2/tools/app_management/harmony_app_list/` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/open_api/2/tools/aweme_auth_list/` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/open_api/2/tools/event/all_assets/detail/` | `singleton` | `高` |
+| `reviewed` | `POST` | `/apprank/api/v1/publisher/list/` | `singleton` | `低` |
+| `reviewed` | `POST` | `/apprank/api/v1/publisher/public_list/` | `singleton` | `低` |
+| `reviewed` | `POST` | `/apprank/api/v1/rank/app_trend/list/` | `singleton` | `低` |
+| `reviewed` | `POST` | `/apprank/api/v1/rank/app_trend/public_list/` | `singleton` | `低` |
+| `reviewed` | `POST` | `/apprank/api/v1/rank/list/` | `singleton` | `低` |
+| `reviewed` | `POST` | `/apprank/api/v1/rank/public_list/` | `singleton` | `低` |
 | `high` | `GET` | `/open_api/2/tools/event/all_assets/list/` | `singleton` | `高` |
-| `registered` | `UNKNOWN` | `/open_api/2/tools/interest_action/id2word/` | `singleton` | `高` |
-| `registered` | `UNKNOWN` | `/open_api/2/tools/interest_action/keyword/suggest/` | `singleton` | `高` |
-| `registered` | `UNKNOWN` | `/open_api/2/tools/interest_action/{toLowerCase}/category/` | `singleton` | `高` |
-| `registered` | `UNKNOWN` | `/open_api/2/tools/interest_action/{toLowerCase}/keyword/` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/open_api/v3.0/cdp/brand/get/` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/open_api/v3.0/gameplay/list/` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/open_api/v3.0/native_anchor/get/detail/` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/open_api/v3.0/project/list/` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/open_api/v3.0/stardelivery/task_author/detail/` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/open_api/v3.0/std_project/list/` | `singleton` | `高` |
-| `registered` | `POST` | `/open_api/v3.0/sugg_words/` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/open_api/v3.0/tools/asset_link/list/` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/open_api/v3.0/tools/blue_flow_package/list/` | `singleton` | `高` |
 | `high` | `GET` | `/open_api/v3.0/tools/micro_${e.os===z.DouyinMiniGame` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/open_api/v3.0/tools/micro_game/list/` | `singleton` | `高` |
-| `medium` | `POST` | `/open_api/v3.0/tools/wechat_game/list/` | `singleton` | `高` |
-| `medium` | `UNKNOWN` | `/openapi/api/v1/open_app/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/openapi/api/v1/open_develop/list/` | `singleton` | `低` |
-| `medium` | `UNKNOWN` | `/skydmp/api/user_api/v2/group/list` | `singleton` | `高` |
 | `high` | `GET` | `/turbo_engine/api/v1/base/company_config/get/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/common/batch_config/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/common/media_directional_package/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/common/media_report/list/` | `singleton` | `低` |
+| `reviewed` | `POST` | `/turbo_engine/api/v1/common/media_report/list/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/health_status/list/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/media/request/history/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/media/task/get_result/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/monetization/csj/account/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/monetization/tobid/account/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/oplog/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/portal/company_query_permission/get/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/task/batch/operate/info/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/task/batch/operate/list/` | `singleton` | `低` |
 | `high` | `GET` | `/turbo_engine/api/v1/task/task_batch_strategy/detail/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v1/task/task_batch_strategy/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v2/event/realtime_event/list/` | `singleton` | `低` |
-| `medium` | `POST` | `/turbo_engine/api/v3/subscribe/list/` | `singleton` | `低` |
-| `medium` | `UNKNOWN` | `/v3.0/docs/api/adgroups/get` | `singleton` | `中` |
-| `medium` | `UNKNOWN` | `/v3.0/docs/api/components/get` | `singleton` | `低` |
-| `medium` | `UNKNOWN` | `/v3.0/docs/api/conversions/get` | `singleton` | `低` |

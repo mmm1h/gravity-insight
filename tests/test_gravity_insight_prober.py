@@ -609,6 +609,47 @@ class GravityInsightProberTests(unittest.TestCase):
         with pytest.raises(ValueError, match="declared as read"):
             assert_read_only_source(source)
 
+    def test_stable_online_probe_never_dispatches_registered_mutations(self) -> None:
+        operation_root = Path("src/gravity_sdk/contracts/operations")
+        mutation_ids = sorted(
+            source["operation"]["operation_id"]
+            for path in operation_root.glob("*.json")
+            if (source := json.loads(path.read_text(encoding="utf-8")))[
+                "operation"
+            ]["effect"]
+            == "mutation"
+        )
+        probe_calls: list[str] = []
+
+        class StableClient:
+            def probe(self, operation_id: str) -> None:
+                probe_calls.append(operation_id)
+
+        class StableClientFactory:
+            @classmethod
+            def from_env(cls, **_kwargs: object) -> StableClient:
+                return StableClient()
+
+        with mock.patch.object(online, "build_runtime", return_value=object()), mock.patch.object(
+            online,
+            "sdk_parts",
+            return_value={"GravityInsightClient": StableClientFactory},
+        ):
+            for operation_id in mutation_ids:
+                with self.subTest(operation_id=operation_id), self.assertRaisesRegex(
+                    ValueError, "only accepts operations declared as read"
+                ):
+                    online.run_online_probes(
+                        [operation_id],
+                        stable=True,
+                        operation_root=operation_root,
+                        evidence_root=self.tmp_path / "evidence",
+                        session=object(),
+                    )
+
+        self.assertEqual(38, len(mutation_ids))
+        self.assertEqual([], probe_calls)
+
     def test_weak_post_probe_requires_traceable_static_confirmation(self) -> None:
         tmp_path = self.tmp_path
         monkeypatch = pytest.MonkeyPatch()
