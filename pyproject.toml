@@ -8,10 +8,26 @@ version = "0.3.0"
 description = "Governed Python SDK and CLI for Gravity Insight and custom SQL"
 readme = "README.md"
 requires-python = ">=3.11"
+authors = [{name = "<PYPI_PACKAGE_OWNER>"}]
+maintainers = [{name = "<PYPI_MAINTAINER>"}]
+keywords = ["analytics", "cli", "governance", "gravity", "sdk"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
 dependencies = [
   "requests==2.32.5",
   "tzdata==2026.3",
 ]
+
+[project.urls]
+Repository = "https://github.com/<GITHUB_ORG>/<REPOSITORY>"
+Issues = "https://github.com/<GITHUB_ORG>/<REPOSITORY>/issues"
 
 [project.optional-dependencies]
 dev = ["pytest>=9,<10"]
@@ -36,3 +52,6 @@ gravity_sdk = [
   "census/data/*",
   "governance/*.json",
 ]
+
+[tool.ruff.lint]
+select = ["F"]
