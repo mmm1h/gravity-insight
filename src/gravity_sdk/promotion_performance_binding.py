@@ -14,21 +14,31 @@ def rows_match_performance_request(
 ) -> bool:
     """Verify every optional App/date identity against the canonical request."""
 
+    return performance_request_mismatch_path(rows, app_id, window) is None
+
+
+def performance_request_mismatch_path(
+    rows: Sequence[Mapping[str, Any]],
+    app_id: str,
+    window: tuple[str, str],
+) -> str | None:
+    """Return only the structural path of the first request-binding mismatch."""
+
     if _canonical_app(app_id) != app_id:
-        return False
+        return "$.request.app_id"
     try:
         start, end = map(date.fromisoformat, window)
     except (TypeError, ValueError):
-        return False
+        return "$.request.date_range"
     if start > end or (start.isoformat(), end.isoformat()) != window:
-        return False
-    for row in rows:
+        return "$.request.date_range"
+    for index, row in enumerate(rows):
         if "app_id" in row and _canonical_app(row["app_id"]) != app_id:
-            return False
+            return f"$.data.data.list[{index}].app_id"
         for field in ("date", "day", "stat_date"):
             if field in row and not _date_in_window(row[field], start, end):
-                return False
-    return True
+                return f"$.data.data.list[{index}].{field}"
+    return None
 
 
 def _canonical_app(value: Any) -> str | None:
@@ -58,4 +68,7 @@ def _date_in_window(value: Any, start: date, end: date) -> bool:
     return selected.isoformat() == value and start <= selected <= end
 
 
-__all__ = ["rows_match_performance_request"]
+__all__ = [
+    "performance_request_mismatch_path",
+    "rows_match_performance_request",
+]

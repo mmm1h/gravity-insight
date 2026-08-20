@@ -639,7 +639,9 @@ live 指标目录但不选择字段。调用方精确选择后第二次调用 `p
 每个平台一个 batch item且内部分页 worker 固定 1；direct 平台池范围 1..24。共享 item 预算按
 平台等额 floor 分配，结果按调用方平台序返回并隔离 sibling 失败。返回
 `gravity-insight.promotion-performance.v1` 的安全投影，不归一字段、不跨平台汇总或排名，也不生成
-策略。`CompositeService.promotion_snapshot()` 保留原签名并按输入能力分流。`resource=primary` 且平台
+策略。行边界从已编译 operation 合同派生 opaque JSON 字段，只接受深度、元素数和序列化大小均
+有界的 JSON；其他字段仍限有界 scalar。结构拒绝返回值无关的 `drift_diagnostics` 检查类别与字段
+路径。`CompositeService.promotion_snapshot()` 保留原签名并按输入能力分流。`resource=primary` 且平台
 全部属于同一 21 项正式集合时，`common_inputs` / `inputs_by_platform` 必须共同绑定唯一 `app_id`、两元素
 `date_list` 和统一 `query_fields`；该分支复用上述 workspace App、请求、FieldPolicy 与结果验证并返回
 同一个 envelope。非 primary 层级或 `bing/xiaohongshu/taptap/wechat_video` 走 stable inventory 兼容

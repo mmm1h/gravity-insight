@@ -22,9 +22,11 @@
   可大于观察值；Promotion 固定 `size=10`，且非空 totals 必须等于观察值。`safe_component`/
   `_safe_success` 还分别持有单 operation 对多 operation、Promotion App/window/metrics binding、允许的
   data 字段和返回组件字段；`product_envelope` 的领域字段也不同。它们不再作为“完全等价重复”处理。
-- **剩余证据债**：`_safe_rows` 的循环骨架相似，但 Material 使用固定字段集并规范化 key，Promotion
-  合并平台字段与请求 metrics 且显式拒绝非字符串 key；现有测试不能证明参数化提取对全部 Mapping
-  边界逐字段等价。`_primary_error` 的选择/复制骨架相似，但缺失 error 时必须调用各自
+- **剩余证据债**：Material 的 `_safe_rows` 只接受固定字段集与 scalar 并规范化 key；Promotion 的
+  `promotion_performance_rows.safe_promotion_rows` 合并平台字段与请求 metrics、显式拒绝非字符串 key，
+  还从编译合同派生 opaque JSON 字段，施加独立深度/元素/序列化大小边界并返回值无关的失败路径。
+  两边当前行为已进一步分叉，现有测试不能证明参数化提取对全部 Mapping 边界逐字段等价。
+  `_primary_error` 的选择/复制骨架相似，但缺失 error 时必须调用各自
   `contract_component`，operation identity 与错误文案不同；现有测试也不足以证明进一步拆分不会改变
   malformed 输入行为。因此两者暂留各自 owner，本条不关闭。
 - **触发条件**：任一产品再次修改标量 row copy 或 primary error selection；或出现第三个采用相同
@@ -98,6 +100,27 @@
   `page_info` unknown 归入真实形状并修正合同；对计划中的另外 28 条 stable collection unknown 取得
   可证伪的完整性信号或转入永久 unknown。
   不得用现有合同声明、短页或满页启发式给自己提升证据等级，也不得全量生产探测。
+
+### 8. Title Package 的行校验会拒绝合同已声明的 opaque JSON 字段
+
+- **Owner area**：Title Package 产品结果投影（`title_package.py`）。
+- **证据**：`material.bytedance_asset_text_title_package.list` 与
+  `material.bytedance_std_asset_text_title_package.list` 的 `response_projection` 都声明
+  `opaque_json_item_keys: ["title_list"]`，且 `title_list` 在 `item_keys` 内会被投影出来。但
+  `title_package.py:210` 对行内**全部**字段执行 `_scalar` 校验，任一非标量值即整批 `return None`。
+  list/dict 不是标量，因此 `title_list` 一旦非空就会让整批行被丢弃。这与 issue #27 在
+  Promotion Performance 上的根因同型：合同声明了 opaque，产品层不认。
+- **与 #27 的差别**：#27 有消费者提交的生产复现（operation 单跑成功、产品层 `contract_changed`）；
+  本条**没有**。只能从代码确定「一旦 `title_list` 为 list/dict 就会被拒」，
+  **无法从代码确定生产响应里它是否实际非空**——若上游恒为 null 或字符串，缺陷永不触发。
+- **当前缓解**：无。#27 的修法（从编译合同派生 opaque 字段集 + 有界 JSON 投影 +
+  值无关失败路径诊断）已在 `promotion_performance_rows.py` 落地，可作为本条的实现范式，
+  但不要在没有触发证据时提前套用——那会给一条未证实的缺陷增加表面积。
+- **触发条件**：观察到任一 Title Package 生产响应的 `title_list` 为非空 list/dict；
+  或有调用方报告 Title Package 产品拒绝了单独调用成功的 operation。
+- **退出条件**：取得上述触发证据后，按 #27 的范式让行校验从合同的 `opaque_json_item_keys`
+  派生 opaque 边界并施加独立的深度/元素数/序列化大小上限，同时保持未登记字段、类型变化
+  与非 opaque 字段的标量规则继续失败关闭；不得放宽成「任意值都收」。
 
 ## 已关闭
 

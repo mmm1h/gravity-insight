@@ -43,6 +43,10 @@ _DRIFT_WARNING_CLASSES = {
     "unregistered response data item keys": "unregistered_response_data_item_keys",
 }
 _MAX_DRIFT_WARNING_COUNT = 1_000_000
+_MAX_STRUCTURAL_DIAGNOSTICS = 8
+_MAX_STRUCTURAL_DIAGNOSTIC_TEXT = 160
+_STRUCTURAL_CHECK_PATTERN = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
+_STRUCTURAL_PATH_PATTERN = re.compile(r"^[A-Za-z0-9_$.[\]<>-]+$")
 
 
 def should_calculate_total(query: Mapping[str, Any]) -> bool:
@@ -256,10 +260,9 @@ def _safe_drift_diagnostics(
                 continue
             seen.add(warning_class)
             warning_counts.append({"class": warning_class, "count": count})
-    evidence: dict[str, Any] = {
-        "operation_id": operation_id,
-        "required_evidence": "maintainer_live_probe",
-    }
+    evidence: dict[str, Any] = _drift_evidence(
+        operation_id, required_evidence="maintainer_live_probe"
+    )
     fingerprint = _safe_schema_fingerprint(envelope.get("schema_fingerprint"))
     if fingerprint is not None:
         evidence["contract_schema_fingerprint"] = fingerprint
@@ -267,6 +270,50 @@ def _safe_drift_diagnostics(
         "schema_version": "gravity-insight.drift-diagnostics.v1",
         "warning_counts": warning_counts,
         "evidence": evidence,
+    }
+
+
+def bounded_structural_drift_diagnostics(
+    operation_id: str, failures: Sequence[tuple[str, str]]
+) -> dict[str, Any]:
+    """Build value-free structural diagnostics in the existing drift shape."""
+
+    selected: list[dict[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for check, path in failures[:_MAX_STRUCTURAL_DIAGNOSTICS]:
+        pair = (check, path)
+        if (
+            pair in seen
+            or len(check) > _MAX_STRUCTURAL_DIAGNOSTIC_TEXT
+            or len(path) > _MAX_STRUCTURAL_DIAGNOSTIC_TEXT
+            or _STRUCTURAL_CHECK_PATTERN.fullmatch(check) is None
+            or _STRUCTURAL_PATH_PATTERN.fullmatch(path) is None
+        ):
+            continue
+        seen.add(pair)
+        selected.append({"check": check, "path": path})
+    counts: dict[str, int] = {}
+    for item in selected:
+        counts[item["check"]] = counts.get(item["check"], 0) + 1
+    return {
+        "schema_version": "gravity-insight.drift-diagnostics.v1",
+        "warning_counts": [
+            {"class": check, "count": count}
+            for check, count in counts.items()
+        ],
+        "evidence": _drift_evidence(
+            operation_id, required_evidence="maintainer_contract_review"
+        ),
+        "failures": selected,
+    }
+
+
+def _drift_evidence(
+    operation_id: str, *, required_evidence: str
+) -> dict[str, Any]:
+    return {
+        "operation_id": operation_id,
+        "required_evidence": required_evidence,
     }
 
 
@@ -310,6 +357,7 @@ def _failure_exit_code(failure: tuple[str, ErrorDetail]) -> int:
 
 __all__ = [
     "aggregate_collection_result",
+    "bounded_structural_drift_diagnostics",
     "combined_status",
     "multidim_envelope",
     "should_calculate_total",
