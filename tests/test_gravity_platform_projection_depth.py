@@ -65,6 +65,102 @@ def _event_property(**overrides: Any) -> dict[str, Any]:
 
 
 class PlatformProjectionDepthTests(unittest.TestCase):
+    def test_bytedance_advertiser_contracts_project_operator_fields_consistently(
+        self,
+    ) -> None:
+        projected_fields = {
+            "delay": 0,
+            "operator_id": 31,
+            "operator_name": "fixture operator",
+        }
+        cases = (
+            (
+                "promotion.bytedance.advertiser.list",
+                {
+                    "date_list": ["2026-08-10", "2026-08-11"],
+                    "query_fields": [],
+                },
+            ),
+            (
+                "promotion.bytedance.advertiser_performance.list",
+                {"date_list": ["2026-08-10", "2026-08-11"]},
+            ),
+        )
+
+        for operation_id, inputs in cases:
+            with self.subTest(operation_id=operation_id):
+                contract = _contract(operation_id)
+                projection = contract["response_projection"]
+                self.assertLessEqual(
+                    set(projected_fields), set(projection["item_keys"])
+                )
+                self.assertTrue(
+                    set(projected_fields).isdisjoint(
+                        projection.get("known_omitted_item_keys", [])
+                    )
+                )
+                client = _client(
+                    operation_id,
+                    {
+                        "code": 0,
+                        "data": {
+                            "list": [projected_fields],
+                            "page_info": {
+                                "page": 1,
+                                "page_size": 10,
+                                "total_number": 1,
+                                "total_page": 1,
+                            },
+                        },
+                    },
+                )
+
+                result = client.read(operation_id, inputs)
+
+                self.assertEqual("success", result["status"])
+                self.assertEqual(projected_fields, result["data"]["list"][0])
+
+    def test_bytedance_advertiser_contracts_fail_closed_on_list_type_change(
+        self,
+    ) -> None:
+        cases = (
+            (
+                "promotion.bytedance.advertiser.list",
+                {
+                    "date_list": ["2026-08-10", "2026-08-11"],
+                    "query_fields": [],
+                },
+            ),
+            (
+                "promotion.bytedance.advertiser_performance.list",
+                {"date_list": ["2026-08-10", "2026-08-11"]},
+            ),
+        )
+
+        for operation_id, inputs in cases:
+            with self.subTest(operation_id=operation_id):
+                client = _client(
+                    operation_id,
+                    {
+                        "code": 0,
+                        "data": {
+                            "list": {"operator_id": 31},
+                            "page_info": {
+                                "page": 1,
+                                "page_size": 10,
+                                "total_number": 1,
+                                "total_page": 1,
+                            },
+                        },
+                    },
+                )
+
+                result = client.read(operation_id, inputs)
+
+                self.assertFalse(result["ok"])
+                self.assertEqual("contract_changed", result["status"])
+                self.assertEqual("CONTRACT_CHANGED", result["error"]["code"])
+
     def test_report_overview_projects_only_reviewed_column_labels(self) -> None:
         operation_id = "report.overview.query"
         columns = {

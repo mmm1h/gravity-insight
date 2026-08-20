@@ -18,7 +18,8 @@ PLATFORM_ROW_FIELDS = MappingProxyType(
             {
                 "advertiser_agent_id", "advertiser_agent_name",
                 "advertiser_budget_mode", "advertiser_remark",
-                "advertiser_system_status", "company", "project_list", "stat_cost",
+                "advertiser_system_status", "company", "delay", "operator_id",
+                "operator_name", "project_list", "stat_cost",
             }
         ),
         "tencent": frozenset(

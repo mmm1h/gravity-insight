@@ -17098,6 +17098,9 @@
           "advertiser_name",
           "advertiser_remark",
           "company",
+          "delay",
+          "operator_id",
+          "operator_name",
           "project_list"
         ],
         "known_omitted_data_item_keys": {},
