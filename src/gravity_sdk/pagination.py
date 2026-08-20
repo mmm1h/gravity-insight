@@ -17,6 +17,7 @@ from .errors import InputValidationError, PaginationError
 from .http_runtime import MAX_CONCURRENCY
 from .models import OperationSpec, ReadResult
 from .pagination_merge import merge_pages, truncate_nonpaginated_result
+from .pagination_completeness import force_prefix
 from .pagination_policy import (
     STOPPED_MISSING_TOTAL_PAGE,
     has_next_page,
@@ -151,6 +152,7 @@ def _limited_nonpaginated_result(
     result = first.to_dict()
     returned, original = truncate_nonpaginated_result(result, max_items)
     result["truncated"] = original > returned
+    force_prefix(result, result["truncated"])
     result["next_page_input"] = None
     result["total"] = {
         "items": original,
@@ -215,6 +217,7 @@ def _limited_paginated_result(
         max_workers=max_workers,
     )
     result["truncated"] = next_page_input is not None
+    force_prefix(result, result["truncated"])
     result["next_page_input"] = next_page_input
     result["total"] = {
         "items": result["page"].get("total_items"),

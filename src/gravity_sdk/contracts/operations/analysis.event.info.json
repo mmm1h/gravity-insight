@@ -29,6 +29,8 @@
     "operation_id": "analysis.event.info",
     "pagination": {
       "kind": "none",
+      "completeness": "unknown",
+      "pagination_evidence": "production",
       "list_path": "",
       "page_field": "",
       "page_info_path": "",

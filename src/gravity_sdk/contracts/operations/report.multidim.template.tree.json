@@ -35,6 +35,8 @@
     "operation_id": "report.multidim.template.tree",
     "pagination": {
       "kind": "none",
+      "completeness": "unknown",
+      "pagination_evidence": "template",
       "list_path": "",
       "page_field": "",
       "page_info_path": "",

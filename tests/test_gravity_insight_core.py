@@ -472,6 +472,8 @@ class GravityInsightCoreTests(unittest.TestCase):
                 "fetched_at",
                 "schema_fingerprint",
                 "operation_id",
+                "completeness",
+                "pagination_evidence",
                 "contract_version",
                 "request",
                 "page",

@@ -55,6 +55,11 @@ class PaginationContractAuditTests(unittest.TestCase):
         self.assertEqual([], reconciled["unexpected_kind_drift"])
         self.assertEqual([], reconciled["coverage"]["missing_from_audit"])
         self.assertEqual([], reconciled["coverage"]["missing_from_contracts"])
+        self.assertEqual({"complete": 60, "unknown": 177}, reconciled["current_completeness"])
+        self.assertEqual(
+            {"production": 97, "template": 131, "wire": 9},
+            reconciled["current_pagination_evidence"],
+        )
         self.assertEqual(
             dict(sorted(Counter(item["kind"] for item in current.values()).items())),
             reconciled["current_declared_kinds"],

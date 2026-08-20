@@ -15,7 +15,7 @@
       "data_shape": "object", "data_keys": ["id", "name", "subject", "report_group_id", "config", "remark", "app_id", "project_id", "create_time", "update_time", "cid", "create_user_id", "create_user_name", "modify_time", "update_user_id", "update_user_name"],
       "required_data_keys": ["id", "name", "subject", "config", "remark"], "item_keys": [], "dynamic_item_fields": []
     },
-    "pagination": {"kind": "none", "page_field": "", "page_size_field": "", "list_path": "", "page_info_path": "", "total_page_field": ""},
+    "pagination": {"kind": "none", "completeness": "unknown", "pagination_evidence": "production", "page_field": "", "page_size_field": "", "list_path": "", "page_info_path": "", "total_page_field": ""},
     "semantic_error_rules": ["code", "extra.error"],
     "privacy_policy": {"classification": "configuration", "redact_fields": ["authorization", "access_token", "token", "cookie", "password", "secret", "refresh_token", "session_token"]},
     "required_parent": [{"operation_id": "report.report.list", "input_field": "id", "output_path": "data.list[].id", "selection": "caller_select"}], "live_probe": {"enabled": true, "inputs": {"id": "1"}}, "examples": [],

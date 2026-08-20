@@ -44,6 +44,8 @@ def _operation() -> dict:
         },
         "pagination": {
             "kind": "page_info",
+            "completeness": "complete",
+            "pagination_evidence": "production",
             "page_field": "page",
             "page_size_field": "page_size",
             "list_path": "data.list",
@@ -172,6 +174,7 @@ class GravityInsightPaginationTests(unittest.TestCase):
         self.assertEqual([1, 2, 3, 4], [row["id"] for row in result["data"]["list"]])
         self.assertEqual("parallel_known_total", result["page"]["fetch_strategy"])
         self.assertEqual(4, result["page"]["pages_fetched"])
+        self.assertEqual("complete", result["completeness"])
 
     def test_all_pages_audit_counts_worker_http_requests(self) -> None:
         from gravity_sdk.receipt import count_http_requests, record_http_request
@@ -230,6 +233,7 @@ class GravityInsightPaginationTests(unittest.TestCase):
         self.assertEqual("stopped_missing_total_page", result["page"]["fetch_strategy"])
         self.assertIsNone(result["page"]["has_more"])
         self.assertIsNone(result["page"]["total_pages"])
+        self.assertEqual("unknown", result["completeness"])
         with patch.object(self.client, "_execute_result", side_effect=execute):
             limited = self.client.read_limited(
                 "example.concurrent.list", max_pages=2, max_items=2
@@ -279,6 +283,7 @@ class GravityInsightPaginationTests(unittest.TestCase):
         self.assertEqual("parallel_known_total", result["page"]["fetch_strategy"])
         self.assertEqual({"page": 4, "page_size": 1}, result["next_page_input"])
         self.assertTrue(result["truncated"])
+        self.assertEqual("prefix", result["completeness"])
 
     def test_limited_unknown_total_stays_serial_and_returns_next_page(self) -> None:
         calls: list[int] = []
@@ -399,6 +404,8 @@ class GravityInsightPaginationTests(unittest.TestCase):
         self.assertEqual(
             {
                 "kind": "page_info",
+                "completeness": "complete",
+                "pagination_evidence": "production",
                 "page_field": "page",
                 "page_size_field": "page_size",
                 "total_page_field": "total_page",

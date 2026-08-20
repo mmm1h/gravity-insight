@@ -49,11 +49,15 @@ def pagination_schema(pagination: Any) -> dict[str, Any]:
     if pagination.kind == "none":
         return {
             "kind": "none",
+            "completeness": pagination.completeness,
+            "pagination_evidence": pagination.pagination_evidence,
             "page_field": pagination.page_field,
             "page_size_field": pagination.page_size_field,
         }
     return {
         "kind": pagination.kind,
+        "completeness": pagination.completeness,
+        "pagination_evidence": pagination.pagination_evidence,
         "page_field": pagination.page_field,
         "page_size_field": pagination.page_size_field,
         "total_page_field": pagination.total_page_field,

@@ -386,6 +386,10 @@ class GravityInsightCliCatalogHardeningTests(unittest.TestCase):
         service = CompositeService(client)
         snapshot = service.metadata_snapshot()
         self.assertEqual(
+            ("partial", "unknown"),
+            (snapshot["status"], snapshot["completeness"]),
+        )
+        self.assertEqual(
             ["report.template.list"],
             [item["operation_id"] for item in client.batch_requests],
         )

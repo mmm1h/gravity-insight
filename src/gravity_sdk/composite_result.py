@@ -10,6 +10,7 @@ from typing import Any
 from .errors import ErrorCategory, ErrorCode, ErrorDetail, exit_code_for_error
 from .result_audit import project_result_audit
 from .result_source import GOVERNED_PRODUCT, result_source
+from .pagination_completeness import COMPLETE, aggregate_completeness
 
 
 _FAILURE_STATUSES = frozenset(
@@ -48,6 +49,17 @@ def should_calculate_total(query: Mapping[str, Any]) -> bool:
     return query.get("ok") is not False and query.get("status", "success") == "success"
 
 
+def aggregate_collection_result(
+    results: Sequence[Mapping[str, Any]], status: str
+) -> tuple[str, str]:
+    """Preserve incomplete nested reads in the aggregate machine status."""
+
+    completeness = aggregate_completeness(results)
+    if results and status in _SUCCESS_STATUSES and completeness != COMPLETE:
+        status = "partial"
+    return status, completeness
+
+
 def multidim_envelope(
     validation: Mapping[str, Any],
     query: Mapping[str, Any],
@@ -69,6 +81,7 @@ def multidim_envelope(
         "result_source": result_source(GOVERNED_PRODUCT),
         "ok": not failures,
         "status": combined_status(statuses),
+        "completeness": aggregate_completeness([query, total]),
         "exit_code": max((_failure_exit_code(item) for item in failures), default=0),
         "error": error,
         "next_action": (
@@ -198,6 +211,12 @@ def _safe_component(
             selected["schema_fingerprint"] = fingerprint
         if isinstance(envelope.get("truncated"), bool):
             selected["truncated"] = envelope["truncated"]
+        if envelope.get("completeness") in {"complete", "prefix", "unknown"}:
+            selected["completeness"] = envelope["completeness"]
+        if envelope.get("pagination_evidence") in {
+            "production", "wire", "template", "none"
+        }:
+            selected["pagination_evidence"] = envelope["pagination_evidence"]
         page = _safe_page(envelope.get("page"))
         if page is not None:
             selected["page"] = page
@@ -289,4 +308,9 @@ def _failure_exit_code(failure: tuple[str, ErrorDetail]) -> int:
     return exit_code_for_error(failure[1])
 
 
-__all__ = ["combined_status", "multidim_envelope", "should_calculate_total"]
+__all__ = [
+    "aggregate_collection_result",
+    "combined_status",
+    "multidim_envelope",
+    "should_calculate_total",
+]

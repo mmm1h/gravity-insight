@@ -24,6 +24,8 @@
     "operation_id": "promotion.latest_account_status.get",
     "pagination": {
       "kind": "none",
+      "completeness": "unknown",
+      "pagination_evidence": "production",
       "list_path": "",
       "page_field": "",
       "page_info_path": "",

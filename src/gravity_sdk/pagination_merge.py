@@ -8,6 +8,7 @@ from typing import Any
 from .drift import aggregate_contract_status
 from .fingerprints import shape_fingerprint
 from .models import OperationSpec, ReadResult
+from .pagination_completeness import page_completeness
 from .result_audit import add_result_audit
 from .response_drift import merge_response_drifts
 
@@ -56,6 +57,10 @@ def merge_pages(
         "fetch_strategy": strategy,
         "max_workers": max_workers,
     }
+    result["completeness"] = page_completeness(
+        operation.pagination.completeness, result["page"], all_pages=True
+    )
+    result["pagination_evidence"] = operation.pagination.pagination_evidence
     result["schema_fingerprint"] = shape_fingerprint(result["data"])
     return add_result_audit(
         result,

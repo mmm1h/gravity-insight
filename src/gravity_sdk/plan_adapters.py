@@ -58,6 +58,7 @@ from .plan_adapter_support import (
 )
 from .plan_run_sql_adapter import validate_run_plan, validate_sql_plan
 from .actionable_error_values import actual_value
+from .pagination_completeness import require_complete_product
 
 
 _COMPOSITE_FIELDS = frozenset(
@@ -90,11 +91,28 @@ _COMPOSITE_OUTPUT_FIELDS = frozenset(
         "include_hourly", "operation_count", "platforms",
         "paginated_operation_count", "query", "results", "scopes", "source_count",
         "total", "validation", "items", "item_count", "saved_analysis", "source", "sources", "truncated", "kind",
+        "completeness", "pagination_evidence",
         "profiles",
         "data", "device_id",
         "operation_id", "definition_network_called", "query_executed", "result",
     }
 )
+
+
+def _normalize_run_result(
+    result: Any, request: Mapping[str, Any]
+) -> Any:
+    if not isinstance(result, Mapping) or result.get("ok") is False:
+        return result
+    native = result.get("result")
+    selected = dict(native) if isinstance(native, Mapping) else dict(result)
+    if request.get("all_pages") is not True:
+        return selected
+    return require_complete_product(
+        selected,
+        operation_id=str(selected.get("operation_id", request["selector"])),
+        product="Plan run all_pages",
+    )
 
 
 def build_plan_adapters(
@@ -135,10 +153,7 @@ def build_plan_adapters(
             metadata_database=database,
             output_fields=context.output_fields or None,
         )
-        if isinstance(result, Mapping) and result.get("ok") is not False:
-            native = result.get("result")
-            return dict(native) if isinstance(native, Mapping) else result
-        return result
+        return _normalize_run_result(result, request)
 
     def validate_sql(request: Mapping[str, Any], context: AdapterContext) -> None:
         validate_sql_plan(request, context, workspace)
@@ -169,7 +184,10 @@ def build_plan_adapters(
         return execute_receipt_query(request, context)
 
     return PlanAdapters(
-        run=PlanAdapter(execute_run, validate_run, _identity_projection),
+        run=PlanAdapter(
+            execute_run, validate_run, _identity_projection,
+            preserve_capability_gap=True,
+        ),
         sql_product=PlanAdapter(execute_sql, validate_sql, _sql_projection),
         metadata_search=PlanAdapter(
             execute_metadata, validate_metadata, _metadata_projection

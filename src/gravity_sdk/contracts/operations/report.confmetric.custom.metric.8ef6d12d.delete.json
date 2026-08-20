@@ -13,7 +13,7 @@
     "input_fields": {"id": {"type": "string", "required": true, "max_length": 128}},
     "live_probe": {"enabled": false, "inputs": {}},
     "operation_id": "report.confmetric.custom.metric.8ef6d12d.delete",
-    "pagination": {"kind": "none", "list_path": "", "page_field": "", "page_info_path": "", "page_size_field": "", "total_page_field": ""},
+    "pagination": {"kind": "none", "completeness": "unknown", "pagination_evidence": "template", "list_path": "", "page_field": "", "page_info_path": "", "page_size_field": "", "total_page_field": ""},
     "path_template": "/turbo_engine/api/v3/confmetric/custom_metric/delete/",
     "platform": null,
     "privacy_policy": {"classification": "configuration", "redact_fields": ["authorization", "access_token", "token", "cookie", "password", "secret", "refresh_token", "session_token"]},

@@ -20,7 +20,7 @@
       "item_keys": ["id", "name", "wildcard_name", "report_conf_template_id", "report_type", "subscribe_status", "start_time", "end_time", "send_way", "subscribe_time", "hourly_send_periods", "subscribe_content", "subscribe_selected_columns", "subscribe_all_columns", "category", "app_id", "project_id", "create_user_id", "create_user_name", "create_time", "update_time", "report_name", "period", "subscribe_info", "cid", "modify_time", "project_name", "update_user_id", "update_user_name"],
       "dynamic_item_fields": []
     },
-    "pagination": {"kind": "page_info", "page_field": "page", "page_size_field": "page_size", "default_page_size": 20, "max_page_size": 100, "list_path": "data.list", "page_info_path": "data.page_info", "total_page_field": "total_page"},
+    "pagination": {"kind": "page_info", "completeness": "complete", "pagination_evidence": "production", "page_field": "page", "page_size_field": "page_size", "default_page_size": 20, "max_page_size": 100, "list_path": "data.list", "page_info_path": "data.page_info", "total_page_field": "total_page"},
     "semantic_error_rules": ["code", "extra.error"],
     "privacy_policy": {"classification": "user_level", "redact_fields": ["authorization", "access_token", "token", "cookie", "password", "secret", "refresh_token", "session_token"]},
     "required_parent": [], "live_probe": {"enabled": true, "inputs": {"filters": [], "page": 1, "page_size": 1}},

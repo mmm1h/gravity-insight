@@ -36,6 +36,8 @@
     "operation_id": "analysis.datamanageconfig.kanban.dashboard.dc7858a7.update",
     "pagination": {
       "kind": "none",
+      "completeness": "unknown",
+      "pagination_evidence": "template",
       "list_path": "",
       "page_field": "",
       "page_info_path": "",
