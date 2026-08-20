@@ -12,7 +12,7 @@ from .draft_probe import probe_draft
 from .drafts import refresh_structured_blockers
 from .parameters import assemble_draft_parameters
 from .promotion import evaluate_gate, promote_drafts, save_draft
-from .read_semantics import assert_probe_operation_ids
+from .read_semantics import assert_available_probe_items, assert_probe_operation_ids
 from .transport import RecordingSession, RequestDiscipline, build_runtime, sdk_parts
 
 
@@ -447,6 +447,7 @@ def run_scoped_reprobes(
 
     if not operation_ids:
         raise ValueError("scoped reprobe requires at least one operation")
+    assert_available_probe_items(operation_ids, draft_root=draft_root)
     if session is None:
         try:
             import requests
@@ -455,8 +456,7 @@ def run_scoped_reprobes(
         session = requests.Session()
     initial_stable = len(_stable_ids(operation_root))
     discipline = RequestDiscipline(
-        interval_seconds=interval_seconds,
-        request_limit=request_limit,
+        interval_seconds=interval_seconds, request_limit=request_limit,
         hard_limit=900,
     )
     recording = RecordingSession(session, discipline)
