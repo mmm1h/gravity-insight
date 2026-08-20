@@ -20,7 +20,7 @@
     "AnalysisStep"
   ],
   "AuthenticationError": [
-    ".errors",
+    ".error_types",
     "AuthenticationError"
   ],
   "CompiledAnalysisQuery": [
@@ -44,7 +44,7 @@
     "CredentialConfig"
   ],
   "CredentialError": [
-    ".errors",
+    ".error_types",
     "CredentialError"
   ],
   "CredentialProvider": [
@@ -100,7 +100,7 @@
     "GravityClient"
   ],
   "GravityExportError": [
-    ".errors",
+    ".error_sql",
     "GravityExportError"
   ],
   "GravityInsightClient": [
@@ -108,7 +108,7 @@
     "GravityInsightClient"
   ],
   "GravityInsightError": [
-    ".errors",
+    ".error_models",
     "GravityInsightError"
   ],
   "GravitySDK": [
@@ -116,11 +116,11 @@
     "GravitySDK"
   ],
   "InputValidationError": [
-    ".errors",
+    ".error_types",
     "InputValidationError"
   ],
   "ManifestError": [
-    ".errors",
+    ".error_types",
     "ManifestError"
   ],
   "MetadataCache": [
@@ -136,15 +136,15 @@
     "OperationProbe"
   ],
   "PaginationError": [
-    ".errors",
+    ".error_types",
     "PaginationError"
   ],
   "ParentRequiredError": [
-    ".errors",
+    ".error_types",
     "ParentRequiredError"
   ],
   "PermissionUnavailableError": [
-    ".errors",
+    ".error_types",
     "PermissionUnavailableError"
   ],
   "PlanAdapter": [
@@ -168,11 +168,11 @@
     "PlanValidationError"
   ],
   "PolicyViolation": [
-    ".errors",
+    ".error_types",
     "PolicyViolation"
   ],
   "SemanticRejectedError": [
-    ".errors",
+    ".error_types",
     "SemanticRejectedError"
   ],
   "SqlBatchRequest": [
@@ -184,27 +184,27 @@
     "SqlBatchResult"
   ],
   "SqlResponseError": [
-    ".errors",
+    ".error_sql",
     "SqlResponseError"
   ],
   "SqlValidationError": [
-    ".errors",
+    ".error_sql",
     "SqlValidationError"
   ],
   "TransportError": [
-    ".errors",
+    ".error_types",
     "TransportError"
   ],
   "UnknownOperationError": [
-    ".errors",
+    ".error_types",
     "UnknownOperationError"
   ],
   "UpstreamContradictedRequestError": [
-    ".errors",
+    ".error_types",
     "UpstreamContradictedRequestError"
   ],
   "UpstreamError": [
-    ".errors",
+    ".error_types",
     "UpstreamError"
   ],
   "analysis_query_batch_schema": [

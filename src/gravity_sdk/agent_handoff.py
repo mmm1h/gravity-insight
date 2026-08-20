@@ -279,9 +279,9 @@ def _composite_plan_request(card: Mapping[str, Any]) -> dict[str, Any]:
         from .agent_multidim import multidim_plan_request
 
         return multidim_plan_request(card)
-    from .agent_report_routing import REPORT_PRODUCTS, report_product_plan_request
+    from .agent_report_routing import NO_SPEC_PRODUCTS, report_product_plan_request
 
-    if composite in REPORT_PRODUCTS:
+    if composite in NO_SPEC_PRODUCTS:
         return report_product_plan_request(str(composite), card)
     if composite == "material_performance":
         from .agent_material_performance import material_performance_plan_request

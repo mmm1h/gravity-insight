@@ -58,15 +58,6 @@
 - **退出条件**：上游提供可校验的版本标识后，把它纳入第二次解析的前置校验，ID 复用即 fail-closed；
   在那之前**不扩大**该模式的适用面——不要把在线输入解析套用到新的动线上来降低调用次数。
 
-### 4. `REPORT_PRODUCTS` 的名字已经和它的内容对不上
-
-- **Owner area**：`agent_report_routing.py`。
-- **证据**：该 frozenset 现含 `advertiser_profile`、`custom_audience` 两个 promotion 产品，
-  常量名与模块 docstring 里的 "report" 已不成立（docstring 已改为 "bounded no-spec products"，
-  常量名没跟着改）。它实际的语义是「无 spec、边界固定的窄产品路由」，与 report 域无关。
-- **触发条件**：再加入第三个非 report 域产品，或有人据名字误以为该集合限定 report 域。
-- **退出条件**：触发时连同调用点一次改名到位（如 `NO_SPEC_PRODUCTS`）；单独为改名开一次提交不值得。
-
 ### 6. Census 把 214 条 POST 仅凭路径词元判为「未覆盖读」
 
 **状态（2026-08-16）**：在线安全缺口已关闭；非推广/素材 155 条已逐条分类，剩余分类证据债务收窄到
@@ -138,3 +129,5 @@
 ## 已关闭
 
 2026-08-19 以前关闭项已压缩到 [清理前快照](../archive/snapshots/technical-debt-2026-08-19.md)，不在当前清单重复展开。
+
+2026-08-20：Agent 有界无 spec 路由集合已改用 `NO_SPEC_PRODUCTS`；`REPORT_PRODUCTS` 作为同对象兼容别名保留。
