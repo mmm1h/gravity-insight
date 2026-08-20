@@ -1,6 +1,6 @@
 # 候选能力证据矩阵
 
-本页只保留 17 项候选的当前裁决。历史请求账本、纠错过程和已完成写面取证见归档快照；运行时是否可执行仍以 manifest 与 gravity agent-catalog 为准。
+本页只保留 18 项候选的当前裁决。历史请求账本、纠错过程和已完成写面取证见归档快照；运行时是否可执行仍以 manifest 与 gravity agent-catalog 为准。
 
 在线补证必须遵循 [探测安全](maintainers/probing.md)：只发送取得下一项裁决所需的最小请求，不猜父资源、权限或业务值；当前租户已明确空的同形请求不重复探测。
 
@@ -25,6 +25,7 @@
 | `app.user_auth.list` | `draft` | 3 次目标请求；HTTP 200、空样本；`page_info`、第二页行为和安全页上限已验证；无父绑定。 | `empty_sample`、`response_schema_unverified` | 在具备可读授权记录的环境取得 1 个非空样本，并重点审查权限、身份和个人信息字段，默认不暴露未知字段。 |
 | `attribution.attribution.query` | `stable v1`（D35 已闭环） | hash-matched `Measurement` bundle 完整证明 14 个恒发字段、`project_id/dims_metrics_list` 两条条件省略、八个恒发筛选数组和四个有限调用画像。2026-08-16 生产 1 次 App catalog + 2 次单日目标 POST：首 App 明确空，第二 App 非空后停止。2026-08-17 宽窗 `date_list=["2026-07-17","2026-08-16"]` 按 catalog 枚举：`catalog#1` envelope `empty`，`catalog#2` 同窗 `success`（`items=23`）后立即停止；均 HTTP 200，无重试、翻页。短窗“无数据”只约束当时那一个 App 和单日窗。 | 无 promotion blocker；旧 evidence 未保存具体 error 正文，不能追认字段拒绝。新证据证明 `extra.error=无数据` 是 `code=0/msg=成功` 的明确空。 | 由 Core/CLI/SDK/Plan/Agent `attribution_performance` 消费；未知 semantic error 继续 fail-closed。 |
 | `attribution.attribution_detail.query` | **`stable v1`（F40 已闭环）** | 1 次 App catalog 后顺序枚举 6 个 `app.testing_tool.list`，前 5 个明确空、第 6 个返回 1 条后停止；目录行 13 个顶层字段、`device_info` 3 个子字段及 `page_info` 4 字段全部登记。以内存父行 `id` 发唯一 1 次详情 POST，HTTP 200 / `code=0`；`device_white` 为同形 object，另外三个列表均明确为空。 | 无 promotion blocker；`attribution_list/postback_list/pay_list` 的 item schema 未观察，不能猜测，未来非空时 fail-closed。 | 由 Core/CLI/SDK/Plan/Agent `attribution_user_detail` 消费；父行只接受 `app.testing_tool.list` 的精确内部 ID。 |
+| `material.asset.fetch` | `stable`（已登记；对历史平台素材的覆盖面待证） | 本轮 0 次请求，纯静态调查（issue #19）。Census 无素材二进制 preview/download 专用路由——唯一 preview 词元是落地页 `/bytedance/site/preview/`，不是素材文件。已登记 operation 中确有素材 URL：`material.bytedance.project_material.list` 的既有取证观察到 `file_url`/`thumbnail_url`，`material.local.list` 亦有二进制 evidence；但无素材专用 task/download handle，export 的 create→poll→download 不能直接复用。 | `material.bytedance.list.material_id` 到 URL/handle 的同一性未证；`not_found`/`expired`/`not_cached` 缺可观测 wire 信号；现有 downloader 缺严格 redirect host 控制、流式 byte cap 与 output-root/扩展名约束 | 先跑 value-free stable probe，只记字段 path/type/presence 与协议分类；再做同 advertiser 的跨 source 内存匹配，只落盘 match count 与 URL 字段形状；唯一匹配后才做有界 Range GET，记 MIME/magic/大小/host family/redirect 形状。ID、URL、query、headers 与原始行一律不落盘；未观察到的失败原因不得写进稳定合同。 |
 
 ## 维护规则
 
