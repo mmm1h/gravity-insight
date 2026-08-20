@@ -2,8 +2,8 @@
 
 The caller surface never receives the raw ``extra.error`` sentence.  Only exact
 strings that this repository has reproduced and reviewed become a classified
-remedy.  Unknown text falls back to the fixed rejection sentence plus
-SDK-owned request-shape context.
+remedy.  Unknown Analysis query text stays fail-closed but is treated as
+retryable upstream until evidence supports assigning it to the caller.
 """
 
 from __future__ import annotations
@@ -67,6 +67,7 @@ _CONTRADICTED_GROUP_CLAIM = (
 
 _FALLBACK_MESSAGE = "Gravity rejected the read operation"
 _RETENTION_QUERY = ANALYSIS_QUERY_OPERATIONS["retention"]
+_ANALYSIS_QUERIES = frozenset(ANALYSIS_QUERY_OPERATIONS.values())
 _GROUP_TYPE_HINT = (
     "compact group_by.source=user compiles to wire type=user; "
     "type=user_property is rejected on event, funnel, and retention"
@@ -118,6 +119,16 @@ def raise_read_rejection(
     field, message, next_action = classify_read_rejection(
         payload, operation_id=operation_id, request_inputs=request_inputs
     )
+    if (
+        operation_id in _ANALYSIS_QUERIES
+        and _reviewed_remedy(_extra_error_text(payload)) is None
+    ):
+        raise _UnclassifiedReadRejectionError(
+            f"actual value: {actual_value(field)}; {message}",
+            field=field,
+            next_action=next_action,
+            http_receipts=http_receipts,
+        )
     if next_action in {_CONTRADICTED_GROUP_CLAIM, _CUSTOM_BEFORE_UNRESOLVED}:
         raise UpstreamContradictedRequestError(
             f"actual value: {actual_value(field)}; {message}",
@@ -214,6 +225,17 @@ def _unclassified_next_action(
     if field == "group_by_list" and operation_id == _RETENTION_QUERY:
         hints.append(_TIME_GRAIN_HINT)
     hint = f" known analysis shape: {'; '.join(hints)}." if hints else ""
+    if operation_id in _ANALYSIS_QUERIES:
+        return (
+            f"actual value: operation={actual_value(operation)} field={actual_value(field)} "
+            f"sent_keys={actual_value(sent)}; allowed next action: treat this "
+            "unreviewed extra.error as upstream, not caller input. For Analysis "
+            "batch issue #24, the same-shape scalar request succeeded; retry with "
+            "--concurrency 1 or run the same components through the scalar entry "
+            "without increasing request count. If it persists, report sanitized "
+            "extra.error, HTTP status, and Retry-After or rate-limit headers."
+            f"{hint}"
+        )
     return (
         f"actual value: operation={actual_value(operation)} field={actual_value(field)} "
         f"sent_keys={actual_value(sent)}; allowed next action: run "
@@ -237,6 +259,10 @@ def _sent_shape(request_inputs: Mapping[str, Any] | None) -> list[str]:
         else:
             keys.append(key)
     return keys[:20]
+
+
+class _UnclassifiedReadRejectionError(UpstreamContradictedRequestError):
+    """An unreviewed upstream sentence cannot safely assign caller blame."""
 
 
 __all__ = [

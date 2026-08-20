@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import json
 import unittest
 import threading
 import time
 from copy import deepcopy
+from datetime import date, timedelta
+from pathlib import Path
 from typing import Any, Mapping
 from unittest.mock import patch
 
+from gravity_sdk import GravityInsightClient
 from gravity_sdk.analysis_query_batch import (
     BATCH_SCHEMA_VERSION,
     MULTI_APP_BATCH_SCHEMA_VERSION,
@@ -22,7 +26,150 @@ from gravity_sdk.cli import build_parser
 from gravity_sdk.onboarding import command_requires_credentials
 from gravity_sdk.errors import PermissionUnavailableError
 from gravity_sdk.sdk import GravitySDK
+from gravity_sdk.transport import TransportResponse
 from gravity_sdk.workspace import load_workspace
+
+
+ROOT = Path(__file__).resolve().parents[1]
+MANIFEST_DIR = ROOT / "src" / "gravity_sdk" / "manifests"
+
+
+def _repository_manifest(*operation_ids: str) -> dict[str, Any]:
+    operations: dict[str, dict[str, Any]] = {}
+    for path in sorted(MANIFEST_DIR.glob("*.json")):
+        document = json.loads(path.read_text(encoding="utf-8"))
+        operations.update(
+            (item["operation_id"], item) for item in document.get("operations", [])
+        )
+    selected: dict[str, dict[str, Any]] = {}
+    pending = list(operation_ids)
+    while pending:
+        operation_id = pending.pop()
+        operation = operations[operation_id]
+        if operation_id in selected:
+            continue
+        selected[operation_id] = operation
+        for parent in operation.get("required_parent", ()):
+            if isinstance(parent, str):
+                pending.append(parent)
+            elif isinstance(parent, Mapping) and parent.get("operation_id"):
+                pending.append(str(parent["operation_id"]))
+    return {"manifest_version": 1, "operations": list(selected.values())}
+
+
+def _event_result() -> dict[str, Any]:
+    return {
+        "code": 0,
+        "data": {
+            "list": [[{
+                "start_date": "2026-07-01",
+                "end_date": "2026-07-01",
+                "target": {"registered": 1},
+                "list": [{"registered": 1}],
+                "event_index": 0,
+            }]],
+            "target_list": ["registered"],
+            "default_limit": 50,
+            "date_list": [{"start_date": "2026-07-01", "end_date": "2026-07-01"}],
+        },
+    }
+
+
+def _issue_24_spec(index: int) -> dict[str, Any]:
+    selected = (date(2026, 7, 1) + timedelta(days=index)).isoformat()
+    return {
+        "start": selected,
+        "end": selected,
+        "time_grain": "day",
+        "global_filters": [
+            {
+                "type": "user",
+                "field": "registered_at",
+                "operator": "RANGE_IN",
+                "value": [f"{selected} 00:00:00", f"{selected} 23:59:59"],
+            },
+            {
+                "type": "user",
+                "field": "account_kind",
+                "operator": "EQUALS",
+                "value": ["fixture"],
+            },
+        ],
+        "global_logic": "AND",
+        "steps": [
+            {
+                "event": "registered",
+                "metric": {"field": "PresetUserCount", "aggregation": "PresetUserCount"},
+            },
+            {
+                "event": "level_changed",
+                "metric": {"field": "PresetUserCount", "aggregation": "PresetUserCount"},
+            },
+        ],
+        "group_by": [{"field": "level", "source": "event", "bucket": "default"}],
+    }
+
+
+def _thaw(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return {str(key): _thaw(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_thaw(item) for item in value]
+    return value
+
+
+class RequestCaptureTransport:
+    is_test_transport = True
+
+    def __init__(self, response: Mapping[str, Any]) -> None:
+        self.response = dict(response)
+        self.calls: list[tuple[str, str, Mapping[str, Any]]] = []
+        self.active = 0
+        self.peak = 0
+        self.lock = threading.Lock()
+
+    def request(self, method: str, path: str, **kwargs: Any) -> TransportResponse:
+        with self.lock:
+            self.calls.append((method, path, kwargs))
+            self.active += 1
+            self.peak = max(self.peak, self.active)
+        try:
+            time.sleep(0.01)
+            return TransportResponse(
+                200, deepcopy(self.response), "2026-08-20T00:00:00Z"
+            )
+        finally:
+            with self.lock:
+                self.active -= 1
+
+    @property
+    def bodies(self) -> list[dict[str, Any]]:
+        return [_thaw(call[2]["body"]) for call in self.calls]
+
+
+def _transport_sdk(response: Mapping[str, Any]) -> tuple[GravitySDK, RequestCaptureTransport]:
+    transport = RequestCaptureTransport(response)
+    insight = GravityInsightClient._from_manifest_for_tests(
+        _repository_manifest("analysis.event.query"), transport=transport
+    )
+    insight._executor._field_validator = lambda *_args, **_kwargs: None
+    return GravitySDK(insight=insight, workspace="examples/workspace"), transport
+
+
+def _issue_24_batch() -> dict[str, Any]:
+    return {
+        "schema_version": BATCH_SCHEMA_VERSION,
+        "queries": [
+            {
+                "id": f"day_{index + 1:02d}",
+                "kind": "event",
+                "app": "demo",
+                "spec": _issue_24_spec(index),
+                "limits": {"max_items": 200},
+            }
+            for index in range(31)
+        ],
+    }
 
 
 def _query(query_id: str, kind: str = "event", *, secret: str = "open") -> dict[str, Any]:
@@ -137,6 +284,57 @@ class CountingInsight:
                 self.active -= 1
 
 class AnalysisQueryBatchTests(unittest.TestCase):
+    def test_31_component_batch_matches_scalar_wire_shape_and_global_budget(self) -> None:
+        scalar_sdk, scalar_transport = _transport_sdk(_event_result())
+        scalar_sdk.analysis_query("event", _issue_24_spec(0), app="demo")
+        scalar_body = scalar_transport.bodies[0]
+
+        batch_sdk, batch_transport = _transport_sdk(_event_result())
+        result = batch_sdk.analysis_queries(_issue_24_batch(), max_workers=4)
+        representative = next(
+            body
+            for body in batch_transport.bodies
+            if body["date_list"][0]["start_date"] == "2026-07-01"
+        )
+        differing = {
+            key
+            for key in scalar_body.keys() | representative.keys()
+            if scalar_body.get(key) != representative.get(key)
+        }
+        self.assertEqual({"query_id"}, differing)
+
+        fixed_spec = _issue_24_spec(0)
+        fixed_spec["query_id"] = representative["query_id"]
+        fixed_sdk, fixed_transport = _transport_sdk(_event_result())
+        fixed_sdk.analysis_query("event", fixed_spec, app="demo")
+        self.assertEqual(representative, fixed_transport.bodies[0])
+        self.assertEqual((31, 4), (len(batch_transport.calls), batch_transport.peak))
+        self.assertEqual(("success", 31, 0, 0, 0), (
+            result["status"], result["success_count"], result["failure_count"],
+            result["skipped_count"], result["exit_code"],
+        ))
+
+    def test_31_unreviewed_rejections_remain_failures_but_are_retryable_upstream(self) -> None:
+        upstream_text = "fixture unreviewed rejection"
+        sdk, transport = _transport_sdk({"code": 0, "extra": {"error": upstream_text}})
+
+        result = sdk.analysis_queries(_issue_24_batch(), max_workers=4)
+
+        self.assertEqual(("error", 0, 31, 0, 3), (
+            result["status"], result["success_count"], result["failure_count"],
+            result["skipped_count"], result["exit_code"],
+        ))
+        self.assertEqual((31, 4), (len(transport.calls), transport.peak))
+        for item in result["results"]:
+            error = item["error"]
+            self.assertEqual(
+                ("UPSTREAM_UNAVAILABLE", "upstream", "input", True),
+                (error["code"], error["category"], error["field"], error["retryable"]),
+            )
+            self.assertIn("same-shape scalar request succeeded", error["next_action"])
+            self.assertIn("--concurrency 1", error["next_action"])
+        self.assertNotIn(upstream_text, repr(result))
+
     def test_all_five_specs_become_same_layer_plan_nodes_and_dry_run_delegates(self) -> None:
         sdk = FakeSDK()
         kinds = ("event", "funnel", "retention", "property", "scatter")
