@@ -49,7 +49,7 @@ CT01 + R09B → CT02 → CT03
 | [R02](R02-journey-trust-data-quality.md) | Journey, Trust and Data Quality platform | R01 | `fixed_dev` | Leaf |
 | [R03](R03-built-in-skill-package.md) | Built-in Skill package and render model | R01 | `fixed_dev` | Leaf |
 | [R04](R04-team-skill-hub-stage-a.md) | Team Skill Hub and Trusted Pack Stage A | R03, R06 | `specified` | Leaf with two artifact channels |
-| [R05](R05-business-semantic-registry.md) | Business Semantic Registry | R01 | `specified` | Leaf |
+| [R05](R05-business-semantic-registry.md) | Business Semantic Registry | R01 | `in_progress` | Leaf |
 | [R06](R06-operator-model-contracts.md) | Analysis Operator and Model contracts | R01 | `specified` | Leaf |
 | [R07](R07-context-pack-repo-provider.md) | Entity/time-aligned Context Pack and Repo Provider | R01 | `specified` | Leaf |
 | [R08](R08-external-provider-rpc-guard.md) | External Provider and RPC Guard | R07 | `specified` | Leaf |

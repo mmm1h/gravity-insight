@@ -3,15 +3,54 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `specified` |
+| Status | `in_progress`; plan-owner ready verdict 2026-08-22 |
 | Track | Method and meaning |
 | Dependencies | R01 |
 | Parallel group | `foundation-a` |
 | Shared-spine integration | Final routing/handoff wiring is serialized |
+| Delivery ledger | This Requirement document; no internal GitHub Issue |
+| Baseline | `dev@9deb9be68493499beb521f74650ad90525444a09` |
+| Branch / worktree | `codex/r05-business-semantic-registry` / `D:\git-pjt\gravity-sdk-wt\r05-business-semantic-registry` |
+| Consumer | `work-dashboard@6b94d3d3955646aad4776688e9f99d693e06e20c` -> `codex/r05-semantic-registry-consumer` |
+| Integrator | Root Codex agent; plural CLI/root export wiring remains serial |
+| Production requests | `0`; live evidence not authorized |
 
 ## Outcome
 
 Reusable Metric, Dimension, Entity, Cohort, Event, SKU, Activity and Release definitions compile into versioned machine contracts. Runtime owns schema and validation; calling projects own concrete bindings and values.
+
+## Plan Owner Verdict And Ready Binding
+
+The user authorized continuous implementation without repeated Requirement
+approval. R01-R03 are `fixed_dev`; the plan owner reviewed
+`tmp/r05-business-semantic-registry-proposal.md` and its conflict ledger, bound
+the current baseline/worktrees/safety gates below, and advanced R05 through
+`reviewed` and `ready` to `in_progress`. This does not authorize production
+probing, writes, releases or `main` promotion.
+
+- Runtime owns closed Semantic Definition/Binding/Source schemas, common
+  definitions, formula/unit/additivity/time/dependency validation and stable
+  resolution reasons. Project sources own concrete App aliases, physical
+  members, formula parameters and effective windows.
+- Runtime initially ships only reusable `entity://gravity/app@1`; the R01
+  acquisition-spend metric and its binding move to a separate canonical
+  work-dashboard semantic source.
+- Existing semantic-compose definitions remain physical execution/member
+  contracts. Existing workspace semantic context remains routing/local
+  arithmetic context; neither is silently promoted into business meaning.
+- Formula operators are closed to source/sum/difference/ratio and exact
+  versioned dependencies. Cycles, missing dependencies, unit/currency,
+  additivity, time-grain, parameter and overlapping-effective-range conflicts
+  fail closed.
+- Public targets are `SemanticRegistry` and
+  `gravity semantics list|describe|resolve|validate`. Singular
+  `gravity semantic compose` remains the only current semantic execution path.
+- R01 project loading becomes a generic source adapter while preserving exact
+  URI, claims, physical binding, App/effective-time gate and zero-request
+  behavior. Context generalization remains R07.
+- Exact acceptance includes all eight kinds, deterministic compile/digest,
+  conflict/status/reason cases, public snapshot/docs, real wheel, canonical
+  consumer migration, full repository gates and usability parity.
 
 ## Current Baseline
 
