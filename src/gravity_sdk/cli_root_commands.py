@@ -7,6 +7,7 @@ from typing import Any, Callable
 from .agent import add_agent_command
 from .agent_catalog import add_agent_catalog_command
 from .capability_trust_cli import add_capability_trust_commands
+from .context_cli import add_context_commands
 from .find import add_operation_commands
 from .find_input import add_input
 from .journey_cli import add_journey_commands
@@ -34,6 +35,7 @@ def add_root_commands(
     add_skill_commands(commands)
     add_semantic_registry_commands(commands, add_input)
     add_operator_model_commands(commands, add_input)
+    add_context_commands(commands, add_input)
 
 
 def dispatch_root_command(args: Any) -> Any:

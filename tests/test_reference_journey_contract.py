@@ -20,6 +20,7 @@ class ReferenceJourneyContractTests(unittest.TestCase):
         skill = artifacts["skill"]["contract"]
         operator = artifacts["operator"]["contract"]
         capability = artifacts["capability"]["contract"]
+        provider = artifacts["context_provider"]["contract"]
 
         self.assertEqual(JOURNEY_ID, journey["journey_id"])
         self.assertEqual(SKILL_URI, journey["required_skill"])
@@ -55,6 +56,13 @@ class ReferenceJourneyContractTests(unittest.TestCase):
         self.assertRegex(capability["provider"]["fingerprint"], r"^[0-9a-f]{64}$")
         self.assertEqual(0, journey["request_budget"]["runtime_additional_requests"])
         self.assertEqual(0, journey["request_budget"]["acceptance_production_requests"])
+        self.assertEqual(
+            "context-provider://gravity/project-repo@1", provider["uri"]
+        )
+        self.assertEqual(
+            {"list", "search", "read", "index", "pack", "verify"},
+            set(provider["supports"]),
+        )
 
     def test_every_artifact_has_a_stable_value_free_digest(self):
         first = reference_artifacts()

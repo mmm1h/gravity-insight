@@ -32,6 +32,7 @@ _EXPORTS = {
     "SemanticRegistry": (".semantic_registry", "SemanticRegistry"),
     "OperatorRegistry": (".operator_registry", "OperatorRegistry"),
     "ModelRegistry": (".model_registry", "ModelRegistry"),
+    "RepoContextProvider": (".repo_context_provider", "RepoContextProvider"),
     "CompositeService": (".composite", "CompositeService"),
     "Credential": (".credentials", "Credential"),
     "CredentialConfig": (".credentials", "CredentialConfig"),

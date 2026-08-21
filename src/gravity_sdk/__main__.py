@@ -38,6 +38,7 @@ Usage:
   gravity semantics list|describe|resolve|validate [--source <semantic-source>]
   gravity operators list|describe|validate
   gravity models list|describe|evaluate [--source <model-artifact>]
+  gravity context project describe|index|search|get|pack|verify
   gravity derive --input <json|file|->
   gravity reports pulse --app <alias|id> --start <date> --end <date>
   gravity reports usage

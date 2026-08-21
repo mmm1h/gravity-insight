@@ -13,13 +13,13 @@ from .capability_trust import (
     CapabilityTrustService,
     assess_capability_requirement,
 )
+from .context_contract import public_context_reference
 from .errors import ErrorCategory, InputValidationError, exit_code_for_category
 from .reference_journey_contract import JOURNEY_ID, reference_artifacts
 from .reference_journey_quality import evaluate_playbook_data_quality
 from .reference_project_contract import (
     ReferenceProjectContractError,
     load_reference_project_contract,
-    public_context_reference,
 )
 from .result_audit import result_receipt_references
 

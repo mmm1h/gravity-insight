@@ -17,16 +17,16 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class ActionableErrorAuditTests(unittest.TestCase):
     def test_actionable_error_inventory_is_complete_and_reproducible(self):
-        """Went 1305 -> 1310 for R06 Operator/Model URI and scope gates.
+        """Went 1310 -> 1313 for R07 bounded Context Pack input gates.
 
-        The new sites bound values and point to exact offline registry discovery
-        or canonical evaluation scope correction instead of guessing.
+        The new sites expose only safe key/type shapes and direct callers to an
+        explicit Requirement instead of accepting discovery output as Context.
         """
 
         rows = inventory(ROOT / "src" / "gravity_sdk")
         counts = Counter(item["grade"] for item in rows)
-        assert len(rows) == 1310
-        assert counts["A"] == 1146
+        assert len(rows) == 1313
+        assert counts["A"] == 1149
         assert counts["B"] == 164
         assert counts.get("C", 0) == 0
         assert sum(counts.values()) == len(rows)

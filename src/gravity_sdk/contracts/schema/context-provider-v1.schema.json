@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.context-provider.v1",
+  "type": "object",
+  "required": ["artifact_kind", "schema_version", "uri", "version", "provider_id", "owner", "transport", "effects", "resource_types", "auth_scope", "freshness", "supports", "source_trust", "role", "limits"],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_kind": {"const": "context_provider"},
+    "schema_version": {"const": "gravity.context-provider.v1"},
+    "uri": {"type": "string", "pattern": "^context-provider://[a-z0-9.-]+/[a-z0-9./-]+@[1-9][0-9]*$", "maxLength": 256},
+    "version": {"type": "integer", "minimum": 1},
+    "provider_id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]*$", "maxLength": 128},
+    "owner": {"type": "string", "minLength": 1, "maxLength": 128},
+    "transport": {"const": "builtin"},
+    "effects": {"type": "array", "minItems": 1, "maxItems": 1, "items": {"const": "read"}},
+    "resource_types": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["document", "code", "configuration", "contract", "release", "git_fact", "project_semantic"]}},
+    "auth_scope": {"const": "project"},
+    "freshness": {"type": "object", "required": ["mode"], "additionalProperties": false, "properties": {"mode": {"const": "git-revision-content-hash"}}},
+    "supports": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["list", "search", "read", "index", "pack", "verify"]}},
+    "source_trust": {"const": "project_authoritative"},
+    "role": {"const": "data"},
+    "limits": {
+      "type": "object",
+      "required": ["max_index_files", "max_index_bytes", "max_file_bytes", "max_path_depth", "max_search_results", "max_excerpt_lines"],
+      "additionalProperties": false,
+      "properties": {
+        "max_index_files": {"type": "integer", "minimum": 1, "maximum": 100000},
+        "max_index_bytes": {"type": "integer", "minimum": 1024, "maximum": 1073741824},
+        "max_file_bytes": {"type": "integer", "minimum": 1, "maximum": 10485760},
+        "max_path_depth": {"type": "integer", "minimum": 1, "maximum": 64},
+        "max_search_results": {"type": "integer", "minimum": 1, "maximum": 1000},
+        "max_excerpt_lines": {"type": "integer", "minimum": 1, "maximum": 1000}
+      }
+    }
+  }
+}
