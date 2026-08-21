@@ -3,15 +3,48 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `specified` |
+| Status | `in_progress`; plan-owner ready verdict 2026-08-22 |
 | Track | Context foundation |
 | Dependencies | R01 |
 | Parallel group | `foundation-a` |
 | Shared-spine integration | Final Agent handoff wiring is serialized |
+| Delivery ledger | This Requirement document; no internal GitHub Issue |
+| Baseline | `dev@51e520f` |
+| Branch / worktree | `codex/r07-context-pack-repo-provider` / `D:\git-pjt\gravity-sdk-wt\r07-context-pack-repo-provider` |
+| Consumer | `work-dashboard@6eee64e5` -> `codex/r07-context-provider-consumer` |
+| Integrator | Root Codex agent; Context CLI/handoff wiring remains serial |
+| Production/external requests | `0`; live/external evidence not authorized |
 
 ## Outcome
 
 A Skill can request the minimum project facts it needs and receive a bounded, cited Context Pack from a built-in Repo Provider, aligned to the same Semantic entities, version/activity time window and source authority.
+
+## Plan Owner Verdict And Ready Binding
+
+The user authorized continuous implementation without repeated Requirement
+approval. R01-R03 and R05-R06 are `fixed_dev`; the plan owner reviewed
+`tmp/r07-context-pack-repo-provider-proposal.md` and its conflict ledger, bound
+the current baseline/worktrees/safety gates below, and advanced R07 through
+`reviewed` and `ready` to `in_progress`. This does not authorize production or
+external requests, writes, releases or `main` promotion.
+
+- Formal Provider/Item/Requirement/Pack contracts replace the R01 provisional
+  parser. R01 project contract upgrades to v3 and the generic Repo Provider
+  preserves its two explicit facts, Git snapshot, hashes, role=data and public
+  body redaction while adding exact line citations.
+- Pack assembly consumes only explicit Requirements. Search is bounded candidate
+  discovery and never auto-selects model context or becomes an authority.
+- The built-in Provider indexes only clean tracked UTF-8 Markdown/Python/JSON/
+  TOML from an exact Git revision, honors Git ignore plus `.gravityignore`, and
+  rejects sensitive/binary/linked/hardlinked/oversized/deep/dirty resources.
+- Entity aliases come from the resolved R05 Semantic binding. Entity/time,
+  sensitivity/freshness, supersession, canonical-before-supporting and conflict
+  gates run before inclusion; required gaps block and optional gaps narrow claims.
+- R07 implements no external MCP/subprocess/host RPC, embeddings, vector store,
+  behavior database, new router or authorization path. R08 owns external RPC.
+- Exact acceptance includes deterministic index/Pack digests, structured/AST
+  discovery, status/reason matrix, prompt-injection/data-role tests, public
+  snapshot/docs, real wheel, canonical consumer, full gates and usability.
 
 ## Current Baseline
 
