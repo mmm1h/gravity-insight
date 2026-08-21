@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; plan-owner ready verdict 2026-08-22 |
+| Status | `fixed_dev`; integrated and validated on `dev` 2026-08-22 |
 | Track | Method and meaning |
 | Dependencies | R01 |
 | Parallel group | `foundation-a` |
@@ -14,6 +14,8 @@
 | Consumer | `work-dashboard@6b94d3d3955646aad4776688e9f99d693e06e20c` -> `codex/r05-semantic-registry-consumer` |
 | Integrator | Root Codex agent; plural CLI/root export wiring remains serial |
 | Production requests | `0`; live evidence not authorized |
+| Implementation / merge | `167ba26` / `8c5fd089` |
+| Canonical consumer | `337d0912`, `6eee64e5` on `codex/r05-semantic-registry-consumer` |
 
 ## Outcome
 
@@ -24,8 +26,9 @@ Reusable Metric, Dimension, Entity, Cohort, Event, SKU, Activity and Release def
 The user authorized continuous implementation without repeated Requirement
 approval. R01-R03 are `fixed_dev`; the plan owner reviewed
 `tmp/r05-business-semantic-registry-proposal.md` and its conflict ledger, bound
-the current baseline/worktrees/safety gates below, and advanced R05 through
-`reviewed` and `ready` to `in_progress`. This does not authorize production
+the current baseline/worktrees/safety gates below, advanced R05 through
+`reviewed` and `ready`, and accepted the validated implementation as `fixed_dev`.
+This does not authorize production
 probing, writes, releases or `main` promotion.
 
 - Runtime owns closed Semantic Definition/Binding/Source schemas, common
@@ -51,6 +54,29 @@ probing, writes, releases or `main` promotion.
 - Exact acceptance includes all eight kinds, deterministic compile/digest,
   conflict/status/reason cases, public snapshot/docs, real wheel, canonical
   consumer migration, full repository gates and usability parity.
+
+## Fixed Dev Evidence
+
+- `SemanticRegistry` compiles explicit mapping/JSON/TOML sources plus the sole
+  Runtime built-in `entity://gravity/app@1`; Definition, Binding and Source
+  schemas, formula/dependency graph, effective-range conflict model and stable
+  gap reasons are packaged in the wheel. No Merge2 value is present in Runtime
+  built-ins.
+- `gravity semantics list|describe|resolve|validate` and the root SDK export are
+  offline. Singular `gravity semantic compose` and its query bytes/Plan owner
+  are unchanged. R01 resolves the project-owned source through the generic
+  Registry while preserving URI, App alias, physical members, claims and both
+  requested windows.
+- Full gates: `1477` unittest tests; `1477 passed, 3731 subtests` under pytest;
+  compiler `237 operations / 11 manifests`; quality PASS; actionable errors
+  `1305 = A1141 / B164 / C0`; active docs exactly `5500` lines.
+- Usability remains `296/336` selection, `248/248` fillability, `53/53` offline
+  terminal and `5/5` recovery; security PASS; production HTTP requests `0`.
+  Canonical consumer tests are `5 passed`; R01 still returns exit 4
+  `blocked/COMPLETENESS_INSUFFICIENT` with zero network.
+- Isolated wheel install resolved the canonical project source without checkout
+  docs. Wheel SHA-256:
+  `d5b1e58ee1bd8f3b8c4569fadee80ac74d969e47deed60a53528c0f88d4ed00e`.
 
 ## Current Baseline
 
