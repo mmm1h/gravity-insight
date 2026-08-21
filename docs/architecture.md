@@ -68,7 +68,7 @@ Source contract 声明固定 host/path/method、输入 schema、分页、响应�
 
 ## Workspace 与 Resolver
 
-Workspace 保存项目意图：App alias、登记 SQL 产品、recipe、参数化 Plan，以及具体活动/SKU/埋点绑定、公式参数和生效窗口。Runtime Semantic Registry 提供可复用类型、通用定义、URI 和校验；Workspace 不保存凭据、上游原始响应或任意 SQL。
+Workspace 保存 App alias、登记 SQL 产品、recipe、参数化 Plan 和调用方词面上下文；项目 Semantic Source 保存具体活动/SKU/埋点绑定、公式参数和生效窗口。Runtime Semantic Registry 提供可复用类型、通用定义、URI 和校验；两者都不保存凭据、上游原始响应或任意 SQL。
 
 Resolver 负责把 alias 和模板参数绑定到精确产品。已知输入一次完成；未知能力先发现再执行。父资源、metadata 或 contract fingerprint 变化时重新解析或失败关闭，不沿用猜测值。
 

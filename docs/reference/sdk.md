@@ -199,6 +199,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `journeys.list()` / `verify()` / `describe(id)` / `can_run(id, input)` / `impact(diff)` / `run(id, input)` | 通用 Journey 合同与 readiness 服务；R01 只有 verified 后才委托既有 playbook |
 | `capability_trust.trust(kind, selector)` / `validate(result)` / `impact(diff)` | Operation/Product/Composite 同层 Trust、只读 Validation 校验与依赖影响；不自动探测或写入 |
 | `LocalSkillResolver().list()` / `describe(id)` / `get(id)` / `export_agent(id)` / `materialize_agent(id, output)` | 只读 Built-in Skill package、依赖 readiness 与确定性 Agent Skills 导出；不选择或执行 Product |
+| `SemanticRegistry(sources).list()` / `describe(uri)` / `resolve(uri)` / `validate(source)` / `dependencies(uris)` | 确定性编译并离线解析版本化 Business Semantic 与项目 Binding；缺失或冲突不猜测 |
 | `material_performance()` | 按显式 App、日期窗和平台读取稳定素材表现；平台保序、共享预算、局部失败隔离 |
 | `fetch_material_asset()` | 从刚读取的已登记素材响应按精确引用完整下载图片/视频；不接受 URL |
 | `promotion_performance()` | 按一个显式 App、日期窗、平台和物理指标读取 21 个同构平台；平台保序、局部失败隔离 |
@@ -632,16 +633,14 @@ resolver 只扫描 wheel 内固定 package；JSON manifest 唯一生成 package�
 `materialize_agent()` 原子创建新目录并拒绝覆盖；普通包无 scripts/执行位/链接/HTTP/SQL/授权。
 Hub、CAS、lock 与 Trusted Pack 属于后续 Requirement。
 
-## Semantic Compose
+## Business Semantic 与 Semantic Compose
 
-`semantic_compose_input_schema()` 离线返回 `gravity.semantic-compose-input.v1`，并显式列出
-`report.ap-cost-observation@1`、`@2`、`@3` 与 `@4`。`@1` 保持 `report.metric.ap-cost@1`、day/week/total、可选
+`SemanticRegistry` 接受 `gravity.semantic-source.v1` mapping 或显式 JSON/TOML 路径，确定性、零网络地执行 `list/describe/resolve/validate/dependencies`；缺失、歧义、冲突、过期和无效定义返回稳定 reason，不扫描 workspace 或执行查询。`semantic_compose_input_schema()` 则离线返回物理 `gravity.semantic-compose-input.v1`，并显式列出 `report.ap-cost-observation@1`、`@2`、`@3` 与 `@4`。`@1` 保持 `report.metric.ap-cost@1`、day/week/total、可选
 click dimension + 必需 join，且过滤器上限为 0。`@2` 增加 dimension-bound `click_company IN` 和
 activate count、pay amount、total ROI 三个 day/week 指标；filter 必须同时选择 click dimension 与 join，
 `ap_cost` 仍允许 day/week/total。`@3` 再增加 9 个已登记 day/week 漏斗、成本、付费人数与收入指标；
 注册数与所有新指标的 total 保持未登记。`@4` 保持 v3 成员面，但将结果声明收窄为执行时点观察；
-编译 canonical bytes 仍确定，同输入跨执行的数值相等性不保证。`prepare_semantic_compose(inputs, *, app, workspace=None)` 输出
-`gravity.semantic-compose-compiled.v1`，并持久化定义 ID/版本/指纹、实际成员、生成查询、零网络验证和
+编译 canonical bytes 仍确定，同输入跨执行的数值相等性不保证。`prepare_semantic_compose(inputs, *, app, workspace=None)` 输出 `gravity.semantic-compose-compiled.v1`，并持久化定义 ID/版本/指纹、实际成员、生成查询、零网络验证和
 scoped `allowed_claims`。
 
 `semantic_compose(inputs, *, app, max_pages=1000, max_items=100000, workspace=None)` 复用相同编译器，
