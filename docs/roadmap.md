@@ -20,11 +20,12 @@
 当前程序状态：
 
 1. **R00 产品宪法与需求拆分（fixed-dev）**：v9.1 canonical 总纲、directive 和细化后的无环需求图已在 `dev` 完成并通过整仓门禁；不表示已发布到 `main`。
-2. **R01 参考纵向切片（in-progress）**：用户已批准 `analysis.merge2.ap-cost-anomaly-localization`，绑定 `work-dashboard/merge2`、`growth-data`、现有 playbook/Plan/Semantic Compose 路径、零生产请求和有界 claims；内部交付账本为 R01 Requirement。
-3. **Phase 0 正确性维护**：分页证据、私有 API 漂移、身份、Census、错误和消费者问题继续推进，不被内容 Track 阻塞。
-4. **并行规则**：依赖满足且写入边界不重叠的领域 core 可在独立 `codex/<unit>` worktree 并行；共享 spine 最终接线由一个 integrator 串行完成。
-5. **Main freeze**：完整计划结束、整体验收通过且用户重新明确批准前，本计划功能只合入 `dev`，不合入 `main`。单项 `fixed_dev` 不等于发布。
-6. **持续实施授权**：用户已明确要求依赖满足后持续完成全部 indexed requirements，不再逐项请求批准；计划 owner 仍须在每个单元开工前绑定机器门禁、写入范围与回滚，且不得由该授权推导生产探测、写入、发布或提前解冻 `main`。
+2. **R01 参考纵向切片（fixed-dev）**：`analysis.merge2.ap-cost-anomaly-localization` 已在 `dev@08b42971` 完成；真实路径因底层完整性仍为 `unknown` 而零请求阻断，交付账本和 R02-R08 extraction ledger 位于 R01 Requirement。
+3. **R02 下一候选**：先从 R01 提取可复用 Journey、same-layer Trust、Validation TTL、Data Quality 和 Analysis Result，不扩建第二执行器或路由器。
+4. **Phase 0 正确性维护**：分页证据、私有 API 漂移、身份、Census、错误和消费者问题继续推进，不被内容 Track 阻塞。
+5. **并行规则**：依赖满足且写入边界不重叠的领域 core 可在独立 `codex/<unit>` worktree 并行；共享 spine 最终接线由一个 integrator 串行完成。
+6. **Main freeze**：完整计划结束、整体验收通过且用户重新明确批准前，本计划功能只合入 `dev`，不合入 `main`。单项 `fixed_dev` 不等于发布。
+7. **持续实施授权**：用户已明确要求依赖满足后持续完成全部 indexed requirements，不再逐项请求批准；计划 owner 仍须在每个单元开工前绑定机器门禁、写入范围与回滚，且不得由该授权推导生产探测、写入、发布或提前解冻 `main`。
 
 ## 已定决策
 

@@ -3,13 +3,14 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; validation complete, pending `dev` integration |
+| Status | `fixed_dev`; integrated and validated 2026-08-22 |
 | Track | Reference implementation |
 | Dependencies | R00 |
 | Parallel group | `reference` |
 | Delivery ledger | This Requirement document; no internal GitHub Issue |
 | Baseline | `dev@05f01c8da13c8414412611eb3c34612862530803` |
 | Branch / worktree | `codex/r01-reference-vertical-slice` / `D:\git-pjt\gravity-sdk-wt\r01-reference-vertical-slice` |
+| Dev integration | `08b42971ed29ade0e4248b1ef02f03fe1920852e` |
 | Integrator | Root Codex agent; shared-spine wiring remains serial |
 | Main integration | Frozen until whole program completion |
 
@@ -98,7 +99,7 @@ Focused happy/empty/partial/gap/invalid/privacy tests, current surface character
 
 ## Delivery Verdict
 
-Accepted for `dev` integration on 2026-08-22. The Runtime slice and canonical
+Integrated into `dev` on 2026-08-22. The Runtime slice and canonical
 consumer migration satisfy the R01 behavior and safety boundary. The live
 Journey is intentionally **blocked**, not successful: the authoritative
 `report.multidim.query` contract declares `completeness=unknown`, below R01's
