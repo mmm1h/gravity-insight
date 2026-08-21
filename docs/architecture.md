@@ -1,6 +1,6 @@
 # 架构与概念
 
-Gravity SDK 是合同执行核，不是 Web 自动化层。它把固定上游路径、请求绑定、响应投影、分页、隐私、错误和证据编译成可由 CLI、SDK、Plan 与 Agent 共用的产品面。
+当前已交付的 Gravity SDK 是 Gravity Agent Runtime 的合同执行核，不是 Web 自动化层。它把固定上游路径、请求绑定、响应投影、分页、隐私、错误和证据编译成可由 CLI、SDK、Plan 与 Agent 共用的产品面。批准的目标架构在保留该内核的前提下增加版本化方法、Context、Trust 和团队分发；目标面只有在对应需求落地后才构成当前接口。
 
 ## 产品边界
 
@@ -8,6 +8,35 @@ Gravity SDK 是合同执行核，不是 Web 自动化层。它把固定上游路
 - 调用项目拥有业务词、活动/SKU、App alias、时间窗和派生公式。
 - Gravity Web 只用于受控取证，不是运行时依赖。
 - Stable 产品可执行；draft 和 gap 只描述缺失证据，不提供旁路。
+
+## 目标 Gravity Agent Runtime
+
+目标产品由相互分离的职责面组成：
+
+```text
+Host Agent
+  Codex / Claude Code：理解意图、编排工具、最终推理与表达
+
+Runtime Plane
+  Journey / Capability Trust / Data Quality
+  Business Semantic / Operator / Model / Context Pack
+  Existing Product / Composite / Plan execution kernel
+  Analysis Result / governed Action / Artifact / Receipt
+
+External Control Plane
+  Skill and trusted-code build/publish/download/verify
+  exact lock / staging / canary / activation plan / rollback
+  external Installer or CI-CD performs activation
+
+Calling Project
+  concrete App/activity/SKU/tracking bindings, project overlays and report language
+```
+
+Skill 是声明式方法与依赖合同，不是执行器；Context 是带来源、权限和时效的数据，不是指令；Operator/Model 是显式安装、版本化和可测试的方法代码。Runtime 继续只有 exact selector、host catalog selection 和 recognizer fallback 的现有选择边界，并继续复用当前 Product/Composite/Plan owner。
+
+目标架构以批准 directive 为唯一上层来源，具体交付按 [Requirement Index](../specs/agent-runtime/index.md) 拆分。当前源码和测试证明迁移起点；旧产品假设可以在 R00 后显式迁移，但安全、权限、隐私、写入确认、生产请求和能力不退化规则不能由需求自行豁免。
+
+所有计划单元只集成到 `dev`；完整计划完成和整体验收前不向 `main` 推广。
 
 ## 三条调用路径
 
@@ -47,7 +76,7 @@ Resolver 负责把 alias 和模板参数绑定到精确产品。已知输入一�
 
 原子 operation 提供最小 wire 合同；产品可以组合多个 operation、并发读取、局部派生和固定诊断。产品卡描述调用方问题、输入、边界和交接，不复制底层执行实现。
 
-新增能力优先复用现有 composite / Plan adapter / Agent card 三面。共享入口接近质量棘轮时增加窄领域 router，不建立通用插件系统。
+新增能力优先复用现有 composite / Plan adapter / Agent card 三面。批准的需求可增加类型化 Skill、Semantic、Operator/Model、Context Provider 或 Action Connector Registry，但不得建立任意远程代码插件、第二套路由或第二套执行框架。
 
 ## 并发与请求预算
 

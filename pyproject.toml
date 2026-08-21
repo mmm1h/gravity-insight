@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "gravity-sdk"
 version = "0.3.0"
-description = "Governed Python SDK and CLI for Gravity Insight and custom SQL"
+description = "Agent-first governed data-analysis runtime, Python SDK, and CLI for Gravity"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [{name = "<PYPI_PACKAGE_OWNER>"}]

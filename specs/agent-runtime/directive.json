@@ -1,0 +1,38 @@
+{
+  "schema_version": "gravity.agent-runtime-directive.v1",
+  "directive_id": "gravity-agent-runtime",
+  "version": "v9",
+  "status": "approved",
+  "source": {
+    "file_name": "gravity-agent-runtime_产品方向架构与Codex开发总纲 (1).md",
+    "sha256": "bafee3deeb3268fdfe17845f8e9925a509db1b1a04aa15babc7ce38c01d3a46f"
+  },
+  "approval": {
+    "approved_by": "user",
+    "approved_at": "2026-08-21",
+    "scope": "architecture_finalization_and_requirement_decomposition",
+    "implementation_requires_ready_requirement": true
+  },
+  "review_baseline": {
+    "branch": "main",
+    "sha": "b9c029db7f41fa90d04b4e019a892cba25eb9230"
+  },
+  "documentation_baseline": {
+    "branch": "dev",
+    "sha": "c1a8656fb22e00d7247a38c4ed316d2a9037827f",
+    "requirement": "R00",
+    "status": "fixed_dev"
+  },
+  "requirements_index": "index.json",
+  "active_feature_requirement": null,
+  "next_candidate": "R01",
+  "main_integration": {
+    "status": "frozen",
+    "development_target": "dev",
+    "unfreeze_requires": [
+      "R00-R16_and_CT01-CT03_program_scope_complete",
+      "integrated_validation_green",
+      "explicit_new_user_approval"
+    ]
+  }
+}

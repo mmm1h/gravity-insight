@@ -10,6 +10,7 @@
 | 领取、推进或关闭 GitHub Issue | [Issue 状态管理](issues.md) |
 | 完成发布治理中的人工决策或占位符 | [负责人操作清单](owner-actions.md) |
 | 查看或清理结构性技术债 | [技术债清单](technical-debt.md) |
+| 实施 Gravity Agent Runtime 需求 | [Requirement Index](../../specs/agent-runtime/index.md)；再读唯一一个已批准 `ready` 需求 |
 | 定位已交付 composite / CLI / SDK / Plan owner | [产品面总览](product-surfaces.md) |
 | 维护变现明细产品与 discovery guard | [Monetization Detail Guard](monetization-discovery-guard.md) |
 | 选择 operation、codec、CLI、recipe、SQL 或 export 扩展面 | [扩展地图](extending.md) |
@@ -26,6 +27,7 @@
 2. 当前结论原位写入唯一 owner：排期进 roadmap，能力证据进候选矩阵，动线进分析台账，结构债进技术债。
 3. 公共行为变化同步更新对应 reference；动态字段、默认值和目录规模不抄进入口页。
 4. `docs/archive` 只保存已被替代的历史证据，不作为日常追加日志，也不参与当前接口裁决。
+5. `specs/agent-runtime/` 只保存已批准总纲的有界交付规格和机器依赖图；草案仍放 `tmp/`，规格不能自行提升为 `ready` 或改写父架构。
 
 ## 源码真相
 

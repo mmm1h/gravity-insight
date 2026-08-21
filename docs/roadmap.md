@@ -11,6 +11,20 @@
 3. **只推进有新证据的候选。** 精确 blocker 与下一步最小证据见[候选矩阵](candidate-capability-matrix.md)；租户数据和权限未变化时不重复空探测。
 4. **控制结构增长。** 共享 spine 串行接线；领域 core 可并行；生成 compiler、provenance、coverage 产物时串行。
 
+## Gravity Agent Runtime program
+
+用户已批准将本仓库从当前 Gravity SDK 内核演进为 Gravity Agent Runtime。目标范围包括同层 Capability Trust/Data Quality、版本化 Skill、Business Semantic、确定性 Operator/Model、有界 Context、受治理 Action/Artifact 和按触发条件建设的 MCP、隔离 SQL Explorer 与 External Control Plane。
+
+目标架构与当前能力必须分开：当前接口仍以 CLI/SDK/Plan、catalog 和机器合同为准；未实现的目标面不得写成已交付。批准总纲通过 `specs/agent-runtime/directive.json` 绑定，串并行依赖和状态以 [Requirement Index](../specs/agent-runtime/index.md) 为准。
+
+当前程序状态：
+
+1. **R00 产品宪法与需求拆分（fixed-dev）**：v9 总纲、directive、无环需求图和 R00-R16/CT01-CT03 已在 `dev` 完成并通过整仓门禁；不表示已发布到 `main`。
+2. **R01 参考纵向切片**：保持 `specified`；用户/计划 owner 选定真实 Journey、调用项目、现有执行路径和请求边界后才能进入 `ready`。
+3. **Phase 0 正确性维护**：分页证据、私有 API 漂移、身份、Census、错误和消费者问题继续推进，不被内容 Track 阻塞。
+4. **并行规则**：依赖满足且写入边界不重叠的领域 core 可在独立 `codex/<unit>` worktree 并行；共享 spine 最终接线由一个 integrator 串行完成。
+5. **Main freeze**：完整计划结束、整体验收通过且用户重新明确批准前，本计划功能只合入 `dev`，不合入 `main`。单项 `fixed_dev` 不等于发布。
+
 ## 已定决策
 
 - Insight-first；SQL 只执行 workspace 已登记产品。

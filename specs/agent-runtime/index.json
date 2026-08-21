@@ -1,0 +1,54 @@
+{
+  "schema_version": "gravity.agent-runtime-requirements.v1",
+  "directive_ref": "directive.json",
+  "status_model": [
+    "draft",
+    "specified",
+    "reviewed",
+    "ready",
+    "in_progress",
+    "fixed_dev",
+    "blocked",
+    "released",
+    "superseded"
+  ],
+  "main_integration": {
+    "policy": "frozen_until_program_complete",
+    "development_target": "dev",
+    "promotion_requires": [
+      "all_planned_requirements_fixed_dev",
+      "integrated_validation_green",
+      "explicit_new_user_approval"
+    ]
+  },
+  "shared_spine": [
+    "src/gravity_sdk/plan_adapters.py",
+    "src/gravity_sdk/agent_capabilities.py",
+    "src/gravity_sdk/agent_composite.py",
+    "src/gravity_sdk/agent_handoff.py",
+    "src/gravity_sdk/cli.py",
+    "src/gravity_sdk/__main__.py"
+  ],
+  "requirements": [
+    {"id":"R00","path":"R00-product-constitution.md","status":"fixed_dev","dependencies":[],"parallel_group":"bootstrap","shared_spine":false},
+    {"id":"R01","path":"R01-reference-vertical-slice.md","status":"specified","dependencies":["R00"],"parallel_group":"reference","shared_spine":true},
+    {"id":"R02","path":"R02-journey-trust-data-quality.md","status":"specified","dependencies":["R01"],"parallel_group":"platform-core","shared_spine":true},
+    {"id":"R03","path":"R03-built-in-skill-package.md","status":"specified","dependencies":["R01"],"parallel_group":"foundation-a","shared_spine":false},
+    {"id":"R04","path":"R04-team-skill-hub-stage-a.md","status":"specified","dependencies":["R03"],"parallel_group":"foundation-b","shared_spine":true},
+    {"id":"R05","path":"R05-business-semantic-registry.md","status":"specified","dependencies":["R01"],"parallel_group":"foundation-a","shared_spine":true},
+    {"id":"R06","path":"R06-operator-model-contracts.md","status":"specified","dependencies":["R01"],"parallel_group":"foundation-a","shared_spine":false},
+    {"id":"R07","path":"R07-context-pack-repo-provider.md","status":"specified","dependencies":["R01"],"parallel_group":"foundation-a","shared_spine":true},
+    {"id":"R08","path":"R08-external-provider-rpc-guard.md","status":"specified","dependencies":["R07"],"parallel_group":"foundation-b","shared_spine":false},
+    {"id":"R09","path":"R09-skill-runtime-project-overlay.md","status":"specified","dependencies":["R02","R04","R05","R06","R07","R08"],"parallel_group":"integration","shared_spine":true},
+    {"id":"R10","path":"R10-mcp-thin-surface.md","status":"specified","dependencies":["R09"],"parallel_group":"optional-surface","shared_spine":true,"trigger":"two_real_consumers_or_explicit_pilot"},
+    {"id":"R11","path":"R11-pap-pilot.md","status":"specified","dependencies":["R02"],"parallel_group":"independent-pilot","shared_spine":true},
+    {"id":"R12","path":"R12-action-experiment-receipt.md","status":"specified","dependencies":["R09"],"parallel_group":"governed-action","shared_spine":true},
+    {"id":"R13","path":"R13-artifact-analysis-delivery.md","status":"specified","dependencies":["R02","R12"],"parallel_group":"delivery","shared_spine":false},
+    {"id":"R14","path":"R14-adaptive-governor-variants.md","status":"specified","dependencies":["R02"],"parallel_group":"runtime-infrastructure","shared_spine":true},
+    {"id":"R15","path":"R15-isolated-sql-explorer.md","status":"specified","dependencies":["R02","R05"],"parallel_group":"isolated-product","shared_spine":true},
+    {"id":"R16","path":"R16-control-plane-stage-b.md","status":"specified","dependencies":["R04"],"parallel_group":"conditional-control","shared_spine":false,"trigger":"external_trust_or_compliance_boundary"},
+    {"id":"CT01","path":"CT01-thinkingai-inventory.md","status":"specified","dependencies":["R00"],"parallel_group":"content-a","shared_spine":false},
+    {"id":"CT02","path":"CT02-thinkingai-representative-skills.md","status":"specified","dependencies":["CT01","R09"],"parallel_group":"content-b","shared_spine":false},
+    {"id":"CT03","path":"CT03-thinkingai-full-specification.md","status":"specified","dependencies":["CT02"],"parallel_group":"content-c","shared_spine":false}
+  ]
+}
