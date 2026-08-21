@@ -1,0 +1,30 @@
+{
+  "artifact_kind": "skill",
+  "schema_version": "gravity.skill.v1",
+  "namespace": "gravity.game",
+  "skill_id": "ap-cost-anomaly-localization",
+  "version": "1.0.0",
+  "lifecycle": "reviewed",
+  "readiness": "blocked",
+  "summary": "Compare returned acquisition-spend rows across two windows and test one caller-selected channel without causal or completeness claims.",
+  "covers_journeys": [
+    "analysis.merge2.ap-cost-anomaly-localization"
+  ],
+  "semantic_dependencies": [
+    "metric://project/acquisition-spend@1"
+  ],
+  "capability_dependencies": [
+    "metric-anomaly-localization@1"
+  ],
+  "operator_dependencies": [
+    "operator://gravity/returned-dimension-change@1"
+  ],
+  "context_dependencies": [
+    "context://project-repo/merge2-acquisition-boundaries@1"
+  ],
+  "effects": [
+    "read"
+  ],
+  "execution_owner": "metric-anomaly-localization@1",
+  "guide_resource": "skills/gravity.game.ap-cost-anomaly-localization/GUIDE.md"
+}

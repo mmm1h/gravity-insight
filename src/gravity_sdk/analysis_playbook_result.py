@@ -4,13 +4,17 @@ from __future__ import annotations
 
 import copy
 from collections.abc import Mapping, Sequence
-from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from decimal import Decimal, InvalidOperation
 from typing import Any
 
 from .analysis_playbook import RESULT_SCHEMA_VERSION
 from .analysis_playbook_catalog import playbook_definition_fingerprint
 from .errors import ContractChangedError, exit_code_for_error
 from .result_audit import SCHEMA_VERSION as RESULT_AUDIT_SCHEMA_VERSION
+from .reference_journey_operator import (
+    ReferenceOperatorError,
+    returned_dimension_change,
+)
 from .semantic_compose import SEMANTIC_COMPOSE_RESULT_SCHEMA_VERSION
 from .semantic_compose_catalog import definition_by_id, definition_fingerprint
 
@@ -328,78 +332,32 @@ def _cross_check(evidence: Mapping[str, _StepEvidence], inputs: Mapping[str, Any
 def _conclusion(
     evidence: Mapping[str, _StepEvidence], inputs: Mapping[str, Any],
 ) -> dict[str, Any]:
-    current = sum(_groups(evidence["compare_current"]).values(), Decimal(0))
-    reference = sum(_groups(evidence["compare_reference"]).values(), Decimal(0))
-    total_delta = current - reference
-    current_slice = _decimal(evidence["validate_current"].rows[0][_METRIC_FIELD], "validate_current")
-    reference_slice = _decimal(evidence["validate_reference"].rows[0][_METRIC_FIELD], "validate_reference")
-    slice_delta = current_slice - reference_slice
-    if total_delta < 0:
-        verdict = (
-            "selected_slice_moved_with_observed_decrease"
-            if slice_delta < 0 else "selected_slice_did_not_move_with_observed_decrease"
+    current = evidence["compare_current"]
+    reference = evidence["compare_reference"]
+    selected_current = evidence["validate_current"]
+    selected_reference = evidence["validate_reference"]
+    try:
+        operator_result = returned_dimension_change(
+            current_rows=current.rows,
+            reference_rows=reference.rows,
+            selected_key=str(inputs["hypothesis"]["values"][0]),
+            selected_current=selected_current.rows[0][_METRIC_FIELD],
+            selected_reference=selected_reference.rows[0][_METRIC_FIELD],
+            current_rows_path=current.rows_path,
+            reference_rows_path=reference.rows_path,
+            selected_current_path=_fact(
+                selected_current, 0, _METRIC_FIELD
+            )["path"],
+            selected_reference_path=_fact(
+                selected_reference, 0, _METRIC_FIELD
+            )["path"],
         )
-    else:
-        verdict = "no_observed_returned_sum_decrease"
-    contribution = None if total_delta == 0 else _render_decimal(
-        (slice_delta / total_delta * Decimal(100)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-    )
-    selected = inputs["hypothesis"]["values"][0]
-    return {
-        "schema_version": "gravity.metric-anomaly-conclusion.v1",
-        "verdict": verdict,
-        "metric": _METRIC_FIELD,
-        "dimension": _DIMENSION_FIELD,
-        "current_returned_dimension_sum": _render_decimal(current),
-        "reference_returned_dimension_sum": _render_decimal(reference),
-        "returned_sum_absolute_change": _render_decimal(total_delta),
-        "relative_change_percent": (
-            None if reference == 0 else _render_decimal(
-                (total_delta / reference * Decimal(100)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-            )
-        ),
-        "selected_slice": selected,
-        "selected_current": _render_decimal(current_slice),
-        "selected_reference": _render_decimal(reference_slice),
-        "selected_absolute_change": _render_decimal(slice_delta),
-        "selected_share_of_returned_sum_change_percent": contribution,
-        "returned_dimension_changes": _dimension_changes(evidence),
-        "statement": (
-            f"The sum of returned {_DIMENSION_FIELD} {_METRIC_FIELD} rows changed from {_render_decimal(reference)} to "
-            f"{_render_decimal(current)} ({_render_decimal(total_delta)}); returned "
-            f"{_DIMENSION_FIELD}={selected} changed from {_render_decimal(reference_slice)} "
-            f"to {_render_decimal(current_slice)} ({_render_decimal(slice_delta)}). "
-            "This is an observed association within the cited facts, not a causal attribution."
-        ),
-        "fact_references": [
-            *_all_metric_facts(evidence["compare_reference"]),
-            *_all_metric_facts(evidence["compare_current"]),
-            _fact(evidence["validate_reference"], 0, _METRIC_FIELD),
-            _fact(evidence["validate_current"], 0, _METRIC_FIELD),
-        ],
-    }
-
-
-def _dimension_changes(evidence: Mapping[str, _StepEvidence]) -> list[dict[str, Any]]:
-    current_evidence = evidence["compare_current"]
-    reference_evidence = evidence["compare_reference"]
-    current = _groups(current_evidence)
-    reference = _groups(reference_evidence)
-    result = []
-    for key in sorted(set(current) & set(reference)):
-        current_index = next(index for index, row in enumerate(current_evidence.rows) if row[_DIMENSION_FIELD] == key)
-        reference_index = next(index for index, row in enumerate(reference_evidence.rows) if row[_DIMENSION_FIELD] == key)
-        result.append({
-            "key": key,
-            "current": _render_decimal(current[key]),
-            "reference": _render_decimal(reference[key]),
-            "absolute_change": _render_decimal(current[key] - reference[key]),
-            "fact_references": [
-                _fact(reference_evidence, reference_index, _METRIC_FIELD),
-                _fact(current_evidence, current_index, _METRIC_FIELD),
-            ],
-        })
-    return sorted(result, key=lambda item: abs(Decimal(item["absolute_change"])), reverse=True)
+        return {
+            **operator_result,
+            "schema_version": "gravity.metric-anomaly-conclusion.v1",
+        }
+    except ReferenceOperatorError as exc:
+        raise _EvidenceError("conclusion", str(exc)) from exc
 
 
 def _public_steps(

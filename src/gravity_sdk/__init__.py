@@ -24,6 +24,9 @@ _EXPORTS = {
     "GravityInsightClient": (".client", "GravityInsightClient"),
     "GravitySDK": (".sdk", "GravitySDK"),
     "connect": (".sdk", "connect"),
+    "ReferenceJourneyService": (
+        ".reference_journey", "ReferenceJourneyService"
+    ),
     "CompositeService": (".composite", "CompositeService"),
     "Credential": (".credentials", "Credential"),
     "CredentialConfig": (".credentials", "CredentialConfig"),

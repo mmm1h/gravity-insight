@@ -1,0 +1,55 @@
+{
+  "artifact_kind": "journey",
+  "schema_version": "gravity.journey.v1",
+  "journey_id": "analysis.merge2.ap-cost-anomaly-localization",
+  "version": 1,
+  "lifecycle": "active",
+  "owner": "growth-data",
+  "calling_project": "work-dashboard/merge2",
+  "required_skill": "skill://gravity.game/ap-cost-anomaly-localization@1.0.0",
+  "required_semantics": [
+    "metric://project/acquisition-spend@1"
+  ],
+  "required_operators": [
+    "operator://gravity/returned-dimension-change@1"
+  ],
+  "required_context": [
+    "context://project-repo/merge2-acquisition-boundaries@1"
+  ],
+  "required_capability": {
+    "identity_kind": "product",
+    "selector": "metric-anomaly-localization@1",
+    "minimum_trust": "stable",
+    "completeness": "complete",
+    "data_quality": "pass"
+  },
+  "execution": {
+    "owner": "metric-anomaly-localization@1",
+    "path": [
+      "gravity.plan.v1",
+      "semantic_compose",
+      "report.multidim.query"
+    ]
+  },
+  "project_contract_path": "20_项目知识库/仓库与配置/gravity-agent-runtime/r01-ap-cost-anomaly.json",
+  "request_budget": {
+    "acceptance_production_requests": 0,
+    "runtime_additional_requests": 0,
+    "existing_query_nodes": 4
+  },
+  "claim_policy": {
+    "allowed": [
+      "window-metric-change",
+      "returned-dimension-change",
+      "selected-slice-observation"
+    ],
+    "forbidden": [
+      "complete-app-total",
+      "unreturned-values",
+      "causality",
+      "incrementality",
+      "roi",
+      "natural-volume-attribution"
+    ]
+  }
+}

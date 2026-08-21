@@ -7,6 +7,8 @@ from typing import Any, Callable
 from .agent import add_agent_command
 from .agent_catalog import add_agent_catalog_command
 from .find import add_operation_commands
+from .find_input import add_input
+from .journey_cli import add_journey_commands
 from .receipt_cli import add_receipt_commands
 from .derived_metrics_cli import add_derived_metrics_command
 
@@ -23,6 +25,7 @@ def add_root_commands(
     add_operation_commands(commands, operation_limit)
     add_receipt_commands(commands)
     add_derived_metrics_command(commands)
+    add_journey_commands(commands, add_input)
 
 
 def dispatch_root_command(args: Any) -> Any:

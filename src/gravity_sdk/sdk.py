@@ -78,6 +78,8 @@ class GravitySDK(
         self._workspace = _load_workspace(workspace)
         self._insight_lock = threading.Lock()
         self._sql_lock = threading.Lock()
+        self._journey_lock = threading.Lock()
+        self._journey_service: Any | None = None
 
     @classmethod
     def from_env(
@@ -127,6 +129,20 @@ class GravitySDK(
                 if self._sql is None:
                     self._sql = self._sql_factory()
         return self._sql
+
+    @property
+    def journeys(self) -> Any:
+        """The narrow Journey service; constructing it performs no I/O."""
+
+        if self._journey_service is None:
+            with self._journey_lock:
+                if self._journey_service is None:
+                    from .reference_journey import ReferenceJourneyService
+
+                    self._journey_service = ReferenceJourneyService(
+                        self, workspace=self._workspace
+                    )
+        return self._journey_service
 
     def read(
         self,
