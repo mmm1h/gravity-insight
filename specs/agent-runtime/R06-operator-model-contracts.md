@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; plan-owner ready verdict 2026-08-22 |
+| Status | `fixed_dev`; integrated and validated on `dev` 2026-08-22 |
 | Track | Deterministic analysis methods |
 | Dependencies | R01 |
 | Parallel group | `foundation-a` |
@@ -12,6 +12,7 @@
 | Branch / worktree | `codex/r06-operator-model-contracts` / `D:\git-pjt\gravity-sdk-wt\r06-operator-model-contracts` |
 | Integrator | Root Codex agent; offline root CLI wiring remains serial |
 | Production requests | `0`; live evidence not authorized |
+| Implementation / merge | `508a13c` / `bc07d531` |
 | Main integration | Frozen until whole program completion |
 
 ## Outcome
@@ -23,8 +24,9 @@ Reusable analysis methods execute as explicitly installed, deterministic Operato
 The user authorized continuous implementation without repeated Requirement
 approval. R01-R03 and R05 are `fixed_dev`; the plan owner reviewed
 `tmp/r06-operator-model-contracts-proposal.md` and its conflict ledger, bound
-the current baseline/worktree/safety gates below, and advanced R06 through
-`reviewed` and `ready` to `in_progress`. This does not authorize production
+the current baseline/worktree/safety gates below, advanced R06 through
+`reviewed` and `ready`, and accepted the validated implementation as
+`fixed_dev`. This does not authorize production
 probing, writes, releases or `main` promotion.
 
 - Runtime initially ships only the characterized R01
@@ -46,6 +48,41 @@ probing, writes, releases or `main` promotion.
 - Exact acceptance includes numerical/resource/contract failures, deterministic
   digests, Model lifecycle gates, package separation/no-scan tests, public
   snapshot/docs, real wheel, R01 consumer parity, full gates and usability.
+
+## Fixed Dev Evidence
+
+- `OperatorRegistry` packages exactly
+  `operator://gravity/returned-dimension-change@1`, binds its formal Definition,
+  input/output schemas and full golden result to artifact digest
+  `ced105700b412be087322c7634402db356089ce5c904e625d758a9c8c41e4f59`,
+  and selects its sole runner from a closed code table. The provisional direct
+  R01 module owner was removed; arithmetic, rounding, ordering, fact paths and
+  statement remain characterized through the Registry.
+- Unit/additivity, sample, canonical JSON, row/input/output byte, dimension-key,
+  decimal coefficient/exponent span, selected-slice cross-check and output
+  schema gates fail closed. `gravity operators list|describe|validate` and the
+  root SDK export are offline; there is no entry-point or environment scan.
+- `ModelRegistry` ships with count `0` and never predicts. Explicit artifacts
+  require lineage, fitting window, calibration, approval, expiry and safe
+  horizon, plus an externally verified startup trusted digest before production
+  claims. Self-declared local approval returns `MODEL_SOURCE_UNTRUSTED` and only
+  scenario claims. The LTV Journey remains zero-network blocked with exact
+  `OPERATOR_UNAVAILABLE` and `MODEL_UNVALIDATED` reasons.
+- The code-free `gravity.trusted-pack-descriptor.v1` freezes exact
+  distribution/version/wheel digest/runtime range/allowed groups for R04; it
+  contains no URL, path, command or entry point. `gravity.receipt.v1` accepts an
+  optional value-free Operator/Model facet and preserves every old caller shape
+  when absent. R01 Analysis Result records method/version/schema/assumptions
+  digest/limitations plus an empty models list.
+- Full gates: `1498` unittest tests; `1498 passed, 3769 subtests` under pytest;
+  compiler `237 operations / 11 manifests`; quality PASS; actionable errors
+  `1310 = A1146 / B164 / C0`; active docs exactly `5500` lines. Canonical R01
+  consumer remains `5 passed` and retains exit 4
+  `blocked/COMPLETENESS_INSUFFICIENT` with zero network.
+- Usability remains `296/336` selection, `248/248` fillability, `53/53` offline
+  terminal and `5/5` recovery; security PASS; production HTTP requests `0`.
+  Isolated wheel install passed without checkout docs. Wheel SHA-256:
+  `09b22c219f63e9db03e640ffb6e588c5c392ae7b4b93b0f36336e2bb5b3da65c`.
 
 ## Current Baseline
 
