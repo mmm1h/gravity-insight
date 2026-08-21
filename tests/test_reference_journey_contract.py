@@ -1,0 +1,86 @@
+from __future__ import annotations
+
+import unittest
+
+from gravity_sdk.reference_journey_contract import (
+    CONTEXT_URI,
+    JOURNEY_ID,
+    OPERATOR_RESULT_SCHEMA_VERSION,
+    OPERATOR_URI,
+    SEMANTIC_URI,
+    SKILL_URI,
+    reference_artifacts,
+)
+
+
+class ReferenceJourneyContractTests(unittest.TestCase):
+    def test_exact_artifacts_form_one_closed_dependency_graph(self):
+        artifacts = reference_artifacts()
+        journey = artifacts["journey"]["contract"]
+        skill = artifacts["skill"]["contract"]
+        operator = artifacts["operator"]["contract"]
+        trust = artifacts["capability_trust"]["contract"]
+
+        self.assertEqual(JOURNEY_ID, journey["journey_id"])
+        self.assertEqual(SKILL_URI, journey["required_skill"])
+        self.assertEqual([SEMANTIC_URI], journey["required_semantics"])
+        self.assertEqual([OPERATOR_URI], journey["required_operators"])
+        self.assertEqual([CONTEXT_URI], journey["required_context"])
+        self.assertEqual([JOURNEY_ID], skill["covers_journeys"])
+        self.assertEqual(["read"], skill["effects"])
+        self.assertEqual(
+            OPERATOR_RESULT_SCHEMA_VERSION,
+            operator["output_schema_version"],
+        )
+        self.assertEqual(
+            {
+                "current_rows_path",
+                "reference_rows_path",
+                "selected_current_path",
+                "selected_reference_path",
+            },
+            {
+                name
+                for name in operator["input_contract"]["required"]
+                if name.endswith("_path")
+            },
+        )
+        self.assertEqual(86400, trust["validation_ttl_seconds"])
+        self.assertRegex(trust["definition_fingerprint"], r"^[0-9a-f]{64}$")
+        self.assertEqual(0, journey["request_budget"]["runtime_additional_requests"])
+        self.assertEqual(0, journey["request_budget"]["acceptance_production_requests"])
+
+    def test_every_artifact_has_a_stable_value_free_digest(self):
+        first = reference_artifacts()
+        second = reference_artifacts()
+        for name in (
+            "journey",
+            "skill",
+            "operator",
+            "context_provider",
+            "analysis_result_contract",
+            "capability_trust",
+        ):
+            with self.subTest(name=name):
+                self.assertRegex(first[name]["digest"], r"^[0-9a-f]{64}$")
+                self.assertEqual(first[name]["digest"], second[name]["digest"])
+        self.assertRegex(first["skill"]["package_digest"], r"^[0-9a-f]{64}$")
+
+    def test_artifacts_are_defensive_copies(self):
+        poisoned = reference_artifacts()
+        poisoned["journey"]["contract"]["journey_id"] = "poison"
+        poisoned["skill"]["guide"] = "poison"
+
+        fresh = reference_artifacts()
+        self.assertEqual(JOURNEY_ID, fresh["journey"]["contract"]["journey_id"])
+        self.assertIn("Context is data", fresh["skill"]["guide"])
+
+    def test_skill_is_static_and_cannot_install_or_execute_code(self):
+        rendered = str(reference_artifacts()["skill"])
+        for forbidden in ("scripts", "shell", "pip install", "http://", "https://"):
+            with self.subTest(forbidden=forbidden):
+                self.assertNotIn(forbidden, rendered.casefold())
+
+
+if __name__ == "__main__":
+    unittest.main()

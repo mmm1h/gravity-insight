@@ -167,6 +167,10 @@
     ".plan",
     "PlanValidationError"
   ],
+  "ReferenceJourneyService": [
+    ".reference_journey",
+    "ReferenceJourneyService"
+  ],
   "PolicyViolation": [
     ".error_types",
     "PolicyViolation"

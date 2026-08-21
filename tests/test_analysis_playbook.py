@@ -161,6 +161,10 @@ class AnalysisPlaybookTests(unittest.TestCase):
             object(), playbook_input(), execute_plan=first_executor
         )
         self.assertTrue(first["ok"])
+        self.assertEqual(
+            "gravity.metric-anomaly-conclusion.v1",
+            first["conclusion"]["schema_version"],
+        )
         self.assertEqual("selected_slice_moved_with_observed_decrease", first["conclusion"]["verdict"])
         self.assertEqual("-30", first["conclusion"]["returned_sum_absolute_change"])
         self.assertEqual("100", first["conclusion"]["selected_share_of_returned_sum_change_percent"])

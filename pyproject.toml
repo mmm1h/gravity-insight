@@ -48,6 +48,7 @@ include = ["gravity_sdk*"]
 [tool.setuptools.package-data]
 gravity_sdk = [
   "contracts/**/*.json",
+  "skills/**/*.md",
   "manifests/*.json",
   "census/data/*",
   "governance/*.json",

@@ -22,7 +22,12 @@
     "approved_by": "user",
     "approved_at": "2026-08-21",
     "scope": "canonical_architecture_source_and_requirement_graph_corrections",
-    "implementation_requires_ready_requirement": true
+    "implementation_requires_ready_requirement": true,
+    "program_implementation_authorized_by": "user",
+    "program_implementation_authorized_at": "2026-08-21",
+    "program_implementation_scope": "all indexed requirements after dependencies and machine gates are satisfied",
+    "repeat_requirement_approval_required": false,
+    "internal_delivery_ledger": "requirement_document"
   },
   "review_baseline": {
     "branch": "main",
@@ -35,8 +40,8 @@
     "status": "fixed_dev"
   },
   "requirements_index": "index.json",
-  "active_feature_requirement": null,
-  "next_candidate": "R01",
+  "active_feature_requirement": "R01",
+  "next_candidate": null,
   "main_integration": {
     "status": "frozen",
     "development_target": "dev",

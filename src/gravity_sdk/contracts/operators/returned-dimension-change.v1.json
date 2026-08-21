@@ -1,0 +1,39 @@
+{
+  "artifact_kind": "operator",
+  "schema_version": "gravity.operator.v1",
+  "uri": "operator://gravity/returned-dimension-change@1",
+  "version": 1,
+  "owner": "gravity-runtime",
+  "deterministic": true,
+  "input_contract": {
+    "required": [
+      "current_rows",
+      "reference_rows",
+      "selected_key",
+      "selected_current",
+      "selected_reference",
+      "current_rows_path",
+      "reference_rows_path",
+      "selected_current_path",
+      "selected_reference_path"
+    ],
+    "metric_values": "finite-decimal",
+    "dimension_keys": "non-empty-unique-string"
+  },
+  "output_schema_version": "gravity.operator-result.returned-dimension-change.v1",
+  "assumptions": [
+    "Both windows use the same project Semantic binding.",
+    "Only returned rows are compared.",
+    "The selected slice is present and cross-checked in both windows."
+  ],
+  "allowed_claims": [
+    "returned-row absolute and relative change",
+    "returned-key change",
+    "selected-slice share of returned-row change"
+  ],
+  "forbidden_claims": [
+    "complete total",
+    "causality",
+    "unreturned values"
+  ]
+}

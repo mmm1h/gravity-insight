@@ -1028,6 +1028,23 @@ gravity promotion custom-audiences --max-pages 1000 --max-items 100000
 未登记字段失败关闭。未知入口使用 `gravity agent "custom audience coverage status"
 --domain promotion`，返回无缺失输入的唯一 `composite:custom_audience` 卡。
 
+## Reference Journey
+
+```powershell
+gravity journey describe analysis.merge2.ap-cost-anomaly-localization
+gravity --workspace <project> journey can-run analysis.merge2.ap-cost-anomaly-localization --input <request.json>
+gravity --workspace <project> journey run analysis.merge2.ap-cost-anomaly-localization --input <request.json>
+```
+
+`describe` 与 `can-run` 严格离线；`run` 也先执行同一 readiness，只有
+`can_run_status=verified` 才委托既有 `metric-anomaly-localization@1` / Plan v1 路径。
+当前 `report.multidim.query` 的合同完整性是 `unknown`，低于 Journey 要求的 `complete`，
+因此真实项目 `can-run/run` 返回 exit 4、`blocked` 和
+`COMPLETENESS_INSUFFICIENT`，不构造凭据、不发目标请求、不发布 findings。
+Project Semantic 与 Context Pack 来自调用项目的固定 R01 机器合同；结果和 Receipt 只携带
+URI、revision、hash、digest 与 citation，不保存 Context 正文。Skill 不是第三条路由臂，
+CLI 也不拥有新 executor、binder、pagination 或 permission 逻辑。
+
 ## Analysis playbook
 
 ```powershell

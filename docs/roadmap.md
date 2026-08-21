@@ -20,10 +20,11 @@
 当前程序状态：
 
 1. **R00 产品宪法与需求拆分（fixed-dev）**：v9.1 canonical 总纲、directive 和细化后的无环需求图已在 `dev` 完成并通过整仓门禁；不表示已发布到 `main`。
-2. **R01 参考纵向切片**：保持 `specified`；用户/计划 owner 选定真实 Journey、调用项目、现有执行路径和请求边界后才能进入 `ready`。
+2. **R01 参考纵向切片（in-progress）**：用户已批准 `analysis.merge2.ap-cost-anomaly-localization`，绑定 `work-dashboard/merge2`、`growth-data`、现有 playbook/Plan/Semantic Compose 路径、零生产请求和有界 claims；内部交付账本为 R01 Requirement。
 3. **Phase 0 正确性维护**：分页证据、私有 API 漂移、身份、Census、错误和消费者问题继续推进，不被内容 Track 阻塞。
 4. **并行规则**：依赖满足且写入边界不重叠的领域 core 可在独立 `codex/<unit>` worktree 并行；共享 spine 最终接线由一个 integrator 串行完成。
 5. **Main freeze**：完整计划结束、整体验收通过且用户重新明确批准前，本计划功能只合入 `dev`，不合入 `main`。单项 `fixed_dev` 不等于发布。
+6. **持续实施授权**：用户已明确要求依赖满足后持续完成全部 indexed requirements，不再逐项请求批准；计划 owner 仍须在每个单元开工前绑定机器门禁、写入范围与回滚，且不得由该授权推导生产探测、写入、发布或提前解冻 `main`。
 
 ## 已定决策
 

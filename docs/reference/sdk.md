@@ -196,6 +196,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `metric_anomaly_playbook_schema()` | 离线返回唯一 playbook 的目标、必要输入、DAG、停止条件与 `allowed_claims` |
 | `prepare_metric_anomaly_playbook()` | 把完整或续跑调查编译为现有 Plan 并做零网络 adapter preflight |
 | `metric_anomaly_playbook()` | 运行或用 checkpoint 续跑；未失效 Plan item 复用，证据不全时不发布结论 |
+| `journeys.describe()` / `journeys.can_run()` / `journeys.run()` | R01 窄 Journey 服务；先离线组合 Trust/DQ、Project Semantic、Operator、Repo Context 与 Skill，verified 后才委托既有 playbook |
 | `material_performance()` | 按显式 App、日期窗和平台读取稳定素材表现；平台保序、共享预算、局部失败隔离 |
 | `fetch_material_asset()` | 从刚读取的已登记素材响应按精确引用完整下载图片/视频；不接受 URL |
 | `promotion_performance()` | 按一个显式 App、日期窗、平台和物理指标读取 21 个同构平台；平台保序、局部失败隔离 |
@@ -573,6 +574,23 @@ max_workers=6, workspace=None)` 使用同一合同。直接入口 worker 默认 
 多个独立请求放在同一个 Plan 的同层节点，由 Plan 全局 pool 并发；不提供第二个 batch scheduler。
 Agent 和 SDK 不解释模板、布局、收藏、权限、图表，也不生成 App、指标、维度、日期、filter value
 或业务指标口径。
+
+## Reference Journey
+
+`sdk.journeys` 是惰性、缓存且不构造 Insight/SQL client 的窄服务：
+
+```python
+description = sdk.journeys.describe()
+readiness = sdk.journeys.can_run(request)
+result = sdk.journeys.run(request)
+```
+
+当前唯一 ID 是 `analysis.merge2.ap-cost-anomaly-localization`。`can_run` 返回
+`verified|unknown|blocked|invalid`、稳定 reason codes 和值无关 execution snapshot。
+当前底层完整性为 `unknown`，所以真实合同返回
+`blocked/COMPLETENESS_INSUFFICIENT` 并保持零网络；不得由返回行、短页或
+`page.has_more` 提升为 complete。测试中的 verified 路径只证明组合合同与既有 executor
+等价，不构成生产完整性证据。
 
 ## Semantic Compose
 

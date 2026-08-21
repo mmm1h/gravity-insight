@@ -16,6 +16,7 @@ Usage:
   gravity agent-catalog categories|category <domain>|describe <selector>|host
   gravity plan schema
   gravity plan run --input <plan.json>
+  gravity journey describe|can-run|run analysis.merge2.ap-cost-anomaly-localization
   gravity analysis saved list|get|prepare|run
   gravity analysis saved create|update|delete --dry-run|--execute
   gravity analysis template list|prepare|run
