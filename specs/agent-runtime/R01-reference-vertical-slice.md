@@ -3,32 +3,56 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `specified`; cannot become `ready` until the reference Journey is owner-approved |
+| Status | `in_progress`; owner-approved 2026-08-21 |
 | Track | Reference implementation |
 | Dependencies | R00 |
 | Parallel group | `reference` |
+| Delivery ledger | This Requirement document; no internal GitHub Issue |
+| Baseline | `dev@05f01c8da13c8414412611eb3c34612862530803` |
+| Branch / worktree | `codex/r01-reference-vertical-slice` / `D:\git-pjt\gravity-sdk-wt\r01-reference-vertical-slice` |
+| Integrator | Root Codex agent; shared-spine wiring remains serial |
 | Main integration | Frozen until whole program completion |
 
 ## Outcome
 
 One real project analysis Journey runs end to end through a Journey Contract, same-layer Capability Trust and Data Quality, one project Semantic, one deterministic Operator, one Built-in Skill, one bounded Repo Context Pack, the existing execution owner, a structured Analysis Result and Receipt/Evidence.
 
-## Ready Gate
+## Owner Verdict And Ready Binding
 
-Before approval, bind all of the following in this document or its Issue:
+The user approved `tmp/r01-reference-vertical-slice-proposal.md` on 2026-08-21
+and designated this Requirement as the internal delivery ledger. The same
+message authorizes Codex to continue through later indexed requirements without
+requesting another per-Requirement approval once their dependencies and machine
+gates are satisfied. This does not authorize production probing, writes,
+credential changes, release actions, or early `main` promotion.
 
-```text
-journey_id
-calling project and owner
-question and success criteria
-current Product/Composite/Plan selector path
-physical and business input scope
-required completeness and allowed claims
-maximum production requests and whether live evidence is authorized
-canonical consumer migration target
-```
-
-Codex must not choose the easiest Journey. A candidate is acceptable only when it exercises Capability, Semantic, Operator and Context boundaries and represents a recurring analysis task.
+- **Journey ID**: `analysis.merge2.ap-cost-anomaly-localization`.
+- **Calling project / owner**: `work-dashboard` project `merge2` / `growth-data`.
+- **Question**: did the sum of returned `click_company` `ap_cost` rows change
+  between equal, non-overlapping windows, and did one caller-selected slice move
+  in the same observed direction?
+- **Success**: Journey readiness is machine-decidable; exact Trust/DQ,
+  project Semantic, deterministic Operator, Built-in Skill, bounded Repo Context
+  and Receipt references compose around the existing executor; missing or
+  degraded evidence produces no conclusion.
+- **Existing execution path**:
+  `metric-anomaly-localization@1 -> Plan v1 -> semantic_compose -> report.multidim.query`.
+- **Physical input scope**: configured `merge2-legacy` App binding, two equal
+  explicit ISO windows, one exact `click_company`, physical `ap_cost`.
+- **Business input scope**: project acquisition-spend Semantic and canonical
+  acquisition/attribution Context citations.
+- **Required completeness**: `complete` for every required query step.
+- **Allowed claims**: returned-row window change, returned-key change and the
+  selected-slice observation already bounded by `metric-anomaly-localization@1`.
+- **Forbidden claims**: complete App total, unreturned values, causality,
+  incrementality, ROI, natural-volume attribution or an unproved semantic
+  equivalence.
+- **Production request maximum / live evidence**: `0` / not authorized.
+- **Canonical consumer target**: current `work-dashboard` Gravity contract,
+  references and focused consumer tests, modified only in a clean worktree.
+- **Acceptance commands**: focused R01/playbook/semantic/Plan tests, real-wheel
+  no-checkout tests, focused consumer tests, both repositories' complete gates,
+  the development usability evaluation and `git diff --check`.
 
 ## Current Baseline
 
@@ -50,7 +74,7 @@ The repository already has closed analysis journeys, host catalog/recognizer rou
 
 ## Machine Contract
 
-The slice must define versioned Journey, Skill, Semantic, Operator, Context Pack and Analysis Result schemas or narrow provisional equivalents. Each identity has one authority and a value-free digest/reference in Receipt metadata. Provisional contracts must state whether R02-R08 may revise them.
+The slice must define versioned Journey, Skill, Semantic, Operator, Context Pack and Analysis Result schemas or narrow provisional equivalents. Each identity has one authority and a value-free digest/reference in Receipt metadata. R02-R08 may revise provisional R01 contracts only with current-behavior characterization, consumer migration and no-capability-loss gates.
 
 ## Migration And Compatibility
 

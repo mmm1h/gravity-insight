@@ -45,7 +45,7 @@ CT01 + R09B → CT02 → CT03
 | ID | Title | Dependencies | State | Delivery |
 | --- | --- | --- | --- | --- |
 | [R00](R00-product-constitution.md) | Product constitution and directive governance | - | `fixed_dev` | Leaf |
-| [R01](R01-reference-vertical-slice.md) | Reference vertical Journey slice | R00 | `specified` | Leaf |
+| [R01](R01-reference-vertical-slice.md) | Reference vertical Journey slice | R00 | `in_progress` | Leaf |
 | [R02](R02-journey-trust-data-quality.md) | Journey, Trust and Data Quality platform | R01 | `specified` | Leaf |
 | [R03](R03-built-in-skill-package.md) | Built-in Skill package and render model | R01 | `specified` | Leaf |
 | [R04](R04-team-skill-hub-stage-a.md) | Team Skill Hub and Trusted Pack Stage A | R03, R06 | `specified` | Leaf with two artifact channels |
@@ -89,3 +89,10 @@ Requirement branches implement domain cores and focused tests first. A named int
 ## Readiness
 
 `specified` means scope and dependency boundaries exist. Before changing a leaf or epic milestone to `ready`, the plan owner must fill unresolved decisions, bind a current baseline SHA and Issue, confirm write scope/worktree, and approve exact acceptance commands.
+
+The user approved the R01 binding and designated the Requirement document as
+the internal program delivery ledger on 2026-08-21. The same authorization lets
+the plan owner promote later requirements without repeated user approval after
+their dependencies, unresolved decisions, write scopes and exact machine gates
+are bound. Production probes, writes, releases and `main` promotion retain their
+separate explicit authorization rules.
