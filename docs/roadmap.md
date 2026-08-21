@@ -24,7 +24,7 @@
 3. **R02 Journey / Trust / DQ 泛化（fixed-dev）**：五个显式 Journey 已绑定严格 ledger projection；Operation/Product/Composite 使用同层 Trust、principal-scoped Validation、TTL、Data Quality 和 transitive impact。R01 仍因完整性不足以 exit 4 零请求阻断；旧私有 Trust owner 已删除，未扩建第二执行器或路由器。
 4. **R03 Built-in Skill Package（fixed-dev）**：R01 Skill 已升级为单一 JSON Render Model，并确定性生成 wheel package、docs mirror 与 Agent Skills export；本地 resolver 传播 R02 Trust blocker，普通包保持零代码，R04 Hub/CAS/lock/trusted-pack 未被提前实现。
 5. **R05 Business Semantic Registry（fixed-dev）**：versioned Definition/Binding/Source、formula/unit/additivity/time/effective-range/conflict 门禁与离线 `SemanticRegistry`/复数 CLI 已集成；Runtime 只含通用 App Entity，Merge2 指标与 App/physical binding 已迁移到 work-dashboard 独立 Source。R01 仍因完整性 unknown 而零请求阻断。
-6. **Phase 0 正确性维护**：分页证据、私有 API 漂移、身份、Census、错误和消费者问题继续推进，不被内容 Track 阻塞。
+6. **R06 Operator / Model Contracts（in-progress）**：抽取唯一 R01 deterministic Operator，建立闭合 Registry、输入/输出/assumption/claim/golden 门禁；Model 只建 lineage/evaluation/approval/expiry 合同且不内置模型，LTV gap 不提升。
 7. **并行规则**：依赖满足且写入边界不重叠的领域 core 可在独立 `codex/<unit>` worktree 并行；共享 spine 最终接线由一个 integrator 串行完成。
 8. **Main freeze**：完整计划结束、整体验收通过且用户重新明确批准前，本计划功能只合入 `dev`，不合入 `main`。单项 `fixed_dev` 不等于发布。
 9. **持续实施授权**：用户已明确要求依赖满足后持续完成全部 indexed requirements，不再逐项请求批准；计划 owner 仍须在每个单元开工前绑定机器门禁、写入范围与回滚，且不得由该授权推导生产探测、写入、发布或提前解冻 `main`。

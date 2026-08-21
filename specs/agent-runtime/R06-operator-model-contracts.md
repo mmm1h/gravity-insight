@@ -3,15 +3,49 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `specified` |
+| Status | `in_progress`; plan-owner ready verdict 2026-08-22 |
 | Track | Deterministic analysis methods |
 | Dependencies | R01 |
 | Parallel group | `foundation-a` |
+| Delivery ledger | This Requirement document; no internal GitHub Issue |
+| Baseline | `dev@4c2d96d5b626449463e9609419e1f10aa64f3a53` |
+| Branch / worktree | `codex/r06-operator-model-contracts` / `D:\git-pjt\gravity-sdk-wt\r06-operator-model-contracts` |
+| Integrator | Root Codex agent; offline root CLI wiring remains serial |
+| Production requests | `0`; live evidence not authorized |
 | Main integration | Frozen until whole program completion |
 
 ## Outcome
 
 Reusable analysis methods execute as explicitly installed, deterministic Operators with versioned input/output, assumptions, claims and golden evidence. Predictive artifacts have separate model lineage and validation contracts.
+
+## Plan Owner Verdict And Ready Binding
+
+The user authorized continuous implementation without repeated Requirement
+approval. R01-R03 and R05 are `fixed_dev`; the plan owner reviewed
+`tmp/r06-operator-model-contracts-proposal.md` and its conflict ledger, bound
+the current baseline/worktree/safety gates below, and advanced R06 through
+`reviewed` and `ready` to `in_progress`. This does not authorize production
+probing, writes, releases or `main` promotion.
+
+- Runtime initially ships only the characterized R01
+  `operator://gravity/returned-dimension-change@1`; its direct provisional
+  module migrates to one closed `OperatorRegistry` runner table with exact
+  packaged input/output schemas and golden cases.
+- Existing derived metrics stay a separate caller-defined arithmetic product;
+  no method is inferred or bulk-wrapped into the Registry.
+- `ModelRegistry` validates identity, Operator/code binding, artifact digest,
+  fitting lineage/window, evaluation/calibration, safe horizon, approval and
+  expiry but performs no prediction. R06 ships no Model Artifact, so the LTV
+  Journey keeps `OPERATOR_UNAVAILABLE` and `MODEL_UNVALIDATED`.
+- R04 receives a code-free trusted-pack descriptor for exact distribution,
+  version, wheel digest and allowed groups. R06 does not implement Hub, CAS,
+  lock, installer, entry-point discovery or Runtime environment scanning.
+- R01 Analysis Result gains exact method/version/assumption/limitation metadata;
+  `gravity.receipt.v1` gains only an optional value-free `operator_model` facet.
+  Existing callers retain their current receipt shape when the facet is absent.
+- Exact acceptance includes numerical/resource/contract failures, deterministic
+  digests, Model lifecycle gates, package separation/no-scan tests, public
+  snapshot/docs, real wheel, R01 consumer parity, full gates and usability.
 
 ## Current Baseline
 
