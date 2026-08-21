@@ -1072,6 +1072,19 @@ Trust。`validate` 只验证输入，不写 principal-scoped store。impact 输�
 合法 `change_kind` 为 `provider_fingerprint_changed|contract_changed|lifecycle_changed|validation_changed|data_quality_changed`。
 输出只列受影响 Capability、Skill、Journey identity 与稳定 reason code，不执行或重跑生产查询。
 
+## Built-in Skills
+
+```powershell
+gravity skills list
+gravity skills show skill://gravity.game/ap-cost-anomaly-localization@1.0.0
+gravity skills export-agent skill://gravity.game/ap-cost-anomaly-localization@1.0.0 --output <parent-directory>
+```
+
+`list/show` 只读 wheel package；`show` 可读 principal-scoped Validation，但不发目标请求、选 Product
+或执行 Skill。R01 当前为 `blocked/COMPLETENESS_INSUFFICIENT`。`export-agent` 从同一 JSON
+Render Model 原子创建 `SKILL.md` + `references/`，拒绝覆盖。普通包无 scripts/执行/网络/SQL/授权；
+该命令不是 Hub install，远程 sync、CAS、lock 与 Trusted Pack 尚不属于当前表面。
+
 ## Analysis playbook
 
 ```powershell

@@ -49,6 +49,7 @@ include = ["gravity_sdk*"]
 gravity_sdk = [
   "contracts/**/*.json",
   "skills/**/*.md",
+  "skills/**/*.json",
   "manifests/*.json",
   "census/data/*",
   "governance/*.json",

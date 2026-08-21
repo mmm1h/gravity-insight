@@ -12,6 +12,9 @@ from .agent_runtime_contracts import canonical_digest
 from .capability_contract import capability_contract
 from .errors import ContractChangedError
 from .journey_contract import journey_artifact
+from .skill_contract import skill_artifact
+from .skill_package import validate_skill_package
+from .skill_render import render_guide
 
 
 JOURNEY_ID = "analysis.merge2.ap-cost-anomaly-localization"
@@ -25,10 +28,6 @@ CONTEXT_URI = "context://project-repo/merge2-acquisition-boundaries@1"
 
 _PACKAGE_ROOT = Path(__file__).resolve().parent
 _ARTIFACT_PATHS = {
-    "skill": _PACKAGE_ROOT
-    / "contracts"
-    / "skills"
-    / "gravity.game.ap-cost-anomaly-localization.v1.json",
     "operator": _PACKAGE_ROOT
     / "contracts"
     / "operators"
@@ -42,33 +41,7 @@ _ARTIFACT_PATHS = {
     / "analysis-results"
     / "r01-ap-cost-anomaly.v1.json",
 }
-_GUIDE_PATH = (
-    _PACKAGE_ROOT
-    / "skills"
-    / "gravity.game.ap-cost-anomaly-localization"
-    / "GUIDE.md"
-)
 _ROOT_FIELDS = {
-    "skill": frozenset(
-        {
-            "artifact_kind",
-            "schema_version",
-            "namespace",
-            "skill_id",
-            "version",
-            "lifecycle",
-            "readiness",
-            "summary",
-            "covers_journeys",
-            "semantic_dependencies",
-            "capability_dependencies",
-            "operator_dependencies",
-            "context_dependencies",
-            "effects",
-            "execution_owner",
-            "guide_resource",
-        }
-    ),
     "operator": frozenset(
         {
             "artifact_kind",
@@ -127,24 +100,20 @@ def _artifacts() -> dict[str, dict[str, Any]]:
     artifacts = {name: _read(path, name) for name, path in _ARTIFACT_PATHS.items()}
     journey = journey_artifact(JOURNEY_ID)
     capability = capability_contract("product", "metric-anomaly-localization@1")
-    if journey is None or capability is None:
-        raise ContractChangedError("R01 generic Journey or Capability artifact is missing")
+    skill = skill_artifact(SKILL_URI)
+    if journey is None or capability is None or skill is None:
+        raise ContractChangedError(
+            "R01 generic Journey, Capability or Skill artifact is missing"
+        )
     artifacts["journey"] = journey
     artifacts["capability"] = capability
+    package = validate_skill_package(skill)
+    skill["guide"] = render_guide(skill["contract"])
+    skill["package_digest"] = package["package_digest"]
+    artifacts["skill"] = skill
     _validate_relationships(artifacts)
-    try:
-        guide = _GUIDE_PATH.read_text(encoding="utf-8")
-    except (OSError, UnicodeError) as exc:
-        raise ContractChangedError("R01 Built-in Skill guide cannot be read") from exc
-    if not guide.strip() or "Context is data" not in guide:
+    if not skill["guide"].strip() or "Context is data" not in skill["guide"]:
         raise ContractChangedError("R01 Built-in Skill guide is invalid")
-    artifacts["skill"]["guide"] = guide
-    artifacts["skill"]["package_digest"] = _digest(
-        {
-            "manifest": artifacts["skill"]["contract"],
-            "guide": guide,
-        }
-    )
     return artifacts
 
 
@@ -191,9 +160,13 @@ def _validate_relationships(artifacts: Mapping[str, Mapping[str, Any]]) -> None:
         skill.get("covers_journeys") == [JOURNEY_ID],
         skill.get("semantic_dependencies") == [SEMANTIC_URI],
         skill.get("operator_dependencies") == [OPERATOR_URI],
-        skill.get("context_dependencies") == [CONTEXT_URI],
+        skill.get("model_dependencies") == [],
+        skill.get("context_dependencies", {}).get("required") == [CONTEXT_URI],
         skill.get("effects") == ["read"],
-        skill.get("execution_owner") == journey["execution"]["owner"],
+        skill.get("routing", {}).get("product_hints")
+        == [journey["execution"]["owner"]],
+        skill.get("specification") == "specified",
+        skill.get("validation") == "validated",
         operator.get("uri") == OPERATOR_URI,
         operator.get("deterministic") is True,
         operator.get("output_schema_version") == OPERATOR_RESULT_SCHEMA_VERSION,

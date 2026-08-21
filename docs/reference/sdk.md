@@ -198,6 +198,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `metric_anomaly_playbook()` | 运行或用 checkpoint 续跑；未失效 Plan item 复用，证据不全时不发布结论 |
 | `journeys.list()` / `verify()` / `describe(id)` / `can_run(id, input)` / `impact(diff)` / `run(id, input)` | 通用 Journey 合同与 readiness 服务；R01 只有 verified 后才委托既有 playbook |
 | `capability_trust.trust(kind, selector)` / `validate(result)` / `impact(diff)` | Operation/Product/Composite 同层 Trust、只读 Validation 校验与依赖影响；不自动探测或写入 |
+| `LocalSkillResolver().list()` / `describe(id)` / `get(id)` / `export_agent(id)` / `materialize_agent(id, output)` | 只读 Built-in Skill package、依赖 readiness 与确定性 Agent Skills 导出；不选择或执行 Product |
 | `material_performance()` | 按显式 App、日期窗和平台读取稳定素材表现；平台保序、共享预算、局部失败隔离 |
 | `fetch_material_asset()` | 从刚读取的已登记素材响应按精确引用完整下载图片/视频；不接受 URL |
 | `promotion_performance()` | 按一个显式 App、日期窗、平台和物理指标读取 21 个同构平台；平台保序、局部失败隔离 |
@@ -615,6 +616,21 @@ R01 `analysis.merge2.ap-cost-anomaly-localization` 保留唯一的当前 Journey
 `page.has_more` 提升为 complete。测试中的 verified 路径只证明组合合同与既有 executor
 等价，不构成生产完整性证据。其他 pilot Journey 当前只用于 list/verify/describe/can-run/impact；
 R02 不为它们创建第二套路由或执行器，未绑定执行时 `run()` 失败关闭。
+
+## Built-in Skill Packages
+
+```python
+from gravity_sdk import LocalSkillResolver
+resolver = LocalSkillResolver()
+result = resolver.get("skill://gravity.game/ap-cost-anomaly-localization@1.0.0")
+export = resolver.export_agent("skill://gravity.game/ap-cost-anomaly-localization@1.0.0")
+```
+
+resolver 只扫描 wheel 内固定 package；JSON manifest 唯一生成 package、docs 和 Agent Skills 视图。
+四个状态正交；`validated` 不等于 `executable`。`get()` 只用 R02 Trust 算 readiness，当前 R01 为
+`blocked/COMPLETENESS_INSUFFICIENT/network_called=false`，不执行 selector。
+`materialize_agent()` 原子创建新目录并拒绝覆盖；普通包无 scripts/执行位/链接/HTTP/SQL/授权。
+Hub、CAS、lock 与 Trusted Pack 属于后续 Requirement。
 
 ## Semantic Compose
 

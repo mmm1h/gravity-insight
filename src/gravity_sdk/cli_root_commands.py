@@ -12,6 +12,7 @@ from .find_input import add_input
 from .journey_cli import add_journey_commands
 from .receipt_cli import add_receipt_commands
 from .derived_metrics_cli import add_derived_metrics_command
+from .skill_cli import add_skill_commands
 
 
 def add_root_commands(
@@ -28,6 +29,7 @@ def add_root_commands(
     add_derived_metrics_command(commands)
     add_journey_commands(commands, add_input)
     add_capability_trust_commands(commands, add_input)
+    add_skill_commands(commands)
 
 
 def dispatch_root_command(args: Any) -> Any:
