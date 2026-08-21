@@ -19,6 +19,8 @@ from .journey_contract import (
     journey_artifacts,
     verify_journey_registry,
 )
+from .model_registry import ModelRegistry
+from .operator_registry import OperatorRegistry
 from .reference_journey_contract import JOURNEY_ID, reference_artifacts
 
 
@@ -38,10 +40,14 @@ class JourneyService:
         *,
         workspace: Any | None = None,
         capability_trust: CapabilityTrustService | None = None,
+        operators: OperatorRegistry | None = None,
+        models: ModelRegistry | None = None,
     ) -> None:
         self._sdk = sdk
         self._workspace = workspace if workspace is not None else sdk.workspace
         self._capability_trust = capability_trust or CapabilityTrustService()
+        self._operators = operators or OperatorRegistry()
+        self._models = models or ModelRegistry(operators=self._operators)
 
     def list(self) -> dict[str, Any]:
         rows = []
@@ -191,12 +197,16 @@ class JourneyService:
         if contract["required_semantics"]:
             statuses.append("blocked")
             reasons.append("SEMANTIC_DEFINITION_MISSING")
-        if contract["required_operators"]:
+        operator_dependencies = self._operators.dependencies(
+            contract["required_operators"]
+        )
+        if not operator_dependencies["ok"]:
             statuses.append("blocked")
-            reasons.append("OPERATOR_UNAVAILABLE")
-        if contract["required_models"]:
+            reasons.extend(operator_dependencies["reason_codes"])
+        model_dependencies = self._models.dependencies(contract["required_models"])
+        if not model_dependencies["ok"]:
             statuses.append("blocked")
-            reasons.append("MODEL_UNVALIDATED")
+            reasons.extend(model_dependencies["reason_codes"])
         if contract["required_context"]:
             statuses.append("blocked")
             reasons.append("CONTEXT_REQUIRED_MISSING")
@@ -216,6 +226,8 @@ class JourneyService:
         return _generic_can_run(
             artifact,
             capability_results=capability_results,
+            operator_dependencies=operator_dependencies,
+            model_dependencies=model_dependencies,
             status=status,
             reasons=reasons,
         )
@@ -225,6 +237,8 @@ def _generic_can_run(
     artifact: Mapping[str, Any],
     *,
     capability_results: list[dict[str, Any]],
+    operator_dependencies: Mapping[str, Any],
+    model_dependencies: Mapping[str, Any],
     status: str,
     reasons: list[str],
 ) -> dict[str, Any]:
@@ -232,8 +246,8 @@ def _generic_can_run(
     dependencies = {
         "capabilities": copy.deepcopy(capability_results),
         "semantics": _static_dependencies(contract["required_semantics"]),
-        "operators": _static_dependencies(contract["required_operators"]),
-        "models": _static_dependencies(contract["required_models"]),
+        "operators": copy.deepcopy(operator_dependencies["dependencies"]),
+        "models": copy.deepcopy(model_dependencies["dependencies"]),
         "context": _static_dependencies(contract["required_context"]),
         "skill": (
             {"uri": contract["required_skill"], "status": "unresolved"}

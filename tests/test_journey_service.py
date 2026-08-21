@@ -75,6 +75,17 @@ class JourneyServiceTests(unittest.TestCase):
             set(ltv["reason_codes"]),
         )
         self.assertEqual(
+            ["OPERATOR_UNAVAILABLE"],
+            ltv["dependencies"]["operators"][0]["reason_codes"],
+        )
+        self.assertEqual(
+            ["MODEL_UNVALIDATED"],
+            ltv["dependencies"]["models"][0]["reason_codes"],
+        )
+        self.assertFalse(
+            ltv["dependencies"]["models"][0]["production_claims_allowed"]
+        )
+        self.assertEqual(
             0,
             sum(
                 result["can_run_status"] == "verified"

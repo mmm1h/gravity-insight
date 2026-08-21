@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.trusted-pack-descriptor.v1",
+  "type": "object",
+  "required": [
+    "artifact_kind", "schema_version", "pack_id", "distribution", "version",
+    "wheel_sha256", "runtime_compatibility", "allowed_groups", "operators",
+    "models", "installation_owner", "activation"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_kind": {"const": "trusted_pack_descriptor"},
+    "schema_version": {"const": "gravity.trusted-pack-descriptor.v1"},
+    "pack_id": {"type": "string", "pattern": "^trusted-pack://[a-z0-9.-]+/[a-z0-9./-]+@[1-9][0-9]*$", "maxLength": 256},
+    "distribution": {"type": "string", "pattern": "^[a-z0-9]+([._-][a-z0-9]+)*$", "maxLength": 128},
+    "version": {"$ref": "#/$defs/version"},
+    "wheel_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "runtime_compatibility": {
+      "type": "object",
+      "required": ["minimum", "maximum"],
+      "additionalProperties": false,
+      "properties": {"minimum": {"$ref": "#/$defs/version"}, "maximum": {"$ref": "#/$defs/version"}}
+    },
+    "allowed_groups": {"type": "array", "minItems": 1, "maxItems": 2, "uniqueItems": true, "items": {"enum": ["gravity.operators", "gravity.models"]}},
+    "operators": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "pattern": "^operator://[a-z0-9.-]+/[a-z0-9./-]+@[1-9][0-9]*$", "maxLength": 256}},
+    "models": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "pattern": "^model://[a-z0-9.-]+/[a-z0-9./-]+@[1-9][0-9]*$", "maxLength": 256}},
+    "installation_owner": {"const": "external_installer"},
+    "activation": {"const": "runtime_startup_verify"}
+  },
+  "$defs": {
+    "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$", "maxLength": 32}
+  }
+}

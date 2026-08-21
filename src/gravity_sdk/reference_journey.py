@@ -194,10 +194,8 @@ def _can_run_result(
             if project is not None
             else None
         ),
-        "operator": {
-            "uri": artifacts["operator"]["contract"]["uri"],
-            "digest": artifacts["operator"]["digest"],
-        },
+        "operator": _operator_reference(artifacts["operator"]),
+        "models": [],
         "skill": _skill_reference(artifacts),
         "context_pack": (
             public_context_reference(project["context_pack"])
@@ -255,6 +253,7 @@ def _success_analysis_result(
         "semantics": [copy.deepcopy(dependencies["semantic"])],
         "capabilities": [copy.deepcopy(dependencies["capability"])],
         "operators": [copy.deepcopy(dependencies["operator"])],
+        "models": copy.deepcopy(dependencies["models"]),
         "context_pack": copy.deepcopy(dependencies["context_pack"]),
         "completeness": "complete",
         "data_quality": copy.deepcopy(quality),
@@ -334,6 +333,20 @@ def _skill_reference(
         "skill_id": contract["skill_id"],
         "version": contract["version"],
         "digest": skill["package_digest"],
+    }
+
+
+def _operator_reference(artifact: Mapping[str, Any]) -> dict[str, Any]:
+    contract = artifact["contract"]
+    return {
+        "uri": contract["uri"],
+        "version": contract["version"],
+        "digest": artifact["digest"],
+        "method": copy.deepcopy(contract["method"]),
+        "assumptions_digest": artifact["assumptions_digest"],
+        "input_schema": copy.deepcopy(contract["schemas"]["input"]),
+        "output_schema": copy.deepcopy(contract["schemas"]["output"]),
+        "limitations": copy.deepcopy(contract["claim_policy"]["limitations"]),
     }
 
 

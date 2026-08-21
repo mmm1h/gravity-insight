@@ -11,7 +11,7 @@ gravity agent [query]         单问题发现；--input 批量发现并返回 Pl
 gravity agent-catalog ...     渐进浏览产品、raw operation 与登记 gap
 gravity plan schema|run       预检或执行受控跨能力 DAG
 gravity derive --input        对已有结果执行调用方绑定的本地派生算术
-gravity semantics ...         离线读取、解析或校验 Business Semantic 合同
+gravity semantics|operators|models ...  离线检查 Semantic、Operator 与 Model 合同
 gravity metadata <command>    本地物理元数据目录
 gravity find <query>          跨 operation、recipe 与 metadata 检索
 gravity recipe <command>      离线校验 workspace recipe

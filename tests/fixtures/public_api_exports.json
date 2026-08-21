@@ -139,6 +139,10 @@
     ".cache",
     "MetadataCache"
   ],
+  "ModelRegistry": [
+    ".model_registry",
+    "ModelRegistry"
+  ],
   "OperationCatalog": [
     ".catalog",
     "OperationCatalog"
@@ -146,6 +150,10 @@
   "OperationProbe": [
     ".catalog",
     "OperationProbe"
+  ],
+  "OperatorRegistry": [
+    ".operator_registry",
+    "OperatorRegistry"
   ],
   "PaginationError": [
     ".error_types",

@@ -12,6 +12,11 @@ from .agent_runtime_contracts import canonical_digest
 from .capability_contract import capability_contract
 from .errors import ContractChangedError
 from .journey_contract import journey_artifact
+from .operator_ids import (
+    RETURNED_DIMENSION_CHANGE_RESULT_SCHEMA,
+    RETURNED_DIMENSION_CHANGE_URI,
+)
+from .operator_registry import OperatorRegistry
 from .skill_contract import skill_artifact
 from .skill_package import validate_skill_package
 from .skill_render import render_guide
@@ -19,19 +24,13 @@ from .skill_render import render_guide
 
 JOURNEY_ID = "analysis.merge2.ap-cost-anomaly-localization"
 SKILL_URI = "skill://gravity.game/ap-cost-anomaly-localization@1.0.0"
-OPERATOR_URI = "operator://gravity/returned-dimension-change@1"
-OPERATOR_RESULT_SCHEMA_VERSION = (
-    "gravity.operator-result.returned-dimension-change.v1"
-)
+OPERATOR_URI = RETURNED_DIMENSION_CHANGE_URI
+OPERATOR_RESULT_SCHEMA_VERSION = RETURNED_DIMENSION_CHANGE_RESULT_SCHEMA
 SEMANTIC_URI = "metric://project/acquisition-spend@1"
 CONTEXT_URI = "context://project-repo/merge2-acquisition-boundaries@1"
 
 _PACKAGE_ROOT = Path(__file__).resolve().parent
 _ARTIFACT_PATHS = {
-    "operator": _PACKAGE_ROOT
-    / "contracts"
-    / "operators"
-    / "returned-dimension-change.v1.json",
     "context_provider": _PACKAGE_ROOT
     / "contracts"
     / "context-providers"
@@ -42,21 +41,6 @@ _ARTIFACT_PATHS = {
     / "r01-ap-cost-anomaly.v1.json",
 }
 _ROOT_FIELDS = {
-    "operator": frozenset(
-        {
-            "artifact_kind",
-            "schema_version",
-            "uri",
-            "version",
-            "owner",
-            "deterministic",
-            "input_contract",
-            "output_schema_version",
-            "assumptions",
-            "allowed_claims",
-            "forbidden_claims",
-        }
-    ),
     "context_provider": frozenset(
         {
             "artifact_kind",
@@ -101,12 +85,14 @@ def _artifacts() -> dict[str, dict[str, Any]]:
     journey = journey_artifact(JOURNEY_ID)
     capability = capability_contract("product", "metric-anomaly-localization@1")
     skill = skill_artifact(SKILL_URI)
-    if journey is None or capability is None or skill is None:
+    operator = OperatorRegistry().artifact(OPERATOR_URI)
+    if journey is None or capability is None or skill is None or operator is None:
         raise ContractChangedError(
             "R01 generic Journey, Capability or Skill artifact is missing"
         )
     artifacts["journey"] = journey
     artifacts["capability"] = capability
+    artifacts["operator"] = operator
     package = validate_skill_package(skill)
     skill["guide"] = render_guide(skill["contract"])
     skill["package_digest"] = package["package_digest"]
@@ -169,7 +155,11 @@ def _validate_relationships(artifacts: Mapping[str, Mapping[str, Any]]) -> None:
         skill.get("validation") == "validated",
         operator.get("uri") == OPERATOR_URI,
         operator.get("deterministic") is True,
-        operator.get("output_schema_version") == OPERATOR_RESULT_SCHEMA_VERSION,
+        operator.get("lifecycle") == "active",
+        operator.get("schemas", {}).get("output", {}).get("schema_version")
+        == OPERATOR_RESULT_SCHEMA_VERSION,
+        operator.get("method", {}).get("method_id")
+        == "returned-dimension-change",
         provider.get("role") == "data",
         provider.get("effects") == ["read"],
         result.get("result_schema_version") == "gravity.analysis-result.v1",

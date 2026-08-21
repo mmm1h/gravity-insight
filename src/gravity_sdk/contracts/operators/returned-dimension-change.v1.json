@@ -3,37 +3,92 @@
   "schema_version": "gravity.operator.v1",
   "uri": "operator://gravity/returned-dimension-change@1",
   "version": 1,
-  "owner": "gravity-runtime",
+  "owner": "gravity-runtime/methods",
+  "lifecycle": "active",
   "deterministic": true,
-  "input_contract": {
-    "required": [
-      "current_rows",
-      "reference_rows",
-      "selected_key",
-      "selected_current",
-      "selected_reference",
-      "current_rows_path",
-      "reference_rows_path",
-      "selected_current_path",
-      "selected_reference_path"
-    ],
-    "metric_values": "finite-decimal",
-    "dimension_keys": "non-empty-unique-string"
+  "method": {
+    "method_id": "returned-dimension-change",
+    "revision": 1,
+    "description": "Compare sums of explicit returned dimension rows and cross-check one selected slice without inferring missing rows."
   },
-  "output_schema_version": "gravity.operator-result.returned-dimension-change.v1",
+  "schemas": {
+    "input": {
+      "schema_version": "gravity.operator-input.returned-dimension-change.v1",
+      "resource": "returned-dimension-change-input-v1.schema.json"
+    },
+    "output": {
+      "schema_version": "gravity.operator-result.returned-dimension-change.v1",
+      "resource": "returned-dimension-change-output-v1.schema.json"
+    }
+  },
+  "implementation": {
+    "kind": "runtime_builtin",
+    "group": "gravity.operators"
+  },
   "assumptions": [
-    "Both windows use the same project Semantic binding.",
-    "Only returned rows are compared.",
-    "The selected slice is present and cross-checked in both windows."
+    {
+      "assumption_id": "same-semantic-binding",
+      "statement": "Both windows use the same project Semantic binding and declared unit."
+    },
+    {
+      "assumption_id": "returned-rows-only",
+      "statement": "Only explicit returned rows are compared; unreturned rows are unknown."
+    },
+    {
+      "assumption_id": "selected-slice-cross-check",
+      "statement": "The selected slice is present and exactly cross-checked in both windows."
+    }
   ],
-  "allowed_claims": [
-    "returned-row absolute and relative change",
-    "returned-key change",
-    "selected-slice share of returned-row change"
+  "requirements": {
+    "minimum_rows_per_window": 1,
+    "data_quality": "caller_gated",
+    "completeness": "caller_gated"
+  },
+  "safe_domain": {
+    "max_rows_per_window": 1000,
+    "max_input_bytes": 1048576,
+    "max_output_bytes": 1048576,
+    "max_dimension_key_bytes": 256,
+    "max_decimal_digits": 38
+  },
+  "unit_policy": {
+    "mode": "same_declared_unit",
+    "allowed_additivity": [
+      "additive"
+    ]
+  },
+  "claim_policy": {
+    "allowed": [
+      "returned-row absolute and relative change",
+      "returned-key change",
+      "selected-slice share of returned-row change"
+    ],
+    "forbidden": [
+      "complete total",
+      "causality",
+      "unreturned values"
+    ],
+    "limitations": [
+      "Only rows returned for both windows can appear in per-key changes.",
+      "A zero denominator produces no relative percentage.",
+      "The method reports an observed association, never causal attribution."
+    ]
+  },
+  "failure_reasons": [
+    "OPERATOR_INPUT_INVALID",
+    "OPERATOR_SAMPLE_INSUFFICIENT",
+    "OPERATOR_DIMENSION_INVALID",
+    "OPERATOR_NUMERIC_INVALID",
+    "OPERATOR_CROSSCHECK_FAILED",
+    "OPERATOR_UNIT_MISMATCH",
+    "OPERATOR_ADDITIVITY_UNSUPPORTED",
+    "OPERATOR_RESOURCE_LIMIT",
+    "OPERATOR_OUTPUT_INVALID"
   ],
-  "forbidden_claims": [
-    "complete total",
-    "causality",
-    "unreturned values"
+  "golden_cases": [
+    {
+      "case_id": "selected-slice-decrease",
+      "resource": "returned-dimension-change-v1.json"
+    }
   ]
 }

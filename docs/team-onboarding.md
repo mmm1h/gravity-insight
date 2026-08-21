@@ -27,7 +27,7 @@ python -m gravity_sdk agent-catalog describe analysis.query.spec:event
 - 未知任务：第一次发现并选择，第二次执行；不要逐条启动多个进程。
 - 多个独立读取：放入一个 Plan 或 batch，复用全局有界并发预算。
 - Analysis spec：先读产品卡的 `schema_argv`，不要从 Web wire 或邻近 operation 猜形状。
-- Runtime Semantic Registry 提供可复用类型、通用定义、URI 和校验；具体业务定义、公式参数/生效窗口和 App alias 由调用项目的显式 Semantic Source 声明，Runtime 不猜测。先用 `gravity semantics validate --source <file>`，再按精确 URI 解析。
+- Runtime Semantic Registry 提供可复用含义；Operator Registry 只运行静态安装且通过 input/output/assumption/claim/golden 门禁的方法；Model 还须命中 startup trusted digest、已验证/批准/未过期且在安全 horizon 内。项目值仍来自显式 Source，任何缺失都不猜测。
 
 产品级步骤见[任务指南](agent-skills/index.md)，通用编排见[Agent 工作流](agent-workflow.md)。
 

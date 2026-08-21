@@ -1,0 +1,79 @@
+{
+  "artifact_kind": "operator_golden",
+  "schema_version": "gravity.operator-golden.v1",
+  "operator_uri": "operator://gravity/returned-dimension-change@1",
+  "cases": [
+    {
+      "case_id": "selected-slice-decrease",
+      "input": {
+        "current_rows": [
+          {"click_company": "bytedance", "ap_cost": 50},
+          {"click_company": "tencent", "ap_cost": 20}
+        ],
+        "reference_rows": [
+          {"click_company": "bytedance", "ap_cost": 80},
+          {"click_company": "tencent", "ap_cost": 20}
+        ],
+        "selected_key": "bytedance",
+        "selected_current": 50,
+        "selected_reference": 80,
+        "current_rows_path": "/current",
+        "reference_rows_path": "/reference",
+        "selected_current_path": "/selected/current",
+        "selected_reference_path": "/selected/reference",
+        "units": {
+          "current": "platform_reported_cost",
+          "reference": "platform_reported_cost",
+          "output": "platform_reported_cost"
+        },
+        "additivity": "additive"
+      },
+      "expected": {
+        "schema_version": "gravity.operator-result.returned-dimension-change.v1",
+        "verdict": "selected_slice_moved_with_observed_decrease",
+        "metric": "ap_cost",
+        "dimension": "click_company",
+        "current_returned_dimension_sum": "70",
+        "reference_returned_dimension_sum": "100",
+        "returned_sum_absolute_change": "-30",
+        "relative_change_percent": "-30",
+        "selected_slice": "bytedance",
+        "selected_current": "50",
+        "selected_reference": "80",
+        "selected_absolute_change": "-30",
+        "selected_share_of_returned_sum_change_percent": "100",
+        "statement": "The sum of returned click_company ap_cost rows changed from 100 to 70 (-30); returned click_company=bytedance changed from 80 to 50 (-30). This is an observed association within the cited facts, not a causal attribution.",
+        "returned_dimension_changes": [
+          {
+            "key": "bytedance",
+            "current": "50",
+            "reference": "80",
+            "absolute_change": "-30",
+            "fact_references": [
+              {"step_id": "compare_reference", "path": "/reference/0/ap_cost"},
+              {"step_id": "compare_current", "path": "/current/0/ap_cost"}
+            ]
+          },
+          {
+            "key": "tencent",
+            "current": "20",
+            "reference": "20",
+            "absolute_change": "0",
+            "fact_references": [
+              {"step_id": "compare_reference", "path": "/reference/1/ap_cost"},
+              {"step_id": "compare_current", "path": "/current/1/ap_cost"}
+            ]
+          }
+        ],
+        "fact_references": [
+          {"step_id": "compare_reference", "path": "/reference/0/ap_cost"},
+          {"step_id": "compare_reference", "path": "/reference/1/ap_cost"},
+          {"step_id": "compare_current", "path": "/current/0/ap_cost"},
+          {"step_id": "compare_current", "path": "/current/1/ap_cost"},
+          {"step_id": "validate_reference", "path": "/selected/reference"},
+          {"step_id": "validate_current", "path": "/selected/current"}
+        ]
+      }
+    }
+  ]
+}

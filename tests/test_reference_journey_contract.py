@@ -34,8 +34,10 @@ class ReferenceJourneyContractTests(unittest.TestCase):
         self.assertEqual(["read"], skill["effects"])
         self.assertEqual(
             OPERATOR_RESULT_SCHEMA_VERSION,
-            operator["output_schema_version"],
+            operator["schemas"]["output"]["schema_version"],
         )
+        self.assertEqual("returned-dimension-change", operator["method"]["method_id"])
+        self.assertTrue(artifacts["operator"]["assumptions_digest"])
         self.assertEqual(
             {
                 "current_rows_path",
@@ -45,7 +47,7 @@ class ReferenceJourneyContractTests(unittest.TestCase):
             },
             {
                 name
-                for name in operator["input_contract"]["required"]
+                for name in artifacts["operator"]["input_schema"]["required"]
                 if name.endswith("_path")
             },
         )

@@ -11,10 +11,8 @@ from .analysis_playbook import RESULT_SCHEMA_VERSION
 from .analysis_playbook_catalog import playbook_definition_fingerprint
 from .errors import ContractChangedError, exit_code_for_error
 from .result_audit import SCHEMA_VERSION as RESULT_AUDIT_SCHEMA_VERSION
-from .reference_journey_operator import (
-    ReferenceOperatorError,
-    returned_dimension_change,
-)
+from .operator_ids import RETURNED_DIMENSION_CHANGE_URI
+from .operator_registry import OperatorRegistry
 from .semantic_compose import SEMANTIC_COMPOSE_RESULT_SCHEMA_VERSION
 from .semantic_compose_catalog import definition_by_id, definition_fingerprint
 
@@ -336,28 +334,35 @@ def _conclusion(
     reference = evidence["compare_reference"]
     selected_current = evidence["validate_current"]
     selected_reference = evidence["validate_reference"]
-    try:
-        operator_result = returned_dimension_change(
-            current_rows=current.rows,
-            reference_rows=reference.rows,
-            selected_key=str(inputs["hypothesis"]["values"][0]),
-            selected_current=selected_current.rows[0][_METRIC_FIELD],
-            selected_reference=selected_reference.rows[0][_METRIC_FIELD],
-            current_rows_path=current.rows_path,
-            reference_rows_path=reference.rows_path,
-            selected_current_path=_fact(
-                selected_current, 0, _METRIC_FIELD
-            )["path"],
-            selected_reference_path=_fact(
-                selected_reference, 0, _METRIC_FIELD
-            )["path"],
+    execution = OperatorRegistry().execute(
+        RETURNED_DIMENSION_CHANGE_URI,
+        {
+            "current_rows": current.rows,
+            "reference_rows": reference.rows,
+            "selected_key": str(inputs["hypothesis"]["values"][0]),
+            "selected_current": selected_current.rows[0][_METRIC_FIELD],
+            "selected_reference": selected_reference.rows[0][_METRIC_FIELD],
+            "current_rows_path": current.rows_path,
+            "reference_rows_path": reference.rows_path,
+            "selected_current_path": _fact(selected_current, 0, _METRIC_FIELD)["path"],
+            "selected_reference_path": _fact(selected_reference, 0, _METRIC_FIELD)["path"],
+            "units": {
+                "current": "platform_reported_cost",
+                "reference": "platform_reported_cost",
+                "output": "platform_reported_cost",
+            },
+            "additivity": "additive",
+        },
+    )
+    if not execution["ok"]:
+        reasons = execution.get("reason_codes", [])
+        raise _EvidenceError(
+            "conclusion", str(reasons[0]) if reasons else "OPERATOR_OUTPUT_INVALID"
         )
-        return {
-            **operator_result,
-            "schema_version": "gravity.metric-anomaly-conclusion.v1",
-        }
-    except ReferenceOperatorError as exc:
-        raise _EvidenceError("conclusion", str(exc)) from exc
+    return {
+        **execution["result"],
+        "schema_version": "gravity.metric-anomaly-conclusion.v1",
+    }
 
 
 def _public_steps(
