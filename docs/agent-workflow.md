@@ -17,9 +17,9 @@
 
 ## 1. 解析 Semantic Schema 与项目绑定
 
-Runtime 拥有可复用 Semantic、确定性 Operator 和 Model lifecycle Schema。项目值来自显式 Source；Operator 只按 exact URI 执行静态安装的方法；Model 未命中 trusted digest、未验证/批准、过期或超安全 horizon 时只允许 scenario/hypothesis，不输出生产预测。
+Runtime 拥有可复用 Semantic、确定性 Operator、Model lifecycle 和 Context Schema。项目值来自显式 Source/Requirement；Operator 只按 exact URI 执行静态安装的方法；Model 未命中 trusted digest、未验证/批准、过期或超安全 horizon 时只允许 scenario/hypothesis，不输出生产预测。
 
-Semantic/Binding/Operator/Model 任一未登记必须返回机器 gap；禁止从列名、自然语言或 Skill 文本补公式、方法或模型。需要物理字段时先查本地 metadata，执行前复验 Product 和依赖合同。
+Semantic/Binding/Operator/Model/required Context 任一未登记必须返回机器 gap；Repo search 只发现 role=data 候选，只有显式 Context Requirement 可组装 Pack。禁止从列名、自然语言或 Skill 文本补公式、方法或模型；执行前复验 Product 和依赖合同。
 
 ## 2. 发现并选择
 

@@ -1049,9 +1049,9 @@ gravity capabilities impact --input <capability-impact-request.json>
 当前 `report.multidim.query` 的合同完整性是 `unknown`，低于 Journey 要求的 `complete`，
 因此真实项目 `can-run/run` 返回 exit 4、`blocked` 和
 `COMPLETENESS_INSUFFICIENT`，不构造凭据、不发目标请求、不发布 findings。
-Project Semantic 与 Context Pack 来自调用项目的固定 R01 机器合同；结果和 Receipt 只携带
-URI、revision、hash、digest 与 citation，不保存 Context 正文。Skill 不是第三条路由臂，
-CLI 也不拥有新 executor、binder、pagination 或 permission 逻辑。
+Project Semantic 与 formal Context Requirement 来自调用项目；内置 Repo Provider 按实体、时间、authority、freshness、sensitivity 与预算组装 Pack。
+离线使用 `gravity context project describe|index|search|get|pack|verify --project-id <id>`；search 只返回 role=data 候选，不能自动进入 Pack。
+结果和 Receipt 只携带 URI、revision、hash、digest 与精确 citation，不保存正文；Skill/CLI 不新增 executor、binder、pagination 或 permission 逻辑。
 
 Capability Trust 的 `stable` 必须同时有同层合同、匹配 provider fingerprint、未过期的当前
 Validation、满足要求的 completeness 和 DQ；子 Operation 不能替 Product/Composite 生成

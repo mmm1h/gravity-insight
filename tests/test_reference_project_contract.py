@@ -5,10 +5,10 @@ from pathlib import Path
 import tempfile
 import unittest
 
+from gravity_sdk.context_contract import public_context_reference
 from gravity_sdk.reference_project_contract import (
     ReferenceProjectContractError,
     load_reference_project_contract,
-    public_context_reference,
 )
 
 
@@ -18,7 +18,7 @@ REFERENCE = {"start": "2026-06-27", "end": "2026-07-03"}
 
 def project_contract(paths=("docs/metric.md", "docs/attribution.md")):
     return {
-        "schema_version": "gravity.reference-project-contract.v2",
+        "schema_version": "gravity.reference-project-contract.v3",
         "project_id": "merge2",
         "owner": "growth-data",
         "semantic": {
@@ -26,20 +26,43 @@ def project_contract(paths=("docs/metric.md", "docs/attribution.md")):
             "uri": "metric://project/acquisition-spend@1",
             "app_alias": "merge2-legacy",
         },
-        "context_pack": {
-            "uri": "context://project-repo/merge2-acquisition-boundaries@1",
+        "context_requirement": {
+            "artifact_kind": "context_requirement",
+            "schema_version": "gravity.context-requirement.v1",
+            "requirement_id": "context://project-repo/merge2-acquisition-boundaries@1",
+            "provider_uri": "context-provider://gravity/project-repo@1",
+            "skill_uri": "skill://gravity.game/ap-cost-anomaly-localization@1.0.0",
+            "journey_id": "analysis.merge2.ap-cost-anomaly-localization",
             "subject_entities": ["app://project/merge2-legacy", "metric://project/acquisition-spend@1"],
+            "required_windows": ["current", "reference"],
+            "authority_policy": {
+                "required": ["canonical"],
+                "allow_supporting": True,
+                "allow_unverified": False,
+            },
+            "allowed_sensitivity": ["internal"],
+            "freshness_policy": {"as_of": None, "max_age_days": None},
+            "budget": {
+                "max_files": 4,
+                "max_file_bytes": 262144,
+                "max_total_bytes": 524288,
+                "max_total_lines": 10000,
+            },
             "items": [
                 {
+                    "item_id": f"r01-context-{index + 1}",
+                    "fact_id": f"r01-fact-{index + 1}",
+                    "required": True,
                     "path": path,
                     "title": path,
                     "resource_type": "document",
                     "entity_refs": ["app://project/merge2-legacy"],
-                    "valid_time": {"start": None, "end": None},
+                    "valid_time": {"start": None, "end": None, "timezone": "Asia/Shanghai"},
                     "effective_range": {"start": None, "end": None},
                     "authority": "canonical" if index == 0 else "supporting",
                     "sensitivity": "internal",
                     "supersedes": [],
+                    "max_age_days": None,
                 }
                 for index, path in enumerate(paths)
             ],
@@ -197,13 +220,13 @@ class ReferenceProjectContractTests(unittest.TestCase):
                 project_contract(("missing.md",)),
             )
             for value in cases:
-                with self.subTest(path=value["context_pack"]["items"][0]["path"]), self.assertRaises(
+                with self.subTest(path=value["context_requirement"]["items"][0]["path"]), self.assertRaises(
                     ReferenceProjectContractError
                 ):
                     self.load(value)
 
         large = self.root / "docs" / "large.md"
-        large.write_text("x" * 131_073, encoding="utf-8")
+        large.write_text("x" * 262_145, encoding="utf-8")
         with self.assertRaises(ReferenceProjectContractError):
             self.load(project_contract(("docs/large.md",)))
 
@@ -219,9 +242,10 @@ class ReferenceProjectContractTests(unittest.TestCase):
             self.load(source=semantic)
 
         context = project_contract()
-        context["context_pack"]["items"][0]["valid_time"] = {
+        context["context_requirement"]["items"][0]["valid_time"] = {
             "start": "2026-07-01",
             "end": None,
+            "timezone": "Asia/Shanghai",
         }
         with self.assertRaisesRegex(
             ReferenceProjectContractError, "CONTEXT_ENTITY_TIME_MISMATCH"

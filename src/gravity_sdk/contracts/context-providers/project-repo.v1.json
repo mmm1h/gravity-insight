@@ -1,0 +1,32 @@
+{
+  "artifact_kind": "context_provider",
+  "schema_version": "gravity.context-provider.v1",
+  "uri": "context-provider://gravity/project-repo@1",
+  "version": 1,
+  "provider_id": "project-repo",
+  "owner": "gravity-runtime/context",
+  "transport": "builtin",
+  "effects": ["read"],
+  "resource_types": [
+    "document",
+    "code",
+    "configuration",
+    "contract",
+    "release",
+    "git_fact",
+    "project_semantic"
+  ],
+  "auth_scope": "project",
+  "freshness": {"mode": "git-revision-content-hash"},
+  "supports": ["list", "search", "read", "index", "pack", "verify"],
+  "source_trust": "project_authoritative",
+  "role": "data",
+  "limits": {
+    "max_index_files": 5000,
+    "max_index_bytes": 67108864,
+    "max_file_bytes": 262144,
+    "max_path_depth": 16,
+    "max_search_results": 50,
+    "max_excerpt_lines": 20
+  }
+}

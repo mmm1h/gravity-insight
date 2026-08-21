@@ -3,10 +3,10 @@ from __future__ import annotations
 import copy
 import json
 from pathlib import Path
+import subprocess
 import tempfile
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
 
 from gravity_sdk.analysis_playbook import run_metric_anomaly_playbook
 from gravity_sdk.data_quality import data_quality_result
@@ -111,17 +111,32 @@ class ReferenceJourneyTests(unittest.TestCase):
         (self.root / value["semantic"]["source_path"]).write_text(
             json.dumps(project_semantic_source()), encoding="utf-8"
         )
+        subprocess.run(
+            ["git", "-C", str(self.root), "init", "-b", "test"],
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            ["git", "-C", str(self.root), "config", "user.name", "R01 Test"],
+            check=True,
+        )
+        subprocess.run(
+            ["git", "-C", str(self.root), "config", "user.email", "r01@example.invalid"],
+            check=True,
+        )
+        subprocess.run(
+            ["git", "-C", str(self.root), "add", "-A"], check=True
+        )
+        subprocess.run(
+            ["git", "-C", str(self.root), "commit", "-m", "fixture"],
+            check=True,
+            capture_output=True,
+        )
         self.workspace = SimpleNamespace(root=self.root, state_root=self.state)
         self.sdk = FakeSDK(self.workspace)
         self.service = ReferenceJourneyRunner(self.sdk)
-        self.revision = patch(
-            "gravity_sdk.reference_project_contract._git_snapshot",
-            return_value=("0" * 40, "2026-08-21T12:00:00Z"),
-        )
-        self.revision.start()
 
     def tearDown(self):
-        self.revision.stop()
         self.temporary.cleanup()
 
     def test_current_real_contract_blocks_before_execution(self):

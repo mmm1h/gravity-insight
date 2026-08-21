@@ -10,6 +10,7 @@ from typing import Any, Mapping
 
 from .agent_runtime_contracts import canonical_digest
 from .capability_contract import capability_contract
+from .context_contract import PROJECT_REPO_PROVIDER_URI, project_repo_provider_artifact
 from .errors import ContractChangedError
 from .journey_contract import journey_artifact
 from .operator_ids import (
@@ -31,33 +32,12 @@ CONTEXT_URI = "context://project-repo/merge2-acquisition-boundaries@1"
 
 _PACKAGE_ROOT = Path(__file__).resolve().parent
 _ARTIFACT_PATHS = {
-    "context_provider": _PACKAGE_ROOT
-    / "contracts"
-    / "context-providers"
-    / "project-repo-r01.v1.json",
     "analysis_result_contract": _PACKAGE_ROOT
     / "contracts"
     / "analysis-results"
     / "r01-ap-cost-anomaly.v1.json",
 }
 _ROOT_FIELDS = {
-    "context_provider": frozenset(
-        {
-            "artifact_kind",
-            "schema_version",
-            "provider_id",
-            "transport",
-            "effects",
-            "resource_types",
-            "auth_scope",
-            "freshness",
-            "supports",
-            "role",
-            "max_files",
-            "max_file_bytes",
-            "max_total_bytes",
-        }
-    ),
     "analysis_result_contract": frozenset(
         {
             "artifact_kind",
@@ -82,6 +62,7 @@ def reference_artifacts() -> dict[str, dict[str, Any]]:
 @lru_cache(maxsize=1)
 def _artifacts() -> dict[str, dict[str, Any]]:
     artifacts = {name: _read(path, name) for name, path in _ARTIFACT_PATHS.items()}
+    artifacts["context_provider"] = project_repo_provider_artifact()
     journey = journey_artifact(JOURNEY_ID)
     capability = capability_contract("product", "metric-anomaly-localization@1")
     skill = skill_artifact(SKILL_URI)
@@ -160,8 +141,11 @@ def _validate_relationships(artifacts: Mapping[str, Mapping[str, Any]]) -> None:
         == OPERATOR_RESULT_SCHEMA_VERSION,
         operator.get("method", {}).get("method_id")
         == "returned-dimension-change",
+        provider.get("uri") == PROJECT_REPO_PROVIDER_URI,
         provider.get("role") == "data",
         provider.get("effects") == ["read"],
+        set(provider.get("supports", ()))
+        == {"list", "search", "read", "index", "pack", "verify"},
         result.get("result_schema_version") == "gravity.analysis-result.v1",
         capability.get("identity_kind") == "product",
         capability.get("selector") == "metric-anomaly-localization@1",

@@ -191,6 +191,10 @@
     ".error_types",
     "PolicyViolation"
   ],
+  "RepoContextProvider": [
+    ".repo_context_provider",
+    "RepoContextProvider"
+  ],
   "SemanticRejectedError": [
     ".error_types",
     "SemanticRejectedError"
