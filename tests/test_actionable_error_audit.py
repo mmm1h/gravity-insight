@@ -17,16 +17,16 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class ActionableErrorAuditTests(unittest.TestCase):
     def test_actionable_error_inventory_is_complete_and_reproducible(self):
-        """Went 1277 -> 1278 for R01's exact Journey selector failure.
+        """Went 1278 -> 1290 for R02 Journey/Capability input gates.
 
-        The new site safely reports the actual selector and carries a precise
-        field plus the canonical discovery command; no grade-C site is added.
+        The new sites bound values, name precise fields, and provide exact
+        alternatives or the canonical Journey discovery command.
         """
 
         rows = inventory(ROOT / "src" / "gravity_sdk")
         counts = Counter(item["grade"] for item in rows)
-        assert len(rows) == 1278
-        assert counts["A"] == 1114
+        assert len(rows) == 1290
+        assert counts["A"] == 1126
         assert counts["B"] == 164
         assert counts.get("C", 0) == 0
         assert sum(counts.values()) == len(rows)

@@ -3,19 +3,19 @@
 from __future__ import annotations
 
 import copy
-import hashlib
-import json
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+from .agent_runtime_contracts import canonical_digest
 from .analysis_playbook_input import normalize_metric_anomaly_inputs
+from .capability_trust import (
+    CapabilityTrustService,
+    assess_capability_requirement,
+)
 from .errors import ErrorCategory, InputValidationError, exit_code_for_category
 from .reference_journey_contract import JOURNEY_ID, reference_artifacts
-from .reference_journey_trust import (
-    evaluate_playbook_data_quality,
-    evaluate_reference_trust,
-)
+from .reference_journey_quality import evaluate_playbook_data_quality
 from .reference_project_contract import (
     ReferenceProjectContractError,
     load_reference_project_contract,
@@ -27,42 +27,23 @@ from .result_audit import result_receipt_references
 CAN_RUN_SCHEMA_VERSION = "gravity.journey-can-run.v1"
 ANALYSIS_RESULT_SCHEMA_VERSION = "gravity.analysis-result.v1"
 INPUT_SCHEMA_VERSION = "gravity.reference-journey-input.v1"
-_VALIDATION_RELATIVE = (
-    "agent-runtime/validations/metric-anomaly-localization.v1.json"
-)
 _INVALID_EXIT = exit_code_for_category(ErrorCategory.CALLER)
 _BLOCKED_EXIT = exit_code_for_category(ErrorCategory.LOCAL)
 
 
-class ReferenceJourneyService:
-    """Describe, assess and run the one owner-approved reference Journey."""
+class ReferenceJourneyRunner:
+    """R01-specific input/project binding around the existing playbook owner."""
 
-    def __init__(self, sdk: Any, *, workspace: Any | None = None) -> None:
+    def __init__(
+        self,
+        sdk: Any,
+        *,
+        workspace: Any | None = None,
+        capability_trust: CapabilityTrustService | None = None,
+    ) -> None:
         self._sdk = sdk
         self._workspace = workspace if workspace is not None else sdk.workspace
-
-    def describe(self) -> dict[str, Any]:
-        artifacts = reference_artifacts()
-        journey = artifacts["journey"]["contract"]
-        return {
-            "schema_version": "gravity.journey-description.v1",
-            "journey": {
-                "journey_id": JOURNEY_ID,
-                "version": journey["version"],
-                "lifecycle": journey["lifecycle"],
-                "owner": journey["owner"],
-                "digest": artifacts["journey"]["digest"],
-            },
-            "skill": _skill_reference(artifacts),
-            "required_semantics": copy.deepcopy(journey["required_semantics"]),
-            "required_operators": copy.deepcopy(journey["required_operators"]),
-            "required_context": copy.deepcopy(journey["required_context"]),
-            "required_capability": copy.deepcopy(journey["required_capability"]),
-            "request_budget": copy.deepcopy(journey["request_budget"]),
-            "claim_policy": copy.deepcopy(journey["claim_policy"]),
-            "execution": copy.deepcopy(journey["execution"]),
-            "network_called": False,
-        }
+        self._capability_trust = capability_trust or CapabilityTrustService()
 
     def can_run(self, inputs: Mapping[str, Any]) -> dict[str, Any]:
         """Return public readiness without echoing caller values."""
@@ -82,29 +63,21 @@ class ReferenceJourneyService:
                 project=None,
             )
         project, project_reasons, project_invalid = self._project(normalized, artifacts)
-        trust = evaluate_reference_trust(_load_validation(self._workspace))
-        reasons = [*project_reasons, *trust["reason_codes"]]
+        requirement = artifacts["journey"]["contract"]["required_capabilities"][0]
+        trust = self._capability_trust.trust(
+            str(requirement["identity_kind"]), str(requirement["selector"])
+        )
+        capability_status, capability_reasons = assess_capability_requirement(
+            trust, requirement
+        )
+        reasons = [*project_reasons, *capability_reasons]
         if project_invalid:
             status = "invalid"
-        elif any(
-            code
-            in {
-                "COMPLETENESS_INSUFFICIENT",
-                "CAPABILITY_FINGERPRINT_MISMATCH",
-                "CAPABILITY_QUARANTINED",
-                "SEMANTIC_DEFINITION_MISSING",
-                "SEMANTIC_BINDING_MISSING",
-                "SEMANTIC_EFFECTIVE_RANGE_MISMATCH",
-                "CONTEXT_REQUIRED_MISSING",
-                "CONTEXT_CONFLICTING",
-                "CONTEXT_ENTITY_TIME_MISMATCH",
-            }
-            for code in reasons
-        ):
+        elif project_reasons or capability_status == "blocked":
             status = "blocked"
-        elif trust["trust_status"] == "unknown":
+        elif capability_status == "unknown":
             status = "unknown"
-        elif trust["trust_status"] != "stable" or project is None:
+        elif capability_status != "stable" or project is None:
             status = "blocked"
         else:
             status = "verified"
@@ -129,9 +102,7 @@ class ReferenceJourneyService:
             changed["can_run_status"] = "blocked"
             changed["reason_codes"] = ["DEPENDENCY_SNAPSHOT_CHANGED"]
             return _blocked_analysis_result(changed, network_called=True)
-        completeness = before["dependencies"]["capability"]["operation"][
-            "completeness"
-        ]
+        completeness = before["dependencies"]["capability"]["completeness"]
         quality = evaluate_playbook_data_quality(
             playbook, completeness=completeness
         )
@@ -372,20 +343,6 @@ def _public_can_run(value: Mapping[str, Any]) -> dict[str, Any]:
     return result
 
 
-def _load_validation(workspace: Any) -> Mapping[str, Any] | None:
-    state_root = getattr(workspace, "state_root", None)
-    if state_root is None:
-        return None
-    path = Path(state_root) / Path(_VALIDATION_RELATIVE)
-    if not path.is_file():
-        return None
-    try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, json.JSONDecodeError):
-        return {"schema_version": "invalid"}
-    return value if isinstance(value, Mapping) else {"schema_version": "invalid"}
-
-
 def _receipt_references(playbook: Mapping[str, Any]) -> list[dict[str, str]]:
     result: list[dict[str, str]] = []
     seen: set[str] = set()
@@ -411,19 +368,12 @@ def _input_scope(value: Mapping[str, Any] | None) -> dict[str, Any] | None:
 
 
 def _digest(value: Any) -> str:
-    encoded = json.dumps(
-        value,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-        allow_nan=False,
-    ).encode("utf-8")
-    return hashlib.sha256(encoded).hexdigest()
+    return canonical_digest(value)
 
 
 __all__ = [
     "ANALYSIS_RESULT_SCHEMA_VERSION",
     "CAN_RUN_SCHEMA_VERSION",
     "INPUT_SCHEMA_VERSION",
-    "ReferenceJourneyService",
+    "ReferenceJourneyRunner",
 ]

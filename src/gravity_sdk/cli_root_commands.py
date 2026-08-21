@@ -6,6 +6,7 @@ from typing import Any, Callable
 
 from .agent import add_agent_command
 from .agent_catalog import add_agent_catalog_command
+from .capability_trust_cli import add_capability_trust_commands
 from .find import add_operation_commands
 from .find_input import add_input
 from .journey_cli import add_journey_commands
@@ -26,6 +27,7 @@ def add_root_commands(
     add_receipt_commands(commands)
     add_derived_metrics_command(commands)
     add_journey_commands(commands, add_input)
+    add_capability_trust_commands(commands, add_input)
 
 
 def dispatch_root_command(args: Any) -> Any:

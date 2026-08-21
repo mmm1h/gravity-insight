@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import copy
-import hashlib
 import json
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Mapping
 
+from .agent_runtime_contracts import canonical_digest
+from .capability_contract import capability_contract
 from .errors import ContractChangedError
+from .journey_contract import journey_artifact
 
 
 JOURNEY_ID = "analysis.merge2.ap-cost-anomaly-localization"
@@ -23,10 +25,6 @@ CONTEXT_URI = "context://project-repo/merge2-acquisition-boundaries@1"
 
 _PACKAGE_ROOT = Path(__file__).resolve().parent
 _ARTIFACT_PATHS = {
-    "journey": _PACKAGE_ROOT
-    / "contracts"
-    / "journeys"
-    / "analysis.merge2.ap-cost-anomaly-localization.v1.json",
     "skill": _PACKAGE_ROOT
     / "contracts"
     / "skills"
@@ -43,10 +41,6 @@ _ARTIFACT_PATHS = {
     / "contracts"
     / "analysis-results"
     / "r01-ap-cost-anomaly.v1.json",
-    "capability_trust": _PACKAGE_ROOT
-    / "contracts"
-    / "trust"
-    / "metric-anomaly-localization.v1.json",
 }
 _GUIDE_PATH = (
     _PACKAGE_ROOT
@@ -55,26 +49,6 @@ _GUIDE_PATH = (
     / "GUIDE.md"
 )
 _ROOT_FIELDS = {
-    "journey": frozenset(
-        {
-            "artifact_kind",
-            "schema_version",
-            "journey_id",
-            "version",
-            "lifecycle",
-            "owner",
-            "calling_project",
-            "required_skill",
-            "required_semantics",
-            "required_operators",
-            "required_context",
-            "required_capability",
-            "execution",
-            "project_contract_path",
-            "request_budget",
-            "claim_policy",
-        }
-    ),
     "skill": frozenset(
         {
             "artifact_kind",
@@ -139,22 +113,6 @@ _ROOT_FIELDS = {
             "finding_types",
         }
     ),
-    "capability_trust": frozenset(
-        {
-            "artifact_kind",
-            "schema_version",
-            "identity_kind",
-            "selector",
-            "definition_fingerprint",
-            "lifecycle",
-            "owner",
-            "dependencies",
-            "required_completeness",
-            "required_data_quality",
-            "validation_ttl_seconds",
-            "allowed_claims",
-        }
-    ),
 }
 
 
@@ -167,6 +125,12 @@ def reference_artifacts() -> dict[str, dict[str, Any]]:
 @lru_cache(maxsize=1)
 def _artifacts() -> dict[str, dict[str, Any]]:
     artifacts = {name: _read(path, name) for name, path in _ARTIFACT_PATHS.items()}
+    journey = journey_artifact(JOURNEY_ID)
+    capability = capability_contract("product", "metric-anomaly-localization@1")
+    if journey is None or capability is None:
+        raise ContractChangedError("R01 generic Journey or Capability artifact is missing")
+    artifacts["journey"] = journey
+    artifacts["capability"] = capability
     _validate_relationships(artifacts)
     try:
         guide = _GUIDE_PATH.read_text(encoding="utf-8")
@@ -203,13 +167,27 @@ def _validate_relationships(artifacts: Mapping[str, Mapping[str, Any]]) -> None:
     operator = artifacts["operator"]["contract"]
     provider = artifacts["context_provider"]["contract"]
     result = artifacts["analysis_result_contract"]["contract"]
-    trust = artifacts["capability_trust"]["contract"]
+    capability = artifacts["capability"]["contract"]
     checks = (
         journey.get("journey_id") == JOURNEY_ID,
+        journey.get("display_binding", {}).get("legacy_display_key")
+        == journey.get("display_name"),
         journey.get("required_skill") == SKILL_URI,
         journey.get("required_semantics") == [SEMANTIC_URI],
         journey.get("required_operators") == [OPERATOR_URI],
         journey.get("required_context") == [CONTEXT_URI],
+        journey.get("required_models") == [],
+        journey.get("required_capabilities")
+        == [
+            {
+                "identity_kind": "product",
+                "selector": "metric-anomaly-localization@1",
+                "contract_version": "1",
+                "minimum_trust": "stable",
+                "completeness": "complete",
+                "data_quality": "pass",
+            }
+        ],
         skill.get("covers_journeys") == [JOURNEY_ID],
         skill.get("semantic_dependencies") == [SEMANTIC_URI],
         skill.get("operator_dependencies") == [OPERATOR_URI],
@@ -222,26 +200,21 @@ def _validate_relationships(artifacts: Mapping[str, Mapping[str, Any]]) -> None:
         provider.get("role") == "data",
         provider.get("effects") == ["read"],
         result.get("result_schema_version") == "gravity.analysis-result.v1",
-        trust.get("identity_kind") == "product",
-        trust.get("selector") == "metric-anomaly-localization@1",
-        _sha256(trust.get("definition_fingerprint")),
-        trust.get("required_completeness") == "complete",
-        trust.get("required_data_quality") == "pass",
-        trust.get("validation_ttl_seconds") == 86400,
+        capability.get("identity_kind") == "product",
+        capability.get("selector") == "metric-anomaly-localization@1",
+        capability.get("selector")
+        == journey["required_capabilities"][0]["selector"],
+        _sha256(capability.get("provider", {}).get("fingerprint")),
+        capability.get("declared_completeness") == "unknown",
+        capability.get("required_data_quality") == "pass",
+        capability.get("validation_ttl_seconds") == 86400,
     )
     if not all(checks):
         raise ContractChangedError("R01 artifact dependency graph changed")
 
 
 def _digest(value: Any) -> str:
-    encoded = json.dumps(
-        value,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-        allow_nan=False,
-    ).encode("utf-8")
-    return hashlib.sha256(encoded).hexdigest()
+    return canonical_digest(value)
 
 
 def _sha256(value: Any) -> bool:

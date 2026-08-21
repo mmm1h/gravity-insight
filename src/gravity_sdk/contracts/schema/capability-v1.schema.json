@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.capability.v1",
+  "type": "object",
+  "required": [
+    "artifact_kind",
+    "schema_version",
+    "identity_kind",
+    "selector",
+    "contract_version",
+    "display_name",
+    "lifecycle",
+    "owner",
+    "effect",
+    "privacy_classification",
+    "provider",
+    "dependencies",
+    "declared_completeness",
+    "required_data_quality",
+    "allowed_claims",
+    "validation_ttl_seconds"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_kind": {"const": "capability"},
+    "schema_version": {"const": "gravity.capability.v1"},
+    "identity_kind": {"enum": ["operation", "product", "composite"]},
+    "selector": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:@/-]*$"},
+    "contract_version": {"type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"},
+    "display_name": {"type": "string", "minLength": 1, "maxLength": 256},
+    "lifecycle": {"enum": ["active", "deprecated", "revoked"]},
+    "owner": {"type": "string", "minLength": 1, "maxLength": 128},
+    "effect": {"type": "string", "minLength": 1, "maxLength": 64},
+    "privacy_classification": {"type": "string", "minLength": 1, "maxLength": 64},
+    "provider": {
+      "type": "object",
+      "required": ["kind", "fingerprint"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"enum": ["operation_manifest", "agent_product_card", "analysis_playbook"]},
+        "fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/dependency"}
+    },
+    "declared_completeness": {"enum": ["complete", "prefix", "unknown"]},
+    "required_data_quality": {"enum": ["pass", "warn", "unknown"]},
+    "allowed_claims": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-z][a-z0-9-]*$"}
+    },
+    "validation_ttl_seconds": {"type": "integer", "minimum": 1, "maximum": 2592000}
+  },
+  "$defs": {
+    "dependency": {
+      "type": "object",
+      "required": ["identity_kind", "selector", "contract_version", "minimum_trust", "completeness", "data_quality"],
+      "additionalProperties": false,
+      "properties": {
+        "identity_kind": {"enum": ["operation", "product", "composite"]},
+        "selector": {"type": "string", "minLength": 1, "maxLength": 256, "pattern": "^[A-Za-z0-9][A-Za-z0-9._:@/-]*$"},
+        "contract_version": {"type": "string", "minLength": 1, "maxLength": 64},
+        "minimum_trust": {"enum": ["stable", "degraded"]},
+        "completeness": {"enum": ["complete", "prefix", "unknown"]},
+        "data_quality": {"enum": ["pass", "warn", "unknown"]}
+      }
+    }
+  }
+}

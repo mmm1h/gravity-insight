@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from .sdk_analysis import AnalysisSdkMixin
+from .sdk_agent_runtime import AgentRuntimeSdkMixin
 from .sdk_bootstrap import BootstrapSdkMixin
 from .sdk_saved_analysis import SavedAnalysisSdkMixin
 from .sdk_analysis_default_dictionary import AnalysisDefaultDictionarySdkMixin
@@ -38,6 +39,7 @@ ClientFactory = Callable[[], Any]
 
 
 class GravitySDK(
+    AgentRuntimeSdkMixin,
     BootstrapSdkMixin,
     DerivedMetricsSdkMixin,
     SavedAnalysisSdkMixin,
@@ -66,6 +68,7 @@ class GravitySDK(
         insight_factory: ClientFactory | None = None,
         sql_factory: ClientFactory | None = None,
         workspace: Any | None = None,
+        _runtime_scope_bound: bool = False,
     ) -> None:
         if insight is not None and insight_factory is not None:
             raise ValueError("pass either insight or insight_factory, not both")
@@ -78,8 +81,7 @@ class GravitySDK(
         self._workspace = _load_workspace(workspace)
         self._insight_lock = threading.Lock()
         self._sql_lock = threading.Lock()
-        self._journey_lock = threading.Lock()
-        self._journey_service: Any | None = None
+        self._initialize_agent_runtime_services(_runtime_scope_bound)
 
     @classmethod
     def from_env(
@@ -106,6 +108,7 @@ class GravitySDK(
             insight_factory=build_insight,
             sql_factory=build_sql,
             workspace=selected_workspace,
+            _runtime_scope_bound=True,
         )
 
     @property
@@ -129,20 +132,6 @@ class GravitySDK(
                 if self._sql is None:
                     self._sql = self._sql_factory()
         return self._sql
-
-    @property
-    def journeys(self) -> Any:
-        """The narrow Journey service; constructing it performs no I/O."""
-
-        if self._journey_service is None:
-            with self._journey_lock:
-                if self._journey_service is None:
-                    from .reference_journey import ReferenceJourneyService
-
-                    self._journey_service = ReferenceJourneyService(
-                        self, workspace=self._workspace
-                    )
-        return self._journey_service
 
     def read(
         self,
