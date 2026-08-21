@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.operator.v1",
+  "type": "object",
+  "required": [
+    "artifact_kind", "schema_version", "uri", "version", "owner",
+    "lifecycle", "deterministic", "method", "schemas", "implementation",
+    "assumptions", "requirements", "safe_domain", "unit_policy",
+    "claim_policy", "failure_reasons", "golden_cases"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_kind": {"const": "operator"},
+    "schema_version": {"const": "gravity.operator.v1"},
+    "uri": {"type": "string", "pattern": "^operator://[a-z0-9.-]+/[a-z0-9./-]+@[1-9][0-9]*$", "maxLength": 256},
+    "version": {"type": "integer", "minimum": 1, "maximum": 2147483647},
+    "owner": {"type": "string", "minLength": 1, "maxLength": 128},
+    "lifecycle": {"enum": ["active", "deprecated", "revoked"]},
+    "deterministic": {"const": true},
+    "method": {
+      "type": "object",
+      "required": ["method_id", "revision", "description"],
+      "additionalProperties": false,
+      "properties": {
+        "method_id": {"type": "string", "pattern": "^[a-z][a-z0-9.-]*$", "maxLength": 128},
+        "revision": {"type": "integer", "minimum": 1, "maximum": 2147483647},
+        "description": {"type": "string", "minLength": 1, "maxLength": 1024}
+      }
+    },
+    "schemas": {
+      "type": "object",
+      "required": ["input", "output"],
+      "additionalProperties": false,
+      "properties": {
+        "input": {"$ref": "#/$defs/schema_resource"},
+        "output": {"$ref": "#/$defs/schema_resource"}
+      }
+    },
+    "implementation": {
+      "type": "object",
+      "required": ["kind", "group"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"const": "runtime_builtin"},
+        "group": {"const": "gravity.operators"}
+      }
+    },
+    "assumptions": {"type": "array", "minItems": 1, "maxItems": 32, "items": {"$ref": "#/$defs/assumption"}},
+    "requirements": {
+      "type": "object",
+      "required": ["minimum_rows_per_window", "data_quality", "completeness"],
+      "additionalProperties": false,
+      "properties": {
+        "minimum_rows_per_window": {"type": "integer", "minimum": 1, "maximum": 1000000},
+        "data_quality": {"const": "caller_gated"},
+        "completeness": {"const": "caller_gated"}
+      }
+    },
+    "safe_domain": {
+      "type": "object",
+      "required": ["max_rows_per_window", "max_input_bytes", "max_output_bytes", "max_dimension_key_bytes", "max_decimal_digits"],
+      "additionalProperties": false,
+      "properties": {
+        "max_rows_per_window": {"type": "integer", "minimum": 1, "maximum": 1000000},
+        "max_input_bytes": {"type": "integer", "minimum": 1024, "maximum": 67108864},
+        "max_output_bytes": {"type": "integer", "minimum": 1024, "maximum": 67108864},
+        "max_dimension_key_bytes": {"type": "integer", "minimum": 1, "maximum": 4096},
+        "max_decimal_digits": {"type": "integer", "minimum": 1, "maximum": 1000}
+      }
+    },
+    "unit_policy": {
+      "type": "object",
+      "required": ["mode", "allowed_additivity"],
+      "additionalProperties": false,
+      "properties": {
+        "mode": {"const": "same_declared_unit"},
+        "allowed_additivity": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["additive", "semi_additive", "non_additive"]}}
+      }
+    },
+    "claim_policy": {
+      "type": "object",
+      "required": ["allowed", "forbidden", "limitations"],
+      "additionalProperties": false,
+      "properties": {
+        "allowed": {"$ref": "#/$defs/string_array"},
+        "forbidden": {"$ref": "#/$defs/string_array"},
+        "limitations": {"$ref": "#/$defs/string_array"}
+      }
+    },
+    "failure_reasons": {"type": "array", "minItems": 1, "maxItems": 64, "uniqueItems": true, "items": {"type": "string", "pattern": "^OPERATOR_[A-Z0-9_]+$"}},
+    "golden_cases": {"type": "array", "minItems": 1, "maxItems": 32, "items": {"$ref": "#/$defs/golden_case"}}
+  },
+  "$defs": {
+    "schema_resource": {
+      "type": "object",
+      "required": ["schema_version", "resource"],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {"type": "string", "minLength": 1, "maxLength": 256},
+        "resource": {"type": "string", "pattern": "^[a-z0-9-]+-v[1-9][0-9]*\\.schema\\.json$", "maxLength": 128}
+      }
+    },
+    "assumption": {
+      "type": "object",
+      "required": ["assumption_id", "statement"],
+      "additionalProperties": false,
+      "properties": {
+        "assumption_id": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$", "maxLength": 128},
+        "statement": {"type": "string", "minLength": 1, "maxLength": 1024}
+      }
+    },
+    "golden_case": {
+      "type": "object",
+      "required": ["case_id", "resource"],
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {"type": "string", "pattern": "^[a-z][a-z0-9-]*$", "maxLength": 128},
+        "resource": {"type": "string", "pattern": "^[a-z0-9-]+-v[1-9][0-9]*\\.json$", "maxLength": 128}
+      }
+    },
+    "string_array": {"type": "array", "minItems": 1, "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 512}}
+  }
+}

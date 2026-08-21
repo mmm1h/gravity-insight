@@ -14,6 +14,7 @@ from .receipt_cli import add_receipt_commands
 from .derived_metrics_cli import add_derived_metrics_command
 from .skill_cli import add_skill_commands
 from .semantic_registry_cli import add_semantic_registry_commands
+from .operator_model_cli import add_operator_model_commands
 
 
 def add_root_commands(
@@ -32,6 +33,7 @@ def add_root_commands(
     add_capability_trust_commands(commands, add_input)
     add_skill_commands(commands)
     add_semantic_registry_commands(commands, add_input)
+    add_operator_model_commands(commands, add_input)
 
 
 def dispatch_root_command(args: Any) -> Any:

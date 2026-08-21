@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.operator-result.returned-dimension-change.v1",
+  "type": "object",
+  "required": [
+    "schema_version", "verdict", "metric", "dimension",
+    "current_returned_dimension_sum", "reference_returned_dimension_sum",
+    "returned_sum_absolute_change", "relative_change_percent", "selected_slice",
+    "selected_current", "selected_reference", "selected_absolute_change",
+    "selected_share_of_returned_sum_change_percent", "statement",
+    "returned_dimension_changes", "fact_references"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.operator-result.returned-dimension-change.v1"},
+    "verdict": {"enum": ["no_observed_returned_sum_decrease", "selected_slice_moved_with_observed_decrease", "selected_slice_did_not_move_with_observed_decrease"]},
+    "metric": {"type": "string", "minLength": 1, "maxLength": 128},
+    "dimension": {"type": "string", "minLength": 1, "maxLength": 128},
+    "current_returned_dimension_sum": {"$ref": "#/$defs/decimal"},
+    "reference_returned_dimension_sum": {"$ref": "#/$defs/decimal"},
+    "returned_sum_absolute_change": {"$ref": "#/$defs/decimal"},
+    "relative_change_percent": {"$ref": "#/$defs/nullable_decimal"},
+    "selected_slice": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "selected_current": {"$ref": "#/$defs/decimal"},
+    "selected_reference": {"$ref": "#/$defs/decimal"},
+    "selected_absolute_change": {"$ref": "#/$defs/decimal"},
+    "selected_share_of_returned_sum_change_percent": {"$ref": "#/$defs/nullable_decimal"},
+    "statement": {"type": "string", "minLength": 1, "maxLength": 4096},
+    "returned_dimension_changes": {"type": "array", "maxItems": 1000, "items": {"$ref": "#/$defs/change"}},
+    "fact_references": {"type": "array", "minItems": 4, "maxItems": 2002, "items": {"$ref": "#/$defs/fact"}}
+  },
+  "$defs": {
+    "decimal": {"type": "string", "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?$", "maxLength": 1024},
+    "nullable_decimal": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/decimal"}]},
+    "fact": {
+      "type": "object",
+      "required": ["step_id", "path"],
+      "additionalProperties": false,
+      "properties": {
+        "step_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "path": {"type": "string", "minLength": 1, "maxLength": 2048, "pattern": "^/.*$"}
+      }
+    },
+    "change": {
+      "type": "object",
+      "required": ["key", "current", "reference", "absolute_change", "fact_references"],
+      "additionalProperties": false,
+      "properties": {
+        "key": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "current": {"$ref": "#/$defs/decimal"},
+        "reference": {"$ref": "#/$defs/decimal"},
+        "absolute_change": {"$ref": "#/$defs/decimal"},
+        "fact_references": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"$ref": "#/$defs/fact"}}
+      }
+    }
+  }
+}

@@ -150,6 +150,13 @@ class ReferenceJourneyTests(unittest.TestCase):
         self.assertEqual("gravity.analysis-result.v1", result["schema_version"])
         self.assertEqual("complete", result["completeness"])
         self.assertEqual("pass", result["data_quality"]["status"])
+        self.assertEqual([], result["models"])
+        self.assertEqual(1, len(result["operators"]))
+        self.assertEqual(
+            "returned-dimension-change",
+            result["operators"][0]["method"]["method_id"],
+        )
+        self.assertTrue(result["operators"][0]["limitations"])
         self.assertEqual("supported_association", result["findings"][0]["finding_type"])
         self.assertTrue(result["receipt_references"])
         self.assertNotIn("content", result["context_pack"]["items"][0])

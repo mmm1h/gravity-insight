@@ -36,6 +36,8 @@ Usage:
   gravity multidim query --app <alias|id> --input <json|file|->
   gravity semantic compose --app <alias|id> --input <json|file|->
   gravity semantics list|describe|resolve|validate [--source <semantic-source>]
+  gravity operators list|describe|validate
+  gravity models list|describe|evaluate [--source <model-artifact>]
   gravity derive --input <json|file|->
   gravity reports pulse --app <alias|id> --start <date> --end <date>
   gravity reports usage

@@ -17,9 +17,9 @@
 
 ## 1. 解析 Semantic Schema 与项目绑定
 
-Runtime 拥有可复用 Semantic 类型/Schema、通用指标/方法定义、版本化 URI，以及单位、可加性、时间粒度、依赖、冲突和公式结构校验。具体活动名、SKU 实值、投放窗口、App alias、埋点绑定、项目专属公式参数与生效窗口属于调用项目，写入显式 `gravity.semantic-source.v1` JSON/TOML 或由受控 Provider 提供；`semantic_context` 不会自动升级为 Business Semantic。
+Runtime 拥有可复用 Semantic、确定性 Operator 和 Model lifecycle Schema。项目值来自显式 Source；Operator 只按 exact URI 执行静态安装的方法；Model 未命中 trusted digest、未验证/批准、过期或超安全 horizon 时只允许 scenario/hypothesis，不输出生产预测。
 
-未登记通用定义或未声明项目绑定必须返回 Semantic/Binding Gap；禁止从列名或自然语言补公式。需要事件、属性或维度时先查本地 metadata，执行前按产品合同复验。
+Semantic/Binding/Operator/Model 任一未登记必须返回机器 gap；禁止从列名、自然语言或 Skill 文本补公式、方法或模型。需要物理字段时先查本地 metadata，执行前复验 Product 和依赖合同。
 
 ## 2. 发现并选择
 

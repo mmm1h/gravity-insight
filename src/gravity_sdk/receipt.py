@@ -350,8 +350,9 @@ def build_receipt(
     status: str,
     duration_ms: float,
     request_count: int,
+    operator_model: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    return {
+    receipt = {
         "schema_version": SCHEMA_VERSION,
         "receipt_id": uuid.uuid4().hex,
         "created_at": datetime.now(timezone.utc)
@@ -365,6 +366,13 @@ def build_receipt(
         "duration_ms": round(max(0.0, duration_ms), 3),
         "request_count": max(0, int(request_count)),
     }
+    if operator_model is not None:
+        from .operator_model_receipt import validate_operator_model_receipt_facet
+
+        receipt["operator_model"] = validate_operator_model_receipt_facet(
+            operator_model
+        )
+    return receipt
 
 
 def persist_receipt(

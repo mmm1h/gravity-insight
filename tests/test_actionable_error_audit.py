@@ -17,16 +17,16 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class ActionableErrorAuditTests(unittest.TestCase):
     def test_actionable_error_inventory_is_complete_and_reproducible(self):
-        """Went 1296 -> 1305 for R05 Semantic URI/source/window gates.
+        """Went 1305 -> 1310 for R06 Operator/Model URI and scope gates.
 
-        The new sites bound values and provide exact local discovery, source
-        validation, or date-mode correction instead of guessing.
+        The new sites bound values and point to exact offline registry discovery
+        or canonical evaluation scope correction instead of guessing.
         """
 
         rows = inventory(ROOT / "src" / "gravity_sdk")
         counts = Counter(item["grade"] for item in rows)
-        assert len(rows) == 1305
-        assert counts["A"] == 1141
+        assert len(rows) == 1310
+        assert counts["A"] == 1146
         assert counts["B"] == 164
         assert counts.get("C", 0) == 0
         assert sum(counts.values()) == len(rows)

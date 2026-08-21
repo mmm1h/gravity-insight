@@ -30,6 +30,8 @@ _EXPORTS = {
     ),
     "LocalSkillResolver": (".skill_package", "LocalSkillResolver"),
     "SemanticRegistry": (".semantic_registry", "SemanticRegistry"),
+    "OperatorRegistry": (".operator_registry", "OperatorRegistry"),
+    "ModelRegistry": (".model_registry", "ModelRegistry"),
     "CompositeService": (".composite", "CompositeService"),
     "Credential": (".credentials", "Credential"),
     "CredentialConfig": (".credentials", "CredentialConfig"),

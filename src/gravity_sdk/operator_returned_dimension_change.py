@@ -1,4 +1,4 @@
-"""Deterministic returned-row comparison for the R01 reference Journey."""
+"""Deterministic returned-row comparison built into the Operator Registry."""
 
 from __future__ import annotations
 
@@ -7,14 +7,18 @@ from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from typing import Any
 
-from .reference_journey_contract import OPERATOR_RESULT_SCHEMA_VERSION
+from .operator_ids import RETURNED_DIMENSION_CHANGE_RESULT_SCHEMA
 
 
-SCHEMA_VERSION = OPERATOR_RESULT_SCHEMA_VERSION
+SCHEMA_VERSION = RETURNED_DIMENSION_CHANGE_RESULT_SCHEMA
 
 
-class ReferenceOperatorError(ValueError):
-    """The governed input facts do not satisfy the Operator contract."""
+class OperatorMethodError(ValueError):
+    """Governed input facts violate one stable Operator failure boundary."""
+
+    def __init__(self, reason_code: str, message: str) -> None:
+        self.reason_code = reason_code
+        super().__init__(message)
 
 
 @dataclass(frozen=True)
@@ -99,18 +103,22 @@ def _comparison(
     dimension: str,
 ) -> _Comparison:
     if not isinstance(selected_key, str) or not selected_key:
-        raise ReferenceOperatorError("selected dimension key is missing")
+        raise OperatorMethodError(
+            "OPERATOR_DIMENSION_INVALID", "selected dimension key is missing"
+        )
     current = _groups(current_rows, metric=metric, dimension=dimension)
     reference = _groups(reference_rows, metric=metric, dimension=dimension)
     current_slice = _decimal(selected_current)
     reference_slice = _decimal(selected_reference)
     if current.get(selected_key) != current_slice:
-        raise ReferenceOperatorError(
-            "selected current value does not match the returned breakdown"
+        raise OperatorMethodError(
+            "OPERATOR_CROSSCHECK_FAILED",
+            "selected current value does not match the returned breakdown",
         )
     if reference.get(selected_key) != reference_slice:
-        raise ReferenceOperatorError(
-            "selected reference value does not match the returned breakdown"
+        raise OperatorMethodError(
+            "OPERATOR_CROSSCHECK_FAILED",
+            "selected reference value does not match the returned breakdown",
         )
     current_sum = sum(current.values(), Decimal(0))
     reference_sum = sum(reference.values(), Decimal(0))
@@ -209,14 +217,21 @@ def _groups(
     rows: Sequence[Mapping[str, Any]], *, metric: str, dimension: str
 ) -> dict[str, Decimal]:
     if not rows:
-        raise ReferenceOperatorError("returned rows are empty")
+        raise OperatorMethodError(
+            "OPERATOR_SAMPLE_INSUFFICIENT", "returned rows are empty"
+        )
     result: dict[str, Decimal] = {}
     for row in rows:
         if not isinstance(row, Mapping):
-            raise ReferenceOperatorError("returned row is not an object")
+            raise OperatorMethodError(
+                "OPERATOR_INPUT_INVALID", "returned row is not an object"
+            )
         key = row.get(dimension)
         if not isinstance(key, str) or not key or key in result:
-            raise ReferenceOperatorError("dimension keys are missing or duplicated")
+            raise OperatorMethodError(
+                "OPERATOR_DIMENSION_INVALID",
+                "dimension keys are missing or duplicated",
+            )
         result[key] = _decimal(row.get(metric))
     return result
 
@@ -272,15 +287,20 @@ def _dimension_changes(
 
 def _decimal(value: Any) -> Decimal:
     if isinstance(value, bool) or value is None:
-        raise ReferenceOperatorError("metric value is missing or non-numeric")
+        raise OperatorMethodError(
+            "OPERATOR_NUMERIC_INVALID", "metric value is missing or non-numeric"
+        )
     try:
         selected = Decimal(str(value))
     except (InvalidOperation, ValueError):
-        raise ReferenceOperatorError(
-            "metric value is missing or non-numeric"
+        raise OperatorMethodError(
+            "OPERATOR_NUMERIC_INVALID",
+            "metric value is missing or non-numeric",
         ) from None
     if not selected.is_finite():
-        raise ReferenceOperatorError("metric value is not finite")
+        raise OperatorMethodError(
+            "OPERATOR_NUMERIC_INVALID", "metric value is not finite"
+        )
     return selected
 
 
@@ -296,7 +316,7 @@ def _fact(step_id: str, rows_path: str, row: int, field: str) -> dict[str, str]:
 
 
 __all__ = [
-    "ReferenceOperatorError",
+    "OperatorMethodError",
     "SCHEMA_VERSION",
     "returned_dimension_change",
 ]
