@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; plan-owner ready verdict 2026-08-22 |
+| Status | `fixed_dev`; accepted on `dev@0ca8681f` 2026-08-22 |
 | Track | Skill packaging foundation |
 | Dependencies | R01 |
 | Parallel group | `foundation-a` |
@@ -97,6 +97,41 @@ existing target. It never mutates Python environments or Runtime configuration.
 ## Verification
 
 Render golden tests, repeated build digest equality, wheel installation test, package-data census, Agent Skills schema validation, tampered package rejection, docs generation check and full repository gates.
+
+## Delivered Evidence
+
+- Implementation `5116a0d` was merged as
+  `dev@0ca8681f5c5206580fac86c1889ba66a3b032453`. The R01 manifest is now
+  the sole `gravity.skill.v1` Render Model with orthogonal specification,
+  lifecycle, readiness and validation plus typed dependencies, claims, budget,
+  provenance and guide structure.
+- Deterministic package digest is
+  `7dc30f8468cb3be33dc4df6c68a102d63af6f629d81ff60c879bbda72e6b4516`.
+  Five exact package files, the docs mirror and four-file Agent Skills export
+  render from that manifest; both package/docs generators pass byte-level
+  UTF-8/LF `--check` gates.
+- Package validation rejects absolute/drive/parent paths, scripts,
+  case-fold collisions, missing/extra/tampered files, links, hardlinks,
+  executable bits, excessive count, file/total bytes and depth. Agent names
+  meet the official 1..64/name-directory rules with deterministic collision
+  and overlength suffixes; materialization is atomic and refuses overwrite.
+- `LocalSkillResolver` and `gravity skills list|show|export-agent` load only
+  fixed Built-in resources. Current R01 Skill readiness is
+  `blocked/COMPLETENESS_INSUFFICIENT/network_called=false`; routing and the
+  existing Journey/Plan executor are unchanged.
+- Complete SDK gates: `1464` unittest tests; `1464 passed, 3687 subtests passed`
+  under pytest; compiler `237 operations, 11 manifests`; quality PASS;
+  actionable errors `1296 = 1132 A + 164 B + 0 C`; CLI and diff checks PASS.
+- Development usability is unchanged at selection `296/336`, fillability
+  `248/248`, offline terminal `53/53`, recovery `5/5`, security PASS and
+  production HTTP requests `0`. Canonical consumer adoption/R01 remains
+  `10 passed, 94 subtests` with no consumer file migration.
+- Final isolated wheel `gravity_sdk-0.3.0-py3-none-any.whl` has SHA-256
+  `2bfc8f9d09dba361a91dbc674cdb626bb9ddcac449d9ed7c31bd0fa9e82703bf`.
+  It loaded the exact package from isolated `site-packages`, rendered the
+  Agent export outside the checkout and preserved consumer R01 exit 4.
+- Remote Hub calls, package code execution, environment mutation, production
+  requests/writes, releases and `main` promotion performed by R03: `0`.
 
 ## Rollback And Exit
 
