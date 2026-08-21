@@ -21,7 +21,7 @@
 
 1. **R00 产品宪法与需求拆分（fixed-dev）**：v9.1 canonical 总纲、directive 和细化后的无环需求图已在 `dev` 完成并通过整仓门禁；不表示已发布到 `main`。
 2. **R01 参考纵向切片（fixed-dev）**：`analysis.merge2.ap-cost-anomaly-localization` 已在 `dev@08b42971` 完成；真实路径因底层完整性仍为 `unknown` 而零请求阻断，交付账本和 R02-R08 extraction ledger 位于 R01 Requirement。
-3. **R02 下一候选**：先从 R01 提取可复用 Journey、same-layer Trust、Validation TTL、Data Quality 和 Analysis Result，不扩建第二执行器或路由器。
+3. **R02 Journey / Trust / DQ 泛化（in-progress）**：从 R01 提取严格 Journey ledger projection、Operation/Product/Composite 同层 Trust、principal-scoped Validation、TTL、Data Quality 和 dependency impact；生产请求上限为 0，不扩建第二执行器或路由器。
 4. **Phase 0 正确性维护**：分页证据、私有 API 漂移、身份、Census、错误和消费者问题继续推进，不被内容 Track 阻塞。
 5. **并行规则**：依赖满足且写入边界不重叠的领域 core 可在独立 `codex/<unit>` worktree 并行；共享 spine 最终接线由一个 integrator 串行完成。
 6. **Main freeze**：完整计划结束、整体验收通过且用户重新明确批准前，本计划功能只合入 `dev`，不合入 `main`。单项 `fixed_dev` 不等于发布。
