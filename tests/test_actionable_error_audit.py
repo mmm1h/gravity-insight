@@ -17,16 +17,16 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class ActionableErrorAuditTests(unittest.TestCase):
     def test_actionable_error_inventory_is_complete_and_reproducible(self):
-        """Went 1290 -> 1296 for R03 Skill identity and export-path gates.
+        """Went 1296 -> 1305 for R05 Semantic URI/source/window gates.
 
-        The new sites bound values, name Skill/output fields, and provide the
-        exact local discovery or path correction instead of guessing.
+        The new sites bound values and provide exact local discovery, source
+        validation, or date-mode correction instead of guessing.
         """
 
         rows = inventory(ROOT / "src" / "gravity_sdk")
         counts = Counter(item["grade"] for item in rows)
-        assert len(rows) == 1296
-        assert counts["A"] == 1132
+        assert len(rows) == 1305
+        assert counts["A"] == 1141
         assert counts["B"] == 164
         assert counts.get("C", 0) == 0
         assert sum(counts.values()) == len(rows)

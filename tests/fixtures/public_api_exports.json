@@ -187,6 +187,10 @@
     ".error_types",
     "SemanticRejectedError"
   ],
+  "SemanticRegistry": [
+    ".semantic_registry",
+    "SemanticRegistry"
+  ],
   "SqlBatchRequest": [
     ".sql",
     "SqlBatchRequest"

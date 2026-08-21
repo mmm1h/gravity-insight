@@ -12,9 +12,13 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Mapping, Sequence
 
 from .reference_journey_contract import CONTEXT_URI, JOURNEY_ID, SEMANTIC_URI
+from .reference_semantic_adapter import (
+    ReferenceSemanticAdapterError,
+    resolve_reference_semantic,
+)
 
 
-SCHEMA_VERSION = "gravity.reference-project-contract.v1"
+SCHEMA_VERSION = "gravity.reference-project-contract.v2"
 CONTEXT_PACK_SCHEMA_VERSION = "gravity.context-pack.v1"
 MAX_CONTEXT_FILES = 4
 MAX_FILE_BYTES = 131_072
@@ -45,11 +49,31 @@ def load_reference_project_contract(
     _validate_project_contract(raw)
     current = _window(current_window, "current_window")
     reference = _window(reference_window, "reference_window")
-    _validate_semantic_window(raw["semantic"], current, reference)
+    semantic_source_path = str(raw["semantic"]["source_path"])
+    selected_source = _safe_file(
+        project_root, semantic_source_path, maximum=MAX_FILE_BYTES
+    )
+    source = _read_json(selected_source, "project Semantic source")
+    try:
+        semantic = resolve_reference_semantic(
+            source,
+            project_id=raw["project_id"],
+            owner=raw["owner"],
+            uri=raw["semantic"]["uri"],
+            app_alias=raw["semantic"]["app_alias"],
+            current=current,
+            reference=reference,
+        )
+    except ReferenceSemanticAdapterError as exc:
+        raise ReferenceProjectContractError(str(exc)) from exc
     if source_revision is None:
         revision, observation = _git_snapshot(
             project_root,
-            [contract_path, *[str(item["path"]) for item in raw["context_pack"]["items"]]],
+            [
+                contract_path,
+                semantic_source_path,
+                *[str(item["path"]) for item in raw["context_pack"]["items"]],
+            ],
         )
     else:
         revision = _revision(source_revision)
@@ -62,9 +86,12 @@ def load_reference_project_contract(
         source_revision=revision,
         observed_at=observation,
     )
-    contract_digest = _digest(raw)
-    semantic = copy.deepcopy(raw["semantic"])
-    semantic["digest"] = _digest(raw["semantic"])
+    contract_digest = _digest(
+        {
+            "contract": raw,
+            "semantic_source_digest": semantic["source_digest"],
+        }
+    )
     return {
         "schema_version": SCHEMA_VERSION,
         "project_id": raw["project_id"],
@@ -94,57 +121,13 @@ def _validate_project_contract(value: Any) -> None:
 def _validate_semantic(value: Any) -> None:
     _fields(
         value,
-        {
-            "uri",
-            "version",
-            "kind",
-            "display_name",
-            "unit",
-            "currency",
-            "additivity",
-            "time_grain",
-            "physical_binding",
-            "bindings",
-            "allowed_claims",
-            "forbidden_claims",
-        },
+        {"source_path", "uri", "app_alias"},
         "semantic",
     )
-    if (
-        value["uri"] != SEMANTIC_URI
-        or value["version"] != 1
-        or value["kind"] != "metric"
-        or value["unit"] != "platform_reported_cost"
-        or value["currency"] != "unknown"
-        or value["additivity"] != "sum"
-        or value["time_grain"] != "total"
-    ):
+    if value["uri"] != SEMANTIC_URI or value["app_alias"] != "merge2-legacy":
         raise ReferenceProjectContractError("project Semantic identity changed")
-    physical = value["physical_binding"]
-    _fields(
-        physical,
-        {"semantic_definition", "metric", "dimension", "filter", "grain", "join"},
-        "physical_binding",
-    )
-    expected = {
-        "semantic_definition": ("report.ap-cost-observation", 2),
-        "metric": ("report.metric.ap-cost", 1),
-        "dimension": ("report.dimension.click-company", 1),
-        "filter": ("report.filter.click-company", 1),
-        "grain": ("report.grain.total", 1),
-        "join": ("report.join.adreport-click-company", 1),
-    }
-    for name, (definition_id, version) in expected.items():
-        _reference(physical[name], name, definition_id, version)
-    bindings = value["bindings"]
-    if not isinstance(bindings, list) or len(bindings) != 1:
-        raise ReferenceProjectContractError("project Semantic requires one App binding")
-    _fields(bindings[0], {"app_alias", "effective_range"}, "semantic binding")
-    if bindings[0]["app_alias"] != "merge2-legacy":
-        raise ReferenceProjectContractError("project Semantic App binding changed")
-    _range(bindings[0]["effective_range"], "semantic effective_range")
-    _strings(value["allowed_claims"], "semantic allowed_claims")
-    _strings(value["forbidden_claims"], "semantic forbidden_claims")
+    if not isinstance(value["source_path"], str) or not value["source_path"]:
+        raise ReferenceProjectContractError("project Semantic source path is invalid")
 
 
 def _validate_context_declaration(value: Any) -> None:
@@ -181,20 +164,6 @@ def _validate_context_declaration(value: Any) -> None:
         _strings(item["supersedes"], "context supersedes", allow_empty=True)
         _range(item["valid_time"], "context valid_time")
         _range(item["effective_range"], "context effective_range")
-
-
-def _validate_semantic_window(
-    semantic: Mapping[str, Any],
-    current: tuple[date, date],
-    reference: tuple[date, date],
-) -> None:
-    binding = semantic["bindings"][0]
-    effective = _range(binding["effective_range"], "semantic effective_range")
-    for window in (current, reference):
-        if not _contains(effective, window):
-            raise ReferenceProjectContractError(
-                "SEMANTIC_EFFECTIVE_RANGE_MISMATCH"
-            )
 
 
 def _context_pack(
@@ -461,14 +430,6 @@ def _day(value: Any, label: str) -> date:
     if parsed is None or parsed.isoformat() != value:
         raise ReferenceProjectContractError(f"{label} must be canonical YYYY-MM-DD")
     return parsed
-
-
-def _reference(
-    value: Any, label: str, definition_id: str, version: int
-) -> None:
-    _fields(value, {"definition_id", "version"}, label)
-    if value != {"definition_id": definition_id, "version": version}:
-        raise ReferenceProjectContractError(f"{label} reference changed")
 
 
 def _fields(value: Any, expected: set[str], label: str) -> None:

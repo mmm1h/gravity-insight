@@ -1,0 +1,19 @@
+{
+  "artifact_kind": "semantic_definition",
+  "schema_version": "gravity.semantic-definition.v1",
+  "uri": "entity://gravity/app@1",
+  "kind": "entity",
+  "version": 1,
+  "owner": "gravity-runtime/semantic",
+  "authority": "runtime",
+  "display_name": "Gravity App",
+  "description": "Reusable application entity type; concrete aliases and platform identifiers remain project bindings.",
+  "effective_range": {"start": null, "end": null},
+  "unit": null,
+  "aggregation": null,
+  "time": null,
+  "entity_uri": null,
+  "formula": null,
+  "binding_required": false,
+  "claim_policy": {"allowed": [], "forbidden": []}
+}

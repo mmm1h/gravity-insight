@@ -29,6 +29,7 @@ _EXPORTS = {
         ".capability_trust", "CapabilityTrustService"
     ),
     "LocalSkillResolver": (".skill_package", "LocalSkillResolver"),
+    "SemanticRegistry": (".semantic_registry", "SemanticRegistry"),
     "CompositeService": (".composite", "CompositeService"),
     "Credential": (".credentials", "Credential"),
     "CredentialConfig": (".credentials", "CredentialConfig"),

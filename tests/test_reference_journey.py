@@ -16,7 +16,7 @@ from gravity_sdk.reference_journey import (
 )
 from gravity_sdk.reference_journey_contract import reference_artifacts
 from tests.test_analysis_playbook import FakePlanExecutor, playbook_input
-from tests.test_reference_project_contract import project_contract
+from tests.test_reference_project_contract import project_contract, project_semantic_source
 
 
 def journey_input():
@@ -107,6 +107,9 @@ class ReferenceJourneyTests(unittest.TestCase):
         value = project_contract(("docs/metric.md", "docs/attribution.md"))
         (contract / "r01-ap-cost-anomaly.json").write_text(
             json.dumps(value), encoding="utf-8"
+        )
+        (self.root / value["semantic"]["source_path"]).write_text(
+            json.dumps(project_semantic_source()), encoding="utf-8"
         )
         self.workspace = SimpleNamespace(root=self.root, state_root=self.state)
         self.sdk = FakeSDK(self.workspace)

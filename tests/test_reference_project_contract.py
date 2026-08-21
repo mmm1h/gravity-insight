@@ -18,34 +18,13 @@ REFERENCE = {"start": "2026-06-27", "end": "2026-07-03"}
 
 def project_contract(paths=("docs/metric.md", "docs/attribution.md")):
     return {
-        "schema_version": "gravity.reference-project-contract.v1",
+        "schema_version": "gravity.reference-project-contract.v2",
         "project_id": "merge2",
         "owner": "growth-data",
         "semantic": {
+            "source_path": "semantic.json",
             "uri": "metric://project/acquisition-spend@1",
-            "version": 1,
-            "kind": "metric",
-            "display_name": "Acquisition spend",
-            "unit": "platform_reported_cost",
-            "currency": "unknown",
-            "additivity": "sum",
-            "time_grain": "total",
-            "physical_binding": {
-                "semantic_definition": {"definition_id": "report.ap-cost-observation", "version": 2},
-                "metric": {"definition_id": "report.metric.ap-cost", "version": 1},
-                "dimension": {"definition_id": "report.dimension.click-company", "version": 1},
-                "filter": {"definition_id": "report.filter.click-company", "version": 1},
-                "grain": {"definition_id": "report.grain.total", "version": 1},
-                "join": {"definition_id": "report.join.adreport-click-company", "version": 1},
-            },
-            "bindings": [
-                {
-                    "app_alias": "merge2-legacy",
-                    "effective_range": {"start": None, "end": None},
-                }
-            ],
-            "allowed_claims": ["returned-row observation"],
-            "forbidden_claims": ["causality", "complete total"],
+            "app_alias": "merge2-legacy",
         },
         "context_pack": {
             "uri": "context://project-repo/merge2-acquisition-boundaries@1",
@@ -68,6 +47,77 @@ def project_contract(paths=("docs/metric.md", "docs/attribution.md")):
     }
 
 
+def project_semantic_source():
+    return {
+        "artifact_kind": "semantic_source",
+        "schema_version": "gravity.semantic-source.v1",
+        "source_id": "work-dashboard/merge2-r01",
+        "source_kind": "project_json",
+        "project_id": "merge2",
+        "owner": "growth-data",
+        "definitions": [
+            {
+                "artifact_kind": "semantic_definition",
+                "schema_version": "gravity.semantic-definition.v1",
+                "uri": "metric://project/acquisition-spend@1",
+                "kind": "metric",
+                "version": 1,
+                "owner": "growth-data",
+                "authority": "project",
+                "display_name": "Acquisition spend",
+                "description": "Platform-reported acquisition spend for returned rows.",
+                "effective_range": {"start": None, "end": None},
+                "unit": {
+                    "kind": "currency",
+                    "symbol": "platform_reported_cost",
+                    "currency": None,
+                    "scale": 2,
+                },
+                "aggregation": {"method": "sum", "additivity": "additive"},
+                "time": {
+                    "grains": ["total"],
+                    "timezone": "unknown",
+                    "attribution_window": None,
+                },
+                "entity_uri": "entity://gravity/app@1",
+                "formula": {"operator": "source", "dependencies": [], "parameters": []},
+                "binding_required": True,
+                "claim_policy": {
+                    "allowed": ["returned-row observation"],
+                    "forbidden": ["causality", "complete total"],
+                },
+            }
+        ],
+        "bindings": [
+            {
+                "artifact_kind": "semantic_binding",
+                "schema_version": "gravity.semantic-binding.v1",
+                "binding_uri": "binding://project/acquisition-spend.merge2-legacy@1",
+                "semantic_uri": "metric://project/acquisition-spend@1",
+                "project_id": "merge2",
+                "owner": "growth-data",
+                "app_alias": "merge2-legacy",
+                "effective_range": {"start": None, "end": None},
+                "provider": {
+                    "kind": "semantic_compose",
+                    "definition": {
+                        "definition_id": "report.ap-cost-observation",
+                        "version": 2,
+                    },
+                    "members": {
+                        "metric": {"definition_id": "report.metric.ap-cost", "version": 1},
+                        "dimension": {"definition_id": "report.dimension.click-company", "version": 1},
+                        "filter": {"definition_id": "report.filter.click-company", "version": 1},
+                        "grain": {"definition_id": "report.grain.total", "version": 1},
+                        "join": {"definition_id": "report.join.adreport-click-company", "version": 1},
+                    },
+                },
+                "parameters": {},
+            }
+        ],
+    }
+
+
 class ReferenceProjectContractTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
@@ -79,13 +129,19 @@ class ReferenceProjectContractTests(unittest.TestCase):
     def tearDown(self):
         self.temporary.cleanup()
 
-    def write_contract(self, value=None):
+    def write_contract(self, value=None, source=None):
+        selected = value or project_contract()
+        source_path = self.root / selected["semantic"]["source_path"]
+        source_path.parent.mkdir(parents=True, exist_ok=True)
+        source_path.write_text(
+            json.dumps(source or project_semantic_source()), encoding="utf-8"
+        )
         path = self.root / "project.json"
-        path.write_text(json.dumps(value or project_contract()), encoding="utf-8")
+        path.write_text(json.dumps(selected), encoding="utf-8")
         return path
 
-    def load(self, value=None):
-        self.write_contract(value)
+    def load(self, value=None, *, source=None):
+        self.write_contract(value, source)
         return load_reference_project_contract(
             self.root,
             contract_path="project.json",
@@ -100,6 +156,18 @@ class ReferenceProjectContractTests(unittest.TestCase):
 
         self.assertEqual("metric://project/acquisition-spend@1", result["semantic"]["uri"])
         self.assertRegex(result["semantic"]["digest"], r"^[0-9a-f]{64}$")
+        self.assertEqual(
+            "merge2-legacy", result["semantic"]["binding"]["app_alias"]
+        )
+        self.assertEqual(
+            project_semantic_source()["definitions"][0]["claim_policy"],
+            result["semantic"]["definition"]["claim_policy"],
+        )
+        self.assertEqual(
+            project_semantic_source()["bindings"][0]["provider"],
+            result["semantic"]["binding"]["provider"],
+        )
+        self.assertFalse(result["semantic"]["network_called"])
         pack = result["context_pack"]
         self.assertEqual([], pack["gaps"])
         self.assertEqual(2, len(pack["items"]))
@@ -140,15 +208,15 @@ class ReferenceProjectContractTests(unittest.TestCase):
             self.load(project_contract(("docs/large.md",)))
 
     def test_semantic_and_context_time_mismatch_are_machine_failures(self):
-        semantic = project_contract()
-        semantic["semantic"]["bindings"][0]["effective_range"] = {
+        semantic = project_semantic_source()
+        semantic["bindings"][0]["effective_range"] = {
             "start": "2026-07-01",
             "end": None,
         }
         with self.assertRaisesRegex(
             ReferenceProjectContractError, "SEMANTIC_EFFECTIVE_RANGE_MISMATCH"
         ):
-            self.load(semantic)
+            self.load(source=semantic)
 
         context = project_contract()
         context["context_pack"]["items"][0]["valid_time"] = {
@@ -166,10 +234,10 @@ class ReferenceProjectContractTests(unittest.TestCase):
         with self.assertRaises(ReferenceProjectContractError):
             self.load(unknown)
 
-        drift = project_contract()
-        drift["semantic"]["physical_binding"]["metric"]["definition_id"] = "guessed"
+        drift = project_semantic_source()
+        drift["bindings"][0]["provider"]["members"]["metric"]["definition_id"] = "guessed"
         with self.assertRaises(ReferenceProjectContractError):
-            self.load(drift)
+            self.load(source=drift)
 
 
 if __name__ == "__main__":

@@ -11,6 +11,7 @@ gravity agent [query]         单问题发现；--input 批量发现并返回 Pl
 gravity agent-catalog ...     渐进浏览产品、raw operation 与登记 gap
 gravity plan schema|run       预检或执行受控跨能力 DAG
 gravity derive --input        对已有结果执行调用方绑定的本地派生算术
+gravity semantics ...         离线读取、解析或校验 Business Semantic 合同
 gravity metadata <command>    本地物理元数据目录
 gravity find <query>          跨 operation、recipe 与 metadata 检索
 gravity recipe <command>      离线校验 workspace recipe
@@ -265,14 +266,15 @@ App、日期或 filter value；物理指标/维度未知时可在 App 和其余�
 Multidim 不回放 template，不处理图表/透视、layout、收藏、拖拽、成员权限或业务指标语义；这些
 边界也不会通过 `--input` 扩张。
 
-## Semantic Compose
+## Business Semantic 与 Semantic Compose
 
-这是 Multidim 之上的窄受治理组合面，不接受物理字段名或裸 SQL：
+复数 `semantics` 只离线编译显式 JSON/TOML Source，默认仅含 wheel 通用定义；singular `semantic compose` 才是 Multidim 之上的物理执行面。两者都不接受推断的字段或裸 SQL：
 
 ```powershell
 gravity semantic compose --input-schema
 gravity semantic compose --app main --input semantic-request.json --dry-run
 gravity semantic compose --app main --input semantic-request.json
+gravity semantics list|describe|resolve|validate [--source <semantic-source>]
 ```
 
 input 必须逐项引用机器 schema 当前列出的 `{definition_id, version}`，并完整提供
@@ -286,8 +288,7 @@ day/week/total。`@3` 保留上述成员，并增加平台展示/点击/点击�
 降级为两个带时间戳的观察及算术差，不得称为确定性重放、稳定、已结算或因果变化。hour 或新指标 +
 total 等不兼容组合在编译时零网络拒绝。
 
-`--dry-run` 返回 `gravity.semantic-compose-compiled.v1`；同输入 canonical JSON 逐字节相同。执行返回
-`gravity.semantic-compose-result.v1`，包含 `resolution_tier`、定义 ID/版本/指纹、实际成员、生成的
+`--dry-run` 返回 `gravity.semantic-compose-compiled.v1`；同输入 canonical JSON 逐字节相同。执行返回 `gravity.semantic-compose-result.v1`，包含 `resolution_tier`、定义 ID/版本/指纹、实际成员、生成的
 Multidim 查询、验证结果和按 App/窗口/成员收窄的 `allowed_claims`。未知成员、禁止 join 或粒度冲突
 均不会构造客户端。该面复用既有 `report.multidim.query`，没有新增 operation，也不提供 Text-to-SQL。
 
