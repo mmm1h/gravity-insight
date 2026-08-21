@@ -46,7 +46,7 @@ CT01 + R09B → CT02 → CT03
 | --- | --- | --- | --- | --- |
 | [R00](R00-product-constitution.md) | Product constitution and directive governance | - | `fixed_dev` | Leaf |
 | [R01](R01-reference-vertical-slice.md) | Reference vertical Journey slice | R00 | `fixed_dev` | Leaf |
-| [R02](R02-journey-trust-data-quality.md) | Journey, Trust and Data Quality platform | R01 | `in_progress` | Leaf |
+| [R02](R02-journey-trust-data-quality.md) | Journey, Trust and Data Quality platform | R01 | `fixed_dev` | Leaf |
 | [R03](R03-built-in-skill-package.md) | Built-in Skill package and render model | R01 | `specified` | Leaf |
 | [R04](R04-team-skill-hub-stage-a.md) | Team Skill Hub and Trusted Pack Stage A | R03, R06 | `specified` | Leaf with two artifact channels |
 | [R05](R05-business-semantic-registry.md) | Business Semantic Registry | R01 | `specified` | Leaf |

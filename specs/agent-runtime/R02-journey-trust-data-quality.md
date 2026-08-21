@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; plan-owner ready verdict 2026-08-22 |
+| Status | `fixed_dev`; accepted on `dev@4f78a0bf` 2026-08-22 |
 | Track | Runtime trust platform |
 | Dependencies | R01 |
 | Parallel group | `platform-core` |
@@ -133,6 +133,38 @@ rendered publicly.
 ## Verification
 
 Parser/format gates, fake-clock TTL tests, drift/quarantine tests, Product/Composite aggregation, identity isolation, zero-network invalid cases, public snapshots, all repository gates and usability eval.
+
+## Delivered Evidence
+
+- Implementation `b6f435674fce85d3ec2088e063e464699347d872` was merged as
+  `dev@4f78a0bfad146e0fb5bd35a6bbb61fef480a453a`. The five pilot
+  Journey contracts verify against all 63 human-ledger rows; the current matrix
+  is `verified=0`, with readable Apps `unknown` and the other four Journeys
+  honestly blocked.
+- R01 migrated to the generic Capability contract, Trust service and DQ result;
+  the former R01-only Trust artifact/evaluator were removed. Its real consumer
+  result remains exit `4`, `blocked/COMPLETENESS_INSUFFICIENT`, empty findings
+  and claims, and `network_called=false`.
+- Complete SDK gates: `1449` unittest tests; `1449 passed, 3674 subtests passed`
+  under pytest; compiler `237 operations, 11 manifests`; quality PASS with
+  `237` provenance records; Journey snapshot, CLI help and diff checks PASS.
+- Actionable errors are fully classified at `1290 = 1126 A + 164 B + 0 C`.
+  Development usability remains selection `296/336`, fillability `248/248`,
+  offline terminal `53/53`, recovery `5/5`, security PASS and production HTTP
+  requests `0`.
+- Isolated real wheel `gravity_sdk-0.3.0-py3-none-any.whl` has SHA-256
+  `8d368ac42df17a9a6a0e5dc4a8e44e1d9b4913a1f71e2e4379b91bcf3458d3a2`.
+  It imported from isolated `site-packages`, loaded packaged Journey/Capability
+  contracts, verified the registry, evaluated Trust, and preserved R01 exit 4
+  from outside the checkout.
+- Canonical consumer `codex/r02-journey-trust-consumer@6b94d3d3955646aad4776688e9f99d693e06e20c`
+  passes focused adoption/R02 (`10 passed, 94 subtests`), its complete business
+  suite (`304 tests`, one policy skip), tracked privacy and GM privacy (`10
+  passed`). Its complete governance command still reports only unrelated
+  baseline defects: two missing historical assets, one GM SQL provenance drift,
+  one expired topic exception and one frozen historical missing link.
+- Production probes, target requests, Validation writes, releases and `main`
+  promotion performed by R02: `0`.
 
 ## Rollback And Exit
 

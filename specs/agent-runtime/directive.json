@@ -35,13 +35,13 @@
   },
   "documentation_baseline": {
     "branch": "dev",
-    "sha": "08b42971ed29ade0e4248b1ef02f03fe1920852e",
-    "requirement": "R01",
+    "sha": "4f78a0bfad146e0fb5bd35a6bbb61fef480a453a",
+    "requirement": "R02",
     "status": "fixed_dev"
   },
   "requirements_index": "index.json",
-  "active_feature_requirement": "R02",
-  "next_candidate": null,
+  "active_feature_requirement": null,
+  "next_candidate": "R03",
   "main_integration": {
     "status": "frozen",
     "development_target": "dev",
