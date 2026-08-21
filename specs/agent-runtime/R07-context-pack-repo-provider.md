@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; plan-owner ready verdict 2026-08-22 |
+| Status | `fixed_dev`; integrated and validated on `dev` 2026-08-22 |
 | Track | Context foundation |
 | Dependencies | R01 |
 | Parallel group | `foundation-a` |
@@ -11,7 +11,7 @@
 | Delivery ledger | This Requirement document; no internal GitHub Issue |
 | Baseline | `dev@51e520f` |
 | Branch / worktree | `codex/r07-context-pack-repo-provider` / `D:\git-pjt\gravity-sdk-wt\r07-context-pack-repo-provider` |
-| Consumer | `work-dashboard@6eee64e5` -> `codex/r07-context-provider-consumer` |
+| Consumer | `work-dashboard@6fdea63c` on `codex/r07-context-provider-consumer`; push hook blocked by unrelated baseline failures |
 | Integrator | Root Codex agent; Context CLI/handoff wiring remains serial |
 | Production/external requests | `0`; live/external evidence not authorized |
 
@@ -25,8 +25,9 @@ The user authorized continuous implementation without repeated Requirement
 approval. R01-R03 and R05-R06 are `fixed_dev`; the plan owner reviewed
 `tmp/r07-context-pack-repo-provider-proposal.md` and its conflict ledger, bound
 the current baseline/worktrees/safety gates below, and advanced R07 through
-`reviewed` and `ready` to `in_progress`. This does not authorize production or
-external requests, writes, releases or `main` promotion.
+`reviewed` and `ready`, and accepted the validated implementation as
+`fixed_dev`. This does not authorize production or external requests, writes,
+releases or `main` promotion.
 
 - Formal Provider/Item/Requirement/Pack contracts replace the R01 provisional
   parser. R01 project contract upgrades to v3 and the generic Repo Provider
@@ -46,7 +47,38 @@ external requests, writes, releases or `main` promotion.
   discovery, status/reason matrix, prompt-injection/data-role tests, public
   snapshot/docs, real wheel, canonical consumer, full gates and usability.
 
-## Current Baseline
+## Fixed Dev Evidence
+
+- `8c2ab27` implements the four strict Context schemas, compiled built-in
+  `context-provider://gravity/project-repo@1`, root `RepoContextProvider`, and
+  offline `describe/index/search/get/pack/verify`; merge `4d290fe` integrates
+  the unit without adding a route arm, executor, remote Provider or credentials.
+- Repo discovery uses bounded local Git metadata and exact revision/hash reads;
+  real Git fixtures cover Markdown/Python/JSON/TOML structure, Git and Gravity
+  ignore rules, dirty/revision TOCTOU, links/hardlinks, depth/bytes, binary/
+  invalid UTF-8, sensitive path redaction and prompt-injection role=data.
+- Pack tests cover R05 aliases, full entity membership, valid/effective time,
+  required/optional missing/stale/denied/unsupported/conflicting outcomes,
+  restricted denial, authority shadowing, supersession chains/cycles/cross-fact
+  rejection, deterministic digest, budget accounting and public body removal.
+- R01 now delegates to the generic owner and consumes a v3 formal Requirement.
+  Canonical consumer `6fdea63c` passes `5` tests and retains exit 4
+  `blocked/COMPLETENESS_INSUFFICIENT` with two exact citations and zero network.
+  Its normal push was rejected only by the pre-existing work-dashboard
+  migration/GM provenance/topic exception/link/tool-smoke failures; no hook was
+  bypassed and the local consumer commit remains intact.
+- Full Runtime gates pass: `1518` unittest; `1518 passed, 3782 subtests` pytest;
+  compiler `237 operations / 11 manifests`; quality PASS; actionable errors
+  `1313 = A1149 / B164 / C0`; active docs remain exactly `5500` lines.
+- Usability is unchanged at `296/336` selection, `248/248` fillability,
+  `53/53` offline terminal and `5/5` recovery; security PASS; production HTTP
+  requests `0`. Isolated wheel install loaded all Context artifacts and CLI.
+  Provider digest is
+  `beaa4409790fdc3404bfadddb0e0eb76f257796021fc8f13887558cf0843f468`;
+  wheel SHA-256 is
+  `2b10616639286fa2609388f9e29de5b6cf6033569b359735ee73698610669323`.
+
+## Starting Baseline
 
 Agents directly read AGENTS/README/docs/code/git using host tools. Workspace semantics point to project facts, but Runtime has no Provider/Item/Pack contract or consistent citation and authority classification.
 
