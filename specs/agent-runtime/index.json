@@ -21,7 +21,7 @@
     {"id":"R01","path":"R01-reference-vertical-slice.md","status":"fixed_dev","dependencies":["R00"],"parallel_group":"reference","shared_spine":true},
     {"id":"R02","path":"R02-journey-trust-data-quality.md","status":"fixed_dev","dependencies":["R01"],"parallel_group":"platform-core","shared_spine":true},
     {"id":"R03","path":"R03-built-in-skill-package.md","status":"fixed_dev","dependencies":["R01"],"parallel_group":"foundation-a","shared_spine":false},
-    {"id":"R04","path":"R04-team-skill-hub-stage-a.md","status":"specified","dependencies":["R03","R06"],"parallel_group":"foundation-b","shared_spine":true},
+    {"id":"R04","path":"R04-team-skill-hub-stage-a.md","status":"in_progress","dependencies":["R03","R06"],"parallel_group":"foundation-b","shared_spine":true},
     {"id":"R05","path":"R05-business-semantic-registry.md","status":"fixed_dev","dependencies":["R01"],"parallel_group":"foundation-a","shared_spine":true},
     {"id":"R06","path":"R06-operator-model-contracts.md","status":"fixed_dev","dependencies":["R01"],"parallel_group":"foundation-a","shared_spine":false},
     {"id":"R07","path":"R07-context-pack-repo-provider.md","status":"fixed_dev","dependencies":["R01"],"parallel_group":"foundation-a","shared_spine":true},

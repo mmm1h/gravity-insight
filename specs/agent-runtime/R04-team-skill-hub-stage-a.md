@@ -3,15 +3,51 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `specified` |
+| Status | `in_progress`; plan-owner ready verdict 2026-08-22 |
 | Track | Skill distribution |
 | Dependencies | R03, R06 |
 | Parallel group | `foundation-b` |
 | Shared-spine integration | CLI wiring is serialized |
+| Delivery ledger | This Requirement document; no internal GitHub Issue |
+| Baseline | `dev@8325554` |
+| Branch / worktree | `codex/r04-team-skill-hub-stage-a` / `D:\git-pjt\gravity-sdk-wt\r04-team-skill-hub-stage-a` |
+| Integrator | Root Codex agent; Skill/Trusted Pack CLI wiring remains serial |
+| Production/external requests | `0`; live Hub, credentials and environment mutation are not authorized |
 
 ## Outcome
 
 Team members can synchronize two explicitly separated Artifact channels: static no-code Skill content, and reviewed Team Trusted Operator/Model packs installed externally from exact wheels/digests and allowlisted groups.
+
+## Plan Owner Verdict And Ready Binding
+
+The user authorized continuous implementation without repeated Requirement
+approval. R03 and R06 are `fixed_dev`; the plan owner reviewed
+`tmp/r04-team-skill-hub-stage-a-proposal.md` and its conflict ledger, bound the
+current baseline/worktree/safety gates below, and advanced R04 through
+`reviewed` and `ready` to `in_progress`. This does not authorize production or
+external requests, credentials, package installation, Runtime environment
+mutation, release or `main` promotion.
+
+- Hub Protocol v1 uses explicit team-controlled local Git mirrors or exact
+  static HTTPS identities; tests use local/fake transports and make zero live
+  requests. Search discovers, while resolve/lock require exact versions.
+- Skill Content and Trusted Packs have distinct Index entries, locks, CAS roots
+  and commands. Locks contain only reproducible facts; local path/time/health
+  stays in separate installation state and never participates in resolution.
+- Ordinary Skill ZIPs must match the R03 Render Model after archive attack
+  checks. Fetch verifies source revision/index/artifact/package digests before a
+  single-flight atomic CAS commit; install only materializes static content.
+- Trusted Pack handling produces a non-executable external Installer plan.
+  Startup verifies only the exact locked distribution/receipt/groups, performs
+  no global entry-point scan or code load, and never invokes pip or a package
+  manager.
+- Built-in `LocalSkillResolver` remains independent and reports `unlocked`;
+  R09B owns future Team lock binding. R04 adds no route, executor, binder,
+  Runtime-time Hub network path or generic plugin mechanism.
+- Exact acceptance includes two-project deterministic locks, local Git/fake
+  HTTPS, concurrent CAS, archive attacks, offline materialization, lock/state
+  separation, trusted wheel plan/startup verification, CLI/SDK/docs/public API,
+  real wheel, full gates and unchanged usability/security.
 
 ## Current Baseline
 
