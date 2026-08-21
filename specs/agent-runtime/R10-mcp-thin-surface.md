@@ -2,16 +2,16 @@
 
 | Field | Value |
 | --- | --- |
-| Parent directive | `gravity-agent-runtime/v9` via `directive.json` |
+| Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
 | Status | `specified`; conditional |
 | Track | Host protocol surface |
-| Dependencies | R09 plus trigger |
+| Dependencies | R09A plus trigger |
 | Parallel group | `optional-surface` |
 | Shared-spine integration | Required and serialized |
 
 ## Trigger
 
-At least two real Host/consumer integrations require MCP and a CLI/SDK parity corpus is frozen, or the user explicitly approves a bounded pilot with exit conditions. Architecture inclusion alone does not make this requirement ready.
+At least two real Host/consumer integrations require MCP and a CLI/SDK parity corpus is frozen, or the user explicitly approves a bounded pilot with exit conditions. Architecture inclusion alone does not make this requirement ready. R09B/R09C capabilities are exposed only when installed; they are not R10 prerequisites.
 
 ## Outcome
 

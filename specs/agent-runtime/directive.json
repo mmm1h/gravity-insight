@@ -1,16 +1,27 @@
 {
   "schema_version": "gravity.agent-runtime-directive.v1",
   "directive_id": "gravity-agent-runtime",
-  "version": "v9",
+  "version": "v9.1",
   "status": "approved",
-  "source": {
+  "canonical_source": {
+    "repository_path": "architecture-source.md",
+    "sha256": "a15c76d8b55376a5c05769f53f07b6f21ef4a527edfa9ed8e715c3da32f12ec4",
+    "format": "markdown",
+    "retrieval": "repository_relative_to_directive"
+  },
+  "origin": {
     "file_name": "gravity-agent-runtime_产品方向架构与Codex开发总纲 (1).md",
+    "imported_sha256": "bafee3deeb3268fdfe17845f8e9925a509db1b1a04aa15babc7ce38c01d3a46f",
+    "authority": "provenance_only"
+  },
+  "supersedes": {
+    "version": "v9",
     "sha256": "bafee3deeb3268fdfe17845f8e9925a509db1b1a04aa15babc7ce38c01d3a46f"
   },
   "approval": {
     "approved_by": "user",
     "approved_at": "2026-08-21",
-    "scope": "architecture_finalization_and_requirement_decomposition",
+    "scope": "canonical_architecture_source_and_requirement_graph_corrections",
     "implementation_requires_ready_requirement": true
   },
   "review_baseline": {
@@ -19,7 +30,7 @@
   },
   "documentation_baseline": {
     "branch": "dev",
-    "sha": "c1a8656fb22e00d7247a38c4ed316d2a9037827f",
+    "sha": "fcdf10db2871c432c851f747c53eb13dd8ea87bd",
     "requirement": "R00",
     "status": "fixed_dev"
   },
@@ -30,7 +41,7 @@
     "status": "frozen",
     "development_target": "dev",
     "unfreeze_requires": [
-      "R00-R16_and_CT01-CT03_program_scope_complete",
+      "all_index_requirements_fixed_dev",
       "integrated_validation_green",
       "explicit_new_user_approval"
     ]

@@ -14,7 +14,7 @@
 | 配置 App、recipe、SQL 产品或调用方语义 | [Workspace 参考](reference/workspace.md) | [架构与概念](architecture.md) |
 | 导出文件或把结果交给 LLM | [导出指南](guides/export.md) | [结果与 LLM 安全](guides/llm-output-safety.md) |
 | 修改 SDK、合同、探针或 Evidence | [维护者入口](maintainers/index.md) | [扩展地图](maintainers/extending.md) |
-| 参与 Gravity Agent Runtime 大改造 | [Requirement Index](../specs/agent-runtime/index.md) | [路线图](roadmap.md)、[架构与概念](architecture.md)、当前 `ready` 需求 |
+| 参与 Gravity Agent Runtime 大改造 | [完整架构总纲](../specs/agent-runtime/architecture-source.md) | [Requirement Index](../specs/agent-runtime/index.md)、[路线图](roadmap.md)、当前 `ready` 需求 |
 | 查看当前动线、候选阻塞、排期或技术债 | [分析动线](analysis-journeys.md) | [候选矩阵](candidate-capability-matrix.md)、[路线图](roadmap.md)、[技术债](maintainers/technical-debt.md) |
 | 复核外部调研或历史取证 | [当前调研结论](research.md) | [历史与证据归档](archive/index.md) |
 
@@ -22,7 +22,7 @@
 
 1. **Insight-first。** Stable Insight 能等价表达的问题不走 SQL。
 2. **只执行已登记能力。** 不接受任意 URL、HTTP 方法、裸 SQL 或未登记字段；合同漂移 fail closed。
-3. **业务语义属于调用方。** 活动、SKU、窗口和埋点绑定放在调用项目；SDK 只解析并验证物理输入。
+3. **Schema 与实例分属两层。** Runtime 拥有可复用 Semantic Schema、通用定义、URI 和通用校验；具体活动/SKU/App/埋点绑定、公式参数与生效窗口由调用项目提供。
 
 ## 文档职责
 

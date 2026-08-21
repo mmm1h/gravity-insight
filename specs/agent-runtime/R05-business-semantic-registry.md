@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Parent directive | `gravity-agent-runtime/v9` via `directive.json` |
+| Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
 | Status | `specified` |
 | Track | Method and meaning |
 | Dependencies | R01 |
@@ -15,11 +15,12 @@ Reusable Metric, Dimension, Entity, Cohort, Event, SKU, Activity and Release def
 
 ## Current Baseline
 
-Workspace and `workspace_semantic_context.py` already carry App aliases, verified queries, terms, exclusions and derived metric declarations. Business formulas and activity/SKU/tracking facts are intentionally calling-project data, but there is no uniform versioned Semantic URI or conflict model.
+Workspace and `workspace_semantic_context.py` already carry App aliases, verified queries, terms, exclusions and derived metric declarations. Concrete activity/SKU/tracking bindings plus project formula parameters/effective windows remain calling-project data, but Runtime lacks reusable Semantic types/common definitions, versioned URIs and a uniform conflict model.
 
 ## Scope
 
 - Define Semantic schema, stable URI/version, owner and effective range.
+- Own reusable types, common metric/method definitions and generic formula structure; keep concrete project bindings/values/parameters in project sources.
 - Validate formula dependencies, units, currency, additivity, time grain, cohort/entity and attribution windows.
 - Compile project JSON/TOML/provider input into immutable definitions.
 - Resolve Skill/Journey dependencies offline.

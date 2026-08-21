@@ -15,11 +15,11 @@
 
 用户已批准将本仓库从当前 Gravity SDK 内核演进为 Gravity Agent Runtime。目标范围包括同层 Capability Trust/Data Quality、版本化 Skill、Business Semantic、确定性 Operator/Model、有界 Context、受治理 Action/Artifact 和按触发条件建设的 MCP、隔离 SQL Explorer 与 External Control Plane。
 
-目标架构与当前能力必须分开：当前接口仍以 CLI/SDK/Plan、catalog 和机器合同为准；未实现的目标面不得写成已交付。批准总纲通过 `specs/agent-runtime/directive.json` 绑定，串并行依赖和状态以 [Requirement Index](../specs/agent-runtime/index.md) 为准。
+目标架构与当前能力必须分开：当前接口仍以 CLI/SDK/Plan、catalog 和机器合同为准；未实现的目标面不得写成已交付。完整批准总纲位于 [architecture source](../specs/agent-runtime/architecture-source.md)，通过 `directive.json` 绑定 digest；串并行依赖和状态以 [Requirement Index](../specs/agent-runtime/index.md) 为准。
 
 当前程序状态：
 
-1. **R00 产品宪法与需求拆分（fixed-dev）**：v9 总纲、directive、无环需求图和 R00-R16/CT01-CT03 已在 `dev` 完成并通过整仓门禁；不表示已发布到 `main`。
+1. **R00 产品宪法与需求拆分（fixed-dev）**：v9.1 canonical 总纲、directive 和细化后的无环需求图已在 `dev` 完成并通过整仓门禁；不表示已发布到 `main`。
 2. **R01 参考纵向切片**：保持 `specified`；用户/计划 owner 选定真实 Journey、调用项目、现有执行路径和请求边界后才能进入 `ready`。
 3. **Phase 0 正确性维护**：分页证据、私有 API 漂移、身份、Census、错误和消费者问题继续推进，不被内容 Track 阻塞。
 4. **并行规则**：依赖满足且写入边界不重叠的领域 core 可在独立 `codex/<unit>` worktree 并行；共享 spine 最终接线由一个 integrator 串行完成。
@@ -34,7 +34,7 @@
 - recognizer 的零候选词法恢复保留原评分；只在原评分弃权且索引内证据足量、唯一并明显领先近邻时选择 owner，索引外填充词不单独构成召回依据。
 - recognizer 只对显式协调结构拆分多意图；中文成对 `既…也/又…`、保留右侧名词的 `和其他` 及 `和…一起/一并` 可由各子句独立 owner 组成精确 selector 集，已登记 unavailable gap 仍作为同次交接附件返回。
 - `report.get.query` 的 Agent owner card 暴露合同派生的顶层 raw 输入模板与完整 compact input schema，并优先于同 selector 的 generic operation card。
-- 业务语义、活动绑定和派生公式属于调用项目，不进入 SDK。
+- Runtime 拥有可复用 Semantic 类型/Schema、通用指标/方法定义、版本化 URI，以及单位、可加性、时间粒度、依赖、冲突和公式结构校验；调用项目拥有具体活动名称、SKU 实值、App/埋点绑定、项目专属公式参数与生效窗口和部门口径。
 - 读取共享全局有界并发预算；不叠加 adapter 私有线程池或增加请求总量。
 - Session、CredentialProvider、metadata/operation catalog、FieldPolicy metadata snapshot 与 receipt state 按 resolved env、账号、principal、credential generation 和 workspace 的不可逆摘要隔离，默认 env 不例外；host limiter 与进程级并发槽继续全局共享，scope 摘要不进入公开输出。
 - 未登记字段、破坏性响应漂移、身份/权限不确定和不完整分页 fail closed。

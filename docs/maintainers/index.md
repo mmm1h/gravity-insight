@@ -10,7 +10,7 @@
 | 领取、推进或关闭 GitHub Issue | [Issue 状态管理](issues.md) |
 | 完成发布治理中的人工决策或占位符 | [负责人操作清单](owner-actions.md) |
 | 查看或清理结构性技术债 | [技术债清单](technical-debt.md) |
-| 实施 Gravity Agent Runtime 需求 | [Requirement Index](../../specs/agent-runtime/index.md)；再读唯一一个已批准 `ready` 需求 |
+| 实施 Gravity Agent Runtime 需求 | [完整架构总纲](../../specs/agent-runtime/architecture-source.md) → [Requirement Index](../../specs/agent-runtime/index.md) → 唯一已批准 `ready` 叶子需求/里程碑 |
 | 定位已交付 composite / CLI / SDK / Plan owner | [产品面总览](product-surfaces.md) |
 | 维护变现明细产品与 discovery guard | [Monetization Detail Guard](monetization-discovery-guard.md) |
 | 选择 operation、codec、CLI、recipe、SQL 或 export 扩展面 | [扩展地图](extending.md) |

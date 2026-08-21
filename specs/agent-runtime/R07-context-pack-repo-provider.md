@@ -1,8 +1,8 @@
-# R07 Context Pack And Repo Context Provider
+# R07 Entity/Time-aligned Context Pack And Repo Context Provider
 
 | Field | Value |
 | --- | --- |
-| Parent directive | `gravity-agent-runtime/v9` via `directive.json` |
+| Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
 | Status | `specified` |
 | Track | Context foundation |
 | Dependencies | R01 |
@@ -11,7 +11,7 @@
 
 ## Outcome
 
-A Skill can request the minimum project facts it needs and receive a bounded, cited Context Pack from a built-in Repo Provider, with explicit freshness, trust, sensitivity, conflicts and gaps.
+A Skill can request the minimum project facts it needs and receive a bounded, cited Context Pack from a built-in Repo Provider, aligned to the same Semantic entities, version/activity time window and source authority.
 
 ## Current Baseline
 
@@ -22,6 +22,8 @@ Agents directly read AGENTS/README/docs/code/git using host tools. Workspace sem
 - Define Context Provider, Item, Requirement and Pack schemas.
 - Implement deterministic Repo discovery for governance docs, manifests, contracts, project definitions and git facts.
 - Return path/line/revision/content hash citations.
+- Require `entity_refs`, `valid_time`, `observed_at`, `effective_range`, `authority`, `source_revision` and `supersedes` on Context Items or an explicit unsupported/gap reason.
+- Resolve entity aliases through R05 Semantic identities and align items to Journey/App/Release/Activity scope before Pack inclusion.
 - Enforce required/optional, freshness, access, sensitivity, conflict and budget handling.
 - Support lexical/structured/AST discovery; embeddings remain optional and non-authoritative.
 
@@ -33,7 +35,7 @@ Agents directly read AGENTS/README/docs/code/git using host tools. Workspace sem
 
 ## Machine Contract
 
-Context content has role `data`. Pack digest covers normalized item references and policy-relevant metadata. Status is `available|stale|missing|denied|conflicting|unsupported`; required gaps affect readiness, optional gaps only narrow claims.
+Context content has role `data`. `valid_time` describes when the fact applies; `observed_at` only records when the Provider saw it; `effective_range` describes when a definition/configuration is authoritative. `authority=canonical|supporting|unverified` controls claim use, and `supersedes` preserves replacement lineage. Pack digest covers normalized item references, entity/time alignment and policy metadata. Status is `available|stale|missing|denied|conflicting|unsupported`; required gaps affect readiness, optional gaps only narrow claims.
 
 ## Migration And Compatibility
 
@@ -46,6 +48,8 @@ Honor `.gitignore`, `.gravityignore`, file/byte/item budgets, sensitive path den
 ## Acceptance
 
 - R01 gets a minimal deterministic Context Pack with exact citations.
+- The Pack reports matched, excluded and superseded items for requested entities/time and applies canonical-before-supporting authority rules.
+- A feedback/document item outside the selected release/activity window cannot support a confirmed claim for that Journey.
 - Required/optional gaps and conflicts are machine-readable.
 - Prompt-injection content remains data.
 - Ignored, binary, oversized and sensitive content is not indexed or leaked.
@@ -53,7 +57,7 @@ Honor `.gitignore`, `.gravityignore`, file/byte/item budgets, sensitive path den
 
 ## Verification
 
-Temporary repository fixtures, path/citation/hash tests, ignore/sensitivity corpus, prompt-injection cases, conflict/freshness tests, budget tests, deterministic index checks and full gates.
+Temporary repository fixtures, path/citation/hash tests, entity alias/release/activity/time-window alignment, authority/supersession conflicts, ignore/sensitivity corpus, prompt-injection cases, budget tests, deterministic index checks and full gates.
 
 ## Rollback And Exit
 

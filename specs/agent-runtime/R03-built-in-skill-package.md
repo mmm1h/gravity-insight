@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Parent directive | `gravity-agent-runtime/v9` via `directive.json` |
+| Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
 | Status | `specified` |
 | Track | Skill packaging foundation |
 | Dependencies | R01 |

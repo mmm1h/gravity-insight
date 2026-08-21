@@ -2,10 +2,10 @@
 
 | Field | Value |
 | --- | --- |
-| Parent directive | `gravity-agent-runtime/v9` via `directive.json` |
+| Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
 | Status | `specified` |
 | Track | Content validation |
-| Dependencies | CT01, R09 |
+| Dependencies | CT01, R09B |
 | Parallel group | `content-b` |
 | Main integration | Frozen until whole program completion |
 
@@ -29,7 +29,7 @@ Selection is based on architecture coverage and real Gravity analysis value, not
 
 ## Current Baseline
 
-CT01 provides source topics; R09 provides the stable runtime composition model. R01's Built-in reference Skill is an architectural slice and does not by itself prove content migration diversity or Hub synchronization.
+CT01 provides source topics; R09A provides Core Skill Runtime and R09B provides Team Hub binding. R01's Built-in reference Skill is an architectural slice and does not by itself prove content migration diversity or Hub synchronization. R09C is required only for a representative Skill that explicitly needs external Context.
 
 ## Scope
 

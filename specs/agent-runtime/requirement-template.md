@@ -2,16 +2,19 @@
 
 | Field | Value |
 | --- | --- |
-| Parent directive | `gravity-agent-runtime/v9` via `directive.json` |
+| Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
 | Status | `draft` |
 | Track | `<track>` |
 | Dependencies | `<IDs or none>` |
 | Parallel group | `<group>` |
+| Delivery mode | `leaf` unless total architecture explicitly permits `staged_epic` |
 | Main integration | Frozen until whole program completion |
 
 ## Outcome
 
 State the user-visible or machine-visible outcome. One requirement must own one end-to-end deliverable, not one implementation phase.
+
+For a `staged_epic`, enumerate mandatory child milestones and require a separate Issue, branch, commit, acceptance and rollback for each. The parent cannot become `fixed_dev` until all milestones do.
 
 ## Current Baseline
 

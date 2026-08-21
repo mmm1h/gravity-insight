@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Parent directive | `gravity-agent-runtime/v9` via `directive.json` |
+| Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
 | Status | `specified`; conditional |
 | Track | Supply chain and updates |
 | Dependencies | R04 plus trigger |
@@ -15,7 +15,7 @@ Document an external trust/compliance boundary: untrusted transport, cross-organ
 
 ## Outcome
 
-An External Control Plane builds, publishes, verifies, stages, canaries and rolls back Runtime/Skill/Provider/Operator artifacts while preserving Stage A Manifest, digest and lock semantics. Runtime never replaces its own loaded wheel.
+An External Control Plane builds, publishes, verifies, stages, canaries and rolls back Runtime/Skill/Provider/Operator artifacts while preserving Stage A Skill-content and Trusted-Pack artifact kinds, digests and lock semantics. Runtime never replaces its own loaded wheel.
 
 ## Current Baseline
 
@@ -34,7 +34,7 @@ R04 provides trusted-source team synchronization, digest locks and local CAS. Re
 
 - No Runtime self-download, self-install or in-process version switch.
 - No implicit latest, partial component activation or public marketplace requirement.
-- No change to Stage A lock/digest semantics.
+- No change to Stage A Skill or Trusted Pack lock/digest semantics and no merging of code into ordinary Skill packages.
 
 ## Machine Contract
 

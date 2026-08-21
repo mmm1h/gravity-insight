@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Parent directive | `gravity-agent-runtime/v9` via `directive.json` |
+| Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
 | Status | `specified` |
 | Track | Provider boundary |
 | Dependencies | R07 |
@@ -22,7 +22,7 @@ Host agents may already access GitHub, files, Feishu or other connectors indepen
 - Define descriptor transport, effects, auth scope, resources, capabilities, freshness and trust.
 - Govern RPC concurrency, call count, timeout, cancellation, retry boundary, output byte/token limits and circuit state.
 - Require Provider-reported RPC statistics and optional self-reported internal I/O/cache statistics.
-- Normalize resources into Context Items/Packs.
+- Normalize resources into Context Items with entity/time/authority/supersession fields, or return an explicit alignment capability gap.
 - Isolate Provider failure from core Gravity data execution.
 
 ## Non-goals
@@ -33,7 +33,7 @@ Host agents may already access GitHub, files, Feishu or other connectors indepen
 
 ## Machine Contract
 
-Descriptor capabilities include list/search/read/list-changed, cancellation, caching, output formats and freshness semantics. Unsupported capabilities return stable reasons. Self-reported internal statistics are audit data, never proof that Runtime enforced those requests.
+Descriptor capabilities include list/search/read/list-changed, cancellation, caching, output formats, freshness and entity/time alignment semantics. Unsupported capabilities return stable reasons. Provider search rank is not entity/time authority; R07 Broker performs final alignment. Self-reported internal statistics are audit data, never proof that Runtime enforced those requests.
 
 ## Migration And Compatibility
 
@@ -48,6 +48,7 @@ Subprocess launch uses a sanitized environment, bounded working directory, expli
 - Timeout, cancellation, oversize, malformed and unavailable Providers return Context Gaps.
 - Unauthorized resources are neither listed nor disclosed through errors.
 - Runtime metrics distinguish enforced RPC counts from self-reported internal counts.
+- Items without provable entity/time/authority metadata remain unverified and cannot support confirmed claims.
 - Provider failure cannot consume the core request pool indefinitely.
 - No returned content becomes instruction or authorization.
 

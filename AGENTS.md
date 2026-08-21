@@ -21,11 +21,13 @@ dependency graph, parallelism constraints, and explicit non-goals.
 This repository owns the governed Runtime plane and its external control-plane
 clients: Insight reads/exports, registered and isolated SQL products, route
 census, contracts, probes, trust/data-quality/privacy gates, versioned Skills,
-reusable Semantic/Operator/Model contracts, bounded Context, governed Action and
-Artifact handoff, and their agent-facing CLI/SDK/Plan/MCP surfaces. Reusable
-industry methods may live here; concrete game activities, SKU values, tracking
-bindings, department reporting language, and campaign decisions remain in the
-calling project.
+reusable Semantic types/schemas/common definitions, Operator/Model contracts,
+bounded Context, governed Action and Artifact handoff, and their agent-facing
+CLI/SDK/Plan/MCP surfaces. Runtime owns versioned URIs plus unit, additivity,
+time-grain, dependency, conflict and formula-structure validation. Reusable
+industry methods may live here; concrete game activity names, SKU values,
+tracking/App bindings, project formula parameters/effective windows, department
+reporting language, and campaign decisions remain in the calling project.
 
 ## Development principles
 
@@ -49,8 +51,11 @@ calling project.
   executable plugin mechanism, dependency-injection framework, or abstraction
   for a single call site. Reuse the existing composite / plan adapter / agent
   card triad and keep one execution owner.
-- **Opportunistic cleanup only in files the current change already touches.**
-  Do not open standalone refactor branches.
+- **No unrelated opportunistic refactors.** Cleanup outside the active
+  requirement's scope remains prohibited. An approved `ready` Requirement may
+  own an explicit structural migration, including a dedicated refactor branch,
+  only when its write scope, current-behavior characterization, capability
+  preservation, consumer migration, rollback and exit conditions are recorded.
 - **A breaking surface change must not cost capability.** Direct breaking
   upgrades are allowed, but first prove no read capability is lost; record the
   finding in `docs/roadmap.md`.
@@ -69,7 +74,10 @@ calling project.
 
 Independent units develop on separate `codex/<unit>` branches and merge back to
 `dev` once green. Do not split one unit across branches by phase; core, surface,
-and agent handoff have ordering dependencies.
+and agent handoff have ordering dependencies. For a directive-approved
+`staged_epic`, each indexed milestone is an independent unit and branch, and
+must still deliver its own complete core/surface/handoff slice rather than
+splitting that milestone again by implementation phase.
 
 The shared spine is `plan_adapters.py`, `agent_capabilities.py`,
 `agent_composite.py`, `agent_handoff.py`, `cli.py`, and `__main__.py`. Preserve
@@ -104,13 +112,16 @@ Do not let the list become an archive.
 - SDK changes start at `docs/maintainers/index.md` and then read only the
   task-specific maintainer page.
 - Gravity Agent Runtime program work also reads
-  `specs/agent-runtime/directive.json`, the Requirement Index, and exactly one
-  externally approved `ready` requirement. A specification cannot approve
-  itself or silently change the parent architecture.
+  `specs/agent-runtime/directive.json`, the complete repository-canonical
+  `architecture-source.md`, the Requirement Index, and exactly one externally
+  approved `ready` requirement. A specification cannot approve itself or
+  silently change the parent architecture.
 - `docs/archive/` preserves non-normative history and evidence. Never use it as
   the source of current interfaces, schedule, capability state, or debt.
-- Reusable business methods and their machine schemas may live in Runtime.
-  Project-specific activity/SKU/tracking values, campaign strategy, and final
+- Runtime owns reusable Semantic types/schemas, common metric/method definitions,
+  versioned URIs and generic validation for units, additivity, time, dependencies
+  and conflicts. Project-specific activity names, SKU values, tracking/App
+  bindings, formula parameters/effective windows, campaign strategy, and final
   reporting language belong in the calling product knowledge base.
 
 ## Consumer migration
@@ -171,11 +182,11 @@ isolated.
   still resolve imports from the `main` checkout and produce false test results.
 - Promote validated changes from `dev` to `main` only as an explicit release
   action after the required checks pass.
-- For the Gravity Agent Runtime program, all R00-R16 and CT01-CT03 feature work
-  remains on `codex/*` branches and `dev` until the whole program is complete,
-  integrated validation is green, and the user gives a new explicit approval.
-  A single requirement reaching `fixed_dev` is never a reason to merge it to
-  `main`.
+- For the Gravity Agent Runtime program, every executable node and staged-epic
+  milestone in `specs/agent-runtime/index.json` remains on `codex/*` branches
+  and `dev` until the whole program is complete, integrated validation is green,
+  and the user gives a new explicit approval. A single requirement reaching
+  `fixed_dev` is never a reason to merge it to `main`.
 - Push `dev` to GitHub at the end of every round. Remove a merged worktree and
   run `git worktree prune` as part of closing that unit, not as a later cleanup.
 

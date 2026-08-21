@@ -27,7 +27,7 @@ python -m gravity_sdk agent-catalog describe analysis.query.spec:event
 - 未知任务：第一次发现并选择，第二次执行；不要逐条启动多个进程。
 - 多个独立读取：放入一个 Plan 或 batch，复用全局有界并发预算。
 - Analysis spec：先读产品卡的 `schema_argv`，不要从 Web wire 或邻近 operation 猜形状。
-- 业务词、公式和 App alias：由调用项目的 workspace 声明，SDK 不推断。
+- Runtime Semantic Registry 提供可复用类型、通用定义、URI 和校验；具体业务词绑定、公式参数/生效窗口和 App alias 由调用项目 workspace 声明，Runtime 不猜测。
 
 产品级步骤见[任务指南](agent-skills/index.md)，通用编排见[Agent 工作流](agent-workflow.md)。
 
@@ -70,7 +70,7 @@ python -m gravity_sdk agent-catalog describe analysis.query.spec:event
 ```text
 1. 认证有效；不记录凭据。
 2. 从 catalog 选择已登记产品，不猜 selector。
-3. 补齐 App、日期和物理字段；业务语义来自 workspace。
+3. 补齐 App、日期和物理字段；通用 Semantic 来自 Runtime，项目实例绑定来自 workspace。
 4. 只执行 success + executable 的交接。
 5. 检查 envelope 状态、窗口、warning、diagnostic 和 interpretation。
 6. 重要数字做一次独立对账。

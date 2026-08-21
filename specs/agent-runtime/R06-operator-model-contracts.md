@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Parent directive | `gravity-agent-runtime/v9` via `directive.json` |
+| Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
 | Status | `specified` |
 | Track | Deterministic analysis methods |
 | Dependencies | R01 |
@@ -21,6 +21,7 @@ The repository contains local derived metric operations and product-specific cal
 
 - Define Operator identity/version/owner, schemas, assumptions, safe domain and failure reasons.
 - Implement the R01 reference Operator and extract a narrow registry.
+- Define the trusted-pack descriptor and exact distribution identity consumed later by R04.
 - Define Model Artifact identity, parameters/artifact digest, fitting lineage, evaluation, expiry and safe horizon when first required.
 - Record method/model references in Analysis Result and Receipt.
 - Establish deterministic/golden test protocol.
@@ -28,12 +29,12 @@ The repository contains local derived metric operations and product-specific cal
 ## Non-goals
 
 - Operators do not fetch data, choose products or access credentials.
-- No remote Skill-supplied code or implicit Python plugin discovery.
+- No remote Skill-supplied code, Runtime-time installation or implicit Python environment/plugin discovery.
 - No MLflow service requirement and no LLM-selected prediction model.
 
 ## Machine Contract
 
-Operator code is part of the Runtime wheel or an explicitly installed trusted pack. Registry lookup is by exact URI/version. Insufficient sample, unit mismatch, invalid assumptions and unsupported domain return stable failures. Model validation is distinct from current data quality.
+Stage A initially runs Built-in Operators from the Runtime wheel. A team-shared Operator may later come from an R04 Team Trusted Pack: exact distribution/version/wheel digest, external installation and explicit allowed group. Registry lookup is by exact URI/version and never scans unlisted distributions. Insufficient sample, unit mismatch, invalid assumptions and unsupported domain return stable failures. Model validation is distinct from current data quality.
 
 ## Migration And Compatibility
 
@@ -50,6 +51,7 @@ Operators consume bounded governed results and Context summaries, never raw cred
 - Unapproved/expired models cannot produce production claims.
 - Method/version/limitations appear in structured output.
 - Remote Skill packages cannot introduce executable code.
+- The trusted-pack contract is distributable by R04 without changing Operator identity or allowing Skill-triggered installation.
 
 ## Verification
 
@@ -57,7 +59,7 @@ Golden fixtures, property/numerical edge tests, resource-limit tests, serializat
 
 ## Rollback And Exit
 
-Keep prior Operator versions addressable while active consumers migrate. Revocation prevents new execution but preserves historical Receipt resolution. Rollback pins the prior exact version.
+Keep prior Operator versions addressable while active consumers migrate. Built-in rollback pins the prior Runtime wheel; trusted-pack rollback pins the prior exact external distribution/digest. Revocation prevents new execution but preserves historical Receipt resolution.
 
 ## Canonical Owners
 
