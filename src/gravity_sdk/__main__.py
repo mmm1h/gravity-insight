@@ -18,6 +18,7 @@ Usage:
   gravity plan run --input <plan.json>
   gravity journey list|verify|describe|can-run|impact|run
   gravity capabilities trust|validate|impact
+  gravity skills list|show|export-agent
   gravity analysis saved list|get|prepare|run
   gravity analysis saved create|update|delete --dry-run|--execute
   gravity analysis template list|prepare|run

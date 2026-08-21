@@ -127,6 +127,10 @@
     ".journey_service",
     "JourneyService"
   ],
+  "LocalSkillResolver": [
+    ".skill_package",
+    "LocalSkillResolver"
+  ],
   "ManifestError": [
     ".error_types",
     "ManifestError"

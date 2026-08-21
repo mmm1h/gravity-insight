@@ -31,6 +31,14 @@ python -m gravity_sdk agent-catalog describe analysis.query.spec:event
 
 产品级步骤见[任务指南](agent-skills/index.md)，通用编排见[Agent 工作流](agent-workflow.md)。
 
+```powershell
+gravity skills list
+gravity skills show <skill_uri>
+```
+
+已知 Skill 可用上面命令离线读版本和缺口。Skill 不替代选路、Journey、权限或执行合同；
+`blocked` 必须停止，`validated` 不代表当前可执行。
+
 ## 3. 识别发现终态
 
 | 终态 | 含义 | 处理 |
