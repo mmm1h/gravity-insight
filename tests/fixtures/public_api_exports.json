@@ -31,6 +31,10 @@
     ".segment_spec",
     "CompiledSegmentSpec"
   ],
+  "CapabilityTrustService": [
+    ".capability_trust",
+    "CapabilityTrustService"
+  ],
   "CompositeService": [
     ".composite",
     "CompositeService"
@@ -119,6 +123,10 @@
     ".error_types",
     "InputValidationError"
   ],
+  "JourneyService": [
+    ".journey_service",
+    "JourneyService"
+  ],
   "ManifestError": [
     ".error_types",
     "ManifestError"
@@ -166,10 +174,6 @@
   "PlanValidationError": [
     ".plan",
     "PlanValidationError"
-  ],
-  "ReferenceJourneyService": [
-    ".reference_journey",
-    "ReferenceJourneyService"
   ],
   "PolicyViolation": [
     ".error_types",

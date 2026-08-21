@@ -1,0 +1,34 @@
+{
+  "artifact_kind": "capability",
+  "schema_version": "gravity.capability.v1",
+  "identity_kind": "product",
+  "selector": "metric-anomaly-localization@1",
+  "contract_version": "1",
+  "display_name": "Metric Anomaly Localization Product",
+  "lifecycle": "active",
+  "owner": "gravity-runtime/analysis",
+  "effect": "read",
+  "privacy_classification": "internal_business",
+  "provider": {
+    "kind": "analysis_playbook",
+    "fingerprint": "ce900bf1e4bd60d195ee3badc00baf12cff3179ea374930173172beae3861b64"
+  },
+  "dependencies": [
+    {
+      "identity_kind": "operation",
+      "selector": "report.multidim.query",
+      "contract_version": "4",
+      "minimum_trust": "stable",
+      "completeness": "complete",
+      "data_quality": "pass"
+    }
+  ],
+  "declared_completeness": "unknown",
+  "required_data_quality": "pass",
+  "allowed_claims": [
+    "window-metric-change",
+    "returned-dimension-change",
+    "selected-slice-observation"
+  ],
+  "validation_ttl_seconds": 86400
+}

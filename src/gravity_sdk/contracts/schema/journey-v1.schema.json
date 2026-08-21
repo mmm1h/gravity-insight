@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.journey.v1",
+  "type": "object",
+  "required": [
+    "artifact_kind",
+    "schema_version",
+    "journey_id",
+    "version",
+    "display_name",
+    "display_binding",
+    "lifecycle",
+    "owner",
+    "calling_project",
+    "required_capabilities",
+    "required_semantics",
+    "required_operators",
+    "required_models",
+    "required_context",
+    "required_skill",
+    "surfaces",
+    "request_budget",
+    "claim_policy",
+    "execution",
+    "project_contract_path"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_kind": {"const": "journey"},
+    "schema_version": {"const": "gravity.journey.v1"},
+    "journey_id": {"type": "string", "minLength": 3, "maxLength": 256, "pattern": "^[a-z][a-z0-9.-]*$"},
+    "version": {"type": "integer", "minimum": 1, "maximum": 2147483647},
+    "display_name": {"type": "string", "minLength": 1, "maxLength": 256},
+    "display_binding": {
+      "type": "object",
+      "required": ["legacy_display_key"],
+      "additionalProperties": false,
+      "properties": {
+        "legacy_display_key": {"type": "string", "minLength": 1, "maxLength": 256}
+      }
+    },
+    "lifecycle": {"enum": ["active", "deprecated", "revoked"]},
+    "owner": {"type": "string", "minLength": 1, "maxLength": 128},
+    "calling_project": {"type": ["string", "null"], "maxLength": 256},
+    "required_capabilities": {"type": "array", "maxItems": 64, "uniqueItems": true, "items": {"$ref": "#/$defs/capability_requirement"}},
+    "required_semantics": {"$ref": "#/$defs/uri_array"},
+    "required_operators": {"$ref": "#/$defs/uri_array"},
+    "required_models": {"$ref": "#/$defs/uri_array"},
+    "required_context": {"$ref": "#/$defs/uri_array"},
+    "required_skill": {"type": ["string", "null"], "maxLength": 256},
+    "surfaces": {
+      "type": "object",
+      "required": ["cli", "sdk", "plan", "agent"],
+      "additionalProperties": false,
+      "properties": {
+        "cli": {"enum": ["available", "declared", "not_applicable", "missing"]},
+        "sdk": {"enum": ["available", "declared", "not_applicable", "missing"]},
+        "plan": {"enum": ["available", "declared", "not_applicable", "missing"]},
+        "agent": {"enum": ["available", "declared", "not_applicable", "missing"]}
+      }
+    },
+    "request_budget": {
+      "type": "object",
+      "required": ["known_requests_min", "known_requests_max", "unknown_discovery_max", "acceptance_production_requests", "runtime_additional_requests"],
+      "additionalProperties": false,
+      "properties": {
+        "known_requests_min": {"type": "integer", "minimum": 0, "maximum": 100000},
+        "known_requests_max": {"type": "integer", "minimum": 0, "maximum": 100000},
+        "unknown_discovery_max": {"type": "integer", "minimum": 0, "maximum": 100000},
+        "acceptance_production_requests": {"type": "integer", "minimum": 0, "maximum": 100000},
+        "runtime_additional_requests": {"type": "integer", "minimum": 0, "maximum": 100000}
+      }
+    },
+    "claim_policy": {
+      "type": "object",
+      "required": ["allowed", "forbidden"],
+      "additionalProperties": false,
+      "properties": {
+        "allowed": {"$ref": "#/$defs/claim_array"},
+        "forbidden": {"$ref": "#/$defs/claim_array"}
+      }
+    },
+    "execution": {
+      "type": "object",
+      "required": ["mode", "owner", "path"],
+      "additionalProperties": false,
+      "properties": {
+        "mode": {"enum": ["operation", "product", "composite", "plan", "unavailable"]},
+        "owner": {"type": "string", "minLength": 1, "maxLength": 256},
+        "path": {"type": "array", "maxItems": 32, "items": {"type": "string", "minLength": 1, "maxLength": 256}}
+      }
+    },
+    "project_contract_path": {"type": ["string", "null"], "maxLength": 512}
+  },
+  "$defs": {
+    "capability_requirement": {
+      "type": "object",
+      "required": ["identity_kind", "selector", "contract_version", "minimum_trust", "completeness", "data_quality"],
+      "additionalProperties": false,
+      "properties": {
+        "identity_kind": {"enum": ["operation", "product", "composite"]},
+        "selector": {"type": "string", "minLength": 1, "maxLength": 256},
+        "contract_version": {"type": "string", "minLength": 1, "maxLength": 64},
+        "minimum_trust": {"enum": ["stable", "degraded"]},
+        "completeness": {"enum": ["complete", "prefix", "unknown"]},
+        "data_quality": {"enum": ["pass", "warn", "unknown"]}
+      }
+    },
+    "uri_array": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 256}
+    },
+    "claim_array": {
+      "type": "array",
+      "maxItems": 128,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-z][a-z0-9-]*$"}
+    }
+  }
+}

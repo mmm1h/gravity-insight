@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.journey-ledger-snapshot.v1",
+  "type": "object",
+  "required": ["schema_version", "source_path", "source_sha256", "snapshot_digest", "row_count", "rows", "network_called"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.journey-ledger-snapshot.v1"},
+    "source_path": {"const": "docs/analysis-journeys.md"},
+    "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "snapshot_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "row_count": {"type": "integer", "minimum": 1, "maximum": 10000},
+    "rows": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10000,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/row"}
+    },
+    "network_called": {"const": false}
+  },
+  "$defs": {
+    "row": {
+      "type": "object",
+      "required": ["legacy_display_key", "display_name", "ledger_status", "surfaces", "request_budget", "blocker_note", "counted", "can_return_business_content", "row_digest"],
+      "additionalProperties": false,
+      "properties": {
+        "legacy_display_key": {"type": "string", "minLength": 1, "maxLength": 256},
+        "display_name": {"type": "string", "minLength": 1, "maxLength": 256},
+        "ledger_status": {"type": "string", "minLength": 1, "maxLength": 256},
+        "surfaces": {
+          "type": "object",
+          "required": ["raw", "cli", "sdk", "plan", "agent"],
+          "additionalProperties": false,
+          "properties": {
+            "raw": {"type": "string", "minLength": 1, "maxLength": 1024},
+            "cli": {"type": "string", "minLength": 1, "maxLength": 256},
+            "sdk": {"type": "string", "minLength": 1, "maxLength": 256},
+            "plan": {"type": "string", "minLength": 1, "maxLength": 256},
+            "agent": {"type": "string", "minLength": 1, "maxLength": 256}
+          }
+        },
+        "request_budget": {
+          "type": "object",
+          "required": ["raw"],
+          "additionalProperties": false,
+          "properties": {
+            "raw": {"type": "string", "minLength": 1, "maxLength": 1024}
+          }
+        },
+        "blocker_note": {"type": "string", "maxLength": 65536},
+        "counted": {"type": "boolean"},
+        "can_return_business_content": {"type": "boolean"},
+        "row_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

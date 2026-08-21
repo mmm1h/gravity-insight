@@ -1,0 +1,32 @@
+{
+  "artifact_kind": "capability",
+  "schema_version": "gravity.capability.v1",
+  "identity_kind": "product",
+  "selector": "analysis.query.spec:event",
+  "contract_version": "1",
+  "display_name": "Event Analysis Product",
+  "lifecycle": "active",
+  "owner": "gravity-runtime/analysis",
+  "effect": "read",
+  "privacy_classification": "user_level",
+  "provider": {
+    "kind": "agent_product_card",
+    "fingerprint": "9148e5a2440eae168c53dedefe8097141d95d5c9dadd7691e3532d72a35d67c7"
+  },
+  "dependencies": [
+    {
+      "identity_kind": "operation",
+      "selector": "analysis.event.query",
+      "contract_version": "1",
+      "minimum_trust": "stable",
+      "completeness": "complete",
+      "data_quality": "pass"
+    }
+  ],
+  "declared_completeness": "unknown",
+  "required_data_quality": "pass",
+  "allowed_claims": [
+    "returned-event-metric-observation"
+  ],
+  "validation_ttl_seconds": 86400
+}

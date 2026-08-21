@@ -1028,15 +1028,22 @@ gravity promotion custom-audiences --max-pages 1000 --max-items 100000
 未登记字段失败关闭。未知入口使用 `gravity agent "custom audience coverage status"
 --domain promotion`，返回无缺失输入的唯一 `composite:custom_audience` 卡。
 
-## Reference Journey
+## Journey And Capability Trust
 
 ```powershell
+gravity journey list
+gravity journey verify
 gravity journey describe analysis.merge2.ap-cost-anomaly-localization
 gravity --workspace <project> journey can-run analysis.merge2.ap-cost-anomaly-localization --input <request.json>
+gravity journey impact --input <capability-impact-request.json>
 gravity --workspace <project> journey run analysis.merge2.ap-cost-anomaly-localization --input <request.json>
+
+gravity capabilities trust operation app.list
+gravity capabilities validate --input <capability-validation.json>
+gravity capabilities impact --input <capability-impact-request.json>
 ```
 
-`describe` 与 `can-run` 严格离线；`run` 也先执行同一 readiness，只有
+`list/verify/describe/can-run/impact` 严格离线；`run` 也先执行同一 readiness，只有
 `can_run_status=verified` 才委托既有 `metric-anomaly-localization@1` / Plan v1 路径。
 当前 `report.multidim.query` 的合同完整性是 `unknown`，低于 Journey 要求的 `complete`，
 因此真实项目 `can-run/run` 返回 exit 4、`blocked` 和
@@ -1044,6 +1051,26 @@ gravity --workspace <project> journey run analysis.merge2.ap-cost-anomaly-locali
 Project Semantic 与 Context Pack 来自调用项目的固定 R01 机器合同；结果和 Receipt 只携带
 URI、revision、hash、digest 与 citation，不保存 Context 正文。Skill 不是第三条路由臂，
 CLI 也不拥有新 executor、binder、pagination 或 permission 逻辑。
+
+Capability Trust 的 `stable` 必须同时有同层合同、匹配 provider fingerprint、未过期的当前
+Validation、满足要求的 completeness 和 DQ；子 Operation 不能替 Product/Composite 生成
+Trust。`validate` 只验证输入，不写 principal-scoped store。impact 输入固定为：
+
+```json
+{
+  "schema_version": "gravity.capability-impact-request.v1",
+  "changes": [
+    {
+      "identity_kind": "operation",
+      "selector": "report.multidim.query",
+      "change_kind": "provider_fingerprint_changed"
+    }
+  ]
+}
+```
+
+合法 `change_kind` 为 `provider_fingerprint_changed|contract_changed|lifecycle_changed|validation_changed|data_quality_changed`。
+输出只列受影响 Capability、Skill、Journey identity 与稳定 reason code，不执行或重跑生产查询。
 
 ## Analysis playbook
 

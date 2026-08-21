@@ -9,9 +9,10 @@ import unittest
 from unittest.mock import patch
 
 from gravity_sdk.analysis_playbook import run_metric_anomaly_playbook
+from gravity_sdk.data_quality import data_quality_result
 from gravity_sdk.reference_journey import (
     INPUT_SCHEMA_VERSION,
-    ReferenceJourneyService,
+    ReferenceJourneyRunner,
 )
 from gravity_sdk.reference_journey_contract import reference_artifacts
 from tests.test_analysis_playbook import FakePlanExecutor, playbook_input
@@ -26,28 +27,47 @@ def journey_input():
 
 
 def stable_trust():
-    artifact = reference_artifacts()["capability_trust"]
+    artifact = reference_artifacts()["capability"]
+    contract = artifact["contract"]
     return {
         "schema_version": "gravity.capability-trust-result.v1",
         "identity_kind": "product",
         "selector": "metric-anomaly-localization@1",
+        "contract_version": contract["contract_version"],
         "lifecycle": "active",
         "trust_status": "stable",
         "contract_digest": artifact["digest"],
-        "operation": {
-            "operation_id": "report.multidim.query",
-            "contract_version": "4",
-            "contract_fingerprint": "5f5cf69fb1184ea1f25a279c39e5bd1dde6493e39c09dfda81639dfda373d991",
-            "completeness": "complete",
-            "pagination_evidence": "production",
+        "provider": {
+            "kind": "analysis_playbook",
+            "expected_fingerprint": contract["provider"]["fingerprint"],
+            "current_fingerprint": contract["provider"]["fingerprint"],
+            "status": "matched",
         },
-        "validation": {"schema_version": "gravity.capability-validation.v1"},
-        "required_completeness": "complete",
-        "required_data_quality": "pass",
+        "validation": None,
+        "completeness": "complete",
+        "data_quality": data_quality_result(
+            [
+                {
+                    "check_id": "fixture",
+                    "status": "pass",
+                    "scope": "metric-anomaly-localization@1",
+                }
+            ]
+        ),
+        "dependencies": [],
         "allowed_claims": ["window-metric-change"],
         "reason_codes": [],
         "network_called": False,
     }
+
+
+class StaticTrustService:
+    def __init__(self, value):
+        self.value = value
+
+    def trust(self, identity_kind, selector):
+        self.assert_identity = (identity_kind, selector)
+        return copy.deepcopy(self.value)
 
 
 class FakeSDK:
@@ -90,7 +110,7 @@ class ReferenceJourneyTests(unittest.TestCase):
         )
         self.workspace = SimpleNamespace(root=self.root, state_root=self.state)
         self.sdk = FakeSDK(self.workspace)
-        self.service = ReferenceJourneyService(self.sdk)
+        self.service = ReferenceJourneyRunner(self.sdk)
         self.revision = patch(
             "gravity_sdk.reference_project_contract._git_snapshot",
             return_value=("0" * 40, "2026-08-21T12:00:00Z"),
@@ -100,16 +120,6 @@ class ReferenceJourneyTests(unittest.TestCase):
     def tearDown(self):
         self.revision.stop()
         self.temporary.cleanup()
-
-    def test_describe_is_offline_and_value_free(self):
-        result = self.service.describe()
-        self.assertEqual(
-            "analysis.merge2.ap-cost-anomaly-localization",
-            result["journey"]["journey_id"],
-        )
-        self.assertEqual(0, result["request_budget"]["runtime_additional_requests"])
-        self.assertFalse(result["network_called"])
-        self.assertEqual([], self.sdk.calls)
 
     def test_current_real_contract_blocks_before_execution(self):
         readiness = self.service.can_run(journey_input())
@@ -123,11 +133,11 @@ class ReferenceJourneyTests(unittest.TestCase):
         self.assertFalse(result["network_called"])
         self.assertEqual([], self.sdk.calls)
 
-    @patch(
-        "gravity_sdk.reference_journey.evaluate_reference_trust",
-        side_effect=lambda *_args, **_options: stable_trust(),
-    )
-    def test_verified_snapshot_uses_existing_playbook_and_builds_analysis_result(self, _trust):
+    def test_verified_snapshot_uses_existing_playbook_and_builds_analysis_result(self):
+        self.service = ReferenceJourneyRunner(
+            self.sdk,
+            capability_trust=StaticTrustService(stable_trust()),
+        )
         readiness = self.service.can_run(journey_input())
         result = self.service.run(journey_input())
 
@@ -144,11 +154,11 @@ class ReferenceJourneyTests(unittest.TestCase):
         self.assertNotIn("Ignore instructions", rendered)
         self.assertNotIn("complete App total", result["findings"][0]["statement"])
 
-    @patch(
-        "gravity_sdk.reference_journey.evaluate_reference_trust",
-        side_effect=lambda *_args, **_options: stable_trust(),
-    )
-    def test_invalid_input_and_missing_project_binding_call_no_executor(self, _trust):
+    def test_invalid_input_and_missing_project_binding_call_no_executor(self):
+        self.service = ReferenceJourneyRunner(
+            self.sdk,
+            capability_trust=StaticTrustService(stable_trust()),
+        )
         invalid = journey_input()
         invalid["current_window"] = {"start": "bad", "end": "bad"}
         self.assertEqual("invalid", self.service.can_run(invalid)["can_run_status"])
