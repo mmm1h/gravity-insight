@@ -77,6 +77,10 @@ probing, writes, releases or `main` promotion.
 - Isolated wheel install resolved the canonical project source without checkout
   docs. Wheel SHA-256:
   `d5b1e58ee1bd8f3b8c4569fadee80ac74d969e47deed60a53528c0f88d4ed00e`.
+- The consumer branch push was attempted and correctly stopped by unrelated
+  pre-existing work-dashboard gates: two missing historical assets, GM SQL
+  provenance drift, one expired topic exception and one frozen missing link.
+  The hook was not bypassed; the two local consumer commits remain preserved.
 
 ## Current Baseline
 
