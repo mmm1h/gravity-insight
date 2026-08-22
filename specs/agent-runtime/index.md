@@ -57,7 +57,7 @@ CT01 + R09B → CT02 → CT03
 | [R09B](R09B-team-hub-binding.md) | Team Hub Skill binding | R04, R09A | `fixed_dev` | Leaf |
 | [R09C](R09C-external-context-binding.md) | External Context binding | R08, R09A | `fixed_dev` | Leaf |
 | [R10](R10-mcp-thin-surface.md) | MCP thin Resources/Tools surface | R09A + trigger | `specified` | Conditional leaf |
-| [R11](R11-pap-pilot.md) | Prepared Analysis Plan pilot | R02 | `in_progress` | Leaf |
+| [R11](R11-pap-pilot.md) | Prepared Analysis Plan pilot | R02 | `fixed_dev` | Leaf |
 | [R12](R12-action-experiment-receipt.md) | Action, Receipt, Experiment and Outcome | R09A | `specified` | Staged epic A→B→C |
 | [R13A](R13A-artifact-transfer.md) | Governed binary Artifact Transfer | R02 | `specified` | Leaf |
 | [R13B](R13B-analysis-artifact-renderer.md) | Analysis Artifact and non-Gravity Renderer | R09A | `specified` | Leaf |

@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; plan-owner ready binding accepted 2026-08-22 |
+| Status | `fixed_dev`; integrated and validated on `dev` 2026-08-22 |
 | Track | Optional Plan-backed optimization |
 | Dependencies | R02 |
 | Parallel group | `independent-pilot` |
@@ -60,6 +60,65 @@ release or `main` promotion.
   privacy/tamper/expiry/bounds; input/source/contract/catalog drift; checkpoint
   atomicity; isolated wheel; full repository, usability/security and retained
   consumer gates. Active human docs remain exactly 5500 lines.
+
+## Fixed Dev Evidence
+
+- Feature commit `f76099c` and merge `ae66b22` add strict private/public PAP
+  schemas, one `PreparedAnalysisPlanService`, lazy `GravitySDK.prepared_plans`
+  and one root export. The root now has `128` lazy exports and
+  `gravity_sdk.__all__` has `129` entries including `__version__`; no CLI, MCP,
+  Agent card, Skill/Journey dependency or new execution owner was added.
+- The pilot accepts only principal/credential-generation-scoped `from_env()`
+  SDKs and read-only host Plans composed of stable executable operation `run`
+  nodes. Direct Products, Direct Bounded Composites, SDK-internal Plans,
+  recipes, composites, SQL, metadata, receipts, arbitrary adapters and all
+  mutations retain their existing owners; unsupported PAP preparation returns
+  `PAP_UNSUPPORTED_PATH` before target calls.
+- Prepare compiles the host source boundary and delegates the exact Plan to
+  ordinary `execute_host_plan(..., dry_run=True)`, so structural validation,
+  binding and every adapter preflight complete before an atomic artifact
+  appears. Execute validates private state, replays that dry preflight and then
+  re-enters `execute_host_plan`; it returns the ordinary Plan envelope without
+  a PAP wrapper or changed request budget.
+- Private `gravity.prepared-analysis-plan.v1` state contains only canonical
+  Plan/referenced-source digests, selected operation catalog/contract and
+  workspace catalog fingerprints, preflight fingerprint, bounded counts,
+  worker budget and timestamps. It contains no raw Plan, source/input values,
+  unused tool data, credentials, Scope digest, account identifier, user rows or
+  condition-sensitive values. The public summary contains only opaque
+  nonce-specific scoped `pap_id`, topology/count/budget and expiry timestamps.
+- Store files have exact schema, canonical digest, regular-single-link/byte
+  checks, atomic create, no mutation API, fixed count/total-byte limits and
+  bounded TTL with valid expired-entry cleanup. Tests cover malformed/missing,
+  content tamper, hardlink, expiry, capacity and failed-commit cleanup without
+  leaving a visible partial artifact.
+- Stable local reasons cover unbound scope, unsupported path, invalid reference,
+  identity/credential-generation drift, missing/tampered/expired state,
+  input/source/contract/catalog drift, invalid TTL/worker budget and store
+  bounds. Source-control pollution still returns the existing
+  `EFFECT_SOURCE_REJECTED`; all failures are value-free and occur before target
+  calls.
+- Characterization proves success, empty, upstream error, completeness,
+  projection/privacy, target request values, one-target-call count and public
+  envelope parity against direct `execute_host_plan`. The real installed SDK
+  catalog also prepares `app.list` with `run` replaced by a fail-if-called
+  sentinel, proving zero target requests rather than a fake-only path.
+- Complete gates pass `1623` unittest; `1623 passed, 3833 subtests` pytest;
+  compiler `237 operations / 11 manifests`; quality and all three generators
+  PASS; integrated R11/Plan/Composite/scope/public/docs gates pass `65` tests
+  and `13` subtests; actionable errors remain `1322 = 1157 A + 165 B + 0 C`;
+  active human docs remain exactly `5500` lines.
+- Development usability remains `296/336` selection, `248/248` fillability,
+  `53/53` offline terminal and `5/5` recovery; security PASS and production
+  HTTP requests `0`. No real credential, production/external request, mutation
+  or release action was used; scope tests used local fake env files only.
+- An isolated non-editable wheel loads both PAP schemas and the public service
+  from `site-packages`, and its real offline catalog prepare passes; wheel
+  SHA-256 is
+  `6b6b430177de961bb330a904c62bbe554b10cad45eb064a8754a15ae8a3a914d`.
+- Retained work-dashboard consumer `e4369ce8` has no PAP dependency. Its
+  current-SDK adoption/R01 suite passes `11` tests and `94` subtests; the branch
+  remains clean and no consumer migration or unrelated repair was required.
 
 ## Outcome
 
