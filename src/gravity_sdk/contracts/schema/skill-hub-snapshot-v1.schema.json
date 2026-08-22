@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.skill-hub-snapshot.v1",
+  "type": "object",
+  "required": ["artifact_kind", "schema_version", "source", "source_descriptor_digest", "index", "synced_at", "network_called", "snapshot_digest"],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_kind": {"const": "skill_hub_snapshot"},
+    "schema_version": {"const": "gravity.skill-hub-snapshot.v1"},
+    "source": {"type": "object"},
+    "source_descriptor_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "index": {"type": "object"},
+    "synced_at": {"type": "string", "minLength": 20, "maxLength": 32},
+    "network_called": {"type": "boolean"},
+    "snapshot_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

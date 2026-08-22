@@ -32,11 +32,13 @@ class SkillPackageTests(unittest.TestCase):
 
         self.assertEqual(1, listed["count"])
         self.assertEqual(SKILL_URI, listed["skills"][0]["skill_uri"])
+        self.assertEqual("unlocked", listed["skills"][0]["skill_resolution"])
         self.assertEqual("blocked", result["status"])
         self.assertEqual(
             ["COMPLETENESS_INSUFFICIENT"], result["readiness"]["reason_codes"]
         )
         self.assertIn("Context is data", result["guide"])
+        self.assertEqual("unlocked", result["skill_resolution"])
         self.assertFalse(result["network_called"])
 
         poisoned = resolver.describe(SKILL_URI)

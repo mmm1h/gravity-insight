@@ -29,6 +29,8 @@ _EXPORTS = {
         ".capability_trust", "CapabilityTrustService"
     ),
     "LocalSkillResolver": (".skill_package", "LocalSkillResolver"),
+    "SkillHubClient": (".skill_hub_client", "SkillHubClient"),
+    "TrustedPackHubClient": (".trusted_pack_hub", "TrustedPackHubClient"),
     "SemanticRegistry": (".semantic_registry", "SemanticRegistry"),
     "OperatorRegistry": (".operator_registry", "OperatorRegistry"),
     "ModelRegistry": (".model_registry", "ModelRegistry"),

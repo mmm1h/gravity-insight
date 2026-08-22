@@ -1073,18 +1073,18 @@ Trust。`validate` 只验证输入，不写 principal-scoped store。impact 输�
 合法 `change_kind` 为 `provider_fingerprint_changed|contract_changed|lifecycle_changed|validation_changed|data_quality_changed`。
 输出只列受影响 Capability、Skill、Journey identity 与稳定 reason code，不执行或重跑生产查询。
 
-## Built-in Skills
+## Skills and Team Hub
 
 ```powershell
 gravity skills list
 gravity skills show skill://gravity.game/ap-cost-anomaly-localization@1.0.0
 gravity skills export-agent skill://gravity.game/ap-cost-anomaly-localization@1.0.0 --output <parent-directory>
+gravity skills sync --source hub-source.json --repository <local-git-mirror> --state-root <state>
+gravity skills lock --skill skill://org.example/team-analysis@1.0.0 --output gravity.skills.lock.json --state-root <state>
+gravity trusted-packs install-plan --lock gravity.trusted-packs.lock.json --output install-plan.json --state-root <state> --cas-root <cas>
 ```
 
-`list/show` 只读 wheel package；`show` 可读 principal-scoped Validation，但不发目标请求、选 Product
-或执行 Skill。R01 当前为 `blocked/COMPLETENESS_INSUFFICIENT`。`export-agent` 从同一 JSON
-Render Model 原子创建 `SKILL.md` + `references/`，拒绝覆盖。普通包无 scripts/执行/网络/SQL/授权；
-该命令不是 Hub install，远程 sync、CAS、lock 与 Trusted Pack 尚不属于当前表面。
+`list/show/export-agent` 继续只读 Built-in package；Team Hub 的 `sync/search/show/resolve/lock/fetch/install/update/verify/audit` 只接受显式本地 Git mirror 或 exact static HTTPS Source，search 不选择版本，lock 不含本机状态，install 只物化无代码 Render Model。Trusted Pack 使用独立 `resolve/lock/fetch/verify/install-plan`、lock 与 CAS；计划只交给外部 Installer，不执行 pip、加载 entry point 或绑定 Runtime，R09B 才负责项目 Team lock。
 
 ## Analysis playbook
 

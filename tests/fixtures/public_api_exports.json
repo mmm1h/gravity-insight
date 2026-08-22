@@ -203,6 +203,10 @@
     ".semantic_registry",
     "SemanticRegistry"
   ],
+  "SkillHubClient": [
+    ".skill_hub_client",
+    "SkillHubClient"
+  ],
   "SqlBatchRequest": [
     ".sql",
     "SqlBatchRequest"
@@ -222,6 +226,10 @@
   "TransportError": [
     ".error_types",
     "TransportError"
+  ],
+  "TrustedPackHubClient": [
+    ".trusted_pack_hub",
+    "TrustedPackHubClient"
   ],
   "UnknownOperationError": [
     ".error_types",

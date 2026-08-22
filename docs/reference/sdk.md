@@ -619,20 +619,20 @@ R01 `analysis.merge2.ap-cost-anomaly-localization` 保留唯一的当前 Journey
 等价，不构成生产完整性证据。其他 pilot Journey 当前只用于 list/verify/describe/can-run/impact；
 R02 不为它们创建第二套路由或执行器，未绑定执行时 `run()` 失败关闭。
 
-## Built-in Skill Packages
+## Skill Packages and Team Hub
 
 ```python
-from gravity_sdk import LocalSkillResolver
-resolver = LocalSkillResolver()
-result = resolver.get("skill://gravity.game/ap-cost-anomaly-localization@1.0.0")
-export = resolver.export_agent("skill://gravity.game/ap-cost-anomaly-localization@1.0.0")
+import json
+from pathlib import Path
+from gravity_sdk import LocalSkillResolver, SkillHubClient, TrustedPackHubClient
+source = json.loads(Path("hub-source.json").read_text(encoding="utf-8"))
+hub = SkillHubClient(".gravity-state", cas_root=".gravity-cas")
+hub.sync(source, repository="/exact/local/git-mirror")
+skill_lock = hub.resolve(["skill://org.example/team-analysis@1.0.0"])["lock"]
+hub.fetch(skill_lock, source, repository="/exact/local/git-mirror")
 ```
 
-resolver 只扫描 wheel 内固定 package；JSON manifest 唯一生成 package、docs 和 Agent Skills 视图。
-四个状态正交；`validated` 不等于 `executable`。`get()` 只用 R02 Trust 算 readiness，当前 R01 为
-`blocked/COMPLETENESS_INSUFFICIENT/network_called=false`，不执行 selector。
-`materialize_agent()` 原子创建新目录并拒绝覆盖；普通包无 scripts/执行位/链接/HTTP/SQL/授权。
-`OperatorRegistry` 只按静态 URI 表执行内置 R01 方法；`ModelRegistry` 默认 inventory 为空且不预测。R06 trusted-pack descriptor 只冻结 exact wheel/digest/allowed groups；Hub、CAS、lock 与外部 Installer 仍属 R04，普通 Skill 不能携带或触发代码安装。
+`LocalSkillResolver` 仍只读 wheel 内 Built-in package 并报告 `skill_resolution=unlocked`。`SkillHubClient` 的 discovery、exact lock、CAS fetch、offline verify/materialize 与本地 installation state 不进入 Runtime 执行；`TrustedPackHubClient` 使用独立 lock/CAS，并由 `resolve/fetch/install_plan` 产生只含 exact wheel/digest/allowed groups 的外部 Installer Plan。两者都不会隐式选择 latest、扫描环境、执行 pip 或加载 entry point；普通 Skill 不能引用 Trusted Pack，R09B 才绑定项目 Team lock。
 
 ## Business Semantic 与 Semantic Compose
 
