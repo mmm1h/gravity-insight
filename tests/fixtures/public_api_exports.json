@@ -19,6 +19,10 @@
     ".analysis_primitives",
     "AnalysisStep"
   ],
+  "ActionPlanService": [
+    ".action_plan",
+    "ActionPlanService"
+  ],
   "AuthenticationError": [
     ".error_types",
     "AuthenticationError"

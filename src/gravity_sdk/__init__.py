@@ -30,6 +30,7 @@ _EXPORTS = {
     "PreparedAnalysisPlanService": (
         ".prepared_analysis_plan", "PreparedAnalysisPlanService"
     ),
+    "ActionPlanService": (".action_plan", "ActionPlanService"),
     "compile_analysis_result": (
         ".analysis_result_contract", "compile_analysis_result"
     ),
