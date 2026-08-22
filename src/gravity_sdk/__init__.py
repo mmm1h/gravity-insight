@@ -29,6 +29,16 @@ _EXPORTS = {
         ".capability_trust", "CapabilityTrustService"
     ),
     "LocalSkillResolver": (".skill_package", "LocalSkillResolver"),
+    "CallableProviderTransport": (
+        ".provider_rpc_transport", "CallableProviderTransport"
+    ),
+    "ExternalContextProvider": (
+        ".external_context_provider", "ExternalContextProvider"
+    ),
+    "ProviderRpcGuard": (".provider_rpc_guard", "ProviderRpcGuard"),
+    "subprocess_context_provider": (
+        ".external_context_provider", "subprocess_context_provider"
+    ),
     "SkillHubClient": (".skill_hub_client", "SkillHubClient"),
     "TrustedPackHubClient": (".trusted_pack_hub", "TrustedPackHubClient"),
     "SemanticRegistry": (".semantic_registry", "SemanticRegistry"),

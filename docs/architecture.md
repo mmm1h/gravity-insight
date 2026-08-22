@@ -32,7 +32,7 @@ Calling Project
   concrete App/activity/SKU/tracking bindings, project overlays and report language
 ```
 
-Skill 是声明式方法与依赖合同，不是执行器；Context 是有来源/权限/时效的数据，不是指令；Operator 是静态映射、版本化且有 golden 的确定性代码，Model 只在 lineage/evaluation/approval/expiry/horizon 全部通过时支持生产 claims。Runtime 不扫描环境或让 Skill 安装代码，并继续复用现有 Product/Composite/Plan owner。
+Skill 是声明式方法与依赖合同，不是执行器；Context 是有来源/权限/时效的 `role=data`，不是指令。外部 Provider 使用独立进程级 RPC 次数/并发/超时/取消/输出/circuit 边界，内部网络与自报统计不冒充 Runtime enforcement；subprocess 不继承 Gravity 凭据、不用 shell、限制 cwd 并终止进程树。Operator 是静态映射、版本化且有 golden 的确定性代码，Model 只在 lineage/evaluation/approval/expiry/horizon 全部通过时支持生产 claims；现有 Product/Composite/Plan owner 不变。
 
 完整目标架构以仓库内 [architecture source](../specs/agent-runtime/architecture-source.md) 为唯一上层来源，并由 [directive](../specs/agent-runtime/directive.json) 绑定 digest；具体交付按 [Requirement Index](../specs/agent-runtime/index.md) 拆分。当前源码和测试证明迁移起点；旧产品假设可以在 R00 后显式迁移，但安全、权限、隐私、写入确认、生产请求和能力不退化规则不能由需求自行豁免。
 

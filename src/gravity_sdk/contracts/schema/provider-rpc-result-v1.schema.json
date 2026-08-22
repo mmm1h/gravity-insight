@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.provider-rpc-result.v1",
+  "type": "object",
+  "required": ["schema_version", "status", "ok", "provider_uri", "provider_digest", "operation", "request_id", "resources", "context_items", "next_cursor", "reason_codes", "exit_code", "enforced_rpc", "provider_reported", "circuit", "provider_rpc_called", "provider_internal_io_controlled", "provider_internal_network"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.provider-rpc-result.v1"},
+    "status": {"enum": ["success", "empty", "context_gap"]},
+    "ok": {"type": "boolean"},
+    "provider_uri": {"type": "string", "pattern": "^context-provider://[a-z0-9.-]+/[a-z0-9./-]+@[1-9][0-9]*$"},
+    "provider_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "operation": {"enum": ["list", "search", "read", "list_changed"]},
+    "request_id": {"anyOf": [{"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"}, {"type": "null"}]},
+    "resources": {"type": "array", "maxItems": 256, "items": {"$ref": "#/$defs/resource"}},
+    "context_items": {"type": "array", "maxItems": 1, "items": {"type": "object"}},
+    "next_cursor": {"type": ["string", "null"], "maxLength": 1024},
+    "reason_codes": {"type": "array", "maxItems": 8, "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]*$", "maxLength": 128}},
+    "exit_code": {"type": ["integer", "null"], "minimum": 1, "maximum": 255},
+    "enforced_rpc": {"$ref": "#/$defs/enforced"},
+    "provider_reported": {"$ref": "#/$defs/reported"},
+    "circuit": {"$ref": "#/$defs/circuit"},
+    "provider_rpc_called": {"type": "boolean"},
+    "provider_internal_io_controlled": {"const": false},
+    "provider_internal_network": {"const": "not_observable"}
+  },
+  "$defs": {
+    "revision": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$"},
+    "resource": {
+      "type": "object",
+      "required": ["uri", "title", "resource_type", "source_revision"],
+      "additionalProperties": false,
+      "properties": {
+        "uri": {"type": "string", "minLength": 5, "maxLength": 2048},
+        "title": {"type": "string", "minLength": 1, "maxLength": 512},
+        "resource_type": {"enum": ["document", "code", "configuration", "contract", "release", "git_fact", "project_semantic"]},
+        "source_revision": {"$ref": "#/$defs/revision"},
+        "entity_refs": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 2048}},
+        "valid_time": {"type": "object"},
+        "effective_range": {"type": "object"},
+        "authority": {"enum": ["canonical", "supporting", "unverified"]},
+        "freshness": {"enum": ["current", "stale", "unknown"]},
+        "sensitivity": {"enum": ["public", "internal", "confidential", "restricted"]}
+      }
+    },
+    "enforced": {
+      "type": "object",
+      "required": ["logical_calls", "transport_attempts", "successes", "gaps", "retries", "timeouts", "cancellations", "unavailable", "malformed", "oversize", "busy", "permission_filtered", "output_bytes", "output_tokens", "active", "peak_active", "max_concurrency", "process_capacity", "max_calls_per_session"],
+      "additionalProperties": false,
+      "properties": {
+        "logical_calls": {"type": "integer", "minimum": 0},
+        "transport_attempts": {"type": "integer", "minimum": 0},
+        "successes": {"type": "integer", "minimum": 0},
+        "gaps": {"type": "integer", "minimum": 0},
+        "retries": {"type": "integer", "minimum": 0},
+        "timeouts": {"type": "integer", "minimum": 0},
+        "cancellations": {"type": "integer", "minimum": 0},
+        "unavailable": {"type": "integer", "minimum": 0},
+        "malformed": {"type": "integer", "minimum": 0},
+        "oversize": {"type": "integer", "minimum": 0},
+        "busy": {"type": "integer", "minimum": 0},
+        "permission_filtered": {"type": "integer", "minimum": 0},
+        "output_bytes": {"type": "integer", "minimum": 0},
+        "output_tokens": {"type": "integer", "minimum": 0},
+        "active": {"type": "integer", "minimum": 0, "maximum": 8},
+        "peak_active": {"type": "integer", "minimum": 0, "maximum": 8},
+        "max_concurrency": {"type": "integer", "minimum": 1, "maximum": 8},
+        "process_capacity": {"const": 8},
+        "max_calls_per_session": {"type": "integer", "minimum": 1, "maximum": 10000}
+      }
+    },
+    "reported": {
+      "type": "object",
+      "required": ["internal_requests", "retries", "cache_hits", "enforced"],
+      "additionalProperties": false,
+      "properties": {
+        "internal_requests": {"type": ["integer", "null"], "minimum": 0},
+        "retries": {"type": ["integer", "null"], "minimum": 0},
+        "cache_hits": {"type": ["integer", "null"], "minimum": 0},
+        "enforced": {"const": false}
+      }
+    },
+    "circuit": {
+      "type": "object",
+      "required": ["state", "consecutive_failures", "open_count", "cooldown_remaining_ms"],
+      "additionalProperties": false,
+      "properties": {
+        "state": {"enum": ["closed", "open", "half_open"]},
+        "consecutive_failures": {"type": "integer", "minimum": 0},
+        "open_count": {"type": "integer", "minimum": 0},
+        "cooldown_remaining_ms": {"type": "integer", "minimum": 0, "maximum": 3600000}
+      }
+    }
+  }
+}
