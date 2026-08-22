@@ -619,20 +619,20 @@ R01 `analysis.merge2.ap-cost-anomaly-localization` 保留唯一的当前 Journey
 等价，不构成生产完整性证据。其他 pilot Journey 当前只用于 list/verify/describe/can-run/impact；
 R02 不为它们创建第二套路由或执行器，未绑定执行时 `run()` 失败关闭。
 
-## Skill Packages and Team Hub
+## Skill And Provider Control Planes
 
 ```python
 import json
 from pathlib import Path
-from gravity_sdk import LocalSkillResolver, SkillHubClient, TrustedPackHubClient
+from gravity_sdk import CallableProviderTransport, ExternalContextProvider, LocalSkillResolver, SkillHubClient, TrustedPackHubClient
 source = json.loads(Path("hub-source.json").read_text(encoding="utf-8"))
 hub = SkillHubClient(".gravity-state", cas_root=".gravity-cas")
 hub.sync(source, repository="/exact/local/git-mirror")
-skill_lock = hub.resolve(["skill://org.example/team-analysis@1.0.0"])["lock"]
-hub.fetch(skill_lock, source, repository="/exact/local/git-mirror")
+transport = CallableProviderTransport("host", host_provider_call)
+external = ExternalContextProvider(external_descriptor, transport)
 ```
 
-`LocalSkillResolver` 仍只读 wheel 内 Built-in package 并报告 `skill_resolution=unlocked`。`SkillHubClient` 的 discovery、exact lock、CAS fetch、offline verify/materialize 与本地 installation state 不进入 Runtime 执行；`TrustedPackHubClient` 使用独立 lock/CAS，并由 `resolve/fetch/install_plan` 产生只含 exact wheel/digest/allowed groups 的外部 Installer Plan。两者都不会隐式选择 latest、扫描环境、执行 pip 或加载 entry point；普通 Skill 不能引用 Trusted Pack，R09B 才绑定项目 Team lock。
+`LocalSkillResolver` 仍只读 Built-in package 并报告 `unlocked`；`SkillHubClient`/`TrustedPackHubClient` 分离 exact lock、CAS、无代码 materialize 与外部 Installer Plan，普通 Skill 不能触发代码安装，R09B 才绑定 Team lock。`ExternalContextProvider` 只接受显式 `mcp|host|subprocess` descriptor 和 read-only transport；进程级 RPC Guard 强制次数/并发/超时/取消/重试/字节/token/circuit，权限外 URI 不调用或披露，Context 始终 `role=data`。`provider_reported` 内部 I/O/cache/retry 永不算 enforced；subprocess executable/argv/cwd 不出现在公共 `describe()`，且外部依赖到 R09C 才影响 Skill，R10 MCP Server 仍需独立 trigger。
 
 ## Business Semantic 与 Semantic Compose
 

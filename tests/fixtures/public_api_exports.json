@@ -35,6 +35,10 @@
     ".capability_trust",
     "CapabilityTrustService"
   ],
+  "CallableProviderTransport": [
+    ".provider_rpc_transport",
+    "CallableProviderTransport"
+  ],
   "CompositeService": [
     ".composite",
     "CompositeService"
@@ -98,6 +102,10 @@
   "ExportState": [
     ".export_runtime",
     "ExportState"
+  ],
+  "ExternalContextProvider": [
+    ".external_context_provider",
+    "ExternalContextProvider"
   ],
   "GravityClient": [
     ".sql",
@@ -186,6 +194,10 @@
   "PlanValidationError": [
     ".plan",
     "PlanValidationError"
+  ],
+  "ProviderRpcGuard": [
+    ".provider_rpc_guard",
+    "ProviderRpcGuard"
   ],
   "PolicyViolation": [
     ".error_types",
@@ -434,6 +446,10 @@
   "segment_rule_spec_schema": [
     ".segment_spec",
     "segment_rule_spec_schema"
+  ],
+  "subprocess_context_provider": [
+    ".external_context_provider",
+    "subprocess_context_provider"
   ],
   "title_packages": [
     ".title_package",

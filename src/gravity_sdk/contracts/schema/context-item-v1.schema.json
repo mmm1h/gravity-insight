@@ -18,7 +18,7 @@
     "effective_range": {"$ref": "#/$defs/date_range"},
     "observed_at": {"type": "string", "minLength": 20, "maxLength": 32},
     "authority": {"enum": ["canonical", "supporting", "unverified"]},
-    "source_revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "source_revision": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$"},
     "content_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "freshness": {"enum": ["current", "stale", "unknown"]},
     "source_trust": {"enum": ["project_authoritative", "reviewed", "observed", "untrusted"]},

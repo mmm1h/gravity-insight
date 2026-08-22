@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.provider-rpc-request.v1",
+  "type": "object",
+  "required": ["schema_version", "request_id", "provider_uri", "operation", "payload"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.provider-rpc-request.v1"},
+    "request_id": {"type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},
+    "provider_uri": {"type": "string", "pattern": "^context-provider://[a-z0-9.-]+/[a-z0-9./-]+@[1-9][0-9]*$", "maxLength": 256},
+    "operation": {"enum": ["list", "search", "read", "list_changed"]},
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "query": {"type": "string", "minLength": 1, "maxLength": 4096},
+        "resource_uri": {"type": "string", "minLength": 5, "maxLength": 2048},
+        "cursor": {"type": ["string", "null"], "maxLength": 1024},
+        "limit": {"type": "integer", "minimum": 1, "maximum": 256},
+        "since_revision": {"type": "string", "minLength": 1, "maxLength": 256}
+      }
+    }
+  }
+}
