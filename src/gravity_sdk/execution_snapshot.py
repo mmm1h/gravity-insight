@@ -79,6 +79,7 @@ def compile_execution_snapshot(value: Mapping[str, Any]) -> dict[str, Any]:
         ("context_packs", "requirement_uri"),
     ):
         _unique(selected[field], key)
+    _validate_skill_binding(selected["skill"])
     _reject_values(selected)
     return selected
 
@@ -96,6 +97,42 @@ def _unique(values: Sequence[Mapping[str, Any]], *keys: str) -> None:
     identities = [tuple(str(value[key]) for key in keys) for value in values]
     if identities != sorted(identities) or len(identities) != len(set(identities)):
         raise ExecutionSnapshotError("Execution snapshot references are not unique and ordered")
+
+
+def _validate_skill_binding(value: Mapping[str, Any] | None) -> None:
+    if value is None:
+        return
+    fields = (
+        "team_lock_digest",
+        "hub_source_digest",
+        "hub_source_reference",
+        "trusted_pack_lock_digest",
+        "trusted_pack_state_digest",
+        "trusted_pack_verification_digest",
+    )
+    if value["resolution"] == "unlocked":
+        if any(value[field] is not None for field in fields):
+            raise ExecutionSnapshotError(
+                "Unlocked Skill snapshot contains Team binding state"
+            )
+        return
+    if (
+        value["team_lock_digest"] is None
+        or value["hub_source_digest"] is None
+        or value["hub_source_reference"] is None
+        or canonical_digest(value["hub_source_reference"])
+        != value["hub_source_digest"]
+    ):
+        raise ExecutionSnapshotError("Locked Skill snapshot source binding changed")
+    trusted = (
+        value["trusted_pack_lock_digest"],
+        value["trusted_pack_state_digest"],
+        value["trusted_pack_verification_digest"],
+    )
+    if trusted[1] is not None and trusted[0] is None:
+        raise ExecutionSnapshotError("Trusted Pack state has no exact lock")
+    if trusted[2] is not None and trusted[1] is None:
+        raise ExecutionSnapshotError("Trusted Pack verification has no exact state")
 
 
 def _reject_values(value: Mapping[str, Any]) -> None:

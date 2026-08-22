@@ -211,6 +211,10 @@
     ".repo_context_provider",
     "RepoContextProvider"
   ],
+  "RuntimeSkillResolver": [
+    ".runtime_skill_resolver",
+    "RuntimeSkillResolver"
+  ],
   "SemanticRejectedError": [
     ".error_types",
     "SemanticRejectedError"

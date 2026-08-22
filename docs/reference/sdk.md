@@ -198,7 +198,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `metric_anomaly_playbook()` | 运行或用 checkpoint 续跑；未失效 Plan item 复用，证据不全时不发布结论 |
 | `journeys.list()` / `verify()` / `describe(id)` / `can_run(id, input)` / `impact(diff)` / `run(id, input)` | 通用 Journey 合同与 readiness 服务；R01 只有 verified 后才委托既有 playbook |
 | `capability_trust.trust(kind, selector)` / `validate(result)` / `impact(diff)` | Operation/Product/Composite 同层 Trust、只读 Validation 校验与依赖影响；不自动探测或写入 |
-| `LocalSkillResolver().list()` / `describe(id)` / `get(id)` / `export_agent(id)` / `materialize_agent(id, output)` | 只读 Built-in Skill package、依赖 readiness 与确定性 Agent Skills 导出；不选择或执行 Product |
+| `LocalSkillResolver()` / `RuntimeSkillResolver(workspace=...).resolve(id, journey=...)` | 前者只读/导出 Built-in package；后者 Built-in-first，并只读项目 exact Team lock、CAS 与 Trusted Pack startup state；均不选择或执行 Product |
 | `SemanticRegistry(sources).list()` / `describe(uri)` / `resolve(uri)` / `validate(source)` / `dependencies(uris)` | 确定性编译并离线解析版本化 Business Semantic 与项目 Binding；缺失或冲突不猜测 |
 | `OperatorRegistry()` / `ModelRegistry(sources)` | 离线解析唯一内置 Operator 与显式 Model Artifact；Model 还必须命中 startup trusted digest 才允许生产 claims，Registry 本身不预测 |
 | `material_performance()` | 按显式 App、日期窗和平台读取稳定素材表现；平台保序、共享预算、局部失败隔离 |
@@ -581,7 +581,7 @@ Agent 和 SDK 不解释模板、布局、收藏、权限、图表，也不生成
 
 ## Journey And Capability Trust
 
-`sdk.journeys`、`sdk.capability_trust` 与 `sdk.skill_runtime` 是惰性、缓存且不构造 Insight/SQL client 的窄服务；Core Skill resolver 只组合本地依赖，不执行数据：
+`sdk.journeys`、`sdk.capability_trust` 与 `sdk.skill_runtime` 是惰性、缓存且不构造 Insight/SQL client 的窄服务；Core Skill resolver 只组合 Built-in 或 exact locked Team 本地依赖，不执行数据：
 
 ```python
 journeys = sdk.journeys.list()
@@ -624,7 +624,7 @@ R02 不为它们创建第二套路由或执行器，未绑定执行时 `run()` �
 ```python
 import json
 from pathlib import Path
-from gravity_sdk import CallableProviderTransport, ExternalContextProvider, LocalSkillResolver, SkillHubClient, TrustedPackHubClient
+from gravity_sdk import CallableProviderTransport, ExternalContextProvider, LocalSkillResolver, RuntimeSkillResolver, SkillHubClient, TrustedPackHubClient
 source = json.loads(Path("hub-source.json").read_text(encoding="utf-8"))
 hub = SkillHubClient(".gravity-state", cas_root=".gravity-cas")
 hub.sync(source, repository="/exact/local/git-mirror")
@@ -632,7 +632,7 @@ transport = CallableProviderTransport("host", host_provider_call)
 external = ExternalContextProvider(external_descriptor, transport)
 ```
 
-`LocalSkillResolver` 只读 Built-in package 并报告 `unlocked`/intrinsic state；`CoreSkillRuntime` 才按当前 Project Overlay 与 R02-R07 依赖计算完整 readiness。`SkillHubClient`/`TrustedPackHubClient` 分离 exact lock、CAS、无代码 materialize 与外部 Installer Plan，R09B 才绑定 Team lock。`ExternalContextProvider` 只接受显式 `mcp|host|subprocess` descriptor 和 read-only transport；RPC Guard 强制次数/并发/超时/取消/重试/字节/token/circuit，权限外 URI 不调用或披露，Context 始终 `role=data`；外部依赖到 R09C 才影响 Skill，R10 MCP Server 仍需独立 trigger。
+`LocalSkillResolver` 只读 Built-in package 并报告 `unlocked`/intrinsic state；`RuntimeSkillResolver` 先解析 Built-in，Team identity 才要求 tracked/clean `gravity.skills.lock.json`、当前 Runtime 版本和 `<state_root>/skill-hub-cas` 完全一致。非 Built-in Operator 与全部 Model 另须 `gravity.trusted-packs.lock.json`、`trusted-packs-installation.json` 和 targeted distribution startup verification；Runtime 不创建缺失 CAS，不 sync/fetch/install、不加载 entry point 或扫描全局 package。`CoreSkillRuntime` 对两类 artifact 继续使用同一 Project Overlay 与 R02-R07 readiness。`ExternalContextProvider` 只接受显式 `mcp|host|subprocess` descriptor 和 read-only transport；外部依赖到 R09C 才影响 Skill，R10 MCP Server 仍需独立 trigger。
 
 ## Business Semantic 与 Semantic Compose
 

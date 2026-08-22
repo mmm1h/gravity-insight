@@ -26,6 +26,7 @@ _EXPORTS = {
     "connect": (".sdk", "connect"),
     "JourneyService": (".journey_service", "JourneyService"),
     "CoreSkillRuntime": (".core_skill_runtime", "CoreSkillRuntime"),
+    "RuntimeSkillResolver": (".runtime_skill_resolver", "RuntimeSkillResolver"),
     "compile_analysis_result": (
         ".analysis_result_contract", "compile_analysis_result"
     ),
