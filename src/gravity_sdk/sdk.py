@@ -68,6 +68,7 @@ class GravitySDK(
         insight_factory: ClientFactory | None = None,
         sql_factory: ClientFactory | None = None,
         workspace: Any | None = None,
+        external_context_providers: Any = (),
         _runtime_scope_bound: bool = False,
     ) -> None:
         if insight is not None and insight_factory is not None:
@@ -79,6 +80,7 @@ class GravitySDK(
         self._insight_factory = insight_factory or _default_insight_client
         self._sql_factory = sql_factory or _default_sql_client
         self._workspace = _load_workspace(workspace)
+        self._external_context_providers = tuple(external_context_providers)
         self._insight_lock = threading.Lock()
         self._sql_lock = threading.Lock()
         self._initialize_agent_runtime_services(_runtime_scope_bound)

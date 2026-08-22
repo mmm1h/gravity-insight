@@ -45,6 +45,7 @@ class AgentRuntimeSdkMixin:
                     self._skill_runtime_service = CoreSkillRuntime(
                         workspace=self._workspace,
                         capability_trust=self.capability_trust,
+                        external_context_providers=self._external_context_providers,
                     )
         return self._skill_runtime_service
 

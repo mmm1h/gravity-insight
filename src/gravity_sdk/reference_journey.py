@@ -67,7 +67,10 @@ class ReferenceJourneyRunner:
     def run(self, inputs: Mapping[str, Any]) -> dict[str, Any]:
         before = self._assess(inputs)
         if before["can_run_status"] != "verified":
-            return _blocked_analysis_result(before, network_called=False)
+            return _blocked_analysis_result(
+                before,
+                network_called=bool(before["provider_rpc_called"]),
+            )
         normalized = before["normalized_input"]
         bindings = before["semantic_bindings"]
         if len(bindings) != 1:
@@ -152,9 +155,13 @@ def _can_run_result(
         "reason_codes": copy.deepcopy(core["reason_codes"]),
         "dependencies": copy.deepcopy(core["dependencies"]),
         "request_budget": copy.deepcopy(core["request_budget"]),
+        "claim_policy": copy.deepcopy(core["claim_policy"]),
         "execution_snapshot": copy.deepcopy(core["execution_snapshot"]),
         "semantic_bindings": copy.deepcopy(core["semantic_bindings"]),
         "normalized_input": copy.deepcopy(normalized),
+        "provider_rpc_called": bool(core["provider_rpc_called"]),
+        "provider_internal_io_controlled": False,
+        "provider_internal_network": core["provider_internal_network"],
         "network_called": False,
     }
 
@@ -199,9 +206,16 @@ def _invalid_can_run(
             "context_packs": [],
         },
         "request_budget": copy.deepcopy(contract["request_budget"]),
+        "claim_policy": {
+            **copy.deepcopy(skill["contract"]["claim_policy"]),
+            "optional_context_complete": True,
+        },
         "execution_snapshot": snapshot,
         "semantic_bindings": [],
         "normalized_input": None,
+        "provider_rpc_called": False,
+        "provider_internal_io_controlled": False,
+        "provider_internal_network": "not_applicable",
         "network_called": False,
     }
 
@@ -281,7 +295,7 @@ def _success_analysis_result(
         "capabilities": copy.deepcopy(snapshot["capabilities"]),
         "operators": copy.deepcopy(snapshot["operators"]),
         "models": copy.deepcopy(snapshot["models"]),
-        "context_pack": _context_pack(readiness),
+        "context_packs": _context_packs(readiness),
         "completeness": "complete",
         "data_quality": copy.deepcopy(quality),
         "evidence_level": "L2",
@@ -304,16 +318,20 @@ def _success_analysis_result(
         "limitations": [
             "No complete App total, causality, incrementality, ROI, or natural-volume claim is allowed."
         ],
-        "allowed_claims": copy.deepcopy(playbook["allowed_claims"]),
-        "forbidden_claims": copy.deepcopy(
-            reference_artifacts()["skill"]["contract"]["claim_policy"]["forbidden"]
-        ),
+        "allowed_claims": [
+            copy.deepcopy(claim)
+            for claim in playbook["allowed_claims"]
+            if claim["claim_id"] in set(readiness["claim_policy"]["allowed"])
+        ],
+        "forbidden_claims": copy.deepcopy(readiness["claim_policy"]["forbidden"]),
         "recommended_next_actions": [],
         "receipt_references": _receipt_references(playbook),
         "execution_snapshot": copy.deepcopy(snapshot),
         "can_run_status": "verified",
         "reason_codes": [],
-        "network_called": bool(playbook.get("network_called")),
+        "network_called": bool(
+            playbook.get("network_called") or readiness["provider_rpc_called"]
+        ),
     }
     return compile_analysis_result(value)
 
@@ -339,7 +357,7 @@ def _blocked_analysis_result(
         "capabilities": copy.deepcopy(snapshot["capabilities"]),
         "operators": copy.deepcopy(snapshot["operators"]),
         "models": copy.deepcopy(snapshot["models"]),
-        "context_pack": _context_pack(readiness),
+        "context_packs": _context_packs(readiness),
         "completeness": "unknown",
         "data_quality": (
             copy.deepcopy(data_quality)
@@ -353,7 +371,7 @@ def _blocked_analysis_result(
         "limitations": ["Required Skill dependencies are not verified."],
         "allowed_claims": [],
         "forbidden_claims": copy.deepcopy(
-            reference_artifacts()["skill"]["contract"]["claim_policy"]["forbidden"]
+            (readiness.get("claim_policy") or {}).get("forbidden", [])
         ),
         "recommended_next_actions": [],
         "receipt_references": [],
@@ -392,9 +410,9 @@ def _public_can_run(value: Mapping[str, Any]) -> dict[str, Any]:
     return result
 
 
-def _context_pack(readiness: Mapping[str, Any]) -> dict[str, Any] | None:
+def _context_packs(readiness: Mapping[str, Any]) -> list[dict[str, Any]]:
     packs = readiness.get("dependencies", {}).get("context_packs", [])
-    return copy.deepcopy(packs[0]) if len(packs) == 1 else None
+    return copy.deepcopy(list(packs))
 
 
 def _supporting_references(snapshot: Mapping[str, Any]) -> list[dict[str, str]]:
@@ -427,7 +445,7 @@ def _supporting_references(snapshot: Mapping[str, Any]) -> list[dict[str, str]]:
                     {"kind": kind, "uri": item["uri"], "digest": item[digest_key]}
                 )
     for item in snapshot["context_packs"]:
-        if item["pack_digest"] is not None:
+        if item["pack_digest"] is not None and item["status"] != "blocked":
             result.append(
                 {
                     "kind": "context",

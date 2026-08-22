@@ -46,6 +46,9 @@ _EXPORTS = {
     "ExternalContextProvider": (
         ".external_context_provider", "ExternalContextProvider"
     ),
+    "ExternalContextBindingResolver": (
+        ".external_context_binding", "ExternalContextBindingResolver"
+    ),
     "ProviderRpcGuard": (".provider_rpc_guard", "ProviderRpcGuard"),
     "subprocess_context_provider": (
         ".external_context_provider", "subprocess_context_provider"

@@ -12,6 +12,7 @@ from .context_contract import (
     project_repo_provider_artifact,
     public_context_reference,
 )
+from .external_context_binding import ExternalContextBindingResolver
 from .project_skill_overlay import ProjectSkillOverlayError
 from .repo_context_git import git_snapshot
 from .repo_context_pack import assemble_context_pack
@@ -27,8 +28,10 @@ def resolve_project_context(
     scope: Mapping[str, Any],
     source_revision: str | None,
     observed_at: str | None,
-) -> tuple[list[dict[str, Any]], list[str]]:
-    required, declared, reasons = _declarations(journey, skill, overlay)
+    external_context: ExternalContextBindingResolver,
+) -> dict[str, Any]:
+    required, optional, declared = _declarations(journey, skill, overlay)
+    reasons: list[str] = []
     aliases = _entity_aliases(semantics, scope, overlay)
     root = Path(getattr(workspace, "root"))
     packs: list[dict[str, Any]] = []
@@ -46,15 +49,59 @@ def resolve_project_context(
         )
         packs.append(public)
         reasons.extend(selected_reasons)
+    repo_dependencies = set(declared)
+    expected_skill = (
+        skill["skill_uri"]
+        if skill is not None
+        else journey["contract"].get("required_skill")
+    )
+    external = external_context.resolve(
+        required=sorted(required - repo_dependencies),
+        optional=sorted(optional - repo_dependencies),
+        skill_uri=str(expected_skill or ""),
+        journey_id=journey["contract"]["journey_id"],
+        aliases=aliases,
+        windows=scope["windows"],
+        project_revision=overlay["source_revision"],
+    )
+    packs.extend(external["context_packs"])
+    reasons.extend(external["reason_codes"])
+    bound = repo_dependencies | set(external["bound_dependencies"])
+    if required - bound:
+        reasons.append("CONTEXT_REQUIRED_MISSING")
+    optional_complete = not bool(optional - bound) and bool(
+        external["optional_context_complete"]
+    )
+    for uri, pack in zip(sorted(declared), packs[: len(declared)]):
+        if not pack["claims"]["optional_context_complete"]:
+            optional_complete = False
+        if uri in optional and (
+            pack["status"] != "available"
+            or not pack["claims"]["confirmed_claims_allowed"]
+        ):
+            optional_complete = False
     _verify_revision(root, overlay, source_revision)
-    return packs, reasons
+    return {
+        "context_packs": sorted(
+            packs, key=lambda item: item["requirement"]["requirement_id"]
+        ),
+        "reason_codes": list(dict.fromkeys(reasons)),
+        "optional_context_complete": optional_complete,
+        "provider_rpc_called": external["provider_rpc_called"],
+        "provider_internal_io_controlled": False,
+        "provider_internal_network": (
+            "not_observable"
+            if external["provider_rpc_called"]
+            else "not_applicable"
+        ),
+    }
 
 
 def _declarations(
     journey: Mapping[str, Any],
     skill: Mapping[str, Any] | None,
     overlay: Mapping[str, Any],
-) -> tuple[set[str], dict[str, Mapping[str, Any]], list[str]]:
+) -> tuple[set[str], set[str], dict[str, Mapping[str, Any]]]:
     required = set(journey["contract"]["required_context"])
     optional = (
         set(skill["contract"]["context_dependencies"]["optional"])
@@ -70,8 +117,7 @@ def _declarations(
             "PROJECT_SKILL_OVERLAY_CONFLICT",
             "Project Skill Overlay contains undeclared Context dependencies",
         )
-    reasons = ["CONTEXT_REQUIRED_MISSING"] if required - set(declared) else []
-    return required, declared, reasons
+    return required, optional, declared
 
 
 def _assemble(

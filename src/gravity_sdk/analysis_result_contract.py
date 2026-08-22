@@ -8,6 +8,7 @@ from typing import Any
 
 from .agent_runtime_contracts import AgentRuntimeContractError, validate_schema
 from .data_quality import DataQualityError, validate_data_quality_result
+from .context_contract import ContextContractError, validate_public_context_pack
 from .execution_snapshot import (
     ExecutionSnapshotError,
     compile_execution_snapshot,
@@ -35,8 +36,8 @@ def compile_analysis_result(value: Mapping[str, Any]) -> dict[str, Any]:
     result["execution_snapshot"] = snapshot
     _validate_snapshot_parity(result, snapshot)
     _validate_status(result, snapshot)
-    _validate_context(result["context_pack"], snapshot["context_packs"])
-    _reject_context_content(result["context_pack"])
+    _reject_context_content(result["context_packs"])
+    _validate_contexts(result["context_packs"], snapshot["context_packs"])
     return result
 
 
@@ -71,7 +72,6 @@ def _validate_status(
             snapshot["status"] == "resolved",
             result["data_quality"]["status"] in {"pass", "warn"},
             bool(result["findings"]),
-            bool(result["allowed_claims"]),
             not result["reason_codes"],
         )
         if not all(checks):
@@ -104,30 +104,28 @@ def _validate_status(
         raise AnalysisResultContractError("Invalid Analysis Result cannot call the network")
 
 
-def _validate_context(value: Any, references: list[dict[str, Any]]) -> None:
-    if not references:
-        if value is not None:
-            raise AnalysisResultContractError(
-                "Analysis Result Context disagrees with its execution snapshot"
-            )
-        return
-    if len(references) != 1 or not isinstance(value, Mapping):
+def _validate_contexts(
+    values: list[Mapping[str, Any]], references: list[dict[str, Any]]
+) -> None:
+    try:
+        selected = [validate_public_context_pack(value) for value in values]
+    except ContextContractError as exc:
+        raise AnalysisResultContractError(str(exc)) from exc
+    observed = [
+        {
+            "requirement_uri": value.get("requirement", {}).get("requirement_id"),
+            "requirement_digest": value.get("requirement", {}).get("digest"),
+            "provider_uri": value.get("provider", {}).get("uri"),
+            "provider_digest": value.get("provider", {}).get("digest"),
+            "source_revision": value.get("provider", {}).get("source_revision"),
+            "pack_digest": value.get("pack_digest"),
+            "status": value.get("status"),
+        }
+        for value in selected
+    ]
+    if observed != references:
         raise AnalysisResultContractError(
-            "Analysis Result v1 requires exactly one referenced Context Pack"
-        )
-    reference = references[0]
-    observed = {
-        "requirement_uri": value.get("requirement", {}).get("requirement_id"),
-        "requirement_digest": value.get("requirement", {}).get("digest"),
-        "provider_uri": value.get("provider", {}).get("uri"),
-        "provider_digest": value.get("provider", {}).get("digest"),
-        "source_revision": value.get("provider", {}).get("source_revision"),
-        "pack_digest": value.get("pack_digest"),
-        "status": value.get("status"),
-    }
-    if observed != reference:
-        raise AnalysisResultContractError(
-            "Analysis Result Context reference disagrees with its snapshot"
+            "Analysis Result Context references disagree with its snapshot"
         )
 
 
