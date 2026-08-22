@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.outcome-evaluation-handoff.v1",
+  "type": "object",
+  "required": ["schema_version", "handoff_id", "handoff_digest", "status", "proposal", "experiment", "source_analysis", "outcome_journey", "evidence_window", "primary_metric", "guardrails", "independence", "reason_codes", "evaluation_performed", "created_at", "network_called"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.outcome-evaluation-handoff.v1"},
+    "handoff_id": {"type": "string", "pattern": "^out1_[0-9a-f]{32}$"},
+    "handoff_digest": {"$ref": "#/$defs/digest"},
+    "status": {"enum": ["blocked", "handoff_ready"]},
+    "proposal": {"type": "object", "required": ["proposal_id", "proposal_digest", "status"], "additionalProperties": false, "properties": {"proposal_id": {"type": "string", "pattern": "^exp1_[0-9a-f]{32}$"}, "proposal_digest": {"$ref": "#/$defs/digest"}, "status": {"enum": ["proposal_only", "ready_for_review"]}}},
+    "experiment": {"$ref": "#/$defs/experiment"},
+    "source_analysis": {"$ref": "#/$defs/source_analysis"},
+    "outcome_journey": {"$ref": "#/$defs/outcome_journey"},
+    "evidence_window": {"$ref": "#/$defs/window"},
+    "primary_metric": {"anyOf": [{"$ref": "#/$defs/metric"}, {"type": "null"}]},
+    "guardrails": {"type": "array", "maxItems": 32, "uniqueItems": true, "items": {"$ref": "#/$defs/metric"}},
+    "independence": {"$ref": "#/$defs/independence"},
+    "reason_codes": {"type": "array", "maxItems": 32, "uniqueItems": true, "items": {"$ref": "#/$defs/reason"}},
+    "evaluation_performed": {"const": false},
+    "created_at": {"$ref": "#/$defs/timestamp"},
+    "network_called": {"const": false}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "nullable_digest": {"anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]},
+    "reason": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{1,127}$"},
+    "timestamp": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"},
+    "date": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+    "window": {"type": "object", "required": ["start", "end", "timezone"], "additionalProperties": false, "properties": {"start": {"$ref": "#/$defs/date"}, "end": {"$ref": "#/$defs/date"}, "timezone": {"type": "string", "minLength": 1, "maxLength": 64}}},
+    "journey": {"type": "object", "required": ["journey_id", "version", "digest"], "additionalProperties": false, "properties": {"journey_id": {"type": "string", "minLength": 3, "maxLength": 256}, "version": {"type": "integer", "minimum": 1}, "digest": {"$ref": "#/$defs/digest"}}},
+    "experiment": {"type": "object", "required": ["experiment_ref", "status", "started_at", "ended_at", "assignment_digest", "evidence_digest"], "additionalProperties": false, "properties": {"experiment_ref": {"type": "string", "pattern": "^experiment://[A-Za-z0-9._:/@-]{1,240}$"}, "status": {"enum": ["completed", "incomplete", "cancelled"]}, "started_at": {"$ref": "#/$defs/timestamp"}, "ended_at": {"$ref": "#/$defs/timestamp"}, "assignment_digest": {"$ref": "#/$defs/nullable_digest"}, "evidence_digest": {"$ref": "#/$defs/nullable_digest"}}},
+    "source_analysis": {"type": "object", "required": ["result_digest", "journey", "scope_digest", "source_window"], "additionalProperties": false, "properties": {"result_digest": {"$ref": "#/$defs/digest"}, "journey": {"$ref": "#/$defs/journey"}, "scope_digest": {"$ref": "#/$defs/digest"}, "source_window": {"$ref": "#/$defs/window"}}},
+    "outcome_journey": {"type": "object", "required": ["journey_id", "version", "digest", "can_run_status", "reason_codes"], "additionalProperties": false, "properties": {"journey_id": {"const": "analysis.experiment-outcome-evaluation"}, "version": {"const": 1}, "digest": {"$ref": "#/$defs/digest"}, "can_run_status": {"enum": ["verified", "blocked"]}, "reason_codes": {"type": "array", "maxItems": 32, "uniqueItems": true, "items": {"$ref": "#/$defs/reason"}}}},
+    "metric": {"type": "object", "required": ["uri", "version", "definition_digest", "binding_digest", "registry_digest", "status", "direction"], "additionalProperties": false, "properties": {"uri": {"type": "string", "minLength": 8, "maxLength": 256}, "version": {"type": ["integer", "null"], "minimum": 1}, "definition_digest": {"$ref": "#/$defs/nullable_digest"}, "binding_digest": {"$ref": "#/$defs/nullable_digest"}, "registry_digest": {"$ref": "#/$defs/nullable_digest"}, "status": {"type": "string", "pattern": "^[a-z][a-z0-9_.-]{0,127}$"}, "direction": {"enum": ["increase", "decrease", "two_sided"]}}},
+    "independence": {"type": "object", "required": ["journey_distinct", "evidence_window_separate", "same_run_evaluation_allowed", "recommendation_self_validation_allowed"], "additionalProperties": false, "properties": {"journey_distinct": {"type": "boolean"}, "evidence_window_separate": {"type": "boolean"}, "same_run_evaluation_allowed": {"const": false}, "recommendation_self_validation_allowed": {"const": false}}}
+  }
+}

@@ -31,6 +31,9 @@ _EXPORTS = {
         ".prepared_analysis_plan", "PreparedAnalysisPlanService"
     ),
     "ActionPlanService": (".action_plan", "ActionPlanService"),
+    "ExperimentHandoffService": (
+        ".experiment_handoff", "ExperimentHandoffService"
+    ),
     "compile_analysis_result": (
         ".analysis_result_contract", "compile_analysis_result"
     ),

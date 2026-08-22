@@ -14,11 +14,25 @@ class AgentRuntimeSdkMixin:
         self._skill_runtime_lock = threading.Lock()
         self._prepared_plans_lock = threading.Lock()
         self._actions_lock = threading.Lock()
+        self._experiments_lock = threading.Lock()
         self._journey_service: Any | None = None
         self._capability_trust_service: Any | None = None
         self._skill_runtime_service: Any | None = None
         self._prepared_plans_service: Any | None = None
         self._actions_service: Any | None = None
+        self._experiments_service: Any | None = None
+
+    @property
+    def experiments(self) -> Any:
+        """Offline Experiment Proposal and independent Outcome Handoff service."""
+
+        if self._experiments_service is None:
+            with self._experiments_lock:
+                if self._experiments_service is None:
+                    from .experiment_handoff import ExperimentHandoffService
+
+                    self._experiments_service = ExperimentHandoffService()
+        return self._experiments_service
 
     @property
     def actions(self) -> Any:

@@ -37,7 +37,7 @@ class JourneyServiceTests(unittest.TestCase):
         verified = self.service.verify()
         described = self.service.describe("analysis.event-trend")
 
-        self.assertEqual(5, listed["count"])
+        self.assertEqual(6, listed["count"])
         self.assertEqual(
             sorted(item["journey_id"] for item in listed["journeys"]),
             [item["journey_id"] for item in listed["journeys"]],
@@ -58,6 +58,7 @@ class JourneyServiceTests(unittest.TestCase):
                 "analysis.event-trend",
                 "analysis.business-pulse",
                 "analysis.ltv-curve-fit",
+                "analysis.experiment-outcome-evaluation",
             )
         }
 
@@ -85,6 +86,9 @@ class JourneyServiceTests(unittest.TestCase):
         self.assertFalse(
             ltv["dependencies"]["models"][0]["production_claims_allowed"]
         )
+        outcome = results["analysis.experiment-outcome-evaluation"]
+        self.assertEqual("blocked", outcome["can_run_status"])
+        self.assertEqual(["OPERATOR_UNAVAILABLE"], outcome["reason_codes"])
         self.assertEqual(
             0,
             sum(

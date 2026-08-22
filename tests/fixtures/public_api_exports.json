@@ -71,6 +71,10 @@
     ".cache",
     "DEFAULT_METADATA_TTL_SECONDS"
   ],
+  "ExperimentHandoffService": [
+    ".experiment_handoff",
+    "ExperimentHandoffService"
+  ],
   "ExportContractRegistry": [
     ".export_contracts",
     "ExportContractRegistry"
