@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; plan-owner ready verdict 2026-08-22 |
+| Status | `fixed_dev`; integrated and validated on `dev` 2026-08-22 |
 | Track | Optional external Context binding |
 | Dependencies | R08, R09A |
 | Parallel group | `optional-binding` |
@@ -26,8 +26,9 @@ The user designated the Requirement document as the internal delivery ledger
 and authorized continuous implementation without repeated approval. R08 and
 R09A are `fixed_dev`; the plan owner reviewed
 `tmp/r09c-external-context-binding-proposal.md` and its conflict ledger, bound
-the baseline/worktree/gates below, and advanced R09C through `reviewed` and
-`ready` to `in_progress`. This does not authorize live Providers, credentials,
+the baseline/worktree/gates below, advanced R09C through `reviewed` and `ready`
+to `in_progress`, then accepted the validated implementation as `fixed_dev`.
+This does not authorize live Providers, credentials,
 production/external requests, package installation, release or `main`
 promotion.
 
@@ -72,6 +73,61 @@ promotion.
   wheel, both complete collectors, compiler/quality/generators, development
   usability/security, CLI help, retained consumer non-regression and
   `git diff --check`; active human docs remain exactly 5500 lines.
+
+## Fixed Dev Evidence
+
+- Feature commit `debd481` and merge `52dbd57` add the tracked
+  `gravity.external-context.json` registry, strict external requirement and
+  public Context Item reference schemas, and one public
+  `ExternalContextBindingResolver`. Root public API now has `127` lazy exports
+  and `gravity_sdk.__all__` has `128` entries including `__version__`.
+- Binding compilation normalizes exact R08 descriptors and Skill/Journey/
+  resource requirements, rejects unsafe/duplicate/out-of-prefix resources and
+  requires one tracked, clean Git snapshot. Runtime accepts only explicitly
+  injected Provider instances with the same URI/digest. A committed subprocess
+  descriptor without injection produces a gap and cannot construct a transport
+  or call `Popen`; no list/search/discovery/credential fallback exists.
+- R07's existing Pack state moved into `ContextPackBroker`; Repo Context
+  behavior remains characterized and byte-equivalent. External exact reads use
+  the same entity alias, valid/effective time, authority, sensitivity,
+  freshness, total budget, supersession, conflict, readiness, digest and
+  public-content-redaction gates. Prompt-injection bodies never enter Core,
+  snapshot, playbook or Analysis Result.
+- R08 remains the only RPC execution owner. R09C performs one exact `read` per
+  resource per resolution and adds no executor, pool, retry, cache or
+  pagination. Provider absence, descriptor mismatch, unavailable, timeout,
+  circuit, denied, stale, unaligned, conflicting and over-budget outcomes keep
+  stable reasons; Pack audit distinguishes `provider_rpc_called` while internal
+  I/O is uncontrolled and internal networking stays `not_observable`.
+- Core reads no external file and calls no Provider for Repo-only Skills.
+  Required gaps block before `ReferenceJourneyRunner`; optional gaps keep the
+  existing owner executable and move `forbidden_without_context` claims from
+  allowed to forbidden. Test-only optional success restores the claim, performs
+  exactly two reads for the runner's before/after snapshot comparison and
+  executes the unchanged playbook/Plan/Operator path.
+- Formal `gravity.analysis-result.v1` directly replaces singular
+  `context_pack` with ordered `context_packs[]`; snapshot was already plural.
+  Each old one-Pack result is preserved as an array of one with identical
+  fields/digest, while Repo plus external Packs remain lossless. Strict public
+  item-reference and Pack compilers reject missing/reordered/extra/private
+  fields. Repository and canonical-consumer search found no singular Result
+  field consumer, so the breaking surface loses no read capability.
+- Extended R07-R09C and R09A/R09B/public/docs focused gates pass `137` tests and
+  `60` subtests; integrated R09C/public/docs gates pass `48` tests and `16`
+  subtests. Complete gates pass `1609` unittest; `1609 passed, 3830 subtests`
+  pytest; compiler `237 operations / 11 manifests`; quality, both generators,
+  CLI, targeted Ruff and diff checks PASS; active docs remain exactly `5500`
+  lines.
+- Development usability remains `296/336` selection, `248/248` fillability,
+  `53/53` offline terminal and `5/5` recovery; security PASS and production HTTP
+  requests `0`. No production/external Provider request was made. The isolated
+  installed-wheel import/export/schema/empty-dependency gates pass from
+  `site-packages`; wheel SHA-256 is
+  `ff08a7622a5a690453b6a05a4d62860b2d6923c572cb0e0bb51810c7f214628c`.
+- Retained work-dashboard consumer `e4369ce8` declares only Built-in/Repo
+  Context, has no external binding and has no singular Analysis Result field
+  consumer. Its current-SDK focused suite passes `11` tests and `94` subtests;
+  the branch remains clean and no unrelated frozen or business path changed.
 
 ## Bound Baseline
 
