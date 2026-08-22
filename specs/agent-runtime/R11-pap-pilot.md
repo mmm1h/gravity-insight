@@ -3,11 +3,63 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `specified` |
+| Status | `in_progress`; plan-owner ready binding accepted 2026-08-22 |
 | Track | Optional Plan-backed optimization |
 | Dependencies | R02 |
 | Parallel group | `independent-pilot` |
 | Shared-spine integration | Required and serialized |
+| Delivery ledger | This Requirement document; no internal GitHub Issue |
+| Baseline | `dev@cfd3d51259c44f5f1556423e7b6bf9f2567ed5b1` |
+| Branch / worktree | `codex/r11-pap-pilot` / `D:\\git-pjt\\gravity-sdk-wt\\r11-pap-pilot` |
+| Consumer | Retained R09A stack `work-dashboard@e4369ce8`; non-regression only |
+| Integrator | Root Codex agent; shared-spine wiring remains serial |
+| Production / external requests | `0`; local fixtures only |
+| Main integration | Frozen until whole program completion |
+
+## Plan Owner Verdict And Ready Binding
+
+The user designated each Requirement as the internal delivery ledger and
+authorized continuous implementation without repeated approval. R02 is
+`fixed_dev`; the plan owner reviewed `tmp/r11-pap-pilot-proposal.md` and its
+conflict ledger, bound the baseline/worktree/gates below, advanced R11 through
+`reviewed` and `ready`, and started it as `in_progress`. This does not authorize
+credentials, production/external requests, mutation, package installation,
+release or `main` promotion.
+
+- Characterize direct Product, Direct Bounded Composite, SDK-internal Plan and
+  host-generated Plan separately. Pilot PAP only for principal-scoped,
+  read-only host Plans composed exclusively of stable executable `run`
+  operation nodes; all unproved topologies fail locally without affecting their
+  existing entry points.
+- Prepare must enter `execute_host_plan`, complete the ordinary dry-run Plan
+  validation/binding/adapter preflight, and only then atomically commit private
+  `gravity.prepared-analysis-plan.v1` state. Execute must recheck every binding
+  and re-enter `execute_host_plan`; PAP owns no executor, binder, scheduler,
+  adapter, permission layer or result envelope.
+- Persist only value-free Plan/source bindings, selected operation contract and
+  catalog fingerprints, workspace catalog fingerprint, bounded counts/budget
+  and expiry. Never persist raw Plan/source/input values, credentials, Scope
+  digest, account identifier, user rows or condition-sensitive values. The
+  caller resubmits the exact host Plan and sources for execution.
+- Return only an opaque nonce/scope-bound `pap_id` plus safe summary. Stable
+  local reasons cover unbound scope, unsupported path, identity, reference,
+  missing/tampered/expired state, input/source/contract/catalog drift and store
+  bounds before target calls.
+- Store below the already principal-scoped workspace state with strict
+  schema/size/link/count/byte limits, atomic immutable creation, bounded TTL and
+  expired-entry cleanup. No mutable alias, latest pointer, remote fetch/sync or
+  public backing path is allowed.
+- Preserve exact host direct-versus-PAP target request count, request values,
+  budget, completeness, errors, projection/privacy and public envelope bytes.
+  Prepare and every pre-execution rejection make zero target calls.
+- Add one lazy `GravitySDK.prepared_plans` service and one root service export.
+  No CLI/MCP/Skill/Journey/Agent-card prerequisite is added; R10 and all
+  direct/composite/internal Plan paths remain independent.
+- Acceptance includes four-topology characterization; happy/empty/error/
+  completeness parity; source attacks; scope isolation; strict private-state
+  privacy/tamper/expiry/bounds; input/source/contract/catalog drift; checkpoint
+  atomicity; isolated wheel; full repository, usability/security and retained
+  consumer gates. Active human docs remain exactly 5500 lines.
 
 ## Outcome
 
