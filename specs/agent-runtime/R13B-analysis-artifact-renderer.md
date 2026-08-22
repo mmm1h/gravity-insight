@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; reviewed/ready binding accepted 2026-08-22 |
+| Status | `fixed_dev`; accepted on `dev@afcf84ccefea9c9c3533196f2b1e9e6ace93fead` 2026-08-22 |
 | Track | Analysis delivery |
 | Dependencies | R09A |
 | Parallel group | `analysis-delivery` |
@@ -90,6 +90,66 @@ Escape untrusted text for each output format, enforce item/byte limits and keep 
 ## Verification
 
 Schema/golden render tests, escaping/injection cases, output budgets, claim preservation, source digest binding and full gates.
+
+## Delivered Evidence
+
+- Implementation `2ec74fe17eac98c4912fafa61f11af90048b2932` was merged as
+  `dev@afcf84ccefea9c9c3533196f2b1e9e6ace93fead`. The existing
+  `gravity.analysis-result.v1` schema, compiler and R09A executor were not
+  changed; the new layer always invokes that compiler before delivery.
+- `gravity.analysis-artifact.v1` preserves source status, scope, Semantic
+  references, findings, exclusions, hypotheses, claims, recommendations,
+  limitations, completeness, DQ, evidence level, Context references and Receipt
+  references. Result, execution-snapshot, Receipt-set and self digests bind the
+  Artifact; Context bodies, full execution snapshots and query rows are absent.
+- Metric/Dimension projections accept only explicit `metric://` and
+  `dimension://` schemes. Filters transparently bind `/scope`, while
+  visualization remains `unspecified/SOURCE_VISUALIZATION_UNDECLARED`; no chart,
+  operator or target filter is inferred.
+- Eight fixed generic sections feed deterministic `gravity.analysis-rendering.v1`
+  Markdown. All variable text is single-line HTML/Markdown escaped; links/raw
+  HTML/project templates/department prose are not produced. The rendering
+  envelope explicitly binds Result, Artifact, Receipt-set and content digests.
+- Compiler limits are 8 MiB source, 8 MiB Artifact, 256 findings and eight
+  sections; Markdown is capped at 1 MiB. Overflow fails without truncating
+  conclusions. `gravity.analysis-delivery.v1` atomically writes validated JSON
+  or complete Markdown through the existing durable writer and preserves an old
+  file when a staged write is interrupted.
+- Current blocked/invalid Results remain conclusion-free. The real R09A
+  `ReferenceJourneyRunner` with the existing synthetic verified Trust fixture
+  reached Analysis Result -> Artifact -> Markdown through the unchanged
+  playbook owner; this proves composition only and does not promote current
+  production completeness or Trust.
+- Final focused delivery/surface coverage was `27 tests, 6 subtests`; post-merge
+  coverage was `48 tests, 6 subtests`. Complete SDK gates passed `1685` unittest
+  tests and `1685 passed, 3886 subtests passed` under pytest. Compiler remained
+  `237 operations, 11 manifests`; quality, all three deterministic generators,
+  CLI help, diff checks and touched-file Ruff passed.
+- Public API is additive at `135` lazy exports / `136` `__all__` entries.
+  `GravitySDK.analysis_artifacts` is lazy/cached and constructs no Insight/SQL
+  client. Active human docs remain exactly `5500` lines.
+- Actionable errors remain `1330 = 1163 A + 167 B + 0 C`. Development usability
+  remains selection `296/336`, fillability `248/248`, offline terminal `53/53`,
+  recovery `5/5`, security violations `0`, and production HTTP requests `0`.
+- Isolated real wheel `gravity_sdk-0.3.0-py3-none-any.whl` has SHA-256
+  `875be2a600d1c2f04ab7338a71e8d3bfcde340a6caadbe3da4d163e702b7557c`.
+  From external `site-packages` it loaded all three packaged schemas, reached
+  the five new root exports, validated a written Artifact and rendered the same
+  deterministic Markdown.
+- Canonical consumer search found no Analysis Result/Artifact consumer; its
+  current-SDK adoption/Journey suite remains green at `11 tests, 94 subtests`,
+  so no consumer branch change was needed.
+- Production probes, target requests, remote writes, releases and `main`
+  promotion performed by R13B: `0`.
+
+## Known Limits
+
+- Markdown v1 is the only renderer. Visualization remains explicitly
+  unspecified until a governed source declares intent; R13C must return a gap
+  for unsupported/undeclared target visualization instead of guessing.
+- R13B exposes offline root/SDK surfaces only. It adds no CLI/shared-spine,
+  natural-language Agent route, Plan adapter, arbitrary template registry or
+  target mutation; final report wording remains in the calling project.
 
 ## Rollback And Exit
 

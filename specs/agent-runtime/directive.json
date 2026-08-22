@@ -41,7 +41,7 @@
   },
   "requirements_index": "index.json",
   "active_feature_requirement": "R13B",
-  "next_candidate": null,
+  "next_candidate": "R13C",
   "main_integration": {
     "status": "frozen",
     "development_target": "dev",
