@@ -611,21 +611,21 @@
       }
     },
     {
-      "blocker_note": "R01 `analysis.merge2.ap-cost-anomaly-localization` 绑定 `work-dashboard/merge2`、`merge2-legacy`、Project Semantic、无代码 Built-in Skill、确定性 returned-row Operator 与两份 `role=data` Repo Context。当前 `report.multidim.query` 权威完整性为 `unknown`，低于必需 `complete`，故 `can-run/run` 均返回 `blocked/COMPLETENESS_INSUFFICIENT`、空 findings/claims/receipts 且不发请求；不得用旧 playbook returned rows 绕过。synthetic complete/fresh snapshot 只用于证明 SDK/CLI/既有 playbook/Analysis Result/Receipt 组合等价，不提升生产 Trust。",
+      "blocker_note": "`analysis.merge2.ap-cost-anomaly-localization` 由 `project.merge2` Overlay 显式扩展 Built-in Skill，绑定 project Semantic、deterministic Operator 与两份 `role=data` Repo Context；Core 将 exact Journey/Skill package/Overlay/Trust/Semantic/Operator/Context/执行合同冻结为值无关 `gravity.execution-snapshot.v1`，既有 runner/Plan 是唯一执行者并产出正式 `gravity.analysis-result.v1`。当前 `report.multidim.query` 权威完整性仍为 `unknown`，故 `can-run/run` 都返回 `blocked/COMPLETENESS_INSUFFICIENT`、空 findings/claims/receipts 且零请求；synthetic complete/fresh 只证明组合等价，不提升生产 Trust。",
       "can_return_business_content": false,
       "counted": true,
       "display_name": "以项目语义、Trust/DQ 和 Repo Context 判断并运行获客消耗异常定位",
-      "ledger_status": "当前阻塞（readiness 已机器闭合）",
+      "ledger_status": "当前阻塞（R09A Core readiness 已机器闭合）",
       "legacy_display_key": "以项目语义、Trust/DQ 和 Repo Context 判断并运行获客消耗异常定位",
       "request_budget": {
         "raw": "can-run 0；当前 run 0"
       },
-      "row_digest": "51041b220a9ff08323dc48b40775adeedaebacd1e2a431a24075b359a6503d70",
+      "row_digest": "a4bac63bf7d61b6f2fdf79c0fdd31c2c2a08caae67107099262af3c5247ffa3c",
       "surfaces": {
-        "agent": "设计不新增卡",
+        "agent": "有（Built-in Agent Skill）",
         "cli": "有",
         "plan": "复用既有 Plan",
-        "raw": "有 / 有 / 复用既有 Plan / 设计不新增卡",
+        "raw": "有 / 有 / 复用既有 Plan / 有（Built-in Agent Skill）",
         "sdk": "有"
       }
     },
@@ -1201,7 +1201,7 @@
     }
   ],
   "schema_version": "gravity.journey-ledger-snapshot.v1",
-  "snapshot_digest": "82e6bf3a9abc14c29f45bdfaadd0b311b265ff30c7e4efcbceb7ed9ed0a39367",
+  "snapshot_digest": "012be791859d4c5faa8146ef1a37f5023a2741ba1a3a3f4938be670c88f9a1e2",
   "source_path": "docs/analysis-journeys.md",
-  "source_sha256": "f29c3e6eb1e96a8bd558b80e3e1e6f5be2e0ee8941d9736884cdb358e1ba05b3"
+  "source_sha256": "e8bad46a962e6fe94cdbc927a3fcc8ad3a7064a3294b1c1a26fac4339be35d19"
 }

@@ -1,26 +1,19 @@
-"""R01 vertical Journey composed around the existing playbook executor."""
+"""R01 Journey binding around Core Skill readiness and the existing executor."""
 
 from __future__ import annotations
 
 import copy
 from collections.abc import Mapping
-from pathlib import Path
 from typing import Any
 
-from .agent_runtime_contracts import canonical_digest
 from .analysis_playbook_input import normalize_metric_anomaly_inputs
-from .capability_trust import (
-    CapabilityTrustService,
-    assess_capability_requirement,
-)
-from .context_contract import public_context_reference
+from .analysis_result_contract import compile_analysis_result
+from .core_skill_runtime import CoreSkillRuntime
+from .data_quality import data_quality_result
 from .errors import ErrorCategory, InputValidationError, exit_code_for_category
+from .execution_snapshot import build_execution_snapshot
 from .reference_journey_contract import JOURNEY_ID, reference_artifacts
 from .reference_journey_quality import evaluate_playbook_data_quality
-from .reference_project_contract import (
-    ReferenceProjectContractError,
-    load_reference_project_contract,
-)
 from .result_audit import result_receipt_references
 
 
@@ -32,80 +25,75 @@ _BLOCKED_EXIT = exit_code_for_category(ErrorCategory.LOCAL)
 
 
 class ReferenceJourneyRunner:
-    """R01-specific input/project binding around the existing playbook owner."""
+    """Keep one R01 execution owner while Core composes local dependencies."""
 
     def __init__(
         self,
         sdk: Any,
         *,
         workspace: Any | None = None,
-        capability_trust: CapabilityTrustService | None = None,
+        capability_trust: Any | None = None,
+        core_runtime: CoreSkillRuntime | None = None,
     ) -> None:
         self._sdk = sdk
         self._workspace = workspace if workspace is not None else sdk.workspace
-        self._capability_trust = capability_trust or CapabilityTrustService()
+        self._core_runtime = core_runtime or CoreSkillRuntime(
+            workspace=self._workspace,
+            capability_trust=capability_trust,
+        )
 
     def can_run(self, inputs: Mapping[str, Any]) -> dict[str, Any]:
-        """Return public readiness without echoing caller values."""
+        """Return public readiness without echoing caller question or hypothesis."""
 
         return _public_can_run(self._assess(inputs))
 
     def _assess(self, inputs: Mapping[str, Any]) -> dict[str, Any]:
-        artifacts = reference_artifacts()
-        normalized, input_reasons = _inputs(inputs)
+        normalized, reasons = _inputs(inputs)
         if normalized is None:
-            return _can_run_result(
-                artifacts,
-                status="invalid",
-                reasons=input_reasons,
-                normalized=None,
-                trust=None,
-                project=None,
-            )
-        project, project_reasons, project_invalid = self._project(normalized, artifacts)
-        requirement = artifacts["journey"]["contract"]["required_capabilities"][0]
-        trust = self._capability_trust.trust(
-            str(requirement["identity_kind"]), str(requirement["selector"])
+            return _invalid_can_run(reference_artifacts(), reasons)
+        core = self._core_runtime.resolve(
+            JOURNEY_ID,
+            {
+                "app_alias": normalized["app"],
+                "windows": {
+                    "current": copy.deepcopy(normalized["current_window"]),
+                    "reference": copy.deepcopy(normalized["reference_window"]),
+                },
+            },
+            input_schema_version=INPUT_SCHEMA_VERSION,
         )
-        capability_status, capability_reasons = assess_capability_requirement(
-            trust, requirement
-        )
-        reasons = [*project_reasons, *capability_reasons]
-        if project_invalid:
-            status = "invalid"
-        elif project_reasons or capability_status == "blocked":
-            status = "blocked"
-        elif capability_status == "unknown":
-            status = "unknown"
-        elif capability_status != "stable" or project is None:
-            status = "blocked"
-        else:
-            status = "verified"
-        return _can_run_result(
-            artifacts,
-            status=status,
-            reasons=reasons,
-            normalized=normalized,
-            trust=trust,
-            project=project,
-        )
+        return _can_run_result(core, normalized)
 
     def run(self, inputs: Mapping[str, Any]) -> dict[str, Any]:
         before = self._assess(inputs)
         if before["can_run_status"] != "verified":
             return _blocked_analysis_result(before, network_called=False)
         normalized = before["normalized_input"]
-        playbook = self._sdk.metric_anomaly_playbook(normalized)
+        bindings = before["semantic_bindings"]
+        if len(bindings) != 1:
+            failed = copy.deepcopy(before)
+            failed["can_run_status"] = "blocked"
+            failed["reason_codes"] = ["SEMANTIC_BINDING_AMBIGUOUS"]
+            return _blocked_analysis_result(failed, network_called=False)
+        playbook = self._sdk.metric_anomaly_playbook(
+            normalized,
+            semantic_binding=bindings[0],
+        )
         after = self._assess(inputs)
-        if after.get("execution_snapshot") != before.get("execution_snapshot"):
+        if after["execution_snapshot"] != before["execution_snapshot"]:
             changed = copy.deepcopy(before)
             changed["can_run_status"] = "blocked"
             changed["reason_codes"] = ["DEPENDENCY_SNAPSHOT_CHANGED"]
             return _blocked_analysis_result(changed, network_called=True)
-        completeness = before["dependencies"]["capability"]["completeness"]
-        quality = evaluate_playbook_data_quality(
-            playbook, completeness=completeness
-        )
+        executed = playbook.get("execution", {}).get("query_steps_executed")
+        maximum = before["request_budget"]["known_requests_max"]
+        if type(executed) is not int or executed > maximum:
+            failed = copy.deepcopy(before)
+            failed["can_run_status"] = "blocked"
+            failed["reason_codes"] = ["REQUEST_BUDGET_EXCEEDED"]
+            return _blocked_analysis_result(failed, network_called=True)
+        completeness = before["dependencies"]["capabilities"][0]["completeness"]
+        quality = evaluate_playbook_data_quality(playbook, completeness=completeness)
         if quality["status"] != "pass":
             failed = copy.deepcopy(before)
             failed["can_run_status"] = "blocked"
@@ -116,39 +104,6 @@ class ReferenceJourneyRunner:
                 data_quality=quality,
             )
         return _success_analysis_result(before, playbook, quality)
-
-    def _project(
-        self,
-        normalized: Mapping[str, Any],
-        artifacts: Mapping[str, Mapping[str, Any]],
-    ) -> tuple[dict[str, Any] | None, list[str], bool]:
-        root = getattr(self._workspace, "root", None)
-        if not isinstance(root, Path):
-            try:
-                root = Path(root)
-            except TypeError:
-                return None, ["SEMANTIC_DEFINITION_MISSING", "CONTEXT_REQUIRED_MISSING"], False
-        path = artifacts["journey"]["contract"]["project_contract_path"]
-        try:
-            project = load_reference_project_contract(
-                root,
-                contract_path=path,
-                current_window=normalized["current_window"],
-                reference_window=normalized["reference_window"],
-            )
-        except ReferenceProjectContractError as exc:
-            reason = str(exc)
-            if reason in {
-                "SEMANTIC_EFFECTIVE_RANGE_MISMATCH",
-                "CONTEXT_ENTITY_TIME_MISMATCH",
-            }:
-                return None, [reason], False
-            if "missing" in reason.casefold():
-                return None, ["SEMANTIC_DEFINITION_MISSING", "CONTEXT_REQUIRED_MISSING"], False
-            return None, ["REFERENCE_PROJECT_CONTRACT_INVALID"], True
-        if normalized["app"] != "merge2-legacy":
-            return None, ["SEMANTIC_BINDING_MISSING"], False
-        return project, [], False
 
 
 def _inputs(value: Mapping[str, Any]) -> tuple[dict[str, Any] | None, list[str]]:
@@ -175,41 +130,9 @@ def _inputs(value: Mapping[str, Any]) -> tuple[dict[str, Any] | None, list[str]]
 
 
 def _can_run_result(
-    artifacts: Mapping[str, Mapping[str, Any]],
-    *,
-    status: str,
-    reasons: list[str],
-    normalized: Mapping[str, Any] | None,
-    trust: Mapping[str, Any] | None,
-    project: Mapping[str, Any] | None,
+    core: Mapping[str, Any], normalized: Mapping[str, Any]
 ) -> dict[str, Any]:
-    dependencies = {
-        "capability": copy.deepcopy(trust),
-        "semantic": (
-            {
-                "uri": project["semantic"]["uri"],
-                "digest": project["semantic"]["digest"],
-                "source_revision": project["source_revision"],
-            }
-            if project is not None
-            else None
-        ),
-        "operator": _operator_reference(artifacts["operator"]),
-        "models": [],
-        "skill": _skill_reference(artifacts),
-        "context_pack": (
-            public_context_reference(project["context_pack"])
-            if project is not None
-            else None
-        ),
-    }
-    snapshot = _digest(
-        {
-            "journey": artifacts["journey"]["digest"],
-            "dependencies": dependencies,
-            "input_scope": _input_scope(normalized),
-        }
-    )
+    status = str(core["status"])
     return {
         "schema_version": CAN_RUN_SCHEMA_VERSION,
         "ok": status == "verified",
@@ -219,19 +142,122 @@ def _can_run_result(
             if status == "verified"
             else _INVALID_EXIT if status == "invalid" else _BLOCKED_EXIT
         ),
-        "journey": {
-            "journey_id": JOURNEY_ID,
-            "version": 1,
-            "digest": artifacts["journey"]["digest"],
-        },
-        "lifecycle": artifacts["journey"]["contract"]["lifecycle"],
+        "journey": copy.deepcopy(core["journey"]),
+        "skill": copy.deepcopy(core["skill"]),
+        "project_overlay": copy.deepcopy(core["project_overlay"]),
+        "lifecycle": copy.deepcopy(core["lifecycle"]),
+        "readiness": copy.deepcopy(core["readiness"]),
+        "validation": core["validation"],
         "can_run_status": status,
-        "reason_codes": list(dict.fromkeys(reasons)),
-        "dependencies": dependencies,
-        "execution_snapshot": snapshot,
+        "reason_codes": copy.deepcopy(core["reason_codes"]),
+        "dependencies": copy.deepcopy(core["dependencies"]),
+        "request_budget": copy.deepcopy(core["request_budget"]),
+        "execution_snapshot": copy.deepcopy(core["execution_snapshot"]),
+        "semantic_bindings": copy.deepcopy(core["semantic_bindings"]),
         "normalized_input": copy.deepcopy(normalized),
         "network_called": False,
     }
+
+
+def _invalid_can_run(
+    artifacts: Mapping[str, Mapping[str, Any]], reasons: list[str]
+) -> dict[str, Any]:
+    journey = artifacts["journey"]
+    skill = artifacts["skill"]
+    contract = journey["contract"]
+    journey_ref = {
+        "journey_id": contract["journey_id"],
+        "version": contract["version"],
+        "digest": journey["digest"],
+    }
+    skill_ref = _artifact_skill_reference(skill)
+    snapshot = _invalid_snapshot(artifacts, journey_ref, skill_ref)
+    return {
+        "schema_version": CAN_RUN_SCHEMA_VERSION,
+        "ok": False,
+        "status": "invalid",
+        "exit_code": _INVALID_EXIT,
+        "journey": journey_ref,
+        "skill": skill_ref,
+        "project_overlay": None,
+        "lifecycle": {
+            "journey": contract["lifecycle"],
+            "skill": skill["contract"]["lifecycle"],
+        },
+        "readiness": {
+            "declared": skill["contract"]["readiness"],
+            "resolved": "invalid",
+        },
+        "validation": skill["contract"]["validation"],
+        "can_run_status": "invalid",
+        "reason_codes": list(dict.fromkeys(reasons)),
+        "dependencies": {
+            "capabilities": [],
+            "semantics": [],
+            "operators": [],
+            "models": [],
+            "context_packs": [],
+        },
+        "request_budget": copy.deepcopy(contract["request_budget"]),
+        "execution_snapshot": snapshot,
+        "semantic_bindings": [],
+        "normalized_input": None,
+        "network_called": False,
+    }
+
+
+def _invalid_snapshot(
+    artifacts: Mapping[str, Mapping[str, Any]],
+    journey_ref: Mapping[str, Any],
+    skill_ref: Mapping[str, Any],
+) -> dict[str, Any]:
+    contract = artifacts["journey"]["contract"]
+    capability = artifacts["capability"]
+    operator = artifacts["operator"]
+    capability_ref = {
+        "identity_kind": capability["contract"]["identity_kind"],
+        "selector": capability["contract"]["selector"],
+        "contract_version": capability["contract"]["contract_version"],
+        "contract_digest": capability["digest"],
+        "trust_digest": None,
+        "status": "unresolved",
+    }
+    semantic_refs = [
+        {
+            "uri": uri,
+            "version": None,
+            "definition_digest": None,
+            "binding_digest": None,
+            "source_digest": None,
+            "registry_digest": None,
+            "status": "unresolved",
+        }
+        for uri in contract["required_semantics"]
+    ]
+    operator_ref = {
+        "uri": operator["contract"]["uri"],
+        "version": operator["contract"]["version"],
+        "digest": operator["digest"],
+        "assumptions_digest": operator["assumptions_digest"],
+        "status": "available",
+    }
+    return build_execution_snapshot(
+        status="blocked",
+        journey=journey_ref,
+        skill=skill_ref,
+        project_overlay=None,
+        capabilities=[capability_ref],
+        semantics=semantic_refs,
+        operators=[operator_ref],
+        models=[],
+        context_packs=[],
+        contracts={
+            "input_schema_version": INPUT_SCHEMA_VERSION,
+            "analysis_result_schema_version": ANALYSIS_RESULT_SCHEMA_VERSION,
+            "execution_mode": contract["execution"]["mode"],
+            "execution_owner": contract["execution"]["owner"],
+        },
+    )
 
 
 def _success_analysis_result(
@@ -239,22 +265,23 @@ def _success_analysis_result(
     playbook: Mapping[str, Any],
     quality: Mapping[str, Any],
 ) -> dict[str, Any]:
-    dependencies = readiness["dependencies"]
+    snapshot = readiness["execution_snapshot"]
     conclusion = copy.deepcopy(playbook["conclusion"])
-    return {
+    scope = _input_scope(readiness["normalized_input"])
+    value = {
         "schema_version": ANALYSIS_RESULT_SCHEMA_VERSION,
         "ok": True,
         "status": "success",
         "exit_code": 0,
         "question": readiness["normalized_input"]["question"],
-        "journey": copy.deepcopy(readiness["journey"]),
-        "skill": copy.deepcopy(dependencies["skill"]),
-        "scope": _input_scope(readiness["normalized_input"]),
-        "semantics": [copy.deepcopy(dependencies["semantic"])],
-        "capabilities": [copy.deepcopy(dependencies["capability"])],
-        "operators": [copy.deepcopy(dependencies["operator"])],
-        "models": copy.deepcopy(dependencies["models"]),
-        "context_pack": copy.deepcopy(dependencies["context_pack"]),
+        "journey": copy.deepcopy(snapshot["journey"]),
+        "skill": copy.deepcopy(snapshot["skill"]),
+        "scope": scope,
+        "semantics": copy.deepcopy(snapshot["semantics"]),
+        "capabilities": copy.deepcopy(snapshot["capabilities"]),
+        "operators": copy.deepcopy(snapshot["operators"]),
+        "models": copy.deepcopy(snapshot["models"]),
+        "context_pack": _context_pack(readiness),
         "completeness": "complete",
         "data_quality": copy.deepcopy(quality),
         "evidence_level": "L2",
@@ -264,6 +291,8 @@ def _success_analysis_result(
                 "statement": conclusion["statement"],
                 "evidence_level": "L2",
                 "fact_references": copy.deepcopy(conclusion["fact_references"]),
+                "supporting_references": _supporting_references(snapshot),
+                "scope": copy.deepcopy(scope),
                 "limitations": [
                     "Only returned rows and the selected slice are compared.",
                     "The result does not establish causality or unreturned values.",
@@ -277,13 +306,16 @@ def _success_analysis_result(
         ],
         "allowed_claims": copy.deepcopy(playbook["allowed_claims"]),
         "forbidden_claims": copy.deepcopy(
-            reference_artifacts()["journey"]["contract"]["claim_policy"]["forbidden"]
+            reference_artifacts()["skill"]["contract"]["claim_policy"]["forbidden"]
         ),
         "recommended_next_actions": [],
         "receipt_references": _receipt_references(playbook),
-        "execution_snapshot": readiness["execution_snapshot"],
+        "execution_snapshot": copy.deepcopy(snapshot),
+        "can_run_status": "verified",
+        "reason_codes": [],
         "network_called": bool(playbook.get("network_called")),
     }
+    return compile_analysis_result(value)
 
 
 def _blocked_analysis_result(
@@ -292,67 +324,111 @@ def _blocked_analysis_result(
     network_called: bool,
     data_quality: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    return {
+    invalid = readiness["can_run_status"] == "invalid"
+    snapshot = readiness["execution_snapshot"]
+    value = {
         "schema_version": ANALYSIS_RESULT_SCHEMA_VERSION,
         "ok": False,
-        "status": "blocked" if readiness["can_run_status"] != "invalid" else "invalid",
-        "exit_code": (
-            _INVALID_EXIT
-            if readiness["can_run_status"] == "invalid"
-            else _BLOCKED_EXIT
+        "status": "invalid" if invalid else "blocked",
+        "exit_code": _INVALID_EXIT if invalid else _BLOCKED_EXIT,
+        "question": None,
+        "journey": copy.deepcopy(snapshot["journey"]),
+        "skill": copy.deepcopy(snapshot["skill"]),
+        "scope": _input_scope(readiness.get("normalized_input")),
+        "semantics": copy.deepcopy(snapshot["semantics"]),
+        "capabilities": copy.deepcopy(snapshot["capabilities"]),
+        "operators": copy.deepcopy(snapshot["operators"]),
+        "models": copy.deepcopy(snapshot["models"]),
+        "context_pack": _context_pack(readiness),
+        "completeness": "unknown",
+        "data_quality": (
+            copy.deepcopy(data_quality)
+            if data_quality is not None
+            else data_quality_result(())
         ),
-        "journey": copy.deepcopy(readiness["journey"]),
+        "evidence_level": None,
+        "findings": [],
+        "excluded_factors": [],
+        "hypotheses": [],
+        "limitations": ["Required Skill dependencies are not verified."],
+        "allowed_claims": [],
+        "forbidden_claims": copy.deepcopy(
+            reference_artifacts()["skill"]["contract"]["claim_policy"]["forbidden"]
+        ),
+        "recommended_next_actions": [],
+        "receipt_references": [],
+        "execution_snapshot": copy.deepcopy(snapshot),
         "can_run_status": readiness["can_run_status"],
         "reason_codes": copy.deepcopy(readiness["reason_codes"]),
-        "scope": _input_scope(readiness.get("normalized_input")),
-        "dependencies": copy.deepcopy(readiness["dependencies"]),
-        "completeness": "unknown",
-        "data_quality": copy.deepcopy(data_quality)
-        if data_quality is not None
-        else {
-            "schema_version": "gravity.data-quality-result.v1",
-            "status": "unknown",
-            "checks": [],
-            "reason_codes": ["DATA_QUALITY_UNPROVEN"],
-        },
-        "findings": [],
-        "allowed_claims": [],
-        "receipt_references": [],
-        "execution_snapshot": readiness["execution_snapshot"],
         "network_called": network_called,
     }
+    return compile_analysis_result(value)
 
 
-def _skill_reference(
-    artifacts: Mapping[str, Mapping[str, Any]],
-) -> dict[str, Any]:
-    skill = artifacts["skill"]
+def _artifact_skill_reference(skill: Mapping[str, Any]) -> dict[str, Any]:
     contract = skill["contract"]
     return {
-        "namespace": contract["namespace"],
-        "skill_id": contract["skill_id"],
+        "uri": skill["skill_uri"],
         "version": contract["version"],
-        "digest": skill["package_digest"],
-    }
-
-
-def _operator_reference(artifact: Mapping[str, Any]) -> dict[str, Any]:
-    contract = artifact["contract"]
-    return {
-        "uri": contract["uri"],
-        "version": contract["version"],
-        "digest": artifact["digest"],
-        "method": copy.deepcopy(contract["method"]),
-        "assumptions_digest": artifact["assumptions_digest"],
-        "input_schema": copy.deepcopy(contract["schemas"]["input"]),
-        "output_schema": copy.deepcopy(contract["schemas"]["output"]),
-        "limitations": copy.deepcopy(contract["claim_policy"]["limitations"]),
+        "manifest_digest": skill["digest"],
+        "package_digest": skill["package_digest"],
+        "resolution": "unlocked",
+        "lifecycle": contract["lifecycle"],
+        "readiness": contract["readiness"],
+        "validation": contract["validation"],
     }
 
 
 def _public_can_run(value: Mapping[str, Any]) -> dict[str, Any]:
     result = copy.deepcopy(dict(value))
     result.pop("normalized_input", None)
+    result.pop("semantic_bindings", None)
+    return result
+
+
+def _context_pack(readiness: Mapping[str, Any]) -> dict[str, Any] | None:
+    packs = readiness.get("dependencies", {}).get("context_packs", [])
+    return copy.deepcopy(packs[0]) if len(packs) == 1 else None
+
+
+def _supporting_references(snapshot: Mapping[str, Any]) -> list[dict[str, str]]:
+    result: list[dict[str, str]] = []
+    for item in snapshot["capabilities"]:
+        if item["trust_digest"] is not None:
+            result.append(
+                {
+                    "kind": "capability",
+                    "uri": f"{item['identity_kind']}:{item['selector']}",
+                    "digest": item["trust_digest"],
+                }
+            )
+    for item in snapshot["semantics"]:
+        if item["definition_digest"] is not None:
+            result.append(
+                {
+                    "kind": "semantic",
+                    "uri": item["uri"],
+                    "digest": item["definition_digest"],
+                }
+            )
+    for field, kind, digest_key in (
+        ("operators", "operator", "digest"),
+        ("models", "model", "digest"),
+    ):
+        for item in snapshot[field]:
+            if item[digest_key] is not None:
+                result.append(
+                    {"kind": kind, "uri": item["uri"], "digest": item[digest_key]}
+                )
+    for item in snapshot["context_packs"]:
+        if item["pack_digest"] is not None:
+            result.append(
+                {
+                    "kind": "context",
+                    "uri": item["requirement_uri"],
+                    "digest": item["pack_digest"],
+                }
+            )
     return result
 
 
@@ -378,10 +454,6 @@ def _input_scope(value: Mapping[str, Any] | None) -> dict[str, Any] | None:
         "reference_window": copy.deepcopy(value["reference_window"]),
         "selected_dimension_count": len(value["hypothesis"]["values"]),
     }
-
-
-def _digest(value: Any) -> str:
-    return canonical_digest(value)
 
 
 __all__ = [

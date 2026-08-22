@@ -581,7 +581,7 @@ Agent 和 SDK 不解释模板、布局、收藏、权限、图表，也不生成
 
 ## Journey And Capability Trust
 
-`sdk.journeys` 与 `sdk.capability_trust` 是惰性、缓存且不构造 Insight/SQL client 的窄服务：
+`sdk.journeys`、`sdk.capability_trust` 与 `sdk.skill_runtime` 是惰性、缓存且不构造 Insight/SQL client 的窄服务；Core Skill resolver 只组合本地依赖，不执行数据：
 
 ```python
 journeys = sdk.journeys.list()
@@ -602,7 +602,8 @@ impact = sdk.capability_trust.impact(capability_impact_request)
 当前机器 registry 固定绑定 readable App、event trend、Business Pulse、R01 与预期阻断的
 LTV curve-fit 五个 ID；Markdown Journey ledger 仍是丰富人工状态的权威，`verify()` 检查
 精确 display/status/surface/budget/long-note 绑定。`can_run` 返回
-`verified|unknown|blocked|invalid`、稳定 reason codes 和值无关 execution snapshot；当前
+`verified|unknown|blocked|invalid`、稳定 reason codes 和自验摘要的 `gravity.execution-snapshot.v1` 对象；snapshot 冻结 Runtime/Journey/Skill package/Project Overlay/Trust/Semantic/Operator/Model/Context/执行合同引用，
+不含问题、App/日期/hypothesis、Context body 或行值。当前
 允许 `verified=0`，不能因 operation 有返回行就推断 Product/Composite/Journey 可信。
 
 Operation、Product 和 Composite 分别拥有同层 Stable Contract 与当前 Validation Result。
@@ -612,11 +613,10 @@ Validation。`validate()` 只校验调用方提供的 result 与当前合同/fin
 `impact()` 接受 `gravity.capability-impact-request.v1`，只返回受影响 Capability、Skill 和 Journey
 identity，不执行、不探测，也不回显 scope key 或私有路径。
 
-R01 `analysis.merge2.ap-cost-anomaly-localization` 保留唯一的当前 Journey runner。
-当前底层完整性为 `unknown`，所以真实合同返回
+R01 `analysis.merge2.ap-cost-anomaly-localization` 保留唯一 Journey runner；`gravity.project-skill-overlay.v1` 只能绑定项目 Semantic Source、Repo Context Requirement 和 default scope，不能覆盖 Trust/completeness/DQ/claims/privacy/selector/effect/Action authorization。Built-in Skill 的 intrinsic readiness 为 `executable`，Core 当前 readiness 仍由全部依赖决定。当前底层完整性为 `unknown`，所以真实合同返回
 `blocked/COMPLETENESS_INSUFFICIENT` 并保持零网络；不得由返回行、短页或
 `page.has_more` 提升为 complete。测试中的 verified 路径只证明组合合同与既有 executor
-等价，不构成生产完整性证据。其他 pilot Journey 当前只用于 list/verify/describe/can-run/impact；
+及正式 `gravity.analysis-result.v1` 等价，不构成生产完整性证据；完整 snapshot 在执行前后不一致即拒绝结论。其他 pilot Journey 当前只用于 list/verify/describe/can-run/impact；
 R02 不为它们创建第二套路由或执行器，未绑定执行时 `run()` 失败关闭。
 
 ## Skill And Provider Control Planes
@@ -632,7 +632,7 @@ transport = CallableProviderTransport("host", host_provider_call)
 external = ExternalContextProvider(external_descriptor, transport)
 ```
 
-`LocalSkillResolver` 仍只读 Built-in package 并报告 `unlocked`；`SkillHubClient`/`TrustedPackHubClient` 分离 exact lock、CAS、无代码 materialize 与外部 Installer Plan，普通 Skill 不能触发代码安装，R09B 才绑定 Team lock。`ExternalContextProvider` 只接受显式 `mcp|host|subprocess` descriptor 和 read-only transport；进程级 RPC Guard 强制次数/并发/超时/取消/重试/字节/token/circuit，权限外 URI 不调用或披露，Context 始终 `role=data`。`provider_reported` 内部 I/O/cache/retry 永不算 enforced；subprocess executable/argv/cwd 不出现在公共 `describe()`，且外部依赖到 R09C 才影响 Skill，R10 MCP Server 仍需独立 trigger。
+`LocalSkillResolver` 只读 Built-in package 并报告 `unlocked`/intrinsic state；`CoreSkillRuntime` 才按当前 Project Overlay 与 R02-R07 依赖计算完整 readiness。`SkillHubClient`/`TrustedPackHubClient` 分离 exact lock、CAS、无代码 materialize 与外部 Installer Plan，R09B 才绑定 Team lock。`ExternalContextProvider` 只接受显式 `mcp|host|subprocess` descriptor 和 read-only transport；RPC Guard 强制次数/并发/超时/取消/重试/字节/token/circuit，权限外 URI 不调用或披露，Context 始终 `role=data`；外部依赖到 R09C 才影响 Skill，R10 MCP Server 仍需独立 trigger。
 
 ## Business Semantic 与 Semantic Compose
 

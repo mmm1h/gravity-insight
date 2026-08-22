@@ -67,7 +67,7 @@
       "source_ref": "gravity-sdk/R01",
       "source_revision": "R01-fixed-dev"
     },
-    "readiness": "blocked",
+    "readiness": "executable",
     "request_budget": {
       "known_requests_max": 4,
       "known_requests_min": 4,
@@ -96,7 +96,7 @@
     "validation": "validated",
     "version": "1.0.0"
   },
-  "manifest_digest": "9b4741b64707cdd65e23fd9ab8d36c631a369047f96735843ad8963c2203e5df",
+  "manifest_digest": "6b89a35e352a3c7337d5a532188a567b2b41fed23b8b00930302f173e7db62b2",
   "schema_version": "gravity.skill-reference.v1",
   "skill_uri": "skill://gravity.game/ap-cost-anomaly-localization@1.0.0"
 }

@@ -72,7 +72,6 @@ class ReferenceJourneyContractTests(unittest.TestCase):
             "skill",
             "operator",
             "context_provider",
-            "analysis_result_contract",
             "capability",
         ):
             with self.subTest(name=name):

@@ -4,7 +4,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from gravity_sdk import GravitySDK
+from gravity_sdk import CoreSkillRuntime, GravitySDK
 from gravity_sdk import cli
 from gravity_sdk.journey_cli import dispatch
 from gravity_sdk.reference_journey_contract import JOURNEY_ID
@@ -53,6 +53,8 @@ class ReferenceJourneySurfaceTests(unittest.TestCase):
             "gravity.journey-description.v1",
             first.describe(JOURNEY_ID)["schema_version"],
         )
+        self.assertIs(sdk.skill_runtime, sdk.skill_runtime)
+        self.assertIsInstance(sdk.skill_runtime, CoreSkillRuntime)
 
     def test_cli_parser_marks_all_journey_commands_local_first(self):
         parser = cli.build_parser()

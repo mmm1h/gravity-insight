@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.project-skill-overlay.v1",
+  "type": "object",
+  "required": [
+    "artifact_kind",
+    "schema_version",
+    "overlay_uri",
+    "version",
+    "project_id",
+    "owner",
+    "extends",
+    "journey_id",
+    "semantic_sources",
+    "semantic_scope",
+    "context_requirements",
+    "default_scope"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_kind": {"const": "project_skill_overlay"},
+    "schema_version": {"const": "gravity.project-skill-overlay.v1"},
+    "overlay_uri": {
+      "type": "string",
+      "minLength": 20,
+      "maxLength": 256,
+      "pattern": "^skill://project\\.[a-z][a-z0-9.-]*/[a-z0-9]+(-[a-z0-9]+)*@(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?$"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 64,
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?$"
+    },
+    "project_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[a-z][a-z0-9.-]*$"
+    },
+    "owner": {"type": "string", "minLength": 1, "maxLength": 128},
+    "extends": {
+      "type": "object",
+      "required": ["skill_uri"],
+      "additionalProperties": false,
+      "properties": {
+        "skill_uri": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 256,
+          "pattern": "^skill://[a-z][a-z0-9.-]*/[a-z0-9]+(-[a-z0-9]+)*@(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?$"
+        }
+      }
+    },
+    "journey_id": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 256,
+      "pattern": "^[a-z][a-z0-9.-]*$"
+    },
+    "semantic_sources": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 512}
+    },
+    "semantic_scope": {
+      "type": "object",
+      "required": ["app_alias"],
+      "additionalProperties": false,
+      "properties": {
+        "app_alias": {"type": "string", "minLength": 1, "maxLength": 128}
+      }
+    },
+    "context_requirements": {
+      "type": "array",
+      "maxItems": 16,
+      "items": {"type": "object"}
+    },
+    "default_scope": {
+      "type": "object",
+      "required": ["app_alias"],
+      "additionalProperties": false,
+      "properties": {
+        "app_alias": {"type": "string", "minLength": 1, "maxLength": 128}
+      }
+    }
+  }
+}

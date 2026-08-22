@@ -43,6 +43,10 @@
     ".composite",
     "CompositeService"
   ],
+  "CoreSkillRuntime": [
+    ".core_skill_runtime",
+    "CoreSkillRuntime"
+  ],
   "Credential": [
     ".credentials",
     "Credential"
@@ -314,6 +318,18 @@
   "compile_host_product_selection": [
     ".agent_host_selection",
     "compile_host_product_selection"
+  ],
+  "compile_analysis_result": [
+    ".analysis_result_contract",
+    "compile_analysis_result"
+  ],
+  "compile_execution_snapshot": [
+    ".execution_snapshot",
+    "compile_execution_snapshot"
+  ],
+  "compile_project_skill_overlay": [
+    ".project_skill_overlay",
+    "compile_project_skill_overlay"
   ],
   "compile_query_spec": [
     ".analysis_spec",

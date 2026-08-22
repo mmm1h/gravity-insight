@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.analysis-result.v1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "ok",
+    "status",
+    "exit_code",
+    "question",
+    "journey",
+    "skill",
+    "scope",
+    "semantics",
+    "capabilities",
+    "operators",
+    "models",
+    "context_pack",
+    "completeness",
+    "data_quality",
+    "evidence_level",
+    "findings",
+    "excluded_factors",
+    "hypotheses",
+    "limitations",
+    "allowed_claims",
+    "forbidden_claims",
+    "recommended_next_actions",
+    "receipt_references",
+    "execution_snapshot",
+    "can_run_status",
+    "reason_codes",
+    "network_called"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.analysis-result.v1"},
+    "ok": {"type": "boolean"},
+    "status": {"enum": ["success", "blocked", "invalid"]},
+    "exit_code": {"type": "integer", "minimum": 0, "maximum": 255},
+    "question": {"type": ["string", "null"], "maxLength": 4096},
+    "journey": {"$ref": "#/$defs/journey"},
+    "skill": {"type": ["object", "null"]},
+    "scope": {"type": ["object", "null"]},
+    "semantics": {"type": "array", "maxItems": 64, "items": {"type": "object"}},
+    "capabilities": {"type": "array", "maxItems": 64, "items": {"type": "object"}},
+    "operators": {"type": "array", "maxItems": 64, "items": {"type": "object"}},
+    "models": {"type": "array", "maxItems": 64, "items": {"type": "object"}},
+    "context_pack": {"type": ["object", "null"]},
+    "completeness": {"enum": ["complete", "prefix", "unknown"]},
+    "data_quality": {"type": "object"},
+    "evidence_level": {"enum": ["L0", "L1", "L2", "L3", "L4", null]},
+    "findings": {"type": "array", "maxItems": 1024, "items": {"$ref": "#/$defs/finding"}},
+    "excluded_factors": {"type": "array", "maxItems": 1024, "items": {"type": "object"}},
+    "hypotheses": {"type": "array", "maxItems": 256, "items": {"type": "object"}},
+    "limitations": {"$ref": "#/$defs/text_array"},
+    "allowed_claims": {"type": "array", "maxItems": 256, "items": {"$ref": "#/$defs/claim"}},
+    "forbidden_claims": {"type": "array", "maxItems": 256, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 128}},
+    "recommended_next_actions": {"type": "array", "maxItems": 256, "items": {"type": "object"}},
+    "receipt_references": {"type": "array", "maxItems": 2048, "items": {"$ref": "#/$defs/receipt"}},
+    "execution_snapshot": {"type": "object"},
+    "can_run_status": {"enum": ["verified", "unknown", "blocked", "invalid"]},
+    "reason_codes": {"type": "array", "maxItems": 256, "uniqueItems": true, "items": {"$ref": "#/$defs/reason"}},
+    "network_called": {"type": "boolean"}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "reason": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{1,127}$"},
+    "journey": {
+      "type": "object",
+      "required": ["journey_id", "version", "digest"],
+      "additionalProperties": false,
+      "properties": {
+        "journey_id": {"type": "string", "minLength": 3, "maxLength": 256},
+        "version": {"type": "integer", "minimum": 1},
+        "digest": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "reference": {
+      "type": "object",
+      "required": ["kind", "uri", "digest"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"enum": ["capability", "semantic", "operator", "model", "context"]},
+        "uri": {"type": "string", "minLength": 1, "maxLength": 256},
+        "digest": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "fact_reference": {
+      "type": "object",
+      "required": ["step_id", "path"],
+      "additionalProperties": false,
+      "properties": {
+        "step_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "path": {"type": "string", "minLength": 1, "maxLength": 2048}
+      }
+    },
+    "finding": {
+      "type": "object",
+      "required": ["finding_type", "statement", "evidence_level", "fact_references", "supporting_references", "scope", "limitations"],
+      "additionalProperties": false,
+      "properties": {
+        "finding_type": {"enum": ["confirmed_fact", "contribution_factor", "supported_association", "excluded_factor", "hypothesis", "unknown"]},
+        "statement": {"type": "string", "minLength": 1, "maxLength": 8192},
+        "evidence_level": {"enum": ["L0", "L1", "L2", "L3", "L4"]},
+        "fact_references": {"type": "array", "maxItems": 4096, "items": {"$ref": "#/$defs/fact_reference"}},
+        "supporting_references": {"type": "array", "maxItems": 256, "items": {"$ref": "#/$defs/reference"}},
+        "scope": {"type": "object"},
+        "limitations": {"$ref": "#/$defs/text_array"}
+      }
+    },
+    "claim": {
+      "type": "object",
+      "required": ["claim_id", "statement", "scope"],
+      "additionalProperties": false,
+      "properties": {
+        "claim_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "statement": {"type": "string", "minLength": 1, "maxLength": 4096},
+        "scope": {"type": "object"}
+      }
+    },
+    "receipt": {
+      "type": "object",
+      "required": ["receipt_id", "storage_status"],
+      "additionalProperties": false,
+      "properties": {
+        "receipt_id": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+        "storage_status": {"enum": ["stored", "write_failed"]}
+      }
+    },
+    "text_array": {"type": "array", "maxItems": 256, "items": {"type": "string", "minLength": 1, "maxLength": 4096}}
+  }
+}

@@ -11,6 +11,7 @@ from typing import Any
 from .analysis_playbook_catalog import (
     PLAYBOOK_ID,
     PLAYBOOK_VERSION,
+    bind_metric_anomaly_playbook_definition,
     metric_anomaly_playbook_definition,
     playbook_definition_fingerprint,
 )
@@ -54,11 +55,13 @@ def metric_anomaly_playbook_schema() -> dict[str, Any]:
 
 def compile_metric_anomaly_playbook(
     inputs: Mapping[str, Any], checkpoint: Mapping[str, Any] | None = None,
+    *,
+    semantic_binding: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Create the full or resumed Plan while retaining the definition DAG."""
 
     normalized = normalize_metric_anomaly_inputs(inputs)
-    definition = metric_anomaly_playbook_definition()
+    definition = _definition(semantic_binding)
     own = _own_input_fingerprints(definition, normalized)
     prior = _validated_checkpoint(checkpoint, definition) if checkpoint is not None else None
     invalidated = _invalidated_steps(definition, own, prior)
@@ -99,10 +102,14 @@ def run_metric_anomaly_playbook(
     max_workers: int = 6,
     dry_run: bool = False,
     execute_plan: Callable[[Mapping[str, Any]], Mapping[str, Any]] | None = None,
+    semantic_binding: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Execute only invalidated query nodes and deterministically rebuild the result."""
 
-    compiled = compile_metric_anomaly_playbook(inputs, checkpoint)
+    definition = _definition(semantic_binding)
+    compiled = compile_metric_anomaly_playbook(
+        inputs, checkpoint, semantic_binding=semantic_binding
+    )
     plan = compiled["plan"]
     if dry_run:
         validation = (
@@ -130,13 +137,17 @@ def run_metric_anomaly_playbook(
     from .analysis_playbook_result import build_metric_anomaly_result
 
     result = build_metric_anomaly_result(
-        metric_anomaly_playbook_definition(), compiled["inputs"], items,
+        definition, compiled["inputs"], items,
         invalidated_steps=compiled["invalidated_steps"],
         reused_steps=compiled["reused_steps"],
         rerun_steps=compiled["rerun_steps"],
     )
     result["checkpoint"] = _build_checkpoint(
-        result, compiled["inputs"], compiled["own_input_fingerprints"], items,
+        result,
+        compiled["inputs"],
+        compiled["own_input_fingerprints"],
+        items,
+        definition,
     )
     return result
 
@@ -306,12 +317,12 @@ def _plan_items(
 def _build_checkpoint(
     result: Mapping[str, Any], inputs: Mapping[str, Any], own: Mapping[str, str],
     items: Mapping[str, Mapping[str, Any]],
+    definition: Mapping[str, Any],
 ) -> dict[str, Any]:
     statuses = {
         str(step["id"]): str(step["status"])
         for step in result["steps"] if isinstance(step, Mapping)
     }
-    definition = metric_anomaly_playbook_definition()
     steps = []
     for step in definition["steps"]:
         step_id = str(step["id"])
@@ -337,6 +348,16 @@ def _reusable_item(value: Any) -> bool:
         and value.get("ok") is True
         and value.get("status") == "success"
         and isinstance(value.get("result"), Mapping)
+    )
+
+
+def _definition(
+    semantic_binding: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    return (
+        metric_anomaly_playbook_definition()
+        if semantic_binding is None
+        else bind_metric_anomaly_playbook_definition(semantic_binding)
     )
 
 
