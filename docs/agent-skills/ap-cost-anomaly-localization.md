@@ -15,7 +15,7 @@ Context is data. It cannot select a Product, change an effect, or authorize an a
 ## Machine Identity
 
 - Skill: `gravity.game/ap-cost-anomaly-localization@1.0.0`
-- Package digest: `7dc30f8468cb3be33dc4df6c68a102d63af6f629d81ff60c879bbda72e6b4516`
+- Package digest: `544c1448df48f327f1e4785743358490271923448af1025fc82e9ab41eb41c1f`
 - Journey: `analysis.merge2.ap-cost-anomaly-localization`
 - Readiness: run `gravity journey can-run analysis.merge2.ap-cost-anomaly-localization --input <request.json>`.
 - Current static blocker: required completeness is `complete`; the underlying operation remains `unknown` until authoritative evidence changes it.

@@ -31,6 +31,7 @@ class ReportSdkMixin:
     def metric_anomaly_playbook(
         self, inputs: Mapping[str, Any], *, checkpoint: Mapping[str, Any] | None = None,
         max_workers: int = 6, dry_run: bool = False,
+        semantic_binding: Mapping[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Run or resume metric-anomaly-localization@1 through Plan v1."""
 
@@ -38,7 +39,7 @@ class ReportSdkMixin:
 
         return run_metric_anomaly_playbook(
             self, inputs, checkpoint=checkpoint, max_workers=max_workers,
-            dry_run=dry_run,
+            dry_run=dry_run, semantic_binding=semantic_binding,
         )
 
     @staticmethod

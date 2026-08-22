@@ -25,6 +25,16 @@ _EXPORTS = {
     "GravitySDK": (".sdk", "GravitySDK"),
     "connect": (".sdk", "connect"),
     "JourneyService": (".journey_service", "JourneyService"),
+    "CoreSkillRuntime": (".core_skill_runtime", "CoreSkillRuntime"),
+    "compile_analysis_result": (
+        ".analysis_result_contract", "compile_analysis_result"
+    ),
+    "compile_execution_snapshot": (
+        ".execution_snapshot", "compile_execution_snapshot"
+    ),
+    "compile_project_skill_overlay": (
+        ".project_skill_overlay", "compile_project_skill_overlay"
+    ),
     "CapabilityTrustService": (
         ".capability_trust", "CapabilityTrustService"
     ),

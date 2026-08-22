@@ -17,9 +17,9 @@
 
 ## 1. 解析 Semantic Schema 与项目绑定
 
-Runtime 拥有可复用 Semantic、确定性 Operator、Model lifecycle 和 Context Schema。项目值来自显式 Source/Requirement；Operator 只按 exact URI 执行静态安装的方法；Model 未命中 trusted digest、未验证/批准、过期或超安全 horizon 时只允许 scenario/hypothesis，不输出生产预测。
+Runtime 拥有可复用 Semantic、确定性 Operator、Model lifecycle、Context、Project Overlay 与 Analysis Result Schema。Overlay 只提供项目 Semantic Source/Repo Context/default scope，不能覆盖 Trust、完整性、claims、隐私、selector、effect 或 Action authorization；Operator 只按 exact URI 执行静态方法，Model 未通过 trusted digest/验证/批准/时限/horizon 时只允许 scenario/hypothesis。
 
-Semantic/Binding/Operator/Model/required Context 任一未登记必须返回机器 gap；Repo search 只发现 role=data 候选，只有显式 Context Requirement 可组装 Pack。禁止从列名、自然语言或 Skill 文本补公式、方法或模型；执行前复验 Product 和依赖合同。
+Semantic/Binding/Operator/Model/required Context 任一未登记必须返回机器 gap；Repo search 只发现 `role=data` 候选，只有显式 Requirement 可组装 Pack。Core Skill readiness 在执行前冻结值无关 `gravity.execution-snapshot.v1`，执行后必须逐项相等；禁止从列名、自然语言、Context 或 Skill 文本补公式、方法、selector 或授权。
 
 ## 2. 发现并选择
 
@@ -68,9 +68,9 @@ gravity agent-catalog describe <selector>
 
 调用方按以下顺序读取：
 
-1. `schema_version`、`status`、`ok`、`result_source`。
+1. `schema_version`、`status`、`ok`、`result_source`；Skill 结果还要校验完整 execution snapshot。
 2. 日期窗、分页/截断、组件状态和 partial failures。
-3. warnings、diagnostics、drift audit、interpretation 和 allowed claims。
+3. warnings、diagnostics、drift audit、DQ、evidence level、limitations 和 allowed/forbidden claims。
 4. 数据行与汇总。
 
 `empty` 是合法结果但只约束当前输入与权限上下文。重要结论需要第二条独立证据；不可加指标不能用分组和替代总计。详见[结果与 LLM 安全](guides/llm-output-safety.md)。

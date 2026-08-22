@@ -6,7 +6,7 @@
   "version": "1.0.0",
   "specification": "specified",
   "lifecycle": "reviewed",
-  "readiness": "blocked",
+  "readiness": "executable",
   "validation": "validated",
   "summary": "Compare returned acquisition-spend rows across two windows and test one caller-selected channel without causal or completeness claims.",
   "description": "Use after selecting the exact Merge2 acquisition-spend anomaly Journey to compare returned channel rows across two windows while preserving completeness, context, and causal-claim limits.",

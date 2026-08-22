@@ -66,7 +66,7 @@
     "source_ref": "gravity-sdk/R01",
     "source_revision": "R01-fixed-dev"
   },
-  "readiness": "blocked",
+  "readiness": "executable",
   "request_budget": {
     "known_requests_max": 4,
     "known_requests_min": 4,

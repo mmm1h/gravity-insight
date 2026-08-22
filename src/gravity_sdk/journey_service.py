@@ -8,12 +8,14 @@ from typing import Any
 
 from .actionable_error_values import actual_value
 from .agent_runtime_contracts import canonical_digest
+from .analysis_result_contract import compile_analysis_result
 from .capability_impact import capability_impact
 from .capability_trust import (
     CapabilityTrustService,
     assess_capability_requirement,
 )
 from .errors import ErrorCategory, InputValidationError, exit_code_for_category
+from .execution_snapshot import build_execution_snapshot
 from .journey_contract import (
     journey_artifact,
     journey_artifacts,
@@ -42,12 +44,21 @@ class JourneyService:
         capability_trust: CapabilityTrustService | None = None,
         operators: OperatorRegistry | None = None,
         models: ModelRegistry | None = None,
+        skill_runtime: Any | None = None,
     ) -> None:
         self._sdk = sdk
         self._workspace = workspace if workspace is not None else sdk.workspace
         self._capability_trust = capability_trust or CapabilityTrustService()
         self._operators = operators or OperatorRegistry()
         self._models = models or ModelRegistry(operators=self._operators)
+        if skill_runtime is None:
+            from .core_skill_runtime import CoreSkillRuntime
+
+            skill_runtime = CoreSkillRuntime(
+                workspace=self._workspace,
+                capability_trust=self._capability_trust,
+            )
+        self._skill_runtime = skill_runtime
 
     def list(self) -> dict[str, Any]:
         rows = []
@@ -117,6 +128,7 @@ class JourneyService:
                 self._sdk,
                 workspace=self._workspace,
                 capability_trust=self._capability_trust,
+                core_runtime=self._skill_runtime,
             ).can_run(inputs if inputs is not None else {})
         if inputs is not None and not isinstance(inputs, Mapping):
             return _generic_can_run(
@@ -140,12 +152,14 @@ class JourneyService:
                 self._sdk,
                 workspace=self._workspace,
                 capability_trust=self._capability_trust,
+                core_runtime=self._skill_runtime,
             ).run(inputs if inputs is not None else {})
         readiness = self.can_run(journey_id, inputs)
         reasons = list(readiness["reason_codes"])
         if readiness["can_run_status"] == "verified":
             reasons = ["JOURNEY_EXECUTION_NOT_BOUND"]
-        return {
+        snapshot = readiness["execution_snapshot"]
+        return compile_analysis_result({
             "schema_version": "gravity.analysis-result.v1",
             "ok": False,
             "status": (
@@ -158,10 +172,17 @@ class JourneyService:
                 if readiness["can_run_status"] == "invalid"
                 else _BLOCKED_EXIT
             ),
-            "journey": copy.deepcopy(readiness["journey"]),
+            "question": None,
+            "journey": copy.deepcopy(snapshot["journey"]),
+            "skill": copy.deepcopy(snapshot["skill"]),
+            "scope": None,
+            "semantics": copy.deepcopy(snapshot["semantics"]),
+            "capabilities": copy.deepcopy(snapshot["capabilities"]),
+            "operators": copy.deepcopy(snapshot["operators"]),
+            "models": copy.deepcopy(snapshot["models"]),
+            "context_pack": None,
             "can_run_status": readiness["can_run_status"],
             "reason_codes": reasons,
-            "dependencies": copy.deepcopy(readiness["dependencies"]),
             "completeness": "unknown",
             "data_quality": {
                 "schema_version": "gravity.data-quality-result.v1",
@@ -169,12 +190,18 @@ class JourneyService:
                 "checks": [],
                 "reason_codes": ["DATA_QUALITY_UNPROVEN"],
             },
+            "evidence_level": None,
             "findings": [],
+            "excluded_factors": [],
+            "hypotheses": [],
+            "limitations": ["Journey execution is not bound to a current owner."],
             "allowed_claims": [],
+            "forbidden_claims": copy.deepcopy(artifact["contract"]["claim_policy"]["forbidden"]),
+            "recommended_next_actions": [],
             "receipt_references": [],
-            "execution_snapshot": readiness["execution_snapshot"],
+            "execution_snapshot": copy.deepcopy(snapshot),
             "network_called": False,
-        }
+        })
 
     def impact(self, request: Mapping[str, Any]) -> dict[str, Any]:
         return capability_impact(request)
@@ -237,12 +264,18 @@ def _generic_can_run(
     artifact: Mapping[str, Any],
     *,
     capability_results: list[dict[str, Any]],
-    operator_dependencies: Mapping[str, Any],
-    model_dependencies: Mapping[str, Any],
+    operator_dependencies: Mapping[str, Any] | None = None,
+    model_dependencies: Mapping[str, Any] | None = None,
     status: str,
     reasons: list[str],
 ) -> dict[str, Any]:
     contract = artifact["contract"]
+    operator_dependencies = operator_dependencies or {
+        "dependencies": [], "reason_codes": []
+    }
+    model_dependencies = model_dependencies or {
+        "dependencies": [], "reason_codes": []
+    }
     dependencies = {
         "capabilities": copy.deepcopy(capability_results),
         "semantics": _static_dependencies(contract["required_semantics"]),
@@ -255,11 +288,12 @@ def _generic_can_run(
             else None
         ),
     }
-    snapshot = canonical_digest(
-        {
-            "journey_digest": artifact["digest"],
-            "dependencies": dependencies,
-        }
+    snapshot = _generic_execution_snapshot(
+        artifact,
+        capability_results,
+        operator_dependencies,
+        model_dependencies,
+        status,
     )
     return {
         "schema_version": CAN_RUN_SCHEMA_VERSION,
@@ -282,8 +316,110 @@ def _generic_can_run(
     }
 
 
+def _generic_execution_snapshot(
+    artifact: Mapping[str, Any],
+    capability_results: list[dict[str, Any]],
+    operator_dependencies: Mapping[str, Any],
+    model_dependencies: Mapping[str, Any],
+    status: str,
+) -> dict[str, Any]:
+    contract = artifact["contract"]
+    capability_states = [
+        _capability_state(result, requirement)
+        for result, requirement in zip(
+            capability_results, contract["required_capabilities"]
+        )
+    ]
+    return build_execution_snapshot(
+        status="resolved" if status == "verified" else "blocked",
+        journey={
+            "journey_id": contract["journey_id"],
+            "version": contract["version"],
+            "digest": artifact["digest"],
+        },
+        skill=None,
+        project_overlay=None,
+        capabilities=[
+            _capability_snapshot_reference(result, requirement, state)
+            for result, requirement, state in zip(
+                capability_results,
+                contract["required_capabilities"],
+                capability_states,
+            )
+        ],
+        semantics=[_semantic_snapshot_reference(uri) for uri in contract["required_semantics"]],
+        operators=[
+            _operator_snapshot_reference(item)
+            for item in operator_dependencies["dependencies"]
+        ],
+        models=[
+            _model_snapshot_reference(item)
+            for item in model_dependencies["dependencies"]
+        ],
+        context_packs=[],
+        contracts={
+            "input_schema_version": None,
+            "analysis_result_schema_version": "gravity.analysis-result.v1",
+            "execution_mode": contract["execution"]["mode"],
+            "execution_owner": contract["execution"]["owner"],
+        },
+    )
+
+
 def _static_dependencies(values: list[str]) -> list[dict[str, str]]:
     return [{"uri": value, "status": "unresolved"} for value in values]
+
+
+def _capability_state(
+    result: Mapping[str, Any], requirement: Mapping[str, Any]
+) -> str:
+    return assess_capability_requirement(result, requirement)[0]
+
+
+def _capability_snapshot_reference(
+    result: Mapping[str, Any], requirement: Mapping[str, Any], status: str
+) -> dict[str, Any]:
+    return {
+        "identity_kind": requirement["identity_kind"],
+        "selector": requirement["selector"],
+        "contract_version": result.get("contract_version"),
+        "contract_digest": result.get("contract_digest"),
+        "trust_digest": canonical_digest(result),
+        "status": status,
+    }
+
+
+def _semantic_snapshot_reference(uri: str) -> dict[str, Any]:
+    return {
+        "uri": uri,
+        "version": None,
+        "definition_digest": None,
+        "binding_digest": None,
+        "source_digest": None,
+        "registry_digest": None,
+        "status": "unresolved",
+    }
+
+
+def _operator_snapshot_reference(value: Mapping[str, Any]) -> dict[str, Any]:
+    operator = value.get("operator") if isinstance(value, Mapping) else None
+    return {
+        "uri": str(value.get("uri") or (operator or {}).get("uri")),
+        "version": (operator or {}).get("version"),
+        "digest": (operator or {}).get("digest"),
+        "assumptions_digest": (operator or {}).get("assumptions_digest"),
+        "status": str(value.get("status", "unresolved")),
+    }
+
+
+def _model_snapshot_reference(value: Mapping[str, Any]) -> dict[str, Any]:
+    model = value.get("model") if isinstance(value, Mapping) else None
+    return {
+        "uri": str(value.get("uri") or (model or {}).get("uri")),
+        "version": (model or {}).get("version"),
+        "digest": (model or {}).get("digest"),
+        "status": str(value.get("status", "unresolved")),
+    }
 
 
 def _journey(journey_id: Any) -> dict[str, Any]:

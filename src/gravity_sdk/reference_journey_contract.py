@@ -3,12 +3,9 @@
 from __future__ import annotations
 
 import copy
-import json
 from functools import lru_cache
-from pathlib import Path
 from typing import Any, Mapping
 
-from .agent_runtime_contracts import canonical_digest
 from .capability_contract import capability_contract
 from .context_contract import PROJECT_REPO_PROVIDER_URI, project_repo_provider_artifact
 from .errors import ContractChangedError
@@ -30,29 +27,6 @@ OPERATOR_RESULT_SCHEMA_VERSION = RETURNED_DIMENSION_CHANGE_RESULT_SCHEMA
 SEMANTIC_URI = "metric://project/acquisition-spend@1"
 CONTEXT_URI = "context://project-repo/merge2-acquisition-boundaries@1"
 
-_PACKAGE_ROOT = Path(__file__).resolve().parent
-_ARTIFACT_PATHS = {
-    "analysis_result_contract": _PACKAGE_ROOT
-    / "contracts"
-    / "analysis-results"
-    / "r01-ap-cost-anomaly.v1.json",
-}
-_ROOT_FIELDS = {
-    "analysis_result_contract": frozenset(
-        {
-            "artifact_kind",
-            "schema_version",
-            "result_schema_version",
-            "owner",
-            "required_references",
-            "completeness_values",
-            "data_quality_values",
-            "finding_types",
-        }
-    ),
-}
-
-
 def reference_artifacts() -> dict[str, dict[str, Any]]:
     """Return defensive copies of the exact validated R01 artifact set."""
 
@@ -61,7 +35,7 @@ def reference_artifacts() -> dict[str, dict[str, Any]]:
 
 @lru_cache(maxsize=1)
 def _artifacts() -> dict[str, dict[str, Any]]:
-    artifacts = {name: _read(path, name) for name, path in _ARTIFACT_PATHS.items()}
+    artifacts: dict[str, dict[str, Any]] = {}
     artifacts["context_provider"] = project_repo_provider_artifact()
     journey = journey_artifact(JOURNEY_ID)
     capability = capability_contract("product", "metric-anomaly-localization@1")
@@ -84,25 +58,11 @@ def _artifacts() -> dict[str, dict[str, Any]]:
     return artifacts
 
 
-def _read(path: Path, expected_kind: str) -> dict[str, Any]:
-    try:
-        value = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-        raise ContractChangedError(f"R01 {expected_kind} artifact cannot be read") from exc
-    if not isinstance(value, dict) or value.get("artifact_kind") != expected_kind:
-        raise ContractChangedError(f"R01 {expected_kind} artifact identity changed")
-    if set(value) != _ROOT_FIELDS[expected_kind]:
-        raise ContractChangedError(f"R01 {expected_kind} artifact fields changed")
-    _json_value(value, expected_kind)
-    return {"contract": value, "digest": _digest(value)}
-
-
 def _validate_relationships(artifacts: Mapping[str, Mapping[str, Any]]) -> None:
     journey = artifacts["journey"]["contract"]
     skill = artifacts["skill"]["contract"]
     operator = artifacts["operator"]["contract"]
     provider = artifacts["context_provider"]["contract"]
-    result = artifacts["analysis_result_contract"]["contract"]
     capability = artifacts["capability"]["contract"]
     checks = (
         journey.get("journey_id") == JOURNEY_ID,
@@ -146,7 +106,6 @@ def _validate_relationships(artifacts: Mapping[str, Mapping[str, Any]]) -> None:
         provider.get("effects") == ["read"],
         set(provider.get("supports", ()))
         == {"list", "search", "read", "index", "pack", "verify"},
-        result.get("result_schema_version") == "gravity.analysis-result.v1",
         capability.get("identity_kind") == "product",
         capability.get("selector") == "metric-anomaly-localization@1",
         capability.get("selector")
@@ -160,23 +119,10 @@ def _validate_relationships(artifacts: Mapping[str, Mapping[str, Any]]) -> None:
         raise ContractChangedError("R01 artifact dependency graph changed")
 
 
-def _digest(value: Any) -> str:
-    return canonical_digest(value)
-
-
 def _sha256(value: Any) -> bool:
     return isinstance(value, str) and len(value) == 64 and all(
         character in "0123456789abcdef" for character in value
     )
-
-
-def _json_value(value: Any, label: str) -> None:
-    try:
-        json.dumps(value, ensure_ascii=False, sort_keys=True, allow_nan=False)
-    except (TypeError, ValueError) as exc:
-        raise ContractChangedError(f"R01 {label} artifact is not canonical JSON") from exc
-
-
 __all__ = [
     "CONTEXT_URI",
     "JOURNEY_ID",

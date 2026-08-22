@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from .errors import ContractChangedError
+from .semantic_contract import SemanticContractError, validate_semantic_binding
 from .semantic_compose_catalog import definition_by_id
 
 
@@ -50,6 +51,27 @@ def metric_anomaly_playbook_definition() -> dict[str, Any]:
     """Return a fresh, validated copy of the only supported playbook."""
 
     return copy.deepcopy(_definition())
+
+
+def bind_metric_anomaly_playbook_definition(
+    semantic_binding: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Bind one compiled project Semantic without changing the playbook owner."""
+
+    try:
+        binding = validate_semantic_binding(semantic_binding)
+    except SemanticContractError as exc:
+        raise ContractChangedError(str(exc)) from exc
+    provider = binding["provider"]
+    if provider["kind"] != "semantic_compose" or binding["parameters"]:
+        raise ContractChangedError(
+            "metric anomaly playbook requires a parameter-free semantic_compose binding"
+        )
+    selected = metric_anomaly_playbook_definition()
+    selected["semantic_definition"] = copy.deepcopy(provider["definition"])
+    selected["members"] = copy.deepcopy(provider["members"])
+    _validate_definition(selected)
+    return selected
 
 
 def playbook_definition_fingerprint(value: Mapping[str, Any] | None = None) -> str:
@@ -201,6 +223,7 @@ __all__ = [
     "DEFINITION_SCHEMA_VERSION",
     "PLAYBOOK_ID",
     "PLAYBOOK_VERSION",
+    "bind_metric_anomaly_playbook_definition",
     "metric_anomaly_playbook_definition",
     "playbook_definition_fingerprint",
 ]

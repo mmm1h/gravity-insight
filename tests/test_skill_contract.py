@@ -29,7 +29,7 @@ class SkillContractTests(unittest.TestCase):
         self.assertEqual(SKILL_URI, artifact["skill_uri"])
         self.assertEqual("specified", contract["specification"])
         self.assertEqual("reviewed", contract["lifecycle"])
-        self.assertEqual("blocked", contract["readiness"])
+        self.assertEqual("executable", contract["readiness"])
         self.assertEqual("validated", contract["validation"])
         self.assertEqual("product", contract["capability_dependencies"][0]["identity_kind"])
         self.assertEqual(
