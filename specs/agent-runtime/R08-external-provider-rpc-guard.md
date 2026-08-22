@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; plan-owner ready verdict 2026-08-22 |
+| Status | `fixed_dev`; integrated and validated on `dev` 2026-08-22 |
 | Track | Provider boundary |
 | Dependencies | R07 |
 | Parallel group | `foundation-b` |
@@ -24,9 +24,10 @@ The user authorized continuous implementation without repeated Requirement
 approval. R07 is `fixed_dev`; the plan owner reviewed
 `tmp/r08-external-provider-rpc-guard-proposal.md` and its conflict ledger,
 bound the current baseline/worktree/safety gates below, and advanced R08 through
-`reviewed` and `ready` to `in_progress`. This does not authorize a live Provider,
-credentials, production/external requests, package installation, release or
-`main` promotion.
+`reviewed` and `ready`, and accepted the validated implementation as
+`fixed_dev`. This does not authorize a live Provider, credentials,
+production/external requests, package installation, release or `main`
+promotion.
 
 - External descriptors are read-only and explicit. RPC requests allow only
   `list/search/read/list_changed`; returned URLs, tool names and text are inert
@@ -50,7 +51,41 @@ credentials, production/external requests, package installation, release or
   circuit/half-open, Context normalization, public API/docs, real wheel, full
   gates and unchanged usability/security with production HTTP zero.
 
-## Current Baseline
+## Fixed Dev Evidence
+
+- `e7558e9` implements four external Provider/RPC schemas, exact descriptor and
+  strict JSON compilers, a process-wide eight-slot Provider budget, per-session
+  call/concurrency limits, timeout/cancel/retry/output/circuit enforcement,
+  callable MCP/Host and bounded subprocess transports, and an agent-facing
+  read-only facade; merge `17ca140` integrates it without shared-spine wiring.
+- Runtime-enforced counters are separate from `provider_reported` internal
+  I/O/retry/cache audit values and every result states internal networking is
+  not observable or controlled. Circuit/metrics are isolated per Provider;
+  unavailable alone retries, while timeout/malformed/oversize/error do not.
+- Permission prefixes block unauthorized reads before RPC and silently filter
+  list/search output without identities or provider error text. Strict UTF-8,
+  duplicate-key/non-finite JSON, request ID, content hash, byte/token, URI and
+  exact response/result schemas fail closed; search order grants no authority.
+- Exact reads normalize to R07 Context Items with `role=data`. Reusable Context
+  revisions now accept bounded exact external revisions while preserving Git
+  SHA behavior byte-for-byte. Missing alignment is a stable gap; observed or
+  untrusted sources become `authority=unverified` and cannot confirm claims.
+- Local subprocess fixtures prove explicit absolute executable/fixed argv,
+  in-root real cwd, no shell, no ambient `GRAVITY_*`, explicit provider env,
+  bounded stdin/stdout/stderr, nonzero/malformed/output-bomb privacy, active
+  cancellation and Windows/POSIX process-tree timeout cleanup. Public describe
+  excludes executable, argv, cwd and environment values.
+- Focused R08/R07/public/docs tests pass `58` tests and `28` subtests. Full gates
+  pass `1574` unittest; `1574 passed, 3820 subtests` pytest; compiler
+  `237 operations / 11 manifests`; quality PASS; public exports `121`; active
+  docs remain exactly `5500` lines; CLI and staged diff checks PASS.
+- Usability remains `296/336` selection, `248/248` fillability, `53/53` offline
+  terminal and `5/5` recovery; security PASS and production HTTP requests `0`.
+  The isolated wheel loaded all Provider schemas/exports and an empty Host RPC
+  outside the checkout; wheel SHA-256 is
+  `3fd61d667878746d7f2364e596d41c8f07d3c19b074874cab99effc68f66c074`.
+
+## Starting Baseline
 
 Host agents may already access GitHub, files, Feishu or other connectors independently. Runtime has no unified external Provider descriptor, RPC budget, cancellation or failure-isolation contract.
 
