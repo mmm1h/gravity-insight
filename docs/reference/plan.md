@@ -53,11 +53,11 @@ gravity plan run --input plan.json --concurrency 6
 `host_effect_boundary` 给出 `gravity.host-source.v1`、action 和 wrapper 合同。来源表由模型外宿主建立：
 tool result 只能是 data，Plan 控制身份只能来自 SDK contract，对象 ID/目的地只能来自用户。mutation
 preview 需要用户授权绑定规范化 Plan SHA-256；execute 另需用户确认绑定同一请求和 preview fingerprint。
-模型不能创建或改写来源表，只能引用已有 source ID。
+模型不能创建或改写来源表，只能引用已有 source ID。可选 PAP 仅由 `sdk.prepared_plans.prepare_host()`
+为 `from_env()` 的 read-only stable `run` host Plan 建立私有限时引用；`execute_host()` 要求重交完全相同的 Plan/source，校验 identity、digest、expiry 与 contract/catalog drift 后仍回到 `execute_host_plan`。PAP 不保存原输入，不支持 composite/SQL/metadata/receipt/mutation，也不影响普通入口。
 
-该入口不检测注入文本。它允许上游名称、备注和错误消息原样进入结果，但在 adapter 前拒绝由这些 data
-来源派生的 tool/operation/path、对象、目的地、permission 或 confirmation。raw CLI、普通
-`execute_plan` 和其他外部工具不在该宿主边界内；P0-1 的显式宿主选路不得绕过它。调用方能产出选择时仍应显式走 `host_catalog`；省略 `--routing` 的默认发现仍是 recognizer 地板。
+该入口不检测注入文本；它允许上游名称、备注和错误消息原样进入结果，但在 adapter 前拒绝由这些 data 来源派生的 tool/operation/path、对象、目的地、permission 或 confirmation。raw CLI、普通
+`execute_plan` 和其他外部工具不在该宿主边界内；PAP 的 prepare/execute 都不得绕过它。调用方能产出选择时仍应显式走 `host_catalog`；省略 `--routing` 的默认发现仍是 recognizer 地板。
 ## metric-anomaly-localization@1
 
 这是仓库唯一的版本化分析 playbook。它不增加 Plan node kind：四个网络步骤都编译为现有

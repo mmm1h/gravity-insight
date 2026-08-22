@@ -826,7 +826,7 @@ Python callback。若需要测试一个自定义 adapter，应直接使用 `grav
 宿主 LLM 生成的 Plan 使用模块级 `gravity_sdk.execute_host_plan(sdk, host_plan, sources)`，不要直接
 调用 `sdk.execute_plan`。`sources` 由模型外调用方按 `gravity.host-source.v1` 建立；tool result 只能是
 data，SDK contract 提供控制身份，用户 instruction/authorization 提供对象、目的地和两步 mutation
-授权。机器合同同时包含在 `gravity plan schema` 的 `host_effect_boundary`。
+授权。可选 `sdk.prepared_plans` 只为 `from_env()`、read-only stable-operation `run` host Plan 保存限时值无关绑定；prepare 和 execute 都重入上述来源边界，执行时须重交 exact Plan/source，其他拓扑继续用原入口。机器合同同时包含在 `gravity plan schema` 的 `host_effect_boundary`。
 
 产品选择先调用 `gravity_sdk.host_product_catalog(client)`，把其厂商无关目录和
 `response_schema` 交给宿主，再将完整响应传入
