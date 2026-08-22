@@ -26,7 +26,7 @@
     {"id":"R06","path":"R06-operator-model-contracts.md","status":"fixed_dev","dependencies":["R01"],"parallel_group":"foundation-a","shared_spine":false},
     {"id":"R07","path":"R07-context-pack-repo-provider.md","status":"fixed_dev","dependencies":["R01"],"parallel_group":"foundation-a","shared_spine":true},
     {"id":"R08","path":"R08-external-provider-rpc-guard.md","status":"fixed_dev","dependencies":["R07"],"parallel_group":"foundation-b","shared_spine":false},
-    {"id":"R09A","path":"R09A-core-skill-runtime.md","status":"specified","dependencies":["R02","R03","R05","R06","R07"],"parallel_group":"core-runtime","shared_spine":true},
+    {"id":"R09A","path":"R09A-core-skill-runtime.md","status":"in_progress","dependencies":["R02","R03","R05","R06","R07"],"parallel_group":"core-runtime","shared_spine":true},
     {"id":"R09B","path":"R09B-team-hub-binding.md","status":"specified","dependencies":["R04","R09A"],"parallel_group":"optional-binding","shared_spine":true},
     {"id":"R09C","path":"R09C-external-context-binding.md","status":"specified","dependencies":["R08","R09A"],"parallel_group":"optional-binding","shared_spine":true},
     {"id":"R10","path":"R10-mcp-thin-surface.md","status":"specified","dependencies":["R09A"],"parallel_group":"optional-surface","shared_spine":true,"trigger":"two_real_consumers_or_explicit_pilot"},
