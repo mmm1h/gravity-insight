@@ -8,11 +8,20 @@ from typing import Any
 
 from .errors import ContractChangedError, ErrorDetail, GravityInsightError
 from .material_asset_contract import actual_value, source_contract
-from .material_asset_transfer import _AssetTransport, _download_response_bound_asset
+from .blob_models import BlobTransport
+from .material_asset_transfer import (
+    _download_response_bound_asset,
+    _prepare_response_bound_asset,
+)
+from .result_audit import (
+    add_result_audit,
+    bind_error_receipts,
+    result_receipt_references,
+)
 from .result_source import GOVERNED_PRODUCT, result_source
 
 
-SCHEMA_VERSION = "gravity.material-asset.v1"
+SCHEMA_VERSION = "gravity.material-asset.v2"
 
 
 class _SourceOperationError(GravityInsightError):
@@ -52,48 +61,55 @@ def fetch_material_asset(
     role: str,
     destination: str | Path,
     *,
-    _transport: _AssetTransport | None = None,
+    output_root: str | Path | None = None,
+    _transport: BlobTransport | None = None,
 ) -> dict[str, Any]:
     """Read a registered source, resolve one row, then download its URL."""
 
-    operation_id, contract, role_contract, item, url = _resolve_response_asset(
-        client, source, source_input, ref_field, ref, role
+    contract, role_contract = _validate_source_request(
+        source, source_input, ref_field, role
     )
-    transfer = _download_response_bound_asset(
-        url,
-        item,
-        role,
+    service, prepared = _prepare_response_bound_asset(
         role_contract,
-        contract,
         destination,
+        output_root=output_root,
         transport=_transport,
     )
-    return {
+    operation_id, item, url, source_result = _resolve_response_asset(
+        client, contract, source_input, ref_field, ref, role, role_contract
+    )
+    source_receipts = result_receipt_references(source_result)
+    try:
+        transfer = _download_response_bound_asset(
+            service,
+            prepared,
+            url,
+            item,
+            operation_id,
+            ref_field,
+            ref,
+            role,
+            contract,
+        )
+    except BaseException as exc:
+        bind_error_receipts(exc, source_receipts)
+        raise
+    return add_result_audit({
         "schema_version": SCHEMA_VERSION,
         "ok": True,
         "status": "success",
         "result_source": result_source(GOVERNED_PRODUCT),
         "effect": "material_file_download",
-        "source": {
-            "operation_id": operation_id,
-            "response_fresh": True,
-            "reference_field": ref_field,
-            "reference_value": ref,
-            "role": role,
-            "caller_url_accepted": False,
-        },
-        "file": transfer,
-    }
+        "artifact": transfer.artifact,
+    }, [*source_receipts, *transfer.receipt_references])
 
 
-def _resolve_response_asset(
-    client: Any,
+def _validate_source_request(
     source: str,
     source_input: Mapping[str, Any],
     ref_field: str,
-    ref: str | int,
     role: str,
-) -> tuple[str, Mapping[str, Any], Mapping[str, Any], Mapping[str, Any], str]:
+) -> tuple[Mapping[str, Any], Mapping[str, Any]]:
     contract = source_contract(source)
     if not isinstance(source_input, Mapping):
         raise actual_value(
@@ -119,33 +135,50 @@ def _resolve_response_asset(
             allowed=tuple(roles or ()),
             next_action="Choose `file` or `thumbnail` and retry the same material reference.",
         )
+    return contract, role_contract
+
+
+def _resolve_response_asset(
+    client: Any,
+    contract: Mapping[str, Any],
+    source_input: Mapping[str, Any],
+    ref_field: str,
+    ref: str | int,
+    role: str,
+    role_contract: Mapping[str, Any],
+) -> tuple[str, Mapping[str, Any], str, Mapping[str, Any]]:
     operation_id = str(contract["operation_id"])
     result = client.read(operation_id, dict(source_input))
-    _raise_source_failure(result, operation_id)
-    rows = _response_rows(result, contract)
-    matched = [item for item in rows if _same_reference(item.get(ref_field), ref)]
-    if len(matched) != 1:
-        raise actual_value(
-            field="ref",
-            actual=ref,
-            allowed=("exactly one reference in the fresh source response",),
-            next_action=(
-                f"Run `gravity run {operation_id}` with the same input, then copy one "
-                "exact documented reference field and value."
-            ),
-        )
-    url_field = str(role_contract["url_field"])
-    url = matched[0].get(url_field)
-    if not isinstance(url, str) or not url.strip():
-        raise actual_value(
-            field="role",
-            actual=role,
-            allowed=("a role populated on the selected source row",),
-            next_action=(
-                f"Refresh `{operation_id}` and select a row whose `{url_field}` is populated."
-            ),
-        )
-    return operation_id, contract, role_contract, matched[0], url
+    receipts = result_receipt_references(result)
+    try:
+        _raise_source_failure(result, operation_id)
+        rows = _response_rows(result, contract)
+        matched = [item for item in rows if _same_reference(item.get(ref_field), ref)]
+        if len(matched) != 1:
+            raise actual_value(
+                field="ref",
+                actual=ref,
+                allowed=("exactly one reference in the fresh source response",),
+                next_action=(
+                    f"Run `gravity run {operation_id}` with the same input, then copy one "
+                    "exact documented reference field and value."
+                ),
+            )
+        url_field = str(role_contract["url_field"])
+        url = matched[0].get(url_field)
+        if not isinstance(url, str) or not url.strip():
+            raise actual_value(
+                field="role",
+                actual=role,
+                allowed=("a role populated on the selected source row",),
+                next_action=(
+                    f"Refresh `{operation_id}` and select a row whose `{url_field}` is populated."
+                ),
+            )
+    except BaseException as exc:
+        bind_error_receipts(exc, receipts)
+        raise
+    return operation_id, matched[0], url, result
 
 
 def _raise_source_failure(result: Any, operation_id: str) -> None:

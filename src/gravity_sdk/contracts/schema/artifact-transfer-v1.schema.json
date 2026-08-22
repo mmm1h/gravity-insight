@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.artifact-transfer.v1",
+  "type": "object",
+  "required": [
+    "schema_version", "artifact_id", "status", "local_ref", "size_bytes",
+    "media_type", "extension", "sha256", "source", "transfer", "integrity",
+    "limitations"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.artifact-transfer.v1"},
+    "artifact_id": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "status": {"const": "complete"},
+    "local_ref": {"type": "string", "minLength": 1, "maxLength": 1024},
+    "size_bytes": {"type": "integer", "minimum": 1, "maximum": 1073741824},
+    "media_type": {"enum": ["image/jpeg", "video/mp4"]},
+    "extension": {"enum": [".jpg", ".jpeg", ".mp4"]},
+    "sha256": {"$ref": "#/$defs/digest"},
+    "source": {
+      "type": "object",
+      "required": [
+        "capability", "operation_id", "response_fresh", "reference_field",
+        "reference_value", "role", "caller_url_accepted"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "capability": {"type": "string", "minLength": 3, "maxLength": 128},
+        "operation_id": {"type": "string", "minLength": 3, "maxLength": 128},
+        "response_fresh": {"const": true},
+        "reference_field": {"type": "string", "minLength": 1, "maxLength": 128},
+        "reference_value": {"type": ["string", "integer"], "minLength": 1, "maxLength": 256},
+        "role": {"type": "string", "minLength": 1, "maxLength": 64},
+        "caller_url_accepted": {"const": false}
+      }
+    },
+    "transfer": {
+      "type": "object",
+      "required": [
+        "streaming", "max_bytes", "redirect_policy", "redirect_count",
+        "initial_host_family", "final_host_family", "cross_host_redirect",
+        "output_root_bound"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "streaming": {"const": true},
+        "max_bytes": {"type": "integer", "minimum": 1, "maximum": 1073741824},
+        "redirect_policy": {"const": "same_host_only"},
+        "redirect_count": {"type": "integer", "minimum": 0, "maximum": 3},
+        "initial_host_family": {"type": "string", "minLength": 1, "maxLength": 253},
+        "final_host_family": {"type": "string", "minLength": 1, "maxLength": 253},
+        "cross_host_redirect": {"const": false},
+        "output_root_bound": {"const": true}
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "required": [
+        "source_size_verified", "source_md5_verified", "magic_verified",
+        "sha256_computed", "atomic_commit", "overwrite"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "source_size_verified": {"type": "boolean"},
+        "source_md5_verified": {"type": "boolean"},
+        "magic_verified": {"const": true},
+        "sha256_computed": {"const": true},
+        "atomic_commit": {"const": true},
+        "overwrite": {"const": "denied"}
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": {
+        "enum": [
+          "local_file_reference_only",
+          "same_host_redirects_only",
+          "source_url_redacted"
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

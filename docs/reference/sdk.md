@@ -673,15 +673,15 @@ receipt = gravity.fetch_material_asset(
     "material_id",
     303,
     "thumbnail",
-    "tmp/thumbnail.jpg",
+    "tmp/thumbnail.jpg", output_root=".",
 )
 ```
 
-方法签名为 `fetch_material_asset(source, source_input, ref_field, ref, role, destination)`。它先执行
-source 对应的已登记 operation，并且只从这次响应的唯一匹配行读取 URL；公开方法没有 URL 参数。
-`destination` 是完整文件的触发条件和最终路径，结果为 `gravity.material-asset.v1` 收据，含大小、
-SHA-256、MIME/magic、完整性和重定向的值无关事实，不含完整 URL。错误分类与 CLI 相同；这是文件
-effect，不进入 Plan v1。
+方法签名为 `fetch_material_asset(source, source_input, ref_field, ref, role, destination, *, output_root=None)`。
+它只从 fresh 已登记 operation 的唯一匹配行读取 URL；公开方法没有 URL 参数，输出在 source read 前绑定 root。
+结果 `gravity.material-asset.v2` 嵌入 `gravity.artifact-transfer.v1`：只返回相对 `local_ref`、大小、
+SHA-256、MIME/extension/magic、同 host 重定向和完整性事实，不含 URL、请求输入或绝对 root；JPEG 上限
+16 MiB、MP4 上限 1 GiB。值无关 HTTP Receipt 引用沿标准 result audit 返回；文件 effect 不进入 Plan v1。
 
 ## Promotion Performance
 

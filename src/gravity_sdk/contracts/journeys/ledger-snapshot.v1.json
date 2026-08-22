@@ -1200,7 +1200,7 @@
       }
     },
     {
-      "blocker_note": "`material.asset.fetch` 不接收 URL：一次调用先重读 `local` 或 `bytedance_project` stable source，再按精确引用从唯一行取 `file_url`/`thumbnail_url` 并完整原子下载。host/path 不枚举、不限制，跨 host redirect 跟随；本地与 Bytedance 的 JPEG/MP4 证据独立成立。HTTP terminal 状态统一归 upstream/3，不创造素材失效 taxonomy；完整文件由显式 output/destination 触发。",
+      "blocker_note": "`material.asset.fetch` 不接收 URL：一次调用先重读 `local` 或 `bytedance_project` stable source，再按精确引用从唯一行取私有 URL。R13A v2 通过共享 Artifact Transfer 完整流式下载：fresh 首跳精确 host/path 动态授权、redirect 仅同 host，root/reparse/overwrite/extension 在 source read 前检查，JPEG/MP4 分别受 16 MiB/1 GiB cap 与 MIME/magic/size/MD5/SHA-256/原子 no-clobber 约束；公开只含相对 `local_ref` 和值无关 Receipt 引用。既有生产样本均无 redirect；HTTP terminal 状态仍统一归 upstream/3，不创造素材失效 taxonomy。",
       "can_return_business_content": true,
       "counted": true,
       "display_name": "按精确平台素材引用预览或下载图片/视频（Issue 19）",
@@ -1209,7 +1209,7 @@
       "request_budget": {
         "raw": "1 / 2（中英首问）"
       },
-      "row_digest": "6025ddad7cad49d6c34727b89f8130ada4abf112ff7619779984e147624fe465",
+      "row_digest": "63888f0af5eeb069563df83eef93bb11566f64cb63b064f81b76574ae72c4512",
       "surfaces": {
         "agent": "有",
         "cli": "有",
@@ -1220,7 +1220,7 @@
     }
   ],
   "schema_version": "gravity.journey-ledger-snapshot.v1",
-  "snapshot_digest": "9588d3b34a1ce388502d673177ede6ce5370f374388b60230fbb2822da1e4022",
+  "snapshot_digest": "a29871887246c531f3ffebf695776811f82ec64212cbde45b8ed8165a2c4b88c",
   "source_path": "docs/analysis-journeys.md",
-  "source_sha256": "0bb8ce36cbcbcfe6a646db390476fc5932b5b5c535113f4572d85e0416d35338"
+  "source_sha256": "fbad3574e14b76df42d2917598fd11fbabbd6919e91fa1aeb6cc45214f1c2733"
 }

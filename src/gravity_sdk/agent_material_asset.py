@@ -54,9 +54,13 @@ def material_asset_capability_cards(
                 "role": "<file-or-thumbnail>",
                 "output": "<new-local-file-path>",
             },
+            "optional_inputs": ["output_root"],
             "source_contract": {
                 "accepts_caller_url": False,
                 "fresh_registered_response_required": True,
+                "artifact_schema_version": "gravity.artifact-transfer.v1",
+                "redirect_policy": "same_host_only",
+                "output_root_bound": True,
                 "sources": ["local", "bytedance_project"],
             },
             "match": {

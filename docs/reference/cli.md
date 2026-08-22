@@ -321,29 +321,29 @@ gravity materials performance --app main --app secondary `
 gravity materials fetch --source local `
   --input '{"page":1,"page_size":20}' `
   --ref-field id --ref <exact-id> --role thumbnail `
-  --output tmp/thumbnail.jpg
+  --output-root . --output tmp/thumbnail.jpg
 
 gravity materials fetch --source bytedance_project `
   --input '{"advertiser_id":<id>,"project_id":<id>}' `
   --ref-field material_id --ref <exact-id> --role file `
-  --output tmp/video.mp4
+  --output-root . --output tmp/video.mp4
 ```
 
 `--input` 只接受所选 source 对应的已登记 operation 输入；命令先重新读取
 `material.local.list` 或 `material.bytedance.project_material.list`，再从这次通过投影的唯一匹配行
-取 `file_url` / `thumbnail_url`。没有 URL 参数，也不会从 `--input` 接受 URL。host、path 和重定向
-目标不枚举、不限制；重定向跟随，收据只返回 initial/final host family、redirect count 和是否跨 host，
-不回显完整 URL。
+取 `file_url` / `thumbnail_url`。没有 URL 参数，也不会从 `--input` 接受 URL。fresh URL 的精确 HTTPS
+host/path 动态成为本次授权，不静态枚举未来 shard；重定向最多 3 次且只能留在同一精确 host，逃逸在
+第二次请求前失败。结果只返回 host family、redirect count，绝不回显 URL。
 
-`--output` 一旦给出就表示调用方确实需要文件，因此执行完整流式下载、Content-Length、已声明
-source size/MD5（存在时）、MIME、magic、SHA-256、fsync 和同目录原子提交；它不是 JSON 输出路径。
-维护探测只读 64-byte Range，不等于产品完整下载。当前 source 合同覆盖已实证的 JPEG thumbnail 与
-MP4 file；其他类型会作为 upstream contract drift 失败关闭，而不是按 host 拒绝。
+`--output` 触发完整文件；`--output-root` 可显式绑定相对目标。省略 root 时相对路径绑定 cwd，旧绝对
+目标绑定其 parent；root、祖先、reparse、overwrite 和扩展名在 source read 前检查，提交时再检查。
+传输强制 Content-Length/stream cap、可用时的 source size/MD5、MIME+extension+magic、SHA-256、fsync
+和原子 no-clobber；JPEG 为 16 MiB，MP4 为 1 GiB。维护 Range probe 不等于产品完整下载。
 
-完整 GET 的 HTTP 200 才是成功；重定向继续跟随。terminal 401/403/404/410/429/5xx 及其他非 200
-状态都属于 upstream/exit 3，其中 408/425/429/5xx 标记 retryable；source/ref/role/input 错误属于
-caller/exit 2，本地 staging/fsync/atomic replace 错误属于 local/exit 4。不会生成
-`not_found/expired/not_cached/permission` 素材状态。
+完整 GET 的 HTTP 200 才成功；terminal 401/403/404/410/429/5xx 及其他非 200 仍为 upstream/exit 3，
+其中 408/425/429/5xx retryable。source/ref/role/input 与 output-root 错误为 caller/exit 2，本地 I/O 为
+local/exit 4；redirect/type/size/digest 以稳定 `ARTIFACT_*` reason code 失败关闭且不留 partial。
+结果为 `gravity.material-asset.v2` + `gravity.artifact-transfer.v1`，不会臆造素材失效状态。
 
 ## Promotion Performance
 

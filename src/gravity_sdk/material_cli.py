@@ -38,25 +38,7 @@ def add_material_commands(
         item = subcommands.add_parser(name)
         add_input(item)
         add_pagination(item)
-    fetch = subcommands.add_parser(
-        "fetch",
-        help="Fetch a file URL taken from a fresh registered material response.",
-    )
-    fetch.add_argument(
-        "--source", required=True, choices=("local", "bytedance_project")
-    )
-    add_input(fetch, required=True)
-    fetch.add_argument(
-        "--ref-field",
-        required=True,
-        choices=("id", "gravity_material_id", "material_id"),
-    )
-    fetch.add_argument("--ref", required=True)
-    fetch.add_argument("--role", required=True, choices=("file", "thumbnail"))
-    fetch.add_argument("--output", required=True, type=_output_file)
-    fetch.set_defaults(
-        operation_id="material.asset.fetch", product_file_output=True
-    )
+    _add_material_fetch_command(subcommands, add_input)
     performance = subcommands.add_parser(
         "performance",
         help="Read platform material performance through one stable operation.",
@@ -99,6 +81,35 @@ def add_material_commands(
     packages.add_argument("--max-items", type=positive_int, default=100_000)
 
 
+def _add_material_fetch_command(
+    subcommands: Any, add_input: Callable[..., None]
+) -> None:
+    fetch = subcommands.add_parser(
+        "fetch",
+        help="Fetch a file URL taken from a fresh registered material response.",
+    )
+    fetch.add_argument(
+        "--source", required=True, choices=("local", "bytedance_project")
+    )
+    add_input(fetch, required=True)
+    fetch.add_argument(
+        "--ref-field",
+        required=True,
+        choices=("id", "gravity_material_id", "material_id"),
+    )
+    fetch.add_argument("--ref", required=True)
+    fetch.add_argument("--role", required=True, choices=("file", "thumbnail"))
+    fetch.add_argument("--output", required=True, type=_output_file)
+    fetch.add_argument(
+        "--output-root",
+        type=_output_file,
+        help="Bind a relative output beneath this existing plain directory.",
+    )
+    fetch.set_defaults(
+        operation_id="material.asset.fetch", product_file_output=True
+    )
+
+
 def dispatch_material_command(args: Any, object_input: Callable[[Any], Any]) -> Any:
     """Dispatch old catalog commands unchanged or run the new product."""
 
@@ -128,6 +139,7 @@ def dispatch_material_command(args: Any, object_input: Callable[[Any], Any]) -> 
             args.ref,
             args.role,
             args.output,
+            output_root=args.output_root,
         )
     if args.materials_command == "title-packages":
         workspace = load_workspace()
