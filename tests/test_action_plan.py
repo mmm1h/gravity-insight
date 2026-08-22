@@ -19,7 +19,6 @@ from gravity_sdk.action_segment_connector import ACTION_KIND
 from gravity_sdk.errors import InputValidationError
 from gravity_sdk.find_input import object_input
 from gravity_sdk.result_audit import SCHEMA_VERSION as AUDIT_SCHEMA_VERSION
-from gravity_sdk.segment_mutation import update_segment_metadata
 from gravity_sdk.segment_mutation_contracts import DETAIL_OPERATION, SAVE
 
 
@@ -231,12 +230,13 @@ class ActionPlanHappyPathTests(unittest.TestCase):
         self.assertEqual(RECEIPT_ID, result["receipt_references"][0]["receipt_id"])
         self.assertFalse(result["automatic_retry"])
         self.assertEqual("allow", result["policy"]["decision"])
-        with self.assertRaises(InputValidationError) as replay:
-            self.service.execute(
-                preview["plan_id"],
-                self.request,
-                confirmation=_confirmation(self.service, preview),
-            )
+        with mock.patch("gravity_sdk.action_plan._utcnow", return_value=NOW):
+            with self.assertRaises(InputValidationError) as replay:
+                self.service.execute(
+                    preview["plan_id"],
+                    self.request,
+                    confirmation=_confirmation(self.service, preview),
+                )
         self.assertEqual("ACTION_PLAN_CONSUMED", replay.exception.code)
         self.assertEqual(1, self.insight.writes)
 
@@ -248,22 +248,23 @@ class ActionPlanHappyPathTests(unittest.TestCase):
         self.assertEqual(("updated", 2, 1), (done["status"], client.reads, client.writes))
 
     def test_new_plan_from_verified_new_preimage_can_update_again(self) -> None:
-        first = self.preview()
-        self.service.execute(
-            first["plan_id"],
-            self.request,
-            confirmation=_confirmation(self.service, first),
-        )
-        second_request = _request(name="Next Name", remark="next-note")
-        second = self.service.preview_segment_update(
-            second_request,
-            authorization=_authorization(self.service, second_request),
-        )
-        result = self.service.execute(
-            second["plan_id"],
-            second_request,
-            confirmation=_confirmation(self.service, second),
-        )
+        with mock.patch("gravity_sdk.action_plan._utcnow", return_value=NOW):
+            first = self.preview()
+            self.service.execute(
+                first["plan_id"],
+                self.request,
+                confirmation=_confirmation(self.service, first),
+            )
+            second_request = _request(name="Next Name", remark="next-note")
+            second = self.service.preview_segment_update(
+                second_request,
+                authorization=_authorization(self.service, second_request),
+            )
+            result = self.service.execute(
+                second["plan_id"],
+                second_request,
+                confirmation=_confirmation(self.service, second),
+            )
         self.assertEqual(("succeeded", 2), (result["status"], self.insight.writes))
 
 

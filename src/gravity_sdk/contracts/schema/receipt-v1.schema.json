@@ -1,0 +1,394 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.receipt.v1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "receipt_id",
+    "created_at",
+    "operation_id",
+    "input_shape_fingerprint",
+    "contract_fingerprint",
+    "output_shape_fingerprint",
+    "status",
+    "duration_ms",
+    "request_count"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.receipt.v1"},
+    "receipt_id": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+    "created_at": {"type": "string", "minLength": 20, "maxLength": 40},
+    "operation_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "input_shape_fingerprint": {"$ref": "#/$defs/sha256"},
+    "contract_fingerprint": {"$ref": "#/$defs/nullable_sha256"},
+    "output_shape_fingerprint": {"$ref": "#/$defs/sha256"},
+    "status": {"type": "string", "pattern": "^[a-z][a-z0-9_-]{0,127}$"},
+    "duration_ms": {"type": "number", "minimum": 0},
+    "request_count": {"type": "integer", "minimum": 0},
+    "run": {"$ref": "#/$defs/run"},
+    "skill": {"$ref": "#/$defs/skill"},
+    "journey": {"$ref": "#/$defs/journey"},
+    "capability": {"$ref": "#/$defs/capability"},
+    "semantics": {"$ref": "#/$defs/semantics"},
+    "operator_model": {"$ref": "#/$defs/operator_model"},
+    "context": {"$ref": "#/$defs/context"},
+    "pagination": {"$ref": "#/$defs/pagination"},
+    "data_quality": {"$ref": "#/$defs/data_quality"},
+    "policy": {"$ref": "#/$defs/policy"},
+    "action": {"$ref": "#/$defs/action"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "nullable_sha256": {
+      "anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]
+    },
+    "reason_code": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]{1,127}$"
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_.-]{0,127}$"
+    },
+    "run_id": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+    "run": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "run_id",
+        "root_run_id",
+        "parent_run_id",
+        "event_type"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {"const": "gravity.receipt-run-facet.v1"},
+        "run_id": {"$ref": "#/$defs/run_id"},
+        "root_run_id": {"$ref": "#/$defs/run_id"},
+        "parent_run_id": {
+          "anyOf": [{"$ref": "#/$defs/run_id"}, {"type": "null"}]
+        },
+        "event_type": {"enum": ["start", "complete", "fail", "abort"]}
+      }
+    },
+    "skill": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "namespace",
+        "skill_id",
+        "version",
+        "digest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {"const": "gravity.receipt-skill-facet.v1"},
+        "namespace": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)*$",
+          "maxLength": 128
+        },
+        "skill_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+          "maxLength": 64
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?$",
+          "maxLength": 64
+        },
+        "digest": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "journey": {
+      "type": "object",
+      "required": ["schema_version", "journey_id", "version", "digest"],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {"const": "gravity.receipt-journey-facet.v1"},
+        "journey_id": {"type": "string", "minLength": 3, "maxLength": 256},
+        "version": {"type": "integer", "minimum": 1},
+        "digest": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "capability": {
+      "type": "object",
+      "required": ["schema_version", "references"],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {"const": "gravity.receipt-capability-facet.v1"},
+        "references": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 128,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/capability_reference"}
+        }
+      }
+    },
+    "capability_reference": {
+      "type": "object",
+      "required": [
+        "identity_kind",
+        "selector",
+        "contract_version",
+        "contract_digest",
+        "validation_digest",
+        "status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "identity_kind": {"enum": ["operation", "product", "composite"]},
+        "selector": {"type": "string", "minLength": 1, "maxLength": 256},
+        "contract_version": {"type": ["string", "null"], "maxLength": 64},
+        "contract_digest": {"$ref": "#/$defs/nullable_sha256"},
+        "validation_digest": {"$ref": "#/$defs/nullable_sha256"},
+        "status": {"$ref": "#/$defs/identifier"}
+      }
+    },
+    "semantics": {
+      "type": "object",
+      "required": ["schema_version", "references"],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {"const": "gravity.receipt-semantics-facet.v1"},
+        "references": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 128,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/semantic_reference"}
+        }
+      }
+    },
+    "semantic_reference": {
+      "type": "object",
+      "required": [
+        "uri",
+        "version",
+        "definition_digest",
+        "binding_digest",
+        "registry_digest",
+        "status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "uri": {"type": "string", "minLength": 8, "maxLength": 256},
+        "version": {"type": ["integer", "null"], "minimum": 1},
+        "definition_digest": {"$ref": "#/$defs/nullable_sha256"},
+        "binding_digest": {"$ref": "#/$defs/nullable_sha256"},
+        "registry_digest": {"$ref": "#/$defs/nullable_sha256"},
+        "status": {"$ref": "#/$defs/identifier"}
+      }
+    },
+    "operator_model": {
+      "type": "object",
+      "required": ["schema_version", "operators", "models", "dependencies_digest"],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {"const": "gravity.operator-model-receipt-facet.v1"},
+        "operators": {
+          "type": "array",
+          "maxItems": 128,
+          "items": {"$ref": "#/$defs/operator_reference"}
+        },
+        "models": {
+          "type": "array",
+          "maxItems": 128,
+          "items": {"$ref": "#/$defs/model_reference"}
+        },
+        "dependencies_digest": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "operator_reference": {
+      "type": "object",
+      "required": ["uri", "version", "digest", "assumptions_digest"],
+      "additionalProperties": false,
+      "properties": {
+        "uri": {"type": "string", "minLength": 8, "maxLength": 256},
+        "version": {"type": "integer", "minimum": 1},
+        "digest": {"$ref": "#/$defs/sha256"},
+        "assumptions_digest": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "model_reference": {
+      "type": "object",
+      "required": [
+        "uri",
+        "version",
+        "digest",
+        "lineage_digest",
+        "evaluation_digest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "uri": {"type": "string", "minLength": 8, "maxLength": 256},
+        "version": {"type": "integer", "minimum": 1},
+        "digest": {"$ref": "#/$defs/sha256"},
+        "lineage_digest": {"$ref": "#/$defs/sha256"},
+        "evaluation_digest": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "context": {
+      "type": "object",
+      "required": ["schema_version", "packs"],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {"const": "gravity.receipt-context-facet.v1"},
+        "packs": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 128,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/context_pack_reference"}
+        }
+      }
+    },
+    "context_pack_reference": {
+      "type": "object",
+      "required": [
+        "requirement_uri",
+        "provider_uri",
+        "pack_digest",
+        "status",
+        "resources"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "requirement_uri": {"type": "string", "minLength": 8, "maxLength": 256},
+        "provider_uri": {"type": ["string", "null"], "maxLength": 256},
+        "pack_digest": {"$ref": "#/$defs/nullable_sha256"},
+        "status": {"enum": ["available", "partial", "blocked", "missing"]},
+        "resources": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/context_resource_reference"}
+        }
+      }
+    },
+    "context_resource_reference": {
+      "type": "object",
+      "required": ["uri", "digest", "trust", "freshness", "sensitivity"],
+      "additionalProperties": false,
+      "properties": {
+        "uri": {"type": "string", "minLength": 8, "maxLength": 2048},
+        "digest": {"$ref": "#/$defs/sha256"},
+        "trust": {
+          "enum": ["project_authoritative", "reviewed", "observed", "untrusted"]
+        },
+        "freshness": {"enum": ["current", "stale", "unknown"]},
+        "sensitivity": {"enum": ["public", "internal", "confidential", "restricted"]}
+      }
+    },
+    "pagination": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "completeness",
+        "pagination_evidence",
+        "truncated"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {"const": "gravity.receipt-pagination-facet.v1"},
+        "completeness": {"enum": ["complete", "prefix", "unknown"]},
+        "pagination_evidence": {"enum": ["production", "wire", "template", "none"]},
+        "truncated": {"type": "boolean"}
+      }
+    },
+    "data_quality": {
+      "type": "object",
+      "required": ["schema_version", "status", "check_ids", "result_digest"],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {"const": "gravity.receipt-data-quality-facet.v1"},
+        "status": {"enum": ["pass", "warn", "fail", "unknown"]},
+        "check_ids": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/identifier"}
+        },
+        "result_digest": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "policy": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "decision_id",
+        "policy_revision",
+        "decision",
+        "reason_codes",
+        "evaluated_effect",
+        "masked_paths"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {"const": "gravity.receipt-policy-facet.v1"},
+        "decision_id": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+        "policy_revision": {"type": "string", "minLength": 1, "maxLength": 128},
+        "decision": {"enum": ["allow", "deny", "require_confirmation"]},
+        "reason_codes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/reason_code"}
+        },
+        "evaluated_effect": {"enum": ["read", "export", "mutation"]},
+        "masked_paths": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^/[^\\r\\n]{0,255}$"}
+        }
+      }
+    },
+    "action": {
+      "type": "object",
+      "required": [
+        "schema_version",
+        "plan_id",
+        "action_kind",
+        "connector",
+        "execution_status",
+        "readback"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {"const": "gravity.receipt-action-facet.v1"},
+        "plan_id": {"type": "string", "minLength": 8, "maxLength": 256},
+        "action_kind": {"$ref": "#/$defs/identifier"},
+        "connector": {"$ref": "#/$defs/connector"},
+        "execution_status": {"enum": ["previewed", "succeeded", "stale", "uncertain"]},
+        "readback": {
+          "type": "object",
+          "required": ["status", "assertion_ids"],
+          "additionalProperties": false,
+          "properties": {
+            "status": {"enum": ["not_performed", "verified", "unverified"]},
+            "assertion_ids": {
+              "type": "array",
+              "maxItems": 64,
+              "uniqueItems": true,
+              "items": {"$ref": "#/$defs/identifier"}
+            }
+          }
+        }
+      }
+    },
+    "connector": {
+      "type": "object",
+      "required": ["id", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"$ref": "#/$defs/identifier"},
+        "version": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}
