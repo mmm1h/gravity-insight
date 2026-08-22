@@ -3,13 +3,13 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; R12-A/B `fixed_dev`, R12-C started 2026-08-22 |
+| Status | `fixed_dev`; R12-A/B/C complete on `dev` 2026-08-22 |
 | Track | Governed action |
 | Dependencies | R09A |
 | Parallel group | `governed-action` |
 | Shared-spine integration | Required and serialized |
 | Delivery ledger | This Requirement document; no internal GitHub Issue |
-| Milestones | R12-A/B `fixed_dev`; R12-C `in_progress` |
+| Milestones | R12-A/B/C `fixed_dev` |
 | R12-A baseline | `dev@3a47ce9f48902313c7898a0ab632c58d4c29259b` |
 | R12-A branch / worktree | `codex/r12a-action-plan-reference-connector` / `D:\\git-pjt\\gravity-sdk-wt\\r12a-action-plan-reference-connector` |
 | R12-B baseline | `dev@7e6c190c4e527579ce772261b947c79c5dcb4d45` |
@@ -271,11 +271,66 @@ installation, release or `main` promotion.
   repository/usability/security and retained clean consumer gates. Active human
   docs remain exactly `5500` lines and production HTTP/mutations remain `0`.
 
+## R12-C Fixed Dev Evidence
+
+- Feature commit `a8f1ba1` and merge `d721074` add six closed machine schemas
+  for power evidence, Proposal request/result, external observation and Outcome
+  request/result; one stateless `ExperimentHandoffService`; lazy
+  `GravitySDK.experiments`; root export; and explicit offline
+  `gravity experiment propose|outcome-handoff`. Root lazy exports are now `130`
+  and `gravity_sdk.__all__` has `131` entries including `__version__`.
+- Proposal first recompiles the exact source `gravity.analysis-result.v1` and
+  planning `gravity.execution-snapshot.v1`. It projects only safe result/scope/
+  snapshot digests, Journey/Skill references and explicit hypothesis data;
+  source findings, rows, receipts, Context bodies and request values are not
+  copied.
+- Target Segment, Primary Metric, Guardrails, precomputed power evidence and
+  Context assumptions must match exact snapshot URI/version/digest/status
+  references. Missing or unresolved dependencies produce stable
+  `proposal_only` reasons. A structurally complete synthetic snapshot can prove
+  `ready_for_review`, but every Proposal fixes
+  `experiment_creation_authorized=false`, `automatic_execution=false` and zero
+  network; R12-C implements no statistics, assignment or experiment API.
+- The Runtime still has one packaged Operator. New canonical
+  `analysis.experiment-outcome-evaluation@1` requires absent
+  `operator://gravity/significance-test@1`, declares all execution surfaces
+  missing and execution unavailable, and therefore returns current
+  `blocked/OPERATOR_UNAVAILABLE`. Journey Registry/ledger now contain `6` / `64`
+  entries without claiming an evaluator exists.
+- Outcome Handoff accepts only an observation whose Proposal ID/digest matches,
+  validates completed assignment/evidence digests and UTC timestamps, aligns
+  observation dates in the explicit business timezone, and requires a later
+  non-overlapping source/evidence window plus a distinct fixed Outcome Journey.
+  `handoff_ready` remains separate from blocked evaluator readiness;
+  `evaluation_performed=false`, same-run evaluation and recommendation
+  self-validation are permanently false.
+- All result schemas are closed against arbitrary metric/power/user payloads;
+  semantic reason/independence state is recomputed after ID/digest validation.
+  Re-signed blocker, date/timezone, metric-value and observation tamper cases
+  fail closed without echoing private CLI input.
+- Complete gates pass `1660` unittest; `1660 passed, 3859 subtests` pytest;
+  compiler `237 operations / 11 manifests`; quality, targeted Ruff and all three
+  generators PASS. Post-merge R12/Journey/public/docs gates pass `71` tests and
+  `26` subtests; actionable errors remain
+  `1330 = 1163 A + 167 B + 0 C`; active human docs remain exactly `5500` lines.
+- Development usability remains `296/336` selection, `248/248` fillability,
+  `53/53` offline terminal and `5/5` recovery; security has zero violations and
+  production HTTP requests/mutations/experiment creations are `0`.
+- An isolated non-editable wheel imports the root service, all six schemas and
+  the six-entry Journey Registry from `site-packages`; wheel SHA-256 is
+  `7b9562091a63170f5b6591933cba972844470c78d559e5ec5bd413b45d5bdfb8`.
+- Canonical consumer migration commit `work-dashboard@d1915a18` updates the
+  registry count and asserts the Outcome Journey remains unavailable with all
+  surfaces missing. Its current-SDK adoption/R01 suite passes `11` tests and
+  `94` subtests. Consumer Gravity adoption and changed-file privacy gates pass;
+  unrelated pre-existing asset/provenance/link gates and 13 GM approval/registry
+  tests remain outside this one-file migration and are not hidden by R12-C.
+
 ## Outcome
 
 Analysis can hand off a structured recommendation to a narrow governed Action Connector through Preview, explicit user confirmation, Execute, Readback and later Outcome Evaluation, with value-free Receipt evidence.
 
-## Current Baseline
+## Entry Baseline
 
 Registered Gravity mutations already support preview/dry-run, explicit execute and domain readback. There is no general Action Plan identity, managed-field ownership, experiment proposal or Skill/Context/Trust Receipt facet composition.
 
