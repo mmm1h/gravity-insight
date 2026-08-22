@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.action-authorization.v1",
+  "type": "object",
+  "required": ["schema_version", "action_kind", "request"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.action-authorization.v1"},
+    "action_kind": {"const": "segment.update_metadata"},
+    "request": {"$ref": "segment-metadata-update-request-v1.schema.json"}
+  }
+}

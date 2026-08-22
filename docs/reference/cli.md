@@ -26,7 +26,7 @@ gravity analysis dashboard prepare|run  编译或执行一个看板的受支持�
 gravity analysis dashboard kanban schema|mutate  查看或执行 Kanban 受治理写合同
 gravity analysis segment snapshot  读取一个分群的详情、历史与单日计算结果
 gravity analysis segment members   读取一个分群的完整成员行与逐人属性
-gravity analysis segment create-from-*|update|update-rule|refresh|delete  预览或显式执行受治理分群写
+gravity analysis segment ... / gravity action segment-update ...  direct 分群写或一次性 Action Plan 确认
 gravity analysis saved ...    列出、读取、准备或严格重放保存分析
 gravity analysis order directory  读取受控四字段的单日普通订单目录
 gravity analysis order trace  按显式 TraceID 读取单日拆单明细
@@ -813,22 +813,21 @@ gravity analysis segment create-from-analysis --spec funnel.json --app main `
 
 gravity analysis segment create-from-rule --spec segment-rule.json --app main --dry-run
 gravity analysis segment update --segment-id <id> --name SDK测试改名 --remark "待验证" --dry-run
-gravity analysis segment update-rule --segment-id <id> --spec segment-rule.json --app main --dry-run
-gravity analysis segment refresh --segment-id <id> --dry-run
-gravity analysis segment delete --segment-id <id> --dry-run
+gravity action segment-update preview --input segment-update-action.json
+gravity action segment-update execute --plan-id <plan-id> --confirm-plan <same-plan-id> `
+  --preview-fingerprint <reviewed-fingerprint> --input segment-update-action.json
 ```
 
-其他创建入口为 `create-from-history --source-segment-id ... --version-id ...` 和
-`create-from-tmp --tmp-segment-id ...`；二者同样要求 `--app/--name` 及显式模式。把上述命令的
-`--dry-run` 改为 `--execute` 才发送一次真实写，SDK 不自动重试。
+其他 direct 入口包括 `create-from-history/create-from-tmp/update-rule/refresh/delete`；它们同样要求
+显式 `--dry-run|--execute`，行为不因 Action Plan 改变。`segment-update-action.json` 固定为
+`gravity.segment-metadata-update-request.v1` 的 exact `segment_id/name/remark`，不接受自然语言。
 
 create 在 `segment_remark` 前缀写入可见 `GSDK-<12 hex>`，完整列表和 detail 读回后才返回 created；
-同 marker+同名复用已存在对象，同名冲突为 caller/2。update/update-rule 保留已有 marker。delete
-不信任调用方提供的归属信息，执行时用 exact ID 重新读取 detail：GSDK marker 或
-`create_user_id == gravity_id` 即放行；否则以 `OWNERSHIP_REQUIRED` / exit 2 失败且不发删除，
-错误同时报告对象 ID、owner ID/name/字段、当前 principal 和下一步。结果 schema 为
-`gravity-insight.segment-mutation.v1`。自然语言只返回 dry-run→execute 命令交接，不自动执行，
-这些 effect 不进入 Plan v1。
+同 marker+同名复用已存在对象；direct update/delete 继续在执行时重读 exact detail 并要求 GSDK marker 或 `create_user_id == gravity_id`。Action preview 额外绑定同一 preimage/owner、managed fields、principal 与 expiry。
+Action execute 必须同时重交相同 request、`plan_id`、同值 `--confirm-plan` 和 preview fingerprint；CLI invocation 才构造 current user authorization，tool/Context/Skill/history 不能授权。
+确认先原子 plan+field claim，再由既有 Segment owner 在 write lock 内检查 preimage 并最多写一次；上游没有 revision/CAS，最后读取后的外部竞态只能靠 readback 判为 uncertain，确认不可重放。
+成功为 `gravity.action-execution.v1 status=succeeded` 且 managed-field/ownership readback verified；写后不确定为 `uncertain`、`automatic_retry=false`，不伪装成功。
+原 direct 结果仍是 `gravity-insight.segment-mutation.v1`；Action 不进入 Plan v1，也不改变其他 mutation family。
 
 ### Segment Rule Spec v1
 

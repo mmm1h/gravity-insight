@@ -181,7 +181,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `segment_members()` | 按稳定 ID 或精确名称返回完整成员行；动态字段由 user-property metadata 发现，历史用 `segment_version_id` |
 | `segment_create_from_analysis()` | 默认零网络预览，显式 `execute=True` 后把一个已验证 funnel step/loss 持久化为带标记分群 |
 | `segment_create_from_rule()` / `segment_create_from_history()` / `segment_create_from_tmp()` | 默认预览，显式确认后从规则、历史版本或临时分群创建带标记分群 |
-| `segment_update()` / `segment_update_rule()` / `segment_refresh()` | 默认预览；执行前读 exact preimage，单次更新且不自动重放 |
+| `segment_update()` / `segment_update_rule()` / `segment_refresh()` / `actions` | direct 方法保持默认预览；`actions` 为 metadata update 绑定 exact preimage/owner/expiry 与一次性确认 |
 | `segment_delete()` | 默认预览；执行时只删除 detail 读回仍带 SDK 标记的分群 |
 | `saved_analyses()` | 列出一个 App 的安全保存分析身份，不读取 opaque config；replay 资格固定为 unchecked/null |
 | `get_saved_analysis()` | 按 ID 或精确名称检查 Strict Replay 资格及 window 要求，不返回 config |
@@ -327,11 +327,12 @@ delete_preview = gravity.segment_delete(segment_id)
 deleted = gravity.segment_delete(segment_id, execute=True)
 ```
 
-create 用确定性 marker 做读前幂等检查，并在单次写后通过完整 segment list 和 detail 读回；跨进程
-重名由上游唯一约束返回 caller/2，不会自动重试。delete 的 ownership 只来自执行时的 detail preimage，
-调用方不能通过传 remark 绕过。`segment_update()` 与 `segment_update_rule()` 会保留读到的 marker；
-`segment_refresh()` 可能异步改变成员集合。历史/临时创建需要调用方给真实且已验证的父 ID，不做发现或
-猜测。自然语言 Agent 只交接 CLI 确认流程，这些方法不映射为 Plan v1 节点。
+create 用确定性 marker 做读前幂等检查并在单次写后经 list/detail 读回；delete 的 ownership 只来自执行时
+detail preimage，调用方不能通过 remark 绕过。direct `segment_update()` 仍以 `execute=True` 显式执行。
+需要不可重放确认时，`sdk.actions.preview_segment_update(request, authorization=host_source("user","authorization",sdk.actions.authorization_value(request)))` 先读 exact detail 并绑定 principal/preimage/owner、两个 managed fields、合同和 expiry，只公开安全 `gravity.action-plan.v1`。
+用户复核后用 `sdk.actions.confirmation_value(plan_id, preview_fingerprint)` 构造新的 current user/authorization source，再调用 `sdk.actions.execute(plan_id, request, confirmation=...)`；request 必须完全相同。
+execute 在旧 Segment write lock 内重读 ownership/preimage，atomic plan+field claim 后最多写一次；上游无 revision/CAS，最后读取后的外部竞态只能由 readback 收敛为 `uncertain`，不能重放或自动重试。原 direct envelope 不变。
+自然语言、Skill、Context、tool result 与历史记录都不能构造授权；Action 不映射为 Plan v1 节点，R12-A 也不增加其他 connector。
 
 ## Analysis Query Spec v1
 

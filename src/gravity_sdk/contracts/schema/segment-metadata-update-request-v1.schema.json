@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.segment-metadata-update-request.v1",
+  "type": "object",
+  "required": ["schema_version", "segment_id", "name"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.segment-metadata-update-request.v1"},
+    "segment_id": {"anyOf": [{"type": "integer", "minimum": 1}, {"type": "string", "pattern": "^[0-9]{1,64}$"}]},
+    "name": {"type": "string", "minLength": 1, "maxLength": 20},
+    "remark": {"type": "string", "maxLength": 2000}
+  }
+}

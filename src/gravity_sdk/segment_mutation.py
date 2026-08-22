@@ -47,6 +47,7 @@ from .segment_mutation_support import (
     run_analysis as _run_analysis,
     require_segment_authority as _require_segment_authority,
     same_app as _same_app,
+    segment_preimage_digest as _segment_preimage_digest,
     segment_catalog as _segment_catalog,
     segment_detail as _segment_detail,
     segment_marker,
@@ -269,6 +270,7 @@ def update_segment_metadata(
     name: str,
     remark: str = "",
     execute: bool = False,
+    _expected_preimage_digest: str | None = None,
 ) -> dict[str, Any]:
     selected_id, selected_name = _identifier(segment_id, "segment_id"), _name(name)
     note = _caller_remark(remark)
@@ -283,6 +285,16 @@ def update_segment_metadata(
     with _WRITE_LOCK:
         preimage = _segment_detail(client, selected_id)
         ownership = _require_segment_authority(client, preimage)
+        if (
+            _expected_preimage_digest is not None
+            and _segment_preimage_digest(preimage) != _expected_preimage_digest
+        ):
+            raise InputValidationError(
+                "actual value: current controlled Segment preimage changed; allowed value: the exact preimage bound by the Action Plan",
+                field="segment_id",
+                code="ACTION_TARGET_CHANGED",
+                next_action="Do not execute or retry this plan; preview a new Action Plan from current Segment detail.",
+            )
         marker = _marker_from_remark(preimage.get("segment_remark"))
         selected_remark = _marked_remark(marker, note) if marker else note
         inputs = {

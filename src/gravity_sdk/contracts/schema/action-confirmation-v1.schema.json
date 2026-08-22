@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.action-confirmation.v1",
+  "type": "object",
+  "required": ["schema_version", "plan_id", "preview_fingerprint", "confirmed"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.action-confirmation.v1"},
+    "plan_id": {"type": "string", "pattern": "^act1_[0-9a-f]{32}_[0-9a-f]{32}$"},
+    "preview_fingerprint": {"$ref": "#/$defs/digest"},
+    "confirmed": {"const": true}
+  },
+  "$defs": {"digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+}
