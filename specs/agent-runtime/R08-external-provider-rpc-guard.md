@@ -53,6 +53,17 @@ promotion.
 
 ## Fixed Dev Evidence
 
+- Corrective commit `a4b7af3` (merge `8128185`) closes a Windows process-tree
+  escape reproduced on unchanged `dev`: `taskkill /T /F` returned 128 after
+  killing the Provider parent but could not terminate two nested venv-launcher
+  descendants. Runtime now assigns each Windows Provider to a private Job Object
+  before writing stdin and uses `KILL_ON_JOB_CLOSE`, retaining taskkill as the
+  unavailable-assignment fallback. Timeout, cancellation and normal completion
+  leave no child process; no descriptor/result/budget/credential surface changes.
+  Focused Provider/Context gates pass `42` tests and `22` subtests; complete
+  gates pass `1574` unittest and `1574 passed, 3820 subtests` pytest; compiler,
+  quality, CLI/diff and development usability/security pass with production HTTP
+  requests `0`.
 - `e7558e9` implements four external Provider/RPC schemas, exact descriptor and
   strict JSON compilers, a process-wide eight-slot Provider budget, per-session
   call/concurrency limits, timeout/cancel/retry/output/circuit enforcement,
