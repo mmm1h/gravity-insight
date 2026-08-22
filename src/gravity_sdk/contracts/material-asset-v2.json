@@ -1,9 +1,12 @@
 {
-  "schema_version": "gravity.material-asset-contract.v1",
+  "schema_version": "gravity.material-asset-contract.v2",
   "effect": "material_file_download",
   "input_boundary": "url_from_fresh_registered_operation_response",
   "accepts_caller_url": false,
-  "redirect_policy": "follow_and_record_without_host_restriction",
+  "initial_host_policy": "fresh_response_exact_host",
+  "redirect_policy": "same_host_only",
+  "output_policy": "root_bound_relative_atomic_no_clobber",
+  "receipt_policy": "value_free_http_references",
   "sources": {
     "local": {
       "operation_id": "material.local.list",
@@ -13,12 +16,20 @@
         "file": {
           "url_field": "file_url",
           "observed_content_type": "video/mp4",
-          "observed_magic_type": "iso-bmff"
+          "extensions": [".mp4"],
+          "magic_signatures": [{"offset": 4, "hex": "66747970"}],
+          "max_bytes": 1073741824,
+          "max_redirects": 3,
+          "timeout_seconds": 120
         },
         "thumbnail": {
           "url_field": "thumbnail_url",
           "observed_content_type": "image/jpeg",
-          "observed_magic_type": "jpeg"
+          "extensions": [".jpg", ".jpeg"],
+          "magic_signatures": [{"offset": 0, "hex": "ffd8ff"}],
+          "max_bytes": 16777216,
+          "max_redirects": 3,
+          "timeout_seconds": 120
         }
       },
       "declared_size_field": "file_size",
@@ -32,19 +43,27 @@
         "file": {
           "url_field": "file_url",
           "observed_content_type": "video/mp4",
-          "observed_magic_type": "iso-bmff"
+          "extensions": [".mp4"],
+          "magic_signatures": [{"offset": 4, "hex": "66747970"}],
+          "max_bytes": 1073741824,
+          "max_redirects": 3,
+          "timeout_seconds": 120
         },
         "thumbnail": {
           "url_field": "thumbnail_url",
           "observed_content_type": "image/jpeg",
-          "observed_magic_type": "jpeg"
+          "extensions": [".jpg", ".jpeg"],
+          "magic_signatures": [{"offset": 0, "hex": "ffd8ff"}],
+          "max_bytes": 16777216,
+          "max_redirects": 3,
+          "timeout_seconds": 120
         }
       }
     }
   },
   "http_status_categories": {
     "200": "success",
-    "redirect_with_location": "follow",
+    "same_host_redirect_with_location": "follow",
     "all_other_terminal_statuses": "upstream"
   },
   "local_failure_category": "local",

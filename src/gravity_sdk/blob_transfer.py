@@ -17,8 +17,8 @@ from .blob_models import (
     RequestsBlobTransport, SafeLocalSource, UploadReceipt,
 )
 from .blob_policy import (
-    BlobPolicy, _header, _normalize_expected_digest, _validate_authorized_source,
-    _validate_declared_size, _validate_remote_url,
+    BlobPolicy, _header, _normalize_expected_digest, _normalize_expected_md5,
+    _validate_authorized_source, _validate_declared_size, _validate_remote_url,
 )
 from .blob_storage import _new_staging_path, _prepare_destination, _validate_resume_state
 from .blob_upload import (
@@ -54,6 +54,7 @@ class SafeBlobTransfer:
         _validate_download_authorization(source, policy, self._wall_clock())
         _validate_declared_size(source.declared_size, policy)
         expected_digest = _normalize_expected_digest(source.expected_sha256)
+        expected_md5 = _normalize_expected_md5(source.expected_md5)
         resume_path = _validate_resume_state(resume, policy)
         response, _ = self._open_download(
             source.url,
@@ -79,6 +80,7 @@ class SafeBlobTransfer:
                     destination_path=destination_path,
                     extension=extension,
                     expected_digest=expected_digest,
+                    expected_md5=expected_md5,
                     resume=resume,
                     resume_path=resume_path,
                     staging_path=staging_path,

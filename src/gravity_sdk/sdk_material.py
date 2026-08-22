@@ -99,6 +99,8 @@ class MaterialSdkMixin:
         ref: str | int,
         role: str,
         destination: str | Path,
+        *,
+        output_root: str | Path | None = None,
     ) -> dict[str, Any]:
         """Fetch a URL resolved from one fresh registered material response."""
 
@@ -112,6 +114,7 @@ class MaterialSdkMixin:
             ref,
             role,
             destination,
+            output_root=output_root,
         )
 
 

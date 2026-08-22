@@ -80,6 +80,7 @@ class AuthorizedBlobSource:
     declared_size: int | None = None
     declared_mime_type: str = ""
     expected_sha256: str | None = None
+    expected_md5: str | None = None
     effect_receipt: object | None = None
 
 
