@@ -81,6 +81,7 @@ class LocalSkillResolver:
                     "package_digest": skill_package_descriptor(artifact)[
                         "package_digest"
                     ],
+                    "skill_resolution": "unlocked",
                 }
             )
         return {
@@ -121,6 +122,7 @@ class LocalSkillResolver:
             "request_budget": copy.deepcopy(contract["request_budget"]),
             "output_schema": contract["output_schema"],
             "package": package,
+            "skill_resolution": "unlocked",
             "network_called": False,
         }
 
@@ -136,6 +138,7 @@ class LocalSkillResolver:
             "dependencies": description["dependencies"],
             "readiness": readiness,
             "guide": render_package_files(artifact)["GUIDE.md"].decode("utf-8"),
+            "skill_resolution": "unlocked",
             "network_called": False,
         }
 

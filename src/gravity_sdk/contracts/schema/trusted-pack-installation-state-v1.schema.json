@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.trusted-pack-installation-state.v1",
+  "type": "object",
+  "required": ["artifact_kind", "schema_version", "lock_digest", "installations", "state_digest"],
+  "additionalProperties": false,
+  "properties": {
+    "artifact_kind": {"const": "trusted_pack_installation_state"},
+    "schema_version": {"const": "gravity.trusted-pack-installation-state.v1"},
+    "lock_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "installations": {
+      "type": "array", "maxItems": 128,
+      "items": {
+        "type": "object",
+        "required": ["pack_id", "descriptor_digest", "distribution", "version", "wheel_sha256", "installed_at", "local_path", "health"],
+        "additionalProperties": false,
+        "properties": {
+          "pack_id": {"type": "string", "minLength": 8, "maxLength": 256},
+          "descriptor_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "distribution": {"type": "string", "minLength": 1, "maxLength": 128},
+          "version": {"type": "string", "minLength": 1, "maxLength": 32},
+          "wheel_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "installed_at": {"type": "string", "minLength": 20, "maxLength": 32},
+          "local_path": {"type": "string", "minLength": 1, "maxLength": 2048},
+          "health": {"enum": ["healthy", "missing", "tampered", "version_mismatch", "metadata_mismatch"]}
+        }
+      }
+    },
+    "state_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

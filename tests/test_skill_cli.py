@@ -49,7 +49,12 @@ class SkillCliTests(unittest.TestCase):
             ],
         ):
             with self.subTest(argv=argv):
-                self.assertFalse(parser.parse_args(argv).network_required)
+                parsed = parser.parse_args(argv)
+                self.assertFalse(parsed.network_required)
+                self.assertEqual(
+                    argv[1] == "export-agent",
+                    bool(getattr(parsed, "product_file_output", False)),
+                )
 
     @patch("gravity_sdk.skill_package.LocalSkillResolver", Resolver)
     @patch("gravity_sdk.workspace.load_workspace", return_value=object())

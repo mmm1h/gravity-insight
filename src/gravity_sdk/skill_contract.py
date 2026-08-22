@@ -74,17 +74,26 @@ def normalize_skill_identity(identifier: Any) -> str:
 
 def load_skill_manifest(path: Path) -> dict[str, Any]:
     value = load_json_object(path, f"Skill manifest {path.name}")
+    return compile_skill_manifest(value, label=f"Skill manifest {path.name}")
+
+
+def compile_skill_manifest(
+    value: Mapping[str, Any], *, label: str = "Skill manifest"
+) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        raise SkillContractError(f"{label} must be an object")
+    contract = copy.deepcopy(dict(value))
     try:
-        validate_schema(value, _SCHEMA_NAME, f"Skill manifest {path.name}")
+        validate_schema(contract, _SCHEMA_NAME, label)
     except AgentRuntimeContractError as exc:
         raise SkillContractError(str(exc)) from exc
-    if value["request_budget"]["known_requests_min"] > value["request_budget"]["known_requests_max"]:
+    if contract["request_budget"]["known_requests_min"] > contract["request_budget"]["known_requests_max"]:
         raise SkillContractError("Skill request budget range is invalid")
-    if set(value["context_dependencies"]["required"]).intersection(
-        value["context_dependencies"]["optional"]
+    if set(contract["context_dependencies"]["required"]).intersection(
+        contract["context_dependencies"]["optional"]
     ):
         raise SkillContractError("Skill Context dependency cannot be required and optional")
-    return value
+    return contract
 
 
 @lru_cache(maxsize=1)
@@ -162,6 +171,7 @@ def _validate_journey_parity(
 __all__ = [
     "SCHEMA_VERSION",
     "SkillContractError",
+    "compile_skill_manifest",
     "load_skill_manifest",
     "normalize_skill_identity",
     "skill_artifact",
