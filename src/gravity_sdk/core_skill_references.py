@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 from collections.abc import Mapping, Sequence
 from typing import Any
 
@@ -21,12 +22,31 @@ def skill_reference(artifact: Mapping[str, Any] | None) -> dict[str, Any] | None
     if artifact is None:
         return None
     contract = artifact["contract"]
+    binding = artifact.get("runtime_binding")
+    if not isinstance(binding, Mapping):
+        binding = {
+            "resolution": "unlocked",
+            "team_lock_digest": None,
+            "hub_source_digest": None,
+            "hub_source_reference": None,
+            "trusted_pack_lock_digest": None,
+            "trusted_pack_state_digest": None,
+            "trusted_pack_verification_digest": None,
+        }
     return {
         "uri": artifact["skill_uri"],
         "version": contract["version"],
         "manifest_digest": artifact["digest"],
         "package_digest": artifact["package_digest"],
-        "resolution": "unlocked",
+        "resolution": binding["resolution"],
+        "team_lock_digest": binding["team_lock_digest"],
+        "hub_source_digest": binding["hub_source_digest"],
+        "hub_source_reference": copy.deepcopy(binding["hub_source_reference"]),
+        "trusted_pack_lock_digest": binding["trusted_pack_lock_digest"],
+        "trusted_pack_state_digest": binding["trusted_pack_state_digest"],
+        "trusted_pack_verification_digest": binding[
+            "trusted_pack_verification_digest"
+        ],
         "lifecycle": contract["lifecycle"],
         "readiness": contract["readiness"],
         "validation": contract["validation"],

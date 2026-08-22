@@ -13,6 +13,7 @@ from gravity_sdk.skill_contract import (
     normalize_skill_identity,
     skill_artifact,
     skill_artifacts,
+    validate_skill_journey_parity,
 )
 
 
@@ -72,6 +73,13 @@ class SkillContractTests(unittest.TestCase):
             "ap-cost-anomaly-localization",
             skill_artifact(SKILL_URI)["contract"]["skill_id"],
         )
+
+    def test_public_journey_parity_fails_with_the_skill_contract_error(self):
+        with self.assertRaises(SkillContractError):
+            validate_skill_journey_parity(
+                skill_artifact(SKILL_URI)["contract"],
+                {"journey_id": "analysis.malformed"},
+            )
 
 
 if __name__ == "__main__":

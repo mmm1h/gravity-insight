@@ -35,7 +35,7 @@ class AgentRuntimeSdkMixin:
 
     @property
     def skill_runtime(self) -> Any:
-        """The offline Built-in Core Skill resolver for this workspace."""
+        """The offline Built-in or exact locked Team Skill runtime."""
 
         if self._skill_runtime_service is None:
             with self._skill_runtime_lock:

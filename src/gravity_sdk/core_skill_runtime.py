@@ -1,4 +1,4 @@
-"""Offline composition of Built-in Skill dependencies for existing executors."""
+"""Offline composition of exact Skill dependencies for existing executors."""
 
 from __future__ import annotations
 
@@ -38,8 +38,7 @@ from .project_skill_overlay import (
 )
 from .semantic_contract import SemanticContractError
 from .semantic_registry import SemanticRegistry
-from .skill_contract import skill_artifact
-from .skill_package import SkillPackageError, validate_skill_package
+from .runtime_skill_resolver import RuntimeSkillResolver
 
 
 SCHEMA_VERSION = "gravity.core-skill-readiness.v1"
@@ -59,11 +58,15 @@ class CoreSkillRuntime:
         capability_trust: CapabilityTrustService | None = None,
         operators: OperatorRegistry | None = None,
         models: ModelRegistry | None = None,
+        skill_resolver: RuntimeSkillResolver | None = None,
     ) -> None:
         self._workspace = workspace
         self._capability_trust = capability_trust or CapabilityTrustService()
         self._operators = operators or OperatorRegistry()
         self._models = models or ModelRegistry(operators=self._operators)
+        self._skill_resolver = skill_resolver or RuntimeSkillResolver(
+            workspace=workspace
+        )
 
     def resolve(
         self,
@@ -105,7 +108,10 @@ class CoreSkillRuntime:
 
     def _local_dependencies(self, journey: Mapping[str, Any]) -> dict[str, Any]:
         contract = journey["contract"]
-        skill, skill_reasons = _skill(journey)
+        skill_resolution = self._skill_resolver.resolve(
+            contract.get("required_skill"), journey=journey
+        )
+        skill = skill_resolution["skill"]
         capabilities, references, states, capability_reasons = self._capabilities(
             contract
         )
@@ -120,7 +126,7 @@ class CoreSkillRuntime:
             "models": models,
             "reasons": [
                 *capability_reasons,
-                *skill_reasons,
+                *skill_resolution["reason_codes"],
                 *operators["reason_codes"],
                 *models["reason_codes"],
             ],
@@ -362,35 +368,6 @@ def _journey(journey_id: Any) -> dict[str, Any]:
             next_action="Run `gravity journey list` and use an exact journey_id.",
         )
     return artifact
-
-
-def _skill(
-    journey: Mapping[str, Any],
-) -> tuple[dict[str, Any] | None, list[str]]:
-    uri = journey["contract"].get("required_skill")
-    if not isinstance(uri, str) or not uri:
-        return None, ["SKILL_DEPENDENCY_UNRESOLVED"]
-    artifact = skill_artifact(uri)
-    if artifact is None:
-        return None, ["SKILL_DEPENDENCY_UNRESOLVED"]
-    try:
-        package = validate_skill_package(artifact)
-    except SkillPackageError:
-        return None, ["SKILL_PACKAGE_INVALID"]
-    artifact["package_digest"] = package["package_digest"]
-    contract = artifact["contract"]
-    reasons: list[str] = []
-    if contract["lifecycle"] in {"deprecated", "revoked"}:
-        reasons.append(
-            "SKILL_REVOKED" if contract["lifecycle"] == "revoked" else "SKILL_DEPRECATED"
-        )
-    if contract["readiness"] != "executable":
-        reasons.append("SKILL_DECLARED_BLOCKED")
-    if contract["validation"] != "validated":
-        reasons.append("SKILL_UNVALIDATED")
-    if contract["effects"] != ["read"]:
-        reasons.append("SKILL_EFFECT_UNSUPPORTED")
-    return artifact, reasons
 
 
 def _scope(value: Mapping[str, Any]) -> dict[str, Any]:

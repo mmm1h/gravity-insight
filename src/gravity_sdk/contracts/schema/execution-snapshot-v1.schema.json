@@ -66,7 +66,7 @@
     },
     "skill": {
       "type": "object",
-      "required": ["uri", "version", "manifest_digest", "package_digest", "resolution", "lifecycle", "readiness", "validation"],
+      "required": ["uri", "version", "manifest_digest", "package_digest", "resolution", "team_lock_digest", "hub_source_digest", "hub_source_reference", "trusted_pack_lock_digest", "trusted_pack_state_digest", "trusted_pack_verification_digest", "lifecycle", "readiness", "validation"],
       "additionalProperties": false,
       "properties": {
         "uri": {"type": "string", "minLength": 16, "maxLength": 256},
@@ -74,9 +74,27 @@
         "manifest_digest": {"$ref": "#/$defs/digest"},
         "package_digest": {"$ref": "#/$defs/digest"},
         "resolution": {"enum": ["unlocked", "locked"]},
+        "team_lock_digest": {"$ref": "#/$defs/nullable_digest"},
+        "hub_source_digest": {"$ref": "#/$defs/nullable_digest"},
+        "hub_source_reference": {"anyOf": [{"$ref": "#/$defs/hub_source"}, {"type": "null"}]},
+        "trusted_pack_lock_digest": {"$ref": "#/$defs/nullable_digest"},
+        "trusted_pack_state_digest": {"$ref": "#/$defs/nullable_digest"},
+        "trusted_pack_verification_digest": {"$ref": "#/$defs/nullable_digest"},
         "lifecycle": {"enum": ["draft", "reviewed", "stable", "deprecated", "revoked"]},
         "readiness": {"enum": ["blocked", "executable"]},
         "validation": {"enum": ["unvalidated", "validated"]}
+      }
+    },
+    "hub_source": {
+      "type": "object",
+      "required": ["source_id", "transport", "source_descriptor_digest", "source_revision", "index_digest"],
+      "additionalProperties": false,
+      "properties": {
+        "source_id": {"type": "string", "minLength": 8, "maxLength": 256},
+        "transport": {"enum": ["git", "static_https"]},
+        "source_descriptor_digest": {"$ref": "#/$defs/digest"},
+        "source_revision": {"type": "string", "minLength": 1, "maxLength": 256},
+        "index_digest": {"$ref": "#/$defs/digest"}
       }
     },
     "overlay": {

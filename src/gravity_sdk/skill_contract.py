@@ -124,7 +124,7 @@ def _validate_dependencies(artifact: Mapping[str, Any]) -> None:
         if journey is None or journey["contract"]["required_skill"] != identity:
             raise SkillContractError("Skill Journey dependency is missing or drifted")
         if len(contract["covers_journeys"]) == 1:
-            _validate_journey_parity(contract, journey["contract"])
+            validate_skill_journey_parity(contract, journey["contract"])
     for requirement in contract["capability_dependencies"]:
         capability = capability_contract(
             str(requirement["identity_kind"]), str(requirement["selector"])
@@ -139,31 +139,40 @@ def _validate_dependencies(artifact: Mapping[str, Any]) -> None:
         raise SkillContractError("Skill routing hints are not declared dependencies")
 
 
-def _validate_journey_parity(
+def validate_skill_journey_parity(
     contract: Mapping[str, Any], journey: Mapping[str, Any]
 ) -> None:
-    checks = (
-        contract["capability_dependencies"] == journey["required_capabilities"],
-        contract["semantic_dependencies"] == journey["required_semantics"],
-        contract["operator_dependencies"] == journey["required_operators"],
-        contract["model_dependencies"] == journey["required_models"],
-        contract["context_dependencies"]["required"] == journey["required_context"],
-        contract["requirements"]["completeness"]
-        == journey["required_capabilities"][0]["completeness"],
-        contract["requirements"]["data_quality"]
-        == journey["required_capabilities"][0]["data_quality"],
-        contract["claim_policy"]["allowed"] == journey["claim_policy"]["allowed"],
-        contract["claim_policy"]["forbidden"]
-        == journey["claim_policy"]["forbidden"],
-        contract["request_budget"]["known_requests_min"]
-        == journey["request_budget"]["known_requests_min"],
-        contract["request_budget"]["known_requests_max"]
-        == journey["request_budget"]["known_requests_max"],
-        contract["request_budget"]["unknown_discovery_max"]
-        == journey["request_budget"]["unknown_discovery_max"],
-        contract["request_budget"]["runtime_additional_requests"]
-        == journey["request_budget"]["runtime_additional_requests"],
-    )
+    try:
+        checks = (
+            journey["journey_id"] in contract["covers_journeys"],
+            contract["capability_dependencies"] == journey["required_capabilities"],
+            contract["semantic_dependencies"] == journey["required_semantics"],
+            contract["operator_dependencies"] == journey["required_operators"],
+            contract["model_dependencies"] == journey["required_models"],
+            contract["context_dependencies"]["required"]
+            == journey["required_context"],
+            contract["requirements"]["completeness"]
+            == journey["required_capabilities"][0]["completeness"],
+            contract["requirements"]["data_quality"]
+            == journey["required_capabilities"][0]["data_quality"],
+            contract["claim_policy"]["allowed"]
+            == journey["claim_policy"]["allowed"],
+            contract["claim_policy"]["forbidden"]
+            == journey["claim_policy"]["forbidden"],
+            contract["request_budget"]["known_requests_min"]
+            == journey["request_budget"]["known_requests_min"],
+            contract["request_budget"]["known_requests_max"]
+            == journey["request_budget"]["known_requests_max"],
+            contract["request_budget"]["unknown_discovery_max"]
+            == journey["request_budget"]["unknown_discovery_max"],
+            contract["request_budget"]["runtime_additional_requests"]
+            == journey["request_budget"]["runtime_additional_requests"],
+            contract["output_schema"] == "gravity.analysis-result.v1",
+        )
+    except (KeyError, IndexError, TypeError) as exc:
+        raise SkillContractError(
+            "Skill and Journey dependency contracts drifted"
+        ) from exc
     if not all(checks):
         raise SkillContractError("Skill and Journey dependency contracts drifted")
 
@@ -177,4 +186,5 @@ __all__ = [
     "skill_artifact",
     "skill_artifacts",
     "skill_uri",
+    "validate_skill_journey_parity",
 ]
