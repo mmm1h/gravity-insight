@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Callable, Mapping, Protocol
 
 from .external_context_contract import compile_external_provider
+from .provider_windows_job import attach_windows_job, close_windows_job
 
 
 ProviderHandler = Callable[[Mapping[str, Any], threading.Event], Mapping[str, Any] | bytes]
@@ -214,7 +215,7 @@ class SubprocessProviderTransport:
                 "creationflags": getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
             }
         try:
-            return subprocess.Popen(
+            process = subprocess.Popen(
                 self._command,
                 cwd=self._working_directory,
                 env=self._environment,
@@ -224,6 +225,8 @@ class SubprocessProviderTransport:
                 shell=False,
                 **flags,
             )
+            attach_windows_job(process)
+            return process
         except OSError as exc:
             raise ProviderTransportError(
                 "PROVIDER_RPC_UNAVAILABLE", "Provider process could not start"
@@ -330,6 +333,7 @@ def _close_process_streams(process: subprocess.Popen[bytes]) -> None:
     for stream in (process.stdout, process.stderr):
         if stream is not None:
             stream.close()
+    close_windows_job(process)
 
 
 def _read_stream(
@@ -357,8 +361,12 @@ def _read_stream(
 
 def _terminate_process_tree(process: subprocess.Popen[bytes], grace_ms: int) -> None:
     if process.poll() is not None:
+        close_windows_job(process)
         return
     grace = max(0.25 if os.name == "nt" else 0.05, grace_ms / 1000)
+    if os.name == "nt" and close_windows_job(process):
+        _wait_after_job_close(process, grace)
+        return
     try:
         if os.name == "nt":
             system_root = Path(os.environ.get("SystemRoot", r"C:\Windows"))
@@ -386,6 +394,20 @@ def _terminate_process_tree(process: subprocess.Popen[bytes], grace_ms: int) -> 
                 os.killpg(process.pid, signal.SIGKILL)
         except OSError:
             pass
+        try:
+            process.wait(timeout=grace)
+        except subprocess.TimeoutExpired:
+            return
+
+
+def _wait_after_job_close(process: subprocess.Popen[bytes], grace: float) -> None:
+    try:
+        process.wait(timeout=grace)
+    except subprocess.TimeoutExpired:
+        try:
+            process.kill()
+        except OSError:
+            return
         try:
             process.wait(timeout=grace)
         except subprocess.TimeoutExpired:
