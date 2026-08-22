@@ -3,13 +3,13 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; R12-A plan-owner ready binding accepted 2026-08-22 |
+| Status | `in_progress`; R12-A `fixed_dev` on 2026-08-22, R12-B/C `specified` |
 | Track | Governed action |
 | Dependencies | R09A |
 | Parallel group | `governed-action` |
 | Shared-spine integration | Required and serialized |
 | Delivery ledger | This Requirement document; no internal GitHub Issue |
-| Active milestone | `R12-A` (`in_progress`); R12-B/C remain `specified` |
+| Milestones | R12-A `fixed_dev`; R12-B/C remain `specified` |
 | R12-A baseline | `dev@3a47ce9f48902313c7898a0ab632c58d4c29259b` |
 | R12-A branch / worktree | `codex/r12a-action-plan-reference-connector` / `D:\\git-pjt\\gravity-sdk-wt\\r12a-action-plan-reference-connector` |
 | Consumer | Retained R09A stack `work-dashboard@e4369ce8`; non-regression only |
@@ -65,6 +65,76 @@ package installation, release or `main` promotion.
   managed-field drift, one mutation maximum, uncertain readback, strict private
   state/privacy/bounds, installed wheel, full repository/usability/security and
   retained consumer gates. Active human docs remain exactly 5500 lines.
+
+## R12-A Fixed Dev Evidence
+
+- Feature commit `f6a313c` and merge `ba404f8` add eight strict Action request,
+  authorization, confirmation, public/private plan, claim, execution and Policy
+  schemas; one `ActionPlanService`; lazy `GravitySDK.actions`; one root export;
+  and explicit `gravity action segment-update preview|execute`. Root public API
+  now has `129` lazy exports and `gravity_sdk.__all__` has `130` entries including
+  `__version__`. No connector discovery/registry, Agent card, Skill permission,
+  arbitrary tool/URL/operation, Plan node kind or second mutation executor exists.
+- The only connector is `gravity.segment-metadata-update@1`. Segment create was
+  rejected as the pilot because current paginated catalog evidence cannot prove
+  global absence. Metadata update instead binds exact detail identity/App,
+  name/remark, owner/update fields, status/timestamps and current contract; the
+  existing GSDK-marker-or-principal owner remains authoritative.
+- Preview requires an exact current `user/authorization` source whose value
+  contains the same `gravity.segment-metadata-update-request.v1`. It resolves
+  the current principal, reads exact detail once, applies the existing ownership
+  gate and sends zero mutations. Tool result, user instruction, Skill, Context
+  and history sources are rejected before detail reads or private state.
+- Private `gravity.action-plan-private.v1` contains only request,
+  authorization, principal, target, preimage, ownership and operation-contract
+  digests; fixed managed-field names, connector identity, timestamps,
+  fingerprint and artifact digest. It contains no raw old/new name or remark,
+  owner name/ID, credential, Scope digest, user row or Context. Public
+  `gravity.action-plan.v1` exposes only opaque plan identity, safe target/change/
+  ownership/readback summary, expiry, preview fingerprint and
+  `require_confirmation` Policy Decision.
+- Execute requires the exact request again plus a second current
+  `user/authorization` source binding `plan_id`, `preview_fingerprint` and
+  `confirmed=true`. Identity/input/target/contract/expiry checks precede atomic
+  O_EXCL plan and `(target,preimage,managed_fields)` claims. Same-plan replay and
+  two plans from one preimage are rejected; a new explicitly authorized plan
+  from a verified changed preimage remains possible.
+- `update_segment_metadata` gained only an internal expected-preimage digest.
+  It still owns detail/ownership resolution, request preview, `_execute_mutation`
+  and name/remark readback under its original process write lock; the digest is
+  compared after current ownership and before the single mutation call. All
+  direct Segment and other mutation-family SDK/CLI/Plan paths remain unchanged.
+- Stable pre-write reasons cover missing/non-user authorization or confirmation,
+  unbound/changed principal scope, malformed/missing/tampered/expired/consumed
+  plan, input/target/owner/contract change, field claim, TTL and store bounds.
+  Stale outcomes send zero mutations. Any exception after `_execute_mutation`
+  was attempted returns `gravity.action-execution.v1 status=uncertain`, preserves
+  safe Receipt references when present, fixes `automatic_retry=false`, consumes
+  the plan and cannot fabricate success.
+- Success requires exactly one write attempt plus existing exact name/remark
+  readback and marker/upstream-owner assertion. The public execution result
+  contains only safe target identity, verified assertion IDs, Policy Decision
+  and opaque Receipt references; it does not copy the direct mutation envelope.
+- The upstream Segment save route has no revision/ETag/CAS. The public preview
+  therefore declares `upstream_revision_unavailable`: same-scope duplicate
+  plans are field-claimed and current detail is checked immediately under the
+  owner lock, but an external change after that last read can only be detected
+  by readback and yields `uncertain`; no stronger atomicity is claimed.
+- Complete gates pass `1641` unittest; `1641 passed, 3840 subtests` pytest;
+  compiler `237 operations / 11 manifests`; quality and all three generators
+  PASS; integrated Action/Segment/all mutation/public/docs gates pass `66` tests
+  and `9` subtests; actionable errors remain
+  `1330 = 1163 A + 167 B + 0 C`; active human docs remain exactly `5500` lines.
+- Development usability remains `296/336` selection, `248/248` fillability,
+  `53/53` offline terminal and `5/5` recovery; security PASS and production HTTP
+  requests `0`. All mutation tests used injected local fixtures; no real
+  credential, external request or production mutation was used.
+- An isolated non-editable wheel loads `ActionPlanService`, all eight schemas
+  and the Action CLI from `site-packages`; wheel SHA-256 is
+  `e6f40a434a968da09a1c1cffbd2fee986ac04ae5057f606cce028d1af71a8932`.
+- Retained work-dashboard consumer `e4369ce8` has no Action Plan dependency. Its
+  current-SDK adoption/R01 suite passes `11` tests and `94` subtests; the branch
+  remains clean and no consumer migration or unrelated repair was required.
 
 ## Outcome
 
