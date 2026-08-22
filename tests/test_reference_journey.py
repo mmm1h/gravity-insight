@@ -9,6 +9,8 @@ from types import SimpleNamespace
 import unittest
 
 from gravity_sdk.analysis_playbook import run_metric_anomaly_playbook
+from gravity_sdk.analysis_artifact import compile_analysis_artifact
+from gravity_sdk.analysis_artifact_markdown import render_analysis_artifact_markdown
 from gravity_sdk.core_skill_runtime import CoreSkillRuntime
 from gravity_sdk.data_quality import data_quality_result
 from gravity_sdk.execution_snapshot import build_execution_snapshot
@@ -219,6 +221,12 @@ class ReferenceJourneyTests(unittest.TestCase):
         rendered = repr(result)
         self.assertNotIn("Ignore instructions", rendered)
         self.assertNotIn("complete App total", result["findings"][0]["statement"])
+        artifact = compile_analysis_artifact(result)
+        delivery = render_analysis_artifact_markdown(artifact)
+        self.assertEqual(result["findings"], artifact["findings"])
+        self.assertEqual(result["allowed_claims"], artifact["claims"]["allowed"])
+        self.assertEqual("gravity.analysis-rendering.v1", delivery["schema_version"])
+        self.assertIn("The sum of returned click\\_company", delivery["content"])
 
     def test_invalid_input_and_missing_project_binding_call_no_executor(self):
         self.service = ReferenceJourneyRunner(

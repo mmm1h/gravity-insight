@@ -198,6 +198,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `prepare_metric_anomaly_playbook()` | 把完整或续跑调查编译为现有 Plan 并做零网络 adapter preflight |
 | `metric_anomaly_playbook()` | 运行或用 checkpoint 续跑；未失效 Plan item 复用，证据不全时不发布结论 |
 | `journeys.list()` / `verify()` / `describe(id)` / `can_run(id, input)` / `impact(diff)` / `run(id, input)` | 通用 Journey 合同与 readiness 服务；R01 只有 verified 后才委托既有 playbook |
+| `analysis_artifacts.compile()` / `verify()` / `render_markdown()` / `write_artifact()` / `write_markdown()` | 从正式 Analysis Result 编译目标无关 Artifact，并离线确定性渲染/原子写入 Markdown |
 | `capability_trust.trust(kind, selector)` / `validate(result)` / `impact(diff)` | Operation/Product/Composite 同层 Trust、只读 Validation 校验与依赖影响；不自动探测或写入 |
 | `LocalSkillResolver()` / `RuntimeSkillResolver(workspace=...).resolve(id, journey=...)` | 前者只读/导出 Built-in package；后者 Built-in-first，并只读项目 exact Team lock、CAS 与 Trusted Pack startup state；均不选择或执行 Product |
 | `SemanticRegistry(sources).list()` / `describe(uri)` / `resolve(uri)` / `validate(source)` / `dependencies(uris)` | 确定性编译并离线解析版本化 Business Semantic 与项目 Binding；缺失或冲突不猜测 |
@@ -559,27 +560,15 @@ create 写 `GSDK-<12 hex>` 并读回；update/delete 复用共享 marker-or-owne
 
 ## Multidim
 
-`multidim_input_schema()` 是 CLI、SDK、Plan 和 Agent 共用的闭合机器合同。公开 input 直接使用
-`date_list/time_dims/metrics_list/custom_metrics_list/data_dims/relate_dims/filters/multi_keys`；
-没有额外 Spec DSL。App 位于 input 外，由 workspace alias 或正整数绑定。
+`multidim_input_schema()` 是 CLI、SDK、Plan 和 Agent 共用的闭合机器合同。公开 input 直接使用 `date_list/time_dims/metrics_list/custom_metrics_list/data_dims/relate_dims/filters/multi_keys`；没有额外 Spec DSL。App 位于 input 外，由 workspace alias 或正整数绑定。
 
-`prepare_multidim_query(inputs, *, app, workspace=None)` 只做安全预检；执行方法
-`multidim_query(inputs, *, app, include_total=False, read_all=False, max_pages=1000, max_items=100000,
-max_workers=6, workspace=None)` 使用同一合同。直接入口 worker 默认 6、最大 24；Plan adapter 固定为 1。实时请求数量为去重指标 metadata
-请求 `M` + query 页数 `P` + 显式 `include_total` 时的一次 total。已知完整输入是一调用；物理指标或
-维度未知而 App、日期/filter value 等其余业务输入已知时，`resolve_capabilities()` 在第一调用返回
-闭合 schema 与 live metadata，调用方精确选择物理名后第二次执行并重新 live 校验。filter value
-不由 SDK 生成。
+`prepare_multidim_query(inputs, *, app, workspace=None)` 只做安全预检；执行方法 `multidim_query(inputs, *, app, include_total=False, read_all=False, max_pages=1000, max_items=100000, max_workers=6, workspace=None)` 使用同一合同。直接入口 worker 默认 6、最大 24；Plan adapter 固定为 1。
+实时请求数量为去重指标 metadata 请求 `M` + query 页数 `P` + 显式 `include_total` 时的一次 total。已知完整输入是一调用；物理指标或维度未知而 App、日期/filter value 等其余业务输入已知时，`resolve_capabilities()` 在第一调用返回闭合 schema 与 live metadata，调用方精确选择物理名后第二次执行并重新 live 校验。filter value 不由 SDK 生成。
 
-执行结果固定使用 `gravity-insight.composite.multidim.v1`，明细行为 `result["query"]["data"]["list"]`。
-消费者必须校验顶层 `schema_version/status/exit_code` 与 `query.status`，并对
-`partial/error/contract_changed` fail closed；不再接受旧的顶层 `data.list` 形状。Plan 调用还必须
-保留 Agent 生成的 `input_schema_version="gravity-insight.multidim-input.v1"`，缺失/未知版本不走兼容
-分支。精确 raw 读取仍属于 `GravityInsightClient`/`gravity run report.multidim.*`，不属于该产品方法。
+执行结果固定使用 `gravity-insight.composite.multidim.v1`，明细行为 `result["query"]["data"]["list"]`。消费者必须校验顶层 `schema_version/status/exit_code` 与 `query.status`，并对 `partial/error/contract_changed` fail closed；不再接受旧的顶层 `data.list` 形状。
+Plan 调用还必须保留 Agent 生成的 `input_schema_version="gravity-insight.multidim-input.v1"`，缺失/未知版本不走兼容分支。精确 raw 读取仍属于 `GravityInsightClient`/`gravity run report.multidim.*`，不属于该产品方法。
 
-多个独立请求放在同一个 Plan 的同层节点，由 Plan 全局 pool 并发；不提供第二个 batch scheduler。
-Agent 和 SDK 不解释模板、布局、收藏、权限、图表，也不生成 App、指标、维度、日期、filter value
-或业务指标口径。
+多个独立请求放在同一个 Plan 的同层节点，由 Plan 全局 pool 并发；不提供第二个 batch scheduler。Agent 和 SDK 不解释模板、布局、收藏、权限、图表，也不生成 App、指标、维度、日期、filter value 或业务指标口径。
 
 ## Journey And Capability Trust
 
@@ -601,25 +590,36 @@ validated = sdk.capability_trust.validate(validation_result)
 impact = sdk.capability_trust.impact(capability_impact_request)
 ```
 
-当前机器 registry 固定绑定 readable App、event trend、Business Pulse、R01 与预期阻断的
-LTV curve-fit 五个 ID；Markdown Journey ledger 仍是丰富人工状态的权威，`verify()` 检查
-精确 display/status/surface/budget/long-note 绑定。`can_run` 返回
-`verified|unknown|blocked|invalid`、稳定 reason codes 和自验摘要的 `gravity.execution-snapshot.v1` 对象；snapshot 冻结 Runtime/Journey/Skill package/Project Overlay/Trust/Semantic/Operator/Model/Context/执行合同引用，正式 Analysis Result 使用有序 `context_packs[]` 与这些引用逐项对齐，
-不含问题、App/日期/hypothesis、Context body 或行值。当前
-允许 `verified=0`，不能因 operation 有返回行就推断 Product/Composite/Journey 可信。
+当前机器 registry 固定绑定 readable App、event trend、Business Pulse、R01 与预期阻断的 LTV curve-fit 五个 ID；Markdown Journey ledger 仍是丰富人工状态的权威，`verify()` 检查精确 display/status/surface/budget/long-note 绑定。
+`can_run` 返回 `verified|unknown|blocked|invalid`、稳定 reason codes 和自验摘要的 `gravity.execution-snapshot.v1` 对象；snapshot 冻结 Runtime/Journey/Skill package/Project Overlay/Trust/Semantic/Operator/Model/Context/执行合同引用，正式 Analysis Result 使用有序 `context_packs[]` 与这些引用逐项对齐，不含问题、App/日期/hypothesis、Context body 或行值。当前允许 `verified=0`，不能因 operation 有返回行就推断 Product/Composite/Journey 可信。
 
-Operation、Product 和 Composite 分别拥有同层 Stable Contract 与当前 Validation Result。
-`GravitySDK.from_env()` 把 Validation store 绑定到 environment/principal/credential generation/workspace
-隔离后的 state root；直接 `GravitySDK(...)` 只能检查静态合同，即使传入相同路径也不会读取持久
-Validation。`validate()` 只校验调用方提供的 result 与当前合同/fingerprint/TTL/DQ，不写 store。
-`impact()` 接受 `gravity.capability-impact-request.v1`，只返回受影响 Capability、Skill 和 Journey
-identity，不执行、不探测，也不回显 scope key 或私有路径。
+Operation、Product 和 Composite 分别拥有同层 Stable Contract 与当前 Validation Result。`GravitySDK.from_env()` 把 Validation store 绑定到 environment/principal/credential generation/workspace 隔离后的 state root；直接 `GravitySDK(...)` 只能检查静态合同，即使传入相同路径也不会读取持久 Validation。
+`validate()` 只校验调用方提供的 result 与当前合同/fingerprint/TTL/DQ，不写 store。`impact()` 接受 `gravity.capability-impact-request.v1`，只返回受影响 Capability、Skill 和 Journey identity，不执行、不探测，也不回显 scope key 或私有路径。
 
-R01 `analysis.merge2.ap-cost-anomaly-localization` 保留唯一 Journey runner；`gravity.project-skill-overlay.v1` 只能绑定项目 Semantic Source、Repo Context Requirement 和 default scope，不能覆盖 Trust/completeness/DQ/claims/privacy/selector/effect/Action authorization。Built-in Skill 的 intrinsic readiness 为 `executable`，Core 当前 readiness 仍由全部依赖决定。当前底层完整性为 `unknown`，所以真实合同返回
-`blocked/COMPLETENESS_INSUFFICIENT` 并保持零网络；不得由返回行、短页或
-`page.has_more` 提升为 complete。测试中的 verified 路径只证明组合合同与既有 executor
-及正式 `gravity.analysis-result.v1` 等价，不构成生产完整性证据；完整 snapshot 在执行前后不一致即拒绝结论。其他 pilot Journey 当前只用于 list/verify/describe/can-run/impact；
-R02 不为它们创建第二套路由或执行器，未绑定执行时 `run()` 失败关闭。
+R01 `analysis.merge2.ap-cost-anomaly-localization` 保留唯一 Journey runner；`gravity.project-skill-overlay.v1` 只能绑定项目 Semantic Source、Repo Context Requirement 和 default scope，不能覆盖 Trust/completeness/DQ/claims/privacy/selector/effect/Action authorization。Built-in Skill 的 intrinsic readiness 为 `executable`，Core 当前 readiness 仍由全部依赖决定。
+当前底层完整性为 `unknown`，所以真实合同返回 `blocked/COMPLETENESS_INSUFFICIENT` 并保持零网络；不得由返回行、短页或 `page.has_more` 提升为 complete。测试中的 verified 路径只证明组合合同与既有 executor 及正式 `gravity.analysis-result.v1` 等价，不构成生产完整性证据；完整 snapshot 在执行前后不一致即拒绝结论。
+其他 pilot Journey 当前只用于 list/verify/describe/can-run/impact；R02 不为它们创建第二套路由或执行器，未绑定执行时 `run()` 失败关闭。
+
+## Analysis Artifact And Markdown
+
+`sdk.analysis_artifacts` 是惰性、缓存、零网络且不构造 Insight/SQL client 的交付服务；根包同时导出 `compile_analysis_artifact`、`validate_analysis_artifact`、`verify_analysis_artifact_source` 与 `render_analysis_artifact_markdown`：
+
+```python
+artifact = sdk.analysis_artifacts.compile(analysis_result)
+sdk.analysis_artifacts.verify(artifact, analysis_result)
+rendering = sdk.analysis_artifacts.render_markdown(artifact)
+json_receipt = sdk.analysis_artifacts.write_artifact(artifact, "tmp/analysis.json")
+markdown_receipt = sdk.analysis_artifacts.write_markdown(artifact, "tmp/analysis.md")
+```
+
+编译入口始终先执行 `compile_analysis_result()`。`gravity.analysis-artifact.v1` 原样保留 source 的 status、scope、findings、claims、hypotheses、limitations、completeness、DQ、evidence level、Context/Receipt references，并以 Result、execution snapshot、Receipt 集合和 Artifact digest 绑定来源；不携带 Context body、完整 execution snapshot 或查询行。
+`metric_uris` / `dimension_uris` 只按显式 URI scheme 投影，`filters` 透明指向 `/scope`。source 没有视觉合同，因此 `visualization.intent=unspecified`，不得按问题、字段名或结论猜图表。
+
+固定上限为 source/Artifact 各 8 MiB、findings 256、sections 8、Markdown UTF-8 1 MiB；超限整体
+失败，不截断 claims 或 findings。`gravity.analysis-rendering.v1` 对所有非固定文本做 HTML/Markdown
+转义和单行化，不生成链接、raw HTML、项目模板或部门措辞，并绑定 Artifact/Result/Receipt/content
+digest。JSON 与 Markdown 文件都在完整校验/渲染后复用原子 writer；该面不执行 Plan、查询、Action
+或 Dashboard 写入，最终报告语言仍由调用项目负责。
 
 ## Skill And Provider Control Planes
 

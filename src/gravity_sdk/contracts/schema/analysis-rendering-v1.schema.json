@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.analysis-rendering.v1",
+  "type": "object",
+  "required": ["schema_version", "format", "media_type", "renderer", "source", "content", "content_size_bytes", "content_sha256", "binding_digest", "network_called"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.analysis-rendering.v1"},
+    "format": {"const": "markdown"},
+    "media_type": {"const": "text/markdown"},
+    "renderer": {
+      "type": "object", "required": ["id", "version"], "additionalProperties": false,
+      "properties": {"id": {"const": "gravity.markdown"}, "version": {"const": 1}}
+    },
+    "source": {
+      "type": "object",
+      "required": ["artifact_id", "artifact_digest", "result_digest", "receipt_references_digest"],
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "artifact_digest": {"$ref": "#/$defs/digest"},
+        "result_digest": {"$ref": "#/$defs/digest"},
+        "receipt_references_digest": {"$ref": "#/$defs/digest"}
+      }
+    },
+    "content": {"type": "string", "minLength": 1, "maxLength": 1048576},
+    "content_size_bytes": {"type": "integer", "minimum": 1, "maximum": 1048576},
+    "content_sha256": {"$ref": "#/$defs/digest"},
+    "binding_digest": {"$ref": "#/$defs/digest"},
+    "network_called": {"const": false}
+  },
+  "$defs": {"digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+}

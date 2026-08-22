@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.analysis-delivery.v1",
+  "type": "object",
+  "required": ["schema_version", "ok", "status", "format", "media_type", "output", "source_result_digest", "source_artifact_digest", "receipt_references_digest", "content_sha256", "binding_digest", "size_bytes", "network_called"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.analysis-delivery.v1"},
+    "ok": {"const": true},
+    "status": {"const": "written"},
+    "format": {"enum": ["json", "markdown"]},
+    "media_type": {"enum": ["application/json", "text/markdown"]},
+    "output": {"type": "string", "minLength": 1, "maxLength": 4096},
+    "source_result_digest": {"$ref": "#/$defs/digest"},
+    "source_artifact_digest": {"$ref": "#/$defs/digest"},
+    "receipt_references_digest": {"$ref": "#/$defs/digest"},
+    "content_sha256": {"$ref": "#/$defs/digest"},
+    "binding_digest": {"$ref": "#/$defs/digest"},
+    "size_bytes": {"type": "integer", "minimum": 1, "maximum": 8388608},
+    "network_called": {"const": false}
+  },
+  "$defs": {"digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+}
