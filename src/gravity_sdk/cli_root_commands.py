@@ -18,6 +18,7 @@ from .semantic_registry_cli import add_semantic_registry_commands
 from .operator_model_cli import add_operator_model_commands
 from .trusted_pack_cli import add_trusted_pack_commands
 from .action_cli import add_action_commands
+from .experiment_cli import add_experiment_commands
 
 
 def add_root_commands(
@@ -40,6 +41,7 @@ def add_root_commands(
     add_context_commands(commands, add_input)
     add_trusted_pack_commands(commands)
     add_action_commands(commands, add_input)
+    add_experiment_commands(commands, add_input)
 
 
 def dispatch_root_command(args: Any) -> Any:

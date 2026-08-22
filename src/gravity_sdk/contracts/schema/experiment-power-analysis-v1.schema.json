@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.experiment-power-analysis.v1",
+  "type": "object",
+  "required": ["schema_version", "status", "operator", "primary_metric_uri", "target_segment_digest", "alpha", "power", "minimum_detectable_effect", "minimum_sample_size_per_arm", "reason_codes", "result_digest"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.experiment-power-analysis.v1"},
+    "status": {"enum": ["complete", "unavailable"]},
+    "operator": {"anyOf": [{"$ref": "#/$defs/operator"}, {"type": "null"}]},
+    "primary_metric_uri": {"type": ["string", "null"], "maxLength": 256},
+    "target_segment_digest": {"$ref": "#/$defs/nullable_digest"},
+    "alpha": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "power": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+    "minimum_detectable_effect": {"type": ["number", "null"], "minimum": 0},
+    "minimum_sample_size_per_arm": {"type": ["integer", "null"], "minimum": 1, "maximum": 2147483647},
+    "reason_codes": {"type": "array", "maxItems": 32, "uniqueItems": true, "items": {"$ref": "#/$defs/reason"}},
+    "result_digest": {"$ref": "#/$defs/nullable_digest"}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "nullable_digest": {"anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]},
+    "reason": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]{1,127}$"},
+    "operator": {
+      "type": "object",
+      "required": ["uri", "version", "digest", "assumptions_digest"],
+      "additionalProperties": false,
+      "properties": {
+        "uri": {"type": "string", "pattern": "^operator://[a-z0-9.-]+/[a-z0-9./-]+@[1-9][0-9]*$"},
+        "version": {"type": "integer", "minimum": 1},
+        "digest": {"$ref": "#/$defs/digest"},
+        "assumptions_digest": {"$ref": "#/$defs/digest"}
+      }
+    }
+  }
+}

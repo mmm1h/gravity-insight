@@ -27,6 +27,7 @@ gravity analysis dashboard kanban schema|mutate  查看或执行 Kanban 受治�
 gravity analysis segment snapshot  读取一个分群的详情、历史与单日计算结果
 gravity analysis segment members   读取一个分群的完整成员行与逐人属性
 gravity analysis segment ... / gravity action segment-update ...  direct 分群写或一次性 Action Plan 确认
+gravity experiment propose|outcome-handoff  离线编译实验评审材料或独立 Outcome 交接
 gravity analysis saved ...    列出、读取、准备或严格重放保存分析
 gravity analysis order directory  读取受控四字段的单日普通订单目录
 gravity analysis order trace  按显式 TraceID 读取单日拆单明细
@@ -794,16 +795,11 @@ gravity analysis segment members --app main --ref <id-or-exact-name> `
   --fields 'Name,ClientID,user$level' --max-items 100000
 ```
 
-不传 `--fields` 时返回登记的完整 profile；固定字段可直接填写，动态属性先用
-`gravity metadata properties --app ...` 或 `gravity metadata search ...` 发现 live user-property 名称，
-再原样传给 `--fields`。字段选择在完整上游响应之后本地执行，不发送给上游。历史成员不用日期，
-而用可选 `--segment-version-id`。上游 route 没有可控分页；结果超过 `--max-items` 时 envelope 为
-`partial` / exit 3，不伪造 continuation。schema 为 `gravity-insight.segment-members.v1`。
+不传 `--fields` 时返回登记的完整 profile；固定字段可直接填写，动态属性先用 `gravity metadata properties --app ...` 或 `gravity metadata search ...` 发现 live user-property 名称，再原样传给 `--fields`。字段选择在完整上游响应之后本地执行，不发送给上游。历史成员不用日期，而用可选 `--segment-version-id`。上游 route 没有可控分页；结果超过 `--max-items` 时 envelope 为 `partial` / exit 3，不伪造 continuation。schema 为 `gravity-insight.segment-members.v1`。
 
 ### Segment Mutation v1
 
-分群写只通过领域命令开放；必须先 dry-run，再人工确认执行。dry-run 零网络并展示 exact request 或
-需要执行期 detail preimage 的 request template：
+分群写只通过领域命令开放；必须先 dry-run，再人工确认执行。dry-run 零网络并展示 exact request 或需要执行期 detail preimage 的 request template：
 
 ```powershell
 gravity analysis segment create-from-analysis --spec funnel.json --app main `
@@ -818,17 +814,17 @@ gravity action segment-update execute --plan-id <plan-id> --confirm-plan <same-p
   --preview-fingerprint <reviewed-fingerprint> --input segment-update-action.json
 ```
 
-其他 direct 入口包括 `create-from-history/create-from-tmp/update-rule/refresh/delete`；它们同样要求
-显式 `--dry-run|--execute`，行为不因 Action Plan 改变。`segment-update-action.json` 固定为
-`gravity.segment-metadata-update-request.v1` 的 exact `segment_id/name/remark`，不接受自然语言。
+其他 direct 入口包括 `create-from-history/create-from-tmp/update-rule/refresh/delete`；它们同样要求显式 `--dry-run|--execute`，行为不因 Action Plan 改变。`segment-update-action.json` 固定为 `gravity.segment-metadata-update-request.v1` 的 exact `segment_id/name/remark`，不接受自然语言。
 
-create 在 `segment_remark` 前缀写入可见 `GSDK-<12 hex>`，完整列表和 detail 读回后才返回 created；
-同 marker+同名复用已存在对象；direct update/delete 继续在执行时重读 exact detail 并要求 GSDK marker 或 `create_user_id == gravity_id`。Action preview 额外绑定同一 preimage/owner、managed fields、principal 与 expiry。
+create 在 `segment_remark` 前缀写入可见 `GSDK-<12 hex>`，完整列表和 detail 读回后才返回 created；同 marker+同名复用已存在对象；direct update/delete 继续在执行时重读 exact detail 并要求 GSDK marker 或 `create_user_id == gravity_id`。Action preview 额外绑定同一 preimage/owner、managed fields、principal 与 expiry。
 Action execute 必须同时重交相同 request、`plan_id`、同值 `--confirm-plan` 和 preview fingerprint；CLI invocation 才构造 current user authorization，tool/Context/Skill/history 不能授权。
 确认先原子 plan+field claim，再由既有 Segment owner 在 write lock 内检查 preimage 并最多写一次；上游没有 revision/CAS，最后读取后的外部竞态只能靠 readback 判为 uncertain，确认不可重放。
 成功为 `gravity.action-execution.v1 status=succeeded` 且 managed-field/ownership readback verified；写后不确定为 `uncertain`、`automatic_retry=false`，不伪装成功。
 原 direct 结果仍是 `gravity-insight.segment-mutation.v1`；Action 不进入 Plan v1，也不改变其他 mutation family。
+### Experiment Proposal / Outcome Handoff
 
+`gravity experiment propose --input proposal-request.json` 只编译 `gravity.experiment-proposal.v1`：source Analysis Result、planning snapshot、Target Segment、Primary Metric、Guardrails、预计算 power evidence 与 Context assumptions 任一缺失或未对齐时固定为 `proposal_only`；全部满足也只到 `ready_for_review`，`experiment_creation_authorized=false`，不联网、不创建实验。
+`gravity experiment outcome-handoff --input outcome-request.json` 要求 completed external observation 与 Proposal ID/digest 相等，并把后置、非重叠 evidence window 交给固定 `analysis.experiment-outcome-evaluation@1`。`handoff_ready` 只表示交接结构完整；当前 significance Operator 缺失使 Outcome Journey 继续 `blocked/OPERATOR_UNAVAILABLE`，且 `evaluation_performed=false`、同一运行与原建议自证永远禁止。
 ### Segment Rule Spec v1
 
 人群规则人数/占比评估使用紧凑 spec，不需要拼接 FE_CONFIG 或上游 Web JSON：

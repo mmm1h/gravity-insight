@@ -182,6 +182,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `segment_create_from_analysis()` | 默认零网络预览，显式 `execute=True` 后把一个已验证 funnel step/loss 持久化为带标记分群 |
 | `segment_create_from_rule()` / `segment_create_from_history()` / `segment_create_from_tmp()` | 默认预览，显式确认后从规则、历史版本或临时分群创建带标记分群 |
 | `segment_update()` / `segment_update_rule()` / `segment_refresh()` / `actions` | direct 方法保持默认预览；`actions` 为 metadata update 绑定 exact preimage/owner/expiry 与一次性确认 |
+| `experiments` | 离线 `ExperimentHandoffService`；编译 Proposal 与独立 Outcome Handoff，不创建实验、不执行评估 |
 | `segment_delete()` | 默认预览；执行时只删除 detail 读回仍带 SDK 标记的分群 |
 | `saved_analyses()` | 列出一个 App 的安全保存分析身份，不读取 opaque config；replay 资格固定为 unchecked/null |
 | `get_saved_analysis()` | 按 ID 或精确名称检查 Strict Replay 资格及 window 要求，不返回 config |
@@ -824,10 +825,9 @@ spec。
 Python callback。若需要测试一个自定义 adapter，应直接使用 `gravity_sdk.plan.execute_plan`
 的依赖注入接口，而不是把自定义执行器注册到 Agent facade。
 
-宿主 LLM 生成的 Plan 使用模块级 `gravity_sdk.execute_host_plan(sdk, host_plan, sources)`，不要直接
-调用 `sdk.execute_plan`。`sources` 由模型外调用方按 `gravity.host-source.v1` 建立；tool result 只能是
+宿主 LLM 生成的 Plan 使用模块级 `gravity_sdk.execute_host_plan(sdk, host_plan, sources)`，不要直接调用 `sdk.execute_plan`。`sources` 由模型外调用方按 `gravity.host-source.v1` 建立；tool result 只能是
 data，SDK contract 提供控制身份，用户 instruction/authorization 提供对象、目的地和两步 mutation
-授权。可选 `sdk.prepared_plans` 只为 `from_env()`、read-only stable-operation `run` host Plan 保存限时值无关绑定；prepare 和 execute 都重入上述来源边界，执行时须重交 exact Plan/source，其他拓扑继续用原入口。机器合同同时包含在 `gravity plan schema` 的 `host_effect_boundary`。
+授权。可选 `sdk.prepared_plans` 只为 `from_env()`、read-only stable-operation `run` host Plan 保存限时值无关绑定；prepare 和 execute 都重入上述来源边界，执行时须重交 exact Plan/source，其他拓扑继续用原入口。机器合同同时包含在 `gravity plan schema` 的 `host_effect_boundary`。`sdk.experiments` 完全离线：`proposal_only|ready_for_review` 都不授权 experiment creation；Outcome Handoff 固定使用另一个 Journey 和后置 evidence window，当前 significance Operator 缺失仍返回独立 blocked readiness，不把 handoff 伪装成 evaluation。
 
 产品选择先调用 `gravity_sdk.host_product_catalog(client)`，把其厂商无关目录和
 `response_schema` 交给宿主，再将完整响应传入

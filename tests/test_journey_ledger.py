@@ -20,7 +20,7 @@ class JourneyLedgerTests(unittest.TestCase):
     def test_current_ledger_preserves_every_field_and_inline_code_pipe(self):
         snapshot = parse_journey_ledger(LEDGER.read_text(encoding="utf-8"))
 
-        self.assertEqual(63, snapshot["row_count"])
+        self.assertEqual(64, snapshot["row_count"])
         self.assertFalse(snapshot["network_called"])
         self.assertEqual(
             len(snapshot["rows"]),

@@ -1,6 +1,6 @@
 {
   "network_called": false,
-  "row_count": 63,
+  "row_count": 64,
   "rows": [
     {
       "blocker_note": "2026-08-18：同进程第二次起只发 1 次 query HTTP；冷启动 FieldPolicy 预取 `event.list`+`event_property.list`（`page_size=2000` 时各 1 页）。评测冻结 case 未改。2026-08-19 #215：`$os` 分维行现带 `用户.设备类型`；`union_groups`/`y` 仍省略。2026-08-19 #225：投放中 App `29034827` 上一条 4 节点 Plan（metadata 确认 `$UserFirstRegister` → 近 7 天趋势 → `$os` 分维）生产 4/4 success；`plan schema` 现写出 `composites.analysis_query.binding_targets=[\"/app\"]`，绑 `/spec/...` 预检列出允许 target。不改状态、不改冻结 case。2026-08-19 #222：组/身份不变量按响应形状生效，新同形 route 不再靠手写 operation_id。2026-08-19 #226：host `boundaries` 改为卡上 owner 字段，加载缺字段即红；不改状态、不改冻结 case。2026-08-19 #227：带 UV 的分维结果信封现有 `interpretation.metrics[].additivity=non_additive`；投放中 App `29034827` 同窗生产确认声明与响应一致。2026-08-19 #229：`NO_CANDIDATE` 信封另带 8 条已登记可执行问法；2026-08-19 #228：跨进程磁盘命中后冷启动 metadata HTTP 不再每进程重打；十人合计 metadata 从 20 降到 2。不改状态、不改冻结 case。2026-08-20 #22：条件 `type=user_property` 改为离线拒绝，`global_filters` 与 `steps[].conditions` 两处都在发请求前失败，错误指向条件路径而不是上游误报的 `group_by_list`；`type=user` 行为不变。`spec-schema` 的 `type` 枚举跨 kind 共用，未收窄，限制只加在编译期的 event/funnel 上。不改状态、不改冻结 case。2026-08-20 #23：上游反报编译器自己生成的 `create_time/day` 分组\"缺失\"时，不再让调用方重加已发的分组，改判 `upstream` + `retryable`（同一请求实测可在另一次执行成功）；未分类的 analysis 拒绝也不再默认把 `field` 说成 `group_by_list`。`SemanticRejectedError` 的\"确定性\"前提对这类自相矛盾的拒绝不成立。不改状态、不改冻结 case。",
@@ -630,6 +630,25 @@
       }
     },
     {
+      "blocker_note": "`analysis.experiment-outcome-evaluation` 与原建议 Journey 分离；Outcome Handoff 只绑定外部 observation digest 和后置非重叠证据窗，不执行评估。当前 `operator://gravity/significance-test@1` 未登记，故 `can-run` 必须返回 `blocked/OPERATOR_UNAVAILABLE`；不得让 Proposal、原建议或同一运行自证结果。",
+      "can_return_business_content": false,
+      "counted": true,
+      "display_name": "基于独立实验观察窗评估实验结果",
+      "ledger_status": "当前阻塞（R12-C 仅交付 handoff）",
+      "legacy_display_key": "基于独立实验观察窗评估实验结果",
+      "request_budget": {
+        "raw": "0 / 0"
+      },
+      "row_digest": "ba8d1db31c899523c276425a15ac23f3e8caa65143318ecb554e17df3e58e4d6",
+      "surfaces": {
+        "agent": "无",
+        "cli": "无",
+        "plan": "无",
+        "raw": "无 / 无 / 无 / 无",
+        "sdk": "无"
+      }
+    },
+    {
       "blocker_note": "R02 只登记机器 Journey 和预期缺口，不实现模型。当前必须返回 `OPERATOR_UNAVAILABLE` 与 `MODEL_UNVALIDATED`，不得由 Prompt 临时选模型或输出精确预测。",
       "can_return_business_content": false,
       "counted": true,
@@ -1201,7 +1220,7 @@
     }
   ],
   "schema_version": "gravity.journey-ledger-snapshot.v1",
-  "snapshot_digest": "012be791859d4c5faa8146ef1a37f5023a2741ba1a3a3f4938be670c88f9a1e2",
+  "snapshot_digest": "9588d3b34a1ce388502d673177ede6ce5370f374388b60230fbb2822da1e4022",
   "source_path": "docs/analysis-journeys.md",
-  "source_sha256": "e8bad46a962e6fe94cdbc927a3fcc8ad3a7064a3294b1c1a26fac4339be35d19"
+  "source_sha256": "0bb8ce36cbcbcfe6a646db390476fc5932b5b5c535113f4572d85e0416d35338"
 }

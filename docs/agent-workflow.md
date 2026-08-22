@@ -86,3 +86,6 @@ gravity agent-catalog describe <selector>
 ## 8. 交付
 
 交付物至少包含：执行入口、输入范围、解析后的日期窗、结果状态、可信度限制、receipt/checkpoint，以及下一步。不要包含凭据、原始请求、用户级明细或未登记响应字段。
+## 9. Experiment / Outcome 交接
+
+只有 verified Analysis Result 与 exact planning snapshot 才能编译 Experiment Proposal；缺 Target/Metric/Guardrail/Power/Context 时保持 `proposal_only`，齐全时也只是 `ready_for_review`，不授权创建。Outcome 必须来自绑定 Proposal 的外部 completed observation，使用不同 Journey 和原分析之后的独立 evidence window；`handoff_ready` 不等于 evaluation 已执行，原建议和同一运行不得自证。
