@@ -60,7 +60,7 @@ CT01 + R09B → CT02 → CT03
 | [R11](R11-pap-pilot.md) | Prepared Analysis Plan pilot | R02 | `fixed_dev` | Leaf |
 | [R12](R12-action-experiment-receipt.md) | Action, Receipt, Experiment and Outcome | R09A | `fixed_dev` (A/B/C) | Staged epic A→B→C |
 | [R13A](R13A-artifact-transfer.md) | Governed binary Artifact Transfer | R02 | `fixed_dev` | Leaf |
-| [R13B](R13B-analysis-artifact-renderer.md) | Analysis Artifact and non-Gravity Renderer | R09A | `specified` | Leaf |
+| [R13B](R13B-analysis-artifact-renderer.md) | Analysis Artifact and non-Gravity Renderer | R09A | `in_progress` | Leaf |
 | [R13C](R13C-dashboard-connector.md) | Gravity Dashboard Connector | R12-A, R13B | `specified` | Leaf |
 | [R14](R14-adaptive-governor-variants.md) | Adaptive Governor and Execution Variants | R02 | `specified` | Staged epic A→B, C, then D |
 | [R15](R15-isolated-sql-explorer.md) | Isolated SQL Explorer | R02, R05 | `specified` | Leaf |
