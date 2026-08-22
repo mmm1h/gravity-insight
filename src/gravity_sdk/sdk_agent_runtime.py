@@ -12,9 +12,23 @@ class AgentRuntimeSdkMixin:
         self._journey_lock = threading.Lock()
         self._capability_trust_lock = threading.Lock()
         self._skill_runtime_lock = threading.Lock()
+        self._prepared_plans_lock = threading.Lock()
         self._journey_service: Any | None = None
         self._capability_trust_service: Any | None = None
         self._skill_runtime_service: Any | None = None
+        self._prepared_plans_service: Any | None = None
+
+    @property
+    def prepared_plans(self) -> Any:
+        """Optional private PAP pilot for scoped read-only host Plans."""
+
+        if self._prepared_plans_service is None:
+            with self._prepared_plans_lock:
+                if self._prepared_plans_service is None:
+                    from .prepared_analysis_plan import PreparedAnalysisPlanService
+
+                    self._prepared_plans_service = PreparedAnalysisPlanService(self)
+        return self._prepared_plans_service
 
     @property
     def journeys(self) -> Any:

@@ -203,6 +203,10 @@
     ".plan",
     "PlanValidationError"
   ],
+  "PreparedAnalysisPlanService": [
+    ".prepared_analysis_plan",
+    "PreparedAnalysisPlanService"
+  ],
   "ProviderRpcGuard": [
     ".provider_rpc_guard",
     "ProviderRpcGuard"

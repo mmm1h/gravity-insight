@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.prepared-analysis-plan.v1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "source_kind",
+    "nonce",
+    "created_at",
+    "expires_at",
+    "host_plan_schema_version",
+    "plan_schema_version",
+    "node_count",
+    "max_workers",
+    "plan_binding_sha256",
+    "source_binding_sha256",
+    "contract_fingerprint",
+    "catalog_fingerprint",
+    "workspace_catalog_fingerprint",
+    "preflight_fingerprint",
+    "artifact_sha256"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.prepared-analysis-plan.v1"},
+    "source_kind": {"const": "host_plan"},
+    "nonce": {"$ref": "#/$defs/opaque"},
+    "created_at": {"$ref": "#/$defs/timestamp"},
+    "expires_at": {"$ref": "#/$defs/timestamp"},
+    "host_plan_schema_version": {"const": "gravity.host-plan.v1"},
+    "plan_schema_version": {"const": "gravity.plan.v1"},
+    "node_count": {"type": "integer", "minimum": 1, "maximum": 64},
+    "max_workers": {"type": "integer", "minimum": 1, "maximum": 24},
+    "plan_binding_sha256": {"$ref": "#/$defs/digest"},
+    "source_binding_sha256": {"$ref": "#/$defs/digest"},
+    "contract_fingerprint": {"$ref": "#/$defs/digest"},
+    "catalog_fingerprint": {"$ref": "#/$defs/digest"},
+    "workspace_catalog_fingerprint": {"$ref": "#/$defs/digest"},
+    "preflight_fingerprint": {"$ref": "#/$defs/digest"},
+    "artifact_sha256": {"$ref": "#/$defs/digest"}
+  },
+  "$defs": {
+    "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "opaque": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+    "timestamp": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"}
+  }
+}

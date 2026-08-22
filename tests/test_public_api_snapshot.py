@@ -55,7 +55,7 @@ class PublicApiSnapshotTests(unittest.TestCase):
         expected = json.loads(SNAPSHOT.read_text(encoding="utf-8"))
 
         self.assertEqual(expected, _lazy_exports())
-        self.assertEqual(127, len(expected))
+        self.assertEqual(128, len(expected))
 
     def test_every_snapshot_symbol_is_reachable_from_the_root_package(self) -> None:
         """An entry in the map is worthless if `from gravity_sdk import X` fails."""

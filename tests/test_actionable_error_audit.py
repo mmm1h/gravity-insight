@@ -17,17 +17,17 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class ActionableErrorAuditTests(unittest.TestCase):
     def test_actionable_error_inventory_is_complete_and_reproducible(self):
-        """Went 1313 -> 1321 for R09A Core Skill scope and identity gates.
+        """Went 1321 -> 1322 for R11's value-free PAP failure helper.
 
-        The new sites expose only safe key/type shapes and direct callers to
-        exact Journey identities, project App aliases and canonical windows.
+        PAP failures deliberately omit bound Plan/source values while retaining
+        a stable code, field and fresh-prepare remedy, so the new site is B.
         """
 
         rows = inventory(ROOT / "src" / "gravity_sdk")
         counts = Counter(item["grade"] for item in rows)
-        assert len(rows) == 1321
+        assert len(rows) == 1322
         assert counts["A"] == 1157
-        assert counts["B"] == 164
+        assert counts["B"] == 165
         assert counts.get("C", 0) == 0
         assert sum(counts.values()) == len(rows)
 

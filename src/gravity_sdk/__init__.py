@@ -27,6 +27,9 @@ _EXPORTS = {
     "JourneyService": (".journey_service", "JourneyService"),
     "CoreSkillRuntime": (".core_skill_runtime", "CoreSkillRuntime"),
     "RuntimeSkillResolver": (".runtime_skill_resolver", "RuntimeSkillResolver"),
+    "PreparedAnalysisPlanService": (
+        ".prepared_analysis_plan", "PreparedAnalysisPlanService"
+    ),
     "compile_analysis_result": (
         ".analysis_result_contract", "compile_analysis_result"
     ),
