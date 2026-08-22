@@ -3,15 +3,17 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; R12-A `fixed_dev` on 2026-08-22, R12-B/C `specified` |
+| Status | `in_progress`; R12-A `fixed_dev`, R12-B started 2026-08-22, R12-C `specified` |
 | Track | Governed action |
 | Dependencies | R09A |
 | Parallel group | `governed-action` |
 | Shared-spine integration | Required and serialized |
 | Delivery ledger | This Requirement document; no internal GitHub Issue |
-| Milestones | R12-A `fixed_dev`; R12-B/C remain `specified` |
+| Milestones | R12-A `fixed_dev`; R12-B `in_progress`; R12-C `specified` |
 | R12-A baseline | `dev@3a47ce9f48902313c7898a0ab632c58d4c29259b` |
 | R12-A branch / worktree | `codex/r12a-action-plan-reference-connector` / `D:\\git-pjt\\gravity-sdk-wt\\r12a-action-plan-reference-connector` |
+| R12-B baseline | `dev@7e6c190c4e527579ce772261b947c79c5dcb4d45` |
+| R12-B branch / worktree | `codex/r12b-receipt-v1-additive-facets` / `D:\\git-pjt\\gravity-sdk-wt\\r12b-receipt-v1-additive-facets` |
 | Consumer | Retained R09A stack `work-dashboard@e4369ce8`; non-regression only |
 | Integrator | Root Codex agent; shared-spine wiring remains serial |
 | Production / external requests / mutations | `0`; injected local fixtures only |
@@ -135,6 +137,45 @@ package installation, release or `main` promotion.
 - Retained work-dashboard consumer `e4369ce8` has no Action Plan dependency. Its
   current-SDK adoption/R01 suite passes `11` tests and `94` subtests; the branch
   remains clean and no consumer migration or unrelated repair was required.
+
+## R12-B Plan Owner Verdict And Ready Binding
+
+The R12-A dependency is `fixed_dev`. Under the user's continuous implementation
+authorization, the plan owner reviewed
+`tmp/r12b-receipt-v1-additive-facets-proposal.md` and its conflict ledger,
+characterized the current Receipt owner and canonical consumer, bound the
+baseline/worktree/gates below, advanced only R12-B through `reviewed` and
+`ready`, and started it as `in_progress`. R12-C remains `specified`. This does
+not authorize credentials, production/external requests, mutation, package
+installation, release or `main` promotion.
+
+- Keep `gravity.receipt.v1`, its existing base fields, resolver `_finish`
+  construction/persistence owner and separate `gravity.http-receipt.v1` /
+  `receipt_references` contracts. With no optional facet, the public resolver
+  mapping and stored JSON must retain the exact pre-R12-B shape.
+- Add only strict optional top-level `run`, `skill`, `journey`, `capability`,
+  `semantics`, `operator_model`, `context`, `pagination`, `data_quality`,
+  `policy` and `action` facets. Preserve the R06 `operator_model` keyword and
+  reject ambiguous duplicate supply; do not add a generic extension bag or v2.
+- A narrow compiler may project facets only from validated execution snapshots,
+  Context Packs, Data Quality Results, Policy Decisions and Action results. It
+  cannot select/execute a Product, recompute readiness/authorization/readback or
+  create a second store.
+- Persist only controlled identities, versions, digests, statuses, reason/check
+  codes, completeness/evidence and Action readback assertion IDs. Omit request/
+  output values, credentials, Scope/principal/account material, raw user rows,
+  Context content/title/citation/path and Action target/preimage/owner/
+  confirmation.
+- Keep Capability/Semantic/Context ordering deterministic and array bounds
+  explicit. Unknown facets, malformed/duplicate references, tampered source
+  digests and non-canonical inputs fail before Receipt persistence.
+- No new CLI/SDK execution surface, telemetry service, signature, external
+  audit store, MCP or R12-C Experiment/Outcome contract enters this milestone.
+- Acceptance covers exact old-shape/persistence parity, all facets separately
+  and together, R06 compatibility, tamper/privacy/defensive-copy/schema/wheel
+  gates, complete repository/usability/security checks and the retained clean
+  `work-dashboard@e4369ce8` current-SDK suite. Production HTTP remains `0` and
+  active human docs remain exactly `5500` lines.
 
 ## Outcome
 
