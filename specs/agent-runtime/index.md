@@ -54,7 +54,7 @@ CT01 + R09B → CT02 → CT03
 | [R07](R07-context-pack-repo-provider.md) | Entity/time-aligned Context Pack and Repo Provider | R01 | `fixed_dev` | Leaf |
 | [R08](R08-external-provider-rpc-guard.md) | External Provider and RPC Guard | R07 | `fixed_dev` | Leaf |
 | [R09A](R09A-core-skill-runtime.md) | Core Skill Runtime and Project Overlay | R02, R03, R05-R07 | `fixed_dev` | Leaf |
-| [R09B](R09B-team-hub-binding.md) | Team Hub Skill binding | R04, R09A | `specified` | Leaf |
+| [R09B](R09B-team-hub-binding.md) | Team Hub Skill binding | R04, R09A | `in_progress` | Leaf |
 | [R09C](R09C-external-context-binding.md) | External Context binding | R08, R09A | `specified` | Leaf |
 | [R10](R10-mcp-thin-surface.md) | MCP thin Resources/Tools surface | R09A + trigger | `specified` | Conditional leaf |
 | [R11](R11-pap-pilot.md) | Prepared Analysis Plan pilot | R02 | `specified` | Leaf |
