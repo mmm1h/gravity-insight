@@ -3,13 +3,13 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; R12-A `fixed_dev`, R12-B started 2026-08-22, R12-C `specified` |
+| Status | `in_progress`; R12-A/B `fixed_dev` on 2026-08-22, R12-C `specified` |
 | Track | Governed action |
 | Dependencies | R09A |
 | Parallel group | `governed-action` |
 | Shared-spine integration | Required and serialized |
 | Delivery ledger | This Requirement document; no internal GitHub Issue |
-| Milestones | R12-A `fixed_dev`; R12-B `in_progress`; R12-C `specified` |
+| Milestones | R12-A/B `fixed_dev`; R12-C `specified` |
 | R12-A baseline | `dev@3a47ce9f48902313c7898a0ab632c58d4c29259b` |
 | R12-A branch / worktree | `codex/r12a-action-plan-reference-connector` / `D:\\git-pjt\\gravity-sdk-wt\\r12a-action-plan-reference-connector` |
 | R12-B baseline | `dev@7e6c190c4e527579ce772261b947c79c5dcb4d45` |
@@ -176,6 +176,57 @@ installation, release or `main` promotion.
   gates, complete repository/usability/security checks and the retained clean
   `work-dashboard@e4369ce8` current-SDK suite. Production HTTP remains `0` and
   active human docs remain exactly `5500` lines.
+
+## R12-B Fixed Dev Evidence
+
+- Feature commit `b98400c` and merge `012d591` retain the existing
+  `gravity.receipt.v1` ten-field base, resolver `_finish` owner, principal-scoped
+  store and separate `gravity.http-receipt.v1` / opaque reference contracts.
+  `build_receipt()` adds only an optional strict facet mapping; every unchanged
+  call and persisted JSON has the exact old key set and meanings.
+- One packaged `receipt-v1.schema.json` closes the base plus optional `run`,
+  `skill`, `journey`, `capability`, `semantics`, `operator_model`, `context`,
+  `pagination`, `data_quality`, `policy` and `action` facets. There is no v2,
+  arbitrary extension bag, new store, CLI/SDK execution surface or public root
+  export. The existing R06 `operator_model` keyword remains exact and duplicate
+  supply is rejected.
+- `compile_receipt_facets()` validates the existing execution snapshot, public
+  Context Pack, Data Quality, Operator/Model, Policy and Action owners before
+  projecting deterministic identity/version/digest/status/check/reason/
+  completeness/readback references. Valid Skill prerelease versions and blocked
+  `unresolved` capability state remain representable; no state is promoted.
+- Cross-facet gates reject Snapshot/Operator-Model and Action/Policy conflicts.
+  Context Pack identity/provider/status must match its snapshot reference;
+  duplicate/reordered Capability, Semantic, Pack, resource, DQ, Policy or Action
+  references and base-field override attempts fail closed.
+- Enriched and persisted Receipts omit request/output values, credentials,
+  Scope/principal/account material, user rows, Context content/title/citation/
+  raw path fields and Action target/preimage/owner/confirmation. Invalid Receipt
+  mappings fail before the persistence directory is created, and builders/
+  validators return defensive copies.
+- R12-A Action schemas now use local Policy references supported by the
+  repository validator; a parity gate requires both embedded definitions to
+  equal canonical `policy-decision-v1`. Two R12-A happy-path tests also bind
+  execute/replay to their existing fixed clock after the original fixed preview
+  crossed its five-minute wall-clock TTL; production TTL behavior is unchanged.
+- Complete gates pass `1648` unittest; `1648 passed, 3853 subtests` pytest;
+  compiler `237 operations / 11 manifests`; quality, targeted Ruff and all three
+  generators PASS. Post-merge Receipt/Action/Operator/resolver/public/docs gates
+  pass `55` tests and `30` subtests; actionable errors remain
+  `1330 = 1163 A + 167 B + 0 C`; active human docs remain exactly `5500` lines.
+- Development usability remains `296/336` selection, `248/248` fillability,
+  `53/53` offline terminal and `5/5` recovery; security has zero violations and
+  production HTTP requests remain `0`. No credential, external request,
+  mutation, package installation into a production environment or live probe
+  was used.
+- An isolated non-editable wheel imports the facet compiler and validates an
+  enriched Receipt plus `receipt-v1.schema.json` from `site-packages`; wheel
+  SHA-256 is
+  `4c8d1dfd25df2151b41ae843623d5eb59ca35f52cdf02116d0857d42780fda4a`.
+- Retained clean `work-dashboard@e4369ce8` does not parse
+  `gravity.receipt.v1` or assume a closed field set. Its current-SDK adoption/
+  R01 suite passes `11` tests and `94` subtests, so no consumer source migration
+  or compatibility adapter was required.
 
 ## Outcome
 
