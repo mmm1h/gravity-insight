@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; plan-owner ready verdict 2026-08-22 |
+| Status | `fixed_dev`; integrated and validated on `dev` 2026-08-22 |
 | Track | Skill distribution |
 | Dependencies | R03, R06 |
 | Parallel group | `foundation-b` |
@@ -24,9 +24,10 @@ The user authorized continuous implementation without repeated Requirement
 approval. R03 and R06 are `fixed_dev`; the plan owner reviewed
 `tmp/r04-team-skill-hub-stage-a-proposal.md` and its conflict ledger, bound the
 current baseline/worktree/safety gates below, and advanced R04 through
-`reviewed` and `ready` to `in_progress`. This does not authorize production or
-external requests, credentials, package installation, Runtime environment
-mutation, release or `main` promotion.
+`reviewed` and `ready`, and accepted the validated implementation as
+`fixed_dev`. This does not authorize production or external requests,
+credentials, package installation, Runtime environment mutation, release or
+`main` promotion.
 
 - Hub Protocol v1 uses explicit team-controlled local Git mirrors or exact
   static HTTPS identities; tests use local/fake transports and make zero live
@@ -49,7 +50,36 @@ mutation, release or `main` promotion.
   separation, trusted wheel plan/startup verification, CLI/SDK/docs/public API,
   real wheel, full gates and unchanged usability/security.
 
-## Current Baseline
+## Fixed Dev Evidence
+
+- `ef012bd` implements eight strict Source/Index/lock/snapshot/state/Installer
+  Plan schemas, exact version compatibility, bounded Git/static HTTPS readers,
+  separate Skill/Trusted Pack clients and CLI, immutable CAS and offline
+  materialization; merge `c37089b` integrates the unit without a Runtime
+  executor, binder, route arm, environment scan or package installer.
+- Source tests cover two clean Git clones, pinned old revisions after branch
+  movement, origin/descriptor mismatch, preflight blob size, parent links,
+  injected HTTPS byte limits, redirect denial, `trust_env=false` and zero
+  ambient authorization. Search never selects or mutates a lock.
+- Archive/CAS tests cover traversal, absolute/case collisions, links,
+  hardlinks, special/executable entries, compression limits, Render Model
+  tampering, same-digest concurrency, linked CAS/install/state paths, atomic
+  readback and offline installation from verified content.
+- Trusted Packs use a distinct lock/CAS/CLI. Two projects produce the same
+  exact lock and external Installer Plan; startup queries only the locked
+  distribution, validates receipt/version/wheel/descriptor/groups, never calls
+  global `entry_points()` or `.load()`, and performs no pip/environment change.
+- Focused R04/public surface tests pass `40` tests and `34` subtests. Full gates
+  pass `1549` unittest; `1549 passed, 3805 subtests` pytest; compiler
+  `237 operations / 11 manifests`; quality PASS; public exports `117`; active
+  docs remain exactly `5500` lines; CLI and staged diff checks PASS.
+- Usability remains `296/336` selection, `248/248` fillability, `53/53` offline
+  terminal and `5/5` recovery; security PASS and production HTTP requests `0`.
+  The isolated wheel loaded all eight schemas, Built-in resources, clients and
+  CLI outside the checkout; wheel SHA-256 is
+  `19ace9097cb1abb35f7bd06cde628283af74a4e1202e2c82994fc63d6ba83b6a`.
+
+## Starting Baseline
 
 Built-in resources ship with the wheel after R03, and R06 defines trusted Operator/Model contracts. There is no remote Hub protocol, project lock, content-addressed cache, team code-pack path or separation between reproducible resolution and local installation state.
 
