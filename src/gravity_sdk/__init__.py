@@ -34,6 +34,21 @@ _EXPORTS = {
     "ExperimentHandoffService": (
         ".experiment_handoff", "ExperimentHandoffService"
     ),
+    "AnalysisArtifactService": (
+        ".analysis_artifact", "AnalysisArtifactService"
+    ),
+    "compile_analysis_artifact": (
+        ".analysis_artifact", "compile_analysis_artifact"
+    ),
+    "render_analysis_artifact_markdown": (
+        ".analysis_artifact_markdown", "render_analysis_artifact_markdown"
+    ),
+    "validate_analysis_artifact": (
+        ".analysis_artifact", "validate_analysis_artifact"
+    ),
+    "verify_analysis_artifact_source": (
+        ".analysis_artifact", "verify_analysis_artifact_source"
+    ),
     "compile_analysis_result": (
         ".analysis_result_contract", "compile_analysis_result"
     ),

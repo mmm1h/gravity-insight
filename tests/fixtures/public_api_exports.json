@@ -19,6 +19,10 @@
     ".analysis_primitives",
     "AnalysisStep"
   ],
+  "AnalysisArtifactService": [
+    ".analysis_artifact",
+    "AnalysisArtifactService"
+  ],
   "ActionPlanService": [
     ".action_plan",
     "ActionPlanService"
@@ -343,6 +347,10 @@
     ".analysis_result_contract",
     "compile_analysis_result"
   ],
+  "compile_analysis_artifact": [
+    ".analysis_artifact",
+    "compile_analysis_artifact"
+  ],
   "compile_execution_snapshot": [
     ".execution_snapshot",
     "compile_execution_snapshot"
@@ -467,6 +475,10 @@
     ".promotion_performance",
     "promotion_performance_input_schema"
   ],
+  "render_analysis_artifact_markdown": [
+    ".analysis_artifact_markdown",
+    "render_analysis_artifact_markdown"
+  ],
   "resolve_host_product_selection": [
     ".agent_host_selection",
     "resolve_host_product_selection"
@@ -494,6 +506,14 @@
   "validate_analysis_query_batch": [
     ".analysis_query_batch",
     "validate_analysis_query_batch"
+  ],
+  "validate_analysis_artifact": [
+    ".analysis_artifact",
+    "validate_analysis_artifact"
+  ],
+  "verify_analysis_artifact_source": [
+    ".analysis_artifact",
+    "verify_analysis_artifact_source"
   ],
   "validate_bilibili_account_request": [
     ".bilibili_account_performance",
