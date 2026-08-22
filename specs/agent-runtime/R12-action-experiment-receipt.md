@@ -3,17 +3,19 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; R12-A/B `fixed_dev` on 2026-08-22, R12-C `specified` |
+| Status | `in_progress`; R12-A/B `fixed_dev`, R12-C started 2026-08-22 |
 | Track | Governed action |
 | Dependencies | R09A |
 | Parallel group | `governed-action` |
 | Shared-spine integration | Required and serialized |
 | Delivery ledger | This Requirement document; no internal GitHub Issue |
-| Milestones | R12-A/B `fixed_dev`; R12-C `specified` |
+| Milestones | R12-A/B `fixed_dev`; R12-C `in_progress` |
 | R12-A baseline | `dev@3a47ce9f48902313c7898a0ab632c58d4c29259b` |
 | R12-A branch / worktree | `codex/r12a-action-plan-reference-connector` / `D:\\git-pjt\\gravity-sdk-wt\\r12a-action-plan-reference-connector` |
 | R12-B baseline | `dev@7e6c190c4e527579ce772261b947c79c5dcb4d45` |
 | R12-B branch / worktree | `codex/r12b-receipt-v1-additive-facets` / `D:\\git-pjt\\gravity-sdk-wt\\r12b-receipt-v1-additive-facets` |
+| R12-C baseline | `dev@50ada33b7d612a35fec99da46f63ffc16ff84def` |
+| R12-C branch / worktree | `codex/r12c-experiment-outcome-handoff` / `D:\\git-pjt\\gravity-sdk-wt\\r12c-experiment-outcome-handoff` |
 | Consumer | Retained R09A stack `work-dashboard@e4369ce8`; non-regression only |
 | Integrator | Root Codex agent; shared-spine wiring remains serial |
 | Production / external requests / mutations | `0`; injected local fixtures only |
@@ -227,6 +229,47 @@ installation, release or `main` promotion.
   `gravity.receipt.v1` or assume a closed field set. Its current-SDK adoption/
   R01 suite passes `11` tests and `94` subtests, so no consumer source migration
   or compatibility adapter was required.
+
+## R12-C Plan Owner Verdict And Ready Binding
+
+R12-B is `fixed_dev`. Under the user's continuous implementation authorization,
+the plan owner reviewed `tmp/r12c-experiment-outcome-handoff-proposal.md` and
+its conflict ledger, characterized the current Operator/Journey gap, bound the
+baseline/worktree/gates below, advanced only R12-C through `reviewed` and
+`ready`, and started it as `in_progress`. This does not authorize credentials,
+production/external requests, experiment creation, mutation, package
+installation, release or `main` promotion.
+
+- Add immutable offline Experiment Proposal, power-evidence, external
+  observation and Outcome Handoff contracts. Compile the existing Analysis
+  Result and planning snapshot first; copy only safe digests/references, not
+  findings, rows, Context bodies or request values.
+- Primary Metric/Guardrail Semantics, Target Segment, precomputed power result
+  and Context assumptions must match exact planning-snapshot references.
+  Missing/unresolved/mismatched dependencies remain `proposal_only` with stable
+  reasons; no Metric, Segment, Operator or assumption is inferred from text.
+- The current Registry has only
+  `operator://gravity/returned-dimension-change@1`. R12-C must not hand-write
+  statistics or add a dependency: absent experiment-power/significance methods
+  remain explicit blockers. A dependency-complete Proposal is still only
+  `ready_for_review`, never execution authorization.
+- Add one canonical `analysis.experiment-outcome-evaluation@1` Journey and bind
+  it to one human-ledger row. Execution/surfaces remain unavailable/missing and
+  the absent `operator://gravity/significance-test@1` keeps current can-run
+  blocked with `OPERATOR_UNAVAILABLE`.
+- Outcome Handoff requires a completed external observation bound to the exact
+  Proposal and a later, non-overlapping evidence window. It always points to the
+  fixed distinct Outcome Journey and fixes same-run/recommendation
+  self-validation to false; it performs no evaluation or causal claim.
+- Add one lazy `GravitySDK.experiments`, root `ExperimentHandoffService` and
+  explicit offline `gravity experiment propose|outcome-handoff --input ...`.
+  No Action Connector, Agent auto-execution, Plan node, selector/router arm,
+  external API or second executor/store enters this milestone.
+- Acceptance covers proposal-only/ready, exact dependency and digest parity,
+  malformed/tampered/duplicate inputs, observation/window/Journey independence,
+  privacy, CLI/SDK zero-network, Journey registry/ledger, isolated wheel, full
+  repository/usability/security and retained clean consumer gates. Active human
+  docs remain exactly `5500` lines and production HTTP/mutations remain `0`.
 
 ## Outcome
 

@@ -58,7 +58,7 @@ CT01 + R09B → CT02 → CT03
 | [R09C](R09C-external-context-binding.md) | External Context binding | R08, R09A | `fixed_dev` | Leaf |
 | [R10](R10-mcp-thin-surface.md) | MCP thin Resources/Tools surface | R09A + trigger | `specified` | Conditional leaf |
 | [R11](R11-pap-pilot.md) | Prepared Analysis Plan pilot | R02 | `fixed_dev` | Leaf |
-| [R12](R12-action-experiment-receipt.md) | Action, Receipt, Experiment and Outcome | R09A | `in_progress` (A/B `fixed_dev`; C `specified`) | Staged epic A→B→C |
+| [R12](R12-action-experiment-receipt.md) | Action, Receipt, Experiment and Outcome | R09A | `in_progress` (A/B `fixed_dev`; C `in_progress`) | Staged epic A→B→C |
 | [R13A](R13A-artifact-transfer.md) | Governed binary Artifact Transfer | R02 | `specified` | Leaf |
 | [R13B](R13B-analysis-artifact-renderer.md) | Analysis Artifact and non-Gravity Renderer | R09A | `specified` | Leaf |
 | [R13C](R13C-dashboard-connector.md) | Gravity Dashboard Connector | R12-A, R13B | `specified` | Leaf |
