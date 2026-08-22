@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; plan-owner ready verdict 2026-08-22 |
+| Status | `fixed_dev`; integrated and validated on `dev` 2026-08-22 |
 | Track | Optional Skill distribution binding |
 | Dependencies | R04, R09A |
 | Parallel group | `optional-binding` |
@@ -26,8 +26,9 @@ The user designated the R01 Requirement as the internal delivery ledger and
 authorized continuous implementation without repeated Requirement approval.
 R04 and R09A are `fixed_dev`; the plan owner reviewed
 `tmp/r09b-team-hub-binding-proposal.md` and its architecture-conflict ledger,
-bound the baseline/worktree/gates below, and advanced R09B through `reviewed`
-and `ready` to `in_progress`. This does not authorize production probes,
+bound the baseline/worktree/gates below, advanced R09B through `reviewed` and
+`ready` to `in_progress`, then accepted the validated implementation as
+`fixed_dev`. This does not authorize production probes,
 credentials, Hub requests, writes, package installation, release or `main`
 promotion.
 
@@ -71,12 +72,63 @@ promotion.
   consumer non-regression and `git diff --check` are mandatory. Active human
   docs remain exactly 5500 lines.
 
-## Current Baseline
+## Fixed Dev Evidence
 
-R04 provides Team Hub Stage A, package/CAS/lock and Trusted Pack installation
-plans. R09A resolves Built-in Skills only. The retained canonical consumer has
-no Team lock, so R09B changes no consumer contract and runs its focused R09A
-suite solely as a non-regression gate.
+- Feature commit `909ae1a` and merge `e8fd2a1` add one public
+  `RuntimeSkillResolver`; root public API now has `126` lazy exports and
+  `gravity_sdk.__all__` has `127` entries including `__version__`. No CLI
+  command, Journey, router, executor, Plan adapter, Provider, operation or
+  worker pool was added.
+- Built-in identity resolves before project access, remains `unlocked`, writes
+  null for every Team/Hub/Trusted snapshot field and succeeds even when the
+  workspace, lock and CAS do not exist. Team identity never falls back: the
+  fixed tracked/clean `gravity.skills.lock.json` must have a valid self-digest,
+  the exact current Runtime version and one exact identity.
+- Runtime reads the default `<workspace.state_root>/skill-hub-cas` without
+  constructing `SkillHubCAS` or creating a missing root. R04
+  `validate_skill_directory` rechecks path/link/hardlink/file budgets, Render
+  Model and package digest; URI, manifest/package digests, Runtime requirement
+  and the complete dependency snapshot must equal the lock.
+- Public Skill/Journey parity now covers Journey identity, capabilities,
+  Semantic, Operator/Model, required Context, completeness/DQ, claims, request
+  budget and formal Analysis Result output schema. Core consumes the same
+  normalized artifact for Built-in and locked Team resolution, while its
+  existing Operator/Model registries remain the availability authority.
+- A locked Skill's non-Built-in Operators and all Models require exact coverage
+  in tracked/clean `gravity.trusted-packs.lock.json` and local
+  `trusted-packs-installation.json`. R04 targeted startup verification checks
+  lock/state/distribution/group identity without install, entry-point load or
+  global scan. Snapshot references include Team lock, exact Hub source plus
+  Trusted lock/state/verification digests and exclude local paths/timestamps.
+- Two clean synthetic Git projects with identical locks and independent CAS
+  roots resolve the same locked Skill reference and both execute successfully
+  through the existing R01 runner/playbook/Plan/Operator owner. Guards make any
+  Runtime call to Hub sync/fetch/install fail the test. Missing, dirty,
+  tampered, wrong-version and dependency-drift lock/CAS cases plus missing,
+  tampered, uncovered and group-drift Trusted state fail closed with stable
+  scoped reasons; Built-in remains available in every Team failure case.
+- Focused R04/R09A/R09B/public gates pass `66` tests and `23` subtests. Complete
+  gates pass `1594` unittest; `1594 passed, 3821 subtests` pytest; compiler
+  `237 operations / 11 manifests`; quality and both generators PASS; active
+  docs remain exactly `5500` lines; CLI, targeted Ruff and diff checks PASS.
+- Development usability remains `296/336` selection, `248/248` fillability,
+  `53/53` offline terminal and `5/5` recovery; security PASS, production HTTP
+  requests `0`, and Runtime Hub requests `0`. The isolated installed-wheel
+  import/export/schema/package gate passes from `site-packages`; wheel SHA-256
+  is `cf4723231e5714439f29612c03ba0368a1d2ab8cacd9d4ae792fd2112f1c4341`.
+  The unchanged Built-in package digest remains
+  `544c1448df48f327f1e4785743358490271923448af1025fc82e9ab41eb41c1f`.
+- Retained work-dashboard consumer `e4369ce8` has no Team lock and needs no R09B
+  migration. Its R09A/current-SDK focused suite passes `11` tests and `94`
+  subtests, its branch remains clean, and no unrelated frozen or business path
+  was changed.
+
+## Bound Baseline
+
+At the bound baseline, R04 provided Team Hub Stage A package/CAS/lock and
+Trusted Pack installation plans while R09A resolved Built-in Skills only. The
+retained canonical consumer had no Team lock, so R09B changed no consumer
+contract and used its focused R09A suite solely as a non-regression gate.
 
 ## Scope
 
