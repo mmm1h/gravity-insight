@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; reviewed/ready binding accepted 2026-08-22 |
+| Status | `fixed_dev`; accepted on `dev@46b317518e576f61877e44ace36ec5cf2f242fe6` 2026-08-22 |
 | Track | Binary/file delivery |
 | Dependencies | R02 |
 | Parallel group | `artifact-transfer` |
@@ -89,6 +89,62 @@ Prevent redirect escape, MIME/magic confusion, path traversal, symlink output, o
 ## Verification
 
 Current materials characterization, streaming/interruption, redirect/MIME/magic/path/size tests, atomic file cases, public snapshots, CLI/SDK parity and full gates.
+
+## Delivered Evidence
+
+- Implementation `175af94d36c87bacbaecdbb75689a495d3fe30ff` was merged as
+  `dev@46b317518e576f61877e44ace36ec5cf2f242fe6`. The material-private
+  redirect/stream/staging/type/commit loop was removed; the real
+  `material.asset.fetch` owner now invokes the existing R02 `SafeBlobTransfer`
+  core through one internal trusted-adapter service.
+- `gravity.material-asset.v2` embeds schema-validated
+  `gravity.artifact-transfer.v1`. The source contract is
+  `gravity.material-asset-contract.v2`: fresh exact HTTPS host/path authorizes
+  the first request, at most three redirects remain on that exact host, JPEG
+  `.jpg/.jpeg` is capped at 16 MiB and MP4 `.mp4` at 1 GiB, and
+  MIME/extension/magic/size/optional MD5/SHA-256 must pass before atomic
+  no-clobber commit.
+- Output root, ancestors, traversal, absolute-under-explicit-root,
+  symlink/reparse, overwrite and extension are checked before the source read
+  and again at commit. Relative output metadata contains only `local_ref`;
+  signed URLs, query/headers, source input/raw rows and absolute roots are
+  absent. Source and binary HTTP calls propagate only opaque standard
+  `gravity.result-audit.v1` references, including failure paths.
+- Focused attack/parity gates cover same-host redirect success, cross-host
+  escape before request two, redirect limit, HTTP category parity, missing/
+  duplicate/oversized reference, declared and streaming caps, Content-Length,
+  MIME/magic/extension, source size/MD5, interruption, schema tamper and
+  pre-commit metadata failure. Final focused core was `44 tests, 35 subtests`;
+  post-merge surface coverage was `189 tests, 370 subtests`.
+- Complete SDK gates: `1676` unittest tests; `1676 passed, 3880 subtests passed`
+  under pytest; compiler `237 operations, 11 manifests`; quality PASS; all
+  three deterministic generators, CLI help, diff checks and touched-file Ruff
+  PASS. Active human docs remain exactly `5500` lines.
+- Actionable errors remain fully classified at
+  `1330 = 1163 A + 167 B + 0 C`. Development usability remains selection
+  `296/336`, fillability `248/248`, offline terminal `53/53`, recovery `5/5`,
+  security violations `0`, and production HTTP requests `0`.
+- Isolated real wheel `gravity_sdk-0.3.0-py3-none-any.whl` has SHA-256
+  `ccb13cf1867d0b3f2b551c9ef71401d2a2ce0756ca972fdc4e552a417aaae18b`.
+  It imported from isolated `site-packages`, loaded the packaged v2 source
+  contract and Artifact schema, discovered the updated Agent card and passed
+  installed CLI help outside the checkout.
+- Canonical consumer search found no material fetch command, selector, method or
+  envelope consumer. Its current-SDK adoption/Journey suite still passes
+  `11 tests, 94 subtests` against this R13A worktree. No consumer branch change
+  was necessary.
+- Production probes, target requests, remote writes, releases and `main`
+  promotion performed by R13A: `0`.
+
+## Known Limits
+
+- Cross-host material redirects are intentionally unsupported because all
+  verified production samples had zero redirects and the complete future host
+  set is unproven. A real cross-host requirement needs value-free evidence and
+  an explicit source-contract upgrade; it must not be inferred from a URL.
+- Artifact Transfer remains a local binary effect behind trusted source
+  adapters. There is no arbitrary URL API, upload/remote target, generic file
+  manager or Plan node; R13B/R13C remain independent later units.
 
 ## Rollback And Exit
 
