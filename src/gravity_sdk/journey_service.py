@@ -180,7 +180,7 @@ class JourneyService:
             "capabilities": copy.deepcopy(snapshot["capabilities"]),
             "operators": copy.deepcopy(snapshot["operators"]),
             "models": copy.deepcopy(snapshot["models"]),
-            "context_pack": None,
+            "context_packs": [],
             "can_run_status": readiness["can_run_status"],
             "reason_codes": reasons,
             "completeness": "unknown",

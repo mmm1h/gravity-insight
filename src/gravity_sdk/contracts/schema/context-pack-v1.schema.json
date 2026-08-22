@@ -75,7 +75,10 @@
       }
     },
     "pack_digest": {"$ref": "#/$defs/digest"},
-    "network_called": {"const": false}
+    "network_called": {"const": false},
+    "provider_rpc_called": {"type": "boolean"},
+    "provider_internal_io_controlled": {"const": false},
+    "provider_internal_network": {"const": "not_observable"}
   },
   "$defs": {
     "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},

@@ -28,6 +28,7 @@ _PROVIDER_SCHEMA = "context-provider-v1.schema.json"
 _ITEM_SCHEMA = "context-item-v1.schema.json"
 _REQUIREMENT_SCHEMA = "context-requirement-v1.schema.json"
 _PACK_SCHEMA = "context-pack-v1.schema.json"
+_ITEM_REFERENCE_SCHEMA = "context-item-reference-v1.schema.json"
 _PROVIDER_ROOT = Path(__file__).resolve().parent / "contracts" / "context-providers"
 _PROVIDER_URI = re.compile(
     r"^context-provider://[a-z0-9.-]+/[a-z0-9./-]+@(?P<version>[1-9][0-9]*)$"
@@ -177,6 +178,16 @@ def validate_context_pack(value: Mapping[str, Any]) -> dict[str, Any]:
 def _validate_pack_metadata(
     pack: Mapping[str, Any], items: Sequence[Mapping[str, Any]]
 ) -> None:
+    audit_fields = {
+        "provider_rpc_called",
+        "provider_internal_io_controlled",
+        "provider_internal_network",
+    }
+    present = audit_fields.intersection(pack)
+    if present and present != audit_fields:
+        raise ContextContractError(
+            "CONTEXT_PACK_INVALID", "Context Pack Provider audit fields are incomplete"
+        )
     _validate_requested_time(pack["requested_time"])
     _validate_pack_order(pack)
     expected_status, expected_claims = _expected_pack_readiness(pack, items)
@@ -318,7 +329,73 @@ def context_item_reference(item: Mapping[str, Any]) -> dict[str, Any]:
 def public_context_reference(pack: Mapping[str, Any]) -> dict[str, Any]:
     selected = validate_context_pack(pack)
     selected["items"] = [context_item_reference(item) for item in selected["items"]]
-    return selected
+    return validate_public_context_pack(selected)
+
+
+def validate_public_context_pack(value: Mapping[str, Any]) -> dict[str, Any]:
+    pack = _object(value, "CONTEXT_PACK_INVALID", "Public Context Pack")
+    _schema(pack, _PACK_SCHEMA, "CONTEXT_PACK_INVALID", "Public Context Pack")
+    _validate_public_items(pack)
+    _validate_public_pack_metadata(pack)
+    return copy.deepcopy(pack)
+
+
+def _validate_public_items(pack: Mapping[str, Any]) -> None:
+    for item in pack["items"]:
+        _validate_public_item(item, pack["provider"])
+    _unique(pack["items"], "item_id", "Context Pack item IDs", reason="CONTEXT_PACK_INVALID")
+    _unique(pack["items"], "uri", "Context Pack item URIs", reason="CONTEXT_PACK_INVALID")
+    if pack["items"] != sorted(pack["items"], key=lambda item: item["item_id"]):
+        raise ContextContractError(
+            "CONTEXT_PACK_INVALID", "Context Pack items are not deterministic"
+        )
+    if pack["alignment"]["matched"] != sorted(item["uri"] for item in pack["items"]):
+        raise ContextContractError(
+            "CONTEXT_PACK_INVALID", "Context Pack matched alignment changed"
+        )
+
+
+def _validate_public_item(
+    item: Mapping[str, Any], provider: Mapping[str, Any]
+) -> None:
+    _schema(
+        item,
+        _ITEM_REFERENCE_SCHEMA,
+        "CONTEXT_PACK_INVALID",
+        "Context Item reference",
+    )
+    checks = (
+        item["entity_refs"] == sorted(item["entity_refs"]),
+        item["resolved_entity_refs"] == sorted(item["resolved_entity_refs"]),
+        item["supersedes"] == sorted(item["supersedes"]),
+        item["provider_uri"] == provider["uri"],
+        item["source_revision"] == provider["source_revision"],
+        item["citation"]["line_start"] <= item["citation"]["line_end"],
+    )
+    if not all(checks):
+        raise ContextContractError(
+            "CONTEXT_PACK_INVALID", "Context Item reference changed"
+        )
+
+
+def _validate_public_pack_metadata(pack: Mapping[str, Any]) -> None:
+    _validate_requested_time(pack["requested_time"])
+    _validate_pack_order(pack)
+    expected_status, expected_claims = _expected_pack_readiness(pack, pack["items"])
+    if pack["status"] != expected_status or pack["claims"] != expected_claims:
+        raise ContextContractError(
+            "CONTEXT_PACK_INVALID", "Context Pack readiness or claims changed"
+        )
+    if (
+        pack["budget"]["used_files"] < len(pack["items"])
+        or pack["budget"]["used_files"] > pack["budget"]["max_files"]
+        or pack["budget"]["used_bytes"] > pack["budget"]["max_total_bytes"]
+        or pack["budget"]["used_lines"] > pack["budget"]["max_total_lines"]
+        or pack["pack_digest"] != context_pack_digest(pack)
+    ):
+        raise ContextContractError(
+            "CONTEXT_PACK_DIGEST_MISMATCH", "Public Context Pack digest changed"
+        )
 
 
 def date_range_contains(
@@ -471,4 +548,5 @@ __all__ = [
     "time_range_contains",
     "validate_context_item",
     "validate_context_pack",
+    "validate_public_context_pack",
 ]

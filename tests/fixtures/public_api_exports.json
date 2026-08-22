@@ -111,6 +111,10 @@
     ".external_context_provider",
     "ExternalContextProvider"
   ],
+  "ExternalContextBindingResolver": [
+    ".external_context_binding",
+    "ExternalContextBindingResolver"
+  ],
   "GravityClient": [
     ".sql",
     "GravityClient"

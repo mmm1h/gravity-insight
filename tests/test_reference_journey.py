@@ -211,7 +211,7 @@ class ReferenceJourneyTests(unittest.TestCase):
         self.assertEqual("available", result["operators"][0]["status"])
         self.assertEqual("supported_association", result["findings"][0]["finding_type"])
         self.assertTrue(result["receipt_references"])
-        self.assertNotIn("content", result["context_pack"]["items"][0])
+        self.assertNotIn("content", result["context_packs"][0]["items"][0])
         self.assertEqual(
             "gravity.execution-snapshot.v1",
             result["execution_snapshot"]["schema_version"],

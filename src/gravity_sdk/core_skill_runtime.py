@@ -29,6 +29,10 @@ from .core_skill_references import (
 )
 from .errors import ContractChangedError, InputValidationError
 from .execution_snapshot import build_execution_snapshot
+from .external_context_binding import (
+    ExternalContextBindingError,
+    ExternalContextBindingResolver,
+)
 from .journey_contract import journey_artifact
 from .model_registry import ModelRegistry
 from .operator_registry import OperatorRegistry
@@ -59,6 +63,8 @@ class CoreSkillRuntime:
         operators: OperatorRegistry | None = None,
         models: ModelRegistry | None = None,
         skill_resolver: RuntimeSkillResolver | None = None,
+        external_context: ExternalContextBindingResolver | None = None,
+        external_context_providers: Sequence[Any] = (),
     ) -> None:
         self._workspace = workspace
         self._capability_trust = capability_trust or CapabilityTrustService()
@@ -66,6 +72,10 @@ class CoreSkillRuntime:
         self._models = models or ModelRegistry(operators=self._operators)
         self._skill_resolver = skill_resolver or RuntimeSkillResolver(
             workspace=workspace
+        )
+        self._external_context = external_context or ExternalContextBindingResolver(
+            workspace=workspace,
+            providers=external_context_providers,
         )
 
     def resolve(
@@ -149,6 +159,10 @@ class CoreSkillRuntime:
             "overlay_status": "blocked",
             "reasons": [],
             "invalid": False,
+            "optional_context_complete": True,
+            "provider_rpc_called": False,
+            "provider_internal_io_controlled": False,
+            "provider_internal_network": "not_applicable",
         }
         try:
             result["overlay"] = self._overlay(
@@ -160,7 +174,7 @@ class CoreSkillRuntime:
             result["semantics"], result["semantic_bindings"], semantic_reasons = (
                 self._semantics(journey, result["overlay"], scope)
             )
-            result["context_packs"], context_reasons = resolve_project_context(
+            context = resolve_project_context(
                 workspace=self._workspace,
                 journey=journey,
                 skill=skill,
@@ -169,10 +183,28 @@ class CoreSkillRuntime:
                 scope=scope,
                 source_revision=source_revision,
                 observed_at=observed_at,
+                external_context=self._external_context,
             )
+            result["context_packs"] = context["context_packs"]
+            result["optional_context_complete"] = context[
+                "optional_context_complete"
+            ]
+            result["provider_rpc_called"] = context["provider_rpc_called"]
+            result["provider_internal_io_controlled"] = context[
+                "provider_internal_io_controlled"
+            ]
+            result["provider_internal_network"] = context[
+                "provider_internal_network"
+            ]
+            context_reasons = context["reason_codes"]
             result["reasons"] = [*semantic_reasons, *context_reasons]
             result["overlay_status"] = "resolved"
-        except (ProjectSkillOverlayError, SemanticContractError, ContextContractError) as exc:
+        except (
+            ProjectSkillOverlayError,
+            SemanticContractError,
+            ContextContractError,
+            ExternalContextBindingError,
+        ) as exc:
             result["reasons"] = [exc.reason_code]
             result["invalid"] = isinstance(exc, SemanticContractError) or exc.reason_code.endswith("_INVALID")
         return result
@@ -222,6 +254,9 @@ class CoreSkillRuntime:
     ) -> dict[str, Any]:
         skill = local["skill"]
         overlay = project["overlay"]
+        claim_policy = _resolved_claim_policy(
+            skill, optional_context_complete=project["optional_context_complete"]
+        )
         return {
             "schema_version": SCHEMA_VERSION,
             "ok": status == "verified",
@@ -240,6 +275,7 @@ class CoreSkillRuntime:
             "validation": (
                 skill["contract"]["validation"] if skill is not None else None
             ),
+            "claim_policy": claim_policy,
             "dependencies": {
                 "capabilities": copy.deepcopy(local["capabilities"]),
                 "semantics": copy.deepcopy(project["semantics"]),
@@ -257,6 +293,11 @@ class CoreSkillRuntime:
             "request_budget": copy.deepcopy(journey["contract"]["request_budget"]),
             "reason_codes": reasons,
             "execution_snapshot": copy.deepcopy(snapshot),
+            "provider_rpc_called": project["provider_rpc_called"],
+            "provider_internal_io_controlled": project[
+                "provider_internal_io_controlled"
+            ],
+            "provider_internal_network": project["provider_internal_network"],
             "network_called": False,
         }
 
@@ -463,6 +504,27 @@ def _execution_binding_reasons(
     except ContractChangedError:
         return ["SEMANTIC_EXECUTION_BINDING_INVALID"]
     return []
+
+
+def _resolved_claim_policy(
+    skill: Mapping[str, Any] | None, *, optional_context_complete: bool
+) -> dict[str, Any] | None:
+    if skill is None:
+        return None
+    policy = skill["contract"]["claim_policy"]
+    restricted = (
+        []
+        if optional_context_complete
+        else list(policy["forbidden_without_context"])
+    )
+    return {
+        "allowed": [
+            claim for claim in policy["allowed"] if claim not in set(restricted)
+        ],
+        "forbidden": list(dict.fromkeys([*policy["forbidden"], *restricted])),
+        "forbidden_without_context": list(policy["forbidden_without_context"]),
+        "optional_context_complete": optional_context_complete,
+    }
 
 
 __all__ = ["CoreSkillRuntime", "CoreSkillRuntimeError", "SCHEMA_VERSION"]
