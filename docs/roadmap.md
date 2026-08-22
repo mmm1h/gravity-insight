@@ -25,7 +25,7 @@
 4. **R03 Built-in Skill Package / R04 Team Skill Hub Stage A（fixed-dev）**：Built-in 与团队无代码 Skill 共用 Manifest/Render Model；显式 Git/static HTTPS Source、exact lock、独立 CAS/offline materialize 已闭合，Trusted Pack 只生成外部 Installer Plan 并做 exact startup verification，未接入 Runtime 执行。
 5. **R05 Business Semantic Registry（fixed-dev）**：versioned Definition/Binding/Source、formula/unit/additivity/time/effective-range/conflict 门禁与离线 `SemanticRegistry`/复数 CLI 已集成；Runtime 只含通用 App Entity，Merge2 指标与 App/physical binding 已迁移到 work-dashboard 独立 Source。R01 仍因完整性 unknown 而零请求阻断。
 6. **R06 Operator / Model Contracts（fixed-dev）**：唯一 R01 deterministic Operator 已迁移到闭合 Registry 与 input/output/assumption/claim/golden/资源门禁；Model Registry 不内置模型，且要求 trusted digest + lineage/evaluation/approval/expiry/horizon 后才允许生产 claims，LTV gap 未提升；R04 trusted-pack descriptor 已冻结。
-7. **R07/R08 Context 与 Provider（fixed-dev）/ R09A Core Skill Runtime（in-progress）**：正在将 Built-in Skill、Trust、Semantic、Operator、Repo Context 与 Project Overlay 冻结为值无关 execution snapshot，并由既有 Journey/Plan owner 生成正式 Analysis Result；不提前绑定 Team Hub 或外部 Provider。
+7. **R07/R08 Context 与 Provider / R09A Core Skill Runtime（fixed-dev）**：Built-in Skill、Trust、Semantic、Operator、Repo Context 与 Project Overlay 已冻结为值无关 execution snapshot，并由既有 Journey/Plan owner 生成正式 Analysis Result；live R01 仍因完整性 unknown 零请求阻断，Team Hub 与外部 Provider binding 留给 R09B/R09C。
 8. **Main freeze**：完整计划结束、整体验收通过且用户重新明确批准前，本计划功能只合入 `dev`，不合入 `main`。单项 `fixed_dev` 不等于发布。
 9. **持续实施授权**：用户已明确要求依赖满足后持续完成全部 indexed requirements，不再逐项请求批准；计划 owner 仍须在每个单元开工前绑定机器门禁、写入范围与回滚，且不得由该授权推导生产探测、写入、发布或提前解冻 `main`。
 

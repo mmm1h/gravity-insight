@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; plan-owner ready verdict 2026-08-22 |
+| Status | `fixed_dev`; integrated and validated on `dev` 2026-08-22 |
 | Track | Core Runtime composition |
 | Dependencies | R02, R03, R05, R06, R07 |
 | Parallel group | `core-runtime` |
@@ -27,7 +27,8 @@ delivery ledger and authorized continuous implementation without repeated
 Requirement approval. R02, R03 and R05-R07 are `fixed_dev`; the plan owner
 reviewed `tmp/r09a-core-skill-runtime-proposal.md` and its conflict ledger,
 bound the baseline/worktrees/gates below, and advanced R09A through `reviewed`
-and `ready` to `in_progress`. This does not authorize production probes,
+and `ready` to `in_progress`, then accepted the validated implementation as
+`fixed_dev`. This does not authorize production probes,
 credentials, Hub/Provider calls, writes, package installation, release or
 `main` promotion.
 
@@ -62,6 +63,61 @@ credentials, Hub/Provider calls, writes, package installation, release or
   Public SDK/CLI/Plan/Agent Skill parity, real-wheel resources, request/context
   budgets, tamper/conflict cases, full gates and active docs at exactly 5500
   lines are mandatory acceptance evidence.
+
+## Fixed Dev Evidence
+
+- Feature commit `011bd42` and merge `c7cf3ce` add strict packaged
+  `gravity.project-skill-overlay.v1`, `gravity.execution-snapshot.v1` and
+  `gravity.analysis-result.v1` contracts plus public compilers and one lazy
+  `CoreSkillRuntime`. Root public API now has `125` lazy exports.
+- The Core resolver composes exact R02/R03/R05-R07 owners offline. Snapshot
+  references freeze Runtime version, Journey, Built-in manifest/package,
+  Overlay Git revision/digest, Capability Trust digest, Semantic
+  definition/binding/source/registry digests, Operator/Model, Context Pack and
+  execution contract. Question, App/date/hypothesis, Context bodies, rows,
+  credentials and private paths are rejected from the snapshot.
+- The R01-only v3 project/Semantic adapters and provisional result descriptor
+  are removed. The Built-in manifest now declares intrinsic
+  `readiness=executable`; current `LocalSkillResolver` and Core readiness still
+  return blocked because authoritative Multidim completeness remains `unknown`.
+  The existing playbook consumes only the compiled project Semantic binding,
+  retains its Plan/semantic-compose/Multidim/Operator owner, and freezes that
+  binding into checkpoint identity.
+- `ReferenceJourneyRunner` compares the complete snapshot before/after its
+  single existing execution. Snapshot drift, request-budget excess, failed DQ
+  or any dependency gap emits a compiled non-success Analysis Result with no
+  findings, allowed claims or Receipt references. Synthetic complete/fresh
+  evidence produces a schema-valid success through the existing Operator only;
+  live work-dashboard remains exit 4 `COMPLETENESS_INSUFFICIENT`, empty
+  findings/claims/receipts and `network_called=false`.
+- R01 CLI/SDK/Plan remain available and the generated Built-in Agent Skill now
+  constitutes the explicit Agent surface; no Agent card, MCP Tool, router,
+  executor, binder, pagination, permission path or worker pool was added. R09B
+  Team lock and R09C external Context binding remain absent and unnecessary.
+- Focused R09A/public/docs gates pass `57` tests and `20` subtests. Complete
+  gates pass `1586` unittest; `1586 passed, 3821 subtests` pytest; compiler
+  `237 operations / 11 manifests`; quality and generators PASS; actionable
+  errors are `1321` total (`1157 A`, `164 B`, `0 C`); active docs remain exactly
+  `5500` lines; CLI and staged diff checks PASS.
+- Development usability remains `296/336` selection, `248/248` fillability,
+  `53/53` offline terminal and `5/5` recovery; security PASS and production HTTP
+  requests `0`. Isolated wheel import/schema/package/live-block gates pass from
+  `site-packages`; wheel SHA-256 is
+  `421a98925a9834383ea9a239ce60456ab5c4cbee1959207c59dcb31cc9235a9a`,
+  Built-in package digest is
+  `544c1448df48f327f1e4785743358490271923448af1025fc82e9ab41eb41c1f`.
+- Canonical consumer commits `e30c2036` and `e4369ce8` migrate the tracked
+  work-dashboard Overlay, focused contract and current reference; focused gates
+  pass `11` tests and `94` subtests. Its full governance remains blocked by
+  unrelated inherited facts: two missing historical migration assets, one GM
+  SQL provenance drift, one expired topic exception, one frozen HTML tmp link,
+  and existing GM approval/registry suite contradictions. No R09A path fails and
+  the consumer branch is not pushed while those repository gates are red.
+- The mandatory full gate also exposed an R08 Windows taskkill descendant
+  escape on unchanged `dev`; separate corrective `a4b7af3` / merge `8128185`
+  introduced pre-stdin Job Object containment and passed R08/full gates before
+  R09A final validation. R09A itself did not absorb Provider binding or RPC
+  ownership.
 
 ## Current Baseline
 
