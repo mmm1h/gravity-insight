@@ -3,15 +3,52 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `specified` |
+| Status | `in_progress`; plan-owner ready verdict 2026-08-22 |
 | Track | Provider boundary |
 | Dependencies | R07 |
 | Parallel group | `foundation-b` |
+| Delivery ledger | This Requirement document; no internal GitHub Issue |
+| Baseline | `dev@30687b1` |
+| Branch / worktree | `codex/r08-external-provider-rpc-guard` / `D:\\git-pjt\\gravity-sdk-wt\\r08-external-provider-rpc-guard` |
+| Integrator | Root Codex agent; no shared-spine wiring is authorized |
+| Production/external requests | `0`; tests use injected callables and local fixture processes only |
 | Main integration | Frozen until whole program completion |
 
 ## Outcome
 
 External MCP, subprocess or host-provided Context sources project into the R07 contracts through a fail-closed RPC Guard. Runtime governs the call boundary without claiming control over Provider-internal networking.
+
+## Plan Owner Verdict And Ready Binding
+
+The user authorized continuous implementation without repeated Requirement
+approval. R07 is `fixed_dev`; the plan owner reviewed
+`tmp/r08-external-provider-rpc-guard-proposal.md` and its conflict ledger,
+bound the current baseline/worktree/safety gates below, and advanced R08 through
+`reviewed` and `ready` to `in_progress`. This does not authorize a live Provider,
+credentials, production/external requests, package installation, release or
+`main` promotion.
+
+- External descriptors are read-only and explicit. RPC requests allow only
+  `list/search/read/list_changed`; returned URLs, tool names and text are inert
+  data and cannot select a Product, effect or authorization.
+- One process-wide Provider executor plus per-descriptor semaphore/call budget
+  owns concurrency. It does not nest a Plan worker pool or govern Provider-
+  internal I/O. Enforced and self-reported statistics remain separate.
+- Timeout/cancel/retry/output/circuit rules are fail-closed. Retry occurs only
+  after a pre-response unavailable failure and consumes the same call budget;
+  one half-open probe follows cooldown.
+- MCP/Host are injected callable transports. Subprocess is an explicit absolute
+  executable/fixed argv/in-root cwd with no shell, sanitized environment,
+  bounded streams and process-tree termination. Only local fixtures execute.
+- R08 normalizes exact reads to R07 Context Items or stable gaps and broadens
+  reusable source revisions beyond Git SHA without changing existing Repo bytes.
+  R07 remains Pack/alignment owner; R09C alone binds external dependencies.
+- R10 MCP Server, R14 adaptive Runtime I/O, external writes, work-dashboard
+  migration and shared-spine changes remain out of scope.
+- Exact acceptance includes fake MCP/Host, real local subprocess timeout/cancel/
+  cleanup/output/credential cases, permissions, retry/budget/concurrency,
+  circuit/half-open, Context normalization, public API/docs, real wheel, full
+  gates and unchanged usability/security with production HTTP zero.
 
 ## Current Baseline
 
@@ -55,6 +92,11 @@ Subprocess launch uses a sanitized environment, bounded working directory, expli
 ## Verification
 
 Fake MCP/subprocess/host Providers, timeout/cancel/process cleanup, credential-environment tests, output bombs, permission filtering, circuit behavior, Context normalization and full gates.
+
+Focused acceptance commands cover external Provider contracts/guard/transports,
+R07 Context compatibility and public API. Final acceptance additionally runs
+both complete test collectors, compiler/quality, development usability, isolated
+wheel loading, CLI help and `git diff --check`.
 
 ## Rollback And Exit
 
