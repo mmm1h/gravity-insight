@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextvars
+import copy
 import json
 import logging
 import uuid
@@ -25,6 +26,21 @@ from .result_output import write_rendered_result
 
 SCHEMA_VERSION = "gravity.receipt.v1"
 HTTP_SCHEMA_VERSION = "gravity.http-receipt.v1"
+_FACET_FIELDS = frozenset(
+    {
+        "run",
+        "skill",
+        "journey",
+        "capability",
+        "semantics",
+        "operator_model",
+        "context",
+        "pagination",
+        "data_quality",
+        "policy",
+        "action",
+    }
+)
 _LOGGER = logging.getLogger("gravity_sdk")
 
 
@@ -351,6 +367,7 @@ def build_receipt(
     duration_ms: float,
     request_count: int,
     operator_model: Mapping[str, Any] | None = None,
+    facets: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     receipt = {
         "schema_version": SCHEMA_VERSION,
@@ -366,27 +383,129 @@ def build_receipt(
         "duration_ms": round(max(0.0, duration_ms), 3),
         "request_count": max(0, int(request_count)),
     }
+    selected_facets = validate_receipt_facets(
+        facets if facets is not None else {}
+    )
     if operator_model is not None:
         from .operator_model_receipt import validate_operator_model_receipt_facet
 
-        receipt["operator_model"] = validate_operator_model_receipt_facet(
+        if "operator_model" in selected_facets:
+            raise ValueError("operator_model receipt facet was supplied twice")
+        selected_facets["operator_model"] = validate_operator_model_receipt_facet(
             operator_model
         )
+    receipt.update(selected_facets)
+    validate_receipt(receipt)
     return receipt
+
+
+def validate_receipt(value: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate one legacy or facet-enriched Receipt without changing its shape."""
+
+    if not isinstance(value, Mapping):
+        raise ValueError("Receipt must be an object")
+    selected = copy.deepcopy(dict(value))
+    from .agent_runtime_contracts import AgentRuntimeContractError, validate_schema
+
+    try:
+        validate_schema(selected, "receipt-v1.schema.json", "Receipt v1")
+    except AgentRuntimeContractError as exc:
+        raise ValueError("Receipt v1 is invalid") from exc
+    operator_model = selected.get("operator_model")
+    if operator_model is not None:
+        from .operator_model_receipt import validate_operator_model_receipt_facet
+
+        validate_operator_model_receipt_facet(operator_model)
+    _validate_facet_order(selected)
+    return selected
+
+
+def validate_receipt_facets(value: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate only the optional part against the canonical Receipt schema."""
+
+    if not isinstance(value, Mapping):
+        raise ValueError("Receipt facets must be an object")
+    selected = copy.deepcopy(dict(value))
+    unknown = set(selected) - _FACET_FIELDS
+    if unknown:
+        raise ValueError(
+            "Receipt facets contain non-facet fields: "
+            + ", ".join(sorted(str(item) for item in unknown))
+        )
+    placeholder = {
+        "schema_version": SCHEMA_VERSION,
+        "receipt_id": "0" * 32,
+        "created_at": "1970-01-01T00:00:00Z",
+        "operation_id": "receipt.validation",
+        "input_shape_fingerprint": "0" * 64,
+        "contract_fingerprint": None,
+        "output_shape_fingerprint": "0" * 64,
+        "status": "success",
+        "duration_ms": 0.0,
+        "request_count": 0,
+        **selected,
+    }
+    validate_receipt(placeholder)
+    return selected
+
+
+def _validate_facet_order(receipt: Mapping[str, Any]) -> None:
+    _validate_capability_facet_order(receipt.get("capability"))
+    _validate_semantics_facet_order(receipt.get("semantics"))
+    _validate_context_facet_order(receipt.get("context"))
+
+
+def _validate_capability_facet_order(capability: Any) -> None:
+    if isinstance(capability, Mapping):
+        references = capability.get("references", [])
+        expected = sorted(
+            references,
+            key=lambda item: (item["identity_kind"], item["selector"]),
+        )
+        identities = [
+            (item["identity_kind"], item["selector"]) for item in references
+        ]
+        if references != expected or len(identities) != len(set(identities)):
+            raise ValueError("Receipt Capability references are not deterministic")
+
+
+def _validate_semantics_facet_order(semantics: Any) -> None:
+    if isinstance(semantics, Mapping):
+        references = semantics.get("references", [])
+        uris = [item["uri"] for item in references]
+        if uris != sorted(uris) or len(uris) != len(set(uris)):
+            raise ValueError("Receipt Semantic references are not deterministic")
+
+
+def _validate_context_facet_order(context: Any) -> None:
+    if isinstance(context, Mapping):
+        packs = context.get("packs", [])
+        keys = [
+            (item["requirement_uri"], item["pack_digest"] or "") for item in packs
+        ]
+        if keys != sorted(keys) or len(keys) != len(set(keys)):
+            raise ValueError("Receipt Context Pack references are not deterministic")
+        for pack in packs:
+            uris = [item["uri"] for item in pack["resources"]]
+            if uris != sorted(uris) or len(uris) != len(set(uris)):
+                raise ValueError(
+                    "Receipt Context resource references are not deterministic"
+                )
 
 
 def persist_receipt(
     receipt: Mapping[str, Any], state_root: Path
 ) -> tuple[bool, Path]:
-    created_at = str(receipt.get("created_at", "unknown")).replace(":", "").replace(
+    selected = validate_receipt(receipt)
+    created_at = str(selected["created_at"]).replace(":", "").replace(
         "-", ""
     )
-    receipt_id = str(receipt.get("receipt_id", "unknown"))
+    receipt_id = str(selected["receipt_id"])
     path = state_root / "receipts" / f"{created_at}-{receipt_id}.json"
     try:
         write_rendered_result(
             str(path),
-            json.dumps(dict(receipt), ensure_ascii=False, sort_keys=True) + "\n",
+            json.dumps(selected, ensure_ascii=False, sort_keys=True) + "\n",
         )
     except (OSError, UnicodeError):
         return False, path
@@ -407,4 +526,6 @@ __all__ = [
     "request_receipt_context",
     "record_completed_http_response",
     "record_http_request",
+    "validate_receipt",
+    "validate_receipt_facets",
 ]

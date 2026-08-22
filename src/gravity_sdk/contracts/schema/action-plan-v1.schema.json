@@ -15,12 +15,26 @@
     "preview_fingerprint": {"$ref": "#/$defs/digest"},
     "created_at": {"$ref": "#/$defs/timestamp"},
     "expires_at": {"$ref": "#/$defs/timestamp"},
-    "policy": {"$ref": "policy-decision-v1.schema.json"}
+    "policy": {"$ref": "#/$defs/policy"}
   },
   "$defs": {
     "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "timestamp": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"},
     "connector": {"type": "object", "required": ["id", "version"], "additionalProperties": false, "properties": {"id": {"const": "gravity.segment-metadata-update"}, "version": {"const": 1}}},
+    "policy": {
+      "type": "object",
+      "required": ["schema_version", "decision_id", "policy_revision", "decision", "reason_codes", "evaluated_effect", "masked_paths"],
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {"const": "gravity.policy-decision.v1"},
+        "decision_id": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+        "policy_revision": {"const": "gravity.action-policy.v1"},
+        "decision": {"enum": ["allow", "deny", "require_confirmation"]},
+        "reason_codes": {"type": "array", "minItems": 1, "maxItems": 16, "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]+$"}},
+        "evaluated_effect": {"const": "mutation"},
+        "masked_paths": {"type": "array", "maxItems": 16, "items": {"type": "string", "minLength": 1, "maxLength": 256}}
+      }
+    },
     "summary": {
       "type": "object",
       "required": ["target", "expected_changes", "managed_fields", "ownership_basis", "readback_assertions", "limitations"],
