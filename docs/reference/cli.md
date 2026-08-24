@@ -26,7 +26,7 @@ gravity analysis dashboard prepare|run  编译或执行一个看板的受支持�
 gravity analysis dashboard kanban schema|mutate  查看或执行 Kanban 受治理写合同
 gravity analysis segment snapshot  读取一个分群的详情、历史与单日计算结果
 gravity analysis segment members   读取一个分群的完整成员行与逐人属性
-gravity analysis segment ... / gravity action segment-update ...  direct 分群写或一次性 Action Plan 确认
+gravity analysis segment ... / gravity action segment-update|dashboard-delivery ...  direct 分群写或 Artifact→Dashboard 一次性 Action Plan 确认
 gravity experiment propose|outcome-handoff  离线编译实验评审材料或独立 Outcome 交接
 gravity analysis saved ...    列出、读取、准备或严格重放保存分析
 gravity analysis order directory  读取受控四字段的单日普通订单目录
@@ -806,15 +806,15 @@ gravity analysis segment create-from-analysis --spec funnel.json --app main `
   --name SDK测试漏斗 --step 1 --loss --idempotency-key funnel-loss-20260816 --dry-run
 gravity analysis segment create-from-analysis --spec funnel.json --app main `
   --name SDK测试漏斗 --step 1 --loss --idempotency-key funnel-loss-20260816 --execute
-
 gravity analysis segment create-from-rule --spec segment-rule.json --app main --dry-run
 gravity analysis segment update --segment-id <id> --name SDK测试改名 --remark "待验证" --dry-run
 gravity action segment-update preview --input segment-update-action.json
 gravity action segment-update execute --plan-id <plan-id> --confirm-plan <same-plan-id> `
   --preview-fingerprint <reviewed-fingerprint> --input segment-update-action.json
+gravity action dashboard-delivery preview --input analysis-dashboard-action.json
+gravity action dashboard-delivery execute --plan-id <plan-id> --confirm-plan <same-plan-id> --preview-fingerprint <reviewed-fingerprint> --input analysis-dashboard-action.json
 ```
-
-其他 direct 入口包括 `create-from-history/create-from-tmp/update-rule/refresh/delete`；它们同样要求显式 `--dry-run|--execute`，行为不因 Action Plan 改变。`segment-update-action.json` 固定为 `gravity.segment-metadata-update-request.v1` 的 exact `segment_id/name/remark`，不接受自然语言。
+其他 direct 入口包括 `create-from-history/create-from-tmp/update-rule/refresh/delete`；它们同样要求显式 `--dry-run|--execute`，行为不因 Action Plan 改变。`segment-update-action.json` 固定为 `gravity.segment-metadata-update-request.v1` 的 exact `segment_id/name/remark`；`analysis-dashboard-action.json` 固定为 `gravity.analysis-dashboard-request.v1` 的完整 Artifact、`app_id/space_id/dashboard_id` 和唯一 `markdown_notes/artifact_scope/single_column` presentation，二者都不接受自然语言授权，后者也不接受 `ui_config` 或 `report_list`。
 
 create 在 `segment_remark` 前缀写入可见 `GSDK-<12 hex>`，完整列表和 detail 读回后才返回 created；同 marker+同名复用已存在对象；direct update/delete 继续在执行时重读 exact detail 并要求 GSDK marker 或 `create_user_id == gravity_id`。Action preview 额外绑定同一 preimage/owner、managed fields、principal 与 expiry。
 Action execute 必须同时重交相同 request、`plan_id`、同值 `--confirm-plan` 和 preview fingerprint；CLI invocation 才构造 current user authorization，tool/Context/Skill/history 不能授权。

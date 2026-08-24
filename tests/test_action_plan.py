@@ -489,8 +489,11 @@ class ActionPlanAuthorityAndDriftTests(unittest.TestCase):
 
     def test_expiry_identity_and_artifact_tamper_fail_before_mutation(self) -> None:
         sdk, insight, request, preview = self.fixture("expiry")
+        expired_at = datetime.fromisoformat(
+            str(preview["expires_at"]).replace("Z", "+00:00")
+        ) + timedelta(seconds=1)
         with mock.patch(
-            "gravity_sdk.action_plan._utcnow", return_value=NOW + timedelta(days=1)
+            "gravity_sdk.action_plan._utcnow", return_value=expired_at
         ), self.assertRaises(InputValidationError) as expired:
             sdk.actions.execute(
                 preview["plan_id"],

@@ -369,6 +369,25 @@ def report_list(detail: Mapping[str, Any]) -> list[Mapping[str, Any]]:
     return [dict(item) for item in reports]
 
 
+def dashboard_preimage_digest(detail: Mapping[str, Any]) -> str:
+    """Bind the exact projected fields owned by Dashboard content writes."""
+
+    return digest(
+        {
+            key: copy.deepcopy(detail.get(key))
+            for key in (
+                "id",
+                "name",
+                "app_id",
+                "space_id",
+                "ui_config",
+                "even_report",
+                "create_user_id",
+            )
+        }
+    )
+
+
 def mutation_preview(
     raw: Mapping[str, Any],
     *,
@@ -518,6 +537,7 @@ __all__ = [
     "caller_text",
     "completed",
     "create_preflight",
+    "dashboard_preimage_digest",
     "descendants",
     "detail_notes",
     "find_object",

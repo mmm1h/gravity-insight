@@ -50,7 +50,7 @@ class AgentRuntimeSdkMixin:
 
     @property
     def actions(self) -> Any:
-        """Explicit Action Plan service with one governed reference connector."""
+        """Explicit Action Plan service with a closed governed connector set."""
 
         if self._actions_service is None:
             with self._actions_lock:

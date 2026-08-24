@@ -9,18 +9,35 @@
     "ok": {"const": true},
     "status": {"const": "previewed"},
     "plan_id": {"type": "string", "pattern": "^act1_[0-9a-f]{32}_[0-9a-f]{32}$"},
-    "action_kind": {"const": "segment.update_metadata"},
-    "connector": {"$ref": "#/$defs/connector"},
-    "confirmation_summary": {"$ref": "#/$defs/summary"},
+    "action_kind": {"enum": ["segment.update_metadata", "dashboard.publish_analysis_artifact"]},
+    "connector": {"type": "object"},
+    "confirmation_summary": {"type": "object"},
     "preview_fingerprint": {"$ref": "#/$defs/digest"},
     "created_at": {"$ref": "#/$defs/timestamp"},
     "expires_at": {"$ref": "#/$defs/timestamp"},
     "policy": {"$ref": "#/$defs/policy"}
   },
+  "oneOf": [
+    {
+      "properties": {
+        "action_kind": {"const": "segment.update_metadata"},
+        "connector": {"$ref": "#/$defs/segment_connector"},
+        "confirmation_summary": {"$ref": "#/$defs/segment_summary"}
+      }
+    },
+    {
+      "properties": {
+        "action_kind": {"const": "dashboard.publish_analysis_artifact"},
+        "connector": {"$ref": "#/$defs/dashboard_connector"},
+        "confirmation_summary": {"$ref": "#/$defs/dashboard_summary"}
+      }
+    }
+  ],
   "$defs": {
     "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "timestamp": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"},
-    "connector": {"type": "object", "required": ["id", "version"], "additionalProperties": false, "properties": {"id": {"const": "gravity.segment-metadata-update"}, "version": {"const": 1}}},
+    "segment_connector": {"type": "object", "required": ["id", "version"], "additionalProperties": false, "properties": {"id": {"const": "gravity.segment-metadata-update"}, "version": {"const": 1}}},
+    "dashboard_connector": {"type": "object", "required": ["id", "version"], "additionalProperties": false, "properties": {"id": {"const": "gravity.analysis-dashboard-notes"}, "version": {"const": 1}}},
     "policy": {
       "type": "object",
       "required": ["schema_version", "decision_id", "policy_revision", "decision", "reason_codes", "evaluated_effect", "masked_paths"],
@@ -35,7 +52,7 @@
         "masked_paths": {"type": "array", "maxItems": 16, "items": {"type": "string", "minLength": 1, "maxLength": 256}}
       }
     },
-    "summary": {
+    "segment_summary": {
       "type": "object",
       "required": ["target", "expected_changes", "managed_fields", "ownership_basis", "readback_assertions", "limitations"],
       "additionalProperties": false,
@@ -46,6 +63,29 @@
         "ownership_basis": {"enum": ["sdk_source_marker", "upstream_owner"]},
         "readback_assertions": {"const": ["segment_name", "segment_remark", "field_ownership"]},
         "limitations": {"const": ["upstream_revision_unavailable", "external_change_after_last_preimage_read_is_detectable_only_by_readback"]}
+      }
+    },
+    "dashboard_summary": {
+      "type": "object",
+      "required": ["target", "expected_changes", "managed_fields", "ownership_basis", "readback_assertions", "limitations"],
+      "additionalProperties": false,
+      "properties": {
+        "target": {
+          "type": "object",
+          "required": ["kind", "app_id", "space_id", "dashboard_id"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {"const": "dashboard"},
+            "app_id": {"type": "integer", "minimum": 1},
+            "space_id": {"type": "integer", "minimum": 1},
+            "dashboard_id": {"type": "integer", "minimum": 1}
+          }
+        },
+        "expected_changes": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "object"}},
+        "managed_fields": {"const": ["dashboard_notes"]},
+        "ownership_basis": {"enum": ["sdk_source_marker", "upstream_owner"]},
+        "readback_assertions": {"const": ["dashboard_identity", "note_content_markers", "source_artifact_binding"]},
+        "limitations": {"const": ["note_only_dashboard_required", "markdown_notes_artifact_scope_single_column_only"]}
       }
     }
   }
