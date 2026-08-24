@@ -5,15 +5,18 @@ from __future__ import annotations
 import copy
 import inspect
 import json
+import os
 import subprocess
 import sys
 import unittest
+from unittest.mock import patch
 
 from gravity_sdk import (
     ExecutionVariantService,
     GravitySDK,
     validate_execution_variant,
     validate_execution_variant_characterization,
+    validate_execution_variant_selection,
 )
 from gravity_sdk.analysis_query_execution_variant import (
     execute_fixed_analysis_query_event_variant,
@@ -31,6 +34,7 @@ from gravity_sdk.execution_variant_contract import (
     REFERENCE_JOURNEY,
     execution_variant_descriptors,
 )
+from gravity_sdk.execution_variant_selection import selection_digest
 from gravity_sdk.plan import AdapterContext
 from gravity_sdk.workspace import load_workspace
 from scripts.generate_execution_variant_characterization import (
@@ -54,6 +58,22 @@ _EVIDENCE_FIELDS = {
     "request_count": "request_count",
     "journey_regression": "journey_sha256",
 }
+_PRODUCT_DIGEST = "76342fbd1eaebf3f9f23c506badd5c76d5e163d300c16aec1daf33ce498640dd"
+
+
+def _selection_service(status="stable", reasons=()):
+    class Trust:
+        @staticmethod
+        def trust(identity_kind, selector):
+            return {
+                "identity_kind": identity_kind,
+                "selector": selector,
+                "contract_digest": _PRODUCT_DIGEST,
+                "trust_status": status,
+                "reason_codes": list(reasons),
+            }
+
+    return ExecutionVariantService(lambda: Trust())
 
 
 class ExecutionVariantContractTests(unittest.TestCase):
@@ -88,8 +108,9 @@ class ExecutionVariantContractTests(unittest.TestCase):
             ))
 
         service = ExecutionVariantService()
-        for name in ("register", "execute", "select", "pin", "benchmark"):
+        for name in ("register", "execute", "pin", "benchmark"):
             self.assertFalse(hasattr(service, name))
+        self.assertTrue(callable(service.select))
         source = inspect.getsource(sys.modules[ExecutionVariantService.__module__])
         self.assertNotIn("entry_points", source)
         self.assertNotIn("import_module", source)
@@ -245,6 +266,10 @@ class ExecutionVariantServiceTests(unittest.TestCase):
             listing["count"], described["variant"]["implementation"]["topology"],
             report["current_trust"]["trust_status"],
         ))
+        self.assertEqual(
+            ("trust_gated", "trust_gated"),
+            (listing["selection_status"], described["selection_status"]),
+        )
         self.assertEqual(("disabled_until_r14_d", False, False), (
             report["selection_status"], report["automatic_selection"],
             report["network_called"],
@@ -263,6 +288,182 @@ class ExecutionVariantServiceTests(unittest.TestCase):
             {"unknown", "degraded", "blocked", "quarantined"},
         )
         self.assertFalse(current["automatic_selection"])
+        with patch.dict(
+            os.environ, {"GRAVITY_EXECUTION_VARIANT_MODE": "automatic"}
+        ):
+            decision = sdk.execution_variants.select(
+                PRODUCT_SELECTOR, pinned_variant_uri=PLAN_VARIANT_URI
+            )
+        self.assertEqual(DIRECT_VARIANT_URI, decision["selected_variant_uri"])
+        self.assertFalse(decision["network_called"])
+        rendered = json.dumps(decision, sort_keys=True)
+        for private in (PRIVATE_EVENT, PRIVATE_ROW, "2026-08-01", "compiled_trace"):
+            self.assertNotIn(private, rendered)
+
+    def test_nonstable_trust_falls_back_before_evaluating_a_plan_pin(self) -> None:
+        for status in ("unknown", "degraded", "blocked", "quarantined"):
+            service = _selection_service(status, ("CAPABILITY_VALIDATION_MISSING",))
+            with patch.dict(
+                os.environ, {"GRAVITY_EXECUTION_VARIANT_MODE": "automatic"}
+            ):
+                result = service.select(
+                    PRODUCT_SELECTOR, pinned_variant_uri=PLAN_VARIANT_URI
+                )
+            with self.subTest(status=status):
+                self.assertEqual(DIRECT_VARIANT_URI, result["selected_variant_uri"])
+                self.assertEqual("canonical_fallback", result["selection_status"])
+                self.assertEqual(
+                    {"requested": True, "evaluated": False, "variant_uri": None},
+                    result["pin"],
+                )
+                self.assertEqual(
+                    ["passed", "failed", "not_evaluated", "not_evaluated", "not_evaluated"],
+                    [item["outcome"] for item in result["gates"]],
+                )
+                self.assertFalse(any(item["eligible"] for item in result["candidates"]))
+                self.assertFalse(result["automatic_selection"])
+
+    def test_stable_automatic_selection_uses_only_bound_objective_facts(self) -> None:
+        service = _selection_service()
+        with patch.dict(os.environ, {}, clear=True):
+            first = service.select(PRODUCT_SELECTOR)
+            second = service.select(PRODUCT_SELECTOR)
+
+        self.assertEqual(first, second)
+        self.assertEqual("automatic", first["mode"])
+        self.assertEqual(first, validate_execution_variant_selection(first))
+        self.assertEqual(DIRECT_VARIANT_URI, first["selected_variant_uri"])
+        self.assertEqual("automatic_selection", first["selection_status"])
+        self.assertTrue(first["automatic_selection"])
+        self.assertEqual([1, 2], [
+            item["local_topology_hops"] for item in first["candidates"]
+        ])
+        self.assertTrue(all(item["eligible"] for item in first["candidates"]))
+        self.assertEqual(("unavailable", "unavailable"), (
+            first["objective_facts"]["latency_evidence"],
+            first["objective_facts"]["cost_evidence"],
+        ))
+        self.assertEqual(first["decision_sha256"], selection_digest(first))
+
+    def test_stable_exact_pin_selects_either_fixed_variant(self) -> None:
+        service = _selection_service()
+        with patch.dict(
+            os.environ, {"GRAVITY_EXECUTION_VARIANT_MODE": "automatic"}
+        ):
+            for uri in (DIRECT_VARIANT_URI, PLAN_VARIANT_URI):
+                result = service.select(PRODUCT_SELECTOR, pinned_variant_uri=uri)
+                with self.subTest(uri=uri):
+                    self.assertEqual(uri, result["selected_variant_uri"])
+                    self.assertEqual("pinned_selection", result["selection_status"])
+                    self.assertEqual(
+                        {"requested": True, "evaluated": True, "variant_uri": uri},
+                        result["pin"],
+                    )
+                    self.assertEqual(
+                        [uri],
+                        [
+                            item["variant_uri"]
+                            for item in result["candidates"]
+                            if item["eligible"]
+                        ],
+                    )
+                    self.assertFalse(result["automatic_selection"])
+
+    def test_disabled_mode_is_canonical_and_unknown_mode_fails_after_trust(self) -> None:
+        calls = []
+
+        class Trust:
+            @staticmethod
+            def trust(identity_kind, selector):
+                calls.append((identity_kind, selector))
+                return {
+                    "identity_kind": identity_kind,
+                    "selector": selector,
+                    "contract_digest": _PRODUCT_DIGEST,
+                    "trust_status": "stable",
+                    "reason_codes": [],
+                }
+
+        service = ExecutionVariantService(lambda: Trust())
+        with patch.dict(
+            os.environ, {"GRAVITY_EXECUTION_VARIANT_MODE": "disabled"}
+        ):
+            disabled = service.select(
+                PRODUCT_SELECTOR, pinned_variant_uri="private-unvalidated-pin"
+            )
+        self.assertEqual(DIRECT_VARIANT_URI, disabled["selected_variant_uri"])
+        self.assertEqual("canonical_fallback", disabled["selection_status"])
+        self.assertFalse(disabled["pin"]["evaluated"])
+        self.assertIn("EXECUTION_VARIANT_MODE_DISABLED", disabled["reason_codes"])
+
+        with patch.dict(
+            os.environ, {"GRAVITY_EXECUTION_VARIANT_MODE": "experimental"}
+        ), self.assertRaises(InputValidationError) as raised:
+            service.select(PRODUCT_SELECTOR)
+        self.assertEqual("EXECUTION_VARIANT_MODE_INVALID", raised.exception.code)
+        self.assertEqual(2, len(calls))
+
+    def test_fixed_characterization_is_validated_before_current_trust(self) -> None:
+        trust_factories = []
+        service = ExecutionVariantService(
+            lambda: trust_factories.append("constructed") or object()
+        )
+        error = ExecutionVariantContractError(
+            "EXECUTION_VARIANT_CHARACTERIZATION_STALE", "fixture is stale"
+        )
+        with patch(
+            "gravity_sdk.execution_variant.load_execution_variant_characterization",
+            side_effect=error,
+        ), self.assertRaises(ExecutionVariantContractError) as raised:
+            service.select(PRODUCT_SELECTOR)
+        self.assertEqual(
+            "EXECUTION_VARIANT_CHARACTERIZATION_STALE",
+            raised.exception.reason_code,
+        )
+        self.assertEqual([], trust_factories)
+
+    def test_unknown_pin_fails_only_when_pin_gate_is_reached(self) -> None:
+        with patch.dict(
+            os.environ, {"GRAVITY_EXECUTION_VARIANT_MODE": "automatic"}
+        ), self.assertRaises(InputValidationError) as raised:
+            _selection_service().select(
+                PRODUCT_SELECTOR,
+                pinned_variant_uri="gravity.execution-variant/unknown/path@1",
+            )
+        self.assertEqual("EXECUTION_VARIANT_UNKNOWN", raised.exception.code)
+
+    def test_selection_schema_digest_and_policy_tamper_fail_closed(self) -> None:
+        with patch.dict(
+            os.environ, {"GRAVITY_EXECUTION_VARIANT_MODE": "automatic"}
+        ):
+            result = _selection_service().select(PRODUCT_SELECTOR)
+        mutations = (
+            lambda item: item["characterization"].__setitem__(
+                "artifact_sha256", "0" * 64
+            ),
+            lambda item: item["candidates"][0].__setitem__(
+                "local_topology_hops", 2
+            ),
+            lambda item: item.__setitem__("selected_variant_uri", PLAN_VARIANT_URI),
+            lambda item: item["gates"].reverse(),
+            lambda item: item["rollback"].__setitem__(
+                "capability_preserved", False
+            ),
+            lambda item: item.__setitem__("extra", "not allowed"),
+        )
+        for mutate in mutations:
+            changed = copy.deepcopy(result)
+            mutate(changed)
+            changed["decision_sha256"] = selection_digest(changed)
+            with self.subTest(mutate=mutate), self.assertRaises(
+                ExecutionVariantContractError
+            ):
+                validate_execution_variant_selection(changed)
+
+        changed = copy.deepcopy(result)
+        changed["decision_sha256"] = "0" * 64
+        with self.assertRaises(ExecutionVariantContractError):
+            validate_execution_variant_selection(changed)
 
     def test_unknown_product_variant_and_runner_scope_are_actionable(self) -> None:
         service = ExecutionVariantService()
@@ -315,6 +516,10 @@ class ExecutionVariantServiceTests(unittest.TestCase):
         self.assertIs(
             gravity_sdk.validate_execution_variant_characterization,
             validate_execution_variant_characterization,
+        )
+        self.assertIs(
+            gravity_sdk.validate_execution_variant_selection,
+            validate_execution_variant_selection,
         )
 
 

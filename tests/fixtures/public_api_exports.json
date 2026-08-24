@@ -51,6 +51,10 @@
     ".execution_variant",
     "validate_execution_variant_characterization"
   ],
+  "validate_execution_variant_selection": [
+    ".execution_variant",
+    "validate_execution_variant_selection"
+  ],
   "ActionPlanService": [
     ".action_plan",
     "ActionPlanService"

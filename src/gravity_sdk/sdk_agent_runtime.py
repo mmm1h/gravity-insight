@@ -33,7 +33,7 @@ class AgentRuntimeSdkMixin:
 
     @property
     def execution_variants(self) -> Any:
-        """Offline fixed Variant descriptors and equivalence evidence."""
+        """Offline fixed Variant evidence and Trust-gated selection."""
 
         if self._execution_variants_service is None:
             with self._execution_variants_lock:

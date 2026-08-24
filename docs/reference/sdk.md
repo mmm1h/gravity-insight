@@ -199,7 +199,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `metric_anomaly_playbook()` | 运行或用 checkpoint 续跑；未失效 Plan item 复用，证据不全时不发布结论 |
 | `journeys.list()` / `verify()` / `describe(id)` / `can_run(id, input)` / `impact(diff)` / `run(id, input)` | 通用 Journey 合同与 readiness 服务；R01 只有 verified 后才委托既有 playbook |
 | `analysis_artifacts.compile()` / `verify()` / `render_markdown()` / `write_artifact()` / `write_markdown()` | 从正式 Analysis Result 编译目标无关 Artifact，并离线确定性渲染/原子写入 Markdown |
-| `governor.policy()` / `observations(...)`; `execution_variants.list()` / `describe(uri)` / `characterization(product)` | 零网络读取当前私有 Governor 状态，或检查固定 Variant 描述、等价性 corpus 与当前 Trust；均不执行路径选择 |
+| `governor.policy()` / `observations(...)`; `execution_variants.list()` / `describe(uri)` / `characterization(product)` / `select(product, pinned_variant_uri=...)` | 零网络读取当前私有 Governor 状态，或检查固定 Variant 证据并作 Trust-gated 纯决策；不执行所选路径 |
 | `capability_trust.trust(kind, selector)` / `validate(result)` / `impact(diff)` | Operation/Product/Composite 同层 Trust、只读 Validation 校验与依赖影响；不自动探测或写入 |
 | `LocalSkillResolver()` / `RuntimeSkillResolver(workspace=...).resolve(id, journey=...)` | 前者只读/导出 Built-in package；后者 Built-in-first，并只读项目 exact Team lock、CAS 与 Trusted Pack startup state；均不选择或执行 Product |
 | `SemanticRegistry(sources).list()` / `describe(uri)` / `resolve(uri)` / `validate(source)` / `dependencies(uris)` | 确定性编译并离线解析版本化 Business Semantic 与项目 Binding；缺失或冲突不猜测 |
@@ -622,7 +622,7 @@ markdown_receipt = sdk.analysis_artifacts.write_markdown(artifact, "tmp/analysis
 ## Adaptive Execution
 
 `sdk.governor.policy()` 返回 `gravity.adaptive-governor-snapshot.v1`：同一 shared Runtime 的当前私有 scope、25-total/24-business/two-SQL hard cap、最多 128 个 waiters 以及 bounded lane limit/circuit/counter/latency；默认 `adaptive`，`GRAVITY_GOVERNOR_MODE=static` 保留固定上限并关闭 AIMD、circuit 与 single-flight。真实 `perform_http_request()` attempt 在计数/HTTP Receipt/R14-A observation 前取得中央 lease；follower/rejection 不生成网络证据，策略不增加 retry，Host limiter 不变，Artifact stream 不合并，Provider RPC 仍只受 R08。查询只呈现 SHA-256 host key 且 `network_called=false`；未绑定 Runtime 返回 `GOVERNOR_SCOPE_UNBOUND`，进程重启清空内存状态。
-`sdk.execution_variants` 只离线检查 `analysis.query.spec:event` 的两个 `gravity.execution-variant.v1` 固定路径：当前 Direct Product 与既有 Plan `analysis_query` adapter。`gravity.execution-variant-characterization.v1` 的四类 value-free corpus 绑定 Product/descriptor/corpus digest，并逐项证明 input/output、completeness、DQ、allowed claims、privacy、freshness、request count 与 Journey regression 等价；报告附加现有 Capability Trust 和 canonical Direct rollback，但固定返回 `selection_status=disabled_until_r14_d`、`automatic_selection=false`。没有 `execute/select/register/pin/benchmark` surface，R14-C 不改变任何 SDK/Plan 路由。
+`sdk.execution_variants` 只离线处理 `analysis.query.spec:event` 的两个 `gravity.execution-variant.v1` 固定路径：当前 Direct Product 与既有 Plan `analysis_query` adapter。R14-C 的 `gravity.execution-variant-characterization.v1` 四类 value-free corpus 逐项证明九维等价并继续原样返回 `selection_status=disabled_until_r14_d`、`automatic_selection=false`；R14-D 的 `select()` 每次按 exact Characterization → 当前 Product Trust → `GRAVITY_EXECUTION_VARIANT_MODE=automatic|disabled` → 可选 exact pin → 次级目标裁决。非 `stable` Trust 或 disabled 一律返回 canonical Direct fallback，Plan pin 不能绕过硬门；stable exact pin 可选任一路径，stable 自动模式因请求数等价、freshness 同 Trust、无可信 latency/cost 差异且 Direct 本地 topology 更短而选 Direct。`gravity.execution-variant-selection.v1` 提供候选资格、五门 trace、客观事实、reason codes、rollback 与 decision digest；它不执行路径，且仍没有 `execute/register/benchmark` surface，不改变任何 SDK/Plan 路由。
 
 ## Skill And Provider Control Planes
 

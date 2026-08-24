@@ -17,16 +17,16 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class ActionableErrorAuditTests(unittest.TestCase):
     def test_actionable_error_inventory_is_complete_and_reproducible(self):
-        """Went 1340 -> 1344 for R14-C Product/Variant inspection gates.
+        """Went 1344 -> 1345 for R14-D's environment kill-switch gate.
 
-        Variant/Product validation has safe actuals and exact offline discovery;
-        fixed runner errors never expose corpus or request values.
+        The invalid mode site has a sanitized actual, exact alternatives, and a
+        local recovery action; Variant pins reuse the existing closed URI gate.
         """
 
         rows = inventory(ROOT / "src" / "gravity_sdk")
         counts = Counter(item["grade"] for item in rows)
-        assert len(rows) == 1344
-        assert counts["A"] == 1177
+        assert len(rows) == 1345
+        assert counts["A"] == 1178
         assert counts["B"] == 167
         assert counts.get("C", 0) == 0
         assert sum(counts.values()) == len(rows)

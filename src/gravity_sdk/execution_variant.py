@@ -1,8 +1,9 @@
-"""Offline inspection service for fixed, characterized Execution Variants."""
+"""Offline inspection and selection for fixed characterized Execution Variants."""
 
 from __future__ import annotations
 
 import copy
+import os
 from collections.abc import Callable
 from typing import Any
 
@@ -19,16 +20,25 @@ from .execution_variant_contract import (
     execution_variant_descriptors,
     validate_execution_variant,
 )
+from .execution_variant_selection import (
+    AUTOMATIC_MODE,
+    DISABLED_MODE,
+    build_execution_variant_selection,
+    validate_execution_variant_selection,
+)
+
+
+_SELECTION_MODE_ENV = "GRAVITY_EXECUTION_VARIANT_MODE"
 
 
 class ExecutionVariantService:
-    """Inspect one closed Variant set without selecting or executing a path."""
+    """Inspect and select within one closed fixed Variant set."""
 
     def __init__(self, trust_factory: Callable[[], Any] | None = None) -> None:
         self._trust_factory = trust_factory or _default_trust_service
 
     def __repr__(self) -> str:
-        return "<ExecutionVariantService fixed inspection only>"
+        return "<ExecutionVariantService fixed offline selection>"
 
     def list(self, product_selector: str | None = None) -> dict[str, Any]:
         if product_selector is not None:
@@ -40,7 +50,7 @@ class ExecutionVariantService:
             "product_selector": PRODUCT_SELECTOR,
             "count": len(variants),
             "variants": variants,
-            "selection_status": "disabled_until_r14_d",
+            "selection_status": "trust_gated",
             "network_called": False,
         }
 
@@ -61,12 +71,13 @@ class ExecutionVariantService:
             "status": "success",
             "ok": True,
             "variant": copy.deepcopy(descriptor),
-            "selection_status": "disabled_until_r14_d",
+            "selection_status": "trust_gated",
             "network_called": False,
         }
 
     def characterization(self, product_selector: str) -> dict[str, Any]:
         selected = _product_selector(product_selector)
+        artifact = load_execution_variant_characterization()
         trust_service = self._trust_factory()
         trust_method = getattr(trust_service, "trust", None)
         if not callable(trust_method):
@@ -75,8 +86,31 @@ class ExecutionVariantService:
                 "Capability Trust owner is unavailable",
             )
         trust = trust_method("product", selected)
-        artifact = load_execution_variant_characterization()
         return attach_current_variant_trust(artifact, trust)
+
+    def select(
+        self,
+        product_selector: str = PRODUCT_SELECTOR,
+        *,
+        pinned_variant_uri: str | None = None,
+    ) -> dict[str, Any]:
+        selected = _product_selector(product_selector)
+        characterization = self.characterization(selected)
+        mode = _selection_mode()
+        pin_requested = pinned_variant_uri is not None
+        evaluated_pin = None
+        if (
+            characterization["current_trust"]["trust_status"] == "stable"
+            and mode == AUTOMATIC_MODE
+            and pin_requested
+        ):
+            evaluated_pin = _known_variant_uri(pinned_variant_uri)
+        return build_execution_variant_selection(
+            characterization,
+            mode=mode,
+            pin_requested=pin_requested,
+            pinned_variant_uri=evaluated_pin,
+        )
 
 
 def _summary(value: dict[str, Any]) -> dict[str, Any]:
@@ -107,6 +141,29 @@ def _variant_uri(value: Any) -> str:
     return value
 
 
+def _known_variant_uri(value: Any) -> str:
+    selected = _variant_uri(value)
+    if selected not in {
+        item["variant_uri"] for item in execution_variant_descriptors()
+    }:
+        _unknown_variant(value)
+    return selected
+
+
+def _selection_mode() -> str:
+    selected = os.environ.get(_SELECTION_MODE_ENV, AUTOMATIC_MODE)
+    if selected not in {AUTOMATIC_MODE, DISABLED_MODE}:
+        raise InputValidationError(
+            f"actual value: {actual_value(selected)}; allowed values: automatic, disabled",
+            field="execution_variant_mode",
+            code="EXECUTION_VARIANT_MODE_INVALID",
+            next_action=(
+                f"Set {_SELECTION_MODE_ENV}=automatic or disabled, then retry."
+            ),
+        )
+    return selected
+
+
 def _unknown_variant(value: Any) -> None:
     raise InputValidationError(
         f"actual value: {actual_value(value)}; allowed value: a URI from sdk.execution_variants.list()",
@@ -127,4 +184,5 @@ __all__ = [
     "ExecutionVariantService",
     "validate_execution_variant",
     "validate_execution_variant_characterization",
+    "validate_execution_variant_selection",
 ]
