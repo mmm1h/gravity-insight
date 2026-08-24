@@ -1,0 +1,81 @@
+{
+  "artifact_kind": "skill",
+  "capability_dependencies": [
+    {
+      "completeness": "unknown",
+      "contract_version": "1",
+      "data_quality": "pass",
+      "identity_kind": "product",
+      "minimum_trust": "stable",
+      "selector": "metric-anomaly-localization@1"
+    }
+  ],
+  "claim_policy": {
+    "allowed": [],
+    "forbidden": [
+      "causality",
+      "complete-payment-population",
+      "inferred-metric-definition"
+    ],
+    "forbidden_without_context": []
+  },
+  "context_dependencies": {
+    "optional": [],
+    "required": []
+  },
+  "covers_journeys": [],
+  "description": "Require project payment numerator, eligible denominator, timezone and attribution definitions before decomposing movement.",
+  "effects": [
+    "read"
+  ],
+  "guide": {
+    "applicability": "Use for two bounded windows when numerator and denominator semantics are compatible and reviewed.",
+    "context_boundary": "A field named payment rate is not a definition; returned dimension changes do not prove root cause or full coverage.",
+    "steps": [
+      "Resolve payment numerator, eligible denominator, timezone, cohort and attribution semantics.",
+      "Use the registered anomaly product to compare compatible returned windows and dimensions.",
+      "Report observed metric and contribution changes, excluded factors and hypotheses within allowed claims."
+    ],
+    "title": "Payment-rate anomaly localization"
+  },
+  "lifecycle": "reviewed",
+  "model_dependencies": [],
+  "namespace": "gravity.game",
+  "operator_dependencies": [],
+  "output_schema": "gravity.analysis-result.v1",
+  "provenance": {
+    "authorship": "independently_authored",
+    "license_review": "approved_internal",
+    "source_kind": "independent",
+    "source_ref": "thinkingai-source://payment-rate-anomaly-diagnosis",
+    "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
+  },
+  "readiness": "blocked",
+  "request_budget": {
+    "known_requests_max": 3,
+    "known_requests_min": 2,
+    "runtime_additional_requests": 0,
+    "unknown_discovery_max": 3
+  },
+  "requirements": {
+    "completeness": "unknown",
+    "data_quality": "pass"
+  },
+  "routing": {
+    "host_catalog_required": true,
+    "product_hints": [
+      "metric-anomaly-localization@1"
+    ],
+    "recognizer_fallback_allowed": true
+  },
+  "runtime_requires": ">=0.3,<0.4",
+  "schema_version": "gravity.skill.v1",
+  "semantic_dependencies": [
+    "metric://project/payment-rate@1"
+  ],
+  "skill_id": "payment-rate-anomaly-diagnosis",
+  "specification": "specified",
+  "summary": "Localize returned payment-rate movement under one additive denominator contract.",
+  "validation": "unvalidated",
+  "version": "1.0.0"
+}

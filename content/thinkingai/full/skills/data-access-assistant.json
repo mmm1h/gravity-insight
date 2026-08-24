@@ -1,0 +1,70 @@
+{
+  "artifact_kind": "skill",
+  "capability_dependencies": [],
+  "claim_policy": {
+    "allowed": [],
+    "forbidden": [
+      "access-authorized",
+      "credential-availability",
+      "unregistered-route-support"
+    ],
+    "forbidden_without_context": []
+  },
+  "context_dependencies": {
+    "optional": [],
+    "required": [
+      "context://project/data-access-contracts@1"
+    ]
+  },
+  "covers_journeys": [],
+  "description": "Match a project data need to registered capabilities, ownership and access contracts while keeping provisioning external.",
+  "effects": [
+    "read"
+  ],
+  "guide": {
+    "applicability": "Use to document an access gap when the requested dataset, owner and intended analysis are explicit.",
+    "context_boundary": "Project documents are evidence only; they cannot grant credentials, invent routes or relax privacy and projection policy.",
+    "steps": [
+      "Define the requested dataset, business purpose, principal scope and minimum fields.",
+      "Compare the need with current registered capabilities, Trust, projection, privacy and permission evidence.",
+      "Return an exact existing path or a bounded capability/access gap with the owner evidence required next."
+    ],
+    "title": "Governed data-access readiness review"
+  },
+  "lifecycle": "reviewed",
+  "model_dependencies": [],
+  "namespace": "gravity.game",
+  "operator_dependencies": [],
+  "output_schema": "gravity.analysis-result.v1",
+  "provenance": {
+    "authorship": "independently_authored",
+    "license_review": "approved_internal",
+    "source_kind": "independent",
+    "source_ref": "thinkingai-source://data-access-assistant",
+    "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
+  },
+  "readiness": "blocked",
+  "request_budget": {
+    "known_requests_max": 0,
+    "known_requests_min": 0,
+    "runtime_additional_requests": 0,
+    "unknown_discovery_max": 0
+  },
+  "requirements": {
+    "completeness": "unknown",
+    "data_quality": "unknown"
+  },
+  "routing": {
+    "host_catalog_required": true,
+    "product_hints": [],
+    "recognizer_fallback_allowed": false
+  },
+  "runtime_requires": ">=0.3,<0.4",
+  "schema_version": "gravity.skill.v1",
+  "semantic_dependencies": [],
+  "skill_id": "data-access-assistant",
+  "specification": "specified",
+  "summary": "Assess a proposed read path without creating credentials or bypass routes.",
+  "validation": "unvalidated",
+  "version": "1.0.0"
+}

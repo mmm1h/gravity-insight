@@ -1,0 +1,84 @@
+{
+  "artifact_kind": "skill",
+  "capability_dependencies": [
+    {
+      "completeness": "unknown",
+      "contract_version": "1",
+      "data_quality": "pass",
+      "identity_kind": "product",
+      "minimum_trust": "stable",
+      "selector": "analysis.query.spec:event"
+    }
+  ],
+  "claim_policy": {
+    "allowed": [],
+    "forbidden": [
+      "causality",
+      "complete-user-population",
+      "sensitive-trait-inference"
+    ],
+    "forbidden_without_context": []
+  },
+  "context_dependencies": {
+    "optional": [],
+    "required": []
+  },
+  "covers_journeys": [],
+  "description": "Construct a bounded segment only after the project defines churn eligibility, observation windows and approved profile dimensions.",
+  "effects": [
+    "read"
+  ],
+  "guide": {
+    "applicability": "Use for descriptive segment work when churn and cohort semantics are reviewed and user-level handling is authorized.",
+    "context_boundary": "A profile describes returned members; it cannot reveal unreturned users, sensitive traits or reasons for churn without stronger evidence.",
+    "steps": [
+      "Resolve the churn event, eligibility window, cohort and allowed profile dimensions.",
+      "Apply a reviewed segment-profile Operator to governed returned rows with privacy and minimum-sample checks.",
+      "Separate descriptive traits from hypotheses and suppress unsupported sensitive or causal interpretations."
+    ],
+    "title": "Governed churn-segment profile"
+  },
+  "lifecycle": "reviewed",
+  "model_dependencies": [],
+  "namespace": "gravity.game",
+  "operator_dependencies": [
+    "operator://gravity/churn-segment-profile@1"
+  ],
+  "output_schema": "gravity.analysis-result.v1",
+  "provenance": {
+    "authorship": "independently_authored",
+    "license_review": "approved_internal",
+    "source_kind": "independent",
+    "source_ref": "thinkingai-source://churn-user-identification-persona",
+    "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
+  },
+  "readiness": "blocked",
+  "request_budget": {
+    "known_requests_max": 1,
+    "known_requests_min": 1,
+    "runtime_additional_requests": 0,
+    "unknown_discovery_max": 2
+  },
+  "requirements": {
+    "completeness": "unknown",
+    "data_quality": "pass"
+  },
+  "routing": {
+    "host_catalog_required": true,
+    "product_hints": [
+      "analysis.query.spec:event"
+    ],
+    "recognizer_fallback_allowed": true
+  },
+  "runtime_requires": ">=0.3,<0.4",
+  "schema_version": "gravity.skill.v1",
+  "semantic_dependencies": [
+    "cohort://project/churn-eligible@1",
+    "metric://project/churn-state@1"
+  ],
+  "skill_id": "churn-user-identification-persona",
+  "specification": "specified",
+  "summary": "Define and profile a churn segment without guessing identity or behavioral causes.",
+  "validation": "unvalidated",
+  "version": "1.0.0"
+}
