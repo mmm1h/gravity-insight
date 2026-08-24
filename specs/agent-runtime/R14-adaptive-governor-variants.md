@@ -3,13 +3,13 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; R14-A/B/C `fixed_dev`, R14-D `specified` |
+| Status | `in_progress`; R14-A/B/C `fixed_dev`, R14-D `in_progress` |
 | Track | Runtime I/O optimization |
 | Dependencies | R02 |
 | Parallel group | `runtime-infrastructure` |
 | Shared-spine integration | Required and serialized |
 | Delivery ledger | This Requirement document; no internal GitHub Issue |
-| Milestones | R14-A/B/C `fixed_dev`; R14-D `specified` |
+| Milestones | R14-A/B/C `fixed_dev`; R14-D `in_progress` |
 | R14-A baseline | `dev@fac2e6e1648bdf60efe1a1b369c9788058cdebed` |
 | R14-A branch / worktree | `codex/r14a-governor-observation` / `D:\git-pjt\gravity-sdk-wt\r14a-governor-observation` |
 | R14-B baseline | `dev@406c07b259ce89067dcb61f155115d87a8643db8` |
@@ -18,6 +18,8 @@
 | R14-C baseline | `dev@711d288134813cb9fa73d87c246c470b5391fc07` |
 | R14-C branch / worktree | `codex/r14c-execution-variants` / `D:\git-pjt\gravity-sdk-wt\r14c-execution-variants` |
 | R14-C feature / merge | `52d40d16a9852118f62a65c77b5476323668229f` / `dev@e2dad8127481bae117a3423bdae2e6dd52aaf492` |
+| R14-D baseline | `dev@c936e7dc0f84bd9860fbe6a563f365231db2e3a4` |
+| R14-D branch / worktree | `codex/r14d-variant-selection` / `D:\git-pjt\gravity-sdk-wt\r14d-variant-selection` |
 | Production requests | `0`; fake Runtime HTTP only |
 | Main integration | Frozen until whole program completion |
 
@@ -331,6 +333,34 @@ release or `main`.
 - Current Product Trust is blocked by completeness/Validation state. R14-D must
   preserve that hard gate and add explicit pin/kill-switch/explanation before
   any automatic choice exists.
+
+## R14-D Plan Owner Verdict And Ready Binding
+
+R14-B and R14-C are `fixed_dev`. Under the user's continuous implementation
+authorization, the plan owner reviewed
+`tmp/r14d-trust-gated-selection-proposal.md` and its architecture conflict
+ledger, bound the baseline/write scope/gates, and advanced R14-D through
+`reviewed` and `ready` to `in_progress`. This does not authorize production
+probes, Variant execution, release or `main`.
+
+- Add only pure offline `sdk.execution_variants.select()`; existing Direct SDK
+  and Plan execution owners remain unchanged and no second dispatcher exists.
+- Evaluate a valid fixed Characterization, current Product Trust, environment
+  kill switch, optional exact pin and secondary objective in that order.
+- `GRAVITY_EXECUTION_VARIANT_MODE` accepts `automatic` or `disabled`; missing
+  defaults to automatic and unknown values fail closed.
+- Non-stable Trust or disabled mode always returns canonical Direct. A Plan pin
+  cannot bypass either gate; stable exact pins may select either fixed Variant.
+- Stable automatic mode selects Direct because request count is equivalent,
+  freshness shares Product Trust, no Variant latency/cost evidence exists and
+  Direct has fewer local topology hops.
+- Add a strict digest-bound selection schema/result with candidate eligibility,
+  objective facts, ordered reasons and rollback contract; retain the R14-C
+  Characterization artifact unchanged.
+- Acceptance covers Trust states, kill switch, pins, objective honesty,
+  determinism, tamper/privacy/offline behavior, full gates, isolated wheel and
+  canonical consumer with zero production HTTP/RPC. Active docs remain exactly
+  5,500 lines.
 
 ## Scope
 
