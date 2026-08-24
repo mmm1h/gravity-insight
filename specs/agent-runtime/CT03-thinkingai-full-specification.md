@@ -3,11 +3,41 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `specified` |
+| Status | `in_progress` |
 | Track | Content expansion |
 | Dependencies | CT02 |
 | Parallel group | `content-c` |
 | Main integration | Frozen until whole program completion |
+| Delivery ledger | This Requirement document; no internal GitHub Issue |
+| Baseline | `dev@2eba695f4d25658fcb703ca988ae82f555d225da` |
+| Branch / worktree | `codex/ct03-thinkingai-full-specification` / `D:\git-pjt\gravity-sdk-wt\ct03-thinkingai-full-specification` |
+| Approved source snapshot | CT01 snapshot `da84f685d6395500168532a26f8a1da6886a786d87f867ce9cb968b963e03ae5` |
+| Gravity production / Hub / Provider requests | `0` |
+
+## Plan Owner Verdict And Ready Binding
+
+CT02 is `fixed_dev`. Under the user's continuous implementation authorization,
+the plan owner reviewed `tmp/ct03-thinkingai-full-specification-proposal.md` and
+its architecture conflict ledger, bound the full inventory scope, write set,
+state rules and machine gates, and advanced CT03 through `reviewed` and `ready`
+to `in_progress`. This does not authorize source-content reuse, production
+access, remote Hub/Provider calls, trusted code, release or `main`.
+
+- Cover every identity in the approved CT01 snapshot exactly once: reuse five
+  CT02 Skills, add 35 independent Skill specifications and bind 15 explicit
+  safe alternatives.
+- Preserve CT01 and CT02 immutable bytes. Build a separate full Hub/index and
+  exact lock using existing R04/R09B package/CAS machinery; bind the lock only
+  after the package commit exists.
+- Keep all 35 new Skills `specified + reviewed + blocked + unvalidated` with
+  complete contracts, closed blocker reasons and next evidence. Readiness and
+  validation totals are derived evidence, never coverage targets.
+- Require full source/specification/eval schemas, source-diff impact, no-code
+  package boundaries, two isolated CAS installs, leakage/tamper/claim gates,
+  full repository gates, wheel separation and canonical-consumer regression.
+- Add no Journey, route, executor, operation, shared-spine wiring, Runtime
+  dependency implementation, Model, Provider, Action or trusted pack. Active
+  human docs remain exactly 5,500 lines and all external request counts stay zero.
 
 ## Outcome
 
