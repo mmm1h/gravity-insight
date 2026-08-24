@@ -42,8 +42,8 @@ _SELECTION = {
     },
     "analysis-metric-definition-alignment": {
         "shape": "project_semantic",
-        "readiness": "blocked",
-        "blockers": ["SEMANTIC_DEFINITION_MISSING"],
+        "readiness": "executable",
+        "blockers": [],
     },
     "filter-result-bias-diagnosis": {
         "shape": "deterministic_operator",
@@ -52,8 +52,8 @@ _SELECTION = {
     },
     "community-hot-topic-analysis": {
         "shape": "required_context",
-        "readiness": "blocked",
-        "blockers": ["CONTEXT_REQUIRED_MISSING"],
+        "readiness": "executable",
+        "blockers": [],
     },
     "game-revenue-forecast": {
         "shape": "blocked_model",

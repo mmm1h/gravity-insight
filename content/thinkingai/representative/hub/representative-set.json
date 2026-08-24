@@ -9,21 +9,19 @@
   ],
   "network_called": false,
   "representative_count": 5,
-  "representative_set_sha256": "3fdfd70b4bf6f8772146d717b5fcbfaf31fe5b07425bd43911f05a3256d5c674",
+  "representative_set_sha256": "36d2c996debc614772e7028dade7e2c7d04d9931e1411410888280aa26961cbf",
   "representatives": [
     {
-      "archive_sha256": "da80f01786928a854f06a5592430181d7d731c06cd8c8f2f46282939e50ea106",
-      "declared_blockers": [
-        "SEMANTIC_DEFINITION_MISSING"
-      ],
+      "archive_sha256": "10404886b7c4435d0d952965e50e24c2320e5a5d62bd4f4e1d2f2324461414db",
+      "declared_blockers": [],
       "dependency_shape": "project_semantic",
       "distribution_allowed": true,
       "independent_authorship": true,
       "journey_id": "analysis.thinkingai.project-metric-contract-check",
       "lifecycle": "reviewed",
-      "manifest_sha256": "008d820f67f3ddcc21e6fcbbb9f68e80e9d614126a609b6fd9c226f1fd1e6502",
-      "package_sha256": "f43ff4557d534eb131cbf2db70d182efbe5aa7f2f8ea5223d1ad897d10609a98",
-      "readiness": "blocked",
+      "manifest_sha256": "afcd4e600361624e2f3828dd90b24653db46f4aced41f0a3acc0d6c4e63530ce",
+      "package_sha256": "2d6dd3a16a4063b56760f498f00ad861312b2fb43674503edfcb3b884f2a2162",
+      "readiness": "executable",
       "skill_uri": "skill://gravity.game/analysis-metric-definition-alignment@1.0.0",
       "source_content_used": false,
       "source_id": "analysis-metric-definition-alignment",
@@ -48,18 +46,16 @@
       "validation": "validated"
     },
     {
-      "archive_sha256": "3f8092066110f5f5a70229a4f79eb778830d4d63dfb1e374a41baec21ca2135c",
-      "declared_blockers": [
-        "CONTEXT_REQUIRED_MISSING"
-      ],
+      "archive_sha256": "c65b0d7c22742831dbf4cdbc49aeca93701862e1db76c90151a6c667595a322f",
+      "declared_blockers": [],
       "dependency_shape": "required_context",
       "distribution_allowed": true,
       "independent_authorship": true,
       "journey_id": "analysis.thinkingai.community-context-correlation",
       "lifecycle": "reviewed",
-      "manifest_sha256": "049cb8f16afc2f6d476fc454ea42b67eca8c6fb82a998d6c03ce32922b7ec148",
-      "package_sha256": "0a8d86c10bd9c8ff3714edbe754d59db8195f050edfbb62cd197b5fa2b29c458",
-      "readiness": "blocked",
+      "manifest_sha256": "da80bf092c8eb320b71b3a9a19212c4cca37bf25d98546eabd8eef43c5fc61cb",
+      "package_sha256": "5aec96cfdc23cbb14d76fee2f833f4526c06de14b5c8294e2b35e49cfd9af631",
+      "readiness": "executable",
       "skill_uri": "skill://gravity.game/community-hot-topic-analysis@1.0.0",
       "source_content_used": false,
       "source_id": "community-hot-topic-analysis",

@@ -6,7 +6,7 @@
   "version": "1.0.0",
   "specification": "specified",
   "lifecycle": "reviewed",
-  "readiness": "blocked",
+  "readiness": "executable",
   "validation": "validated",
   "summary": "Verify a project-owned metric contract before reading its observations.",
   "description": "Resolve the project metric definition, binding, unit, aggregation, time grain, and effective range before the governed event query is allowed to support a result.",

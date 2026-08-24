@@ -7,8 +7,8 @@
       "archive": {
         "media_type": "application/vnd.gravity.skill-package.v1+zip",
         "path": "content/thinkingai/representative/hub/artifacts/skills/analysis-metric-definition-alignment-1.0.0.zip",
-        "sha256": "da80f01786928a854f06a5592430181d7d731c06cd8c8f2f46282939e50ea106",
-        "size_bytes": 3966
+        "sha256": "10404886b7c4435d0d952965e50e24c2320e5a5d62bd4f4e1d2f2324461414db",
+        "size_bytes": 3964
       },
       "manifest": {
         "artifact_kind": "skill",
@@ -66,7 +66,7 @@
           "source_ref": "thinkingai-source://analysis-metric-definition-alignment",
           "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
         },
-        "readiness": "blocked",
+        "readiness": "executable",
         "request_budget": {
           "known_requests_max": 1,
           "known_requests_min": 1,
@@ -107,14 +107,14 @@
             "media_type": "application/json",
             "path": "manifest.json",
             "role": "manifest",
-            "sha256": "e72f37d573b81bb626fe06ae61dd64bbbbaf900caa43071a3862a686c8713478",
-            "size_bytes": 2952
+            "sha256": "67cc747e6ce25c92dc193ccc1cf6852e952dbd2a03e4edfe652c1a0ecc19da0e",
+            "size_bytes": 2955
           },
           {
             "media_type": "application/json",
             "path": "provenance.json",
             "role": "provenance",
-            "sha256": "458a529f00bb6659d7d52e88371e0ff5da0060ed7e0de6e9532251be04582c5a",
+            "sha256": "290b9d65b0ee50bb0544bd748975463a3f1406476e2f956fe4b3fa019f42ef1f",
             "size_bytes": 572
           },
           {
@@ -128,13 +128,13 @@
             "media_type": "application/json",
             "path": "references/SCHEMA.json",
             "role": "schema",
-            "sha256": "d3f51061033dcdfb342bfc26dc410fe63f1a8964245240a1574995082a1e4f27",
-            "size_bytes": 3355
+            "sha256": "04e9e959c95220550bbc32844ca16f475c0cccdb8395cb248ce739b5c2170a01",
+            "size_bytes": 3358
           }
         ],
-        "manifest_digest": "008d820f67f3ddcc21e6fcbbb9f68e80e9d614126a609b6fd9c226f1fd1e6502",
+        "manifest_digest": "afcd4e600361624e2f3828dd90b24653db46f4aced41f0a3acc0d6c4e63530ce",
         "namespace": "gravity.game",
-        "package_digest": "f43ff4557d534eb131cbf2db70d182efbe5aa7f2f8ea5223d1ad897d10609a98",
+        "package_digest": "2d6dd3a16a4063b56760f498f00ad861312b2fb43674503edfcb3b884f2a2162",
         "provenance": {
           "authorship": "independently_authored",
           "license_review": "approved_internal",
@@ -301,8 +301,8 @@
       "archive": {
         "media_type": "application/vnd.gravity.skill-package.v1+zip",
         "path": "content/thinkingai/representative/hub/artifacts/skills/community-hot-topic-analysis-1.0.0.zip",
-        "sha256": "3f8092066110f5f5a70229a4f79eb778830d4d63dfb1e374a41baec21ca2135c",
-        "size_bytes": 4023
+        "sha256": "c65b0d7c22742831dbf4cdbc49aeca93701862e1db76c90151a6c667595a322f",
+        "size_bytes": 4024
       },
       "manifest": {
         "artifact_kind": "skill",
@@ -365,7 +365,7 @@
           "source_ref": "thinkingai-source://community-hot-topic-analysis",
           "source_revision": "aaa43a8c3007504b71dd87024486e0c4e8221af62e08b5314a96156a1e21adb2"
         },
-        "readiness": "blocked",
+        "readiness": "executable",
         "request_budget": {
           "known_requests_max": 1,
           "known_requests_min": 1,
@@ -404,14 +404,14 @@
             "media_type": "application/json",
             "path": "manifest.json",
             "role": "manifest",
-            "sha256": "eeb40f20ccf2b9f3b6fa0494ea244a3bf06b05984bb1503216bfae3bc707564e",
-            "size_bytes": 3062
+            "sha256": "e731f0628f60619679e47455ce15a84388ad74b8b651e6b4800b767d0f77dd3c",
+            "size_bytes": 3065
           },
           {
             "media_type": "application/json",
             "path": "provenance.json",
             "role": "provenance",
-            "sha256": "d63760d19c947f557d4731a8e96dd0401feff3f541bb542b80f036259ca9c3f2",
+            "sha256": "bbc79b0f268dea35c0bac87404d43321245d3d221896ef84380bf5825de754c2",
             "size_bytes": 556
           },
           {
@@ -425,13 +425,13 @@
             "media_type": "application/json",
             "path": "references/SCHEMA.json",
             "role": "schema",
-            "sha256": "bc05ded41812ffb895d8d43e156d9b87f371f4939e5d4ba7651e0cacbd54b0ee",
-            "size_bytes": 3463
+            "sha256": "7ea037e4182838721359b86fb6087db7216011369863897ef038c6e9227ebc98",
+            "size_bytes": 3466
           }
         ],
-        "manifest_digest": "049cb8f16afc2f6d476fc454ea42b67eca8c6fb82a998d6c03ce32922b7ec148",
+        "manifest_digest": "da80bf092c8eb320b71b3a9a19212c4cca37bf25d98546eabd8eef43c5fc61cb",
         "namespace": "gravity.game",
-        "package_digest": "0a8d86c10bd9c8ff3714edbe754d59db8195f050edfbb62cd197b5fa2b29c458",
+        "package_digest": "5aec96cfdc23cbb14d76fee2f833f4526c06de14b5c8294e2b35e49cfd9af631",
         "provenance": {
           "authorship": "independently_authored",
           "license_review": "approved_internal",

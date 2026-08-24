@@ -6,7 +6,7 @@
   "version": "1.0.0",
   "specification": "specified",
   "lifecycle": "reviewed",
-  "readiness": "blocked",
+  "readiness": "executable",
   "validation": "validated",
   "summary": "Relate governed behavior observations to a bounded project community signal.",
   "description": "Require a project-owned Context Pack aligned to the same App and time window, then distinguish returned behavior facts from supporting community observations and hypotheses.",
