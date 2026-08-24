@@ -1,6 +1,6 @@
 {
   "artifact_kind": "skills_lock",
-  "lock_digest": "0441f0694557f218d610d63e98a7ae75f91dde89dde5c7ed3c9b0a707451a3c9",
+  "lock_digest": "92070c64e7143e9050eb3ca020cf8fd22de04ae91c73e7e3605695a4bf9c2051",
   "requested": [
     "skill://gravity.game/analysis-metric-definition-alignment@1.0.0",
     "skill://gravity.game/app-device-performance-analysis@1.0.0",
@@ -12,9 +12,9 @@
   "schema_version": "gravity.skills-lock.v1",
   "skills": [
     {
-      "archive_sha256": "10404886b7c4435d0d952965e50e24c2320e5a5d62bd4f4e1d2f2324461414db",
+      "archive_sha256": "4a9551a982fb1a9783e61a0fe676f8bf1771b40b6d899ac31f8056e00b114ff4",
       "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/analysis-metric-definition-alignment-1.0.0.zip",
-      "artifact_size": 3964,
+      "artifact_size": 8368,
       "dependencies": {
         "capabilities": [
           {
@@ -45,9 +45,9 @@
       "skill_uri": "skill://gravity.game/analysis-metric-definition-alignment@1.0.0"
     },
     {
-      "archive_sha256": "27f8a300c8c7afba46a05263fae7bacdd3d1446a957ce05ac77f94ed469fdd05",
+      "archive_sha256": "7eac32cd2277b4238d99354fca22283c0663857765108a020d5afbae2b08d504",
       "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/app-device-performance-analysis-1.0.0.zip",
-      "artifact_size": 3827,
+      "artifact_size": 8078,
       "dependencies": {
         "capabilities": [
           {
@@ -76,9 +76,9 @@
       "skill_uri": "skill://gravity.game/app-device-performance-analysis@1.0.0"
     },
     {
-      "archive_sha256": "c65b0d7c22742831dbf4cdbc49aeca93701862e1db76c90151a6c667595a322f",
+      "archive_sha256": "d75d5e987a82ddedd8d23d2cc8889af53630293aa749e0c3815fd619aad83812",
       "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/community-hot-topic-analysis-1.0.0.zip",
-      "artifact_size": 4024,
+      "artifact_size": 8619,
       "dependencies": {
         "capabilities": [
           {
@@ -109,9 +109,9 @@
       "skill_uri": "skill://gravity.game/community-hot-topic-analysis@1.0.0"
     },
     {
-      "archive_sha256": "2f9668784a26a6553c469c66cccc7d7be46e75e0197b5bcf807c7d4b02d87cfb",
+      "archive_sha256": "9e3d911d7b1b6f30ba4861bf87866cb509cd778f940335449f467ee8fd1bfa45",
       "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/filter-result-bias-diagnosis-1.0.0.zip",
-      "artifact_size": 4134,
+      "artifact_size": 8661,
       "dependencies": {
         "capabilities": [
           {
@@ -142,9 +142,9 @@
       "skill_uri": "skill://gravity.game/filter-result-bias-diagnosis@1.0.0"
     },
     {
-      "archive_sha256": "7b7afac4fb5353b0a38172fac13418af4b1a9bac399ec8b3bc46a69c0a93047d",
+      "archive_sha256": "b593f89087d7b0e9bc2869b28ad9eefcf7d1371ec74729d6add31bbfc5c84226",
       "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/game-revenue-forecast-1.0.0.zip",
-      "artifact_size": 4080,
+      "artifact_size": 8473,
       "dependencies": {
         "capabilities": [
           {
@@ -176,10 +176,10 @@
     }
   ],
   "source": {
-    "index_digest": "ae981d6974bb43af0499e446cd169e8197d965bd76e0997169e9a11552be425d",
+    "index_digest": "edc8f5c4c7f60f710c643b9af7db308fb5091b51e7bda9cfb91c236daa28b882",
     "source_descriptor_digest": "8013e578f6648d5d9efa01f634b724b3a6017304a86abdab85e63938a5e6d2a3",
     "source_id": "hub-source://gravity/thinkingai-representative@1",
-    "source_revision": "e76a88202a652fdd2d9b9e5440ab44066aac8cc1",
+    "source_revision": "ebff827e97e245f2663d18f13863ae5a084891d8",
     "transport": "git"
   }
 }

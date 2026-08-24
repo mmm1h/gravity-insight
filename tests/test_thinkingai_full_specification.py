@@ -552,7 +552,7 @@ class ThinkingAIFullSpecificationTests(unittest.TestCase):
 
     def test_lock_is_bound_to_the_package_commit_and_rejects_tampering(self) -> None:
         self.assertEqual(
-            "4309b7f74b8e8d38fa5bae5bdcf3f3a292cdc6fc",
+            "ebff827e97e245f2663d18f13863ae5a084891d8",
             self.lock["source"]["source_revision"],
         )
         self.assertEqual(
