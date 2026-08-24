@@ -30,6 +30,8 @@ WORKSPACE_FILENAME = "gravity.toml"
 WORKSPACE_ENV = "GRAVITY_WORKSPACE"
 _NAME_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
 _OUTPUT_FIELD_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
+_CONTRACT_VERSION_RE = re.compile(r"^[1-9][0-9]{0,8}$")
+_SHA256_RE = re.compile(r"^[a-f0-9]{64}$")
 _SENSITIVE_OUTPUT_FIELDS = frozenset(
     {"user_id", "device_id", "distinct_id", "account_id", "phone", "email"}
 )
@@ -453,6 +455,44 @@ def _validate_custom_sql_product(
     max_rows = raw.get("max_rows")
     if type(max_rows) is not int or not 1 <= max_rows <= 10000:
         raise WorkspaceError(f"{path}: products.{name}.max_rows must be between 1 and 10000")
+    _validate_product_promotion_provenance(name, raw, path)
+
+
+def validate_registered_sql_product_definition(
+    workspace: Workspace,
+    name: str,
+    definition: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Validate one promoted definition through the canonical workspace owner."""
+
+    path = workspace.path or Path("<sql-explorer-promotion>")
+    selected = _validate_products(
+        {name: dict(definition)},
+        workspace.apps,
+        workspace.datasources,
+        path,
+    )
+    return dict(selected[name])
+
+
+def _validate_product_promotion_provenance(
+    name: str, raw: Mapping[str, Any], path: Path
+) -> None:
+    version = raw.get("contract_version")
+    if version is not None and (
+        not isinstance(version, str) or _CONTRACT_VERSION_RE.fullmatch(version) is None
+    ):
+        raise WorkspaceError(
+            f"{path}: products.{name}.contract_version must be a positive version"
+        )
+    for provenance_field in ("promotion_source_sha256", "review_evidence_sha256"):
+        value = raw.get(provenance_field)
+        if value is not None and (
+            not isinstance(value, str) or _SHA256_RE.fullmatch(value) is None
+        ):
+            raise WorkspaceError(
+                f"{path}: products.{name}.{provenance_field} must be a SHA-256 digest"
+            )
 
 
 def _validate_output_fields(name: str, fields: list[str], path: Path) -> None:
@@ -498,4 +538,5 @@ __all__ = [
     "load_workspace",
     "require_products",
     "user_cache_root",
+    "validate_registered_sql_product_definition",
 ]

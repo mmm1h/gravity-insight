@@ -42,6 +42,7 @@ from gravity_sdk.sql.products import (
     verify_all,
 )
 from gravity_sdk.sql.query import sql_error_exit_code
+from gravity_sdk.sql_explorer_cli import add_sql_explorer_commands, dispatch_sql_explorer
 from gravity_sdk.workspace import WorkspaceError, load_workspace
 
 
@@ -151,6 +152,7 @@ def build_parser(
         "--output", type=output_file,
         help="Atomically write the complete JSON result to a local file.",
     )
+    add_sql_explorer_commands(commands)
     return parser
 
 
@@ -514,6 +516,8 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "credentials":
         return _run_credentials(args)
+    if args.command == "explorer":
+        return dispatch_sql_explorer(args)
     missing_products = _missing_products_error(configured_products, workspace_error)
     if missing_products is not None:
         return missing_products
@@ -530,9 +534,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.dry_run:
         return _run_dry_checks()
     parser.error(
-        "Choose --dry-run, products, status, evidence-preflight, verify, query, or credentials."
+        "Choose --dry-run, products, status, evidence-preflight, verify, query, explorer, or credentials."
     )
-    return sql_error_exit_code("input")
 
 
 def _client() -> GravityClient:

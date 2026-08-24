@@ -52,6 +52,9 @@ _EXPORTS = {
     "ExecutionVariantService": (
         ".execution_variant", "ExecutionVariantService"
     ),
+    "SqlExplorerService": (
+        ".sql_explorer", "SqlExplorerService"
+    ),
     "validate_execution_variant": (
         ".execution_variant", "validate_execution_variant"
     ),
@@ -60,6 +63,15 @@ _EXPORTS = {
     ),
     "validate_execution_variant_selection": (
         ".execution_variant", "validate_execution_variant_selection"
+    ),
+    "validate_sql_explorer_request": (
+        ".sql_explorer", "validate_sql_explorer_request"
+    ),
+    "validate_sql_explorer_result": (
+        ".sql_explorer", "validate_sql_explorer_result"
+    ),
+    "validate_sql_explorer_promotion": (
+        ".sql_explorer", "validate_sql_explorer_promotion"
     ),
     "compile_analysis_artifact": (
         ".analysis_artifact", "compile_analysis_artifact"

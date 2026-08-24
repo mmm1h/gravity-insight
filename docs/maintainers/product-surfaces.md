@@ -1,7 +1,6 @@
 # 已交付产品面
 
-本页只回答“当前产品入口在哪里、由谁拥有”。参数、schema、默认值和返回形状不在这里复制；
-它们以 [CLI](../reference/cli.md)、[SDK](../reference/sdk.md)、[Plan](../reference/plan.md)、
+本页只回答“当前产品入口在哪里、由谁拥有”。参数、schema、默认值和返回形状不在这里复制；它们以 [CLI](../reference/cli.md)、[SDK](../reference/sdk.md)、[Plan](../reference/plan.md)、
 运行时 catalog 和机器合同为准。
 
 | 产品 | 当前入口 | 不变量 | 参考与历史 |
@@ -13,6 +12,7 @@
 | Dashboard Analysis | `analysis dashboard prepare|run` / dashboard analysis SDK / `dashboard_analysis` composite | 只编译已证明图表；不模拟 layout、favourite 或页面 global filter | [CLI](../reference/cli.md#dashboard-analysis-replay-v2)、[Plan](../reference/plan.md#dashboard-analysis-composite)、[条件证据](../archive/designs/dashboard-conditions.md) |
 | Order Directory | `analysis order directory` / `order_directory()` / `order_directory` composite | 严格单日、固定四字段、完整分页；额外标识 fail closed | [CLI](../reference/cli.md#order-directory-v1)、[Plan](../reference/plan.md#order-directory-composite)、[设计](../archive/designs/order-directory.md) |
 | Order Split Trace | `analysis order trace` / `order_split_trace()` / `order_split_trace` composite | 本地唯一父匹配后才读 child；结果不暴露 TraceID | [CLI](../reference/cli.md#order-split-trace-v1)、[Plan](../reference/plan.md#order-split-trace-composite)、[设计](../archive/designs/order-split-trace.md) |
+| Isolated SQL Explorer | `sql explorer inspect|execute|promote` / `sql_explorer` SDK | SQLite-only；AST + database read-only identity + budgets；exploratory 隔离且无 Agent/Plan fallback | [CLI](../reference/cli.md#sql)、[SDK](../reference/sdk.md#sql-专用底层-facade) |
 
 ## 维护规则
 
