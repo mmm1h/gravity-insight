@@ -49,6 +49,15 @@ _EXPORTS = {
     "validate_adaptive_governor_snapshot": (
         ".adaptive_governor", "validate_adaptive_governor_snapshot"
     ),
+    "ExecutionVariantService": (
+        ".execution_variant", "ExecutionVariantService"
+    ),
+    "validate_execution_variant": (
+        ".execution_variant", "validate_execution_variant"
+    ),
+    "validate_execution_variant_characterization": (
+        ".execution_variant", "validate_execution_variant_characterization"
+    ),
     "compile_analysis_artifact": (
         ".analysis_artifact", "compile_analysis_artifact"
     ),
