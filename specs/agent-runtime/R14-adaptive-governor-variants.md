@@ -3,17 +3,18 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; R14-A `fixed_dev`, R14-B internally approved 2026-08-24 |
+| Status | `in_progress`; R14-A/B `fixed_dev`, R14-C/D `specified` |
 | Track | Runtime I/O optimization |
 | Dependencies | R02 |
 | Parallel group | `runtime-infrastructure` |
 | Shared-spine integration | Required and serialized |
 | Delivery ledger | This Requirement document; no internal GitHub Issue |
-| Milestones | R14-A `fixed_dev`; R14-B `in_progress`; R14-C/D `specified` |
+| Milestones | R14-A/B `fixed_dev`; R14-C/D `specified` |
 | R14-A baseline | `dev@fac2e6e1648bdf60efe1a1b369c9788058cdebed` |
 | R14-A branch / worktree | `codex/r14a-governor-observation` / `D:\git-pjt\gravity-sdk-wt\r14a-governor-observation` |
 | R14-B baseline | `dev@406c07b259ce89067dcb61f155115d87a8643db8` |
 | R14-B branch / worktree | `codex/r14b-adaptive-governor` / `D:\git-pjt\gravity-sdk-wt\r14b-adaptive-governor` |
+| R14-B feature / merge | `fe299ea279f43c3ed3396e5998745395ab4720e9` / `dev@dd357ed5baa0fdd9c4ca63b278ac274f94d91d55` |
 | Production requests | `0`; fake Runtime HTTP only |
 | Main integration | Frozen until whole program completion |
 
@@ -170,6 +171,68 @@ not authorize Variant selection, production probes, releases or `main`.
   peak/backpressure/cancellation/fairness, single-flight count/error semantics,
   Receipt/privacy/Provider, full gates, wheel and consumer with zero production
   HTTP. Active docs remain exactly 5,500 lines.
+
+## R14-B Fixed Dev Evidence
+
+- Feature `fe299ea279f43c3ed3396e5998745395ab4720e9` was merged as
+  `dev@dd357ed5baa0fdd9c4ca63b278ac274f94d91d55`. One process Governor now
+  surrounds each actual `perform_http_request()` attempt before the canonical
+  counter/HTTP Receipt/R14-A observation boundary. Runtime's process business
+  and SQL semaphores plus SQL client's duplicate outer guard were removed; one
+  injected Governor is the only concurrency seam.
+- Static mode proves the prior 24-business/two-SQL ceilings and a 25th login
+  spare. Adaptive private scope/host/operation/profile lanes start at the
+  approved profile limits, add one after a full success window, decrease one
+  on a two-second slow success, halve on 429/5xx/transport, and open after three
+  consecutive capacity failures for a fake-clock 30-second cooldown with one
+  half-open probe. No policy owns retry or adds a request.
+- One bounded 128-waiter condition covers capacity and single-flight followers;
+  cancellation, timeout, queue/flight/scope/lane exhaustion fail before HTTP
+  and release all counts. Grants alternate waiting Journey digests when
+  possible. Plan binds only execution ID through a ContextVar and retains its
+  existing outer/borrow worker budget and declaration-order results.
+- Adaptive-only single-flight keys the exact canonical private digest of an
+  effect=`read` wire request. A simultaneous SQL pair produced one session
+  call, one canonical request count and one HTTP Receipt. Distinct values,
+  mutation, login, stream and static requests do not coalesce; a failed leader
+  releases its follower to one normal attempt and caches no error.
+- `gravity.adaptive-governor-snapshot.v1` and `sdk.governor.policy()` expose
+  only bounded current-scope counts, hard capacities, SHA-256 host keys and
+  lane policy metrics with `network_called=false`. Raw scope/request/Journey
+  keys, URL/path, query/body/header/credential and response values never render.
+  Artifact streams consume capacity without coalescing; R08 Provider RPC leaves
+  Runtime Governor state unchanged.
+- R14-B focused coverage is `11 tests, 13 subtests`; merge-head transport/Plan/
+  SQL/Receipt/scope/Provider/public coverage is `79 tests, 51 subtests`.
+  Exact feature-head gates passed `1718` unittest tests and `1718 passed, 3908
+  subtests` under pytest. Compiler remains `237 operations, 11 manifests`;
+  quality, all three deterministic generators, root CLI help, diff checks and
+  touched-file Ruff passed. `http_runtime.py` AST tightened `2907 -> 2901`.
+- Public root exports are additive at `139` lazy entries / `140` `__all__`
+  names. Actionable errors are `1340 = 1173 A + 167 B + 0 C`. Development
+  usability remains selection `296/336`, fillability `248/248`, offline
+  terminal `53/53`, recovery `5/5`, security violations `0`, skipped production
+  cases `283` and production HTTP requests `0`. Active human docs remain
+  exactly `5500` lines.
+- Final isolated wheel `gravity_sdk-0.3.0-py3-none-any.whl` has SHA-256
+  `6cffe0bdc1acdb5a99a29390c6bd2b306fee03bfeb883d13ede4d69613489ee1`.
+  External `site-packages` loaded the lazy root validator, packaged adaptive
+  schema and an offline static snapshot. Canonical
+  `work-dashboard@d1915a18278fca8823782a7d13e691a6d5702ad2` remains clean and
+  passed `11 tests, 94 subtests`; no consumer migration was required.
+- Production probes, external Gravity/Provider HTTP or RPC, credentials, remote writes,
+  releases and `main` promotion performed by R14-B: `0`.
+
+## R14-B Known Limits
+
+- Adaptive state, queues, metrics and successful single-flight results are
+  process-local and in-memory. Restart clears state; no distributed or
+  cross-process coordination is claimed.
+- The Governor controls concurrency only. The fixed Host Rate Limiter and
+  bounded requester own pacing, Retry-After, retry and auth refresh. A
+  single-flight follower may already have reserved a fixed rate slot.
+- R14-C/D Variant contracts and automatic selection are not delivered. No
+  latency/cost observation can select a Product path or bypass Trust.
 
 ## Scope
 

@@ -25,7 +25,7 @@
 4. **R03 Built-in Skill Package / R04 Team Skill Hub Stage A（fixed-dev）**：Built-in 与团队无代码 Skill 共用 Manifest/Render Model；显式 Git/static HTTPS Source、exact lock、独立 CAS/offline materialize 已闭合，Trusted Pack 只生成外部 Installer Plan 并做 exact startup verification，未接入 Runtime 执行。
 5. **R05 Business Semantic Registry（fixed-dev）**：versioned Definition/Binding/Source、formula/unit/additivity/time/effective-range/conflict 门禁与离线 `SemanticRegistry`/复数 CLI 已集成；Runtime 只含通用 App Entity，Merge2 指标与 App/physical binding 已迁移到 work-dashboard 独立 Source。R01 仍因完整性 unknown 而零请求阻断。
 6. **R06 Operator / Model Contracts（fixed-dev）**：唯一 R01 deterministic Operator 已迁移到闭合 Registry 与 input/output/assumption/claim/golden/资源门禁；Model Registry 不内置模型，且要求 trusted digest + lineage/evaluation/approval/expiry/horizon 后才允许生产 claims，LTV gap 未提升；R04 trusted-pack descriptor 已冻结。
-7. **R07-R13C 与 R14-A（fixed-dev）；R14-B Adaptive Governor（in-progress）**：R14-B 用一个全局 Governor 接管 24-business/2-SQL 容量并激活 AIMD/circuit/backpressure/single-flight/Journey fairness；Host limiter/retry 不变，不增加请求，Provider 仍只受 R08 RPC Guard。
+7. **R07-R14-B（fixed-dev）；R14-C Execution Variant Characterization（next）**：单一 Governor 已接管 25-total/24-business/2-SQL 容量并激活 AIMD/circuit/backpressure/single-flight/Journey fairness；Host limiter/retry 不变，Provider 仍只受 R08，R14-C 才定义等价固定变体。
 8. **Main freeze**：完整计划结束、整体验收通过且用户重新明确批准前，本计划功能只合入 `dev`，不合入 `main`。单项 `fixed_dev` 不等于发布。
 9. **持续实施授权**：用户已明确要求依赖满足后持续完成全部 indexed requirements，不再逐项请求批准；计划 owner 仍须在每个单元开工前绑定机器门禁、写入范围与回滚，且不得由该授权推导生产探测、写入、发布或提前解冻 `main`。
 
@@ -40,7 +40,7 @@
 - `report.get.query` 的 Agent owner card 暴露合同派生的顶层 raw 输入模板与完整 compact input schema，并优先于同 selector 的 generic operation card。
 - Runtime 拥有可复用 Semantic 类型/Schema、通用指标/方法定义、版本化 URI，以及单位、可加性、时间粒度、依赖、冲突和公式结构校验；调用项目拥有具体活动名称、SKU 实值、App/埋点绑定、项目专属公式参数与生效窗口和部门口径。
 - 读取共享全局有界并发预算；不叠加 adapter 私有线程池或增加请求总量。
-- Session、CredentialProvider、metadata/operation catalog、FieldPolicy metadata snapshot 与 receipt state 按 resolved env、账号、principal、credential generation 和 workspace 的不可逆摘要隔离，默认 env 不例外；host limiter 与进程级并发槽继续全局共享，scope 摘要不进入公开输出。
+- Session、CredentialProvider、metadata/operation catalog、FieldPolicy metadata snapshot 与 receipt state 按 resolved env、账号、principal、credential generation 和 workspace 的不可逆摘要隔离，默认 env 不例外；host limiter 与单一进程 Governor 继续全局共享，scope 摘要不进入公开输出。
 - 未登记字段、破坏性响应漂移、身份/权限不确定和不完整分页 fail closed。
 - Probe 语义只使用六态机器模型；`unknown` 不等于 read，静态 read candidate 不构成授权，未证实 POST
   必须在任何凭据或网络动作前归入 `unsafe_unknown` 并失败关闭。
