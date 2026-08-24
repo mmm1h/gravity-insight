@@ -3,15 +3,17 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; R14-A `fixed_dev` 2026-08-24 |
+| Status | `in_progress`; R14-A `fixed_dev`, R14-B internally approved 2026-08-24 |
 | Track | Runtime I/O optimization |
 | Dependencies | R02 |
 | Parallel group | `runtime-infrastructure` |
 | Shared-spine integration | Required and serialized |
 | Delivery ledger | This Requirement document; no internal GitHub Issue |
-| Milestones | R14-A `fixed_dev`; R14-B/C/D `specified` |
+| Milestones | R14-A `fixed_dev`; R14-B `in_progress`; R14-C/D `specified` |
 | R14-A baseline | `dev@fac2e6e1648bdf60efe1a1b369c9788058cdebed` |
 | R14-A branch / worktree | `codex/r14a-governor-observation` / `D:\git-pjt\gravity-sdk-wt\r14a-governor-observation` |
+| R14-B baseline | `dev@406c07b259ce89067dcb61f155115d87a8643db8` |
+| R14-B branch / worktree | `codex/r14b-adaptive-governor` / `D:\git-pjt\gravity-sdk-wt\r14b-adaptive-governor` |
 | Production requests | `0`; fake Runtime HTTP only |
 | Main integration | Frozen until whole program completion |
 
@@ -136,6 +138,38 @@ or `main` promotion.
   cancellation-aware leases and Journey fairness belong only to R14-B. Variant
   contracts/characterization/selection remain R14-C/D and cannot consume
   latency as a Trust substitute.
+
+## R14-B Plan Owner Verdict And Ready Binding
+
+R14-A is `fixed_dev`. Under the user's continuous implementation authorization,
+the plan owner reviewed `tmp/r14b-adaptive-governor-proposal.md` and its conflict
+ledger, bound the baseline/worktree/gates, and advanced only R14-B through
+`reviewed` and `ready` to `in_progress`. R14-C/D remain `specified`; this does
+not authorize Variant selection, production probes, releases or `main`.
+
+- Replace the process 24-business/two-SQL semaphores and duplicate SQL outer
+  guard with one Governor hard capacity: 25 total, 24 business, SQL two and one
+  login spare. Static rollback enforces these exact caps without adaptation.
+- Adaptive lanes are private scope/host/operation/profile states. Deterministic
+  AIMD increases after a full success window, halves on 429/5xx/transport and
+  decreases on fixed slow latency; no policy adds a request or retry.
+- Three consecutive capacity failures open a 30-second fake-clock circuit;
+  half-open permits one probe. A 128-waiter cancellation-aware queue grants
+  different waiting Plan Journey keys in rotation when possible.
+- Adaptive-only single-flight shares only simultaneous exact private-digest
+  effect=`read` successes. Mutations/login/Artifact streams never coalesce;
+  failed leaders release followers to their normal request path.
+- Only actual leaders increment the canonical HTTP counter and create HTTP
+  Receipt/R14-A observation. Rejections and followers fabricate no evidence.
+- Add a value-free current-scope adaptive snapshot and
+  `sdk.governor.policy()`. Request/Journey keys, scope, URL/path and values stay
+  private. Provider RPC remains wholly under R08.
+- Bind Plan execution ID through a ContextVar only; Plan workers, adapter demand,
+  result order, Host Rate Limiter and existing retry/auth behavior remain.
+- Acceptance includes static cap equivalence, fake-clock AIMD/circuit, global
+  peak/backpressure/cancellation/fairness, single-flight count/error semantics,
+  Receipt/privacy/Provider, full gates, wheel and consumer with zero production
+  HTTP. Active docs remain exactly 5,500 lines.
 
 ## Scope
 
