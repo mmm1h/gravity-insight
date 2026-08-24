@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.governor-observation-snapshot.v1",
+  "type": "object",
+  "required": [
+    "schema_version", "mode", "policy_revision", "after_sequence",
+    "next_sequence", "count", "has_more", "truncated",
+    "dropped_observations", "observations", "limits", "network_called"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.governor-observation-snapshot.v1"},
+    "mode": {"enum": ["observe", "disabled"]},
+    "policy_revision": {"const": "gravity.governor-policy.observe.v1"},
+    "after_sequence": {"type": "integer", "minimum": 0},
+    "next_sequence": {"type": "integer", "minimum": 0},
+    "count": {"type": "integer", "minimum": 0, "maximum": 1000},
+    "has_more": {"type": "boolean"},
+    "truncated": {"type": "boolean"},
+    "dropped_observations": {"type": "integer", "minimum": 0},
+    "observations": {"type": "array", "maxItems": 1000, "items": {"type": "object"}},
+    "limits": {
+      "type": "object",
+      "required": ["max_observations", "max_scopes", "max_page_size", "max_latency_ms", "max_rate_delay_ms"],
+      "additionalProperties": false,
+      "properties": {
+        "max_observations": {"type": "integer", "minimum": 1, "maximum": 4096},
+        "max_scopes": {"type": "integer", "minimum": 1, "maximum": 64},
+        "max_page_size": {"const": 1000},
+        "max_latency_ms": {"const": 600000},
+        "max_rate_delay_ms": {"const": 600000}
+      }
+    },
+    "network_called": {"const": false}
+  }
+}

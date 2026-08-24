@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 import threading
 import time
 import unittest
@@ -57,11 +56,20 @@ class PeakTransport:
         self.request_ids = []
 
     def batch(self, requests, *, max_workers, **_options):
+        first_wave = min(max_workers, len(requests))
+        barrier = threading.Barrier(first_wave) if first_wave > 1 else None
+        started = 0
+
         def send(request):
+            nonlocal started
             with self.lock:
                 self.active += 1
                 self.peak = max(self.peak, self.active)
                 self.request_ids.append(request["request_id"])
+                started += 1
+                synchronize = started <= first_wave
+            if barrier is not None and synchronize:
+                barrier.wait(timeout=2)
             time.sleep(0.01)
             try:
                 return self.response(request)

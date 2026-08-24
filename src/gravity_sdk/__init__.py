@@ -37,6 +37,15 @@ _EXPORTS = {
     "AnalysisArtifactService": (
         ".analysis_artifact", "AnalysisArtifactService"
     ),
+    "GovernorObservationService": (
+        ".governor_observation", "GovernorObservationService"
+    ),
+    "validate_governor_observation": (
+        ".governor_observation", "validate_governor_observation"
+    ),
+    "validate_governor_observation_snapshot": (
+        ".governor_observation", "validate_governor_observation_snapshot"
+    ),
     "compile_analysis_artifact": (
         ".analysis_artifact", "compile_analysis_artifact"
     ),

@@ -28,7 +28,7 @@
       "src/gravity_sdk/credentials.py::CredentialProvider._credential_from_login": 18,
       "src/gravity_sdk/credentials.py::CredentialProvider._get": 19,
       "src/gravity_sdk/governance/stable_privacy.py::operation_exposure_paths": 32,
-      "src/gravity_sdk/http_runtime.py::_GravityRequester.request": 22,
+      "src/gravity_sdk/http_runtime.py::_GravityRequester.request": 20,
       "src/gravity_sdk/prober/batch.py::finalize_batch_report": 55,
       "src/gravity_sdk/prober/batch.py::run_batch_probes": 47,
       "src/gravity_sdk/prober/cli.py::run": 17,
@@ -269,7 +269,7 @@
     },
     "src/gravity_sdk/http_runtime.py": {
       "ast_hard_limit": 3815,
-      "ast_nodes": 3643,
+      "ast_nodes": 2907,
       "migration_sloc": 675,
       "sloc_hard_limit": 751
     },
