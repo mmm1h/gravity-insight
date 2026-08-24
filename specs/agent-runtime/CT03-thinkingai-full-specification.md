@@ -3,14 +3,14 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `fixed_dev` |
+| Status | `in_progress` (2026-08-25 audit hardening) |
 | Track | Content expansion |
 | Dependencies | CT02 |
 | Parallel group | `content-c` |
 | Main integration | Frozen until whole program completion |
 | Delivery ledger | This Requirement document; no internal GitHub Issue |
 | Baseline | `dev@2eba695f4d25658fcb703ca988ae82f555d225da` |
-| Branch / worktree | `codex/ct03-thinkingai-full-specification` / `D:\git-pjt\gravity-sdk-wt\ct03-thinkingai-full-specification` |
+| Branch / worktree | `codex/ct03-audit-hardening` / `D:\git-pjt\gravity-sdk-wt\ct03-audit-hardening` |
 | Approved source snapshot | CT01 snapshot `da84f685d6395500168532a26f8a1da6886a786d87f867ce9cb968b963e03ae5` |
 | Gravity production / Hub / Provider requests | `0` |
 | Feature commits | `4309b7f`, `8b09f14`, `bc448f8` |
@@ -24,6 +24,9 @@ its architecture conflict ledger, bound the full inventory scope, write set,
 state rules and machine gates, and advanced CT03 through `reviewed` and `ready`
 to `in_progress`. This does not authorize source-content reuse, production
 access, remote Hub/Provider calls, trusted code, release or `main`.
+The 2026-08-25 audit verdict reopens CT03 only for the binding, lock-revision,
+source-impact, durable-consumer and delivery-governance gaps recorded in
+`tmp/ct03-audit-hardening-proposal.md`; the original scope remains unchanged.
 
 - Cover every identity in the approved CT01 snapshot exactly once: reuse five
   CT02 Skills, add 35 independent Skill specifications and bind 15 explicit
