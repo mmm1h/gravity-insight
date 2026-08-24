@@ -3,11 +3,16 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `specified` |
+| Status | `in_progress` |
 | Track | Parallel content |
 | Dependencies | R00 |
 | Parallel group | `content-a` |
 | Main integration | Frozen until whole program completion |
+| Delivery ledger | This Requirement document; no internal GitHub Issue |
+| Baseline | `dev@6dace728670d4a295cd51e3d395b70631f6d19bc` |
+| Branch / worktree | `codex/ct01-thinkingai-inventory` / `D:\git-pjt\gravity-sdk-wt\ct01-thinkingai-inventory` |
+| Approved source snapshot | Chinese public `/skills/` observed `2026-08-24T10:10:30.857Z` |
+| Gravity production requests | `0` |
 
 ## Outcome
 
@@ -16,6 +21,37 @@ Every publicly discoverable ThinkingAI Skill topic in an approved source snapsho
 ## Current Baseline
 
 The public catalog is dynamic and mixes advertised totals, categories and detail pages. The repository has research references but no current source adapter, closed link inventory or machine migration matrix.
+
+## Plan Owner Verdict And Ready Binding
+
+R00 is `fixed_dev`. Under the user's continuous implementation authorization,
+the plan owner reviewed `tmp/ct01-thinkingai-inventory-proposal.md` and its
+architecture conflict ledger, bound the approved public scope/copyright/license/
+mapping/gates, and advanced CT01 through `reviewed` and `ready` to
+`in_progress`. This does not authorize source-body retention, distributable
+Skill content, production Gravity access, release or `main`.
+
+- Bind source adapter `thinkingai-public-catalog-dom@1` to the public Chinese
+  `/skills/` root, its visible category/detail links, robots and sitemap. The
+  frozen observation has 55 unique detail links, no pagination, exact 55-link
+  sitemap closure, HTTP 200 and matching final/canonical/H1 for every item.
+- Detail body text was hashed inside the browser only. Commit URL, title,
+  categories, status/closure and SHA-256 metadata; never body, descriptions,
+  examples, images, charts, customer/effect numbers, raw HTML or marketing prose.
+- Add strict observation/snapshot/diff schemas, append-only current artifacts and
+  a deterministic generator/check. Counts derive from sorted items; duplicate,
+  orphan, missing, unknown-category or unmapped items fail closed.
+- Map source categories to closed Gravity taxonomy. Generic topics get future
+  Skill IDs and `license_review=approved` only for metadata plus fully independent
+  rewrite. `ae-*`/`te-*` proprietary operations are blocked and map to an
+  out-of-scope alternative; automatic SQL generation also maps to the explicit
+  Registered SQL/Explorer alternative.
+- All CT01 items remain `distribution_allowed=false`; independent generic content
+  is merely `required`. Blocked/needs-review items cannot advance to a
+  distributable specification.
+- Acceptance covers all diff states, link/category coverage, digest/order,
+  unmapped/license gates, protected-content leakage, full gates, wheel and
+  canonical consumer. Active human docs remain exactly 5,500 lines.
 
 ## Scope
 
