@@ -39,6 +39,18 @@
     ".adaptive_governor",
     "validate_adaptive_governor_snapshot"
   ],
+  "ExecutionVariantService": [
+    ".execution_variant",
+    "ExecutionVariantService"
+  ],
+  "validate_execution_variant": [
+    ".execution_variant",
+    "validate_execution_variant"
+  ],
+  "validate_execution_variant_characterization": [
+    ".execution_variant",
+    "validate_execution_variant_characterization"
+  ],
   "ActionPlanService": [
     ".action_plan",
     "ActionPlanService"

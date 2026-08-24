@@ -19,6 +19,7 @@ class AgentRuntimeSdkMixin:
         self._experiments_lock = threading.Lock()
         self._analysis_artifacts_lock = threading.Lock()
         self._governor_lock = threading.Lock()
+        self._execution_variants_lock = threading.Lock()
         self._journey_service: Any | None = None
         self._capability_trust_service: Any | None = None
         self._skill_runtime_service: Any | None = None
@@ -27,7 +28,22 @@ class AgentRuntimeSdkMixin:
         self._experiments_service: Any | None = None
         self._analysis_artifacts_service: Any | None = None
         self._governor_service: Any | None = None
+        self._execution_variants_service: Any | None = None
         self._governor_runtime_factory = runtime_factory
+
+    @property
+    def execution_variants(self) -> Any:
+        """Offline fixed Variant descriptors and equivalence evidence."""
+
+        if self._execution_variants_service is None:
+            with self._execution_variants_lock:
+                if self._execution_variants_service is None:
+                    from .execution_variant import ExecutionVariantService
+
+                    self._execution_variants_service = ExecutionVariantService(
+                        lambda: self.capability_trust
+                    )
+        return self._execution_variants_service
 
     @property
     def governor(self) -> Any:
