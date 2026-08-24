@@ -3,11 +3,41 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `specified` |
+| Status | `in_progress` |
 | Track | Content validation |
 | Dependencies | CT01, R09B |
 | Parallel group | `content-b` |
 | Main integration | Frozen until whole program completion |
+| Delivery ledger | This Requirement document; no internal GitHub Issue |
+| Baseline | `dev@69e4c8edafc4f173b2c436a116b4ea588abc5f75` |
+| Branch / worktree | `codex/ct02-thinkingai-representative-skills` / `D:\git-pjt\gravity-sdk-wt\ct02-thinkingai-representative-skills` |
+| Gravity production / Hub / Provider requests | `0` |
+
+## Plan Owner Verdict And Ready Binding
+
+CT01 and R09B are `fixed_dev`. Under the user's continuous implementation
+authorization, the plan owner reviewed
+`tmp/ct02-thinkingai-representative-skills-proposal.md` and its architecture
+conflict ledger, bound the selection/write scope/gates, and advanced CT02 through
+`reviewed` and `ready` to `in_progress`. This does not authorize source-content
+reuse, production access, trusted-code installation, release or `main`.
+
+- Select `app-device-performance-analysis` (Capability-only),
+  `analysis-metric-definition-alignment` (project Semantic),
+  `filter-result-bias-diagnosis` (deterministic Operator),
+  `community-hot-topic-analysis` (required Context) and
+  `game-revenue-forecast` (blocked Model).
+- Use only independently authored `gravity.skill.v1` content, standard Journey
+  contracts and R04/R09B package/index/lock/CAS machinery. No Runtime route,
+  executor, operation, shared-spine or schema exception may be added.
+- Generate five deterministic no-code packages, a Hub index, representative set,
+  eval corpus and exact multi-Skill lock. Commit packages first and bind the lock
+  to that exact Git revision in a subsequent commit.
+- Require two isolated project/CAS roots, package/lock parity, dependency-state,
+  happy/empty/partial/gap/invalid, claim-boundary, prompt-injection, marketing
+  leakage, full gates, wheel separation and canonical-consumer evidence.
+- Active human docs remain exactly 5,500 lines; Gravity production, Hub and
+  external Provider requests remain zero.
 
 ## Outcome
 

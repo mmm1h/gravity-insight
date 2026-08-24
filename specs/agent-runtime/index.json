@@ -39,7 +39,7 @@
     {"id":"R15","path":"R15-isolated-sql-explorer.md","status":"fixed_dev","dependencies":["R02","R05"],"parallel_group":"isolated-product","shared_spine":true},
     {"id":"R16","path":"R16-control-plane-stage-b.md","status":"specified","dependencies":["R04"],"parallel_group":"conditional-control","shared_spine":false,"trigger":"external_trust_or_compliance_boundary"},
     {"id":"CT01","path":"CT01-thinkingai-inventory.md","status":"fixed_dev","dependencies":["R00"],"parallel_group":"content-a","shared_spine":false},
-    {"id":"CT02","path":"CT02-thinkingai-representative-skills.md","status":"specified","dependencies":["CT01","R09B"],"parallel_group":"content-b","shared_spine":false},
+    {"id":"CT02","path":"CT02-thinkingai-representative-skills.md","status":"in_progress","dependencies":["CT01","R09B"],"parallel_group":"content-b","shared_spine":false},
     {"id":"CT03","path":"CT03-thinkingai-full-specification.md","status":"specified","dependencies":["CT02"],"parallel_group":"content-c","shared_spine":false}
   ]
 }
