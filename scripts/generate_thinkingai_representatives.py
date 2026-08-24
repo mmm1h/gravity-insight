@@ -195,15 +195,17 @@ def _locked_revision() -> str:
     return str(lock["source"]["source_revision"])
 
 
-def _verify_source_revision(revision: str) -> None:
+def _verify_source_revision(revision: str, expected_index: bytes) -> None:
     completed = subprocess.run(
-        ["git", "cat-file", "-e", f"{revision}:{_INDEX_REPOSITORY_PATH}"],
+        ["git", "show", f"{revision}:{_INDEX_REPOSITORY_PATH}"],
         cwd=ROOT,
         check=False,
         capture_output=True,
     )
     if completed.returncode:
         raise SystemExit("source revision does not contain the generated Hub index")
+    if completed.stdout != expected_index:
+        raise SystemExit("source revision Hub index does not match generated index")
 
 
 def main() -> int:
@@ -214,9 +216,9 @@ def main() -> int:
     group.add_argument("--packages-only", action="store_true")
     options = parser.parse_args()
     revision = _locked_revision() if options.check else options.source_revision
-    if revision is not None:
-        _verify_source_revision(revision)
     outputs = render_outputs(revision)
+    if revision is not None:
+        _verify_source_revision(revision, outputs[INDEX_TARGET])
     mismatched = [
         path
         for path, content in outputs.items()

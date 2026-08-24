@@ -81,6 +81,15 @@ def compile_full_source(
     representatives = validate_representative_set(representative_set)
     if source["source_snapshot_sha256"] != snapshot["snapshot_sha256"]:
         invalid("THINKINGAI_FULL_SOURCE_INVALID", "source snapshot binding changed")
+    if (
+        representatives["source_snapshot_sha256"] != snapshot["snapshot_sha256"]
+        or representatives["source_observation_sha256"]
+        != snapshot["source_observation"]["observation_sha256"]
+    ):
+        invalid(
+            "THINKINGAI_FULL_REPRESENTATIVE_DRIFT",
+            "representative set is not bound to the source snapshot",
+        )
     source_items = {item["source_id"]: item for item in snapshot["items"]}
     _validate_coverage(source, snapshot, representatives)
     for definition in source["skills"]:

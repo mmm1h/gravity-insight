@@ -22,6 +22,14 @@ def compile_full_eval(
 ) -> dict[str, Any]:
     specification = validate_full_specification(full_specification)
     representative = validate_representative_eval(representative_eval)
+    if (
+        representative["representative_set_sha256"]
+        != specification["representative_set_sha256"]
+    ):
+        invalid(
+            "THINKINGAI_FULL_EVAL_INVALID",
+            "representative eval is not bound to the full specification",
+        )
     blockers = _blockers(specification)
     control = _supported_control(specification)
     cases = [
@@ -79,16 +87,37 @@ def validate_full_eval(value: Mapping[str, Any]) -> dict[str, Any]:
 
 
 def compile_source_impact(
-    full_specification: Mapping[str, Any], inventory_diff: Mapping[str, Any]
+    full_specification: Mapping[str, Any],
+    inventory_diff: Mapping[str, Any],
+    current_full_specification: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     specification = validate_full_specification(full_specification)
     difference = validate_inventory_diff(inventory_diff)
-    _validate_impact_baseline(specification, difference)
-    current = {item["source_id"]: item for item in specification["items"]}
-    changes = [_impact_item(change, current) for change in difference["changes"]]
+    current_specification = (
+        validate_full_specification(current_full_specification)
+        if current_full_specification is not None
+        else None
+    )
+    current_specification = _validate_impact_baseline(
+        specification, difference, current_specification
+    )
+    baseline = {item["source_id"]: item for item in specification["items"]}
+    current = (
+        {item["source_id"]: item for item in current_specification["items"]}
+        if current_specification is not None
+        else {}
+    )
+    changes = [
+        _impact_item(change, baseline, current) for change in difference["changes"]
+    ]
     return {
         "schema_version": "gravity.thinkingai-full-source-impact.v1",
         "specification_sha256": specification["specification_sha256"],
+        "current_specification_sha256": (
+            current_specification["specification_sha256"]
+            if current_specification is not None
+            else None
+        ),
         "inventory_diff_sha256": difference["diff_sha256"],
         "changes": sorted(changes, key=lambda item: item["source_id"]),
         "network_called": False,
@@ -215,23 +244,56 @@ def _validate_case(case: Mapping[str, Any]) -> None:
 
 
 def _validate_impact_baseline(
-    specification: Mapping[str, Any], difference: Mapping[str, Any]
-) -> None:
+    specification: Mapping[str, Any],
+    difference: Mapping[str, Any],
+    current_specification: Mapping[str, Any] | None,
+) -> Mapping[str, Any] | None:
     previous = difference["previous_snapshot"]
+    current = difference["current_snapshot"]
     if previous is None or previous["snapshot_sha256"] is None:
-        return
+        if specification["source_snapshot_sha256"] != current["snapshot_sha256"]:
+            invalid(
+                "THINKINGAI_FULL_SOURCE_IMPACT_INVALID",
+                "initial source diff does not end at the specified snapshot",
+            )
+        if current_specification is not None:
+            invalid(
+                "THINKINGAI_FULL_SOURCE_IMPACT_INVALID",
+                "initial source diff accepts one current specification",
+            )
+        return specification
     if previous["snapshot_sha256"] != specification["source_snapshot_sha256"]:
         invalid(
             "THINKINGAI_FULL_SOURCE_IMPACT_INVALID",
             "source diff does not start from the specified snapshot",
         )
+    has_added = any(change["state"] == "added" for change in difference["changes"])
+    if current_specification is None:
+        if has_added:
+            invalid(
+                "THINKINGAI_FULL_COVERAGE_INVALID",
+                "added source requires a current full specification",
+            )
+        return None
+    if current_specification["source_snapshot_sha256"] != current["snapshot_sha256"]:
+        invalid(
+            "THINKINGAI_FULL_SOURCE_IMPACT_INVALID",
+            "current specification does not match the diff target snapshot",
+        )
+    return current_specification
 
 
 def _impact_item(
-    change: Mapping[str, Any], current: Mapping[str, Mapping[str, Any]]
+    change: Mapping[str, Any],
+    baseline: Mapping[str, Mapping[str, Any]],
+    current: Mapping[str, Mapping[str, Any]],
 ) -> dict[str, Any]:
     source_id = change["source_id"]
-    item = current.get(source_id)
+    item = (
+        current.get(source_id)
+        if change["state"] == "added"
+        else baseline.get(source_id)
+    )
     if item is None:
         invalid(
             "THINKINGAI_FULL_COVERAGE_INVALID",
