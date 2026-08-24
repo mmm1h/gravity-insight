@@ -8,7 +8,12 @@ from typing import Any
 
 from .credentials import GRAVITY_HOST
 from .errors import CredentialError
-from .http_runtime import GravityHttpRuntime, HostRateLimiter, _rate_from_environment, _validated_rate
+from .host_rate_limiter import (
+    HostRateLimiter,
+    _rate_from_environment,
+    _validated_rate,
+)
+from .http_runtime import GravityHttpRuntime
 from .paths import STATE_ROOT
 from .runtime_scope import (
     RuntimeScopeKey,
@@ -88,6 +93,7 @@ def get_shared_runtime(
                 attempts=attempts,
                 isolated=resolved_isolated,
                 receipt_root=principal_state_root(base_receipt_root, scope),
+                observation_scope_key=scope.fingerprint,
             )
             _SHARED_RUNTIMES[scope] = existing
         else:

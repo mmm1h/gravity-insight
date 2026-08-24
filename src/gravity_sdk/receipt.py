@@ -6,12 +6,13 @@ import contextvars
 import copy
 import json
 import logging
+import time
 import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Iterator, Mapping
+from typing import Any, Callable, Iterator, Mapping, Sequence
 
 from .errors import InputValidationError
 from .fingerprints import shape_fingerprint
@@ -132,6 +133,8 @@ def perform_http_request(
     *args: Any,
     http_receipt: Mapping[str, Any] | None = None,
     receipt_root: Path | None = None,
+    governor_context: Mapping[str, Any] | None = None,
+    governor_clock: Callable[[], float] = time.monotonic,
     **kwargs: Any,
 ) -> Any:
     record_http_request()
@@ -141,13 +144,54 @@ def perform_http_request(
         else None
     )
     token = _ACTIVE_HTTP_RECEIPT.set(active) if active is not None else None
+    started = _governor_clock_value(governor_clock)
+    finished = started
+    response: Any = None
+    error: BaseException | None = None
     try:
         response = request(*args, **kwargs)
+        finished = _governor_clock_value(governor_clock, fallback=started)
         record_active_http_response(response)
         return response
+    except BaseException as caught:
+        error = caught
+        finished = _governor_clock_value(governor_clock, fallback=started)
+        raise
     finally:
+        _record_governor_observation(
+            args,
+            kwargs,
+            receipt_context=http_receipt,
+            governor_context=governor_context,
+            response=response,
+            error=error,
+            duration_seconds=max(0.0, finished - started),
+        )
         if token is not None:
             _ACTIVE_HTTP_RECEIPT.reset(token)
+
+
+def _governor_clock_value(
+    clock: Callable[[], float], *, fallback: float = 0.0
+) -> float:
+    try:
+        return float(clock())
+    except Exception:
+        return fallback
+
+
+def _record_governor_observation(
+    request_args: Sequence[Any],
+    request_kwargs: Mapping[str, Any],
+    **values: Any,
+) -> None:
+    try:
+        from .governor_observation import observe_http_attempt
+
+        observe_http_attempt(request_args, request_kwargs, **values)
+    except Exception:
+        # Observation can never change the authorized request outcome.
+        pass
 
 
 def record_active_http_response(response: Any) -> None:

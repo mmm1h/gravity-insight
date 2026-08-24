@@ -199,6 +199,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `metric_anomaly_playbook()` | 运行或用 checkpoint 续跑；未失效 Plan item 复用，证据不全时不发布结论 |
 | `journeys.list()` / `verify()` / `describe(id)` / `can_run(id, input)` / `impact(diff)` / `run(id, input)` | 通用 Journey 合同与 readiness 服务；R01 只有 verified 后才委托既有 playbook |
 | `analysis_artifacts.compile()` / `verify()` / `render_markdown()` / `write_artifact()` / `write_markdown()` | 从正式 Analysis Result 编译目标无关 Artifact，并离线确定性渲染/原子写入 Markdown |
+| `governor.observations(after_sequence=0, limit=1000)` | 零网络读取当前私有 Runtime scope 的值无关 HTTP attempt 观测；不暴露 path、请求/响应值或 scope key |
 | `capability_trust.trust(kind, selector)` / `validate(result)` / `impact(diff)` | Operation/Product/Composite 同层 Trust、只读 Validation 校验与依赖影响；不自动探测或写入 |
 | `LocalSkillResolver()` / `RuntimeSkillResolver(workspace=...).resolve(id, journey=...)` | 前者只读/导出 Built-in package；后者 Built-in-first，并只读项目 exact Team lock、CAS 与 Trusted Pack startup state；均不选择或执行 Product |
 | `SemanticRegistry(sources).list()` / `describe(uri)` / `resolve(uri)` / `validate(source)` / `dependencies(uris)` | 确定性编译并离线解析版本化 Business Semantic 与项目 Binding；缺失或冲突不猜测 |
@@ -615,11 +616,13 @@ markdown_receipt = sdk.analysis_artifacts.write_markdown(artifact, "tmp/analysis
 编译入口始终先执行 `compile_analysis_result()`。`gravity.analysis-artifact.v1` 原样保留 source 的 status、scope、findings、claims、hypotheses、limitations、completeness、DQ、evidence level、Context/Receipt references，并以 Result、execution snapshot、Receipt 集合和 Artifact digest 绑定来源；不携带 Context body、完整 execution snapshot 或查询行。
 `metric_uris` / `dimension_uris` 只按显式 URI scheme 投影，`filters` 透明指向 `/scope`。source 没有视觉合同，因此 `visualization.intent=unspecified`，不得按问题、字段名或结论猜图表。
 
-固定上限为 source/Artifact 各 8 MiB、findings 256、sections 8、Markdown UTF-8 1 MiB；超限整体
-失败，不截断 claims 或 findings。`gravity.analysis-rendering.v1` 对所有非固定文本做 HTML/Markdown
-转义和单行化，不生成链接、raw HTML、项目模板或部门措辞，并绑定 Artifact/Result/Receipt/content
-digest。JSON 与 Markdown 文件都在完整校验/渲染后复用原子 writer；Artifact 服务本身不执行 Plan、查询或 Action。`sdk.actions.preview_dashboard_delivery()` 另接收 `gravity.analysis-dashboard-request.v1`，只允许显式 `markdown_notes + artifact_scope + single_column`，要求 verified Artifact、resolved Metric/Dimension、Workspace App 与有序日期绑定；目标必须是当前 principal 可管理且无 report association 的 note-only Dashboard，完整行分为最多 20 个 4,000 字符 note，超限不截断。
+固定上限为 source/Artifact 各 8 MiB、findings 256、sections 8、Markdown UTF-8 1 MiB；超限整体失败且不截断 claims/findings。`gravity.analysis-rendering.v1` 转义所有非固定文本，不生成链接、raw HTML、项目模板或部门措辞，并绑定 Artifact/Result/Receipt/content digest。JSON/Markdown 在完整校验后原子写；Artifact 服务不执行 Plan、查询或 Action。`sdk.actions.preview_dashboard_delivery()` 只接受 `markdown_notes + artifact_scope + single_column`、verified Artifact、resolved Metric/Dimension、Workspace App、有序日期和无 report association 的 owned Dashboard，完整行最多拆为 20 个 4,000 字符 note。
 确认后同一 Action store/claim owner 把 expected preimage 交给既有 `dashboard.notes.replace` write lock，最多写一次并用 marker 读回；request 永不接受 `ui_config`、`report_list` 或 raw Web config。成功 target/Receipts 绑定 Artifact、Result、snapshot、filters、claims、rendering、source/mutation Receipt digest；非 Gravity renderer 不依赖 Dashboard，最终报告语言仍由调用项目负责。
+
+## Governor Observation Mode
+
+`sdk.governor.observations()` 返回 `gravity.governor-observation-snapshot.v1`：同一 `GravitySDK.from_env()` shared Runtime 的最多 4,096 条 attempt，按 sequence 增量读取；host 只保留 SHA-256 key，operation/status/latency/rate-delay/attempt/当前静态 budget 都有上限，查询本身 `network_called=false`。
+R14-A 只在原 `perform_http_request()` 计数边界完成后记录，既有 HTTP Receipt 保持不变；`observe|disabled` 不改变 limiter、24/2 semaphore、SQL 外层池、Plan worker、retry、请求参数/数量/顺序。未绑定 Runtime 的直接 SDK 返回 `GOVERNOR_SCOPE_UNBOUND`；Provider RPC/内部网络不进入 Runtime HTTP 观测，进程重启会清空内存基线。
 
 ## Skill And Provider Control Planes
 
@@ -638,12 +641,9 @@ external = ExternalContextProvider(external_descriptor, transport); sdk = Gravit
 
 ## Business Semantic 与 Semantic Compose
 
-`SemanticRegistry` 接受 `gravity.semantic-source.v1` mapping 或显式 JSON/TOML 路径，确定性、零网络地执行 `list/describe/resolve/validate/dependencies`；缺失、歧义、冲突、过期和无效定义返回稳定 reason，不扫描 workspace 或执行查询。`semantic_compose_input_schema()` 则离线返回物理 `gravity.semantic-compose-input.v1`，并显式列出 `report.ap-cost-observation@1`、`@2`、`@3` 与 `@4`。`@1` 保持 `report.metric.ap-cost@1`、day/week/total、可选 click dimension + 必需 join，且过滤器上限为 0。`@2` 增加 dimension-bound `click_company IN` 和
-activate count、pay amount、total ROI 三个 day/week 指标；filter 必须同时选择 click dimension 与 join，
-`ap_cost` 仍允许 day/week/total。`@3` 再增加 9 个已登记 day/week 漏斗、成本、付费人数与收入指标；
-注册数与所有新指标的 total 保持未登记。`@4` 保持 v3 成员面，但将结果声明收窄为执行时点观察；
-编译 canonical bytes 仍确定，同输入跨执行的数值相等性不保证。`prepare_semantic_compose(inputs, *, app, workspace=None)` 输出 `gravity.semantic-compose-compiled.v1`，并持久化定义 ID/版本/指纹、实际成员、生成查询、零网络验证和
-scoped `allowed_claims`。
+`SemanticRegistry` 接受 `gravity.semantic-source.v1` mapping 或显式 JSON/TOML 路径，确定性、零网络地执行 `list/describe/resolve/validate/dependencies`；缺失、歧义、冲突、过期和无效定义返回稳定 reason，不扫描 workspace 或执行查询。`semantic_compose_input_schema()` 离线列出 `report.ap-cost-observation@1`～`@4`：`@1` 为 AP cost day/week/total、可选 click dimension + 必需 join 且无过滤；`@2` 增加 `click_company IN` 和 activate/pay/ROI day/week。
+`@3` 再增加 9 个已登记 day/week 漏斗、成本、付费人数与收入指标，注册数与新指标 total 保持未登记；`@4` 保持 v3 成员面但将声明收窄为执行时点观察，编译 canonical bytes 确定但跨执行数值相等性不保证。
+`prepare_semantic_compose(inputs, *, app, workspace=None)` 输出 `gravity.semantic-compose-compiled.v1`，并持久化定义 ID/版本/指纹、实际成员、生成查询、零网络验证和 scoped `allowed_claims`。
 
 `semantic_compose(inputs, *, app, max_pages=1000, max_items=100000, workspace=None)` 复用相同编译器，
 再委托既有 Multidim query；adapter 内 worker 固定 1，不叠加调度器。结果为

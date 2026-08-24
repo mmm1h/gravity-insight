@@ -7,7 +7,9 @@ from typing import Any
 
 
 class AgentRuntimeSdkMixin:
-    def _initialize_agent_runtime_services(self, scope_bound: bool) -> None:
+    def _initialize_agent_runtime_services(
+        self, scope_bound: bool, runtime_factory: Any | None = None
+    ) -> None:
         self._runtime_scope_bound = bool(scope_bound)
         self._journey_lock = threading.Lock()
         self._capability_trust_lock = threading.Lock()
@@ -16,6 +18,7 @@ class AgentRuntimeSdkMixin:
         self._actions_lock = threading.Lock()
         self._experiments_lock = threading.Lock()
         self._analysis_artifacts_lock = threading.Lock()
+        self._governor_lock = threading.Lock()
         self._journey_service: Any | None = None
         self._capability_trust_service: Any | None = None
         self._skill_runtime_service: Any | None = None
@@ -23,6 +26,22 @@ class AgentRuntimeSdkMixin:
         self._actions_service: Any | None = None
         self._experiments_service: Any | None = None
         self._analysis_artifacts_service: Any | None = None
+        self._governor_service: Any | None = None
+        self._governor_runtime_factory = runtime_factory
+
+    @property
+    def governor(self) -> Any:
+        """Value-free observations for this SDK's shared Runtime scope."""
+
+        if self._governor_service is None:
+            with self._governor_lock:
+                if self._governor_service is None:
+                    from .governor_observation import GovernorObservationService
+
+                    self._governor_service = GovernorObservationService(
+                        self._governor_runtime_factory
+                    )
+        return self._governor_service
 
     @property
     def analysis_artifacts(self) -> Any:

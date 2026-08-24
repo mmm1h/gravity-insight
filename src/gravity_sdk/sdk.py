@@ -70,6 +70,7 @@ class GravitySDK(
         workspace: Any | None = None,
         external_context_providers: Any = (),
         _runtime_scope_bound: bool = False,
+        _runtime_factory: ClientFactory | None = None,
     ) -> None:
         if insight is not None and insight_factory is not None:
             raise ValueError("pass either insight or insight_factory, not both")
@@ -83,7 +84,9 @@ class GravitySDK(
         self._external_context_providers = tuple(external_context_providers)
         self._insight_lock = threading.Lock()
         self._sql_lock = threading.Lock()
-        self._initialize_agent_runtime_services(_runtime_scope_bound)
+        self._initialize_agent_runtime_services(
+            _runtime_scope_bound, _runtime_factory
+        )
 
     @classmethod
     def from_env(
@@ -99,7 +102,7 @@ class GravitySDK(
 
         from .sdk_environment import environment_components
 
-        build_insight, build_sql, selected_workspace = environment_components(
+        build_insight, build_sql, selected_workspace, runtime = environment_components(
             allow_experimental=allow_experimental,
             timeout=timeout,
             attempts=attempts,
@@ -111,6 +114,7 @@ class GravitySDK(
             sql_factory=build_sql,
             workspace=selected_workspace,
             _runtime_scope_bound=True,
+            _runtime_factory=runtime,
         )
 
     @property
