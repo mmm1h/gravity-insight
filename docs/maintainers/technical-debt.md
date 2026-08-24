@@ -130,4 +130,4 @@
 `uncovered_read`，其余 POST/未知方法分别为 `unsafe_unknown` / `static_read_candidate`，默认 draft
 selector 不再消费它们。
 
-2026-08-20：Agent 有界无 spec 路由集合已改用 `NO_SPEC_PRODUCTS`；`REPORT_PRODUCTS` 作为同对象兼容别名保留。
+2026-08-20：Agent 有界无 spec 路由集合已改用 `NO_SPEC_PRODUCTS`；`REPORT_PRODUCTS` 作为同对象兼容别名保留。2026-08-25：CT03 跨产物绑定、exact revision/index 与跨 Python archive 确定性缺口已关闭。

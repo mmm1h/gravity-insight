@@ -3,18 +3,18 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress` (2026-08-25 audit hardening) |
+| Status | `fixed_dev` (2026-08-25 audit hardening complete) |
 | Track | Content expansion |
 | Dependencies | CT02 |
 | Parallel group | `content-c` |
 | Main integration | Frozen until whole program completion |
 | Delivery ledger | This Requirement document; no internal GitHub Issue |
 | Baseline | `dev@2eba695f4d25658fcb703ca988ae82f555d225da` |
-| Branch / worktree | `codex/ct03-audit-hardening` / `D:\git-pjt\gravity-sdk-wt\ct03-audit-hardening` |
+| Branch / worktree | `codex/ct03-cross-version-archives` / `D:\git-pjt\gravity-sdk-wt\ct03-cross-version-archives` |
 | Approved source snapshot | CT01 snapshot `da84f685d6395500168532a26f8a1da6886a786d87f867ce9cb968b963e03ae5` |
 | Gravity production / Hub / Provider requests | `0` |
-| Feature commits | `4309b7f`, `8b09f14`, `bc448f8` |
-| Canonical consumer | `work-dashboard@2039e387` |
+| Feature commits | `4309b7f`, `8b09f14`, `bc448f8`, `90bc28a`, `ebff827`, `055e99c` |
+| Canonical consumer | `work-dashboard@dbec71bb` / draft PR `#17` |
 
 ## Plan Owner Verdict And Ready Binding
 
@@ -59,7 +59,7 @@ CT02 proves the content schema and dependency model on representative shapes. Th
   alternatives. Five CT02 representatives are reused byte-for-byte; 35 new
   independently authored Skills are `specified + reviewed + blocked +
   unvalidated`. The full specification digest is
-  `06cfd6e50694dfeb459fc339dbb4772fd00eb04699415a57f5acd6f0861324f6`.
+  `b447d2f7c927d3cc68d4bbc32cfc26fe11c216ef180a5f041b6048d063ff9716`.
 - Current evidence, not a target, derives four executable / 36 blocked Skills and
   five validated / 35 unvalidated Skills. Every blocked item has closed machine
   reason codes and next evidence. The 14 vendor-specific identities remain safe
@@ -70,35 +70,40 @@ CT02 proves the content schema and dependency model on representative shapes. Th
   to CT01 metadata provenance without source prose, examples, images, methods or
   marketing numbers. Source-title, marketing-number, instruction, duplicate,
   unmapped, state, digest, package and eval tampering fail closed. Eval digest is
-  `219df1a4f13f8d9dfb2e508221ca7e244d6a918b2118dd08d29b684f7f274f43`.
-- Source-diff impact preserves stable package references: added identities must
-  already be covered, changed/redirected identities require review, and removed
-  identities retain history instead of automatic deletion. CT01 observation,
-  snapshot and diff bytes and all CT02 package bytes remain unchanged.
+  `d4b97ed1f536c7a5ffbeac6e5564ba41ad658942c6fd3738effb12ec2d20934c`.
+- Source-diff impact preserves prior package references: added identities require
+  an explicit current specification bound to the target snapshot, changed or
+  redirected identities require review, and removed identities retain history.
+  CT01 observation/snapshot/diff and all Skill manifest bytes remain unchanged.
 - The full Stage A Hub index contains the exact 40-Skill set and reuses the five
   representative entries. Its index digest is
-  `ae40a656675a8b9a71a0322358f7d0c7a36b79fa75eb48781b8872c499d0b038`.
+  `158861da84ebe688518a2b2b9833a5d2cc42a50da052820c82cd7b4fc206e308`.
   The lock digest
-  `e6e5218d96d2670d595f9e05099861d9cf863319eb635813a97efba11dd3f5ae`
-  binds package commit `4309b7f74b8e8d38fa5bae5bdcf3f3a292cdc6fc`;
+  `66d03141f75ffb2d1811f88b221df1d502d860c62cf92e257f61b81357447e9b`
+  binds package commit `ebff827e97e245f2663d18f13863ae5a084891d8`;
   two isolated CAS/project roots fetched, materialized and verified all packages
   byte-identically with zero Hub network.
-- Complete gates passed 1,773 unittest tests and 1,773 pytest tests plus 4,373
-  subtests. The expanded ThinkingAI/Hub/documentation suite passed 68 tests plus
-  432 subtests. All eight deterministic generators/checkers passed; compiler
-  stayed at 237 operations / 11 manifests, quality and touched Ruff passed, and
+- Complete gates passed 1,773 unittest tests and 1,773 pytest tests plus 4,375
+  subtests. The focused ThinkingAI suite passed 26 tests plus 411 subtests. All
+  eight deterministic generators/checkers passed; compiler stayed at 237
+  operations / 11 manifests, quality passed, and
   development usability stayed 296/336 selection, 248/248 fillability, 53/53
   offline terminal, 5/5 recovery, 0 security violations and 0 production HTTP.
 - Isolated-wheel validation loaded all three CT03 schemas and source/coverage/
   eval compilers from `site-packages`; wheel SHA-256 is
-  `5d8d21cc4c5eb50b490811a1c20f866562b1c9b5ea71a2960d0cc979312949ef`.
+  `8d00923e481131076b794278f630751dac797e1b0eed5bf93677316efcbe31f3`.
   Its 1,650 entries contain no top-level Team Hub content; the installed Runtime
   still has 11 Journeys and exactly one Built-in Skill.
-- `work-dashboard@2039e387` passed 11 tests plus 94 subtests against CT03 with no
-  consumer change. Active human docs remain exactly 5,500 lines. Structural
-  technical debt was reviewed and no current entry changed or closed. Gravity
-  production, remote Hub, external Provider, credentials, release and `main`
-  promotion performed by CT03: `0`.
+- `work-dashboard@dbec71bb` is remotely durable in draft PR #17 and passed full
+  local governance, 271 governance tests, 303 root tests and 5 focused Runtime
+  tests. GitHub refused to start its jobs for account billing/spending state, so
+  the draft remains unmergeable and is not recorded as remote CI success.
+- Audit hardening rejects cross-snapshot/eval substitution, verifies exact index
+  bytes at locked revisions, uses cross-version deterministic stored archives,
+  and passed Python 3.11 `dev` CI run `32765065267`. `main` now requires strict
+  `test` checks for admins and rejects force-push/deletion; Issue status cardinality
+  is clean. Active human docs remain exactly 5,500 lines. Gravity production,
+  remote Hub/Provider, credentials, release and `main` promotion performed: `0`.
 
 ## Known Limits
 

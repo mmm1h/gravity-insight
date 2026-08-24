@@ -12,8 +12,8 @@
 | Baseline | `dev@69e4c8edafc4f173b2c436a116b4ea588abc5f75` |
 | Branch / worktree | `codex/ct02-thinkingai-representative-skills` / `D:\git-pjt\gravity-sdk-wt\ct02-thinkingai-representative-skills` |
 | Gravity production / Hub / Provider requests | `0` |
-| Feature commits | `767753a`, `e76a882`, `6be46a3`, `24f60d1` |
-| Canonical consumer | `work-dashboard@2039e387` |
+| Feature commits | `767753a`, `e76a882`, `6be46a3`, `24f60d1`, `ebff827`, `055e99c` |
+| Canonical consumer | `work-dashboard@dbec71bb` / draft PR `#17` |
 
 ## Plan Owner Verdict And Ready Binding
 
@@ -69,14 +69,14 @@ CT01 provides source topics; R09A provides Core Skill Runtime and R09B provides 
   no-code packages cover Capability-only, project Semantic, deterministic
   Operator, required Context and blocked Model shapes. The representative-set
   digest is
-  `36d2c996debc614772e7028dade7e2c7d04d9931e1411410888280aa26961cbf`.
+  `90fff31d5b8384b1393077cdee0065387739eac8cdd041f322cc93bc2ea23ad6`.
   Semantic and Context packages are statically executable because their project
   dependencies are resolved at `can-run`; only the unvalidated Model package is
   statically blocked.
 - The exact five-Skill lock has digest
-  `0441f0694557f218d610d63e98a7ae75f91dde89dde5c7ed3c9b0a707451a3c9`
+  `92070c64e7143e9050eb3ca020cf8fd22de04ae91c73e7e3605695a4bf9c2051`
   and binds package source revision
-  `e76a88202a652fdd2d9b9e5440ab44066aac8cc1`. Two isolated project roots and
+  `ebff827e97e245f2663d18f13863ae5a084891d8`. Two isolated project roots and
   CAS roots installed byte-identical packages offline. With explicit fixture
   dependencies, four shapes resolved `verified`; the Model shape remained
   blocked by `HUB_TRUSTED_PACK_MISSING` and `MODEL_UNVALIDATED`.
@@ -86,26 +86,26 @@ CT01 provides source topics; R09A provides Core Skill Runtime and R09B provides 
   No route, executor, operation, shared-spine wiring, Model, Provider, trusted
   pack or Action was added; Team packages remain outside the one Built-in Skill.
 - The eight-case eval digest is
-  `c7119333073d3d205930a48e9db7461a201f522778a35591b6559da86d6d28e1`.
+  `e28ab3eb612681ccfd08a8d1713764b2f6564f0c8e447a9b2a43c30baad9892f`.
   Happy, empty, partial, gap, invalid, claim-boundary, prompt-injection and
   marketing-leakage gates preserve zero claims on rejected/blocked cases and
   never treat Context text as instructions. CT01 source prose, examples,
   methods, images and numbers are absent; CT01 artifacts remain immutable and
   non-distributable while the independent packages have internal license review.
-- Complete gates passed 1,762 unittest tests and 1,762 pytest tests plus 4,054
+- Complete gates passed 1,773 unittest tests and 1,773 pytest tests plus 4,375
   subtests. All seven deterministic generators/checkers passed; compiler stayed
   at 237 operations / 11 manifests, quality passed, and development usability
   stayed 296/336 selection, 248/248 fillability, 53/53 offline terminal, 5/5
   recovery, 0 security violations and 0 production HTTP requests.
 - Isolated-wheel validation loaded both CT02 schemas and all five Journeys from
   `site-packages`; the wheel SHA-256 is
-  `1b5e282699afbfdaab170d1a001c26a54ff6594ef27bdeb8a321683b6fa6ac49`.
-  Its 1,643 entries contain no top-level Team Hub content, and the installed
+  `8d00923e481131076b794278f630751dac797e1b0eed5bf93677316efcbe31f3`.
+  Its 1,650 entries contain no top-level Team Hub content, and the installed
   Built-in registry still contains exactly one Skill.
 - The canonical consumer's exact Journey-count assertion exposed the intended
-  additive catalog change. `work-dashboard@2039e387` now requires all five CT02
-  Journey IDs and passed 11 tests plus 94 subtests against this branch; no
-  consumer runtime or business artifact changed.
+  additive catalog change. `work-dashboard@dbec71bb` requires all five CT02
+  Journey IDs and passed 5 focused tests plus its 271 governance / 303 root
+  tests against current `dev`; no additional consumer runtime behavior changed.
 - Active human docs remain exactly 5,500 lines. Structural technical debt was
   reviewed and no current entry changed or closed. Gravity production, remote
   Hub, external Provider, credentials, release and `main` promotion performed

@@ -40,7 +40,7 @@
     "status": "fixed_dev"
   },
   "requirements_index": "index.json",
-  "active_feature_requirement": "CT03",
+  "active_feature_requirement": null,
   "next_candidate": null,
   "main_integration": {
     "status": "frozen",
