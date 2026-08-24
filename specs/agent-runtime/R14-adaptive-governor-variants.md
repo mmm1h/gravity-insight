@@ -3,13 +3,13 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; R14-A/B `fixed_dev`, R14-C internally approved 2026-08-24 |
+| Status | `in_progress`; R14-A/B/C `fixed_dev`, R14-D `specified` |
 | Track | Runtime I/O optimization |
 | Dependencies | R02 |
 | Parallel group | `runtime-infrastructure` |
 | Shared-spine integration | Required and serialized |
 | Delivery ledger | This Requirement document; no internal GitHub Issue |
-| Milestones | R14-A/B `fixed_dev`; R14-C `in_progress`; R14-D `specified` |
+| Milestones | R14-A/B/C `fixed_dev`; R14-D `specified` |
 | R14-A baseline | `dev@fac2e6e1648bdf60efe1a1b369c9788058cdebed` |
 | R14-A branch / worktree | `codex/r14a-governor-observation` / `D:\git-pjt\gravity-sdk-wt\r14a-governor-observation` |
 | R14-B baseline | `dev@406c07b259ce89067dcb61f155115d87a8643db8` |
@@ -17,6 +17,7 @@
 | R14-B feature / merge | `fe299ea279f43c3ed3396e5998745395ab4720e9` / `dev@dd357ed5baa0fdd9c4ca63b278ac274f94d91d55` |
 | R14-C baseline | `dev@711d288134813cb9fa73d87c246c470b5391fc07` |
 | R14-C branch / worktree | `codex/r14c-execution-variants` / `D:\git-pjt\gravity-sdk-wt\r14c-execution-variants` |
+| R14-C feature / merge | `52d40d16a9852118f62a65c77b5476323668229f` / `dev@e2dad8127481bae117a3423bdae2e6dd52aaf492` |
 | Production requests | `0`; fake Runtime HTTP only |
 | Main integration | Frozen until whole program completion |
 
@@ -264,6 +265,72 @@ release or `main`.
 - Acceptance includes schema/digest/tamper/privacy/Trust/current-path parity,
   full gates, wheel and consumer with zero production HTTP/RPC. Active human
   docs remain exactly 5,500 lines.
+
+## R14-C Fixed Dev Evidence
+
+- Feature `52d40d16a9852118f62a65c77b5476323668229f` was merged as
+  `dev@e2dad8127481bae117a3423bdae2e6dd52aaf492`. The canonical Direct SDK
+  Product and Plan adapter behavior, host routing and Plan scheduler are
+  unchanged; no selection or alternate public execution path was added.
+- Two closed `gravity.execution-variant.v1` descriptors bind Product
+  `analysis.query.spec:event@1` and Capability digest
+  `76342fbd1eaebf3f9f23c506badd5c76d5e163d300c16aec1daf33ce498640dd`.
+  Direct descriptor digest is `214f24080e4e86c6fafa07a44d29cdf24acebb583a6fa6ae0ca938552bd6f5f4`;
+  Plan adapter digest is `8107a2d165949402c51d24050f95c4473c7069850770a92492c133df00bef028`.
+  Both are fixed, require stable Product Trust and name canonical Direct as the
+  capability-preserving rollback.
+- Generated Characterization artifact
+  `e04bf55ba6df75d1e6429fa3df39ddbd8f6fd825ba7d4c95752d264afc87064b`
+  binds corpus digest
+  `6d4d56aeb30cee49d61dc3c55a799ae4d771ddbfd1859573d6f5b5f54681e3f5`.
+  Success, empty, contract-drift and runtime-failure cases fix the same legal
+  opaque query ID, compile byte-identical `analysis.event.query` inputs, make
+  one logical request and produce byte-identical safe outputs.
+- All nine dimensions are `equivalent`: input/output semantics, completeness,
+  Data Quality, allowed claims, privacy, freshness, request count and Journey
+  regression. Per-dimension tampering produces a bounded mismatch; Product,
+  descriptor, corpus, result, rollback and Artifact digest tampering fail
+  closed. The packaged evidence contains only case IDs and SHA-256 values, not
+  App/event/date/query/result/trace values or credentials.
+- Lazy `sdk.execution_variants.list()/describe()/characterization()` is offline
+  and closed to exactly two descriptors. Characterization attaches current
+  Capability Trust from R02; the default current result remains `blocked` and
+  even an injected `stable` result cannot change
+  `selection_status=disabled_until_r14_d` or `automatic_selection=false`.
+  The service has no register/execute/select/pin/benchmark method and never
+  scans entry points or imports descriptor strings.
+- R14-C focused coverage is `9 tests, 29 subtests`; merge-head Analysis/Plan/
+  Trust/public/documentation coverage is `62 tests, 45 subtests`. Exact
+  feature-head gates passed `1727` unittest tests and `1727 passed, 3937
+  subtests` under pytest. Compiler remains `237 operations, 11 manifests`;
+  quality, all four deterministic generators, root CLI help, diff checks and
+  touched-file Ruff passed.
+- Public root exports are additive at `142` lazy entries / `143` `__all__`
+  names. Actionable errors are `1344 = 1177 A + 167 B + 0 C`. Development
+  usability remains selection `296/336`, fillability `248/248`, offline
+  terminal `53/53`, recovery `5/5`, security violations `0`, skipped production
+  cases `283` and production HTTP requests `0`. Active human docs remain
+  exactly `5500` lines.
+- Final isolated wheel `gravity_sdk-0.3.0-py3-none-any.whl` has SHA-256
+  `da31fe96cc9c5bc05b9ac62aec51fdd320670242fab6aebe8cac6a7e48715c46`.
+  External `site-packages` loaded all three root exports, both schemas, the
+  packaged Characterization and a blocked current Trust report with selection
+  disabled. Canonical `work-dashboard@d1915a18278fca8823782a7d13e691a6d5702ad2`
+  remains clean and passed `11 tests, 94 subtests`; no consumer migration was
+  required.
+- Production probes, external Gravity/Provider HTTP or RPC, credentials,
+  remote writes, releases and `main` promotion performed by R14-C: `0`.
+
+## R14-C Known Limits
+
+- Characterization uses a deterministic fake Product corpus and proves
+  contract-path equivalence, not live latency or cost advantage. It performs
+  no production benchmark and stores no business values.
+- Only the event Analysis Product is characterized. Other Direct, Composite,
+  Plan or SQL paths are not Variant candidates and cannot be selected.
+- Current Product Trust is blocked by completeness/Validation state. R14-D must
+  preserve that hard gate and add explicit pin/kill-switch/explanation before
+  any automatic choice exists.
 
 ## Scope
 
