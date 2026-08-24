@@ -21,7 +21,7 @@ Usage:
   gravity skills list|show|export-agent
   gravity skills sync|search|resolve|lock|fetch|install|update|verify|audit
   gravity trusted-packs resolve|lock|fetch|verify|install-plan
-  gravity action segment-update preview|execute --input <json|file|->
+  gravity action segment-update|dashboard-delivery preview|execute --input <json|file|->
   gravity experiment propose|outcome-handoff --input <json|file|->
   gravity analysis saved list|get|prepare|run
   gravity analysis saved create|update|delete --dry-run|--execute

@@ -17,16 +17,16 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class ActionableErrorAuditTests(unittest.TestCase):
     def test_actionable_error_inventory_is_complete_and_reproducible(self):
-        """Went 1322 -> 1330 for R12-A Action authority and stale gates.
+        """Went 1330 -> 1335 for R13C closed connector and preimage gates.
 
-        Exact request/source validation has safe actuals; private plan/store
-        failures remain value-free B sites with stable field and fresh-preview remedy.
+        Dashboard subset/source validation has safe actuals; private plan/store
+        failures remain value-free B sites with stable fresh-preview remedies.
         """
 
         rows = inventory(ROOT / "src" / "gravity_sdk")
         counts = Counter(item["grade"] for item in rows)
-        assert len(rows) == 1330
-        assert counts["A"] == 1163
+        assert len(rows) == 1335
+        assert counts["A"] == 1168
         assert counts["B"] == 167
         assert counts.get("C", 0) == 0
         assert sum(counts.values()) == len(rows)

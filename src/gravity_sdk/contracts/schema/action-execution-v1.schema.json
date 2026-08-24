@@ -9,8 +9,8 @@
     "ok": {"type": "boolean"},
     "status": {"enum": ["succeeded", "stale", "uncertain"]},
     "plan_id": {"type": "string", "pattern": "^act1_[0-9a-f]{32}_[0-9a-f]{32}$"},
-    "action_kind": {"const": "segment.update_metadata"},
-    "connector": {"type": "object", "required": ["id", "version"], "additionalProperties": false, "properties": {"id": {"const": "gravity.segment-metadata-update"}, "version": {"const": 1}}},
+    "action_kind": {"enum": ["segment.update_metadata", "dashboard.publish_analysis_artifact"]},
+    "connector": {"type": "object", "required": ["id", "version"], "additionalProperties": false, "properties": {"id": {"enum": ["gravity.segment-metadata-update", "gravity.analysis-dashboard-notes"]}, "version": {"const": 1}}},
     "write_attempted": {"type": "boolean"},
     "write_attempts": {"type": "integer", "minimum": 0, "maximum": 1},
     "automatic_retry": {"const": false},
@@ -20,6 +20,20 @@
     "reason_codes": {"type": "array", "maxItems": 16, "items": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]+$"}},
     "policy": {"$ref": "#/$defs/policy"}
   },
+  "oneOf": [
+    {
+      "properties": {
+        "action_kind": {"const": "segment.update_metadata"},
+        "connector": {"type": "object", "required": ["id", "version"], "additionalProperties": false, "properties": {"id": {"const": "gravity.segment-metadata-update"}, "version": {"const": 1}}}
+      }
+    },
+    {
+      "properties": {
+        "action_kind": {"const": "dashboard.publish_analysis_artifact"},
+        "connector": {"type": "object", "required": ["id", "version"], "additionalProperties": false, "properties": {"id": {"const": "gravity.analysis-dashboard-notes"}, "version": {"const": 1}}}
+      }
+    }
+  ],
   "$defs": {
     "policy": {
       "type": "object",

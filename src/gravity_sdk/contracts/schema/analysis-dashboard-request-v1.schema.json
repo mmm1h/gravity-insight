@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.analysis-dashboard-request.v1",
+  "type": "object",
+  "required": ["schema_version", "artifact", "target", "presentation"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.analysis-dashboard-request.v1"},
+    "artifact": {
+      "type": "object",
+      "required": ["schema_version", "artifact_id", "artifact_digest"],
+      "properties": {
+        "schema_version": {"const": "gravity.analysis-artifact.v1"},
+        "artifact_id": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "artifact_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      },
+      "additionalProperties": true
+    },
+    "target": {
+      "type": "object",
+      "required": ["app_id", "space_id", "dashboard_id"],
+      "additionalProperties": false,
+      "properties": {
+        "app_id": {"type": "integer", "minimum": 1},
+        "space_id": {"type": "integer", "minimum": 1},
+        "dashboard_id": {"type": "integer", "minimum": 1}
+      }
+    },
+    "presentation": {
+      "type": "object",
+      "required": ["visualization", "filter_mode", "layout"],
+      "additionalProperties": false,
+      "properties": {
+        "visualization": {"type": "string", "minLength": 1, "maxLength": 64},
+        "filter_mode": {"type": "string", "minLength": 1, "maxLength": 64},
+        "layout": {"type": "string", "minLength": 1, "maxLength": 64}
+      }
+    }
+  }
+}

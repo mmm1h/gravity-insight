@@ -28,6 +28,23 @@ def add_action_commands(commands: Any, add_input: Callable[..., None]) -> Any:
     execute.add_argument("--preview-fingerprint", required=True)
     add_input(execute, required=True)
     execute.set_defaults(_gravity_handler=dispatch)
+    dashboard = resources.add_parser(
+        "dashboard-delivery",
+        help="Publish one Analysis Artifact to an owned note-only Dashboard.",
+    )
+    dashboard_phases = dashboard.add_subparsers(
+        dest="action_command", required=True
+    )
+    dashboard_preview = dashboard_phases.add_parser("preview")
+    add_input(dashboard_preview, required=True)
+    dashboard_preview.add_argument("--ttl-seconds", type=int, default=900)
+    dashboard_preview.set_defaults(_gravity_handler=dispatch)
+    dashboard_execute = dashboard_phases.add_parser("execute")
+    dashboard_execute.add_argument("--plan-id", required=True)
+    dashboard_execute.add_argument("--confirm-plan", required=True)
+    dashboard_execute.add_argument("--preview-fingerprint", required=True)
+    add_input(dashboard_execute, required=True)
+    dashboard_execute.set_defaults(_gravity_handler=dispatch)
     return action
 
 
@@ -46,7 +63,12 @@ def dispatch(
         authorization = host_source(
             "user", "authorization", service.authorization_value(request)
         )
-        return service.preview_segment_update(
+        preview = (
+            service.preview_segment_update
+            if args.action_resource == "segment-update"
+            else service.preview_dashboard_delivery
+        )
+        return preview(
             request,
             authorization=authorization,
             ttl_seconds=args.ttl_seconds,

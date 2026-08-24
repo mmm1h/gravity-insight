@@ -48,6 +48,18 @@ _FIELDS = frozenset(
         "artifact_digest",
     }
 )
+_CONNECTOR_PROFILES = {
+    (
+        "segment.update_metadata",
+        "gravity.segment-metadata-update",
+        1,
+    ): ["segment_name", "segment_remark"],
+    (
+        "dashboard.publish_analysis_artifact",
+        "gravity.analysis-dashboard-notes",
+        1,
+    ): ["dashboard_notes"],
+}
 
 
 class ActionPlanStore:
@@ -219,13 +231,16 @@ def _read_artifact(path: Path, nonce: str) -> dict[str, Any]:
 def _validate_artifact(value: Any, nonce: str) -> None:
     if not isinstance(value, dict) or set(value) != _FIELDS:
         _fail("ACTION_PLAN_TAMPERED")
+    profile = (
+        value.get("action_kind"),
+        value.get("connector_id"),
+        value.get("connector_version"),
+    )
     if (
         value.get("schema_version") != PRIVATE_SCHEMA_VERSION
         or value.get("nonce") != nonce
-        or value.get("action_kind") != "segment.update_metadata"
-        or value.get("connector_id") != "gravity.segment-metadata-update"
-        or value.get("connector_version") != 1
-        or value.get("managed_fields") != ["segment_name", "segment_remark"]
+        or profile not in _CONNECTOR_PROFILES
+        or value.get("managed_fields") != _CONNECTOR_PROFILES.get(profile)
     ):
         _fail("ACTION_PLAN_TAMPERED")
     for field in (

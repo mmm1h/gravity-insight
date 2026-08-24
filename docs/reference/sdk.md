@@ -181,7 +181,7 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `segment_members()` | 按稳定 ID 或精确名称返回完整成员行；动态字段由 user-property metadata 发现，历史用 `segment_version_id` |
 | `segment_create_from_analysis()` | 默认零网络预览，显式 `execute=True` 后把一个已验证 funnel step/loss 持久化为带标记分群 |
 | `segment_create_from_rule()` / `segment_create_from_history()` / `segment_create_from_tmp()` | 默认预览，显式确认后从规则、历史版本或临时分群创建带标记分群 |
-| `segment_update()` / `segment_update_rule()` / `segment_refresh()` / `actions` | direct 方法保持默认预览；`actions` 为 metadata update 绑定 exact preimage/owner/expiry 与一次性确认 |
+| `segment_update()` / `segment_update_rule()` / `segment_refresh()` / `actions` | direct 方法保持默认预览；`actions` 为 Segment metadata 或 Analysis Artifact→note-only Dashboard 绑定 exact preimage/owner/expiry 与一次性确认 |
 | `experiments` | 离线 `ExperimentHandoffService`；编译 Proposal 与独立 Outcome Handoff，不创建实验、不执行评估 |
 | `segment_delete()` | 默认预览；执行时只删除 detail 读回仍带 SDK 标记的分群 |
 | `saved_analyses()` | 列出一个 App 的安全保存分析身份，不读取 opaque config；replay 资格固定为 unchecked/null |
@@ -618,8 +618,8 @@ markdown_receipt = sdk.analysis_artifacts.write_markdown(artifact, "tmp/analysis
 固定上限为 source/Artifact 各 8 MiB、findings 256、sections 8、Markdown UTF-8 1 MiB；超限整体
 失败，不截断 claims 或 findings。`gravity.analysis-rendering.v1` 对所有非固定文本做 HTML/Markdown
 转义和单行化，不生成链接、raw HTML、项目模板或部门措辞，并绑定 Artifact/Result/Receipt/content
-digest。JSON 与 Markdown 文件都在完整校验/渲染后复用原子 writer；该面不执行 Plan、查询、Action
-或 Dashboard 写入，最终报告语言仍由调用项目负责。
+digest。JSON 与 Markdown 文件都在完整校验/渲染后复用原子 writer；Artifact 服务本身不执行 Plan、查询或 Action。`sdk.actions.preview_dashboard_delivery()` 另接收 `gravity.analysis-dashboard-request.v1`，只允许显式 `markdown_notes + artifact_scope + single_column`，要求 verified Artifact、resolved Metric/Dimension、Workspace App 与有序日期绑定；目标必须是当前 principal 可管理且无 report association 的 note-only Dashboard，完整行分为最多 20 个 4,000 字符 note，超限不截断。
+确认后同一 Action store/claim owner 把 expected preimage 交给既有 `dashboard.notes.replace` write lock，最多写一次并用 marker 读回；request 永不接受 `ui_config`、`report_list` 或 raw Web config。成功 target/Receipts 绑定 Artifact、Result、snapshot、filters、claims、rendering、source/mutation Receipt digest；非 Gravity renderer 不依赖 Dashboard，最终报告语言仍由调用项目负责。
 
 ## Skill And Provider Control Planes
 

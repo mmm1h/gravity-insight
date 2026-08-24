@@ -7,8 +7,8 @@
   "properties": {
     "schema_version": {"const": "gravity.action-plan-private.v1"},
     "nonce": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
-    "action_kind": {"const": "segment.update_metadata"},
-    "connector_id": {"const": "gravity.segment-metadata-update"},
+    "action_kind": {"enum": ["segment.update_metadata", "dashboard.publish_analysis_artifact"]},
+    "connector_id": {"enum": ["gravity.segment-metadata-update", "gravity.analysis-dashboard-notes"]},
     "connector_version": {"const": 1},
     "created_at": {"$ref": "#/$defs/timestamp"},
     "expires_at": {"$ref": "#/$defs/timestamp"},
@@ -19,10 +19,28 @@
     "preimage_digest": {"$ref": "#/$defs/digest"},
     "ownership_digest": {"$ref": "#/$defs/digest"},
     "contract_fingerprint": {"$ref": "#/$defs/digest"},
-    "managed_fields": {"const": ["segment_name", "segment_remark"]},
+    "managed_fields": {"type": "array", "minItems": 1, "maxItems": 2, "items": {"type": "string"}},
     "preview_fingerprint": {"$ref": "#/$defs/digest"},
     "artifact_digest": {"$ref": "#/$defs/digest"}
   },
+  "oneOf": [
+    {
+      "properties": {
+        "action_kind": {"const": "segment.update_metadata"},
+        "connector_id": {"const": "gravity.segment-metadata-update"},
+        "connector_version": {"const": 1},
+        "managed_fields": {"const": ["segment_name", "segment_remark"]}
+      }
+    },
+    {
+      "properties": {
+        "action_kind": {"const": "dashboard.publish_analysis_artifact"},
+        "connector_id": {"const": "gravity.analysis-dashboard-notes"},
+        "connector_version": {"const": 1},
+        "managed_fields": {"const": ["dashboard_notes"]}
+      }
+    }
+  ],
   "$defs": {
     "digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
     "timestamp": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"}

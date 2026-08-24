@@ -19,8 +19,8 @@ from .kanban_mutation_support import (
     WRITE_LOCK,
     caller_text,
     completed,
+    dashboard_preimage_digest,
     detail_notes,
-    find_object,
     marked_name,
     marker_from_text,
     mutation_preview,
@@ -43,6 +43,7 @@ def replace_notes(
     dashboard_id: int,
     notes: Sequence[Mapping[str, Any]],
     execute: bool = False,
+    _expected_preimage_digest: str | None = None,
 ) -> dict[str, Any]:
     app = positive_id(app_id, "app_id")
     space = positive_id(space_id, "space_id")
@@ -50,8 +51,24 @@ def replace_notes(
     normalized = _notes(notes, dashboard)
     if execute:
         with WRITE_LOCK:
-            return _replace_notes(client, app, space, dashboard, normalized, send=True)
-    return _replace_notes(client, app, space, dashboard, normalized, send=False)
+            return _replace_notes(
+                client,
+                app,
+                space,
+                dashboard,
+                normalized,
+                send=True,
+                expected_preimage_digest=_expected_preimage_digest,
+            )
+    return _replace_notes(
+        client,
+        app,
+        space,
+        dashboard,
+        normalized,
+        send=False,
+        expected_preimage_digest=None,
+    )
 
 
 def _replace_notes(
@@ -62,6 +79,7 @@ def _replace_notes(
     layout: list[dict[str, Any]],
     *,
     send: bool,
+    expected_preimage_digest: str | None,
 ) -> dict[str, Any]:
     detail = read_detail(client, app, space, dashboard)
     if report_list(detail):
@@ -71,6 +89,16 @@ def _replace_notes(
             next_action="Choose an empty/note-only SDK dashboard; this action will not modify multidimensional report content.",
         )
     ownership = require_dashboard_authority(client, detail, dashboard)
+    if (
+        expected_preimage_digest is not None
+        and dashboard_preimage_digest(detail) != expected_preimage_digest
+    ):
+        raise InputValidationError(
+            "actual value: Dashboard content changed after Action preview; allowed value: the exact previewed Dashboard preimage",
+            field="dashboard_id",
+            code="ACTION_TARGET_CHANGED",
+            next_action="Do not retry this plan; inspect current Dashboard content and preview a new Action Plan.",
+        )
     inputs = {
         "app_id": app,
         "id": dashboard,
