@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; internally approved 2026-08-24 |
+| Status | `fixed_dev`; accepted on `dev@c7c5ba2f1615cc186ce7ba87a0deadc4e8e329e7` 2026-08-24 |
 | Track | Governed Gravity delivery |
 | Dependencies | R12-A, R13B |
 | Parallel group | `dashboard-delivery` |
@@ -93,6 +93,67 @@ User confirmation, ownership, preimage, managed fields, idempotency and readback
 ## Verification
 
 Compiler fixtures, identity/filter/date validation, preview/execute/readback, ownership/stale/drift cases, Receipt binding, canonical consumer tests and full gates.
+
+## Delivered Evidence
+
+- Implementation `cc01de0acca911711313b3b5d9effeb1e3396e43` was merged as
+  `dev@c7c5ba2f1615cc186ce7ba87a0deadc4e8e329e7`. The existing
+  `ActionPlanService`, principal-scoped private store, plan/field claims and
+  execution envelope now dispatch exactly two closed profiles; no second
+  executor, store, dynamic registry, plugin import or compatibility path exists.
+- `gravity.analysis-dashboard-request.v1` accepts only a complete Analysis
+  Artifact, exact App/space/Dashboard IDs and the explicit
+  `markdown_notes/artifact_scope/single_column` tuple. Full Artifact schema and
+  self-digest, success/verified status, resolved versioned Metric/Dimension
+  digests, Workspace App binding, paired ordered ISO dates, scope/filters,
+  unique claims and Result/snapshot/Receipt bindings all fail closed before plan
+  allocation. Raw `config`, `ui_config` and `report_list` are not request fields.
+- The connector reuses R13B's escaped deterministic Markdown and rejects any
+  indivisible line, more than 20 notes or more than 4,000 characters per note;
+  it never truncates findings or claims. Public Preview exposes only counts and
+  digests, while the private plan stores only fixed identifiers plus request,
+  authorization, principal, target, preimage, ownership and contract digests.
+- Existing `dashboard.notes.replace` remains the mutation/readback owner. Its
+  only extension is an internal expected-preimage check under the existing
+  write lock. Execution attempts at most one `dashboard.update`, checks exact
+  ordered content-derived markers, and binds Artifact/Result/snapshot/filters/
+  claims/rendering plus source and mutation Receipt references. Preimage drift
+  is zero-write `stale`; post-write readback failure is `uncertain` with no retry.
+- Stable unsupported reasons include visualization, filter mode, layout,
+  Artifact status/integrity, Semantic/source/date binding, target kind and
+  representation budgets. Report-bearing or foreign-owned Dashboards stop
+  before plan creation. Same-preimage and concurrent plans retain atomic one-shot
+  claims; crossed connector identity/managed-field and persisted-file tamper are
+  rejected as `ACTION_PLAN_TAMPERED`.
+- R13C focused coverage is `11 tests, 3 subtests`; merge-head Action/Kanban/
+  audit/documentation coverage is `58 tests, 10 subtests`. Complete SDK gates
+  passed `1696` unittest tests and `1696 passed, 3889 subtests passed` under
+  pytest. Compiler remains `237 operations, 11 manifests`; quality, all three
+  deterministic generators, root CLI help, diff checks and touched-file Ruff
+  passed. Active human docs remain exactly `5500` lines.
+- Actionable errors are `1335 = 1168 A + 167 B + 0 C`. Development usability
+  remains selection `296/336`, fillability `248/248`, offline terminal `53/53`,
+  recovery `5/5`, security violations `0`, skipped production cases `283` and
+  production HTTP requests `0`.
+- Isolated real wheel `gravity_sdk-0.3.0-py3-none-any.whl` has SHA-256
+  `89c5d6f048ac4991262562b112a558a911a14edf07344c72ed7a8895f1b23945`.
+  From external `site-packages` it loaded the connector and Action alias, found
+  the packaged request schema and parsed the new CLI resource. Canonical
+  `work-dashboard@d1915a18278fca8823782a7d13e691a6d5702ad2` remains clean and
+  passed `11 tests, 94 subtests`; no consumer migration was required.
+- Production probes, target requests, remote writes, releases and `main`
+  promotion performed by R13C: `0`.
+
+## Known Limits
+
+- v1 publishes complete Markdown only to an existing owned note-only Dashboard.
+  It does not create a Dashboard, create a saved analysis, link reports or
+  compose multiple writes; those paths would require a separately proven atomic
+  owner rather than a compensating-write workflow.
+- Supported scope fields are `app/start/end/timezone/filters`; other filter DSLs,
+  chart visualizations, grid layouts, report-bearing targets and content beyond
+  the exact note budget return stable gaps. Dashboard availability never affects
+  Analysis Artifact, Markdown or Artifact Transfer.
 
 ## Rollback And Exit
 
