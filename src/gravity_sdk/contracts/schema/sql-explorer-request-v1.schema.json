@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.sql-explorer-request.v1",
+  "type": "object",
+  "required": [
+    "schema_version", "dialect", "database_path", "sql", "parameters", "policy"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.sql-explorer-request.v1"},
+    "dialect": {"type": "string", "minLength": 1, "maxLength": 32},
+    "database_path": {"type": "string", "minLength": 1, "maxLength": 4096},
+    "sql": {"type": "string", "minLength": 1, "maxLength": 65536},
+    "parameters": {
+      "type": "array", "maxItems": 256,
+      "items": {"$ref": "#/$defs/scalar"}
+    },
+    "policy": {
+      "type": "object",
+      "required": [
+        "allowed_relations", "allowed_functions", "output_columns", "budgets"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "allowed_relations": {
+          "type": "array", "minItems": 1, "maxItems": 64, "uniqueItems": true,
+          "items": {
+            "type": "string", "pattern": "^main\\.[A-Za-z_][A-Za-z0-9_]*$"
+          }
+        },
+        "allowed_functions": {
+          "type": "array", "maxItems": 64, "uniqueItems": true,
+          "items": {
+            "type": "string", "pattern": "^[a-z_][a-z0-9_]*$"
+          }
+        },
+        "output_columns": {
+          "type": "array", "minItems": 1, "maxItems": 256, "uniqueItems": true,
+          "items": {
+            "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"
+          }
+        },
+        "budgets": {"$ref": "#/$defs/budgets"}
+      }
+    }
+  },
+  "$defs": {
+    "scalar": {
+      "anyOf": [
+        {"type": "null"},
+        {"type": "boolean"},
+        {"type": "integer"},
+        {"type": "number"},
+        {"type": "string", "maxLength": 1048576}
+      ]
+    },
+    "budgets": {
+      "type": "object",
+      "required": [
+        "statement_timeout_ms", "max_vm_steps", "progress_ops", "max_rows",
+        "max_output_bytes", "max_cell_bytes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "statement_timeout_ms": {"type": "integer", "minimum": 1, "maximum": 30000},
+        "max_vm_steps": {"type": "integer", "minimum": 1000, "maximum": 10000000},
+        "progress_ops": {"type": "integer", "minimum": 1, "maximum": 10000},
+        "max_rows": {"type": "integer", "minimum": 1, "maximum": 1000},
+        "max_output_bytes": {"type": "integer", "minimum": 256, "maximum": 8388608},
+        "max_cell_bytes": {"type": "integer", "minimum": 32, "maximum": 1048576}
+      }
+    }
+  }
+}

@@ -16,7 +16,7 @@ gravity metadata <command>    本地物理元数据目录
 gravity find <query>          跨 operation、recipe 与 metadata 检索
 gravity recipe <command>      离线校验 workspace recipe
 gravity run <selector>        单进程解析并执行 recipe 或 operation
-gravity sql <command>         受控 SQL 产品
+gravity sql <command>         登记 SQL 与显式隔离 Explorer
 gravity census <command>      前端路由盘点
 gravity analysis context      并发读取一个 App 的分析上下文
 gravity analysis defaults     读取一个 App 的 Analysis 默认值字典
@@ -1237,9 +1237,9 @@ workspace 的发现顺序、最小配置和 recipe 字段见 [Workspace 参考](
 | `gravity sql status [--json]` | 查看最近 Evidence 与可查询状态 |
 | `gravity sql evidence-preflight` | Evidence 刷新前离线检查 |
 | `gravity sql verify [--date ...] [--publish]` | 验证最近安全自然日；显式发布才更新 Evidence |
-| `gravity sql query <product> ...` | 执行一个或批量已登记聚合产品 |
+| `gravity sql query <product> ...` / `gravity sql explorer inspect|execute|promote --input ...` | 执行已登记聚合产品，或显式运行/晋升隔离 SQLite 探索 |
 
-SQL CLI 不是任意查询入口。它只实现 `custom-sql` 这一种受治理的聚合产品机制；具体产品名称、SQL、App、数据源、输出字段和禁止结论全部由调用项目的 `gravity.toml` 维护。产品层校验固定占位符、聚合隐私、输出投影和行数上限；可选 `output_semantics` 把字段口径带入目录、dry-run 与查询摘要，但不内置业务事件、属性、动态 warning 或指标好坏判断。
+Registered SQL 只实现 `custom-sql` 受治理聚合产品；具体产品名称、SQL、App、数据源、输出字段和禁止结论全部由调用项目的 `gravity.toml` 维护。独立 Explorer 只接受显式 `gravity.sql-explorer-request.v1`：当前唯一方言为 SQLite，SQLGlot AST 单 SELECT、绝对本地 DB、`mode=ro` + `query_only` + authorizer、精确 relation/function/output allowlist、engine/progress/row/cell/byte budget 缺一即阻断；不会接管 registered SQL/Insight 失败。结果固定 `exploratory`、completeness `unknown`、allowed claims 空且零网络；SQL/path/parameters 不进入 session/error/promotion。`promote` 必须显式 review evidence 和 `--output`，只生成带 version/provenance/consumer contract 的普通 workspace product，不自动安装或授予 stable Trust。
 
 未知产品时先运行一次 `gravity sql products`；已知产品直接 `gravity sql query`。query 支持
 单个参数、`--input` 对象、数组或 `requests` wrapper，并以 `--concurrency 1..2` 保序并发。

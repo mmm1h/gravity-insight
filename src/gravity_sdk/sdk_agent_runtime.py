@@ -20,6 +20,7 @@ class AgentRuntimeSdkMixin:
         self._analysis_artifacts_lock = threading.Lock()
         self._governor_lock = threading.Lock()
         self._execution_variants_lock = threading.Lock()
+        self._sql_explorer_lock = threading.Lock()
         self._journey_service: Any | None = None
         self._capability_trust_service: Any | None = None
         self._skill_runtime_service: Any | None = None
@@ -29,7 +30,20 @@ class AgentRuntimeSdkMixin:
         self._analysis_artifacts_service: Any | None = None
         self._governor_service: Any | None = None
         self._execution_variants_service: Any | None = None
+        self._sql_explorer_service: Any | None = None
         self._governor_runtime_factory = runtime_factory
+
+    @property
+    def sql_explorer(self) -> Any:
+        """Explicit isolated local SQL exploration and promotion compiler."""
+
+        if self._sql_explorer_service is None:
+            with self._sql_explorer_lock:
+                if self._sql_explorer_service is None:
+                    from .sql_explorer import SqlExplorerService
+
+                    self._sql_explorer_service = SqlExplorerService(self._workspace)
+        return self._sql_explorer_service
 
     @property
     def execution_variants(self) -> Any:

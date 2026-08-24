@@ -170,8 +170,8 @@ SQL product 的描述和执行仍使用同一个 workspace。
 | `read_many()` | `GravityInsightClient.batch()` |
 | `list_http_receipts()` / `get_http_receipt()` / `export_http_receipts()` | 查询有界、布局无关的 `gravity.http-receipt-query.v1` 诊断合同 |
 | `export_run()` | 现有治理导出状态机：create、poll、download、隐私/schema 校验和原子提交 |
-| `describe_sql_products()` | 安全描述 workspace 产品，不返回 SQL 模板 |
-| `query_sql_products()` | `run_product_queries()`，支持单对象或批量、保序隔离失败 |
+| `describe_sql_products()` / `query_sql_products()` | 安全描述或执行 workspace registered products；不返回 SQL 模板，批量保序隔离失败 |
+| `sql_explorer.inspect()` / `execute()` / `promote()` | 显式 SQLite AST/只读身份/budget 探索与 reviewed product 编译；不自动安装、路由或授予 stable Trust |
 | `compile_analysis_query()` | 把 Analysis Spec v1 编译为稳定 operation input 并运行离线输入校验；带筛选值时预览脱敏且不返回 Plan node；零网络请求 |
 | `analysis_query()` | 使用同一编译器执行 `event/funnel/retention/property/scatter` 稳定查询 |
 | `bootstrap_event_analysis()` | 校验显式 App/日期/物理事件，按需同步单页 metadata 并返回已验证、固定 catalog 指纹的首条事件 Plan；不执行分析 |
@@ -958,7 +958,7 @@ batch = sql.execute_batch(
 必须自己拥有并审核 SQL 模板，不能把 `execute_sql()` 暴露为任意 SQL 工具。
 `execute_batch()` 会并发提交全部独立项并保持输入顺序；某项本地校验失败或引擎拒绝不会取消已经
 提交的其他项。该接口不伪装成可早停的依赖计划；需要统一失败诊断与有界请求计数时使用受治理的
-`gravity sql query` 产品信封。
+`gravity sql query` 产品信封。独立 `sdk.sql_explorer` 不使用本 facade 或 Gravity 凭据：它只处理显式 `gravity.sql-explorer-request.v1`，用锁定 SQLGlot SQLite AST、数据库 `mode=ro/query_only`、authorizer 和 engine/progress/output budgets 返回固定 exploratory/unknown/no-claims 结果。`promote()` 需要 successful value-free source、外部 review digest 和完整 current `custom-sql` definition，只编译 `gravity.sql-explorer-promotion.v1`；workspace install、同层 Validation、Skill/Journey/看板/Action 仍在边界外。
 
 ## 错误与输出
 

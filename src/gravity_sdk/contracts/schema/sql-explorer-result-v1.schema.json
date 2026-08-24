@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.sql-explorer-result.v1",
+  "type": "object",
+  "required": [
+    "schema_version", "operation", "ok", "status", "trust", "completeness",
+    "allowed_claims", "stable_dependency_allowed", "session", "rows",
+    "row_count", "output_bytes", "error", "promotion_source",
+    "network_called", "result_sha256"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "gravity.sql-explorer-result.v1"},
+    "operation": {"enum": ["inspect", "execute"]},
+    "ok": {"type": "boolean"},
+    "status": {"enum": ["ready", "success", "blocked", "error"]},
+    "trust": {"const": "exploratory"},
+    "completeness": {"const": "unknown"},
+    "allowed_claims": {"type": "array", "maxItems": 0},
+    "stable_dependency_allowed": {"const": false},
+    "session": {"type": ["object", "null"]},
+    "rows": {
+      "type": "array", "maxItems": 1000,
+      "items": {
+        "type": "object",
+        "additionalProperties": {"$ref": "#/$defs/scalar"}
+      }
+    },
+    "row_count": {"type": "integer", "minimum": 0, "maximum": 1000},
+    "output_bytes": {"type": "integer", "minimum": 0, "maximum": 8388608},
+    "error": {"type": ["object", "null"]},
+    "promotion_source": {"type": ["object", "null"]},
+    "network_called": {"const": false},
+    "result_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+  },
+  "$defs": {
+    "scalar": {
+      "anyOf": [
+        {"type": "null"},
+        {"type": "boolean"},
+        {"type": "integer"},
+        {"type": "number"},
+        {"type": "string", "maxLength": 1048576}
+      ]
+    }
+  }
+}
