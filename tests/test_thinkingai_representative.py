@@ -343,6 +343,12 @@ class ThinkingAIRepresentativeTests(unittest.TestCase):
             with self.subTest(path=path.relative_to(ROOT)):
                 self.assertTrue(path.is_file())
                 self.assertEqual(content, path.read_bytes())
+                if path.suffix == ".zip":
+                    with zipfile.ZipFile(path) as archive:
+                        self.assertEqual(
+                            {zipfile.ZIP_STORED},
+                            {item.compress_type for item in archive.infolist()},
+                        )
         assert revision is not None
         verify_representative_source_revision(revision, INDEX_TARGET.read_bytes())
         with self.assertRaisesRegex(SystemExit, "does not match generated index"):

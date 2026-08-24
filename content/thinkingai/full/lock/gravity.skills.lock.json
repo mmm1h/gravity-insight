@@ -1,6 +1,6 @@
 {
   "artifact_kind": "skills_lock",
-  "lock_digest": "e6e5218d96d2670d595f9e05099861d9cf863319eb635813a97efba11dd3f5ae",
+  "lock_digest": "66d03141f75ffb2d1811f88b221df1d502d860c62cf92e257f61b81357447e9b",
   "requested": [
     "skill://gravity.game/ad-delivery-analysis@1.0.0",
     "skill://gravity.game/analysis-metric-definition-alignment@1.0.0",
@@ -47,9 +47,9 @@
   "schema_version": "gravity.skills-lock.v1",
   "skills": [
     {
-      "archive_sha256": "4d7a3feb538881e042fe0c1f8a272c9f45df305d641bb2296dbb9d81053aab56",
+      "archive_sha256": "c33852f43b845e8b9f3ebdeb75fda9a2de66eefa9b5155b60372cdc6eeafacda",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/ad-delivery-analysis-1.0.0.zip",
-      "artifact_size": 3841,
+      "artifact_size": 7871,
       "dependencies": {
         "capabilities": [
           {
@@ -79,9 +79,9 @@
       "skill_uri": "skill://gravity.game/ad-delivery-analysis@1.0.0"
     },
     {
-      "archive_sha256": "10404886b7c4435d0d952965e50e24c2320e5a5d62bd4f4e1d2f2324461414db",
+      "archive_sha256": "4a9551a982fb1a9783e61a0fe676f8bf1771b40b6d899ac31f8056e00b114ff4",
       "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/analysis-metric-definition-alignment-1.0.0.zip",
-      "artifact_size": 3964,
+      "artifact_size": 8368,
       "dependencies": {
         "capabilities": [
           {
@@ -112,9 +112,9 @@
       "skill_uri": "skill://gravity.game/analysis-metric-definition-alignment@1.0.0"
     },
     {
-      "archive_sha256": "27f8a300c8c7afba46a05263fae7bacdd3d1446a957ce05ac77f94ed469fdd05",
+      "archive_sha256": "7eac32cd2277b4238d99354fca22283c0663857765108a020d5afbae2b08d504",
       "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/app-device-performance-analysis-1.0.0.zip",
-      "artifact_size": 3827,
+      "artifact_size": 8078,
       "dependencies": {
         "capabilities": [
           {
@@ -143,9 +143,9 @@
       "skill_uri": "skill://gravity.game/app-device-performance-analysis@1.0.0"
     },
     {
-      "archive_sha256": "4cbfc48ec81d057d418d97cce9700dc5a5f77b96128fbd897f159155e6d55c90",
+      "archive_sha256": "4ee3b1c903924b7fef2aef7cc42dd550ca54444819d16412edace5e0b589ddc6",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/channel-quality-analysis-1.0.0.zip",
-      "artifact_size": 3818,
+      "artifact_size": 7928,
       "dependencies": {
         "capabilities": [
           {
@@ -175,9 +175,9 @@
       "skill_uri": "skill://gravity.game/channel-quality-analysis@1.0.0"
     },
     {
-      "archive_sha256": "db2a9275c26b56fd2be418b49e1e1e52de97bd5786a95f4d2c5c976a60e8a6d0",
+      "archive_sha256": "a21afeda60f8fed899b1ad2b70469887eb97d00c252c5c7dedf3b95d4e4dc5fb",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/churn-user-identification-persona-1.0.0.zip",
-      "artifact_size": 3914,
+      "artifact_size": 8012,
       "dependencies": {
         "capabilities": [
           {
@@ -209,9 +209,9 @@
       "skill_uri": "skill://gravity.game/churn-user-identification-persona@1.0.0"
     },
     {
-      "archive_sha256": "245fc56812e84f290047d9f0ae71705368702d58bd77dce2fc64efd6d73109ab",
+      "archive_sha256": "d4d05e6d4d39e1be3ad905c7319301fa14f15bfaa9d8d85fb1b9c74dd116baf6",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/community-comment-analysis-1.0.0.zip",
-      "artifact_size": 3687,
+      "artifact_size": 7284,
       "dependencies": {
         "capabilities": [],
         "context": {
@@ -233,9 +233,9 @@
       "skill_uri": "skill://gravity.game/community-comment-analysis@1.0.0"
     },
     {
-      "archive_sha256": "ba85be4f70b349e344d871eed67a50bb20856d3530880c154d5aaebe0afd8e3d",
+      "archive_sha256": "f2619abdab75c7378b1453a2bd4925700d384f5b9226b5bb878f09797a9c58b9",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/community-daily-report-1.0.0.zip",
-      "artifact_size": 3674,
+      "artifact_size": 7171,
       "dependencies": {
         "capabilities": [],
         "context": {
@@ -257,9 +257,9 @@
       "skill_uri": "skill://gravity.game/community-daily-report@1.0.0"
     },
     {
-      "archive_sha256": "c65b0d7c22742831dbf4cdbc49aeca93701862e1db76c90151a6c667595a322f",
+      "archive_sha256": "d75d5e987a82ddedd8d23d2cc8889af53630293aa749e0c3815fd619aad83812",
       "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/community-hot-topic-analysis-1.0.0.zip",
-      "artifact_size": 4024,
+      "artifact_size": 8619,
       "dependencies": {
         "capabilities": [
           {
@@ -290,9 +290,9 @@
       "skill_uri": "skill://gravity.game/community-hot-topic-analysis@1.0.0"
     },
     {
-      "archive_sha256": "b5e66799d24ccc8d07e670e91e844cbfa08daa400b3ea0d59992e70791a6eb3f",
+      "archive_sha256": "3f904cd5ef4033572f7f4b031baaa63b94aededff2e79661339a69858f6cc083",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/community-weekly-report-1.0.0.zip",
-      "artifact_size": 3702,
+      "artifact_size": 7290,
       "dependencies": {
         "capabilities": [],
         "context": {
@@ -314,9 +314,9 @@
       "skill_uri": "skill://gravity.game/community-weekly-report@1.0.0"
     },
     {
-      "archive_sha256": "7f84b9c9088a4cb39aff82650dac064a7ba86e11da7d5845c0607f49fcf13fbd",
+      "archive_sha256": "8d8369d75001712fa2dbfbf3204311512d53c8a5e7220261746a89f82f50465e",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/dashboard-no-data-diagnosis-1.0.0.zip",
-      "artifact_size": 3844,
+      "artifact_size": 7798,
       "dependencies": {
         "capabilities": [
           {
@@ -345,9 +345,9 @@
       "skill_uri": "skill://gravity.game/dashboard-no-data-diagnosis@1.0.0"
     },
     {
-      "archive_sha256": "0496984944042324760ba2f694711a855dcd5fcf5f005c8e5d63cc16c28cefe5",
+      "archive_sha256": "9971564ad24f5cce0aa1082009ccc8dd3f15c0a03041f02f7819301ad78ad894",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/data-access-assistant-1.0.0.zip",
-      "artifact_size": 3596,
+      "artifact_size": 7133,
       "dependencies": {
         "capabilities": [],
         "context": {
@@ -367,9 +367,9 @@
       "skill_uri": "skill://gravity.game/data-access-assistant@1.0.0"
     },
     {
-      "archive_sha256": "18b133feecc77a563fe3609c07de09fddeb1be17c57bad8d288891afa37375a2",
+      "archive_sha256": "9db0d5a78a2d353257c45ab2f5fed2005b6babffbdf6b237dd815b35b3a17f82",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/data-integration-assistant-1.0.0.zip",
-      "artifact_size": 3547,
+      "artifact_size": 7135,
       "dependencies": {
         "capabilities": [],
         "context": {
@@ -389,9 +389,9 @@
       "skill_uri": "skill://gravity.game/data-integration-assistant@1.0.0"
     },
     {
-      "archive_sha256": "2f9668784a26a6553c469c66cccc7d7be46e75e0197b5bcf807c7d4b02d87cfb",
+      "archive_sha256": "9e3d911d7b1b6f30ba4861bf87866cb509cd778f940335449f467ee8fd1bfa45",
       "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/filter-result-bias-diagnosis-1.0.0.zip",
-      "artifact_size": 4134,
+      "artifact_size": 8661,
       "dependencies": {
         "capabilities": [
           {
@@ -422,9 +422,9 @@
       "skill_uri": "skill://gravity.game/filter-result-bias-diagnosis@1.0.0"
     },
     {
-      "archive_sha256": "d4df45043886c7213f7ab0740ca74539546a7c985efaed18d38164a39cb02ca3",
+      "archive_sha256": "c1c2ef6eab5cfaa0a57f27ca26b20d9a2515b7c963a7d41dea4b2706ed7e05f7",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/first-purchase-analysis-1.0.0.zip",
-      "artifact_size": 3660,
+      "artifact_size": 7532,
       "dependencies": {
         "capabilities": [
           {
@@ -453,9 +453,9 @@
       "skill_uri": "skill://gravity.game/first-purchase-analysis@1.0.0"
     },
     {
-      "archive_sha256": "d74af7b8f28ed0de7f89a5392ac1e90527c1db3ccf735120cb50e569782f70e8",
+      "archive_sha256": "65ae9a9aa0ad1b35d0612354fa5b754f0feeb0f1ad1ac83568dc21382d6eaa4e",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/funnel-analysis-misunderstanding-diagnosis-1.0.0.zip",
-      "artifact_size": 3806,
+      "artifact_size": 7835,
       "dependencies": {
         "capabilities": [
           {
@@ -486,9 +486,9 @@
       "skill_uri": "skill://gravity.game/funnel-analysis-misunderstanding-diagnosis@1.0.0"
     },
     {
-      "archive_sha256": "6f16b42d1dd67b7354d4dd83c6ff2f1b9497b2f94be3af6aabf23de1dfbd0345",
+      "archive_sha256": "1b6eb7079b76543b978b607ad4b6ce9d5a0319e6e06ccdb219adaf748e81e292",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/game-campaign-effect-evaluation-1.0.0.zip",
-      "artifact_size": 3839,
+      "artifact_size": 7869,
       "dependencies": {
         "capabilities": [
           {
@@ -521,9 +521,9 @@
       "skill_uri": "skill://gravity.game/game-campaign-effect-evaluation@1.0.0"
     },
     {
-      "archive_sha256": "7b7afac4fb5353b0a38172fac13418af4b1a9bac399ec8b3bc46a69c0a93047d",
+      "archive_sha256": "b593f89087d7b0e9bc2869b28ad9eefcf7d1371ec74729d6add31bbfc5c84226",
       "artifact_path": "content/thinkingai/representative/hub/artifacts/skills/game-revenue-forecast-1.0.0.zip",
-      "artifact_size": 4080,
+      "artifact_size": 8473,
       "dependencies": {
         "capabilities": [
           {
@@ -554,9 +554,9 @@
       "skill_uri": "skill://gravity.game/game-revenue-forecast@1.0.0"
     },
     {
-      "archive_sha256": "704d77f1438d91fbb1d50cb702a30adcea4fc25dbca307a5c2c2dc4ee83a020a",
+      "archive_sha256": "1f32365d4dda3b9c466690c952f103c8c0b5afe3f1eec63d776668c9342649d0",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/gift-package-push-strategy-1.0.0.zip",
-      "artifact_size": 3812,
+      "artifact_size": 7772,
       "dependencies": {
         "capabilities": [
           {
@@ -587,9 +587,9 @@
       "skill_uri": "skill://gravity.game/gift-package-push-strategy@1.0.0"
     },
     {
-      "archive_sha256": "000c7c7a92eb0527e6b0adc7a79eff87bf4ec6b16324ebdb6b1af66a6819e8ba",
+      "archive_sha256": "3dad06da612282b381b1f2990b0b2c09b7e568822b6ea515ecf18d63f6636995",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/gift-penetration-optimization-1.0.0.zip",
-      "artifact_size": 3708,
+      "artifact_size": 7685,
       "dependencies": {
         "capabilities": [
           {
@@ -620,9 +620,9 @@
       "skill_uri": "skill://gravity.game/gift-penetration-optimization@1.0.0"
     },
     {
-      "archive_sha256": "6b9c9fa12844d398316d10b9e4b193ece9a85dadfa6f3ede40784ab79859532b",
+      "archive_sha256": "43591ece21904268ab015544866a7bb459ba8e1f2ea3b3b81b7ffee0ea2d7166",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/level-churn-diagnosis-1.0.0.zip",
-      "artifact_size": 3719,
+      "artifact_size": 7630,
       "dependencies": {
         "capabilities": [
           {
@@ -653,9 +653,9 @@
       "skill_uri": "skill://gravity.game/level-churn-diagnosis@1.0.0"
     },
     {
-      "archive_sha256": "b7d1de33f2ceb741ee2f262e060731f373a1d24207055110a62d5e8470c65e13",
+      "archive_sha256": "617fadafb2a2301ca18580396dd8ee168376f26dbfc6550e7c5a40e1ebecef13",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/lt-prediction-1.0.0.zip",
-      "artifact_size": 3741,
+      "artifact_size": 7582,
       "dependencies": {
         "capabilities": [
           {
@@ -686,9 +686,9 @@
       "skill_uri": "skill://gravity.game/lt-prediction@1.0.0"
     },
     {
-      "archive_sha256": "b8c3e3dee832ded0eed746668dc426ee815f4816027b1519b5f743f6b5089f3e",
+      "archive_sha256": "f02694ede03071a4df28afc92f6d1da7716e8ff453eb5e7fbaeb336a5073b67a",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/ltv-analysis-monitoring-1.0.0.zip",
-      "artifact_size": 3747,
+      "artifact_size": 7564,
       "dependencies": {
         "capabilities": [
           {
@@ -719,9 +719,9 @@
       "skill_uri": "skill://gravity.game/ltv-analysis-monitoring@1.0.0"
     },
     {
-      "archive_sha256": "31a8bf686e97268aa030f696ecc2acbae3ccd466274f62e964d0fa05af0e90bc",
+      "archive_sha256": "b84863f15080e389a956815e162e7c9f9ce30e671da11873cebea71710ae0ec8",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/ltv-curve-fitting-segmented-calculation-1.0.0.zip",
-      "artifact_size": 3859,
+      "artifact_size": 7861,
       "dependencies": {
         "capabilities": [
           {
@@ -752,9 +752,9 @@
       "skill_uri": "skill://gravity.game/ltv-curve-fitting-segmented-calculation@1.0.0"
     },
     {
-      "archive_sha256": "2fbf9fa34551bb1e36d72fbc9ac5f48b5e008bc16dc77554101fb21c101289d0",
+      "archive_sha256": "6d446bce1c770b000a598a5ac5eb997fa258df4a3f6b27fde7815e4cf274cfc6",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/ltv-dashboard-setup-1.0.0.zip",
-      "artifact_size": 3732,
+      "artifact_size": 7585,
       "dependencies": {
         "capabilities": [
           {
@@ -785,9 +785,9 @@
       "skill_uri": "skill://gravity.game/ltv-dashboard-setup@1.0.0"
     },
     {
-      "archive_sha256": "4bfd8c05f79b0df4f32a559c9108d2e4737113583b915cfd2c5b7ad78236beac",
+      "archive_sha256": "920cf73c16a1ac9914662d5a59552625e9306780a12d998d82dae045b98c288d",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/ltv-payback-period-prediction-1.0.0.zip",
-      "artifact_size": 3769,
+      "artifact_size": 7616,
       "dependencies": {
         "capabilities": [
           {
@@ -818,9 +818,9 @@
       "skill_uri": "skill://gravity.game/ltv-payback-period-prediction@1.0.0"
     },
     {
-      "archive_sha256": "dbe1bc69d3f7f30d3e79aa178144ebc88013f683d9174116cd6edce60e9cc411",
+      "archive_sha256": "65e16edb815cc4bd64a303b986462ed0f1b3acd659ac7a8e9cd5562d32488d7a",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/new-hero-launch-insight-1.0.0.zip",
-      "artifact_size": 3774,
+      "artifact_size": 7717,
       "dependencies": {
         "capabilities": [
           {
@@ -851,9 +851,9 @@
       "skill_uri": "skill://gravity.game/new-hero-launch-insight@1.0.0"
     },
     {
-      "archive_sha256": "235f0ae7d76571cd0630f2869e373e7caee204fd76081d74def3b086710a12b7",
+      "archive_sha256": "0d3eab2d4cd9674c6111176cba7440b66efedbe8efb7c8f81486fdeb4e61bfd3",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/operation-journey-canvas-creation-1.0.0.zip",
-      "artifact_size": 3623,
+      "artifact_size": 7259,
       "dependencies": {
         "capabilities": [],
         "context": {
@@ -875,9 +875,9 @@
       "skill_uri": "skill://gravity.game/operation-journey-canvas-creation@1.0.0"
     },
     {
-      "archive_sha256": "111a0a5c58c6361d191e6a6f447c3a627f2f9bbe9438f7f90515c0df64bf1960",
+      "archive_sha256": "f031fd8e82d6d0b60230f055a70b3da6e898eb46849198008d6fac718bf10762",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/payment-attribution-analysis-1.0.0.zip",
-      "artifact_size": 3671,
+      "artifact_size": 7590,
       "dependencies": {
         "capabilities": [
           {
@@ -906,9 +906,9 @@
       "skill_uri": "skill://gravity.game/payment-attribution-analysis@1.0.0"
     },
     {
-      "archive_sha256": "92990e91a0c3301769939a6b37b24da0f955189fcea4434e779d9d7191177355",
+      "archive_sha256": "2fb1b38ac283454749d1dda9451f2bbea032c740b7e36660a1de9fd4d9dd20c9",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/payment-conversion-funnel-1.0.0.zip",
-      "artifact_size": 3756,
+      "artifact_size": 7684,
       "dependencies": {
         "capabilities": [
           {
@@ -939,9 +939,9 @@
       "skill_uri": "skill://gravity.game/payment-conversion-funnel@1.0.0"
     },
     {
-      "archive_sha256": "c72c62430a74b71185c3fa1b1c6bdf402a5f32a1cd6eeb2e12e214f38f2cf1da",
+      "archive_sha256": "71ad2d81fc3947408fb9b05ddd8c5295230891698c529fc524a0303491443a6d",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/payment-funnel-setup-1.0.0.zip",
-      "artifact_size": 3686,
+      "artifact_size": 7560,
       "dependencies": {
         "capabilities": [
           {
@@ -970,9 +970,9 @@
       "skill_uri": "skill://gravity.game/payment-funnel-setup@1.0.0"
     },
     {
-      "archive_sha256": "e44c733f8162662910cd96a9a1c931613f83f7a2bb99348755e8054054d6668f",
+      "archive_sha256": "7f8ecdb992d65f0e975fdfe2cd889e19514ea6da9bc402e0c109dd068ae2257d",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/payment-rate-anomaly-diagnosis-1.0.0.zip",
-      "artifact_size": 3703,
+      "artifact_size": 7665,
       "dependencies": {
         "capabilities": [
           {
@@ -1001,9 +1001,9 @@
       "skill_uri": "skill://gravity.game/payment-rate-anomaly-diagnosis@1.0.0"
     },
     {
-      "archive_sha256": "d005dbf4f863208b5e4f7360e05cf7bc35872a56d275032e03194ee850a89c98",
+      "archive_sha256": "4de4c3f1c61a672874c6ca512f4d09b88c7d19cf16700f0ad2642ef7e9a60943",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/product-pricing-optimization-1.0.0.zip",
-      "artifact_size": 3805,
+      "artifact_size": 7806,
       "dependencies": {
         "capabilities": [
           {
@@ -1036,9 +1036,9 @@
       "skill_uri": "skill://gravity.game/product-pricing-optimization@1.0.0"
     },
     {
-      "archive_sha256": "fbcf0980d1bd89eff62baa0436cffce96c9e2067b5910232d7b940c3c3f14ea4",
+      "archive_sha256": "ea76afac5d14a38f90199d11fd89c11d24d5c1775c12e6aeb95ec046198e9fc1",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/pvp-win-rate-analysis-1.0.0.zip",
-      "artifact_size": 3670,
+      "artifact_size": 7542,
       "dependencies": {
         "capabilities": [
           {
@@ -1067,9 +1067,9 @@
       "skill_uri": "skill://gravity.game/pvp-win-rate-analysis@1.0.0"
     },
     {
-      "archive_sha256": "560b1d3c8c1667fe493aa2694810f417b7be7929b3dcdb78165b7315e5c07b5e",
+      "archive_sha256": "c0b6206bc6ea9f2991c9506f6d9e80307cbe7d037daf994a361102e744caa8d6",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/repurchase-analysis-1.0.0.zip",
-      "artifact_size": 3611,
+      "artifact_size": 7452,
       "dependencies": {
         "capabilities": [
           {
@@ -1098,9 +1098,9 @@
       "skill_uri": "skill://gravity.game/repurchase-analysis@1.0.0"
     },
     {
-      "archive_sha256": "58e53313c5454495a0c00ab26ea54dae1a57c07361fa89ad013e7b88618192b2",
+      "archive_sha256": "7ec822185818aae3edf39513a64237b3d72d3845b28b5c0635140edb878d252c",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/retention-analysis-data-verification-1.0.0.zip",
-      "artifact_size": 3719,
+      "artifact_size": 7694,
       "dependencies": {
         "capabilities": [
           {
@@ -1131,9 +1131,9 @@
       "skill_uri": "skill://gravity.game/retention-analysis-data-verification@1.0.0"
     },
     {
-      "archive_sha256": "8439eea739eb1155aab04a701b5255c35238858116085e3a714765668fa97ce7",
+      "archive_sha256": "5f2f9caee3bd54e58efdfb419663301059942ff22dcfbdaa702db1e3497e8f58",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/single-user-behavior-analysis-1.0.0.zip",
-      "artifact_size": 3775,
+      "artifact_size": 7762,
       "dependencies": {
         "capabilities": [
           {
@@ -1162,9 +1162,9 @@
       "skill_uri": "skill://gravity.game/single-user-behavior-analysis@1.0.0"
     },
     {
-      "archive_sha256": "74758733179fff679b2477de06d4f7ee6d54ac68547c9956faed02322eb4f520",
+      "archive_sha256": "82ff188377af7c39459f1b6f88598880fdfa0e3b55e3af58f8dd26511adf75fc",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/sql-performance-optimization-1.0.0.zip",
-      "artifact_size": 3609,
+      "artifact_size": 7244,
       "dependencies": {
         "capabilities": [],
         "context": {
@@ -1184,9 +1184,9 @@
       "skill_uri": "skill://gravity.game/sql-performance-optimization@1.0.0"
     },
     {
-      "archive_sha256": "e372d3a56796efeeb49e7ae1bb5594ccb7ce65149a1eef5d680630f692439496",
+      "archive_sha256": "becfaf52ba208949ddbb2f54d58ddff3bd8b1075437567f43bd42caaed663f6a",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/system-field-reference-guide-1.0.0.zip",
-      "artifact_size": 3569,
+      "artifact_size": 7096,
       "dependencies": {
         "capabilities": [],
         "context": {
@@ -1206,9 +1206,9 @@
       "skill_uri": "skill://gravity.game/system-field-reference-guide@1.0.0"
     },
     {
-      "archive_sha256": "b6b28c57887c9e89a8cc0251fc34c11fc8f71d168f93dd12c1633669104dbd7a",
+      "archive_sha256": "2beda24f7c7ab4b7d348b7014460697a9bbb44e4385ef542640bf8c7adefd5b9",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/trino-metadata-query-analysis-1.0.0.zip",
-      "artifact_size": 3508,
+      "artifact_size": 6913,
       "dependencies": {
         "capabilities": [],
         "context": {
@@ -1226,9 +1226,9 @@
       "skill_uri": "skill://gravity.game/trino-metadata-query-analysis@1.0.0"
     },
     {
-      "archive_sha256": "036b115c4b37529d6d6cfe95b554c4a2f5f56c1086a6f1c08b1e094d5dcdefd8",
+      "archive_sha256": "4cb2f5cabcee287344762dad05590ddb5889918ae9459411112d11401e37d592",
       "artifact_path": "content/thinkingai/full/hub/artifacts/skills/user-tag-system-design-1.0.0.zip",
-      "artifact_size": 3626,
+      "artifact_size": 7196,
       "dependencies": {
         "capabilities": [],
         "context": {
@@ -1251,10 +1251,10 @@
     }
   ],
   "source": {
-    "index_digest": "ae40a656675a8b9a71a0322358f7d0c7a36b79fa75eb48781b8872c499d0b038",
+    "index_digest": "158861da84ebe688518a2b2b9833a5d2cc42a50da052820c82cd7b4fc206e308",
     "source_descriptor_digest": "24ee80a0813aa50fad5adf5e1c7695032c6add1c9b91b172fa77de8a24dcc73d",
     "source_id": "hub-source://gravity/thinkingai-full@1",
-    "source_revision": "4309b7f74b8e8d38fa5bae5bdcf3f3a292cdc6fc",
+    "source_revision": "ebff827e97e245f2663d18f13863ae5a084891d8",
     "transport": "git"
   }
 }
