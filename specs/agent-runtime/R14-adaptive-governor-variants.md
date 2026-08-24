@@ -3,13 +3,13 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress`; R14-A/B/C `fixed_dev`, R14-D `in_progress` |
+| Status | `fixed_dev`; R14-A/B/C/D `fixed_dev` |
 | Track | Runtime I/O optimization |
 | Dependencies | R02 |
 | Parallel group | `runtime-infrastructure` |
 | Shared-spine integration | Required and serialized |
 | Delivery ledger | This Requirement document; no internal GitHub Issue |
-| Milestones | R14-A/B/C `fixed_dev`; R14-D `in_progress` |
+| Milestones | R14-A/B/C/D `fixed_dev` |
 | R14-A baseline | `dev@fac2e6e1648bdf60efe1a1b369c9788058cdebed` |
 | R14-A branch / worktree | `codex/r14a-governor-observation` / `D:\git-pjt\gravity-sdk-wt\r14a-governor-observation` |
 | R14-B baseline | `dev@406c07b259ce89067dcb61f155115d87a8643db8` |
@@ -20,6 +20,7 @@
 | R14-C feature / merge | `52d40d16a9852118f62a65c77b5476323668229f` / `dev@e2dad8127481bae117a3423bdae2e6dd52aaf492` |
 | R14-D baseline | `dev@c936e7dc0f84bd9860fbe6a563f365231db2e3a4` |
 | R14-D branch / worktree | `codex/r14d-variant-selection` / `D:\git-pjt\gravity-sdk-wt\r14d-variant-selection` |
+| R14-D feature / merge | `4ab0b45adfe14d23af4e9dad08569fbd617f51cc` / `dev@9ef948bd3ef7e3e8298c9b6a8cb42038fe4fdd3c` |
 | Production requests | `0`; fake Runtime HTTP only |
 | Main integration | Frozen until whole program completion |
 
@@ -361,6 +362,70 @@ probes, Variant execution, release or `main`.
   determinism, tamper/privacy/offline behavior, full gates, isolated wheel and
   canonical consumer with zero production HTTP/RPC. Active docs remain exactly
   5,500 lines.
+
+## R14-D Fixed Dev Evidence
+
+- Feature `4ab0b45adfe14d23af4e9dad08569fbd617f51cc` was merged as
+  `dev@9ef948bd3ef7e3e8298c9b6a8cb42038fe4fdd3c`; the merge tree is byte-identical
+  to the fully validated feature tree. Existing Direct SDK and Plan execution,
+  Product/host routing and the Plan scheduler are unchanged.
+- `ExecutionVariantService.select()` is one pure offline decision. It validates
+  the exact packaged Characterization before constructing current Product
+  Trust, then evaluates Trust, `GRAVITY_EXECUTION_VARIANT_MODE`, optional exact
+  pin and secondary objective in that order. Unknown modes fail locally with
+  `EXECUTION_VARIANT_MODE_INVALID` after Trust and before pin.
+- All non-`stable` Trust states make both candidates ineligible and return the
+  canonical Direct fallback without evaluating or echoing a pin. Disabled mode
+  does the same even for stable Trust and an invalid pin. Under stable automatic
+  mode, exact Direct/Plan pins select only that fixed URI; pins never bypass the
+  preceding gates.
+- Stable unpinned automatic mode selects Direct from only proved facts: request
+  count is equivalent, freshness shares Product Trust/upstream response,
+  Variant-specific latency and cost evidence are unavailable, and Direct has
+  one local topology hop versus Plan adapter's two. No latency, cost, freshness
+  or request measurement is fabricated.
+- `gravity.execution-variant-selection.v1` strictly binds Product,
+  Characterization/corpus, descriptor candidates, current Trust, mode/pin,
+  five-gate trace, objective facts, ordered reasons, canonical rollback and a
+  deterministic decision digest. Schema, digest and policy-consistent tamper
+  tests fail closed even after digest recomputation; results are value-free and
+  `network_called=false`.
+- R14-C's Characterization artifact and corpus remain unchanged at
+  `e04bf55ba6df75d1e6429fa3df39ddbd8f6fd825ba7d4c95752d264afc87064b` and
+  `6d4d56aeb30cee49d61dc3c55a799ae4d771ddbfd1859573d6f5b5f54681e3f5`.
+  Its `disabled_until_r14_d` fields continue to describe that immutable evidence;
+  service list/describe now report `trust_gated` availability.
+- R14-D focused coverage is `16 tests, 41 subtests`. Complete merge-tree gates
+  passed `1734` unittest tests and `1734 passed, 3949 subtests` under pytest.
+  Compiler remains `237 operations, 11 manifests`; quality, all four
+  deterministic generators, root help, documentation, diff checks and touched
+  Ruff passed. Active human docs remain exactly `5500` lines.
+- Public root exports are additive at `143` lazy entries / `144` `__all__`
+  names. Actionable errors are `1345 = 1178 A + 167 B + 0 C`. Development
+  usability remains selection `296/336`, fillability `248/248`, offline terminal
+  `53/53`, recovery `5/5`, security violations `0`, skipped production cases
+  `283` and production HTTP requests `0`.
+- Final isolated wheel `gravity_sdk-0.3.0-py3-none-any.whl` has SHA-256
+  `d3c8ab9efc6d3743e67d67aa811ec9978643ce8d0cbe2a4e46f92ec0ad8eb869`.
+  External `site-packages` loaded the root validator and packaged schema, then
+  proved stable automatic Direct, stable pinned Plan and disabled Direct
+  rollback. Canonical
+  `work-dashboard@d1915a18278fca8823782a7d13e691a6d5702ad2` remained clean and
+  passed `11 tests, 94 subtests`; no consumer migration was required.
+- Structural technical debt was reviewed and no current entry was changed or
+  closed. Production probes, external Gravity/Provider HTTP or RPC, credentials,
+  remote writes, releases and `main` promotion performed by R14-D: `0`.
+
+## R14-D Known Limits
+
+- Selection returns a fixed Variant identity and explanation; it does not add
+  an execute method or alter either existing execution owner. Only the
+  characterized event Analysis Product can be selected.
+- Default current Product Trust remains blocked, so the current environment
+  returns Direct fallback. A stable automatic decision also remains Direct
+  until governed evidence proves a truthful secondary advantage for Plan.
+- The kill switch is process-environment state and decisions are not persisted.
+  Canonical Direct remains the capability-preserving code/config rollback.
 
 ## Scope
 
