@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress` |
+| Status | `fixed_dev` |
 | Track | Isolated exploratory product |
 | Dependencies | R02, R05 |
 | Parallel group | `isolated-product` |
@@ -11,6 +11,7 @@
 | Delivery ledger | This Requirement document; no internal GitHub Issue |
 | Baseline | `dev@f29f493c73179efc55692f500a935002b04d915c` |
 | Branch / worktree | `codex/r15-isolated-sql-explorer` / `D:\git-pjt\gravity-sdk-wt\r15-isolated-sql-explorer` |
+| Feature / merge | `5dbf33bad14a8ce13250d28d337e2e71cb9d8dff` / `dev@a0033700ca9e78b964fd3cf2855f391310bb1f1e` |
 | First dialect / parser | SQLite / `sqlglot==30.17.0` |
 | Production requests | `0`; temporary local SQLite only |
 
@@ -55,6 +56,94 @@ production database, Gravity SQL, credentials, network calls, release or `main`.
   bypassed, fake-clock/resource/output budgets, privacy snapshots, promotion
   lifecycle, registered-SQL no-fallback regression, full gates, isolated wheel
   and canonical consumer. Active human docs remain exactly 5,500 lines.
+
+## Fixed Dev Evidence
+
+- Feature `5dbf33bad14a8ce13250d28d337e2e71cb9d8dff` was merged as
+  `dev@a0033700ca9e78b964fd3cf2855f391310bb1f1e`; the merge tree is byte-identical
+  to the fully validated feature tree. Existing Gravity custom-SQL routes,
+  registered product compile/query/Evidence, Plan adapters and Insight routing
+  are unchanged and never fall back to Explorer on either success or failure.
+- The first closed dialect is SQLite with required `sqlglot==30.17.0`. SQLGlot
+  receives explicit dialect `sqlite`, must produce exactly one stable canonical
+  outer `Select` AST, and carries comment/CTE/table/function/placeholder/output
+  evidence. DDL/DML, PRAGMA, ATTACH, multiple statements, comments, set
+  operations, star projection, dynamic/attached/system relations, unknown
+  functions and output/parameter mismatch stop before caller execution.
+- Each inspect/execute opens an absolute existing regular file only through a
+  generated `file:` URI with `mode=ro`, applies/readbacks
+  `trusted_schema=OFF`, `mmap_size=0` and `query_only=ON`, begins one deferred
+  transaction and keeps a SQLite authorizer plus progress handler installed
+  through prepare/step. A test bypassed AST and then removed the authorizer;
+  the database connection still rejected DELETE and a writable connection
+  proved all 120 fixture rows unchanged.
+- AST and database authorizer both enforce the exact relation/view/function
+  allowlists. A real allowed view executed while its hidden COUNT and base-table
+  read were authorized only through the named view/function policy; session
+  counts include actual database authorization callbacks rather than AST alone.
+- SQLite `setlimit` lowers value/SQL/column/expression/compound/function/attach/
+  pattern/trigger/variable/VDBE/worker limits. The progress handler interrupts at
+  the earlier fake-clock timeout or VM-step resource budget; a generated outer
+  limit and row/cell/total-byte gates return no partial rows. Session metadata
+  calls this `sqlite_vm_steps`, never a measured scan-byte budget.
+- `gravity.sql-explorer-result.v1` always reports `trust=exploratory`,
+  completeness `unknown`, no allowed claims, `stable_dependency_allowed=false`
+  and `network_called=false`. SQL, parameters and database paths are absent from
+  success/error/session/promotion metadata; no HTTP Receipt is created. Result
+  digests bind rows, while the promotion source contains no rows or row digest.
+- Lazy `sdk.sql_explorer.inspect()/execute()/promote()` and explicit
+  `gravity sql explorer inspect|execute|promote` share one owner. Explorer works
+  without configured products and constructs neither Insight nor registered-SQL
+  clients. Registered SQL CLI imports SQLGlot only if Explorer is actually used.
+- Promotion requires an exact successful value-free source, explicit approval,
+  independent review-evidence SHA-256, name/version and a complete existing
+  `custom-sql` definition. The canonical workspace validator proves datasource/
+  App, exact placeholders, aggregate privacy, projection/semantics, forbidden
+  claims and max rows; output adds version/source/review provenance and a
+  consumer contract. CLI atomically writes only the explicit output. Automatic
+  install/replacement and stable Trust/Journey/Skill/Dashboard/Action use remain
+  false.
+- R15 focused coverage is `13 tests, 15 subtests`; broader SQL/SDK/Trust/Plan/
+  workspace/public/documentation coverage passed `108 tests, 40 subtests`.
+  Complete merge-tree gates passed `1747` unittest tests and `1747 passed, 3964
+  subtests` under pytest. Compiler remains `237 operations, 11 manifests`;
+  quality, all four deterministic generators, root/SQL help, dependency, docs,
+  diff checks and touched Ruff passed. Active human docs remain exactly `5500`
+  lines.
+- Public root exports are additive at `147` lazy entries / `148` `__all__`
+  names. Actionable errors remain `1345 = 1178 A + 167 B + 0 C`. Development
+  usability remains selection `296/336`, fillability `248/248`, offline terminal
+  `53/53`, recovery `5/5`, security violations `0`, skipped production cases
+  `283` and production HTTP requests `0`.
+- Final isolated wheel `gravity_sdk-0.3.0-py3-none-any.whl` has SHA-256
+  `a275d5bd16dba237c0d65a74a10a226f737a67cc99e6f9acaf33b18b03cef012`.
+  External `site-packages` proved exact SQLGlot metadata, all four packaged
+  schemas, root validators and a real temporary mode-ro SQLite aggregate with
+  zero transport requests. Canonical
+  `work-dashboard@d1915a18278fca8823782a7d13e691a6d5702ad2` remained clean and
+  passed `11 tests, 94 subtests`; no consumer migration was required.
+- Official parser/database evidence was read from
+  https://pypi.org/project/sqlglot/, https://sqlglot.com/sqlglot.html,
+  https://sqlite.org/uri.html, https://sqlite.org/pragma.html#pragma_query_only,
+  https://sqlite.org/security.html and https://sqlite.org/c3ref/set_authorizer.html.
+  Structural technical debt was reviewed and no current entry changed or closed.
+  Production/external database probes, Gravity/Provider HTTP or RPC, credentials,
+  remote writes, releases and `main` promotion performed by R15: `0`.
+
+## Known Limits
+
+- SQLite is the only dialect and accepts only explicit local regular database
+  files. There is no PostgreSQL/MySQL/Gravity Explorer identity adapter; a future
+  network dialect must prove its server role/transaction/resource controls and
+  use the existing Runtime Governor before becoming executable.
+- SQLite VM steps are an enforceable resource budget, not a scan-byte measure.
+  Explorer therefore keeps completeness unknown and makes no cost/coverage claim.
+- Exploratory rows are returned only to the explicit caller and are not durable
+  Runtime evidence. Callers remain responsible for protecting any file/stdout to
+  which they explicitly direct those rows.
+- Promotion review evidence is external and the Runtime does not infer semantic
+  equivalence between SQLite exploration and reviewed registered SQL. The
+  artifact is inert until explicit workspace install and same-layer Validation.
 
 ## Scope
 

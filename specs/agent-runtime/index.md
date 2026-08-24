@@ -63,7 +63,7 @@ CT01 + R09B → CT02 → CT03
 | [R13B](R13B-analysis-artifact-renderer.md) | Analysis Artifact and non-Gravity Renderer | R09A | `fixed_dev` | Leaf |
 | [R13C](R13C-dashboard-connector.md) | Gravity Dashboard Connector | R12-A, R13B | `fixed_dev` | Leaf |
 | [R14](R14-adaptive-governor-variants.md) | Adaptive Governor and Execution Variants | R02 | `fixed_dev` (A/B/C/D) | Staged epic A→B, C, then D |
-| [R15](R15-isolated-sql-explorer.md) | Isolated SQL Explorer | R02, R05 | `in_progress` | Leaf |
+| [R15](R15-isolated-sql-explorer.md) | Isolated SQL Explorer | R02, R05 | `fixed_dev` | Leaf |
 | [R16](R16-control-plane-stage-b.md) | Control Plane Stage B | R04 + trigger | `specified` | Conditional leaf |
 | [CT01](CT01-thinkingai-inventory.md) | ThinkingAI source inventory | R00 | `specified` | Parallel content |
 | [CT02](CT02-thinkingai-representative-skills.md) | Representative ThinkingAI Skills | CT01, R09B | `specified` | Content validation |
