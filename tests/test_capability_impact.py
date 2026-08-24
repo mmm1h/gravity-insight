@@ -51,15 +51,35 @@ class CapabilityImpactTests(unittest.TestCase):
         )
 
         self.assertEqual(
-            ["analysis.event-trend"],
+            [
+                "analysis.event-trend",
+                "analysis.thinkingai.community-context-correlation",
+                "analysis.thinkingai.device-segment-event-review",
+                "analysis.thinkingai.project-metric-contract-check",
+                "analysis.thinkingai.returned-filter-comparison",
+            ],
             [item["journey_id"] for item in event["affected_journeys"]],
         )
         self.assertEqual(
-            ["analysis.business-pulse"],
+            [
+                "analysis.business-pulse",
+                "analysis.thinkingai.revenue-forecast-readiness",
+            ],
             [item["journey_id"] for item in pulse["affected_journeys"]],
         )
-        self.assertEqual([], event["affected_skills"])
-        self.assertEqual([], pulse["affected_skills"])
+        self.assertEqual(
+            [
+                "skill://gravity.game/analysis-metric-definition-alignment@1.0.0",
+                "skill://gravity.game/app-device-performance-analysis@1.0.0",
+                "skill://gravity.game/community-hot-topic-analysis@1.0.0",
+                "skill://gravity.game/filter-result-bias-diagnosis@1.0.0",
+            ],
+            [item["skill_uri"] for item in event["affected_skills"]],
+        )
+        self.assertEqual(
+            ["skill://gravity.game/game-revenue-forecast@1.0.0"],
+            [item["skill_uri"] for item in pulse["affected_skills"]],
+        )
 
     def test_unknown_identity_is_value_free_and_has_no_invented_dependents(self):
         result = capability_impact(request("fixture.unknown"))

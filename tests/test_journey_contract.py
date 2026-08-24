@@ -24,6 +24,11 @@ EXPECTED = {
     "analysis.merge2.ap-cost-anomaly-localization",
     "analysis.experiment-outcome-evaluation",
     "analysis.ltv-curve-fit",
+    "analysis.thinkingai.community-context-correlation",
+    "analysis.thinkingai.device-segment-event-review",
+    "analysis.thinkingai.project-metric-contract-check",
+    "analysis.thinkingai.returned-filter-comparison",
+    "analysis.thinkingai.revenue-forecast-readiness",
 }
 
 
@@ -54,8 +59,8 @@ class JourneyContractTests(unittest.TestCase):
         result = verify_journey_registry()
 
         self.assertEqual("valid", result["status"])
-        self.assertEqual(64, result["ledger_row_count"])
-        self.assertEqual(6, result["machine_contract_count"])
+        self.assertEqual(69, result["ledger_row_count"])
+        self.assertEqual(11, result["machine_contract_count"])
         self.assertFalse(result["network_called"])
         first = next(
             item

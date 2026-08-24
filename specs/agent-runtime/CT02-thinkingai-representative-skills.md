@@ -3,7 +3,7 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `in_progress` |
+| Status | `fixed_dev` |
 | Track | Content validation |
 | Dependencies | CT01, R09B |
 | Parallel group | `content-b` |
@@ -12,6 +12,8 @@
 | Baseline | `dev@69e4c8edafc4f173b2c436a116b4ea588abc5f75` |
 | Branch / worktree | `codex/ct02-thinkingai-representative-skills` / `D:\git-pjt\gravity-sdk-wt\ct02-thinkingai-representative-skills` |
 | Gravity production / Hub / Provider requests | `0` |
+| Feature commits | `767753a`, `e76a882`, `6be46a3`, `24f60d1` |
+| Canonical consumer | `work-dashboard@2039e387` |
 
 ## Plan Owner Verdict And Ready Binding
 
@@ -60,6 +62,62 @@ Selection is based on architecture coverage and real Gravity analysis value, not
 ## Current Baseline
 
 CT01 provides source topics; R09A provides Core Skill Runtime and R09B provides Team Hub binding. R01's Built-in reference Skill is an architectural slice and does not by itself prove content migration diversity or Hub synchronization. R09C is required only for a representative Skill that explicitly needs external Context.
+
+## Fixed-Dev Delivery Evidence
+
+- Five independently authored `gravity.skill.v1` manifests and deterministic
+  no-code packages cover Capability-only, project Semantic, deterministic
+  Operator, required Context and blocked Model shapes. The representative-set
+  digest is
+  `36d2c996debc614772e7028dade7e2c7d04d9931e1411410888280aa26961cbf`.
+  Semantic and Context packages are statically executable because their project
+  dependencies are resolved at `can-run`; only the unvalidated Model package is
+  statically blocked.
+- The exact five-Skill lock has digest
+  `0441f0694557f218d610d63e98a7ae75f91dde89dde5c7ed3c9b0a707451a3c9`
+  and binds package source revision
+  `e76a88202a652fdd2d9b9e5440ab44066aac8cc1`. Two isolated project roots and
+  CAS roots installed byte-identical packages offline. With explicit fixture
+  dependencies, four shapes resolved `verified`; the Model shape remained
+  blocked by `HUB_TRUSTED_PACK_MISSING` and `MODEL_UNVALIDATED`.
+- Five standard Journey contracts raise the generic registry from 6 to 11 and
+  retain one execution owner. Clean-project discovery reports exact missing
+  Skill/Semantic/Context/Model reasons without executable argv or network calls.
+  No route, executor, operation, shared-spine wiring, Model, Provider, trusted
+  pack or Action was added; Team packages remain outside the one Built-in Skill.
+- The eight-case eval digest is
+  `c7119333073d3d205930a48e9db7461a201f522778a35591b6559da86d6d28e1`.
+  Happy, empty, partial, gap, invalid, claim-boundary, prompt-injection and
+  marketing-leakage gates preserve zero claims on rejected/blocked cases and
+  never treat Context text as instructions. CT01 source prose, examples,
+  methods, images and numbers are absent; CT01 artifacts remain immutable and
+  non-distributable while the independent packages have internal license review.
+- Complete gates passed 1,762 unittest tests and 1,762 pytest tests plus 4,054
+  subtests. All seven deterministic generators/checkers passed; compiler stayed
+  at 237 operations / 11 manifests, quality passed, and development usability
+  stayed 296/336 selection, 248/248 fillability, 53/53 offline terminal, 5/5
+  recovery, 0 security violations and 0 production HTTP requests.
+- Isolated-wheel validation loaded both CT02 schemas and all five Journeys from
+  `site-packages`; the wheel SHA-256 is
+  `1b5e282699afbfdaab170d1a001c26a54ff6594ef27bdeb8a321683b6fa6ac49`.
+  Its 1,643 entries contain no top-level Team Hub content, and the installed
+  Built-in registry still contains exactly one Skill.
+- The canonical consumer's exact Journey-count assertion exposed the intended
+  additive catalog change. `work-dashboard@2039e387` now requires all five CT02
+  Journey IDs and passed 11 tests plus 94 subtests against this branch; no
+  consumer runtime or business artifact changed.
+- Active human docs remain exactly 5,500 lines. Structural technical debt was
+  reviewed and no current entry changed or closed. Gravity production, remote
+  Hub, external Provider, credentials, release and `main` promotion performed
+  by CT02: `0`.
+
+## Known Limits
+
+- This representative set validates five dependency shapes; it does not specify
+  the remaining CT01 generic topics. CT03 owns that content expansion.
+- Semantic and Context packages require exact project artifacts at run time. The
+  forecast package remains discovery-only until a separately approved trusted
+  Model satisfies R06; CT02 does not create or distribute that Model.
 
 ## Scope
 
