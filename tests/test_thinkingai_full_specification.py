@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import json
 from pathlib import Path
+import tempfile
 import unittest
 import zipfile
 
@@ -10,7 +11,10 @@ from gravity_sdk.agent_runtime_contracts import canonical_digest, load_json_obje
 from gravity_sdk.journey_contract import journey_artifacts
 from gravity_sdk.skill_contract import compile_skill_manifest, skill_artifacts
 from gravity_sdk.skill_hub_archive import validate_skill_archive
-from gravity_sdk.skill_hub_contract import compile_hub_index
+from gravity_sdk.skill_hub_cas import SkillHubCAS
+from gravity_sdk.skill_hub_contract import compile_hub_index, compile_hub_source
+from gravity_sdk.skill_hub_locks import compile_skills_lock
+from gravity_sdk.skill_hub_source import HubSourceSession
 from gravity_sdk.thinkingai_full_specification import (
     ThinkingAIFullSpecificationError,
     compile_full_eval,
@@ -33,10 +37,12 @@ from gravity_sdk.thinkingai_representative import (
 from scripts.generate_thinkingai_full_specifications import (
     EVAL_TARGET,
     INDEX_TARGET,
+    LOCK_TARGET,
     REPRESENTATIVE_EVAL,
     REPRESENTATIVE_INDEX,
     REPRESENTATIVE_SET,
     SOURCE_INPUT,
+    SOURCE_TARGET,
     SPECIFICATION_TARGET,
     render_outputs,
 )
@@ -75,6 +81,12 @@ class ThinkingAIFullSpecificationTests(unittest.TestCase):
         )
         cls.evaluation = validate_full_eval(
             load_json_object(EVAL_TARGET, "CT03 full eval")
+        )
+        cls.hub_source = compile_hub_source(
+            load_json_object(SOURCE_TARGET, "CT03 full Hub source")
+        )
+        cls.lock = compile_skills_lock(
+            load_json_object(LOCK_TARGET, "CT03 full Skill lock")
         )
 
     def assert_reason(self, reason_code: str, function, *args) -> None:
@@ -364,6 +376,65 @@ class ThinkingAIFullSpecificationTests(unittest.TestCase):
     def test_content_track_does_not_add_runtime_journeys_or_builtins(self) -> None:
         self.assertEqual(11, len(journey_artifacts()))
         self.assertEqual(1, len(skill_artifacts()))
+
+    def test_exact_lock_installs_all_packages_into_two_isolated_cas_roots(self) -> None:
+        revision = self.lock["source"]["source_revision"]
+
+        def read_artifact(relative: str, maximum: int) -> bytes:
+            content = ROOT.joinpath(*relative.split("/")).read_bytes()
+            self.assertLessEqual(len(content), maximum)
+            return content
+
+        session = HubSourceSession(
+            self.hub_source["contract"], revision, self.index, False, read_artifact
+        )
+        self.assertEqual(self.lock["source"], session.reference())
+        self.assertEqual(40, len(self.lock["skills"]))
+        self.assertEqual(
+            sorted(self.lock["requested"]),
+            [item["skill_uri"] for item in self.lock["skills"]],
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            snapshots = []
+            for name in ("left", "right"):
+                cas = SkillHubCAS(root / name / "cas")
+                installed = []
+                for item in self.lock["skills"]:
+                    entry = self.index["skills"][item["skill_uri"]]
+                    fetched = cas.fetch_skill(session, entry)
+                    materialized = cas.materialize_skill(
+                        item["package_digest"],
+                        root / name / "installed" / entry["manifest"]["skill_id"],
+                    )
+                    with self.subTest(project=name, skill_uri=item["skill_uri"]):
+                        self.assertFalse(fetched["cached"])
+                        self.assertTrue(materialized["changed"])
+                        self.assertEqual(
+                            item["package_digest"], fetched["package_digest"]
+                        )
+                        self.assertEqual(
+                            item["package_digest"], materialized["package_digest"]
+                        )
+                    installed.append(
+                        (item["skill_uri"], item["package_digest"], item["archive_sha256"])
+                    )
+                snapshots.append(installed)
+            self.assertEqual(snapshots[0], snapshots[1])
+        self.assertFalse(session.network_called)
+
+    def test_lock_is_bound_to_the_package_commit_and_rejects_tampering(self) -> None:
+        self.assertEqual(
+            "4309b7f74b8e8d38fa5bae5bdcf3f3a292cdc6fc",
+            self.lock["source"]["source_revision"],
+        )
+        self.assertEqual(
+            self.index["digest"], self.lock["source"]["index_digest"]
+        )
+        changed = copy.deepcopy(self.lock)
+        changed["skills"][0]["archive_sha256"] = "0" * 64
+        with self.assertRaisesRegex(Exception, "DIGEST_MISMATCH"):
+            compile_skills_lock(changed)
 
 
 def _redigest(value: dict, field: str) -> None:
