@@ -3,11 +3,17 @@
 | Field | Value |
 | --- | --- |
 | Parent directive | `gravity-agent-runtime/v9.1` via `directive.json` |
-| Status | `specified` |
+| Status | `in_progress`; R14-A internally approved 2026-08-24 |
 | Track | Runtime I/O optimization |
 | Dependencies | R02 |
 | Parallel group | `runtime-infrastructure` |
 | Shared-spine integration | Required and serialized |
+| Delivery ledger | This Requirement document; no internal GitHub Issue |
+| Milestones | R14-A `in_progress`; R14-B/C/D `specified` |
+| R14-A baseline | `dev@fac2e6e1648bdf60efe1a1b369c9788058cdebed` |
+| R14-A branch / worktree | `codex/r14a-governor-observation` / `D:\git-pjt\gravity-sdk-wt\r14a-governor-observation` |
+| Production requests | `0`; fake Runtime HTTP only |
+| Main integration | Frozen until whole program completion |
 
 ## Outcome
 
@@ -32,6 +38,41 @@ R14-B + R14-C
 ```
 
 Every stage has a separate Issue, branch, commit, validation and rollback. R14-A changes no scheduling. R14-D cannot enter `ready` until both R14-B and R14-C are `fixed_dev`.
+
+## R14-A Plan Owner Verdict And Ready Binding
+
+The user designated this Requirement as the staged delivery ledger and
+authorized continuous implementation without repeated approval. With R02
+already `fixed_dev`, the plan owner reviewed
+`tmp/r14a-governor-observation-proposal.md` and its architecture conflict ledger,
+bound the baseline/worktree/gates, and advanced only R14-A through `reviewed`
+and `ready` to `in_progress`. R14-B/C/D remain `specified`. This does not
+authorize production probing, adaptive scheduling, Variant selection, release
+or `main` promotion.
+
+- Observe at the existing `perform_http_request()` count boundary after policy
+  authorization. Record one bounded value-free attempt without extra request,
+  retry, wait, lease, argument mutation or alternate transport.
+- Partition an in-memory recorder by the existing private Runtime scope. Expose
+  only hashed host, operation/profile/method, status/outcome, capped latency and
+  rate delay, attempts and declared current budgets; never expose path, URL,
+  request/response values, credentials, principal or scope digest.
+- Preserve the fixed Host Rate Limiter, 24 business/two SQL Runtime semaphores,
+  outer SQL two-slot guard, Plan worker/borrow budget, auth refresh and retry
+  behavior exactly. R14-A adds no AIMD, circuit, backpressure, single-flight,
+  fairness or adaptive decision.
+- Keep durable HTTP Receipt v1 unchanged. Add separate observation/snapshot
+  schemas, 4,096 observations per scope, at most 64 scopes, bounded ascending
+  query with explicit dropped/truncated state, and observe/disabled policy mode.
+- Add lazy `GravitySDK.governor.observations()` over the same bound runtime.
+  Direct SDKs without that binding fail locally; query performs no network.
+- Runtime-owned Artifact/blob HTTP is observed in a private process partition.
+  R08 Provider RPC and Provider-internal network remain outside the Runtime HTTP
+  Governor and retain their own budgets.
+- Acceptance requires byte/count/order-equivalent disabled/observe traces,
+  status/retry/budget/privacy/scope/bound tests, current transport/SQL/Plan/
+  Receipt/multi-account regressions, full gates, wheel and canonical consumer,
+  with zero production HTTP. Active human docs remain exactly 5,500 lines.
 
 ## Scope
 

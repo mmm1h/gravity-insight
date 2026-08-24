@@ -40,8 +40,8 @@
     "status": "fixed_dev"
   },
   "requirements_index": "index.json",
-  "active_feature_requirement": "R13C",
-  "next_candidate": "R14-A",
+  "active_feature_requirement": "R14-A",
+  "next_candidate": "R14-B",
   "main_integration": {
     "status": "frozen",
     "development_target": "dev",
